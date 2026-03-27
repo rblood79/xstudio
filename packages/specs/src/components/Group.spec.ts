@@ -119,4 +119,43 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       eventMode: "passive" as const,
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            placeholder: "Group label",
+          },
+        ],
+      },
+      {
+        title: "ARIA Role",
+        fields: [
+          {
+            key: "role",
+            type: "enum",
+            label: "Role",
+            options: [
+              { value: "group", label: "Group" },
+              { value: "region", label: "Region" },
+              { value: "presentation", label: "Presentation" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "States",
+        fields: [
+          { key: "isDisabled", type: "boolean" },
+          { key: "isInvalid", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+        ],
+      },
+    ],
+  },
 };

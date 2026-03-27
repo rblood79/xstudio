@@ -229,4 +229,37 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       cursor: props.isDisabled ? "not-allowed" : "default",
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [{ key: "value", type: "number", label: "Value" }],
+      },
+      {
+        title: "Design",
+        fields: [
+          { type: "size" },
+          {
+            key: "staticColor",
+            type: "enum",
+            label: "Static Color",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "white", label: "White" },
+              { value: "black", label: "Black" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "isIndeterminate", type: "boolean" },
+          { key: "isDisabled", type: "boolean" },
+        ],
+      },
+    ],
+  },
 };

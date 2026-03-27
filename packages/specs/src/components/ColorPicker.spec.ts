@@ -114,6 +114,26 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "label", type: "string", label: "Label" },
+          { key: "defaultValue", type: "string", label: "Default Value" },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [{ type: "variant" }, { type: "size" }],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값

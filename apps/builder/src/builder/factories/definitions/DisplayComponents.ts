@@ -462,7 +462,6 @@ export function createProgressBarDefinition(
         tag: "Label",
         props: {
           children: "Progress",
-          variant: "default",
           style: {
             backgroundColor: "transparent",
             width: "fit-content",
@@ -539,7 +538,6 @@ export function createMeterDefinition(
         tag: "Label",
         props: {
           children: "Storage",
-          variant: "default",
           style: {
             backgroundColor: "transparent",
             width: "fit-content",
@@ -696,8 +694,6 @@ export function createRangeCalendarDefinition(
       {
         tag: "CalendarHeader",
         props: {
-          variant: "default",
-          size: "md",
           children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
             year: "numeric",
             month: "long",
@@ -709,8 +705,6 @@ export function createRangeCalendarDefinition(
       {
         tag: "CalendarGrid",
         props: {
-          variant: "default",
-          size: "md",
           defaultToday: true,
           dayOffset: firstDay,
           totalDays: calTotalDays,

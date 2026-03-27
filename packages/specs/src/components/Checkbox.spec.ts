@@ -143,6 +143,56 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
     rules: [{ parentProp: "size", childPath: "Label" }],
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        visibleWhen: { parentTagNot: "CheckboxGroup" },
+        fields: [{ key: "isEmphasized", type: "boolean" }, { type: "size" }],
+      },
+      {
+        title: "State",
+        fields: [
+          { key: "isSelected", type: "boolean" },
+          { key: "isIndeterminate", type: "boolean" },
+          { key: "isRequired", type: "boolean" },
+          { key: "isInvalid", type: "boolean" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "autoFocus", type: "boolean" },
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+          },
+          {
+            key: "value",
+            type: "string",
+            label: "Value",
+            emptyToUndefined: true,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            emptyToUndefined: true,
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";

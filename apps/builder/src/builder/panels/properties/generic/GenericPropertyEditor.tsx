@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { createElement, memo, useMemo, type ComponentType } from "react";
 import type { ComponentSpec } from "@xstudio/specs";
 import { PropertyCustomId, PropertySection } from "../../../components";
 import { useStore } from "../../../stores";
@@ -8,11 +8,11 @@ import { SpecField } from "./SpecField";
 
 interface GenericPropertyEditorProps extends ComponentEditorProps {
   spec: ComponentSpec<Record<string, unknown>>;
-  renderAfterSections?: (props: {
+  renderAfterSections?: ComponentType<{
     elementId: string;
     currentProps: Record<string, unknown>;
     onUpdate: (updatedProps: Record<string, unknown>) => void;
-  }) => React.ReactNode;
+  }>;
 }
 
 export const GenericPropertyEditor = memo(function GenericPropertyEditor({
@@ -27,6 +27,14 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
     return element?.customId || "";
   }, [elementId]);
 
+  const parentTag = useMemo(() => {
+    const state = useStore.getState();
+    const element = state.elementsMap.get(elementId);
+    if (!element?.parent_id) return undefined;
+    const parent = state.elementsMap.get(element.parent_id);
+    return parent?.tag;
+  }, [elementId]);
+
   const updateCustomId = (newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;
     if (updateElement && elementId) {
@@ -35,7 +43,7 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
   };
 
   const visibleSections = (spec.properties?.sections ?? []).filter((section) =>
-    evaluateVisibility(section.visibleWhen, currentProps),
+    evaluateVisibility(section.visibleWhen, currentProps, parentTag),
   );
 
   return (
@@ -56,7 +64,7 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
         <PropertySection key={section.title} title={section.title}>
           {section.fields
             .filter((field) =>
-              evaluateVisibility(field.visibleWhen, currentProps),
+              evaluateVisibility(field.visibleWhen, currentProps, parentTag),
             )
             .map((field, index) => (
               <SpecField
@@ -70,8 +78,8 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
         </PropertySection>
       ))}
 
-      {typeof renderAfterSections === "function" &&
-        renderAfterSections({
+      {renderAfterSections != null &&
+        createElement(renderAfterSections, {
           elementId,
           currentProps,
           onUpdate,

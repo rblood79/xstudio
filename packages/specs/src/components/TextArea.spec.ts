@@ -102,6 +102,80 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
     rules: [{ parentProp: "size", childPath: "Label" }],
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          { type: "size" },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Validation",
+        fields: [
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon" },
+              { value: "label", label: "Label" },
+            ],
+          },
+          { key: "isInvalid", type: "boolean" },
+          { key: "maxLength", type: "number", label: "Max Length" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "autoFocus", type: "boolean" },
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            emptyToUndefined: true,
+          },
+          {
+            key: "autoComplete",
+            type: "enum",
+            label: "Autocomplete",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

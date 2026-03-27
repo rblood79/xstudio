@@ -94,6 +94,47 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Layout",
+        fields: [
+          {
+            key: "layout",
+            type: "enum",
+            label: "Layout",
+            options: [
+              { value: "grid", label: "Grid" },
+              { value: "stack", label: "Stack" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Colors",
+        fields: [
+          { key: "defaultValue", type: "string", label: "Default Value" },
+          {
+            key: "colorSpace",
+            type: "enum",
+            label: "Color Space",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "rgb", label: "RGB" },
+              { value: "hsl", label: "HSL" },
+              { value: "hsb", label: "HSB" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값

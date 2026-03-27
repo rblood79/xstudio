@@ -222,4 +222,42 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "File Selection",
+        fields: [
+          {
+            key: "acceptedFileTypes",
+            type: "string",
+            label: "Accepted File Types",
+            placeholder: "image/*, .pdf, .docx",
+          },
+          { key: "allowsMultiple", type: "boolean", label: "Allow Multiple" },
+          {
+            key: "acceptDirectory",
+            type: "boolean",
+            label: "Accept Directory",
+          },
+        ],
+      },
+      {
+        title: "Camera (Mobile)",
+        fields: [
+          {
+            key: "defaultCamera",
+            type: "enum",
+            label: "Default Camera",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "user", label: "User" },
+              { value: "environment", label: "Environment" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 };

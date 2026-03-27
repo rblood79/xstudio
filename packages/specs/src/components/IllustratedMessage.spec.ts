@@ -172,4 +172,41 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
       eventMode: "none" as const,
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "heading",
+            type: "string",
+            label: "Heading",
+            placeholder: "No content",
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            placeholder: "There is nothing to display.",
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          { type: "size" },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "vertical", label: "Vertical" },
+              { value: "horizontal", label: "Horizontal" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 };

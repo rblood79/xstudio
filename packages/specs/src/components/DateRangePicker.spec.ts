@@ -47,6 +47,171 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   sizes: DATE_PICKER_SIZES,
   states: DATE_PICKER_STATES,
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "label", type: "string", label: "Label" },
+          { key: "description", type: "string", label: "Description" },
+          { key: "errorMessage", type: "string", label: "Error Message" },
+          { key: "placeholderValue", type: "string", label: "Placeholder" },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          { type: "variant" },
+          { type: "size" },
+          {
+            key: "locale",
+            type: "enum",
+            label: "Locale",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "ko-KR", label: "한국어" },
+              { value: "en-US", label: "English (US)" },
+              { value: "ja-JP", label: "日本語" },
+              { value: "zh-CN", label: "中文" },
+              { value: "de-DE", label: "Deutsch" },
+              { value: "fr-FR", label: "Français" },
+            ],
+          },
+          {
+            key: "calendarSystem",
+            type: "enum",
+            label: "Calendar System",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "buddhist", label: "Buddhist" },
+              { value: "hebrew", label: "Hebrew" },
+              { value: "islamic-civil", label: "Islamic (Civil)" },
+              { value: "persian", label: "Persian" },
+            ],
+          },
+          {
+            key: "granularity",
+            type: "enum",
+            label: "Granularity",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Day" },
+              { value: "hour", label: "Hour" },
+              { value: "minute", label: "Minute" },
+              { value: "second", label: "Second" },
+            ],
+          },
+          {
+            key: "hourCycle",
+            type: "enum",
+            label: "Hour Cycle",
+            emptyToUndefined: true,
+            valueTransform: "number" as const,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "12", label: "12 Hour" },
+              { value: "24", label: "24 Hour" },
+            ],
+          },
+          { key: "hideTimeZone", type: "boolean", label: "Hide Timezone" },
+          {
+            key: "shouldForceLeadingZeros",
+            type: "boolean",
+            label: "Force Leading Zeros",
+          },
+          {
+            key: "pageBehavior",
+            type: "enum",
+            label: "Page Behavior",
+            options: [
+              { value: "visible", label: "Visible" },
+              { value: "hidden", label: "Hidden" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          { key: "defaultToday", type: "boolean", label: "Default to Today" },
+          {
+            key: "minValue",
+            type: "string",
+            label: "Min Value",
+            placeholder: "2024-01-01",
+          },
+          {
+            key: "maxValue",
+            type: "string",
+            label: "Max Value",
+            placeholder: "2024-12-31",
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon" },
+              { value: "label", label: "Label" },
+            ],
+          },
+          { key: "isInvalid", type: "boolean" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+          { key: "autoFocus", type: "boolean" },
+          {
+            key: "shouldCloseOnSelect",
+            type: "boolean",
+            label: "Close On Select",
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "startName",
+            type: "string",
+            label: "Start Name",
+            emptyToUndefined: true,
+            placeholder: "start-date",
+          },
+          {
+            key: "endName",
+            type: "string",
+            label: "End Name",
+            emptyToUndefined: true,
+            placeholder: "end-date",
+          },
+          {
+            key: "autoComplete",
+            type: "string",
+            label: "Autocomplete",
+            emptyToUndefined: true,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   propagation: {
     rules: [
       // label → Label children (항상 덮어쓰기 — 부모 label이 Label.children의 단일 소스)

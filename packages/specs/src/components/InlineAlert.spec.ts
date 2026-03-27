@@ -115,6 +115,33 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
 
   states: {},
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "heading",
+            type: "string",
+            label: "Heading",
+            placeholder: "Alert heading",
+          },
+          {
+            key: "children",
+            type: "string",
+            label: "Description",
+            placeholder: "Alert message",
+            multiline: true,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [{ type: "variant" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const bgColor = props.style?.backgroundColor ?? variant.background;

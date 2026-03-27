@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * Nav Props
  */
 export interface NavProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  'aria-label'?: string;
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  "aria-label"?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -24,25 +24,25 @@ export interface NavProps {
  * Nav Component Spec
  */
 export const NavSpec: ComponentSpec<NavProps> = {
-  name: 'Nav',
-  description: 'HTML5 nav 기반 네비게이션 컨테이너',
-  element: 'nav',
+  name: "Nav",
+  description: "HTML5 nav 기반 네비게이션 컨테이너",
+  element: "nav",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: '{color.accent-subtle}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.accent-subtle}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
@@ -51,24 +51,24 @@ export const NavSpec: ComponentSpec<NavProps> = {
       height: 48,
       paddingX: 12,
       paddingY: 8,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
     md: {
       height: 56,
       paddingX: 16,
       paddingY: 12,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 12,
     },
     lg: {
       height: 64,
       paddingX: 20,
       paddingY: 16,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 16,
     },
   },
@@ -78,11 +78,11 @@ export const NavSpec: ComponentSpec<NavProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
@@ -93,18 +93,21 @@ export const NavSpec: ComponentSpec<NavProps> = {
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius as unknown as number;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
 
       // 배경
       shapes.push({
-        id: 'bg',
-        type: 'roundRect' as const,
+        id: "bg",
+        type: "roundRect" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         radius: borderRadius,
         fill: bgColor,
       });
@@ -113,13 +116,29 @@ export const NavSpec: ComponentSpec<NavProps> = {
     },
 
     react: (props) => ({
-      'aria-label': props['aria-label'] || 'Navigation',
-      role: 'navigation',
+      "aria-label": props["aria-label"] || "Navigation",
+      role: "navigation",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
-      cursor: 'default',
+      eventMode: "static" as const,
+      cursor: "default",
     }),
+  },
+
+  properties: {
+    sections: [
+      {
+        title: "Accessibility",
+        fields: [
+          {
+            key: "aria-label",
+            type: "string",
+            label: "aria-label",
+            placeholder: "Main navigation",
+          },
+        ],
+      },
+    ],
   },
 };

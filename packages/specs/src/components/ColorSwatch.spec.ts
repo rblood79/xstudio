@@ -90,6 +90,29 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Color",
+        fields: [
+          { key: "color", type: "string", label: "Color Value" },
+          {
+            key: "colorSpace",
+            type: "enum",
+            label: "Color Space",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "rgb", label: "RGB" },
+              { value: "hsl", label: "HSL" },
+              { value: "hsb", label: "HSB" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const swatchSize = size.height;

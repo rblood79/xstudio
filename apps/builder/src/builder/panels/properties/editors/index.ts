@@ -7,7 +7,6 @@ export { CheckboxEditor } from "./CheckboxEditor";
 export { CheckboxGroupEditor } from "./CheckboxGroupEditor";
 export { RadioEditor } from "./RadioEditor";
 export { RadioGroupEditor } from "./RadioGroupEditor";
-export { ToggleButtonEditor } from "./ToggleButtonEditor";
 export { ToggleButtonGroupEditor } from "./ToggleButtonGroupEditor";
 export { ListBoxEditor } from "./ListBoxEditor";
 export { ListBoxItemEditor } from "./ListBoxItemEditor";
@@ -43,7 +42,6 @@ export { TimeFieldEditor } from "./TimeFieldEditor";
 export { BreadcrumbsEditor } from "./BreadcrumbsEditor";
 export { DateRangePickerEditor } from "./DateRangePickerEditor";
 export { BreadcrumbEditor } from "./BreadcrumbEditor";
-export { GroupEditor } from "./GroupEditor";
 // ⭐ Phase 6: BodyEditor 분리
 export { PageBodyEditor } from "./PageBodyEditor";
 export { LayoutBodyEditor } from "./LayoutBodyEditor";
@@ -51,7 +49,6 @@ export { MenuEditor } from "./MenuEditor";
 export { MenuItemEditor } from "./MenuItemEditor";
 export { NumberFieldEditor } from "./NumberFieldEditor";
 export { SearchFieldEditor } from "./SearchFieldEditor";
-export { ToolbarEditor } from "./ToolbarEditor";
 export { ModalEditor } from "./ModalEditor";
 // ⭐ Layout/Slot 관련
 export { SlotEditor } from "./SlotEditor";
@@ -63,22 +60,7 @@ export { DataTableEditor } from "./DataTableEditor";
 export { DateFieldEditor } from "./DateFieldEditor";
 
 // ⭐ Form/Disclosure 에디터 추가
-export { DisclosureEditor } from "./DisclosureEditor";
-export { DisclosureGroupEditor } from "./DisclosureGroupEditor";
 export { AutocompleteEditor } from "./AutocompleteEditor";
-
-// ⭐ Color 에디터 추가
-export { ColorPickerEditor } from "./ColorPickerEditor";
-export { ColorAreaEditor } from "./ColorAreaEditor";
-export { ColorSliderEditor } from "./ColorSliderEditor";
-export { ColorWheelEditor } from "./ColorWheelEditor";
-export { ColorSwatchEditor } from "./ColorSwatchEditor";
-export { ColorSwatchPickerEditor } from "./ColorSwatchPickerEditor";
-
-// ⭐ Icon 에디터 (ADR-019)
-export { IconEditor } from "./IconEditor";
 
 // ⭐ 신규 컴포넌트 에디터 추가
 export { RangeCalendarEditor } from "./RangeCalendarEditor";
-export { FileTriggerEditor } from "./FileTriggerEditor";
-export { DropZoneEditor } from "./DropZoneEditor";

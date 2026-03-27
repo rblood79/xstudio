@@ -130,6 +130,63 @@ export const CardSpec: ComponentSpec<CardProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          { type: "variant" },
+          {
+            key: "cardType",
+            type: "enum",
+            label: "Card Type",
+            options: [
+              { value: "default", label: "Default" },
+              { value: "media", label: "Media" },
+              { value: "gallery", label: "Gallery" },
+            ],
+          },
+          { type: "size" },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "vertical", label: "Vertical" },
+              { value: "horizontal", label: "Horizontal" },
+            ],
+          },
+          {
+            key: "accentColor",
+            type: "enum",
+            label: "Accent Color",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "red", label: "Red" },
+              { value: "orange", label: "Orange" },
+              { value: "yellow", label: "Yellow" },
+              { value: "green", label: "Green" },
+              { value: "turquoise", label: "Turquoise" },
+              { value: "cyan", label: "Cyan" },
+              { value: "blue", label: "Blue" },
+              { value: "indigo", label: "Indigo" },
+              { value: "purple", label: "Purple" },
+              { value: "pink", label: "Pink" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "States",
+        fields: [
+          { key: "isQuiet", type: "boolean", label: "Quiet" },
+          { key: "isDisabled", type: "boolean" },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값

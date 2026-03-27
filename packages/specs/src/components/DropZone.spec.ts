@@ -213,4 +213,34 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       cursor: "pointer",
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            placeholder: "Drop files here",
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            placeholder: "or click to browse",
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [{ type: "variant" }, { type: "size" }],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
 };

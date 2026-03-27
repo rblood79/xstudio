@@ -92,6 +92,22 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Size",
+        fields: [
+          { key: "outerRadius", type: "number", label: "Outer Radius" },
+          { key: "innerRadius", type: "number", label: "Inner Radius" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, _variant, size, _state = "default") => {
       const outerRadius = size.height / 2;

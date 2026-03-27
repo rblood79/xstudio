@@ -144,6 +144,62 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [{ key: "children", type: "string", label: "Label" }],
+      },
+      {
+        title: "Design",
+        visibleWhen: { parentTagNot: "ToggleButtonGroup" },
+        fields: [
+          { key: "isEmphasized", type: "boolean" },
+          { key: "isQuiet", type: "boolean", label: "Quiet" },
+          { type: "size" },
+        ],
+      },
+      {
+        title: "State",
+        fields: [{ key: "isSelected", type: "boolean" }],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "autoFocus", type: "boolean" },
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+            placeholder: "toggle-name",
+          },
+          {
+            key: "value",
+            type: "string",
+            label: "Value",
+            emptyToUndefined: true,
+            placeholder: "toggle-value",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            emptyToUndefined: true,
+            placeholder: "form-id",
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       // S2: isEmphasized → selected 시 accent, 기본 → selected 시 neutral-subtle

@@ -94,6 +94,58 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Color Space",
+        fields: [
+          {
+            key: "colorSpace",
+            type: "enum",
+            label: "Color Space",
+            options: [
+              { value: "rgb", label: "RGB" },
+              { value: "hsl", label: "HSL" },
+              { value: "hsb", label: "HSB" },
+            ],
+          },
+          {
+            key: "xChannel",
+            type: "enum",
+            label: "X Channel",
+            options: [
+              { value: "red", label: "Red" },
+              { value: "green", label: "Green" },
+              { value: "blue", label: "Blue" },
+              { value: "hue", label: "Hue" },
+              { value: "saturation", label: "Saturation" },
+              { value: "lightness", label: "Lightness" },
+              { value: "brightness", label: "Brightness" },
+            ],
+          },
+          {
+            key: "yChannel",
+            type: "enum",
+            label: "Y Channel",
+            options: [
+              { value: "red", label: "Red" },
+              { value: "green", label: "Green" },
+              { value: "blue", label: "Blue" },
+              { value: "hue", label: "Hue" },
+              { value: "saturation", label: "Saturation" },
+              { value: "lightness", label: "Lightness" },
+              { value: "brightness", label: "Brightness" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, _variant, size, _state = "default") => {
       const areaSize = size.height; // 정사각형

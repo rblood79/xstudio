@@ -53,8 +53,6 @@ export function createTextFieldDefinition(
         tag: "Label",
         props: {
           children: "Text Field",
-          variant: "default",
-          size: "md",
           style: {
             fontSize: 14,
             fontWeight: 500,
@@ -67,7 +65,6 @@ export function createTextFieldDefinition(
         tag: "Input",
         props: {
           type: "text",
-          size: "md",
           placeholder: "Enter text...",
           style: {
             width: "100%",
@@ -142,7 +139,6 @@ export function createTextAreaDefinition(
         tag: "Label",
         props: {
           children: "Text Area",
-          variant: "default",
           style: {
             fontSize: 14,
             fontWeight: 500,
@@ -269,7 +265,6 @@ export function createFormDefinition(
             tag: "Label",
             props: {
               children: "Field Label",
-              variant: "default",
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -307,7 +302,6 @@ export function createFormDefinition(
             tag: "Label",
             props: {
               children: "Another Field",
-              variant: "default",
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -462,7 +456,6 @@ export function createNumberFieldDefinition(
         tag: "Label",
         props: {
           children: "Number",
-          variant: "default",
           style: {
             display: "block",
             fontSize: "14px",
@@ -585,7 +578,6 @@ export function createSearchFieldDefinition(
         tag: "Label",
         props: {
           children: "Search",
-          variant: "default",
           style: {
             fontWeight: 500,
           },
@@ -720,7 +712,6 @@ export function createSliderDefinition(
         tag: "Label",
         props: {
           children: isRange ? "Range Slider" : "Slider",
-          variant: "default",
           style: {
             backgroundColor: "transparent",
           },

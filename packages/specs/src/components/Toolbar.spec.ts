@@ -146,4 +146,23 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       eventMode: "static" as const,
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 };

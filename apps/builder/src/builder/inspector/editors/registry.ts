@@ -4,16 +4,21 @@ import { componentMetadata } from "@xstudio/shared/components/metadata";
 import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
 import { ButtonHybridAfterSections } from "../../panels/properties/editors/ButtonEditor";
+import { CardHybridAfterSections } from "../../panels/properties/editors/CardEditor";
+import { CheckboxHybridAfterSections } from "../../panels/properties/editors/CheckboxEditor";
 import { ComboBoxHybridAfterSections } from "../../panels/properties/editors/ComboBoxEditor";
 import { GridListHybridAfterSections } from "../../panels/properties/editors/GridListEditor";
 import { ListBoxHybridAfterSections } from "../../panels/properties/editors/ListBoxEditor";
 import { NumberFieldHybridAfterSections } from "../../panels/properties/editors/NumberFieldEditor";
+import { RadioHybridAfterSections } from "../../panels/properties/editors/RadioEditor";
 import { SearchFieldHybridAfterSections } from "../../panels/properties/editors/SearchFieldEditor";
 import { SelectHybridAfterSections } from "../../panels/properties/editors/SelectEditor";
+import { SwitchHybridAfterSections } from "../../panels/properties/editors/SwitchEditor";
 import { TagGroupHybridAfterSections } from "../../panels/properties/editors/TagGroupEditor";
 import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";
 import { TreeHybridAfterSections } from "../../panels/properties/editors/TreeEditor";
 import { TextFieldHybridAfterSections } from "../../panels/properties/editors/TextFieldEditor";
+import { SliderHybridAfterSections } from "../../panels/properties/editors/SliderEditor";
 
 /**
  * 에디터 캐시
@@ -24,6 +29,10 @@ function getHybridAfterSections(type: string) {
   switch (type) {
     case "Button":
       return ButtonHybridAfterSections;
+    case "Card":
+      return CardHybridAfterSections;
+    case "Checkbox":
+      return CheckboxHybridAfterSections;
     case "ComboBox":
       return ComboBoxHybridAfterSections;
     case "GridList":
@@ -32,10 +41,14 @@ function getHybridAfterSections(type: string) {
       return ListBoxHybridAfterSections;
     case "NumberField":
       return NumberFieldHybridAfterSections;
+    case "Radio":
+      return RadioHybridAfterSections;
     case "SearchField":
       return SearchFieldHybridAfterSections;
     case "Select":
       return SelectHybridAfterSections;
+    case "Switch":
+      return SwitchHybridAfterSections;
     case "TagGroup":
       return TagGroupHybridAfterSections;
     case "Tabs":
@@ -44,6 +57,8 @@ function getHybridAfterSections(type: string) {
       return TreeHybridAfterSections;
     case "TextField":
       return TextFieldHybridAfterSections;
+    case "Slider":
+      return SliderHybridAfterSections;
     default:
       return undefined;
   }
@@ -61,7 +76,7 @@ const editorModules = import.meta.glob<{
  * 에디터 모듈 동적 import
  */
 async function importEditor(
-  editorName: string
+  editorName: string,
 ): Promise<ComponentType<ComponentEditorProps> | null> {
   try {
     // editorName에 해당하는 모듈 경로 생성
@@ -115,7 +130,7 @@ export interface EditorContext {
  */
 export async function getEditor(
   type: string,
-  context?: EditorContext
+  context?: EditorContext,
 ): Promise<ComponentType<ComponentEditorProps> | null> {
   // ⭐ Special case: body 타입은 현재 편집 모드에 따라 다른 Editor 반환
   // ⭐ Phase 6 Fix: layout_id가 아닌 editMode를 기준으로 결정
@@ -176,7 +191,7 @@ export async function getEditor(
   } else {
     console.warn(
       "[getEditor] Failed to import editor:",
-      metadata.inspector.editorName
+      metadata.inspector.editorName,
     );
   }
 

@@ -140,4 +140,20 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       eventMode: "static" as const,
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "allowsMultipleExpanded",
+            type: "boolean",
+            label: "Allow Multiple Expanded",
+          },
+          { key: "isDisabled", type: "boolean" },
+        ],
+      },
+    ],
+  },
 };

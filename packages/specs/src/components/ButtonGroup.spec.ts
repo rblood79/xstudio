@@ -98,6 +98,40 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          { type: "size" },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+          {
+            key: "align",
+            type: "enum",
+            label: "Align",
+            options: [
+              { value: "start", label: "Start" },
+              { value: "center", label: "Center" },
+              { value: "end", label: "End" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, _variant, size, _state = "default") => {
       const shapes: Shape[] = [];

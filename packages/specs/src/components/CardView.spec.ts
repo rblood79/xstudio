@@ -80,6 +80,63 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
 
   states: {},
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "layout",
+            type: "enum",
+            label: "Layout",
+            options: [
+              { value: "grid", label: "Grid" },
+              { value: "waterfall", label: "Waterfall" },
+            ],
+          },
+          { type: "variant" },
+          { type: "size" },
+          {
+            key: "density",
+            type: "enum",
+            label: "Density",
+            options: [
+              { value: "compact", label: "Compact" },
+              { value: "regular", label: "Regular" },
+              { value: "spacious", label: "Spacious" },
+            ],
+          },
+          { key: "columns", type: "number", label: "Columns" },
+          { key: "gap", type: "number", label: "Gap" },
+        ],
+      },
+      {
+        title: "Selection",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            options: [
+              { value: "none", label: "None" },
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "selectionStyle",
+            type: "enum",
+            label: "Selection Style",
+            options: [
+              { value: "checkbox", label: "Checkbox" },
+              { value: "highlight", label: "Highlight" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (_props, _variant, _size, _state = "default") => {
       // CardView는 순수 컨테이너 — 자식 Card가 실제 렌더링

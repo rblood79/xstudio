@@ -23,6 +23,41 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 
+export const CheckboxHybridAfterSections = memo(
+  function CheckboxHybridAfterSections({
+    elementId,
+    currentProps,
+  }: PropertyEditorProps) {
+    const { buildChildUpdates } = useSyncChildProp(elementId);
+
+    const handleChildrenChange = useCallback(
+      (value: string) => {
+        const childUpdates = buildChildUpdates([
+          { childTag: "Label", propKey: "children", value },
+        ]);
+        useStore
+          .getState()
+          .updateSelectedPropertiesWithChildren(
+            { children: value },
+            childUpdates,
+          );
+      },
+      [buildChildUpdates],
+    );
+
+    return (
+      <PropertySection title="Content">
+        <PropertyInput
+          label={PROPERTY_LABELS.LABEL}
+          value={String(currentProps.children ?? "")}
+          onChange={handleChildrenChange}
+          icon={Tag}
+        />
+      </PropertySection>
+    );
+  },
+);
+
 export const CheckboxEditor = memo(
   function CheckboxEditor({
     elementId,

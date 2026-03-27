@@ -256,4 +256,43 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       cursor: "pointer",
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "title",
+            type: "string",
+            label: "Title",
+            placeholder: "Click to expand",
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [{ type: "variant" }, { type: "size" }],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "defaultExpanded",
+            type: "boolean",
+            label: "Default Expanded",
+          },
+          {
+            key: "isExpanded",
+            type: "boolean",
+            label: "Expanded (Controlled)",
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
 };

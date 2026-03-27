@@ -92,6 +92,23 @@ export const AvatarGroupSpec: ComponentSpec<AvatarGroupProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [{ key: "label", type: "string", label: "Label" }],
+      },
+      {
+        title: "Design",
+        fields: [{ type: "size" }],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (_props, _variant, _size, _state = "default") => {
       // AvatarGroup은 투명 컨테이너 — Avatar 자식은 compositional 렌더링

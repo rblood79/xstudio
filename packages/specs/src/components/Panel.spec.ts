@@ -99,6 +99,47 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [{ key: "title", type: "string", label: "Title" }],
+      },
+      {
+        title: "Design",
+        fields: [
+          { type: "variant" },
+          {
+            key: "accentColor",
+            type: "enum",
+            label: "Accent Color",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "red", label: "Red" },
+              { value: "orange", label: "Orange" },
+              { value: "yellow", label: "Yellow" },
+              { value: "green", label: "Green" },
+              { value: "turquoise", label: "Turquoise" },
+              { value: "cyan", label: "Cyan" },
+              { value: "blue", label: "Blue" },
+              { value: "indigo", label: "Indigo" },
+              { value: "purple", label: "Purple" },
+              { value: "pink", label: "Pink" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          { key: "isOpen", type: "boolean", label: "Is Open" },
+          { key: "isDismissable", type: "boolean", label: "Dismissable" },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const title = props.title;

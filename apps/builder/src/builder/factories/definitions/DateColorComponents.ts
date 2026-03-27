@@ -257,8 +257,6 @@ export function createCalendarDefinition(
       {
         tag: "CalendarHeader",
         props: {
-          variant: "default",
-          size: "md",
           children: monthText,
         } as ComponentElementProps,
         ...ownerFields,
@@ -267,8 +265,6 @@ export function createCalendarDefinition(
       {
         tag: "CalendarGrid",
         props: {
-          variant: "default",
-          size: "md",
           defaultToday: true,
           dayOffset: firstDay,
           totalDays: calTotalDays,
@@ -325,7 +321,6 @@ export function createDateFieldDefinition(
         tag: "Label",
         props: {
           children: "Date Field",
-          variant: "default",
           style: {
             width: "fit-content",
             height: "fit-content",
@@ -400,7 +395,6 @@ export function createTimeFieldDefinition(
         tag: "Label",
         props: {
           children: "Time",
-          variant: "default",
           style: {
             width: "fit-content",
             height: "fit-content",
@@ -473,7 +467,6 @@ export function createColorFieldDefinition(
         tag: "Label",
         props: {
           children: "Color",
-          variant: "default",
           style: {
             display: "block",
             fontSize: "14px",

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { ComponentSpec, FieldDef } from "@xstudio/specs";
 import {
+  PropertyIconPicker,
   PropertyInput,
   PropertySelect,
   PropertySizeToggle,
@@ -99,10 +100,13 @@ export const SpecField = memo(function SpecField({
     case "size": {
       const key = field.key ?? "size";
       const sizeKeys = Object.keys(spec.sizes);
-      const sizeOptions = (field.options ?? sizeKeys.map((value) => ({
-        value,
-        label: value.toUpperCase(),
-      }))).map((option) => ({
+      const sizeOptions = (
+        field.options ??
+        sizeKeys.map((value) => ({
+          value,
+          label: value.toUpperCase(),
+        }))
+      ).map((option) => ({
         id: option.value,
         label: option.label,
       }));
@@ -177,6 +181,29 @@ export const SpecField = memo(function SpecField({
           icon={icon}
         />
       );
+
+    case "icon": {
+      const handleIconChange = (iconName: string) => {
+        onUpdate(buildUpdate(field.key, iconName));
+      };
+      const handleIconClear = () => {
+        const updates: Record<string, unknown> = { [field.key]: undefined };
+        if (field.clearKeys) {
+          for (const clearKey of field.clearKeys) {
+            updates[clearKey] = undefined;
+          }
+        }
+        onUpdate(updates);
+      };
+      return (
+        <PropertyIconPicker
+          label={label}
+          value={resolveCurrentValue(field.key) as string | undefined}
+          onChange={handleIconChange}
+          onClear={handleIconClear}
+        />
+      );
+    }
 
     default:
       return null;

@@ -171,4 +171,46 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
       cursor: props.isDisabled ? "not-allowed" : "default",
     }),
   },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "src",
+            type: "string",
+            label: "Source URL",
+            placeholder: "https://...",
+          },
+          {
+            key: "alt",
+            type: "string",
+            label: "Alt Text",
+            placeholder: "Image description",
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "objectFit",
+            type: "enum",
+            label: "Object Fit",
+            options: [
+              { value: "cover", label: "Cover" },
+              { value: "contain", label: "Contain" },
+              { value: "fill", label: "Fill" },
+              { value: "none", label: "None" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
 };

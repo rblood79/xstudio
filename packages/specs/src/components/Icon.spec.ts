@@ -97,6 +97,44 @@ export const IconSpec: ComponentSpec<IconProps> = {
     focusVisible: {},
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Icon",
+        fields: [
+          { key: "iconName", type: "icon", label: "Icon" },
+          {
+            type: "size",
+            derivedUpdateFn: (value, currentProps) => {
+              const SIZE_TO_FONT: Record<string, number> = {
+                xs: 16,
+                sm: 18,
+                md: 24,
+                lg: 36,
+                xl: 48,
+              };
+              const fontSize = SIZE_TO_FONT[value as string] ?? 24;
+              const existingStyle =
+                (currentProps.style as Record<string, unknown>) ?? {};
+              return {
+                size: value,
+                style: { ...existingStyle, fontSize: String(fontSize) },
+              };
+            },
+          },
+          {
+            key: "strokeWidth",
+            type: "number",
+            label: "Stroke Width",
+            min: 0.5,
+            max: 4,
+            step: 0.5,
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size) => {
       const iconSize = size.iconSize ?? 24;

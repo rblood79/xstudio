@@ -93,6 +93,54 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Channel",
+        fields: [
+          {
+            key: "colorSpace",
+            type: "enum",
+            label: "Color Space",
+            options: [
+              { value: "rgb", label: "RGB" },
+              { value: "hsl", label: "HSL" },
+              { value: "hsb", label: "HSB" },
+            ],
+          },
+          {
+            key: "channel",
+            type: "enum",
+            label: "Channel",
+            options: [
+              { value: "hue", label: "Hue" },
+              { value: "saturation", label: "Saturation" },
+              { value: "brightness", label: "Brightness" },
+              { value: "lightness", label: "Lightness" },
+              { value: "red", label: "Red" },
+              { value: "green", label: "Green" },
+              { value: "blue", label: "Blue" },
+              { value: "alpha", label: "Alpha" },
+            ],
+          },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, _variant, size, _state = "default") => {
       const width = (props.style?.width as number) || 200;

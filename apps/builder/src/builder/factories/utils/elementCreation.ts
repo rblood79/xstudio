@@ -5,6 +5,7 @@ import { ComponentDefinition, ChildDefinition } from "../types";
 import { generateCustomId } from "../../utils/idGeneration";
 import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../stores/utils/elementSanitizer";
+import { applyFactoryPropagation } from "../../utils/propagationEngine";
 
 /**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성
@@ -57,7 +58,10 @@ export function createElementsFromDefinition(definition: ComponentDefinition): {
 
   processChildren(definition.children, parent.id);
 
-  return { parent, children: allChildren };
+  // ADR-048: 부모 props를 자식에 전파 (Factory 생성 시 초기값 보장)
+  const propagatedChildren = applyFactoryPropagation(parent, allChildren);
+
+  return { parent, children: propagatedChildren };
 }
 
 /**

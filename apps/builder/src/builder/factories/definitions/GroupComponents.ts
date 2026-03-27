@@ -72,7 +72,6 @@ export function createToggleButtonGroupDefinition(
         tag: "ToggleButton",
         props: {
           children: "Toggle 1",
-          size: "md",
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
@@ -83,7 +82,6 @@ export function createToggleButtonGroupDefinition(
         tag: "ToggleButton",
         props: {
           children: "Toggle 2",
-          size: "md",
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
@@ -208,7 +206,6 @@ export function createCheckboxGroupDefinition(
         tag: "Label",
         props: {
           children: "Checkbox Group",
-          variant: "default",
           style: {
             width: "fit-content",
             height: "fit-content",
@@ -238,7 +235,6 @@ export function createCheckboxGroupDefinition(
                 tag: "Label",
                 props: {
                   children: "Option 1",
-                  variant: "default",
                 } as ComponentElementProps,
                 ...ownerFields,
                 order_num: 1,
@@ -259,7 +255,6 @@ export function createCheckboxGroupDefinition(
                 tag: "Label",
                 props: {
                   children: "Option 2",
-                  variant: "default",
                 } as ComponentElementProps,
                 ...ownerFields,
                 order_num: 1,
@@ -309,7 +304,6 @@ export function createRadioGroupDefinition(
         tag: "Label",
         props: {
           children: "Radio Group",
-          variant: "default",
           style: {
             width: "fit-content",
             height: "fit-content",
@@ -339,7 +333,6 @@ export function createRadioGroupDefinition(
                 tag: "Label",
                 props: {
                   children: "Option 1",
-                  variant: "default",
                   style: {
                     width: "fit-content",
                     height: "fit-content",
@@ -364,7 +357,6 @@ export function createRadioGroupDefinition(
                 tag: "Label",
                 props: {
                   children: "Option 2",
-                  variant: "default",
                   style: {
                     width: "fit-content",
                     height: "fit-content",
@@ -417,7 +409,6 @@ export function createTagGroupDefinition(
         tag: "Label",
         props: {
           children: "Tag Group",
-          variant: "default",
           style: {
             fontWeight: 500,
           },
@@ -701,7 +692,6 @@ export function createCheckboxDefinition(
         tag: "Label",
         props: {
           children: "Checkbox",
-          variant: "default",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -748,7 +738,6 @@ export function createRadioDefinition(
         tag: "Label",
         props: {
           children: "Radio",
-          variant: "default",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -796,7 +785,6 @@ export function createSwitchDefinition(
         tag: "Label",
         props: {
           children: "Switch",
-          variant: "default",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,

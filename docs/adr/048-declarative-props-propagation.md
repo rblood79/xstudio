@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — Phase 0~3, 5 완료 + Phase 4 파일럿(DatePicker) 완료 (2026-03-27)
+**Accepted** — Phase 0~5 전체 완료 (2026-03-27)
 
 ## Prerequisites
 

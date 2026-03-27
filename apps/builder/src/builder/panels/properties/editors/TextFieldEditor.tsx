@@ -81,17 +81,20 @@ export const TextFieldHybridAfterSections = memo(
         const childUpdates = buildChildUpdates([
           { childTag: "Input", propKey: "size", value },
         ]);
-        const { childrenMap } = useStore.getState();
+        const { childrenMap, elementsMap } = useStore.getState();
         const children = childrenMap.get(elementId);
         const labelChild = children?.find((child) => child.tag === "Label");
 
         if (labelChild) {
+          // childrenMap의 labelChild.props는 stale할 수 있으므로 elementsMap에서 최신 props 조회
+          const freshLabelChild = elementsMap.get(labelChild.id);
+          const freshProps = freshLabelChild?.props ?? labelChild.props;
           const labelStyle =
-            (labelChild.props?.style as Record<string, unknown>) || {};
+            (freshProps?.style as Record<string, unknown>) || {};
           childUpdates.push({
             elementId: labelChild.id,
             props: {
-              ...labelChild.props,
+              ...freshProps,
               size: value,
               style: {
                 ...labelStyle,

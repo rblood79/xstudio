@@ -146,6 +146,48 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
     ],
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          { type: "variant" },
+          { type: "size" },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            emptyToUndefined: true,
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";

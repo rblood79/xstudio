@@ -98,6 +98,32 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "src",
+            type: "string",
+            label: "Image URL",
+            placeholder: "https://...",
+          },
+          { key: "alt", type: "string", label: "Alt Text" },
+          { key: "initials", type: "string", label: "Initials" },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [{ type: "size" }],
+      },
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean" }],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const diameter = (size as unknown as { height: number }).height ?? 32;

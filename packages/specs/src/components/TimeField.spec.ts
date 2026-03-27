@@ -85,6 +85,128 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
     ],
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          { type: "size" },
+          {
+            key: "granularity",
+            type: "enum",
+            label: "Granularity",
+            options: [
+              { value: "hour", label: "Hour" },
+              { value: "minute", label: "Minute" },
+              { value: "second", label: "Second" },
+            ],
+          },
+          {
+            key: "hourCycle",
+            type: "enum",
+            label: "Hour Cycle",
+            emptyToUndefined: true,
+            valueTransform: "number",
+            options: [
+              { value: "", label: "Auto" },
+              { value: "12", label: "12 Hour" },
+              { value: "24", label: "24 Hour" },
+            ],
+          },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+          { key: "hideTimeZone", type: "boolean", label: "Hide Timezone" },
+          {
+            key: "shouldForceLeadingZeros",
+            type: "boolean",
+            label: "Force Leading Zeros",
+          },
+        ],
+      },
+      {
+        title: "Internationalization",
+        fields: [
+          {
+            key: "locale",
+            type: "enum",
+            label: "Locale",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "en-US", label: "English (US)" },
+              { value: "en-GB", label: "English (UK)" },
+              { value: "ko-KR", label: "한국어" },
+              { value: "ja-JP", label: "日本語" },
+              { value: "zh-CN", label: "中文" },
+              { value: "de-DE", label: "Deutsch" },
+              { value: "fr-FR", label: "Français" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "minValue",
+            type: "string",
+            label: "Min Value",
+            placeholder: "09:00",
+          },
+          {
+            key: "maxValue",
+            type: "string",
+            label: "Max Value",
+            placeholder: "18:00",
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon" },
+              { value: "label", label: "Label" },
+            ],
+          },
+          { key: "isInvalid", type: "boolean" },
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+          { key: "autoFocus", type: "boolean" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+            placeholder: "time-field-name",
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

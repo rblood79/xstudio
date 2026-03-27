@@ -100,6 +100,88 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [{ type: "variant" }, { type: "size" }],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "locale",
+            type: "enum",
+            label: "Locale",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "ko-KR", label: "한국어" },
+              { value: "en-US", label: "English (US)" },
+              { value: "en-GB", label: "English (UK)" },
+              { value: "ja-JP", label: "日本語" },
+              { value: "zh-CN", label: "中文" },
+              { value: "de-DE", label: "Deutsch" },
+              { value: "fr-FR", label: "Français" },
+            ],
+          },
+          {
+            key: "calendarSystem",
+            type: "enum",
+            label: "Calendar System",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "buddhist", label: "Buddhist" },
+              { value: "hebrew", label: "Hebrew" },
+              { value: "islamic-civil", label: "Islamic (Civil)" },
+              { value: "persian", label: "Persian" },
+            ],
+          },
+          { key: "defaultToday", type: "boolean", label: "Default to Today" },
+          { key: "minValue", type: "string", label: "Min Value" },
+          { key: "maxValue", type: "string", label: "Max Value" },
+          { key: "defaultValue", type: "string", label: "Default Value" },
+          {
+            key: "defaultFocusedValue",
+            type: "string",
+            label: "Default Focused Value",
+          },
+          { key: "isInvalid", type: "boolean" },
+          { key: "errorMessage", type: "string", label: "Error Message" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+          { key: "autoFocus", type: "boolean" },
+          {
+            key: "pageBehavior",
+            type: "enum",
+            label: "Page Behavior",
+            options: [
+              { value: "visible", label: "Visible" },
+              { value: "single", label: "Single" },
+            ],
+          },
+          {
+            key: "visibleMonths",
+            type: "enum",
+            label: "Visible Months",
+            valueTransform: "number",
+            options: [
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (_props, variant, size, state = "default") => {
       const borderRadius = size.borderRadius;

@@ -96,6 +96,72 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
     },
   },
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "label", type: "string", label: "Label" },
+          { key: "description", type: "string", label: "Description" },
+          { key: "errorMessage", type: "string", label: "Error Message" },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          { key: "isEmphasized", type: "boolean" },
+          { key: "isQuiet", type: "boolean", label: "Quiet" },
+          { type: "size" },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+          { key: "indicator", type: "boolean", label: "Indicator" },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            options: [
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          { key: "isRequired", type: "boolean" },
+          { key: "isInvalid", type: "boolean" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "isDisabled", type: "boolean" },
+          { key: "autoFocus", type: "boolean" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+            placeholder: "togglebutton-group-name",
+          },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값

@@ -2,11 +2,11 @@
 
 ## Status
 
-Partial
+Accepted
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 완료 + B/C 하이브리드 11개 진행)
+2026-03-13 (2026-03-16 코드베이스 실측 + 설계 리뷰 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 + B/C 하이브리드 11개, 2026-03-27 Phase 2~4 전체 완료)
 
 ## Decision Makers
 
@@ -1182,6 +1182,39 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 - 기존 수동 에디터와 동작/노출 surface가 동일함을 확인
 - ADR-046에서 닫은 계약(`Form`, `ColorField`)이 손실 없이 자동 생성 경로로 표현됨을 확인
 
+**2026-03-27 현재 상태 — Phase 0~4 전체 완료**:
+
+- Phase 2 확장 완료
+  - 58개 컴포넌트 Spec에 `properties` 추가, specRegistry 58개 등록
+  - 등급 A 순수 generic (afterSections 없음): Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, Calendar, DateField, DatePicker, DateRangePicker, TimeField, ToggleButton, ToggleButtonGroup, InlineAlert, Panel, TextArea, Icon, Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
+  - parentTagNot 조건부: Checkbox (CheckboxGroup 내 Design 숨김), ToggleButton (ToggleButtonGroup 내 Design 숨김)
+- Phase 3 완료 — Grade B hybrid 16개
+  - Button: Content/Design/Behavior generic + Icon/Link/Form afterSections
+  - SearchField: Design/InputMode/Validation/Behavior/Form generic + Content afterSections
+  - TextField: InputType/Validation/Behavior/Form generic + Design/Content afterSections
+  - NumberField: Internationalization/AdvancedFormat/Validation/Behavior/Form generic + Design/Content afterSections
+  - Checkbox: Design/State/Behavior/Form generic + Content(Label childSync) afterSections
+  - Switch: Design/State/Behavior/Form generic + Content(Label childSync) afterSections
+  - Radio: State/Behavior generic + Content(Label+Value childSync) afterSections
+  - Card: Design/States generic + Content/Asset/Interactions(2-depth childSync) afterSections
+  - Slider: Design/Behavior/Form generic + Content/NumberFormatting/Range afterSections
+  - Select, ComboBox, GridList, ListBox, TagGroup, Tabs, Tree: 기존 하이브리드 유지
+  - icon field 타입 SpecField 구현 — PropertyIconPicker 연동, clearKeys 지원
+  - Icon: size field에 derivedUpdateFn 추가 (size→style.fontSize 동시 업데이트)
+- Phase 4 완료 — 수동 에디터 파일 정리
+  - 삭제된 수동 에디터: **34개** (12개 배치1-3 + 22개 Phase 4)
+    - 배치1-3: Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
+    - Phase 4: Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, ToggleButton, Icon
+  - editors/index.ts export 정리
+  - 남은 수동 에디터: ~51개 (hybrid afterSections 16개 + Grade C 수동 35개)
+- 버그 수정
+  - GenericPropertyEditor `renderAfterSections`: `typeof === "function"` → `createElement(renderAfterSections, props)` 패치 — `React.memo()` 반환값은 object이므로 typeof 체크 실패. createElement으로 교체하여 memo 래핑된 afterSections 정상 렌더링
+- 검증
+  - `pnpm build:specs` — 92 CSS 생성 정상
+  - `pnpm type-check` — 에러 0개
+  - Avatar (Grade A) 브라우저 검증 — Content/Design/Behavior 자동 생성 정상
+  - Checkbox (Grade B hybrid) 브라우저 검증 — generic + afterSections Content 렌더링 정상
+
 **2026-03-26 현재 상태**:
 
 - Phase 0 인프라 완료
@@ -1398,13 +1431,15 @@ properties: {
 
 ## Metrics / Verification
 
-| 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |   Phase 4 (정리)   |
-| ---------------- | :------------------------: | :--------------: | :--------------: | :----------------: |
-| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | ~**20개** (등급 C) |
-| 자동 생성 에디터 |            0개             |       75개       |       83개       |      **83개**      |
-| 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |      **1개**       |
-| variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |      **1곳**       |
-| 자동화율         |             0%             |      72.8%       |      80.6%       |     **80.6%**      |
+| 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |     Phase 4 (실측)      |
+| ---------------- | :------------------------: | :--------------: | :--------------: | :---------------------: |
+| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~51개** (hybrid+수동) |
+| 자동 생성 에디터 |            0개             |       75개       |       83개       |     **58개** (spec)     |
+| 삭제된 에디터    |            0개             |       12개       |       12개       |        **34개**         |
+| hybrid 에디터    |            0개             |       0개        |       7개        |        **16개**         |
+| specRegistry     |            0개             |       12개       |       23개       |        **58개**         |
+| 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |         **1개**         |
+| variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |         **1곳**         |
 
 > **산정 기준**: 103개 전체 에디터 중 GenericPropertyEditor 전환 대상 83개(등급 A 75 + 등급 B 8). 등급 C 20개는 수동 유지 (UI 모드 전환이 없는 에디터에 한해 하이브리드 적용 시 코드량 30~50% 감소 가능).
 

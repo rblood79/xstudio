@@ -161,6 +161,23 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
     rules: [{ parentProp: "size", childPath: "Label" }],
   },
 
+  properties: {
+    sections: [
+      {
+        title: "State",
+        fields: [{ key: "isSelected", type: "boolean" }],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "autoFocus", type: "boolean" },
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+        ],
+      },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";
