@@ -11,7 +11,17 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Layout } from "lucide-react";
+import {
+  Layout,
+  Type,
+  Globe,
+  DollarSign,
+  ArrowDown,
+  ArrowUp,
+  Move,
+  NotebookTabs,
+  Tag,
+} from "lucide-react";
 
 /**
  * Slider Props
@@ -145,11 +155,24 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       { parentProp: "size", childPath: "SliderOutput" },
       { parentProp: "size", childPath: "SliderThumb" },
       { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+      { parentProp: "value", childPath: "SliderTrack", override: true },
+      { parentProp: "minValue", childPath: "SliderTrack", override: true },
+      { parentProp: "maxValue", childPath: "SliderTrack", override: true },
     ],
   },
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [{ key: "label", type: "string", label: "Label", icon: Type }],
+      },
       {
         title: "Design",
         fields: [
@@ -177,6 +200,69 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         ],
       },
       {
+        title: "Number Formatting",
+        fields: [
+          {
+            key: "locale",
+            type: "string",
+            label: "Locale",
+            icon: Globe,
+            placeholder: "ko-KR, en-US, etc.",
+            emptyToUndefined: true,
+          },
+          {
+            key: "valueFormat",
+            type: "enum",
+            label: "Value Format",
+            icon: DollarSign,
+            options: [
+              { value: "number", label: "Number" },
+              { value: "percent", label: "Percent" },
+              { value: "unit", label: "Unit" },
+              { value: "custom", label: "Custom" },
+            ],
+          },
+          {
+            key: "unit",
+            type: "string",
+            label: "Unit",
+            icon: Type,
+            placeholder: "kilometer, celsius, meter, etc.",
+            emptyToUndefined: true,
+            visibleWhen: { key: "valueFormat", equals: "unit" },
+          },
+          {
+            key: "showValue",
+            type: "boolean",
+            label: "Show Value",
+            icon: NotebookTabs,
+          },
+        ],
+      },
+      {
+        title: "Range",
+        fields: [
+          {
+            key: "minValue",
+            type: "number",
+            label: "Min Value",
+            icon: ArrowDown,
+          },
+          {
+            key: "maxValue",
+            type: "number",
+            label: "Max Value",
+            icon: ArrowUp,
+          },
+          {
+            key: "step",
+            type: "number",
+            label: "Step",
+            icon: Move,
+          },
+        ],
+      },
+      {
         title: "Behavior",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
@@ -187,6 +273,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             key: "name",
             type: "string",
             label: "Name",
+            icon: Tag,
             emptyToUndefined: true,
           },
           {

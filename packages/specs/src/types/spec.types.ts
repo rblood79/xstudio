@@ -189,6 +189,14 @@ export interface StringField extends BaseFieldDef {
   multiline?: boolean;
 }
 
+/** string-array — 쉼표 구분 문자열 ↔ string[] 변환 (예: filterFields) */
+export interface StringArrayField extends BaseFieldDef {
+  type: "string-array";
+  placeholder?: string;
+  /** 구분자. 기본값: "," */
+  separator?: string;
+}
+
 export interface NumberField extends BaseFieldDef {
   type: "number";
   min?: number;
@@ -236,6 +244,7 @@ export type FieldDef =
   | BooleanField
   | EnumField
   | StringField
+  | StringArrayField
   | NumberField
   | IconField
   | CustomField

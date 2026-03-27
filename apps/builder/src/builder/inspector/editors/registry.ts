@@ -3,8 +3,6 @@ import type { ComponentEditorProps } from "../types";
 import { componentMetadata } from "@xstudio/shared/components/metadata";
 import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
-import { GridListHybridAfterSections } from "../../panels/properties/editors/GridListEditor";
-import { ListBoxHybridAfterSections } from "../../panels/properties/editors/ListBoxEditor";
 import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";
 import { SliderHybridAfterSections } from "../../panels/properties/editors/SliderEditor";
 
@@ -15,10 +13,6 @@ const editorCache = new Map<string, ComponentType<ComponentEditorProps>>();
 
 function getHybridAfterSections(type: string) {
   switch (type) {
-    case "GridList":
-      return GridListHybridAfterSections;
-    case "ListBox":
-      return ListBoxHybridAfterSections;
     case "Tabs":
       return TabsHybridAfterSections;
     case "Slider":

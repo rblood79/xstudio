@@ -29,7 +29,6 @@ import {
   MessageSquare,
   Settings,
   BarChart3,
-  Settings2,
   ChevronRight,
   Star,
   Trash2,
@@ -432,13 +431,6 @@ const ComponentList = memo(
                   size={iconProps.size}
                 />
               </ActionIconButton>
-              <button className="iconButton" aria-label="filter components">
-                <Settings2
-                  color={iconProps.color}
-                  strokeWidth={iconProps.strokeWidth}
-                  size={iconProps.size}
-                />
-              </button>
             </>
           }
         />

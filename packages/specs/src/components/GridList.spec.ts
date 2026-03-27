@@ -25,6 +25,8 @@ import {
   MoveHorizontal,
   Square,
   FormInput,
+  Search,
+  Filter,
 } from "lucide-react";
 
 /**
@@ -236,6 +238,27 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
               textValue: "Item",
             },
             labelProp: "label",
+          },
+        ],
+      },
+      {
+        title: "Filtering",
+        icon: Search,
+        fields: [
+          {
+            key: "filterText",
+            type: "string",
+            label: "Filter Text",
+            icon: Search,
+            placeholder: "Search...",
+            emptyToUndefined: true,
+          },
+          {
+            key: "filterFields",
+            type: "string-array",
+            label: "Filter Fields",
+            icon: Filter,
+            placeholder: "label, name, title",
           },
         ],
       },

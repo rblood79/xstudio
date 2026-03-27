@@ -163,8 +163,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "#️⃣",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "NumberFieldEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
       supportedEvents: [
@@ -201,8 +200,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "☑️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "CheckboxEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onPress, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -234,8 +232,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🔘",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "RadioEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onPress, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -304,8 +301,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🎚️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "SwitchEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -325,8 +321,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🎚️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "SliderEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onChangeEnd, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -653,8 +648,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "🃏",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "CardEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // Custom container - supports basic mouse events
       supportedEvents: [

@@ -169,6 +169,29 @@ export const SpecField = memo(function SpecField({
         />
       );
 
+    case "string-array": {
+      const sep = field.separator ?? ",";
+      const arr = resolveCurrentValue(field.key);
+      const displayValue = Array.isArray(arr) ? arr.join(`${sep} `) : "";
+      return (
+        <PropertyInput
+          label={label}
+          value={displayValue}
+          onChange={(value) => {
+            const fields = value
+              .split(sep)
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0);
+            onUpdate(
+              buildUpdate(field.key, fields.length > 0 ? fields : undefined),
+            );
+          }}
+          placeholder={field.placeholder}
+          icon={icon}
+        />
+      );
+    }
+
     case "number":
       return (
         <PropertyInput
