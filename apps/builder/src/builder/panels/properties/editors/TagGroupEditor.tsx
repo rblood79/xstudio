@@ -7,7 +7,6 @@ import {
   PointerOff,
   FileText,
   AlertTriangle,
-  Database,
   Search,
 } from "lucide-react";
 import { TagGroupSpec } from "@xstudio/specs";
@@ -15,8 +14,6 @@ import {
   PropertyInput,
   PropertySwitch,
   PropertySection,
-  PropertyDataBinding,
-  type DataBindingValue,
 } from "../../../components";
 import { GenericPropertyEditor } from "../generic";
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -58,13 +55,6 @@ export const TagGroupHybridAfterSections = memo(
       [selectedTagId, tagChildren],
     );
 
-    const handleDataBindingChange = useCallback(
-      (binding: DataBindingValue | null) => {
-        onUpdate({ dataBinding: binding || undefined });
-      },
-      [onUpdate],
-    );
-
     const contentSection = useMemo(
       () => (
         <PropertySection title="Content">
@@ -85,25 +75,9 @@ export const TagGroupHybridAfterSections = memo(
             }}
             icon={Tag}
           />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.DESCRIPTION}
-            value={String(currentProps.description || "")}
-            onChange={(value) => updateProp("description", value)}
-            icon={FileText}
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.ERROR_MESSAGE}
-            value={String(currentProps.errorMessage || "")}
-            onChange={(value) => updateProp("errorMessage", value)}
-            icon={AlertTriangle}
-          />
         </PropertySection>
       ),
       [
-        currentProps.description,
-        currentProps.errorMessage,
         currentProps.label,
         elementId,
         storeElements,
@@ -125,13 +99,18 @@ export const TagGroupHybridAfterSections = memo(
 
           <PropertyInput
             label="Filter Fields"
-            value={String(((currentProps.filterFields as string[]) || []).join(", "))}
+            value={String(
+              ((currentProps.filterFields as string[]) || []).join(", "),
+            )}
             onChange={(value) => {
               const fields = value
                 .split(",")
                 .map((field) => field.trim())
                 .filter(Boolean);
-              updateProp("filterFields", fields.length > 0 ? fields : undefined);
+              updateProp(
+                "filterFields",
+                fields.length > 0 ? fields : undefined,
+              );
             }}
             placeholder="label, name, title"
             icon={FileText}
@@ -141,24 +120,13 @@ export const TagGroupHybridAfterSections = memo(
       [currentProps.filterFields, currentProps.filterText, updateProp],
     );
 
-    const dataBindingSection = useMemo(
-      () => (
-        <PropertySection title="Data Binding" icon={Database}>
-          <PropertyDataBinding
-            label="데이터 소스"
-            value={currentProps.dataBinding as DataBindingValue | undefined}
-            onChange={handleDataBindingChange}
-          />
-        </PropertySection>
-      ),
-      [currentProps.dataBinding, handleDataBindingChange],
-    );
-
     const tagManagementSection = useMemo(
       () => (
         <PropertySection title={PROPERTY_LABELS.TAG_MANAGEMENT}>
           <div className="tab-overview">
-            <p className="tab-overview-text">Total tags: {tagChildren.length || 0}</p>
+            <p className="tab-overview-text">
+              Total tags: {tagChildren.length || 0}
+            </p>
           </div>
 
           {Array.isArray(currentProps.removedItemIds) &&
@@ -173,7 +141,8 @@ export const TagGroupHybridAfterSections = memo(
                 }}
               >
                 <p className="tab-overview-text">
-                  Removed items: {(currentProps.removedItemIds as string[]).length}
+                  Removed items:{" "}
+                  {(currentProps.removedItemIds as string[]).length}
                 </p>
                 <button
                   className="control-button secondary"
@@ -325,7 +294,6 @@ export const TagGroupHybridAfterSections = memo(
       <>
         {contentSection}
         {filteringSection}
-        {dataBindingSection}
         {tagManagementSection}
       </>
     );

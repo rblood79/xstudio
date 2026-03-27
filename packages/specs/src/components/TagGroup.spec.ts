@@ -23,6 +23,7 @@ import {
   PenOff,
   Trash,
   FormInput,
+  FileText,
 } from "lucide-react";
 
 /**
@@ -92,6 +93,25 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
+          },
+        ],
+      },
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
           },
         ],
       },

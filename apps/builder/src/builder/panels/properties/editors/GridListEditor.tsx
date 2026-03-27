@@ -5,7 +5,6 @@ import {
   Trash,
   PointerOff,
   FileText,
-  Database,
   Search,
 } from "lucide-react";
 import { GridListSpec } from "@xstudio/specs";
@@ -13,8 +12,6 @@ import {
   PropertyInput,
   PropertySwitch,
   PropertySection,
-  PropertyDataBinding,
-  type DataBindingValue,
 } from "../../../components";
 import { GenericPropertyEditor } from "../generic";
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -51,13 +48,6 @@ export const GridListHybridAfterSections = memo(
       deselectItem();
     }, [elementId, deselectItem]);
 
-    const handleDataBindingChange = useCallback(
-      (binding: DataBindingValue | null) => {
-        onUpdate({ dataBinding: binding || undefined });
-      },
-      [onUpdate],
-    );
-
     const filteringSection = useMemo(
       () => (
         <PropertySection title="Filtering">
@@ -71,45 +61,37 @@ export const GridListHybridAfterSections = memo(
 
           <PropertyInput
             label="Filter Fields"
-            value={String(((currentProps.filterFields as string[]) || []).join(", "))}
+            value={String(
+              ((currentProps.filterFields as string[]) || []).join(", "),
+            )}
             onChange={(value) => {
               const fields = value
                 .split(",")
                 .map((field) => field.trim())
                 .filter(Boolean);
-              onUpdate({ filterFields: fields.length > 0 ? fields : undefined });
+              onUpdate({
+                filterFields: fields.length > 0 ? fields : undefined,
+              });
             }}
             placeholder="label, name, title"
             icon={FileText}
           />
-          <p className="property-help">
-            쉼표로 구분하여 검색할 필드 지정
-          </p>
+          <p className="property-help">쉼표로 구분하여 검색할 필드 지정</p>
         </PropertySection>
       ),
       [currentProps.filterFields, currentProps.filterText, onUpdate],
-    );
-
-    const dataBindingSection = useMemo(
-      () => (
-        <PropertySection title="Data Binding" icon={Database}>
-          <PropertyDataBinding
-            label="데이터 소스"
-            value={currentProps.dataBinding as DataBindingValue | undefined}
-            onChange={handleDataBindingChange}
-          />
-        </PropertySection>
-      ),
-      [currentProps.dataBinding, handleDataBindingChange],
     );
 
     const itemManagementSection = useMemo(
       () => (
         <PropertySection title={PROPERTY_LABELS.ITEM_MANAGEMENT}>
           <div className="tab-overview">
-            <p className="tab-overview-text">Total items: {children.length || 0}</p>
+            <p className="tab-overview-text">
+              Total items: {children.length || 0}
+            </p>
             <p className="section-overview-help">
-              Select individual items to edit label, value, description, and state
+              Select individual items to edit label, value, description, and
+              state
             </p>
           </div>
 
@@ -185,7 +167,8 @@ export const GridListHybridAfterSections = memo(
             <PropertyInput
               label={PROPERTY_LABELS.DESCRIPTION}
               value={String(
-                (currentItem.props as Record<string, unknown>).description || "",
+                (currentItem.props as Record<string, unknown>).description ||
+                  "",
               )}
               onChange={(value) =>
                 updateItem(currentItem.id, {
@@ -251,7 +234,6 @@ export const GridListHybridAfterSections = memo(
     return (
       <>
         {filteringSection}
-        {dataBindingSection}
         {itemManagementSection}
       </>
     );

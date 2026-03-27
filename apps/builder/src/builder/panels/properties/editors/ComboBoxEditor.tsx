@@ -8,9 +8,7 @@ import {
   Trash,
   Binary,
   Menu,
-  Database,
   Parentheses,
-  Layout,
 } from "lucide-react";
 import { ComboBoxSpec } from "@xstudio/specs";
 import {
@@ -18,10 +16,8 @@ import {
   PropertySwitch,
   PropertySelect,
   PropertySection,
-  PropertyDataBinding,
   PropertySizeToggle,
   PropertyIconPicker,
-  type DataBindingValue,
 } from "../../../components";
 import { GenericPropertyEditor } from "../generic";
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -33,7 +29,6 @@ import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { useSyncGrandchildProp } from "../../../hooks/useSyncGrandchildProp";
 import { supabase } from "../../../../env/supabase.client";
 import type { BatchPropsUpdate } from "../../../stores/utils/elementUpdate";
-import { LABEL_POSITION_OPTIONS } from "./editorUtils";
 
 const COMBOBOX_FONT_SIZE_BY_SIZE: Record<string, number> = {
   xs: 10,
@@ -180,23 +175,9 @@ export const ComboBoxHybridAfterSections = memo(
       [elementId],
     );
 
-    const handleLabelPositionChange = useCallback(
-      (value: string) => {
-        onUpdate({ labelPosition: value });
-      },
-      [onUpdate],
-    );
-
     const handleMenuTriggerChange = useCallback(
       (value: string) => {
         onUpdate({ menuTrigger: value });
-      },
-      [onUpdate],
-    );
-
-    const handleDataBindingChange = useCallback(
-      (binding: DataBindingValue | null) => {
-        onUpdate({ dataBinding: binding || undefined });
       },
       [onUpdate],
     );
@@ -298,14 +279,6 @@ export const ComboBoxHybridAfterSections = memo(
             onChange={handleSizeChange}
           />
 
-          <PropertySelect
-            label={PROPERTY_LABELS.LABEL_POSITION}
-            value={String(currentProps.labelPosition || "top")}
-            options={LABEL_POSITION_OPTIONS}
-            onChange={handleLabelPositionChange}
-            icon={Layout}
-          />
-
           <PropertyIconPicker
             label="Trigger Icon"
             value={String(currentProps.iconName || "chevron-down")}
@@ -315,10 +288,8 @@ export const ComboBoxHybridAfterSections = memo(
       ),
       [
         currentProps.iconName,
-        currentProps.labelPosition,
         currentProps.size,
         currentProps.variant,
-        handleLabelPositionChange,
         handleSizeChange,
         handleVariantChange,
         onUpdate,
@@ -388,19 +359,6 @@ export const ComboBoxHybridAfterSections = memo(
       [currentProps.menuTrigger, handleMenuTriggerChange],
     );
 
-    const dataBindingSection = useMemo(
-      () => (
-        <PropertySection title="Data Binding" icon={Database}>
-          <PropertyDataBinding
-            label="데이터 소스"
-            value={currentProps.dataBinding as DataBindingValue | undefined}
-            onChange={handleDataBindingChange}
-          />
-        </PropertySection>
-      ),
-      [currentProps.dataBinding, handleDataBindingChange],
-    );
-
     const itemManagementSection = useMemo(
       () => (
         <PropertySection title={PROPERTY_LABELS.ADD_OPTION}>
@@ -453,7 +411,9 @@ export const ComboBoxHybridAfterSections = memo(
             value={String(
               (currentOption.props as Record<string, unknown>).label || "",
             )}
-            onChange={(value) => handleOptionLabelChange(currentOption.id, value)}
+            onChange={(value) =>
+              handleOptionLabelChange(currentOption.id, value)
+            }
             icon={Tag}
           />
 
@@ -462,14 +422,17 @@ export const ComboBoxHybridAfterSections = memo(
             value={String(
               (currentOption.props as Record<string, unknown>).value || "",
             )}
-            onChange={(value) => handleOptionValueChange(currentOption.id, value)}
+            onChange={(value) =>
+              handleOptionValueChange(currentOption.id, value)
+            }
             icon={Binary}
           />
 
           <PropertyInput
             label={PROPERTY_LABELS.DESCRIPTION}
             value={String(
-              (currentOption.props as Record<string, unknown>).description || "",
+              (currentOption.props as Record<string, unknown>).description ||
+                "",
             )}
             onChange={(value) =>
               handleOptionDescriptionChange(currentOption.id, value)
@@ -516,7 +479,6 @@ export const ComboBoxHybridAfterSections = memo(
         {designSection}
         {contentSection}
         {triggerBehaviorSection}
-        {dataBindingSection}
         {itemManagementSection}
       </>
     );

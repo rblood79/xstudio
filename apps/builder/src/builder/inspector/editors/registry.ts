@@ -7,7 +7,6 @@ import { ButtonHybridAfterSections } from "../../panels/properties/editors/Butto
 import { ComboBoxHybridAfterSections } from "../../panels/properties/editors/ComboBoxEditor";
 import { GridListHybridAfterSections } from "../../panels/properties/editors/GridListEditor";
 import { ListBoxHybridAfterSections } from "../../panels/properties/editors/ListBoxEditor";
-import { SearchFieldHybridAfterSections } from "../../panels/properties/editors/SearchFieldEditor";
 import { SelectHybridAfterSections } from "../../panels/properties/editors/SelectEditor";
 import { TagGroupHybridAfterSections } from "../../panels/properties/editors/TagGroupEditor";
 import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";
@@ -30,8 +29,6 @@ function getHybridAfterSections(type: string) {
       return GridListHybridAfterSections;
     case "ListBox":
       return ListBoxHybridAfterSections;
-    case "SearchField":
-      return SearchFieldHybridAfterSections;
     case "Select":
       return SelectHybridAfterSections;
     case "TagGroup":

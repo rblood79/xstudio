@@ -23,8 +23,6 @@ import {
   PropertySwitch,
   PropertyCustomId,
   PropertySection,
-  PropertyDataBinding,
-  type DataBindingValue,
 } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
@@ -67,14 +65,6 @@ export const DataTableEditor = memo(function DataTableEditor({
       }
     },
     [elementId],
-  );
-
-  // DataBinding change handler
-  const handleDataBindingChange = useCallback(
-    (binding: DataBindingValue | null) => {
-      updateProp("dataBinding", binding || undefined);
-    },
-    [updateProp],
   );
 
   // Refresh handler
@@ -149,15 +139,6 @@ export const DataTableEditor = memo(function DataTableEditor({
           placeholder="User information from API"
           icon={FileText}
           description="Optional description"
-        />
-      </PropertySection>
-
-      {/* Data Source Section */}
-      <PropertySection title="Data Source" icon={Database}>
-        <PropertyDataBinding
-          label="Data Binding"
-          value={currentProps.dataBinding as DataBindingValue | undefined}
-          onChange={handleDataBindingChange}
         />
       </PropertySection>
 
@@ -265,7 +246,7 @@ export const DataTableEditor = memo(function DataTableEditor({
               Set a unique DataTable ID (e.g., "users-datatable",
               "products-api")
             </li>
-            <li>Configure data source using Data Binding</li>
+            <li>Configure data source in Events Panel</li>
             <li>
               Reference in ListBox, Select, ComboBox with{" "}
               <code>dataTableId</code> prop

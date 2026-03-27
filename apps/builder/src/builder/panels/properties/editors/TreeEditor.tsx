@@ -1,10 +1,6 @@
 import { useMemo, useCallback, memo } from "react";
-import { Plus, Database } from "lucide-react";
-import {
-  PropertySection,
-  PropertyDataBinding,
-  type DataBindingValue,
-} from "../../../components";
+import { Plus } from "lucide-react";
+import { PropertySection } from "../../../components";
 import { GenericPropertyEditor } from "../generic";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
@@ -20,8 +16,6 @@ const UUID_REGEX =
 
 export const TreeHybridAfterSections = memo(function TreeHybridAfterSections({
   elementId,
-  currentProps,
-  onUpdate,
 }: PropertyEditorProps) {
   const addElement = useStore((state) => state.addElement);
   const currentPageId = useStore((state) => state.currentPageId);
@@ -29,16 +23,11 @@ export const TreeHybridAfterSections = memo(function TreeHybridAfterSections({
   const treeItemChildren = useMemo(() => {
     const { elements } = useStore.getState();
     return elements
-      .filter((child) => child.parent_id === elementId && child.tag === "TreeItem")
+      .filter(
+        (child) => child.parent_id === elementId && child.tag === "TreeItem",
+      )
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [elementId]);
-
-  const handleDataBindingChange = useCallback(
-    (binding: DataBindingValue | null) => {
-      onUpdate({ dataBinding: binding || undefined });
-    },
-    [onUpdate],
-  );
 
   const addNewTreeItem = useCallback(async () => {
     try {
@@ -78,21 +67,14 @@ export const TreeHybridAfterSections = memo(function TreeHybridAfterSections({
 
   return (
     <>
-      <PropertySection title="Data Binding" icon={Database}>
-        <PropertyDataBinding
-          label="데이터 소스"
-          value={currentProps.dataBinding as DataBindingValue | undefined}
-          onChange={handleDataBindingChange}
-        />
-      </PropertySection>
-
       <PropertySection title={PROPERTY_LABELS.TREE_ITEMS}>
         <div className="tree-overview">
           <p className="tree-overview-text">
             Total tree items: {treeItemChildren.length || 0}
           </p>
           <p className="tree-overview-help">
-            Select individual tree items from layer tree to edit their properties
+            Select individual tree items from layer tree to edit their
+            properties
           </p>
         </div>
 
@@ -123,7 +105,9 @@ export const TreeEditor = memo(function TreeEditor(props: PropertyEditorProps) {
   );
 });
 
-async function resolvePageId(currentPageId: string | null): Promise<string | null> {
+async function resolvePageId(
+  currentPageId: string | null,
+): Promise<string | null> {
   if (currentPageId) return currentPageId;
 
   const pathParts = window.location.pathname.split("/");
