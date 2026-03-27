@@ -69,3 +69,19 @@ export const lineHeight = {
 export function getTypographyToken(name: keyof TypographyTokens): number {
   return typography[name];
 }
+
+/**
+ * fontSize에 대응하는 CSS line-height (px)를 반환.
+ * fullTreeLayout.ts의 LABEL_SIZE_STYLE과 동일 소스.
+ */
+const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
+  10: typography["text-2xs--line-height"],
+  12: typography["text-xs--line-height"],
+  14: typography["text-sm--line-height"],
+  16: typography["text-base--line-height"],
+  18: typography["text-lg--line-height"],
+};
+
+export function getLabelLineHeight(fontSize: number): number {
+  return FONT_SIZE_TO_LINE_HEIGHT[fontSize] ?? Math.ceil(fontSize * 1.5);
+}

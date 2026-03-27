@@ -1198,16 +1198,22 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - Radio: State/Behavior generic + Content(Label+Value childSync) afterSections
   - Card: Design/States generic + Content/Asset/Interactions(2-depth childSync) afterSections
   - Slider: Design/Behavior/Form generic + Content/NumberFormatting/Range afterSections
-  - Select, ComboBox, GridList, ListBox, TagGroup, Tabs, Tree: 기존 하이브리드 유지
+  - Select, ComboBox, TagGroup, Tree: **Spec Generic 완전 전환** (2026-03-27) — 수동 에디터 삭제, children-manager + propagation으로 자동화
+  - ListBox, GridList: Hybrid (filtering만 잔존, children-manager로 CRUD 자동화)
+  - Tabs: Hybrid 유지 (Tab+Panel 쌍 생성 — 구조상 children-manager 불가)
+  - Slider: Hybrid 유지 (Range 모드 Thumb 동적 생성/삭제)
   - icon field 타입 SpecField 구현 — PropertyIconPicker 연동, clearKeys 지원
   - Icon: size field에 derivedUpdateFn 추가 (size→style.fontSize 동시 업데이트)
 - Phase 4 완료 — 수동 에디터 파일 정리
-  - 삭제된 수동 에디터: **36개** (12개 배치1-3 + 22개 Phase 4 + 2개 propagation 전환)
+  - 삭제된 수동 에디터: **46개** (12개 배치1-3 + 22개 Phase 4 + 2개 propagation 전환 + 10개 Spec Generic 완전 전환)
     - 배치1-3: Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
     - Phase 4: Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, ToggleButton, Icon
     - Propagation 전환: Calendar, RangeCalendar (수동 childSync → propagation 엔진 교체)
+    - **Spec Generic 완전 전환 (2026-03-27)**: Button, TextField, CheckboxGroup, RadioGroup, ComboBox, Select, TagGroup, Tree (수동 에디터 삭제, Spec properties로 모든 필드 자동화)
+    - **Hybrid CRUD → children-manager 전환 (2026-03-27)**: ComboBox, Select, ListBox, GridList, TagGroup, Tree (수동 아이템 CRUD → Spec `children-manager` 필드로 대체)
+    - **Propagation 규칙 추가 (2026-03-27)**: ComboBox(label→Label, placeholder→ComboBoxInput), Select(label→Label, placeholder→SelectValue), TagGroup(label→Label) — 수동 child prop sync/size cascading 코드 제거
   - editors/index.ts export 정리
-  - 남은 수동 에디터: ~49개 (hybrid afterSections 16개 + Grade C 수동 33개)
+  - 남은 수동 에디터: ~39개 (hybrid afterSections 6개 + Grade C 수동 33개)
   - RangeCalendar Spec 신규 생성: CalendarSpec 기반 spread + propagation 8규칙 + properties 3섹션
   - propagationRegistry: 21개 → **22개** (RangeCalendar 추가)
 - 버그 수정
@@ -1225,21 +1231,21 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 
 | #   | 카테고리    | 컴포넌트           | 에디터 유형 |
 | --- | ----------- | ------------------ | :---------: |
-| 1   | Buttons     | Button             |   Hybrid    |
+| 1   | Buttons     | Button             |    자동     |
 | 2   | Buttons     | ToggleButton       |    자동     |
 | 3   | Buttons     | ToggleButtonGroup  |   자동 ¹    |
 | 4   | Buttons     | Toolbar            |    자동     |
 | 5   | Buttons     | ButtonGroup        |    자동     |
 | 6   | Buttons     | ActionMenu         |    수동     |
-| 7   | Forms       | TextField          |   Hybrid    |
+| 7   | Forms       | TextField          |    자동     |
 | 8   | Forms       | NumberField        |   Hybrid    |
 | 9   | Forms       | SearchField        |   Hybrid    |
 | 10  | Forms       | Checkbox           |   Hybrid    |
-| 11  | Forms       | CheckboxGroup      |    수동     |
+| 11  | Forms       | CheckboxGroup      |    자동     |
 | 12  | Forms       | Radio              |   Hybrid    |
-| 13  | Forms       | RadioGroup         |    수동     |
-| 14  | Forms       | Select             |   Hybrid    |
-| 15  | Forms       | ComboBox           |   Hybrid    |
+| 13  | Forms       | RadioGroup         |    자동     |
+| 14  | Forms       | Select             |    자동     |
+| 15  | Forms       | ComboBox           |    자동     |
 | 16  | Forms       | Switch             |   Hybrid    |
 | 17  | Forms       | Slider             |   Hybrid    |
 | 18  | Forms       | TailSwatch         |    수동     |
@@ -1258,8 +1264,8 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 | 31  | Collections | Table              |    수동     |
 | 32  | Collections | ListBox            |   Hybrid    |
 | 33  | Collections | GridList           |   Hybrid    |
-| 34  | Collections | Tree               |   Hybrid    |
-| 35  | Collections | TagGroup           |   Hybrid    |
+| 34  | Collections | Tree               |    자동     |
+| 35  | Collections | TagGroup           |    자동     |
 | 36  | Collections | CardView           |    자동     |
 | 37  | Collections | TableView          |    수동     |
 | 38  | Collections | DataTable          |    수동     |
@@ -1301,8 +1307,8 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 
 | 유형       |  개수  | 비율  |
 | ---------- | :----: | :---: |
-| **자동**   | **43** | 58.9% |
-| **Hybrid** | **16** | 21.9% |
+| **자동**   | **53** | 72.6% |
+| **Hybrid** | **6**  | 8.2%  |
 | **수동**   | **14** | 19.2% |
 | **합계**   | **73** | 100%  |
 

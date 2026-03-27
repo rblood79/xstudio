@@ -9,7 +9,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
+import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Globe,
@@ -603,7 +603,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
-      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelLineHeight = getLabelLineHeight(fontSize);
       const labelGap = 8;
       const labelOffset = labelLineHeight + labelGap;
       const inputHeight = size.height as number;

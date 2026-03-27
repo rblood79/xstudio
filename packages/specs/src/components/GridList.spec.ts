@@ -222,6 +222,23 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
           },
         ],
       },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Items",
+            childTag: "GridListItem",
+            defaultChildProps: {
+              label: "Item",
+              value: "",
+              textValue: "Item",
+            },
+            labelProp: "label",
+          },
+        ],
+      },
     ],
   },
 

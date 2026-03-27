@@ -162,6 +162,22 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
           },
         ],
       },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Tree Items",
+            childTag: "TreeItem",
+            defaultChildProps: {
+              children: "Item",
+              value: "",
+            },
+            labelProp: "children",
+          },
+        ],
+      },
     ],
   },
 

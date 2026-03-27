@@ -189,6 +189,22 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           },
         ],
       },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Items",
+            childTag: "ListBoxItem",
+            defaultChildProps: {
+              label: "Item",
+              value: "",
+            },
+            labelProp: "label",
+          },
+        ],
+      },
     ],
   },
 

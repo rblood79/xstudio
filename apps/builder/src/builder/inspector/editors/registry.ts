@@ -3,13 +3,9 @@ import type { ComponentEditorProps } from "../types";
 import { componentMetadata } from "@xstudio/shared/components/metadata";
 import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
-import { ComboBoxHybridAfterSections } from "../../panels/properties/editors/ComboBoxEditor";
 import { GridListHybridAfterSections } from "../../panels/properties/editors/GridListEditor";
 import { ListBoxHybridAfterSections } from "../../panels/properties/editors/ListBoxEditor";
-import { SelectHybridAfterSections } from "../../panels/properties/editors/SelectEditor";
-import { TagGroupHybridAfterSections } from "../../panels/properties/editors/TagGroupEditor";
 import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";
-import { TreeHybridAfterSections } from "../../panels/properties/editors/TreeEditor";
 import { SliderHybridAfterSections } from "../../panels/properties/editors/SliderEditor";
 
 /**
@@ -19,20 +15,12 @@ const editorCache = new Map<string, ComponentType<ComponentEditorProps>>();
 
 function getHybridAfterSections(type: string) {
   switch (type) {
-    case "ComboBox":
-      return ComboBoxHybridAfterSections;
     case "GridList":
       return GridListHybridAfterSections;
     case "ListBox":
       return ListBoxHybridAfterSections;
-    case "Select":
-      return SelectHybridAfterSections;
-    case "TagGroup":
-      return TagGroupHybridAfterSections;
     case "Tabs":
       return TabsHybridAfterSections;
-    case "Tree":
-      return TreeHybridAfterSections;
     case "Slider":
       return SliderHybridAfterSections;
     default:

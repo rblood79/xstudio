@@ -8,8 +8,12 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
+import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  FIELD_TRIGGER_VARIABLES,
+  FIELD_AUTO_HEIGHT_VARIABLES,
+} from "../utils/fieldDelegation";
 import {
   Tag,
   Binary,
@@ -20,6 +24,9 @@ import {
   FormInput,
   FileText,
   Layout,
+  Parentheses,
+  Menu,
+  AlertTriangle,
 } from "lucide-react";
 
 /**
@@ -72,8 +79,53 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   properties: {
     sections: [
       {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+            emptyToUndefined: true,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+          },
+          {
+            key: "placeholder",
+            type: "string",
+            label: "Placeholder",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+        ],
+      },
+      {
         title: "Design",
         fields: [
+          {
+            key: "variant",
+            type: "variant",
+            label: "Variant",
+            icon: Parentheses,
+          },
+          { type: "size" },
+          {
+            key: "iconName",
+            type: "icon",
+            label: "Trigger Icon",
+          },
           {
             key: "labelPosition",
             type: "enum",
@@ -82,6 +134,22 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             options: [
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Trigger Behavior",
+        fields: [
+          {
+            key: "menuTrigger",
+            type: "enum",
+            label: "Menu Trigger",
+            icon: Menu,
+            options: [
+              { value: "focus", label: "Focus" },
+              { value: "input", label: "Input" },
+              { value: "manual", label: "Manual" },
             ],
           },
         ],
@@ -175,6 +243,23 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           },
         ],
       },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Options",
+            childTag: "ComboBoxItem",
+            defaultChildProps: {
+              label: "Option",
+              value: "",
+              textValue: "Option",
+            },
+            labelProp: "label",
+          },
+        ],
+      },
     ],
   },
 
@@ -258,60 +343,13 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         // ComboBoxWrapper 대응 — 컨테이너 (bg/border/padding)
         // Select의 .react-aria-Button과 동일 역할
         childSelector: ".combobox-container",
-        variables: {
-          xs: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "1px 1px 1px 4px",
-            "font-size": "var(--text-2xs)",
-          },
-          sm: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "2px 2px 2px 8px",
-            "font-size": "var(--text-xs)",
-          },
-          md: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "4px 4px 4px 12px",
-            "font-size": "var(--text-sm)",
-          },
-          lg: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "8px 8px 8px 16px",
-            "font-size": "var(--text-base)",
-          },
-          xl: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "12px 12px 12px 24px",
-            "font-size": "var(--text-lg)",
-          },
-        },
+        variables: FIELD_TRIGGER_VARIABLES,
       },
       {
         // ComboBoxInput 대응 — 텍스트 입력
         // Select의 .react-aria-SelectValue와 동일 역할
         childSelector: ".react-aria-Input",
-        variables: {
-          xs: { height: "auto" },
-          sm: { height: "auto" },
-          md: { height: "auto" },
-          lg: { height: "auto" },
-          xl: { height: "auto" },
-        },
+        variables: FIELD_AUTO_HEIGHT_VARIABLES,
       },
       {
         // ComboBoxTrigger 대응 — chevron 버튼
@@ -383,6 +421,18 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       { parentProp: "size", childPath: "ComboBoxInput" },
       { parentProp: "size", childPath: "ComboBoxTrigger" },
       { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+      {
+        parentProp: "placeholder",
+        childPath: ["ComboBoxWrapper", "ComboBoxInput"],
+        childProp: "placeholder",
+        override: true,
+      },
     ],
   },
 
@@ -437,7 +487,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
       // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
-      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelLineHeight = getLabelLineHeight(fontSize);
       const labelGap = 8;
       const labelOffset = labelLineHeight + labelGap;
       const inputHeight = size.height as number;

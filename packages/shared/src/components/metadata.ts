@@ -54,8 +54,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Buttons",
     icon: "🔘",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ToggleButtonEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onChange, onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -183,8 +182,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🔍",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "SearchFieldEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onSubmit, onClear, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
       supportedEvents: [
@@ -268,8 +266,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🔽",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "SelectEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onOpenChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
       supportedEvents: [
@@ -288,8 +285,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🔽",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ComboBoxEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onInputChange, onOpenChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
       supportedEvents: [
@@ -512,8 +508,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "📋",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ListBoxEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onAction, onFocus, onBlur, onFocusChange
       supportedEvents: ["onSelectionChange", "onAction", "onFocus", "onBlur"],
@@ -525,8 +520,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "🎛️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "GridListEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onAction, onFocus, onBlur
       supportedEvents: ["onSelectionChange", "onAction", "onFocus", "onBlur"],
@@ -538,8 +532,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "🌳",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TreeEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onExpandedChange, onFocus, onBlur
       supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],
@@ -551,8 +544,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "🏷️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TagGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onRemove, onSelectionChange, onFocus, onBlur
       supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],

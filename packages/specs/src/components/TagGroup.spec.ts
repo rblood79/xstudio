@@ -24,6 +24,7 @@ import {
   Trash,
   FormInput,
   FileText,
+  Tag,
 } from "lucide-react";
 
 /**
@@ -99,6 +100,13 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       {
         title: "Content",
         fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+            emptyToUndefined: true,
+          },
           {
             key: "description",
             type: "string",
@@ -219,6 +227,22 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
           },
         ],
       },
+      {
+        title: "Tag Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Tags",
+            childTag: "Tag",
+            defaultChildProps: {
+              children: "Tag",
+              isDisabled: false,
+            },
+            labelProp: "children",
+          },
+        ],
+      },
     ],
   },
 
@@ -299,6 +323,12 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       { parentProp: "allowsRemoving", childPath: "Tag" },
       { parentProp: "allowsRemoving", childPath: "TagList" },
       { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
     ],
   },
 

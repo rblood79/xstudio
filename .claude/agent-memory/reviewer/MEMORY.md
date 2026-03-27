@@ -16,10 +16,14 @@
 - **resolveChildPath 중첩 경로 초기 껍데기 객체**: `[{ id: parentId } as ElementLike]`로 props/tag 없는 임시 객체를 매 호출마다 생성 — 첫 단계를 parentId 문자열로 직접 처리하여 제거 가능
 - **useSyncChildProp stale props 병합**: `childrenMap`에서 읽은 `child.props`로 `{ ...child.props, [key]: value }` merge — childrenMap staleness 규칙 위반. `elementsMap.get(child.id).props`로 최신 props 조회 필요 (useSyncGrandchildProp 동일)
 - **propagationRegistry와 specRegistry 이중 Spec 등록**: 동일 Spec 집합을 두 파일에서 import — `PROPERTY_EDITOR_SPEC_MAP`을 단일 소스로 consolidation 필요. Phase 3 전 수행 필수
+- **에디터 삭제 시 3곳 동시 정리 필수**: (1) 에디터 .tsx 파일 삭제, (2) `editors/index.ts` export 제거, (3) `metadata.ts` `hasCustomEditor: true` + `editorName` → `hasCustomEditor: false` 변경. 1개라도 누락 시 빌드 오류 또는 console.warn 발생 (e0c2da74 SearchFieldEditor 사례)
+- **Spec 전환 시 metadata.ts 미정리 패턴**: 에디터 파일은 HybridAfterSection으로 전환하되 Spec을 등록한 경우, registry.ts가 propertySpec 경로로 단락되어 metadata `hasCustomEditor: true` 분기에 도달하지 않더라도 metadata 불일치 상태가 남음 — 05e6489c 커밋의 GridList/ListBox가 이 패턴 (Spec 등록 후 metadata 미정리)
+- **Spec shapes() 내 `Math.ceil(fontSize * 1.5)` labelLineHeight 계산**: Select.spec.ts, ComboBox.spec.ts의 legacy(!hasChildren) 경로에 남아있는 패턴 — LABEL_SIZE_STYLE lineHeight 역참조로 교체 필요 (canvas-rendering.md CRITICAL 규칙)
+- **composition.delegation 크기별 CSS 변수 복제**: Select.spec.ts ↔ ComboBox.spec.ts의 trigger 컨테이너 delegation 변수 5사이즈가 거의 동일 — 공통 헬퍼 팩토리로 추출 필요
 
 ## False Positive 기록
 
-(잘못된 지적으로 판명된 케이스 — 향후 동일 패턴에서 불필요한 지적 방지)
+- **`hasCustomEditor: false` 명시적 선언**: 런타임 동작에 영향 없음 — registry.ts가 propertySpec 우선 체크 후 fallback으로만 사용. 생략 가능하나 기존 패턴과 일관성 측면에서 MEDIUM 이하 이슈
 
 ## 프로젝트 컨벤션 예외
 

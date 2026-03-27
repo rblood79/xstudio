@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored - Property Editor Spec Generic 대규모 전환 (2026-03-27)
+
+ADR-041 Phase 0~4 완료. 수동 에디터 46개 삭제, 컴포넌트 패널 73개 중 53개(72.6%) Spec Generic 자동 생성.
+
+#### Spec Generic 완전 전환 (10개 에디터 삭제)
+
+- **Button, TextField**: Spec `properties`에 모든 필드 선언, propagation으로 자식 sync 자동화
+- **CheckboxGroup, RadioGroup**: `children-manager` + propagation으로 아이템 CRUD/size 전파 자동화
+- **ComboBox, Select**: Content/Design/Trigger Behavior + Item Management 모두 Spec properties로 전환, label/placeholder propagation 규칙 추가
+- **TagGroup, Tree**: children-manager로 아이템 관리 자동화, label propagation 추가
+
+#### Propagation 규칙 추가
+
+- ComboBox: `label → Label.children`, `placeholder → [ComboBoxWrapper, ComboBoxInput].placeholder`
+- Select: `label → Label.children`, `placeholder → [SelectTrigger, SelectValue].children`
+- TagGroup: `label → Label.children`
+
+#### Hybrid CRUD → children-manager 전환 (6개)
+
+- ComboBox(ComboBoxItem), Select(SelectItem), ListBox(ListBoxItem), GridList(GridListItem), TagGroup(Tag), Tree(TreeItem)
+
+#### 잔여 Hybrid (4개)
+
+- ListBox, GridList: filtering 섹션만 수동
+- Tabs: Tab+Panel 쌍 생성 (구조상 children-manager 불가)
+- Slider: Range 모드 Thumb 동적 생성/삭제
+
 ### Refactored - RangeSlider 잔여 참조 제거 및 SelectBoxGroup → GridList 통합 (2026-03-23)
 
 #### RangeSlider 잔여 참조 완전 제거

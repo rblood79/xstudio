@@ -12,13 +12,10 @@ export {
   darkColors,
   getColorToken,
   getColorTokens,
-} from './colors';
+} from "./colors";
 
 // Spacing
-export {
-  spacing,
-  getSpacingToken,
-} from './spacing';
+export { spacing, getSpacingToken } from "./spacing";
 
 // Typography
 export {
@@ -27,19 +24,13 @@ export {
   fontWeight,
   lineHeight,
   getTypographyToken,
-} from './typography';
+  getLabelLineHeight,
+} from "./typography";
 
 // Radius
-export {
-  radius,
-  getRadiusToken,
-} from './radius';
+export { radius, getRadiusToken } from "./radius";
 
 // Shadows
-export {
-  shadows,
-  getShadowToken,
-  parseShadow,
-} from './shadows';
+export { shadows, getShadowToken, parseShadow } from "./shadows";
 
-export type { ParsedShadow } from './shadows';
+export type { ParsedShadow } from "./shadows";

@@ -8,8 +8,12 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
+import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  FIELD_TRIGGER_VARIABLES,
+  FIELD_AUTO_HEIGHT_VARIABLES,
+} from "../utils/fieldDelegation";
 import {
   List,
   LayoutList,
@@ -21,6 +25,11 @@ import {
   Focus,
   FormInput,
   Layout,
+  Tag,
+  FileText,
+  AlertTriangle,
+  SpellCheck2,
+  Menu,
 } from "lucide-react";
 
 /**
@@ -75,8 +84,42 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   properties: {
     sections: [
       {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+            emptyToUndefined: true,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+          },
+          {
+            key: "placeholder",
+            type: "string",
+            label: "Placeholder",
+            icon: SpellCheck2,
+            emptyToUndefined: true,
+          },
+        ],
+      },
+      {
         title: "Design",
         fields: [
+          { type: "size" },
           {
             key: "labelPosition",
             type: "enum",
@@ -85,6 +128,22 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             options: [
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Trigger Behavior",
+        fields: [
+          {
+            key: "menuTrigger",
+            type: "enum",
+            label: "Menu Trigger",
+            icon: Menu,
+            options: [
+              { value: "focus", label: "Focus" },
+              { value: "input", label: "Input" },
+              { value: "manual", label: "Manual" },
             ],
           },
         ],
@@ -209,6 +268,22 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           },
         ],
       },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Options",
+            childTag: "SelectItem",
+            defaultChildProps: {
+              label: "Option",
+              value: "",
+            },
+            labelProp: "label",
+          },
+        ],
+      },
     ],
   },
 
@@ -291,58 +366,11 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       // Label은 LabelSpec에서 variant 기반으로 color/font-size 결정 (단일 소스)
       {
         childSelector: ".react-aria-Button",
-        variables: {
-          xs: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "1px 1px 1px 4px",
-            "font-size": "var(--text-2xs)",
-          },
-          sm: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "2px 2px 2px 8px",
-            "font-size": "var(--text-xs)",
-          },
-          md: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "4px 4px 4px 12px",
-            "font-size": "var(--text-sm)",
-          },
-          lg: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "8px 8px 8px 16px",
-            "font-size": "var(--text-base)",
-          },
-          xl: {
-            height: "auto",
-            background: "var(--bg)",
-            color: "var(--fg)",
-            border: "1px solid var(--border-hover)",
-            padding: "12px 12px 12px 24px",
-            "font-size": "var(--text-lg)",
-          },
-        },
+        variables: FIELD_TRIGGER_VARIABLES,
       },
       {
         childSelector: ".react-aria-SelectValue",
-        variables: {
-          xs: { height: "auto" },
-          sm: { height: "auto" },
-          md: { height: "auto" },
-          lg: { height: "auto" },
-          xl: { height: "auto" },
-        },
+        variables: FIELD_AUTO_HEIGHT_VARIABLES,
       },
       {
         childSelector: ".react-aria-ListBox .react-aria-ListBoxItem",
@@ -384,6 +412,18 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       { parentProp: "size", childPath: "SelectValue" },
       { parentProp: "size", childPath: "SelectIcon" },
       { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+      {
+        parentProp: "placeholder",
+        childPath: ["SelectTrigger", "SelectValue"],
+        childProp: "children",
+        override: true,
+      },
     ],
   },
 
@@ -435,7 +475,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
       // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
-      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelLineHeight = getLabelLineHeight(fontSize);
       const labelGap = 8;
       const labelOffset = labelLineHeight + labelGap;
       const triggerHeight = size.height as number;
