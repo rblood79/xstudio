@@ -484,3 +484,11 @@ export {
   TABLEVIEW_ROW_HEIGHTS,
 } from "./components/TableView.spec";
 export type { TableViewProps } from "./components/TableView.spec";
+
+// Properties-only Specs
+export { ActionMenuSpec } from "./components/ActionMenu.spec";
+export { AutocompleteSpec } from "./components/Autocomplete.spec";
+export { FieldSpec } from "./components/Field.spec";
+export { AccordionSpec } from "./components/Accordion.spec";
+export { ModalSpec } from "./components/Modal.spec";
+export { TailSwatchSpec } from "./components/TailSwatch.spec";

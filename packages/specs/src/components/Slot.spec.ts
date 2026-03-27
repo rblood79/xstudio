@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { FileText, Type, AlertCircle } from "lucide-react";
 
 /**
  * Slot Props
@@ -18,6 +19,9 @@ export interface SlotProps {
   variant?: "default";
   size?: "S" | "M" | "L";
   label?: string;
+  name?: string;
+  description?: string;
+  required?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -71,6 +75,37 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
   },
 
   states: {},
+
+  properties: {
+    sections: [
+      {
+        title: "Slot Settings",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: FileText,
+            placeholder: "content",
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: Type,
+            placeholder: "Main content area",
+            emptyToUndefined: true,
+          },
+          {
+            key: "required",
+            type: "boolean",
+            label: "Required",
+            icon: AlertCircle,
+          },
+        ],
+      },
+    ],
+  },
 
   render: {
     shapes: (props, variant, size, _state = "default") => {

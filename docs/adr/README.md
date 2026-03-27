@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-28 (ADR-041 Phase 0~4 전체 완료 — 자동 59개/80.8%, Hybrid 2개, 에디터 54개 삭제, string-array 필드 타입 추가)
+> **최종 업데이트**: 2026-03-28 (ADR-041 Phase 0~4 전체 완료 — 자동 67개/91.8%, Hybrid 2개, 수동 4개, 에디터 62개 삭제)
 
 ## 현황 요약
 
@@ -108,7 +108,7 @@
 
 | 순서 | 대상    | 내용                                                                                                          | 규모 |   상태   |
 | :--: | ------- | ------------------------------------------------------------------------------------------------------------- | :--: | :------: |
-|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (59개 spec, 22개 propagation, 2개 hybrid, 54개 에디터 삭제) |  -   | **완료** |
+|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (67개 spec, 22개 propagation, 2개 hybrid, 62개 에디터 삭제) |  -   | **완료** |
 |  2   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                 |  대  | **완료** |
 |  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                  |  중  |          |
 |  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                 |  소  |          |
@@ -151,7 +151,7 @@ ADR-041 (Spec-Driven Property Editor, **완료**)
 ADR-046 (S2 계약 확장, 독립)
 ```
 
-- **ADR-041**: Phase 0~4 전체 완료. 59개 Spec properties, 2개 hybrid afterSections, 54개 수동 에디터 삭제 (자동 59/Hybrid 2/수동 12)
+- **ADR-041**: Phase 0~4 전체 완료. 67개 Spec properties, 2개 hybrid afterSections, 62개 수동 에디터 삭제 (자동 67/Hybrid 2/수동 4)
 - **ADR-048**: Phase 0~5 전체 완료. PropagationSpec 엔진 + Registry + 4경로 통합
 - **ADR-045**: ADR-041/048 기반 위에서 에디터 정합성 정렬 (INCOMPLETE 9개 + 공통 패턴 16개)
 - **ADR-046**: S2 계약 확장 (Form, ColorField, Tabs) — Spec 완성도 향상, 독립 실행 가능

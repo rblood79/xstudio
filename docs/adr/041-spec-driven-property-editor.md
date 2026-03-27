@@ -1207,7 +1207,8 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
     - **Propagation 규칙 추가 (2026-03-27)**: ComboBox(label→Label, placeholder→ComboBoxInput), Select(label→Label, placeholder→SelectValue), TagGroup(label→Label) — 수동 child prop sync/size cascading 코드 제거
   - editors/index.ts export 정리
   - **Filtering 자동화 (2026-03-28)**: `string-array` 필드 타입 신규 → ListBox/GridList Filtering 섹션 Spec 전환, 에디터 삭제
-  - 남은 수동 에디터: ~14개 (hybrid afterSections 2개 + Grade C 수동 12개)
+  - **수동 에디터 일괄 자동화 (2026-03-28)**: ActionMenu, Autocomplete, TableView, Field, Accordion, Modal, TailSwatch, Menu — properties-only Spec 생성 + specRegistry 등록, 에디터 8개 삭제
+  - 남은 수동 에디터: ~6개 (hybrid afterSections 2개 + Grade C 수동 4개)
   - RangeCalendar Spec 신규 생성: CalendarSpec 기반 spread + propagation 8규칙 + properties 3섹션
   - propagationRegistry: 21개 → **22개** (RangeCalendar 추가)
 - 버그 수정
@@ -1230,7 +1231,7 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 | 3   | Buttons     | ToggleButtonGroup  |   자동 ¹    |
 | 4   | Buttons     | Toolbar            |    자동     |
 | 5   | Buttons     | ButtonGroup        |    자동     |
-| 6   | Buttons     | ActionMenu         |    수동     |
+| 6   | Buttons     | ActionMenu         |    자동     |
 | 7   | Forms       | TextField          |    자동     |
 | 8   | Forms       | NumberField        |    자동     |
 | 9   | Forms       | SearchField        |    자동     |
@@ -1242,10 +1243,10 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 | 15  | Forms       | ComboBox           |    자동     |
 | 16  | Forms       | Switch             |    자동     |
 | 17  | Forms       | Slider             |   Hybrid    |
-| 18  | Forms       | TailSwatch         |    수동     |
+| 18  | Forms       | TailSwatch         |    자동     |
 | 19  | Forms       | FileTrigger        |    자동     |
 | 20  | Forms       | DropZone           |    자동     |
-| 21  | Forms       | Autocomplete       |    수동     |
+| 21  | Forms       | Autocomplete       |    자동     |
 | 22  | Forms       | Form               |    자동     |
 | 23  | Color       | ColorPicker        |    자동     |
 | 24  | Color       | ColorField         |    자동     |
@@ -1254,16 +1255,16 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 | 27  | Color       | ColorWheel         |    자동     |
 | 28  | Color       | ColorSwatch        |    자동     |
 | 29  | Color       | ColorSwatchPicker  |    자동     |
-| 30  | Collections | Menu               |    수동     |
+| 30  | Collections | Menu               |    자동     |
 | 31  | Collections | Table              |    수동     |
 | 32  | Collections | ListBox            |    자동     |
 | 33  | Collections | GridList           |    자동     |
 | 34  | Collections | Tree               |    자동     |
 | 35  | Collections | TagGroup           |    자동     |
 | 36  | Collections | CardView           |    자동     |
-| 37  | Collections | TableView          |    수동     |
+| 37  | Collections | TableView          |    자동     |
 | 38  | Collections | DataTable          |    수동     |
-| 39  | Collections | Field              |    수동     |
+| 39  | Collections | Field              |    자동     |
 | 40  | Content     | ProgressBar        |    자동     |
 | 41  | Content     | Meter              |    자동     |
 | 42  | Content     | Badge              |    자동     |
@@ -1287,10 +1288,10 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 | 60  | Layout      | DisclosureGroup    |    자동     |
 | 61  | Layout      | Nav                |    자동     |
 | 62  | Layout      | Slot               |    수동     |
-| 63  | Layout      | Accordion          |    수동     |
+| 63  | Layout      | Accordion          |    자동     |
 | 64  | Overlays    | Tooltip            |    자동     |
 | 65  | Overlays    | Dialog             |    자동     |
-| 66  | Overlays    | Modal              |    수동     |
+| 66  | Overlays    | Modal              |    자동     |
 | 67  | Overlays    | Popover            |    자동     |
 | 68  | Date & Time | Calendar           |    자동     |
 | 69  | Date & Time | DatePicker         |   자동 ¹    |
@@ -1301,9 +1302,9 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 
 | 유형       |  개수  | 비율  |
 | ---------- | :----: | :---: |
-| **자동**   | **59** | 80.8% |
+| **자동**   | **67** | 91.8% |
 | **Hybrid** | **2**  | 2.7%  |
-| **수동**   | **12** | 16.4% |
+| **수동**   | **4**  | 5.5%  |
 | **합계**   | **73** | 100%  |
 
 **2026-03-26 현재 상태**:
@@ -1522,16 +1523,16 @@ properties: {
 
 ## Metrics / Verification
 
-| 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |     Phase 4 (실측)      |
-| ---------------- | :------------------------: | :--------------: | :--------------: | :---------------------: |
-| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~14개** (hybrid+수동) |
-| 자동 생성 에디터 |            0개             |       75개       |       83개       |     **59개** (spec)     |
-| 삭제된 에디터    |            0개             |       12개       |       12개       |        **54개**         |
-| hybrid 에디터    |            0개             |       0개        |       7개        |         **2개**         |
-| specRegistry     |            0개             |       12개       |       23개       |        **59개**         |
-| propagation      |            0개             |       0개        |       21개       |        **22개**         |
-| 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |         **1개**         |
-| variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |         **1곳**         |
+| 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |     Phase 4 (실측)     |
+| ---------------- | :------------------------: | :--------------: | :--------------: | :--------------------: |
+| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~6개** (hybrid+수동) |
+| 자동 생성 에디터 |            0개             |       75개       |       83개       |    **67개** (spec)     |
+| 삭제된 에디터    |            0개             |       12개       |       12개       |        **62개**        |
+| hybrid 에디터    |            0개             |       0개        |       7개        |        **2개**         |
+| specRegistry     |            0개             |       12개       |       23개       |        **67개**        |
+| propagation      |            0개             |       0개        |       21개       |        **22개**        |
+| 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |        **1개**         |
+| variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |        **1곳**         |
 
 > **산정 기준**: 103개 전체 에디터 중 GenericPropertyEditor 전환 대상 83개(등급 A 75 + 등급 B 8). 등급 C 20개는 수동 유지 (UI 모드 전환이 없는 에디터에 한해 하이브리드 적용 시 코드량 30~50% 감소 가능).
 

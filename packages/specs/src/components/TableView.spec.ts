@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Layout, ToggleLeft, Columns } from "lucide-react";
 
 /**
  * TableView Props
@@ -78,6 +79,70 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
       pointerEvents: "none",
     },
     focusVisible: {},
+  },
+
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "density",
+            type: "enum",
+            label: "Density",
+            icon: Layout,
+            options: [
+              { value: "compact", label: "Compact" },
+              { value: "regular", label: "Regular" },
+              { value: "spacious", label: "Spacious" },
+            ],
+          },
+          {
+            key: "overflowMode",
+            type: "enum",
+            label: "Overflow Mode",
+            icon: Columns,
+            options: [
+              { value: "truncate", label: "Truncate" },
+              { value: "wrap", label: "Wrap" },
+            ],
+          },
+          { key: "isQuiet", type: "boolean", label: "Quiet", icon: ToggleLeft },
+          {
+            key: "isStriped",
+            type: "boolean",
+            label: "Striped",
+            icon: ToggleLeft,
+          },
+        ],
+      },
+      {
+        title: "Selection",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            options: [
+              { value: "none", label: "None" },
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Features",
+        fields: [
+          { key: "allowsSorting", type: "boolean", label: "Allow Sorting" },
+          {
+            key: "allowsResizingColumns",
+            type: "boolean",
+            label: "Allow Resizing Columns",
+          },
+        ],
+      },
+    ],
   },
 
   render: {

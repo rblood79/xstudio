@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Tag, PointerOff, Focus, SquareX, List } from "lucide-react";
 
 /**
  * Menu Props
@@ -95,6 +96,61 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       outline: "2px solid var(--accent)",
       outlineOffset: "-2px",
     },
+  },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [{ key: "label", type: "string", label: "Label", icon: Tag }],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            icon: List,
+            options: [
+              { value: "none", label: "None" },
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "disallowEmptySelection",
+            type: "boolean",
+            label: "Disallow Empty Selection",
+            icon: SquareX,
+          },
+          {
+            key: "selectedKeys",
+            type: "string-array",
+            label: "Selected Keys",
+            placeholder: "key1, key2",
+          },
+          {
+            key: "defaultSelectedKeys",
+            type: "string-array",
+            label: "Default Selected Keys",
+            placeholder: "key1, key2",
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+        ],
+      },
+    ],
   },
 
   render: {

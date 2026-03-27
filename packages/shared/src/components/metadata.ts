@@ -89,8 +89,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "📋",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "MenuEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onAction, onSelectionChange, onClose, onOpenChange
       supportedEvents: [
@@ -341,8 +340,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TailSwatchEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // Custom component: onChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -380,8 +378,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🔍",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "AutocompleteEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onInputChange, onSelectionChange, onFocus, onBlur
       supportedEvents: [
@@ -679,8 +676,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "🗂️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "BreadcrumbsEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onAction, onFocus, onBlur
       supportedEvents: ["onAction", "onFocus", "onBlur"],
@@ -791,8 +787,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "🔲",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "SlotEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -818,8 +813,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Overlays",
     icon: "🪟",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ModalEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onOpenChange
       supportedEvents: ["onOpenChange"],
@@ -1118,8 +1112,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "FieldEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1194,8 +1187,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Buttons",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ActionMenuEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: ["onAction", "onOpenChange"],
     },
@@ -1206,8 +1198,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "AccordionEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1270,8 +1261,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TableViewEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: ["onSelectionChange", "onSortChange", "onAction"],
     },

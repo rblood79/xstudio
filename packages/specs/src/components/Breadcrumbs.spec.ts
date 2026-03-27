@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { PointerOff } from "lucide-react";
 
 /**
  * Breadcrumbs Props
@@ -18,6 +19,7 @@ export interface BreadcrumbsProps {
   variant?: "default" | "accent";
   size?: "S" | "M" | "L";
   separator?: string;
+  isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
   /** ElementSprite에서 주입: 자식 Breadcrumb 텍스트 배열 (Skia 렌더링용) */
   _crumbs?: string[];
@@ -85,6 +87,31 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       outline: "2px solid var(--accent)",
       outlineOffset: "2px",
     },
+  },
+
+  properties: {
+    sections: [
+      {
+        title: "Behavior",
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
+      },
+      {
+        title: "Breadcrumb Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Breadcrumbs",
+            childTag: "Breadcrumb",
+            defaultChildProps: {
+              children: "Breadcrumb",
+              href: "/",
+            },
+            labelProp: "children",
+          },
+        ],
+      },
+    ],
   },
 
   render: {
