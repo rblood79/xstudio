@@ -114,6 +114,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       {
         title: "Design",
         fields: [
+          { type: "size" },
           {
             key: "labelPosition",
             type: "enum",

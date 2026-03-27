@@ -33,8 +33,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Buttons",
     icon: "🔘",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ButtonEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -147,8 +146,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "📝",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TextFieldEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
       supportedEvents: [
@@ -226,8 +224,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "☑️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "CheckboxGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onChange, onFocus, onBlur, onFocusChange
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -259,8 +256,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "🔘",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "RadioGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onChange, onFocus, onBlur, onFocusChange
       supportedEvents: ["onChange", "onFocus", "onBlur"],
