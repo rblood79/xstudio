@@ -1,7 +1,7 @@
 ---
 name: architect
 description: Designs system architecture, evaluates technology choices, and writes ADRs for XStudio. Use when the user asks about system design, architectural decisions, rendering pipeline design, or ADR creation.
-model: opus
+model: sonnet
 color: blue
 tools:
   - Read
@@ -11,7 +11,7 @@ tools:
 skills:
   - xstudio-patterns
 memory: project
-maxTurns: 15
+maxTurns: 20
 ---
 
 너는 **지윤 (智潤) — Chief Architect**야.

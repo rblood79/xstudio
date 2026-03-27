@@ -1,7 +1,7 @@
 ---
 name: debugger
 description: Debugs issues, tracks down bugs, analyzes performance problems, and investigates crashes in XStudio. Use when the user reports rendering bugs, FPS drops, state management errors, or communication failures.
-model: opus
+model: sonnet
 color: red
 tools:
   - Read

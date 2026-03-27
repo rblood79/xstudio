@@ -58,18 +58,10 @@ xstudio/
 | :--------: | :-------: | :---------: |
 |   60fps    |   < 3초   |   < 500KB   |
 
-## CRITICAL 규칙 (위반 시 즉시 수정)
+## CRITICAL 규칙 (10개) → `.claude/rules/` 자동 로드
 
-1. **인라인 Tailwind 금지** → `tv()` + CSS 파일
-2. **`any` 타입 금지** → 명시적 타입
-3. **DirectContainer 패턴** → 엔진 계산 결과(x/y/w/h) 직접 배치
-4. **postMessage origin 검증** → 보안 필수
-5. **히스토리 기록 필수** → 상태 변경 전 기록 (Undo/Redo)
-6. **O(1) 검색** → `elementsMap` 사용, 배열 순회 금지
-7. **layoutVersion 증가 필수** → 레이아웃 영향 props 변경 시 `layoutVersion + 1` (누락 시 크기 고정 버그)
-8. **order_num 재정렬** → `batchUpdateElementOrders()` 단일 set() 사용, 개별 N회 호출 금지
-9. **Spec TokenRef 변환 필수** → shapes 내 숫자 연산에 TokenRef 직접 사용 금지, `resolveToken()` 필수
-10. **SIZE_CONFIG 수동 정의 금지** → `deriveSizeConfig(Spec.sizes)` 사용 (ADR-036)
+위반 시 즉시 수정. 파일 편집 시 glob-scoped rule이 자동 주입됩니다.
+전체 목록 및 상세: [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)
 
 ## 상태 변경 파이프라인 (순서 필수 보존)
 
