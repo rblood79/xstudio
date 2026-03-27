@@ -119,7 +119,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",

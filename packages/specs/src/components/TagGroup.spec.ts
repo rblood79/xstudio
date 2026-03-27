@@ -69,7 +69,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "variant",
@@ -183,11 +183,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             label: "Invalid",
             icon: AlertTriangle,
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           {
             key: "isDisabled",
             type: "boolean",
@@ -212,11 +208,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             label: "Allows Custom Value",
             icon: PenOff,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

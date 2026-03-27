@@ -127,7 +127,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { key: "isEmphasized", type: "boolean" },
           { type: "size" },
@@ -171,18 +171,10 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
             ],
           },
           { key: "isInvalid", type: "boolean" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

@@ -193,7 +193,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {

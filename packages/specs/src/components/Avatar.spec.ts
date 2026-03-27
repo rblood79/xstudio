@@ -114,11 +114,11 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "size" }],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

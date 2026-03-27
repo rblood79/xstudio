@@ -107,7 +107,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { key: "isEmphasized", type: "boolean" },
           { key: "isQuiet", type: "boolean", label: "Quiet" },
@@ -138,18 +138,10 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
           },
           { key: "isRequired", type: "boolean" },
           { key: "isInvalid", type: "boolean" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           { key: "isDisabled", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

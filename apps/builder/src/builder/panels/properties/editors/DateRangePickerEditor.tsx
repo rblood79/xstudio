@@ -64,8 +64,8 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content Section */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -73,10 +73,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           onChange={updateCustomId}
           placeholder="daterangepicker_1"
         />
-      </PropertySection>
 
-      {/* Content Section */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
@@ -108,77 +105,8 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
         />
       </PropertySection>
 
-      {/* State Section */}
-      <PropertySection title="State">
-        <PropertySwitch
-          label="Default to Today"
-          isSelected={Boolean(currentProps.defaultToday)}
-          onChange={(checked) => updateProp("defaultToday", checked)}
-          icon={CalendarDays}
-        />
-
-        <PropertyInput
-          label="Min Value"
-          value={String(currentProps.minValue || "")}
-          onChange={(value) => updateProp("minValue", value || undefined)}
-          placeholder="2024-01-01"
-        />
-
-        <PropertyInput
-          label="Max Value"
-          value={String(currentProps.maxValue || "")}
-          onChange={(value) => updateProp("maxValue", value || undefined)}
-          placeholder="2024-12-31"
-        />
-
-        <PropertySelect
-          label={PROPERTY_LABELS.REQUIRED}
-          value={String(currentProps.necessityIndicator || "")}
-          onChange={(value) => onUpdate(buildRequiredUpdate(value))}
-          options={NECESSITY_INDICATOR_OPTIONS}
-          icon={CheckSquare}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.INVALID}
-          isSelected={Boolean(currentProps.isInvalid)}
-          onChange={(checked) => updateProp("isInvalid", checked)}
-          icon={AlertTriangle}
-        />
-      </PropertySection>
-
-      {/* Behavior Section */}
-      <PropertySection title="Behavior">
-        <PropertySwitch
-          label={PROPERTY_LABELS.DISABLED}
-          isSelected={Boolean(currentProps.isDisabled)}
-          onChange={(checked) => updateProp("isDisabled", checked)}
-          icon={PointerOff}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.READONLY}
-          isSelected={Boolean(currentProps.isReadOnly)}
-          onChange={(checked) => updateProp("isReadOnly", checked)}
-          icon={PenOff}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.AUTO_FOCUS}
-          isSelected={Boolean(currentProps.autoFocus)}
-          onChange={(checked) => updateProp("autoFocus", checked)}
-          icon={Focus}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.SHOULD_CLOSE_ON_SELECT}
-          isSelected={currentProps.shouldCloseOnSelect !== false}
-          onChange={(checked) => updateProp("shouldCloseOnSelect", checked)}
-        />
-      </PropertySection>
-
-      {/* Design Section — @sync DatePickerEditor */}
-      <PropertySection title="Design">
+      {/* Appearance Section — @sync DatePickerEditor */}
+      <PropertySection title="Appearance">
         <PropertySelect
           label={PROPERTY_LABELS.VARIANT}
           value={String(currentProps.variant || "default")}
@@ -252,8 +180,71 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
         />
       </PropertySection>
 
-      {/* Form Integration Section — DateRangePicker: startName/endName */}
-      <PropertySection title="Form Integration">
+      {/* State Section */}
+      <PropertySection title="State">
+        <PropertySwitch
+          label="Default to Today"
+          isSelected={Boolean(currentProps.defaultToday)}
+          onChange={(checked) => updateProp("defaultToday", checked)}
+          icon={CalendarDays}
+        />
+
+        <PropertyInput
+          label="Min Value"
+          value={String(currentProps.minValue || "")}
+          onChange={(value) => updateProp("minValue", value || undefined)}
+          placeholder="2024-01-01"
+        />
+
+        <PropertyInput
+          label="Max Value"
+          value={String(currentProps.maxValue || "")}
+          onChange={(value) => updateProp("maxValue", value || undefined)}
+          placeholder="2024-12-31"
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.REQUIRED}
+          value={String(currentProps.necessityIndicator || "")}
+          onChange={(value) => onUpdate(buildRequiredUpdate(value))}
+          options={NECESSITY_INDICATOR_OPTIONS}
+          icon={CheckSquare}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.INVALID}
+          isSelected={Boolean(currentProps.isInvalid)}
+          onChange={(checked) => updateProp("isInvalid", checked)}
+          icon={AlertTriangle}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={(checked) => updateProp("isDisabled", checked)}
+          icon={PointerOff}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.READONLY}
+          isSelected={Boolean(currentProps.isReadOnly)}
+          onChange={(checked) => updateProp("isReadOnly", checked)}
+          icon={PenOff}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.AUTO_FOCUS}
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={(checked) => updateProp("autoFocus", checked)}
+          icon={Focus}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.SHOULD_CLOSE_ON_SELECT}
+          isSelected={currentProps.shouldCloseOnSelect !== false}
+          onChange={(checked) => updateProp("shouldCloseOnSelect", checked)}
+        />
+
         <PropertyInput
           label="Start Name"
           value={String(currentProps.startName || "")}

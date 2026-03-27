@@ -63,7 +63,7 @@ export const TailSwatchSpec: ComponentSpec<TailSwatchProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],

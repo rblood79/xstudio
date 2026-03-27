@@ -103,7 +103,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "labelPosition",
@@ -190,7 +190,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "autoFocus",
@@ -210,11 +210,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             label: "Read Only",
             icon: PenOff,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
           {
             key: "name",
             type: "string",

@@ -165,18 +165,15 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
   // ToggleButtonGroup 컴포넌트 전체 설정 UI
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content Section */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
           elementId={elementId}
           placeholder="togglebuttongroup_1"
         />
-      </PropertySection>
 
-      {/* Content Section */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
@@ -199,8 +196,8 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
         />
       </PropertySection>
 
-      {/* Design Section */}
-      <PropertySection title="Design">
+      {/* Appearance Section */}
+      <PropertySection title="Appearance">
         <PropertySwitch
           label="Emphasized"
           isSelected={Boolean(currentProps.isEmphasized)}
@@ -301,10 +298,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
           onChange={(checked) => updateProp("isInvalid", checked)}
           icon={AlertTriangle}
         />
-      </PropertySection>
 
-      {/* Behavior Section */}
-      <PropertySection title="Behavior">
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}
@@ -318,10 +312,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
           onChange={(checked) => updateProp("autoFocus", checked)}
           icon={Focus}
         />
-      </PropertySection>
 
-      {/* Form Integration Section */}
-      <PropertySection title="Form Integration">
         <PropertyInput
           label={PROPERTY_LABELS.NAME}
           value={String(currentProps.name || "")}

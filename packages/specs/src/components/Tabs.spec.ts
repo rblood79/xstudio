@@ -48,7 +48,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "density",
@@ -79,7 +79,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "isDisabled",

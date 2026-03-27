@@ -64,8 +64,8 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -73,10 +73,6 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
           onChange={updateCustomId}
           placeholder="timefield_1"
         />
-      </PropertySection>
-
-      {/* Content */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
@@ -108,8 +104,8 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
         />
       </PropertySection>
 
-      {/* Design */}
-      <PropertySection title="Design">
+      {/* Appearance */}
+      <PropertySection title="Appearance">
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
           value={String(currentProps.size || "md")}
@@ -165,8 +161,8 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
         />
       </PropertySection>
 
-      {/* Internationalization */}
-      <PropertySection title="Internationalization">
+      {/* Locale */}
+      <PropertySection title="Locale">
         <PropertySelect
           label={PROPERTY_LABELS.LOCALE}
           value={String(currentProps.locale || "")}
@@ -255,10 +251,7 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
           onChange={(checked) => updateProp("autoFocus", checked)}
           icon={Focus}
         />
-      </PropertySection>
 
-      {/* Form Integration */}
-      <PropertySection title="Form Integration">
         <PropertyInput
           label={PROPERTY_LABELS.NAME}
           value={String(currentProps.name || "")}

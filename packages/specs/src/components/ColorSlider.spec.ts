@@ -135,7 +135,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

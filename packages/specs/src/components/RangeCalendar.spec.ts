@@ -42,7 +42,7 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
@@ -101,11 +101,6 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
             placeholder: "2024-12-31",
           },
           { key: "errorMessage", type: "string", label: "Error Message" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
           {

@@ -185,11 +185,8 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isSelected", type: "boolean" }],
-      },
-      {
-        title: "Behavior",
         fields: [
+          { key: "isSelected", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },

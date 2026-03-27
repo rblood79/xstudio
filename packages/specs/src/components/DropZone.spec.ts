@@ -234,11 +234,11 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

@@ -47,18 +47,15 @@ export const TabEditor = memo(function TabEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content Section */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
           elementId={elementId}
           placeholder="tab_1"
         />
-      </PropertySection>
 
-      {/* Content Section */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.TAB_TITLE}
           value={String(currentProps.title || "")}
@@ -67,8 +64,8 @@ export const TabEditor = memo(function TabEditor({
         />
       </PropertySection>
 
-      {/* Behavior Section */}
-      <PropertySection title="Behavior">
+      {/* State Section */}
+      <PropertySection title="State">
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}
@@ -77,8 +74,8 @@ export const TabEditor = memo(function TabEditor({
         />
       </PropertySection>
 
-      {/* Design Section */}
-      <PropertySection title="Design">
+      {/* Appearance Section */}
+      <PropertySection title="Appearance">
         <PropertySelect
           label={PROPERTY_LABELS.VARIANT}
           value={String(currentProps.variant || "default")}

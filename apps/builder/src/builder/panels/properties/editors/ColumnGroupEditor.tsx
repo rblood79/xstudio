@@ -1,11 +1,19 @@
 import { memo, useMemo } from "react";
-import { PropertyInput, PropertyCustomId, PropertySection } from '../../../components';
-import { PropertyEditorProps } from '../types/editorTypes';
-import { useStore } from '../../../stores';
-import { Type } from 'lucide-react';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
+import {
+  PropertyInput,
+  PropertyCustomId,
+  PropertySection,
+} from "../../../components";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { useStore } from "../../../stores";
+import { Type } from "lucide-react";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 
-export const ColumnGroupEditor = memo(function ColumnGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const ColumnGroupEditor = memo(function ColumnGroupEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
   // Get customId from element in store
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
@@ -29,8 +37,7 @@ export const ColumnGroupEditor = memo(function ColumnGroupEditor({ elementId, cu
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}

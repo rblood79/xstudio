@@ -61,7 +61,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "variant" },
           { type: "size" },
@@ -172,11 +172,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             ],
           },
           { key: "isInvalid", type: "boolean" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
@@ -185,11 +181,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             type: "boolean",
             label: "Close On Select",
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "startName",
             type: "string",

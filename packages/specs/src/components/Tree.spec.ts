@@ -143,11 +143,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
               defaultSelectedKeys: parseCsvList(value),
             }),
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           {
             key: "isDisabled",
             type: "boolean",

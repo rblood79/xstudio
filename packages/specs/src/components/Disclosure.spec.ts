@@ -271,7 +271,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
@@ -287,11 +287,9 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
             type: "boolean",
             label: "Expanded (Controlled)",
           },
+
+          { key: "isDisabled", type: "boolean" },
         ],
-      },
-      {
-        title: "Behavior",
-        fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],
   },

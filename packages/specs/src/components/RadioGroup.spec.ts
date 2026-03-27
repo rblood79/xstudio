@@ -127,7 +127,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { key: "isEmphasized", type: "boolean" },
           { type: "size" },
@@ -171,18 +171,8 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
             ],
           },
           { key: "isInvalid", type: "boolean" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
           {
             key: "name",
             type: "string",

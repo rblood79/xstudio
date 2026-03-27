@@ -77,7 +77,7 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",
@@ -109,7 +109,7 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "target",

@@ -114,7 +114,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "labelPosition",
@@ -129,7 +129,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         ],
       },
       {
-        title: "Internationalization",
+        title: "Locale",
         fields: [
           {
             key: "locale",
@@ -282,7 +282,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "autoFocus",
@@ -308,11 +308,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             label: "Wheel Disabled",
             icon: MousePointerClick,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

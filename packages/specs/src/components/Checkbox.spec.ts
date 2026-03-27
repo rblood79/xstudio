@@ -158,7 +158,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
         fields: [{ key: "children", type: "string", label: "Label" }],
       },
       {
-        title: "Design",
+        title: "Appearance",
         visibleWhen: { parentTagNot: "CheckboxGroup" },
         fields: [{ key: "isEmphasized", type: "boolean" }, { type: "size" }],
       },
@@ -169,19 +169,11 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           { key: "isIndeterminate", type: "boolean" },
           { key: "isRequired", type: "boolean" },
           { key: "isInvalid", type: "boolean" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           { key: "autoFocus", type: "boolean" },
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

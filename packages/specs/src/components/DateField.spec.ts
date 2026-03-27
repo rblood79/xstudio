@@ -99,7 +99,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -145,7 +145,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
         ],
       },
       {
-        title: "Internationalization",
+        title: "Locale",
         fields: [
           {
             key: "locale",
@@ -198,11 +198,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

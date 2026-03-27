@@ -22,7 +22,7 @@ export const AccordionSpec: ComponentSpec<AccordionProps> = {
   properties: {
     sections: [
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "allowsMultipleExpanded",

@@ -129,7 +129,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

@@ -53,7 +53,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "isDismissable",

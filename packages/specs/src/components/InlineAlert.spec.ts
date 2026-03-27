@@ -136,7 +136,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "variant" }],
       },
     ],

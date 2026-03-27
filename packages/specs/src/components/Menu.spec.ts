@@ -136,11 +136,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             label: "Default Selected Keys",
             placeholder: "key1, key2",
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           {
             key: "autoFocus",

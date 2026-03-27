@@ -96,7 +96,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -140,7 +140,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         ],
       },
       {
-        title: "Internationalization",
+        title: "Locale",
         fields: [
           {
             key: "locale",
@@ -190,11 +190,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

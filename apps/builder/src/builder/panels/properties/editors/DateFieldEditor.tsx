@@ -65,8 +65,8 @@ export const DateFieldEditor = memo(function DateFieldEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -74,10 +74,7 @@ export const DateFieldEditor = memo(function DateFieldEditor({
           onChange={updateCustomId}
           placeholder="datefield_1"
         />
-      </PropertySection>
 
-      {/* Content */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
@@ -109,8 +106,8 @@ export const DateFieldEditor = memo(function DateFieldEditor({
         />
       </PropertySection>
 
-      {/* Design */}
-      <PropertySection title="Design">
+      {/* Appearance */}
+      <PropertySection title="Appearance">
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
           value={String(currentProps.size || "md")}
@@ -167,8 +164,8 @@ export const DateFieldEditor = memo(function DateFieldEditor({
         />
       </PropertySection>
 
-      {/* Internationalization */}
-      <PropertySection title="Internationalization">
+      {/* Locale */}
+      <PropertySection title="Locale">
         <PropertySelect
           label={PROPERTY_LABELS.LOCALE}
           value={String(currentProps.locale || "")}
@@ -277,10 +274,7 @@ export const DateFieldEditor = memo(function DateFieldEditor({
           onChange={(checked) => updateProp("autoFocus", checked)}
           icon={Focus}
         />
-      </PropertySection>
 
-      {/* Form Integration */}
-      <PropertySection title="Form Integration">
         <PropertyInput
           label={PROPERTY_LABELS.NAME}
           value={String(currentProps.name || "")}

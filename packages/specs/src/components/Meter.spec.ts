@@ -118,7 +118,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",

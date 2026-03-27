@@ -50,8 +50,7 @@ export const CellEditor = memo(function CellEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      <PropertySection title={PROPERTY_LABELS.CELL_CONTENT}>
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -59,9 +58,6 @@ export const CellEditor = memo(function CellEditor({
           onChange={updateCustomId}
           placeholder="cell_1"
         />
-      </PropertySection>
-
-      <PropertySection title={PROPERTY_LABELS.CELL_CONTENT}>
         {/* Cell Content */}
         <PropertyInput
           label={PROPERTY_LABELS.CHILDREN}

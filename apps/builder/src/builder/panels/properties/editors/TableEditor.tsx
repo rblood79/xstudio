@@ -285,8 +285,8 @@ export const TableEditor = memo(
 
     return (
       <>
-        {/* Basic */}
-        <PropertySection title="Basic">
+        {/* Configuration */}
+        <PropertySection title="Configuration">
           <PropertyCustomId
             label="ID"
             value={customId}
@@ -294,10 +294,7 @@ export const TableEditor = memo(
             onChange={updateCustomId}
             placeholder="table_1"
           />
-        </PropertySection>
 
-        {/* Configuration */}
-        <PropertySection title="Configuration">
           {/* Selection Mode */}
           <PropertySelect
             label={PROPERTY_LABELS.SELECTION_MODE}

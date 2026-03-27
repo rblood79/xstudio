@@ -83,7 +83,7 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "layout",

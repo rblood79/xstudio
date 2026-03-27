@@ -138,11 +138,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             label: "Invalid",
             icon: AlertTriangle,
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           {
             key: "isDisabled",
             type: "boolean",
@@ -161,10 +157,37 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             label: "Auto Focus",
             icon: Focus,
           },
+
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            placeholder: "brandColor",
+            emptyToUndefined: true,
+            icon: Tag,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            placeholder: "form-id",
+            emptyToUndefined: true,
+            icon: Tag,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",
@@ -231,37 +254,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "rgb", label: "RGB" },
               { value: "hsl", label: "HSL" },
               { value: "hsb", label: "HSB" },
-            ],
-          },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            placeholder: "brandColor",
-            emptyToUndefined: true,
-            icon: Tag,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            placeholder: "form-id",
-            emptyToUndefined: true,
-            icon: Tag,
-          },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: CheckSquare,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
             ],
           },
         ],

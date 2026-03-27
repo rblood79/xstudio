@@ -60,7 +60,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
   properties: {
     sections: [
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "autoFocus",

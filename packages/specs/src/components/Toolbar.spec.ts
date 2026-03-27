@@ -150,7 +150,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "orientation",

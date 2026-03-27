@@ -117,7 +117,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -221,11 +221,6 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "label", label: "Label (required/optional)" },
             ],
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           {
             key: "isDisabled",
             type: "boolean",
@@ -244,11 +239,6 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             label: "Auto Focus",
             icon: Focus,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
           {
             key: "name",
             type: "string",

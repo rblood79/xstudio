@@ -124,11 +124,11 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

@@ -140,7 +140,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

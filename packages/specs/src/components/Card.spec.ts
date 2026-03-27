@@ -163,7 +163,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "variant" },
           {

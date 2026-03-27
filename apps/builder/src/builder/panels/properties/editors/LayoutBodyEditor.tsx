@@ -13,7 +13,11 @@
 
 import { memo, useCallback, useMemo } from "react";
 import { Layout } from "lucide-react";
-import { PropertyCustomId, PropertyInput, PropertySection } from "../../../components";
+import {
+  PropertyCustomId,
+  PropertyInput,
+  PropertySection,
+} from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { LayoutPresetSelector } from "./LayoutPresetSelector";
@@ -39,25 +43,18 @@ export const LayoutBodyEditor = memo(
       (value: string) => {
         onUpdate({ className: value || undefined });
       },
-      [onUpdate]
+      [onUpdate],
     );
 
     return (
       <>
-        {/* Basic Section */}
-        <PropertySection title="Basic">
-          <PropertyCustomId
-            label="ID"
-            value={customId}
-            elementId={elementId}
-            placeholder="layout-body"
-          />
-        </PropertySection>
-
         {/* ⭐ Layout 전용: 프리셋 선택기 (Slot 자동 생성) */}
         {layoutId && (
           <PropertySection title="Layout Preset">
-            <LayoutPresetSelector layoutId={layoutId} bodyElementId={elementId} />
+            <LayoutPresetSelector
+              layoutId={layoutId}
+              bodyElementId={elementId}
+            />
           </PropertySection>
         )}
 
@@ -66,6 +63,13 @@ export const LayoutBodyEditor = memo(
 
         {/* Layout Section */}
         <PropertySection title="Layout">
+          <PropertyCustomId
+            label="ID"
+            value={customId}
+            elementId={elementId}
+            placeholder="layout-body"
+          />
+
           <PropertyInput
             label="Class Name"
             value={String(currentProps.className || "")}
@@ -83,7 +87,7 @@ export const LayoutBodyEditor = memo(
       JSON.stringify(prevProps.currentProps) ===
         JSON.stringify(nextProps.currentProps)
     );
-  }
+  },
 );
 
 export default LayoutBodyEditor;

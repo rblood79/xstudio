@@ -99,11 +99,11 @@ export const AvatarGroupSpec: ComponentSpec<AvatarGroupProps> = {
         fields: [{ key: "label", type: "string", label: "Label" }],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "size" }],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

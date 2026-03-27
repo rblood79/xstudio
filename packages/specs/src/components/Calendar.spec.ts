@@ -117,7 +117,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
@@ -163,11 +163,6 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           },
           { key: "isInvalid", type: "boolean" },
           { key: "errorMessage", type: "string", label: "Error Message" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
           { key: "autoFocus", type: "boolean" },

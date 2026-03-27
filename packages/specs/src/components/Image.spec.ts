@@ -192,7 +192,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "objectFit",
@@ -208,7 +208,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

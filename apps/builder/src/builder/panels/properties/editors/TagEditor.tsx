@@ -179,16 +179,6 @@ export const TagEditor = memo(function TagEditor({
   // Field 자식이 없으면 기존 정적 아이템 편집 UI
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
-        <PropertyCustomId
-          label="ID"
-          value={customId}
-          elementId={elementId}
-          placeholder="tag_1"
-        />
-      </PropertySection>
-
       <PropertySection title="Static Item Properties">
         <p className="section-overview-help">
           💡 This is a static Tag. Add Field elements to enable dynamic data
@@ -198,6 +188,13 @@ export const TagEditor = memo(function TagEditor({
 
       {/* Content Section */}
       <PropertySection title="Content">
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="tag_1"
+        />
+
         <PropertyInput
           label={PROPERTY_LABELS.TEXT}
           value={String(currentProps.children || "")}
@@ -214,8 +211,8 @@ export const TagEditor = memo(function TagEditor({
         />
       </PropertySection>
 
-      {/* Behavior Section */}
-      <PropertySection title="Behavior">
+      {/* State Section */}
+      <PropertySection title="State">
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}

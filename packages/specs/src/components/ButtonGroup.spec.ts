@@ -101,7 +101,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -126,7 +126,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

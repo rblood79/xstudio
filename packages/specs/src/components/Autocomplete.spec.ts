@@ -47,7 +47,7 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           {

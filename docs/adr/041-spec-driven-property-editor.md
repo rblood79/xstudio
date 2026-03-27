@@ -169,18 +169,24 @@ interface ComponentSpec<Props> {
 
 interface PropertySchema {
   sections: SectionDef[];
-  /** false로 설정 시 Basic 섹션(PropertyCustomId) 자동 생성을 억제. 기본값: true */
-  includeBasicSection?: boolean;
 }
 
 interface SectionDef {
-  title: string; // "Design", "Content", "Behavior"
+  title: string; // "Content", "Appearance", "State", "Locale" (S2 표준)
   fields: FieldDef[];
   visibleWhen?: VisibilityCondition; // 섹션 전체 조건부 표시
 }
+
+/** S2 기준 표준 섹션 타이틀 */
+const SECTION_TITLES = {
+  CONTENT: "Content", // customId, label, description, placeholder, children, icon
+  APPEARANCE: "Appearance", // size, variant, fillStyle, orientation, density
+  STATE: "State", // isDisabled, isReadOnly, isRequired, isInvalid, isSelected, defaultValue, autoFocus, selectionMode, name, validationBehavior, min/max
+  LOCALE: "Locale", // locale, calendarSystem, hourCycle (조건부)
+} as const;
 ```
 
-> **Built-in Basic 섹션**: 101/103개 에디터가 `PropertyCustomId`를 포함하는 "Basic" 섹션을 동일하게 사용한다. GenericPropertyEditor는 `includeBasicSection !== false`일 때 자동으로 "Basic" 섹션(PropertyCustomId)을 최상단에 렌더링한다. 개별 Spec의 `properties.sections`에 중복 정의할 필요 없다. `PropertyCustomId`의 placeholder는 `spec.name.toLowerCase() + "_1"` (예: `"button_1"`, `"badge_1"`)로 자동 생성한다.
+> **Built-in CustomId**: GenericPropertyEditor는 첫 번째 "Content" 섹션 상단에 `PropertyCustomId`를 자동 삽입한다. Content 섹션이 없으면 자체 생성한다. `PropertyCustomId`의 placeholder는 `spec.name.toLowerCase() + "_1"` (예: `"button_1"`, `"badge_1"`)로 자동 생성한다.
 
 ### FieldDef 공통 속성
 

@@ -73,7 +73,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",
@@ -92,7 +92,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "isDisabled",

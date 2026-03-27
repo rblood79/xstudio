@@ -46,22 +46,30 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
     evaluateVisibility(section.visibleWhen, currentProps, parentTag),
   );
 
+  const customIdField = (
+    <PropertyCustomId
+      label="ID"
+      value={customId}
+      elementId={elementId}
+      onChange={updateCustomId}
+      placeholder={`${spec.name.toLowerCase()}_1`}
+    />
+  );
+
+  // customId를 첫 번째 Content 섹션 상단에 삽입
+  const firstContentIndex = visibleSections.findIndex(
+    (s) => s.title === "Content",
+  );
+
   return (
     <>
-      {spec.properties?.includeBasicSection !== false && (
-        <PropertySection title="Basic">
-          <PropertyCustomId
-            label="ID"
-            value={customId}
-            elementId={elementId}
-            onChange={updateCustomId}
-            placeholder={`${spec.name.toLowerCase()}_1`}
-          />
-        </PropertySection>
+      {firstContentIndex === -1 && (
+        <PropertySection title="Content">{customIdField}</PropertySection>
       )}
 
-      {visibleSections.map((section) => (
+      {visibleSections.map((section, sectionIndex) => (
         <PropertySection key={section.title} title={section.title}>
+          {sectionIndex === firstContentIndex && customIdField}
           {section.fields
             .filter((field) =>
               evaluateVisibility(field.visibleWhen, currentProps, parentTag),

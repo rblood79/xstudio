@@ -112,7 +112,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -238,7 +238,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "autoFocus",
@@ -270,11 +270,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             label: "Auto Correct",
             icon: SpellCheck2,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

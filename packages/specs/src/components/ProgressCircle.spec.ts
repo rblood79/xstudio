@@ -237,7 +237,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
         fields: [{ key: "value", type: "number", label: "Value" }],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -254,7 +254,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "isIndeterminate", type: "boolean" },
           { key: "isDisabled", type: "boolean" },

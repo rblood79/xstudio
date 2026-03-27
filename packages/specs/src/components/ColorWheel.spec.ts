@@ -102,7 +102,7 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [{ key: "isDisabled", type: "boolean" }],
       },
     ],

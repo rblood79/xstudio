@@ -35,18 +35,15 @@ export const PanelEditor = memo(function PanelEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content Section */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
           elementId={elementId}
           placeholder="panel_1"
         />
-      </PropertySection>
 
-      {/* Content Section */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.TITLE}
           value={String(currentProps.title || "")}
@@ -55,8 +52,8 @@ export const PanelEditor = memo(function PanelEditor({
         />
       </PropertySection>
 
-      {/* Design Section */}
-      <PropertySection title="Design">
+      {/* Appearance Section */}
+      <PropertySection title="Appearance">
         <PropertySelect
           label={PROPERTY_LABELS.STYLE}
           value={String(currentProps.variant || "card")}

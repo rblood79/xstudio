@@ -101,8 +101,8 @@ export const DataTableEditor = memo(function DataTableEditor({
 
   return (
     <>
-      {/* Basic Section */}
-      <PropertySection title="Basic">
+      {/* DataTable Settings Section */}
+      <PropertySection title="DataTable Settings" icon={Database}>
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -110,10 +110,7 @@ export const DataTableEditor = memo(function DataTableEditor({
           onChange={updateCustomId}
           placeholder="datatable_1"
         />
-      </PropertySection>
 
-      {/* DataTable Settings Section */}
-      <PropertySection title="DataTable Settings" icon={Database}>
         <PropertyInput
           label="DataTable ID"
           value={String(currentProps.id || "")}

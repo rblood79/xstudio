@@ -169,11 +169,6 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             label: "Required",
             icon: CheckSquare,
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           {
             key: "isDisabled",
             type: "boolean",
@@ -198,11 +193,6 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             label: "Render Empty State",
             icon: Square,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
           {
             key: "name",
             type: "string",

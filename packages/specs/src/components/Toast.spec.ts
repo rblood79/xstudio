@@ -72,7 +72,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "timeout",
@@ -89,7 +89,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "variant",

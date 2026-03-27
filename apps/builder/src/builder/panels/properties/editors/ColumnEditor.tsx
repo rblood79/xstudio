@@ -53,7 +53,6 @@ export const ColumnEditor = memo(function ColumnEditor({
   return (
     <div className="component-props">
       <PropertySection title={PROPERTY_LABELS.COLUMN_CONTENT}>
-        {/* Custom ID */}
         <PropertyCustomId
           label="ID"
           value={customId}

@@ -144,7 +144,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   properties: {
     sections: [
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "allowsMultipleExpanded",

@@ -38,7 +38,7 @@ export const ActionMenuSpec: ComponentSpec<ActionMenuProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -54,7 +54,7 @@ export const ActionMenuSpec: ComponentSpec<ActionMenuProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "isQuiet", type: "boolean", label: "Quiet", icon: ToggleLeft },
           { key: "isDisabled", type: "boolean" },

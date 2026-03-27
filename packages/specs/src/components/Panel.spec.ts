@@ -106,7 +106,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
         fields: [{ key: "title", type: "string", label: "Title" }],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "variant" },
           {

@@ -92,16 +92,14 @@ export const InlineAlertEditor = memo(function InlineAlertEditor({
 
   return (
     <>
-      <PropertySection title="Basic">
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
           elementId={elementId}
           placeholder="inline_alert_1"
         />
-      </PropertySection>
 
-      <PropertySection title="Content">
         <PropertyInput
           label="Heading"
           value={headingValue}
@@ -120,7 +118,7 @@ export const InlineAlertEditor = memo(function InlineAlertEditor({
         />
       </PropertySection>
 
-      <PropertySection title="Design">
+      <PropertySection title="Appearance">
         <PropertySelect
           label={PROPERTY_LABELS.VARIANT}
           value={String(currentProps.variant || "neutral")}

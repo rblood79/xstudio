@@ -250,7 +250,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "variant" },
           { type: "size" },
@@ -352,11 +352,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             ],
           },
           { key: "isInvalid", type: "boolean" },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
@@ -365,11 +361,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             type: "boolean",
             label: "Close On Select",
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

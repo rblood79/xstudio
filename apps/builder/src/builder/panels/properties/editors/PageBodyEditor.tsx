@@ -12,7 +12,11 @@
 
 import { memo, useCallback, useMemo } from "react";
 import { Layout } from "lucide-react";
-import { PropertyCustomId, PropertyInput, PropertySection } from "../../../components";
+import {
+  PropertyCustomId,
+  PropertyInput,
+  PropertySection,
+} from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { PageLayoutSelector } from "./PageLayoutSelector";
@@ -39,21 +43,11 @@ export const PageBodyEditor = memo(
       (value: string) => {
         onUpdate({ className: value || undefined });
       },
-      [onUpdate]
+      [onUpdate],
     );
 
     return (
       <>
-        {/* Basic Section */}
-        <PropertySection title="Basic">
-          <PropertyCustomId
-            label="ID"
-            value={customId}
-            elementId={elementId}
-            placeholder="body"
-          />
-        </PropertySection>
-
         {/* ⭐ Page 전용: Layout 선택 */}
         {currentPageId && <PageLayoutSelector pageId={currentPageId} />}
 
@@ -62,6 +56,13 @@ export const PageBodyEditor = memo(
 
         {/* Layout Section */}
         <PropertySection title="Layout">
+          <PropertyCustomId
+            label="ID"
+            value={customId}
+            elementId={elementId}
+            placeholder="body"
+          />
+
           <PropertyInput
             label="Class Name"
             value={String(currentProps.className || "")}
@@ -79,7 +80,7 @@ export const PageBodyEditor = memo(
       JSON.stringify(prevProps.currentProps) ===
         JSON.stringify(nextProps.currentProps)
     );
-  }
+  },
 );
 
 export default PageBodyEditor;

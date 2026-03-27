@@ -74,7 +74,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",
@@ -106,7 +106,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "isDot",

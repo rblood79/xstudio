@@ -78,7 +78,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",
@@ -139,7 +139,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           {
             key: "type",

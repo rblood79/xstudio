@@ -107,7 +107,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "size" },
           {
@@ -141,16 +141,12 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "autoFocus", type: "boolean" },
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

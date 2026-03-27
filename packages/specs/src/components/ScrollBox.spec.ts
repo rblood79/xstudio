@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { resolveStateColors } from '../utils/stateEffect';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { resolveStateColors } from "../utils/stateEffect";
 
 /**
  * ScrollBox Props
  */
 export interface ScrollBoxProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  scrollDirection?: 'vertical' | 'horizontal' | 'both';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  scrollDirection?: "vertical" | "horizontal" | "both";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -24,27 +24,27 @@ export interface ScrollBoxProps {
  * ScrollBox Component Spec
  */
 export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
-  name: 'ScrollBox',
-  description: 'React Aria 기반 스크롤 가능한 컨테이너 컴포넌트',
-  element: 'div',
+  name: "ScrollBox",
+  description: "React Aria 기반 스크롤 가능한 컨테이너 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -53,58 +53,67 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
       height: 120,
       paddingX: 8,
       paddingY: 8,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
     },
     md: {
       height: 200,
       paddingX: 12,
       paddingY: 12,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
     },
     lg: {
       height: 320,
       paddingX: 16,
       paddingY: 16,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
     },
   },
 
   states: {
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
-      const width = 'auto' as const;
+      const width = "auto" as const;
       const height = size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
-      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
-      const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.border}' as TokenRef));
+      const bgColor =
+        props.style?.backgroundColor ??
+        resolveStateColors(variant, state).background;
+      const borderColor =
+        props.style?.borderColor ??
+        (variant.border || ("{color.border}" as TokenRef));
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -114,21 +123,21 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
         },
         // 세로 스크롤바 트랙
         {
-          type: 'roundRect' as const,
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: 6,
           height: height * 0.3,
           radius: 3,
-          fill: '{color.neutral-subdued}' as TokenRef,
+          fill: "{color.neutral-subdued}" as TokenRef,
           fillAlpha: 0.3,
         },
       ];
@@ -139,7 +148,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
 
       // 스크롤 콘텐츠 컨테이너
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
         width,
@@ -147,8 +156,8 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
         children: [],
         clip: true,
         layout: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           padding: size.paddingY,
         },
       });
@@ -159,13 +168,17 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
     react: (props) => ({
       tabIndex: 0,
       style: {
-        overflowX: props.scrollDirection === 'horizontal' || props.scrollDirection === 'both' ? 'auto' : 'hidden',
-        overflowY: props.scrollDirection === 'horizontal' ? 'hidden' : 'auto',
+        overflowX:
+          props.scrollDirection === "horizontal" ||
+          props.scrollDirection === "both"
+            ? "auto"
+            : "hidden",
+        overflowY: props.scrollDirection === "horizontal" ? "hidden" : "auto",
       },
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

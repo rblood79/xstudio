@@ -46,7 +46,7 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             type: "variant",

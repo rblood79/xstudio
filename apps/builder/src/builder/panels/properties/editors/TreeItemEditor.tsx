@@ -104,8 +104,8 @@ export const TreeItemEditor = memo(function TreeItemEditor({
 
   return (
     <>
-      {/* Basic */}
-      <PropertySection title="Basic">
+      {/* Content Section */}
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -113,10 +113,7 @@ export const TreeItemEditor = memo(function TreeItemEditor({
           onChange={updateCustomId}
           placeholder="treeitem_1"
         />
-      </PropertySection>
 
-      {/* Content Section */}
-      <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.TITLE}
           value={String(currentProps.title || "")}
@@ -147,8 +144,8 @@ export const TreeItemEditor = memo(function TreeItemEditor({
         />
       </PropertySection>
 
-      {/* Behavior Section */}
-      <PropertySection title="Behavior">
+      {/* State Section */}
+      <PropertySection title="State">
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}

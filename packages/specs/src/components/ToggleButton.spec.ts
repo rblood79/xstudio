@@ -151,7 +151,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         fields: [{ key: "children", type: "string", label: "Label" }],
       },
       {
-        title: "Design",
+        title: "Appearance",
         visibleWhen: { parentTagNot: "ToggleButtonGroup" },
         fields: [
           { key: "isEmphasized", type: "boolean" },
@@ -161,19 +161,12 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isSelected", type: "boolean" }],
-      },
-      {
-        title: "Behavior",
         fields: [
+          { key: "isSelected", type: "boolean" },
           { key: "autoFocus", type: "boolean" },
           { key: "isDisabled", type: "boolean" },
           { key: "isReadOnly", type: "boolean" },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

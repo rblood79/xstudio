@@ -112,7 +112,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "variant",
@@ -195,11 +195,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               };
             },
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
+
           {
             key: "isDisabled",
             type: "boolean",
@@ -218,11 +214,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             label: "Auto Focus",
             icon: Focus,
           },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
+
           {
             key: "name",
             type: "string",

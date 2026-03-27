@@ -179,7 +179,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         fields: [{ key: "label", type: "string", label: "Label", icon: Type }],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "variant" },
           { type: "size" },
@@ -268,12 +268,9 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         ],
       },
       {
-        title: "Behavior",
-        fields: [{ key: "isDisabled", type: "boolean" }],
-      },
-      {
-        title: "Form Integration",
+        title: "State",
         fields: [
+          { key: "isDisabled", type: "boolean" },
           {
             key: "name",
             type: "string",

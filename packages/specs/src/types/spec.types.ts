@@ -131,9 +131,16 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
 
 // ─── ADR-041: PropertySchema 타입 ───────────────────────────────────────────
 
+/** S2 기준 표준 섹션 타이틀 (도메인 고유 섹션은 자유 문자열) */
+export const SECTION_TITLES = {
+  CONTENT: "Content",
+  APPEARANCE: "Appearance",
+  STATE: "State",
+  LOCALE: "Locale",
+} as const;
+
 export interface PropertySchema {
   sections: SectionDef[];
-  includeBasicSection?: boolean;
 }
 
 export interface SectionDef {

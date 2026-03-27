@@ -84,7 +84,7 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
   properties: {
     sections: [
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "density",

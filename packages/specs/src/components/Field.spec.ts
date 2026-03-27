@@ -45,7 +45,7 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "visible", type: "boolean", label: "Visible", icon: Eye },
           {
@@ -57,7 +57,7 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           {
             key: "type",

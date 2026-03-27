@@ -123,11 +123,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             label: "Required",
             icon: CheckSquare,
           },
-        ],
-      },
-      {
-        title: "Behavior",
-        fields: [
           {
             key: "isDisabled",
             type: "boolean",
@@ -139,6 +134,24 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             type: "boolean",
             label: "Auto Focus",
             icon: Focus,
+          },
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: FormInput,
+            emptyToUndefined: true,
+            placeholder: "listbox-name",
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: FileText,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
           },
         ],
       },
@@ -164,29 +177,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             label: "Overscan",
             icon: Rows,
             visibleWhen: { key: "enableVirtualization", equals: true },
-          },
-        ],
-      },
-      {
-        title: "Form Integration",
-        fields: [
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-            placeholder: "listbox-name",
-          },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: FileText,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
           },
         ],
       },
