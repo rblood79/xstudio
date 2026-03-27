@@ -19,6 +19,7 @@ import {
   PenOff,
   FormInput,
   FileText,
+  Layout,
 } from "lucide-react";
 
 /**
@@ -42,6 +43,7 @@ export interface ComboBoxProps {
   autoFocus?: boolean;
   allowsCustomValue?: boolean;
   validationBehavior?: "native" | "aria";
+  labelPosition?: "top" | "side";
   necessityIndicator?: "icon" | "label";
   /** 트리거 아이콘 이름 */
   iconName?: string;
@@ -69,6 +71,21 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
   properties: {
     sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
       {
         title: "State",
         fields: [

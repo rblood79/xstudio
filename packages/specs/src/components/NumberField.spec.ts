@@ -27,6 +27,7 @@ import {
   MousePointerClick,
   FileText,
   Tag,
+  Layout,
 } from "lucide-react";
 
 /**
@@ -36,6 +37,7 @@ export interface NumberFieldProps {
   variant?: "default" | "accent" | "negative";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
+  placeholder?: string;
   value?: number;
   minValue?: number;
   maxValue?: number;
@@ -82,6 +84,50 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+          },
+          {
+            key: "value",
+            type: "number",
+            label: "Value",
+            icon: Hash,
+          },
+          {
+            key: "placeholder",
+            type: "string",
+            label: "Placeholder",
+            icon: Type,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
       {
         title: "Internationalization",
         fields: [
@@ -481,6 +527,18 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
     rules: [
       { parentProp: "size", childPath: "Label" },
       { parentProp: "size", childPath: "ComboBoxWrapper" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+      {
+        parentProp: "placeholder",
+        childPath: ["ComboBoxWrapper", "ComboBoxInput"],
+        childProp: "placeholder",
+        override: true,
+      },
     ],
   },
 

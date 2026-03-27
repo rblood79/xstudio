@@ -18,53 +18,6 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 
-export const RadioHybridAfterSections = memo(function RadioHybridAfterSections({
-  elementId,
-  currentProps,
-  onUpdate,
-}: PropertyEditorProps) {
-  const { buildChildUpdates } = useSyncChildProp(elementId);
-
-  const handleChildrenChange = useCallback(
-    (value: string) => {
-      const childUpdates = buildChildUpdates([
-        { childTag: "Label", propKey: "children", value },
-      ]);
-      useStore
-        .getState()
-        .updateSelectedPropertiesWithChildren(
-          { children: value },
-          childUpdates,
-        );
-    },
-    [buildChildUpdates],
-  );
-
-  const handleValueChange = useCallback(
-    (value: string) => {
-      onUpdate({ value: value || undefined });
-    },
-    [onUpdate],
-  );
-
-  return (
-    <PropertySection title="Content">
-      <PropertyInput
-        label={PROPERTY_LABELS.LABEL}
-        value={String(currentProps.children ?? "")}
-        onChange={handleChildrenChange}
-        icon={Tag}
-      />
-      <PropertyInput
-        label={PROPERTY_LABELS.VALUE}
-        value={String(currentProps.value ?? "")}
-        onChange={handleValueChange}
-        icon={Binary}
-      />
-    </PropertySection>
-  );
-});
-
 export const RadioEditor = memo(function RadioEditor({
   elementId,
   currentProps,

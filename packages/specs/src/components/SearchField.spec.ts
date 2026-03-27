@@ -74,6 +74,35 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   properties: {
     sections: [
       {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+          },
+          {
+            key: "value",
+            type: "string",
+            label: "Value",
+          },
+          {
+            key: "placeholder",
+            type: "string",
+            label: "Placeholder",
+            icon: FileText,
+            placeholder: "Search...",
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+        ],
+      },
+      {
         title: "Design",
         fields: [
           {
@@ -274,6 +303,18 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       { parentProp: "size", childPath: "SearchIcon" },
       { parentProp: "size", childPath: "SearchClearButton" },
       { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+      {
+        parentProp: "placeholder",
+        childPath: ["SearchFieldWrapper", "SearchInput"],
+        childProp: "placeholder",
+        override: true,
+      },
     ],
   },
 

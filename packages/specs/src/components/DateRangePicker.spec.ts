@@ -13,6 +13,7 @@ import {
   DATE_PICKER_SIZES,
   DATE_PICKER_STATES,
 } from "./DatePicker.spec";
+import { Layout } from "lucide-react";
 
 export interface DateRangePickerProps {
   variant?: "default" | "accent";
@@ -25,6 +26,7 @@ export interface DateRangePickerProps {
   calendarSystem?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  labelPosition?: "top" | "side";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -63,6 +65,16 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         fields: [
           { type: "variant" },
           { type: "size" },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
           {
             key: "locale",
             type: "enum",

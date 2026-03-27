@@ -8,6 +8,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Layout } from "lucide-react";
 
 export interface DatePickerProps {
   variant?: "default" | "accent";
@@ -19,6 +20,7 @@ export interface DatePickerProps {
   calendarSystem?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  labelPosition?: "top" | "side";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -252,6 +254,16 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         fields: [
           { type: "variant" },
           { type: "size" },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
           {
             key: "locale",
             type: "enum",

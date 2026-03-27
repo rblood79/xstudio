@@ -130,8 +130,38 @@ export const CardSpec: ComponentSpec<CardProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      {
+        parentProp: "title",
+        childPath: ["CardHeader", "Heading"],
+        childProp: "children",
+        override: true,
+      },
+      {
+        parentProp: "description",
+        childPath: ["CardContent", "Description"],
+        childProp: "children",
+        override: true,
+      },
+    ],
+  },
+
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "title", type: "string", label: "Title" },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            multiline: true,
+          },
+          { key: "footer", type: "string", label: "Footer" },
+        ],
+      },
       {
         title: "Design",
         fields: [
@@ -174,6 +204,65 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "purple", label: "Purple" },
               { value: "pink", label: "Pink" },
             ],
+          },
+        ],
+      },
+      {
+        title: "Asset & Media",
+        fields: [
+          {
+            key: "asset",
+            type: "enum",
+            label: "Asset Type",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "file", label: "File" },
+              { value: "folder", label: "Folder" },
+              { value: "image", label: "Image" },
+              { value: "video", label: "Video" },
+              { value: "audio", label: "Audio" },
+            ],
+          },
+          {
+            key: "assetSrc",
+            type: "string",
+            label: "Asset Source URL",
+            visibleWhen: { key: "asset", truthy: true },
+          },
+          {
+            key: "preview",
+            type: "string",
+            label: "Preview Image URL",
+            visibleWhen: { key: "variant", equals: "gallery" },
+          },
+        ],
+      },
+      {
+        title: "Interactions",
+        fields: [
+          {
+            key: "href",
+            type: "string",
+            label: "Link",
+            placeholder: "https://...",
+          },
+          {
+            key: "target",
+            type: "enum",
+            label: "Target",
+            visibleWhen: { key: "href", truthy: true },
+            options: [
+              { value: "_self", label: "Self" },
+              { value: "_blank", label: "Blank" },
+            ],
+          },
+          { key: "isSelectable", type: "boolean", label: "Selectable" },
+          {
+            key: "isSelected",
+            type: "boolean",
+            label: "Selected",
+            visibleWhen: { key: "isSelectable", equals: true },
           },
         ],
       },

@@ -73,6 +73,7 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
                 spec={spec}
                 currentProps={currentProps}
                 onUpdate={onUpdate}
+                elementId={elementId}
               />
             ))}
         </PropertySection>

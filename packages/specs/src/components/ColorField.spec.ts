@@ -19,6 +19,7 @@ import {
   PointerOff,
   PenOff,
   Focus,
+  Layout,
 } from "lucide-react";
 
 /**
@@ -184,7 +185,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             key: "labelPosition",
             type: "enum",
             label: "Label Position",
-            icon: Tag,
+            icon: Layout,
             options: [
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },

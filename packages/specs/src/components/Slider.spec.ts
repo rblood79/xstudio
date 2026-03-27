@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Layout } from "lucide-react";
 
 /**
  * Slider Props
@@ -28,6 +29,7 @@ export interface SliderProps {
   showValue?: boolean;
   isDisabled?: boolean;
   isRequired?: boolean;
+  labelPosition?: "top" | "side";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -153,6 +155,16 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         fields: [
           { type: "variant" },
           { type: "size" },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
           {
             key: "orientation",
             type: "enum",

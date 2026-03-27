@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Layout } from "lucide-react";
 
 /**
  * TextArea Props
@@ -28,6 +29,7 @@ export interface TextAreaProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  labelPosition?: "top" | "side";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -112,6 +114,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
             key: "labelPosition",
             type: "enum",
             label: "Label Position",
+            icon: Layout,
             options: [
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },

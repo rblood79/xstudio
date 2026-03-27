@@ -31,6 +31,7 @@ import {
   MeterSpec,
   CalendarSpec,
   RangeCalendarSpec,
+  CardSpec,
 } from "@xstudio/specs";
 
 // ─── Lazy Index ─────────────────────────────────────────────────────────────
@@ -141,3 +142,4 @@ registerPropagationSpec("ProgressBar", ProgressBarSpec);
 registerPropagationSpec("Meter", MeterSpec);
 registerPropagationSpec("Calendar", CalendarSpec);
 registerPropagationSpec("RangeCalendar", RangeCalendarSpec);
+registerPropagationSpec("Card", CardSpec);

@@ -8,12 +8,14 @@ import {
   PropertySwitch,
 } from "../../../components";
 import { inferLabel } from "./inferLabel";
+import { ChildItemManager } from "./ChildItemManager";
 
 interface SpecFieldProps {
   field: FieldDef;
   spec: ComponentSpec<Record<string, unknown>>;
   currentProps: Record<string, unknown>;
   onUpdate: (updatedProps: Record<string, unknown>) => void;
+  elementId?: string;
 }
 
 export const SpecField = memo(function SpecField({
@@ -21,6 +23,7 @@ export const SpecField = memo(function SpecField({
   spec,
   currentProps,
   onUpdate,
+  elementId,
 }: SpecFieldProps) {
   const fieldKey = "key" in field && field.key ? field.key : undefined;
   const label = field.label ?? inferLabel(fieldKey ?? field.type);
@@ -204,6 +207,11 @@ export const SpecField = memo(function SpecField({
         />
       );
     }
+
+    case "children-manager":
+      return elementId ? (
+        <ChildItemManager elementId={elementId} field={field} />
+      ) : null;
 
     default:
       return null;

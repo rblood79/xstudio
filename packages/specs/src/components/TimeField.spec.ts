@@ -5,6 +5,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Layout } from "lucide-react";
 
 export interface TimeFieldProps {
   variant?: "default" | "accent" | "negative";
@@ -15,6 +16,7 @@ export interface TimeFieldProps {
   locale?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  labelPosition?: "top" | "side";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -123,6 +125,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             key: "labelPosition",
             type: "enum",
             label: "Label Position",
+            icon: Layout,
             options: [
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },

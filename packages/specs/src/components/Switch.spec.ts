@@ -125,11 +125,23 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   },
 
   propagation: {
-    rules: [{ parentProp: "size", childPath: "Label" }],
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "children",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+    ],
   },
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [{ key: "children", type: "string", label: "Label" }],
+      },
       {
         title: "Design",
         fields: [{ key: "isEmphasized", type: "boolean" }, { type: "size" }],

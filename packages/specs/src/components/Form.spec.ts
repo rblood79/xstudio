@@ -16,6 +16,7 @@ import {
   CheckSquare,
   Globe,
   Send,
+  Layout,
 } from "lucide-react";
 
 /**
@@ -87,6 +88,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
             key: "labelPosition",
             type: "enum",
             label: "Label Position",
+            icon: Layout,
             options: [
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },

@@ -213,6 +213,18 @@ export interface CustomField extends BaseFieldDef {
   component: ComponentType<CustomFieldComponentProps>;
 }
 
+export interface ChildrenManagerField extends BaseFieldDef {
+  type: "children-manager";
+  /** 자식 Element의 태그명 (e.g. "Checkbox", "Radio", "ToggleButton") */
+  childTag: string;
+  /** 새 자식 추가 시 기본 props */
+  defaultChildProps?: Record<string, unknown>;
+  /** 자식 목록에서 레이블로 표시할 prop 키 (e.g. "children") */
+  labelProp?: string;
+  /** 중첩 자식 허용 여부 (Tree 등) */
+  allowNested?: boolean;
+}
+
 export type DerivedUpdateFn = (
   value: unknown,
   currentProps: Record<string, unknown>,
@@ -226,7 +238,8 @@ export type FieldDef =
   | StringField
   | NumberField
   | IconField
-  | CustomField;
+  | CustomField
+  | ChildrenManagerField;
 
 // ─── ADR-036: Tier 2 Composite CSS 타입 ─────────────────────────────────────
 

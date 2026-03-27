@@ -21,6 +21,7 @@ import {
   PenOff,
   FileText,
   Tag,
+  Layout,
 } from "lucide-react";
 
 /**
@@ -81,6 +82,50 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+          },
+          {
+            key: "value",
+            type: "string",
+            label: "Value",
+          },
+          {
+            key: "placeholder",
+            type: "string",
+            label: "Placeholder",
+            icon: FileText,
+            placeholder: "Enter text...",
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
       {
         title: "Input Type",
         fields: [
@@ -384,6 +429,18 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     rules: [
       { parentProp: "size", childPath: "Label" },
       { parentProp: "size", childPath: "Input" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+      {
+        parentProp: "placeholder",
+        childPath: "Input",
+        childProp: "placeholder",
+        override: true,
+      },
     ],
   },
 

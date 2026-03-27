@@ -20,6 +20,7 @@ import {
   PenOff,
   Focus,
   FormInput,
+  Layout,
 } from "lucide-react";
 
 /**
@@ -73,6 +74,21 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
   properties: {
     sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
       {
         title: "State",
         fields: [

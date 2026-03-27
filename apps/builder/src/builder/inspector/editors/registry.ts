@@ -4,16 +4,11 @@ import { componentMetadata } from "@xstudio/shared/components/metadata";
 import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
 import { ButtonHybridAfterSections } from "../../panels/properties/editors/ButtonEditor";
-import { CardHybridAfterSections } from "../../panels/properties/editors/CardEditor";
-import { CheckboxHybridAfterSections } from "../../panels/properties/editors/CheckboxEditor";
 import { ComboBoxHybridAfterSections } from "../../panels/properties/editors/ComboBoxEditor";
 import { GridListHybridAfterSections } from "../../panels/properties/editors/GridListEditor";
 import { ListBoxHybridAfterSections } from "../../panels/properties/editors/ListBoxEditor";
-import { NumberFieldHybridAfterSections } from "../../panels/properties/editors/NumberFieldEditor";
-import { RadioHybridAfterSections } from "../../panels/properties/editors/RadioEditor";
 import { SearchFieldHybridAfterSections } from "../../panels/properties/editors/SearchFieldEditor";
 import { SelectHybridAfterSections } from "../../panels/properties/editors/SelectEditor";
-import { SwitchHybridAfterSections } from "../../panels/properties/editors/SwitchEditor";
 import { TagGroupHybridAfterSections } from "../../panels/properties/editors/TagGroupEditor";
 import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";
 import { TreeHybridAfterSections } from "../../panels/properties/editors/TreeEditor";
@@ -29,26 +24,16 @@ function getHybridAfterSections(type: string) {
   switch (type) {
     case "Button":
       return ButtonHybridAfterSections;
-    case "Card":
-      return CardHybridAfterSections;
-    case "Checkbox":
-      return CheckboxHybridAfterSections;
     case "ComboBox":
       return ComboBoxHybridAfterSections;
     case "GridList":
       return GridListHybridAfterSections;
     case "ListBox":
       return ListBoxHybridAfterSections;
-    case "NumberField":
-      return NumberFieldHybridAfterSections;
-    case "Radio":
-      return RadioHybridAfterSections;
     case "SearchField":
       return SearchFieldHybridAfterSections;
     case "Select":
       return SelectHybridAfterSections;
-    case "Switch":
-      return SwitchHybridAfterSections;
     case "TagGroup":
       return TagGroupHybridAfterSections;
     case "Tabs":

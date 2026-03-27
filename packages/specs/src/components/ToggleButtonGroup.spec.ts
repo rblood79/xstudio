@@ -159,6 +159,19 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
           },
         ],
       },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Buttons",
+            childTag: "ToggleButton",
+            defaultChildProps: { children: "Button" },
+            labelProp: "children",
+          },
+        ],
+      },
     ],
   },
 

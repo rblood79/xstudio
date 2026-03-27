@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Layout } from "lucide-react";
 
 /**
  * CheckboxGroup Props
@@ -20,9 +21,15 @@ export interface CheckboxGroupProps {
   label?: string;
   description?: string;
   orientation?: "vertical" | "horizontal";
+  labelPosition?: "top" | "side";
   isDisabled?: boolean;
+  isReadOnly?: boolean;
   isInvalid?: boolean;
+  isRequired?: boolean;
+  necessityIndicator?: "icon" | "label";
   errorMessage?: string;
+  name?: string;
+  isEmphasized?: boolean;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -106,6 +113,101 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
       { parentProp: "size", childPath: "Checkbox" },
       { parentProp: "size", childPath: "CheckboxItems" },
       { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "label", type: "string", label: "Label" },
+          { key: "description", type: "string", label: "Description" },
+          { key: "errorMessage", type: "string", label: "Error Message" },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          { key: "isEmphasized", type: "boolean" },
+          { type: "size" },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            emptyToUndefined: true,
+            derivedUpdateFn: (value: unknown) =>
+              value
+                ? { isRequired: true, necessityIndicator: value }
+                : { isRequired: false, necessityIndicator: undefined },
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label" },
+            ],
+          },
+          { key: "isInvalid", type: "boolean" },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          { key: "isDisabled", type: "boolean" },
+          { key: "isReadOnly", type: "boolean" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+          },
+        ],
+      },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Checkboxes",
+            childTag: "Checkbox",
+            defaultChildProps: {
+              children: "Checkbox",
+              value: "",
+              isSelected: false,
+            },
+            labelProp: "children",
+          },
+        ],
+      },
     ],
   },
 

@@ -158,11 +158,31 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   },
 
   propagation: {
-    rules: [{ parentProp: "size", childPath: "Label" }],
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "children",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+    ],
   },
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "children", type: "string", label: "Label" },
+          {
+            key: "value",
+            type: "string",
+            label: "Value",
+            emptyToUndefined: true,
+          },
+        ],
+      },
       {
         title: "State",
         fields: [{ key: "isSelected", type: "boolean" }],
