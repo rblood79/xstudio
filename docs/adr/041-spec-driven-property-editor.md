@@ -1183,10 +1183,10 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 - 기존 수동 에디터와 동작/노출 surface가 동일함을 확인
 - ADR-046에서 닫은 계약(`Form`, `ColorField`)이 손실 없이 자동 생성 경로로 표현됨을 확인
 
-**2026-03-27 현재 상태 — Phase 0~4 전체 완료**:
+**2026-03-28 현재 상태 — Phase 0~4 전체 완료**:
 
 - Phase 2 확장 완료
-  - 59개 컴포넌트 Spec에 `properties` 추가, specRegistry 59개 등록
+  - 69개 컴포넌트 Spec에 `properties` 추가, specRegistry 69개 등록
   - 등급 A 순수 generic (afterSections 없음): Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, Calendar, RangeCalendar, DateField, DatePicker, DateRangePicker, TimeField, ToggleButton, ToggleButtonGroup, InlineAlert, Panel, TextArea, Icon, Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
   - parentTagNot 조건부: Checkbox (CheckboxGroup 내 Design 숨김), ToggleButton (ToggleButtonGroup 내 Design 숨김)
 - Phase 3 완료 — Grade B 전환
@@ -1198,7 +1198,7 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - icon field 타입 SpecField 구현 — PropertyIconPicker 연동, clearKeys 지원
   - Icon: size field에 derivedUpdateFn 추가 (size→style.fontSize 동시 업데이트)
 - Phase 4 완료 — 수동 에디터 파일 정리
-  - 삭제된 수동 에디터: **54개** (12개 배치1-3 + 22개 Phase 4 + 2개 propagation 전환 + 18개 Spec Generic 완전 전환)
+  - 삭제된 수동 에디터: **64개** (12개 배치1-3 + 22개 Phase 4 + 2개 propagation 전환 + 28개 Spec Generic 완전 전환)
     - 배치1-3: Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
     - Phase 4: Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, ToggleButton, Icon
     - Propagation 전환: Calendar, RangeCalendar (수동 childSync → propagation 엔진 교체)
@@ -1209,7 +1209,9 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - editors/index.ts export 정리
   - **Filtering 자동화 (2026-03-28)**: `string-array` 필드 타입 신규 → ListBox/GridList Filtering 섹션 Spec 전환, 에디터 삭제
   - **수동 에디터 일괄 자동화 (2026-03-28)**: ActionMenu, Autocomplete, TableView, Field, Accordion, Modal, TailSwatch, Menu — properties-only Spec 생성 + specRegistry 등록, 에디터 8개 삭제
-  - 남은 수동 에디터: ~6개 (hybrid afterSections 2개 + Grade C 수동 4개)
+  - **Breadcrumbs/Slot 자동화 (2026-03-28)**: Breadcrumbs(children-manager), Slot(name/description/required) — Spec properties 추가, 에디터 2개 삭제
+  - **PropertyNumberInput (2026-03-28)**: React Aria NumberField 기반 숫자 전용 입력 컴포넌트 — SpecField `number` 타입이 PropertyInput→PropertyNumberInput으로 교체, -/+ 스테퍼 버튼 포함
+  - 남은 수동 에디터: ~4개 (hybrid afterSections 2개 + Grade C 수동 2개)
   - RangeCalendar Spec 신규 생성: CalendarSpec 기반 spread + propagation 8규칙 + properties 3섹션
   - propagationRegistry: 21개 → **22개** (RangeCalendar 추가)
 - 버그 수정
@@ -1283,12 +1285,12 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 | 54  | Layout      | Panel              |   자동 ¹    |
 | 55  | Layout      | Card               |    자동     |
 | 56  | Layout      | Tabs               |   Hybrid    |
-| 57  | Layout      | Breadcrumbs        |    수동     |
+| 57  | Layout      | Breadcrumbs        |    자동     |
 | 58  | Layout      | Group              |    자동     |
 | 59  | Layout      | Disclosure         |    자동     |
 | 60  | Layout      | DisclosureGroup    |    자동     |
 | 61  | Layout      | Nav                |    자동     |
-| 62  | Layout      | Slot               |    수동     |
+| 62  | Layout      | Slot               |    자동     |
 | 63  | Layout      | Accordion          |    자동     |
 | 64  | Overlays    | Tooltip            |    자동     |
 | 65  | Overlays    | Dialog             |    자동     |
@@ -1303,9 +1305,9 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 
 | 유형       |  개수  | 비율  |
 | ---------- | :----: | :---: |
-| **자동**   | **67** | 91.8% |
+| **자동**   | **69** | 94.5% |
 | **Hybrid** | **2**  | 2.7%  |
-| **수동**   | **4**  | 5.5%  |
+| **수동**   | **2**  | 2.7%  |
 | **합계**   | **73** | 100%  |
 
 **2026-03-26 현재 상태**:
@@ -1526,11 +1528,11 @@ properties: {
 
 | 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |     Phase 4 (실측)     |
 | ---------------- | :------------------------: | :--------------: | :--------------: | :--------------------: |
-| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~6개** (hybrid+수동) |
-| 자동 생성 에디터 |            0개             |       75개       |       83개       |    **67개** (spec)     |
-| 삭제된 에디터    |            0개             |       12개       |       12개       |        **62개**        |
+| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~4개** (hybrid+수동) |
+| 자동 생성 에디터 |            0개             |       75개       |       83개       |    **69개** (spec)     |
+| 삭제된 에디터    |            0개             |       12개       |       12개       |        **64개**        |
 | hybrid 에디터    |            0개             |       0개        |       7개        |        **2개**         |
-| specRegistry     |            0개             |       12개       |       23개       |        **67개**        |
+| specRegistry     |            0개             |       12개       |       23개       |        **69개**        |
 | propagation      |            0개             |       0개        |       21개       |        **22개**        |
 | 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |        **1개**         |
 | variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |        **1곳**         |

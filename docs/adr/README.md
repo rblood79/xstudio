@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-28 (ADR-041 Phase 0~4 전체 완료 — 자동 67개/91.8%, Hybrid 2개, 수동 4개, 에디터 62개 삭제)
+> **최종 업데이트**: 2026-03-28 (ADR-041 Phase 0~4 전체 완료 — 자동 69개/94.5%, Hybrid 2개, 수동 2개, 에디터 64개 삭제)
 
 ## 현황 요약
 
@@ -108,7 +108,7 @@
 
 | 순서 | 대상    | 내용                                                                                                          | 규모 |   상태   |
 | :--: | ------- | ------------------------------------------------------------------------------------------------------------- | :--: | :------: |
-|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (67개 spec, 22개 propagation, 2개 hybrid, 62개 에디터 삭제) |  -   | **완료** |
+|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (69개 spec, 22개 propagation, 2개 hybrid, 64개 에디터 삭제) |  -   | **완료** |
 |  2   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                 |  대  | **완료** |
 |  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                  |  중  |          |
 |  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                 |  소  |          |
@@ -145,15 +145,15 @@
 **핵심 의존 체인** (순서 필수):
 
 ```
-ADR-041 (Spec-Driven Property Editor, **완료**)
-  → ADR-048 (선언적 Props Propagation, **완료**)
-    → ADR-045 (Property Editor 정합성 정렬)
+ADR-041 (Spec-Driven Property Editor, ✅ 완료 — 94.5% 자동화)
+  → ADR-048 (선언적 Props Propagation, ✅ 완료)
+    → ADR-045 (Property Editor 정합성 정렬) ← 다음 우선순위
 ADR-046 (S2 계약 확장, 독립)
 ```
 
-- **ADR-041**: Phase 0~4 전체 완료. 67개 Spec properties, 2개 hybrid afterSections, 62개 수동 에디터 삭제 (자동 67/Hybrid 2/수동 4)
-- **ADR-048**: Phase 0~5 전체 완료. PropagationSpec 엔진 + Registry + 4경로 통합
-- **ADR-045**: ADR-041/048 기반 위에서 에디터 정합성 정렬 (INCOMPLETE 9개 + 공통 패턴 16개)
+- ~~**ADR-041**~~: Phase 0~4 전체 완료. 69개 Spec properties, 2개 hybrid, 64개 에디터 삭제 (자동 69/Hybrid 2/수동 2). `string-array`/`children-manager`/`PropertyNumberInput` 필드 타입 추가
+- ~~**ADR-048**~~: Phase 0~5 전체 완료. PropagationSpec 엔진 + Registry + 4경로 통합. 22개 컴포넌트 전파 규칙
+- **ADR-045**: ADR-041/048 기반 위에서 에디터 정합성 정렬 (INCOMPLETE 에디터 + 공통 패턴) — **다음 착수 대상**
 - **ADR-046**: S2 계약 확장 (Form, ColorField, Tabs) — Spec 완성도 향상, 독립 실행 가능
 
 ### P3: ADR-042 + ADR-043 + ADR-038 → ADR-032 → ADR-034 → ADR-013
@@ -179,7 +179,7 @@ ADR-032 (Events Platform 재설계)
 
 **P3 실행 시 병행되는 Property Editor 구조 변경**:
 
-- **Child Item Management 제거 (10개 에디터)**: React Aria Components `items` data-driven Collection 패턴 전환
+- ~~**Child Item Management 제거 (10개 에디터)**~~: ✅ ADR-041에서 `children-manager` Spec 필드로 전환 완료 (ComboBox, Select, ListBox, GridList, TagGroup, Tree, Breadcrumbs)
 - **이벤트 설정 제거 (108개 에디터)**: Events Panel(ADR-034)로 중앙 집중
 
 ### P4: ADR-009 잔여 + ADR-020 + ADR-026 잔여 + ADR-044
