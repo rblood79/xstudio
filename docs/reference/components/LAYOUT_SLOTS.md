@@ -3344,7 +3344,7 @@ export const PageBodyEditor = memo(function PageBodyEditor({
   return (
     <>
       {/* Basic Section */}
-      <PropertySection title="Basic">
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -3476,7 +3476,7 @@ export const LayoutBodyEditor = memo(function LayoutBodyEditor({
   return (
     <>
       {/* Basic Section */}
-      <PropertySection title="Basic">
+      <PropertySection title="Content">
         <PropertyCustomId
           label="ID"
           value={customId}

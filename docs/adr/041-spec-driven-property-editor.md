@@ -407,7 +407,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { type: "variant" },
           { key: "fillStyle", type: "enum", label: "Fill Style",
@@ -428,7 +428,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "type", type: "enum", label: "Type",
             options: [
@@ -498,7 +498,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         ],
       },
       {
-        title: "Design",
+        title: "Appearance",
         fields: [
           { key: "isEmphasized", type: "boolean", label: "Emphasized" },
           { type: "size" }, // key 생략 → 기본값 "size"
@@ -513,7 +513,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         ],
       },
       {
-        title: "Behavior",
+        title: "State",
         fields: [
           { key: "autoFocus", type: "boolean", label: "Auto Focus" },
           { key: "isDisabled", type: "boolean", label: "Disabled" },
@@ -521,7 +521,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         ],
       },
       {
-        title: "Form Integration",
+        title: "State",
         fields: [
           {
             key: "name",
@@ -564,7 +564,7 @@ interface GenericPropertyEditorProps extends PropertyEditorProps {
   spec: ComponentSpec<Record<string, unknown>>;
   /** 하이브리드 패턴: 수동 섹션 제외.
    *  오타 방지는 Spec 정의 시 sections 배열에서 title을 상수로 추출하여 활용.
-   *  예: const SECTION_TITLES = ["Content", "Design", "Behavior"] as const;
+   *  예: const SECTION_TITLES = ["Content", "Appearance", "State"] as const;
    *      excludeSections={["Content"]} */
   excludeSections?: string[];
 }
@@ -675,12 +675,7 @@ function GenericPropertyEditor({
 
   return (
     <>
-      {/* Built-in Basic 섹션 (PropertyCustomId) */}
-      {spec.properties?.includeBasicSection !== false && (
-        <PropertySection title="Basic">
-          <PropertyCustomId elementId={elementId} />
-        </PropertySection>
-      )}
+      {/* CustomId는 첫 번째 Content 섹션 상단에 자동 삽입 */}
 
       {/* Schema 기반 섹션 렌더링 — 섹션별 memo로 격리 */}
       {visibleSections
@@ -1499,7 +1494,7 @@ properties: {
       ],
     },
     {
-      title: "Design",
+      title: "Appearance",
       fields: [
         { type: "variant" },
         { type: "size" },
@@ -1515,7 +1510,7 @@ properties: {
       ],
     },
     {
-      title: "Behavior",
+      title: "State",
       fields: [
         { key: "isDisabled", type: "boolean", label: "Disabled" },
         { key: "isSelectable", type: "boolean", label: "Selectable" },
