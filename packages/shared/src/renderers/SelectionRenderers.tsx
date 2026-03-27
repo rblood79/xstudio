@@ -155,10 +155,20 @@ export const renderListBox = (
         disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
         autoFocus={Boolean(element.props.autoFocus)}
         enableVirtualization={Boolean(element.props.enableVirtualization)}
-        height={typeof element.props.height === "number" ? element.props.height : undefined}
-        overscan={typeof element.props.overscan === "number" ? element.props.overscan : undefined}
+        height={
+          typeof element.props.height === "number"
+            ? element.props.height
+            : undefined
+        }
+        overscan={
+          typeof element.props.overscan === "number"
+            ? element.props.overscan
+            : undefined
+        }
         filterText={
-          element.props.filterText ? String(element.props.filterText) : undefined
+          element.props.filterText
+            ? String(element.props.filterText)
+            : undefined
         }
         filterFields={element.props.filterFields as string[] | undefined}
         defaultSelectedKeys={
@@ -204,6 +214,7 @@ export const renderListBox = (
     <ListBox
       key={element.id}
       id={element.customId}
+      aria-label={String(element.props.label || "List")}
       data-element-id={element.id}
       className={element.props.className}
       variant={(element.props.variant as string) || undefined}
@@ -218,8 +229,16 @@ export const renderListBox = (
       disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
       autoFocus={Boolean(element.props.autoFocus)}
       enableVirtualization={Boolean(element.props.enableVirtualization)}
-      height={typeof element.props.height === "number" ? element.props.height : undefined}
-      overscan={typeof element.props.overscan === "number" ? element.props.overscan : undefined}
+      height={
+        typeof element.props.height === "number"
+          ? element.props.height
+          : undefined
+      }
+      overscan={
+        typeof element.props.overscan === "number"
+          ? element.props.overscan
+          : undefined
+      }
       filterText={
         element.props.filterText ? String(element.props.filterText) : undefined
       }
@@ -486,6 +505,7 @@ export const renderGridList = (
     <GridList
       key={element.id}
       id={element.customId}
+      aria-label={String(element.props.label || "Grid List")}
       data-element-id={element.id}
       className={element.props.className}
       variant={(element.props.variant as "default" | "accent") || "default"}
@@ -1015,9 +1035,7 @@ export const renderComboBox = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      size={
-        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"
-      }
+      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       variant={
         (element.props.variant as "default" | "accent" | "negative") ||
         "default"

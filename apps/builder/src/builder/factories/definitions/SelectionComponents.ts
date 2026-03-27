@@ -272,6 +272,7 @@ export function createListBoxDefinition(
     parent: {
       tag: "ListBox",
       props: {
+        label: "List Box",
         orientation: "vertical",
         selectionMode: "single",
       } as ComponentElementProps,
@@ -395,6 +396,7 @@ export function createGridListDefinition(
     parent: {
       tag: "GridList",
       props: {
+        label: "Grid List",
         layout: "stack",
         selectionMode: "none",
         style: {

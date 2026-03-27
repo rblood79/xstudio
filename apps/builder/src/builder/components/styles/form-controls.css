@@ -111,6 +111,7 @@
 
         .react-aria-SelectValue {
           font-size: var(--text-xs);
+          line-height: var(--text-xs--line-height);
           color: var(--fg);
           white-space: nowrap;
           overflow: hidden;
@@ -146,6 +147,7 @@
 
           &::before {
             height: 100%;
+            background-color: var(--bg-overlay);
           }
         }
 
@@ -164,6 +166,7 @@
       text-align: center;
       background-color: transparent;
       font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
       color: var(--fg-muted);
     }
 
@@ -179,6 +182,7 @@
     .react-aria-Input,
     .react-aria-TextArea {
       font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
       background-color: transparent;
       border-left-width: 0;
       padding-inline-start: var(--spacing);
@@ -200,6 +204,61 @@
     .react-aria-Group:focus-within {
       outline: 2px solid var(--focus-ring);
       outline-offset: -2px;
+    }
+
+    /* NumberField: input + stepper buttons (Select chevron 사이즈 기준) */
+    .react-aria-NumberField-group {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .react-aria-NumberField-input {
+      flex: 1;
+      min-width: 0;
+
+      /* Hide native spin buttons */
+      -moz-appearance: textfield;
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+
+    .react-aria-NumberField-steppers {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      gap: var(--spacing-xs);
+    }
+
+    .react-aria-NumberField-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--text-xl);
+      height: var(--text-xl);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+      background: var(--bg-overlay);
+      box-shadow: var(--shadow-sm);
+      border: none;
+      color: var(--fg-muted);
+      cursor: pointer;
+      padding: 0;
+
+      &:hover {
+        color: var(--fg);
+        background: var(--bg-muted);
+      }
+
+      &[data-disabled] {
+        color: var(--fg-disabled);
+        cursor: default;
+        background: transparent;
+      }
     }
 
     /* IconPicker: input-style trigger + clear button */
@@ -350,6 +409,7 @@
 
     .slider-output {
       font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
       color: var(--fg);
       min-width: 40px;
       text-align: right;

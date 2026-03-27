@@ -11,6 +11,7 @@ export {
   PropertyFieldset,
   PropertySection,
   PropertyInput,
+  PropertyNumberInput,
   PropertyCheckbox,
   PropertySelect,
   PropertySwitch,

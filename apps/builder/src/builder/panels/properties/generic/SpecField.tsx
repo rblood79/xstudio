@@ -3,6 +3,7 @@ import type { ComponentSpec, FieldDef } from "@xstudio/specs";
 import {
   PropertyIconPicker,
   PropertyInput,
+  PropertyNumberInput,
   PropertySelect,
   PropertySizeToggle,
   PropertySwitch,
@@ -202,21 +203,22 @@ export const SpecField = memo(function SpecField({
       );
     }
 
-    case "number":
+    case "number": {
+      const numValue = resolveCurrentValue(field.key);
       return (
-        <PropertyInput
+        <PropertyNumberInput
           label={label}
-          type="number"
-          value={String(resolveCurrentValue(field.key) ?? "")}
-          onChange={(value) => {
-            const normalizedValue = value === "" ? undefined : Number(value);
-            onUpdate(buildUpdate(field.key, normalizedValue));
+          value={numValue != null ? Number(numValue) : undefined}
+          onChange={(val) => {
+            onUpdate(buildUpdate(field.key, val));
           }}
           min={field.min}
           max={field.max}
+          step={field.step}
           icon={icon}
         />
       );
+    }
 
     case "icon": {
       const handleIconChange = (iconName: string) => {

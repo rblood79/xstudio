@@ -42,9 +42,15 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
     }
   };
 
-  const visibleSections = (spec.properties?.sections ?? []).filter((section) =>
-    evaluateVisibility(section.visibleWhen, currentProps, parentTag),
-  );
+  const { visibleSections, firstContentIndex } = useMemo(() => {
+    const sections = (spec.properties?.sections ?? []).filter((section) =>
+      evaluateVisibility(section.visibleWhen, currentProps, parentTag),
+    );
+    return {
+      visibleSections: sections,
+      firstContentIndex: sections.findIndex((s) => s.title === "Content"),
+    };
+  }, [spec, currentProps, parentTag]);
 
   const renderCustomId = () => (
     <PropertyCustomId
@@ -54,10 +60,6 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
       onChange={updateCustomId}
       placeholder={`${spec.name.toLowerCase()}_1`}
     />
-  );
-
-  const firstContentIndex = visibleSections.findIndex(
-    (s) => s.title === "Content",
   );
 
   return (

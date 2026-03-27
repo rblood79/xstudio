@@ -1,6 +1,7 @@
 export { PropertyFieldset } from "./PropertyFieldset";
 export { PropertySection } from "./PropertySection";
 export { PropertyInput } from "./PropertyInput";
+export { PropertyNumberInput } from "./PropertyNumberInput";
 export { PropertyCheckbox } from "./PropertyCheckbox";
 export { PropertySelect } from "./PropertySelect";
 export { PropertySwitch } from "./PropertySwitch";
