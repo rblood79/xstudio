@@ -10,12 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import {
-  Type,
-  Parentheses,
-  Focus,
-  PointerOff,
-} from "lucide-react";
+import { Type, Parentheses, Focus, PointerOff } from "lucide-react";
 
 /**
  * Button Props
@@ -110,6 +105,36 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
               { value: "lg", label: "L" },
               { value: "xl", label: "XL" },
             ],
+          },
+        ],
+      },
+      {
+        title: "Icon",
+        fields: [
+          {
+            key: "iconName",
+            type: "icon",
+            label: "Icon",
+            clearKeys: ["iconPosition", "iconStrokeWidth"],
+          },
+          {
+            key: "iconPosition",
+            type: "enum",
+            label: "Position",
+            visibleWhen: { key: "iconName", truthy: true },
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+          },
+          {
+            key: "iconStrokeWidth",
+            type: "number",
+            label: "Stroke Width",
+            min: 0.5,
+            max: 4,
+            step: 0.5,
+            visibleWhen: { key: "iconName", truthy: true },
           },
         ],
       },

@@ -106,16 +106,16 @@
 
 ## 다음 진행 목표 (2026-03-26 기준)
 
-| 순서 | 대상    | 내용                                                                                             | 규모 |   상태   |
-| :--: | ------- | ------------------------------------------------------------------------------------------------ | :--: | :------: |
-|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (58개 spec, 16개 hybrid, 34개 에디터 삭제)     |  -   | **완료** |
-|  2   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                    |  대  | **완료** |
-|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)     |  중  |          |
-|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                    |  소  |          |
-|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                           |  대  |          |
-|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL      |  대  |          |
-|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행) |  중  |          |
-|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                    |  대  |          |
+| 순서 | 대상    | 내용                                                                                                           | 규모 |   상태   |
+| :--: | ------- | -------------------------------------------------------------------------------------------------------------- | :--: | :------: |
+|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (59개 spec, 22개 propagation, 16개 hybrid, 36개 에디터 삭제) |  -   | **완료** |
+|  2   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                  |  대  | **완료** |
+|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                   |  중  |          |
+|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                  |  소  |          |
+|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                         |  대  |          |
+|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                    |  대  |          |
+|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)               |  중  |          |
+|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                  |  대  |          |
 
 > 완료된 이전 목표는 변경 이력 참조
 >

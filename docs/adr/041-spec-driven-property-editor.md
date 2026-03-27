@@ -1185,8 +1185,8 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 **2026-03-27 현재 상태 — Phase 0~4 전체 완료**:
 
 - Phase 2 확장 완료
-  - 58개 컴포넌트 Spec에 `properties` 추가, specRegistry 58개 등록
-  - 등급 A 순수 generic (afterSections 없음): Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, Calendar, DateField, DatePicker, DateRangePicker, TimeField, ToggleButton, ToggleButtonGroup, InlineAlert, Panel, TextArea, Icon, Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
+  - 59개 컴포넌트 Spec에 `properties` 추가, specRegistry 59개 등록
+  - 등급 A 순수 generic (afterSections 없음): Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, Calendar, RangeCalendar, DateField, DatePicker, DateRangePicker, TimeField, ToggleButton, ToggleButtonGroup, InlineAlert, Panel, TextArea, Icon, Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
   - parentTagNot 조건부: Checkbox (CheckboxGroup 내 Design 숨김), ToggleButton (ToggleButtonGroup 내 Design 숨김)
 - Phase 3 완료 — Grade B hybrid 16개
   - Button: Content/Design/Behavior generic + Icon/Link/Form afterSections
@@ -1202,11 +1202,14 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - icon field 타입 SpecField 구현 — PropertyIconPicker 연동, clearKeys 지원
   - Icon: size field에 derivedUpdateFn 추가 (size→style.fontSize 동시 업데이트)
 - Phase 4 완료 — 수동 에디터 파일 정리
-  - 삭제된 수동 에디터: **34개** (12개 배치1-3 + 22개 Phase 4)
+  - 삭제된 수동 에디터: **36개** (12개 배치1-3 + 22개 Phase 4 + 2개 propagation 전환)
     - 배치1-3: Badge, Separator, StatusLight, Meter, ProgressBar, Link, Tooltip, Dialog, Popover, Toast, Form, ColorField
     - Phase 4: Avatar, AvatarGroup, ButtonGroup, CardView, ColorArea, ColorPicker, ColorSlider, ColorSwatch, ColorSwatchPicker, ColorWheel, Disclosure, DisclosureGroup, DropZone, FileTrigger, Group, IllustratedMessage, Image, Nav, ProgressCircle, Toolbar, ToggleButton, Icon
+    - Propagation 전환: Calendar, RangeCalendar (수동 childSync → propagation 엔진 교체)
   - editors/index.ts export 정리
-  - 남은 수동 에디터: ~51개 (hybrid afterSections 16개 + Grade C 수동 35개)
+  - 남은 수동 에디터: ~49개 (hybrid afterSections 16개 + Grade C 수동 33개)
+  - RangeCalendar Spec 신규 생성: CalendarSpec 기반 spread + propagation 8규칙 + properties 3섹션
+  - propagationRegistry: 21개 → **22개** (RangeCalendar 추가)
 - 버그 수정
   - GenericPropertyEditor `renderAfterSections`: `typeof === "function"` → `createElement(renderAfterSections, props)` 패치 — `React.memo()` 반환값은 object이므로 typeof 체크 실패. createElement으로 교체하여 memo 래핑된 afterSections 정상 렌더링
 - 검증
@@ -1214,6 +1217,94 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - `pnpm type-check` — 에러 0개
   - Avatar (Grade A) 브라우저 검증 — Content/Design/Behavior 자동 생성 정상
   - Checkbox (Grade B hybrid) 브라우저 검증 — generic + afterSections Content 렌더링 정상
+
+**컴포넌트 패널 기준 에디터 유형 비교표 (73개)**:
+
+> 자동 = GenericPropertyEditor (Spec properties), Hybrid = 자동 + afterSections, 수동 = 기존 에디터 fallback
+> ¹ specRegistry 우선이므로 GenericPropertyEditor가 사용됨. 에디터 파일은 존재하지만 로드되지 않음
+
+| #   | 카테고리    | 컴포넌트           | 에디터 유형 |
+| --- | ----------- | ------------------ | :---------: |
+| 1   | Buttons     | Button             |   Hybrid    |
+| 2   | Buttons     | ToggleButton       |    자동     |
+| 3   | Buttons     | ToggleButtonGroup  |   자동 ¹    |
+| 4   | Buttons     | Toolbar            |    자동     |
+| 5   | Buttons     | ButtonGroup        |    자동     |
+| 6   | Buttons     | ActionMenu         |    수동     |
+| 7   | Forms       | TextField          |   Hybrid    |
+| 8   | Forms       | NumberField        |   Hybrid    |
+| 9   | Forms       | SearchField        |   Hybrid    |
+| 10  | Forms       | Checkbox           |   Hybrid    |
+| 11  | Forms       | CheckboxGroup      |    수동     |
+| 12  | Forms       | Radio              |   Hybrid    |
+| 13  | Forms       | RadioGroup         |    수동     |
+| 14  | Forms       | Select             |   Hybrid    |
+| 15  | Forms       | ComboBox           |   Hybrid    |
+| 16  | Forms       | Switch             |   Hybrid    |
+| 17  | Forms       | Slider             |   Hybrid    |
+| 18  | Forms       | TailSwatch         |    수동     |
+| 19  | Forms       | FileTrigger        |    자동     |
+| 20  | Forms       | DropZone           |    자동     |
+| 21  | Forms       | Autocomplete       |    수동     |
+| 22  | Forms       | Form               |    자동     |
+| 23  | Color       | ColorPicker        |    자동     |
+| 24  | Color       | ColorField         |    자동     |
+| 25  | Color       | ColorArea          |    자동     |
+| 26  | Color       | ColorSlider        |    자동     |
+| 27  | Color       | ColorWheel         |    자동     |
+| 28  | Color       | ColorSwatch        |    자동     |
+| 29  | Color       | ColorSwatchPicker  |    자동     |
+| 30  | Collections | Menu               |    수동     |
+| 31  | Collections | Table              |    수동     |
+| 32  | Collections | ListBox            |   Hybrid    |
+| 33  | Collections | GridList           |   Hybrid    |
+| 34  | Collections | Tree               |   Hybrid    |
+| 35  | Collections | TagGroup           |   Hybrid    |
+| 36  | Collections | CardView           |    자동     |
+| 37  | Collections | TableView          |    수동     |
+| 38  | Collections | DataTable          |    수동     |
+| 39  | Collections | Field              |    수동     |
+| 40  | Content     | ProgressBar        |    자동     |
+| 41  | Content     | Meter              |    자동     |
+| 42  | Content     | Badge              |    자동     |
+| 43  | Content     | Icon               |    자동     |
+| 44  | Content     | Toast              |    자동     |
+| 45  | Content     | Separator          |    자동     |
+| 46  | Content     | Avatar             |    자동     |
+| 47  | Content     | AvatarGroup        |    자동     |
+| 48  | Content     | StatusLight        |    자동     |
+| 49  | Content     | InlineAlert        |   자동 ¹    |
+| 50  | Content     | ProgressCircle     |    자동     |
+| 51  | Content     | Image              |    자동     |
+| 52  | Content     | IllustratedMessage |    자동     |
+| 53  | Layout      | Link               |    자동     |
+| 54  | Layout      | Panel              |   자동 ¹    |
+| 55  | Layout      | Card               |   Hybrid    |
+| 56  | Layout      | Tabs               |   Hybrid    |
+| 57  | Layout      | Breadcrumbs        |    수동     |
+| 58  | Layout      | Group              |    자동     |
+| 59  | Layout      | Disclosure         |    자동     |
+| 60  | Layout      | DisclosureGroup    |    자동     |
+| 61  | Layout      | Nav                |    자동     |
+| 62  | Layout      | Slot               |    수동     |
+| 63  | Layout      | Accordion          |    수동     |
+| 64  | Overlays    | Tooltip            |    자동     |
+| 65  | Overlays    | Dialog             |    자동     |
+| 66  | Overlays    | Modal              |    수동     |
+| 67  | Overlays    | Popover            |    자동     |
+| 68  | Date & Time | Calendar           |    자동     |
+| 69  | Date & Time | DatePicker         |   자동 ¹    |
+| 70  | Date & Time | DateRangePicker    |   자동 ¹    |
+| 71  | Date & Time | TimeField          |   자동 ¹    |
+| 72  | Date & Time | DateField          |   자동 ¹    |
+| 73  | Date & Time | RangeCalendar      |    자동     |
+
+| 유형       |  개수  | 비율  |
+| ---------- | :----: | :---: |
+| **자동**   | **43** | 58.9% |
+| **Hybrid** | **16** | 21.9% |
+| **수동**   | **14** | 19.2% |
+| **합계**   | **73** | 100%  |
 
 **2026-03-26 현재 상태**:
 
@@ -1433,11 +1524,12 @@ properties: {
 
 | 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |     Phase 4 (실측)      |
 | ---------------- | :------------------------: | :--------------: | :--------------: | :---------------------: |
-| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~51개** (hybrid+수동) |
-| 자동 생성 에디터 |            0개             |       75개       |       83개       |     **58개** (spec)     |
-| 삭제된 에디터    |            0개             |       12개       |       12개       |        **34개**         |
+| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | **~49개** (hybrid+수동) |
+| 자동 생성 에디터 |            0개             |       75개       |       83개       |     **59개** (spec)     |
+| 삭제된 에디터    |            0개             |       12개       |       12개       |        **36개**         |
 | hybrid 에디터    |            0개             |       0개        |       7개        |        **16개**         |
-| specRegistry     |            0개             |       12개       |       23개       |        **58개**         |
+| specRegistry     |            0개             |       12개       |       23개       |        **59개**         |
+| propagation      |            0개             |       0개        |       21개       |        **22개**         |
 | 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |         **1개**         |
 | variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |         **1곳**         |
 
