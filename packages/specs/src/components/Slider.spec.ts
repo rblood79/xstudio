@@ -37,6 +37,11 @@ export interface SliderProps {
   maxValue?: number;
   step?: number;
   showValue?: boolean;
+  locale?: string;
+  valueFormat?: "number" | "percent" | "unit" | "custom";
+  unit?: string;
+  form?: string;
+  orientation?: "horizontal" | "vertical";
   isDisabled?: boolean;
   isRequired?: boolean;
   labelPosition?: "top" | "side";

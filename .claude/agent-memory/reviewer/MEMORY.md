@@ -20,6 +20,11 @@
 - **Spec 전환 시 metadata.ts 미정리 패턴**: 에디터 파일은 HybridAfterSection으로 전환하되 Spec을 등록한 경우, registry.ts가 propertySpec 경로로 단락되어 metadata `hasCustomEditor: true` 분기에 도달하지 않더라도 metadata 불일치 상태가 남음 — 05e6489c 커밋의 GridList/ListBox가 이 패턴 (Spec 등록 후 metadata 미정리)
 - **Spec shapes() 내 `Math.ceil(fontSize * 1.5)` labelLineHeight 계산**: Select.spec.ts, ComboBox.spec.ts의 legacy(!hasChildren) 경로에 남아있는 패턴 — LABEL_SIZE_STYLE lineHeight 역참조로 교체 필요 (canvas-rendering.md CRITICAL 규칙)
 - **composition.delegation 크기별 CSS 변수 복제**: Select.spec.ts ↔ ComboBox.spec.ts의 trigger 컨테이너 delegation 변수 5사이즈가 거의 동일 — 공통 헬퍼 팩토리로 추출 필요
+- **propagation 규칙과 수동 syncChildProp 병존으로 이중 업데이트**: Spec에 `{ parentProp: "value", childPath: "SliderTrack", override: true }` 규칙이 있음에도 에디터에서 `syncSliderTrackValue`로 SliderTrack을 별도 업데이트 — propagation 규칙 추가 시 에디터의 대응 수동 sync 코드 반드시 제거
+- **`handleRangeModeToggle`에서 `childrenMap` stale props 사용**: `sliderOutput.props`를 childrenMap 경유로 spread — `elementsMap.get(id)?.props` 로 최신 조회 필수 (zustand-childrenmap-staleness 반복 패턴)
+- **Spec properties field key가 Props 인터페이스에 미등록**: `Slider.spec.ts`의 `key: "orientation"` 필드가 `SliderProps`에 없는 패턴 — Spec properties 추가 시 Props 인터페이스에도 동시 등록 필수
+- **Spec sizes 키와 Props.size 타입 불일치**: `ListBox.spec.ts`에서 `sizes` 키는 `sm/md/lg`인데 `ListBoxProps.size`는 `"S"|"M"|"L"` — runtime에 `spec.sizes[props.size]` undefined 반환
+- **string-array join/split 구분자 비대칭**: `SpecField.tsx`의 `string-array` 케이스에서 join은 `sep + " "`, split은 `sep`만 사용 — 커스텀 separator 사용 시 round-trip 불완전
 
 ## False Positive 기록
 

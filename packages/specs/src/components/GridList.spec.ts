@@ -25,9 +25,8 @@ import {
   MoveHorizontal,
   Square,
   FormInput,
-  Search,
-  Filter,
 } from "lucide-react";
+import { FILTERING_SECTION } from "../utils/sharedSections";
 
 /**
  * GridList Item
@@ -241,27 +240,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
           },
         ],
       },
-      {
-        title: "Filtering",
-        icon: Search,
-        fields: [
-          {
-            key: "filterText",
-            type: "string",
-            label: "Filter Text",
-            icon: Search,
-            placeholder: "Search...",
-            emptyToUndefined: true,
-          },
-          {
-            key: "filterFields",
-            type: "string-array",
-            label: "Filter Fields",
-            icon: Filter,
-            placeholder: "label, name, title",
-          },
-        ],
-      },
+      FILTERING_SECTION,
     ],
   },
 

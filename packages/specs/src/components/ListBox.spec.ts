@@ -24,16 +24,15 @@ import {
   Ruler,
   Rows,
   FormInput,
-  Search,
-  Filter,
 } from "lucide-react";
+import { FILTERING_SECTION } from "../utils/sharedSections";
 
 /**
  * ListBox Props
  */
 export interface ListBoxProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   description?: string;
   errorMessage?: string;
@@ -70,7 +69,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [
@@ -207,27 +206,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           },
         ],
       },
-      {
-        title: "Filtering",
-        icon: Search,
-        fields: [
-          {
-            key: "filterText",
-            type: "string",
-            label: "Filter Text",
-            icon: Search,
-            placeholder: "Search...",
-            emptyToUndefined: true,
-          },
-          {
-            key: "filterFields",
-            type: "string-array",
-            label: "Filter Fields",
-            icon: Filter,
-            placeholder: "label, name, title",
-          },
-        ],
-      },
+      FILTERING_SECTION,
     ],
   },
 

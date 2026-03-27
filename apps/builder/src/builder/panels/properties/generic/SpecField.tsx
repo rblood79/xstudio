@@ -172,7 +172,9 @@ export const SpecField = memo(function SpecField({
     case "string-array": {
       const sep = field.separator ?? ",";
       const arr = resolveCurrentValue(field.key);
-      const displayValue = Array.isArray(arr) ? arr.join(`${sep} `) : "";
+      const displayValue = Array.isArray(arr)
+        ? arr.join(sep === "," ? ", " : sep)
+        : "";
       return (
         <PropertyInput
           label={label}

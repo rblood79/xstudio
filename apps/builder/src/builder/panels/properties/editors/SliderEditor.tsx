@@ -16,6 +16,9 @@ import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
  * Range Mode 토글 시 Thumb 동적 생성/삭제 + 배열 value 조작이 필요하므로
  * Spec 선언형으로 표현 불가. 나머지(label, NumberFormatting, Range min/max/step 등)는
  * Spec properties + propagation으로 자동화 완료.
+ *
+ * value/minValue/maxValue → SliderTrack 동기화는 propagation 규칙이 담당하므로
+ * afterSections에서 SliderTrack을 직접 업데이트하지 않는다.
  */
 export const SliderHybridAfterSections = memo(
   function SliderHybridAfterSections({
@@ -33,22 +36,6 @@ export const SliderHybridAfterSections = memo(
         ]
       : [0, 100];
 
-    // SliderTrack에 value 직접 동기화
-    const syncSliderTrackValue = useCallback(
-      (value: unknown) => {
-        const { childrenMap } = useStore.getState();
-        const children = childrenMap.get(elementId) ?? [];
-        const track = children.find((c) => c.tag === "SliderTrack");
-        if (!track) return;
-        useStore.getState().updateElementProps(track.id, {
-          ...track.props,
-          value,
-        });
-      },
-      [elementId],
-    );
-
-    // SliderOutput children 동기화
     const syncSliderOutput = useCallback(
       (text: string) => {
         const childUpdates = buildChildUpdates([
@@ -72,7 +59,7 @@ export const SliderHybridAfterSections = memo(
 
         const sliderChildren = childrenMap.get(elementId) ?? [];
         const sliderTrack = sliderChildren.find((c) => c.tag === "SliderTrack");
-        const sliderOutput = sliderChildren.find(
+        const sliderOutputRef = sliderChildren.find(
           (c) => c.tag === "SliderOutput",
         );
 
@@ -88,11 +75,14 @@ export const SliderHybridAfterSections = memo(
 
           onUpdate({ value: [startVal, endVal] });
 
-          if (sliderOutput) {
-            store.updateElementProps(sliderOutput.id, {
-              ...sliderOutput.props,
-              children: `${startVal} – ${endVal}`,
-            });
+          if (sliderOutputRef) {
+            const freshOutput = elementsMap.get(sliderOutputRef.id);
+            if (freshOutput) {
+              store.updateElementProps(freshOutput.id, {
+                ...freshOutput.props,
+                children: `${startVal} – ${endVal}`,
+              });
+            }
           }
 
           if (sliderTrack) {
@@ -123,11 +113,14 @@ export const SliderHybridAfterSections = memo(
 
           onUpdate({ value: singleVal });
 
-          if (sliderOutput) {
-            store.updateElementProps(sliderOutput.id, {
-              ...sliderOutput.props,
-              children: String(singleVal),
-            });
+          if (sliderOutputRef) {
+            const freshOutput = elementsMap.get(sliderOutputRef.id);
+            if (freshOutput) {
+              store.updateElementProps(freshOutput.id, {
+                ...freshOutput.props,
+                children: String(singleVal),
+              });
+            }
           }
 
           if (sliderTrack) {
@@ -159,10 +152,9 @@ export const SliderHybridAfterSections = memo(
           : [0, 100];
         latest[index] = num;
         onUpdate({ value: latest });
-        syncSliderTrackValue(latest);
         syncSliderOutput(`${latest[0]} – ${latest[1]}`);
       },
-      [elementId, onUpdate, syncSliderTrackValue, syncSliderOutput],
+      [elementId, onUpdate, syncSliderOutput],
     );
 
     return (
@@ -198,7 +190,6 @@ export const SliderHybridAfterSections = memo(
             onChange={(value) => {
               const numVal = value === "" ? 0 : Number(value) || 0;
               onUpdate({ value: numVal });
-              syncSliderTrackValue(numVal);
               syncSliderOutput(String(numVal));
             }}
             icon={NotebookTabs}
