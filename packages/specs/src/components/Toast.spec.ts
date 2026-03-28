@@ -32,6 +32,8 @@ export interface ToastProps {
   size?: "S" | "M" | "L";
   message?: string;
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 높이 */
+  _containerHeight?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -309,7 +311,11 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       shapes.push({
         type: "text" as const,
         x: paddingX + (size.iconSize || 20) + (size.gap || 10),
-        y: size.height / 2,
+        y:
+          typeof props._containerHeight === "number" &&
+          props._containerHeight > 0
+            ? props._containerHeight / 2
+            : size.height / 2,
         text: message,
         fontSize: fontSize,
         fontFamily: ff,

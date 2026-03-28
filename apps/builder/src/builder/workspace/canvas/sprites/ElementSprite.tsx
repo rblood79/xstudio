@@ -2066,7 +2066,12 @@ export const ElementSprite = memo(function ElementSprite({
               if (tag === "Tag" && tagGroupAllowsRemoving) {
                 specProps = { ...specProps, allowsRemoving: true };
               }
-              if (tag === "Tag" || tag === "Breadcrumbs" || tag === "Tabs") {
+              if (
+                tag === "Tag" ||
+                tag === "Breadcrumbs" ||
+                tag === "Tabs" ||
+                tag === "Toast"
+              ) {
                 specProps = {
                   ...specProps,
                   _containerWidth: finalWidth,
