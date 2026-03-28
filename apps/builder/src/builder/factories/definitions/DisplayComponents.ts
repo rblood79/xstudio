@@ -309,7 +309,8 @@ export function createActionMenuDefinition(
     parent: {
       tag: "ActionMenu",
       props: {
-        children: "More",
+        children: "Actions",
+        label: "Actions",
         size: "md",
         align: "start",
         style: {},
@@ -318,7 +319,35 @@ export function createActionMenuDefinition(
       parent_id: parentId,
       order_num: orderNum,
     },
-    children: [],
+    children: [
+      {
+        tag: "MenuItem",
+        props: {
+          children: "Edit",
+          textValue: "Edit",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "MenuItem",
+        props: {
+          children: "Duplicate",
+          textValue: "Duplicate",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "MenuItem",
+        props: {
+          children: "Delete",
+          textValue: "Delete",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+    ],
   };
 }
 

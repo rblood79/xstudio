@@ -68,6 +68,75 @@ export function createMenuDefinition(
 }
 
 /**
+ * Nav 컴포넌트 정의
+ *
+ * CSS DOM 구조 대응:
+ *   Nav (parent, tag="Nav")
+ *     ├─ Link (tag="Link", children="Home", href="/")
+ *     ├─ Link (tag="Link", children="About", href="/about")
+ *     └─ Link (tag="Link", children="Contact", href="/contact")
+ */
+export function createNavDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Nav",
+    parent: {
+      tag: "Nav",
+      props: {
+        label: "Navigation",
+        style: {
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Link",
+        props: {
+          children: "Home",
+          href: "/",
+          variant: "primary",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Link",
+        props: {
+          children: "About",
+          href: "/about",
+          variant: "primary",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "Link",
+        props: {
+          children: "Contact",
+          href: "/contact",
+          variant: "primary",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+    ],
+  };
+}
+
+/**
  * Pagination 컴포넌트 정의
  *
  * CSS DOM 구조 대응:

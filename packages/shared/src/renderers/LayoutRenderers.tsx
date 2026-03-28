@@ -20,7 +20,17 @@ import {
   Group,
   Skeleton,
   RangeCalendar,
+  MenuButton,
+  MenuItem,
 } from "../components/list";
+import { Disclosure } from "../components/Disclosure";
+import { DisclosureGroup } from "../components/DisclosureGroup";
+import { ColorSwatch } from "../components/ColorSwatch";
+import {
+  ColorSwatchPicker,
+  ColorSwatchPickerItem,
+} from "../components/ColorSwatchPicker";
+import { parseColor } from "react-aria-components";
 import { Slot } from "../components/Slot";
 import { getIconData } from "@xstudio/specs";
 import type {
@@ -817,8 +827,7 @@ export const renderProgressBar = (
       className={element.props.className}
       label={label}
       variant={
-        (element.props.variant as "default" | "accent" | "neutral") ||
-        "default"
+        (element.props.variant as "default" | "accent" | "neutral") || "default"
       }
       value={Number(element.props.value || 0)}
       minValue={
@@ -1451,10 +1460,8 @@ export const renderStatusLight = (
   _context: RenderContext,
 ): React.ReactNode => {
   const size = String(element.props.size || "md").toLowerCase();
-  const dotSize =
-    { sm: 8, md: 10, lg: 12 }[size] ?? 10;
-  const fontSize =
-    { sm: 12, md: 14, lg: 16 }[size] ?? 14;
+  const dotSize = { sm: 8, md: 10, lg: 12 }[size] ?? 10;
+  const fontSize = { sm: 12, md: 14, lg: 16 }[size] ?? 14;
 
   const variantColorMap: Record<string, string> = {
     neutral: "var(--fg-muted)",
@@ -1577,36 +1584,64 @@ export const renderActionMenu = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const eventHandlers =
-    context.services?.createEventHandlerMap?.(element, context) ?? {};
+  const { elements, renderElement } = context;
+
+  const menuItemChildren = elements
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "MenuItem",
+    )
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   return (
-    <button
+    <MenuButton
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
-      data-custom-id={element.customId}
+      label={String(element.props.children || element.props.label || "Actions")}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {menuItemChildren.map((child) => renderElement(child, child.id))}
+    </MenuButton>
+  );
+};
+
+/**
+ * Nav 렌더링
+ * 네비게이션 컨테이너 — 자식(Link 등) 렌더링
+ */
+export const renderNav = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <nav
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
       style={{
-        display: "inline-flex",
+        display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        gap: 4,
+        gap: 16,
         ...element.props.style,
       }}
       className={element.props.className}
-      disabled={Boolean(element.props.isDisabled)}
-      onClick={eventHandlers.onClick as unknown as React.MouseEventHandler}
+      aria-label={String(element.props.label || "Navigation")}
     >
-      {(element.props.children as React.ReactNode) ||
-        (element.props.label as string) ||
-        "More"}
-      <span style={{ fontSize: 10, lineHeight: 1 }}>&#9660;</span>
-    </button>
+      {children.map((child) => renderElement(child, child.id))}
+    </nav>
   );
 };
 
 /**
  * Accordion 렌더링
- * DisclosureGroup과 동일한 구조 — flex column 컨테이너
+ * React Aria DisclosureGroup 기반 — Accordion = DisclosureGroup
  */
 export const renderAccordion = (
   element: PreviewElement,
@@ -1619,24 +1654,202 @@ export const renderAccordion = (
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   return (
-    <div
+    <DisclosureGroup
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
-      data-custom-id={element.customId}
-      data-accent={
-        element.props.accentColor
-          ? String(element.props.accentColor)
-          : undefined
-      }
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        ...element.props.style,
-      }}
+      allowsMultipleExpanded={Boolean(
+        element.props.allowsMultipleExpanded ?? false,
+      )}
+      style={element.props.style}
       className={element.props.className}
     >
       {children.map((child) => renderElement(child, child.id))}
+    </DisclosureGroup>
+  );
+};
+
+/**
+ * DisclosureGroup 렌더링
+ * React Aria DisclosureGroup — 여러 Disclosure를 감싸는 컨테이너
+ */
+export const renderDisclosureGroup = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <DisclosureGroup
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      allowsMultipleExpanded={Boolean(
+        element.props.allowsMultipleExpanded ?? true,
+      )}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </DisclosureGroup>
+  );
+};
+
+/**
+ * Disclosure 렌더링
+ * React Aria Disclosure — 접을 수 있는 콘텐츠 패널
+ */
+export const renderDisclosure = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  const headerEl = children.find(
+    (c) => c.tag === "DisclosureHeader" || c.tag === "Heading",
+  );
+
+  const title = headerEl
+    ? String(
+        (headerEl.props as Record<string, unknown>).children ||
+          (headerEl.props as Record<string, unknown>).title ||
+          "Section",
+      )
+    : String(element.props.title || "Section");
+
+  const contentChildren = children.filter(
+    (c) => c.tag !== "DisclosureHeader" && c.tag !== "Heading",
+  );
+
+  return (
+    <Disclosure
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      title={title}
+      defaultExpanded={Boolean(element.props.isExpanded ?? true)}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {contentChildren.map((child) => renderElement(child, child.id))}
+    </Disclosure>
+  );
+};
+
+/**
+ * DisclosureHeader 렌더링 — Disclosure 내부에서 직접 처리하므로 단독 사용 시 fallback
+ */
+export const renderDisclosureHeader = (
+  element: PreviewElement,
+  _context: RenderContext,
+): React.ReactNode => {
+  return (
+    <span key={element.id} data-element-id={element.id}>
+      {String(element.props.children || element.props.title || "Section")}
+    </span>
+  );
+};
+
+/**
+ * DisclosureContent 렌더링 — 텍스트 콘텐츠 표시
+ */
+export const renderDisclosureContent = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <div
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+    >
+      {children.length > 0
+        ? children.map((child) => renderElement(child, child.id))
+        : String(element.props.children || "")}
     </div>
+  );
+};
+
+/**
+ * ColorSwatch 렌더링
+ * React Aria ColorSwatch — 단일 색상 박스
+ */
+export const renderColorSwatch = (
+  element: PreviewElement,
+  _context: RenderContext,
+): React.ReactNode => {
+  const colorStr = String(
+    element.props.color || element.props.value || "#3b82f6",
+  );
+  let color;
+  try {
+    color = parseColor(colorStr);
+  } catch {
+    color = parseColor("#3b82f6");
+  }
+
+  return (
+    <ColorSwatch
+      key={element.id}
+      data-element-id={element.id}
+      color={color}
+      style={element.props.style}
+      className={element.props.className}
+    />
+  );
+};
+
+/**
+ * ColorSwatchPicker 렌더링
+ * React Aria ColorSwatchPicker — 색상 선택 그리드
+ */
+export const renderColorSwatchPicker = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements } = context;
+
+  const swatchChildren = elements
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "ColorSwatch",
+    )
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <ColorSwatchPicker
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {swatchChildren.map((child) => {
+        const colorStr = String(
+          (child.props as Record<string, unknown>).color ||
+            (child.props as Record<string, unknown>).value ||
+            "#3b82f6",
+        );
+        let color;
+        try {
+          color = parseColor(colorStr);
+        } catch {
+          color = parseColor("#3b82f6");
+        }
+        return <ColorSwatchPickerItem key={child.id} color={color} />;
+      })}
+    </ColorSwatchPicker>
   );
 };
 

@@ -84,7 +84,15 @@ export const rendererMap: Record<
   // Phase 2: Action/Group/Accordion (ADR-030)
   ButtonGroup: LayoutRenderers.renderButtonGroup,
   ActionMenu: LayoutRenderers.renderActionMenu,
+  Nav: LayoutRenderers.renderNav,
+  Navigation: LayoutRenderers.renderNav,
   Accordion: LayoutRenderers.renderAccordion,
+  Disclosure: LayoutRenderers.renderDisclosure,
+  DisclosureHeader: LayoutRenderers.renderDisclosureHeader,
+  DisclosureContent: LayoutRenderers.renderDisclosureContent,
+  DisclosureGroup: LayoutRenderers.renderDisclosureGroup,
+  ColorSwatch: LayoutRenderers.renderColorSwatch,
+  ColorSwatchPicker: LayoutRenderers.renderColorSwatchPicker,
   // Phase 3: Extended Controls (ADR-030)
   ProgressCircle: LayoutRenderers.renderProgressCircle,
   Image: LayoutRenderers.renderImage,

@@ -54,6 +54,7 @@ import {
 } from "./definitions/OverlayComponents";
 import {
   createMenuDefinition,
+  createNavDefinition,
   createPaginationDefinition,
   createDisclosureDefinition,
   createDisclosureGroupDefinition,
@@ -131,6 +132,8 @@ export class ComponentFactory {
     Table: ComponentFactory.createTable,
     // ⭐ Navigation Components
     Menu: ComponentFactory.createMenu,
+    Nav: ComponentFactory.createNav,
+    Navigation: ComponentFactory.createNav,
     Pagination: ComponentFactory.createPagination,
     Disclosure: ComponentFactory.createDisclosure,
     DisclosureGroup: ComponentFactory.createDisclosureGroup,
@@ -411,6 +414,12 @@ export class ComponentFactory {
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createMenuDefinition, context);
+  }
+
+  private static async createNav(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createNavDefinition, context);
   }
 
   private static async createPagination(
