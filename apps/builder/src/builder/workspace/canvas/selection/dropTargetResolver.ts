@@ -38,6 +38,18 @@ export interface DropTarget {
   siblingBounds: ElementBounds[];
 }
 
+/**
+ * ADR-043 Phase 3: SkiaOverlay RAF에서 읽는 drop indicator 스냅샷.
+ * DropIndicatorState와 동일한 형태로, DropTarget에서 직접 추출한다.
+ * BoundingBox 대신 ElementBounds를 사용하여 변환 없이 전달.
+ */
+export interface DropIndicatorSnapshot {
+  targetBounds: ElementBounds;
+  insertIndex: number;
+  childBounds: ElementBounds[];
+  isHorizontal: boolean;
+}
+
 /** resolveDropTarget에 필요한 store 슬라이스 */
 export interface DropTargetStoreSlice {
   elementsMap: Map<string, Element>;

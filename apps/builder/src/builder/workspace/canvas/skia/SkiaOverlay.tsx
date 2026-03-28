@@ -32,6 +32,7 @@ import type {
   RendererInvalidationPacket,
   SkiaRendererInput,
 } from "../renderers";
+import type { DropIndicatorSnapshot } from "../selection/dropTargetResolver";
 import { recordInvalidation } from "./renderInvalidation";
 import {
   readCssBgColor,
@@ -73,6 +74,11 @@ interface SkiaOverlayProps {
   invalidateLayout: () => void;
   invalidationPacket: RendererInvalidationPacket;
   rendererInput: SkiaRendererInput;
+  /**
+   * ADR-043 Phase 3: drop indicator 스냅샷 ref
+   * SelectionLayer에서 드래그 중 갱신, RAF에서 직접 읽음 (React state 아님)
+   */
+  dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
 }
 
 // readCssBgColor → themeWatcher.ts로 추출 (ADR-035 Phase 6)

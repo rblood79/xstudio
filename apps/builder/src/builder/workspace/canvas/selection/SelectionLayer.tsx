@@ -35,6 +35,7 @@ import {
   resolveDropTarget,
   computeReorderFromDropTarget,
   type DropTarget,
+  type DropIndicatorSnapshot,
 } from "./dropTargetResolver";
 
 // ============================================
@@ -69,6 +70,11 @@ export interface SelectionLayerProps {
     (position: { x: number; y: number }) => void
   >;
   onEndDragRef?: React.MutableRefObject<() => void>;
+  /**
+   * ADR-043 Phase 3: drop indicator 상태 변경 알림 ref
+   * SkiaOverlay RAF 루프에서 직접 읽는 ref — React state 사용 금지 (매 포인터 이벤트마다 갱신)
+   */
+  dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
 }
 
 // ============================================
@@ -90,6 +96,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   onStartMoveRef,
   onUpdateDragRef,
   onEndDragRef,
+  dropIndicatorSnapshotRef,
 }: SelectionLayerProps) {
   useExtend(PIXI_COMPONENTS);
 
@@ -179,15 +186,31 @@ export const SelectionLayer = memo(function SelectionLayer({
         x: originalBounds.x + originalBounds.width / 2 + delta.x,
         y: originalBounds.y + originalBounds.height / 2 + delta.y,
       };
-      dropTargetRef.current = resolveDropTarget(scenePoint, draggedId, {
+      const resolved = resolveDropTarget(scenePoint, draggedId, {
         elementsMap: dragState.elementsMap,
         childrenMap: dragState.childrenMap,
       });
+      dropTargetRef.current = resolved;
+      // ADR-043 Phase 3: drop indicator 스냅샷 갱신 (SkiaOverlay RAF에서 읽음)
+      if (dropIndicatorSnapshotRef) {
+        dropIndicatorSnapshotRef.current = resolved
+          ? {
+              targetBounds: resolved.containerBounds,
+              insertIndex: resolved.insertionIndex,
+              childBounds: resolved.siblingBounds,
+              isHorizontal: resolved.isHorizontal,
+            }
+          : null;
+      }
     },
     onMoveEnd: (elementId, delta) => {
       // ADR-043 Phase 2: drop target이 있고 인접하지 않은 삽입이면 reorder
       const dropTarget = dropTargetRef.current;
       dropTargetRef.current = null;
+      // ADR-043 Phase 3: drop indicator 제거
+      if (dropIndicatorSnapshotRef) {
+        dropIndicatorSnapshotRef.current = null;
+      }
 
       if (dropTarget && !dropTarget.isAdjacentInsertion) {
         const state = useStore.getState();
