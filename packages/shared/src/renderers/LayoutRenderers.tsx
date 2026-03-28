@@ -39,6 +39,7 @@ import type {
   DataBinding,
   ColumnMapping,
   BadgeVariant,
+  ComponentSize,
 } from "../types";
 
 /** Button 내부 아이콘 SVG 렌더링 (Preview용) */
@@ -796,7 +797,7 @@ export const renderPopover = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      size={element.props.size as import("../types").ComponentSize | undefined}
+      size={element.props.size as ComponentSize | undefined}
       placement={
         (element.props.placement as
           | "top"
@@ -809,7 +810,7 @@ export const renderPopover = (
           | "bottom end") || undefined
       }
       crossOffset={
-        element.props.crossOffset != null
+        element.props.crossOffset !== undefined
           ? Number(element.props.crossOffset)
           : undefined
       }
@@ -819,7 +820,7 @@ export const renderPopover = (
           : undefined
       }
       containerPadding={
-        element.props.containerPadding != null
+        element.props.containerPadding !== undefined
           ? Number(element.props.containerPadding)
           : undefined
       }
@@ -1086,7 +1087,7 @@ export const renderBreadcrumbs = (
           ? element.props["aria-label"]
           : undefined
       }
-      size={element.props.size as import("../types").ComponentSize | undefined}
+      size={element.props.size as ComponentSize | undefined}
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
@@ -1630,6 +1631,20 @@ export const renderActionMenu = (
       id={element.customId}
       data-element-id={element.id}
       label={String(element.props.children || element.props.label || "Actions")}
+      align={element.props.align as "start" | "end" | undefined}
+      direction={
+        element.props.direction as
+          | "bottom"
+          | "top"
+          | "left"
+          | "right"
+          | undefined
+      }
+      shouldFlip={
+        element.props.shouldFlip !== undefined
+          ? Boolean(element.props.shouldFlip)
+          : undefined
+      }
       style={element.props.style}
       className={element.props.className}
     >

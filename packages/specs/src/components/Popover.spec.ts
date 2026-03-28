@@ -90,11 +90,6 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
               { value: "bottom end", label: "Bottom End" },
             ],
           },
-        ],
-      },
-      {
-        title: "State",
-        fields: [
           {
             key: "crossOffset",
             type: "number",
@@ -103,18 +98,18 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
             step: 1,
           },
           {
-            key: "shouldFlip",
-            type: "boolean",
-            label: "Should Flip",
-            icon: FlipHorizontal2,
-          },
-          {
             key: "containerPadding",
             type: "number",
             label: "Container Padding",
             icon: SquareDashedMousePointer,
             min: 0,
             step: 1,
+          },
+          {
+            key: "shouldFlip",
+            type: "boolean",
+            label: "Should Flip",
+            icon: FlipHorizontal2,
           },
         ],
       },
