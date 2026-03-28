@@ -76,8 +76,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Buttons",
     icon: "🔘",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ToggleButtonGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -107,8 +106,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Buttons",
     icon: "🛠️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ToolbarEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onFocus, onBlur
       supportedEvents: ["onFocus", "onBlur"],
@@ -120,8 +118,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "🔗",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "LinkEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
@@ -352,8 +349,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "📁",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "FileTriggerEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onSelect
       supportedEvents: ["onSelect"],
@@ -365,8 +361,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "📥",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DropZoneEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onDrop, onDropEnter, onDropExit
       supportedEvents: ["onDrop", "onDropEnter", "onDropExit"],
@@ -395,8 +390,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorPickerEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -408,8 +402,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorFieldEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -421,8 +414,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorAreaEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onChangeEnd, onFocus, onBlur
       supportedEvents: ["onChange", "onChangeEnd", "onFocus", "onBlur"],
@@ -434,8 +426,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorSliderEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onChangeEnd, onFocus, onBlur
       supportedEvents: ["onChange", "onChangeEnd", "onFocus", "onBlur"],
@@ -447,8 +438,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorWheelEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onChangeEnd, onFocus, onBlur
       supportedEvents: ["onChange", "onChangeEnd", "onFocus", "onBlur"],
@@ -460,8 +450,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorSwatchEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -472,8 +461,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Color",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ColorSwatchPickerEditor",
+      hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -550,8 +538,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Overlays",
     icon: "💬",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TooltipEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onOpenChange (tooltip trigger)
       supportedEvents: ["onOpenChange", "onMouseEnter", "onMouseLeave"],
@@ -563,8 +550,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "📊",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ProgressBarEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       supportedEvents: [],
     },
@@ -575,8 +561,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "📏",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "MeterEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       supportedEvents: [],
     },
@@ -587,8 +572,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "🏷️",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "BadgeEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -599,8 +583,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "🎨",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "IconEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -611,8 +594,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "🔔",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ToastEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onClose
       supportedEvents: ["onClose"],
@@ -626,8 +608,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "📦",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "PanelEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // Custom container - supports basic mouse events
       supportedEvents: [
@@ -688,8 +669,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "➖",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "SeparatorEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // Static element - no events
       supportedEvents: [],
@@ -701,8 +681,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "📦",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "GroupEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onFocus, onBlur (for keyboard navigation)
       supportedEvents: ["onFocus", "onBlur"],
@@ -714,8 +693,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Forms",
     icon: "📝",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "FormEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onSubmit, onReset, onInvalid
       supportedEvents: ["onSubmit", "onReset", "onInvalid"],
@@ -727,8 +705,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "📂",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DisclosureEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onExpandedChange, onFocus, onBlur
       supportedEvents: ["onExpandedChange", "onFocus", "onBlur"],
@@ -740,8 +717,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "📂",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DisclosureGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onExpandedChange
       supportedEvents: ["onExpandedChange"],
@@ -768,8 +744,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Layout",
     icon: "🧭",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "NavEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // nav 태그: 내비게이션 링크 컨테이너 (접근성 landmark)
       supportedEvents: [
@@ -800,8 +775,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Overlays",
     icon: "💬",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DialogEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onOpenChange, onFocus, onBlur
       supportedEvents: ["onOpenChange", "onFocus", "onBlur"],
@@ -825,8 +799,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Overlays",
     icon: "💭",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "PopoverEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onOpenChange
       supportedEvents: ["onOpenChange"],
@@ -840,8 +813,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "CalendarEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocusChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -853,8 +825,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DatePickerEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onOpenChange, onFocus, onBlur
       supportedEvents: ["onChange", "onOpenChange", "onFocus", "onBlur"],
@@ -866,8 +837,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DateRangePickerEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onOpenChange, onFocus, onBlur
       supportedEvents: ["onChange", "onOpenChange", "onFocus", "onBlur"],
@@ -879,8 +849,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "🕐",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "TimeFieldEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -892,8 +861,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "DateFieldEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -905,8 +873,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "RangeCalendarEditor",
+      hasCustomEditor: false,
       dataBindingType: "value",
       // React Aria: onChange, onFocusChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
@@ -1125,8 +1092,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "AvatarEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1137,8 +1103,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "AvatarGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1149,8 +1114,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "StatusLightEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1161,8 +1125,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "InlineAlertEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1175,8 +1138,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Buttons",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ButtonGroupEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1211,8 +1173,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ProgressCircleEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1223,8 +1184,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "ImageEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: ["onLoad", "onError"],
     },
@@ -1237,8 +1197,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Content",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "IllustratedMessageEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: [],
     },
@@ -1249,8 +1208,7 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "CardViewEditor",
+      hasCustomEditor: false,
       dataBindingType: null,
       supportedEvents: ["onSelectionChange", "onAction"],
     },

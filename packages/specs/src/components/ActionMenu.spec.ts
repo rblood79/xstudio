@@ -2,6 +2,7 @@
  * ActionMenu Component Spec (properties-only)
  */
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 import { Type, ToggleLeft, Layout, PointerOff } from "lucide-react";
 
 export interface ActionMenuProps {
@@ -128,7 +129,9 @@ export const ActionMenuSpec: ComponentSpec<ActionMenuProps> = {
           ? typeof styleBr === "number"
             ? styleBr
             : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+          : typeof size.borderRadius === "number"
+            ? size.borderRadius
+            : Number(resolveToken(size.borderRadius as TokenRef) ?? 4);
 
       const bgColor =
         props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
@@ -148,7 +151,10 @@ export const ActionMenuSpec: ComponentSpec<ActionMenuProps> = {
           x: paddingX,
           y: 0,
           text: `${text} ▾`,
-          fontSize: size.fontSize as unknown as number,
+          fontSize:
+            typeof size.fontSize === "number"
+              ? size.fontSize
+              : Number(resolveToken(size.fontSize as TokenRef) ?? 14),
           fontWeight: 500,
           fill: variant.text,
           align: "left",

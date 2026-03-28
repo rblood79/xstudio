@@ -244,7 +244,7 @@ export const renderTabs = (
               {elements
                 .filter((child) => child.parent_id === correspondingPanel.id)
                 .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-                .map((child) => renderElement(child))}
+                .map((child) => renderElement(child, child.id))}
             </Panel>
           </TabPanel>
         );
@@ -1066,7 +1066,7 @@ export const renderBreadcrumbs = (
       columnMapping={element.props.columnMapping as ColumnMapping | undefined}
       {...eventHandlers}
     >
-      {breadcrumbChildren.map((child) => renderElement(child))}
+      {breadcrumbChildren.map((child) => renderElement(child, child.id))}
     </Breadcrumbs>
   );
 };
