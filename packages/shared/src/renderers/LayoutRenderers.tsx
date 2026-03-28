@@ -1628,7 +1628,8 @@ export const renderNav = (
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 16,
+        gap: "16px",
+        padding: "8px 16px",
         ...element.props.style,
       }}
       className={element.props.className}
