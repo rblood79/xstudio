@@ -3,15 +3,17 @@
  *
  * 🚀 Phase 10 B1.3: 선택 시스템 통합 레이어
  * 🚀 Phase 19: 성능 최적화 - selectionBoxRef를 통한 imperative 업데이트
+ * ADR-043 Phase 2: Drop Target Resolver 연결
  *
  * 기능:
  * - 선택된 요소의 SelectionBox 표시
  * - Transform 핸들로 리사이즈
- * - 드래그로 이동
+ * - 드래그로 이동 (Phase 2: 같은 부모 내 reorder 지원)
  * - 라쏘 선택
  *
  * @since 2025-12-11 Phase 10 B1.3
  * @updated 2025-12-23 Phase 19 성능 최적화
+ * @updated 2026-03-29 ADR-043 Phase 2 Drop Target Resolver
  */
 
 import { useCallback, useMemo, memo, useState, useEffect, useRef } from "react";
@@ -29,6 +31,11 @@ import {
 import { SelectionBox, type SelectionBoxHandle } from "./SelectionBox";
 import { useDragInteraction } from "./useDragInteraction";
 import type { BoundingBox } from "./types";
+import {
+  resolveDropTarget,
+  computeReorderFromDropTarget,
+  type DropTarget,
+} from "./dropTargetResolver";
 
 // ============================================
 // Types
@@ -89,6 +96,10 @@ export const SelectionLayer = memo(function SelectionLayer({
   // SelectionBox imperative handle ref (드래그 중 PixiJS 직접 조작)
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
 
+  // ADR-043 Phase 2: 드래그 중 현재 drop target을 ref로 보관
+  // React state로 저장하지 않음 — 매 포인터 이벤트마다 갱신되므로 리렌더링 비용 회피
+  const dropTargetRef = useRef<DropTarget | null>(null);
+
   // Store state
   // 🚀 성능 최적화: elementsMap 전체 구독 제거
   // 기존: elementsMap 구독 → 어떤 요소든 변경되면 SelectionLayer 리렌더
@@ -148,14 +159,51 @@ export const SelectionLayer = memo(function SelectionLayer({
   // ============================================
 
   const { startMove, updateDrag, endDrag } = useDragInteraction({
-    onDragUpdate: (_operation, data) => {
-      if (data.delta) {
-        selectionBoxRef.current?.updatePosition(data.delta);
-      }
+    onDragUpdate: (operation, data) => {
+      if (operation !== "move" || !data.delta) return;
+
+      const { delta } = data;
+      selectionBoxRef.current?.updatePosition(delta);
+
+      // ADR-043 Phase 2: drop target resolver
+      // RAF 내에서 호출되므로 매 프레임 1회 실행. resolver는 순수 함수.
+      const dragState = useStore.getState();
+      const draggedId = dragState.selectedElementIds[0];
+      if (!draggedId) return;
+
+      // 드래그 중 요소의 현재 scene-local 위치 = 원래 중심 + delta
+      const originalBounds = getElementBoundsSimple(draggedId);
+      if (!originalBounds) return;
+
+      const scenePoint = {
+        x: originalBounds.x + originalBounds.width / 2 + delta.x,
+        y: originalBounds.y + originalBounds.height / 2 + delta.y,
+      };
+      dropTargetRef.current = resolveDropTarget(scenePoint, draggedId, {
+        elementsMap: dragState.elementsMap,
+        childrenMap: dragState.childrenMap,
+      });
     },
     onMoveEnd: (elementId, delta) => {
-      // drop 시점에 store commit (히스토리 기록 포함)
-      // 드래그 중 store mutation 없음 → drop 시에만 style.left/top delta 반영
+      // ADR-043 Phase 2: drop target이 있고 인접하지 않은 삽입이면 reorder
+      const dropTarget = dropTargetRef.current;
+      dropTargetRef.current = null;
+
+      if (dropTarget && !dropTarget.isAdjacentInsertion) {
+        const state = useStore.getState();
+        const updates = computeReorderFromDropTarget(dropTarget, elementId, {
+          elementsMap: state.elementsMap,
+          childrenMap: state.childrenMap,
+        });
+        if (updates.length > 0) {
+          // 파이프라인: Memory Update (batchUpdateElementOrders) → History → DB (백그라운드)
+          state.batchUpdateElementOrders(updates);
+        }
+        selectionBoxRef.current?.resetPosition();
+        return;
+      }
+
+      // drop target 없음 or 인접 삽입(위치 변화 없음) → 기존 absolute delta 반영
       const state = useStore.getState();
       const el = state.elementsMap.get(elementId);
       if (!el) return;
