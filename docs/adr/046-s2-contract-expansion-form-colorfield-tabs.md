@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-03-26)
+Implemented (2026-03-29)
 
 ## Context
 
@@ -103,19 +103,30 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
   - `Form.labelPosition`
   - `Form.labelAlign`
   - `Form.necessityIndicator`
+- 채택 (ADR-045 잔여 통합, 2026-03-29)
+  - `Tooltip.containerPadding`
+  - `Tooltip.crossOffset`
+  - `Tooltip.shouldFlip`
+  - `Popover.crossOffset`
+  - `Popover.shouldFlip`
+  - `Popover.containerPadding`
+  - `Breadcrumbs.size` (E2E 완성)
+  - `Menu.align`
+  - `Menu.direction`
+  - `Menu.shouldFlip`
 - 보류
   - `Form.size`
   - `Form.isEmphasized`
 
 ## Gates
 
-| Gate | 조건 | 목적 |
-| ---- | ---- | ---- |
-| G1 | 채택 대상 prop는 S2 문서 근거와 현재 코드 경로(builder/shared/renderer) 중 최소 2개 이상의 근거를 가진다. | 문서-코드 괴리 방지 |
-| G2 | 채택한 prop는 `unified.types.ts`와 shared component API에 동시에 반영 가능해야 한다. | 자동 생성 입력 계약 확보 |
-| G3 | `ColorField`는 현재 editor에만 존재하는 필드를 그대로 승격하지 않고, 타입/renderer 반영 가능성을 먼저 검증한다. | editor-driven 계약 오염 방지 |
-| G4 | `Form`의 상위 계약은 자식 필드 전파 규칙과 함께 정의하거나, 전파 규칙이 없다면 채택을 보류한다. | 부분 구현 방지 |
-| G5 | `Tabs`의 새 계약은 `density`처럼 실질 렌더링 의미가 있는 항목만 우선 채택한다. | 과도한 surface 확장 방지 |
+| Gate | 조건                                                                                                            | 목적                         |
+| ---- | --------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| G1   | 채택 대상 prop는 S2 문서 근거와 현재 코드 경로(builder/shared/renderer) 중 최소 2개 이상의 근거를 가진다.       | 문서-코드 괴리 방지          |
+| G2   | 채택한 prop는 `unified.types.ts`와 shared component API에 동시에 반영 가능해야 한다.                            | 자동 생성 입력 계약 확보     |
+| G3   | `ColorField`는 현재 editor에만 존재하는 필드를 그대로 승격하지 않고, 타입/renderer 반영 가능성을 먼저 검증한다. | editor-driven 계약 오염 방지 |
+| G4   | `Form`의 상위 계약은 자식 필드 전파 규칙과 함께 정의하거나, 전파 규칙이 없다면 채택을 보류한다.                 | 부분 구현 방지               |
+| G5   | `Tabs`의 새 계약은 `density`처럼 실질 렌더링 의미가 있는 항목만 우선 채택한다.                                  | 과도한 surface 확장 방지     |
 
 ## Consequences
 

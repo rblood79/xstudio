@@ -10,7 +10,14 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
-import { MessageSquare, MapPin, Move } from "lucide-react";
+import {
+  MessageSquare,
+  MapPin,
+  Move,
+  SquareDashedMousePointer,
+  ArrowLeftRight,
+  FlipHorizontal2,
+} from "lucide-react";
 
 /**
  * Tooltip Props
@@ -30,6 +37,9 @@ export interface TooltipProps {
     | "bottom start"
     | "bottom end";
   offset?: number;
+  containerPadding?: number;
+  crossOffset?: number;
+  shouldFlip?: boolean;
   showArrow?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -93,6 +103,27 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
             type: "number",
             label: "Offset",
             icon: Move,
+          },
+          {
+            key: "containerPadding",
+            type: "number",
+            label: "Container Padding",
+            icon: SquareDashedMousePointer,
+            min: 0,
+            step: 1,
+          },
+          {
+            key: "crossOffset",
+            type: "number",
+            label: "Cross Offset",
+            icon: ArrowLeftRight,
+            step: 1,
+          },
+          {
+            key: "shouldFlip",
+            type: "boolean",
+            label: "Should Flip",
+            icon: FlipHorizontal2,
           },
         ],
       },

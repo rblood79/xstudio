@@ -9,7 +9,13 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveStateColors } from "../utils/stateEffect";
-import { MessageSquare, MapPin } from "lucide-react";
+import {
+  MessageSquare,
+  MapPin,
+  ArrowLeftRight,
+  FlipHorizontal2,
+  SquareDashedMousePointer,
+} from "lucide-react";
 
 /**
  * Popover Props
@@ -28,6 +34,9 @@ export interface PopoverProps {
     | "bottom start"
     | "bottom end";
   showArrow?: boolean;
+  crossOffset?: number;
+  shouldFlip?: boolean;
+  containerPadding?: number;
 }
 
 /**
@@ -59,6 +68,10 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
         ],
       },
       {
+        title: "Appearance",
+        fields: [{ type: "size" }],
+      },
+      {
         title: "Position",
         fields: [
           {
@@ -76,6 +89,32 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
               { value: "bottom start", label: "Bottom Start" },
               { value: "bottom end", label: "Bottom End" },
             ],
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "crossOffset",
+            type: "number",
+            label: "Cross Offset",
+            icon: ArrowLeftRight,
+            step: 1,
+          },
+          {
+            key: "shouldFlip",
+            type: "boolean",
+            label: "Should Flip",
+            icon: FlipHorizontal2,
+          },
+          {
+            key: "containerPadding",
+            type: "number",
+            label: "Container Padding",
+            icon: SquareDashedMousePointer,
+            min: 0,
+            step: 1,
           },
         ],
       },

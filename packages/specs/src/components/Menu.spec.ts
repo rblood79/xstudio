@@ -11,7 +11,17 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Tag, PointerOff, Focus, SquareX, List, Hash } from "lucide-react";
+import {
+  Tag,
+  PointerOff,
+  Focus,
+  SquareX,
+  List,
+  Hash,
+  AlignStartVertical,
+  ArrowDown,
+  ToggleRight,
+} from "lucide-react";
 
 /**
  * Menu Props
@@ -19,6 +29,9 @@ import { Tag, PointerOff, Focus, SquareX, List, Hash } from "lucide-react";
 export interface MenuProps {
   variant?: "default" | "accent";
   size?: "S" | "M" | "L";
+  align?: "start" | "end";
+  direction?: "bottom" | "top" | "left" | "right";
+  shouldFlip?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -105,6 +118,33 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
         fields: [{ key: "label", type: "string", label: "Label", icon: Tag }],
       },
       {
+        title: "Appearance",
+        fields: [
+          {
+            key: "align",
+            type: "enum",
+            label: "Align",
+            icon: AlignStartVertical,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+          },
+          {
+            key: "direction",
+            type: "enum",
+            label: "Direction",
+            icon: ArrowDown,
+            options: [
+              { value: "bottom", label: "Bottom" },
+              { value: "top", label: "Top" },
+              { value: "left", label: "Left" },
+              { value: "right", label: "Right" },
+            ],
+          },
+        ],
+      },
+      {
         title: "State",
         fields: [
           {
@@ -144,6 +184,12 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             type: "boolean",
             label: "Auto Focus",
             icon: Focus,
+          },
+          {
+            key: "shouldFlip",
+            type: "boolean",
+            label: "Should Flip",
+            icon: ToggleRight,
           },
         ],
       },

@@ -723,6 +723,21 @@ export const renderTooltip = (
           ? Number(element.props.offset)
           : undefined
       }
+      containerPadding={
+        element.props.containerPadding !== undefined
+          ? Number(element.props.containerPadding)
+          : undefined
+      }
+      crossOffset={
+        element.props.crossOffset !== undefined
+          ? Number(element.props.crossOffset)
+          : undefined
+      }
+      shouldFlip={
+        element.props.shouldFlip !== undefined
+          ? Boolean(element.props.shouldFlip)
+          : undefined
+      }
     >
       {typeof element.props.children === "string"
         ? element.props.children
@@ -781,6 +796,7 @@ export const renderPopover = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      size={element.props.size as import("../types").ComponentSize | undefined}
       placement={
         (element.props.placement as
           | "top"
@@ -791,6 +807,21 @@ export const renderPopover = (
           | "top end"
           | "bottom start"
           | "bottom end") || undefined
+      }
+      crossOffset={
+        element.props.crossOffset != null
+          ? Number(element.props.crossOffset)
+          : undefined
+      }
+      shouldFlip={
+        element.props.shouldFlip !== undefined
+          ? Boolean(element.props.shouldFlip)
+          : undefined
+      }
+      containerPadding={
+        element.props.containerPadding != null
+          ? Number(element.props.containerPadding)
+          : undefined
       }
     >
       {typeof element.props.children === "string"
@@ -1055,6 +1086,7 @@ export const renderBreadcrumbs = (
           ? element.props["aria-label"]
           : undefined
       }
+      size={element.props.size as import("../types").ComponentSize | undefined}
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}

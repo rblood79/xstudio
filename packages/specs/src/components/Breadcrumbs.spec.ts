@@ -92,6 +92,10 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   properties: {
     sections: [
       {
+        title: "Appearance",
+        fields: [{ type: "size" }],
+      },
+      {
         title: "State",
         fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
