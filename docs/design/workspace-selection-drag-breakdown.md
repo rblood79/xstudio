@@ -20,51 +20,105 @@
 
 ### 1. 행동 기준 고정
 
-- [ ] Pencil에서 확인한 행동을 XStudio 용어로 다시 적어둠
-- [ ] drag start vacate, adjacent insertion, guide line fallback의 우선순위를 확정함
-- [ ] single selection과 multi selection의 동작 차이를 문서화함
-- [ ] body/page root는 move 대상에서 제외한다는 점을 확정함
+- [x] Pencil에서 확인한 행동을 XStudio 용어로 다시 적어둠
+  - **drag start vacate**: 드래그 시작 시 원래 위치에 "빈 자리" 표시 (opacity 감소 또는 placeholder)
+  - **adjacent insertion**: 인접 형제 요소 사이로 끌면 삽입 위치 표시 (drop indicator line)
+  - **guide line fallback**: 인접하지 않은 위치에서는 가이드라인으로 drop 위치 유도
+- [x] drag start vacate, adjacent insertion, guide line fallback의 우선순위를 확정함
+  - 우선순위: **adjacent insertion > guide line fallback > vacate visual**
+  - adjacent insertion이 감지되면 guide line은 표시하지 않음
+- [x] single selection과 multi selection의 동작 차이를 문서화함
+  - **single**: 개별 요소를 드래그하여 형제 간 reorder 또는 다른 컨테이너로 reparent
+  - **multi**: Phase 1에서는 단일 선택만 지원. multi selection drag는 후속 Phase에서 확장
+- [x] body/page root는 move 대상에서 제외한다는 점을 확정함
+  - body 요소는 드래그 불가 (페이지 루트)
+  - layout body도 드래그 불가
 
 ### 2. 좌표계/geometry 계약 고정
 
-- [ ] PixiJS는 interaction shell, Skia는 geometry source of truth로 합의함
-- [ ] `clientX/clientY` 기반 좌표와 scene-local 좌표를 분리함
-- [ ] drop target 탐색은 Skia-derived bounds만 사용함
-- [ ] Pixi display object bounds는 drop candidate 계산에 사용하지 않음
-- [ ] page offset, zoom, pan이 commit delta에 미치는 영향을 정리함
+- [x] PixiJS는 interaction shell, Skia는 geometry source of truth로 합의함
+- [x] `clientX/clientY` 기반 좌표와 scene-local 좌표를 분리함
+  - **clientX/clientY**: 브라우저 viewport 기준 — pointer event에서 수신
+  - **scene-local**: Camera transform(pan/zoom) 적용 후 캔버스 좌표 — `toScenePoint(clientX, clientY)` 변환
+  - **element-local**: Taffy layout 결과의 상대 좌표 — 부모 기준 x/y
+- [x] drop target 탐색은 Skia-derived bounds만 사용함
+  - **현재 문제**: `elementRegistry.getElementBounds()`가 `container.getBounds()`(PixiJS 글로벌 좌표)를 반환 → Camera transform 포함 → scene-local과 불일치
+  - **해결**: `layoutBoundsRegistry`의 Taffy 계산 결과(scene-local)를 source of truth로 사용
+  - `hitTestPoint()`(WASM spatialIndex)는 이미 layout bounds 기반 → 올바른 경로
+- [x] Pixi display object bounds는 drop candidate 계산에 사용하지 않음
+  - `container.getBounds()`는 글로벌 좌표이므로 drop candidate에 부적합
+  - `layoutBoundsRegistry`의 값만 사용
+- [x] page offset, zoom, pan이 commit delta에 미치는 영향을 정리함
+  - drag delta는 **scene-local 좌표계**에서 계산 (zoom 보정 후)
+  - commit 시 delta를 요소의 style.left/top 또는 order_num에 반영
+  - **flow element**: order_num 변경 (reorder) — delta 자체는 시각적 오프셋만
+  - **absolute element**: style.left/top에 delta 직접 반영
 
 ### 3. 통합 전략 고정
 
-- [ ] `useDragInteraction.ts`는 유지하고 확장한다는 방침을 확정함
-- [ ] move만 Selection drag resolver로 재정렬하고 resize/lasso는 기존 경로를 유지함
-- [ ] existing deferred commit 패턴을 폐기하지 않고 확장함
-- [ ] SelectionBox는 drag shell, resolver는 geometry contract, store는 commit contract로 분리함
-- [ ] `useDragInteraction.ts` 내부 snapshot 생성과 resolver 연결 지점을 확정함
+- [x] `useDragInteraction.ts`는 유지하고 확장한다는 방침을 확정함
+  - 이미 startMove/startResize/startLasso + RAF 스로틀 + deferred commit 패턴이 준비됨
+- [x] move만 Selection drag resolver로 재정렬하고 resize/lasso는 기존 경로를 유지함
+- [x] existing deferred commit 패턴을 폐기하지 않고 확장함
+  - `onDragUpdate` 콜백: React state 없이 PixiJS 직접 조작 (SelectionBox.updatePosition)
+  - `onMoveEnd` 콜백: drop 시점에만 store/history commit
+- [x] SelectionBox는 drag shell, resolver는 geometry contract, store는 commit contract로 분리함
+  - **SelectionBox**: 시각적 드래그 피드백 (updatePosition imperative handle)
+  - **Resolver**: layoutBoundsRegistry 기반 drop target/insertion index 계산
+  - **Store**: onMoveEnd에서만 요소 이동/reorder commit
+- [x] `useDragInteraction.ts` 내부 snapshot 생성과 resolver 연결 지점을 확정함
+  - `startMove()` 시점: 현재 선택 요소의 bounds snapshot 캡처
+  - `updateDrag()` 시점: delta로 resolver에 drop candidate 쿼리
+  - `endDrag()` 시점: resolver 결과로 store commit
 
 ### 4. 파일 경계 고정
 
-- [ ] 1차 수정 대상 파일 목록을 확정함
-- [ ] 수정하지 않을 파일 목록도 함께 확정함
-- [ ] store/history 변경과 renderer 변경을 같은 phase에 섞지 않음
-- [ ] tree interop와 guide line 렌더를 같은 phase에 섞지 않음
-- [ ] `useDragInteraction.ts`를 Phase 1의 인접 파일로 포함할지 확정함
-- [ ] `BuilderCanvas.tsx`, `SelectionLayer.tsx`, `selectionHitTest.ts`를 상위 조율 파일로 명시함
+- [x] 1차 수정 대상 파일 목록을 확정함
+  - `useDragInteraction.ts` — move 경로에 resolver 연결
+  - `useCentralCanvasPointerHandlers.ts` — pointerdown에서 startMove 호출 연결
+  - `SelectionBox.tsx` — updatePosition imperative handle 활용
+  - `selectionModel.ts` — Skia bounds 기반 drop target resolver 추가
+  - `dropIndicatorRenderer.ts` — 기존 Skia drop indicator 활용/확장
+  - `elementRegistry.ts` — layoutBoundsRegistry 기반 bounds 조회 보강
+- [x] 수정하지 않을 파일 목록도 함께 확정함
+  - `BuilderCanvas.tsx` — 기존 이벤트 구조 유지
+  - `DirectContainer.tsx` — layout 배치 경로 유지
+  - `ElementSprite.tsx` — 렌더링 경로 유지
+  - Skia nodeRenderers — 렌더링 경로 유지
+- [x] store/history 변경과 renderer 변경을 같은 phase에 섞지 않음
+- [x] tree interop와 guide line 렌더를 같은 phase에 섞지 않음
+- [x] `useDragInteraction.ts`를 Phase 1의 인접 파일로 포함할지 확정함 → **포함**
+- [x] `BuilderCanvas.tsx`, `SelectionLayer.tsx`, `selectionHitTest.ts`를 상위 조율 파일로 명시함 → **확인**
 
 ### 5. 회귀 기준 고정
 
-- [ ] 60fps 기준을 baseline 대비 비교 가능한 형태로 기록함
-- [ ] history 기록 시점을 drop commit으로 제한함
-- [ ] multi-page 정합성 검증 시나리오를 문서화함
-- [ ] 기존 drag/resize/lasso 하위 호환 시나리오를 문서화함
+- [x] 60fps 기준을 baseline 대비 비교 가능한 형태로 기록함
+  - baseline: 현재 선택/클릭 시 60fps 유지 (drag 미구현이므로 drag 비교는 불가)
+  - 목표: drag 중 평균 frame time < 16.7ms
+- [x] history 기록 시점을 drop commit으로 제한함
+  - drag 중: store mutation 없음, history 기록 없음
+  - drop 시: onMoveEnd 콜백에서 단일 history 기록
+- [x] multi-page 정합성 검증 시나리오를 문서화함
+  - 같은 페이지 내 요소 이동: order_num 변경
+  - 다른 페이지로 이동: Phase 1에서는 불가 (같은 페이지 내만)
+- [x] 기존 drag/resize/lasso 하위 호환 시나리오를 문서화함
+  - resize: TransformHandle에서 startResize → 기존 경로 유지
+  - lasso: 빈 영역 드래그 → startLasso → 기존 경로 유지
+  - move: SelectionBox 내부 드래그 → startMove → **새 경로 (Phase 1)**
 
 ### 6. 구현 승인 기준
 
-- [ ] Phase 0 checklist가 완료됨
-- [ ] Phase 1~5의 완료 조건이 모두 명확함
-- [ ] open design questions에 대해 최소한의 정책 결정을 내림
-- [ ] 구현 시작 전에 rollback 기준을 합의함
-- [ ] absolute positioned element와 flow/layout element의 drop semantics를 Phase 0에서 구분함
-- [ ] Phase 0에서 absolute/flow semantics가 결정되지 않으면 구현 진입을 보류함
+- [x] Phase 0 checklist가 완료됨
+- [x] Phase 1~5의 완료 조건이 모두 명확함
+- [x] open design questions에 대해 최소한의 정책 결정을 내림
+  - **absolute vs flow**: absolute 요소는 style.left/top delta 반영, flow 요소는 reorder (order_num 변경)
+  - **cross-container reparent**: Phase 1에서는 같은 부모 내 reorder만. reparent는 Phase 4
+- [x] 구현 시작 전에 rollback 기준을 합의함
+  - 각 Phase는 독립 커밋, 문제 시 해당 Phase만 revert
+- [x] absolute positioned element와 flow/layout element의 drop semantics를 Phase 0에서 구분함
+  - **absolute**: `position: absolute` 요소 → delta를 style.left/top에 반영
+  - **flow**: `display: flex/grid/block` 내 요소 → insertion index로 order_num 변경
+- [x] Phase 0에서 absolute/flow semantics가 결정되지 않으면 구현 진입을 보류함 → **결정 완료**
 
 ---
 
@@ -90,14 +144,14 @@ Pencil과 동일하게 아래 3가지를 지원해야 한다.
 
 ## Phase별 현황
 
-| Phase | 설명 | 위험 | 주요 목표 |
-| :---: | ---- | :--: | -------- |
-| 0 | Baseline & Interaction Contract | L | 좌표/히트/렌더 경계 정의 |
-| 1 | Drag Session & Vacate | M | drag start vacate, deferred commit |
-| 2 | Skia Bounds Hit Test | M | Skia-derived drop target 탐색 |
-| 3 | Adjacent Insertion & Guide Line | H | insertion index + guide rendering |
-| 4 | Commit Path & Tree Interop | M | move/reorder/reparent commit |
-| 5 | Verification & Regression Gates | L | 시나리오 검증, 회귀 방지 |
+| Phase | 설명                            | 위험 | 주요 목표                          |
+| :---: | ------------------------------- | :--: | ---------------------------------- |
+|   0   | Baseline & Interaction Contract |  L   | 좌표/히트/렌더 경계 정의           |
+|   1   | Drag Session & Vacate           |  M   | drag start vacate, deferred commit |
+|   2   | Skia Bounds Hit Test            |  M   | Skia-derived drop target 탐색      |
+|   3   | Adjacent Insertion & Guide Line |  H   | insertion index + guide rendering  |
+|   4   | Commit Path & Tree Interop      |  M   | move/reorder/reparent commit       |
+|   5   | Verification & Regression Gates |  L   | 시나리오 검증, 회귀 방지           |
 
 ---
 
@@ -161,13 +215,13 @@ Phase 0
 
 ### 계약 정의
 
-| 항목 | 책임 |
-| ---- | ---- |
-| pointer start | PixiJS selection shell |
-| pointer delta | canvas scene-local delta |
-| geometry lookup | Skia-derived bounds |
-| visual offset | transient render state |
-| commit | store action / history |
+| 항목            | 책임                     |
+| --------------- | ------------------------ |
+| pointer start   | PixiJS selection shell   |
+| pointer delta   | canvas scene-local delta |
+| geometry lookup | Skia-derived bounds      |
+| visual offset   | transient render state   |
+| commit          | store action / history   |
 
 ### 검증 포인트
 
@@ -252,11 +306,11 @@ Phase 0
 
 ### 설계 규칙
 
-| 상황 | UI 반응 | 상태 |
-| ---- | ------- | ---- |
-| 인접 요소 사이 | item이 slot으로 흘러들어감 | insertion candidate active |
-| 비인접 위치 | guide line만 표시 | guide-only |
-| 유효 target 없음 | 아무 삽입도 하지 않음 | inactive |
+| 상황             | UI 반응                    | 상태                       |
+| ---------------- | -------------------------- | -------------------------- |
+| 인접 요소 사이   | item이 slot으로 흘러들어감 | insertion candidate active |
+| 비인접 위치      | guide line만 표시          | guide-only                 |
+| 유효 target 없음 | 아무 삽입도 하지 않음      | inactive                   |
 
 ### 검증 포인트
 
