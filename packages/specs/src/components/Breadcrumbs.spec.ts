@@ -20,6 +20,8 @@ export interface BreadcrumbsProps {
   size?: "S" | "M" | "L";
   separator?: string;
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
   /** ElementSprite에서 주입: 자식 Breadcrumb 텍스트 배열 (Skia 렌더링용) */
   _crumbs?: string[];
@@ -137,17 +139,34 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       // CSS 구분자 간격: padding: 0 var(--spacing) = 0 4px
       const separatorPadding = 4;
 
-      // Phase C: 브레드크럼 아이템 생성
+      // 브레드크럼 아이템 생성
       let x = 0;
       const height = size.height || 24;
-      // 간이 문자 폭 추정 계수 (Pretendard 평균)
+      const containerWidth =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : 0;
+      // fallback: containerWidth 미주입 시 문자 폭 추정
       const charWidthFactor = resolvedFontSize * 0.55;
+      const sepCharWidth = resolvedFontSize * 0.35;
+      const sepCount = Math.max(0, crumbs.length - 1);
+      // containerWidth가 있으면 crumb당 사용 가능한 폭 계산
+      const totalSepWidth = sepCount * (separatorPadding * 2 + sepCharWidth);
+      const crumbMaxWidth =
+        containerWidth > 0
+          ? Math.max(
+              resolvedFontSize * 2,
+              (containerWidth - totalSepWidth) / crumbs.length,
+            )
+          : 0;
+
       for (let i = 0; i < crumbs.length; i++) {
         const isLast = i === crumbs.length - 1;
-        const estimatedTextWidth = crumbs[i].length * charWidthFactor;
+        const estimatedTextWidth =
+          containerWidth > 0
+            ? crumbMaxWidth
+            : crumbs[i].length * charWidthFactor;
 
-        // 크럼 텍스트 — maxWidth 명시하여 specShapeConverter의
-        // containerWidth - shape.x 자동 축소 방지 (줄바꿈 원인 제거)
         shapes.push({
           type: "text" as const,
           x,
@@ -167,7 +186,6 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
         // 구분자 (CSS: padding 0 4px)
         if (!isLast) {
           x += separatorPadding;
-          const sepEstimate = resolvedFontSize * 0.35;
           shapes.push({
             type: "text" as const,
             x,
@@ -179,9 +197,9 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
             fill: "{color.neutral-subdued}" as TokenRef,
             align: "left" as const,
             baseline: "middle" as const,
-            maxWidth: sepEstimate + resolvedFontSize,
+            maxWidth: sepCharWidth + resolvedFontSize,
           });
-          x += separatorPadding + sepEstimate;
+          x += separatorPadding + sepCharWidth;
         }
       }
 

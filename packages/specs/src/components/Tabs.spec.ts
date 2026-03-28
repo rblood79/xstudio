@@ -30,6 +30,8 @@ export interface TabsProps {
   showIndicator?: boolean;
   /** 컨테이너 시스템에서 주입하는 실제 Tab 레이블 */
   _tabLabels?: string[];
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -195,9 +197,17 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
           : ["Tab 1", "Tab 2"];
       const selectedIdx = 0; // 기본 첫 번째 탭 선택
 
-      // 콘텐츠 기반 탭 너비 추정 (CSS Preview와 유사)
+      // containerWidth 기반 탭 너비 (Phase 2: 추정 제거)
+      const containerWidth =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : 0;
       const estimateTabWidth = (label: string): number => {
-        const charWidth = fontSize * 0.55; // Pretendard 평균 문자 폭 추정
+        if (containerWidth > 0) {
+          return Math.max(48, containerWidth / tabLabels.length);
+        }
+        // fallback: containerWidth 미주입 시 문자 폭 추정
+        const charWidth = fontSize * 0.55;
         return Math.max(
           48,
           Math.ceil(label.length * charWidth) + size.paddingX * 2,
