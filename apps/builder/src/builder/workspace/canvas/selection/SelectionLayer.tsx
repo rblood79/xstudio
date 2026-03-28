@@ -14,7 +14,7 @@
  * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import { useCallback, useMemo, memo, useState, useEffect } from "react";
+import { useCallback, useMemo, memo, useState, useEffect, useRef } from "react";
 import { useExtend } from "@pixi/react";
 import { PIXI_COMPONENTS } from "../pixiSetup";
 import { useStore } from "../../../stores";
@@ -26,7 +26,8 @@ import {
   computeSelectionBounds as computeSelectionBoundsModel,
   resolveSelectedElementsForPage,
 } from "../interaction";
-import { SelectionBox } from "./SelectionBox";
+import { SelectionBox, type SelectionBoxHandle } from "./SelectionBox";
+import { useDragInteraction } from "./useDragInteraction";
 import type { BoundingBox } from "./types";
 
 // ============================================
@@ -46,6 +47,21 @@ export interface SelectionLayerProps {
   zoom?: number;
   /** 🚀 Phase 7: Pan offset for coordinate transformation */
   panOffset?: { x: number; y: number };
+  /**
+   * ADR-043 Phase 1: 드래그 콜백 refs
+   * useCentralCanvasPointerHandlers에서 업데이트, SelectionLayer에서 구현
+   */
+  onStartMoveRef?: React.MutableRefObject<
+    (
+      elementId: string,
+      bounds: BoundingBox,
+      position: { x: number; y: number },
+    ) => void
+  >;
+  onUpdateDragRef?: React.MutableRefObject<
+    (position: { x: number; y: number }) => void
+  >;
+  onEndDragRef?: React.MutableRefObject<() => void>;
 }
 
 // ============================================
@@ -64,8 +80,14 @@ export const SelectionLayer = memo(function SelectionLayer({
   pagePositionsVersion: _pagePositionsVersion = 0,
   zoom = 1,
   panOffset = { x: 0, y: 0 },
+  onStartMoveRef,
+  onUpdateDragRef,
+  onEndDragRef,
 }: SelectionLayerProps) {
   useExtend(PIXI_COMPONENTS);
+
+  // SelectionBox imperative handle ref (드래그 중 PixiJS 직접 조작)
+  const selectionBoxRef = useRef<SelectionBoxHandle>(null);
 
   // Store state
   // 🚀 성능 최적화: elementsMap 전체 구독 제거
@@ -121,6 +143,57 @@ export const SelectionLayer = memo(function SelectionLayer({
     };
   }, [computeSelectionBounds]);
 
+  // ============================================
+  // ADR-043 Phase 1: Drag Interaction
+  // ============================================
+
+  const { startMove, updateDrag, endDrag } = useDragInteraction({
+    onDragUpdate: (_operation, data) => {
+      if (data.delta) {
+        selectionBoxRef.current?.updatePosition(data.delta);
+      }
+    },
+    onMoveEnd: (elementId, delta) => {
+      // drop 시점에 store commit (히스토리 기록 포함)
+      // 드래그 중 store mutation 없음 → drop 시에만 style.left/top delta 반영
+      const state = useStore.getState();
+      const el = state.elementsMap.get(elementId);
+      if (!el) return;
+
+      const prevLeft = parseFloat(String(el.props?.style?.left ?? 0)) || 0;
+      const prevTop = parseFloat(String(el.props?.style?.top ?? 0)) || 0;
+      const newLeft = prevLeft + delta.x;
+      const newTop = prevTop + delta.y;
+
+      // 파이프라인: Memory Update → History → DB Persist (백그라운드)
+      void state.updateElementProps(elementId, {
+        ...el.props,
+        style: {
+          ...el.props?.style,
+          left: newLeft,
+          top: newTop,
+        },
+      });
+
+      // SelectionBox 원래 위치 리셋 (store 업데이트 후 bounds가 갱신되므로)
+      selectionBoxRef.current?.resetPosition();
+    },
+  });
+
+  // 콜백 refs를 통해 useCentralCanvasPointerHandlers ↔ SelectionLayer 연결
+  useEffect(() => {
+    if (onStartMoveRef) onStartMoveRef.current = startMove;
+    if (onUpdateDragRef) onUpdateDragRef.current = updateDrag;
+    if (onEndDragRef) onEndDragRef.current = endDrag;
+  }, [
+    startMove,
+    updateDrag,
+    endDrag,
+    onStartMoveRef,
+    onUpdateDragRef,
+    onEndDragRef,
+  ]);
+
   // 단일 선택 여부
   const isSingleSelection = selectedElements.length === 1;
 
@@ -129,6 +202,7 @@ export const SelectionLayer = memo(function SelectionLayer({
       {/* 선택 박스 (선택된 요소가 있을 때) */}
       {selectionBounds && selectedElements.length > 0 && (
         <SelectionBox
+          ref={selectionBoxRef}
           bounds={selectionBounds}
           showHandles={isSingleSelection}
           zoom={zoom}

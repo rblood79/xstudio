@@ -17,6 +17,9 @@ interface ModifierState {
   shiftKey: boolean;
 }
 
+/** 드래그 시작 threshold (px, scene-local 좌표계) */
+const DRAG_THRESHOLD = 3;
+
 interface UseCentralCanvasPointerHandlersOptions {
   completeEditRef: MutableRefObject<(elementId: string) => void>;
   computeSelectionBoundsForHitTest: () => BoundingBox | null;
@@ -29,6 +32,18 @@ interface UseCentralCanvasPointerHandlersOptions {
   isEditingRef: MutableRefObject<boolean>;
   lastClickTargetRef: MutableRefObject<string | null>;
   lastClickTimeRef: MutableRefObject<number>;
+  /** 드래그 시작 콜백 (SelectionLayer로 전달) */
+  onStartMove: MutableRefObject<
+    (
+      elementId: string,
+      bounds: BoundingBox,
+      position: { x: number; y: number },
+    ) => void
+  >;
+  /** 드래그 업데이트 콜백 (SelectionLayer로 전달) */
+  onUpdateDrag: MutableRefObject<(position: { x: number; y: number }) => void>;
+  /** 드래그 종료 콜백 (SelectionLayer로 전달) */
+  onEndDrag: MutableRefObject<() => void>;
   pageHeight: number;
   pageWidth: number;
   screenToCanvasPoint: (position: { x: number; y: number }) => {
@@ -53,6 +68,9 @@ export function useCentralCanvasPointerHandlers({
   isEditingRef,
   lastClickTargetRef,
   lastClickTimeRef,
+  onStartMove,
+  onUpdateDrag,
+  onEndDrag,
   pageHeight,
   pageWidth,
   screenToCanvasPoint,
@@ -68,6 +86,22 @@ export function useCentralCanvasPointerHandlers({
     if (!element) {
       return;
     }
+
+    /**
+     * 드래그 pending 상태 (threshold 미만 이동 중)
+     * pointerdown에서 inSelectionBounds 히트 시 초기화,
+     * pointermove에서 threshold 초과 시 드래그 시작
+     */
+    let pendingDrag: {
+      elementId: string;
+      bounds: BoundingBox;
+      startCanvasPos: { x: number; y: number };
+      startClientX: number;
+      startClientY: number;
+    } | null = null;
+
+    /** 현재 드래그 활성 여부 (threshold 초과 후) */
+    let isDragging = false;
 
     const handlePointerDown = (event: PointerEvent) => {
       if (event.button !== 0) {
@@ -167,7 +201,6 @@ export function useCentralCanvasPointerHandlers({
           metaKey: event.metaKey,
           shiftKey: event.shiftKey,
         };
-        const isMultiSelectKey = modifiers.metaKey || modifiers.ctrlKey;
 
         handleElementClickRef.current(hitElementId, modifiers);
         return;
@@ -198,6 +231,17 @@ export function useCentralCanvasPointerHandlers({
           const session = commitPointerClick(targetId, now);
           lastClickTargetRef.current = session.lastClickTargetId;
           lastClickTimeRef.current = session.lastClickTime;
+
+          // Body 요소는 drag 대상에서 제외
+          if (targetId && selectedElement?.tag.toLowerCase() !== "body") {
+            pendingDrag = {
+              elementId: targetId,
+              bounds: selectionBounds,
+              startCanvasPos: canvasPos,
+              startClientX: event.clientX,
+              startClientY: event.clientY,
+            };
+          }
         }
         return;
       }
@@ -236,7 +280,75 @@ export function useCentralCanvasPointerHandlers({
       }
     };
 
+    const handleWindowPointerMove = (event: PointerEvent) => {
+      if (pendingDrag) {
+        const dx = event.clientX - pendingDrag.startClientX;
+        const dy = event.clientY - pendingDrag.startClientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (!isDragging && dist >= DRAG_THRESHOLD) {
+          // threshold 초과 → 드래그 시작
+          isDragging = true;
+          // store에서 최신 selectedElementIds 읽기 (stale closure 방지)
+          const currentId =
+            useStore.getState().selectedElementIds[0] ?? pendingDrag.elementId;
+          onStartMove.current(
+            currentId,
+            pendingDrag.bounds,
+            pendingDrag.startCanvasPos,
+          );
+        }
+
+        if (isDragging) {
+          const rect = element.getBoundingClientRect();
+          const canvasPos = screenToCanvasPoint({
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+          });
+          onUpdateDrag.current(canvasPos);
+        }
+        return;
+      }
+
+      // pendingDrag 없을 때 커서 업데이트
+      const rect = element.getBoundingClientRect();
+      const canvasPos = screenToCanvasPoint({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+
+      const state = useStore.getState();
+      const isSingleSelection = state.selectedElementIds.length === 1;
+
+      if (isSingleSelection) {
+        const selectionBounds =
+          selectionBoundsRef.current ?? computeSelectionBoundsForHitTest();
+        const { hitHandle } = resolveSelectionHit(
+          canvasPos,
+          selectionBounds,
+          zoom,
+        );
+        if (hitHandle) {
+          setCursor(hitHandle.cursor);
+          return;
+        }
+      }
+
+      setCursor("default");
+    };
+
+    const handleWindowPointerUp = () => {
+      if (isDragging) {
+        onEndDrag.current();
+      }
+      pendingDrag = null;
+      isDragging = false;
+    };
+
     const handlePointerMove = (event: PointerEvent) => {
+      // pendingDrag가 없을 때만 커서 업데이트 (드래그 중 window 핸들러가 처리)
+      if (pendingDrag) return;
+
       const rect = element.getBoundingClientRect();
       const canvasPos = screenToCanvasPoint({
         x: event.clientX - rect.left,
@@ -265,10 +377,14 @@ export function useCentralCanvasPointerHandlers({
 
     element.addEventListener("pointerdown", handlePointerDown);
     element.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointermove", handleWindowPointerMove);
+    window.addEventListener("pointerup", handleWindowPointerUp);
 
     return () => {
       element.removeEventListener("pointerdown", handlePointerDown);
       element.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointermove", handleWindowPointerMove);
+      window.removeEventListener("pointerup", handleWindowPointerUp);
     };
   }, [
     completeEditRef,
@@ -280,6 +396,9 @@ export function useCentralCanvasPointerHandlers({
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,
+    onEndDrag,
+    onStartMove,
+    onUpdateDrag,
     pageHeight,
     pageWidth,
     screenToCanvasPoint,

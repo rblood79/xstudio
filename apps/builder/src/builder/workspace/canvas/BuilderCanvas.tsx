@@ -458,6 +458,19 @@ export function BuilderCanvas({
   // SelectionLayer의 selectionBounds를 ref로 저장 (중앙 핸들러에서 접근)
   const selectionBoundsRef = useRef<BoundingBox | null>(null);
 
+  // ADR-043 Phase 1: drag 콜백 refs (SelectionLayer → useCentralCanvasPointerHandlers 연결)
+  const onStartMoveRef = useRef<
+    (
+      elementId: string,
+      bounds: BoundingBox,
+      position: { x: number; y: number },
+    ) => void
+  >(() => {});
+  const onUpdateDragRef = useRef<(position: { x: number; y: number }) => void>(
+    () => {},
+  );
+  const onEndDragRef = useRef<() => void>(() => {});
+
   const computeSelectionBoundsForHitTest = useCallback(() => {
     const state = useStore.getState();
     const selectedElements = resolveSelectedElementsForPage({
@@ -518,6 +531,9 @@ export function BuilderCanvas({
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,
+    onStartMove: onStartMoveRef,
+    onUpdateDrag: onUpdateDragRef,
+    onEndDrag: onEndDragRef,
     pageHeight,
     pageWidth,
     screenToCanvasPoint,
@@ -720,6 +736,9 @@ export function BuilderCanvas({
               panOffset={panOffset}
               pagePositions={pagePositions}
               pagePositionsVersion={pagePositionsVersion}
+              onStartMoveRef={onStartMoveRef}
+              onUpdateDragRef={onUpdateDragRef}
+              onEndDragRef={onEndDragRef}
             />
           </pixiContainer>
         </Application>
