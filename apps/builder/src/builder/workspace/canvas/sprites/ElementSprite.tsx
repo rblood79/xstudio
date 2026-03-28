@@ -112,6 +112,7 @@ import {
   ColorWheelSpec,
   ColorSwatchSpec,
   ColorSwatchPickerSpec,
+  ActionMenuSpec,
   LabelSpec,
   FieldErrorSpec,
   DescriptionSpec,
@@ -789,7 +790,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   InlineAlert: InlineAlertSpec,
   // Phase 2: Action/Group components (ADR-030)
   ButtonGroup: ButtonGroupSpec,
-  ActionMenu: ButtonSpec,
+  ActionMenu: ActionMenuSpec,
   // Phase 3: Extended Controls (ADR-030)
   ProgressCircle: ProgressCircleSpec,
   // Image: ImageSprite handles rendering directly (not spec-based)

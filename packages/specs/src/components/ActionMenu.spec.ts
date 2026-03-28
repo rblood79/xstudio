@@ -1,11 +1,12 @@
 /**
  * ActionMenu Component Spec (properties-only)
  */
-import type { ComponentSpec, TokenRef } from "../types";
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { Type, ToggleLeft, Layout, PointerOff } from "lucide-react";
 
 export interface ActionMenuProps {
   children?: string;
+  label?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   align?: "start" | "end";
   isQuiet?: boolean;
@@ -116,6 +117,46 @@ export const ActionMenuSpec: ComponentSpec<ActionMenuProps> = {
   states: {},
 
   render: {
-    shapes: () => [],
+    shapes: (props, variant, size) => {
+      const text = String(props.children || props.label || "Actions");
+      const height = size.height;
+      const paddingX = size.paddingX;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
+
+      const bgColor =
+        props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
+
+      const shapes: Shape[] = [
+        {
+          type: "roundRect",
+          x: 0,
+          y: 0,
+          width: "auto",
+          height,
+          radius: borderRadius,
+          fill: bgColor,
+        },
+        {
+          type: "text",
+          x: paddingX,
+          y: 0,
+          text: `${text} ▾`,
+          fontSize: size.fontSize as unknown as number,
+          fontWeight: 500,
+          fill: variant.text,
+          align: "left",
+          baseline: "middle",
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+      ];
+      return shapes;
+    },
   },
 };
