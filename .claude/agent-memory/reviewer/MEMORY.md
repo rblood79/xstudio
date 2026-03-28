@@ -31,6 +31,12 @@
 - **Spec properties icon 일관성 결여**: 동일 key(isDisabled/isInvalid/necessityIndicator/orientation 등)가 어떤 파일에선 icon 있고 다른 파일에선 없음 — DatePicker/DateRangePicker/TextArea/RadioGroup/CheckboxGroup이 특히 많이 누락
 - **Spec properties 섹션 배치 불일치**: `necessityIndicator`가 절반은 "State"에 절반은 "Validation"에 배치, `labelPosition`이 `Form.spec.ts`만 "State"에 배치(나머지 14개 파일은 "Appearance"), `selectionMode`가 CardView/TableView는 "Selection"에 나머지는 "State"에 배치
 - **Card/Group spec 섹션 타이틀 "States" (복수)**: 표준 단수 "State" 대신 "States" 사용 — isDisabled/isInvalid/isReadOnly 섹션 불일치 원인
+- **Renderer overlay props 인라인 변환 중복**: `renderTooltip`/`renderPopover` 등에서 `X !== undefined ? Number(X) : undefined` 패턴 반복 — `propToNumber()` 헬퍼 추출 필요. `!== undefined`와 `!= null` 혼용으로 null 처리 비일관성도 동반
+- **`ComponentSize` 미import → 인라인 `import()` 타입 캐스팅**: `LayoutRenderers.tsx`에서 `ComponentSize`를 named import 없이 `as import("../types").ComponentSize | undefined`로 직접 JSX 속성에 인라인 캐스팅 — 상단 import에 추가 필요
+- **Overlay Spec fields 공유 상수 없음**: `crossOffset`/`shouldFlip`/`containerPadding` field 정의가 Tooltip.spec.ts · Popover.spec.ts에 동일하게 복제 — `overlayPositioningFields` 공유 상수 추출 필요. 섹션 배치(Position vs State)도 불일치
+- **프로덕션 렌더 경로 `console.log` 미제거**: `Menu.tsx`에 개발 디버그용 log 20여 개가 렌더 경로에 존재 — 제거 필수
+- **Spec props → Renderer 전달 누락 (E2E 단절)**: `Menu.spec.ts`에 `align`/`direction`/`shouldFlip` 추가 후 `renderActionMenu`에서 `MenuButton`으로 전달 안 됨 — Spec properties 추가 시 반드시 렌더러 전달 + API 매핑까지 E2E로 완성해야 함. `align`/`direction` → React Aria `placement` 변환 로직 필요
+- **React Aria API와 다른 Spec prop naming**: Tooltip/Popover는 React Aria `placement` prop을 그대로 사용하지만, Menu는 `align`+`direction` 분리 naming — React Aria `MenuTriggerProps`에는 `placement`가 없어 변환 레이어 필수. Spec 설계 시 React Aria API 이름을 먼저 확인 필요
 
 ## False Positive 기록
 
