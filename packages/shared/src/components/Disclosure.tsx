@@ -84,9 +84,7 @@ export function Disclosure({
           {title}
         </Button>
       </Heading>
-      <DisclosurePanel>
-        <p>{children}</p>
-      </DisclosurePanel>
+      <DisclosurePanel>{children}</DisclosurePanel>
     </AriaDisclosure>
   );
 }

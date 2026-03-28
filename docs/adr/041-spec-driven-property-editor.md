@@ -6,7 +6,7 @@ Accepted
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 설계 리뷰 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 + B/C 하이브리드 11개, 2026-03-27 Phase 2~4 전체 완료)
+2026-03-13 (2026-03-16 코드베이스 실측 + 설계 리뷰 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 + B/C 하이브리드 11개, 2026-03-27 Phase 2~4 전체 완료, 2026-03-29 S2 섹션 재분류 + PropertySizeToggle 수정 + Disclosure p 래퍼 제거)
 
 ## Decision Makers
 
@@ -226,7 +226,8 @@ type FieldDef =
   | NumberField
   | IconField
   | CustomField
-  | ChildSyncField;
+  | ChildrenManagerField;
+// ChildSyncField → ADR-048 PropagationSpec으로 대체 (미구현 상태에서 직행 전환)
 
 // variant — Spec.variants에서 옵션 자동 추출
 interface VariantField extends Omit<BaseFieldDef, "key"> {
@@ -283,24 +284,15 @@ interface CustomField extends BaseFieldDef {
   component: React.ComponentType<CustomFieldComponentProps>;
 }
 
-// childSync — 부모 prop 변경 시 자식 자동 동기화 (discriminated union을 위해 별도 type 사용)
-interface ChildSyncField extends BaseFieldDef {
-  type: "childSync";
-  /** UI 렌더링 타입. 기본값: "string" (PropertyInput). "size"이면 PropertySizeToggle. */
-  uiType?: "string" | "size";
-  placeholder?: string;
-  multiline?: boolean;
-  childSync: {
-    path: [string, ...string[]]; // 최소 1개 요소 필수. 1-depth: ["Label"], 2-depth: ["CardHeader", "Heading"]
-    propKey: string; // "children" — 동기화할 자식 prop
-    /** 부모 prop 변경 시 자식에 추가로 적용할 파생 값 계산 함수.
-     *  Spec은 shapes() 등 런타임 함수를 이미 포함하는 객체이므로 직접 참조 가능.
-     *  문자열 레지스트리 대비 장점: 타입 안전성 보장, 디버깅 직관적, 인프라 코드 불필요. */
-    derivedUpdateFn?: DerivedUpdateFn;
-    /** 2-depth 경로에서 wrapper가 없을 때 직계 자식에서 직접 찾기. 기본값: false.
-     *  CardEditor 등 flat→nested 구조 마이그레이션 하위 호환용. */
-    fallbackToDirectChild?: boolean;
-  };
+// ⚠️ childSync — ADR-048 PropagationSpec으로 대체됨 (Superseded)
+// 미구현 상태에서 직행 전환. 부모→자식 prop 전파는 propagationRegistry.ts에서 선언적으로 처리.
+// interface ChildSyncField { ... } → 삭제됨
+
+// children-manager — 자식 항목 CRUD 관리 (ListBox, Select, TagGroup, Breadcrumbs 등)
+interface ChildrenManagerField {
+  type: "children-manager";
+  childTag: string; // 관리 대상 자식 태그 (예: "ListBoxItem", "MenuItem")
+  fields: FieldDef[]; // 각 자식 항목의 편집 필드
 }
 
 // custom 필드 컴포넌트 Props

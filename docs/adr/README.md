@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-28 (ADR-041 Phase 0~4 전체 완료 — 자동 69개/94.5%, Hybrid 2개, 수동 2개, 에디터 64개 삭제)
+> **최종 업데이트**: 2026-03-29 (S2 섹션 재분류 완료 — Content/Appearance/State/Locale 4섹션, PropertySizeToggle 수정, Disclosure p 래퍼 제거)
 
 ## 현황 요약
 
@@ -49,36 +49,36 @@
 
 ### 부분 완료
 
-| ADR                                               | 제목                                            | 완료 범위                                                                                                                                                        | 미완료 범위                                                                                                                            | 우선순위 |
-| ------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | :------: |
-| [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout                  | Foundation + Phase 0~4 구현 완료 (Phase 2 TypedArray, Phase 3 Flat Render List, Phase 4 R-tree) + Layout Worker(layoutWorker.ts)                                 | Phase 2 SharedArrayBuffer + Phase 5 OffscreenCanvas Worker 미구현 (layoutWorker는 레이아웃 전용, OffscreenCanvas 렌더링 Worker와 별도) |    P4    |
-| [010](010-events-panel.md)                        | Events Panel Smart Recommendations              | EventsPanel 기본 UI 완성 (Block WHEN→IF→THEN/ELSE) + P0/P1 완료 (추천 이벤트/액션 chips, 호환성 배지, 누락 경고, 18개 템플릿)                                    | P1.5 (UX 폴리싱) + P2 (AI 이벤트 생성) 미구현                                                                                          |    P5    |
-| [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)           | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                                                              | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
-| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                                                       | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
-| [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                                                          | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
-| [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                                                           | Phase E (추가 라이브러리)                                                                                                              |    P4    |
-| [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                                                              | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
-| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~4 전체 완료. Spec 등록 62개, 자동 53개(72.6%), Hybrid 6개(8.2%), 수동 14개(19.2%). 에디터 46개 삭제. children-manager + propagation으로 CRUD/sync 자동화 | 잔여 Hybrid 6개(ListBox/GridList filtering, Tabs/Slider 구조적), Grade C 수동 14개                                                     |  **P2**  |
-| [042](042-spec-dimension-injection.md)            | Spec Container Dimension Injection              | Phase 1 (Tag) 완료                                                                                                                                               | Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                                                    |    P3    |
+| ADR                                               | 제목                                            | 완료 범위                                                                                                                                                                                  | 미완료 범위                                                                                                                            | 우선순위 |
+| ------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | :------: |
+| [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout                  | Foundation + Phase 0~4 구현 완료 (Phase 2 TypedArray, Phase 3 Flat Render List, Phase 4 R-tree) + Layout Worker(layoutWorker.ts)                                                           | Phase 2 SharedArrayBuffer + Phase 5 OffscreenCanvas Worker 미구현 (layoutWorker는 레이아웃 전용, OffscreenCanvas 렌더링 Worker와 별도) |    P4    |
+| [010](010-events-panel.md)                        | Events Panel Smart Recommendations              | EventsPanel 기본 UI 완성 (Block WHEN→IF→THEN/ELSE) + P0/P1 완료 (추천 이벤트/액션 chips, 호환성 배지, 누락 경고, 18개 템플릿)                                                              | P1.5 (UX 폴리싱) + P2 (AI 이벤트 생성) 미구현                                                                                          |    P5    |
+| [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)           | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                                                                                        | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
+| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                                                                                 | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
+| [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                                                                                    | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
+| [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                                                                                     | Phase E (추가 라이브러리)                                                                                                              |    P4    |
+| [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                                                                                        | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
+| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~4 전체 완료. S2 섹션 재분류(Content/Appearance/State/Locale). Spec 등록 62개, Generic 31개, Hybrid 8개, Custom 14개. 에디터 34개 삭제. PropertySizeToggle non-indicator 모드 전환. | 잔여 Hybrid 8개(ListBox/GridList filtering, Tabs/Slider 구조적 등), Custom 14개                                                        |  **P2**  |
+| [042](042-spec-dimension-injection.md)            | Spec Container Dimension Injection              | Phase 1 (Tag) 완료                                                                                                                                                                         | Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                                                    |    P3    |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 
 ### 미구현
 
-| ADR                                                      | 제목                                     | 상태         | 규모                                                                                                                                       | 우선순위 |
-| -------------------------------------------------------- | ---------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | :------: |
-| [013](013-quick-connect-data-binding.md)                 | Quick Connect 데이터 바인딩              | Proposed     | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                            |  **P3**  |
-| [020](020-design-kit-improvement.md)                     | Design Kit 패널 분석 및 개선             | Proposed     | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                                   |    P4    |
-| [015](015-sitemap-layout.md)                             | Sitemap Hierarchy 워크플로우 엣지        | Proposed     | 변경 대상 8파일, 코드 미생성                                                                                                               |    P5    |
-| [016](016-photoshop-ui-ux.md)                            | Photoshop 벤치마크 기반 UI/UX (v2)       | Proposed     | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                                     |    P5    |
-| [032](032-events-data-integration.md)                    | Events Platform 재설계 + Data 통합       | Proposed     | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                                     |  **P3**  |
-| [034](034-events-panel-renovation.md)                    | Events Panel Renovation                  | Proposed     | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                                  |  **P3**  |
-| [038](038-figma-import.md)                               | Figma 디자인 임포트 시스템               | Proposed     | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                  |  **P3**  |
-| [043](043-selection-drag-alignment.md)                   | Selection Drag Alignment                 | Proposed     | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                                                               |    P3    |
-| [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed     | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |    P4    |
-| [045](045-s2-property-editor-alignment.md)               | S2 Property Editor 프로퍼티 정합성 정렬  | Proposed     | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                                                            |  **P2**  |
-| [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs    | Accepted     | 자동 생성 전 계약 확정 — `Tabs.density`, `ColorField` 1차 계약(`labelAlign` 포함), `Form.labelPosition/labelAlign/necessityIndicator` 채택 |  **P2**  |
-| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | **Accepted** | Phase 0~5 전체 완료. 4경로 통합 + 20개 Spec + ~290줄→60줄 + Factory 하드코딩 제거                                                          |  **P2**  |
+| ADR                                                      | 제목                                     | 상태               | 규모                                                                                                                                       | 우선순위 |
+| -------------------------------------------------------- | ---------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | :------: |
+| [013](013-quick-connect-data-binding.md)                 | Quick Connect 데이터 바인딩              | Proposed           | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                            |  **P3**  |
+| [020](020-design-kit-improvement.md)                     | Design Kit 패널 분석 및 개선             | Proposed           | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                                   |    P4    |
+| [015](015-sitemap-layout.md)                             | Sitemap Hierarchy 워크플로우 엣지        | Proposed           | 변경 대상 8파일, 코드 미생성                                                                                                               |    P5    |
+| [016](016-photoshop-ui-ux.md)                            | Photoshop 벤치마크 기반 UI/UX (v2)       | Proposed           | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                                     |    P5    |
+| [032](032-events-data-integration.md)                    | Events Platform 재설계 + Data 통합       | Proposed           | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                                     |  **P3**  |
+| [034](034-events-panel-renovation.md)                    | Events Panel Renovation                  | Proposed           | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                                  |  **P3**  |
+| [038](038-figma-import.md)                               | Figma 디자인 임포트 시스템               | Proposed           | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                  |  **P3**  |
+| [043](043-selection-drag-alignment.md)                   | Selection Drag Alignment                 | Proposed           | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                                                               |    P3    |
+| [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed           | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |    P4    |
+| [045](045-s2-property-editor-alignment.md)               | S2 Property Editor 프로퍼티 정합성 정렬  | Proposed           | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                                                            |  **P2**  |
+| [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs    | Accepted           | 자동 생성 전 계약 확정 — `Tabs.density`, `ColorField` 1차 계약(`labelAlign` 포함), `Form.labelPosition/labelAlign/necessityIndicator` 채택 |  **P2**  |
+| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | **✅ Implemented** | Phase 0~5 전체 완료. 4경로 통합 + 20개 Spec + ~290줄→60줄 + Factory 하드코딩 제거                                                          |  **P2**  |
 
 ## Events Panel 설계 문서군
 
@@ -104,18 +104,18 @@
 
 ---
 
-## 다음 진행 목표 (2026-03-26 기준)
+## 다음 진행 목표 (2026-03-29 기준)
 
-| 순서 | 대상    | 내용                                                                                                          | 규모 |   상태   |
-| :--: | ------- | ------------------------------------------------------------------------------------------------------------- | :--: | :------: |
-|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (69개 spec, 22개 propagation, 2개 hybrid, 64개 에디터 삭제) |  -   | **완료** |
-|  2   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                 |  대  | **완료** |
-|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                  |  중  |          |
-|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                 |  소  |          |
-|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                        |  대  |          |
-|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                   |  대  |          |
-|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)              |  중  |          |
-|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                 |  대  |          |
+| 순서 | 대상    | 내용                                                                                                                                             | 규모 |   상태   |
+| :--: | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | :--: | :------: |
+|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (62개 Spec 등록, Generic 31개, Hybrid 8개, Custom 14개, 34개 에디터 삭제, S2 섹션 재분류 완료) |  -   | **완료** |
+|  -   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                                                    |  대  | **완료** |
+|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                                                     |  중  |          |
+|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                                                    |  소  |          |
+|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                                                           |  대  |          |
+|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                                                      |  대  |          |
+|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                                                 |  중  |          |
+|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                                                    |  대  |          |
 
 > 완료된 이전 목표는 변경 이력 참조
 >
@@ -145,13 +145,13 @@
 **핵심 의존 체인** (순서 필수):
 
 ```
-ADR-041 (Spec-Driven Property Editor, ✅ 완료 — 94.5% 자동화)
+ADR-041 (Spec-Driven Property Editor, ✅ 완료 — 85.5% 자동화 (Generic 31 + Hybrid 8 = 39/62, Custom 14개 제외 시 100% 커버리지))
   → ADR-048 (선언적 Props Propagation, ✅ 완료)
     → ADR-045 (Property Editor 정합성 정렬) ← 다음 우선순위
 ADR-046 (S2 계약 확장, 독립)
 ```
 
-- ~~**ADR-041**~~: Phase 0~4 전체 완료. 69개 Spec properties, 2개 hybrid, 64개 에디터 삭제 (자동 69/Hybrid 2/수동 2). `string-array`/`children-manager`/`PropertyNumberInput` 필드 타입 추가
+- ~~**ADR-041**~~: Phase 0~4 전체 완료. 62개 Spec 등록, 31 Generic + 8 Hybrid, 34개 에디터 삭제. S2 섹션 재분류(Content/Appearance/State/Locale). PropertySizeToggle non-indicator 모드 전환. `string-array`/`children-manager`/`PropertyNumberInput` 필드 타입 추가
 - ~~**ADR-048**~~: Phase 0~5 전체 완료. PropagationSpec 엔진 + Registry + 4경로 통합. 22개 컴포넌트 전파 규칙
 - **ADR-045**: ADR-041/048 기반 위에서 에디터 정합성 정렬 (INCOMPLETE 에디터 + 공통 패턴) — **다음 착수 대상**
 - **ADR-046**: S2 계약 확장 (Form, ColorField, Tabs) — Spec 완성도 향상, 독립 실행 가능

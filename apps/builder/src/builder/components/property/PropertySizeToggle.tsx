@@ -48,7 +48,6 @@ export const PropertySizeToggle = memo(function PropertySizeToggle({
       <ToggleButtonGroup
         aria-label={label}
         selectionMode="single"
-        indicator
         selectedKeys={[value]}
         onSelectionChange={handleChange}
       >
