@@ -29,10 +29,17 @@ interface DragVisualOffsetData {
 
 const G = globalThis as unknown as {
   __xstudio_dragVisualOffset?: DragVisualOffsetData | null;
+  __xstudio_dragSiblingOffsets?: Map<string, { dx: number; dy: number }> | null;
 };
 
 function _get(): DragVisualOffsetData | null {
   return G.__xstudio_dragVisualOffset ?? null;
+}
+
+function _getSiblingOffset(
+  elementId: string,
+): { dx: number; dy: number } | undefined {
+  return G.__xstudio_dragSiblingOffsets?.get(elementId);
 }
 
 /**
@@ -64,6 +71,19 @@ export function setDragVisualOffset(
   if (changed) {
     notifyLayoutChange();
   }
+}
+
+/**
+ * 드래그 중 형제 요소들의 시각적 오프셋을 설정한다.
+ * Pencil deferred-drop 패턴: vacate(빈 자리 채움) + insertion(공간 열기).
+ *
+ * @param offsets elementId → {dx, dy} 맵. null이면 모든 형제 오프셋 제거.
+ */
+export function setDragSiblingOffsets(
+  offsets: Map<string, { dx: number; dy: number }> | null,
+): void {
+  G.__xstudio_dragSiblingOffsets = offsets;
+  notifyLayoutChange();
 }
 
 /** 현재 드래그 시각적 오프셋 반환 */
@@ -104,12 +124,16 @@ function renderNodeInternal(
 ): void {
   if (!node.visible) return;
 
-  // Pencil deferred-drop: 드래그 대상 요소에 시각적 오프셋 적용
+  // Pencil deferred-drop: 드래그 대상/형제 요소에 시각적 오프셋 적용
   const dragOffset = _get();
   const isDragTarget =
     dragOffset !== null && node.elementId === dragOffset.elementId;
-  const offsetX = isDragTarget ? dragOffset.dx : 0;
-  const offsetY = isDragTarget ? dragOffset.dy : 0;
+  const siblingOffset =
+    !isDragTarget && node.elementId
+      ? _getSiblingOffset(node.elementId)
+      : undefined;
+  const offsetX = isDragTarget ? dragOffset!.dx : (siblingOffset?.dx ?? 0);
+  const offsetY = isDragTarget ? dragOffset!.dy : (siblingOffset?.dy ?? 0);
 
   if (node.width > 0 || node.height > 0) {
     const nodeLeft = node.x + offsetX;

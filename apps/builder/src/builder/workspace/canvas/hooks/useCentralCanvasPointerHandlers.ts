@@ -206,6 +206,22 @@ export function useCentralCanvasPointerHandlers({
         };
 
         handleElementClickRef.current(hitElementId, modifiers);
+
+        // ADR-043: 선택 즉시 pendingDrag 설정 — 첫 클릭에서 바로 드래그 가능
+        // handleElementClick이 동기적으로 store를 갱신한 후 bounds 재계산
+        const hitElement = state.elementsMap.get(hitElementId);
+        if (hitElement && hitElement.tag.toLowerCase() !== "body") {
+          const freshBounds = computeSelectionBoundsForHitTest();
+          if (freshBounds) {
+            pendingDrag = {
+              elementId: hitElementId,
+              bounds: freshBounds,
+              startCanvasPos: canvasPos,
+              startClientX: event.clientX,
+              startClientY: event.clientY,
+            };
+          }
+        }
         return;
       }
 

@@ -36,11 +36,16 @@ import type { BoundingBox } from "./types";
 import {
   resolveDropTarget,
   computeReorderFromDropTarget,
+  computeSiblingOffsets,
   type DropTarget,
   type DropIndicatorSnapshot,
 } from "./dropTargetResolver";
 import { historyManager } from "../../../stores/history";
 import { getDB } from "../../../../lib/db";
+import {
+  setDragVisualOffset,
+  setDragSiblingOffsets,
+} from "../skia/nodeRendererTree";
 
 // ============================================
 // Types
@@ -179,10 +184,15 @@ export const SelectionLayer = memo(function SelectionLayer({
       const { delta } = data;
       selectionBoxRef.current?.updatePosition(delta);
 
-      // ADR-043 Phase 2: drop target resolver
-      // RAF 내에서 호출되므로 매 프레임 1회 실행. resolver는 순수 함수.
+      // ADR-043: Skia 렌더러에 드래그 오프셋 전달 — 요소가 커서를 따라 이동
       const dragState = useStore.getState();
       const draggedId = dragState.selectedElementIds[0];
+      if (draggedId) {
+        setDragVisualOffset(draggedId, delta.x, delta.y);
+      }
+
+      // ADR-043 Phase 2: drop target resolver
+      // RAF 내에서 호출되므로 매 프레임 1회 실행. resolver는 순수 함수.
       if (!draggedId) return;
 
       // 드래그 중 요소의 현재 scene-local 위치 = 원래 중심 + delta
@@ -198,6 +208,18 @@ export const SelectionLayer = memo(function SelectionLayer({
         childrenMap: dragState.childrenMap,
       });
       dropTargetRef.current = resolved;
+
+      // ADR-043: 형제 오프셋 계산 (vacate + insertion preview)
+      if (resolved) {
+        const sibOffsets = computeSiblingOffsets(resolved, draggedId, {
+          elementsMap: dragState.elementsMap,
+          childrenMap: dragState.childrenMap,
+        });
+        setDragSiblingOffsets(sibOffsets);
+      } else {
+        setDragSiblingOffsets(null);
+      }
+
       // ADR-043 Phase 3: drop indicator 스냅샷 갱신 (SkiaOverlay RAF에서 읽음)
       if (dropIndicatorSnapshotRef) {
         dropIndicatorSnapshotRef.current = resolved
@@ -211,6 +233,10 @@ export const SelectionLayer = memo(function SelectionLayer({
       }
     },
     onMoveEnd: (elementId, delta) => {
+      // ADR-043: Skia 드래그 + 형제 오프셋 제거 (store 갱신이 렌더 트리거)
+      setDragVisualOffset(null, 0, 0, true);
+      setDragSiblingOffsets(null);
+
       // ADR-043 Phase 2: drop target이 있고 인접하지 않은 삽입이면 reorder
       const dropTarget = dropTargetRef.current;
       dropTargetRef.current = null;
@@ -299,7 +325,9 @@ export const SelectionLayer = memo(function SelectionLayer({
     if (onCancelDragRef)
       onCancelDragRef.current = () => {
         cancelDrag();
-        // drop indicator 제거
+        // Skia 드래그 + 형제 오프셋 + drop indicator 제거
+        setDragVisualOffset(null);
+        setDragSiblingOffsets(null);
         if (dropIndicatorSnapshotRef) {
           dropIndicatorSnapshotRef.current = null;
         }

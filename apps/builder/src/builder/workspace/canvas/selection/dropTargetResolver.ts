@@ -146,14 +146,8 @@ export function resolveDropTarget(
   const parent = store.elementsMap.get(parentId);
   if (!parent) return null;
 
-  // body 요소는 drop target이 될 수 있으나,
-  // absolute 배치 요소의 부모이므로 reorder 대상이 아님
-  // → Phase 2에서는 스킵 (null 반환)
-  if (parent.tag.toLowerCase() === "body") return null;
-
-  // 3. 컨테이너 bounds 조회
-  const containerBounds = getElementBoundsSimple(parentId);
-  if (!containerBounds) return null;
+  // 3. 컨테이너 bounds 조회 (body 등 bounds 미등록 컨테이너는 자식 bounds로 대체)
+  let containerBounds = getElementBoundsSimple(parentId);
 
   // 4. 컨테이너의 방향 감지
   const isHorizontal = detectIsHorizontal(parent);
@@ -168,6 +162,29 @@ export function resolveDropTarget(
     const b = getElementBoundsSimple(sibling.id);
     if (b) siblingBounds.push(b);
   }
+
+  // 6.1 containerBounds가 없으면 (body 등) 자식+드래그 요소 bounds의 합집합으로 대체
+  if (!containerBounds && siblingBounds.length > 0) {
+    const dragBounds = getElementBoundsSimple(draggedElementId);
+    const all = dragBounds ? [...siblingBounds, dragBounds] : siblingBounds;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    for (const b of all) {
+      if (b.x < minX) minX = b.x;
+      if (b.y < minY) minY = b.y;
+      if (b.x + b.width > maxX) maxX = b.x + b.width;
+      if (b.y + b.height > maxY) maxY = b.y + b.height;
+    }
+    containerBounds = {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  }
+  if (!containerBounds) return null;
 
   // 7. insertion index 결정
   //
@@ -207,6 +224,67 @@ export function resolveDropTarget(
     containerBounds,
     siblingBounds,
   };
+}
+
+// ============================================
+// Sibling Visual Offsets (Pencil vacate + insertion)
+// ============================================
+
+/**
+ * 드래그 중 형제 요소들의 시각적 오프셋을 계산한다.
+ *
+ * Pencil 패턴:
+ * - Vacate: 드래그 요소의 원래 자리를 형제들이 채움 (gap close)
+ * - Insertion: 삽입 위치에서 형제들이 공간을 열어줌 (make space)
+ *
+ * 알고리즘:
+ * - origIdx 이후 형제: -dragSize (gap close)
+ * - insertionIndex 이후 형제: +dragSize (make space)
+ * - 두 오프셋을 합산
+ *
+ * @returns elementId → { dx, dy } 맵
+ */
+export function computeSiblingOffsets(
+  dropTarget: DropTarget,
+  draggedElementId: string,
+  store: DropTargetStoreSlice,
+): Map<string, { dx: number; dy: number }> {
+  const offsets = new Map<string, { dx: number; dy: number }>();
+  const { containerId, insertionIndex, isHorizontal } = dropTarget;
+
+  // 전체 자식 (드래그 요소 포함, order_num 오름차순)
+  const sortedChildren = getSortedChildren(containerId, store);
+  const origIdx = sortedChildren.findIndex((c) => c.id === draggedElementId);
+  if (origIdx < 0) return offsets;
+
+  // 드래그 요소의 크기 (layoutBoundsRegistry에서)
+  const dragBounds = getElementBoundsSimple(draggedElementId);
+  if (!dragBounds) return offsets;
+  const dragSize = isHorizontal ? dragBounds.width : dragBounds.height;
+
+  // 드래그 요소를 제외한 형제 배열 (siblings)과 각 형제의 원래 인덱스(oi)
+  const siblings = sortedChildren.filter((c) => c.id !== draggedElementId);
+
+  for (let i = 0; i < siblings.length; i++) {
+    const sibling = siblings[i];
+    // 형제의 원래 전체 배열 인덱스
+    const oi = sortedChildren.findIndex((c) => c.id === sibling.id);
+
+    // vacate: 원래 드래그 위치 이��� 형제 → gap close
+    const closeGap = oi > origIdx ? -dragSize : 0;
+    // insertion: 삽입 위치 이후 형제 → make space
+    const makeSpace = i >= insertionIndex ? dragSize : 0;
+
+    const total = closeGap + makeSpace;
+    if (total !== 0) {
+      offsets.set(sibling.id, {
+        dx: isHorizontal ? total : 0,
+        dy: isHorizontal ? 0 : total,
+      });
+    }
+  }
+
+  return offsets;
 }
 
 // ============================================
