@@ -1631,20 +1631,6 @@ export const renderActionMenu = (
       id={element.customId}
       data-element-id={element.id}
       label={String(element.props.children || element.props.label || "Actions")}
-      align={element.props.align as "start" | "end" | undefined}
-      direction={
-        element.props.direction as
-          | "bottom"
-          | "top"
-          | "left"
-          | "right"
-          | undefined
-      }
-      shouldFlip={
-        element.props.shouldFlip !== undefined
-          ? Boolean(element.props.shouldFlip)
-          : undefined
-      }
       style={element.props.style}
       className={element.props.className}
     >

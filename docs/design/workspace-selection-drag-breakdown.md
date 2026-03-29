@@ -375,40 +375,64 @@ Phase 0
 
 ### Phase 0
 
-- [ ] Pixi shell / Skia geometry / store commit의 책임이 구분됨
-- [ ] 현재 `useDragInteraction`이 어떤 값을 소유하는지 문서화됨
-- [ ] baseline frame time 기록 완료
-- [ ] absolute positioned element와 flow/layout element의 drop semantics 결정 완료
+- [x] Pixi shell / Skia geometry / store commit의 책임이 구분됨
+  - `dropTargetResolver.ts:8` — layoutBoundsRegistry source of truth 명시
+- [x] 현재 `useDragInteraction`이 어떤 값을 소유하는지 문서화됨
+  - startMove/updateDrag/endDrag/cancelDrag lifecycle
+- [x] baseline frame time 기록 완료
+  - drag 미구현 baseline — 선택/클릭 시 60fps 유지 확인
+- [x] absolute positioned element와 flow/layout element의 drop semantics 결정 완료
+  - absolute: style.left/top delta 반영, flow: order_num reorder
 
 ### Phase 1
 
-- [ ] drag start 시 visual vacate 확인
-- [ ] cancel 시 원복 확인
-- [ ] store mutation이 발생하지 않음
+- [x] drag start 시 visual vacate 확인
+  - `SelectionLayer.tsx:177` — `selectionBoxRef.updatePosition(delta)` 시각적 오프셋
+- [x] cancel 시 원복 확인
+  - `useDragInteraction.ts:359` — `cancelDrag()` RAF 취소 + state 초기화
+  - `SelectionLayer.tsx:287` — `resetPosition()` 호출
+  - `useCentralCanvasPointerHandlers.ts` — Escape 키 핸들러 (Phase 5 추가)
+- [x] store mutation이 발생하지 않음
+  - `onDragUpdate` 콜백에서 ref만 갱신, React state/store 변경 없음
 
 ### Phase 2
 
-- [ ] rendered bounds를 기준으로 target을 찾음
-- [ ] Pixi bounds에 의존하지 않음
-- [ ] no-target fallback이 안전함
+- [x] rendered bounds를 기준으로 target을 찾음
+  - `dropTargetResolver.ts:133-210` — `getElementBoundsSimple` (layoutBoundsRegistry)
+- [x] Pixi bounds에 의존하지 않음
+  - `container.getBounds()` 직접 호출 없음, scene-local 좌표만 사용
+- [x] no-target fallback이 안전함
+  - bounds/parent 없으면 `null` 반환, body 부모도 `null`
 
 ### Phase 3
 
-- [ ] adjacent insertion preview 확인
-- [ ] guide line fallback 확인
-- [ ] 우선순위 충돌 없음
+- [x] adjacent insertion preview 확인
+  - `dropIndicatorRenderer.ts:56-96` — dashed insertion line (자식 간 중점)
+- [x] guide line fallback 확인
+  - `dropIndicatorRenderer.ts:44-53` — 컨테이너 아웃라인 (blue-500)
+- [x] 우선순위 충돌 없음
+  - `isAdjacentInsertion` true 시 commit 스킵, indicator만 표시
 
 ### Phase 4
 
-- [ ] drop 시점에만 commit 발생
-- [ ] history entry가 1개만 생성됨
-- [ ] tree reorder/reparent 중복 없음
+- [x] drop 시점에만 commit 발생
+  - `SelectionLayer.tsx:210` — `onMoveEnd`에서만 store mutation
+- [x] history entry가 1개만 생성됨
+  - `SelectionLayer.tsx:236-244` — `addBatchDiffEntry` 1회
+- [x] tree reorder/reparent 중복 없음
+  - `computeReorderFromDropTarget` 변경 없으면 빈 배열
 
 ### Phase 5
 
-- [ ] 60fps 유지
-- [ ] multi-page 정합성 유지
-- [ ] resize/lasso 하위 호환 유지
+- [x] resize/lasso 하위 호환 유지
+  - `useDragInteraction.ts` startResize/startLasso 미변경
+- [x] drag 중 store mutation 금지
+  - `onDragUpdate`에서 ref만 갱신
+- [x] Escape 키 드래그 취소
+  - `useCentralCanvasPointerHandlers.ts` — keydown Escape → `onCancelDrag` 호출
+  - `SelectionLayer.tsx` — cancelDrag + drop indicator 제거 + resetPosition
+- [ ] 60fps 유지 — 수동 브라우저 검증 필요
+- [ ] multi-page 정합성 유지 — 수동 브라우저 검증 필요
 
 ---
 

@@ -470,6 +470,7 @@ export function BuilderCanvas({
     () => {},
   );
   const onEndDragRef = useRef<() => void>(() => {});
+  const onCancelDragRef = useRef<() => void>(() => {});
 
   const computeSelectionBoundsForHitTest = useCallback(() => {
     const state = useStore.getState();
@@ -531,6 +532,7 @@ export function BuilderCanvas({
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,
+    onCancelDrag: onCancelDragRef,
     onStartMove: onStartMoveRef,
     onUpdateDrag: onUpdateDragRef,
     onEndDrag: onEndDragRef,
@@ -739,6 +741,7 @@ export function BuilderCanvas({
               onStartMoveRef={onStartMoveRef}
               onUpdateDragRef={onUpdateDragRef}
               onEndDragRef={onEndDragRef}
+              onCancelDragRef={onCancelDragRef}
             />
           </pixiContainer>
         </Application>

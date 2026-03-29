@@ -44,6 +44,8 @@ interface UseCentralCanvasPointerHandlersOptions {
   onUpdateDrag: MutableRefObject<(position: { x: number; y: number }) => void>;
   /** 드래그 종료 콜백 (SelectionLayer로 전달) */
   onEndDrag: MutableRefObject<() => void>;
+  /** ADR-043 Phase 5: 드래그 취소 콜백 (Escape 키) */
+  onCancelDrag: MutableRefObject<() => void>;
   pageHeight: number;
   pageWidth: number;
   screenToCanvasPoint: (position: { x: number; y: number }) => {
@@ -70,6 +72,7 @@ export function useCentralCanvasPointerHandlers({
   lastClickTimeRef,
   onStartMove,
   onUpdateDrag,
+  onCancelDrag,
   onEndDrag,
   pageHeight,
   pageWidth,
@@ -345,6 +348,16 @@ export function useCentralCanvasPointerHandlers({
       isDragging = false;
     };
 
+    // ADR-043 Phase 5: Escape 키로 드래그 취소
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && (isDragging || pendingDrag)) {
+        event.preventDefault();
+        onCancelDrag.current();
+        pendingDrag = null;
+        isDragging = false;
+      }
+    };
+
     const handlePointerMove = (event: PointerEvent) => {
       // pendingDrag가 없을 때만 커서 업데이트 (드래그 중 window 핸들러가 처리)
       if (pendingDrag) return;
@@ -379,12 +392,14 @@ export function useCentralCanvasPointerHandlers({
     element.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointermove", handleWindowPointerMove);
     window.addEventListener("pointerup", handleWindowPointerUp);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       element.removeEventListener("pointerdown", handlePointerDown);
       element.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointermove", handleWindowPointerMove);
       window.removeEventListener("pointerup", handleWindowPointerUp);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [
     completeEditRef,
@@ -396,6 +411,7 @@ export function useCentralCanvasPointerHandlers({
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,
+    onCancelDrag,
     onEndDrag,
     onStartMove,
     onUpdateDrag,

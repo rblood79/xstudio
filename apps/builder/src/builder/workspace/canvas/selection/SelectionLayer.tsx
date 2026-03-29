@@ -74,6 +74,8 @@ export interface SelectionLayerProps {
     (position: { x: number; y: number }) => void
   >;
   onEndDragRef?: React.MutableRefObject<() => void>;
+  /** ADR-043 Phase 5: 드래그 취소 콜백 ref (Escape 키) */
+  onCancelDragRef?: React.MutableRefObject<() => void>;
   /**
    * ADR-043 Phase 3: drop indicator 상태 변경 알림 ref
    * SkiaOverlay RAF 루프에서 직접 읽는 ref — React state 사용 금지 (매 포인터 이벤트마다 갱신)
@@ -100,6 +102,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   onStartMoveRef,
   onUpdateDragRef,
   onEndDragRef,
+  onCancelDragRef,
   dropIndicatorSnapshotRef,
 }: SelectionLayerProps) {
   useExtend(PIXI_COMPONENTS);
@@ -169,7 +172,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   // ADR-043 Phase 1: Drag Interaction
   // ============================================
 
-  const { startMove, updateDrag, endDrag } = useDragInteraction({
+  const { startMove, updateDrag, endDrag, cancelDrag } = useDragInteraction({
     onDragUpdate: (operation, data) => {
       if (operation !== "move" || !data.delta) return;
 
@@ -293,13 +296,26 @@ export const SelectionLayer = memo(function SelectionLayer({
     if (onStartMoveRef) onStartMoveRef.current = startMove;
     if (onUpdateDragRef) onUpdateDragRef.current = updateDrag;
     if (onEndDragRef) onEndDragRef.current = endDrag;
+    if (onCancelDragRef)
+      onCancelDragRef.current = () => {
+        cancelDrag();
+        // drop indicator 제거
+        if (dropIndicatorSnapshotRef) {
+          dropIndicatorSnapshotRef.current = null;
+        }
+        dropTargetRef.current = null;
+        selectionBoxRef.current?.resetPosition();
+      };
   }, [
     startMove,
     updateDrag,
     endDrag,
+    cancelDrag,
     onStartMoveRef,
     onUpdateDragRef,
     onEndDragRef,
+    onCancelDragRef,
+    dropIndicatorSnapshotRef,
   ]);
 
   // 단일 선택 여부
