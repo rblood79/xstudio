@@ -40,7 +40,7 @@ import {
   type DropIndicatorSnapshot,
 } from "./dropTargetResolver";
 import { historyManager } from "../../../stores/history";
-import { getDB } from "../../../lib/db";
+import { getDB } from "../../../../lib/db";
 
 // ============================================
 // Types
