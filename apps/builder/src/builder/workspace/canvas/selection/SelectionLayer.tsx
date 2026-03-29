@@ -4,6 +4,7 @@
  * 🚀 Phase 10 B1.3: 선택 시스템 통합 레이어
  * 🚀 Phase 19: 성능 최적화 - selectionBoxRef를 통한 imperative 업데이트
  * ADR-043 Phase 2: Drop Target Resolver 연결
+ * ADR-043 Phase 4: Commit Path — reorder + history + DB persist
  *
  * 기능:
  * - 선택된 요소의 SelectionBox 표시
@@ -14,6 +15,7 @@
  * @since 2025-12-11 Phase 10 B1.3
  * @updated 2025-12-23 Phase 19 성능 최적화
  * @updated 2026-03-29 ADR-043 Phase 2 Drop Target Resolver
+ * @updated 2026-03-29 ADR-043 Phase 4 Commit Path
  */
 
 import { useCallback, useMemo, memo, useState, useEffect, useRef } from "react";
@@ -37,6 +39,8 @@ import {
   type DropTarget,
   type DropIndicatorSnapshot,
 } from "./dropTargetResolver";
+import { historyManager } from "../../../stores/history";
+import { getDB } from "../../../lib/db";
 
 // ============================================
 // Types
@@ -219,8 +223,41 @@ export const SelectionLayer = memo(function SelectionLayer({
           childrenMap: state.childrenMap,
         });
         if (updates.length > 0) {
-          // 파이프라인: Memory Update (batchUpdateElementOrders) → History → DB (백그라운드)
+          // 파이프라인:
+          // 1. History Record (상태 변경 전 스냅샷)
+          const prevElements = updates
+            .map((u) => state.elementsMap.get(u.id))
+            .filter((el): el is NonNullable<typeof el> => el !== undefined);
+
+          // 2. Memory Update (batchUpdateElementOrders: 단일 set() + _rebuildIndexes())
           state.batchUpdateElementOrders(updates);
+
+          // 3. History addBatchDiffEntry (변경 전 → 후 diff)
+          if (prevElements.length > 0) {
+            const nextState = useStore.getState();
+            const nextElements = updates
+              .map((u) => nextState.elementsMap.get(u.id))
+              .filter((el): el is NonNullable<typeof el> => el !== undefined);
+            if (nextElements.length === prevElements.length) {
+              historyManager.addBatchDiffEntry(prevElements, nextElements);
+            }
+          }
+
+          // 4. DB Persist (백그라운드 — stale closure 방지 위해 queueMicrotask 내 get() 사용)
+          queueMicrotask(() => {
+            void (async () => {
+              try {
+                const db = await getDB();
+                await Promise.all(
+                  updates.map((u) =>
+                    db.elements.update(u.id, { order_num: u.order_num }),
+                  ),
+                );
+              } catch (error) {
+                console.error("[SelectionLayer] reorder DB 저장 실패:", error);
+              }
+            })();
+          });
         }
         selectionBoxRef.current?.resetPosition();
         return;
