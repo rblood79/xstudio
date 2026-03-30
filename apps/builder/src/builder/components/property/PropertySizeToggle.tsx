@@ -50,6 +50,7 @@ export const PropertySizeToggle = memo(function PropertySizeToggle({
         selectionMode="single"
         selectedKeys={[value]}
         onSelectionChange={handleChange}
+        indicator
       >
         {items.map((item) => (
           <ToggleButton key={item.id} id={item.id}>

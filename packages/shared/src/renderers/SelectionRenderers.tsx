@@ -136,12 +136,118 @@ export const renderListBox = (
       );
     };
 
+    const dbLabelText = element.props.label
+      ? String(element.props.label)
+      : null;
+
     return (
+      <div key={element.id} data-element-id={element.id}>
+        {dbLabelText && (
+          <label
+            style={{
+              display: "block",
+              fontSize: "var(--text-sm)",
+              fontWeight: 500,
+              marginBottom: 4,
+              color: "var(--fg)",
+            }}
+          >
+            {dbLabelText}
+          </label>
+        )}
+        <ListBox
+          id={element.customId}
+          aria-label={dbLabelText || "List"}
+          className={element.props.className}
+          variant={(element.props.variant as string) || undefined}
+          size={(element.props.size as "sm" | "md" | "lg") || undefined}
+          orientation={
+            (element.props.orientation as "horizontal" | "vertical") ||
+            "vertical"
+          }
+          selectionMode={
+            (element.props.selectionMode as "none" | "single" | "multiple") ||
+            "none"
+          }
+          disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
+          autoFocus={Boolean(element.props.autoFocus)}
+          enableVirtualization={Boolean(element.props.enableVirtualization)}
+          height={
+            typeof element.props.height === "number"
+              ? element.props.height
+              : undefined
+          }
+          overscan={
+            typeof element.props.overscan === "number"
+              ? element.props.overscan
+              : undefined
+          }
+          filterText={
+            element.props.filterText
+              ? String(element.props.filterText)
+              : undefined
+          }
+          filterFields={element.props.filterFields as string[] | undefined}
+          defaultSelectedKeys={
+            Array.isArray(element.props.selectedKeys)
+              ? (element.props.selectedKeys as unknown as string[])
+              : []
+          }
+          dataBinding={
+            (element.dataBinding || element.props.dataBinding) as
+              | DataBinding
+              | undefined
+          }
+          columnMapping={columnMapping}
+          onSelectionChange={(selectedKeys) => {
+            const updatedProps = {
+              ...element.props,
+              selectedKeys: Array.from(selectedKeys),
+            };
+            updateElementProps(element.id, updatedProps);
+
+            // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
+            const eventHandlerMap = context.services?.createEventHandlerMap?.(
+              element,
+              context,
+            );
+            const customHandler = eventHandlerMap?.["onSelectionChange"] as
+              | ((value: unknown) => void)
+              | undefined;
+            customHandler?.(selectedKeys);
+          }}
+        >
+          {renderItemFunction}
+        </ListBox>
+      </div>
+    );
+  }
+
+  // Static children (no data binding)
+  const staticChildren = listBoxChildren.map((item) =>
+    context.renderElement(item),
+  );
+
+  const labelText = element.props.label ? String(element.props.label) : null;
+
+  return (
+    <div key={element.id} data-element-id={element.id}>
+      {labelText && (
+        <label
+          style={{
+            display: "block",
+            fontSize: "var(--text-sm)",
+            fontWeight: 500,
+            marginBottom: 4,
+            color: "var(--fg)",
+          }}
+        >
+          {labelText}
+        </label>
+      )}
       <ListBox
-        key={element.id}
         id={element.customId}
-        aria-label={String(element.props.label || "List")}
-        data-element-id={element.id}
+        aria-label={labelText || "List"}
         className={element.props.className}
         variant={(element.props.variant as string) || undefined}
         size={(element.props.size as "sm" | "md" | "lg") || undefined}
@@ -200,80 +306,9 @@ export const renderListBox = (
           customHandler?.(selectedKeys);
         }}
       >
-        {renderItemFunction}
+        {staticChildren}
       </ListBox>
-    );
-  }
-
-  // Static children (no data binding)
-  const staticChildren = listBoxChildren.map((item) =>
-    context.renderElement(item),
-  );
-
-  return (
-    <ListBox
-      key={element.id}
-      id={element.customId}
-      aria-label={String(element.props.label || "List")}
-      data-element-id={element.id}
-      className={element.props.className}
-      variant={(element.props.variant as string) || undefined}
-      size={(element.props.size as "sm" | "md" | "lg") || undefined}
-      orientation={
-        (element.props.orientation as "horizontal" | "vertical") || "vertical"
-      }
-      selectionMode={
-        (element.props.selectionMode as "none" | "single" | "multiple") ||
-        "none"
-      }
-      disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
-      autoFocus={Boolean(element.props.autoFocus)}
-      enableVirtualization={Boolean(element.props.enableVirtualization)}
-      height={
-        typeof element.props.height === "number"
-          ? element.props.height
-          : undefined
-      }
-      overscan={
-        typeof element.props.overscan === "number"
-          ? element.props.overscan
-          : undefined
-      }
-      filterText={
-        element.props.filterText ? String(element.props.filterText) : undefined
-      }
-      filterFields={element.props.filterFields as string[] | undefined}
-      defaultSelectedKeys={
-        Array.isArray(element.props.selectedKeys)
-          ? (element.props.selectedKeys as unknown as string[])
-          : []
-      }
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
-      columnMapping={columnMapping}
-      onSelectionChange={(selectedKeys) => {
-        const updatedProps = {
-          ...element.props,
-          selectedKeys: Array.from(selectedKeys),
-        };
-        updateElementProps(element.id, updatedProps);
-
-        // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
-        const eventHandlerMap = context.services?.createEventHandlerMap?.(
-          element,
-          context,
-        );
-        const customHandler = eventHandlerMap?.["onSelectionChange"] as
-          | ((value: unknown) => void)
-          | undefined;
-        customHandler?.(selectedKeys);
-      }}
-    >
-      {staticChildren}
-    </ListBox>
+    </div>
   );
 };
 

@@ -257,7 +257,8 @@ function applySideLabelChildStyles(
           style: {
             ...cs,
             width: cs.width ?? "100%",
-            marginLeft: cs.marginLeft ?? FORM_SIDE_LABEL_WIDTH + FORM_SIDE_LABEL_GAP,
+            marginLeft:
+              cs.marginLeft ?? FORM_SIDE_LABEL_WIDTH + FORM_SIDE_LABEL_GAP,
           },
         },
       };
@@ -554,12 +555,16 @@ export function applyImplicitStyles(
     const sizeName = (containerProps?.size as string) ?? "md";
     const pad = sizeName === "sm" ? 4 : sizeName === "lg" ? 8 : 6;
     const gap = sizeName === "sm" ? 2 : sizeName === "lg" ? 6 : 4;
+    // label이 있으면 label 높이 + gap만큼 paddingTop 추가
+    const hasLabel = !!containerProps?.label;
+    const labelFontSize = sizeName === "sm" ? 10 : sizeName === "lg" ? 14 : 12;
+    const labelHeight = hasLabel ? Math.ceil(labelFontSize * 1.2) + gap : 0;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
       flexDirection: "column",
       gap: parentStyle.gap ?? gap,
-      paddingTop: parentStyle.paddingTop ?? pad,
+      paddingTop: parentStyle.paddingTop ?? pad + labelHeight,
       paddingBottom: parentStyle.paddingBottom ?? pad,
       paddingLeft: parentStyle.paddingLeft ?? pad,
       paddingRight: parentStyle.paddingRight ?? pad,
@@ -803,11 +808,9 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width:
-                labelPos === "side" ? cs.width : (cs.width ?? "100%"),
+              width: labelPos === "side" ? cs.width : (cs.width ?? "100%"),
               flex: labelPos === "side" ? (cs.flex ?? 1) : cs.flex,
-              minWidth:
-                labelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
+              minWidth: labelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
               gap: cs.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
               ...withSpecPadding(cs, sizeName),
             },
@@ -859,8 +862,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width:
-                nfLabelPos === "side" ? cs.width : (cs.width ?? "100%"),
+              width: nfLabelPos === "side" ? cs.width : (cs.width ?? "100%"),
               flex: nfLabelPos === "side" ? (cs.flex ?? 1) : cs.flex,
               minWidth:
                 nfLabelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
