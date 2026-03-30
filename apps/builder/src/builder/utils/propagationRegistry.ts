@@ -32,6 +32,7 @@ import {
   CalendarSpec,
   RangeCalendarSpec,
   CardSpec,
+  ListBoxSpec,
 } from "@xstudio/specs";
 
 // ─── Lazy Index ─────────────────────────────────────────────────────────────
@@ -143,3 +144,4 @@ registerPropagationSpec("Meter", MeterSpec);
 registerPropagationSpec("Calendar", CalendarSpec);
 registerPropagationSpec("RangeCalendar", RangeCalendarSpec);
 registerPropagationSpec("Card", CardSpec);
+registerPropagationSpec("ListBox", ListBoxSpec);

@@ -555,16 +555,12 @@ export function applyImplicitStyles(
     const sizeName = (containerProps?.size as string) ?? "md";
     const pad = sizeName === "sm" ? 4 : sizeName === "lg" ? 8 : 6;
     const gap = sizeName === "sm" ? 2 : sizeName === "lg" ? 6 : 4;
-    // label이 있으면 label 높이 + gap만큼 paddingTop 추가
-    const hasLabel = !!containerProps?.label;
-    const labelFontSize = sizeName === "sm" ? 10 : sizeName === "lg" ? 14 : 12;
-    const labelHeight = hasLabel ? Math.ceil(labelFontSize * 1.2) + gap : 0;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
       flexDirection: "column",
       gap: parentStyle.gap ?? gap,
-      paddingTop: parentStyle.paddingTop ?? pad + labelHeight,
+      paddingTop: parentStyle.paddingTop ?? pad,
       paddingBottom: parentStyle.paddingBottom ?? pad,
       paddingLeft: parentStyle.paddingLeft ?? pad,
       paddingRight: parentStyle.paddingRight ?? pad,

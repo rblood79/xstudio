@@ -71,6 +71,18 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   defaultVariant: "default",
   defaultSize: "md",
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+    ],
+  },
+
   properties: {
     sections: [
       {
@@ -283,46 +295,20 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
-      const fwRaw = props.style?.fontWeight;
-      const fw =
-        fwRaw != null
-          ? typeof fwRaw === "number"
-            ? fwRaw
-            : parseInt(String(fwRaw), 10) || 500
-          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const labelFontSize = fontSize - 2;
-      const labelHeight = Math.ceil(labelFontSize * 1.2);
-      const labelGap = size.gap ?? 8;
-      const labelOffset = props.label ? labelHeight + labelGap : 0;
+      // Label은 자식 Label Element가 처리 (compositional 패턴)
 
       const shapes: Shape[] = [];
-
-      // 라벨
-      if (props.label) {
-        shapes.push({
-          type: "text" as const,
-          x: 0,
-          y: 0,
-          text: props.label,
-          fontSize: fontSize - 2,
-          fontFamily: ff,
-          fontWeight: fw,
-          fill: textColor,
-          align: textAlign,
-          baseline: "top" as const,
-        });
-      }
 
       // 리스트 컨테이너 배경
       shapes.push({
         id: "bg",
         type: "roundRect" as const,
         x: 0,
-        y: labelOffset,
+        y: 0,
         width,
         height: "auto",
         radius: borderRadius as unknown as number,
@@ -363,8 +349,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const paddingY = (size.paddingY as unknown as number) || 8;
       const gap = (size.gap as unknown as number) || 4;
       const paddingX = (size.paddingX as unknown as number) || 12;
-      const baseY = labelOffset;
-      let itemY = baseY + paddingY;
+      let itemY = paddingY;
 
       // 선택 상태 계산
       const selectedSet = new Set<number>(

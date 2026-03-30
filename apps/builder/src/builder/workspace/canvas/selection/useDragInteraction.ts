@@ -264,7 +264,7 @@ export function useDragInteraction(
               x: position.x - startPosition.x,
               y: position.y - startPosition.y,
             };
-            onDragUpdate("move", { delta });
+            onDragUpdate("move", { delta, current: position });
             break;
           }
           case "resize": {

@@ -186,30 +186,45 @@ export function resolveDropTarget(
   }
   if (!containerBounds) return null;
 
-  // 7. insertion index 결정
+  // 7. insertion index 결정 (gap 기반)
   //
   // 알고리즘:
-  // - 형제가 없으면 → insertionIndex = 0
-  // - scenePoint가 각 형제의 절반 기준으로 앞에 있으면 해당 형제 앞에 삽입
-  // - 모든 형제를 지나쳤으면 맨 뒤에 삽입
+  // - 커서가 형제 영역 위에 있으면 → 해당 형제의 midpoint 기준으로 삽입
+  // - 커서가 gap(형제 사이 빈 영역)에 있으면 → 해당 gap에 삽입
+  // - 커서가 모든 형제 위에 있으면 → 맨 처음/뒤에 삽입
+  const pos = isHorizontal ? scenePoint.x : scenePoint.y;
   let insertionIndex = siblings.length; // 기본: 맨 뒤
 
   for (let i = 0; i < siblingBounds.length; i++) {
-    if (isInFirstHalf(scenePoint, siblingBounds[i], isHorizontal)) {
+    const b = siblingBounds[i];
+    const bStart = isHorizontal ? b.x : b.y;
+    const bEnd = bStart + (isHorizontal ? b.width : b.height);
+
+    if (pos < bStart) {
+      // 커서가 이 형제 시작 전 (gap 또는 컨테이너 시작) → 이 형제 앞에 삽입
       insertionIndex = i;
       break;
     }
+    if (pos >= bStart && pos <= bEnd) {
+      // 커서가 형제 영역 위 → midpoint 기준
+      const mid = (bStart + bEnd) / 2;
+      if (pos < mid) {
+        insertionIndex = i;
+      } else {
+        insertionIndex = i + 1;
+      }
+      break;
+    }
+    // pos > bEnd → 다음 형제 확인
   }
 
   // 8. 현재 드래그 요소의 현재 index를 구해 인접 삽입 여부 판단
   const currentIndex = sortedChildren.findIndex(
     (c) => c.id === draggedElementId,
   );
-  // 형제 기준 삽입 인덱스를 원래 자식 배열 기준으로 변환
-  // (드래그 요소가 siblings[i] 앞에 오므로, dragged가 제거됐을 때의 index)
   const originalInsertIndex =
     currentIndex >= 0 && currentIndex <= insertionIndex
-      ? insertionIndex + 1 // dragged가 앞에 있었으면 원래 배열에서 한 칸 더 뒤
+      ? insertionIndex + 1
       : insertionIndex;
 
   const isAdjacentInsertion =

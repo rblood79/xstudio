@@ -124,34 +124,22 @@ function renderNodeInternal(
 ): void {
   if (!node.visible) return;
 
-  // Pencil deferred-drop: 드래그 대상/형제 요소에 시각적 오프셋 적용
-  const dragOffset = _get();
-  const isDragTarget =
-    dragOffset !== null && node.elementId === dragOffset.elementId;
-  const siblingOffset =
-    !isDragTarget && node.elementId
-      ? _getSiblingOffset(node.elementId)
-      : undefined;
-  const offsetX = isDragTarget ? dragOffset!.dx : (siblingOffset?.dx ?? 0);
-  const offsetY = isDragTarget ? dragOffset!.dy : (siblingOffset?.dy ?? 0);
-
+  // ADR-043: 드래그 오프셋은 skiaTreeBuilder에서 node.x/y에 반영됨
   if (node.width > 0 || node.height > 0) {
-    const nodeLeft = node.x + offsetX;
-    const nodeTop = node.y + offsetY;
-    const nodeRight = nodeLeft + node.width;
-    const nodeBottom = nodeTop + node.height;
+    const nodeRight = node.x + node.width;
+    const nodeBottom = node.y + node.height;
     if (
       cullLeft > nodeRight ||
-      cullRight < nodeLeft ||
+      cullRight < node.x ||
       cullTop > nodeBottom ||
-      cullBottom < nodeTop
+      cullBottom < node.y
     ) {
       return;
     }
   }
 
   canvas.save();
-  canvas.translate(node.x + offsetX, node.y + offsetY);
+  canvas.translate(node.x, node.y);
 
   if (node.transform) {
     canvas.concat(node.transform);
