@@ -248,8 +248,8 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.none}" as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 6,
     },
@@ -257,8 +257,8 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-md}" as TokenRef,
-      borderRadius: "{radius.none}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 8,
     },
@@ -266,8 +266,8 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.none}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 10,
     },
@@ -345,7 +345,9 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             : parseFloat(String(styleBw)) || 0
           : 1;
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

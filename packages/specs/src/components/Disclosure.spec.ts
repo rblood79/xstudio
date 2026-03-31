@@ -18,7 +18,7 @@ import { Type, ToggleLeft, PointerOff, Parentheses } from "lucide-react";
  */
 export interface DisclosureProps {
   variant?: "default" | "accent" | "surface";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   isExpanded?: boolean;
   title?: string;
   style?: Record<string, string | number | undefined>;
@@ -34,7 +34,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -62,31 +62,37 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
 
   sizes: {
     sm: {
-      height: 36,
-      paddingX: 12,
-      paddingY: 8,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
+      height: 0,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      lineHeight: "{typography.text-xs--line-height}" as TokenRef,
+      borderWidth: 1,
       iconSize: 14,
-      gap: 8,
+      gap: 6,
     },
     md: {
-      height: 44,
-      paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
+      height: 0,
+      paddingX: 12,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
+      lineHeight: "{typography.text-sm--line-height}" as TokenRef,
+      borderWidth: 1,
       iconSize: 16,
-      gap: 12,
+      gap: 8,
     },
     lg: {
-      height: 52,
-      paddingX: 20,
-      paddingY: 16,
-      fontSize: "{typography.text-lg}" as TokenRef,
+      height: 0,
+      paddingX: 16,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
+      lineHeight: "{typography.text-base--line-height}" as TokenRef,
+      borderWidth: 1,
       iconSize: 20,
-      gap: 16,
+      gap: 10,
     },
   },
 

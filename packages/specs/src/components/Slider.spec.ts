@@ -9,7 +9,6 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
@@ -66,8 +65,8 @@ export const SLIDER_FILL_COLORS: Record<
     handle: "{color.accent}" as TokenRef,
   },
   neutral: {
-    fill: "{color.neutral-subtle}" as TokenRef,
-    handle: "{color.neutral-subtle}" as TokenRef,
+    fill: "{color.neutral-subdued}" as TokenRef,
+    handle: "{color.neutral-subdued}" as TokenRef,
   },
 };
 
@@ -304,7 +303,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
       const sizeName = props.size ?? "md";
       const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
@@ -324,10 +323,9 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const trackY = sliderDims.thumbSize / 2 - sliderDims.trackHeight / 2;
       const trackRadius = sliderDims.trackHeight / 2;
 
-      // 사용자 스타일 우선
-      const bgColor =
-        props.style?.backgroundColor ??
-        resolveStateColors(variant, state).background;
+      // 트랙 배경: CSS var(--bg-muted) = {color.neutral-subtle} 통일
+      const trackBgColor =
+        props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
       const textColor = props.style?.color ?? variant.text;
       const fwRaw = props.style?.fontWeight;
       const fw =
@@ -338,8 +336,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
           : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      // fontSize가 TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      // Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFontSize =
         typeof rawFontSize === "number"
           ? rawFontSize
@@ -393,7 +393,6 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         const offsetY =
           props.label || props.showValue ? numericFontSize + gap : 0;
 
-        // 트랙 배경
         shapes.push({
           id: "track",
           type: "roundRect" as const,
@@ -402,7 +401,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
           width,
           height: sliderDims.trackHeight,
           radius: trackRadius,
-          fill: bgColor,
+          fill: trackBgColor,
         });
 
         // 채우기 (single: 0~value, range: value[0]~value[1])

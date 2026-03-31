@@ -355,6 +355,13 @@ export function applyImplicitStyles(
   let effectiveParent = containerEl;
   let filteredChildren = children;
 
+  // ── Menu ──────────────────────────────────────────────────────────
+  // Menu는 트리거 버튼만 캔버스에 렌더링 — MenuItem 자식은 Popover이므로 Taffy 레이아웃 제외
+  if (containerTag === "menu") {
+    filteredChildren = [];
+    return { effectiveParent, filteredChildren };
+  }
+
   // ── TagGroup ───────────────────────────────────────────────────────
   // CSS 구조: TagGroup(column) > Label + TagList(row wrap) > Tags
   // TagList가 있으면 column 통과, 없으면(레거시) row wrap으로 보정

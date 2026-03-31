@@ -343,7 +343,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   sizes: {
     sm: {
       height: 22,
-      paddingX: 12,
+      paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
@@ -351,7 +351,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     },
     md: {
       height: 30,
-      paddingX: 16,
+      paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
@@ -359,7 +359,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     },
     lg: {
       height: 42,
-      paddingX: 24,
+      paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
@@ -487,8 +487,10 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             : parseFloat(String(styleBw)) || 0
           : defaultBw;
 
-      // fontSize: TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      // fontSize: Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

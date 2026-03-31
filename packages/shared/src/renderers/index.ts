@@ -83,7 +83,6 @@ export const rendererMap: Record<
   InlineAlert: LayoutRenderers.renderInlineAlert,
   // Phase 2: Action/Group/Accordion (ADR-030)
   ButtonGroup: LayoutRenderers.renderButtonGroup,
-  ActionMenu: LayoutRenderers.renderActionMenu,
   Nav: LayoutRenderers.renderNav,
   Navigation: LayoutRenderers.renderNav,
   Accordion: LayoutRenderers.renderAccordion,

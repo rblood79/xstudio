@@ -337,19 +337,19 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   // @sync ComboBox.spec.ts variants — 동일한 컨테이너 배경
   variants: {
     default: {
-      background: "{color.elevated}" as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
       backgroundHover: "{color.layer-1}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.elevated}" as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
       backgroundHover: "{color.layer-1}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     negative: {
-      background: "{color.elevated}" as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
       backgroundHover: "{color.negative-subtle}" as TokenRef,
       backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
@@ -418,35 +418,35 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         variables: {
           xs: {
             height: "auto",
-            background: "var(--bg-raised)",
+            background: "var(--bg-inset)",
             color: "var(--fg)",
             border: "1px solid var(--border)",
             padding: "1px 1px 1px 4px",
           },
           sm: {
             height: "auto",
-            background: "var(--bg-raised)",
+            background: "var(--bg-inset)",
             color: "var(--fg)",
             border: "1px solid var(--border)",
             padding: "2px 2px 2px 8px",
           },
           md: {
             height: "auto",
-            background: "var(--bg-raised)",
+            background: "var(--bg-inset)",
             color: "var(--fg)",
             border: "1px solid var(--border)",
             padding: "4px 4px 4px 12px",
           },
           lg: {
             height: "auto",
-            background: "var(--bg-raised)",
+            background: "var(--bg-inset)",
             color: "var(--fg)",
             border: "1px solid var(--border)",
             padding: "8px 8px 8px 16px",
           },
           xl: {
             height: "auto",
-            background: "var(--bg-raised)",
+            background: "var(--bg-inset)",
             color: "var(--fg)",
             border: "1px solid var(--border)",
             padding: "12px 12px 12px 24px",
@@ -594,7 +594,9 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             : parseFloat(String(styleBw)) || 0
           : defaultBw;
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

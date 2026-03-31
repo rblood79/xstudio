@@ -105,7 +105,9 @@ export const renderTree = (
       }
       style={element.props.style}
       className={element.props.className}
-      aria-label={String(element.props["aria-label"] || element.props.label || "Tree")}
+      aria-label={String(
+        element.props["aria-label"] || element.props.label || "Tree",
+      )}
       selectionMode={
         (element.props.selectionMode as "none" | "single" | "multiple") ||
         "single"
@@ -794,7 +796,9 @@ export const renderMenu = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      label={String(element.props.label || "Menu")}
+      label={String(element.props.children || element.props.label || "Menu")}
+      variant={(element.props.variant as string) || "primary"}
+      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       style={element.props.style}
       className={element.props.className}
       dataBinding={

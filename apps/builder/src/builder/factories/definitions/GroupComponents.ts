@@ -235,6 +235,11 @@ export function createCheckboxGroupDefinition(
                 tag: "Label",
                 props: {
                   children: "Option 1",
+                  style: {
+                    width: "fit-content",
+                    height: "fit-content",
+                    fontWeight: 500,
+                  },
                 } as ComponentElementProps,
                 ...ownerFields,
                 order_num: 1,
@@ -255,6 +260,11 @@ export function createCheckboxGroupDefinition(
                 tag: "Label",
                 props: {
                   children: "Option 2",
+                  style: {
+                    width: "fit-content",
+                    height: "fit-content",
+                    fontWeight: 500,
+                  },
                 } as ComponentElementProps,
                 ...ownerFields,
                 order_num: 1,

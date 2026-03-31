@@ -128,8 +128,8 @@
 @import "./ColorField.css";
 @import "./ColorSwatchPicker.css";
 
-/* Menu Components */
-@import "./generated/Menu.css";
+/* Menu Components — skipCSSGeneration, 수동 CSS */
+@import "./Menu.css";
 @import "./Autocomplete.css"; /* generated 없음 — 수동 유지 */
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */

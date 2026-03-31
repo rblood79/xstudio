@@ -17,7 +17,7 @@ import { FileCheck, ToggleLeft, Folder, Camera } from "lucide-react";
  */
 export interface FileTriggerProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   text?: string;
   label?: string;
@@ -35,9 +35,10 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   description: "React Aria 기반 파일 선택 트리거 컴포넌트",
   element: "button",
   archetype: "button",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -70,7 +71,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       height: 40,
       paddingX: 24,
       paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 8,

@@ -260,7 +260,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         radius: switchSize.thumbSize / 2,
         fill: isChecked
           ? ("{color.white}" as TokenRef)
-          : ("{color.border-hover}" as TokenRef),
+          : ("{color.neutral-subtle}" as TokenRef),
       });
 
       // 라벨 텍스트 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)

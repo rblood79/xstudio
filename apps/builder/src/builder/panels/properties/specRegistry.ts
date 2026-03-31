@@ -1,7 +1,6 @@
 import type { ComponentSpec } from "@xstudio/specs";
 import {
   AccordionSpec,
-  ActionMenuSpec,
   AutocompleteSpec,
   AvatarSpec,
   CardSpec,
@@ -85,7 +84,6 @@ export const PROPERTY_EDITOR_SPEC_MAP: Record<
   ComponentSpec<Record<string, unknown>>
 > = {
   Accordion: AccordionSpec as ComponentSpec<Record<string, unknown>>,
-  ActionMenu: ActionMenuSpec as ComponentSpec<Record<string, unknown>>,
   Autocomplete: AutocompleteSpec as ComponentSpec<Record<string, unknown>>,
   Avatar: AvatarSpec as ComponentSpec<Record<string, unknown>>,
   AvatarGroup: AvatarGroupSpec as ComponentSpec<Record<string, unknown>>,

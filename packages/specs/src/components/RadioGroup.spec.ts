@@ -28,7 +28,7 @@ import {
  */
 export interface RadioGroupProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   description?: string;
   orientation?: "vertical" | "horizontal";
@@ -55,7 +55,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -121,7 +121,16 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Radio", override: true },
+      {
+        parentProp: "size",
+        childPath: ["RadioItems", "Radio"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["RadioItems", "Radio", "Label"],
+        override: true,
+      },
       { parentProp: "size", childPath: "RadioItems", override: true },
       { parentProp: "size", childPath: "Label", override: true },
     ],

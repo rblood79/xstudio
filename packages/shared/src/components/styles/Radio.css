@@ -9,7 +9,7 @@
     display: flex;
     position: relative;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--radio-gap, var(--spacing-sm));
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
     --label-font-size: var(--text-sm);
@@ -21,12 +21,12 @@
     &:before {
       content: "";
       display: block;
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: var(--text-xl);
+      height: var(--text-xl);
       box-sizing: border-box;
       border: 2px solid var(--border-hover);
       background: var(--color-white);
-      border-radius: var(--text-lg);
+      border-radius: var(--text-xl);
       transition: all 0.2s ease;
     }
 
@@ -37,7 +37,7 @@
     &[data-selected] {
       &:before {
         border-color: var(--radio-color);
-        border-width: calc(var(--spacing) * 1.25);
+        border-width: 6px;
       }
 
       &[data-pressed]:before {
@@ -110,11 +110,12 @@
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
     --label-font-size: var(--text-xs);
+    --radio-gap: 6px;
 
     &:before {
-      width: var(--text-lg);
-      height: var(--text-lg);
-      border-radius: var(--text-lg);
+      width: var(--text-base);
+      height: var(--text-base);
+      border-radius: var(--text-base);
     }
 
     &[data-selected]:before {
@@ -126,6 +127,7 @@
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
     --label-font-size: var(--text-sm);
+    --radio-gap: 8px;
 
     &:before {
       width: var(--text-xl);
@@ -134,7 +136,7 @@
     }
 
     &[data-selected]:before {
-      border-width: calc(var(--spacing) * 1.25);
+      border-width: 6px;
     }
   }
 
@@ -142,6 +144,7 @@
     font-size: var(--text-lg);
     line-height: var(--text-lg--line-height);
     --label-font-size: var(--text-base);
+    --radio-gap: 10px;
 
     &:before {
       width: var(--text-2xl);
@@ -150,7 +153,7 @@
     }
 
     &[data-selected]:before {
-      border-width: 6px;
+      border-width: 7px;
     }
   }
 }

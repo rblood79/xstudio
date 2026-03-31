@@ -28,7 +28,7 @@ import {
  */
 export interface CheckboxGroupProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   description?: string;
   orientation?: "vertical" | "horizontal";
@@ -55,7 +55,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -121,7 +121,16 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Checkbox", override: true },
+      {
+        parentProp: "size",
+        childPath: ["CheckboxItems", "Checkbox"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["CheckboxItems", "Checkbox", "Label"],
+        override: true,
+      },
       { parentProp: "size", childPath: "CheckboxItems", override: true },
       { parentProp: "size", childPath: "Label", override: true },
     ],

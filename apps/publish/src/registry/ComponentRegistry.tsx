@@ -512,11 +512,6 @@ export function registerSharedComponents(): void {
     displayName: "ButtonGroup",
     category: "input",
   });
-  registerComponent("ActionMenu", {
-    component: Button as ComponentType<Record<string, unknown>>,
-    displayName: "ActionMenu",
-    category: "input",
-  });
   registerComponent("Accordion", {
     component: DisclosureGroup as ComponentType<Record<string, unknown>>,
     displayName: "Accordion",

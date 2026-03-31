@@ -122,7 +122,9 @@ export function MenuButton<T extends object>({
     if (loading) {
       return (
         <MenuTrigger {...props}>
-          <Button>{label}</Button>
+          <Button data-variant={variant} data-size={size}>
+            {label}
+          </Button>
           <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
@@ -142,7 +144,9 @@ export function MenuButton<T extends object>({
     if (error) {
       return (
         <MenuTrigger {...props}>
-          <Button>{label}</Button>
+          <Button data-variant={variant} data-size={size}>
+            {label}
+          </Button>
           <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
@@ -253,7 +257,9 @@ export function MenuButton<T extends object>({
 
       return (
         <MenuTrigger {...props}>
-          <Button>{label}</Button>
+          <Button data-variant={variant} data-size={size}>
+            {label}
+          </Button>
           <Popover data-size={size}>
             <Menu
               items={menuItems as Iterable<T>}
@@ -271,7 +277,9 @@ export function MenuButton<T extends object>({
     // 데이터 없음
     return (
       <MenuTrigger {...props}>
-        <Button>{label}</Button>
+        <Button data-variant={variant} data-size={size}>
+          {label}
+        </Button>
         <Popover data-size={size}>
           <Menu
             className={getMenuClassName()}
@@ -404,7 +412,9 @@ export function MenuButton<T extends object>({
 
     return (
       <MenuTrigger {...props}>
-        <Button>{label}</Button>
+        <Button data-variant={variant} data-size={size}>
+          {label}
+        </Button>
         <Popover>
           <Menu
             items={menuItems}
@@ -428,7 +438,9 @@ export function MenuButton<T extends object>({
   // Static Children 또는 Loading/Error 상태
   return (
     <MenuTrigger {...props}>
-      <Button>{label}</Button>
+      <Button data-variant={variant} data-size={size}>
+        {label}
+      </Button>
       <Popover>
         <Menu
           {...props}

@@ -28,9 +28,12 @@ export function createMenuDefinition(
     parent: {
       tag: "Menu",
       props: {
+        children: "Menu",
         "aria-label": "Menu",
+        size: "md",
         selectionMode: "none",
         style: {
+          width: "fit-content",
           display: "block",
         },
       } as ComponentElementProps,

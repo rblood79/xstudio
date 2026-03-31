@@ -28,7 +28,17 @@
     .checkbox-items {
       display: flex;
       flex-direction: column;
-      gap: var(--spacing-md);
+      gap: var(--cb-items-gap, var(--spacing-md));
+    }
+
+    &[data-size="sm"] {
+      --cb-items-gap: 8px;
+    }
+    &[data-size="md"] {
+      --cb-items-gap: 12px;
+    }
+    &[data-size="lg"] {
+      --cb-items-gap: 16px;
     }
 
     &[data-orientation="horizontal"] .checkbox-items {

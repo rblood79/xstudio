@@ -21,6 +21,7 @@ import {
   BreadcrumbsSpec,
   StatusLightSpec,
   SelectValueSpec,
+  MenuSpec,
 } from "@xstudio/specs";
 
 /** Spec shapes에서 추출한 텍스트 스타일 */
@@ -53,6 +54,10 @@ const TEXT_BEARING_SPECS: Record<
   breadcrumbs: { spec: BreadcrumbsSpec, defaultSize: "md" },
   statuslight: { spec: StatusLightSpec, defaultSize: "md" },
   selectvalue: { spec: SelectValueSpec, defaultSize: "md" },
+  menu: {
+    spec: MenuSpec as ComponentSpec<Record<string, unknown>>,
+    defaultSize: "md",
+  },
 };
 
 /**

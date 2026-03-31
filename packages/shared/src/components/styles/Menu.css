@@ -1,50 +1,46 @@
 @layer components {
-  /* ========== Base Menu Styles ========== */
+  /* ========== Base Menu Styles (S2) ========== */
   .react-aria-Menu {
     max-height: inherit;
     overflow: auto;
     padding: var(--spacing);
+    width: fit-content;
     min-width: 150px;
+    max-width: 320px;
     outline: none;
-    background: var(--bg-raised);
-    border-radius: var(--border-radius);
+    background: var(--bg-inset);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     color: var(--fg);
-
-    /* 기본 variant 변수 */
-    --menu-accent: var(--border);
-    --menu-focused-bg: var(--color-primary-100);
-    --menu-focused-color: var(--color-primary-900);
   }
 
-  /* ========== MenuItem Styles ========== */
+  /* ========== MenuItem Styles (S2 Grid) ========== */
   .react-aria-MenuItem {
-    margin: var(--spacing);
+    margin: 0;
     padding: var(--spacing) var(--spacing-md);
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-sm);
     outline: none;
     cursor: default;
     color: var(--fg);
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     position: relative;
     display: grid;
     grid-template-areas:
-      "label kbd"
-      "desc  kbd";
+      "checkmark icon label value keyboard descriptor"
+      ". . desc . . .";
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
     align-items: center;
-    column-gap: var(--gap);
+    column-gap: var(--spacing-sm);
     forced-color-adjust: none;
-    transition: all 150ms ease;
+    transition: background 150ms ease;
 
     &[data-focused] {
-      background: var(--color-primary-100);
-      color: var(--color-primary-900);
+      background: var(--bg-muted);
     }
 
     &[data-disabled] {
-      color: color-mix(in srgb, var(--fg) 38%, transparent);
-      cursor: not-allowed;
       opacity: 0.38;
+      cursor: not-allowed;
     }
 
     &[href] {
@@ -87,7 +83,7 @@
     }
 
     .react-aria-Header {
-      font-size: var(--text-sm);
+      font-size: var(--text-xs);
       font-weight: 700;
       color: var(--fg-muted);
       padding: 0 var(--spacing-sm);
@@ -96,15 +92,15 @@
 
     .react-aria-Separator {
       height: 1px;
-      background: var(--bg-muted);
-      margin: var(--spacing) var(--spacing-sm);
+      background: var(--border);
+      margin: var(--spacing-sm) 0;
     }
   }
 
   /* ========== MenuItem Slots ========== */
   .react-aria-MenuItem {
     [slot="label"] {
-      font-weight: 600;
+      font-weight: 500;
       grid-area: label;
       color: var(--fg);
     }
@@ -116,7 +112,7 @@
     }
 
     kbd {
-      grid-area: kbd;
+      grid-area: keyboard;
       font-family: var(--font-mono);
       font-size: var(--text-xs);
       text-align: end;
@@ -134,11 +130,7 @@
       }
 
       kbd {
-        background: color-mix(
-          in srgb,
-          var(--color-primary-900) 12%,
-          transparent
-        );
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
       }
     }
   }
@@ -147,7 +139,7 @@
   .menu-item-content {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     grid-area: label;
     width: 100%;
     color: var(--fg);
@@ -163,7 +155,7 @@
   }
 
   .menu-item-shortcut {
-    grid-area: kbd;
+    grid-area: keyboard;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     padding: 2px 6px;
@@ -188,7 +180,7 @@
     }
 
     .menu-item-shortcut {
-      background: color-mix(in srgb, var(--color-primary-900) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 12%, transparent);
       color: inherit;
     }
   }
@@ -202,7 +194,7 @@
     stroke-width: 2px;
     stroke-linecap: round;
     stroke-linejoin: round;
-    margin-left: var(--spacing-md);
+    margin-left: var(--spacing-sm);
     color: var(--fg-muted);
   }
 
@@ -215,11 +207,11 @@
     contain: layout style;
 
     &[data-placement="right"] {
-      margin-left: -5px;
+      margin-left: -2px;
     }
 
     &[data-placement="left"] {
-      margin-right: -5px;
+      margin-right: -2px;
     }
 
     .react-aria-Menu {
@@ -240,74 +232,25 @@
     }
   }
 
-  /* ========== Color Variants ========== */
-  .react-aria-Menu[data-variant="primary"] {
-    --menu-accent: var(--accent);
-    --menu-focused-bg: var(--color-primary-100);
-    --menu-focused-color: var(--color-primary-900);
-  }
-
-  .react-aria-Menu[data-variant="secondary"] {
-    --menu-accent: var(--bg-inset);
-    --menu-focused-bg: var(--bg-inset);
-    --menu-focused-color: var(--fg-emphasis);
-  }
-
-  .react-aria-Menu[data-variant="tertiary"] {
-    --menu-accent: var(--color-purple-600);
-    --menu-focused-bg: var(--color-tertiary-100);
-    --menu-focused-color: var(--color-tertiary-900);
-  }
-
-  .react-aria-Menu[data-variant="error"] {
-    --menu-accent: var(--negative);
-    --menu-focused-bg: var(--color-error-100);
-    --menu-focused-color: var(--color-error-900);
-  }
-
-  .react-aria-Menu[data-variant="primary"],
-  .react-aria-Menu[data-variant="secondary"],
-  .react-aria-Menu[data-variant="tertiary"],
-  .react-aria-Menu[data-variant="error"] {
-    border-color: var(--menu-accent);
-
-    .react-aria-MenuItem {
-      &[data-focused] {
-        background: var(--menu-focused-bg);
-        color: var(--menu-focused-color);
-      }
-
-      &[data-selection-mode]::before {
-        color: var(--menu-accent);
-      }
+  /* ========== Variant: accent ========== */
+  .react-aria-Menu[data-variant="accent"] {
+    .react-aria-MenuItem[data-focused] {
+      background: var(--accent-subtle);
     }
 
-    .react-aria-Separator {
-      background: var(--menu-accent);
-      opacity: 0.12;
+    .react-aria-MenuItem[data-selection-mode]::before {
+      color: var(--accent);
     }
   }
 
-  /* ===== Filled Variant ===== */
-  .react-aria-Menu[data-variant="filled"] {
-    background: var(--accent-subtle);
-    border-color: transparent;
-
-    .react-aria-MenuItem {
-      &[data-focused] {
-        background: var(--bg-overlay);
-      }
-    }
-  }
-
-  /* ========== Size Variants ========== */
+  /* ========== Size Variants (S2) ========== */
   .react-aria-Menu[data-size="sm"] {
-    padding: var(--spacing-sm);
+    padding: var(--spacing);
     min-width: 120px;
 
     .react-aria-MenuItem {
-      margin: var(--spacing-xs);
-      padding: var(--spacing-sm) var(--spacing);
+      min-height: 24px;
+      padding: 0 9px;
       font-size: var(--text-xs);
 
       [slot="label"] {
@@ -342,12 +285,12 @@
     min-width: 150px;
 
     .react-aria-MenuItem {
-      margin: var(--spacing);
-      padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-base);
+      min-height: 32px;
+      padding: 0 12px;
+      font-size: var(--text-sm);
 
       [slot="label"] {
-        font-size: var(--text-base);
+        font-size: var(--text-sm);
       }
 
       [slot="description"],
@@ -368,18 +311,18 @@
     }
 
     .react-aria-Header {
-      font-size: var(--text-sm);
+      font-size: var(--text-xs);
       padding: 0 var(--spacing-sm);
     }
   }
 
   .react-aria-Menu[data-size="lg"] {
-    padding: var(--spacing-md);
+    padding: var(--spacing);
     min-width: 180px;
 
     .react-aria-MenuItem {
-      margin: var(--spacing-sm);
-      padding: var(--spacing-md) var(--spacing-lg);
+      min-height: 40px;
+      padding: 0 15px;
       font-size: var(--text-base);
 
       [slot="label"] {
@@ -404,9 +347,51 @@
     }
 
     .react-aria-Header {
+      font-size: var(--text-sm);
+      padding: 0 var(--spacing-md);
+    }
+  }
+
+  .react-aria-Menu[data-size="xl"] {
+    padding: var(--spacing);
+    min-width: 200px;
+
+    .react-aria-MenuItem {
+      min-height: 48px;
+      padding: 0 18px;
+      font-size: var(--text-base);
+
+      [slot="label"] {
+        font-size: var(--text-base);
+      }
+
+      [slot="description"],
+      kbd,
+      .menu-item-shortcut,
+      .menu-item-description {
+        font-size: var(--text-sm);
+      }
+
+      .menu-item-icon {
+        font-size: var(--text-lg);
+      }
+
+      .chevron {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .react-aria-Header {
       font-size: var(--text-base);
       padding: 0 var(--spacing-md);
     }
+  }
+
+  /* ========== Focus Visible ========== */
+  .react-aria-MenuItem[data-focus-visible] {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
   }
 
   /* ========== Forced Colors Mode (High Contrast) ========== */

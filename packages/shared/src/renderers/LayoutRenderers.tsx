@@ -20,7 +20,6 @@ import {
   Group,
   Skeleton,
   RangeCalendar,
-  MenuButton,
   MenuItem,
 } from "../components/list";
 import { Disclosure } from "../components/Disclosure";
@@ -1610,36 +1609,6 @@ export const renderButtonGroup = (
 };
 
 /**
- * ActionMenu 렌더링
- * 드롭다운 트리거 버튼만 렌더링 (메뉴 패널은 팝오버로 처리)
- */
-export const renderActionMenu = (
-  element: PreviewElement,
-  context: RenderContext,
-): React.ReactNode => {
-  const { elements, renderElement } = context;
-
-  const menuItemChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "MenuItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  return (
-    <MenuButton
-      key={element.id}
-      id={element.customId}
-      data-element-id={element.id}
-      label={String(element.props.children || element.props.label || "Actions")}
-      style={element.props.style}
-      className={element.props.className}
-    >
-      {menuItemChildren.map((child) => renderElement(child, child.id))}
-    </MenuButton>
-  );
-};
-
-/**
  * Nav 렌더링
  * 네비게이션 컨테이너 — 자식(Link 등) 렌더링
  */
@@ -1769,6 +1738,8 @@ export const renderDisclosure = (
       id={element.customId}
       data-element-id={element.id}
       title={title}
+      variant={(element.props.variant as string) || "default"}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       defaultExpanded={Boolean(element.props.isExpanded ?? true)}
       style={element.props.style}
       className={element.props.className}

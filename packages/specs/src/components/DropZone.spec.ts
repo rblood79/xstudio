@@ -17,7 +17,7 @@ import { Tag, FileText, Parentheses, PointerOff } from "lucide-react";
  */
 export interface DropZoneProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   isDropTarget?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -31,9 +31,10 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   description: "React Aria 기반 파일 드롭 존 컴포넌트",
   element: "div",
   archetype: "simple",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -66,7 +67,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       height: 120,
       paddingX: 24,
       paddingY: 24,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 32,
       gap: 12,

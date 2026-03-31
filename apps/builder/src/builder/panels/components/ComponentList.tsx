@@ -95,6 +95,7 @@ const layoutComp = [
   { tag: "ScrollBox", label: "scroll box", icon: ScrollText },
   { tag: "MaskedFrame", label: "masked frame", icon: Frame },
   { tag: "Accordion", label: "accordion", icon: ChevronDown },
+  { tag: "Disclosure", label: "disclosure", icon: ChevronDown },
   { tag: "CardView", label: "card view", icon: Grid },
   { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
 ] as const;
@@ -105,7 +106,7 @@ const buttonsComp = [
   { tag: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
   { tag: "Toolbar", label: "toolbar", icon: Settings },
   { tag: "ButtonGroup", label: "button group", icon: GroupIcon },
-  { tag: "ActionMenu", label: "action menu", icon: Menu },
+  { tag: "Menu", label: "menu", icon: Menu },
 ] as const;
 
 const formsComp = [
@@ -131,7 +132,6 @@ const collectionsComp = [
   { tag: "GridList", label: "grid list", icon: Grid },
   { tag: "Tree", label: "tree", icon: ListTree },
   { tag: "TagGroup", label: "tag group", icon: Tag },
-  { tag: "Menu", label: "menu", icon: Menu },
   { tag: "Section", label: "section", icon: Square },
   { tag: "TableView", label: "table view", icon: TableProperties },
 ] as const;

@@ -771,6 +771,12 @@ function extractFromValue(value: unknown): string {
   return "";
 }
 
+/** BUTTON_SIZE_CONFIG 경로를 사용하는 태그 (calculateContentWidth/Height 공통) */
+const BUTTON_LIKE_TAGS = new Set(["button", "input", "select", "a", "menu"]);
+
+/** BUTTON_SIZE_CONFIG 경로 (parseBoxModel용, select/a 제외) */
+const BUTTON_LIKE_BOX_TAGS = new Set(["button", "input", "menu"]);
+
 /** 컴포넌트별 기본 size prop 값 */
 const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   // Badge 계열: 'md' 기본값 (CSS TagGroup 기본 size=md와 동기화)
@@ -785,6 +791,7 @@ const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   select: "sm",
   a: "md",
   togglebutton: "md",
+  menu: "md",
 };
 
 /**
@@ -1190,7 +1197,7 @@ export function calculateContentWidth(
     // 버튼, 인풋 등은 size prop에 따라 fontSize 결정
     // padding/border는 parseBoxModel에서 처리 → 여기서는 텍스트 너비만 반환
     // (inline padding 변경 시 이중 계산 방지)
-    const isFormElement = ["button", "input", "select", "a"].includes(tag);
+    const isFormElement = BUTTON_LIKE_TAGS.has(tag);
     const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
     if (isFormElement || inlineUIConfig) {
       // Spec에서 실제 text style 추출 — 렌더러와 동일한 fontWeight/fontFamily 보장
@@ -1534,11 +1541,12 @@ export function calculateContentHeight(
   // padding/border는 parseBoxModel에서 별도 관리 → BlockEngine이 합산
   const tag = (element.tag ?? "").toLowerCase();
   const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
-  if (tag === "button" || inlineUIConfig) {
+  const isButtonLike = BUTTON_LIKE_BOX_TAGS.has(tag);
+  if (isButtonLike || inlineUIConfig) {
     const props = element.props as Record<string, unknown> | undefined;
     const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
     const size = (props?.size as string) ?? defaultSize;
-    const configMap = tag === "button" ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
+    const configMap = isButtonLike ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
     const sizeConfig =
       configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
 
@@ -2524,7 +2532,7 @@ export function parseBoxModel(
   // Select 컨테이너는 web CSS에서 padding:0 + display:flex 구조이며,
   // 내부 SelectTrigger가 자체 padding을 처리
   const tag = (element.tag ?? "").toLowerCase();
-  const isFormElement = ["button", "input"].includes(tag);
+  const isFormElement = BUTTON_LIKE_BOX_TAGS.has(tag);
   const inlineUISizeConfig = INLINE_UI_SIZE_CONFIGS[tag];
   const hasSizeConfig = isFormElement || !!inlineUISizeConfig;
 
@@ -2678,6 +2686,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "linkbutton",
   "breadcrumbs",
   "icon",
+  "menu",
 ]);
 
 /**

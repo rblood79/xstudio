@@ -1144,17 +1144,6 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
   {
-    type: "ActionMenu",
-    label: "Action Menu",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: false,
-      dataBindingType: null,
-      supportedEvents: ["onAction", "onOpenChange"],
-    },
-  },
-  {
     type: "Accordion",
     label: "Accordion",
     category: "Layout",

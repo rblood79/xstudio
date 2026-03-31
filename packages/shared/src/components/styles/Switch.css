@@ -17,7 +17,7 @@
     display: flex;
     position: relative;
     align-items: center;
-    gap: 10px;
+    gap: var(--switch-gap, 10px);
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
     --label-font-size: var(--text-sm);
@@ -94,6 +94,7 @@
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
     --label-font-size: var(--text-xs);
+    --switch-gap: 8px;
 
     .indicator {
       width: calc(var(--text-3xl) + 2px);
@@ -113,6 +114,7 @@
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
     --label-font-size: var(--text-sm);
+    --switch-gap: 10px;
 
     .indicator {
       width: var(--text-4xl);
@@ -132,6 +134,7 @@
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
     --label-font-size: var(--text-base);
+    --switch-gap: 12px;
 
     .indicator {
       width: calc(var(--text-5xl) - 4px);

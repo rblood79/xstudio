@@ -486,7 +486,6 @@ export {
 export type { TableViewProps } from "./components/TableView.spec";
 
 // Properties-only Specs
-export { ActionMenuSpec } from "./components/ActionMenu.spec";
 export { AutocompleteSpec } from "./components/Autocomplete.spec";
 export { FieldSpec } from "./components/Field.spec";
 export { AccordionSpec } from "./components/Accordion.spec";

@@ -3,7 +3,10 @@
 ## 리뷰 빈출 이슈 패턴
 
 - **Store 타입 → 엔진 함수 캐스팅**: Store의 `childrenMap`/`elementsMap`을 엔진 유틸 파라미터 타입으로 `as Map<string, ...>` 캐스팅하는 패턴 — 엔진 인터페이스가 Store 타입의 최소 구조만 요구하도록 설계 필요
-- **Spec propagation rules copy-paste**: 유사 컴포넌트(DatePicker/DateRangePicker 등) 간 propagation 규칙 배열을 통째로 복제하는 패턴 — 공통 규칙은 팩토리 함수로 추출해야 함
+- **Spec propagation rules copy-paste**: 유사 컴포넌트(DatePicker/DateRangePicker, CheckboxGroup/RadioGroup 등) 간 propagation 규칙 배열을 통째로 복제하는 패턴 — 공통 규칙은 팩토리 함수로 추출해야 함 (`makeGroupSizePropagationRules` 패턴 제안)
+- **shapes() 선언부·사용부 이중 주석**: 변수 선언 직전과 해당 변수를 shape에 전달하는 위치 양쪽에 동일 내용을 주석으로 기재하는 copy-paste — 선언부 주석 하나만 유지
+- **Slider shapes() fontSize Propagation 우선순위 패턴 미적용**: NumberField/SearchField/TextField는 `props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize)` 패턴으로 수정됐으나 Slider는 누락 — size propagation 후 Canvas 미반영 버그 유발
+- **composition delegation 인라인 공통 CSS 토큰 5중 복제**: `.react-aria-Group` 등 delegation 블록에서 `background`, `color`, `border` 값이 xs~xl 5개 사이즈에 동일하게 복제 — `GROUP_BASE_STYLE` 상수 추출 필요 (NumberField, ComboBox 동일 패턴)
 - **`unknown` 경유 타입 우회 (`as unknown as T`)**: 제네릭 파라미터 타입 불일치를 `CAST` 헬퍼로 회피하는 패턴 — 함수 시그니처 제네릭화로 해결
 - **hot path `Object.keys()` 빈 체크**: `handleUpdate`처럼 매 prop 변경 시 호출되는 콜백에서 `Object.keys(obj).length === 0`으로 빈 객체 확인 — 루프 내 카운터 또는 `for...in` 단락 평가로 대체
 - **hot path 이중 spread (`{ ...parent, props: { ...parent.props, ...delta } }`)**: propagation 규칙 존재 시 매 호출마다 두 번 shallow copy — 함수 시그니처를 `(parentProps, changedProps)` 분리 전달로 merge 불필요하게 설계
@@ -46,6 +49,11 @@
 - **`as unknown as T` — 제네릭 DateValue placeholderValue**: `now()` 반환 `ZonedDateTime`을 `T extends DateValue`로 캐스팅 시 이중 우회. `placeholderValue` prop 타입을 `DateValue | undefined`로 완화하거나 업캐스팅으로 해결 (DatePicker.tsx, DateRangePicker.tsx 동일 패턴)
 - **remountKey granularity 과세분화**: DatePicker/DateRangePicker `remountKey`에 granularity 4-값을 그대로 포함하면 "hour"→"minute" 전환에서 불필요한 리마운트 발생 — `isTimeGranularity ? "time" : "date"` 2-값으로 단순화하여 day↔time 경계에서만 리마운트
 - **`!== false` 기본값 전환 패턴**: `Boolean(prop)` → `prop !== false`로 변경 시 기존 저장 요소(prop 키 없음)가 영향을 받음 — 팩토리 기본값 추가 없이 단독으로 변경하면 마이그레이션 이슈. DateRenderers.tsx의 hideTimeZone/shouldForceLeadingZeros 사례
+- **Slider.spec.ts fontSize 우선순위 미적용**: `props.style?.fontSize ?? size.fontSize` 패턴 사용 — `props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize)` 패턴 필수 (canvas-rendering.md CRITICAL). 향후 Slider 수정 시 즉시 확인 필요
+- **CheckboxGroup/RadioGroup 3단계 propagation + DFS Label 이중 경로**: `["CheckboxItems", "Checkbox", "Label"]` 규칙이 Label에 size를 Store에 기록하고, fullTreeLayout.ts DFS도 동일 Label에 size를 주입 — Inspector는 Store write, DFS는 인라인 스타일 주입이라 현재 충돌 없으나 Phase 3 전 단일 경로 통합 필요
+- **`necessityIndicator` derivedUpdateFn 3중 복제**: TextField/NumberField/SearchField.spec.ts의 `derivedUpdateFn`이 완전히 동일 — `packages/specs/src/utils/sharedSections.ts`에 `NECESSITY_INDICATOR_FIELD` 공유 상수로 추출 필요. sharedSections.ts에 이미 FILTERING_SECTION 패턴 존재
+- **GroupComponents.ts Label factory 인라인 6회 반복**: `createDefaultLabelProps()`가 unified.types.ts:1624에 이미 존재하나 GroupComponents.ts에서 미사용 — Radio 자식(344, 368행)에는 `fontWeight: 500`도 누락되어 Checkbox 자식과 불일치
+- **`resolveSpecFontSize()` 헬퍼 미존재**: 3단계 fontSize 해결 패턴이 17개 Spec 파일(TextField, NumberField, SearchField, Switch, Checkbox, Radio, Label, Input, SelectValue, DateSegment, MeterValue, ProgressBarValue, SliderOutput, FieldError, Description 등)에 인라인 복제 — `packages/specs/src/renderers/utils/tokenResolver.ts`에 추출 필요. fallback 값(12/14/16)이 파일마다 다르므로 매개변수화 필수
 
 ## False Positive 기록
 

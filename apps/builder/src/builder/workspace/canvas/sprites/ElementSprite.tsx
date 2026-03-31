@@ -112,7 +112,6 @@ import {
   ColorWheelSpec,
   ColorSwatchSpec,
   ColorSwatchPickerSpec,
-  ActionMenuSpec,
   LabelSpec,
   FieldErrorSpec,
   DescriptionSpec,
@@ -290,6 +289,9 @@ const TEXT_TAGS = new Set([
  * 이미지 관련 태그들
  */
 const IMAGE_TAGS = new Set(["Image", "Avatar", "Logo", "Thumbnail"]);
+
+/** 트리거 버튼만 캔버스에 렌더링 — 자식은 popover이므로 숨김 */
+const POPOVER_TRIGGER_TAGS = new Set(["Menu"]);
 
 /**
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
@@ -790,7 +792,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   InlineAlert: InlineAlertSpec,
   // Phase 2: Action/Group components (ADR-030)
   ButtonGroup: ButtonGroupSpec,
-  ActionMenu: ActionMenuSpec,
   // Phase 3: Extended Controls (ADR-030)
   ProgressCircle: ProgressCircleSpec,
   // Image: ImageSprite handles rendering directly (not spec-based)
@@ -2054,6 +2055,7 @@ export const ElementSprite = memo(function ElementSprite({
                 "TagGroup", // _tagItems synthetic prop
                 "Table", // 3단계 중첩 (별도 작업)
                 "Tree", // 다단계 중첩 (별도 작업)
+                "Menu", // 트리거 버튼만 렌더링 (자식 MenuItem은 popover)
               ]);
 
               if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
@@ -3245,7 +3247,8 @@ export const ElementSprite = memo(function ElementSprite({
     spriteType !== "box" &&
     spriteType !== "flex" &&
     spriteType !== "grid" &&
-    spriteType !== "toggleButtonGroup"
+    spriteType !== "toggleButtonGroup" &&
+    !POPOVER_TRIGGER_TAGS.has(element.tag)
   ) {
     return (
       <>

@@ -5,9 +5,9 @@
     justify-content: center;
     min-height: 120px;
     padding: var(--spacing-lg, 24px);
-    border: 2px solid var(--border);
+    border: 2px dashed var(--border);
     border-radius: var(--radius-md, 12px);
-    background-color: var(--bg-raised);
+    background-color: var(--bg);
     color: var(--fg);
     transition: all 0.2s ease;
     cursor: pointer;
@@ -19,19 +19,10 @@
     border-style: solid;
   }
 
-  /* Variant: primary */
-  .react-aria-DropZone[data-variant="primary"] {
+  /* Variant: accent */
+  .react-aria-DropZone[data-variant="accent"] {
     border-color: var(--accent);
-    background-color: color-mix(
-      in srgb,
-      var(--accent) 15%,
-      white
-    );
-  }
-
-  /* Variant: dashed */
-  .react-aria-DropZone[data-variant="dashed"] {
-    border-style: dashed;
+    background-color: var(--accent-subtle);
   }
 
   /* Size: sm */
@@ -71,11 +62,7 @@
   .react-aria-DropZone[data-drop-target],
   .react-aria-DropZone.is-drop-target {
     border-color: var(--accent);
-    background-color: color-mix(
-      in srgb,
-      var(--accent) 15%,
-      white
-    );
+    background-color: var(--accent-subtle);
     transform: scale(1.02);
   }
 

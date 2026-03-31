@@ -30,7 +30,17 @@
     .radio-items {
       display: flex;
       flex-direction: column;
-      gap: var(--spacing-md);
+      gap: var(--radio-items-gap, var(--spacing-md));
+    }
+
+    &[data-size="sm"] {
+      --radio-items-gap: 8px;
+    }
+    &[data-size="md"] {
+      --radio-items-gap: 12px;
+    }
+    &[data-size="lg"] {
+      --radio-items-gap: 16px;
     }
 
     &[data-orientation="horizontal"] .radio-items {

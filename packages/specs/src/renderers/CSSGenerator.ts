@@ -30,6 +30,7 @@ const ARCHETYPE_BASE_STYLES: Record<ArchetypeId, string[]> = {
     `    display: inline-flex;`,
     `    align-items: center;`,
     `    justify-content: center;`,
+    `    width: fit-content;`,
     `    box-sizing: border-box;`,
     `    cursor: pointer;`,
     `    user-select: none;`,
