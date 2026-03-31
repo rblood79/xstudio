@@ -12,7 +12,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 
 export interface DateInputProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   /** 부모에서 주입 */
   _parentTag?: "DateField" | "TimeField" | "DatePicker" | "DateRangePicker";
   _granularity?: string;
@@ -119,7 +119,7 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

@@ -169,7 +169,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
           x: cellLeft,
           y: weekdayY,
           text: weekdays[col],
-          fontSize: fontSize - 2,
+          fontSize,
           fontFamily: ff,
           fontWeight: 700,
           fill: "{color.neutral-subdued}" as TokenRef,
