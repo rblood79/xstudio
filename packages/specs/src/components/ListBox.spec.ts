@@ -300,9 +300,49 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
       // Compositional: 자식 Element(Label, ListBoxItem)가 있으면
-      // 컨테이너는 투명 — 자식이 각자 렌더링 (Select 패턴과 동일)
+      // Label 아래 아이템 영역에만 배경+테두리 렌더링
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return [];
+      if (hasChildren) {
+        const containerH = (props as Record<string, unknown>)
+          ._containerHeight as number | undefined;
+        // Label 높이 추정: LabelSpec size 기준
+        const LABEL_HEIGHT: Record<string, number> = {
+          sm: 16,
+          md: 20,
+          lg: 24,
+        };
+        const sizeName = (props.size as string) ?? "md";
+        const labelH = props.label
+          ? (LABEL_HEIGHT[sizeName] ?? 20) + (size.gap ?? 4)
+          : 0;
+        const itemAreaH = containerH ? containerH - labelH : 0;
+
+        if (itemAreaH <= 0) return [];
+
+        const shapes: Shape[] = [
+          {
+            id: "bg",
+            type: "roundRect" as const,
+            x: 0,
+            y: labelH,
+            width,
+            height: itemAreaH,
+            radius: borderRadius as unknown as number,
+            fill: bgColor,
+          },
+        ];
+        const borderColor = props.style?.borderColor ?? variant.border;
+        if (borderColor) {
+          shapes.push({
+            type: "border" as const,
+            target: "bg",
+            borderWidth: 1,
+            color: borderColor,
+            radius: borderRadius as unknown as number,
+          });
+        }
+        return shapes;
+      }
 
       const shapes: Shape[] = [];
 
