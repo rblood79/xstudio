@@ -159,6 +159,11 @@ export interface ElementsState {
   batchUpdateElementOrders: (
     updates: Array<{ id: string; order_num: number }>,
   ) => void;
+  moveElementToContainer: (
+    elementId: string,
+    newParentId: string,
+    insertionIndex: number,
+  ) => void;
 
   // 다중 선택 관련 액션
   toggleElementInSelection: (elementId: string) => void;
@@ -1107,6 +1112,71 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         const newOrder = updateMap.get(el.id);
         return newOrder !== undefined ? { ...el, order_num: newOrder } : el;
       });
+      set((state) => ({
+        elements: updatedElements,
+        layoutVersion: state.layoutVersion + 1,
+      }));
+      get()._rebuildIndexes();
+    },
+
+    // cross-container 이동: parent_id 변경 + 양쪽 컨테이너 order_num 재정렬
+    moveElementToContainer: (elementId, newParentId, insertionIndex) => {
+      const prevState = get();
+      const element = prevState.elementsMap.get(elementId);
+      if (!element || !element.parent_id) return;
+
+      const oldParentId = element.parent_id;
+      if (oldParentId === newParentId) return; // same parent → batchUpdateElementOrders 사용
+
+      // childrenMap props는 stale → elementsMap에서 최신 조회
+      const oldSiblings = (prevState.childrenMap.get(oldParentId) ?? [])
+        .map((c) => prevState.elementsMap.get(c.id))
+        .filter((c): c is Element => c !== undefined);
+      const newSiblings = (prevState.childrenMap.get(newParentId) ?? [])
+        .map((c) => prevState.elementsMap.get(c.id))
+        .filter((c): c is Element => c !== undefined);
+
+      // 변경 맵 구성: id → { parent_id?, order_num }
+      const updateMap = new Map<
+        string,
+        { parent_id?: string; order_num: number }
+      >();
+
+      // 구 부모: 드래그 요소 제거 후 나머지 재정렬
+      const remainingOld = oldSiblings
+        .filter((c) => c.id !== elementId)
+        .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+      remainingOld.forEach((c, i) => updateMap.set(c.id, { order_num: i }));
+
+      // 신 부모: 삽입 위치에 요소 추가 후 재정렬
+      const sortedNew = [...newSiblings].sort(
+        (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
+      );
+      const newOrder = [
+        ...sortedNew.slice(0, insertionIndex),
+        element,
+        ...sortedNew.slice(insertionIndex),
+      ];
+      newOrder.forEach((c, i) => {
+        if (c.id === elementId) {
+          updateMap.set(c.id, { parent_id: newParentId, order_num: i });
+        } else {
+          updateMap.set(c.id, { order_num: i });
+        }
+      });
+
+      // 단일 set()으로 전체 적용
+      const { elements: currentElements } = get();
+      const updatedElements = currentElements.map((el) => {
+        const upd = updateMap.get(el.id);
+        if (!upd) return el;
+        return {
+          ...el,
+          order_num: upd.order_num,
+          ...(upd.parent_id ? { parent_id: upd.parent_id } : {}),
+        };
+      });
+
       set((state) => ({
         elements: updatedElements,
         layoutVersion: state.layoutVersion + 1,

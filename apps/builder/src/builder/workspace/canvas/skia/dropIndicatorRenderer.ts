@@ -10,16 +10,22 @@
 import type { CanvasKit, Canvas } from "canvaskit-wasm";
 import type { BoundingBox } from "../selection/types";
 
-// blue-500 (#3b82f6)
+// blue-500 (#3b82f6) — same-parent reorder
 const DROP_R = 0x3b / 255;
 const DROP_G = 0x82 / 255;
 const DROP_B = 0xf6 / 255;
+
+// green-500 (#22c55e) — cross-container reparent
+const REPARENT_R = 0x22 / 255;
+const REPARENT_G = 0xc5 / 255;
+const REPARENT_B = 0x5e / 255;
 
 export interface DropIndicatorState {
   targetBounds: BoundingBox;
   insertIndex: number;
   childBounds: BoundingBox[];
   isHorizontal: boolean;
+  isReparent?: boolean;
 }
 
 /**
@@ -37,9 +43,14 @@ export function renderDropIndicator(
 ): void {
   const { targetBounds, insertIndex, childBounds, isHorizontal } = state;
 
+  // reparent 여부에 따라 색상 선택 (green-500 vs blue-500)
+  const R = state.isReparent ? REPARENT_R : DROP_R;
+  const G = state.isReparent ? REPARENT_G : DROP_G;
+  const B = state.isReparent ? REPARENT_B : DROP_B;
+
   // C-1: 컨테이너 반투명 배경 오버레이
   const bgPaint = new ck.Paint();
-  bgPaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 0.06));
+  bgPaint.setColor(ck.Color4f(R, G, B, 0.06));
   bgPaint.setAntiAlias(true);
   bgPaint.setStyle(ck.PaintStyle.Fill);
   canvas.drawRect4f(
@@ -53,7 +64,7 @@ export function renderDropIndicator(
 
   // C-2: 타겟 컨테이너 아웃라인 (2/zoom, alpha 0.8)
   const outlinePaint = new ck.Paint();
-  outlinePaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 0.8));
+  outlinePaint.setColor(ck.Color4f(R, G, B, 0.8));
   outlinePaint.setAntiAlias(true);
   outlinePaint.setStyle(ck.PaintStyle.Stroke);
   const sw = 2 / zoom;
@@ -86,7 +97,7 @@ export function renderDropIndicator(
     }
 
     const linePaint = new ck.Paint();
-    linePaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 1));
+    linePaint.setColor(ck.Color4f(R, G, B, 1));
     linePaint.setAntiAlias(true);
     linePaint.setStyle(ck.PaintStyle.Stroke);
     linePaint.setStrokeWidth(2 / zoom);
@@ -114,7 +125,7 @@ export function renderDropIndicator(
     // 양끝 원
     const circleR = 3 / zoom;
     const circlePaint = new ck.Paint();
-    circlePaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 1));
+    circlePaint.setColor(ck.Color4f(R, G, B, 1));
     circlePaint.setAntiAlias(true);
     circlePaint.setStyle(ck.PaintStyle.Fill);
 

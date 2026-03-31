@@ -36,6 +36,10 @@ export interface DropTarget {
   containerBounds: ElementBounds;
   /** 드래그 대상 제외 후 정렬된 형제 bounds (DropIndicator 렌더링용) */
   siblingBounds: ElementBounds[];
+  /** cross-container reparent 여부 */
+  isReparent: boolean;
+  /** reparent 시 원래 부모 ID */
+  originalParentId?: string;
 }
 
 /**
@@ -48,6 +52,7 @@ export interface DropIndicatorSnapshot {
   insertIndex: number;
   childBounds: ElementBounds[];
   isHorizontal: boolean;
+  isReparent?: boolean;
 }
 
 /** resolveDropTarget에 필요한 store 슬라이스 */
@@ -113,6 +118,128 @@ function isInFirstHalf(
 }
 
 // ============================================
+// Cross-Container Helpers
+// ============================================
+
+/**
+ * 순환 방지: elementId가 ancestorId의 자손인지 확인.
+ * (드래그 요소를 자신의 자손 컨테이너로 이동하면 순환 참조 발생)
+ */
+function isDescendantOf(
+  elementId: string,
+  ancestorId: string,
+  elementsMap: Map<string, Element>,
+): boolean {
+  let currentId: string | undefined = elementId;
+  while (currentId) {
+    if (currentId === ancestorId) return true;
+    const el = elementsMap.get(currentId);
+    currentId = el?.parent_id ?? undefined;
+  }
+  return false;
+}
+
+/**
+ * Cross-container drop target 탐색.
+ * hitIds에서 유효한 컨테이너 후보를 찾아 가장 깊은 것을 선택.
+ */
+function resolveCrossContainerDrop(
+  scenePoint: { x: number; y: number },
+  draggedElementId: string,
+  hitIds: string[],
+  store: DropTargetStoreSlice,
+): DropTarget | null {
+  const dragged = store.elementsMap.get(draggedElementId);
+  if (!dragged) return null;
+
+  let bestCandidate: { element: Element; depth: number } | null = null;
+
+  for (const hitId of hitIds) {
+    if (hitId === draggedElementId) continue;
+    if (isDescendantOf(hitId, draggedElementId, store.elementsMap)) continue;
+
+    const hitEl = store.elementsMap.get(hitId);
+    if (!hitEl) continue;
+    if (!hitEl.parent_id) continue; // root/body 제외
+    if (hitEl.tag?.toLowerCase() === "body") continue;
+    if (hitId === dragged.parent_id) continue; // 현재 부모는 same-parent 로직이 처리
+
+    // 컨테이너 여부 확인: childrenMap에 해당 ID가 존재하거나 display가 컨테이너 성격
+    const hasChildren = store.childrenMap.has(hitId);
+    const style = hitEl.props?.style as Record<string, unknown> | undefined;
+    const display = style?.display;
+    const isContainer =
+      hasChildren ||
+      display === "flex" ||
+      display === "grid" ||
+      display === "block";
+
+    if (!isContainer) continue;
+
+    // depth 계산 (부모 체인 길이)
+    let depth = 0;
+    let cur: string | undefined = hitId;
+    while (cur) {
+      depth++;
+      const el = store.elementsMap.get(cur);
+      cur = el?.parent_id ?? undefined;
+    }
+
+    if (!bestCandidate || depth > bestCandidate.depth) {
+      bestCandidate = { element: hitEl, depth };
+    }
+  }
+
+  if (!bestCandidate) return null;
+
+  const container = bestCandidate.element;
+  const containerId = container.id;
+  const containerBounds = getElementBoundsSimple(containerId);
+  if (!containerBounds) return null;
+
+  const isHorizontal = detectIsHorizontal(container);
+
+  // 새 컨테이너의 자식 목록에서 삽입 위치 계산
+  const children = getSortedChildren(containerId, store);
+  const childBounds: ElementBounds[] = [];
+  for (const child of children) {
+    const b = getElementBoundsSimple(child.id);
+    if (b) childBounds.push(b);
+  }
+
+  // 삽입 위치 계산 (same-parent 로직과 동일)
+  const pos = isHorizontal ? scenePoint.x : scenePoint.y;
+  let insertionIndex = children.length;
+
+  for (let i = 0; i < childBounds.length; i++) {
+    const b = childBounds[i];
+    const bStart = isHorizontal ? b.x : b.y;
+    const bEnd = bStart + (isHorizontal ? b.width : b.height);
+
+    if (pos < bStart) {
+      insertionIndex = i;
+      break;
+    }
+    if (pos >= bStart && pos <= bEnd) {
+      const mid = (bStart + bEnd) / 2;
+      insertionIndex = pos < mid ? i : i + 1;
+      break;
+    }
+  }
+
+  return {
+    containerId,
+    insertionIndex,
+    isAdjacentInsertion: false,
+    isHorizontal,
+    containerBounds,
+    siblingBounds: childBounds,
+    isReparent: true,
+    originalParentId: dragged.parent_id ?? undefined,
+  };
+}
+
+// ============================================
 // Main Resolver
 // ============================================
 
@@ -134,6 +261,7 @@ export function resolveDropTarget(
   scenePoint: { x: number; y: number },
   draggedElementId: string,
   store: DropTargetStoreSlice,
+  hitTestFn?: (x: number, y: number) => string[],
 ): DropTarget | null {
   // 1. 드래그 요소 조회
   const dragged = store.elementsMap.get(draggedElementId);
@@ -231,14 +359,35 @@ export function resolveDropTarget(
     originalInsertIndex === currentIndex ||
     originalInsertIndex === currentIndex + 1;
 
-  return {
+  const sameParentResult: DropTarget = {
     containerId: parentId,
     insertionIndex,
     isAdjacentInsertion,
     isHorizontal,
     containerBounds,
     siblingBounds,
+    isReparent: false,
   };
+
+  // 9. hitTestFn이 있으면 cross-container 후보 탐색
+  if (hitTestFn) {
+    const hitIds = hitTestFn(scenePoint.x, scenePoint.y);
+    const crossResult = resolveCrossContainerDrop(
+      scenePoint,
+      draggedElementId,
+      hitIds,
+      store,
+    );
+
+    if (crossResult) {
+      // same-parent 결과가 없거나 인접 삽입(실질적 이동 없음)이면 cross-container 우선
+      if (!sameParentResult || sameParentResult.isAdjacentInsertion) {
+        return crossResult;
+      }
+    }
+  }
+
+  return sameParentResult;
 }
 
 // ============================================

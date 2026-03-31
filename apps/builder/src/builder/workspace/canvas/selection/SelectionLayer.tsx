@@ -50,6 +50,7 @@ import {
 } from "../skia/dragAnimator";
 import { historyManager } from "../../../stores/history";
 import { getDB } from "../../../../lib/db";
+import { hitTestPoint } from "../wasm-bindings/spatialIndex";
 
 // ============================================
 // Types
@@ -185,6 +186,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   const dragStartSnapshotRef = useRef<Array<{
     id: string;
     order_num: number;
+    parent_id?: string | null;
   }> | null>(null);
 
   // A-6: 마지막으로 resolve된 drop target (onMoveEnd에서 단일 commit에 사용)
@@ -206,12 +208,17 @@ export const SelectionLayer = memo(function SelectionLayer({
       if (!scenePoint) return;
 
       // A-7: 드래그 시작 시 원래 order_num 스냅샷을 한 번만 캡처
+      // reparent를 위해 parent_id도 함께 저장
       if (!dragStartSnapshotRef.current) {
         const dragged = dragState.elementsMap.get(draggedId);
         if (dragged) {
           const allChildren = [...dragState.elementsMap.values()]
             .filter((e) => e.parent_id === dragged.parent_id)
-            .map((e) => ({ id: e.id, order_num: e.order_num ?? 0 }));
+            .map((e) => ({
+              id: e.id,
+              order_num: e.order_num ?? 0,
+              parent_id: e.parent_id,
+            }));
           dragStartSnapshotRef.current = allChildren;
         }
       }
@@ -237,6 +244,7 @@ export const SelectionLayer = memo(function SelectionLayer({
                   insertIndex: prev.insertionIndex,
                   childBounds: prev.siblingBounds,
                   isHorizontal: prev.isHorizontal,
+                  isReparent: prev.isReparent,
                 }
               : null;
           }
@@ -244,11 +252,16 @@ export const SelectionLayer = memo(function SelectionLayer({
         }
       }
 
-      // drop target resolve
-      const resolved = resolveDropTarget(scenePoint, draggedId, {
-        elementsMap: dragState.elementsMap,
-        childrenMap: dragState.childrenMap,
-      });
+      // drop target resolve (hitTestPoint 전달로 cross-container 탐색 활성화)
+      const resolved = resolveDropTarget(
+        scenePoint,
+        draggedId,
+        {
+          elementsMap: dragState.elementsMap,
+          childrenMap: dragState.childrenMap,
+        },
+        hitTestPoint,
+      );
 
       // A-6: 마지막 resolved target 저장 (onMoveEnd 단일 commit용)
       lastResolvedDropTargetRef.current = resolved;
@@ -272,6 +285,7 @@ export const SelectionLayer = memo(function SelectionLayer({
               insertIndex: resolved.insertionIndex,
               childBounds: resolved.siblingBounds,
               isHorizontal: resolved.isHorizontal,
+              isReparent: resolved.isReparent,
             }
           : null;
       }
@@ -297,35 +311,62 @@ export const SelectionLayer = memo(function SelectionLayer({
       // 3. 단일 store commit
       if (finalTarget && !finalTarget.isAdjacentInsertion) {
         const state = useStore.getState();
-        const updates = computeReorderFromDropTarget(finalTarget, elementId, {
-          elementsMap: state.elementsMap,
-          childrenMap: state.childrenMap,
-        });
-        if (updates.length > 0) {
-          state.batchUpdateElementOrders(updates);
+        if (finalTarget.isReparent) {
+          // cross-container reparent: parent_id 변경 + 양쪽 order_num 재정렬
+          state.moveElementToContainer(
+            elementId,
+            finalTarget.containerId,
+            finalTarget.insertionIndex,
+          );
+        } else {
+          // same-parent reorder
+          const updates = computeReorderFromDropTarget(finalTarget, elementId, {
+            elementsMap: state.elementsMap,
+            childrenMap: state.childrenMap,
+          });
+          if (updates.length > 0) {
+            state.batchUpdateElementOrders(updates);
+          }
         }
       }
 
       // 4. History + DB Persist
       if (startSnapshot) {
         const state = useStore.getState();
+
+        // reparent 시: 구 부모 형제들 + 드래그 요소 + 신 부모 형제들 모두 포함
+        const affectedIds = new Set(startSnapshot.map((s) => s.id));
+        if (finalTarget?.isReparent) {
+          // 신 부모의 현재 자식들도 히스토리에 포함
+          const newSiblings = state.childrenMap.get(finalTarget.containerId);
+          newSiblings?.forEach((c) => affectedIds.add(c.id));
+          affectedIds.add(elementId);
+        }
+
         const prevElements = startSnapshot
+          .filter((s) => affectedIds.has(s.id))
           .map((s) => {
             const el = state.elementsMap.get(s.id);
-            return el ? { ...el, order_num: s.order_num } : undefined;
+            return el
+              ? {
+                  ...el,
+                  order_num: s.order_num,
+                  parent_id: s.parent_id ?? el.parent_id,
+                }
+              : undefined;
           })
           .filter((el): el is NonNullable<typeof el> => el !== undefined);
-        const nextElements = startSnapshot
-          .map((s) => state.elementsMap.get(s.id))
+        const nextElements = [...affectedIds]
+          .map((id) => state.elementsMap.get(id))
           .filter((el): el is NonNullable<typeof el> => el !== undefined);
 
-        if (
-          prevElements.length > 0 &&
-          prevElements.length === nextElements.length
-        ) {
-          const hasChange = prevElements.some(
-            (p, i) => p.order_num !== nextElements[i].order_num,
-          );
+        if (prevElements.length > 0 && nextElements.length > 0) {
+          const hasChange =
+            finalTarget?.isReparent ||
+            prevElements.some((p) => {
+              const next = state.elementsMap.get(p.id);
+              return next && next.order_num !== p.order_num;
+            });
           if (hasChange) {
             historyManager.addBatchDiffEntry(prevElements, nextElements);
           }
@@ -337,19 +378,31 @@ export const SelectionLayer = memo(function SelectionLayer({
             try {
               const db = await getDB();
               const currentState = useStore.getState();
+              const persistIds = [...affectedIds];
               await Promise.all(
-                startSnapshot.map((s) => {
-                  const el = currentState.elementsMap.get(s.id);
-                  if (el && el.order_num !== s.order_num) {
-                    return db.elements.update(s.id, {
+                persistIds.map((id) => {
+                  const el = currentState.elementsMap.get(id);
+                  const snap = startSnapshot.find((s) => s.id === id);
+                  if (!el) return Promise.resolve();
+                  const orderChanged = !snap || el.order_num !== snap.order_num;
+                  const parentChanged =
+                    finalTarget?.isReparent &&
+                    id === elementId &&
+                    el.parent_id !== snap?.parent_id;
+                  if (orderChanged || parentChanged) {
+                    return db.elements.update(id, {
                       order_num: el.order_num ?? 0,
+                      ...(parentChanged ? { parent_id: el.parent_id } : {}),
                     });
                   }
                   return Promise.resolve();
                 }),
               );
             } catch (error) {
-              console.error("[SelectionLayer] reorder DB 저장 실패:", error);
+              console.error(
+                "[SelectionLayer] reorder/reparent DB 저장 실패:",
+                error,
+              );
             }
           })();
         });
