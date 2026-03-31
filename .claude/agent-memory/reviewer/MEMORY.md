@@ -39,6 +39,9 @@
 - **React Aria API와 다른 Spec prop naming**: Tooltip/Popover는 React Aria `placement` prop을 그대로 사용하지만, Menu는 `align`+`direction` 분리 naming — React Aria `MenuTriggerProps`에는 `placement`가 없어 변환 레이어 필수. Spec 설계 시 React Aria API 이름을 먼저 확인 필요
 - **Spec shapes() fontSize 해결 3단계 패턴 (56개 파일 중복)**: `(1) rawFontSize = props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize)` → `(2) resolvedFs = typeof raw === "number" ? raw : raw.startsWith("{") ? resolveToken(raw) : raw` → `(3) fontSize = typeof resolvedFs === "number" ? resolvedFs : fallback` 패턴이 56개 Spec 파일에 복제. `utils/` 에 `resolveSpecFontSize(props, size, fallback)` 헬퍼 추출 필요. fallback 값은 파일마다 12/14/16으로 다르므로 매개변수화 필요
 - **`override: true` 일괄 추가 패턴**: propagation `size` 규칙에 `override: true`가 22개 Spec 파일에 일괄 추가됨 — size prop은 항상 override여야 하므로, propagation 엔진에서 `parentProp === "size"`인 규칙에 `override: true`를 자동 적용하거나 별도 `sizeRules` 배열 타입으로 분리하는 설계 고려 필요
+- **CSS 수동 파일 index.css 미등록 + 컴포넌트 직접 import 의존**: `Calendar.css`(수동), `Popover.css`(수동)가 `index.css`에 없고 각각 `Calendar.tsx`에서 직접 import되거나 누락된 상태. `generated/` 파일과 수동 파일이 서로 다른 경로로 로드되어 `@layer` 우선순위 제어 불가. 수동 CSS 추가 시 반드시 `index.css`에 generated → manual 순서로 등록 필수
+- **generated/Popover.css `background: --bg-inset` 토큰 오남용**: Popover는 오버레이이므로 `--bg-raised` 또는 `--bg-overlay`가 의미상 올바르나 Spec에 `{color.layer-2}`(`--bg-inset`)로 정의됨 — Popover.spec.ts의 기본 variant background 토큰 재검토 필요
+- **generated/Popover.css `position: fixed` + Popover.css `position: static` override 체인**: Popover.css가 index.css에 누락되면 `.react-aria-Popover .react-aria-Dialog { position: static }` 규칙이 미적용 → DatePicker/DateRangePicker 팝오버 2×2px 축소. import 누락 시 즉시 확인 필요
 
 ## False Positive 기록
 

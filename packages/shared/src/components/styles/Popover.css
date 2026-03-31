@@ -123,9 +123,9 @@
     }
   }
 
-  /* generated/Dialog.css가 position: fixed를 생성하지만, Popover 내부에서는
-     transform이 containing block을 변경하여 Dialog가 flow에서 빠지고
-     Popover가 2x2px로 축소된다. specificity 0-2-0 > 0-1-0 (ADR-047) */
+  /* generated/Popover.css의 position: fixed가 Popover에 적용되면,
+     Popover 내부 Dialog가 flow에서 빠져 Popover가 2x2px로 축소된다.
+     Dialog를 position: static으로 상쇄. specificity 0-2-0 > 0-1-0 (ADR-047) */
   .react-aria-Popover .react-aria-Dialog {
     position: static;
   }

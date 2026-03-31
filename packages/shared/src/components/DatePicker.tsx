@@ -26,7 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { getLocalTimeZone, today, now } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
 import type { NecessityIndicator } from "./Field";
@@ -84,6 +84,8 @@ export interface DatePickerProps<T extends DateValue> extends Omit<
   labelPosition?: "top" | "side";
   hideTimeZone?: boolean;
   pageBehavior?: "visible" | "single";
+  /** 동시에 표시할 월 수 (1~3) */
+  visibleMonths?: number;
   form?: string;
   autoComplete?: string;
   validationBehavior?: "native" | "aria";
@@ -117,6 +119,7 @@ export function DatePicker<T extends DateValue>({
   labelPosition = "top",
   hideTimeZone,
   pageBehavior,
+  visibleMonths,
   form,
   autoComplete,
   validationBehavior,
@@ -132,6 +135,15 @@ export function DatePicker<T extends DateValue>({
     ? granularity || "minute"
     : granularity || "day";
 
+  // 시간 granularity 사용 시 placeholderValue를 CalendarDateTime으로 설정
+  // (CalendarDate는 시간 정보가 없어 React Aria에서 에러 발생)
+  const isTimeGranularity = ["hour", "minute", "second"].includes(
+    effectiveGranularity,
+  );
+  const placeholderValue = isTimeGranularity
+    ? (now(effectiveTimezone) as unknown as T)
+    : undefined;
+
   // minValue/maxValue 문자열 자동 파싱
   const parsedMinValue =
     typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
@@ -145,10 +157,12 @@ export function DatePicker<T extends DateValue>({
       ? safeParseDateString(props.defaultValue)
       : props.defaultValue;
 
-  // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
+  // defaultToday가 true이고 value가 없으면 오늘 날짜/시간 설정
   const defaultValue =
     defaultToday && !props.value && !parsedDefaultValue
-      ? (today(effectiveTimezone) as T)
+      ? ((isTimeGranularity
+          ? now(effectiveTimezone)
+          : today(effectiveTimezone)) as T)
       : (parsedDefaultValue as T | undefined);
 
   const datePickerClassName = composeRenderProps(
@@ -171,6 +185,7 @@ export function DatePicker<T extends DateValue>({
       data-size={size}
       data-label-position={labelPosition}
       granularity={effectiveGranularity}
+      placeholderValue={placeholderValue}
       defaultValue={defaultValue}
       minValue={parsedMinValue as T | undefined}
       maxValue={parsedMaxValue as T | undefined}
@@ -223,6 +238,12 @@ export function DatePicker<T extends DateValue>({
               data-size={size}
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
+              visibleDuration={
+                visibleMonths && visibleMonths > 1
+                  ? { months: visibleMonths }
+                  : undefined
+              }
+              pageBehavior={pageBehavior}
             >
               <header>
                 <Button slot="previous">
@@ -233,18 +254,34 @@ export function DatePicker<T extends DateValue>({
                   <ChevronRight size={16} />
                 </Button>
               </header>
-              <CalendarGrid>
-                {(date) => <CalendarCell date={date} />}
-              </CalendarGrid>
+              <div style={{ display: "flex", gap: 8 }}>
+                {Array.from(
+                  {
+                    length:
+                      visibleMonths && visibleMonths > 1 ? visibleMonths : 1,
+                  },
+                  (_, i) => (
+                    <CalendarGrid
+                      key={i}
+                      offset={i === 0 ? undefined : { months: i }}
+                    >
+                      {(date) => <CalendarCell date={date} />}
+                    </CalendarGrid>
+                  ),
+                )}
+              </div>
             </Calendar>
 
-            {includeTime && (
+            {(includeTime || isTimeGranularity) && (
               <div className="date-picker-time-section">
                 <div className="date-picker-time-field-wrapper">
                   <Label className="date-picker-time-field-label">
                     {timeLabel}
                   </Label>
                   <TimeField
+                    granularity={
+                      effectiveGranularity as "hour" | "minute" | "second"
+                    }
                     hourCycle={timeFormat === "12h" ? 12 : 24}
                     className="react-aria-DatePicker-time-field"
                   >

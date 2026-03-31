@@ -137,13 +137,10 @@ export const renderDatePicker = (
   const { updateElementProps } = context;
 
   const getGranularity = () => {
-    if (element.props.includeTime) {
-      const g = String(element.props.granularity || "");
-      return ["hour", "minute", "second"].includes(g) ? g : "minute";
-    } else {
-      const g = String(element.props.granularity || "");
-      return ["day"].includes(g) ? g : "day";
-    }
+    const g = String(element.props.granularity || "");
+    if (["hour", "minute", "second"].includes(g)) return g;
+    // includeTime이 true이면 기본 minute, 아니면 day
+    return element.props.includeTime ? "minute" : "day";
   };
 
   const locale = element.props.locale as string | undefined;
@@ -205,6 +202,11 @@ export const renderDatePicker = (
       autoFocus={Boolean(element.props.autoFocus)}
       shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       shouldCloseOnSelect={element.props.shouldCloseOnSelect !== false}
+      visibleMonths={
+        element.props.visibleMonths
+          ? Number(element.props.visibleMonths)
+          : undefined
+      }
       includeTime={Boolean(element.props.includeTime)}
       timeFormat={(element.props.timeFormat as "12h" | "24h") || "24h"}
       timeLabel={(element.props.timeLabel as string) || "시간"}
@@ -294,6 +296,11 @@ export const renderDateRangePicker = (
       autoFocus={Boolean(element.props.autoFocus)}
       shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       shouldCloseOnSelect={element.props.shouldCloseOnSelect !== false}
+      visibleMonths={
+        element.props.visibleMonths
+          ? Number(element.props.visibleMonths)
+          : undefined
+      }
       allowsNonContiguousRanges={Boolean(
         element.props.allowsNonContiguousRanges,
       )}

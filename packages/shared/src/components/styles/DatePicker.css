@@ -37,6 +37,19 @@
     }
 
     /* ===== Size ===== */
+    &[data-size="xs"] {
+      --dp-input-padding: var(--spacing-3xs) var(--spacing-3xs)
+        var(--spacing-3xs) var(--spacing-xs);
+      --dp-input-size: var(--text-2xs);
+      --dp-input-line-height: var(--text-2xs--line-height);
+      --dp-gap: var(--spacing-2xs);
+      --dp-btn-width: var(--text-sm);
+      --dp-btn-height: var(--text-sm);
+      --dp-hint-size: var(--text-2xs);
+      --dp-segment-size: var(--text-2xs);
+      --label-font-size: var(--text-2xs);
+      --label-line-height: var(--text-2xs--line-height);
+    }
     &[data-size="sm"] {
       --dp-input-padding: var(--spacing-2xs) var(--spacing-2xs)
         var(--spacing-2xs) var(--spacing-sm);
@@ -75,6 +88,19 @@
       --dp-segment-size: var(--text-base);
       --label-font-size: var(--text-base);
       --label-line-height: var(--text-base--line-height);
+    }
+    &[data-size="xl"] {
+      --dp-input-padding: var(--spacing-md) var(--spacing-md) var(--spacing-md)
+        var(--spacing-xl);
+      --dp-input-size: var(--text-lg);
+      --dp-input-line-height: var(--text-lg--line-height);
+      --dp-gap: var(--spacing-sm);
+      --dp-btn-width: var(--text-3xl);
+      --dp-btn-height: var(--text-3xl);
+      --dp-hint-size: var(--text-sm);
+      --dp-segment-size: var(--text-lg);
+      --label-font-size: var(--text-lg);
+      --label-line-height: var(--text-lg--line-height);
     }
 
     /* ===== Group Container (@sync SearchField .searchfield-container) ===== */

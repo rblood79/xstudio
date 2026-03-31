@@ -86,6 +86,7 @@
 
 /* Calendar Components */
 @import "./generated/Calendar.css";
+@import "./Calendar.css"; /* CalendarCell states + size-responsive inner elements */
 @import "./RangeCalendar.css"; /* generated 없음 — 수동 유지 */
 
 /* Group Components — skipCSSGeneration, 수동 CSS */
@@ -121,6 +122,7 @@
 @import "./Modal.css"; /* Foundation — Spec 없음 */
 @import "./Dialog.css";
 @import "./generated/Popover.css";
+@import "./Popover.css"; /* animations, placement, Dialog position:static override */
 
 /* Advanced Color Components — skipCSSGeneration, 수동 CSS */
 @import "./ColorField.css";

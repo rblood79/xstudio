@@ -34,6 +34,19 @@
     }
 
     /* ===== Size — @sync DatePicker.css 패턴 B (비대칭: right=top) ===== */
+    &[data-size="xs"] {
+      --drp-group-padding: var(--spacing-3xs) var(--spacing-3xs)
+        var(--spacing-3xs) var(--spacing-xs);
+      --drp-input-size: var(--text-2xs);
+      --drp-input-line-height: var(--text-2xs--line-height);
+      --drp-gap: var(--spacing-2xs);
+      --drp-segment-size: var(--text-2xs);
+      --drp-btn-width: var(--text-sm);
+      --drp-btn-height: var(--text-sm);
+      --drp-hint-size: var(--text-2xs);
+      --label-font-size: var(--text-2xs);
+      --label-line-height: var(--text-2xs--line-height);
+    }
     &[data-size="sm"] {
       --drp-group-padding: var(--spacing-2xs) var(--spacing-2xs)
         var(--spacing-2xs) var(--spacing-sm);
@@ -72,6 +85,19 @@
       --drp-hint-size: var(--text-sm);
       --label-font-size: var(--text-base);
       --label-line-height: var(--text-base--line-height);
+    }
+    &[data-size="xl"] {
+      --drp-group-padding: var(--spacing-md) var(--spacing-md) var(--spacing-md)
+        var(--spacing-xl);
+      --drp-input-size: var(--text-lg);
+      --drp-input-line-height: var(--text-lg--line-height);
+      --drp-gap: var(--spacing-sm);
+      --drp-segment-size: var(--text-lg);
+      --drp-btn-width: var(--text-3xl);
+      --drp-btn-height: var(--text-3xl);
+      --drp-hint-size: var(--text-sm);
+      --label-font-size: var(--text-lg);
+      --label-line-height: var(--text-lg--line-height);
     }
 
     /* ===== Group Container — @sync DatePicker.css .react-aria-DateInput ===== */

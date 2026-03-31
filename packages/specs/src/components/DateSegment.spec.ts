@@ -56,6 +56,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
   description: "날짜/시간 세그먼트 박스 렌더링 (DateField, TimeField 공용)",
   element: "div",
   archetype: "simple",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

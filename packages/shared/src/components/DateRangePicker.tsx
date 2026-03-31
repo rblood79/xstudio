@@ -70,6 +70,7 @@ export interface DateRangePickerProps<T extends DateValue> extends Omit<
   necessityIndicator?: NecessityIndicator;
   hideTimeZone?: boolean;
   pageBehavior?: "visible" | "single";
+  visibleMonths?: number;
   startName?: string;
   endName?: string;
   form?: string;
@@ -102,6 +103,7 @@ export function DateRangePicker<T extends DateValue>({
   necessityIndicator,
   hideTimeZone,
   pageBehavior,
+  visibleMonths,
   startName,
   endName,
   form,
@@ -208,6 +210,12 @@ export function DateRangePicker<T extends DateValue>({
               data-size={size}
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
+              visibleDuration={
+                visibleMonths && visibleMonths > 1
+                  ? { months: visibleMonths }
+                  : undefined
+              }
+              pageBehavior={pageBehavior}
             >
               <header>
                 <Button slot="previous">
@@ -218,9 +226,22 @@ export function DateRangePicker<T extends DateValue>({
                   <ChevronRight size={16} />
                 </Button>
               </header>
-              <CalendarGrid>
-                {(date) => <CalendarCell date={date} />}
-              </CalendarGrid>
+              <div style={{ display: "flex", gap: 8 }}>
+                {Array.from(
+                  {
+                    length:
+                      visibleMonths && visibleMonths > 1 ? visibleMonths : 1,
+                  },
+                  (_, i) => (
+                    <CalendarGrid
+                      key={i}
+                      offset={i === 0 ? undefined : { months: i }}
+                    >
+                      {(date) => <CalendarCell date={date} />}
+                    </CalendarGrid>
+                  ),
+                )}
+              </div>
             </RangeCalendar>
 
             {includeTime && (

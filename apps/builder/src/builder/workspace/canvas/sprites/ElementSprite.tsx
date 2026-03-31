@@ -1096,7 +1096,13 @@ export const ElementSprite = memo(function ElementSprite({
   const dateInputParentTag = useStore((state) => {
     if (!isDateInput || !element.parent_id) return null;
     const p = state.elementsMap.get(element.parent_id);
-    return p && (p.tag === "DateField" || p.tag === "TimeField") ? p.tag : null;
+    return p &&
+      (p.tag === "DateField" ||
+        p.tag === "TimeField" ||
+        p.tag === "DatePicker" ||
+        p.tag === "DateRangePicker")
+      ? p.tag
+      : null;
   });
   const dateInputGranularity = useStore((state) => {
     if (!isDateInput || !element.parent_id) return null;

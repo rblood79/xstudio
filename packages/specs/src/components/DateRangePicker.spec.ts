@@ -23,6 +23,7 @@ import {
   ArrowLeftRight,
   Hash,
   EyeOff,
+  Columns,
   CheckSquare,
   PointerOff,
   PenOff,
@@ -43,6 +44,7 @@ export interface DateRangePickerProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
+  visibleMonths?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -153,6 +155,15 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "visible", label: "Visible" },
               { value: "hidden", label: "Hidden" },
             ],
+          },
+          {
+            key: "visibleMonths",
+            type: "number",
+            label: "Visible Months",
+            icon: Columns,
+            min: 1,
+            max: 3,
+            step: 1,
           },
         ],
       },
@@ -287,16 +298,47 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         override: true,
       },
 
+      // granularity → DateInput
+      {
+        parentProp: "granularity",
+        childPath: "DateInput",
+        childProp: "_granularity",
+        override: true,
+      },
+
       // size → 직접 자식
       { parentProp: "size", childPath: "DateInput", override: true },
       { parentProp: "size", childPath: "Calendar", override: true },
       { parentProp: "size", childPath: "RangeCalendar", override: true },
       { parentProp: "size", childPath: "Label", override: true },
       // size → Calendar/RangeCalendar 서브트리
-      { parentProp: "size", childPath: ["Calendar", "CalendarHeader"], override: true },
-      { parentProp: "size", childPath: ["Calendar", "CalendarGrid"], override: true },
-      { parentProp: "size", childPath: ["RangeCalendar", "CalendarHeader"], override: true },
-      { parentProp: "size", childPath: ["RangeCalendar", "CalendarGrid"], override: true },
+      {
+        parentProp: "size",
+        childPath: ["Calendar", "CalendarHeader"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["Calendar", "CalendarGrid"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["RangeCalendar", "CalendarHeader"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["RangeCalendar", "CalendarGrid"],
+        override: true,
+      },
+
+      // visibleMonths → RangeCalendar
+      {
+        parentProp: "visibleMonths",
+        childPath: "RangeCalendar",
+        override: true,
+      },
 
       // variant
       { parentProp: "variant", childPath: "Calendar" },

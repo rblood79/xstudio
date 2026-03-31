@@ -18,6 +18,7 @@ import {
   ArrowLeftRight,
   Hash,
   EyeOff,
+  Columns,
   CheckSquare,
   PointerOff,
   PenOff,
@@ -37,6 +38,7 @@ export interface DatePickerProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
+  visibleMonths?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -201,6 +203,15 @@ export const DATE_PICKER_VARIANTS = {
 
 /** DatePicker/DateRangePicker 공유 sizes */
 export const DATE_PICKER_SIZES = {
+  xs: {
+    height: 20,
+    paddingX: 4,
+    paddingY: 1,
+    fontSize: "{typography.text-2xs}" as TokenRef,
+    borderRadius: "{radius.xs}" as TokenRef,
+    iconSize: 10,
+    gap: 2,
+  },
   sm: {
     height: 22,
     paddingX: 8,
@@ -227,6 +238,15 @@ export const DATE_PICKER_SIZES = {
     borderRadius: "{radius.lg}" as TokenRef,
     iconSize: 20,
     gap: 4,
+  },
+  xl: {
+    height: 52,
+    paddingX: 20,
+    paddingY: 12,
+    fontSize: "{typography.text-lg}" as TokenRef,
+    borderRadius: "{radius.xl}" as TokenRef,
+    iconSize: 24,
+    gap: 8,
   },
 };
 
@@ -342,6 +362,15 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "visible", label: "Visible" },
               { value: "single", label: "Single" },
             ],
+          },
+          {
+            key: "visibleMonths",
+            type: "number",
+            label: "Visible Months",
+            icon: Columns,
+            min: 1,
+            max: 3,
+            step: 1,
           },
         ],
       },
@@ -468,13 +497,32 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         override: true,
       },
 
+      // granularity → DateInput
+      {
+        parentProp: "granularity",
+        childPath: "DateInput",
+        childProp: "_granularity",
+        override: true,
+      },
+
       // size → 직접 자식
       { parentProp: "size", childPath: "DateInput", override: true },
       { parentProp: "size", childPath: "Calendar", override: true },
       { parentProp: "size", childPath: "Label", override: true },
       // size → Calendar 서브트리
-      { parentProp: "size", childPath: ["Calendar", "CalendarHeader"], override: true },
-      { parentProp: "size", childPath: ["Calendar", "CalendarGrid"], override: true },
+      {
+        parentProp: "size",
+        childPath: ["Calendar", "CalendarHeader"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["Calendar", "CalendarGrid"],
+        override: true,
+      },
+
+      // visibleMonths → Calendar
+      { parentProp: "visibleMonths", childPath: "Calendar", override: true },
 
       // variant → 직접 자식
       { parentProp: "variant", childPath: "Calendar" },
