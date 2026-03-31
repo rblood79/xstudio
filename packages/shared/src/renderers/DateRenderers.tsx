@@ -147,8 +147,9 @@ export const renderDatePicker = (
   const calendarSystem = element.props.calendarSystem as string | undefined;
   const size = element.props.size as string | undefined;
   const variant = element.props.variant as string | undefined;
-  // locale/calendarSystem 변경 시 리마운트 (defaultValue calendar 타입 재적용)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}`;
+  const granularity = getGranularity();
+  // locale/calendarSystem/granularity 변경 시 리마운트 (CalendarDate↔ZonedDateTime 타입 전환)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${granularity}`;
 
   return (
     <DatePicker
@@ -187,8 +188,8 @@ export const renderDatePicker = (
       defaultToday={element.props.defaultToday === true}
       minValue={element.props.minValue as string | undefined}
       maxValue={element.props.maxValue as string | undefined}
-      hideTimeZone={Boolean(element.props.hideTimeZone)}
-      granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
+      hideTimeZone={element.props.hideTimeZone !== false}
+      granularity={granularity as "day" | "hour" | "minute" | "second"}
       pageBehavior={
         (element.props.pageBehavior as "visible" | "single") || undefined
       }
@@ -238,8 +239,9 @@ export const renderDateRangePicker = (
   const locale = element.props.locale as string | undefined;
   const calendarSystem = element.props.calendarSystem as string | undefined;
   const size = element.props.size as string | undefined;
-  // locale/calendarSystem 변경 시 리마운트 (defaultValue calendar 타입 재적용)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}`;
+  const granularity = getGranularity();
+  // locale/calendarSystem/granularity 변경 시 리마운트 (CalendarDate↔ZonedDateTime 타입 전환)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${granularity}`;
 
   return (
     <DateRangePicker
@@ -267,8 +269,8 @@ export const renderDateRangePicker = (
       minValue={element.props.minValue as string | undefined}
       maxValue={element.props.maxValue as string | undefined}
       defaultToday={element.props.defaultToday === true}
-      hideTimeZone={Boolean(element.props.hideTimeZone)}
-      granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
+      hideTimeZone={element.props.hideTimeZone !== false}
+      granularity={granularity as "day" | "hour" | "minute" | "second"}
       hourCycle={
         element.props.hourCycle
           ? (Number(element.props.hourCycle) as 12 | 24)
@@ -367,8 +369,8 @@ export const renderDateField = (
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       autoFocus={Boolean(element.props.autoFocus)}
-      hideTimeZone={Boolean(element.props.hideTimeZone)}
-      shouldForceLeadingZeros={Boolean(element.props.shouldForceLeadingZeros)}
+      hideTimeZone={element.props.hideTimeZone !== false}
+      shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       minValue={element.props.minValue as string | undefined}
       maxValue={element.props.maxValue as string | undefined}
       validationBehavior={
@@ -441,8 +443,8 @@ export const renderTimeField = (
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       autoFocus={Boolean(element.props.autoFocus)}
-      hideTimeZone={Boolean(element.props.hideTimeZone)}
-      shouldForceLeadingZeros={Boolean(element.props.shouldForceLeadingZeros)}
+      hideTimeZone={element.props.hideTimeZone !== false}
+      shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       validationBehavior={
         (element.props.validationBehavior as "native" | "aria") || undefined
       }

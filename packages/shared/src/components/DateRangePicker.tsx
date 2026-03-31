@@ -26,7 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { getLocalTimeZone, today, now } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
 import type { NecessityIndicator } from "./Field";
@@ -116,6 +116,13 @@ export function DateRangePicker<T extends DateValue>({
     ? granularity || "minute"
     : granularity || "day";
 
+  const isTimeGranularity = ["hour", "minute", "second"].includes(
+    effectiveGranularity,
+  );
+  const placeholderValue = isTimeGranularity
+    ? (now(effectiveTimezone) as unknown as T)
+    : undefined;
+
   // minValue/maxValue 문자열 자동 파싱
   const parsedMinValue =
     typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
@@ -123,11 +130,14 @@ export function DateRangePicker<T extends DateValue>({
   const parsedMaxValue =
     typeof maxValue === "string" ? safeParseDateString(maxValue) : maxValue;
 
+  const todayOrNow = isTimeGranularity
+    ? now(effectiveTimezone)
+    : today(effectiveTimezone);
   const defaultValue =
     defaultToday && !props.value && !props.defaultValue
       ? {
-          start: today(effectiveTimezone) as T,
-          end: today(effectiveTimezone) as T,
+          start: todayOrNow as T,
+          end: todayOrNow as T,
         }
       : props.defaultValue;
 
@@ -146,6 +156,7 @@ export function DateRangePicker<T extends DateValue>({
       data-variant={variant}
       data-size={size}
       granularity={effectiveGranularity}
+      placeholderValue={placeholderValue}
       defaultValue={defaultValue}
       minValue={parsedMinValue as T | undefined}
       maxValue={parsedMaxValue as T | undefined}
@@ -244,7 +255,7 @@ export function DateRangePicker<T extends DateValue>({
               </div>
             </RangeCalendar>
 
-            {includeTime && (
+            {(includeTime || isTimeGranularity) && (
               <div className="date-picker-time-section">
                 <div className="date-picker-time-fields-container">
                   <div className="date-picker-time-field-wrapper">
@@ -252,6 +263,9 @@ export function DateRangePicker<T extends DateValue>({
                       {startTimeLabel}
                     </Label>
                     <TimeField
+                      granularity={
+                        effectiveGranularity as "hour" | "minute" | "second"
+                      }
                       hourCycle={timeFormat === "12h" ? 12 : 24}
                       className="react-aria-DateRangePicker-start-time"
                     >
@@ -265,6 +279,9 @@ export function DateRangePicker<T extends DateValue>({
                       {endTimeLabel}
                     </Label>
                     <TimeField
+                      granularity={
+                        effectiveGranularity as "hour" | "minute" | "second"
+                      }
                       hourCycle={timeFormat === "12h" ? 12 : 24}
                       className="react-aria-DateRangePicker-end-time"
                     >
