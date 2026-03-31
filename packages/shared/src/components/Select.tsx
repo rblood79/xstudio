@@ -402,6 +402,7 @@ export function Select<T extends object>({
               items={selectItems}
               className="react-aria-ListBox"
               selectionMode={selectionMode}
+              data-size={size}
             >
               {listBoxContent}
             </ListBox>
