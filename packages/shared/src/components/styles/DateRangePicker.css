@@ -5,6 +5,11 @@
     gap: var(--spacing-xs);
     color: var(--fg);
 
+    &[data-label-position="side"] {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
     /* Accent locals — @sync DatePicker.css */
     --field-accent: var(--border);
     --dp-pressed-bg: var(--bg-muted);

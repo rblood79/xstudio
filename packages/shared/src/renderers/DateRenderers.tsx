@@ -265,6 +265,7 @@ export const renderDateRangePicker = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       defaultValue={undefined}
       minValue={element.props.minValue as string | undefined}
       maxValue={element.props.maxValue as string | undefined}

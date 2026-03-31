@@ -68,6 +68,7 @@ export interface DateRangePickerProps<T extends DateValue> extends Omit<
   /** @example "2024-12-31" */
   maxValue?: string | DateValue;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
   hideTimeZone?: boolean;
   pageBehavior?: "visible" | "single";
   visibleMonths?: number;
@@ -101,6 +102,7 @@ export function DateRangePicker<T extends DateValue>({
   minValue,
   maxValue,
   necessityIndicator,
+  labelPosition = "top",
   hideTimeZone,
   pageBehavior,
   visibleMonths,
@@ -155,6 +157,7 @@ export function DateRangePicker<T extends DateValue>({
       className={dateRangePickerClassName}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
       granularity={effectiveGranularity}
       placeholderValue={placeholderValue}
       defaultValue={defaultValue}

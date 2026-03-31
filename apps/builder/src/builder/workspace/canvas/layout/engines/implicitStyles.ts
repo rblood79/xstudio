@@ -1393,25 +1393,29 @@ export function applyImplicitStyles(
   }
 
   // ── Card ────────────────────────────────────────────────────────────
-  // ── DatePicker / DateRangePicker — flex column + gap + Label 필터링 ─────
+  // ── DatePicker / DateRangePicker — flex column + gap + Label 필터링 + labelPosition ─────
   if (containerTag === "datepicker" || containerTag === "daterangepicker") {
     const hasLabel = !!containerProps?.label;
-    if (!hasLabel) {
-      filteredChildren = children.filter((c) => c.tag !== "Label");
-    }
-    const ps = parentStyle;
-    effectiveParent = {
-      ...effectiveParent,
-      props: {
-        ...effectiveParent.props,
-        style: {
-          ...(effectiveParent.props?.style as Record<string, unknown>),
-          display: ps.display ?? "flex",
-          flexDirection: ps.flexDirection ?? "column",
-          gap: ps.gap ?? 4,
-        },
-      },
-    } as Element;
+    // Calendar/RangeCalendar は Popover で表示されるため Taffy レイアウトから除外
+    const POPOVER_CHILDREN = new Set(["Calendar", "RangeCalendar"]);
+    filteredChildren = children.filter((c) => {
+      if (c.tag === "Label") return hasLabel;
+      return !POPOVER_CHILDREN.has(c.tag);
+    });
+
+    const dpLabelPos = containerProps?.labelPosition as string | undefined;
+    const dpFlexDir = resolveLabelFlexDir(
+      dpLabelPos,
+      parentStyle.flexDirection,
+    );
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: dpFlexDir,
+      gap: parentStyle.gap ?? 4,
+    });
+
+    filteredChildren = applySideLabelChildStyles(filteredChildren, dpLabelPos);
   }
 
   // ── Calendar — padding/gap/display 주입 (Generated CSS 동기) ─────
