@@ -25,8 +25,9 @@ export interface DropIndicatorState {
 /**
  * Drop indicator를 CanvasKit으로 렌더링한다.
  *
- * 1. 타겟 컨테이너 아웃라인 (3/zoom 두께, blue-500)
- * 2. 삽입 위치 dashed line (2/zoom 두께, 자식 간 중점)
+ * 1. 타겟 컨테이너 반투명 배경 오버레이 (alpha 0.06)
+ * 2. 타겟 컨테이너 아웃라인 (2/zoom 두께, blue-500, alpha 0.8)
+ * 3. 삽입 위치 solid line (2/zoom 두께, 양끝 원형 캡)
  */
 export function renderDropIndicator(
   ck: CanvasKit,
@@ -36,29 +37,38 @@ export function renderDropIndicator(
 ): void {
   const { targetBounds, insertIndex, childBounds, isHorizontal } = state;
 
-  const paint = new ck.Paint();
-  paint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 1));
-  paint.setAntiAlias(true);
-  paint.setStyle(ck.PaintStyle.Stroke);
+  // C-1: 컨테이너 반투명 배경 오버레이
+  const bgPaint = new ck.Paint();
+  bgPaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 0.06));
+  bgPaint.setAntiAlias(true);
+  bgPaint.setStyle(ck.PaintStyle.Fill);
+  canvas.drawRect4f(
+    targetBounds.x,
+    targetBounds.y,
+    targetBounds.x + targetBounds.width,
+    targetBounds.y + targetBounds.height,
+    bgPaint,
+  );
+  bgPaint.delete();
 
-  // 1. 타겟 컨테이너 아웃라인
-  const sw = 3 / zoom;
-  paint.setStrokeWidth(sw);
+  // C-2: 타겟 컨테이너 아웃라인 (2/zoom, alpha 0.8)
+  const outlinePaint = new ck.Paint();
+  outlinePaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 0.8));
+  outlinePaint.setAntiAlias(true);
+  outlinePaint.setStyle(ck.PaintStyle.Stroke);
+  const sw = 2 / zoom;
+  outlinePaint.setStrokeWidth(sw);
   canvas.drawRect4f(
     targetBounds.x - sw / 2,
     targetBounds.y - sw / 2,
     targetBounds.x + targetBounds.width + sw / 2,
     targetBounds.y + targetBounds.height + sw / 2,
-    paint,
+    outlinePaint,
   );
+  outlinePaint.delete();
 
-  // 2. 삽입 라인 (dashed)
+  // C-3: 삽입 라인 (solid, round cap, 양끝 원)
   if (insertIndex >= 0 && childBounds.length > 0) {
-    const lw = 2 / zoom;
-    paint.setStrokeWidth(lw);
-    const dashEffect = ck.PathEffect.MakeDash([8 / zoom, 8 / zoom]);
-    paint.setPathEffect(dashEffect);
-
     const start = (b: BoundingBox) => (isHorizontal ? b.x : b.y);
     const end = (b: BoundingBox) =>
       isHorizontal ? b.x + b.width : b.y + b.height;
@@ -75,26 +85,58 @@ export function renderDropIndicator(
         2;
     }
 
+    const linePaint = new ck.Paint();
+    linePaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 1));
+    linePaint.setAntiAlias(true);
+    linePaint.setStyle(ck.PaintStyle.Stroke);
+    linePaint.setStrokeWidth(2 / zoom);
+    linePaint.setStrokeCap(ck.StrokeCap.Round);
+
     if (isHorizontal) {
-      canvas.drawRect4f(
+      canvas.drawLine(
         linePos,
         targetBounds.y,
         linePos,
         targetBounds.y + targetBounds.height,
-        paint,
+        linePaint,
       );
     } else {
-      canvas.drawRect4f(
+      canvas.drawLine(
         targetBounds.x,
         linePos,
         targetBounds.x + targetBounds.width,
         linePos,
-        paint,
+        linePaint,
       );
     }
+    linePaint.delete();
 
-    dashEffect.delete();
+    // 양끝 원
+    const circleR = 3 / zoom;
+    const circlePaint = new ck.Paint();
+    circlePaint.setColor(ck.Color4f(DROP_R, DROP_G, DROP_B, 1));
+    circlePaint.setAntiAlias(true);
+    circlePaint.setStyle(ck.PaintStyle.Fill);
+
+    if (isHorizontal) {
+      // 세로 라인 → 상단/하단에 원
+      canvas.drawCircle(linePos, targetBounds.y, circleR, circlePaint);
+      canvas.drawCircle(
+        linePos,
+        targetBounds.y + targetBounds.height,
+        circleR,
+        circlePaint,
+      );
+    } else {
+      // 가로 라인 → 좌측/우측에 원
+      canvas.drawCircle(targetBounds.x, linePos, circleR, circlePaint);
+      canvas.drawCircle(
+        targetBounds.x + targetBounds.width,
+        linePos,
+        circleR,
+        circlePaint,
+      );
+    }
+    circlePaint.delete();
   }
-
-  paint.delete();
 }
