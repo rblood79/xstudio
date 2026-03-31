@@ -2070,8 +2070,7 @@ export const ElementSprite = memo(function ElementSprite({
                 tag === "Tag" ||
                 tag === "Breadcrumbs" ||
                 tag === "Tabs" ||
-                tag === "Toast" ||
-                tag === "ListBox"
+                tag === "Toast"
               ) {
                 specProps = {
                   ...specProps,

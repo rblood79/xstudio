@@ -282,20 +282,6 @@ export function createListBoxDefinition(
     },
     children: [
       {
-        tag: "Label",
-        props: {
-          children: "List Box",
-          variant: "default",
-          style: {
-            width: "fit-content",
-            height: "fit-content",
-            fontWeight: 500,
-          },
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 0,
-      },
-      {
         tag: "ListBoxItem",
         props: {
           textValue: "Aardvark",

@@ -802,7 +802,6 @@ function traversePostOrder(
     "Meter",
     "DatePicker",
     "DateRangePicker",
-    "ListBox",
   ]);
   const LABEL_SIZE_STYLE: Record<
     string,

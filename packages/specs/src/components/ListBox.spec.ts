@@ -71,18 +71,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   defaultVariant: "default",
   defaultSize: "md",
 
-  propagation: {
-    rules: [
-      { parentProp: "size", childPath: "Label" },
-      {
-        parentProp: "label",
-        childPath: "Label",
-        childProp: "children",
-        override: true,
-      },
-    ],
-  },
-
   properties: {
     sections: [
       {
@@ -295,69 +283,53 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fwRaw = props.style?.fontWeight;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      // Compositional: 자식 Element(Label, ListBoxItem)가 있으면
-      // Label 아래 아이템 영역에만 배경+테두리 렌더링
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) {
-        const containerH = (props as Record<string, unknown>)
-          ._containerHeight as number | undefined;
-        // Label 높이 추정: LabelSpec size 기준
-        const LABEL_HEIGHT: Record<string, number> = {
-          sm: 16,
-          md: 20,
-          lg: 24,
-        };
-        const sizeName = (props.size as string) ?? "md";
-        const labelH = props.label
-          ? (LABEL_HEIGHT[sizeName] ?? 20) + (size.gap ?? 4)
-          : 0;
-        const itemAreaH = containerH ? containerH - labelH : 0;
-
-        if (itemAreaH <= 0) return [];
-
-        const shapes: Shape[] = [
-          {
-            id: "bg",
-            type: "roundRect" as const,
-            x: 0,
-            y: labelH,
-            width,
-            height: itemAreaH,
-            radius: borderRadius as unknown as number,
-            fill: bgColor,
-          },
-        ];
-        const borderColor = props.style?.borderColor ?? variant.border;
-        if (borderColor) {
-          shapes.push({
-            type: "border" as const,
-            target: "bg",
-            borderWidth: 1,
-            color: borderColor,
-            radius: borderRadius as unknown as number,
-          });
-        }
-        return shapes;
-      }
+      const labelFontSize = fontSize - 2;
+      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelGap = size.gap ?? 8;
+      const labelOffset = props.label ? labelHeight + labelGap : 0;
 
       const shapes: Shape[] = [];
 
-      // Standalone(자식 없음): 컨테이너 배경 + 아이템 직접 렌더링
+      // 라벨
+      if (props.label) {
+        shapes.push({
+          type: "text" as const,
+          x: 0,
+          y: 0,
+          text: props.label,
+          fontSize: fontSize - 2,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
+          baseline: "top" as const,
+        });
+      }
+
+      // 리스트 컨테이너 배경
       shapes.push({
         id: "bg",
         type: "roundRect" as const,
         x: 0,
-        y: 0,
+        y: labelOffset,
         width,
         height: "auto",
         radius: borderRadius as unknown as number,
         fill: bgColor,
       });
 
+      // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -376,6 +348,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         });
       }
 
+      // Child Composition: 자식 Element가 있으면 spec shapes에서 아이템 렌더링 스킵
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 리스트 아이템 생성
       const items: string[] =
         props.items ??
@@ -387,7 +363,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const paddingY = (size.paddingY as unknown as number) || 8;
       const gap = (size.gap as unknown as number) || 4;
       const paddingX = (size.paddingX as unknown as number) || 12;
-      let itemY = paddingY;
+      const baseY = labelOffset;
+      let itemY = baseY + paddingY;
 
       // 선택 상태 계산
       const selectedSet = new Set<number>(
