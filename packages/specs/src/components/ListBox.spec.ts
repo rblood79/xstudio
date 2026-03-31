@@ -299,11 +299,14 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      // Label은 자식 Label Element가 처리 (compositional 패턴)
+      // Compositional: 자식 Element(Label, ListBoxItem)가 있으면
+      // 컨테이너는 투명 — 자식이 각자 렌더링 (Select 패턴과 동일)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return [];
 
       const shapes: Shape[] = [];
 
-      // 리스트 컨테이너 배경
+      // Standalone(자식 없음): 컨테이너 배경 + 아이템 직접 렌더링
       shapes.push({
         id: "bg",
         type: "roundRect" as const,
@@ -315,7 +318,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         fill: bgColor,
       });
 
-      // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -333,10 +335,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           radius: borderRadius as unknown as number,
         });
       }
-
-      // Child Composition: 자식 Element가 있으면 spec shapes에서 아이템 렌더링 스킵
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
 
       // 리스트 아이템 생성
       const items: string[] =
