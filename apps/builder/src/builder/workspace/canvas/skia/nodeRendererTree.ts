@@ -36,7 +36,7 @@ function _get(): DragVisualOffsetData | null {
   return G.__xstudio_dragVisualOffset ?? null;
 }
 
-function _getSiblingOffset(
+export function getSiblingOffset(
   elementId: string,
 ): { dx: number; dy: number } | undefined {
   return G.__xstudio_dragSiblingOffsets?.get(elementId);

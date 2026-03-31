@@ -17,7 +17,7 @@ import type { BoundingBox } from "../selection/types";
 import type { AIEffectNodeBounds } from "./types";
 import type { Element } from "../../../../types/core/store.types";
 import { getSkiaNode } from "./useSkiaNode";
-import { getDragVisualOffset } from "./nodeRendererTree";
+import { getDragVisualOffset, getSiblingOffset } from "./nodeRendererTree";
 import {
   renderBox,
   renderText,
@@ -578,6 +578,9 @@ export function executeRenderCommands(
   // 비가시 요소 스킵 카운터
   let skipDepth = 0;
 
+  // 드래그 반투명 레이어 추적 스택 (ELEMENT_BEGIN/END 쌍 대응)
+  const dragAlphaStack: boolean[] = [];
+
   const len = commands.length;
   for (let i = 0; i < len; i++) {
     const cmd = commands[i];
@@ -631,8 +634,11 @@ export function executeRenderCommands(
         const dragOff = getDragVisualOffset();
         const hasDragOffset =
           dragOff !== null && cmd.elementId === dragOff.elementId;
-        const dox = hasDragOffset ? dragOff.dx : 0;
-        const doy = hasDragOffset ? dragOff.dy : 0;
+        const sibOff = !hasDragOffset
+          ? getSiblingOffset(cmd.elementId)
+          : undefined;
+        const dox = hasDragOffset ? dragOff.dx : (sibOff?.dx ?? 0);
+        const doy = hasDragOffset ? dragOff.dy : (sibOff?.dy ?? 0);
 
         // translate 스택 갱신
         const parentPos = translateStack[stackTop];
@@ -651,6 +657,17 @@ export function executeRenderCommands(
 
         canvas.save();
         canvas.translate(cmd.x + dox, cmd.y + doy);
+
+        // A-8: 드래그 중인 요소 반투명 처리
+        if (hasDragOffset) {
+          const alphaPaint = new ck.Paint();
+          alphaPaint.setAlphaf(0.5);
+          canvas.saveLayer(alphaPaint);
+          alphaPaint.delete();
+          dragAlphaStack.push(true);
+        } else {
+          dragAlphaStack.push(false);
+        }
 
         if (cmd.transform) {
           canvas.concat(cmd.transform);
@@ -750,6 +767,9 @@ export function executeRenderCommands(
       case CMD_ELEMENT_END: {
         endRenderEffects(canvas, cmd.effectLayerCount);
         if (cmd.hasBlend) canvas.restore();
+        // A-8: 드래그 반투명 레이어 복원
+        const hadDragAlpha = dragAlphaStack.pop();
+        if (hadDragAlpha) canvas.restore();
         canvas.restore();
         if (stackTop > 0) stackTop--;
         if (eidTop > 0) eidTop--;

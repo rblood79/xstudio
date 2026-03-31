@@ -36,9 +36,14 @@ import type { BoundingBox } from "./types";
 import {
   resolveDropTarget,
   computeReorderFromDropTarget,
+  computeSiblingOffsets,
   type DropTarget,
   type DropIndicatorSnapshot,
 } from "./dropTargetResolver";
+import {
+  setDragVisualOffset,
+  setDragSiblingOffsets,
+} from "../skia/nodeRendererTree";
 import { historyManager } from "../../../stores/history";
 import { getDB } from "../../../../lib/db";
 
@@ -172,14 +177,14 @@ export const SelectionLayer = memo(function SelectionLayer({
   // ADR-043 Phase 1: Drag Interaction
   // ============================================
 
-  // ADR-043: 드래그 시작 시 원래 order_num 스냅샷 (undo용)
+  // ADR-043 Phase A: 드래그 시작 시 원래 order_num 스냅샷 (commit 후 undo용)
   const dragStartSnapshotRef = useRef<Array<{
     id: string;
     order_num: number;
   }> | null>(null);
 
-  // reorder 후 레이아웃 재계산 전 중복 reorder 방지
-  const reorderCooldownRef = useRef(false);
+  // A-6: 마지막으로 resolve된 drop target (onMoveEnd에서 단일 commit에 사용)
+  const lastResolvedDropTargetRef = useRef<DropTarget | null>(null);
 
   const { startMove, updateDrag, endDrag, cancelDrag } = useDragInteraction({
     onDragUpdate: (operation, data) => {
@@ -196,46 +201,63 @@ export const SelectionLayer = memo(function SelectionLayer({
       const scenePoint = data.current;
       if (!scenePoint) return;
 
-      // reorder cooldown: 이전 reorder 후 레이아웃 재계산 대기 중이면 스킵
-      if (reorderCooldownRef.current) return;
-
-      // 커서가 드래그 요소 bounds 안에 있으면 reorder 불필요
-      const draggedBounds = getElementBoundsSimple(draggedId);
-      if (draggedBounds) {
-        const pos = scenePoint.y; // TODO: isHorizontal이면 x
-        const bStart = draggedBounds.y;
-        const bEnd = bStart + draggedBounds.height;
-        if (pos >= bStart && pos <= bEnd) return;
+      // A-7: 드래그 시작 시 원래 order_num 스냅샷을 한 번만 캡처
+      if (!dragStartSnapshotRef.current) {
+        const dragged = dragState.elementsMap.get(draggedId);
+        if (dragged) {
+          const allChildren = [...dragState.elementsMap.values()]
+            .filter((e) => e.parent_id === dragged.parent_id)
+            .map((e) => ({ id: e.id, order_num: e.order_num ?? 0 }));
+          dragStartSnapshotRef.current = allChildren;
+        }
       }
 
+      // A-3: 드래그 요소 시각적 오프셋 적용 (store 변경 없음)
+      setDragVisualOffset(draggedId, delta.x, delta.y);
+
+      // A-5: dead zone — 이전 drop target의 방향에 따라 커서 위치 축 결정
+      const draggedBounds = getElementBoundsSimple(draggedId);
+      if (draggedBounds) {
+        const isHz = lastResolvedDropTargetRef.current?.isHorizontal ?? false;
+        const pos = isHz ? scenePoint.x : scenePoint.y;
+        const bStart = isHz ? draggedBounds.x : draggedBounds.y;
+        const bEnd =
+          bStart + (isHz ? draggedBounds.width : draggedBounds.height);
+        if (pos >= bStart && pos <= bEnd) {
+          // drop indicator 유지, 형제 오프셋은 그대로
+          if (dropIndicatorSnapshotRef) {
+            const prev = lastResolvedDropTargetRef.current;
+            dropIndicatorSnapshotRef.current = prev
+              ? {
+                  targetBounds: prev.containerBounds,
+                  insertIndex: prev.insertionIndex,
+                  childBounds: prev.siblingBounds,
+                  isHorizontal: prev.isHorizontal,
+                }
+              : null;
+          }
+          return;
+        }
+      }
+
+      // drop target resolve
       const resolved = resolveDropTarget(scenePoint, draggedId, {
         elementsMap: dragState.elementsMap,
         childrenMap: dragState.childrenMap,
       });
-      dropTargetRef.current = resolved;
 
-      // ADR-043 Pencil 패턴: 드래그 중 실제 reorder 수행 (undo 없음)
-      if (resolved && !resolved.isAdjacentInsertion) {
-        const updates = computeReorderFromDropTarget(resolved, draggedId, {
+      // A-6: 마지막 resolved target 저장 (onMoveEnd 단일 commit용)
+      lastResolvedDropTargetRef.current = resolved;
+
+      // 형제 시각적 오프셋 갱신
+      if (resolved) {
+        const offsets = computeSiblingOffsets(resolved, draggedId, {
           elementsMap: dragState.elementsMap,
           childrenMap: dragState.childrenMap,
         });
-        if (updates.length > 0) {
-          // 첫 reorder 시 원래 순서 스냅샷 저장 (undo용)
-          if (!dragStartSnapshotRef.current) {
-            const allChildren = [...dragState.elementsMap.values()]
-              .filter((e) => e.parent_id === resolved.containerId)
-              .map((e) => ({ id: e.id, order_num: e.order_num ?? 0 }));
-            dragStartSnapshotRef.current = allChildren;
-          }
-          dragState.batchUpdateElementOrders(updates);
-
-          // cooldown: 다음 프레임까지 추가 reorder 방지 (stale bounds로 중복 reorder 차단)
-          reorderCooldownRef.current = true;
-          requestAnimationFrame(() => {
-            reorderCooldownRef.current = false;
-          });
-        }
+        setDragSiblingOffsets(offsets.size > 0 ? offsets : null);
+      } else {
+        setDragSiblingOffsets(null);
       }
 
       // ADR-043 Phase 3: drop indicator 스냅샷 갱신 (SkiaOverlay RAF에서 읽음)
@@ -251,17 +273,36 @@ export const SelectionLayer = memo(function SelectionLayer({
       }
     },
     onMoveEnd: (elementId, _delta) => {
+      // A-4: onMoveEnd — 단일 commit (visual offsets 해제 후 store 반영)
+
+      // 1. commit 전에 최종 drop target과 snapshot을 먼저 읽기
+      const finalTarget = lastResolvedDropTargetRef.current;
+      const startSnapshot = dragStartSnapshotRef.current;
+
+      // 2. 시각적 상태 모두 해제
+      setDragVisualOffset(null, 0, 0, true); // store 갱신이 뒤따르므로 invalidation 스킵
+      setDragSiblingOffsets(null);
       dropTargetRef.current = null;
+      lastResolvedDropTargetRef.current = null;
+      dragStartSnapshotRef.current = null;
       if (dropIndicatorSnapshotRef) {
         dropIndicatorSnapshotRef.current = null;
       }
 
-      // Pencil 패턴: 드래그 중 이미 reorder 완료 → history + DB persist만 수행
-      const startSnapshot = dragStartSnapshotRef.current;
-      dragStartSnapshotRef.current = null;
+      // 3. 단일 store commit
+      if (finalTarget && !finalTarget.isAdjacentInsertion) {
+        const state = useStore.getState();
+        const updates = computeReorderFromDropTarget(finalTarget, elementId, {
+          elementsMap: state.elementsMap,
+          childrenMap: state.childrenMap,
+        });
+        if (updates.length > 0) {
+          state.batchUpdateElementOrders(updates);
+        }
+      }
 
+      // 4. History + DB Persist
       if (startSnapshot) {
-        // History: 드래그 시작 → 현재 상태 diff
         const state = useStore.getState();
         const prevElements = startSnapshot
           .map((s) => {
@@ -277,7 +318,6 @@ export const SelectionLayer = memo(function SelectionLayer({
           prevElements.length > 0 &&
           prevElements.length === nextElements.length
         ) {
-          // 실제 변경이 있는 경우만 history 기록
           const hasChange = prevElements.some(
             (p, i) => p.order_num !== nextElements[i].order_num,
           );
@@ -322,17 +362,15 @@ export const SelectionLayer = memo(function SelectionLayer({
     if (onCancelDragRef)
       onCancelDragRef.current = () => {
         cancelDrag();
+        // A: 취소 시 시각적 오프셋 해제 (store는 변경하지 않았으므로 복원 불필요)
+        setDragVisualOffset(null);
+        setDragSiblingOffsets(null);
         if (dropIndicatorSnapshotRef) {
           dropIndicatorSnapshotRef.current = null;
         }
         dropTargetRef.current = null;
-        // Pencil 패턴: 취소 시 원래 순서 복원
-        const snapshot = dragStartSnapshotRef.current;
-        if (snapshot) {
-          const state = useStore.getState();
-          state.batchUpdateElementOrders(snapshot);
-          dragStartSnapshotRef.current = null;
-        }
+        lastResolvedDropTargetRef.current = null;
+        dragStartSnapshotRef.current = null;
         selectionBoxRef.current?.resetPosition();
       };
   }, [
