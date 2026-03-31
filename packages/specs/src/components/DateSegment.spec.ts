@@ -135,7 +135,9 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
         const literalText = String(props.value ?? props.placeholder ?? "");
         if (!literalText) return [];
 
-        const rawFs = props.style?.fontSize ?? size.fontSize;
+        const rawFs = props.size
+          ? size.fontSize
+          : (props.style?.fontSize ?? size.fontSize);
         const resolvedFs =
           typeof rawFs === "number"
             ? rawFs
@@ -183,7 +185,9 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
 
       const bgAlpha = props.isFocused ? 1.0 : 0.7;
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

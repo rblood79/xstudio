@@ -155,7 +155,10 @@ export const InputSpec: ComponentSpec<InputProps> = {
             : parseFloat(String(styleBw)) || 0
           : 1;
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      // props.size가 명시적으로 설정된 경우 size.fontSize를 우선 사용
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

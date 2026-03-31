@@ -84,7 +84,9 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
 
       const width = (props.style?.width as number) || "auto";
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

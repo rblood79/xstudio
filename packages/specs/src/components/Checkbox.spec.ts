@@ -321,7 +321,9 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       const labelText = props.children || props.label || props.text;
       if (!hasChildren && labelText) {
         const textColor = props.style?.color ?? variant.text;
-        const rawFontSize = props.style?.fontSize ?? size.fontSize;
+        const rawFontSize = props.size
+          ? size.fontSize
+          : (props.style?.fontSize ?? size.fontSize);
         const resolvedFs =
           typeof rawFontSize === "number"
             ? rawFontSize

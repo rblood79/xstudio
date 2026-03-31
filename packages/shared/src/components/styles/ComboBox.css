@@ -127,8 +127,8 @@
       transition:
         border-color 200ms ease,
         background-color 200ms ease;
-      padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
-        var(--spacing-md);
+      padding: var(--combo-input-padding);
+      padding-right: var(--combo-btn-right);
     }
 
     &:has(

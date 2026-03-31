@@ -400,8 +400,16 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   propagation: {
     rules: [
       { parentProp: "size", childPath: "SelectTrigger", override: true },
-      { parentProp: "size", childPath: "SelectValue", override: true },
-      { parentProp: "size", childPath: "SelectIcon", override: true },
+      {
+        parentProp: "size",
+        childPath: ["SelectTrigger", "SelectValue"],
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: ["SelectTrigger", "SelectIcon"],
+        override: true,
+      },
       { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "label",

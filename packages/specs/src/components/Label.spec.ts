@@ -149,7 +149,11 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
 
       const width = (props.style?.width as number) || "auto";
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      // props.size가 명시적으로 설정된 경우 size.fontSize를 우선 사용
+      // (propagation이 size prop만 변경하고 style.fontSize는 갱신하지 않으므로)
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

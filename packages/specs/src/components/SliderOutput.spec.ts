@@ -98,7 +98,9 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
       const text = props.children ?? "";
       if (!text) return [];
 
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize
