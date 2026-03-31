@@ -112,6 +112,8 @@ const PROGRESSBAR_TAGS = new Set([
 
 /** Slider 태그 집합 */
 const SLIDER_TAGS = new Set(["slider"]);
+/** DatePicker/DateRangePicker 내 Popover로 표시되는 자식 — Taffy 레이아웃 제외 */
+const POPOVER_CHILDREN_TAGS = new Set(["Calendar", "RangeCalendar"]);
 
 /** Slider 사이즈별 gap (SliderSpec.sizes.gap 동기) */
 const SLIDER_GAP: Record<string, number> = {
@@ -1396,11 +1398,9 @@ export function applyImplicitStyles(
   // ── DatePicker / DateRangePicker — flex column + gap + Label 필터링 + labelPosition ─────
   if (containerTag === "datepicker" || containerTag === "daterangepicker") {
     const hasLabel = !!containerProps?.label;
-    // Calendar/RangeCalendar は Popover で表示されるため Taffy レイアウトから除外
-    const POPOVER_CHILDREN = new Set(["Calendar", "RangeCalendar"]);
     filteredChildren = children.filter((c) => {
       if (c.tag === "Label") return hasLabel;
-      return !POPOVER_CHILDREN.has(c.tag);
+      return !POPOVER_CHILDREN_TAGS.has(c.tag);
     });
 
     const dpLabelPos = containerProps?.labelPosition as string | undefined;

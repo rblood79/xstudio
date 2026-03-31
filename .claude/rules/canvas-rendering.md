@@ -256,6 +256,13 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 
 - LayoutContainer 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출
 
+## Popover 자식 Taffy 레이아웃 제외
+
+DatePicker/DateRangePicker 내부의 Calendar/RangeCalendar은 Preview에서 Popover로 표시되므로 WebGL Taffy 레이아웃에 참여하면 안 됨.
+
+- `POPOVER_CHILDREN_TAGS` (모듈 스코프 상수): `Set(["Calendar", "RangeCalendar"])`
+- `implicitStyles.ts`에서 `filteredChildren`에서 제외하여 `labelPosition: "side"` 시 Label + DateInput만 row 배치
+
 ## Spec Container Dimension Injection (CRITICAL)
 
 Spec shapes가 레이아웃 엔진(Taffy) 결과(containerWidth/Height)를 필요로 할 때:

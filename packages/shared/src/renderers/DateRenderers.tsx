@@ -148,8 +148,9 @@ export const renderDatePicker = (
   const size = element.props.size as string | undefined;
   const variant = element.props.variant as string | undefined;
   const granularity = getGranularity();
-  // locale/calendarSystem/granularity 변경 시 리마운트 (CalendarDate↔ZonedDateTime 타입 전환)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${granularity}`;
+  const isTime = ["hour", "minute", "second"].includes(granularity);
+  // locale/calendarSystem + date↔time 타입 전환 시 리마운트 (CalendarDate↔ZonedDateTime)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${isTime}`;
 
   return (
     <DatePicker
@@ -240,8 +241,8 @@ export const renderDateRangePicker = (
   const calendarSystem = element.props.calendarSystem as string | undefined;
   const size = element.props.size as string | undefined;
   const granularity = getGranularity();
-  // locale/calendarSystem/granularity 변경 시 리마운트 (CalendarDate↔ZonedDateTime 타입 전환)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${granularity}`;
+  const isTime = ["hour", "minute", "second"].includes(granularity);
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${isTime}`;
 
   return (
     <DateRangePicker

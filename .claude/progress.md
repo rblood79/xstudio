@@ -81,23 +81,41 @@
 | Label factory     | 7개 factory      | TextField/TextArea/NumberField/SearchField/Select/ComboBox/ColorField에 `width/height: "fit-content"` 추가 |
 | implicitStyles    | side label       | `minWidth: FORM_SIDE_LABEL_WIDTH` 강제 주입 제거                                                           |
 
+## DatePicker/DateRangePicker 기능 확장 (2026-03-31)
+
+| 수정                | 대상                                                      | 내용                                                                               |
+| ------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Popover→Dialog 패턴 | DatePicker, DateRangePicker                               | Popover에서 data-size/variant 제거 → Dialog에 전달, Calendar에 data-size 직접 전달 |
+| Dialog skipCSS      | Dialog.spec.ts                                            | `skipCSSGeneration: true` + generated/Dialog.css 삭제                              |
+| DateSegment skipCSS | DateSegment.spec.ts                                       | `skipCSSGeneration: true` + generated/DateSegment.css 삭제                         |
+| CSS xs/xl 추가      | DatePicker.css, DateRangePicker.css, Dialog.css           | 5단계 size variants 완비                                                           |
+| Spec xs/xl 추가     | DATE_PICKER_SIZES, Dialog.spec, ListBox.spec              | 5단계 size 정의                                                                    |
+| visibleMonths       | DatePicker, DateRangePicker, Calendar                     | Spec properties + propagation + 복수 CalendarGrid 렌더링                           |
+| granularity 시간    | DatePicker, DateRangePicker                               | placeholderValue(now) + TimeField 자동 표시 + granularity 전파                     |
+| labelPosition side  | DatePicker.css, DateRangePicker.css, .tsx, implicitStyles | CSS + WebGL 양쪽 side 레이아웃 지원                                                |
+| Popover 자식 제외   | implicitStyles.ts                                         | Calendar/RangeCalendar을 Taffy 레이아웃에서 제외 (POPOVER_CHILDREN_TAGS)           |
+| factory 기본값      | DateColorComponents.ts                                    | hideTimeZone/shouldForceLeadingZeros/visibleMonths 기본값                          |
+| CSS import 정리     | index.css, Popover.css                                    | Calendar.css, Popover.css 수동 import 추가, 주석 정정                              |
+
 ## 다음 작업 후보
 
 - ADR-045 (ADR-041/048 이후)
 - ADR-046 (S2 계약 확장)
 - `resolveSpecFontSize()` 유틸리티 추출 — 56개 Spec의 동일 3단계 패턴 통합
 - `override: true` 엔진 자동화 — `parentProp === "size"` 암묵 적용
+- `getGranularity()` / `isTimeGranularity` 헬퍼 추출 — DateRenderers.tsx / DatePicker.tsx 중복 해소
 
 ## 알려진 이슈
 
 - `LABEL_DELEGATION_PARENT_TAGS`/`LABEL_WRAPPER_TAGS` (fullTreeLayout.ts Label DFS) — Registry 교체 가능하지만 복잡한 DFS 로직이라 안전하게 유지
 - 기존 생성된 컴포넌트의 Label에 `width: "fit-content"` 미설정 가능 — 새로 생성한 컴포넌트에서만 정상 동작
+- 기존 DatePicker/DateRangePicker에 `hideTimeZone`/`shouldForceLeadingZeros` prop 없음 — 렌더러 `!== false` 패턴으로 동작은 true이지만 프로퍼티 패널 표시는 off
 
 ## 세션 로그
 
 | 날짜       | 에이전트 | 작업 요약                                                                                                                           | 결과 |
 | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 2026-03-31 | main     | ADR-048 후속 — size propagation WebGL 정합성 (override, 중첩경로, fontSize 우선순위, Label factory fit-content, ListBox CSS xs/xl)  | 완료 |
+| 2026-03-31 | main     | ADR-048 후속 + DatePicker 기능 확장 (size propagation, visibleMonths, granularity 시간, labelPosition, Popover→Dialog 패턴)         | 완료 |
 | 2026-03-27 | main     | ADR-041 Phase 0~4 전체 완료 (Card/Slider/Icon hybrid + 수동 에디터 22개 삭제 + Phase 4 정리)                                        | 완료 |
 | 2026-03-27 | main     | ADR-041 Phase 2~3 확장 (30개+ Spec properties + Checkbox/Switch/Radio hybrid + icon field + specRegistry 58개 + createElement 패치) | 완료 |
 | 2026-03-27 | main     | ADR-048 Phase 2-E/F + 4 + 5 전체 완료 (3경로 교체+Factory+정리)                                                                     | 완료 |

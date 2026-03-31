@@ -42,6 +42,10 @@
 - **CSS 수동 파일 index.css 미등록 + 컴포넌트 직접 import 의존**: `Calendar.css`(수동), `Popover.css`(수동)가 `index.css`에 없고 각각 `Calendar.tsx`에서 직접 import되거나 누락된 상태. `generated/` 파일과 수동 파일이 서로 다른 경로로 로드되어 `@layer` 우선순위 제어 불가. 수동 CSS 추가 시 반드시 `index.css`에 generated → manual 순서로 등록 필수
 - **generated/Popover.css `background: --bg-inset` 토큰 오남용**: Popover는 오버레이이므로 `--bg-raised` 또는 `--bg-overlay`가 의미상 올바르나 Spec에 `{color.layer-2}`(`--bg-inset`)로 정의됨 — Popover.spec.ts의 기본 variant background 토큰 재검토 필요
 - **generated/Popover.css `position: fixed` + Popover.css `position: static` override 체인**: Popover.css가 index.css에 누락되면 `.react-aria-Popover .react-aria-Dialog { position: static }` 규칙이 미적용 → DatePicker/DateRangePicker 팝오버 2×2px 축소. import 누락 시 즉시 확인 필요
+- **`new Set([...])` 조건 블록 내부 생성 + 일본어 주석 혼입**: `applyImplicitStyles` 같은 hot path 조건 블록 안에 고정 Set 리터럴을 생성하는 패턴(모듈 최상단 상수로 호이스팅 필수) + 같은 지점에 일본어 주석이 함께 삽입된 패턴 — 커밋 전 일본어/중국어 문자(は、ため、から 등) grep 점검 필요 (implicitStyles.ts POPOVER_CHILDREN 사례)
+- **`as unknown as T` — 제네릭 DateValue placeholderValue**: `now()` 반환 `ZonedDateTime`을 `T extends DateValue`로 캐스팅 시 이중 우회. `placeholderValue` prop 타입을 `DateValue | undefined`로 완화하거나 업캐스팅으로 해결 (DatePicker.tsx, DateRangePicker.tsx 동일 패턴)
+- **remountKey granularity 과세분화**: DatePicker/DateRangePicker `remountKey`에 granularity 4-값을 그대로 포함하면 "hour"→"minute" 전환에서 불필요한 리마운트 발생 — `isTimeGranularity ? "time" : "date"` 2-값으로 단순화하여 day↔time 경계에서만 리마운트
+- **`!== false` 기본값 전환 패턴**: `Boolean(prop)` → `prop !== false`로 변경 시 기존 저장 요소(prop 키 없음)가 영향을 받음 — 팩토리 기본값 추가 없이 단독으로 변경하면 마이그레이션 이슈. DateRenderers.tsx의 hideTimeZone/shouldForceLeadingZeros 사례
 
 ## False Positive 기록
 
