@@ -38,8 +38,8 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
     rules: [
       { parentProp: "variant", childPath: "CalendarHeader" },
       { parentProp: "variant", childPath: "CalendarGrid" },
-      { parentProp: "size", childPath: "CalendarHeader" },
-      { parentProp: "size", childPath: "CalendarGrid" },
+      { parentProp: "size", childPath: "CalendarHeader", override: true },
+      { parentProp: "size", childPath: "CalendarGrid", override: true },
       { parentProp: "locale", childPath: "CalendarHeader" },
       { parentProp: "locale", childPath: "CalendarGrid" },
       { parentProp: "calendarSystem", childPath: "CalendarHeader" },

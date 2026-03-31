@@ -96,9 +96,9 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Label" },
-      { parentProp: "size", childPath: "DateInput" },
-      { parentProp: "size", childPath: "DateSegment" },
+      { parentProp: "size", childPath: "Label", override: true },
+      { parentProp: "size", childPath: "DateInput", override: true },
+      { parentProp: "size", childPath: "DateSegment", override: true },
       {
         parentProp: "label",
         childPath: "Label",

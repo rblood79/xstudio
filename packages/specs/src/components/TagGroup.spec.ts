@@ -310,11 +310,11 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Tag" },
-      { parentProp: "size", childPath: "TagList" },
+      { parentProp: "size", childPath: "Tag", override: true },
+      { parentProp: "size", childPath: "TagList", override: true },
       { parentProp: "allowsRemoving", childPath: "Tag" },
       { parentProp: "allowsRemoving", childPath: "TagList" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "label",
         childPath: "Label",

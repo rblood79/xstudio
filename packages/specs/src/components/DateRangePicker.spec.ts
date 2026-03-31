@@ -288,15 +288,15 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       },
 
       // size → 직접 자식
-      { parentProp: "size", childPath: "DateInput" },
-      { parentProp: "size", childPath: "Calendar" },
-      { parentProp: "size", childPath: "RangeCalendar" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "DateInput", override: true },
+      { parentProp: "size", childPath: "Calendar", override: true },
+      { parentProp: "size", childPath: "RangeCalendar", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
       // size → Calendar/RangeCalendar 서브트리
-      { parentProp: "size", childPath: ["Calendar", "CalendarHeader"] },
-      { parentProp: "size", childPath: ["Calendar", "CalendarGrid"] },
-      { parentProp: "size", childPath: ["RangeCalendar", "CalendarHeader"] },
-      { parentProp: "size", childPath: ["RangeCalendar", "CalendarGrid"] },
+      { parentProp: "size", childPath: ["Calendar", "CalendarHeader"], override: true },
+      { parentProp: "size", childPath: ["Calendar", "CalendarGrid"], override: true },
+      { parentProp: "size", childPath: ["RangeCalendar", "CalendarHeader"], override: true },
+      { parentProp: "size", childPath: ["RangeCalendar", "CalendarGrid"], override: true },
 
       // variant
       { parentProp: "variant", childPath: "Calendar" },

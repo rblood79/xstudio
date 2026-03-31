@@ -138,7 +138,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "children",
         childPath: "Label",

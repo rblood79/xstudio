@@ -353,7 +353,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   },
 
   propagation: {
-    rules: [{ parentProp: "size", childPath: "Label" }],
+    rules: [{ parentProp: "size", childPath: "Label", override: true }],
   },
 
   states: {

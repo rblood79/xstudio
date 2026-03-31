@@ -525,8 +525,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Label" },
-      { parentProp: "size", childPath: "ComboBoxWrapper" },
+      { parentProp: "size", childPath: "Label", override: true },
+      { parentProp: "size", childPath: "ComboBoxWrapper", override: true },
       {
         parentProp: "label",
         childPath: "Label",

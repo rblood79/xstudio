@@ -233,9 +233,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "ProgressBarTrack" },
-      { parentProp: "size", childPath: "ProgressBarValue" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "ProgressBarTrack", override: true },
+      { parentProp: "size", childPath: "ProgressBarValue", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
     ],
   },
 

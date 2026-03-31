@@ -159,10 +159,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "SliderTrack" },
-      { parentProp: "size", childPath: "SliderOutput" },
-      { parentProp: "size", childPath: "SliderThumb" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "SliderTrack", override: true },
+      { parentProp: "size", childPath: "SliderOutput", override: true },
+      { parentProp: "size", childPath: "SliderThumb", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "label",
         childPath: "Label",

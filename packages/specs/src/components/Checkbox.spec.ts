@@ -153,7 +153,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "children",
         childPath: "Label",

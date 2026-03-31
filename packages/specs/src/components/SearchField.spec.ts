@@ -289,11 +289,11 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "SearchFieldWrapper" },
-      { parentProp: "size", childPath: "SearchInput" },
-      { parentProp: "size", childPath: "SearchIcon" },
-      { parentProp: "size", childPath: "SearchClearButton" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "SearchFieldWrapper", override: true },
+      { parentProp: "size", childPath: "SearchInput", override: true },
+      { parentProp: "size", childPath: "SearchIcon", override: true },
+      { parentProp: "size", childPath: "SearchClearButton", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "label",
         childPath: "Label",

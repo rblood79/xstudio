@@ -420,8 +420,8 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Label" },
-      { parentProp: "size", childPath: "Input" },
+      { parentProp: "size", childPath: "Label", override: true },
+      { parentProp: "size", childPath: "Input", override: true },
       {
         parentProp: "label",
         childPath: "Label",

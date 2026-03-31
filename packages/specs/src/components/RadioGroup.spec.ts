@@ -121,9 +121,9 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Radio" },
-      { parentProp: "size", childPath: "RadioItems" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Radio", override: true },
+      { parentProp: "size", childPath: "RadioItems", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
     ],
   },
 

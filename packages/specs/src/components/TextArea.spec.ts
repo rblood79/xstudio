@@ -111,7 +111,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   },
 
   propagation: {
-    rules: [{ parentProp: "size", childPath: "Label" }],
+    rules: [{ parentProp: "size", childPath: "Label", override: true }],
   },
 
   properties: {

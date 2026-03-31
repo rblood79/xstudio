@@ -121,9 +121,9 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Checkbox" },
-      { parentProp: "size", childPath: "CheckboxItems" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Checkbox", override: true },
+      { parentProp: "size", childPath: "CheckboxItems", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
     ],
   },
 

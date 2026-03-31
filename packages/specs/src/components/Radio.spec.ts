@@ -167,7 +167,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "children",
         childPath: "Label",

@@ -409,10 +409,10 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "ComboBoxWrapper" },
-      { parentProp: "size", childPath: "ComboBoxInput" },
-      { parentProp: "size", childPath: "ComboBoxTrigger" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "ComboBoxWrapper", override: true },
+      { parentProp: "size", childPath: "ComboBoxInput", override: true },
+      { parentProp: "size", childPath: "ComboBoxTrigger", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
       {
         parentProp: "label",
         childPath: "Label",

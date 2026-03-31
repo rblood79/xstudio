@@ -231,9 +231,9 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   propagation: {
     rules: [
-      { parentProp: "size", childPath: "MeterTrack" },
-      { parentProp: "size", childPath: "MeterValue" },
-      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "MeterTrack", override: true },
+      { parentProp: "size", childPath: "MeterValue", override: true },
+      { parentProp: "size", childPath: "Label", override: true },
     ],
   },
 
