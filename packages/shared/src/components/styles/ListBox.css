@@ -258,7 +258,8 @@
     }
 
     .react-aria-ListBoxItem {
-      padding: var(--spacing) var(--spacing-md) var(--spacing) var(--spacing-xl);
+      padding: var(--lb-item-padding);
+      padding-left: var(--spacing-xl);
 
       &[data-focus-visible] {
         outline: none;
@@ -352,7 +353,21 @@
   }
 
   /* ========== Size Variants (Button size 시스템 기준) ========== */
-  /* sm: Button sm = text-xs / text-xs--line-height */
+  /* xs: text-2xs */
+  .react-aria-ListBox[data-size="xs"] {
+    --lb-padding: var(--spacing-3xs);
+    --lb-gap: var(--spacing-3xs);
+    --lb-header-size: var(--text-2xs);
+    --lb-header-padding: 0 var(--spacing-xs);
+    --lb-item-padding: var(--spacing-3xs) var(--spacing-xs);
+    --lb-item-min-height: 16px;
+    --lb-item-size: var(--text-2xs);
+    --lb-item-line-height: var(--text-2xs--line-height);
+    --lb-desc-size: var(--text-2xs);
+    --lb-desc-line-height: var(--text-2xs--line-height);
+  }
+
+  /* sm: text-xs */
   .react-aria-ListBox[data-size="sm"] {
     --lb-padding: var(--spacing-2xs);
     --lb-gap: var(--spacing-3xs);
@@ -366,7 +381,7 @@
     --lb-desc-line-height: var(--text-2xs--line-height);
   }
 
-  /* md: Button md = text-sm / text-sm--line-height */
+  /* md: text-sm */
   .react-aria-ListBox[data-size="md"] {
     --lb-padding: var(--spacing-xs);
     --lb-gap: var(--spacing-2xs);
@@ -380,7 +395,7 @@
     --lb-desc-line-height: var(--text-xs--line-height);
   }
 
-  /* lg: Button lg = text-base / text-base--line-height */
+  /* lg: text-base */
   .react-aria-ListBox[data-size="lg"] {
     --lb-padding: var(--spacing-sm);
     --lb-gap: var(--spacing-xs);
@@ -394,9 +409,25 @@
     --lb-desc-line-height: var(--text-sm--line-height);
   }
 
+  /* xl: text-lg */
+  .react-aria-ListBox[data-size="xl"] {
+    --lb-padding: var(--spacing-md);
+    --lb-gap: var(--spacing-xs);
+    --lb-header-size: var(--text-lg);
+    --lb-header-padding: 0 var(--spacing-xl);
+    --lb-item-padding: var(--spacing-md) var(--spacing-xl);
+    --lb-item-min-height: 24px;
+    --lb-item-size: var(--text-lg);
+    --lb-item-line-height: var(--text-lg--line-height);
+    --lb-desc-size: var(--text-sm);
+    --lb-desc-line-height: var(--text-sm--line-height);
+  }
+
+  .react-aria-ListBox[data-size="xs"],
   .react-aria-ListBox[data-size="sm"],
   .react-aria-ListBox[data-size="md"],
-  .react-aria-ListBox[data-size="lg"] {
+  .react-aria-ListBox[data-size="lg"],
+  .react-aria-ListBox[data-size="xl"] {
     padding: var(--lb-padding);
     gap: var(--lb-gap);
 
