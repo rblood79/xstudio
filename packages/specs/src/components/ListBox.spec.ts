@@ -219,6 +219,14 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   },
 
   sizes: {
+    xs: {
+      height: 0,
+      paddingX: 4,
+      paddingY: 2,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      gap: 2,
+    },
     sm: {
       height: 0,
       paddingX: 8,
@@ -240,6 +248,14 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       paddingX: 16,
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
+      gap: 6,
+    },
+    xl: {
+      height: 0,
+      paddingX: 20,
+      paddingY: 12,
+      fontSize: "{typography.text-xl}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 6,
     },

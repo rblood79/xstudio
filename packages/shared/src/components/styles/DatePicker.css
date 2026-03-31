@@ -223,54 +223,19 @@
     }
   }
 
-  /* ========== Popover (body에 포탈 — data-size/data-variant로 size 전파) ========== */
+  /* ========== Popover (body에 포탈) ========== */
   .react-aria-Popover[data-trigger="DatePicker"] {
     max-width: unset;
+  }
 
-    /* Popover 내부 Calendar에 size별 스타일 전파 */
-    &[data-size="sm"] .react-aria-Calendar {
-      header .react-aria-Heading {
-        font-size: var(--text-xs);
-      }
-      .react-aria-Button {
-        width: calc(var(--text-2xl) + var(--spacing-xs));
-        height: var(--text-2xl);
-      }
-      .react-aria-CalendarGridHeader th {
-        font-size: var(--text-xs);
-        line-height: var(--text-xs--line-height);
-        height: var(--text-2xl);
-      }
-      .react-aria-CalendarGridBody td .react-aria-CalendarCell {
-        width: var(--text-2xl);
-        height: var(--text-2xl);
-        line-height: var(--text-xs--line-height);
-        font-size: var(--text-xs);
-      }
+  /* ========== Dialog 내부 Calendar — Dialog가 배경/테두리/padding 담당 ========== */
+  .react-aria-Popover[data-trigger="DatePicker"] .react-aria-Dialog {
+    .react-aria-Calendar {
+      background: transparent;
+      border: none;
+      padding: 0;
     }
 
-    &[data-size="lg"] .react-aria-Calendar {
-      header .react-aria-Heading {
-        font-size: var(--text-base);
-      }
-      .react-aria-Button {
-        width: calc(var(--text-4xl) + var(--spacing-xs));
-        height: var(--text-4xl);
-      }
-      .react-aria-CalendarGridHeader th {
-        font-size: var(--text-base);
-        line-height: var(--text-base--line-height);
-        height: var(--text-4xl);
-      }
-      .react-aria-CalendarGridBody td .react-aria-CalendarCell {
-        width: var(--text-4xl);
-        height: var(--text-4xl);
-        line-height: var(--text-base--line-height);
-        font-size: var(--text-base);
-      }
-    }
-
-    /* Popover 내부 variant 전파 */
     &[data-variant="accent"] .react-aria-Calendar {
       .react-aria-CalendarCell[data-selected] {
         background: var(--accent);

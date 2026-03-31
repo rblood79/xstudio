@@ -241,7 +241,6 @@ function applySideLabelChildStyles(
           style: {
             ...cs,
             width: cs.width ?? FORM_SIDE_LABEL_WIDTH,
-            minWidth: cs.minWidth ?? FORM_SIDE_LABEL_WIDTH,
             flexShrink: cs.flexShrink ?? 0,
             alignSelf: cs.alignSelf ?? "flex-start",
           },
@@ -257,7 +256,8 @@ function applySideLabelChildStyles(
           style: {
             ...cs,
             width: cs.width ?? "100%",
-            marginLeft: cs.marginLeft ?? FORM_SIDE_LABEL_WIDTH + FORM_SIDE_LABEL_GAP,
+            marginLeft:
+              cs.marginLeft ?? FORM_SIDE_LABEL_WIDTH + FORM_SIDE_LABEL_GAP,
           },
         },
       };
@@ -803,11 +803,9 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width:
-                labelPos === "side" ? cs.width : (cs.width ?? "100%"),
+              width: labelPos === "side" ? cs.width : (cs.width ?? "100%"),
               flex: labelPos === "side" ? (cs.flex ?? 1) : cs.flex,
-              minWidth:
-                labelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
+              minWidth: labelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
               gap: cs.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
               ...withSpecPadding(cs, sizeName),
             },
@@ -859,8 +857,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width:
-                nfLabelPos === "side" ? cs.width : (cs.width ?? "100%"),
+              width: nfLabelPos === "side" ? cs.width : (cs.width ?? "100%"),
               flex: nfLabelPos === "side" ? (cs.flex ?? 1) : cs.flex,
               minWidth:
                 nfLabelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,

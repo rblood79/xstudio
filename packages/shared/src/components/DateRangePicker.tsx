@@ -201,10 +201,11 @@ export function DateRangePicker<T extends DateValue>({
       </Group>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
-      <Popover data-size={size} data-variant={variant}>
-        <Dialog>
+      <Popover>
+        <Dialog data-size={size} data-variant={variant}>
           <div className="date-picker-popup">
             <RangeCalendar
+              data-size={size}
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
             >

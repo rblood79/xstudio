@@ -119,7 +119,7 @@
 
 /* Overlay Components */
 @import "./Modal.css"; /* Foundation — Spec 없음 */
-@import "./generated/Dialog.css";
+@import "./Dialog.css";
 @import "./generated/Popover.css";
 
 /* Advanced Color Components — skipCSSGeneration, 수동 CSS */

@@ -29,6 +29,12 @@ globs:
 - `_hasChildren` 체크 패턴 필수: 배경/테두리 shapes 직후, standalone 콘텐츠 shapes 직전에 배치
 - Child Spec 추가 시 `packages/specs/src/index.ts` + `components/index.ts` 양쪽에 export 후 `pnpm build:specs`
 - `TAG_SPEC_MAP`에 해당 태그의 Spec 등록 필수
+- **Spec shapes fontSize 우선순위 (Propagation 정합성)**: `props.size`가 명시적으로 설정된 경우 `size.fontSize`를 우선 사용. Propagation은 `size` prop만 변경하고 `style.fontSize`는 갱신하지 않으므로, `props.style?.fontSize`가 우선되면 size 변경이 Canvas에 미반영됨.
+  ```typescript
+  const rawFontSize = props.size
+    ? size.fontSize
+    : (props.style?.fontSize ?? size.fontSize);
+  ```
 
 ## Spec ↔ CSS 경계 (skipCSSGeneration)
 

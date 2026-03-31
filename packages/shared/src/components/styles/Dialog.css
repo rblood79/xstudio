@@ -2,7 +2,7 @@
   /* ========== Base Dialog Styles ========== */
   .react-aria-Dialog {
     outline: none;
-    padding: var(--spacing-xl);
+    padding: var(--spacing-sm);
     max-height: inherit;
     box-sizing: border-box;
     overflow: auto;
@@ -59,8 +59,17 @@
   }
 
   /* ========== Size Variants ========== */
+  .react-aria-Dialog[data-size="xs"] {
+    padding: var(--spacing-2xs);
+    border-radius: var(--radius-md);
+
+    .react-aria-Heading[slot="title"] {
+      font-size: var(--text-base);
+    }
+  }
+
   .react-aria-Dialog[data-size="sm"] {
-    padding: var(--spacing-md);
+    padding: var(--spacing-xs);
     border-radius: var(--radius-lg);
 
     .react-aria-Heading[slot="title"] {
@@ -69,7 +78,7 @@
   }
 
   .react-aria-Dialog[data-size="md"] {
-    padding: var(--spacing-xl);
+    padding: var(--spacing-sm);
     border-radius: var(--radius-xl);
 
     .react-aria-Heading[slot="title"] {
@@ -78,11 +87,20 @@
   }
 
   .react-aria-Dialog[data-size="lg"] {
-    padding: var(--spacing-xl);
+    padding: var(--spacing-md);
     border-radius: var(--radius-2xl);
 
     .react-aria-Heading[slot="title"] {
       font-size: var(--text-2xl);
+    }
+  }
+
+  .react-aria-Dialog[data-size="xl"] {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-2xl);
+
+    .react-aria-Heading[slot="title"] {
+      font-size: var(--text-3xl);
     }
   }
 

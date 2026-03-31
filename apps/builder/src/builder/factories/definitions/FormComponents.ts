@@ -54,7 +54,8 @@ export function createTextFieldDefinition(
         props: {
           children: "Text Field",
           style: {
-            fontSize: 14,
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -140,7 +141,8 @@ export function createTextAreaDefinition(
         props: {
           children: "Text Area",
           style: {
-            fontSize: 14,
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -457,9 +459,9 @@ export function createNumberFieldDefinition(
         props: {
           children: "Number",
           style: {
-            display: "block",
-            fontSize: "14px",
-            fontWeight: "500",
+            width: "fit-content",
+            height: "fit-content",
+            fontWeight: 500,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -579,6 +581,8 @@ export function createSearchFieldDefinition(
         props: {
           children: "Search",
           style: {
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -610,7 +614,7 @@ export function createSearchFieldDefinition(
             props: {
               children: "",
               placeholder: "Search...",
-              style: { flex: 1, fontSize: 14 },
+              style: { flex: 1 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,

@@ -23,7 +23,7 @@
 - **propagation 규칙과 수동 syncChildProp 병존으로 이중 업데이트**: Spec에 `{ parentProp: "value", childPath: "SliderTrack", override: true }` 규칙이 있음에도 에디터에서 `syncSliderTrackValue`로 SliderTrack을 별도 업데이트 — propagation 규칙 추가 시 에디터의 대응 수동 sync 코드 반드시 제거
 - **`handleRangeModeToggle`에서 `childrenMap` stale props 사용**: `sliderOutput.props`를 childrenMap 경유로 spread — `elementsMap.get(id)?.props` 로 최신 조회 필수 (zustand-childrenmap-staleness 반복 패턴)
 - **Spec properties field key가 Props 인터페이스에 미등록**: `Slider.spec.ts`의 `key: "orientation"` 필드가 `SliderProps`에 없는 패턴 — Spec properties 추가 시 Props 인터페이스에도 동시 등록 필수
-- **Spec sizes 키와 Props.size 타입 불일치**: `ListBox.spec.ts`에서 `sizes` 키는 `sm/md/lg`인데 `ListBoxProps.size`는 `"S"|"M"|"L"` — runtime에 `spec.sizes[props.size]` undefined 반환
+- **Spec sizes 키와 CSS size variant 불일치**: `ListBox.spec.ts`의 `sizes` 키는 `sm/md/lg` 3개인데, CSS에 `xs`/`xl` 추가 시 Spec sizes에 동시 추가 누락 → `spec.sizes["xs"]` undefined 반환. `ListBoxProps.size` 타입도 확장 필요. CSS size variant 추가 시 Spec sizes + Props 타입 3곳 동시 갱신 필수
 - **string-array join/split 구분자 비대칭**: `SpecField.tsx`의 `string-array` 케이스에서 join은 `sep + " "`, split은 `sep`만 사용 — 커스텀 separator 사용 시 round-trip 불완전
 - **memo 컴포넌트 내 useCallback 누락 (핸들러)**: `GenericPropertyEditor` 등 memo 컴포넌트에서 자식에게 전달하는 콜백을 useCallback 없이 정의 — 자식이 memo여도 매 렌더마다 새 참조로 리렌더 유발
 - **JSX 객체 단일 인스턴스 이중 위치 참조**: `customIdField` 변수에 JSX를 한 번 생성 후 두 조건 분기에서 동시 사용 — 함수로 분리하여 각 경로에서 독립 생성 필요
@@ -37,6 +37,8 @@
 - **프로덕션 렌더 경로 `console.log` 미제거**: `Menu.tsx`에 개발 디버그용 log 20여 개가 렌더 경로에 존재 — 제거 필수
 - **Spec props → Renderer 전달 누락 (E2E 단절)**: `Menu.spec.ts`에 `align`/`direction`/`shouldFlip` 추가 후 `renderActionMenu`에서 `MenuButton`으로 전달 안 됨 — Spec properties 추가 시 반드시 렌더러 전달 + API 매핑까지 E2E로 완성해야 함. `align`/`direction` → React Aria `placement` 변환 로직 필요
 - **React Aria API와 다른 Spec prop naming**: Tooltip/Popover는 React Aria `placement` prop을 그대로 사용하지만, Menu는 `align`+`direction` 분리 naming — React Aria `MenuTriggerProps`에는 `placement`가 없어 변환 레이어 필수. Spec 설계 시 React Aria API 이름을 먼저 확인 필요
+- **Spec shapes() fontSize 해결 3단계 패턴 (56개 파일 중복)**: `(1) rawFontSize = props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize)` → `(2) resolvedFs = typeof raw === "number" ? raw : raw.startsWith("{") ? resolveToken(raw) : raw` → `(3) fontSize = typeof resolvedFs === "number" ? resolvedFs : fallback` 패턴이 56개 Spec 파일에 복제. `utils/` 에 `resolveSpecFontSize(props, size, fallback)` 헬퍼 추출 필요. fallback 값은 파일마다 12/14/16으로 다르므로 매개변수화 필요
+- **`override: true` 일괄 추가 패턴**: propagation `size` 규칙에 `override: true`가 22개 Spec 파일에 일괄 추가됨 — size prop은 항상 override여야 하므로, propagation 엔진에서 `parentProp === "size"`인 규칙에 `override: true`를 자동 적용하거나 별도 `sizeRules` 배열 타입으로 분리하는 설계 고려 필요
 
 ## False Positive 기록
 

@@ -668,3 +668,33 @@ for (const rule of rules) {
 | implicitStyles.ts의 fontSize 주입이 fullTreeLayout과 별도 경로                | MED  |   2   | implicitStyles도 Registry 기반 교체 대상에 포함                              |
 | Label transform 함수로 LABEL_SIZE_STYLE 재현 정확도                           | MED  |   2   | Phase 2에서 LABEL_SIZE_STYLE 완전 매핑 검증 후 진행                          |
 | tagGroupAncestorSize 별도 selector와의 우선순위 체인 보존                     | MED  |   3   | props.size > parentDelegated > tagGroupAncestor > "md" 체인 유지             |
+
+## 후속 버그 수정 (2026-03-31)
+
+### 1. `override: true` 일괄 적용 (22개 Spec)
+
+**문제**: size 전파 시 `childHasValue` 체크로 인해 자식에 이미 size가 있으면 전파가 스킵됨
+**수정**: 모든 `parentProp: "size"` 규칙에 `override: true` 추가 (22개 Spec)
+
+### 2. 중첩 경로 수정 (Select/ComboBox)
+
+**문제**: SelectValue/SelectIcon은 SelectTrigger의 자식, ComboBoxInput/ComboBoxTrigger는 ComboBoxWrapper의 자식이므로 직접 경로로 찾지 못함
+**수정**: 중첩 경로로 변경 — `["SelectTrigger", "SelectValue"]`, `["ComboBoxWrapper", "ComboBoxInput"]` 등
+
+### 3. Spec shapes fontSize 우선순위 (12개 Spec)
+
+**문제**: DFS/Factory가 주입한 `style.fontSize`가 propagation으로 변경된 `size` prop보다 우선되어 Canvas에서 size 변경 미반영
+**수정**: `props.size`가 명시적으로 설정된 경우 `size.fontSize`를 우선 사용
+
+```typescript
+const rawFontSize = props.size
+  ? size.fontSize
+  : (props.style?.fontSize ?? size.fontSize);
+```
+
+대상: Label, SelectValue, Input, Description, FieldError, Radio, Checkbox, Switch, SliderOutput, ProgressBarValue, MeterValue, DateSegment
+
+### 4. Label factory `width: "fit-content"` 누락 (7개 factory)
+
+**문제**: DateField/TimeField Label factory에는 `width: "fit-content"`가 있어 side 모드에서 정상이지만, TextField/Select/ComboBox 등은 누락되어 `implicitStyles.ts`의 `FORM_SIDE_LABEL_WIDTH(176px)` fallback 적용
+**수정**: TextField, TextArea, NumberField, SearchField, Select, ComboBox, ColorField factory에 `width: "fit-content", height: "fit-content"` 추가 + `minWidth: FORM_SIDE_LABEL_WIDTH` 강제 주입 제거

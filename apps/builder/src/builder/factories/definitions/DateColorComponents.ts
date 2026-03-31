@@ -468,9 +468,9 @@ export function createColorFieldDefinition(
         props: {
           children: "Color",
           style: {
-            display: "block",
-            fontSize: "14px",
-            fontWeight: "500",
+            width: "fit-content",
+            height: "fit-content",
+            fontWeight: 500,
           },
         } as ComponentElementProps,
         ...ownerFields,

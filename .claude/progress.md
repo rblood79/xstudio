@@ -5,11 +5,12 @@
 
 ## 현재 상태
 
-- 최종 업데이트: 2026-03-27
+- 최종 업데이트: 2026-03-31
 - 활성 브랜치: main
 
 ## 최근 완료된 작업
 
+- ADR-048 후속 버그 수정 — size propagation WebGL/Preview 정합성 (2026-03-31, 아래 상세)
 - ADR-041 Spec-Driven Property Editor **Phase 0~4 전체 완료** (58개 Spec properties, 16개 hybrid, icon field, 수동 에디터 34개 삭제)
 - ADR-048 선언적 Props Propagation **Phase 0~5 전체 완료** (아래 상세)
 - Date & Time S2 전환 완료 (Calendar, DatePicker, DateRangePicker, RangeCalendar, DateField, TimeField)
@@ -67,19 +68,36 @@
 | LABEL_DELEGATION_PARENT_TAGS (DFS 내부) | 복잡한 DFS 로직이라 안전하게 유지 |
 | implicitStyles getDelegatedSize         | 범용 3단계 탐색 — 교체 불필요     |
 
+## ADR-048 후속 버그 수정 (2026-03-31)
+
+| 수정              | 대상             | 내용                                                                                                       |
+| ----------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| `override: true`  | 22개 Spec        | 모든 size 전파 규칙에 override 추가                                                                        |
+| 중첩 경로         | Select, ComboBox | SelectValue→`["SelectTrigger","SelectValue"]`, ComboBoxInput→`["ComboBoxWrapper","ComboBoxInput"]`         |
+| fontSize 우선순위 | 12개 Spec shapes | `props.size ? size.fontSize : (style.fontSize ?? size.fontSize)`                                           |
+| ListBox CSS       | xs/xl 추가       | `data-size` xs/xl variants + Popover 컨텍스트 변수 참조                                                    |
+| ComboBox CSS      | padding          | `.combobox-container` padding을 `--combo-input-padding` + `padding-right: --combo-btn-right`               |
+| data-size 이동    | Select, ComboBox | Popover→ListBox (S2 패턴: Popover padding=0)                                                               |
+| Label factory     | 7개 factory      | TextField/TextArea/NumberField/SearchField/Select/ComboBox/ColorField에 `width/height: "fit-content"` 추가 |
+| implicitStyles    | side label       | `minWidth: FORM_SIDE_LABEL_WIDTH` 강제 주입 제거                                                           |
+
 ## 다음 작업 후보
 
 - ADR-045 (ADR-041/048 이후)
 - ADR-046 (S2 계약 확장)
+- `resolveSpecFontSize()` 유틸리티 추출 — 56개 Spec의 동일 3단계 패턴 통합
+- `override: true` 엔진 자동화 — `parentProp === "size"` 암묵 적용
 
 ## 알려진 이슈
 
 - `LABEL_DELEGATION_PARENT_TAGS`/`LABEL_WRAPPER_TAGS` (fullTreeLayout.ts Label DFS) — Registry 교체 가능하지만 복잡한 DFS 로직이라 안전하게 유지
+- 기존 생성된 컴포넌트의 Label에 `width: "fit-content"` 미설정 가능 — 새로 생성한 컴포넌트에서만 정상 동작
 
 ## 세션 로그
 
 | 날짜       | 에이전트 | 작업 요약                                                                                                                           | 결과 |
 | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 2026-03-31 | main     | ADR-048 후속 — size propagation WebGL 정합성 (override, 중첩경로, fontSize 우선순위, Label factory fit-content, ListBox CSS xs/xl)  | 완료 |
 | 2026-03-27 | main     | ADR-041 Phase 0~4 전체 완료 (Card/Slider/Icon hybrid + 수동 에디터 22개 삭제 + Phase 4 정리)                                        | 완료 |
 | 2026-03-27 | main     | ADR-041 Phase 2~3 확장 (30개+ Spec properties + Checkbox/Switch/Radio hybrid + icon field + specRegistry 58개 + createElement 패치) | 완료 |
 | 2026-03-27 | main     | ADR-048 Phase 2-E/F + 4 + 5 전체 완료 (3경로 교체+Factory+정리)                                                                     | 완료 |

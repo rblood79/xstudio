@@ -44,7 +44,8 @@ export function createSelectDefinition(
         props: {
           children: "Select",
           style: {
-            fontSize: 14,
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -65,7 +66,7 @@ export function createSelectDefinition(
             tag: "SelectValue",
             props: {
               placeholder: "Choose an option...",
-              style: { flex: 1, fontSize: 14 },
+              style: { flex: 1 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -169,7 +170,8 @@ export function createComboBoxDefinition(
         props: {
           children: "Combo Box",
           style: {
-            fontSize: 14,
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -191,7 +193,7 @@ export function createComboBoxDefinition(
             props: {
               children: "",
               placeholder: "Type or select...",
-              style: { flex: 1, fontSize: 14 },
+              style: { flex: 1 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -295,7 +297,7 @@ export function createListBoxDefinition(
             tag: "Text",
             props: {
               children: "Aardvark",
-              style: { fontSize: 14, fontWeight: 500 },
+              style: { fontWeight: 500 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -325,7 +327,7 @@ export function createListBoxDefinition(
             tag: "Text",
             props: {
               children: "Cat",
-              style: { fontSize: 14, fontWeight: 500 },
+              style: { fontWeight: 500 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -355,7 +357,7 @@ export function createListBoxDefinition(
             tag: "Text",
             props: {
               children: "Kangaroo",
-              style: { fontSize: 14, fontWeight: 500 },
+              style: { fontWeight: 500 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -422,7 +424,7 @@ export function createGridListDefinition(
             tag: "Text",
             props: {
               children: "Desert Sunset",
-              style: { fontSize: 14, fontWeight: 600 },
+              style: { fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -452,7 +454,7 @@ export function createGridListDefinition(
             tag: "Text",
             props: {
               children: "Hiking Trail",
-              style: { fontSize: 14, fontWeight: 600 },
+              style: { fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -482,7 +484,7 @@ export function createGridListDefinition(
             tag: "Text",
             props: {
               children: "Mountain Sunrise",
-              style: { fontSize: 14, fontWeight: 600 },
+              style: { fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -536,7 +538,6 @@ export function createListDefinition(
         tag: "ListItem",
         props: {
           children: "Item 1",
-          style: { fontSize: 14 },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -545,7 +546,6 @@ export function createListDefinition(
         tag: "ListItem",
         props: {
           children: "Item 2",
-          style: { fontSize: 14 },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -554,7 +554,6 @@ export function createListDefinition(
         tag: "ListItem",
         props: {
           children: "Item 3",
-          style: { fontSize: 14 },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,

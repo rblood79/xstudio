@@ -35,9 +35,10 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   description: "React Aria 기반 다이얼로그 컴포넌트",
   archetype: "overlay",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "accent",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [
@@ -102,29 +103,45 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   },
 
   sizes: {
+    xs: {
+      height: 0,
+      paddingX: 2,
+      paddingY: 2,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
+      gap: 4,
+    },
     sm: {
       height: 0,
-      paddingX: 16,
-      paddingY: 16,
+      paddingX: 4,
+      paddingY: 4,
       fontSize: "{typography.text-md}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
-      gap: 16,
+      gap: 8,
     },
     md: {
       height: 0,
-      paddingX: 24,
-      paddingY: 24,
+      paddingX: 8,
+      paddingY: 8,
       fontSize: "{typography.text-md}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
-      gap: 20,
+      gap: 12,
     },
     lg: {
       height: 0,
-      paddingX: 32,
-      paddingY: 32,
+      paddingX: 12,
+      paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.xl}" as TokenRef,
-      gap: 24,
+      borderRadius: "{radius.2xl}" as TokenRef,
+      gap: 16,
+    },
+    xl: {
+      height: 0,
+      paddingX: 16,
+      paddingY: 16,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: "{radius.2xl}" as TokenRef,
+      gap: 20,
     },
   },
 
