@@ -43,6 +43,8 @@ import {
   setPagePosStaleFrames,
   tickPagePosStaleFrames,
 } from "./skiaTreeBuilder";
+import { tickAnimations, getInterpolatedOffsets } from "./dragAnimator";
+import { setDragSiblingOffsets } from "./nodeRendererTree";
 import { buildSkiaFrameContent } from "./skiaFramePipeline";
 import { type PageFrame } from "./workflowRenderer";
 import { type CachedEdgeGeometry } from "./workflowHitTest";
@@ -114,6 +116,7 @@ export function SkiaOverlay({
   invalidateLayout,
   invalidationPacket,
   rendererInput,
+  dropIndicatorSnapshotRef,
 }: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
@@ -724,6 +727,17 @@ export function SkiaOverlay({
         skiaFontManager.getFamilies().length > 0
           ? skiaFontManager.getFontMgr()
           : undefined;
+
+      // Drag animation tick — drop indicator가 있으면 드래그 활성 상태
+      const dropIndicator = dropIndicatorSnapshotRef?.current ?? null;
+      if (dropIndicator) {
+        const stillAnimating = tickAnimations();
+        const interpolated = getInterpolatedOffsets();
+        setDragSiblingOffsets(interpolated.size > 0 ? interpolated : null);
+        if (stillAnimating) {
+          notifyLayoutChange(); // 다음 프레임 요청
+        }
+      }
 
       // ── ADR-035 Phase 4: Frame Content Build (skiaFramePipeline.ts) ──
       const contentResult = buildSkiaFrameContent({

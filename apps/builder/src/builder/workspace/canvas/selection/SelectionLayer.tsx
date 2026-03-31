@@ -44,6 +44,10 @@ import {
   setDragVisualOffset,
   setDragSiblingOffsets,
 } from "../skia/nodeRendererTree";
+import {
+  updateAnimationTargets,
+  clearAllAnimations,
+} from "../skia/dragAnimator";
 import { historyManager } from "../../../stores/history";
 import { getDB } from "../../../../lib/db";
 
@@ -249,15 +253,15 @@ export const SelectionLayer = memo(function SelectionLayer({
       // A-6: 마지막 resolved target 저장 (onMoveEnd 단일 commit용)
       lastResolvedDropTargetRef.current = resolved;
 
-      // 형제 시각적 오프셋 갱신
+      // 형제 시각적 오프셋 갱신 (dragAnimator를 통한 lerp 보간)
       if (resolved) {
         const offsets = computeSiblingOffsets(resolved, draggedId, {
           elementsMap: dragState.elementsMap,
           childrenMap: dragState.childrenMap,
         });
-        setDragSiblingOffsets(offsets.size > 0 ? offsets : null);
+        updateAnimationTargets(offsets.size > 0 ? offsets : null);
       } else {
-        setDragSiblingOffsets(null);
+        updateAnimationTargets(null);
       }
 
       // ADR-043 Phase 3: drop indicator 스냅샷 갱신 (SkiaOverlay RAF에서 읽음)
@@ -280,6 +284,7 @@ export const SelectionLayer = memo(function SelectionLayer({
       const startSnapshot = dragStartSnapshotRef.current;
 
       // 2. 시각적 상태 모두 해제
+      clearAllAnimations(); // 애니메이터 상태 즉시 초기화
       setDragVisualOffset(null, 0, 0, true); // store 갱신이 뒤따르므로 invalidation 스킵
       setDragSiblingOffsets(null);
       dropTargetRef.current = null;
@@ -363,6 +368,7 @@ export const SelectionLayer = memo(function SelectionLayer({
       onCancelDragRef.current = () => {
         cancelDrag();
         // A: 취소 시 시각적 오프셋 해제 (store는 변경하지 않았으므로 복원 불필요)
+        clearAllAnimations(); // 애니메이터 상태 즉시 초기화
         setDragVisualOffset(null);
         setDragSiblingOffsets(null);
         if (dropIndicatorSnapshotRef) {
