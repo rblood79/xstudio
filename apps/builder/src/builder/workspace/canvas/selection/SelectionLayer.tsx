@@ -228,28 +228,29 @@ export const SelectionLayer = memo(function SelectionLayer({
       setDragVisualOffset(draggedId, delta.x, delta.y);
 
       // A-5: dead zone — 이전 drop target의 방향에 따라 커서 위치 축 결정
-      const draggedBounds = getSceneBounds(draggedId);
-      if (draggedBounds) {
-        const isHz = lastResolvedDropTargetRef.current?.isHorizontal ?? false;
-        const pos = isHz ? scenePoint.x : scenePoint.y;
-        const bStart = isHz ? draggedBounds.x : draggedBounds.y;
-        const bEnd =
-          bStart + (isHz ? draggedBounds.width : draggedBounds.height);
-        if (pos >= bStart && pos <= bEnd) {
-          // drop indicator 유지, 형제 오프셋은 그대로
-          if (dropIndicatorSnapshotRef) {
-            const prev = lastResolvedDropTargetRef.current;
-            dropIndicatorSnapshotRef.current = prev
-              ? {
-                  targetBounds: prev.containerBounds,
-                  insertIndex: prev.insertionIndex,
-                  childBounds: prev.siblingBounds,
-                  isHorizontal: prev.isHorizontal,
-                  isReparent: prev.isReparent,
-                }
-              : null;
+      // 첫 번째 resolve 전에는 방향을 모르므로 dead zone 스킵 (가로 컨테이너에서 Y축 고정 방지)
+      const prevTarget = lastResolvedDropTargetRef.current;
+      if (prevTarget) {
+        const draggedBounds = getSceneBounds(draggedId);
+        if (draggedBounds) {
+          const isHz = prevTarget.isHorizontal;
+          const pos = isHz ? scenePoint.x : scenePoint.y;
+          const bStart = isHz ? draggedBounds.x : draggedBounds.y;
+          const bEnd =
+            bStart + (isHz ? draggedBounds.width : draggedBounds.height);
+          if (pos >= bStart && pos <= bEnd) {
+            // drop indicator 유지, 형제 오프셋은 그대로
+            if (dropIndicatorSnapshotRef) {
+              dropIndicatorSnapshotRef.current = {
+                targetBounds: prevTarget.containerBounds,
+                insertIndex: prevTarget.insertionIndex,
+                childBounds: prevTarget.siblingBounds,
+                isHorizontal: prevTarget.isHorizontal,
+                isReparent: prevTarget.isReparent,
+              };
+            }
+            return;
           }
-          return;
         }
       }
 
