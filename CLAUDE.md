@@ -58,6 +58,16 @@ xstudio/
 | :--------: | :-------: | :---------: |
 |   60fps    |   < 3초   |   < 500KB   |
 
+## Superpowers 워크플로 강제 (최우선)
+
+모든 작업에서 **Superpowers**를 적극 활용합니다:
+
+- 복잡한 작업(렌더링 수정, drag-and-drop, 대규모 리팩토링) 시작 시 **Structured Planning / Brainstorming** 스킬을 먼저 사용해 2~3개 접근 방식을 제안받고 선택한다.
+- 버그 수정은 **Systematic Debugging (4단계 root-cause)** 스킬을 따른다.
+- 구현은 **TDD (RED-GREEN-REFACTOR)** 사이클을 기본으로 한다.
+- **렌더링 관련 모든 수정 후에는 반드시 `/cross-check` 스킬을 최종 검증 단계로 실행**한다.
+- CRITICAL 또는 HIGH 이슈는 절대 스킵하지 않고 즉시 수정한다.
+
 ## CRITICAL 규칙 (10개) → `.claude/rules/` 자동 로드
 
 위반 시 즉시 수정. 파일 편집 시 glob-scoped rule이 자동 주입됩니다.
@@ -103,3 +113,9 @@ xstudio/
 3. **코드 리뷰 시 이슈 스킵 금지**: HIGH/MEDIUM 심각도 발견사항을 '범위 외'로 스킵하지 않는다. 명시적으로 지시받지 않는 한 발견 즉시 수정한다.
 4. **교차 레이어 변경 확인**: 한 레이어의 변경이 다른 레이어에 영향을 미칠 수 있다. 변경 시 항상 확인할 파일: spec 파일, factory 파일, CSS renderer, WebGL/Canvas renderer, editor 파일.
 5. **좌표계 검증 선행**: 드래그앤드롭 또는 좌표 기반 기능 구현 시 좌표계 가정(local vs global, canvas vs screen)을 코드 작성 전에 검증하고 주석으로 문서화한다.
+
+---
+
+**마지막 지침**:
+항상 **Plan 먼저 → Execute → Verify (`/cross-check` + `type-check`)** 순서를 지킨다.
+불확실한 부분은 질문을 먼저 하고, 가정하지 않는다.
