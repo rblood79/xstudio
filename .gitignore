@@ -6,6 +6,9 @@ node_modules
 .kiro/
 .windsurf/
 
+# Roo Code — 프로젝트 규칙 등(로컬 전용)
+.roo/
+
 # macOS
 .DS_Store
 dist
