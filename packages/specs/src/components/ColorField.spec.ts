@@ -327,7 +327,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       height: 40,
       paddingX: 10,
       paddingY: 6,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 26,
       gap: 8,

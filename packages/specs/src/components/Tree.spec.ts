@@ -214,7 +214,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       height: 36,
       paddingX: 12,
       paddingY: 6,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 4,

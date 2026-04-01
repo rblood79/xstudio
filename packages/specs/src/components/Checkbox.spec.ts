@@ -123,7 +123,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },

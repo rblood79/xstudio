@@ -90,7 +90,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
       height: "auto" as unknown as number,
       paddingX: 16,
       paddingY: 16,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       accentWidth: 4,
       gap: 12,

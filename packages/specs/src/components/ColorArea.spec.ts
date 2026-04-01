@@ -75,7 +75,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       height: 240,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 0,

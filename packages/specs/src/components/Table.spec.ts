@@ -91,7 +91,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       height: 44,
       paddingX: 12,
       paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },

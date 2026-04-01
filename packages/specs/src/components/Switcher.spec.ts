@@ -64,7 +64,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       height: 40,
       paddingX: 4,
       paddingY: 4,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 2,
     },

@@ -290,7 +290,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       height: 40,
       paddingX: 16,
       paddingY: 6,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 10,
     },

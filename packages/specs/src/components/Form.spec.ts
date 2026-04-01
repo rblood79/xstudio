@@ -213,7 +213,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
       height: 0,
       paddingX: 20,
       paddingY: 20,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 16,
     },

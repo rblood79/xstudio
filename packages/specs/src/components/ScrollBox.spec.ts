@@ -60,7 +60,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
       height: 200,
       paddingX: 12,
       paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
     },
     lg: {

@@ -96,7 +96,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       height: 0,
       paddingX: 18,
       paddingY: 18,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       gap: 12,
     },

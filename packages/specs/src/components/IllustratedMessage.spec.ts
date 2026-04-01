@@ -62,7 +62,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 8,
-      headingFontSize: "{typography.text-md}" as TokenRef,
+      headingFontSize: "{typography.text-base}" as TokenRef,
     },
     md: {
       height: "auto" as unknown as number,
@@ -77,7 +77,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
       height: "auto" as unknown as number,
       paddingX: 32,
       paddingY: 32,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 16,
       headingFontSize: "{typography.text-xl}" as TokenRef,

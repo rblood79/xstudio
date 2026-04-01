@@ -93,7 +93,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       height: 0,
       paddingX: 16,
       paddingY: 16,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 12,
     },

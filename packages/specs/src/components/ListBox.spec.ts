@@ -239,7 +239,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       height: 0,
       paddingX: 12,
       paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 4,
     },

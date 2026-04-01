@@ -62,7 +62,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       height: 0,
       paddingX: 12,
       paddingY: 6,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },

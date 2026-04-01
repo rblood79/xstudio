@@ -75,7 +75,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       height: 0,
       paddingX: 8,
       paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 36,
       gap: 8,

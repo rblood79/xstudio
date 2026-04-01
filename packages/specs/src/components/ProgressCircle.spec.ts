@@ -93,7 +93,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       strokeWidth: 4,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },

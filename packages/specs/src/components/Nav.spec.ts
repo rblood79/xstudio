@@ -60,7 +60,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
       height: 56,
       paddingX: 16,
       paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 12,
     },

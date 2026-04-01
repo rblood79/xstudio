@@ -106,7 +106,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       height: 0,
       paddingX: 16,
       paddingY: 16,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 12,
     },

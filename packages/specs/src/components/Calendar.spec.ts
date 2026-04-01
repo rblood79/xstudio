@@ -90,7 +90,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       height: 0,
       paddingX: 12,
       paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 32,
       gap: 8,

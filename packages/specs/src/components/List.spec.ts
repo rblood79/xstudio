@@ -67,7 +67,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       height: 0,
       paddingX: 12,
       paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 20,
       gap: 4,

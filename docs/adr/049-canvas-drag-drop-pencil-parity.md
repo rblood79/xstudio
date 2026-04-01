@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted** — Phase A~D 구현 완료 + 좌표계/dead zone 버그 수정 (2026-04-01)
+**Accepted** — Phase A~D 구현 완료 + 후속 버그 수정 7건 (2026-04-01)
 
 ## Prerequisites
 
@@ -267,20 +267,37 @@ export interface DropTarget {
 }
 ```
 
-#### resolveDropTarget 확장
+#### resolveDropTarget 확장 — 3단계 우선순위
 
 ```typescript
-export function resolveDropTarget(
-  scenePoint: { x: number; y: number },
-  draggedElementId: string,
-  store: DropTargetStoreSlice,
-  hitTestFn?: (x: number, y: number) => string[], // WASM hitTest 주입
-): DropTarget | null {
+export function resolveDropTarget(scenePoint, draggedElementId, store, hitTestFn?) {
   // 1. 같은 부모 내 reorder (기존 로직)
-  // 2. hitTestFn이 있으면 cross-container 후보 탐색
-  // 3. cross-container 결과가 있고 same-parent가 인접 삽입이면 cross 우선
+  const sameParentResult = ...;
+
+  // 2. cursorOutsideParent 판단 (현재 부모 bounds 밖인지)
+  const cursorOutsideParent = ...;
+
+  // 3. hitTestFn으로 cross-container 후보 탐색
+  if (crossResult) {
+    // 커서가 부모 밖이거나 same-parent가 인접 삽입이면 cross 우선
+    if (cursorOutsideParent || sameParentResult.isAdjacentInsertion) return crossResult;
+  }
+
+  // 4. 조부모 fallback — 커서가 부모 밖인데 cross도 없으면 (그룹에서 꺼내기)
+  //    body 같은 root 컨테이너는 hitTest에서 제외되므로 직접 조부모 탐색
+  if (cursorOutsideParent && parent.parent_id) {
+    return reparentToGrandparent(scenePoint, parent.parent_id, ...);
+  }
+
+  return sameParentResult;
 }
 ```
+
+**그룹에서 꺼내기 (조부모 fallback)**:
+
+- `resolveCrossContainerDrop`은 body/root를 제외 → 최상위 컨테이너로의 reparent 불가
+- 커서가 현재 부모 밖 + crossResult 없음 → 조부모(그룹의 부모)에서 `findInsertionIndex`로 삽입 위치 계산
+- 이를 통해 그룹 → body, 그룹 → 상위 Card 등 모든 "꺼내기" 동작 지원
 
 #### 순환 방지 (CRITICAL)
 
@@ -333,23 +350,26 @@ const dropIndicatorSnapshotRef = useRef<DropIndicatorSnapshot | null>(null);
 
 ### 수정 파일
 
-| 파일                              | 변경 내용                                                                      | Phase        |
-| --------------------------------- | ------------------------------------------------------------------------------ | ------------ |
-| `selection/SelectionLayer.tsx`    | 즉시 reorder 제거, deferred commit, dead zone 양축 지원, `getSceneBounds` 전환 | A, Bugfix    |
-| `selection/dropTargetResolver.ts` | `getSceneBounds` 전환, cross-container 탐색, DropTarget.isReparent, 순환 방지  | A, D, Bugfix |
-| `skia/nodeRendererTree.ts`        | `_getSiblingOffset` → `getSiblingOffset` export                                | A            |
-| `skia/renderCommands.ts`          | 형제 시각적 오프셋 적용, 드래그 요소 반투명 saveLayer                          | A            |
-| `skia/dropIndicatorRenderer.ts`   | 반투명 배경, 실선+끝점 원, 아웃라인 조정, reparent 색상                        | C, D         |
-| `skia/SkiaOverlay.tsx`            | RAF 루프에서 dragAnimator tick + setDragSiblingOffsets                         | B            |
-| `stores/elements.ts`              | `moveElementToContainer` 액션 추가                                             | D            |
-| `BuilderCanvas.tsx`               | `dropIndicatorSnapshotRef` 생성 + SelectionLayer/SkiaOverlay 전달              | Bugfix       |
+| 파일                              | 변경 내용                                                                                | Phase        |
+| --------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
+| `selection/SelectionLayer.tsx`    | deferred commit, dead zone 양축, `getSceneBounds`, selection box 숨김, dragSize 전달     | A, Bugfix    |
+| `selection/dropTargetResolver.ts` | `getSceneBounds`, cross-container, 조부모 fallback, `findInsertionIndex` 추출, 순환 방지 | A, D, Bugfix |
+| `selection/SelectionBox.tsx`      | `setVisible(visible)` imperative handle 추가                                             | Bugfix       |
+| `skia/nodeRendererTree.ts`        | `_getSiblingOffset` → `getSiblingOffset` export                                          | A            |
+| `skia/renderCommands.ts`          | 형제 시각적 오프셋 적용, 드래그 요소 반투명 saveLayer                                    | A            |
+| `skia/dropIndicatorRenderer.ts`   | 반투명 배경, 실선+끝점 원, reparent 색상, dragSize 기반 삽입 라인 보정                   | C, D, Bugfix |
+| `skia/SkiaOverlay.tsx`            | RAF dragAnimator tick, `dropIndicatorState` 전달 (null 하드코딩 제거)                    | B, Bugfix    |
+| `skia/skiaOverlayBuilder.ts`      | 드래그 중 selection box/handles 렌더링 스킵                                              | Bugfix       |
+| `stores/elements.ts`              | `moveElementToContainer` 액션 추가                                                       | D            |
+| `BuilderCanvas.tsx`               | `dropIndicatorSnapshotRef` 생성 + SelectionLayer/SkiaOverlay 전달                        | Bugfix       |
 
 ### 제거 대상
 
-| 대상                                              | 위치               |
-| ------------------------------------------------- | ------------------ |
-| `reorderCooldownRef`                              | SelectionLayer.tsx |
-| `batchUpdateElementOrders` 호출 (onDragUpdate 내) | SelectionLayer.tsx |
+| 대상                                                | 위치               |
+| --------------------------------------------------- | ------------------ |
+| `reorderCooldownRef`                                | SelectionLayer.tsx |
+| `dropTargetRef` (좀비 ref — 선언/리셋만, 읽기 없음) | SelectionLayer.tsx |
+| `batchUpdateElementOrders` 호출 (onDragUpdate 내)   | SelectionLayer.tsx |
 
 ## 데이터 흐름도
 
@@ -366,7 +386,8 @@ const dropIndicatorSnapshotRef = useRef<DropIndicatorSnapshot | null>(null);
 │      │                                                          │
 │      ├──► resolveDropTarget (getSceneBounds 기반)                │
 │      │       ├─ same-parent reorder                             │
-│      │       └─ cross-container (hitTestPoint WASM)             │
+│      │       ├─ cross-container (hitTestPoint WASM)             │
+│      │       └─ 조부모 fallback (커서가 부모 밖 + cross 없음)    │
 │      │                                                          │
 │      ├──► computeSiblingOffsets (vacate + insertion)             │
 │      │       │                                                  │
@@ -426,8 +447,9 @@ const dropIndicatorSnapshotRef = useRef<DropIndicatorSnapshot | null>(null);
 ### Cross-container 안전
 
 1. **순환 방지**: `isDescendantOf` 체크 — 자손 컨테이너 드롭 차단
-2. **body/page root 드롭 차단**: body 선택 제외 로직 유지
+2. **body/page root**: hitTest에서 body 제외 유지, 대신 조부모 fallback으로 body로의 reparent 지원
 3. **reparent 실패 시**: moveElementToContainer가 예외 throw → onMoveEnd에서 catch, 시각적 오프셋만 클리어
+4. **3단계 우선순위**: same-parent → cross-container (hitTest) → 조부모 fallback (cursorOutsideParent)
 
 ## 발견 및 수정된 버그
 
@@ -448,6 +470,30 @@ const dropIndicatorSnapshotRef = useRef<DropIndicatorSnapshot | null>(null);
 - **증상**: 세로 배치는 동작하지만 가로(row) 컨테이너에서 gap 애니메이션 미작동
 - **원인**: `isHz = lastResolvedDropTargetRef.current?.isHorizontal ?? false` — 첫 resolve 전 항상 `false` → Y축 검사 → 수평 드래그 시 dead zone 탈출 불가
 - **수정**: `prevTarget`이 null이면 dead zone 스킵하여 첫 resolve 보장
+
+### Bug 4: dropIndicatorState null 하드코딩
+
+- **증상**: 삽입 라인/컨테이너 하이라이트가 드래그 중 표시 안 됨
+- **원인**: SkiaOverlay의 `buildFrameRenderPlan` 호출에서 `dropIndicatorState: null` 하드코딩
+- **수정**: `dropIndicatorSnapshotRef?.current`를 그대로 전달
+
+### Bug 5: 삽입 라인이 형제에 밀착 (animated gap 미반영)
+
+- **증상**: 가이드 라인이 gap 중앙이 아닌 형제 요소에 바로 붙어서 표시
+- **원인**: `childBounds`가 원본 layout 위치 → animated 오프셋 미반영 → `linePos`가 gap 없이 계산
+- **수정**: `DropIndicatorSnapshot`에 `dragSize` 추가, 렌더러에서 `linePos`를 `dragSize/2`만큼 보정
+
+### Bug 6: 드래그 중 selection box 잔존
+
+- **증상**: 드래그 시작 시 선택 박스(파란 테두리 + 핸들)가 계속 표시
+- **원인**: Selection box는 Skia 오버레이에서 렌더링 — PixiJS visible 토글은 무관
+- **수정**: `skiaOverlayBuilder.ts`에서 `dropIndicatorState`가 있으면 selection 렌더링 스킵
+
+### Bug 7: 그룹에서 꺼내기 불가 (조부모 reparent)
+
+- **증상**: 그룹 간 이동은 가능하지만 그룹 밖으로 요소를 꺼낼 수 없음
+- **원인**: (1) cross-container가 body/root를 제외 → 최상위 컨테이너로 reparent 불가. (2) 커서가 부모 밖이어도 same-parent 결과가 존재하면 cross를 무시
+- **수정**: (1) `cursorOutsideParent` 조건 추가 — 커서가 부모 밖이면 cross 우선. (2) cross도 없으면 조부모 fallback — `parent.parent_id`로 직접 reparent 결과 생성
 
 ## 커밋 이력
 

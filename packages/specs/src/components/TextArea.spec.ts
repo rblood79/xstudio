@@ -96,7 +96,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       height: 80,
       paddingX: 14,
       paddingY: 10,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 6,
     },

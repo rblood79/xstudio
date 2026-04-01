@@ -64,7 +64,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       height: 36,
       paddingX: 10,
       paddingY: 6,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 6,
     },

@@ -178,7 +178,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       height: 48,
       paddingX: 16,
       paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 20,
       gap: 10,
