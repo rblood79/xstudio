@@ -25,7 +25,7 @@ Add the server to your MCP client configuration (the exact file and schema may d
 
 ### Cursor
 
-[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install.md?name=React%20Aria\&config=eyJjb21tYW5kIjoibnB4IEByZWFjdC1hcmlhL21jcEBsYXRlc3QifQ%3D%3D)
+[Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install.md?name=React%20Aria&config=eyJjb21tYW5kIjoibnB4IEByZWFjdC1hcmlhL21jcEBsYXRlc3QifQ%3D%3D)
 
 Or follow Cursor's MCP install [guide](https://cursor.com/docs/context/mcp#installing-mcp-servers) and use the standard config above.
 
@@ -70,10 +70,6 @@ gemini mcp add react-aria npx @react-aria/mcp@latest
 ```
 
 For more information, see the [Gemini CLI MCP documentation](https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md#how-to-set-up-your-mcp-server).
-
-### Windsurf
-
-Follow the Windsurf MCP [documentation](https://docs.windsurf.com/windsurf/cascade/mcp) and use the standard config above.
 
 ## Agent Skills
 
