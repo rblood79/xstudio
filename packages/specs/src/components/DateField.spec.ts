@@ -213,9 +213,21 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
-              { value: "icon", label: "Icon" },
-              { value: "label", label: "Label" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
             ],
+            derivedUpdateFn: (value) => {
+              if (value === undefined || value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
           },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "isDisabled", type: "boolean", icon: PointerOff },

@@ -199,7 +199,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
             options: [
               { value: "", label: "None" },
               { value: "icon", label: "Icon (*)" },
-              { value: "label", label: "Label" },
+              { value: "label", label: "Label (required/optional)" },
             ],
           },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },

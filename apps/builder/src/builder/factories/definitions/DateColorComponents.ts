@@ -50,6 +50,7 @@ export function createDatePickerDefinition(
         label: "Date Picker",
         variant: "default",
         size: "md",
+        labelPosition: "top",
         visibleMonths: 1,
         defaultToday: true,
         hideTimeZone: true,
@@ -150,6 +151,7 @@ export function createDateRangePickerDefinition(
         label: "Date Range",
         variant: "default",
         size: "md",
+        labelPosition: "top",
         visibleMonths: 1,
         defaultToday: true,
         hideTimeZone: true,
@@ -312,6 +314,7 @@ export function createDateFieldDefinition(
       props: {
         label: "Date Field",
         size: "md",
+        labelPosition: "top",
         hideTimeZone: true,
         shouldForceLeadingZeros: true,
         isDisabled: false,
@@ -388,6 +391,8 @@ export function createTimeFieldDefinition(
       props: {
         label: "Time",
         size: "md",
+        labelPosition: "top",
+        granularity: "minute",
         hideTimeZone: true,
         shouldForceLeadingZeros: true,
         isDisabled: false,
@@ -461,6 +466,7 @@ export function createColorFieldDefinition(
     parent: {
       tag: "ColorField",
       props: {
+        labelPosition: "top",
         isDisabled: false,
         style: {
           display: "flex",

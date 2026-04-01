@@ -190,6 +190,7 @@ export function createCheckboxGroupDefinition(
         tag: "CheckboxGroup",
         label: "Checkbox Group",
         name: "",
+        labelPosition: "top",
         orientation: "vertical",
         value: [],
         isInvalid: false,
@@ -299,6 +300,7 @@ export function createRadioGroupDefinition(
       props: {
         label: "Radio Group",
         name: "",
+        labelPosition: "top",
         orientation: "vertical",
         value: "",
         isInvalid: false,
@@ -406,6 +408,7 @@ export function createTagGroupDefinition(
       props: {
         label: "Tag Group",
         size: "md",
+        labelPosition: "top",
         maxRows: 2,
         allowsRemoving: false,
         selectionMode: "multiple",

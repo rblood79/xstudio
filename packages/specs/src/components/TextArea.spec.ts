@@ -173,9 +173,21 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
-              { value: "icon", label: "Icon" },
-              { value: "label", label: "Label" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
             ],
+            derivedUpdateFn: (value) => {
+              if (value === undefined || value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
           },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "maxLength", type: "number", label: "Max Length", icon: Hash },
