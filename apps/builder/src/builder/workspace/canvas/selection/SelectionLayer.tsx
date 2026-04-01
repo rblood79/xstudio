@@ -51,6 +51,7 @@ import {
 import { historyManager } from "../../../stores/history";
 import { getDB } from "../../../../lib/db";
 import { hitTestPoint } from "../wasm-bindings/spatialIndex";
+import { getSceneBounds } from "../skia/renderCommands";
 
 // ============================================
 // Types
@@ -227,7 +228,7 @@ export const SelectionLayer = memo(function SelectionLayer({
       setDragVisualOffset(draggedId, delta.x, delta.y);
 
       // A-5: dead zone — 이전 drop target의 방향에 따라 커서 위치 축 결정
-      const draggedBounds = getElementBoundsSimple(draggedId);
+      const draggedBounds = getSceneBounds(draggedId);
       if (draggedBounds) {
         const isHz = lastResolvedDropTargetRef.current?.isHorizontal ?? false;
         const pos = isHz ? scenePoint.x : scenePoint.y;

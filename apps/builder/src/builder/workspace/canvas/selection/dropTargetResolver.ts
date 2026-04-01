@@ -5,7 +5,8 @@
  * insertion index를 결정하는 순수 함수 모듈.
  *
  * 좌표 규칙:
- * - layoutBoundsRegistry를 source of truth로 사용 (scene-local 좌표)
+ * - getSceneBounds (renderCommands boundsMap)를 source of truth로 사용 (scene-local 좌표)
+ * - layoutBoundsRegistry 사용 금지 (PixiJS global 좌표 — Camera zoom/pan 포함)
  * - Pixi container.getBounds() 사용 금지 (Camera transform 포함 글로벌 좌표)
  *
  * Phase 범위:
@@ -16,8 +17,8 @@
  */
 
 import type { Element } from "../../../../types/builder/unified.types";
-import { getElementBoundsSimple } from "../elementRegistry";
 import type { ElementBounds } from "../elementRegistry";
+import { getSceneBounds } from "../skia/renderCommands";
 
 // ============================================
 // Types
@@ -194,7 +195,7 @@ function resolveCrossContainerDrop(
 
   const container = bestCandidate.element;
   const containerId = container.id;
-  const containerBounds = getElementBoundsSimple(containerId);
+  const containerBounds = getSceneBounds(containerId);
   if (!containerBounds) return null;
 
   const isHorizontal = detectIsHorizontal(container);
@@ -203,7 +204,7 @@ function resolveCrossContainerDrop(
   const children = getSortedChildren(containerId, store);
   const childBounds: ElementBounds[] = [];
   for (const child of children) {
-    const b = getElementBoundsSimple(child.id);
+    const b = getSceneBounds(child.id);
     if (b) childBounds.push(b);
   }
 
@@ -275,7 +276,7 @@ export function resolveDropTarget(
   if (!parent) return null;
 
   // 3. 컨테이너 bounds 조회 (body 등 bounds 미등록 컨테이너는 자식 bounds로 대체)
-  let containerBounds = getElementBoundsSimple(parentId);
+  let containerBounds = getSceneBounds(parentId);
 
   // 4. 컨테이너의 방향 감지
   const isHorizontal = detectIsHorizontal(parent);
@@ -287,13 +288,13 @@ export function resolveDropTarget(
   // 6. 형제 bounds 수집 (layoutBoundsRegistry에 없는 요소는 스킵)
   const siblingBounds: ElementBounds[] = [];
   for (const sibling of siblings) {
-    const b = getElementBoundsSimple(sibling.id);
+    const b = getSceneBounds(sibling.id);
     if (b) siblingBounds.push(b);
   }
 
   // 6.1 containerBounds가 없으면 (body 등) 자식+드래그 요소 bounds의 합집합으로 대체
   if (!containerBounds && siblingBounds.length > 0) {
-    const dragBounds = getElementBoundsSimple(draggedElementId);
+    const dragBounds = getSceneBounds(draggedElementId);
     const all = dragBounds ? [...siblingBounds, dragBounds] : siblingBounds;
     let minX = Infinity,
       minY = Infinity,
@@ -422,7 +423,7 @@ export function computeSiblingOffsets(
   if (origIdx < 0) return offsets;
 
   // 드래그 요소의 크기 (layoutBoundsRegistry에서)
-  const dragBounds = getElementBoundsSimple(draggedElementId);
+  const dragBounds = getSceneBounds(draggedElementId);
   if (!dragBounds) return offsets;
   const dragSize = isHorizontal ? dragBounds.width : dragBounds.height;
 
