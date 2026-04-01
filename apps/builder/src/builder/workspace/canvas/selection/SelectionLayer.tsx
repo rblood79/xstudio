@@ -121,10 +121,6 @@ export const SelectionLayer = memo(function SelectionLayer({
   // SelectionBox imperative handle ref (드래그 중 PixiJS 직접 조작)
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
 
-  // ADR-043 Phase 2: 드래그 중 현재 drop target을 ref로 보관
-  // React state로 저장하지 않음 — 매 포인터 이벤트마다 갱신되므로 리렌더링 비용 회피
-  const dropTargetRef = useRef<DropTarget | null>(null);
-
   // Store state
   // 🚀 성능 최적화: elementsMap 전체 구독 제거
   // 기존: elementsMap 구독 → 어떤 요소든 변경되면 SelectionLayer 리렌더
@@ -198,7 +194,6 @@ export const SelectionLayer = memo(function SelectionLayer({
       if (operation !== "move" || !data.delta) return;
 
       const { delta } = data;
-      selectionBoxRef.current?.updatePosition(delta);
 
       const dragState = useStore.getState();
       const draggedId = dragState.selectedElementIds[0];
@@ -208,9 +203,9 @@ export const SelectionLayer = memo(function SelectionLayer({
       const scenePoint = data.current;
       if (!scenePoint) return;
 
-      // A-7: 드래그 시작 시 원래 order_num 스냅샷을 한 번만 캡처
-      // reparent를 위해 parent_id도 함께 저장
+      // A-7: 드래그 시작 시 원래 order_num 스냅샷을 한 번만 캡처 + selection box 숨김
       if (!dragStartSnapshotRef.current) {
+        selectionBoxRef.current?.setVisible(false);
         const dragged = dragState.elementsMap.get(draggedId);
         if (dragged) {
           const allChildren = [...dragState.elementsMap.values()]
@@ -241,12 +236,18 @@ export const SelectionLayer = memo(function SelectionLayer({
           if (pos >= bStart && pos <= bEnd) {
             // drop indicator 유지, 형제 오프셋은 그대로
             if (dropIndicatorSnapshotRef) {
+              const db = getSceneBounds(draggedId);
               dropIndicatorSnapshotRef.current = {
                 targetBounds: prevTarget.containerBounds,
                 insertIndex: prevTarget.insertionIndex,
                 childBounds: prevTarget.siblingBounds,
                 isHorizontal: prevTarget.isHorizontal,
                 isReparent: prevTarget.isReparent,
+                dragSize: db
+                  ? prevTarget.isHorizontal
+                    ? db.width
+                    : db.height
+                  : 0,
               };
             }
             return;
@@ -281,15 +282,24 @@ export const SelectionLayer = memo(function SelectionLayer({
 
       // ADR-043 Phase 3: drop indicator 스냅샷 갱신 (SkiaOverlay RAF에서 읽음)
       if (dropIndicatorSnapshotRef) {
-        dropIndicatorSnapshotRef.current = resolved
-          ? {
-              targetBounds: resolved.containerBounds,
-              insertIndex: resolved.insertionIndex,
-              childBounds: resolved.siblingBounds,
-              isHorizontal: resolved.isHorizontal,
-              isReparent: resolved.isReparent,
-            }
-          : null;
+        if (resolved) {
+          const db = getSceneBounds(draggedId);
+          const dragSize = db
+            ? resolved.isHorizontal
+              ? db.width
+              : db.height
+            : 0;
+          dropIndicatorSnapshotRef.current = {
+            targetBounds: resolved.containerBounds,
+            insertIndex: resolved.insertionIndex,
+            childBounds: resolved.siblingBounds,
+            isHorizontal: resolved.isHorizontal,
+            isReparent: resolved.isReparent,
+            dragSize,
+          };
+        } else {
+          dropIndicatorSnapshotRef.current = null;
+        }
       }
     },
     onMoveEnd: (elementId, _delta) => {
@@ -299,11 +309,13 @@ export const SelectionLayer = memo(function SelectionLayer({
       const finalTarget = lastResolvedDropTargetRef.current;
       const startSnapshot = dragStartSnapshotRef.current;
 
-      // 2. 시각적 상태 모두 해제
-      clearAllAnimations(); // 애니메이터 상태 즉시 초기화
-      setDragVisualOffset(null, 0, 0, true); // store 갱신이 뒤따르므로 invalidation 스킵
+      // 2. 시각적 상태 모두 해제 + selection box 복원
+      clearAllAnimations();
+      setDragVisualOffset(null, 0, 0, true);
       setDragSiblingOffsets(null);
-      dropTargetRef.current = null;
+      selectionBoxRef.current?.setVisible(true);
+      selectionBoxRef.current?.resetPosition();
+
       lastResolvedDropTargetRef.current = null;
       dragStartSnapshotRef.current = null;
       if (dropIndicatorSnapshotRef) {
@@ -381,10 +393,11 @@ export const SelectionLayer = memo(function SelectionLayer({
               const db = await getDB();
               const currentState = useStore.getState();
               const persistIds = [...affectedIds];
+              const snapMap = new Map(startSnapshot.map((s) => [s.id, s]));
               await Promise.all(
                 persistIds.map((id) => {
                   const el = currentState.elementsMap.get(id);
-                  const snap = startSnapshot.find((s) => s.id === id);
+                  const snap = snapMap.get(id);
                   if (!el) return Promise.resolve();
                   const orderChanged = !snap || el.order_num !== snap.order_num;
                   const parentChanged =
@@ -429,9 +442,10 @@ export const SelectionLayer = memo(function SelectionLayer({
         if (dropIndicatorSnapshotRef) {
           dropIndicatorSnapshotRef.current = null;
         }
-        dropTargetRef.current = null;
+
         lastResolvedDropTargetRef.current = null;
         dragStartSnapshotRef.current = null;
+        selectionBoxRef.current?.setVisible(true);
         selectionBoxRef.current?.resetPosition();
       };
   }, [

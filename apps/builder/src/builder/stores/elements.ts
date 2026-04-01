@@ -1165,9 +1165,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         }
       });
 
-      // 단일 set()으로 전체 적용
-      const { elements: currentElements } = get();
-      const updatedElements = currentElements.map((el) => {
+      // 단일 set()으로 전체 적용 (prevState와 동일 스냅샷 사용)
+      const updatedElements = prevState.elements.map((el) => {
         const upd = updateMap.get(el.id);
         if (!upd) return el;
         return {

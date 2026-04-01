@@ -357,8 +357,8 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
         renderDropIndicator(ck, canvas, dropIndicatorState, cameraZoom);
       }
 
-      // ── Selection ──
-      if (selectionData.bounds) {
+      // ── Selection (드래그 중에는 숨김 — 드래그 요소가 반투명으로 떠있으므로) ──
+      if (selectionData.bounds && !dropIndicatorState) {
         renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
         if (selectionData.showHandles) {
           renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);

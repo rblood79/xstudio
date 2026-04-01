@@ -26,6 +26,8 @@ export interface DropIndicatorState {
   childBounds: BoundingBox[];
   isHorizontal: boolean;
   isReparent?: boolean;
+  /** 드래그 요소의 주축 크기 — 삽입 라인 위치를 animated gap 중앙으로 보정 */
+  dragSize?: number;
 }
 
 /**
@@ -79,21 +81,28 @@ export function renderDropIndicator(
   outlinePaint.delete();
 
   // C-3: 삽입 라인 (solid, round cap, 양끝 원)
+  // dragSize가 있으면 animated gap 중앙에 위치 보정
+  // vacate 오프셋(-dragSize)이 insertIndex 이전 형제에 적용되므로
+  // 원본 bounds 기준 linePos를 dragSize/2만큼 보정
+  const ds = state.dragSize ?? 0;
   if (insertIndex >= 0 && childBounds.length > 0) {
-    const start = (b: BoundingBox) => (isHorizontal ? b.x : b.y);
-    const end = (b: BoundingBox) =>
+    const bStart = (b: BoundingBox) => (isHorizontal ? b.x : b.y);
+    const bEnd = (b: BoundingBox) =>
       isHorizontal ? b.x + b.width : b.y + b.height;
 
     let linePos: number;
     if (insertIndex === 0) {
-      linePos = (start(targetBounds) + start(childBounds[0])) / 2;
+      linePos = (bStart(targetBounds) + bStart(childBounds[0])) / 2;
     } else if (insertIndex >= childBounds.length) {
       linePos =
-        (end(childBounds[childBounds.length - 1]) + end(targetBounds)) / 2;
+        (bEnd(childBounds[childBounds.length - 1]) + bEnd(targetBounds)) / 2;
     } else {
-      linePos =
-        (end(childBounds[insertIndex - 1]) + start(childBounds[insertIndex])) /
+      // 원본: 두 형제 사이 midpoint. animated gap 보정: -ds/2 (vacate offset 반영)
+      const rawMid =
+        (bEnd(childBounds[insertIndex - 1]) +
+          bStart(childBounds[insertIndex])) /
         2;
+      linePos = rawMid - ds / 2;
     }
 
     const linePaint = new ck.Paint();

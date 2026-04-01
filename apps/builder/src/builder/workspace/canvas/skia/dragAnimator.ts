@@ -93,20 +93,27 @@ export function tickAnimations(): boolean {
   return stillAnimating;
 }
 
+// 매 프레임 new Map() 할당 방지 — 모듈 레벨 재사용
+const _interpolatedCache = new Map<string, { dx: number; dy: number }>();
+
 /**
  * 현재 보간된 오프셋 Map 반환 (setDragSiblingOffsets에 전달용)
+ * 반환된 Map은 다음 호출 시 clear됨 — 호출자가 캐싱하지 말 것.
  */
 export function getInterpolatedOffsets(): Map<
   string,
   { dx: number; dy: number }
 > {
-  const result = new Map<string, { dx: number; dy: number }>();
+  _interpolatedCache.clear();
   for (const [id, offset] of animatedOffsets) {
     if (offset.currentDx !== 0 || offset.currentDy !== 0) {
-      result.set(id, { dx: offset.currentDx, dy: offset.currentDy });
+      _interpolatedCache.set(id, {
+        dx: offset.currentDx,
+        dy: offset.currentDy,
+      });
     }
   }
-  return result;
+  return _interpolatedCache;
 }
 
 /**

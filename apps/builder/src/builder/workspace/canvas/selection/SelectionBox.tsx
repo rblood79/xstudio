@@ -38,6 +38,8 @@ export interface SelectionBoxHandle {
   updateBounds: (bounds: BoundingBox) => void;
   /** 원래 위치로 리셋 */
   resetPosition: () => void;
+  /** 드래그 중 selection box 표시/숨김 */
+  setVisible: (visible: boolean) => void;
 }
 
 export interface SelectionBoxProps {
@@ -125,6 +127,11 @@ export const SelectionBox = memo(
           if (containerRef.current) {
             const original = originalBoundsRef.current;
             containerRef.current.position.set(original.x, original.y);
+          }
+        },
+        setVisible: (visible: boolean) => {
+          if (containerRef.current) {
+            containerRef.current.visible = visible;
           }
         },
       }),

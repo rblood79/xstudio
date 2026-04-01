@@ -783,7 +783,7 @@ export function SkiaOverlay({
         visiblePageFrames: visiblePageFramesRef.current,
         workflowHoverState: workflowHoverStateRef.current,
         elementHoverState: elementHoverStateRef.current,
-        dropIndicatorState: null,
+        dropIndicatorState: dropIndicator,
         minimapVisible: minimapVisibleRef.current,
         minimapConfig: minimapConfigRef.current,
         skiaCanvasWidth: skiaCanvas.width,

@@ -55,6 +55,17 @@
 - **GroupComponents.ts Label factory 인라인 6회 반복**: `createDefaultLabelProps()`가 unified.types.ts:1624에 이미 존재하나 GroupComponents.ts에서 미사용 — Radio 자식(344, 368행)에는 `fontWeight: 500`도 누락되어 Checkbox 자식과 불일치
 - **`resolveSpecFontSize()` 헬퍼 미존재**: 3단계 fontSize 해결 패턴이 17개 Spec 파일(TextField, NumberField, SearchField, Switch, Checkbox, Radio, Label, Input, SelectValue, DateSegment, MeterValue, ProgressBarValue, SliderOutput, FieldError, Description 등)에 인라인 복제 — `packages/specs/src/renderers/utils/tokenResolver.ts`에 추출 필요. fallback 값(12/14/16)이 파일마다 다르므로 매개변수화 필수
 
+- **좀비 ref (쓰기 없이 리셋만 남은 ref)**: 기능 이전 후 이전 ref를 선언 + `.current = null` 리셋 코드만 남기는 패턴 — SelectionLayer의 `dropTargetRef`가 `lastResolvedDropTargetRef`로 역할 이전 후 좀비 상태. 기능 이전 시 구 ref 완전 제거 필수
+- **insertion index 계산 로직 cross-container 복제**: same-parent(`resolveDropTarget`)와 cross-container(`resolveCrossContainerDrop`) 경로에 동일한 삽입 위치 계산 루프 복제 — `computeInsertionIndex(pos, bounds, isHorizontal)` 순수 함수 추출 필요
+- **Store 함수 내 `get()` 이중 호출**: `moveElementToContainer`처럼 함수 시작(`const prevState = get()`)과 중간(`const { elements } = get()`)에서 두 번 state를 읽는 패턴 — 두 스냅샷이 다를 경우 order_num 불일치 발생. 단일 `get()` 스냅샷 사용 필수
+- **DropIndicatorSnapshot ↔ DropTarget 수동 변환 중복**: 두 인터페이스가 1:1 대응하면서 필드 이름만 다름(`insertIndex` vs `insertionIndex` 등) — 매 이벤트마다 수동 변환 코드 발생. `Pick<DropTarget, ...>` 타입 앨리어싱으로 통합 필요
+- **drag hot path N² findIndex**: `computeSiblingOffsets` 내부 루프에서 `sortedChildren.findIndex()` 매 반복 호출 — 루프 전 `Map<id, origIdx>` 한 번 빌드로 O(1) 전환 필수 (dropTargetResolver.ts:436)
+- **drag hot path isDescendantOf + depth 이중 트리 순회**: `resolveCrossContainerDrop`에서 hitId마다 `isDescendantOf`(O(depth)) + depth 계산(O(depth)) 별도 수행 — 단일 while 루프로 통합 + dragged 조상 Set 선빌드로 최적화
+- **RAF per-frame Map 할당 (dragAnimator)**: `getInterpolatedOffsets()`가 60fps RAF에서 매 프레임 `new Map()` + value 객체 생성 — 모듈 레벨 재사용 Map으로 교체 필요
+- **dead zone early return에서 불필요한 snapshot 객체 재생성**: `dropIndicatorSnapshotRef.current`가 이미 올바른 값인데도 `prevTarget` 필드 분해로 새 객체 할당 — 이전 값 유지로 할당 생략 가능
+- **DB persist 루프 내 `startSnapshot.find()` O(N) 반복**: `persistIds.map(id => startSnapshot.find(...))` 패턴 — 진입 전 `Map<id, snap>`으로 변환하여 O(1) 조회
+- **onDragUpdate 첫 프레임 `elementsMap.values()` 전체 순회**: 스냅샷 캡처 시 `childrenMap` 미사용 → O(N) 전체 스캔. `childrenMap.get(parent_id)`로 교체 필수 (domain-o1-lookup 위반)
+
 ## False Positive 기록
 
 - **`hasCustomEditor: false` 명시적 선언**: 런타임 동작에 영향 없음 — registry.ts가 propertySpec 우선 체크 후 fallback으로만 사용. 생략 가능하나 기존 패턴과 일관성 측면에서 MEDIUM 이하 이슈

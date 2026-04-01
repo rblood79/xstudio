@@ -54,6 +54,8 @@ export interface DropIndicatorSnapshot {
   childBounds: ElementBounds[];
   isHorizontal: boolean;
   isReparent?: boolean;
+  /** 드래그 요소의 주축 크기 — 삽입 라인이 animated gap 중앙에 위치하도록 보정 */
+  dragSize?: number;
 }
 
 /** resolveDropTarget에 필요한 store 슬라이스 */
@@ -65,6 +67,28 @@ export interface DropTargetStoreSlice {
 // ============================================
 // Internal Utilities
 // ============================================
+
+/**
+ * bounds 배열에서 커서 위치 기반 insertion index를 결정한다.
+ * 커서가 형제 midpoint 앞이면 해당 인덱스, 뒤면 +1.
+ */
+function findInsertionIndex(
+  pos: number,
+  bounds: ElementBounds[],
+  fallback: number,
+  isHorizontal: boolean,
+): number {
+  for (let i = 0; i < bounds.length; i++) {
+    const b = bounds[i];
+    const bStart = isHorizontal ? b.x : b.y;
+    const bEnd = bStart + (isHorizontal ? b.width : b.height);
+    if (pos < bStart) return i;
+    if (pos >= bStart && pos <= bEnd) {
+      return pos < (bStart + bEnd) / 2 ? i : i + 1;
+    }
+  }
+  return fallback;
+}
 
 /**
  * 컨테이너의 주요 flex 방향을 결정한다.
@@ -208,25 +232,13 @@ function resolveCrossContainerDrop(
     if (b) childBounds.push(b);
   }
 
-  // 삽입 위치 계산 (same-parent 로직과 동일)
   const pos = isHorizontal ? scenePoint.x : scenePoint.y;
-  let insertionIndex = children.length;
-
-  for (let i = 0; i < childBounds.length; i++) {
-    const b = childBounds[i];
-    const bStart = isHorizontal ? b.x : b.y;
-    const bEnd = bStart + (isHorizontal ? b.width : b.height);
-
-    if (pos < bStart) {
-      insertionIndex = i;
-      break;
-    }
-    if (pos >= bStart && pos <= bEnd) {
-      const mid = (bStart + bEnd) / 2;
-      insertionIndex = pos < mid ? i : i + 1;
-      break;
-    }
-  }
+  const insertionIndex = findInsertionIndex(
+    pos,
+    childBounds,
+    children.length,
+    isHorizontal,
+  );
 
   return {
     containerId,
@@ -315,37 +327,14 @@ export function resolveDropTarget(
   }
   if (!containerBounds) return null;
 
-  // 7. insertion index 결정 (gap 기반)
-  //
-  // 알고리즘:
-  // - 커서가 형제 영역 위에 있으면 → 해당 형제의 midpoint 기준으로 삽입
-  // - 커서가 gap(형제 사이 빈 영역)에 있으면 → 해당 gap에 삽입
-  // - 커서가 모든 형제 위에 있으면 → 맨 처음/뒤에 삽입
+  // 7. insertion index 결정 (gap 기반 midpoint 비교)
   const pos = isHorizontal ? scenePoint.x : scenePoint.y;
-  let insertionIndex = siblings.length; // 기본: 맨 뒤
-
-  for (let i = 0; i < siblingBounds.length; i++) {
-    const b = siblingBounds[i];
-    const bStart = isHorizontal ? b.x : b.y;
-    const bEnd = bStart + (isHorizontal ? b.width : b.height);
-
-    if (pos < bStart) {
-      // 커서가 이 형제 시작 전 (gap 또는 컨테이너 시작) → 이 형제 앞에 삽입
-      insertionIndex = i;
-      break;
-    }
-    if (pos >= bStart && pos <= bEnd) {
-      // 커서가 형제 영역 위 → midpoint 기준
-      const mid = (bStart + bEnd) / 2;
-      if (pos < mid) {
-        insertionIndex = i;
-      } else {
-        insertionIndex = i + 1;
-      }
-      break;
-    }
-    // pos > bEnd → 다음 형제 확인
-  }
+  const insertionIndex = findInsertionIndex(
+    pos,
+    siblingBounds,
+    siblings.length,
+    isHorizontal,
+  );
 
   // 8. 현재 드래그 요소의 현재 index를 구해 인접 삽입 여부 판단
   const currentIndex = sortedChildren.findIndex(
@@ -427,13 +416,17 @@ export function computeSiblingOffsets(
   if (!dragBounds) return offsets;
   const dragSize = isHorizontal ? dragBounds.width : dragBounds.height;
 
-  // 드래그 요소를 제외한 형제 배열 (siblings)과 각 형제의 원래 인덱스(oi)
+  // id → 원래 인덱스 맵 (O(1) lookup, findIndex N² 제거)
+  const origIndexMap = new Map<string, number>();
+  for (let j = 0; j < sortedChildren.length; j++) {
+    origIndexMap.set(sortedChildren[j].id, j);
+  }
+
   const siblings = sortedChildren.filter((c) => c.id !== draggedElementId);
 
   for (let i = 0; i < siblings.length; i++) {
     const sibling = siblings[i];
-    // 형제의 원래 전체 배열 인덱스
-    const oi = sortedChildren.findIndex((c) => c.id === sibling.id);
+    const oi = origIndexMap.get(sibling.id)!;
 
     // vacate: 원래 드래그 위치 이��� 형제 → gap close
     const closeGap = oi > origIdx ? -dragSize : 0;
