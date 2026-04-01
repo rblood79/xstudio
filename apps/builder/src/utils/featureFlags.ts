@@ -18,8 +18,6 @@
 export type RenderMode = "skia";
 
 export interface FeatureFlags {
-  /** WebGL Canvas 사용 여부 (Phase 10) */
-  useWebGLCanvas: boolean;
   /** 디버그 로그 활성화 */
   enableDebugLogs: boolean;
   /** 캔버스 비교 모드 (iframe + PixiJS 동시 표시) */
@@ -76,11 +74,6 @@ export function isWebGLCanvas(): boolean {
 }
 
 /**
- * @deprecated Use isWebGLCanvas() instead
- */
-export const useWebGLCanvas = isWebGLCanvas;
-
-/**
  * 디버그 로그 활성화 여부
  *
  * @returns true if debug logs should be enabled
@@ -106,11 +99,6 @@ export function enableDebugLogs(): boolean {
 export function isCanvasCompareMode(): boolean {
   return parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false);
 }
-
-/**
- * @deprecated Use isCanvasCompareMode() instead
- */
-export const useCanvasCompareMode = isCanvasCompareMode;
 
 // ============================================
 // WASM Feature Flags (Phase 0+)
@@ -191,15 +179,9 @@ export function isReactQueryDevtoolsEnabled(): boolean {
  *
  * @returns 현재 Feature Flags 상태
  *
- * @example
- * ```typescript
- * const flags = getFeatureFlags();
- * // { useWebGLCanvas: false, enableDebugLogs: true }
- * ```
  */
 export function getFeatureFlags(): FeatureFlags {
   return {
-    useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, true),
     enableDebugLogs: parseBoolean(
       import.meta.env.VITE_ENABLE_DEBUG_LOGS,
       false,
@@ -212,6 +194,10 @@ export function getFeatureFlags(): FeatureFlags {
     wasmLayoutEngine: true,
     renderMode: "skia" as RenderMode,
     fillV2: parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false),
+    enableReactQueryDevtools: parseBoolean(
+      import.meta.env.VITE_ENABLE_REACT_QUERY_DEVTOOLS,
+      false,
+    ),
   };
 }
 

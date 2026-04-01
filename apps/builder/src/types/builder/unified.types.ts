@@ -2041,19 +2041,6 @@ export function createDefaultIconProps(): IconElementProps {
   };
 }
 
-export function createDefaultScrollBoxProps(): BaseElementProps {
-  return {
-    // CSS base: overflow:auto, 컨테이너
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      width: "100%",
-      height: "200px",
-      overflow: "auto",
-    },
-  };
-}
-
 export function createDefaultMaskedFrameProps(): BaseElementProps {
   return {
     // CSS base: overflow:hidden, 클리핑 마스크 컨테이너
@@ -2171,7 +2158,6 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Group: createDefaultGroupProps,
     Image: createDefaultImageProps,
     Icon: createDefaultIconProps,
-    ScrollBox: createDefaultScrollBoxProps,
     MaskedFrame: createDefaultMaskedFrameProps,
     Skeleton: createDefaultSkeletonProps,
   };

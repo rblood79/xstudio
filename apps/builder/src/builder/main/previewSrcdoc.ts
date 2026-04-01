@@ -27,8 +27,10 @@ const BASE_STYLES = `
   }
   /* ⭐ body가 React 루트이자 body element로 사용됨 (DOM/데이터 트리 일치) */
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
     line-height: 1.5;
+    color: var(--fg, #1a1a1a);
+    background: var(--bg, #ffffff);
   }
   .preview-empty, .preview-loading {
     display: flex;

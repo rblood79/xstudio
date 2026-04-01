@@ -31,12 +31,6 @@ export type ComponentSizeSubset = "sm" | "md" | "lg";
  */
 export type DensitySize = "compact" | "comfortable" | "relaxed" | "spacious";
 
-/**
- * Legacy size values (to be migrated)
- * @deprecated Use ComponentSize or ComponentSizeSubset instead
- */
-export type LegacySize = "small" | "medium" | "large";
-
 // ============================================================================
 // S2 Common Props
 // ============================================================================
@@ -146,14 +140,6 @@ export type TabsDensity = "compact" | "regular";
 // Utility Types
 // ============================================================================
 
-export type ConvertLegacySize<T extends LegacySize> = T extends "small"
-  ? "sm"
-  : T extends "medium"
-    ? "md"
-    : T extends "large"
-      ? "lg"
-      : never;
-
 export interface VariantSizeProps<V = string, S = ComponentSize> {
   variant?: V;
   size?: S;
@@ -167,23 +153,4 @@ export function isComponentSize(value: unknown): value is ComponentSize {
   return (
     typeof value === "string" && ["xs", "sm", "md", "lg", "xl"].includes(value)
   );
-}
-
-export function isLegacySize(value: unknown): value is LegacySize {
-  return (
-    typeof value === "string" && ["small", "medium", "large"].includes(value)
-  );
-}
-
-export function convertLegacySize(size: LegacySize): ComponentSizeSubset {
-  switch (size) {
-    case "small":
-      return "sm";
-    case "medium":
-      return "md";
-    case "large":
-      return "lg";
-    default:
-      return "md";
-  }
 }

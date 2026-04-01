@@ -149,19 +149,4 @@ export function useCanvasSetSelectedElement() {
   return useStore((state) => state.setSelectedElement);
 }
 
-// ============================================
-// Migration Helpers
-// ============================================
-
-/**
- * @deprecated postMessage 기반 시스템에서 마이그레이션 중
- * WebGL Canvas는 useCanvasElements()를 사용하세요
- */
-export function getElementsFromStore() {
-  console.warn(
-    "[DEPRECATED] getElementsFromStore() is deprecated. Use useCanvasElements() hook instead.",
-  );
-  return useStore.getState().elements;
-}
-
 export default useCanvasStore;

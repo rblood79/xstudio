@@ -309,10 +309,6 @@ export type { DropZoneProps } from "./DropZone.spec";
 export { FileTriggerSpec } from "./FileTrigger.spec";
 export type { FileTriggerProps } from "./FileTrigger.spec";
 
-// ScrollBox
-export { ScrollBoxSpec } from "./ScrollBox.spec";
-export type { ScrollBoxProps } from "./ScrollBox.spec";
-
 // MaskedFrame
 export { MaskedFrameSpec } from "./MaskedFrame.spec";
 export type { MaskedFrameProps } from "./MaskedFrame.spec";

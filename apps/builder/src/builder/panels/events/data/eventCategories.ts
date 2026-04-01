@@ -2,13 +2,7 @@
  * 이벤트 카테고리 및 메타데이터
  */
 
-import {
-  Mouse,
-  FileText,
-  Keyboard,
-  Component,
-  Zap,
-} from 'lucide-react';
+import { Mouse, FileText, Keyboard, Component, Zap } from "lucide-react";
 import type { EventCategory, EventMetadata, EventType } from "../types";
 
 /**
@@ -25,38 +19,38 @@ export const EVENT_CATEGORIES: Record<string, EventCategory> = {
       "onMouseEnter",
       "onMouseLeave",
       "onMouseDown",
-      "onMouseUp"
+      "onMouseUp",
     ],
-    description: "마우스 상호작용 이벤트"
+    description: "마우스 상호작용 이벤트",
   },
   form: {
     id: "form",
     label: "Form Events",
     icon: FileText,
     events: ["onChange", "onInput", "onSubmit", "onFocus", "onBlur"],
-    description: "폼 입력 및 제출 이벤트"
+    description: "폼 입력 및 제출 이벤트",
   },
   keyboard: {
     id: "keyboard",
     label: "Keyboard Events",
     icon: Keyboard,
     events: ["onKeyDown", "onKeyUp", "onKeyPress"],
-    description: "키보드 입력 이벤트"
+    description: "키보드 입력 이벤트",
   },
   reactAria: {
     id: "reactAria",
     label: "React Aria Events",
     icon: Component,
     events: ["onPress", "onSelectionChange", "onAction", "onOpenChange"],
-    description: "React Aria 컴포넌트 전용 이벤트"
+    description: "React Aria 컴포넌트 전용 이벤트",
   },
   other: {
     id: "other",
     label: "Other Events",
     icon: Zap,
     events: ["onScroll", "onResize", "onLoad"],
-    description: "기타 이벤트"
-  }
+    description: "기타 이벤트",
+  },
 };
 
 /**
@@ -70,7 +64,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "95%",
     category: "mouse",
     compatibleWith: ["Button", "Link", "Card", "Image", "div"],
-    example: "버튼 클릭 → 페이지 이동"
+    example: "버튼 클릭 → 페이지 이동",
   },
   onDoubleClick: {
     label: "더블클릭",
@@ -78,7 +72,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "15%",
     category: "mouse",
     compatibleWith: ["Button", "Card", "div"],
-    example: "카드 더블클릭 → 상세 보기"
+    example: "카드 더블클릭 → 상세 보기",
   },
   onMouseEnter: {
     label: "마우스 진입",
@@ -86,7 +80,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "45%",
     category: "mouse",
     compatibleWith: ["Button", "Card", "Tooltip", "div"],
-    example: "카드 호버 → 툴팁 표시"
+    example: "카드 호버 → 툴팁 표시",
   },
   onMouseLeave: {
     label: "마우스 나감",
@@ -94,7 +88,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "40%",
     category: "mouse",
     compatibleWith: ["Button", "Card", "Tooltip", "div"],
-    example: "카드에서 마우스 나감 → 툴팁 숨김"
+    example: "카드에서 마우스 나감 → 툴팁 숨김",
   },
   onMouseDown: {
     label: "마우스 다운",
@@ -102,7 +96,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "10%",
     category: "mouse",
     compatibleWith: ["Button", "div"],
-    example: "드래그 시작"
+    example: "드래그 시작",
   },
   onMouseUp: {
     label: "마우스 업",
@@ -110,7 +104,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "10%",
     category: "mouse",
     compatibleWith: ["Button", "div"],
-    example: "드래그 종료"
+    example: "드래그 종료",
   },
 
   // Form Events
@@ -126,9 +120,9 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
       "Checkbox",
       "Switch",
       "RadioGroup",
-      "Slider"
+      "Slider",
     ],
-    example: "입력 필드 변경 → 상태 업데이트"
+    example: "입력 필드 변경 → 상태 업데이트",
   },
   onInput: {
     label: "입력",
@@ -136,7 +130,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "60%",
     category: "form",
     compatibleWith: ["TextField", "SearchField"],
-    example: "검색어 입력 → 자동완성 표시"
+    example: "검색어 입력 → 자동완성 표시",
   },
   onSubmit: {
     label: "제출",
@@ -144,7 +138,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "85%",
     category: "form",
     compatibleWith: ["Form"],
-    example: "폼 제출 → API 호출"
+    example: "폼 제출 → API 호출",
   },
   onFocus: {
     label: "포커스",
@@ -152,7 +146,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "50%",
     category: "form",
     compatibleWith: ["TextField", "Select", "ComboBox", "Button"],
-    example: "입력 필드 포커스 → 도움말 표시"
+    example: "입력 필드 포커스 → 도움말 표시",
   },
   onBlur: {
     label: "포커스 해제",
@@ -160,7 +154,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "45%",
     category: "form",
     compatibleWith: ["TextField", "Select", "ComboBox", "Button"],
-    example: "입력 필드 벗어남 → 유효성 검사"
+    example: "입력 필드 벗어남 → 유효성 검사",
   },
 
   // Keyboard Events
@@ -170,7 +164,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "35%",
     category: "keyboard",
     compatibleWith: ["TextField", "SearchField", "div"],
-    example: "Enter 키 → 검색 실행"
+    example: "Enter 키 → 검색 실행",
   },
   onKeyUp: {
     label: "키 뗌",
@@ -178,7 +172,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "20%",
     category: "keyboard",
     compatibleWith: ["TextField", "SearchField", "div"],
-    example: "Escape 키 → 모달 닫기"
+    example: "Escape 키 → 모달 닫기",
   },
   onKeyPress: {
     label: "키 입력",
@@ -186,7 +180,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "15%",
     category: "keyboard",
     compatibleWith: ["TextField", "SearchField"],
-    example: "키 입력 → 실시간 검색"
+    example: "키 입력 → 실시간 검색",
   },
 
   // React Aria Events
@@ -196,7 +190,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "90%",
     category: "reactAria",
     compatibleWith: ["Button", "ToggleButton", "Link"],
-    example: "버튼 프레스 → 액션 실행"
+    example: "버튼 프레스 → 액션 실행",
   },
   onSelectionChange: {
     label: "선택 변경",
@@ -210,9 +204,9 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
       "ComboBox",
       "TagGroup",
       "ToggleButtonGroup",
-      "RadioGroup"
+      "RadioGroup",
     ],
-    example: "리스트 아이템 선택 → 상세 정보 표시"
+    example: "리스트 아이템 선택 → 상세 정보 표시",
   },
   onAction: {
     label: "액션",
@@ -220,7 +214,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "80%",
     category: "reactAria",
     compatibleWith: ["Menu", "ListBox", "GridList"],
-    example: "메뉴 아이템 클릭 → 명령 실행"
+    example: "메뉴 아이템 클릭 → 명령 실행",
   },
   onOpenChange: {
     label: "열림/닫힘",
@@ -228,7 +222,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "70%",
     category: "reactAria",
     compatibleWith: ["Menu", "ComboBox", "Select", "Dialog"],
-    example: "드롭다운 열림 → 데이터 로드"
+    example: "드롭다운 열림 → 데이터 로드",
   },
 
   // Other Events
@@ -237,8 +231,8 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     description: "요소가 스크롤될 때 발생",
     usage: "30%",
     category: "other",
-    compatibleWith: ["div", "ScrollView"],
-    example: "페이지 하단 도달 → 더 로드"
+    compatibleWith: ["div"],
+    example: "페이지 하단 도달 → 더 로드",
   },
   onResize: {
     label: "크기 변경",
@@ -246,7 +240,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "10%",
     category: "other",
     compatibleWith: ["div", "ResizablePanel"],
-    example: "창 크기 변경 → 레이아웃 재계산"
+    example: "창 크기 변경 → 레이아웃 재계산",
   },
   onLoad: {
     label: "로드",
@@ -254,8 +248,8 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     usage: "25%",
     category: "other",
     compatibleWith: ["Image", "iframe"],
-    example: "이미지 로드 완료 → 애니메이션 시작"
-  }
+    example: "이미지 로드 완료 → 애니메이션 시작",
+  },
 };
 
 /**
@@ -299,7 +293,7 @@ export const COMPONENT_RECOMMENDED_EVENTS: Record<string, EventType[]> = {
   Image: ["onClick", "onLoad"],
 
   // Default
-  default: ["onClick", "onPress"]
+  default: ["onClick", "onPress"],
 };
 
 /**
@@ -307,7 +301,7 @@ export const COMPONENT_RECOMMENDED_EVENTS: Record<string, EventType[]> = {
  */
 export function isEventCompatible(
   eventType: EventType,
-  componentType: string
+  componentType: string,
 ): boolean {
   const metadata = EVENT_METADATA[eventType];
   if (!metadata.compatibleWith) return true;
@@ -318,7 +312,10 @@ export function isEventCompatible(
  * 컴포넌트의 추천 이벤트 가져오기
  */
 export function getRecommendedEvents(componentType: string): EventType[] {
-  return COMPONENT_RECOMMENDED_EVENTS[componentType] || COMPONENT_RECOMMENDED_EVENTS.default;
+  return (
+    COMPONENT_RECOMMENDED_EVENTS[componentType] ||
+    COMPONENT_RECOMMENDED_EVENTS.default
+  );
 }
 
 /**

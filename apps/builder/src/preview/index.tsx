@@ -32,12 +32,7 @@ const injectBaseStyles = () => {
     }
 
     /* ⭐ body가 React 루트이자 body element로 사용됨 */
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      line-height: 1.5;
-      color: var(--fg, #1a1a1a);
-      background: var(--bg, #ffffff);
-    }
+    
 
     .canvas-empty {
       display: flex;
@@ -107,19 +102,3 @@ if (document.readyState === "loading") {
 } else {
   initCanvasRuntime();
 }
-
-// ============================================
-// Exports (번들 시 사용)
-// ============================================
-
-export { App } from "./App";
-export { getRuntimeStore, useRuntimeStore } from "./store";
-export { navigateInCanvas } from "./router";
-export { messageSender } from "./messaging";
-
-// Legacy exports for backward compatibility
-export {
-  getRuntimeStore as getPreviewStore,
-  useRuntimeStore as usePreviewStore,
-} from "./store";
-export { navigateInCanvas as navigateInPreview } from "./router";

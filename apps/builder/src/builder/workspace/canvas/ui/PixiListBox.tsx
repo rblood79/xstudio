@@ -2,7 +2,6 @@
  * Pixi ListBox
  *
  * 투명 히트 영역 전용 컴포넌트
- * Skia가 모든 시각적 렌더링을 담당하므로 @pixi/ui ScrollBox는 불필요.
  * 이벤트 히트 영역만 제공합니다.
  *
  * @since 2025-12-16 Phase 1 WebGL Migration

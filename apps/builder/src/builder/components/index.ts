@@ -28,7 +28,7 @@ export {
 } from "./property";
 
 // Panel 컴포넌트
-export { PanelHeader, Section, SectionHeader } from "./panel";
+export { PanelHeader, Section } from "./panel";
 export type { SectionProps } from "./panel";
 
 // Selection 컴포넌트

@@ -92,7 +92,6 @@ import {
   SkeletonSpec,
   DropZoneSpec,
   FileTriggerSpec,
-  ScrollBoxSpec,
   MaskedFrameSpec,
   InputSpec,
   ListSpec,
@@ -151,7 +150,6 @@ import {
   PixiSelect,
   PixiProgressBar,
   PixiSwitcher,
-  PixiScrollBox,
   PixiList,
   PixiMaskedFrame,
   // Phase 1 WebGL Migration Components
@@ -296,10 +294,10 @@ const POPOVER_TRIGGER_TAGS = new Set(["Menu"]);
 /**
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
  */
-const UI_BUTTON_TAGS = new Set(["Button", "SubmitButton"]);
+const UI_BUTTON_TAGS = new Set(["Button"]);
 
-const UI_CHECKBOX_GROUP_TAGS = new Set(["CheckboxGroup"]); // CheckboxGroup 컨테이너
-const UI_CHECKBOX_ITEM_TAGS = new Set(["Checkbox", "CheckBox"]); // Checkbox 개별 아이템 (Switch/Toggle은 UI_SWITCH_TAGS로 분리)
+const UI_CHECKBOX_GROUP_TAGS = new Set(["CheckboxGroup"]);
+const UI_CHECKBOX_ITEM_TAGS = new Set(["Checkbox"]);
 const UI_RADIO_GROUP_TAGS = new Set(["RadioGroup"]); // RadioGroup 컨테이너
 const UI_RADIO_ITEM_TAGS = new Set(["Radio"]); // Radio 개별 아이템 (투명 hit area만)
 
@@ -307,27 +305,12 @@ const UI_RADIO_ITEM_TAGS = new Set(["Radio"]); // Radio 개별 아이템 (투명
  * UI 컴포넌트 태그들 (Phase 6)
  */
 const UI_SLIDER_TAGS = new Set(["Slider"]);
-const UI_INPUT_TAGS = new Set(["Input"]); // TextField/TextInput은 UI_TEXTFIELD_TAGS, SearchField는 UI_SEARCHFIELD_TAGS로 분리
-const UI_SELECT_TAGS = new Set(["Select", "Dropdown"]); // ComboBox는 UI_COMBOBOX_TAGS로 분리
-const UI_PROGRESS_TAGS = new Set([
-  "ProgressBar",
-  "Progress",
-  "LoadingBar",
-  "ProgressCircle",
-]);
-const UI_SWITCHER_TAGS = new Set(["Switcher", "SegmentedControl", "TabBar"]);
-const UI_SCROLLBOX_TAGS = new Set([
-  "ScrollBox",
-  "ScrollContainer",
-  "ScrollView",
-]);
-const UI_LIST_TAGS = new Set(["List", "ItemList", "VirtualList"]);
-const UI_MASKEDFRAME_TAGS = new Set([
-  "MaskedFrame",
-  "ClippedImage",
-  "MaskedImage",
-  "AvatarImage",
-]);
+const UI_INPUT_TAGS = new Set(["Input"]);
+const UI_SELECT_TAGS = new Set(["Select"]);
+const UI_PROGRESS_TAGS = new Set(["ProgressBar", "ProgressCircle"]);
+const UI_SWITCHER_TAGS = new Set(["Switcher", "TabBar"]);
+const UI_LIST_TAGS = new Set(["List"]);
+const UI_MASKEDFRAME_TAGS = new Set(["MaskedFrame"]);
 
 /**
  * Phase 1 WebGL Migration 컴포넌트 태그들
@@ -335,20 +318,20 @@ const UI_MASKEDFRAME_TAGS = new Set([
 const UI_TOGGLEBUTTON_TAGS = new Set(["ToggleButton"]);
 const UI_TOGGLEBUTTONGROUP_TAGS = new Set(["ToggleButtonGroup"]);
 const UI_LISTBOX_TAGS = new Set(["ListBox"]);
-const UI_BADGE_TAGS = new Set(["Badge", "Tag", "Chip", "Icon"]);
-const UI_METER_TAGS = new Set(["Meter", "Gauge"]);
+const UI_BADGE_TAGS = new Set(["Badge", "Tag", "Icon"]);
+const UI_METER_TAGS = new Set(["Meter"]);
 const UI_STATUSLIGHT_TAGS = new Set(["StatusLight"]);
 
 /**
  * Phase 2 WebGL Migration 컴포넌트 태그들
  */
-const UI_SEPARATOR_TAGS = new Set(["Separator", "Divider", "Hr"]);
-const UI_LINK_TAGS = new Set(["Link", "Anchor", "A"]);
+const UI_SEPARATOR_TAGS = new Set(["Separator"]);
+const UI_LINK_TAGS = new Set(["Link"]);
 const UI_BREADCRUMBS_TAGS = new Set(["Breadcrumbs"]);
-const UI_CARD_TAGS = new Set(["Card", "Box"]);
+const UI_CARD_TAGS = new Set(["Card"]);
 const UI_PANEL_TAGS = new Set(["Panel"]);
-const UI_MENU_TAGS = new Set(["Menu", "ContextMenu", "DropdownMenu"]);
-const UI_TABS_TAGS = new Set(["Tabs", "TabList"]);
+const UI_MENU_TAGS = new Set(["Menu"]);
+const UI_TABS_TAGS = new Set(["Tabs"]);
 
 /**
  * Phase 3 WebGL Migration 컴포넌트 태그들
@@ -367,17 +350,17 @@ const FORM_INHERITANCE_TAGS = new Set([
  * Phase 4 WebGL Migration 컴포넌트 태그들
  */
 const UI_GRIDLIST_TAGS = new Set(["GridList"]);
-const UI_TREE_TAGS = new Set(["Tree", "TreeView"]);
-const UI_TABLE_TAGS = new Set(["Table", "DataTable", "DataGrid"]);
+const UI_TREE_TAGS = new Set(["Tree"]);
+const UI_TABLE_TAGS = new Set(["Table"]);
 
 /**
  * Phase 5 WebGL Migration 컴포넌트 태그들
  */
 const UI_DISCLOSURE_TAGS = new Set(["Disclosure"]);
-const UI_DISCLOSUREGROUP_TAGS = new Set(["DisclosureGroup", "Accordion"]);
+const UI_DISCLOSUREGROUP_TAGS = new Set(["DisclosureGroup"]);
 const UI_TOOLTIP_TAGS = new Set(["Tooltip"]);
 const UI_POPOVER_TAGS = new Set(["Popover"]);
-const UI_DIALOG_TAGS = new Set(["Dialog", "Modal", "AlertDialog"]);
+const UI_DIALOG_TAGS = new Set(["Dialog"]);
 
 /**
  * Phase 6 WebGL Migration 컴포넌트 태그들 - Date/Color Components
@@ -400,14 +383,14 @@ const UI_DATERANGEPICKER_TAGS = new Set(["DateRangePicker"]);
 /**
  * Phase 7 WebGL Migration 컴포넌트 태그들 - Form & Utility Components
  */
-const UI_TEXTFIELD_TAGS = new Set(["TextField", "TextInput"]);
-const UI_SWITCH_TAGS = new Set(["Switch", "Toggle"]);
-const UI_TEXTAREA_TAGS = new Set(["TextArea", "Textarea"]);
+const UI_TEXTFIELD_TAGS = new Set(["TextField"]);
+const UI_SWITCH_TAGS = new Set(["Switch"]);
+const UI_TEXTAREA_TAGS = new Set(["TextArea"]);
 const UI_FORM_TAGS = new Set(["Form"]);
 const UI_TOOLBAR_TAGS = new Set(["Toolbar"]);
-const UI_FILETRIGGER_TAGS = new Set(["FileTrigger", "FileUpload", "FileInput"]);
-const UI_DROPZONE_TAGS = new Set(["DropZone", "FileDropZone"]);
-const UI_SKELETON_TAGS = new Set(["Skeleton", "SkeletonLoader"]);
+const UI_FILETRIGGER_TAGS = new Set(["FileTrigger"]);
+const UI_DROPZONE_TAGS = new Set(["DropZone"]);
+const UI_SKELETON_TAGS = new Set(["Skeleton"]);
 
 /**
  * Phase 8 WebGL Migration 컴포넌트 태그들 - Notification & Color Utility Components
@@ -593,7 +576,6 @@ function getSpriteType(element: Element): SpriteType {
   // ProgressBar/ProgressCircle: TAG_SPEC_MAP에 등록 → spriteType "box" + hasSpecShapes로 표준 경로 사용
   // if (UI_PROGRESS_TAGS.has(tag)) return "progressBar";  // 제거: 전용 경로 대신 표준 spec shapes 경로
   if (UI_SWITCHER_TAGS.has(tag)) return "switcher";
-  if (UI_SCROLLBOX_TAGS.has(tag)) return "scrollBox";
   if (UI_LIST_TAGS.has(tag)) return "list";
   if (UI_MASKEDFRAME_TAGS.has(tag)) return "maskedFrame";
 
@@ -682,79 +664,48 @@ function getSpriteType(element: Element): SpriteType {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+  // Core components
   Button: ButtonSpec,
-  SubmitButton: ButtonSpec,
   CheckboxGroup: CheckboxGroupSpec,
   Checkbox: CheckboxSpec,
-  CheckBox: CheckboxSpec,
   Switch: SwitchSpec,
-  Toggle: SwitchSpec,
   RadioGroup: RadioGroupSpec,
   Radio: RadioSpec,
   Slider: SliderSpec,
   Input: InputSpec,
   TextField: TextFieldSpec,
-  TextInput: TextFieldSpec,
   SearchField: SearchFieldSpec,
   Select: SelectSpec,
-  Dropdown: SelectSpec,
   ComboBox: ComboBoxSpec,
   ProgressBar: ProgressBarSpec,
-  Progress: ProgressBarSpec,
-  LoadingBar: ProgressBarSpec,
   Switcher: SwitcherSpec,
-  SegmentedControl: SwitcherSpec,
   TabBar: SwitcherSpec,
-  ScrollBox: ScrollBoxSpec,
-  ScrollContainer: ScrollBoxSpec,
-  ScrollView: ScrollBoxSpec,
   List: ListSpec,
-  ItemList: ListSpec,
-  VirtualList: ListSpec,
   MaskedFrame: MaskedFrameSpec,
-  ClippedImage: MaskedFrameSpec,
-  MaskedImage: MaskedFrameSpec,
-  AvatarImage: MaskedFrameSpec,
   ToggleButton: ToggleButtonSpec,
   ToggleButtonGroup: ToggleButtonGroupSpec,
   ListBox: ListBoxSpec,
   Badge: BadgeSpec,
   Icon: IconSpec,
   Tag: TagSpec,
-  Chip: BadgeSpec,
   Meter: MeterSpec,
-  Gauge: MeterSpec,
   Separator: SeparatorSpec,
-  Hr: SeparatorSpec,
   Link: LinkSpec,
-  Anchor: LinkSpec,
-  A: LinkSpec,
   Breadcrumbs: BreadcrumbsSpec,
   Card: CardSpec,
-  Box: CardSpec,
   Nav: NavSpec,
-  Navigation: NavSpec,
   Panel: PanelSpec,
   Menu: MenuSpec,
-  ContextMenu: MenuSpec,
-  DropdownMenu: MenuSpec,
   Tabs: TabsSpec,
-  TabList: TabsSpec,
   NumberField: NumberFieldSpec,
   GridList: GridListSpec,
   Tree: TreeSpec,
-  TreeView: TreeSpec,
   Table: TableSpec,
-  DataTable: TableSpec,
-  DataGrid: TableSpec,
   Disclosure: DisclosureSpec,
   DisclosureGroup: DisclosureGroupSpec,
-  Accordion: DisclosureGroupSpec,
   Tooltip: TooltipSpec,
   Popover: PopoverSpec,
   Dialog: DialogSpec,
-  Modal: DialogSpec,
-  AlertDialog: DialogSpec,
   ColorSwatch: ColorSwatchSpec,
   ColorSlider: ColorSliderSpec,
   TimeField: TimeFieldSpec,
@@ -769,33 +720,23 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   ColorPicker: ColorPickerSpec,
   DateRangePicker: DateRangePickerSpec,
   TextArea: TextAreaSpec,
-  Textarea: TextAreaSpec,
   Form: FormSpec,
   Toolbar: ToolbarSpec,
   FileTrigger: FileTriggerSpec,
-  FileUpload: FileTriggerSpec,
-  FileInput: FileTriggerSpec,
   DropZone: DropZoneSpec,
-  FileDropZone: DropZoneSpec,
   Skeleton: SkeletonSpec,
-  SkeletonLoader: SkeletonSpec,
   Toast: ToastSpec,
   Pagination: PaginationSpec,
   ColorField: ColorFieldSpec,
   ColorSwatchPicker: ColorSwatchPickerSpec,
   Group: GroupSpec,
   Slot: SlotSpec,
-  // Phase 1: Display/Feedback
   Avatar: AvatarSpec,
   AvatarGroup: AvatarGroupSpec,
   StatusLight: StatusLightSpec,
   InlineAlert: InlineAlertSpec,
-  // Phase 2: Action/Group components (ADR-030)
   ButtonGroup: ButtonGroupSpec,
-  // Phase 3: Extended Controls (ADR-030)
   ProgressCircle: ProgressCircleSpec,
-  // Image: ImageSprite handles rendering directly (not spec-based)
-  // Phase 4: Advanced Components (ADR-030)
   IllustratedMessage: IllustratedMessageSpec,
   CardView: CardViewSpec,
   TableView: TableViewSpec,
@@ -2804,11 +2745,6 @@ export const ElementSprite = memo(function ElementSprite({
             isSelected={isSelected}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
-        );
-
-      case "scrollBox":
-        return (
-          <PixiScrollBox element={effectiveElement} isSelected={isSelected} />
         );
 
       case "list":
