@@ -12,6 +12,9 @@ import { App } from "./App";
 // ⭐ 모노레포 구조에서는 @xstudio/shared alias 사용
 import "@xstudio/shared/components/styles/index.css";
 
+// Pretendard 폰트 (Preview iframe은 별도 컨텍스트이므로 독립 로드 필요)
+import "pretendard/dist/web/static/pretendard.css";
+
 // ============================================
 // Styles (인라인으로 포함되거나 별도 CSS 파일)
 // ============================================

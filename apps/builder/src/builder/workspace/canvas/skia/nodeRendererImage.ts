@@ -2,6 +2,7 @@ import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
 import { SkiaDisposable } from "./disposable";
 import { createRoundRectPath } from "./nodeRendererClip";
 import type { SkiaNodeData } from "./nodeRendererTypes";
+import { DEFAULT_FONT_FEATURES } from "../layout/engines/cssResolver";
 
 export function renderImage(
   ck: CanvasKit,
@@ -85,6 +86,7 @@ export function renderImage(
             color: ck.Color(156, 163, 175, 1),
             fontSize: altFontSize,
             fontFamilies: ["Pretendard", "sans-serif"],
+            fontFeatures: DEFAULT_FONT_FEATURES,
           }),
         );
         builder.addText(altText);

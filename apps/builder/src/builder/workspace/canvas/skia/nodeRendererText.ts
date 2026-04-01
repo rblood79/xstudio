@@ -1,7 +1,14 @@
-import type { CanvasKit, Canvas, FontMgr, Paragraph, EmbindEnumEntity } from "canvaskit-wasm";
+import type {
+  CanvasKit,
+  Canvas,
+  FontMgr,
+  Paragraph,
+  EmbindEnumEntity,
+} from "canvaskit-wasm";
 import {
   resolveFontVariantFeatures,
   resolveFontStretchWidth,
+  DEFAULT_FONT_FEATURES,
 } from "../layout/engines/cssResolver";
 import {
   cssNormalBreakProcess,
@@ -215,7 +222,8 @@ export function renderText(
       fontWidthEntries[fontWidthIndex - 1]?.[1] ?? fontWidthEnumValues.Normal;
 
     const fontVariantStr = node.text.fontVariant ?? "normal";
-    const fontFeatureTags = resolveFontVariantFeatures(fontVariantStr);
+    const variantFeatures = resolveFontVariantFeatures(fontVariantStr);
+    const fontFeatureTags = [...DEFAULT_FONT_FEATURES, ...variantFeatures];
 
     const heightMultiplierOpt =
       heightMultiplier > 0 ? heightMultiplier : undefined;

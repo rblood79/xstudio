@@ -14,7 +14,7 @@
 @layer dashboard, base, preview-system, components, shared-tokens, builder-system, utilities;
 
 /* External dependencies */
-@import "../node_modules/pretendard/dist/web/static/pretendard.css";
+@import "pretendard/dist/web/static/pretendard.css";
 @import "tailwindcss";
 
 /* Tailwind base styles (includes :root, @font-face, @layer base, @layer components) */

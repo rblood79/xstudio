@@ -346,7 +346,6 @@ export function SkiaOverlay({
         // 기본 폰트 로드 (텍스트 렌더링에 필수)
         // Pretendard 다중 weight 로드 — Spec fontWeight와 CanvasKit 폰트 매칭
         {
-          // 정적 import — Vite가 각 woff2 파일을 asset URL로 변환
           const fontWeights = [
             {
               url: (

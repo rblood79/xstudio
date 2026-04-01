@@ -464,12 +464,8 @@ export function applyImplicitStyles(
                 ),
               ) || 14;
             const labelWidth =
-              measureTextWidth(
-                labelText,
-                labelFontSize,
-                "Pretendard Variable",
-                500,
-              ) + gap;
+              measureTextWidth(labelText, labelFontSize, "Pretendard", 500) +
+              gap;
             parentWidth = Math.max(parentWidth - labelWidth, 50);
           }
         }
@@ -507,7 +503,7 @@ export function applyImplicitStyles(
           const textWidth = measureTextWidth(
             text,
             tagFontSize,
-            "Pretendard Variable",
+            "Pretendard",
             400,
           );
           const tagWidth = tagPaddingX * 2 + borderWidth * 2 + textWidth;

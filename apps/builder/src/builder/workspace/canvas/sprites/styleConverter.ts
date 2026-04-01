@@ -10,15 +10,18 @@
  * @updated 2025-12-20 Phase 22 - colord 색상 파싱
  */
 
-import { cssColorToPixiHex } from '../../../../utils/color';
-import { colord, extend } from 'colord';
-import lchPlugin from 'colord/plugins/lch';
-import labPlugin from 'colord/plugins/lab';
+import { cssColorToPixiHex } from "../../../../utils/color";
+import { colord, extend } from "colord";
+import lchPlugin from "colord/plugins/lch";
+import labPlugin from "colord/plugins/lab";
 
-import type { EffectStyle, DropShadowEffect } from '../skia/types';
-import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
-import type { CSSValueContext } from '../layout/engines/cssValueParser';
-import { resolveCurrentColor, preprocessStyle } from '../layout/engines/cssResolver';
+import type { EffectStyle, DropShadowEffect } from "../skia/types";
+import { resolveCSSSizeValue } from "../layout/engines/cssValueParser";
+import type { CSSValueContext } from "../layout/engines/cssValueParser";
+import {
+  resolveCurrentColor,
+  preprocessStyle,
+} from "../layout/engines/cssResolver";
 
 extend([lchPlugin, labPlugin]);
 
@@ -88,7 +91,7 @@ export interface CSSStyle {
   justifySelf?: string;
   gap?: number | string;
   // Visibility
-  visibility?: 'visible' | 'hidden' | 'collapse';
+  visibility?: "visible" | "hidden" | "collapse";
   // CSS Transform
   transform?: string;
   transformOrigin?: string;
@@ -131,9 +134,9 @@ export interface PixiTextStyle {
   fontFamily: string;
   fontSize: number;
   fontWeight: string;
-  fontStyle: 'normal' | 'italic' | 'oblique'; // P7.2
+  fontStyle: "normal" | "italic" | "oblique"; // P7.2
   fill: number;
-  align: 'left' | 'center' | 'right';
+  align: "left" | "center" | "right";
   letterSpacing: number; // P7.3
   leading: number; // P7.4: lineHeight → leading
   wordWrap: boolean;
@@ -158,9 +161,14 @@ function clampByte(v: number): number {
 }
 
 function rgbToHexStr(r: number, g: number, b: number, alpha?: number): string {
-  const hex = `#${clampByte(r).toString(16).padStart(2, '0')}${clampByte(g).toString(16).padStart(2, '0')}${clampByte(b).toString(16).padStart(2, '0')}`;
+  const hex = `#${clampByte(r).toString(16).padStart(2, "0")}${clampByte(g).toString(16).padStart(2, "0")}${clampByte(b).toString(16).padStart(2, "0")}`;
   if (alpha !== undefined && alpha < 1) {
-    return hex + clampByte(alpha * 255).toString(16).padStart(2, '0');
+    return (
+      hex +
+      clampByte(alpha * 255)
+        .toString(16)
+        .padStart(2, "0")
+    );
   }
   return hex;
 }
@@ -172,7 +180,7 @@ function oklchToHex(L: number, C: number, H: number, alpha?: number): string {
 
   const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
   const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  const s_ = L - 0.0894841775 * a - 1.291485548 * b;
 
   const l = l_ * l_ * l_;
   const m = m_ * m_ * m_;
@@ -180,7 +188,7 @@ function oklchToHex(L: number, C: number, H: number, alpha?: number): string {
 
   const linR = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
   const linG = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-  const linB = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+  const linB = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
 
   return rgbToHexStr(
     gammaEncode(linR) * 255,
@@ -191,37 +199,40 @@ function oklchToHex(L: number, C: number, H: number, alpha?: number): string {
 }
 
 function labToHex(L: number, a: number, b: number, alpha?: number): string {
-  const input = alpha !== undefined
-    ? { l: L, a, b, alpha }
-    : { l: L, a, b };
+  const input = alpha !== undefined ? { l: L, a, b, alpha } : { l: L, a, b };
   const c = colord(input);
-  if (!c.isValid()) return '#000000';
+  if (!c.isValid()) return "#000000";
   const rgb = c.toRgb();
   return rgbToHexStr(rgb.r, rgb.g, rgb.b, alpha);
 }
 
 function lchToHex(L: number, C: number, H: number, alpha?: number): string {
-  const input = alpha !== undefined
-    ? { l: L, c: C, h: H, alpha }
-    : { l: L, c: C, h: H };
+  const input =
+    alpha !== undefined ? { l: L, c: C, h: H, alpha } : { l: L, c: C, h: H };
   const c = colord(input);
-  if (!c.isValid()) return '#000000';
+  if (!c.isValid()) return "#000000";
   const rgb = c.toRgb();
   return rgbToHexStr(rgb.r, rgb.g, rgb.b, alpha);
 }
 
-function colorFuncToHex(colorspace: string, r: number, g: number, b: number, alpha?: number): string {
+function colorFuncToHex(
+  colorspace: string,
+  r: number,
+  g: number,
+  b: number,
+  alpha?: number,
+): string {
   const cs = colorspace.toLowerCase();
 
-  if (cs === 'srgb') {
+  if (cs === "srgb") {
     return rgbToHexStr(r * 255, g * 255, b * 255, alpha);
   }
 
-  if (cs === 'display-p3') {
+  if (cs === "display-p3") {
     // display-p3 → linear-sRGB (Bradford-adapted D65 → D65, IEC 61966-2-1)
     const linR = 0.4865709 * r + 0.2656677 * g + 0.1982173 * b;
     const linG = 0.2289746 * r + 0.6917385 * g + 0.0792869 * b;
-    const linB = 0.0000000 * r + 0.0451134 * g + 1.0439444 * b;
+    const linB = 0.0 * r + 0.0451134 * g + 1.0439444 * b;
     return rgbToHexStr(
       gammaEncode(linR) * 255,
       gammaEncode(linG) * 255,
@@ -246,14 +257,14 @@ function parseColorFuncArgs(
   inner: string,
   percentScales: number[],
 ): { values: number[]; alpha: number | undefined } {
-  const slashIdx = inner.lastIndexOf('/');
+  const slashIdx = inner.lastIndexOf("/");
   let valuesPart = inner;
   let alpha: number | undefined;
 
   if (slashIdx !== -1) {
     valuesPart = inner.slice(0, slashIdx).trim();
     const alphaPart = inner.slice(slashIdx + 1).trim();
-    if (alphaPart.endsWith('%')) {
+    if (alphaPart.endsWith("%")) {
       alpha = parseFloat(alphaPart) / 100;
     } else {
       alpha = parseFloat(alphaPart);
@@ -261,9 +272,12 @@ function parseColorFuncArgs(
     if (isNaN(alpha)) alpha = undefined;
   }
 
-  const tokens = valuesPart.trim().split(/[\s,]+/).filter(Boolean);
+  const tokens = valuesPart
+    .trim()
+    .split(/[\s,]+/)
+    .filter(Boolean);
   const values = tokens.map((token, i) => {
-    if (token.endsWith('%')) {
+    if (token.endsWith("%")) {
       const scale = percentScales[i] ?? 1;
       return (parseFloat(token) / 100) * scale;
     }
@@ -338,11 +352,11 @@ function splitColorMixArgs(inner: string): string[] {
 
   for (let i = 0; i < inner.length; i++) {
     const ch = inner[i];
-    if (ch === '(') {
+    if (ch === "(") {
       depth++;
-    } else if (ch === ')') {
+    } else if (ch === ")") {
       depth--;
-    } else if (ch === ',' && depth === 0) {
+    } else if (ch === "," && depth === 0) {
       parts.push(inner.slice(start, i).trim());
       start = i + 1;
     }
@@ -366,11 +380,12 @@ export function resolveColorMix(value: string, depth = 0): string | null {
   if (depth >= COLOR_MIX_MAX_DEPTH) return null;
 
   const trimmed = value.trim();
-  if (!trimmed.toLowerCase().startsWith('color-mix(')) return null;
+  if (!trimmed.toLowerCase().startsWith("color-mix(")) return null;
 
-  const innerStart = trimmed.indexOf('(');
-  const innerEnd = trimmed.lastIndexOf(')');
-  if (innerStart === -1 || innerEnd === -1 || innerEnd <= innerStart) return null;
+  const innerStart = trimmed.indexOf("(");
+  const innerEnd = trimmed.lastIndexOf(")");
+  if (innerStart === -1 || innerEnd === -1 || innerEnd <= innerStart)
+    return null;
 
   const inner = trimmed.slice(innerStart + 1, innerEnd);
   const parts = splitColorMixArgs(inner);
@@ -398,7 +413,7 @@ export function resolveColorMix(value: string, depth = 0): string | null {
   }
 
   const resolveArg = (raw: string): string => {
-    if (raw.toLowerCase().startsWith('color-mix(')) {
+    if (raw.toLowerCase().startsWith("color-mix(")) {
       return resolveColorMix(raw, depth + 1) ?? raw;
     }
     return raw;
@@ -454,27 +469,27 @@ export function cssColorToHex(
 
   const lower = effective.toLowerCase();
 
-  if (lower.startsWith('oklch(')) {
+  if (lower.startsWith("oklch(")) {
     const hex = parseOklch(effective);
     if (hex) return cssColorToPixiHex(hex, fallback);
     return fallback;
   }
-  if (lower.startsWith('lab(')) {
+  if (lower.startsWith("lab(")) {
     const hex = parseLab(effective);
     if (hex) return cssColorToPixiHex(hex, fallback);
     return fallback;
   }
-  if (lower.startsWith('lch(')) {
+  if (lower.startsWith("lch(")) {
     const hex = parseLch(effective);
     if (hex) return cssColorToPixiHex(hex, fallback);
     return fallback;
   }
-  if (lower.startsWith('color(')) {
+  if (lower.startsWith("color(")) {
     const hex = parseColorFunc(effective);
     if (hex) return cssColorToPixiHex(hex, fallback);
     return fallback;
   }
-  if (lower.startsWith('color-mix(')) {
+  if (lower.startsWith("color-mix(")) {
     const resolved = resolveColorMix(effective);
     if (resolved) return cssColorToPixiHex(resolved, fallback);
   }
@@ -488,25 +503,28 @@ export function cssColorToHex(
  * 🚀 Phase 5: currentColor 키워드 지원
  * color-mix() 함수는 resolveColorMix()로 먼저 해석한다.
  */
-export function cssColorToAlpha(color: string | undefined, resolvedColor?: string): number {
+export function cssColorToAlpha(
+  color: string | undefined,
+  resolvedColor?: string,
+): number {
   if (!color) return 1;
   const effective = resolvedColor
     ? String(resolveCurrentColor(color, resolvedColor))
     : color;
-  if (effective.toLowerCase() === 'transparent') return 0;
+  if (effective.toLowerCase() === "transparent") return 0;
 
   const lower = effective.toLowerCase();
 
   if (
-    lower.startsWith('oklch(') ||
-    lower.startsWith('lab(') ||
-    lower.startsWith('lch(') ||
-    lower.startsWith('color(')
+    lower.startsWith("oklch(") ||
+    lower.startsWith("lab(") ||
+    lower.startsWith("lch(") ||
+    lower.startsWith("color(")
   ) {
     return extractLevel4Alpha(effective);
   }
 
-  const target = lower.startsWith('color-mix(')
+  const target = lower.startsWith("color-mix(")
     ? (resolveColorMix(effective) ?? effective)
     : effective;
 
@@ -519,14 +537,14 @@ export function cssColorToAlpha(color: string | undefined, resolvedColor?: strin
 }
 
 function extractLevel4Alpha(color: string): number {
-  const parenStart = color.indexOf('(');
-  const parenEnd = color.lastIndexOf(')');
+  const parenStart = color.indexOf("(");
+  const parenEnd = color.lastIndexOf(")");
   if (parenStart === -1 || parenEnd === -1) return 1;
   const inner = color.slice(parenStart + 1, parenEnd);
-  const slashIdx = inner.lastIndexOf('/');
+  const slashIdx = inner.lastIndexOf("/");
   if (slashIdx === -1) return 1;
   const alphaPart = inner.slice(slashIdx + 1).trim();
-  if (alphaPart.endsWith('%')) {
+  if (alphaPart.endsWith("%")) {
     const v = parseFloat(alphaPart) / 100;
     return isNaN(v) ? 1 : Math.max(0, Math.min(1, v));
   }
@@ -556,7 +574,7 @@ export function parseCSSSize(
   value: string | number | undefined,
   parentSize?: number,
   fallback = 0,
-  viewport?: { width: number; height: number }
+  viewport?: { width: number; height: number },
 ): number {
   if (value === undefined || value === null) return fallback;
 
@@ -596,14 +614,22 @@ export function convertToTransform(style: CSSStyle | undefined): PixiTransform {
  * @param style - CSS 스타일 객체
  * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
-export function convertToFillStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiFillStyle {
-  const bg = style?.backgroundColor ?? (style as Record<string, unknown> | undefined)?.background as string | undefined;
+export function convertToFillStyle(
+  style: CSSStyle | undefined,
+  resolvedColor?: string,
+): PixiFillStyle {
+  const bg =
+    style?.backgroundColor ??
+    ((style as Record<string, unknown> | undefined)?.background as
+      | string
+      | undefined);
   const color = cssColorToHex(bg, 0xffffff, resolvedColor);
-  const alpha = style?.opacity !== undefined
-    ? parseCSSSize(style.opacity, undefined, 1)
-    : bg
-      ? cssColorToAlpha(bg, resolvedColor)
-      : 0;
+  const alpha =
+    style?.opacity !== undefined
+      ? parseCSSSize(style.opacity, undefined, 1)
+      : bg
+        ? cssColorToAlpha(bg, resolvedColor)
+        : 0;
 
   return { color, alpha };
 }
@@ -614,7 +640,10 @@ export function convertToFillStyle(style: CSSStyle | undefined, resolvedColor?: 
  * @param style - CSS 스타일 객체
  * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
-export function convertToStrokeStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiStrokeStyle | null {
+export function convertToStrokeStyle(
+  style: CSSStyle | undefined,
+  resolvedColor?: string,
+): PixiStrokeStyle | null {
   if (!style?.borderWidth && !style?.borderColor) {
     return null;
   }
@@ -632,7 +661,7 @@ export function convertToStrokeStyle(style: CSSStyle | undefined, resolvedColor?
  */
 export function convertToTextStyle(
   style: CSSStyle | undefined,
-  containerWidth = 100
+  containerWidth = 100,
 ): PixiTextStyle {
   const fontSize = parseCSSSize(style?.fontSize, undefined, 16);
 
@@ -645,10 +674,11 @@ export function convertToTextStyle(
     const lh = parseCSSSize(style.lineHeight, undefined, 0);
     // 배수 값 판별: 숫자 타입이거나 단위 없는 숫자 문자열 (예: "1.4", "1.5")
     // CSS line-height: 숫자만 있으면 배수, px/em 등 단위가 있으면 절대값
-    const isMultiplier = lh < 10 && (
-      typeof style.lineHeight === 'number' ||
-      (typeof style.lineHeight === 'string' && /^\d*\.?\d+$/.test(style.lineHeight.trim()))
-    );
+    const isMultiplier =
+      lh < 10 &&
+      (typeof style.lineHeight === "number" ||
+        (typeof style.lineHeight === "string" &&
+          /^\d*\.?\d+$/.test(style.lineHeight.trim())));
     if (isMultiplier) {
       // 배수 값 (예: 1.4, 1.5)
       leading = (lh - 1) * fontSize;
@@ -662,12 +692,13 @@ export function convertToTextStyle(
   }
 
   return {
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
+    fontFamily: style?.fontFamily || "Pretendard, sans-serif",
     fontSize,
-    fontWeight: String(style?.fontWeight || 'normal'),
-    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal', // P7.2
+    fontWeight: String(style?.fontWeight || "normal"),
+    fontStyle:
+      (style?.fontStyle as "normal" | "italic" | "oblique") || "normal", // P7.2
     fill: cssColorToHex(style?.color, 0x000000),
-    align: (style?.textAlign as 'left' | 'center' | 'right') || 'left',
+    align: (style?.textAlign as "left" | "center" | "right") || "left",
     letterSpacing: parseCSSSize(style?.letterSpacing, undefined, 0), // P7.3
     leading, // P7.4
     wordWrap: true,
@@ -682,15 +713,18 @@ export function convertToTextStyle(
 /**
  * P7.6: CSS textTransform 적용
  */
-export function applyTextTransform(text: string, transform: string | undefined): string {
-  if (!transform || transform === 'none') return text;
+export function applyTextTransform(
+  text: string,
+  transform: string | undefined,
+): string {
+  if (!transform || transform === "none") return text;
 
   switch (transform.toLowerCase()) {
-    case 'uppercase':
+    case "uppercase":
       return text.toUpperCase();
-    case 'lowercase':
+    case "lowercase":
       return text.toLowerCase();
-    case 'capitalize':
+    case "capitalize":
       return text.replace(/\b\w/g, (c) => c.toUpperCase());
     default:
       return text;
@@ -705,16 +739,16 @@ export function calculateTextY(
   textHeight: number,
   verticalAlign: string | undefined,
   paddingTop = 0,
-  paddingBottom = 0
+  paddingBottom = 0,
 ): number {
   const contentHeight = containerHeight - paddingTop - paddingBottom;
 
   switch (verticalAlign?.toLowerCase()) {
-    case 'top':
+    case "top":
       return paddingTop;
-    case 'bottom':
+    case "bottom":
       return containerHeight - textHeight - paddingBottom;
-    case 'middle':
+    case "middle":
     default:
       return paddingTop + (contentHeight - textHeight) / 2;
   }
@@ -725,10 +759,17 @@ export function calculateTextY(
 // ============================================
 
 export type ClipPathShape =
-  | { type: 'inset'; top: number; right: number; bottom: number; left: number; borderRadius: number }
-  | { type: 'circle'; radius: number; cx: number; cy: number }
-  | { type: 'ellipse'; rx: number; ry: number; cx: number; cy: number }
-  | { type: 'polygon'; points: Array<{ x: number; y: number }> };
+  | {
+      type: "inset";
+      top: number;
+      right: number;
+      bottom: number;
+      left: number;
+      borderRadius: number;
+    }
+  | { type: "circle"; radius: number; cx: number; cy: number }
+  | { type: "ellipse"; rx: number; ry: number; cx: number; cy: number }
+  | { type: "polygon"; points: Array<{ x: number; y: number }> };
 
 /**
  * CSS clip-path 값을 파싱하여 ClipPathShape로 변환
@@ -748,7 +789,7 @@ export function parseClipPath(
   width: number,
   height: number,
 ): ClipPathShape | null {
-  if (!value || value === 'none') return null;
+  if (!value || value === "none") return null;
 
   const trimmed = value.trim();
 
@@ -777,24 +818,28 @@ export function parseClipPath(
 
 function resolveClipLength(raw: string, base: number): number {
   const trimmed = raw.trim();
-  if (trimmed.endsWith('%')) {
+  if (trimmed.endsWith("%")) {
     return (parseFloat(trimmed) / 100) * base;
   }
   return parseCSSSize(trimmed, base, 0);
 }
 
-function resolveClipPosition(raw: string, width: number, height: number): [number, number] {
+function resolveClipPosition(
+  raw: string,
+  width: number,
+  height: number,
+): [number, number] {
   const keyword = raw.trim().toLowerCase();
-  if (keyword === 'center') return [width / 2, height / 2];
-  if (keyword === 'top') return [width / 2, 0];
-  if (keyword === 'bottom') return [width / 2, height];
-  if (keyword === 'left') return [0, height / 2];
-  if (keyword === 'right') return [width, height / 2];
+  if (keyword === "center") return [width / 2, height / 2];
+  if (keyword === "top") return [width / 2, 0];
+  if (keyword === "bottom") return [width / 2, height];
+  if (keyword === "left") return [0, height / 2];
+  if (keyword === "right") return [width, height / 2];
 
   const parts = raw.trim().split(/\s+/);
-  const cx = resolveClipAxisValue(parts[0] ?? '50%', width, 'x', width, height);
+  const cx = resolveClipAxisValue(parts[0] ?? "50%", width, "x", width, height);
   const cy = parts[1]
-    ? resolveClipAxisValue(parts[1], height, 'y', width, height)
+    ? resolveClipAxisValue(parts[1], height, "y", width, height)
     : height / 2;
   return [cx, cy];
 }
@@ -802,31 +847,39 @@ function resolveClipPosition(raw: string, width: number, height: number): [numbe
 function resolveClipAxisValue(
   raw: string,
   base: number,
-  _axis: 'x' | 'y',
+  _axis: "x" | "y",
   width: number,
   height: number,
 ): number {
   const keyword = raw.trim().toLowerCase();
-  if (keyword === 'center') return base / 2;
-  if (keyword === 'left') return 0;
-  if (keyword === 'right') return width;
-  if (keyword === 'top') return 0;
-  if (keyword === 'bottom') return height;
+  if (keyword === "center") return base / 2;
+  if (keyword === "left") return 0;
+  if (keyword === "right") return width;
+  if (keyword === "top") return 0;
+  if (keyword === "bottom") return height;
   return resolveClipLength(raw, base);
 }
 
-function parseInset(args: string, width: number, height: number): ClipPathShape | null {
+function parseInset(
+  args: string,
+  width: number,
+  height: number,
+): ClipPathShape | null {
   // 분리: round 키워드 앞/뒤
-  const roundIdx = args.toLowerCase().indexOf('round');
+  const roundIdx = args.toLowerCase().indexOf("round");
   const sidesPart = roundIdx >= 0 ? args.slice(0, roundIdx).trim() : args;
-  const roundPart = roundIdx >= 0 ? args.slice(roundIdx + 5).trim() : '';
+  const roundPart = roundIdx >= 0 ? args.slice(roundIdx + 5).trim() : "";
 
   const sides = sidesPart.split(/\s+/).filter(Boolean);
   if (sides.length === 0) return null;
 
   let top: number, right: number, bottom: number, left: number;
   if (sides.length === 1) {
-    top = right = bottom = left = resolveClipLength(sides[0], Math.min(width, height));
+    top =
+      right =
+      bottom =
+      left =
+        resolveClipLength(sides[0], Math.min(width, height));
   } else if (sides.length === 2) {
     top = bottom = resolveClipLength(sides[0], height);
     right = left = resolveClipLength(sides[1], width);
@@ -845,28 +898,39 @@ function parseInset(args: string, width: number, height: number): ClipPathShape 
     ? resolveClipLength(roundPart.split(/\s+/)[0], Math.min(width, height))
     : 0;
 
-  return { type: 'inset', top, right, bottom, left, borderRadius };
+  return { type: "inset", top, right, bottom, left, borderRadius };
 }
 
-function parseCircle(args: string, width: number, height: number): ClipPathShape | null {
-  const atIdx = args.toLowerCase().indexOf(' at ');
+function parseCircle(
+  args: string,
+  width: number,
+  height: number,
+): ClipPathShape | null {
+  const atIdx = args.toLowerCase().indexOf(" at ");
   const radiusPart = atIdx >= 0 ? args.slice(0, atIdx).trim() : args.trim();
-  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : 'center';
+  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : "center";
 
   const base = Math.sqrt((width * width + height * height) / 2);
-  const radius = radiusPart === 'closest-side' || radiusPart === 'farthest-side' || !radiusPart
-    ? Math.min(width, height) / 2
-    : resolveClipLength(radiusPart, base);
+  const radius =
+    radiusPart === "closest-side" ||
+    radiusPart === "farthest-side" ||
+    !radiusPart
+      ? Math.min(width, height) / 2
+      : resolveClipLength(radiusPart, base);
 
   const [cx, cy] = resolveClipPosition(centerPart, width, height);
 
-  return { type: 'circle', radius, cx, cy };
+  return { type: "circle", radius, cx, cy };
 }
 
-function parseEllipse(args: string, width: number, height: number): ClipPathShape | null {
-  const atIdx = args.toLowerCase().indexOf(' at ');
+function parseEllipse(
+  args: string,
+  width: number,
+  height: number,
+): ClipPathShape | null {
+  const atIdx = args.toLowerCase().indexOf(" at ");
   const radiiPart = atIdx >= 0 ? args.slice(0, atIdx).trim() : args.trim();
-  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : 'center';
+  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : "center";
 
   const radii = radiiPart.split(/\s+/).filter(Boolean);
   const rx = radii[0] ? resolveClipLength(radii[0], width) : width / 2;
@@ -874,15 +938,22 @@ function parseEllipse(args: string, width: number, height: number): ClipPathShap
 
   const [cx, cy] = resolveClipPosition(centerPart, width, height);
 
-  return { type: 'ellipse', rx, ry, cx, cy };
+  return { type: "ellipse", rx, ry, cx, cy };
 }
 
-function parsePolygon(args: string, width: number, height: number): ClipPathShape | null {
+function parsePolygon(
+  args: string,
+  width: number,
+  height: number,
+): ClipPathShape | null {
   // 'evenodd' 또는 'nonzero' fill rule 접두어 제거
-  const cleaned = args.replace(/^(evenodd|nonzero)\s*,?\s*/i, '');
-  const pointPairs = cleaned.split(',').map(s => s.trim()).filter(Boolean);
+  const cleaned = args.replace(/^(evenodd|nonzero)\s*,?\s*/i, "");
+  const pointPairs = cleaned
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-  const points = pointPairs.map(pair => {
+  const points = pointPairs.map((pair) => {
     const coords = pair.split(/\s+/).filter(Boolean);
     const x = coords[0] ? resolveClipLength(coords[0], width) : 0;
     const y = coords[1] ? resolveClipLength(coords[1], height) : 0;
@@ -890,7 +961,7 @@ function parsePolygon(args: string, width: number, height: number): ClipPathShap
   });
 
   if (points.length < 3) return null;
-  return { type: 'polygon', points };
+  return { type: "polygon", points };
 }
 
 /**
@@ -903,11 +974,11 @@ function parsePolygon(args: string, width: number, height: number): ClipPathShap
  * - 4값: "8px 4px 2px 6px" → [8, 4, 2, 6] (tl, tr, br, bl)
  */
 export function convertBorderRadius(
-  borderRadius: string | number | undefined
+  borderRadius: string | number | undefined,
 ): number | [number, number, number, number] {
   if (!borderRadius) return 0;
 
-  if (typeof borderRadius === 'number') return borderRadius;
+  if (typeof borderRadius === "number") return borderRadius;
 
   // 공백 구분 다중 값 파싱
   const parts = borderRadius.trim().split(/\s+/);
@@ -915,7 +986,7 @@ export function convertBorderRadius(
     return parseCSSSize(parts[0], undefined, 0);
   }
 
-  const values = parts.map(p => {
+  const values = parts.map((p) => {
     const v = parseCSSSize(p, undefined, 0);
     // 음수 및 invalid 값 방어
     return Number.isFinite(v) && v >= 0 ? v : 0;
@@ -953,17 +1024,23 @@ export interface ConvertedStyle {
  * @param computedColor - 상위 resolved color (cssResolver.resolveStyle()의 결과)
  *                        전달하지 않으면 style.color 값을 사용한다.
  */
-export function convertStyle(style: CSSStyle | undefined, computedColor?: string): ConvertedStyle {
+export function convertStyle(
+  style: CSSStyle | undefined,
+  computedColor?: string,
+): ConvertedStyle {
   const transform = convertToTransform(style);
 
   // currentColor 해석을 위한 color 값 결정
   // computedColor가 전달된 경우: 상위 cascade에서 이미 계산된 값 사용
   // 그렇지 않은 경우: 현재 style의 color 값 사용 (fallback: #000000)
-  const resolvedColor = computedColor ?? style?.color ?? '#000000';
+  const resolvedColor = computedColor ?? style?.color ?? "#000000";
 
   // 비상속 속성의 cascade 키워드(initial, unset, revert) 및 currentColor 전처리
   const processedStyle = style
-    ? (preprocessStyle(style as Record<string, unknown>, resolvedColor) as CSSStyle)
+    ? (preprocessStyle(
+        style as Record<string, unknown>,
+        resolvedColor,
+      ) as CSSStyle)
     : style;
 
   return {
@@ -1000,7 +1077,9 @@ interface SkiaEffectsResult {
  * - backdropFilter: blur() → BackgroundBlurEffect
  * - mixBlendMode → blendMode string
  */
-export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult {
+export function buildSkiaEffects(
+  style: CSSStyle | undefined,
+): SkiaEffectsResult {
   if (!style) return {};
 
   const effects: EffectStyle[] = [];
@@ -1009,12 +1088,12 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
   if (style.opacity !== undefined) {
     const value = parseCSSSize(style.opacity, undefined, 1);
     if (value < 1) {
-      effects.push({ type: 'opacity', value });
+      effects.push({ type: "opacity", value });
     }
   }
 
   // 2. boxShadow → DropShadowEffect (다중 shadow 지원)
-  if (style.boxShadow && style.boxShadow !== 'none') {
+  if (style.boxShadow && style.boxShadow !== "none") {
     const shadows = parseAllBoxShadows(style.boxShadow);
     for (const shadow of shadows) {
       effects.push(shadow);
@@ -1031,15 +1110,20 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
 
   // 4. backdropFilter: blur(Xpx) → BackgroundBlurEffect
   if (style.backdropFilter) {
-    const blurMatch = style.backdropFilter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
+    const blurMatch = style.backdropFilter.match(
+      /blur\((\d+(?:\.\d+)?)(px)?\)/,
+    );
     if (blurMatch) {
-      effects.push({ type: 'background-blur', sigma: parseFloat(blurMatch[1]) });
+      effects.push({
+        type: "background-blur",
+        sigma: parseFloat(blurMatch[1]),
+      });
     }
   }
 
   // 5. CSS transform → CanvasKit 3x3 matrix
   let transformMatrix: Float32Array | undefined;
-  if (style.transform && style.transform !== 'none') {
+  if (style.transform && style.transform !== "none") {
     // width/height는 transform-origin의 % 해석에 필요 — SkiaEffectsResult에서는
     // 호출측에서 별도 width/height 전달이 필요하나, 현재 buildSkiaEffects()는
     // style만 받으므로 transform-origin의 % 및 키워드는 0 기반으로 처리한다.
@@ -1062,7 +1146,7 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
 function parseAllBoxShadows(raw: string): DropShadowEffect[] {
   const parts = raw.split(/,(?![^(]*\))/);
   return parts
-    .map(s => parseOneShadow(s.trim()))
+    .map((s) => parseOneShadow(s.trim()))
     .filter((s): s is DropShadowEffect => s !== null);
 }
 
@@ -1072,13 +1156,13 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
  * 지원 포맷: [inset] offsetX offsetY [blurRadius [spreadRadius]] [color]
  */
 function parseOneShadow(raw: string): DropShadowEffect | null {
-  if (!raw || raw === 'none') return null;
+  if (!raw || raw === "none") return null;
 
   const inner = /\binset\b/.test(raw);
-  let cleaned = raw.replace(/\binset\b/, '').trim();
+  let cleaned = raw.replace(/\binset\b/, "").trim();
 
   // 색상 추출 (rgb/rgba/hsl/hsla/#hex)
-  let colorStr = 'rgba(0,0,0,1)';
+  let colorStr = "rgba(0,0,0,1)";
   const colorPatterns = [
     /rgba?\([^)]+\)/,
     /hsla?\([^)]+\)/,
@@ -1088,7 +1172,7 @@ function parseOneShadow(raw: string): DropShadowEffect | null {
     const match = cleaned.match(pattern);
     if (match) {
       colorStr = match[0];
-      cleaned = cleaned.replace(match[0], '').trim();
+      cleaned = cleaned.replace(match[0], "").trim();
       break;
     }
   }
@@ -1114,7 +1198,7 @@ function parseOneShadow(raw: string): DropShadowEffect | null {
   );
 
   return {
-    type: 'drop-shadow',
+    type: "drop-shadow",
     dx,
     dy,
     sigmaX: sigma,
@@ -1180,9 +1264,9 @@ function skewMatrix(ax: number, ay: number): Float32Array {
 /** 각도 문자열을 라디안으로 변환 */
 function parseAngle(value: string): number {
   const trimmed = value.trim();
-  if (trimmed.endsWith('rad')) return parseFloat(trimmed);
-  if (trimmed.endsWith('turn')) return parseFloat(trimmed) * Math.PI * 2;
-  if (trimmed.endsWith('grad')) return parseFloat(trimmed) * (Math.PI / 200);
+  if (trimmed.endsWith("rad")) return parseFloat(trimmed);
+  if (trimmed.endsWith("turn")) return parseFloat(trimmed) * Math.PI * 2;
+  if (trimmed.endsWith("grad")) return parseFloat(trimmed) * (Math.PI / 200);
   // deg (기본)
   return parseFloat(trimmed) * (Math.PI / 180);
 }
@@ -1196,7 +1280,7 @@ function parseAngle(value: string): number {
  * 여러 함수를 순서대로 왼쪽에서 오른쪽으로 합성한다.
  */
 export function parseTransform(value: string): Float32Array | null {
-  if (!value || value === 'none') return null;
+  if (!value || value === "none") return null;
 
   // 각 transform 함수를 추출: functionName(args)
   const funcRegex = /(\w+)\(([^)]*)\)/g;
@@ -1206,59 +1290,62 @@ export function parseTransform(value: string): Float32Array | null {
 
   while ((match = funcRegex.exec(value)) !== null) {
     const fn = match[1];
-    const args = match[2].split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+    const args = match[2]
+      .split(/[\s,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     let mat: Float32Array | null = null;
 
     switch (fn) {
-      case 'translate': {
+      case "translate": {
         const tx = parseCSSSize(args[0], undefined, 0);
         const ty = args[1] ? parseCSSSize(args[1], undefined, 0) : 0;
         mat = translateMatrix(tx, ty);
         break;
       }
-      case 'translateX': {
+      case "translateX": {
         mat = translateMatrix(parseCSSSize(args[0], undefined, 0), 0);
         break;
       }
-      case 'translateY': {
+      case "translateY": {
         mat = translateMatrix(0, parseCSSSize(args[0], undefined, 0));
         break;
       }
-      case 'rotate': {
+      case "rotate": {
         mat = rotateMatrix(parseAngle(args[0]));
         break;
       }
-      case 'scale': {
+      case "scale": {
         const sx = parseFloat(args[0]);
         const sy = args[1] ? parseFloat(args[1]) : sx;
         if (!isNaN(sx) && !isNaN(sy)) mat = scaleMatrix(sx, sy);
         break;
       }
-      case 'scaleX': {
+      case "scaleX": {
         const sx = parseFloat(args[0]);
         if (!isNaN(sx)) mat = scaleMatrix(sx, 1);
         break;
       }
-      case 'scaleY': {
+      case "scaleY": {
         const sy = parseFloat(args[0]);
         if (!isNaN(sy)) mat = scaleMatrix(1, sy);
         break;
       }
-      case 'skew': {
+      case "skew": {
         const ax = parseAngle(args[0]);
         const ay = args[1] ? parseAngle(args[1]) : 0;
         mat = skewMatrix(ax, ay);
         break;
       }
-      case 'skewX': {
+      case "skewX": {
         mat = skewMatrix(parseAngle(args[0]), 0);
         break;
       }
-      case 'skewY': {
+      case "skewY": {
         mat = skewMatrix(0, parseAngle(args[0]));
         break;
       }
-      case 'matrix': {
+      case "matrix": {
         // CSS matrix(a, b, c, d, e, f) → CanvasKit row-major 3x3
         // CSS 행렬:        CanvasKit 배열:
         // | a  c  e |      [a, c, e,
@@ -1266,7 +1353,7 @@ export function parseTransform(value: string): Float32Array | null {
         // | 0  0  1 |       0, 0, 1]
         if (args.length === 6) {
           const [a, b, c, d, e, f] = args.map(Number);
-          if ([a, b, c, d, e, f].every(n => isFinite(n))) {
+          if ([a, b, c, d, e, f].every((n) => isFinite(n))) {
             mat = Float32Array.of(a, c, e, b, d, f, 0, 0, 1);
           }
         }
@@ -1303,21 +1390,27 @@ export function parseTransformOrigin(
   const parts = value.trim().split(/\s+/);
   const resolveX = (v: string): number => {
     switch (v) {
-      case 'left': return 0;
-      case 'center': return width / 2;
-      case 'right': return width;
+      case "left":
+        return 0;
+      case "center":
+        return width / 2;
+      case "right":
+        return width;
       default:
-        if (v.endsWith('%')) return (parseFloat(v) / 100) * width;
+        if (v.endsWith("%")) return (parseFloat(v) / 100) * width;
         return parseCSSSize(v, width, width / 2);
     }
   };
   const resolveY = (v: string): number => {
     switch (v) {
-      case 'top': return 0;
-      case 'center': return height / 2;
-      case 'bottom': return height;
+      case "top":
+        return 0;
+      case "center":
+        return height / 2;
+      case "bottom":
+        return height;
       default:
-        if (v.endsWith('%')) return (parseFloat(v) / 100) * height;
+        if (v.endsWith("%")) return (parseFloat(v) / 100) * height;
         return parseCSSSize(v, height, height / 2);
     }
   };
@@ -1455,14 +1548,14 @@ function hueRotateMatrix(degrees: number): Float32Array {
   const bL = 0.0722;
 
   // 사양에 따른 3x3 RGB 회전 행렬
-  const m00 = rL + cos * (1 - rL) + sin * (-rL);
-  const m01 = gL + cos * (-gL) + sin * (-gL);
-  const m02 = bL + cos * (-bL) + sin * (1 - bL);
-  const m10 = rL + cos * (-rL) + sin * 0.143;
-  const m11 = gL + cos * (1 - gL) + sin * 0.140;
-  const m12 = bL + cos * (-bL) + sin * (-0.283);
-  const m20 = rL + cos * (-rL) + sin * (-(1 - rL));
-  const m21 = gL + cos * (-gL) + sin * gL;
+  const m00 = rL + cos * (1 - rL) + sin * -rL;
+  const m01 = gL + cos * -gL + sin * -gL;
+  const m02 = bL + cos * -bL + sin * (1 - bL);
+  const m10 = rL + cos * -rL + sin * 0.143;
+  const m11 = gL + cos * (1 - gL) + sin * 0.14;
+  const m12 = bL + cos * -bL + sin * -0.283;
+  const m20 = rL + cos * -rL + sin * -(1 - rL);
+  const m21 = gL + cos * -gL + sin * gL;
   const m22 = bL + cos * (1 - bL) + sin * bL;
 
   // prettier-ignore
@@ -1558,7 +1651,7 @@ function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
   let cleaned = arg.trim();
 
   // 색상 추출 (rgb/rgba/hsl/hsla/#hex) — box-shadow 파서와 동일한 패턴
-  let colorStr = 'rgba(0,0,0,1)';
+  let colorStr = "rgba(0,0,0,1)";
   const colorPatterns = [
     /rgba?\([^)]+\)/,
     /hsla?\([^)]+\)/,
@@ -1568,7 +1661,7 @@ function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
     const match = cleaned.match(pattern);
     if (match) {
       colorStr = match[0];
-      cleaned = cleaned.replace(match[0], '').trim();
+      cleaned = cleaned.replace(match[0], "").trim();
       break;
     }
   }
@@ -1595,7 +1688,7 @@ function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
   );
 
   return {
-    type: 'drop-shadow',
+    type: "drop-shadow",
     dx,
     dy,
     sigmaX: sigma,
@@ -1635,15 +1728,15 @@ function parseCSSFilter(filter: string): EffectStyle[] {
     const arg = funcMatch[2].trim();
 
     switch (fn) {
-      case 'blur': {
+      case "blur": {
         const sigma = parseFloat(arg);
         if (!isNaN(sigma) && sigma > 0) {
-          results.push({ type: 'layer-blur', sigma });
+          results.push({ type: "layer-blur", sigma });
         }
         break;
       }
 
-      case 'brightness': {
+      case "brightness": {
         const val = parseFilterNumericArg(arg, 1);
         if (val !== null) {
           const mat = brightnessMatrix(val);
@@ -1654,7 +1747,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'contrast': {
+      case "contrast": {
         const val = parseFilterNumericArg(arg, 1);
         if (val !== null) {
           const mat = contrastMatrix(val);
@@ -1665,7 +1758,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'saturate': {
+      case "saturate": {
         const val = parseFilterNumericArg(arg, 1);
         if (val !== null) {
           const mat = saturateMatrix(val);
@@ -1676,7 +1769,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'hue-rotate': {
+      case "hue-rotate": {
         const degrees = parseFilterAngleArg(arg);
         if (degrees !== null) {
           const mat = hueRotateMatrix(degrees);
@@ -1687,7 +1780,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'grayscale': {
+      case "grayscale": {
         const val = parseFilterNumericArg(arg, 1);
         if (val !== null) {
           // 클램핑은 grayscaleMatrix 내부에서 처리
@@ -1699,7 +1792,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'invert': {
+      case "invert": {
         const val = parseFilterNumericArg(arg, 1);
         if (val !== null) {
           // 클램핑은 invertMatrix 내부에서 처리
@@ -1711,7 +1804,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'sepia': {
+      case "sepia": {
         const val = parseFilterNumericArg(arg, 1);
         if (val !== null) {
           // 클램핑은 sepiaMatrix 내부에서 처리
@@ -1723,7 +1816,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
-      case 'drop-shadow': {
+      case "drop-shadow": {
         // arg: "4px 4px 10px rgba(0,0,0,0.5)" 형식
         const shadow = parseDropShadowFilterArgs(arg);
         if (shadow) {
@@ -1750,7 +1843,7 @@ function parseCSSFilter(filter: string): EffectStyle[] {
       }
     }
     if (!isIdentity) {
-      results.push({ type: 'color-matrix', matrix: composedMatrix });
+      results.push({ type: "color-matrix", matrix: composedMatrix });
     }
   }
 
@@ -1764,10 +1857,13 @@ function parseCSSFilter(filter: string): EffectStyle[] {
  * - "150%" → 1.5
  * - 파싱 실패 시 null 반환
  */
-function parseFilterNumericArg(arg: string, _defaultValue: number): number | null {
+function parseFilterNumericArg(
+  arg: string,
+  _defaultValue: number,
+): number | null {
   if (!arg) return null;
   const trimmed = arg.trim();
-  if (trimmed.endsWith('%')) {
+  if (trimmed.endsWith("%")) {
     const num = parseFloat(trimmed);
     return isNaN(num) ? null : num / 100;
   }
@@ -1788,15 +1884,15 @@ function parseFilterAngleArg(arg: string): number | null {
   if (!arg) return null;
   const trimmed = arg.trim();
 
-  if (trimmed.endsWith('rad')) {
+  if (trimmed.endsWith("rad")) {
     const rad = parseFloat(trimmed);
     return isNaN(rad) ? null : rad * (180 / Math.PI);
   }
-  if (trimmed.endsWith('turn')) {
+  if (trimmed.endsWith("turn")) {
     const turn = parseFloat(trimmed);
     return isNaN(turn) ? null : turn * 360;
   }
-  if (trimmed.endsWith('grad')) {
+  if (trimmed.endsWith("grad")) {
     const grad = parseFloat(trimmed);
     return isNaN(grad) ? null : grad * (180 / 200);
   }

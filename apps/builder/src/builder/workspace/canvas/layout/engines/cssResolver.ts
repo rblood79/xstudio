@@ -17,8 +17,8 @@
  * @updated 2026-02-19 Phase 5 - currentColor + initial/unset/revert
  */
 
-import { parseFontShorthand } from './cssValueParser';
-import { DEFAULT_FONT_FAMILY } from '../../../../fonts/customFonts';
+import { parseFontShorthand } from "./cssValueParser";
+import { DEFAULT_FONT_FAMILY } from "../../../../fonts/customFonts";
 
 // ============================================
 // 상속 가능 속성 목록
@@ -30,23 +30,23 @@ import { DEFAULT_FONT_FAMILY } from '../../../../fonts/customFonts';
  * 참고: https://developer.mozilla.org/en-US/docs/Web/CSS/inheritance
  */
 export const INHERITABLE_PROPERTIES = new Set([
-  'color',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'fontStyle',
-  'fontVariant',
-  'fontStretch',
-  'lineHeight',
-  'letterSpacing',
-  'wordSpacing',
-  'textAlign',
-  'textTransform',
-  'textIndent',
-  'visibility',
-  'wordBreak',
-  'overflowWrap',
-  'whiteSpace',
+  "color",
+  "fontSize",
+  "fontFamily",
+  "fontWeight",
+  "fontStyle",
+  "fontVariant",
+  "fontStretch",
+  "lineHeight",
+  "letterSpacing",
+  "wordSpacing",
+  "textAlign",
+  "textTransform",
+  "textIndent",
+  "visibility",
+  "wordBreak",
+  "overflowWrap",
+  "whiteSpace",
 ]);
 
 // ============================================
@@ -63,34 +63,34 @@ export const INHERITABLE_PROPERTIES = new Set([
  */
 export const CSS_INITIAL_VALUES: Record<string, string | number> = {
   // 상속 속성
-  color: '#000000',
+  color: "#000000",
   fontSize: 16,
-  fontWeight: '400',
-  fontStyle: 'normal',
-  fontFamily: 'sans-serif',
-  fontVariant: 'normal',
-  fontStretch: 'normal',
-  textAlign: 'start',
-  textDecoration: 'none',
-  textTransform: 'none',
+  fontWeight: "400",
+  fontStyle: "normal",
+  fontFamily: "sans-serif",
+  fontVariant: "normal",
+  fontStretch: "normal",
+  textAlign: "start",
+  textDecoration: "none",
+  textTransform: "none",
   letterSpacing: 0,
   wordSpacing: 0,
-  lineHeight: 'normal',
+  lineHeight: "normal",
   textIndent: 0,
-  visibility: 'visible',
-  whiteSpace: 'normal',
-  wordBreak: 'normal',
-  overflowWrap: 'normal',
+  visibility: "visible",
+  whiteSpace: "normal",
+  wordBreak: "normal",
+  overflowWrap: "normal",
   // 비상속 속성
-  backgroundColor: 'transparent',
-  borderColor: '#000000',
+  backgroundColor: "transparent",
+  borderColor: "#000000",
   borderWidth: 0,
   borderTopWidth: 0,
   borderRightWidth: 0,
   borderBottomWidth: 0,
   borderLeftWidth: 0,
   borderRadius: 0,
-  borderStyle: 'none',
+  borderStyle: "none",
   margin: 0,
   marginTop: 0,
   marginRight: 0,
@@ -102,12 +102,12 @@ export const CSS_INITIAL_VALUES: Record<string, string | number> = {
   paddingBottom: 0,
   paddingLeft: 0,
   opacity: 1,
-  display: 'inline',
-  position: 'static',
-  overflow: 'visible',
-  textDecorationColor: 'currentColor',
-  outlineColor: 'invert',
-  zIndex: 'auto',
+  display: "inline",
+  position: "static",
+  overflow: "visible",
+  textDecorationColor: "currentColor",
+  outlineColor: "invert",
+  zIndex: "auto",
 };
 
 // ============================================
@@ -120,11 +120,11 @@ export const CSS_INITIAL_VALUES: Record<string, string | number> = {
  * 이 속성들의 값이 'currentColor'이면 현재 요소의 `color` 값으로 대체한다.
  */
 const COLOR_PROPERTIES = new Set([
-  'borderColor',
-  'backgroundColor',
-  'textDecorationColor',
-  'outlineColor',
-  'boxShadow',
+  "borderColor",
+  "backgroundColor",
+  "textDecorationColor",
+  "outlineColor",
+  "boxShadow",
 ]);
 
 // ============================================
@@ -137,38 +137,58 @@ export interface FontFeatureTag {
 }
 
 const FONT_VARIANT_FEATURE_MAP: Record<string, FontFeatureTag[]> = {
-  'small-caps': [{ name: 'smcp', value: 1 }],
-  'all-small-caps': [{ name: 'smcp', value: 1 }, { name: 'c2sc', value: 1 }],
-  'petite-caps': [{ name: 'pcap', value: 1 }],
-  'all-petite-caps': [{ name: 'pcap', value: 1 }, { name: 'c2pc', value: 1 }],
-  'unicase': [{ name: 'unic', value: 1 }],
-  'titling-caps': [{ name: 'titl', value: 1 }],
-  'oldstyle-nums': [{ name: 'onum', value: 1 }],
-  'lining-nums': [{ name: 'lnum', value: 1 }],
-  'tabular-nums': [{ name: 'tnum', value: 1 }],
-  'proportional-nums': [{ name: 'pnum', value: 1 }],
+  "small-caps": [{ name: "smcp", value: 1 }],
+  "all-small-caps": [
+    { name: "smcp", value: 1 },
+    { name: "c2sc", value: 1 },
+  ],
+  "petite-caps": [{ name: "pcap", value: 1 }],
+  "all-petite-caps": [
+    { name: "pcap", value: 1 },
+    { name: "c2pc", value: 1 },
+  ],
+  unicase: [{ name: "unic", value: 1 }],
+  "titling-caps": [{ name: "titl", value: 1 }],
+  "oldstyle-nums": [{ name: "onum", value: 1 }],
+  "lining-nums": [{ name: "lnum", value: 1 }],
+  "tabular-nums": [{ name: "tnum", value: 1 }],
+  "proportional-nums": [{ name: "pnum", value: 1 }],
 };
 
-export function resolveFontVariantFeatures(fontVariant: string): FontFeatureTag[] {
+export function resolveFontVariantFeatures(
+  fontVariant: string,
+): FontFeatureTag[] {
   const lower = fontVariant.toLowerCase().trim();
-  if (lower === 'normal' || lower === '') return [];
+  if (lower === "normal" || lower === "") return [];
   return FONT_VARIANT_FEATURE_MAP[lower] ?? [];
 }
+
+/**
+ * CSS :root의 font-feature-settings와 동일한 기본 OpenType features.
+ * App.css: --default-font-feature-settings: "cv02", "cv03", "cv04", "cv11"
+ * CanvasKit은 브라우저처럼 CSS 상속을 하지 않으므로 명시적으로 전달해야 한다.
+ */
+export const DEFAULT_FONT_FEATURES: FontFeatureTag[] = [
+  { name: "cv02", value: 1 },
+  { name: "cv03", value: 1 },
+  { name: "cv04", value: 1 },
+  { name: "cv11", value: 1 },
+];
 
 // ============================================
 // font-stretch → CanvasKit FontWidth 인덱스 매핑
 // ============================================
 
 const FONT_STRETCH_KEYWORD_MAP: Record<string, number> = {
-  'ultra-condensed': 1,
-  'extra-condensed': 2,
-  'condensed': 3,
-  'semi-condensed': 4,
-  'normal': 5,
-  'semi-expanded': 6,
-  'expanded': 7,
-  'extra-expanded': 8,
-  'ultra-expanded': 9,
+  "ultra-condensed": 1,
+  "extra-condensed": 2,
+  condensed: 3,
+  "semi-condensed": 4,
+  normal: 5,
+  "semi-expanded": 6,
+  expanded: 7,
+  "extra-expanded": 8,
+  "ultra-expanded": 9,
 };
 
 const FONT_STRETCH_PERCENT_BREAKPOINTS: [number, number][] = [
@@ -189,7 +209,7 @@ export function resolveFontStretchWidth(fontStretch: string): number {
   const keyword = FONT_STRETCH_KEYWORD_MAP[lower];
   if (keyword !== undefined) return keyword;
 
-  if (lower.endsWith('%')) {
+  if (lower.endsWith("%")) {
     const pct = parseFloat(lower);
     if (isNaN(pct)) return 5;
 
@@ -250,21 +270,21 @@ export interface ComputedStyle {
  * CSS 명세의 initial value 기반.
  */
 export const ROOT_COMPUTED_STYLE: ComputedStyle = {
-  color: '#000000',
+  color: "#000000",
   fontSize: 16,
   fontFamily: `${DEFAULT_FONT_FAMILY}, sans-serif`,
   fontWeight: 400,
-  fontStyle: 'normal',
-  fontVariant: 'normal',
-  fontStretch: 'normal',
+  fontStyle: "normal",
+  fontVariant: "normal",
+  fontStretch: "normal",
   letterSpacing: 0,
   wordSpacing: 0,
-  textAlign: 'left',
-  textTransform: 'none',
-  visibility: 'visible',
-  wordBreak: 'normal',
-  overflowWrap: 'normal',
-  whiteSpace: 'normal',
+  textAlign: "left",
+  textTransform: "none",
+  visibility: "visible",
+  wordBreak: "normal",
+  overflowWrap: "normal",
+  whiteSpace: "normal",
 };
 
 // ============================================
@@ -285,11 +305,11 @@ export function resolveCurrentColor(
   value: unknown,
   resolvedColor: string,
 ): unknown {
-  if (typeof value !== 'string') return value;
-  if (!value.toLowerCase().includes('currentcolor')) return value;
+  if (typeof value !== "string") return value;
+  if (!value.toLowerCase().includes("currentcolor")) return value;
 
   // 전체 값이 currentColor인 경우 (대소문자 무관)
-  if (value.toLowerCase() === 'currentcolor') {
+  if (value.toLowerCase() === "currentcolor") {
     return resolvedColor;
   }
 
@@ -314,29 +334,29 @@ export function resolveCurrentColor(
  * @param parentValue - 부모 computed 값
  * @returns 해석된 값, 또는 'INHERIT' 센티넬(부모 값 그대로 사용 의미)
  */
-const INHERIT_SENTINEL = Symbol('inherit');
+const INHERIT_SENTINEL = Symbol("inherit");
 
 function resolveCascadeKeyword(
   prop: string,
   value: unknown,
   _parentValue: unknown,
 ): unknown | typeof INHERIT_SENTINEL {
-  if (typeof value !== 'string') return value;
+  if (typeof value !== "string") return value;
 
   const lower = value.toLowerCase();
 
   switch (lower) {
-    case 'inherit':
+    case "inherit":
       return INHERIT_SENTINEL;
 
-    case 'initial':
-    case 'revert': {
+    case "initial":
+    case "revert": {
       // CSS 초기값 맵에서 조회, 없으면 값 그대로 유지
       const initial = CSS_INITIAL_VALUES[prop];
       return initial !== undefined ? initial : value;
     }
 
-    case 'unset':
+    case "unset":
       // 상속 속성: inherit처럼 동작
       if (INHERITABLE_PROPERTIES.has(prop)) {
         return INHERIT_SENTINEL;
@@ -363,42 +383,42 @@ function resolveCascadeKeyword(
  */
 const LOGICAL_TO_PHYSICAL: Record<string, string> = {
   // margin
-  marginInlineStart: 'marginLeft',
-  marginInlineEnd: 'marginRight',
-  marginBlockStart: 'marginTop',
-  marginBlockEnd: 'marginBottom',
+  marginInlineStart: "marginLeft",
+  marginInlineEnd: "marginRight",
+  marginBlockStart: "marginTop",
+  marginBlockEnd: "marginBottom",
   // padding
-  paddingInlineStart: 'paddingLeft',
-  paddingInlineEnd: 'paddingRight',
-  paddingBlockStart: 'paddingTop',
-  paddingBlockEnd: 'paddingBottom',
+  paddingInlineStart: "paddingLeft",
+  paddingInlineEnd: "paddingRight",
+  paddingBlockStart: "paddingTop",
+  paddingBlockEnd: "paddingBottom",
   // border-width
-  borderInlineStartWidth: 'borderLeftWidth',
-  borderInlineEndWidth: 'borderRightWidth',
-  borderBlockStartWidth: 'borderTopWidth',
-  borderBlockEndWidth: 'borderBottomWidth',
+  borderInlineStartWidth: "borderLeftWidth",
+  borderInlineEndWidth: "borderRightWidth",
+  borderBlockStartWidth: "borderTopWidth",
+  borderBlockEndWidth: "borderBottomWidth",
   // border-color
-  borderInlineStartColor: 'borderLeftColor',
-  borderInlineEndColor: 'borderRightColor',
-  borderBlockStartColor: 'borderTopColor',
-  borderBlockEndColor: 'borderBottomColor',
+  borderInlineStartColor: "borderLeftColor",
+  borderInlineEndColor: "borderRightColor",
+  borderBlockStartColor: "borderTopColor",
+  borderBlockEndColor: "borderBottomColor",
   // border-style
-  borderInlineStartStyle: 'borderLeftStyle',
-  borderInlineEndStyle: 'borderRightStyle',
-  borderBlockStartStyle: 'borderTopStyle',
-  borderBlockEndStyle: 'borderBottomStyle',
+  borderInlineStartStyle: "borderLeftStyle",
+  borderInlineEndStyle: "borderRightStyle",
+  borderBlockStartStyle: "borderTopStyle",
+  borderBlockEndStyle: "borderBottomStyle",
   // inset (단일)
-  insetInlineStart: 'left',
-  insetInlineEnd: 'right',
-  insetBlockStart: 'top',
-  insetBlockEnd: 'bottom',
+  insetInlineStart: "left",
+  insetInlineEnd: "right",
+  insetBlockStart: "top",
+  insetBlockEnd: "bottom",
   // size
-  inlineSize: 'width',
-  blockSize: 'height',
-  minInlineSize: 'minWidth',
-  maxInlineSize: 'maxWidth',
-  minBlockSize: 'minHeight',
-  maxBlockSize: 'maxHeight',
+  inlineSize: "width",
+  blockSize: "height",
+  minInlineSize: "minWidth",
+  maxInlineSize: "maxWidth",
+  minBlockSize: "minHeight",
+  maxBlockSize: "maxHeight",
 };
 
 /**
@@ -407,12 +427,12 @@ const LOGICAL_TO_PHYSICAL: Record<string, string> = {
  * shorthand는 단일 값이면 양쪽 모두, 공백 구분 두 값이면 start/end 각각 적용한다.
  */
 const LOGICAL_SHORTHAND_TO_PHYSICAL: Record<string, [string, string]> = {
-  insetInline: ['left', 'right'],
-  insetBlock: ['top', 'bottom'],
-  marginInline: ['marginLeft', 'marginRight'],
-  marginBlock: ['marginTop', 'marginBottom'],
-  paddingInline: ['paddingLeft', 'paddingRight'],
-  paddingBlock: ['paddingTop', 'paddingBottom'],
+  insetInline: ["left", "right"],
+  insetBlock: ["top", "bottom"],
+  marginInline: ["marginLeft", "marginRight"],
+  marginBlock: ["marginTop", "marginBottom"],
+  paddingInline: ["paddingLeft", "paddingRight"],
+  paddingBlock: ["paddingTop", "paddingBottom"],
 };
 
 /**
@@ -436,13 +456,15 @@ export function resolveLogicalProperties(
   const result: Record<string, unknown> = { ...style };
 
   // shorthand 처리
-  for (const [logicalKey, [physStart, physEnd]] of Object.entries(LOGICAL_SHORTHAND_TO_PHYSICAL)) {
+  for (const [logicalKey, [physStart, physEnd]] of Object.entries(
+    LOGICAL_SHORTHAND_TO_PHYSICAL,
+  )) {
     if (!(logicalKey in result)) continue;
 
     const raw = result[logicalKey];
     delete result[logicalKey];
 
-    if (typeof raw === 'string' && raw.trim().includes(' ')) {
+    if (typeof raw === "string" && raw.trim().includes(" ")) {
       const parts = raw.trim().split(/\s+/);
       const startVal = parts[0];
       const endVal = parts[1];
@@ -494,14 +516,18 @@ export interface ImportantSplit {
  * preprocessImportant({ color: 'red !important', fontSize: '14px' })
  * // { normal: { fontSize: '14px' }, important: { color: 'red' } }
  */
-export function preprocessImportant(style: Record<string, unknown>): ImportantSplit {
+export function preprocessImportant(
+  style: Record<string, unknown>,
+): ImportantSplit {
   const normal: Record<string, unknown> = {};
   const important: Record<string, unknown> = {};
 
   for (const prop of Object.keys(style)) {
     const value = style[prop];
-    if (typeof value === 'string' && value.endsWith('!important')) {
-      important[prop] = value.slice(0, value.length - '!important'.length).trimEnd();
+    if (typeof value === "string" && value.endsWith("!important")) {
+      important[prop] = value
+        .slice(0, value.length - "!important".length)
+        .trimEnd();
     } else {
       normal[prop] = value;
     }
@@ -542,32 +568,44 @@ export function resolveStyle(
   if (!style) return { ...parentComputed };
 
   // !important 분리
-  const { normal: normalStyle, important: importantStyle } = preprocessImportant(style);
+  const { normal: normalStyle, important: importantStyle } =
+    preprocessImportant(style);
 
   // 논리 속성을 물리 속성으로 전환 (물리 속성 우선)
   const afterLogicalNormal = resolveLogicalProperties(normalStyle);
   const afterLogicalImportant = resolveLogicalProperties(importantStyle);
 
-  function expandFontShorthand(src: Record<string, unknown>): Record<string, unknown> {
-    if (src['font'] === undefined) return src;
-    const parsed = parseFontShorthand(src['font']);
+  function expandFontShorthand(
+    src: Record<string, unknown>,
+  ): Record<string, unknown> {
+    if (src["font"] === undefined) return src;
+    const parsed = parseFontShorthand(src["font"]);
     if (!parsed) return src;
     const expanded: Record<string, unknown> = { ...src };
-    delete expanded['font'];
-    if (parsed.fontStyle !== undefined && expanded['fontStyle'] === undefined) {
-      expanded['fontStyle'] = parsed.fontStyle;
+    delete expanded["font"];
+    if (parsed.fontStyle !== undefined && expanded["fontStyle"] === undefined) {
+      expanded["fontStyle"] = parsed.fontStyle;
     }
-    if (parsed.fontWeight !== undefined && expanded['fontWeight'] === undefined) {
-      expanded['fontWeight'] = parsed.fontWeight;
+    if (
+      parsed.fontWeight !== undefined &&
+      expanded["fontWeight"] === undefined
+    ) {
+      expanded["fontWeight"] = parsed.fontWeight;
     }
-    if (parsed.fontSize !== undefined && expanded['fontSize'] === undefined) {
-      expanded['fontSize'] = parsed.fontSize;
+    if (parsed.fontSize !== undefined && expanded["fontSize"] === undefined) {
+      expanded["fontSize"] = parsed.fontSize;
     }
-    if (parsed.lineHeight !== undefined && expanded['lineHeight'] === undefined) {
-      expanded['lineHeight'] = parsed.lineHeight;
+    if (
+      parsed.lineHeight !== undefined &&
+      expanded["lineHeight"] === undefined
+    ) {
+      expanded["lineHeight"] = parsed.lineHeight;
     }
-    if (parsed.fontFamily !== undefined && expanded['fontFamily'] === undefined) {
-      expanded['fontFamily'] = parsed.fontFamily;
+    if (
+      parsed.fontFamily !== undefined &&
+      expanded["fontFamily"] === undefined
+    ) {
+      expanded["fontFamily"] = parsed.fontFamily;
     }
     return expanded;
   }
@@ -581,9 +619,14 @@ export function resolveStyle(
   // 1단계: normal 속성 적용
   for (const prop of INHERITABLE_PROPERTIES) {
     const rawValue = effectiveNormal[prop];
-    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
+    if (rawValue === undefined || rawValue === null || rawValue === "")
+      continue;
 
-    const resolved = resolveCascadeKeyword(prop, rawValue, computed[prop as keyof ComputedStyle]);
+    const resolved = resolveCascadeKeyword(
+      prop,
+      rawValue,
+      computed[prop as keyof ComputedStyle],
+    );
 
     if (resolved === INHERIT_SENTINEL) continue;
 
@@ -593,9 +636,14 @@ export function resolveStyle(
   // 2단계: !important 속성 적용 (normal 값을 덮어씀)
   for (const prop of INHERITABLE_PROPERTIES) {
     const rawValue = effectiveImportant[prop];
-    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
+    if (rawValue === undefined || rawValue === null || rawValue === "")
+      continue;
 
-    const resolved = resolveCascadeKeyword(prop, rawValue, computed[prop as keyof ComputedStyle]);
+    const resolved = resolveCascadeKeyword(
+      prop,
+      rawValue,
+      computed[prop as keyof ComputedStyle],
+    );
 
     if (resolved === INHERIT_SENTINEL) continue;
 
@@ -603,15 +651,15 @@ export function resolveStyle(
   }
 
   // fontSize 상대 단위 해석 (em, rem, px)
-  if (typeof computed.fontSize === 'string') {
+  if (typeof computed.fontSize === "string") {
     const fs = String(computed.fontSize);
-    if (fs.endsWith('em') && !fs.endsWith('rem')) {
+    if (fs.endsWith("em") && !fs.endsWith("rem")) {
       // em: 부모 fontSize 기준
       computed.fontSize = parseFloat(fs) * parentComputed.fontSize;
-    } else if (fs.endsWith('rem')) {
+    } else if (fs.endsWith("rem")) {
       // rem: 루트 fontSize 기준 (16px 고정)
       computed.fontSize = parseFloat(fs) * 16;
-    } else if (fs.endsWith('px')) {
+    } else if (fs.endsWith("px")) {
       computed.fontSize = parseFloat(fs);
     } else {
       computed.fontSize = parseFloat(fs) || parentComputed.fontSize;
@@ -645,19 +693,20 @@ export function preprocessStyle(
 
   for (const prop of Object.keys(result)) {
     const rawValue = result[prop];
-    if (rawValue === undefined || rawValue === null || rawValue === '') continue;
+    if (rawValue === undefined || rawValue === null || rawValue === "")
+      continue;
 
     // cascade 키워드 해석 (부모 없는 flat 처리: 비상속 속성은 initial로 fallback)
-    if (typeof rawValue === 'string') {
+    if (typeof rawValue === "string") {
       const lower = rawValue.toLowerCase();
 
-      if (lower === 'initial' || lower === 'revert') {
+      if (lower === "initial" || lower === "revert") {
         const initial = CSS_INITIAL_VALUES[prop];
         if (initial !== undefined) {
           result[prop] = initial;
           continue;
         }
-      } else if (lower === 'unset') {
+      } else if (lower === "unset") {
         if (INHERITABLE_PROPERTIES.has(prop)) {
           // 상속 속성의 unset은 resolveStyle()에서 처리됨, 여기서는 건너뜀
           continue;

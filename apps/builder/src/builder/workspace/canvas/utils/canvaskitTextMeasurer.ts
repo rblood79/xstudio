@@ -23,6 +23,7 @@ import { skiaFontManager } from "../skia/fontManager";
 import {
   resolveFontVariantFeatures,
   resolveFontStretchWidth,
+  DEFAULT_FONT_FEATURES,
 } from "../layout/engines/cssResolver";
 import {
   cssNormalBreakProcess,
@@ -208,9 +209,10 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     // nodeRenderers.ts의 renderText()와 동일한 textStyle 구성
     // heightMultiplier / halfLeading도 렌더러와 일치시켜야
     // getMaxIntrinsicWidth()가 동일한 text shaping 결과를 반환
-    const fontFeatures = style.fontVariant
+    const variantFeatures = style.fontVariant
       ? resolveFontVariantFeatures(style.fontVariant)
       : [];
+    const fontFeatures = [...DEFAULT_FONT_FEATURES, ...variantFeatures];
     // 렌더러(specShapeConverter)와 동일하게 CSS 체인 전체를 split+resolve
     const fontFamilies = buildFontFamilies(style.fontFamily);
     const heightMultiplier = style.lineHeight
@@ -289,9 +291,10 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     if (cached) return cached;
 
     // measureWidth와 동일한 textStyle + halfLeading (CSS line-height 상하 균등 분배)
-    const fontFeatures = style.fontVariant
+    const variantFeatures = style.fontVariant
       ? resolveFontVariantFeatures(style.fontVariant)
       : [];
+    const fontFeatures = [...DEFAULT_FONT_FEATURES, ...variantFeatures];
     // 렌더러(specShapeConverter)와 동일하게 CSS 체인 전체를 split+resolve
     const fontFamilies = buildFontFamilies(style.fontFamily);
     const heightMultiplier = style.lineHeight
