@@ -25,7 +25,7 @@ import {
  */
 export interface FormProps {
   variant?: "default" | "outlined";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   title?: string;
   description?: string;
@@ -56,7 +56,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

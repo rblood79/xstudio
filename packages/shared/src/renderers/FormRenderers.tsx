@@ -41,7 +41,9 @@ function findNearestAncestorForm(
   let currentParentId = element.parent_id;
 
   while (currentParentId) {
-    const parent = elements.find((candidate) => candidate.id === currentParentId);
+    const parent = elements.find(
+      (candidate) => candidate.id === currentParentId,
+    );
     if (!parent) return null;
     if (parent.tag === "Form") return parent;
     currentParentId = parent.parent_id;
@@ -58,12 +60,19 @@ export function resolveInheritedFormFieldProps(
   if (!formElement) return {};
 
   return {
-    labelPosition:
-      formElement.props.labelPosition as "top" | "side" | undefined,
-    labelAlign:
-      formElement.props.labelAlign as "start" | "center" | "end" | undefined,
-    necessityIndicator:
-      formElement.props.necessityIndicator as "icon" | "label" | undefined,
+    labelPosition: formElement.props.labelPosition as
+      | "top"
+      | "side"
+      | undefined,
+    labelAlign: formElement.props.labelAlign as
+      | "start"
+      | "center"
+      | "end"
+      | undefined,
+    necessityIndicator: formElement.props.necessityIndicator as
+      | "icon"
+      | "label"
+      | undefined,
   };
 }
 
@@ -88,9 +97,7 @@ export const renderForm = (
       style={element.props.style}
       className={element.props.className}
       action={element.props.action ? String(element.props.action) : undefined}
-      method={
-        (element.props.method as "get" | "post" | undefined) || undefined
-      }
+      method={(element.props.method as "get" | "post" | undefined) || undefined}
       encType={
         (element.props.encType as
           | "application/x-www-form-urlencoded"
@@ -113,8 +120,7 @@ export const renderForm = (
         undefined
       }
       labelPosition={
-        (element.props.labelPosition as "top" | "side" | undefined) ||
-        undefined
+        (element.props.labelPosition as "top" | "side" | undefined) || undefined
       }
       labelAlign={
         (element.props.labelAlign as "start" | "center" | "end" | undefined) ||
@@ -210,6 +216,7 @@ export const renderNumberField = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
@@ -238,7 +245,9 @@ export const renderNumberField = (
           | "unit"
           | undefined) ?? "decimal"
       }
-      currency={element.props.currency ? String(element.props.currency) : undefined}
+      currency={
+        element.props.currency ? String(element.props.currency) : undefined
+      }
       unit={element.props.unit ? String(element.props.unit) : undefined}
       notation={
         (element.props.notation as

@@ -24,7 +24,7 @@ import {
  */
 export interface TooltipProps {
   variant?: "accent" | "surface";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   text?: string;
   placement?:
@@ -64,7 +64,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   element: "div",
 
   defaultVariant: "surface",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

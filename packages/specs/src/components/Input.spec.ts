@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface InputProps {
   variant?: "default" | "accent" | "negative";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   value?: string;
   placeholder?: string;
   label?: string;
@@ -36,7 +36,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
   archetype: "input-base",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

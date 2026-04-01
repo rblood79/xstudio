@@ -29,7 +29,7 @@ export interface ToastProps {
     | "bottom-left"
     | "bottom-center";
   variant?: "info" | "success" | "warning" | "error";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   message?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 높이 */
@@ -49,7 +49,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   element: "div",
 
   defaultVariant: "info",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

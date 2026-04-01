@@ -16,6 +16,12 @@
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: 120px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
 }
 
 .react-aria-MaskedFrame[data-variant="default"] {

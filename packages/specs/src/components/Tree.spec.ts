@@ -38,7 +38,7 @@ function parseCsvList(value: unknown): string[] {
  */
 export interface TreeProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   description?: string;
   selectionMode?: "none" | "single" | "multiple";
@@ -63,7 +63,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

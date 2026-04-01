@@ -17,7 +17,7 @@ import { FileText, Type, AlertCircle } from "lucide-react";
  */
 export interface SlotProps {
   variant?: "default";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   name?: string;
   description?: string;
@@ -35,7 +35,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

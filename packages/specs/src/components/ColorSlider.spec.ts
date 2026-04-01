@@ -15,7 +15,7 @@ import { Sliders, ArrowLeftRight, PointerOff } from "lucide-react";
  */
 export interface ColorSliderProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   channel?: "hue" | "saturation" | "lightness" | "brightness" | "alpha";
   value?: number;
   isDisabled?: boolean;
@@ -32,7 +32,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

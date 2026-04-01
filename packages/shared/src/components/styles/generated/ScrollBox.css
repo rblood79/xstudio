@@ -21,6 +21,12 @@
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: 200px;
+  padding: 12px 12px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
 }
 
 .react-aria-ScrollBox[data-variant="default"] {

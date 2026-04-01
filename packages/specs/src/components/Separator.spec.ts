@@ -22,7 +22,7 @@ export interface SeparatorProps {
     | "accent"
     | "neutral"
     | "surface";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
 }
 
@@ -41,7 +41,7 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   element: "hr",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

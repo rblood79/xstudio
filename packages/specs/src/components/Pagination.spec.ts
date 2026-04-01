@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface PaginationProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   totalPages?: number;
   currentPage?: number;
   style?: Record<string, string | number | undefined>;
@@ -32,7 +32,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

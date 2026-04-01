@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ListProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   items?: Array<{ label: string; description?: string }>;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -34,7 +34,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

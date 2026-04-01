@@ -21,6 +21,13 @@
   background: var(--bg-inset);
   color: var(--fg-muted);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: 40px;
+  padding: 4px 4px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 2px;
 }
 
 .react-aria-Switcher[data-variant="default"] {

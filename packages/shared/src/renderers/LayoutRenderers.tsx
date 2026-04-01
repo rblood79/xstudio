@@ -705,6 +705,8 @@ export const renderTooltip = (
     <Tooltip
       key={element.id}
       data-element-id={element.id}
+      data-variant={element.props.variant || "default"}
+      data-size={element.props.size || "md"}
       style={element.props.style}
       className={element.props.className}
       placement={
@@ -764,6 +766,8 @@ export const renderDialog = (
     <Dialog
       key={element.id}
       data-element-id={element.id}
+      data-variant={element.props.variant || "default"}
+      data-size={element.props.size || "md"}
       style={element.props.style}
       className={element.props.className}
       role={(element.props.role as "dialog" | "alertdialog") || "dialog"}

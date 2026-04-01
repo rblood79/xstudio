@@ -16,6 +16,12 @@
   background: transparent;
   color: var(--fg-muted);
   border: none;
+
+  /* Default size */
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
 }
 
 .react-aria-Description[data-variant="default"] {

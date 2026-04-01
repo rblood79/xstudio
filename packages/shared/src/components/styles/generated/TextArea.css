@@ -17,6 +17,13 @@
   background: var(--bg-inset);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: 80px;
+  padding: 10px 14px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 6px;
 }
 
 .react-aria-TextArea[data-variant="default"] {

@@ -16,6 +16,12 @@
   background: var(--bg-muted);
   color: var(--fg);
   border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 6px 10px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
 }
 
 .react-aria-Tooltip[data-variant="accent"] {

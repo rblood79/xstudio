@@ -11,7 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 export interface SelectTriggerProps {
   variant?: "default" | "accent" | "negative";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
   isInvalid?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -24,7 +24,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
   archetype: "button",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

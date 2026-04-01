@@ -21,6 +21,14 @@
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: auto;
+  padding: 8px 12px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 4px;
+  --icon-size: 20px;
 }
 
 .react-aria-List[data-variant="default"] {

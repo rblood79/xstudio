@@ -18,7 +18,7 @@ import { Type, Palette, ToggleLeft, Parentheses } from "lucide-react";
  */
 export interface PanelProps {
   variant?: "default" | "accent" | "surface";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   title?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -34,7 +34,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

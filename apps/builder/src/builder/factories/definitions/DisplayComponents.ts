@@ -150,7 +150,7 @@ export function createStatusLightDefinition(
       props: {
         variant: "positive",
         children: "Available",
-        size: "M",
+        size: "md",
         style: {
           display: "flex",
           flexDirection: "row",
@@ -559,7 +559,7 @@ export function createProgressCircleDefinition(
       tag: "ProgressCircle",
       props: {
         value: 75,
-        size: "M",
+        size: "md",
         isIndeterminate: false,
         isDisabled: false,
         style: {
@@ -705,7 +705,7 @@ export function createIllustratedMessageDefinition(
     parent: {
       tag: "IllustratedMessage",
       props: {
-        size: "M",
+        size: "md",
         heading: "No results",
         description: "Try another search term.",
         style: {

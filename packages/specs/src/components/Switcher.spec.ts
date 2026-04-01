@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SwitcherProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   items?: Array<string | { label: string; value?: string }>;
   activeIndex?: number;
   isDisabled?: boolean;
@@ -32,7 +32,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

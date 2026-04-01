@@ -15,7 +15,7 @@ import { resolveStateColors } from "../utils/stateEffect";
  */
 export interface ScrollBoxProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   scrollDirection?: "vertical" | "horizontal" | "both";
   style?: Record<string, string | number | undefined>;
 }
@@ -29,7 +29,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

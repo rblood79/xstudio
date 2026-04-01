@@ -35,7 +35,7 @@ export interface TableRow {
  */
 export interface TableProps {
   variant?: "default" | "striped" | "bordered";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   columns?: TableColumn[];
   rows?: TableRow[];
   selectionMode?: "none" | "single" | "multiple";
@@ -52,7 +52,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

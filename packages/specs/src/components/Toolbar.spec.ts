@@ -15,7 +15,7 @@ import { ArrowLeftRight } from "lucide-react";
  */
 export interface ToolbarProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   style?: Record<string, string | number | undefined>;
 }
@@ -30,7 +30,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

@@ -15,7 +15,7 @@ import { Hash, PointerOff } from "lucide-react";
  */
 export interface ColorWheelProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   hue?: number;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -31,7 +31,7 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

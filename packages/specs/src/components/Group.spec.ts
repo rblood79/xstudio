@@ -15,7 +15,7 @@ import { Tag, Shield, PointerOff, AlertTriangle, PenOff } from "lucide-react";
  */
 export interface GroupProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   label?: string;
   style?: Record<string, string | number | undefined>;
@@ -31,7 +31,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

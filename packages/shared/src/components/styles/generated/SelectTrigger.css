@@ -22,6 +22,14 @@
   background: var(--bg-inset);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: 30px;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 6px;
+  --icon-size: 18px;
 }
 
 .react-aria-SelectTrigger[data-variant="default"] {

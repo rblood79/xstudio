@@ -32,7 +32,7 @@ export type DateSegmentType =
  */
 export interface DateSegmentProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   /** 세그먼트 타입 (month, day, year, hour, minute, second 등) */
   segmentType?: DateSegmentType;
   /** 표시할 값 (숫자 또는 텍스트) */
@@ -59,7 +59,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

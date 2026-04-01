@@ -22,7 +22,7 @@ import {
  */
 export interface PopoverProps {
   variant?: "accent" | "neutral" | "surface";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   placement?:
     | "top"
@@ -52,7 +52,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   element: "div",
 
   defaultVariant: "surface",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

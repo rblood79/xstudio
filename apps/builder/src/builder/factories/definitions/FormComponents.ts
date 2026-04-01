@@ -778,7 +778,7 @@ export function createToolbarDefinition(
         props: {
           children: "Action 1",
           variant: "default",
-          size: "S",
+          size: "sm",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
@@ -789,7 +789,7 @@ export function createToolbarDefinition(
         props: {
           children: "Action 2",
           variant: "default",
-          size: "S",
+          size: "sm",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
@@ -812,7 +812,7 @@ export function createToolbarDefinition(
         props: {
           children: "Action 3",
           variant: "default",
-          size: "S",
+          size: "sm",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,

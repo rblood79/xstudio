@@ -15,7 +15,7 @@ import { LayoutGrid, Hash, Sliders, PointerOff } from "lucide-react";
  */
 export interface ColorSwatchPickerProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   value?: string;
   colors?: string[];
   columns?: number;
@@ -33,7 +33,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

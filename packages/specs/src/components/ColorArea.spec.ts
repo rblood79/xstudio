@@ -15,7 +15,7 @@ import { Sliders, PointerOff } from "lucide-react";
  */
 export interface ColorAreaProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   hue?: number;
   xValue?: number;
   yValue?: number;
@@ -33,7 +33,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

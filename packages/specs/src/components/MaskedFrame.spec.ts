@@ -14,7 +14,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  */
 export interface MaskedFrameProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   maskShape?: "rect" | "circle" | "roundRect";
   style?: Record<string, string | number | undefined>;
 }
@@ -29,7 +29,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   archetype: "simple",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

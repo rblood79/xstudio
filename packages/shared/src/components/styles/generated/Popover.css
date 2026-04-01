@@ -15,6 +15,13 @@
   background: var(--bg-inset);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 12px;
 }
 
 .react-aria-Popover[data-variant="accent"] {

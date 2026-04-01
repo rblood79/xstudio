@@ -20,7 +20,7 @@ export interface SectionProps {
     | "purple"
     | "surface"
     | "outlined";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -37,7 +37,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
   element: "section",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

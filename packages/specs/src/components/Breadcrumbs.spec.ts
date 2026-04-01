@@ -17,7 +17,7 @@ import { PointerOff } from "lucide-react";
  */
 export interface BreadcrumbsProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   separator?: string;
   isDisabled?: boolean;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */

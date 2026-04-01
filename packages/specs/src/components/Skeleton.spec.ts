@@ -14,7 +14,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  */
 export interface SkeletonProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   skeletonVariant?: "text" | "avatar" | "card" | "list";
   width?: number;
   height?: number;
@@ -31,7 +31,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

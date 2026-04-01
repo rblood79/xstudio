@@ -27,7 +27,7 @@ import {
  */
 export interface TextAreaProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -54,7 +54,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   archetype: "input-base",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

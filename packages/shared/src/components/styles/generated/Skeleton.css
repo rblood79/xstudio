@@ -16,6 +16,12 @@
   background: var(--bg-inset);
   color: var(--fg-muted);
   border: none;
+
+  /* Default size */
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
 }
 
 .react-aria-Skeleton[data-variant="default"] {

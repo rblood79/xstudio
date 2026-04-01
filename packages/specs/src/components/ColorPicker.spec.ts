@@ -17,7 +17,7 @@ import { Tag, Hash, PointerOff } from "lucide-react";
  */
 export interface ColorPickerProps {
   variant?: "default" | "compact" | "expanded";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   value?: string;
   hue?: number;
   saturation?: number;
@@ -39,7 +39,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   overlay: {
     usePortal: true,

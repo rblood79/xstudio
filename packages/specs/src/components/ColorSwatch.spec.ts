@@ -15,7 +15,7 @@ import { Palette, Sliders } from "lucide-react";
  */
 export interface ColorSwatchProps {
   variant?: "default" | "selected";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   color?: string;
   isDisabled?: boolean;
   isSelected?: boolean;
@@ -32,7 +32,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

@@ -21,6 +21,13 @@
   background: var(--bg);
   color: var(--fg);
   border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 12px;
 }
 
 .react-aria-Section[data-variant="default"] {

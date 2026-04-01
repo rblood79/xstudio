@@ -15,7 +15,7 @@ import { Tag } from "lucide-react";
  */
 export interface NavProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   "aria-label"?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -30,7 +30,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
   element: "nav",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

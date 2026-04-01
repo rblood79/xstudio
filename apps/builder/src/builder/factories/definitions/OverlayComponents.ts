@@ -29,7 +29,7 @@ export function createDialogDefinition(
       tag: "Dialog",
       props: {
         variant: "accent",
-        size: "M",
+        size: "md",
         isDismissible: false,
         style: {
           display: "flex",
@@ -113,7 +113,7 @@ export function createPopoverDefinition(
       tag: "Popover",
       props: {
         variant: "default",
-        size: "S",
+        size: "sm",
         style: {
           display: "flex",
           flexDirection: "column",

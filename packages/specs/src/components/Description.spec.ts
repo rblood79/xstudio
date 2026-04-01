@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface DescriptionProps {
   variant?: "default";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -32,7 +32,7 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
   archetype: "simple",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
