@@ -4,7 +4,7 @@
     width: 100%;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--bg-raised);
+    background: var(--bg);
     color: var(--fg);
 
     /* 기본 variant 변수 */
@@ -128,8 +128,8 @@
     }
   }
 
-  /* ========== Color Variants ========== */
-  .react-aria-Disclosure[data-variant="primary"] {
+  /* ========== Color Variants (Spec: default/accent/surface) ========== */
+  .react-aria-Disclosure[data-variant="accent"] {
     --disc-accent: var(--accent);
     border-color: var(--accent);
 
@@ -154,28 +154,18 @@
     }
   }
 
-  .react-aria-Disclosure[data-variant="secondary"] {
-    --disc-accent: var(--bg-inset);
-    border-color: var(--fg-on-accent);
+  .react-aria-Disclosure[data-variant="surface"] {
+    background: var(--bg-inset);
+    border-color: var(--border);
 
     .react-aria-Button[slot="trigger"] {
-      color: var(--fg-on-accent);
-
       &[data-hovered] {
-        background: color-mix(in srgb, var(--bg-inset) 8%, transparent);
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--bg-inset) 12%, transparent);
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
       }
-
-      &[data-focus-visible] {
-        outline-color: var(--fg-on-accent);
-      }
-    }
-
-    &[data-expanded] {
-      background: color-mix(in srgb, var(--bg-inset) 4%, transparent);
     }
   }
 

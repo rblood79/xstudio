@@ -232,7 +232,13 @@
     }
   }
 
-  /* ========== Variant: accent ========== */
+  /* ========== Variants (S2: primary/secondary/accent/negative) ========== */
+  .react-aria-Menu[data-variant="secondary"] {
+    .react-aria-MenuItem[data-focused] {
+      background: var(--bg-muted);
+    }
+  }
+
   .react-aria-Menu[data-variant="accent"] {
     .react-aria-MenuItem[data-focused] {
       background: var(--accent-subtle);
@@ -240,6 +246,16 @@
 
     .react-aria-MenuItem[data-selection-mode]::before {
       color: var(--accent);
+    }
+  }
+
+  .react-aria-Menu[data-variant="negative"] {
+    .react-aria-MenuItem[data-focused] {
+      background: color-mix(in srgb, var(--negative) 10%, transparent);
+    }
+
+    .react-aria-MenuItem[data-selection-mode]::before {
+      color: var(--negative);
     }
   }
 

@@ -16,7 +16,7 @@ import { ToggleLeft, PointerOff } from "lucide-react";
  */
 export interface DisclosureGroupProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   allowsMultipleExpanded?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -31,7 +31,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -63,7 +63,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },

@@ -21,7 +21,7 @@ import {
 
 export interface TimeFieldProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   granularity?: "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
@@ -39,7 +39,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

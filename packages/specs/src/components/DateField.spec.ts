@@ -22,7 +22,7 @@ import {
 
 export interface DateFieldProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   granularity?: "day" | "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
@@ -41,7 +41,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

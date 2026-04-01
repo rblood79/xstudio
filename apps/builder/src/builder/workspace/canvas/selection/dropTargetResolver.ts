@@ -369,10 +369,56 @@ export function resolveDropTarget(
       store,
     );
 
+    // 커서가 현재 부모 bounds 밖인지 판단
+    const cursorOutsideParent =
+      containerBounds != null &&
+      (scenePoint.x < containerBounds.x ||
+        scenePoint.x > containerBounds.x + containerBounds.width ||
+        scenePoint.y < containerBounds.y ||
+        scenePoint.y > containerBounds.y + containerBounds.height);
+
     if (crossResult) {
-      // same-parent 결과가 없거나 인접 삽입(실질적 이동 없음)이면 cross-container 우선
-      if (!sameParentResult || sameParentResult.isAdjacentInsertion) {
+      if (
+        cursorOutsideParent ||
+        !sameParentResult ||
+        sameParentResult.isAdjacentInsertion
+      ) {
         return crossResult;
+      }
+    }
+
+    // 커서가 부모 밖인데 cross-container도 없으면 → 조부모로 reparent (그룹에서 꺼내기)
+    if (cursorOutsideParent && parent.parent_id) {
+      const grandparentId = parent.parent_id;
+      const grandparent = store.elementsMap.get(grandparentId);
+      if (grandparent) {
+        const gpBounds = getSceneBounds(grandparentId);
+        if (gpBounds) {
+          const gpIsHz = detectIsHorizontal(grandparent);
+          const gpChildren = getSortedChildren(grandparentId, store);
+          const gpChildBounds: ElementBounds[] = [];
+          for (const child of gpChildren) {
+            const b = getSceneBounds(child.id);
+            if (b) gpChildBounds.push(b);
+          }
+          const gpPos = gpIsHz ? scenePoint.x : scenePoint.y;
+          const gpInsertionIndex = findInsertionIndex(
+            gpPos,
+            gpChildBounds,
+            gpChildren.length,
+            gpIsHz,
+          );
+          return {
+            containerId: grandparentId,
+            insertionIndex: gpInsertionIndex,
+            isAdjacentInsertion: false,
+            isHorizontal: gpIsHz,
+            containerBounds: gpBounds,
+            siblingBounds: gpChildBounds,
+            isReparent: true,
+            originalParentId: parentId,
+          };
+        }
       }
     }
   }

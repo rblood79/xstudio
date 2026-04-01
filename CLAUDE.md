@@ -92,3 +92,14 @@ xstudio/
 | CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                                     | ITCSS + tv() 스타일링 상세                                                            |
 | CSS 자동 생성  | [docs/adr/completed/036-spec-first-single-source.md](docs/adr/completed/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                                      |
 | Spec↔CSS 경계  | [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)                                   | Leaf(Spec CSS) vs Container(수동 CSS) 분류표, 결정 흐름도                             |
+
+## 렌더링 버그 수정 규칙
+
+이 프로젝트는 **3개 렌더링 타겟**: CSS(DOM Preview), WebGL(Skia Canvas), PixiJS(이벤트)를 가집니다.
+컴포넌트는 **5개 레이어**: spec, factory, CSS renderer, WebGL/Canvas renderer, editor로 구성됩니다.
+
+1. **모든 렌더링 경로 검증 필수**: 시각적/렌더링 버그 수정 시 CSS, WebGL/Skia, Canvas **모든 경로**에서 수정을 확인. 한 경로만 수정하고 다른 경로를 누락하지 않는다.
+2. **전체 코드 경로 추적**: 수정 후 factory → spec → renderer → editor 전체 경로를 추적하여 하류 파손이 없는지 확인. 모든 관련 레이어를 체크하기 전까지 수정 완료로 간주하지 않는다.
+3. **코드 리뷰 시 이슈 스킵 금지**: HIGH/MEDIUM 심각도 발견사항을 '범위 외'로 스킵하지 않는다. 명시적으로 지시받지 않는 한 발견 즉시 수정한다.
+4. **교차 레이어 변경 확인**: 한 레이어의 변경이 다른 레이어에 영향을 미칠 수 있다. 변경 시 항상 확인할 파일: spec 파일, factory 파일, CSS renderer, WebGL/Canvas renderer, editor 파일.
+5. **좌표계 검증 선행**: 드래그앤드롭 또는 좌표 기반 기능 구현 시 좌표계 가정(local vs global, canvas vs screen)을 코드 작성 전에 검증하고 주석으로 문서화한다.

@@ -30,6 +30,7 @@ export function createMenuDefinition(
       props: {
         children: "Menu",
         "aria-label": "Menu",
+        variant: "primary",
         size: "md",
         selectionMode: "none",
         style: {

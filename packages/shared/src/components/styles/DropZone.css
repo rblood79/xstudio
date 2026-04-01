@@ -14,11 +14,6 @@
     text-align: center;
   }
 
-  /* Variant: default */
-  .react-aria-DropZone[data-variant="default"] {
-    border-style: solid;
-  }
-
   /* Variant: accent */
   .react-aria-DropZone[data-variant="accent"] {
     border-color: var(--accent);

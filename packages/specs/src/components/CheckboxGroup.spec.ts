@@ -240,8 +240,10 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
     shapes: (props, _variant, size, _state = "default") => {
       const shapes: Shape[] = [];
 
-      // 사용자 스타일 우선
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      // Propagation 정합성: props.size 명시 시 size.fontSize 우선
+      const rawFontSize = props.size
+        ? size.fontSize
+        : (props.style?.fontSize ?? size.fontSize);
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize

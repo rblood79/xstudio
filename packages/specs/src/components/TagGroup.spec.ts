@@ -32,7 +32,7 @@ import {
  */
 export interface TagGroupProps {
   variant?: "default" | "accent" | "neutral" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   selectionMode?: "none" | "single" | "multiple";
   selectionBehavior?: "toggle" | "replace";
   label?: string;
@@ -64,7 +64,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   properties: {
     sections: [

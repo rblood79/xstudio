@@ -1691,6 +1691,8 @@ export const renderDisclosureGroup = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      data-variant={(element.props.variant as string) || "default"}
+      data-size={(element.props.size as string) || "md"}
       allowsMultipleExpanded={Boolean(
         element.props.allowsMultipleExpanded ?? true,
       )}
