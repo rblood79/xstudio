@@ -40,6 +40,7 @@ import { ClickableBackground } from "./components/ClickableBackground";
 import { ElementsLayer } from "./components/ElementsLayer";
 import { PageContainer } from "./components/PageContainer";
 import { SelectionLayer, type BoundingBox } from "./selection";
+import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 // GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
 import { screenToViewportPoint } from "./viewport/viewportTransforms";
@@ -118,6 +119,7 @@ function SkiaOverlayLazy(props: {
   invalidateLayout: () => void;
   invalidationPacket: RendererInvalidationPacket;
   rendererInput: SkiaRendererInput;
+  dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
 }) {
   return (
     <Suspense fallback={null}>
@@ -458,6 +460,9 @@ export function BuilderCanvas({
   // SelectionLayer의 selectionBounds를 ref로 저장 (중앙 핸들러에서 접근)
   const selectionBoundsRef = useRef<BoundingBox | null>(null);
 
+  // ADR-049: drop indicator snapshot ref (SelectionLayer ↔ SkiaOverlay 공유)
+  const dropIndicatorSnapshotRef = useRef<DropIndicatorSnapshot | null>(null);
+
   // ADR-043 Phase 1: drag 콜백 refs (SelectionLayer → useCentralCanvasPointerHandlers 연결)
   const onStartMoveRef = useRef<
     (
@@ -742,6 +747,7 @@ export function BuilderCanvas({
               onUpdateDragRef={onUpdateDragRef}
               onEndDragRef={onEndDragRef}
               onCancelDragRef={onCancelDragRef}
+              dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
             />
           </pixiContainer>
         </Application>
@@ -756,6 +762,7 @@ export function BuilderCanvas({
           invalidateLayout={invalidateLayout}
           invalidationPacket={rendererInvalidationPacket}
           rendererInput={skiaRendererInput}
+          dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
         />
       )}
 
