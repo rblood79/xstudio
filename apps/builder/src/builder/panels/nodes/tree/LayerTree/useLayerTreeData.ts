@@ -15,32 +15,15 @@ import {
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
-  const elementTree = useMemo(() => {
-    const startTime = performance.now();
-    const result = buildTreeFromElements(elements);
-    const duration = performance.now() - startTime;
-    if (duration >= 8) {
-      console.log("[perf] layer-tree.build-elements", {
-        durationMs: Number(duration.toFixed(1)),
-        elementCount: elements.length,
-      });
-    }
-    return result;
-  }, [elements]);
+  const elementTree = useMemo(
+    () => buildTreeFromElements(elements),
+    [elements],
+  );
 
-  const treeNodes = useMemo(() => {
-    const startTime = performance.now();
-    const result = convertToLayerTreeNodes(elementTree, elements);
-    const duration = performance.now() - startTime;
-    if (duration >= 8) {
-      console.log("[perf] layer-tree.build-nodes", {
-        durationMs: Number(duration.toFixed(1)),
-        elementCount: elements.length,
-        nodeCount: result.length,
-      });
-    }
-    return result;
-  }, [elementTree, elements]);
+  const treeNodes = useMemo(
+    () => convertToLayerTreeNodes(elementTree, elements),
+    [elementTree, elements],
+  );
 
   // nodeMap: treeNodes 기반 O(1) 조회용 맵
   const { nodeMap, focusNodeMap, disabledKeys } = useMemo(() => {
@@ -80,38 +63,50 @@ export function useLayerTreeData(elements: Element[]) {
 
   // useTreeData 대신 직접 tree 객체 생성
   // getItem은 nodeMap 기반으로 구현
-  const tree = useMemo(() => ({
-    getItem: (key: string | number) => {
-      const node = nodeMap.get(String(key));
-      return node ? { value: node } : undefined;
-    },
-  }), [nodeMap]);
+  const tree = useMemo(
+    () => ({
+      getItem: (key: string | number) => {
+        const node = nodeMap.get(String(key));
+        return node ? { value: node } : undefined;
+      },
+    }),
+    [nodeMap],
+  );
 
   const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const syncToStore = useCallback(
-    (updates: Array<{ id: string; parentId?: string | null; orderNum?: number }>) => {
+    (
+      updates: Array<{
+        id: string;
+        parentId?: string | null;
+        orderNum?: number;
+      }>,
+    ) => {
       if (updates.length === 0) return;
       batchUpdateElements(
         updates.map((update) => ({
           elementId: update.id,
           updates: {
-            ...(update.parentId !== undefined && { parent_id: update.parentId }),
-            ...(update.orderNum !== undefined && { order_num: update.orderNum }),
+            ...(update.parentId !== undefined && {
+              parent_id: update.parentId,
+            }),
+            ...(update.orderNum !== undefined && {
+              order_num: update.orderNum,
+            }),
           },
-        }))
+        })),
       );
     },
-    [batchUpdateElements]
+    [batchUpdateElements],
   );
 
   return { tree, treeNodes, nodeMap, focusNodeMap, disabledKeys, syncToStore };
 }
 
-
 function convertToLayerTreeNodes(
   tree: ElementTreeItem[],
   elements: Element[],
-  depth = 0
+  depth = 0,
 ): LayerTreeNode[] {
   const elementsMap = new Map(elements.map((el) => [el.id, el]));
 
@@ -169,7 +164,7 @@ function getDisplayName(item: ElementTreeItem): string {
 function getVirtualChildren(
   item: ElementTreeItem,
   depth: number,
-  element: Element
+  element: Element,
 ): LayerTreeNode[] {
   const props = item.props as ElementProps | undefined;
   if (!props) return [];
@@ -178,7 +173,7 @@ function getVirtualChildren(
     type: VirtualChildType,
     index: number,
     label: string,
-    data: unknown
+    data: unknown,
   ): LayerTreeNode => ({
     id: `${item.id}::${type}:${index}`,
     name: label,
@@ -197,12 +192,7 @@ function getVirtualChildren(
   if (item.tag === "ToggleButtonGroup") {
     const children = childrenAs<ButtonItem>(props.children);
     return children.map((child, index) =>
-      makeNode(
-        "toggle",
-        index,
-        child.title || `Button ${index + 1}`,
-        child
-      )
+      makeNode("toggle", index, child.title || `Button ${index + 1}`, child),
     );
   }
 
@@ -213,55 +203,50 @@ function getVirtualChildren(
         "checkbox",
         index,
         child.label || `Checkbox ${index + 1}`,
-        child
-      )
+        child,
+      ),
     );
   }
 
   if (item.tag === "RadioGroup") {
     const children = childrenAs<RadioItem>(props.children);
     return children.map((child, index) =>
-      makeNode(
-        "radio",
-        index,
-        child.label || `Radio ${index + 1}`,
-        child
-      )
+      makeNode("radio", index, child.label || `Radio ${index + 1}`, child),
     );
   }
 
   if (item.tag === "ListBox") {
     const children = childrenAs<ListItem>(props.children);
     return children.map((child, index) =>
-      makeNode("listbox", index, child.label || `Item ${index + 1}`, child)
+      makeNode("listbox", index, child.label || `Item ${index + 1}`, child),
     );
   }
 
   if (item.tag === "GridList") {
     const children = childrenAs<ListItem>(props.children);
     return children.map((child, index) =>
-      makeNode("gridlist", index, child.label || `Item ${index + 1}`, child)
+      makeNode("gridlist", index, child.label || `Item ${index + 1}`, child),
     );
   }
 
   if (item.tag === "Select") {
     const children = childrenAs<ListItem>(props.children);
     return children.map((child, index) =>
-      makeNode("select", index, child.label || `Option ${index + 1}`, child)
+      makeNode("select", index, child.label || `Option ${index + 1}`, child),
     );
   }
 
   if (item.tag === "ComboBox") {
     const children = childrenAs<ListItem>(props.children);
     return children.map((child, index) =>
-      makeNode("combobox", index, child.label || `Option ${index + 1}`, child)
+      makeNode("combobox", index, child.label || `Option ${index + 1}`, child),
     );
   }
 
   if (item.tag === "Tree") {
     const children = childrenAs<TreeItemType>(props.children);
     return children.map((child, index) =>
-      makeNode("tree", index, child.title || `Item ${index + 1}`, child)
+      makeNode("tree", index, child.title || `Item ${index + 1}`, child),
     );
   }
 

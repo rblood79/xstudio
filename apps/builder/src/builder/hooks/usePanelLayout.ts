@@ -7,7 +7,6 @@
  */
 
 import { useCallback } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { useStore } from "../stores";
 import type {
   PanelId,
@@ -30,8 +29,7 @@ const getLayout = () => useStore.getState().panelLayout;
  * @returns 레이아웃 상태 및 액션
  */
 export function usePanelLayout(): UsePanelLayoutReturn {
-  // useShallow: panelLayout 객체의 최상위 키를 개별 비교
-  const layout = useStore(useShallow((state) => state.panelLayout));
+  const layout = useStore((state) => state.panelLayout);
   const setPanelLayout = useStore((state) => state.setPanelLayout);
 
   /**

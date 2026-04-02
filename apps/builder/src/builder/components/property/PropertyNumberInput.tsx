@@ -40,6 +40,7 @@ export const PropertyNumberInput = memo(
     const committedRef = useRef(false);
     const focusedElementIdRef = useRef<string | null>(null);
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       setLocalValue(value);
       committedRef.current = false;

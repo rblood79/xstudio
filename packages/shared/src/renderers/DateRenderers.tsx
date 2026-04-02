@@ -343,7 +343,6 @@ export const renderDateField = (
   const hourCycle = element.props.hourCycle
     ? Number(element.props.hourCycle)
     : undefined;
-  const size = element.props.size as string | undefined;
   // granularity/locale/calendar 변경 시 리마운트 (defaultValue 재적용)
   const remountKey = `${element.id}-${granularity}-${locale || ""}-${calendar || ""}`;
 
@@ -418,7 +417,6 @@ export const renderTimeField = (
   const hourCycle = element.props.hourCycle
     ? Number(element.props.hourCycle)
     : undefined;
-  const size = element.props.size as string | undefined;
   const remountKey = `${element.id}-${granularity}-${locale || ""}`;
 
   return wrapWithI18n(

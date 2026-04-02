@@ -313,17 +313,6 @@ export const usePageManager = ({
 
         const newPage = newPageData;
 
-        // useListData에 추가 (ApiPage 타입으로 변환)
-        const apiPage: ApiPage = {
-          id: newPage.id,
-          project_id: newPage.project_id,
-          title: newPage.title,
-          slug: newPage.slug,
-          parent_id: newPage.parent_id ?? null,
-          order_num: newPage.order_num ?? 0,
-          created_at: newPage.created_at ?? new Date().toISOString(),
-          updated_at: newPage.updated_at ?? new Date().toISOString(),
-        };
         setSelectedPageId(newPage.id);
 
         const nextPosition = computeNextPagePosition();
@@ -401,17 +390,6 @@ export const usePageManager = ({
 
         const newPage = newPageData;
 
-        // useListData에 추가 (ApiPage 타입으로 변환)
-        const apiPage: ApiPage = {
-          id: newPage.id,
-          project_id: newPage.project_id,
-          title: newPage.title,
-          slug: newPage.slug,
-          parent_id: newPage.parent_id ?? null,
-          order_num: newPage.order_num ?? 0,
-          created_at: newPage.created_at ?? new Date().toISOString(),
-          updated_at: newPage.updated_at ?? new Date().toISOString(),
-        };
         setSelectedPageId(newPage.id);
 
         if (!layoutId) {

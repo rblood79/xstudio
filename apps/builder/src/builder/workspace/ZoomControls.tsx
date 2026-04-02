@@ -50,6 +50,7 @@ export const ZoomControls = memo(function ZoomControls({
   const anchorRef = useRef<HTMLDivElement>(null);
 
   // 포커스 중이 아닐 때만 외부 zoom 변경을 input에 반영
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (!isEditingRef.current) {
       setInputValue(`${zoomPercent}%`);

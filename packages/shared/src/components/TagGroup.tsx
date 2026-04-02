@@ -209,6 +209,46 @@ export function TagGroup<T extends object>({
       dataBinding.type === "collection") ||
     isPropertyBinding;
 
+  // Static Children: data-binding 경로에서는 사용하지 않으므로 스킵
+  const allMappedChildren = hasDataBinding
+    ? children
+    : typeof children === "function"
+      ? children
+      : React.Children.map(children as React.ReactNode, (child) => {
+          if (!React.isValidElement(child)) return child;
+          const { children: tagContent, ...tagProps } = child.props as TagProps;
+          const textValue =
+            typeof tagContent === "string" ? tagContent : undefined;
+          return (
+            <AriaTag
+              textValue={textValue}
+              {...tagProps}
+              className="react-aria-Tag"
+            >
+              {({ allowsRemoving }) => (
+                <>
+                  {tagContent}
+                  {allowsRemoving && (
+                    <Button slot="remove" className="tag-remove-btn">
+                      <X size={14} />
+                    </Button>
+                  )}
+                </>
+              )}
+            </AriaTag>
+          );
+        });
+
+  // children에서 텍스트 추출 (미러 DOM용, data-binding 경로에서는 빈 배열)
+  const tagTexts = React.useMemo(() => {
+    if (hasDataBinding || !Array.isArray(allMappedChildren)) return [];
+    return allMappedChildren.map((child) => {
+      if (!React.isValidElement(child)) return "";
+      const p = child.props as { textValue?: string; children?: unknown };
+      return p.textValue || String(p.children || "");
+    });
+  }, [hasDataBinding, allMappedChildren]);
+
   // children이 render function인지 확인 (Field children 렌더링 모드)
   const isRenderFunction = typeof children === "function";
 
@@ -428,47 +468,6 @@ export function TagGroup<T extends object>({
       );
     }
   }
-
-  // Static Children (기존 방식)
-  // React Aria의 TagList collection은 AriaTag(react-aria-components Tag)만 인식.
-  // 커스텀 Tag 래퍼는 인식 불가 → AriaTag로 변환하여 전달.
-  const allMappedChildren =
-    typeof children === "function"
-      ? children
-      : React.Children.map(children as React.ReactNode, (child) => {
-          if (!React.isValidElement(child)) return child;
-          const { children: tagContent, ...tagProps } = child.props as TagProps;
-          const textValue =
-            typeof tagContent === "string" ? tagContent : undefined;
-          return (
-            <AriaTag
-              textValue={textValue}
-              {...tagProps}
-              className="react-aria-Tag"
-            >
-              {({ allowsRemoving }) => (
-                <>
-                  {tagContent}
-                  {allowsRemoving && (
-                    <Button slot="remove" className="tag-remove-btn">
-                      <X size={14} />
-                    </Button>
-                  )}
-                </>
-              )}
-            </AriaTag>
-          );
-        });
-
-  // children에서 텍스트 추출 (미러 DOM용)
-  const tagTexts = React.useMemo(() => {
-    if (!Array.isArray(allMappedChildren)) return [];
-    return allMappedChildren.map((child) => {
-      if (!React.isValidElement(child)) return "";
-      const p = child.props as { textValue?: string; children?: unknown };
-      return p.textValue || String(p.children || "");
-    });
-  }, [allMappedChildren]);
 
   const totalChildCount = tagTexts.length;
 

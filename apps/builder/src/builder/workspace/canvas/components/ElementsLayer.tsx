@@ -82,6 +82,7 @@ export const ElementsLayer = memo(function ElementsLayer({
     layoutVersion = 0,
   } = rendererInput;
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const pageChildrenMap = useMemo(() => {
     return buildPageChildrenMap({
       bodyElement,

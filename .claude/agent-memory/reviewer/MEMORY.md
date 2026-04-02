@@ -65,6 +65,9 @@
 - **dead zone early return에서 불필요한 snapshot 객체 재생성**: `dropIndicatorSnapshotRef.current`가 이미 올바른 값인데도 `prevTarget` 필드 분해로 새 객체 할당 — 이전 값 유지로 할당 생략 가능
 - **DB persist 루프 내 `startSnapshot.find()` O(N) 반복**: `persistIds.map(id => startSnapshot.find(...))` 패턴 — 진입 전 `Map<id, snap>`으로 변환하여 O(1) 조회
 - **onDragUpdate 첫 프레임 `elementsMap.values()` 전체 순회**: 스냅샷 캡처 시 `childrenMap` 미사용 → O(N) 전체 스캔. `childrenMap.get(parent_id)`로 교체 필수 (domain-o1-lookup 위반)
+- **`useShallow` 제거로 배열/객체 구독 성능 회귀**: Zustand v5에서 `string[]` 배열이나 객체를 직접 구독할 때 `useShallow` 없이는 매 상태 업데이트마다 새 참조 생성 → 불필요한 리렌더 유발. `selectedElementIds`(배열), `panelLayout`(객체) 구독 시 `useShallow` 필수. primitive(string, boolean, number) 만 개별 구독 무방
+- **훅 제거 불완전 (dead 호출과 잔존 호출 혼재)**: `usePageManager` 같은 훅을 컴포넌트 내 한 위치에서만 제거하고 같은 컴포넌트 내 다른 위치의 동일 훅 호출을 누락하는 패턴 — 훅 제거 시 파일 전체를 grep하여 모든 호출 위치 확인 필수
+- **내부 유틸 함수 내 Store Map 재빌드**: `useLayerTreeData` 같이 `elements` 배열을 받는 useMemo 내부 헬퍼에서 `new Map(elements.map(...))` 재생성 — Store의 `elementsMap`을 인자로 전달하여 O(1) 조회 활용
 
 ## False Positive 기록
 

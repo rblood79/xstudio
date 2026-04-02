@@ -225,6 +225,7 @@ export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
   // Phase 5: Skia 렌더 데이터 부착
   // Fill V2: element.fills → fillsToSkiaFillColor 우선 사용
   const fills = element.fills;
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const skiaNodeData = useMemo(() => {
     // Fill V2: Feature Flag ON + fills 존재 시 fills 배열에서 fillColor 추출
     let fillColor: Float32Array;

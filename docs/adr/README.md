@@ -1,15 +1,15 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-29 (ADR-045/046 Implemented — Tooltip/Popover/Menu overlay props E2E, Breadcrumbs size E2E, S2 섹션 재분류 완료)
+> **최종 업데이트**: 2026-04-02 (ADR-043 Implemented Phase 0~6, ADR-049 Accepted Phase A~D 완료, ADR-045/046/048 완료 섹션 이동)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 27     |
-| 부분 완료                              | 10     |
-| 미구현 (Proposed/계획)                 | 11     |
-| **합계**                               | **48** |
+| 완료 (Accepted/Implemented/Superseded) | 32     |
+| 부분 완료                              | 9      |
+| 미구현 (Proposed/계획)                 | 8      |
+| **합계**                               | **49** |
 
 ---
 
@@ -46,6 +46,11 @@
 | [040](completed/040-visible-page-delta-runtime.md)             | Visible Page + Delta Runtime 전환        | Implemented | 2026-03-14 | Phase 0~6 완료 (snapshot recovery 분리, atomic activation, delta-first store/preview 계약)            |
 | [036](completed/036-spec-first-single-source.md)               | Spec-First Single Source — CSS 자동 생성 | Implemented | 2026-03-16 | Phase 1~4 완료 (CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환)                   |
 | [047](047-s2-popover-overlay-alignment.md)                     | S2 Popover/Overlay CSS 정합성 정렬       | Implemented | 2026-03-26 | Layer 1+2 완료 — DatePicker/DateRangePicker 버그 수정 + Popover/Tooltip 계열 S2 패턴 정렬 (7개 CSS)   |
+| [045](045-s2-property-editor-alignment.md)                     | S2 Property Editor 프로퍼티 정합성 정렬  | Implemented | 2026-03-29 | ADR-046에 통합 완료                                                                                   |
+| [046](046-s2-contract-expansion-form-colorfield-tabs.md)       | S2 계약 확장 — Form, ColorField, Tabs    | Implemented | 2026-03-29 | Form/ColorField/Tabs + Tooltip/Popover/Breadcrumbs/Menu overlay props E2E 완료                        |
+| [048](048-declarative-props-propagation.md)                    | S2 선언적 Props Propagation              | Implemented | 2026-03-29 | Phase 0~5 전체 완료. 4경로 통합 + 20개 Spec + ~290줄→60줄 + Factory 하드코딩 제거                     |
+| [043](043-selection-drag-alignment.md)                         | Selection Drag Alignment                 | Implemented | 2026-03-30 | Phase 0~6 완료 (drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel)  |
+| [049](049-canvas-drag-drop-pencil-parity.md)                   | Canvas Drag & Drop Pencil 패턴 정합성    |  Accepted   | 2026-04-01 | Phase A~D 완료 (deferred commit, spring 보간, drop indicator 개선, cross-container reparenting)       |
 
 ### 부분 완료
 
@@ -65,20 +70,16 @@
 
 ### 미구현
 
-| ADR                                                      | 제목                                     | 상태               | 규모                                                                                        | 우선순위 |
-| -------------------------------------------------------- | ---------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)                 | Quick Connect 데이터 바인딩              | Proposed           | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                             |  **P3**  |
-| [020](020-design-kit-improvement.md)                     | Design Kit 패널 분석 및 개선             | Proposed           | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수    |    P4    |
-| [015](015-sitemap-layout.md)                             | Sitemap Hierarchy 워크플로우 엣지        | Proposed           | 변경 대상 8파일, 코드 미생성                                                                |    P5    |
-| [016](016-photoshop-ui-ux.md)                            | Photoshop 벤치마크 기반 UI/UX (v2)       | Proposed           | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                      |    P5    |
-| [032](032-events-data-integration.md)                    | Events Platform 재설계 + Data 통합       | Proposed           | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동      |  **P3**  |
-| [034](034-events-panel-renovation.md)                    | Events Panel Renovation                  | Proposed           | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                   |  **P3**  |
-| [038](038-figma-import.md)                               | Figma 디자인 임포트 시스템               | Proposed           | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                   |  **P3**  |
-| [043](043-selection-drag-alignment.md)                   | Selection Drag Alignment                 | Proposed           | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                |    P3    |
-| [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed           | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                 |    P4    |
-| [045](045-s2-property-editor-alignment.md)               | S2 Property Editor 프로퍼티 정합성 정렬  | **✅ Implemented** | ADR-046에 통합 완료 (2026-03-29)                                                            |  **P2**  |
-| [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs    | **✅ Implemented** | Form/ColorField/Tabs + Tooltip/Popover/Breadcrumbs/Menu overlay props E2E 완료 (2026-03-29) |  **P2**  |
-| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | **✅ Implemented** | Phase 0~5 전체 완료. 4경로 통합 + 20개 Spec + ~290줄→60줄 + Factory 하드코딩 제거           |  **P2**  |
+| ADR                                                   | 제목                                    | 상태     | 규모                                                                                     | 우선순위 |
+| ----------------------------------------------------- | --------------------------------------- | -------- | ---------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md)              | Quick Connect 데이터 바인딩             | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
+| [020](020-design-kit-improvement.md)                  | Design Kit 패널 분석 및 개선            | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
+| [015](015-sitemap-layout.md)                          | Sitemap Hierarchy 워크플로우 엣지       | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
+| [016](016-photoshop-ui-ux.md)                         | Photoshop 벤치마크 기반 UI/UX (v2)      | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
+| [032](032-events-data-integration.md)                 | Events Platform 재설계 + Data 통합      | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
+| [034](034-events-panel-renovation.md)                 | Events Panel Renovation                 | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
+| [038](038-figma-import.md)                            | Figma 디자인 임포트 시스템              | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                |  **P3**  |
+| [044](044-project-renaming-xstudio-to-composition.md) | 프로젝트 리네이밍 xstudio → composition | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환              |    P4    |
 
 ## Events Panel 설계 문서군
 
@@ -104,22 +105,25 @@
 
 ---
 
-## 다음 진행 목표 (2026-03-29 기준)
+## 다음 진행 목표 (2026-04-02 기준)
 
 | 순서 | 대상    | 내용                                                                                                                                             | 규모 |   상태   |
 | :--: | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | :--: | :------: |
 |  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (62개 Spec 등록, Generic 31개, Hybrid 8개, Custom 14개, 34개 에디터 삭제, S2 섹션 재분류 완료) |  -   | **완료** |
 |  -   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                                                    |  대  | **완료** |
-|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                                                     |  중  |          |
-|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                                                    |  소  |          |
-|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                                                           |  대  |          |
-|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                                                      |  대  |          |
-|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                                                 |  중  |          |
-|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                                                    |  대  |          |
+|  -   | ADR-045 | S2 Property Editor 정합성 — ADR-046에 통합 완료 (2026-03-29)                                                                                     |  중  | **완료** |
+|  -   | ADR-046 | S2 계약 확장 — Form/ColorField/Tabs + overlay props E2E 완료 (2026-03-29)                                                                        |  소  | **완료** |
+|  -   | ADR-043 | Selection Drag Alignment — Phase 0~6 전체 완료 (2026-03-30)                                                                                      |  중  | **완료** |
+|  -   | ADR-049 | Canvas Drag & Drop Pencil 패턴 — Phase A~D 완료 (deferred commit, spring, reparenting) (2026-04-01)                                              |  중  | **완료** |
+|  1   | ADR-042 | Spec Container Dimension Injection — Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                         |  중  |          |
+|  2   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                                                           |  대  |          |
+|  3   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                                                      |  대  |          |
+|  4   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                                                 |  중  |          |
+|  5   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                                                    |  대  |          |
 
 > 완료된 이전 목표는 변경 이력 참조
 >
-> **2026-03-26 우선순위 재산정**: Property Editor 체인(ADR-041→048→045)을 P2 최우선 그룹으로 확정. 근거: ① ADR-041 진행 중(Phase 0~2 완료)이라 컨텍스트 연속성 확보 ② ADR-048은 50개+ 조합형 컴포넌트의 근본 구조 문제 해결 — 선행 조건(ADR-041 Phase 0~2) 이미 충족 ③ ADR-045는 041/048 기반 위에서 에디터 정합성 정렬. ADR-043(Selection Drag)은 UX 개선 → P3, ADR-044(리네이밍)은 기능 가치 없음 → P4, ADR-042(Dimension Injection)는 긴급 아님 → P3 하향.
+> **2026-04-02 우선순위 재산정**: Property Editor 체인(ADR-041→048→045→046) 전체 완료. Drag & Drop 체인(ADR-043→049) 전체 완료. ADR-042(Dimension Injection)를 다음 우선순위로 상향 — 렌더링 정합성 직결. ADR-038(Figma Import)은 대규모이나 사용자 가치 높음.
 
 ---
 

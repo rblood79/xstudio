@@ -20,7 +20,6 @@ import {
   Group,
   Skeleton,
   RangeCalendar,
-  MenuItem,
 } from "../components/list";
 import { Disclosure } from "../components/Disclosure";
 import { DisclosureGroup } from "../components/DisclosureGroup";

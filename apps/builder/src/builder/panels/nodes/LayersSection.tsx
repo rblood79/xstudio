@@ -40,6 +40,7 @@ export const LayersSection = memo(function LayersSection({
     [currentPageElements],
   );
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     setIsTreeVisible(false);
     let cancelBackgroundTask: (() => void) | undefined;

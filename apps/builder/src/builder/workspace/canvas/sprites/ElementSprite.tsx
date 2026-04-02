@@ -148,7 +148,6 @@ import {
   PixiSlider,
   PixiInput,
   PixiSelect,
-  PixiProgressBar,
   PixiSwitcher,
   PixiList,
   PixiMaskedFrame,
@@ -159,7 +158,6 @@ import {
   PixiBadge,
   PixiMeter,
   // Phase 2 WebGL Migration Components
-  PixiSeparator,
   PixiLink,
   PixiBreadcrumbs,
   PixiCard,
@@ -182,8 +180,6 @@ import {
   // Phase 6 WebGL Migration Components
   PixiColorSwatch,
   PixiColorSlider,
-  PixiTimeField,
-  PixiDateField,
   PixiColorArea,
   PixiCalendar,
   PixiColorWheel,
@@ -264,8 +260,6 @@ export interface ElementSpriteProps {
 // Tag to Sprite Mapping
 // ============================================
 
-const EMPTY_CHILDREN: Element[] = [];
-
 /**
  * 텍스트 관련 태그들
  */
@@ -307,7 +301,6 @@ const UI_RADIO_ITEM_TAGS = new Set(["Radio"]); // Radio 개별 아이템 (투명
 const UI_SLIDER_TAGS = new Set(["Slider"]);
 const UI_INPUT_TAGS = new Set(["Input"]);
 const UI_SELECT_TAGS = new Set(["Select"]);
-const UI_PROGRESS_TAGS = new Set(["ProgressBar", "ProgressCircle"]);
 const UI_SWITCHER_TAGS = new Set(["Switcher", "TabBar"]);
 const UI_LIST_TAGS = new Set(["List"]);
 const UI_MASKEDFRAME_TAGS = new Set(["MaskedFrame"]);
@@ -325,7 +318,6 @@ const UI_STATUSLIGHT_TAGS = new Set(["StatusLight"]);
 /**
  * Phase 2 WebGL Migration 컴포넌트 태그들
  */
-const UI_SEPARATOR_TAGS = new Set(["Separator"]);
 const UI_LINK_TAGS = new Set(["Link"]);
 const UI_BREADCRUMBS_TAGS = new Set(["Breadcrumbs"]);
 const UI_CARD_TAGS = new Set(["Card"]);
@@ -573,8 +565,6 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_SLIDER_TAGS.has(tag)) return "slider";
   if (UI_INPUT_TAGS.has(tag)) return "input";
   if (UI_SELECT_TAGS.has(tag)) return "select";
-  // ProgressBar/ProgressCircle: TAG_SPEC_MAP에 등록 → spriteType "box" + hasSpecShapes로 표준 경로 사용
-  // if (UI_PROGRESS_TAGS.has(tag)) return "progressBar";  // 제거: 전용 경로 대신 표준 spec shapes 경로
   if (UI_SWITCHER_TAGS.has(tag)) return "switcher";
   if (UI_LIST_TAGS.has(tag)) return "list";
   if (UI_MASKEDFRAME_TAGS.has(tag)) return "maskedFrame";
@@ -1563,6 +1553,7 @@ export const ElementSprite = memo(function ElementSprite({
   const computedW = computedContainerSize?.width;
   const computedH = computedContainerSize?.height;
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const skiaNodeData = useMemo(() => {
     const style = elementStyle as CSSStyle | undefined;
 

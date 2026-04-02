@@ -127,21 +127,6 @@ function getSortedChildren(
   return fresh.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
 }
 
-/**
- * 점이 bounds의 전반부(앞쪽 50%)에 있는지 판단.
- * 수평 컨테이너는 x축, 수직 컨테이너는 y축을 기준으로 한다.
- */
-function isInFirstHalf(
-  point: { x: number; y: number },
-  bounds: ElementBounds,
-  isHorizontal: boolean,
-): boolean {
-  if (isHorizontal) {
-    return point.x < bounds.x + bounds.width / 2;
-  }
-  return point.y < bounds.y + bounds.height / 2;
-}
-
 // ============================================
 // Cross-Container Helpers
 // ============================================

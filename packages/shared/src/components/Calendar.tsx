@@ -11,7 +11,6 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
 import { Skeleton } from "./Skeleton";
@@ -57,7 +56,7 @@ export function Calendar<T extends DateValue>({
   errorMessage,
   locale,
   calendarSystem,
-  defaultToday = false,
+  defaultToday: _defaultToday = false,
   minValue,
   maxValue,
   selectionAlignment = "center",

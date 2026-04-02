@@ -37,9 +37,6 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
-  const { initializeProject } = usePageManager({
-    requestAutoSelectAfterUpdate,
-  });
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
   // 🚀 Performance: 탭 관련 상태만 구독

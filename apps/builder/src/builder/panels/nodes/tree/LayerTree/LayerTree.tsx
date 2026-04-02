@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import type { Key } from "react-stately";
 import { TreeBase, VirtualizedTree } from "../TreeBase";
 import type { TreeItemState } from "../TreeBase/types";
@@ -31,7 +31,7 @@ export function LayerTree({
   const { tree, treeNodes, nodeMap, focusNodeMap, disabledKeys, syncToStore } =
     useLayerTreeData(elements);
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
-    new Set()
+    new Set(),
   );
 
   // 포커스 관리 훅
@@ -57,7 +57,7 @@ export function LayerTree({
       }
       onExpandedChange?.(keys as Set<string | number>);
     },
-    [expandedKeys, onExpandedChange]
+    [expandedKeys, onExpandedChange],
   );
 
   const handleSelectionChange = useCallback(
@@ -69,7 +69,7 @@ export function LayerTree({
       if (!node || node.virtualChildType) return;
       onItemClick(node.element);
     },
-    [nodeMap, onItemClick]
+    [nodeMap, onItemClick],
   );
 
   // DnD 유효성 검사 (클로저로 tree 캡처)
@@ -79,7 +79,7 @@ export function LayerTree({
         getItem: (key) => tree.getItem(key),
       }).valid;
     },
-    [tree]
+    [tree],
   );
 
   // DnD 이동 처리 (클로저로 tree, syncToStore 캡처)
@@ -105,7 +105,7 @@ export function LayerTree({
       // DnD 후 포커스 유지
       handleAfterMove(payload.keys);
     },
-    [tree, treeNodes, syncToStore, handleAfterMove]
+    [tree, treeNodes, syncToStore, handleAfterMove],
   );
 
   // 드래그 가능 여부
@@ -124,7 +124,7 @@ export function LayerTree({
         onSelectTabElement={onSelectTabElement}
       />
     ),
-    [onItemDelete, selectedTab, onSelectTabElement]
+    [onItemDelete, selectedTab, onSelectTabElement],
   );
 
   const sharedTreeProps = {

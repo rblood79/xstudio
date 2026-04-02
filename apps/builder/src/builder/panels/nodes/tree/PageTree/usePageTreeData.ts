@@ -4,27 +4,19 @@ import type { PageTreeNode } from "./types";
 import { useStore } from "../../../../stores";
 
 export function usePageTreeData(pages: Page[]) {
-  const { treeNodes, nodeMap } = useMemo(() => {
-    const startTime = performance.now();
-    const result = buildPageTree(pages);
-    const duration = performance.now() - startTime;
-    if (duration >= 8) {
-      console.log("[perf] page-tree.build", {
-        durationMs: Number(duration.toFixed(1)),
-        pageCount: pages.length,
-      });
-    }
-    return result;
-  }, [pages]);
+  const { treeNodes, nodeMap } = useMemo(() => buildPageTree(pages), [pages]);
 
   // useTreeData 대신 직접 tree 객체 생성
   // getItem은 nodeMap 기반으로 구현
-  const tree = useMemo(() => ({
-    getItem: (key: string | number) => {
-      const node = nodeMap.get(String(key));
-      return node ? { value: node } : undefined;
-    },
-  }), [nodeMap]);
+  const tree = useMemo(
+    () => ({
+      getItem: (key: string | number) => {
+        const node = nodeMap.get(String(key));
+        return node ? { value: node } : undefined;
+      },
+    }),
+    [nodeMap],
+  );
 
   const setPages = useStore((state) => state.setPages);
   const currentPages = useStore((state) => state.pages);
@@ -36,7 +28,7 @@ export function usePageTreeData(pages: Page[]) {
         id: string;
         parentId?: string | null;
         orderNum?: number;
-      }>
+      }>,
     ) => {
       if (updates.length === 0) return;
 
@@ -60,7 +52,7 @@ export function usePageTreeData(pages: Page[]) {
       //   showToast('error', '저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.');
       // }
     },
-    [currentPages, setPages]
+    [currentPages, setPages],
   );
 
   return { tree, treeNodes, nodeMap, syncToStore };

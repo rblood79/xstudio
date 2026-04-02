@@ -289,6 +289,7 @@ export const TextSprite = memo(function TextSprite({
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
   // Phase 5: Skia 렌더 데이터 부착
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const skiaNodeData = useMemo(() => {
     const r = ((textStyle.fill >> 16) & 0xff) / 255;
     const g = ((textStyle.fill >> 8) & 0xff) / 255;

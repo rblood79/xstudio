@@ -200,7 +200,6 @@ export function BuilderCanvas({
   const invalidateLayout = useStore((state) => state.invalidateLayout);
 
   // Settings state (SettingsPanel 연동)
-  const snapToGrid = useStore((state) => state.snapToGrid);
   const showGrid = useStore((state) => state.showGrid);
   const gridSize = useStore((state) => state.gridSize);
   const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
@@ -340,10 +339,7 @@ export function BuilderCanvas({
     zoom,
   ]);
 
-  const depthMap = sceneSnapshot.depthMap;
   const visiblePageIds = sceneSnapshot.document.visiblePageIds;
-  const pageElements =
-    sceneSnapshot.document.currentPageSnapshot?.pageElements ?? [];
   const visiblePages = useMemo(() => {
     return pages.filter((page) => visiblePageIds.has(page.id));
   }, [pages, visiblePageIds]);

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Implemented — Phase 0~6 전체 완료 (2026-03-30). 후속 ADR-049에서 Pencil 패턴 완성 (Phase A~D).
 
 ## Date
 
@@ -77,11 +77,11 @@ XStudio는 여기서 한 단계 더 복잡하다.
 
 ### Risk Threshold Check
 
-| 대안 | 기술 | 성능 | 유지보수 | 마이그레이션 | 판정 |
-| ---- | ---- | ---- | -------- | ------------ | ---- |
-| A | M | L | M | L | 보수적이지만 좌표 불일치 해소가 불완전 |
-| **B** | M | M | **L** | M | **채택** |
-| C | **H** | M | M | **H** | 과도한 통합 |
+| 대안  | 기술  | 성능 | 유지보수 | 마이그레이션 | 판정                                   |
+| ----- | ----- | ---- | -------- | ------------ | -------------------------------------- |
+| A     | M     | L    | M        | L            | 보수적이지만 좌표 불일치 해소가 불완전 |
+| **B** | M     | M    | **L**    | M            | **채택**                               |
+| C     | **H** | M    | M        | **H**        | 과도한 통합                            |
 
 ---
 
@@ -129,11 +129,11 @@ XStudio는 여기서 한 단계 더 복잡하다.
 
 ## Gates
 
-| 시점 | 조건 | 통과 기준 | 실패 시 rollback 범위 |
-| ---- | ---- | -------- | -------------------- |
-| Phase 0 | 좌표계와 source of truth 정의 | Pixi는 shell, Skia는 geometry로 문서화 완료 | 문서만 롤백 |
-| Phase 1 | drag lifecycle 연결 | drag start vacate와 deferred commit 분리 확인 | Phase 1 변경만 롤백 |
-| Phase 2 | Skia bounds hit test | rendered bounds와 drop candidate 일치 확인 | Phase 2 변경만 롤백 |
-| Phase 3 | adjacent insertion / guide line | 인접 삽입과 guide line 우선순위 확인 | Phase 3 변경만 롤백 |
-| Phase 4 | commit path | drop 시점에만 store/history 기록 확인 | Phase 4 변경만 롤백 |
-| Phase 5 | regression gate | 60fps와 multi-page 정합성 유지 확인 | 전체 phase 재평가 |
+| 시점    | 조건                            | 통과 기준                                     | 실패 시 rollback 범위 |
+| ------- | ------------------------------- | --------------------------------------------- | --------------------- |
+| Phase 0 | 좌표계와 source of truth 정의   | Pixi는 shell, Skia는 geometry로 문서화 완료   | 문서만 롤백           |
+| Phase 1 | drag lifecycle 연결             | drag start vacate와 deferred commit 분리 확인 | Phase 1 변경만 롤백   |
+| Phase 2 | Skia bounds hit test            | rendered bounds와 drop candidate 일치 확인    | Phase 2 변경만 롤백   |
+| Phase 3 | adjacent insertion / guide line | 인접 삽입과 guide line 우선순위 확인          | Phase 3 변경만 롤백   |
+| Phase 4 | commit path                     | drop 시점에만 store/history 기록 확인         | Phase 4 변경만 롤백   |
+| Phase 5 | regression gate                 | 60fps와 multi-page 정합성 유지 확인           | 전체 phase 재평가     |

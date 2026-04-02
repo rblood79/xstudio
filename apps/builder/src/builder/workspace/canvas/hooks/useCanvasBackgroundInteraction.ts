@@ -11,13 +11,7 @@ export function useCanvasBackgroundInteraction({
   setSelectedElement,
 }: UseCanvasBackgroundInteractionParams) {
   return useCallback(() => {
-    const {
-      editingContextId,
-      exitEditingContext,
-      currentPageId,
-      elementsMap,
-      pageIndex,
-    } = useStore.getState();
+    const { editingContextId, exitEditingContext } = useStore.getState();
 
     if (editingContextId !== null) {
       exitEditingContext();
