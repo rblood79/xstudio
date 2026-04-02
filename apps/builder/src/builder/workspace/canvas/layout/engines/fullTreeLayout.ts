@@ -1017,6 +1017,24 @@ function traversePostOrder(
     availableWidth,
     availableHeight,
   );
+
+  // Grid 컨테이너: 자식 availableWidth를 트랙 폭으로 조정
+  // CSS에서 1fr 트랙은 컨테이너 폭을 균등 분배하므로, DFS에서 미리 계산하여
+  // enrichWithIntrinsicSize가 올바른 width 기준으로 height를 계산하도록 한다.
+  if (effectiveDisplay === "grid" || effectiveDisplay === "inline-grid") {
+    const gridCols = elementStyle.gridTemplateColumns as string[] | undefined;
+    if (gridCols && gridCols.length > 0) {
+      const numCols = gridCols.length;
+      const gapVal =
+        typeof elementStyle.gap === "number"
+          ? elementStyle.gap
+          : parseFloat(String(elementStyle.gap ?? "0")) || 0;
+      const totalGap = gapVal * (numCols - 1);
+      const trackWidth = Math.max(0, (childAvail.width - totalGap) / numCols);
+      childAvail.width = trackWidth;
+    }
+  }
+
   for (const childId of sortedChildIds) {
     traversePostOrder(
       childId,
@@ -1722,9 +1740,7 @@ export function calculateFullTreeLayout(
     // 실제 Taffy 할당 width는 grid 1fr, flex-grow/shrink, 부모 제약 등으로 달라질 수 있다.
     // 자식의 실제 width가 enrichment width와 다르면 → 실제 width로 re-enrich → 재계산.
     // 부모는 Taffy가 자식 height 합산으로 auto height를 자동 갱신한다.
-    // 2-pass height 교정: 현재 grid 레이아웃과 충돌하므로 비활성화
-    // TODO: DFS 단계에서 grid 트랙 폭 사전 계산으로 재설계 필요
-    if (false as boolean) {
+    {
       const WIDTH_TOLERANCE = 2;
       let needsSecondPass = false;
       const childUpdates: Array<{
