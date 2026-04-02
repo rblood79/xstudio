@@ -240,7 +240,6 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
             fontSize: cs.fontSize ?? 14,
             fontWeight: cs.fontWeight ?? 600,
             width: cs.width ?? "100%",
-            whiteSpace: cs.whiteSpace ?? "nowrap",
           },
         },
       };
@@ -254,7 +253,6 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
             ...cs,
             fontSize: cs.fontSize ?? 12,
             width: cs.width ?? "100%",
-            whiteSpace: cs.whiteSpace ?? "nowrap",
           },
         },
       };

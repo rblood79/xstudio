@@ -28,7 +28,7 @@
 
   /* ========== Layout: Grid (격자) ========== */
   .react-aria-GridList[data-layout="grid"] {
-    grid-template-columns: repeat(var(--gl-columns, 2), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--gl-columns, 2), 1fr);
     .react-aria-GridListItem {
       justify-content: flex-start;
     }
@@ -93,9 +93,6 @@
       font-size: var(--text-sm);
       font-weight: 600;
       line-height: var(--text-sm--line-height);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     /* 카드 내부 설명 */
@@ -103,9 +100,6 @@
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
       color: var(--fg-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     /* 드래그 핸들 */
