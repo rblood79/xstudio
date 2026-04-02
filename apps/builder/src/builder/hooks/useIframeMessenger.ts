@@ -54,8 +54,6 @@ export type IframeReadyState =
   | "ready"
   | "error";
 
-export type UseIframeMessengerOptions = Record<string, never>;
-
 // 🎯 모듈 레벨 변수: 모든 useIframeMessenger 인스턴스가 공유
 let pendingAutoSelectElementId: string | null = null;
 
@@ -92,10 +90,7 @@ function cancelScheduledFrame(taskId: number | null): void {
   clearTimeout(taskId);
 }
 
-export const useIframeMessenger = (
-  options?: UseIframeMessengerOptions,
-): UseIframeMessengerReturn => {
-  void options; // 확장용 인터페이스
+export const useIframeMessenger = (): UseIframeMessengerReturn => {
   // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 완전 스킵
   // - isWebGLCanvas(): WebGL 캔버스 활성화 여부 (빌드타임 상수)
   // - isCanvasCompareMode(): 비교 모드 (빌드타임 상수)
@@ -629,10 +624,8 @@ export const useIframeMessenger = (
         const { elementsMap } = useStore.getState();
         const newColumns = event.data.payload.columns;
 
-        // 🚀 Phase 3: O(n²) → Set 기반 O(n+m) 조회
-        const existingIds = new Set(elementsMap.keys());
         const columnsToAdd = newColumns.filter(
-          (col: Element) => !existingIds.has(col.id),
+          (col: Element) => !elementsMap.has(col.id),
         );
 
         if (columnsToAdd.length === 0) {
@@ -651,10 +644,8 @@ export const useIframeMessenger = (
         const { elementsMap } = useStore.getState();
         const newFields = event.data.payload.fields;
 
-        // 🚀 Phase 3: O(n²) → Set 기반 O(n+m) 조회
-        const existingIds = new Set(elementsMap.keys());
         const fieldsToAdd = newFields.filter(
-          (field: Element) => !existingIds.has(field.id),
+          (field: Element) => !elementsMap.has(field.id),
         );
 
         if (fieldsToAdd.length === 0) {

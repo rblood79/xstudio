@@ -53,8 +53,8 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 
 async function handleInit(requestId: number): Promise<void> {
   if (!wasm) {
+    // @ts-expect-error WASM module has no TypeScript declarations
     const mod = await import(
-      // @ts-ignore WASM module has no TypeScript declarations
       /* @vite-ignore */ "../wasm-bindings/pkg/xstudio_wasm"
     );
     wasm = mod;

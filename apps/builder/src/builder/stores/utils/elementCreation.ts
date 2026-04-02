@@ -148,7 +148,6 @@ export const createAddComplexElementAction =
 
     // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
     // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
-    let allElements: Element[] = [];
     set((prevState) => {
       // ADR-040 Phase 3: childrenMap O(1) 조회 (elements.filter 배열 순회 제거)
       const siblings =
@@ -167,12 +166,13 @@ export const createAddComplexElementAction =
             : -1;
         parentToAdd = { ...normalizedParent, order_num: maxOrder + 1 };
       }
-      allElements = [parentToAdd, ...normalizedChildren];
       return {
-        elements: [...prevState.elements, ...allElements],
+        elements: [...prevState.elements, parentToAdd, ...normalizedChildren],
         layoutVersion: prevState.layoutVersion + 1,
       };
     });
+
+    const allElements = [parentToAdd, ...normalizedChildren];
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)

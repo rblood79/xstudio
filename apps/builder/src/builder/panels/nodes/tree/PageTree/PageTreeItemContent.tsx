@@ -1,6 +1,5 @@
 import React from "react";
 import { Button } from "react-aria-components";
-import type { PressEvent } from "react-aria-components";
 import {
   ChevronRight,
   File,
@@ -35,10 +34,6 @@ export function PageTreeItemContent({
   const { depth, hasChildren, isRoot, page, name } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
 
-  const stopEventPropagation = (_e: PressEvent) => {
-    // PressEvent does not have stopPropagation; use continuePropagation if needed
-  };
-
   return (
     <div
       className={`elementItem ${isSelected ? "active" : ""} ${
@@ -55,8 +50,6 @@ export function PageTreeItemContent({
             slot="chevron"
             className="layer-expand-button"
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${name}`}
-            onPressStart={stopEventPropagation}
-            onPress={stopEventPropagation}
           >
             <ChevronRight
               color={ICON_EDIT_PROPS.color}
@@ -93,8 +86,6 @@ export function PageTreeItemContent({
           aria-hidden={isRoot}
           style={{ pointerEvents: isRoot ? "none" : "auto" }}
           isDisabled={isRoot}
-          onPressStart={stopEventPropagation}
-          onPress={stopEventPropagation}
         >
           <GripVertical
             color={ICON_EDIT_PROPS.color}
@@ -106,7 +97,6 @@ export function PageTreeItemContent({
           <Button
             className="iconButton"
             aria-label={`Settings for ${name}`}
-            onPressStart={stopEventPropagation}
             onPress={() => onSettings?.(page)}
           >
             <Settings2
@@ -120,7 +110,6 @@ export function PageTreeItemContent({
           <Button
             className="iconButton"
             aria-label={`Delete ${name}`}
-            onPressStart={stopEventPropagation}
             onPress={() => onDelete(page)}
           >
             <Trash

@@ -98,11 +98,7 @@ export interface UseDeltaMessengerReturn {
   getDeltaStats: () => DeltaStats;
 }
 
-export type UseDeltaMessengerOptions = Record<string, never>;
-
-export const useDeltaMessenger = (
-  _options?: UseDeltaMessengerOptions,
-): UseDeltaMessengerReturn => {
+export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
   const statsRef = useRef<DeltaStats>({
     deltaSent: 0,
     fullUpdateSent: 0,
