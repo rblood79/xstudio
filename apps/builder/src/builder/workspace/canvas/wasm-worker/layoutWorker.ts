@@ -13,9 +13,10 @@ import {
   WorkerResponseType,
   type WorkerRequest,
   type WorkerResponse,
-} from './protocol';
+} from "./protocol";
 
-type WasmModule = typeof import('../../../../../wasm-bindings/pkg/xstudio_wasm');
+// @ts-expect-error WASM module has no TypeScript declarations
+type WasmModule = typeof import("../wasm-bindings/pkg/xstudio_wasm");
 
 let wasm: WasmModule | null = null;
 
@@ -53,19 +54,22 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 async function handleInit(requestId: number): Promise<void> {
   if (!wasm) {
     const mod = await import(
-      /* @vite-ignore */ '../../../../../wasm-bindings/pkg/xstudio_wasm'
+      // @ts-ignore WASM module has no TypeScript declarations
+      /* @vite-ignore */ "../wasm-bindings/pkg/xstudio_wasm"
     );
     wasm = mod;
   }
   respond({ type: WorkerResponseType.INIT_OK, requestId });
 }
 
-function handleBlockLayout(req: Extract<WorkerRequest, { type: WorkerRequestType.BLOCK_LAYOUT }>): void {
+function handleBlockLayout(
+  req: Extract<WorkerRequest, { type: WorkerRequestType.BLOCK_LAYOUT }>,
+): void {
   if (!wasm) {
     respond({
       type: WorkerResponseType.ERROR,
       requestId: req.requestId,
-      message: 'WASM not initialized',
+      message: "WASM not initialized",
     });
     return;
   }
@@ -94,35 +98,49 @@ function handleBlockLayout(req: Extract<WorkerRequest, { type: WorkerRequestType
   };
 
   // Transfer the positions buffer
-  (self as unknown as { postMessage: (msg: WorkerResponse, transfer?: Transferable[]) => void }).postMessage(response, [positions.buffer]);
+  (
+    self as unknown as {
+      postMessage: (msg: WorkerResponse, transfer?: Transferable[]) => void;
+    }
+  ).postMessage(response, [positions.buffer]);
 }
 
-function handleGridLayout(req: Extract<WorkerRequest, { type: WorkerRequestType.GRID_LAYOUT }>): void {
+function handleGridLayout(
+  req: Extract<WorkerRequest, { type: WorkerRequestType.GRID_LAYOUT }>,
+): void {
   if (!wasm) {
     respond({
       type: WorkerResponseType.ERROR,
       requestId: req.requestId,
-      message: 'WASM not initialized',
+      message: "WASM not initialized",
     });
     return;
   }
 
   // 1. Track 파싱
-  const tracksX = wasm.parse_tracks(req.colTemplate, req.availableWidth, req.colGap);
-  const tracksY = wasm.parse_tracks(req.rowTemplate, req.availableHeight, req.rowGap);
+  const tracksX = wasm.parse_tracks(
+    req.colTemplate,
+    req.availableWidth,
+    req.colGap,
+  );
+  const tracksY = wasm.parse_tracks(
+    req.rowTemplate,
+    req.availableHeight,
+    req.rowGap,
+  );
 
   // 기본 트랙 (비어있으면 1 column/row)
-  const effectiveTracksX = tracksX.length > 0
-    ? tracksX
-    : new Float32Array([req.availableWidth]);
-  const effectiveTracksY = tracksY.length > 0
-    ? tracksY
-    : new Float32Array([50]);
+  const effectiveTracksX =
+    tracksX.length > 0 ? tracksX : new Float32Array([req.availableWidth]);
+  const effectiveTracksY =
+    tracksY.length > 0 ? tracksY : new Float32Array([50]);
 
   // 2. Cell 위치 계산
   const result = wasm.calculate_cell_positions(
-    effectiveTracksX, effectiveTracksY,
-    req.colGap, req.rowGap,
+    effectiveTracksX,
+    effectiveTracksY,
+    req.colGap,
+    req.rowGap,
     req.childCount,
   );
 
@@ -135,11 +153,17 @@ function handleGridLayout(req: Extract<WorkerRequest, { type: WorkerRequestType.
     positions,
   };
 
-  (self as unknown as { postMessage: (msg: WorkerResponse, transfer?: Transferable[]) => void }).postMessage(response, [positions.buffer]);
+  (
+    self as unknown as {
+      postMessage: (msg: WorkerResponse, transfer?: Transferable[]) => void;
+    }
+  ).postMessage(response, [positions.buffer]);
 }
 
 // ── Helper ──
 
 function respond(msg: WorkerResponse): void {
-  (self as unknown as { postMessage: (msg: WorkerResponse) => void }).postMessage(msg);
+  (
+    self as unknown as { postMessage: (msg: WorkerResponse) => void }
+  ).postMessage(msg);
 }
