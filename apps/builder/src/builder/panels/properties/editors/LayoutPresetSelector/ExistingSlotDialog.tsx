@@ -12,12 +12,7 @@
 import { memo, useCallback } from "react";
 import { AlertTriangle, Trash2, Merge, X } from "lucide-react";
 import { Button } from "@xstudio/shared/components";
-import {
-  Dialog,
-  DialogTrigger,
-  Modal,
-  Heading,
-} from "react-aria-components";
+import { Dialog, DialogTrigger, Modal, Heading } from "react-aria-components";
 import type { ExistingSlotInfo, PresetApplyMode } from "./types";
 import { iconProps } from "../../../../../utils/ui/uiConstants";
 
@@ -73,8 +68,8 @@ export const ExistingSlotDialog = memo(function ExistingSlotDialog({
 
           <div className="dialog-content">
             <p className="dialog-description">
-              &ldquo;{presetName}&rdquo; 프리셋을 적용하려면 기존 Slot을
-              어떻게 처리할지 선택하세요.
+              &ldquo;{presetName}&rdquo; 프리셋을 적용하려면 기존 Slot을 어떻게
+              처리할지 선택하세요.
             </p>
 
             <div className="existing-slots-list">
@@ -104,7 +99,7 @@ export const ExistingSlotDialog = memo(function ExistingSlotDialog({
           </div>
 
           <div className="dialog-actions">
-            <Button variant="default" onPress={handleCancel}>
+            <Button variant="secondary" onPress={handleCancel}>
               <X size={iconProps.size} />
               취소
             </Button>

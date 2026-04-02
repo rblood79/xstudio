@@ -12,7 +12,17 @@
  * @see src/builder/stores/canvasStore.ts - 직접 스토어 접근 방식
  */
 
-import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable, RuntimeApiEndpoint, RuntimeVariable } from '../store/types';
+import type {
+  PreviewStoreState,
+  PreviewElement,
+  PreviewPage,
+  PreviewLayout,
+  ThemeVar,
+  DataSource,
+  RuntimeDataTable,
+  RuntimeApiEndpoint,
+  RuntimeVariable,
+} from "../store/types";
 
 // ============================================
 // Helper: Get Target Origin for postMessage
@@ -20,15 +30,10 @@ import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, The
 
 /**
  * postMessage의 targetOrigin을 반환합니다.
- * srcdoc iframe에서는 window.location.origin이 'null'이 되므로 '*' 사용
+ * src iframe은 부모와 동일한 origin을 공유합니다.
  */
 function getTargetOrigin(): string {
-  const origin = window.location.origin;
-  // srcdoc iframe에서 origin은 'null' 문자열 또는 null
-  if (!origin || origin === 'null') {
-    return '*';
-  }
-  return origin;
+  return window.location.origin;
 }
 
 // ============================================
@@ -36,7 +41,7 @@ function getTargetOrigin(): string {
 // ============================================
 
 export interface UpdateElementsMessage {
-  type: 'UPDATE_ELEMENTS';
+  type: "UPDATE_ELEMENTS";
   elements: PreviewElement[];
   // ⭐ Layout/Slot System: pageInfo도 함께 전송 (초기 로드 시 Layout 렌더링용)
   pageInfo?: {
@@ -46,74 +51,74 @@ export interface UpdateElementsMessage {
 }
 
 export interface UpdateElementPropsMessage {
-  type: 'UPDATE_ELEMENT_PROPS';
+  type: "UPDATE_ELEMENT_PROPS";
   elementId: string;
   props: Record<string, unknown>;
 }
 
 export interface DeleteElementMessage {
-  type: 'DELETE_ELEMENT';
+  type: "DELETE_ELEMENT";
   elementId: string;
 }
 
 export interface DeleteElementsMessage {
-  type: 'DELETE_ELEMENTS';
+  type: "DELETE_ELEMENTS";
   elementIds: string[];
 }
 
 export interface ThemeVarsMessage {
-  type: 'THEME_VARS';
+  type: "THEME_VARS";
   vars: ThemeVar[];
 }
 
 export interface SetDarkModeMessage {
-  type: 'SET_DARK_MODE';
+  type: "SET_DARK_MODE";
   isDark: boolean;
 }
 
 export interface UpdatePageInfoMessage {
-  type: 'UPDATE_PAGE_INFO';
+  type: "UPDATE_PAGE_INFO";
   pageId: string | null;
   layoutId: string | null;
 }
 
 export interface UpdatePagesMessage {
-  type: 'UPDATE_PAGES';
+  type: "UPDATE_PAGES";
   pages: PreviewPage[];
 }
 
 export interface UpdateDataSourcesMessage {
-  type: 'UPDATE_DATA_SOURCES';
+  type: "UPDATE_DATA_SOURCES";
   dataSources: DataSource[];
 }
 
 export interface UpdateDataTablesMessage {
-  type: 'UPDATE_DATA_TABLES';
+  type: "UPDATE_DATA_TABLES";
   dataTables: RuntimeDataTable[];
 }
 
 export interface UpdateApiEndpointsMessage {
-  type: 'UPDATE_API_ENDPOINTS';
+  type: "UPDATE_API_ENDPOINTS";
   apiEndpoints: RuntimeApiEndpoint[];
 }
 
 export interface UpdateVariablesMessage {
-  type: 'UPDATE_VARIABLES';
+  type: "UPDATE_VARIABLES";
   variables: RuntimeVariable[];
 }
 
 export interface UpdateLayoutsMessage {
-  type: 'UPDATE_LAYOUTS';
+  type: "UPDATE_LAYOUTS";
   layouts: PreviewLayout[];
 }
 
 export interface UpdateAuthContextMessage {
-  type: 'UPDATE_AUTH_CONTEXT';
+  type: "UPDATE_AUTH_CONTEXT";
   token: string | null;
 }
 
 export interface RequestElementSelectionMessage {
-  type: 'REQUEST_ELEMENT_SELECTION';
+  type: "REQUEST_ELEMENT_SELECTION";
   elementId: string;
 }
 
@@ -126,7 +131,7 @@ export interface RequestElementSelectionMessage {
  * - 전체 배열 대신 추가된 요소만 전송
  */
 export interface DeltaElementAddedMessage {
-  type: 'DELTA_ELEMENT_ADDED';
+  type: "DELTA_ELEMENT_ADDED";
   element: PreviewElement;
   childElements?: PreviewElement[];
 }
@@ -136,7 +141,7 @@ export interface DeltaElementAddedMessage {
  * - 변경된 props만 전송 (전체 요소 대신)
  */
 export interface DeltaElementUpdatedMessage {
-  type: 'DELTA_ELEMENT_UPDATED';
+  type: "DELTA_ELEMENT_UPDATED";
   elementId: string;
   /** 변경된 props만 (기존 props와 merge) */
   propsChanges: Record<string, unknown>;
@@ -150,7 +155,7 @@ export interface DeltaElementUpdatedMessage {
  * 단일 요소 삭제
  */
 export interface DeltaElementRemovedMessage {
-  type: 'DELTA_ELEMENT_REMOVED';
+  type: "DELTA_ELEMENT_REMOVED";
   elementId: string;
   /** 자식 요소들도 함께 삭제 */
   childElementIds?: string[];
@@ -161,7 +166,7 @@ export interface DeltaElementRemovedMessage {
  * - 다중 선택 편집, 정렬 등에 사용
  */
 export interface DeltaBatchUpdateMessage {
-  type: 'DELTA_BATCH_UPDATE';
+  type: "DELTA_BATCH_UPDATE";
   updates: Array<{
     elementId: string;
     propsChanges?: Record<string, unknown>;
@@ -207,20 +212,20 @@ export type BuilderToPreviewMessage =
 
 type StoreActions = Pick<
   PreviewStoreState,
-  | 'setElements'
-  | 'updateElementProps'
-  | 'setThemeVars'
-  | 'setDarkMode'
-  | 'setCurrentPageId'
-  | 'setCurrentLayoutId'
-  | 'setPages'
-  | 'setLayouts'
-  | 'setDataSources'
-  | 'setDataTables'
-  | 'setApiEndpoints'
-  | 'setVariables'
-  | 'setAuthToken'
-  | 'setReady'
+  | "setElements"
+  | "updateElementProps"
+  | "setThemeVars"
+  | "setDarkMode"
+  | "setCurrentPageId"
+  | "setCurrentLayoutId"
+  | "setPages"
+  | "setLayouts"
+  | "setDataSources"
+  | "setDataTables"
+  | "setApiEndpoints"
+  | "setVariables"
+  | "setAuthToken"
+  | "setReady"
 > & {
   // 🚀 Phase 4: Delta-specific actions (optional, fallback to setElements if not available)
   addElement?: (element: PreviewElement) => void;
@@ -241,7 +246,7 @@ export class MessageHandler {
     options?: {
       onElementSelected?: (elementId: string) => void;
       onVariablesUpdated?: (variables: RuntimeVariable[]) => void;
-    }
+    },
   ) {
     this.store = store;
     this.onElementSelected = options?.onElementSelected;
@@ -255,91 +260,91 @@ export class MessageHandler {
     // Origin 검증 (production에서만)
     if (import.meta.env.PROD) {
       if (event.origin !== window.location.origin) {
-        console.warn('[Preview] Message from untrusted origin:', event.origin);
+        console.warn("[Preview] Message from untrusted origin:", event.origin);
         return;
       }
     }
 
     const data = event.data as BuilderToPreviewMessage;
-    if (!data || typeof data !== 'object' || !data.type) {
+    if (!data || typeof data !== "object" || !data.type) {
       return;
     }
 
     switch (data.type) {
-      case 'UPDATE_ELEMENTS':
+      case "UPDATE_ELEMENTS":
         this.handleUpdateElements(data);
         break;
 
-      case 'UPDATE_ELEMENT_PROPS':
+      case "UPDATE_ELEMENT_PROPS":
         this.handleUpdateElementProps(data);
         break;
 
-      case 'DELETE_ELEMENT':
+      case "DELETE_ELEMENT":
         this.handleDeleteElement(data);
         break;
 
-      case 'DELETE_ELEMENTS':
+      case "DELETE_ELEMENTS":
         this.handleDeleteElements(data);
         break;
 
-      case 'THEME_VARS':
+      case "THEME_VARS":
         this.handleThemeVars(data);
         break;
 
-      case 'SET_DARK_MODE':
+      case "SET_DARK_MODE":
         this.handleSetDarkMode(data);
         break;
 
-      case 'UPDATE_PAGE_INFO':
+      case "UPDATE_PAGE_INFO":
         this.handleUpdatePageInfo(data);
         break;
 
-      case 'UPDATE_PAGES':
+      case "UPDATE_PAGES":
         this.handleUpdatePages(data);
         break;
 
-      case 'UPDATE_LAYOUTS':
+      case "UPDATE_LAYOUTS":
         this.handleUpdateLayouts(data);
         break;
 
-      case 'UPDATE_DATA_SOURCES':
+      case "UPDATE_DATA_SOURCES":
         this.handleUpdateDataSources(data);
         break;
 
-      case 'UPDATE_DATA_TABLES':
+      case "UPDATE_DATA_TABLES":
         this.handleUpdateDataTables(data);
         break;
 
-      case 'UPDATE_API_ENDPOINTS':
+      case "UPDATE_API_ENDPOINTS":
         this.handleUpdateApiEndpoints(data);
         break;
 
-      case 'UPDATE_VARIABLES':
+      case "UPDATE_VARIABLES":
         this.handleUpdateVariables(data);
         break;
 
-      case 'UPDATE_AUTH_CONTEXT':
+      case "UPDATE_AUTH_CONTEXT":
         this.handleUpdateAuthContext(data);
         break;
 
-      case 'REQUEST_ELEMENT_SELECTION':
+      case "REQUEST_ELEMENT_SELECTION":
         this.handleRequestElementSelection(data);
         break;
 
       // 🚀 Phase 4: Delta Update Handlers
-      case 'DELTA_ELEMENT_ADDED':
+      case "DELTA_ELEMENT_ADDED":
         this.handleDeltaElementAdded(data);
         break;
 
-      case 'DELTA_ELEMENT_UPDATED':
+      case "DELTA_ELEMENT_UPDATED":
         this.handleDeltaElementUpdated(data);
         break;
 
-      case 'DELTA_ELEMENT_REMOVED':
+      case "DELTA_ELEMENT_REMOVED":
         this.handleDeltaElementRemoved(data);
         break;
 
-      case 'DELTA_BATCH_UPDATE':
+      case "DELTA_BATCH_UPDATE":
         this.handleDeltaBatchUpdate(data);
         break;
 
@@ -365,7 +370,7 @@ export class MessageHandler {
     }
 
     // ACK 전송
-    this.sendToBuilder({ type: 'ELEMENTS_UPDATED_ACK' });
+    this.sendToBuilder({ type: "ELEMENTS_UPDATED_ACK" });
   }
 
   private handleUpdateElementProps(data: UpdateElementPropsMessage): void {
@@ -437,7 +442,9 @@ export class MessageHandler {
     this.store.setAuthToken(data.token);
   }
 
-  private handleRequestElementSelection(data: RequestElementSelectionMessage): void {
+  private handleRequestElementSelection(
+    data: RequestElementSelectionMessage,
+  ): void {
     if (this.onElementSelected) {
       this.onElementSelected(data.elementId);
     }
@@ -465,15 +472,19 @@ export class MessageHandler {
       // Fallback: setElements 사용 (기존 방식)
       if (this.store.getElements) {
         const currentElements = this.store.getElements();
-        const newElements = [...currentElements, element, ...(childElements || [])];
+        const newElements = [
+          ...currentElements,
+          element,
+          ...(childElements || []),
+        ];
         this.store.setElements(newElements);
       }
     }
 
     // ACK 전송
     this.sendToBuilder({
-      type: 'DELTA_ACK',
-      operation: 'ELEMENT_ADDED',
+      type: "DELTA_ACK",
+      operation: "ELEMENT_ADDED",
       elementId: element.id,
     });
   }
@@ -490,7 +501,7 @@ export class MessageHandler {
       const updates: Partial<PreviewElement> = {};
 
       if (propsChanges && Object.keys(propsChanges).length > 0) {
-        updates.props = propsChanges as PreviewElement['props'];
+        updates.props = propsChanges as PreviewElement["props"];
       }
       if (parentId !== undefined) {
         updates.parent_id = parentId;
@@ -509,8 +520,8 @@ export class MessageHandler {
 
     // ACK 전송
     this.sendToBuilder({
-      type: 'DELTA_ACK',
-      operation: 'ELEMENT_UPDATED',
+      type: "DELTA_ACK",
+      operation: "ELEMENT_UPDATED",
       elementId,
     });
   }
@@ -531,14 +542,16 @@ export class MessageHandler {
       // Fallback: 필터링
       const currentElements = this.store.getElements();
       const idsToRemove = new Set([elementId, ...(childElementIds || [])]);
-      const filteredElements = currentElements.filter(el => !idsToRemove.has(el.id));
+      const filteredElements = currentElements.filter(
+        (el) => !idsToRemove.has(el.id),
+      );
       this.store.setElements(filteredElements);
     }
 
     // ACK 전송
     this.sendToBuilder({
-      type: 'DELTA_ACK',
-      operation: 'ELEMENT_REMOVED',
+      type: "DELTA_ACK",
+      operation: "ELEMENT_REMOVED",
       elementId,
     });
   }
@@ -556,7 +569,7 @@ export class MessageHandler {
         const elementUpdates: Partial<PreviewElement> = {};
 
         if (update.propsChanges) {
-          elementUpdates.props = update.propsChanges as PreviewElement['props'];
+          elementUpdates.props = update.propsChanges as PreviewElement["props"];
         }
         if (update.parentId !== undefined) {
           elementUpdates.parent_id = update.parentId;
@@ -578,8 +591,8 @@ export class MessageHandler {
 
     // ACK 전송
     this.sendToBuilder({
-      type: 'DELTA_ACK',
-      operation: 'BATCH_UPDATE',
+      type: "DELTA_ACK",
+      operation: "BATCH_UPDATE",
       count: updates.length,
     });
   }
@@ -592,7 +605,7 @@ export class MessageHandler {
     try {
       window.parent.postMessage(message, getTargetOrigin());
     } catch (error) {
-      console.error('[Preview] Failed to send message to builder:', error);
+      console.error("[Preview] Failed to send message to builder:", error);
     }
   }
 }
@@ -604,14 +617,11 @@ export class MessageHandler {
 export const messageSender = {
   /**
    * Preview 준비 완료 알림
-   *
-   * srcdoc에 주입된 __bootstrapNonce를 함께 전송하여 builder가 출처를 검증합니다.
    */
   sendReady(): void {
-    const nonce = (window as Window & { __bootstrapNonce?: string }).__bootstrapNonce ?? null;
     window.parent.postMessage(
-      { type: 'PREVIEW_READY', nonce },
-      window.location.origin !== 'null' ? window.location.origin : '*',
+      { type: "PREVIEW_READY" },
+      window.location.origin,
     );
   },
 
@@ -621,11 +631,15 @@ export const messageSender = {
   sendElementSelected(
     elementId: string,
     rect: { top: number; left: number; width: number; height: number },
-    options?: { isMultiSelect?: boolean; props?: Record<string, unknown>; style?: Record<string, unknown> }
+    options?: {
+      isMultiSelect?: boolean;
+      props?: Record<string, unknown>;
+      style?: Record<string, unknown>;
+    },
   ): void {
     window.parent.postMessage(
       {
-        type: 'ELEMENT_SELECTED',
+        type: "ELEMENT_SELECTED",
         elementId,
         isMultiSelect: options?.isMultiSelect || false,
         payload: {
@@ -634,21 +648,24 @@ export const messageSender = {
           style: options?.style,
         },
       },
-      getTargetOrigin()
+      getTargetOrigin(),
     );
   },
 
   /**
    * Computed Style 전송
    */
-  sendComputedStyle(elementId: string, computedStyle: Record<string, string>): void {
+  sendComputedStyle(
+    elementId: string,
+    computedStyle: Record<string, string>,
+  ): void {
     window.parent.postMessage(
       {
-        type: 'ELEMENT_COMPUTED_STYLE',
+        type: "ELEMENT_COMPUTED_STYLE",
         elementId,
         payload: { computedStyle },
       },
-      getTargetOrigin()
+      getTargetOrigin(),
     );
   },
 
@@ -658,10 +675,10 @@ export const messageSender = {
   sendDragSelected(elementIds: string[]): void {
     window.parent.postMessage(
       {
-        type: 'ELEMENTS_DRAG_SELECTED',
+        type: "ELEMENTS_DRAG_SELECTED",
         elementIds,
       },
-      getTargetOrigin()
+      getTargetOrigin(),
     );
   },
 
@@ -671,11 +688,11 @@ export const messageSender = {
   sendStateChanged(path: string, value: unknown): void {
     window.parent.postMessage(
       {
-        type: 'STATE_CHANGED',
+        type: "STATE_CHANGED",
         path,
         value,
       },
-      getTargetOrigin()
+      getTargetOrigin(),
     );
   },
 };

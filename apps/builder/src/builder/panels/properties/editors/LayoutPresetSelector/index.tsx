@@ -48,16 +48,17 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
 }: LayoutPresetSelectorProps) {
   // 선택된 프리셋 상태
   const [selectedPresetKey, setSelectedPresetKey] = useState<string | null>(
-    null
+    null,
   );
   // 다이얼로그 열림 상태
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // 프리셋 적용 훅
-  const { existingSlots, currentPresetKey, applyPreset, isApplying } = usePresetApply({
-    layoutId,
-    bodyElementId,
-  });
+  const { existingSlots, currentPresetKey, applyPreset, isApplying } =
+    usePresetApply({
+      layoutId,
+      bodyElementId,
+    });
 
   // 카테고리별 프리셋 그룹화
   const presetsByCategory = useMemo(() => {
@@ -97,7 +98,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
         applyPreset(presetKey, "replace");
       }
     },
-    [existingSlots.length, currentPresetKey, applyPreset]
+    [existingSlots.length, currentPresetKey, applyPreset],
   );
 
   // 다이얼로그 확인 핸들러
@@ -109,7 +110,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
       setDialogOpen(false);
       setSelectedPresetKey(null);
     },
-    [selectedPresetKey, applyPreset]
+    [selectedPresetKey, applyPreset],
   );
 
   // 다이얼로그 닫기 핸들러
@@ -129,7 +130,10 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
         return (
           <div key={categoryKey} className="list-subgroup">
             <div className="list-subgroup-header">
-              <CategoryIcon size={iconEditProps.size} className="list-subgroup-icon" />
+              <CategoryIcon
+                size={iconEditProps.size}
+                className="list-subgroup-icon"
+              />
               <span className="list-subgroup-title">{meta.label}</span>
             </div>
 
@@ -144,7 +148,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
                 return (
                   <Button
                     key={presetKey}
-                    variant="default"
+                    variant="secondary"
                     className={`list-item preset-card ${isSelected ? "selected" : ""} ${isApplied ? "applied" : ""}`}
                     onPress={() => handlePresetClick(presetKey)}
                     isDisabled={isApplying}
@@ -155,7 +159,9 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
                       height={60}
                     />
                     <span className="list-item-name">{preset.name}</span>
-                    {isApplied && <span className="list-item-badge applied">적용됨</span>}
+                    {isApplied && (
+                      <span className="list-item-badge applied">적용됨</span>
+                    )}
                   </Button>
                 );
               })}

@@ -17,6 +17,7 @@ export interface TransformStyleValues {
   height: string;
   top: string;
   left: string;
+  isBody?: boolean;
   // ADR-026 Phase 2: Min/Max + Aspect Ratio
   minWidth: string;
   maxWidth: string;

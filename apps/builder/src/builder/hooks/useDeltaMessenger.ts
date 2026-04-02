@@ -98,15 +98,11 @@ export interface UseDeltaMessengerReturn {
   getDeltaStats: () => DeltaStats;
 }
 
-export interface UseDeltaMessengerOptions {
-  /** ADR-006 P2-2: PREVIEW_READY 부트스트랩 메시지 검증용 nonce */
-  bootstrapNonce?: string;
-}
+export type UseDeltaMessengerOptions = Record<string, never>;
 
 export const useDeltaMessenger = (
-  options?: UseDeltaMessengerOptions,
+  _options?: UseDeltaMessengerOptions,
 ): UseDeltaMessengerReturn => {
-  const bootstrapNonce = options?.bootstrapNonce;
   const statsRef = useRef<DeltaStats>({
     deltaSent: 0,
     fullUpdateSent: 0,
@@ -142,10 +138,10 @@ export const useDeltaMessenger = (
    */
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // ADR-006 P2-2: PREVIEW_READY는 nonce 포함 부트스트랩 검증, 그 외는 source+origin 이중 검증
+      // PREVIEW_READY는 origin 검증, 그 외는 source+origin 이중 검증
       const isBootstrap = event.data?.type === "PREVIEW_READY";
       if (isBootstrap) {
-        if (!isValidBootstrapMessage(event, bootstrapNonce)) return;
+        if (!isValidBootstrapMessage(event)) return;
       } else {
         if (!isValidPreviewMessage(event)) return;
       }
@@ -170,7 +166,7 @@ export const useDeltaMessenger = (
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [bootstrapNonce]);
+  }, []);
 
   /**
    * 요소 추가 Delta 전송

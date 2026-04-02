@@ -42,8 +42,10 @@ export const TableEditor = memo(
     currentProps,
     onUpdate,
   }: PropertyEditorProps) {
-    // ADR-040: elementsMap O(1) 조회
+    // ADR-040: elementsMap / childrenMap O(1) 조회
     const element = useStore((state) => state.elementsMap.get(elementId));
+    const elementsMap = useStore((state) => state.elementsMap);
+    const childrenMap = useStore((state) => state.childrenMap);
     const mergeElements = useStore((state) => state.mergeElements);
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -74,15 +76,33 @@ export const TableEditor = memo(
       return <div className="table-editor-empty">Table 요소를 선택하세요</div>;
     }
 
-    // Table 구조 분석
-    const tableBody = elements.find(
-      (el) => el.parent_id === element.id && el.tag === "TableBody",
+    // Table 구조 분석 — childrenMap은 Element[]를 반환하므로 직접 사용
+    const elementChildren = childrenMap.get(element.id) ?? [];
+    const tableBody = elementChildren.find((el) => el.tag === "TableBody");
+
+    // TableHeader 찾기
+    const tableHeaderElement = elementChildren.find(
+      (el) => el.tag === "TableHeader",
     );
+
+    // 실제 Column Element들 가져오기
+    const actualColumns = tableHeaderElement
+      ? (childrenMap.get(tableHeaderElement.id) ?? [])
+          .filter((el) => el.tag === "Column")
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+      : [];
+
+    // Column Group Element들 가져오기
+    const actualColumnGroups = tableHeaderElement
+      ? (childrenMap.get(tableHeaderElement.id) ?? [])
+          .filter((el) => el.tag === "ColumnGroup")
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+      : [];
 
     // 현재 테이블의 행들 찾기 (TableBody > Row)
     const rows = tableBody
-      ? elements
-          .filter((el) => el.parent_id === tableBody.id && el.tag === "Row")
+      ? (childrenMap.get(tableBody.id) ?? [])
+          .filter((el) => el.tag === "Row")
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
       : [];
 
@@ -91,9 +111,10 @@ export const TableEditor = memo(
 
       try {
         const rowId = ElementUtils.generateId();
+        const allElements = Array.from(elementsMap.values());
         const newRowElement: Element = {
           id: rowId,
-          customId: generateCustomId("Row", elements),
+          customId: generateCustomId("Row", allElements),
           tag: "Row",
           props: {},
           parent_id: tableBody.id,
@@ -128,7 +149,7 @@ export const TableEditor = memo(
         const columnsFromProps = actualColumns;
 
         // Track all elements so far for unique ID generation
-        const allElementsSoFar = [...elements, newRowElement];
+        const allElementsSoFar = [...allElements, newRowElement];
 
         for (let i = 0; i < columnsFromProps.length; i++) {
           const cellId = ElementUtils.generateId();
@@ -204,7 +225,10 @@ export const TableEditor = memo(
         const groupId = ElementUtils.generateId();
         const newGroupElement: Element = {
           id: groupId,
-          customId: generateCustomId("ColumnGroup", elements),
+          customId: generateCustomId(
+            "ColumnGroup",
+            Array.from(elementsMap.values()),
+          ),
           tag: "ColumnGroup",
           props: {
             children: "New Group",
@@ -256,32 +280,6 @@ export const TableEditor = memo(
         console.error("Column Group 삭제 중 오류:", error);
       }
     };
-
-    // TableHeader 찾기
-    const tableHeaderElement = elements.find(
-      (el) => el.parent_id === element?.id && el.tag === "TableHeader",
-    );
-
-    // 실제 Column Element들 가져오기
-    const actualColumns = tableHeaderElement
-      ? elements
-          .filter(
-            (el) =>
-              el.parent_id === tableHeaderElement.id && el.tag === "Column",
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-      : [];
-
-    // Column Group Element들 가져오기
-    const actualColumnGroups = tableHeaderElement
-      ? elements
-          .filter(
-            (el) =>
-              el.parent_id === tableHeaderElement.id &&
-              el.tag === "ColumnGroup",
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-      : [];
 
     return (
       <>
@@ -757,8 +755,8 @@ export const TableEditor = memo(
           {rows.length > 0 && (
             <div className="tabs-list">
               {rows.map((row, index) => {
-                const rowCells = elements
-                  .filter((el) => el.parent_id === row.id && el.tag === "Cell")
+                const rowCells = (childrenMap.get(row.id) ?? [])
+                  .filter((el) => el.tag === "Cell")
                   .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
                 return (

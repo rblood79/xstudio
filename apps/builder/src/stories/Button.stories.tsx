@@ -3,14 +3,10 @@ import { Button } from "@xstudio/shared/components/Button";
 import type { ButtonVariant, ComponentSize } from "@xstudio/shared/types";
 
 const VARIANTS: ButtonVariant[] = [
-  "default",
+  "accent",
   "primary",
   "secondary",
-  "tertiary",
-  "error",
-  "surface",
-  "outline",
-  "ghost",
+  "negative",
 ];
 
 const SIZES: ComponentSize[] = ["xs", "sm", "md", "lg", "xl"];
@@ -32,8 +28,8 @@ const meta = {
   },
   args: {
     children: "Button",
-    variant: "default",
-    size: "S",
+    variant: "accent",
+    size: "md",
   },
 } satisfies Meta<typeof Button>;
 

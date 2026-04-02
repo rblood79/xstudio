@@ -1,4 +1,5 @@
 import { memo, useCallback } from "react";
+import type { Key } from "react-aria-components";
 import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
 
 interface PropertySizeToggleProps {
@@ -35,7 +36,7 @@ export const PropertySizeToggle = memo(function PropertySizeToggle({
   const items = options ?? (scale === "5" ? SIZE_5 : SIZE_3);
 
   const handleChange = useCallback(
-    (keys: Set<string>) => {
+    (keys: Set<Key>) => {
       const selected = Array.from(keys)[0] as string;
       if (selected) onChange(selected);
     },

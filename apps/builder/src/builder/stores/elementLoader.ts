@@ -88,6 +88,7 @@ export type ElementLoaderSlice = LoaderState & ElementLoaderActions;
 interface ElementsStateMinimal {
   elements: Element[];
   elementsMap: Map<string, Element>;
+  pageElementsSnapshot: Record<string, Element[]>;
   currentPageId: string | null;
   _rebuildIndexes: () => void;
 }

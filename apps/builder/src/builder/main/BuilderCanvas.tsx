@@ -1,5 +1,4 @@
-import React, { useMemo } from "react";
-import { generatePreviewSrcdoc, shouldUseSrcdoc } from "./previewSrcdoc";
+import React from "react";
 
 export interface BuilderCanvasProps {
   projectId?: string;
@@ -13,8 +12,6 @@ export interface BuilderCanvasProps {
   onIframeLoad: () => void;
   onMessage: (event: MessageEvent) => void;
   children?: React.ReactNode;
-  /** ADR-006 P2-2: nonce 기반 부트스트랩 메시지 검증용 */
-  bootstrapNonce: string;
 }
 
 /**
@@ -26,25 +23,15 @@ export interface BuilderCanvasProps {
  * @deprecated WebGL Canvas 전환 완료 후 제거 예정
  */
 export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
-  projectId,
   breakpoint,
   breakpoints,
   onIframeLoad,
   onMessage,
   children,
-  bootstrapNonce,
 }) => {
   const currentBreakpoint = breakpoints.find(
     (bp) => bp.id === Array.from(breakpoint)[0],
   );
-
-  // srcdoc 모드 여부 및 srcdoc 콘텐츠 생성
-  // bootstrapNonce가 바뀌면 srcdoc를 재생성하여 nonce도 갱신됨
-  const useSrcdoc = shouldUseSrcdoc();
-  const srcdocContent = useMemo(() => {
-    if (!useSrcdoc || !projectId) return null;
-    return generatePreviewSrcdoc(projectId, bootstrapNonce);
-  }, [useSrcdoc, projectId, bootstrapNonce]);
 
   // Phase 2.2 최적화: useRef 패턴으로 리스너 재등록 방지
   const onMessageRef = React.useRef(onMessage);
@@ -77,32 +64,13 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
           borderWidth: currentBreakpoint?.id === "screen" ? "0px" : "1px",
         }}
       >
-        {/*
-         * Preview iframe
-         * - srcdoc 모드: 완전히 독립된 Preview Runtime (권장)
-         * - src 모드: 기존 방식 (동일 앱 내 /preview 라우트)
-         */}
-        {useSrcdoc && srcdocContent ? (
-          <iframe
-            id="previewFrame"
-            srcDoc={srcdocContent}
-            style={{ width: "100%", height: "100%", border: "none" }}
-            title="XStudio Preview"
-            onLoad={onIframeLoad}
-          />
-        ) : (
-          <iframe
-            id="previewFrame"
-            src={
-              projectId
-                ? `/preview/${projectId}?isIframe=true`
-                : "/preview?isIframe=true"
-            }
-            style={{ width: "100%", height: "100%", border: "none" }}
-            title="XStudio Preview"
-            onLoad={onIframeLoad}
-          />
-        )}
+        <iframe
+          id="previewFrame"
+          src="/preview.html"
+          style={{ width: "100%", height: "100%", border: "none" }}
+          title="XStudio Preview"
+          onLoad={onIframeLoad}
+        />
         {children}
       </div>
     </main>

@@ -1,3 +1,4 @@
+import { resolve } from "path";
 import { defineConfig } from "vite";
 import type { Connect, ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
@@ -12,7 +13,7 @@ function createProxyMiddleware(): Connect.NextHandleFunction {
   return async (
     req: IncomingMessage,
     res: ServerResponse,
-    next: Connect.NextFunction
+    next: Connect.NextFunction,
   ) => {
     // 모든 /api 요청 로깅
     if (req.url?.startsWith("/api")) {
@@ -39,7 +40,7 @@ function createProxyMiddleware(): Connect.NextHandleFunction {
       for (const [key, value] of Object.entries(req.headers)) {
         if (
           !["host", "connection", "origin", "referer"].includes(
-            key.toLowerCase()
+            key.toLowerCase(),
           ) &&
           value
         ) {
@@ -68,11 +69,11 @@ function createProxyMiddleware(): Connect.NextHandleFunction {
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader(
         "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
+        "GET, POST, PUT, DELETE, OPTIONS",
       );
       res.setHeader(
         "Access-Control-Allow-Headers",
-        "Content-Type, Authorization"
+        "Content-Type, Authorization",
       );
 
       // OPTIONS 요청 처리
@@ -96,13 +97,15 @@ function createProxyMiddleware(): Connect.NextHandleFunction {
 
       response.headers.forEach((value, key) => {
         const lowerKey = key.toLowerCase();
-        if (!skipHeaders.some(skip => lowerKey.includes(skip))) {
+        if (!skipHeaders.some((skip) => lowerKey.includes(skip))) {
           res.setHeader(key, value);
         }
       });
 
       const responseBody = await response.text();
-      console.log(`✅ [Proxy] Response: ${response.status}, ${responseBody.length} bytes`);
+      console.log(
+        `✅ [Proxy] Response: ${response.status}, ${responseBody.length} bytes`,
+      );
       res.end(responseBody);
     } catch (error) {
       console.error("[Proxy Error]", error);
@@ -129,7 +132,7 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [wasm(), apiProxyPlugin(), react()],
     worker: {
-      format: 'es',
+      format: "es",
       plugins: () => [wasm()],
     },
     base: command === "build" ? "/xstudio/" : "/",
@@ -138,19 +141,49 @@ export default defineConfig(({ command }) => {
       // 'baseline-widely-available'은 Vite 7의 기본값
       // 더 넓은 호환성이 필요하면 'modules' 사용
       target: "baseline-widely-available", // 또는 'modules'
+      rollupOptions: {
+        input: {
+          main: resolve(import.meta.dirname, "index.html"),
+          preview: resolve(import.meta.dirname, "preview.html"),
+        },
+      },
     },
     resolve: {
       alias: [
         { find: "@", replacement: `${import.meta.dirname}/src` },
         // @xstudio/shared aliases - must be ordered from most specific to least specific
-        { find: /^@xstudio\/shared\/components\/styles\/(.*)$/, replacement: `${import.meta.dirname}/../../packages/shared/src/components/styles/$1` },
-        { find: /^@xstudio\/shared\/components\/(.*)$/, replacement: `${import.meta.dirname}/../../packages/shared/src/components/$1` },
-        { find: "@xstudio/shared/components", replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.tsx` },
-        { find: "@xstudio/shared/utils", replacement: `${import.meta.dirname}/../../packages/shared/src/utils/index.ts` },
-        { find: "@xstudio/shared/types", replacement: `${import.meta.dirname}/../../packages/shared/src/types/index.ts` },
-        { find: "@xstudio/shared/renderers", replacement: `${import.meta.dirname}/../../packages/shared/src/renderers/index.ts` },
-        { find: "@xstudio/shared/hooks", replacement: `${import.meta.dirname}/../../packages/shared/src/hooks/index.ts` },
-        { find: "@xstudio/shared", replacement: `${import.meta.dirname}/../../packages/shared/src/index.ts` },
+        {
+          find: /^@xstudio\/shared\/components\/styles\/(.*)$/,
+          replacement: `${import.meta.dirname}/../../packages/shared/src/components/styles/$1`,
+        },
+        {
+          find: /^@xstudio\/shared\/components\/(.*)$/,
+          replacement: `${import.meta.dirname}/../../packages/shared/src/components/$1`,
+        },
+        {
+          find: "@xstudio/shared/components",
+          replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.tsx`,
+        },
+        {
+          find: "@xstudio/shared/utils",
+          replacement: `${import.meta.dirname}/../../packages/shared/src/utils/index.ts`,
+        },
+        {
+          find: "@xstudio/shared/types",
+          replacement: `${import.meta.dirname}/../../packages/shared/src/types/index.ts`,
+        },
+        {
+          find: "@xstudio/shared/renderers",
+          replacement: `${import.meta.dirname}/../../packages/shared/src/renderers/index.ts`,
+        },
+        {
+          find: "@xstudio/shared/hooks",
+          replacement: `${import.meta.dirname}/../../packages/shared/src/hooks/index.ts`,
+        },
+        {
+          find: "@xstudio/shared",
+          replacement: `${import.meta.dirname}/../../packages/shared/src/index.ts`,
+        },
       ],
     },
     optimizeDeps: {

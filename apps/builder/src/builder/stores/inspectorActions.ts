@@ -72,6 +72,9 @@ interface RequiredState {
   selectedElementId: string | null;
   elementsMap: Map<string, Element>;
   elements: Element[];
+  childrenMap: Map<string, Element[]>;
+  layoutVersion: number;
+  dirtyElementIds: Set<string>;
   currentPageId: string | null;
   updateElement: (
     elementId: string,
@@ -425,13 +428,16 @@ export const createInspectorActionsSlice: StateCreator<
       const newElementsMap = new Map(elementsMap);
       newElementsMap.set(selectedElementId, updatedElement);
 
-      // ADR-040 Phase 3: indexOf + with() 증분 패치 (findIndex O(N) 제거)
+      // ADR-040 Phase 3: indexOf 증분 패치 (findIndex O(N) 제거)
       const currentElements = (get() as CombinedState).elements;
       const elementIndex = element ? currentElements.indexOf(element) : -1;
-      const newElements =
-        elementIndex !== -1
-          ? currentElements.with(elementIndex, updatedElement)
-          : currentElements;
+      let newElements: Element[];
+      if (elementIndex !== -1) {
+        newElements = currentElements.slice();
+        newElements[elementIndex] = updatedElement;
+      } else {
+        newElements = currentElements;
+      }
 
       // ADR-006 P3-1: style 프리뷰도 layoutVersion 증가 → 캔버스 레이아웃 즉시 반영
       set(
@@ -679,10 +685,13 @@ export const createInspectorActionsSlice: StateCreator<
       const elementIndex = existingElement
         ? currentElements.indexOf(existingElement)
         : -1;
-      const newElements =
-        elementIndex !== -1
-          ? currentElements.with(elementIndex, updatedElement)
-          : currentElements;
+      let newElements: Element[];
+      if (elementIndex !== -1) {
+        newElements = currentElements.slice();
+        newElements[elementIndex] = updatedElement;
+      } else {
+        newElements = currentElements;
+      }
 
       set({
         elements: newElements,

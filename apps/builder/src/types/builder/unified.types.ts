@@ -1238,7 +1238,7 @@ export function createDefaultLinkProps(): LinkElementProps {
   return {
     children: "Link",
     href: "#",
-    variant: "default",
+    variant: "primary",
     size: "md",
     isDisabled: false,
     isExternal: false,

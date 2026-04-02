@@ -10,6 +10,7 @@
  */
 
 import { memo, useCallback, useState } from "react";
+import type { Key } from "react-aria-components";
 import {
   PropertySection,
   PropertyUnitInput,
@@ -86,7 +87,7 @@ const SizeModeToggle = memo(function SizeModeToggle({
   fillDisabledReason?: string;
 }) {
   const handleSelectionChange = useCallback(
-    (keys: Set<string>) => {
+    (keys: Set<Key>) => {
       const selected = Array.from(keys)[0] as SizeMode | undefined;
       if (selected) onChange(selected);
     },
@@ -186,7 +187,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   );
 
   const handleSelfAlignment = useCallback(
-    (keys: Set<string>) => {
+    (keys: Set<Key>) => {
       const value = Array.from(keys)[0] as string | undefined;
       if (!value) {
         updateStylesImmediate({ alignSelf: "", justifySelf: "" });

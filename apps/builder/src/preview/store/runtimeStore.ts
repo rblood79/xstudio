@@ -160,7 +160,7 @@ export const createRuntimeStore = () =>
       }
       set({ themeVars: merged });
       // CSS 변수 적용
-      applyThemeVars(merged, get().isDarkMode);
+      applyThemeVars(merged);
     },
     isDarkMode: false,
     setDarkMode: (isDark: boolean) => {
@@ -169,8 +169,8 @@ export const createRuntimeStore = () =>
         "data-theme",
         isDark ? "dark" : "light",
       );
-      // 테마 변수 재적용
-      applyThemeVars(get().themeVars, isDark);
+      // 테마 변수 재적용 (dark/light CSS 블록이 data-theme에 의존하므로 재생성 필요)
+      applyThemeVars(get().themeVars);
     },
 
     // ============================================
@@ -349,18 +349,21 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 }
 
 /**
- * Theme 변수를 CSS 변수로 적용
+ * Theme 변수를 CSS 변수로 적용.
+ * 기존 <style> 요소를 재사용하여 불필요한 DOM 조작(remove→create→append)을 방지합니다.
+ * data-theme 속성은 setDarkMode()가 단일 관리하므로 여기서 중복 설정하지 않습니다.
  */
-function applyThemeVars(vars: ThemeVar[], isDarkMode: boolean): void {
-  const root = document.documentElement;
+function applyThemeVars(vars: ThemeVar[]): void {
+  let styleEl = document.getElementById(
+    "runtime-theme-vars",
+  ) as HTMLStyleElement | null;
 
-  // 기존 커스텀 스타일 제거
-  const existingStyle = document.getElementById("runtime-theme-vars");
-  if (existingStyle) {
-    existingStyle.remove();
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "runtime-theme-vars";
+    document.head.appendChild(styleEl);
   }
 
-  // 새 스타일 생성
   const lightVars = vars.filter((v) => !v.isDark);
   const darkVars = vars.filter((v) => v.isDark);
 
@@ -378,13 +381,7 @@ function applyThemeVars(vars: ThemeVar[], isDarkMode: boolean): void {
     cssText += "}\n";
   }
 
-  const styleEl = document.createElement("style");
-  styleEl.id = "runtime-theme-vars";
   styleEl.textContent = cssText;
-  document.head.appendChild(styleEl);
-
-  // 현재 테마 적용
-  root.setAttribute("data-theme", isDarkMode ? "dark" : "light");
 }
 
 // ============================================

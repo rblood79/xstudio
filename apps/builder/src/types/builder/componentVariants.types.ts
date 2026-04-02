@@ -46,13 +46,16 @@ export type StaticColor = "auto" | "black" | "white";
 // ============================================================================
 
 /**
- * Button visual variants (S2 aligned)
- * - accent: Blue/accent emphasis
- * - primary: Dark/neutral fill
- * - secondary: Neutral outline
- * - negative: Error/destructive
+ * Button visual variants
+ * S2 core: accent, primary, secondary, negative
+ * Builder UI 확장: ghost (투명 배경 + 테두리 없음)
  */
-export type ButtonVariant = "accent" | "primary" | "secondary" | "negative";
+export type ButtonVariant =
+  | "accent"
+  | "primary"
+  | "secondary"
+  | "negative"
+  | "ghost";
 
 /**
  * Button fill style (S2)

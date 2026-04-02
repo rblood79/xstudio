@@ -49,7 +49,8 @@ export type ButtonVariant =
   | "secondary"
   | "negative"
   | "premium"
-  | "genai";
+  | "genai"
+  | "ghost";
 
 /**
  * Button fill style (S2)

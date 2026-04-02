@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "react-aria-components";
+import type { PressEvent } from "react-aria-components";
 import {
   ChevronRight,
   File,
@@ -34,10 +35,8 @@ export function PageTreeItemContent({
   const { depth, hasChildren, isRoot, page, name } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
 
-  const stopEventPropagation = (event: {
-    stopPropagation?: () => void;
-  }) => {
-    event.stopPropagation?.();
+  const stopEventPropagation = (_e: PressEvent) => {
+    // PressEvent does not have stopPropagation; use continuePropagation if needed
   };
 
   return (
