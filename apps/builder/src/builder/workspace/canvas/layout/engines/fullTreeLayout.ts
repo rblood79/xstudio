@@ -1722,7 +1722,9 @@ export function calculateFullTreeLayout(
     // 실제 Taffy 할당 width는 grid 1fr, flex-grow/shrink, 부모 제약 등으로 달라질 수 있다.
     // 자식의 실제 width가 enrichment width와 다르면 → 실제 width로 re-enrich → 재계산.
     // 부모는 Taffy가 자식 height 합산으로 auto height를 자동 갱신한다.
-    {
+    // 2-pass height 교정: 현재 grid 레이아웃과 충돌하므로 비활성화
+    // TODO: DFS 단계에서 grid 트랙 폭 사전 계산으로 재설계 필요
+    if (false as boolean) {
       const WIDTH_TOLERANCE = 2;
       let needsSecondPass = false;
       const childUpdates: Array<{
@@ -1860,27 +1862,6 @@ export function calculateFullTreeLayout(
         }
 
         persistentTree.computeLayout(availableWidth, availableHeight);
-
-        // Fallback: dirty 마킹 후에도 부모 height 미갱신 시 full rebuild
-        if (parentsToMarkDirty.size > 0) {
-          let rebuildNeeded = false;
-          const verifyLayouts = persistentTree.getLayoutsBatch();
-          for (const parentId of parentsToMarkDirty) {
-            const ph = persistentTree.getHandle(parentId);
-            if (ph === undefined) continue;
-            const cur = verifyLayouts.get(ph);
-            const prev = firstPassLayouts.get(ph);
-            if (cur && prev && Math.abs(cur.height - prev.height) < 0.5) {
-              rebuildNeeded = true;
-              break;
-            }
-          }
-          if (rebuildNeeded) {
-            persistentTree.reset();
-            persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
-            persistentTree.computeLayout(availableWidth, availableHeight);
-          }
-        }
       }
     }
 

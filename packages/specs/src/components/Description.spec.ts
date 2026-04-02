@@ -45,7 +45,7 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
 
   sizes: {
     sm: {
-      height: 14,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -53,7 +53,7 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
       gap: 0,
     },
     md: {
-      height: 16,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -61,7 +61,7 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
       gap: 0,
     },
     lg: {
-      height: 20,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
