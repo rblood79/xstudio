@@ -68,6 +68,10 @@
 - **`useShallow` 제거로 배열/객체 구독 성능 회귀**: Zustand v5에서 `string[]` 배열이나 객체를 직접 구독할 때 `useShallow` 없이는 매 상태 업데이트마다 새 참조 생성 → 불필요한 리렌더 유발. `selectedElementIds`(배열), `panelLayout`(객체) 구독 시 `useShallow` 필수. primitive(string, boolean, number) 만 개별 구독 무방
 - **훅 제거 불완전 (dead 호출과 잔존 호출 혼재)**: `usePageManager` 같은 훅을 컴포넌트 내 한 위치에서만 제거하고 같은 컴포넌트 내 다른 위치의 동일 훅 호출을 누락하는 패턴 — 훅 제거 시 파일 전체를 grep하여 모든 호출 위치 확인 필수
 - **내부 유틸 함수 내 Store Map 재빌드**: `useLayerTreeData` 같이 `elements` 배열을 받는 useMemo 내부 헬퍼에서 `new Map(elements.map(...))` 재생성 — Store의 `elementsMap`을 인자로 전달하여 O(1) 조회 활용
+- **자식 font 위임 selector 분리 증식**: `inlineAlertFontStyle`(InlineAlert 자식 Heading/Description)과 `collectionItemFontStyle`(ListBoxItem/GridListItem 자식 Text/Description)이 별도 selector로 존재 — 부모 태그 → 자식 tag → `fs:fw` 문자열 반환 구조가 동일하므로 `CHILD_FONT_DELEGATION` 단일 Map + selector로 통합 필요. 신규 컴포넌트 추가 시 selector 1개씩 증가 방지
+- **implicitStyles.ts 컬렉션 자식 font 주입 블록 완전 복제**: `gridlistitem`(L614)과 `listboxitem`(L650) 블록의 Text/Description font 주입 map 로직 동일 — `injectCollectionItemFontStyles(children)` 순수 함수로 추출 공유 필요
+- **factory Text/Description style 리터럴 N회 반복**: `SelectionComponents.ts`에서 `{ fontSize: 14, fontWeight: 600 }`, `{ fontSize: 12 }` 리터럴이 아이템 개수만큼 인라인 복제 — `COLLECTION_ITEM_LABEL_STYLE` / `COLLECTION_ITEM_DESC_STYLE` 모듈 상수로 추출 필요
+- **`_containerWidth` 주입 태그 인라인 열거 18개**: `ElementSprite.tsx` L2030~2050의 `||` 체인 — `CONTAINER_WIDTH_TAGS = new Set([...])` 모듈 상수로 추출 후 `.has(tag)` 단일 조건으로 교체 필요. 태그 추가 시 체인 수정 실수 방지
 
 ## False Positive 기록
 

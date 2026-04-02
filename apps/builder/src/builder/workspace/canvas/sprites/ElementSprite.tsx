@@ -260,6 +260,36 @@ export interface ElementSpriteProps {
 // Tag to Sprite Mapping
 // ============================================
 
+/** Spec shapes에 _containerWidth/_containerHeight를 주입하는 태그 */
+const CONTAINER_DIMENSION_TAGS = new Set([
+  "Tag",
+  "Breadcrumbs",
+  "Tabs",
+  "Toast",
+  "ProgressBar",
+  "ProgressBarTrack",
+  "Meter",
+  "MeterTrack",
+  "TextField",
+  "TextArea",
+  "Input",
+  "Select",
+  "SelectTrigger",
+  "ComboBox",
+  "SearchField",
+  "NumberField",
+  "GridList",
+  "Image",
+  "Slider",
+  "SliderTrack",
+  "ListBox",
+  "ColorField",
+  "ColorSlider",
+  "DateSegment",
+  "Skeleton",
+  "Switcher",
+]);
+
 /**
  * 텍스트 관련 태그들
  */
@@ -2021,34 +2051,7 @@ export const ElementSprite = memo(function ElementSprite({
               if (tag === "Tag" && tagGroupAllowsRemoving) {
                 specProps = { ...specProps, allowsRemoving: true };
               }
-              if (
-                tag === "Tag" ||
-                tag === "Breadcrumbs" ||
-                tag === "Tabs" ||
-                tag === "Toast" ||
-                tag === "ProgressBar" ||
-                tag === "ProgressBarTrack" ||
-                tag === "Meter" ||
-                tag === "MeterTrack" ||
-                tag === "TextField" ||
-                tag === "TextArea" ||
-                tag === "Input" ||
-                tag === "Select" ||
-                tag === "SelectTrigger" ||
-                tag === "ComboBox" ||
-                tag === "SearchField" ||
-                tag === "NumberField" ||
-                tag === "GridList" ||
-                tag === "Image" ||
-                tag === "Slider" ||
-                tag === "SliderTrack" ||
-                tag === "ListBox" ||
-                tag === "ColorField" ||
-                tag === "ColorSlider" ||
-                tag === "DateSegment" ||
-                tag === "Skeleton" ||
-                tag === "Switcher"
-              ) {
+              if (CONTAINER_DIMENSION_TAGS.has(tag)) {
                 specProps = {
                   ...specProps,
                   _containerWidth: finalWidth,

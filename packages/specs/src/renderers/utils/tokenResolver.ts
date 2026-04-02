@@ -231,3 +231,16 @@ export function hexStringToNumber(hex: string): number {
   // rgb() 등 다른 형식은 colord로 처리 필요
   return 0x000000;
 }
+
+/**
+ * Spec shapes에서 _containerWidth를 우선 사용하고 fallback으로 style.width 또는 기본값 반환
+ */
+export function resolveContainerWidth(
+  props: { _containerWidth?: number; style?: Record<string, unknown> },
+  fallback: number,
+): number {
+  if (typeof props._containerWidth === "number" && props._containerWidth > 0) {
+    return props._containerWidth;
+  }
+  return (props.style?.width as number) || fallback;
+}

@@ -226,6 +226,29 @@ function withParentStyle(el: Element, style: Record<string, unknown>): Element {
   };
 }
 
+/** GridListItem/ListBoxItem 자식 Text/Description에 CSS 정합성 fontSize/fontWeight 주입 */
+function injectCollectionItemFontStyles(children: Element[]): Element[] {
+  return children.map((child) => {
+    const cs = (child.props?.style as Record<string, unknown>) || {};
+    if (child.tag === "Text" && cs.fontSize == null) {
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: { ...cs, fontSize: 14, fontWeight: cs.fontWeight ?? 600 },
+        },
+      };
+    }
+    if (child.tag === "Description" && cs.fontSize == null) {
+      return {
+        ...child,
+        props: { ...child.props, style: { ...cs, fontSize: 12 } },
+      };
+    }
+    return child;
+  });
+}
+
 function applySideLabelChildStyles(
   children: Element[],
   labelPos: string | undefined,
@@ -609,27 +632,7 @@ export function applyImplicitStyles(
       paddingRight: parentStyle.paddingRight ?? 12,
       borderWidth: parentStyle.borderWidth ?? 1,
     });
-    // CSS 정합성: .gridlist-item-label { font-size: var(--text-sm)=14 }
-    //             .gridlist-item-description { font-size: var(--text-xs)=12 }
-    filteredChildren = filteredChildren.map((child) => {
-      const cs = (child.props?.style as Record<string, unknown>) || {};
-      if (child.tag === "Text" && cs.fontSize == null) {
-        return {
-          ...child,
-          props: {
-            ...child.props,
-            style: { ...cs, fontSize: 14, fontWeight: cs.fontWeight ?? 600 },
-          },
-        };
-      }
-      if (child.tag === "Description" && cs.fontSize == null) {
-        return {
-          ...child,
-          props: { ...child.props, style: { ...cs, fontSize: 12 } },
-        };
-      }
-      return child;
-    });
+    filteredChildren = injectCollectionItemFontStyles(filteredChildren);
   }
 
   // ── ListBoxItem ───────────────────────────────────────────────
@@ -645,27 +648,7 @@ export function applyImplicitStyles(
       paddingLeft: parentStyle.paddingLeft ?? 12,
       paddingRight: parentStyle.paddingRight ?? 12,
     });
-    // CSS 정합성: [slot="label"] { font-size: var(--text-sm)=14, font-weight:600 }
-    //             [slot="description"] { font-size: var(--text-xs)=12 }
-    filteredChildren = filteredChildren.map((child) => {
-      const cs = (child.props?.style as Record<string, unknown>) || {};
-      if (child.tag === "Text" && cs.fontSize == null) {
-        return {
-          ...child,
-          props: {
-            ...child.props,
-            style: { ...cs, fontSize: 14, fontWeight: cs.fontWeight ?? 600 },
-          },
-        };
-      }
-      if (child.tag === "Description" && cs.fontSize == null) {
-        return {
-          ...child,
-          props: { ...child.props, style: { ...cs, fontSize: 12 } },
-        };
-      }
-      return child;
-    });
+    filteredChildren = injectCollectionItemFontStyles(filteredChildren);
   }
 
   // ── ToggleButtonGroup ─────────────────────────────────────────────

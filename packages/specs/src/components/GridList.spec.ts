@@ -304,12 +304,9 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
           }
           cellY = currentY;
         } else {
-          // stack: 세로 1열
+          // stack: 세로 1열 — currentY는 루프 말미에서 갱신
           cellX = 0;
-          cellY = idx === 0 ? 0 : currentY;
-          if (idx > 0) {
-            // 이전 아이템 높이 + gap
-          }
+          cellY = currentY;
         }
 
         // 카드 배경
