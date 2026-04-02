@@ -239,9 +239,8 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
             ...cs,
             fontSize: cs.fontSize ?? 14,
             fontWeight: cs.fontWeight ?? 600,
-            // CSS flex column stretch 동기화: 부모 폭을 따르도록 width 100%
-            // enrichWithIntrinsicSize가 fit-content width를 주입하는 것을 방지
             width: cs.width ?? "100%",
+            whiteSpace: cs.whiteSpace ?? "nowrap",
           },
         },
       };
@@ -255,6 +254,7 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
             ...cs,
             fontSize: cs.fontSize ?? 12,
             width: cs.width ?? "100%",
+            whiteSpace: cs.whiteSpace ?? "nowrap",
           },
         },
       };
