@@ -32,7 +32,7 @@ import {
   createsStackingContext,
 } from "../layout/engines/cssStackingContext";
 import { parsePadding, getContentBounds } from "./paddingUtils";
-import { drawBox, parseBorderConfig } from "../utils";
+import { drawBox, parseBorderConfig, type BorderConfig } from "../utils";
 import { useSkiaNode } from "../skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "../layoutContext";
 import { isFillV2Enabled } from "../../../../utils/featureFlags";
@@ -165,7 +165,10 @@ export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
           (typeof borderRadius === "number"
             ? borderRadius
             : (borderRadius?.[0] ?? 0)),
-        border: borderConfig ?? collectionItemBorder,
+        border: (borderConfig ?? collectionItemBorder) as
+          | BorderConfig
+          | null
+          | undefined,
       });
       // Selection highlight는 SelectionLayer에서 처리
     },

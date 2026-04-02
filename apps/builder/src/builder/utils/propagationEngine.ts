@@ -197,7 +197,7 @@ export function resolvePropagatedProps(
     }
 
     // 값 변환
-    let value = parentValue;
+    let value: unknown = parentValue;
     if (rule.transform) {
       try {
         value = rule.transform(value, parentProps);

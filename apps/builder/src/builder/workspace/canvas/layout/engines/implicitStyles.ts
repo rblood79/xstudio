@@ -828,7 +828,10 @@ export function applyImplicitStyles(
     });
 
     filteredChildren = applySideLabelChildStyles(filteredChildren, labelPos);
-    const flexDir = resolveLabelFlexDir(labelPos, parentStyle.flexDirection);
+    const flexDir = resolveLabelFlexDir(
+      labelPos,
+      parentStyle.flexDirection as string | undefined,
+    );
     effectiveParent = withParentStyle(
       containerEl,
       labelPos === "side"

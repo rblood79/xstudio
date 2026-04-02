@@ -7,9 +7,13 @@
  * 카메라 변환(translate + scale) 내부에서 씬-로컬 좌표로 호출된다.
  */
 
-import type { CanvasKit, Canvas, FontMgr } from 'canvaskit-wasm';
-import { SkiaDisposable } from './disposable';
-import type { WorkflowEdge, DataSourceEdge, LayoutGroup } from './workflowEdges';
+import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
+import { SkiaDisposable } from "./disposable";
+import type {
+  WorkflowEdge,
+  DataSourceEdge,
+  LayoutGroup,
+} from "./workflowEdges";
 
 // ============================================
 // Types
@@ -21,6 +25,8 @@ export interface PageFrame {
   y: number;
   width: number;
   height: number;
+  title?: string;
+  elementCount?: number;
 }
 
 /** 소스 요소의 씬-로컬 바운드 (elementRegistry 기반) */
@@ -67,14 +73,14 @@ export interface WorkflowHighlightState {
 // Constants
 // ============================================
 
-const EDGE_STROKE_WIDTH = 1;   // screen px
-const ARROW_SIZE = 8;          // screen px
+const EDGE_STROKE_WIDTH = 1; // screen px
+const ARROW_SIZE = 8; // screen px
 const DS_INDICATOR_RADIUS = 5; // screen px (data source indicator circle)
-const DS_LABEL_FONT_SIZE = 9;  // screen px
+const DS_LABEL_FONT_SIZE = 9; // screen px
 const LAYOUT_GROUP_PADDING = 20; // screen px
 const LAYOUT_STROKE_WIDTH = 1.5; // screen px
 const LAYOUT_LABEL_FONT_SIZE = 10; // screen px
-const ORTHO_BORDER_RADIUS = 8;     // screen px — smoothstep 꺾임 둥글기
+const ORTHO_BORDER_RADIUS = 8; // screen px — smoothstep 꺾임 둥글기
 
 /** blue-500 (#3b82f6) */
 const NAVIGATION_COLOR: [number, number, number] = [
@@ -212,7 +218,8 @@ export function computeOrthogonalTurnPoint(
     // ← 방향: 타겟 오른쪽 직후의 페이지 왼쪽 엣지 찾기
     let nextEdge = sourceFrame.x;
     for (const [, f] of pageFrameMap) {
-      if (f.x > targetFrame.x + targetFrame.width && f.x < nextEdge) nextEdge = f.x;
+      if (f.x > targetFrame.x + targetFrame.width && f.x < nextEdge)
+        nextEdge = f.x;
     }
     return (targetFrame.x + targetFrame.width + nextEdge) / 2;
   }
@@ -229,7 +236,8 @@ export function computeOrthogonalTurnPoint(
   // ↑ 방향: 타겟 아래쪽 직후의 페이지 상단 엣지 찾기
   let nextEdge = sourceFrame.y;
   for (const [, f] of pageFrameMap) {
-    if (f.y > targetFrame.y + targetFrame.height && f.y < nextEdge) nextEdge = f.y;
+    if (f.y > targetFrame.y + targetFrame.height && f.y < nextEdge)
+      nextEdge = f.y;
   }
   return (targetFrame.y + targetFrame.height + nextEdge) / 2;
 }
@@ -244,7 +252,11 @@ export function computeEdgeBezier(
   targetFrame: PageFrame,
   sourceElementBounds?: ElementBounds,
 ): EdgeBezierGeometry {
-  const endpoints = computeEndpoints(sourceFrame, targetFrame, sourceElementBounds);
+  const endpoints = computeEndpoints(
+    sourceFrame,
+    targetFrame,
+    sourceElementBounds,
+  );
   const controlPoints = computeControlPoints(endpoints);
   return {
     ...endpoints,
@@ -283,8 +295,10 @@ export function renderWorkflowEdges(
     const srcR = 3 / zoom;
 
     // 하이라이트 활성 여부 (hoveredEdgeId 또는 focusedPageId가 있으면 활성)
-    const isHighlightActive = highlightState != null &&
-      (highlightState.hoveredEdgeId != null || highlightState.focusedPageId != null);
+    const isHighlightActive =
+      highlightState != null &&
+      (highlightState.hoveredEdgeId != null ||
+        highlightState.focusedPageId != null);
 
     // 공유 Paint 객체 (엣지 루프 밖에서 1회 생성, 속성만 업데이트)
     const strokePaint = scope.track(new ck.Paint());
@@ -306,7 +320,9 @@ export function renderWorkflowEdges(
     srcStrokePaint.setStrokeWidth(1.2 / zoom);
 
     // 이벤트 엣지용 대시 PathEffect (zoom당 1회 생성)
-    const dashEffect = scope.track(ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]));
+    const dashEffect = scope.track(
+      ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]),
+    );
 
     for (const edge of edges) {
       const sourceFrame = pageFrameMap.get(edge.sourcePageId);
@@ -333,25 +349,36 @@ export function renderWorkflowEdges(
         }
       }
 
-      const isEvent = edge.type === 'event-navigation';
+      const isEvent = edge.type === "event-navigation";
       const color = isEvent ? EVENT_NAV_COLOR : NAVIGATION_COLOR;
 
       // 공유 Paint 속성 업데이트 (new 없이 재사용)
       strokePaint.setStrokeWidth(edgeStrokeWidth);
-      strokePaint.setColor(ck.Color4f(color[0], color[1], color[2], edgeOpacity));
+      strokePaint.setColor(
+        ck.Color4f(color[0], color[1], color[2], edgeOpacity),
+      );
       strokePaint.setPathEffect(isEvent ? dashEffect : null);
 
-      arrowPaint.setColor(ck.Color4f(color[0], color[1], color[2], edgeOpacity));
+      arrowPaint.setColor(
+        ck.Color4f(color[0], color[1], color[2], edgeOpacity),
+      );
 
-      srcStrokePaint.setColor(ck.Color4f(color[0], color[1], color[2], edgeOpacity));
+      srcStrokePaint.setColor(
+        ck.Color4f(color[0], color[1], color[2], edgeOpacity),
+      );
 
       // 소스 요소 바운드 조회 (요소 레벨 앵커링)
-      const sourceElBounds = edge.sourceElementId && elementBoundsMap
-        ? elementBoundsMap.get(edge.sourceElementId)
-        : undefined;
+      const sourceElBounds =
+        edge.sourceElementId && elementBoundsMap
+          ? elementBoundsMap.get(edge.sourceElementId)
+          : undefined;
 
       // 엔드포인트 계산 (소스 요소가 있으면 요소에서 출발)
-      const endpoints = computeEndpoints(sourceFrame, targetFrame, sourceElBounds);
+      const endpoints = computeEndpoints(
+        sourceFrame,
+        targetFrame,
+        sourceElBounds,
+      );
       const { sx, sy, ex, ey } = endpoints;
 
       // 경로 그리기
@@ -360,12 +387,28 @@ export function renderWorkflowEdges(
 
       if (straightEdges) {
         // 직각(orthogonal/smoothstep): 타겟 직전 페이지와의 갭 중앙에서 꺾어 진입
-        const pageDx = Math.abs(targetFrame.x + targetFrame.width / 2 - sourceFrame.x - sourceFrame.width / 2);
-        const pageDy = Math.abs(targetFrame.y + targetFrame.height / 2 - sourceFrame.y - sourceFrame.height / 2);
+        const pageDx = Math.abs(
+          targetFrame.x +
+            targetFrame.width / 2 -
+            sourceFrame.x -
+            sourceFrame.width / 2,
+        );
+        const pageDy = Math.abs(
+          targetFrame.y +
+            targetFrame.height / 2 -
+            sourceFrame.y -
+            sourceFrame.height / 2,
+        );
         const isHorizontal = pageDx >= pageDy;
         path.moveTo(sx, sy);
         if (isHorizontal) {
-          const turnX = computeOrthogonalTurnPoint(targetFrame, sourceFrame, pageFrameMap, true, ex > sx);
+          const turnX = computeOrthogonalTurnPoint(
+            targetFrame,
+            sourceFrame,
+            pageFrameMap,
+            true,
+            ex > sx,
+          );
           // smoothstep: 꺾임점에 둥근 모서리 (arcToTangent)
           const r = Math.min(
             ORTHO_BORDER_RADIUS / zoom,
@@ -373,31 +416,49 @@ export function renderWorkflowEdges(
             Math.abs(ey - sy) / 2,
           );
           const dirX = Math.sign(turnX - sx); // 수평 진행 방향
-          const dirY = Math.sign(ey - sy);     // 수직 진행 방향
+          const dirY = Math.sign(ey - sy); // 수직 진행 방향
           // 1st turn: 수평 → 수직
           path.lineTo(turnX - r * dirX, sy);
           path.arcToTangent(turnX, sy, turnX, sy + r * dirY, r);
           // 2nd turn: 수직 → 수평
           path.lineTo(turnX, ey - r * dirY);
-          path.arcToTangent(turnX, ey, turnX + r * Math.sign(ex - turnX), ey, r);
+          path.arcToTangent(
+            turnX,
+            ey,
+            turnX + r * Math.sign(ex - turnX),
+            ey,
+            r,
+          );
           path.lineTo(ex, ey);
           angle = Math.atan2(0, ex - turnX);
         } else {
-          const turnY = computeOrthogonalTurnPoint(targetFrame, sourceFrame, pageFrameMap, false, ey > sy);
+          const turnY = computeOrthogonalTurnPoint(
+            targetFrame,
+            sourceFrame,
+            pageFrameMap,
+            false,
+            ey > sy,
+          );
           // smoothstep: 꺾임점에 둥근 모서리 (arcToTangent)
           const r = Math.min(
             ORTHO_BORDER_RADIUS / zoom,
             Math.abs(turnY - sy) / 2,
             Math.abs(ex - sx) / 2,
           );
-          const dirX = Math.sign(ex - sx);     // 수평 진행 방향
-          const dirY = Math.sign(turnY - sy);   // 수직 진행 방향
+          const dirX = Math.sign(ex - sx); // 수평 진행 방향
+          const dirY = Math.sign(turnY - sy); // 수직 진행 방향
           // 1st turn: 수직 → 수평
           path.lineTo(sx, turnY - r * dirY);
           path.arcToTangent(sx, turnY, sx + r * dirX, turnY, r);
           // 2nd turn: 수평 → 수직
           path.lineTo(ex - r * dirX, turnY);
-          path.arcToTangent(ex, turnY, ex, turnY + r * Math.sign(ey - turnY), r);
+          path.arcToTangent(
+            ex,
+            turnY,
+            ex,
+            turnY + r * Math.sign(ey - turnY),
+            r,
+          );
           path.lineTo(ex, ey);
           angle = Math.atan2(ey - turnY, 0);
         }
@@ -439,23 +500,49 @@ export function renderWorkflowEdges(
 // ============================================
 
 /** green-500 (#22c55e) */
-const DS_COLOR_DATA_TABLE: [number, number, number] = [0x22 / 255, 0xc5 / 255, 0x5e / 255];
+const DS_COLOR_DATA_TABLE: [number, number, number] = [
+  0x22 / 255,
+  0xc5 / 255,
+  0x5e / 255,
+];
 /** amber-500 (#f59e0b) */
-const DS_COLOR_API: [number, number, number] = [0xf5 / 255, 0x9e / 255, 0x0b / 255];
+const DS_COLOR_API: [number, number, number] = [
+  0xf5 / 255,
+  0x9e / 255,
+  0x0b / 255,
+];
 /** emerald-500 (#10b981) */
-const DS_COLOR_SUPABASE: [number, number, number] = [0x10 / 255, 0xb9 / 255, 0x81 / 255];
+const DS_COLOR_SUPABASE: [number, number, number] = [
+  0x10 / 255,
+  0xb9 / 255,
+  0x81 / 255,
+];
 /** gray-400 (#9ca3af) */
-const DS_COLOR_MOCK: [number, number, number] = [0x9c / 255, 0xa3 / 255, 0xaf / 255];
+const DS_COLOR_MOCK: [number, number, number] = [
+  0x9c / 255,
+  0xa3 / 255,
+  0xaf / 255,
+];
 
 /** secondary-400 (#a78bfa) violet-400 */
-const LAYOUT_GROUP_COLOR: [number, number, number] = [0xa7 / 255, 0x8b / 255, 0xfa / 255];
+const LAYOUT_GROUP_COLOR: [number, number, number] = [
+  0xa7 / 255,
+  0x8b / 255,
+  0xfa / 255,
+];
 
-function getDataSourceColor(sourceType: DataSourceEdge['sourceType']): [number, number, number] {
+function getDataSourceColor(
+  sourceType: DataSourceEdge["sourceType"],
+): [number, number, number] {
   switch (sourceType) {
-    case 'dataTable': return DS_COLOR_DATA_TABLE;
-    case 'api': return DS_COLOR_API;
-    case 'supabase': return DS_COLOR_SUPABASE;
-    case 'mock': return DS_COLOR_MOCK;
+    case "dataTable":
+      return DS_COLOR_DATA_TABLE;
+    case "api":
+      return DS_COLOR_API;
+    case "supabase":
+      return DS_COLOR_SUPABASE;
+    case "mock":
+      return DS_COLOR_MOCK;
   }
 }
 
@@ -508,7 +595,7 @@ export function renderDataSourceEdges(
     // 폰트 (1회 생성)
     let font: InstanceType<typeof ck.Font> | null = null;
     if (fontMgr) {
-      const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+      const typeface = fontMgr.matchFamilyStyle("Pretendard", {
         weight: ck.FontWeight.Normal,
         width: ck.FontWidth.Normal,
         slant: ck.FontSlant.Upright,
@@ -532,8 +619,8 @@ export function renderDataSourceEdges(
       const pageFrame = pageFrameMap.get(firstBound.pageId);
       if (!pageFrame) continue;
 
-      const indicatorX = pageFrame.x + (20 / zoom) + dsIndex * (80 / zoom);
-      const indicatorY = pageFrame.y - (20 / zoom);
+      const indicatorX = pageFrame.x + 20 / zoom + dsIndex * (80 / zoom);
+      const indicatorY = pageFrame.y - 20 / zoom;
 
       // 원형 인디케이터 (filled)
       circlePaint.setColor(ck.Color4f(color[0], color[1], color[2], 1));
@@ -542,7 +629,7 @@ export function renderDataSourceEdges(
       // 라벨 텍스트
       if (font) {
         labelPaint.setColor(ck.Color4f(color[0], color[1], color[2], 1));
-        const labelX = indicatorX + radius + (4 / zoom);
+        const labelX = indicatorX + radius + 4 / zoom;
         const labelY = indicatorY + fontSize * 0.35;
         canvas.drawText(ds.name, labelX, labelY, labelPaint, font);
       }
@@ -608,9 +695,16 @@ export function renderLayoutGroups(
     strokePaint.setStyle(ck.PaintStyle.Stroke);
     strokePaint.setStrokeWidth(strokeWidth);
     strokePaint.setColor(
-      ck.Color4f(LAYOUT_GROUP_COLOR[0], LAYOUT_GROUP_COLOR[1], LAYOUT_GROUP_COLOR[2], 0.7),
+      ck.Color4f(
+        LAYOUT_GROUP_COLOR[0],
+        LAYOUT_GROUP_COLOR[1],
+        LAYOUT_GROUP_COLOR[2],
+        0.7,
+      ),
     );
-    const dashEffect = scope.track(ck.PathEffect.MakeDash([8 / zoom, 4 / zoom]));
+    const dashEffect = scope.track(
+      ck.PathEffect.MakeDash([8 / zoom, 4 / zoom]),
+    );
     strokePaint.setPathEffect(dashEffect);
 
     // 배경 Fill Paint
@@ -618,7 +712,12 @@ export function renderLayoutGroups(
     fillPaint.setAntiAlias(true);
     fillPaint.setStyle(ck.PaintStyle.Fill);
     fillPaint.setColor(
-      ck.Color4f(LAYOUT_GROUP_COLOR[0], LAYOUT_GROUP_COLOR[1], LAYOUT_GROUP_COLOR[2], 0.05),
+      ck.Color4f(
+        LAYOUT_GROUP_COLOR[0],
+        LAYOUT_GROUP_COLOR[1],
+        LAYOUT_GROUP_COLOR[2],
+        0.05,
+      ),
     );
 
     // 라벨 Paint
@@ -626,7 +725,12 @@ export function renderLayoutGroups(
     labelPaint.setAntiAlias(true);
     labelPaint.setStyle(ck.PaintStyle.Fill);
     labelPaint.setColor(
-      ck.Color4f(LAYOUT_GROUP_COLOR[0], LAYOUT_GROUP_COLOR[1], LAYOUT_GROUP_COLOR[2], 0.9),
+      ck.Color4f(
+        LAYOUT_GROUP_COLOR[0],
+        LAYOUT_GROUP_COLOR[1],
+        LAYOUT_GROUP_COLOR[2],
+        0.9,
+      ),
     );
 
     for (const group of layoutGroups) {
@@ -653,8 +757,8 @@ export function renderLayoutGroups(
       const rect = ck.XYWHRect(
         minX - padding,
         minY - padding,
-        (maxX - minX) + padding * 2,
-        (maxY - minY) + padding * 2,
+        maxX - minX + padding * 2,
+        maxY - minY + padding * 2,
       );
       const rrect = ck.RRectXY(rect, cornerRadius, cornerRadius);
 
@@ -664,7 +768,7 @@ export function renderLayoutGroups(
 
       // 레이아웃 이름 라벨 (좌상단)
       if (fontMgr) {
-        const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+        const typeface = fontMgr.matchFamilyStyle("Pretendard", {
           weight: ck.FontWeight.Normal,
           width: ck.FontWidth.Normal,
           slant: ck.FontSlant.Upright,
@@ -672,8 +776,8 @@ export function renderLayoutGroups(
         if (typeface) {
           const font = scope.track(new ck.Font(typeface, fontSize));
           font.setSubpixel(true);
-          const labelX = minX - padding + (6 / zoom);
-          const labelY = minY - padding - (6 / zoom);
+          const labelX = minX - padding + 6 / zoom;
+          const labelY = minY - padding - 6 / zoom;
           canvas.drawText(group.layoutName, labelX, labelY, labelPaint, font);
         }
       }

@@ -22,6 +22,7 @@ import {
   Suspense,
 } from "react";
 import { Application } from "@pixi/react";
+import type { Application as PixiApplication } from "pixi.js";
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
@@ -69,6 +70,7 @@ import {
   computeWorkflowEdges,
   computeDataSourceEdges,
   computeLayoutGroups,
+  type WorkflowElementInput,
 } from "./skia/workflowEdges";
 
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
@@ -233,10 +235,7 @@ export function BuilderCanvas({
   );
 
   const zoom = useViewportSyncStore((state) => state.zoom);
-  const panOffset = useViewportSyncStore(
-    (state) => state.panOffset,
-    (a, b) => a.x === b.x && a.y === b.y,
-  );
+  const panOffset = useViewportSyncStore((state) => state.panOffset);
 
   // 🆕 Multi-page: 페이지 타이틀 드래그
   const { startDrag: startPageDrag } = usePageDrag(zoom);
@@ -344,10 +343,15 @@ export function BuilderCanvas({
     return pages.filter((page) => visiblePageIds.has(page.id));
   }, [pages, visiblePageIds]);
   const workflowEdges = useMemo(() => {
-    return computeWorkflowEdges(pages, elements);
+    return computeWorkflowEdges(
+      pages,
+      elements as unknown as WorkflowElementInput[],
+    );
   }, [pages, elements]);
   const dataSourceEdges = useMemo(() => {
-    return computeDataSourceEdges(elements);
+    return computeDataSourceEdges(
+      elements as unknown as WorkflowElementInput[],
+    );
   }, [elements]);
   const layoutGroups = useMemo(() => {
     return computeLayoutGroups(pages, layouts);

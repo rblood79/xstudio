@@ -104,5 +104,5 @@ export const canvasDebug = {
 
 // 개발 콘솔에서 접근 가능하도록 전역 등록
 if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
-  (window as Record<string, unknown>).__canvasDebug = canvasDebug;
+  (window as unknown as Record<string, unknown>).__canvasDebug = canvasDebug;
 }

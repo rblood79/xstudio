@@ -24,6 +24,7 @@ import type {
   SharedSceneDerivedData,
 } from "./types";
 import type { ElementBounds } from "./workflowRenderer";
+import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import {
   getSharedLayoutMap,
   getSharedLayoutVersion,
@@ -228,7 +229,7 @@ function buildViaCommandStream(
   const stream = getCachedCommandStream(
     rootElementIds,
     commandChildrenMap,
-    sharedLayoutMap,
+    sharedLayoutMap as Map<string, ComputedLayout>,
     bodyPagePositions,
     registryVersion,
     pagePosVersion,
@@ -326,7 +327,10 @@ function buildViaTree(
   if (hasAIEffects) {
     const aiBuildStart =
       process.env.NODE_ENV === "development" ? performance.now() : 0;
-    nodeBoundsMap = buildNodeBoundsMap(tree, aiState);
+    nodeBoundsMap = buildNodeBoundsMap(
+      tree,
+      aiState as unknown as Parameters<typeof buildNodeBoundsMap>[1],
+    );
     if (process.env.NODE_ENV === "development") {
       recordWasmMetric("aiBoundsBuildTime", performance.now() - aiBuildStart);
     }

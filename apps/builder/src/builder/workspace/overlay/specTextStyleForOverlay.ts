@@ -7,7 +7,7 @@
  * @see specTextStyle.ts (레이아웃 측정용 — fontSize/fontWeight/fontFamily만)
  */
 
-import type { ComponentSpec, TextShape, BoxShape } from "@xstudio/specs";
+import type { ComponentSpec, TextShape, Shape } from "@xstudio/specs";
 import {
   ButtonSpec,
   BadgeSpec,
@@ -71,7 +71,7 @@ export function extractFullSpecTextStyle(
 
   // BoxShape에서 컨테이너 크기 추출 (padding 계산용)
   const boxShape = shapes.find(
-    (s): s is BoxShape & { type: "box" } => s.type === "box",
+    (s): s is Shape & { type: "rect" } => s.type === "rect",
   );
 
   // fontWeight 정규화

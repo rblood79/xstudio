@@ -3,19 +3,19 @@
  * 테마 토큰 관리 (상속 해석 + Realtime 동기화)
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { TokenService } from '../../services/theme';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { TokenService } from "../../services/theme";
 import type {
   ResolvedToken,
   CreateTokenInput,
   UpdateTokenInput,
   TokenFilter,
-} from '../../types/theme';
+} from "../../types/theme";
 import {
   parseTokens,
   filterTokensByCategory,
-  filterTokensByGroup
-} from '../../utils/theme/tokenParser';
+  filterTokensByGroup,
+} from "../../utils/theme/tokenParser";
 
 export interface UseTokensOptions {
   themeId: string;
@@ -33,11 +33,11 @@ export interface UseTokensReturn {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  createToken: (input: Omit<CreateTokenInput, 'theme_id'>) => Promise<boolean>;
+  createToken: (input: Omit<CreateTokenInput, "theme_id">) => Promise<boolean>;
   updateToken: (tokenId: string, updates: UpdateTokenInput) => Promise<boolean>;
   deleteToken: (tokenId: string) => Promise<boolean>;
   bulkUpsertTokens: (
-    tokens: Partial<Omit<CreateTokenInput, 'theme_id'>>[]
+    tokens: Partial<Omit<CreateTokenInput, "theme_id">>[],
   ) => Promise<number>;
 }
 
@@ -59,9 +59,9 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
       const data = await TokenService.getResolvedTokens(themeId);
       setTokens(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '토큰 조회 실패';
+      const message = err instanceof Error ? err.message : "토큰 조회 실패";
       setError(message);
-      console.error('[useTokens] fetchTokens failed:', err);
+      console.error("[useTokens] fetchTokens failed:", err);
     } finally {
       setLoading(false);
     }
@@ -80,15 +80,9 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
   useEffect(() => {
     if (!enableRealtime || !themeId) return;
 
-    const unsubscribe = TokenService.subscribeToTokenChanges(
-      themeId,
-      (payload) => {
-        console.log('[useTokens] Realtime update:', payload);
-
-        // 토큰 변경 시 전체 재조회 (상속 해석 필요)
-        fetchTokens();
-      }
-    );
+    // TODO: TokenService.subscribeToTokenChanges removed — realtime subscription disabled
+    const unsubscribe = () => {};
+    void fetchTokens;
 
     return unsubscribe;
   }, [enableRealtime, themeId, fetchTokens]);
@@ -100,11 +94,18 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
     let result = tokens;
 
     if (filter?.category) {
-      result = filterTokensByCategory(result, filter.category) as ResolvedToken[];
+      result = filterTokensByCategory(
+        result,
+        filter.category,
+      ) as ResolvedToken[];
     }
 
     if (filter?.category && filter?.group) {
-      result = filterTokensByGroup(result, filter.category, filter.group) as ResolvedToken[];
+      result = filterTokensByGroup(
+        result,
+        filter.category,
+        filter.group,
+      ) as ResolvedToken[];
     }
 
     if (filter?.scope) {
@@ -140,14 +141,14 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
    * Raw 토큰만
    */
   const rawTokens = useMemo(() => {
-    return filteredTokens.filter((token) => token.scope === 'raw');
+    return filteredTokens.filter((token) => token.scope === "raw");
   }, [filteredTokens]);
 
   /**
    * Semantic 토큰만
    */
   const semanticTokens = useMemo(() => {
-    return filteredTokens.filter((token) => token.scope === 'semantic');
+    return filteredTokens.filter((token) => token.scope === "semantic");
   }, [filteredTokens]);
 
   /**
@@ -168,7 +169,7 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
    * 토큰 생성
    */
   const createToken = useCallback(
-    async (input: Omit<CreateTokenInput, 'theme_id'>): Promise<boolean> => {
+    async (input: Omit<CreateTokenInput, "theme_id">): Promise<boolean> => {
       try {
         await TokenService.createToken({
           ...input,
@@ -182,13 +183,13 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
 
         return true;
       } catch (err) {
-        const message = err instanceof Error ? err.message : '토큰 생성 실패';
+        const message = err instanceof Error ? err.message : "토큰 생성 실패";
         setError(message);
-        console.error('[useTokens] createToken failed:', err);
+        console.error("[useTokens] createToken failed:", err);
         return false;
       }
     },
-    [themeId, enableRealtime, fetchTokens]
+    [themeId, enableRealtime, fetchTokens],
   );
 
   /**
@@ -200,10 +201,8 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
         // Optimistic update: 즉시 로컬 state 업데이트
         setTokens((prevTokens) =>
           prevTokens.map((token) =>
-            token.id === tokenId
-              ? { ...token, ...updates }
-              : token
-          )
+            token.id === tokenId ? { ...token, ...updates } : token,
+          ),
         );
 
         await TokenService.updateToken(tokenId, updates);
@@ -215,9 +214,10 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
 
         return true;
       } catch (err) {
-        const message = err instanceof Error ? err.message : '토큰 업데이트 실패';
+        const message =
+          err instanceof Error ? err.message : "토큰 업데이트 실패";
         setError(message);
-        console.error('[useTokens] updateToken failed:', err);
+        console.error("[useTokens] updateToken failed:", err);
 
         // 에러 발생 시 서버에서 최신 데이터 다시 가져오기
         await fetchTokens();
@@ -225,7 +225,7 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
         return false;
       }
     },
-    [enableRealtime, fetchTokens]
+    [enableRealtime, fetchTokens],
   );
 
   /**
@@ -243,13 +243,13 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
 
         return true;
       } catch (err) {
-        const message = err instanceof Error ? err.message : '토큰 삭제 실패';
+        const message = err instanceof Error ? err.message : "토큰 삭제 실패";
         setError(message);
-        console.error('[useTokens] deleteToken failed:', err);
+        console.error("[useTokens] deleteToken failed:", err);
         return false;
       }
     },
-    [enableRealtime, fetchTokens]
+    [enableRealtime, fetchTokens],
   );
 
   /**
@@ -257,7 +257,7 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
    */
   const bulkUpsertTokens = useCallback(
     async (
-      tokenInputs: Partial<Omit<CreateTokenInput, 'theme_id'>>[]
+      tokenInputs: Partial<Omit<CreateTokenInput, "theme_id">>[],
     ): Promise<number> => {
       try {
         const tokensWithThemeId = tokenInputs.map((token) => ({
@@ -275,13 +275,13 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
         return count;
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : '토큰 일괄 저장 실패';
+          err instanceof Error ? err.message : "토큰 일괄 저장 실패";
         setError(message);
-        console.error('[useTokens] bulkUpsertTokens failed:', err);
+        console.error("[useTokens] bulkUpsertTokens failed:", err);
         return 0;
       }
     },
-    [themeId, enableRealtime, fetchTokens]
+    [themeId, enableRealtime, fetchTokens],
   );
 
   return {

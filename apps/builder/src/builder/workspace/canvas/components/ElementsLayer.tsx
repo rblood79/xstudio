@@ -231,7 +231,7 @@ export const ElementsLayer = memo(function ElementsLayer({
       updateElementCount(fullTreeLayoutMap.size);
     }
 
-    publishLayoutMap(fullTreeLayoutMap, bodyElement.page_id);
+    publishLayoutMap(fullTreeLayoutMap, bodyElement.page_id ?? undefined);
   }, [fullTreeLayoutMap, bodyElement]);
 
   const renderedTree = useMemo(() => {

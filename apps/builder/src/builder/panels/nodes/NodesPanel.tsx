@@ -180,7 +180,7 @@ const LayoutsTabContent = memo(function LayoutsTabContent({
       selectedElementId={selectedElementId}
       setSelectedElement={setSelectedElement}
       sendElementSelectedMessage={sendElementSelectedMessage}
-      requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
+      requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate!}
       projectId={projectId}
     />
   );

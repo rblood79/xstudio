@@ -27,6 +27,7 @@ export type {
   NumberField,
   IconField,
   CustomField,
+  ChildrenManagerField,
   DerivedUpdateFn,
   CustomFieldComponentProps,
   PropagationRule,
