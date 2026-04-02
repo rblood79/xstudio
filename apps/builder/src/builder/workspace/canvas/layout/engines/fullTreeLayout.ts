@@ -308,6 +308,7 @@ function patchBatchStyleFromImplicit(
     // 배열 속성 (gridTemplateColumns, gridTemplateRows 등)
     if (Array.isArray(val)) {
       batchStyle[key] = val;
+      continue;
     }
   }
 }
@@ -1743,18 +1744,31 @@ export function calculateFullTreeLayout(
           unknown
         >;
         const rawH = childStyle.height;
-        if (rawH && rawH !== "auto" && rawH !== "fit-content") continue;
+        if (
+          rawH !== undefined &&
+          rawH !== null &&
+          rawH !== "auto" &&
+          rawH !== "fit-content"
+        )
+          continue;
 
         const handle = persistentTree.getHandle(node.elementId);
         if (handle === undefined) continue;
         const layout = firstPassLayouts.get(handle);
         if (!layout) continue;
 
-        // enrichment 시 사용된 width 추정: style.width가 숫자이면 그 값, 아니면 availableWidth
-        const enrichedWidth =
-          typeof childStyle.width === "number"
-            ? childStyle.width
-            : availableWidth;
+        // enrichment 시 사용된 width 추정
+        const rawW = childStyle.width;
+        let enrichedWidth: number;
+        if (typeof rawW === "number") {
+          enrichedWidth = rawW;
+        } else if (typeof rawW === "string" && rawW.endsWith("px")) {
+          enrichedWidth = parseFloat(rawW) || availableWidth;
+        } else if (typeof rawW === "string" && rawW.endsWith("%")) {
+          enrichedWidth = (availableWidth * (parseFloat(rawW) || 100)) / 100;
+        } else {
+          enrichedWidth = availableWidth;
+        }
 
         if (Math.abs(layout.width - enrichedWidth) > WIDTH_TOLERANCE) {
           childUpdates.push({
@@ -1775,10 +1789,36 @@ export function calculateFullTreeLayout(
             string,
             unknown
           >;
-          const childComputed = resolveStyle(childStyle, {});
+          // 컨테이너(자식이 있는 요소)는 height 제거 — Taffy auto height 계산
           const childChildren = getChildElements(node.elementId);
+          const filteredChildIds = filteredChildIdsMap.get(node.elementId);
+          const isContainer =
+            childChildren.length > 0 ||
+            (filteredChildIds != null && filteredChildIds.length > 0);
+          if (isContainer) {
+            if (node.style.height) {
+              delete node.style.height;
+              persistentTree.updateNodeStyle(node.elementId, node.style);
+            }
+            continue;
+          }
+
+          // implicitStyles가 주입한 width를 element에 반영하여 re-enrich
+          const batchWidth = node.style.width;
+          const mergedStyle =
+            batchWidth && !childStyle.width
+              ? { ...childStyle, width: batchWidth }
+              : childStyle;
+          const mergedEl =
+            mergedStyle !== childStyle
+              ? ({
+                  ...childEl,
+                  props: { ...childEl.props, style: mergedStyle },
+                } as Element)
+              : childEl;
+          const childComputed = resolveStyle(mergedStyle, {});
           const reEnriched = enrichWithIntrinsicSize(
-            childEl,
+            mergedEl,
             actualWidth,
             availableHeight,
             childComputed,

@@ -226,23 +226,37 @@ function withParentStyle(el: Element, style: Record<string, unknown>): Element {
   };
 }
 
-/** GridListItem/ListBoxItem 자식 Text/Description에 CSS 정합성 fontSize/fontWeight 주입 */
+/** GridListItem/ListBoxItem 자식 Text/Description에 CSS 정합성 fontSize/fontWeight/width 주입 */
 function injectCollectionItemFontStyles(children: Element[]): Element[] {
   return children.map((child) => {
     const cs = (child.props?.style as Record<string, unknown>) || {};
-    if (child.tag === "Text" && cs.fontSize == null) {
+    if (child.tag === "Text") {
       return {
         ...child,
         props: {
           ...child.props,
-          style: { ...cs, fontSize: 14, fontWeight: cs.fontWeight ?? 600 },
+          style: {
+            ...cs,
+            fontSize: cs.fontSize ?? 14,
+            fontWeight: cs.fontWeight ?? 600,
+            // CSS flex column stretch 동기화: 부모 폭을 따르도록 width 100%
+            // enrichWithIntrinsicSize가 fit-content width를 주입하는 것을 방지
+            width: cs.width ?? "100%",
+          },
         },
       };
     }
-    if (child.tag === "Description" && cs.fontSize == null) {
+    if (child.tag === "Description") {
       return {
         ...child,
-        props: { ...child.props, style: { ...cs, fontSize: 12 } },
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            fontSize: cs.fontSize ?? 12,
+            width: cs.width ?? "100%",
+          },
+        },
       };
     }
     return child;
