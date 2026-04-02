@@ -166,7 +166,7 @@ function loadLayoutFromStorage():
         result.activeLeftPanels = DEFAULT_PANEL_LAYOUT.activeLeftPanels;
         result.activeRightPanels = DEFAULT_PANEL_LAYOUT.activeRightPanels;
         // 리셋된 값을 저장
-        saveLayoutToStorage(result);
+        debouncedSaveLayoutToStorage(result);
       }
 
       return result;

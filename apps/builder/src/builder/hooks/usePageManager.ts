@@ -428,7 +428,7 @@ export const usePageManager = ({
           "slug:",
           newPage.slug,
         );
-        return { success: true, data: apiPage };
+        return { success: true, data: newPage };
       } catch (error) {
         console.error("페이지 생성 에러 (with params):", error);
         return { success: false, error: error as Error };

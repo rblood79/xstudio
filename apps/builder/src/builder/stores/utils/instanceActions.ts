@@ -23,7 +23,11 @@ import { resolveInstanceProps } from "../../../utils/component/instanceResolver"
  */
 export function createInstance(
   get: () => ElementsState,
-  set: (partial: Partial<ElementsState>) => void,
+  set: (
+    partial:
+      | Partial<ElementsState>
+      | ((state: ElementsState) => Partial<ElementsState>),
+  ) => void,
   masterId: string,
   parentId: string,
   pageId: string,
@@ -75,7 +79,11 @@ export function createInstance(
  */
 export function detachInstance(
   get: () => ElementsState,
-  set: (partial: Partial<ElementsState>) => void,
+  set: (
+    partial:
+      | Partial<ElementsState>
+      | ((state: ElementsState) => Partial<ElementsState>),
+  ) => void,
   instanceId: string,
 ): { previousState: Element } | null {
   const state = get();

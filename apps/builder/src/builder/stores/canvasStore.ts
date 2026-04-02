@@ -17,7 +17,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStore } from ".";
-import type { Element } from "../../types";
+import type { Element } from "../../types/core/store.types";
 
 const EMPTY_ELEMENTS: Element[] = [];
 

@@ -8,18 +8,25 @@
  */
 
 // Border-box 유틸리티
-export * from './borderUtils';
-export * from './graphicsUtils';
+export * from "./borderUtils";
+export * from "./graphicsUtils";
 
 // CSS 변수 읽기
-export * from './cssVariableReader';
+export * from "./cssVariableReader";
 
 // GPU 프로파일링
-export * from './gpuProfilerCore';
+export * from "./gpuProfilerCore";
 
 // Phase 0: @pixi/ui 순수 로직 추출
-export * from './colorMath';
-export * from './boxCalculation';
+// mixWithBlack/mixWithWhite는 cssVariableCore에서 export — 중복 제외
+export {
+  extractRGB,
+  composeRGB,
+  adjustColor,
+  lerpColor,
+  deriveHoverPressedColors,
+} from "./colorMath";
+export * from "./boxCalculation";
 export {
   type TextMeasurer,
   type TextMeasureResult,
@@ -27,4 +34,4 @@ export {
   Canvas2DTextMeasurer,
   getTextMeasurer,
   setTextMeasurer,
-} from './textMeasure';
+} from "./textMeasure";

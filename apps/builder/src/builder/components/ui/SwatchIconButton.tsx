@@ -24,7 +24,7 @@ export function SwatchIconButton({
         className ? `swatch-icon-button ${className}` : "swatch-icon-button"
       }
     >
-      <span className="swatch-icon-inner">{children}</span>
+      <span className="swatch-icon-inner">{children as React.ReactNode}</span>
     </RACButton>
   );
 }

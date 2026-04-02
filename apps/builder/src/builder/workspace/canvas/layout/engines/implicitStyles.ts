@@ -386,11 +386,13 @@ export function applyImplicitStyles(
       return child;
     });
 
-    const tgLabelPos = containerProps?.labelPosition as string | undefined;
+    const tgLabelPos = containerProps?.labelPosition as unknown as
+      | string
+      | undefined;
     const tgDefaultDir = hasTagList ? "column" : "row";
     const tgFlexDir = resolveLabelFlexDir(
       tgLabelPos,
-      parentStyle.flexDirection,
+      parentStyle.flexDirection as string | undefined,
       tgDefaultDir,
     );
     effectiveParent = withParentStyle(containerEl, {
@@ -706,8 +708,13 @@ export function applyImplicitStyles(
         return child;
       });
 
-    const labelPos = containerProps?.labelPosition as string | undefined;
-    const flexDir = resolveLabelFlexDir(labelPos, parentStyle.flexDirection);
+    const labelPos = containerProps?.labelPosition as unknown as
+      | string
+      | undefined;
+    const flexDir = resolveLabelFlexDir(
+      labelPos,
+      parentStyle.flexDirection as string | undefined,
+    );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
