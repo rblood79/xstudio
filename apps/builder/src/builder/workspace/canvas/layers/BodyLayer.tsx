@@ -154,18 +154,22 @@ export const BodyLayer = memo(function BodyLayer({
         fillColor,
         ...(gradientFill ? { fill: gradientFill } : {}),
         borderRadius,
-        strokeColor: borderConfig
-          ? (() => {
-              const sc = borderConfig.color ?? 0x000000;
-              return Float32Array.of(
-                ((sc >> 16) & 0xff) / 255,
-                ((sc >> 8) & 0xff) / 255,
-                (sc & 0xff) / 255,
-                borderConfig.alpha ?? 1,
-              );
-            })()
-          : undefined,
-        strokeWidth: borderConfig?.width,
+        strokeColor: (() => {
+          if (borderConfig) {
+            const sc = borderConfig.color ?? 0x000000;
+            return Float32Array.of(
+              ((sc >> 16) & 0xff) / 255,
+              ((sc >> 8) & 0xff) / 255,
+              (sc & 0xff) / 255,
+              borderConfig.alpha ?? 1,
+            );
+          }
+          // 기본 장식 border: CSS --border 동기화 (page 영역 구분)
+          return skiaTheme === "dark"
+            ? Float32Array.of(0.25, 0.25, 0.28, 1) // zinc-700 ≈ #3f3f46
+            : Float32Array.of(0.83, 0.83, 0.83, 1); // gray-300 ≈ #d4d4d4
+        })(),
+        strokeWidth: borderConfig?.width ?? 1,
       },
     };
   }, [
