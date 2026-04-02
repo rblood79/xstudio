@@ -1780,6 +1780,8 @@ export function calculateFullTreeLayout(
       }
 
       if (needsSecondPass) {
+        const parentsToMarkDirty = new Set<string>();
+
         for (const { nodeIndex, actualWidth } of childUpdates) {
           const node = batch[nodeIndex];
           const childEl = elementsMap.get(node.elementId);
@@ -1836,10 +1838,49 @@ export function calculateFullTreeLayout(
             unknown
           >;
           patchBatchStyleFromImplicit(node.style, origStyle, reStyle);
-          persistentTree.updateNodeStyle(node.elementId, node.style);
+          const styleChanged = persistentTree.updateNodeStyle(
+            node.elementId,
+            node.style,
+          );
+
+          // 자식 height 변경 시 부모 dirty 수집
+          if (styleChanged && childEl.parent_id) {
+            parentsToMarkDirty.add(childEl.parent_id);
+          }
+        }
+
+        // 부모 + 조부모 명시적 dirty 마킹
+        // grid 내 flex 컨테이너(GridListItem) 등에서 dirty propagation 보장
+        for (const parentId of parentsToMarkDirty) {
+          persistentTree.markDirty(parentId);
+          const parentEl = elementsMap.get(parentId);
+          if (parentEl?.parent_id) {
+            persistentTree.markDirty(parentEl.parent_id);
+          }
         }
 
         persistentTree.computeLayout(availableWidth, availableHeight);
+
+        // Fallback: dirty 마킹 후에도 부모 height 미갱신 시 full rebuild
+        if (parentsToMarkDirty.size > 0) {
+          let rebuildNeeded = false;
+          const verifyLayouts = persistentTree.getLayoutsBatch();
+          for (const parentId of parentsToMarkDirty) {
+            const ph = persistentTree.getHandle(parentId);
+            if (ph === undefined) continue;
+            const cur = verifyLayouts.get(ph);
+            const prev = firstPassLayouts.get(ph);
+            if (cur && prev && Math.abs(cur.height - prev.height) < 0.5) {
+              rebuildNeeded = true;
+              break;
+            }
+          }
+          if (rebuildNeeded) {
+            persistentTree.reset();
+            persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
+            persistentTree.computeLayout(availableWidth, availableHeight);
+          }
+        }
       }
     }
 

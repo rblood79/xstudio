@@ -225,6 +225,18 @@ export class PersistentTaffyTree {
   }
 
   /**
+   * 노드와 조상을 명시적으로 dirty 마킹.
+   * 자식 height 변경 시 부모 auto height 재계산을 강제한다.
+   */
+  markDirty(elementId: string): boolean {
+    const handle = this.handleMap.get(elementId);
+    if (handle === undefined) return false;
+    this.taffy.markDirty(handle);
+    this._lastJsonMap.delete(elementId);
+    return true;
+  }
+
+  /**
    * 노드의 마지막 스타일 JSON 문자열 반환 (display 전환 감지용).
    */
   getLastJson(elementId: string): string | undefined {
