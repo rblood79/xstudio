@@ -72,6 +72,17 @@
 - **implicitStyles.ts 컬렉션 자식 font 주입 블록 완전 복제**: `gridlistitem`(L614)과 `listboxitem`(L650) 블록의 Text/Description font 주입 map 로직 동일 — `injectCollectionItemFontStyles(children)` 순수 함수로 추출 공유 필요
 - **factory Text/Description style 리터럴 N회 반복**: `SelectionComponents.ts`에서 `{ fontSize: 14, fontWeight: 600 }`, `{ fontSize: 12 }` 리터럴이 아이템 개수만큼 인라인 복제 — `COLLECTION_ITEM_LABEL_STYLE` / `COLLECTION_ITEM_DESC_STYLE` 모듈 상수로 추출 필요
 - **`_containerWidth` 주입 태그 인라인 열거 18개**: `ElementSprite.tsx` L2030~2050의 `||` 체인 — `CONTAINER_WIDTH_TAGS = new Set([...])` 모듈 상수로 추출 후 `.has(tag)` 단일 조건으로 교체 필요. 태그 추가 시 체인 수정 실수 방지
+- **Step 4.5 `enrichedWidth` 추정 부정확**: `fullTreeLayout.ts`의 2-pass height 교정에서 `style.width`가 `number` 타입인 경우만 처리하고 `"200px"`, `"50%"` 등 문자열을 `availableWidth`로 퉁침 — px/% 문자열도 파싱하거나 `reEnriched.props?.style?.width` 역산 방식으로 교체 필요
+- **Step 4.5 auto height 조건에서 `rawH === 0` / `rawH === ""` falsy 처리**: `if (rawH && ...)` 조건이 숫자 0이나 빈 문자열을 undefined처럼 취급 — `if (rawH !== undefined && rawH !== null && ...)` 명시적 조건으로 교체 필요
+- **`pageLayoutSignature` useMemo에 `layoutVersion` deps 누락**: `ElementsLayer.tsx`의 `pageLayoutSignature`가 `elementById` Map 참조를 deps로 사용하나, Map 내부 값 변경이 참조 변경 없이 발생 가능 — `layoutVersion`을 deps에 추가 필요
+- **`PropertyNumberInput` memo 비교에 `onChange` 참조 비교 추가 — useCallback 미보장 시 memo 무력화**: 부모가 인라인 핸들러를 전달하면 항상 새 참조로 memo가 깨짐 — 인터페이스에 useCallback 의무 주석 추가 또는 memo 비교에서 `onChange` 제거 후 내부 ref로 캡처
+- **`patchBatchStyleFromImplicit` 배열 분기 `continue` 누락**: `fullTreeLayout.ts`의 배열 속성(`gridTemplateColumns` 등) 처리 분기에 `continue`가 없어 다른 분기와 비일관성 — 마지막 분기라 현재 동작 문제없으나 키 추가 시 silent bug 위험. 배열 분기 뒤 `continue;` 추가 필요 (3cd27aa9 수정 완료)
+- **grid track 폭 계산에서 `elementStyle.gap` 직접 파싱**: `fullTreeLayout.ts` grid 트랙 폭 계산(~L1028)에서 `parseFloat(String(gap))` 인라인 파싱 — 이미 import된 `parseCSSPropWithContext`로 교체하면 `"8px"`, `"50%"`, `rowGap`/`columnGap` 분리 케이스까지 처리 가능. 현재 `"Npx"` 형태 gap은 우연히 동작
+- **2-pass enrichedWidth px/% 인라인 파싱**: `fullTreeLayout.ts` L1781-1788의 `rawW.endsWith("px")` / `rawW.endsWith("%")` 분기 — `parseCSSPropWithContext(rawW, { containerWidth: availableWidth })`로 교체 가능. 기존 패턴(MEMORY "Step 4.5 enrichedWidth 추정 부정확")과 동일 위치
+- **`markDirty` 내 `_lastJsonMap.delete()` — WASM 불필요 재호출**: `persistentTaffyTree.ts:235`의 markDirty에서 `_lastJsonMap.delete(elementId)` 호출 시 다음 `updateNodeStyle()`에서 항상 `updateStyleRaw()` 강제 실행 — 스타일 변경 없이 dirty 비트만 필요한 경우 불필요한 WASM 비용 발생. `_lastJsonMap.delete()` 제거 후 Taffy `markDirty()`만 호출하는 방향으로 검증 필요
+- **`childAvail` 직접 mutation (grid 트랙 폭)**: `fullTreeLayout.ts:1034`에서 `childAvail.width = trackWidth` 직접 write — 비균등 트랙(`["1fr","2fr"]`) 오산 + 객체 공유 시 side-effect 위험. 복사본(`{ ...childAvail, width: trackWidth }`) 사용 필수
+- **Step 4.5 `getLayoutsBatch()` 조건 없이 선호출**: L1751에서 `needsSecondPass` false 경로에서도 먼저 호출, Step 5에서 재호출 → 2-pass 실행 시 총 3회. 조건 블록 내부로 이동하여 1회로 통합 필요 (fullTreeLayout.ts:1751/1885)
+- **`injectCollectionItemFontStyles` childrenMap stale props 위험**: `implicitStyles.ts`의 `injectCollectionItemFontStyles`에서 `child.props?.style` 직접 참조 — child가 childrenMap 경유 시 stale. zustand-childrenmap-staleness 반복 패턴
 
 ## False Positive 기록
 

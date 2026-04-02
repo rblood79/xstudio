@@ -1021,6 +1021,7 @@ function traversePostOrder(
   // Grid 컨테이너: 자식 availableWidth를 트랙 폭으로 조정
   // CSS에서 1fr 트랙은 컨테이너 폭을 균등 분배하므로, DFS에서 미리 계산하여
   // enrichWithIntrinsicSize가 올바른 width 기준으로 height를 계산하도록 한다.
+  let gridChildWidth = childAvail.width;
   if (effectiveDisplay === "grid" || effectiveDisplay === "inline-grid") {
     const gridCols = elementStyle.gridTemplateColumns as string[] | undefined;
     if (gridCols && gridCols.length > 0) {
@@ -1030,8 +1031,7 @@ function traversePostOrder(
           ? elementStyle.gap
           : parseFloat(String(elementStyle.gap ?? "0")) || 0;
       const totalGap = gapVal * (numCols - 1);
-      const trackWidth = Math.max(0, (childAvail.width - totalGap) / numCols);
-      childAvail.width = trackWidth;
+      gridChildWidth = Math.max(0, (childAvail.width - totalGap) / numCols);
     }
   }
 
@@ -1040,7 +1040,7 @@ function traversePostOrder(
       childId,
       elementsMap,
       childrenMap,
-      childAvail.width,
+      gridChildWidth,
       childAvail.height,
       getChildElements,
       computedStyle,

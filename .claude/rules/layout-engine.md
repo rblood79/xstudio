@@ -95,17 +95,14 @@ globs:
 - `affectedNodeIds` 필터를 걸 때 `undefined` 조건 누락 금지 — 캐시 미스 시 `affectedNodeIds`가 `undefined`로 전달될 수 있음
 - 위반 시: display 전환(flex↔grid↔block) 또는 columns 변경이 새로고침 전까지 캔버스에 반영 안 됨
 
-## 2-Pass 레이아웃 — width 제약 → height 재계산 (범용)
+## Grid 트랙 폭 사전 계산 + 2-Pass 안전망
 
-CSS 브라우저는 폭 결정 → 텍스트 줄바꿈 → auto height를 한 번에 처리하지만, Taffy는 enrichment(1-pass)에서 부모 전체 폭 기준으로 height 계산 → 실제 할당 폭과 불일치.
+CSS 브라우저는 폭 결정 → 텍스트 줄바꿈 → auto height를 한 번에 처리하지만, Taffy는 enrichment에서 `availableWidth` 기준으로 height 계산.
 
-- **fullTreeLayout Step 4.5**: `computeLayout` 후 **모든 노드**의 실제 width vs enrichment width 비교
-  - auto height 노드만 대상 (고정 height 스킵)
-  - width 차이 > 2px → `enrichWithIntrinsicSize` 재실행 → `computeLayout` 재호출
-  - 부모는 Taffy가 자식 height 합산으로 auto height 자동 갱신
-- **적용 범위**: grid 1fr 트랙, flex-grow/shrink, flex row wrap, 사용자 지정 width 제약 등 모든 케이스
+- **DFS 트랙 폭 사전 계산**: `estimateChildAvailableSize` 후 grid 컨테이너이면 `childAvail.width = (contentWidth - totalGap) / numCols`로 조정. 1차 enrichment에서 올바른 height 계산 보장
+- **fullTreeLayout Step 4.5 (안전망)**: `computeLayout` 후 모든 노드의 실제 width vs enrichment width 비교 → 차이 시 re-enrich + dirty 마킹 + computeLayout 재호출
+- **2-pass와 full rebuild 충돌 금지**: 2-pass에서 batch style 수정 후 `buildFull(batch)` 호출 금지 — 불일치 발생. `updateNodeStyle` + `markDirty` + `computeLayout`만 사용
 - `patchBatchStyleFromImplicit`에서 `Array.isArray(val)` 조건 필수 — gridTemplateColumns 배열 패치
-- 기존 `TaffyFlexEngine.layoutChildren` 2-pass (라인 269-348)와 동일 원리이나, fullTreeLayout은 PersistentTaffyTree 기반이므로 별도 구현
 
 ## Layout Prop 변경 → Canvas 즉시 반영 파이프라인
 

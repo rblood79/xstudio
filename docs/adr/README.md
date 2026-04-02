@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-02 (ADR-043 Implemented Phase 0~6, ADR-049 Accepted Phase A~D 완료, ADR-045/046/048 완료 섹션 이동)
+> **최종 업데이트**: 2026-04-02 (코드 검증 기반 전면 갱신 — ADR-041 Spec 97개/Generic 71개, ADR-042 27개 컴포넌트 구현, ADR-048 CSS/Preview 미구현 발견, ADR-043/049 완료 확인)
 
 ## 현황 요약
 
@@ -17,54 +17,54 @@
 
 ### 완료
 
-| ADR                                                            | 제목                                     |    상태     | 완료일     | 비고                                                                                                  |
-| -------------------------------------------------------------- | ---------------------------------------- | :---------: | ---------- | ----------------------------------------------------------------------------------------------------- |
-| [001](completed/001-state-management.md)                       | Zustand State Management                 |  Accepted   | 2024-01    | 기반 아키텍처                                                                                         |
-| [002](completed/002-styling-approach.md)                       | ITCSS + tailwind-variants                |  Accepted   | 2024-01    | 기반 아키텍처                                                                                         |
-| [003](completed/003-canvas-rendering.md)                       | PixiJS Canvas Rendering                  | Superseded  | 2026-02-05 | CanvasKit/Skia 메인 렌더러 전환 완료, PixiJS 이벤트 전용                                              |
-| [004](completed/004-preview-isolation.md)                      | iframe Preview Isolation                 |  Accepted   | 2024-01    | 기반 아키텍처                                                                                         |
-| [005](completed/005-css-text-wrapping.md)                      | CSS Text Wrapping                        | Implemented | 2026-03-03 | Phase 1~3 전체 완료                                                                                   |
-| [006](completed/006-child-composition-remaining.md)            | Child Composition Pattern                | Implemented | 2026-02-24 | 49/62 spec 완료, Table/Tree 2개 보류, Phase 5 Known Issues 잔존                                       |
-| [007](completed/007-project-export.md)                         | Project Export/Import                    | Implemented | 2026-01-02 | 100% 완성                                                                                             |
-| [008](completed/008-layout-engine.md)                          | 캔버스 레이아웃 엔진 전환 (전략 D)       | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                                                                        |
-| [014](completed/014-fonts.md)                                  | Fonts 실행 계획                          | Implemented | 2026-03-05 | Phase A+B+C+C2+D+E 전체 완료 (FontRegistryV2 + 멀티파일 Export)                                       |
-| [017](completed/017-css-override-ssot.md)                      | React-Aria CSS Override SSOT             | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입                                                  |
-| [018](completed/018-component-css-restructure.md)              | 컴포넌트 CSS 구조 재작성                 |  Complete   | 2026-03-07 | Phase 1~3 완료 (utilities.css + button-base + inset -249줄), Phase 4 스킵                             |
-| [022](completed/022-s2-color-token-migration.md)               | React Spectrum S2 색상 토큰 전환         |  Accepted   | 2026-03-05 | Phase 1~5 완료, M3→S2 토큰 rename + CSS↔Skia 불일치 해소                                              |
-| [023](completed/023-s2-component-variant-props.md)             | 컴포넌트 Variant Props S2 전환           |  Accepted   | 2026-03-05 | Phase 1+2+3 완료, Badge 19 variants, ToggleButton S2, Button premium/genai                            |
-| [025](completed/025-s2-named-color-palette.md)                 | S2 Named Color Palette 확장              |  Accepted   | 2026-03-08 | Phase 1~3 완료 (12색x2=24토큰, tokenResolver, Badge 19 variants), Phase 4 잔여                        |
-| [028](completed/028-builder-css-scope-isolation.md)            | Builder CSS 스코프 격리                  | Implemented | 2026-03-07 | Phase 0+1 완료 (`[data-context="builder"]` 전환 + 변수 30→21 축소)                                    |
-| [024](completed/024-s2-css-variable-migration.md)              | CSS 변수명 S2 체계 전환                  | Superseded  | 2026-03-09 | ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료                          |
-| [029](completed/029-builder-css-dead-code-cleanup.md)          | Builder CSS Dead Code 정리               |  Complete   | 2026-03-07 | Phase 1-3 완료 (유령변수 138건 치환 + dead code 24건 + 모놀리식 CSS 분리)                             |
-| [021](completed/021-theme-system-redesign.md)                  | 테마 시스템 개편 — Tint + Tailwind       |  Accepted   | 2026-03-09 | Phase A+B+C+D+E 전체 완료 (Radix accent 오버라이드 포함)                                              |
-| [030](completed/030-s2-spectrum-only-components.md)            | S2 전용 컴포넌트 마이그레이션            | Implemented | 2026-03-09 | Phase 0~4 전체 완료 (22개 컴포넌트 + 23 Property Editor + metadata 통합)                              |
-| [031](completed/031-card-s2-migration.md)                      | Card S2 마이그레이션                     | Implemented | 2026-03-09 | Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)                                    |
-| [033](completed/033-css-property-ssot-consolidation.md)        | CSS 속성 SSOT 통합 — 구조 변수화         | Implemented | 2026-03-11 | Phase 0~3 완료 (M3 잔여 제거 + Input/Button/Label/FieldError 변수화)                                  |
-| [037](completed/037-workspace-scene-runtime-rearchitecture.md) | Workspace Scene Runtime 재구성           | Implemented | 2026-03-13 | Phase 0~6 완료 (SceneSnapshot, SelectionModel, invalidation packet, store split)                      |
-| [035](completed/035-workspace-canvas-refactor.md)              | Workspace Canvas Runtime 리팩토링        | Implemented | 2026-03-13 | Phase 0~8 완료 (baseline 수집, invalidation/panel runtime test gate, WASM 분리)                       |
-| [039](completed/039-page-scoped-rendering.md)                  | Multi-page Canvas Page-Scoped Rendering  | Implemented | 2026-03-13 | Phase 0~6 완료 (document/page snapshot 분리, visible page Pixi/Skia 렌더링, page-scoped invalidation) |
-| [040](completed/040-visible-page-delta-runtime.md)             | Visible Page + Delta Runtime 전환        | Implemented | 2026-03-14 | Phase 0~6 완료 (snapshot recovery 분리, atomic activation, delta-first store/preview 계약)            |
-| [036](completed/036-spec-first-single-source.md)               | Spec-First Single Source — CSS 자동 생성 | Implemented | 2026-03-16 | Phase 1~4 완료 (CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환)                   |
-| [047](047-s2-popover-overlay-alignment.md)                     | S2 Popover/Overlay CSS 정합성 정렬       | Implemented | 2026-03-26 | Layer 1+2 완료 — DatePicker/DateRangePicker 버그 수정 + Popover/Tooltip 계열 S2 패턴 정렬 (7개 CSS)   |
-| [045](045-s2-property-editor-alignment.md)                     | S2 Property Editor 프로퍼티 정합성 정렬  | Implemented | 2026-03-29 | ADR-046에 통합 완료                                                                                   |
-| [046](046-s2-contract-expansion-form-colorfield-tabs.md)       | S2 계약 확장 — Form, ColorField, Tabs    | Implemented | 2026-03-29 | Form/ColorField/Tabs + Tooltip/Popover/Breadcrumbs/Menu overlay props E2E 완료                        |
-| [048](048-declarative-props-propagation.md)                    | S2 선언적 Props Propagation              | Implemented | 2026-03-29 | Phase 0~5 전체 완료. 4경로 통합 + 20개 Spec + ~290줄→60줄 + Factory 하드코딩 제거                     |
-| [043](043-selection-drag-alignment.md)                         | Selection Drag Alignment                 | Implemented | 2026-03-30 | Phase 0~6 완료 (drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel)  |
-| [049](049-canvas-drag-drop-pencil-parity.md)                   | Canvas Drag & Drop Pencil 패턴 정합성    |  Accepted   | 2026-04-01 | Phase A~D 완료 (deferred commit, spring 보간, drop indicator 개선, cross-container reparenting)       |
+| ADR                                                            | 제목                                     |    상태     | 완료일     | 비고                                                                                                               |
+| -------------------------------------------------------------- | ---------------------------------------- | :---------: | ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| [001](completed/001-state-management.md)                       | Zustand State Management                 |  Accepted   | 2024-01    | 기반 아키텍처                                                                                                      |
+| [002](completed/002-styling-approach.md)                       | ITCSS + tailwind-variants                |  Accepted   | 2024-01    | 기반 아키텍처                                                                                                      |
+| [003](completed/003-canvas-rendering.md)                       | PixiJS Canvas Rendering                  | Superseded  | 2026-02-05 | CanvasKit/Skia 메인 렌더러 전환 완료, PixiJS 이벤트 전용                                                           |
+| [004](completed/004-preview-isolation.md)                      | iframe Preview Isolation                 |  Accepted   | 2024-01    | 기반 아키텍처                                                                                                      |
+| [005](completed/005-css-text-wrapping.md)                      | CSS Text Wrapping                        | Implemented | 2026-03-03 | Phase 1~3 전체 완료                                                                                                |
+| [006](completed/006-child-composition-remaining.md)            | Child Composition Pattern                | Implemented | 2026-02-24 | 49/62 spec 완료, Table/Tree 2개 보류, Phase 5 Known Issues 잔존                                                    |
+| [007](completed/007-project-export.md)                         | Project Export/Import                    | Implemented | 2026-01-02 | 100% 완성                                                                                                          |
+| [008](completed/008-layout-engine.md)                          | 캔버스 레이아웃 엔진 전환 (전략 D)       | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                                                                                     |
+| [014](completed/014-fonts.md)                                  | Fonts 실행 계획                          | Implemented | 2026-03-05 | Phase A+B+C+C2+D+E 전체 완료 (FontRegistryV2 + 멀티파일 Export)                                                    |
+| [017](completed/017-css-override-ssot.md)                      | React-Aria CSS Override SSOT             | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입                                                               |
+| [018](completed/018-component-css-restructure.md)              | 컴포넌트 CSS 구조 재작성                 |  Complete   | 2026-03-07 | Phase 1~3 완료 (utilities.css + button-base + inset -249줄), Phase 4 스킵                                          |
+| [022](completed/022-s2-color-token-migration.md)               | React Spectrum S2 색상 토큰 전환         |  Accepted   | 2026-03-05 | Phase 1~5 완료, M3→S2 토큰 rename + CSS↔Skia 불일치 해소                                                           |
+| [023](completed/023-s2-component-variant-props.md)             | 컴포넌트 Variant Props S2 전환           |  Accepted   | 2026-03-05 | Phase 1+2+3 완료, Badge 19 variants, ToggleButton S2, Button premium/genai                                         |
+| [025](completed/025-s2-named-color-palette.md)                 | S2 Named Color Palette 확장              |  Accepted   | 2026-03-08 | Phase 1~3 완료 (12색x2=24토큰, tokenResolver, Badge 19 variants), Phase 4 잔여                                     |
+| [028](completed/028-builder-css-scope-isolation.md)            | Builder CSS 스코프 격리                  | Implemented | 2026-03-07 | Phase 0+1 완료 (`[data-context="builder"]` 전환 + 변수 30→21 축소)                                                 |
+| [024](completed/024-s2-css-variable-migration.md)              | CSS 변수명 S2 체계 전환                  | Superseded  | 2026-03-09 | ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료                                       |
+| [029](completed/029-builder-css-dead-code-cleanup.md)          | Builder CSS Dead Code 정리               |  Complete   | 2026-03-07 | Phase 1-3 완료 (유령변수 138건 치환 + dead code 24건 + 모놀리식 CSS 분리)                                          |
+| [021](completed/021-theme-system-redesign.md)                  | 테마 시스템 개편 — Tint + Tailwind       |  Accepted   | 2026-03-09 | Phase A+B+C+D+E 전체 완료 (Radix accent 오버라이드 포함)                                                           |
+| [030](completed/030-s2-spectrum-only-components.md)            | S2 전용 컴포넌트 마이그레이션            | Implemented | 2026-03-09 | Phase 0~4 전체 완료 (22개 컴포넌트 + 23 Property Editor + metadata 통합)                                           |
+| [031](completed/031-card-s2-migration.md)                      | Card S2 마이그레이션                     | Implemented | 2026-03-09 | Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)                                                 |
+| [033](completed/033-css-property-ssot-consolidation.md)        | CSS 속성 SSOT 통합 — 구조 변수화         | Implemented | 2026-03-11 | Phase 0~3 완료 (M3 잔여 제거 + Input/Button/Label/FieldError 변수화)                                               |
+| [037](completed/037-workspace-scene-runtime-rearchitecture.md) | Workspace Scene Runtime 재구성           | Implemented | 2026-03-13 | Phase 0~6 완료 (SceneSnapshot, SelectionModel, invalidation packet, store split)                                   |
+| [035](completed/035-workspace-canvas-refactor.md)              | Workspace Canvas Runtime 리팩토링        | Implemented | 2026-03-13 | Phase 0~8 완료 (baseline 수집, invalidation/panel runtime test gate, WASM 분리)                                    |
+| [039](completed/039-page-scoped-rendering.md)                  | Multi-page Canvas Page-Scoped Rendering  | Implemented | 2026-03-13 | Phase 0~6 완료 (document/page snapshot 분리, visible page Pixi/Skia 렌더링, page-scoped invalidation)              |
+| [040](completed/040-visible-page-delta-runtime.md)             | Visible Page + Delta Runtime 전환        | Implemented | 2026-03-14 | Phase 0~6 완료 (snapshot recovery 분리, atomic activation, delta-first store/preview 계약)                         |
+| [036](completed/036-spec-first-single-source.md)               | Spec-First Single Source — CSS 자동 생성 | Implemented | 2026-03-16 | Phase 1~4 완료 (CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환)                                |
+| [047](047-s2-popover-overlay-alignment.md)                     | S2 Popover/Overlay CSS 정합성 정렬       | Implemented | 2026-03-26 | Layer 1+2 완료 — DatePicker/DateRangePicker 버그 수정 + Popover/Tooltip 계열 S2 패턴 정렬 (7개 CSS)                |
+| [045](045-s2-property-editor-alignment.md)                     | S2 Property Editor 프로퍼티 정합성 정렬  | Implemented | 2026-03-29 | ADR-046에 통합 완료                                                                                                |
+| [046](046-s2-contract-expansion-form-colorfield-tabs.md)       | S2 계약 확장 — Form, ColorField, Tabs    | Implemented | 2026-03-29 | Form/ColorField/Tabs + Tooltip/Popover/Breadcrumbs/Menu overlay props E2E 완료                                     |
+| [048](048-declarative-props-propagation.md)                    | S2 선언적 Props Propagation              | Implemented | 2026-03-29 | Phase 0~5 완료. 26개 Spec 등록. WebGL+Skia+Factory 3경로 통합 (CSS/Preview 경로 미구현, labelPosition 전파 미구현) |
+| [043](043-selection-drag-alignment.md)                         | Selection Drag Alignment                 | Implemented | 2026-03-30 | Phase 0~6 완료 (drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel)               |
+| [049](049-canvas-drag-drop-pencil-parity.md)                   | Canvas Drag & Drop Pencil 패턴 정합성    |  Accepted   | 2026-04-01 | Phase A~D 완료 (deferred commit, spring 보간, drop indicator 개선, cross-container reparenting)                    |
 
 ### 부분 완료
 
-| ADR                                               | 제목                                            | 완료 범위                                                                                                                                                                                  | 미완료 범위                                                                                                                            | 우선순위 |
-| ------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | :------: |
-| [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout                  | Foundation + Phase 0~4 구현 완료 (Phase 2 TypedArray, Phase 3 Flat Render List, Phase 4 R-tree) + Layout Worker(layoutWorker.ts)                                                           | Phase 2 SharedArrayBuffer + Phase 5 OffscreenCanvas Worker 미구현 (layoutWorker는 레이아웃 전용, OffscreenCanvas 렌더링 Worker와 별도) |    P4    |
-| [010](010-events-panel.md)                        | Events Panel Smart Recommendations              | EventsPanel 기본 UI 완성 (Block WHEN→IF→THEN/ELSE) + P0/P1 완료 (추천 이벤트/액션 chips, 호환성 배지, 누락 경고, 18개 템플릿)                                                              | P1.5 (UX 폴리싱) + P2 (AI 이벤트 생성) 미구현                                                                                          |    P5    |
-| [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)           | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                                                                                        | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
-| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                                                                                 | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
-| [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                                                                                    | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
-| [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                                                                                     | Phase E (추가 라이브러리)                                                                                                              |    P4    |
-| [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                                                                                        | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
-| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~4 전체 완료. S2 섹션 재분류(Content/Appearance/State/Locale). Spec 등록 62개, Generic 31개, Hybrid 8개, Custom 14개. 에디터 34개 삭제. PropertySizeToggle non-indicator 모드 전환. | 잔여 Hybrid 8개(ListBox/GridList filtering, Tabs/Slider 구조적 등), Custom 14개                                                        |  **P2**  |
-| [042](042-spec-dimension-injection.md)            | Spec Container Dimension Injection              | Phase 1 (Tag) 완료                                                                                                                                                                         | Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                                                    |    P3    |
+| ADR                                               | 제목                                            | 완료 범위                                                                                                                                                                                         | 미완료 범위                                                                                                                            | 우선순위 |
+| ------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | :------: |
+| [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout                  | Foundation + Phase 0~4 구현 완료 (Phase 2 TypedArray, Phase 3 Flat Render List, Phase 4 R-tree) + Layout Worker(layoutWorker.ts)                                                                  | Phase 2 SharedArrayBuffer + Phase 5 OffscreenCanvas Worker 미구현 (layoutWorker는 레이아웃 전용, OffscreenCanvas 렌더링 Worker와 별도) |    P4    |
+| [010](010-events-panel.md)                        | Events Panel Smart Recommendations              | EventsPanel 기본 UI 완성 (Block WHEN→IF→THEN/ELSE) + P0/P1 완료 (추천 이벤트/액션 chips, 호환성 배지, 누락 경고, 18개 템플릿)                                                                     | P1.5 (UX 폴리싱) + P2 (AI 이벤트 생성) 미구현                                                                                          |    P5    |
+| [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)           | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                                                                                               | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
+| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                                                                                        | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
+| [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                                                                                           | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
+| [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                                                                                            | Phase E (추가 라이브러리)                                                                                                              |    P4    |
+| [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                                                                                               | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
+| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~4 전체 완료. S2 섹션 재분류(Content/Appearance/State/Locale). **Spec 97개, Generic 71개, Hybrid 2개, Custom 25개**. 에디터 34개 삭제. PropertySizeToggle non-indicator 모드 전환.         | 잔여 Hybrid 2개(Tabs/Slider), Custom 25개 중 자동화 가능 에디터 검토                                                                   |  **P2**  |
+| [042](042-spec-dimension-injection.md)            | Spec Container Dimension Injection              | **Phase 1~3 완료 (27개 컴포넌트** — TextField, NumberField, SearchField, Select, ComboBox, ProgressBar, Meter, Slider, Tabs, Breadcrumbs, GridList, ListBox, Tag 등 **dimension injection 구현)** | 텍스트 폭 추정 fallback 잔존 컴포넌트 정리                                                                                             |    P3    |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 
@@ -107,23 +107,24 @@
 
 ## 다음 진행 목표 (2026-04-02 기준)
 
-| 순서 | 대상    | 내용                                                                                                                                             | 규모 |   상태   |
-| :--: | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | :--: | :------: |
-|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 전체 완료 (62개 Spec 등록, Generic 31개, Hybrid 8개, Custom 14개, 34개 에디터 삭제, S2 섹션 재분류 완료) |  -   | **완료** |
-|  -   | ADR-048 | S2 Context 선언적 Props Propagation — **Phase 0~5 전체 완료**                                                                                    |  대  | **완료** |
-|  -   | ADR-045 | S2 Property Editor 정합성 — ADR-046에 통합 완료 (2026-03-29)                                                                                     |  중  | **완료** |
-|  -   | ADR-046 | S2 계약 확장 — Form/ColorField/Tabs + overlay props E2E 완료 (2026-03-29)                                                                        |  소  | **완료** |
-|  -   | ADR-043 | Selection Drag Alignment — Phase 0~6 전체 완료 (2026-03-30)                                                                                      |  중  | **완료** |
-|  -   | ADR-049 | Canvas Drag & Drop Pencil 패턴 — Phase A~D 완료 (deferred commit, spring, reparenting) (2026-04-01)                                              |  중  | **완료** |
-|  1   | ADR-042 | Spec Container Dimension Injection — Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                         |  중  |          |
-|  2   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                                                           |  대  |          |
-|  3   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                                                      |  대  |          |
-|  4   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                                                 |  중  |          |
-|  5   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                                                    |  대  |          |
+| 순서 | 대상    | 내용                                                                                                               | 규모 |   상태   |
+| :--: | ------- | ------------------------------------------------------------------------------------------------------------------ | :--: | :------: |
+|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 완료 (**Spec 97개, Generic 71, Hybrid 2, Custom 25**, S2 섹션 재분류 완료) |  -   | **완료** |
+|  -   | ADR-048 | S2 선언적 Props Propagation — Phase 0~5 완료 (26개 Spec, WebGL+Skia+Factory 3경로. CSS/Preview 미구현)             |  대  | **완료** |
+|  -   | ADR-045 | S2 Property Editor 정합성 — ADR-046에 통합 완료 (2026-03-29)                                                       |  중  | **완료** |
+|  -   | ADR-046 | S2 계약 확장 — Form/ColorField/Tabs + overlay props E2E 완료 (2026-03-29)                                          |  소  | **완료** |
+|  -   | ADR-043 | Selection Drag Alignment — Phase 0~6 전체 완료 (2026-03-30)                                                        |  중  | **완료** |
+|  -   | ADR-049 | Canvas Drag & Drop Pencil 패턴 — Phase A~D 완료 (deferred commit, spring, reparenting) (2026-04-01)                |  중  | **완료** |
+|  1   | ADR-048 | Props Propagation 잔여 — CSS/Preview 경로 통합 + labelPosition 전파 규칙 추가                                      |  중  |          |
+|  2   | ADR-042 | Spec Container Dimension Injection — 27개 구현 완료, 잔존 fallback 컴포넌트 정리                                   |  소  |          |
+|  3   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                             |  대  |          |
+|  4   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                        |  대  |          |
+|  5   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                   |  중  |          |
+|  6   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                      |  대  |          |
 
 > 완료된 이전 목표는 변경 이력 참조
 >
-> **2026-04-02 우선순위 재산정**: Property Editor 체인(ADR-041→048→045→046) 전체 완료. Drag & Drop 체인(ADR-043→049) 전체 완료. ADR-042(Dimension Injection)를 다음 우선순위로 상향 — 렌더링 정합성 직결. ADR-038(Figma Import)은 대규모이나 사용자 가치 높음.
+> **2026-04-02 우선순위 재산정 (코드 검증 기반)**: Property Editor 체인 전체 완료 (Spec 97개로 확대). Drag & Drop 체인 전체 완료. ADR-048 CSS/Preview 경로 미구현 발견 → 잔여 작업 1순위. ADR-042는 27개 컴포넌트 구현 확인 → 잔존 fallback 정리만 필요 (규모 축소). ADR-038(Figma Import)은 대규모이나 사용자 가치 높음.
 
 ---
 
@@ -144,30 +145,36 @@
 - ~~**ADR-039**: Multi-page Canvas Page-Scoped Rendering~~ — 2026-03-13 Phase 0~6 완료. visible page 중심 Pixi/Skia 렌더링, document/page snapshot 분리, page-scoped invalidation 반영
 - ~~**ADR-040**: Visible Page + Delta Runtime~~ — 2026-03-14 Phase 0~6 완료. snapshot recovery 분리, atomic activation, delta-first store/preview 계약 정착
 
-### P2: Property Editor 체인 (ADR-041 → ADR-048 → ADR-045) + 계약 확장
+### P2: Property Editor 체인 (ADR-041 → ADR-048 → ADR-045 → ADR-046) — 전체 완료
 
-**핵심 의존 체인** (순서 필수):
+**핵심 의존 체인** (전체 완료):
 
 ```
-ADR-041 (Spec-Driven Property Editor, ✅ 완료 — 85.5% 자동화 (Generic 31 + Hybrid 8 = 39/62, Custom 14개 제외 시 100% 커버리지))
-  → ADR-048 (선언적 Props Propagation, ✅ 완료)
-    → ADR-045 (Property Editor 정합성 정렬) ← 다음 우선순위
-ADR-046 (S2 계약 확장, 독립)
+ADR-041 (Spec-Driven Property Editor, ✅ 완료 — Spec 97개, Generic 71 + Hybrid 2 = 73/97 자동화)
+  → ADR-048 (선언적 Props Propagation, ✅ 완료 — 26개 Spec, WebGL+Skia+Factory 3경로)
+    → ADR-045 (Property Editor 정합성 정렬, ✅ ADR-046에 통합)
+ADR-046 (S2 계약 확장, ✅ 완료)
 ```
 
-- ~~**ADR-041**~~: Phase 0~4 전체 완료. 62개 Spec 등록, 31 Generic + 8 Hybrid, 34개 에디터 삭제. S2 섹션 재분류(Content/Appearance/State/Locale). PropertySizeToggle non-indicator 모드 전환. `string-array`/`children-manager`/`PropertyNumberInput` 필드 타입 추가
-- ~~**ADR-048**~~: Phase 0~5 전체 완료. PropagationSpec 엔진 + Registry + 4경로 통합. 22개 컴포넌트 전파 규칙
-- **ADR-045**: ADR-041/048 기반 위에서 에디터 정합성 정렬 (INCOMPLETE 에디터 + 공통 패턴) — **다음 착수 대상**
-- **ADR-046**: S2 계약 확장 (Form, ColorField, Tabs) — Spec 완성도 향상, 독립 실행 가능
+- ~~**ADR-041**~~: Phase 0~4 전체 완료. **97개 Spec 등록, 71 Generic + 2 Hybrid, 25 Custom**. S2 섹션 재분류(Content/Appearance/State/Locale). PropertySizeToggle non-indicator 모드 전환
+- ~~**ADR-048**~~: Phase 0~5 완료. PropagationSpec 엔진 + Registry. 26개 컴포넌트 전파 규칙. **잔여: CSS/Preview 경로 미구현, labelPosition 전파 미구현**
+- ~~**ADR-045**~~: ADR-046에 통합 완료 (2026-03-29)
+- ~~**ADR-046**~~: Form/ColorField/Tabs + overlay props E2E 완료 (2026-03-29)
 
-### P3: ADR-042 + ADR-043 + ADR-038 → ADR-032 → ADR-034 → ADR-013
+### P2: Drag & Drop 체인 (ADR-043 → ADR-049) — 전체 완료
+
+- ~~**ADR-043**~~: Phase 0~6 전체 완료 (2026-03-30). drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel
+- ~~**ADR-049**~~: Phase A~D 완료 (2026-04-01). deferred commit, spring 보간(0.15 lerp), cross-container reparenting, getSceneBounds 좌표계 통일
+
+### P3: ADR-048 잔여 + ADR-042 + ADR-038 → ADR-032 → ADR-034 → ADR-013
 
 - ~~**ADR-036**: Spec-First Single Source~~ — 2026-03-16 완료
 - ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded
-- ~~기반 안정화~~ — 2026-03-26 완료 (Button/Badge/ToggleButton height, 인라인 style CSS override 해소, Toolbar 등)
-- **ADR-042**: Spec Container Dimension Injection Phase 2~4 — 긴급하지 않으나 렌더링 정합성 향상
-- **ADR-043**: Selection Drag Alignment — UX 개선이지만 기능 차단 아님
-- **ADR-038**: Figma 디자인 임포트 — 대규모, Property Editor 체인 완료 후 착수
+- ~~**ADR-043**: Selection Drag Alignment~~ — 2026-03-30 완료
+- ~~기반 안정화~~ — 2026-03-26 완료
+- **ADR-048 잔여**: CSS/Preview 경로 propagation 통합 + labelPosition 전파 규칙 — 렌더링 정합성 직결
+- **ADR-042**: Spec Container Dimension Injection — 27개 구현 완료, 잔존 fallback 정리 (규모 축소)
+- **ADR-038**: Figma 디자인 임포트 — 대규모, 모든 인프라 체인 완료 후 착수 가능
 
 **Events 의존 체인** (순서 필수):
 

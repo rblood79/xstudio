@@ -29,6 +29,9 @@
   /* ========== Layout: Grid (격자) ========== */
   .react-aria-GridList[data-layout="grid"] {
     grid-template-columns: repeat(var(--gl-columns, 2), 1fr);
+    .react-aria-GridListItem {
+      justify-content: flex-start;
+    }
   }
 
   /* ========== GridListItem Styles (카드형) ========== */

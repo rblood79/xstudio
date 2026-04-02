@@ -18,7 +18,7 @@
   border: none;
 
   /* Default size */
-  height: 16px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
@@ -38,21 +38,21 @@
 }
 
 .react-aria-Description[data-size="sm"] {
-  height: 14px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-Description[data-size="md"] {
-  height: 16px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-Description[data-size="lg"] {
-  height: 20px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
