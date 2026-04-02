@@ -268,11 +268,22 @@ DatePicker/DateRangePicker 내부의 Calendar/RangeCalendar은 Preview에서 Pop
 Spec shapes가 레이아웃 엔진(Taffy) 결과(containerWidth/Height)를 필요로 할 때:
 
 - **`_containerWidth`/`_containerHeight` props 주입** — ElementSprite에서 `finalWidth`/`finalHeight`를 specProps에 전달
+- **`CONTAINER_DIMENSION_TAGS` Set** (모듈 상수) — 주입 대상 태그 O(1) 조회. 새 Spec 추가 시 이 Set에 등록 필수
+- **2-pass height 교정**: 모든 컨테이너에서 자식 width 제약 → 텍스트 줄바꿈 → height 재계산이 자동 동작 (fullTreeLayout Step 4.5)
 - **우측 역산 배치**: `containerWidth - border - paddingRight - pad - iconSize/2` (텍스트 폭 추정 금지)
 - **정확한 세로 중앙**: `containerHeight / 2` (`size.height / 2` 사용 금지 — border 미포함)
 - **파이프라인 타이밍 수정 금지**: `publishLayoutMap` 동기화, `notifyLayoutChange()` 강제 호출 등 해킹 금지
 - **부모 delegation prop 변경 시**: `updateSelectedPropertiesWithChildren`으로 부모+자식 atomic batch update
 - 상세: `.claude/skills/xstudio-patterns/rules/spec-container-dimension-injection.md`
+
+## Collection Item 자식 Font 주입 (ListBoxItem/GridListItem)
+
+TextSprite는 store의 원본 `element.props.style`을 직접 읽으므로, implicitStyles(Taffy 전용) 주입만으로는 렌더링에 반영되지 않음.
+
+- **ElementSprite `collectionItemFontStyle` selector**: 부모가 ListBoxItem/GridListItem이면 Text→"14:600", Description→"12:400" 반환
+- **`effectiveElementForText` useMemo**: `inlineAlertFontStyle` 또는 `collectionItemFontStyle`로 style override
+- 기존 InlineAlert 패턴(`inlineAlertFontStyle`)과 동일 구조
+- 새 collection 컴포넌트 추가 시 selector 조건에 부모 태그 추가
 
 ## Pointer → Move 대상 ID 규칙 (CRITICAL)
 

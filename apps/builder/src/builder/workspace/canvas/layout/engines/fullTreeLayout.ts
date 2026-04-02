@@ -1716,60 +1716,57 @@ export function calculateFullTreeLayout(
     // ── Step 4: 레이아웃 계산 ─────────────────────────────────────────
     persistentTree.computeLayout(availableWidth, availableHeight);
 
-    // ── Step 4.5: Grid 자식 2-pass (텍스트 줄바꿈 height 교정) ────────
-    // Grid 1fr 트랙 내에서 자식 width가 enrichment 시 사용한 width와 다르면
-    // 실제 width로 re-enrich하여 텍스트 줄바꿈 height를 재계산한다.
-    // TaffyFlexEngine.layoutChildren 2-pass 패턴과 동일 원리.
+    // ── Step 4.5: 2-pass height 교정 (width 변동 → 텍스트 줄바꿈 → height 재계산)
+    // 1차 pass의 enrichment는 부모 availableWidth 기준이지만,
+    // 실제 Taffy 할당 width는 grid 1fr, flex-grow/shrink, 부모 제약 등으로 달라질 수 있다.
+    // 자식의 실제 width가 enrichment width와 다르면 → 실제 width로 re-enrich → 재계산.
+    // 부모는 Taffy가 자식 height 합산으로 auto height를 자동 갱신한다.
     {
       const WIDTH_TOLERANCE = 2;
-      let needsGridSecondPass = false;
-      const gridChildUpdates: Array<{
+      let needsSecondPass = false;
+      const childUpdates: Array<{
         nodeIndex: number;
         actualWidth: number;
       }> = [];
 
       const firstPassLayouts = persistentTree.getLayoutsBatch();
+
+      // 모든 노드를 순회하며 실제 width vs enrichment width 비교
       for (let i = 0; i < batch.length; i++) {
         const node = batch[i];
-        if (node.style.display !== "grid") continue;
+        const childEl = elementsMap.get(node.elementId);
+        if (!childEl) continue;
 
-        // grid 컨테이너의 자식 찾기
-        const childIds = filteredChildIdsMap.get(node.elementId);
-        if (!childIds) continue;
+        // auto height가 아닌 요소는 스킵 (고정 height는 줄바꿈 영향 없음)
+        const childStyle = (childEl.props?.style ?? {}) as Record<
+          string,
+          unknown
+        >;
+        const rawH = childStyle.height;
+        if (rawH && rawH !== "auto" && rawH !== "fit-content") continue;
 
-        for (const childId of childIds) {
-          const childHandle = persistentTree.getHandle(childId);
-          if (childHandle === undefined) continue;
-          const childLayout = firstPassLayouts.get(childHandle);
-          if (!childLayout) continue;
+        const handle = persistentTree.getHandle(node.elementId);
+        if (handle === undefined) continue;
+        const layout = firstPassLayouts.get(handle);
+        if (!layout) continue;
 
-          const childIdx = batch.findIndex((b) => b.elementId === childId);
-          if (childIdx === -1) continue;
+        // enrichment 시 사용된 width 추정: style.width가 숫자이면 그 값, 아니면 availableWidth
+        const enrichedWidth =
+          typeof childStyle.width === "number"
+            ? childStyle.width
+            : availableWidth;
 
-          const childEl = elementsMap.get(childId);
-          if (!childEl) continue;
-          const childStyle = (childEl.props?.style ?? {}) as Record<
-            string,
-            unknown
-          >;
-          const enrichedWidth =
-            typeof childStyle.width === "number"
-              ? childStyle.width
-              : availableWidth;
-
-          if (Math.abs(childLayout.width - enrichedWidth) > WIDTH_TOLERANCE) {
-            gridChildUpdates.push({
-              nodeIndex: childIdx,
-              actualWidth: childLayout.width,
-            });
-            needsGridSecondPass = true;
-          }
+        if (Math.abs(layout.width - enrichedWidth) > WIDTH_TOLERANCE) {
+          childUpdates.push({
+            nodeIndex: i,
+            actualWidth: layout.width,
+          });
+          needsSecondPass = true;
         }
       }
 
-      if (needsGridSecondPass) {
-        // grid 자식을 실제 width로 re-enrich하고 Taffy 스타일 갱신
-        for (const { nodeIndex, actualWidth } of gridChildUpdates) {
+      if (needsSecondPass) {
+        for (const { nodeIndex, actualWidth } of childUpdates) {
           const node = batch[nodeIndex];
           const childEl = elementsMap.get(node.elementId);
           if (!childEl) continue;
@@ -1790,7 +1787,6 @@ export function calculateFullTreeLayout(
             false,
           );
 
-          // batch 엔트리의 스타일을 re-enriched 값으로 갱신
           const reStyle = (reEnriched.props?.style ?? {}) as Record<
             string,
             unknown
@@ -1803,7 +1799,6 @@ export function calculateFullTreeLayout(
           persistentTree.updateNodeStyle(node.elementId, node.style);
         }
 
-        // 재계산
         persistentTree.computeLayout(availableWidth, availableHeight);
       }
     }

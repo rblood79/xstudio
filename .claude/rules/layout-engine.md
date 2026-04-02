@@ -86,13 +86,44 @@ globs:
 - `enrichWithIntrinsicSize`에서 width 주입 시 `Math.ceil` 적용
 - Taffy(f32)와 JS(f64) 간 부동소수점 정밀도 차이로 flex-wrap 컨테이너에서 불필요한 wrap 방지
 
-## PersistentTaffyTree display 전환 감지 (CRITICAL)
+## PersistentTaffyTree display/grid 전환 감지 (CRITICAL)
 
 - `implicitStyles`가 주입하는 display 변경(GridList `layout` prop 등)은 PersistentTaffyTree의 증분 갱신으로 처리 불가 → **full rebuild 필수**
 - `fullTreeLayout.ts` Step 3: `prevDisplay !== curDisplay` 비교로 display 전환 감지
+- **gridTemplateColumns 변경도 full rebuild 트리거** — Taffy 증분 갱신이 grid track 변경을 올바르게 처리하지 못함
 - `affectedNodeIds`가 있으면 해당 노드만 검사 (성능 최적화), 없으면 전체 배치 노드 검사
 - `affectedNodeIds` 필터를 걸 때 `undefined` 조건 누락 금지 — 캐시 미스 시 `affectedNodeIds`가 `undefined`로 전달될 수 있음
-- 위반 시: display 전환(flex↔grid↔block)이 새로고침 전까지 캔버스에 반영 안 됨
+- 위반 시: display 전환(flex↔grid↔block) 또는 columns 변경이 새로고침 전까지 캔버스에 반영 안 됨
+
+## 2-Pass 레이아웃 — width 제약 → height 재계산 (범용)
+
+CSS 브라우저는 폭 결정 → 텍스트 줄바꿈 → auto height를 한 번에 처리하지만, Taffy는 enrichment(1-pass)에서 부모 전체 폭 기준으로 height 계산 → 실제 할당 폭과 불일치.
+
+- **fullTreeLayout Step 4.5**: `computeLayout` 후 **모든 노드**의 실제 width vs enrichment width 비교
+  - auto height 노드만 대상 (고정 height 스킵)
+  - width 차이 > 2px → `enrichWithIntrinsicSize` 재실행 → `computeLayout` 재호출
+  - 부모는 Taffy가 자식 height 합산으로 auto height 자동 갱신
+- **적용 범위**: grid 1fr 트랙, flex-grow/shrink, flex row wrap, 사용자 지정 width 제약 등 모든 케이스
+- `patchBatchStyleFromImplicit`에서 `Array.isArray(val)` 조건 필수 — gridTemplateColumns 배열 패치
+- 기존 `TaffyFlexEngine.layoutChildren` 2-pass (라인 269-348)와 동일 원리이나, fullTreeLayout은 PersistentTaffyTree 기반이므로 별도 구현
+
+## Layout Prop 변경 → Canvas 즉시 반영 파이프라인
+
+새 레이아웃 영향 prop 추가 시 **5곳 동시 확인 필수**:
+
+1. `inspectorActions.ts`의 `LAYOUT_AFFECTING_PROPS` — layoutVersion 트리거
+2. `layoutCache.ts`의 `LAYOUT_PROP_KEYS` — 캐시 시그니처
+3. `ElementsLayer.tsx`의 `pageLayoutSignature` deps — `elementById` 포함 (pageElements는 stale 참조)
+4. `fullTreeLayout.ts`의 `patchBatchStyleFromImplicit` — 배열 타입 지원
+5. `fullTreeLayout.ts`의 display/grid 전환 감지 — 필요 시 full rebuild 조건 추가
+
+## Collection Item font 주입 (ListBoxItem/GridListItem)
+
+- 자식 Text/Description의 fontSize/fontWeight를 3경로에서 동기화:
+  - **CSS**: 부모에 font-size/weight 설정 → 자식 상속 + description override
+  - **implicitStyles**: `injectCollectionItemFontStyles()` 헬퍼 — Taffy 높이 계산용
+  - **ElementSprite**: `collectionItemFontStyle` selector — TextSprite 렌더링용
+- GridListItem에 `minWidth: 0` 주입 — CSS `minmax(0, 1fr)` 동기화
 
 ## order_num 재정렬
 
