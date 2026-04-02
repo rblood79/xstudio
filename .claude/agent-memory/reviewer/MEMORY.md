@@ -83,6 +83,10 @@
 - **`childAvail` 직접 mutation (grid 트랙 폭)**: `fullTreeLayout.ts:1034`에서 `childAvail.width = trackWidth` 직접 write — 비균등 트랙(`["1fr","2fr"]`) 오산 + 객체 공유 시 side-effect 위험. 복사본(`{ ...childAvail, width: trackWidth }`) 사용 필수
 - **Step 4.5 `getLayoutsBatch()` 조건 없이 선호출**: L1751에서 `needsSecondPass` false 경로에서도 먼저 호출, Step 5에서 재호출 → 2-pass 실행 시 총 3회. 조건 블록 내부로 이동하여 1회로 통합 필요 (fullTreeLayout.ts:1751/1885)
 - **`injectCollectionItemFontStyles` childrenMap stale props 위험**: `implicitStyles.ts`의 `injectCollectionItemFontStyles`에서 `child.props?.style` 직접 참조 — child가 childrenMap 경유 시 stale. zustand-childrenmap-staleness 반복 패턴
+- **`resolveContainerWidth` dead export**: `tokenResolver.ts:238`에 export되어 있으나 `packages/specs/src/` 및 `apps/` 전체 grep 결과 import 사용처 없음 — 확인 후 제거 또는 `@internal` 표시
+- **Step 4.5 O(N) 전체 배치 순회 — autoHeightCandidates 미추적**: 매 레이아웃 계산마다 `batch.length` 전체를 순회하여 auto/fit-content height 요소를 탐색 — DFS enrichment 단계에서 intrinsic height 계산이 실행된 노드만 `Set<number>`로 추적하면 순회 대상 한정 가능 (fullTreeLayout.ts:1753)
+- **`gridTemplateColumns` 변경 감지에 JSON.stringify 이중 직렬화**: display 전환 감지 루프에서 grid 노드마다 `JSON.stringify(prevParsed.gridTemplateColumns)` + `JSON.stringify(node.style.gridTemplateColumns)` 2회 직렬화 — `persistentTaffyTree`에 `gridColsHashMap` 별도 저장 또는 `_lastJsonMap` 부분 비교로 대체 가능 (fullTreeLayout.ts:1709)
+- **`injectCollectionItemFontStyles` — 값 동일 시 early-return 없음**: Text/Description 자식이 이미 올바른 fontSize/fontWeight/width를 보유해도 3중 spread shallow copy 수행 — 값 일치 시 `return child` early-return으로 불필요한 객체 생성 제거 가능
 
 ## False Positive 기록
 
