@@ -10,22 +10,25 @@
  * @since 2026-02-28 Phase 11 - Block → Taffy Block 전환
  */
 
-import type { Element } from '../../../../../types/core/store.types';
-import type { ComputedLayout, LayoutContext } from './LayoutEngine';
-import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
-import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
-import { BaseTaffyEngine } from './BaseTaffyEngine';
+import type { Element } from "../../../../../types/core/store.types";
+import type { ComputedLayout, LayoutContext } from "./LayoutEngine";
+import type {
+  TaffyStyle,
+  TaffyNodeHandle,
+} from "../../wasm-bindings/taffyLayout";
+import { TaffyLayout } from "../../wasm-bindings/taffyLayout";
+import { BaseTaffyEngine } from "./BaseTaffyEngine";
 import {
   parseMargin,
   enrichWithIntrinsicSize,
   applyCommonTaffyStyle,
   parseCSSPropWithContext,
-} from './utils';
-import { resolveStyle } from './cssResolver';
-import type { ComputedStyle } from './cssResolver';
-import type { CSSValueContext } from './cssValueParser';
-import { toTaffyDisplay, getElementDisplay } from './taffyDisplayAdapter';
-import type { TaffyDisplayConfig } from './taffyDisplayAdapter';
+} from "./utils";
+import { resolveStyle } from "./cssResolver";
+import type { ComputedStyle } from "./cssResolver";
+import type { CSSValueContext } from "./cssValueParser";
+import { toTaffyDisplay, getElementDisplay } from "./taffyDisplayAdapter";
+import type { TaffyDisplayConfig } from "./taffyDisplayAdapter";
 
 // ─── margin:auto 판별 ────────────────────────────────────────────────
 
@@ -37,35 +40,65 @@ import type { TaffyDisplayConfig } from './taffyDisplayAdapter';
  *
  * TaffyFlexEngine의 동일한 헬퍼를 복사 — private이므로 재사용 불가.
  */
-function resolveMarginAutoSides(
-  style: Record<string, unknown> | undefined,
-): { top: boolean; right: boolean; bottom: boolean; left: boolean } {
+function resolveMarginAutoSides(style: Record<string, unknown> | undefined): {
+  top: boolean;
+  right: boolean;
+  bottom: boolean;
+  left: boolean;
+} {
   const result = { top: false, right: false, bottom: false, left: false };
   if (!style) return result;
 
   // shorthand에서 auto 판별
-  if (typeof style.margin === 'string') {
+  if (typeof style.margin === "string") {
     const tokens = style.margin.trim().split(/\s+/);
     const sides = (() => {
       switch (tokens.length) {
-        case 1: return { top: tokens[0], right: tokens[0], bottom: tokens[0], left: tokens[0] };
-        case 2: return { top: tokens[0], right: tokens[1], bottom: tokens[0], left: tokens[1] };
-        case 3: return { top: tokens[0], right: tokens[1], bottom: tokens[2], left: tokens[1] };
-        case 4: return { top: tokens[0], right: tokens[1], bottom: tokens[2], left: tokens[3] };
-        default: return { top: '', right: '', bottom: '', left: '' };
+        case 1:
+          return {
+            top: tokens[0],
+            right: tokens[0],
+            bottom: tokens[0],
+            left: tokens[0],
+          };
+        case 2:
+          return {
+            top: tokens[0],
+            right: tokens[1],
+            bottom: tokens[0],
+            left: tokens[1],
+          };
+        case 3:
+          return {
+            top: tokens[0],
+            right: tokens[1],
+            bottom: tokens[2],
+            left: tokens[1],
+          };
+        case 4:
+          return {
+            top: tokens[0],
+            right: tokens[1],
+            bottom: tokens[2],
+            left: tokens[3],
+          };
+        default:
+          return { top: "", right: "", bottom: "", left: "" };
       }
     })();
-    result.top = sides.top === 'auto';
-    result.right = sides.right === 'auto';
-    result.bottom = sides.bottom === 'auto';
-    result.left = sides.left === 'auto';
+    result.top = sides.top === "auto";
+    result.right = sides.right === "auto";
+    result.bottom = sides.bottom === "auto";
+    result.left = sides.left === "auto";
   }
 
   // 개별 속성이 shorthand를 override (CSS 우선순위)
-  if (style.marginTop !== undefined) result.top = style.marginTop === 'auto';
-  if (style.marginRight !== undefined) result.right = style.marginRight === 'auto';
-  if (style.marginBottom !== undefined) result.bottom = style.marginBottom === 'auto';
-  if (style.marginLeft !== undefined) result.left = style.marginLeft === 'auto';
+  if (style.marginTop !== undefined) result.top = style.marginTop === "auto";
+  if (style.marginRight !== undefined)
+    result.right = style.marginRight === "auto";
+  if (style.marginBottom !== undefined)
+    result.bottom = style.marginBottom === "auto";
+  if (style.marginLeft !== undefined) result.left = style.marginLeft === "auto";
 
   return result;
 }
@@ -96,19 +129,25 @@ export function elementToTaffyBlockStyle(
 
   // TaffyDisplayConfig 전체 필드 패스스루
   // inline-block 리프: flexGrow/flexShrink 고정 (크기 고정 아이템)
-  if (taffyConfig.flexGrow !== undefined) result.flexGrow = taffyConfig.flexGrow;
-  if (taffyConfig.flexShrink !== undefined) result.flexShrink = taffyConfig.flexShrink;
+  if (taffyConfig.flexGrow !== undefined)
+    result.flexGrow = taffyConfig.flexGrow;
+  if (taffyConfig.flexShrink !== undefined)
+    result.flexShrink = taffyConfig.flexShrink;
   // inline-block 부모 (flex row wrap 시뮬레이션): flexDirection/flexWrap/alignItems/alignContent
-  if (taffyConfig.flexDirection) result.flexDirection = taffyConfig.flexDirection;
+  if (taffyConfig.flexDirection)
+    result.flexDirection = taffyConfig.flexDirection;
   if (taffyConfig.flexWrap) result.flexWrap = taffyConfig.flexWrap;
-  if (taffyConfig.alignItems) result.alignItems = taffyConfig.alignItems;
-  if (taffyConfig.alignContent) result.alignContent = taffyConfig.alignContent as TaffyStyle['alignContent'];
+  if (taffyConfig.alignItems)
+    result.alignItems = taffyConfig.alignItems as TaffyStyle["alignItems"];
+  if (taffyConfig.alignContent)
+    result.alignContent =
+      taffyConfig.alignContent as TaffyStyle["alignContent"];
 
   // Position
-  if (style.position === 'absolute' || style.position === 'fixed') {
-    result.position = 'absolute';
-  } else if (style.position === 'relative') {
-    result.position = 'relative';
+  if (style.position === "absolute" || style.position === "fixed") {
+    result.position = "absolute";
+  } else if (style.position === "relative") {
+    result.position = "relative";
   }
 
   // Size + Min/Max + Padding + Border + Gap (공통 헬퍼)
@@ -118,25 +157,45 @@ export function elementToTaffyBlockStyle(
 
   // Align self (block 자식도 flex 부모 안에 들어갈 수 있음)
   if (style.alignSelf) {
-    result.alignSelf = style.alignSelf as TaffyStyle['alignSelf'];
+    result.alignSelf = style.alignSelf as TaffyStyle["alignSelf"];
   }
 
   // Justify self
   if (style.justifySelf) {
-    result.justifySelf = style.justifySelf as TaffyStyle['justifySelf'];
+    result.justifySelf = style.justifySelf as TaffyStyle["justifySelf"];
   }
 
   // Margin — margin:auto는 parseMargin()이 숫자 전용이므로 원본 값을 직접 검사
   const margin = parseMargin(style);
   const marginAuto = resolveMarginAutoSides(style);
-  result.marginTop = marginAuto.top ? 'auto' : (margin.top !== 0 ? margin.top : undefined);
-  result.marginRight = marginAuto.right ? 'auto' : (margin.right !== 0 ? margin.right : undefined);
-  result.marginBottom = marginAuto.bottom ? 'auto' : (margin.bottom !== 0 ? margin.bottom : undefined);
-  result.marginLeft = marginAuto.left ? 'auto' : (margin.left !== 0 ? margin.left : undefined);
+  result.marginTop = marginAuto.top
+    ? "auto"
+    : margin.top !== 0
+      ? margin.top
+      : undefined;
+  result.marginRight = marginAuto.right
+    ? "auto"
+    : margin.right !== 0
+      ? margin.right
+      : undefined;
+  result.marginBottom = marginAuto.bottom
+    ? "auto"
+    : margin.bottom !== 0
+      ? margin.bottom
+      : undefined;
+  result.marginLeft = marginAuto.left
+    ? "auto"
+    : margin.left !== 0
+      ? margin.left
+      : undefined;
 
   // Inset (position offsets)
   // Taffy 0.9는 Position::Relative와 Position::Absolute 모두에서 inset을 네이티브 처리
-  if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'relative') {
+  if (
+    style.position === "absolute" ||
+    style.position === "fixed" ||
+    style.position === "relative"
+  ) {
     const top = parseCSSPropWithContext(style.top, ctx);
     const left = parseCSSPropWithContext(style.left, ctx);
     const right = parseCSSPropWithContext(style.right, ctx);
@@ -180,8 +239,8 @@ export function isTaffyBlockAvailable(): boolean {
 export class TaffyBlockEngine extends BaseTaffyEngine {
   static instance: TaffyBlockEngine | null = null;
 
-  readonly displayTypes = ['block', 'inline-block', 'inline', 'flow-root'];
-  protected readonly engineName = 'TaffyBlockEngine';
+  readonly displayTypes = ["block", "inline-block", "inline", "flow-root"];
+  protected readonly engineName = "TaffyBlockEngine";
 
   constructor() {
     super();
@@ -201,8 +260,10 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
     const getChildElements = context?.getChildElements;
 
     // ── 1. 자식별 computed style 캐시 ──────────────────────────────────
-    const childComputedStyles = children.map(child => {
-      const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
+    const childComputedStyles = children.map((child) => {
+      const childRawStyle = child.props?.style as
+        | Record<string, unknown>
+        | undefined;
       return resolveStyle(childRawStyle, parentComputed);
     });
 
@@ -222,7 +283,9 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
 
     // ── 3. 자식 display 목록 수집 (부모 toTaffyDisplay 판단용) ──────────
     // inline-block 자식이 하나라도 있으면 부모를 flex row wrap으로 변환
-    const childDisplayValues = enrichedChildren.map(child => getElementDisplay(child));
+    const childDisplayValues = enrichedChildren.map((child) =>
+      getElementDisplay(child),
+    );
 
     // ── 4. 자식 노드 생성 ───────────────────────────────────────────────
     const childHandles: TaffyNodeHandle[] = [];
@@ -235,7 +298,11 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
 
       // 자식 자신의 display를 변환 (inline-block 리프 → block + flexGrow:0)
       const childTaffyConfig = toTaffyDisplay(childDisplay, []);
-      const taffyStyle = elementToTaffyBlockStyle(enrichedChild, childTaffyConfig, cssCtx);
+      const taffyStyle = elementToTaffyBlockStyle(
+        enrichedChild,
+        childTaffyConfig,
+        cssCtx,
+      );
 
       const handle = taffy.createNode(taffyStyle);
       childHandles.push(handle);
@@ -243,10 +310,17 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
     }
 
     // ── 5. 부모 display 변환 (자식 display 목록 기반) ───────────────────
-    const parentRawStyle = (parent.props?.style || {}) as Record<string, unknown>;
+    const parentRawStyle = (parent.props?.style || {}) as Record<
+      string,
+      unknown
+    >;
     const parentDisplay = getElementDisplay(parent);
     // enrichedChildren 전달: vertical-align 기반 alignItems 동적 결정 (ADR-006 P2-3)
-    const parentTaffyConfig = toTaffyDisplay(parentDisplay, childDisplayValues, enrichedChildren);
+    const parentTaffyConfig = toTaffyDisplay(
+      parentDisplay,
+      childDisplayValues,
+      enrichedChildren,
+    );
 
     // ── 6. 부모 노드 생성 ───────────────────────────────────────────────
     const parentStyle: TaffyStyle = {};
@@ -261,12 +335,17 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
       parentStyle.flexWrap = parentTaffyConfig.flexWrap;
     }
     if (parentTaffyConfig.alignItems) {
-      parentStyle.alignItems = parentTaffyConfig.alignItems;
+      parentStyle.alignItems =
+        parentTaffyConfig.alignItems as TaffyStyle["alignItems"];
     }
 
     // 부모 Size + Padding + Border + Gap (applyCommonTaffyStyle)
     // 공통 헬퍼로 전달 후 setupParentDimensions()로 padding/border 리셋
-    applyCommonTaffyStyle(parentStyle as Record<string, unknown>, parentRawStyle, cssCtx);
+    applyCommonTaffyStyle(
+      parentStyle as Record<string, unknown>,
+      parentRawStyle,
+      cssCtx,
+    );
 
     // setupParentDimensions():
     // - width = availableWidth, height = availableHeight (sentinel -1이면 생략)

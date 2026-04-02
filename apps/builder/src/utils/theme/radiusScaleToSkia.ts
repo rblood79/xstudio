@@ -48,6 +48,8 @@ export function radiusScaleToSkia(scale: RadiusScale): void {
   for (const [key, base] of Object.entries(BASE_RADIUS)) {
     // none(0)과 full(9999)은 스케일링하지 않음
     if (key === "none" || key === "full") continue;
-    (radius as Record<string, number>)[key] = Math.round(base * factor);
+    (radius as unknown as Record<string, number>)[key] = Math.round(
+      base * factor,
+    );
   }
 }

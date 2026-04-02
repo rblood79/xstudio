@@ -115,7 +115,9 @@ export function computeSelectionBounds({
 
   for (const element of selectedElements) {
     if (element.tag.toLowerCase() === "body") {
-      const position = element.page_id ? pagePositions?.[element.page_id] : undefined;
+      const position = element.page_id
+        ? pagePositions?.[element.page_id]
+        : undefined;
       boxes.push({
         x: position?.x ?? 0,
         y: position?.y ?? 0,
@@ -125,11 +127,11 @@ export function computeSelectionBounds({
       continue;
     }
 
-    const container = getContainer(element.id);
+    const container = getContainer?.(element.id);
     if (container) {
       const localPosition = getCameraLocalPosition(container);
       if (localPosition) {
-        const bounds = getBounds(element.id);
+        const bounds = getBounds?.(element.id);
         boxes.push({
           x: localPosition.x,
           y: localPosition.y,
@@ -140,7 +142,7 @@ export function computeSelectionBounds({
       }
     }
 
-    const bounds = getBounds(element.id);
+    const bounds = getBounds?.(element.id);
     if (bounds) {
       boxes.push({
         x: (bounds.x - panOffset.x) / currentZoom,

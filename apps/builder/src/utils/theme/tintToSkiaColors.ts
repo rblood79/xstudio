@@ -187,7 +187,7 @@ function restoreAccent(
   snapshot: AccentSnapshot,
 ): void {
   for (const key of ACCENT_KEYS) {
-    (colors as Record<string, string>)[key] = snapshot[key];
+    (colors as unknown as Record<string, string>)[key] = snapshot[key];
   }
 }
 

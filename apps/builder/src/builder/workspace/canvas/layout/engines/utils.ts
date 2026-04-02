@@ -501,12 +501,12 @@ function deriveSizeConfig(
       paddingLeft: s.paddingLeft ?? s.paddingX,
       paddingRight: s.paddingRight ?? s.paddingX,
       paddingY: s.paddingY,
-      fontSize,
+      fontSize: fontSize as number,
       lineHeight:
         typeof s.lineHeight === "number"
           ? s.lineHeight
           : typeof s.lineHeight === "string" && s.lineHeight.startsWith("{")
-            ? (resolveToken(s.lineHeight) ?? 20)
+            ? Number(resolveToken(s.lineHeight)) || 20
             : 20,
       borderWidth: s.borderWidth ?? 1,
       iconSize: s.iconSize ?? 16,
@@ -846,7 +846,11 @@ export function calculateContentWidth(
     const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
     const measurer = getTextMeasurer();
     const textWidth = measurer
-      ? measurer.measureWidth(text, fontSize, fontWeight, ffamily)
+      ? measurer.measureWidth(text, {
+          fontSize,
+          fontWeight,
+          fontFamily: ffamily,
+        })
       : text.length * fontSize * 0.6;
     return Math.ceil(dims.dotSize + dims.gap + textWidth);
   }

@@ -781,7 +781,8 @@ function measureSpecTextMinHeight(
   // CSS border-box 보정: border shape에서 borderWidth 추출
   const borderShape = shapes.find((s) => s.type === "border");
   const bgBorderWidth = borderShape
-    ? (((borderShape as Record<string, unknown>).borderWidth as number) ?? 0)
+    ? (((borderShape as unknown as Record<string, unknown>)
+        .borderWidth as number) ?? 0)
     : 0;
 
   for (const shape of shapes) {
@@ -902,8 +903,8 @@ function rearrangeShapesForColumn(
         shape.y = boxSize / 2;
         break;
       case "line":
-        shape.x1 += centerX;
-        shape.x2 += centerX;
+        (shape as unknown as { x1: number; x2: number }).x1 += centerX;
+        (shape as unknown as { x1: number; x2: number }).x2 += centerX;
         break;
       case "text":
         // 텍스트를 indicator 아래에 배치, 가운데 정렬
@@ -1107,7 +1108,7 @@ export const ElementSprite = memo(function ElementSprite({
         return "left";
       }
 
-      currentParentId = parent.parent_id;
+      currentParentId = parent.parent_id ?? "";
     }
 
     return null;
@@ -1302,7 +1303,7 @@ export const ElementSprite = memo(function ElementSprite({
       ((parent.props as Record<string, unknown> | undefined)?.size as string) ??
       "md";
     const specSize = (InlineAlertSpec.sizes[sizeName] ??
-      InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as Record<
+      InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as unknown as Record<
       string,
       unknown
     >;
@@ -2147,7 +2148,7 @@ export const ElementSprite = memo(function ElementSprite({
                 const textMinHeight = measureSpecTextMinHeight(
                   shapes,
                   finalWidth,
-                  sizeSpec,
+                  sizeSpec as unknown as Record<string, unknown>,
                   style?.whiteSpace as string | undefined,
                   style?.wordBreak as string | undefined,
                   style?.overflowWrap as string | undefined,

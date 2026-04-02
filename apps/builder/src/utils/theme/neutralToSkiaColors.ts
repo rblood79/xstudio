@@ -139,8 +139,16 @@ const DARK_MAP: Record<string, number | string> = {
 export function neutralToSkiaColors(preset: NeutralPreset): void {
   const palette = NEUTRAL_PALETTES[preset];
 
-  applyNeutralColors(lightColors, palette, LIGHT_MAP);
-  applyNeutralColors(darkColors, palette, DARK_MAP);
+  applyNeutralColors(
+    lightColors as unknown as Record<string, string>,
+    palette,
+    LIGHT_MAP,
+  );
+  applyNeutralColors(
+    darkColors as unknown as Record<string, string>,
+    palette,
+    DARK_MAP,
+  );
 }
 
 function applyNeutralColors(

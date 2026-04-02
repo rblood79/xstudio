@@ -885,7 +885,7 @@ export function applyImplicitStyles(
     filteredChildren = applySideLabelChildStyles(filteredChildren, nfLabelPos);
     const nfFlexDir = resolveLabelFlexDir(
       nfLabelPos,
-      parentStyle.flexDirection,
+      parentStyle.flexDirection as string | undefined,
     );
     effectiveParent = withParentStyle(
       containerEl,
@@ -1070,7 +1070,7 @@ export function applyImplicitStyles(
     filteredChildren = applySideLabelChildStyles(filteredChildren, tfLabelPos);
     const tfFlexDir = resolveLabelFlexDir(
       tfLabelPos,
-      parentStyle.flexDirection,
+      parentStyle.flexDirection as string | undefined,
     );
     effectiveParent = withParentStyle(
       containerEl,
@@ -1127,7 +1127,7 @@ export function applyImplicitStyles(
     const dfLabelPos = containerProps?.labelPosition as string | undefined;
     const dfFlexDir = resolveLabelFlexDir(
       dfLabelPos,
-      parentStyle.flexDirection,
+      parentStyle.flexDirection as string | undefined,
     );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
@@ -1416,7 +1416,7 @@ export function applyImplicitStyles(
     const dpLabelPos = containerProps?.labelPosition as string | undefined;
     const dpFlexDir = resolveLabelFlexDir(
       dpLabelPos,
-      parentStyle.flexDirection,
+      parentStyle.flexDirection as string | undefined,
     );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,

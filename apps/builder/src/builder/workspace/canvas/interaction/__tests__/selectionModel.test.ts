@@ -20,9 +20,18 @@ describe("selectionModel", () => {
     const selected = resolveSelectedElementsForPage({
       currentPageId: "page-a",
       elementsMap: new Map([
-        ["body-a", createElement({ id: "body-a", page_id: "page-a", tag: "Body" })],
-        ["card-a", createElement({ id: "card-a", page_id: "page-a", tag: "Card" })],
-        ["card-b", createElement({ id: "card-b", page_id: "page-b", tag: "Card" })],
+        [
+          "body-a",
+          createElement({ id: "body-a", page_id: "page-a", tag: "Body" }),
+        ],
+        [
+          "card-a",
+          createElement({ id: "card-a", page_id: "page-a", tag: "Card" }),
+        ],
+        [
+          "card-b",
+          createElement({ id: "card-b", page_id: "page-b", tag: "Card" }),
+        ],
       ]),
       selectedElementIds: ["body-a", "card-b", "card-a"],
     });
@@ -38,7 +47,7 @@ describe("selectionModel", () => {
         }
         return null;
       },
-      getContainer: () => null,
+      getContainer: () => undefined,
       getCurrentZoom: () => 2,
       pageHeight: 600,
       pagePositions: { "page-a": { x: 100, y: 50 } },
