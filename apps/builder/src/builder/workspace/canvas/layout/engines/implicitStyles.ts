@@ -226,7 +226,7 @@ function withParentStyle(el: Element, style: Record<string, unknown>): Element {
   };
 }
 
-/** GridListItem/ListBoxItem 자식 Text/Description에 CSS 정합성 fontSize/fontWeight/width 주입 */
+/** GridListItem/ListBoxItem 자식 Text/Description에 CSS 정합성 fontSize/fontWeight 주입 */
 function injectCollectionItemFontStyles(children: Element[]): Element[] {
   return children.map((child) => {
     const cs = (child.props?.style as Record<string, unknown>) || {};
@@ -239,9 +239,9 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
             ...cs,
             fontSize: cs.fontSize ?? 14,
             fontWeight: cs.fontWeight ?? 600,
-            // CSS flex column stretch 동기화: 부모 폭을 따르도록 width 100%
-            // enrichWithIntrinsicSize가 fit-content width를 주입하는 것을 방지
-            width: cs.width ?? "100%",
+            // CSS flex column stretch 동기화 — Taffy가 부모 폭으로 확장하되 min-content 유지
+            alignSelf: cs.alignSelf ?? "stretch",
+            overflow: cs.overflow ?? "hidden",
           },
         },
       };
@@ -254,7 +254,8 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
           style: {
             ...cs,
             fontSize: cs.fontSize ?? 12,
-            width: cs.width ?? "100%",
+            alignSelf: cs.alignSelf ?? "stretch",
+            overflow: cs.overflow ?? "hidden",
           },
         },
       };
