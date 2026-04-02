@@ -93,6 +93,8 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             type: "number",
             label: "Columns",
             icon: Binary,
+            min: 1,
+            max: 12,
             visibleWhen: { key: "layout", equals: "grid" },
           },
         ],

@@ -606,6 +606,7 @@ export function applyImplicitStyles(
         display: "grid",
         gridTemplateColumns: Array(columns).fill("1fr"),
         gap: parentStyle.gap ?? gap,
+        overflow: parentStyle.overflow ?? "hidden",
       });
     } else {
       effectiveParent = withParentStyle(containerEl, {
@@ -625,6 +626,8 @@ export function applyImplicitStyles(
       ...parentStyle,
       display: "flex",
       flexDirection: "column",
+      // CSS grid 1fr 트랙 내에서 축소되도록 minWidth: 0 (CSS minmax(0, 1fr) 동기화)
+      minWidth: parentStyle.minWidth ?? 0,
       gap: parentStyle.gap ?? 2,
       paddingTop: parentStyle.paddingTop ?? 10,
       paddingBottom: parentStyle.paddingBottom ?? 10,

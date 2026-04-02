@@ -406,6 +406,7 @@ export function createGridListDefinition(
       tag: "GridList",
       props: {
         layout: "stack",
+        columns: 2,
         selectionMode: "none",
         style: {
           width: "100%",

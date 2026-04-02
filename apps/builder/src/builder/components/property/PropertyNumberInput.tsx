@@ -60,12 +60,15 @@ export const PropertyNumberInput = memo(
           aria-label={label || "Number"}
           value={localValue ?? NaN}
           onChange={(val) => {
+            // React Aria NumberField onChange는 커밋 시점에만 호출됨
+            // (blur, Enter, stepper 클릭) → 즉시 store 반영
             const resolved = isNaN(val)
               ? allowEmpty
                 ? undefined
                 : (min ?? 0)
               : val;
             setLocalValue(resolved);
+            commit(resolved);
           }}
           minValue={min}
           maxValue={max}
@@ -125,17 +128,11 @@ export const PropertyNumberInput = memo(
       </PropertyFieldset>
     );
   },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.label === nextProps.label &&
-      prevProps.value === nextProps.value &&
-      prevProps.min === nextProps.min &&
-      prevProps.max === nextProps.max &&
-      prevProps.step === nextProps.step &&
-      prevProps.placeholder === nextProps.placeholder &&
-      prevProps.className === nextProps.className &&
-      prevProps.icon === nextProps.icon &&
-      prevProps.allowEmpty === nextProps.allowEmpty
-    );
-  },
+  (prevProps, nextProps) =>
+    prevProps.value === nextProps.value &&
+    prevProps.onChange === nextProps.onChange &&
+    prevProps.label === nextProps.label &&
+    prevProps.min === nextProps.min &&
+    prevProps.max === nextProps.max &&
+    prevProps.step === nextProps.step,
 );

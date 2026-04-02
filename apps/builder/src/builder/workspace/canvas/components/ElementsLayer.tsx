@@ -102,8 +102,13 @@ export const ElementsLayer = memo(function ElementsLayer({
     return createPageElementsSignature(pageElements);
   }, [pageElements]);
   const pageLayoutSignature = useMemo(() => {
-    return createPageLayoutSignature(bodyElement, pageElements);
-  }, [bodyElement, pageElements]);
+    // elementById에서 최신 props를 읽어 시그니처 생성
+    // pageElements는 childrenMap 기반(구조 변경 시에만 갱신)이므로 props가 stale할 수 있음
+    const freshElements = pageElements.map(
+      (el) => elementById.get(el.id) ?? el,
+    );
+    return createPageLayoutSignature(bodyElement, freshElements);
+  }, [bodyElement, pageElements, elementById]);
   const childrenIdMap = useMemo(() => {
     return buildChildrenIdMap(pageChildrenMap);
   }, [pageChildrenMap]);

@@ -302,6 +302,12 @@ function patchBatchStyleFromImplicit(
     // string 속성 (display, flexDirection, alignItems 등)
     if (typeof val === "string") {
       batchStyle[key] = val;
+      continue;
+    }
+
+    // 배열 속성 (gridTemplateColumns, gridTemplateRows 등)
+    if (Array.isArray(val)) {
+      batchStyle[key] = val;
     }
   }
 }
@@ -1671,11 +1677,22 @@ export function calculateFullTreeLayout(
         if (hasFilter && !affectedNodeIds.has(node.elementId)) continue;
         const prevJson = persistentTree.getLastJson(node.elementId);
         if (!prevJson) continue;
-        const prevDisplay = JSON.parse(prevJson).display as string | undefined;
+        const prevParsed = JSON.parse(prevJson);
+        const prevDisplay = prevParsed.display as string | undefined;
         const curDisplay = node.style.display as string | undefined;
         if (prevDisplay !== curDisplay) {
           needsFullRebuild = true;
           break;
+        }
+        // gridTemplateColumns 변경: Taffy 증분 갱신으로 grid track 변경이
+        // 올바르게 반영되지 않으므로 full rebuild 필요
+        if (curDisplay === "grid") {
+          const prevCols = JSON.stringify(prevParsed.gridTemplateColumns);
+          const curCols = JSON.stringify(node.style.gridTemplateColumns);
+          if (prevCols !== curCols) {
+            needsFullRebuild = true;
+            break;
+          }
         }
       }
       // 자식 수 변경 감지는 incrementalUpdate의 updateChildren에서 처리
@@ -1698,6 +1715,98 @@ export function calculateFullTreeLayout(
 
     // ── Step 4: 레이아웃 계산 ─────────────────────────────────────────
     persistentTree.computeLayout(availableWidth, availableHeight);
+
+    // ── Step 4.5: Grid 자식 2-pass (텍스트 줄바꿈 height 교정) ────────
+    // Grid 1fr 트랙 내에서 자식 width가 enrichment 시 사용한 width와 다르면
+    // 실제 width로 re-enrich하여 텍스트 줄바꿈 height를 재계산한다.
+    // TaffyFlexEngine.layoutChildren 2-pass 패턴과 동일 원리.
+    {
+      const WIDTH_TOLERANCE = 2;
+      let needsGridSecondPass = false;
+      const gridChildUpdates: Array<{
+        nodeIndex: number;
+        actualWidth: number;
+      }> = [];
+
+      const firstPassLayouts = persistentTree.getLayoutsBatch();
+      for (let i = 0; i < batch.length; i++) {
+        const node = batch[i];
+        if (node.style.display !== "grid") continue;
+
+        // grid 컨테이너의 자식 찾기
+        const childIds = filteredChildIdsMap.get(node.elementId);
+        if (!childIds) continue;
+
+        for (const childId of childIds) {
+          const childHandle = persistentTree.getHandle(childId);
+          if (childHandle === undefined) continue;
+          const childLayout = firstPassLayouts.get(childHandle);
+          if (!childLayout) continue;
+
+          const childIdx = batch.findIndex((b) => b.elementId === childId);
+          if (childIdx === -1) continue;
+
+          const childEl = elementsMap.get(childId);
+          if (!childEl) continue;
+          const childStyle = (childEl.props?.style ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const enrichedWidth =
+            typeof childStyle.width === "number"
+              ? childStyle.width
+              : availableWidth;
+
+          if (Math.abs(childLayout.width - enrichedWidth) > WIDTH_TOLERANCE) {
+            gridChildUpdates.push({
+              nodeIndex: childIdx,
+              actualWidth: childLayout.width,
+            });
+            needsGridSecondPass = true;
+          }
+        }
+      }
+
+      if (needsGridSecondPass) {
+        // grid 자식을 실제 width로 re-enrich하고 Taffy 스타일 갱신
+        for (const { nodeIndex, actualWidth } of gridChildUpdates) {
+          const node = batch[nodeIndex];
+          const childEl = elementsMap.get(node.elementId);
+          if (!childEl) continue;
+
+          const childStyle = (childEl.props?.style ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const childComputed = resolveStyle(childStyle, {});
+          const childChildren = getChildElements(node.elementId);
+          const reEnriched = enrichWithIntrinsicSize(
+            childEl,
+            actualWidth,
+            availableHeight,
+            childComputed,
+            childChildren,
+            getChildElements,
+            false,
+          );
+
+          // batch 엔트리의 스타일을 re-enriched 값으로 갱신
+          const reStyle = (reEnriched.props?.style ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const origStyle = (childEl.props?.style ?? {}) as Record<
+            string,
+            unknown
+          >;
+          patchBatchStyleFromImplicit(node.style, origStyle, reStyle);
+          persistentTree.updateNodeStyle(node.elementId, node.style);
+        }
+
+        // 재계산
+        persistentTree.computeLayout(availableWidth, availableHeight);
+      }
+    }
 
     // ── Step 5: 결과 수집 → Map<elementId, ComputedLayout> ──────────
     const layoutBatch = persistentTree.getLayoutsBatch();
