@@ -1756,6 +1756,9 @@ export function calculateFullTreeLayout(
         const childEl = elementsMap.get(node.elementId);
         if (!childEl) continue;
 
+        // root(body) 노드는 Step 1.5에서 pageWidth/Height를 명시적으로 설정하므로 스킵
+        if (node.elementId === rootElementId) continue;
+
         // auto height가 아닌 요소는 스킵 (고정 height는 줄바꿈 영향 없음)
         const childStyle = (childEl.props?.style ?? {}) as Record<
           string,
