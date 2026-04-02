@@ -12,12 +12,8 @@ import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
-  Tag,
-  FileText,
-  AlertTriangle,
   List,
   SquareX,
-  CheckSquare,
   PointerOff,
   Focus,
   Zap,
@@ -32,17 +28,11 @@ import { FILTERING_SECTION } from "../utils/sharedSections";
  */
 export interface ListBoxProps {
   variant?: "default" | "accent";
-  size?: "sm" | "md" | "lg";
-  label?: string;
-  description?: string;
-  errorMessage?: string;
   isDisabled?: boolean;
   selectionMode?: "none" | "single" | "multiple";
   disallowEmptySelection?: boolean;
-  isRequired?: boolean;
   autoFocus?: boolean;
   name?: string;
-  validationBehavior?: "native" | "aria";
   enableVirtualization?: boolean;
   height?: number;
   overscan?: number;
@@ -55,6 +45,8 @@ export interface ListBoxProps {
   /** 선택된 아이템 인덱스 목록 (다중 선택용 하이라이트) */
   selectedIndices?: number[];
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -73,32 +65,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
 
   properties: {
     sections: [
-      {
-        title: "Content",
-        fields: [
-          {
-            key: "label",
-            type: "string",
-            label: "Aria Label",
-            icon: Tag,
-            placeholder: "Screen reader label",
-          },
-          {
-            key: "description",
-            type: "string",
-            label: "Description",
-            icon: FileText,
-            emptyToUndefined: true,
-          },
-          {
-            key: "errorMessage",
-            type: "string",
-            label: "Error Message",
-            icon: AlertTriangle,
-            emptyToUndefined: true,
-          },
-        ],
-      },
       {
         title: "State",
         fields: [
@@ -119,12 +85,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             icon: SquareX,
           },
           {
-            key: "isRequired",
-            type: "boolean",
-            label: "Required",
-            icon: CheckSquare,
-          },
-          {
             key: "isDisabled",
             type: "boolean",
             label: "Disabled",
@@ -143,16 +103,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             icon: FormInput,
             emptyToUndefined: true,
             placeholder: "listbox-name",
-          },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: FileText,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
           },
         ],
       },
@@ -219,45 +169,13 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   },
 
   sizes: {
-    xs: {
-      height: 0,
-      paddingX: 4,
-      paddingY: 2,
-      fontSize: "{typography.text-2xs}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
-      gap: 2,
-    },
-    sm: {
-      height: 0,
-      paddingX: 8,
-      paddingY: 4,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
-      gap: 2,
-    },
     md: {
       height: 0,
       paddingX: 12,
       paddingY: 8,
-      fontSize: "{typography.text-base}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 4,
-    },
-    lg: {
-      height: 0,
-      paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.lg}" as TokenRef,
-      gap: 6,
-    },
-    xl: {
-      height: 0,
-      paddingX: 20,
-      paddingY: 12,
-      fontSize: "{typography.text-xl}" as TokenRef,
-      borderRadius: "{radius.lg}" as TokenRef,
-      gap: 6,
     },
   },
 
@@ -274,9 +192,18 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "variant", childPath: "ListBoxItem", override: true },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 200;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor =
@@ -299,12 +226,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
-
-      // label은 aria-label 전용 — 시각적 렌더링 안 함 (React Aria 패턴)
 
       const shapes: Shape[] = [];
 
@@ -403,7 +328,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           text: items[i],
           fontSize,
           fontFamily: ff,
-          fontWeight: isSelected ? 600 : 400,
+          fontWeight: 600,
           fill: isSelected ? ("{color.neutral}" as TokenRef) : textColor,
           align: textAlign,
           baseline: "middle" as const,

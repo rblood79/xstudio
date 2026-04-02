@@ -89,7 +89,7 @@
 
   .react-aria-DropZone [slot="label"] {
     font-size: var(--text-base);
-    font-weight: 500;
+    font-weight: 600;
     color: var(--fg);
   }
 

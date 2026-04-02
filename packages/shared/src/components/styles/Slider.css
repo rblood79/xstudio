@@ -31,7 +31,7 @@
     gap: var(--spacing-sm);
 
     /* ===== Label ===== */
-    --label-font-weight: 500;
+    --label-font-weight: 600;
 
     .react-aria-Label {
       grid-area: label;

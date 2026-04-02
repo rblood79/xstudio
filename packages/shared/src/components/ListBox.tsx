@@ -45,19 +45,14 @@ import { Skeleton } from "./Skeleton";
 
 import "./styles/ListBox.css";
 
-// 사이즈별 아이템 높이 (CSS와 동기화)
-const ITEM_HEIGHTS: Record<ComponentSizeSubset, number> = {
-  sm: 32,
-  md: 40,
-  lg: 48,
-};
+// 아이템 높이 고정값 (가상화용)
+const ITEM_HEIGHT = 40;
 
 interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
   variant?: string;
-  size?: ComponentSizeSubset;
   // Virtualization props
   enableVirtualization?: boolean;
   height?: number; // 컨테이너 높이 (px), default: 300
@@ -101,7 +96,6 @@ export function ListBox<T extends object>({
   dataBinding,
   columnMapping,
   variant = "primary",
-  size = "md",
   enableVirtualization = false,
   height = 300,
   overscan = 5,
@@ -137,8 +131,8 @@ export function ListBox<T extends object>({
     ],
   });
 
-  // 아이템 높이 (사이즈 기반)
-  const itemHeight = ITEM_HEIGHTS[size];
+  // 아이템 높이 고정값
+  const itemHeight = ITEM_HEIGHT;
 
   // React Aria 1.13.0: 필터링 로직
   const filteredData = React.useMemo(() => {
@@ -288,18 +282,13 @@ export function ListBox<T extends object>({
   if (externalLoading) {
     return (
       <div
-        className={`react-aria-ListBox ${variant} ${size}`}
+        className={`react-aria-ListBox ${variant}`}
         role="listbox"
         aria-busy="true"
         aria-label="Loading list..."
       >
         {Array.from({ length: skeletonCount }).map((_, i) => (
-          <Skeleton
-            key={i}
-            componentVariant="list-item"
-            size={size}
-            index={i}
-          />
+          <Skeleton key={i} componentVariant="list-item" size="md" index={i} />
         ))}
       </div>
     );
@@ -311,14 +300,10 @@ export function ListBox<T extends object>({
     if (loading) {
       return (
         <div
-          className={`react-aria-ListBox virtualized ${variant} ${size}`}
+          className={`react-aria-ListBox virtualized ${variant}`}
           style={{ height }}
         >
-          <CollectionLoadingState
-            size={size}
-            variant={variant}
-            height={height}
-          />
+          <CollectionLoadingState size="md" variant={variant} height={height} />
         </div>
       );
     }
@@ -327,13 +312,12 @@ export function ListBox<T extends object>({
     if (error) {
       return (
         <div
-          className={`react-aria-ListBox virtualized ${variant} ${size}`}
+          className={`react-aria-ListBox virtualized ${variant}`}
           style={{ height }}
         >
           <CollectionErrorDisplay
             error={error}
             onRetry={reload}
-            size={size}
             variant={variant}
             height={height}
           />
@@ -351,7 +335,7 @@ export function ListBox<T extends object>({
         aria-label={props["aria-label"] || "List"}
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        className={`react-aria-ListBox virtualized ${variant} ${size}`}
+        className={`react-aria-ListBox virtualized ${variant}`}
         style={{
           height,
           overflow: "auto",
@@ -424,7 +408,6 @@ export function ListBox<T extends object>({
           {...props}
           className={getListBoxClassName(props.className)}
           data-variant={variant}
-          data-size={size}
         >
           <AriaListBoxItem
             key="loading"
@@ -445,7 +428,6 @@ export function ListBox<T extends object>({
           {...props}
           className={getListBoxClassName(props.className)}
           data-variant={variant}
-          data-size={size}
         >
           <AriaListBoxItem
             key="error"
@@ -471,7 +453,6 @@ export function ListBox<T extends object>({
           {...props}
           className={getListBoxClassName(props.className)}
           data-variant={variant}
-          data-size={size}
           items={items}
         >
           {children}
@@ -485,7 +466,6 @@ export function ListBox<T extends object>({
         {...props}
         className={getListBoxClassName(props.className)}
         data-variant={variant}
-        data-size={size}
       >
         {children}
       </AriaListBox>
@@ -501,7 +481,6 @@ export function ListBox<T extends object>({
           {...props}
           className={getListBoxClassName(props.className)}
           data-variant={variant}
-          data-size={size}
         >
           <AriaListBoxItem
             key="loading"
@@ -522,7 +501,6 @@ export function ListBox<T extends object>({
           {...props}
           className={getListBoxClassName(props.className)}
           data-variant={variant}
-          data-size={size}
         >
           <AriaListBoxItem
             key="error"
@@ -554,7 +532,6 @@ export function ListBox<T extends object>({
             {...props}
             className={getListBoxClassName(props.className)}
             data-variant={variant}
-            data-size={size}
             items={items}
           >
             {children}
@@ -568,7 +545,6 @@ export function ListBox<T extends object>({
           {...props}
           className={getListBoxClassName(props.className)}
           data-variant={variant}
-          data-size={size}
           items={items}
         >
           {(item) => {
@@ -595,7 +571,6 @@ export function ListBox<T extends object>({
       {...props}
       className={getListBoxClassName(props.className)}
       data-variant={variant}
-      data-size={size}
     >
       {children}
     </AriaListBox>

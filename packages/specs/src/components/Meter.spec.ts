@@ -35,6 +35,8 @@ export interface MeterProps {
   valueFormat?: "number" | "percent" | "custom";
   isDisabled?: boolean;
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -244,7 +246,10 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md;
       const fillColor =
         METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;
-      const width = (props.style?.width as number) || 240;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 240;
       const barHeight = meterDims.barHeight;
       const styleGap = props.style?.gap;
       const gap =

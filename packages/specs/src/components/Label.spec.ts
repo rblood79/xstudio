@@ -167,8 +167,8 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
         fwRaw != null
           ? typeof fwRaw === "number"
             ? fwRaw
-            : parseInt(String(fwRaw), 10) || 500
-          : 500;
+            : parseInt(String(fwRaw), 10) || 600
+          : 600;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 

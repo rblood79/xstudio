@@ -56,6 +56,8 @@ export interface SearchFieldProps {
   minLength?: number;
   maxLength?: number;
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -311,7 +313,10 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 280;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 280;
       const height = size.height;
       const iconSize = size.iconSize ?? 18;
 

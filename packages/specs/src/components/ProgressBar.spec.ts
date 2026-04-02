@@ -37,6 +37,8 @@ export interface ProgressBarProps {
   isIndeterminate?: boolean;
   isDisabled?: boolean;
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -247,7 +249,10 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md;
       const fillColor =
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
-      const width = (props.style?.width as number) || 240;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 240;
       const barHeight = barDims.barHeight;
       const styleGap = props.style?.gap;
       const gap =

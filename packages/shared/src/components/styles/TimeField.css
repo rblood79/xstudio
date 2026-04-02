@@ -87,7 +87,7 @@
 
     /* ===== Label ===== */
     --label-font-size: var(--tf-label-size);
-    --label-font-weight: 500;
+    --label-font-weight: 600;
     --label-margin: var(--spacing-xs);
 
     &[data-variant="primary"],

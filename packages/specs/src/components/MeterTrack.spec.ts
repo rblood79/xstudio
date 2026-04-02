@@ -22,6 +22,8 @@ export interface MeterTrackProps {
   size?: "sm" | "md" | "lg";
   value?: number;
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -115,7 +117,10 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
         METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;
       const sizeName = props.size ?? "md";
 
-      const width = (props.style?.width as number) || 240;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 240;
       const barHeight = size.height;
 
       const styleBr = props.style?.borderRadius;

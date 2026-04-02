@@ -66,6 +66,8 @@ export interface NumberFieldProps {
     maximumFractionDigits?: number;
   };
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
   _hasChildren?: boolean;
 }
@@ -558,7 +560,10 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 200;
       const btnSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;

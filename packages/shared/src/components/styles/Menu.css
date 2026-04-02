@@ -100,7 +100,7 @@
   /* ========== MenuItem Slots ========== */
   .react-aria-MenuItem {
     [slot="label"] {
-      font-weight: 500;
+      font-weight: 600;
       grid-area: label;
       color: var(--fg);
     }

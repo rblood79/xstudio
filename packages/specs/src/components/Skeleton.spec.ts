@@ -18,6 +18,8 @@ export interface SkeletonProps {
   skeletonVariant?: "text" | "avatar" | "card" | "list";
   width?: number;
   height?: number;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -77,7 +79,10 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const skeletonType = props.skeletonVariant || "text";
-      const width = props.width || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : props.width || 200;
       const height = props.height || size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값

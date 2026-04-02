@@ -558,18 +558,15 @@ export function applyImplicitStyles(
   // ── ListBox ──────────────────────────────────────────────────────────
   // CSS: display:flex column, padding, gap, border
   if (containerTag === "listbox") {
-    const sizeName = (containerProps?.size as string) ?? "md";
-    const pad = sizeName === "sm" ? 4 : sizeName === "lg" ? 8 : 6;
-    const gap = sizeName === "sm" ? 2 : sizeName === "lg" ? 6 : 4;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
       flexDirection: "column",
-      gap: parentStyle.gap ?? gap,
-      paddingTop: parentStyle.paddingTop ?? pad,
-      paddingBottom: parentStyle.paddingBottom ?? pad,
-      paddingLeft: parentStyle.paddingLeft ?? pad,
-      paddingRight: parentStyle.paddingRight ?? pad,
+      gap: parentStyle.gap ?? 4,
+      paddingTop: parentStyle.paddingTop ?? 6,
+      paddingBottom: parentStyle.paddingBottom ?? 6,
+      paddingLeft: parentStyle.paddingLeft ?? 6,
+      paddingRight: parentStyle.paddingRight ?? 6,
     });
   }
 
@@ -578,8 +575,7 @@ export function applyImplicitStyles(
   if (containerTag === "gridlist") {
     const layout = containerProps?.layout as string | undefined;
     const columns = (containerProps?.columns as number) || 2;
-    const sizeName = (containerProps?.size as string) ?? "md";
-    const gap = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+    const gap = 12;
 
     if (layout === "grid") {
       effectiveParent = withParentStyle(containerEl, {
@@ -602,28 +598,37 @@ export function applyImplicitStyles(
   // Composition 패턴: 자식 Text/Description Element를 column 방향으로 배치
   // CSS 동기화: .react-aria-GridListItem { padding, border(1px), border-radius }
   if (containerTag === "gridlistitem") {
-    const sizeName =
-      (containerProps?.size as string) ??
-      ((containerEl.parent_id
-        ? (
-            elementById.get(containerEl.parent_id)?.props as
-              | Record<string, unknown>
-              | undefined
-          )?.size
-        : undefined) as string | undefined) ??
-      "md";
-    const itemPadX = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
-    const itemPadY = sizeName === "sm" ? 8 : sizeName === "lg" ? 12 : 10;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
       flexDirection: "column",
-      gap: parentStyle.gap ?? 4,
-      paddingTop: parentStyle.paddingTop ?? itemPadY,
-      paddingBottom: parentStyle.paddingBottom ?? itemPadY,
-      paddingLeft: parentStyle.paddingLeft ?? itemPadX,
-      paddingRight: parentStyle.paddingRight ?? itemPadX,
+      gap: parentStyle.gap ?? 2,
+      paddingTop: parentStyle.paddingTop ?? 10,
+      paddingBottom: parentStyle.paddingBottom ?? 10,
+      paddingLeft: parentStyle.paddingLeft ?? 12,
+      paddingRight: parentStyle.paddingRight ?? 12,
       borderWidth: parentStyle.borderWidth ?? 1,
+    });
+    // CSS 정합성: .gridlist-item-label { font-size: var(--text-sm)=14 }
+    //             .gridlist-item-description { font-size: var(--text-xs)=12 }
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style as Record<string, unknown>) || {};
+      if (child.tag === "Text" && cs.fontSize == null) {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: { ...cs, fontSize: 14, fontWeight: cs.fontWeight ?? 600 },
+          },
+        };
+      }
+      if (child.tag === "Description" && cs.fontSize == null) {
+        return {
+          ...child,
+          props: { ...child.props, style: { ...cs, fontSize: 12 } },
+        };
+      }
+      return child;
     });
   }
 
@@ -639,6 +644,27 @@ export function applyImplicitStyles(
       paddingBottom: parentStyle.paddingBottom ?? 4,
       paddingLeft: parentStyle.paddingLeft ?? 12,
       paddingRight: parentStyle.paddingRight ?? 12,
+    });
+    // CSS 정합성: [slot="label"] { font-size: var(--text-sm)=14, font-weight:600 }
+    //             [slot="description"] { font-size: var(--text-xs)=12 }
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style as Record<string, unknown>) || {};
+      if (child.tag === "Text" && cs.fontSize == null) {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: { ...cs, fontSize: 14, fontWeight: cs.fontWeight ?? 600 },
+          },
+        };
+      }
+      if (child.tag === "Description" && cs.fontSize == null) {
+        return {
+          ...child,
+          props: { ...child.props, style: { ...cs, fontSize: 12 } },
+        };
+      }
+      return child;
     });
   }
 

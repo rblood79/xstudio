@@ -3,6 +3,7 @@
   .react-aria-GridList {
     display: grid;
     grid-template-columns: 1fr;
+    width: 100%;
     padding: 0;
     border: none;
     border-radius: 0;
@@ -35,11 +36,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    gap: var(--spacing-2xs);
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
     background: var(--bg-overlay);
     color: var(--fg);
+    font-size: var(--text-sm);
+    font-weight: 600;
     cursor: pointer;
     outline: none;
     transition: all 150ms ease;
@@ -83,16 +87,16 @@
 
     /* 카드 내부 라벨 */
     .gridlist-item-label {
+      font-size: var(--text-sm);
       font-weight: 600;
-      line-height: 1.4;
+      line-height: var(--text-sm--line-height);
     }
 
     /* 카드 내부 설명 */
     .gridlist-item-description {
-      font-size: 0.875em;
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
       color: var(--fg-muted);
-      margin-top: var(--spacing-2xs);
-      line-height: 1.4;
     }
 
     /* 드래그 핸들 */
@@ -158,49 +162,6 @@
   .react-aria-GridListItem[data-drop-target] {
     outline: 2px solid var(--accent);
     background: color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-
-  /* ========== Size Variants ========== */
-  .react-aria-GridList[data-size="sm"] {
-    gap: var(--spacing-xs);
-
-    .react-aria-GridListItem {
-      padding: var(--spacing-sm) var(--spacing-md);
-      border-radius: var(--radius-md);
-      font-size: var(--text-sm);
-
-      &[data-selected] {
-        padding: calc(var(--spacing-sm) - 1px) calc(var(--spacing-md) - 1px);
-      }
-    }
-  }
-
-  .react-aria-GridList[data-size="md"] {
-    gap: var(--spacing-md);
-
-    .react-aria-GridListItem {
-      padding: var(--spacing-md) var(--spacing-lg);
-      border-radius: var(--radius-lg);
-      font-size: var(--text-sm);
-
-      &[data-selected] {
-        padding: calc(var(--spacing-md) - 1px) calc(var(--spacing-lg) - 1px);
-      }
-    }
-  }
-
-  .react-aria-GridList[data-size="lg"] {
-    gap: var(--spacing-lg);
-
-    .react-aria-GridListItem {
-      padding: var(--spacing-lg) var(--spacing-xl);
-      border-radius: var(--radius-lg);
-      font-size: var(--text-base);
-
-      &[data-selected] {
-        padding: calc(var(--spacing-lg) - 1px) calc(var(--spacing-xl) - 1px);
-      }
-    }
   }
 
   /* ========== Forced Colors Mode (High Contrast) ========== */

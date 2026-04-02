@@ -64,6 +64,8 @@ export interface SelectProps {
   /** 선택된 아이템 인덱스 (하이라이트용) */
   selectedIndex?: number;
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
   /** ElementSprite에서 주입: 자식 Element 존재 시 spec shapes에서 label 렌더링 스킵 */
   _hasChildren?: boolean;
@@ -428,7 +430,10 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 200;
       const chevronSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;

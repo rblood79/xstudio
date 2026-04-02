@@ -44,6 +44,8 @@ export interface DateSegmentProps {
   /** 읽기 전용 여부 (literal 세그먼트: /, : 등) */
   isLiteral?: boolean;
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -172,7 +174,10 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
             : parseFloat(String(styleBr)) || 0
           : (size.borderRadius as unknown as number);
 
-      const width = (props.style?.width as number) || 32;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 32;
       const height = size.height;
 
       // 포커스 시 primary 배경, 기본은 반투명 표면 색상

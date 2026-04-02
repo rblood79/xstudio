@@ -1312,6 +1312,19 @@ export const ElementSprite = memo(function ElementSprite({
     return `${specSize.descFontSize ?? 14}:${specSize.descFontWeight ?? 400}`;
   });
 
+  // ListBoxItem/GridListItem 자식 Text/Description: CSS 정합성 fontSize 주입
+  // CSS: [slot="label"] font-size: var(--text-sm)=14, [slot="description"] font-size: var(--text-xs)=12
+  const collectionItemFontStyle = useStore((state) => {
+    const tag = element.tag;
+    if (tag !== "Text" && tag !== "Description") return null;
+    if (!element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (parent?.tag !== "ListBoxItem" && parent?.tag !== "GridListItem")
+      return null;
+    if (tag === "Text") return "14:600";
+    return "12:400";
+  });
+
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
   // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
   // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
@@ -1464,8 +1477,9 @@ export const ElementSprite = memo(function ElementSprite({
 
   // 🚀 InlineAlert 자식: spec 기반 font 스타일 주입 (WebGL TextSprite용)
   const effectiveElementForText = useMemo(() => {
-    if (!inlineAlertFontStyle) return effectiveElement;
-    const [fs, fw] = inlineAlertFontStyle.split(":").map(Number);
+    const fontStyleStr = inlineAlertFontStyle ?? collectionItemFontStyle;
+    if (!fontStyleStr) return effectiveElement;
+    const [fs, fw] = fontStyleStr.split(":").map(Number);
     const currentStyle = (effectiveElement.props?.style || {}) as Record<
       string,
       unknown
@@ -1483,7 +1497,7 @@ export const ElementSprite = memo(function ElementSprite({
         },
       },
     } as Element;
-  }, [effectiveElement, inlineAlertFontStyle]);
+  }, [effectiveElement, inlineAlertFontStyle, collectionItemFontStyle]);
 
   // Label은 spec shapes 경로(isUIComponent=true)에서 variant.text로 색상 결정
   // 부모 variant 상속은 L1489-1499의 PARENT_VARIANT_TO_LABEL에서 처리
@@ -2011,7 +2025,29 @@ export const ElementSprite = memo(function ElementSprite({
                 tag === "Tag" ||
                 tag === "Breadcrumbs" ||
                 tag === "Tabs" ||
-                tag === "Toast"
+                tag === "Toast" ||
+                tag === "ProgressBar" ||
+                tag === "ProgressBarTrack" ||
+                tag === "Meter" ||
+                tag === "MeterTrack" ||
+                tag === "TextField" ||
+                tag === "TextArea" ||
+                tag === "Input" ||
+                tag === "Select" ||
+                tag === "SelectTrigger" ||
+                tag === "ComboBox" ||
+                tag === "SearchField" ||
+                tag === "NumberField" ||
+                tag === "GridList" ||
+                tag === "Image" ||
+                tag === "Slider" ||
+                tag === "SliderTrack" ||
+                tag === "ListBox" ||
+                tag === "ColorField" ||
+                tag === "ColorSlider" ||
+                tag === "DateSegment" ||
+                tag === "Skeleton" ||
+                tag === "Switcher"
               ) {
                 specProps = {
                   ...specProps,

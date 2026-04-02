@@ -27,6 +27,8 @@ export interface ProgressBarTrackProps {
   value?: number;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -107,7 +109,10 @@ export const ProgressBarTrackSpec: ComponentSpec<ProgressBarTrackProps> = {
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
       const sizeName = props.size ?? "md";
 
-      const width = (props.style?.width as number) || 240;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 240;
       const barHeight = size.height;
 
       // borderRadius: 사용자 스타일 우선 → spec 상수 fallback

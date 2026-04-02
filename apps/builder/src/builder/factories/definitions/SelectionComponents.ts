@@ -47,7 +47,7 @@ export function createSelectDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -174,7 +174,7 @@ export function createComboBoxDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -276,9 +276,11 @@ export function createListBoxDefinition(
     parent: {
       tag: "ListBox",
       props: {
-        label: "List Box",
         orientation: "vertical",
         selectionMode: "single",
+        style: {
+          width: "100%",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -299,7 +301,7 @@ export function createListBoxDefinition(
             tag: "Text",
             props: {
               children: "Aardvark",
-              style: { fontWeight: 500 },
+              style: { fontSize: 14, fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -308,6 +310,7 @@ export function createListBoxDefinition(
             tag: "Description",
             props: {
               children: "A nocturnal burrowing mammal",
+              slot: "description",
               style: { fontSize: 12 },
             } as ComponentElementProps,
             ...ownerFields,
@@ -329,7 +332,7 @@ export function createListBoxDefinition(
             tag: "Text",
             props: {
               children: "Cat",
-              style: { fontWeight: 500 },
+              style: { fontSize: 14, fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -338,6 +341,7 @@ export function createListBoxDefinition(
             tag: "Description",
             props: {
               children: "A small domesticated carnivore",
+              slot: "description",
               style: { fontSize: 12 },
             } as ComponentElementProps,
             ...ownerFields,
@@ -359,7 +363,7 @@ export function createListBoxDefinition(
             tag: "Text",
             props: {
               children: "Kangaroo",
-              style: { fontWeight: 500 },
+              style: { fontSize: 14, fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -368,6 +372,7 @@ export function createListBoxDefinition(
             tag: "Description",
             props: {
               children: "A large marsupial native to Australia",
+              slot: "description",
               style: { fontSize: 12 },
             } as ComponentElementProps,
             ...ownerFields,
@@ -400,7 +405,6 @@ export function createGridListDefinition(
     parent: {
       tag: "GridList",
       props: {
-        label: "Grid List",
         layout: "stack",
         selectionMode: "none",
         style: {
@@ -426,7 +430,7 @@ export function createGridListDefinition(
             tag: "Text",
             props: {
               children: "Desert Sunset",
-              style: { fontWeight: 600 },
+              style: { fontSize: 14, fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -435,6 +439,7 @@ export function createGridListDefinition(
             tag: "Description",
             props: {
               children: "PNG • 2/3/2024",
+              slot: "description",
               style: { fontSize: 12 },
             } as ComponentElementProps,
             ...ownerFields,
@@ -456,7 +461,7 @@ export function createGridListDefinition(
             tag: "Text",
             props: {
               children: "Hiking Trail",
-              style: { fontWeight: 600 },
+              style: { fontSize: 14, fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -465,6 +470,7 @@ export function createGridListDefinition(
             tag: "Description",
             props: {
               children: "JPEG • 1/10/2022",
+              slot: "description",
               style: { fontSize: 12 },
             } as ComponentElementProps,
             ...ownerFields,
@@ -486,7 +492,7 @@ export function createGridListDefinition(
             tag: "Text",
             props: {
               children: "Mountain Sunrise",
-              style: { fontWeight: 600 },
+              style: { fontSize: 14, fontWeight: 600 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -495,6 +501,7 @@ export function createGridListDefinition(
             tag: "Description",
             props: {
               children: "PNG • 3/15/2015",
+              slot: "description",
               style: { fontSize: 12 },
             } as ComponentElementProps,
             ...ownerFields,

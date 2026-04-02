@@ -144,7 +144,6 @@ export const renderListBox = (
         data-element-id={element.id}
         className={element.props.className}
         variant={(element.props.variant as string) || undefined}
-        size={(element.props.size as "sm" | "md" | "lg") || undefined}
         orientation={
           (element.props.orientation as "horizontal" | "vertical") || "vertical"
         }
@@ -218,7 +217,6 @@ export const renderListBox = (
       data-element-id={element.id}
       className={element.props.className}
       variant={(element.props.variant as string) || undefined}
-      size={(element.props.size as "sm" | "md" | "lg") || undefined}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
@@ -466,36 +464,47 @@ export const renderGridList = (
             isDisabled={Boolean(gridListItemTemplate.props.isDisabled)}
             className={gridListItemTemplate.props.className}
           >
-            {fieldChildren.length > 0
-              ? fieldChildren.map((field) => {
-                  const fieldKey = (field.props as { key?: string }).key;
-                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+            {fieldChildren.length > 0 ? (
+              fieldChildren.map((field) => {
+                const fieldKey = (field.props as { key?: string }).key;
+                const fieldValue = fieldKey ? item[fieldKey] : undefined;
 
-                  return (
-                    <DataField
-                      key={field.id}
-                      fieldKey={fieldKey || ""}
-                      label={(field.props as { label?: string }).label}
-                      type={
-                        (field.props as { type?: string }).type as
-                          | "string"
-                          | "number"
-                          | "boolean"
-                          | "date"
-                          | "image"
-                          | "url"
-                          | "email"
-                      }
-                      value={fieldValue}
-                      visible={
-                        (field.props as { visible?: boolean }).visible !== false
-                      }
-                      style={field.props.style}
-                      className={field.props.className}
-                    />
-                  );
-                })
-              : String(gridListItemTemplate.props.label || "")}
+                return (
+                  <DataField
+                    key={field.id}
+                    fieldKey={fieldKey || ""}
+                    label={(field.props as { label?: string }).label}
+                    type={
+                      (field.props as { type?: string }).type as
+                        | "string"
+                        | "number"
+                        | "boolean"
+                        | "date"
+                        | "image"
+                        | "url"
+                        | "email"
+                    }
+                    value={fieldValue}
+                    visible={
+                      (field.props as { visible?: boolean }).visible !== false
+                    }
+                    style={field.props.style}
+                    className={field.props.className}
+                  />
+                );
+              })
+            ) : (
+              <>
+                <span className="gridlist-item-label">
+                  {String(gridListItemTemplate.props.label || "")}
+                </span>
+                {gridListItemTemplate.props.description && (
+                  <span className="gridlist-item-description">
+                    {String(gridListItemTemplate.props.description)}
+                  </span>
+                )}
+              </>
+            )}
           </GridListItem>
         );
       }
@@ -509,7 +518,6 @@ export const renderGridList = (
       data-element-id={element.id}
       className={element.props.className}
       variant={(element.props.variant as "default" | "accent") || "default"}
-      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       layout={(element.props.layout as "stack" | "grid") || "stack"}
       columns={(element.props.columns as number) || 2}
       selectionMode={
@@ -579,7 +587,7 @@ export const renderGridListItem = (
     ? `skeleton ${element.props.className || ""}`.trim()
     : element.props.className;
 
-  // 콘텐츠 렌더링: 스켈레톤 → 자식 Element → label fallback
+  // 콘텐츠 렌더링: 스켈레톤 → 자식 Element → label+description fallback
   const renderContent = () => {
     if (isSkeleton) {
       return (
@@ -592,7 +600,16 @@ export const renderGridListItem = (
     if (childElements.length > 0) {
       return childElements.map((child) => context.renderElement(child));
     }
-    return String(element.props.label || element.props.children || "");
+    const label = String(element.props.label || element.props.children || "");
+    const description = element.props.description as string | undefined;
+    return (
+      <>
+        <span className="gridlist-item-label">{label}</span>
+        {description && (
+          <span className="gridlist-item-description">{description}</span>
+        )}
+      </>
+    );
   };
 
   return (

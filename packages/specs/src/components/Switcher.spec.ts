@@ -20,6 +20,8 @@ export interface SwitcherProps {
   items?: Array<string | { label: string; value?: string }>;
   activeIndex?: number;
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -93,7 +95,10 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
 
   render: {
     shapes: (props, variant, size, _state = "default") => {
-      const width = (props.style?.width as number) || 240;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 240;
       const height = size.height;
 
       // 사용자 스타일 우선

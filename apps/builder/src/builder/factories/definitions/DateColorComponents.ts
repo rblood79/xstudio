@@ -70,7 +70,7 @@ export function createDatePickerDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -171,7 +171,7 @@ export function createDateRangePickerDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -336,7 +336,7 @@ export function createDateFieldDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -414,7 +414,7 @@ export function createTimeFieldDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -473,6 +473,7 @@ export function createColorFieldDefinition(
           flexDirection: "row",
           alignItems: "center",
           gap: "8px",
+          width: "100%",
         },
       } as ComponentElementProps,
       ...ownerFields,
@@ -487,7 +488,7 @@ export function createColorFieldDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -577,6 +578,7 @@ export function createColorPickerDefinition(
           channel: "hue",
           style: {
             display: "block",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,

@@ -210,7 +210,7 @@ export function createCheckboxGroupDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -239,7 +239,7 @@ export function createCheckboxGroupDefinition(
                   style: {
                     width: "fit-content",
                     height: "fit-content",
-                    fontWeight: 500,
+                    fontWeight: 600,
                   },
                 } as ComponentElementProps,
                 ...ownerFields,
@@ -264,7 +264,7 @@ export function createCheckboxGroupDefinition(
                   style: {
                     width: "fit-content",
                     height: "fit-content",
-                    fontWeight: 500,
+                    fontWeight: 600,
                   },
                 } as ComponentElementProps,
                 ...ownerFields,
@@ -319,7 +319,7 @@ export function createRadioGroupDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -423,7 +423,7 @@ export function createTagGroupDefinition(
         props: {
           children: "Tag Group",
           style: {
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,

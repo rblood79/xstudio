@@ -57,7 +57,7 @@ export function createTextFieldDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -145,7 +145,7 @@ export function createTextAreaDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -467,7 +467,7 @@ export function createNumberFieldDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -590,7 +590,7 @@ export function createSearchFieldDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
-            fontWeight: 500,
+            fontWeight: 600,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -715,6 +715,9 @@ export function createSliderDefinition(
         isRequired: false,
         orientation: "horizontal",
         showValue: true,
+        style: {
+          width: "100%",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

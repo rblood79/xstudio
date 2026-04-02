@@ -54,6 +54,8 @@ export interface ColorFieldProps {
   necessityIndicator?: "icon" | "label";
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "center" | "end";
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -372,7 +374,10 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 160;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 160;
       const height = size.height;
       const swatchSize = size.iconSize ?? 26;
 

@@ -12,14 +12,10 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
-  Tag,
-  FileText,
-  AlertTriangle,
   Grid,
   Binary,
   Rows,
   SquareX,
-  CheckSquare,
   PointerOff,
   Focus,
   MoveHorizontal,
@@ -42,15 +38,10 @@ export interface GridListItem {
  */
 export interface GridListProps {
   variant?: "default" | "accent";
-  size?: "sm" | "md" | "lg";
-  label?: string;
-  description?: string;
-  errorMessage?: string;
   layout?: "stack" | "grid";
   selectionMode?: "none" | "single" | "multiple";
   selectionBehavior?: "toggle" | "replace";
   disallowEmptySelection?: boolean;
-  isRequired?: boolean;
   isDisabled?: boolean;
   autoFocus?: boolean;
   allowsDragging?: boolean;
@@ -61,6 +52,8 @@ export interface GridListProps {
   filterText?: string;
   filterFields?: string[];
   items?: GridListItem[];
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -79,40 +72,11 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   properties: {
     sections: [
       {
-        title: "Content",
-        fields: [
-          {
-            key: "label",
-            type: "string",
-            label: "Label",
-            icon: Tag,
-          },
-          {
-            key: "description",
-            type: "string",
-            label: "Description",
-            icon: FileText,
-            emptyToUndefined: true,
-          },
-          {
-            key: "errorMessage",
-            type: "string",
-            label: "Error Message",
-            icon: AlertTriangle,
-            emptyToUndefined: true,
-          },
-        ],
-      },
-      {
         title: "Layout",
         fields: [
           {
             key: "variant",
             type: "variant",
-          },
-          {
-            key: "size",
-            type: "size",
           },
           {
             key: "layout",
@@ -164,12 +128,6 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             icon: SquareX,
           },
           {
-            key: "isRequired",
-            type: "boolean",
-            label: "Required",
-            icon: CheckSquare,
-          },
-          {
             key: "isDisabled",
             type: "boolean",
             label: "Disabled",
@@ -200,16 +158,6 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             icon: FormInput,
             emptyToUndefined: true,
             placeholder: "gridlist-name",
-          },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: FileText,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
           },
         ],
       },
@@ -250,14 +198,6 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   },
 
   sizes: {
-    sm: {
-      height: 0,
-      paddingX: 0,
-      paddingY: 0,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: 0 as unknown as TokenRef,
-      gap: 8,
-    },
     md: {
       height: 0,
       paddingX: 0,
@@ -265,14 +205,6 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 12,
-    },
-    lg: {
-      height: 0,
-      paddingX: 0,
-      paddingY: 0,
-      fontSize: "{typography.text-base}" as TokenRef,
-      borderRadius: 0 as unknown as TokenRef,
-      gap: 16,
     },
   },
 
@@ -283,6 +215,12 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       pointerEvents: "none",
     },
     focusVisible: {},
+  },
+
+  propagation: {
+    rules: [
+      { parentProp: "variant", childPath: "GridListItem", override: true },
+    ],
   },
 
   render: {
@@ -307,6 +245,8 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      // description font size: CSS 정합성 — sm:text-2xs(10), md:text-xs(12), lg:text-sm(14)
+      const descFontSize = fontSize - 2;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textColor = props.style?.color ?? variant.text;
 
@@ -317,7 +257,10 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       const descGap = fontSize > 14 ? 6 : 4;
 
       // 컨테이너 전체 너비
-      const totalWidth = (props.style?.width as number) || 280;
+      const totalWidth =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 280;
       const cellWidth =
         layout === "grid"
           ? (totalWidth - gap * (numCols - 1)) / numCols
@@ -326,7 +269,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       // 카드 높이 계산
       const cardContentHeight = (item: GridListItem) => {
         const labelH = fontSize;
-        const descH = item.description ? fontSize - 2 + descGap : 0;
+        const descH = item.description ? descFontSize + descGap : 0;
         return cardPaddingY * 2 + labelH + descH;
       };
 
@@ -409,7 +352,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             x: cellX + cardPaddingX,
             y: cellY + cardPaddingY + fontSize + descGap,
             text: item.description,
-            fontSize: fontSize - 2,
+            fontSize: descFontSize,
             fontFamily: ff,
             fill: "{color.neutral-subdued}" as TokenRef,
           });

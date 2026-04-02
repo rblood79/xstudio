@@ -23,6 +23,8 @@ export interface SliderTrackProps {
   maxValue?: number;
   orientation?: "horizontal" | "vertical";
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -117,7 +119,10 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
 
-      const width = (props.style?.width as number) || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 200;
       const trackHeight = trackDims.trackHeight;
       const trackRadius = trackHeight / 2;
 

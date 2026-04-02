@@ -20,6 +20,8 @@ export interface ImageProps {
   alt?: string;
   objectFit?: "cover" | "contain" | "fill" | "none";
   isDisabled?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -96,7 +98,10 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
 
   render: {
     shapes: (props, variant, size, _state = "default") => {
-      const width = (props.style?.width as number) || size.width || 280;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || size.width || 280;
       const height = (props.style?.height as number) || size.height || 200;
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;

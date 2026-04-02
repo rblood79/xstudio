@@ -14,7 +14,6 @@ import {
   GridListProps,
 } from "react-aria-components";
 import { MyCheckbox } from "./Checkbox";
-import type { ComponentSize } from "../types";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import { useCollectionData } from "../hooks";
@@ -35,7 +34,6 @@ interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
   columns?: number;
   // M3 props
   variant?: string;
-  size?: ComponentSize;
   /**
    * React Aria 1.13.0: 커스텀 필터 함수
    * @example filter={(item) => item.status === 'active'}
@@ -60,7 +58,6 @@ export function GridList<T extends object>({
   layout = "stack",
   columns = 2,
   variant = "primary",
-  size = "md",
   filter,
   filterText,
   filterFields = ["label", "name", "title"] as (keyof T)[],
@@ -151,7 +148,6 @@ export function GridList<T extends object>({
           {...props}
           className={gridListClassName}
           data-variant={variant}
-          data-size={size}
           layout={layout}
           style={gridListStyle}
         >
@@ -182,7 +178,6 @@ export function GridList<T extends object>({
           {...props}
           className={gridListClassName}
           data-variant={variant}
-          data-size={size}
           layout={layout}
           style={gridListStyle}
         >
@@ -220,7 +215,6 @@ export function GridList<T extends object>({
           {...props}
           className={gridListClassName}
           data-variant={variant}
-          data-size={size}
           layout={layout}
           style={gridListStyle}
           items={items}
@@ -236,7 +230,6 @@ export function GridList<T extends object>({
         {...props}
         className={gridListClassName}
         data-variant={variant}
-        data-size={size}
       >
         {children}
       </AriaGridList>
@@ -252,7 +245,6 @@ export function GridList<T extends object>({
           {...props}
           className={gridListClassName}
           data-variant={variant}
-          data-size={size}
           layout={layout}
           style={gridListStyle}
         >
@@ -283,7 +275,6 @@ export function GridList<T extends object>({
           {...props}
           className={gridListClassName}
           data-variant={variant}
-          data-size={size}
           layout={layout}
           style={gridListStyle}
         >
@@ -324,7 +315,6 @@ export function GridList<T extends object>({
           {...props}
           className={gridListClassName}
           data-variant={variant}
-          data-size={size}
           layout={layout}
           style={gridListStyle}
           items={items}
@@ -343,7 +333,12 @@ export function GridList<T extends object>({
                     selectionBehavior === "toggle" && (
                       <MyCheckbox slot="selection" />
                     )}
-                  {item.label}
+                  <span className="gridlist-item-label">{item.label}</span>
+                  {(item as Record<string, unknown>).description && (
+                    <span className="gridlist-item-description">
+                      {String((item as Record<string, unknown>).description)}
+                    </span>
+                  )}
                 </>
               )}
             </AriaGridListItem>
@@ -359,7 +354,6 @@ export function GridList<T extends object>({
       {...props}
       className={gridListClassName}
       data-variant={variant}
-      data-size={size}
       layout={layout}
       style={gridListStyle}
     >

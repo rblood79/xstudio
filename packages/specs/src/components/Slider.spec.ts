@@ -48,6 +48,8 @@ export interface SliderProps {
   isRequired?: boolean;
   labelPosition?: "top" | "side";
   children?: string;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -309,7 +311,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
-      const width = (props.style?.width as number) || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 200;
       const gap = size.gap ?? 10;
 
       const min = props.minValue ?? 0;

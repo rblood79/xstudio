@@ -14,6 +14,8 @@ export interface SelectTriggerProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
   isInvalid?: boolean;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -118,7 +120,10 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 200;
+      const width =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : (props.style?.width as number) || 200;
       // 레이아웃 엔진이 계산한 높이를 사용 (ElementSprite가 style.height로 주입)
       const height =
         (props.style?.height as number) || (size.height as number) || 40;

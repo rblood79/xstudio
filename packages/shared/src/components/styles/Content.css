@@ -9,7 +9,7 @@
   /* Text component */
   .react-aria-Text {
     color: var(--fg);
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
   }
 
   /* Description slot */
