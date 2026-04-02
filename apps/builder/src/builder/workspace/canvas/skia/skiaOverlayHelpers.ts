@@ -125,12 +125,14 @@ export function buildPageTitleRenderItems(
   hasSelection: boolean,
 ): PageTitleRenderItem[] {
   return pageFrames
-    .filter((frame) => Boolean(frame.title))
+    .filter((frame): frame is PageFrame & { title: string } =>
+      Boolean(frame.title),
+    )
     .map((frame) => ({
       title: frame.title,
       x: frame.x,
       y: frame.y,
-      elementCount: frame.elementCount,
+      elementCount: frame.elementCount ?? 0,
       highlighted: hasSelection && frame.id === activePageId,
     }));
 }
