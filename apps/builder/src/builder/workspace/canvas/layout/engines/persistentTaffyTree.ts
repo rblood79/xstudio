@@ -232,6 +232,7 @@ export class PersistentTaffyTree {
     const handle = this.handleMap.get(elementId);
     if (handle === undefined) return false;
     this.taffy.markDirty(handle);
+    this._lastJsonMap.delete(elementId);
     return true;
   }
 

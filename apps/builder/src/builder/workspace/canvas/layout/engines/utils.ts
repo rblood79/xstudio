@@ -2770,8 +2770,7 @@ export function enrichWithIntrinsicSize(
       (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
     (isFlexChild &&
       TEXT_LEAF_TAGS.has(tag) &&
-      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)) &&
-      style?.alignSelf !== "stretch") ||
+      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
     (IMAGE_INTRINSIC_TAGS.has(tag) &&
       typeof rawWidth === "string" &&
       INTRINSIC_WIDTH_KEYWORDS.has(rawWidth));
