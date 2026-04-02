@@ -1031,7 +1031,7 @@ function traversePostOrder(
           : parseFloat(String(elementStyle.gap ?? "0")) || 0;
       const totalGap = gapVal * (numCols - 1);
       const trackWidth = Math.max(0, (childAvail.width - totalGap) / numCols);
-      childAvail.width = trackWidth;
+      childAvail = { ...childAvail, width: trackWidth };
     }
   }
 
