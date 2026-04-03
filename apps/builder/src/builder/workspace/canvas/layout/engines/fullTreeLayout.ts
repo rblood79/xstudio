@@ -645,41 +645,43 @@ function estimateChildAvailableSize(
 
 // ─── DFS post-order 순회 ─────────────────────────────────────────────
 
+/** DFS 전체에서 공유되는 불변 context + mutable 누적기 */
+interface DFSContext {
+  // 불변 참조
+  elementsMap: Map<string, Element>;
+  childrenMap: Map<string, string[]>;
+  getChildElements: (id: string) => Element[];
+  // mutable 누적기
+  batch: PersistentBatchNode[];
+  indexMap: Map<string, number>;
+  visiting: Set<string>;
+  processedElementsMap: Map<string, Element>;
+}
+
 /**
  * DFS post-order 순회로 배치 배열 구성.
  *
  * 리프 노드를 먼저 배열에 추가하고, 이후 부모 노드가 자식 인덱스를
  * children 배열에 참조하는 방식으로 tree 구조를 평탄화한다.
- *
- * 이렇게 하면 Rust의 build_tree_batch()가 배열을 한 번만 순회하면서
- * 모든 자식이 이미 생성된 상태로 부모 노드를 생성할 수 있다.
- *
- * @param elementId      - 현재 처리 중인 노드의 요소 ID
- * @param elementsMap    - O(1) 요소 조회 맵
- * @param childrenMap    - O(1) 자식 ID 목록 조회 맵
- * @param availableWidth - 현재 노드에 사용 가능한 너비
- * @param availableHeight- 현재 노드에 사용 가능한 높이
- * @param getChildElements- 자식 Element 배열 accessor
- * @param parentComputed - 부모 computed style (CSS 상속용)
- * @param parentDisplay  - 부모 요소의 display 값 (CSS Blockification 적용 여부 결정)
- * @param batch          - 결과를 누적하는 배치 배열 (mutable)
- * @param indexMap       - elementId → batch 배열 인덱스 매핑 (mutable)
  */
 function traversePostOrder(
   elementId: string,
-  elementsMap: Map<string, Element>,
-  childrenMap: Map<string, string[]>,
+  ctx: DFSContext,
   availableWidth: number,
   availableHeight: number,
-  getChildElements: (id: string) => Element[],
   parentComputed: ComputedStyle,
   parentDisplay: string,
-  batch: PersistentBatchNode[],
-  indexMap: Map<string, number>,
-  visiting: Set<string>,
-  processedElementsMap: Map<string, Element>,
   depth: number = 0,
 ): void {
+  const {
+    elementsMap,
+    childrenMap,
+    getChildElements,
+    batch,
+    indexMap,
+    visiting,
+    processedElementsMap,
+  } = ctx;
   // 1. 중복 방문 방지 (이미 post-order 완료된 노드)
   if (indexMap.has(elementId)) return;
 
@@ -703,11 +705,12 @@ function traversePostOrder(
 
   visiting.add(elementId);
 
-  let rawElement = elementsMap.get(elementId);
-  if (!rawElement) {
+  const storeElement = elementsMap.get(elementId);
+  if (!storeElement) {
     visiting.delete(elementId);
     return;
   }
+  let rawElement = storeElement;
 
   // Heading/Description → InlineAlert 부모 spec에서 font 스타일 주입 (텍스트 폭 측정 정합성)
   if (rawElement.tag === "Heading" || rawElement.tag === "Description") {
@@ -913,8 +916,11 @@ function traversePostOrder(
 
   // implicit style이 주입된 부모 요소 사용
   let element = effectiveParent;
-  // 2-pass re-enrichment를 위해 DFS injection + implicit style 적용된 element 보존
-  processedElementsMap.set(elementId, element);
+  // DFS injection 또는 implicit style로 변경된 경우만 보존 (2-pass re-enrichment용)
+  // storeElement: DFS injection 전 원본. rawElement는 DFS 중 재할당될 수 있어 비교 기준 부적합
+  if (element !== storeElement) {
+    processedElementsMap.set(elementId, element);
+  }
 
   // TagList/TagGroup의 Tag 자식에 TagGroup size 상속 (calculateContentWidth 정합성)
   // DFS rawElement 주입(line 602)은 개별 Tag 노드 진입 시에만 적용되므로,
@@ -1019,7 +1025,7 @@ function traversePostOrder(
 
   // 3. 자식 먼저 재귀 (post-order)
   // Fix 6: 현재 요소의 content area 크기를 자식의 availableWidth/Height로 전달
-  const childAvail = estimateChildAvailableSize(
+  let childAvail = estimateChildAvailableSize(
     elementStyle,
     availableWidth,
     availableHeight,
@@ -1045,17 +1051,11 @@ function traversePostOrder(
   for (const childId of sortedChildIds) {
     traversePostOrder(
       childId,
-      elementsMap,
-      childrenMap,
+      ctx,
       childAvail.width,
       childAvail.height,
-      getChildElements,
       computedStyle,
-      effectiveDisplay, // 현재 요소의 display를 자식의 parentDisplay로 전달
-      batch,
-      indexMap,
-      visiting,
-      processedElementsMap,
+      effectiveDisplay,
       depth + 1,
     );
   }
@@ -1108,15 +1108,12 @@ function traversePostOrder(
     // props.style 참조 비교 — 동일하면 applyImplicitStyles가 수정하지 않은 것
     if (filteredChild.props?.style === originalEl.props?.style) continue;
 
-    // 부모의 implicit styles가 적용된 자식을 보존 (2-pass re-enrichment용)
-    // DFS injection(Label fontSize/lineHeight 등)은 자식 자신의 traversePostOrder에서 설정되었으므로
-    // 기존 processedElement의 스타일을 base로, 부모 implicit styles를 merge
+    // DFS injection(Label fontSize/lineHeight) + parent implicit styles(whiteSpace 등) merge
+    // props: DFS injection 우선 (size 등 보존), style: implicit 우선 (marginLeft 등 적용)
     const existingProcessed = processedElementsMap.get(filteredChild.id);
     if (existingProcessed) {
-      const existingStyle = (existingProcessed.props?.style ?? {}) as Record<
-        string,
-        unknown
-      >;
+      const { style: dfsStyle, ...dfsNonStyleProps } =
+        (existingProcessed.props ?? {}) as Record<string, unknown>;
       const implicitStyle = (filteredChild.props?.style ?? {}) as Record<
         string,
         unknown
@@ -1125,8 +1122,11 @@ function traversePostOrder(
         ...filteredChild,
         props: {
           ...filteredChild.props,
-          ...existingProcessed.props,
-          style: { ...existingStyle, ...implicitStyle },
+          ...dfsNonStyleProps,
+          style: {
+            ...((dfsStyle ?? {}) as Record<string, unknown>),
+            ...implicitStyle,
+          },
         },
       } as Element);
     } else {
@@ -1643,29 +1643,27 @@ export function calculateFullTreeLayout(
 
   // ── Step 1: DFS post-order 순회 → 배치 배열 구성 ──────────────────
   //    (항상 수행 — implicit style, enrichment, CSS resolve 필요)
-  const batch: PersistentBatchNode[] = [];
-  const indexMap = new Map<string, number>();
-  // ADR-006 P0-4: per-call 사이클 감지용 visiting set (모듈 레벨 선언 금지)
-  const visiting = new Set<string>();
-  // DFS injection + implicit style이 적용된 element 보존 (2-pass re-enrichment용)
-  const processedElementsMap = new Map<string, Element>();
+  const dfsCtx: DFSContext = {
+    elementsMap,
+    childrenMap,
+    getChildElements,
+    batch: [],
+    indexMap: new Map<string, number>(),
+    visiting: new Set<string>(),
+    processedElementsMap: new Map<string, Element>(),
+  };
+  const { batch, indexMap, processedElementsMap } = dfsCtx;
 
   // TagGroup allowsRemoving 컨텍스트 설정 (모든 DFS/FlexEngine/재귀 경로에서 조회)
   setTagGroupAllowsRemovingContext(elementsMap, childrenMap);
 
   traversePostOrder(
     rootElementId,
-    elementsMap,
-    childrenMap,
+    dfsCtx,
     availableWidth,
     availableHeight,
-    getChildElements,
     ROOT_COMPUTED_STYLE,
-    "block", // 루트의 부모 display (기본값: block)
-    batch,
-    indexMap,
-    visiting,
-    processedElementsMap,
+    "block",
     0,
   );
 
@@ -1871,7 +1869,7 @@ export function calculateFullTreeLayout(
                   props: { ...childEl.props, style: mergedStyle },
                 } as Element)
               : childEl;
-          const childComputed = resolveStyle(mergedStyle, {});
+          const childComputed = resolveStyle(mergedStyle, ROOT_COMPUTED_STYLE);
           const reEnriched = enrichWithIntrinsicSize(
             mergedEl,
             actualWidth,
