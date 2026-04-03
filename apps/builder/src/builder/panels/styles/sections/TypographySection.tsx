@@ -473,7 +473,6 @@ const TYPOGRAPHY_PROPS = [
   "wordBreak",
   "overflowWrap",
   "textOverflow",
-  "overflow",
 ];
 
 export const TypographySection = memo(function TypographySection() {
