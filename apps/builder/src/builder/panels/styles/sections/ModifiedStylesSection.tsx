@@ -5,11 +5,16 @@
  * 사용자가 수정한 inline style만 표시
  */
 
-import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
-import type { SelectedElement } from '../../../inspector/types';
-import { getModifiedProperties } from '../hooks/useStyleSource';
-import { useStyleActions } from '../hooks/useStyleActions';
-import { Type, Square, RulerDimensionLine } from 'lucide-react';
+import {
+  PropertySection,
+  PropertyUnitInput,
+  PropertyColor,
+  PropertySelect,
+} from "../../../components";
+import type { SelectedElement } from "../../../inspector/types";
+import { getModifiedProperties } from "../hooks/useStyleSource";
+import { useStyleActions } from "../hooks/useStyleActions";
+import { Type, Square, RulerDimensionLine } from "lucide-react";
 import {
   FONT_FAMILIES,
   FONT_WEIGHTS,
@@ -19,7 +24,7 @@ import {
   ALIGN_ITEMS_OPTIONS,
   JUSTIFY_CONTENT_OPTIONS,
   FLEX_WRAP_OPTIONS,
-} from '../constants/styleOptions';
+} from "../constants/styleOptions";
 
 interface ModifiedStylesSectionProps {
   selectedElement: SelectedElement;
@@ -36,9 +41,7 @@ export function ModifiedStylesSection({
       <PropertySection title="Modified Styles">
         <div className="empty-state">
           <p className="empty-message">No modified styles</p>
-          <p className="empty-hint">
-            Edit any style property to see it here
-          </p>
+          <p className="empty-hint">Edit any style property to see it here</p>
         </div>
       </PropertySection>
     );
@@ -47,40 +50,84 @@ export function ModifiedStylesSection({
   // Group properties by category for better organization
   const categorizedProps = {
     layout: modifiedProperties.filter((p) =>
-      ['display', 'flexDirection', 'alignItems', 'justifyContent', 'gap', 'flexWrap'].includes(p)
+      [
+        "display",
+        "flexDirection",
+        "alignItems",
+        "justifyContent",
+        "gap",
+        "flexWrap",
+      ].includes(p),
     ),
     spacing: modifiedProperties.filter((p) =>
-      ['padding', 'margin', 'width', 'height', 'top', 'left', 'right', 'bottom'].includes(p)
+      [
+        "padding",
+        "margin",
+        "width",
+        "height",
+        "top",
+        "left",
+        "right",
+        "bottom",
+      ].includes(p),
     ),
     appearance: modifiedProperties.filter((p) =>
-      ['backgroundColor', 'backgroundImage', 'backgroundSize', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle'].includes(p)
+      [
+        "backgroundColor",
+        "backgroundImage",
+        "backgroundSize",
+        "borderColor",
+        "borderWidth",
+        "borderRadius",
+        "borderStyle",
+        "overflow",
+        "boxShadow",
+      ].includes(p),
     ),
     typography: modifiedProperties.filter((p) =>
-      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight', 'letterSpacing', 'color', 'textAlign', 'textDecoration', 'textTransform', 'verticalAlign'].includes(p)
+      [
+        "fontFamily",
+        "fontSize",
+        "fontWeight",
+        "fontStyle",
+        "lineHeight",
+        "letterSpacing",
+        "color",
+        "textAlign",
+        "textDecoration",
+        "textTransform",
+        "verticalAlign",
+      ].includes(p),
     ),
   };
 
   // Render property input based on type
   const renderProperty = (property: string) => {
-    const value = selectedElement.style?.[property as keyof React.CSSProperties];
+    const value =
+      selectedElement.style?.[property as keyof React.CSSProperties];
     if (!value) return null;
 
     // Background image (gradient) — read-only display
-    if (property === 'backgroundImage' || property === 'backgroundSize') {
+    if (property === "backgroundImage" || property === "backgroundSize") {
       const displayValue = String(value);
-      const truncated = displayValue.length > 30
-        ? displayValue.slice(0, 30) + '…'
-        : displayValue;
+      const truncated =
+        displayValue.length > 30
+          ? displayValue.slice(0, 30) + "…"
+          : displayValue;
       return (
         <div key={property} className="modified-readonly-field">
-          <span className="modified-readonly-label">{formatLabel(property)}</span>
-          <span className="modified-readonly-value" title={displayValue}>{truncated}</span>
+          <span className="modified-readonly-label">
+            {formatLabel(property)}
+          </span>
+          <span className="modified-readonly-value" title={displayValue}>
+            {truncated}
+          </span>
         </div>
       );
     }
 
     // Color properties
-    if (['backgroundColor', 'borderColor', 'color'].includes(property)) {
+    if (["backgroundColor", "borderColor", "color"].includes(property)) {
       return (
         <PropertyColor
           key={property}
@@ -93,7 +140,7 @@ export function ModifiedStylesSection({
     }
 
     // Font family
-    if (property === 'fontFamily') {
+    if (property === "fontFamily") {
       return (
         <PropertySelect
           key={property}
@@ -107,7 +154,7 @@ export function ModifiedStylesSection({
     }
 
     // Font weight
-    if (property === 'fontWeight') {
+    if (property === "fontWeight") {
       return (
         <PropertySelect
           key={property}
@@ -121,7 +168,7 @@ export function ModifiedStylesSection({
     }
 
     // Border style
-    if (property === 'borderStyle') {
+    if (property === "borderStyle") {
       return (
         <PropertySelect
           key={property}
@@ -135,7 +182,7 @@ export function ModifiedStylesSection({
     }
 
     // Layout properties (display, flexDirection, alignItems, justifyContent, flexWrap)
-    if (property === 'display') {
+    if (property === "display") {
       return (
         <PropertySelect
           key={property}
@@ -148,7 +195,7 @@ export function ModifiedStylesSection({
       );
     }
 
-    if (property === 'flexDirection') {
+    if (property === "flexDirection") {
       return (
         <PropertySelect
           key={property}
@@ -161,7 +208,7 @@ export function ModifiedStylesSection({
       );
     }
 
-    if (property === 'alignItems') {
+    if (property === "alignItems") {
       return (
         <PropertySelect
           key={property}
@@ -174,7 +221,7 @@ export function ModifiedStylesSection({
       );
     }
 
-    if (property === 'justifyContent') {
+    if (property === "justifyContent") {
       return (
         <PropertySelect
           key={property}
@@ -187,7 +234,7 @@ export function ModifiedStylesSection({
       );
     }
 
-    if (property === 'flexWrap') {
+    if (property === "flexWrap") {
       return (
         <PropertySelect
           key={property}
@@ -251,34 +298,36 @@ export function ModifiedStylesSection({
 // Helper: Format property name to readable label
 function formatLabel(property: string): string {
   return property
-    .replace(/([A-Z])/g, ' $1')
+    .replace(/([A-Z])/g, " $1")
     .replace(/^./, (str) => str.toUpperCase())
     .trim();
 }
 
 // Helper: Get units for property
 function getUnitsForProperty(property: string): string[] {
-  if (['width', 'height', 'top', 'left', 'right', 'bottom'].includes(property)) {
-    return ['reset', 'px', '%', 'rem', 'em', 'vh', 'vw'];
+  if (
+    ["width", "height", "top", "left", "right", "bottom"].includes(property)
+  ) {
+    return ["reset", "px", "%", "rem", "em", "vh", "vw"];
   }
-  if (['padding', 'margin', 'gap'].includes(property)) {
-    return ['reset', 'px', 'rem', 'em'];
+  if (["padding", "margin", "gap"].includes(property)) {
+    return ["reset", "px", "rem", "em"];
   }
-  if (['fontSize', 'lineHeight', 'letterSpacing'].includes(property)) {
-    return ['reset', 'px', 'rem', 'em', 'pt'];
+  if (["fontSize", "lineHeight", "letterSpacing"].includes(property)) {
+    return ["reset", "px", "rem", "em", "pt"];
   }
-  if (['borderWidth'].includes(property)) {
-    return ['reset', 'px'];
+  if (["borderWidth"].includes(property)) {
+    return ["reset", "px"];
   }
-  if (['borderRadius'].includes(property)) {
-    return ['reset', 'px', '%', 'rem', 'em'];
+  if (["borderRadius"].includes(property)) {
+    return ["reset", "px", "%", "rem", "em"];
   }
-  return ['px'];
+  return ["px"];
 }
 
 // Helper: Get min value for property
 function getMinForProperty(property: string): number {
-  if (['top', 'left', 'right', 'bottom', 'letterSpacing'].includes(property)) {
+  if (["top", "left", "right", "bottom", "letterSpacing"].includes(property)) {
     return -9999;
   }
   return 0;
@@ -286,19 +335,21 @@ function getMinForProperty(property: string): number {
 
 // Helper: Get max value for property
 function getMaxForProperty(property: string): number {
-  if (['width', 'height', 'top', 'left', 'right', 'bottom'].includes(property)) {
+  if (
+    ["width", "height", "top", "left", "right", "bottom"].includes(property)
+  ) {
     return 9999;
   }
-  if (['padding', 'margin', 'gap', 'borderRadius'].includes(property)) {
+  if (["padding", "margin", "gap", "borderRadius"].includes(property)) {
     return 500;
   }
-  if (['fontSize'].includes(property)) {
+  if (["fontSize"].includes(property)) {
     return 200;
   }
-  if (['borderWidth'].includes(property)) {
+  if (["borderWidth"].includes(property)) {
     return 100;
   }
-  if (['lineHeight', 'letterSpacing'].includes(property)) {
+  if (["lineHeight", "letterSpacing"].includes(property)) {
     return 10;
   }
   return 9999;
