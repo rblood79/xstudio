@@ -45,7 +45,7 @@ import {
 import { renderWorkflowMinimap, type MinimapConfig } from "./workflowMinimap";
 import {
   buildPageFrameMap,
-  buildChildOverflowContextMap,
+  getCachedChildOverflowContextMap,
   type OverflowContentInfo,
   type ChildOverflowContext,
 } from "./skiaFrameHelpers";
@@ -395,7 +395,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
 
       // ── Overflow Hatching (scroll/auto 부모의 자식 선택 시 사선 패턴) ──
       if (overflowInfoMap && selection.selectedElementIds.length > 0) {
-        const childCtxMap = buildChildOverflowContextMap(overflowInfoMap);
+        const childCtxMap = getCachedChildOverflowContextMap(overflowInfoMap);
         for (const selId of selection.selectedElementIds) {
           const ctx = childCtxMap.get(selId);
           if (

@@ -54,11 +54,9 @@ export function buildPageFrameMap(
 export interface OverflowContentInfo {
   containerBounds: BoundingBox;
   contentBounds: BoundingBox;
-  overflowChildBounds: BoundingBox[];
-  /** 경계를 벗어나는 자식 ID 목록 */
-  overflowChildIds: string[];
+  overflowChildren: Array<{ id: string; bounds: BoundingBox }>;
   /** overflow 타입 — scroll/auto 시 선택 상태에서 해칭 패턴 표시 */
-  overflowType: string;
+  overflowType: "hidden" | "clip" | "scroll" | "auto";
 }
 
 /** 자식 요소가 속한 overflow 부모 정보 */
@@ -68,7 +66,7 @@ export interface ChildOverflowContext {
   /** 자식 요소의 bounds (원본) */
   childBounds: BoundingBox;
   /** 부모의 overflow 타입 */
-  overflowType: string;
+  overflowType: "hidden" | "clip" | "scroll" | "auto";
 }
 
 /**
@@ -105,8 +103,7 @@ export function buildOverflowInfoMap(
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    const overflowChildBounds: BoundingBox[] = [];
-    const overflowChildIds: string[] = [];
+    const overflowChildren: Array<{ id: string; bounds: BoundingBox }> = [];
 
     for (const child of children) {
       const b = treeBoundsMap.get(child.id);
@@ -118,12 +115,11 @@ export function buildOverflowInfoMap(
       maxY = Math.max(maxY, b.y + b.height);
 
       if (b.x < cx || b.y < cy || b.x + b.width > cr || b.y + b.height > cb) {
-        overflowChildBounds.push(b);
-        overflowChildIds.push(child.id);
+        overflowChildren.push({ id: child.id, bounds: b });
       }
     }
 
-    if (minX === Infinity || overflowChildBounds.length === 0) continue;
+    if (minX === Infinity || overflowChildren.length === 0) continue;
 
     result.set(elementId, {
       containerBounds,
@@ -133,9 +129,8 @@ export function buildOverflowInfoMap(
         width: maxX - minX,
         height: maxY - minY,
       },
-      overflowChildBounds,
-      overflowChildIds,
-      overflowType: overflow,
+      overflowChildren,
+      overflowType: overflow as "hidden" | "clip" | "scroll" | "auto",
     });
   }
 
@@ -151,10 +146,10 @@ export function buildChildOverflowContextMap(
 ): Map<string, ChildOverflowContext> {
   const result = new Map<string, ChildOverflowContext>();
   for (const info of overflowInfoMap.values()) {
-    for (let i = 0; i < info.overflowChildIds.length; i++) {
-      result.set(info.overflowChildIds[i], {
+    for (const child of info.overflowChildren) {
+      result.set(child.id, {
         containerBounds: info.containerBounds,
-        childBounds: info.overflowChildBounds[i],
+        childBounds: child.bounds,
         overflowType: info.overflowType,
       });
     }
@@ -198,6 +193,31 @@ export function getCachedOverflowInfoMap(
   _cachedOverflowInfoPosVersion = pagePosVersion;
 
   return _cachedOverflowInfoMap;
+}
+
+// ============================================
+// Child Overflow Context Cache
+// ============================================
+
+let _cachedChildCtxMap: Map<string, ChildOverflowContext> | null = null;
+let _cachedChildCtxSource: Map<string, OverflowContentInfo> | null = null;
+
+/**
+ * buildChildOverflowContextMap()의 참조 비교 캐시 래퍼.
+ * overflowInfoMap 참조가 같으면 이전 결과를 반환한다.
+ */
+export function getCachedChildOverflowContextMap(
+  overflowInfoMap: Map<string, OverflowContentInfo>,
+): Map<string, ChildOverflowContext> {
+  if (
+    _cachedChildCtxSource === overflowInfoMap &&
+    _cachedChildCtxMap !== null
+  ) {
+    return _cachedChildCtxMap;
+  }
+  _cachedChildCtxMap = buildChildOverflowContextMap(overflowInfoMap);
+  _cachedChildCtxSource = overflowInfoMap;
+  return _cachedChildCtxMap;
 }
 
 export function buildElementBoundsMapFromTreeBounds(

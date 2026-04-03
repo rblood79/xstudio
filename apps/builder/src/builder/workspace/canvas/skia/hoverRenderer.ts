@@ -103,14 +103,13 @@ export function renderOverflowContent(
 ): void {
   const scope = new SkiaDisposable();
   try {
-    const { containerBounds: c, overflowChildBounds } = info;
+    const { containerBounds: c, overflowChildren } = info;
 
     // 컨테이너 내부를 제외한 영역에만 렌더 (Difference clipping)
     canvas.save();
     const clipRect = ck.LTRBRect(c.x, c.y, c.x + c.width, c.y + c.height);
     canvas.clipRect(clipRect, ck.ClipOp.Difference, true);
 
-    // 1. 자식 bounds 반투명 fill
     const fillPaint = scope.track(new ck.Paint());
     fillPaint.setAntiAlias(true);
     fillPaint.setStyle(ck.PaintStyle.Fill);
@@ -118,12 +117,6 @@ export function renderOverflowContent(
       ck.Color4f(HOVER_R, HOVER_G, HOVER_B, OVERFLOW_FILL_ALPHA),
     );
 
-    for (const b of overflowChildBounds) {
-      const rect = ck.LTRBRect(b.x, b.y, b.x + b.width, b.y + b.height);
-      canvas.drawRect(rect, fillPaint);
-    }
-
-    // 2. 자식 bounds outline
     const strokePaint = scope.track(new ck.Paint());
     strokePaint.setAntiAlias(true);
     strokePaint.setStyle(ck.PaintStyle.Stroke);
@@ -132,8 +125,10 @@ export function renderOverflowContent(
       ck.Color4f(HOVER_R, HOVER_G, HOVER_B, OVERFLOW_STROKE_ALPHA),
     );
 
-    for (const b of overflowChildBounds) {
+    for (const child of overflowChildren) {
+      const { bounds: b } = child;
       const rect = ck.LTRBRect(b.x, b.y, b.x + b.width, b.y + b.height);
+      canvas.drawRect(rect, fillPaint);
       canvas.drawRect(rect, strokePaint);
     }
 
@@ -149,6 +144,7 @@ export function renderOverflowContent(
 
 const HATCHING_ALPHA = 0.35;
 const HATCHING_LINE_SPACING = 6; // 화면 px 간격
+const MAX_HATCHING_LINES = 200; // GPU 과부하 방지 상한
 
 /**
  * 선택된 자식 요소가 scroll/auto 부모의 경계를 벗어날 때 해칭 패턴 표시.
@@ -193,12 +189,19 @@ export function renderOverflowHatching(
     const bottom = cb.y + cb.height;
     const totalSpan = right - left + (bottom - top);
 
+    // 라인 수 상한 — 큰 요소에서 GPU 과부하 방지
+    const effectiveSpacing =
+      totalSpan / spacing > MAX_HATCHING_LINES
+        ? totalSpan / MAX_HATCHING_LINES
+        : spacing;
+
     const path = scope.track(new ck.Path());
-    for (let d = 0; d < totalSpan; d += spacing) {
+    for (let d = -(bottom - top); d < right - left; d += effectiveSpacing) {
+      // 우하향(\) 45도 대각선
       const x0 = left + d;
       const y0 = top;
-      const x1 = left;
-      const y1 = top + d;
+      const x1 = left + d + (bottom - top);
+      const y1 = bottom;
       path.moveTo(x0, y0);
       path.lineTo(x1, y1);
     }

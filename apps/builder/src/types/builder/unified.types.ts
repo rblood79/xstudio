@@ -1751,6 +1751,7 @@ export function createDefaultBodyProps(): DivElementProps {
     style: {
       display: "block",
       fontFamily: DEFAULT_FONT_FAMILY,
+      overflow: "auto",
     },
   };
 }
