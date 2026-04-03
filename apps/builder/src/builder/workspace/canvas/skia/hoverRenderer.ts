@@ -147,8 +147,8 @@ export function renderOverflowContent(
 // Overflow Hatching Pattern (scroll/auto 선택 시)
 // ============================================
 
-const HATCHING_ALPHA = 0.15;
-const HATCHING_LINE_SPACING = 8; // 화면 px 간격
+const HATCHING_ALPHA = 0.35;
+const HATCHING_LINE_SPACING = 6; // 화면 px 간격
 
 /**
  * 선택된 자식 요소가 scroll/auto 부모의 경계를 벗어날 때 해칭 패턴 표시.
@@ -182,8 +182,9 @@ export function renderOverflowHatching(
     const paint = scope.track(new ck.Paint());
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Stroke);
-    paint.setStrokeWidth(1 / zoom);
-    paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HATCHING_ALPHA));
+    paint.setStrokeWidth(1.5 / zoom);
+    // 빨간 계열 — overflow 영역 경고 표시
+    paint.setColor(ck.Color4f(0.9, 0.2, 0.2, HATCHING_ALPHA));
 
     const spacing = HATCHING_LINE_SPACING / zoom;
     const left = cb.x;
