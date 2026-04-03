@@ -71,6 +71,50 @@ const FLEX_GRID_DISPLAYS = new Set([
 /** traversePostOrder 최대 재귀 깊이 (ADR-006 P0-4) */
 const MAX_TREE_DEPTH = 100;
 
+/** Label DFS injection: size → fontSize/lineHeight 매핑 (LabelSpec 단일 소스) */
+const LABEL_SIZE_STYLE: Record<
+  string,
+  { fontSize: number; lineHeight: string }
+> = {
+  xs: { fontSize: 10, lineHeight: "16px" },
+  sm: { fontSize: 12, lineHeight: "16px" },
+  md: { fontSize: 14, lineHeight: "20px" },
+  lg: { fontSize: 16, lineHeight: "24px" },
+  xl: { fontSize: 18, lineHeight: "28px" },
+};
+
+/** Label DFS injection: size delegation 대상 부모 태그 */
+const LABEL_DELEGATION_PARENT_TAGS = new Set([
+  "Switch",
+  "Checkbox",
+  "Radio",
+  "CheckboxGroup",
+  "RadioGroup",
+  "TagGroup",
+  "Select",
+  "ComboBox",
+  "SearchField",
+  "TextField",
+  "TextArea",
+  "NumberField",
+  "DateField",
+  "TimeField",
+  "ColorField",
+  "Slider",
+  "ProgressBar",
+  "Meter",
+  "DatePicker",
+  "DateRangePicker",
+]);
+
+/** Label DFS injection: size 없이 상위로 통과하는 구조적 래퍼 태그 */
+const LABEL_WRAPPER_TAGS = new Set([
+  "Checkbox",
+  "Radio",
+  "CheckboxItems",
+  "RadioItems",
+]);
+
 // ─── NaN/Infinity sanitize 유틸 (ADR-006 P0-2) ───────────────────────
 
 const sanitizeStats = { count: 0 };
@@ -788,46 +832,6 @@ function traversePostOrder(
 
   // Label → 부모 size 상속 (DFS 진입 시 fontSize/lineHeight 주입)
   // CSS는 --label-font-size 변수로 처리하지만, Taffy는 인라인 fontSize가 필요
-  // LabelSpec 단일 소스: sm=12(text-xs)/16lh, md=14(text-sm)/20lh, lg=16(text-md)/24lh
-  const LABEL_DELEGATION_PARENT_TAGS = new Set([
-    "Switch",
-    "Checkbox",
-    "Radio",
-    "CheckboxGroup",
-    "RadioGroup",
-    "TagGroup",
-    "Select",
-    "ComboBox",
-    "SearchField",
-    "TextField",
-    "TextArea",
-    "NumberField",
-    "DateField",
-    "TimeField",
-    "ColorField",
-    "Slider",
-    "ProgressBar",
-    "Meter",
-    "DatePicker",
-    "DateRangePicker",
-  ]);
-  const LABEL_SIZE_STYLE: Record<
-    string,
-    { fontSize: number; lineHeight: string }
-  > = {
-    xs: { fontSize: 10, lineHeight: "16px" },
-    sm: { fontSize: 12, lineHeight: "16px" },
-    md: { fontSize: 14, lineHeight: "20px" },
-    lg: { fontSize: 16, lineHeight: "24px" },
-    xl: { fontSize: 18, lineHeight: "28px" },
-  };
-  // 구조적 래퍼 태그: size 없이 상위로 통과하는 중간 컨테이너
-  const LABEL_WRAPPER_TAGS = new Set([
-    "Checkbox",
-    "Radio",
-    "CheckboxItems",
-    "RadioItems",
-  ]);
   if (rawElement.tag === "Label") {
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
     const labelStyle = (rawProps?.style || {}) as Record<string, unknown>;
@@ -1231,18 +1235,7 @@ function traversePostOrder(
         | string
         | undefined) || "md";
     {
-      // LabelSpec 단일 소스: xs~xl
-      const LABEL_SIZE_MAP: Record<
-        string,
-        { fontSize: number; lineHeight: string }
-      > = {
-        xs: { fontSize: 10, lineHeight: "16px" },
-        sm: { fontSize: 12, lineHeight: "16px" },
-        md: { fontSize: 14, lineHeight: "20px" },
-        lg: { fontSize: 16, lineHeight: "24px" },
-        xl: { fontSize: 18, lineHeight: "28px" },
-      };
-      const delegated = LABEL_SIZE_MAP[parentSize];
+      const delegated = LABEL_SIZE_STYLE[parentSize];
       if (delegated) {
         const prevGetChildElements2 = effectiveGetChildElements;
         effectiveGetChildElements = (id: string) => {
