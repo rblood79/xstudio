@@ -23,6 +23,7 @@ import {
   Tag,
   FormInput,
   PointerOff,
+  PenOff,
 } from "lucide-react";
 
 /**
@@ -285,6 +286,12 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         title: "State",
         fields: [
           { key: "isDisabled", type: "boolean", icon: PointerOff },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
           {
             key: "name",
             type: "string",

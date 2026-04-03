@@ -224,6 +224,12 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             ],
           },
           {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
+          },
+          {
             key: "isDisabled",
             type: "boolean",
             label: "Disabled",

@@ -18,6 +18,7 @@ import {
   ArrowUp,
   Globe,
   DollarSign,
+  Contrast,
 } from "lucide-react";
 
 /**
@@ -143,6 +144,18 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
               { value: "sm", label: "S" },
               { value: "md", label: "M" },
               { value: "lg", label: "L" },
+            ],
+          },
+          {
+            key: "staticColor",
+            type: "enum",
+            label: "Static Color",
+            icon: Contrast,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "white", label: "White" },
+              { value: "black", label: "Black" },
             ],
           },
         ],

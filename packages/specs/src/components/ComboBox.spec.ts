@@ -199,6 +199,12 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           },
 
           {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
+          },
+          {
             key: "isDisabled",
             type: "boolean",
             label: "Disabled",

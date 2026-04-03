@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Type, Parentheses, Focus, PointerOff } from "lucide-react";
+import { Type, Parentheses, Focus, PointerOff, Contrast } from "lucide-react";
 
 /**
  * Button Props
@@ -104,6 +104,18 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
               { value: "md", label: "M" },
               { value: "lg", label: "L" },
               { value: "xl", label: "XL" },
+            ],
+          },
+          {
+            key: "staticColor",
+            type: "enum",
+            label: "Static Color",
+            icon: Contrast,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "white", label: "White" },
+              { value: "black", label: "Black" },
             ],
           },
         ],

@@ -108,6 +108,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       {
         title: "Appearance",
         fields: [
+          { type: "size" },
           {
             key: "labelPosition",
             type: "enum",
@@ -157,6 +158,12 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             type: "boolean",
             label: "Read Only",
             icon: PenOff,
+          },
+          {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
           },
           {
             key: "name",

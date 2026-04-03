@@ -207,6 +207,12 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             icon: PenOff,
           },
           {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
+          },
+          {
             key: "spellCheck",
             type: "boolean",
             label: "Spell Check",

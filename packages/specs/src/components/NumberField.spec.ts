@@ -118,6 +118,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       {
         title: "Appearance",
         fields: [
+          { type: "size" },
           {
             key: "labelPosition",
             type: "enum",
@@ -259,6 +260,12 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             type: "boolean",
             label: "Read Only",
             icon: PenOff,
+          },
+          {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
           },
           {
             key: "isWheelDisabled",

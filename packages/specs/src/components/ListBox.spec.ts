@@ -20,6 +20,7 @@ import {
   Ruler,
   Rows,
   FormInput,
+  MousePointer2,
 } from "lucide-react";
 import { FILTERING_SECTION } from "../utils/sharedSections";
 
@@ -76,6 +77,16 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             options: [
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "selectionBehavior",
+            type: "enum",
+            label: "Selection Behavior",
+            icon: MousePointer2,
+            options: [
+              { value: "toggle", label: "Toggle" },
+              { value: "replace", label: "Replace" },
             ],
           },
           {
