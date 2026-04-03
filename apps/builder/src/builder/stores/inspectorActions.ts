@@ -227,6 +227,7 @@ export const createInspectorActionsSlice: StateCreator<
       "necessityIndicator",
       "isRequired",
       "labelPosition",
+      "overflow",
     ]);
     const hasLayoutChange = Object.keys(propsUpdate).some((key) =>
       LAYOUT_AFFECTING_PROPS.has(key),

@@ -300,6 +300,11 @@ export interface FrameRenderPlan {
 export interface SharedSceneDerivedData {
   /** element → bounding box (content 빌드에서 생성, 모든 overlay가 재사용) */
   treeBoundsMap: Map<string, import("../selection/types").BoundingBox>;
+  /** overflow 컨테이너 → 자식 bounds 정보 (ADR-050 Phase 3) */
+  overflowInfoMap: Map<
+    string,
+    import("./skiaFrameHelpers").OverflowContentInfo
+  >;
   /** 카메라 상태 */
   cameraX: number;
   cameraY: number;

@@ -8,8 +8,8 @@
  * @since 2025-12-20 Phase 3 - Advanced State Management
  */
 
-import { useAtomValue } from 'jotai';
-import { layoutValuesAtom } from '../atoms/styleAtoms';
+import { useAtomValue } from "jotai";
+import { layoutValuesAtom } from "../atoms/styleAtoms";
 
 export interface LayoutStyleValues {
   display: string;
@@ -18,6 +18,7 @@ export interface LayoutStyleValues {
   justifyContent: string;
   gap: string;
   flexWrap: string;
+  overflow: string;
   padding: string;
   paddingTop: string;
   paddingRight: string;

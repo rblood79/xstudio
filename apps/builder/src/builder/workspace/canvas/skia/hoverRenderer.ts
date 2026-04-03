@@ -6,9 +6,10 @@
  * 카메라 변환(translate + scale) 내부에서 씬-로컬 좌표로 호출된다.
  */
 
-import type { CanvasKit, Canvas } from 'canvaskit-wasm';
-import { SkiaDisposable } from './disposable';
-import type { BoundingBox } from '../selection/types';
+import type { CanvasKit, Canvas } from "canvaskit-wasm";
+import { SkiaDisposable } from "./disposable";
+import type { BoundingBox } from "../selection/types";
+import type { OverflowContentInfo } from "./skiaFrameHelpers";
 
 // ============================================
 // Constants — 호버 하이라이트 (blue-500, alpha 0.5)
@@ -18,6 +19,13 @@ const HOVER_R = 0x3b / 255;
 const HOVER_G = 0x82 / 255;
 const HOVER_B = 0xf6 / 255;
 const HOVER_ALPHA = 0.5;
+
+// ============================================
+// Constants — overflow content (blue-500, 낮은 alpha)
+// ============================================
+
+const OVERFLOW_FILL_ALPHA = 0.08;
+const OVERFLOW_STROKE_ALPHA = 0.25;
 
 // ============================================
 // Constants — editingContext 경계 (gray-400, alpha 0.3)
@@ -70,6 +78,64 @@ export function renderHoverHighlight(
     canvas.drawRect(rect, paint);
   } finally {
     dashEffect?.delete();
+    scope.dispose();
+  }
+}
+
+// ============================================
+// Overflow Content (Figma-style)
+// ============================================
+
+/**
+ * overflow 컨테이너 밖으로 벗어난 자식 영역을 반투명으로 렌더링한다.
+ *
+ * 컨테이너 내부는 클리핑(Difference)하여 컨테이너 밖 영역만 표시한다.
+ * 씬-로컬 좌표계에서 호출. strokeWidth = 1/zoom으로 화면상 1px 유지.
+ */
+export function renderOverflowContent(
+  ck: CanvasKit,
+  canvas: Canvas,
+  info: OverflowContentInfo,
+  zoom: number,
+): void {
+  const scope = new SkiaDisposable();
+  try {
+    const { containerBounds: c, overflowChildBounds } = info;
+
+    // 컨테이너 내부를 제외한 영역에만 렌더 (Difference clipping)
+    canvas.save();
+    const clipRect = ck.LTRBRect(c.x, c.y, c.x + c.width, c.y + c.height);
+    canvas.clipRect(clipRect, ck.ClipOp.Difference, true);
+
+    // 1. 자식 bounds 반투명 fill
+    const fillPaint = scope.track(new ck.Paint());
+    fillPaint.setAntiAlias(true);
+    fillPaint.setStyle(ck.PaintStyle.Fill);
+    fillPaint.setColor(
+      ck.Color4f(HOVER_R, HOVER_G, HOVER_B, OVERFLOW_FILL_ALPHA),
+    );
+
+    for (const b of overflowChildBounds) {
+      const rect = ck.LTRBRect(b.x, b.y, b.x + b.width, b.y + b.height);
+      canvas.drawRect(rect, fillPaint);
+    }
+
+    // 2. 자식 bounds outline
+    const strokePaint = scope.track(new ck.Paint());
+    strokePaint.setAntiAlias(true);
+    strokePaint.setStyle(ck.PaintStyle.Stroke);
+    strokePaint.setStrokeWidth(1 / zoom);
+    strokePaint.setColor(
+      ck.Color4f(HOVER_R, HOVER_G, HOVER_B, OVERFLOW_STROKE_ALPHA),
+    );
+
+    for (const b of overflowChildBounds) {
+      const rect = ck.LTRBRect(b.x, b.y, b.x + b.width, b.y + b.height);
+      canvas.drawRect(rect, strokePaint);
+    }
+
+    canvas.restore();
+  } finally {
     scope.dispose();
   }
 }

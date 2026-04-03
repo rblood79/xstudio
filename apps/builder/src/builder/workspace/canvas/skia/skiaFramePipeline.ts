@@ -42,7 +42,10 @@ import {
 } from "./skiaTreeBuilder";
 import { buildNodeBoundsMap } from "./aiEffects";
 import { renderNode } from "./nodeRenderers";
-import { buildElementBoundsMapFromTreeBounds } from "./skiaFrameHelpers";
+import {
+  buildElementBoundsMapFromTreeBounds,
+  getCachedOverflowInfoMap,
+} from "./skiaFrameHelpers";
 import { recordWasmMetric } from "../utils/gpuProfilerCore";
 import { collectVisiblePageRoots } from "./visiblePageRoots";
 
@@ -138,6 +141,10 @@ export function buildSkiaFrameContent(
   return {
     sharedScene: buildSharedSceneDerivedData(
       treeBoundsMap,
+      rendererInput.elementsMap,
+      rendererInput.childrenMap,
+      registryVersion,
+      pagePosVersion,
       cameraX,
       cameraY,
       cameraZoom,
@@ -155,12 +162,23 @@ export const buildFrameContent = buildSkiaFrameContent;
 
 export function buildSharedSceneDerivedData(
   treeBoundsMap: Map<string, BoundingBox>,
+  elementsMap: Map<string, Element>,
+  childrenMap: Map<string, Element[]>,
+  registryVersion: number,
+  pagePosVersion: number,
   cameraX: number,
   cameraY: number,
   cameraZoom: number,
 ): SharedSceneDerivedData {
   return {
     treeBoundsMap,
+    overflowInfoMap: getCachedOverflowInfoMap(
+      treeBoundsMap,
+      elementsMap,
+      childrenMap,
+      registryVersion,
+      pagePosVersion,
+    ),
     cameraX,
     cameraY,
     cameraZoom,

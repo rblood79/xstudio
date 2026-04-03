@@ -2731,6 +2731,11 @@ export function enrichWithIntrinsicSize(
   const style = element.props?.style as Record<string, unknown> | undefined;
   const tag = (element.tag ?? "").toLowerCase();
 
+  // DC-6: overflow cap — height/width: auto + overflow != visible 조합에서
+  // 자식 합산이 availableHeight/Width를 초과하지 않도록 제한
+  const overflow = (style?.overflow as string) ?? "visible";
+  const isOverflowClipped = overflow !== "visible";
+
   const rawHeight = style?.height;
   const INTRINSIC_HEIGHT_KEYWORDS = new Set([
     "fit-content",
@@ -2871,6 +2876,14 @@ export function enrichWithIntrinsicSize(
       injectHeight += box.padding.top + box.padding.bottom;
       injectHeight += box.border.top + box.border.bottom;
     }
+    // DC-6: overflow cap — availableHeight가 있고 overflow가 클리핑되면 초과분 제한
+    if (
+      isOverflowClipped &&
+      availableHeight > 0 &&
+      injectHeight > availableHeight
+    ) {
+      injectHeight = availableHeight;
+    }
     injectedStyle.height = injectHeight;
   }
 
@@ -2899,6 +2912,14 @@ export function enrichWithIntrinsicSize(
     let injectWidth = baseContentWidth;
     injectWidth += box.padding.left + box.padding.right;
     injectWidth += box.border.left + box.border.right;
+    // DC-6: overflow cap — availableWidth가 있고 overflow가 클리핑되면 초과분 제한
+    if (
+      isOverflowClipped &&
+      availableWidth > 0 &&
+      injectWidth > availableWidth
+    ) {
+      injectWidth = availableWidth;
+    }
     // Math.ceil: Taffy(f32)와 JS(f64) 간 부동소수점 정밀도 차이로
     // flex-wrap 컨테이너에서 자식 합계가 부모 폭을 미세하게 초과하여
     // 불필요한 wrap이 발생하는 것을 방지

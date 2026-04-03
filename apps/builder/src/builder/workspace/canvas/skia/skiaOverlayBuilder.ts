@@ -39,9 +39,13 @@ import {
 import {
   renderHoverHighlight,
   renderEditingContextBorder,
+  renderOverflowContent,
 } from "./hoverRenderer";
 import { renderWorkflowMinimap, type MinimapConfig } from "./workflowMinimap";
-import { buildPageFrameMap } from "./skiaFrameHelpers";
+import {
+  buildPageFrameMap,
+  type OverflowContentInfo,
+} from "./skiaFrameHelpers";
 import { buildEdgeGeometryCache } from "./workflowHitTest";
 import { buildWorkflowElementBounds } from "./skiaFramePipeline";
 import {
@@ -150,6 +154,8 @@ export interface OverlayBuildInput {
   workflowHoveredEdgeId: string | null;
   // Hover
   elementHoverState: ElementHoverState;
+  // Overflow (Figma-style content outline)
+  overflowInfoMap?: Map<string, OverflowContentInfo>;
   // Drop Indicator (드래그 중 타겟 표시)
   dropIndicatorState: DropIndicatorState | null;
   // Visible page frames (page title/selection 계층)
@@ -191,6 +197,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     workflowElementBoundsMap,
     workflowHoveredEdgeId,
     elementHoverState,
+    overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
     minimapVisible,
@@ -350,6 +357,14 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           cameraZoom,
           target.dashed,
         );
+      }
+
+      // ── Overflow Content (Figma-style) ──
+      if (hoveredCtxId && overflowInfoMap) {
+        const overflowInfo = overflowInfoMap.get(hoveredCtxId);
+        if (overflowInfo) {
+          renderOverflowContent(ck, canvas, overflowInfo, cameraZoom);
+        }
       }
 
       // ── Drop Indicator ──

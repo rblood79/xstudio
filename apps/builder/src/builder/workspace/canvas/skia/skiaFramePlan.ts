@@ -157,6 +157,7 @@ export function buildFrameRenderPlan(
     workflowElementBoundsMap: workflow?.workflowElementBoundsMap ?? null,
     workflowHoveredEdgeId: workflowHoverState.hoveredEdgeId,
     elementHoverState,
+    overflowInfoMap: sharedScene.overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
     minimapVisible,

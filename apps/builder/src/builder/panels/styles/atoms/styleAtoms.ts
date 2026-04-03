@@ -691,6 +691,7 @@ export const layoutValuesAtom = selectAtom(
       ),
       gap: String(style.gap ?? computed.gap ?? synthetic.gap ?? "0px"),
       flexWrap: String(style.flexWrap ?? computed.flexWrap ?? "nowrap"),
+      overflow: String(style.overflow ?? ""),
       padding: String(style.padding ?? computed.padding ?? "0px"),
       paddingTop: String(
         style.paddingTop ??
