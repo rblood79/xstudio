@@ -15,8 +15,6 @@ import {
   FIELD_AUTO_HEIGHT_VARIABLES,
 } from "../utils/fieldDelegation";
 import {
-  List,
-  LayoutList,
   Hash,
   SquareX,
   CheckSquare,
@@ -29,7 +27,6 @@ import {
   FileText,
   AlertTriangle,
   SpellCheck2,
-  Menu,
 } from "lucide-react";
 
 /**
@@ -135,49 +132,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         ],
       },
       {
-        title: "Trigger Behavior",
-        fields: [
-          {
-            key: "menuTrigger",
-            type: "enum",
-            label: "Menu Trigger",
-            icon: Menu,
-            options: [
-              { value: "focus", label: "Focus" },
-              { value: "input", label: "Input" },
-              { value: "manual", label: "Manual" },
-            ],
-          },
-        ],
-      },
-      {
         title: "State",
         fields: [
-          {
-            key: "selectionMode",
-            type: "enum",
-            label: "Selection Mode",
-            icon: List,
-            options: [
-              { value: "single", label: "Single" },
-              { value: "multiple", label: "Multiple" },
-            ],
-          },
-          {
-            key: "multipleDisplayMode",
-            type: "enum",
-            label: "Display Mode",
-            icon: LayoutList,
-            visibleWhen: {
-              key: "selectionMode",
-              equals: "multiple",
-            },
-            options: [
-              { value: "count", label: 'Count (e.g., "3 selected")' },
-              { value: "list", label: 'List (e.g., "A, B, C")' },
-              { value: "custom", label: "Custom" },
-            ],
-          },
           {
             key: "selectedValue",
             type: "string",
