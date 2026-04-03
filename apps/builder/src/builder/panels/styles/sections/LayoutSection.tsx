@@ -32,9 +32,7 @@ import {
   WrapText,
   CornerDownLeft,
   ArrowRightToLine,
-  Scissors,
 } from "lucide-react";
-import { OVERFLOW_OPTIONS } from "../constants/styleOptions";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useLayoutValuesJotai } from "../hooks/useLayoutValuesJotai";
@@ -462,18 +460,6 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
         />
       </div>
 
-      {/* Overflow */}
-      <div className="layout-container">
-        <PropertySelect
-          icon={Scissors}
-          label="Overflow"
-          className="overflow"
-          value={styleValues.overflow}
-          options={OVERFLOW_OPTIONS}
-          onChange={(value) => updateStyleImmediate("overflow", value)}
-        />
-      </div>
-
       {/* Spacing Section: Padding & Margin */}
       {!isSpacingExpanded ? (
         /* 축소 모드: 단일 입력 */
@@ -578,7 +564,6 @@ const LAYOUT_PROPS = [
   "marginRight",
   "marginBottom",
   "marginLeft",
-  "overflow",
 ];
 
 export const LayoutSection = memo(function LayoutSection() {

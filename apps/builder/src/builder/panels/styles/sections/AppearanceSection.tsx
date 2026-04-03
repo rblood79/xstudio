@@ -24,7 +24,9 @@ import {
   SquareDashedBottom,
   EllipsisVertical,
   Eclipse,
+  Scissors,
 } from "lucide-react";
+import { OVERFLOW_OPTIONS } from "../constants/styleOptions";
 import { shadows } from "@xstudio/specs";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
@@ -182,6 +184,18 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           }}
         />
       </div>
+
+      {/* Overflow */}
+      <div className="style-overflow">
+        <PropertySelect
+          icon={Scissors}
+          label="Overflow"
+          className="overflow"
+          value={styleValues.overflow}
+          options={OVERFLOW_OPTIONS}
+          onChange={(value) => updateStyleImmediate("overflow", value)}
+        />
+      </div>
     </>
   );
 });
@@ -199,6 +213,7 @@ const APPEARANCE_PROPS = [
   "borderRadius",
   "borderStyle",
   "boxShadow",
+  "overflow",
 ];
 
 export const AppearanceSection = memo(function AppearanceSection() {

@@ -691,7 +691,6 @@ export const layoutValuesAtom = selectAtom(
       ),
       gap: String(style.gap ?? computed.gap ?? synthetic.gap ?? "0px"),
       flexWrap: String(style.flexWrap ?? computed.flexWrap ?? "nowrap"),
-      overflow: String(style.overflow ?? ""),
       padding: String(style.padding ?? computed.padding ?? "0px"),
       paddingTop: String(
         style.paddingTop ??
@@ -852,6 +851,7 @@ export const appearanceValuesAtom = selectAtom(
       ),
       borderStyle: String(style.borderStyle ?? computed.borderStyle ?? "solid"),
       boxShadow: String(style.boxShadow ?? computed.boxShadow ?? "none"),
+      overflow: String(style.overflow ?? computed.overflow ?? "visible"),
     };
   },
   (a, b) => {
@@ -863,7 +863,8 @@ export const appearanceValuesAtom = selectAtom(
       a.borderWidth === b.borderWidth &&
       a.borderRadius === b.borderRadius &&
       a.borderStyle === b.borderStyle &&
-      a.boxShadow === b.boxShadow
+      a.boxShadow === b.boxShadow &&
+      a.overflow === b.overflow
     );
   },
 );

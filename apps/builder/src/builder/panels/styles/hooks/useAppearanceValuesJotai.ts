@@ -8,8 +8,8 @@
  * @since 2025-12-20 Phase 3 - Advanced State Management
  */
 
-import { useAtomValue } from 'jotai';
-import { appearanceValuesAtom } from '../atoms/styleAtoms';
+import { useAtomValue } from "jotai";
+import { appearanceValuesAtom } from "../atoms/styleAtoms";
 
 export interface AppearanceStyleValues {
   backgroundColor: string;
@@ -18,6 +18,7 @@ export interface AppearanceStyleValues {
   borderRadius: string;
   borderStyle: string;
   boxShadow: string;
+  overflow: string;
 }
 
 /**

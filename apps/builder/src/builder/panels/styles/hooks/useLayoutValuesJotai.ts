@@ -18,7 +18,6 @@ export interface LayoutStyleValues {
   justifyContent: string;
   gap: string;
   flexWrap: string;
-  overflow: string;
   padding: string;
   paddingTop: string;
   paddingRight: string;
