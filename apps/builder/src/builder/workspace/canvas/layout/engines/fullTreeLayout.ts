@@ -633,6 +633,7 @@ function traversePostOrder(
   batch: PersistentBatchNode[],
   indexMap: Map<string, number>,
   visiting: Set<string>,
+  processedElementsMap: Map<string, Element>,
   depth: number = 0,
 ): void {
   // 1. 중복 방문 방지 (이미 post-order 완료된 노드)
@@ -908,6 +909,8 @@ function traversePostOrder(
 
   // implicit style이 주입된 부모 요소 사용
   let element = effectiveParent;
+  // 2-pass re-enrichment를 위해 DFS injection + implicit style 적용된 element 보존
+  processedElementsMap.set(elementId, element);
 
   // TagList/TagGroup의 Tag 자식에 TagGroup size 상속 (calculateContentWidth 정합성)
   // DFS rawElement 주입(line 602)은 개별 Tag 노드 진입 시에만 적용되므로,
@@ -1048,6 +1051,7 @@ function traversePostOrder(
       batch,
       indexMap,
       visiting,
+      processedElementsMap,
       depth + 1,
     );
   }
@@ -1099,6 +1103,31 @@ function traversePostOrder(
 
     // props.style 참조 비교 — 동일하면 applyImplicitStyles가 수정하지 않은 것
     if (filteredChild.props?.style === originalEl.props?.style) continue;
+
+    // 부모의 implicit styles가 적용된 자식을 보존 (2-pass re-enrichment용)
+    // DFS injection(Label fontSize/lineHeight 등)은 자식 자신의 traversePostOrder에서 설정되었으므로
+    // 기존 processedElement의 스타일을 base로, 부모 implicit styles를 merge
+    const existingProcessed = processedElementsMap.get(filteredChild.id);
+    if (existingProcessed) {
+      const existingStyle = (existingProcessed.props?.style ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const implicitStyle = (filteredChild.props?.style ?? {}) as Record<
+        string,
+        unknown
+      >;
+      processedElementsMap.set(filteredChild.id, {
+        ...filteredChild,
+        props: {
+          ...filteredChild.props,
+          ...existingProcessed.props,
+          style: { ...existingStyle, ...implicitStyle },
+        },
+      } as Element);
+    } else {
+      processedElementsMap.set(filteredChild.id, filteredChild);
+    }
 
     const origStyle = (originalEl.props?.style ?? {}) as Record<
       string,
@@ -1625,6 +1654,8 @@ export function calculateFullTreeLayout(
   const indexMap = new Map<string, number>();
   // ADR-006 P0-4: per-call 사이클 감지용 visiting set (모듈 레벨 선언 금지)
   const visiting = new Set<string>();
+  // DFS injection + implicit style이 적용된 element 보존 (2-pass re-enrichment용)
+  const processedElementsMap = new Map<string, Element>();
 
   // TagGroup allowsRemoving 컨텍스트 설정 (모든 DFS/FlexEngine/재귀 경로에서 조회)
   setTagGroupAllowsRemovingContext(elementsMap, childrenMap);
@@ -1641,6 +1672,7 @@ export function calculateFullTreeLayout(
     batch,
     indexMap,
     visiting,
+    processedElementsMap,
     0,
   );
 
@@ -1805,7 +1837,12 @@ export function calculateFullTreeLayout(
 
         for (const { nodeIndex, actualWidth } of childUpdates) {
           const node = batch[nodeIndex];
-          const childEl = elementsMap.get(node.elementId);
+          // DFS injection + implicit style이 적용된 element 사용 (store 원본 대신)
+          // Label: DFS에서 fontSize/lineHeight 주입, ComboBoxTrigger: implicit에서 width/height 주입
+          // store 원본 사용 시 이 값들이 소실되어 height가 잘못 계산됨
+          const childEl =
+            processedElementsMap.get(node.elementId) ??
+            elementsMap.get(node.elementId);
           if (!childEl) continue;
 
           const childStyle = (childEl.props?.style ?? {}) as Record<
@@ -1828,8 +1865,10 @@ export function calculateFullTreeLayout(
 
           // implicitStyles가 주입한 width를 element에 반영하여 re-enrich
           const batchWidth = node.style.width;
+          const storeStyle = (elementsMap.get(node.elementId)?.props?.style ??
+            {}) as Record<string, unknown>;
           const mergedStyle =
-            batchWidth && !childStyle.width
+            batchWidth && !storeStyle.width
               ? { ...childStyle, width: batchWidth }
               : childStyle;
           const mergedEl =

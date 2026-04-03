@@ -19,6 +19,7 @@ Collection 컴포넌트들(ListBox, GridList, Select, ComboBox, TagGroup 등)의
 **원인**: React Aria의 ComboBox는 각 ComboBoxItem에 `textValue` prop이 필요하지만, Field 컴포넌트를 children으로 사용할 때는 textValue가 설정되지 않았습니다.
 
 **해결책**:
+
 ```typescript
 // SelectionRenderers.tsx:719-741
 const textValue = fieldChildren
@@ -41,6 +42,7 @@ const textValue = fieldChildren
 ```
 
 **결과**:
+
 - 사용자가 "John"을 입력하면 name 또는 email 필드에 "John"이 포함된 항목이 모두 표시됩니다
 - 여러 필드를 한 번에 검색할 수 있습니다
 - 부분 매칭을 지원합니다
@@ -52,10 +54,11 @@ const textValue = fieldChildren
 **해결책**:
 
 **TagGroup 컴포넌트** (`TagGroup.tsx:42-43, 87-151`):
+
 ```typescript
 export interface TagGroupProps<T> {
   // ... other props
-  removedItemIds?: string[];  // Track removed items
+  removedItemIds?: string[]; // Track removed items
 }
 
 // Filter out removed items before rendering
@@ -71,6 +74,7 @@ const tagItems = boundData
 ```
 
 **Preview Renderer** (`CollectionRenderers.tsx:174-384`):
+
 ```typescript
 // ColumnMapping 추출
 const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -98,6 +102,7 @@ const renderChildren = hasValidTemplate
 ```
 
 **결과**:
+
 - TagGroup이 REST API/MOCK_DATA에서 데이터를 로드하여 Tag들을 동적으로 렌더링합니다
 - Field 컴포넌트를 사용하여 각 필드의 타입에 맞게 표시합니다
 - ListBox, GridList, Select, ComboBox와 동일한 패턴을 따릅니다
@@ -111,6 +116,7 @@ const renderChildren = hasValidTemplate
 **아키텍처**:
 
 1. **TagGroup 컴포넌트** - 필터링 로직:
+
 ```typescript
 const tagItems = boundData
   .filter((item, index) => {
@@ -121,6 +127,7 @@ const tagItems = boundData
 ```
 
 2. **Preview Renderer** - onRemove 핸들러:
+
 ```typescript
 onRemove={async (keys) => {
   const keysToRemove = Array.from(keys).map(String);
@@ -143,18 +150,23 @@ onRemove={async (keys) => {
 ```
 
 3. **Inspector Recovery UI** - 복구 버튼:
+
 ```tsx
-{Array.isArray(currentProps.removedItemIds) && currentProps.removedItemIds.length > 0 && (
-  <div style={{ backgroundColor: 'var(--color-warning-bg)' }}>
-    <p>🗑️ Removed items: {currentProps.removedItemIds.length}</p>
-    <button onClick={() => updateProp('removedItemIds', [])}>
-      ♻️ Restore All Removed Items
-    </button>
-  </div>
-)}
+{
+  Array.isArray(currentProps.removedItemIds) &&
+    currentProps.removedItemIds.length > 0 && (
+      <div style={{ backgroundColor: "var(--color-warning-bg)" }}>
+        <p>🗑️ Removed items: {currentProps.removedItemIds.length}</p>
+        <button onClick={() => updateProp("removedItemIds", [])}>
+          ♻️ Restore All Removed Items
+        </button>
+      </div>
+    );
+}
 ```
 
 **데이터 흐름**:
+
 ```
 1. 사용자가 Tag의 X 버튼 클릭
 2. onRemove 콜백 호출
@@ -166,12 +178,14 @@ onRemove={async (keys) => {
 ```
 
 **특징**:
+
 - **비파괴적**: 원본 데이터(REST API/MOCK_DATA) 변경 없음
 - **영구 저장**: removedItemIds가 DB에 저장되어 새로고침 후에도 유지
 - **Undo 가능**: History 시스템과 통합되어 Ctrl+Z로 복구 가능
 - **복구 가능**: Inspector에서 원클릭으로 모든 항목 복구
 
 **결과**:
+
 - Tag를 제거하면 화면에서 즉시 사라지고 다시 나타나지 않습니다
 - Inspector에 제거된 항목 개수가 표시됩니다
 - "♻️ Restore All" 버튼으로 모든 항목을 한 번에 복구할 수 있습니다
@@ -183,6 +197,7 @@ onRemove={async (keys) => {
 **해결책**: 모든 Collection 컴포넌트가 **1개의 child item만 생성**하도록 통일
 
 **변경사항** (`SelectionComponents.ts`):
+
 ```typescript
 // Before
 Select → 3 SelectItems
@@ -196,65 +211,74 @@ ListBox → 1 ListBoxItem
 ```
 
 **이유**:
+
 - columnMapping 모드에서는 1개의 child item이 템플릿으로 사용됩니다
 - 초기에 여러 개의 항목이 있으면 혼란스럽고 불필요합니다
 - 일관된 패턴을 제공합니다
 
 **결과**:
+
 - 모든 Collection 컴포넌트가 동일한 패턴을 따릅니다
 - 사용자가 REST API를 연결하면 1개의 템플릿 항목이 모든 데이터에 적용됩니다
 - 깔끔한 초기 상태를 제공합니다
 
 ## Collection Components 상태
 
-| Component | columnMapping | textValue (filtering) | removedItemIds | Status |
-|-----------|---------------|----------------------|----------------|--------|
-| **ListBox** | ✅ | N/A | N/A | ✅ Implemented |
-| **GridList** | ✅ | N/A | N/A | ✅ Implemented |
-| **Select** | ✅ | N/A | N/A | ✅ Implemented |
-| **ComboBox** | ✅ | ✅ | N/A | ✅ Implemented |
-| **TagGroup** | ✅ | N/A | ✅ | ✅ Implemented |
-| **Menu** | 🔄 | N/A | N/A | Pending |
-| **Tree** | 🔄 | N/A | N/A | Hierarchical only |
-| **CheckboxGroup** | 🔄 | N/A | N/A | Pending |
-| **RadioGroup** | 🔄 | N/A | N/A | Pending |
-| **ToggleButtonGroup** | 🔄 | N/A | N/A | Pending |
+| Component             | columnMapping | textValue (filtering) | removedItemIds | Status            |
+| --------------------- | ------------- | --------------------- | -------------- | ----------------- |
+| **ListBox**           | ✅            | N/A                   | N/A            | ✅ Implemented    |
+| **GridList**          | ✅            | N/A                   | N/A            | ✅ Implemented    |
+| **Select**            | ✅            | N/A                   | N/A            | ✅ Implemented    |
+| **ComboBox**          | ✅            | ✅                    | N/A            | ✅ Implemented    |
+| **TagGroup**          | ✅            | N/A                   | ✅             | ✅ Implemented    |
+| **Menu**              | 🔄            | N/A                   | N/A            | Pending           |
+| **Tree**              | 🔄            | N/A                   | N/A            | Hierarchical only |
+| **CheckboxGroup**     | 🔄            | N/A                   | N/A            | Pending           |
+| **RadioGroup**        | 🔄            | N/A                   | N/A            | Pending           |
+| **ToggleButtonGroup** | 🔄            | N/A                   | N/A            | Pending           |
 
 ## 파일 위치
 
 ### 컴포넌트
+
 - `src/builder/components/TagGroup.tsx` - TagGroup 컴포넌트
 - `src/builder/components/ComboBox.tsx` - ComboBox 컴포넌트
 - `src/builder/components/Select.tsx` - Select 컴포넌트
 - `src/builder/components/GridList.tsx` - GridList 컴포넌트
 
 ### 렌더러
+
 - `src/builder/preview/renderers/SelectionRenderers.tsx` - Select, ComboBox 렌더러
 - `src/builder/preview/renderers/CollectionRenderers.tsx` - TagGroup 렌더러
 
 ### 에디터
+
 - `src/builder/inspector/properties/editors/TagGroupEditor.tsx` - TagGroup Inspector
 - `src/builder/inspector/data/DataSourceSelector.tsx` - DataBinding 타입 선택
 - `src/builder/inspector/data/APICollectionEditor.tsx` - API Collection 설정
 
 ### 팩토리
+
 - `src/builder/factories/definitions/SelectionComponents.ts` - 초기 컴포넌트 생성
 
 ## 사용 예제
 
 ### ComboBox 필터링
+
 ```typescript
 // 사용자가 ComboBox에서 "john"을 입력
 // → name에 "John Doe"가 있거나 email에 "john@example.com"이 있는 항목이 표시됨
 ```
 
 ### TagGroup 동적 렌더링
+
 ```typescript
 // REST API에서 10개의 태그 데이터 로드
 // → 각 태그마다 name, color 필드가 Field 컴포넌트로 표시됨
 ```
 
 ### TagGroup 항목 제거 및 복구
+
 ```typescript
 // 1. Tag의 X 버튼 클릭
 // 2. 화면에서 사라짐 (removedItemIds: ["tag-1"])
@@ -266,7 +290,7 @@ ListBox → 1 ListBoxItem
 ## 관련 문서
 
 - [CLAUDE.md](../../CLAUDE.md) - Collection Components 전체 가이드
-- [CHANGELOG.md](../CHANGELOG.md) - 변경사항 로그
+- [CHANGELOG.md](../../CHANGELOG.md) - 변경사항 로그
 - [Mock Data API](../../CLAUDE.md#mock-data-api-endpoints) - 테스트용 Mock 데이터
 
 ## 향후 계획

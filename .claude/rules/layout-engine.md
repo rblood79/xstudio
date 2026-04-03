@@ -95,6 +95,25 @@ globs:
 - `affectedNodeIds` 필터를 걸 때 `undefined` 조건 누락 금지 — 캐시 미스 시 `affectedNodeIds`가 `undefined`로 전달될 수 있음
 - 위반 시: display 전환(flex↔grid↔block) 또는 columns 변경이 새로고침 전까지 캔버스에 반영 안 됨
 
+## 2-Pass re-enrichment: processedElementsMap 필수 사용 (CRITICAL)
+
+Step 4.5 (2-pass height 교정)에서 element를 조회할 때 **`processedElementsMap`을 우선 사용**해야 한다. `elementsMap`(store 원본)은 DFS injection과 implicit styles가 없어 height가 잘못 계산된다.
+
+- **Label**: DFS injection으로 `fontSize: 14, lineHeight: "20px"` 주입 → store 원본에는 없음 → fallback fontSize=16, lineHeight=24 → 텍스트 줄바꿈 → height 48px (기대 20px)
+- **ComboBoxTrigger**: implicit styles로 `width: 18, height: 18` 주입 → store 원본 style=`{}` → fallback height=24
+- **패턴**: `processedElementsMap.get(id) ?? elementsMap.get(id)` 순으로 조회
+- **merge 규칙**: Step 3.6에서 부모 implicit styles를 자식에 적용할 때, 기존 `processedElementsMap`의 DFS injection 값을 base로 implicit styles를 merge (덮어쓰기 금지)
+- **위치**: `fullTreeLayout.ts` Step 4.5 re-enrichment 루프
+
+```typescript
+// ❌ store 원본 → DFS/implicit 소실
+const childEl = elementsMap.get(node.elementId);
+
+// ✅ processedElementsMap 우선 → DFS/implicit 보존
+const childEl =
+  processedElementsMap.get(node.elementId) ?? elementsMap.get(node.elementId);
+```
+
 ## Grid 트랙 폭 사전 계산 + 2-Pass 안전망
 
 CSS 브라우저는 폭 결정 → 텍스트 줄바꿈 → auto height를 한 번에 처리하지만, Taffy는 enrichment에서 `availableWidth` 기준으로 height 계산.

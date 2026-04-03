@@ -1259,7 +1259,7 @@ export const createYourAction = (set: SetState, get: GetState) => async () => {
 // 4. Use in main store
 export const createYourStoreSlice: StateCreator<YourStoreState> = (
   set,
-  get
+  get,
 ) => {
   const yourAction = createYourAction(set, get);
 
@@ -1387,7 +1387,7 @@ ElementUtils.createChildElementWithParentCheck was deleted - use direct Supabase
 const data = await ElementUtils.createChildElementWithParentCheck(
   newElement,
   pageId,
-  parentId
+  parentId,
 );
 
 // ✅ CORRECT - Direct Supabase insert
@@ -1544,7 +1544,7 @@ const multiSelectMode = useStore((state) => state.multiSelectMode);
 
 // ✅ GOOD - For primitive values that change independently
 const selectedElementId = useInspectorState(
-  (state) => state.selectedElement?.id
+  (state) => state.selectedElement?.id,
 );
 
 // ❌ BAD - When child properties need to trigger updates
@@ -1586,7 +1586,7 @@ const handleUpdate = useCallback(
   (props) => {
     updateProperties(props);
   },
-  [updateProperties]
+  [updateProperties],
 );
 
 // ✅ GOOD - useMemo for expensive computations
@@ -1709,7 +1709,6 @@ Before optimizing re-renders:
    ```
 
 2. **Before creating new CSS classes, ALWAYS check existing patterns:**
-
    - Read similar components in `src/builder/components/`
    - Search for existing CSS in `src/builder/components/components.css`
    - Reuse existing class names (e.g., `combobox-container`, `control-label`)
@@ -2036,13 +2035,11 @@ All interactive components use the Action Token System for consistent theming ac
 Components follow three distinct patterns based on their usage context:
 
 1. **Standalone Components** - Always used independently
-
    - Examples: Button, Slider, Card, Separator, ProgressBar, Meter
    - Have their own variant and size props
    - Use `tv()` for className composition: `.react-aria-Component.variant`
 
 2. **Parent-Controlled Components** - Child styling controlled by parent
-
    - Examples: Radio/RadioGroup, TagGroup/Tag
    - Radio never used standalone (always in RadioGroup)
    - Parent sets CSS data attributes: `data-radio-variant`, `data-radio-size`
@@ -2109,7 +2106,7 @@ export function ToggleButton({
 }: ToggleButtonExtendedProps) {
   const toggleButtonClassName = composeRenderProps(
     props.className,
-    (className) => toggleButtonStyles({ variant, size, className })
+    (className) => toggleButtonStyles({ variant, size, className }),
   );
 
   return <RACToggleButton {...props} className={toggleButtonClassName} />;
@@ -2156,7 +2153,7 @@ export function ToggleButton({
 ```tsx
 // 3. Conditional Property Editor - src/builder/inspector/properties/editors/ToggleButtonEditor.tsx
 const parentElement = useStore((state) =>
-  state.elements.find((el) => el.id === element?.parent_id)
+  state.elements.find((el) => el.id === element?.parent_id),
 );
 const isChildOfToggleButtonGroup = parentElement?.tag === "ToggleButtonGroup";
 
@@ -2413,7 +2410,7 @@ When a page is added/deleted/selected, the system uses an ACK-based pattern to e
          type: "REQUEST_ELEMENT_SELECTION",
          elementId: pendingAutoSelectElementId,
        },
-       "*"
+       "*",
      );
    }
    ```
@@ -2422,7 +2419,7 @@ When a page is added/deleted/selected, the system uses an ACK-based pattern to e
    ```tsx
    // messageHandlers.ts - DOM first, then elements array
    const domElement = document.querySelector(
-     `[data-element-id="${elementId}"]`
+     `[data-element-id="${elementId}"]`,
    );
    const element = elements.find((el) => el.id === elementId); // May be outdated
    // Continue with domElement even if element not found in array
@@ -2689,7 +2686,7 @@ const snapToGrid = useStore((state) => state.snapToGrid);
 ```
 
 **ESLint Rule:** `local/no-zustand-grouped-selectors` (error)
-**Reference:** See CHANGELOG.md "Anti-Patterns Discovered" and SettingsPanel.tsx refactoring
+**Reference:** See docs/CHANGELOG.md (archived root section) "Anti-Patterns Discovered" and SettingsPanel.tsx refactoring
 
 ❌ **useShallow Wrapper with Zustand (CRITICAL - Also Causes Infinite Loops):**
 
@@ -2701,7 +2698,7 @@ const settings = useStore(
   useShallow((state) => ({
     showOverlay: state.showOverlay,
     showGrid: state.showGrid,
-  }))
+  })),
 );
 
 // ✅ CORRECT - Individual selectors (same as above)
@@ -2710,7 +2707,7 @@ const showGrid = useStore((state) => state.showGrid);
 ```
 
 **ESLint Rule:** `local/no-zustand-use-shallow` (error)
-**Reference:** See CHANGELOG.md "Anti-Patterns Discovered"
+**Reference:** See docs/CHANGELOG.md (archived root section) "Anti-Patterns Discovered"
 
 ❌ **Manual Keyboard Event Listeners (Duplicate Code):**
 
@@ -2744,7 +2741,7 @@ const shortcuts = useMemo(
       description: "Paste",
     },
   ],
-  [handleCopy, handlePaste]
+  [handleCopy, handlePaste],
 );
 
 useKeyboardShortcutsRegistry(shortcuts, [handleCopy, handlePaste]);
@@ -2795,7 +2792,7 @@ import type { EventType } from "@/types/events/events.types";
 ```
 
 **ESLint Rule:** `local/no-eventtype-legacy-import` (error)
-**Reference:** See CHANGELOG.md "Anti-Patterns Discovered"
+**Reference:** See docs/CHANGELOG.md (archived root section) "Anti-Patterns Discovered"
 
 ❌ **PixiJS Component Registration Missing Class Names (CRITICAL):**
 
@@ -3022,7 +3019,6 @@ Composer excels at making coordinated changes across multiple files. XStudio's a
 **Common Multi-File Scenarios:**
 
 1. **Adding a New Component** (5-7 files typically):
-
    - Component file: `src/builder/components/ComponentName.tsx`
    - CSS file: `src/builder/components/styles/ComponentName.css`
    - Property editor: `src/builder/inspector/properties/editors/ComponentNameEditor.tsx`
@@ -3032,7 +3028,6 @@ Composer excels at making coordinated changes across multiple files. XStudio's a
    - Type definitions: `src/types/...`
 
 2. **Store Module Refactoring** (3-5 files):
-
    - Main store: `src/builder/stores/elements.ts`
    - Utility module: `src/builder/stores/utils/elementAction.ts`
    - History module: `src/builder/stores/history/historyActions.ts`
@@ -3398,19 +3393,16 @@ const componentStyles = tv({
 ### Composer Best Practices
 
 1. **Start with Plan Mode:**
-
    - Always review the plan before execution
    - Ensure all related files are included
    - Check that architectural patterns are followed
 
 2. **Execute Incrementally:**
-
    - Don't accept all changes at once
    - Review each step before proceeding
    - Test after each major step
 
 3. **Use Chat for Exploration:**
-
    - Understand the codebase before making changes
    - Find related files and patterns
    - Ask about architectural decisions
