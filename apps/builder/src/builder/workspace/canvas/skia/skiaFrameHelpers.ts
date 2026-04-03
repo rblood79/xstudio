@@ -55,7 +55,19 @@ export interface OverflowContentInfo {
   containerBounds: BoundingBox;
   contentBounds: BoundingBox;
   overflowChildBounds: BoundingBox[];
+  /** 경계를 벗어나는 자식 ID 목록 */
+  overflowChildIds: string[];
   /** overflow 타입 — scroll/auto 시 선택 상태에서 해칭 패턴 표시 */
+  overflowType: string;
+}
+
+/** 자식 요소가 속한 overflow 부모 정보 */
+export interface ChildOverflowContext {
+  /** 부모 컨테이너 bounds (클리핑 영역) */
+  containerBounds: BoundingBox;
+  /** 자식 요소의 bounds (원본) */
+  childBounds: BoundingBox;
+  /** 부모의 overflow 타입 */
   overflowType: string;
 }
 
@@ -94,6 +106,7 @@ export function buildOverflowInfoMap(
     let maxX = -Infinity;
     let maxY = -Infinity;
     const overflowChildBounds: BoundingBox[] = [];
+    const overflowChildIds: string[] = [];
 
     for (const child of children) {
       const b = treeBoundsMap.get(child.id);
@@ -106,6 +119,7 @@ export function buildOverflowInfoMap(
 
       if (b.x < cx || b.y < cy || b.x + b.width > cr || b.y + b.height > cb) {
         overflowChildBounds.push(b);
+        overflowChildIds.push(child.id);
       }
     }
 
@@ -120,10 +134,31 @@ export function buildOverflowInfoMap(
         height: maxY - minY,
       },
       overflowChildBounds,
+      overflowChildIds,
       overflowType: overflow,
     });
   }
 
+  return result;
+}
+
+/**
+ * overflowInfoMap에서 자식 ID → 부모 overflow 컨텍스트 역매핑을 생성한다.
+ * 선택된 자식 요소가 overflow 영역에 있는지 빠르게 조회하기 위해 사용.
+ */
+export function buildChildOverflowContextMap(
+  overflowInfoMap: Map<string, OverflowContentInfo>,
+): Map<string, ChildOverflowContext> {
+  const result = new Map<string, ChildOverflowContext>();
+  for (const info of overflowInfoMap.values()) {
+    for (let i = 0; i < info.overflowChildIds.length; i++) {
+      result.set(info.overflowChildIds[i], {
+        containerBounds: info.containerBounds,
+        childBounds: info.overflowChildBounds[i],
+        overflowType: info.overflowType,
+      });
+    }
+  }
   return result;
 }
 

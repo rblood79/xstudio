@@ -9,7 +9,10 @@
 import type { CanvasKit, Canvas } from "canvaskit-wasm";
 import { SkiaDisposable } from "./disposable";
 import type { BoundingBox } from "../selection/types";
-import type { OverflowContentInfo } from "./skiaFrameHelpers";
+import type {
+  OverflowContentInfo,
+  ChildOverflowContext,
+} from "./skiaFrameHelpers";
 
 // ============================================
 // Constants — 호버 하이라이트 (blue-500, alpha 0.5)
@@ -148,32 +151,32 @@ const HATCHING_ALPHA = 0.15;
 const HATCHING_LINE_SPACING = 8; // 화면 px 간격
 
 /**
- * scroll/auto 컨테이너 선택 시 overflow 영역에 대각선 해칭 패턴 표시.
- * 컨테이너 밖(ClipOp.Difference) + 콘텐츠 bounds 내에서 45도 사선 렌더링.
+ * 선택된 자식 요소가 scroll/auto 부모의 경계를 벗어날 때 해칭 패턴 표시.
+ * 자식 bounds에서 부모 컨테이너 밖 영역에만 45도 사선 렌더링.
  */
 export function renderOverflowHatching(
   ck: CanvasKit,
   canvas: Canvas,
-  info: OverflowContentInfo,
+  ctx: ChildOverflowContext,
   zoom: number,
 ): void {
   const scope = new SkiaDisposable();
   try {
-    const { containerBounds: c, contentBounds: cb } = info;
+    const { containerBounds: c, childBounds: cb } = ctx;
 
-    // 컨테이너 밖 영역만 (Difference clipping)
+    // 부모 컨테이너 밖 영역만 (Difference clipping)
     canvas.save();
     const containerRect = ck.LTRBRect(c.x, c.y, c.x + c.width, c.y + c.height);
     canvas.clipRect(containerRect, ck.ClipOp.Difference, true);
 
-    // 콘텐츠 bounds 내로 추가 클리핑
-    const contentRect = ck.LTRBRect(
+    // 자식 bounds 내로 추가 클리핑
+    const childRect = ck.LTRBRect(
       cb.x,
       cb.y,
       cb.x + cb.width,
       cb.y + cb.height,
     );
-    canvas.clipRect(contentRect, ck.ClipOp.Intersect, true);
+    canvas.clipRect(childRect, ck.ClipOp.Intersect, true);
 
     // 대각선 45도 해칭 라인
     const paint = scope.track(new ck.Paint());
@@ -191,7 +194,6 @@ export function renderOverflowHatching(
 
     const path = scope.track(new ck.Path());
     for (let d = 0; d < totalSpan; d += spacing) {
-      // 왼쪽 위에서 오른쪽 아래로 45도 라인
       const x0 = left + d;
       const y0 = top;
       const x1 = left;

@@ -45,7 +45,9 @@ import {
 import { renderWorkflowMinimap, type MinimapConfig } from "./workflowMinimap";
 import {
   buildPageFrameMap,
+  buildChildOverflowContextMap,
   type OverflowContentInfo,
+  type ChildOverflowContext,
 } from "./skiaFrameHelpers";
 import { buildEdgeGeometryCache } from "./workflowHitTest";
 import { buildWorkflowElementBounds } from "./skiaFramePipeline";
@@ -391,16 +393,16 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
         renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
       }
 
-      // ── Overflow Hatching (scroll/auto 선택 시 사선 패턴) ──
+      // ── Overflow Hatching (scroll/auto 부모의 자식 선택 시 사선 패턴) ──
       if (overflowInfoMap && selection.selectedElementIds.length > 0) {
+        const childCtxMap = buildChildOverflowContextMap(overflowInfoMap);
         for (const selId of selection.selectedElementIds) {
-          const selOverflow = overflowInfoMap.get(selId);
+          const ctx = childCtxMap.get(selId);
           if (
-            selOverflow &&
-            (selOverflow.overflowType === "scroll" ||
-              selOverflow.overflowType === "auto")
+            ctx &&
+            (ctx.overflowType === "scroll" || ctx.overflowType === "auto")
           ) {
-            renderOverflowHatching(ck, canvas, selOverflow, cameraZoom);
+            renderOverflowHatching(ck, canvas, ctx, cameraZoom);
           }
         }
       }
