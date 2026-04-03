@@ -187,7 +187,6 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       {
         title: "Appearance",
         fields: [
-          { type: "variant" },
           { type: "size" },
           {
             key: "labelPosition",

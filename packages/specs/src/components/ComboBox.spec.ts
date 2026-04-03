@@ -24,7 +24,6 @@ import {
   FormInput,
   FileText,
   Layout,
-  Parentheses,
   Menu,
   AlertTriangle,
 } from "lucide-react";
@@ -116,12 +115,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       {
         title: "Appearance",
         fields: [
-          {
-            key: "variant",
-            type: "variant",
-            label: "Variant",
-            icon: Parentheses,
-          },
           { type: "size" },
           {
             key: "iconName",
