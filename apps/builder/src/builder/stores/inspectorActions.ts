@@ -228,6 +228,10 @@ export const createInspectorActionsSlice: StateCreator<
       "isRequired",
       "labelPosition",
       "overflow",
+      "iconName",
+      "iconPosition",
+      "minValue",
+      "maxValue",
     ]);
     const hasLayoutChange = Object.keys(propsUpdate).some((key) =>
       LAYOUT_AFFECTING_PROPS.has(key),

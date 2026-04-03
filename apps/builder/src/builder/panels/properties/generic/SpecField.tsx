@@ -137,7 +137,9 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertySwitch
           label={label}
-          isSelected={Boolean(resolveCurrentValue(field.key))}
+          isSelected={Boolean(
+            resolveCurrentValue(field.key) ?? field.defaultValue,
+          )}
           onChange={(checked) => onUpdate(buildUpdate(field.key, checked))}
           icon={icon}
         />
@@ -206,7 +208,7 @@ export const SpecField = memo(function SpecField({
     }
 
     case "number": {
-      const numValue = resolveCurrentValue(field.key);
+      const numValue = resolveCurrentValue(field.key) ?? field.defaultValue;
       return (
         <PropertyNumberInput
           label={label}

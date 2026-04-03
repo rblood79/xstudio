@@ -8,6 +8,8 @@
 - **Slider shapes() fontSize Propagation 우선순위 패턴 미적용**: NumberField/SearchField/TextField는 `props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize)` 패턴으로 수정됐으나 Slider는 누락 — size propagation 후 Canvas 미반영 버그 유발
 - **composition delegation 인라인 공통 CSS 토큰 5중 복제**: `.react-aria-Group` 등 delegation 블록에서 `background`, `color`, `border` 값이 xs~xl 5개 사이즈에 동일하게 복제 — `GROUP_BASE_STYLE` 상수 추출 필요 (NumberField, ComboBox 동일 패턴)
 - **`unknown` 경유 타입 우회 (`as unknown as T`)**: 제네릭 파라미터 타입 불일치를 `CAST` 헬퍼로 회피하는 패턴 — 함수 시그니처 제네릭화로 해결
+- **`<span role="button"> + onKeyDown` 수동 패턴**: React Aria `Button`이 이미 import된 파일에서 clear/action 버튼을 `<span role="button" tabIndex={0} onKeyDown={...}>`으로 수동 구현 — `<Button onPress={...}>`로 교체 필요 (PropertyIconPicker.tsx, KitBrowser.tsx, KitComponentList.tsx 동일 패턴)
+- **`SpecField defaultValue` fallback 미적용 케이스**: `FieldDef.defaultValue`가 `BaseFieldDef`에 존재하여 모든 field 타입에 사용 가능하나, `boolean` 케이스에서 `?? field.defaultValue` fallback이 누락됨 — `Boolean(undefined) = false` 변환으로 `defaultValue: true` 필드가 항상 false 표시되는 잠재적 버그. `string` 케이스는 `?? ""`으로 fallback하여 `defaultValue` 자체를 무시. 수정 패턴: `Boolean(resolveCurrentValue(field.key) ?? field.defaultValue)`
 - **hot path `Object.keys()` 빈 체크**: `handleUpdate`처럼 매 prop 변경 시 호출되는 콜백에서 `Object.keys(obj).length === 0`으로 빈 객체 확인 — 루프 내 카운터 또는 `for...in` 단락 평가로 대체
 - **hot path 이중 spread (`{ ...parent, props: { ...parent.props, ...delta } }`)**: propagation 규칙 존재 시 매 호출마다 두 번 shallow copy — 함수 시그니처를 `(parentProps, changedProps)` 분리 전달로 merge 불필요하게 설계
 - **asStyle 축적 spread**: 동일 elementId에 규칙이 N개면 `existing.style = { ...prevStyle, [k]: v }` N회 반복 — style 객체 직접 키 할당으로 대체
@@ -91,6 +93,8 @@
 - **renderSkia 콜백 내부 역매핑 재생성**: `buildChildOverflowContextMap(overflowInfoMap)`이 60fps renderSkia 콜백 내부에서 매 프레임 `Map<string, ...>` 전체 재생성 — overflowInfoMap 변경 시점에 상류에서 1회 파생·캐싱 필요 (skiaOverlayBuilder.ts Overflow Hatching 섹션)
 - **Skia Overlay 45도 해칭 방향 오류 패턴**: `(left+d, top) → (left, top+d)` 라인이 `\` 방향이 아닌 `/` 방향. 완전 커버를 위한 d 범위도 `0..totalSpan`이 아닌 `-(bottom-top)...(right-left)` 필요 (hoverRenderer.ts renderOverflowHatching)
 - **모듈 레벨 캐시 싱글턴 — 멀티 페이지 오염**: `_cachedOverflowInfoMap`이 모듈 레벨 변수로 페이지 구분 없이 단일 캐시 — 캐시 키에 pageId 포함 또는 `Map<pageId, cache>` 구조로 격리 필요 (skiaFrameHelpers.ts getCachedOverflowInfoMap)
+- **LAYOUT_PROP_KEYS ↔ LAYOUT_AFFECTING_PROPS 동기화 누락**: `layoutCache.ts`의 `LAYOUT_PROP_KEYS`에 항목 추가 시 `inspectorActions.ts`의 `LAYOUT_AFFECTING_PROPS`에도 동시 추가 필수. 누락 시 해당 prop 변경이 `layoutVersion`을 증가시키지 않아 캔버스 레이아웃 미반영. layout-engine.md "2곳 동시 등록 필수" 규칙.
+- **CSS 클래스 선언 없이 className 적용**: 컴포넌트에서 `icon-picker-trigger-group`, `icon-picker-input-trigger`, `icon-picker-value`, `icon-picker-clear` 등 className을 사용하면서 대응 CSS 파일에 클래스 정의가 없는 패턴 — 새 컴포넌트 클래스 추가 시 CSS 파일 동시 작성 필수 (PropertyIconPicker.tsx 사례)
 
 ## False Positive 기록
 

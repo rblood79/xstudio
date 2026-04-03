@@ -30,24 +30,20 @@ export const PropertyIconPicker = memo(function PropertyIconPicker({
 }: PropertyIconPickerProps) {
   const hasIcon = !!value;
 
-  const handleClear = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (onClear) {
-        onClear();
-      } else {
-        onChange("");
-      }
-    },
-    [onClear, onChange],
-  );
+  const handleClear = useCallback(() => {
+    if (onClear) {
+      onClear();
+    } else {
+      onChange("");
+    }
+  }, [onClear, onChange]);
 
   return (
     <fieldset className="properties-aria">
       <legend className="fieldset-legend">{label}</legend>
-      <div className="react-aria-control react-aria-Group">
-        <IconPickerPopover value={value || "circle"} onSelect={onChange}>
-          <Button className="react-aria-Button icon-picker-input-trigger">
+      <IconPickerPopover value={value || "circle"} onSelect={onChange}>
+        <Button className="react-aria-control react-aria-Group">
+          <span className="react-aria-Button icon-picker-input-trigger">
             {hasIcon && (
               <label className="control-label">
                 <IconPreview name={value} size={iconProps.size} />
@@ -56,19 +52,18 @@ export const PropertyIconPicker = memo(function PropertyIconPicker({
             <span className="icon-picker-value">
               {hasIcon ? value : "None"}
             </span>
-          </Button>
-        </IconPickerPopover>
-        {hasIcon && (
-          <button
-            type="button"
-            className="icon-picker-clear"
-            aria-label="Clear icon"
-            onClick={handleClear}
-          >
-            <X size={iconProps.size} strokeWidth={iconProps.strokeWidth} />
-          </button>
-        )}
-      </div>
+          </span>
+          {hasIcon && (
+            <Button
+              className="icon-picker-clear"
+              aria-label="Clear icon"
+              onPress={handleClear}
+            >
+              <X size={iconProps.size} strokeWidth={iconProps.strokeWidth} />
+            </Button>
+          )}
+        </Button>
+      </IconPickerPopover>
     </fieldset>
   );
 });

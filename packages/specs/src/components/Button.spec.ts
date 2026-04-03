@@ -121,6 +121,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
             key: "iconPosition",
             type: "enum",
             label: "Position",
+            defaultValue: "start",
             visibleWhen: { key: "iconName", truthy: true },
             options: [
               { value: "start", label: "Start" },
@@ -131,6 +132,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
             key: "iconStrokeWidth",
             type: "number",
             label: "Stroke Width",
+            defaultValue: 2,
             min: 0.5,
             max: 4,
             step: 0.5,
@@ -145,6 +147,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
             key: "type",
             type: "enum",
             label: "Type",
+            defaultValue: "button",
             icon: Parentheses,
             options: [
               { value: "button", label: "Button" },

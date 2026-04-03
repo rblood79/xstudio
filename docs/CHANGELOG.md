@@ -5,6 +5,26 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Dark Mode 정합성 + Layout 캐시 + Icon Picker UX] - 2026-04-03
+
+### Bug Fixes
+
+- **Button primary variant dark mode 텍스트 미표시**: Spec 토큰 `{color.white}` (항상 #fff) → `{color.base}` (adaptive: light=#fff, dark=#171717)로 수정. CSS `var(--bg)`와 일치
+  - 동일 패턴 sweep: Badge neutral, Menu primary, ToggleButton default selected — 모두 `{color.base}`로 통일
+- **Text 컴포넌트 dark mode 기본색 하드코딩**: TextSprite 기본 텍스트색 `0x000000` (black) → `darkColors.neutral`/`lightColors.neutral` theme-aware 기본색 적용
+- **Button icon 추가 시 fit-content width 미갱신**: `layoutCache.ts`의 `LAYOUT_PROP_KEYS`에 `iconName`, `iconPosition` 누락 → 캐시 signature 미변경 → 재계산 스킵. 추가 sweep: `minValue`, `maxValue`, `variant`도 누락 확인 후 추가
+- **Icon Picker popover 너비 초과**: `width: 296px` 고정 → `width: var(--trigger-width, 296px)`. trigger를 부모 `.react-aria-control`로 변경하여 부모 너비에 맞춤
+- **Icon Picker 선택 시 popover 미닫힘**: `DialogTrigger` controlled state 추가, `handleSelect`에서 `setIsOpen(false)` 호출
+- **SpecField number/boolean defaultValue 미표시**: `resolveCurrentValue() ?? field.defaultValue` fallback 누락 → number, boolean 케이스 모두 추가
+- **Button property editor 기본값 미표시**: `iconPosition` (defaultValue: "start"), `iconStrokeWidth` (defaultValue: 2), `type` (defaultValue: "button") 추가
+
+### Infrastructure
+
+- **Icon Picker clear 버튼**: `<span role="button">` + `as unknown` 캐스트 → React Aria `<Button onPress>` 교체
+- **Icon Picker grid columns**: `repeat(8, 1fr)` → `repeat(auto-fill, 32px)` — 컨테이너 너비에 맞게 자동 조정
+
+---
+
 ## [Canvas 선택 UX 개선 + NumberField/Input height 정합성] - 2026-03-21
 
 ### Bug Fixes

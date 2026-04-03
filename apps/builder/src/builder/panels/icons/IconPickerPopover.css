@@ -1,6 +1,6 @@
 @layer builder-system {
   .icon-picker-popover {
-    width: 296px;
+    width: var(--trigger-width, 296px);
     background: var(--bg-overlay);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -45,7 +45,7 @@
 
   .icon-picker-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(auto-fill, 32px);
     gap: 2px;
     overflow-y: auto;
     scrollbar-width: thin;

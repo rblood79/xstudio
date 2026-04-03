@@ -142,7 +142,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       background: "{color.neutral}" as TokenRef,
       backgroundHover: "{color.neutral}" as TokenRef,
       backgroundPressed: "{color.neutral}" as TokenRef,
-      text: "{color.white}" as TokenRef,
+      text: "{color.base}" as TokenRef,
     },
     positive: {
       background: "{color.positive}" as TokenRef,

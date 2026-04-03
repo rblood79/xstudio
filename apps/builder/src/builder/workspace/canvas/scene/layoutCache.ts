@@ -124,6 +124,10 @@ const LAYOUT_PROP_KEYS = [
   "necessityIndicator",
   "isRequired",
   "labelPosition",
+  "iconName",
+  "iconPosition",
+  "minValue",
+  "maxValue",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {

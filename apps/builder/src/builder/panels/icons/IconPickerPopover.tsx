@@ -5,7 +5,7 @@
  * React Aria DialogTrigger + Popover 기반
  */
 
-import { memo, useCallback, useRef, useEffect } from "react";
+import { memo, useCallback, useRef, useEffect, useState } from "react";
 import { Dialog, DialogTrigger, Popover, Input } from "react-aria-components";
 import { IconPreview } from "./components/IconPreview";
 import { useIconSearch } from "./hooks/useIconSearch";
@@ -28,12 +28,22 @@ export const IconPickerPopover = memo(function IconPickerPopover({
   onSelect,
   children,
 }: IconPickerPopoverProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSelect = useCallback(
+    (iconName: string) => {
+      onSelect(iconName);
+      setIsOpen(false);
+    },
+    [onSelect],
+  );
+
   return (
-    <DialogTrigger>
+    <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       {children}
       <Popover placement="bottom start" className="icon-picker-popover">
         <Dialog className="icon-picker-dialog">
-          <IconPickerContent value={value} onSelect={onSelect} />
+          <IconPickerContent value={value} onSelect={handleSelect} />
         </Dialog>
       </Popover>
     </DialogTrigger>

@@ -52,7 +52,7 @@ export interface ToggleButtonProps {
 export const TOGGLE_SELECTED_COLORS = {
   default: {
     bg: "{color.neutral}" as TokenRef,
-    text: "{color.white}" as TokenRef,
+    text: "{color.base}" as TokenRef,
     border: "{color.neutral}" as TokenRef,
   },
   emphasized: {

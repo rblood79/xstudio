@@ -160,6 +160,15 @@ Spec 기반 컴포넌트(Button, Badge 등)의 텍스트 폭 측정 시 `extract
 - `tintToSkiaColors.ts`의 `mixWithBlackSrgb()` 사용 (oklch lightness 근사 금지)
 - light/dark 모드 무관하게 동일 연산 (CSS `color-mix`는 모드별 분기 없음)
 
+## Dark Mode Spec 텍스트 토큰 정합성 (CRITICAL)
+
+Spec variant `text` 토큰이 CSS의 `--button-text` / `color` 변수와 일치해야 Skia↔CSS dark mode 렌더링이 동기화된다.
+
+- **adaptive 배경 (`{color.neutral}` = `var(--fg)`)**: 텍스트에 `{color.white}` 사용 금지 → `{color.base}` (= `var(--bg)`) 사용
+- **adaptive 배경 (`{color.accent}`)**: 텍스트에 `{color.on-accent}` 사용
+- **hardcoded 배경 (`{color.purple}`, `{color.negative}` 등)**: 텍스트에 `{color.white}` 사용 가능
+- **TextSprite 기본색**: `style.color` 미설정 시 `skiaTheme`에 따라 `darkColors.neutral`/`lightColors.neutral` 사용 (CSS `var(--fg)` 동기화)
+
 ## Arc Shape 렌더링 (ProgressCircle 등)
 
 - Spec `arc` shape → specShapeConverter에서 `type: "box"` + `arc` 데이터로 변환
