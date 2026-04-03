@@ -188,7 +188,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       background: "{color.neutral}" as TokenRef,
       backgroundHover: "{color.neutral-hover}" as TokenRef,
       backgroundPressed: "{color.neutral-pressed}" as TokenRef,
-      text: "{color.white}" as TokenRef,
+      text: "{color.base}" as TokenRef,
       border: "{color.neutral}" as TokenRef,
       borderHover: "{color.neutral-hover}" as TokenRef,
     },

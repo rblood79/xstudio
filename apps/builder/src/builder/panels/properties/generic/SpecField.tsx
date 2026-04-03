@@ -147,7 +147,9 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertySelect
           label={label}
-          value={String(resolveCurrentValue(field.key) ?? "")}
+          value={String(
+            resolveCurrentValue(field.key) ?? field.defaultValue ?? "",
+          )}
           onChange={(value) => {
             const normalizedValue =
               field.emptyToUndefined && value === ""

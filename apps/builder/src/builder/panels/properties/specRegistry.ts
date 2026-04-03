@@ -27,12 +27,14 @@ import {
   DialogSpec,
   DisclosureSpec,
   DisclosureGroupSpec,
+  DisclosureHeaderSpec,
   DropZoneSpec,
   FieldSpec,
   FileTriggerSpec,
   FormSpec,
   GridListSpec,
   GroupSpec,
+  HeadingSpec,
   IconSpec,
   IllustratedMessageSpec,
   ImageSpec,
@@ -116,12 +118,16 @@ export const PROPERTY_EDITOR_SPEC_MAP: Record<
   DisclosureGroup: DisclosureGroupSpec as ComponentSpec<
     Record<string, unknown>
   >,
+  DisclosureHeader: DisclosureHeaderSpec as ComponentSpec<
+    Record<string, unknown>
+  >,
   DropZone: DropZoneSpec as ComponentSpec<Record<string, unknown>>,
   Field: FieldSpec as ComponentSpec<Record<string, unknown>>,
   FileTrigger: FileTriggerSpec as ComponentSpec<Record<string, unknown>>,
   Form: FormSpec as ComponentSpec<Record<string, unknown>>,
   GridList: GridListSpec as ComponentSpec<Record<string, unknown>>,
   Group: GroupSpec as ComponentSpec<Record<string, unknown>>,
+  Heading: HeadingSpec as ComponentSpec<Record<string, unknown>>,
   Icon: IconSpec as ComponentSpec<Record<string, unknown>>,
   IllustratedMessage: IllustratedMessageSpec as ComponentSpec<
     Record<string, unknown>

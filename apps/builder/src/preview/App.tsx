@@ -403,8 +403,10 @@ function CanvasContent() {
             return "div";
           case "DisclosureGroup":
             return "div";
-          case "DisclosureHeader":
-            return "button";
+          case "DisclosureHeader": {
+            const hl = Number(props?.headingLevel) || 3;
+            return `h${Math.min(Math.max(hl, 1), 6)}`;
+          }
           case "DisclosureContent":
             return "div";
           // Form 복합 컴포넌트

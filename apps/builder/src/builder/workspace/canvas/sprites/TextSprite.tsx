@@ -33,6 +33,11 @@ import { useSkiaNode } from "../skia/useSkiaNode";
 import type { SkiaNodeData } from "../skia/nodeRenderers";
 import { skiaFontManager } from "../skia/fontManager";
 import { LayoutComputedSizeContext } from "../layoutContext";
+import {
+  useResolvedSkiaTheme,
+  useThemeConfigVersion,
+} from "../../../../stores/themeConfigStore";
+import { hexStringToNumber, lightColors, darkColors } from "@xstudio/specs";
 
 // ============================================
 // Types
@@ -86,6 +91,8 @@ export const TextSprite = memo(function TextSprite({
   const converted = useMemo(() => convertStyle(style), [style]);
   const { fill, text: textStyle, borderRadius } = converted;
   const computedContainerSize = useContext(LayoutComputedSizeContext);
+  const skiaTheme = useResolvedSkiaTheme();
+  const themeVersion = useThemeConfigVersion();
 
   // BoxSprite 패턴: Yoga 계산 크기를 우선 사용 (기본값 100×100 대신)
   const transform = useMemo(() => {
@@ -291,9 +298,15 @@ export const TextSprite = memo(function TextSprite({
   // Phase 5: Skia 렌더 데이터 부착
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const skiaNodeData = useMemo(() => {
-    const r = ((textStyle.fill >> 16) & 0xff) / 255;
-    const g = ((textStyle.fill >> 8) & 0xff) / 255;
-    const b = (textStyle.fill & 0xff) / 255;
+    // style.color 미설정 시 theme-aware 기본색 (CSS var(--fg) 동기화)
+    const effectiveFill = style?.color
+      ? textStyle.fill
+      : hexStringToNumber(
+          skiaTheme === "dark" ? darkColors.neutral : lightColors.neutral,
+        );
+    const r = ((effectiveFill >> 16) & 0xff) / 255;
+    const g = ((effectiveFill >> 8) & 0xff) / 255;
+    const b = (effectiveFill & 0xff) / 255;
 
     // CSS fontWeight string → numeric (100–900)
     const fw = textStyle.fontWeight;
@@ -489,6 +502,8 @@ export const TextSprite = memo(function TextSprite({
     borderConfig,
     flexAlignment,
     style,
+    skiaTheme,
+    themeVersion,
   ]);
 
   useSkiaNode(element.id, skiaNodeData as SkiaNodeData);

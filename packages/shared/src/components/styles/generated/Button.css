@@ -20,7 +20,7 @@
 
   /* Default variant */
   background: var(--fg);
-  color: var(--color-white);
+  color: var(--bg);
   border: 1px solid var(--fg);
 
   /* Default size */
@@ -53,7 +53,7 @@
 
 .react-aria-Button[data-variant="primary"] {
   background: var(--fg);
-  color: var(--color-white);
+  color: var(--bg);
   border-color: var(--fg);
 
   &[data-hovered] {

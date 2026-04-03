@@ -321,6 +321,14 @@ export type { LabelProps } from "./Label.spec";
 export { FieldErrorSpec } from "./FieldError.spec";
 export type { FieldErrorProps } from "./FieldError.spec";
 
+// Heading
+export { HeadingSpec } from "./Heading.spec";
+export type { HeadingProps } from "./Heading.spec";
+
+// DisclosureHeader
+export { DisclosureHeaderSpec } from "./DisclosureHeader.spec";
+export type { DisclosureHeaderProps } from "./DisclosureHeader.spec";
+
 // Description
 export { DescriptionSpec } from "./Description.spec";
 export type { DescriptionProps } from "./Description.spec";

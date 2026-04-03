@@ -400,6 +400,12 @@ export type { LabelProps } from "./components/Label.spec";
 export { FieldErrorSpec } from "./components/FieldError.spec";
 export type { FieldErrorProps } from "./components/FieldError.spec";
 
+export { HeadingSpec } from "./components/Heading.spec";
+export type { HeadingProps } from "./components/Heading.spec";
+
+export { DisclosureHeaderSpec } from "./components/DisclosureHeader.spec";
+export type { DisclosureHeaderProps } from "./components/DisclosureHeader.spec";
+
 export { DescriptionSpec } from "./components/Description.spec";
 export type { DescriptionProps } from "./components/Description.spec";
 

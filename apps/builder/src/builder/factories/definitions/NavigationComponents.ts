@@ -277,6 +277,7 @@ export function createDisclosureDefinition(
         tag: "DisclosureHeader",
         props: {
           children: "Section Title",
+          headingLevel: 3,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -347,6 +348,7 @@ export function createDisclosureGroupDefinition(
             tag: "DisclosureHeader",
             props: {
               children: "Section 1",
+              headingLevel: 3,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -375,6 +377,7 @@ export function createDisclosureGroupDefinition(
             tag: "DisclosureHeader",
             props: {
               children: "Section 2",
+              headingLevel: 3,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,

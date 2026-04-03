@@ -130,6 +130,8 @@ function apiProxyPlugin() {
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
   return {
+    logLevel: "warn", // HMR 로그 및 불필요한 콘솔 로그 최소화
+    clearScreen: false, // 화면 클리어 비활성화
     plugins: [wasm(), apiProxyPlugin(), react()],
     worker: {
       format: "es",

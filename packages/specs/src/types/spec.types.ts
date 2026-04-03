@@ -153,6 +153,8 @@ export interface BaseFieldDef {
   key: string;
   label?: string;
   icon?: LucideIcon;
+  /** props에 값이 없을 때 에디터에 표시할 기본값 */
+  defaultValue?: unknown;
   visibleWhen?: VisibilityCondition;
   emptyToUndefined?: boolean;
   updatePath?: [string, ...string[]];
