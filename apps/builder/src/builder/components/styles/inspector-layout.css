@@ -433,6 +433,22 @@
       .box-shadow {
         grid-area: box-shadow;
       }
+
+      .style-overflow {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas: "overflow overflow .";
+
+        > * {
+          min-width: 0;
+        }
+      }
+
+      .overflow {
+        grid-area: overflow;
+      }
     }
 
     &[data-section-id="typography"] .section-content {
