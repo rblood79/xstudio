@@ -42,6 +42,14 @@ export const LayersSection = memo(function LayersSection({
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
+    // snapshot이 있으면 즉시 표시, 없으면 다음 프레임까지 placeholder 유지
+    // (페이지 삭제 → 전환 시 tree가 빈 상태로 flash되는 것 방지)
+    const snapshot = useStore.getState().pageElementsSnapshot[currentPageId];
+    if (snapshot && snapshot.length > 0) {
+      setIsTreeVisible(true);
+      return;
+    }
+
     setIsTreeVisible(false);
     let cancelBackgroundTask: (() => void) | undefined;
     const taskId = scheduleNextFrame(() => {

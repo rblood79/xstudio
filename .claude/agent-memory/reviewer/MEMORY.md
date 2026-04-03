@@ -87,6 +87,10 @@
 - **Step 4.5 O(N) 전체 배치 순회 — autoHeightCandidates 미추적**: 매 레이아웃 계산마다 `batch.length` 전체를 순회하여 auto/fit-content height 요소를 탐색 — DFS enrichment 단계에서 intrinsic height 계산이 실행된 노드만 `Set<number>`로 추적하면 순회 대상 한정 가능 (fullTreeLayout.ts:1753)
 - **`gridTemplateColumns` 변경 감지에 JSON.stringify 이중 직렬화**: display 전환 감지 루프에서 grid 노드마다 `JSON.stringify(prevParsed.gridTemplateColumns)` + `JSON.stringify(node.style.gridTemplateColumns)` 2회 직렬화 — `persistentTaffyTree`에 `gridColsHashMap` 별도 저장 또는 `_lastJsonMap` 부분 비교로 대체 가능 (fullTreeLayout.ts:1709)
 - **`injectCollectionItemFontStyles` — 값 동일 시 early-return 없음**: Text/Description 자식이 이미 올바른 fontSize/fontWeight/width를 보유해도 3중 spread shallow copy 수행 — 값 일치 시 `return child` early-return으로 불필요한 객체 생성 제거 가능
+- **병렬 배열 패턴 (overflowChildBounds[] + overflowChildIds[])**: 인덱스 동기화 의존 병렬 배열 — `interface { id: string; bounds: BoundingBox }` 구조체 배열로 교체 필수. 길이 불일치 버그가 타입에서 검출 안 됨 (skiaFrameHelpers.ts OverflowContentInfo 사례)
+- **renderSkia 콜백 내부 역매핑 재생성**: `buildChildOverflowContextMap(overflowInfoMap)`이 60fps renderSkia 콜백 내부에서 매 프레임 `Map<string, ...>` 전체 재생성 — overflowInfoMap 변경 시점에 상류에서 1회 파생·캐싱 필요 (skiaOverlayBuilder.ts Overflow Hatching 섹션)
+- **Skia Overlay 45도 해칭 방향 오류 패턴**: `(left+d, top) → (left, top+d)` 라인이 `\` 방향이 아닌 `/` 방향. 완전 커버를 위한 d 범위도 `0..totalSpan`이 아닌 `-(bottom-top)...(right-left)` 필요 (hoverRenderer.ts renderOverflowHatching)
+- **모듈 레벨 캐시 싱글턴 — 멀티 페이지 오염**: `_cachedOverflowInfoMap`이 모듈 레벨 변수로 페이지 구분 없이 단일 캐시 — 캐시 키에 pageId 포함 또는 `Map<pageId, cache>` 구조로 격리 필요 (skiaFrameHelpers.ts getCachedOverflowInfoMap)
 
 ## False Positive 기록
 

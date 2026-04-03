@@ -104,17 +104,21 @@ const PagesTabContent = memo(function PagesTabContent({
   const [visibleLayerPageId, setVisibleLayerPageId] = useState<string | null>(
     deferredCurrentPageId,
   );
-  const visibleLayerElementCount = useStore(
+  // 삭제된 페이지 감지 → currentPageId fallback (LayersSection unmount 방지)
+  const activeLayerPageId = useStore(
     useCallback(
-      (state) =>
-        visibleLayerPageId
-          ? (state.pageElementsSnapshot[visibleLayerPageId] ?? []).length
-          : 0,
+      (state) => {
+        const pageId =
+          visibleLayerPageId && visibleLayerPageId in state.pageElementsSnapshot
+            ? visibleLayerPageId
+            : state.currentPageId;
+        if (!pageId) return null;
+        const snapshot = state.pageElementsSnapshot[pageId];
+        return snapshot && snapshot.length > 0 ? pageId : null;
+      },
       [visibleLayerPageId],
     ),
   );
-  const shouldShowLayersSection =
-    !!visibleLayerPageId && visibleLayerElementCount > 0;
 
   useEffect(() => {
     if (projectId && pageCount === 0) {
@@ -155,8 +159,8 @@ const PagesTabContent = memo(function PagesTabContent({
   return (
     <>
       <PagesSection projectId={projectId} />
-      {shouldShowLayersSection ? (
-        <LayersSection currentPageId={visibleLayerPageId} />
+      {activeLayerPageId ? (
+        <LayersSection currentPageId={activeLayerPageId} />
       ) : (
         <div className="section" aria-hidden="true" style={{ minHeight: 72 }} />
       )}

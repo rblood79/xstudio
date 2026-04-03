@@ -118,8 +118,13 @@ export const PagesSection = memo(function PagesSection({
           ).find((element) => element.order_num === 0) ?? nextBodyElement)
         : null;
 
-      // 1. UI는 즉시 반영하되, 현재 페이지 삭제 시 fallback activation은 다음 프레임으로 분리
-      if (deletingCurrentPage && pageToSelect) {
+      // 대상 페이지가 이미 로드됐으면 fallback transition 스킵 (깜빡임 방지)
+      const targetPageElements = pageToSelect
+        ? currentState.pageElementsSnapshot[pageToSelect.id]
+        : undefined;
+      const isTargetLoaded =
+        !!targetPageElements && targetPageElements.length > 0;
+      if (deletingCurrentPage && pageToSelect && !isTargetLoaded) {
         setIsFallbackTransitioning(true);
       }
 
