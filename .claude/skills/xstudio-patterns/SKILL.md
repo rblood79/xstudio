@@ -1,7 +1,9 @@
 ---
 name: xstudio-patterns
 description: Defines code patterns, rules, and best practices for XStudio Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Use when writing, reviewing, refactoring, or debugging any XStudio code, or when making architectural decisions about the builder.
+TRIGGER when: user mentions "코드 패턴", "규칙 확인", "컨벤션 체크", "아키텍처 규칙", "XStudio 규칙", "패턴 체크", "코드 리뷰 기준", "code patterns", "conventions", "architecture rules", or asks about XStudio coding standards, Spec rules, rendering conventions, or state management patterns.
 user-invocable: true
+scope: XStudio Builder codebase (apps/builder, packages/specs, packages/shared, packages/layout-flow)
 ---
 
 # XStudio Patterns Skill
@@ -131,3 +133,37 @@ XStudio Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 - **[ADR-001](../../../docs/adr/001-state-management.md)** Zustand | **[ADR-002](../../../docs/adr/002-styling-approach.md)** ITCSS+tv() | **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** Canvas
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** iframe | **[ADR-005](../../../docs/adr/005-css-text-wrapping.md)** Text Wrap | **[ADR-008](../../../docs/adr/008-layout-engine.md)** Taffy
 - **[Component Spec](../../../docs/COMPONENT_SPEC.md)** 단일 소스 아키텍처
+
+## 규칙 효과 측정
+
+규칙의 실제 효과를 추적하여 컨텍스트 예산을 최적화합니다.
+
+### 측정 템플릿
+
+리뷰어 에이전트가 `.claude/agent-memory/reviewer/MEMORY.md`에 기록:
+
+| 규칙     | 위반 수 | False Positive | 실효성          | 비고 |
+| -------- | ------- | -------------- | --------------- | ---- |
+| (규칙명) | N       | N              | HIGH/MEDIUM/LOW |      |
+
+### 정리 기준
+
+- **위반 0 + 3개월 이상**: Claude가 내재화했을 가능성 → 제거 후보 (컨텍스트 절약)
+- **False Positive > 50%**: 규칙 조건이 너무 넓음 → 조건 좁히기
+- **위반 빈번 + 실효성 LOW**: 규칙이 모호함 → Why 보강 또는 코드 레벨 방지로 전환
+
+## Evals
+
+### Positive (발동해야 하는 경우)
+
+- "캔버스에서 텍스트가 잘려요" → ✅ 캔버스 렌더링 규칙 참조 필요
+- "Zustand store에 슬라이스 추가하려면?" → ✅ 상태 관리 규칙 참조
+- "이 코드가 XStudio 컨벤션에 맞나?" → ✅ 규칙 인덱스 조회
+- "Spec 파일 새로 만들 때 주의사항?" → ✅ Spec 빌드/등록 규칙
+
+### Negative (발동하면 안 되는 경우)
+
+- "README 업데이트해줘" → ❌ 문서 작업, 코드 패턴 무관
+- "git commit 해줘" → ❌ Git 작업
+- "이 React 훅 설명해줘" (일반 React) → ❌ XStudio 특화 아님
+- "TypeScript 타입 추론 원리가 뭐야?" → ❌ 일반 TS 지식

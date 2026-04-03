@@ -145,37 +145,12 @@ Spec TokenRef: {color.primary}, {color.secondary}, {color.tertiary},
 
 ## Tint Color System (preview-system.css)
 
-`--tint` 변수 하나로 전체 accent 색상 전환 (React Aria starter 패턴):
-
-```css
---tint: var(--blue); /* 기본: 파란 테마 */
---tint: var(--purple); /* 보라 테마로 전환 */
-```
-
-- 프리셋: `--red`, `--orange`, `--yellow`, `--green`, `--turquoise`, `--cyan`, `--blue`, `--indigo`, `--purple`, `--pink`
-- 자동 생성: `--tint-100` ~ `--tint-1600` (oklch relative color)
-- 다크모드: lightness 스케일 자동 반전
-- ThemeStudio 오버라이드(`--color-highlight-background` 등)가 tint fallback보다 우선
+`--tint` 변수 하나로 전체 accent 색상 전환 (React Aria starter 패턴). 프리셋: `--red`, `--orange`, `--yellow`, `--green`, `--turquoise`, `--cyan`, `--blue`, `--indigo`, `--purple`, `--pink`. 자동 생성: `--tint-100` ~ `--tint-1600` (oklch relative color). ThemeStudio 오버라이드가 tint fallback보다 우선.
 
 ## Hover/Pressed 파생
 
-`color-mix()` 패턴 사용 (utilities.css `.button-base` 참조):
-
-```css
-/* hover: 85% base + 15% black */
-background: color-mix(in srgb, var(--accent) 85%, black);
-/* pressed: 75% base + 25% black */
-background: color-mix(in srgb, var(--accent) 75%, black);
-```
-
-### Skia/Canvas 측 color-mix 처리
-
-Skia는 CSS `color-mix()`를 네이티브 지원하지 않으므로 JS에서 동일 연산 수행:
-
-- **`tintToSkiaColors.ts`의 `mixWithBlackSrgb()`**: srgb 채널별 선형 혼합 (CSS 정합)
-  - `mixWithBlackSrgb(accentHex, 85)` = `color-mix(in srgb, accent 85%, black)`
-  - oklch lightness 근사 사용 금지 (srgb 혼합과 수학적으로 다른 결과)
-- light/dark 모드 무관하게 동일 연산 (CSS `color-mix`는 모드별 분기 없음)
+`color-mix(in srgb, var(--accent) 85%, black)` = hover, `75%` = pressed. utilities.css `.button-base` 참조.
+Skia 측 color-mix 처리: canvas-rendering.md의 color-mix 규칙 참조.
 
 ## Utility 클래스 (ADR-018)
 
@@ -187,10 +162,9 @@ Skia는 CSS `color-mix()`를 네이티브 지원하지 않으므로 JS에서 동
 
 ## Dark Mode — Skia/WebGL 적용 (ADR-021)
 
-Skia 캔버스에서 dark mode를 반영하려면:
+Skia dark mode 적용 상세: canvas-rendering.md 참조.
 
-1. **`resolveSkiaTheme(darkMode)`**: `DarkModePreference` → `"light" | "dark"` 변환 ("system"은 OS 미디어 쿼리 기반)
-2. **`specShapesToSkia(shapes, skiaTheme, ...)`**: 두 번째 인자에 `skiaTheme` 전달 (하드코딩 `"light"` 금지)
-3. **`setDarkMode`**: 반드시 `themeVersion++` + `notifyLayoutChange()` 호출 (누락 시 Skia 무반응)
-4. **BodyLayer**: 명시적 배경색 미지정 시 `lightColors.base`/`darkColors.base` fallback 전환
-5. **lightColors/darkColors**: `@xstudio/specs` export, Object.freeze() 미적용 → mutation으로 Tint/Neutral 동적 갱신
+핵심 체크리스트:
+
+- `specShapesToSkia()` 두 번째 인자에 `skiaTheme` 전달 (하드코딩 `"light"` 금지)
+- `setDarkMode` 시 `themeVersion++` + `notifyLayoutChange()` 호출 필수 (누락 시 Skia 무반응)

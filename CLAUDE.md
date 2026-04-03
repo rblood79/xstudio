@@ -58,27 +58,23 @@ xstudio/
 | :--------: | :-------: | :---------: |
 |   60fps    |   < 3초   |   < 500KB   |
 
-## Superpowers 워크플로 강제 (최우선)
+## Superpowers 워크플로
 
-모든 작업에서 **Superpowers**를 적극 활용합니다:
-
-- 복잡한 작업(렌더링 수정, drag-and-drop, 대규모 리팩토링) 시작 시 **Structured Planning / Brainstorming** 스킬을 먼저 사용해 2~3개 접근 방식을 제안받고 선택한다.
-- 버그 수정은 **Systematic Debugging (4단계 root-cause)** 스킬을 따른다.
-- 구현은 **TDD (RED-GREEN-REFACTOR)** 사이클을 기본으로 한다.
-- **렌더링 관련 모든 수정 후에는 반드시 `/cross-check` 스킬을 최종 검증 단계로 실행**한다.
-- CRITICAL 또는 HIGH 이슈는 절대 스킵하지 않고 즉시 수정한다.
+- **복잡한 작업** (렌더링, drag-and-drop, 대규모 리팩토링): Brainstorming 스킬로 접근 방식 탐색 후 선택
+- **버그 수정**: Systematic Debugging 4단계 root-cause 스킬
+- **구현**: TDD (RED-GREEN-REFACTOR) 사이클 기본
+- **렌더링 수정 후**: `/cross-check` 스킬 최종 검증
+- **단순 작업** (한 줄 수정, 설정 변경): 스킬 스킵 가능
+- CRITICAL/HIGH 이슈: 즉시 수정, 스킵 금지
 
 ## CRITICAL 규칙 (10개) → `.claude/rules/` 자동 로드
 
 위반 시 즉시 수정. 파일 편집 시 glob-scoped rule이 자동 주입됩니다.
 전체 목록 및 상세: [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)
 
-## 상태 변경 파이프라인 (순서 필수 보존)
+## 상태 변경 파이프라인
 
-```
-1. Memory Update (즉시) → 2. Index Rebuild (즉시) → 3. History Record (즉시)
-4. DB Persist (백그라운드) → 5. Preview Sync (백그라운드) → 6. Order Rebalance (백그라운드)
-```
+`Memory → Index → History (즉시) → DB → Preview → Rebalance (백그라운드)` — 순서 필수 보존. 상세: `.claude/rules/state-management.md`
 
 ## 자동 품질 게이트 (Hooks)
 
@@ -103,18 +99,22 @@ xstudio/
 | CSS 자동 생성  | [docs/adr/completed/036-spec-first-single-source.md](docs/adr/completed/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                                      |
 | Spec↔CSS 경계  | [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)                                   | Leaf(Spec CSS) vs Container(수동 CSS) 분류표, 결정 흐름도                             |
 
-## 렌더링 버그 수정 규칙
+## 렌더링 버그 수정 원칙
 
-이 프로젝트는 **3개 렌더링 타겟**: CSS(DOM Preview), WebGL(Skia Canvas), PixiJS(이벤트)를 가집니다.
-컴포넌트는 **5개 레이어**: spec, factory, CSS renderer, WebGL/Canvas renderer, editor로 구성됩니다.
+3개 렌더링 타겟(CSS/Skia/PixiJS) × 5개 레이어(spec/factory/CSS renderer/WebGL renderer/editor).
 
-1. **모든 렌더링 경로 검증 필수**: 시각적/렌더링 버그 수정 시 CSS, WebGL/Skia, Canvas **모든 경로**에서 수정을 확인. 한 경로만 수정하고 다른 경로를 누락하지 않는다.
-2. **전체 코드 경로 추적**: 수정 후 factory → spec → renderer → editor 전체 경로를 추적하여 하류 파손이 없는지 확인. 모든 관련 레이어를 체크하기 전까지 수정 완료로 간주하지 않는다.
-3. **코드 리뷰 시 이슈 스킵 금지**: HIGH/MEDIUM 심각도 발견사항을 '범위 외'로 스킵하지 않는다. 명시적으로 지시받지 않는 한 발견 즉시 수정한다.
-4. **교차 레이어 변경 확인**: 한 레이어의 변경이 다른 레이어에 영향을 미칠 수 있다. 변경 시 항상 확인할 파일: spec 파일, factory 파일, CSS renderer, WebGL/Canvas renderer, editor 파일.
-5. **좌표계 검증 선행**: 드래그앤드롭 또는 좌표 기반 기능 구현 시 좌표계 가정(local vs global, canvas vs screen)을 코드 작성 전에 검증하고 주석으로 문서화한다.
-6. **배치 스윕 우선**: 동일 패턴의 이슈를 발견하면 한 컴포넌트만 수정하지 말고, codebase 전체를 grep하여 같은 패턴을 가진 **모든 컴포넌트를 한 번에** 수정한다. 한 건씩 수정 → 같은 버그 반복 발견 사이클을 방지한다.
-7. **과잉 변경 금지**: 요청된 범위를 넘는 리팩토링, 주석 추가, 코드 정리, 타입 개선을 하지 않는다. 버그 수정이면 버그만 수정하고, 기능 추가면 해당 기능만 구현한다.
+- **모든 경로 검증**: 한 경로만 수정하고 다른 경로 누락 금지 → `/cross-check` 스킬로 검증
+- **전체 경로 추적**: factory → spec → renderer → editor 하류 파손 확인
+- **배치 스윕**: 동일 패턴 이슈 → codebase grep → 한 번에 수정
+- **과잉 변경 금지**: 요청 범위만 수정
+- 상세: `.claude/rules/canvas-rendering.md` (파일 편집 시 자동 로드)
+
+## 병렬 워크플로 (Boris 패턴)
+
+- 대규모 리팩토링: `isolation: "worktree"`로 격리된 에이전트 실행
+- 독립 작업 2+ 개: `/dispatch` 스킬로 병렬 에이전트 실행
+- reviewer + implementer 분리: 구현 에이전트 완료 후 reviewer 에이전트로 검증
+- `/loop` 활용: 렌더링 파리티 반복 검증에 적합
 
 ---
 

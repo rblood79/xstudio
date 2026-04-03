@@ -1,7 +1,9 @@
 ---
 name: component-design
 description: Skill 문서를 활용한 컴포넌트 설계/구현 워크플로우. React Aria/Spectrum 문서 참조, IDE 타입 검증, Chrome 브라우저 검증을 단계별로 수행합니다.
+TRIGGER when: user mentions "새 컴포넌트", "컴포넌트 만들어", "컴포넌트 구현", "컴포넌트 설계", "S2 전환", "S2 기능 추가", "컴포넌트 추가", "new component", "implement component", "design component", or asks to create, design, or implement a new UI component for XStudio.
 user-invocable: true
+scope: 새 컴포넌트 생성 또는 기존 컴포넌트의 구조적 변경 (단순 버그 수정, 스타일 변경은 제외)
 ---
 
 # Component Design Skill
@@ -122,3 +124,40 @@ mcp__claude-in-chrome__computer(action: "screenshot", tabId: {tabId})
 | Phase 1 (React Aria) | React Aria 미지원 컴포넌트, 단순 버그 수정 |
 | Phase 3 (IDE)        | `pnpm type-check`로 대체 가능              |
 | Phase 4 (Chrome)     | 서버 미실행, 시각적 변화 없는 수정         |
+
+## 산출물 템플릿
+
+### Phase 1 리서치 산출물
+
+| 항목             | 내용                                     |
+| ---------------- | ---------------------------------------- |
+| React Aria hooks | (사용할 hooks/components 목록)           |
+| Props 인터페이스 | (핵심 props 설계)                        |
+| 접근성 요구사항  | (키보드 네비게이션, ARIA 패턴)           |
+| XStudio 매핑     | (tv() 스타일, Zustand 연동, Spec shapes) |
+
+### Phase 2 구현 체크리스트
+
+- [ ] 타입 정의 (`unified.types.ts` + `defaultPropsMap`)
+- [ ] Spec 작성 (`packages/specs/src/components/`)
+- [ ] Factory 정의 (`factories/definitions/`)
+- [ ] Preview Renderer (`preview/renderers/`)
+- [ ] Canvas 연동 (`TAG_SPEC_MAP` + `pnpm build:specs`)
+- [ ] Property Editor (선택)
+- [ ] `/cross-check` 렌더링 정합성 검증
+
+## Evals
+
+### Positive (발동해야 하는 경우)
+
+- "DateTimePicker 컴포넌트 새로 만들어줘" → ✅ 새 컴포넌트 생성 워크플로
+- "Select에 S2 기능 추가하고 싶어" → ✅ S2 전환 워크플로
+- "Tabs 컴포넌트 설계해줘" → ✅ 컴포넌트 설계
+- "React Aria 기반으로 Dialog 구현" → ✅ React Aria 컴포넌트 구현
+
+### Negative (발동하면 안 되는 경우)
+
+- "Button 색상 버그 수정" → ❌ 버그 수정 → systematic-debugging
+- "CSS만 변경해줘" → ❌ 스타일 수정, 컴포넌트 구조 변경 아님
+- "Store 리팩토링" → ❌ 상태 관리 작업
+- "기존 컴포넌트 삭제해줘" → ❌ 삭제 작업, 설계 워크플로 불필요

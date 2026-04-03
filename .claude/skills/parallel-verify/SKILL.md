@@ -58,3 +58,17 @@ user_invocable: true
 2. CRITICAL/HIGH 이슈를 우선 수정
 3. `pnpm build:specs && pnpm type-check`로 검증
 4. 최종 결과 보고
+
+## Evals
+
+### Positive (발동해야 하는 경우)
+
+- "전체 컴포넌트 정합성 체크해줘" → ✅ 전체 패밀리 병렬 검증
+- "Forms 패밀리 일괄 검증" → ✅ 패밀리 단위 검증
+- "Spec 대량 수정 후 전체 확인해봐" → ✅ 다수 컴포넌트 영향
+
+### Negative (발동하면 안 되는 경우)
+
+- "Button 하나만 확인해줘" → ❌ 단일 컴포넌트 → cross-check 사용
+- "타입 에러 수정해줘" → ❌ 타입 작업, 렌더링 검증 불필요
+- "TextField CSS만 수정했어" → ❌ 단일 경로 + 단일 컴포넌트 → cross-check 사용

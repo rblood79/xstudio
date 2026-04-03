@@ -40,12 +40,6 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/auto-format.sh"
-          },
-          {
-            "type": "command",
-            "command": "pnpm type-check --pretty 2>&1 | head -40 || true",
-            "description": "Auto type-check after edits - catch cascading rendering bugs early",
-            "timeout": 45
           }
         ]
       }
