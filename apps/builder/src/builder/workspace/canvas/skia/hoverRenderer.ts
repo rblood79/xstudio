@@ -183,8 +183,8 @@ export function renderOverflowHatching(
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Stroke);
     paint.setStrokeWidth(1.5 / zoom);
-    // 빨간 계열 — overflow 영역 경고 표시
-    paint.setColor(ck.Color4f(0.9, 0.2, 0.2, HATCHING_ALPHA));
+    // --focus-ring 토큰 색상 (blue-500 = #3b82f6)
+    paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HATCHING_ALPHA));
 
     const spacing = HATCHING_LINE_SPACING / zoom;
     const left = cb.x;
