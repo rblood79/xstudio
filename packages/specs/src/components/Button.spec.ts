@@ -49,7 +49,6 @@ export interface ButtonProps {
   formTarget?: "_self" | "_blank" | "_parent" | "_top";
   staticColor?: "white" | "black";
   isDisabled?: boolean;
-  isLoading?: boolean;
   isPending?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -548,8 +547,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
 
     react: (props) => ({
-      "data-loading": props.isLoading || undefined,
-      "aria-busy": props.isLoading || undefined,
+      "data-loading": props.isPending || undefined,
+      "aria-busy": props.isPending || undefined,
     }),
 
     pixi: (props) => ({
