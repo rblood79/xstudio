@@ -4,54 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-catalogs:
-  default:
-    '@types/node':
-      specifier: 24.10.4
-      version: 24.10.4
-    '@types/react':
-      specifier: ^19.2.14
-      version: 19.2.14
-    '@types/react-dom':
-      specifier: ^19.2.3
-      version: 19.2.3
-    '@vitejs/plugin-react-swc':
-      specifier: ^4.2.3
-      version: 4.2.3
-    cross-env:
-      specifier: ^10.1.0
-      version: 10.1.0
-    immer:
-      specifier: ^11.1.4
-      version: 11.1.4
-    jotai:
-      specifier: ^2.18.0
-      version: 2.18.0
-    react:
-      specifier: ^19.2.4
-      version: 19.2.4
-    react-aria-components:
-      specifier: ^1.15.1
-      version: 1.15.1
-    react-dom:
-      specifier: ^19.2.4
-      version: 19.2.4
-    react-router:
-      specifier: ^7.13.1
-      version: 7.13.1
-    react-router-dom:
-      specifier: ^7.13.1
-      version: 7.13.1
-    typescript:
-      specifier: ~5.9.3
-      version: 5.9.3
-    vite:
-      specifier: ^7.3.1
-      version: 7.3.1
-    zustand:
-      specifier: ^5.0.11
-      version: 5.0.11
-
 importers:
 
   .:
@@ -2776,6 +2728,7 @@ packages:
   '@xmldom/xmldom@0.8.11':
     resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -8838,7 +8791,6 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.59.0
       '@rollup/rollup-win32-x64-msvc': 4.59.0
       fsevents: 2.3.3
-    optional: true
 
   run-applescript@7.1.0: {}
 
@@ -9192,11 +9144,11 @@ snapshots:
 
   vite@7.3.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0):
     dependencies:
-      esbuild: 0.27.2
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      esbuild: 0.27.7
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
       postcss: 8.5.6
-      rollup: 4.54.0
+      rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:
       '@types/node': 24.10.4
