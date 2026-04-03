@@ -191,6 +191,118 @@ HarfBuzz WASM(Skia)과 Canvas `measureText()`(Pretext)는 서브픽셀 수준에
   └──────────────┘  └─────────────────┘  └────────────────────┘
 ```
 
+### Phase 0: Feasibility POC — 환경 검증 (1~2일)
+
+Phase A 시작 전에 **실제 XStudio 환경에서 Pretext가 CanvasKit과 공존 가능한지** 검증한다.
+
+#### 0-1. Canvas 2D Context 공존 검증 (CRITICAL)
+
+Pretext `prepare()`는 Canvas 2D `measureText()`를 호출한다. XStudio는 CanvasKit이 WebGL context를 점유하므로, **두 context가 동일 canvas element에서 충돌할 가능성**을 검증해야 한다.
+
+```typescript
+// POC: Pretext가 내부적으로 별도 canvas를 생성하는지 확인
+// Pretext 소스 measurement.ts — OffscreenCanvas 사용 여부
+const canvas =
+  typeof OffscreenCanvas !== "undefined"
+    ? new OffscreenCanvas(0, 0) // ← 별도 canvas, 충돌 없음
+    : document.createElement("canvas"); // ← 별도 canvas, 충돌 없음
+
+// XStudio WebGL canvas와 분리되어 있으므로 공존 가능
+// 단, OffscreenCanvas 미지원 환경(구형 Safari)에서는 DOM canvas 생성
+```
+
+**검증 항목**: Pretext `prepare()` 호출이 CanvasKit WebGL surface에 영향을 주지 않는지 확인.
+
+#### 0-2. 폰트 로딩 타이밍 검증 (HIGH)
+
+Pretext는 Canvas 2D `measureText()`에 의존하므로 **폰트가 브라우저에 로딩되어 있어야** 정확한 측정이 가능하다. CanvasKit은 `FontMgr.FromData()`로 WASM에 직접 주입하므로 로딩 타이밍이 다르다.
+
+```
+CanvasKit 경로:  FontMgr.FromData(arrayBuffer) → 즉시 사용 가능
+Pretext 경로:    document.fonts.ready → CSS @font-face 로딩 완료 후 사용 가능
+
+두 이벤트의 타이밍이 다를 수 있음 → 일시적 불일치 윈도우
+```
+
+**검증 항목**:
+
+1. `document.fonts.ready` 시점에 Google Fonts(Inter, Noto Sans KR)가 Canvas 2D에서 정확히 측정되는지
+2. `skiaFontManager.onFontLoaded()` 시점과 `document.fonts.ready` 시점의 차이
+3. 폰트 로딩 전 prepare() 호출 시 fallback 폰트 측정 → 로딩 후 캐시 무효화 → 재측정 정확도
+
+**해결 방안**: 이중 감지 패턴
+
+```typescript
+// CanvasKit FontMgr 변경 → Pretext 캐시도 무효화
+skiaFontManager.onFontLoaded(() => {
+  textLayoutService.clearCache();
+  useStore.getState().invalidateLayout();
+});
+
+// 브라우저 폰트 로딩 → Pretext 캐시도 무효화
+document.fonts.ready.then(() => {
+  textLayoutService.clearCache();
+  useStore.getState().invalidateLayout();
+});
+
+// 추가: 개별 폰트 로딩 이벤트
+document.fonts.addEventListener("loadingdone", () => {
+  textLayoutService.clearCache();
+  useStore.getState().invalidateLayout();
+});
+```
+
+#### 0-3. 세그먼트 폭 합산 정확도 검증 (HIGH)
+
+Pretext는 `Intl.Segmenter`로 텍스트를 세그먼트 분할 후 각 세그먼트의 Canvas `measureText()` 폭을 합산한다. **세그먼트 폭의 합 ≠ 전체 텍스트 폭**인 경우가 존재한다 (커닝, contextual alternates 등).
+
+**검증 항목**: XStudio 실제 텍스트 코퍼스(한국어+영어 혼합, 버튼 레이블, Label 텍스트 등)에서 Pretext width와 CSS actual width의 오차 측정.
+
+```typescript
+// POC 벤치마크
+const testTexts = [
+  "Submit Order", // 영문
+  "제출하기", // 한국어
+  "주문 Submit 완료", // 혼합
+  "2024-03-15 12:00 PM", // 숫자+특수문자
+  "파일을 drag & drop", // 혼합 + 특수
+];
+
+for (const text of testTexts) {
+  const prepared = prepare(text, "14px Inter");
+  const pretextWidth = measureNaturalWidth(prepared);
+  const cssWidth = measureCSSWidth(text, "14px Inter"); // hidden DOM element
+  console.log(
+    `${text}: Pretext=${pretextWidth}, CSS=${cssWidth}, diff=${pretextWidth - cssWidth}`,
+  );
+}
+```
+
+#### 0-4. word-break/overflow-wrap 커버리지 매트릭스
+
+Pretext의 정확한 CSS 모드 지원 범위를 코드 수준에서 검증:
+
+| CSS 조합                  | Pretext 지원   | 검증 필요    | fallback  |
+| ------------------------- | -------------- | ------------ | --------- |
+| `normal` + `normal`       | ✅ (core path) | —            | —         |
+| `normal` + `break-word`   | ✅ (명시 지원) | —            | —         |
+| `normal` + `anywhere`     | ⚠️ 미확인      | Phase 0 검증 | CanvasKit |
+| `break-all` + (any)       | ❌ 미지원      | —            | CanvasKit |
+| `keep-all` + `normal`     | ⚠️ 미확인      | Phase 0 검증 | CanvasKit |
+| `keep-all` + `break-word` | ⚠️ 미확인      | Phase 0 검증 | CanvasKit |
+
+**판정 기준**: 위 매트릭스에서 "미확인" 항목을 Pretext 소스코드(`line-break.ts`)에서 검증. 지원 확인 시 Pretext 경로, 미지원 확인 시 CanvasKit fallback으로 확정.
+
+#### Phase 0 완료 기준
+
+- [ ] Canvas 2D context + WebGL context 공존 확인 (충돌 없음)
+- [ ] 폰트 로딩 타이밍 차이 ≤ 100ms 확인 (또는 이중 감지 패턴 작동 확인)
+- [ ] 한국어+영어 혼합 텍스트에서 Pretext width vs CSS width 오차 ≤ 1px
+- [ ] word-break/overflow-wrap 커버리지 매트릭스 확정
+- [ ] 500 요소 기준 prepare() 벤치마크 실행 (19ms 이내 확인)
+
+**Phase 0 실패 시**: Pretext 도입 중단, 현재 CanvasKit 경로 유지 + 보정 해킹 개선으로 전환.
+
 ### Phase A: Foundation — TextLayoutService 생성 (2~3일)
 
 #### A-1. 패키지 구성
@@ -226,8 +338,16 @@ class PretextMeasurer implements TextMeasurer {
   private cache = new Map<string, PreparedText>();
 
   measureWidth(text: string, style: TextMeasureStyle): number {
+    // Phase 0 검증: letterSpacing/wordSpacing이 있으면 CanvasKit fallback
+    if (style.letterSpacing || style.wordSpacing) {
+      return canvasKitFallback.measureWidth(text, style);
+    }
+    // word-break 모드가 Pretext 미지원이면 fallback
+    if (style.wordBreak === "break-all" || style.wordBreak === "keep-all") {
+      return canvasKitFallback.measureWidth(text, style);
+    }
     const prepared = this.getOrPrepare(text, style);
-    return measureNaturalWidth(prepared); // Pretext API
+    return measureNaturalWidth(prepared);
   }
 
   measureWrapped(
@@ -235,13 +355,24 @@ class PretextMeasurer implements TextMeasurer {
     style: TextMeasureStyle,
     maxWidth: number,
   ): TextMeasureResult {
+    // 동일 fallback 가드
+    if (this.needsFallback(style)) {
+      return canvasKitFallback.measureWrapped(text, style, maxWidth);
+    }
     const prepared = this.getOrPrepare(text, style);
-    const { height, lineCount } = layout(
-      prepared,
-      maxWidth,
-      this.resolveLineHeight(style),
-    );
-    return { width: maxWidth, height, lineCount };
+    const lineHeight = this.resolveLineHeight(style);
+
+    // ★ Codex 지적: width 반환 전략
+    // 현재 CanvasKit은 paragraph.getLongestLine()을 반환 — fit-content 계산에 사용됨
+    // layout() fast path는 width 미반환 → layoutWithLines()로 실제 최장 줄 폭 계산
+    const { lines } = layoutWithLines(prepared, maxWidth, lineHeight);
+    const longestLineWidth = Math.max(...lines.map((l) => l.width));
+
+    return {
+      width: longestLineWidth, // ← getLongestLine() 호환
+      height: lines.length * lineHeight,
+      lineCount: lines.length,
+    };
   }
 
   // 핵심: prepare() 결과를 캐시하여 layout()만 재호출
@@ -254,7 +385,29 @@ class PretextMeasurer implements TextMeasurer {
     }
     return prepared;
   }
+
+  // fallback 필요 여부 판정 (Phase 0 매트릭스 기반)
+  private needsFallback(style: TextMeasureStyle): boolean {
+    if (style.letterSpacing || style.wordSpacing) return true;
+    if (style.whiteSpace && style.whiteSpace !== "normal") return true;
+    if (style.wordBreak === "break-all" || style.wordBreak === "keep-all")
+      return true;
+    return false;
+  }
 }
+```
+
+**Codex 지적 반영**: `measureWrapped().width`를 `maxWidth` 대신 `layoutWithLines()` 기반의 **실제 최장 줄 폭**으로 반환한다. 이는 현재 CanvasKit의 `paragraph.getLongestLine()` 반환과 호환되어 fit-content 계산 리그레션을 방지한다. `layoutWithLines()`는 `layout()` fast path(0.0002ms)보다 느리지만(~0.01ms), 여전히 CanvasKit Paragraph 생성(~0.5ms)보다 **50배 빠르다**.
+
+**height-only 최적화 경로**: width가 불필요한 호출(Step 4.5 re-enrich 등)에서는 `layout()` fast path를 직접 사용하여 0.0002ms 성능 유지:
+
+```typescript
+// enrichWithIntrinsicSize — height만 필요
+const { height } = layout(prepared, availableWidth, lineHeight); // 0.0002ms
+
+// calculateContentWidth — width 필요
+const { lines } = layoutWithLines(prepared, maxWidth, lineHeight); // ~0.01ms
+const contentWidth = Math.max(...lines.map((l) => l.width));
 ```
 
 #### A-3. 캐시 전략
@@ -306,10 +459,21 @@ Step 4.5: 너비 불일치 노드 N개 발견
 Step 4.5: 너비 불일치 노드 N개 발견
   → N × layout(prepared, newWidth, lineHeight)  ← prepare() 재호출 불필요!
   → N × 0.0002ms = 0.02ms (100 노드 기준)
-  → 2,500배 빠름
 ```
 
 이 최적화가 가능한 이유: `prepare()`는 텍스트와 폰트에만 의존하고, `layout()`은 너비와 lineHeight에만 의존한다. 너비가 바뀌어도 텍스트/폰트는 동일하므로 `prepare()` 캐시를 그대로 사용.
+
+**end-to-end 현실적 예측** (Codex 검토 반영):
+
+위 수치는 **Pretext `layout()` 호출만** 비교한 최적 시나리오이다. 실제 Step 4.5에서는 `layout()` 외에도 `processedElementsMap` 조회, `resolveStyle()`, border-box 계산, `patchBatchStyleFromImplicit()`, `persistentTree.updateNodeStyle()` + `markDirty()`, 그리고 Taffy `computeLayout()` 재호출 비용이 잔존한다.
+
+| 비교 기준                                              | 현재  | Pretext | 개선율   |
+| ------------------------------------------------------ | ----- | ------- | -------- |
+| **Pretext layout() 단독** (이론적 최대)                | ~50ms | ~0.02ms | 2,500×   |
+| **enrichWithIntrinsicSize 전체** (스타일 resolve 포함) | ~50ms | ~5ms    | **10×**  |
+| **Step 4.5 end-to-end** (Taffy 재호출 포함)            | ~65ms | ~10ms   | **6.5×** |
+
+end-to-end 기준 **6~10배 개선**이 현실적이다. Pretext가 제거하는 것은 WASM Paragraph round-trip이며, 나머지 JS 연산과 Taffy 재호출은 그대로 남는다. 다만 이 개선만으로도 **드래그 리사이즈 시 16.67ms 프레임 버짓 내 진입이 가능**해진다.
 
 #### B-3. Taffy 연동 패턴
 
@@ -382,6 +546,56 @@ function renderText(canvas, node, ck, fontMgr) {
   canvas.drawParagraph(paragraph, x, y);
 }
 ```
+
+**후처리 코드 간섭 대응** (Codex 지적 반영):
+
+현재 `nodeRendererText.ts` L349-367에는 Paragraph 생성 **후** 추가 보정 로직이 존재한다:
+
+1. **L350-355**: nowrap/pre일 때 `getMaxIntrinsicWidth()`로 재layout
+2. **L357-365**: 멀티라인에서 `maxIntrinsicWidth <= effectiveLayoutWidth` 시 재layout
+
+Break Hint 텍스트(\n 삽입)에서는 `getMaxIntrinsicWidth()`가 **각 줄의 최대 폭**을 반환하므로, 원본 텍스트보다 항상 작아진다. 이로 인해 후처리 #2가 **의도치 않게 트리거**되어 불필요한 재layout이 발생할 수 있다.
+
+**해결**: Break Hint 경로에서는 후처리를 스킵:
+
+```typescript
+const usePretextBreakHints = !needsFallback(style) && whiteSpace === "normal";
+
+if (usePretextBreakHints) {
+  // Pretext Break Hint 경로 — 줄바꿈이 이미 확정되었으므로 후처리 불필요
+  const hintedText = lines.map((l) => l.text).join("\n");
+  const paragraph = buildParagraph(hintedText, paraStyle);
+  paragraph.layout(maxWidth);
+  canvas.drawParagraph(paragraph, x, y);
+  // ← 후처리 #1, #2 스킵
+} else {
+  // 기존 CanvasKit 경로 — 후처리 로직 유지
+  const paragraph = buildParagraph(processedText, paraStyle);
+  paragraph.layout(effectiveLayoutWidth);
+  // ... 기존 후처리 #1, #2 실행
+}
+```
+
+#### C-2b. word-break/overflow-wrap 분기 전략 (Codex 지적 반영)
+
+현재 `nodeRendererText.ts`에는 5가지 word-break × overflow-wrap 분기가 존재한다. Pretext 도입 후의 분기 매트릭스:
+
+| 조합                      | 현재 경로                   | Pretext 도입 후                             | 비고                           |
+| ------------------------- | --------------------------- | ------------------------------------------- | ------------------------------ |
+| `normal` + `normal`       | `cssNormalBreakProcess()`   | **Pretext Break Hint**                      | 핵심 교체 대상                 |
+| `normal` + `break-word`   | `preprocessBreakWordText()` | **Pretext Break Hint**                      | Pretext 명시 지원              |
+| `normal` + `anywhere`     | `preprocessBreakWordText()` | Pretext or fallback (Phase 0 검증)          |                                |
+| `break-all` + (any)       | ZWS 삽입                    | **CanvasKit 유지**                          | 문자 단위 분할, Pretext 미지원 |
+| `keep-all` + `normal`     | `computeKeepAllWidth()`     | **CanvasKit 유지** (Phase 0 검증 후 재평가) |                                |
+| `keep-all` + `break-word` | `computeKeepAllWidth(true)` | **CanvasKit 유지** (Phase 0 검증 후 재평가) |                                |
+
+**핵심 원칙**: Pretext 경로는 `normal + normal`과 `normal + break-word` 두 조합에만 적용. 나머지는 기존 CanvasKit 경로를 **변경 없이** 유지하여 리그레션 방지.
+
+#### C-2c. ParagraphStyle 이중 생성 인식 (Codex 지적 반영)
+
+Break Hint Injection(전략 A)에서도 CanvasKit `ParagraphBuilder.Make(paraStyle, fontMgr)`는 여전히 호출된다. 즉 Pretext가 대체하는 것은 **줄바꿈 결정**이지, **Paragraph 생성 비용 자체는 아니다** (렌더링에 필요하므로 제거 불가).
+
+렌더링 경로의 Paragraph 생성을 완전히 제거하려면 Per-Line `drawText()`(전략 B)로 전환해야 하나, HarfBuzz 셰이핑 품질을 포기하게 된다. **현 시점에서는 전략 A를 유지하고, Phase E에서 전략 B를 선택적으로 평가**한다.
 
 #### C-3. specShapeConverter.ts 통합
 
@@ -588,12 +802,24 @@ walkLineRanges(
 
 ### 측정 비용 (500 텍스트 요소 기준)
 
-| 연산                                 | 현재 (CanvasKit)               | Pretext 도입 후        | 개선율     |
+#### Pretext API 단독 비교 (이론적 최대)
+
+| 연산                                 | 현재 (CanvasKit)               | Pretext API 단독       | API 개선율 |
 | ------------------------------------ | ------------------------------ | ---------------------- | ---------- |
 | **초기 측정** (prepare)              | ~35ms (Paragraph 500개 생성)   | ~19ms (prepare 500개)  | 1.8×       |
 | **리사이즈 재계산** (layout)         | ~35ms (Paragraph 재생성)       | ~0.09ms (layout만)     | **389×**   |
 | **2-Pass 보정** (Step 4.5, 100 노드) | ~50ms (Paragraph 100개 재생성) | ~0.02ms (layout 100개) | **2,500×** |
-| **전체 레이아웃 사이클**             | ~120ms                         | ~19.11ms               | **6.3×**   |
+
+#### End-to-End 현실적 예측 (Codex 검토 반영)
+
+Pretext `layout()` 외에도 스타일 resolve, border-box 계산, Taffy 재호출 등의 부가 비용이 잔존한다.
+
+| 연산                           | 현재    | Pretext E2E | E2E 개선율 | 비고                                 |
+| ------------------------------ | ------- | ----------- | ---------- | ------------------------------------ |
+| **초기 전체 레이아웃**         | ~120ms  | ~55ms       | **2.2×**   | prepare() 비용 지배적                |
+| **리사이즈 전체 사이클**       | ~85ms   | ~8ms        | **10×**    | layout() + 스타일 + Taffy            |
+| **2-Pass 전체** (Step 4.5)     | ~65ms   | ~10ms       | **6.5×**   | layout() + enrichment + Taffy 재호출 |
+| **프레임 버짓 (16.67ms) 충족** | ❌ 초과 | ✅ 여유     | —          | 60fps 안정화                         |
 
 ### 메모리 비용
 
@@ -780,6 +1006,57 @@ Pretext의 `prepare(text, font)`는 CSS font shorthand만 수용하며, `letter-
 
 **심각도**: LOW-MEDIUM — 대부분의 UI 텍스트에 무영향, 커스텀 spacing 텍스트만 fallback
 
+### Risk 7: Canvas 2D Context 충돌 (Codex 지적)
+
+Pretext `prepare()`는 Canvas 2D `measureText()`를 호출한다. XStudio는 CanvasKit이 WebGL context를 점유하므로, 두 context가 충돌할 가능성이 있다.
+
+**분석**: Pretext 소스(`measurement.ts`)를 확인하면, 내부적으로 `OffscreenCanvas` 또는 `document.createElement("canvas")`로 **별도 canvas element**를 생성하여 2D context를 획득한다. XStudio의 WebGL canvas와는 **물리적으로 다른 element**이므로 충돌하지 않는다.
+
+**완화**: Phase 0에서 실제 공존을 검증. OffscreenCanvas 미지원 환경(구형 Safari)에서는 DOM canvas가 생성되므로, 메모리 사용량 확인 필요.
+
+**심각도**: LOW (Phase 0 검증으로 확정) — Pretext가 별도 canvas를 생성하는 것이 확인되면 해소
+
+### Risk 8: 폰트 로딩 타이밍 경쟁 조건 (Codex 지적)
+
+CanvasKit은 `FontMgr.FromData()`로 WASM에 폰트를 직접 주입하므로 로딩 타이밍을 확실히 알 수 있다. Pretext는 Canvas 2D에 의존하므로 `document.fonts.ready` 시점에 의존한다.
+
+**위험**: Google Fonts CDN 로딩 완료 전에 `prepare()`가 호출되면 fallback 폰트(sans-serif)로 측정 → 캐시에 잘못된 값 저장.
+
+**완화**: Phase 0에서 설계한 **이중 감지 패턴** (CanvasKit `onFontLoaded` + `document.fonts.addEventListener("loadingdone")`)으로 양쪽 모두 캐시 무효화. 추가로, `prepare()` 호출 전 `document.fonts.check()` 가드:
+
+```typescript
+private getOrPrepare(text: string, style: TextMeasureStyle): PreparedText {
+  const fontReady = document.fonts.check(`${style.fontSize}px ${style.fontFamily}`);
+  if (!fontReady) {
+    // 폰트 미로딩 → CanvasKit fallback (FontMgr에는 이미 로딩됨)
+    throw new FontNotReadyError();
+  }
+  // ...
+}
+```
+
+**심각도**: MEDIUM — 이중 감지 + check() 가드로 완화 가능하나 Phase 0 검증 필수
+
+### Risk 9: 세그먼트 폭 합산 정확도 (Codex 지적)
+
+Pretext는 `Intl.Segmenter`로 텍스트를 세그먼트 분할 후 각 세그먼트의 `measureText()` 폭을 합산한다. **세그먼트 폭의 합 ≠ 전체 텍스트 폭**인 경우가 존재한다 (스크립트 전환 지점의 커닝, contextual alternates 등).
+
+**영향**: 한국어+영어 혼합 텍스트("주문 Submit 완료")에서 스크립트 전환 지점의 간격 오차.
+
+**완화**: Pretext가 7,680 테스트 케이스에서 이를 검증하고 있으며, 세그먼트 간 glue/접착 규칙으로 보정한다. Phase 0에서 XStudio 실제 텍스트 코퍼스로 오차 ≤ 1px 확인.
+
+**심각도**: LOW — Pretext의 테스트 스위트가 이미 커버하는 영역이나 Phase 0 검증 필요
+
+### Risk 10: Worker Thread 제약 (Codex 지적)
+
+`prepare()`가 Canvas 2D `measureText()`를 사용하므로 **Web Worker에서 호출 불가** (OffscreenCanvas.getContext('2d')는 Safari 미지원).
+
+**영향**: 현재 레이아웃 엔진은 메인 스레드에서 실행하므로 당장 문제없음. 다만 ADR-009에서 암시한 OffscreenCanvas Worker 오프로드 계획이 있다면 Pretext가 **블로커**가 된다.
+
+**완화**: ADR-009 Phase 5 (OffscreenCanvas Worker)는 현재 미구현(P4 우선순위). Pretext가 도입되면 레이아웃 측정은 메인 스레드, Skia 렌더링만 Worker로 분리하는 아키텍처로 전환. 측정이 0.0002ms 수준이면 메인 스레드에서도 병목이 아니므로 Worker 오프로드 필요성 자체가 감소한다.
+
+**심각도**: LOW — 현재 미구현 계획에 대한 제약, 실질적 영향 없음
+
 ---
 
 ## 수정 파일 목록
@@ -808,14 +1085,14 @@ Pretext의 `prepare(text, font)`는 CSS font shorthand만 수용하며, `letter-
 | `TextEditOverlay.tsx`        | 오버레이 컨테이너에 Pretext height 적용           | D-2   |
 | `specTextStyleForOverlay.ts` | lineHeight 통일 (Pretext 기준)                    | D-2   |
 
-### 제거 후보 (Phase C 완료 후)
+### 제거 후보 (Phase C 완료 + A/B 검증 확인 후)
 
-| 파일/코드                   | 이유                            |
-| --------------------------- | ------------------------------- |
-| `cssNormalBreakProcess()`   | Pretext가 CSS normal break 내장 |
-| `preprocessBreakWordText()` | Pretext가 break-word 내장       |
-| `computeKeepAllWidth()`     | Pretext가 CJK keep-all 내장     |
-| 측정용 Paragraph LRU 캐시   | PreparedText 캐시로 대체        |
+| 파일/코드                   | 제거 조건                                                                                                          | 비고                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| `preprocessBreakWordText()` | **확정 제거 가능** — Pretext가 `overflow-wrap: break-word` 명시 지원                                               |                                                         |
+| `cssNormalBreakProcess()`   | **조건부** — Pretext가 `overflow-wrap: normal`(overflow 허용, 단어 분할 금지)을 정확히 재현하는지 A/B 검증 후 결정 | Phase 0 매트릭스에서 확인                               |
+| `computeKeepAllWidth()`     | **보류** — Pretext의 `word-break: keep-all` 지원이 미확인. Phase 0에서 검증 후 판단                                | `break-all`/`keep-all`은 CanvasKit fallback 유지가 안전 |
+| 측정용 Paragraph LRU 캐시   | **Phase B 완료 후 축소** — 렌더링용 Paragraph 캐시는 유지, 측정 전용 캐시만 축소                                   |                                                         |
 
 ---
 
@@ -887,11 +1164,23 @@ Store (text, style)
 
 ```typescript
 function getEffectiveMeasurer(style: TextMeasureStyle): TextMeasurer {
-  // white-space가 normal이 아닌 경우 → 기존 CanvasKit
+  // 1. white-space가 normal이 아닌 경우 → CanvasKit
   if (style.whiteSpace && style.whiteSpace !== "normal") {
     return canvasKitMeasurer;
   }
-  // Pretext prepare 실패 시 → 기존 CanvasKit
+  // 2. word-break/overflow-wrap 조합이 Pretext 미지원 → CanvasKit (Codex 지적)
+  if (style.wordBreak === "break-all" || style.wordBreak === "keep-all") {
+    return canvasKitMeasurer;
+  }
+  // 3. letterSpacing/wordSpacing 사용 → CanvasKit (세그먼트 폭 미반영)
+  if (style.letterSpacing || style.wordSpacing) {
+    return canvasKitMeasurer;
+  }
+  // 4. 폰트 미로딩 → CanvasKit (FontMgr에는 이미 로딩) (Codex 지적)
+  if (!document.fonts.check(`${style.fontSize}px ${style.fontFamily}`)) {
+    return canvasKitMeasurer;
+  }
+  // 5. Pretext prepare 실패 시 → CanvasKit
   try {
     return pretextMeasurer;
   } catch {
@@ -932,6 +1221,16 @@ skiaFontManager.onFontLoaded(() => {
 ---
 
 ## 마이그레이션 체크리스트
+
+### Phase 0 (Feasibility POC) — Go/No-Go 게이트
+
+- [ ] Canvas 2D context + WebGL context 공존 확인 (Pretext가 별도 canvas 생성 검증)
+- [ ] 폰트 로딩 타이밍 차이 측정 (`document.fonts.ready` vs `skiaFontManager.onFontLoaded`)
+- [ ] 이중 감지 패턴 작동 확인 (폰트 로딩 후 캐시 무효화 → 재측정 정확)
+- [ ] 한국어+영어 혼합 텍스트 Pretext width vs CSS width 오차 ≤ 1px 확인
+- [ ] word-break/overflow-wrap 커버리지 매트릭스 확정 (Pretext 소스 `line-break.ts` 검증)
+- [ ] 500 요소 prepare() 벤치마크 (19ms 이내)
+- [ ] **Go/No-Go 판정**: 위 항목 전부 통과 시 Phase A 진행, 하나라도 실패 시 대안 검토
 
 ### Phase A (Foundation)
 
