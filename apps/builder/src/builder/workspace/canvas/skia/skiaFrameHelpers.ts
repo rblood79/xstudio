@@ -55,6 +55,8 @@ export interface OverflowContentInfo {
   containerBounds: BoundingBox;
   contentBounds: BoundingBox;
   overflowChildBounds: BoundingBox[];
+  /** overflow 타입 — scroll/auto 시 선택 상태에서 해칭 패턴 표시 */
+  overflowType: string;
 }
 
 /**
@@ -118,6 +120,7 @@ export function buildOverflowInfoMap(
         height: maxY - minY,
       },
       overflowChildBounds,
+      overflowType: overflow,
     });
   }
 

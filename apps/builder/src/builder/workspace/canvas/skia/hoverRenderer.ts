@@ -141,6 +141,73 @@ export function renderOverflowContent(
 }
 
 // ============================================
+// Overflow Hatching Pattern (scroll/auto 선택 시)
+// ============================================
+
+const HATCHING_ALPHA = 0.15;
+const HATCHING_LINE_SPACING = 8; // 화면 px 간격
+
+/**
+ * scroll/auto 컨테이너 선택 시 overflow 영역에 대각선 해칭 패턴 표시.
+ * 컨테이너 밖(ClipOp.Difference) + 콘텐츠 bounds 내에서 45도 사선 렌더링.
+ */
+export function renderOverflowHatching(
+  ck: CanvasKit,
+  canvas: Canvas,
+  info: OverflowContentInfo,
+  zoom: number,
+): void {
+  const scope = new SkiaDisposable();
+  try {
+    const { containerBounds: c, contentBounds: cb } = info;
+
+    // 컨테이너 밖 영역만 (Difference clipping)
+    canvas.save();
+    const containerRect = ck.LTRBRect(c.x, c.y, c.x + c.width, c.y + c.height);
+    canvas.clipRect(containerRect, ck.ClipOp.Difference, true);
+
+    // 콘텐츠 bounds 내로 추가 클리핑
+    const contentRect = ck.LTRBRect(
+      cb.x,
+      cb.y,
+      cb.x + cb.width,
+      cb.y + cb.height,
+    );
+    canvas.clipRect(contentRect, ck.ClipOp.Intersect, true);
+
+    // 대각선 45도 해칭 라인
+    const paint = scope.track(new ck.Paint());
+    paint.setAntiAlias(true);
+    paint.setStyle(ck.PaintStyle.Stroke);
+    paint.setStrokeWidth(1 / zoom);
+    paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HATCHING_ALPHA));
+
+    const spacing = HATCHING_LINE_SPACING / zoom;
+    const left = cb.x;
+    const top = cb.y;
+    const right = cb.x + cb.width;
+    const bottom = cb.y + cb.height;
+    const totalSpan = right - left + (bottom - top);
+
+    const path = scope.track(new ck.Path());
+    for (let d = 0; d < totalSpan; d += spacing) {
+      // 왼쪽 위에서 오른쪽 아래로 45도 라인
+      const x0 = left + d;
+      const y0 = top;
+      const x1 = left;
+      const y1 = top + d;
+      path.moveTo(x0, y0);
+      path.lineTo(x1, y1);
+    }
+    canvas.drawPath(path, paint);
+
+    canvas.restore();
+  } finally {
+    scope.dispose();
+  }
+}
+
+// ============================================
 // Editing Context Border
 // ============================================
 
