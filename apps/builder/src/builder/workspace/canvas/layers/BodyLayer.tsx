@@ -143,6 +143,14 @@ export const BodyLayer = memo(function BodyLayer({
       fillColor = Float32Array.of(r, g, b, gradientFill ? 1 : backgroundAlpha);
     }
 
+    // overflow 클리핑: body에 overflow 설정 시 자식 클리핑 (ADR-050)
+    const overflow = bodyStyle?.overflow as string | undefined;
+    const clipChildren =
+      overflow === "hidden" ||
+      overflow === "clip" ||
+      overflow === "scroll" ||
+      overflow === "auto";
+
     return {
       type: "box" as const,
       x: 0,
@@ -150,6 +158,7 @@ export const BodyLayer = memo(function BodyLayer({
       width: pageWidth,
       height: pageHeight,
       visible: true,
+      ...(clipChildren ? { clipChildren: true } : {}),
       box: {
         fillColor,
         ...(gradientFill ? { fill: gradientFill } : {}),
@@ -180,6 +189,7 @@ export const BodyLayer = memo(function BodyLayer({
     borderRadius,
     borderConfig,
     fills,
+    bodyStyle,
   ]);
 
   useSkiaNode(bodyElement?.id ?? "", bodyElement ? bodySkiaData : null);

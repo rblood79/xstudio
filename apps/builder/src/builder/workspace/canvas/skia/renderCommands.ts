@@ -383,12 +383,24 @@ function visitElement(
 
   // 외부 자식 (element children) → CHILDREN_BEGIN/END + 재귀
   const childElements = childrenMap.get(elementId);
+  // ADR-050: clipChildren일 때 skiaData의 원본 크기 사용 (pageWidth/Height)
+  // layoutMap의 height는 enrichment로 확장될 수 있어 clip이 무효화됨
+  const clipWidth = skiaData.clipChildren
+    ? skiaData.width > 0
+      ? skiaData.width
+      : width
+    : width;
+  const clipHeight = skiaData.clipChildren
+    ? skiaData.height > 0
+      ? skiaData.height
+      : height
+    : height;
   if (childElements && childElements.length > 0) {
     commands.push({
       type: CMD_CHILDREN_BEGIN,
       clipChildren: skiaData.clipChildren ?? false,
-      width,
-      height,
+      width: clipWidth,
+      height: clipHeight,
       scrollOffset: skiaData.scrollOffset,
     });
 

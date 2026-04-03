@@ -207,6 +207,41 @@ export function buildSkiaTreeHierarchical(
     return results;
   }
 
+  /**
+   * ADR-050: body에 clipChildren이 설정된 경우, body의 형제 노드(자식 요소)를
+   * body의 children으로 편입시킨다.
+   *
+   * PixiJS 트리에서 body(pixiGraphics)와 자식 요소(BoxSprite 등)가 같은
+   * PageContainer 아래 형제로 배치되어 있으므로, Skia 트리에서도 같은 레벨로
+   * 수집된다. body.clipChildren이 동작하려면 자식이 body 노드 아래에 있어야 한다.
+   */
+  function adoptSiblingsIntoClipBody(nodes: SkiaNodeData[]): SkiaNodeData[] {
+    const bodyIdx = nodes.findIndex((n) => n.clipChildren && n.type === "box");
+    if (bodyIdx === -1) return nodes;
+
+    const bodyNode = nodes[bodyIdx];
+    // body 앞의 노드(title hit area 등)는 유지, body 뒤의 형제를 body children으로 편입
+    const before = nodes.slice(0, bodyIdx);
+    const siblings = nodes.slice(bodyIdx + 1);
+
+    if (siblings.length === 0) return nodes;
+
+    // 형제 좌표를 body 기준 상대 좌표로 변환
+    const adoptedChildren = siblings.map((s) => ({
+      ...s,
+      x: s.x - bodyNode.x,
+      y: s.y - bodyNode.y,
+    }));
+
+    return [
+      ...before,
+      {
+        ...bodyNode,
+        children: [...(bodyNode.children || []), ...adoptedChildren],
+      },
+    ];
+  }
+
   const children = traverse(cameraContainer, 0, 0);
   if (children.length === 0) {
     _cachedTree = null;
@@ -215,6 +250,10 @@ export function buildSkiaTreeHierarchical(
     return null;
   }
 
+  // ADR-050: clipChildren body 후처리 — body와 형제가 flat으로 풀린 경우
+  // Page 컨테이너가 Skia 레지스트리 미등록 → body와 자식 요소가 동일 레벨
+  const processedChildren = adoptSiblingsIntoClipBody(children);
+
   const result: SkiaNodeData = {
     type: "container",
     x: 0,
@@ -222,7 +261,7 @@ export function buildSkiaTreeHierarchical(
     width: 0,
     height: 0,
     visible: true,
-    children,
+    children: processedChildren,
   };
 
   _cachedTree = result;
