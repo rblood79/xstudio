@@ -169,14 +169,16 @@
 
 > Spec: [CSS Overflow Module Level 3](https://www.w3.org/TR/css-overflow-3/)
 
-| 속성                        | 상태 | 구현 파일                                       | 비고                               |
-| --------------------------- | ---- | ----------------------------------------------- | ---------------------------------- |
-| `overflow: visible`         | ✅   | (기본값)                                        |                                    |
-| `overflow: hidden`          | ✅   | `BoxSprite.tsx:224`, `nodeRenderers.ts:282-308` | CanvasKit `clipRect`               |
-| `overflow: scroll`          | ❌   | —                                               | 스크롤바 UI 미구현                 |
-| `overflow: auto`            | ❌   | —                                               |                                    |
-| `overflow: clip`            | ✅   | `BoxSprite.tsx`, `TaffyBlockEngine.ts`          | hidden과 동일한 clipRect, BFC 생성 |
-| `overflow-x` / `overflow-y` | ✅   | `engines/utils.ts` `applyCommonTaffyStyle()`    | Flex/Grid/Block 3경로 모두 지원    |
+| 속성                        | 상태 | 구현 파일                                                         | 비고                                                                           |
+| --------------------------- | ---- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `overflow: visible`         | ✅   | (기본값)                                                          |                                                                                |
+| `overflow: hidden`          | ✅   | `BoxSprite.tsx:224`, `nodeRenderers.ts:282-308`                   | CanvasKit `clipRect`                                                           |
+| `overflow: scroll`          | ❌   | —                                                                 | 스크롤바 UI 미구현 (ADR-009 Phase E 후속)                                      |
+| `overflow: auto`            | ⚠️   | —                                                                 | body 기본값으로 추가됨 (body spec). 스크롤바 UI 미구현 (ADR-009 Phase E 후속)  |
+| `overflow: clip`            | ✅   | `BoxSprite.tsx`, `TaffyBlockEngine.ts`                            | hidden과 동일한 clipRect, BFC 생성                                             |
+| `overflow-x` / `overflow-y` | ✅   | `engines/utils.ts` `applyCommonTaffyStyle()`                      | Flex/Grid/Block 3경로 모두 지원                                                |
+| **에디터 UI**               | ✅   | `panels/styles/sections/AppearanceSection.tsx`, `styleOptions.ts` | Appearance 섹션 — visible/hidden/scroll/auto/clip 셀렉터 (ADR-050, 2026-04-03) |
+| **해칭 시각화 (Canvas)**    | ✅   | `skia/hoverRenderer.ts`, `skiaTreeBuilder.ts`                     | 자식 선택 시 부모 클립 영역 밖 해칭 표시 (우하향 45°, MAX_HATCHING_LINES=200)  |
 
 ### 7.5 Replaced Element Sizing (Image)
 
