@@ -55,7 +55,7 @@
 
 .react-aria-Badge[data-variant="neutral"] {
   background: var(--fg);
-  color: var(--color-white);
+  color: var(--bg);
 
   &[data-hovered] {
     background: var(--fg);
