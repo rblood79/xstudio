@@ -19,8 +19,8 @@ import {
   PenOff,
   FormInput,
   Hash,
-  Contrast,
 } from "lucide-react";
+import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
 /**
  * ToggleButton Props (S2)
@@ -38,6 +38,7 @@ export interface ToggleButtonProps {
   isSelected?: boolean;
   isEmphasized?: boolean;
   isQuiet?: boolean;
+  staticColor?: "white" | "black";
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
   /** 그룹 내 위치 정보 (ToggleButtonGroup 자식일 때 주입) */
@@ -170,18 +171,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
           { key: "isEmphasized", type: "boolean", icon: Eye },
           { key: "isQuiet", type: "boolean", label: "Quiet", icon: Eye },
           { type: "size" },
-          {
-            key: "staticColor",
-            type: "enum",
-            label: "Static Color",
-            icon: Contrast,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Auto" },
-              { value: "white", label: "White" },
-              { value: "black", label: "Black" },
-            ],
-          },
+          STATIC_COLOR_FIELD,
         ],
       },
       {

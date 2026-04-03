@@ -10,7 +10,8 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Type, Parentheses, Focus, PointerOff, Contrast } from "lucide-react";
+import { Type, Parentheses, Focus, PointerOff } from "lucide-react";
+import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
 /**
  * Button Props
@@ -46,6 +47,7 @@ export interface ButtonProps {
   formMethod?: "get" | "post" | "dialog";
   formNoValidate?: boolean;
   formTarget?: "_self" | "_blank" | "_parent" | "_top";
+  staticColor?: "white" | "black";
   isDisabled?: boolean;
   isLoading?: boolean;
   isPending?: boolean;
@@ -106,18 +108,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
               { value: "xl", label: "XL" },
             ],
           },
-          {
-            key: "staticColor",
-            type: "enum",
-            label: "Static Color",
-            icon: Contrast,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Auto" },
-              { value: "white", label: "White" },
-              { value: "black", label: "Black" },
-            ],
-          },
+          STATIC_COLOR_FIELD,
         ],
       },
       {

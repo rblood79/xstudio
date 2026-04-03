@@ -2,6 +2,7 @@
 
 ## 리뷰 빈출 이슈 패턴
 
+- **Spec 공용 field 정의 복제 (staticColor/isInvalid 등)**: `staticColor` enum field가 Button/ToggleButton/ProgressBar/Meter/Link/ProgressCircle 6개 파일에 동일 구조로 복제. `isInvalid`/`isDisabled`/`isReadOnly` boolean field도 10개 이상 Spec 파일에서 복제. `sharedSections.ts`에 `STATIC_COLOR_FIELD`, `IS_INVALID_FIELD`, `IS_DISABLED_FIELD`, `IS_READONLY_FIELD` 상수로 추출 필요. 단, `label` 포함 여부와 `emptyToUndefined`/`icon` 세부 값이 파일마다 다를 수 있으므로 통합 전 확인 필수
 - **Store 타입 → 엔진 함수 캐스팅**: Store의 `childrenMap`/`elementsMap`을 엔진 유틸 파라미터 타입으로 `as Map<string, ...>` 캐스팅하는 패턴 — 엔진 인터페이스가 Store 타입의 최소 구조만 요구하도록 설계 필요
 - **Spec propagation rules copy-paste**: 유사 컴포넌트(DatePicker/DateRangePicker, CheckboxGroup/RadioGroup 등) 간 propagation 규칙 배열을 통째로 복제하는 패턴 — 공통 규칙은 팩토리 함수로 추출해야 함 (`makeGroupSizePropagationRules` 패턴 제안)
 - **shapes() 선언부·사용부 이중 주석**: 변수 선언 직전과 해당 변수를 shape에 전달하는 위치 양쪽에 동일 내용을 주석으로 기재하는 copy-paste — 선언부 주석 하나만 유지

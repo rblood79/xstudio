@@ -52,8 +52,6 @@ export interface SelectProps {
   autoFocus?: boolean;
   labelPosition?: "top" | "side";
   necessityIndicator?: "icon" | "label";
-  selectionMode?: "single" | "multiple";
-  multipleDisplayMode?: "count" | "list" | "custom";
   disallowEmptySelection?: boolean;
   validationBehavior?: "native" | "aria";
   /** 드롭다운 아이템 목록 */

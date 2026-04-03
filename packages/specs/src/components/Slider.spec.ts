@@ -46,6 +46,7 @@ export interface SliderProps {
   form?: string;
   orientation?: "horizontal" | "vertical";
   isDisabled?: boolean;
+  isReadOnly?: boolean;
   isRequired?: boolean;
   labelPosition?: "top" | "side";
   children?: string;

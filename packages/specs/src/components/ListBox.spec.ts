@@ -31,6 +31,7 @@ export interface ListBoxProps {
   variant?: "default" | "accent";
   isDisabled?: boolean;
   selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "toggle" | "replace";
   disallowEmptySelection?: boolean;
   autoFocus?: boolean;
   name?: string;

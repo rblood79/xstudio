@@ -19,8 +19,8 @@ import {
   ArrowUp,
   Globe,
   DollarSign,
-  Contrast,
 } from "lucide-react";
+import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
 /**
  * ProgressBar Props
@@ -36,6 +36,7 @@ export interface ProgressBarProps {
   showValue?: boolean;
   valueFormat?: "number" | "percent" | "custom";
   isIndeterminate?: boolean;
+  staticColor?: "white" | "black";
   isDisabled?: boolean;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
@@ -147,18 +148,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
               { value: "lg", label: "L" },
             ],
           },
-          {
-            key: "staticColor",
-            type: "enum",
-            label: "Static Color",
-            icon: Contrast,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Auto" },
-              { value: "white", label: "White" },
-              { value: "black", label: "Black" },
-            ],
-          },
+          STATIC_COLOR_FIELD,
         ],
       },
       {
