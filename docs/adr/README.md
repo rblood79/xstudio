@@ -51,7 +51,7 @@
 | [048](048-declarative-props-propagation.md)                    | S2 선언적 Props Propagation                | Implemented | 2026-03-29 | Phase 0~5 완료. 26개 Spec 등록. WebGL+Skia+Factory 3경로 통합 (CSS/Preview 경로 미구현, labelPosition 전파 미구현) |
 | [043](043-selection-drag-alignment.md)                         | Selection Drag Alignment                   | Implemented | 2026-03-30 | Phase 0~6 완료 (drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel)               |
 | [049](049-canvas-drag-drop-pencil-parity.md)                   | Canvas Drag & Drop Pencil 패턴 정합성      |  Accepted   | 2026-04-01 | Phase A~D 완료 (deferred commit, spring 보간, drop indicator 개선, cross-container reparenting)                    |
-| [050](050-container-overflow-property.md)                      | Container Overflow 프로퍼티 (Figma 스타일) | Implemented | 2026-04-03 | 에디터 UI(Appearance 섹션) + Preview CSS + 해칭 패턴 시각화 + body clipChildren 특수 처리 완료                     |
+| [050](completed/050-container-overflow-property.md)            | Container Overflow 프로퍼티 (Figma 스타일) | Implemented | 2026-04-03 | 에디터 UI(Appearance 섹션) + Preview CSS + 해칭 패턴 시각화 + body clipChildren 특수 처리 완료                     |
 
 ### 부분 완료
 
