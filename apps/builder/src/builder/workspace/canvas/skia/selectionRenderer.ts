@@ -10,10 +10,10 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.11
  */
 
-import type { CanvasKit, Canvas, FontMgr } from 'canvaskit-wasm';
-import { SkiaDisposable } from './disposable';
-import type { BoundingBox } from '../selection/types';
-import { HANDLE_SIZE, HANDLE_CONFIGS } from '../selection/types';
+import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
+import { SkiaDisposable } from "./disposable";
+import type { BoundingBox } from "../selection/types";
+import { HANDLE_SIZE, HANDLE_CONFIGS } from "../selection/types";
 
 // ============================================
 // Constants (0x3b82f6 = blue-500)
@@ -25,30 +25,30 @@ const SELECTION_G = 0x82 / 255; // 0.510
 const SELECTION_B = 0xf6 / 255; // 0.965
 
 /** Page Title 레이블 설정 */
-const PAGE_TITLE_FONT_SIZE = 12;           // 화면상 폰트 크기 (px)
-const PAGE_TITLE_OFFSET_Y = 20;            // 페이지 상단 위로 오프셋 (px)
-const PAGE_TITLE_COLOR_R = 0x64 / 255;     // slate-500 (#64748b)
+const PAGE_TITLE_FONT_SIZE = 12; // 화면상 폰트 크기 (px)
+const PAGE_TITLE_OFFSET_Y = 20; // 페이지 상단 위로 오프셋 (px)
+const PAGE_TITLE_COLOR_R = 0x64 / 255; // slate-500 (#64748b)
 const PAGE_TITLE_COLOR_G = 0x74 / 255;
 const PAGE_TITLE_COLOR_B = 0x8b / 255;
 const PAGE_TITLE_OPACITY = 0.8;
 
 /** Element Count 뱃지 설정 */
-const BADGE_FONT_SIZE = 10;                // 화면상 폰트 크기 (px)
-const BADGE_GAP = 6;                       // 타이틀과 뱃지 사이 간격 (px)
-const BADGE_COLOR_R = 0x94 / 255;          // slate-400 (#94a3b8)
+const BADGE_FONT_SIZE = 10; // 화면상 폰트 크기 (px)
+const BADGE_GAP = 6; // 타이틀과 뱃지 사이 간격 (px)
+const BADGE_COLOR_R = 0x94 / 255; // slate-400 (#94a3b8)
 const BADGE_COLOR_G = 0xa3 / 255;
 const BADGE_COLOR_B = 0xb8 / 255;
 const BADGE_OPACITY = 0.6;
 
 /** Dimension 레이블 설정 */
-const DIMENSION_LABEL_FONT_SIZE = 11;      // 화면상 폰트 크기 (px)
-const DIMENSION_LABEL_PADDING_X = 6;       // 레이블 수평 패딩
-const DIMENSION_LABEL_PADDING_Y = 3;       // 레이블 수직 패딩
-const DIMENSION_LABEL_OFFSET_Y = 8;        // 선택 박스 하단으로부터의 오프셋
-const DIMENSION_LABEL_BG_R = 0x51 / 255;   // 배경색 (#51a2ff)
+const DIMENSION_LABEL_FONT_SIZE = 11; // 화면상 폰트 크기 (px)
+const DIMENSION_LABEL_PADDING_X = 6; // 레이블 수평 패딩
+const DIMENSION_LABEL_PADDING_Y = 3; // 레이블 수직 패딩
+const DIMENSION_LABEL_OFFSET_Y = 8; // 선택 박스 하단으로부터의 오프셋
+const DIMENSION_LABEL_BG_R = 0x51 / 255; // 배경색 (#51a2ff)
 const DIMENSION_LABEL_BG_G = 0xa2 / 255;
 const DIMENSION_LABEL_BG_B = 0xff / 255;
-const DIMENSION_LABEL_BORDER_RADIUS = 4;   // 배경 둥근 모서리
+const DIMENSION_LABEL_BORDER_RADIUS = 4; // 배경 둥근 모서리
 
 // ============================================
 // Types
@@ -187,7 +187,8 @@ export function renderDimensionLabels(
       const width = Math.round(bounds.width);
       const height = Math.round(bounds.height);
       const charCount = `${width} × ${height}`.length;
-      const estimatedTextWidth = charCount * DIMENSION_LABEL_FONT_SIZE * 0.6 * invZoom;
+      const estimatedTextWidth =
+        charCount * DIMENSION_LABEL_FONT_SIZE * 0.6 * invZoom;
       const estimatedTextHeight = DIMENSION_LABEL_FONT_SIZE * invZoom;
 
       const labelWidth = estimatedTextWidth + paddingX * 2;
@@ -198,7 +199,14 @@ export function renderDimensionLabels(
       const bgPaint = scope.track(new ck.Paint());
       bgPaint.setAntiAlias(true);
       bgPaint.setStyle(ck.PaintStyle.Fill);
-      bgPaint.setColor(ck.Color4f(DIMENSION_LABEL_BG_R, DIMENSION_LABEL_BG_G, DIMENSION_LABEL_BG_B, 1));
+      bgPaint.setColor(
+        ck.Color4f(
+          DIMENSION_LABEL_BG_R,
+          DIMENSION_LABEL_BG_G,
+          DIMENSION_LABEL_BG_B,
+          1,
+        ),
+      );
 
       const rrect = ck.RRectXY(
         ck.LTRBRect(labelX, labelY, labelX + labelWidth, labelY + labelHeight),
@@ -229,14 +237,14 @@ export function renderDimensionLabels(
     const dimensionText = `${width} × ${height}`;
 
     // Font + Paint를 사용한 직접 텍스트 렌더링
-    const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+    const typeface = fontMgr.matchFamilyStyle("Pretendard", {
       weight: ck.FontWeight.Normal,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
     });
 
     if (!typeface) {
-      console.warn('[renderDimensionLabels] typeface not found');
+      console.warn("[renderDimensionLabels] typeface not found");
       return;
     }
 
@@ -247,7 +255,7 @@ export function renderDimensionLabels(
     const glyphIds = font.getGlyphIDs(dimensionText);
     const glyphWidths = font.getGlyphWidths(glyphIds);
     const textWidth = glyphWidths.reduce((sum, w) => sum + w, 0);
-    const textHeight = fontSize;
+    const textHeight = fontSize * 1.2; // line-height: normal ≈ 1.2
 
     // 레이블 배경 크기 및 위치 계산
     const labelWidth = textWidth + paddingX * 2;
@@ -259,7 +267,14 @@ export function renderDimensionLabels(
     const bgPaint = scope.track(new ck.Paint());
     bgPaint.setAntiAlias(true);
     bgPaint.setStyle(ck.PaintStyle.Fill);
-    bgPaint.setColor(ck.Color4f(DIMENSION_LABEL_BG_R, DIMENSION_LABEL_BG_G, DIMENSION_LABEL_BG_B, 1));
+    bgPaint.setColor(
+      ck.Color4f(
+        DIMENSION_LABEL_BG_R,
+        DIMENSION_LABEL_BG_G,
+        DIMENSION_LABEL_BG_B,
+        1,
+      ),
+    );
 
     const rrect = ck.RRectXY(
       ck.LTRBRect(labelX, labelY, labelX + labelWidth, labelY + labelHeight),
@@ -321,7 +336,9 @@ export function renderLasso(
     strokePaint.setAntiAlias(true);
     strokePaint.setStyle(ck.PaintStyle.Stroke);
     strokePaint.setStrokeWidth(sw);
-    strokePaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 0.8));
+    strokePaint.setColor(
+      ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 0.8),
+    );
     canvas.drawRect(rect, strokePaint);
   } finally {
     scope.dispose();
@@ -355,7 +372,7 @@ export function renderPageTitle(
     const invZoom = 1 / zoom;
 
     // Typeface 획득
-    const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+    const typeface = fontMgr.matchFamilyStyle("Pretendard", {
       weight: isActive ? ck.FontWeight.Medium : ck.FontWeight.Normal,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
@@ -373,10 +390,14 @@ export function renderPageTitle(
     if (isActive) {
       textPaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
     } else {
-      textPaint.setColor(ck.Color4f(
-        PAGE_TITLE_COLOR_R, PAGE_TITLE_COLOR_G, PAGE_TITLE_COLOR_B,
-        PAGE_TITLE_OPACITY,
-      ));
+      textPaint.setColor(
+        ck.Color4f(
+          PAGE_TITLE_COLOR_R,
+          PAGE_TITLE_COLOR_G,
+          PAGE_TITLE_COLOR_B,
+          PAGE_TITLE_OPACITY,
+        ),
+      );
     }
 
     // canvas.scale로 줌 보정 → 폰트 사이즈가 항상 고정되어 글리프 메트릭 안정
@@ -385,7 +406,9 @@ export function renderPageTitle(
 
     // 화면 픽셀 좌표에서 위치 계산 후 pixel snap
     const textX = 0;
-    const textY = Math.round(-PAGE_TITLE_OFFSET_Y + PAGE_TITLE_FONT_SIZE * 0.85);
+    const textY = Math.round(
+      -PAGE_TITLE_OFFSET_Y + PAGE_TITLE_FONT_SIZE * 0.85,
+    );
 
     canvas.drawText(title, textX, textY, textPaint, font);
 
@@ -396,22 +419,33 @@ export function renderPageTitle(
       const titleWidth = titleGlyphWidths.reduce((sum, w) => sum + w, 0);
 
       const badgeText = `${elementCount} elements`;
-      const badgeTypeface = fontMgr.matchFamilyStyle('Pretendard', {
+      const badgeTypeface = fontMgr.matchFamilyStyle("Pretendard", {
         weight: ck.FontWeight.Normal,
         width: ck.FontWidth.Normal,
         slant: ck.FontSlant.Upright,
       });
       if (badgeTypeface) {
-        const badgeFont = scope.track(new ck.Font(badgeTypeface, BADGE_FONT_SIZE));
+        const badgeFont = scope.track(
+          new ck.Font(badgeTypeface, BADGE_FONT_SIZE),
+        );
         badgeFont.setSubpixel(true);
 
         const badgePaint = scope.track(new ck.Paint());
         badgePaint.setAntiAlias(true);
         badgePaint.setStyle(ck.PaintStyle.Fill);
-        badgePaint.setColor(ck.Color4f(BADGE_COLOR_R, BADGE_COLOR_G, BADGE_COLOR_B, BADGE_OPACITY));
+        badgePaint.setColor(
+          ck.Color4f(
+            BADGE_COLOR_R,
+            BADGE_COLOR_G,
+            BADGE_COLOR_B,
+            BADGE_OPACITY,
+          ),
+        );
 
         const badgeX = titleWidth + BADGE_GAP;
-        const badgeY = Math.round(-PAGE_TITLE_OFFSET_Y + BADGE_FONT_SIZE * 0.85);
+        const badgeY = Math.round(
+          -PAGE_TITLE_OFFSET_Y + BADGE_FONT_SIZE * 0.85,
+        );
 
         canvas.drawText(badgeText, badgeX, badgeY, badgePaint, badgeFont);
       }
