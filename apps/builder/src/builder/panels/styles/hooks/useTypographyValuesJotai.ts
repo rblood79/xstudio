@@ -60,11 +60,11 @@ function deriveTextBehaviorPreset(
   if (wb === "keep-all") return "keep-all";
   if (ow === "break-word") return "break-words";
   if (
-    ws === "normal" &&
-    wb === "normal" &&
-    ow === "normal" &&
-    to === "clip" &&
-    of === "visible"
+    (!ws || ws === "normal") &&
+    (!wb || wb === "normal") &&
+    (!ow || ow === "normal") &&
+    (!to || to === "clip") &&
+    (!of || of === "visible")
   )
     return "normal";
   return "custom";

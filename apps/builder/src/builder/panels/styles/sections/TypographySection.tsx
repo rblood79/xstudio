@@ -43,8 +43,8 @@ import {
   DEFAULT_FONT_OPTIONS,
   FONT_REGISTRY_STORAGE_KEY,
   getFontWeightOptions,
+  loadFontRegistry,
 } from "../../../fonts/customFonts";
-import { loadFontRegistry } from "@xstudio/shared/utils";
 import { usePanelLayout } from "../../../hooks/usePanelLayout";
 
 /**
@@ -60,8 +60,8 @@ const TypographySectionContent = memo(function TypographySectionContent() {
     useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
-  const [registryFaces, setRegistryFaces] = useState(
-    () => loadFontRegistry().faces,
+  const [registryFaces, setRegistryFaces] = useState(() =>
+    loadFontRegistry().faces.map(({ family, weight }) => ({ family, weight })),
   );
 
   // ADR-008: Text Behavior 프리셋 변경 핸들러
@@ -127,7 +127,13 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   );
 
   useEffect(() => {
-    const syncFonts = () => setRegistryFaces(loadFontRegistry().faces);
+    const syncFonts = () =>
+      setRegistryFaces(
+        loadFontRegistry().faces.map(({ family, weight }) => ({
+          family,
+          weight,
+        })),
+      );
 
     window.addEventListener("xstudio:custom-fonts-updated", syncFonts);
     const handleStorage = (event: StorageEvent) => {

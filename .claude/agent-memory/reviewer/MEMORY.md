@@ -107,3 +107,6 @@
 - Canvas 관련 코드: DirectContainer 패턴 필수 (엔진 결과 직접 배치)
 - field 컴포넌트: 입력 영역 배경 `--bg-inset` / `{color.layer-2}` 통일
 - `propagationRegistry.ts`의 `CAST` 헬퍼: Phase 1 임시 패턴 — Phase 3 대량 등록 전에 제네릭 시그니처로 교체 필요
+- **폰트 레지스트리 동기화 useEffect 복제**: `xstudio:custom-fonts-updated` + `StorageEvent(FONT_REGISTRY_STORAGE_KEY)` 이중 채널 구독 패턴이 `FontManagerPanel.tsx`와 `TypographySection.tsx`에 동일하게 복제 — `useFontRegistry()` 커스텀 훅으로 추출 필요
+- **`loadFontRegistry` 이중 import 경로**: `customFonts.ts`가 re-export하는데도 `@xstudio/shared/utils`에서 직접 import하는 패턴 — `customFonts.ts` 단일 진입점으로 통합 필요
+- **`deriveTextBehaviorPreset` normal 조건 round-trip 불일치**: `handleTextBehaviorChange`에서 normal 저장 시 빈 문자열(`""`)로 저장하나 감지 조건은 `"normal"/"clip"/"visible"` 기대 — 저장값과 감지 조건을 같은 기준으로 통일 필요
