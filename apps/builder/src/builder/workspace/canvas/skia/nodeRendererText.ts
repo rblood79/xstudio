@@ -15,6 +15,12 @@ import {
   computeKeepAllWidth,
   preprocessBreakWordText,
 } from "../utils/textWrapUtils";
+import {
+  USE_CANVAS2D_MEASURE,
+  needsFallback,
+  measureWithCanvas2D,
+} from "../utils/canvas2dSegmentCache";
+import type { TextMeasureStyle } from "../utils/textMeasure";
 import { SkiaDisposable } from "./disposable";
 import { skiaFontManager } from "./fontManager";
 import {
@@ -297,7 +303,33 @@ export function renderText(
     let effectiveLayoutWidth = isEllipsis ? node.text.maxWidth : layoutMaxWidth;
 
     if (!isEllipsis && layoutMaxWidth < 100000) {
-      if (wordBreak === "normal" && overflowWrap === "normal") {
+      // ADR-051: Canvas 2D Break Hint Injection
+      // Canvas 2D가 결정한 줄바꿈을 \n으로 삽입하여 CanvasKit 렌더링에 강제.
+      // 측정(Canvas 2D)과 렌더링(CanvasKit)의 줄바꿈 일치를 구조적으로 보장.
+      const c2dStyle: TextMeasureStyle = {
+        fontSize: node.text.fontSize,
+        fontFamily: node.text.fontFamilies.join(", "),
+        fontWeight: node.text.fontWeight,
+        fontStyle: node.text.fontStyle,
+        fontVariant: node.text.fontVariant,
+        fontStretch: node.text.fontStretch,
+        letterSpacing: node.text.letterSpacing,
+        wordSpacing: node.text.wordSpacing,
+        lineHeight: node.text.lineHeight,
+        wordBreak,
+        overflowWrap,
+        whiteSpace,
+      };
+
+      if (USE_CANVAS2D_MEASURE && !needsFallback(c2dStyle)) {
+        const c2dResult = measureWithCanvas2D(
+          processedText,
+          c2dStyle,
+          layoutMaxWidth,
+        );
+        renderableText = c2dResult.hintedText;
+        effectiveLayoutWidth = layoutMaxWidth;
+      } else if (wordBreak === "normal" && overflowWrap === "normal") {
         const result = cssNormalBreakProcess(
           ck,
           paraStyle,

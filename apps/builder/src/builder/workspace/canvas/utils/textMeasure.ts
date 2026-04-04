@@ -33,12 +33,14 @@ export interface TextMeasureStyle {
   // 렌더러 ParagraphStyle 정합성을 위한 확장 속성
   letterSpacing?: number;
   wordSpacing?: number;
-  fontStyle?: number | string;  // 0|'normal'=upright, 1|'italic', 2|'oblique'
-  fontStretch?: string;         // 'normal', 'condensed', 'expanded' 등
-  fontVariant?: string;         // 'normal', 'small-caps' 등
+  fontStyle?: number | string; // 0|'normal'=upright, 1|'italic', 2|'oblique'
+  fontStretch?: string; // 'normal', 'condensed', 'expanded' 등
+  fontVariant?: string; // 'normal', 'small-caps' 등
   // CSS 텍스트 래핑 에뮬레이션 (ADR-008)
-  wordBreak?: 'normal' | 'break-all' | 'keep-all';
-  overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+  wordBreak?: "normal" | "break-all" | "keep-all";
+  overflowWrap?: "normal" | "break-word" | "anywhere";
+  // ADR-051: needsFallback() 판별용 (nowrap/pre/pre-wrap → CanvasKit fallback)
+  whiteSpace?: string;
 }
 
 /**
@@ -52,7 +54,11 @@ export interface TextMeasurer {
   measureWidth(text: string, style: TextMeasureStyle): number;
 
   /** 줄바꿈 포함 텍스트 크기 측정 */
-  measureWrapped(text: string, style: TextMeasureStyle, maxWidth: number): TextMeasureResult;
+  measureWrapped(
+    text: string,
+    style: TextMeasureStyle,
+    maxWidth: number,
+  ): TextMeasureResult;
 }
 
 // ============================================
@@ -64,9 +70,9 @@ let _measureCtx: CanvasRenderingContext2D | null = null;
 
 function getMeasureCtx(): CanvasRenderingContext2D | null {
   if (!_measureCtx) {
-    if (typeof document === 'undefined') return null;
-    const canvas = document.createElement('canvas');
-    _measureCtx = canvas.getContext('2d');
+    if (typeof document === "undefined") return null;
+    const canvas = document.createElement("canvas");
+    _measureCtx = canvas.getContext("2d");
   }
   return _measureCtx;
 }
@@ -85,11 +91,12 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
       return text.length * (style.fontSize * 0.5);
     }
     // fontStyle(italic/oblique)을 ctx.font 문자열에 포함
-    const fontStyleStr = (style.fontStyle === 1 || style.fontStyle === 'italic')
-      ? 'italic '
-      : (style.fontStyle === 2 || style.fontStyle === 'oblique')
-        ? 'oblique '
-        : '';
+    const fontStyleStr =
+      style.fontStyle === 1 || style.fontStyle === "italic"
+        ? "italic "
+        : style.fontStyle === 2 || style.fontStyle === "oblique"
+          ? "oblique "
+          : "";
     ctx.font = `${fontStyleStr}${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
     let width = ctx.measureText(text).width;
     // letterSpacing: 각 문자 사이 간격 수동 가산
@@ -104,10 +111,18 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
     return width;
   }
 
-  measureWrapped(text: string, style: TextMeasureStyle, maxWidth: number): TextMeasureResult {
+  measureWrapped(
+    text: string,
+    style: TextMeasureStyle,
+    maxWidth: number,
+  ): TextMeasureResult {
     // measureWrappedTextHeight()를 경유하지 않고 직접 Canvas 2D word-wrap 로직 인라인
     // (measureWrappedTextHeight → getTextMeasurer().measureWrapped 경유 시 무한 재귀 발생)
-    const fm = measureFontMetrics(style.fontFamily, style.fontSize, style.fontWeight ?? 400);
+    const fm = measureFontMetrics(
+      style.fontFamily,
+      style.fontSize,
+      style.fontWeight ?? 400,
+    );
     const lineHeight = style.lineHeight ?? fm.lineHeight;
     if (!text || maxWidth <= 0) {
       return { width: 0, height: lineHeight };
@@ -118,26 +133,27 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
       return { width: maxWidth, height: lineHeight };
     }
 
-    const fontStyleStr = (style.fontStyle === 1 || style.fontStyle === 'italic')
-      ? 'italic '
-      : (style.fontStyle === 2 || style.fontStyle === 'oblique')
-        ? 'oblique '
-        : '';
+    const fontStyleStr =
+      style.fontStyle === 1 || style.fontStyle === "italic"
+        ? "italic "
+        : style.fontStyle === 2 || style.fontStyle === "oblique"
+          ? "oblique "
+          : "";
     ctx.font = `${fontStyleStr}${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
 
     // ADR-008: word-break × overflow-wrap 에뮬레이션
-    const wb = style.wordBreak || 'normal';
-    const ow = style.overflowWrap || 'normal';
+    const wb = style.wordBreak || "normal";
+    const ow = style.overflowWrap || "normal";
 
     // break-all: 모든 문자가 줄바꿈 지점 → 문자 단위 측정
-    if (wb === 'break-all') {
+    if (wb === "break-all") {
       return this._measureBreakAll(ctx, text, maxWidth, lineHeight, style);
     }
 
     const words = text.split(/(\s+)/); // 공백 포함 분리
     let lineCount = 1;
     let currentLineWidth = 0;
-    const allowBreakWord = ow === 'break-word' || ow === 'anywhere';
+    const allowBreakWord = ow === "break-word" || ow === "anywhere";
 
     for (const word of words) {
       let wordWidth = this._measureWord(ctx, word, style);
@@ -175,7 +191,11 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
   }
 
   /** 단어 폭 측정 (letterSpacing 포함) */
-  private _measureWord(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, word: string, style: TextMeasureStyle): number {
+  private _measureWord(
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+    word: string,
+    style: TextMeasureStyle,
+  ): number {
     let w = ctx.measureText(word).width;
     if (style.letterSpacing && style.letterSpacing !== 0) {
       w += style.letterSpacing * Math.max(0, word.length - 1);
@@ -186,7 +206,10 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
   /** break-all: 문자 단위 줄바꿈 측정 */
   private _measureBreakAll(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-    text: string, maxWidth: number, lineHeight: number, style: TextMeasureStyle,
+    text: string,
+    maxWidth: number,
+    lineHeight: number,
+    style: TextMeasureStyle,
   ): TextMeasureResult {
     const chars = Array.from(text);
     let lineCount = 1;
@@ -244,12 +267,12 @@ const MAX_FONT_METRICS_CACHE_SIZE = 256;
  * 캐시하면 안 됨. 폰트 로드 완료 후 캐시를 클리어하고 이후 측정부터 캐싱.
  */
 let _fontsReady = false;
-if (typeof document !== 'undefined' && document.fonts) {
+if (typeof document !== "undefined" && document.fonts) {
   document.fonts.ready.then(() => {
     _fontsReady = true;
     _fontMetricsCache.clear();
     // 폰트 로드 완료 후 레이아웃 재계산 트리거
-    window.dispatchEvent(new CustomEvent('xstudio:fonts-ready'));
+    window.dispatchEvent(new CustomEvent("xstudio:fonts-ready"));
   });
 }
 
@@ -259,7 +282,8 @@ if (typeof document !== 'undefined' && document.fonts) {
  * 대소문자 + descender 문자(g, j, p, q, y)를 포함하여
  * actualBoundingBoxAscent/Descent가 정확한 범위를 반환하도록 합니다.
  */
-const METRIC_SAMPLE_TEXT = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzgjpqy';
+const METRIC_SAMPLE_TEXT =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzgjpqy";
 
 /**
  * Canvas 2D TextMetrics 기반 폰트 메트릭 측정
@@ -296,20 +320,23 @@ export function measureFontMetrics(
 
       // actualBoundingBoxAscent/Descent는 최신 브라우저에서 지원
       if (
-        typeof metrics.actualBoundingBoxAscent === 'number' &&
-        typeof metrics.actualBoundingBoxDescent === 'number'
+        typeof metrics.actualBoundingBoxAscent === "number" &&
+        typeof metrics.actualBoundingBoxDescent === "number"
       ) {
         // fontBoundingBox: 폰트 전체의 ascent/descent (CSS line-height: normal에 대응)
         // actualBoundingBox: 현재 텍스트 글리프의 실제 경계 (baseline, 렌더링 용도)
-        const fontBBoxH = (typeof metrics.fontBoundingBoxAscent === 'number' &&
-          typeof metrics.fontBoundingBoxDescent === 'number')
-          ? metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
-          : metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        const fontBBoxH =
+          typeof metrics.fontBoundingBoxAscent === "number" &&
+          typeof metrics.fontBoundingBoxDescent === "number"
+            ? metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
+            : metrics.actualBoundingBoxAscent +
+              metrics.actualBoundingBoxDescent;
 
         const result: FontMetrics = {
           ascent: metrics.actualBoundingBoxAscent,
           descent: metrics.actualBoundingBoxDescent,
-          fontHeight: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+          fontHeight:
+            metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
           lineHeight: fontBBoxH,
         };
 
@@ -414,16 +441,20 @@ export function measureWrappedTextHeight(
   fontFamily: string,
   maxWidth: number,
   lineHeight?: number,
-  wordBreak?: 'normal' | 'break-all' | 'keep-all',
-  overflowWrap?: 'normal' | 'break-word' | 'anywhere',
+  wordBreak?: "normal" | "break-all" | "keep-all",
+  overflowWrap?: "normal" | "break-word" | "anywhere",
 ): number {
-  const result = getTextMeasurer().measureWrapped(text, {
-    fontSize,
-    fontFamily,
-    fontWeight,
-    lineHeight,
-    wordBreak,
-    overflowWrap,
-  }, maxWidth);
+  const result = getTextMeasurer().measureWrapped(
+    text,
+    {
+      fontSize,
+      fontFamily,
+      fontWeight,
+      lineHeight,
+      wordBreak,
+      overflowWrap,
+    },
+    maxWidth,
+  );
   return result.height;
 }

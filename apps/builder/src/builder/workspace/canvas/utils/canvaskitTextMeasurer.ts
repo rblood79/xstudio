@@ -30,6 +30,11 @@ import {
   computeKeepAllWidth,
   preprocessBreakWordText,
 } from "./textWrapUtils";
+import {
+  USE_CANVAS2D_MEASURE,
+  needsFallback,
+  measureWithCanvas2D,
+} from "./canvas2dSegmentCache";
 
 // ============================================
 // CanvasKit enum 매핑 헬퍼
@@ -270,6 +275,15 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
   ): TextMeasureResult {
     const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
     if (!text || maxWidth <= 0) return { width: 0, height: lineHeight };
+
+    // ADR-051: Canvas 2D 3-Tier 측정 경로
+    // needsFallback()이 false면 Canvas 2D 세그먼트 캐시 사용
+    // CSS Preview와 동일한 브라우저 폰트 엔진 → ~99% 줄바꿈 정합성
+    if (USE_CANVAS2D_MEASURE && !needsFallback(style)) {
+      const result = measureWithCanvas2D(text, style, maxWidth);
+      return { width: result.width, height: result.height };
+    }
+
     if (!isCanvasKitInitialized()) {
       // Fallback: rough estimate
       const charWidth = style.fontSize * 0.5;
