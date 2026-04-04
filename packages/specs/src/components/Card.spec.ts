@@ -34,6 +34,16 @@ export interface CardProps {
   isSelectable?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
+  isQuiet?: boolean;
+  title?: string;
+  description?: string;
+  footer?: string;
+  accentColor?: string;
+  asset?: boolean;
+  assetSrc?: string;
+  preview?: boolean;
+  href?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }

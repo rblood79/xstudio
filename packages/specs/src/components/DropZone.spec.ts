@@ -19,6 +19,7 @@ export interface DropZoneProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   label?: string;
+  description?: string;
   isDropTarget?: boolean;
   style?: Record<string, string | number | undefined>;
 }

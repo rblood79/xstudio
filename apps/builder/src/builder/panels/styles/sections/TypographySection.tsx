@@ -42,9 +42,9 @@ import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import {
   DEFAULT_FONT_OPTIONS,
   FONT_REGISTRY_STORAGE_KEY,
-  getCustomFonts,
   getFontWeightOptions,
 } from "../../../fonts/customFonts";
+import { loadFontRegistry } from "@xstudio/shared/utils";
 import { usePanelLayout } from "../../../hooks/usePanelLayout";
 
 /**
@@ -60,13 +60,22 @@ const TypographySectionContent = memo(function TypographySectionContent() {
     useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
-  const [customFonts, setCustomFonts] = useState(() => getCustomFonts());
+  const [registryFaces, setRegistryFaces] = useState(
+    () => loadFontRegistry().faces,
+  );
 
   // ADR-008: Text Behavior 프리셋 변경 핸들러
   // updateStyles (batch)로 5개 속성을 단일 set()에 적용 → 히스토리 1건 + 레이아웃 1회
   const handleTextBehaviorChange = useCallback(
     (preset: string) => {
       const presets: Record<string, Record<string, string>> = {
+        normal: {
+          whiteSpace: "",
+          wordBreak: "",
+          overflowWrap: "",
+          textOverflow: "",
+          overflow: "",
+        },
         nowrap: {
           whiteSpace: "nowrap",
           wordBreak: "",
@@ -118,7 +127,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   );
 
   useEffect(() => {
-    const syncFonts = () => setCustomFonts(getCustomFonts());
+    const syncFonts = () => setRegistryFaces(loadFontRegistry().faces);
 
     window.addEventListener("xstudio:custom-fonts-updated", syncFonts);
     const handleStorage = (event: StorageEvent) => {
@@ -135,22 +144,22 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   const fontOptions = useMemo(() => {
     const seenFamilies = new Set<string>();
     const dynamicOptions: Array<{ value: string; label: string }> = [];
-    for (const font of customFonts) {
-      if (!seenFamilies.has(font.family)) {
-        seenFamilies.add(font.family);
+    for (const face of registryFaces) {
+      if (!seenFamilies.has(face.family)) {
+        seenFamilies.add(face.family);
         dynamicOptions.push({
-          value: font.family,
-          label: `${font.family} (Custom)`,
+          value: face.family,
+          label: `${face.family} (Custom)`,
         });
       }
     }
 
     return [...DEFAULT_FONT_OPTIONS, ...dynamicOptions];
-  }, [customFonts]);
+  }, [registryFaces]);
 
   const fontWeightOptions = useMemo(
-    () => getFontWeightOptions(styleValues?.fontFamily || ""),
-    [styleValues?.fontFamily, customFonts],
+    () => getFontWeightOptions(styleValues?.fontFamily || "", registryFaces),
+    [styleValues?.fontFamily, registryFaces],
   );
 
   if (!styleValues) return null;
@@ -429,9 +438,10 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         value={styleValues.textBehaviorPreset}
         popoverWidthMode="fit-content"
         options={[
-          { value: "break-words", label: "Break Words" },
+          { value: "normal", label: "Normal" },
           { value: "nowrap", label: "No Wrap" },
           { value: "truncate", label: "Truncate (...)" },
+          { value: "break-words", label: "Break Words" },
           { value: "break-all", label: "Break All" },
           { value: "keep-all", label: "Keep All (CJK)" },
           { value: "preserve", label: "Preserve" },

@@ -41,9 +41,15 @@ export interface SwitchProps {
   children?: string;
   label?: string;
   name?: string;
+  isEmphasized?: boolean;
   isSelected?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  autoFocus?: boolean;
+  value?: string;
+  form?: string;
   style?: Record<string, string | number | undefined>;
 }
 

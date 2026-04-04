@@ -19,6 +19,7 @@ export interface ColorAreaProps {
   hue?: number;
   xValue?: number;
   yValue?: number;
+  colorSpace?: "rgb" | "hsl" | "hsb";
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }

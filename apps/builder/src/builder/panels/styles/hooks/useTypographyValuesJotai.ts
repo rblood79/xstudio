@@ -59,7 +59,14 @@ function deriveTextBehaviorPreset(
   if (wb === "break-all") return "break-all";
   if (wb === "keep-all") return "keep-all";
   if (ow === "break-word") return "break-words";
-  // ADR-051: "normal" 프리셋 제거 — 기본값이 break-word이므로 ow='normal'은 명시적 custom 설정
+  if (
+    ws === "normal" &&
+    wb === "normal" &&
+    ow === "normal" &&
+    to === "clip" &&
+    of === "visible"
+  )
+    return "normal";
   return "custom";
 }
 

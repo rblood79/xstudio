@@ -43,12 +43,15 @@ export interface CheckboxProps {
   text?: string;
   name?: string;
   value?: string;
+  isEmphasized?: boolean;
   isSelected?: boolean;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  autoFocus?: boolean;
+  form?: string;
   style?: Record<string, string | number | undefined>;
 }
 

@@ -17,6 +17,8 @@ export interface ColorWheelProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   hue?: number;
+  outerRadius?: number;
+  innerRadius?: number;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }

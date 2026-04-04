@@ -442,6 +442,7 @@ const WEIGHT_LABELS: Record<string, string> = {
  */
 export function getFontWeightOptions(
   family: string,
+  registryFaces: ReadonlyArray<{ family: string; weight?: string }>,
 ): Array<{ value: string; label: string }> {
   let weights: string[];
 
@@ -450,9 +451,7 @@ export function getFontWeightOptions(
   } else if (GOOGLE_FONT_WEIGHT_MAP.has(family)) {
     weights = GOOGLE_FONT_WEIGHT_MAP.get(family)!;
   } else {
-    // 커스텀 폰트 registry에서 weight 수집
-    const registry = loadFontRegistry();
-    const familyFaces = registry.faces.filter((f) => f.family === family);
+    const familyFaces = registryFaces.filter((f) => f.family === family);
     if (familyFaces.length > 0) {
       const weightSet = new Set<string>();
       for (const face of familyFaces) {

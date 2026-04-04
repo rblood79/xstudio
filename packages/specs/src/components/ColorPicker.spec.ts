@@ -23,6 +23,7 @@ export interface ColorPickerProps {
   saturation?: number;
   brightness?: number;
   alpha?: number;
+  label?: string;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }

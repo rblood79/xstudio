@@ -19,6 +19,8 @@ export interface ColorSwatchPickerProps {
   value?: string;
   colors?: string[];
   columns?: number;
+  layout?: "grid" | "stack";
+  colorSpace?: "rgb" | "hsl" | "hsb";
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }

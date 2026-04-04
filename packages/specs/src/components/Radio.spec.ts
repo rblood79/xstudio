@@ -41,6 +41,7 @@ export interface RadioProps {
   value?: string;
   isSelected?: boolean;
   isDisabled?: boolean;
+  autoFocus?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 

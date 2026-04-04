@@ -30,6 +30,7 @@ export interface ToggleButtonGroupProps {
   selectionMode?: "single" | "multiple";
   isEmphasized?: boolean;
   isQuiet?: boolean;
+  label?: string;
   indicator?: boolean;
   style?: Record<string, string | number | undefined>;
 }

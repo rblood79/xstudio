@@ -23,6 +23,8 @@ export interface FileTriggerProps {
   label?: string;
   acceptedFileTypes?: string[];
   allowsMultiple?: boolean;
+  acceptDirectory?: boolean;
+  defaultCamera?: "user" | "environment";
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
