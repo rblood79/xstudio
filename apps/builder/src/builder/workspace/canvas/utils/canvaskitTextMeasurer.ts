@@ -34,6 +34,9 @@ import {
   USE_CANVAS2D_MEASURE,
   needsFallback,
   measureWithCanvas2D,
+  buildFontKey,
+  buildFontString,
+  getOrMeasureWidth,
 } from "./canvas2dSegmentCache";
 
 // ============================================
@@ -198,8 +201,17 @@ if (import.meta.hot) {
  */
 export class CanvasKitTextMeasurer implements TextMeasurer {
   measureWidth(text: string, style: TextMeasureStyle): number {
-    if (!text || !isCanvasKitInitialized())
-      return text.length * (style.fontSize * 0.5);
+    if (!text) return 0;
+
+    // ADR-051: Canvas 2D 측정 경로 — measureWrapped와 동일한 엔진 사용
+    // CanvasKit 초기화 전후 모두 Canvas 2D로 측정하여 폭 차이 제거
+    if (USE_CANVAS2D_MEASURE && !needsFallback(style)) {
+      const fontKey = buildFontKey(style);
+      const fontString = buildFontString(style);
+      return getOrMeasureWidth(text, fontKey, fontString);
+    }
+
+    if (!isCanvasKitInitialized()) return text.length * (style.fontSize * 0.5);
 
     const ck = getCanvasKit();
     const fontMgr = skiaFontManager.getFontMgr();
