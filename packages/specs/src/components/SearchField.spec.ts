@@ -188,14 +188,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             icon: AlertTriangle,
           },
           {
-            key: "pattern",
-            type: "string",
-            label: "Pattern",
-            icon: AlertTriangle,
-            emptyToUndefined: true,
-            placeholder: "Regular expression",
-          },
-          {
             key: "minLength",
             type: "number",
             label: "Min Length",

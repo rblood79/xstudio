@@ -13,7 +13,6 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
   Type,
-  Globe,
   DollarSign,
   ArrowDown,
   ArrowUp,
@@ -47,7 +46,6 @@ export interface SliderProps {
   orientation?: "horizontal" | "vertical";
   isDisabled?: boolean;
   isReadOnly?: boolean;
-  isRequired?: boolean;
   labelPosition?: "top" | "side";
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
@@ -213,23 +211,6 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       {
         title: "Locale",
         fields: [
-          {
-            key: "locale",
-            type: "enum",
-            label: "Locale",
-            icon: Globe,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Auto" },
-              { value: "ko-KR", label: "한국어" },
-              { value: "en-US", label: "English (US)" },
-              { value: "en-GB", label: "English (UK)" },
-              { value: "ja-JP", label: "日本語" },
-              { value: "zh-CN", label: "中文" },
-              { value: "de-DE", label: "Deutsch" },
-              { value: "fr-FR", label: "Français" },
-            ],
-          },
           {
             key: "valueFormat",
             type: "enum",

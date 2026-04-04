@@ -13,7 +13,6 @@ import {
   Link,
   ExternalLink,
   ToggleLeft,
-  Eye,
   PointerOff,
   Parentheses,
   Palette,
@@ -200,7 +199,8 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "media", label: "Media" },
               { value: "gallery", label: "Gallery" },
             ],
-           defaultValue: "default" },
+            defaultValue: "default",
+          },
           { type: "size" },
           {
             key: "orientation",
@@ -211,7 +211,8 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "vertical", label: "Vertical" },
               { value: "horizontal", label: "Horizontal" },
             ],
-           defaultValue: "vertical" },
+            defaultValue: "vertical",
+          },
           {
             key: "accentColor",
             type: "enum",
@@ -286,7 +287,8 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "_self", label: "Self" },
               { value: "_blank", label: "Blank" },
             ],
-           defaultValue: "_self" },
+            defaultValue: "_self",
+          },
           {
             key: "isSelectable",
             type: "boolean",
@@ -304,10 +306,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       },
       {
         title: "State",
-        fields: [
-          { key: "isQuiet", type: "boolean", label: "Quiet", icon: Eye },
-          { key: "isDisabled", type: "boolean", icon: PointerOff },
-        ],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

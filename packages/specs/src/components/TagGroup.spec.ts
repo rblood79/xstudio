@@ -22,7 +22,6 @@ import {
   PointerOff,
   PenOff,
   Trash,
-  FormInput,
   FileText,
   Tag,
 } from "lucide-react";
@@ -41,7 +40,6 @@ export interface TagGroupProps {
   isDisabled?: boolean;
   isReadOnly?: boolean;
   disallowEmptySelection?: boolean;
-  isRequired?: boolean;
   necessityIndicator?: "icon" | "label";
   isInvalid?: boolean;
   allowsRemoving?: boolean;
@@ -191,12 +189,6 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             icon: PointerOff,
           },
           {
-            key: "isReadOnly",
-            type: "boolean",
-            label: "Read Only",
-            icon: PenOff,
-          },
-          {
             key: "allowsRemoving",
             type: "boolean",
             label: "Allows Removing",
@@ -209,14 +201,6 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             icon: PenOff,
           },
 
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-            placeholder: "tag-group-name",
-          },
         ],
       },
       {

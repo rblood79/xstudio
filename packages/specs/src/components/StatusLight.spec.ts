@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Type, Parentheses, ToggleLeft } from "lucide-react";
+import { Type, Parentheses } from "lucide-react";
 
 /**
  * StatusLight Props
@@ -32,7 +32,6 @@ export interface StatusLightProps {
     | "yellow";
   size?: "sm" | "md" | "lg";
   children?: string;
-  isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -93,14 +92,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       },
       {
         title: "State",
-        fields: [
-          {
-            key: "isDisabled",
-            type: "boolean",
-            label: "Disabled",
-            icon: ToggleLeft,
-          },
-        ],
+        fields: [],
       },
     ],
   },

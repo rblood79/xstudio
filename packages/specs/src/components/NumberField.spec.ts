@@ -102,12 +102,6 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             icon: Hash,
           },
           {
-            key: "placeholder",
-            type: "string",
-            label: "Placeholder",
-            icon: Type,
-          },
-          {
             key: "description",
             type: "string",
             label: "Description",

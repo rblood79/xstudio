@@ -20,7 +20,6 @@ export interface ToastProps {
   defaultTitle?: string;
   defaultDescription?: string;
   timeout?: number;
-  maxToasts?: number;
   position?:
     | "top-right"
     | "top-left"
@@ -82,12 +81,6 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
             label: "Default Timeout (ms)",
             icon: Clock,
            defaultValue: 5000 },
-          {
-            key: "maxToasts",
-            type: "number",
-            label: "Max Toasts",
-            icon: Bell,
-           defaultValue: 5 },
         ],
       },
       {

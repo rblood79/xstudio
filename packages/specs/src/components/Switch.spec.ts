@@ -15,7 +15,6 @@ import {
   Eye,
   ToggleLeft,
   CheckSquare,
-  AlertTriangle,
   Focus,
   PointerOff,
   PenOff,
@@ -174,7 +173,6 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         fields: [
           { key: "isSelected", type: "boolean", icon: ToggleLeft },
           { key: "isRequired", type: "boolean", icon: CheckSquare },
-          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
 
           { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },

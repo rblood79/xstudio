@@ -12,7 +12,6 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
   ToggleLeft,
-  Columns,
   ArrowUpDown,
   GripVertical,
   List,
@@ -23,11 +22,9 @@ import {
  */
 export interface TableViewProps {
   density?: "compact" | "regular" | "spacious";
-  overflowMode?: "wrap" | "truncate";
   selectionMode?: "none" | "single" | "multiple";
   allowsResizingColumns?: boolean;
   allowsSorting?: boolean;
-  isStriped?: boolean;
   isQuiet?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -103,24 +100,9 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
               { value: "regular", label: "Regular" },
               { value: "spacious", label: "Spacious" },
             ],
-           defaultValue: "regular" },
-          {
-            key: "overflowMode",
-            type: "enum",
-            label: "Overflow Mode",
-            icon: Columns,
-            options: [
-              { value: "truncate", label: "Truncate" },
-              { value: "wrap", label: "Wrap" },
-            ],
-           defaultValue: "truncate" },
-          { key: "isQuiet", type: "boolean", label: "Quiet", icon: ToggleLeft },
-          {
-            key: "isStriped",
-            type: "boolean",
-            label: "Striped",
-            icon: ToggleLeft,
+            defaultValue: "regular",
           },
+          { key: "isQuiet", type: "boolean", label: "Quiet", icon: ToggleLeft },
         ],
       },
       {
@@ -136,7 +118,8 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-           defaultValue: "none" },
+            defaultValue: "none",
+          },
         ],
       },
       {

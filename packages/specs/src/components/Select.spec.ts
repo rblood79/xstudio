@@ -19,7 +19,6 @@ import {
   SquareX,
   CheckSquare,
   PointerOff,
-  PenOff,
   Focus,
   FormInput,
   Layout,
@@ -126,7 +125,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {
@@ -190,12 +190,6 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             icon: PointerOff,
           },
           {
-            key: "isReadOnly",
-            type: "boolean",
-            label: "Read Only",
-            icon: PenOff,
-          },
-          {
             key: "autoFocus",
             type: "boolean",
             label: "Auto Focus",
@@ -218,7 +212,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "native" },
+            defaultValue: "native",
+          },
         ],
       },
       {

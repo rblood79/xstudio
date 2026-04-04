@@ -64,6 +64,7 @@ xstudio/
 - **버그 수정**: Systematic Debugging 4단계 root-cause 스킬
 - **구현**: TDD (RED-GREEN-REFACTOR) 사이클 기본
 - **렌더링 수정 후**: `/cross-check` 스킬 최종 검증
+- **ADR 생성**: "ADR 생성" 자연어 → `/create-adr` 스킬 (번호 자동 할당 + Risk-First 템플릿)
 - **단순 작업** (한 줄 수정, 설정 변경): 스킬 스킵 가능
 - CRITICAL/HIGH 이슈: 즉시 수정, 스킵 금지
 
@@ -92,7 +93,8 @@ xstudio/
 | 코드 패턴/규칙 | [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)                                                     | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                               |
 | 도메인 규칙    | [.claude/rules/](.claude/rules/)                                                                         | Glob-scoped — 해당 파일 작업 시 자동 로드                                             |
 | Agent 가이드   | [.claude/agents/](.claude/agents/)                                                                       | architect, implementer, evaluator, reviewer, debugger, documenter, refactorer, tester |
-| ADR            | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 + Risk-First 템플릿                                                     |
+| ADR 현황       | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 대시보드                                                                |
+| ADR 규칙       | [.claude/rules/adr-writing.md](.claude/rules/adr-writing.md)                                             | Risk-First 템플릿, 위험 평가, 금지 패턴 (`docs/adr/**` 자동 로드)                     |
 | 렌더링 상세    | [RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md)                                              | Dual Renderer, DirectContainer 패턴 상세                                              |
 | 컴포넌트 스펙  | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                                                              | Spec 단일 소스 아키텍처                                                               |
 | CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                                     | ITCSS + tv() 스타일링 상세                                                            |
