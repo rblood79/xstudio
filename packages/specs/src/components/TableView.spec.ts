@@ -103,7 +103,7 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
               { value: "regular", label: "Regular" },
               { value: "spacious", label: "Spacious" },
             ],
-          },
+           defaultValue: "regular" },
           {
             key: "overflowMode",
             type: "enum",
@@ -113,7 +113,7 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
               { value: "truncate", label: "Truncate" },
               { value: "wrap", label: "Wrap" },
             ],
-          },
+           defaultValue: "truncate" },
           { key: "isQuiet", type: "boolean", label: "Quiet", icon: ToggleLeft },
           {
             key: "isStriped",
@@ -136,7 +136,7 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "none" },
         ],
       },
       {

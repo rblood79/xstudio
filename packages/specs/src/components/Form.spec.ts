@@ -84,7 +84,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
       {
@@ -99,7 +99,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "labelAlign",
             type: "enum",
@@ -110,7 +110,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "center", label: "Center" },
               { value: "end", label: "Right" },
             ],
-          },
+           defaultValue: "start" },
           {
             key: "necessityIndicator",
             type: "enum",
@@ -145,7 +145,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "get", label: "GET" },
               { value: "post", label: "POST" },
             ],
-          },
+           defaultValue: "get" },
           {
             key: "encType",
             type: "enum",

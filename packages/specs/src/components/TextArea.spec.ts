@@ -131,7 +131,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {

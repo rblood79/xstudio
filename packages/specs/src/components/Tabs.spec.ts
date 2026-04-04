@@ -61,7 +61,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
               { value: "compact", label: "Compact" },
               { value: "regular", label: "Regular" },
             ],
-          },
+           defaultValue: "regular" },
           {
             key: "orientation",
             type: "enum",
@@ -71,13 +71,13 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
           {
             key: "showIndicator",
             type: "boolean",
             label: "Show Indicator",
             icon: MousePointer2,
-          },
+           defaultValue: true },
         ],
       },
       {

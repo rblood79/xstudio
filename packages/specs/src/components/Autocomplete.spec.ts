@@ -78,7 +78,7 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
               { value: "accent", label: "Accent sensitive" },
               { value: "variant", label: "Full sensitivity" },
             ],
-          },
+           defaultValue: "base" },
         ],
       },
     ],

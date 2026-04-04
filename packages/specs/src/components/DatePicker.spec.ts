@@ -314,7 +314,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "granularity",
             type: "enum",
@@ -362,7 +362,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "visible", label: "Visible" },
               { value: "single", label: "Single" },
             ],
-          },
+           defaultValue: "visible" },
           {
             key: "visibleMonths",
             type: "number",
@@ -371,7 +371,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             min: 1,
             max: 3,
             step: 1,
-          },
+           defaultValue: 1 },
         ],
       },
       {
@@ -461,7 +461,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             type: "boolean",
             label: "Close On Select",
             icon: CheckSquare,
-          },
+           defaultValue: true },
 
           {
             key: "name",
@@ -493,7 +493,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
     ],

@@ -111,7 +111,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
               { value: "grid", label: "Grid" },
               { value: "stack", label: "Stack" },
             ],
-          },
+           defaultValue: "grid" },
         ],
       },
       {

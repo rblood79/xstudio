@@ -71,7 +71,7 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
         ],
       },
     ],

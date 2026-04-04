@@ -144,7 +144,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
           { key: "indicator", type: "boolean", label: "Indicator", icon: Eye },
         ],
       },
@@ -160,7 +160,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "single" },
           { key: "isRequired", type: "boolean", icon: CheckSquare },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
 

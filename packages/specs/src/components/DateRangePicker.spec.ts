@@ -107,7 +107,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "granularity",
             type: "enum",
@@ -155,7 +155,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "visible", label: "Visible" },
               { value: "hidden", label: "Hidden" },
             ],
-          },
+           defaultValue: "visible" },
           {
             key: "visibleMonths",
             type: "number",
@@ -164,7 +164,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             min: 1,
             max: 3,
             step: 1,
-          },
+           defaultValue: 1 },
         ],
       },
       {
@@ -260,7 +260,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             type: "boolean",
             label: "Close On Select",
             icon: CheckSquare,
-          },
+           defaultValue: true },
 
           {
             key: "startName",
@@ -294,7 +294,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
     ],

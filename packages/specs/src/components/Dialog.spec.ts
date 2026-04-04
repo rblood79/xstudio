@@ -71,6 +71,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
               { value: "dialog", label: "Dialog" },
               { value: "alertdialog", label: "Alert Dialog" },
             ],
+            defaultValue: "dialog",
           },
         ],
       },

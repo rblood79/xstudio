@@ -191,7 +191,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
               { value: "start", label: "Start" },
               { value: "end", label: "End" },
             ],
-          },
+           defaultValue: "start" },
           {
             key: "direction",
             type: "enum",
@@ -203,7 +203,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
               { value: "left", label: "Left" },
               { value: "right", label: "Right" },
             ],
-          },
+           defaultValue: "bottom" },
           {
             key: "isQuiet",
             type: "boolean",
@@ -225,13 +225,13 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "none" },
           {
             key: "shouldFlip",
             type: "boolean",
             label: "Should Flip",
             icon: ToggleRight,
-          },
+           defaultValue: true },
           {
             key: "autoFocus",
             type: "boolean",

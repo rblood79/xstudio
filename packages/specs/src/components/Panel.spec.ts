@@ -146,7 +146,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
             type: "boolean",
             label: "Dismissable",
             icon: ToggleLeft,
-          },
+           defaultValue: true },
         ],
       },
     ],

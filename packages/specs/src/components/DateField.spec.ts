@@ -149,7 +149,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "hideTimeZone",
             type: "boolean",
@@ -250,7 +250,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
     ],

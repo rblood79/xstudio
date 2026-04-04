@@ -79,7 +79,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "single" },
           {
             key: "selectionBehavior",
             type: "enum",
@@ -89,7 +89,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
               { value: "toggle", label: "Toggle" },
               { value: "replace", label: "Replace" },
             ],
-          },
+           defaultValue: "toggle" },
           {
             key: "disallowEmptySelection",
             type: "boolean",
@@ -126,7 +126,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             type: "boolean",
             label: "Enable Virtualization",
             icon: Zap,
-          },
+           defaultValue: true },
           {
             key: "height",
             type: "number",
@@ -140,7 +140,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             label: "Overscan",
             icon: Rows,
             visibleWhen: { key: "enableVirtualization", equals: true },
-          },
+           defaultValue: 5 },
         ],
       },
       {

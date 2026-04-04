@@ -94,7 +94,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {
@@ -136,7 +136,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "none" },
           {
             key: "selectionBehavior",
             type: "enum",
@@ -146,7 +146,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "toggle", label: "Toggle" },
               { value: "replace", label: "Replace" },
             ],
-          },
+           defaultValue: "toggle" },
           {
             key: "disallowEmptySelection",
             type: "boolean",
@@ -201,7 +201,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             type: "boolean",
             label: "Allows Removing",
             icon: Trash,
-          },
+           defaultValue: true },
           {
             key: "allowsCustomValue",
             type: "boolean",

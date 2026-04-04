@@ -111,7 +111,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
               { value: "hsl", label: "HSL" },
               { value: "hsb", label: "HSB" },
             ],
-          },
+           defaultValue: "rgb" },
           {
             key: "xChannel",
             type: "enum",
@@ -126,7 +126,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
               { value: "lightness", label: "Lightness" },
               { value: "brightness", label: "Brightness" },
             ],
-          },
+           defaultValue: "saturation" },
           {
             key: "yChannel",
             type: "enum",
@@ -141,7 +141,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
               { value: "lightness", label: "Lightness" },
               { value: "brightness", label: "Brightness" },
             ],
-          },
+           defaultValue: "brightness" },
         ],
       },
       {

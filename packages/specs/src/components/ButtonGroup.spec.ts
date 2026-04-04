@@ -114,7 +114,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
           {
             key: "align",
             type: "enum",
@@ -125,7 +125,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
               { value: "center", label: "Center" },
               { value: "end", label: "End" },
             ],
-          },
+           defaultValue: "start" },
         ],
       },
       {

@@ -131,7 +131,7 @@ export const IconSpec: ComponentSpec<IconProps> = {
             min: 0.5,
             max: 4,
             step: 0.5,
-          },
+           defaultValue: 2 },
         ],
       },
     ],

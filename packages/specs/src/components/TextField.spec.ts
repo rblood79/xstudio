@@ -127,7 +127,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {
@@ -147,7 +147,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
               { value: "url", label: "URL" },
               { value: "number", label: "Number" },
             ],
-          },
+           defaultValue: "text" },
           {
             key: "inputMode",
             type: "enum",

@@ -118,7 +118,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {

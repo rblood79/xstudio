@@ -200,7 +200,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "media", label: "Media" },
               { value: "gallery", label: "Gallery" },
             ],
-          },
+           defaultValue: "default" },
           { type: "size" },
           {
             key: "orientation",
@@ -211,7 +211,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "vertical", label: "Vertical" },
               { value: "horizontal", label: "Horizontal" },
             ],
-          },
+           defaultValue: "vertical" },
           {
             key: "accentColor",
             type: "enum",
@@ -286,7 +286,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
               { value: "_self", label: "Self" },
               { value: "_blank", label: "Blank" },
             ],
-          },
+           defaultValue: "_self" },
           {
             key: "isSelectable",
             type: "boolean",

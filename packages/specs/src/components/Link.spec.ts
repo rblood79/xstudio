@@ -105,7 +105,7 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
               { value: "white", label: "White" },
               { value: "black", label: "Black" },
             ],
-          },
+           defaultValue: "auto" },
         ],
       },
       {
@@ -150,7 +150,7 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
             type: "boolean",
             label: "Show External Icon",
             icon: Eye,
-          },
+           defaultValue: true },
           {
             key: "isDisabled",
             type: "boolean",

@@ -208,7 +208,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
               { value: "visible", label: "Visible" },
               { value: "single", label: "Single" },
             ],
-          },
+           defaultValue: "visible" },
           {
             key: "visibleMonths",
             type: "enum",
@@ -220,7 +220,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
               { value: "2", label: "2" },
               { value: "3", label: "3" },
             ],
-          },
+           defaultValue: "1" },
         ],
       },
     ],

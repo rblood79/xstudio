@@ -185,7 +185,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
       {
@@ -215,7 +215,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "labelAlign",
             type: "enum",
@@ -226,7 +226,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "center", label: "Center" },
               { value: "end", label: "Right" },
             ],
-          },
+           defaultValue: "start" },
           {
             key: "channel",
             type: "enum",

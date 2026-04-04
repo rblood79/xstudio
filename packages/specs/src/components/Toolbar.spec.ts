@@ -162,7 +162,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
         ],
       },
     ],

@@ -91,7 +91,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
               { value: "subtle", label: "Subtle" },
               { value: "outline", label: "Outline" },
             ],
-          },
+           defaultValue: "bold" },
           {
             type: "size",
             label: "Size",

@@ -47,13 +47,13 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
       {
         title: "State",
         fields: [
-          { key: "visible", type: "boolean", label: "Visible", icon: Eye },
+          { key: "visible", type: "boolean", label: "Visible", icon: Eye , defaultValue: true },
           {
             key: "showLabel",
             type: "boolean",
             label: "Show Label",
             icon: Tags,
-          },
+           defaultValue: true },
         ],
       },
       {
@@ -73,7 +73,7 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
               { value: "boolean", label: "Boolean" },
               { value: "image", label: "Image" },
             ],
-          },
+           defaultValue: "string" },
         ],
       },
     ],

@@ -128,7 +128,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {
@@ -162,7 +162,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "percent", label: "Percent" },
               { value: "unit", label: "Unit" },
             ],
-          },
+           defaultValue: "decimal" },
           {
             key: "currency",
             type: "enum",
@@ -182,7 +182,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "AUD", label: "AUD ($)" },
               { value: "CAD", label: "CAD ($)" },
             ],
-          },
+           defaultValue: "KRW" },
           {
             key: "unit",
             type: "string",
@@ -206,7 +206,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "scientific", label: "Scientific" },
               { value: "engineering", label: "Engineering" },
             ],
-          },
+           defaultValue: "standard" },
           {
             key: "decimals",
             type: "number",
@@ -313,7 +313,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             type: "number",
             label: "Step",
             icon: Move,
-          },
+           defaultValue: 1 },
           {
             key: "necessityIndicator",
             type: "enum",

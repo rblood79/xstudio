@@ -92,7 +92,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "none" },
           {
             key: "selectionBehavior",
             type: "enum",
@@ -102,7 +102,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
               { value: "replace", label: "Replace" },
               { value: "toggle", label: "Toggle" },
             ],
-          },
+           defaultValue: "toggle" },
           {
             key: "disallowEmptySelection",
             type: "boolean",

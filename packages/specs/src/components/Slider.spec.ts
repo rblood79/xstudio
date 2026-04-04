@@ -197,7 +197,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "orientation",
             type: "enum",
@@ -207,7 +207,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
         ],
       },
       {
@@ -241,7 +241,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "unit", label: "Unit" },
               { value: "custom", label: "Custom" },
             ],
-          },
+           defaultValue: "number" },
           {
             key: "unit",
             type: "string",
@@ -256,7 +256,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             type: "boolean",
             label: "Show Value",
             icon: NotebookTabs,
-          },
+           defaultValue: true },
         ],
       },
       {
@@ -267,19 +267,19 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             type: "number",
             label: "Min Value",
             icon: ArrowDown,
-          },
+           defaultValue: 0 },
           {
             key: "maxValue",
             type: "number",
             label: "Max Value",
             icon: ArrowUp,
-          },
+           defaultValue: 100 },
           {
             key: "step",
             type: "number",
             label: "Step",
             icon: Move,
-          },
+           defaultValue: 1 },
         ],
       },
       {

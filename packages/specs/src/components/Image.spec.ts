@@ -213,7 +213,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
               { value: "fill", label: "Fill" },
               { value: "none", label: "None" },
             ],
-          },
+           defaultValue: "cover" },
         ],
       },
       {

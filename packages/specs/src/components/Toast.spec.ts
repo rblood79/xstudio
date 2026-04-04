@@ -81,13 +81,13 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
             type: "number",
             label: "Default Timeout (ms)",
             icon: Clock,
-          },
+           defaultValue: 5000 },
           {
             key: "maxToasts",
             type: "number",
             label: "Max Toasts",
             icon: Bell,
-          },
+           defaultValue: 5 },
         ],
       },
       {
@@ -104,7 +104,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
               { value: "warning", label: "Warning" },
               { value: "error", label: "Error" },
             ],
-          },
+           defaultValue: "info" },
           {
             key: "position",
             type: "enum",
@@ -118,7 +118,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
               { value: "bottom-left", label: "Bottom Left" },
               { value: "bottom-center", label: "Bottom Center" },
             ],
-          },
+           defaultValue: "bottom" },
         ],
       },
     ],

@@ -112,7 +112,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
               { value: "hsl", label: "HSL" },
               { value: "hsb", label: "HSB" },
             ],
-          },
+           defaultValue: "rgb" },
           {
             key: "channel",
             type: "enum",
@@ -128,7 +128,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
               { value: "blue", label: "Blue" },
               { value: "alpha", label: "Alpha" },
             ],
-          },
+           defaultValue: "hue" },
           {
             key: "orientation",
             type: "enum",
@@ -138,7 +138,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "horizontal" },
         ],
       },
       {

@@ -87,7 +87,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
               { value: "stack", label: "Stack" },
               { value: "grid", label: "Grid" },
             ],
-          },
+           defaultValue: "stack" },
           {
             key: "columns",
             type: "number",
@@ -96,7 +96,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             min: 1,
             max: 12,
             visibleWhen: { key: "layout", equals: "grid" },
-          },
+           defaultValue: 3 },
         ],
       },
       {
@@ -112,7 +112,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-          },
+           defaultValue: "none" },
           {
             key: "selectionBehavior",
             type: "enum",
@@ -122,7 +122,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
               { value: "toggle", label: "Toggle" },
               { value: "replace", label: "Replace" },
             ],
-          },
+           defaultValue: "toggle" },
           {
             key: "disallowEmptySelection",
             type: "boolean",

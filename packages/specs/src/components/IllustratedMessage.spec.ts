@@ -208,7 +208,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
               { value: "vertical", label: "Vertical" },
               { value: "horizontal", label: "Horizontal" },
             ],
-          },
+           defaultValue: "horizontal" },
         ],
       },
     ],

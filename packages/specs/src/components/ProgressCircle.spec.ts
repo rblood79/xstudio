@@ -235,7 +235,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
     sections: [
       {
         title: "Content",
-        fields: [{ key: "value", type: "number", label: "Value", icon: Hash }],
+        fields: [{ key: "value", type: "number", label: "Value", icon: Hash , defaultValue: 0 }],
       },
       {
         title: "Appearance",

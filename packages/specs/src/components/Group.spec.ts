@@ -148,7 +148,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
               { value: "region", label: "Region" },
               { value: "presentation", label: "Presentation" },
             ],
-          },
+           defaultValue: "group" },
         ],
       },
       {

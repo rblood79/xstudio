@@ -105,13 +105,13 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
             type: "number",
             label: "Outer Radius",
             icon: Hash,
-          },
+           defaultValue: 96 },
           {
             key: "innerRadius",
             type: "number",
             label: "Inner Radius",
             icon: Hash,
-          },
+           defaultValue: 72 },
         ],
       },
       {

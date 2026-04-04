@@ -59,7 +59,7 @@ export const TailSwatchSpec: ComponentSpec<TailSwatchProps> = {
               { value: "hsl", label: "HSL" },
               { value: "hsb", label: "HSB (Default)" },
             ],
-          },
+           defaultValue: "hsb" },
         ],
       },
       {

@@ -103,7 +103,7 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
               { value: "2", label: "2" },
               { value: "3", label: "3" },
             ],
-          },
+           defaultValue: "1" },
           {
             key: "minValue",
             type: "string",

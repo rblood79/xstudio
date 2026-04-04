@@ -95,7 +95,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
               { value: "fill", label: "Fill" },
               { value: "outline", label: "Outline" },
             ],
-          },
+           defaultValue: "fill" },
           {
             type: "size",
             label: "Size",

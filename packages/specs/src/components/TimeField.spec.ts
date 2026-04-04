@@ -121,7 +121,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "minute", label: "Minute" },
               { value: "second", label: "Second" },
             ],
-          },
+           defaultValue: "minute" },
           {
             key: "hourCycle",
             type: "enum",
@@ -144,7 +144,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
           {
             key: "hideTimeZone",
             type: "boolean",
@@ -244,7 +244,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
     ],

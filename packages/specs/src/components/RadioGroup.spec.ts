@@ -170,7 +170,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-          },
+           defaultValue: "vertical" },
           {
             key: "labelPosition",
             type: "enum",
@@ -180,7 +180,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {

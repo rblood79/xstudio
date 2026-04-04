@@ -89,7 +89,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             label: "Value",
             min: 0,
             icon: BarChart3,
-          },
+           defaultValue: 0 },
         ],
       },
       {
@@ -122,13 +122,13 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
               { value: "percent", label: "Percent" },
               { value: "custom", label: "Custom" },
             ],
-          },
+           defaultValue: "percent" },
           {
             key: "showValue",
             type: "boolean",
             label: "Show Value",
             icon: BarChart3,
-          },
+           defaultValue: true },
         ],
       },
       {
@@ -159,13 +159,13 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             type: "number",
             label: "Min Value",
             icon: ArrowDown,
-          },
+           defaultValue: 0 },
           {
             key: "maxValue",
             type: "number",
             label: "Max Value",
             icon: ArrowUp,
-          },
+           defaultValue: 100 },
           {
             key: "isIndeterminate",
             type: "boolean",

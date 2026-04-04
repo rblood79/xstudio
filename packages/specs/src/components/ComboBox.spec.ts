@@ -130,7 +130,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-          },
+           defaultValue: "top" },
         ],
       },
       {
@@ -146,7 +146,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "input", label: "Input" },
               { value: "manual", label: "Manual" },
             ],
-          },
+           defaultValue: "input" },
         ],
       },
       {
@@ -233,7 +233,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-          },
+           defaultValue: "native" },
         ],
       },
       {
