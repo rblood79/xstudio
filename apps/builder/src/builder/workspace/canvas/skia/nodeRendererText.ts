@@ -328,7 +328,12 @@ export function renderText(
           layoutMaxWidth,
         );
         renderableText = c2dResult.hintedText;
-        effectiveLayoutWidth = layoutMaxWidth;
+        // ADR-051: 단어가 maxWidth보다 넓은 경우 effectiveWidth 확장
+        // (cssNormalBreakProcess와 동일 동작: overflow 허용)
+        effectiveLayoutWidth = Math.max(
+          layoutMaxWidth,
+          Math.ceil(c2dResult.width),
+        );
       } else if (wordBreak === "normal" && overflowWrap === "normal") {
         const result = cssNormalBreakProcess(
           ck,

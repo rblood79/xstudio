@@ -195,7 +195,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "orientation",
             type: "enum",
@@ -205,7 +206,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "horizontal" },
+            defaultValue: "horizontal",
+          },
         ],
       },
       {
@@ -222,7 +224,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "unit", label: "Unit" },
               { value: "custom", label: "Custom" },
             ],
-           defaultValue: "number" },
+            defaultValue: "number",
+          },
           {
             key: "unit",
             type: "string",
@@ -237,7 +240,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             type: "boolean",
             label: "Show Value",
             icon: NotebookTabs,
-           defaultValue: true },
+            defaultValue: true,
+          },
         ],
       },
       {
@@ -248,19 +252,22 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             type: "number",
             label: "Min Value",
             icon: ArrowDown,
-           defaultValue: 0 },
+            defaultValue: 0,
+          },
           {
             key: "maxValue",
             type: "number",
             label: "Max Value",
             icon: ArrowUp,
-           defaultValue: 100 },
+            defaultValue: 100,
+          },
           {
             key: "step",
             type: "number",
             label: "Step",
             icon: Move,
-           defaultValue: 1 },
+            defaultValue: 1,
+          },
         ],
       },
       {
@@ -347,6 +354,16 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
       // 라벨 + 값 행 (자식 Element가 있으면 자식 TextSprite가 렌더링하므로 스킵)
       if (!hasChildren && (props.label || props.showValue)) {
+        // value 텍스트 폭 추정 (label maxWidth 계산용)
+        const valueText = props.showValue
+          ? isRange
+            ? values.map(String).join(" – ")
+            : String(values[0])
+          : "";
+        const estimatedValueWidth = props.showValue
+          ? valueText.length * numericFontSize * 0.6 + 8
+          : 0;
+
         if (props.label) {
           shapes.push({
             type: "text" as const,
@@ -359,12 +376,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             fill: textColor,
             align: "left" as const,
             baseline: "top" as const,
+            maxWidth: props.showValue ? width - estimatedValueWidth : undefined,
           });
         }
         if (props.showValue) {
-          const valueText = isRange
-            ? values.map(String).join(" – ")
-            : String(values[0]);
           shapes.push({
             type: "text" as const,
             x: 0,

@@ -88,7 +88,8 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             label: "Value",
             min: 0,
             icon: BarChart3,
-           defaultValue: 0 },
+            defaultValue: 0,
+          },
         ],
       },
       {
@@ -104,13 +105,15 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
               { value: "percent", label: "Percent" },
               { value: "custom", label: "Custom" },
             ],
-           defaultValue: "percent" },
+            defaultValue: "percent",
+          },
           {
             key: "showValue",
             type: "boolean",
             label: "Show Value",
             icon: BarChart3,
-           defaultValue: true },
+            defaultValue: true,
+          },
         ],
       },
       {
@@ -141,13 +144,15 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             type: "number",
             label: "Min Value",
             icon: ArrowDown,
-           defaultValue: 0 },
+            defaultValue: 0,
+          },
           {
             key: "maxValue",
             type: "number",
             label: "Max Value",
             icon: ArrowUp,
-           defaultValue: 100 },
+            defaultValue: 100,
+          },
           {
             key: "isIndeterminate",
             type: "boolean",
@@ -296,6 +301,20 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       } else {
         // Standalone 모드: 기존 monolithic 렌더링
         const hasLabelRow = !!props.label || showValue;
+
+        // value 텍스트 폭 추정 (label maxWidth 계산용)
+        // "50%" = ~3문자, fontSize * 0.6 * 문자수 + 여유 8px
+        const formattedValue = showValue
+          ? props.valueFormat === "number"
+            ? String(Math.round(value))
+            : props.valueFormat === "custom"
+              ? String(Math.round(value))
+              : `${Math.round(percent)}%`
+          : "";
+        const estimatedValueWidth = showValue
+          ? formattedValue.length * fontSize * 0.6 + 8
+          : 0;
+
         if (props.label) {
           shapes.push({
             type: "text" as const,
@@ -308,15 +327,10 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             fill: textColor,
             align: "left" as const,
             baseline: "top" as const,
+            maxWidth: showValue ? width - estimatedValueWidth : undefined,
           });
         }
         if (showValue) {
-          const formattedValue =
-            props.valueFormat === "number"
-              ? String(Math.round(value))
-              : props.valueFormat === "custom"
-                ? String(Math.round(value))
-                : `${Math.round(percent)}%`;
           shapes.push({
             type: "text" as const,
             x: width,
