@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import {
   Layout,
   Type,
@@ -354,14 +355,14 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
       // 라벨 + 값 행 (자식 Element가 있으면 자식 TextSprite가 렌더링하므로 스킵)
       if (!hasChildren && (props.label || props.showValue)) {
-        // value 텍스트 폭 추정 (label maxWidth 계산용)
         const valueText = props.showValue
           ? isRange
             ? values.map(String).join(" – ")
             : String(values[0])
           : "";
-        const estimatedValueWidth = props.showValue
-          ? valueText.length * numericFontSize * 0.6 + 8
+        // ADR-051: 실측 기반 value 텍스트 폭 (추정값 제거)
+        const measuredValueWidth = props.showValue
+          ? measureSpecTextWidth(valueText, numericFontSize, ff) + 4
           : 0;
 
         if (props.label) {
@@ -376,7 +377,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             fill: textColor,
             align: "left" as const,
             baseline: "top" as const,
-            maxWidth: props.showValue ? width - estimatedValueWidth : undefined,
+            maxWidth: props.showValue ? width - measuredValueWidth : undefined,
           });
         }
         if (props.showValue) {

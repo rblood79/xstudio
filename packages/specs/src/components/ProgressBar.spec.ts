@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import {
   Tag,
   BarChart3,
@@ -302,8 +303,6 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         // Standalone 모드: 기존 monolithic 렌더링
         const hasLabelRow = !!props.label || showValue;
 
-        // value 텍스트 폭 추정 (label maxWidth 계산용)
-        // "50%" = ~3문자, fontSize * 0.6 * 문자수 + 여유 8px
         const formattedValue = showValue
           ? props.valueFormat === "number"
             ? String(Math.round(value))
@@ -311,8 +310,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
               ? String(Math.round(value))
               : `${Math.round(percent)}%`
           : "";
-        const estimatedValueWidth = showValue
-          ? formattedValue.length * fontSize * 0.6 + 8
+        // ADR-051: 실측 기반 value 텍스트 폭 (추정값 제거)
+        const measuredValueWidth = showValue
+          ? measureSpecTextWidth(formattedValue, fontSize, ff) + 4 // 4px 여유 (kerning)
           : 0;
 
         if (props.label) {
@@ -327,7 +327,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             fill: textColor,
             align: "left" as const,
             baseline: "top" as const,
-            maxWidth: showValue ? width - estimatedValueWidth : undefined,
+            maxWidth: showValue ? width - measuredValueWidth : undefined,
           });
         }
         if (showValue) {

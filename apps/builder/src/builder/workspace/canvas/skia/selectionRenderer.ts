@@ -255,7 +255,11 @@ export function renderDimensionLabels(
     const glyphIds = font.getGlyphIDs(dimensionText);
     const glyphWidths = font.getGlyphWidths(glyphIds);
     const textWidth = glyphWidths.reduce((sum, w) => sum + w, 0);
-    const textHeight = fontSize * 1.2; // line-height: normal ≈ 1.2
+    // Font metrics 기반 높이 (추정값 제거)
+    const fontMetrics = font.getMetrics();
+    const textHeight = fontMetrics
+      ? Math.abs(fontMetrics.ascent) + Math.abs(fontMetrics.descent)
+      : fontSize * 1.2;
 
     // 레이블 배경 크기 및 위치 계산
     const labelWidth = textWidth + paddingX * 2;
