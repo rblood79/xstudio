@@ -1691,7 +1691,30 @@ export function calculateContentHeight(
     if (hasLabel || hasValue) {
       const fontSize = parseNumericValue(style?.fontSize) ?? 14;
       const gap = isMeter ? 8 : 8; // spec sizes[*].gap
-      return Math.ceil(fontSize * 1.2) + gap + barHeight;
+      // ADR-051: label 텍스트가 줄바꿈될 수 있으므로 measureWrappedTextHeight 사용
+      const labelText = String(props?.label ?? "");
+      const fontWeight =
+        parseNumericValue(style?.fontWeight) ??
+        computedStyle?.fontWeight ??
+        400;
+      const ff =
+        (style?.fontFamily as string) ??
+        computedStyle?.fontFamily ??
+        specFontFamily.sans;
+      const resolvedLH = parseLineHeight(style, fontSize) ?? fontSize * 1.5;
+      let textH = Math.ceil(resolvedLH);
+      if (labelText && availableWidth > 0) {
+        textH = measureWrappedTextHeight(
+          labelText,
+          fontSize,
+          fontWeight,
+          ff,
+          availableWidth,
+          resolvedLH,
+        );
+        textH = Math.max(textH, Math.ceil(resolvedLH));
+      }
+      return textH + gap + barHeight;
     }
     return barHeight;
   }
@@ -2068,12 +2091,49 @@ export function calculateContentHeight(
           }
         } else {
           // 기타 자식: explicit height 또는 텍스트 기반
-          childH =
-            typeof childStyle.height === "number"
-              ? childStyle.height
-              : Math.ceil(
-                  (parseFloat(String(childStyle.fontSize ?? 14)) || 14) * 1.5,
+          if (typeof childStyle.height === "number") {
+            childH = childStyle.height;
+          } else {
+            // ADR-051: 텍스트가 있으면 줄바꿈 포함 높이 계산
+            const otherProps = child.props as
+              | Record<string, unknown>
+              | undefined;
+            const otherText = String(
+              otherProps?.children ?? otherProps?.text ?? "",
+            );
+            const otherFs = parseFloat(String(childStyle.fontSize ?? 14)) || 14;
+            const otherLH =
+              parseLineHeight(childStyle as Record<string, unknown>, otherFs) ??
+              otherFs * 1.5;
+            if (otherText && availableWidth > 0) {
+              const otherFw =
+                parseFloat(String(childStyle.fontWeight ?? 400)) || 400;
+              const otherFf =
+                (childStyle.fontFamily as string) ??
+                computedStyle?.fontFamily ??
+                specFontFamily.sans;
+              const otherPad = parsePadding(
+                childStyle as Record<string, unknown>,
+                availableWidth,
+              );
+              const otherMaxW = availableWidth - otherPad.left - otherPad.right;
+              if (otherMaxW > 0) {
+                const otherWrappedH = measureWrappedTextHeight(
+                  otherText,
+                  otherFs,
+                  otherFw,
+                  otherFf,
+                  otherMaxW,
+                  otherLH,
                 );
+                childH = Math.max(otherWrappedH, Math.ceil(otherLH));
+              } else {
+                childH = Math.ceil(otherLH);
+              }
+            } else {
+              childH = Math.ceil(otherLH);
+            }
+          }
         }
 
         if (childH > 0) {
@@ -2099,7 +2159,32 @@ export function calculateContentHeight(
         unknown
       >;
       const labelFontSize = parseFloat(String(labelStyle.fontSize ?? 14)) || 14;
-      const labelHeight = Math.ceil(labelFontSize * 1.5);
+      const labelLH =
+        parseLineHeight(labelStyle, labelFontSize) ?? labelFontSize * 1.5;
+      // ADR-051: Label 텍스트 줄바꿈 포함 높이 계산
+      const labelProps = labelChild?.props as
+        | Record<string, unknown>
+        | undefined;
+      const labelText = String(
+        labelProps?.children ?? labelProps?.text ?? props?.label ?? "",
+      );
+      let labelHeight = Math.ceil(labelLH);
+      if (labelText && availableWidth > 0) {
+        const labelFw = parseFloat(String(labelStyle.fontWeight ?? 400)) || 400;
+        const labelFf =
+          (labelStyle.fontFamily as string) ??
+          computedStyle?.fontFamily ??
+          specFontFamily.sans;
+        labelHeight = measureWrappedTextHeight(
+          labelText,
+          labelFontSize,
+          labelFw,
+          labelFf,
+          availableWidth,
+          labelLH,
+        );
+        labelHeight = Math.max(labelHeight, Math.ceil(labelLH));
+      }
       return labelHeight + gap + bodyHeight;
     }
     return bodyHeight;
