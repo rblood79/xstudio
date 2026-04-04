@@ -12,8 +12,8 @@
  * @since 2025-12-20 Phase 3 - Advanced State Management
  */
 
-import { useAtomValue } from 'jotai';
-import { typographyValuesAtom, selectedElementAtom } from '../atoms/styleAtoms';
+import { useAtomValue } from "jotai";
+import { typographyValuesAtom, selectedElementAtom } from "../atoms/styleAtoms";
 
 export interface TypographyStyleValues {
   fontFamily: string;
@@ -46,16 +46,21 @@ export interface TypographyStyleValues {
  * ADR-008: 텍스트 래핑 속성 조합 → 프리셋 이름 파생
  */
 function deriveTextBehaviorPreset(
-  ws: string, wb: string, ow: string, to: string, of: string,
+  ws: string,
+  wb: string,
+  ow: string,
+  to: string,
+  of: string,
 ): string {
-  if (ws === 'nowrap' && to === 'ellipsis' && of === 'hidden') return 'truncate';
-  if (ws === 'nowrap') return 'nowrap';
-  if (ws === 'pre-wrap') return 'preserve';
-  if (wb === 'break-all') return 'break-all';
-  if (wb === 'keep-all') return 'keep-all';
-  if (ow === 'break-word') return 'break-words';
-  if (ws === 'normal' && wb === 'normal' && ow === 'normal' && to === 'clip' && of === 'visible') return 'normal';
-  return 'custom';
+  if (ws === "nowrap" && to === "ellipsis" && of === "hidden")
+    return "truncate";
+  if (ws === "nowrap") return "nowrap";
+  if (ws === "pre-wrap") return "preserve";
+  if (wb === "break-all") return "break-all";
+  if (wb === "keep-all") return "keep-all";
+  if (ow === "break-word") return "break-words";
+  // ADR-051: "normal" 프리셋 제거 — 기본값이 break-word이므로 ow='normal'은 명시적 custom 설정
+  return "custom";
 }
 
 /**
@@ -84,8 +89,11 @@ export function useTypographyValuesJotai(): TypographyStyleValues | null {
     ...values,
     isFontSizeFromPreset,
     textBehaviorPreset: deriveTextBehaviorPreset(
-      values.whiteSpace, values.wordBreak, values.overflowWrap,
-      values.textOverflow, values.overflow,
+      values.whiteSpace,
+      values.wordBreak,
+      values.overflowWrap,
+      values.textOverflow,
+      values.overflow,
     ),
   };
 }

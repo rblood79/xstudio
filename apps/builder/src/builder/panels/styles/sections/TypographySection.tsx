@@ -67,13 +67,6 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   const handleTextBehaviorChange = useCallback(
     (preset: string) => {
       const presets: Record<string, Record<string, string>> = {
-        normal: {
-          whiteSpace: "",
-          wordBreak: "",
-          overflowWrap: "",
-          textOverflow: "",
-          overflow: "",
-        },
         nowrap: {
           whiteSpace: "nowrap",
           wordBreak: "",
@@ -436,10 +429,9 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         value={styleValues.textBehaviorPreset}
         popoverWidthMode="fit-content"
         options={[
-          { value: "normal", label: "Normal" },
+          { value: "break-words", label: "Break Words" },
           { value: "nowrap", label: "No Wrap" },
           { value: "truncate", label: "Truncate (...)" },
-          { value: "break-words", label: "Break Words" },
           { value: "break-all", label: "Break All" },
           { value: "keep-all", label: "Keep All (CJK)" },
           { value: "preserve", label: "Preserve" },
