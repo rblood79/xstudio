@@ -175,52 +175,105 @@ function normalizeFormatProps(props) {
 }
 ```
 
-## Phase 3: 패턴 C — 기능 변경 (4건)
+## Phase 3: 패턴 C — 기능 변경
 
-### 대상
+### 3-A. Meter/ProgressBar: `showValue` 제거 (S2 완전 따르기)
 
-| 컴포넌트    | 현재                   | S2                           | 변경 유형      |
-| ----------- | ---------------------- | ---------------------------- | -------------- |
-| Meter       | `showValue: boolean`   | `valueLabel: ReactNode`      | 의미+타입 변경 |
-| ProgressBar | `showValue: boolean`   | `valueLabel: ReactNode`      | 의미+타입 변경 |
-| Slider      | `showValue: boolean`   | `valueLabel: ReactNode`      | 의미+타입 변경 |
-| TextField   | `autoCorrect: boolean` | `autoCorrect: "on" \| "off"` | 타입 변경      |
+**S2 실제 동작**: `showValue` prop은 S2에 존재하지 않음. 값 표시는 **`label` prop 유무**로 제어됨:
 
-### 참조 범위 — showValue (Codex 리뷰 반영)
+```tsx
+// S2 Meter/ProgressBar 내부
+{
+  label && <FieldLabel>{label}</FieldLabel>;
+}
+{
+  label && <Text>{valueText}</Text>;
+} // label 없으면 값도 숨겨짐
+```
 
-`showValue`는 shapes뿐 아니라 **6개+ 경로**에서 참조됨:
+**XStudio 적용**:
+
+- **`showValue` prop 제거** — S2에 없는 prop
+- 값 표시는 `label` 유무로 제어 (S2 패턴 그대로)
+- `label` 있으면 → 자동 포맷 값 표시 (`value` + `formatOptions`)
+- `label` 없으면 → 값도 미표시
+- "label은 보이고 값만 숨기기"는 S2에서 지원하지 않는 조합이므로 XStudio도 미지원
+
+**기존 데이터 마이그레이션**: `showValue=false`인 기존 프로젝트 요소는 `label`도 함께 제거하여 S2 패턴과 일치시킴
+
+### 3-B. Slider: `showValue` 제거 (S2 완전 따르기)
+
+**S2 실제 동작**: Slider에 `showValue`/`valueLabel` prop 모두 없음. `SliderOutput`이 **항상 렌더링**됨 (숨기기 옵션 없음):
+
+```tsx
+// S2 Slider 내부 — outputValue는 항상 렌더링
+let outputValue = (
+  <SliderOutput>
+    {({ state }) =>
+      state.values.map((_, i) => state.getThumbValueLabel(i)).join(" – ")
+    }
+  </SliderOutput>
+);
+{
+  labelPosition === "top" && outputValue;
+} // 항상 표시
+{
+  labelPosition === "side" && outputValue;
+} // 항상 표시
+```
+
+**XStudio 적용**:
+
+- `showValue` prop 제거 — S2에 없는 prop
+- SliderOutput은 항상 표시 (S2 동작과 일치)
+- 기존 `showValue=false` 데이터: 마이그레이션 시 prop 삭제만 (SliderOutput은 항상 표시됨으로 변경)
+
+### 참조 범위 — showValue (전체 경로)
+
+`showValue` 제거 시 영향받는 모든 경로:
+
+**Meter/ProgressBar 경로**:
+
+- `packages/specs/src/components/Meter.spec.ts` — Props interface + field + shapes
+- `packages/specs/src/components/ProgressBar.spec.ts` — 동일
+- `packages/shared/src/renderers/LayoutRenderers.tsx:879,933` — `element.props.showValue`
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts:1688-1690` — 높이 계산
+
+**Slider 경로**:
 
 - `packages/specs/src/components/Slider.spec.ts:348` — shapes
 - `packages/shared/src/components/Slider.tsx:60,88,135` — prop 정의 + 조건부 렌더링
-- `packages/shared/src/renderers/LayoutRenderers.tsx:879,933` — element.props.showValue
+- `packages/shared/src/renderers/LayoutRenderers.tsx:879` — element.props.showValue
 - `packages/shared/src/renderers/SelectionRenderers.tsx:1265` — element.props.showValue
 - `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:1243-1323` — Label/Output 필터링 (6곳+)
-- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts:1672-1690` — 높이 계산
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts:1672` — 높이 계산
 
-### valueLabel 설계
-
-S2에서 `valueLabel`은 ReactNode (표시할 내용 자체를 전달). XStudio 빌더에서는:
-
-- **기본**: `valueLabel: true` → 자동 포맷된 값 표시 (현재 showValue=true와 동일)
-- **숨김**: `valueLabel: false` → 값 미표시
-- **커스텀**: `valueLabel: string` → 사용자 지정 텍스트 (예: "{value}%")
-
-프로퍼티 패널: enum 타입 (Auto / Hidden / Custom) + 조건부 텍스트 입력.
-
-### autoCorrect 설계
+### 3-C. TextField: `autoCorrect` 타입 변경
 
 - 현재: `autoCorrect: boolean` (true/false)
-- S2: `autoCorrect: string` ("on"/"off")
+- S2: `autoCorrect: string` (HTML 표준 "on"/"off")
 - 프로퍼티 패널: boolean field → enum field ("on"/"off")
+
+> **S2 divergence 명시**: S2는 `autoCorrect?: string` (제한 없는 string). XStudio는 `"on" | "off"` 유니온으로 유효 값만 허용. 실질적으로 호환되나 정확한 타입 일치는 아님.
 
 ### 데이터 normalization
 
 ```typescript
-// showValue → valueLabel
-if ("showValue" in props && !("valueLabel" in props)) {
-  props.valueLabel = props.showValue;
+// Meter/ProgressBar: showValue 제거
+// S2 패턴: label 유무로 값 표시 제어. showValue=false → label도 함께 제거
+if ("showValue" in props) {
+  if (props.showValue === false && props.label) {
+    delete props.label; // S2: label 없으면 값도 미표시
+  }
   delete props.showValue;
 }
+
+// Slider: showValue 제거 (S2는 SliderOutput 항상 표시)
+// showValue=false 데이터는 prop 삭제만 (값이 항상 보이게 됨)
+if ("showValue" in props) {
+  delete props.showValue;
+}
+
 // autoCorrect boolean → string
 if (typeof props.autoCorrect === "boolean") {
   props.autoCorrect = props.autoCorrect ? "on" : "off";
