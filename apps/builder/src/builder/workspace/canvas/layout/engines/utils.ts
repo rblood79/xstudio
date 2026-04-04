@@ -2010,7 +2010,7 @@ export function calculateContentHeight(
           childTag === "description" ||
           childTag === "fielderror"
         ) {
-          // 텍스트 자식: explicit height 우선, 없으면 lineHeight, fallback fontSize * 1.5
+          // 텍스트 자식: explicit height 우선, 없으면 줄바꿈 포함 높이 계산
           // CSS Preview 정합성: LabelSpec lineHeight(--text-sm--line-height 등) 우선 사용
           const explicitH = parseNumericValue(childStyle.height);
           if (explicitH != null && explicitH > 0) {
@@ -2022,7 +2022,49 @@ export function calculateContentHeight(
               childStyle as Record<string, unknown>,
               fontSize,
             );
-            childH = lh != null ? Math.ceil(lh) : Math.ceil(fontSize * 1.5);
+            const resolvedLH =
+              lh != null ? Math.ceil(lh) : Math.ceil(fontSize * 1.5);
+            // ADR-051: Description/Label 텍스트 줄바꿈 시 높이 동적 확장
+            // 텍스트가 있고 availableWidth가 있으면 measureWrappedTextHeight로 정확한 높이 계산
+            const childProps = child.props as
+              | Record<string, unknown>
+              | undefined;
+            const childText = String(
+              childProps?.children ?? childProps?.text ?? "",
+            );
+            const childFontFamily =
+              (childStyle.fontFamily as string) ??
+              computedStyle?.fontFamily ??
+              specFontFamily.sans;
+            if (childText && availableWidth > 0) {
+              const childPad = parsePadding(childStyle, availableWidth);
+              const maxTextW = availableWidth - childPad.left - childPad.right;
+              if (maxTextW > 0) {
+                const wrappedH = measureWrappedTextHeight(
+                  childText,
+                  fontSize,
+                  parseFloat(String(childStyle.fontWeight ?? 400)) || 400,
+                  childFontFamily,
+                  maxTextW,
+                  resolvedLH,
+                  childStyle.wordBreak as
+                    | "normal"
+                    | "break-all"
+                    | "keep-all"
+                    | undefined,
+                  childStyle.overflowWrap as
+                    | "normal"
+                    | "break-word"
+                    | "anywhere"
+                    | undefined,
+                );
+                childH = Math.max(wrappedH, resolvedLH);
+              } else {
+                childH = resolvedLH;
+              }
+            } else {
+              childH = resolvedLH;
+            }
           }
         } else {
           // 기타 자식: explicit height 또는 텍스트 기반
