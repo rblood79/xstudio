@@ -224,67 +224,9 @@ ADR-032 (Events Platform 재설계)
 
 ---
 
-## ADR 작성 가이드라인 (Risk-First Design Loop)
+## ADR 작성 가이드라인
 
-새 ADR 작성 시 아래 순서를 **필수로** 따릅니다. 자세한 방법론은 `.claude/agents/architect.md` 참조.
-
-ADR은 **결정 문서**로만 유지합니다.
-
-- ADR에는 문제 정의, 대안, 리스크, 결정, 게이트만 넣습니다.
-- 구현 phase, 파일 경계, 세부 작업 순서, 검증 시나리오는 별도 `docs/design/*-breakdown.md` 문서로 분리합니다.
-- ADR 본문에 구현 세부가 길게 들어가면, 해당 내용은 설계 문서로 이동합니다.
-- 설계 문서는 ADR의 결정에 종속되며, 구현 검증 과정에서 자주 갱신될 수 있습니다.
-
-```
-[금지]  Context → Decision → Consequences/Risks (기록용)
-[필수]  Context → Alternatives → Risk per Alternative → Threshold Check → Decision → Gates
-```
-
-### 템플릿
-
-```markdown
-# ADR-NNN: [Title]
-
-## Status
-
-Proposed | Accepted | Deprecated | Superseded
-
-## Context
-
-[문제 설명 + 제약 조건 (hard constraints 명시)]
-
-## Alternatives Considered
-
-### 대안 A: [이름]
-
-- 설명: ...
-- 위험: 기술(L/M/H/C) / 성능(L/M/H/C) / 유지보수(L/M/H/C) / 마이그레이션(L/M/H/C)
-
-### 대안 B: [이름]
-
-- 설명: ...
-- 위험: 기술(L/M/H/C) / 성능(L/M/H/C) / 유지보수(L/M/H/C) / 마이그레이션(L/M/H/C)
-
-## Decision
-
-[선택된 대안 + 위험 수용 근거]
-
-## Gates
-
-[잔존 HIGH 위험에 대한 Gate 테이블. 없으면 "잔존 HIGH 위험 없음" 명시]
-
-## Consequences
-
-### Positive
-
-### Negative
-```
-
-### Risk Threshold Check 규칙
-
-- 모든 대안이 HIGH 1개 이상 → 위험을 회피하는 새 대안 추가
-- 어떤 대안이든 CRITICAL 1개 이상 → 근본적으로 다른 접근 추가
-- 최대 2회 루프 후에도 HIGH 이상이면 "위험 수용 근거" 명시
+> **단일 소스**: [`.claude/rules/adr-writing.md`](../../.claude/rules/adr-writing.md) — Risk-First Design Loop 템플릿, 위험 평가 규칙, 금지 패턴 정의. `docs/adr/**` 파일 편집 시 자동 로드됨.
 
 ---
 
