@@ -16,6 +16,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { measureSpecTextWidth } from "../renderers/utils/measureText";
 
 /**
  * Tag Props
@@ -233,7 +234,9 @@ export const TagSpec: ComponentSpec<TagProps> = {
           const iconSize = Math.round(fontSize * 0.75);
           const removeButtonGap = 2; // CSS .tag-remove-btn margin-left
           const removeX =
-            paddingX + fontSize * text.length * 0.55 + removeButtonGap;
+            paddingX +
+            measureSpecTextWidth(text, fontSize, fontFamily.sans) +
+            removeButtonGap;
           const removePad = 2; // --spacing-2xs
           // containerHeight = size.height + border(1)*2 → 정중앙 보정
           const borderWidth = 1;

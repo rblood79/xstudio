@@ -845,13 +845,7 @@ export function calculateContentWidth(
     const fontWeight = specStyle?.fontWeight ?? 400;
     const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
     const measurer = getTextMeasurer();
-    const textWidth = measurer
-      ? measurer.measureWidth(text, {
-          fontSize,
-          fontWeight,
-          fontFamily: ffamily,
-        })
-      : text.length * fontSize * 0.6;
+    const textWidth = measureTextWidth(text, fontSize, ffamily, fontWeight);
     return Math.ceil(dims.dotSize + dims.gap + textWidth);
   }
 
@@ -935,30 +929,20 @@ export function calculateContentWidth(
       }
     }
 
-    // 2) Spec shapes 간이 추정 폭 (specShapeConverter가 사용하는 x좌표 기준)
-    // specShapeConverter: maxWidth = containerWidth - shape.x
-    // → containerWidth가 Spec의 마지막 crumb x + 마지막 crumb 실측 폭보다 작으면 줄바꿈 발생
-    // Spec 간이 공식: crumbs[i].length * (fontSize * 0.55), sep: separatorPadding + fontSize * 0.35
+    // 2) Spec shapes 실측 폭 (specShapeConverter x좌표 기준)
+    // ADR-051: 추정값(fontSize * 0.55) 대신 measureTextWidth 실측
     let specX = 0;
     for (let i = 0; i < crumbs.length; i++) {
       const isLast = i === crumbs.length - 1;
-      specX += crumbs[i].length * (fontSize * 0.55);
+      specX += measureTextWidth(crumbs[i], fontSize, ffamily, 600);
       if (!isLast) {
         specX += separatorPadding;
-        specX += separatorPadding + fontSize * 0.35;
+        specX +=
+          separatorPadding +
+          measureTextWidth(separator, fontSize, ffamily, 400);
       }
     }
-    // Spec의 총 x는 마지막 crumb 끝까지의 간이 추정 (마지막 crumb 폭 포함)
-    // 마지막 crumb 실측 폭으로 교체: specX - 간이마지막 + 실측마지막
-    const lastCrumbEstimate =
-      crumbs[crumbs.length - 1].length * (fontSize * 0.55);
-    const lastCrumbMeasured = measureTextWidth(
-      crumbs[crumbs.length - 1],
-      fontSize,
-      ffamily,
-      600,
-    );
-    const specRenderWidth = specX - lastCrumbEstimate + lastCrumbMeasured;
+    const specRenderWidth = specX;
 
     // 둘 중 더 큰 값 사용: Spec x좌표 기반 렌더링이 containerWidth 안에 들어오도록 보장
     return Math.ceil(Math.max(measuredWidth, specRenderWidth));

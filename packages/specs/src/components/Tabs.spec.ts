@@ -14,6 +14,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import { Ratio, PointerOff, MousePointer2 } from "lucide-react";
 
 /**
@@ -61,7 +62,8 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
               { value: "compact", label: "Compact" },
               { value: "regular", label: "Regular" },
             ],
-           defaultValue: "regular" },
+            defaultValue: "regular",
+          },
           {
             key: "orientation",
             type: "enum",
@@ -71,13 +73,15 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "horizontal" },
+            defaultValue: "horizontal",
+          },
           {
             key: "showIndicator",
             type: "boolean",
             label: "Show Indicator",
             icon: MousePointer2,
-           defaultValue: true },
+            defaultValue: true,
+          },
         ],
       },
       {
@@ -206,11 +210,11 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
         if (containerWidth > 0) {
           return Math.max(48, containerWidth / tabLabels.length);
         }
-        // fallback: containerWidth 미주입 시 문자 폭 추정
-        const charWidth = fontSize * 0.55;
+        // fallback: containerWidth 미주입 시 실측 폭 사용
         return Math.max(
           48,
-          Math.ceil(label.length * charWidth) + size.paddingX * 2,
+          Math.ceil(measureSpecTextWidth(label, fontSize, ff)) +
+            size.paddingX * 2,
         );
       };
 

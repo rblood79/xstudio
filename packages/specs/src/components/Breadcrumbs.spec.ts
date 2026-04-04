@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import { PointerOff } from "lucide-react";
+import { measureSpecTextWidth } from "../renderers/utils/measureText";
 
 /**
  * Breadcrumbs Props
@@ -146,12 +147,16 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
           : 0;
-      // fallback: containerWidth 미주입 시 문자 폭 추정
-      const charWidthFactor = resolvedFontSize * 0.55;
-      const sepCharWidth = resolvedFontSize * 0.35;
+      // ADR-051: separator 폭 실측 (추정값 제거)
+      const sepText = String(props.separator ?? "/");
+      const sepMeasuredWidth = measureSpecTextWidth(
+        sepText,
+        resolvedFontSize,
+        ff,
+      );
       const sepCount = Math.max(0, crumbs.length - 1);
-      // containerWidth가 있으면 crumb당 사용 가능한 폭 계산
-      const totalSepWidth = sepCount * (separatorPadding * 2 + sepCharWidth);
+      const totalSepWidth =
+        sepCount * (separatorPadding * 2 + sepMeasuredWidth);
       const crumbMaxWidth =
         containerWidth > 0
           ? Math.max(
@@ -162,10 +167,11 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
 
       for (let i = 0; i < crumbs.length; i++) {
         const isLast = i === crumbs.length - 1;
+        // ADR-051: crumb 폭 실측
         const estimatedTextWidth =
           containerWidth > 0
             ? crumbMaxWidth
-            : crumbs[i].length * charWidthFactor;
+            : measureSpecTextWidth(crumbs[i], resolvedFontSize, ff, 600);
 
         shapes.push({
           type: "text" as const,
@@ -197,9 +203,9 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
             fill: "{color.neutral-subdued}" as TokenRef,
             align: "left" as const,
             baseline: "middle" as const,
-            maxWidth: sepCharWidth + resolvedFontSize,
+            maxWidth: sepMeasuredWidth + resolvedFontSize,
           });
-          x += separatorPadding + sepCharWidth;
+          x += separatorPadding + sepMeasuredWidth;
         }
       }
 

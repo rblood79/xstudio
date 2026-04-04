@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import {
   Layout,
   Rows3,
@@ -92,7 +93,8 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {
@@ -134,7 +136,8 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-           defaultValue: "none" },
+            defaultValue: "none",
+          },
           {
             key: "selectionBehavior",
             type: "enum",
@@ -144,7 +147,8 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
               { value: "toggle", label: "Toggle" },
               { value: "replace", label: "Replace" },
             ],
-           defaultValue: "toggle" },
+            defaultValue: "toggle",
+          },
           {
             key: "disallowEmptySelection",
             type: "boolean",
@@ -193,14 +197,14 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             type: "boolean",
             label: "Allows Removing",
             icon: Trash,
-           defaultValue: true },
+            defaultValue: true,
+          },
           {
             key: "allowsCustomValue",
             type: "boolean",
             label: "Allows Custom Value",
             icon: PenOff,
           },
-
         ],
       },
       {
@@ -342,9 +346,12 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
         let tagX = 0;
 
         for (const item of tagItems) {
-          // 태그 칩 너비 추정
-          const charWidth = tagFontSize * 0.55;
-          const textWidth = item.text.length * charWidth;
+          // 태그 칩 너비 실측
+          const textWidth = measureSpecTextWidth(
+            item.text,
+            tagFontSize,
+            fontFamily.sans,
+          );
           const chipWidth = textWidth + tagPaddingX * 2;
 
           // Tag 배경 (roundRect)
