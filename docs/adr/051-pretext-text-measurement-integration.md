@@ -95,6 +95,11 @@ XStudio는 3개 렌더링 타겟(CSS/DOM Preview, Skia/WebGL Canvas, PixiJS Even
 4. **안전한 도입**: `needsFallback()` 텍스트 단위 분기 → letterSpacing, break-all, nowrap 등은 기존 CanvasKit 유지
 5. **기존 아키텍처 호환**: `TextMeasurer` 인터페이스 그대로, 측정기 2개 유지, `isCanvasKitMeasurer()` 변경 불필요
 
+기각 사유:
+
+- **대안 A 기각**: HIGH 2건(기술 + 유지보수). v0.0.4 안정성 부족(#89/#96/#98), 기본값 normal 유지 시 SSOT ~29%만 → 비용 대비 효과 불균형
+- **대안 C 기각**: CSS 정합성 개선 없음(~90% 유지). CanvasKit과 CSS가 다른 폰트 엔진인 근본 원인이 해결되지 않아 핵심 문제(줄바꿈 불일치) 미해결. 성능 개선도 제한적(WASM Paragraph 구조 유지)
+
 위험 수용 근거 (잔존 MEDIUM 2건):
 
 - Canvas 2D 서브픽셀 차이: Phase 0에서 100+ 텍스트 실측, 1px 초과 시 해당 패턴만 fallback 추가
@@ -104,13 +109,13 @@ XStudio는 3개 렌더링 타겟(CSS/DOM Preview, Skia/WebGL Canvas, PixiJS Even
 
 ## Gates
 
-| Gate                 | 조건                                                              | 실패 시                     |
-| -------------------- | ----------------------------------------------------------------- | --------------------------- |
-| **Phase 0 Go/No-Go** | Canvas 2D vs CSS DOM width ≤ 1px (라틴 50 + CJK 30 + 혼합 20문장) | 대안 C로 전환               |
-| **Phase 0 Go/No-Go** | `Intl.Segmenter` CJK 분할 vs CSS 줄바꿈 일치 (한중일 50문장)      | CJK fallback 범위 확대      |
-| **Phase 0 Go/No-Go** | 세그먼트 캐시 warm 후 `computeLines()` ≤ 0.1ms (500 토큰)         | 캐시 구조 재설계            |
-| **Phase A 완료**     | `USE_CANVAS2D_MEASURE` 플래그로 A/B 비교, 회귀 0건                | 플래그 off → CanvasKit 원복 |
-| **Phase C 완료**     | Break Hint `\n` 후 CanvasKit 렌더링 시각 비교 통과                | Break Hint 플래그 off       |
+| Gate                 | 시점            | 통과 조건                                                         | 실패 시 대안                |
+| -------------------- | --------------- | ----------------------------------------------------------------- | --------------------------- |
+| **Phase 0 Go/No-Go** | Phase A 착수 전 | Canvas 2D vs CSS DOM width ≤ 1px (라틴 50 + CJK 30 + 혼합 20문장) | 대안 C로 전환               |
+| **Phase 0 Go/No-Go** | Phase A 착수 전 | `Intl.Segmenter` CJK 분할 vs CSS 줄바꿈 일치 (한중일 50문장)      | CJK fallback 범위 확대      |
+| **Phase 0 Go/No-Go** | Phase A 착수 전 | 세그먼트 캐시 warm 후 `computeLines()` ≤ 0.1ms (500 토큰)         | 캐시 구조 재설계            |
+| **Phase A 완료**     | Phase B 착수 전 | `USE_CANVAS2D_MEASURE` 플래그 A/B 비교, 회귀 0건                  | 플래그 off → CanvasKit 원복 |
+| **Phase C 완료**     | 배포 전         | Break Hint `\n` 후 CanvasKit 렌더링 시각 비교 통과                | Break Hint 플래그 off       |
 
 ## Consequences
 
