@@ -64,7 +64,7 @@ UI 컴포넌트의 구조/API를 설계할 때:
 
 1. `Read .claude/skills/react-aria/references/components/{ComponentName}.md` → 공식 API 구조, 합성 패턴, 접근성 요구사항 참조
 2. `Read .claude/skills/react-aria/references/guides/collections.md` → 컬렉션/합성 패턴 참조
-3. `Read .claude/skills/react-spectrum-s2/references/components/{ComponentName}.md` → Spectrum S2 디자인 시스템 구현 비교
+3. `Read .claude/skills/react-spectrum/references/components/{ComponentName}.md` → Spectrum S2 디자인 시스템 구현 비교
 4. React Aria의 Composition 패턴을 XStudio의 Element 트리 구조에 매핑
 
 활용 시점:

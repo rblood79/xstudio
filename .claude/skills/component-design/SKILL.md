@@ -43,7 +43,7 @@ Read .claude/skills/react-aria/references/interactions/usePress.md → 인터랙
 ### 1-3. React Spectrum S2 참조 (디자인 시스템 비교 시)
 
 ```
-Read .claude/skills/react-spectrum-s2/references/components/{ComponentName}.md
+Read .claude/skills/react-spectrum/references/components/{ComponentName}.md
 ```
 
 Adobe의 Spectrum 2 디자인 시스템 구현을 참조하여 XStudio 컴포넌트와 비교한다.

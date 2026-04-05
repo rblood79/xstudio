@@ -33,7 +33,7 @@ maxTurns: 30
 
 1. `Read .claude/skills/react-aria/references/components/{ComponentName}.md` → API, 예제, 접근성 패턴 참조
 2. `Read .claude/skills/react-aria/references/guides/` → 가이드 (collections, selection, forms 등)
-3. `Read .claude/skills/react-spectrum-s2/references/components/{ComponentName}.md` → Spectrum S2 디자인 시스템 비교 (선택)
+3. `Read .claude/skills/react-spectrum/references/components/{ComponentName}.md` → Spectrum S2 디자인 시스템 비교 (선택)
 4. 참조 결과를 XStudio 컨벤션(tv(), Zustand, Spec)에 맞게 내재화
 
 ### IDE MCP (타입 검증)
@@ -128,7 +128,7 @@ gh search code "[패턴 키워드]" --language=TypeScript
 1. **Skill 문서 먼저 확인** — Props/API 사양 파악
 
    ```
-   Read .claude/skills/react-spectrum-s2/references/components/{ComponentName}.md
+   Read .claude/skills/react-spectrum/references/components/{ComponentName}.md
    ```
 
 2. **S2 GitHub 소스코드 fetch** — 실제 구현 메커니즘 확인
