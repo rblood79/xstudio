@@ -65,6 +65,14 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   },
 
   sizes: {
+    xs: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      gap: 0,
+    },
     sm: {
       height: 0,
       paddingX: 0,
@@ -86,6 +94,14 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      gap: 0,
+    },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xl}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       gap: 0,
     },
