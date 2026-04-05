@@ -36,6 +36,7 @@ ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeas
 - Spec-Driven Text Style: `extractSpecTextStyle(tag, props)` 사용. **텍스트 props(children/text/label) 없이 호출 금지** → null 반환 → fallback 측정 불일치
 - Paragraph API: 콘텐츠 폭=`getLongestLine()`, max-content=`getMaxIntrinsicWidth()`. `getMaxWidth()` 사용 금지
 - WASM Paragraph 객체 캐싱 금지 (메모리 누수). 결과값 `{width, height}` 만 LRU 캐싱
+- **Layout 보정 금지**: `calculateContentWidth`, `enrichWithIntrinsicSize` 등 layout 경로에서 `+2/+4px` Canvas 2D→CanvasKit 보정 사용 금지. **Why**: Layout = Canvas 2D = CSS 정합이 원칙. Canvas 2D↔CanvasKit sub-pixel 차이는 **렌더링 단**(nodeRendererText.ts)에서 `effectiveLayoutWidth = Math.ceil(c2dResult.width) + 1`로 처리. layout에 보정 적용 시 CSS와 불일치.
 
 ## 4. Spec-CSS 경계
 
@@ -88,6 +89,7 @@ ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeas
 - ❌ publishLayoutMap 타이밍 해킹, notifyLayoutChange() 강제 호출
 - ❌ parentElement를 useMemo 내 직접 참조 (stale closure)
 - ❌ hitElementId를 startMove에 직접 전달 (selectedElementIds 사용)
+- ❌ `calculateContentWidth`에 `isCanvasKitMeasurer() ? 0 : +N` 보정 추가 (CSS 정합 파괴 → nodeRendererText `+1` 마진 사용)
 
 ## 상세 레퍼런스
 

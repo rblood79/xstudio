@@ -30,6 +30,20 @@ export interface ImplicitStyleResult {
   filteredChildren: Element[];
 }
 
+// ─── 공유 유틸 ──────────────────────────────────────────────────────
+
+/** ProgressBar/Meter value → 포맷된 텍스트 (implicitStyles + ElementSprite 공유) */
+export function formatProgressValue(
+  value: number,
+  min: number,
+  max: number,
+  format?: string,
+): string {
+  if (format === "number") return String(Math.round(value));
+  const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  return `${Math.round(Math.max(0, Math.min(100, percent)))}%`;
+}
+
 // ─── 내부 상수 ──────────────────────────────────────────────────────
 
 /**
@@ -1242,18 +1256,13 @@ export function applyImplicitStyles(
     const showValue = containerProps?.showValue !== false;
     const sizeName = (containerProps?.size as string) ?? "md";
 
-    // value → 포맷된 텍스트 계산 (ElementSprite 미러링)
     // layout 엔진이 Skia 렌더링과 동일한 텍스트로 fit-content width를 측정해야 함
-    const rawVal = Number(containerProps?.value ?? 0);
-    const minV = Number(containerProps?.minValue ?? 0);
-    const maxV = Number(containerProps?.maxValue ?? 100);
-    const percent = maxV > minV ? ((rawVal - minV) / (maxV - minV)) * 100 : 0;
-    const clampedPercent = Math.max(0, Math.min(100, percent));
-    const valueFormat = containerProps?.valueFormat as string | undefined;
-    const formattedValue =
-      valueFormat === "number"
-        ? String(Math.round(rawVal))
-        : `${Math.round(clampedPercent)}%`;
+    const formattedValue = formatProgressValue(
+      Number(containerProps?.value ?? 0),
+      Number(containerProps?.minValue ?? 0),
+      Number(containerProps?.maxValue ?? 100),
+      containerProps?.valueFormat as string | undefined,
+    );
 
     // Label/Output 필터: hasLabel이 false면 Label 제외, showValue false면 Output 제외
     filteredChildren = children.filter((c) => {

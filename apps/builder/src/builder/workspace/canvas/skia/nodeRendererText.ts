@@ -328,9 +328,7 @@ export function renderText(
           layoutMaxWidth,
         );
         renderableText = c2dResult.hintedText;
-        // Canvas 2D 줄바꿈 결정 기반 effectiveWidth:
         // +1: Canvas 2D↔CanvasKit sub-pixel 차이로 인한 오발 줄바꿈 방지
-        // layout 보정(+2/+4px) 대신 렌더링에서만 1px 마진 적용 → CSS 정합 유지
         effectiveLayoutWidth = Math.max(
           layoutMaxWidth,
           Math.ceil(c2dResult.width) + 1,

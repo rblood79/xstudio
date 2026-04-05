@@ -183,3 +183,11 @@ DatePicker/DateRangePicker 내부의 Calendar/RangeCalendar은 Preview에서 Pop
 - 참조: `docs/bug/skia-button-text-linebreak.md`
 
 **FontMgr 교체 시 캐시 clear**: 렌더러의 Paragraph LRU 캐시(nodeRenderers.ts)와 측정기 캐시(canvaskitTextMeasurer.ts)는 별도 관리 (목적이 다름: 렌더 vs 측정)
+
+## Canvas 2D↔CanvasKit 텍스트 오차 처리 원칙
+
+Layout = Canvas 2D = CSS 정합이 원칙. Canvas 2D 측정값에 보정(+2/+4px) 추가 금지.
+
+- **Layout 경로** (`calculateContentWidth`, `enrichWithIntrinsicSize`, `fullTreeLayout Step 3.6`): Canvas 2D `measureTextWidth()` 결과를 그대로 사용. `isCanvasKitMeasurer()` 기반 보정 금지.
+- **렌더링 경로** (`nodeRendererText.ts`): `effectiveLayoutWidth = Math.max(layoutMaxWidth, Math.ceil(c2dResult.width) + 1)` — Canvas 2D↔CanvasKit sub-pixel 차이를 렌더링 단에서만 +1px 마진으로 흡수.
+- **Break Hint** (`nodeRendererText.ts:324`): Canvas 2D가 줄바꿈 결정 → hintedText `\n` 주입 → CanvasKit 강제. 다줄 텍스트에서도 +1px 마진이 줄 내 추가 줄바꿈 방지.

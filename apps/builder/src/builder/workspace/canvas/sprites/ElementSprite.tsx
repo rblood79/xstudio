@@ -215,6 +215,7 @@ import { useResolvedElement } from "./useResolvedElement";
 import { isFlexContainer, isGridContainer } from "../layout";
 import { measureWrappedTextHeight } from "../utils/textMeasure";
 import { PHANTOM_INDICATOR_CONFIGS } from "../layout/engines/utils";
+import { formatProgressValue } from "../layout/engines/implicitStyles";
 
 // ============================================
 // Constants
@@ -2107,16 +2108,12 @@ export const ElementSprite = memo(function ElementSprite({
               // ProgressBarValue: 부모 ProgressBar의 value를 포맷팅하여 children에 주입
               // delegation 값이 항상 우선 (factory의 초기 "50%"보다 부모의 실시간 value 우선)
               if (isProgressBarValue && parentProgressShowValue) {
-                const rawVal = parentProgressValue ?? 0;
-                const minV = parentProgressMinValue ?? 0;
-                const maxV = parentProgressMaxValue ?? 100;
-                const percent =
-                  maxV > minV ? ((rawVal - minV) / (maxV - minV)) * 100 : 0;
-                const clampedPercent = Math.max(0, Math.min(100, percent));
-                const formatted =
-                  parentProgressValueFormat === "number"
-                    ? String(Math.round(rawVal))
-                    : `${Math.round(clampedPercent)}%`;
+                const formatted = formatProgressValue(
+                  parentProgressValue ?? 0,
+                  parentProgressMinValue ?? 0,
+                  parentProgressMaxValue ?? 100,
+                  parentProgressValueFormat,
+                );
                 const existingStyle = (specProps.style || {}) as Record<
                   string,
                   unknown
@@ -2127,7 +2124,7 @@ export const ElementSprite = memo(function ElementSprite({
                   size: specProps.size ?? parentProgressSize ?? undefined,
                   style: {
                     ...existingStyle,
-                    fontSize: undefined, // sizeSpec.fontSize가 결정하도록 제거
+                    fontSize: undefined,
                   },
                 };
               }
