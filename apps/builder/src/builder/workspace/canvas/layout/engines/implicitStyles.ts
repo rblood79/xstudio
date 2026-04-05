@@ -44,7 +44,7 @@ export function formatProgressValue(
     return `${Math.round(Math.max(0, Math.min(100, percent)))}%`;
   }
   // currency/unit style에 필수값 없으면 decimal fallback
-  const style = formatOptions.style as string;
+  const style = formatOptions.style as Intl.NumberFormatOptions["style"];
   if (style === "currency" && !formatOptions.currency) {
     return String(Math.round(value));
   }

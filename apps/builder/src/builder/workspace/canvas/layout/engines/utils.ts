@@ -1697,7 +1697,7 @@ export function calculateContentHeight(
         specFontFamily.sans;
       const resolvedLH = parseLineHeight(style, fontSize) ?? fontSize * 1.5;
       let textH = Math.ceil(resolvedLH);
-      if (labelText && availableWidth > 0) {
+      if (labelText && availableWidth != null && availableWidth > 0) {
         textH = measureWrappedTextHeight(
           labelText,
           fontSize,
@@ -2053,7 +2053,7 @@ export function calculateContentHeight(
               (childStyle.fontFamily as string) ??
               computedStyle?.fontFamily ??
               specFontFamily.sans;
-            if (childText && availableWidth > 0) {
+            if (childText && availableWidth != null && availableWidth > 0) {
               const childPad = parsePadding(childStyle, availableWidth);
               const maxTextW = availableWidth - childPad.left - childPad.right;
               if (maxTextW > 0) {
@@ -2099,7 +2099,7 @@ export function calculateContentHeight(
             const otherLH =
               parseLineHeight(childStyle as Record<string, unknown>, otherFs) ??
               otherFs * 1.5;
-            if (otherText && availableWidth > 0) {
+            if (otherText && availableWidth != null && availableWidth > 0) {
               const otherFw =
                 parseFloat(String(childStyle.fontWeight ?? 400)) || 400;
               const otherFf =
@@ -2163,7 +2163,7 @@ export function calculateContentHeight(
         labelProps?.children ?? labelProps?.text ?? props?.label ?? "",
       );
       let labelHeight = Math.ceil(labelLH);
-      if (labelText && availableWidth > 0) {
+      if (labelText && availableWidth != null && availableWidth > 0) {
         const labelFw = parseFloat(String(labelStyle.fontWeight ?? 400)) || 400;
         const labelFf =
           (labelStyle.fontFamily as string) ??

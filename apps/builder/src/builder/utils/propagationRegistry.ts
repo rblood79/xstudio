@@ -5,7 +5,7 @@
  * lazy 초기화 — 첫 호출 시 1회만 빌드.
  * 모든 키는 소문자로 정규화.
  */
-import type { ComponentSpec, PropagationRule } from "@xstudio/specs";
+import type { ComponentSpec, PropagationRule, Shape } from "@xstudio/specs";
 import {
   // Phase 1: DatePicker
   DatePickerSpec,
@@ -39,7 +39,7 @@ import {
 // ─── Collection Item propagation-only specs ─────────────────────────────────
 // 독립 Spec 파일이 없는 컴포넌트의 label/description → 자식 전파 전용
 
-const noopShapes = () => [] as const;
+const noopShapes = (): Shape[] => [];
 
 function createCollectionItemPropagationSpec(
   name: string,
