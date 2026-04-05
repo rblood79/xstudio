@@ -770,7 +770,7 @@ export const renderDialog = (
       style={element.props.style}
       className={element.props.className}
       role={(element.props.role as "dialog" | "alertdialog") || "dialog"}
-      isDismissible={Boolean(element.props.isDismissible)}
+      isDismissable={Boolean(element.props.isDismissable)}
     >
       {typeof element.props.children === "string"
         ? element.props.children

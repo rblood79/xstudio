@@ -29,6 +29,10 @@ import {
   AlignLeft,
   HelpCircle,
   Columns,
+  EyeOff,
+  Loader,
+  ArrowUpDown,
+  FlipVertical,
 } from "lucide-react";
 
 /**
@@ -51,9 +55,14 @@ export interface SelectProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  isQuiet?: boolean;
+  isLoading?: boolean;
   autoFocus?: boolean;
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";
+  align?: "start" | "end";
+  direction?: "bottom" | "top";
+  shouldFlip?: boolean;
   necessityIndicator?: "icon" | "label";
   disallowEmptySelection?: boolean;
   validationBehavior?: "native" | "aria";
@@ -150,6 +159,37 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "end", label: "End" },
             ],
             defaultValue: "start",
+          },
+          { key: "isQuiet", type: "boolean", label: "Quiet", icon: EyeOff },
+          { key: "isLoading", type: "boolean", label: "Loading", icon: Loader },
+          {
+            key: "align",
+            type: "enum",
+            label: "Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
+          },
+          {
+            key: "direction",
+            type: "enum",
+            label: "Direction",
+            icon: ArrowUpDown,
+            options: [
+              { value: "bottom", label: "Bottom" },
+              { value: "top", label: "Top" },
+            ],
+            defaultValue: "bottom",
+          },
+          {
+            key: "shouldFlip",
+            type: "boolean",
+            label: "Should Flip",
+            icon: FlipVertical,
+            defaultValue: true,
           },
           {
             key: "menuWidth",

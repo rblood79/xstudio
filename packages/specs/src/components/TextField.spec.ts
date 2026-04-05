@@ -23,6 +23,9 @@ import {
   Tag,
   Layout,
   HelpCircle,
+  Minimize2,
+  CornerDownLeft,
+  Image,
 } from "lucide-react";
 
 /**
@@ -47,6 +50,7 @@ export interface TextFieldProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  isQuiet?: boolean;
   autoFocus?: boolean;
   autoComplete?: string;
   autoCorrect?: "on" | "off";
@@ -59,6 +63,15 @@ export interface TextFieldProps {
     | "numeric"
     | "decimal"
     | "search";
+  enterKeyHint?:
+    | "enter"
+    | "done"
+    | "go"
+    | "next"
+    | "previous"
+    | "search"
+    | "send";
+  icon?: string;
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";
   necessityIndicator?: "icon" | "label";
@@ -138,6 +151,20 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
+          },
+          {
+            key: "icon",
+            type: "string",
+            label: "Icon",
+            icon: Image,
+            emptyToUndefined: true,
+            placeholder: "icon-name",
           },
         ],
       },
@@ -240,6 +267,23 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
               { value: "off", label: "Off" },
             ],
             defaultValue: "off",
+          },
+          {
+            key: "enterKeyHint",
+            type: "enum",
+            label: "Enter Key Hint",
+            icon: CornerDownLeft,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "enter", label: "Enter" },
+              { value: "done", label: "Done" },
+              { value: "go", label: "Go" },
+              { value: "next", label: "Next" },
+              { value: "previous", label: "Previous" },
+              { value: "search", label: "Search" },
+              { value: "send", label: "Send" },
+            ],
           },
 
           {

@@ -38,6 +38,7 @@ export interface MeterProps {
   staticColor?: "white" | "black" | "auto";
   isDisabled?: boolean;
   labelAlign?: "start" | "end";
+  labelPosition?: "top" | "side";
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -143,6 +144,17 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
             ],
           },
           STATIC_COLOR_FIELD,
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+            defaultValue: "top",
+          },
           {
             key: "labelAlign",
             type: "enum",

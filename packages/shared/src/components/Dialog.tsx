@@ -36,13 +36,13 @@ import "./styles/Dialog.css";
 export interface DialogExtendedProps extends DialogProps {
   variant?: string;
   size?: ComponentSize;
-  isDismissible?: boolean;
+  isDismissable?: boolean;
 }
 
 export function Dialog({
   variant = "primary",
   size = "md",
-  isDismissible,
+  isDismissable,
   ...props
 }: DialogExtendedProps) {
   // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
@@ -58,7 +58,7 @@ export function Dialog({
       className={dialogClassName}
       data-variant={variant}
       data-size={size}
-      data-dismissible={isDismissible || undefined}
+      data-dismissible={isDismissable || undefined}
     />
   );
 }

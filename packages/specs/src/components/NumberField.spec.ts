@@ -30,6 +30,8 @@ import {
   Layout,
   AlignLeft,
   HelpCircle,
+  Minimize2,
+  EyeOff,
 } from "lucide-react";
 
 /**
@@ -51,6 +53,8 @@ export interface NumberFieldProps {
   isRequired?: boolean;
   isReadOnly?: boolean;
   isWheelDisabled?: boolean;
+  isQuiet?: boolean;
+  hideStepper?: boolean;
   autoFocus?: boolean;
   name?: string;
   form?: string;
@@ -136,6 +140,18 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "end", label: "End" },
             ],
             defaultValue: "start",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
+          },
+          {
+            key: "hideStepper",
+            type: "boolean",
+            label: "Hide Stepper",
+            icon: EyeOff,
           },
         ],
       },

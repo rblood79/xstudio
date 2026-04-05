@@ -987,7 +987,7 @@ export interface BreadcrumbsElementProps extends BaseElementProps {
 // === Dialog Element Props ===
 export interface DialogElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  isDismissible?: boolean;
+  isDismissable?: boolean;
   role?: "dialog" | "alertdialog";
 }
 
@@ -1009,7 +1009,7 @@ export interface PopoverElementProps extends BaseElementProps {
 // === Modal Element Props ===
 export interface ModalElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  isDismissible?: boolean;
+  isDismissable?: boolean;
 }
 
 // === Tooltip Element Props ===

@@ -30,7 +30,7 @@ export function createDialogDefinition(
       props: {
         variant: "accent",
         size: "md",
-        isDismissible: false,
+        isDismissable: false,
         style: {
           display: "flex",
           flexDirection: "column",

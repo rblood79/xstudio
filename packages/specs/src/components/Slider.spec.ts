@@ -26,6 +26,9 @@ import {
   AlignLeft,
   Sparkles,
   HelpCircle,
+  Eye,
+  Layers,
+  SlidersHorizontal,
 } from "lucide-react";
 
 /**
@@ -50,6 +53,10 @@ export interface SliderProps {
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";
   isEmphasized?: boolean;
+  isFilled?: boolean;
+  fillOffset?: number;
+  trackGradient?: string[];
+  showValueLabel?: boolean;
   contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
@@ -246,6 +253,25 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             type: "boolean",
             label: "Emphasized",
             icon: Sparkles,
+          },
+          {
+            key: "isFilled",
+            type: "boolean",
+            label: "Filled",
+            icon: Layers,
+          },
+          {
+            key: "fillOffset",
+            type: "number",
+            label: "Fill Offset",
+            icon: SlidersHorizontal,
+            step: 1,
+          },
+          {
+            key: "showValueLabel",
+            type: "boolean",
+            label: "Show Value Label",
+            icon: Eye,
           },
         ],
       },

@@ -182,7 +182,7 @@ export interface EditablePanelProps {
   variant?: "tab" | "card" | "bordered" | "shadow";
   tabIndex?: number;
   isOpen?: boolean;
-  isDismissible?: boolean;
+  isDismissable?: boolean;
   className?: string;
   style?: Record<string, string | number>;
 }
@@ -438,7 +438,7 @@ export const COMPONENT_PROPERTY_FIELDS: Record<string, PropertyField[]> = {
       ],
     },
     { key: "isOpen", label: "열림 상태", type: "boolean" },
-    { key: "isDismissible", label: "닫기 가능", type: "boolean" },
+    { key: "isDismissable", label: "닫기 가능", type: "boolean" },
   ],
   Slider: [
     { key: "label", label: "라벨", type: "text" },

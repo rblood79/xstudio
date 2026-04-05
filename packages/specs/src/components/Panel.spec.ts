@@ -142,7 +142,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
             icon: ToggleLeft,
           },
           {
-            key: "isDismissible",
+            key: "isDismissable",
             type: "boolean",
             label: "Dismissible",
             icon: ToggleLeft,

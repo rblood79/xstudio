@@ -26,6 +26,7 @@ import {
   FormInput,
   ToggleLeft,
   HelpCircle,
+  Calendar,
 } from "lucide-react";
 
 export interface DatePickerProps {
@@ -38,7 +39,9 @@ export interface DatePickerProps {
   calendarSystem?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  isQuiet?: boolean;
   labelPosition?: "top" | "side";
+  firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
   maxVisibleMonths?: number;
   contextualHelp?: string;
   style?: Record<string, string | number | undefined>;
@@ -324,6 +327,24 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          { key: "isQuiet", type: "boolean", label: "Quiet", icon: EyeOff },
+          {
+            key: "firstDayOfWeek",
+            type: "enum",
+            label: "First Day of Week",
+            icon: Calendar,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "sun", label: "Sunday" },
+              { value: "mon", label: "Monday" },
+              { value: "tue", label: "Tuesday" },
+              { value: "wed", label: "Wednesday" },
+              { value: "thu", label: "Thursday" },
+              { value: "fri", label: "Friday" },
+              { value: "sat", label: "Saturday" },
+            ],
           },
           {
             key: "granularity",

@@ -3,7 +3,7 @@ const LABEL_OVERRIDES: Record<string, string> = {
   colorSpace: "Color Space",
   errorMessage: "Error Message",
   isDisabled: "Disabled",
-  isDismissible: "Dismissible",
+  isDismissable: "Dismissible",
   isInvalid: "Invalid",
   isQuiet: "Quiet",
   isReadOnly: "Read Only",

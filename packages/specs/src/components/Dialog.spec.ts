@@ -19,7 +19,7 @@ export interface DialogProps {
   size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   title?: string;
-  isDismissible?: boolean;
+  isDismissable?: boolean;
   role?: "dialog" | "alertdialog";
 }
 
@@ -57,7 +57,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
         title: "State",
         fields: [
           {
-            key: "isDismissible",
+            key: "isDismissable",
             type: "boolean",
             label: "Dismissible",
             icon: ToggleLeft,
@@ -213,7 +213,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       role: props.role ?? "dialog",
       "aria-modal": true,
       "aria-label": props.title,
-      "data-dismissible": props.isDismissible || undefined,
+      "data-dismissible": props.isDismissable || undefined,
     }),
 
     pixi: () => ({
