@@ -101,12 +101,14 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
           {
             key: "formatOptions.style",
             type: "enum",
-            label: "Value Format",
+            label: "Format Options",
             icon: Hash,
             updatePath: ["formatOptions", "style"],
             options: [
-              { value: "decimal", label: "Number" },
+              { value: "decimal", label: "Decimal" },
               { value: "percent", label: "Percent" },
+              { value: "currency", label: "Currency" },
+              { value: "unit", label: "Unit" },
             ],
             defaultValue: "percent",
           },
@@ -257,6 +259,12 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   propagation: {
     rules: [
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
       { parentProp: "size", childPath: "MeterTrack", override: true },
       { parentProp: "size", childPath: "MeterValue", override: true },
       { parentProp: "size", childPath: "Label", override: true },

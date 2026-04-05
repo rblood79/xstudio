@@ -282,12 +282,13 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
           {
             key: "formatOptions.style",
             type: "enum",
-            label: "Format Style",
+            label: "Format Options",
             icon: Hash,
             updatePath: ["formatOptions", "style"],
             options: [
-              { value: "decimal", label: "Number" },
+              { value: "decimal", label: "Decimal" },
               { value: "percent", label: "Percent" },
+              { value: "currency", label: "Currency" },
               { value: "unit", label: "Unit" },
             ],
             defaultValue: "decimal",

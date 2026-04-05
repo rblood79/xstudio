@@ -185,7 +185,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
           {
             key: "formatOptions.style",
             type: "enum",
-            label: "Format Style",
+            label: "Format Options",
             icon: DollarSign,
             updatePath: ["formatOptions", "style"],
             options: [

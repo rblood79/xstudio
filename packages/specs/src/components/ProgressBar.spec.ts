@@ -102,12 +102,14 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
           {
             key: "formatOptions.style",
             type: "enum",
-            label: "Value Format",
+            label: "Format Options",
             icon: Hash,
             updatePath: ["formatOptions", "style"],
             options: [
-              { value: "decimal", label: "Number" },
+              { value: "decimal", label: "Decimal" },
               { value: "percent", label: "Percent" },
+              { value: "currency", label: "Currency" },
+              { value: "unit", label: "Unit" },
             ],
             defaultValue: "percent",
           },
@@ -249,6 +251,12 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
 
   propagation: {
     rules: [
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
       { parentProp: "size", childPath: "ProgressBarTrack", override: true },
       { parentProp: "size", childPath: "ProgressBarValue", override: true },
       { parentProp: "size", childPath: "Label", override: true },
