@@ -294,6 +294,22 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             defaultValue: "decimal",
           },
           {
+            key: "formatOptions.currency",
+            type: "enum",
+            label: "Currency",
+            icon: Hash,
+            updatePath: ["formatOptions", "currency"],
+            visibleWhen: { key: "formatOptions.style", equals: "currency" },
+            options: [
+              { value: "KRW", label: "KRW (₩)" },
+              { value: "USD", label: "USD ($)" },
+              { value: "EUR", label: "EUR (€)" },
+              { value: "GBP", label: "GBP (£)" },
+              { value: "JPY", label: "JPY (¥)" },
+            ],
+            defaultValue: "KRW",
+          },
+          {
             key: "formatOptions.unit",
             type: "string",
             label: "Unit",
