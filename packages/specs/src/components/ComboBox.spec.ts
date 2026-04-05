@@ -20,7 +20,6 @@ import {
   CheckSquare,
   PointerOff,
   PenOff,
-  FormInput,
   FileText,
   Layout,
   Menu,
@@ -218,14 +217,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             type: "boolean",
             label: "Read Only",
             icon: PenOff,
-          },
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-            placeholder: "combobox-name",
           },
           {
             key: "validationBehavior",

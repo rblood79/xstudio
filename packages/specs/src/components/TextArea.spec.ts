@@ -13,7 +13,6 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
   SpellCheck2,
-  FormInput,
   PointerOff,
   AlertTriangle,
   PenOff,
@@ -207,20 +206,6 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
 
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
           {
             key: "autoComplete",
             type: "enum",

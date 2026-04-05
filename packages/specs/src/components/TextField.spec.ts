@@ -281,22 +281,6 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           },
 
           {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: Tag,
-            emptyToUndefined: true,
-            placeholder: "field-name",
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FileText,
-            emptyToUndefined: true,
-            placeholder: "form-id",
-          },
-          {
             key: "errorMessage",
             type: "string",
             label: "Error Message",

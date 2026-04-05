@@ -16,7 +16,6 @@ import {
   PointerOff,
   PenOff,
   CheckSquare,
-  FormInput,
   Tag,
   FileText,
   HelpCircle,
@@ -263,13 +262,6 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
           {
             key: "validationBehavior",
             type: "enum",

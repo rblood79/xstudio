@@ -18,7 +18,6 @@ import {
   AlertTriangle,
   PointerOff,
   PenOff,
-  FormInput,
   Hash,
 } from "lucide-react";
 
@@ -192,24 +191,10 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           { key: "isReadOnly", type: "boolean", icon: PenOff },
 
           {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
-          {
             key: "value",
             type: "string",
             label: "Value",
             icon: Hash,
-            emptyToUndefined: true,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FormInput,
             emptyToUndefined: true,
           },
         ],

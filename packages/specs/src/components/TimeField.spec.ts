@@ -14,7 +14,6 @@ import {
   PointerOff,
   PenOff,
   CheckSquare,
-  FormInput,
   HelpCircle,
   FileText,
 } from "lucide-react";
@@ -258,21 +257,6 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-            placeholder: "time-field-name",
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
           {
             key: "placeholderValue",
             type: "string",

@@ -200,22 +200,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             icon: AlertTriangle,
           },
           {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: Tag,
-            emptyToUndefined: true,
-            placeholder: "search-name",
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FileText,
-            emptyToUndefined: true,
-            placeholder: "form-id",
-          },
-          {
             key: "errorMessage",
             type: "string",
             label: "Error Message",

@@ -504,20 +504,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           },
 
           {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
-          {
             key: "autoComplete",
             type: "string",
             label: "Autocomplete",

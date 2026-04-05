@@ -162,22 +162,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             icon: PenOff,
           },
           {
-            key: "name",
-            type: "string",
-            label: "Name",
-            placeholder: "brandColor",
-            emptyToUndefined: true,
-            icon: Tag,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            placeholder: "form-id",
-            emptyToUndefined: true,
-            icon: Tag,
-          },
-          {
             key: "validationBehavior",
             type: "enum",
             label: "Validation Behavior",

@@ -18,7 +18,6 @@ import {
   PointerOff,
   Eye,
   PenOff,
-  FormInput,
   CheckSquare,
   ArrowLeftRight,
   HelpCircle,
@@ -234,20 +233,6 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
 
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
           {
             key: "validationBehavior",
             type: "enum",
