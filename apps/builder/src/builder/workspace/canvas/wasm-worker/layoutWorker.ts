@@ -15,7 +15,6 @@ import {
   type WorkerResponse,
 } from "./protocol";
 
-// @ts-expect-error WASM module has no TypeScript declarations
 type WasmModule = typeof import("../wasm-bindings/pkg/xstudio_wasm");
 
 let wasm: WasmModule | null = null;
@@ -54,7 +53,6 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 async function handleInit(requestId: number): Promise<void> {
   if (!wasm) {
     const mod = await import(
-      // @ts-ignore WASM module has no TypeScript declarations
       /* @vite-ignore */ "../wasm-bindings/pkg/xstudio_wasm"
     );
     wasm = mod;
