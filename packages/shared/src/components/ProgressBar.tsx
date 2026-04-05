@@ -50,6 +50,11 @@ export interface ProgressBarProps extends AriaProgressBarProps {
    */
   valueLabel?: string;
   /**
+   * 레이블 위치
+   * @default 'top'
+   */
+  labelPosition?: "top" | "side";
+  /**
    * Show loading skeleton instead of progress bar
    * @default false
    */
@@ -69,6 +74,7 @@ export function ProgressBar({
   formatOptions,
   showValueLabel = true,
   valueLabel,
+  labelPosition = "top",
   isLoading,
   ...props
 }: ProgressBarProps) {
@@ -101,6 +107,7 @@ export function ProgressBar({
       )}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
     >
       {({ percentage, valueText }) => (
         <>

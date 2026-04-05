@@ -16,7 +16,7 @@ import {
   Layout,
   ArrowDown,
   ArrowUp,
-  DollarSign,
+  Hash,
   AlignLeft,
 } from "lucide-react";
 import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
@@ -101,21 +101,14 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
           {
             key: "formatOptions.style",
             type: "enum",
-            label: "Format Style",
-            icon: DollarSign,
+            label: "Value Format",
+            icon: Hash,
             updatePath: ["formatOptions", "style"],
             options: [
               { value: "decimal", label: "Number" },
               { value: "percent", label: "Percent" },
             ],
             defaultValue: "percent",
-          },
-          {
-            key: "showValueLabel",
-            type: "boolean",
-            label: "Show Value Label",
-            icon: Gauge,
-            defaultValue: true,
           },
           {
             key: "valueLabel",

@@ -18,7 +18,7 @@ import {
   Layout,
   ArrowDown,
   ArrowUp,
-  DollarSign,
+  Hash,
 } from "lucide-react";
 import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
@@ -102,21 +102,14 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
           {
             key: "formatOptions.style",
             type: "enum",
-            label: "Format Style",
-            icon: DollarSign,
+            label: "Value Format",
+            icon: Hash,
             updatePath: ["formatOptions", "style"],
             options: [
               { value: "decimal", label: "Number" },
               { value: "percent", label: "Percent" },
             ],
             defaultValue: "percent",
-          },
-          {
-            key: "showValueLabel",
-            type: "boolean",
-            label: "Show Value Label",
-            icon: BarChart3,
-            defaultValue: true,
           },
           {
             key: "valueLabel",

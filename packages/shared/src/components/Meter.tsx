@@ -55,6 +55,11 @@ export interface MeterProps extends AriaMeterProps {
    */
   customFormatter?: (value: number) => string;
   /**
+   * 레이블 위치
+   * @default 'top'
+   */
+  labelPosition?: "top" | "side";
+  /**
    * Show loading skeleton instead of meter
    * @default false
    */

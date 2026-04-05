@@ -887,6 +887,7 @@ export const renderProgressBar = (
           : undefined
       }
       locale={(element.props.locale as string) || undefined}
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
     />
   );
 };
@@ -946,6 +947,7 @@ export const renderMeter = (
           : undefined
       }
       locale={(element.props.locale as string) || undefined}
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
     />
   );
 };
