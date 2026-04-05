@@ -11,7 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, typography } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Type, Hash, Focus, PointerOff, PenOff } from "lucide-react";
+import { Type, Hash, Focus, PointerOff, PenOff, Sparkles } from "lucide-react";
 
 /** fontSize(px) → CSS lineHeight(px) 매핑 */
 const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
@@ -27,13 +27,14 @@ const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
  */
 export interface RadioProps {
   variant?: "default" | "accent" | "neutral" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   label?: string;
   text?: string;
   value?: string;
   isSelected?: boolean;
   isDisabled?: boolean;
+  isEmphasized?: boolean;
   autoFocus?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -77,6 +78,7 @@ export const RADIO_DIMENSIONS: Record<
   sm: { outer: 16, inner: 6 },
   md: { outer: 20, inner: 8 },
   lg: { outer: 24, inner: 10 },
+  xl: { outer: 28, inner: 12 },
 };
 
 /**
@@ -143,6 +145,14 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 10,
     },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 12,
+    },
   },
 
   states: {
@@ -192,6 +202,12 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
           { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
+          {
+            key: "isEmphasized",
+            type: "boolean",
+            label: "Emphasized",
+            icon: Sparkles,
+          },
         ],
       },
     ],

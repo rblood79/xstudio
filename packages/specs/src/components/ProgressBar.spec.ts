@@ -27,7 +27,7 @@ import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
  */
 export interface ProgressBarProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   value?: number;
   minValue?: number;
@@ -37,7 +37,7 @@ export interface ProgressBarProps {
   valueLabel?: string;
   formatOptions?: Intl.NumberFormatOptions;
   isIndeterminate?: boolean;
-  staticColor?: "white" | "black";
+  staticColor?: "white" | "black" | "auto";
   isDisabled?: boolean;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
@@ -57,6 +57,7 @@ export const PROGRESSBAR_DIMENSIONS: Record<string, { barHeight: number }> = {
   sm: { barHeight: 4 },
   md: { barHeight: 8 },
   lg: { barHeight: 12 },
+  xl: { barHeight: 16 },
 };
 
 /**
@@ -140,6 +141,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
               { value: "sm", label: "S" },
               { value: "md", label: "M" },
               { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
             ],
           },
           STATIC_COLOR_FIELD,
@@ -217,6 +219,14 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
+      gap: 4,
+    },
+    xl: {
+      height: 16,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 4,
     },

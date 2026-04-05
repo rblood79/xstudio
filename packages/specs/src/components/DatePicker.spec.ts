@@ -25,11 +25,12 @@ import {
   Focus,
   FormInput,
   ToggleLeft,
+  HelpCircle,
 } from "lucide-react";
 
 export interface DatePickerProps {
   variant?: "default" | "accent";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   value?: string;
   placeholder?: string;
   label?: string;
@@ -39,6 +40,7 @@ export interface DatePickerProps {
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
   maxVisibleMonths?: number;
+  contextualHelp?: string;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -297,6 +299,13 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             type: "string",
             label: "Placeholder",
             icon: FileText,
+          },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
           },
         ],
       },

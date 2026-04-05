@@ -23,6 +23,9 @@ import {
   FormInput,
   PointerOff,
   PenOff,
+  AlignLeft,
+  Sparkles,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -30,7 +33,7 @@ import {
  */
 export interface SliderProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   name?: string;
   /** 단일 값 또는 범위 값 (React Aria Slider<number | number[]> 패턴) */
@@ -45,6 +48,9 @@ export interface SliderProps {
   isDisabled?: boolean;
   isReadOnly?: boolean;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
+  isEmphasized?: boolean;
+  contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -78,6 +84,7 @@ export const SLIDER_DIMENSIONS: Record<
   sm: { trackHeight: 4, thumbSize: 14 },
   md: { trackHeight: 8, thumbSize: 18 },
   lg: { trackHeight: 12, thumbSize: 22 },
+  xl: { trackHeight: 16, thumbSize: 26 },
 };
 
 /**
@@ -140,6 +147,14 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
     },
+    xl: {
+      height: 16,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
+      gap: 4,
+    },
   },
 
   states: {
@@ -178,7 +193,16 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
     sections: [
       {
         title: "Content",
-        fields: [{ key: "label", type: "string", label: "Label", icon: Type }],
+        fields: [
+          { key: "label", type: "string", label: "Label", icon: Type },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
+        ],
       },
       {
         title: "Appearance",
@@ -196,6 +220,17 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             defaultValue: "top",
           },
           {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
+          },
+          {
             key: "orientation",
             type: "enum",
             label: "Orientation",
@@ -205,6 +240,12 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "vertical", label: "Vertical" },
             ],
             defaultValue: "horizontal",
+          },
+          {
+            key: "isEmphasized",
+            type: "boolean",
+            label: "Emphasized",
+            icon: Sparkles,
           },
         ],
       },

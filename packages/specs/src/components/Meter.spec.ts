@@ -17,6 +17,7 @@ import {
   ArrowDown,
   ArrowUp,
   DollarSign,
+  AlignLeft,
 } from "lucide-react";
 import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
@@ -25,7 +26,7 @@ import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
  */
 export interface MeterProps {
   variant?: "informative" | "positive" | "notice" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   value?: number;
   minValue?: number;
@@ -34,8 +35,9 @@ export interface MeterProps {
   valueLabel?: string;
   locale?: string;
   formatOptions?: Intl.NumberFormatOptions;
-  staticColor?: "white" | "black";
+  staticColor?: "white" | "black" | "auto";
   isDisabled?: boolean;
+  labelAlign?: "start" | "end";
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -141,6 +143,17 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
             ],
           },
           STATIC_COLOR_FIELD,
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
+          },
         ],
       },
       {
@@ -215,6 +228,14 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
+      gap: 4,
+    },
+    xl: {
+      height: 16,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 4,
     },
   },

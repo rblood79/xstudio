@@ -26,6 +26,7 @@ import {
   Layout,
   Menu,
   AlertTriangle,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -58,6 +59,7 @@ export interface ComboBoxProps {
   /** 선택된 아이템 인덱스 (하이라이트용) */
   selectedIndex?: number;
   children?: string;
+  contextualHelp?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
@@ -110,6 +112,13 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             icon: FileText,
             emptyToUndefined: true,
           },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
         ],
       },
       {
@@ -130,7 +139,8 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {
@@ -146,7 +156,8 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "input", label: "Input" },
               { value: "manual", label: "Manual" },
             ],
-           defaultValue: "input" },
+            defaultValue: "input",
+          },
         ],
       },
       {
@@ -233,7 +244,8 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
       {

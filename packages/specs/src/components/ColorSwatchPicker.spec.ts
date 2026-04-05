@@ -8,7 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { LayoutGrid, Hash, Sliders, PointerOff } from "lucide-react";
+import { Circle, LayoutGrid, Hash, Sliders, PointerOff } from "lucide-react";
 
 /**
  * ColorSwatchPicker Props
@@ -21,6 +21,8 @@ export interface ColorSwatchPickerProps {
   columns?: number;
   layout?: "grid" | "stack";
   colorSpace?: "rgb" | "hsl" | "hsb";
+  density?: "compact" | "regular" | "spacious";
+  rounding?: "default" | "none" | "full";
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -100,6 +102,35 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
   properties: {
     sections: [
       {
+        title: "Appearance",
+        fields: [
+          {
+            key: "density",
+            type: "enum",
+            label: "Density",
+            icon: LayoutGrid,
+            options: [
+              { value: "compact", label: "Compact" },
+              { value: "regular", label: "Regular" },
+              { value: "spacious", label: "Spacious" },
+            ],
+            defaultValue: "regular",
+          },
+          {
+            key: "rounding",
+            type: "enum",
+            label: "Rounding",
+            icon: Circle,
+            options: [
+              { value: "default", label: "Default" },
+              { value: "none", label: "None" },
+              { value: "full", label: "Full" },
+            ],
+            defaultValue: "default",
+          },
+        ],
+      },
+      {
         title: "Layout",
         fields: [
           {
@@ -111,7 +142,8 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
               { value: "grid", label: "Grid" },
               { value: "stack", label: "Stack" },
             ],
-           defaultValue: "grid" },
+            defaultValue: "grid",
+          },
         ],
       },
       {

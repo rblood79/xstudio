@@ -36,7 +36,7 @@ const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
  */
 export interface SwitchProps {
   variant?: "default" | "emphasized";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   label?: string;
   name?: string;
@@ -71,6 +71,7 @@ export const SWITCH_DIMENSIONS: Record<
   sm: { trackWidth: 32, trackHeight: 18, thumbSize: 14, thumbOffset: 2 },
   md: { trackWidth: 36, trackHeight: 20, thumbSize: 16, thumbOffset: 2 },
   lg: { trackWidth: 44, trackHeight: 24, thumbSize: 20, thumbOffset: 2 },
+  xl: { trackWidth: 52, trackHeight: 28, thumbSize: 24, thumbOffset: 2 },
 };
 
 /**
@@ -124,6 +125,14 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 12,
+    },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
+      gap: 14,
     },
   },
 

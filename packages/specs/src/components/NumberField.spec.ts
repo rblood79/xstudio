@@ -28,6 +28,8 @@ import {
   FileText,
   Tag,
   Layout,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -53,9 +55,11 @@ export interface NumberFieldProps {
   name?: string;
   form?: string;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   necessityIndicator?: "icon" | "label";
   locale?: string;
   formatOptions?: Intl.NumberFormatOptions;
+  contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -98,6 +102,13 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             label: "Description",
             icon: FileText,
           },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
         ],
       },
       {
@@ -114,6 +125,17 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
           },
         ],
       },

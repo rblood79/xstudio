@@ -22,6 +22,8 @@ import {
   FileText,
   Tag,
   Layout,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -35,7 +37,7 @@ export interface TextFieldProps {
     | "purple"
     | "negative"
     | "positive";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -59,11 +61,13 @@ export interface TextFieldProps {
     | "decimal"
     | "search";
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   necessityIndicator?: "icon" | "label";
   form?: string;
   pattern?: string;
   minLength?: number;
   maxLength?: number;
+  contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -111,6 +115,13 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             type: "string",
             label: "Description",
             icon: FileText,
+          },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
           },
         ],
       },
@@ -379,6 +390,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 8,
+    },
+    xl: {
+      height: 54,
+      paddingX: 24,
+      paddingY: 12,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      gap: 10,
     },
   },
 

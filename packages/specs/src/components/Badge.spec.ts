@@ -36,7 +36,13 @@ export interface BadgeProps {
     | "pink"
     | "turquoise"
     | "fuchsia"
-    | "magenta";
+    | "magenta"
+    | "chartreuse"
+    | "celery"
+    | "seafoam"
+    | "brown"
+    | "cinnamon"
+    | "silver";
   fillStyle?: "bold" | "subtle" | "outline";
   size?: "sm" | "md" | "lg";
   children?: string;
@@ -91,7 +97,8 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
               { value: "subtle", label: "Subtle" },
               { value: "outline", label: "Outline" },
             ],
-           defaultValue: "bold" },
+            defaultValue: "bold",
+          },
           {
             type: "size",
             label: "Size",
@@ -240,6 +247,42 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       backgroundHover: "{color.magenta}" as TokenRef,
       backgroundPressed: "{color.magenta}" as TokenRef,
       text: "{color.white}" as TokenRef,
+    },
+    chartreuse: {
+      background: "{color.chartreuse}" as TokenRef,
+      backgroundHover: "{color.chartreuse-hover}" as TokenRef,
+      backgroundPressed: "{color.chartreuse-pressed}" as TokenRef,
+      text: "{color.black}" as TokenRef,
+    },
+    celery: {
+      background: "{color.celery}" as TokenRef,
+      backgroundHover: "{color.celery-hover}" as TokenRef,
+      backgroundPressed: "{color.celery-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    seafoam: {
+      background: "{color.seafoam}" as TokenRef,
+      backgroundHover: "{color.seafoam-hover}" as TokenRef,
+      backgroundPressed: "{color.seafoam-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    brown: {
+      background: "{color.brown}" as TokenRef,
+      backgroundHover: "{color.brown-hover}" as TokenRef,
+      backgroundPressed: "{color.brown-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    cinnamon: {
+      background: "{color.cinnamon}" as TokenRef,
+      backgroundHover: "{color.cinnamon-hover}" as TokenRef,
+      backgroundPressed: "{color.cinnamon-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    silver: {
+      background: "{color.silver}" as TokenRef,
+      backgroundHover: "{color.silver-hover}" as TokenRef,
+      backgroundPressed: "{color.silver-pressed}" as TokenRef,
+      text: "{color.black}" as TokenRef,
     },
   },
 

@@ -20,6 +20,8 @@ import {
   PenOff,
   Hash,
   CheckSquare,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -27,7 +29,7 @@ import {
  */
 export interface TextAreaProps {
   variant?: "default" | "accent" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -39,7 +41,9 @@ export interface TextAreaProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  contextualHelp?: string;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -110,6 +114,14 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
+    xl: {
+      height: 160,
+      paddingX: 24,
+      paddingY: 16,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
+      gap: 10,
+    },
   },
 
   propagation: {
@@ -118,6 +130,18 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
+        ],
+      },
       {
         title: "Appearance",
         fields: [
@@ -131,7 +155,8 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {

@@ -21,13 +21,13 @@ export interface ToastProps {
   defaultDescription?: string;
   timeout?: number;
   position?:
-    | "top-right"
-    | "top-left"
-    | "top-center"
-    | "bottom-right"
-    | "bottom-left"
-    | "bottom-center";
-  variant?: "info" | "success" | "warning" | "error";
+    | "top end"
+    | "top start"
+    | "top"
+    | "bottom end"
+    | "bottom start"
+    | "bottom";
+  variant?: "info" | "positive" | "notice" | "negative";
   size?: "sm" | "md" | "lg";
   message?: string;
   children?: string;
@@ -80,7 +80,8 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
             type: "number",
             label: "Default Timeout (ms)",
             icon: Clock,
-           defaultValue: 5000 },
+            defaultValue: 5000,
+          },
         ],
       },
       {
@@ -93,25 +94,27 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
             icon: Bell,
             options: [
               { value: "info", label: "Info" },
-              { value: "success", label: "Success" },
-              { value: "warning", label: "Warning" },
-              { value: "error", label: "Error" },
+              { value: "positive", label: "Positive" },
+              { value: "notice", label: "Notice" },
+              { value: "negative", label: "Negative" },
             ],
-           defaultValue: "info" },
+            defaultValue: "info",
+          },
           {
             key: "position",
             type: "enum",
             label: "Position",
             icon: Layout,
             options: [
-              { value: "top-right", label: "Top Right" },
-              { value: "top-left", label: "Top Left" },
-              { value: "top-center", label: "Top Center" },
-              { value: "bottom-right", label: "Bottom Right" },
-              { value: "bottom-left", label: "Bottom Left" },
-              { value: "bottom-center", label: "Bottom Center" },
+              { value: "top end", label: "Top End" },
+              { value: "top start", label: "Top Start" },
+              { value: "top", label: "Top" },
+              { value: "bottom end", label: "Bottom End" },
+              { value: "bottom start", label: "Bottom Start" },
+              { value: "bottom", label: "Bottom" },
             ],
-           defaultValue: "bottom" },
+            defaultValue: "bottom",
+          },
         ],
       },
     ],
@@ -134,21 +137,21 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
-    success: {
-      background: "{color.accent-subtle}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+    positive: {
+      background: "{color.positive-subtle}" as TokenRef,
+      backgroundHover: "{color.positive-subtle}" as TokenRef,
+      backgroundPressed: "{color.positive-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
+      border: "{color.positive}" as TokenRef,
     },
-    warning: {
-      background: "{color.negative-subtle}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+    notice: {
+      background: "{color.notice-subtle}" as TokenRef,
+      backgroundHover: "{color.notice-subtle}" as TokenRef,
+      backgroundPressed: "{color.notice-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
+      border: "{color.notice}" as TokenRef,
     },
-    error: {
+    negative: {
       background: "{color.purple-subtle}" as TokenRef,
       backgroundHover: "{color.purple-subtle}" as TokenRef,
       backgroundPressed: "{color.purple-subtle}" as TokenRef,

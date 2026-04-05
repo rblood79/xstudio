@@ -20,6 +20,7 @@ import {
   PenOff,
   Focus,
   Layout,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -54,6 +55,7 @@ export interface ColorFieldProps {
   necessityIndicator?: "icon" | "label";
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "center" | "end";
+  contextualHelp?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
@@ -104,6 +106,13 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             placeholder: "#000000",
             emptyToUndefined: true,
             icon: Palette,
+          },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
           },
         ],
       },
@@ -185,7 +194,8 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
       {
@@ -215,7 +225,8 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "labelAlign",
             type: "enum",
@@ -226,7 +237,8 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "center", label: "Center" },
               { value: "end", label: "Right" },
             ],
-           defaultValue: "start" },
+            defaultValue: "start",
+          },
           {
             key: "channel",
             type: "enum",

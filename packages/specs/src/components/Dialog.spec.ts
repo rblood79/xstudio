@@ -16,7 +16,7 @@ import { MessageSquare, ToggleLeft, Parentheses } from "lucide-react";
  */
 export interface DialogProps {
   variant?: "accent" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   title?: string;
   isDismissible?: boolean;

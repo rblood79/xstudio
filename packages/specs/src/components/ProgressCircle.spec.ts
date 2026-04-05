@@ -26,7 +26,7 @@ export interface ProgressCircleProps {
   value?: number;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
-  staticColor?: "white" | "black";
+  staticColor?: "white" | "black" | "auto";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -253,13 +253,13 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
             key: "staticColor",
             type: "enum",
             label: "Static Color",
-            emptyToUndefined: true,
             icon: Palette,
             options: [
-              { value: "", label: "None" },
+              { value: "auto", label: "Auto" },
               { value: "white", label: "White" },
               { value: "black", label: "Black" },
             ],
+            defaultValue: "auto",
           },
         ],
       },

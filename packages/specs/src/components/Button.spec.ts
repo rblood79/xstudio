@@ -47,7 +47,7 @@ export interface ButtonProps {
   formMethod?: "get" | "post" | "dialog";
   formNoValidate?: boolean;
   formTarget?: "_self" | "_blank" | "_parent" | "_top";
-  staticColor?: "white" | "black";
+  staticColor?: "white" | "black" | "auto";
   isDisabled?: boolean;
   isPending?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -95,7 +95,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
               { value: "fill", label: "Fill" },
               { value: "outline", label: "Outline" },
             ],
-           defaultValue: "fill" },
+            defaultValue: "fill",
+          },
           {
             type: "size",
             label: "Size",

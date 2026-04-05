@@ -18,6 +18,7 @@ import {
   Send,
   Layout,
   FormInput,
+  Sparkles,
 } from "lucide-react";
 
 /**
@@ -25,7 +26,7 @@ import {
  */
 export interface FormProps {
   variant?: "default" | "outlined";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   title?: string;
   description?: string;
@@ -43,6 +44,7 @@ export interface FormProps {
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "center" | "end";
   necessityIndicator?: "icon" | "label";
+  isEmphasized?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -84,7 +86,8 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
       {
@@ -99,7 +102,8 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "labelAlign",
             type: "enum",
@@ -110,7 +114,8 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "center", label: "Center" },
               { value: "end", label: "Right" },
             ],
-           defaultValue: "start" },
+            defaultValue: "start",
+          },
           {
             key: "necessityIndicator",
             type: "enum",
@@ -122,6 +127,12 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "icon", label: "Icon (*)" },
               { value: "label", label: "Label (required/optional)" },
             ],
+          },
+          {
+            key: "isEmphasized",
+            type: "boolean",
+            label: "Emphasized",
+            icon: Sparkles,
           },
         ],
       },
@@ -145,7 +156,8 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "get", label: "GET" },
               { value: "post", label: "POST" },
             ],
-           defaultValue: "get" },
+            defaultValue: "get",
+          },
           {
             key: "encType",
             type: "enum",
@@ -224,6 +236,14 @@ export const FormSpec: ComponentSpec<FormProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       gap: 20,
+    },
+    xl: {
+      height: 0,
+      paddingX: 36,
+      paddingY: 36,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: "{radius.2xl}" as TokenRef,
+      gap: 24,
     },
   },
 

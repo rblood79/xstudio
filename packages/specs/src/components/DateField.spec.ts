@@ -18,11 +18,14 @@ import {
   Focus,
   CheckSquare,
   FormInput,
+  Tag,
+  FileText,
+  HelpCircle,
 } from "lucide-react";
 
 export interface DateFieldProps {
   variant?: "default" | "accent" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   granularity?: "day" | "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
@@ -31,6 +34,7 @@ export interface DateFieldProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
+  contextualHelp?: string;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -92,6 +96,14 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       borderRadius: 0 as unknown as TokenRef,
       gap: 8,
     },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: 0 as unknown as TokenRef,
+      gap: 10,
+    },
   },
 
   propagation: {
@@ -110,6 +122,25 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
 
   properties: {
     sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "label", type: "string", label: "Label", icon: Tag },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
+        ],
+      },
       {
         title: "Appearance",
         fields: [
@@ -149,7 +180,8 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "hideTimeZone",
             type: "boolean",
@@ -250,7 +282,8 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
     ],

@@ -29,8 +29,14 @@ export interface StatusLightProps {
     | "indigo"
     | "magenta"
     | "purple"
-    | "yellow";
-  size?: "sm" | "md" | "lg";
+    | "yellow"
+    | "seafoam"
+    | "pink"
+    | "turquoise"
+    | "cinnamon"
+    | "brown"
+    | "silver";
+  size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -43,6 +49,7 @@ export const STATUSLIGHT_DIMENSIONS: Record<
   sm: { height: 20, dotSize: 8, gap: 8, fontSize: 12 },
   md: { height: 24, dotSize: 10, gap: 8, fontSize: 14 },
   lg: { height: 28, dotSize: 12, gap: 8, fontSize: 16 },
+  xl: { height: 32, dotSize: 14, gap: 8, fontSize: 18 },
 };
 
 /**
@@ -86,6 +93,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
               { value: "sm", label: "S" },
               { value: "md", label: "M" },
               { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
             ],
           },
         ],
@@ -176,6 +184,42 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       backgroundPressed: "{color.yellow}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
+    seafoam: {
+      background: "{color.seafoam}" as TokenRef,
+      backgroundHover: "{color.seafoam}" as TokenRef,
+      backgroundPressed: "{color.seafoam}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    pink: {
+      background: "{color.pink}" as TokenRef,
+      backgroundHover: "{color.pink}" as TokenRef,
+      backgroundPressed: "{color.pink}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    turquoise: {
+      background: "{color.turquoise}" as TokenRef,
+      backgroundHover: "{color.turquoise}" as TokenRef,
+      backgroundPressed: "{color.turquoise}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    cinnamon: {
+      background: "{color.cinnamon}" as TokenRef,
+      backgroundHover: "{color.cinnamon}" as TokenRef,
+      backgroundPressed: "{color.cinnamon}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    brown: {
+      background: "{color.brown}" as TokenRef,
+      backgroundHover: "{color.brown}" as TokenRef,
+      backgroundPressed: "{color.brown}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    silver: {
+      background: "{color.silver}" as TokenRef,
+      backgroundHover: "{color.silver}" as TokenRef,
+      backgroundPressed: "{color.silver}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
   },
 
   sizes: {
@@ -203,6 +247,15 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 8,
+    },
+    xl: {
+      height: 32,
+      dotSize: 14,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },

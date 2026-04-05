@@ -21,6 +21,8 @@ import {
   PenOff,
   FileText,
   Tag,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -28,7 +30,7 @@ import {
  */
 export interface SearchFieldProps {
   variant?: "default" | "accent";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   value?: string;
@@ -42,6 +44,7 @@ export interface SearchFieldProps {
   name?: string;
   form?: string;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   necessityIndicator?: "icon" | "label";
   inputMode?:
     | "none"
@@ -55,6 +58,7 @@ export interface SearchFieldProps {
   pattern?: string;
   minLength?: number;
   maxLength?: number;
+  contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -103,6 +107,13 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             label: "Description",
             icon: FileText,
           },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
         ],
       },
       {
@@ -118,7 +129,19 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
+          },
         ],
       },
       {
@@ -270,6 +293,15 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
+      gap: 10,
+    },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      iconSize: 28,
       gap: 10,
     },
   },

@@ -21,6 +21,8 @@ import {
   FormInput,
   CheckSquare,
   ArrowLeftRight,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -28,11 +30,12 @@ import {
  */
 export interface RadioGroupProps {
   variant?: "default" | "accent";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   description?: string;
   orientation?: "vertical" | "horizontal";
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   name?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
@@ -40,6 +43,7 @@ export interface RadioGroupProps {
   isRequired?: boolean;
   necessityIndicator?: "icon" | "label";
   isEmphasized?: boolean;
+  contextualHelp?: string;
   errorMessage?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -96,6 +100,14 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 16,
+    },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 20,
     },
   },
 
@@ -154,6 +166,13 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
             label: "Error Message",
             icon: AlertTriangle,
           },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
         ],
       },
       {
@@ -170,7 +189,8 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "vertical" },
+            defaultValue: "vertical",
+          },
           {
             key: "labelPosition",
             type: "enum",
@@ -180,7 +200,19 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
+          },
         ],
       },
       {

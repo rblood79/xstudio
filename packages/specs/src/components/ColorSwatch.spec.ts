@@ -8,7 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { Palette, Sliders } from "lucide-react";
+import { Circle, Palette, Sliders } from "lucide-react";
 
 /**
  * ColorSwatch Props
@@ -17,6 +17,7 @@ export interface ColorSwatchProps {
   variant?: "default" | "selected";
   size?: "sm" | "md" | "lg";
   color?: string;
+  rounding?: "default" | "none" | "full";
   isDisabled?: boolean;
   isSelected?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -109,6 +110,23 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
               { value: "hsl", label: "HSL" },
               { value: "hsb", label: "HSB" },
             ],
+          },
+        ],
+      },
+      {
+        title: "Appearance",
+        fields: [
+          {
+            key: "rounding",
+            type: "enum",
+            label: "Rounding",
+            icon: Circle,
+            options: [
+              { value: "default", label: "Default" },
+              { value: "none", label: "None" },
+              { value: "full", label: "Full" },
+            ],
+            defaultValue: "default",
           },
         ],
       },

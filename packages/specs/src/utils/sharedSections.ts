@@ -10,12 +10,12 @@ export const STATIC_COLOR_FIELD: FieldDef = {
   type: "enum",
   label: "Static Color",
   icon: Contrast,
-  emptyToUndefined: true,
   options: [
-    { value: "", label: "Auto" },
+    { value: "auto", label: "Auto" },
     { value: "white", label: "White" },
     { value: "black", label: "Black" },
   ],
+  defaultValue: "auto",
 };
 
 /** Filtering 섹션 — ListBox, GridList 등 컬렉션 컴포넌트 공용 */

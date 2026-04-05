@@ -26,6 +26,8 @@ import {
   FileText,
   AlertTriangle,
   SpellCheck2,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -50,6 +52,7 @@ export interface SelectProps {
   isRequired?: boolean;
   autoFocus?: boolean;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   necessityIndicator?: "icon" | "label";
   disallowEmptySelection?: boolean;
   validationBehavior?: "native" | "aria";
@@ -57,6 +60,7 @@ export interface SelectProps {
   items?: string[];
   /** 선택된 아이템 인덱스 (하이라이트용) */
   selectedIndex?: number;
+  contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -110,6 +114,13 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             icon: SpellCheck2,
             emptyToUndefined: true,
           },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
         ],
       },
       {
@@ -126,6 +137,17 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: AlignLeft,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
           },
         ],
       },

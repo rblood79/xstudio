@@ -21,6 +21,7 @@ import {
   FormInput,
   CheckSquare,
   ArrowLeftRight,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -41,6 +42,7 @@ export interface CheckboxGroupProps {
   errorMessage?: string;
   name?: string;
   isEmphasized?: boolean;
+  contextualHelp?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -154,6 +156,13 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
             label: "Error Message",
             icon: AlertTriangle,
           },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
         ],
       },
       {
@@ -170,7 +179,8 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "vertical" },
+            defaultValue: "vertical",
+          },
           {
             key: "labelPosition",
             type: "enum",
@@ -180,7 +190,8 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {

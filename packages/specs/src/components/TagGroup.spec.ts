@@ -25,6 +25,9 @@ import {
   Trash,
   FileText,
   Tag,
+  AlignLeft,
+  Sparkles,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -48,6 +51,9 @@ export interface TagGroupProps {
   name?: string;
   maxRows?: number;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
+  isEmphasized?: boolean;
+  contextualHelp?: string;
   style?: Record<string, string | number | undefined>;
   /** ElementSprite에서 주입: 자식 Tag 텍스트 배열 (Skia 렌더링용) */
   _tagItems?: { text: string }[];
@@ -95,6 +101,12 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             ],
             defaultValue: "top",
           },
+          {
+            key: "isEmphasized",
+            type: "boolean",
+            label: "Emphasized",
+            icon: Sparkles,
+          },
         ],
       },
       {
@@ -119,6 +131,13 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             type: "string",
             label: "Error Message",
             icon: AlertTriangle,
+            emptyToUndefined: true,
+          },
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
             emptyToUndefined: true,
           },
         ],

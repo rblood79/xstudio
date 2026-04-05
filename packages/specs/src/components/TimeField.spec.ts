@@ -16,18 +16,22 @@ import {
   Focus,
   CheckSquare,
   FormInput,
+  AlignLeft,
+  HelpCircle,
 } from "lucide-react";
 
 export interface TimeFieldProps {
   variant?: "default" | "accent" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   granularity?: "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
   locale?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  contextualHelp?: string;
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -89,6 +93,14 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
       borderRadius: 0 as unknown as TokenRef,
       gap: 8,
     },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: 0 as unknown as TokenRef,
+      gap: 10,
+    },
   },
 
   propagation: {
@@ -107,6 +119,18 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   properties: {
     sections: [
       {
+        title: "Content",
+        fields: [
+          {
+            key: "contextualHelp",
+            type: "string",
+            label: "Contextual Help",
+            icon: HelpCircle,
+            emptyToUndefined: true,
+          },
+        ],
+      },
+      {
         title: "Appearance",
         fields: [
           { type: "size" },
@@ -120,7 +144,8 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "minute", label: "Minute" },
               { value: "second", label: "Second" },
             ],
-           defaultValue: "minute" },
+            defaultValue: "minute",
+          },
           {
             key: "hourCycle",
             type: "enum",
@@ -143,7 +168,8 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "hideTimeZone",
             type: "boolean",
@@ -160,8 +186,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
       },
       {
         title: "Locale",
-        fields: [
-        ],
+        fields: [],
       },
       {
         title: "State",
@@ -226,7 +251,8 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
     ],
