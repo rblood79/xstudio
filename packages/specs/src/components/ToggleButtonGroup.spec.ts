@@ -9,13 +9,9 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import {
-  Tag,
-  FileText,
-  AlertTriangle,
   Eye,
   ArrowLeftRight,
   List,
-  CheckSquare,
   PointerOff,
   Focus,
   FormInput,
@@ -34,7 +30,6 @@ export interface ToggleButtonGroupProps {
   isQuiet?: boolean;
   density?: "compact" | "regular";
   isJustified?: boolean;
-  label?: string;
   indicator?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -132,24 +127,6 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   properties: {
     sections: [
       {
-        title: "Content",
-        fields: [
-          { key: "label", type: "string", label: "Label", icon: Tag },
-          {
-            key: "description",
-            type: "string",
-            label: "Description",
-            icon: FileText,
-          },
-          {
-            key: "errorMessage",
-            type: "string",
-            label: "Error Message",
-            icon: AlertTriangle,
-          },
-        ],
-      },
-      {
         title: "Appearance",
         fields: [
           { key: "isEmphasized", type: "boolean", icon: Eye },
@@ -200,9 +177,6 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
             ],
             defaultValue: "single",
           },
-          { key: "isRequired", type: "boolean", icon: CheckSquare },
-          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
-
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "autoFocus", type: "boolean", icon: Focus },
 
