@@ -161,17 +161,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             label: "Read Only",
             icon: PenOff,
           },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: CheckSquare,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
-            defaultValue: "aria",
-          },
         ],
       },
       {

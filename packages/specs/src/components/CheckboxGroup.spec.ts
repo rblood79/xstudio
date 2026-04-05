@@ -232,18 +232,6 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
 
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: CheckSquare,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
-            defaultValue: "aria",
-          },
         ],
       },
       {

@@ -218,17 +218,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             label: "Read Only",
             icon: PenOff,
           },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: FileText,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
-            defaultValue: "aria",
-          },
         ],
       },
       {

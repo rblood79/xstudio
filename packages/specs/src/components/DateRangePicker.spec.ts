@@ -325,17 +325,6 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             icon: FormInput,
             emptyToUndefined: true,
           },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: CheckSquare,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
-            defaultValue: "aria",
-          },
         ],
       },
     ],

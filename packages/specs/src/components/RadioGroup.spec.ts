@@ -240,17 +240,6 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          {
-            key: "validationBehavior",
-            type: "enum",
-            label: "Validation Behavior",
-            icon: CheckSquare,
-            options: [
-              { value: "native", label: "Native" },
-              { value: "aria", label: "ARIA" },
-            ],
-            defaultValue: "aria",
-          },
         ],
       },
       {
