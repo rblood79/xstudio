@@ -7,7 +7,19 @@ export function evaluateVisibility(
 ): boolean {
   if (!condition) return true;
 
-  const value = condition.key ? currentProps[condition.key] : undefined;
+  const value = condition.key
+    ? condition.key.includes(".")
+      ? condition.key
+          .split(".")
+          .reduce<unknown>(
+            (obj, k) =>
+              obj && typeof obj === "object"
+                ? (obj as Record<string, unknown>)[k]
+                : undefined,
+            currentProps,
+          )
+      : currentProps[condition.key]
+    : undefined;
 
   if (condition.equals !== undefined && value !== condition.equals) {
     return false;
