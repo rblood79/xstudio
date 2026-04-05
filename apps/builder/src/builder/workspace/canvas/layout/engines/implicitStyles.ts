@@ -632,7 +632,8 @@ export function applyImplicitStyles(
 
   // ── GridListItem ────────────────────────────────────────────────
   // Composition 패턴: 자식 Text/Description Element를 column 방향으로 배치
-  // CSS 동기화: .react-aria-GridListItem { padding, border(1px), border-radius }
+  // CSS 동기화: .react-aria-GridListItem { padding: var(--spacing-md) var(--spacing-lg), border(1px) }
+  // --spacing-md = 0.75rem = 12px, --spacing-lg = 1rem = 16px
   if (containerTag === "gridlistitem") {
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
@@ -640,11 +641,11 @@ export function applyImplicitStyles(
       flexDirection: "column",
       // CSS grid 1fr 트랙 내에서 축소되도록 minWidth: 0 (CSS minmax(0, 1fr) 동기화)
       minWidth: parentStyle.minWidth ?? 0,
-      gap: parentStyle.gap ?? 2,
-      paddingTop: parentStyle.paddingTop ?? 10,
-      paddingBottom: parentStyle.paddingBottom ?? 10,
-      paddingLeft: parentStyle.paddingLeft ?? 12,
-      paddingRight: parentStyle.paddingRight ?? 12,
+      gap: parentStyle.gap ?? 4,
+      paddingTop: parentStyle.paddingTop ?? 12,
+      paddingBottom: parentStyle.paddingBottom ?? 12,
+      paddingLeft: parentStyle.paddingLeft ?? 16,
+      paddingRight: parentStyle.paddingRight ?? 16,
       borderWidth: parentStyle.borderWidth ?? 1,
     });
     filteredChildren = injectCollectionItemFontStyles(filteredChildren);

@@ -1858,6 +1858,7 @@ export function calculateFullTreeLayout(
           const batchWidth = node.style.width;
           const storeStyle = (elementsMap.get(node.elementId)?.props?.style ??
             {}) as Record<string, unknown>;
+
           const mergedStyle =
             batchWidth && !storeStyle.width
               ? { ...childStyle, width: batchWidth }
