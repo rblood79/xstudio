@@ -1,5 +1,7 @@
 # xstudio AI 기능 업그레이드 설계
 
+> **Superseded by [ADR-054](054-local-llm-architecture.md)** — 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)
+
 > 작성일: 2026-01-31
 > 참고: `docs/RENDERING_ARCHITECTURE.md` (렌더링 전환 계획)
 > 대상: `apps/builder/src/services/ai/`, `apps/builder/src/builder/panels/ai/`
