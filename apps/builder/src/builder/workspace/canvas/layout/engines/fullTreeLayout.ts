@@ -45,7 +45,7 @@ import {
   getParentTagsForChild,
 } from "../../../../utils/propagationRegistry";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
-import { InlineAlertSpec } from "@xstudio/specs";
+import { InlineAlertSpec, fontFamily as specFontFamily } from "@xstudio/specs";
 import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
 import { useScrollState } from "../../../../stores/scrollState";
 
@@ -1143,16 +1143,15 @@ function traversePostOrder(
     >;
     patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
 
-    // fontSize가 implicitStyles에서 새로 주입된 경우, height 재계산
+    // fontSize가 implicitStyles에서 새로 주입된 경우, height + width 재계산
     // DFS post-order에서 자식은 부모보다 먼저 enrichment되므로
-    // fontSize 없이 계산된 height(fallback 16→24)를 올바른 값으로 교정
-    // LabelSpec lineHeight 사용: CSS Preview(--text-sm--line-height 등)와 정합성 보장
+    // fontSize 없이 계산된 height(fallback 16→24) + fit-content width를 올바른 값으로 교정
     if (modStyle.fontSize != null && modStyle.fontSize !== origStyle.fontSize) {
       const childFs =
         typeof modStyle.fontSize === "number"
           ? modStyle.fontSize
           : parseFloat(String(modStyle.fontSize)) || 16;
-      // LABEL_SIZE_STYLE의 lineHeight를 역참조 (fontSize → lineHeight)
+      // LabelSpec lineHeight 사용: CSS Preview(--text-sm--line-height 등)와 정합성 보장
       const labelEntry = Object.values(LABEL_SIZE_STYLE).find(
         (e) => e.fontSize === childFs,
       );
@@ -1160,6 +1159,33 @@ function traversePostOrder(
         ? parseFloat(labelEntry.lineHeight)
         : Math.ceil(childFs * 1.5);
       batch[batchIdx].style.height = `${correctedHeight}px`;
+
+      // fit-content width 재계산: fontSize 변경 시 텍스트 측정값도 변동
+      // ProgressBarValue, MeterValue 등 fit-content 자식의 width가 이전 fontSize 기준으로 계산됨
+      const childStoreWidth = origStyle.width;
+      if (
+        childStoreWidth === "fit-content" ||
+        childStoreWidth === "max-content" ||
+        childStoreWidth === "min-content"
+      ) {
+        const childText = String(
+          (filteredChild.props as Record<string, unknown>)?.children ?? "",
+        );
+        if (childText) {
+          const childFw =
+            parseFloat(
+              String(modStyle.fontWeight ?? origStyle.fontWeight ?? 400),
+            ) || 400;
+          const childFf =
+            (modStyle.fontFamily as string) ??
+            (origStyle.fontFamily as string) ??
+            specFontFamily.sans;
+          const correctedWidth = Math.ceil(
+            measureTextWidth(childText, childFs, childFf, childFw),
+          );
+          batch[batchIdx].style.width = `${correctedWidth}px`;
+        }
+      }
     }
   }
 
@@ -1524,7 +1550,6 @@ function incrementalUpdate(
   tree: PersistentTaffyTree,
   batch: PersistentBatchNode[],
   filteredChildIdsMap: Map<string, string[]>,
-  affectedNodeIds?: Set<string>,
 ): {
   stylesUpdated: number;
   childrenUpdated: number;
@@ -1547,15 +1572,12 @@ function incrementalUpdate(
   //    post-order 보장: 자식이 부모보다 먼저 처리되므로
   //    addNode 후 부모의 updateChildren 시 자식 handle이 이미 존재
   //    변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교로 처리 (12차 정정)
+  //    ⚠️ affectedNodeIds 필터 제거: DFS가 모든 노드를 re-enrich하므로
+  //    batch의 fresh styles를 전부 Taffy에 반영해야 한다.
+  //    필터 적용 시 OLD+NEW 혼합 상태로 computeLayout → 잘못된 width/height 계산.
+  //    updateNodeStyle은 내부 JSON 비교로 변경 없는 노드를 O(1) 스킵한다.
   for (const node of batch) {
     if (tree.hasNode(node.elementId)) {
-      if (
-        affectedNodeIds &&
-        affectedNodeIds.size > 0 &&
-        !affectedNodeIds.has(node.elementId)
-      ) {
-        continue;
-      }
       if (tree.updateNodeStyle(node.elementId, node.style)) {
         stats.stylesUpdated++;
       }
@@ -1567,13 +1589,6 @@ function incrementalUpdate(
 
   // 3. 자식 구조 갱신 (변경 감지는 PersistentTaffyTree 내부 hash 비교)
   for (const node of batch) {
-    if (
-      affectedNodeIds &&
-      affectedNodeIds.size > 0 &&
-      !affectedNodeIds.has(node.elementId)
-    ) {
-      continue;
-    }
     const childIds = filteredChildIdsMap.get(node.elementId) ?? [];
     if (tree.updateChildren(node.elementId, childIds)) {
       stats.childrenUpdated++;
@@ -1620,7 +1635,6 @@ export function calculateFullTreeLayout(
   availableWidth: number,
   availableHeight: number,
   getChildElements: (id: string) => Element[],
-  affectedNodeIds?: Set<string>,
 ): Map<string, ComputedLayout> | null {
   // WASM 가용성 확인
   if (!isRustWasmReady()) return null;
@@ -1710,13 +1724,10 @@ export function calculateFullTreeLayout(
     // Taffy WASM이 올바르게 재계산하지 않으므로 full rebuild 필요
     let needsFullRebuild = !persistentTree.isInitialized;
     if (!needsFullRebuild) {
-      // affectedNodeIds가 있으면 해당 노드만 검사 (성능 최적화),
-      // 없으면 (캐시 미스 등) 모든 배치 노드를 검사.
-      // implicitStyles가 주입하는 display 변경(GridList layout prop 등)은
-      // 캐시 미스로 affectedNodeIds 없이 호출될 수 있다.
-      const hasFilter = affectedNodeIds && affectedNodeIds.size > 0;
+      // 모든 배치 노드를 검사하여 display/grid 전환 감지
+      // (affectedNodeIds 필터 제거: DFS가 모든 노드를 re-enrich하므로
+      //  비영향 노드의 display 변경도 감지해야 함)
       for (const node of batch) {
-        if (hasFilter && !affectedNodeIds.has(node.elementId)) continue;
         const prevJson = persistentTree.getLastJson(node.elementId);
         if (!prevJson) continue;
         const prevParsed = JSON.parse(prevJson);
@@ -1747,12 +1758,7 @@ export function calculateFullTreeLayout(
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
       // 변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교 (12차 정정)
-      incrementalUpdate(
-        persistentTree,
-        batch,
-        filteredChildIdsMap,
-        affectedNodeIds,
-      );
+      incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
     }
 
     // ── Step 4: 레이아웃 계산 ─────────────────────────────────────────

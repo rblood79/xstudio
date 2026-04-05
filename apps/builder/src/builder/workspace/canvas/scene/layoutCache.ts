@@ -315,7 +315,6 @@ export function getCachedPageLayout({
     availableWidth,
     availableHeight,
     (id: string) => pageChildrenMap.get(id) ?? [],
-    pageDirtyState.hasDirty ? pageDirtyState.affectedLayoutNodeIds : undefined,
   );
 
   pageLayoutCache.set(cacheKey, {
