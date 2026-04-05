@@ -14,7 +14,6 @@ import {
   Type,
   Eye,
   ToggleLeft,
-  CheckSquare,
   Focus,
   PointerOff,
   PenOff,
@@ -43,7 +42,6 @@ export interface SwitchProps {
   isEmphasized?: boolean;
   defaultSelected?: boolean;
   isSelected?: boolean;
-  isRequired?: boolean;
   isInvalid?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
@@ -182,8 +180,6 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         title: "State",
         fields: [
           { key: "isSelected", type: "boolean", icon: ToggleLeft },
-          { key: "isRequired", type: "boolean", icon: CheckSquare },
-
           { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },

@@ -12,7 +12,6 @@ import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Tag,
-  FileText,
   Parentheses,
   PointerOff,
   CheckSquare,
@@ -26,7 +25,6 @@ export interface DropZoneProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   label?: string;
-  description?: string;
   isDropTarget?: boolean;
   isFilled?: boolean;
   replaceMessage?: string;
@@ -237,13 +235,6 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
             label: "Label",
             placeholder: "Drop files here",
             icon: Tag,
-          },
-          {
-            key: "description",
-            type: "string",
-            label: "Description",
-            placeholder: "or click to browse",
-            icon: FileText,
           },
         ],
       },
