@@ -4,7 +4,7 @@
 
 - **Spec 공용 field 정의 복제 (staticColor/isInvalid 등)**: `staticColor` enum field가 Button/ToggleButton/ProgressBar/Meter/Link/ProgressCircle 6개 파일에 동일 구조로 복제. `isInvalid`/`isDisabled`/`isReadOnly` boolean field도 10개 이상 Spec 파일에서 복제. `sharedSections.ts`에 `STATIC_COLOR_FIELD`, `IS_INVALID_FIELD`, `IS_DISABLED_FIELD`, `IS_READONLY_FIELD` 상수로 추출 필요. 단, `label` 포함 여부와 `emptyToUndefined`/`icon` 세부 값이 파일마다 다를 수 있으므로 통합 전 확인 필수
 - **Store 타입 → 엔진 함수 캐스팅**: Store의 `childrenMap`/`elementsMap`을 엔진 유틸 파라미터 타입으로 `as Map<string, ...>` 캐스팅하는 패턴 — 엔진 인터페이스가 Store 타입의 최소 구조만 요구하도록 설계 필요
-- **Spec propagation rules copy-paste**: 유사 컴포넌트(DatePicker/DateRangePicker, CheckboxGroup/RadioGroup 등) 간 propagation 규칙 배열을 통째로 복제하는 패턴 — 공통 규칙은 팩토리 함수로 추출해야 함 (`makeGroupSizePropagationRules` 패턴 제안)
+- **Spec propagation rules copy-paste**: 유사 컴포넌트(DatePicker/DateRangePicker, CheckboxGroup/RadioGroup, **GridListItem/ListBoxItem** 등) 간 propagation 규칙 배열을 통째로 복제하는 패턴 — 공통 규칙은 팩토리 함수로 추출해야 함 (`makeGroupSizePropagationRules`, `createCollectionItemPropagationSpec` 패턴 제안). GridListItem/ListBoxItemPropagationSpec은 `name` 필드만 다른 완전 복제 사례 (82fb0bb6)
 - **shapes() 선언부·사용부 이중 주석**: 변수 선언 직전과 해당 변수를 shape에 전달하는 위치 양쪽에 동일 내용을 주석으로 기재하는 copy-paste — 선언부 주석 하나만 유지
 - **Slider shapes() fontSize Propagation 우선순위 패턴 미적용**: NumberField/SearchField/TextField는 `props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize)` 패턴으로 수정됐으나 Slider는 누락 — size propagation 후 Canvas 미반영 버그 유발
 - **composition delegation 인라인 공통 CSS 토큰 5중 복제**: `.react-aria-Group` 등 delegation 블록에서 `background`, `color`, `border` 값이 xs~xl 5개 사이즈에 동일하게 복제 — `GROUP_BASE_STYLE` 상수 추출 필요 (NumberField, ComboBox 동일 패턴)
@@ -87,6 +87,8 @@
 - **Step 4.5 `getLayoutsBatch()` 조건 없이 선호출**: L1751에서 `needsSecondPass` false 경로에서도 먼저 호출, Step 5에서 재호출 → 2-pass 실행 시 총 3회. 조건 블록 내부로 이동하여 1회로 통합 필요 (fullTreeLayout.ts:1751/1885)
 - **`injectCollectionItemFontStyles` childrenMap stale props 위험**: `implicitStyles.ts`의 `injectCollectionItemFontStyles`에서 `child.props?.style` 직접 참조 — child가 childrenMap 경유 시 stale. zustand-childrenmap-staleness 반복 패턴
 - **`resolveContainerWidth` dead export**: `tokenResolver.ts:238`에 export되어 있으나 `packages/specs/src/` 및 `apps/` 전체 grep 결과 import 사용처 없음 — 확인 후 제거 또는 `@internal` 표시
+- **fit-content width 재계산 Step 3 vs Step 4 의도적 시점 분리**: `fullTreeLayout.ts:1163-1188`에 Step 3(DFS implicitStyle 패치 직후)에 fit-content width 재계산 블록이 추가됨 — `enrichWithIntrinsicSize`(Step 4)와 동일 `INTRINSIC_WIDTH_KEYWORDS` + `measureTextWidth` 경로를 사용하나, fontSize가 implicitStyles에서 새로 주입된 경우에 한해 선행 보정하는 목적. 완전 중복이 아니므로 통합 불가. 단, fontFamily/fontWeight 추출 3줄은 `resolveFontProps(mod, orig)` 헬퍼로 추출해 `implicitStyles.ts:504`와 공유 가능
+- **`specFontFamily.sans` vs `DEFAULT_FONT_FAMILY` fallback 이중 소스**: `measureTextWidth` 기본값/fullTreeLayout 새 블록은 `specFontFamily.sans`(@xstudio/specs), `cssResolver.ts ROOT_COMPUTED_STYLE`은 `DEFAULT_FONT_FAMILY`(customFonts.ts) — 두 값이 같은지 assert 또는 주석 명시 필요. 다르면 측정/렌더 불일치 버그
 - **Step 4.5 O(N) 전체 배치 순회 — autoHeightCandidates 미추적**: 매 레이아웃 계산마다 `batch.length` 전체를 순회하여 auto/fit-content height 요소를 탐색 — DFS enrichment 단계에서 intrinsic height 계산이 실행된 노드만 `Set<number>`로 추적하면 순회 대상 한정 가능 (fullTreeLayout.ts:1753)
 - **`gridTemplateColumns` 변경 감지에 JSON.stringify 이중 직렬화**: display 전환 감지 루프에서 grid 노드마다 `JSON.stringify(prevParsed.gridTemplateColumns)` + `JSON.stringify(node.style.gridTemplateColumns)` 2회 직렬화 — `persistentTaffyTree`에 `gridColsHashMap` 별도 저장 또는 `_lastJsonMap` 부분 비교로 대체 가능 (fullTreeLayout.ts:1709)
 - **`injectCollectionItemFontStyles` — 값 동일 시 early-return 없음**: Text/Description 자식이 이미 올바른 fontSize/fontWeight/width를 보유해도 3중 spread shallow copy 수행 — 값 일치 시 `return child` early-return으로 불필요한 객체 생성 제거 가능
@@ -96,6 +98,7 @@
 - **모듈 레벨 캐시 싱글턴 — 멀티 페이지 오염**: `_cachedOverflowInfoMap`이 모듈 레벨 변수로 페이지 구분 없이 단일 캐시 — 캐시 키에 pageId 포함 또는 `Map<pageId, cache>` 구조로 격리 필요 (skiaFrameHelpers.ts getCachedOverflowInfoMap)
 - **LAYOUT_PROP_KEYS ↔ LAYOUT_AFFECTING_PROPS 동기화 누락**: `layoutCache.ts`의 `LAYOUT_PROP_KEYS`에 항목 추가 시 `inspectorActions.ts`의 `LAYOUT_AFFECTING_PROPS`에도 동시 추가 필수. 누락 시 해당 prop 변경이 `layoutVersion`을 증가시키지 않아 캔버스 레이아웃 미반영. layout-engine.md "2곳 동시 등록 필수" 규칙.
 - **CSS 클래스 선언 없이 className 적용**: 컴포넌트에서 `icon-picker-trigger-group`, `icon-picker-input-trigger`, `icon-picker-value`, `icon-picker-clear` 등 className을 사용하면서 대응 CSS 파일에 클래스 정의가 없는 패턴 — 새 컴포넌트 클래스 추가 시 CSS 파일 동시 작성 필수 (PropertyIconPicker.tsx 사례)
+- **`parseFloat(String(fontWeight)) || 400` CSS 키워드 silent fallback**: `fontWeight`에 `"bold"`/`"lighter"`/`"bolder"` 등 CSS 키워드가 들어오면 `parseFloat` NaN → `|| 400` fallback으로 굳어져 실제 폰트 굵기(700 등)를 무시하고 텍스트 width 측정 오계산. `FW_KEYWORDS = { bold: 700, lighter: 300, bolder: 700 }` 수치 변환 가드 필수 (fullTreeLayout.ts:1175 사례)
 
 ## False Positive 기록
 

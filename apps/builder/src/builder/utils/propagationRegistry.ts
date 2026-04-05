@@ -37,58 +37,38 @@ import {
 } from "@xstudio/specs";
 
 // ─── Collection Item propagation-only specs ─────────────────────────────────
-// GridListItem/ListBoxItem은 독립 Spec 파일이 없지만,
-// Editor에서 label/description 변경 시 자식 Text/Description Element로 전파 필요.
+// 독립 Spec 파일이 없는 컴포넌트의 label/description → 자식 전파 전용
 
-const GridListItemPropagationSpec: ComponentSpec<Record<string, unknown>> = {
-  name: "GridListItem",
-  element: "div",
-  propagation: {
-    rules: [
-      {
-        parentProp: "label",
-        childPath: "Text",
-        childProp: "children",
-        override: true,
-      },
-      {
-        parentProp: "description",
-        childPath: "Description",
-        childProp: "children",
-        override: true,
-      },
-    ],
-  },
-  variants: {},
-  sizes: {},
-  states: {},
-  render: { shapes: () => [] },
-};
+const noopShapes = () => [] as const;
 
-const ListBoxItemPropagationSpec: ComponentSpec<Record<string, unknown>> = {
-  name: "ListBoxItem",
-  element: "div",
-  propagation: {
-    rules: [
-      {
-        parentProp: "label",
-        childPath: "Text",
-        childProp: "children",
-        override: true,
-      },
-      {
-        parentProp: "description",
-        childPath: "Description",
-        childProp: "children",
-        override: true,
-      },
-    ],
-  },
-  variants: {},
-  sizes: {},
-  states: {},
-  render: { shapes: () => [] },
-};
+function createCollectionItemPropagationSpec(
+  name: string,
+): ComponentSpec<Record<string, unknown>> {
+  return {
+    name,
+    element: "div",
+    propagation: {
+      rules: [
+        {
+          parentProp: "label",
+          childPath: "Text",
+          childProp: "children",
+          override: true,
+        },
+        {
+          parentProp: "description",
+          childPath: "Description",
+          childProp: "children",
+          override: true,
+        },
+      ],
+    },
+    variants: {},
+    sizes: {},
+    states: {},
+    render: { shapes: noopShapes },
+  };
+}
 
 // ─── Lazy Index ─────────────────────────────────────────────────────────────
 
@@ -202,5 +182,11 @@ registerPropagationSpec("Card", CardSpec);
 registerPropagationSpec("GridList", GridListSpec);
 registerPropagationSpec("ListBox", ListBoxSpec);
 // Collection Item → 자식 Text/Description 전파
-registerPropagationSpec("GridListItem", GridListItemPropagationSpec);
-registerPropagationSpec("ListBoxItem", ListBoxItemPropagationSpec);
+registerPropagationSpec(
+  "GridListItem",
+  createCollectionItemPropagationSpec("GridListItem"),
+);
+registerPropagationSpec(
+  "ListBoxItem",
+  createCollectionItemPropagationSpec("ListBoxItem"),
+);

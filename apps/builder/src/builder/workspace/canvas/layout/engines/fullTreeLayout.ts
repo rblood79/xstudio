@@ -1143,9 +1143,8 @@ function traversePostOrder(
     >;
     patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
 
-    // fontSize가 implicitStyles에서 새로 주입된 경우, height + width 재계산
-    // DFS post-order에서 자식은 부모보다 먼저 enrichment되므로
-    // fontSize 없이 계산된 height(fallback 16→24) + fit-content width를 올바른 값으로 교정
+    // DFS post-order: 자식이 부모보다 먼저 enrichment → fontSize 미주입 상태로 계산됨
+    // implicitStyles가 fontSize를 주입하면 height(lineHeight 기반) + fit-content width 재계산
     if (modStyle.fontSize != null && modStyle.fontSize !== origStyle.fontSize) {
       const childFs =
         typeof modStyle.fontSize === "number"
@@ -1160,8 +1159,7 @@ function traversePostOrder(
         : Math.ceil(childFs * 1.5);
       batch[batchIdx].style.height = `${correctedHeight}px`;
 
-      // fit-content width 재계산: fontSize 변경 시 텍스트 측정값도 변동
-      // ProgressBarValue, MeterValue 등 fit-content 자식의 width가 이전 fontSize 기준으로 계산됨
+      // fit-content/max-content/min-content: 텍스트 측정값이 fontSize에 의존
       const childStoreWidth = origStyle.width;
       if (
         childStoreWidth === "fit-content" ||
@@ -1569,13 +1567,8 @@ function incrementalUpdate(
   }
 
   // 2. post-order 순회: 새 노드 추가 + 기존 노드 스타일 갱신
-  //    post-order 보장: 자식이 부모보다 먼저 처리되므로
-  //    addNode 후 부모의 updateChildren 시 자식 handle이 이미 존재
-  //    변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교로 처리 (12차 정정)
-  //    ⚠️ affectedNodeIds 필터 제거: DFS가 모든 노드를 re-enrich하므로
-  //    batch의 fresh styles를 전부 Taffy에 반영해야 한다.
-  //    필터 적용 시 OLD+NEW 혼합 상태로 computeLayout → 잘못된 width/height 계산.
-  //    updateNodeStyle은 내부 JSON 비교로 변경 없는 노드를 O(1) 스킵한다.
+  //    모든 batch 노드를 Taffy에 반영 (부분 필터 시 OLD+NEW 혼합 → 잘못된 계산)
+  //    updateNodeStyle은 내부 JSON 비교로 변경 없는 노드 스킵
   for (const node of batch) {
     if (tree.hasNode(node.elementId)) {
       if (tree.updateNodeStyle(node.elementId, node.style)) {
@@ -1724,9 +1717,7 @@ export function calculateFullTreeLayout(
     // Taffy WASM이 올바르게 재계산하지 않으므로 full rebuild 필요
     let needsFullRebuild = !persistentTree.isInitialized;
     if (!needsFullRebuild) {
-      // 모든 배치 노드를 검사하여 display/grid 전환 감지
-      // (affectedNodeIds 필터 제거: DFS가 모든 노드를 re-enrich하므로
-      //  비영향 노드의 display 변경도 감지해야 함)
+      // display/grid 전환 감지: Taffy 증분 갱신으로 처리 불가 → full rebuild
       for (const node of batch) {
         const prevJson = persistentTree.getLastJson(node.elementId);
         if (!prevJson) continue;
@@ -1756,8 +1747,7 @@ export function calculateFullTreeLayout(
       persistentTree.reset();
       persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
     } else {
-      // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
-      // 변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교 (12차 정정)
+      // Path B: 증분 갱신 (JSON 비교로 변경된 노드만 WASM 호출)
       incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
     }
 
