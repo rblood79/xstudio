@@ -80,12 +80,9 @@ const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
   lg: { box: 24, gap: 10 },
 };
 
-/** ProgressBar/Meter 사이즈별 gap (ProgressBarSpec.sizes.gap 동기) */
-const PROGRESSBAR_GAP: Record<string, number> = {
-  sm: 6,
-  md: 8,
-  lg: 10,
-};
+/** ProgressBar/Meter — CSS: row-gap: var(--spacing-xs)=4px, column-gap: var(--spacing-md)=12px */
+const PROGRESSBAR_ROW_GAP = 4;
+const PROGRESSBAR_COL_GAP = 12;
 
 /** ProgressBar/Meter 사이즈별 barHeight (PROGRESSBAR_DIMENSIONS 동기) */
 const PROGRESSBAR_BAR_HEIGHT: Record<string, number> = {
@@ -115,11 +112,12 @@ const SLIDER_TAGS = new Set(["slider"]);
 /** DatePicker/DateRangePicker 내 Popover로 표시되는 자식 — Taffy 레이아웃 제외 */
 const POPOVER_CHILDREN_TAGS = new Set(["Calendar", "RangeCalendar"]);
 
-/** Slider 사이즈별 gap (SliderSpec.sizes.gap 동기) */
-const SLIDER_GAP: Record<string, number> = {
-  sm: 6,
-  md: 8,
-  lg: 10,
+/** Slider — CSS: row-gap: var(--spacing-xs)=4px, column-gap: S2 S/M=16px, L=20px */
+const SLIDER_ROW_GAP = 4;
+const SLIDER_COL_GAP: Record<string, number> = {
+  sm: 16,
+  md: 16,
+  lg: 20,
 };
 
 /** Slider 사이즈별 레이아웃 높이 = thumbSize (시각적 trackHeight 4/8/12가 아님, thumb 수용 목적) */
@@ -632,8 +630,8 @@ export function applyImplicitStyles(
 
   // ── GridListItem ────────────────────────────────────────────────
   // Composition 패턴: 자식 Text/Description Element를 column 방향으로 배치
-  // CSS 동기화: .react-aria-GridListItem { padding: var(--spacing-md) var(--spacing-lg), border(1px) }
-  // --spacing-md = 0.75rem = 12px, --spacing-lg = 1rem = 16px
+  // CSS 동기화: .react-aria-GridListItem { padding: var(--spacing-md) var(--spacing-lg), gap: var(--spacing-2xs), border(1px) }
+  // --spacing-md = 12px, --spacing-lg = 16px, --spacing-2xs = 2px
   if (containerTag === "gridlistitem") {
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
@@ -641,7 +639,7 @@ export function applyImplicitStyles(
       flexDirection: "column",
       // CSS grid 1fr 트랙 내에서 축소되도록 minWidth: 0 (CSS minmax(0, 1fr) 동기화)
       minWidth: parentStyle.minWidth ?? 0,
-      gap: parentStyle.gap ?? 4,
+      gap: parentStyle.gap ?? 2,
       paddingTop: parentStyle.paddingTop ?? 12,
       paddingBottom: parentStyle.paddingBottom ?? 12,
       paddingLeft: parentStyle.paddingLeft ?? 16,
@@ -1243,7 +1241,19 @@ export function applyImplicitStyles(
     const hasLabel = !!containerProps?.label;
     const showValue = containerProps?.showValue !== false;
     const sizeName = (containerProps?.size as string) ?? "md";
-    const specGap = PROGRESSBAR_GAP[sizeName] ?? PROGRESSBAR_GAP.md;
+
+    // value → 포맷된 텍스트 계산 (ElementSprite 미러링)
+    // layout 엔진이 Skia 렌더링과 동일한 텍스트로 fit-content width를 측정해야 함
+    const rawVal = Number(containerProps?.value ?? 0);
+    const minV = Number(containerProps?.minValue ?? 0);
+    const maxV = Number(containerProps?.maxValue ?? 100);
+    const percent = maxV > minV ? ((rawVal - minV) / (maxV - minV)) * 100 : 0;
+    const clampedPercent = Math.max(0, Math.min(100, percent));
+    const valueFormat = containerProps?.valueFormat as string | undefined;
+    const formattedValue =
+      valueFormat === "number"
+        ? String(Math.round(rawVal))
+        : `${Math.round(clampedPercent)}%`;
 
     // Label/Output 필터: hasLabel이 false면 Label 제외, showValue false면 Output 제외
     filteredChildren = children.filter((c) => {
@@ -1291,6 +1301,7 @@ export function applyImplicitStyles(
           ...child,
           props: {
             ...child.props,
+            children: showValue ? formattedValue : "",
             size: sizeName,
             style: { ...cs, fontSize: valueFontSize },
           },
@@ -1305,7 +1316,8 @@ export function applyImplicitStyles(
       flexDirection: parentStyle.flexDirection ?? "row",
       flexWrap: parentStyle.flexWrap ?? "wrap",
       justifyContent: parentStyle.justifyContent ?? "space-between",
-      gap: parentStyle.gap ?? specGap,
+      rowGap: parentStyle.rowGap ?? PROGRESSBAR_ROW_GAP,
+      columnGap: parentStyle.columnGap ?? PROGRESSBAR_COL_GAP,
     });
   }
 
@@ -1316,7 +1328,24 @@ export function applyImplicitStyles(
     const hasLabel = !!containerProps?.label;
     const showValue = containerProps?.showValue !== false;
     const sizeName = (containerProps?.size as string) ?? "md";
-    const specGap = SLIDER_GAP[sizeName] ?? SLIDER_GAP.md;
+    const sliderColGap = SLIDER_COL_GAP[sizeName] ?? SLIDER_COL_GAP.md;
+
+    // value → 포맷된 텍스트 계산 (ElementSprite 미러링)
+    const sliderValue = containerProps?.value;
+    const sliderMin = Number(containerProps?.minValue ?? 0);
+    const sliderMax = Number(containerProps?.maxValue ?? 100);
+    let sliderFormattedValue = "";
+    if (showValue) {
+      if (Array.isArray(sliderValue)) {
+        sliderFormattedValue = (sliderValue as number[])
+          .map((v) => String(Math.round(Number(v))))
+          .join(" – ");
+      } else {
+        sliderFormattedValue = String(
+          Math.round(Number(sliderValue ?? sliderMin)),
+        );
+      }
+    }
 
     // Label/Output 필터
     filteredChildren = children.filter((c) => {
@@ -1364,6 +1393,7 @@ export function applyImplicitStyles(
           ...child,
           props: {
             ...child.props,
+            children: sliderFormattedValue,
             size: sizeName,
             style: { ...cs, fontSize: valueFontSize },
           },
@@ -1378,7 +1408,8 @@ export function applyImplicitStyles(
       flexDirection: parentStyle.flexDirection ?? "row",
       flexWrap: parentStyle.flexWrap ?? "wrap",
       justifyContent: parentStyle.justifyContent ?? "space-between",
-      gap: parentStyle.gap ?? specGap,
+      rowGap: parentStyle.rowGap ?? SLIDER_ROW_GAP,
+      columnGap: parentStyle.columnGap ?? sliderColGap,
     });
   }
 

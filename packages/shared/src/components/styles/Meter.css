@@ -29,7 +29,8 @@
       "bar bar";
     grid-template-columns: 1fr auto;
     box-sizing: border-box;
-    gap: var(--spacing-xs);
+    row-gap: var(--spacing-xs);
+    column-gap: var(--spacing-md);
     width: 100%;
     color: var(--fg);
     font-size: var(--text-sm);

@@ -28,6 +28,7 @@ import {
   parseCSSPropWithContext,
   measureTextWidth,
 } from "./utils";
+import { isCanvasKitMeasurer } from "../../utils/textMeasure";
 import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
 import {
@@ -1178,9 +1179,11 @@ function traversePostOrder(
             (modStyle.fontFamily as string) ??
             (origStyle.fontFamily as string) ??
             specFontFamily.sans;
-          const correctedWidth = Math.ceil(
-            measureTextWidth(childText, childFs, childFf, childFw),
-          );
+          // Canvas 2D → CanvasKit 렌더링 간 sub-pixel 오차 보정 (calculateContentWidth 동기)
+          const canvas2dCompensation = isCanvasKitMeasurer() ? 0 : 4;
+          const correctedWidth =
+            Math.ceil(measureTextWidth(childText, childFs, childFf, childFw)) +
+            canvas2dCompensation;
           batch[batchIdx].style.width = `${correctedWidth}px`;
         }
       }

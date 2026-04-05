@@ -99,6 +99,9 @@
 - **LAYOUT_PROP_KEYS ↔ LAYOUT_AFFECTING_PROPS 동기화 누락**: `layoutCache.ts`의 `LAYOUT_PROP_KEYS`에 항목 추가 시 `inspectorActions.ts`의 `LAYOUT_AFFECTING_PROPS`에도 동시 추가 필수. 누락 시 해당 prop 변경이 `layoutVersion`을 증가시키지 않아 캔버스 레이아웃 미반영. layout-engine.md "2곳 동시 등록 필수" 규칙.
 - **CSS 클래스 선언 없이 className 적용**: 컴포넌트에서 `icon-picker-trigger-group`, `icon-picker-input-trigger`, `icon-picker-value`, `icon-picker-clear` 등 className을 사용하면서 대응 CSS 파일에 클래스 정의가 없는 패턴 — 새 컴포넌트 클래스 추가 시 CSS 파일 동시 작성 필수 (PropertyIconPicker.tsx 사례)
 - **`parseFloat(String(fontWeight)) || 400` CSS 키워드 silent fallback**: `fontWeight`에 `"bold"`/`"lighter"`/`"bolder"` 등 CSS 키워드가 들어오면 `parseFloat` NaN → `|| 400` fallback으로 굳어져 실제 폰트 굵기(700 등)를 무시하고 텍스트 width 측정 오계산. `FW_KEYWORDS = { bold: 700, lighter: 300, bolder: 700 }` 수치 변환 가드 필수 (fullTreeLayout.ts:1175 사례)
+- **implicitStyles spacing 토큰 주석-값 불일치 (--spacing-2xs = 2px 혼동)**: `--spacing-2xs = 0.125rem = 2px`인데 `implicitStyles.ts` GridListItem `gap`이 `4`로 설정된 사례. `--spacing` = `--spacing-xs` = 4px와 혼동한 것. implicitStyles.ts 주석에 사용된 토큰 값이 누락돼 있으면 혼동 가능성 높음 — 토큰 주석 및 값 추가 시 shared-tokens.css 원본 대조 필수
+- **Step 3.6 fit-content width 재계산 — Slider Label 미커버**: Step 3.6 재계산(fullTreeLayout.ts:1164-1186)은 `childStoreWidth === "fit-content"` 조건을 통과해야 width를 재계산함. `ProgressBarValue`/`MeterValue`/`SliderOutput`은 factory에서 `width: "fit-content"` 명시 → 재계산 커버됨. 반면 Slider `Label`은 factory에 `width: "fit-content"` 미설정(FormComponents.ts:728-735) → Step 3.6 width 재계산 미진입. `enrichWithIntrinsicSize`의 `isFlexChild && TEXT_LEAF_TAGS.has(tag)` 경로가 Step 4에서 처리하나, Step 4 실행 전 processedElementsMap에 fontSize가 반영되었는지 순서 의존성 주의 필요
+- **`enrichWithIntrinsicSize` 내 Set 상수 4개 함수 내부 생성**: `INTRINSIC_WIDTH_KEYWORDS`, `INTRINSIC_HEIGHT_KEYWORDS`, `IMAGE_INTRINSIC_TAGS`, `SPEC_SHAPES_INPUT_TAGS`가 함수 내부에서 매 호출마다 재생성됨 (utils.ts:2855-2938) — 모듈 레벨 상수로 호이스팅 필요. hot path 반복 패턴
 
 ## False Positive 기록
 

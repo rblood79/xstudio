@@ -125,7 +125,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
-      gap: 6,
+      gap: 4,
     },
     md: {
       height: 8,
@@ -133,7 +133,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
-      gap: 8,
+      gap: 4,
     },
     lg: {
       height: 12,
@@ -141,7 +141,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
-      gap: 10,
+      gap: 4,
     },
   },
 

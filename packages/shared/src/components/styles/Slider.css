@@ -28,7 +28,8 @@
       "track track";
     grid-template-columns: 1fr auto;
     color: var(--fg);
-    gap: var(--spacing-sm);
+    row-gap: var(--spacing-xs);
+    column-gap: var(--spacing-lg);
 
     /* ===== Label ===== */
     --label-font-weight: 600;
@@ -238,6 +239,7 @@
 
   .react-aria-Slider[data-size="lg"] {
     --label-font-size: var(--text-base);
+    column-gap: 1.25rem;
 
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
