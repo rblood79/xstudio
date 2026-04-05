@@ -33,7 +33,6 @@ import {
   measureWrappedTextHeight,
   measureFontMetrics,
   getTextMeasurer,
-  isCanvasKitMeasurer,
 } from "../../utils/textMeasure";
 import type { FontMetrics } from "../../utils/textMeasure";
 import {
@@ -1156,9 +1155,7 @@ export function calculateContentWidth(
     const labelText = String(
       props?.children ?? props?.label ?? props?.text ?? "",
     );
-    // Canvas 2D 사용 시 CanvasKit paragraph API와의 폰트 측정 오차 보정 (+2px)
-    // CanvasKit 측정기 사용 시 보정 불필요 (동일 렌더러로 측정)
-    const canvas2dCompensation = isCanvasKitMeasurer() ? 0 : 2;
+    // Canvas 2D 측정값 사용 (CSS 정합), CanvasKit 렌더링 오차는 nodeRendererText에서 처리
     const textWidth = labelText
       ? Math.ceil(
           measureTextWidth(
@@ -1167,7 +1164,7 @@ export function calculateContentWidth(
             indicatorFontFamily,
             indicatorFontWeight,
           ),
-        ) + canvas2dCompensation
+        )
       : 0;
     const flexDir = style?.flexDirection as string | undefined;
     const isColumn = flexDir === "column" || flexDir === "column-reverse";
@@ -1338,10 +1335,8 @@ export function calculateContentWidth(
         lineHeight,
       },
     );
-    // CanvasKit: ParagraphStyle이 렌더러와 일치하므로 보정 불필요, Math.ceil만으로 충분
-    // Canvas 2D: CanvasKit 렌더링과의 엔진 간 오차 보정 (+4px)
-    const generalCompensation = isCanvasKitMeasurer() ? 0 : 4;
-    return Math.ceil(baseWidth) + generalCompensation;
+    // Canvas 2D 측정값 사용 (CSS 정합), CanvasKit 렌더링 오차는 nodeRendererText에서 처리
+    return Math.ceil(baseWidth);
   }
 
   // 4. Image: 자연 치수 캐시에서 로드된 이미지의 실제 너비 사용 (fit-content/auto)

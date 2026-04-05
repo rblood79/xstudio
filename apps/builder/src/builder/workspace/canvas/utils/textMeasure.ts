@@ -12,8 +12,6 @@
  * @updated 2026-02-17 Phase 0: TextMeasurer 인터페이스 추가
  */
 
-import { USE_CANVAS2D_MEASURE } from "./canvas2dSegmentCache";
-
 // ============================================
 // TextMeasurer Interface
 // ============================================
@@ -402,13 +400,12 @@ export function getTextMeasurer(): TextMeasurer {
 }
 
 /**
- * 현재 활성 측정기가 실제로 CanvasKit Paragraph API를 사용하는지 확인
+ * 현재 활성 측정기가 CanvasKit 기반인지 확인
  *
- * CanvasKit 측정기가 활성화되어도 USE_CANVAS2D_MEASURE=true이면
- * 내부적으로 Canvas 2D를 사용하므로 오차 보정이 여전히 필요하다.
+ * Canvas 2D 측정 + CanvasKit 렌더링 간 오차는 nodeRendererText.ts의
+ * effectiveLayoutWidth +1 마진으로 처리 (layout 보정 불필요).
  */
 export function isCanvasKitMeasurer(): boolean {
-  if (USE_CANVAS2D_MEASURE) return false;
   return !(_activeMeasurer instanceof Canvas2DTextMeasurer);
 }
 
