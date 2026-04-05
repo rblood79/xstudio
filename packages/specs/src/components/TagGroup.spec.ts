@@ -102,6 +102,17 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             defaultValue: "top",
           },
           {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: Layout,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
+          },
+          {
             key: "isEmphasized",
             type: "boolean",
             label: "Emphasized",

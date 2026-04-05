@@ -156,6 +156,27 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         title: "Content",
         fields: [
           {
+            key: "label",
+            type: "string",
+            label: "Label",
+            placeholder: "Description",
+            icon: Layout,
+          },
+          {
+            key: "placeholder",
+            type: "string",
+            label: "Placeholder",
+            icon: Layout,
+            emptyToUndefined: true,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: Layout,
+            emptyToUndefined: true,
+          },
+          {
             key: "contextualHelp",
             type: "string",
             label: "Contextual Help",

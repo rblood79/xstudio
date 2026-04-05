@@ -44,7 +44,7 @@
   }
 }
 
-.react-aria-InlineAlert[data-variant="informative"] {
+.react-aria-InlineAlert[data-variant="info"] {
   background: var(--color-info-100);
   color: var(--fg);
   border-color: var(--color-info-600);

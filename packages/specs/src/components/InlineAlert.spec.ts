@@ -15,7 +15,7 @@ import { Heading, Type, Parentheses } from "lucide-react";
  * InlineAlert Props
  */
 export interface InlineAlertProps {
-  variant?: "neutral" | "informative" | "positive" | "notice" | "negative";
+  variant?: "neutral" | "info" | "positive" | "notice" | "negative";
   children?: string;
   heading?: string;
   autoFocus?: boolean;
@@ -31,7 +31,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
   archetype: "alert",
   element: "div",
 
-  defaultVariant: "informative",
+  defaultVariant: "info",
   defaultSize: "md",
 
   variants: {
@@ -42,7 +42,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.neutral-subdued}" as TokenRef,
     },
-    informative: {
+    info: {
       background: "{color.informative-subtle}" as TokenRef,
       backgroundHover: "{color.informative-subtle}" as TokenRef,
       backgroundPressed: "{color.informative-subtle}" as TokenRef,

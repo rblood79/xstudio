@@ -184,7 +184,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             icon: ArrowLeftRight,
             options: [
               { value: "visible", label: "Visible" },
-              { value: "hidden", label: "Hidden" },
+              { value: "single", label: "Single" },
             ],
             defaultValue: "visible",
           },

@@ -381,7 +381,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
       const min = props.minValue ?? 0;
       const max = props.maxValue ?? 100;
-      const value = Math.max(min, Math.min(max, props.value ?? 50));
+      const value = Math.max(min, Math.min(max, props.value ?? 0));
       const percent = ((value - min) / (max - min)) * 100;
       const fillWidth = (width * percent) / 100;
 

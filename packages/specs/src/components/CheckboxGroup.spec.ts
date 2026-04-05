@@ -34,6 +34,7 @@ export interface CheckboxGroupProps {
   description?: string;
   orientation?: "vertical" | "horizontal";
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "end";
   isDisabled?: boolean;
   isReadOnly?: boolean;
   isInvalid?: boolean;
@@ -195,6 +196,17 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Align",
+            icon: Layout,
+            options: [
+              { value: "start", label: "Start" },
+              { value: "end", label: "End" },
+            ],
+            defaultValue: "start",
           },
         ],
       },

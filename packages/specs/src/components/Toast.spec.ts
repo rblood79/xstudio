@@ -27,7 +27,7 @@ export interface ToastProps {
     | "bottom end"
     | "bottom start"
     | "bottom";
-  variant?: "info" | "positive" | "notice" | "negative";
+  variant?: "info" | "positive" | "neutral" | "negative";
   size?: "sm" | "md" | "lg";
   message?: string;
   children?: string;
@@ -95,7 +95,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
             options: [
               { value: "info", label: "Info" },
               { value: "positive", label: "Positive" },
-              { value: "notice", label: "Notice" },
+              { value: "neutral", label: "Neutral" },
               { value: "negative", label: "Negative" },
             ],
             defaultValue: "info",
@@ -144,12 +144,12 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.positive}" as TokenRef,
     },
-    notice: {
-      background: "{color.notice-subtle}" as TokenRef,
-      backgroundHover: "{color.notice-subtle}" as TokenRef,
-      backgroundPressed: "{color.notice-subtle}" as TokenRef,
+    neutral: {
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.notice}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     negative: {
       background: "{color.purple-subtle}" as TokenRef,

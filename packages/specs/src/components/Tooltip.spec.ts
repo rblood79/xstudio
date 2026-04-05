@@ -23,7 +23,7 @@ import {
  * Tooltip Props
  */
 export interface TooltipProps {
-  variant?: "accent" | "surface";
+  variant?: "neutral" | "info" | "positive" | "negative";
   size?: "sm" | "md" | "lg";
   children?: string;
   text?: string;
@@ -63,7 +63,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   archetype: "simple",
   element: "div",
 
-  defaultVariant: "surface",
+  defaultVariant: "neutral",
   defaultSize: "md",
 
   properties: {
@@ -97,13 +97,15 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
               { value: "bottom start", label: "Bottom Start" },
               { value: "bottom end", label: "Bottom End" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "offset",
             type: "number",
             label: "Offset",
             icon: Move,
-           defaultValue: 8 },
+            defaultValue: 8,
+          },
           {
             key: "containerPadding",
             type: "number",
@@ -111,20 +113,23 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
             icon: SquareDashedMousePointer,
             min: 0,
             step: 1,
-           defaultValue: 12 },
+            defaultValue: 12,
+          },
           {
             key: "crossOffset",
             type: "number",
             label: "Cross Offset",
             icon: ArrowLeftRight,
             step: 1,
-           defaultValue: 0 },
+            defaultValue: 0,
+          },
           {
             key: "shouldFlip",
             type: "boolean",
             label: "Should Flip",
             icon: FlipHorizontal2,
-           defaultValue: true },
+            defaultValue: true,
+          },
         ],
       },
     ],
@@ -140,16 +145,28 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   },
 
   variants: {
-    accent: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent}" as TokenRef,
-      backgroundPressed: "{color.accent}" as TokenRef,
-      text: "{color.on-accent}" as TokenRef,
-    },
-    surface: {
+    neutral: {
       background: "{color.neutral-subtle}" as TokenRef,
       backgroundHover: "{color.neutral-subtle}" as TokenRef,
       backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    info: {
+      background: "{color.informative-subtle}" as TokenRef,
+      backgroundHover: "{color.informative-subtle}" as TokenRef,
+      backgroundPressed: "{color.informative-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    positive: {
+      background: "{color.positive-subtle}" as TokenRef,
+      backgroundHover: "{color.positive-subtle}" as TokenRef,
+      backgroundPressed: "{color.positive-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    negative: {
+      background: "{color.negative-subtle}" as TokenRef,
+      backgroundHover: "{color.negative-subtle}" as TokenRef,
+      backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
   },
