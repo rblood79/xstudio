@@ -284,7 +284,6 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             type: "enum",
             label: "Format Options",
             icon: Hash,
-            updatePath: ["formatOptions", "style"],
             options: [
               { value: "decimal", label: "Decimal" },
               { value: "percent", label: "Percent" },
@@ -292,6 +291,17 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
               { value: "unit", label: "Unit" },
             ],
             defaultValue: "decimal",
+            derivedUpdateFn: (
+              value: unknown,
+              props: Record<string, unknown>,
+            ) => {
+              const prev =
+                (props.formatOptions as Record<string, unknown>) ?? {};
+              const base = { ...prev, style: value };
+              if (value === "currency" && !prev.currency) base.currency = "KRW";
+              if (value === "unit" && !prev.unit) base.unit = "kilometer";
+              return { formatOptions: base };
+            },
           },
           {
             key: "formatOptions.currency",
