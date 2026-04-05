@@ -25,12 +25,14 @@
 
     .react-aria-Label {
       grid-area: label;
+      white-space: nowrap;
     }
 
     .value {
       grid-area: value;
       font-size: var(--text-sm);
       color: var(--fg-muted);
+      white-space: nowrap;
     }
 
     .bar {
@@ -112,6 +114,20 @@
 
     .value {
       font-size: var(--text-base);
+    }
+  }
+
+  .react-aria-ProgressBar[data-size="xl"] {
+    font-size: var(--text-lg);
+    --label-font-size: var(--text-lg);
+
+    .bar {
+      height: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+    }
+
+    .value {
+      font-size: var(--text-lg);
     }
   }
 

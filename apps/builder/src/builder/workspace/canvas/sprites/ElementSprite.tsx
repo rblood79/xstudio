@@ -1325,6 +1325,9 @@ export const ElementSprite = memo(function ElementSprite({
       "RadioGroup",
       "Switch",
       "Toggle",
+      "ProgressBar",
+      "Meter",
+      "Slider",
     ]);
     return NOWRAP_PARENTS.has(parent.tag);
   });
@@ -2326,7 +2329,11 @@ export const ElementSprite = memo(function ElementSprite({
                     // Checkbox/Radio/Switch 내부 Label: CSS white-space: nowrap 동기화
                     // Tag/Badge: CSS white-space: nowrap 동기화
                     const isNowrapTag =
-                      element.tag === "Tag" || element.tag === "Badge";
+                      element.tag === "Tag" ||
+                      element.tag === "Badge" ||
+                      element.tag === "ProgressBarValue" ||
+                      element.tag === "MeterValue" ||
+                      element.tag === "SliderOutput";
                     const effectiveWhiteSpace =
                       style?.whiteSpace ??
                       (isLabelInNowrapParent || isNowrapTag

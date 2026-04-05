@@ -37,12 +37,14 @@
     .react-aria-Label {
       grid-area: label;
       text-align: left;
+      white-space: nowrap;
     }
 
     /* ===== Output ===== */
     .react-aria-SliderOutput {
       grid-area: output;
       font-size: var(--text-sm);
+      white-space: nowrap;
     }
 
     /* ===== Track ===== */
@@ -240,36 +242,41 @@
   .react-aria-Slider[data-size="lg"] {
     --label-font-size: var(--text-base);
     column-gap: 1.25rem;
+  }
+
+  .react-aria-Slider[data-size="xl"] {
+    --label-font-size: var(--text-lg);
+    column-gap: 1.25rem;
 
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
-        height: 28px;
+        height: 32px;
 
         .slider-track-bg,
         .slider-fill {
-          height: 12px;
+          height: 16px;
         }
       }
     }
 
     &[data-orientation="vertical"] {
       .react-aria-SliderTrack {
-        width: 28px;
+        width: 32px;
 
         .slider-track-bg,
         .slider-fill {
-          width: 12px;
+          width: 16px;
         }
       }
     }
 
     .react-aria-SliderOutput {
-      font-size: var(--text-base);
+      font-size: var(--text-lg);
     }
 
     .react-aria-SliderThumb {
-      width: 22px;
-      height: 22px;
+      width: 26px;
+      height: 26px;
     }
   }
 }

@@ -123,6 +123,7 @@ const PROGRESSBAR_BAR_HEIGHT: Record<string, number> = {
   sm: 4,
   md: 8,
   lg: 12,
+  xl: 16,
 };
 
 /** ProgressBar/Meter 사이즈별 fontSize (ProgressBarSpec.sizes.fontSize resolved) */
@@ -130,6 +131,15 @@ const PROGRESSBAR_FONT_SIZE: Record<string, number> = {
   sm: 12,
   md: 14,
   lg: 16,
+  xl: 18,
+};
+
+/** ProgressBar/Meter 사이즈별 lineHeight (CSS --text-*--line-height 동기) */
+const PROGRESSBAR_LINE_HEIGHT: Record<string, number> = {
+  sm: 16,
+  md: 20,
+  lg: 24,
+  xl: 28,
 };
 
 /** ProgressBar/Meter 태그 집합 */
@@ -152,6 +162,7 @@ const SLIDER_COL_GAP: Record<string, number> = {
   sm: 16,
   md: 16,
   lg: 20,
+  xl: 20,
 };
 
 /** Slider 사이즈별 레이아웃 높이 = thumbSize (시각적 trackHeight 4/8/12가 아님, thumb 수용 목적) */
@@ -159,6 +170,7 @@ const SLIDER_TRACK_LAYOUT_HEIGHT: Record<string, number> = {
   sm: 14,
   md: 18,
   lg: 22,
+  xl: 26,
 };
 
 /** Slider 사이즈별 fontSize (SliderSpec.sizes.fontSize resolved) */
@@ -166,6 +178,15 @@ const SLIDER_FONT_SIZE: Record<string, number> = {
   sm: 12,
   md: 14,
   lg: 16,
+  xl: 18,
+};
+
+/** Slider 사이즈별 lineHeight (CSS --text-*--line-height 동기) */
+const SLIDER_LINE_HEIGHT: Record<string, number> = {
+  sm: 16,
+  md: 20,
+  lg: 24,
+  xl: 28,
 };
 
 /** Synthetic Label을 생성하는 태그 */
@@ -1336,13 +1357,20 @@ export function applyImplicitStyles(
       if (child.tag === "ProgressBarValue" || child.tag === "MeterValue") {
         const valueFontSize =
           PROGRESSBAR_FONT_SIZE[sizeName] ?? PROGRESSBAR_FONT_SIZE.md;
+        const valueLineHeight =
+          PROGRESSBAR_LINE_HEIGHT[sizeName] ?? PROGRESSBAR_LINE_HEIGHT.md;
         return {
           ...child,
           props: {
             ...child.props,
             children: showValueLabel ? formattedValue : "",
             size: sizeName,
-            style: { ...cs, fontSize: valueFontSize },
+            style: {
+              ...cs,
+              fontSize: valueFontSize,
+              lineHeight: `${valueLineHeight}px`,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+            },
           },
         } as Element;
       }
@@ -1433,13 +1461,20 @@ export function applyImplicitStyles(
       }
       if (child.tag === "SliderOutput") {
         const valueFontSize = SLIDER_FONT_SIZE[sizeName] ?? SLIDER_FONT_SIZE.md;
+        const valueLineHeight =
+          SLIDER_LINE_HEIGHT[sizeName] ?? SLIDER_LINE_HEIGHT.md;
         return {
           ...child,
           props: {
             ...child.props,
             children: sliderFormattedValue,
             size: sizeName,
-            style: { ...cs, fontSize: valueFontSize },
+            style: {
+              ...cs,
+              fontSize: valueFontSize,
+              lineHeight: `${valueLineHeight}px`,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+            },
           },
         } as Element;
       }

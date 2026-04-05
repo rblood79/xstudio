@@ -297,7 +297,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             ) => {
               const prev =
                 (props.formatOptions as Record<string, unknown>) ?? {};
-              const base = { ...prev, style: value };
+              const base: Record<string, unknown> = { ...prev, style: value };
               if (value === "currency" && !prev.currency) base.currency = "KRW";
               if (value === "unit" && !prev.unit) base.unit = "kilometer";
               return { formatOptions: base };

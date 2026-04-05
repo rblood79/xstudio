@@ -6,17 +6,201 @@
 
 ```
 ═══ 환경 셋업 ═══
-Phase 0: Ollama + Qwen3 로컬 설치 및 검증
+Phase 0: Ollama + 로컬 모델 설치 및 검증
 
 ═══ LLM 인프라 ═══
 Phase 1: LLM Provider 추상화 레이어 + Groq 완전 제거
-Phase 2: Ollama Provider 구현 (현재 개발 환경)
+Phase 2: Ollama Provider 구현 + 난이도 라우팅 (현재 개발 환경)
 Phase 3: node-llama-cpp Provider 구현 (Electron 전환 후)
-Phase 4: 모델 관리 UI + 자동 설정
+Phase 4: 모델 관리 + 선택 UI
 
 ═══ AI 기능 (인프라 위) ═══
 Phase 5: 컴포넌트 지능 — 카탈로그 + 선택적 문서 주입 (목표 1)
 Phase 6: 디자인 지능 — Plan→Execute→Verify 에이전트 + 도구 확장 (목표 2)
+Phase 7: AI 지능 확장 — 접근성 감사 + 브랜드 테마
+```
+
+---
+
+## 로컬 모델 권장사양 + 품질 평가 요약
+
+### 폐쇄망 지원이 로컬 LLM 기본인 이유
+
+인터넷을 사용할 수 없는 폐쇄망 환경에서도 빌더의 AI 기능이 동작해야 한다.
+로컬 모델이 기본이고, 온라인 모델은 인터넷 사용 가능 시 선택적 업그레이드이다.
+
+### 하드웨어 티어별 권장 모델
+
+|  티어  | 하드웨어             | 권장 모델                  | GGUF 크기  |     속도      |   BFCL   |
+| :----: | -------------------- | -------------------------- | :--------: | :-----------: | :------: |
+|   T1   | 16GB MacBook Air     | Qwen3 14B Q4_K_M           |    9GB     |   ~18 tok/s   |   ~68%   |
+| **T2** | **36GB MacBook Pro** | **Qwen3.5-35B-A3B Q4_K_M** | **18.5GB** | **~55 tok/s** | **~73%** |
+|   T3   | 64GB MacBook Pro Max | Qwen3 32B Q5_K_M           |    25GB    |   ~25 tok/s   |  75.7%   |
+|   T4   | 128GB Mac Studio     | Qwen3.5-122B-A10B Q4_K_M   |   ~70GB    |   ~50 tok/s   |  최상위  |
+
+### 문서 주입(Tier 2) 보정 효과
+
+컴포넌트별 React Aria/Spectrum md 문서를 컨텍스트에 주입하면,
+props/events 설정은 "추론"이 아닌 "독해" 수준으로 전환된다.
+
+| 작업 유형       | BFCL 기준 | 문서 주입 보정 | 이유                                              |
+| --------------- | :-------: | :------------: | ------------------------------------------------- |
+| 단일 prop/event | BFCL 점수 |  **+15~20%p**  | `onPress: (e: PressEvent) => void` 가 문서에 명시 |
+| enum 값 선택    | BFCL 점수 |  **+12~18%p**  | `variant: 'primary' \| 'secondary'` 가 열거됨     |
+| 다중 props 조합 | BFCL 점수 |  **+8~12%p**   | 각 prop은 참조, 조합은 추론                       |
+| 복합 구조/Plan  | BFCL 점수 |   **+3~8%p**   | 구조적 추론은 문서만으로 부족                     |
+
+### 합격률 요약 (문서 주입 보정 후, 중급 개발자 90% 기준)
+
+|       티어       |   합격   |  근접   |  미달   | 합격률  |
+| :--------------: | :------: | :-----: | :-----: | :-----: |
+|     T1 (14B)     |   5개    |   5개   |   5개   |   33%   |
+| **T2 (35B-A3B)** | **11개** | **3개** | **1개** | **73%** |
+|     T3 (32B)     |   12개   |   2개   |   1개   |   80%   |
+|  Cloud (Claude)  |   14개   |   0개   |   1개   |   93%   |
+
+> 모든 티어에서 유일한 "미달" = **Plan 복합(대시보드 수준)** — 이는 모델 크기가 아닌 추론 깊이 한계.
+> 난이도 라우팅으로 온라인 전환 제안 또는 작업 자동 분할로 대응.
+
+### 로컬 모델 인터랙션 원칙: Step-by-Step
+
+로컬 모델은 **한 번에 전체 완성**이 아닌 **단계별 지시에 정확히 응답하는 어시스턴트** 역할이다.
+
+| 모드              | 인터랙션 패턴                                  | 적용                    |
+| ----------------- | ---------------------------------------------- | ----------------------- |
+| **로컬 (기본)**   | 사용자 주도 + AI 보조. 한 번에 1~2개 작업      | 폐쇄망, 프라이버시 중시 |
+| **온라인 (선택)** | AI 주도 가능. "대시보드 만들어줘" 한 번에 처리 | 인터넷 가능 환경        |
+
+**로컬 모드 UX 제약:**
+
+1. **시스템 프롬프트 분기**: 로컬 모델일 때 "한 번에 하나의 작업에 집중하세요" 지시 추가
+2. **Agent Loop MAX_TURNS 제한**: 로컬=5턴, 온라인=10턴. 로컬에서 과도한 멀티스텝 방지
+3. **복합 요청 감지 시 가이드**: "이 요청을 단계별로 나눠서 진행할까요?" UI 안내
+4. **자동 분할 (auto-split)**: 폐쇄망에서 복합 요청 시 단순 시퀀스로 자동 분해
+
+```
+로컬 모드 사용 예시:
+
+사용자: "대시보드 만들어줘"
+  ↓
+AI: "단계별로 진행하겠습니다:
+     1단계: 전체 레이아웃을 어떤 구조로 할까요?
+     - dashboard-grid (상단 카드 + 하단 테이블)
+     - sidebar-content (좌측 메뉴 + 우측 콘텐츠)
+     - card-grid (카드 그리드)"
+  ↓
+사용자: "dashboard-grid로"
+  ↓
+AI: apply_layout(dashboard-grid) ✓
+    "레이아웃 생성 완료. 상단 영역에 어떤 컴포넌트를 넣을까요?"
+  ↓
+사용자: "통계 카드 4개"
+  ↓
+AI: create_composite(Card) × 4 ✓
+    "카드 4개 배치 완료. 하단 영역은요?"
+  ↓
+사용자: "사용자 데이터 테이블"
+  ↓
+AI: create_composite(Table, dataBinding: /users) ✓
+```
+
+> 개별 단계 성공률 T2: 88~92%. 사용자 가이드 + 단계 분리로 **전체 완성률이 단일 복합 요청(72%)보다 높음**.
+
+### 난이도 기반 자동 라우팅
+
+```typescript
+// services/ai/routing/difficultyRouter.ts
+
+type Difficulty = "simple" | "medium" | "complex";
+
+function assessDifficulty(
+  userMessage: string,
+  context: BuilderContext,
+): Difficulty {
+  // 1. 언급된 컴포넌트 수
+  const componentCount = countMentionedComponents(userMessage);
+  // 2. 레이아웃 복잡도 키워드
+  const hasLayoutKeywords =
+    /대시보드|dashboard|페이지|전체|레이아웃|sidebar|grid/i.test(userMessage);
+  // 3. 멀티스텝 지시어
+  const hasMultiStep = /그리고|또한|추가로|다음에|and then|also/i.test(
+    userMessage,
+  );
+
+  if (componentCount >= 5 || (hasLayoutKeywords && hasMultiStep))
+    return "complex";
+  if (componentCount >= 3 || hasLayoutKeywords) return "medium";
+  return "simple";
+}
+
+async function routeRequest(
+  difficulty: Difficulty,
+  settings: AISettings,
+  providers: LLMProvider[],
+): Promise<{ provider: LLMProvider; model: string; strategy: string }> {
+  const localProvider = providers.find(
+    (p) => p.type === "local" && p.isAvailable(),
+  );
+  const cloudProvider = providers.find(
+    (p) => p.type === "cloud" && p.isAvailable(),
+  );
+
+  switch (difficulty) {
+    case "simple":
+      // 로컬 모델 (T2 기준 90~96%)
+      return {
+        provider: localProvider!,
+        model: settings.selectedModel,
+        strategy: "local",
+      };
+
+    case "medium":
+      // 로컬 모델 + thinking mode 강제 (T2 기준 85~92%)
+      return {
+        provider: localProvider!,
+        model: settings.selectedModel,
+        strategy: "local-think",
+      };
+
+    case "complex":
+      if (cloudProvider) {
+        // 온라인 모델 자동 제안
+        // UI에서: "이 작업은 온라인 모델이 더 정확합니다. 전환할까요?"
+        return {
+          provider: cloudProvider,
+          model: "claude-sonnet-4-6",
+          strategy: "cloud-suggest",
+        };
+      }
+      // 폐쇄망: 복합 작업을 단순 작업으로 자동 분할
+      return {
+        provider: localProvider!,
+        model: settings.selectedModel,
+        strategy: "auto-split",
+      };
+  }
+}
+```
+
+**폐쇄망 auto-split 전략:**
+
+```
+사용자: "사용자 관리 대시보드를 만들어줘 — 통계 카드 4개 + 테이블"
+  ↓
+assessDifficulty → 'complex'
+  ↓
+cloudProvider 없음 (폐쇄망)
+  ↓
+auto-split: 복합 요청을 단순 요청 시퀀스로 분해
+  1. "전체 레이아웃 컨테이너 생성" (simple → apply_layout)
+  2. "통계 카드 1 생성" (simple → create_composite Card)
+  3. "통계 카드 2 생성" (simple)
+  4. "통계 카드 3 생성" (simple)
+  5. "통계 카드 4 생성" (simple)
+  6. "데이터 테이블 생성" (medium → create_composite Table + dataBinding)
+  ↓
+각 단계를 순차 실행 — 개별 성공률 T2: 88~92%
+전체 성공률: 개별보다 낮지만 단일 복합 요청(72%)보다 높음
 ```
 
 ---
@@ -62,29 +246,45 @@ curl http://localhost:11434/api/tags
 # {"models":[]}  ← 빈 배열이면 정상 (아직 모델 없음)
 ```
 
-### 0-3. Qwen3 모델 다운로드
+### 0-3. 모델 다운로드 (하드웨어 티어별)
 
-**기본 모델 (Qwen3 7B — 범용, tool calling 지원)**:
+**T1 — 16GB RAM (최소)**:
 
 ```bash
-ollama pull qwen3:7b
-# pulling manifest... done
-# pulling layers... ~4.5GB (Q4_K_M 양자화)
+ollama pull qwen3:14b
+# ~9GB (Q4_K_M) — 16GB에서 실행 가능한 최대 모델
 ```
 
-**코딩 특화 모델 (Qwen3-Coder 7B — 선택)**:
+**T2 — 36GB RAM (권장)**:
 
 ```bash
-ollama pull qwen3-coder:7b
+ollama pull qwen3.5:35b-a3b
+# ~18.5GB (Q4_K_M) — MoE 3B 활성, ~55 tok/s, 합격률 73%
+```
+
+**T3 — 64GB RAM (최적)**:
+
+```bash
+ollama pull qwen3:32b
+# ~25GB (Q5_K_M) — BFCL 75.7% 오픈소스 1위, 합격률 80%
+```
+
+**코딩 특화 (선택)**:
+
+```bash
+ollama pull qwen3-coder:30b-a3b
+# ~18.6GB — 코드 생성 특화, T2 이상
 ```
 
 **다운로드 확인**:
 
 ```bash
 ollama list
-# NAME              ID            SIZE     MODIFIED
-# qwen3:7b          xxxxxxxxxxxx  4.5 GB   Just Now
+# NAME                  ID            SIZE      MODIFIED
+# qwen3.5:35b-a3b       xxxxxxxxxxxx  18.5 GB   Just Now
 ```
+
+> **7B 모델은 비권장**: tool calling ~55%로 AI 기능 합격률 0%. 14B 이상 필수.
 
 ### 0-4. Tool Calling 검증
 
@@ -195,13 +395,14 @@ curl http://localhost:11434/api/chat -d '{
 
 ### 0-7. 시스템 요구사항 체크리스트
 
-| 항목   | 최소                  | 권장                      | 확인 방법                            |
-| ------ | --------------------- | ------------------------- | ------------------------------------ |
-| RAM    | 8GB                   | 16GB+                     | `sysctl hw.memsize` (macOS)          |
-| 디스크 | 10GB 여유             | 20GB+                     | `df -h`                              |
-| GPU    | Apple Silicon (Metal) | M2+                       | `system_profiler SPDisplaysDataType` |
-| Ollama | 0.6+                  | 최신                      | `ollama --version`                   |
-| 모델   | qwen3:7b              | qwen3:7b + qwen3-coder:7b | `ollama list`                        |
+| 항목   | T1 최소 (16GB)        | T2 권장 (36GB)               | T3 최적 (64GB)   | 확인 방법                            |
+| ------ | --------------------- | ---------------------------- | ---------------- | ------------------------------------ |
+| RAM    | 16GB                  | **36GB**                     | 64GB             | `sysctl hw.memsize` (macOS)          |
+| 디스크 | 15GB 여유             | 25GB+ 여유                   | 35GB+ 여유       | `df -h`                              |
+| GPU    | Apple Silicon (Metal) | M3/M4 Pro                    | M3/M4 Max        | `system_profiler SPDisplaysDataType` |
+| Ollama | 0.6+                  | 최신                         | 최신             | `ollama --version`                   |
+| 모델   | qwen3:14b (9GB)       | **qwen3.5:35b-a3b (18.5GB)** | qwen3:32b (25GB) | `ollama list`                        |
+| 합격률 | 33% (5/15)            | **73% (11/15)**              | 80% (12/15)      | —                                    |
 
 ### 0-8. 환경 변수 설정 (XStudio 개발용)
 

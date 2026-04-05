@@ -4,6 +4,17 @@
 
 Proposed — 2026-04-04
 
+### 2026-04-05 패치 — Layout 보정 제거 + 렌더링 post-layout 교정
+
+ADR-051 채택 전이지만, 대안 B의 핵심 원리(Canvas 2D = CSS = Layout SSOT)를 선행 적용:
+
+- **Layout 경로**: `calculateContentWidth`, `fullTreeLayout Step 3.6`의 `+2/+4px` CanvasKit 보정 완전 제거
+- **렌더링 경로**: `nodeRendererText.ts`에서 `paragraph.layout()` 후 `\n` 없는 단일줄 텍스트가 줄바꿈되면 `getMaxIntrinsicWidth() + 1`로 재layout
+- **Break Hint**: Canvas 2D `measureWithCanvas2D()` → hintedText `\n` 주입 → CanvasKit 강제 (기존 구현)
+- **결과**: Layout = Canvas 2D = CSS (보정 0px), Canvas 2D↔CanvasKit sub-pixel 차이는 렌더링 단에서만 교정
+
+> 이 패치는 Phase 0 Go/No-Go 이전의 독립적 개선이며, ADR-051 전체 채택과 무관하게 유지됨.
+
 ## Context
 
 XStudio는 3개 렌더링 타겟(CSS/DOM Preview, Skia/WebGL Canvas, PixiJS Event)을 가지며, 텍스트 렌더링에서 CSS↔Skia 간 구조적 불일치가 존재한다.

@@ -5,6 +5,41 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Canvas 2D↔CanvasKit 텍스트 정합성 + ProgressBar S2 Gap] - 2026-04-05
+
+### Bug Fixes
+
+- **Canvas 2D↔CanvasKit 텍스트 줄바꿈 근본 해결**:
+  - Layout 경로의 `+2/+4px` CanvasKit 보정 완전 제거 → Layout = Canvas 2D = CSS (보정 0px)
+  - 렌더링 단(nodeRendererText.ts) post-layout 교정: `paragraph.layout()` 후 `\n` 없는 단일줄 텍스트가 줄바꿈되면 `getMaxIntrinsicWidth() + 1`로 재layout
+  - CanvasKit 자체 측정 기반이므로 경험적 tolerance 불필요
+  - Canvas 2D Break Hint 경로: `Math.ceil(c2dResult.width) + 1` 마진으로 sub-pixel 차이 흡수
+  - 위치: `nodeRendererText.ts`, `utils.ts`, `fullTreeLayout.ts`, `textMeasure.ts`
+
+- **ProgressBarValue 동적 텍스트 줄바꿈**: value 변경 시 formatted text(`34%`, `41%` 등) 폭이 Canvas 2D 측정과 불일치
+  - `formatProgressValue()` 공유 함수 추출 → implicitStyles(layout) + ElementSprite(rendering) 동일 텍스트 사용
+  - 위치: `implicitStyles.ts`, `ElementSprite.tsx`
+
+- **GridListItem gap 4→2px**: CSS `--spacing-2xs`(2px)와 불일치 → `gap: 2`로 수정
+
+### Improvements
+
+- **ProgressBar/Meter gap S2 정합**: `gap` → `row-gap(4px) + column-gap(12px)` 분리 (S2 bar-utils.ts 기준)
+  - CSS: `row-gap: var(--spacing-xs); column-gap: var(--spacing-md)`
+  - Spec gap: 6/8/10 → 4 (고정, S2 track-to-label 4px)
+  - 위치: `ProgressBar.css`, `Meter.css`, `Slider.css`, `implicitStyles.ts`, Spec files
+
+- **Slider gap S2 정합**: `row-gap(4px) + columnGap(sm/md=16, lg=20)` (S2 slider.ts 기준)
+
+- **PropagationSpec 중복 제거**: `createCollectionItemPropagationSpec()` factory 함수로 GridListItem/ListBoxItem 공통화
+
+### Documentation
+
+- `canvas-rendering.md`: Layout 보정 금지 규칙 + CanvasKit 오발 줄바꿈 교정 규칙 추가
+- `canvas-details.md`: Canvas 2D↔CanvasKit 텍스트 오차 처리 원칙 섹션 추가
+
+---
+
 ## [2-Pass Layout height 교정 + Heading Level] - 2026-04-03
 
 ### Bug Fixes
