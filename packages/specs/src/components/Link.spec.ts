@@ -35,6 +35,7 @@ export interface LinkProps {
   staticColor?: "auto" | "black" | "white";
   isExternal?: boolean;
   showExternalIcon?: boolean;
+  isStandalone?: boolean;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -105,7 +106,14 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
               { value: "white", label: "White" },
               { value: "black", label: "Black" },
             ],
-           defaultValue: "auto" },
+            defaultValue: "auto",
+          },
+          {
+            key: "isStandalone",
+            type: "boolean",
+            label: "Standalone",
+            icon: ExternalLink,
+          },
         ],
       },
       {
@@ -150,7 +158,8 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
             type: "boolean",
             label: "Show External Icon",
             icon: Eye,
-           defaultValue: true },
+            defaultValue: true,
+          },
           {
             key: "isDisabled",
             type: "boolean",

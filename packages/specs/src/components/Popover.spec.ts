@@ -13,6 +13,7 @@ import {
   MessageSquare,
   MapPin,
   ArrowLeftRight,
+  ArrowUpDown,
   FlipHorizontal2,
   SquareDashedMousePointer,
 } from "lucide-react";
@@ -34,6 +35,7 @@ export interface PopoverProps {
     | "bottom start"
     | "bottom end";
   hideArrow?: boolean;
+  offset?: number;
   crossOffset?: number;
   shouldFlip?: boolean;
   containerPadding?: number;
@@ -90,6 +92,14 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
               { value: "bottom end", label: "Bottom End" },
             ],
             defaultValue: "bottom",
+          },
+          {
+            key: "offset",
+            type: "number",
+            label: "Offset",
+            icon: ArrowUpDown,
+            step: 1,
+            defaultValue: 8,
           },
           {
             key: "crossOffset",

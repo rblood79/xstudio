@@ -19,6 +19,8 @@ import {
   PointerOff,
   Focus,
   FormInput,
+  LayoutGrid,
+  AlignJustify,
 } from "lucide-react";
 
 /**
@@ -30,6 +32,8 @@ export interface ToggleButtonGroupProps {
   selectionMode?: "single" | "multiple";
   isEmphasized?: boolean;
   isQuiet?: boolean;
+  density?: "compact" | "regular";
+  isJustified?: boolean;
   label?: string;
   indicator?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -144,8 +148,26 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "horizontal" },
+            defaultValue: "horizontal",
+          },
           { key: "indicator", type: "boolean", label: "Indicator", icon: Eye },
+          {
+            key: "density",
+            type: "enum",
+            label: "Density",
+            icon: LayoutGrid,
+            options: [
+              { value: "compact", label: "Compact" },
+              { value: "regular", label: "Regular" },
+            ],
+            defaultValue: "regular",
+          },
+          {
+            key: "isJustified",
+            type: "boolean",
+            label: "Justified",
+            icon: AlignJustify,
+          },
         ],
       },
       {
@@ -160,7 +182,8 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-           defaultValue: "single" },
+            defaultValue: "single",
+          },
           { key: "isRequired", type: "boolean", icon: CheckSquare },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
 

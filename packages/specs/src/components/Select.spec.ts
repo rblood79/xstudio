@@ -28,6 +28,7 @@ import {
   SpellCheck2,
   AlignLeft,
   HelpCircle,
+  Columns,
 } from "lucide-react";
 
 /**
@@ -60,6 +61,7 @@ export interface SelectProps {
   items?: string[];
   /** 선택된 아이템 인덱스 (하이라이트용) */
   selectedIndex?: number;
+  menuWidth?: string;
   contextualHelp?: string;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
@@ -148,6 +150,14 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "end", label: "End" },
             ],
             defaultValue: "start",
+          },
+          {
+            key: "menuWidth",
+            type: "string",
+            label: "Menu Width",
+            icon: Columns,
+            emptyToUndefined: true,
+            placeholder: "auto",
           },
         ],
       },

@@ -50,6 +50,7 @@ export interface TagGroupProps {
   allowsCustomValue?: boolean;
   name?: string;
   maxRows?: number;
+  groupActionLabel?: string;
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";
   isEmphasized?: boolean;
@@ -116,6 +117,13 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             key: "label",
             type: "string",
             label: "Label",
+            icon: Tag,
+            emptyToUndefined: true,
+          },
+          {
+            key: "groupActionLabel",
+            type: "string",
+            label: "Action Label",
             icon: Tag,
             emptyToUndefined: true,
           },

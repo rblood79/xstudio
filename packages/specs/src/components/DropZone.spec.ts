@@ -10,7 +10,14 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Tag, FileText, Parentheses, PointerOff } from "lucide-react";
+import {
+  Tag,
+  FileText,
+  Parentheses,
+  PointerOff,
+  CheckSquare,
+  MessageSquare,
+} from "lucide-react";
 
 /**
  * DropZone Props
@@ -21,6 +28,8 @@ export interface DropZoneProps {
   label?: string;
   description?: string;
   isDropTarget?: boolean;
+  isFilled?: boolean;
+  replaceMessage?: string;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -244,7 +253,22 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
+        fields: [
+          {
+            key: "isFilled",
+            type: "boolean",
+            label: "Filled",
+            icon: CheckSquare,
+          },
+          {
+            key: "replaceMessage",
+            type: "string",
+            label: "Replace Message",
+            icon: MessageSquare,
+            emptyToUndefined: true,
+          },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+        ],
       },
     ],
   },

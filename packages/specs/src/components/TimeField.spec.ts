@@ -18,12 +18,15 @@ import {
   FormInput,
   AlignLeft,
   HelpCircle,
+  FileText,
 } from "lucide-react";
 
 export interface TimeFieldProps {
   variant?: "default" | "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
   label?: string;
+  description?: string;
+  errorMessage?: string;
   granularity?: "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
   locale?: string;
@@ -121,6 +124,20 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
       {
         title: "Content",
         fields: [
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+          },
           {
             key: "contextualHelp",
             type: "string",
