@@ -18,7 +18,6 @@ import {
   Tag,
   Binary,
   CheckSquare,
-  Focus,
   PointerOff,
   PenOff,
   FormInput,
@@ -220,13 +219,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             label: "Read Only",
             icon: PenOff,
           },
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
-
           {
             key: "name",
             type: "string",

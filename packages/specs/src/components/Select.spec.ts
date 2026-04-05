@@ -19,7 +19,6 @@ import {
   SquareX,
   CheckSquare,
   PointerOff,
-  Focus,
   FormInput,
   Layout,
   Tag,
@@ -261,12 +260,6 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             type: "boolean",
             label: "Disabled",
             icon: PointerOff,
-          },
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
           },
           {
             key: "name",

@@ -10,15 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import {
-  Type,
-  Eye,
-  ToggleLeft,
-  Focus,
-  PointerOff,
-  FormInput,
-  Hash,
-} from "lucide-react";
+import { Type, Eye, ToggleLeft, PointerOff } from "lucide-react";
 
 /**
  * ToggleButton Props (S2)
@@ -174,33 +166,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         title: "State",
         fields: [
           { key: "isSelected", type: "boolean", icon: ToggleLeft },
-          { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
-
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            emptyToUndefined: true,
-            placeholder: "toggle-name",
-            icon: FormInput,
-          },
-          {
-            key: "value",
-            type: "string",
-            label: "Value",
-            emptyToUndefined: true,
-            placeholder: "toggle-value",
-            icon: Hash,
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            emptyToUndefined: true,
-            placeholder: "form-id",
-            icon: FormInput,
-          },
         ],
       },
     ],

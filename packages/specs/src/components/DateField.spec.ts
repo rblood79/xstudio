@@ -15,7 +15,6 @@ import {
   AlertTriangle,
   PointerOff,
   PenOff,
-  Focus,
   CheckSquare,
   FormInput,
   Tag,
@@ -264,8 +263,6 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          { key: "autoFocus", type: "boolean", icon: Focus },
-
           {
             key: "name",
             type: "string",

@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   PointerOff,
   PenOff,
-  Focus,
   CheckSquare,
   FormInput,
   HelpCircle,
@@ -259,8 +258,6 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          { key: "autoFocus", type: "boolean", icon: Focus },
-
           {
             key: "name",
             type: "string",

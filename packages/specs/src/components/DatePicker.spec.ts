@@ -22,7 +22,6 @@ import {
   CheckSquare,
   PointerOff,
   PenOff,
-  Focus,
   FormInput,
   ToggleLeft,
   HelpCircle,
@@ -496,7 +495,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
 
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          { key: "autoFocus", type: "boolean", icon: Focus },
           {
             key: "shouldCloseOnSelect",
             type: "boolean",

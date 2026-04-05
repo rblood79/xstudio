@@ -11,7 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, typography } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Type, Hash, Focus, PointerOff, PenOff, Sparkles } from "lucide-react";
+import { Type, Hash, PointerOff, PenOff, Sparkles } from "lucide-react";
 
 /** fontSize(px) → CSS lineHeight(px) 매핑 */
 const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
@@ -199,7 +199,6 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       {
         title: "State",
         fields: [
-          { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
           {

@@ -16,7 +16,6 @@ import {
   ToggleLeft,
   CheckSquare,
   AlertTriangle,
-  Focus,
   PointerOff,
   PenOff,
   FormInput,
@@ -189,8 +188,6 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           { key: "isIndeterminate", type: "boolean", icon: ToggleLeft },
           { key: "isRequired", type: "boolean", icon: CheckSquare },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
-
-          { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
 

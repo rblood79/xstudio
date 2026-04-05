@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   Hash,
   CheckSquare,
-  Focus,
   PointerOff,
   PenOff,
   FileText,
@@ -182,12 +181,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       {
         title: "State",
         fields: [
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
           {
             key: "isDisabled",
             type: "boolean",

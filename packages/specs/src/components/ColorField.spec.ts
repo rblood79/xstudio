@@ -18,7 +18,6 @@ import {
   CheckSquare,
   PointerOff,
   PenOff,
-  Focus,
   Layout,
   HelpCircle,
 } from "lucide-react";
@@ -162,13 +161,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             label: "Read Only",
             icon: PenOff,
           },
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
-
           {
             key: "name",
             type: "string",

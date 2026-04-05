@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   PointerOff,
   PenOff,
-  Focus,
   ToggleLeft,
   ArrowLeftRight,
 } from "lucide-react";
@@ -217,7 +216,6 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
-          { key: "autoFocus", type: "boolean", icon: Focus },
           {
             key: "pageBehavior",
             type: "enum",

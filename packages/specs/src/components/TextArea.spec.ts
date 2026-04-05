@@ -13,7 +13,6 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
   SpellCheck2,
-  Focus,
   FormInput,
   PointerOff,
   AlertTriangle,
@@ -205,7 +204,6 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       {
         title: "State",
         fields: [
-          { key: "autoFocus", type: "boolean", icon: Focus },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
           { key: "isReadOnly", type: "boolean", icon: PenOff },
 

@@ -11,16 +11,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import {
-  Grid,
-  Binary,
-  Rows,
-  SquareX,
-  PointerOff,
-  Focus,
-  Square,
-  FormInput,
-} from "lucide-react";
+import { Grid, Binary, Rows, SquareX, PointerOff, Square } from "lucide-react";
 import { FILTERING_SECTION } from "../utils/sharedSections";
 
 /**
@@ -139,24 +130,10 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             icon: PointerOff,
           },
           {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
-          {
             key: "renderEmptyState",
             type: "boolean",
             label: "Render Empty State",
             icon: Square,
-          },
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: FormInput,
-            emptyToUndefined: true,
-            placeholder: "gridlist-name",
           },
         ],
       },

@@ -13,7 +13,6 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Tag,
   PointerOff,
-  Focus,
   List,
   AlignStartVertical,
   ArrowDown,
@@ -228,12 +227,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             label: "Should Flip",
             icon: ToggleRight,
             defaultValue: true,
-          },
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
           },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],

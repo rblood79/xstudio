@@ -11,7 +11,6 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
-  Focus,
   RotateCcw,
   CheckSquare,
   Globe,
@@ -65,12 +64,6 @@ export const FormSpec: ComponentSpec<FormProps> = {
       {
         title: "State",
         fields: [
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
           {
             key: "restoreFocus",
             type: "boolean",

@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Type, Parentheses, Focus, PointerOff } from "lucide-react";
+import { Type, Parentheses, PointerOff } from "lucide-react";
 import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
 /**
@@ -157,12 +157,6 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
               { value: "submit", label: "Submit" },
               { value: "reset", label: "Reset" },
             ],
-          },
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
           },
           {
             key: "isPending",

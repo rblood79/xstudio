@@ -21,7 +21,6 @@ import {
   ArrowUp,
   Move,
   CheckSquare,
-  Focus,
   PointerOff,
   PenOff,
   MousePointerClick,
@@ -303,12 +302,6 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       {
         title: "State",
         fields: [
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
           {
             key: "isDisabled",
             type: "boolean",

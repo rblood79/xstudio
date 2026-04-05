@@ -18,7 +18,6 @@ import {
   Workflow,
   SquareX,
   PointerOff,
-  Focus,
   ChevronsUpDown,
   Hash,
 } from "lucide-react";
@@ -92,7 +91,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-           defaultValue: "none" },
+            defaultValue: "none",
+          },
           {
             key: "selectionBehavior",
             type: "enum",
@@ -102,7 +102,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
               { value: "replace", label: "Replace" },
               { value: "toggle", label: "Toggle" },
             ],
-           defaultValue: "toggle" },
+            defaultValue: "toggle",
+          },
           {
             key: "disallowEmptySelection",
             type: "boolean",
@@ -155,12 +156,6 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
             type: "boolean",
             label: "Disabled",
             icon: PointerOff,
-          },
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
           },
         ],
       },
