@@ -82,6 +82,7 @@ const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
   14: typography["text-sm--line-height"],
   16: typography["text-base--line-height"],
   18: typography["text-lg--line-height"],
+  20: typography["text-xl--line-height"],
 };
 
 export function getLabelLineHeight(fontSize: number): number {

@@ -22,7 +22,6 @@ import {
   FileText,
   Tag,
   Layout,
-  AlignLeft,
   HelpCircle,
 } from "lucide-react";
 

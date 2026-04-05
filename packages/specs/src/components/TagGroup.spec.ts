@@ -25,7 +25,6 @@ import {
   Trash,
   FileText,
   Tag,
-  AlignLeft,
   Sparkles,
   HelpCircle,
 } from "lucide-react";

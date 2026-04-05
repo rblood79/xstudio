@@ -16,7 +16,6 @@ import {
   Focus,
   CheckSquare,
   FormInput,
-  AlignLeft,
   HelpCircle,
   FileText,
 } from "lucide-react";

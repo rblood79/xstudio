@@ -41,39 +41,39 @@
   }
 }
 
-.react-aria-Toast[data-variant="success"] {
-  background: var(--accent-subtle);
+.react-aria-Toast[data-variant="positive"] {
+  background: var(--color-green-100);
   color: var(--fg);
-  border-color: var(--accent);
+  border-color: var(--color-green-600);
 
   &[data-hovered] {
-    background: var(--accent-subtle);
-    border-color: var(--accent-subtle);
+    background: var(--color-green-100);
+    border-color: var(--color-green-100);
   }
 
   &[data-pressed] {
-    background: var(--accent-subtle);
-    border-color: var(--accent-subtle);
+    background: var(--color-green-100);
+    border-color: var(--color-green-100);
   }
 }
 
-.react-aria-Toast[data-variant="warning"] {
-  background: var(--color-error-100);
+.react-aria-Toast[data-variant="notice"] {
+  background: var(--color-warning-100);
   color: var(--fg);
-  border-color: var(--negative);
+  border-color: var(--color-warning-600);
 
   &[data-hovered] {
-    background: var(--color-error-100);
-    border-color: var(--color-error-100);
+    background: var(--color-warning-100);
+    border-color: var(--color-warning-100);
   }
 
   &[data-pressed] {
-    background: var(--color-error-100);
-    border-color: var(--color-error-100);
+    background: var(--color-warning-100);
+    border-color: var(--color-warning-100);
   }
 }
 
-.react-aria-Toast[data-variant="error"] {
+.react-aria-Toast[data-variant="negative"] {
   background: var(--color-purple-100);
   color: var(--fg);
   border-color: var(--color-purple-600);

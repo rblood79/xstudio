@@ -20,7 +20,6 @@ import {
   PenOff,
   Hash,
   CheckSquare,
-  AlignLeft,
   HelpCircle,
 } from "lucide-react";
 

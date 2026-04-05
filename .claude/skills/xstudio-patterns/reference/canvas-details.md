@@ -189,5 +189,6 @@ DatePicker/DateRangePicker 내부의 Calendar/RangeCalendar은 Preview에서 Pop
 Layout = Canvas 2D = CSS 정합이 원칙. Canvas 2D 측정값에 보정(+2/+4px) 추가 금지.
 
 - **Layout 경로** (`calculateContentWidth`, `enrichWithIntrinsicSize`, `fullTreeLayout Step 3.6`): Canvas 2D `measureTextWidth()` 결과를 그대로 사용. `isCanvasKitMeasurer()` 기반 보정 금지.
-- **렌더링 경로** (`nodeRendererText.ts`): `effectiveLayoutWidth = Math.max(layoutMaxWidth, Math.ceil(c2dResult.width) + 1)` — Canvas 2D↔CanvasKit sub-pixel 차이를 렌더링 단에서만 +1px 마진으로 흡수.
-- **Break Hint** (`nodeRendererText.ts:324`): Canvas 2D가 줄바꿈 결정 → hintedText `\n` 주입 → CanvasKit 강제. 다줄 텍스트에서도 +1px 마진이 줄 내 추가 줄바꿈 방지.
+- **렌더링 경로** (`nodeRendererText.ts`): post-layout 교정 — `paragraph.layout(effectiveLayoutWidth)` 후, `\n` 없는 단일줄 텍스트가 줄바꿈되면 `getMaxIntrinsicWidth() + 1`로 재layout. CanvasKit 자체 측정 기반이므로 경험적 tolerance 불필요.
+- **Break Hint** (`nodeRendererText.ts:324`): Canvas 2D가 줄바꿈 결정 → hintedText `\n` 주입 → CanvasKit 강제.
+- **`getMaxIntrinsicWidth()` 호출 시점**: 반드시 `layout()` 이후. layout 전 호출 시 0 반환.

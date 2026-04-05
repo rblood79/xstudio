@@ -98,6 +98,14 @@
   gap: 8px;
 }
 
+.react-aria-TextArea[data-size="xl"] {
+  height: 160px;
+  padding: 16px 24px;
+  font-size: var(--text-xl);
+  border-radius: var(--radius-lg);
+  gap: 10px;
+}
+
 .react-aria-TextArea[data-hovered] {
 }
 

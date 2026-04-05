@@ -383,22 +383,19 @@ export function renderText(
     const paragraph = builder.build();
     paragraph.layout(effectiveLayoutWidth);
 
-    if (!isEllipsis && (whiteSpace === "nowrap" || whiteSpace === "pre")) {
-      const intrinsicWidth = paragraph.getMaxIntrinsicWidth();
-      if (intrinsicWidth > 0) {
-        paragraph.layout(Math.ceil(intrinsicWidth) + 1);
-      }
-    }
-
-    if (!isEllipsis && whiteSpace !== "nowrap" && whiteSpace !== "pre") {
+    // Canvas 2D↔CanvasKit 오발 줄바꿈 교정:
+    // hintedText에 \n이 없는데(Canvas 2D가 한 줄 판정) CanvasKit이 줄바꿈한 경우
+    // → CanvasKit 자체 측정(getMaxIntrinsicWidth)으로 재layout
+    // \n이 있는 다줄 텍스트는 의도된 줄바꿈이므로 건드리지 않음
+    if (!isEllipsis && !renderableText.includes("\n")) {
       const lineMetrics = paragraph.getLineMetrics();
       if (lineMetrics.length > 1) {
         const maxIntrinsic = paragraph.getMaxIntrinsicWidth();
-        const dprEpsilon =
-          1 / (typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1);
-        if (maxIntrinsic <= effectiveLayoutWidth + dprEpsilon) {
-          paragraph.layout(Math.ceil(maxIntrinsic) + 1);
-        }
+        effectiveLayoutWidth = Math.max(
+          effectiveLayoutWidth,
+          Math.ceil(maxIntrinsic) + 1,
+        );
+        paragraph.layout(effectiveLayoutWidth);
       }
     }
 

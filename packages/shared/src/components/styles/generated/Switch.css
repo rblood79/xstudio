@@ -77,6 +77,14 @@
   gap: 12px;
 }
 
+.react-aria-Switch[data-size="xl"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-full);
+  gap: 14px;
+}
+
 .react-aria-Switch[data-hovered] {
 }
 

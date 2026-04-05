@@ -194,6 +194,84 @@
   }
 }
 
+.react-aria-StatusLight[data-variant="seafoam"] {
+  background: var(--seafoam);
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: var(--seafoam);
+  }
+
+  &[data-pressed] {
+    background: var(--seafoam);
+  }
+}
+
+.react-aria-StatusLight[data-variant="pink"] {
+  background: oklch(0.6 0.18 348);
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: oklch(0.6 0.18 348);
+  }
+
+  &[data-pressed] {
+    background: oklch(0.6 0.18 348);
+  }
+}
+
+.react-aria-StatusLight[data-variant="turquoise"] {
+  background: oklch(0.55 0.1 195);
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: oklch(0.55 0.1 195);
+  }
+
+  &[data-pressed] {
+    background: oklch(0.55 0.1 195);
+  }
+}
+
+.react-aria-StatusLight[data-variant="cinnamon"] {
+  background: var(--cinnamon);
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: var(--cinnamon);
+  }
+
+  &[data-pressed] {
+    background: var(--cinnamon);
+  }
+}
+
+.react-aria-StatusLight[data-variant="brown"] {
+  background: var(--brown);
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: var(--brown);
+  }
+
+  &[data-pressed] {
+    background: var(--brown);
+  }
+}
+
+.react-aria-StatusLight[data-variant="silver"] {
+  background: var(--silver);
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: var(--silver);
+  }
+
+  &[data-pressed] {
+    background: var(--silver);
+  }
+}
+
 .react-aria-StatusLight[data-size="sm"] {
   height: 20px;
   padding: 0px 0px;
@@ -214,6 +292,14 @@
   height: 28px;
   padding: 0px 0px;
   font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  gap: 8px;
+}
+
+.react-aria-StatusLight[data-size="xl"] {
+  height: 32px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
   border-radius: var(--radius-none);
   gap: 8px;
 }

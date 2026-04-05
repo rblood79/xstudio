@@ -36,7 +36,8 @@ ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeas
 - Spec-Driven Text Style: `extractSpecTextStyle(tag, props)` 사용. **텍스트 props(children/text/label) 없이 호출 금지** → null 반환 → fallback 측정 불일치
 - Paragraph API: 콘텐츠 폭=`getLongestLine()`, max-content=`getMaxIntrinsicWidth()`. `getMaxWidth()` 사용 금지
 - WASM Paragraph 객체 캐싱 금지 (메모리 누수). 결과값 `{width, height}` 만 LRU 캐싱
-- **Layout 보정 금지**: `calculateContentWidth`, `enrichWithIntrinsicSize` 등 layout 경로에서 `+2/+4px` Canvas 2D→CanvasKit 보정 사용 금지. **Why**: Layout = Canvas 2D = CSS 정합이 원칙. Canvas 2D↔CanvasKit sub-pixel 차이는 **렌더링 단**(nodeRendererText.ts)에서 `effectiveLayoutWidth = Math.ceil(c2dResult.width) + 1`로 처리. layout에 보정 적용 시 CSS와 불일치.
+- **Layout 보정 금지**: `calculateContentWidth`, `enrichWithIntrinsicSize` 등 layout 경로에서 `+2/+4px` Canvas 2D→CanvasKit 보정 사용 금지. **Why**: Layout = Canvas 2D = CSS 정합이 원칙. Canvas 2D↔CanvasKit sub-pixel 차이는 **렌더링 단**(nodeRendererText.ts)에서 post-layout `getMaxIntrinsicWidth()` 교정으로 처리. layout에 보정 적용 시 CSS와 불일치.
+- **CanvasKit 오발 줄바꿈 교정**: nodeRendererText.ts에서 `paragraph.layout()` 후 `\n` 없는 단일줄 텍스트가 줄바꿈되면 `getMaxIntrinsicWidth() + 1`로 재layout. **Why**: Canvas 2D↔CanvasKit 엔진 차이로 같은 텍스트가 다른 폭으로 측정됨. CanvasKit 자체 측정 기반 교정이므로 경험적 tolerance 불필요.
 
 ## 4. Spec-CSS 경계
 
