@@ -134,8 +134,8 @@ const PROGRESSBAR_FONT_SIZE: Record<string, number> = {
   xl: 18,
 };
 
-/** ProgressBar/Meter 사이즈별 lineHeight (CSS --text-*--line-height 동기) */
-const PROGRESSBAR_LINE_HEIGHT: Record<string, number> = {
+/** 사이즈별 lineHeight (CSS --text-*--line-height 동기, ProgressBar/Meter/Slider 공통) */
+const SIZE_LINE_HEIGHT: Record<string, number> = {
   sm: 16,
   md: 20,
   lg: 24,
@@ -179,14 +179,6 @@ const SLIDER_FONT_SIZE: Record<string, number> = {
   md: 14,
   lg: 16,
   xl: 18,
-};
-
-/** Slider 사이즈별 lineHeight (CSS --text-*--line-height 동기) */
-const SLIDER_LINE_HEIGHT: Record<string, number> = {
-  sm: 16,
-  md: 20,
-  lg: 24,
-  xl: 28,
 };
 
 /** Synthetic Label을 생성하는 태그 */
@@ -1318,7 +1310,9 @@ export function applyImplicitStyles(
       return true;
     });
 
-    // Label: flexGrow:1 = CSS grid 1fr 에뮬레이션 (컨테이너 - value - gap 폭 할당)
+    // Label: width:0 + flexGrow:1 = CSS grid 1fr 에뮬레이션
+    // basis=0 → Label+Value가 항상 1행에 배치 (fit-content basis 시 flex wrap 발생)
+    // flexShrink:1 명시 → 후처리 flexShrink:0 일괄주입 방지
     // Track: width:100%로 2행 강제
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -1332,7 +1326,10 @@ export function applyImplicitStyles(
             style: {
               ...cs,
               fontSize: labelFontSize,
+              width: 0,
               flexGrow: cs.flexGrow ?? 1,
+              flexShrink: cs.flexShrink ?? 1,
+              minWidth: 0,
               whiteSpace: cs.whiteSpace ?? "nowrap",
             },
           },
@@ -1358,7 +1355,7 @@ export function applyImplicitStyles(
         const valueFontSize =
           PROGRESSBAR_FONT_SIZE[sizeName] ?? PROGRESSBAR_FONT_SIZE.md;
         const valueLineHeight =
-          PROGRESSBAR_LINE_HEIGHT[sizeName] ?? PROGRESSBAR_LINE_HEIGHT.md;
+          SIZE_LINE_HEIGHT[sizeName] ?? SIZE_LINE_HEIGHT.md;
         return {
           ...child,
           props: {
@@ -1369,6 +1366,7 @@ export function applyImplicitStyles(
               ...cs,
               fontSize: valueFontSize,
               lineHeight: `${valueLineHeight}px`,
+              flexShrink: cs.flexShrink ?? 0,
               whiteSpace: cs.whiteSpace ?? "nowrap",
             },
           },
@@ -1421,7 +1419,7 @@ export function applyImplicitStyles(
       return true;
     });
 
-    // Label: flexGrow:1 = CSS grid 1fr 에뮬레이션 (컨테이너 - output - gap 폭 할당)
+    // Label: width:0 + flexGrow:1 = CSS grid 1fr 에뮬레이션
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (child.tag === "Label") {
@@ -1433,7 +1431,10 @@ export function applyImplicitStyles(
             style: {
               ...cs,
               fontSize: labelFontSize,
+              width: 0,
               flexGrow: cs.flexGrow ?? 1,
+              flexShrink: cs.flexShrink ?? 1,
+              minWidth: 0,
               whiteSpace: cs.whiteSpace ?? "nowrap",
             },
           },
@@ -1462,7 +1463,7 @@ export function applyImplicitStyles(
       if (child.tag === "SliderOutput") {
         const valueFontSize = SLIDER_FONT_SIZE[sizeName] ?? SLIDER_FONT_SIZE.md;
         const valueLineHeight =
-          SLIDER_LINE_HEIGHT[sizeName] ?? SLIDER_LINE_HEIGHT.md;
+          SIZE_LINE_HEIGHT[sizeName] ?? SIZE_LINE_HEIGHT.md;
         return {
           ...child,
           props: {
@@ -1473,6 +1474,7 @@ export function applyImplicitStyles(
               ...cs,
               fontSize: valueFontSize,
               lineHeight: `${valueLineHeight}px`,
+              flexShrink: cs.flexShrink ?? 0,
               whiteSpace: cs.whiteSpace ?? "nowrap",
             },
           },

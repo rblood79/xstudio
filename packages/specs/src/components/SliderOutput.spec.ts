@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SliderOutputProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** 표시할 값 텍스트 (포맷팅된 문자열) */
   children?: string;
   style?: Record<string, string | number | undefined>;

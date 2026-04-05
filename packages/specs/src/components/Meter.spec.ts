@@ -58,6 +58,7 @@ export const METER_DIMENSIONS: Record<string, { barHeight: number }> = {
   sm: { barHeight: 4 },
   md: { barHeight: 8 },
   lg: { barHeight: 12 },
+  xl: { barHeight: 16 },
 };
 
 /**

@@ -19,7 +19,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface MeterTrackProps {
   variant?: "informative" | "positive" | "warning" | "critical";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   value?: number;
   isDisabled?: boolean;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
@@ -32,6 +32,7 @@ const TRACK_BORDER_RADIUS: Record<string, TokenRef> = {
   sm: "{radius.sm}" as TokenRef,
   md: "{radius.sm}" as TokenRef,
   lg: "{radius.md}" as TokenRef,
+  xl: "{radius.lg}" as TokenRef,
 };
 
 /** 트랙 배경색 */
@@ -98,6 +99,14 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 0,
+    },
+    xl: {
+      height: METER_DIMENSIONS.xl.barHeight,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },

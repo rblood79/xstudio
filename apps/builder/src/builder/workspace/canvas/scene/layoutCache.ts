@@ -128,6 +128,9 @@ const LAYOUT_PROP_KEYS = [
   "iconPosition",
   "minValue",
   "maxValue",
+  "formatOptions",
+  "showValueLabel",
+  "valueLabel",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {

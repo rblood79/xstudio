@@ -1272,15 +1272,30 @@ export function calculateContentWidth(
       return textWidth + iconExtra + removeExtra;
     }
 
-    // 일반 요소: computedStyle 기준으로 font 속성을 해소
-    // raw style에 fontSize가 없으면 CSS 상속 기본값(16px)을 사용해야 렌더러와 일치
+    // 일반 요소: Spec → inline style → computedStyle → 기본값 순으로 font 속성 해소
+    // inline style에 font 속성이 모두 있으면 Spec 조회 스킵 (hot-path 최적화)
+    const needsSpecFallback =
+      style?.fontSize == null ||
+      style?.fontWeight == null ||
+      style?.fontFamily == null;
+    const specStyle = needsSpecFallback
+      ? extractSpecTextStyle(tag, element.props as Record<string, unknown>)
+      : null;
     const fontSize =
-      parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize ?? 16; // CSS initial value (ROOT_COMPUTED_STYLE.fontSize)
+      parseNumericValue(style?.fontSize) ??
+      specStyle?.fontSize ??
+      computedStyle?.fontSize ??
+      16;
     const fontFamily =
       (style?.fontFamily as string) ??
+      specStyle?.fontFamily ??
       computedStyle?.fontFamily ??
       specFontFamily.sans;
-    const fontWeight = style?.fontWeight ?? computedStyle?.fontWeight ?? 400;
+    const fontWeight =
+      style?.fontWeight ??
+      specStyle?.fontWeight ??
+      computedStyle?.fontWeight ??
+      400;
     const letterSpacing =
       parseNumericValue(style?.letterSpacing) ??
       computedStyle?.letterSpacing ??

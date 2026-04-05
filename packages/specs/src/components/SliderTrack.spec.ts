@@ -16,7 +16,7 @@ import { SLIDER_FILL_COLORS, SLIDER_DIMENSIONS } from "./Slider.spec";
  */
 export interface SliderTrackProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** 단일 값 또는 범위 값 (부모 Slider에서 상속) */
   value?: number | number[];
   minValue?: number;
@@ -34,6 +34,7 @@ export const SLIDER_TRACK_DIMENSIONS: Record<string, { trackHeight: number }> =
     sm: { trackHeight: 4 },
     md: { trackHeight: 8 },
     lg: { trackHeight: 12 },
+    xl: { trackHeight: 16 },
   };
 
 /**
@@ -94,6 +95,14 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 0,
+    },
+    xl: {
+      height: SLIDER_TRACK_DIMENSIONS.xl.trackHeight,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },

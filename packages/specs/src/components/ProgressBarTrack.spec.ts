@@ -23,7 +23,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ProgressBarTrackProps {
   variant?: "default";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   value?: number;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
@@ -37,6 +37,7 @@ const TRACK_BORDER_RADIUS: Record<string, TokenRef> = {
   sm: "{radius.sm}" as TokenRef,
   md: "{radius.sm}" as TokenRef,
   lg: "{radius.md}" as TokenRef,
+  xl: "{radius.lg}" as TokenRef,
 };
 
 /** 트랙 배경색 */
@@ -87,6 +88,14 @@ export const ProgressBarTrackSpec: ComponentSpec<ProgressBarTrackProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 0,
+    },
+    xl: {
+      height: PROGRESSBAR_DIMENSIONS.xl.barHeight,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },

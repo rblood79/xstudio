@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface MeterValueProps {
   variant?: "informative" | "positive" | "warning" | "critical";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }

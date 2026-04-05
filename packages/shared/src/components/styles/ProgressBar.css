@@ -47,6 +47,7 @@
     }
 
     .fill {
+      border-radius: var(--radius-sm);
       background: var(--fill-color);
       height: 100%;
       transition: width 200ms ease-out;
@@ -83,6 +84,9 @@
       height: var(--spacing-xs);
       border-radius: var(--radius-sm);
     }
+    .fill {
+      border-radius: var(--radius-sm);
+    }
 
     .value {
       font-size: var(--text-xs);
@@ -97,7 +101,9 @@
       height: var(--spacing-sm);
       border-radius: var(--radius-sm);
     }
-
+    .fill {
+      border-radius: var(--radius-sm);
+    }
     .value {
       font-size: var(--text-sm);
     }
@@ -111,7 +117,9 @@
       height: var(--spacing-md);
       border-radius: var(--radius-lg);
     }
-
+    .fill {
+      border-radius: var(--radius-md);
+    }
     .value {
       font-size: var(--text-base);
     }
@@ -125,7 +133,9 @@
       height: var(--spacing-lg);
       border-radius: var(--radius-lg);
     }
-
+    .fill {
+      border-radius: var(--radius-lg);
+    }
     .value {
       font-size: var(--text-lg);
     }

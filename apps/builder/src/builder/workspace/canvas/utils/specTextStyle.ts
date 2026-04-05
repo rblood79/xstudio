@@ -22,6 +22,9 @@ import {
   StatusLightSpec,
   SelectValueSpec,
   MenuSpec,
+  ProgressBarValueSpec,
+  MeterValueSpec,
+  SliderOutputSpec,
 } from "@xstudio/specs";
 
 /** Spec shapes에서 추출한 텍스트 스타일 */
@@ -56,6 +59,18 @@ const TEXT_BEARING_SPECS: Record<
   selectvalue: { spec: SelectValueSpec, defaultSize: "md" },
   menu: {
     spec: MenuSpec as ComponentSpec<Record<string, unknown>>,
+    defaultSize: "md",
+  },
+  progressbarvalue: {
+    spec: ProgressBarValueSpec as ComponentSpec<Record<string, unknown>>,
+    defaultSize: "md",
+  },
+  metervalue: {
+    spec: MeterValueSpec as ComponentSpec<Record<string, unknown>>,
+    defaultSize: "md",
+  },
+  slideroutput: {
+    spec: SliderOutputSpec as ComponentSpec<Record<string, unknown>>,
     defaultSize: "md",
   },
 };

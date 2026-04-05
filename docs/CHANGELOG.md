@@ -5,6 +5,41 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ProgressBar/Meter/Slider 정합성 강화 + TEXT_BEARING_SPECS SSOT] - 2026-04-06
+
+### Bug Fixes
+
+- **ProgressBar Label 공백 줄바꿈**: CSS grid `1fr auto` → Taffy flex 에뮬레이션 불일치
+  - Label: `width: 0` + `flexGrow: 1` + `flexShrink: 1` = CSS grid `1fr` (basis=0으로 항상 1행 배치)
+  - Value: `flexShrink: 0` (축소 불가, content width 보존)
+  - CSS/Taffy/Skia 3경로 `white-space: nowrap` 동기화
+  - 위치: `implicitStyles.ts`, `ElementSprite.tsx`, `ProgressBar.css`, `Meter.css`, `Slider.css`
+
+- **ProgressBarValue Currency 줄바꿈 (근본 원인 2개)**:
+  1. `LAYOUT_PROP_KEYS`/`LAYOUT_AFFECTING_PROPS`에 `formatOptions` 미등록 → Currency 변경 시 layout 미재계산
+  2. `calculateContentWidth`가 fontWeight 400으로 측정, Spec은 fontWeight 500 렌더링 → 폭 불일치 → Break Hint `\n` 삽입 → post-layout correction 스킵
+  - 수정: `formatOptions`/`showValueLabel`/`valueLabel` 등록 (layoutCache.ts + inspectorActions.ts)
+  - 수정: `TEXT_BEARING_SPECS`에 ProgressBarValue/MeterValue/SliderOutput 등록 → Spec SSOT fontWeight 추출
+
+- **Value height 불일치 (Label 20 vs Value 21)**: Value Spec에 lineHeight 미정의 → CanvasKit 기본값 사용
+  - ProgressBarValue/MeterValue/SliderOutput Spec sizes에 lineHeight 추가 (sm:16, md:20, lg:24, xl:28)
+  - implicitStyles에서 `lineHeight: "${N}px"` 주입
+
+### Features
+
+- **ProgressBar/Meter/Slider xl size 추가**: CSS + Spec + implicitStyles 전체 경로
+  - CSS: `[data-size="xl"]` 규칙 (fontSize: `--text-lg`, barHeight: `--spacing-lg`)
+  - Spec: 부모/Track/Value/Output sizes에 xl 추가, DIMENSIONS에 xl 추가
+  - implicitStyles: FONT_SIZE/BAR_HEIGHT/LINE_HEIGHT/TRACK_HEIGHT xl 상수 추가
+
+### Architecture
+
+- **TEXT_BEARING_SPECS SSOT 확장**: `calculateContentWidth` generic 경로에 `extractSpecTextStyle` fallback 추가
+  - Spec 등록 컴포넌트는 fontWeight/fontFamily를 Spec에서 추출 → 하드코딩 제거
+  - 위치: `specTextStyle.ts`, `utils.ts`
+
+---
+
 ## [Canvas 2D↔CanvasKit 텍스트 정합성 + ProgressBar S2 Gap] - 2026-04-05
 
 ### Bug Fixes

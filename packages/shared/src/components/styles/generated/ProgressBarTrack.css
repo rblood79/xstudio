@@ -59,6 +59,12 @@
   border-radius: var(--radius-none);
 }
 
+.react-aria-ProgressBarTrack[data-size="xl"] {
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+}
+
 .react-aria-ProgressBarTrack[data-hovered] {
 }
 

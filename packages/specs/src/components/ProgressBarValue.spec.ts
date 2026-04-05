@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ProgressBarValueProps {
   variant?: "default";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** 표시할 값 텍스트 (부모에서 delegation) */
   children?: string;
   style?: Record<string, string | number | undefined>;

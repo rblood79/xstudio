@@ -2329,11 +2329,7 @@ export const ElementSprite = memo(function ElementSprite({
                     // Checkbox/Radio/Switch 내부 Label: CSS white-space: nowrap 동기화
                     // Tag/Badge: CSS white-space: nowrap 동기화
                     const isNowrapTag =
-                      element.tag === "Tag" ||
-                      element.tag === "Badge" ||
-                      element.tag === "ProgressBarValue" ||
-                      element.tag === "MeterValue" ||
-                      element.tag === "SliderOutput";
+                      element.tag === "Tag" || element.tag === "Badge";
                     const effectiveWhiteSpace =
                       style?.whiteSpace ??
                       (isLabelInNowrapParent || isNowrapTag
