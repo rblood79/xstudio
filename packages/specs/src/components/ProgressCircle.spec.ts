@@ -23,7 +23,6 @@ import { Hash, Palette, Loader } from "lucide-react";
 export interface ProgressCircleProps {
   variant?: "default";
   size?: "sm" | "md" | "lg";
-  label?: string;
   value?: number;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
@@ -237,13 +236,6 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       {
         title: "Content",
         fields: [
-          {
-            key: "label",
-            type: "string",
-            label: "Label (aria-label)",
-            icon: Loader,
-            emptyToUndefined: true,
-          },
           {
             key: "value",
             type: "number",
