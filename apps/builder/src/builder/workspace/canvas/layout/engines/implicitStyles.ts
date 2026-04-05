@@ -39,9 +39,29 @@ export function formatProgressValue(
   max: number,
   formatOptions?: Record<string, unknown> | null,
 ): string {
-  if (formatOptions?.style === "decimal") return String(Math.round(value));
-  const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
-  return `${Math.round(Math.max(0, Math.min(100, percent)))}%`;
+  if (!formatOptions?.style || formatOptions.style === "percent") {
+    const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
+    return `${Math.round(Math.max(0, Math.min(100, percent)))}%`;
+  }
+  // currency/unit style에 필수값 없으면 decimal fallback
+  const style = formatOptions.style as string;
+  if (style === "currency" && !formatOptions.currency) {
+    return String(Math.round(value));
+  }
+  if (style === "unit" && !formatOptions.unit) {
+    return String(Math.round(value));
+  }
+  try {
+    const opts: Intl.NumberFormatOptions = { style };
+    if (formatOptions.currency) opts.currency = String(formatOptions.currency);
+    if (formatOptions.unit) opts.unit = String(formatOptions.unit);
+    if (formatOptions.notation)
+      opts.notation =
+        formatOptions.notation as Intl.NumberFormatOptions["notation"];
+    return new Intl.NumberFormat(undefined, opts).format(value);
+  } catch {
+    return String(Math.round(value));
+  }
 }
 
 // ─── 내부 상수 ──────────────────────────────────────────────────────
@@ -1277,7 +1297,7 @@ export function applyImplicitStyles(
       return true;
     });
 
-    // Label: fit-content 유지, Output: fit-content → justifyContent: space-between로 배치
+    // Label: flexGrow:1 = CSS grid 1fr 에뮬레이션 (컨테이너 - value - gap 폭 할당)
     // Track: width:100%로 2행 강제
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -1288,7 +1308,12 @@ export function applyImplicitStyles(
           ...child,
           props: {
             ...child.props,
-            style: { ...cs, fontSize: labelFontSize },
+            style: {
+              ...cs,
+              fontSize: labelFontSize,
+              flexGrow: cs.flexGrow ?? 1,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+            },
           },
         } as Element;
       }
@@ -1368,7 +1393,7 @@ export function applyImplicitStyles(
       return true;
     });
 
-    // Label: fit-content 유지, Output: fontSize, Track: width:100% + height
+    // Label: flexGrow:1 = CSS grid 1fr 에뮬레이션 (컨테이너 - output - gap 폭 할당)
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (child.tag === "Label") {
@@ -1377,7 +1402,12 @@ export function applyImplicitStyles(
           ...child,
           props: {
             ...child.props,
-            style: { ...cs, fontSize: labelFontSize },
+            style: {
+              ...cs,
+              fontSize: labelFontSize,
+              flexGrow: cs.flexGrow ?? 1,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+            },
           },
         } as Element;
       }

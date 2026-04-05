@@ -382,13 +382,33 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         // Standalone 모드: 기존 monolithic 렌더링
         const hasLabelRow = !!props.label || showValueLabel;
 
-        const formatStyle = (
-          props.formatOptions as Intl.NumberFormatOptions | undefined
-        )?.style;
+        const fo = props.formatOptions as Intl.NumberFormatOptions | undefined;
         const autoFormatted = showValueLabel
-          ? formatStyle === "decimal"
-            ? String(Math.round(value))
-            : `${Math.round(percent)}%`
+          ? (() => {
+              if (!fo?.style || fo.style === "percent")
+                return `${Math.round(percent)}%`;
+              if (fo.style === "currency" && fo.currency) {
+                try {
+                  return new Intl.NumberFormat(undefined, {
+                    style: "currency",
+                    currency: fo.currency,
+                  }).format(value);
+                } catch {
+                  return String(Math.round(value));
+                }
+              }
+              if (fo.style === "unit" && fo.unit) {
+                try {
+                  return new Intl.NumberFormat(undefined, {
+                    style: "unit",
+                    unit: fo.unit,
+                  }).format(value);
+                } catch {
+                  return String(Math.round(value));
+                }
+              }
+              return String(Math.round(value));
+            })()
           : "";
         const formattedValue = props.valueLabel ?? autoFormatted;
         // ADR-051: 실측 기반 value 텍스트 폭 (추정값 제거)

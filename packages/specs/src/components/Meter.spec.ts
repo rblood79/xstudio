@@ -401,11 +401,32 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
           });
         }
         if (props.showValueLabel !== false) {
-          const formatStyle = props.formatOptions?.style;
-          const autoFormatted =
-            formatStyle === "decimal"
-              ? String(value)
-              : `${Math.round(percent)}%`;
+          const fo = props.formatOptions;
+          const autoFormatted = (() => {
+            if (!fo?.style || fo.style === "percent")
+              return `${Math.round(percent)}%`;
+            if (fo.style === "currency" && fo.currency) {
+              try {
+                return new Intl.NumberFormat(undefined, {
+                  style: "currency",
+                  currency: fo.currency,
+                }).format(value);
+              } catch {
+                return String(value);
+              }
+            }
+            if (fo.style === "unit" && fo.unit) {
+              try {
+                return new Intl.NumberFormat(undefined, {
+                  style: "unit",
+                  unit: fo.unit,
+                }).format(value);
+              } catch {
+                return String(value);
+              }
+            }
+            return String(value);
+          })();
           const formattedValue = props.valueLabel ?? autoFormatted;
           shapes.push({
             type: "text" as const,
