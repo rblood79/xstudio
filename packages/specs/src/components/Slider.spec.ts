@@ -24,7 +24,6 @@ import {
   AlignLeft,
   Sparkles,
   HelpCircle,
-  Eye,
   Layers,
   SlidersHorizontal,
 } from "lucide-react";
@@ -265,12 +264,6 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             label: "Fill Offset",
             icon: SlidersHorizontal,
             step: 1,
-          },
-          {
-            key: "showValueLabel",
-            type: "boolean",
-            label: "Show Value Label",
-            icon: Eye,
           },
         ],
       },
