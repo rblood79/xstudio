@@ -63,6 +63,8 @@ function createCollectionItemPropagationSpec(
         },
       ],
     },
+    defaultVariant: "default",
+    defaultSize: "md",
     variants: {},
     sizes: {},
     states: {},

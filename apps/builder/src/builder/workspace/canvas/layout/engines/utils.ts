@@ -1583,7 +1583,7 @@ export function calculateContentHeight(
 
     // 텍스트 줄바꿈 높이 계산: availableWidth가 제공되면 줄바꿈 고려
     // configHeight보다 먼저 체크하여 텍스트가 줄바꿈되면 더 큰 높이를 사용
-    if (availableWidth !== undefined && availableWidth > 0) {
+    if (availableWidth != null && availableWidth > 0) {
       const paddingX =
         parseNumericValue(style?.paddingLeft) ??
         parseNumericValue(style?.padding) ??
