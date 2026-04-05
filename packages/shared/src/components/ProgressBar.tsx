@@ -100,10 +100,11 @@ export function ProgressBar({
     return formatOptions;
   })();
 
-  // 값 포맷팅 함수
+  // 값 포맷팅 함수 — safeFormatOptions 기반 Intl.NumberFormat 사용
   const formatValue = (value: number): string => {
-    if (safeFormatOptions?.style === "decimal") {
-      return formatNumber(value, locale);
+    if (safeFormatOptions) {
+      const v = safeFormatOptions.style === "percent" ? value / 100 : value;
+      return new Intl.NumberFormat(locale, safeFormatOptions).format(v);
     }
     return formatPercent(value / 100, locale, 0);
   };
