@@ -12,7 +12,6 @@ import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
-  Keyboard,
   AlertTriangle,
   Hash,
   CheckSquare,
@@ -23,9 +22,6 @@ import {
   AlignLeft,
   HelpCircle,
   Image,
-  Type,
-  SpellCheck2,
-  CornerDownLeft,
 } from "lucide-react";
 
 /**
@@ -162,23 +158,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         ],
       },
       {
-        title: "Input Mode",
-        fields: [
-          {
-            key: "inputMode",
-            type: "enum",
-            label: "Input Mode",
-            icon: Keyboard,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "None" },
-              { value: "text", label: "Text" },
-              { value: "search", label: "Search" },
-            ],
-          },
-        ],
-      },
-      {
         title: "State",
         fields: [
           {
@@ -247,51 +226,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             label: "Icon",
             icon: Image,
             emptyToUndefined: true,
-          },
-          {
-            key: "autoCorrect",
-            type: "enum",
-            label: "Auto Correct",
-            icon: CheckSquare,
-            options: [
-              { value: "on", label: "On" },
-              { value: "off", label: "Off" },
-            ],
-            defaultValue: "off",
-          },
-          {
-            key: "spellCheck",
-            type: "boolean",
-            label: "Spell Check",
-            icon: SpellCheck2,
-          },
-          {
-            key: "enterKeyHint",
-            type: "enum",
-            label: "Enter Key Hint",
-            icon: CornerDownLeft,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Default" },
-              { value: "enter", label: "Enter" },
-              { value: "done", label: "Done" },
-              { value: "go", label: "Go" },
-              { value: "next", label: "Next" },
-              { value: "previous", label: "Previous" },
-              { value: "search", label: "Search" },
-              { value: "send", label: "Send" },
-            ],
-          },
-          {
-            key: "type",
-            type: "enum",
-            label: "Input Type",
-            icon: Type,
-            options: [
-              { value: "search", label: "Search" },
-              { value: "text", label: "Text" },
-            ],
-            defaultValue: "search",
           },
         ],
       },

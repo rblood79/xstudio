@@ -11,7 +11,6 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
-  RotateCcw,
   CheckSquare,
   Globe,
   Send,
@@ -61,17 +60,6 @@ export const FormSpec: ComponentSpec<FormProps> = {
 
   properties: {
     sections: [
-      {
-        title: "State",
-        fields: [
-          {
-            key: "restoreFocus",
-            type: "boolean",
-            label: "Restore Focus",
-            icon: RotateCcw,
-          },
-        ],
-      },
       {
         title: "Appearance",
         fields: [

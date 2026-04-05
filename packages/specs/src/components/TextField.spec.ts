@@ -12,7 +12,6 @@ import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Keyboard,
-  SpellCheck2,
   AlertTriangle,
   Hash,
   CheckSquare,
@@ -23,7 +22,6 @@ import {
   Layout,
   HelpCircle,
   Minimize2,
-  CornerDownLeft,
   Image,
 } from "lucide-react";
 
@@ -187,41 +185,6 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             ],
             defaultValue: "text",
           },
-          {
-            key: "inputMode",
-            type: "enum",
-            label: "Input Mode",
-            icon: Keyboard,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "None" },
-              { value: "text", label: "Text" },
-              { value: "numeric", label: "Numeric" },
-              { value: "decimal", label: "Decimal" },
-              { value: "tel", label: "Tel" },
-              { value: "email", label: "Email" },
-              { value: "url", label: "URL" },
-              { value: "search", label: "Search" },
-            ],
-          },
-          {
-            key: "autoComplete",
-            type: "enum",
-            label: "Autocomplete",
-            icon: SpellCheck2,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Off" },
-              { value: "on", label: "On" },
-              { value: "name", label: "Name" },
-              { value: "email", label: "Email" },
-              { value: "username", label: "Username" },
-              { value: "new-password", label: "New Password" },
-              { value: "current-password", label: "Current Password" },
-              { value: "tel", label: "Tel" },
-              { value: "url", label: "URL" },
-            ],
-          },
         ],
       },
       {
@@ -246,53 +209,10 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             icon: AlertTriangle,
           },
           {
-            key: "spellCheck",
-            type: "boolean",
-            label: "Spell Check",
-            icon: SpellCheck2,
-          },
-          {
-            key: "autoCorrect",
-            type: "enum",
-            label: "Auto Correct",
-            icon: SpellCheck2,
-            options: [
-              { value: "on", label: "On" },
-              { value: "off", label: "Off" },
-            ],
-            defaultValue: "off",
-          },
-          {
-            key: "enterKeyHint",
-            type: "enum",
-            label: "Enter Key Hint",
-            icon: CornerDownLeft,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Default" },
-              { value: "enter", label: "Enter" },
-              { value: "done", label: "Done" },
-              { value: "go", label: "Go" },
-              { value: "next", label: "Next" },
-              { value: "previous", label: "Previous" },
-              { value: "search", label: "Search" },
-              { value: "send", label: "Send" },
-            ],
-          },
-
-          {
             key: "errorMessage",
             type: "string",
             label: "Error Message",
             icon: AlertTriangle,
-          },
-          {
-            key: "pattern",
-            type: "string",
-            label: "Pattern",
-            icon: AlertTriangle,
-            emptyToUndefined: true,
-            placeholder: "Regular expression",
           },
           {
             key: "minLength",

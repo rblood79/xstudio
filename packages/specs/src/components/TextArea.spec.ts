@@ -12,15 +12,12 @@ import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import {
   Layout,
-  SpellCheck2,
   PointerOff,
   AlertTriangle,
   PenOff,
   Hash,
   CheckSquare,
   HelpCircle,
-  Keyboard,
-  CornerDownLeft,
 } from "lucide-react";
 
 /**
@@ -207,18 +204,6 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           { key: "isReadOnly", type: "boolean", icon: PenOff },
 
           {
-            key: "autoComplete",
-            type: "enum",
-            label: "Autocomplete",
-            icon: SpellCheck2,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "None" },
-              { value: "on", label: "On" },
-              { value: "off", label: "Off" },
-            ],
-          },
-          {
             key: "necessityIndicator",
             type: "enum",
             label: "Required",
@@ -250,57 +235,6 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
             label: "Min Length",
             icon: Hash,
             min: 0,
-          },
-          {
-            key: "inputMode",
-            type: "enum",
-            label: "Input Mode",
-            icon: Keyboard,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Default" },
-              { value: "text", label: "Text" },
-              { value: "numeric", label: "Numeric" },
-              { value: "decimal", label: "Decimal" },
-              { value: "tel", label: "Tel" },
-              { value: "email", label: "Email" },
-              { value: "url", label: "URL" },
-              { value: "search", label: "Search" },
-            ],
-          },
-          {
-            key: "spellCheck",
-            type: "boolean",
-            label: "Spell Check",
-            icon: SpellCheck2,
-          },
-          {
-            key: "autoCorrect",
-            type: "enum",
-            label: "Auto Correct",
-            icon: CheckSquare,
-            options: [
-              { value: "on", label: "On" },
-              { value: "off", label: "Off" },
-            ],
-            defaultValue: "off",
-          },
-          {
-            key: "enterKeyHint",
-            type: "enum",
-            label: "Enter Key Hint",
-            icon: CornerDownLeft,
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Default" },
-              { value: "enter", label: "Enter" },
-              { value: "done", label: "Done" },
-              { value: "go", label: "Go" },
-              { value: "next", label: "Next" },
-              { value: "previous", label: "Previous" },
-              { value: "search", label: "Search" },
-              { value: "send", label: "Send" },
-            ],
           },
         ],
       },

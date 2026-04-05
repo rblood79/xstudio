@@ -22,7 +22,6 @@ import {
   CheckSquare,
   PointerOff,
   PenOff,
-  FormInput,
   ToggleLeft,
   HelpCircle,
   Calendar,
@@ -501,14 +500,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             label: "Close On Select",
             icon: CheckSquare,
             defaultValue: true,
-          },
-
-          {
-            key: "autoComplete",
-            type: "string",
-            label: "Autocomplete",
-            icon: FormInput,
-            emptyToUndefined: true,
           },
         ],
       },

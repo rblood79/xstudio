@@ -318,13 +318,6 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             emptyToUndefined: true,
             placeholder: "end-date",
           },
-          {
-            key: "autoComplete",
-            type: "string",
-            label: "Autocomplete",
-            icon: FormInput,
-            emptyToUndefined: true,
-          },
         ],
       },
     ],
