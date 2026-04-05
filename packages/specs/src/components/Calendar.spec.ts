@@ -31,6 +31,8 @@ export interface CalendarProps {
   value?: string;
   locale?: string;
   calendarSystem?: string;
+  firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
+  visibleMonths?: number;
   isDisabled?: boolean;
   isReadOnly?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -134,6 +136,23 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         title: "Locale",
         fields: [
           {
+            key: "firstDayOfWeek",
+            type: "enum",
+            label: "First Day of Week",
+            icon: Globe,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto (Locale)" },
+              { value: "sun", label: "Sunday" },
+              { value: "mon", label: "Monday" },
+              { value: "tue", label: "Tuesday" },
+              { value: "wed", label: "Wednesday" },
+              { value: "thu", label: "Thursday" },
+              { value: "fri", label: "Friday" },
+              { value: "sat", label: "Saturday" },
+            ],
+          },
+          {
             key: "locale",
             type: "enum",
             label: "Locale",
@@ -211,7 +230,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
             defaultValue: "visible",
           },
           {
-            key: "maxVisibleMonths",
+            key: "visibleMonths",
             type: "enum",
             label: "Max Visible Months",
             icon: Hash,

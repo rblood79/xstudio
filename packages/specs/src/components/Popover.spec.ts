@@ -34,7 +34,7 @@ export interface PopoverProps {
     | "top end"
     | "bottom start"
     | "bottom end";
-  hideArrow?: boolean;
+  showArrow?: boolean;
   offset?: number;
   crossOffset?: number;
   shouldFlip?: boolean;
@@ -250,8 +250,8 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
       });
 
       // Phase F: Arrow indicator (placement 기반 V자 2-line 화살표)
-      // hideArrow가 true가 아닐 때 렌더링 (기본: 화살표 표시)
-      if (!props.hideArrow) {
+      // showArrow가 true가 아닐 때 렌더링 (기본: 화살표 표시)
+      if (!props.showArrow) {
         const arrowSize = 8;
         const bgFill = resolveStateColors(variant, state).background;
         const placement = props.placement ?? "bottom";

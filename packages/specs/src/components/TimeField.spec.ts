@@ -128,6 +128,13 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         title: "Content",
         fields: [
           {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Layout,
+            emptyToUndefined: true,
+          },
+          {
             key: "description",
             type: "string",
             label: "Description",

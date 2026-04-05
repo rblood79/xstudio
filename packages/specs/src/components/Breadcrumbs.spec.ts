@@ -20,6 +20,8 @@ export interface BreadcrumbsProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   separator?: string;
+  showRoot?: boolean;
+  isMultiline?: boolean;
   isDisabled?: boolean;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -96,7 +98,21 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
     sections: [
       {
         title: "Appearance",
-        fields: [{ type: "size" }],
+        fields: [
+          { type: "size" },
+          {
+            key: "showRoot",
+            type: "boolean",
+            label: "Show Root",
+            icon: PointerOff,
+          },
+          {
+            key: "isMultiline",
+            type: "boolean",
+            label: "Multiline",
+            icon: PointerOff,
+          },
+        ],
       },
       {
         title: "State",

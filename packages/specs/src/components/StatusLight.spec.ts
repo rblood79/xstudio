@@ -38,6 +38,7 @@ export interface StatusLightProps {
     | "silver";
   size?: "sm" | "md" | "lg" | "xl";
   children?: string;
+  isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -95,6 +96,12 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
               { value: "lg", label: "L" },
               { value: "xl", label: "XL" },
             ],
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: Parentheses,
           },
         ],
       },

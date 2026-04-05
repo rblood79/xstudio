@@ -23,6 +23,8 @@ import { Ratio, PointerOff, MousePointer2 } from "lucide-react";
 export interface TabsProps {
   variant?: "default";
   density?: "compact" | "regular";
+  isQuiet?: boolean;
+  isEmphasized?: boolean;
   size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   selectedKey?: string;
@@ -74,6 +76,18 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
               { value: "vertical", label: "Vertical" },
             ],
             defaultValue: "horizontal",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Ratio,
+          },
+          {
+            key: "isEmphasized",
+            type: "boolean",
+            label: "Emphasized",
+            icon: Ratio,
           },
           {
             key: "showIndicator",

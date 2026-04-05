@@ -49,6 +49,7 @@ export interface DateRangePickerProps {
   labelPosition?: "top" | "side";
   firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
   maxVisibleMonths?: number;
+  shouldFlip?: boolean;
   contextualHelp?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -197,6 +198,13 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             max: 3,
             step: 1,
             defaultValue: 1,
+          },
+          {
+            key: "shouldFlip",
+            type: "boolean",
+            label: "Should Flip",
+            icon: ArrowLeftRight,
+            defaultValue: true,
           },
         ],
       },
