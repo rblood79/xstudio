@@ -387,7 +387,11 @@ export function renderText(
     // hintedText에 \n이 없는데(Canvas 2D가 한 줄 판정) CanvasKit이 줄바꿈한 경우
     // → CanvasKit 자체 측정(getMaxIntrinsicWidth)으로 재layout
     // \n이 있는 다줄 텍스트는 의도된 줄바꿈이므로 건드리지 않음
-    if (!isEllipsis && !renderableText.includes("\n")) {
+    if (
+      !isEllipsis &&
+      layoutMaxWidth < 100000 &&
+      !renderableText.includes("\n")
+    ) {
       const lineMetrics = paragraph.getLineMetrics();
       if (lineMetrics.length > 1) {
         const maxIntrinsic = paragraph.getMaxIntrinsicWidth();
