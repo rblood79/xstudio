@@ -23,6 +23,10 @@ import {
   Tag,
   AlignLeft,
   HelpCircle,
+  Image,
+  Type,
+  SpellCheck2,
+  CornerDownLeft,
 } from "lucide-react";
 
 /**
@@ -33,6 +37,7 @@ export interface SearchFieldProps {
   size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
+  defaultValue?: string;
   value?: string;
   description?: string;
   errorMessage?: string;
@@ -59,6 +64,19 @@ export interface SearchFieldProps {
   minLength?: number;
   maxLength?: number;
   contextualHelp?: string;
+  icon?: string;
+  autoCorrect?: "on" | "off";
+  spellCheck?: boolean;
+  enterKeyHint?:
+    | "enter"
+    | "done"
+    | "go"
+    | "next"
+    | "previous"
+    | "search"
+    | "send";
+  type?: "text" | "search" | "url" | "tel" | "email";
+  validationBehavior?: "native" | "aria";
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -245,6 +263,69 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
                 necessityIndicator: value as "icon" | "label",
               };
             },
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+            defaultValue: "aria",
+          },
+          {
+            key: "icon",
+            type: "string",
+            label: "Icon",
+            icon: Image,
+            emptyToUndefined: true,
+          },
+          {
+            key: "autoCorrect",
+            type: "enum",
+            label: "Auto Correct",
+            icon: CheckSquare,
+            options: [
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ],
+            defaultValue: "off",
+          },
+          {
+            key: "spellCheck",
+            type: "boolean",
+            label: "Spell Check",
+            icon: SpellCheck2,
+          },
+          {
+            key: "enterKeyHint",
+            type: "enum",
+            label: "Enter Key Hint",
+            icon: CornerDownLeft,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "enter", label: "Enter" },
+              { value: "done", label: "Done" },
+              { value: "go", label: "Go" },
+              { value: "next", label: "Next" },
+              { value: "previous", label: "Previous" },
+              { value: "search", label: "Search" },
+              { value: "send", label: "Send" },
+            ],
+          },
+          {
+            key: "type",
+            type: "enum",
+            label: "Input Type",
+            icon: Type,
+            options: [
+              { value: "search", label: "Search" },
+              { value: "text", label: "Text" },
+            ],
+            defaultValue: "search",
           },
         ],
       },

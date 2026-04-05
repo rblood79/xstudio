@@ -36,7 +36,10 @@ export interface RadioGroupProps {
   orientation?: "vertical" | "horizontal";
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";
+  defaultValue?: string;
   name?: string;
+  value?: string;
+  form?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
   isReadOnly?: boolean;
@@ -45,6 +48,7 @@ export interface RadioGroupProps {
   isEmphasized?: boolean;
   contextualHelp?: string;
   errorMessage?: string;
+  validationBehavior?: "native" | "aria";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -243,6 +247,24 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
             label: "Name",
             icon: FormInput,
             emptyToUndefined: true,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FormInput,
+            emptyToUndefined: true,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+            defaultValue: "aria",
           },
         ],
       },

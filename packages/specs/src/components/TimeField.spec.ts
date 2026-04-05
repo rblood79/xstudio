@@ -29,6 +29,10 @@ export interface TimeFieldProps {
   granularity?: "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
   locale?: string;
+  form?: string;
+  defaultValue?: string;
+  placeholderValue?: string;
+  value?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
   contextualHelp?: string;
@@ -257,6 +261,20 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             icon: FormInput,
             emptyToUndefined: true,
             placeholder: "time-field-name",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FormInput,
+            emptyToUndefined: true,
+          },
+          {
+            key: "placeholderValue",
+            type: "string",
+            label: "Placeholder",
+            icon: FileText,
+            emptyToUndefined: true,
           },
           {
             key: "validationBehavior",

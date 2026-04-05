@@ -39,6 +39,7 @@ export interface SliderProps {
   size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   name?: string;
+  defaultValue?: number | number[];
   /** 단일 값 또는 범위 값 (React Aria Slider<number | number[]> 패턴) */
   value?: number | number[];
   minValue?: number;

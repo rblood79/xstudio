@@ -66,6 +66,7 @@ export interface SelectProps {
   necessityIndicator?: "icon" | "label";
   disallowEmptySelection?: boolean;
   validationBehavior?: "native" | "aria";
+  form?: string;
   /** 드롭다운 아이템 목록 */
   items?: string[];
   /** 선택된 아이템 인덱스 (하이라이트용) */
@@ -274,6 +275,13 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             placeholder: "select-name",
             emptyToUndefined: true,
             icon: FormInput,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FormInput,
+            emptyToUndefined: true,
           },
           {
             key: "validationBehavior",

@@ -931,8 +931,8 @@ export const renderMeter = (
         (element.props.variant as
           | "informative"
           | "positive"
-          | "notice"
-          | "negative") || "informative"
+          | "warning"
+          | "critical") || "informative"
       }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       showValueLabel={element.props.showValueLabel !== false}

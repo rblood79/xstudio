@@ -16,10 +16,10 @@
     &[data-variant="positive"] {
       --fill-color: var(--color-green-600);
     }
-    &[data-variant="notice"] {
+    &[data-variant="warning"] {
       --fill-color: var(--color-warning-600);
     }
-    &[data-variant="negative"] {
+    &[data-variant="critical"] {
       --fill-color: var(--negative);
     }
 

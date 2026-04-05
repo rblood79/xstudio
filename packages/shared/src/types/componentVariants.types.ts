@@ -129,7 +129,7 @@ export type LinkVariant = "primary" | "secondary";
  * - notice: 주의 상태
  * - negative: 오류/위험 상태
  */
-export type MeterVariant = "informative" | "positive" | "notice" | "negative";
+export type MeterVariant = "informative" | "positive" | "warning" | "critical";
 
 // ============================================================================
 // Static Color

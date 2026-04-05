@@ -18,7 +18,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * MeterTrack Props
  */
 export interface MeterTrackProps {
-  variant?: "informative" | "positive" | "notice" | "negative";
+  variant?: "informative" | "positive" | "warning" | "critical";
   size?: "sm" | "md" | "lg";
   value?: number;
   isDisabled?: boolean;
@@ -62,13 +62,13 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    notice: {
+    warning: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    negative: {
+    critical: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,

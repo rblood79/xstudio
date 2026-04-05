@@ -43,6 +43,7 @@ export interface TextFieldProps {
   label?: string;
   placeholder?: string;
   name?: string;
+  defaultValue?: string;
   value?: string;
   description?: string;
   errorMessage?: string;

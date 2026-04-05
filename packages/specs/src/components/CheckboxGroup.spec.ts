@@ -39,10 +39,14 @@ export interface CheckboxGroupProps {
   isInvalid?: boolean;
   isRequired?: boolean;
   necessityIndicator?: "icon" | "label";
+  defaultValue?: string[];
   errorMessage?: string;
   name?: string;
+  value?: string[];
+  form?: string;
   isEmphasized?: boolean;
   contextualHelp?: string;
+  validationBehavior?: "native" | "aria";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -224,6 +228,24 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
             label: "Name",
             icon: FormInput,
             emptyToUndefined: true,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FormInput,
+            emptyToUndefined: true,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+            defaultValue: "aria",
           },
         ],
       },

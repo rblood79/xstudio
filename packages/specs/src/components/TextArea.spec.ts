@@ -21,6 +21,8 @@ import {
   Hash,
   CheckSquare,
   HelpCircle,
+  Keyboard,
+  CornerDownLeft,
 } from "lucide-react";
 
 /**
@@ -32,6 +34,7 @@ export interface TextAreaProps {
   label?: string;
   placeholder?: string;
   name?: string;
+  defaultValue?: string;
   value?: string;
   description?: string;
   errorMessage?: string;
@@ -43,6 +46,26 @@ export interface TextAreaProps {
   contextualHelp?: string;
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";
+  inputMode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
+  spellCheck?: boolean;
+  autoCorrect?: "on" | "off";
+  enterKeyHint?:
+    | "enter"
+    | "done"
+    | "go"
+    | "next"
+    | "previous"
+    | "search"
+    | "send";
+  minLength?: number;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -217,6 +240,64 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           },
           { key: "isInvalid", type: "boolean", icon: AlertTriangle },
           { key: "maxLength", type: "number", label: "Max Length", icon: Hash },
+          {
+            key: "minLength",
+            type: "number",
+            label: "Min Length",
+            icon: Hash,
+            min: 0,
+          },
+          {
+            key: "inputMode",
+            type: "enum",
+            label: "Input Mode",
+            icon: Keyboard,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "text", label: "Text" },
+              { value: "numeric", label: "Numeric" },
+              { value: "decimal", label: "Decimal" },
+              { value: "tel", label: "Tel" },
+              { value: "email", label: "Email" },
+              { value: "url", label: "URL" },
+              { value: "search", label: "Search" },
+            ],
+          },
+          {
+            key: "spellCheck",
+            type: "boolean",
+            label: "Spell Check",
+            icon: SpellCheck2,
+          },
+          {
+            key: "autoCorrect",
+            type: "enum",
+            label: "Auto Correct",
+            icon: CheckSquare,
+            options: [
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ],
+            defaultValue: "off",
+          },
+          {
+            key: "enterKeyHint",
+            type: "enum",
+            label: "Enter Key Hint",
+            icon: CornerDownLeft,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "enter", label: "Enter" },
+              { value: "done", label: "Done" },
+              { value: "go", label: "Go" },
+              { value: "next", label: "Next" },
+              { value: "previous", label: "Previous" },
+              { value: "search", label: "Search" },
+              { value: "send", label: "Send" },
+            ],
+          },
         ],
       },
     ],

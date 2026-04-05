@@ -42,6 +42,7 @@ export interface NumberFieldProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
+  defaultValue?: number;
   value?: number;
   minValue?: number;
   maxValue?: number;
@@ -64,6 +65,7 @@ export interface NumberFieldProps {
   locale?: string;
   formatOptions?: Intl.NumberFormatOptions;
   contextualHelp?: string;
+  validationBehavior?: "native" | "aria";
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -364,6 +366,17 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
                 necessityIndicator: value as "icon" | "label",
               };
             },
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+            defaultValue: "aria",
           },
         ],
       },

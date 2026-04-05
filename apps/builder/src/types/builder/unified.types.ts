@@ -905,7 +905,7 @@ export interface ProgressBarElementProps extends BaseElementProps {
 // === Meter Element Props ===
 export interface MeterElementProps extends BaseElementProps {
   size?: "sm" | "md" | "lg";
-  variant?: "informative" | "positive" | "notice" | "negative";
+  variant?: "informative" | "positive" | "warning" | "critical";
   label?: string;
   value?: number;
   minValue?: number;

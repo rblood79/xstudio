@@ -25,7 +25,7 @@ import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
  * Meter Props
  */
 export interface MeterProps {
-  variant?: "informative" | "positive" | "notice" | "negative";
+  variant?: "informative" | "positive" | "warning" | "critical";
   size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   value?: number;
@@ -49,8 +49,8 @@ export interface MeterProps {
 export const METER_FILL_COLORS: Record<string, TokenRef> = {
   informative: "{color.informative}" as TokenRef,
   positive: "{color.positive}" as TokenRef,
-  notice: "{color.notice}" as TokenRef,
-  negative: "{color.negative}" as TokenRef,
+  warning: "{color.notice}" as TokenRef,
+  critical: "{color.negative}" as TokenRef,
 };
 
 /** 사이즈별 바 치수 */
@@ -203,13 +203,13 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    notice: {
+    warning: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    negative: {
+    critical: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,

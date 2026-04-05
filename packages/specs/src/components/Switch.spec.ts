@@ -41,6 +41,7 @@ export interface SwitchProps {
   label?: string;
   name?: string;
   isEmphasized?: boolean;
+  defaultSelected?: boolean;
   isSelected?: boolean;
   isRequired?: boolean;
   isInvalid?: boolean;

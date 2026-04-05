@@ -15,7 +15,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * MeterValue Props
  */
 export interface MeterValueProps {
-  variant?: "informative" | "positive" | "notice" | "negative";
+  variant?: "informative" | "positive" | "warning" | "critical";
   size?: "sm" | "md" | "lg";
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -46,13 +46,13 @@ export const MeterValueSpec: ComponentSpec<MeterValueProps> = {
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    notice: {
+    warning: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    negative: {
+    critical: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
