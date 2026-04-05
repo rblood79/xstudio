@@ -13,8 +13,6 @@ import {
   ArrowLeftRight,
   List,
   PointerOff,
-  Focus,
-  FormInput,
   LayoutGrid,
   AlignJustify,
 } from "lucide-react";
@@ -178,16 +176,6 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
             defaultValue: "single",
           },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
-          { key: "autoFocus", type: "boolean", icon: Focus },
-
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            emptyToUndefined: true,
-            placeholder: "togglebutton-group-name",
-            icon: FormInput,
-          },
         ],
       },
       {
