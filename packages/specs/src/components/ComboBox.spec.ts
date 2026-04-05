@@ -233,7 +233,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "native" },
+           defaultValue: "aria" },
         ],
       },
       {

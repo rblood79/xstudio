@@ -212,7 +212,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-            defaultValue: "native",
+            defaultValue: "aria",
           },
         ],
       },

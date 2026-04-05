@@ -250,7 +250,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "native" },
+           defaultValue: "aria" },
         ],
       },
     ],

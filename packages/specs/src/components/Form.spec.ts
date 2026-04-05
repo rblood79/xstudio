@@ -84,7 +84,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "native" },
+           defaultValue: "aria" },
         ],
       },
       {

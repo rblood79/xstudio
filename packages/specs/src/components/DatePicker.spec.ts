@@ -493,7 +493,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "native" },
+           defaultValue: "aria" },
         ],
       },
     ],

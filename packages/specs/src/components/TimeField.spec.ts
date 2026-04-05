@@ -226,7 +226,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "native" },
+           defaultValue: "aria" },
         ],
       },
     ],

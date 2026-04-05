@@ -177,29 +177,21 @@ function normalizeFormatProps(props) {
 
 ## Phase 3: 패턴 C — 기능 변경
 
-### 3-A. Meter/ProgressBar: `showValue` 제거 (S2 완전 따르기)
+### 3-A. Meter/ProgressBar: `showValue` → `valueLabel` + `showValueLabel` (S2 기준)
 
-**S2 실제 동작**: `showValue` prop은 S2에 존재하지 않음. 값 표시는 **`label` prop 유무**로 제어됨:
+**S2 실제 Props** (레퍼런스 확인):
 
-```tsx
-// S2 Meter/ProgressBar 내부
-{
-  label && <FieldLabel>{label}</FieldLabel>;
-}
-{
-  label && <Text>{valueText}</Text>;
-} // label 없으면 값도 숨겨짐
-```
+- `valueLabel: ReactNode` — 커스텀 값 레이블 (비어있으면 value에서 자동 생성)
+- `showValueLabel: boolean` — 값 레이블 표시 여부
 
 **XStudio 적용**:
 
-- **`showValue` prop 제거** — S2에 없는 prop
-- 값 표시는 `label` 유무로 제어 (S2 패턴 그대로)
-- `label` 있으면 → 자동 포맷 값 표시 (`value` + `formatOptions`)
-- `label` 없으면 → 값도 미표시
-- "label은 보이고 값만 숨기기"는 S2에서 지원하지 않는 조합이므로 XStudio도 미지원
+- **`showValue` 제거** — S2에 없는 prop
+- **`valueLabel: string` 추가** — 커스텀 값 텍스트 (S2 ReactNode의 빌더 축소). 비어있으면 value + formatOptions로 자동 생성
+- **`showValueLabel: boolean` 추가** — 값 레이블 표시/숨김 토글 (S2와 동일)
+- 프로퍼티 패널: valueLabel = string input, showValueLabel = boolean switch
 
-**기존 데이터 마이그레이션**: `showValue=false`인 기존 프로젝트 요소는 `label`도 함께 제거하여 S2 패턴과 일치시킴
+**기존 데이터 마이그레이션**: `showValue` → `showValueLabel`로 직접 매핑 (동일 의미)
 
 ### 3-B. Slider: `showValue` 제거 (S2 완전 따르기)
 
@@ -259,17 +251,13 @@ let outputValue = (
 ### 데이터 normalization
 
 ```typescript
-// Meter/ProgressBar: showValue 제거
-// S2 패턴: label 유무로 값 표시 제어. showValue=false → label도 함께 제거
-if ("showValue" in props) {
-  if (props.showValue === false && props.label) {
-    delete props.label; // S2: label 없으면 값도 미표시
-  }
+// Meter/ProgressBar: showValue → showValueLabel (S2 네이밍)
+if ("showValue" in props && !("showValueLabel" in props)) {
+  props.showValueLabel = props.showValue;
   delete props.showValue;
 }
 
 // Slider: showValue 제거 (S2는 SliderOutput 항상 표시)
-// showValue=false 데이터는 prop 삭제만 (값이 항상 보이게 됨)
 if ("showValue" in props) {
   delete props.showValue;
 }

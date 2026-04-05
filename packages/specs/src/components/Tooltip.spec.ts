@@ -103,7 +103,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
             type: "number",
             label: "Offset",
             icon: Move,
-           defaultValue: 0 },
+           defaultValue: 8 },
           {
             key: "containerPadding",
             type: "number",
