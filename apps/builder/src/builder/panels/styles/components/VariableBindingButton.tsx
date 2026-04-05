@@ -9,15 +9,15 @@
  * @since 2026-02-11 Phase 4
  */
 
-import { memo, useCallback, useMemo } from 'react';
-import { DialogTrigger, Button as AriaButton } from 'react-aria-components';
-import { Link2, Link2Off } from 'lucide-react';
-import { Popover } from '@xstudio/shared/components/Popover';
-import { useTokens } from '../../../../stores/themeStore';
-import type { DesignToken } from '../../../../types/theme';
-import { iconSmall } from '../../../../utils/ui/uiConstants';
+import { memo, useCallback, useMemo } from "react";
+import { DialogTrigger, Button as AriaButton } from "react-aria-components";
+import { Link2, Link2Off } from "lucide-react";
+import { Popover } from "@xstudio/shared/components/Popover";
+import { useTokens } from "../../../../stores/themeStore";
+import type { DesignToken } from "../../../../types/theme";
+import { iconSmall } from "../../../../utils/ui/uiConstants";
 
-import './VariableBindingButton.css';
+import "./VariableBindingButton.css";
 
 interface VariableBindingButtonProps {
   /** 현재 색상 값 (hex8 또는 "$--변수명") */
@@ -28,7 +28,7 @@ interface VariableBindingButtonProps {
 
 /** "$--" 접두사 패턴 매칭 */
 function isVariableRef(value: string): boolean {
-  return value.startsWith('$--');
+  return value.startsWith("$--");
 }
 
 /** "$--css-variable" → "css-variable" */
@@ -39,16 +39,16 @@ function getVariableName(value: string): string {
 /** 토큰의 색상 값을 hex6로 추출 */
 function getTokenColorHex(token: DesignToken): string {
   const val = token.value;
-  if (typeof val === 'string') return val;
-  if (val && typeof val === 'object' && 'r' in val) {
+  if (typeof val === "string") return val;
+  if (val && typeof val === "object" && "r" in val) {
     const { r, g, b } = val as { r: number; g: number; b: number };
-    return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+    return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
   }
-  if (val && typeof val === 'object' && 'h' in val) {
+  if (val && typeof val === "object" && "h" in val) {
     // HSL → 간이 변환 (미리보기용)
-    return '#888888';
+    return "#888888";
   }
-  return '#000000';
+  return "#000000";
 }
 
 export const VariableBindingButton = memo(function VariableBindingButton({
@@ -57,17 +57,18 @@ export const VariableBindingButton = memo(function VariableBindingButton({
 }: VariableBindingButtonProps) {
   const tokens = useTokens();
   const isBound = isVariableRef(value);
-  const boundVarName = isBound ? getVariableName(value) : '';
+  const boundVarName = isBound ? getVariableName(value) : "";
 
   // 색상 타입 토큰만 필터
   const colorTokens = useMemo(
-    () => tokens.filter((t) => t.type === 'color'),
+    () => tokens.filter((t) => t.type === "color"),
     [tokens],
   );
 
   const handleSelect = useCallback(
     (token: DesignToken) => {
-      const cssVar = token.css_variable ?? `--${token.name.replace(/\./g, '-')}`;
+      const cssVar =
+        token.css_variable ?? `--${token.name.replace(/\./g, "-")}`;
       onChange(`$${cssVar}`);
     },
     [onChange],
@@ -75,7 +76,7 @@ export const VariableBindingButton = memo(function VariableBindingButton({
 
   const handleUnbind = useCallback(() => {
     // 바인딩 해제 시 기본 검정색으로 복원
-    onChange('#000000FF');
+    onChange("#000000FF");
   }, [onChange]);
 
   return (
@@ -109,18 +110,25 @@ export const VariableBindingButton = memo(function VariableBindingButton({
         <Popover
           placement="bottom end"
           className="variable-binding__popover"
-          showArrow={false}
+          hideArrow
         >
           <div className="variable-binding__list">
             <div className="variable-binding__list-header">Color Variables</div>
             {colorTokens.length === 0 && (
-              <div className="variable-binding__empty">No color tokens available</div>
+              <div className="variable-binding__empty">
+                No color tokens available
+              </div>
             )}
             {colorTokens.map((token) => (
               <TokenRow
                 key={token.id}
                 token={token}
-                isActive={isBound && boundVarName === (token.css_variable?.slice(2) ?? token.name.replace(/\./g, '-'))}
+                isActive={
+                  isBound &&
+                  boundVarName ===
+                    (token.css_variable?.slice(2) ??
+                      token.name.replace(/\./g, "-"))
+                }
                 onSelect={handleSelect}
               />
             ))}
@@ -144,7 +152,7 @@ const TokenRow = memo(function TokenRow({
   const colorHex = useMemo(() => getTokenColorHex(token), [token]);
   const displayName = token.css_variable
     ? token.css_variable.slice(2)
-    : token.name.replace(/\./g, '-');
+    : token.name.replace(/\./g, "-");
 
   const handleClick = useCallback(() => {
     onSelect(token);

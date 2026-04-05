@@ -32,7 +32,7 @@ export interface RangeCalendarProps<T extends DateValue> extends Omit<
   /** Unicode calendar identifier (e.g. "gregory", "buddhist", "japanese") */
   calendarSystem?: string;
   /** @default 1 */
-  visibleMonths?: number;
+  maxVisibleMonths?: number;
   /** @example "2024-01-01" */
   minValue?: string | DateValue;
   /** @example "2024-12-31" */
@@ -47,7 +47,7 @@ export function RangeCalendar<T extends DateValue>({
   errorMessage,
   locale,
   calendarSystem,
-  visibleMonths = 1,
+  maxVisibleMonths = 1,
   minValue,
   maxValue,
   isLoading,
@@ -87,7 +87,7 @@ export function RangeCalendar<T extends DateValue>({
       data-size={size}
       minValue={parsedMinValue as T | undefined}
       maxValue={parsedMaxValue as T | undefined}
-      visibleDuration={{ months: visibleMonths }}
+      visibleDuration={{ months: maxVisibleMonths }}
     >
       <header>
         <Button slot="previous">
@@ -99,7 +99,7 @@ export function RangeCalendar<T extends DateValue>({
         </Button>
       </header>
       <div className="calendar-grids">
-        {Array.from({ length: visibleMonths }, (_, i) => (
+        {Array.from({ length: maxVisibleMonths }, (_, i) => (
           <CalendarGrid key={i} offset={{ months: i }}>
             {(date) => <CalendarCell date={date} />}
           </CalendarGrid>

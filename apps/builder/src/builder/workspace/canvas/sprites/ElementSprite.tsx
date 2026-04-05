@@ -1235,20 +1235,20 @@ export const ElementSprite = memo(function ElementSprite({
         | undefined) ?? null
     );
   });
-  const parentProgressValueFormat = useStore((state) => {
+  const parentProgressFormatOptions = useStore((state) => {
     if (!isProgressBarValue || !element.parent_id) return null;
     const parent = state.elementsMap.get(element.parent_id);
-    return (
-      ((parent?.props as Record<string, unknown> | undefined)?.valueFormat as
-        | string
-        | undefined) ?? null
-    );
+    const fo = (parent?.props as Record<string, unknown> | undefined)
+      ?.formatOptions;
+    return fo && typeof fo === "object"
+      ? (fo as Record<string, unknown>)
+      : null;
   });
-  const parentProgressShowValue = useStore((state) => {
+  const parentProgressShowValueLabel = useStore((state) => {
     if (!isProgressBarValue || !element.parent_id) return true;
     const parent = state.elementsMap.get(element.parent_id);
     const pp = parent?.props as Record<string, unknown> | undefined;
-    return pp?.showValue !== false;
+    return pp?.showValueLabel !== false;
   });
   const parentProgressMinValue = useStore((state) => {
     if (!isProgressBarChild || !element.parent_id) return null;
@@ -2107,12 +2107,12 @@ export const ElementSprite = memo(function ElementSprite({
 
               // ProgressBarValue: 부모 ProgressBar의 value를 포맷팅하여 children에 주입
               // delegation 값이 항상 우선 (factory의 초기 "50%"보다 부모의 실시간 value 우선)
-              if (isProgressBarValue && parentProgressShowValue) {
+              if (isProgressBarValue && parentProgressShowValueLabel) {
                 const formatted = formatProgressValue(
                   parentProgressValue ?? 0,
                   parentProgressMinValue ?? 0,
                   parentProgressMaxValue ?? 100,
-                  parentProgressValueFormat,
+                  parentProgressFormatOptions,
                 );
                 const existingStyle = (specProps.style || {}) as Record<
                   string,
@@ -2529,8 +2529,8 @@ export const ElementSprite = memo(function ElementSprite({
     parentProgressIndeterminate,
     parentProgressVariant,
     parentProgressSize,
-    parentProgressValueFormat,
-    parentProgressShowValue,
+    parentProgressFormatOptions,
+    parentProgressShowValueLabel,
     parentProgressMinValue,
     parentProgressMaxValue,
     parentSliderValueSerialized,

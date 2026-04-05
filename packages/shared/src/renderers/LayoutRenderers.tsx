@@ -770,7 +770,7 @@ export const renderDialog = (
       style={element.props.style}
       className={element.props.className}
       role={(element.props.role as "dialog" | "alertdialog") || "dialog"}
-      isDismissable={Boolean(element.props.isDismissable)}
+      isDismissible={Boolean(element.props.isDismissible)}
     >
       {typeof element.props.children === "string"
         ? element.props.children
@@ -876,10 +876,15 @@ export const renderProgressBar = (
       }
       isIndeterminate={Boolean(element.props.isIndeterminate || false)}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
-      showValue={element.props.showValue !== false}
-      valueFormat={
-        (element.props.valueFormat as "number" | "percent" | "custom") ||
-        undefined
+      showValueLabel={element.props.showValueLabel !== false}
+      valueLabel={
+        element.props.valueLabel ? String(element.props.valueLabel) : undefined
+      }
+      formatOptions={
+        element.props.formatOptions &&
+        typeof element.props.formatOptions === "object"
+          ? (element.props.formatOptions as Intl.NumberFormatOptions)
+          : undefined
       }
       locale={(element.props.locale as string) || undefined}
     />
@@ -930,10 +935,15 @@ export const renderMeter = (
           | "negative") || "informative"
       }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
-      showValue={element.props.showValue !== false}
-      valueFormat={
-        (element.props.valueFormat as "number" | "percent" | "custom") ||
-        undefined
+      showValueLabel={element.props.showValueLabel !== false}
+      valueLabel={
+        element.props.valueLabel ? String(element.props.valueLabel) : undefined
+      }
+      formatOptions={
+        element.props.formatOptions &&
+        typeof element.props.formatOptions === "object"
+          ? (element.props.formatOptions as Intl.NumberFormatOptions)
+          : undefined
       }
       locale={(element.props.locale as string) || undefined}
     />
@@ -1995,7 +2005,7 @@ export const renderRangeCalendar = (
 
   const locale = element.props.locale as string | undefined;
   const calendarSystem = element.props.calendarSystem as string | undefined;
-  const visibleMonths = Number(element.props.visibleMonths) || 1;
+  const maxVisibleMonths = Number(element.props.maxVisibleMonths) || 1;
   const size = element.props.size as string | undefined;
   const variant = element.props.variant as string | undefined;
   // locale/calendarSystem/size 변경 시 리마운트
@@ -2019,7 +2029,7 @@ export const renderRangeCalendar = (
       }
       isDisabled={Boolean(element.props.isDisabled)}
       isReadOnly={Boolean(element.props.isReadOnly)}
-      visibleMonths={visibleMonths}
+      maxVisibleMonths={maxVisibleMonths}
       allowsNonContiguousRanges={Boolean(
         element.props.allowsNonContiguousRanges,
       )}

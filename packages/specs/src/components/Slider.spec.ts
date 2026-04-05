@@ -14,12 +14,11 @@ import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import {
   Layout,
   Type,
-  DollarSign,
+  Hash,
   ArrowDown,
   ArrowUp,
   ArrowLeftRight,
   Move,
-  NotebookTabs,
   Tag,
   FormInput,
   PointerOff,
@@ -39,10 +38,8 @@ export interface SliderProps {
   minValue?: number;
   maxValue?: number;
   step?: number;
-  showValue?: boolean;
   locale?: string;
-  valueFormat?: "number" | "percent" | "unit" | "custom";
-  unit?: string;
+  formatOptions?: Intl.NumberFormatOptions;
   form?: string;
   orientation?: "horizontal" | "vertical";
   isDisabled?: boolean;
@@ -215,33 +212,27 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         title: "Locale",
         fields: [
           {
-            key: "valueFormat",
+            key: "formatOptions.style",
             type: "enum",
-            label: "Value Format",
-            icon: DollarSign,
+            label: "Format Style",
+            icon: Hash,
+            updatePath: ["formatOptions", "style"],
             options: [
-              { value: "number", label: "Number" },
+              { value: "decimal", label: "Number" },
               { value: "percent", label: "Percent" },
               { value: "unit", label: "Unit" },
-              { value: "custom", label: "Custom" },
             ],
-            defaultValue: "number",
+            defaultValue: "decimal",
           },
           {
-            key: "unit",
+            key: "formatOptions.unit",
             type: "string",
             label: "Unit",
             icon: Type,
-            placeholder: "kilometer, celsius, meter, etc.",
+            updatePath: ["formatOptions", "unit"],
             emptyToUndefined: true,
-            visibleWhen: { key: "valueFormat", equals: "unit" },
-          },
-          {
-            key: "showValue",
-            type: "boolean",
-            label: "Show Value",
-            icon: NotebookTabs,
-            defaultValue: true,
+            visibleWhen: { key: "formatOptions.style", equals: "unit" },
+            placeholder: "kilometer, celsius, etc.",
           },
         ],
       },
@@ -354,16 +345,27 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       // 라벨 + 값 행 (자식 Element가 있으면 자식 TextSprite가 렌더링하므로 스킵)
-      if (!hasChildren && (props.label || props.showValue)) {
-        const valueText = props.showValue
-          ? isRange
-            ? values.map(String).join(" – ")
-            : String(values[0])
-          : "";
+      // S2: SliderOutput은 항상 표시됨
+      if (!hasChildren) {
+        const formatSingleValue = (v: number): string => {
+          if (props.formatOptions) {
+            try {
+              return new Intl.NumberFormat(
+                props.locale,
+                props.formatOptions,
+              ).format(v);
+            } catch {
+              return String(v);
+            }
+          }
+          return String(v);
+        };
+        const valueText = isRange
+          ? values.map(formatSingleValue).join(" – ")
+          : formatSingleValue(values[0]);
         // ADR-051: 실측 기반 value 텍스트 폭 (추정값 제거)
-        const measuredValueWidth = props.showValue
-          ? measureSpecTextWidth(valueText, numericFontSize, ff) + 4
-          : 0;
+        const measuredValueWidth =
+          measureSpecTextWidth(valueText, numericFontSize, ff) + 4;
 
         if (props.label) {
           shapes.push({
@@ -377,30 +379,28 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             fill: textColor,
             align: "left" as const,
             baseline: "top" as const,
-            maxWidth: props.showValue ? width - measuredValueWidth : undefined,
+            maxWidth: width - measuredValueWidth,
           });
         }
-        if (props.showValue) {
-          shapes.push({
-            type: "text" as const,
-            x: 0,
-            y: 0,
-            text: valueText,
-            fontSize: numericFontSize,
-            fontFamily: ff,
-            fill: textColor,
-            align: "right" as const,
-            baseline: "top" as const,
-            maxWidth: width,
-          });
-        }
+        shapes.push({
+          type: "text" as const,
+          x: 0,
+          y: 0,
+          text: valueText,
+          fontSize: numericFontSize,
+          fontFamily: ff,
+          fill: textColor,
+          align: "right" as const,
+          baseline: "top" as const,
+          maxWidth: width,
+        });
       }
 
       // 자식 Element(SliderTrack, SliderThumb 등)가 있으면
       // 트랙/fill/thumb은 자식 Spec shapes가 담당 → 부모에서 스킵
       if (!hasChildren) {
-        const offsetY =
-          props.label || props.showValue ? numericFontSize + gap : 0;
+        // S2: SliderOutput은 항상 표시되므로 항상 텍스트 행 높이 확보
+        const offsetY = numericFontSize + gap;
 
         shapes.push({
           id: "track",

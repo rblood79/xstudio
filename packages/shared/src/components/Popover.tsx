@@ -18,10 +18,10 @@ export interface PopoverProps extends Omit<AriaPopoverProps, "children"> {
    */
   size?: ComponentSize;
   /**
-   * 화살표 표시 여부
-   * @default true
+   * 화살표 숨김 여부
+   * @default false
    */
-  showArrow?: boolean;
+  hideArrow?: boolean;
   /**
    * 포커스 제약
    * Popover 내부에서만 포커스 이동 가능
@@ -72,7 +72,7 @@ export interface PopoverProps extends Omit<AriaPopoverProps, "children"> {
 export function Popover({
   children,
   size = "md",
-  showArrow = true,
+  hideArrow = false,
   containFocus = false,
   autoFocus = true,
   restoreFocus = true,
@@ -84,7 +84,7 @@ export function Popover({
 
   return (
     <AriaPopover {...props} className={popoverClassName} data-size={size}>
-      {showArrow && (
+      {!hideArrow && (
         <OverlayArrow>
           <svg width={12} height={12} viewBox="0 0 12 12">
             <path d="M0 0 L6 6 L12 0" />

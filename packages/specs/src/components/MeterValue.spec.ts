@@ -2,7 +2,7 @@
  * MeterValue Component Spec
  *
  * Meter compound 컴포넌트의 child 요소 (현재 값 텍스트 표시)
- * 부모에서 value/valueFormat을 delegation 받아 표시
+ * 부모에서 value/formatOptions를 delegation 받아 표시
  *
  * @packageDocumentation
  */

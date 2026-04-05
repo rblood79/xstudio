@@ -84,8 +84,8 @@ export interface DatePickerProps<T extends DateValue> extends Omit<
   labelPosition?: "top" | "side";
   hideTimeZone?: boolean;
   pageBehavior?: "visible" | "single";
-  /** 동시에 표시할 월 수 (1~3) */
-  visibleMonths?: number;
+  /** 동시에 표시할 최대 월 수 (1~3) */
+  maxVisibleMonths?: number;
   form?: string;
   autoComplete?: string;
   validationBehavior?: "native" | "aria";
@@ -119,7 +119,7 @@ export function DatePicker<T extends DateValue>({
   labelPosition = "top",
   hideTimeZone,
   pageBehavior,
-  visibleMonths,
+  maxVisibleMonths,
   form,
   autoComplete,
   validationBehavior,
@@ -239,8 +239,8 @@ export function DatePicker<T extends DateValue>({
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
               visibleDuration={
-                visibleMonths && visibleMonths > 1
-                  ? { months: visibleMonths }
+                maxVisibleMonths && maxVisibleMonths > 1
+                  ? { months: maxVisibleMonths }
                   : undefined
               }
               pageBehavior={pageBehavior}
@@ -258,7 +258,9 @@ export function DatePicker<T extends DateValue>({
                 {Array.from(
                   {
                     length:
-                      visibleMonths && visibleMonths > 1 ? visibleMonths : 1,
+                      maxVisibleMonths && maxVisibleMonths > 1
+                        ? maxVisibleMonths
+                        : 1,
                   },
                   (_, i) => (
                     <CalendarGrid

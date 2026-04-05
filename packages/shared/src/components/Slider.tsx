@@ -8,11 +8,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSizeSubset } from "../types";
-import {
-  formatNumber,
-  formatPercent,
-  formatUnit,
-} from "../utils/core/numberUtils";
+import { formatNumber } from "../utils/core/numberUtils";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/Slider.css";
@@ -36,28 +32,15 @@ export interface SliderProps<T> extends AriaSliderProps<T> {
    */
   locale?: string;
   /**
-   * 값 표시 형식
-   * - number: 숫자로 표시 (75)
-   * - percent: 퍼센트로 표시 (75%)
-   * - unit: 단위와 함께 표시 (75 km)
-   * - custom: 커스텀 포맷터 사용
-   * @default 'number'
+   * Intl.NumberFormat 옵션으로 값 표시 형식 지정
+   * @example { style: 'percent' }
+   * @example { style: 'unit', unit: 'kilometer' }
    */
-  valueFormat?: "number" | "percent" | "unit" | "custom";
-  /**
-   * 단위 (valueFormat이 'unit'일 때 사용)
-   * @example 'kilometer', 'celsius', 'meter'
-   */
-  unit?: string;
+  formatOptions?: Intl.NumberFormatOptions;
   /**
    * 커스텀 포맷터 함수
    */
   customFormatter?: (value: number) => string;
-  /**
-   * 값 표시 여부
-   * @default true
-   */
-  showValue?: boolean;
   /**
    * Visual variant
    * @default 'default'
@@ -81,11 +64,9 @@ export function Slider<T extends number | number[]>({
   isEmphasized = false,
   size = "md",
   locale = "ko-KR",
-  valueFormat = "number",
-  unit,
+  formatOptions,
   customFormatter,
   variant = "default",
-  showValue = true,
   isLoading,
   ...props
 }: SliderProps<T>) {
@@ -110,17 +91,15 @@ export function Slider<T extends number | number[]>({
       return customFormatter(value);
     }
 
-    switch (valueFormat) {
-      case "percent":
-        return formatPercent(value / 100, locale, 0);
-      case "unit":
-        return unit
-          ? formatUnit(value, unit, locale)
-          : formatNumber(value, locale);
-      case "number":
-      default:
+    if (formatOptions) {
+      try {
+        return new Intl.NumberFormat(locale, formatOptions).format(value);
+      } catch {
         return formatNumber(value, locale);
+      }
     }
+
+    return formatNumber(value, locale);
   };
 
   return (
@@ -132,13 +111,11 @@ export function Slider<T extends number | number[]>({
       data-size={size}
     >
       {label && <Label>{label}</Label>}
-      {showValue && (
-        <SliderOutput>
-          {({ state }) =>
-            state.values.map((value) => formatValue(value)).join(" – ")
-          }
-        </SliderOutput>
-      )}
+      <SliderOutput>
+        {({ state }) =>
+          state.values.map((value) => formatValue(value)).join(" – ")
+        }
+      </SliderOutput>
       <SliderTrack>
         {({ state, isDisabled }) => (
           <>

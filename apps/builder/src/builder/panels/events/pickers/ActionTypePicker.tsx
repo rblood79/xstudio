@@ -7,18 +7,21 @@
  * Phase 3: Events Panel 재설계 - 검색 기능 추가
  */
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from "react";
 import {
   DialogTrigger,
   Button,
   ListBox,
   ListBoxItem,
-} from 'react-aria-components';
-import { Popover } from '@xstudio/shared/components/Popover';
-import { CirclePlus, Search, ChevronDown } from 'lucide-react';
-import type { ActionType } from '@/types/events/events.types';
-import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from '@/types/events/events.types';
-import { iconProps, iconEditProps } from '@/utils/ui/uiConstants';
+} from "react-aria-components";
+import { Popover } from "@xstudio/shared/components/Popover";
+import { CirclePlus, Search, ChevronDown } from "lucide-react";
+import type { ActionType } from "@/types/events/events.types";
+import {
+  ACTION_TYPE_LABELS,
+  REGISTRY_ACTION_CATEGORIES,
+} from "@/types/events/events.types";
+import { iconProps, iconEditProps } from "@/utils/ui/uiConstants";
 
 interface ActionTypePickerProps {
   /** 액션 선택 시 호출되는 콜백 */
@@ -56,10 +59,10 @@ export function ActionTypePicker({
   selectedType,
   isDisabled = false,
   inline = false,
-  placeholder = 'Search actions...',
+  placeholder = "Search actions...",
   showCategories = true,
 }: ActionTypePickerProps) {
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   // 사용 가능한 액션 타입 목록
@@ -73,33 +76,38 @@ export function ActionTypePicker({
 
     const searchLower = searchValue.toLowerCase();
     return availableActionTypes.filter((type) => {
-      const label = ACTION_TYPE_LABELS[type]?.toLowerCase() || '';
-      return type.toLowerCase().includes(searchLower) || label.includes(searchLower);
+      const label = ACTION_TYPE_LABELS[type]?.toLowerCase() || "";
+      return (
+        type.toLowerCase().includes(searchLower) || label.includes(searchLower)
+      );
     });
   }, [availableActionTypes, searchValue]);
 
   // 카테고리별 그룹화
   const groupedActionTypes = useMemo(() => {
     if (!showCategories) {
-      return [{ category: 'Actions', actions: filteredActionTypes }];
+      return [{ category: "Actions", actions: filteredActionTypes }];
     }
 
     const groups: { category: string; actions: ActionType[] }[] = [];
 
     // REGISTRY_ACTION_CATEGORIES가 있으면 사용, 없으면 단일 그룹
-    if (typeof REGISTRY_ACTION_CATEGORIES !== 'undefined') {
+    if (typeof REGISTRY_ACTION_CATEGORIES !== "undefined") {
       Object.entries(REGISTRY_ACTION_CATEGORIES).forEach(([, categoryData]) => {
         // categoryData는 { label: string, actions: readonly string[] } 형태
-        const categoryInfo = categoryData as { label: string; actions: readonly string[] };
-        const filtered = (categoryInfo.actions as unknown as ActionType[]).filter((a) =>
-          filteredActionTypes.includes(a)
-        );
+        const categoryInfo = categoryData as {
+          label: string;
+          actions: readonly string[];
+        };
+        const filtered = (
+          categoryInfo.actions as unknown as ActionType[]
+        ).filter((a) => filteredActionTypes.includes(a));
         if (filtered.length > 0) {
           groups.push({ category: categoryInfo.label, actions: filtered });
         }
       });
     } else {
-      groups.push({ category: 'Actions', actions: filteredActionTypes });
+      groups.push({ category: "Actions", actions: filteredActionTypes });
     }
 
     return groups;
@@ -108,7 +116,7 @@ export function ActionTypePicker({
   // 액션 선택 핸들러
   const handleSelect = (actionType: ActionType) => {
     onSelect(actionType);
-    setSearchValue('');
+    setSearchValue("");
     setIsOpen(false);
   };
 
@@ -123,7 +131,7 @@ export function ActionTypePicker({
         searchInputRef.current?.focus();
       }, 50);
     } else {
-      setSearchValue('');
+      setSearchValue("");
     }
   };
 
@@ -137,7 +145,9 @@ export function ActionTypePicker({
           aria-label="액션 타입 선택"
         >
           <span className="action-picker-value">
-            {selectedType ? ACTION_TYPE_LABELS[selectedType] || selectedType : placeholder}
+            {selectedType
+              ? ACTION_TYPE_LABELS[selectedType] || selectedType
+              : placeholder}
           </span>
           <ChevronDown size={iconEditProps.size} />
         </Button>
@@ -146,7 +156,7 @@ export function ActionTypePicker({
           placement="bottom start"
           offset={4}
           className="action-picker-popover"
-          showArrow={false}
+          hideArrow
         >
           <div className="action-picker-search">
             <Search size={iconEditProps.size} color={iconProps.color} />
@@ -225,7 +235,7 @@ export function ActionTypePicker({
         placement="bottom end"
         offset={4}
         className="action-picker-popover"
-        showArrow={false}
+        hideArrow
       >
         <div className="action-picker-search">
           <Search size={iconEditProps.size} color={iconProps.color} />

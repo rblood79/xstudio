@@ -9,23 +9,28 @@
  * @updated 2026-02-10 Gradient Phase 2
  */
 
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from "react";
 import {
   Checkbox as AriaCheckbox,
   DialogTrigger,
   Button as AriaButton,
-} from 'react-aria-components';
-import { ColorSwatch } from '@xstudio/shared/components/ColorSwatch';
-import { Popover } from '@xstudio/shared/components/Popover';
-import { Trash2 } from 'lucide-react';
-import type { FillItem, ColorFillItem, ImageFillItem, GradientStop } from '../../../../types/builder/fill.types';
-import { FillType } from '../../../../types/builder/fill.types';
-import { hex8ToHex6, normalizeToHex8 } from '../utils/colorUtils';
-import { FillDetailPopover } from './FillDetailPopover';
-import { ScrubInput } from './ScrubInput';
-import { iconSmall } from '../../../../utils/ui/uiConstants';
+} from "react-aria-components";
+import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
+import { Popover } from "@xstudio/shared/components/Popover";
+import { Trash2 } from "lucide-react";
+import type {
+  FillItem,
+  ColorFillItem,
+  ImageFillItem,
+  GradientStop,
+} from "../../../../types/builder/fill.types";
+import { FillType } from "../../../../types/builder/fill.types";
+import { hex8ToHex6, normalizeToHex8 } from "../utils/colorUtils";
+import { FillDetailPopover } from "./FillDetailPopover";
+import { ScrubInput } from "./ScrubInput";
+import { iconSmall } from "../../../../utils/ui/uiConstants";
 
-import './FillLayerRow.css';
+import "./FillLayerRow.css";
 
 interface FillLayerRowProps {
   fill: FillItem;
@@ -37,10 +42,10 @@ interface FillLayerRowProps {
 }
 
 const GRADIENT_TYPE_LABELS: Record<string, string> = {
-  [FillType.LinearGradient]: 'Linear',
-  [FillType.RadialGradient]: 'Radial',
-  [FillType.AngularGradient]: 'Angular',
-  [FillType.MeshGradient]: 'Mesh',
+  [FillType.LinearGradient]: "Linear",
+  [FillType.RadialGradient]: "Radial",
+  [FillType.AngularGradient]: "Angular",
+  [FillType.MeshGradient]: "Mesh",
 };
 
 function buildSwatchGradient(stops: GradientStop[]): string {
@@ -48,7 +53,7 @@ function buildSwatchGradient(stops: GradientStop[]): string {
   const parts = sorted.map(
     (s) => `${s.color.slice(0, 7)} ${(s.position * 100).toFixed(1)}%`,
   );
-  return `linear-gradient(90deg, ${parts.join(', ')})`;
+  return `linear-gradient(90deg, ${parts.join(", ")})`;
 }
 
 export const FillLayerRow = memo(function FillLayerRow({
@@ -67,11 +72,12 @@ export const FillLayerRow = memo(function FillLayerRow({
   const isMeshGradient = fill.type === FillType.MeshGradient;
   const isImage = fill.type === FillType.Image;
 
-  const colorValue = isColor ? (fill as ColorFillItem).color : '#000000FF';
-  const displayHex = isColor ? hex8ToHex6(normalizeToHex8(colorValue)) : '';
-  const gradientLabel = (isGradient || isMeshGradient) ? GRADIENT_TYPE_LABELS[fill.type] ?? '' : '';
-  const imageUrl = isImage ? (fill as ImageFillItem).url : '';
-  const displayLabel = isImage ? 'Image' : gradientLabel;
+  const colorValue = isColor ? (fill as ColorFillItem).color : "#000000FF";
+  const displayHex = isColor ? hex8ToHex6(normalizeToHex8(colorValue)) : "";
+  const gradientLabel =
+    isGradient || isMeshGradient ? (GRADIENT_TYPE_LABELS[fill.type] ?? "") : "";
+  const imageUrl = isImage ? (fill as ImageFillItem).url : "";
+  const displayLabel = isImage ? "Image" : gradientLabel;
   const opacityPercent = Math.round(fill.opacity * 100);
 
   const gradientStops = useMemo(
@@ -79,7 +85,7 @@ export const FillLayerRow = memo(function FillLayerRow({
     [isGradient, fill],
   );
   const swatchGradientCss = useMemo(
-    () => (isGradient ? buildSwatchGradient(gradientStops) : ''),
+    () => (isGradient ? buildSwatchGradient(gradientStops) : ""),
     [isGradient, gradientStops],
   );
 
@@ -149,7 +155,10 @@ export const FillLayerRow = memo(function FillLayerRow({
       </AriaCheckbox>
 
       <DialogTrigger>
-        <AriaButton className="fill-layer-row__swatch-btn" aria-label="Edit fill">
+        <AriaButton
+          className="fill-layer-row__swatch-btn"
+          aria-label="Edit fill"
+        >
           {isColor && <ColorSwatch color={colorValue} />}
           {isGradient && (
             <div
@@ -157,20 +166,20 @@ export const FillLayerRow = memo(function FillLayerRow({
               style={{ background: swatchGradientCss }}
             />
           )}
-          {isMeshGradient && (
-            <div className="fill-layer-row__mesh-swatch" />
-          )}
+          {isMeshGradient && <div className="fill-layer-row__mesh-swatch" />}
           {isImage && (
             <div
               className="fill-layer-row__image-swatch"
-              style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
+              style={
+                imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined
+              }
             />
           )}
         </AriaButton>
         <Popover
           placement="bottom start"
           className="fill-detail-popover-container"
-          showArrow={false}
+          hideArrow
         >
           <FillDetailPopover
             fill={fill}

@@ -80,7 +80,7 @@ export const renderCalendar = (
 
   const locale = element.props.locale as string | undefined;
   const calendarSystem = element.props.calendarSystem as string | undefined;
-  const visibleMonths = Number(element.props.visibleMonths) || 1;
+  const maxVisibleMonths = Number(element.props.maxVisibleMonths) || 1;
   const size = element.props.size as string | undefined;
   const variant = element.props.variant as string | undefined;
   // locale/calendarSystem 변경 시 리마운트 (defaultValue calendar 타입 재적용)
@@ -105,7 +105,7 @@ export const renderCalendar = (
       isDisabled={Boolean(element.props.isDisabled)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
-      visibleMonths={visibleMonths}
+      maxVisibleMonths={maxVisibleMonths}
       pageBehavior={getPageBehavior() as "visible" | "single"}
       defaultToday={element.props.defaultToday === true}
       minValue={element.props.minValue as string | undefined}
@@ -204,9 +204,9 @@ export const renderDatePicker = (
       autoFocus={Boolean(element.props.autoFocus)}
       shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       shouldCloseOnSelect={element.props.shouldCloseOnSelect !== false}
-      visibleMonths={
-        element.props.visibleMonths
-          ? Number(element.props.visibleMonths)
+      maxVisibleMonths={
+        element.props.maxVisibleMonths
+          ? Number(element.props.maxVisibleMonths)
           : undefined
       }
       includeTime={Boolean(element.props.includeTime)}
@@ -300,9 +300,9 @@ export const renderDateRangePicker = (
       autoFocus={Boolean(element.props.autoFocus)}
       shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       shouldCloseOnSelect={element.props.shouldCloseOnSelect !== false}
-      visibleMonths={
-        element.props.visibleMonths
-          ? Number(element.props.visibleMonths)
+      maxVisibleMonths={
+        element.props.maxVisibleMonths
+          ? Number(element.props.maxVisibleMonths)
           : undefined
       }
       allowsNonContiguousRanges={Boolean(

@@ -392,7 +392,7 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
             <Popover
               placement="bottom start"
               className="fill-detail-popover-container"
-              showArrow={false}
+              hideArrow
             >
               <FillDetailPopover
                 fill={popoverFill}

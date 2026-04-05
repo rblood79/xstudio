@@ -12,7 +12,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSizeSubset, MeterVariant } from "../types";
-import { formatPercent, formatNumber } from "../utils/core/numberUtils";
+import { formatPercent } from "../utils/core/numberUtils";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/Meter.css";
@@ -35,18 +35,21 @@ export interface MeterProps extends AriaMeterProps {
    */
   locale?: string;
   /**
-   * 값 표시 형식
-   * - number: 숫자로 표시 (75)
-   * - percent: 퍼센트로 표시 (75%)
-   * - custom: 커스텀 포맷터 사용
-   * @default 'percent'
+   * Intl.NumberFormat 옵션으로 값 표시 형식 제어
+   * - { style: "decimal" } → 숫자로 표시 (75)
+   * - { style: "percent" } → 퍼센트로 표시 (75%)
+   * @default undefined (percent 표시)
    */
-  valueFormat?: "number" | "percent" | "custom";
+  formatOptions?: Intl.NumberFormatOptions;
   /**
-   * 값 표시 여부
+   * 값 레이블 표시 여부
    * @default true
    */
-  showValue?: boolean;
+  showValueLabel?: boolean;
+  /**
+   * 커스텀 값 레이블 문자열 (없으면 value에서 자동 생성)
+   */
+  valueLabel?: string;
   /**
    * 커스텀 포맷터 함수
    */
@@ -68,8 +71,9 @@ export function Meter({
   variant = "informative",
   size = "md",
   locale = "ko-KR",
-  valueFormat = "percent",
-  showValue = true,
+  formatOptions,
+  showValueLabel = true,
+  valueLabel,
   customFormatter,
   isLoading,
   ...props
@@ -90,19 +94,20 @@ export function Meter({
       return customFormatter(value);
     }
 
-    switch (valueFormat) {
-      case "percent":
-        return formatPercent(value / 100, locale, 0);
-      case "number":
-        return formatNumber(value, locale);
-      default:
-        return String(value);
+    if (formatOptions) {
+      return new Intl.NumberFormat(locale, formatOptions).format(
+        formatOptions.style === "percent" ? value / 100 : value,
+      );
     }
+
+    // 기본: percent 표시
+    return formatPercent(value / 100, locale, 0);
   };
 
   return (
     <AriaMeter
       {...props}
+      formatOptions={formatOptions}
       className={composeRenderProps(props.className, (className) =>
         className ? `react-aria-Meter ${className}` : "react-aria-Meter",
       )}
@@ -112,11 +117,12 @@ export function Meter({
       {({ percentage, valueText }) => (
         <>
           {label && <Label>{label}</Label>}
-          {showValue && (
+          {showValueLabel && (
             <span className="value">
-              {props.value !== undefined
-                ? formatValue(props.value as number)
-                : valueText}
+              {valueLabel ??
+                (props.value !== undefined
+                  ? formatValue(props.value as number)
+                  : valueText)}
             </span>
           )}
           <div className="bar">

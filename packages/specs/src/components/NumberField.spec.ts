@@ -55,16 +55,7 @@ export interface NumberFieldProps {
   labelPosition?: "top" | "side";
   necessityIndicator?: "icon" | "label";
   locale?: string;
-  formatStyle?: "decimal" | "percent" | "currency" | "unit";
-  currency?: string;
-  unit?: string;
-  notation?: "standard" | "compact" | "scientific" | "engineering";
-  decimals?: number;
-  showGroupSeparator?: boolean;
-  formatOptions?: {
-    minimumFractionDigits?: number;
-    maximumFractionDigits?: number;
-  };
+  formatOptions?: Intl.NumberFormatOptions;
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
@@ -122,7 +113,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {
@@ -145,25 +137,33 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "fr-FR", label: "Français" },
             ],
           },
+        ],
+      },
+      {
+        title: "Format",
+        fields: [
           {
-            key: "formatStyle",
+            key: "formatOptions.style",
             type: "enum",
             label: "Format Style",
             icon: DollarSign,
+            updatePath: ["formatOptions", "style"],
             options: [
               { value: "decimal", label: "Decimal" },
               { value: "currency", label: "Currency" },
               { value: "percent", label: "Percent" },
               { value: "unit", label: "Unit" },
             ],
-           defaultValue: "decimal" },
+            defaultValue: "decimal",
+          },
           {
-            key: "currency",
+            key: "formatOptions.currency",
             type: "enum",
             label: "Currency",
             icon: DollarSign,
+            updatePath: ["formatOptions", "currency"],
             visibleWhen: {
-              key: "formatStyle",
+              key: "formatOptions.style",
               equals: "currency",
             },
             options: [
@@ -176,61 +176,55 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
               { value: "AUD", label: "AUD ($)" },
               { value: "CAD", label: "CAD ($)" },
             ],
-           defaultValue: "KRW" },
+            defaultValue: "KRW",
+          },
           {
-            key: "unit",
+            key: "formatOptions.unit",
             type: "string",
             label: "Unit",
             icon: Type,
+            updatePath: ["formatOptions", "unit"],
             emptyToUndefined: true,
             visibleWhen: {
-              key: "formatStyle",
+              key: "formatOptions.style",
               equals: "unit",
             },
             placeholder: "kilometer, celsius, megabyte, etc.",
           },
           {
-            key: "notation",
+            key: "formatOptions.notation",
             type: "enum",
             label: "Notation",
             icon: Hash,
+            updatePath: ["formatOptions", "notation"],
             options: [
               { value: "standard", label: "Standard" },
               { value: "compact", label: "Compact" },
               { value: "scientific", label: "Scientific" },
               { value: "engineering", label: "Engineering" },
             ],
-           defaultValue: "standard" },
-          {
-            key: "decimals",
-            type: "number",
-            label: "Decimals",
-            icon: Hash,
+            defaultValue: "standard",
           },
           {
-            key: "showGroupSeparator",
-            type: "boolean",
-            label: "Show Group Separator",
-            icon: Hash,
-          },
-        ],
-      },
-      {
-        title: "Advanced Format Options",
-        fields: [
-          {
-            key: "minimumFractionDigits",
+            key: "formatOptions.minimumFractionDigits",
             type: "number",
             label: "Min Fraction Digits",
             icon: Hash,
             updatePath: ["formatOptions", "minimumFractionDigits"],
           },
           {
-            key: "maximumFractionDigits",
+            key: "formatOptions.maximumFractionDigits",
             type: "number",
             label: "Max Fraction Digits",
             icon: Hash,
             updatePath: ["formatOptions", "maximumFractionDigits"],
+          },
+          {
+            key: "formatOptions.useGrouping",
+            type: "boolean",
+            label: "Show Group Separator",
+            icon: Hash,
+            updatePath: ["formatOptions", "useGrouping"],
           },
         ],
       },
@@ -307,7 +301,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             type: "number",
             label: "Step",
             icon: Move,
-           defaultValue: 1 },
+            defaultValue: 1,
+          },
           {
             key: "necessityIndicator",
             type: "enum",

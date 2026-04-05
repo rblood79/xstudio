@@ -48,7 +48,7 @@ export interface TextFieldProps {
   isRequired?: boolean;
   autoFocus?: boolean;
   autoComplete?: string;
-  autoCorrect?: boolean;
+  autoCorrect?: "on" | "off";
   inputMode?:
     | "none"
     | "text"
@@ -127,7 +127,8 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
         ],
       },
       {
@@ -147,7 +148,8 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
               { value: "url", label: "URL" },
               { value: "number", label: "Number" },
             ],
-           defaultValue: "text" },
+            defaultValue: "text",
+          },
           {
             key: "inputMode",
             type: "enum",
@@ -220,9 +222,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           },
           {
             key: "autoCorrect",
-            type: "boolean",
+            type: "enum",
             label: "Auto Correct",
             icon: SpellCheck2,
+            options: [
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ],
+            defaultValue: "off",
           },
 
           {

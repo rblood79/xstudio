@@ -38,7 +38,7 @@ export interface DatePickerProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
-  visibleMonths?: number;
+  maxVisibleMonths?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -314,7 +314,8 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "granularity",
             type: "enum",
@@ -362,16 +363,18 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "visible", label: "Visible" },
               { value: "single", label: "Single" },
             ],
-           defaultValue: "visible" },
+            defaultValue: "visible",
+          },
           {
-            key: "visibleMonths",
+            key: "maxVisibleMonths",
             type: "number",
-            label: "Visible Months",
+            label: "Max Visible Months",
             icon: Columns,
             min: 1,
             max: 3,
             step: 1,
-           defaultValue: 1 },
+            defaultValue: 1,
+          },
         ],
       },
       {
@@ -461,7 +464,8 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             type: "boolean",
             label: "Close On Select",
             icon: CheckSquare,
-           defaultValue: true },
+            defaultValue: true,
+          },
 
           {
             key: "name",
@@ -493,7 +497,8 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
     ],
@@ -533,8 +538,13 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         override: true,
       },
 
-      // visibleMonths → Calendar
-      { parentProp: "visibleMonths", childPath: "Calendar", override: true },
+      // maxVisibleMonths → Calendar
+      {
+        parentProp: "maxVisibleMonths",
+        childPath: "Calendar",
+        childProp: "maxVisibleMonths",
+        override: true,
+      },
 
       // variant → 직접 자식
       { parentProp: "variant", childPath: "Calendar" },

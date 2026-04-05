@@ -33,7 +33,7 @@ export interface PopoverProps {
     | "top end"
     | "bottom start"
     | "bottom end";
-  showArrow?: boolean;
+  hideArrow?: boolean;
   crossOffset?: number;
   shouldFlip?: boolean;
   containerPadding?: number;
@@ -89,14 +89,16 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
               { value: "bottom start", label: "Bottom Start" },
               { value: "bottom end", label: "Bottom End" },
             ],
-           defaultValue: "bottom" },
+            defaultValue: "bottom",
+          },
           {
             key: "crossOffset",
             type: "number",
             label: "Cross Offset",
             icon: ArrowLeftRight,
             step: 1,
-           defaultValue: 0 },
+            defaultValue: 0,
+          },
           {
             key: "containerPadding",
             type: "number",
@@ -104,13 +106,15 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
             icon: SquareDashedMousePointer,
             min: 0,
             step: 1,
-           defaultValue: 12 },
+            defaultValue: 12,
+          },
           {
             key: "shouldFlip",
             type: "boolean",
             label: "Should Flip",
             icon: FlipHorizontal2,
-           defaultValue: true },
+            defaultValue: true,
+          },
         ],
       },
     ],
@@ -236,8 +240,8 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
       });
 
       // Phase F: Arrow indicator (placement 기반 V자 2-line 화살표)
-      // showArrow가 명시적으로 true일 때만 렌더링
-      if (props.showArrow === true) {
+      // hideArrow가 true가 아닐 때 렌더링 (기본: 화살표 표시)
+      if (!props.hideArrow) {
         const arrowSize = 8;
         const bgFill = resolveStateColors(variant, state).background;
         const placement = props.placement ?? "bottom";

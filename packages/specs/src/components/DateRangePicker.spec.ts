@@ -44,7 +44,7 @@ export interface DateRangePickerProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
-  visibleMonths?: number;
+  maxVisibleMonths?: number;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -107,7 +107,8 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "top", label: "Top" },
               { value: "side", label: "Side" },
             ],
-           defaultValue: "top" },
+            defaultValue: "top",
+          },
           {
             key: "granularity",
             type: "enum",
@@ -155,16 +156,18 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "visible", label: "Visible" },
               { value: "hidden", label: "Hidden" },
             ],
-           defaultValue: "visible" },
+            defaultValue: "visible",
+          },
           {
-            key: "visibleMonths",
+            key: "maxVisibleMonths",
             type: "number",
-            label: "Visible Months",
+            label: "Max Visible Months",
             icon: Columns,
             min: 1,
             max: 3,
             step: 1,
-           defaultValue: 1 },
+            defaultValue: 1,
+          },
         ],
       },
       {
@@ -260,7 +263,8 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
             type: "boolean",
             label: "Close On Select",
             icon: CheckSquare,
-           defaultValue: true },
+            defaultValue: true,
+          },
 
           {
             key: "startName",
@@ -294,7 +298,8 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },
             ],
-           defaultValue: "aria" },
+            defaultValue: "aria",
+          },
         ],
       },
     ],
@@ -345,10 +350,11 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         override: true,
       },
 
-      // visibleMonths → RangeCalendar
+      // maxVisibleMonths → RangeCalendar
       {
-        parentProp: "visibleMonths",
+        parentProp: "maxVisibleMonths",
         childPath: "RangeCalendar",
+        childProp: "maxVisibleMonths",
         override: true,
       },
 

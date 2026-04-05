@@ -1262,7 +1262,10 @@ export const renderSlider = (
       variant={
         (element.props.variant as "default" | "accent" | "neutral") || "default"
       }
-      showValue={element.props.showValue !== false}
+      formatOptions={
+        element.props.formatOptions as Intl.NumberFormatOptions | undefined
+      }
+      locale={(element.props.locale as string) || undefined}
       onChange={(value) => {
         updateElementProps(element.id, {
           ...element.props,

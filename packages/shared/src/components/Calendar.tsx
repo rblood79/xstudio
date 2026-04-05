@@ -45,7 +45,7 @@ export interface CalendarProps<T extends DateValue> extends Omit<
   /** @default 'visible' */
   pageBehavior?: "visible" | "single";
   /** @default 1 */
-  visibleMonths?: number;
+  maxVisibleMonths?: number;
   /** @default false */
   isLoading?: boolean;
 }
@@ -61,7 +61,7 @@ export function Calendar<T extends DateValue>({
   maxValue,
   selectionAlignment = "center",
   pageBehavior,
-  visibleMonths = 1,
+  maxVisibleMonths = 1,
   isLoading,
   ...props
 }: CalendarProps<T>) {
@@ -108,7 +108,7 @@ export function Calendar<T extends DateValue>({
       maxValue={parsedMaxValue as T | undefined}
       selectionAlignment={selectionAlignment}
       pageBehavior={pageBehavior}
-      visibleDuration={{ months: visibleMonths }}
+      visibleDuration={{ months: maxVisibleMonths }}
     >
       <header>
         <Button slot="previous">
@@ -120,7 +120,7 @@ export function Calendar<T extends DateValue>({
         </Button>
       </header>
       <div className="calendar-grids">
-        {Array.from({ length: visibleMonths }, (_, i) => (
+        {Array.from({ length: maxVisibleMonths }, (_, i) => (
           <CalendarGrid key={i} offset={{ months: i }}>
             {(date) => <CalendarCell date={date} />}
           </CalendarGrid>

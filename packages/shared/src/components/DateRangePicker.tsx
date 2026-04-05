@@ -71,7 +71,7 @@ export interface DateRangePickerProps<T extends DateValue> extends Omit<
   labelPosition?: "top" | "side";
   hideTimeZone?: boolean;
   pageBehavior?: "visible" | "single";
-  visibleMonths?: number;
+  maxVisibleMonths?: number;
   startName?: string;
   endName?: string;
   form?: string;
@@ -105,7 +105,7 @@ export function DateRangePicker<T extends DateValue>({
   labelPosition = "top",
   hideTimeZone,
   pageBehavior,
-  visibleMonths,
+  maxVisibleMonths,
   startName,
   endName,
   form,
@@ -225,8 +225,8 @@ export function DateRangePicker<T extends DateValue>({
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
               visibleDuration={
-                visibleMonths && visibleMonths > 1
-                  ? { months: visibleMonths }
+                maxVisibleMonths && maxVisibleMonths > 1
+                  ? { months: maxVisibleMonths }
                   : undefined
               }
               pageBehavior={pageBehavior}
@@ -244,7 +244,9 @@ export function DateRangePicker<T extends DateValue>({
                 {Array.from(
                   {
                     length:
-                      visibleMonths && visibleMonths > 1 ? visibleMonths : 1,
+                      maxVisibleMonths && maxVisibleMonths > 1
+                        ? maxVisibleMonths
+                        : 1,
                   },
                   (_, i) => (
                     <CalendarGrid

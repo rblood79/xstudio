@@ -33,8 +33,9 @@ export interface ProgressBarProps {
   minValue?: number;
   maxValue?: number;
   locale?: string;
-  showValue?: boolean;
-  valueFormat?: "number" | "percent" | "custom";
+  showValueLabel?: boolean;
+  valueLabel?: string;
+  formatOptions?: Intl.NumberFormatOptions;
   isIndeterminate?: boolean;
   staticColor?: "white" | "black";
   isDisabled?: boolean;
@@ -97,23 +98,30 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         title: "Locale",
         fields: [
           {
-            key: "valueFormat",
+            key: "formatOptions.style",
             type: "enum",
-            label: "Value Format",
+            label: "Format Style",
             icon: DollarSign,
+            updatePath: ["formatOptions", "style"],
             options: [
-              { value: "number", label: "Number" },
+              { value: "decimal", label: "Number" },
               { value: "percent", label: "Percent" },
-              { value: "custom", label: "Custom" },
             ],
             defaultValue: "percent",
           },
           {
-            key: "showValue",
+            key: "showValueLabel",
             type: "boolean",
-            label: "Show Value",
+            label: "Show Value Label",
             icon: BarChart3,
             defaultValue: true,
+          },
+          {
+            key: "valueLabel",
+            type: "string",
+            label: "Value Label",
+            placeholder: "Custom label (e.g. 50%)",
+            icon: BarChart3,
           },
         ],
       },
@@ -295,23 +303,25 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
 
       // hasChildren일 때: Label → child, ProgressBarOutput → child, ProgressBarTrack → child
       // ProgressBar spec shapes는 완전 스킵 (모든 렌더링이 child에서 처리)
-      const showValue = props.showValue !== false;
+      const showValueLabel = props.showValueLabel !== false;
 
       if (hasChildren) {
         // 모든 렌더링은 child element가 담당 → shapes 비어있음
       } else {
         // Standalone 모드: 기존 monolithic 렌더링
-        const hasLabelRow = !!props.label || showValue;
+        const hasLabelRow = !!props.label || showValueLabel;
 
-        const formattedValue = showValue
-          ? props.valueFormat === "number"
+        const formatStyle = (
+          props.formatOptions as Intl.NumberFormatOptions | undefined
+        )?.style;
+        const autoFormatted = showValueLabel
+          ? formatStyle === "decimal"
             ? String(Math.round(value))
-            : props.valueFormat === "custom"
-              ? String(Math.round(value))
-              : `${Math.round(percent)}%`
+            : `${Math.round(percent)}%`
           : "";
+        const formattedValue = props.valueLabel ?? autoFormatted;
         // ADR-051: 실측 기반 value 텍스트 폭 (추정값 제거)
-        const measuredValueWidth = showValue
+        const measuredValueWidth = showValueLabel
           ? measureSpecTextWidth(formattedValue, fontSize, ff) + 4 // 4px 여유 (kerning)
           : 0;
 
@@ -327,10 +337,10 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             fill: textColor,
             align: "left" as const,
             baseline: "top" as const,
-            maxWidth: showValue ? width - measuredValueWidth : undefined,
+            maxWidth: showValueLabel ? width - measuredValueWidth : undefined,
           });
         }
-        if (showValue) {
+        if (showValueLabel) {
           shapes.push({
             type: "text" as const,
             x: width,

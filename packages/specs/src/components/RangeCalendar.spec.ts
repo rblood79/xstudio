@@ -21,7 +21,7 @@ import {
  */
 export interface RangeCalendarProps extends CalendarProps {
   allowsNonContiguousRanges?: boolean;
-  visibleMonths?: number;
+  maxVisibleMonths?: number;
 }
 
 /**
@@ -93,9 +93,9 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
         title: "State",
         fields: [
           {
-            key: "visibleMonths",
+            key: "maxVisibleMonths",
             type: "enum",
-            label: "Visible Months",
+            label: "Max Visible Months",
             icon: Hash,
             valueTransform: "number" as const,
             options: [
@@ -103,7 +103,8 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
               { value: "2", label: "2" },
               { value: "3", label: "3" },
             ],
-           defaultValue: "1" },
+            defaultValue: "1",
+          },
           {
             key: "minValue",
             type: "string",

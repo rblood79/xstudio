@@ -237,36 +237,6 @@ export const renderNumberField = (
           : undefined
       }
       locale={element.props.locale ? String(element.props.locale) : undefined}
-      formatStyle={
-        (element.props.formatStyle as
-          | "decimal"
-          | "currency"
-          | "percent"
-          | "unit"
-          | undefined) ?? "decimal"
-      }
-      currency={
-        element.props.currency ? String(element.props.currency) : undefined
-      }
-      unit={element.props.unit ? String(element.props.unit) : undefined}
-      notation={
-        (element.props.notation as
-          | "standard"
-          | "compact"
-          | "scientific"
-          | "engineering"
-          | undefined) ?? "standard"
-      }
-      decimals={
-        element.props.decimals !== undefined
-          ? Number(element.props.decimals)
-          : undefined
-      }
-      showGroupSeparator={
-        element.props.showGroupSeparator !== undefined
-          ? Boolean(element.props.showGroupSeparator)
-          : undefined
-      }
       formatOptions={formatOptions}
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}

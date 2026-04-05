@@ -30,9 +30,10 @@ export interface MeterProps {
   value?: number;
   minValue?: number;
   maxValue?: number;
-  showValue?: boolean;
+  showValueLabel?: boolean;
+  valueLabel?: string;
   locale?: string;
-  valueFormat?: "number" | "percent" | "custom";
+  formatOptions?: Intl.NumberFormatOptions;
   staticColor?: "white" | "black";
   isDisabled?: boolean;
   children?: string;
@@ -95,23 +96,30 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
         title: "Locale",
         fields: [
           {
-            key: "valueFormat",
+            key: "formatOptions.style",
             type: "enum",
-            label: "Value Format",
+            label: "Format Style",
             icon: DollarSign,
+            updatePath: ["formatOptions", "style"],
             options: [
-              { value: "number", label: "Number" },
+              { value: "decimal", label: "Number" },
               { value: "percent", label: "Percent" },
-              { value: "custom", label: "Custom" },
             ],
             defaultValue: "percent",
           },
           {
-            key: "showValue",
+            key: "showValueLabel",
             type: "boolean",
-            label: "Show Value",
+            label: "Show Value Label",
             icon: Gauge,
             defaultValue: true,
+          },
+          {
+            key: "valueLabel",
+            type: "string",
+            label: "Value Label",
+            placeholder: "Custom label (e.g. 75%)",
+            icon: Tag,
           },
         ],
       },
@@ -294,7 +302,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       }
 
       // Standalone 모드: 라벨 + 값 행
-      const hasLabelRow = props.label || props.showValue !== false;
+      const hasLabelRow = props.label || props.showValueLabel !== false;
       if (hasLabelRow) {
         if (props.label) {
           shapes.push({
@@ -310,11 +318,13 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
             baseline: "top" as const,
           });
         }
-        if (props.showValue !== false) {
-          const formattedValue =
-            props.valueFormat === "number"
+        if (props.showValueLabel !== false) {
+          const formatStyle = props.formatOptions?.style;
+          const autoFormatted =
+            formatStyle === "decimal"
               ? String(value)
               : `${Math.round(percent)}%`;
+          const formattedValue = props.valueLabel ?? autoFormatted;
           shapes.push({
             type: "text" as const,
             x: width,

@@ -35,22 +35,20 @@ export interface ProgressBarProps extends AriaProgressBarProps {
    */
   locale?: string;
   /**
-   * 값 표시 형식
-   * - number: 숫자로 표시 (75)
-   * - percent: 퍼센트로 표시 (75%)
-   * - custom: 커스텀 포맷터 사용
-   * @default 'percent'
+   * Intl.NumberFormat 포맷 옵션
+   * style: 'decimal' → 숫자만 표시 (75), 'percent' → 퍼센트 표시 (75%)
+   * @default { style: 'percent' }
    */
-  valueFormat?: "number" | "percent" | "custom";
+  formatOptions?: Intl.NumberFormatOptions;
   /**
-   * 값 표시 여부
+   * 값 레이블 표시 여부
    * @default true
    */
-  showValue?: boolean;
+  showValueLabel?: boolean;
   /**
-   * 커스텀 포맷터 함수
+   * 커스텀 값 레이블 문자열 (없으면 value에서 자동 생성)
    */
-  customFormatter?: (value: number) => string;
+  valueLabel?: string;
   /**
    * Show loading skeleton instead of progress bar
    * @default false
@@ -68,9 +66,9 @@ export function ProgressBar({
   variant = "default",
   size = "md",
   locale = "ko-KR",
-  valueFormat = "percent",
-  showValue = true,
-  customFormatter,
+  formatOptions,
+  showValueLabel = true,
+  valueLabel,
   isLoading,
   ...props
 }: ProgressBarProps) {
@@ -86,23 +84,16 @@ export function ProgressBar({
   }
   // 값 포맷팅 함수
   const formatValue = (value: number): string => {
-    if (customFormatter) {
-      return customFormatter(value);
+    if (formatOptions?.style === "decimal") {
+      return formatNumber(value, locale);
     }
-
-    switch (valueFormat) {
-      case "percent":
-        return formatPercent(value / 100, locale, 0);
-      case "number":
-        return formatNumber(value, locale);
-      default:
-        return String(value);
-    }
+    return formatPercent(value / 100, locale, 0);
   };
 
   return (
     <AriaProgressBar
       {...props}
+      formatOptions={formatOptions}
       className={composeRenderProps(props.className, (className) =>
         className
           ? `react-aria-ProgressBar ${className}`
@@ -114,11 +105,12 @@ export function ProgressBar({
       {({ percentage, valueText }) => (
         <>
           {label && <Label>{label}</Label>}
-          {showValue && (
+          {showValueLabel && (
             <span className="value">
-              {props.value !== undefined
-                ? formatValue(props.value as number)
-                : valueText}
+              {valueLabel ??
+                (props.value !== undefined
+                  ? formatValue(props.value as number)
+                  : valueText)}
             </span>
           )}
           <div className="bar">

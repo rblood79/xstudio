@@ -1666,7 +1666,7 @@ export function calculateContentHeight(
 
     // label 또는 showValue가 있으면 텍스트 행 높이 추가
     const hasLabel = !!props?.label;
-    const hasValue = props?.showValue !== false; // ProgressBar/Meter 모두 기본 true
+    const hasValue = props?.showValueLabel !== false; // ProgressBar/Meter 모두 기본 true
     if (hasLabel || hasValue) {
       const fontSize = parseNumericValue(style?.fontSize) ?? 14;
       const gap = isMeter ? 8 : 8; // spec sizes[*].gap

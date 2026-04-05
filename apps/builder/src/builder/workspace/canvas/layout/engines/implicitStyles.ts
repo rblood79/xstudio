@@ -37,9 +37,9 @@ export function formatProgressValue(
   value: number,
   min: number,
   max: number,
-  format?: string,
+  formatOptions?: Record<string, unknown> | null,
 ): string {
-  if (format === "number") return String(Math.round(value));
+  if (formatOptions?.style === "decimal") return String(Math.round(value));
   const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
   return `${Math.round(Math.max(0, Math.min(100, percent)))}%`;
 }
@@ -1253,22 +1253,27 @@ export function applyImplicitStyles(
   // flex row wrap: Label(flex:1) + Output(auto) → 1행, Track(width:100%) → 2행(강제 줄바꿈)
   if (PROGRESSBAR_TAGS.has(containerTag)) {
     const hasLabel = !!containerProps?.label;
-    const showValue = containerProps?.showValue !== false;
+    const showValueLabel = containerProps?.showValueLabel !== false;
     const sizeName = (containerProps?.size as string) ?? "md";
 
     // layout 엔진이 Skia 렌더링과 동일한 텍스트로 fit-content width를 측정해야 함
-    const formattedValue = formatProgressValue(
+    const autoFormattedValue = formatProgressValue(
       Number(containerProps?.value ?? 0),
       Number(containerProps?.minValue ?? 0),
       Number(containerProps?.maxValue ?? 100),
-      containerProps?.valueFormat as string | undefined,
+      containerProps?.formatOptions &&
+        typeof containerProps.formatOptions === "object"
+        ? (containerProps.formatOptions as Record<string, unknown>)
+        : null,
     );
+    const formattedValue =
+      (containerProps?.valueLabel as string | undefined) ?? autoFormattedValue;
 
-    // Label/Output 필터: hasLabel이 false면 Label 제외, showValue false면 Output 제외
+    // Label/Output 필터: hasLabel이 false면 Label 제외, showValueLabel false면 Output 제외
     filteredChildren = children.filter((c) => {
       if (c.tag === "Label") return hasLabel;
       if (c.tag === "ProgressBarValue" || c.tag === "MeterValue")
-        return showValue;
+        return showValueLabel;
       return true;
     });
 
@@ -1310,7 +1315,7 @@ export function applyImplicitStyles(
           ...child,
           props: {
             ...child.props,
-            children: showValue ? formattedValue : "",
+            children: showValueLabel ? formattedValue : "",
             size: sizeName,
             style: { ...cs, fontSize: valueFontSize },
           },

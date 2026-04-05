@@ -8,31 +8,34 @@
  * Phase 6: 추천 이벤트 섹션 추가 (컴포넌트별 최적 이벤트 빠른 추가)
  */
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from "react";
 import {
   DialogTrigger,
   Button,
   ListBox,
   ListBoxItem,
-} from 'react-aria-components';
-import { Popover } from '@xstudio/shared/components/Popover';
-import { CirclePlus, Search, ChevronDown, Zap } from 'lucide-react';
-import type { EventType } from '@/types/events/events.types';
-import { EVENT_TYPE_LABELS, EVENT_CATEGORIES } from '@/types/events/events.types';
-import { iconProps, iconEditProps, iconSmall } from '@/utils/ui/uiConstants';
+} from "react-aria-components";
+import { Popover } from "@xstudio/shared/components/Popover";
+import { CirclePlus, Search, ChevronDown, Zap } from "lucide-react";
+import type { EventType } from "@/types/events/events.types";
+import {
+  EVENT_TYPE_LABELS,
+  EVENT_CATEGORIES,
+} from "@/types/events/events.types";
+import { iconProps, iconEditProps, iconSmall } from "@/utils/ui/uiConstants";
 
 // 추천 이벤트 우선순위 (컴포넌트별 가장 많이 사용되는 이벤트 순서)
 // ⚠️ 순서 중요: 사용자 상호작용 → 값 변경 → 포커스 순
 const EVENT_PRIORITY: EventType[] = [
-  'onClick',          // 가장 일반적인 클릭 이벤트 (Button, Link 등)
-  'onChange',         // 값 변경 이벤트 (TextField, Select, Checkbox 등)
-  'onSubmit',         // 폼 제출 이벤트 (Form)
-  'onKeyDown',        // 키보드 이벤트 (TextField, NumberField 등)
-  'onKeyUp',          // 키보드 이벤트
-  'onMouseEnter',     // 마우스 진입
-  'onMouseLeave',     // 마우스 나감
-  'onFocus',          // 포커스 (낮은 우선순위)
-  'onBlur',           // 블러 (낮은 우선순위)
+  "onClick", // 가장 일반적인 클릭 이벤트 (Button, Link 등)
+  "onChange", // 값 변경 이벤트 (TextField, Select, Checkbox 등)
+  "onSubmit", // 폼 제출 이벤트 (Form)
+  "onKeyDown", // 키보드 이벤트 (TextField, NumberField 등)
+  "onKeyUp", // 키보드 이벤트
+  "onMouseEnter", // 마우스 진입
+  "onMouseLeave", // 마우스 나감
+  "onFocus", // 포커스 (낮은 우선순위)
+  "onBlur", // 블러 (낮은 우선순위)
 ];
 
 interface EventTypePickerProps {
@@ -75,7 +78,7 @@ export function EventTypePicker({
   isDisabled = false,
   inline = false,
 }: EventTypePickerProps) {
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   // 기본 이벤트 목록: allowedTypes가 있으면 그것을 우선 사용하고, 없으면 전체
@@ -96,7 +99,7 @@ export function EventTypePicker({
   // 사용 가능한 이벤트 타입 목록 (이미 등록된 타입 제외)
   const availableEventTypes = useMemo(() => {
     return baseEventTypes.filter(
-      (type) => !registeredTypes.includes(type) || type === selectedType
+      (type) => !registeredTypes.includes(type) || type === selectedType,
     );
   }, [baseEventTypes, registeredTypes, selectedType]);
 
@@ -118,8 +121,10 @@ export function EventTypePicker({
 
     const searchLower = searchValue.toLowerCase();
     return availableEventTypes.filter((type) => {
-      const label = EVENT_TYPE_LABELS[type]?.toLowerCase() || '';
-      return type.toLowerCase().includes(searchLower) || label.includes(searchLower);
+      const label = EVENT_TYPE_LABELS[type]?.toLowerCase() || "";
+      return (
+        type.toLowerCase().includes(searchLower) || label.includes(searchLower)
+      );
     });
   }, [availableEventTypes, searchValue]);
 
@@ -129,12 +134,15 @@ export function EventTypePicker({
     const added = new Set<EventType>();
 
     // EVENT_CATEGORIES가 있으면 사용, 없으면 단일 그룹
-    if (typeof EVENT_CATEGORIES !== 'undefined') {
+    if (typeof EVENT_CATEGORIES !== "undefined") {
       Object.entries(EVENT_CATEGORIES).forEach(([, categoryData]) => {
         // categoryData는 { label: string, events: readonly string[] } 형태
-        const categoryInfo = categoryData as { label: string; events: readonly string[] };
-        const filtered = (categoryInfo.events as unknown as EventType[]).filter((e) =>
-          filteredEventTypes.includes(e)
+        const categoryInfo = categoryData as {
+          label: string;
+          events: readonly string[];
+        };
+        const filtered = (categoryInfo.events as unknown as EventType[]).filter(
+          (e) => filteredEventTypes.includes(e),
         );
         if (filtered.length > 0) {
           groups.push({ category: categoryInfo.label, events: filtered });
@@ -142,13 +150,13 @@ export function EventTypePicker({
         }
       });
     } else {
-      groups.push({ category: 'Events', events: filteredEventTypes });
+      groups.push({ category: "Events", events: filteredEventTypes });
     }
 
     // 카테고리에서 누락된 타입이 있다면 기본 그룹으로 추가
     const leftovers = filteredEventTypes.filter((e) => !added.has(e));
-    if (leftovers.length > 0 && typeof EVENT_CATEGORIES !== 'undefined') {
-      groups.push({ category: 'Events', events: leftovers });
+    if (leftovers.length > 0 && typeof EVENT_CATEGORIES !== "undefined") {
+      groups.push({ category: "Events", events: leftovers });
     }
 
     return groups;
@@ -157,7 +165,7 @@ export function EventTypePicker({
   // 이벤트 선택 핸들러
   const handleSelect = (eventType: EventType) => {
     onSelect(eventType);
-    setSearchValue('');
+    setSearchValue("");
     setIsOpen(false);
   };
 
@@ -173,7 +181,7 @@ export function EventTypePicker({
         searchInputRef.current?.focus();
       }, 50);
     } else {
-      setSearchValue('');
+      setSearchValue("");
     }
   };
 
@@ -187,7 +195,9 @@ export function EventTypePicker({
           aria-label="이벤트 타입 선택"
         >
           <span className="event-picker-value">
-            {selectedType ? EVENT_TYPE_LABELS[selectedType] || selectedType : 'Select event...'}
+            {selectedType
+              ? EVENT_TYPE_LABELS[selectedType] || selectedType
+              : "Select event..."}
           </span>
           <ChevronDown size={iconEditProps.size} />
         </Button>
@@ -196,7 +206,7 @@ export function EventTypePicker({
           placement="bottom start"
           offset={4}
           className="event-picker-popover"
-          showArrow={false}
+          hideArrow
         >
           <div className="event-picker-search">
             <Search size={iconEditProps.size} color={iconProps.color} />
@@ -275,7 +285,7 @@ export function EventTypePicker({
         placement="bottom end"
         offset={4}
         className="event-picker-popover"
-        showArrow={false}
+        hideArrow
       >
         {/* 추천 이벤트 섹션 - 검색어가 없고 추천 이벤트가 있을 때만 표시 */}
         {!searchValue && recommendedEvents.length > 0 && (

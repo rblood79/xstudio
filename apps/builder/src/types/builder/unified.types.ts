@@ -191,7 +191,7 @@ export interface TextFieldElementProps extends BaseElementProps {
   isInvalid?: boolean;
   autoFocus?: boolean;
   autoComplete?: string;
-  autoCorrect?: boolean;
+  autoCorrect?: "on" | "off";
   inputMode?:
     | "none"
     | "text"
@@ -378,8 +378,7 @@ export interface SliderElementProps extends BaseElementProps {
   name?: string;
   form?: string;
   locale?: string;
-  unit?: string;
-  valueFormat?: string;
+  formatOptions?: Intl.NumberFormatOptions;
   onChange?: (value: number) => void;
 }
 
@@ -851,14 +850,8 @@ export interface NumberFieldElementProps extends BaseElementProps {
   form?: string;
   labelPosition?: "top" | "side";
   necessityIndicator?: "icon" | "label";
-  decimals?: number;
-  formatStyle?: "decimal" | "percent" | "currency" | "unit";
-  currency?: string;
-  unit?: string;
-  notation?: "standard" | "scientific" | "engineering" | "compact";
   locale?: string;
-  showGroupSeparator?: boolean;
-  formatOptions?: Record<string, unknown>;
+  formatOptions?: Intl.NumberFormatOptions;
   validationBehavior?: "native" | "aria";
 }
 
@@ -906,7 +899,7 @@ export interface ProgressBarElementProps extends BaseElementProps {
   isIndeterminate?: boolean;
   showValue?: boolean;
   locale?: string;
-  valueFormat?: "number" | "percent" | "custom";
+  formatOptions?: Intl.NumberFormatOptions;
 }
 
 // === Meter Element Props ===
@@ -919,7 +912,7 @@ export interface MeterElementProps extends BaseElementProps {
   maxValue?: number;
   showValue?: boolean;
   locale?: string;
-  valueFormat?: "number" | "percent" | "custom";
+  formatOptions?: Intl.NumberFormatOptions;
 }
 
 // === Form Element Props ===
@@ -994,7 +987,7 @@ export interface BreadcrumbsElementProps extends BaseElementProps {
 // === Dialog Element Props ===
 export interface DialogElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  isDismissable?: boolean;
+  isDismissible?: boolean;
   role?: "dialog" | "alertdialog";
 }
 
@@ -1016,7 +1009,7 @@ export interface PopoverElementProps extends BaseElementProps {
 // === Modal Element Props ===
 export interface ModalElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  isDismissable?: boolean;
+  isDismissible?: boolean;
 }
 
 // === Tooltip Element Props ===
