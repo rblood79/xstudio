@@ -88,9 +88,21 @@ export function ProgressBar({
       />
     );
   }
+  // formatOptions 유효성 보정: currency/unit style에 필수값 없으면 decimal로 fallback
+  const safeFormatOptions = (() => {
+    if (!formatOptions) return undefined;
+    if (formatOptions.style === "currency" && !formatOptions.currency) {
+      return { ...formatOptions, style: "decimal" as const };
+    }
+    if (formatOptions.style === "unit" && !formatOptions.unit) {
+      return { ...formatOptions, style: "decimal" as const };
+    }
+    return formatOptions;
+  })();
+
   // 값 포맷팅 함수
   const formatValue = (value: number): string => {
-    if (formatOptions?.style === "decimal") {
+    if (safeFormatOptions?.style === "decimal") {
       return formatNumber(value, locale);
     }
     return formatPercent(value / 100, locale, 0);
@@ -99,7 +111,7 @@ export function ProgressBar({
   return (
     <AriaProgressBar
       {...props}
-      formatOptions={formatOptions}
+      formatOptions={safeFormatOptions}
       className={composeRenderProps(props.className, (className) =>
         className
           ? `react-aria-ProgressBar ${className}`

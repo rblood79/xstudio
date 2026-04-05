@@ -93,15 +93,27 @@ export function Meter({
       />
     );
   }
+  // formatOptions 유효성 보정: currency/unit style에 필수값 없으면 decimal로 fallback
+  const safeFormatOptions = (() => {
+    if (!formatOptions) return undefined;
+    if (formatOptions.style === "currency" && !formatOptions.currency) {
+      return { ...formatOptions, style: "decimal" as const };
+    }
+    if (formatOptions.style === "unit" && !formatOptions.unit) {
+      return { ...formatOptions, style: "decimal" as const };
+    }
+    return formatOptions;
+  })();
+
   // 값 포맷팅 함수
   const formatValue = (value: number): string => {
     if (customFormatter) {
       return customFormatter(value);
     }
 
-    if (formatOptions) {
-      return new Intl.NumberFormat(locale, formatOptions).format(
-        formatOptions.style === "percent" ? value / 100 : value,
+    if (safeFormatOptions) {
+      return new Intl.NumberFormat(locale, safeFormatOptions).format(
+        safeFormatOptions.style === "percent" ? value / 100 : value,
       );
     }
 
@@ -112,7 +124,7 @@ export function Meter({
   return (
     <AriaMeter
       {...props}
-      formatOptions={formatOptions}
+      formatOptions={safeFormatOptions}
       className={composeRenderProps(props.className, (className) =>
         className ? `react-aria-Meter ${className}` : "react-aria-Meter",
       )}
