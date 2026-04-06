@@ -26,6 +26,7 @@
     "test:e2e": "playwright test",
     "check:pixi-plan": "pnpm -F @xstudio/builder check:pixi-plan",
     "fix:pixi-plan": "pnpm -F @xstudio/builder fix:pixi-plan",
+    "build:layout": "cd packages/xstudio-layout && wasm-pack build --target web --release",
     "wasm:build": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --out-dir ../wasm-bindings/pkg",
     "wasm:dev": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --dev --out-dir ../wasm-bindings/pkg",
     "wasm:test": "wasm-pack test --node apps/builder/src/builder/workspace/canvas/wasm",
