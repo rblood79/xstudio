@@ -52,7 +52,7 @@ export const UNIFIED_ENGINE_FLAGS = {
 
   // 전체 전환 — Box/Text/Image Sprite 정밀 이�� 완료 (Phase 6.5-6.7)
   // useLayoutPublisher(store 기반) + StoreRenderBridge(순수 함수) 활성화
-  UNIFIED_ENGINE: true,
+  UNIFIED_ENGINE: false,
 } as const;
 
 export type UnifiedEngineFlag = keyof typeof UNIFIED_ENGINE_FLAGS;
