@@ -176,6 +176,25 @@ export type EffectStyle =
   | BackdropFilterEffect;
 
 // ============================================
+// Text Shadow Types (G4)
+// ============================================
+
+/**
+ * CSS text-shadow 단일 항목.
+ *
+ * sigma는 CSS blur-radius를 2.355로 나눈 표준편차 값이다.
+ * (blur-radius 0 → sigma 0 → 블러 없음)
+ */
+export interface TextShadow {
+  offsetX: number;
+  offsetY: number;
+  /** 가우시안 블러 시그마 (cssBlurPx / 2.355). 0이면 블러 없음 */
+  sigma: number;
+  /** CanvasKit Color4f [r, g, b, a] 0-1 범위 */
+  color: Float32Array;
+}
+
+// ============================================
 // AI Visual Feedback Types (G.3)
 // ============================================
 

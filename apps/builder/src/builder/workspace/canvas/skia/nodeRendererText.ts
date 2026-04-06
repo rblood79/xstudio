@@ -427,6 +427,37 @@ export function renderText(
       );
     }
 
+    // G4: text-shadow — shadow를 원본 텍스트보다 먼저 렌더 (2-pass)
+    if (node.text.textShadows?.length) {
+      for (const shadow of node.text.textShadows) {
+        canvas.save();
+        canvas.translate(shadow.offsetX, shadow.offsetY);
+
+        if (shadow.sigma > 0) {
+          const blurPaint = new ck.Paint();
+          blurPaint.setImageFilter(
+            ck.ImageFilter.MakeBlur(
+              shadow.sigma,
+              shadow.sigma,
+              ck.TileMode.Decal,
+              null,
+            ),
+          );
+          canvas.saveLayer(blurPaint);
+          blurPaint.delete();
+        }
+
+        canvas.drawParagraph(
+          paragraph,
+          node.text.paddingLeft + textIndent + alignOffset,
+          drawY,
+        );
+
+        if (shadow.sigma > 0) canvas.restore(); // blur saveLayer
+        canvas.restore(); // translate
+      }
+    }
+
     canvas.drawParagraph(
       paragraph,
       node.text.paddingLeft + textIndent + alignOffset,
