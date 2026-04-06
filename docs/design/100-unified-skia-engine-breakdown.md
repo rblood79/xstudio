@@ -446,11 +446,152 @@ wasm-pack build --target web --release
 wasm-opt -Os -o xstudio_layout_opt.wasm xstudio_layout_bg.wasm
 ```
 
-예상 WASM 크기: ~250-350KB (gzip ~100-140KB)
+예상 WASM 크기: ~200-300KB (gzip ~80-120KB)
 
 - Taffy flex/grid/block: ~150KB
-- geo-index R-tree: ~50KB
-- sticky + wasm-bindgen 글루: ~50-150KB
+- spatial index (기존 코드 이식): ~30KB
+- sticky + 2-pass + wasm-bindgen 글루: ~50-120KB
+
+---
+
+## 4.5 기존 패치 이식 전략 — 34개 전투 패치 분류
+
+> 현재 코드에 누적된 34개의 전투 패치(battle-tested fixes)를 새 엔진에서 어떻게 처리하는가.
+> "그대로 이식"이 아니라 **새 엔진에 맞는 최적 형태**로 재설계.
+
+### Tier 1: Rust 엔진에 네이티브 설계 (7개 → 패치 아닌 설계)
+
+현재는 JS 측 사후 보정이지만, 새 Rust 엔진에서는 **핵심 기능**으로 내장:
+
+| 패치                  | 현재 (JS 패치)                              | 새 엔진 (Rust 네이티브)                               |
+| --------------------- | ------------------------------------------- | ----------------------------------------------------- |
+| 2-Pass Layout         | fullTreeLayout에서 사후 width 비교 + 재계산 | `compute_layout()` 내부에 pass1→width 검증→pass2 내장 |
+| DFS Post-Order        | JS 수동 순회 (~100줄)                       | Rust 트리 순회가 네이티브 post-order                  |
+| 변경 감지 (JSON+hash) | JSON.stringify 비교                         | `style_hash: u64` 필드, O(1) hash 비교                |
+| Display 전환 감지     | JS에서 사전/사후 display 비교               | `update_style()` 반환값에 `NeedsFullRebuild` 포함     |
+| Props Propagation     | JS registry + DFS 주입                      | Rust `propagation_rules` 테이블 내장                  |
+| processedElementsMap  | JS 별도 Map 관리                            | Rust 노드에 `enriched_style` 필드 내장                |
+| f32 정밀도 보정       | JS Math.ceil 사후 보정                      | Rust `ceil_to_pixel()` 유틸, 모든 측정에 자동 적용    |
+
+```rust
+// Rust Layout Engine — Tier 1 패치가 네이티브 기능으로 설계된 예시
+impl LayoutEngine {
+    pub fn compute_layout(&mut self, root: u32, avail_w: f32, avail_h: f32) {
+        // Pass 1: post-order DFS (네이티브)
+        self.compute_pass1(root, avail_w, avail_h);
+
+        // Pass 2: width 불일치 노드 자동 재계산 (2-pass 내장)
+        let dirty = self.collect_width_mismatch_nodes();
+        if !dirty.is_empty() {
+            self.re_enrich_and_recompute(&dirty);
+        }
+    }
+
+    pub fn update_node_style(&mut self, handle: u32, style_json: &str) -> UpdateResult {
+        let new_hash = hash_style(style_json);
+        if new_hash == self.nodes[handle].style_hash {
+            return UpdateResult::Unchanged;  // 변경 감지 O(1)
+        }
+
+        let old_display = self.nodes[handle].style.display;
+        self.apply_style(handle, style_json);
+
+        if old_display != self.nodes[handle].style.display {
+            return UpdateResult::NeedsFullRebuild;  // display 전환 자동
+        }
+
+        self.nodes[handle].style_hash = new_hash;
+        UpdateResult::Dirty
+    }
+}
+```
+
+**효과**: JS DFS/enrichment ~1500줄 → Rust 네이티브. JS-WASM 경계 횟수 감소.
+
+### Tier 2: 하이브리드 텍스트로 구조적 제거 (4개 → 패치 삭제)
+
+| 패치                        | 현재                    | 하이브리드로 왜 불필요한가                    |
+| --------------------------- | ----------------------- | --------------------------------------------- |
+| +1px sub-pixel buffer       | nodeRendererText.ts     | 측정=렌더 동일 Paragraph → 서브픽셀 차이 없음 |
+| getMaxIntrinsicWidth() 교정 | nodeRendererText.ts     | 측정 시 CanvasKit이 정확한 값 반환            |
+| Break Hint Tier 보정        | canvas2dSegmentCache.ts | Tier 1/2/3 전체 삭제 → 단순 \n 주입만 유지    |
+| spread dilate/erode         | effects.ts              | G2에서 RRect 확대로 대체                      |
+
+**효과**: ~200줄 보정 코드 삭제, canvas2dSegmentCache 612줄 → ~30줄.
+
+### Tier 3: 하드코딩 → ComponentLayoutRegistry (13개 → 데이터 외부화)
+
+현재 `enrichWithIntrinsicSize` ~1500줄의 if/else/switch를 **데이터 레지스트리**로 전환:
+
+```typescript
+// componentLayoutRegistry.ts (~200줄 데이터)
+export const COMPONENT_LAYOUT_REGISTRY: Record<string, ComponentLayoutSpec> = {
+  Button: {
+    heightFormula: "max(paddingY*2 + textHeight, minHeight)",
+    implicitStyles: { display: "flex", alignItems: "center", gap: "8px" },
+    measurement: "spec-size-config",
+  },
+  Label: {
+    inject: ["fontSize", "lineHeight"],
+    injectCondition: "lineHeight == null", // fontSize 조건 아님 (CRITICAL)
+    delegationParents: [
+      "Switch",
+      "Checkbox",
+      "Radio",
+      "DatePicker",
+      "DateRangePicker",
+    ],
+    wrapperTags: ["CheckboxItems", "RadioItems"],
+    sizeStyleSource: "LabelSpec.variants",
+    suffixProviders: ["necessityIndicator"],
+  },
+  Tag: {
+    contextProps: ["allowsRemoving"],
+    paddingRule: "allowsRemoving ? { right: paddingY } : {}",
+  },
+  // ... 각 컴포넌트가 데이터 항목 (코드가 아님)
+};
+
+// enrichmentEngine.ts (~300줄 범용 엔진)
+function enrichFromRegistry(
+  element: Element,
+  registry: ComponentLayoutSpec,
+  context: EnrichmentContext,
+): EnrichedElement {
+  // 1. implicitStyles 적용
+  // 2. inject 조건 확인 + 값 주입
+  // 3. delegationParents 탐색
+  // 4. suffixProviders 적용
+  // 5. heightFormula 계산
+  // 6. contextProps 수집
+  // → 범용 로직, 컴포넌트 무관
+}
+```
+
+|                         |        현재         |             ADR-100              |
+| ----------------------- | :-----------------: | :------------------------------: |
+| enrichWithIntrinsicSize |  ~1500줄 (if/else)  | ~200줄 데이터 + ~300줄 범용 엔진 |
+| 새 컴포넌트 추가        |   코드 수정 필수    |   **레지스트리에 항목 추가만**   |
+| 버그 발생 위치          | 30개 분기 중 어딘가 |         데이터 항목 1개          |
+| 테스트                  |   컴포넌트별 개별   |   범용 엔진 1회 + 데이터 검증    |
+
+### Tier 4: Skia 렌더러 그대로 유지 (10개)
+
+CanvasKit 동작 특성 패치. 변경 불필요:
+
+`halfLeading:true`, `fontFamilies resolveFamily`, `Paragraph 캐시 fontMgr 무효화`,
+`forceStrutHeight:true`, `TokenRef 재귀 해석`, `Container dimension injection`,
+`fontSize 우선순위`, `border stroke inset`, `MakeDropShadow`, `WASM 포맷 일관성`
+
+### 종합 효과
+
+| Tier                      |   수   | 코드 변화                           |
+| ------------------------- | :----: | ----------------------------------- |
+| **Tier 1: Rust 네이티브** |   7    | JS ~1500줄 → Rust 내장 (JS 측 삭제) |
+| **Tier 2: 구조적 제거**   |   4    | ~800줄 삭제 (보정 로직 전체)        |
+| **Tier 3: 데이터 외부화** |   13   | ~1500줄 → ~500줄 (데이터+범용엔진)  |
+| **Tier 4: 렌더러 유지**   |   10   | 변경 0줄                            |
+| **합계**                  | **34** | **~2,800줄 삭제 또는 구조 개선**    |
 
 ---
 
@@ -770,9 +911,250 @@ class Camera {
 
 ## 8. Layer 6: CSS3 렌더링 확장
 
-### 신규 구현 항목
+### 8.0 CSS 시각 정합성 갭 수정 (렌더링 감사 2026-04-06)
 
-#### 8.1 backdrop-filter
+> 기존 Skia 렌더러의 CSS 정합성 감사에서 발견된 7개 갭. Phase 3에서 수정. 총 ~241줄.
+
+#### G1: box-shadow + border-radius 정합성 (HIGH)
+
+**현재**: shadow가 직사각형 bounds에 렌더 → border-radius 무시
+**CSS 스펙**: shadow는 border-radius 윤곽을 따라야 함
+
+```typescript
+// nodeRendererBorders.ts 수정 — shadow 렌더 시 RRect 클리핑 적용
+function renderBoxShadow(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
+  for (const shadow of node.shadows) {
+    canvas.save();
+
+    if (shadow.inner && node.borderRadius) {
+      // inset shadow: RRect 안쪽만
+      canvas.clipRRect(
+        ck.RRectXY(node.bounds, node.borderRadius[0], node.borderRadius[1]),
+        ck.ClipOp.Intersect,
+        true,
+      );
+    }
+
+    // shadow를 border-radius에 맞는 RRect로 렌더
+    const shadowBounds = shadow.inner
+      ? node.bounds
+      : expandRect(node.bounds, shadow.spread);
+    const shadowRRect = ck.RRectXY(
+      shadowBounds,
+      (node.borderRadius?.[0] ?? 0) + (shadow.spread ?? 0),
+      (node.borderRadius?.[1] ?? 0) + (shadow.spread ?? 0),
+    );
+
+    const paint = new ck.Paint();
+    paint.setColor(shadow.color);
+    paint.setImageFilter(
+      ck.ImageFilter.MakeBlur(
+        shadow.blur / 2.355,
+        shadow.blur / 2.355, // G3 수정 반영
+        ck.TileMode.Decal,
+        null,
+      ),
+    );
+    canvas.translate(shadow.dx, shadow.dy);
+    canvas.drawRRect(shadowRRect, paint);
+
+    canvas.restore();
+  }
+}
+```
+
+**참조**: React Native Skia `BoxShadowView` 패턴 — RRect shadow 직접 draw.
+
+#### G2: box-shadow spread 정확도 (MEDIUM)
+
+**현재**: `MakeDilate/MakeErode` (형태 왜곡)
+**CSS 스펙**: spread = 박스를 확대/축소 → 그 위에 blur
+
+```typescript
+// 현재 (부정확)
+inputFilter = ck.ImageFilter.MakeDilate(spread, spread, null);
+
+// 수정: RRect 크기를 spread만큼 확대/축소 후 직접 draw (G1과 통합)
+const shadowBounds = expandRect(node.bounds, shadow.spread);
+// → G1의 shadowRRect에서 이미 처리됨
+```
+
+**G1과 통합**: spread를 RRect 크기 확대로 처리하면 dilate/erode 불필요.
+
+#### G3: blur sigma 공식 (1줄 수정)
+
+**현재**: `sigma = radius / 2`
+**CSS W3C**: `sigma = radius / (2 * sqrt(2 * ln(2)))` ≈ `radius / 2.355`
+
+```typescript
+// effects.ts, styleConverter.ts — 모든 blur sigma 계산 위치
+// 변경 전
+const sigma = blurRadius / 2;
+// 변경 후
+const CSS_BLUR_SIGMA_DIVISOR = 2.355; // W3C Gaussian: 2 * sqrt(2 * ln(2))
+const sigma = blurRadius / CSS_BLUR_SIGMA_DIVISOR;
+```
+
+#### G4: text-shadow 구현 (2-pass 렌더링)
+
+**현재**: 미구현
+**CSS 스펙**: offset + blur + color의 shadow를 텍스트 아래에 렌더
+
+```typescript
+// nodeRendererText.ts 확장
+function renderTextWithShadow(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  fontMgr: FontMgr,
+): void {
+  if (!node.textShadows?.length) {
+    renderText(ck, canvas, node, fontMgr);
+    return;
+  }
+
+  // Pass 1: 각 shadow를 오프셋+blur로 렌더
+  for (const shadow of node.textShadows) {
+    canvas.save();
+    canvas.translate(shadow.offsetX, shadow.offsetY);
+
+    if (shadow.blur > 0) {
+      const blurPaint = new ck.Paint();
+      blurPaint.setImageFilter(
+        ck.ImageFilter.MakeBlur(
+          shadow.blur / 2.355,
+          shadow.blur / 2.355,
+          ck.TileMode.Decal,
+          null,
+        ),
+      );
+      canvas.saveLayer(blurPaint);
+    }
+
+    // shadow 색상으로 텍스트 렌더
+    const shadowNode = { ...node, fillColor: shadow.color };
+    renderText(ck, canvas, shadowNode, fontMgr);
+
+    if (shadow.blur > 0) canvas.restore(); // blur layer
+    canvas.restore(); // translate
+  }
+
+  // Pass 2: 원본 텍스트
+  renderText(ck, canvas, node, fontMgr);
+}
+```
+
+#### G5: repeating-gradient (TileMode 분기)
+
+**현재**: `TileMode.Clamp` 고정
+**CSS 스펙**: `repeating-linear-gradient` 등은 `Repeat` 필요
+
+```typescript
+// fills.ts — gradient 생성 시
+const tileMode = gradient.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp;
+ck.Shader.MakeLinearGradient(start, end, colors, positions, tileMode);
+```
+
+#### G6: radial-gradient 키워드 변환
+
+**현재**: pre-computed radii만 처리
+**CSS 스펙**: `closest-side`, `farthest-corner` 등 키워드 → 수치 변환
+
+```typescript
+// fills.ts 또는 styleConverter.ts — radial gradient 전처리
+function resolveRadialSize(
+  keyword: string,
+  cx: number,
+  cy: number,
+  width: number,
+  height: number,
+): { rx: number; ry: number } {
+  switch (keyword) {
+    case "closest-side":
+      return { rx: Math.min(cx, width - cx), ry: Math.min(cy, height - cy) };
+    case "farthest-side":
+      return { rx: Math.max(cx, width - cx), ry: Math.max(cy, height - cy) };
+    case "closest-corner":
+      return cornersDistance(cx, cy, width, height, Math.min);
+    case "farthest-corner": // CSS 기본값
+    default:
+      return cornersDistance(cx, cy, width, height, Math.max);
+  }
+}
+```
+
+#### G7: gradient oklab 색상 보간
+
+**현재**: sRGB 보간 (gradient 색상 사이 직선 보간)
+**CSS 모던 기본**: oklab 보간 (지각적으로 균일한 전환)
+
+```typescript
+// color/oklabInterpolation.ts (신규, ~80줄)
+// sRGB → linear RGB → oklab 변환
+function srgbToOklab(
+  r: number,
+  g: number,
+  b: number,
+): [number, number, number] {
+  // sRGB → linear
+  const lr = r <= 0.04045 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+  const lg = g <= 0.04045 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+  const lb = b <= 0.04045 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+
+  // linear RGB → oklab (Björn Ottosson 행렬)
+  const l = Math.cbrt(
+    0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb,
+  );
+  const m = Math.cbrt(
+    0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb,
+  );
+  const s = Math.cbrt(
+    0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb,
+  );
+
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+// gradient 색상 보간 시 oklab 경유
+function interpolateGradientColors(
+  colors: Float32Array[],
+  positions: number[],
+  steps: number,
+): Float32Array[] {
+  // 1. 모든 색상을 oklab으로 변환
+  // 2. oklab 공간에서 선형 보간
+  // 3. 결과를 sRGB로 역변환
+  // 4. Skia gradient에 전달할 확장된 color stop 배열 반환
+}
+```
+
+**적용**: gradient 생성 시 color stop을 oklab 보간으로 확장 후 Skia에 전달.
+
+---
+
+### 수정 후 정합성 전망
+
+| 영역                 | 수정 전  | 수정 후  |
+| -------------------- | :------: | :------: |
+| gradient             |   85%    | **98%**  |
+| box-shadow           |   70%    | **97%**  |
+| blur/filter          |   90%    | **99%**  |
+| text-shadow          |    0%    | **95%**  |
+| **전체 시각 정합성** | **~82%** | **~97%** |
+
+> 나머지 ~3%: 브라우저별 서브픽셀 antialiasing/hinting 차이 — 어떤 엔진에서도 100% 불가능한 영역.
+
+---
+
+### 8.1 신규 구현: backdrop-filter
 
 ```typescript
 // nodeRendererEffects.ts (확장)
@@ -791,8 +1173,8 @@ function renderBackdropFilter(
 
   // 3. blur 적용
   const blurFilter = ck.ImageFilter.MakeBlur(
-    filter.blur,
-    filter.blur,
+    filter.blur / 2.355, // G3 수정 반영
+    filter.blur / 2.355,
     ck.TileMode.Clamp,
     null,
   );
@@ -811,21 +1193,9 @@ function renderBackdropFilter(
 
 #### 8.2 text-shadow
 
-```typescript
-// nodeRendererText.ts (확장)
-function applyTextShadow(
-  builder: ParagraphBuilder,
-  shadows: TextShadow[],
-): void {
-  for (const shadow of shadows) {
-    builder.addShadow({
-      color: colorToFloat32(shadow.color),
-      offset: [shadow.offsetX, shadow.offsetY],
-      blurRadius: shadow.blur,
-    });
-  }
-}
-```
+> G4에서 구현됨 (2-pass 렌더링). 위 섹션 참조.
+
+````
 
 #### 8.3 mask-image
 
@@ -848,7 +1218,7 @@ function renderWithMask(
   canvas.restore();
   canvas.restore();
 }
-```
+````
 
 #### 8.4 CSS Transitions
 
@@ -945,28 +1315,172 @@ function createInvertMatrix(): Float32Array {
 
 ---
 
-## 9. 텍스트 파이프라인 통합
+## 9. 텍스트 파이���라인 — 하이브리드 단일 소스 (ADR-051 Supersede)
 
-ADR-051의 Pretext 기반 Canvas 2D 측정을 새 아키텍처에 통합:
+> **핵심 문제**: 현재 빌더의 가장 큰 문제 — Canvas 2D와 CanvasKit의 텍스트 측정 차이로
+> 의도하지 않은 줄바꿈, height 불일치, 부모 레이아웃 붕괴 발생.
+>
+> **해법**: Canvas 2D가 줄바꿈 **위치**를 결정(CSS 정합성), CanvasKit이 실제 **높이**를 반환(렌더 정합성).
+> 두 정합성을 모두 달성. ADR-051의 복잡한 보정 체계(Tier 1/2/3)를 구조적으로 대체.
+
+### 현재 문제 (이중 엔진 불일치)
 
 ```
-텍스트 측정 (Layout Engine 요청)
-  ↓
-JS 콜백 (engine.set_text_measure_func)
-  ↓
-canvas2dSegmentCache.ts
-  ├─ Intl.Segmenter 토큰화
-  ├─ Canvas 2D measureText() 캐시
-  ├─ Greedy line-breaking + lineFitEpsilon
-  └─ Line verification (Tier 2)
-  ↓
-결과: { width, height } → Rust Layout Engine
-  ↓
-렌더링 시 (nodeRendererText.ts)
-  ├─ Break Hint (\n) 주입
-  ├─ CanvasKit Paragraph 생성
-  └─ post-layout getMaxIntrinsicWidth() 교정
+Canvas 2D: "Click here to learn more" = 199px → 한 줄 → height 24px
+CanvasKit:  "Click here to learn more" = 201px → "more" 줄바꿈 → height 48px
+
+Taffy에 24px 전달 → 부모 24px → 실제 렌더 48px → 💥 넘침 + 레이아웃 붕괴
 ```
+
+### 하이브리드 해법 (3단계)
+
+```
+Rust Layout Engine → JS 콜백 (measureTextForLayout)
+  ↓
+  단계 1: Canvas 2D 줄바꿈 결정 (CSS와 동일한 엔진)
+    canvas2dLineBreak(text, style, maxWidth)
+    → ["Click here to learn", "more"]  (CSS와 동일한 위치에서 줄바꿈)
+  ↓
+  단계 2: CanvasKit Paragraph에 Break Hint(\n) 주입
+    "Click here to learn\nmore"
+    paragraph.layout(maxWidth)
+    → CanvasKit이 CSS와 동일한 위치에서 줄바꿈 (강제)
+  ↓
+  단계 3: CanvasKit 실제 높이를 Layout에 반환
+    paragraph.getHeight() = 48px (렌더링 엔진의 정확한 값)
+    Math.ceil(48.2) = 49px → Layout Engine에 반환
+  ↓
+  Paragraph 객체 캐시 (LRU) → 렌더링 시 재사용 (측정=렌더 동일 객체)
+```
+
+### 구현
+
+```typescript
+// text/hybridTextMeasure.ts
+
+const paragraphCache = new LRUCache<
+  string,
+  {
+    paragraph: Paragraph;
+    width: number;
+    height: number;
+  }
+>(2000);
+
+function measureTextForLayout(
+  text: string,
+  styleJson: string,
+  maxWidth: number,
+): [number, number] {
+  // [width, height] — WASM으로 반환
+  const cacheKey = `${text}|${styleJson}|${maxWidth}`;
+  const cached = paragraphCache.get(cacheKey);
+  if (cached) return [cached.width, cached.height];
+
+  const style = JSON.parse(styleJson);
+
+  // ─── 단계 1: Canvas 2D로 줄바꿈 위치 결정 (CSS 정합성) ───
+  const lines = canvas2dLineBreak(text, style, maxWidth);
+  const hintedText = lines.join("\n");
+
+  // ─── 단계 2: CanvasKit Paragraph에 Break Hint 적용 ───
+  const ck = getCanvasKit();
+  const fontMgr = getFontManager();
+
+  const paraStyle = new ck.ParagraphStyle({
+    textStyle: {
+      fontSize: style.fontSize,
+      fontFamilies: style.fontFamily.split(",").map((f: string) => f.trim()),
+      fontStyle: { weight: style.fontWeight ?? 400 },
+      heightMultiplier: style.lineHeight
+        ? style.lineHeight / style.fontSize
+        : undefined,
+      halfLeading: true,
+    },
+    textAlign: mapTextAlign(style.textAlign),
+  });
+
+  const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+  builder.addText(hintedText);
+  const paragraph = builder.build();
+  paragraph.layout(maxWidth);
+
+  // ─── 단계 3: CanvasKit 실제 치수 반환 (렌더 정합성) ───
+  const width = Math.ceil(paragraph.getLongestLine());
+  const height = Math.ceil(paragraph.getHeight());
+
+  // 캐시 — 렌더링 시 이 Paragraph를 그대로 draw
+  paragraphCache.set(cacheKey, { paragraph, width, height });
+
+  return [width, height];
+}
+
+// ─── Canvas 2D 줄바꿈 결정 (기존 canvas2dSegmentCache.ts 재활용) ───
+function canvas2dLineBreak(
+  text: string,
+  style: TextStyle,
+  maxWidth: number,
+): string[] {
+  // Intl.Segmenter 토큰화
+  // Canvas 2D measureText() 폭 캐시
+  // Greedy line-breaking (CSS와 동일 알고리즘)
+  // → 줄바꿈 위치 결정 → 줄 배열 반환
+  // (기존 canvas2dSegmentCache.ts의 computeLines() 재활용)
+}
+```
+
+### Skia 렌더링 — 캐시된 Paragraph 재사용
+
+```typescript
+// nodeRendererText.ts 수정
+function renderText(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  fontMgr: FontMgr,
+): void {
+  const cacheKey = buildTextCacheKey(node);
+  const cached = paragraphCache.get(cacheKey);
+
+  if (cached) {
+    // 측정 시 생성한 동일한 Paragraph → 0px 차이 보장
+    canvas.drawParagraph(cached.paragraph, 0, 0);
+    return;
+  }
+
+  // 캐시 미스 (드문 경우) — 새로 생성
+  // ...
+}
+```
+
+### 정합성 비교
+
+|                         |         현재          |        ADR-051         |     ADR-100 하이브리드     |
+| ----------------------- | :-------------------: | :--------------------: | :------------------------: |
+| **줄바꿈 결정**         |       Canvas 2D       |       Canvas 2D        |         Canvas 2D          |
+| **렌더링**              | CanvasKit (자체 판단) | CanvasKit (Break Hint) |   CanvasKit (Break Hint)   |
+| **Layout height**       |   Canvas 2D 높이 ❌   |   Canvas 2D 높이 ❌    | **CanvasKit 실제 높이** ✅ |
+| **측정=렌더 동일 객체** |          No           |           No           |  **Yes (Paragraph 캐시)**  |
+| **CSS 줄바꿈 일치**     |          ✅           |           ✅           |             ✅             |
+| **Canvas 내부 정합**    |   ❌ (24px vs 48px)   |       ⚠️ (~98%)        |     **✅ (0px 차이)**      |
+| **CSS↔Canvas height**   |     ❌ 24px 차이      |        ⚠️ 수 px        |    **±1px** (Math.ceil)    |
+| **부모 레이아웃 붕괴**  |        빈번 💥        |         간헐적         |       **불가능** ✅        |
+| **코드 복잡도**         |           —           |   612줄 (Tier 1/2/3)   |         **~60줄**          |
+
+### ADR-051 관계
+
+ADR-100이 구현되면 ADR-051은 **Superseded**:
+
+| ADR-051 구성요소                        | ADR-100에서                                                                 |
+| --------------------------------------- | --------------------------------------------------------------------------- |
+| canvas2dSegmentCache.ts (612줄)         | `canvas2dLineBreak()` ~30줄로 축소 (줄바꿈 결정만 재활용, Tier 보정 불필요) |
+| Break Hint Injection                    | 유지 (하이브리드 단계 2)                                                    |
+| Tier 1 lineFitEpsilon                   | **삭제** (CanvasKit 높이 사용으로 불필요)                                   |
+| Tier 2 Line Verification                | **삭제** (CanvasKit이 진실)                                                 |
+| Tier 3 Semantic Preprocessing           | **삭제** (CanvasKit이 진실)                                                 |
+| post-layout getMaxIntrinsicWidth() 교정 | **삭제** (측정=렌더 동일 객체)                                              |
+| `needsFallback()` 분기                  | **삭제** (모든 텍스트가 하이브리드 경로)                                    |
+| **순 삭제: ~550줄, 보정 로직 전체**     |                                                                             |
 
 ---
 
@@ -1131,59 +1645,174 @@ Total                        < 15.5ms ✓ (1.17ms 여유)
 
 ---
 
-## 13. 테스트 전략
+## 13. 기능 파리티 체크리스트 + 테스트 전략
 
-### 13.1 레이아웃 정합성 테스트
+> **원칙: 현재 동작하는 기능 중 하나라도 안 되면 전환 불가.**
+> 전수조사(2026-04-06) 기반 78개 기능 항목. 각 Phase Gate에서 해당 항목 전부 통과 필수.
 
-브라우저 CSS 렌더링 결과와 Rust CSS3 Engine 결과를 자동 비교:
+### 13.1 선택 인터랙션 (5항목)
 
-```typescript
-// tests/layout-parity/
-// 각 CSS3 기능별 테스트 HTML 생성 → 브라우저에서 getBoundingClientRect() 수집
-// → 동일 스타일로 Rust Engine computeLayout() → 결과 비교
+| #   | 기능                        | 현재 경로                           | 대체 경로                          | 검증 방법                                   |
+| --- | --------------------------- | ----------------------------------- | ---------------------------------- | ------------------------------------------- |
+| S1  | 단일 클릭 선택              | DOM → hitTest → store               | 동일 (PixiJS 무관)                 | E2E: 요소 클릭 → selectedElementIds 확인    |
+| S2  | 멀티 선택 (Ctrl/Cmd+클릭)   | DOM → hitTest → toggle              | 동일                               | E2E: Ctrl+클릭 → 복수 선택 확인             |
+| S3  | 라쏘 선택 (드래그)          | DOM → lasso rect → queryRect        | 동일                               | E2E: 빈 영역 드래그 → 교차 요소 전부 선택   |
+| S4  | 더블클릭 (텍스트 편집 진입) | DOM → isDoubleClick → startEdit     | 동일                               | E2E: 텍스트 더블클릭 → TextEditOverlay 표시 |
+| S5  | 배경 클릭 (선택 해제)       | DOM → hitTest miss → clearSelection | HoverManager miss → clearSelection | E2E: 빈 영역 클릭 → 선택 해제               |
 
-describe("float layout parity", () => {
-  test("float left with clear", async () => {
-    const browserLayouts = await getBrowserLayouts("float-left-clear.html");
-    const engineLayouts = engine.computeAndGetLayouts(floatLeftClearTree);
-    assertLayoutsMatch(browserLayouts, engineLayouts, { tolerance: 1 }); // ≤1px
-  });
-});
+### 13.2 드래그 (6항목)
+
+| #   | 기능                   | 현재 경로                      | 대체 경로                           | 검증 방법                                 |
+| --- | ---------------------- | ------------------------------ | ----------------------------------- | ----------------------------------------- |
+| D1  | 요소 이동              | DOM pointermove → store update | StoreBridge → SceneGraph dirty      | E2E: 드래그 → 위치 변경 확인              |
+| D2  | 리사이즈 (8핸들)       | hitTestHandle → resize         | SpatialIndex handle bounds → resize | E2E: 각 핸들 드래그 → 크기 변경           |
+| D3  | 드래그 임계값 (3px)    | DRAG_THRESHOLD=3               | 동일 상수 유지                      | E2E: 1px 이동 → 드래그 아님, 4px → 드래그 |
+| D4  | 컨테이너 간 이동       | dropTargetResolver             | 동일 (PixiJS 무관)                  | E2E: 요소를 다른 컨테이너로 드래그        |
+| D5  | 드래그 시각 효과       | setDragVisualOffset (Skia)     | 동일                                | 시각 확인: 드래그 중 요소 위치 오프셋     |
+| D6  | 형제 vacate 애니메이션 | setDragSiblingOffsets (Skia)   | 동일                                | 시각 확인: 드래그 중 형제 이동            |
+
+### 13.3 뷰포트 (6항목)
+
+| #   | 기능                  | 현재 경로                            | 대체 경로                   | 검증 방법                           |
+| --- | --------------------- | ------------------------------------ | --------------------------- | ----------------------------------- |
+| V1  | 휠 줌 (Ctrl+Wheel)    | ViewportController → Container.scale | Camera.zoom → Skia scale    | E2E: Ctrl+휠 → 줌 변경              |
+| V2  | 핀치 줌               | ViewportController                   | Camera.zoom                 | 터치 디바이스 수동 테스트           |
+| V3  | 스페이스+드래그 팬    | ViewportController → Container.x/y   | Camera.x/y → Skia translate | E2E: Space+드래그 → 팬              |
+| V4  | 줌 focal point        | 커서 위치 기준 줌                    | 동일 수학                   | E2E: 줌 후 커서 아래 요소 위치 유지 |
+| V5  | 줌 한계 (0.1x~5x)     | ViewportController min/max           | Camera min/max              | E2E: 한계 초과 줌 시도 → 제한       |
+| V6  | Zoom to fit/selection | ViewportController.setPosition       | Camera.setPosition          | E2E: 단축키 → 뷰포트 이동           |
+
+### 13.4 텍스트 편집 (5항목)
+
+| #   | 기능                          | 현재 경로                        | 대체 경로                       | 검증 방법                           |
+| --- | ----------------------------- | -------------------------------- | ------------------------------- | ----------------------------------- |
+| T1  | 인라인 편집 (TextEditOverlay) | DOM overlay, 이미 PixiJS 무관    | 동일                            | E2E: 더블클릭 → 텍스트 입력         |
+| T2  | 오버레이 위치 동기화          | layout position → screen coords  | SceneGraph.node.layout → screen | E2E: 줌/팬 후 오버레이 위치 정확    |
+| T3  | Skia 텍스트 숨김/표시         | editingElementId → Skia skip     | 동일 (nodeRendererState)        | 시각 확인: 편집 중 이중 텍스트 없음 |
+| T4  | 편집 취소 (Escape)            | cancelEdit → 원복                | 동일                            | E2E: Escape → 변경 전 텍스트        |
+| T5  | 히스토리 기록                 | completeEdit → addBatchDiffEntry | 동일                            | E2E: 편집 완료 → Undo로 원복        |
+
+### 13.5 호버/커서 (5항목)
+
+| #   | 기능                            | 현재 경로                        | 대체 경로                                 | 검증 방법                              |
+| --- | ------------------------------- | -------------------------------- | ----------------------------------------- | -------------------------------------- |
+| H1  | 요소 호버 하이라이트            | PixiJS pointerOver → Skia render | **HoverManager** → SceneGraph → Skia      | 시각 확인: 마우스오버 시 파란 외곽선   |
+| H2  | 핸들 호버 커서 변경             | PixiJS cursor prop               | **CursorManager** → canvasEl.style.cursor | E2E: 핸들 위 → nw-resize 커서          |
+| H3  | 중첩 요소 호버 (최소 면적)      | hitTest → smallest bounds        | 동일 알고리즘                             | E2E: 중첩된 요소 중 가장 안쪽 선택     |
+| H4  | 컨테이너 hover (dashed outline) | hoverRenderer dashed=true        | 동일 (Skia)                               | 시각 확인: 그룹 호버 시 점선           |
+| H5  | 컴포넌트 프리뷰 상태            | PixiJS → setPreviewState → Skia  | **HoverManager → setPreviewState**        | 시각 확인: Button hover/pressed 스타일 |
+
+### 13.6 시각 피드백 (6항목)
+
+| #   | 기능                            | 현재 경로                  | 대체 경로 | 검증 방법                       |
+| --- | ------------------------------- | -------------------------- | --------- | ------------------------------- |
+| F1  | 선택 박스 (파란 외곽선)         | Skia selectionRenderer     | 동일      | 시각 확인                       |
+| F2  | 리사이즈 핸들 (4 코너 + 4 엣지) | Skia selectionRenderer     | 동일      | 시각 확인: 8개 핸들 위치/크기   |
+| F3  | 드롭 인디케이터                 | Skia dropIndicatorRenderer | 동일      | 시각 확인: 드래그 중 삽입 라인  |
+| F4  | 그리드/스냅                     | Skia gridRenderer          | 동일      | 시각 확인: 줌별 그리드 간격     |
+| F5  | 치수 라벨 (W×H)                 | Skia selectionRenderer     | 동일      | 시각 확인: 선택 아래 크기 표시  |
+| F6  | 오버플로우 해칭 패턴            | Skia hoverRenderer         | 동일      | 시각 확인: overflow:hidden 영역 |
+
+### 13.7 멀티페이지 (5항목)
+
+| #   | 기능                    | 현재 경로                         | 대체 경로         | 검증 방법                            |
+| --- | ----------------------- | --------------------------------- | ----------------- | ------------------------------------ |
+| M1  | 다중 페이지 동시 렌더링 | visiblePageRoots → Skia           | 동일              | 시각 확인: 2+ 페이지 동시 표시       |
+| M2  | 뷰포트 컬링             | useViewportCulling → spatialIndex | 동일              | 성능 측정: 화면 밖 페이지 렌더 안 함 |
+| M3  | 페이지 드래그 리오더    | usePageDrag                       | 동일 (DOM 기반)   | E2E: 페이지 드래그 → 순서 변경       |
+| M4  | 페이지 프레임 라벨      | Skia selectionRenderer            | 동일              | 시각 확인: 페이지 제목 + 요소 수     |
+| M5  | 5000+ 요소 60fps        | 현재 20-30fps                     | **목표 50-60fps** | 성능 벤치마크                        |
+
+### 13.8 스크롤/오버플로우 (4항목)
+
+| #   | 기능                      | 현재 경로                       | 대체 경로       | 검증 방법                             |
+| --- | ------------------------- | ------------------------------- | --------------- | ------------------------------------- |
+| O1  | overflow:hidden 클리핑    | Skia clipRect/clipPath          | 동일            | 시각 확인: 자식이 부모 밖으로 안 보임 |
+| O2  | overflow:scroll 스크롤    | useScrollWheelInteraction       | 동일 (DOM 기반) | E2E: 스크롤 → scrollTop 변경          |
+| O3  | 스크롤바 렌더링           | Skia renderScrollbar            | 동일            | 시각 확인: 수직/수평 스크롤바         |
+| O4  | 스크롤 위치 → Skia 오프셋 | scrollOffset → canvas.translate | 동일            | 시각 확인: 스크롤 시 콘텐츠 이동      |
+
+### 13.9 렌더링 (11항목)
+
+| #   | 기능                               | 변경 여부 | 검증 방법              |
+| --- | ---------------------------------- | :-------: | ---------------------- |
+| R1  | 박스 (fill + border + radius)      |   유지    | 스크린샷 비교          |
+| R2  | 텍스트 (Paragraph + 줄바꿈)        |   유지    | 스크린샷 비교          |
+| R3  | 이미지 (object-fit + placeholder)  |   유지    | 스크린샷 비교          |
+| R4  | 효과 (opacity, blur, shadow)       |   유지    | 스크린샷 비교          |
+| R5  | 블렌드 모드 (18종)                 |   유지    | 스크린샷 비교          |
+| R6  | 그래디언트 (linear, radial, conic) |   유지    | 스크린샷 비교          |
+| R7  | 클리핑 (rect, path, rrect)         |   유지    | 스크린샷 비교          |
+| R8  | 아이콘 Path 렌더링                 |   유지    | 스크린샷 비교          |
+| R9  | Arc 셰이프 (ProgressCircle)        |   유지    | 스크린샷 비교          |
+| R10 | 다크/라이트 모드                   |   유지    | 양쪽 모드 스크린샷     |
+| R11 | Spec shapes (컴포넌트 비주얼)      |   유지    | 전체 컴포넌트 스크린샷 |
+
+### 13.10 성능 최적화 (6항목)
+
+| #   | 기능                                 | 변경 여부 | 검증 방법                              |
+| --- | ------------------------------------ | :-------: | -------------------------------------- |
+| P1  | Camera-only 최적화 (<1ms)            |   유지    | FPS 측정: 팬/줌 중 프레임 타임         |
+| P2  | Dual-surface 캐싱                    |   유지    | 프로파일링: contentSurface 재사용 확인 |
+| P3  | Paragraph 캐시 (LRU 1000)            |   유지    | 메모리 측정: 캐시 히트율               |
+| P4  | 이미지 캐시                          |   유지    | 메모리 측정: 중복 로드 없음            |
+| P5  | Cleanup render debounce (200ms)      |   유지    | 시각 확인: 팬 정지 후 선명해짐         |
+| P6  | Render invalidation (7 reason types) |   유지    | 로그 확인: invalidation 추적           |
+
+### 13.11 키보드/기타 (5항목)
+
+| #   | 기능                   |       변경 여부       | 검증 방법                      |
+| --- | ---------------------- | :-------------------: | ------------------------------ |
+| K1  | Escape (드래그 취소)   |  유지 (DOM keydown)   | E2E: 드래그 중 Escape → 원위치 |
+| K2  | Delete (요소 삭제)     |   유지 (캔버스 밖)    | E2E: 선택 후 Delete → 삭제     |
+| K3  | Undo/Redo              | 유지 (historyManager) | E2E: 변경 → Ctrl+Z → 원복      |
+| K4  | 워크플로우 엣지 렌더링 |      유지 (Skia)      | 시각 확인                      |
+| K5  | 미니맵                 |      유지 (Skia)      | 시각 확인                      |
+
+---
+
+### 총 78개 항목 요약
+
+| 카테고리          | 항목 수 |     PixiJS 의존     |          대체 필요           |
+| ----------------- | :-----: | :-----------------: | :--------------------------: |
+| 선택 인터랙션     |    5    |  1 (S5 배경 클릭)   |         HoverManager         |
+| 드래그            |    6    |          0          |              —               |
+| 뷰포트            |    6    | 3 (V1,V3,V6 카메라) |        Camera 클래스         |
+| 텍스트 편집       |    5    |          0          |              —               |
+| 호버/커서         |    5    |    **5 (전부)**     | HoverManager + CursorManager |
+| 시각 피드백       |    6    |          0          |              —               |
+| 멀티페이지        |    5    |          0          |              —               |
+| 스크롤/오버플로우 |    4    |          0          |              —               |
+| 렌더링            |   11    |          0          |              —               |
+| 성능 최적화       |    6    |          0          |              —               |
+| 키보드/기타       |    5    |          0          |              —               |
+| **합계**          | **64**  |     **9** (12%)     |       **~125줄 코드**        |
+
+**78개 중 69개(88%)는 PixiJS에 의존하지 않아 변경 불필요.**
+**9개(12%)만 대체 필요하며, 대체 코드는 ~125줄.**
+
+### 13.12 자동화 테스트 전략
+
 ```
-
-### 13.2 렌더링 스크린샷 비교
-
-Skia 렌더링 결과 vs CSS 브라우저 렌더링의 시각적 비교:
-
+Phase별 Gate 통과 조건:
+├─ E2E 테스트 (Playwright)
+│   ├─ 선택: S1~S5 전부 자동화
+│   ├─ 드래그: D1~D3 자동화, D4~D6 수동
+│   ├─ 뷰포트: V1,V3,V5 자동화
+│   └─ 텍스트: T1,T4,T5 자동화
+│
+├─ 시각 회귀 테스트 (pixelmatch)
+│   ├─ R1~R11 전체 컴포넌트 스크린샷 비교
+│   ├─ F1~F6 시각 피드백 스크린샷
+│   └─ 허용 오차: 0.1% 미만 픽셀 차이
+│
+├─ 성능 벤치마크
+│   ├─ P1: camera-only 프레임 <1ms
+│   ├─ M5: 1000 요소 60fps (p95)
+│   ├─ 드래그 지연 <8ms (p95)
+│   └─ 초기 로드 <1.5초
+│
+└─ 레이아웃 패리티
+    ├─ Taffy 기존 테스트 100% 통과
+    └─ sticky: CSS 비교 테스트 (≤1px)
 ```
-1. 테스트 HTML → headless Chrome 스크린샷
-2. 동일 요소 트리 → Skia 렌더링 → PNG 출력
-3. pixelmatch 비교 (허용 오차: 0.1%)
-```
-
-### 13.3 성능 회귀 테스트
-
-```typescript
-// tests/performance/
-describe("canvas performance", () => {
-  test("1000 elements at 60fps", () => {
-    const fps = measureFPS(createScene(1000), { duration: 5000 });
-    expect(fps.p95).toBeGreaterThanOrEqual(60);
-  });
-
-  test("drag latency < 16ms", () => {
-    const latency = measureDragLatency(createScene(500));
-    expect(latency.p95).toBeLessThan(16);
-  });
-
-  test("initial load < 3s", () => {
-    const loadTime = measureInitialLoad();
-    expect(loadTime).toBeLessThan(3000);
-  });
-});
-```
-
-### 13.4 Superseded ADR 검증
-
-- ADR-003 (PixiJS): 모든 기존 기능이 PixiJS 없이 동작하는지 검증
-- ADR-008 (Taffy): 모든 기존 레이아웃이 새 엔진에서 동일하게 계산되는지 검증
