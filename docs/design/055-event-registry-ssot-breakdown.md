@@ -188,12 +188,12 @@ pnpm type-check   # Record<EventType, ...> 계약으로 누락 감지 확인
 
 ### 마이그레이션 체크리스트
 
-- [ ] `events.registry.ts`를 `EVENT_REGISTRY` 객체 방식으로 전면 교체
-- [ ] `eventTypes.ts`에서 `EventType` union 수동 나열 제거 → registry re-export
-- [ ] `eventTypes.ts`에서 `EVENT_TYPE_LABELS` 제거 → registry re-export
-- [ ] `events.types.ts`에서 `EVENT_TYPE_LABELS` (Partial 버전) 제거 → registry re-export
-- [ ] `EVENT_METADATA` 타입을 `Record<EventType, EventMetadata>`로 강화
-- [ ] `EVENT_CATEGORIES` 이벤트 목록을 registry에서 derive
-- [ ] EventsPanel 타입 어서션 제거 (optional)
-- [ ] `pnpm type-check` 통과
-- [ ] 이벤트 패널 UI 동작 확인 (EventTypePicker 포함)
+- [x] `events.registry.ts`를 `EVENT_REGISTRY` 객체 방식으로 전면 교체 (Phase 1, 4f6ecbe7)
+- [x] `eventTypes.ts`에서 `EventType` union 수동 나열 제거 → registry re-export (Phase 1)
+- [x] `eventTypes.ts`에서 `EVENT_TYPE_LABELS` 제거 → registry re-export (Phase 1)
+- [x] `events.types.ts`에서 `EVENT_TYPE_LABELS` (Partial 버전) 제거 → registry re-export (Phase 1)
+- [x] `EVENT_METADATA` 타입 `Record<EventType, EventMetadata>` 이미 적용 (Phase 2, 21e84c11)
+- [x] `EVENT_CATEGORIES` 이벤트 목록을 registry `EVENT_CATEGORIES_BY_ID`에서 derive (Phase 2)
+- [x] EventsPanel `RegistryEventType` alias + 타입 어서션 + string[] 캐스팅 제거 (Phase 3, 9c9ce7ee)
+- [x] `pnpm type-check` 통과
+- [ ] 이벤트 패널 UI 동작 확인 (EventTypePicker 포함) — 수동 검증 필요
