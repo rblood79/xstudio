@@ -213,7 +213,10 @@ class CanvasKitWebGPUBackend implements GPUBackend { ... }
 
 ### 목표
 
-CSS Level 3 레이아웃 완전 지원. 단일 Rust WASM 바이너리.
+현대 웹 핵심 레이아웃 완전 지원 (ROI 기반 스코프). 단일 Rust WASM 바이너리.
+
+> ROI ≈ 0 기능 삭제: float, clear, table layout, inline formatting context, multi-column, margin collapsing.
+> 보류 경로 유지: 수요 발생 시 독립 모듈로 추가 가능한 구조.
 
 ### 구조
 
@@ -223,56 +226,32 @@ xstudio-layout/ (새 Rust crate)
 ├── src/
 │   ├── lib.rs              # WASM 진입점, wasm-bindgen exports
 │   ├── tree.rs             # Layout tree (노드, 스타일, 자식 관계)
-│   ├── style.rs            # CSS 스타일 구조체 (모든 CSS3 속성)
+│   ├── style.rs            # CSS 스타일 구조체
 │   ├── computed.rs         # Computed 스타일 (cascade, inheritance)
 │   ├── layout.rs           # Layout 디스패치 (display별 분기)
 │   │
-│   ├── flex/               # Flexbox (Taffy fork)
+│   ├── flex/               # Flexbox (Taffy fork, 검증됨)
 │   │   ├── mod.rs
-│   │   ├── algorithm.rs    # flex 알고리즘 (Taffy 기반)
+│   │   ├── algorithm.rs
 │   │   └── types.rs
 │   │
-│   ├── grid/               # CSS Grid (Taffy fork)
+│   ├── grid/               # CSS Grid (Taffy fork + areas)
 │   │   ├── mod.rs
-│   │   ├── algorithm.rs    # grid 알고리즘 (Taffy 기반)
+│   │   ├── algorithm.rs
 │   │   ├── track_sizing.rs
 │   │   └── placement.rs    # grid-template-areas 포함
 │   │
-│   ├── block/              # Block Flow
+│   ├── block/              # Block Flow (단순 — margin collapse 제외)
 │   │   ├── mod.rs
-│   │   ├── algorithm.rs    # block 레이아웃
-│   │   └── margin_collapse.rs  # margin collapsing (CSS2.1 §8.3.1)
-│   │
-│   ├── inline/             # Inline Flow (NEW)
-│   │   ├── mod.rs
-│   │   ├── line_box.rs     # line box 생성, baseline alignment
-│   │   ├── inline_formatting.rs  # inline formatting context
-│   │   └── text_run.rs     # text run 분할, bidi
-│   │
-│   ├── float/              # Float (NEW)
-│   │   ├── mod.rs
-│   │   ├── algorithm.rs    # float 배치 (CSS2.1 §9.5)
-│   │   ├── clear.rs        # clear 처리
-│   │   └── exclusion.rs    # float exclusion area 계산
-│   │
-│   ├── table/              # Table (NEW)
-│   │   ├── mod.rs
-│   │   ├── algorithm.rs    # table 레이아웃 (CSS2.1 §17)
-│   │   ├── column_sizing.rs # 열 너비 계산
-│   │   └── row_group.rs    # thead/tbody/tfoot
-│   │
-│   ├── multicol/           # Multi-Column (NEW)
-│   │   ├── mod.rs
-│   │   ├── algorithm.rs    # column balancing
-│   │   └── break.rs        # break-before/after/inside
+│   │   └── algorithm.rs
 │   │
 │   ├── position/           # Positioning
 │   │   ├── mod.rs
 │   │   ├── sticky.rs       # position: sticky (NEW)
-│   │   ├── absolute.rs     # position: absolute/fixed
+│   │   ├── absolute.rs     # position: absolute/fixed (Taffy fork)
 │   │   └── stacking.rs     # stacking context, z-index
 │   │
-│   ├── sizing/             # Intrinsic Sizing
+│   ├── sizing/             # Intrinsic Sizing (Taffy fork)
 │   │   ├── mod.rs
 │   │   ├── content_size.rs # min-content, max-content, fit-content
 │   │   └── aspect_ratio.rs
@@ -284,25 +263,31 @@ xstudio-layout/ (새 Rust crate)
 │   └── spatial/            # Spatial Index (기존 WASM 통합)
 │       ├── mod.rs
 │       └── grid_index.rs   # cell-based 256px grid
+│
+│   # 🗑️ 삭제됨 (ROI ≈ 0):
+│   # ├── inline/           # IFC, line box, bidi → 노코드 불필요
+│   # ├── float/            # float/clear → flex/grid 대체
+│   # ├── table/            # CSS table layout → Grid 대체
+│   # └── multicol/         # multi-column → 보류 (niche)
 ```
 
-### CSS3 속성 지원 매트릭스
+### CSS 속성 지원 매트릭스 (ROI 다이어트 후)
 
-| 카테고리       | 속성                                                                                                                                                                                                                                 | 구현 소스                         |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| **Display**    | flex, inline-flex, grid, inline-grid, block, inline, inline-block, none, contents, table, table-row, table-cell, table-header-group, table-footer-group, table-row-group, table-column, table-column-group, table-caption, list-item | Taffy fork + 신규                 |
-| **Flexbox**    | flex-direction, flex-wrap, justify-content, align-items, align-content, flex-grow, flex-shrink, flex-basis, order, gap, align-self                                                                                                   | Taffy fork (검증됨)               |
-| **Grid**       | grid-template-columns/rows, grid-template-areas, grid-auto-columns/rows, grid-auto-flow, grid-column/row (start/end/span), justify-items/self, subgrid                                                                               | Taffy fork + areas 추가           |
-| **Block**      | margin collapsing, width auto, height auto                                                                                                                                                                                           | Taffy fork + margin collapse 구현 |
-| **Inline**     | line-height, vertical-align, baseline, text-align, text-indent, word-spacing, letter-spacing                                                                                                                                         | 신규 (Servo 참조)                 |
-| **Float**      | float (left/right/none), clear (left/right/both/none)                                                                                                                                                                                | 신규 (CSS2.1 §9.5 참조)           |
-| **Table**      | table-layout (auto/fixed), border-collapse, border-spacing, caption-side, empty-cells                                                                                                                                                | 신규 (CSS2.1 §17 참조)            |
-| **Multicol**   | column-count, column-width, column-gap, column-rule, column-span, column-fill, break-before/after/inside                                                                                                                             | 신규 (CSS Multi-column §3~7)      |
-| **Position**   | static, relative, absolute, fixed, sticky, top/right/bottom/left, inset, z-index                                                                                                                                                     | Taffy fork + sticky 신규          |
-| **Box Model**  | width, height, min/max-\*, margin, padding, border-width, box-sizing, aspect-ratio                                                                                                                                                   | Taffy fork                        |
-| **Overflow**   | overflow (visible/hidden/scroll/auto), overflow-x/y                                                                                                                                                                                  | Taffy fork                        |
-| **Sizing**     | fit-content, min-content, max-content, auto, calc()                                                                                                                                                                                  | Taffy fork                        |
-| **Visibility** | visibility (visible/hidden/collapse), display:none                                                                                                                                                                                   | 신규                              |
+| 카테고리         | 속성                                                                                                                               | 소스                |  상태   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------- | :-----: |
+| **Display**      | flex, inline-flex, grid, inline-grid, block, none                                                                                  | Taffy fork          |   ✅    |
+| **Flexbox**      | flex-direction, flex-wrap, justify-content, align-items, align-content, flex-grow, flex-shrink, flex-basis, order, gap, align-self | Taffy fork          |   ✅    |
+| **Grid**         | grid-template-columns/rows, **grid-template-areas**, grid-auto-columns/rows, grid-auto-flow, grid-column/row, justify-items/self   | Taffy fork + areas  |   ✅    |
+| **Block**        | width auto, height auto (margin collapse 제외)                                                                                     | Taffy fork          |   ✅    |
+| **Position**     | static, relative, absolute, fixed, **sticky**, top/right/bottom/left, inset, z-index                                               | Taffy fork + sticky |   ✅    |
+| **Box Model**    | width, height, min/max-\*, margin, padding, border-width, box-sizing, aspect-ratio                                                 | Taffy fork          |   ✅    |
+| **Overflow**     | overflow (visible/hidden/scroll/auto), overflow-x/y                                                                                | Taffy fork          |   ✅    |
+| **Sizing**       | fit-content, min-content, max-content, auto, calc()                                                                                | Taffy fork          |   ✅    |
+| **Visibility**   | visibility (visible/hidden), display:none                                                                                          | 신규                |   ✅    |
+| ~~**Float**~~    | ~~float, clear~~                                                                                                                   | —                   | 🗑️ 삭제 |
+| ~~**Inline**~~   | ~~IFC, line box, baseline, bidi~~                                                                                                  | —                   | 🗑️ 삭제 |
+| ~~**Table**~~    | ~~table-layout, border-collapse~~                                                                                                  | —                   | 🗑️ 삭제 |
+| ~~**Multicol**~~ | ~~column-count, column-width~~                                                                                                     | —                   | ⏸️ 보류 |
 
 ### WASM 인터페이스
 
@@ -966,7 +951,9 @@ layout/engines/
 
 ---
 
-## 11. Phase 계획
+## 11. Phase 계획 (ROI 다이어트 후 — 14주)
+
+> 원본 21주 → 14주. Float/Inline(4주) + Table/Multicol(4주) 삭제, Sticky만 Phase 3에 통합.
 
 ### Phase 0: 기반 준비 + 벤치마크 (1주)
 
@@ -974,15 +961,15 @@ layout/engines/
 - [ ] 현재 성능 baseline 측정 (FPS, 초기 로드, 메모리, 드래그 지연)
 - [ ] GPU Backend 추상화 인터페이스 설계
 - [ ] SceneGraph 타입 정의 + 단위 테스트 스캐폴딩
-- [ ] Rust CSS3 Engine crate 초기화 + wasm-pack 빌드 파이프라인
+- [ ] Rust Layout Engine crate 초기화 + wasm-pack 빌드 파이프라인
 
 **Gate G0**: baseline 측정 완료, WASM 빌드 파이프라인 동작 확인
 
-### Phase 1: Rust CSS3 Engine — Flex/Grid 패리티 (4주)
+### Phase 1: Rust Layout Engine — Flex/Grid/Block 패리티 (4주)
 
 - [ ] Taffy flex 알고리즘 포크 + 단위 테스트 이식
-- [ ] Taffy grid 알고리즘 포크 + grid-template-areas 추가
-- [ ] Block 레이아웃 + margin collapsing 구현
+- [ ] Taffy grid 알고리즘 포크 + **grid-template-areas** 추가
+- [ ] Block 레이아웃 (margin collapse 제외 — 노코드 빌더는 gap/padding)
 - [ ] 텍스트 측정 JS 콜백 인터페이스 구현
 - [ ] Spatial Index 통합 (기존 WASM 코드 이식)
 - [ ] 기존 Taffy 테스트 케이스 100% 통과 검증
@@ -1001,46 +988,33 @@ layout/engines/
 
 **Gate G2**: PixiJS 없이 기존 기능 100% 동작, 60fps 유지
 
-### Phase 3: Float/Inline 레이아웃 (4주)
+### Phase 3: Sticky + CSS3 렌더링 확장 (3주)
 
-- [ ] Inline formatting context 구현 (line box, baseline)
-- [ ] Float 알고리즘 구현 (CSS2.1 §9.5)
-- [ ] Clear 처리 구현
-- [ ] inline-block 구현
-- [ ] display: inline 구현
-- [ ] Servo layout2020 참조 알고리즘 검증
-- [ ] CSS 비교 테스트 (브라우저 결과 vs 엔진 결과, ≤1px)
-
-**Gate G3**: float/inline 레이아웃 브라우저 대비 ≤1px 오차
-
-### Phase 4: Table/Multicol/Sticky (4주)
-
-- [ ] Table 레이아웃 구현 (auto/fixed, border-collapse)
-- [ ] Multi-column 레이아웃 구현 (balancing, breaks)
-- [ ] position: sticky 구현
-- [ ] position: fixed 구현 (viewport 기준 배치)
-- [ ] visibility: collapse 구현
-- [ ] CSS 비교 테스트
-
-**Gate G4**: table/multicol/sticky 브라우저 대비 ≤1px 오차
-
-### Phase 5: CSS3 렌더링 확장 + 성능 (3주)
-
-- [ ] backdrop-filter 구현
-- [ ] text-shadow 구현
-- [ ] mask-image 구현
+- [ ] **position: sticky** 구현 (스크롤 오프셋 비교, containing block 기준)
+- [ ] **position: fixed** 구현 (viewport 기준 배치)
+- [ ] backdrop-filter 구현 (SaveLayer + blur behind)
+- [ ] text-shadow 구현 (CanvasKit ParagraphStyle shadow)
+- [ ] mask-image 구현 (CanvasKit Shader mask)
 - [ ] CSS transitions 엔진 구현
 - [ ] CSS animations (@keyframes) 엔진 구현
-- [ ] sepia, invert 필터 추가
+- [ ] sepia, invert 필터 추가 (ColorMatrix)
 - [ ] outline-style (dashed, dotted) 추가
 - [ ] background-blend-mode 추가
+
+**Gate G3**: sticky 동작 + 렌더링 확장 전부 동작
+
+### Phase 4: 성능 최적화 + 벤치마크 (2주)
+
 - [ ] Dirty region 렌더링 최적화
 - [ ] GPU texture cache 구현
+- [ ] 5000 요소 멀티페이지 프로파일링
+- [ ] WASM 바이너리 크기 최적화 (wasm-opt)
 - [ ] 성능 벤치마크 (vs baseline)
+- [ ] hot path 병목 식별 + 최적화
 
-**Gate G5**: 1000 요소 60fps, 초기 로드 <3초, 드래그 <16ms
+**Gate G4**: 1000 요소 60fps, 5000 요소 50fps+, 초기 로드 <3초, 드래그 <16ms
 
-### Phase 6: Shadow→Production 전환 (2주)
+### Phase 5: Shadow→Production 전환 (1주)
 
 - [ ] 기능 동등성 최종 검증 (전체 컴포넌트 스펙 테스트)
 - [ ] 엣지 케이스 수정 (스크롤, 중첩 overflow, 복합 레이아웃)
@@ -1049,7 +1023,13 @@ layout/engines/
 - [ ] PixiJS/Taffy dead code 최종 정리
 - [ ] 문서 업데이트 (RENDERING_ARCHITECTURE.md, COMPONENT_SPEC.md)
 
-**Gate G6**: 기능 100% 동등 + 성능 동등 이상 → production 전환
+**Gate G5**: 기능 100% 동등 + 성능 동등 이상 → production 전환
+
+### 보류 Phase (수요 발생 시)
+
+- **Phase X-1: Multi-column** — column-count, column-width, column-gap, break rules
+- **Phase X-2: Subgrid** — nested grid template inheritance
+- **Phase X-3: Writing modes** — vertical-rl, direction: rtl, unicode-bidi
 
 ---
 
