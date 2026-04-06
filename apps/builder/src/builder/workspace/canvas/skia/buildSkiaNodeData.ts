@@ -79,7 +79,7 @@ export function buildSkiaNodeData(
     overflow === "scroll" ||
     overflow === "auto";
 
-  const zIndex = parseZIndex(style as Record<string, unknown>);
+  const zIndex = parseZIndex(style.zIndex as string | number | undefined);
   const isStackingContext = createsStackingContext(
     style as Record<string, unknown>,
   );
@@ -93,8 +93,27 @@ export function buildSkiaNodeData(
   // clip-path
   const clipPath =
     typeof style.clipPath === "string"
-      ? parseClipPath(style.clipPath, width, height)
+      ? (parseClipPath(style.clipPath, width, height) ?? undefined)
       : undefined;
+
+  // fill color → Float32Array
+  const { fill, stroke, borderRadius } = converted;
+  const fillColor = Float32Array.of(
+    ((fill.color >> 16) & 0xff) / 255,
+    ((fill.color >> 8) & 0xff) / 255,
+    (fill.color & 0xff) / 255,
+    fill.alpha,
+  );
+
+  // stroke → Float32Array
+  const strokeColor = stroke?.color
+    ? Float32Array.of(
+        ((stroke.color >> 16) & 0xff) / 255,
+        ((stroke.color >> 8) & 0xff) / 255,
+        (stroke.color & 0xff) / 255,
+        stroke.alpha ?? 1,
+      )
+    : undefined;
 
   // 기본 SkiaNodeData (box 타입)
   const nodeData: SkiaNodeData = {
@@ -105,23 +124,22 @@ export function buildSkiaNodeData(
     width,
     height,
     visible: true,
-    effects: skiaEffects.effects,
-    blendMode: skiaEffects.blendMode,
-    transform: skiaEffects.transform,
-    clipPath,
     clipChildren,
     scrollOffset,
     zIndex,
     isStackingContext,
+    clipPath,
     box: {
-      fillColor: converted.fill.color,
-      fill: converted.fill.gradient ?? undefined,
-      borderRadius: converted.borderRadius,
-      strokeColor: converted.stroke?.color,
-      strokeWidth: converted.stroke?.width,
-      strokeStyle: converted.stroke?.style as string | undefined,
+      fillColor,
+      borderRadius: borderRadius ?? 0,
+      strokeColor,
+      strokeWidth: stroke?.width,
     },
   };
+
+  if (skiaEffects.effects) nodeData.effects = skiaEffects.effects;
+  if (skiaEffects.blendMode) nodeData.blendMode = skiaEffects.blendMode;
+  if (skiaEffects.transform) nodeData.transform = skiaEffects.transform;
 
   return nodeData;
 }
