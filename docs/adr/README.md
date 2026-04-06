@@ -113,26 +113,27 @@
 
 ---
 
-## 다음 진행 목표 (2026-04-02 기준)
+## 다음 진행 목표 (2026-04-06 기준)
 
-| 순서 | 대상    | 내용                                                                                                               | 규모 |   상태   |
-| :--: | ------- | ------------------------------------------------------------------------------------------------------------------ | :--: | :------: |
-|  -   | ADR-041 | Spec-Driven Property Editor — Phase 0~4 완료 (**Spec 97개, Generic 71, Hybrid 2, Custom 25**, S2 섹션 재분류 완료) |  -   | **완료** |
-|  -   | ADR-048 | S2 선언적 Props Propagation — Phase 0~5 완료 (26개 Spec, WebGL+Skia+Factory 3경로. CSS/Preview 미구현)             |  대  | **완료** |
-|  -   | ADR-045 | S2 Property Editor 정합성 — ADR-046에 통합 완료 (2026-03-29)                                                       |  중  | **완료** |
-|  -   | ADR-046 | S2 계약 확장 — Form/ColorField/Tabs + overlay props E2E 완료 (2026-03-29)                                          |  소  | **완료** |
-|  -   | ADR-043 | Selection Drag Alignment — Phase 0~6 전체 완료 (2026-03-30)                                                        |  중  | **완료** |
-|  -   | ADR-049 | Canvas Drag & Drop Pencil 패턴 — Phase A~D 완료 (deferred commit, spring, reparenting) (2026-04-01)                |  중  | **완료** |
-|  1   | ADR-048 | Props Propagation 잔여 — CSS/Preview 경로 통합 + labelPosition 전파 규칙 추가                                      |  중  |          |
-|  2   | ADR-042 | Spec Container Dimension Injection — 27개 구현 완료, 잔존 fallback 컴포넌트 정리                                   |  소  |          |
-|  3   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                             |  대  |          |
-|  4   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                        |  대  |          |
-|  5   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                   |  중  |          |
-|  6   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                      |  대  |          |
+| 순서 | 대상    | 내용                                                                                                       | 규모 |   상태   |
+| :--: | ------- | ---------------------------------------------------------------------------------------------------------- | :--: | :------: |
+|  -   | ADR-050 | Container Overflow 프로퍼티 — 해칭 패턴 + clipChildren (2026-04-03)                                        |  소  | **완료** |
+|  -   | ADR-052 | S2 Props API 정합성 — 이름 변경 4건, formatOptions 통합, showValue 제거 (2026-04-05)                       |  중  | **완료** |
+|  -   | ADR-053 | S2 Props 커버리지 확장 — size XL 17개, contextualHelp, staticColor auto (2026-04-05)                       |  중  | **완료** |
+|  -   | ADR-055 | 이벤트 레지스트리 SSOT — EVENT_REGISTRY 정본 도입, 수동 정의 제거 (2026-04-06)                             |  중  | **완료** |
+|  -   | -       | 이벤트 패널 등록 누락 보강 — TextArea 등록, onChangeEnd/onExpandedChange/onRemove, form Props (2026-04-06) |  소  | **완료** |
+|  -   | -       | 컴포넌트 프로퍼티 전수조사 — 65+ spec RSP 정합성 감사, 과잉 props 제거, 브라우저 props sections 제거       |  대  | **완료** |
+|  1   | ADR-048 | Props Propagation 잔여 — CSS/Preview 경로 통합 + labelPosition 전파 규칙 추가                              |  중  |          |
+|  2   | ADR-042 | Spec Container Dimension Injection — 27개 구현 완료, 잔존 fallback 컴포넌트 정리                           |  소  |          |
+|  3   | ADR-051 | Pretext 텍스트 측정 통합 — Canvas 2D→CanvasKit 단일 소스, 2-Pass 2500× 가속                                |  대  |          |
+|  4   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                     |  대  |          |
+|  5   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                |  대  |          |
+|  6   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview (ADR-032 선행)                              |  중  |          |
+|  7   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                              |  대  |          |
 
 > 완료된 이전 목표는 변경 이력 참조
 >
-> **2026-04-02 우선순위 재산정 (코드 검증 기반)**: Property Editor 체인 전체 완료 (Spec 97개로 확대). Drag & Drop 체인 전체 완료. ADR-048 CSS/Preview 경로 미구현 발견 → 잔여 작업 1순위. ADR-042는 27개 컴포넌트 구현 확인 → 잔존 fallback 정리만 필요 (규모 축소). ADR-038(Figma Import)은 대규모이나 사용자 가치 높음.
+> **2026-04-06 우선순위 재산정**: S2 Props 체인(ADR-052/053) 완료. 이벤트 시스템 SSOT(ADR-055) 완료. 컴포넌트 프로퍼티 전수조사 + 과잉 props 정리 완료. ADR-051(텍스트 측정 통합)을 3순위로 승격 — 렌더링 정합성 직결. ADR-100/101(렌더링 엔진 대안)은 장기 아키텍처 결정으로 보류.
 
 ---
 
@@ -174,14 +175,17 @@ ADR-046 (S2 계약 확장, ✅ 완료)
 - ~~**ADR-043**~~: Phase 0~6 전체 완료 (2026-03-30). drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel
 - ~~**ADR-049**~~: Phase A~D 완료 (2026-04-01). deferred commit, spring 보간(0.15 lerp), cross-container reparenting, getSceneBounds 좌표계 통일
 
-### P3: ADR-048 잔여 + ADR-042 + ADR-038 → ADR-032 → ADR-034 → ADR-013
+### P3: ADR-048 잔여 + ADR-042 + ADR-051 + ADR-038 → ADR-032 → ADR-034 → ADR-013
 
 - ~~**ADR-036**: Spec-First Single Source~~ — 2026-03-16 완료
 - ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded
 - ~~**ADR-043**: Selection Drag Alignment~~ — 2026-03-30 완료
-- ~~기반 안정화~~ — 2026-03-26 완료
+- ~~**ADR-050**: Container Overflow~~ — 2026-04-03 완료
+- ~~**ADR-052/053**: S2 Props API 정합성 + 커버리지~~ — 2026-04-05 완료
+- ~~**ADR-055**: 이벤트 레지스트리 SSOT~~ — 2026-04-06 완료
 - **ADR-048 잔여**: CSS/Preview 경로 propagation 통합 + labelPosition 전파 규칙 — 렌더링 정합성 직결
 - **ADR-042**: Spec Container Dimension Injection — 27개 구현 완료, 잔존 fallback 정리 (규모 축소)
+- **ADR-051**: Pretext 텍스트 측정 통합 — Canvas 2D→CanvasKit 단일 소스, 렌더링 정합성 핵심
 - **ADR-038**: Figma 디자인 임포트 — 대규모, 모든 인프라 체인 완료 후 착수 가능
 
 **Events 의존 체인** (순서 필수):
