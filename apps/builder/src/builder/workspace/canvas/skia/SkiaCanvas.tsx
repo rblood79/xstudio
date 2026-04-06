@@ -215,15 +215,12 @@ export function SkiaCanvas({
             elementsMap: state.elementsMap,
             childrenMap: state.childrenMap,
           }),
-          (curr, prev) => {
-            if (
-              curr.elementsMap !== prev.elementsMap ||
-              curr.childrenMap !== prev.childrenMap
-            ) {
-              cb();
-            }
+          cb,
+          {
+            equalityFn: (a, b) =>
+              a.elementsMap === b.elementsMap &&
+              a.childrenMap === b.childrenMap,
           },
-          { equalityFn: Object.is },
         ),
       theme: "light",
     });

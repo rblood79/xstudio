@@ -48,6 +48,8 @@ const SPEC_PREFERRED_TEXT_TAGS = new Set([
   "Description", // InlineAlert parent font delegation
 ]);
 
+const EMPTY_LAYOUT_MAP = new Map<string, ComputedLayout>();
+
 /** Spec 경로 사용 여부: TAG_SPEC_MAP 등록 + TEXT_TAGS 미등록 또는 delegation 필요 */
 function useSpecPath(element: Element): boolean {
   if (!getSpecForTag(element.tag)) return false;
@@ -123,8 +125,8 @@ export class StoreRenderBridge {
       // 첫 실행: 전체 rebuild
       this.fullRebuild(elementsMap, layoutMap, theme, childrenMap);
     } else if (changedIds.size === 0) {
-      // 동일 참조 = 요소 변경 없음 (layout만 변경되었을 수 있음)
-      this.layoutOnlySync(elementsMap, layoutMap, theme, childrenMap);
+      // 동일 참조 = 요소 변경 없음, layout만 변경 → 전체 rebuild
+      this.fullRebuild(elementsMap, layoutMap, theme, childrenMap);
     } else {
       // 증분 갱신: 변경된 요소만 rebuild
       this.incrementalSync(
@@ -178,7 +180,7 @@ export class StoreRenderBridge {
     childrenMap: Map<string, Element[]> | null,
   ): void {
     const ctx: BuildContext = {
-      layoutMap: layoutMap ?? new Map(),
+      layoutMap: layoutMap ?? EMPTY_LAYOUT_MAP,
       theme,
     };
 
@@ -205,7 +207,6 @@ export class StoreRenderBridge {
         id,
         layout,
         ctx,
-        theme,
         elementsMap,
         childrenMap,
       );
@@ -213,20 +214,6 @@ export class StoreRenderBridge {
         registerSkiaNode(id, nodeData);
       }
     }
-  }
-
-  /**
-   * Layout만 변경 시: layout 좌표가 달라진 요소만 rebuild.
-   * elementsMap 참조는 동일하지만 layoutMap이 달라졌을 수 있음.
-   */
-  private layoutOnlySync(
-    elementsMap: Map<string, Element>,
-    layoutMap: Map<string, ComputedLayout> | null,
-    theme: "light" | "dark",
-    childrenMap: Map<string, Element[]> | null,
-  ): void {
-    // Layout publish 후 호출: 전체 rebuild (layout은 요소별 dirty 판별 불가)
-    this.fullRebuild(elementsMap, layoutMap, theme, childrenMap);
   }
 
   /**
@@ -239,7 +226,7 @@ export class StoreRenderBridge {
     childrenMap: Map<string, Element[]> | null,
   ): void {
     const ctx: BuildContext = {
-      layoutMap: layoutMap ?? new Map(),
+      layoutMap: layoutMap ?? EMPTY_LAYOUT_MAP,
       theme,
     };
 
@@ -255,7 +242,6 @@ export class StoreRenderBridge {
         id,
         layout,
         ctx,
-        theme,
         elementsMap,
         childrenMap,
       );
@@ -302,7 +288,6 @@ export class StoreRenderBridge {
     id: string,
     layout: ComputedLayout | undefined,
     ctx: BuildContext,
-    theme: "light" | "dark",
     elementsMap: Map<string, Element>,
     childrenMap: Map<string, Element[]> | null,
   ): import("./nodeRendererTypes").SkiaNodeData | null {
@@ -311,7 +296,7 @@ export class StoreRenderBridge {
       const nodeData = buildSpecNodeData({
         element,
         layout,
-        theme,
+        theme: ctx.theme,
         childElements,
         elementsMap,
       });
@@ -322,17 +307,17 @@ export class StoreRenderBridge {
     }
 
     if (isTextElement(element)) {
-      return buildTextNodeData({ element, layout, theme });
+      return buildTextNodeData({ element, layout, theme: ctx.theme });
     }
 
     if (isImageElement(element)) {
       const src = getImageSrc(element);
       const skImage = src ? getSkImage(src) : null;
 
-      // 이미지 추적 (incrementalSync 경로)
       if (src) {
+        const alreadyLoading = this.loadedImageSrcs.has(id);
         this.loadedImageSrcs.set(id, src);
-        if (!skImage && !this.loadedImageSrcs.has(id)) {
+        if (!skImage && !alreadyLoading) {
           this.loadImageAsync(id, src);
         }
       }
