@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 36     |
 | 부분 완료                              | 9      |
-| 미구현 (Proposed/계획)                 | 10     |
-| **합계**                               | **55** |
+| 미구현 (Proposed/계획)                 | 12     |
+| **합계**                               | **57** |
 
 ---
 
@@ -52,6 +52,9 @@
 | [043](043-selection-drag-alignment.md)                         | Selection Drag Alignment                   | Implemented | 2026-03-30 | Phase 0~6 완료 (drag lifecycle, drop target resolver, drop indicator, reorder commit, Escape cancel)               |
 | [049](049-canvas-drag-drop-pencil-parity.md)                   | Canvas Drag & Drop Pencil 패턴 정합성      |  Accepted   | 2026-04-01 | Phase A~D 완료 (deferred commit, spring 보간, drop indicator 개선, cross-container reparenting)                    |
 | [050](completed/050-container-overflow-property.md)            | Container Overflow 프로퍼티 (Figma 스타일) | Implemented | 2026-04-03 | 에디터 UI(Appearance 섹션) + Preview CSS + 해칭 패턴 시각화 + body clipChildren 특수 처리 완료                     |
+| [052](052-s2-props-api-alignment.md)                           | S2 Props API 정합성 마이그레이션           | Implemented | 2026-04-05 | Phase 1~3 완료 — 이름 변경 4건 + formatOptions 통합 -7 + showValue 제거 -3 + autoCorrect 타입 (순 -10 props)       |
+| [053](053-s2-props-coverage-expansion.md)                      | S2 Props 커버리지 확장                     | Implemented | 2026-04-05 | Phase 1~5 완료 — size XL 17개 + contextualHelp/labelAlign/isEmphasized + staticColor auto + 개별 S2 props          |
+| [055](055-event-registry-ssot.md)                              | 이벤트 레지스트리 SSOT 통합                | Implemented | 2026-04-06 | Phase 1~3 완료 — EVENT_REGISTRY 정본 도입, 수동 정의 제거, 타입 어서션 제거                                        |
 
 ### 부분 완료
 
@@ -71,23 +74,20 @@
 
 ### 미구현
 
-| ADR                                                   | 제목                                               | 상태        | 규모                                                                                                                                 | 우선순위 |
-| ----------------------------------------------------- | -------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ | :------: |
-| [013](013-quick-connect-data-binding.md)              | Quick Connect 데이터 바인딩                        | Proposed    | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                      |  **P3**  |
-| [020](020-design-kit-improvement.md)                  | Design Kit 패널 분석 및 개선                       | Proposed    | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                             |    P4    |
-| [015](015-sitemap-layout.md)                          | Sitemap Hierarchy 워크플로우 엣지                  | Proposed    | 변경 대상 8파일, 코드 미생성                                                                                                         |    P5    |
-| [016](016-photoshop-ui-ux.md)                         | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed    | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                               |    P5    |
-| [032](032-events-data-integration.md)                 | Events Platform 재설계 + Data 통합                 | Proposed    | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                               |  **P3**  |
-| [034](034-events-panel-renovation.md)                 | Events Panel Renovation                            | Proposed    | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                            |  **P3**  |
-| [038](038-figma-import.md)                            | Figma 디자인 임포트 시스템                         | Proposed    | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                            |  **P3**  |
-| [044](044-project-renaming-xstudio-to-composition.md) | 프로젝트 리네이밍 xstudio → composition            | Proposed    | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                          |    P4    |
-| [051](051-pretext-text-measurement-integration.md)    | Pretext 텍스트 측정/레이아웃 통합 (SSOT)           | Proposed    | 5 Phase (A~E) — CSS↔Skia 정합성 단일 소스, 2-Pass 2500× 가속, Break Hint Injection                                                   |  **P2**  |
-| [052](052-s2-props-api-alignment.md)                  | S2 Props API 정합성 마이그레이션                   | Implemented | Phase 1~3 완료 — 이름 변경 4건 + formatOptions 통합 -7 + showValue 제거 -3 + autoCorrect 타입 (순 -10 props)                         |  **P2**  |
-| [053](053-s2-props-coverage-expansion.md)             | S2 Props 커버리지 확장                             | Implemented | Phase 1~5 완료 — size XL 17개 + contextualHelp/labelAlign/isEmphasized + staticColor auto + 개별 S2 props + variant 확장             |  **P2**  |
-| [054](054-local-llm-architecture.md)                  | 로컬 LLM ���키텍�� (Ollama → node-llama-cpp)       | Proposed    | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                 |  **P2**  |
-| [100](100-unified-skia-rendering-engine.md)           | Unified Skia Rendering Engine — PixiJS/Taffy 제거  | Proposed    | 6 Phase (0~5, 14주) — Taffy fork(외부 의존성 1개) + SceneGraph + CanvasKit 단일 렌더. ROI 다이어트 적용. Supersedes ADR-003, ADR-008 |  **P1**  |
-| [101](101-browser-native-rendering-engine.md)         | Browser-Native Rendering Engine — 렌더링 엔진 삭제 | Proposed    | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008           |  **P1**  |
-| [055](055-event-registry-ssot.md)                     | 이벤트 레지스트리 SSOT 통합                        | Implemented | Phase 1~3 완료 — EVENT_REGISTRY 정본 도입, eventTypes/events.types 수동 정의 제거, EventsPanel 타입 어서션 제거                      |  **P3**  |
+| ADR                                                   | 제목                                               | 상태     | 규모                                                                                                                                 | 우선순위 |
+| ----------------------------------------------------- | -------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ | :------: |
+| [013](013-quick-connect-data-binding.md)              | Quick Connect 데이터 바인딩                        | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                      |  **P3**  |
+| [020](020-design-kit-improvement.md)                  | Design Kit 패널 분석 및 개선                       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                             |    P4    |
+| [015](015-sitemap-layout.md)                          | Sitemap Hierarchy 워크플로우 엣지                  | Proposed | 변경 대상 8파일, 코드 미생성                                                                                                         |    P5    |
+| [016](016-photoshop-ui-ux.md)                         | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                               |    P5    |
+| [032](032-events-data-integration.md)                 | Events Platform 재설계 + Data 통합                 | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                               |  **P3**  |
+| [034](034-events-panel-renovation.md)                 | Events Panel Renovation                            | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                            |  **P3**  |
+| [038](038-figma-import.md)                            | Figma 디자인 임포트 시스템                         | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                            |  **P3**  |
+| [044](044-project-renaming-xstudio-to-composition.md) | 프로젝트 리네이밍 xstudio → composition            | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                          |    P4    |
+| [051](051-pretext-text-measurement-integration.md)    | Pretext 텍스트 측정/레이아웃 통합 (SSOT)           | Proposed | 5 Phase (A~E) — CSS↔Skia 정합성 단일 소스, 2-Pass 2500× 가속, Break Hint Injection                                                   |  **P2**  |
+| [054](054-local-llm-architecture.md)                  | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)        | Proposed | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                 |  **P2**  |
+| [100](100-unified-skia-rendering-engine.md)           | Unified Skia Rendering Engine — PixiJS/Taffy 제거  | Proposed | 6 Phase (0~5, 14주) — Taffy fork(외부 의존성 1개) + SceneGraph + CanvasKit 단일 렌더. ROI 다이어트 적용. Supersedes ADR-003, ADR-008 |  **P1**  |
+| [101](101-browser-native-rendering-engine.md)         | Browser-Native Rendering Engine — 렌더링 엔진 삭제 | Proposed | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008           |  **P1**  |
 
 ## Events Panel 설계 문서군
 
