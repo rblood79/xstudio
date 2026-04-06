@@ -1973,13 +1973,14 @@ export function calculateFullTreeLayout(
             );
           }
         }
-        useScrollState
-          .getState()
-          .updateMaxScroll(
-            elementId,
-            Math.max(0, maxBottom - layout.height),
-            Math.max(0, maxRight - layout.width),
-          );
+        // queueMicrotask: 렌더링 중 setState 방지 (React strict mode)
+        const scrollTop = Math.max(0, maxBottom - layout.height);
+        const scrollLeft = Math.max(0, maxRight - layout.width);
+        queueMicrotask(() => {
+          useScrollState
+            .getState()
+            .updateMaxScroll(elementId, scrollTop, scrollLeft);
+        });
       }
     }
 
