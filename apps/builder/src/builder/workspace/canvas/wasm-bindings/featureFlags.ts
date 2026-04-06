@@ -50,8 +50,8 @@ export const UNIFIED_ENGINE_FLAGS = {
   // Phase 4: 성능
   USE_TILE_CACHE: false,
 
-  // 전체 전환 — 레이아웃 독립화 완료, 렌더 데이터 생성 미완
-  // 4개 Sprite(Box/Text/Image/Element) 정밀 이식 후 활성화
+  // 전체 전환 — Box/Text/Image Sprite 정밀 이�� 완료 (Phase 6.5-6.7)
+  // useLayoutPublisher(store 기반) + StoreRenderBridge(순수 함수) 활성화
   UNIFIED_ENGINE: false,
 } as const;
 

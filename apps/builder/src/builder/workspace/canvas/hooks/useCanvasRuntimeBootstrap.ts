@@ -30,6 +30,20 @@ export function useCanvasRuntimeBootstrap(): CanvasRuntimeBootstrapResult {
       window.removeEventListener("xstudio:fonts-ready", handleFontsReady);
   }, []);
 
+  // ADR-100: UNIFIED_ENGINE=true → PixiJS Application 없으므로 직접 WASM 초기화
+  useEffect(() => {
+    if (!isUnifiedFlag("UNIFIED_ENGINE")) return;
+    if (wasmLayoutReady) return;
+
+    void initRustWasm().then(() => {
+      if (isRustWasmReady()) {
+        setWasmLayoutReady(true);
+        // WASM 준비 후 layoutVersion 증가 → useLayoutPublisher 재실행 트리거
+        useStore.getState().invalidateLayout();
+      }
+    });
+  }, [wasmLayoutReady]);
+
   useEffect(() => {
     if (wasmLayoutReady) {
       return;

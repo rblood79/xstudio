@@ -202,7 +202,6 @@ export function SkiaCanvas({
 
   useEffect(() => {
     if (app) return; // PixiJS가 있으면 기존 Sprite 경로 사용
-
     const bridge = new StoreRenderBridge();
     bridge.connect({
       getElements: () => useStore.getState().elementsMap,
