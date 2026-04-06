@@ -103,6 +103,15 @@
 - **Step 3.6 fit-content width 재계산 — Slider Label 미커버**: Step 3.6 재계산(fullTreeLayout.ts:1164-1186)은 `childStoreWidth === "fit-content"` 조건을 통과해야 width를 재계산함. `ProgressBarValue`/`MeterValue`/`SliderOutput`은 factory에서 `width: "fit-content"` 명시 → 재계산 커버됨. 반면 Slider `Label`은 factory에 `width: "fit-content"` 미설정(FormComponents.ts:728-735) → Step 3.6 width 재계산 미진입. `enrichWithIntrinsicSize`의 `isFlexChild && TEXT_LEAF_TAGS.has(tag)` 경로가 Step 4에서 처리하나, Step 4 실행 전 processedElementsMap에 fontSize가 반영되었는지 순서 의존성 주의 필요
 - **`enrichWithIntrinsicSize` 내 Set 상수 4개 함수 내부 생성**: `INTRINSIC_WIDTH_KEYWORDS`, `INTRINSIC_HEIGHT_KEYWORDS`, `IMAGE_INTRINSIC_TAGS`, `SPEC_SHAPES_INPUT_TAGS`가 함수 내부에서 매 호출마다 재생성됨 (utils.ts:2855-2938) — 모듈 레벨 상수로 호이스팅 필요. hot path 반복 패턴
 
+- **`isImplementedActionType` O(N) 미개선**: `isImplementedEventType`은 O(1) property lookup으로 개선했으나 같은 파일의 `isImplementedActionType`은 `array.includes()` O(N) 그대로 — `new Set(IMPLEMENTED_ACTION_TYPES)`로 O(1) 전환 필요 (events.registry.ts:364-368)
+- **EVENT_CATEGORIES `interaction` key ↔ `reactAria` ID 불일치**: registry의 레거시 `EVENT_CATEGORIES`에서 key `interaction`이 `reactAria` 카테고리 데이터를 담음 — `eventCategories.ts`의 `EVENT_CATEGORIES`는 `reactAria` key 정상 사용. 소비처 없으면 제거, 있으면 key 통일 필요
+- **`ACTION_TYPE_LABELS` snake_case 중복 UI 노출 위험**: `Object.keys(ACTION_TYPE_LABELS)`로 `availableActionTypes` 생성 시 snake_case 키 혼입 → UI picker에 snake_case 항목 노출 잠재 버그. `ACTION_CATEGORIES` actions union으로 대체 권장
+- **interface 이중 선언 (re-export 파일에서 재선언)**: `events.types.ts` ↔ `eventTypes.ts` 간에 `EventContext`, `EventExecutionResult`, `DEFAULT_DEBOUNCE_TIME` 등이 동일 내용으로 중복 선언 — re-export 파일에서는 선언 없이 상위 파일 import+re-export로만 유지
+- **eslint-disable으로 dead 코드 유지**: `blockActionsToEventActions` 함수(`EventsPanel.tsx:107`)가 eslint-disable 주석으로 dead 상태 유지 — 삭제 또는 별도 유틸 파일로 이동. SKILL.md 금지 패턴
+
+- **Events `ACTION_TYPE_LABELS` 기반 `availableActionTypes` 복제**: `EventsPanel.tsx:193`과 `ActionTypePicker.tsx:70` 양쪽에서 `Object.keys(ACTION_TYPE_LABELS) as ActionType[]`로 동일 목록 생성 — `events.registry.ts`에 `getImplementedActionTypes()` 헬퍼 추출 권장. 단, `ACTION_TYPE_LABELS`에 snake_case alias가 포함되어 있어 추출 시 dedup 필요
+- **Events Panel groupBy 로직 3중 복제**: `EventsPanel.tsx`의 `ActionPickerOverlay`, `ActionTypePicker.tsx`, `EventTypePicker.tsx`에서 카테고리별 그룹화 패턴(forEach + as unknown as T[] 이중 캐스팅 + 빈 카테고리 제외)이 동일하게 복제 — `getActionsByCategory()` 헬퍼로 일원화 가능. `typeof REGISTRY_ACTION_CATEGORIES !== "undefined"` dead 방어 코드도 동시 제거 필요
+
 ## False Positive 기록
 
 - **`hasCustomEditor: false` 명시적 선언**: 런타임 동작에 영향 없음 — registry.ts가 propertySpec 우선 체크 후 fallback으로만 사용. 생략 가능하나 기존 패턴과 일관성 측면에서 MEDIUM 이하 이슈
