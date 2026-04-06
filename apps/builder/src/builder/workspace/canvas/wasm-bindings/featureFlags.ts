@@ -40,8 +40,8 @@ export const UNIFIED_ENGINE_FLAGS = {
   USE_DOM_HOVER: false,
   USE_DOM_CURSOR: false,
   USE_CAMERA_OBJECT: false,
-  USE_SCENE_GRAPH: false,
-  REMOVE_PIXI: false,
+  USE_SCENE_GRAPH: true,
+  REMOVE_PIXI: true,
 
   // Phase 3: 렌더링 확장
   USE_HYBRID_TEXT: false,
