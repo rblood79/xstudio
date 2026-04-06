@@ -50,7 +50,8 @@ export const UNIFIED_ENGINE_FLAGS = {
   // Phase 4: 성능
   USE_TILE_CACHE: false,
 
-  // 전체 전환
+  // 전체 전환 — PixiJS Application 제거 시 레이아웃 파이프라인도 중단되어 미사용
+  // Phase 6 완료 후 레이아웃 독립화 필요
   UNIFIED_ENGINE: false,
 } as const;
 

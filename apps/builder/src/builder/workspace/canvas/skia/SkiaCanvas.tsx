@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { Application as PixiApplication, Container } from "pixi.js";
+import type { Application as PixiApplication } from "pixi.js";
 import { SkiaRenderer } from "./SkiaRenderer";
 import { getRegistryVersion, notifyLayoutChange } from "./useSkiaNode";
 import { isCanvasKitInitialized, getCanvasKit } from "./initCanvasKit";
@@ -62,8 +62,10 @@ import {
   buildFrameRenderPlan,
 } from "./skiaFramePlan";
 import { Camera } from "../viewport/Camera";
-import { useViewportSyncStore } from "../stores";
 import { viewportState as mutableViewport } from "../viewport/viewportState";
+import { StoreRenderBridge } from "./StoreRenderBridge";
+import { getSharedLayoutMap } from "../layout/engines/fullTreeLayout";
+import { useStore } from "../../../stores";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -101,16 +103,6 @@ export interface SkiaCanvasProps {
  * - Camera 클래스로 viewport 상태 관리
  * - Command Stream 경로 전용 (sharedLayoutMap 필수)
  */
-/**
- * PixiJS stage에서 Camera Container를 찾는다 (SkiaOverlay와 동일 패턴).
- */
-function findCameraContainer(stage: Container): Container | null {
-  for (const child of stage.children) {
-    if ((child as Container).label === "Camera") return child as Container;
-  }
-  return null;
-}
-
 export function SkiaCanvas({
   containerEl,
   backgroundColor = 0xf3f4f6,
@@ -125,13 +117,13 @@ export function SkiaCanvas({
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
   const contextLostRef = useRef(false);
-  const cameraRef = useRef<Camera>(externalCamera ?? new Camera());
+  const _cameraRef = useRef<Camera>(externalCamera ?? new Camera());
 
   // Phase 6: Selection/AI 상태 변경 감지용 ref
   const overlayVersionRef = useRef(0);
   const lastSelectionSignatureRef = useRef("");
   const lastAIActiveRef = useRef(0);
-  const lastPageFramesSignatureRef = useRef("");
+  const _lastPageFramesSignatureRef = useRef("");
   const allPageFramesRef = useRef(
     rendererInput.sceneSnapshot.document.allPageFrames,
   );
@@ -205,6 +197,23 @@ export function SkiaCanvas({
     invalidationPacketRef.current = invalidationPacket;
   }, [invalidationPacket]);
 
+  // ---------- StoreRenderBridge (Phase 6) ----------
+  // PixiJS Application이 없을 때 store에서 직접 skiaNodeRegistry를 채운다.
+
+  useEffect(() => {
+    if (app) return; // PixiJS가 있으면 기존 Sprite 경로 사용
+
+    const bridge = new StoreRenderBridge();
+    bridge.connect({
+      getElements: () => useStore.getState().elementsMap,
+      getLayoutMap: () => getSharedLayoutMap(),
+      subscribe: (cb) => useStore.subscribe(cb),
+      theme: "light",
+    });
+
+    return () => bridge.dispose();
+  }, [app]);
+
   // Camera ↔ viewport 동기화는 viewportState 뮤터블 ref로 대체 (Phase 5.4)
   // ViewportController.notifyUpdateListeners()가 viewportState를 동기 갱신
   // SkiaCanvas RAF에서 mutableViewport.x/y/zoom으로 직접 읽기
@@ -241,10 +250,10 @@ export function SkiaCanvas({
         await initAllWasm();
         if (cancelled) return;
 
-        const ck = getCanvasKit();
+        getCanvasKit(); // CanvasKit 초기화 확인
         // 기본 폰트 로딩
-        await loadAllCustomFontsToSkia(ck, skiaFontManager);
-        await loadGoogleFontsToSkia(ck, skiaFontManager);
+        await loadAllCustomFontsToSkia();
+        await loadGoogleFontsToSkia();
         if (!cancelled) setReady(true);
       } catch (e) {
         console.error("[SkiaCanvas] WASM/Font 초기화 실패:", e);
@@ -290,7 +299,6 @@ export function SkiaCanvas({
 
     const ck = getCanvasKit();
     const skiaCanvas = canvasRef.current;
-    const camera = cameraRef.current;
 
     // DPR 적용
     const dpr = window.devicePixelRatio || 1;

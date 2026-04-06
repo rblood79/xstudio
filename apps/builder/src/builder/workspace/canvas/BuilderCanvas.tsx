@@ -678,8 +678,8 @@ export function BuilderCanvas({
           </button>
         </div>
       )}
-      {/* 🚀 Phase 7: Application — REMOVE_PIXI=true에서도 유지 (ElementSprite 데이터 등록 필요) */}
-      {containerEl && (
+      {/* 🚀 Phase 7: Application — UNIFIED_ENGINE=true 시 완전 제거 (StoreRenderBridge ���체) */}
+      {containerEl && !isUnifiedFlag("UNIFIED_ENGINE") && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
@@ -790,11 +790,11 @@ export function BuilderCanvas({
           dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
         />
       )}
-      {containerEl && isUnifiedFlag("REMOVE_PIXI") && pixiApp && (
+      {containerEl && isUnifiedFlag("REMOVE_PIXI") && (
         <SkiaCanvasLazy
           containerEl={containerEl}
           backgroundColor={backgroundColor}
-          app={pixiApp}
+          app={pixiApp ?? undefined}
           invalidateLayout={invalidateLayout}
           invalidationPacket={rendererInvalidationPacket}
           rendererInput={skiaRendererInput}
