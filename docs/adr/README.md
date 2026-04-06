@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-06 (ADR-100/101 Proposed — 렌더링 엔진 재설계 대안 2건: Unified Skia vs Browser-Native)
+> **최종 업데이트**: 2026-04-06 (ADR-055 Proposed — 이벤트 레지스트리 SSOT 통합)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 35     |
 | 부분 완료                              | 9      |
-| 미구현 (Proposed/계획)                 | 10     |
-| **합계**                               | **54** |
+| 미구현 (Proposed/계획)                 | 11     |
+| **합계**                               | **55** |
 
 ---
 
@@ -87,6 +87,7 @@
 | [054](054-local-llm-architecture.md)                  | 로컬 LLM ���키텍�� (Ollama → node-llama-cpp)       | Proposed    | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                 |  **P2**  |
 | [100](100-unified-skia-rendering-engine.md)           | Unified Skia Rendering Engine — PixiJS/Taffy 제거  | Proposed    | 6 Phase (0~5, 14주) — Taffy fork(외부 의존성 1개) + SceneGraph + CanvasKit 단일 렌더. ROI 다이어트 적용. Supersedes ADR-003, ADR-008 |  **P1**  |
 | [101](101-browser-native-rendering-engine.md)         | Browser-Native Rendering Engine — 렌더링 엔진 삭제 | Proposed    | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008           |  **P1**  |
+| [055](055-event-registry-ssot.md)                     | 이벤트 레지스트리 SSOT 통합                        | Proposed    | 3 Phase — EventType 이중 정의 해소, satisfies 계약으로 컴파일 타임 누락 감지, 수정 파일 4개→2개                                      |  **P3**  |
 
 ## Events Panel 설계 문서군
 
