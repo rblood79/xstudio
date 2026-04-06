@@ -25,7 +25,17 @@ import {
   calculateViewportBounds,
   useViewportCulling,
 } from "../hooks/useViewportCulling";
-import { DirectContainer } from "./DirectContainer";
+// DirectContainer 제거 (Phase 9: PixiJS 제거)
+const DirectContainer = ({
+  children,
+}: {
+  children: React.ReactNode;
+  elementId?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}) => <>{children}</>;
 
 const NON_CONTAINER_TAGS = new Set([
   "Text",

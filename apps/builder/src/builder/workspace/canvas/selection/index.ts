@@ -35,20 +35,7 @@ export {
   hitTestSelectionBounds,
 } from "./types";
 
-// Components
-export { SelectionBox } from "./SelectionBox";
-export type { SelectionBoxProps, SelectionBoxHandle } from "./SelectionBox";
-
-export { TransformHandle } from "./TransformHandle";
-export type { TransformHandleProps } from "./TransformHandle";
-
-export { LassoSelection } from "./LassoSelection";
-export { getLassoBounds } from "./LassoSelection.utils";
-export type { LassoSelectionProps } from "./LassoSelection";
-
-export { SelectionLayer } from "./SelectionLayer";
-export { findElementsInLasso } from "./SelectionLayer.utils";
-export type { SelectionLayerProps } from "./SelectionLayer";
+// Phase 9: PixiJS Selection 컴포넌트 제거 (Skia selectionRenderer가 대체)
 export {
   findBodySelectionAtCanvasPoint,
   pickTopmostHitElementId,

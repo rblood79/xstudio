@@ -1,4 +1,5 @@
-import type { Container } from "pixi.js";
+// PixiJS Container 대체 (Phase 9: PixiJS 제거)
+type Container = { parent?: Container | null; visible: boolean };
 import type { Element } from "../../../../types/core/store.types";
 import {
   calculateCombinedBounds,

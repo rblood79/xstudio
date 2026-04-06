@@ -21,27 +21,28 @@ import {
   lazy,
   Suspense,
 } from "react";
-import { Application } from "@pixi/react";
-import type { Application as PixiApplication } from "pixi.js";
+// Phase 9: PixiJS 제거 — Application stub
+type PixiApplication = unknown;
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
 
-// P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
-// 🚀 Phase 5: 동적 해상도 및 저사양 기기 감지
-import {
-  useExtend,
-  PIXI_COMPONENTS,
-  isLowEndDevice,
-  getDynamicResolution,
-} from "./pixiSetup";
+// Phase 9: pixiSetup 제거 — stub
+const useExtend = (_: unknown) => {};
+const PIXI_COMPONENTS = {};
+const isLowEndDevice = () => false;
+const getDynamicResolution = (_a: unknown, _b: unknown) => 1;
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
-import { ClickableBackground } from "./components/ClickableBackground";
+// Phase 9: ClickableBackground 제거
+const ClickableBackground = (_: Record<string, unknown>) => null;
 import { ElementsLayer } from "./components/ElementsLayer";
-import { PageContainer } from "./components/PageContainer";
-import { SelectionLayer, type BoundingBox } from "./selection";
+// Phase 9: PageContainer 제거
+const PageContainer = (_: Record<string, unknown>) => null;
+// Phase 9: SelectionLayer 제거 (Skia selectionRenderer가 대체)
+const SelectionLayer = (_: Record<string, unknown>) => null;
+type BoundingBox = { x: number; y: number; width: number; height: number };
 import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 // GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
@@ -112,10 +113,8 @@ const PAGE_STACK_GAP = 80;
 /**
  * Phase 5: CanvasKit 오버레이 (Lazy Import)
  */
-const skiaOverlayImport = () =>
-  import("./skia/SkiaOverlay").then((mod) => ({ default: mod.SkiaOverlay }));
-const SkiaOverlayComponent = lazy(skiaOverlayImport);
-skiaOverlayImport(); // 모듈 프리로드: lazy 해제 없이 초기 번들 크기 유지하면서 청크 로딩 선행
+// Phase 9: SkiaOverlay 제거 (REMOVE_PIXI=true → SkiaCanvas 단독)
+const SkiaOverlayComponent = () => null;
 
 /**
  * ADR-100 Phase 2.7: SkiaCanvas (SceneGraph 기반 단독 렌더러, Lazy Import)
