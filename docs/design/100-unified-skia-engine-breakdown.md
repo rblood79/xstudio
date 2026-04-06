@@ -1873,3 +1873,393 @@ Phase별 Gate 통과 조건:
     ├─ Taffy 기존 테스트 100% 통과
     └─ sticky: CSS 비교 테스트 (≤1px)
 ```
+
+---
+
+## 14. Baseline 실측 데이터 프레임워크
+
+> **원칙: 추정 수치로 결정하지 않는다.** 모든 성능 수치는 실측으로 교체.
+> 기존 `gpuProfilerCore.ts` + `GPUDebugOverlay.tsx` 인프라를 확장.
+
+### 14.1 측정 항목 + 방법
+
+| 메트릭                   | 측정 방법                                                    | 도구                | 수집 시점                        |
+| ------------------------ | ------------------------------------------------------------ | ------------------- | -------------------------------- |
+| **FPS (p50/p95/p99)**    | gpuProfilerCore.ts 60프레임 샘플링                           | 기존 GPUProfiler    | Phase 0 baseline + 매 Phase Gate |
+| **프레임타임 breakdown** | SkiaOverlay.tsx renderFrame 내 `performance.now()` 구간 측정 | 기존 코드 확장      | Phase 0                          |
+| **드래그 지연**          | pointerdown → 다음 requestAnimationFrame 완료까지            | 커스텀 측정         | Phase 0                          |
+| **초기 로드**            | navigationStart → SkiaOverlay 첫 렌더 완료                   | Performance API     | Phase 0                          |
+| **JS 힙 메모리**         | `performance.memory.usedJSHeapSize`                          | Chrome DevTools API | Phase 0                          |
+| **GPU 메모리**           | `WEBGL_debug_renderer_info` + 텍스처 크기 합산               | GPUDebugOverlay     | Phase 0                          |
+| **WebGL 컨텍스트 수**    | `document.querySelectorAll('canvas')` + getContext 호출 수   | 수동 확인           | Phase 0                          |
+| **WASM 초기화 시간**     | 각 WASM 모듈 `init()` 전후 `performance.now()`               | 기존 initRustWasm   | Phase 0                          |
+| **스케일링 지수(b)**     | 100/500/1K/2K/5K 요소에서 프레임타임 → log-log 회귀          | 벤치마크 스크립트   | Phase 0 + 매 Phase               |
+
+### 14.2 벤치마크 시나리오
+
+```typescript
+// benchmarks/canvasStress.ts — Phase 0에서 구축, 이후 매 Phase 실행
+const SCENARIOS = [
+  // 정적 렌더링
+  { name: "static-100", elements: 100, mutations: 0, duration: 5000 },
+  { name: "static-1000", elements: 1000, mutations: 0, duration: 5000 },
+  { name: "static-5000", elements: 5000, mutations: 0, duration: 5000 },
+
+  // 실시간 변경 (매 프레임 N개 스타일 변경)
+  { name: "mutate-1000x10", elements: 1000, mutations: 10, duration: 5000 },
+  { name: "mutate-5000x10", elements: 5000, mutations: 10, duration: 5000 },
+
+  // 드래그 시뮬레이션
+  { name: "drag-500", elements: 500, drag: true, duration: 3000 },
+  { name: "drag-2000", elements: 2000, drag: true, duration: 3000 },
+
+  // 줌/팬
+  { name: "zoom-1000", elements: 1000, zoom: true, duration: 3000 },
+
+  // 멀티페이지
+  { name: "multipage-3x1000", pages: 3, elementsPerPage: 1000, duration: 5000 },
+];
+```
+
+### 14.3 문서 내 추정치 → 실측치 교체 맵
+
+| 위치                                   | 현재 (추정) | Phase 0에서 교체할 값 |
+| -------------------------------------- | ----------- | --------------------- |
+| 성능 예산 표 "현재 1000 요소 FPS"      | 45-55fps    | `static-1000` p50/p95 |
+| 성능 예산 표 "현재 드래그 지연"        | ~12ms       | `drag-500` p95        |
+| 성능 예산 표 "현재 JS 힙"              | ~150MB      | `static-1000` 힙 측정 |
+| 성능 예산 표 "현재 초기 로드"          | ~2.5초      | Performance API 실측  |
+| 프레임 예산 "React reconcile 5-8ms"    | 추정        | renderFrame breakdown |
+| 프레임 예산 "PixiJS sprite sync 3-5ms" | 추정        | renderFrame breakdown |
+| 스케일링 지수                          | 없음        | log-log 회귀 b 값     |
+
+---
+
+## 15. 점진적 전달 전략 — Feature Flag 기반
+
+> **원칙: Shadow 빅뱅 전환이 아니라, 매주 사용자에게 가치를 전달한다.**
+
+### 15.1 Feature Flag 체계
+
+```typescript
+// featureFlags.ts
+export const UNIFIED_ENGINE_FLAGS = {
+  // Phase 1: Layout Engine 교체 (내부, 사용자 무영향)
+  USE_RUST_LAYOUT_ENGINE: false, // Taffy fork WASM
+
+  // Phase 2: PixiJS 점진 제거 (각 단계별 독립 배포)
+  USE_DOM_HOVER: false, // PixiJS hover → HoverManager
+  USE_DOM_CURSOR: false, // PixiJS cursor → CursorManager
+  USE_CAMERA_OBJECT: false, // PixiJS Container → Camera 클래스
+  USE_SCENE_GRAPH: false, // @pixi/react 트리 → SceneGraph
+  REMOVE_PIXI: false, // PixiJS 완전 제거 (위 4개 모두 true일 때)
+
+  // Phase 3: 렌더링 확장 (점진 활성화)
+  USE_HYBRID_TEXT: false, // 하이브리드 텍스트 측정
+  USE_TILE_CACHE: false, // 타일 무효화 렌더링
+
+  // 전체 전환
+  UNIFIED_ENGINE: false, // 위 모든 flag를 한번에 활성화
+} as const;
+```
+
+### 15.2 점진 배포 일정
+
+```
+Week 2: USE_DOM_HOVER=true → 배포
+  효과: PixiJS hover 이벤트 제거. 사용자 무체감. 메모리 -5%.
+  검증: H1~H5 기능 파리티 + 벤치마크.
+
+Week 3: USE_DOM_CURSOR=true + USE_CAMERA_OBJECT=true → 배포
+  효과: PixiJS cursor/camera 제거. 사용자 무체감.
+  검증: V1~V6, H2 기능 파리티.
+
+Week 5: USE_RUST_LAYOUT_ENGINE=true → 배포 (A/B 10%)
+  효과: Taffy → fork 교체. 레이아웃 동일해야 함.
+  검증: 레이아웃 패리티 테스트 + 10% 사용자 모니터링.
+
+Week 7: USE_SCENE_GRAPH=true → 배포 (A/B 10%)
+  효과: @pixi/react 트리 제거. fps 향상 시작.
+  검증: 78개 기능 파리티 + fps 벤치마크.
+
+Week 8: REMOVE_PIXI=true → 배포 (A/B 10% → 50%)
+  효과: PixiJS 완전 제거. WebGL -1, 메모리 -50%.
+  검증: 전체 벤치마크 + 50% 사용자 모니터링.
+
+Week 10: USE_HYBRID_TEXT=true → 배포
+  효과: 텍스트 줄바꿈 붕괴 해결.
+  검증: 텍스트 정합성 5000 조합.
+
+Week 12: USE_TILE_CACHE=true → 배포
+  효과: 5000 요소 성능 도달.
+  검증: 스케일링 지수 b < 0.8.
+
+Week 14: UNIFIED_ENGINE=true → 전체 전환 (100%)
+  이전 코드 경로 soft-delete (6주 후 hard-delete).
+```
+
+### 15.3 A/B 비교 자동화
+
+```typescript
+// 매 배포 시 A/B 비교 수집
+interface ABMetrics {
+  flagName: string;
+  userGroup: "control" | "treatment";
+  fps_p50: number;
+  fps_p95: number;
+  dragLatency_p95: number;
+  errorRate: number; // 콘솔 에러/분
+  layoutMismatch: number; // Preview↔Canvas 불일치 건수
+}
+```
+
+---
+
+## 16. 롤백 전략
+
+> **원칙: 어떤 Phase에서든 이전 상태로 즉시 복원 가능해야 한다.**
+
+### 16.1 Feature Flag 롤백
+
+```
+문제 발견 시:
+  1. 해당 flag를 false로 변경 (서버 설정 또는 환경 변수)
+  2. 사용자는 다음 페이지 로드에서 이전 경로로 자동 전환
+  3. 새 코드와 이전 코드가 공존하므로 즉시 롤백 가능
+
+롤백 시간: < 1분 (flag 변경 + CDN 캐시 무효화)
+```
+
+### 16.2 Phase별 롤백 시나리오
+
+| Phase | 실패 시나리오               | 롤백 방법                                   |   영향 범위   |
+| :---: | --------------------------- | ------------------------------------------- | :-----------: |
+|   1   | Rust Engine 레이아웃 불일치 | `USE_RUST_LAYOUT_ENGINE=false` → 기존 Taffy | 0 (내부 교체) |
+|   2   | SceneGraph 기능 누락        | `USE_SCENE_GRAPH=false` → @pixi/react 복원  | 0 (flag 전환) |
+|   2   | PixiJS 제거 후 성능 회귀    | `REMOVE_PIXI=false` → PixiJS 복원           | 0 (flag 전환) |
+|   3   | sticky 오동작               | sticky만 비활성화 (JS polyfill fallback)    |  해당 기능만  |
+|   3   | 텍스트 하이브리드 불일치    | `USE_HYBRID_TEXT=false` → 기존 텍스트 경로  |   텍스트만    |
+|   4   | 타일 캐시 렌더링 아티팩트   | `USE_TILE_CACHE=false` → 전체 렌더          |    성능만     |
+|   5   | Production 전환 후 문제     | `UNIFIED_ENGINE=false` → 전체 이전 경로     |     전체      |
+
+### 16.3 자동 롤백 (Constitutional Invariants)
+
+```typescript
+// constitutionalGuard.ts — production 모니터링
+const INVARIANTS = {
+  fps_p95_min: 30, // 절대 하한 (30fps 미만이면 즉시 롤백)
+  errorRate_max: 5, // 분당 에러 5건 초과 시 롤백
+  layoutMismatch_max: 0, // Preview↔Canvas 불일치 0건
+  dragLatency_p99_max: 50, // 드래그 지연 50ms 초과 시 롤백
+};
+
+function monitorAndAutoRollback(): void {
+  setInterval(() => {
+    const metrics = collectMetrics();
+
+    for (const [key, threshold] of Object.entries(INVARIANTS)) {
+      if (key.endsWith("_min") && metrics[key] < threshold) {
+        rollback(`${key} = ${metrics[key]} < ${threshold}`);
+      }
+      if (key.endsWith("_max") && metrics[key] > threshold) {
+        rollback(`${key} = ${metrics[key]} > ${threshold}`);
+      }
+    }
+  }, 10_000); // 10초 간격
+}
+
+function rollback(reason: string): void {
+  console.error(`🚨 AUTO-ROLLBACK: ${reason}`);
+  // 가장 최근 활성화된 flag를 비활성화
+  disableLastEnabledFlag();
+  // 알림 전송
+  sendAlert(`ADR-100 auto-rollback: ${reason}`);
+}
+```
+
+### 16.4 이전 코드 생명 주기
+
+```
+flag 활성화 → 6주 안정 → 이전 코드 soft-delete (주석 + dead code 표시)
+  → 6주 추가 안정 → hard-delete (코드 제거)
+
+총 12주 공존 → 어떤 시점에서든 롤백 가능
+```
+
+---
+
+## 17. 운영 준비
+
+### 17.1 팀/인력 가정
+
+| 역할                  | 필요 역량                               |      인원       | 비고         |
+| --------------------- | --------------------------------------- | :-------------: | ------------ |
+| Rust/WASM 개발        | Taffy fork + wasm-bindgen               |       1명       | Phase 1 핵심 |
+| TypeScript 프론트엔드 | SceneGraph + StoreBridge + Event 재설계 |       1명       | Phase 2 핵심 |
+| Skia 렌더링           | CanvasKit API + 시각 정합성             | 1명 (겸임 가능) | Phase 3      |
+| QA/벤치마크           | Playwright + 성능 측정                  |      겸임       | 전 Phase     |
+
+**최소 인원: 1명** (순차 실행 14주), **권장: 2명** (Rust + TS 병렬, ~9주)
+
+### 17.2 CI/CD 파이프라인 변경
+
+```yaml
+# .github/workflows/unified-engine.yml (추가)
+unified-engine-ci:
+  steps:
+    # 1. Rust WASM 빌드
+    - name: Build xstudio-layout WASM
+      run: |
+        cd packages/xstudio-layout
+        wasm-pack build --target web --release
+        wasm-opt -Os -o pkg/xstudio_layout_opt.wasm pkg/xstudio_layout_bg.wasm
+
+    # 2. WASM 바이너리 크기 검증
+    - name: Check WASM size
+      run: |
+        SIZE=$(stat -f%z pkg/xstudio_layout_opt.wasm)
+        if [ $SIZE -gt 400000 ]; then
+          echo "❌ WASM size ${SIZE} > 400KB limit"
+          exit 1
+        fi
+
+    # 3. Taffy 레이아웃 패리티 테스트
+    - name: Layout parity tests
+      run: cargo test --release
+
+    # 4. 기존 type-check + 벤치마크
+    - name: TypeScript type check
+      run: pnpm type-check
+
+    # 5. 기능 파리티 E2E (feature flag 활성화)
+    - name: Feature parity E2E
+      run: UNIFIED_ENGINE=true pnpm test:e2e
+
+    # 6. 성능 회귀 (Constitutional)
+    - name: Performance regression
+      run: pnpm bench:canvas -- --assert-no-regression
+```
+
+### 17.3 기존 프로젝트 데이터 호환
+
+```
+현재 프로젝트 데이터: Supabase DB의 elements + styles + pages
+  → 데이터 스키마는 변경 없음 (Store 레이어 유지)
+  → 레이아웃 계산만 다른 엔진으로 수행
+  → 결과가 동일해야 함 (레이아웃 패리티 테스트로 검증)
+
+호환성 리스크:
+  - Taffy fork가 기존 Taffy와 다른 결과를 내는 경우
+  - 해결: 기존 Taffy 테스트 100% 통과 (Phase 1 Gate)
+
+데이터 마이그레이션: 불필요
+  - 요소 데이터는 Store 레벨에서 동일
+  - 레이아웃 결과는 런타임 계산 (저장하지 않음)
+  - CSS 스타일은 동일하게 해석
+```
+
+### 17.4 모니터링 (Production 전환 후)
+
+```typescript
+// monitoring/unifiedEngineMetrics.ts
+// Supabase Edge Function 또는 Analytics로 수집
+
+interface EngineMetrics {
+  userId: string;
+  engineVersion: "legacy" | "unified";
+  timestamp: number;
+
+  // 성능
+  fps_p50: number;
+  fps_p95: number;
+  frameTime_p95: number;
+  dragLatency_p95: number;
+
+  // 리소스
+  jsHeapMB: number;
+  webglContexts: number;
+
+  // 정합성
+  textMismatchCount: number; // 하이브리드 텍스트 fallback 횟수
+  layoutRecalcCount: number; // 2-pass 발동 횟수
+
+  // 에러
+  renderErrorCount: number;
+  wasmErrorCount: number;
+}
+```
+
+### 17.5 Taffy Fork Upstream 동기화 정책
+
+```
+정책: Cherry-pick (전체 동기화 아님)
+
+주기: Taffy 분기별 릴리스(~3개월) 시 변경 로그 확인
+  → 버그 수정: cherry-pick
+  → 새 기능: 필요성 평가 후 선택적 적용
+  → Breaking change: 영향 분석 후 결정
+
+자동화:
+  - GitHub Action: Taffy 새 릴리스 시 알림 (dependabot 스타일)
+  - diff 요약 자동 생성 (flex/grid/block 관련 변경만 필터)
+```
+
+---
+
+## 18. 위험 정량화
+
+> **원칙: "MEDIUM"이 아니라 확률 × 영향 = 예상 비용으로 위험을 평가한다.**
+
+### 18.1 위험 레지스터
+
+| #   | 위험                                                     | 확률 | 영향 (일수) | 예상 비용 | 완화 방법                                   | 완화 비용 |
+| --- | -------------------------------------------------------- | :--: | :---------: | :-------: | ------------------------------------------- | :-------: |
+| R1  | Taffy fork 테스트 이식 실패 (API 차이)                   | 10%  |    +5일     |   0.5일   | fork 전 API 호환 매트릭스 작성              |    1일    |
+| R2  | WASM 바이너리 크기 >400KB                                | 10%  |    +3일     |   0.3일   | wasm-opt + feature flag 분리 + tree-shaking |   0.5일   |
+| R3  | sticky 알고리즘이 중첩 스크롤에서 오동작                 | 15%  |    +3일     |  0.45일   | WPT 5개 케이스 + 브라우저 비교              |    1일    |
+| R4  | SceneGraph dirty rect 5000 요소에서 60fps 미달           | 20%  |    +5일     |   1.0일   | 타일 캐시 + 프로파일링 반복                 |    2일    |
+| R5  | 텍스트 하이브리드 Canvas2D↔CanvasKit 줄바꿈 불일치 (CJK) | 15%  |    +4일     |   0.6일   | Intl.Segmenter CJK 테스트 50개              |    1일    |
+| R6  | PixiJS 제거 후 미발견 기능 누락                          | 10%  |    +3일     |   0.3일   | 78개 파리티 체크리스트 + E2E                |    2일    |
+| R7  | CSS 시각 정합성 G1~G7 수정 후 다른 렌더링 회귀           | 10%  |    +2일     |   0.2일   | pixelmatch 전체 컴포넌트 스크린샷           |    1일    |
+| R8  | Taffy fork upstream 동기화 누락으로 버그 전파            |  5%  |    +2일     |   0.1일   | 분기별 cherry-pick 정책 + 알림              |   0.5일   |
+
+### 18.2 총 위험 예산
+
+```
+총 예상 비용 (확률 가중):
+  R1(0.5) + R2(0.3) + R3(0.45) + R4(1.0) + R5(0.6) + R6(0.3) + R7(0.2) + R8(0.1)
+  = 3.45일
+
+총 완화 비용:
+  1 + 0.5 + 1 + 2 + 1 + 2 + 1 + 0.5 = 9일
+
+14주(70 영업일) 대비:
+  위험 예산 3.45일 = 4.9% → 허용 가능
+  완화 비용 9일 = 12.9% → Phase 0 + 각 Phase Gate에 분산
+
+최악의 경우 (모든 위험 실현):
+  5 + 3 + 3 + 5 + 4 + 3 + 2 + 2 = 27일 추가 → 14주 → 19.4주
+  → 그래도 원본 21주보다 짧음
+```
+
+### 18.3 위험 대시보드 (Phase Gate에서 업데이트)
+
+```
+Phase 0 완료 시:
+  R1: □ 미확인  → API 호환 매트릭스 완성 후 확률 재평가
+  R2: □ 미확인  → 초기 WASM 빌드 후 크기 확인
+  R4: □ 미확인  → baseline 스케일링 지수(b) 측정 후 재평가
+
+Phase 1 완료 시:
+  R1: ✅ 해소 또는 ❌ 실현 → 영향 실측
+  R2: ✅ 해소 또는 ❌ 실현 → wasm-opt 적용
+
+Phase 2 완료 시:
+  R4: ✅ 해소 또는 ❌ 실현 → 타일 캐시 필요 여부 확정
+  R6: ✅ 해소 또는 ❌ 실현 → 78개 파리티 결과
+
+각 Phase에서 위험이 실현되면:
+  → 영향 일수를 실측값으로 교체
+  → 총 일정에 반영
+  → 다음 Phase 조정
+```
