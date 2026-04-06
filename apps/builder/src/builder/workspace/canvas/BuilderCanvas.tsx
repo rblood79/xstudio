@@ -677,8 +677,8 @@ export function BuilderCanvas({
           </button>
         </div>
       )}
-      {/* 🚀 Phase 7: Application 즉시 렌더링 / ADR-100: REMOVE_PIXI=true 시 스킵 */}
-      {containerEl && !isUnifiedFlag("REMOVE_PIXI") && (
+      {/* 🚀 Phase 7: Application — REMOVE_PIXI=true에서도 유지 (ElementSprite 데이터 등록 필요) */}
+      {containerEl && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
