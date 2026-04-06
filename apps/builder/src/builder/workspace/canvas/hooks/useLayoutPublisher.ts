@@ -35,7 +35,10 @@ export function useLayoutPublisher(
   layoutVersion: number,
 ): void {
   const pagesRef = useRef(pages);
-  pagesRef.current = pages;
+
+  useEffect(() => {
+    pagesRef.current = pages;
+  });
 
   useEffect(() => {
     const currentPages = pagesRef.current;
