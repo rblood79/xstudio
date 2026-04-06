@@ -1,48 +1,19 @@
 /**
  * 통합된 이벤트 타입 시스템
- * - Inspector EventHandler와 EventEngine ElementEvent 통합
- * - React Aria 이벤트 포함
+ *
+ * ⚠️ EventType과 EVENT_TYPE_LABELS는 events.registry.ts 정본에서 파생됩니다.
+ * 새 이벤트 추가 시 events.registry.ts의 EVENT_REGISTRY만 수정하세요.
  */
 
 import type { LucideIcon } from "lucide-react";
 
-/**
- * 지원되는 이벤트 타입
- */
-export type EventType =
-  // Mouse Events
-  | "onClick"
-  | "onDoubleClick"
-  | "onMouseEnter"
-  | "onMouseLeave"
-  | "onMouseDown"
-  | "onMouseUp"
-
-  // Form Events
-  | "onChange"
-  | "onInput"
-  | "onSubmit"
-  | "onFocus"
-  | "onBlur"
-
-  // Keyboard Events
-  | "onKeyDown"
-  | "onKeyUp"
-  | "onKeyPress"
-
-  // React Aria Events (중요!)
-  | "onPress"
-  | "onSelectionChange"
-  | "onAction"
-  | "onOpenChange"
-  | "onChangeEnd"
-  | "onExpandedChange"
-  | "onRemove"
-
-  // Other
-  | "onScroll"
-  | "onResize"
-  | "onLoad";
+// EventType은 registry 정본에서 derive (ADR-055)
+export type {
+  EventType,
+  ImplementedEventType,
+  EventCategoryId,
+} from "@/types/events/events.registry";
+export { EVENT_TYPE_LABELS } from "@/types/events/events.registry";
 
 /**
  * 이벤트 핸들러 (통합 버전)
@@ -457,44 +428,7 @@ export interface EventExecutionResult {
   totalExecutionTime: number;
 }
 
-/**
- * 이벤트 타입 레이블 맵
- */
-export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  // Mouse
-  onClick: "클릭",
-  onDoubleClick: "더블클릭",
-  onMouseEnter: "마우스 진입",
-  onMouseLeave: "마우스 나감",
-  onMouseDown: "마우스 다운",
-  onMouseUp: "마우스 업",
-
-  // Form
-  onChange: "값 변경",
-  onInput: "입력",
-  onSubmit: "제출",
-  onFocus: "포커스",
-  onBlur: "포커스 해제",
-
-  // Keyboard
-  onKeyDown: "키 누름",
-  onKeyUp: "키 뗌",
-  onKeyPress: "키 입력",
-
-  // React Aria
-  onPress: "프레스",
-  onSelectionChange: "선택 변경",
-  onAction: "액션",
-  onOpenChange: "열림/닫힘",
-  onChangeEnd: "값 변경 완료",
-  onExpandedChange: "펼침/접힘 변경",
-  onRemove: "항목 제거",
-
-  // Other
-  onScroll: "스크롤",
-  onResize: "크기 변경",
-  onLoad: "로드",
-};
+// EVENT_TYPE_LABELS는 파일 상단에서 registry re-export로 제공됨
 
 /**
  * 액션 타입 레이블 맵

@@ -1,205 +1,320 @@
 /**
- * Event Type Registry
+ * Event Type Registry — 이벤트 정의의 유일한 정본 (ADR-055)
  *
- * 중앙 이벤트 타입 레지스트리 - 타입 시스템과 런타임 구현의 단일 진실 공급원
+ * 새 이벤트 추가 시 이 파일의 EVENT_REGISTRY만 수정하면 됩니다.
+ * EventType, ImplementedEventType, EVENT_TYPE_LABELS는 자동 derive됩니다.
  *
- * 이 파일은 다음을 보장합니다:
- * 1. UI에서 선택 가능한 이벤트/액션 = 실제로 작동하는 이벤트/액션
- * 2. 타입 시스템과 런타임 검증의 동기화
- * 3. 새 이벤트/액션 추가 시 체크리스트로 활용
+ * 1차 파생물: EventType, ImplementedEventType, EVENT_TYPE_LABELS, EVENT_CATEGORIES
+ * 2차 파생물(별도 파일): metadata.ts supportedEvents, COMPONENT_RECOMMENDED_EVENTS
  */
 
-// ===== 구현된 이벤트 타입 (화이트리스트) =====
+// ===== 이벤트 카테고리 ID =====
 
-/**
- * 현재 구현되어 실제로 작동하는 이벤트 타입 목록
- *
- * 새 이벤트 추가 체크리스트:
- * 1. 이 배열에 추가
- * 2. EventHandlerFactory의 allowedEventTypes에 추가
- * 3. 실제 이벤트 핸들러 구현
- * 4. Inspector UI에서 테스트
- */
-export const IMPLEMENTED_EVENT_TYPES = [
-  // Mouse Events (구현됨)
-  "onClick",
-  "onMouseEnter",
-  "onMouseLeave",
+export type EventCategoryId =
+  | "mouse"
+  | "form"
+  | "keyboard"
+  | "reactAria"
+  | "other";
 
-  // Form Events (구현됨)
-  "onChange",
-  "onSubmit",
-  "onFocus",
-  "onBlur",
+// ===== 이벤트 정의 인터페이스 =====
 
-  // Keyboard Events (구현됨)
-  "onKeyDown",
-  "onKeyUp",
+interface EventDef {
+  label: string;
+  category: EventCategoryId;
+  implemented: boolean;
+}
 
-  // React Aria Events (구현됨)
-  "onPress", // React Aria 전용 (Button, Link 등)
-  "onSelectionChange", // 리스트/선택 컴포넌트 (ListBox, Select, ComboBox 등)
-  "onAction", // 메뉴 아이템 (Menu)
-  "onOpenChange", // 드롭다운/모달 (Select, ComboBox, Dialog 등)
-  "onChangeEnd", // Slider, Color 컴포넌트 값 확정
-  "onExpandedChange", // Disclosure, Tree 확장/축소
-  "onRemove", // TagGroup 항목 제거
+// ===== 정본: EVENT_REGISTRY =====
 
-  // 향후 구현 예정:
-  // 'onDoubleClick',    // 더블클릭
-  // 'onInput',          // 입력 중
-  // 'onScroll',         // 스크롤
-  // 'onResize',         // 리사이즈
-  // 'onHover',          // React Aria 호버
-  // 'onDragStart',      // 드래그 시작
-  // 'onDragEnd',        // 드래그 종료
-  // 'onDrop',           // 드롭
-] as const;
+export const EVENT_REGISTRY = {
+  // Mouse Events
+  onClick: {
+    label: "클릭",
+    category: "mouse",
+    implemented: true,
+  },
+  onDoubleClick: {
+    label: "더블클릭",
+    category: "mouse",
+    implemented: false,
+  },
+  onMouseEnter: {
+    label: "마우스 진입",
+    category: "mouse",
+    implemented: true,
+  },
+  onMouseLeave: {
+    label: "마우스 나감",
+    category: "mouse",
+    implemented: true,
+  },
+  onMouseDown: {
+    label: "마우스 다운",
+    category: "mouse",
+    implemented: false,
+  },
+  onMouseUp: {
+    label: "마우스 업",
+    category: "mouse",
+    implemented: false,
+  },
 
-export type EventType = (typeof IMPLEMENTED_EVENT_TYPES)[number];
+  // Form Events
+  onChange: {
+    label: "값 변경",
+    category: "form",
+    implemented: true,
+  },
+  onInput: {
+    label: "입력",
+    category: "form",
+    implemented: false,
+  },
+  onSubmit: {
+    label: "제출",
+    category: "form",
+    implemented: true,
+  },
+  onFocus: {
+    label: "포커스",
+    category: "form",
+    implemented: true,
+  },
+  onBlur: {
+    label: "포커스 해제",
+    category: "form",
+    implemented: true,
+  },
 
-// ===== 구현된 액션 타입 (화이트리스트) =====
+  // Keyboard Events
+  onKeyDown: {
+    label: "키 누름",
+    category: "keyboard",
+    implemented: true,
+  },
+  onKeyUp: {
+    label: "키 뗌",
+    category: "keyboard",
+    implemented: true,
+  },
+  onKeyPress: {
+    label: "키 입력",
+    category: "keyboard",
+    implemented: false,
+  },
 
-/**
- * 현재 구현되어 실제로 작동하는 액션 타입 목록
- *
- * 새 액션 추가 체크리스트:
- * 1. 이 배열에 추가
- * 2. EventEngine의 actionHandlers에 구현 함수 등록
- * 3. 액션 에디터 컴포넌트 생성 (src/builder/inspector/events/actions/)
- * 4. ACTION_METADATA에 메타데이터 추가
- * 5. Inspector UI에서 테스트
- */
+  // React Aria Events
+  onPress: {
+    label: "프레스",
+    category: "reactAria",
+    implemented: true,
+  },
+  onSelectionChange: {
+    label: "선택 변경",
+    category: "reactAria",
+    implemented: true,
+  },
+  onAction: {
+    label: "액션",
+    category: "reactAria",
+    implemented: true,
+  },
+  onOpenChange: {
+    label: "열림/닫힘",
+    category: "reactAria",
+    implemented: true,
+  },
+  onChangeEnd: {
+    label: "값 변경 완료",
+    category: "reactAria",
+    implemented: true,
+  },
+  onExpandedChange: {
+    label: "펼침/접힘 변경",
+    category: "reactAria",
+    implemented: true,
+  },
+  onRemove: {
+    label: "항목 제거",
+    category: "reactAria",
+    implemented: true,
+  },
+
+  // Other Events
+  onScroll: {
+    label: "스크롤",
+    category: "other",
+    implemented: false,
+  },
+  onResize: {
+    label: "크기 변경",
+    category: "other",
+    implemented: false,
+  },
+  onLoad: {
+    label: "로드",
+    category: "other",
+    implemented: false,
+  },
+} as const satisfies Record<string, EventDef>;
+
+// ===== 1차 파생: 타입 =====
+
+/** 모든 이벤트 타입 (구현 + 미구현) */
+export type EventType = keyof typeof EVENT_REGISTRY;
+
+/** 구현된 이벤트만 */
+export type ImplementedEventType = {
+  [K in EventType]: (typeof EVENT_REGISTRY)[K]["implemented"] extends true
+    ? K
+    : never;
+}[EventType];
+
+// ===== 1차 파생: 런타임 상수 =====
+
+/** 구현된 이벤트 배열 (런타임 whitelist) */
+export const IMPLEMENTED_EVENT_TYPES = (
+  Object.keys(EVENT_REGISTRY) as EventType[]
+).filter((k) => EVENT_REGISTRY[k].implemented) as ImplementedEventType[];
+
+/** 이벤트 타입 → 한글 레이블 매핑 */
+export const EVENT_TYPE_LABELS = Object.fromEntries(
+  (Object.entries(EVENT_REGISTRY) as [EventType, EventDef][]).map(([k, v]) => [
+    k,
+    v.label,
+  ]),
+) as Record<EventType, string>;
+
+/** 카테고리별 이벤트 목록 (자동 집계) */
+export const EVENT_CATEGORIES_BY_ID = (
+  Object.entries(EVENT_REGISTRY) as [EventType, EventDef][]
+).reduce<Record<EventCategoryId, EventType[]>>(
+  (acc, [key, def]) => {
+    if (!acc[def.category]) acc[def.category] = [];
+    acc[def.category].push(key);
+    return acc;
+  },
+  {} as Record<EventCategoryId, EventType[]>,
+);
+
+/** 레거시 호환: EVENT_CATEGORIES (기존 구조 유지) */
+export const EVENT_CATEGORIES = {
+  mouse: {
+    label: "Mouse Events",
+    events: EVENT_CATEGORIES_BY_ID.mouse ?? [],
+  },
+  form: {
+    label: "Form Events",
+    events: EVENT_CATEGORIES_BY_ID.form ?? [],
+  },
+  keyboard: {
+    label: "Keyboard Events",
+    events: EVENT_CATEGORIES_BY_ID.keyboard ?? [],
+  },
+  interaction: {
+    label: "Interaction Events",
+    events: EVENT_CATEGORIES_BY_ID.reactAria ?? [],
+  },
+  other: {
+    label: "Other Events",
+    events: EVENT_CATEGORIES_BY_ID.other ?? [],
+  },
+} as const;
+
+// ===== 타입 가드 =====
+
+/** 이벤트 타입이 registry에 존재하는지 확인 */
+export function isEventType(eventType: string): eventType is EventType {
+  return eventType in EVENT_REGISTRY;
+}
+
+/** 이벤트 타입이 구현되어 있는지 확인 */
+export function isImplementedEventType(
+  eventType: string,
+): eventType is ImplementedEventType {
+  return (
+    eventType in EVENT_REGISTRY &&
+    EVENT_REGISTRY[eventType as EventType].implemented
+  );
+}
+
+// ===== 액션 타입 (변경 없음 — 이벤트 정본화와 별도) =====
+
 export const IMPLEMENTED_ACTION_TYPES = [
-  // Navigation (구현됨)
+  // Navigation
   "navigate",
   "scroll_to",
-  "scrollTo", // alias for scroll_to
+  "scrollTo",
 
-  // UI State (구현됨)
+  // UI State
   "toggle_visibility",
-  "toggleVisibility", // alias for toggle_visibility
+  "toggleVisibility",
   "show_modal",
-  "showModal", // alias for show_modal
+  "showModal",
   "hide_modal",
-  "hideModal", // alias for hide_modal
+  "hideModal",
   "showToast",
 
-  // Data Management (구현됨)
+  // Data Management
   "update_state",
-  "updateState", // alias for update_state
+  "updateState",
   "set_state",
-  "setState", // alias for set_state
+  "setState",
   "copy_to_clipboard",
-  "copyToClipboard", // alias for copy_to_clipboard
+  "copyToClipboard",
 
-  // Form Operations (구현됨)
+  // Form Operations
   "validate_form",
-  "validateForm", // alias for validate_form
+  "validateForm",
   "reset_form",
-  "resetForm", // alias for reset_form
+  "resetForm",
   "submit_form",
-  "submitForm", // alias for submit_form
+  "submitForm",
   "update_form_field",
-  "updateFormField", // alias for update_form_field
+  "updateFormField",
 
-  // Custom (구현됨)
+  // Custom
   "custom_function",
-  "customFunction", // alias for custom_function
+  "customFunction",
   "api_call",
-  "apiCall", // alias for api_call
+  "apiCall",
   "show_toast",
-  // showToast already above
 
-  // Component Interaction (구현됨)
+  // Component Interaction
   "set_component_state",
-  "setComponentState", // alias for set_component_state
+  "setComponentState",
   "trigger_component_action",
-  "triggerComponentAction", // alias for trigger_component_action
+  "triggerComponentAction",
 
-  // Collection Interaction (구현됨)
+  // Collection Interaction
   "filter_collection",
-  "filterCollection", // alias for filter_collection
+  "filterCollection",
   "select_item",
-  "selectItem", // alias for select_item
+  "selectItem",
   "clear_selection",
-  "clearSelection", // alias for clear_selection
+  "clearSelection",
 
-  // Data Panel Integration (구현됨)
-  "fetchDataTable", // DataTable 데이터 fetch
-  "refreshDataTable", // DataTable 데이터 새로고침
-  "executeApi", // API Endpoint 실행
-  "setVariable", // Variable 값 설정
-  "getVariable", // Variable 값 가져오기
+  // Data Panel Integration
+  "fetchDataTable",
+  "refreshDataTable",
+  "executeApi",
+  "setVariable",
+  "getVariable",
 
-  // DataTable Actions (Phase 3 추가)
-  "loadDataTable", // DataTable 로드 (alias for fetchDataTable with options)
-  "syncComponent", // 컴포넌트 간 데이터 동기화
-  "saveToDataTable", // API 응답을 DataTable에 저장
-
-  // 향후 구현 예정:
-  // 'update_props',        // 요소 props 업데이트
-  // 'trigger_animation',   // 애니메이션 트리거
-  // 'play_sound',          // 사운드 재생
-  // 'send_analytics',      // 분석 이벤트 전송
-  // 'console_log',         // 디버깅용 콘솔 로그
-  // 'set_localStorage',    // localStorage 설정
-  // 'get_localStorage',    // localStorage 가져오기
-  // 'remove_localStorage', // localStorage 삭제
+  // DataTable Actions
+  "loadDataTable",
+  "syncComponent",
+  "saveToDataTable",
 ] as const;
 
 export type ActionType = (typeof IMPLEMENTED_ACTION_TYPES)[number];
 
-// ===== 타입 가드 함수 =====
-
-/**
- * 이벤트 타입이 구현되어 있는지 확인
- */
-export function isImplementedEventType(
-  eventType: string,
-): eventType is EventType {
-  return (IMPLEMENTED_EVENT_TYPES as readonly string[]).includes(eventType);
-}
-
-/**
- * 액션 타입이 구현되어 있는지 확인
- */
 export function isImplementedActionType(
   actionType: string,
 ): actionType is ActionType {
   return (IMPLEMENTED_ACTION_TYPES as readonly string[]).includes(actionType);
 }
-
-// ===== 이벤트 카테고리 (UI 그룹화용) =====
-
-export const EVENT_CATEGORIES = {
-  mouse: {
-    label: "Mouse Events",
-    events: ["onClick", "onMouseEnter", "onMouseLeave"] as const,
-  },
-  form: {
-    label: "Form Events",
-    events: ["onChange", "onSubmit", "onFocus", "onBlur"] as const,
-  },
-  keyboard: {
-    label: "Keyboard Events",
-    events: ["onKeyDown", "onKeyUp"] as const,
-  },
-  interaction: {
-    label: "Interaction Events",
-    events: [
-      "onPress",
-      "onSelectionChange",
-      "onAction",
-      "onOpenChange",
-      "onChangeEnd",
-      "onExpandedChange",
-      "onRemove",
-    ] as const,
-  },
-} as const;
-
-// ===== 액션 카테고리 (UI 그룹화용) =====
 
 export const ACTION_CATEGORIES = {
   navigation: {
@@ -257,14 +372,11 @@ export const ACTION_CATEGORIES = {
 
 // ===== 디버깅 유틸리티 =====
 
-/**
- * 구현된 이벤트/액션 타입 통계
- */
 export function getImplementationStats() {
   return {
     events: {
+      total: Object.keys(EVENT_REGISTRY).length,
       implemented: IMPLEMENTED_EVENT_TYPES.length,
-      categories: Object.keys(EVENT_CATEGORIES).length,
     },
     actions: {
       implemented: IMPLEMENTED_ACTION_TYPES.length,
@@ -272,13 +384,3 @@ export function getImplementationStats() {
     },
   };
 }
-
-/**
- * 개발 모드에서 통계 출력
- */
-/*
-if (import.meta.env.DEV) {
-  const stats = getImplementationStats();
-  console.log('[Event Registry] Implementation Stats:', stats);
-}
-*/
