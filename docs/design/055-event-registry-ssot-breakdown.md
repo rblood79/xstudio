@@ -1,13 +1,14 @@
 # ADR-055 구현 상세: 이벤트 레지스트리 SSOT 통합
 
-## Phase 1: Registry에 레이블 통합 (eventTypes.ts 이중 정의 해소)
+## Phase 1: Registry에 레이블 통합 (eventTypes.ts + events.types.ts 삼중 정의 해소)
 
 ### 변경 파일
 
-| 파일                                                         | 변경 내용                                                                                  |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `apps/builder/src/types/events/events.registry.ts`           | `EVENT_TYPE_LABELS` 추가 (`satisfies Record<EventType, string>`)                           |
-| `apps/builder/src/builder/panels/events/types/eventTypes.ts` | `EventType` union 삭제 → registry re-export. `EVENT_TYPE_LABELS` 삭제 → registry re-export |
+| 파일                                                         | 변경 내용                                                                                      |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `apps/builder/src/types/events/events.registry.ts`           | `EVENT_TYPE_LABELS` 추가 (`satisfies Record<EventType, string>`)                               |
+| `apps/builder/src/builder/panels/events/types/eventTypes.ts` | `EventType` union 삭제 → registry re-export. `EVENT_TYPE_LABELS` 삭제 → registry re-export     |
+| `apps/builder/src/types/events/events.types.ts`              | `EVENT_TYPE_LABELS` (Partial 버전) 삭제 → registry re-export. EventTypePicker import 경로 유지 |
 
 ### 상세
 
@@ -146,8 +147,10 @@ pnpm type-check   # Record<EventType, ...> 계약으로 누락 감지 확인
 
 - [ ] `eventTypes.ts`에서 `EventType` union 수동 나열 제거
 - [ ] `eventTypes.ts`에서 `EVENT_TYPE_LABELS` 제거
+- [ ] `events.types.ts`에서 `EVENT_TYPE_LABELS` (Partial 버전) 제거
 - [ ] `events.registry.ts`에 `EVENT_TYPE_LABELS` 추가 (satisfies 계약)
-- [ ] `eventTypes.ts`에 re-export 추가
+- [ ] `eventTypes.ts`에 registry re-export 추가
+- [ ] `events.types.ts`에 registry re-export 추가 (EventTypePicker import 경로 유지)
 - [ ] 미구현 이벤트 메타데이터 `PLANNED_EVENT_METADATA`로 분리
 - [ ] `EVENT_METADATA` 타입을 `Record<EventType, EventMetadata>`로 강화
 - [ ] EventsPanel 타입 어서션 제거 (optional)
