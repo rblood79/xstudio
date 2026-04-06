@@ -1,5 +1,4 @@
 import type { Element } from "../../../../types/core/store.types";
-import { getElementContainer } from "../elementRegistry";
 import type { CullingResult } from "../hooks/useViewportCulling";
 
 const CULLING_CACHE_LIMIT = 24;
@@ -118,32 +117,7 @@ export function getCachedTopLevelCandidateIds({
   };
 
   for (const root of roots) {
-    const container = getElementContainer(root.id);
-    if (!container) {
-      visitSubtree(root);
-      continue;
-    }
-
-    try {
-      const bounds = (
-        container as {
-          getBounds?: () => {
-            x: number;
-            y: number;
-            width: number;
-            height: number;
-          };
-        }
-      ).getBounds?.();
-      if (
-        !bounds ||
-        (bounds.width <= 0 && bounds.height <= 0) ||
-        isInViewport(bounds, viewport)
-      ) {
-        visitSubtree(root);
-      }
-    } catch {
-      visitSubtree(root);
+    visitSubtree(root);
     }
   }
 

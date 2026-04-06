@@ -27,7 +27,7 @@ import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
-type BoundingBox = { x: number; y: number; width: number; height: number };
+import type { BoundingBox } from "./selection/types";
 import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 // GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
@@ -44,7 +44,7 @@ import {
   type RendererInvalidationPacket,
   type SkiaRendererInput,
 } from "./renderers";
-import { getElementBoundsSimple, getElementContainer } from "./elementRegistry";
+import { getElementBoundsSimple } from "./elementRegistry";
 import { GPUDebugOverlay } from "./utils/GPUDebugOverlay";
 import { useCanvasElementSelectionHandlers } from "./hooks/useCanvasElementSelectionHandlers";
 import { useCanvasBackgroundInteraction } from "./hooks/useCanvasBackgroundInteraction";
@@ -382,9 +382,6 @@ export function BuilderCanvas({
     [panOffset, zoom],
   );
 
-  const handleInteractionStart = useCallback(() => {}, []);
-  const handleInteractionEnd = useCallback(() => {}, []);
-
   const rendererInvalidationPacket = useMemo(() => {
     return createRendererInvalidationPacket({
       ai: {
@@ -485,8 +482,6 @@ export function BuilderCanvas({
 
     return computeSelectionBounds({
       getBounds: getElementBoundsSimple,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getContainer: getElementContainer as any,
       pageHeight,
       pagePositions,
       pageWidth,
@@ -670,8 +665,6 @@ export function BuilderCanvas({
           minZoom={0.1}
           maxZoom={5}
           app={null}
-          onInteractionStart={handleInteractionStart}
-          onInteractionEnd={handleInteractionEnd}
           initialPanOffsetX={initialPanOffsetX}
         />
       )}

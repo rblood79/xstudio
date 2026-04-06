@@ -16,10 +16,7 @@
 
 import { useMemo } from "react";
 import type { Element } from "../../../../types/core/store.types";
-import {
-  getElementBoundsSimple,
-  getElementContainer,
-} from "../elementRegistry";
+import { getElementBoundsSimple } from "../elementRegistry";
 import { getCachedCullingResult } from "../scene";
 import { WASM_FLAGS } from "../wasm-bindings/featureFlags";
 import { queryVisibleElements } from "../wasm-bindings/spatialIndex";
@@ -337,10 +334,7 @@ export function useViewportCulling({
         );
 
         const visibleElements = elements.filter(
-          (el) =>
-            !visibleIds.size ||
-            visibleIds.has(el.id) ||
-            !getElementContainer(el.id),
+          (el) => !visibleIds.size || visibleIds.has(el.id),
         );
 
         const culledCount = elements.length - visibleElements.length;
