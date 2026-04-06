@@ -100,46 +100,69 @@ export type EventCategory = (typeof EVENT_REGISTRY)[EventType]["category"];
   - 기술(MEDIUM): `satisfies` 연산자 + conditional type derive가 복잡. `EventCategory` 인터페이스(LucideIcon)를 registry에 포함 시 UI 의존성 오염.
   - 마이그레이션(MEDIUM): `eventTypes.ts`의 넓은 union → 좁은 derive로 전환 시 `eventCategories.ts`의 `EVENT_METADATA` 키가 구현된 이벤트만 커버하도록 변경 필요.
 
-### 대안 B: Registry + Metadata 2-Layer 분리 (Figma 패턴)
+### 대안 B: implemented 플래그 레지스트리 + Metadata 2-Layer (Figma 패턴)
 
-"구현 레이어"와 "UI 메타데이터 레이어"를 명시적으로 분리한다. Registry는 타입과 구현 여부만, UI 메타데이터(icon, description, usage 등)는 별도 파일에 유지한다. 단 `EventType`은 registry에서만 derive.
+"정의 레이어"와 "UI 메타데이터 레이어"를 명시적으로 분리한다. 핵심: **`EventType` = 모든 이벤트 (구현+미구현)**, `ImplementedEventType` = 필터된 서브셋. 현재 빌더 패널의 `EventType`이 미구현 이벤트까지 포함하는 구조를 그대로 수용한다.
 
 ```typescript
-// Layer 1: events.registry.ts (타입 SSOT — 현재 구조 유지 + 레이블 추가)
-export const IMPLEMENTED_EVENT_TYPES = [
-  "onClick",
-  "onChange",
-  // ...
-] as const;
+// Layer 1: events.registry.ts (타입 SSOT — implemented 플래그 기반)
+export const EVENT_REGISTRY = {
+  // 구현됨
+  onClick:           { label: "클릭",           category: "mouse",     implemented: true },
+  onMouseEnter:      { label: "마우스 진입",    category: "mouse",     implemented: true },
+  onChange:           { label: "값 변경",        category: "form",      implemented: true },
+  onPress:           { label: "프레스",          category: "reactAria", implemented: true },
+  // ... 구현된 이벤트
 
-export type EventType = (typeof IMPLEMENTED_EVENT_TYPES)[number];
-
-// 레이블을 registry로 통합 (eventTypes.ts의 EVENT_TYPE_LABELS 제거)
-export const EVENT_TYPE_LABELS = {
-  onClick: "클릭",
-  onChange: "값 변경",
+  // 미구현 (현재 eventTypes.ts의 넓은 union에 포함된 항목)
+  onDoubleClick:     { label: "더블클릭",        category: "mouse",     implemented: false },
+  onScroll:          { label: "스크롤",          category: "other",     implemented: false },
+  onLoad:            { label: "로드",            category: "other",     implemented: false },
   // ...
-} as const satisfies Record<EventType, string>;
-// ← 컴파일 타임에 IMPLEMENTED_EVENT_TYPES와 완전 일치 보장
+} as const satisfies Record<string, EventDef>;
+
+// 모든 이벤트 타입 (현재 eventTypes.ts의 넓은 union 대체)
+export type EventType = keyof typeof EVENT_REGISTRY;
+
+// 구현된 이벤트만 (런타임 whitelist)
+export type ImplementedEventType = {
+  [K in EventType]: (typeof EVENT_REGISTRY)[K]["implemented"] extends true ? K : never;
+}[EventType];
+
+export const IMPLEMENTED_EVENT_TYPES = (Object.keys(EVENT_REGISTRY) as EventType[])
+  .filter((k) => EVENT_REGISTRY[k].implemented) as ImplementedEventType[];
+
+// 레이블은 레지스트리에서 파생 (별도 선언 불필요)
+export const EVENT_TYPE_LABELS = Object.fromEntries(
+  Object.entries(EVENT_REGISTRY).map(([k, v]) => [k, v.label])
+) as Record<EventType, string>;
 
 // Layer 2: eventCategories.ts (UI 메타데이터 — 변경 최소)
 // EventType은 registry에서 import, 메타데이터 객체는 여기에 유지
 import type { EventType } from "@/types/events/events.registry";
 
+// Record<EventType>으로 모든 이벤트(구현+미구현) 커버 — 현재 구조와 동일
 export const EVENT_METADATA: Record<EventType, EventMetadata> = { ... };
-// ← Record<EventType, ...> 이므로 새 이벤트 추가 시 TypeScript가 누락 감지
 ```
 
-`packages/shared`의 `supportedEvents: string[]`은 유지한다. shared의 이벤트 목록은 registry의 `ImplementedEventType`보다 **넓은 개념**이다 — `onClose`(Toast), `onSelect`(FileTrigger), `onDrop*`(DropZone), `onReset`/`onInvalid`(Form), `onSortChange`(TableView), `onError`/`onRefresh`(DataTable) 등이 포함되어 있으며, 이들은 `IMPLEMENTED_EVENT_TYPES`에 아직 없다. `EventsPanel.tsx`의 `isImplementedEventType()` 필터가 런타임에 이를 걸러내므로, shared 측은 `string[]`로 유지하고 빌더 측에서 필터링하는 현재 패턴이 올바르다.
+**이벤트 타입 3계층 정리:**
 
-장점: 최소 변경으로 최대 효과. Registry → 타입 + 레이블 SSOT, UI 레이어는 Record<EventType> 계약으로 컴파일 타임 누락 감지. `eventTypes.ts`의 독립 `EventType` union과 `EVENT_TYPE_LABELS` 제거로 이중 정의 해소.
+| 계층                   | 타입                   | 범위                                            | 소스                          |
+| ---------------------- | ---------------------- | ----------------------------------------------- | ----------------------------- |
+| `EventType`            | 모든 알려진 이벤트     | 구현 + 미구현 (onClick~onLoad)                  | `EVENT_REGISTRY` keys         |
+| `ImplementedEventType` | 구현 완료 이벤트       | EventsPanel에서 실제 사용 가능                  | `implemented: true` 필터      |
+| `string` (shared)      | 컴포넌트별 이벤트 명세 | 위 두 계층보다 넓음 (onClose, onDrop\* 등 포함) | `metadata.ts` supportedEvents |
 
-단점: `eventCategories.ts`는 여전히 별도 파일로 존재 (완전한 1파일 단일화는 아님). `metadata.ts`의 `supportedEvents`는 string[]로 남음 (shared 독립성 제약).
+`packages/shared`의 `supportedEvents: string[]`은 유지한다. shared의 이벤트 목록은 `EventType`보다도 **넓은 개념**이다 — `onClose`(Toast), `onSelect`(FileTrigger), `onDrop*`(DropZone), `onReset`/`onInvalid`(Form), `onSortChange`(TableView), `onError`/`onRefresh`(DataTable) 등이 포함되어 있으며, 이들은 `EVENT_REGISTRY`에도 없을 수 있다. `EventsPanel.tsx`의 `isImplementedEventType()` 필터가 런타임에 이를 걸러내므로, shared 측은 `string[]`로 유지하고 빌더 측에서 필터링하는 현재 패턴이 올바르다.
+
+장점: 현재 빌더 패널의 `EventType`(미구현 포함) 구조를 그대로 수용하면서 단일 소스화. `eventTypes.ts`/`events.types.ts`의 독립 정의를 모두 제거. `implemented` 플래그로 구현/미구현 구분이 레지스트리 내에서 완결.
+
+단점: `eventCategories.ts`는 여전히 별도 파일로 존재 (UI 아이콘 분리). `metadata.ts`의 `supportedEvents`는 string[]로 남음 (shared 독립성 + 더 넓은 이벤트 명세 계층).
 
 - 위험: 기술(LOW) / 성능(LOW) / 유지보수(LOW) / 마이그레이션(LOW)
-  - 기술(LOW): `satisfies` 연산자 사용은 TS 4.9+ 표준. XStudio가 TS 5 사용 중 — 문제없음.
-  - 유지보수(LOW): 이벤트 추가 시 registry 1곳 + `EVENT_METADATA` 1곳 (2파일) → 현재 4파일 대비 개선. `Record<EventType>` 계약으로 컴파일 타임 누락 감지.
-  - 마이그레이션(LOW): `eventTypes.ts`의 `EventType` union을 registry derive로 교체 + `EVENT_TYPE_LABELS`를 registry로 이동. 기존 컨슈머 import 경로는 `events.types.ts` re-export 레이어를 통해 유지 가능.
+  - 기술(LOW): `satisfies` + conditional type은 TS 4.9+ 표준. XStudio가 TS 5 사용 중 — 문제없음.
+  - 유지보수(LOW): 정본 이벤트 정의 추가는 registry 1곳만 수정. 컴포넌트 연결은 metadata.ts + eventCategories.ts에서 추가 수정 필요하지만, `Record<EventType>` 계약이 누락을 컴파일 타임에 감지.
+  - 마이그레이션(LOW): `eventTypes.ts`의 수동 union을 registry re-export로 교체. `events.types.ts`의 `EVENT_TYPE_LABELS`도 re-export로 교체. 기존 컨슈머 import 경로는 re-export 레이어로 유지.
 
 ### 대안 C: Plugin Registry (확장 가능한 동적 레지스트리)
 
@@ -184,21 +207,31 @@ registerEvent({ id: "onDoubleClick", label: "더블클릭", category: "mouse", .
 
 ## Decision
 
-**대안 B: Registry + Metadata 2-Layer 분리**를 채택한다.
+**대안 B: implemented 플래그 레지스트리 + Metadata 2-Layer 분리**를 채택한다.
+
+### 핵심 타입 전략 (확정)
+
+`EVENT_REGISTRY` 객체에 모든 이벤트(구현+미구현)를 `implemented` 플래그와 함께 정의한다:
+
+- `EventType` = `keyof typeof EVENT_REGISTRY` → 모든 이벤트 (현재 `eventTypes.ts`의 넓은 union 대체)
+- `ImplementedEventType` = conditional filter → 구현된 이벤트만 (현재 `events.registry.ts`의 좁은 타입 대체)
+- `string` (shared) = registry보다 넓은 컴포넌트별 이벤트 명세 → 변경 없음
+
+이 전략은 현재 빌더 패널의 `EventType`이 미구현 이벤트까지 포함하는 구조, `EVENT_METADATA`가 모든 이벤트를 커버하는 구조를 **그대로 수용**한다. 별도 분리(`PLANNED_EVENT_METADATA`) 불필요.
 
 ### 선택 근거 (위험 수용 근거)
 
 대안 B의 잔존 위험이 모두 LOW인 이유:
 
-1. **기술 LOW**: `satisfies` 연산자는 TS 4.9+ 표준 기능. XStudio는 TS 5를 사용한다. `Record<EventType, EventMetadata>` 계약이 컴파일 타임에 새 이벤트 추가 시 `EVENT_METADATA` 누락을 감지해준다.
+1. **기술 LOW**: `satisfies` + conditional type은 TS 4.9+ 표준. `EVENT_REGISTRY`에서 `EventType`(전체)과 `ImplementedEventType`(서브셋)을 모두 derive하므로 현재 코드의 두 타입 계층을 자연스럽게 수용.
 
 2. **마이그레이션 LOW**: 변경 범위가 명확히 제한된다.
-   - `eventTypes.ts`에서 `EventType` union 제거 → registry derived type re-export로 교체
-   - `EVENT_TYPE_LABELS`를 registry로 이동
-   - `events.types.ts` re-export 레이어 유지 → 기존 컨슈머 import 경로 무변경
-   - `eventCategories.ts`는 `Record<EventType, ...>` 계약만 추가 — 내용 변경 없음
+   - `eventTypes.ts`에서 `EventType` union 제거 → registry `keyof typeof EVENT_REGISTRY` re-export
+   - `events.types.ts`에서 `EVENT_TYPE_LABELS` 제거 → registry re-export
+   - `eventCategories.ts`는 `Record<EventType, ...>` 계약만 추가 — 미구현 이벤트 메타데이터도 `EventType`에 포함되므로 분리 불필요
+   - 기존 컨슈머 import 경로는 re-export 레이어로 유지
 
-3. **유지보수 LOW**: 이벤트 추가 시 수정 파일 5개 → 2개 (registry + eventCategories). TypeScript가 `EVENT_METADATA`와 `EVENT_TYPE_LABELS` 누락을 컴파일 타임에 강제. `events.types.ts`의 별도 `EVENT_TYPE_LABELS`는 registry re-export로 교체하여 제거.
+3. **유지보수 LOW**: 정본 이벤트 정의 추가는 `EVENT_REGISTRY` **1곳만** 수정. 특정 컴포넌트에서 새 이벤트를 사용하려면 `metadata.ts`(supportedEvents)와 `eventCategories.ts`(COMPONENT_RECOMMENDED_EVENTS)에서 추가 수정 필요 — 단, 이는 "이벤트 정의"가 아니라 "컴포넌트 연결"이므로 성격이 다르다.
 
 ### 기각된 대안 기각 사유
 
@@ -208,68 +241,48 @@ registerEvent({ id: "onDoubleClick", label: "더블클릭", category: "mouse", .
 
 ### 구체적 구현 구조
 
-**Phase 1: Registry에 레이블 통합 (eventTypes.ts + events.types.ts 이중/삼중 정의 해소)**
+**Phase 1: EVENT_REGISTRY 단일 객체 + 기존 파일 re-export**
 
 ```typescript
-// apps/builder/src/types/events/events.registry.ts에 추가
+// apps/builder/src/types/events/events.registry.ts (전면 교체)
+export const EVENT_REGISTRY = {
+  onClick:          { label: "클릭",           category: "mouse",     implemented: true },
+  onDoubleClick:    { label: "더블클릭",       category: "mouse",     implemented: false },
+  onMouseEnter:     { label: "마우스 진입",    category: "mouse",     implemented: true },
+  onMouseLeave:     { label: "마우스 나감",    category: "mouse",     implemented: true },
+  // ... 모든 이벤트 (구현+미구현)
+} as const satisfies Record<string, EventDef>;
 
-// EVENT_TYPE_LABELS를 registry로 이동
-// satisfies: IMPLEMENTED_EVENT_TYPES의 모든 항목을 커버해야 컴파일 통과
-export const EVENT_TYPE_LABELS = {
-  onClick: "클릭",
-  onMouseEnter: "마우스 진입",
-  onMouseLeave: "마우스 나감",
-  onChange: "값 변경",
-  onSubmit: "제출",
-  onFocus: "포커스",
-  onBlur: "포커스 해제",
-  onKeyDown: "키 누름",
-  onKeyUp: "키 뗌",
-  onPress: "프레스",
-  onSelectionChange: "선택 변경",
-  onAction: "액션",
-  onOpenChange: "열림/닫힘",
-  onChangeEnd: "값 변경 완료",
-  onExpandedChange: "펼침/접힘 변경",
-  onRemove: "항목 제거",
-} as const satisfies Record<EventType, string>;
-// ← IMPLEMENTED_EVENT_TYPES에서 derive된 EventType과 키가 불일치하면 컴파일 에러
+export type EventType = keyof typeof EVENT_REGISTRY;
+export type ImplementedEventType = { /* conditional filter */ }[EventType];
+
+export const IMPLEMENTED_EVENT_TYPES = /* filter implemented: true */;
+export const EVENT_TYPE_LABELS = /* derive from registry.label */;
 ```
 
 ```typescript
-// apps/builder/src/builder/panels/events/types/eventTypes.ts에서 제거
-// - EventType union 수동 나열 삭제
-// - EVENT_TYPE_LABELS 삭제
-// + registry에서 re-export로 교체
-export type { EventType } from "@/types/events/events.registry";
+// eventTypes.ts — 수동 union/labels 삭제, re-export만
+export type {
+  EventType,
+  ImplementedEventType,
+} from "@/types/events/events.registry";
 export { EVENT_TYPE_LABELS } from "@/types/events/events.registry";
+// 나머지 인터페이스(EventHandler, EventAction 등)는 유지
 ```
 
 ```typescript
-// apps/builder/src/types/events/events.types.ts에서 제거
-// - EVENT_TYPE_LABELS (Partial 버전) 삭제 → registry re-export
-// - EventTypePicker.tsx는 import 경로 유지 (events.types.ts가 re-export)
+// events.types.ts — EVENT_TYPE_LABELS 삭제, re-export만
 export { EVENT_TYPE_LABELS } from "./events.registry";
+// EventTypePicker.tsx의 import 경로 무변경
 ```
 
-**Phase 2: eventCategories.ts에 Record 계약 추가**
+**Phase 2: eventCategories.ts Record 계약 강화**
 
-```typescript
-// apps/builder/src/builder/panels/events/data/eventCategories.ts
-import type { EventType } from "@/types/events/events.registry";
-
-// Record<EventType, ...>로 변경 — 새 이벤트 추가 시 누락되면 컴파일 에러
-export const EVENT_METADATA: Record<EventType, EventMetadata> = {
-  onClick: { ... },
-  // 이 객체의 키 집합 = IMPLEMENTED_EVENT_TYPES 집합과 정확히 일치해야 함
-};
-```
-
-현재 `EVENT_METADATA`는 미구현 이벤트(`onDoubleClick`, `onScroll` 등)의 메타데이터도 포함한다. Phase 2에서 미구현 이벤트의 메타데이터를 `PLANNED_EVENT_METADATA`로 분리하거나 조건부로 처리한다.
+`EVENT_METADATA: Record<EventType, EventMetadata>` — `EventType`이 모든 이벤트(구현+미구현)이므로 현재 메타데이터 구조와 자연스럽게 호환. 미구현 이벤트 분리 불필요.
 
 **Phase 3: EventsPanel 타입 어서션 제거 (선택)**
 
-`eventTypes.ts`의 `EventType`이 registry derived type으로 교체되면 `EventHandler.event`와 `RegistryEventType`이 동일 타입이 된다. `handler.event as EventTrigger['event']` 강제 어서션이 불필요해진다.
+`EventType`이 단일 소스가 되면 `handler.event as EventTrigger['event']` 강제 어서션이 불필요해진다.
 
 > 구현 상세: [055-event-registry-ssot-breakdown.md](../design/055-event-registry-ssot-breakdown.md)
 
@@ -279,22 +292,20 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
 
 잔존 HIGH 위험 없음.
 
-현재 `EVENT_METADATA`가 미구현 이벤트를 포함하는 문제는 `satisfies Record<EventType, ...>` 계약 추가 시 컴파일 에러로 즉시 드러난다. 이것은 위험이 아니라 **의도된 컴파일 타임 감지** — 마이그레이션 시 수동으로 해결한다.
-
 ---
 
 ## Consequences
 
 ### Positive
 
-- 이벤트 추가 시 수정 파일: **5개 → 2개** (registry + eventCategories). `events.types.ts`/`eventTypes.ts`의 별도 레이블/유니온 제거
-- `satisfies Record<EventType, string>` 계약으로 레이블 누락을 컴파일 타임에 감지
-- `satisfies Record<EventType, EventMetadata>` 계약으로 메타데이터 누락을 컴파일 타임에 감지
-- `EventType`이 단일 소스(registry derived)에서 나오므로 두 타입 간 강제 어서션 제거 가능
+- **정본 이벤트 정의 추가**: `EVENT_REGISTRY` **1곳만** 수정 (현재 5곳). label/category/implemented가 모두 레지스트리에서 derive
+- **컴포넌트 연결 추가**: `metadata.ts`(supportedEvents) + `eventCategories.ts`(COMPONENT_RECOMMENDED_EVENTS) 수정 — 이는 "이벤트 정의"가 아닌 "컴포넌트별 설정"이므로 SSOT 범위 밖
+- `EventType`(전체)과 `ImplementedEventType`(서브셋)이 단일 `EVENT_REGISTRY`에서 derive → `eventTypes.ts`/`events.types.ts`의 수동 union/labels 이중 정의 완전 제거
+- `Record<EventType, EventMetadata>` 계약으로 메타데이터 누락을 컴파일 타임에 감지
+- `EventType`이 단일 소스에서 나오므로 EventsPanel 타입 어서션 제거 가능
 - Registry의 UI 라이브러리 무관성(LucideIcon 비의존) 유지
 
 ### Negative
 
-- `eventTypes.ts`의 `EventType` union이 registry re-export로 교체되면, 미구현 이벤트 타입(`onDoubleClick`, `onScroll` 등)을 참조하는 코드가 있으면 컴파일 에러 발생 (의도된 결과이나 마이그레이션 시 주의)
-- `packages/shared`의 `supportedEvents: string[]`은 shared 독립성 제약과 함께, registry `ImplementedEventType`보다 넓은 이벤트 명세(`onClose`, `onSelect`, `onDrop*`, `onReset`, `onInvalid`, `onError`, `onSortChange`, `onRefresh` 등)를 포함하므로 `EventType[]` 강타입화 불가 — 런타임 `isImplementedEventType()` 필터링 패턴은 유지 필요
-- `EVENT_METADATA`가 현재 미구현 이벤트를 포함하므로, `Record<EventType, EventMetadata>` 계약 적용 시 미구현 이벤트 메타데이터를 `PLANNED_EVENT_METADATA`로 분리하는 추가 작업 필요
+- `packages/shared`의 `supportedEvents: string[]`은 `EventType`보다 넓은 이벤트 명세 계층(`onClose`, `onSelect`, `onDrop*`, `onReset`, `onInvalid`, `onError`, `onSortChange`, `onRefresh` 등)을 포함하므로 `EventType[]` 강타입화 불가 — 런타임 `isImplementedEventType()` 필터링 패턴 유지 필요
+- `events.registry.ts` 전면 교체가 필요하며, 기존 `IMPLEMENTED_EVENT_TYPES` as const 배열 → `EVENT_REGISTRY` 객체로 구조 변경. 단 re-export 레이어로 기존 컨슈머 import 경로 유지
