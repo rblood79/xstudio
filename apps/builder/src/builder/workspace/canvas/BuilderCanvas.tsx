@@ -142,6 +142,7 @@ function SkiaOverlayLazy(props: {
 function SkiaCanvasLazy(props: {
   containerEl: HTMLDivElement;
   backgroundColor?: number;
+  app?: PixiApplication;
   invalidateLayout: () => void;
   invalidationPacket: RendererInvalidationPacket;
   rendererInput: SkiaRendererInput;
@@ -789,10 +790,11 @@ export function BuilderCanvas({
           dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
         />
       )}
-      {containerEl && isUnifiedFlag("REMOVE_PIXI") && (
+      {containerEl && isUnifiedFlag("REMOVE_PIXI") && pixiApp && (
         <SkiaCanvasLazy
           containerEl={containerEl}
           backgroundColor={backgroundColor}
+          app={pixiApp}
           invalidateLayout={invalidateLayout}
           invalidationPacket={rendererInvalidationPacket}
           rendererInput={skiaRendererInput}

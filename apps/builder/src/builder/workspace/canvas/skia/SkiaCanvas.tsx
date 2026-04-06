@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import type { Application as PixiApplication, Container } from "pixi.js";
 import { SkiaRenderer } from "./SkiaRenderer";
 import { getRegistryVersion, notifyLayoutChange } from "./useSkiaNode";
 import { isCanvasKitInitialized, getCanvasKit } from "./initCanvasKit";
@@ -72,6 +73,8 @@ export interface SkiaCanvasProps {
   containerEl: HTMLDivElement;
   /** 배경색 (hex) */
   backgroundColor?: number;
+  /** PixiJS Application (Camera Container 읽기용, 과도기) */
+  app?: PixiApplication;
   /** Layout 무효화 콜백 */
   invalidateLayout: () => void;
   /** 프레임별 무효화 패킷 */
@@ -97,9 +100,20 @@ export interface SkiaCanvasProps {
  * - Camera 클래스로 viewport 상태 관리
  * - Command Stream 경로 전용 (sharedLayoutMap 필수)
  */
+/**
+ * PixiJS stage에서 Camera Container를 찾는다 (SkiaOverlay와 동일 패턴).
+ */
+function findCameraContainer(stage: Container): Container | null {
+  for (const child of stage.children) {
+    if ((child as Container).label === "Camera") return child as Container;
+  }
+  return null;
+}
+
 export function SkiaCanvas({
   containerEl,
   backgroundColor = 0xf3f4f6,
+  app,
   invalidateLayout,
   invalidationPacket,
   rendererInput,
@@ -337,11 +351,13 @@ export function SkiaCanvas({
       if (!rendererRef.current) return;
       if (contextLostRef.current) return;
 
-      // Camera 상태 — store에서 직접 읽기 (subscribe 지연 없이 최신값)
-      const viewportState = useViewportSyncStore.getState();
-      const cameraX = viewportState.panOffset.x;
-      const cameraY = viewportState.panOffset.y;
-      const cameraZoom = Math.max(viewportState.zoom, 0.001);
+      // Camera 상태 — PixiJS Camera Container에서 직접 읽기 (SkiaOverlay와 동일)
+      const cameraContainer = app?.stage
+        ? findCameraContainer(app.stage)
+        : null;
+      const cameraX = cameraContainer?.x ?? 0;
+      const cameraY = cameraContainer?.y ?? 0;
+      const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
 
       const registryVersion = getRegistryVersion();
       const packet = invalidationPacketRef.current;
