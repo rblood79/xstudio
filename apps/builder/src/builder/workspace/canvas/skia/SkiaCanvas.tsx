@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { Application as PixiApplication } from "pixi.js";
 import { SkiaRenderer } from "./SkiaRenderer";
 import { getRegistryVersion, notifyLayoutChange } from "./useSkiaNode";
 import { isCanvasKitInitialized, getCanvasKit } from "./initCanvasKit";
@@ -76,8 +75,8 @@ export interface SkiaCanvasProps {
   containerEl: HTMLDivElement;
   /** 배경색 (hex) */
   backgroundColor?: number;
-  /** PixiJS Application (Camera Container 읽기용, 과도기) */
-  app?: PixiApplication;
+  /** PixiJS Application (과도기 호환, 미사용) */
+  app?: unknown;
   /** Layout 무효화 콜백 */
   invalidateLayout: () => void;
   /** 프레임별 무효화 패킷 */

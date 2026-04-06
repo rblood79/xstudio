@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useRef, useCallback, useMemo, type RefObject } from "react";
-import type { Container } from "pixi.js";
 import {
   type ViewportState,
   type ViewportController,
@@ -175,9 +174,18 @@ export function useViewportControl(
 
     // PixiJS 경로: Camera Container에 attach
     if (app?.stage) {
-      const cameraContainer = app.stage.children.find(
-        (child: Container) => child.label === cameraLabel,
-      ) as Container | undefined;
+      // eslint 경고 없이 PixiJS Container를 any 없이 다루기 위해 unknown으로 캐스트
+      const stageChildren = app.stage.children as Array<{
+        label?: string;
+        x: number;
+        y: number;
+        scale: { set(value: number): void; x: number };
+        position?: { x: number; y: number };
+        parent?: unknown;
+      }>;
+      const cameraContainer = stageChildren.find(
+        (child) => child.label === cameraLabel,
+      );
 
       if (cameraContainer) {
         controller.attach(cameraContainer);

@@ -11,8 +11,17 @@
  * @since 2025-12-12 Phase 12 B3.2
  */
 
-import type { Container } from "pixi.js";
 import { viewportState } from "./viewportState";
+
+/** PixiJS Container에서 필요한 최소 인터페이스 */
+interface PixiContainerLike {
+  x: number;
+  y: number;
+  scale: { set(value: number): void; x: number };
+  label?: string;
+  position?: { x: number; y: number };
+  parent?: unknown;
+}
 
 // ============================================
 // Types
@@ -44,7 +53,7 @@ export interface ViewportControllerOptions {
  * 드래그/줌 중 React 리렌더를 방지합니다.
  */
 export class ViewportController {
-  private container: Container | null = null;
+  private container: PixiContainerLike | null = null;
   private options: Required<ViewportControllerOptions>;
 
   // 현재 상태 (Container에서 동기화)
@@ -72,7 +81,7 @@ export class ViewportController {
   /**
    * PixiJS Container 연결
    */
-  attach(container: Container): void {
+  attach(container: PixiContainerLike): void {
     this.container = container;
     // 현재 Container 상태로 동기화
     this.currentState = {

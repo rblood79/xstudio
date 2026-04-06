@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Application as PixiApplication } from "pixi.js";
 import { useStore } from "../../../stores";
 import { initRustWasm, isRustWasmReady } from "../wasm-bindings/rustWasm";
 import { isUnifiedFlag } from "../wasm-bindings/featureFlags";
 
+/** PixiJS Application에서 필요한 최소 인터페이스 */
+interface PixiApplicationLike {
+  ticker: { stop(): void };
+  renderer: { background: { alpha: number } };
+}
+
 interface CanvasRuntimeBootstrapResult {
   appReady: boolean;
-  handlePixiAppInit: (app: PixiApplication) => void;
-  pixiApp: PixiApplication | null;
+  handlePixiAppInit: (app: PixiApplicationLike) => void;
+  pixiApp: PixiApplicationLike | null;
   wasmLayoutFailed: boolean;
   wasmLayoutReady: boolean;
 }
 
 export function useCanvasRuntimeBootstrap(): CanvasRuntimeBootstrapResult {
   const [appReady, setAppReady] = useState(false);
-  const [pixiApp, setPixiApp] = useState<PixiApplication | null>(null);
+  const [pixiApp, setPixiApp] = useState<PixiApplicationLike | null>(null);
   const [wasmLayoutReady, setWasmLayoutReady] = useState(() =>
     isRustWasmReady(),
   );

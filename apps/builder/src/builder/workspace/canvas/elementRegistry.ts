@@ -10,8 +10,6 @@
  * @updated 2026-02-18 Phase 11 - DirectContainer 전환 완료
  */
 
-import { Container, Bounds } from "pixi.js";
-
 import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { getSceneBounds } from "./skia/renderCommands";
 
@@ -31,10 +29,10 @@ export interface ElementBounds {
 // ============================================
 
 /**
- * Element ID → PixiJS Container 매핑
+ * Element ID → PixiJS Container 매핑 (legacy — UNIFIED_ENGINE에서는 미사용)
  * React 리렌더링을 트리거하지 않는 단순 Map 사용
  */
-const elementRegistry = new Map<string, Container>();
+const elementRegistry = new Map<string, unknown>();
 
 /**
  * Element ID → 직접 계산된 layout bounds 매핑
@@ -51,9 +49,9 @@ const layoutBoundsRegistry = new Map<string, ElementBounds>();
  * Container를 registry에 등록
  *
  * @param id - Element ID
- * @param container - PixiJS Container 인스턴스
+ * @param container - PixiJS Container 인스턴스 (legacy, any type)
  */
-export function registerElement(id: string, container: Container): void {
+export function registerElement(id: string, container: unknown): void {
   elementRegistry.set(id, container);
 }
 
@@ -100,9 +98,9 @@ export function unregisterElement(id: string): void {
  * Element ID로 Container 조회
  *
  * @param id - Element ID
- * @returns Container 또는 undefined
+ * @returns Container 또는 undefined (UNIFIED_ENGINE에서는 항상 undefined)
  */
-export function getElementContainer(id: string): Container | undefined {
+export function getElementContainer(id: string): unknown | undefined {
   return elementRegistry.get(id);
 }
 
@@ -110,14 +108,25 @@ export function getElementContainer(id: string): Container | undefined {
  * Element ID로 bounds 조회 (getBounds() 호출)
  *
  * @param id - Element ID
- * @returns Rectangle 또는 null
+ * @returns ElementBounds 또는 null
  */
-export function getElementBounds(id: string): Bounds | null {
-  const container = elementRegistry.get(id);
+export function getElementBounds(id: string): ElementBounds | null {
+  const container = elementRegistry.get(id) as
+    | {
+        getBounds?: () => {
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+        };
+      }
+    | undefined;
   if (!container) return null;
 
   try {
-    return container.getBounds();
+    const b = container.getBounds?.();
+    if (!b) return null;
+    return { x: b.x, y: b.y, width: b.width, height: b.height };
   } catch {
     // Container가 아직 렌더링되지 않았거나 destroyed된 경우
     return null;

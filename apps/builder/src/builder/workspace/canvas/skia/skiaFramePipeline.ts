@@ -13,7 +13,6 @@
  */
 
 import type { CanvasKit, FontMgr } from "canvaskit-wasm";
-import type { Container } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { RendererAIInvalidation, SkiaRendererInput } from "../renderers";
 import type { BoundingBox } from "../selection/types";
@@ -54,11 +53,14 @@ import { collectVisiblePageRoots } from "./visiblePageRoots";
 // Content Build — 입력/출력 타입
 // ============================================
 
+/** PixiJS Container에서 buildViaTree에 필요한 최소 인터페이스 */
+type PixiContainerLike = Parameters<typeof buildSkiaTreeHierarchical>[0];
+
 export interface ContentBuildInput {
   aiState: RendererAIInvalidation;
   registryVersion: number;
   pagePosVersion: number;
-  cameraContainer: Container | null;
+  cameraContainer: PixiContainerLike | null;
   cameraX: number;
   cameraY: number;
   cameraZoom: number;
@@ -300,7 +302,7 @@ function buildViaCommandStream(
 // ============================================
 
 function buildViaTree(
-  cameraContainer: Container | null,
+  cameraContainer: PixiContainerLike | null,
   registryVersion: number,
   cameraX: number,
   cameraY: number,

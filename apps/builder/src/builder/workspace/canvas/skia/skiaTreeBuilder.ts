@@ -16,8 +16,16 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.7
  */
 
-import type { Container } from "pixi.js";
 import type { SkiaNodeData } from "./nodeRenderers";
+
+/** PixiJS Container에서 Tree 순회에 필요한 최소 인터페이스 */
+interface PixiContainerLike {
+  label?: string;
+  width: number;
+  height: number;
+  worldTransform: { tx: number; ty: number };
+  children: Iterable<unknown>;
+}
 import type { BoundingBox } from "../selection/types";
 import { getSkiaNode } from "./useSkiaNode";
 import { buildTreeBoundsMap } from "./skiaFrameHelpers";
@@ -117,7 +125,7 @@ export function tickPagePosStaleFrames(): boolean {
  * PixiJS 씬 그래프를 계층적으로 순회하여 Skia 렌더 트리를 구성한다.
  */
 export function buildSkiaTreeHierarchical(
-  cameraContainer: Container,
+  cameraContainer: PixiContainerLike,
   registryVersion: number,
   cameraX: number,
   cameraY: number,
@@ -140,15 +148,15 @@ export function buildSkiaTreeHierarchical(
    * @param parentAbsY - 부모 labeled 노드의 씬-로컬 절대 Y 좌표
    */
   function traverse(
-    container: Container,
+    container: PixiContainerLike,
     parentAbsX: number,
     parentAbsY: number,
   ): SkiaNodeData[] {
     const results: SkiaNodeData[] = [];
 
     for (const child of container.children) {
-      if (!("children" in child)) continue;
-      const c = child as Container;
+      if (!("children" in (child as object))) continue;
+      const c = child as PixiContainerLike;
 
       if (c.label) {
         const nodeData = getSkiaNode(c.label);
