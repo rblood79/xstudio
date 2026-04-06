@@ -118,7 +118,6 @@ export function getCachedTopLevelCandidateIds({
 
   for (const root of roots) {
     visitSubtree(root);
-    }
   }
 
   topLevelCandidateCache.set(cacheKey, candidateIds);

@@ -682,29 +682,8 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     ];
   }
 
-  // ---------- Focus ring (focusVisible/focused) ----------
-  if (
-    (componentState === "focusVisible" || componentState === "focused") &&
-    specNode.box
-  ) {
-    const focusState =
-      componentState === "focused"
-        ? spec.states?.focused?.outline
-          ? spec.states.focused
-          : spec.states?.focusVisible
-        : spec.states?.focusVisible;
-    if (focusState?.outline) {
-      const parsed = parseOutlineShorthand(
-        focusState.outline as string,
-        focusState.outlineOffset as string | number | undefined,
-      );
-      if (parsed) {
-        specNode.box.outlineColor = parsed.color;
-        specNode.box.outlineWidth = parsed.width;
-        specNode.box.outlineOffset = parsed.offset;
-      }
-    }
-  }
+  // Focus ring: componentState가 focusVisible/focused를 지원하게 되면 활성화
+  // 현재 componentState는 "default" | "disabled"만 가능
 
   // ---------- Text wrapping props (nowrap parent) ----------
   if (specNode.children) {
