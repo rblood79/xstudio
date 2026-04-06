@@ -18,10 +18,8 @@ import {
 import { Popover } from "@xstudio/shared/components/Popover";
 import { CirclePlus, Search, ChevronDown, Zap } from "lucide-react";
 import type { EventType } from "@/types/events/events.types";
-import {
-  EVENT_TYPE_LABELS,
-  EVENT_CATEGORIES,
-} from "@/types/events/events.types";
+import { EVENT_TYPE_LABELS } from "@/types/events/events.types";
+import { EVENT_CATEGORIES } from "../data/eventCategories";
 import { iconProps, iconEditProps, iconSmall } from "@/utils/ui/uiConstants";
 
 // 추천 이벤트 우선순위 (컴포넌트별 가장 많이 사용되는 이벤트 순서)
