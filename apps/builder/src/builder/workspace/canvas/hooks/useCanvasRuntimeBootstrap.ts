@@ -92,7 +92,7 @@ export function useCanvasRuntimeBootstrap(): CanvasRuntimeBootstrapResult {
     return () => clearTimeout(timeoutId);
   }, [wasmLayoutReady]);
 
-  const handlePixiAppInit = useCallback((app: PixiApplication) => {
+  const handlePixiAppInit = useCallback((app: PixiApplicationLike) => {
     setPixiApp(app);
     setAppReady(true);
 

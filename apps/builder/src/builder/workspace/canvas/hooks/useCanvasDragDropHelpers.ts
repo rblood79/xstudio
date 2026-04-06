@@ -1,10 +1,7 @@
 import { useCallback } from "react";
 import type { Element } from "../../../../types/core/store.types";
-import {
-  getElementBoundsSimple,
-  getElementContainer,
-} from "../elementRegistry";
-import { findElementsInLasso, type BoundingBox } from "../selection";
+import { getElementBoundsSimple } from "../elementRegistry";
+import type { BoundingBox } from "../selection";
 import {
   viewportToScreenPoint,
   viewportToScreenSize,
@@ -37,47 +34,15 @@ export function useCanvasDragDropHelpers({
       const startGlobal = viewportToScreenPoint(start, zoom, panOffset);
       const endGlobal = viewportToScreenPoint(end, zoom, panOffset);
 
-      return findElementsInLasso(
-        pageElements.map((element) => {
-          const container = getElementContainer(element.id);
-          let bounds: {
-            height: number;
-            width: number;
-            x: number;
-            y: number;
-          } | null = null;
+      const lassoLeft = Math.min(startGlobal.x, endGlobal.x);
+      const lassoTop = Math.min(startGlobal.y, endGlobal.y);
+      const lassoRight = Math.max(startGlobal.x, endGlobal.x);
+      const lassoBottom = Math.max(startGlobal.y, endGlobal.y);
 
-          if (container) {
-            try {
-              const containerBounds = container.getBounds();
-              bounds = {
-                x: containerBounds.x,
-                y: containerBounds.y,
-                width: containerBounds.width,
-                height: containerBounds.height,
-              };
-            } catch {
-              bounds = null;
-            }
-          }
-
-          if (!bounds) {
-            bounds = getElementBoundsSimple(element.id);
-          }
-
-          if (bounds) {
-            return {
-              id: element.id,
-              props: {
-                style: {
-                  left: bounds.x,
-                  top: bounds.y,
-                  width: bounds.width,
-                  height: bounds.height,
-                },
-              },
-            };
-          }
+      return pageElements
+        .map((element) => {
+          const bounds = getElementBoundsSimple(element.id);
+          if (bounds) return { id: element.id, bounds };
 
           const style = element.props?.style as
             | Record<string, unknown>
@@ -98,19 +63,24 @@ export function useCanvasDragDropHelpers({
 
           return {
             id: element.id,
-            props: {
-              style: {
-                left: Number.isFinite(localLeft) ? fallbackPosition.x : 0,
-                top: Number.isFinite(localTop) ? fallbackPosition.y : 0,
-                width: Number.isFinite(localWidth) ? fallbackSize.width : 0,
-                height: Number.isFinite(localHeight) ? fallbackSize.height : 0,
-              },
+            bounds: {
+              x: Number.isFinite(localLeft) ? fallbackPosition.x : 0,
+              y: Number.isFinite(localTop) ? fallbackPosition.y : 0,
+              width: Number.isFinite(localWidth) ? fallbackSize.width : 0,
+              height: Number.isFinite(localHeight) ? fallbackSize.height : 0,
             },
           };
-        }),
-        startGlobal,
-        endGlobal,
-      );
+        })
+        .filter(({ bounds }) => {
+          // 요소의 AABB가 lasso 영역과 교차하면 선택
+          return !(
+            bounds.x + bounds.width < lassoLeft ||
+            bounds.x > lassoRight ||
+            bounds.y + bounds.height < lassoTop ||
+            bounds.y > lassoBottom
+          );
+        })
+        .map(({ id }) => id);
     },
     [pageElements, panOffset, zoom],
   );

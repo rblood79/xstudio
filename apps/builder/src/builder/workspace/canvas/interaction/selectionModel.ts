@@ -1,5 +1,10 @@
 // PixiJS Container 대체 (Phase 9: PixiJS 제거)
-type Container = { parent?: Container | null; visible: boolean };
+type Container = {
+  label?: string;
+  parent?: Container | null;
+  visible: boolean;
+  position?: { x: number; y: number };
+};
 import type { Element } from "../../../../types/core/store.types";
 import {
   calculateCombinedBounds,
@@ -50,8 +55,8 @@ function getCameraLocalPosition(
     if (node.label === "Camera") {
       return { x, y };
     }
-    x += node.position.x;
-    y += node.position.y;
+    x += node.position?.x ?? 0;
+    y += node.position?.y ?? 0;
     node = node.parent as Container | null;
   }
 

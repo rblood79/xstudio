@@ -9,7 +9,6 @@
 
 // Border-box 유틸리티
 export * from "./borderUtils";
-export * from "./graphicsUtils";
 
 // CSS 변수 읽기
 export * from "./cssVariableReader";

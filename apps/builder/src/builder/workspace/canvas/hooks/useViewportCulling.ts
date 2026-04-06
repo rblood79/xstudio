@@ -16,7 +16,10 @@
 
 import { useMemo } from "react";
 import type { Element } from "../../../../types/core/store.types";
-import { getElementContainer } from "../elementRegistry";
+import {
+  getElementBoundsSimple,
+  getElementContainer,
+} from "../elementRegistry";
 import { getCachedCullingResult } from "../scene";
 import { WASM_FLAGS } from "../wasm-bindings/featureFlags";
 import { queryVisibleElements } from "../wasm-bindings/spatialIndex";
@@ -164,8 +167,9 @@ export function isElementInViewport(
 }
 
 /**
- * getBounds() 기반 O(N) 스크린 좌표 culling (Fallback / 교차 검증용)
+ * layoutBoundsRegistry 기반 O(N) 스크린 좌표 culling (Fallback / 교차 검증용)
  *
+ * Phase 9: PixiJS 제거 이후 getBounds() 대신 getElementBoundsSimple() 사용.
  * 부모-자식 관계를 고려하여 overflow 가능성이 있는 자식을 포함.
  */
 function getBoundsVisibleElements(
@@ -179,58 +183,27 @@ function getBoundsVisibleElements(
     const cached = parentVisibilityCache.get(parentId);
     if (cached !== undefined) return cached;
 
-    const parentContainer = getElementContainer(parentId);
-    if (!parentContainer) {
+    const bounds = getElementBoundsSimple(parentId);
+    if (!bounds) {
       parentVisibilityCache.set(parentId, true);
       return true;
     }
-    try {
-      const bounds = parentContainer.getBounds();
-      if (bounds.width <= 0 && bounds.height <= 0) {
-        parentVisibilityCache.set(parentId, true);
-        return true;
-      }
-      const visible = isElementInViewport(
-        {
-          x: bounds.x,
-          y: bounds.y,
-          width: bounds.width,
-          height: bounds.height,
-        },
-        viewport,
-      );
-      parentVisibilityCache.set(parentId, visible);
-      return visible;
-    } catch {
+    if (bounds.width <= 0 && bounds.height <= 0) {
       parentVisibilityCache.set(parentId, true);
       return true;
     }
+    const visible = isElementInViewport(bounds, viewport);
+    parentVisibilityCache.set(parentId, visible);
+    return visible;
   };
 
   return elements.filter((element) => {
-    const container = getElementContainer(element.id);
-    if (!container) return true;
-
-    try {
-      const bounds = container.getBounds();
-      if (bounds.width <= 0 && bounds.height <= 0) return true;
-      if (
-        isElementInViewport(
-          {
-            x: bounds.x,
-            y: bounds.y,
-            width: bounds.width,
-            height: bounds.height,
-          },
-          viewport,
-        )
-      )
-        return true;
-      if (isParentOnScreen(element.parent_id)) return true;
-      return false;
-    } catch {
-      return true;
-    }
+    const bounds = getElementBoundsSimple(element.id);
+    if (!bounds) return true;
+    if (bounds.width <= 0 && bounds.height <= 0) return true;
+    if (isElementInViewport(bounds, viewport)) return true;
+    if (isParentOnScreen(element.parent_id)) return true;
+    return false;
   });
 }
 

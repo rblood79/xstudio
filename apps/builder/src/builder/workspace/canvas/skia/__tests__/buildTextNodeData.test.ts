@@ -59,8 +59,8 @@ function makeLayout(
   y = 0,
   width = 200,
   height = 40,
-): { x: number; y: number; width: number; height: number } {
-  return { x, y, width, height };
+): { elementId: string; x: number; y: number; width: number; height: number } {
+  return { elementId: "test-layout", x, y, width, height };
 }
 
 // ---------------------------------------------------------------------------

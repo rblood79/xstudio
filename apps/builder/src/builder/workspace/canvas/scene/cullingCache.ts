@@ -125,8 +125,18 @@ export function getCachedTopLevelCandidateIds({
     }
 
     try {
-      const bounds = container.getBounds();
+      const bounds = (
+        container as {
+          getBounds?: () => {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+          };
+        }
+      ).getBounds?.();
       if (
+        !bounds ||
         (bounds.width <= 0 && bounds.height <= 0) ||
         isInViewport(bounds, viewport)
       ) {

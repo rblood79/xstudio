@@ -750,18 +750,20 @@ function applyPhantomIndicatorOffset(
   if (!indicatorConfig) return;
 
   const padFallback =
-    style.padding !== undefined ? parseCSSSize(style.padding) : 0;
+    style.padding !== undefined
+      ? parseCSSSize(style.padding as string | number)
+      : 0;
   const padTop =
     style.paddingTop !== undefined
-      ? parseCSSSize(style.paddingTop)
+      ? parseCSSSize(style.paddingTop as string | number)
       : padFallback;
   const padBottom =
     style.paddingBottom !== undefined
-      ? parseCSSSize(style.paddingBottom)
+      ? parseCSSSize(style.paddingBottom as string | number)
       : padFallback;
   const padLeft =
     style.paddingLeft !== undefined
-      ? parseCSSSize(style.paddingLeft)
+      ? parseCSSSize(style.paddingLeft as string | number)
       : padFallback;
 
   // content area 높이 = border-box - padding
@@ -798,7 +800,7 @@ function applyInlineBorderOverlay(
   const borderWidth = style.borderWidth;
   if (borderWidth == null) return;
 
-  const bw = parseCSSSize(borderWidth);
+  const bw = parseCSSSize(borderWidth as string | number);
   if (bw <= 0) return;
 
   // box가 없으면 생성
@@ -825,7 +827,9 @@ function applyInlineBorderOverlay(
 
   // borderRadius (inline override)
   if (style.borderRadius != null) {
-    specNode.box.borderRadius = parseCSSSize(style.borderRadius);
+    specNode.box.borderRadius = parseCSSSize(
+      style.borderRadius as string | number,
+    );
   }
 }
 

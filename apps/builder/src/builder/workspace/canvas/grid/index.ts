@@ -7,19 +7,18 @@
  */
 
 // Components
-export { GridLayer } from './GridLayer';
-export type { GridLayerProps } from './GridLayer';
+// GridLayer는 Phase 9에서 삭제됨 — Skia gridRenderer로 대체
 
 // Constants
 export const ZOOM_PRESETS = {
-  FIT: 'fit',
-  '25%': 0.25,
-  '50%': 0.5,
-  '75%': 0.75,
-  '100%': 1,
-  '150%': 1.5,
-  '200%': 2,
-  '300%': 3,
+  FIT: "fit",
+  "25%": 0.25,
+  "50%": 0.5,
+  "75%": 0.75,
+  "100%": 1,
+  "150%": 1.5,
+  "200%": 2,
+  "300%": 3,
 } as const;
 
 export const DEFAULT_GRID_SIZE = 20;

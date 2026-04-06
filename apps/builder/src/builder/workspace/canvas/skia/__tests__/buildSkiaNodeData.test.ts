@@ -28,12 +28,12 @@ function makeElement(overrides: Partial<Element> = {}): Element {
 function makeCtx(
   layoutOverrides?: Record<
     string,
-    { x: number; y: number; width: number; height: number }
+    { elementId: string; x: number; y: number; width: number; height: number }
   >,
 ): BuildContext {
   const layoutMap = new Map<
     string,
-    { x: number; y: number; width: number; height: number }
+    { elementId: string; x: number; y: number; width: number; height: number }
   >();
   if (layoutOverrides) {
     for (const [id, layout] of Object.entries(layoutOverrides)) {
@@ -47,7 +47,7 @@ describe("buildSkiaNodeData", () => {
   test("basic box element", () => {
     const el = makeElement();
     const ctx = makeCtx({
-      "test-1": { x: 10, y: 20, width: 200, height: 100 },
+      "test-1": { elementId: "test-1", x: 10, y: 20, width: 200, height: 100 },
     });
     const node = buildSkiaNodeData(el, ctx);
 

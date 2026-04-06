@@ -26,6 +26,7 @@ import { useLayoutsStore } from "../../stores/layouts";
 import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
+import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
 type BoundingBox = { x: number; y: number; width: number; height: number };
 import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 // GridLayer는 Skia gridRenderer로 대체됨
@@ -484,7 +485,8 @@ export function BuilderCanvas({
 
     return computeSelectionBounds({
       getBounds: getElementBoundsSimple,
-      getContainer: getElementContainer,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getContainer: getElementContainer as any,
       pageHeight,
       pagePositions,
       pageWidth,

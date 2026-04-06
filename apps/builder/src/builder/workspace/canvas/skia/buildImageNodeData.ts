@@ -10,6 +10,7 @@
  */
 
 import type { Element } from "../../../../types/core/store.types";
+import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import type { SkiaNodeData } from "./nodeRendererTypes";
 import type { Image as SkImage } from "canvaskit-wasm";
 import { parsePadding, getContentBounds } from "../sprites/paddingUtils";

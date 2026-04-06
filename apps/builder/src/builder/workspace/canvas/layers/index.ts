@@ -1,7 +1,5 @@
 /**
  * Canvas Layers
  *
- * @since 2025-12-12
+ * Phase 9: BodyLayer 삭제 (PixiJS 전용)
  */
-
-export { BodyLayer, type BodyLayerProps } from './BodyLayer';
