@@ -4,7 +4,12 @@ import type {
   Paragraph,
 } from "canvaskit-wasm";
 import type { ClipPathShape } from "../sprites/styleConverter";
-import type { EffectStyle, FillStyle } from "./types";
+import type {
+  DropShadowEffect,
+  EffectStyle,
+  FillStyle,
+  TextShadow,
+} from "./types";
 
 export interface PartialBorderData {
   sides: { top?: boolean; right?: boolean; bottom?: boolean; left?: boolean };
@@ -50,6 +55,8 @@ export interface SkiaNodeData {
     outlineColor?: Float32Array;
     outlineWidth?: number;
     outlineOffset?: number;
+    /** G1+G2: CSS box-shadow 목록. renderBoxShadows()에서 RRect로 직접 렌더 */
+    shadows?: DropShadowEffect[];
   };
   text?: {
     content: string;
@@ -78,6 +85,8 @@ export interface SkiaNodeData {
     fontVariant?: string;
     fontStretch?: string;
     clipText?: boolean;
+    /** G4: CSS text-shadow 목록 (shadow-first 2-pass 렌더링) */
+    textShadows?: TextShadow[];
   };
   image?: {
     skImage: SkImage | null;

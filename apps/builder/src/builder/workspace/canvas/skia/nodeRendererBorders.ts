@@ -299,6 +299,67 @@ function renderInsetOutsetBorder(
   canvas.restore();
 }
 
+/**
+ * G1+G2: Box-shadow를 border-radius에 맞는 RRect로 직접 렌더.
+ * spread는 RRect 크기 확대로 처리 (dilate/erode 대체).
+ * CSS 스펙 레이어 순서: shadow → background → border
+ */
+function renderBoxShadows(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
+  if (!node.box?.shadows?.length) return;
+
+  const br = node.box.borderRadius;
+  const baseRadius =
+    typeof br === "number" ? br : Array.isArray(br) ? br[0] : 0;
+
+  for (const shadow of node.box.shadows) {
+    if (shadow.inner) continue; // outer shadow만 처리
+
+    const spread = shadow.spread ?? 0;
+    const shadowRect = ck.LTRBRect(
+      -spread,
+      -spread,
+      node.width + spread,
+      node.height + spread,
+    );
+
+    const paint = new ck.Paint();
+    paint.setAntiAlias(true);
+    paint.setColor(shadow.color);
+
+    if (shadow.sigmaX > 0 || shadow.sigmaY > 0) {
+      paint.setImageFilter(
+        ck.ImageFilter.MakeBlur(
+          shadow.sigmaX,
+          shadow.sigmaY,
+          ck.TileMode.Decal,
+          null,
+        ),
+      );
+    }
+
+    canvas.save();
+    canvas.translate(shadow.dx, shadow.dy);
+
+    // CSS 스펙: shadow radius = max(0, border-radius + spread)
+    const shadowRadius = Math.max(0, baseRadius + spread);
+    if (shadowRadius > 0) {
+      canvas.drawRRect(
+        ck.RRectXY(shadowRect, shadowRadius, shadowRadius),
+        paint,
+      );
+    } else {
+      canvas.drawRect(shadowRect, paint);
+    }
+
+    paint.delete();
+    canvas.restore();
+  }
+}
+
 export function renderBox(
   ck: CanvasKit,
   canvas: Canvas,
@@ -308,6 +369,9 @@ export function renderBox(
 
   const scope = new SkiaDisposable();
   try {
+    // G1+G2: box-shadow는 fill 아래에 렌더 (CSS 스펙: shadow → background → border)
+    renderBoxShadows(ck, canvas, node);
+
     const paint = scope.track(new ck.Paint());
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Fill);
@@ -421,7 +485,9 @@ export function renderBox(
 
       const outlineRadius = node.box.borderRadius;
       const isArrayBr = Array.isArray(outlineRadius);
-      const hasBr = isArrayBr ? outlineRadius.some((r) => r > 0) : outlineRadius > 0;
+      const hasBr = isArrayBr
+        ? outlineRadius.some((r) => r > 0)
+        : outlineRadius > 0;
 
       if (hasBr) {
         if (isArrayBr) {
