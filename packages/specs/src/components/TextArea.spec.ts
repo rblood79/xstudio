@@ -38,6 +38,8 @@ export interface TextAreaProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  autoFocus?: boolean;
+  form?: string;
   contextualHelp?: string;
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "end";

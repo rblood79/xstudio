@@ -45,6 +45,7 @@ export interface DateRangePickerProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   isQuiet?: boolean;
+  form?: string;
   labelPosition?: "top" | "side";
   firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
   maxVisibleMonths?: number;

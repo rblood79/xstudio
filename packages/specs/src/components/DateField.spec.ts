@@ -33,6 +33,7 @@ export interface DateFieldProps {
   isInvalid?: boolean;
   labelPosition?: "top" | "side";
   contextualHelp?: string;
+  name?: string;
   style?: Record<string, string | number | undefined>;
 }
 

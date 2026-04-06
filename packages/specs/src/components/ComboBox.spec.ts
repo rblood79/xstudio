@@ -36,6 +36,7 @@ export interface ComboBoxProps {
   label?: string;
   placeholder?: string;
   name?: string;
+  form?: string;
   inputValue?: string;
   selectedText?: string;
   description?: string;

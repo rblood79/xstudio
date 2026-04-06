@@ -4,7 +4,7 @@
  * - React Aria 이벤트 포함
  */
 
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from "lucide-react";
 
 /**
  * 지원되는 이벤트 타입
@@ -35,6 +35,9 @@ export type EventType =
   | "onSelectionChange"
   | "onAction"
   | "onOpenChange"
+  | "onChangeEnd"
+  | "onExpandedChange"
+  | "onRemove"
 
   // Other
   | "onScroll"
@@ -47,8 +50,8 @@ export type EventType =
 export interface EventHandler {
   id: string;
   event: EventType;
-  actions: EventAction[];       // THEN 액션 (조건 만족 시)
-  elseActions?: EventAction[];  // ELSE 액션 (조건 불만족 시)
+  actions: EventAction[]; // THEN 액션 (조건 만족 시)
+  elseActions?: EventAction[]; // ELSE 액션 (조건 불만족 시)
 
   // 선택적 고급 기능
   enabled?: boolean;
@@ -206,7 +209,13 @@ export interface ShowToastConfig {
   message: string;
   type: "success" | "error" | "warning" | "info";
   duration?: number;
-  position?: "top" | "bottom" | "top-right" | "top-left" | "bottom-right" | "bottom-left";
+  position?:
+    | "top"
+    | "bottom"
+    | "top-right"
+    | "top-left"
+    | "bottom-right"
+    | "bottom-left";
 }
 
 /**
@@ -477,11 +486,14 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   onSelectionChange: "선택 변경",
   onAction: "액션",
   onOpenChange: "열림/닫힘",
+  onChangeEnd: "값 변경 완료",
+  onExpandedChange: "펼침/접힘 변경",
+  onRemove: "항목 제거",
 
   // Other
   onScroll: "스크롤",
   onResize: "크기 변경",
-  onLoad: "로드"
+  onLoad: "로드",
 };
 
 /**
@@ -514,7 +526,7 @@ export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
   // Variable
   setVariable: "변수 설정",
   copyToClipboard: "클립보드 복사",
-  customFunction: "커스텀 함수"
+  customFunction: "커스텀 함수",
 };
 
 /**

@@ -41,6 +41,9 @@ export const IMPLEMENTED_EVENT_TYPES = [
   "onSelectionChange", // 리스트/선택 컴포넌트 (ListBox, Select, ComboBox 등)
   "onAction", // 메뉴 아이템 (Menu)
   "onOpenChange", // 드롭다운/모달 (Select, ComboBox, Dialog 등)
+  "onChangeEnd", // Slider, Color 컴포넌트 값 확정
+  "onExpandedChange", // Disclosure, Tree 확장/축소
+  "onRemove", // TagGroup 항목 제거
 
   // 향후 구현 예정:
   // 'onDoubleClick',    // 더블클릭
@@ -189,6 +192,9 @@ export const EVENT_CATEGORIES = {
       "onSelectionChange",
       "onAction",
       "onOpenChange",
+      "onChangeEnd",
+      "onExpandedChange",
+      "onRemove",
     ] as const,
   },
 } as const;

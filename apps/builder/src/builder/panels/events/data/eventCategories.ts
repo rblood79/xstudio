@@ -41,7 +41,15 @@ export const EVENT_CATEGORIES: Record<string, EventCategory> = {
     id: "reactAria",
     label: "React Aria Events",
     icon: Component,
-    events: ["onPress", "onSelectionChange", "onAction", "onOpenChange"],
+    events: [
+      "onPress",
+      "onSelectionChange",
+      "onAction",
+      "onOpenChange",
+      "onChangeEnd",
+      "onExpandedChange",
+      "onRemove",
+    ],
     description: "React Aria 컴포넌트 전용 이벤트",
   },
   other: {
@@ -121,6 +129,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
       "Switch",
       "RadioGroup",
       "Slider",
+      "TextArea",
     ],
     example: "입력 필드 변경 → 상태 업데이트",
   },
@@ -225,6 +234,31 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = {
     example: "드롭다운 열림 → 데이터 로드",
   },
 
+  onChangeEnd: {
+    label: "값 변경 완료",
+    description: "드래그/조작이 끝나고 최종 값이 확정되었을 때 발생",
+    usage: "60%",
+    category: "reactAria",
+    compatibleWith: ["Slider", "ColorArea", "ColorSlider", "ColorWheel"],
+    example: "슬라이더 드래그 종료 → API에 최종 값 저장",
+  },
+  onExpandedChange: {
+    label: "펼침/접힘 변경",
+    description: "확장/축소 상태가 변경되었을 때 발생",
+    usage: "50%",
+    category: "reactAria",
+    compatibleWith: ["Disclosure", "DisclosureGroup", "Tree", "Accordion"],
+    example: "아코디언 섹션 열림 → 콘텐츠 로드",
+  },
+  onRemove: {
+    label: "항목 제거",
+    description: "태그나 항목이 제거되었을 때 발생",
+    usage: "40%",
+    category: "reactAria",
+    compatibleWith: ["TagGroup"],
+    example: "태그 제거 → 필터 갱신",
+  },
+
   // Other Events
   onScroll: {
     label: "스크롤",
@@ -269,7 +303,8 @@ export const COMPONENT_RECOMMENDED_EVENTS: Record<string, EventType[]> = {
   Checkbox: ["onChange"],
   Switch: ["onChange"],
   RadioGroup: ["onChange"],
-  Slider: ["onChange"],
+  Slider: ["onChange", "onChangeEnd"],
+  TextArea: ["onChange", "onFocus", "onBlur", "onKeyDown"],
 
   // Selection
   Select: ["onSelectionChange", "onOpenChange"],
@@ -277,16 +312,24 @@ export const COMPONENT_RECOMMENDED_EVENTS: Record<string, EventType[]> = {
   ListBox: ["onSelectionChange", "onAction"],
   GridList: ["onSelectionChange", "onAction"],
   Menu: ["onAction", "onOpenChange"],
-  TagGroup: ["onSelectionChange"],
+  TagGroup: ["onSelectionChange", "onRemove"],
 
   // Collections
   Table: ["onSelectionChange"],
-  Tree: ["onSelectionChange", "onAction"],
+  Tree: ["onSelectionChange", "onExpandedChange", "onAction"],
 
   // Layout
   Tabs: ["onSelectionChange"],
   Dialog: ["onOpenChange"],
   Popover: ["onOpenChange"],
+  Disclosure: ["onExpandedChange"],
+  DisclosureGroup: ["onExpandedChange"],
+  Accordion: ["onExpandedChange"],
+
+  // Color
+  ColorArea: ["onChange", "onChangeEnd"],
+  ColorSlider: ["onChange", "onChangeEnd"],
+  ColorWheel: ["onChange", "onChangeEnd"],
 
   // Content
   Card: ["onClick", "onMouseEnter", "onMouseLeave"],

@@ -46,6 +46,7 @@ export interface SliderProps {
   formatOptions?: Intl.NumberFormatOptions;
   form?: string;
   orientation?: "horizontal" | "vertical";
+  autoFocus?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
   labelPosition?: "top" | "side";

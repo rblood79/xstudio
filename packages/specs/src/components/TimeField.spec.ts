@@ -27,6 +27,7 @@ export interface TimeFieldProps {
   granularity?: "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
   locale?: string;
+  name?: string;
   form?: string;
   defaultValue?: string;
   placeholderValue?: string;

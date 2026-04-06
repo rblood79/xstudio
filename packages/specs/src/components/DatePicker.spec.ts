@@ -43,6 +43,7 @@ export interface DatePickerProps {
   maxVisibleMonths?: number;
   shouldFlip?: boolean;
   contextualHelp?: string;
+  name?: string;
   style?: Record<string, string | number | undefined>;
 }
 

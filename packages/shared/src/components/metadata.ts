@@ -78,8 +78,8 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: false,
       dataBindingType: "collection",
-      // React Aria: onChange, onFocus, onBlur
-      supportedEvents: ["onChange", "onFocus", "onBlur"],
+      // React Aria: onChange, onSelectionChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onSelectionChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -183,6 +183,24 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [
         "onChange",
         "onSubmit",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
+    },
+  },
+  {
+    type: "TextArea",
+    label: "Text Area",
+    category: "Forms",
+    icon: "📝",
+    inspector: {
+      hasCustomEditor: false,
+      dataBindingType: "value",
+      // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
+      supportedEvents: [
+        "onChange",
         "onFocus",
         "onBlur",
         "onKeyDown",
@@ -322,6 +340,7 @@ export const componentMetadata: ComponentMeta[] = [
       // React Aria: onChange, onChangeEnd, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
       supportedEvents: [
         "onChange",
+        "onChangeEnd",
         "onFocus",
         "onBlur",
         "onKeyDown",
@@ -515,7 +534,12 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onExpandedChange, onFocus, onBlur
-      supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],
+      supportedEvents: [
+        "onSelectionChange",
+        "onExpandedChange",
+        "onFocus",
+        "onBlur",
+      ],
     },
   },
   {
@@ -527,7 +551,7 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: false,
       dataBindingType: "collection",
       // React Aria: onRemove, onSelectionChange, onFocus, onBlur
-      supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],
+      supportedEvents: ["onSelectionChange", "onRemove", "onFocus", "onBlur"],
     },
   },
 
@@ -1151,7 +1175,8 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: false,
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onExpandedChange
+      supportedEvents: ["onExpandedChange"],
     },
   },
 
