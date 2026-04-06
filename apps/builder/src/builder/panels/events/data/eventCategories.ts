@@ -1,62 +1,53 @@
 /**
  * 이벤트 카테고리 및 메타데이터
+ *
+ * ⚠️ 이벤트 목록은 EVENT_REGISTRY 정본에서 파생됩니다 (ADR-055).
+ * 새 이벤트 추가 시 events.registry.ts의 EVENT_REGISTRY만 수정하세요.
+ * 이 파일은 UI 메타데이터(아이콘, 상세 설명, 호환성, 추천 이벤트)만 관리합니다.
  */
 
 import { Mouse, FileText, Keyboard, Component, Zap } from "lucide-react";
 import type { EventCategory, EventMetadata, EventType } from "../types";
+import { EVENT_CATEGORIES_BY_ID } from "@/types/events/events.registry";
 
 /**
  * 이벤트 카테고리 정의
+ * events 목록은 EVENT_REGISTRY의 category 필드에서 자동 집계 (하드코딩 제거)
  */
 export const EVENT_CATEGORIES: Record<string, EventCategory> = {
   mouse: {
     id: "mouse",
     label: "Mouse Events",
     icon: Mouse,
-    events: [
-      "onClick",
-      "onDoubleClick",
-      "onMouseEnter",
-      "onMouseLeave",
-      "onMouseDown",
-      "onMouseUp",
-    ],
+    events: EVENT_CATEGORIES_BY_ID.mouse ?? [],
     description: "마우스 상호작용 이벤트",
   },
   form: {
     id: "form",
     label: "Form Events",
     icon: FileText,
-    events: ["onChange", "onInput", "onSubmit", "onFocus", "onBlur"],
+    events: EVENT_CATEGORIES_BY_ID.form ?? [],
     description: "폼 입력 및 제출 이벤트",
   },
   keyboard: {
     id: "keyboard",
     label: "Keyboard Events",
     icon: Keyboard,
-    events: ["onKeyDown", "onKeyUp", "onKeyPress"],
+    events: EVENT_CATEGORIES_BY_ID.keyboard ?? [],
     description: "키보드 입력 이벤트",
   },
   reactAria: {
     id: "reactAria",
     label: "React Aria Events",
     icon: Component,
-    events: [
-      "onPress",
-      "onSelectionChange",
-      "onAction",
-      "onOpenChange",
-      "onChangeEnd",
-      "onExpandedChange",
-      "onRemove",
-    ],
+    events: EVENT_CATEGORIES_BY_ID.reactAria ?? [],
     description: "React Aria 컴포넌트 전용 이벤트",
   },
   other: {
     id: "other",
     label: "Other Events",
     icon: Zap,
-    events: ["onScroll", "onResize", "onLoad"],
+    events: EVENT_CATEGORIES_BY_ID.other ?? [],
     description: "기타 이벤트",
   },
 };
