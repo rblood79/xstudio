@@ -12,8 +12,12 @@ export type {
   EventType,
   ImplementedEventType,
   EventCategoryId,
+  ActionType,
 } from "@/types/events/events.registry";
-export { EVENT_TYPE_LABELS } from "@/types/events/events.registry";
+export {
+  EVENT_TYPE_LABELS,
+  ACTION_TYPE_LABELS,
+} from "@/types/events/events.registry";
 
 /**
  * 이벤트 핸들러 (통합 버전)
@@ -50,53 +54,7 @@ export interface EventAction {
   enabled?: boolean; // 액션 활성화 여부
 }
 
-/**
- * 액션 타입
- */
-export type ActionType =
-  // Navigation
-  | "navigate"
-  | "scrollTo"
-
-  // State Management
-  | "setState"
-  | "updateState"
-
-  // API & Data
-  | "apiCall"
-
-  // UI Interaction
-  | "showModal"
-  | "hideModal"
-  | "showToast"
-  | "toggleVisibility"
-
-  // Form
-  | "validateForm"
-  | "resetForm"
-  | "submitForm"
-
-  // Component Interaction
-  | "setComponentState"
-  | "triggerComponentAction"
-  | "updateFormField"
-
-  // Collection Interaction (NEW)
-  | "filterCollection"
-  | "selectItem"
-  | "clearSelection"
-
-  // Data Panel Integration (NEW)
-  | "loadDataTable"
-  | "syncComponent"
-  | "saveToDataTable"
-
-  // Variable
-  | "setVariable"
-
-  // Utilities
-  | "copyToClipboard"
-  | "customFunction";
+// ActionType은 파일 상단에서 registry re-export로 제공됨
 
 /**
  * 액션 설정 (Union 타입)
@@ -428,40 +386,7 @@ export interface EventExecutionResult {
   totalExecutionTime: number;
 }
 
-// EVENT_TYPE_LABELS는 파일 상단에서 registry re-export로 제공됨
-
-/**
- * 액션 타입 레이블 맵
- * Note: Partial 사용 - camelCase만 정의 (snake_case 별칭은 폴백 사용)
- */
-export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
-  navigate: "페이지 이동",
-  scrollTo: "스크롤 이동",
-  setState: "상태 설정",
-  updateState: "상태 업데이트",
-  apiCall: "API 호출",
-  showModal: "모달 표시",
-  hideModal: "모달 숨김",
-  showToast: "토스트 표시",
-  toggleVisibility: "표시/숨김 토글",
-  validateForm: "폼 검증",
-  resetForm: "폼 리셋",
-  submitForm: "폼 제출",
-  setComponentState: "컴포넌트 상태 설정",
-  triggerComponentAction: "컴포넌트 액션 실행",
-  updateFormField: "폼 필드 업데이트",
-  filterCollection: "컬렉션 필터링",
-  selectItem: "아이템 선택",
-  clearSelection: "선택 해제",
-  // Data Panel Integration (NEW)
-  loadDataTable: "DataTable 로드",
-  syncComponent: "컴포넌트 동기화",
-  saveToDataTable: "DataTable 저장",
-  // Variable
-  setVariable: "변수 설정",
-  copyToClipboard: "클립보드 복사",
-  customFunction: "커스텀 함수",
-};
+// EVENT_TYPE_LABELS, ACTION_TYPE_LABELS는 파일 상단에서 registry re-export로 제공됨
 
 /**
  * 기본값 상수

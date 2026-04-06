@@ -310,6 +310,57 @@ export const IMPLEMENTED_ACTION_TYPES = [
 
 export type ActionType = (typeof IMPLEMENTED_ACTION_TYPES)[number];
 
+/** 액션 타입 → 한글 레이블 매핑 */
+export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
+  navigate: "페이지 이동",
+  scrollTo: "스크롤 이동",
+  setState: "상태 설정",
+  updateState: "상태 업데이트",
+  toggleVisibility: "표시/숨김 토글",
+  showModal: "모달 표시",
+  hideModal: "모달 숨김",
+  showToast: "토스트 표시",
+  validateForm: "폼 검증",
+  resetForm: "폼 리셋",
+  submitForm: "폼 제출",
+  updateFormField: "폼 필드 업데이트",
+  setComponentState: "컴포넌트 상태 설정",
+  triggerComponentAction: "컴포넌트 액션 트리거",
+  filterCollection: "컬렉션 필터",
+  selectItem: "항목 선택",
+  clearSelection: "선택 해제",
+  apiCall: "API 호출",
+  copyToClipboard: "클립보드 복사",
+  customFunction: "커스텀 함수",
+  fetchDataTable: "DataTable 조회",
+  refreshDataTable: "DataTable 새로고침",
+  executeApi: "API 실행",
+  setVariable: "변수 설정",
+  getVariable: "변수 조회",
+  loadDataTable: "DataTable 로드",
+  syncComponent: "컴포넌트 동기화",
+  saveToDataTable: "DataTable에 저장",
+  // snake_case aliases
+  toggle_visibility: "표시/숨김 토글",
+  show_modal: "모달 표시",
+  hide_modal: "모달 숨김",
+  update_state: "상태 업데이트",
+  set_state: "상태 설정",
+  scroll_to: "스크롤 이동",
+  copy_to_clipboard: "클립보드 복사",
+  validate_form: "폼 검증",
+  reset_form: "폼 리셋",
+  submit_form: "폼 제출",
+  update_form_field: "폼 필드 업데이트",
+  custom_function: "커스텀 함수",
+  api_call: "API 호출",
+  set_component_state: "컴포넌트 상태 설정",
+  trigger_component_action: "컴포넌트 액션 트리거",
+  filter_collection: "컬렉션 필터",
+  select_item: "항목 선택",
+  clear_selection: "선택 해제",
+};
+
 export function isImplementedActionType(
   actionType: string,
 ): actionType is ActionType {
@@ -369,18 +420,3 @@ export const ACTION_CATEGORIES = {
     actions: ["customFunction", "apiCall"] as const,
   },
 } as const;
-
-// ===== 디버깅 유틸리티 =====
-
-export function getImplementationStats() {
-  return {
-    events: {
-      total: Object.keys(EVENT_REGISTRY).length,
-      implemented: IMPLEMENTED_EVENT_TYPES.length,
-    },
-    actions: {
-      implemented: IMPLEMENTED_ACTION_TYPES.length,
-      categories: Object.keys(ACTION_CATEGORIES).length,
-    },
-  };
-}

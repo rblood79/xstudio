@@ -27,6 +27,7 @@ export {
   EVENT_TYPE_LABELS,
   EVENT_CATEGORIES,
   EVENT_CATEGORIES_BY_ID,
+  ACTION_TYPE_LABELS,
   ACTION_CATEGORIES as REGISTRY_ACTION_CATEGORIES,
 } from "./events.registry";
 
@@ -278,68 +279,4 @@ export const DEFAULT_DEBOUNCE_TIME = 300;
 export const DEFAULT_THROTTLE_TIME = 100;
 export const MAX_EXECUTION_TIME = 5000;
 
-// EVENT_TYPE_LABELS는 registry에서 re-export (상단 참조)
-
-/**
- * ⚠️ IMPORTANT: Only include labels for IMPLEMENTED types
- * Partial type allows only implemented types to have labels
- */
-export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
-  navigate: "페이지 이동",
-  toggle_visibility: "표시/숨김 토글",
-  toggleVisibility: "표시/숨김 토글",
-  update_state: "상태 업데이트",
-  updateState: "상태 업데이트",
-  setState: "상태 설정",
-  show_modal: "모달 표시",
-  showModal: "모달 표시",
-  hide_modal: "모달 숨김",
-  hideModal: "모달 숨김",
-  showToast: "토스트 표시",
-  custom_function: "커스텀 함수",
-  customFunction: "커스텀 함수",
-  scroll_to: "스크롤 이동",
-  scrollTo: "스크롤 이동",
-  copy_to_clipboard: "클립보드 복사",
-  copyToClipboard: "클립보드 복사",
-  validate_form: "폼 검증",
-  validateForm: "폼 검증",
-  reset_form: "폼 리셋",
-  resetForm: "폼 리셋",
-  submitForm: "폼 제출",
-  updateFormField: "폼 필드 업데이트",
-  apiCall: "API 호출",
-  setComponentState: "컴포넌트 상태 설정",
-  triggerComponentAction: "컴포넌트 액션 트리거",
-  filterCollection: "컬렉션 필터",
-  selectItem: "항목 선택",
-  clearSelection: "선택 해제",
-  // Data Panel
-  fetchDataTable: "DataTable 조회",
-  refreshDataTable: "DataTable 새로고침",
-  executeApi: "API 실행",
-  setVariable: "변수 설정",
-  getVariable: "변수 조회",
-  // DataTable Actions (Phase 3)
-  loadDataTable: "DataTable 로드",
-  syncComponent: "컴포넌트 동기화",
-  saveToDataTable: "DataTable에 저장",
-  // 구현 예정:
-  // update_props: '속성 업데이트',
-  // trigger_animation: '애니메이션 실행',
-  // play_sound: '사운드 재생',
-  // send_analytics: '분석 데이터 전송'
-};
-
-export const ACTION_CATEGORIES = {
-  navigation: ["navigate", "scroll_to"],
-  interaction: [
-    "toggle_visibility",
-    "show_modal",
-    "hide_modal",
-    "update_props",
-  ],
-  data: ["update_state", "copy_to_clipboard", "send_analytics"],
-  media: ["play_sound", "trigger_animation"],
-  custom: ["custom_function"],
-} as const;
+// EVENT_TYPE_LABELS, ACTION_TYPE_LABELS는 registry에서 re-export (상단 참조)
