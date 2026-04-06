@@ -16,6 +16,17 @@ vi.mock("@xstudio/specs", () => ({
   darkColors: { neutral: "#e5e5e5" },
 }));
 
+// Mock tagSpecMap (Spec import 차단)
+vi.mock("../../sprites/tagSpecMap", () => ({
+  TAG_SPEC_MAP: {},
+  getSpecForTag: () => null,
+}));
+
+// Mock buildSpecNodeData (Spec 렌더링 차단)
+vi.mock("../buildSpecNodeData", () => ({
+  buildSpecNodeData: () => null,
+}));
+
 // Mock imageCache (비동기 로딩 시뮬레이션)
 const mockImageCache = new Map<string, unknown>();
 vi.mock("../imageCache", () => ({

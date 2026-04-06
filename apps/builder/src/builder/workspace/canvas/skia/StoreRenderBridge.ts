@@ -17,8 +17,10 @@ import { buildSkiaNodeData, type BuildContext } from "./buildSkiaNodeData";
 import { buildBoxNodeData } from "./buildBoxNodeData";
 import { buildTextNodeData } from "./buildTextNodeData";
 import { buildImageNodeData } from "./buildImageNodeData";
+import { buildSpecNodeData } from "./buildSpecNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
+import { getSpecForTag } from "../sprites/tagSpecMap";
 
 // ---------------------------------------------------------------------------
 // Tag 분류
@@ -62,15 +64,27 @@ export class StoreRenderBridge {
   connect(options: {
     getElements: () => Map<string, Element>;
     getLayoutMap: () => Map<string, ComputedLayout> | null;
+    getChildrenMap?: () => Map<string, Element[]>;
     subscribe: (callback: () => void) => () => void;
     theme?: "light" | "dark";
   }): void {
     this.dispose();
 
-    const { getElements, getLayoutMap, subscribe, theme = "light" } = options;
+    const {
+      getElements,
+      getLayoutMap,
+      getChildrenMap,
+      subscribe,
+      theme = "light",
+    } = options;
 
     const resync = () => {
-      this.fullSync(getElements(), getLayoutMap(), theme);
+      this.fullSync(
+        getElements(),
+        getLayoutMap(),
+        theme,
+        getChildrenMap?.() ?? null,
+      );
     };
     this.pendingResync = resync;
 
@@ -88,6 +102,7 @@ export class StoreRenderBridge {
     elementsMap: Map<string, Element>,
     layoutMap: Map<string, ComputedLayout> | null,
     theme: "light" | "dark",
+    childrenMap: Map<string, Element[]> | null = null,
   ): void {
     const ctx: BuildContext = {
       layoutMap: layoutMap ?? new Map(),
@@ -120,6 +135,16 @@ export class StoreRenderBridge {
         }
 
         nodeData = buildImageNodeData({ element, layout, skImage });
+      } else if (getSpecForTag(element.tag)) {
+        // Spec 기반 컴포넌트 (Button, Checkbox 등): shapes → specShapesToSkia
+        const childElements = childrenMap?.get(id) ?? undefined;
+        nodeData = buildSpecNodeData({ element, layout, theme, childElements });
+        // Spec이 null 반환 시 (크기 미확정 등) Box fallback
+        if (!nodeData) {
+          nodeData =
+            buildBoxNodeData({ element, layout }) ??
+            buildSkiaNodeData(element, ctx);
+        }
       } else {
         // Box 요소 / fallback
         nodeData =

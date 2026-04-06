@@ -206,6 +206,7 @@ export function SkiaCanvas({
     bridge.connect({
       getElements: () => useStore.getState().elementsMap,
       getLayoutMap: () => getSharedLayoutMap(),
+      getChildrenMap: () => useStore.getState().childrenMap,
       subscribe: (cb) => useStore.subscribe(cb),
       theme: "light",
     });
