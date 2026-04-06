@@ -165,7 +165,7 @@ export function renderTransformHandles(
  * 씬-로컬 좌표계에서 호출되며, fontSize/padding은 1/zoom으로 스케일하여
  * 화면상 일정한 크기를 유지한다.
  */
-let _dimensionLabelTypefaceWarned = false;
+let _dimensionLabelTypefaceWarned = false; // 폰트 로드 완료 후 리셋됨
 export function renderDimensionLabels(
   ck: CanvasKit,
   canvas: Canvas,
@@ -238,21 +238,23 @@ export function renderDimensionLabels(
     const dimensionText = `${width} × ${height}`;
 
     // Font + Paint를 사용한 직접 텍스트 렌더링
-    const typeface = fontMgr.matchFamilyStyle("Pretendard", {
+    // Pretendard → Inter → system-ui 폴백 체인
+    const fontStyle = {
       weight: ck.FontWeight.Normal,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
-    });
+    };
+    const typeface =
+      fontMgr.matchFamilyStyle("Pretendard", fontStyle) ??
+      fontMgr.matchFamilyStyle("Inter", fontStyle) ??
+      fontMgr.matchFamilyStyle("sans-serif", fontStyle) ??
+      fontMgr.matchFamilyStyle("", fontStyle); // 시스템 기본 폰트
 
     if (!typeface) {
-      if (!_dimensionLabelTypefaceWarned) {
-        console.warn(
-          "[renderDimensionLabels] typeface not found — 폰트 로딩 후 해결됨",
-        );
-        _dimensionLabelTypefaceWarned = true;
-      }
+      // 모든 폴백 실패 — 다음 프레임에서 재시도 (return하지 않고 no-font 경로로 진입하지 않음)
       return;
     }
+    _dimensionLabelTypefaceWarned = false; // 폰트 로드 후 경고 리셋
 
     const font = scope.track(new ck.Font(typeface, fontSize));
     font.setSubpixel(true);
