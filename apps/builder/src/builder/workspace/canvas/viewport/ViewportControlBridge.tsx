@@ -20,6 +20,9 @@ export interface ViewportControlBridgeProps {
   minZoom?: number;
   /** 최대 줌 */
   maxZoom?: number;
+  /** PixiJS Application (optional — UNIFIED_ENGINE에서는 null) */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app?: { stage: any } | null;
   // 🚀 Phase 6.1: 인터랙션 콜백 (동적 해상도 연동용)
   /** 팬/줌 인터랙션 시작 시 호출 */
   onInteractionStart?: () => void;
@@ -39,6 +42,7 @@ export function ViewportControlBridge({
   cameraLabel = "Camera",
   minZoom = 0.1,
   maxZoom = 5,
+  app,
   // 🚀 Phase 6.1: 인터랙션 콜백
   onInteractionStart,
   onInteractionEnd,
@@ -50,6 +54,7 @@ export function ViewportControlBridge({
     cameraLabel,
     minZoom,
     maxZoom,
+    app,
     // 🚀 Phase 6.1: 인터랙션 콜백 전달
     onInteractionStart,
     onInteractionEnd,

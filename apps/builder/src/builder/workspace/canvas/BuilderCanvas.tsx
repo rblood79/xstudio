@@ -838,6 +838,20 @@ export function BuilderCanvas({
         />
       )}
 
+      {/* ADR-100: UNIFIED_ENGINE=true → PixiJS 외부 ViewportControlBridge */}
+      {containerEl && isUnifiedFlag("UNIFIED_ENGINE") && (
+        <ViewportControlBridge
+          containerEl={containerEl}
+          cameraLabel="Camera"
+          minZoom={0.1}
+          maxZoom={5}
+          app={null}
+          onInteractionStart={handleInteractionStart}
+          onInteractionEnd={handleInteractionEnd}
+          initialPanOffsetX={initialPanOffsetX}
+        />
+      )}
+
       <GPUDebugOverlay />
 
       {/* 텍스트 편집 오버레이 (B1.5) */}

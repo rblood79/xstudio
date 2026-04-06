@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useRef, useCallback, useMemo, type RefObject } from "react";
-import { useApplication } from "@pixi/react";
 import type { Container } from "pixi.js";
 import {
   type ViewportState,
@@ -42,6 +41,9 @@ export interface UseViewportControlOptions {
   maxZoom?: number;
   /** HTML 컨테이너 요소 (이벤트 바인딩용) */
   containerEl?: HTMLElement | null;
+  /** PixiJS Application (optional — UNIFIED_ENGINE에서는 null) */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app?: { stage: any } | null;
   // 🚀 Phase 6.1: 인터랙션 콜백 (동적 해상도 연동용)
   /** 팬/줌 인터랙션 시작 시 호출 */
   onInteractionStart?: () => void;
@@ -70,13 +72,12 @@ export function useViewportControl(
     minZoom = 0.1,
     maxZoom = 5,
     containerEl,
+    app = null,
     // 🚀 Phase 6.1: 인터랙션 콜백
     onInteractionStart,
     onInteractionEnd,
     initialPanOffsetX,
   } = options;
-
-  const { app } = useApplication();
   const isPanningRef = useRef(false);
   const isSpacePressedRef = useRef(false);
   // 🚀 Phase 6.1: 줌 종료 디바운스 타이머
@@ -114,9 +115,8 @@ export function useViewportControl(
   );
 
   const controller = useMemo(() => {
-    if (!app?.stage) return null;
     return getViewportController({ minZoom, maxZoom });
-  }, [app, minZoom, maxZoom]);
+  }, [minZoom, maxZoom]);
 
   // onStateSync 콜백을 싱글톤에 설정 (싱글톤 생성 후 지연 바인딩)
   useEffect(() => {
@@ -171,23 +171,20 @@ export function useViewportControl(
 
   // Controller 생성 및 Container 연결
   useEffect(() => {
-    if (!app?.stage || !controller) return;
+    if (!controller) return;
 
-    // Camera Container 찾기
-    const cameraContainer = app.stage.children.find(
-      (child) => (child as Container).label === cameraLabel,
-    ) as Container | undefined;
+    // PixiJS 경로: Camera Container에 attach
+    if (app?.stage) {
+      const cameraContainer = app.stage.children.find(
+        (child: Container) => child.label === cameraLabel,
+      ) as Container | undefined;
 
-    if (!cameraContainer) {
-      console.warn(
-        `[useViewportControl] Camera container with label "${cameraLabel}" not found`,
-      );
-      return;
+      if (cameraContainer) {
+        controller.attach(cameraContainer);
+      }
     }
 
-    controller.attach(cameraContainer);
-
-    // 초기 상태 적용 (Zustand에서 읽어서 Container에 적용)
+    // 초기 상태 적용 (Zustand에서 읽어서 Controller에 적용)
     const { zoom, panOffset, setViewportSnapshot } =
       useViewportSyncStore.getState();
     const initialViewport =

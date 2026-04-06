@@ -120,18 +120,20 @@ export class ViewportController {
    * React state 업데이트 없이 Container 직접 조작
    */
   updatePan(clientX: number, clientY: number): void {
-    if (!this.isPanning || !this.lastPanPoint || !this.container) return;
+    if (!this.isPanning || !this.lastPanPoint) return;
 
     const deltaX = clientX - this.lastPanPoint.x;
     const deltaY = clientY - this.lastPanPoint.y;
 
-    // Container 직접 조작 (React re-render 없음)
-    this.container.x += deltaX;
-    this.container.y += deltaY;
+    // Container 직접 조작 (PixiJS 경로)
+    if (this.container) {
+      this.container.x += deltaX;
+      this.container.y += deltaY;
+    }
 
     // 내부 상태 업데이트
-    this.currentState.x = this.container.x;
-    this.currentState.y = this.container.y;
+    this.currentState.x += deltaX;
+    this.currentState.y += deltaY;
 
     this.lastPanPoint = { x: clientX, y: clientY };
 
@@ -166,8 +168,6 @@ export class ViewportController {
     delta: number,
     syncImmediately = true,
   ): void {
-    if (!this.container) return;
-
     const { minZoom, maxZoom } = this.options;
 
     // 컨테이너 내 상대 좌표
@@ -175,7 +175,7 @@ export class ViewportController {
     const relativeY = clientY - containerRect.top;
 
     // 현재 스케일
-    const currentScale = this.container.scale.x;
+    const currentScale = this.currentState.scale;
 
     // 새 스케일 계산 (클램핑)
     const newScale = Math.min(
@@ -189,13 +189,15 @@ export class ViewportController {
     const zoomRatio = newScale / currentScale;
 
     // 커서 위치 유지를 위한 새 팬 오프셋
-    const newX = relativeX - (relativeX - this.container.x) * zoomRatio;
-    const newY = relativeY - (relativeY - this.container.y) * zoomRatio;
+    const newX = relativeX - (relativeX - this.currentState.x) * zoomRatio;
+    const newY = relativeY - (relativeY - this.currentState.y) * zoomRatio;
 
-    // Container 직접 조작
-    this.container.x = newX;
-    this.container.y = newY;
-    this.container.scale.set(newScale);
+    // Container 직접 조작 (PixiJS 경로)
+    if (this.container) {
+      this.container.x = newX;
+      this.container.y = newY;
+      this.container.scale.set(newScale);
+    }
 
     // 내부 상태 업데이트
     this.currentState = { x: newX, y: newY, scale: newScale };
@@ -212,11 +214,12 @@ export class ViewportController {
    * 절대 위치/스케일 설정 (외부에서 React state가 변경될 때)
    */
   setPosition(x: number, y: number, scale: number): void {
-    if (!this.container) return;
-
-    this.container.x = x;
-    this.container.y = y;
-    this.container.scale.set(scale);
+    // Container 직접 조작 (PixiJS 경로)
+    if (this.container) {
+      this.container.x = x;
+      this.container.y = y;
+      this.container.scale.set(scale);
+    }
 
     this.currentState = { x, y, scale };
 
