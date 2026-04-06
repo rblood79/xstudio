@@ -66,6 +66,7 @@ import { useCentralCanvasPointerHandlers } from "./hooks/useCentralCanvasPointer
 import { useCanvasRuntimeBootstrap } from "./hooks/useCanvasRuntimeBootstrap";
 import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
+import { useDragBridge } from "./hooks/useDragBridge";
 import { usePageDrag } from "./hooks/usePageDrag";
 import { buildSceneSnapshot } from "./scene";
 import {
@@ -537,6 +538,16 @@ export function BuilderCanvas({
   );
   const onEndDragRef = useRef<() => void>(() => {});
   const onCancelDragRef = useRef<() => void>(() => {});
+
+  // ADR-100: UNIFIED_ENGINE=true → SelectionLayer 없이 드래그 콜백 바인딩
+  useDragBridge({
+    onStartMoveRef,
+    onUpdateDragRef,
+    onEndDragRef,
+    onCancelDragRef,
+    dropIndicatorSnapshotRef,
+    enabled: isUnifiedFlag("UNIFIED_ENGINE"),
+  });
 
   const computeSelectionBoundsForHitTest = useCallback(() => {
     const state = useStore.getState();
