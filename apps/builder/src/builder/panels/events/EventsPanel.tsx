@@ -12,8 +12,11 @@ import { Button } from "react-aria-components";
 import { Search, X } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
-import type { ActionType, EventType as RegistryEventType } from "@/types/events/events.types";
-import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from "@/types/events/events.types";
+import type { ActionType } from "@/types/events/events.types";
+import {
+  ACTION_TYPE_LABELS,
+  REGISTRY_ACTION_CATEGORIES,
+} from "@/types/events/events.types";
 import { getRecommendedActions } from "./data/actionMetadata";
 import type { EventHandler, EventType } from "./types/eventTypes";
 import type {
@@ -38,13 +41,12 @@ import { WhenBlock } from "./blocks/WhenBlock";
 import { IfBlock } from "./blocks/IfBlock";
 import { ThenElseBlock } from "./blocks/ThenElseBlock";
 import { BlockActionEditor } from "./editors/BlockActionEditor";
+import { ChevronLeft, Trash, Zap, SquareMousePointer } from "lucide-react";
 import {
-  ChevronLeft,
-  Trash,
-  Zap,
-  SquareMousePointer,
-} from "lucide-react";
-import { iconProps, iconEditProps, iconLarge } from "../../../utils/ui/uiConstants";
+  iconProps,
+  iconEditProps,
+  iconLarge,
+} from "../../../utils/ui/uiConstants";
 import { PanelHeader, PropertySection, EmptyState } from "../../components";
 import { useInitialMountDetection } from "@/builder/hooks";
 import { useComponentMeta } from "../../hooks";
@@ -71,11 +73,11 @@ import "./EventsPanel.css";
 
 /**
  * EventHandler → EventTrigger 변환
- * Note: 타입 어서션 사용 - eventTypes의 EventType과 registry의 EventType 간 호환
+ * EventType이 단일 정본(EVENT_REGISTRY)에서 derive되므로 타입 어서션 불필요 (ADR-055)
  */
 function handlerToTrigger(handler: EventHandler): EventTrigger {
   return {
-    event: handler.event as EventTrigger['event'],
+    event: handler.event,
     target: "self",
   };
 }
@@ -84,7 +86,7 @@ function handlerToTrigger(handler: EventHandler): EventTrigger {
  * EventHandler.actions → BlockEventAction[] 변환
  */
 function actionsToBlockActions(
-  actions: EventHandler["actions"]
+  actions: EventHandler["actions"],
 ): BlockEventAction[] {
   if (!actions) return [];
   return actions.map((action, index) => ({
@@ -104,7 +106,7 @@ function actionsToBlockActions(
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function blockActionsToEventActions(
-  blockActions: BlockEventAction[]
+  blockActions: BlockEventAction[],
 ): EventHandler["actions"] {
   return blockActions.map((action) => ({
     id: action.id,
@@ -122,14 +124,16 @@ function blockActionsToEventActions(
  * handleConditionsChange에서 생성한 형식을 역변환:
  * "left operator right && left2 operator2 right2" → ConditionGroup
  */
-function parseConditionString(condition: string | undefined): ConditionGroup | undefined {
-  if (!condition || condition.trim() === '') return undefined;
+function parseConditionString(
+  condition: string | undefined,
+): ConditionGroup | undefined {
+  if (!condition || condition.trim() === "") return undefined;
 
   // AND/OR 연산자 감지
-  const hasOr = condition.includes(' || ');
-  const hasAnd = condition.includes(' && ');
-  const operator: 'AND' | 'OR' = hasOr && !hasAnd ? 'OR' : 'AND';
-  const separator = operator === 'OR' ? ' || ' : ' && ';
+  const hasOr = condition.includes(" || ");
+  const hasAnd = condition.includes(" && ");
+  const operator: "AND" | "OR" = hasOr && !hasAnd ? "OR" : "AND";
+  const separator = operator === "OR" ? " || " : " && ";
 
   // 조건 문자열 파싱
   const conditionStrings = condition.split(separator);
@@ -141,14 +145,16 @@ function parseConditionString(condition: string | undefined): ConditionGroup | u
     return {
       id: `cond-parsed-${index}-${Date.now()}`,
       left: {
-        type: 'literal' as const,
-        value: parts[0] || trimmed
+        type: "literal" as const,
+        value: parts[0] || trimmed,
       },
-      operator: (parts[1] as 'equals' | 'is_not_empty') || 'is_not_empty',
-      right: parts[2] ? {
-        type: 'literal' as const,
-        value: parts[2]
-      } : undefined,
+      operator: (parts[1] as "equals" | "is_not_empty") || "is_not_empty",
+      right: parts[2]
+        ? {
+            type: "literal" as const,
+            value: parts[2],
+          }
+        : undefined,
     };
   });
 
@@ -164,7 +170,7 @@ function parseConditionString(condition: string | undefined): ConditionGroup | u
  * 버튼 목록으로 액션을 직접 표시 (ListBox 대신 버튼 사용)
  */
 interface ActionPickerOverlayProps {
-  branch: 'then' | 'else';
+  branch: "then" | "else";
   onSelect: (actionType: ActionType) => void;
   onClose: () => void;
   /** 현재 이벤트 타입 (추천 배지용) */
@@ -173,8 +179,14 @@ interface ActionPickerOverlayProps {
   componentType?: string;
 }
 
-function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentType }: ActionPickerOverlayProps) {
-  const [searchValue, setSearchValue] = useState('');
+function ActionPickerOverlay({
+  branch,
+  onSelect,
+  onClose,
+  eventType,
+  componentType,
+}: ActionPickerOverlayProps) {
+  const [searchValue, setSearchValue] = useState("");
 
   // 사용 가능한 액션 타입 목록
   const availableActionTypes = useMemo(() => {
@@ -193,8 +205,10 @@ function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentTy
 
     const searchLower = searchValue.toLowerCase();
     return availableActionTypes.filter((type) => {
-      const label = ACTION_TYPE_LABELS[type]?.toLowerCase() || '';
-      return type.toLowerCase().includes(searchLower) || label.includes(searchLower);
+      const label = ACTION_TYPE_LABELS[type]?.toLowerCase() || "";
+      return (
+        type.toLowerCase().includes(searchLower) || label.includes(searchLower)
+      );
     });
   }, [availableActionTypes, searchValue]);
 
@@ -203,9 +217,12 @@ function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentTy
     const groups: { category: string; actions: ActionType[] }[] = [];
 
     Object.entries(REGISTRY_ACTION_CATEGORIES).forEach(([, categoryData]) => {
-      const categoryInfo = categoryData as { label: string; actions: readonly string[] };
-      const filtered = (categoryInfo.actions as unknown as ActionType[]).filter((a) =>
-        filteredActionTypes.includes(a)
+      const categoryInfo = categoryData as {
+        label: string;
+        actions: readonly string[];
+      };
+      const filtered = (categoryInfo.actions as unknown as ActionType[]).filter(
+        (a) => filteredActionTypes.includes(a),
       );
       if (filtered.length > 0) {
         groups.push({ category: categoryInfo.label, actions: filtered });
@@ -219,11 +236,7 @@ function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentTy
     <div className="action-picker-overlay">
       <div className="action-picker-header">
         <span>Add Action to {branch.toUpperCase()}</span>
-        <Button
-          className="iconButton"
-          onPress={onClose}
-          aria-label="Close"
-        >
+        <Button className="iconButton" onPress={onClose} aria-label="Close">
           <X
             color={iconProps.color}
             strokeWidth={iconProps.strokeWidth}
@@ -243,7 +256,11 @@ function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentTy
         />
       </div>
 
-      <div className="action-picker-list" role="listbox" aria-label="액션 타입 목록">
+      <div
+        className="action-picker-list"
+        role="listbox"
+        aria-label="액션 타입 목록"
+      >
         {filteredActionTypes.length === 0 ? (
           <div className="action-picker-empty">
             <Search size={iconProps.size} color={iconProps.color} />
@@ -292,7 +309,10 @@ export function EventsPanel({ isActive }: PanelProps) {
   if (!selectedElement) {
     return (
       <div className="events-panel">
-        <PanelHeader icon={<SquareMousePointer size={iconProps.size} />} title="Events" />
+        <PanelHeader
+          icon={<SquareMousePointer size={iconProps.size} />}
+          title="Events"
+        />
         <div className="panel-contents">
           <EmptyState message="요소를 선택하세요" />
         </div>
@@ -322,35 +342,35 @@ function EventsPanelContent({
   updateEvents,
 }: EventsPanelContentProps) {
   const componentMeta = useComponentMeta(selectedElement?.type);
-  // 컴포넌트가 지원하는 이벤트 타입 (내부용: 넓은 EventType)
+  // 컴포넌트가 지원하는 이벤트 타입 (metadata.ts의 string[] → EventType 필터링)
   const supportedEventsRaw = (componentMeta?.inspector.supportedEvents ||
     []) as EventType[];
-  // Registry에 구현된 이벤트만 필터링 (UI 컴포넌트용: RegistryEventType)
+  // 구현된 이벤트만 필터링
   const supportedEvents = supportedEventsRaw.filter(
-    (event): event is RegistryEventType => isImplementedEventType(event)
+    (event): event is EventType => isImplementedEventType(event),
   );
 
   // ⭐ showAddAction을 컴포넌트 내부로 이동
   // key={selectedElement.id}로 인해 요소 변경 시 자동으로 false로 리셋됨
-  const [showAddAction, setShowAddAction] = useState<'then' | 'else' | false>(false);
+  const [showAddAction, setShowAddAction] = useState<"then" | "else" | false>(
+    false,
+  );
 
   // 선택된 액션 (편집 모드)
   const [selectedAction, setSelectedAction] = useState<BlockEventAction | null>(
-    null
+    null,
   );
   // THEN vs ELSE 액션 구분 (편집 모드에서 사용)
-  const [selectedActionBranch, setSelectedActionBranch] = useState<'then' | 'else'>('then');
+  const [selectedActionBranch, setSelectedActionBranch] = useState<
+    "then" | "else"
+  >("then");
   // ⭐ selectedElement.events에 이미 매핑된 이벤트 사용
   // elementMapper.ts에서 element.props.events → selectedElement.events로 매핑됨
   const eventsFromElement = selectedElement?.events || [];
 
   // React Stately로 이벤트 핸들러 관리
-  const {
-    handlers,
-    addHandler,
-    updateHandler,
-    removeHandler,
-  } = useEventHandlers(eventsFromElement as EventHandler[]);
+  const { handlers, addHandler, updateHandler, removeHandler } =
+    useEventHandlers(eventsFromElement as EventHandler[]);
 
   // 이벤트 선택 관리
   const { selectedHandler, selectHandler, selectAfterDelete } =
@@ -360,18 +380,18 @@ function EventsPanelContent({
   const { actions, addAction } = useActions(selectedHandler?.actions || []);
 
   // ELSE Actions 관리 (선택된 핸들러의 ELSE 액션)
-  const { actions: elseActions, addAction: addElseAction } = useActions(selectedHandler?.elseActions || []);
+  const { actions: elseActions, addAction: addElseAction } = useActions(
+    selectedHandler?.elseActions || [],
+  );
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
-  // Registry 타입으로 필터링된 등록된 이벤트 목록
   const registeredEventTypes = handlers
     .map((h) => h.event)
-    .filter((event): event is RegistryEventType => isImplementedEventType(event));
+    .filter((event): event is EventType => isImplementedEventType(event));
 
   // 등록되지 않은 지원 이벤트 목록 (빠른 추가용)
-  // string[]로 캐스팅하여 EventType과 RegistryEventType 간의 includes 비교 허용
   const availableSupportedEvents = supportedEvents.filter(
-    (event) => !(registeredEventTypes as string[]).includes(event)
+    (event) => !registeredEventTypes.includes(event),
   );
 
   // THEN Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
@@ -391,7 +411,10 @@ function EventsPanelContent({
     data: elseActions,
     onUpdate: (updatedElseActions) => {
       if (selectedHandler) {
-        const updatedHandler = { ...selectedHandler, elseActions: updatedElseActions };
+        const updatedHandler = {
+          ...selectedHandler,
+          elseActions: updatedElseActions,
+        };
         updateHandler(selectedHandler.id, updatedHandler);
       }
     },
@@ -399,9 +422,12 @@ function EventsPanelContent({
   });
 
   // Handlers → Inspector 동기화 콜백 (안정화)
-  const handleHandlersUpdate = useCallback((updatedHandlers: EventHandler[]) => {
-    updateEvents(updatedHandlers);
-  }, [updateEvents]);
+  const handleHandlersUpdate = useCallback(
+    (updatedHandlers: EventHandler[]) => {
+      updateEvents(updatedHandlers);
+    },
+    [updateEvents],
+  );
 
   // Handlers 변경 시 Inspector 동기화 (초기 마운트 감지 적용)
   useInitialMountDetection({
@@ -412,8 +438,7 @@ function EventsPanelContent({
 
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
-    // string[]로 캐스팅하여 EventType과 RegistryEventType 간의 includes 비교 허용
-    if ((registeredEventTypes as string[]).includes(eventType)) {
+    if (registeredEventTypes.includes(eventType)) {
       return;
     }
     const newHandler = addHandler(eventType);
@@ -421,42 +446,45 @@ function EventsPanelContent({
   };
 
   // 템플릿 적용 (이벤트 + 액션 일괄 생성)
-  const handleApplyTemplate = useCallback((template: EventTemplate) => {
-    const templateEvents = generateEventHandlerIds(template.events, 'tpl');
-    let firstNewHandlerId: string | null = null;
+  const handleApplyTemplate = useCallback(
+    (template: EventTemplate) => {
+      const templateEvents = generateEventHandlerIds(template.events, "tpl");
+      let firstNewHandlerId: string | null = null;
 
-    for (const templateEvent of templateEvents) {
-      const existingHandler = handlers.find(
-        (h) => h.event === templateEvent.event
-      );
+      for (const templateEvent of templateEvents) {
+        const existingHandler = handlers.find(
+          (h) => h.event === templateEvent.event,
+        );
 
-      if (existingHandler) {
-        // 기존 핸들러에 액션 병합
-        const mergedActions = [
-          ...existingHandler.actions,
-          ...templateEvent.actions,
-        ];
-        updateHandler(existingHandler.id, {
-          ...existingHandler,
-          actions: mergedActions,
-        });
-        if (!firstNewHandlerId) firstNewHandlerId = existingHandler.id;
-      } else {
-        // 새 핸들러 생성
-        const newHandler = addHandler(templateEvent.event);
-        updateHandler(newHandler.id, {
-          ...newHandler,
-          actions: templateEvent.actions,
-        });
-        if (!firstNewHandlerId) firstNewHandlerId = newHandler.id;
+        if (existingHandler) {
+          // 기존 핸들러에 액션 병합
+          const mergedActions = [
+            ...existingHandler.actions,
+            ...templateEvent.actions,
+          ];
+          updateHandler(existingHandler.id, {
+            ...existingHandler,
+            actions: mergedActions,
+          });
+          if (!firstNewHandlerId) firstNewHandlerId = existingHandler.id;
+        } else {
+          // 새 핸들러 생성
+          const newHandler = addHandler(templateEvent.event);
+          updateHandler(newHandler.id, {
+            ...newHandler,
+            actions: templateEvent.actions,
+          });
+          if (!firstNewHandlerId) firstNewHandlerId = newHandler.id;
+        }
       }
-    }
 
-    // 첫 번째 핸들러 자동 선택 (결과 즉시 확인)
-    if (firstNewHandlerId) {
-      selectHandler(firstNewHandlerId);
-    }
-  }, [handlers, addHandler, updateHandler, selectHandler]);
+      // 첫 번째 핸들러 자동 선택 (결과 즉시 확인)
+      if (firstNewHandlerId) {
+        selectHandler(firstNewHandlerId);
+      }
+    },
+    [handlers, addHandler, updateHandler, selectHandler],
+  );
 
   // 이벤트 핸들러 삭제
   const handleRemoveHandler = (handlerId: string) => {
@@ -465,10 +493,13 @@ function EventsPanelContent({
   };
 
   // 액션 추가 (THEN/ELSE 구분)
-  const handleAddAction = (actionType: ActionType, branch: 'then' | 'else' = 'then') => {
+  const handleAddAction = (
+    actionType: ActionType,
+    branch: "then" | "else" = "then",
+  ) => {
     // ⭐ 중앙화된 정규화 유틸 사용 (snake_case → camelCase)
     const normalizedActionType = normalizeToInspectorAction(actionType);
-    if (branch === 'else') {
+    if (branch === "else") {
       addElseAction(normalizedActionType, {});
     } else {
       addAction(normalizedActionType, {});
@@ -486,7 +517,7 @@ function EventsPanelContent({
       };
       updateHandler(selectedHandler!.id, updatedHandler);
     },
-    [actions, selectedHandler, updateHandler]
+    [actions, selectedHandler, updateHandler],
   );
 
   // 액션 삭제 (ELSE)
@@ -499,7 +530,7 @@ function EventsPanelContent({
       };
       updateHandler(selectedHandler!.id, updatedHandler);
     },
-    [elseActions, selectedHandler, updateHandler]
+    [elseActions, selectedHandler, updateHandler],
   );
 
   // 액션 업데이트 (THEN)
@@ -516,11 +547,14 @@ function EventsPanelContent({
           config: updates.config ?? action.config,
           delay: updates.delay ?? action.delay,
           condition: updates.condition ?? action.condition,
-          enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
+          enabled:
+            updates.enabled !== undefined
+              ? updates.enabled
+              : (action.enabled ?? true),
         };
 
         const updatedActions = actions.map((a) =>
-          a.id === actionId ? updatedAction : a
+          a.id === actionId ? updatedAction : a,
         );
         const updatedHandler = {
           ...selectedHandler!,
@@ -529,7 +563,7 @@ function EventsPanelContent({
         updateHandler(selectedHandler!.id, updatedHandler);
       }
     },
-    [actions, selectedHandler, updateHandler]
+    [actions, selectedHandler, updateHandler],
   );
 
   // 액션 업데이트 (ELSE)
@@ -545,11 +579,14 @@ function EventsPanelContent({
           config: updates.config ?? action.config,
           delay: updates.delay ?? action.delay,
           condition: updates.condition ?? action.condition,
-          enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
+          enabled:
+            updates.enabled !== undefined
+              ? updates.enabled
+              : (action.enabled ?? true),
         };
 
         const updatedElseActions = elseActions.map((a) =>
-          a.id === actionId ? updatedAction : a
+          a.id === actionId ? updatedAction : a,
         );
         const updatedHandler = {
           ...selectedHandler!,
@@ -558,7 +595,7 @@ function EventsPanelContent({
         updateHandler(selectedHandler!.id, updatedHandler);
       }
     },
-    [elseActions, selectedHandler, updateHandler]
+    [elseActions, selectedHandler, updateHandler],
   );
 
   // 트리거 변경
@@ -568,7 +605,7 @@ function EventsPanelContent({
       const updated = { ...selectedHandler, event: trigger.event };
       updateHandler(selectedHandler.id, updated);
     },
-    [selectedHandler, updateHandler]
+    [selectedHandler, updateHandler],
   );
 
   // 조건 변경
@@ -585,7 +622,7 @@ function EventsPanelContent({
       const updated = { ...selectedHandler, condition: conditionString };
       updateHandler(selectedHandler.id, updated);
     },
-    [selectedHandler, updateHandler]
+    [selectedHandler, updateHandler],
   );
 
   // 조건 블록 제거
@@ -597,7 +634,9 @@ function EventsPanelContent({
 
   // 블록 액션 데이터 변환
   const blockActions = actionsToBlockActions(selectedHandler?.actions || []);
-  const blockElseActions = actionsToBlockActions(selectedHandler?.elseActions || []);
+  const blockElseActions = actionsToBlockActions(
+    selectedHandler?.elseActions || [],
+  );
 
   // condition 문자열 → ConditionGroup 파싱
   const parsedConditions = parseConditionString(selectedHandler?.condition);
@@ -630,7 +669,10 @@ function EventsPanelContent({
               onSelect={handleAddEvent}
               registeredTypes={registeredEventTypes}
               allowedTypes={supportedEvents}
-              isDisabled={availableSupportedEvents.length === 0 && supportedEvents.length === 0}
+              isDisabled={
+                availableSupportedEvents.length === 0 &&
+                supportedEvents.length === 0
+              }
             />
           )
         }
@@ -701,7 +743,7 @@ function EventsPanelContent({
                 trigger={handlerToTrigger(selectedHandler)}
                 onChange={handleTriggerChange}
                 registeredEventTypes={registeredEventTypes.filter(
-                  (t) => t !== selectedHandler.event
+                  (t) => t !== selectedHandler.event,
                 )}
                 allowedEventTypes={supportedEvents}
                 showConnector={true}
@@ -719,17 +761,19 @@ function EventsPanelContent({
               <ThenElseBlock
                 type="then"
                 actions={blockActions}
-                onAddAction={() => setShowAddAction('then')}
+                onAddAction={() => setShowAddAction("then")}
                 onActionClick={(action) => {
                   setSelectedAction(action);
-                  setSelectedActionBranch('then');
+                  setSelectedActionBranch("then");
                 }}
                 onRemoveAction={handleRemoveAction}
                 onUpdateAction={handleUpdateAction}
                 showConnector={true}
                 eventType={selectedHandler.event}
                 componentType={selectedElement.type}
-                onQuickAddAction={(actionType) => handleAddAction(actionType, 'then')}
+                onQuickAddAction={(actionType) =>
+                  handleAddAction(actionType, "then")
+                }
               />
 
               {/* ELSE 블록 - 조건 불만족 시 액션 목록 (조건이 있을 때만 표시) */}
@@ -737,17 +781,19 @@ function EventsPanelContent({
                 <ThenElseBlock
                   type="else"
                   actions={blockElseActions}
-                  onAddAction={() => setShowAddAction('else')}
+                  onAddAction={() => setShowAddAction("else")}
                   onActionClick={(action) => {
                     setSelectedAction(action);
-                    setSelectedActionBranch('else');
+                    setSelectedActionBranch("else");
                   }}
                   onRemoveAction={handleRemoveElseAction}
                   onUpdateAction={handleUpdateElseAction}
                   showConnector={true}
                   eventType={selectedHandler.event}
                   componentType={selectedElement.type}
-                  onQuickAddAction={(actionType) => handleAddAction(actionType, 'else')}
+                  onQuickAddAction={(actionType) =>
+                    handleAddAction(actionType, "else")
+                  }
                 />
               )}
 
@@ -755,7 +801,9 @@ function EventsPanelContent({
               {showAddAction && (
                 <ActionPickerOverlay
                   branch={showAddAction}
-                  onSelect={(actionType) => handleAddAction(actionType, showAddAction)}
+                  onSelect={(actionType) =>
+                    handleAddAction(actionType, showAddAction)
+                  }
                   onClose={() => setShowAddAction(false)}
                   eventType={selectedHandler.event}
                   componentType={selectedElement.type}
@@ -778,13 +826,14 @@ function EventsPanelContent({
                       />
                     </Button>
                     <span className="action-editor-title">
-                      {selectedAction.type} ({selectedActionBranch.toUpperCase()})
+                      {selectedAction.type} (
+                      {selectedActionBranch.toUpperCase()})
                     </span>
                   </div>
                   <BlockActionEditor
                     action={selectedAction}
                     onChange={(updates) => {
-                      if (selectedActionBranch === 'else') {
+                      if (selectedActionBranch === "else") {
                         handleUpdateElseAction(selectedAction.id, updates);
                       } else {
                         handleUpdateAction(selectedAction.id, updates);
