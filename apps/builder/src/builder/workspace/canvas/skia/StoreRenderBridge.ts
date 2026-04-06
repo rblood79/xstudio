@@ -21,6 +21,7 @@ import { buildSpecNodeData } from "./buildSpecNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
 import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
+import { onLayoutPublished } from "../layout";
 
 function isTextElement(element: Element): boolean {
   return TEXT_TAGS.has(element.tag);
@@ -30,12 +31,36 @@ function isImageElement(element: Element): boolean {
   return IMAGE_TAGS.has(element.tag);
 }
 
+/**
+ * TEXT_TAGS ∩ TAG_SPEC_MAP 중 parent delegation이 필요한 태그.
+ * 이 태그들은 buildSpecNodeData (spec 경로)로 라우팅하여
+ * parentDelegatedSize, necessityIndicator, labelAlignment 등을 처리.
+ * 나머지 TEXT_TAGS (Text, Heading, Description, InlineAlert 등)는
+ * buildTextNodeData (텍스트 경로)로 라우팅하여 inline CSS style 지원.
+ */
+const SPEC_PREFERRED_TEXT_TAGS = new Set([
+  "Label",
+  "FieldError",
+  "InlineAlert",
+  "Description", // InlineAlert parent font delegation
+]);
+
+/** Spec 경로 사용 여부: TAG_SPEC_MAP 등록 + TEXT_TAGS 미등록 또는 delegation 필요 */
+function useSpecPath(element: Element): boolean {
+  if (!getSpecForTag(element.tag)) return false;
+  // TEXT_TAGS에 속하지 않으면 항상 spec 경로
+  if (!TEXT_TAGS.has(element.tag)) return true;
+  // TEXT_TAGS이면서 parent delegation이 필요한 경우만 spec 경로
+  return SPEC_PREFERRED_TEXT_TAGS.has(element.tag);
+}
+
 // ---------------------------------------------------------------------------
 // StoreRenderBridge
 // ---------------------------------------------------------------------------
 
 export class StoreRenderBridge {
   private unsubscribe: (() => void) | null = null;
+  private unsubscribeLayout: (() => void) | null = null;
   private registeredIds = new Set<string>();
   /** 이미지 src → element id 매핑 (라이프사이클 관리) */
   private loadedImageSrcs = new Map<string, string>();
@@ -75,8 +100,9 @@ export class StoreRenderBridge {
     // 초기 동기화
     resync();
 
-    // 변경 구독
+    // 변경 구독: Zustand store + layout publish
     this.unsubscribe = subscribe(resync);
+    this.unsubscribeLayout = onLayoutPublished(resync);
   }
 
   /**
@@ -102,8 +128,27 @@ export class StoreRenderBridge {
       const layout = ctx.layoutMap.get(id) ?? undefined;
       let nodeData;
 
-      if (isTextElement(element)) {
-        // Text 요소: 완전한 TextSprite 로직 (Phase 6 정밀 이식)
+      if (useSpecPath(element)) {
+        // Spec 경로: TAG_SPEC_MAP 등록 + TEXT_TAGS 미등록 컴포넌트
+        // 또는 parent delegation이 필요한 TEXT_TAGS (Label, FieldError)
+        // Phase 8: parent delegation, accent override, phantom indicator 등 포함
+        const childElements = childrenMap?.get(id) ?? undefined;
+        nodeData = buildSpecNodeData({
+          element,
+          layout,
+          theme,
+          childElements,
+          elementsMap,
+        });
+        // Spec이 null 반환 시 (크기 미확정 등) fallback
+        if (!nodeData) {
+          nodeData =
+            buildBoxNodeData({ element, layout }) ??
+            buildSkiaNodeData(element, ctx);
+        }
+      } else if (isTextElement(element)) {
+        // 텍스트 요소 (Text, Heading, Description, InlineAlert, Kbd, Code)
+        // inline CSS style (border, background 등) 지원
         nodeData = buildTextNodeData({ element, layout, theme });
       } else if (isImageElement(element)) {
         // Image 요소: 캐시된 skImage 동기 조회 + 비동기 로딩
@@ -119,16 +164,6 @@ export class StoreRenderBridge {
         }
 
         nodeData = buildImageNodeData({ element, layout, skImage });
-      } else if (getSpecForTag(element.tag)) {
-        // Spec 기반 컴포넌트 (Button, Checkbox 등): shapes → specShapesToSkia
-        const childElements = childrenMap?.get(id) ?? undefined;
-        nodeData = buildSpecNodeData({ element, layout, theme, childElements });
-        // Spec이 null 반환 시 (크기 미확정 등) Box fallback
-        if (!nodeData) {
-          nodeData =
-            buildBoxNodeData({ element, layout }) ??
-            buildSkiaNodeData(element, ctx);
-        }
       } else {
         // Box 요소 / fallback
         nodeData =
@@ -182,6 +217,10 @@ export class StoreRenderBridge {
     if (this.unsubscribe) {
       this.unsubscribe();
       this.unsubscribe = null;
+    }
+    if (this.unsubscribeLayout) {
+      this.unsubscribeLayout();
+      this.unsubscribeLayout = null;
     }
     this.pendingResync = null;
 

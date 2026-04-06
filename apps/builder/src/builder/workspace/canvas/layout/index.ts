@@ -8,13 +8,11 @@
  */
 
 // Grid Layout (Custom)
-export {
-  GridLayout,
-} from './GridLayout';
+export { GridLayout } from "./GridLayout";
 
 export {
   isGridContainer,
-  isFlexContainer,  // 🚀 Phase 7: LayoutEngine.ts에서 이동
+  isFlexContainer, // 🚀 Phase 7: LayoutEngine.ts에서 이동
   parseGridTemplate,
   parseGap,
   parseGridArea,
@@ -25,7 +23,7 @@ export {
   type GridTrack,
   type GridCellBounds,
   type GridLayoutProps,
-} from './GridLayout.utils';
+} from "./GridLayout.utils";
 
 // 엔진 유틸리티 re-export
 export {
@@ -62,4 +60,5 @@ export {
   publishLayoutMap,
   getSharedLayoutMap,
   getSharedLayoutVersion,
-} from './engines';
+  onLayoutPublished,
+} from "./engines";

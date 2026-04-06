@@ -1,18 +1,45 @@
 /**
- * buildSpecNodeData — Spec 기반 컴포넌트 SkiaNodeData 빌드 (ADR-100 Phase 6)
+ * buildSpecNodeData — Spec 기반 컴포넌트 SkiaNodeData 빌드 (ADR-100 Phase 8)
  *
  * ElementSprite의 Spec→shapes→specShapesToSkia 파이프라인을 순수 함수로 추출.
  * Button, Checkbox, Switch 등 TAG_SPEC_MAP에 등록된 모든 컴포넌트를 처리.
  *
- * PixiJS 의존성 없음. element.props + layout + theme에서 구축.
+ * Phase 8 추가:
+ * - Parent→child value propagation (size delegation, progress, slider, date, icon, label)
+ * - Column layout (rearrangeShapesForColumn)
+ * - Text auto-height (measureSpecTextMinHeight)
+ * - Accent override (withAccentOverride)
+ * - Phantom indicator offset (padding/align-items)
+ * - Disabled opacity, focus ring, text wrapping props
+ *
+ * PixiJS 의존성 없음. element.props + layout + theme + elementsMap에서 구축.
  */
 
 import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
-import type { ComponentState } from "@xstudio/specs";
+import type { ComponentState, Shape } from "@xstudio/specs";
+import { InlineAlertSpec } from "@xstudio/specs";
 import { getSpecForTag } from "../sprites/tagSpecMap";
 import { specShapesToSkia } from "./specShapeConverter";
+import {
+  withAccentOverride,
+  type TintPreset,
+} from "../../../../utils/theme/tintToSkiaColors";
+import { getParentTagsForChild } from "../../../utils/propagationRegistry";
+import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
+import { formatProgressValue } from "../layout/engines/implicitStyles";
+import { PHANTOM_INDICATOR_CONFIGS } from "../layout/engines/utils";
+import {
+  parseCSSSize,
+  cssColorToHex,
+  colorIntToFloat32,
+} from "../sprites/styleConverter";
+import {
+  rearrangeShapesForColumn,
+  measureSpecTextMinHeight,
+  parseOutlineShorthand,
+} from "./specBuildHelpers";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,8 +49,387 @@ interface SpecBuildInput {
   element: Element;
   layout: ComputedLayout | undefined;
   theme: "light" | "dark";
-  /** 부모 체인에서 자식 Element 목록 (childrenMap에서 조회) */
+  /** childrenMap에서 조회한 자식 Element 목록 */
   childElements?: Element[];
+  /** 부모 체인 조회용 (Phase 8) */
+  elementsMap: Map<string, Element>;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const CONTAINER_DIMENSION_TAGS = new Set([
+  "Tag",
+  "Breadcrumbs",
+  "Tabs",
+  "Toast",
+  "ProgressBar",
+  "ProgressBarTrack",
+  "Meter",
+  "MeterTrack",
+  "TextField",
+  "TextArea",
+  "Input",
+  "Select",
+  "SelectTrigger",
+  "ComboBox",
+  "SearchField",
+  "NumberField",
+  "GridList",
+  "Image",
+  "Slider",
+  "SliderTrack",
+  "ListBox",
+  "ColorField",
+  "ColorSlider",
+  "DateSegment",
+  "Skeleton",
+  "Switcher",
+]);
+
+const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+  "Tabs",
+  "Breadcrumbs",
+  "TagGroup",
+  "Table",
+  "Tree",
+  "Menu",
+]);
+
+const NOWRAP_PARENTS = new Set([
+  "Checkbox",
+  "CheckBox",
+  "CheckboxGroup",
+  "Radio",
+  "RadioGroup",
+  "Switch",
+  "Toggle",
+  "ProgressBar",
+  "Meter",
+  "Slider",
+]);
+
+const FORM_INHERITANCE_TAGS = new Set([
+  "TextField",
+  "NumberField",
+  "SearchField",
+  "ColorField",
+]);
+
+const DATE_INPUT_PARENT_TAGS = new Set([
+  "DateField",
+  "TimeField",
+  "DatePicker",
+  "DateRangePicker",
+]);
+
+// ---------------------------------------------------------------------------
+// Parent Lookup Helpers (pure functions — no hooks)
+// ---------------------------------------------------------------------------
+
+function getProps(element: Element): Record<string, unknown> {
+  return (element.props ?? {}) as Record<string, unknown>;
+}
+
+/** Registry 기반 부모 size delegation (0-3 level 조상 탐색) */
+function resolveParentDelegatedSize(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): string | null {
+  const delegationParents = getParentTagsForChild(element.tag);
+  if (!delegationParents || !element.parent_id) return null;
+
+  let currentId: string | null | undefined = element.parent_id;
+  for (let depth = 0; depth < 3 && currentId; depth++) {
+    const ancestor = elementsMap.get(currentId);
+    if (!ancestor) break;
+    if (delegationParents.has(ancestor.tag.toLowerCase())) {
+      return (getProps(ancestor).size as string) ?? null;
+    }
+    currentId = ancestor.parent_id;
+  }
+  return null;
+}
+
+/** ToggleButton group position */
+function resolveToggleGroupPosition(
+  element: Element,
+  elementsMap: Map<string, Element>,
+  childrenMap: Map<string, Element[]> | null,
+): {
+  orientation: string;
+  isFirst: boolean;
+  isLast: boolean;
+  isOnly: boolean;
+} | null {
+  if (element.tag !== "ToggleButton" || !element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent || parent.tag !== "ToggleButtonGroup") return null;
+
+  const orientation = (getProps(parent).orientation as string) || "horizontal";
+
+  const siblings = childrenMap?.get(parent.id);
+  if (!siblings || siblings.length === 0) return null;
+
+  const sorted = [...siblings].sort(
+    (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
+  );
+  const index = sorted.findIndex((s) => s.id === element.id);
+  if (index === -1) return null;
+
+  return {
+    orientation,
+    isFirst: index === 0,
+    isLast: index === sorted.length - 1,
+    isOnly: sorted.length === 1,
+  };
+}
+
+/** DateInput parent tag/granularity/hourCycle/locale */
+function resolveDateInputParent(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): Record<string, unknown> | null {
+  if (element.tag !== "DateInput" || !element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent || !DATE_INPUT_PARENT_TAGS.has(parent.tag)) return null;
+
+  const pp = getProps(parent);
+  const result: Record<string, unknown> = { _parentTag: parent.tag };
+  if (pp.granularity != null) result._granularity = pp.granularity;
+  if (pp.hourCycle != null) result._hourCycle = pp.hourCycle;
+  if (pp.locale != null) result._locale = pp.locale;
+  return result;
+}
+
+/** Label necessity indicator from parent field */
+function resolveLabelNecessity(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): { indicator: string; isRequired: boolean } | null {
+  if (element.tag !== "Label" || !element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent) return null;
+
+  const pp = getProps(parent);
+  const indicator = pp.necessityIndicator as string | undefined;
+  if (!indicator) return null;
+
+  return { indicator, isRequired: Boolean(pp.isRequired) };
+}
+
+/** Label alignment from Form ancestor chain */
+function resolveLabelAlignment(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): string | null {
+  if (element.tag !== "Label" || !element.parent_id) return null;
+
+  // Walk from parent → ancestors looking for Form
+  let currentId: string | null | undefined = element.parent_id;
+  while (currentId) {
+    const ancestor = elementsMap.get(currentId);
+    if (!ancestor) break;
+
+    if (ancestor.tag === "Form" || FORM_INHERITANCE_TAGS.has(ancestor.tag)) {
+      const pp = getProps(ancestor);
+      if (pp.labelPosition === "side" && pp.labelAlign) {
+        return pp.labelAlign as string;
+      }
+    }
+
+    currentId = ancestor.parent_id;
+  }
+  return null;
+}
+
+/** ProgressBar/Meter → Track/Value value propagation */
+function resolveProgressProps(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): Record<string, unknown> | null {
+  const isTrack =
+    element.tag === "ProgressBarTrack" || element.tag === "MeterTrack";
+  const isValue =
+    element.tag === "ProgressBarValue" || element.tag === "MeterValue";
+  if (!isTrack && !isValue) return null;
+  if (!element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent) return null;
+
+  const pp = getProps(parent);
+  const rawVal = (pp.value as number) ?? 0;
+  const minV = (pp.minValue as number) ?? 0;
+  const maxV = (pp.maxValue as number) ?? 100;
+  const normalizedValue =
+    maxV > minV
+      ? Math.max(0, Math.min(100, ((rawVal - minV) / (maxV - minV)) * 100))
+      : 0;
+
+  if (isTrack) {
+    return {
+      value: normalizedValue,
+      isIndeterminate: Boolean(pp.isIndeterminate),
+      variant: (pp.variant as string) ?? undefined,
+      size: (pp.size as string) ?? undefined,
+    };
+  }
+
+  // isValue
+  const showValueLabel = pp.showValueLabel !== false;
+  if (!showValueLabel) return null;
+
+  const valueLabel = pp.valueLabel as string | undefined;
+  const formatted =
+    valueLabel && valueLabel.length > 0
+      ? valueLabel
+      : formatProgressValue(
+          rawVal,
+          minV,
+          maxV,
+          pp.formatOptions && typeof pp.formatOptions === "object"
+            ? (pp.formatOptions as Record<string, unknown>)
+            : null,
+        );
+
+  return {
+    children: formatted,
+    size: (pp.size as string) ?? undefined,
+    _clearFontSize: true, // signal to clear fontSize from style
+  };
+}
+
+/** Slider → SliderTrack value propagation */
+function resolveSliderProps(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): Record<string, unknown> | null {
+  if (element.tag !== "SliderTrack" || !element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent) return null;
+
+  const pp = getProps(parent);
+  return {
+    value: pp.value ?? 50,
+    minValue: (pp.minValue as number) ?? 0,
+    maxValue: (pp.maxValue as number) ?? 100,
+    variant: (pp.variant as string) ?? "default",
+  };
+}
+
+/** InlineAlert → Heading/Description font delegation */
+function resolveInlineAlertFont(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): { fontSize: number; fontWeight: number } | null {
+  if (element.tag !== "Heading" && element.tag !== "Description") return null;
+  if (!element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent || parent.tag !== "InlineAlert") return null;
+
+  const pp = getProps(parent);
+  const sizeName = (pp.size as string) ?? "md";
+  const specSize = (InlineAlertSpec.sizes[sizeName] ??
+    InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as unknown as Record<
+    string,
+    unknown
+  >;
+
+  if (element.tag === "Heading") {
+    return {
+      fontSize: (specSize.headingFontSize as number) ?? 16,
+      fontWeight: (specSize.headingFontWeight as number) ?? 700,
+    };
+  }
+  // Description
+  return {
+    fontSize: (specSize.descFontSize as number) ?? 14,
+    fontWeight: (specSize.descFontWeight as number) ?? 400,
+  };
+}
+
+/** SelectIcon/ComboBoxTrigger → parent/grandparent iconName */
+function resolveIconDelegation(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): string | null {
+  if (element.tag !== "SelectIcon" && element.tag !== "ComboBoxTrigger")
+    return null;
+  if (!element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent) return null;
+
+  const parentIcon = getProps(parent).iconName as string | undefined;
+  if (parentIcon) return parentIcon;
+
+  // Grandparent fallback (SelectIcon → SelectTrigger → Select)
+  if (parent.parent_id) {
+    const gp = elementsMap.get(parent.parent_id);
+    if (gp) {
+      const gpIcon = getProps(gp).iconName as string | undefined;
+      if (gpIcon) return gpIcon;
+    }
+  }
+  return null;
+}
+
+/** TagGroup allowsRemoving → Tag child */
+function resolveTagGroupAllowsRemoving(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): boolean {
+  if (element.tag !== "Tag" || !element.parent_id) return false;
+
+  const tagList = elementsMap.get(element.parent_id);
+  if (!tagList?.parent_id) return false;
+
+  const ancestor =
+    tagList.tag === "TagList"
+      ? elementsMap.get(tagList.parent_id)
+      : tagList.tag === "TagGroup"
+        ? tagList
+        : null;
+  if (!ancestor || ancestor.tag !== "TagGroup") return false;
+
+  return Boolean(getProps(ancestor).allowsRemoving);
+}
+
+/** Label in nowrap parent detection */
+function isLabelInNowrapParent(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): boolean {
+  if (element.tag !== "Label" || !element.parent_id) return false;
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent) return false;
+  return NOWRAP_PARENTS.has(parent.tag);
+}
+
+/** Accent color from element or ancestor chain */
+function resolveAccentColor(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): TintPreset | undefined {
+  const elementAccent = getProps(element).accentColor as TintPreset | undefined;
+  if (elementAccent) return elementAccent;
+
+  let pid = element.parent_id;
+  while (pid) {
+    const p = elementsMap.get(pid);
+    if (!p) break;
+    const ac = getProps(p).accentColor as TintPreset | undefined;
+    if (ac) return ac;
+    pid = p.parent_id;
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -31,19 +437,21 @@ interface SpecBuildInput {
 // ---------------------------------------------------------------------------
 
 /**
- * Spec 기반 컴포넌트의 SkiaNodeData를 생성.
+ * Spec 기반 컴포넌트의 SkiaNodeData를 생성 (Phase 8 — 전체 기능).
  *
  * 1. TAG_SPEC_MAP에서 ComponentSpec 조회
- * 2. variant/size spec 해석
+ * 2. Parent→child value propagation
  * 3. spec.render.shapes() 호출
- * 4. specShapesToSkia() 변환
- *
- * TAG_SPEC_MAP에 없는 태그는 null 반환.
+ * 4. Column layout / text auto-height 보정
+ * 5. Accent override + specShapesToSkia() 변환
+ * 6. Phantom indicator offset
+ * 7. Disabled opacity / focus ring
  */
 export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
-  const { element, layout, theme, childElements } = input;
+  const { element, layout, theme, childElements, elementsMap } = input;
+  const tag = element.tag;
 
-  const spec = getSpecForTag(element.tag);
+  const spec = getSpecForTag(tag);
   if (!spec) return null;
 
   const w = layout?.width ?? 0;
@@ -53,44 +461,174 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   if (w <= 0 && h <= 0) return null;
 
   // ---------- variant / size spec 해석 ----------
-  const props = (element.props ?? {}) as Record<string, unknown>;
+  const props = getProps(element);
+  const style = (props.style || {}) as Record<string, unknown>;
+
+  // Parent-delegated size
+  const delegatedSize = resolveParentDelegatedSize(element, elementsMap);
+  const size = (props.size as string) ?? delegatedSize ?? spec.defaultSize;
   const variant = (props.variant as string) ?? spec.defaultVariant;
-  const size = (props.size as string) ?? spec.defaultSize;
 
   const variantSpec =
     spec.variants[variant] ?? spec.variants[spec.defaultVariant];
   const sizeSpec = spec.sizes[size] ?? spec.sizes[spec.defaultSize];
   if (!variantSpec || !sizeSpec) return null;
 
-  // ---------- component state ----------
-  const componentState: ComponentState = (() => {
-    if (props.isDisabled || props.disabled) return "disabled";
-    return "default";
-  })();
+  // ---------- flexDirection → column detection ----------
+  const flexDir = (style.flexDirection as string) || "";
+  const isColumn = flexDir === "column" || flexDir === "column-reverse";
 
   // ---------- specProps 준비 ----------
   let specProps: Record<string, unknown> = { ...props };
 
-  // width/height 주입 (spec shapes는 숫자 기대)
-  const existingStyle = (specProps.style || {}) as Record<string, unknown>;
-  specProps = {
-    ...specProps,
-    style: {
-      ...existingStyle,
-      width:
-        typeof existingStyle.width === "number"
-          ? existingStyle.width
-          : w > 0
-            ? w
-            : undefined,
-      height: existingStyle.height ?? (h > 0 ? h : undefined),
-    },
-    _containerWidth: w,
-    _containerHeight: h,
-    ...(childElements && childElements.length > 0
-      ? { _hasChildren: true }
-      : {}),
-  };
+  // Size injection (delegated overrides default)
+  if (delegatedSize && !props.size) {
+    specProps = { ...specProps, size: delegatedSize };
+  }
+
+  // ToggleButton group position
+  const togglePos = resolveToggleGroupPosition(
+    element,
+    elementsMap,
+    input.childElements !== undefined
+      ? buildChildrenMapFromElements(elementsMap)
+      : null,
+  );
+  if (togglePos) {
+    specProps = { ...specProps, _groupPosition: togglePos };
+  }
+
+  // DateInput parent delegation
+  const dateProps = resolveDateInputParent(element, elementsMap);
+  if (dateProps) {
+    specProps = { ...specProps, ...dateProps };
+  }
+
+  // Label necessity indicator
+  const necessity = resolveLabelNecessity(element, elementsMap);
+  if (necessity) {
+    const originalText =
+      (specProps.children as string) || (specProps.label as string) || "";
+    const indicatorText = getNecessityIndicatorSuffix(
+      necessity.indicator,
+      necessity.isRequired,
+    );
+    if (indicatorText) {
+      specProps = {
+        ...specProps,
+        children: originalText + indicatorText,
+        _necessityIndicator: necessity.indicator,
+        _isRequired: necessity.isRequired,
+      };
+    }
+  }
+
+  // Label alignment from Form ancestor
+  const labelAlign = resolveLabelAlignment(element, elementsMap);
+  if (labelAlign) {
+    const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+    specProps = {
+      ...specProps,
+      style: {
+        ...existingStyle,
+        textAlign: existingStyle.textAlign ?? labelAlign,
+      },
+    };
+  }
+
+  // InlineAlert → Heading/Description font delegation
+  const inlineAlertFont = resolveInlineAlertFont(element, elementsMap);
+  if (inlineAlertFont) {
+    const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+    specProps = {
+      ...specProps,
+      style: {
+        ...existingStyle,
+        fontSize: existingStyle.fontSize ?? inlineAlertFont.fontSize,
+        fontWeight: existingStyle.fontWeight ?? inlineAlertFont.fontWeight,
+      },
+    };
+  }
+
+  // ProgressBar/Meter value propagation
+  const progressProps = resolveProgressProps(element, elementsMap);
+  if (progressProps) {
+    const clearFontSize = progressProps._clearFontSize;
+    const { _clearFontSize: _, ...rest } = progressProps;
+    specProps = {
+      ...specProps,
+      ...Object.fromEntries(
+        Object.entries(rest).filter(([, v]) => v !== undefined),
+      ),
+      ...(specProps.value != null && !clearFontSize
+        ? { value: specProps.value }
+        : {}),
+    };
+
+    if (clearFontSize) {
+      const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+      specProps = {
+        ...specProps,
+        style: { ...existingStyle, fontSize: undefined },
+      };
+    }
+  }
+
+  // Slider value propagation
+  const sliderProps = resolveSliderProps(element, elementsMap);
+  if (sliderProps) {
+    specProps = { ...specProps, ...sliderProps };
+  }
+
+  // SelectIcon/ComboBoxTrigger icon delegation
+  const delegatedIcon = resolveIconDelegation(element, elementsMap);
+  if (delegatedIcon && !specProps.iconName) {
+    specProps = { ...specProps, iconName: delegatedIcon };
+  }
+
+  // TagGroup allowsRemoving
+  if (resolveTagGroupAllowsRemoving(element, elementsMap)) {
+    specProps = { ...specProps, allowsRemoving: true };
+  }
+
+  // _hasChildren injection
+  if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+    if (childElements && childElements.length > 0) {
+      specProps = { ...specProps, _hasChildren: true };
+    }
+  }
+
+  // Container dimension injection
+  if (CONTAINER_DIMENSION_TAGS.has(tag)) {
+    specProps = {
+      ...specProps,
+      _containerWidth: w,
+      _containerHeight: h,
+    };
+  }
+
+  // ---------- component state ----------
+  const componentState: ComponentState = (() => {
+    if (specProps.isDisabled || specProps.disabled) return "disabled";
+    return "default";
+  })();
+
+  // ---------- width/height injection ----------
+  let specHeight = h;
+  if (w > 0 || h > 0) {
+    const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+    const existingW = existingStyle.width;
+    const resolvedWidth =
+      typeof existingW === "number" ? existingW : w > 0 ? w : undefined;
+    specProps = {
+      ...specProps,
+      style: {
+        ...existingStyle,
+        width: resolvedWidth,
+        height: existingStyle.height ?? (h > 0 ? h : undefined),
+      },
+    };
+  }
 
   // ---------- shapes 생성 ----------
   const shapes = spec.render.shapes(
@@ -100,15 +638,218 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     componentState,
   );
 
-  // ---------- specShapesToSkia 변환 ----------
-  const specNode = specShapesToSkia(shapes, theme, w, h, element.id);
+  // ---------- Column layout ----------
+  if (isColumn) {
+    rearrangeShapesForColumn(shapes, w, sizeSpec.gap ?? 8);
+  }
 
-  // layout 좌표 적용 (specShapesToSkia는 x=0, y=0으로 생성)
+  // ---------- Text auto-height ----------
+  const hasExplicitHeight =
+    style.height !== undefined && style.height !== "auto";
+  if (!hasExplicitHeight && w > 0) {
+    const textMinHeight = measureSpecTextMinHeight(
+      shapes,
+      w,
+      sizeSpec as unknown as Record<string, unknown>,
+      style.whiteSpace as string | undefined,
+      style.wordBreak as string | undefined,
+      style.overflowWrap as string | undefined,
+    );
+    if (textMinHeight !== undefined && textMinHeight > specHeight) {
+      specHeight = textMinHeight;
+    }
+  }
+
+  // ---------- Accent override + specShapesToSkia ----------
+  const resolvedAccent = resolveAccentColor(element, elementsMap);
+  const specNode = withAccentOverride(resolvedAccent, () =>
+    specShapesToSkia(shapes, theme, w, specHeight, element.id),
+  );
+
+  // ---------- Inline CSS border overlay ----------
+  applyInlineBorderOverlay(specNode, style);
+
+  // ---------- Phantom indicator offset ----------
+  applyPhantomIndicatorOffset(specNode, tag, size, style, specHeight);
+
+  // ---------- Disabled opacity ----------
+  if (componentState === "disabled") {
+    const opacityVal =
+      (spec.states?.disabled?.opacity as number | undefined) ?? 0.38;
+    specNode.effects = [
+      ...(specNode.effects ?? []),
+      { type: "opacity" as const, value: opacityVal },
+    ];
+  }
+
+  // ---------- Focus ring (focusVisible/focused) ----------
+  if (
+    (componentState === "focusVisible" || componentState === "focused") &&
+    specNode.box
+  ) {
+    const focusState =
+      componentState === "focused"
+        ? spec.states?.focused?.outline
+          ? spec.states.focused
+          : spec.states?.focusVisible
+        : spec.states?.focusVisible;
+    if (focusState?.outline) {
+      const parsed = parseOutlineShorthand(
+        focusState.outline as string,
+        focusState.outlineOffset as string | number | undefined,
+      );
+      if (parsed) {
+        specNode.box.outlineColor = parsed.color;
+        specNode.box.outlineWidth = parsed.width;
+        specNode.box.outlineOffset = parsed.offset;
+      }
+    }
+  }
+
+  // ---------- Text wrapping props (nowrap parent) ----------
+  if (specNode.children) {
+    const labelNowrap = isLabelInNowrapParent(element, elementsMap);
+    const isNowrapTag = tag === "Tag" || tag === "Badge";
+
+    for (const child of specNode.children) {
+      if (child.type === "text" && child.text) {
+        const effectiveWhiteSpace =
+          (style.whiteSpace as string) ??
+          (labelNowrap || isNowrapTag ? "nowrap" : undefined);
+        if (effectiveWhiteSpace) {
+          child.text.whiteSpace =
+            effectiveWhiteSpace as typeof child.text.whiteSpace;
+        }
+      }
+    }
+  }
+
+  // ---------- layout 좌표 적용 ----------
   specNode.x = layout?.x ?? 0;
   specNode.y = layout?.y ?? 0;
   specNode.width = w;
-  specNode.height = h;
+  specNode.height = specHeight;
   specNode.elementId = element.id;
 
   return specNode;
+}
+
+// ---------------------------------------------------------------------------
+// Phantom Indicator Offset
+// ---------------------------------------------------------------------------
+
+function applyPhantomIndicatorOffset(
+  specNode: SkiaNodeData,
+  tag: string,
+  size: string,
+  style: Record<string, unknown>,
+  specHeight: number,
+): void {
+  const tagLower = tag.toLowerCase();
+  const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[tagLower];
+  if (!indicatorConfig) return;
+
+  const padFallback =
+    style.padding !== undefined ? parseCSSSize(style.padding) : 0;
+  const padTop =
+    style.paddingTop !== undefined
+      ? parseCSSSize(style.paddingTop)
+      : padFallback;
+  const padBottom =
+    style.paddingBottom !== undefined
+      ? parseCSSSize(style.paddingBottom)
+      : padFallback;
+  const padLeft =
+    style.paddingLeft !== undefined
+      ? parseCSSSize(style.paddingLeft)
+      : padFallback;
+
+  // content area 높이 = border-box - padding
+  const contentH = specHeight - padTop - padBottom;
+
+  // align-items 세로 정렬
+  const s = (size as "sm" | "md" | "lg") || "md";
+  const indicatorH = indicatorConfig.heights[s] ?? indicatorConfig.heights.md;
+  const alignItems = style.alignItems as string | undefined;
+  let alignOffsetY = 0;
+  if (alignItems === "center" && contentH > indicatorH) {
+    alignOffsetY = (contentH - indicatorH) / 2;
+  } else if (alignItems === "flex-end" && contentH > indicatorH) {
+    alignOffsetY = contentH - indicatorH;
+  }
+
+  // padding + align-items 합산 오프셋
+  specNode.x = (specNode.x ?? 0) + padLeft;
+  specNode.y = (specNode.y ?? 0) + padTop + alignOffsetY;
+}
+
+// ---------------------------------------------------------------------------
+// Inline CSS Border Overlay
+// ---------------------------------------------------------------------------
+
+/**
+ * 사용자가 스타일 패널에서 설정한 inline CSS border를 spec node 위에 오버레이.
+ * Spec shapes는 컴포넌트 기본 외관을 정의하고, inline border는 사용자 커스터마이징.
+ */
+function applyInlineBorderOverlay(
+  specNode: SkiaNodeData,
+  style: Record<string, unknown>,
+): void {
+  const borderWidth = style.borderWidth;
+  if (borderWidth == null) return;
+
+  const bw = parseCSSSize(borderWidth);
+  if (bw <= 0) return;
+
+  // box가 없으면 생성
+  if (!specNode.box) {
+    specNode.box = {
+      fillColor: Float32Array.of(0, 0, 0, 0),
+      borderRadius: 0,
+    };
+  }
+
+  // borderColor
+  const borderColorStr = style.borderColor as string | undefined;
+  const borderHex = borderColorStr
+    ? cssColorToHex(borderColorStr, 0x808080)
+    : 0x808080;
+  specNode.box.strokeColor = colorIntToFloat32(borderHex, 1);
+  specNode.box.strokeWidth = bw;
+
+  // borderStyle
+  const borderStyle = style.borderStyle as string | undefined;
+  if (borderStyle && borderStyle !== "solid" && borderStyle !== "none") {
+    specNode.box.strokeStyle = borderStyle as "dashed" | "dotted";
+  }
+
+  // borderRadius (inline override)
+  if (style.borderRadius != null) {
+    specNode.box.borderRadius = parseCSSSize(style.borderRadius);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * elementsMap에서 간이 childrenMap 구축 (ToggleButton position 계산용).
+ * StoreRenderBridge가 childrenMap을 전달하지 않는 경우의 fallback.
+ */
+function buildChildrenMapFromElements(
+  elementsMap: Map<string, Element>,
+): Map<string, Element[]> {
+  const map = new Map<string, Element[]>();
+  for (const [, el] of elementsMap) {
+    if (el.parent_id) {
+      let siblings = map.get(el.parent_id);
+      if (!siblings) {
+        siblings = [];
+        map.set(el.parent_id, siblings);
+      }
+      siblings.push(el);
+    }
+  }
+  return map;
 }

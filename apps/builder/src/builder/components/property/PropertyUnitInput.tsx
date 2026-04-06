@@ -95,8 +95,15 @@ export const PropertyUnitInput = memo(
     // useMemo로 value prop에서 파생값 계산 (useLayoutEffect + setState 대체)
     const parsed = useMemo(() => parseUnitValue(value), [value]);
     const numericValue = parsed.numericValue;
+    // 단위 해석: parsed.unit이 비어있고 숫자가 있으면 units 목록에서 첫 번째 비키워드 단위로 폴백
+    // (e.g., borderWidth: "1" → unit="" → "px" 폴백)
     const unit =
-      parsed.unit || (parsed.numericValue !== null ? defaultUnit : parsed.unit);
+      parsed.unit ||
+      (parsed.numericValue !== null
+        ? defaultUnit ||
+          units.find((u) => u !== "" && !KEYWORDS.includes(u)) ||
+          ""
+        : parsed.unit);
     const isKeyword = parsed.numericValue === null;
     const [inputValue, setInputValue] = useState(
       parsed.numericValue !== null

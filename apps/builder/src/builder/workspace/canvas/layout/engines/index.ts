@@ -9,9 +9,19 @@
  */
 
 // Re-export types
-export type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
-export type { Margin, BoxModel, VerticalAlign, LineBoxItem, LineBox } from './types';
-export type { CSSVariableScope } from './cssValueParser';
+export type {
+  LayoutEngine,
+  ComputedLayout,
+  LayoutContext,
+} from "./LayoutEngine";
+export type {
+  Margin,
+  BoxModel,
+  VerticalAlign,
+  LineBoxItem,
+  LineBox,
+} from "./types";
+export type { CSSVariableScope } from "./cssValueParser";
 
 // Re-export utilities
 export {
@@ -33,13 +43,18 @@ export {
   enrichWithIntrinsicSize,
   INLINE_BLOCK_TAGS,
   getPhantomIndicatorWidth,
-} from './utils';
+} from "./utils";
 
 // W3-7: CSS var() DOM fallback 헬퍼
-export { createVariableScopeWithDOMFallback } from './cssValueParser';
+export { createVariableScopeWithDOMFallback } from "./cssValueParser";
 
 // ADR-005 Phase 2: Persistent Taffy Tree + Incremental Layout
-export { calculateFullTreeLayout, resetPersistentTree } from './fullTreeLayout';
+export { calculateFullTreeLayout, resetPersistentTree } from "./fullTreeLayout";
 
 // ADR-005 Phase 3: Flat Render Command Stream — 공유 Layout Map
-export { publishLayoutMap, getSharedLayoutMap, getSharedLayoutVersion } from './fullTreeLayout';
+export {
+  publishLayoutMap,
+  getSharedLayoutMap,
+  getSharedLayoutVersion,
+  onLayoutPublished,
+} from "./fullTreeLayout";

@@ -174,6 +174,14 @@ let _sharedLayoutVersion = 0;
 let _mergedLayoutMap: Map<string, ComputedLayout> | null = null;
 let _mergedLayoutVersion = -1;
 
+/** publishLayoutMap 이후 호출되는 리스너 (StoreRenderBridge 재동기화용) */
+const _layoutPublishListeners = new Set<() => void>();
+
+export function onLayoutPublished(cb: () => void): () => void {
+  _layoutPublishListeners.add(cb);
+  return () => _layoutPublishListeners.delete(cb);
+}
+
 /** fullTreeLayoutMap을 페이지 단위로 공유한다. */
 export function publishLayoutMap(
   map: Map<string, ComputedLayout> | null,
@@ -186,6 +194,8 @@ export function publishLayoutMap(
     _perPageLayoutMaps.delete(key);
   }
   _sharedLayoutVersion++;
+  // Layout 발행 후 리스너 알림 (StoreRenderBridge 재동기화)
+  for (const cb of _layoutPublishListeners) cb();
 }
 
 /** 공유된 fullTreeLayoutMap 조회 (모든 페이지 머지, 버전 캐시) */

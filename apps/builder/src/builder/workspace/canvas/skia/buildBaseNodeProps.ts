@@ -55,8 +55,8 @@ export function buildBaseNodeProps(
   element: Element,
   layout: ComputedLayout | undefined,
 ): BaseNodeProps | null {
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  if (!style) return null;
+  const style =
+    (element.props?.style as Record<string, unknown> | undefined) ?? {};
 
   const converted = convertStyle(
     style as Parameters<typeof convertStyle>[0],

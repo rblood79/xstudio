@@ -383,6 +383,15 @@ export function renderText(
     const paragraph = builder.build();
     paragraph.layout(effectiveLayoutWidth);
 
+    // CanvasKit 큰 width 렌더링 실패 방지:
+    // paragraph.layout(100000+) 시 텍스트가 보이지 않는 CanvasKit 내부 버그.
+    // nowrap/pre → maxIntrinsicWidth + 1로 재레이아웃하여 정확한 폭 사용.
+    if (layoutMaxWidth >= 100000) {
+      const maxIntrinsic = paragraph.getMaxIntrinsicWidth();
+      effectiveLayoutWidth = Math.ceil(maxIntrinsic) + 1;
+      paragraph.layout(effectiveLayoutWidth);
+    }
+
     // Canvas 2D↔CanvasKit 오발 줄바꿈 교정:
     // hintedText에 \n이 없는데(Canvas 2D가 한 줄 판정) CanvasKit이 줄바꿈한 경우
     // → CanvasKit 자체 측정(getMaxIntrinsicWidth)으로 재layout
