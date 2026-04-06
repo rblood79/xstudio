@@ -50,8 +50,8 @@ export const UNIFIED_ENGINE_FLAGS = {
   // Phase 4: 성능
   USE_TILE_CACHE: false,
 
-  // 전체 전환 — useLayoutPublisher + StoreRenderBridge 준비 완료
-  // 활성화 조건: buildSkiaNodeData가 4개 Sprite와 동등한 데이터 생성 시
+  // 전체 전환 — 레이아웃 독립화 완료, 렌더 데이터 생성 미완
+  // 4개 Sprite(Box/Text/Image/Element) 정밀 이식 후 활성화
   UNIFIED_ENGINE: false,
 } as const;
 

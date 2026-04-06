@@ -18,6 +18,7 @@ import {
   buildTextSkiaNodeData,
   type BuildContext,
 } from "./buildSkiaNodeData";
+import { buildBoxNodeData } from "./buildBoxNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 
 // ---------------------------------------------------------------------------
@@ -90,9 +91,14 @@ export class StoreRenderBridge {
     for (const [id, element] of elementsMap) {
       currentIds.add(id);
 
+      // Box 요소 (대부분의 요소): 완전한 BoxSprite 로직 사용
+      // Text 요소: 기본 텍스트 빌더
+      // 그 외: 기본 빌더 (fallback)
+      const layout = ctx.layoutMap.get(id) ?? undefined;
       const nodeData = isTextElement(element)
         ? buildTextSkiaNodeData(element, ctx)
-        : buildSkiaNodeData(element, ctx);
+        : (buildBoxNodeData({ element, layout }) ??
+          buildSkiaNodeData(element, ctx));
 
       if (nodeData) {
         registerSkiaNode(id, nodeData);

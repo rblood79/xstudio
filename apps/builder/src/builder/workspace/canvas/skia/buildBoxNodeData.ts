@@ -21,12 +21,12 @@ import {
   parseZIndex,
   createsStackingContext,
 } from "../layout/engines/cssStackingContext";
+import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import {
-  isFillV2Enabled,
   fillsToSkiaFillColor,
   fillsToSkiaFillStyle,
   cssBgImageToSkia,
-} from "../sprites/fillConverter";
+} from "../../../panels/styles/utils/fillToSkia";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -156,7 +156,7 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
     skiaTransform = applyTransformOrigin(skiaEffects.transform, ox, oy);
   }
 
-  const zIndex = parseZIndex(style.zIndex);
+  const zIndex = parseZIndex(style.zIndex as string | number | undefined);
   const isStackingCtx = createsStackingContext(style);
 
   // Overflow
@@ -204,18 +204,14 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
       ? parseClipPath(style.clipPath, w, h)
       : undefined;
 
-  // Stroke
-  const borderConfig = stroke;
-  const strokeColor = borderConfig?.color
-    ? (() => {
-        const sc = borderConfig.color;
-        return Float32Array.of(
-          ((sc >> 16) & 0xff) / 255,
-          ((sc >> 8) & 0xff) / 255,
-          (sc & 0xff) / 255,
-          borderConfig.alpha ?? 1,
-        );
-      })()
+  // Stroke — PixiStrokeStyle (color, width, alpha)
+  const strokeColor = stroke?.color
+    ? Float32Array.of(
+        ((stroke.color >> 16) & 0xff) / 255,
+        ((stroke.color >> 8) & 0xff) / 255,
+        (stroke.color & 0xff) / 255,
+        stroke.alpha ?? 1,
+      )
     : isCardItem
       ? Float32Array.of(0.83, 0.83, 0.83, 1)
       : undefined;
@@ -246,11 +242,7 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
           : {}),
       borderRadius: br,
       strokeColor,
-      strokeWidth: borderConfig?.width ?? (isCardItem ? 1 : undefined),
-      strokeStyle:
-        borderConfig?.style !== "solid" && borderConfig?.style !== "none"
-          ? (borderConfig?.style as string)
-          : undefined,
+      strokeWidth: stroke?.width ?? (isCardItem ? 1 : undefined),
     },
   } as SkiaNodeData;
 }
