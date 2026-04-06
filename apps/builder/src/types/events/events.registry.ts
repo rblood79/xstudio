@@ -198,30 +198,6 @@ export const EVENT_CATEGORIES_BY_ID = (
   {} as Record<EventCategoryId, EventType[]>,
 );
 
-/** 레거시 호환: EVENT_CATEGORIES (기존 구조 유지) */
-export const EVENT_CATEGORIES = {
-  mouse: {
-    label: "Mouse Events",
-    events: EVENT_CATEGORIES_BY_ID.mouse ?? [],
-  },
-  form: {
-    label: "Form Events",
-    events: EVENT_CATEGORIES_BY_ID.form ?? [],
-  },
-  keyboard: {
-    label: "Keyboard Events",
-    events: EVENT_CATEGORIES_BY_ID.keyboard ?? [],
-  },
-  interaction: {
-    label: "Interaction Events",
-    events: EVENT_CATEGORIES_BY_ID.reactAria ?? [],
-  },
-  other: {
-    label: "Other Events",
-    events: EVENT_CATEGORIES_BY_ID.other ?? [],
-  },
-} as const;
-
 // ===== 타입 가드 =====
 
 /** 이벤트 타입이 registry에 존재하는지 확인 */
@@ -310,8 +286,8 @@ export const IMPLEMENTED_ACTION_TYPES = [
 
 export type ActionType = (typeof IMPLEMENTED_ACTION_TYPES)[number];
 
-/** 액션 타입 → 한글 레이블 매핑 */
-export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
+/** 액션 타입 → 한글 레이블 매핑 (camelCase 정본, snake_case는 자동 derive) */
+const CAMEL_ACTION_LABELS: Record<string, string> = {
   navigate: "페이지 이동",
   scrollTo: "스크롤 이동",
   setState: "상태 설정",
@@ -340,31 +316,48 @@ export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
   loadDataTable: "DataTable 로드",
   syncComponent: "컴포넌트 동기화",
   saveToDataTable: "DataTable에 저장",
-  // snake_case aliases
-  toggle_visibility: "표시/숨김 토글",
-  show_modal: "모달 표시",
-  hide_modal: "모달 숨김",
-  update_state: "상태 업데이트",
-  set_state: "상태 설정",
-  scroll_to: "스크롤 이동",
-  copy_to_clipboard: "클립보드 복사",
-  validate_form: "폼 검증",
-  reset_form: "폼 리셋",
-  submit_form: "폼 제출",
-  update_form_field: "폼 필드 업데이트",
-  custom_function: "커스텀 함수",
-  api_call: "API 호출",
-  set_component_state: "컴포넌트 상태 설정",
-  trigger_component_action: "컴포넌트 액션 트리거",
-  filter_collection: "컬렉션 필터",
-  select_item: "항목 선택",
-  clear_selection: "선택 해제",
 };
+
+// snake_case alias → camelCase 매핑 (normalizeToInspectorAction과 동일 매핑)
+const SNAKE_TO_CAMEL: Record<string, string> = {
+  toggle_visibility: "toggleVisibility",
+  show_modal: "showModal",
+  hide_modal: "hideModal",
+  update_state: "updateState",
+  set_state: "setState",
+  scroll_to: "scrollTo",
+  copy_to_clipboard: "copyToClipboard",
+  validate_form: "validateForm",
+  reset_form: "resetForm",
+  submit_form: "submitForm",
+  update_form_field: "updateFormField",
+  custom_function: "customFunction",
+  api_call: "apiCall",
+  set_component_state: "setComponentState",
+  trigger_component_action: "triggerComponentAction",
+  filter_collection: "filterCollection",
+  select_item: "selectItem",
+  clear_selection: "clearSelection",
+  show_toast: "showToast",
+};
+
+// snake_case 레이블을 camelCase에서 자동 derive
+export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
+  ...CAMEL_ACTION_LABELS,
+  ...Object.fromEntries(
+    Object.entries(SNAKE_TO_CAMEL).map(([snake, camel]) => [
+      snake,
+      CAMEL_ACTION_LABELS[camel] ?? snake,
+    ]),
+  ),
+} as Partial<Record<ActionType, string>>;
+
+const IMPLEMENTED_ACTION_TYPES_SET = new Set<string>(IMPLEMENTED_ACTION_TYPES);
 
 export function isImplementedActionType(
   actionType: string,
 ): actionType is ActionType {
-  return (IMPLEMENTED_ACTION_TYPES as readonly string[]).includes(actionType);
+  return IMPLEMENTED_ACTION_TYPES_SET.has(actionType);
 }
 
 export const ACTION_CATEGORIES = {

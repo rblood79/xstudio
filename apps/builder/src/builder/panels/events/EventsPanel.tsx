@@ -100,25 +100,6 @@ function actionsToBlockActions(
 }
 
 /**
- * BlockEventAction[] → EventHandler.actions 변환 (역변환)
- * Note: 타입 어서션 사용 - BlockEventAction.type (registry)과 EventAction.type (eventTypes) 간 호환
- * @todo 향후 이벤트 편집 기능에서 사용 예정
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function blockActionsToEventActions(
-  blockActions: BlockEventAction[],
-): EventHandler["actions"] {
-  return blockActions.map((action) => ({
-    id: action.id,
-    type: action.type as EventHandler["actions"][number]["type"],
-    config: action.config,
-    delay: action.delay,
-    condition: action.condition,
-    enabled: action.enabled,
-  }));
-}
-
-/**
  * condition 문자열 → ConditionGroup 파싱
  *
  * handleConditionsChange에서 생성한 형식을 역변환:
