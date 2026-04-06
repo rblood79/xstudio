@@ -21,27 +21,11 @@ import {
   lazy,
   Suspense,
 } from "react";
-// Phase 9: PixiJS 제거 — Application stub
-type PixiApplication = unknown;
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
-
-// Phase 9: pixiSetup 제거 — stub
-const useExtend = (_: unknown) => {};
-const PIXI_COMPONENTS = {};
-const isLowEndDevice = () => false;
-const getDynamicResolution = (_a: unknown, _b: unknown) => 1;
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
-import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
-// Phase 9: ClickableBackground 제거
-const ClickableBackground = (_: Record<string, unknown>) => null;
-import { ElementsLayer } from "./components/ElementsLayer";
-// Phase 9: PageContainer 제거
-const PageContainer = (_: Record<string, unknown>) => null;
-// Phase 9: SelectionLayer 제거 (Skia selectionRenderer가 대체)
-const SelectionLayer = (_: Record<string, unknown>) => null;
 type BoundingBox = { x: number; y: number; width: number; height: number };
 import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 // GridLayer는 Skia gridRenderer로 대체됨
@@ -113,37 +97,16 @@ const PAGE_STACK_GAP = 80;
 /**
  * Phase 5: CanvasKit 오버레이 (Lazy Import)
  */
-// Phase 9: SkiaOverlay 제거 (REMOVE_PIXI=true → SkiaCanvas 단독)
-const SkiaOverlayComponent = () => null;
-
 /**
- * ADR-100 Phase 2.7: SkiaCanvas (SceneGraph 기반 단독 렌더러, Lazy Import)
- * REMOVE_PIXI=true일 때 SkiaOverlay 대신 사용.
+ * SkiaCanvas (SceneGraph 기반 단독 렌더러, Lazy Import)
  */
 const skiaCanvasImport = () =>
   import("./skia/SkiaCanvas").then((mod) => ({ default: mod.SkiaCanvas }));
 const SkiaCanvasComponent = lazy(skiaCanvasImport);
 
-function SkiaOverlayLazy(props: {
-  containerEl: HTMLDivElement;
-  backgroundColor?: number;
-  app: PixiApplication;
-  invalidateLayout: () => void;
-  invalidationPacket: RendererInvalidationPacket;
-  rendererInput: SkiaRendererInput;
-  dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
-}) {
-  return (
-    <Suspense fallback={null}>
-      <SkiaOverlayComponent {...props} />
-    </Suspense>
-  );
-}
-
 function SkiaCanvasLazy(props: {
   containerEl: HTMLDivElement;
   backgroundColor?: number;
-  app?: PixiApplication;
   invalidateLayout: () => void;
   invalidationPacket: RendererInvalidationPacket;
   rendererInput: SkiaRendererInput;
@@ -155,20 +118,6 @@ function SkiaCanvasLazy(props: {
     </Suspense>
   );
 }
-
-/**
- * P4: PixiJS 컴포넌트 등록 브릿지
- *
- * useExtend 훅을 사용하여 메모이제이션된 컴포넌트 등록을 수행합니다.
- * Application 내부 첫 번째 자식으로 배치해야 합니다.
- */
-function PixiExtendBridge() {
-  useExtend(PIXI_COMPONENTS);
-  return null;
-}
-
-// SelectionOverlay는 SelectionLayer로 대체됨 (B1.3)
-// CanvasSmoothResizeBridge 제거됨 - resizeTo={containerEl}로 대체 (Panel Toggle 성능 최적화)
 
 // ============================================
 // Main Component
@@ -185,25 +134,10 @@ export function BuilderCanvas({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  const {
-    appReady,
-    handlePixiAppInit,
-    pixiApp,
-    wasmLayoutFailed,
-    wasmLayoutReady,
-  } = useCanvasRuntimeBootstrap();
-
-  // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
-  const isLowEnd = isLowEndDevice();
+  const { appReady, wasmLayoutFailed, wasmLayoutReady } =
+    useCanvasRuntimeBootstrap();
 
   const containerSize = useViewportSyncStore((state) => state.containerSize);
-
-  // 🚀 Phase 5 + 6.1: 동적 해상도 (줌/팬 중에는 낮춤)
-  const [isInteracting, setIsInteracting] = useState(false);
-  const resolution = useMemo(
-    () => getDynamicResolution(isInteracting, containerSize),
-    [isInteracting, containerSize],
-  );
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -369,9 +303,8 @@ export function BuilderCanvas({
     return pages.filter((page) => visiblePageIds.has(page.id));
   }, [pages, visiblePageIds]);
 
-  // ADR-100 Phase 6.4: UNIFIED_ENGINE=true 시 PixiJS 없이 레이아웃 발행
+  // ADR-100 Phase 6.4: PixiJS 없이 레이아웃 발행
   const layoutPublisherInputs = useMemo(() => {
-    if (!isUnifiedFlag("UNIFIED_ENGINE")) return [];
     return visiblePages
       .map((page) => {
         const input = buildPixiPageRendererInput({
@@ -448,14 +381,8 @@ export function BuilderCanvas({
     [panOffset, zoom],
   );
 
-  // 🚀 Phase 5: 줌/팬 시작/종료 시 해상도 조정
-  const handleInteractionStart = useCallback(() => {
-    setIsInteracting(true);
-  }, []);
-
-  const handleInteractionEnd = useCallback(() => {
-    setIsInteracting(false);
-  }, []);
+  const handleInteractionStart = useCallback(() => {}, []);
+  const handleInteractionEnd = useCallback(() => {}, []);
 
   const rendererInvalidationPacket = useMemo(() => {
     return createRendererInvalidationPacket({
@@ -723,123 +650,10 @@ export function BuilderCanvas({
           </button>
         </div>
       )}
-      {/* 🚀 Phase 7: Application — UNIFIED_ENGINE=true 시 완전 제거 (StoreRenderBridge ���체) */}
-      {containerEl && !isUnifiedFlag("UNIFIED_ENGINE") && (
-        <Application
-          resizeTo={containerEl}
-          background={backgroundColor}
-          backgroundAlpha={0}
-          // 🚀 Phase 5: 저사양 기기에서 antialias 비활성화
-          antialias={!isLowEnd}
-          // 🚀 Phase 5: 동적 해상도 (인터랙션 중 낮춤)
-          resolution={resolution}
-          autoDensity={true}
-          roundPixels={false}
-          // 🚀 Phase 5: GPU 성능 최적화
-          powerPreference="high-performance"
-          // 🚀 Phase 8: Application + LayoutSystem 초기화 완료 콜백
-          // LayoutSystem.init()이 Yoga WASM을 내부적으로 로드 (Phase 9에서 제거 예정)
-          onInit={handlePixiAppInit}
-        >
-          {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
-          <PixiExtendBridge />
-
-          {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
-          {/* 🚀 Phase 6.1: 줌/팬 인터랙션 시 동적 해상도 조정 */}
-          <ViewportControlBridge
-            containerEl={containerEl}
-            cameraLabel="Camera"
-            minZoom={0.1}
-            maxZoom={5}
-            onInteractionStart={handleInteractionStart}
-            onInteractionEnd={handleInteractionEnd}
-            initialPanOffsetX={initialPanOffsetX}
-          />
-
-          {/* 전체 Canvas 영역 클릭 → editingContext 복귀 또는 body 선택 */}
-          <ClickableBackground
-            onClick={handleCanvasBackgroundClick}
-            zoom={zoom}
-            panOffset={panOffset}
-          />
-
-          {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
-          <pixiContainer
-            label="Camera"
-            eventMode="static"
-            interactiveChildren={true}
-          >
-            {/* 🆕 Multi-page: 메모이제이션된 페이지 컨테이너 (뷰포트 컬링 적용) */}
-            {visiblePages.map((page) => {
-              const pos = pagePositions[page.id];
-              const rendererInput = buildPixiPageRendererInput({
-                elementById,
-                dirtyElementIds,
-                pageHeight,
-                pageId: page.id,
-                pagePositionVersion: pagePositionsVersion,
-                pageWidth,
-                panOffset,
-                sceneSnapshot,
-                wasmLayoutReady,
-                zoom,
-              });
-              if (!pos || !rendererInput) return null;
-              return (
-                <PageContainer
-                  key={page.id}
-                  pageId={page.id}
-                  posX={pos.x}
-                  posY={pos.y}
-                  pageWidth={pageWidth}
-                  pageHeight={pageHeight}
-                  zoom={zoom}
-                  isVisible={visiblePageIds.has(page.id)}
-                  appReady={appReady}
-                  wasmLayoutReady={wasmLayoutReady}
-                  bodyElement={rendererInput.bodyElement}
-                  onTitleDragStart={startPageDrag}
-                >
-                  <ElementsLayer rendererInput={rendererInput} />
-                </PageContainer>
-              );
-            })}
-
-            {/* Selection Layer (최상단 - 모든 페이지 위) */}
-            <SelectionLayer
-              pageWidth={pageWidth}
-              pageHeight={pageHeight}
-              zoom={zoom}
-              panOffset={panOffset}
-              pagePositions={pagePositions}
-              pagePositionsVersion={pagePositionsVersion}
-              onStartMoveRef={onStartMoveRef}
-              onUpdateDragRef={onUpdateDragRef}
-              onEndDragRef={onEndDragRef}
-              onCancelDragRef={onCancelDragRef}
-              dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
-            />
-          </pixiContainer>
-        </Application>
-      )}
-
-      {/* Phase 5: CanvasKit 오버레이 / ADR-100 Phase 2.7: SkiaCanvas 단독 렌더러 */}
-      {containerEl && !isUnifiedFlag("REMOVE_PIXI") && pixiApp && (
-        <SkiaOverlayLazy
-          containerEl={containerEl}
-          backgroundColor={backgroundColor}
-          app={pixiApp}
-          invalidateLayout={invalidateLayout}
-          invalidationPacket={rendererInvalidationPacket}
-          rendererInput={skiaRendererInput}
-          dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
-        />
-      )}
-      {containerEl && isUnifiedFlag("REMOVE_PIXI") && (
+      {containerEl && (
         <SkiaCanvasLazy
           containerEl={containerEl}
           backgroundColor={backgroundColor}
-          app={pixiApp ?? undefined}
           invalidateLayout={invalidateLayout}
           invalidationPacket={rendererInvalidationPacket}
           rendererInput={skiaRendererInput}
@@ -847,8 +661,7 @@ export function BuilderCanvas({
         />
       )}
 
-      {/* ADR-100: UNIFIED_ENGINE=true → PixiJS 외부 ViewportControlBridge */}
-      {containerEl && isUnifiedFlag("UNIFIED_ENGINE") && (
+      {containerEl && (
         <ViewportControlBridge
           containerEl={containerEl}
           cameraLabel="Camera"
