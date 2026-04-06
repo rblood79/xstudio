@@ -13,6 +13,7 @@
 import { Container, Bounds } from "pixi.js";
 
 import { notifyLayoutChange } from "./skia/useSkiaNode";
+import { getSceneBounds } from "./skia/renderCommands";
 
 // ============================================
 // Types
@@ -133,6 +134,10 @@ export function getElementBoundsSimple(id: string): ElementBounds | null {
   // 직접 저장된 layout bounds 우선 사용 (getBounds() 타이밍 문제 우회)
   const layoutBounds = layoutBoundsRegistry.get(id);
   if (layoutBounds) return layoutBounds;
+
+  // ADR-100: Command Stream boundsMap fallback (UNIFIED_ENGINE — PixiJS 없음)
+  const sceneBounds = getSceneBounds(id);
+  if (sceneBounds) return sceneBounds;
 
   // fallback: PixiJS Container의 getBounds()
   const bounds = getElementBounds(id);
