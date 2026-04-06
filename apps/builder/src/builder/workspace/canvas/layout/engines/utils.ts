@@ -3044,7 +3044,14 @@ export function enrichWithIntrinsicSize(
     // Math.ceil: Taffy(f32)와 JS(f64) 간 부동소수점 정밀도 차이로
     // flex-wrap 컨테이너에서 자식 합계가 부모 폭을 미세하게 초과하여
     // 불필요한 wrap이 발생하는 것을 방지
-    injectedStyle.width = Math.ceil(injectWidth);
+    const ceiledWidth = Math.ceil(injectWidth);
+    injectedStyle.width = ceiledWidth;
+    // CSS min-width:auto 에뮬레이션: flex item의 기본 min-width는 콘텐츠 크기
+    // width를 주입하면 Taffy가 flex-shrink로 축소할 수 있으므로 minWidth도 동시 설정
+    // 사용자가 명시적 minWidth를 설정한 경우는 보존
+    if (isFlexChild && !style?.minWidth) {
+      injectedStyle.minWidth = ceiledWidth;
+    }
   }
 
   // 변경이 없으면 원본 반환
