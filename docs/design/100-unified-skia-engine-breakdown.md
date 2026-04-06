@@ -2,12 +2,49 @@
 
 > 이 문서는 [ADR-100](../adr/100-unified-skia-rendering-engine.md)의 구현 상세입니다.
 
+## 검증된 오픈소스 의존성 및 참조
+
+> 리서치 완료 (2026-04-06). 모든 핵심 기능에 검증된 소스코드가 존재함.
+
+### 직접 의존 (fork 또는 채택)
+
+| 프로젝트          | License | 용도                                                                           | GitHub                                                                |
+| ----------------- | ------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| **Taffy v0.10.0** | MIT     | Layout Engine 포크 기반 — flex/grid/block/areas 검증됨. **sticky만 추가 구현** | [DioxusLabs/taffy](https://github.com/DioxusLabs/taffy) ⭐3.1k        |
+| **geo-index**     | MIT     | Spatial Index — R-tree, flatbush zero-copy 바이너리 호환, WASM 명시 지원       | [georust/geo-index](https://github.com/georust/geo-index)             |
+| **Popmotion**     | MIT     | CSS transition/animation 코어 — DOM 비의존, spring/keyframe/easing (4.5kb)     | [Popmotion/popmotion](https://github.com/Popmotion/popmotion) ⭐20.2k |
+
+### 아키텍처 패턴 참조
+
+| 패턴                           | 참조 프로젝트                                                                 | 참조 위치                                        |
+| ------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------ |
+| CanvasKit scene graph 브리지   | **AntV G** (MIT, ⭐1.2k) — 유일한 CanvasKit 렌더러 보유 scene graph           | `antvis/G/packages/g-plugin-canvaskit-renderer/` |
+| Dirty rectangle 알고리즘       | **ZRender** (BSD-3, ⭐6.3k) — ECharts 프로덕션 검증                           | `ecomfe/zrender/src/canvas/`                     |
+| Skia WASM + 타일 캐싱          | **Penpot** render-wasm (MPL-2, ⭐38k)                                         | `penpot/penpot/render-wasm/`                     |
+| backdrop-filter/mask 구현      | **React Native Skia** (MIT, ⭐8.3k) — saveLayer + ImageFilter 패턴            | `Shopify/react-native-skia/packages/skia/src/`   |
+| position: sticky 알고리즘      | **Stickyfill** (MIT, ⭐2.3k) — 3단계 상태 전환 (normal→fixed→absolute-bottom) | `wilddeer/stickyfill/src/`                       |
+| CanvasKit + WASM 레이아웃 통합 | **OpenPencil** (MIT, ⭐4k) — XStudio와 거의 동일 스택                         | `open-pencil/open-pencil/`                       |
+| Rust 100% 에디터 아키텍처      | **Graphite** (Apache-2.0, ⭐25k) — Rust 렌더링 + JS thin UI                   | `GraphiteEditor/Graphite/`                       |
+| JS-WASM 경계 최적화            | **Penpot** — 바이너리 직렬화 (104byte/shape), linear memory 직접 조작         | `penpot/penpot/render-wasm/src/`                 |
+| Stylo+Taffy+Parley 통합 패턴   | **Blitz** (MIT, ⭐3.5k) — 모듈별 독립 사용 가능한 아키텍처                    | `DioxusLabs/blitz/`                              |
+
+### CSS3 렌더링 — 추가 라이브러리 불필요
+
+| 기능                  | CanvasKit 내장 API                                                 | 참조 구현                             |
+| --------------------- | ------------------------------------------------------------------ | ------------------------------------- |
+| backdrop-filter       | `saveLayer(bounds, null, backdropFilter)` + `ImageFilter.MakeBlur` | React Native Skia `BackdropBlur`      |
+| text-shadow           | `TextStyle.shadows` + `ImageFilter.MakeDropShadow`                 | CanvasKit Paragraph API               |
+| mask-image            | `MaskFilter` + `RuntimeEffect.Make` (SkSL shader)                  | React Native Skia alpha mask          |
+| sepia/invert          | `ColorFilter.MakeMatrix` (5x4 color matrix)                        | 이미 XStudio `effects.ts`에 패턴 존재 |
+| outline-style         | `Paint.setPathEffect(DashPathEffect.Make)`                         | Skia 공식 API                         |
+| background-blend-mode | `Paint.setBlendMode` (18종 이미 구현)                              | 이미 XStudio `blendModes.ts`          |
+
 ## 목차
 
 1. [현재 아키텍처 분석](#1-현재-아키텍처-분석)
 2. [목표 아키텍처](#2-목표-아키텍처)
 3. [Layer 1: GPU Backend 추상화](#3-layer-1-gpu-backend-추상화)
-4. [Layer 2: Custom Rust CSS3 Layout Engine](#4-layer-2-custom-rust-css3-layout-engine)
+4. [Layer 2: Custom Rust Layout Engine](#4-layer-2-custom-rust-css3-layout-engine)
 5. [Layer 3: SceneGraph (Retained Mode)](#5-layer-3-scenegraph-retained-mode)
 6. [Layer 4: SkiaRenderer 확장](#6-layer-4-skiarenderer-확장)
 7. [Layer 5: Event System 재설계](#7-layer-5-event-system-재설계)
@@ -373,19 +410,42 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+# Layout — Taffy v0.10.0 fork (flex/grid/block/areas 검증됨)
+# git = "https://github.com/xstudio/taffy-fork" or path = "../taffy-fork"
+taffy = { version = "0.10", features = ["grid", "block_layout"] }
+
+# Spatial Index — geo-index (flatbush zero-copy 바이너리 호환)
+geo-index = "0.2"
+
+# WASM 바인딩
 wasm-bindgen = "0.2"
 js-sys = "0.3"
+
+# 직렬화 (JS-WASM 경계 최소화 — Penpot 패턴: 바이너리 직렬화 우선)
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [profile.release]
+panic = "abort"      # unwind 제거
 opt-level = "s"      # 크기 최적화
-lto = true
-codegen-units = 1
+lto = true           # 링크 타임 최적화
+codegen-units = 1    # 단일 유닛
+strip = true         # 디버그 심볼 제거
 ```
 
-빌드: `wasm-pack build --target web --release`
-예상 WASM 크기: ~200-400KB (gzip ~80-150KB)
+빌드:
+
+```bash
+wasm-pack build --target web --release
+# 후처리 (10-20% 추가 감소)
+wasm-opt -Os -o xstudio_layout_opt.wasm xstudio_layout_bg.wasm
+```
+
+예상 WASM 크기: ~250-350KB (gzip ~100-140KB)
+
+- Taffy flex/grid/block: ~150KB
+- geo-index R-tree: ~50KB
+- sticky + wasm-bindgen 글루: ~50-150KB
 
 ---
 

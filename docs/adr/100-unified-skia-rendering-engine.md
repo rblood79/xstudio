@@ -86,24 +86,35 @@ Zustand Store
   → DOM Events → WASM SpatialIndex → SceneGraph → Store
 ```
 
-**Layout Engine 전략 (ROI 다이어트 적용):**
+**Layout Engine 전략 (ROI 다이어트 + 리서치 기반):**
 
-- Taffy의 검증된 flex/grid 알고리즘을 **포크**하여 기반 (핵심 레이아웃의 ~90%)
-- `grid-template-areas` 추가 (네이밍 영역 → 숫자 변환)
-- `position: sticky` 추가 (스크롤 오프셋 비교, 비교적 단순)
-- Block 레이아웃 (margin collapse 제외 — flex/grid 컨텍스트에서 미발생, 노코드는 gap/padding)
-- ~~float/clear, table, inline, multicol~~ — **삭제** (ROI ≈ 0, 현대 웹에서 미사용)
+- [Taffy v0.10.0](https://github.com/DioxusLabs/taffy) (MIT, ⭐3.1k) **포크** — flex/grid/block + `grid-template-areas` 이미 구현됨
+- `position: sticky` 추가 — [Stickyfill](https://github.com/wilddeer/stickyfill) (MIT) 3단계 상태 전환 알고리즘 참조
+- [geo-index](https://github.com/georust/geo-index) (MIT) — R-tree spatial index, flatbush와 **zero-copy 바이너리 호환**, 레이아웃 후 즉시 인덱스 구축
+- ~~float/clear, table, inline, multicol~~ — **삭제** (ROI ≈ 0)
 - 텍스트 측정: Pretext 원리 기반 Canvas 2D (ADR-051) → Break Hint → CanvasKit 렌더링
-- 단일 WASM 바이너리로 통합 (layout + spatial index)
+- 단일 WASM 바이너리 (`xstudio-layout.wasm`, ~300KB 예상)
 
-**CSS3 렌더링 확장:**
+**SceneGraph (자체 구현, 검증된 패턴 참조):**
 
-- backdrop-filter (SaveLayer + blur behind)
-- text-shadow (CanvasKit ParagraphStyle shadow)
-- mask-image (CanvasKit Shader mask)
-- CSS transitions/animations (SceneGraph 프레임 보간)
-- sepia, invert 필터 (ColorMatrix 확장)
-- outline-style (dashed, dotted 추가)
+- [AntV G `g-canvaskit`](https://github.com/antvis/G) (MIT) — **CanvasKit 렌더러를 가진 유일한 scene graph**. 브리지 패턴 참조
+- [ZRender](https://github.com/ecomfe/zrender) (BSD-3, ⭐6.3k) — ECharts의 **dirty rectangle 알고리즘** (프로덕션 검증)
+- [Penpot render-wasm](https://github.com/penpot/penpot) (MPL-2, ⭐38k) — **Skia WASM + 타일 캐싱** 패턴
+
+**CSS3 렌더링 확장 (추가 라이브러리 불필요 — CanvasKit 내장 API):**
+
+- backdrop-filter — `saveLayer` backdrop 인자 + `ImageFilter.MakeBlur`. [React Native Skia](https://github.com/Shopify/react-native-skia) (MIT, ⭐8.3k) 구현 패턴 참조
+- text-shadow — `TextStyle.shadows` + `ImageFilter.MakeDropShadow` (CanvasKit 내장)
+- mask-image — `MaskFilter` + `RuntimeEffect` shader (CanvasKit 내장)
+- CSS transitions/animations — [Popmotion](https://github.com/Popmotion/popmotion) (MIT, ⭐20.2k) 코어 엔진 (DOM 비의존, 4.5kb) 채택 또는 알고리즘 추출
+- sepia, invert — `ColorFilter` ColorMatrix (CanvasKit 내장)
+- outline-style — `Paint.setPathEffect` + `DashPathEffect` (CanvasKit 내장)
+
+**유사 제품 아키텍처 검증:**
+
+- [OpenPencil](https://github.com/open-pencil/open-pencil) (MIT, ⭐4k) — CanvasKit + Yoga WASM + RBush. **XStudio와 거의 동일 스택**, 가장 직접적 참조
+- [Graphite](https://github.com/GraphiteEditor/Graphite) (Apache-2.0, ⭐25k) — Rust 100% 아키텍처 (tiny-skia/Vello)
+- [Penpot](https://github.com/penpot/penpot) (MPL-2, ⭐38k) — 바이너리 직렬화로 JS-WASM 경계 최소화
 
 **위험:**
 
@@ -167,12 +178,13 @@ PixiJS만 제거하고 Taffy는 유지. CSS3 레이아웃 갭(float/table/inline
 
 ROI 다이어트 후 HIGH 위험 0개. 잔존 MEDIUM 위험에 대한 완화:
 
-1. **Taffy fork**: flex/grid/block은 이미 검증된 코드 100% 재활용 (레이아웃의 ~95% 커버)
-2. **신규 구현 최소화**: sticky(스크롤 오프셋 비교) + grid-template-areas(네이밍→숫자 변환)만 추가
-3. **float/table/inline/multicol 삭제**: 구현 비용 극대(~8주) 대비 현대 웹 사용률 0% — 삭제로 일정 33% 단축
-4. **Shadow Engine**: 기존 시스템과 병행 운영하므로 실패 시 롤백 가능
-5. **Pretext 텍스트 측정**: ADR-051의 Canvas 2D 측정을 통합하여 텍스트 레이아웃 정합성 확보
-6. **보류 기능 확장 경로**: multi-column, subgrid 등은 수요 발생 시 독립 Phase로 추가 가능
+1. **Taffy v0.10.0 fork**: flex/grid/block + `grid-template-areas`가 이미 구현됨 (⭐3.1k, MIT, Servo/Blitz/Zed 등 프로덕션 사용). 신규 구현은 **sticky만** (~200줄, [Stickyfill](https://github.com/wilddeer/stickyfill) 알고리즘 참조)
+2. **검증된 오픈소스 조합**: [geo-index](https://github.com/georust/geo-index)(spatial index) + [Popmotion](https://github.com/Popmotion/popmotion)(transition 엔진) — 모두 MIT, 프로덕션 검증
+3. **CSS3 렌더링은 CanvasKit 내장 API만**: backdrop-filter, text-shadow, mask 모두 추가 라이브러리 불필요. [React Native Skia](https://github.com/Shopify/react-native-skia)(⭐8.3k) 구현 패턴 참조
+4. **유사 제품 아키텍처 검증**: [OpenPencil](https://github.com/open-pencil/open-pencil)(CanvasKit+Yoga WASM)이 거의 동일 스택으로 동작 확인. [Penpot](https://github.com/penpot/penpot)(Skia WASM+타일 캐싱)이 대규모 캔버스 성능 검증
+5. **SceneGraph 참조 패턴 풍부**: [AntV G](https://github.com/antvis/G)(CanvasKit 브리지), [ZRender](https://github.com/ecomfe/zrender)(dirty rect), [Penpot](https://github.com/penpot/penpot)(타일 캐싱) — 각 패턴이 프로덕션 검증됨
+6. **Shadow Engine**: 기존 시스템과 병행 운영하므로 실패 시 롤백 가능
+7. **보류 기능 확장 경로**: multi-column, subgrid 등은 수요 발생 시 독립 Phase로 추가 가능
 
 ### 기각 사유
 
