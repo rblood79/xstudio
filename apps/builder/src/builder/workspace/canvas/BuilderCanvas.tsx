@@ -37,6 +37,7 @@ import {
 } from "./pixiSetup";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
+import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
 import { ClickableBackground } from "./components/ClickableBackground";
 import { ElementsLayer } from "./components/ElementsLayer";
 import { PageContainer } from "./components/PageContainer";
@@ -114,6 +115,14 @@ const skiaOverlayImport = () =>
 const SkiaOverlayComponent = lazy(skiaOverlayImport);
 skiaOverlayImport(); // 모듈 프리로드: lazy 해제 없이 초기 번들 크기 유지하면서 청크 로딩 선행
 
+/**
+ * ADR-100 Phase 2.7: SkiaCanvas (SceneGraph 기반 단독 렌더러, Lazy Import)
+ * REMOVE_PIXI=true일 때 SkiaOverlay 대신 사용.
+ */
+const skiaCanvasImport = () =>
+  import("./skia/SkiaCanvas").then((mod) => ({ default: mod.SkiaCanvas }));
+const SkiaCanvasComponent = lazy(skiaCanvasImport);
+
 function SkiaOverlayLazy(props: {
   containerEl: HTMLDivElement;
   backgroundColor?: number;
@@ -126,6 +135,21 @@ function SkiaOverlayLazy(props: {
   return (
     <Suspense fallback={null}>
       <SkiaOverlayComponent {...props} />
+    </Suspense>
+  );
+}
+
+function SkiaCanvasLazy(props: {
+  containerEl: HTMLDivElement;
+  backgroundColor?: number;
+  invalidateLayout: () => void;
+  invalidationPacket: RendererInvalidationPacket;
+  rendererInput: SkiaRendererInput;
+  dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <SkiaCanvasComponent {...props} />
     </Suspense>
   );
 }
@@ -653,8 +677,8 @@ export function BuilderCanvas({
           </button>
         </div>
       )}
-      {/* 🚀 Phase 7: Application 즉시 렌더링, Yoga는 LayoutSystem.init()에서 로드 */}
-      {containerEl && (
+      {/* 🚀 Phase 7: Application 즉시 렌더링 / ADR-100: REMOVE_PIXI=true 시 스킵 */}
+      {containerEl && !isUnifiedFlag("REMOVE_PIXI") && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
@@ -753,12 +777,22 @@ export function BuilderCanvas({
         </Application>
       )}
 
-      {/* Phase 5: CanvasKit 오버레이 */}
-      {containerEl && pixiApp && (
+      {/* Phase 5: CanvasKit 오버레이 / ADR-100 Phase 2.7: SkiaCanvas 단독 렌더러 */}
+      {containerEl && !isUnifiedFlag("REMOVE_PIXI") && pixiApp && (
         <SkiaOverlayLazy
           containerEl={containerEl}
           backgroundColor={backgroundColor}
           app={pixiApp}
+          invalidateLayout={invalidateLayout}
+          invalidationPacket={rendererInvalidationPacket}
+          rendererInput={skiaRendererInput}
+          dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
+        />
+      )}
+      {containerEl && isUnifiedFlag("REMOVE_PIXI") && (
+        <SkiaCanvasLazy
+          containerEl={containerEl}
+          backgroundColor={backgroundColor}
           invalidateLayout={invalidateLayout}
           invalidationPacket={rendererInvalidationPacket}
           rendererInput={skiaRendererInput}
