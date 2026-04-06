@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-06
+Accepted — 2026-04-07 (Phase 8-9 Implemented, PixiJS 완전 제거)
 
 Supersedes: [ADR-003](completed/003-canvas-rendering.md) (PixiJS Canvas Rendering), [ADR-008](completed/008-layout-engine.md) (Taffy WASM Layout Engine), [ADR-051](051-pretext-text-measurement-integration.md) (Pretext 텍스트 측정 — 하이브리드 단일 소스로 대체)
 
