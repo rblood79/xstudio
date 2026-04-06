@@ -194,6 +194,31 @@ impl LayoutEngine {
             .expect("taffy set_children");
     }
 
+    /// CSS order 기반 자식 정렬 후 set_children.
+    ///
+    /// Taffy 0.10은 Style.order 미지원이므로 TS 레이어에서 정렬 후
+    /// 정렬된 순서대로 set_children 호출. 이 메서드는 handles+orders를
+    /// 받아 order 오름차순 정렬 후 set_children을 수행한다.
+    ///
+    /// `orders`가 빈 배열이면 `children` 순서 그대로 사용.
+    pub fn set_children_ordered(
+        &mut self,
+        handle: u32,
+        children: &[u32],
+        orders: &[i32],
+    ) {
+        if orders.is_empty() || orders.len() != children.len() {
+            self.set_children(handle, children);
+            return;
+        }
+
+        let mut indexed: Vec<(usize, i32)> = orders.iter().copied().enumerate().collect();
+        indexed.sort_by_key(|&(_, order)| order);
+
+        let sorted: Vec<u32> = indexed.iter().map(|&(i, _)| children[i]).collect();
+        self.set_children(handle, &sorted);
+    }
+
     pub fn remove_node(&mut self, handle: u32) {
         if let Some(meta) = self.nodes.remove(&handle) {
             let _ = self.tree.remove(meta.node_id);
@@ -760,5 +785,58 @@ mod tests {
 
         // column 방향 + overflowY:scroll → shrink=0 → 150px 유지
         assert_eq!(lc["height"].as_f64().unwrap() as i32, 150);
+    }
+
+    #[test]
+    fn set_children_ordered_sorts_by_order() {
+        let mut engine = LayoutEngine::new();
+
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"300px","height":"50px"}"#,
+        );
+
+        // 3 자식: 각 100px
+        let c1 = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+        let c2 = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+        let c3 = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+
+        // order: c3=1, c1=2, c2=3 → 정렬 후 c3, c1, c2
+        engine.set_children_ordered(parent, &[c1, c2, c3], &[2, 3, 1]);
+        engine.compute_layout(parent, 300.0, 50.0);
+
+        let l1: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c1)).unwrap();
+        let l2: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c2)).unwrap();
+        let l3: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c3)).unwrap();
+
+        // c3(order=1) → x=0, c1(order=2) → x=100, c2(order=3) → x=200
+        assert_eq!(l3["x"].as_f64().unwrap() as i32, 0);
+        assert_eq!(l1["x"].as_f64().unwrap() as i32, 100);
+        assert_eq!(l2["x"].as_f64().unwrap() as i32, 200);
+    }
+
+    #[test]
+    fn set_children_ordered_empty_orders_preserves_original() {
+        let mut engine = LayoutEngine::new();
+
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"200px","height":"50px"}"#,
+        );
+        let c1 = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+        let c2 = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+
+        // orders 빈 배열 → 원래 순서 유지
+        engine.set_children_ordered(parent, &[c1, c2], &[]);
+        engine.compute_layout(parent, 200.0, 50.0);
+
+        let l1: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c1)).unwrap();
+        let l2: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c2)).unwrap();
+
+        assert_eq!(l1["x"].as_f64().unwrap() as i32, 0);
+        assert_eq!(l2["x"].as_f64().unwrap() as i32, 100);
     }
 }
