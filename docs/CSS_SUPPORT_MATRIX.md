@@ -153,15 +153,15 @@
 
 > Spec: [CSS Positioned Layout Module Level 3](https://www.w3.org/TR/css-position-3/)
 
-| 속성                                | 상태 | 구현 파일                                                        | 비고                                                  |
-| ----------------------------------- | ---- | ---------------------------------------------------------------- | ----------------------------------------------------- |
-| `position: static`                  | ✅   | (기본값)                                                         |                                                       |
-| `position: relative`                | ✅   | `cssStackingContext.ts:23`                                       | stacking context 판정                                 |
-| `position: absolute`                | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:58-59` |                                                       |
-| `position: fixed`                   | ⚠️   | `fullTreeLayout.ts buildNodeStyle()`                             | `absolute`로 정규화 — 뷰포트 기준 고정 동작 없음      |
-| `position: sticky`                  | ⚠️   | `cssStackingContext.ts:22`                                       | stacking context만 생성, 실제 sticky 스크롤 동작 없음 |
-| `top` / `right` / `bottom` / `left` | ✅   | `TaffyFlexEngine.ts:161-169`                                     | absolute/relative 요소에 적용                         |
-| `z-index`                           | ✅   | `cssStackingContext.ts:38-43`, `nodeRenderers.ts:155`            | auto/숫자, stacking context 렌더 정렬                 |
+| 속성                                | 상태 | 구현 파일                                                        | 비고                                                                                            |
+| ----------------------------------- | ---- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `position: static`                  | ✅   | (기본값)                                                         |                                                                                                 |
+| `position: relative`                | ✅   | `cssStackingContext.ts:23`                                       | stacking context 판정                                                                           |
+| `position: absolute`                | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:58-59` |                                                                                                 |
+| `position: fixed`                   | ⚠️   | `fullTreeLayout.ts buildNodeStyle()`                             | `absolute`로 정규화 — 뷰포트 기준 고정 동작 없음                                                |
+| `position: sticky`                  | ⚠️   | `cssStackingContext.ts:22`, `layout/stickyResolver.ts`           | stacking context 생성 + post-layout 3-state 보정 (normal→stuck→limit). fullTreeLayout 연동 대기 |
+| `top` / `right` / `bottom` / `left` | ✅   | `TaffyFlexEngine.ts:161-169`                                     | absolute/relative 요소에 적용                                                                   |
+| `z-index`                           | ✅   | `cssStackingContext.ts:38-43`, `nodeRenderers.ts:155`            | auto/숫자, stacking context 렌더 정렬                                                           |
 
 ---
 
@@ -211,18 +211,18 @@
 
 ### 8.1 배경
 
-| 속성                                  | 상태 | 구현 파일                   | 비고                                        |
-| ------------------------------------- | ---- | --------------------------- | ------------------------------------------- |
-| `background-color`                    | ✅   | `fills.ts:44-51`            | hex, rgb, rgba, hsl, hsla, named 색상       |
-| `background-image: linear-gradient()` | ✅   | `fills.ts:54-74`            | `CanvasKit.Shader.MakeLinearGradient`       |
-| `background-image: radial-gradient()` | ✅   | `fills.ts:76-98`            | `MakeTwoPointConicalGradient`               |
-| `background-image: conic-gradient()`  | ✅   | `fills.ts:100-124`          | `MakeSweepGradient` (−90° 보정)             |
-| `background-image: url()`             | ✅   | `fills.ts:126-143`          | `Image.makeShaderOptions`                   |
-| `background-size`                     | ✅   | `fillToSkia.ts`             | cover, contain, auto, px, %                 |
-| `background-position`                 | ✅   | `fillToSkia.ts`             | 키워드(center/top/bottom/left/right), px, % |
-| `background-repeat`                   | ✅   | `fillToSkia.ts`, `fills.ts` | repeat, no-repeat, repeat-x, repeat-y       |
-| `background-attachment`               | ❌   | —                           |                                             |
-| mesh-gradient (비표준)                | ✅   | `fills.ts:146-188`          | SkSL RuntimeEffect                          |
+| 속성                                  | 상태 | 구현 파일                   | 비고                                                                        |
+| ------------------------------------- | ---- | --------------------------- | --------------------------------------------------------------------------- |
+| `background-color`                    | ✅   | `fills.ts:44-51`            | hex, rgb, rgba, hsl, hsla, named 색상                                       |
+| `background-image: linear-gradient()` | ✅   | `fills.ts:54-74`            | `MakeLinearGradient`. G5: repeating TileMode 지원. G7: oklab 보간 모듈 준비 |
+| `background-image: radial-gradient()` | ✅   | `fills.ts:76-98`            | `MakeTwoPointConicalGradient`. G6: closest-side/farthest-corner 키워드 변환 |
+| `background-image: conic-gradient()`  | ✅   | `fills.ts:100-124`          | `MakeSweepGradient` (−90° 보정)                                             |
+| `background-image: url()`             | ✅   | `fills.ts:126-143`          | `Image.makeShaderOptions`                                                   |
+| `background-size`                     | ✅   | `fillToSkia.ts`             | cover, contain, auto, px, %                                                 |
+| `background-position`                 | ✅   | `fillToSkia.ts`             | 키워드(center/top/bottom/left/right), px, %                                 |
+| `background-repeat`                   | ✅   | `fillToSkia.ts`, `fills.ts` | repeat, no-repeat, repeat-x, repeat-y                                       |
+| `background-attachment`               | ❌   | —                           |                                                                             |
+| mesh-gradient (비표준)                | ✅   | `fills.ts:146-188`          | SkSL RuntimeEffect                                                          |
 
 ### 8.2 테두리
 
@@ -246,9 +246,10 @@
 
 ### 8.4 그림자
 
-| 속성         | 상태 | 구현 파일                   | 비고                    |
-| ------------ | ---- | --------------------------- | ----------------------- |
-| `box-shadow` | ✅   | `styleConverter.ts:458-521` | 다중 shadow, inset 지원 |
+| 속성          | 상태 | 구현 파일                                             | 비고                                                                              |
+| ------------- | ---- | ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `box-shadow`  | ✅   | `styleConverter.ts:458-521`, `nodeRendererBorders.ts` | 다중 shadow, inset 지원. G1: border-radius RRect 반영. G2: spread RRect 확대 처리 |
+| `text-shadow` | ⚠️   | `nodeRendererText.ts`, `types.ts TextShadow`          | 2-pass 렌더링 구현. styleConverter 파싱 연동 대기                                 |
 
 ---
 
@@ -334,12 +335,12 @@
 
 > Spec: [CSS Transitions Level 1](https://www.w3.org/TR/css-transitions-1/), [CSS Animations Level 1](https://www.w3.org/TR/css-animations-1/)
 
-| 속성                     | 상태 | 비고                                                       |
-| ------------------------ | ---- | ---------------------------------------------------------- |
-| `transition`             | ❌   | CanvasKit 정적 렌더링 — 프레임 기반 애니메이션 인프라 없음 |
-| `animation`              | ❌   |                                                            |
-| `@keyframes`             | ❌   |                                                            |
-| `transition-*` 개별 속성 | ❌   |                                                            |
+| 속성                     | 상태 | 구현 파일                  | 비고                                                                                               |
+| ------------------------ | ---- | -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `transition`             | ⚠️   | `skia/transitionEngine.ts` | cubic-bezier + lerp + 5종 easing (ease/ease-in/ease-out/ease-in-out/linear). 상태 시스템 연동 대기 |
+| `animation`              | ❌   | —                          |                                                                                                    |
+| `@keyframes`             | ❌   | —                          |                                                                                                    |
+| `transition-*` 개별 속성 | ⚠️   | `skia/transitionEngine.ts` | parseEasing + computeTransitionValue 구현. 렌더 루프 연동 대기                                     |
 
 ---
 
@@ -347,18 +348,18 @@
 
 > Spec: [Filter Effects Module Level 1](https://www.w3.org/TR/filter-effects-1/)
 
-| 속성                      | 상태 | 구현 파일                                                  | 비고                                                                 |
-| ------------------------- | ---- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| `filter: blur()`          | ✅   | `styleConverter.ts:421-426`                                | LayerBlurEffect (전경 블러)                                          |
-| `filter: brightness()`    | ✅   | `styleConverter.ts:792-800`, `styleConverter.ts:982-990`   | SVG 사양 4x5 색상 행렬, CanvasKit ColorFilter                        |
-| `filter: contrast()`      | ✅   | `styleConverter.ts:808-817`, `styleConverter.ts:993-1001`  | SVG 사양 4x5 색상 행렬, CanvasKit ColorFilter                        |
-| `filter: grayscale()`     | ✅   | `styleConverter.ts:884-902`, `styleConverter.ts:1026-1036` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter |
-| `filter: saturate()`      | ✅   | `styleConverter.ts:825-839`, `styleConverter.ts:1004-1013` | SVG 사양 feColorMatrix saturate, CanvasKit ColorFilter               |
-| `filter: sepia()`         | ✅   | `styleConverter.ts:932-952`, `styleConverter.ts:1048-1058` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter |
-| `filter: invert()`        | ✅   | `styleConverter.ts:909-924`, `styleConverter.ts:1038-1047` | 4x5 색상 행렬, CanvasKit ColorFilter                                 |
-| `filter: hue-rotate()`    | ✅   | `styleConverter.ts:847-878`, `styleConverter.ts:1015-1024` | SVG 사양 feColorMatrix hueRotate, CanvasKit ColorFilter              |
-| `filter: drop-shadow()`   | ✅   | `styleConverter.ts` parseCSSFilter                         | CanvasKit DropShadowImageFilter                                      |
-| `backdrop-filter: blur()` | ✅   | `styleConverter.ts:429-434`                                | BackgroundBlurEffect (배경 블러)                                     |
+| 속성                      | 상태 | 구현 파일                                                  | 비고                                                                  |
+| ------------------------- | ---- | ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| `filter: blur()`          | ✅   | `styleConverter.ts:421-426`                                | LayerBlurEffect (전경 블러). G3: sigma=radius/2.355 (W3C Gaussian)    |
+| `filter: brightness()`    | ✅   | `styleConverter.ts:792-800`, `styleConverter.ts:982-990`   | SVG 사양 4x5 색상 행렬, CanvasKit ColorFilter                         |
+| `filter: contrast()`      | ✅   | `styleConverter.ts:808-817`, `styleConverter.ts:993-1001`  | SVG 사양 4x5 색상 행렬, CanvasKit ColorFilter                         |
+| `filter: grayscale()`     | ✅   | `styleConverter.ts:884-902`, `styleConverter.ts:1026-1036` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter  |
+| `filter: saturate()`      | ✅   | `styleConverter.ts:825-839`, `styleConverter.ts:1004-1013` | SVG 사양 feColorMatrix saturate, CanvasKit ColorFilter                |
+| `filter: sepia()`         | ✅   | `styleConverter.ts:932-952`, `styleConverter.ts:1048-1058` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter  |
+| `filter: invert()`        | ✅   | `styleConverter.ts:909-924`, `styleConverter.ts:1038-1047` | 4x5 색상 행렬, CanvasKit ColorFilter                                  |
+| `filter: hue-rotate()`    | ✅   | `styleConverter.ts:847-878`, `styleConverter.ts:1015-1024` | SVG 사양 feColorMatrix hueRotate, CanvasKit ColorFilter               |
+| `filter: drop-shadow()`   | ✅   | `styleConverter.ts` parseCSSFilter                         | CanvasKit DropShadowImageFilter                                       |
+| `backdrop-filter: blur()` | ✅   | `styleConverter.ts:429-434`, `effects.ts`                  | BackgroundBlurEffect + BackdropFilterEffect (SaveLayer + blur behind) |
 
 ---
 
@@ -441,28 +442,41 @@
 
 ### 카테고리별 지원율
 
-| #   | CSS Spec Module             | ✅      | ⚠️    | ❌     | 지원율  |
-| --- | --------------------------- | ------- | ----- | ------ | ------- |
-| 1   | Display Level 3             | 9       | 2     | 0      | 82%     |
-| 2   | Box Model Level 3           | 13      | 1     | 0      | 96%     |
-| 3   | Box Sizing Level 3          | 2       | 3     | 0      | 40%     |
-| 4   | Flexbox Level 1             | 14      | 0     | 0      | 100%    |
-| 5   | Grid Layout Level 1         | 19      | 0     | 0      | 100%    |
-| 6   | Positioning Level 3         | 5       | 2     | 0      | 86%     |
-| 7   | Overflow Level 3            | 4       | 0     | 2      | 67%     |
-| 8   | Backgrounds/Borders Level 3 | 20      | 0     | 1      | 95%     |
-| 9   | Color Level 4               | 10      | 0     | 0      | 100%    |
-| 10  | Fonts Level 3               | 8       | 0     | 0      | 100%    |
-| 11  | Text Level 3                | 12      | 1     | 0      | 96%     |
-| 12  | Transforms Level 1          | 10      | 0     | 1      | 91%     |
-| 13  | Transitions/Animations      | 0       | 0     | 4      | 0%      |
-| 14  | Filter Effects Level 1      | 10      | 0     | 0      | 100%    |
-| 15  | Visual Effects              | 7       | 0     | 1      | 88%     |
-| 16  | Values/Units Level 3        | 12      | 0     | 0      | 100%    |
-| 17  | Cascade Level 4             | 6       | 0     | 1      | 86%     |
-| 18  | Logical Properties Level 1  | 7       | 0     | 0      | 100%    |
-|     | **합계**                    | **167** | **9** | **11** | **88%** |
+| #   | CSS Spec Module             | ✅      | ⚠️     | ❌    | 지원율  |
+| --- | --------------------------- | ------- | ------ | ----- | ------- |
+| 1   | Display Level 3             | 9       | 2      | 0     | 82%     |
+| 2   | Box Model Level 3           | 13      | 1      | 0     | 96%     |
+| 3   | Box Sizing Level 3          | 2       | 3      | 0     | 40%     |
+| 4   | Flexbox Level 1             | 14      | 0      | 0     | 100%    |
+| 5   | Grid Layout Level 1         | 19      | 0      | 0     | 100%    |
+| 6   | Positioning Level 3         | 5       | 2      | 0     | 86%     |
+| 7   | Overflow Level 3            | 4       | 0      | 2     | 67%     |
+| 8   | Backgrounds/Borders Level 3 | 20      | 1      | 0     | 95%     |
+| 9   | Color Level 4               | 10      | 0      | 0     | 100%    |
+| 10  | Fonts Level 3               | 8       | 0      | 0     | 100%    |
+| 11  | Text Level 3                | 12      | 1      | 0     | 96%     |
+| 12  | Transforms Level 1          | 10      | 0      | 1     | 91%     |
+| 13  | Transitions/Animations      | 0       | 2      | 2     | 25%     |
+| 14  | Filter Effects Level 1      | 10      | 0      | 0     | 100%    |
+| 15  | Visual Effects              | 7       | 0      | 1     | 88%     |
+| 16  | Values/Units Level 3        | 12      | 0      | 0     | 100%    |
+| 17  | Cascade Level 4             | 6       | 0      | 1     | 86%     |
+| 18  | Logical Properties Level 1  | 7       | 0      | 0     | 100%    |
+|     | **합계**                    | **167** | **12** | **8** | **90%** |
 
+> **변경 내역 (2026-04-06 v2.0 갱신 — ADR-100 Phase 3 CSS3 렌더링 확장):**
+>
+> - G3: `filter: blur()` sigma 공식 수정: `radius/2` → `radius/2.355` (W3C Gaussian)
+> - G1+G2: `box-shadow` border-radius RRect 반영 + spread를 RRect 확대로 처리
+> - G4: `text-shadow` 2-pass 렌더링 구현 (❌ → ⚠️, styleConverter 연동 대기)
+> - G5: `repeating-linear/radial/conic-gradient` TileMode.Repeat 지원
+> - G6: `radial-gradient` 키워드 변환 (closest-side/farthest-side/closest-corner/farthest-corner)
+> - G7: oklab 색상 보간 모듈 (`oklabInterpolation.ts`)
+> - `backdrop-filter`: BackdropFilterEffect 타입 + effects.ts SaveLayer 구현
+> - `position: sticky`: stickyResolver.ts 3-state 보정 (normal→stuck→limit)
+> - `transition` / `transition-*`: transitionEngine.ts cubic-bezier + 5종 easing (❌ → ⚠️)
+> - 합계: ✅167 ⚠️12 ❌8 → 지원율 88% → **90%**
+>
 > **변경 내역 (2026-02-19 v1.1 갱신):**
 >
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
