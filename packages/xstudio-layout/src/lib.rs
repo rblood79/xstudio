@@ -1,3 +1,5 @@
+mod style;
+
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
