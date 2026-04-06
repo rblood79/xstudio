@@ -25,9 +25,14 @@ export function buildTreeBoundsMap(
       });
     }
 
+    // 부모의 scrollOffset을 자식 좌표에 반영
+    // overflow: scroll 컨테이너의 자식은 스크롤만큼 이동한 위치에 렌더링됨
+    const scrollX = node.scrollOffset?.scrollLeft ?? 0;
+    const scrollY = node.scrollOffset?.scrollTop ?? 0;
+
     if (node.children) {
       for (const child of node.children) {
-        traverse(child, absX, absY);
+        traverse(child, absX - scrollX, absY - scrollY);
       }
     }
   }
