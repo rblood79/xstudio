@@ -7,9 +7,9 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.6 이펙트 파이프라인
  */
 
-import type { CanvasKit, Canvas, ImageFilter } from 'canvaskit-wasm';
-import type { EffectStyle } from './types';
-import { SkiaDisposable } from './disposable';
+import type { CanvasKit, Canvas, ImageFilter } from "canvaskit-wasm";
+import type { EffectStyle } from "./types";
+import { SkiaDisposable } from "./disposable";
 
 /**
  * 이펙트를 시작한다 (saveLayer 스택에 레이어 추가).
@@ -28,13 +28,16 @@ export function beginRenderEffects(
   const scope = new SkiaDisposable();
 
   if (import.meta.env.DEV && effects.length > 0) {
-    console.log('[Skia Effects] beginRenderEffects:', effects.map(e => e.type));
+    console.log(
+      "[Skia Effects] beginRenderEffects:",
+      effects.map((e) => e.type),
+    );
   }
 
   try {
     for (const effect of effects) {
       switch (effect.type) {
-        case 'opacity': {
+        case "opacity": {
           const paint = scope.track(new ck.Paint());
           paint.setAlphaf(effect.value);
           canvas.saveLayer(paint);
@@ -42,7 +45,7 @@ export function beginRenderEffects(
           break;
         }
 
-        case 'background-blur': {
+        case "background-blur": {
           const filter = scope.track(
             ck.ImageFilter.MakeBlur(
               effect.sigma,
@@ -58,7 +61,7 @@ export function beginRenderEffects(
           break;
         }
 
-        case 'layer-blur': {
+        case "backdrop-filter": {
           const filter = scope.track(
             ck.ImageFilter.MakeBlur(
               effect.sigma,
@@ -74,7 +77,23 @@ export function beginRenderEffects(
           break;
         }
 
-        case 'drop-shadow': {
+        case "layer-blur": {
+          const filter = scope.track(
+            ck.ImageFilter.MakeBlur(
+              effect.sigma,
+              effect.sigma,
+              ck.TileMode.Clamp,
+              null,
+            ),
+          );
+          const paint = scope.track(new ck.Paint());
+          paint.setImageFilter(filter);
+          canvas.saveLayer(paint);
+          layerCount++;
+          break;
+        }
+
+        case "drop-shadow": {
           // Inner/Outer 모두 MakeDropShadow 사용 (소스 콘텐츠 보존).
           // MakeDropShadowOnly는 소스를 제거하므로 inner shadow에서
           // 콘텐츠가 사라지는 버그 발생 (I-CR1).
@@ -83,17 +102,33 @@ export function beginRenderEffects(
           // M-2: spread → dilate/erode filter 체인으로 근사
           let inputFilter: ImageFilter | null = null;
           if (effect.spread && effect.spread !== 0) {
-            inputFilter = effect.spread > 0
-              ? scope.track(ck.ImageFilter.MakeDilate(effect.spread, effect.spread, null))
-              : scope.track(ck.ImageFilter.MakeErode(-effect.spread, -effect.spread, null));
+            inputFilter =
+              effect.spread > 0
+                ? scope.track(
+                    ck.ImageFilter.MakeDilate(
+                      effect.spread,
+                      effect.spread,
+                      null,
+                    ),
+                  )
+                : scope.track(
+                    ck.ImageFilter.MakeErode(
+                      -effect.spread,
+                      -effect.spread,
+                      null,
+                    ),
+                  );
           }
 
           if (import.meta.env.DEV) {
-            console.log('[Skia Effects] MakeDropShadow params:', {
-              dx: effect.dx, dy: effect.dy,
-              sigmaX: effect.sigmaX, sigmaY: effect.sigmaY,
+            console.log("[Skia Effects] MakeDropShadow params:", {
+              dx: effect.dx,
+              dy: effect.dy,
+              sigmaX: effect.sigmaX,
+              sigmaY: effect.sigmaY,
               color: Array.from(effect.color),
-              inner: effect.inner, spread: effect.spread,
+              inner: effect.inner,
+              spread: effect.spread,
             });
           }
 
@@ -114,7 +149,7 @@ export function beginRenderEffects(
           break;
         }
 
-        case 'color-matrix': {
+        case "color-matrix": {
           // CSS filter(brightness, contrast, saturate, hue-rotate)에서
           // 합성된 4x5 색상 행렬을 CanvasKit ColorFilter로 적용한다.
           const colorFilter = scope.track(
