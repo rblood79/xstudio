@@ -103,6 +103,12 @@
 - **Step 3.6 fit-content width 재계산 — Slider Label 미커버**: Step 3.6 재계산(fullTreeLayout.ts:1164-1186)은 `childStoreWidth === "fit-content"` 조건을 통과해야 width를 재계산함. `ProgressBarValue`/`MeterValue`/`SliderOutput`은 factory에서 `width: "fit-content"` 명시 → 재계산 커버됨. 반면 Slider `Label`은 factory에 `width: "fit-content"` 미설정(FormComponents.ts:728-735) → Step 3.6 width 재계산 미진입. `enrichWithIntrinsicSize`의 `isFlexChild && TEXT_LEAF_TAGS.has(tag)` 경로가 Step 4에서 처리하나, Step 4 실행 전 processedElementsMap에 fontSize가 반영되었는지 순서 의존성 주의 필요
 - **`enrichWithIntrinsicSize` 내 Set 상수 4개 함수 내부 생성**: `INTRINSIC_WIDTH_KEYWORDS`, `INTRINSIC_HEIGHT_KEYWORDS`, `IMAGE_INTRINSIC_TAGS`, `SPEC_SHAPES_INPUT_TAGS`가 함수 내부에서 매 호출마다 재생성됨 (utils.ts:2855-2938) — 모듈 레벨 상수로 호이스팅 필요. hot path 반복 패턴
 
+- **`set` 직후 `has` 체크 — 항상 true로 단락되는 로직 버그**: `loadedImageSrcs.set(id, src)` 직후 `!loadedImageSrcs.has(id)`를 조건으로 사용하는 패턴 — set 이후 has는 항상 true이므로 의도한 분기가 절대 실행되지 않음. 체크 로직을 set 이전에 배치하거나 별도 플래그로 분리 필요 (StoreRenderBridge.ts:334-336, incrementalSync 이미지 경로)
+- **ctx 내 중복 파라미터 별도 전달**: `BuildContext`에 `theme` 필드가 포함됨에도 `theme`을 독립 파라미터로 추가로 전달하는 패턴 — ctx 필드 활용 또는 파라미터 통합으로 제거
+- **1줄 wrapper 메서드로 의도 오해 유발**: `layoutOnlySync`처럼 내부에서 `fullRebuild`만 호출하는 wrapper — 미래 최적화 의도를 시사하지만 주석에 불가능하다고 적혀 있어 오해를 유발. dead placeholder는 제거하거나 `// TODO` 명시 필수
+- **`detectChangedIds` 삭제 감지 루프 O(n_prev) 전체 순회**: 첫 번째 루프에서 변경/추가 ID를 수집하면서 동시에 `seenIds` Set을 빌드하지 않아, 두 번째 루프(`prevElementsMap.keys()` 순회)가 전 요소를 재순회 — 첫 루프에서 visitedIds를 동시 빌드하면 두 번째 루프를 O(k_deleted)로 단락 가능 (StoreRenderBridge.ts:157-165)
+- **Zustand `subscribe` selector wrapper 객체 매 호출 생성**: `(state) => ({ elementsMap, childrenMap })` selector가 모든 상태 변경마다 새 객체를 반환 → `equalityFn: Object.is`가 wrapper 참조를 비교하므로 항상 새 참조 = callback이 모든 상태 변경에서 호출됨. 비교 함수를 `(a, b) => a.elementsMap === b.elementsMap && a.childrenMap === b.childrenMap`으로 교체 필요 (SkiaCanvas.tsx:213-227)
+
 - **`isImplementedActionType` O(N) 미개선**: `isImplementedEventType`은 O(1) property lookup으로 개선했으나 같은 파일의 `isImplementedActionType`은 `array.includes()` O(N) 그대로 — `new Set(IMPLEMENTED_ACTION_TYPES)`로 O(1) 전환 필요 (events.registry.ts:364-368)
 - **EVENT_CATEGORIES `interaction` key ↔ `reactAria` ID 불일치**: registry의 레거시 `EVENT_CATEGORIES`에서 key `interaction`이 `reactAria` 카테고리 데이터를 담음 — `eventCategories.ts`의 `EVENT_CATEGORIES`는 `reactAria` key 정상 사용. 소비처 없으면 제거, 있으면 key 통일 필요
 - **`ACTION_TYPE_LABELS` snake_case 중복 UI 노출 위험**: `Object.keys(ACTION_TYPE_LABELS)`로 `availableActionTypes` 생성 시 snake_case 키 혼입 → UI picker에 snake_case 항목 노출 잠재 버그. `ACTION_CATEGORIES` actions union으로 대체 권장
@@ -125,3 +131,7 @@
 - **폰트 레지스트리 동기화 useEffect 복제**: `xstudio:custom-fonts-updated` + `StorageEvent(FONT_REGISTRY_STORAGE_KEY)` 이중 채널 구독 패턴이 `FontManagerPanel.tsx`와 `TypographySection.tsx`에 동일하게 복제 — `useFontRegistry()` 커스텀 훅으로 추출 필요
 - **`loadFontRegistry` 이중 import 경로**: `customFonts.ts`가 re-export하는데도 `@xstudio/shared/utils`에서 직접 import하는 패턴 — `customFonts.ts` 단일 진입점으로 통합 필요
 - **`deriveTextBehaviorPreset` normal 조건 round-trip 불일치**: `handleTextBehaviorChange`에서 normal 저장 시 빈 문자열(`""`)로 저장하나 감지 조건은 `"normal"/"clip"/"visible"` 기대 — 저장값과 감지 조건을 같은 기준으로 통일 필요
+- **`StoreRenderBridge.detectChangedIds` ↔ store `dirtyElementIds` 이중 변경 추적**: `prevElementsMap` O(N) 순회와 store의 `dirtyElementIds` Set이 동일한 "변경된 element ID" 정보를 독립적으로 관리 — `dirtyElementIds` 범위 확인 후 단일 소스로 통합 필요
+- **`buildNodeForElement` 라우팅 ↔ `ElementSprite.tsx` `isUIComponent` 분기 중복**: `useSpecPath()`/`isTextElement()`/`isImageElement()` + `SPEC_PREFERRED_TEXT_TAGS` 상수가 StoreRenderBridge 내부에만 존재 — `tagSpecMap.ts`에 `resolveSkiaNodeBuilder()` 추출로 공유 필요
+- **`buildNodeForElement` 이미지 추적 dead condition**: L334 `this.loadedImageSrcs.set(id, src)` 후 L335 `!this.loadedImageSrcs.has(id)` 체크 → 항상 false → `loadImageAsync` 미호출. incrementalSync 경로에서만 이미지 비동기 로드 누락 버그. set 전에 has 체크 필수
+- **Zustand 구독 패턴 혼재**: `SkiaCanvas.tsx`의 selector 기반 선택적 구독과 `useWorkflowInteraction.ts:280`의 전체 구독 패턴이 혼재 — selector 기반으로 통일 필요
