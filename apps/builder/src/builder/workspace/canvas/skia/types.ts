@@ -46,6 +46,7 @@ export interface LinearGradientFill {
   end: [number, number];
   colors: Float32Array[];
   positions: number[];
+  repeating?: boolean;
 }
 
 export interface RadialGradientFill {
@@ -55,6 +56,7 @@ export interface RadialGradientFill {
   endRadius: number;
   colors: Float32Array[];
   positions: number[];
+  repeating?: boolean;
 }
 
 export interface AngularGradientFill {
@@ -65,6 +67,7 @@ export interface AngularGradientFill {
   positions: number[];
   /** CSS conic-gradient(12시) → CanvasKit(3시) 보정용 회전 행렬 */
   rotationMatrix?: Float32Array;
+  repeating?: boolean;
 }
 
 export interface ImageFill {

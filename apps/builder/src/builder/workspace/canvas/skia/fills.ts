@@ -7,8 +7,8 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.5 Fill 시스템
  */
 
-import type { CanvasKit, Paint } from 'canvaskit-wasm';
-import type { FillStyle } from './types';
+import type { CanvasKit, Paint } from "canvaskit-wasm";
+import type { FillStyle } from "./types";
 
 /**
  * Float32Array[] → flat Float32Array 변환 (CanvasKit WASM 호환성 보장)
@@ -41,30 +41,29 @@ export function applyFill(
   fill: FillStyle,
 ): { delete(): void } | null {
   switch (fill.type) {
-    case 'color': {
-      paint.setColor(ck.Color4f(
-        fill.rgba[0],
-        fill.rgba[1],
-        fill.rgba[2],
-        fill.rgba[3],
-      ));
+    case "color": {
+      paint.setColor(
+        ck.Color4f(fill.rgba[0], fill.rgba[1], fill.rgba[2], fill.rgba[3]),
+      );
       return null;
     }
 
-    case 'linear-gradient': {
+    case "linear-gradient": {
       const flatColors = flattenColors(fill.colors);
       const shader = ck.Shader.MakeLinearGradient(
         fill.start,
         fill.end,
         flatColors,
         fill.positions,
-        ck.TileMode.Clamp,
+        fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
       );
       if (!shader) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[applyFill] MakeLinearGradient returned null', {
-            start: fill.start, end: fill.end,
-            colorsLen: fill.colors.length, positionsLen: fill.positions.length,
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[applyFill] MakeLinearGradient returned null", {
+            start: fill.start,
+            end: fill.end,
+            colorsLen: fill.colors.length,
+            positionsLen: fill.positions.length,
           });
         }
         return null;
@@ -73,7 +72,7 @@ export function applyFill(
       return shader;
     }
 
-    case 'radial-gradient': {
+    case "radial-gradient": {
       const flatColors = flattenColors(fill.colors);
       const shader = ck.Shader.MakeTwoPointConicalGradient(
         fill.center,
@@ -82,14 +81,20 @@ export function applyFill(
         fill.endRadius,
         flatColors,
         fill.positions,
-        ck.TileMode.Clamp,
+        fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
       );
       if (!shader) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[applyFill] MakeTwoPointConicalGradient returned null', {
-            center: fill.center, startRadius: fill.startRadius, endRadius: fill.endRadius,
-            colorsLen: fill.colors.length, positionsLen: fill.positions.length,
-          });
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[applyFill] MakeTwoPointConicalGradient returned null",
+            {
+              center: fill.center,
+              startRadius: fill.startRadius,
+              endRadius: fill.endRadius,
+              colorsLen: fill.colors.length,
+              positionsLen: fill.positions.length,
+            },
+          );
         }
         return null;
       }
@@ -97,7 +102,7 @@ export function applyFill(
       return shader;
     }
 
-    case 'angular-gradient': {
+    case "angular-gradient": {
       const flatColors = flattenColors(fill.colors);
       // MakeSweepGradient(cx, cy, colors, positions, tileMode, localMatrix, flags)
       // localMatrix로 CSS conic-gradient(12시) → CanvasKit(3시) 보정
@@ -106,15 +111,17 @@ export function applyFill(
         fill.cy,
         flatColors,
         fill.positions,
-        ck.TileMode.Clamp,
+        fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
         fill.rotationMatrix ?? null, // localMatrix로 -90° 보정
-        0,                           // flags
+        0, // flags
       );
       if (!shader) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[applyFill] MakeSweepGradient returned null', {
-            cx: fill.cx, cy: fill.cy,
-            colorsLen: fill.colors.length, positionsLen: fill.positions.length,
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[applyFill] MakeSweepGradient returned null", {
+            cx: fill.cx,
+            cy: fill.cy,
+            colorsLen: fill.colors.length,
+            positionsLen: fill.positions.length,
           });
         }
         return null;
@@ -123,18 +130,28 @@ export function applyFill(
       return shader;
     }
 
-    case 'image': {
+    case "image": {
       // CanvasKit-WASM: Image.makeShaderOptions() 사용
       // (ck.Shader.MakeImageShader는 존재하지 않음)
-      const skImage = fill.image as { makeShaderOptions?: (...args: unknown[]) => unknown } | null;
-      if (skImage && typeof skImage.makeShaderOptions === 'function') {
+      const skImage = fill.image as {
+        makeShaderOptions?: (...args: unknown[]) => unknown;
+      } | null;
+      if (skImage && typeof skImage.makeShaderOptions === "function") {
         // tileModeX/Y 분리 지원 (background-repeat: repeat-x/y)
         // 하위 호환: 구형 tileMode 필드가 있으면 fallback으로 사용
         const tmX = fill.tileModeX ?? fill.tileMode ?? ck.TileMode.Decal;
         const tmY = fill.tileModeY ?? fill.tileMode ?? ck.TileMode.Decal;
-        const shader = (skImage as {
-          makeShaderOptions(tx: unknown, ty: unknown, fm: unknown, mm: unknown, lm?: unknown): unknown;
-        }).makeShaderOptions(
+        const shader = (
+          skImage as {
+            makeShaderOptions(
+              tx: unknown,
+              ty: unknown,
+              fm: unknown,
+              mm: unknown,
+              lm?: unknown,
+            ): unknown;
+          }
+        ).makeShaderOptions(
           tmX,
           tmY,
           fill.sampling, // FilterMode
@@ -147,12 +164,13 @@ export function applyFill(
       return null;
     }
 
-    case 'mesh-gradient': {
+    case "mesh-gradient": {
       // CanvasKit에 네이티브 mesh gradient API가 없으므로
       // SkSL RuntimeEffect로 4코너 bilinear interpolation 구현.
       // 2x2 그리드(4색)만 지원. 더 큰 그리드는 좌상 4셀로 폴백.
       const c = fill.colors;
-      if (!c || c.length < 4 || fill.width <= 0 || fill.height <= 0) return null;
+      if (!c || c.length < 4 || fill.width <= 0 || fill.height <= 0)
+        return null;
 
       // SkSL: 4코너 bilinear interpolation (좌상·우상·좌하·우하)
       const sksl = `
@@ -170,19 +188,34 @@ export function applyFill(
 
       const effect = ck.RuntimeEffect.Make(sksl);
       if (!effect) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[applyFill] RuntimeEffect.Make failed for mesh-gradient');
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[applyFill] RuntimeEffect.Make failed for mesh-gradient",
+          );
         }
         return null;
       }
 
       // uniforms: [uTL(4), uTR(4), uBL(4), uBR(4), uSize(2)] = 18 floats
       const uniforms = new Float32Array([
-        c[0][0], c[0][1], c[0][2], c[0][3],  // TL
-        c[1][0], c[1][1], c[1][2], c[1][3],  // TR
-        c[2][0], c[2][1], c[2][2], c[2][3],  // BL
-        c[3][0], c[3][1], c[3][2], c[3][3],  // BR
-        fill.width, fill.height,              // size
+        c[0][0],
+        c[0][1],
+        c[0][2],
+        c[0][3], // TL
+        c[1][0],
+        c[1][1],
+        c[1][2],
+        c[1][3], // TR
+        c[2][0],
+        c[2][1],
+        c[2][2],
+        c[2][3], // BL
+        c[3][0],
+        c[3][1],
+        c[3][2],
+        c[3][3], // BR
+        fill.width,
+        fill.height, // size
       ]);
 
       const shader = effect.makeShader(uniforms);
