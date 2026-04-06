@@ -65,6 +65,7 @@ import { useCanvasBackgroundInteraction } from "./hooks/useCanvasBackgroundInter
 import { useCentralCanvasPointerHandlers } from "./hooks/useCentralCanvasPointerHandlers";
 import { useCanvasRuntimeBootstrap } from "./hooks/useCanvasRuntimeBootstrap";
 import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
+import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
 import { usePageDrag } from "./hooks/usePageDrag";
 import { buildSceneSnapshot } from "./scene";
 import {
@@ -367,6 +368,41 @@ export function BuilderCanvas({
   const visiblePages = useMemo(() => {
     return pages.filter((page) => visiblePageIds.has(page.id));
   }, [pages, visiblePageIds]);
+
+  // ADR-100 Phase 6.4: UNIFIED_ENGINE=true 시 PixiJS 없이 레이아웃 발행
+  const layoutPublisherInputs = useMemo(() => {
+    if (!isUnifiedFlag("UNIFIED_ENGINE")) return [];
+    return visiblePages
+      .map((page) => {
+        const input = buildPixiPageRendererInput({
+          elementById,
+          dirtyElementIds,
+          pageHeight,
+          pageId: page.id,
+          pagePositionVersion: pagePositionsVersion,
+          pageWidth,
+          panOffset,
+          sceneSnapshot,
+          wasmLayoutReady,
+          zoom,
+        });
+        return input ? { pageId: page.id, input } : null;
+      })
+      .filter((v): v is NonNullable<typeof v> => v !== null);
+  }, [
+    visiblePages,
+    elementById,
+    dirtyElementIds,
+    pageHeight,
+    pagePositionsVersion,
+    pageWidth,
+    panOffset,
+    sceneSnapshot,
+    wasmLayoutReady,
+    zoom,
+  ]);
+  useLayoutPublisher(layoutPublisherInputs, layoutVersion);
+
   const workflowEdges = useMemo(() => {
     return computeWorkflowEdges(
       pages,

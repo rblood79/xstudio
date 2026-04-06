@@ -50,8 +50,8 @@ export const UNIFIED_ENGINE_FLAGS = {
   // Phase 4: 성능
   USE_TILE_CACHE: false,
 
-  // 전체 전환 — PixiJS Application 제거 시 레이아웃 파이프라인도 중단되어 미사용
-  // Phase 6 완료 후 레이아웃 독립화 필요
+  // 전체 전환 — useLayoutPublisher + StoreRenderBridge 준비 완료
+  // 활성화 조건: buildSkiaNodeData가 4개 Sprite와 동등한 데이터 생성 시
   UNIFIED_ENGINE: false,
 } as const;
 
