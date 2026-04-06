@@ -92,6 +92,12 @@ ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeas
 - ❌ hitElementId를 startMove에 직접 전달 (selectedElementIds 사용)
 - ❌ `calculateContentWidth`에 `isCanvasKitMeasurer() ? 0 : +N` 보정 추가 (CSS 정합 파괴 → nodeRendererText `+1` 마진 사용)
 
+## 8. Overflow Scroll 가이드라인 동기화
+
+- `buildTreeBoundsMap` (Tree 경로): traverse 시 부모의 `scrollOffset`을 자식 좌표에서 차감 필수. **Why**: 미반영 시 hover outline이 스크롤 전 위치에 고정
+- `renderCommands.ts` (Command Stream 경로): `visitElement`에서 자식 boundsMap 좌표에 부모 `scrollOffset` 차감 필수. **Why**: boundsMap은 절대 좌표 → 렌더링의 `canvas.translate`와 동기화 필요
+- `scrollState.scrollVersion`: 스크롤 변경 시 `getCachedTreeBoundsMap` 캐시 무효화용 카운터. **Why**: `registryVersion`/`pagePosVersion`만으로는 스크롤 변경 미감지
+
 ## 상세 레퍼런스
 
 - [Canvas 렌더링 구현 상세](../skills/xstudio-patterns/reference/canvas-details.md)
