@@ -49,7 +49,25 @@ export function buildSkiaNodeData(
   ctx: BuildContext,
 ): SkiaNodeData | null {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  if (!style) return null;
+
+  // style 없는 요소 (Spec 기반 Button 등): 최소 placeholder로 등록
+  // → command stream 트리 순회가 끊기지 않도록 함
+  if (!style) {
+    const layout = ctx.layoutMap.get(element.id);
+    return {
+      type: "box",
+      elementId: element.id,
+      x: layout?.x ?? 0,
+      y: layout?.y ?? 0,
+      width: layout?.width ?? 0,
+      height: layout?.height ?? 0,
+      visible: true,
+      box: {
+        fillColor: Float32Array.of(0, 0, 0, 0),
+        borderRadius: 0,
+      },
+    };
+  }
 
   // display:none → 렌더 스킵
   if (style.display === "none") return null;

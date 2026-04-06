@@ -105,10 +105,14 @@ describe("buildSkiaNodeData", () => {
     expect(node?.elementId).toBe("my-element");
   });
 
-  test("no style → null", () => {
+  test("no style → placeholder box (트리 순회 유지)", () => {
     const el = { id: "x", tag: "div", props: {} } as Element;
     const node = buildSkiaNodeData(el, makeCtx());
-    expect(node).toBeNull();
+    expect(node).not.toBeNull();
+    expect(node!.type).toBe("box");
+    expect(node!.visible).toBe(true);
+    // 투명 fill
+    expect(node!.box!.fillColor[3]).toBe(0);
   });
 });
 
