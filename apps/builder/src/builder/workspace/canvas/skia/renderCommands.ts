@@ -407,11 +407,15 @@ function visitElement(
     // z-index 정렬: skiaNodeRegistry에서 각 자식의 zIndex 조회
     const sortedChildren = sortChildElementsByZIndex(childElements);
 
+    // boundsMap에 scroll offset 반영: 자식의 절대 좌표에서 부모의 스크롤량 차감
+    const scrollX = skiaData.scrollOffset?.scrollLeft ?? 0;
+    const scrollY = skiaData.scrollOffset?.scrollTop ?? 0;
+
     for (const child of sortedChildren) {
       visitElement(
         child.id,
-        absX,
-        absY,
+        absX - scrollX,
+        absY - scrollY,
         commands,
         boundsMap,
         childrenMap,

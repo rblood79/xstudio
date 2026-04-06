@@ -275,20 +275,23 @@ export function buildSkiaTreeHierarchical(
 // Tree Bounds Map Cache
 // ============================================
 
-// Selection 바운드맵 캐시 — 트리와 동일하게 registryVersion + pagePosVersion 기반 재사용
+// Selection 바운드맵 캐시 — registryVersion + pagePosVersion + scrollVersion 기반 재사용
 let _cachedTreeBoundsMap: Map<string, BoundingBox> | null = null;
 let _cachedTreeBoundsVersion = -1;
 let _cachedTreeBoundsPosVersion = -1;
+let _cachedTreeBoundsScrollVersion = -1;
 
 export function getCachedTreeBoundsMap(
   tree: SkiaNodeData,
   registryVersion: number,
   pagePosVersion = 0,
+  scrollVersion = 0,
 ): Map<string, BoundingBox> {
   if (
     _cachedTreeBoundsMap &&
     registryVersion === _cachedTreeBoundsVersion &&
-    pagePosVersion === _cachedTreeBoundsPosVersion
+    pagePosVersion === _cachedTreeBoundsPosVersion &&
+    scrollVersion === _cachedTreeBoundsScrollVersion
   ) {
     return _cachedTreeBoundsMap;
   }
@@ -296,5 +299,6 @@ export function getCachedTreeBoundsMap(
   _cachedTreeBoundsMap = map;
   _cachedTreeBoundsVersion = registryVersion;
   _cachedTreeBoundsPosVersion = pagePosVersion;
+  _cachedTreeBoundsScrollVersion = scrollVersion;
   return map;
 }

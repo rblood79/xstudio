@@ -12,7 +12,7 @@
  * @since 2026-02-19 W3-5
  */
 
-import { create } from 'zustand';
+import { create } from "zustand";
 
 // ============================================
 // Types
@@ -34,6 +34,8 @@ export interface ElementScrollState {
 interface ScrollStateStore {
   /** elementId → 스크롤 상태 매핑 (O(1) 조회) */
   scrollMap: Map<string, ElementScrollState>;
+  /** 스크롤 위치 변경 시 증가하는 카운터 — treeBoundsMap 캐시 무효화용 */
+  scrollVersion: number;
 
   // ── Actions ──
 
@@ -93,19 +95,28 @@ const DEFAULT_SCROLL_STATE: ElementScrollState = {
 
 export const useScrollState = create<ScrollStateStore>((set, _get) => ({
   scrollMap: new Map(),
+  scrollVersion: 0,
 
   setScroll: (elementId, scrollTop, scrollLeft) => {
     set((state) => {
       const nextMap = new Map(state.scrollMap);
       const existing = nextMap.get(elementId) ?? { ...DEFAULT_SCROLL_STATE };
 
+      const newTop = clamp(scrollTop, 0, existing.maxScrollTop);
+      const newLeft = clamp(scrollLeft, 0, existing.maxScrollLeft);
+
+      // 값이 변경되지 않으면 no-op (불필요한 리렌더 방지)
+      if (existing.scrollTop === newTop && existing.scrollLeft === newLeft) {
+        return state;
+      }
+
       nextMap.set(elementId, {
         ...existing,
-        scrollTop: clamp(scrollTop, 0, existing.maxScrollTop),
-        scrollLeft: clamp(scrollLeft, 0, existing.maxScrollLeft),
+        scrollTop: newTop,
+        scrollLeft: newLeft,
       });
 
-      return { scrollMap: nextMap };
+      return { scrollMap: nextMap, scrollVersion: state.scrollVersion + 1 };
     });
   },
 
@@ -133,13 +144,28 @@ export const useScrollState = create<ScrollStateStore>((set, _get) => ({
       const nextMap = new Map(state.scrollMap);
       const existing = nextMap.get(elementId) ?? { ...DEFAULT_SCROLL_STATE };
 
+      const newTop = clamp(
+        existing.scrollTop + deltaY,
+        0,
+        existing.maxScrollTop,
+      );
+      const newLeft = clamp(
+        existing.scrollLeft + deltaX,
+        0,
+        existing.maxScrollLeft,
+      );
+
+      if (existing.scrollTop === newTop && existing.scrollLeft === newLeft) {
+        return state;
+      }
+
       nextMap.set(elementId, {
         ...existing,
-        scrollTop: clamp(existing.scrollTop + deltaY, 0, existing.maxScrollTop),
-        scrollLeft: clamp(existing.scrollLeft + deltaX, 0, existing.maxScrollLeft),
+        scrollTop: newTop,
+        scrollLeft: newLeft,
       });
 
-      return { scrollMap: nextMap };
+      return { scrollMap: nextMap, scrollVersion: state.scrollVersion + 1 };
     });
   },
 
@@ -182,7 +208,9 @@ export function isScrollable(elementId: string): boolean {
 /**
  * React hook: 요소의 스크롤 상태 구독
  */
-export const useElementScrollState = (elementId: string | null): ElementScrollState | null =>
+export const useElementScrollState = (
+  elementId: string | null,
+): ElementScrollState | null =>
   useScrollState((state) => {
     if (!elementId) return null;
     return state.scrollMap.get(elementId) ?? null;

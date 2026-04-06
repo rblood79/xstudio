@@ -31,6 +31,7 @@ import {
   getSharedFilteredChildrenMap,
   getSyntheticElementsMap,
 } from "../layout/engines/fullTreeLayout";
+import { useScrollState } from "../../../stores/scrollState";
 import {
   getCachedCommandStream,
   executeRenderCommands,
@@ -329,10 +330,12 @@ function buildViaTree(
 
   const selectionBuildStart =
     process.env.NODE_ENV === "development" ? performance.now() : 0;
+  const scrollVersion = useScrollState.getState().scrollVersion;
   const treeBoundsMap = getCachedTreeBoundsMap(
     tree,
     registryVersion,
     pagePosVersion,
+    scrollVersion,
   );
   if (process.env.NODE_ENV === "development") {
     recordWasmMetric(
