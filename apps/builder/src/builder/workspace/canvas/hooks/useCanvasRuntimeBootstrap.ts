@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Application as PixiApplication } from "pixi.js";
 import { useStore } from "../../../stores";
 import { initRustWasm, isRustWasmReady } from "../wasm-bindings/rustWasm";
+import { isUnifiedFlag } from "../wasm-bindings/featureFlags";
 
 interface CanvasRuntimeBootstrapResult {
   appReady: boolean;
@@ -75,6 +76,13 @@ export function useCanvasRuntimeBootstrap(): CanvasRuntimeBootstrapResult {
   const handlePixiAppInit = useCallback((app: PixiApplication) => {
     setPixiApp(app);
     setAppReady(true);
+
+    // ADR-100: REMOVE_PIXI=true → PixiJS 렌더 루프 중지 (CPU 절감)
+    // React 컴포넌트 트리(ElementSprite 데이터 등록)는 유지, 렌더링만 중지
+    if (isUnifiedFlag("REMOVE_PIXI")) {
+      app.ticker.stop();
+      app.renderer.background.alpha = 0;
+    }
   }, []);
 
   return {
