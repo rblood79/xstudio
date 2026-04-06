@@ -91,6 +91,8 @@ ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeas
 - ❌ parentElement를 useMemo 내 직접 참조 (stale closure)
 - ❌ hitElementId를 startMove에 직접 전달 (selectedElementIds 사용)
 - ❌ `calculateContentWidth`에 `isCanvasKitMeasurer() ? 0 : +N` 보정 추가 (CSS 정합 파괴 → nodeRendererText `+1` 마진 사용)
+- ❌ `enrichWithIntrinsicSize`에서 flex 자식 width 주입 시 minWidth 미설정 (CSS min-width:auto 누락 → 자식 0px 축소)
+- ❌ overflow flexShrink 보정에서 `scroll/auto`만 체크 (`hidden/clip` 누락 → `!== "visible"` 필수)
 
 ## 8. Overflow Scroll 가이드라인 동기화
 

@@ -69,6 +69,12 @@ globs:
 - 보정 위치: `fullTreeLayout.ts` DFS post-order (Step 5.7) + `TaffyFlexEngine.ts` `_runTaffyPassRaw`. **Why**: WebGL은 fullTreeLayout, 레거시 경로는 TaffyFlexEngine — 양쪽 모두 필요
 - flex-direction과 overflow 축 매칭 필수: `row` → `overflowX`, `column` → `overflowY`. **Why**: 교차축 overflow는 shrink와 무관
 
+## CSS min-width:auto 에뮬레이션 (CRITICAL)
+
+- `enrichWithIntrinsicSize`에서 flex 자식에 `width` 주입 시 `minWidth`도 동일 값으로 동시 설정. **Why**: CSS flex item의 기본 `min-width: auto` = min-content 크기. Taffy는 이를 0으로 처리 → 자식이 0px까지 축소 가능. `overflow: visible`에서도 Preview와 동일하게 자연 너비 유지 필요
+- 사용자 명시적 `minWidth` 설정 시 보존 (덮어쓰기 금지)
+- `isFlexChild` 파라미터가 true일 때만 적용. **Why**: block 자식은 min-width:auto가 0이므로 주입 불필요
+
 ## 기타 규칙
 
 - calculateContentHeight: content-box만 반환 (padding 제외)
@@ -80,6 +86,8 @@ globs:
 
 ## 금지 패턴
 
+- flex 자식 width 주입 시 minWidth 미설정 금지 → `enrichWithIntrinsicSize`에서 동시 주입 필수
+- overflow flexShrink 보정에서 `scroll/auto`만 체크 금지 → `!== "visible"` 필수
 - DFS 조건에 `fontSize == null` 사용 금지 → `lineHeight == null` 필수
 - Label height에 `Math.ceil(fontSize * 1.5)` 금지 → LABEL_SIZE_STYLE 역참조
 - Label lineHeight를 숫자로 전달 금지 → `"20px"` 문자열 필수
