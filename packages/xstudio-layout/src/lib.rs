@@ -1,9 +1,11 @@
+mod spatial;
 mod style;
 
 use std::collections::HashMap;
 use taffy::prelude::*;
 use wasm_bindgen::prelude::*;
 
+use spatial::SpatialGrid;
 use style::parse_style;
 
 // ---------------------------------------------------------------------------
@@ -48,6 +50,7 @@ pub struct LayoutEngine {
     /// handle (u32) → NodeMeta
     nodes: HashMap<u32, NodeMeta>,
     next_handle: u32,
+    spatial: SpatialGrid,
 }
 
 #[wasm_bindgen]
@@ -62,6 +65,7 @@ impl LayoutEngine {
             tree: TaffyTree::new(),
             nodes: HashMap::new(),
             next_handle: 1,
+            spatial: SpatialGrid::new(256.0),
         }
     }
 
@@ -324,6 +328,31 @@ impl LayoutEngine {
         self.tree = TaffyTree::new();
         self.nodes.clear();
         self.next_handle = 1;
+        self.spatial.clear();
+    }
+
+    // -----------------------------------------------------------------------
+    // Spatial index
+    // -----------------------------------------------------------------------
+
+    pub fn spatial_upsert(&mut self, id: u32, x: f32, y: f32, w: f32, h: f32) {
+        self.spatial.upsert(id, x, y, w, h);
+    }
+
+    pub fn spatial_remove(&mut self, id: u32) {
+        self.spatial.remove(id);
+    }
+
+    pub fn spatial_query_point(&self, x: f32, y: f32) -> Vec<u32> {
+        self.spatial.query_point(x, y)
+    }
+
+    pub fn spatial_query_rect(&self, left: f32, top: f32, right: f32, bottom: f32) -> Vec<u32> {
+        self.spatial.query_rect(left, top, right, bottom)
+    }
+
+    pub fn spatial_clear(&mut self) {
+        self.spatial.clear();
     }
 
     pub fn is_ready(&self) -> bool {
