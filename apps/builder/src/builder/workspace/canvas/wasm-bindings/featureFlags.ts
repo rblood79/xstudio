@@ -25,8 +25,38 @@ export const WASM_FLAGS = {
 } as const;
 
 /** 현재 렌더 모드 (skia 고정) */
-export type RenderMode = 'skia';
+export type RenderMode = "skia";
 
 export function getRenderMode(): RenderMode {
-  return 'skia';
+  return "skia";
+}
+
+/** ADR-100: Unified Skia Engine — 점진 전환 flag */
+export const UNIFIED_ENGINE_FLAGS = {
+  // Phase 1: Layout Engine 교체
+  USE_RUST_LAYOUT_ENGINE: false,
+
+  // Phase 2: PixiJS 점진 제거
+  USE_DOM_HOVER: false,
+  USE_DOM_CURSOR: false,
+  USE_CAMERA_OBJECT: false,
+  USE_SCENE_GRAPH: false,
+  REMOVE_PIXI: false,
+
+  // Phase 3: 렌더링 확장
+  USE_HYBRID_TEXT: false,
+  USE_CSS3_EFFECTS: false,
+
+  // Phase 4: 성능
+  USE_TILE_CACHE: false,
+
+  // 전체 전환
+  UNIFIED_ENGINE: false,
+} as const;
+
+export type UnifiedEngineFlag = keyof typeof UNIFIED_ENGINE_FLAGS;
+
+export function isUnifiedFlag(flag: UnifiedEngineFlag): boolean {
+  if (UNIFIED_ENGINE_FLAGS.UNIFIED_ENGINE) return true;
+  return UNIFIED_ENGINE_FLAGS[flag];
 }
