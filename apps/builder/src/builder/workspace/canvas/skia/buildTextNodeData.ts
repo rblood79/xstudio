@@ -237,13 +237,6 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
       stroke.alpha ?? 1,
     );
     boxData.strokeWidth = stroke.width;
-    if (stroke.style !== "solid" && stroke.style !== "none") {
-      boxData.strokeStyle = stroke.style as SkiaNodeData["box"] extends {
-        strokeStyle?: infer S;
-      }
-        ? S
-        : never;
-    }
   }
 
   // ---------- CSS transform ----------
