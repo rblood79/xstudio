@@ -1184,8 +1184,8 @@ function parseOneShadow(raw: string): DropShadowEffect | null {
   const dx = nums[0];
   const dy = nums[1];
   const blurRadius = nums[2] ?? 0;
-  // CSS blur-radius → Skia sigma (sigma ≈ blurRadius / 2)
-  const sigma = blurRadius / 2;
+  // CSS blur-radius → Skia sigma (W3C: σ = radius / 2.355)
+  const sigma = blurRadius / 2.355;
 
   // 색상 → Float32Array
   const hex = cssColorToHex(colorStr, 0x000000);
@@ -1673,8 +1673,8 @@ function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
   const dx = nums[0];
   const dy = nums[1];
   const blurRadius = nums[2] ?? 0;
-  // CSS blur-radius → Skia sigma (sigma ≈ blurRadius / 2)
-  const sigma = blurRadius / 2;
+  // CSS blur-radius → Skia sigma (W3C: σ = radius / 2.355)
+  const sigma = blurRadius / 2.355;
   // nums[3]은 spread — filter drop-shadow에서는 무시
 
   // 색상 → Float32Array (box-shadow 파서와 동일한 변환)
