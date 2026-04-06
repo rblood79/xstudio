@@ -68,8 +68,8 @@ export class CanvasKitWebGLBackend implements GPUBackend {
 
   resizeSurface(
     surface: GPUSurface,
-    width: number,
-    height: number,
+    _width: number,
+    _height: number,
   ): GPUSurface | null {
     // CanvasKit doesn't support resize — dispose and recreate
     this.disposeSurface(surface);
