@@ -1508,6 +1508,31 @@ function traversePostOrder(
     }
   }
 
+  // 5.7. overflow: scroll/auto 부모의 flex 자식 shrink 방지
+  // CSS에서 scroll 컨테이너의 flex 자식은 shrink하지 않고 overflow 허용
+  // Taffy는 이 상호작용을 지원하지 않으므로 명시적 flexShrink: 0 주입
+  if (FLEX_GRID_DISPLAYS.has(effectiveDisplay)) {
+    const ov = (elementStyle.overflow as string) ?? "visible";
+    const ovX = (elementStyle.overflowX as string) ?? ov;
+    const ovY = (elementStyle.overflowY as string) ?? ov;
+    const isScrollX = ovX === "scroll" || ovX === "auto";
+    const isScrollY = ovY === "scroll" || ovY === "auto";
+    const isRow =
+      !styleRecord.flexDirection ||
+      styleRecord.flexDirection === "row" ||
+      styleRecord.flexDirection === "row-reverse";
+    if ((isRow && isScrollX) || (!isRow && isScrollY)) {
+      for (const childId of sortedChildIds) {
+        const childBatchIdx = indexMap.get(childId);
+        if (childBatchIdx === undefined) continue;
+        const childBatch = batch[childBatchIdx];
+        if (childBatch.style.flexShrink === undefined) {
+          childBatch.style.flexShrink = 0;
+        }
+      }
+    }
+  }
+
   // 6. 자식 batch 인덱스 목록 구성 (filteredChildren 기반)
   // CSS order 정렬 순서를 유지하기 위해 sortedChildIds 사용
   const childIndices: number[] = [];
