@@ -1508,20 +1508,20 @@ function traversePostOrder(
     }
   }
 
-  // 5.7. overflow: scroll/auto 부모의 flex 자식 shrink 방지
-  // CSS에서 scroll 컨테이너의 flex 자식은 shrink하지 않고 overflow 허용
-  // Taffy는 이 상호작용을 지원하지 않으므로 명시적 flexShrink: 0 주입
+  // 5.7. overflow: non-visible 부모의 flex 자식 shrink 방지
+  // CSS에서 overflow clipped 컨테이너(hidden/clip/scroll/auto)의 flex 자식은
+  // shrink하지 않고 overflow 허용. Taffy는 이 상호작용 미지원 → flexShrink: 0 주입
   if (FLEX_GRID_DISPLAYS.has(effectiveDisplay)) {
     const ov = (elementStyle.overflow as string) ?? "visible";
     const ovX = (elementStyle.overflowX as string) ?? ov;
     const ovY = (elementStyle.overflowY as string) ?? ov;
-    const isScrollX = ovX === "scroll" || ovX === "auto";
-    const isScrollY = ovY === "scroll" || ovY === "auto";
+    const isClippedX = ovX !== "visible";
+    const isClippedY = ovY !== "visible";
     const isRow =
       !styleRecord.flexDirection ||
       styleRecord.flexDirection === "row" ||
       styleRecord.flexDirection === "row-reverse";
-    if ((isRow && isScrollX) || (!isRow && isScrollY)) {
+    if ((isRow && isClippedX) || (!isRow && isClippedY)) {
       for (const childId of sortedChildIds) {
         const childBatchIdx = indexMap.get(childId);
         if (childBatchIdx === undefined) continue;

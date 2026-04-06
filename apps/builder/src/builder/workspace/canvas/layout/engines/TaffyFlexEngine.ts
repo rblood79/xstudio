@@ -493,8 +493,8 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
       sortedOriginal = indices.map((i) => originalChildren[i]);
     }
 
-    // 부모 overflow 확인: scroll/auto이면 자식 flexShrink 기본값을 0으로 설정
-    // CSS에서 overflow: scroll 컨테이너는 자식이 shrink하지 않고 overflow 허용
+    // 부모 overflow 확인: non-visible이면 자식 flexShrink 기본값을 0으로 설정
+    // CSS에서 overflow clipped 컨테이너(hidden/clip/scroll/auto)의 자식은 shrink 안 함
     const parentRawStyle = parent.props?.style as
       | Record<string, unknown>
       | undefined;
@@ -503,10 +503,8 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
       (parentRawStyle?.overflowX as string) ?? parentOverflow;
     const parentOverflowY =
       (parentRawStyle?.overflowY as string) ?? parentOverflow;
-    const isParentScrollableX =
-      parentOverflowX === "scroll" || parentOverflowX === "auto";
-    const isParentScrollableY =
-      parentOverflowY === "scroll" || parentOverflowY === "auto";
+    const isParentClippedX = parentOverflowX !== "visible";
+    const isParentClippedY = parentOverflowY !== "visible";
 
     // 1. 자식 노드 생성
     const childHandles: TaffyNodeHandle[] = [];
@@ -525,13 +523,13 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
         cssCtx,
       );
 
-      // overflow: scroll/auto 부모의 자식은 명시적 flexShrink가 없으면 shrink 방지
+      // overflow clipped 부모의 자식은 명시적 flexShrink가 없으면 shrink 방지
       if (taffyStyle.flexShrink === undefined) {
         const isRow =
           !parentRawStyle?.flexDirection ||
           parentRawStyle.flexDirection === "row" ||
           parentRawStyle.flexDirection === "row-reverse";
-        if ((isRow && isParentScrollableX) || (!isRow && isParentScrollableY)) {
+        if ((isRow && isParentClippedX) || (!isRow && isParentClippedY)) {
           taffyStyle.flexShrink = 0;
         }
       }

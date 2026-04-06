@@ -65,7 +65,7 @@ globs:
 
 ## Overflow Scroll + Flex Shrink 보정
 
-- `overflow: scroll/auto` 부모의 flex 자식에 명시적 `flexShrink`가 없으면 `flexShrink: 0` 자동 주입. **Why**: CSS에서 scroll 컨테이너의 자식은 shrink하지 않고 overflow 허용하지만, Taffy는 이 상호작용 미지원 → 기본 `flexShrink: 1`로 자식이 축소됨
+- `overflow !== "visible"` 부모(hidden/clip/scroll/auto)의 flex 자식에 명시적 `flexShrink`가 없으면 `flexShrink: 0` 자동 주입. **Why**: CSS에서 overflow clipped 컨테이너의 자식은 shrink하지 않고 overflow 허용하지만, Taffy는 이 상호작용 미지원 → 기본 `flexShrink: 1`로 자식이 축소됨
 - 보정 위치: `fullTreeLayout.ts` DFS post-order (Step 5.7) + `TaffyFlexEngine.ts` `_runTaffyPassRaw`. **Why**: WebGL은 fullTreeLayout, 레거시 경로는 TaffyFlexEngine — 양쪽 모두 필요
 - flex-direction과 overflow 축 매칭 필수: `row` → `overflowX`, `column` → `overflowY`. **Why**: 교차축 overflow는 shrink와 무관
 
