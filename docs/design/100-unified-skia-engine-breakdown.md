@@ -1533,82 +1533,139 @@ layout/engines/
 ## 11. Phase 계획 (ROI 다이어트 후 — 14주)
 
 > 원본 21주 → 14주. Float/Inline(4주) + Table/Multicol(4주) 삭제, Sticky만 Phase 3에 통합.
+> 검증 기법: Figma(벤치마크 선행) + Google(WPT 준수) + Meta(데이터 검증) 적용.
 
-### Phase 0: 기반 준비 + 벤치마크 (1주)
+### Phase 0: 기반 준비 + 벤치마크 인프라 (1주)
 
 - [ ] Shadow Engine 브랜치 생성 (`feature/unified-skia-engine`)
-- [ ] 현재 성능 baseline 측정 (FPS, 초기 로드, 메모리, 드래그 지연)
+- [ ] **MotionMark 스타일 벤치마크 구축** (Figma 기법 — 벤치마크가 기능보다 먼저)
+  - 10K 요소 스트레스 테스트 (매 프레임 10개 변경 → p50/p95/p99 측정)
+  - 드래그 지연 측정 (pointerdown→렌더 완료)
+  - 초기 로드 측정 (navigation start→first meaningful paint)
+- [ ] 현재 성능 baseline 측정 (위 벤치마크로)
+- [ ] **margin collapse 사용률 감사** (Meta 기법 — 데이터로 ROI 증명)
+  - 전체 프로젝트 DB 스캔: block + adjacent margin 패턴 비율 측정
+  - 예상 <0.1% → 의도적 미구현 확정
 - [ ] GPU Backend 추상화 인터페이스 설계
 - [ ] SceneGraph 타입 정의 + 단위 테스트 스캐폴딩
 - [ ] Rust Layout Engine crate 초기화 + wasm-pack 빌드 파이프라인
 
-**Gate G0**: baseline 측정 완료, WASM 빌드 파이프라인 동작 확인
+**Gate G0**: baseline 측정 완료 + 벤치마크 자동화 + margin collapse <0.1% 확인 + WASM 빌드 동작
 
 ### Phase 1: Rust Layout Engine — Flex/Grid/Block 패리티 (4주)
 
 - [ ] Taffy flex 알고리즘 포크 + 단위 테스트 이식
-- [ ] Taffy grid 알고리즘 포크 + **grid-template-areas** 추가
-- [ ] Block 레이아웃 (margin collapse 제외 — 노코드 빌더는 gap/padding)
-- [ ] 텍스트 측정 JS 콜백 인터페이스 구현
+- [ ] Taffy grid 알고리즘 포크 + **grid-template-areas** (이미 구현됨, 테스트만)
+- [ ] Block 레이아웃 (margin collapse 제외)
+- [ ] **Tier 1 패치 Rust 네이티브 구현**:
+  - `style_hash: u64` 변경 감지 (JSON 비교 대체, O(1))
+  - `update_style()` → `UpdateResult::NeedsFullRebuild` (display 전환 자동 감지)
+  - `ceil_to_pixel()` 유틸 (f32 보정 네이티브)
+  - 2-pass layout 내장 (pass1 → width 검증 → pass2)
+  - `enriched_style` 필드 (processedElementsMap 대체)
+  - `propagation_rules` 테이블 (registry-based 전파)
+- [ ] 텍스트 측정 하이브리드 JS 콜백 (Canvas 2D 줄바꿈 + CanvasKit 높이)
 - [ ] Spatial Index 통합 (기존 WASM 코드 이식)
 - [ ] 기존 Taffy 테스트 케이스 100% 통과 검증
 
-**Gate G1**: flex/grid/block 레이아웃 기존 테스트 100% 통과
+**Gate G1**: flex/grid/block 레이아웃 기존 테스트 100% 통과 + Tier 1 패치 네이티브 동작
 
 ### Phase 2: SceneGraph + PixiJS 제거 (3주)
 
 - [ ] SceneGraph 구현 (SceneNode, dirty flag, tree 관리)
+- [ ] **타일 무효화 렌더링** (Figma/Penpot 기법 — dirty rect 대신 타일 캐시)
+  - 256×256px 타일 분할
+  - 변경 요소 → 교차 타일만 무효화
+  - 나머지 타일 GPU 텍스처 blit (~0.1ms)
 - [ ] StoreBridge 구현 (Zustand→SceneGraph 동기화)
+- [ ] **Tier 3 ComponentLayoutRegistry** 구현
+  - enrichWithIntrinsicSize 1500줄 → 데이터 ~200줄 + 범용 엔진 ~300줄
+  - 컴포넌트별 implicit styles, injection 조건, delegation 규칙 데이터화
 - [ ] GPU Backend (CanvasKitWebGLBackend) 구현
 - [ ] SkiaRenderer를 SceneGraph에서 직접 렌더하도록 변경
-- [ ] Event System 재설계 (HoverManager, CursorManager, Camera)
+- [ ] Event System 재설계 (HoverManager ~30줄, CursorManager ~15줄, Camera ~50줄)
 - [ ] PixiJS 의존성 전체 제거
-- [ ] 기존 캔버스 기능 100% 동작 검증
+- [ ] **기능 파리티 78개 항목 전수 검증** (섹션 13 체크리스트)
 
-**Gate G2**: PixiJS 없이 기존 기능 100% 동작, 60fps 유지
+**Gate G2**: PixiJS 없이 78개 기능 100% 동작 + 60fps 유지 + 벤치마크 회귀 없음
 
 ### Phase 3: Sticky + CSS3 렌더링 확장 (3주)
 
-- [ ] **position: sticky** 구현 (스크롤 오프셋 비교, containing block 기준)
-- [ ] **position: fixed** 구현 (viewport 기준 배치)
-- [ ] backdrop-filter 구현 (SaveLayer + blur behind)
-- [ ] text-shadow 구현 (CanvasKit ParagraphStyle shadow)
-- [ ] mask-image 구현 (CanvasKit Shader mask)
-- [ ] CSS transitions 엔진 구현
-- [ ] CSS animations (@keyframes) 엔진 구현
-- [ ] sepia, invert 필터 추가 (ColorMatrix)
-- [ ] outline-style (dashed, dotted) 추가
-- [ ] background-blend-mode 추가
+- [ ] **position: sticky** — post-layout 조정 (Chrome Blink 기법 — Taffy 수정 불필요)
+  - stickyResolver: 스크롤 오프셋 → 3단계 상태 전환 (~50줄)
+  - **WPT 스타일 테스트** (Google 기법): 브라우저 비교 5+ 케이스
+- [ ] **position: fixed** — viewport 기준 배치
+- [ ] **CSS 시각 정합성 갭 수정** (G1~G7, ~241줄):
+  - G1: shadow + border-radius (RRect draw)
+  - G2: box-shadow spread (RRect 확대)
+  - G3: blur sigma 공식 (radius/2.355)
+  - G4: text-shadow (2-pass 렌더링)
+  - G5: repeating-gradient (TileMode.Repeat)
+  - G6: radial-gradient 키워드 변환
+  - G7: gradient oklab 보간
+- [ ] backdrop-filter (SaveLayer + blur behind)
+- [ ] mask-image (MaskFilter + RuntimeEffect)
+- [ ] CSS transitions 엔진 (~130줄 자체 구현: cubic-bezier + spring + lerp)
+  - **WPT + fuzzing 검증** (Google 기법): 기본 5종 + 랜덤 100종 bezier, 브라우저 비교
+- [ ] CSS animations (@keyframes)
+- [ ] sepia, invert 필터 (ColorMatrix)
+- [ ] outline-style (dashed, dotted)
 
-**Gate G3**: sticky 동작 + 렌더링 확장 전부 동작
+**Gate G3**: sticky WPT 통과 + 렌더링 확장 전부 동작 + easing 브라우저 비교 ≤0.001 오차 + 시각 정합성 82%→97%
 
 ### Phase 4: 성능 최적화 + 벤치마크 (2주)
 
-- [ ] Dirty region 렌더링 최적화
-- [ ] GPU texture cache 구현
-- [ ] 5000 요소 멀티페이지 프로파일링
-- [ ] WASM 바이너리 크기 최적화 (wasm-opt)
-- [ ] 성능 벤치마크 (vs baseline)
-- [ ] hot path 병목 식별 + 최적화
+- [ ] **MotionMark 벤치마크 실행** (Phase 0 baseline 대비):
+  - 1000 요소: p95 ≥ 60fps
+  - 5000 요소: p95 ≥ 50fps
+  - 10000 요소: p95 ≥ 35fps
+  - 드래그 지연: p95 < 8ms
+- [ ] 타일 캐시 적중률 측정 (목표: 안정 상태 >95%)
+- [ ] GPU texture cache 구현 + VRAM 사용량 측정
+- [ ] WASM 바이너리 크기 최적화 (wasm-opt -Os)
+- [ ] hot path 프로파일링 → 병목 식별 → 최적화
+- [ ] **텍스트 하이브리드 측정 정합성 검증**:
+  - 100개 다국어 텍스트 × 10개 폰트 × 5개 크기 = 5000 조합
+  - CSS(Preview) 높이 vs CanvasKit 높이: ≤1px 오차
+  - 줄바꿈 위치: 100% 일치
 
-**Gate G4**: 1000 요소 60fps, 5000 요소 50fps+, 초기 로드 <3초, 드래그 <16ms
+**Gate G4**: 모든 벤치마크 목표 달성 + 텍스트 정합성 검증 통과
 
 ### Phase 5: Shadow→Production 전환 (1주)
 
-- [ ] 기능 동등성 최종 검증 (전체 컴포넌트 스펙 테스트)
+- [ ] **기능 파리티 78개 항목 최종 전수 검증**
+- [ ] **시각 회귀 테스트** (pixelmatch):
+  - 전체 컴포넌트 스펙 스크린샷 비교 (0.1% 미만 차이)
+  - 다크/라이트 모드 양쪽
 - [ ] 엣지 케이스 수정 (스크롤, 중첩 overflow, 복합 레이아웃)
-- [ ] ADR-051 (Pretext 텍스트 측정) 통합 최종 검증
 - [ ] main 브랜치 머지 준비
 - [ ] PixiJS/Taffy dead code 최종 정리
+- [ ] ADR-003, ADR-008, ADR-051 → Superseded 상태 변경
 - [ ] 문서 업데이트 (RENDERING_ARCHITECTURE.md, COMPONENT_SPEC.md)
 
-**Gate G5**: 기능 100% 동등 + 성능 동등 이상 → production 전환
+**Gate G5**: 기능 78개 100% + 스크린샷 0.1% 미만 차이 + 벤치마크 baseline 이상 → production 전환
 
-### 보류 Phase (수요 발생 시)
+### 보류 Phase — CSS 기능 확장 (수요 발생 시)
 
 - **Phase X-1: Multi-column** — column-count, column-width, column-gap, break rules
 - **Phase X-2: Subgrid** — nested grid template inheritance
 - **Phase X-3: Writing modes** — vertical-rl, direction: rtl, unicode-bidi
+
+### 보류 Phase — Level 4 성능 스케일링 (10,000+ 요소, 별도 ADR)
+
+> ADR-100은 Level 1~3 (5000 요소 50-60fps). Level 4는 10,000+ 요소 60fps 목표.
+> 현재 설계가 Level 4를 차단하지 않음을 검증 완료 (ADR-100 확장 경로 섹션 참조).
+
+- **Phase L4-1: Web Worker Layout** — Rust WASM Layout Engine을 Web Worker에서 실행. 메인 스레드 레이아웃 0ms. SharedArrayBuffer로 결과 전달 (zero-copy)
+- **Phase L4-2: OffscreenCanvas Render** — CanvasKit 렌더링을 OffscreenCanvas Worker에서 실행. 메인 스레드 렌더 0ms. GPUBackend 추상화가 이미 지원
+- **Phase L4-3: WASM SIMD** — `target-feature = "+simd128"` 활성화. 레이아웃 벡터 연산 4x 가속. Chrome 91+/Safari 16.4+ 지원
+- **Phase L4-4: 커스텀 Rust 할당기** — `#[global_allocator]` wee_alloc 또는 bump 할당기. WASM 메모리 단편�� 제거, GC 압력 0
+
+### 보류 Phase — Level 5 엔진 커스텀 (50,000+ 요소, 별도 ADR)
+
+- **Phase L5-1: CanvasKit 커스텀 빌드** — 불필요 모듈 제거 (PDF, SVG 파서 등). WASM 6MB → ~3MB
+- **Phase L5-2: WebGPU Compute Shader** — 레이아웃 연산을 GPU compute로 오프로드. 대규모 트리 병렬 처리
+- **Phase L5-3: 커스텀 렌더 파이프라인** — Skia 우회, SceneGraph → WebGPU 직접 렌더. draw call 최소화
 
 ---
 

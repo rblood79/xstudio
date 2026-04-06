@@ -238,3 +238,36 @@ ROI 다이어트 후 HIGH 위험 0개. 잔존 MEDIUM 위험에 대한 완화:
 - **Shadow Engine 병행 기간** — 전환 완료까지 두 시스템 공존
 - **삭제된 CSS 기능 요청 시** — float/table/multicol 요청 시 추가 Phase 필요 (보류 경로 명시됨)
 - **영향 범위 광범위** — Builder Canvas 전체 파일 (~50개) 수정/교체
+
+## 확장 경로 — Level 4/5 성능 스케일링
+
+> ADR-100은 Level 1~3 (아키텍처 최적화) 범위. Level 4/5는 수요 발생 시 별도 ADR.
+> **현재 설계가 Level 4/5를 차단하지 않음을 검증 완료.**
+
+### 최적화 5단계
+
+| Level | 범위                                       |       목표 성능        | ADR-100 상태  |
+| :---: | ------------------------------------------ | :--------------------: | :-----------: |
+|   1   | PixiJS/Taffy 제거, WebGL -1                |    1000 요소 60fps     | ✅ Phase 1~2  |
+|   2   | SceneGraph, dirty flag, React 제거         |    2000 요소 60fps     |  ✅ Phase 2   |
+|   3   | 타일 캐시, Rust 네이티브, Paragraph 공유   |   5000 요소 50-60fps   | ✅ Phase 3~4  |
+| **4** | **Web Worker + WASM SIMD + 커스텀 할당기** | **10,000+ 요소 60fps** | **경로 확보** |
+| **5** | **Skia 포크 + WebGPU Compute Shader**      | **50,000+ 요소 60fps** | **경로 확보** |
+
+### Level 4 차단 방지 설계 원칙
+
+| Level 4 기법             | 차단 여부 | 확보된 경로                                                                                        |
+| ------------------------ | :-------: | -------------------------------------------------------------------------------------------------- |
+| Web Worker (Layout)      | ✅ 미차단 | Rust WASM은 Worker에서 실행 가능. 텍스트 측정 JS 콜백을 Worker에서도 호출 가능하게 인터페이스 분리 |
+| OffscreenCanvas (Render) | ✅ 미차단 | GPUBackend 추상화가 OffscreenCanvas 지원. Surface 생성을 팩토리로 분리                             |
+| WASM SIMD                | ✅ 미차단 | Cargo.toml `target-feature = "+simd128"` 추가만으로 활성화                                         |
+| SharedArrayBuffer        | ✅ 미차단 | `build_tree_batch(data: &[u8])` 바이너리 프로토콜이 이미 SAB 호환                                  |
+| 커스텀 Rust 할당기       | ✅ 미차단 | `#[global_allocator]` wee_alloc 또는 bump 할당기로 교체 가능                                       |
+
+### Level 5 차단 방지 설계 원칙
+
+| Level 5 기법            | 차단 여부 | 확보된 경로                                                            |
+| ----------------------- | :-------: | ---------------------------------------------------------------------- |
+| Skia 포크 (커스텀 빌드) | ✅ 미차단 | CanvasKit WASM 바이너리를 자체 빌드로 교체 가능 (locateFile 패턴 유지) |
+| WebGPU Compute Shader   | ✅ 미차단 | GPUBackend 추상화의 `CanvasKitWebGPUBackend` 구현 경로 설계됨          |
+| 커스텀 렌더 파이프라인  | ✅ 미차단 | SceneGraph → RenderCommand 패턴이 Skia 외 백엔드에도 적용 가능         |
