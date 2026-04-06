@@ -23,6 +23,7 @@ import {
   parseTransformOrigin,
   parseCSSSize,
   cssColorToAlpha,
+  colorIntToFloat32,
 } from "../sprites/styleConverter";
 import {
   parseZIndex,
@@ -179,12 +180,7 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
     : hexStringToNumber(
         theme === "dark" ? darkColors.neutral : lightColors.neutral,
       );
-  const textColor = Float32Array.of(
-    ((effectiveFill >> 16) & 0xff) / 255,
-    ((effectiveFill >> 8) & 0xff) / 255,
-    (effectiveFill & 0xff) / 255,
-    1,
-  );
+  const textColor = colorIntToFloat32(effectiveFill, 1);
 
   // ---------- Font properties ----------
   const numericFontWeight = parseFontWeight(textStyle.fontWeight);
@@ -218,24 +214,14 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
   )
     ? cssColorToAlpha(style.backgroundColor as string | undefined)
     : fill.alpha;
-  const fillColor = Float32Array.of(
-    ((fill.color >> 16) & 0xff) / 255,
-    ((fill.color >> 8) & 0xff) / 255,
-    (fill.color & 0xff) / 255,
-    bgAlpha,
-  );
+  const fillColor = colorIntToFloat32(fill.color, bgAlpha);
 
   const boxData: SkiaNodeData["box"] = {
     fillColor,
     borderRadius: borderRadius ?? 0,
   };
   if (stroke) {
-    boxData.strokeColor = Float32Array.of(
-      ((stroke.color >> 16) & 0xff) / 255,
-      ((stroke.color >> 8) & 0xff) / 255,
-      (stroke.color & 0xff) / 255,
-      stroke.alpha ?? 1,
-    );
+    boxData.strokeColor = colorIntToFloat32(stroke.color, stroke.alpha ?? 1);
     boxData.strokeWidth = stroke.width;
   }
 

@@ -204,3 +204,17 @@ export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
 export function getSpecForTag(tag: string): ComponentSpec<any> | null {
   return TAG_SPEC_MAP[tag] ?? null;
 }
+
+/** 텍스트 렌더링 대상 태그 (TextSprite / buildTextNodeData 경로) */
+export const TEXT_TAGS = new Set([
+  "Heading",
+  "Text",
+  "Label",
+  "Description",
+  "Kbd",
+  "Code",
+  "InlineAlert",
+]);
+
+/** 이미지 렌더링 대상 태그 (ImageSprite / buildImageNodeData 경로) */
+export const IMAGE_TAGS = new Set(["Image", "Avatar", "Logo", "Thumbnail"]);

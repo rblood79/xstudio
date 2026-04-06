@@ -111,18 +111,15 @@ export function useDragBridge({
           const bEnd =
             bStart + (isHz ? draggedBounds.width : draggedBounds.height);
           if (pos >= bStart && pos <= bEnd) {
-            const db = getSceneBounds(draggedId);
             dropIndicatorSnapshotRef.current = {
               targetBounds: prevTarget.containerBounds,
               insertIndex: prevTarget.insertionIndex,
               childBounds: prevTarget.siblingBounds,
               isHorizontal: prevTarget.isHorizontal,
               isReparent: prevTarget.isReparent,
-              dragSize: db
-                ? prevTarget.isHorizontal
-                  ? db.width
-                  : db.height
-                : 0,
+              dragSize: prevTarget.isHorizontal
+                ? draggedBounds.width
+                : draggedBounds.height,
             };
             return;
           }

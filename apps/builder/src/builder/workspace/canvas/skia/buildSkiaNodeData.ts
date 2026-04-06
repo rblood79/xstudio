@@ -17,6 +17,7 @@ import {
   convertStyle,
   buildSkiaEffects,
   parseClipPath,
+  colorIntToFloat32,
 } from "../sprites/styleConverter";
 import {
   parseZIndex,
@@ -114,23 +115,10 @@ export function buildSkiaNodeData(
       ? (parseClipPath(style.clipPath, width, height) ?? undefined)
       : undefined;
 
-  // fill color → Float32Array
   const { fill, stroke, borderRadius } = converted;
-  const fillColor = Float32Array.of(
-    ((fill.color >> 16) & 0xff) / 255,
-    ((fill.color >> 8) & 0xff) / 255,
-    (fill.color & 0xff) / 255,
-    fill.alpha,
-  );
-
-  // stroke → Float32Array
+  const fillColor = colorIntToFloat32(fill.color, fill.alpha);
   const strokeColor = stroke?.color
-    ? Float32Array.of(
-        ((stroke.color >> 16) & 0xff) / 255,
-        ((stroke.color >> 8) & 0xff) / 255,
-        (stroke.color & 0xff) / 255,
-        stroke.alpha ?? 1,
-      )
+    ? colorIntToFloat32(stroke.color, stroke.alpha ?? 1)
     : undefined;
 
   // 기본 SkiaNodeData (box 타입)

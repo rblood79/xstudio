@@ -135,7 +135,6 @@ export function getElementBoundsSimple(id: string): ElementBounds | null {
   const layoutBounds = layoutBoundsRegistry.get(id);
   if (layoutBounds) return layoutBounds;
 
-  // ADR-100: Command Stream boundsMap fallback (UNIFIED_ENGINE — PixiJS 없음)
   const sceneBounds = getSceneBounds(id);
   if (sceneBounds) return sceneBounds;
 

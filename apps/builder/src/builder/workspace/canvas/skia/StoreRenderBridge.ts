@@ -20,23 +20,7 @@ import { buildImageNodeData } from "./buildImageNodeData";
 import { buildSpecNodeData } from "./buildSpecNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
-import { getSpecForTag } from "../sprites/tagSpecMap";
-
-// ---------------------------------------------------------------------------
-// Tag 분류
-// ---------------------------------------------------------------------------
-
-const TEXT_TAGS = new Set([
-  "Heading",
-  "Text",
-  "Label",
-  "Description",
-  "Kbd",
-  "Code",
-  "InlineAlert",
-]);
-
-const IMAGE_TAGS = new Set(["Image", "Avatar", "Logo", "Thumbnail"]);
+import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
 
 function isTextElement(element: Element): boolean {
   return TEXT_TAGS.has(element.tag);
@@ -179,7 +163,7 @@ export class StoreRenderBridge {
    * 비동기 이미지 로딩 후 재동기화 트리거.
    */
   private loadImageAsync(elementId: string, src: string): void {
-    loadSkImage(src).then((img) => {
+    void loadSkImage(src).then((img) => {
       if (!img) return;
       // 이미 dispose 되었거나 해당 요소가 사라졌으면 해제
       if (!this.registeredIds.has(elementId)) {

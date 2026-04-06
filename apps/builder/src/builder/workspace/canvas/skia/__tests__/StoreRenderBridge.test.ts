@@ -20,6 +20,16 @@ vi.mock("@xstudio/specs", () => ({
 vi.mock("../../sprites/tagSpecMap", () => ({
   TAG_SPEC_MAP: {},
   getSpecForTag: () => null,
+  TEXT_TAGS: new Set([
+    "Heading",
+    "Text",
+    "Label",
+    "Description",
+    "Kbd",
+    "Code",
+    "InlineAlert",
+  ]),
+  IMAGE_TAGS: new Set(["Image", "Avatar", "Logo", "Thumbnail"]),
 }));
 
 // Mock buildSpecNodeData (Spec 렌더링 차단)

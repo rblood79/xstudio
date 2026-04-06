@@ -85,18 +85,11 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
             : undefined,
       height: existingStyle.height ?? (h > 0 ? h : undefined),
     },
-  };
-
-  // _hasChildren 패턴: 자식이 있으면 spec은 shell만 반환
-  if (childElements && childElements.length > 0) {
-    specProps = { ...specProps, _hasChildren: true };
-  }
-
-  // _containerWidth/_containerHeight 주입
-  specProps = {
-    ...specProps,
     _containerWidth: w,
     _containerHeight: h,
+    ...(childElements && childElements.length > 0
+      ? { _hasChildren: true }
+      : {}),
   };
 
   // ---------- shapes 생성 ----------

@@ -539,7 +539,6 @@ export function BuilderCanvas({
   const onEndDragRef = useRef<() => void>(() => {});
   const onCancelDragRef = useRef<() => void>(() => {});
 
-  // ADR-100: UNIFIED_ENGINE=true → SelectionLayer 없이 드래그 콜백 바인딩
   useDragBridge({
     onStartMoveRef,
     onUpdateDragRef,

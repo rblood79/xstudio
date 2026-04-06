@@ -497,6 +497,19 @@ export function cssColorToHex(
 }
 
 /**
+ * PixiJS hex color (0xRRGGBB) → Float32Array [r, g, b, a] (0-1 범위).
+ * buildBoxNodeData, buildTextNodeData, buildImageNodeData 등에서 공용.
+ */
+export function colorIntToFloat32(color: number, alpha: number): Float32Array {
+  return Float32Array.of(
+    ((color >> 16) & 0xff) / 255,
+    ((color >> 8) & 0xff) / 255,
+    (color & 0xff) / 255,
+    alpha,
+  );
+}
+
+/**
  * CSS 색상에서 알파 값 추출
  *
  * colord를 사용하여 rgba/hsla/oklch/#rrggbbaa 등 모든 CSS 색상 형식을 지원한다 (I-L17).
