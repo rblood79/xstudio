@@ -207,6 +207,106 @@ impl LayoutEngine {
     }
 
     // -----------------------------------------------------------------------
+    // CSS 보정: overflow flex-shrink + min-width auto
+    // -----------------------------------------------------------------------
+
+    /// CSS 보정: overflow !== "visible" 부모의 flex 자식에 flexShrink=0 주입.
+    ///
+    /// CSS 스펙: overflow가 visible이 아닌 flex 컨테이너(hidden/clip/scroll/auto)의
+    /// 자식은 shrink하지 않고 overflow 허용. Taffy는 이 상호작용을 지원하지 않으므로
+    /// 명시적 flexShrink=0 주입이 필요.
+    ///
+    /// `parent_style_json`에서 overflow/flexDirection을 파싱하여
+    /// `child_handles`의 해당 축 flexShrink를 0으로 설정.
+    /// 이미 명시적 flexShrink가 설정된 자식은 건너뜀.
+    pub fn apply_overflow_shrink_fix(
+        &mut self,
+        parent_style_json: &str,
+        child_handles: &[u32],
+        child_explicit_shrink: &[u8], // 1=explicit, 0=default
+    ) {
+        let value: serde_json::Value =
+            serde_json::from_str(parent_style_json).unwrap_or(serde_json::Value::Null);
+        let obj = match &value {
+            serde_json::Value::Object(m) => m,
+            _ => return,
+        };
+
+        let overflow = obj
+            .get("overflow")
+            .and_then(|v| v.as_str())
+            .unwrap_or("visible");
+        let overflow_x = obj
+            .get("overflowX")
+            .and_then(|v| v.as_str())
+            .unwrap_or(overflow);
+        let overflow_y = obj
+            .get("overflowY")
+            .and_then(|v| v.as_str())
+            .unwrap_or(overflow);
+
+        let is_clipped_x = overflow_x != "visible";
+        let is_clipped_y = overflow_y != "visible";
+
+        if !is_clipped_x && !is_clipped_y {
+            return;
+        }
+
+        let flex_dir = obj
+            .get("flexDirection")
+            .and_then(|v| v.as_str())
+            .unwrap_or("row");
+        let is_row = flex_dir == "row" || flex_dir == "row-reverse";
+
+        let should_fix = (is_row && is_clipped_x) || (!is_row && is_clipped_y);
+        if !should_fix {
+            return;
+        }
+
+        for (i, &child_handle) in child_handles.iter().enumerate() {
+            let has_explicit = child_explicit_shrink
+                .get(i)
+                .copied()
+                .unwrap_or(0)
+                == 1;
+            if has_explicit {
+                continue;
+            }
+
+            if let Some(meta) = self.nodes.get(&child_handle) {
+                if let Ok(mut child_style) = self.tree.style(meta.node_id).cloned() {
+                    child_style.flex_shrink = 0.0;
+                    let _ = self.tree.set_style(meta.node_id, child_style);
+                }
+            }
+        }
+    }
+
+    /// CSS 보정: flex 자식에 width 주입 시 minWidth도 동시 설정 (min-width:auto 에뮬레이션).
+    ///
+    /// CSS에서 flex item의 기본 min-width는 콘텐츠 크기(auto).
+    /// Taffy는 min-width:auto를 0으로 처리하여 flex-shrink로 콘텐츠 이하 축소 가능.
+    /// width 주입 시 minWidth도 동일값으로 설정하여 CSS 동작을 에뮬레이션.
+    ///
+    /// `has_explicit_min_width`가 true이면 사용자 설정 보존.
+    pub fn apply_min_width_fix(
+        &mut self,
+        handle: u32,
+        width: f32,
+        has_explicit_min_width: bool,
+    ) {
+        if has_explicit_min_width {
+            return;
+        }
+        if let Some(meta) = self.nodes.get(&handle) {
+            if let Ok(mut style) = self.tree.style(meta.node_id).cloned() {
+                style.min_size.width = Dimension::length(width);
+                let _ = self.tree.set_style(meta.node_id, style);
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Layout computation
     // -----------------------------------------------------------------------
 
@@ -478,5 +578,187 @@ mod tests {
 
         engine.clear();
         assert_eq!(engine.node_count(), 0);
+    }
+
+    #[test]
+    fn overflow_hidden_prevents_flex_shrink() {
+        let mut engine = LayoutEngine::new();
+
+        // 부모: flex row, overflow:hidden, 200px 너비
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"200px","height":"100px","overflowX":"hidden"}"#,
+        );
+
+        // 자식 2개: 각각 150px (합계 300px > 부모 200px)
+        // flexShrink 미명시 → 기본값 1 → Taffy가 축소 시도
+        let child_a = engine.create_node(r#"{"width":"150px","height":"50px"}"#);
+        let child_b = engine.create_node(r#"{"width":"150px","height":"50px"}"#);
+
+        engine.set_children(parent, &[child_a, child_b]);
+
+        // 보정 적용: overflow hidden → flexShrink=0
+        engine.apply_overflow_shrink_fix(
+            r#"{"overflow":"hidden","flexDirection":"row"}"#,
+            &[child_a, child_b],
+            &[0, 0], // 둘 다 명시적 shrink 없음
+        );
+
+        engine.compute_layout(parent, 200.0, 100.0);
+
+        let la: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child_a)).unwrap();
+        let lb: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child_b)).unwrap();
+
+        // shrink=0이므로 자식은 원래 크기 유지 (150px), 부모 밖으로 overflow
+        assert_eq!(la["width"].as_f64().unwrap() as i32, 150);
+        assert_eq!(lb["width"].as_f64().unwrap() as i32, 150);
+        // child_b는 150px 위치에서 시작
+        assert_eq!(lb["x"].as_f64().unwrap() as i32, 150);
+    }
+
+    #[test]
+    fn overflow_visible_allows_flex_shrink() {
+        let mut engine = LayoutEngine::new();
+
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"200px","height":"100px"}"#,
+        );
+
+        let child_a = engine.create_node(r#"{"width":"150px","height":"50px"}"#);
+        let child_b = engine.create_node(r#"{"width":"150px","height":"50px"}"#);
+
+        engine.set_children(parent, &[child_a, child_b]);
+
+        // overflow:visible → 보정 미적용
+        engine.apply_overflow_shrink_fix(
+            r#"{"overflow":"visible","flexDirection":"row"}"#,
+            &[child_a, child_b],
+            &[0, 0],
+        );
+
+        engine.compute_layout(parent, 200.0, 100.0);
+
+        let la: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child_a)).unwrap();
+        let lb: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child_b)).unwrap();
+
+        // shrink 기본값(1) 유지 → 자식이 축소됨 (각 100px)
+        assert_eq!(la["width"].as_f64().unwrap() as i32, 100);
+        assert_eq!(lb["width"].as_f64().unwrap() as i32, 100);
+    }
+
+    #[test]
+    fn explicit_flex_shrink_preserved_with_overflow() {
+        let mut engine = LayoutEngine::new();
+
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"200px","height":"100px","overflowX":"hidden"}"#,
+        );
+
+        // child_a는 명시적 flexShrink=1
+        let child_a = engine.create_node(r#"{"width":"150px","height":"50px","flexShrink":1}"#);
+        let child_b = engine.create_node(r#"{"width":"150px","height":"50px"}"#);
+
+        engine.set_children(parent, &[child_a, child_b]);
+
+        // child_a는 명시적(1), child_b는 기본(0)
+        engine.apply_overflow_shrink_fix(
+            r#"{"overflow":"hidden","flexDirection":"row"}"#,
+            &[child_a, child_b],
+            &[1, 0], // child_a = explicit
+        );
+
+        engine.compute_layout(parent, 200.0, 100.0);
+
+        let la: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child_a)).unwrap();
+        let lb: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child_b)).unwrap();
+
+        // child_a는 명시적 shrink=1 → 축소됨
+        // child_b는 보정 shrink=0 → 150px 유지
+        // child_a가 나머지 50px 차지
+        assert_eq!(lb["width"].as_f64().unwrap() as i32, 150);
+        assert_eq!(la["width"].as_f64().unwrap() as i32, 50);
+    }
+
+    #[test]
+    fn min_width_fix_prevents_shrink_below_content() {
+        let mut engine = LayoutEngine::new();
+
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"200px","height":"100px"}"#,
+        );
+
+        // child: 300px (부모 200px보다 큼), flexShrink 기본
+        let child = engine.create_node(r#"{"width":"300px","height":"50px"}"#);
+
+        engine.set_children(parent, &[child]);
+
+        // minWidth 보정 적용: width=300 → minWidth=300
+        engine.apply_min_width_fix(child, 300.0, false);
+
+        engine.compute_layout(parent, 200.0, 100.0);
+
+        let lc: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+
+        // minWidth=300 → shrink 불가 → 300px 유지
+        assert_eq!(lc["width"].as_f64().unwrap() as i32, 300);
+    }
+
+    #[test]
+    fn min_width_fix_skips_explicit_min_width() {
+        let mut engine = LayoutEngine::new();
+
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"row","width":"200px","height":"100px"}"#,
+        );
+
+        // child: 명시적 minWidth=50
+        let child = engine.create_node(r#"{"width":"300px","height":"50px","minWidth":"50px"}"#);
+
+        engine.set_children(parent, &[child]);
+
+        // has_explicit_min_width=true → 보정 스킵
+        engine.apply_min_width_fix(child, 300.0, true);
+
+        engine.compute_layout(parent, 200.0, 100.0);
+
+        let lc: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+
+        // 명시적 minWidth=50 → shrink 가능 → 200px로 축소
+        assert_eq!(lc["width"].as_f64().unwrap() as i32, 200);
+    }
+
+    #[test]
+    fn overflow_column_direction_checks_y_axis() {
+        let mut engine = LayoutEngine::new();
+
+        // flex column + overflowY:scroll
+        let parent = engine.create_node(
+            r#"{"display":"flex","flexDirection":"column","width":"200px","height":"100px","overflowY":"scroll"}"#,
+        );
+
+        let child = engine.create_node(r#"{"width":"100px","height":"150px"}"#);
+
+        engine.set_children(parent, &[child]);
+
+        engine.apply_overflow_shrink_fix(
+            r#"{"overflow":"visible","overflowY":"scroll","flexDirection":"column"}"#,
+            &[child],
+            &[0],
+        );
+
+        engine.compute_layout(parent, 200.0, 100.0);
+
+        let lc: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+
+        // column 방향 + overflowY:scroll → shrink=0 → 150px 유지
+        assert_eq!(lc["height"].as_f64().unwrap() as i32, 150);
     }
 }
