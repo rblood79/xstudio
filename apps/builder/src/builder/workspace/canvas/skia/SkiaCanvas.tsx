@@ -63,6 +63,7 @@ import {
 } from "./skiaFramePlan";
 import { Camera } from "../viewport/Camera";
 import { useViewportSyncStore } from "../stores";
+import { viewportState as mutableViewport } from "../viewport/viewportState";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -204,30 +205,9 @@ export function SkiaCanvas({
     invalidationPacketRef.current = invalidationPacket;
   }, [invalidationPacket]);
 
-  // ---------- Camera ↔ Store 동기화 (Phase 5) ----------
-
-  useEffect(() => {
-    const camera = cameraRef.current;
-
-    // 초기 동기화: store → Camera
-    const { zoom, panOffset } = useViewportSyncStore.getState();
-    camera.setPosition(panOffset.x, panOffset.y, zoom);
-
-    // store 변경 구독: pan/zoom 변경 시 Camera 갱신
-    const unsub = useViewportSyncStore.subscribe(
-      (state) => ({
-        x: state.panOffset.x,
-        y: state.panOffset.y,
-        z: state.zoom,
-      }),
-      (curr) => {
-        camera.setPosition(curr.x, curr.y, curr.z);
-      },
-      { equalityFn: (a, b) => a.x === b.x && a.y === b.y && a.z === b.z },
-    );
-
-    return unsub;
-  }, []);
+  // Camera ↔ viewport 동기화는 viewportState 뮤터블 ref로 대체 (Phase 5.4)
+  // ViewportController.notifyUpdateListeners()가 viewportState를 동기 갱신
+  // SkiaCanvas RAF에서 mutableViewport.x/y/zoom으로 직접 읽기
 
   // ---------- 인터랙션 훅 ----------
 
@@ -351,13 +331,10 @@ export function SkiaCanvas({
       if (!rendererRef.current) return;
       if (contextLostRef.current) return;
 
-      // Camera 상태 — PixiJS Camera Container에서 직접 읽기 (SkiaOverlay와 동일)
-      const cameraContainer = app?.stage
-        ? findCameraContainer(app.stage)
-        : null;
-      const cameraX = cameraContainer?.x ?? 0;
-      const cameraY = cameraContainer?.y ?? 0;
-      const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
+      // Camera 상태 — ViewportController 뮤터블 ref에서 직접 읽기 (zero-latency)
+      const cameraX = mutableViewport.x;
+      const cameraY = mutableViewport.y;
+      const cameraZoom = Math.max(mutableViewport.zoom, 0.001);
 
       const registryVersion = getRegistryVersion();
       const packet = invalidationPacketRef.current;

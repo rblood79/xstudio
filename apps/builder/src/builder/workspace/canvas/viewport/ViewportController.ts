@@ -11,7 +11,8 @@
  * @since 2025-12-12 Phase 12 B3.2
  */
 
-import type { Container } from 'pixi.js';
+import type { Container } from "pixi.js";
+import { viewportState } from "./viewportState";
 
 // ============================================
 // Types
@@ -163,7 +164,7 @@ export class ViewportController {
     clientY: number,
     containerRect: DOMRect,
     delta: number,
-    syncImmediately = true
+    syncImmediately = true,
   ): void {
     if (!this.container) return;
 
@@ -177,7 +178,10 @@ export class ViewportController {
     const currentScale = this.container.scale.x;
 
     // 새 스케일 계산 (클램핑)
-    const newScale = Math.min(Math.max(currentScale * (1 + delta), minZoom), maxZoom);
+    const newScale = Math.min(
+      Math.max(currentScale * (1 + delta), minZoom),
+      maxZoom,
+    );
 
     if (newScale === currentScale) return;
 
@@ -259,6 +263,10 @@ export class ViewportController {
    */
   private notifyUpdateListeners(): void {
     const state = this.currentState;
+    // ADR-100: 뮤터블 ref 동기 갱신 — SkiaCanvas RAF에서 zero-latency 읽기
+    viewportState.x = state.x;
+    viewportState.y = state.y;
+    viewportState.zoom = state.scale;
     for (const listener of this.updateListeners) {
       listener(state);
     }
@@ -281,7 +289,9 @@ let viewportControllerInstance: ViewportController | null = null;
 /**
  * ViewportController 싱글톤 인스턴스 가져오기
  */
-export function getViewportController(options?: ViewportControllerOptions): ViewportController {
+export function getViewportController(
+  options?: ViewportControllerOptions,
+): ViewportController {
   if (!viewportControllerInstance) {
     viewportControllerInstance = new ViewportController(options);
   }
