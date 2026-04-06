@@ -304,8 +304,8 @@ export { EVENT_TYPE_LABELS } from "./events.registry";
 
 ### Positive
 
-- **정본 확립**: 이벤트 정의 추가 = `EVENT_REGISTRY` 1곳만 수정. 1차 파생물(타입, 레이블, 카테고리)은 자동 derive
-- **이중 정의 제거**: `eventTypes.ts`/`events.types.ts`/`eventCategories.ts`에 분산된 수동 union/labels 완전 제거
+- **정본 확립**: 이벤트 정의 추가 = `EVENT_REGISTRY` 1곳만 수정. `EventType`/`ImplementedEventType`/`EVENT_TYPE_LABELS`는 정본에서 자동 derive
+- **핵심 이벤트 정의의 수동 union/labels 제거**: `eventTypes.ts`의 `EventType` union과 `events.types.ts`/`eventTypes.ts`의 `EVENT_TYPE_LABELS` 수동 정의 제거. `eventCategories.ts`의 `EVENT_METADATA` 내부 표시용 label/category는 유지 (UI 메타데이터 레이어)
 - **컴파일 타임 계약**: `Record<EventType, EventMetadata>` 계약으로 소비처의 누락을 컴파일 타임에 감지
 - **타입 어서션 제거**: `EventType`이 단일 정본에서 나오므로 `EventsPanel`의 강제 타입 어서션 불필요
 - **UI 의존성 격리**: 정본(registry)은 LucideIcon 등 UI 라이브러리 비의존 유지
