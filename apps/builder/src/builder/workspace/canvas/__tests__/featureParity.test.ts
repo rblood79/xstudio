@@ -233,16 +233,18 @@ describe("UNIFIED_ENGINE_FLAGS parity", () => {
     expect("REMOVE_PIXI" in UNIFIED_ENGINE_FLAGS).toBe(true);
   });
 
-  test("모든 flags 기본값 false", () => {
-    for (const [key, value] of Object.entries(UNIFIED_ENGINE_FLAGS)) {
-      expect(value).toBe(false);
-    }
+  test("Phase 5 활성 flags 확인", () => {
+    // Phase 5: USE_SCENE_GRAPH + REMOVE_PIXI 활성화됨
+    expect(UNIFIED_ENGINE_FLAGS.USE_SCENE_GRAPH).toBe(true);
+    expect(UNIFIED_ENGINE_FLAGS.REMOVE_PIXI).toBe(true);
+    // 나머지는 아직 비활성
+    expect(UNIFIED_ENGINE_FLAGS.USE_RUST_LAYOUT_ENGINE).toBe(false);
+    expect(UNIFIED_ENGINE_FLAGS.UNIFIED_ENGINE).toBe(false);
   });
 
-  test("isUnifiedFlag 마스터 flag 동작", () => {
-    // UNIFIED_ENGINE=false이므로 모든 개별 flag도 false
-    expect(isUnifiedFlag("USE_SCENE_GRAPH")).toBe(false);
-    expect(isUnifiedFlag("REMOVE_PIXI")).toBe(false);
+  test("isUnifiedFlag 개별 flag 동작", () => {
+    expect(isUnifiedFlag("USE_SCENE_GRAPH")).toBe(true);
+    expect(isUnifiedFlag("REMOVE_PIXI")).toBe(true);
     expect(isUnifiedFlag("UNIFIED_ENGINE")).toBe(false);
   });
 });
