@@ -12,23 +12,14 @@
 
 import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
-import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import type { EffectStyle } from "./types";
 import {
-  convertStyle,
-  buildSkiaEffects,
-  parseClipPath,
   applyTextTransform,
-  applyTransformOrigin,
-  parseTransformOrigin,
   parseCSSSize,
   cssColorToAlpha,
   colorIntToFloat32,
 } from "../sprites/styleConverter";
-import {
-  parseZIndex,
-  createsStackingContext,
-} from "../layout/engines/cssStackingContext";
+import { buildBaseNodeProps } from "./buildBaseNodeProps";
 import { parsePadding } from "../sprites/paddingUtils";
 import { skiaFontManager } from "./fontManager";
 import { colord } from "colord";
@@ -140,29 +131,25 @@ function parseFontStyle(value: unknown): number {
 export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
   const { element, layout, theme } = input;
 
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  if (!style) return null;
+  const base = buildBaseNodeProps(element, layout);
+  if (!base) return null;
 
-  const converted = convertStyle(
-    style as Parameters<typeof convertStyle>[0],
-    style.color as string | undefined,
-  );
+  const {
+    converted,
+    effects,
+    blendMode,
+    skiaTransform,
+    x,
+    y,
+    w,
+    h,
+    visible,
+    zIndex,
+    isStackingContext,
+    clipPath,
+    style,
+  } = base;
   const { fill, text: textStyle, borderRadius, stroke } = converted;
-  const skiaEffects = buildSkiaEffects(
-    style as Parameters<typeof buildSkiaEffects>[0],
-  );
-
-  // Layout dimensions (layoutMap 우선, 없으면 convertStyle 결과)
-  const w = layout?.width ?? converted.transform.width;
-  const h = layout?.height ?? converted.transform.height;
-  const x = layout?.x ?? converted.transform.x;
-  const y = layout?.y ?? converted.transform.y;
-
-  // Visibility — TextSprite는 visible flag로 처리 (null 반환 아님)
-  const visible =
-    style.display !== "none" &&
-    style.visibility !== "hidden" &&
-    style.visibility !== "collapse";
 
   // ---------- Text content ----------
   const props = element.props as Record<string, unknown> | undefined;
@@ -204,14 +191,8 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
   );
   const hasDecoration = decorationBitmask !== 0;
 
-  // ---------- z-index / stacking context ----------
-  const zIndex = parseZIndex(style.zIndex as string | number | undefined);
-  const isStackingCtx = createsStackingContext(style);
-
   // ---------- Box data (Float32Array) ----------
-  const bgAlpha = skiaEffects.effects?.some(
-    (e: EffectStyle) => e.type === "opacity",
-  )
+  const bgAlpha = effects?.some((e: EffectStyle) => e.type === "opacity")
     ? cssColorToAlpha(style.backgroundColor as string | undefined)
     : fill.alpha;
   const fillColor = colorIntToFloat32(fill.color, bgAlpha);
@@ -224,23 +205,6 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
     boxData.strokeColor = colorIntToFloat32(stroke.color, stroke.alpha ?? 1);
     boxData.strokeWidth = stroke.width;
   }
-
-  // ---------- CSS transform ----------
-  let skiaTransform: Float32Array | undefined;
-  if (skiaEffects.transform) {
-    const [ox, oy] = parseTransformOrigin(
-      style.transformOrigin as string | undefined,
-      w,
-      h,
-    );
-    skiaTransform = applyTransformOrigin(skiaEffects.transform, ox, oy);
-  }
-
-  // ---------- Clip path ----------
-  const clipPath =
-    typeof style.clipPath === "string"
-      ? parseClipPath(style.clipPath, w, h)
-      : undefined;
 
   // ---------- Assemble SkiaNodeData ----------
   const nodeData: SkiaNodeData = {
@@ -369,13 +333,12 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
     },
   };
 
-  // Optional top-level fields
-  if (skiaEffects.effects) nodeData.effects = skiaEffects.effects;
-  if (skiaEffects.blendMode) nodeData.blendMode = skiaEffects.blendMode;
+  if (effects) nodeData.effects = effects;
+  if (blendMode) nodeData.blendMode = blendMode;
   if (skiaTransform) nodeData.transform = skiaTransform;
   if (clipPath) nodeData.clipPath = clipPath;
   if (zIndex !== undefined) nodeData.zIndex = zIndex;
-  if (isStackingCtx) nodeData.isStackingContext = true;
+  if (isStackingContext) nodeData.isStackingContext = true;
 
   return nodeData;
 }

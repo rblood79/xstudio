@@ -11,20 +11,9 @@
 
 import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
-import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import type { Image as SkImage } from "canvaskit-wasm";
-import {
-  convertStyle,
-  buildSkiaEffects,
-  parseClipPath,
-  applyTransformOrigin,
-  parseTransformOrigin,
-} from "../sprites/styleConverter";
 import { parsePadding, getContentBounds } from "../sprites/paddingUtils";
-import {
-  parseZIndex,
-  createsStackingContext,
-} from "../layout/engines/cssStackingContext";
+import { buildBaseNodeProps } from "./buildBaseNodeProps";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,27 +95,25 @@ export function buildImageNodeData(
 ): SkiaNodeData | null {
   const { element, layout, skImage } = input;
 
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  if (!style) return null;
+  const base = buildBaseNodeProps(element, layout);
+  if (!base) return null;
 
-  const converted = convertStyle(
-    style as Parameters<typeof convertStyle>[0],
-    style.color as string | undefined,
-  );
+  const {
+    converted,
+    effects,
+    blendMode,
+    skiaTransform,
+    x,
+    y,
+    w,
+    h,
+    visible,
+    zIndex,
+    isStackingContext: isStackingCtx,
+    clipPath,
+    style,
+  } = base;
   const { borderRadius } = converted;
-  const skiaEffects = buildSkiaEffects(
-    style as Parameters<typeof buildSkiaEffects>[0],
-  );
-
-  const w = layout?.width ?? converted.transform.width;
-  const h = layout?.height ?? converted.transform.height;
-  const x = layout?.x ?? converted.transform.x;
-  const y = layout?.y ?? converted.transform.y;
-
-  const visible =
-    style.display !== "none" &&
-    style.visibility !== "hidden" &&
-    style.visibility !== "collapse";
 
   // ---------- Props ----------
   const props = element.props as Record<string, unknown> | undefined;
@@ -149,27 +136,6 @@ export function buildImageNodeData(
 
   // ---------- Object-fit ----------
   const imageContent = computeObjectFit(skImage, objectFit, contentBounds);
-
-  // ---------- z-index / stacking context ----------
-  const zIndex = parseZIndex(style.zIndex as string | number | undefined);
-  const isStackingCtx = createsStackingContext(style);
-
-  // ---------- CSS transform ----------
-  let skiaTransform: Float32Array | undefined;
-  if (skiaEffects.transform) {
-    const [ox, oy] = parseTransformOrigin(
-      style.transformOrigin as string | undefined,
-      w,
-      h,
-    );
-    skiaTransform = applyTransformOrigin(skiaEffects.transform, ox, oy);
-  }
-
-  // ---------- Clip path ----------
-  const clipPath =
-    typeof style.clipPath === "string"
-      ? parseClipPath(style.clipPath, w, h)
-      : undefined;
 
   // ---------- Assemble SkiaNodeData ----------
   const nodeData: SkiaNodeData = {
@@ -195,9 +161,8 @@ export function buildImageNodeData(
     },
   };
 
-  // Optional top-level fields
-  if (skiaEffects.effects) nodeData.effects = skiaEffects.effects;
-  if (skiaEffects.blendMode) nodeData.blendMode = skiaEffects.blendMode;
+  if (effects) nodeData.effects = effects;
+  if (blendMode) nodeData.blendMode = blendMode;
   if (skiaTransform) nodeData.transform = skiaTransform;
   if (clipPath) nodeData.clipPath = clipPath;
   if (zIndex !== undefined) nodeData.zIndex = zIndex;
