@@ -127,12 +127,19 @@ pub fn parse_style(json: &str) -> Style {
     }
 
     // --- alignment ---
+    // display가 JSON에 명시적으로 설정된 경우에만 기본 alignment 주입.
+    // 자식 노드(display 미명시)에는 주입하지 않음 — Taffy의 None이 올바른 동작.
+    let display_explicitly_set = obj.contains_key("display");
+
     if let Some(v) = obj.get("justifyContent").and_then(|v| v.as_str()) {
         style.justify_content = parse_justify_content(v);
     }
 
     if let Some(v) = obj.get("alignItems").and_then(|v| v.as_str()) {
         style.align_items = parse_align_items(v);
+    } else if display_explicitly_set && style.display == Display::Flex {
+        // CSS flex 기본값: align-items: stretch
+        style.align_items = Some(AlignItems::Stretch);
     }
 
     if let Some(v) = obj.get("alignContent").and_then(|v| v.as_str()) {
@@ -241,12 +248,14 @@ fn parse_dimension_str(s: &str) -> Dimension {
 }
 
 /// Parse a JSON value into a `LengthPercentageAuto` (used for margin, inset).
+/// CSS default for margin is `0`, not `auto`. `auto` in flex means "absorb free space"
+/// which causes unintended centering.
 fn parse_lpa(v: Option<&Value>) -> LengthPercentageAuto {
     match v {
-        None => LengthPercentageAuto::auto(),
+        None => LengthPercentageAuto::length(0.0),
         Some(Value::String(s)) => parse_lpa_str(s),
         Some(Value::Number(n)) => LengthPercentageAuto::length(n.as_f64().unwrap_or(0.0) as f32),
-        _ => LengthPercentageAuto::auto(),
+        _ => LengthPercentageAuto::length(0.0),
     }
 }
 
@@ -305,8 +314,10 @@ fn parse_lp_str(s: &str) -> LengthPercentage {
 
 fn parse_justify_content(s: &str) -> Option<JustifyContent> {
     Some(match s {
-        "flex-start" | "start" => JustifyContent::Start,
-        "flex-end" | "end" => JustifyContent::End,
+        "flex-start" => JustifyContent::FlexStart,
+        "flex-end" => JustifyContent::FlexEnd,
+        "start" => JustifyContent::Start,
+        "end" => JustifyContent::End,
         "center" => JustifyContent::Center,
         "space-between" => JustifyContent::SpaceBetween,
         "space-around" => JustifyContent::SpaceAround,
@@ -318,8 +329,10 @@ fn parse_justify_content(s: &str) -> Option<JustifyContent> {
 
 fn parse_align_items(s: &str) -> Option<AlignItems> {
     Some(match s {
-        "flex-start" | "start" => AlignItems::Start,
-        "flex-end" | "end" => AlignItems::End,
+        "flex-start" => AlignItems::FlexStart,
+        "flex-end" => AlignItems::FlexEnd,
+        "start" => AlignItems::Start,
+        "end" => AlignItems::End,
         "center" => AlignItems::Center,
         "baseline" => AlignItems::Baseline,
         "stretch" => AlignItems::Stretch,
@@ -331,6 +344,8 @@ fn parse_align_content(s: &str) -> Option<AlignContent> {
     Some(match s {
         "flex-start" | "start" => AlignContent::Start,
         "flex-end" | "end" => AlignContent::End,
+        "start" => AlignContent::Start,
+        "end" => AlignContent::End,
         "center" => AlignContent::Center,
         "space-between" => AlignContent::SpaceBetween,
         "space-around" => AlignContent::SpaceAround,
@@ -345,6 +360,8 @@ fn parse_align_self(s: &str) -> Option<AlignSelf> {
         "auto" => return None,
         "flex-start" | "start" => AlignSelf::Start,
         "flex-end" | "end" => AlignSelf::End,
+        "start" => AlignSelf::Start,
+        "end" => AlignSelf::End,
         "center" => AlignSelf::Center,
         "baseline" => AlignSelf::Baseline,
         "stretch" => AlignSelf::Stretch,
@@ -514,7 +531,7 @@ mod tests {
             r#"{"display":"flex","justifyContent":"center","alignItems":"flex-start"}"#,
         );
         assert_eq!(style.justify_content, Some(JustifyContent::Center));
-        assert_eq!(style.align_items, Some(AlignItems::Start));
+        assert_eq!(style.align_items, Some(AlignItems::FlexStart));
     }
 
     #[test]
