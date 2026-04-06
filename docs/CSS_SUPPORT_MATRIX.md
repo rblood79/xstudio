@@ -1,6 +1,6 @@
 # CSS Level 3 엔진 정합성 체크리스트
 
-> **최종 갱신**: 2026-03-03
+> **최종 갱신**: 2026-04-06
 > **목적**: XStudio 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
 > **엔진**: TaffyFlexEngine (Taffy WASM) · TaffyGridEngine (Taffy WASM) · TaffyBlockEngine (Taffy WASM)
 > **렌더러**: CanvasKit/Skia WASM
@@ -42,14 +42,14 @@
 
 ### 2.1 크기
 
-| 속성         | 상태 | 구현 파일                                                     | 비고                           |
-| ------------ | ---- | ------------------------------------------------------------- | ------------------------------ |
-| `width`      | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `utils.ts:863`          | px, %, em, rem, vh, vw, calc() |
-| `height`     | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `utils.ts:864`          | 동상                           |
-| `min-width`  | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:71` |                                |
-| `max-width`  | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:73` |                                |
-| `min-height` | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:72` |                                |
-| `max-height` | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:74` |                                |
+| 속성         | 상태 | 구현 파일                                                     | 비고                                                                                                    |
+| ------------ | ---- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `width`      | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `utils.ts:863`          | px, %, em, rem, vh, vw, calc()                                                                          |
+| `height`     | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `utils.ts:864`          | 동상                                                                                                    |
+| `min-width`  | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:71` | flex item: `enrichWithIntrinsicSize`에서 `min-width:auto` 에뮬레이션 (width 주입 시 minWidth 동시 설정) |
+| `max-width`  | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:73` |                                                                                                         |
+| `min-height` | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:72` |                                                                                                         |
+| `max-height` | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `TaffyFlexEngine.ts:74` |                                                                                                         |
 
 ### 2.2 여백
 
@@ -101,14 +101,14 @@
 
 ### 4.2 아이템 속성
 
-| 속성               | 상태 | 구현 파일                                                                          | 비고                                                                                                                     |
-| ------------------ | ---- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `flex` (shorthand) | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `engines/utils.ts applyFlexItemProperties()` | none, auto, 숫자, 3값 형식 — block/grid 자식에서도 `applyFlexItemProperties()`로 flexGrow/flexShrink/flexBasis 분해 적용 |
-| `flex-grow`        | ✅   | `TaffyFlexEngine.ts:106`                                                           |                                                                                                                          |
-| `flex-shrink`      | ✅   | `TaffyFlexEngine.ts:107`                                                           |                                                                                                                          |
-| `flex-basis`       | ✅   | `TaffyFlexEngine.ts:108-111`                                                       |                                                                                                                          |
-| `align-self`       | ✅   | `TaffyFlexEngine.ts:113-116`                                                       |                                                                                                                          |
-| `order`            | ✅   | `TaffyFlexEngine.ts:118-122`, `taffyLayout.ts`                                     | Taffy WASM order 전달                                                                                                    |
+| 속성               | 상태 | 구현 파일                                                                          | 비고                                                                                                                        |
+| ------------------ | ---- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `flex` (shorthand) | ✅   | `fullTreeLayout.ts buildNodeStyle()`, `engines/utils.ts applyFlexItemProperties()` | none, auto, 숫자, 3값 형식 — block/grid 자식에서도 `applyFlexItemProperties()`로 flexGrow/flexShrink/flexBasis 분해 적용    |
+| `flex-grow`        | ✅   | `TaffyFlexEngine.ts:106`                                                           |                                                                                                                             |
+| `flex-shrink`      | ✅   | `TaffyFlexEngine.ts:107`                                                           | `overflow !== visible` 부모: 명시적 flexShrink 없으면 `flexShrink: 0` 자동 주입 (fullTreeLayout Step 5.7 + TaffyFlexEngine) |
+| `flex-basis`       | ✅   | `TaffyFlexEngine.ts:108-111`                                                       |                                                                                                                             |
+| `align-self`       | ✅   | `TaffyFlexEngine.ts:113-116`                                                       |                                                                                                                             |
+| `order`            | ✅   | `TaffyFlexEngine.ts:118-122`, `taffyLayout.ts`                                     | Taffy WASM order 전달                                                                                                       |
 
 ---
 
@@ -169,16 +169,19 @@
 
 > Spec: [CSS Overflow Module Level 3](https://www.w3.org/TR/css-overflow-3/)
 
-| 속성                        | 상태 | 구현 파일                                                         | 비고                                                                           |
-| --------------------------- | ---- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `overflow: visible`         | ✅   | (기본값)                                                          |                                                                                |
-| `overflow: hidden`          | ✅   | `BoxSprite.tsx:224`, `nodeRenderers.ts:282-308`                   | CanvasKit `clipRect`                                                           |
-| `overflow: scroll`          | ❌   | —                                                                 | 스크롤바 UI 미구현 (ADR-009 Phase E 후속)                                      |
-| `overflow: auto`            | ⚠️   | —                                                                 | body 기본값으로 추가됨 (body spec). 스크롤바 UI 미구현 (ADR-009 Phase E 후속)  |
-| `overflow: clip`            | ✅   | `BoxSprite.tsx`, `TaffyBlockEngine.ts`                            | hidden과 동일한 clipRect, BFC 생성                                             |
-| `overflow-x` / `overflow-y` | ✅   | `engines/utils.ts` `applyCommonTaffyStyle()`                      | Flex/Grid/Block 3경로 모두 지원                                                |
-| **에디터 UI**               | ✅   | `panels/styles/sections/AppearanceSection.tsx`, `styleOptions.ts` | Appearance 섹션 — visible/hidden/scroll/auto/clip 셀렉터 (ADR-050, 2026-04-03) |
-| **해칭 시각화 (Canvas)**    | ✅   | `skia/hoverRenderer.ts`, `skiaTreeBuilder.ts`                     | 자식 선택 시 부모 클립 영역 밖 해칭 표시 (우하향 45°, MAX_HATCHING_LINES=200)  |
+| 속성                              | 상태 | 구현 파일                                                         | 비고                                                                                                                |
+| --------------------------------- | ---- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `overflow: visible`               | ✅   | (기본값)                                                          | flex 자식: `min-width:auto` 에뮬레이션으로 콘텐츠 크기 이하 축소 방지                                               |
+| `overflow: hidden`                | ✅   | `BoxSprite.tsx:224`, `nodeRenderers.ts:282-308`                   | CanvasKit `clipRect` + flex 자식 `flexShrink: 0` 자동 주입                                                          |
+| `overflow: scroll`                | ✅   | `BoxSprite.tsx`, `scrollState.ts`, `renderCommands.ts`            | 클리핑 + 스크롤바 UI + 마우스 휠 스크롤 + flex 자식 shrink 방지 + hover guideline scroll offset 동기화 (2026-04-06) |
+| `overflow: auto`                  | ✅   | `BoxSprite.tsx`, `scrollState.ts`                                 | scroll과 동일 동작 (콘텐츠 초과 시 스크롤바 표시)                                                                   |
+| `overflow: clip`                  | ✅   | `BoxSprite.tsx`, `TaffyBlockEngine.ts`                            | hidden과 동일한 clipRect + BFC 생성 + flex 자식 shrink 방지                                                         |
+| `overflow-x` / `overflow-y`       | ✅   | `engines/utils.ts` `applyCommonTaffyStyle()`                      | Flex/Grid/Block 3경로 모두 지원. 축별 독립 제어                                                                     |
+| **flex shrink 보정**              | ✅   | `fullTreeLayout.ts` Step 5.7, `TaffyFlexEngine.ts`                | `overflow !== visible` 시 자식 `flexShrink: 0` 주입. flex-direction 축 매칭 (row→overflowX, column→overflowY)       |
+| **min-width:auto 에뮬레이션**     | ✅   | `engines/utils.ts` `enrichWithIntrinsicSize()`                    | flex item에 width 주입 시 minWidth 동시 설정. CSS §4.5 min-width:auto = min-content (2026-04-06)                    |
+| **hover guideline scroll 동기화** | ✅   | `skiaFrameHelpers.ts`, `renderCommands.ts`, `scrollState.ts`      | treeBoundsMap에 scrollOffset 반영 + scrollVersion 캐시 무효화 (2026-04-06)                                          |
+| **에디터 UI**                     | ✅   | `panels/styles/sections/AppearanceSection.tsx`, `styleOptions.ts` | Appearance 섹션 — visible/hidden/scroll/auto/clip 셀렉터 (ADR-050, 2026-04-03)                                      |
+| **해칭 시각화 (Canvas)**          | ✅   | `skia/hoverRenderer.ts`, `skiaTreeBuilder.ts`                     | 자식 선택 시 부모 클립 영역 밖 해칭 표시 (우하향 45°, MAX_HATCHING_LINES=200)                                       |
 
 ### 7.5 Replaced Element Sizing (Image)
 
