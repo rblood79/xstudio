@@ -61,6 +61,7 @@ import {
   buildFrameRenderPlan,
 } from "./skiaFramePlan";
 import { Camera } from "../viewport/Camera";
+import { useViewportSyncStore } from "../stores";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -188,6 +189,31 @@ export function SkiaCanvas({
   useEffect(() => {
     invalidationPacketRef.current = invalidationPacket;
   }, [invalidationPacket]);
+
+  // ---------- Camera ↔ Store 동기화 (Phase 5) ----------
+
+  useEffect(() => {
+    const camera = cameraRef.current;
+
+    // 초기 동기화: store → Camera
+    const { zoom, panOffset } = useViewportSyncStore.getState();
+    camera.setPosition(panOffset.x, panOffset.y, zoom);
+
+    // store 변경 구독: pan/zoom 변경 시 Camera 갱신
+    const unsub = useViewportSyncStore.subscribe(
+      (state) => ({
+        x: state.panOffset.x,
+        y: state.panOffset.y,
+        z: state.zoom,
+      }),
+      (curr) => {
+        camera.setPosition(curr.x, curr.y, curr.z);
+      },
+      { equalityFn: (a, b) => a.x === b.x && a.y === b.y && a.z === b.z },
+    );
+
+    return unsub;
+  }, []);
 
   // ---------- 인터랙션 훅 ----------
 
