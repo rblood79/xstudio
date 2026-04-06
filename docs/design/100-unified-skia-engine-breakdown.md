@@ -6,13 +6,18 @@
 
 > 리서치 완료 (2026-04-06). 모든 핵심 기능에 검증된 소스코드가 존재함.
 
-### 직접 의존 (fork 또는 채택)
+### 외부 의존성: 1개만
 
-| 프로젝트          | License | 용도                                                                           | GitHub                                                                |
-| ----------------- | ------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| **Taffy v0.10.0** | MIT     | Layout Engine 포크 기반 — flex/grid/block/areas 검증됨. **sticky만 추가 구현** | [DioxusLabs/taffy](https://github.com/DioxusLabs/taffy) ⭐3.1k        |
-| **geo-index**     | MIT     | Spatial Index — R-tree, flatbush zero-copy 바이너리 호환, WASM 명시 지원       | [georust/geo-index](https://github.com/georust/geo-index)             |
-| **Popmotion**     | MIT     | CSS transition/animation 코어 — DOM 비의존, spring/keyframe/easing (4.5kb)     | [Popmotion/popmotion](https://github.com/Popmotion/popmotion) ⭐20.2k |
+| 프로젝트          | License | 용도                                                                           | GitHub                                                         |
+| ----------------- | ------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| **Taffy v0.10.0** | MIT     | Layout Engine 포크 기반 — flex/grid/block/areas 검증됨. **sticky만 추가 구현** | [DioxusLabs/taffy](https://github.com/DioxusLabs/taffy) ⭐3.1k |
+
+**삭제된 의존성:**
+
+| 프로젝트      | 삭제 사유                                                                 | 대체                                            |
+| ------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
+| ~~geo-index~~ | XStudio에 이미 Rust WASM spatial index 존재 (`wasm/src/spatial_index.rs`) | 기존 코드를 `xstudio-layout` crate에 이식       |
+| ~~Popmotion~~ | CSS easing/spring/keyframe 보간은 ~130줄 순수 수학                        | 자체 구현 (cubic-bezier + damped spring + lerp) |
 
 ### 아키텍처 패턴 참조
 
@@ -410,12 +415,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Layout — Taffy v0.10.0 fork (flex/grid/block/areas 검증됨)
+# 유일한 외부 의존성 — Taffy v0.10.0 fork (flex/grid/block/areas 검증됨)
 # git = "https://github.com/xstudio/taffy-fork" or path = "../taffy-fork"
 taffy = { version = "0.10", features = ["grid", "block_layout"] }
 
-# Spatial Index — geo-index (flatbush zero-copy 바이너리 호환)
-geo-index = "0.2"
+# Spatial Index — 기존 wasm/src/spatial_index.rs 이식 (외부 의존성 0)
+# geo-index 삭제: XStudio에 이미 검증된 cell-based grid 구현 존재
 
 # WASM 바인딩
 wasm-bindgen = "0.2"

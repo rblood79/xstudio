@@ -90,10 +90,10 @@ Zustand Store
 
 - [Taffy v0.10.0](https://github.com/DioxusLabs/taffy) (MIT, ⭐3.1k) **포크** — flex/grid/block + `grid-template-areas` 이미 구현됨
 - `position: sticky` 추가 — [Stickyfill](https://github.com/wilddeer/stickyfill) (MIT) 3단계 상태 전환 알고리즘 참조
-- [geo-index](https://github.com/georust/geo-index) (MIT) — R-tree spatial index, flatbush와 **zero-copy 바이너리 호환**, 레이아웃 후 즉시 인덱스 구축
+- Spatial Index — 기존 XStudio WASM spatial index(`wasm/src/spatial_index.rs`)를 crate에 이식 (외부 의존성 0)
 - ~~float/clear, table, inline, multicol~~ — **삭제** (ROI ≈ 0)
 - 텍스트 측정: Pretext 원리 기반 Canvas 2D (ADR-051) → Break Hint → CanvasKit 렌더링
-- 단일 WASM 바이너리 (`xstudio-layout.wasm`, ~300KB 예상)
+- 단일 WASM 바이너리 (`xstudio-layout.wasm`, ~250KB 예상) — **외부 Rust 의존성: Taffy fork 1개만**
 
 **SceneGraph (자체 구현, 검증된 패턴 참조):**
 
@@ -106,7 +106,7 @@ Zustand Store
 - backdrop-filter — `saveLayer` backdrop 인자 + `ImageFilter.MakeBlur`. [React Native Skia](https://github.com/Shopify/react-native-skia) (MIT, ⭐8.3k) 구현 패턴 참조
 - text-shadow — `TextStyle.shadows` + `ImageFilter.MakeDropShadow` (CanvasKit 내장)
 - mask-image — `MaskFilter` + `RuntimeEffect` shader (CanvasKit 내장)
-- CSS transitions/animations — [Popmotion](https://github.com/Popmotion/popmotion) (MIT, ⭐20.2k) 코어 엔진 (DOM 비의존, 4.5kb) 채택 또는 알고리즘 추출
+- CSS transitions/animations — 자체 구현 (~130줄 순수 수학: cubic-bezier + damped spring + keyframe lerp). [Popmotion](https://github.com/Popmotion/popmotion) 알고리즘 참조
 - sepia, invert — `ColorFilter` ColorMatrix (CanvasKit 내장)
 - outline-style — `Paint.setPathEffect` + `DashPathEffect` (CanvasKit 내장)
 
@@ -179,7 +179,7 @@ PixiJS만 제거하고 Taffy는 유지. CSS3 레이아웃 갭(float/table/inline
 ROI 다이어트 후 HIGH 위험 0개. 잔존 MEDIUM 위험에 대한 완화:
 
 1. **Taffy v0.10.0 fork**: flex/grid/block + `grid-template-areas`가 이미 구현됨 (⭐3.1k, MIT, Servo/Blitz/Zed 등 프로덕션 사용). 신규 구현은 **sticky만** (~200줄, [Stickyfill](https://github.com/wilddeer/stickyfill) 알고리즘 참조)
-2. **검증된 오픈소스 조합**: [geo-index](https://github.com/georust/geo-index)(spatial index) + [Popmotion](https://github.com/Popmotion/popmotion)(transition 엔진) — 모두 MIT, 프로덕션 검증
+2. **외부 의존성 최소화**: Rust 의존성 Taffy fork 1개만. Spatial index는 기존 XStudio WASM 코드 이식, transition 엔진은 ~130줄 자체 구현 (Popmotion 알고리즘 참조)
 3. **CSS3 렌더링은 CanvasKit 내장 API만**: backdrop-filter, text-shadow, mask 모두 추가 라이브러리 불필요. [React Native Skia](https://github.com/Shopify/react-native-skia)(⭐8.3k) 구현 패턴 참조
 4. **유사 제품 아키텍처 검증**: [OpenPencil](https://github.com/open-pencil/open-pencil)(CanvasKit+Yoga WASM)이 거의 동일 스택으로 동작 확인. [Penpot](https://github.com/penpot/penpot)(Skia WASM+타일 캐싱)이 대규모 캔버스 성능 검증
 5. **SceneGraph 참조 패턴 풍부**: [AntV G](https://github.com/antvis/G)(CanvasKit 브리지), [ZRender](https://github.com/ecomfe/zrender)(dirty rect), [Penpot](https://github.com/penpot/penpot)(타일 캐싱) — 각 패턴이 프로덕션 검증됨
