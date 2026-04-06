@@ -207,7 +207,24 @@ export function SkiaCanvas({
       getElements: () => useStore.getState().elementsMap,
       getLayoutMap: () => getSharedLayoutMap(),
       getChildrenMap: () => useStore.getState().childrenMap,
-      subscribe: (cb) => useStore.subscribe(cb),
+      // 선택적 구독: elementsMap/childrenMap 변경만 감지
+      // selectedElementId, currentPageId 등 무관한 변경은 fullSync 미트리거
+      subscribe: (cb) =>
+        useStore.subscribe(
+          (state) => ({
+            elementsMap: state.elementsMap,
+            childrenMap: state.childrenMap,
+          }),
+          (curr, prev) => {
+            if (
+              curr.elementsMap !== prev.elementsMap ||
+              curr.childrenMap !== prev.childrenMap
+            ) {
+              cb();
+            }
+          },
+          { equalityFn: Object.is },
+        ),
       theme: "light",
     });
 
