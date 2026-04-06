@@ -1,0 +1,207 @@
+/**
+ * buildImageNodeData — ImageSprite SkiaNodeData 빌드 로직 추출 (ADR-100 Phase 6)
+ *
+ * ImageSprite.tsx useMemo (lines 286-322)의 순수 함수 버전.
+ * PixiJS 의존성 없음. element.props + layout + skImage에서 구축.
+ *
+ * 특수 사항:
+ * - skImage는 비동기 로딩 결과를 외부에서 주입 (StoreRenderBridge가 관리)
+ * - object-fit 계산 포함 (cover/contain/fill/none)
+ */
+
+import type { Element } from "../../../../types/core/store.types";
+import type { SkiaNodeData } from "./nodeRendererTypes";
+import type { ComputedLayout } from "../layout/engines/LayoutEngine";
+import type { Image as SkImage } from "canvaskit-wasm";
+import {
+  convertStyle,
+  buildSkiaEffects,
+  parseClipPath,
+  applyTransformOrigin,
+  parseTransformOrigin,
+} from "../sprites/styleConverter";
+import { parsePadding, getContentBounds } from "../sprites/paddingUtils";
+import {
+  parseZIndex,
+  createsStackingContext,
+} from "../layout/engines/cssStackingContext";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface ImageBuildInput {
+  element: Element;
+  layout: ComputedLayout | undefined;
+  /** 비동기 로드된 SkImage (null이면 placeholder 표시) */
+  skImage: SkImage | null;
+}
+
+// ---------------------------------------------------------------------------
+// Object-fit 계산
+// ---------------------------------------------------------------------------
+
+interface ContentRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function computeObjectFit(
+  skImage: SkImage | null,
+  objectFit: "cover" | "contain" | "fill" | "none",
+  contentBounds: ContentRect,
+): ContentRect {
+  if (!skImage || objectFit === "fill") {
+    return contentBounds;
+  }
+
+  const imgW = skImage.width();
+  const imgH = skImage.height();
+  const cw = contentBounds.width;
+  const ch = contentBounds.height;
+
+  if (objectFit === "none") {
+    return {
+      x: contentBounds.x + (cw - imgW) / 2,
+      y: contentBounds.y + (ch - imgH) / 2,
+      width: imgW,
+      height: imgH,
+    };
+  }
+
+  // contain / cover
+  const scaleX = cw / imgW;
+  const scaleY = ch / imgH;
+  const scale =
+    objectFit === "contain"
+      ? Math.min(scaleX, scaleY)
+      : Math.max(scaleX, scaleY);
+  const w = imgW * scale;
+  const h = imgH * scale;
+  return {
+    x: contentBounds.x + (cw - w) / 2,
+    y: contentBounds.y + (ch - h) / 2,
+    width: w,
+    height: h,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Main Builder
+// ---------------------------------------------------------------------------
+
+/**
+ * ImageSprite의 skiaNodeData useMemo 로직을 순수 함수로 추출.
+ *
+ * ImageSprite.tsx lines 286-322의 완전한 이식:
+ * - object-fit 기반 이미지 콘텐츠 영역 계산
+ * - placeholder box (gray-200 배경)
+ * - border-radius, effects, visibility
+ * - altText (미로드 시)
+ */
+export function buildImageNodeData(
+  input: ImageBuildInput,
+): SkiaNodeData | null {
+  const { element, layout, skImage } = input;
+
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  if (!style) return null;
+
+  const converted = convertStyle(
+    style as Parameters<typeof convertStyle>[0],
+    style.color as string | undefined,
+  );
+  const { borderRadius } = converted;
+  const skiaEffects = buildSkiaEffects(
+    style as Parameters<typeof buildSkiaEffects>[0],
+  );
+
+  const w = layout?.width ?? converted.transform.width;
+  const h = layout?.height ?? converted.transform.height;
+  const x = layout?.x ?? converted.transform.x;
+  const y = layout?.y ?? converted.transform.y;
+
+  const visible =
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.visibility !== "collapse";
+
+  // ---------- Props ----------
+  const props = element.props as Record<string, unknown> | undefined;
+  const objectFit = (() => {
+    const fit = props?.objectFit as string | undefined;
+    if (
+      fit === "contain" ||
+      fit === "cover" ||
+      fit === "fill" ||
+      fit === "none"
+    )
+      return fit;
+    return "cover";
+  })();
+  const altText = String(props?.alt || "");
+
+  // ---------- Padding + content bounds ----------
+  const padding = parsePadding(style as Parameters<typeof parsePadding>[0]);
+  const contentBounds = getContentBounds(w, h, padding);
+
+  // ---------- Object-fit ----------
+  const imageContent = computeObjectFit(skImage, objectFit, contentBounds);
+
+  // ---------- z-index / stacking context ----------
+  const zIndex = parseZIndex(style.zIndex as string | number | undefined);
+  const isStackingCtx = createsStackingContext(style);
+
+  // ---------- CSS transform ----------
+  let skiaTransform: Float32Array | undefined;
+  if (skiaEffects.transform) {
+    const [ox, oy] = parseTransformOrigin(
+      style.transformOrigin as string | undefined,
+      w,
+      h,
+    );
+    skiaTransform = applyTransformOrigin(skiaEffects.transform, ox, oy);
+  }
+
+  // ---------- Clip path ----------
+  const clipPath =
+    typeof style.clipPath === "string"
+      ? parseClipPath(style.clipPath, w, h)
+      : undefined;
+
+  // ---------- Assemble SkiaNodeData ----------
+  const nodeData: SkiaNodeData = {
+    type: "image",
+    elementId: element.id,
+    x,
+    y,
+    width: w,
+    height: h,
+    visible,
+    // placeholder 렌더링용 box (skImage 미로드 시 fillColor로 배경 표시)
+    box: {
+      fillColor: Float32Array.of(0.898, 0.906, 0.922, 1), // gray-200 (#e5e7eb)
+      borderRadius: borderRadius ?? 0,
+    },
+    image: {
+      skImage,
+      contentX: imageContent.x,
+      contentY: imageContent.y,
+      contentWidth: imageContent.width,
+      contentHeight: imageContent.height,
+      ...(altText && !skImage ? { altText } : {}),
+    },
+  };
+
+  // Optional top-level fields
+  if (skiaEffects.effects) nodeData.effects = skiaEffects.effects;
+  if (skiaEffects.blendMode) nodeData.blendMode = skiaEffects.blendMode;
+  if (skiaTransform) nodeData.transform = skiaTransform;
+  if (clipPath) nodeData.clipPath = clipPath;
+  if (zIndex !== undefined) nodeData.zIndex = zIndex;
+  if (isStackingCtx) nodeData.isStackingContext = true;
+
+  return nodeData;
+}

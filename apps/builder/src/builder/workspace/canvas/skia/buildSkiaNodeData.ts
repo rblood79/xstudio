@@ -127,57 +127,5 @@ export function buildSkiaNodeData(
 }
 
 /**
- * 텍스트 요소에 대한 SkiaNodeData 구축.
+ * @deprecated buildTextNodeData.ts 사용. 이 함수는 제거 예정.
  */
-export function buildTextSkiaNodeData(
-  element: Element,
-  ctx: BuildContext,
-): SkiaNodeData | null {
-  const base = buildSkiaNodeData(element, ctx);
-  if (!base) return null;
-
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  const content =
-    (element.props?.children as string) ??
-    (element.props?.text as string) ??
-    (element.props?.label as string) ??
-    "";
-
-  if (!content) return base;
-
-  const converted = convertStyle(
-    style as Parameters<typeof convertStyle>[0],
-    style?.color as string | undefined,
-  );
-
-  base.type = "text";
-  base.text = {
-    content,
-    fontFamilies: [
-      (style?.fontFamily as string) ?? "Pretendard",
-      "Pretendard",
-      "sans-serif",
-    ],
-    fontSize: parseFloat(String(style?.fontSize ?? "16")),
-    fontWeight: parseFontWeight(style?.fontWeight),
-    color: converted.fill.color,
-    paddingLeft: parseFloat(String(style?.paddingLeft ?? "0")),
-    paddingTop: parseFloat(String(style?.paddingTop ?? "0")),
-    maxWidth: base.width,
-  };
-
-  return base;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function parseFontWeight(value: unknown): number | undefined {
-  if (value === undefined || value === null) return undefined;
-  const n = parseInt(String(value), 10);
-  if (!isNaN(n)) return n;
-  if (value === "bold") return 700;
-  if (value === "normal") return 400;
-  return undefined;
-}

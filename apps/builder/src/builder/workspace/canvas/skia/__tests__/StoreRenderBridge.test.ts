@@ -2,6 +2,29 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import { StoreRenderBridge } from "../StoreRenderBridge";
 import type { Element } from "../../../../../types/core/store.types";
 
+// Mock fontManager (window 없는 환경)
+vi.mock("../fontManager", () => ({
+  skiaFontManager: {
+    resolveFamily: (f: string) => f,
+  },
+}));
+
+// Mock @xstudio/specs
+vi.mock("@xstudio/specs", () => ({
+  hexStringToNumber: (hex: string) => parseInt(hex.replace("#", ""), 16),
+  lightColors: { neutral: "#1a1a1a" },
+  darkColors: { neutral: "#e5e5e5" },
+}));
+
+// Mock imageCache (비동기 로딩 시뮬레이션)
+const mockImageCache = new Map<string, unknown>();
+vi.mock("../imageCache", () => ({
+  getSkImage: (url: string) => mockImageCache.get(url) ?? null,
+  loadSkImage: (url: string) =>
+    Promise.resolve(mockImageCache.get(url) ?? null),
+  releaseSkImage: () => {},
+}));
+
 // Mock useSkiaNode registry
 vi.mock("../useSkiaNode", () => {
   const registry = new Map<string, unknown>();
@@ -138,6 +161,29 @@ describe("StoreRenderBridge", () => {
 
     bridge.connect({
       getElements: () => elements,
+      getLayoutMap: () => new Map(),
+      subscribe: () => () => {},
+    });
+
+    expect(bridge.size).toBe(1);
+  });
+
+  test("image elements use buildImageNodeData", () => {
+    const imgEl = {
+      id: "i1",
+      tag: "Image",
+      props: {
+        src: "https://example.com/photo.jpg",
+        style: {
+          backgroundColor: "#e5e7eb",
+          width: "200px",
+          height: "150px",
+        },
+      },
+    } as Element;
+
+    bridge.connect({
+      getElements: () => new Map([["i1", imgEl]]),
       getLayoutMap: () => new Map(),
       subscribe: () => () => {},
     });
