@@ -165,6 +165,7 @@ export function renderTransformHandles(
  * 씬-로컬 좌표계에서 호출되며, fontSize/padding은 1/zoom으로 스케일하여
  * 화면상 일정한 크기를 유지한다.
  */
+let _dimensionLabelTypefaceWarned = false;
 export function renderDimensionLabels(
   ck: CanvasKit,
   canvas: Canvas,
@@ -244,7 +245,12 @@ export function renderDimensionLabels(
     });
 
     if (!typeface) {
-      console.warn("[renderDimensionLabels] typeface not found");
+      if (!_dimensionLabelTypefaceWarned) {
+        console.warn(
+          "[renderDimensionLabels] typeface not found — 폰트 로딩 후 해결됨",
+        );
+        _dimensionLabelTypefaceWarned = true;
+      }
       return;
     }
 

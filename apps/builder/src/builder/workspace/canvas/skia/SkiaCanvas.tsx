@@ -337,10 +337,11 @@ export function SkiaCanvas({
       if (!rendererRef.current) return;
       if (contextLostRef.current) return;
 
-      // Camera 상태
-      const cameraX = camera.x;
-      const cameraY = camera.y;
-      const cameraZoom = Math.max(camera.zoom, 0.001);
+      // Camera 상태 — store에서 직접 읽기 (subscribe 지연 없이 최신값)
+      const viewportState = useViewportSyncStore.getState();
+      const cameraX = viewportState.panOffset.x;
+      const cameraY = viewportState.panOffset.y;
+      const cameraZoom = Math.max(viewportState.zoom, 0.001);
 
       const registryVersion = getRegistryVersion();
       const packet = invalidationPacketRef.current;
