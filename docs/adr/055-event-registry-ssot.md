@@ -6,37 +6,32 @@ Proposed — 2026-04-06
 
 ## Context
 
-### 문제
+### 문제: 이벤트 정의의 정본(canonical source)이 없다
 
-이벤트 하나를 추가하려면 현재 **5곳**을 수정해야 한다:
+이벤트 하나를 추가할 때 수정 지점이 5곳에 분산되어 있지만, 이들은 성격이 다르다:
 
-1. `apps/builder/src/builder/panels/events/types/eventTypes.ts` — `EventType` union (수동 나열) + `EVENT_TYPE_LABELS`
-2. `apps/builder/src/types/events/events.registry.ts` — `IMPLEMENTED_EVENT_TYPES` as const + `EVENT_CATEGORIES` + 타입 가드
-3. `apps/builder/src/types/events/events.types.ts` — `EVENT_TYPE_LABELS` (별도 Partial 버전) + `EVENT_CATEGORIES` — **EventTypePicker가 실제로 참조하는 소스**
-4. `apps/builder/src/builder/panels/events/data/eventCategories.ts` — `EVENT_CATEGORIES` (UI 아이콘 포함) + `EVENT_METADATA` + `COMPONENT_RECOMMENDED_EVENTS`
-5. `packages/shared/src/components/metadata.ts` — 각 컴포넌트의 `supportedEvents: string[]`
+**이벤트 정의 (정본이 필요한 영역):**
 
-`EVENT_TYPE_LABELS`만 해도 3곳에 별도 정의되어 있다 (`eventTypes.ts`, `events.types.ts`, `eventCategories.ts`의 EVENT_METADATA.label).
+1. `eventTypes.ts` — `EventType` union (수동 나열) + `EVENT_TYPE_LABELS`
+2. `events.registry.ts` — `IMPLEMENTED_EVENT_TYPES` as const + `EVENT_CATEGORIES` + 타입 가드
+3. `events.types.ts` — `EVENT_TYPE_LABELS` (별도 Partial 버전) — **EventTypePicker가 실제 참조하는 소스**
+
+**컴포넌트 연결 (정본에서 파생되어야 하는 영역):** 4. `eventCategories.ts` — `EVENT_METADATA` + `COMPONENT_RECOMMENDED_EVENTS` (추천 정책) 5. `metadata.ts` — 컴포넌트별 `supportedEvents: string[]` (컴포넌트 연결)
+
+핵심 문제는 1~3이 각각 독립적으로 이벤트를 정의하고 있어 **정본이 없다**는 것이다. `EVENT_TYPE_LABELS`만 해도 3곳에 별도 정의되어 있다. 4~5는 정본이 확립되면 자연스럽게 정본을 기반으로 유지/검증할 수 있다.
 
 ### 실제 분산 사례
 
-- `onChangeEnd`/`onExpandedChange`/`onRemove` 추가 시 5파일 동시 수정 필요 — 실제로 `events.types.ts`의 `EVENT_TYPE_LABELS`에는 이 3개가 반영되지 않은 상태 (이벤트 피커 UI에 레이블 미표시 가능성)
-- `metadata.ts`의 `supportedEvents`에 `onClose`(Toast), `onSelect`(FileTrigger), `onDrop*`(DropZone), `onReset`/`onInvalid`(Form), `onSortChange`(TableView), `onError`/`onRefresh`(DataTable) 등 registry에 없는 이벤트가 다수 존재
-
-### 현재 타입 불일치 (코드 확인 결과)
-
-`eventTypes.ts`는 미구현 이벤트(`onDoubleClick`, `onScroll`, `onResize`, `onLoad` 등)를 포함한 **넓은** `EventType` union을 독립 정의한다. 반면 `events.registry.ts`는 `IMPLEMENTED_EVENT_TYPES`에서 derive한 **좁은** `EventType`을 별도로 export한다. 이 두 타입이 공존하여 `EventsPanel.tsx`에서 강제 타입 어서션(`handler.event as EventTrigger['event']`)이 필요한 상황이다.
-
-추가로 `events.types.ts`가 **제3의 `EVENT_TYPE_LABELS`**를 독립 정의하고 있으며, `EventTypePicker.tsx`가 이 파일에서 직접 import한다 (`events.types.ts:260`, `EventTypePicker.tsx:22`). 즉 registry를 수정해도 실제 UI에 반영되지 않는 경로가 존재한다.
+- `onChangeEnd`/`onExpandedChange`/`onRemove` 추가 시 정의 3곳 + 연결 2곳 동시 수정 필요 — 실제로 `events.types.ts`의 `EVENT_TYPE_LABELS`에는 이 3개가 반영되지 않은 상태
+- `eventTypes.ts`의 넓은 `EventType` union과 `events.registry.ts`의 좁은 `EventType`이 공존하여 `EventsPanel.tsx`에서 강제 타입 어서션 필요
 
 ### Hard Constraints
 
-- **기존 UI 동작 변경 없음**: EventTypePicker, EventsPanel의 이벤트 목록 표시 동작 유지
-- **`isImplementedEventType()` 필터링 메커니즘 유지**: `EventsPanel.tsx` 330, 369번 줄 패턴 보존
-- **`packages/shared` 독립성**: 빌더 의존 없음 유지 — 이벤트 레지스트리를 shared에 넣을 수 없음
-- **`packages/shared`의 `supportedEvents`는 registry보다 넓은 개념**: `onClose`, `onSelect`, `onDrop*`, `onReset`, `onInvalid`, `onError`, `onSortChange`, `onRefresh` 등 registry `IMPLEMENTED_EVENT_TYPES`에 없는 이벤트가 `metadata.ts`에 다수 존재. 이들은 "향후 구현 예정" 또는 "react-aria 자동 처리" 이벤트로, `ImplementedEventType`과 별도 계층(`SupportedEventName`)이 필요
-- **`events.types.ts` 소비 경로 포함**: `EventTypePicker.tsx`가 `events.types.ts`의 `EVENT_TYPE_LABELS`/`EVENT_CATEGORIES`를 직접 사용 — 마이그레이션 범위에 반드시 포함
-- **TypeScript strict 타입 안전성**: `EventType` union → 반드시 단일 소스에서 derive
+1. **TypeScript strict 타입 안전성**: `EventType` union → 반드시 단일 정본에서 derive
+2. **기존 소비처 동작 변경 없음**: EventTypePicker, EventsPanel 등 소비처의 이벤트 목록 표시 동작 유지
+3. **`packages/shared` 독립성**: 빌더 의존 없음 유지 — 정본 레지스트리는 shared에 넣을 수 없음
+4. **shared `supportedEvents`는 정본보다 넓은 계층**: `onClose`, `onSelect`, `onDrop*`, `onReset`, `onInvalid`, `onError`, `onSortChange`, `onRefresh` 등 정본 레지스트리에 없는 이벤트가 `metadata.ts`에 다수 존재 — 정본의 `EventType`으로 강타입화 불가
+5. **모든 소비 경로 포함**: `EventTypePicker.tsx`가 `events.types.ts`를 직접 참조 — 이 경로도 정본에서 파생되어야 함
 
 ### Soft Constraints
 
@@ -209,29 +204,40 @@ registerEvent({ id: "onDoubleClick", label: "더블클릭", category: "mouse", .
 
 **대안 B: implemented 플래그 레지스트리 + Metadata 2-Layer 분리**를 채택한다.
 
-### 핵심 타입 전략 (확정)
+### 정본화 전략 (확정)
 
-`EVENT_REGISTRY` 객체에 모든 이벤트(구현+미구현)를 `implemented` 플래그와 함께 정의한다:
+`EVENT_REGISTRY`를 이벤트 정의의 **유일한 정본**으로 둔다.
 
-- `EventType` = `keyof typeof EVENT_REGISTRY` → 모든 이벤트 (현재 `eventTypes.ts`의 넓은 union 대체)
-- `ImplementedEventType` = conditional filter → 구현된 이벤트만 (현재 `events.registry.ts`의 좁은 타입 대체)
-- `string` (shared) = registry보다 넓은 컴포넌트별 이벤트 명세 → 변경 없음
+**정본 (`EVENT_REGISTRY`):**
 
-이 전략은 현재 빌더 패널의 `EventType`이 미구현 이벤트까지 포함하는 구조, `EVENT_METADATA`가 모든 이벤트를 커버하는 구조를 **그대로 수용**한다. 별도 분리(`PLANNED_EVENT_METADATA`) 불필요.
+- 이벤트 정의 = label + category + implemented 플래그
+- 새 이벤트 추가 시 **이 1곳만** 수정
+
+**1차 파생물 (정본에서 자동 derive):**
+
+- `EventType` = `keyof typeof EVENT_REGISTRY` (모든 이벤트)
+- `ImplementedEventType` = conditional filter (구현된 이벤트만)
+- `EVENT_TYPE_LABELS` = registry label 필드에서 derive
+- `EVENT_CATEGORIES` = registry category 필드에서 집계
+
+**2차 파생물 (정본을 기반으로 유지되는 컴포넌트 연결 정보):**
+
+- `metadata.ts` `supportedEvents` — 컴포넌트별 이벤트 지원 목록
+- `COMPONENT_RECOMMENDED_EVENTS` — 컴포넌트별 추천 이벤트
+
+**소비처 (읽기만):**
+
+- EventsPanel, EventTypePicker 등 — 정본의 파생값을 import하여 사용
+
+2차 파생물은 정본 자체가 아니므로, 컴포넌트에 새 이벤트를 연결할 때 추가 수정이 필요하다. 이는 "이벤트 정의"가 아니라 "컴포넌트 설정"이므로 SSOT 범위 밖이다.
 
 ### 선택 근거 (위험 수용 근거)
 
-대안 B의 잔존 위험이 모두 LOW인 이유:
+1. **기술 LOW**: `satisfies` + conditional type은 TS 4.9+ 표준. 정본에서 `EventType`(전체)과 `ImplementedEventType`(서브셋)을 모두 derive하므로 현재 코드의 두 타입 계층을 자연스럽게 수용.
 
-1. **기술 LOW**: `satisfies` + conditional type은 TS 4.9+ 표준. `EVENT_REGISTRY`에서 `EventType`(전체)과 `ImplementedEventType`(서브셋)을 모두 derive하므로 현재 코드의 두 타입 계층을 자연스럽게 수용.
+2. **마이그레이션 LOW**: `eventTypes.ts`/`events.types.ts`의 수동 정의를 정본 re-export로 교체. `eventCategories.ts`는 `Record<EventType, ...>` 계약만 추가. 기존 소비처 import 경로는 re-export 레이어로 유지.
 
-2. **마이그레이션 LOW**: 변경 범위가 명확히 제한된다.
-   - `eventTypes.ts`에서 `EventType` union 제거 → registry `keyof typeof EVENT_REGISTRY` re-export
-   - `events.types.ts`에서 `EVENT_TYPE_LABELS` 제거 → registry re-export
-   - `eventCategories.ts`는 `Record<EventType, ...>` 계약만 추가 — 미구현 이벤트 메타데이터도 `EventType`에 포함되므로 분리 불필요
-   - 기존 컨슈머 import 경로는 re-export 레이어로 유지
-
-3. **유지보수 LOW**: 정본 이벤트 정의 추가는 `EVENT_REGISTRY` **1곳만** 수정. 특정 컴포넌트에서 새 이벤트를 사용하려면 `metadata.ts`(supportedEvents)와 `eventCategories.ts`(COMPONENT_RECOMMENDED_EVENTS)에서 추가 수정 필요 — 단, 이는 "이벤트 정의"가 아니라 "컴포넌트 연결"이므로 성격이 다르다.
+3. **유지보수 LOW**: 정본 이벤트 정의 추가 = `EVENT_REGISTRY` 1곳. `Record<EventType>` 계약이 `EVENT_METADATA`/`EVENT_TYPE_LABELS` 누락을 컴파일 타임에 감지.
 
 ### 기각된 대안 기각 사유
 
@@ -298,14 +304,14 @@ export { EVENT_TYPE_LABELS } from "./events.registry";
 
 ### Positive
 
-- **정본 이벤트 정의 추가**: `EVENT_REGISTRY` **1곳만** 수정 (현재 5곳). label/category/implemented가 모두 레지스트리에서 derive
-- **컴포넌트 연결 추가**: `metadata.ts`(supportedEvents) + `eventCategories.ts`(COMPONENT_RECOMMENDED_EVENTS) 수정 — 이는 "이벤트 정의"가 아닌 "컴포넌트별 설정"이므로 SSOT 범위 밖
-- `EventType`(전체)과 `ImplementedEventType`(서브셋)이 단일 `EVENT_REGISTRY`에서 derive → `eventTypes.ts`/`events.types.ts`의 수동 union/labels 이중 정의 완전 제거
-- `Record<EventType, EventMetadata>` 계약으로 메타데이터 누락을 컴파일 타임에 감지
-- `EventType`이 단일 소스에서 나오므로 EventsPanel 타입 어서션 제거 가능
-- Registry의 UI 라이브러리 무관성(LucideIcon 비의존) 유지
+- **정본 확립**: 이벤트 정의 추가 = `EVENT_REGISTRY` 1곳만 수정. 1차 파생물(타입, 레이블, 카테고리)은 자동 derive
+- **이중 정의 제거**: `eventTypes.ts`/`events.types.ts`/`eventCategories.ts`에 분산된 수동 union/labels 완전 제거
+- **컴파일 타임 계약**: `Record<EventType, EventMetadata>` 계약으로 소비처의 누락을 컴파일 타임에 감지
+- **타입 어서션 제거**: `EventType`이 단일 정본에서 나오므로 `EventsPanel`의 강제 타입 어서션 불필요
+- **UI 의존성 격리**: 정본(registry)은 LucideIcon 등 UI 라이브러리 비의존 유지
 
 ### Negative
 
-- `packages/shared`의 `supportedEvents: string[]`은 `EventType`보다 넓은 이벤트 명세 계층(`onClose`, `onSelect`, `onDrop*`, `onReset`, `onInvalid`, `onError`, `onSortChange`, `onRefresh` 등)을 포함하므로 `EventType[]` 강타입화 불가 — 런타임 `isImplementedEventType()` 필터링 패턴 유지 필요
-- `events.registry.ts` 전면 교체가 필요하며, 기존 `IMPLEMENTED_EVENT_TYPES` as const 배열 → `EVENT_REGISTRY` 객체로 구조 변경. 단 re-export 레이어로 기존 컨슈머 import 경로 유지
+- **2차 파생물은 수동 유지**: `metadata.ts`(supportedEvents)와 `COMPONENT_RECOMMENDED_EVENTS`는 컴포넌트 연결 정보로서 별도 수정 필요 — 정본화 범위 밖
+- **shared 계층 한계**: `packages/shared`의 `supportedEvents: string[]`은 정본 `EventType`보다 넓은 이벤트 명세(`onClose`, `onSelect`, `onDrop*`, `onReset`, `onInvalid`, `onError`, `onSortChange`, `onRefresh` 등)를 포함하므로 강타입화 불가 — 런타임 `isImplementedEventType()` 필터링 패턴 유지
+- **registry 전면 교체**: `IMPLEMENTED_EVENT_TYPES` as const 배열 → `EVENT_REGISTRY` 객체로 구조 변경. re-export 레이어로 기존 소비처 import 경로 유지
