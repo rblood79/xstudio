@@ -19,6 +19,7 @@ import {
   parseCSSSize,
   cssColorToAlpha,
   colorIntToFloat32,
+  parseTextShadow,
 } from "../sprites/styleConverter";
 import { buildBaseNodeProps } from "./buildBaseNodeProps";
 import { parsePadding } from "../sprites/paddingUtils";
@@ -330,6 +331,13 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
       // fontStretch (condensed 등)
       ...(style.fontStretch && style.fontStretch !== "normal"
         ? { fontStretch: style.fontStretch as string }
+        : {}),
+      // G4: text-shadow
+      ...(style.textShadow && style.textShadow !== "none"
+        ? (() => {
+            const shadows = parseTextShadow(style.textShadow as string);
+            return shadows.length > 0 ? { textShadows: shadows } : {};
+          })()
         : {}),
     },
   };
