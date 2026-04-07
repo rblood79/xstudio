@@ -118,6 +118,8 @@ export class StoreRenderBridge {
   private pendingResync: (() => void) | null = null;
   /** 이전 elementsMap 참조 (증분 갱신용) */
   private prevElementsMap: Map<string, Element> | null = null;
+  /** 이전 theme (변경 감지 → fullRebuild 강제) */
+  private prevTheme: "light" | "dark" = "light";
   /** CSS transition 애니메이션 매니저 (선택 연결) */
   public transitionManager: TransitionManager | null = null;
 
@@ -129,6 +131,8 @@ export class StoreRenderBridge {
     getLayoutMap: () => Map<string, ComputedLayout> | null;
     getChildrenMap?: () => Map<string, Element[]>;
     subscribe: (callback: () => void) => () => void;
+    getTheme?: () => "light" | "dark";
+    /** @deprecated 정적 theme — getTheme 사용 권장 */
     theme?: "light" | "dark";
   }): void {
     this.dispose();
@@ -138,14 +142,17 @@ export class StoreRenderBridge {
       getLayoutMap,
       getChildrenMap,
       subscribe,
+      getTheme,
       theme = "light",
     } = options;
+
+    const resolveTheme = getTheme ?? (() => theme);
 
     const resync = () => {
       this.sync(
         getElements(),
         getLayoutMap(),
-        theme,
+        resolveTheme(),
         getChildrenMap?.() ?? null,
       );
     };
@@ -168,10 +175,14 @@ export class StoreRenderBridge {
     theme: "light" | "dark",
     childrenMap: Map<string, Element[]> | null = null,
   ): void {
-    const changedIds = this.detectChangedIds(elementsMap);
+    // theme 변경 시 전체 rebuild 강제 (모든 Spec 색상 재계산 필요)
+    const themeChanged = theme !== this.prevTheme;
+    this.prevTheme = theme;
+
+    const changedIds = themeChanged ? null : this.detectChangedIds(elementsMap);
 
     if (changedIds === null) {
-      // 첫 실행: 전체 rebuild
+      // 첫 실행 또는 theme 변경: 전체 rebuild
       this.fullRebuild(elementsMap, layoutMap, theme, childrenMap);
     } else if (changedIds.size === 0) {
       // 동일 참조 = 요소 변경 없음, layout만 변경 → 전체 rebuild
@@ -386,8 +397,12 @@ export class StoreRenderBridge {
     // Box / fallback
     const isCollectionItem = COLLECTION_ITEM_TAGS.has(element.tag);
     return (
-      buildBoxNodeData({ element, layout, isCollectionItem }) ??
-      buildSkiaNodeData(element, ctx)
+      buildBoxNodeData({
+        element,
+        layout,
+        isCollectionItem,
+        theme: ctx.theme,
+      }) ?? buildSkiaNodeData(element, ctx)
     );
   }
 

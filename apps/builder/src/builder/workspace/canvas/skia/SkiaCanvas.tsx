@@ -66,6 +66,10 @@ import { viewportState as mutableViewport } from "../viewport/viewportState";
 import { StoreRenderBridge } from "./StoreRenderBridge";
 import { getSharedLayoutMap } from "../layout/engines/fullTreeLayout";
 import { useStore } from "../../../stores";
+import {
+  useThemeConfigStore,
+  resolveSkiaTheme,
+} from "../../../../stores/themeConfigStore";
 
 // Dev profiler — window.__XSTUDIO_PROFILER 노출 (side-effect import)
 import "../benchmarks/devProfiler";
@@ -210,11 +214,11 @@ export function SkiaCanvas({
       getElements: () => useStore.getState().elementsMap,
       getLayoutMap: () => getSharedLayoutMap(),
       getChildrenMap: () => useStore.getState().childrenMap,
-      // 선택적 구독: elementsMap/childrenMap 변경만 감지
+      // 선택적 구독: elementsMap/childrenMap/darkMode 변경 감지
       subscribe: (cb) => {
         let prevElements = useStore.getState().elementsMap;
         let prevChildren = useStore.getState().childrenMap;
-        return useStore.subscribe(() => {
+        const unsubStore = useStore.subscribe(() => {
           const state = useStore.getState();
           if (
             state.elementsMap !== prevElements ||
@@ -225,8 +229,22 @@ export function SkiaCanvas({
             cb();
           }
         });
+        // themeConfigStore 변경 시 전체 rebuild (darkMode/tint/neutral/radiusScale)
+        let prevThemeVersion = useThemeConfigStore.getState().themeVersion;
+        const unsubTheme = useThemeConfigStore.subscribe(() => {
+          const { themeVersion } = useThemeConfigStore.getState();
+          if (themeVersion !== prevThemeVersion) {
+            prevThemeVersion = themeVersion;
+            cb();
+          }
+        });
+        return () => {
+          unsubStore();
+          unsubTheme();
+        };
       },
-      theme: "light",
+      // themeConfigStore에서 매 sync마다 동적으로 읽기
+      getTheme: () => resolveSkiaTheme(useThemeConfigStore.getState().darkMode),
     });
 
     return () => bridge.dispose();

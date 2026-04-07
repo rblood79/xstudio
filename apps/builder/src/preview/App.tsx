@@ -141,11 +141,19 @@ function CanvasContent() {
           string,
           string | number
         >;
+        // body의 color/backgroundColor는 항상 CSS 변수 사용 (dark mode 전환 지원)
+        const BODY_THEME_PROPS = new Set(["color", "backgroundColor"]);
+        const BODY_THEME_MAP: Record<string, string> = {
+          color: "var(--fg)",
+          backgroundColor: "var(--bg)",
+        };
+
         Object.entries(style).forEach(([key, value]) => {
           const cssKey = key.replace(/([A-Z])/g, "-$1").toLowerCase(); // camelCase → kebab-case
-          // 숫자 값에 px 단위 추가 (unitless 속성 제외)
-          const cssValue =
-            typeof value === "number" && !CSS_UNITLESS.has(key)
+          // body color/bg는 CSS 변수로 대체 — DB 하드코딩 값 대신 테마 반영
+          const cssValue = BODY_THEME_PROPS.has(key)
+            ? BODY_THEME_MAP[key]
+            : typeof value === "number" && !CSS_UNITLESS.has(key)
               ? `${value}px`
               : String(value);
           document.body.style.setProperty(cssKey, cssValue);

@@ -171,6 +171,13 @@ export const createRuntimeStore = () =>
       );
       // 테마 변수 재적용 (dark/light CSS 블록이 data-theme에 의존하므로 재생성 필요)
       applyThemeVars(get().themeVars);
+
+      // body 인라인 스타일이 하드코딩(#1a1a1a/#ffffff)된 기존 프로젝트 대응:
+      // CSS 변수로 강제 override하여 dark mode가 반영되도록 함
+      if (document.body) {
+        document.body.style.color = "var(--fg)";
+        document.body.style.backgroundColor = "var(--bg)";
+      }
     },
 
     // ============================================

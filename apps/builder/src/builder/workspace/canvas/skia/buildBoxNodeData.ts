@@ -27,6 +27,7 @@ import {
   fillsToSkiaFillStyle,
   cssBgImageToSkia,
 } from "../../../panels/styles/utils/fillToSkia";
+import { hexStringToNumber, lightColors, darkColors } from "@xstudio/specs";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,6 +44,7 @@ interface BoxBuildInput {
   } | null;
   isCollectionItem?: boolean;
   isCardItem?: boolean;
+  theme?: "light" | "dark";
 }
 
 // ---------------------------------------------------------------------------
@@ -50,10 +52,20 @@ interface BoxBuildInput {
 // ---------------------------------------------------------------------------
 
 export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
-  const { element, layout, scrollState, isCollectionItem, isCardItem } = input;
+  const { element, layout, scrollState, isCollectionItem, isCardItem, theme } =
+    input;
 
-  const style =
+  // body 요소의 color/backgroundColor를 theme에 따라 동적 override
+  const isBody = element.tag === "body";
+  const rawStyle =
     (element.props?.style as Record<string, unknown> | undefined) ?? {};
+  const style = isBody
+    ? {
+        ...rawStyle,
+        backgroundColor: theme === "dark" ? darkColors.base : lightColors.base,
+        color: theme === "dark" ? darkColors.neutral : lightColors.neutral,
+      }
+    : rawStyle;
 
   const converted = convertStyle(
     style as Parameters<typeof convertStyle>[0],
