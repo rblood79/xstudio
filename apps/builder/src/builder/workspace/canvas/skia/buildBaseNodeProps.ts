@@ -60,9 +60,6 @@ export function buildBaseNodeProps(
     | undefined
     | null;
 
-  // style이 없고 layout도 없으면 렌더 불가 → null
-  if (!styleRaw && !layout) return null;
-
   const style = styleRaw ?? {};
 
   const converted = convertStyle(
