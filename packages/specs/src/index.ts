@@ -135,6 +135,9 @@ export type { ReactRenderResult, PixiRenderContext } from "./renderers";
 export { ButtonSpec } from "./components/Button.spec";
 export type { ButtonProps } from "./components/Button.spec";
 
+export { TextSpec } from "./components/Text.spec";
+export type { TextProps } from "./components/Text.spec";
+
 export { BadgeSpec } from "./components/Badge.spec";
 export type { BadgeProps } from "./components/Badge.spec";
 

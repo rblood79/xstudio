@@ -73,6 +73,7 @@ import {
   TooltipSpec,
   TreeSpec,
   RangeCalendarSpec,
+  TextSpec,
 } from "@xstudio/specs";
 
 /**
@@ -158,6 +159,7 @@ export const PROPERTY_EDITOR_SPEC_MAP: Record<
   TableView: TableViewSpec as ComponentSpec<Record<string, unknown>>,
   TagGroup: TagGroupSpec as ComponentSpec<Record<string, unknown>>,
   Tabs: TabsSpec as ComponentSpec<Record<string, unknown>>,
+  Text: TextSpec as ComponentSpec<Record<string, unknown>>,
   TextArea: TextAreaSpec as ComponentSpec<Record<string, unknown>>,
   TextField: TextFieldSpec as ComponentSpec<Record<string, unknown>>,
   TimeField: TimeFieldSpec as ComponentSpec<Record<string, unknown>>,

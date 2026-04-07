@@ -95,6 +95,22 @@ function resolveFlexAlignment(style: Record<string, unknown> | undefined): {
 }
 
 // ---------------------------------------------------------------------------
+// Text Size Presets — TextSpec.sizes의 TokenRef를 resolve한 px 값.
+// TextSpec(packages/specs/src/components/Text.spec.ts)과 동기화 유지.
+// ---------------------------------------------------------------------------
+
+const TEXT_SIZE_MAP: Record<string, { fontSize: number; lineHeight: number }> =
+  {
+    xs: { fontSize: 12, lineHeight: 16 },
+    sm: { fontSize: 14, lineHeight: 20 },
+    md: { fontSize: 16, lineHeight: 24 },
+    lg: { fontSize: 18, lineHeight: 28 },
+    xl: { fontSize: 20, lineHeight: 28 },
+    "2xl": { fontSize: 24, lineHeight: 32 },
+    "3xl": { fontSize: 30, lineHeight: 36 },
+  };
+
+// ---------------------------------------------------------------------------
 // Font helpers
 // ---------------------------------------------------------------------------
 
@@ -171,6 +187,12 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
       );
   const textColor = colorIntToFloat32(effectiveFill, 1);
 
+  // ---------- Size preset → fontSize/lineHeight ----------
+  const sizePreset = (props?.size as string) ?? "md";
+  const sizeConfig = TEXT_SIZE_MAP[sizePreset] ?? TEXT_SIZE_MAP.md;
+  // style.fontSize가 명시되어 있으면 style 우선, 없으면 preset 사용
+  const effectiveFontSize = textStyle.fontSize || sizeConfig.fontSize;
+
   // ---------- Font properties ----------
   const numericFontWeight = parseFontWeight(textStyle.fontWeight);
   const numericFontStyle = parseFontStyle(textStyle.fontStyle);
@@ -221,16 +243,18 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
     text: {
       content: textContent,
       fontFamilies,
-      fontSize: textStyle.fontSize,
+      fontSize: effectiveFontSize,
       fontWeight: numericFontWeight,
       fontStyle: numericFontStyle,
       color: textColor,
       align: flexAlignment?.textAlign ?? textStyle.align,
       letterSpacing: textStyle.letterSpacing,
-      // leading > 0이면 명시적 lineHeight (leading=0이면 폰트 기본값)
+      // lineHeight: style.lineHeight 명시 > leading > size preset > 폰트 기본값
       ...(textStyle.leading > 0
-        ? { lineHeight: textStyle.leading + textStyle.fontSize }
-        : {}),
+        ? { lineHeight: textStyle.leading + effectiveFontSize }
+        : style.lineHeight
+          ? {}
+          : { lineHeight: sizeConfig.lineHeight }),
       // textDecoration → CanvasKit bitmask
       ...(hasDecoration
         ? {

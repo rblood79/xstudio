@@ -16,14 +16,18 @@ vi.mock("../fontManager", () => ({
 }));
 
 // Mock @xstudio/specs (lightColors/darkColors)
-vi.mock("@xstudio/specs", () => ({
-  hexStringToNumber: (hex: string) => {
-    const h = hex.replace("#", "");
-    return parseInt(h, 16);
-  },
-  lightColors: { neutral: "#1a1a1a" },
-  darkColors: { neutral: "#e5e5e5" },
-}));
+vi.mock("@xstudio/specs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@xstudio/specs")>();
+  return {
+    ...actual,
+    hexStringToNumber: (hex: string) => {
+      const h = hex.replace("#", "");
+      return parseInt(h, 16);
+    },
+    lightColors: { neutral: "#1a1a1a" },
+    darkColors: { neutral: "#e5e5e5" },
+  };
+});
 
 import { buildTextNodeData } from "../buildTextNodeData";
 
