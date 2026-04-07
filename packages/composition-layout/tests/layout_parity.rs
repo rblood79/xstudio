@@ -1,4 +1,4 @@
-use xstudio_layout::LayoutEngine;
+use composition_layout::LayoutEngine;
 
 fn get_layout(engine: &LayoutEngine, handle: u32) -> (f32, f32, f32, f32) {
     let batch = engine.get_layouts_batch(&[handle]);

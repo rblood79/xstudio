@@ -272,7 +272,7 @@ if (typeof document !== "undefined" && document.fonts) {
     _fontsReady = true;
     _fontMetricsCache.clear();
     // 폰트 로드 완료 후 레이아웃 재계산 트리거
-    window.dispatchEvent(new CustomEvent("xstudio:fonts-ready"));
+    window.dispatchEvent(new CustomEvent("composition:fonts-ready"));
   });
 }
 

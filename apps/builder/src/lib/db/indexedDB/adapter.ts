@@ -28,7 +28,7 @@ import type {
 } from "../../../types/builder/data.types";
 import { LRUCache } from "./LRUCache";
 
-const DB_NAME = "xstudio";
+const DB_NAME = "composition";
 const DB_VERSION = 7; // ✅ 버전 7: Data Panel 테이블 추가 (data_tables, api_endpoints, variables, transformers)
 
 export class IndexedDBAdapter implements DatabaseAdapter {

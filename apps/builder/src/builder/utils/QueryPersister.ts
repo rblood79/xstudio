@@ -48,7 +48,7 @@ export interface PersisterOptions {
 // Constants
 // ============================================
 
-const DEFAULT_DB_NAME = 'xstudio-query-cache';
+const DEFAULT_DB_NAME = 'composition-query-cache';
 const DEFAULT_STORE_NAME = 'queries';
 const DEFAULT_TTL = 60 * 60 * 1000; // 1시간
 const DEFAULT_MAX_SIZE = 50 * 1024 * 1024; // 50MB

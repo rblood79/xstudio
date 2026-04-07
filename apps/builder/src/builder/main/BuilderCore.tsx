@@ -861,7 +861,7 @@ export const BuilderCore: React.FC = () => {
     };
 
     // sessionStorage에 저장 (같은 origin의 새 탭에서 접근 가능)
-    sessionStorage.setItem("xstudio-preview-data", JSON.stringify(previewData));
+    sessionStorage.setItem("composition-preview-data", JSON.stringify(previewData));
 
     // 새 탭에서 publish 앱 열기
     window.open("/publish/", "_blank");

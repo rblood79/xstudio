@@ -10,14 +10,14 @@
  * @since 2024-12-29
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 // ============================================
 // Types
 // ============================================
 
-export type ThemeMode = 'light' | 'dark' | 'auto';
+export type ThemeMode = "light" | "dark" | "auto";
 export type UiScale = 80 | 100 | 120;
 
 export interface UiState {
@@ -42,7 +42,7 @@ export interface UiState {
 // ============================================
 
 const DEFAULT_UI_STATE = {
-  themeMode: 'auto' as ThemeMode,
+  themeMode: "auto" as ThemeMode,
   uiScale: 100 as UiScale,
 };
 
@@ -62,7 +62,7 @@ export const useUiStore = create<UiState>()(
       },
 
       setUiScale: (scale: UiScale) => {
-        document.documentElement.style.setProperty('--ui-scale', String(scale));
+        document.documentElement.style.setProperty("--ui-scale", String(scale));
         set({ uiScale: scale });
       },
 
@@ -71,15 +71,17 @@ export const useUiStore = create<UiState>()(
       },
     }),
     {
-      name: 'xstudio-ui', // localStorage key
-      version: 1,
+      name: "composition-ui", // localStorage key
       onRehydrateStorage: () => (state) => {
         if (state?.uiScale) {
-          document.documentElement.style.setProperty('--ui-scale', String(state.uiScale));
+          document.documentElement.style.setProperty(
+            "--ui-scale",
+            String(state.uiScale),
+          );
         }
       },
-    }
-  )
+    },
+  ),
 );
 
 // ============================================
@@ -93,11 +95,10 @@ export const useUiScale = () => useUiStore((state) => state.uiScale);
 // Non-React Access (for effects, services)
 // ============================================
 
-export const getUiState = (): Pick<UiState, 'themeMode' | 'uiScale'> => {
+export const getUiState = (): Pick<UiState, "themeMode" | "uiScale"> => {
   const state = useUiStore.getState();
   return {
     themeMode: state.themeMode,
     uiScale: state.uiScale,
   };
 };
-

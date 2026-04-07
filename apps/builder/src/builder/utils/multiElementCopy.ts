@@ -185,7 +185,7 @@ export function pasteMultipleElements(
 export function serializeCopiedElements(copiedData: CopiedElementsData): string {
   // Convert Map to array for JSON serialization
   const serializable = {
-    __xstudio_elements__: true, // Magic marker for validation
+    __composition_elements__: true, // Magic marker for validation
     version: 1,
     elements: copiedData.elements,
     rootIds: copiedData.rootIds,
@@ -212,7 +212,7 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
     const parsed = JSON.parse(json);
 
     // Validate magic marker
-    if (!parsed.__xstudio_elements__) {
+    if (!parsed.__composition_elements__) {
       // Not our clipboard data - silently ignore
       return null;
     }

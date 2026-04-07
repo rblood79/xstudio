@@ -40,7 +40,7 @@ interface PageHistoryMeta {
 // Constants
 // ============================================
 
-const DB_NAME = 'xstudio-history';
+const DB_NAME = 'composition-history';
 const DB_VERSION = 1;
 const STORE_ENTRIES = 'history-entries';
 const STORE_META = 'page-meta';

@@ -336,7 +336,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           const cssVars = tokensToCSS(tokens);
           const cssText = formatCSSVars(cssVars);
 
-          const styleId = "xstudio-theme-vars";
+          const styleId = "composition-theme-vars";
           let styleTag = document.getElementById(
             styleId,
           ) as HTMLStyleElement | null;

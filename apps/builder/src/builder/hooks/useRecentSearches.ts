@@ -1,7 +1,7 @@
 import { useListData } from 'react-stately';
 import { useEffect } from 'react';
 
-const RECENT_SEARCHES_KEY = 'xstudio_recent_searches';
+const RECENT_SEARCHES_KEY = 'composition_recent_searches';
 const MAX_RECENT_SEARCHES = 10; // 최대 저장 개수
 
 /**

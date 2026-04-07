@@ -37,13 +37,13 @@ function FontManagerContent() {
   useEffect(() => {
     const syncRegistry = () => setRegistry(loadFontRegistry());
 
-    window.addEventListener("xstudio:custom-fonts-updated", syncRegistry);
+    window.addEventListener("composition:custom-fonts-updated", syncRegistry);
     const handleStorage = (e: StorageEvent) => {
       if (e.key === FONT_REGISTRY_STORAGE_KEY) syncRegistry();
     };
     window.addEventListener("storage", handleStorage);
     return () => {
-      window.removeEventListener("xstudio:custom-fonts-updated", syncRegistry);
+      window.removeEventListener("composition:custom-fonts-updated", syncRegistry);
       window.removeEventListener("storage", handleStorage);
     };
   }, []);

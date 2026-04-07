@@ -15,8 +15,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // 환경별로 다른 스토리지 키 사용
 const storageKey = import.meta.env.DEV
-    ? 'xstudio-auth-dev'
-    : 'xstudio-auth-prod';
+    ? 'composition-auth-dev'
+    : 'composition-auth-prod';
 
 // 전역 인스턴스 생성 (싱글톤 패턴)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

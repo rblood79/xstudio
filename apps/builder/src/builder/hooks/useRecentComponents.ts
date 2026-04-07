@@ -1,7 +1,7 @@
 import { useListData } from 'react-stately';
 import { useEffect } from 'react';
 
-const RECENT_COMPONENTS_KEY = 'xstudio_recent_components';
+const RECENT_COMPONENTS_KEY = 'composition_recent_components';
 const MAX_RECENT_ITEMS = 8;
 
 interface RecentComponent {

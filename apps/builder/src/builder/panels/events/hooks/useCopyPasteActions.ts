@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { EventAction } from "../types/eventTypes";
 
-const CLIPBOARD_KEY = "xstudio-event-actions-clipboard";
+const CLIPBOARD_KEY = "composition-event-actions-clipboard";
 
 /**
  * Hook for copy/paste actions functionality

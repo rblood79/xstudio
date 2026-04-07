@@ -66,11 +66,11 @@ export interface ImageNaturalDimensions {
 /** URL → 자연 치수 캐시 (이미지 로드 후 동기적 조회용)
  * HMR-resilient: window 전역에 저장하여 모듈 리로드 시에도 유지 */
 const dimensionsCache: Map<string, ImageNaturalDimensions> =
-  ((globalThis as Record<string, unknown>).__xstudio_imageDimsCache as Map<
+  ((globalThis as Record<string, unknown>).__composition_imageDimsCache as Map<
     string,
     ImageNaturalDimensions
   >) ??
-  ((globalThis as Record<string, unknown>).__xstudio_imageDimsCache = new Map<
+  ((globalThis as Record<string, unknown>).__composition_imageDimsCache = new Map<
     string,
     ImageNaturalDimensions
   >());

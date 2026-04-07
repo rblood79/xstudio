@@ -135,14 +135,14 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         })),
       );
 
-    window.addEventListener("xstudio:custom-fonts-updated", syncFonts);
+    window.addEventListener("composition:custom-fonts-updated", syncFonts);
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== FONT_REGISTRY_STORAGE_KEY) return;
       syncFonts();
     };
     window.addEventListener("storage", handleStorage);
     return () => {
-      window.removeEventListener("xstudio:custom-fonts-updated", syncFonts);
+      window.removeEventListener("composition:custom-fonts-updated", syncFonts);
       window.removeEventListener("storage", handleStorage);
     };
   }, []);

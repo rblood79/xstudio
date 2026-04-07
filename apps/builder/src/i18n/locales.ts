@@ -81,7 +81,7 @@ export function getBrowserLocale(): SupportedLocale {
  */
 export function getStoredLocale(): SupportedLocale {
   try {
-    const stored = localStorage.getItem('xstudio-locale');
+    const stored = localStorage.getItem('composition-locale');
     if (stored && stored in localeConfigs) {
       return stored as SupportedLocale;
     }
@@ -97,7 +97,7 @@ export function getStoredLocale(): SupportedLocale {
  */
 export function setStoredLocale(locale: SupportedLocale): void {
   try {
-    localStorage.setItem('xstudio-locale', locale);
+    localStorage.setItem('composition-locale', locale);
   } catch (error) {
     console.error('Error saving locale to localStorage:', error);
   }

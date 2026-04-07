@@ -61,4 +61,4 @@ export interface UsePanelLayoutReturn extends PanelLayoutActions {
 /**
  * 레이아웃 저장 키
  */
-export const PANEL_LAYOUT_STORAGE_KEY = 'xstudio-panel-layout';
+export const PANEL_LAYOUT_STORAGE_KEY = 'composition-panel-layout';

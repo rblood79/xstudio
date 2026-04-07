@@ -91,7 +91,7 @@ type DataStore = DataStoreExtended;
 // LocalStorage helpers for persist:true variables
 // ============================================
 
-const RUNTIME_VALUES_KEY = "xstudio-runtime-values";
+const RUNTIME_VALUES_KEY = "composition-runtime-values";
 
 function loadPersistedRuntimeValues(): Map<string, unknown> {
   try {

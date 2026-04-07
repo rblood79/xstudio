@@ -127,8 +127,8 @@ const queryClient = new QueryClient({
 
 const root = document.getElementById("root");
 
-// GitHub Pages 배포 시 /xstudio/ 경로 사용
-const basename = import.meta.env.PROD ? "/xstudio" : "/";
+// GitHub Pages 배포 시 /composition/ 경로 사용
+const basename = import.meta.env.PROD ? "/composition" : "/";
 
 ReactDOM.createRoot(root!).render(
   <QueryClientProvider client={queryClient}>

@@ -310,19 +310,19 @@ export function SkiaCanvas({
         await syncCustomFontsWithSkia();
         notifyLayoutChange();
         invalidateLayout();
-        window.dispatchEvent(new CustomEvent("xstudio:fonts-ready"));
+        window.dispatchEvent(new CustomEvent("composition:fonts-ready"));
       } catch (e) {
         console.warn("[SkiaCanvas] 동적 커스텀 폰트 동기화 실패:", e);
       }
     };
 
     window.addEventListener(
-      "xstudio:custom-fonts-updated",
+      "composition:custom-fonts-updated",
       handleCustomFontsUpdated,
     );
     return () => {
       window.removeEventListener(
-        "xstudio:custom-fonts-updated",
+        "composition:custom-fonts-updated",
         handleCustomFontsUpdated,
       );
     };

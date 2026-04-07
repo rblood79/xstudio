@@ -11,7 +11,7 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
     injectRegistryFontStyle();
   });
 
-  window.addEventListener("xstudio:custom-fonts-updated", () => {
+  window.addEventListener("composition:custom-fonts-updated", () => {
     injectRegistryFontStyle();
   });
 }

@@ -107,10 +107,10 @@ export const createEditModeSlice: StateCreator<EditModeStore> = (set, get) => {
 
 export const useEditModeStore = create<EditModeStore>()(
   persist(createEditModeSlice, {
-    name: "xstudio-edit-mode",
+    name: "composition-edit-mode",
     // mode만 저장 (pageId, layoutId는 저장하지 않음 - 각 스토어에서 관리)
     partialize: (state) => ({ mode: state.mode }),
-  })
+  }),
 );
 
 // ============================================

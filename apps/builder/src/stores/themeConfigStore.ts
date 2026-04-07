@@ -68,7 +68,7 @@ interface ThemeConfigState extends PersistedThemeConfig {
 // localStorage Helpers
 // ============================================================================
 
-const STORAGE_KEY_PREFIX = "xstudio-theme-config-";
+const STORAGE_KEY_PREFIX = "composition-theme-config-";
 
 /** 현재 프로젝트 ID (persist 시 사용) */
 let currentProjectId: string | null = null;

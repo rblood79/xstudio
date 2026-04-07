@@ -133,7 +133,7 @@ function applyTransform(
 /**
  * localStorage 캐시 키 생성
  */
-const getCacheKey = (dataTableId: string) => `xstudio_datatable_cache_${dataTableId}`;
+const getCacheKey = (dataTableId: string) => `composition_datatable_cache_${dataTableId}`;
 
 /**
  * 캐시 데이터 구조

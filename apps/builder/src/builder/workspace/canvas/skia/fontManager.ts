@@ -14,7 +14,7 @@
 import type { FontMgr, Typeface } from "canvaskit-wasm";
 import { getCanvasKit } from "./initCanvasKit";
 
-const IDB_NAME = "xstudio-fonts";
+const IDB_NAME = "composition-fonts";
 const IDB_VERSION = 2; // v2: 이전 잘못된 서브셋 캐시 무효화
 const IDB_STORE = "fonts";
 

@@ -9,7 +9,7 @@ export interface ThresholdConfig {
   danger: number; // default: 75
 }
 
-const STORAGE_KEY = "xstudio-monitor-thresholds";
+const STORAGE_KEY = "composition-monitor-thresholds";
 
 const DEFAULT_CONFIG: ThresholdConfig = { warning: 60, danger: 75 };
 

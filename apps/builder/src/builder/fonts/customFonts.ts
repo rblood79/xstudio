@@ -16,7 +16,7 @@ import {
 } from "@composition/shared";
 import type { FontFormat } from "@composition/shared";
 
-const STYLE_ID = "xstudio-custom-fonts";
+const STYLE_ID = "composition-custom-fonts";
 
 // ============================================
 // Registry-based API (v2)
@@ -30,7 +30,7 @@ export function saveRegistryAndNotify(registry: FontRegistryV2): void {
 
   saveFontRegistry(registry);
   injectRegistryFontStyle();
-  window.dispatchEvent(new CustomEvent("xstudio:custom-fonts-updated"));
+  window.dispatchEvent(new CustomEvent("composition:custom-fonts-updated"));
 }
 
 /**

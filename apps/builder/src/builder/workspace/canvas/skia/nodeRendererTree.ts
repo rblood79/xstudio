@@ -28,18 +28,18 @@ interface DragVisualOffsetData {
 }
 
 const G = globalThis as unknown as {
-  __xstudio_dragVisualOffset?: DragVisualOffsetData | null;
-  __xstudio_dragSiblingOffsets?: Map<string, { dx: number; dy: number }> | null;
+  __composition_dragVisualOffset?: DragVisualOffsetData | null;
+  __composition_dragSiblingOffsets?: Map<string, { dx: number; dy: number }> | null;
 };
 
 function _get(): DragVisualOffsetData | null {
-  return G.__xstudio_dragVisualOffset ?? null;
+  return G.__composition_dragVisualOffset ?? null;
 }
 
 export function getSiblingOffset(
   elementId: string,
 ): { dx: number; dy: number } | undefined {
-  return G.__xstudio_dragSiblingOffsets?.get(elementId);
+  return G.__composition_dragSiblingOffsets?.get(elementId);
 }
 
 /**
@@ -55,12 +55,12 @@ export function setDragVisualOffset(
   skipInvalidation = false,
 ): void {
   const prev = _get();
-  G.__xstudio_dragVisualOffset =
+  G.__composition_dragVisualOffset =
     elementId !== null ? { elementId, dx, dy } : null;
 
   if (skipInvalidation) return;
 
-  const next = G.__xstudio_dragVisualOffset;
+  const next = G.__composition_dragVisualOffset;
   const changed =
     (prev === null) !== (next === null) ||
     (prev &&
@@ -82,7 +82,7 @@ export function setDragVisualOffset(
 export function setDragSiblingOffsets(
   offsets: Map<string, { dx: number; dy: number }> | null,
 ): void {
-  G.__xstudio_dragSiblingOffsets = offsets;
+  G.__composition_dragSiblingOffsets = offsets;
   notifyLayoutChange();
 }
 

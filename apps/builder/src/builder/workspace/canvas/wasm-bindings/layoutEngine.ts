@@ -1,11 +1,11 @@
 /**
  * New Layout Engine TypeScript Wrapper (ADR-100)
  *
- * xstudio-layout WASM을 TaffyLayout과 동일한 인터페이스로 래핑한다.
+ * composition-layout WASM을 TaffyLayout과 동일한 인터페이스로 래핑한다.
  * USE_RUST_LAYOUT_ENGINE feature flag 활성화 시 TaffyLayout 대신 사용된다.
  *
  * @see docs/adr/100-unified-skia-engine.md
- * @see packages/xstudio-layout/src/lib.rs
+ * @see packages/composition-layout/src/lib.rs
  */
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ let initPromise: Promise<void> | null = null;
 // ─── Init ─────────────────────────────────────────────────────────────
 
 /**
- * Initialize the xstudio-layout WASM module.
+ * Initialize the composition-layout WASM module.
  * Call once at startup when USE_RUST_LAYOUT_ENGINE flag is enabled.
  * Subsequent calls are no-ops (idempotent).
  */
@@ -137,7 +137,7 @@ export function isLayoutEngineReady(): boolean {
 // ─── Layout API (mirrors TaffyLayout interface) ───────────────────────
 
 /**
- * High-level TypeScript wrapper for the xstudio-layout WASM engine.
+ * High-level TypeScript wrapper for the composition-layout WASM engine.
  *
  * API mirrors TaffyLayout so the two can be swapped via feature flag.
  *

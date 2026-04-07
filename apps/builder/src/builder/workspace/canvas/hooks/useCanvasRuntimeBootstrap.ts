@@ -30,9 +30,9 @@ export function useCanvasRuntimeBootstrap(): CanvasRuntimeBootstrapResult {
       useStore.getState().invalidateLayout();
     };
 
-    window.addEventListener("xstudio:fonts-ready", handleFontsReady);
+    window.addEventListener("composition:fonts-ready", handleFontsReady);
     return () =>
-      window.removeEventListener("xstudio:fonts-ready", handleFontsReady);
+      window.removeEventListener("composition:fonts-ready", handleFontsReady);
   }, []);
 
   // ADR-100: UNIFIED_ENGINE=true → PixiJS Application 없으므로 직접 WASM 초기화

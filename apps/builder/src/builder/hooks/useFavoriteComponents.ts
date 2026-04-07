@@ -1,7 +1,7 @@
 import { useListData } from 'react-stately';
 import { useEffect } from 'react';
 
-const FAVORITE_COMPONENTS_KEY = 'xstudio_favorite_components';
+const FAVORITE_COMPONENTS_KEY = 'composition_favorite_components';
 
 /**
  * localStorage에서 즐겨찾기 로드

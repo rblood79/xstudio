@@ -4,10 +4,14 @@
  * 사용자 설정 관리 (localStorage 기반 영구 저장)
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { UserSettings, SyncMode, ProjectCreationMode } from '../types/settings.types';
-import { DEFAULT_SETTINGS } from '../types/settings.types';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type {
+  UserSettings,
+  SyncMode,
+  ProjectCreationMode,
+} from "../types/settings.types";
+import { DEFAULT_SETTINGS } from "../types/settings.types";
 
 interface SettingsState extends UserSettings {
   // Actions
@@ -36,10 +40,10 @@ export const useSettingsStore = create<SettingsState>()(
       resetSettings: () => set(DEFAULT_SETTINGS),
     }),
     {
-      name: 'xstudio-settings', // localStorage key
+      name: "composition-settings", // localStorage key
       version: 1,
-    }
-  )
+    },
+  ),
 );
 
 // 편의 함수: 현재 설정 가져오기
