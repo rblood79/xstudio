@@ -452,6 +452,26 @@ export function renderText(
     }
 
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
+    // Variable font: fontFeatures + fontVariations(wght axis)를 pushStyle로 명시 적용.
+    // ParagraphStyle.textStyle만으로는 CanvasKit에서 Variable font의
+    // weight/fontFeatures가 렌더링에 반영되지 않는 문제 대응.
+    builder.pushStyle(
+      new ck.TextStyle({
+        fontFamilies: resolvedFamilies,
+        fontSize: node.text.fontSize,
+        fontStyle: { weight: fontWeight, slant: fontSlant, width: fontWidth },
+        color: node.text.color,
+        letterSpacing: node.text.letterSpacing ?? 0,
+        wordSpacing: node.text.wordSpacing ?? 0,
+        ...(heightMultiplierOpt !== undefined
+          ? { heightMultiplier: heightMultiplierOpt, halfLeading: true }
+          : {}),
+        ...(fontFeatureTags.length > 0
+          ? { fontFeatures: fontFeatureTags }
+          : {}),
+        fontVariations: [{ axis: "wght", value: node.text.fontWeight ?? 400 }],
+      }),
+    );
     builder.addText(renderableText);
     const paragraph = builder.build();
     paragraph.layout(effectiveLayoutWidth);
