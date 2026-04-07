@@ -5,63 +5,20 @@
  * Builder의 BrowserRouter와 완전히 분리되어 동작합니다.
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from "react";
 import {
   MemoryRouter,
   Routes,
   Route,
   useNavigate,
   useLocation,
-  useParams as useRouterParams,
   type NavigateFunction,
-} from 'react-router-dom';
-import { useRuntimeStore } from '../store';
-import type { RuntimeLayout } from '../store/types';
-import { generatePageUrl, hasDynamicParams } from '../../utils/urlGenerator';
-import type { Page } from '../../types/builder/unified.types';
-
-// ============================================
-// Router Context (navigate 함수 공유용)
-// ============================================
-
-interface RouterContextValue {
-  navigate: NavigateFunction | null;
-}
-
-const RouterContext = React.createContext<RouterContextValue>({ navigate: null });
-
-export function useCanvasNavigate() {
-  const ctx = React.useContext(RouterContext);
-  return ctx.navigate;
-}
-
-// Legacy alias
-export const usePreviewNavigate = useCanvasNavigate;
-
-// ============================================
-// Route Params Hook (동적 파라미터 접근용)
-// ============================================
-
-/**
- * 동적 라우트 파라미터에 접근하는 훅
- *
- * React Router의 useParams를 래핑하여 Canvas 컨텍스트에서 사용
- *
- * @example
- * // Route: /products/:categoryId/items/:itemId
- * // URL: /products/shoes/items/123
- *
- * function ProductDetail() {
- *   const params = useCanvasParams();
- *   // params = { categoryId: 'shoes', itemId: '123' }
- * }
- */
-export function useCanvasParams(): Record<string, string | undefined> {
-  return useRouterParams();
-}
-
-// Legacy alias
-export const usePreviewParams = useCanvasParams;
+} from "react-router-dom";
+import { RouterContext } from "./canvasRouterContext";
+import { useRuntimeStore } from "../store";
+import type { RuntimeLayout } from "../store/types";
+import { generatePageUrl, hasDynamicParams } from "../../utils/urlGenerator";
+import type { Page } from "../../types/builder/unified.types";
 
 // ============================================
 // Page Renderer Component
@@ -108,19 +65,19 @@ function DefaultNotFound({ originalUrl }: { originalUrl?: string }) {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        padding: '2rem',
-        textAlign: 'center',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: "2rem",
+        textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>404</h1>
-      <p style={{ color: '#666' }}>Page not found</p>
+      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>404</h1>
+      <p style={{ color: "#666" }}>Page not found</p>
       {originalUrl && (
-        <p style={{ color: '#999', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+        <p style={{ color: "#999", fontSize: "0.875rem", marginTop: "0.5rem" }}>
           {originalUrl}
         </p>
       )}
@@ -162,7 +119,8 @@ function NotFound({ layoutId, originalUrl, renderElements }: NotFoundProps) {
 
   // Layout별 404 페이지 찾기
   const layout = layoutId ? layouts.find((l) => l.id === layoutId) : null;
-  const notFoundPageId = (layout as RuntimeLayout & { notFoundPageId?: string })?.notFoundPageId;
+  const notFoundPageId = (layout as RuntimeLayout & { notFoundPageId?: string })
+    ?.notFoundPageId;
 
   // 프로젝트 기본 404은 아직 미구현 (TODO: Project 타입에 defaultNotFoundPageId 추가 후)
   // const projectDefaultNotFoundPageId = project?.defaultNotFoundPageId;
@@ -172,7 +130,10 @@ function NotFound({ layoutId, originalUrl, renderElements }: NotFoundProps) {
     const notFoundPage = pages.find((p) => p.id === notFoundPageId);
     if (notFoundPage) {
       return (
-        <LayoutNotFoundPage pageId={notFoundPageId} renderElements={renderElements} />
+        <LayoutNotFoundPage
+          pageId={notFoundPageId}
+          renderElements={renderElements}
+        />
       );
     }
   }
@@ -226,7 +187,7 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
   }, []);
 
   // 초기 경로 설정
-  const initialEntries = [currentPath || '/'];
+  const initialEntries = [currentPath || "/"];
 
   // ⭐ Nested Routes & Slug System: 각 페이지의 최종 URL 계산
   const routeConfigs = useMemo(() => {
@@ -235,7 +196,7 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
       id: p.id,
       title: p.title,
       slug: p.slug,
-      project_id: '', // Canvas에서는 사용하지 않음
+      project_id: "", // Canvas에서는 사용하지 않음
       parent_id: p.parent_id,
       layout_id: p.layout_id,
       order_num: p.order_num,
@@ -253,13 +214,18 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
           id: page.id,
           title: page.title,
           slug: page.slug,
-          project_id: '',
+          project_id: "",
           parent_id: page.parent_id,
           layout_id: page.layout_id,
           order_num: page.order_num,
         },
         layout: layout
-          ? { id: layout.id, name: layout.name, project_id: '', slug: layout.slug || undefined }
+          ? {
+              id: layout.id,
+              name: layout.name,
+              project_id: "",
+              slug: layout.slug || undefined,
+            }
           : null,
         allPages: pagesAsPage,
       });
@@ -279,8 +245,8 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
       if (a.isDynamic && !b.isDynamic) return 1;
       if (!a.isDynamic && b.isDynamic) return -1;
       // 더 구체적인 경로가 먼저 (세그먼트 수가 많은 것)
-      const aSegments = a.path.split('/').length;
-      const bSegments = b.path.split('/').length;
+      const aSegments = a.path.split("/").length;
+      const bSegments = b.path.split("/").length;
       return bSegments - aSegments;
     });
   }, [pages, layouts]);
@@ -303,20 +269,13 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
 
           {/* 페이지가 없을 때 기본 라우트 */}
           {pages.length === 0 && (
-            <Route
-              path="/"
-              element={<>{renderElements()}</>}
-            />
+            <Route path="/" element={<>{renderElements()}</>} />
           )}
 
           {/* 404 페이지 - Layout별 404 또는 기본 404 */}
           <Route
             path="*"
-            element={
-              <NotFound
-                renderElements={renderElements}
-              />
-            }
+            element={<NotFound renderElements={renderElements} />}
           />
         </Routes>
         {children}
@@ -328,34 +287,3 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
 // Legacy alias
 export const PreviewRouter = CanvasRouter;
 export type PreviewRouterProps = CanvasRouterProps;
-
-// ============================================
-// Navigation Helper (EventEngine에서 사용)
-// ============================================
-
-let globalNavigate: NavigateFunction | null = null;
-
-export function setGlobalNavigate(navigate: NavigateFunction) {
-  globalNavigate = navigate;
-}
-
-export function getGlobalNavigate(): NavigateFunction | null {
-  return globalNavigate;
-}
-
-/**
- * Canvas 내부에서 네비게이션 수행
- * EventEngine에서 호출됩니다.
- */
-export function navigateInCanvas(path: string, options?: { replace?: boolean }) {
-  if (globalNavigate) {
-    globalNavigate(path, options);
-    return true;
-  }
-
-  console.warn('[CanvasRouter] Navigate function not available yet');
-  return false;
-}
-
-// Legacy alias
-export const navigateInPreview = navigateInCanvas;

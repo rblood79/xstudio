@@ -843,7 +843,6 @@ export function calculateContentWidth(
     const fontSize = specStyle?.fontSize ?? dims.fontSize;
     const fontWeight = specStyle?.fontWeight ?? 400;
     const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
-    const measurer = getTextMeasurer();
     const textWidth = measureTextWidth(text, fontSize, ffamily, fontWeight);
     return Math.ceil(dims.dotSize + dims.gap + textWidth);
   }

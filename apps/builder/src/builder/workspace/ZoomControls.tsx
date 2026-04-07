@@ -1,6 +1,6 @@
 /** 줌 레벨 표시 input + 프리셋 액션 메뉴 (MenuTrigger 패턴) */
 
-import { useCallback, useRef, memo, useState, useEffect } from "react";
+import { useCallback, useRef, memo, useState } from "react";
 import {
   MenuTrigger,
   Menu,
@@ -44,18 +44,12 @@ export const ZoomControls = memo(function ZoomControls({
 }: ZoomControlsProps) {
   const zoom = useViewportSyncStore((state) => state.zoom);
 
-  const [inputValue, setInputValue] = useState("");
   const zoomPercent = Math.round(zoom * 100);
-  const isEditingRef = useRef(false);
+  // null = 편집 중 아님, string = 편집 중인 값
+  const [editingValue, setEditingValue] = useState<string | null>(null);
+  const displayedValue =
+    editingValue !== null ? editingValue : `${zoomPercent}%`;
   const anchorRef = useRef<HTMLDivElement>(null);
-
-  // 포커스 중이 아닐 때만 외부 zoom 변경을 input에 반영
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    if (!isEditingRef.current) {
-      setInputValue(`${zoomPercent}%`);
-    }
-  }, [zoomPercent]);
 
   // ============================================
   // Zoom Handlers (getState 사용으로 의존성 최소화)
@@ -128,17 +122,16 @@ export const ZoomControls = memo(function ZoomControls({
   // ============================================
 
   const handleInputBlur = useCallback(() => {
-    isEditingRef.current = false;
-    const numStr = inputValue.replace(/%/g, "").trim();
+    const numStr = (editingValue ?? "").replace(/%/g, "").trim();
     const num = parseFloat(numStr);
+    setEditingValue(null);
 
     if (isNaN(num) || num < MIN_ZOOM * 100 || num > MAX_ZOOM * 100) {
-      setInputValue(`${zoomPercent}%`);
       return;
     }
 
     zoomTo(num / 100);
-  }, [inputValue, zoomPercent, zoomTo]);
+  }, [editingValue, zoomTo]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -151,7 +144,7 @@ export const ZoomControls = memo(function ZoomControls({
 
       if (e.key === "Escape") {
         e.preventDefault();
-        setInputValue(`${zoomPercent}%`);
+        setEditingValue(null);
         (e.target as HTMLInputElement).blur();
         return;
       }
@@ -172,10 +165,10 @@ export const ZoomControls = memo(function ZoomControls({
 
   const handleInputFocus = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
-      isEditingRef.current = true;
+      setEditingValue(`${zoomPercent}%`);
       e.target.select();
     },
-    [],
+    [zoomPercent],
   );
 
   // ============================================
@@ -187,8 +180,8 @@ export const ZoomControls = memo(function ZoomControls({
       <div ref={anchorRef} className="zoom-trigger-button">
         <input
           className="zoom-input"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          value={displayedValue}
+          onChange={(e) => setEditingValue(e.target.value)}
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}

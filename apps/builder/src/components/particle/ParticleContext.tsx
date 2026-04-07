@@ -1,23 +1,12 @@
-import {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { useRef, useState, useCallback, type ReactNode } from "react";
 import type {
   EffectType,
   MorphContent,
   VortexState,
-  ParticleBackgroundContextValue,
+  ParticleThemePreset,
 } from "./types";
 import { DEFAULT_LEAVE_DELAY_MS, DEFAULT_INITIAL_CONTENT } from "./constants";
-import type { ParticleThemePreset } from "./types";
-
-// ==================== Context ====================
-const ParticleBackgroundContext =
-  createContext<ParticleBackgroundContextValue | null>(null);
+import { ParticleBackgroundContext } from "./particleContextInstance";
 
 // ==================== Provider Props ====================
 interface ParticleBackgroundProviderProps {
@@ -85,7 +74,7 @@ export function ParticleBackgroundProvider({
         }, leaveDelayMs);
       }
     },
-    [leaveDelayMs]
+    [leaveDelayMs],
   );
 
   return (
@@ -103,15 +92,4 @@ export function ParticleBackgroundProvider({
       {children}
     </ParticleBackgroundContext.Provider>
   );
-}
-
-// ==================== Hook ====================
-export function useParticleBackground() {
-  const context = useContext(ParticleBackgroundContext);
-  if (!context) {
-    throw new Error(
-      "useParticleBackground must be used within ParticleBackgroundProvider"
-    );
-  }
-  return context;
 }

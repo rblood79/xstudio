@@ -1,4 +1,9 @@
-import { useEffect, type MutableRefObject, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  type MutableRefObject,
+  type RefObject,
+} from "react";
 import { useStore } from "../../../stores";
 import type { BoundingBox } from "../selection";
 import {
@@ -10,6 +15,7 @@ import {
   resolveTopmostHitElementId,
 } from "../interaction";
 import { hitTestPoint } from "../wasm-bindings/spatialIndex";
+import { useKeyboardShortcutsRegistry } from "../../../hooks/useKeyboardShortcutsRegistry";
 
 interface ModifierState {
   ctrlKey: boolean;
@@ -60,6 +66,14 @@ interface UseCentralCanvasPointerHandlersOptions {
   zoom: number;
 }
 
+type PendingDrag = {
+  elementId: string;
+  bounds: BoundingBox;
+  startCanvasPos: { x: number; y: number };
+  startClientX: number;
+  startClientY: number;
+};
+
 export function useCentralCanvasPointerHandlers({
   completeEditRef,
   computeSelectionBoundsForHitTest,
@@ -84,27 +98,41 @@ export function useCentralCanvasPointerHandlers({
   setSelectedElements,
   zoom,
 }: UseCentralCanvasPointerHandlersOptions): void {
+  /** 드래그 pending 상태 — effect 재실행 간 유지되므로 ref로 관리 */
+  const pendingDragRef = useRef<PendingDrag | null>(null);
+  /** 현재 드래그 활성 여부 — effect 재실행 간 유지되므로 ref로 관리 */
+  const isDraggingRef = useRef(false);
+
+  // Escape 키 드래그 취소 — window.keydown 직접 등록 대신 레지스트리 사용
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: "Escape",
+        modifier: "none",
+        handler: () => {
+          if (isDraggingRef.current || pendingDragRef.current) {
+            onCancelDrag.current();
+            pendingDragRef.current = null;
+            isDraggingRef.current = false;
+          }
+        },
+        preventDefault: true,
+        category: "canvas",
+        description: "Cancel drag (Escape)",
+      },
+    ],
+    [onCancelDrag],
+  );
+
   useEffect(() => {
     const element = containerRef.current;
     if (!element) {
       return;
     }
 
-    /**
-     * 드래그 pending 상태 (threshold 미만 이동 중)
-     * pointerdown에서 inSelectionBounds 히트 시 초기화,
-     * pointermove에서 threshold 초과 시 드래그 시작
-     */
-    let pendingDrag: {
-      elementId: string;
-      bounds: BoundingBox;
-      startCanvasPos: { x: number; y: number };
-      startClientX: number;
-      startClientY: number;
-    } | null = null;
-
-    /** 현재 드래그 활성 여부 (threshold 초과 후) */
-    let isDragging = false;
+    // effect 재실행 시 드래그 상태 초기화
+    pendingDragRef.current = null;
+    isDraggingRef.current = false;
 
     const handlePointerDown = (event: PointerEvent) => {
       if (event.button !== 0) {
@@ -213,7 +241,7 @@ export function useCentralCanvasPointerHandlers({
         if (hitElement && hitElement.tag.toLowerCase() !== "body") {
           const freshBounds = computeSelectionBoundsForHitTest();
           if (freshBounds) {
-            pendingDrag = {
+            pendingDragRef.current = {
               elementId: hitElementId,
               bounds: freshBounds,
               startCanvasPos: canvasPos,
@@ -253,7 +281,7 @@ export function useCentralCanvasPointerHandlers({
 
           // Body 요소는 drag 대상에서 제외
           if (targetId && selectedElement?.tag.toLowerCase() !== "body") {
-            pendingDrag = {
+            pendingDragRef.current = {
               elementId: targetId,
               bounds: selectionBounds,
               startCanvasPos: canvasPos,
@@ -300,25 +328,26 @@ export function useCentralCanvasPointerHandlers({
     };
 
     const handleWindowPointerMove = (event: PointerEvent) => {
-      if (pendingDrag) {
-        const dx = event.clientX - pendingDrag.startClientX;
-        const dy = event.clientY - pendingDrag.startClientY;
+      const pending = pendingDragRef.current;
+      if (pending) {
+        const dx = event.clientX - pending.startClientX;
+        const dy = event.clientY - pending.startClientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (!isDragging && dist >= DRAG_THRESHOLD) {
+        if (!isDraggingRef.current && dist >= DRAG_THRESHOLD) {
           // threshold 초과 → 드래그 시작
-          isDragging = true;
+          isDraggingRef.current = true;
           // store에서 최신 selectedElementIds 읽기 (stale closure 방지)
           const currentId =
-            useStore.getState().selectedElementIds[0] ?? pendingDrag.elementId;
+            useStore.getState().selectedElementIds[0] ?? pending.elementId;
           onStartMove.current(
             currentId,
-            pendingDrag.bounds,
-            pendingDrag.startCanvasPos,
+            pending.bounds,
+            pending.startCanvasPos,
           );
         }
 
-        if (isDragging) {
+        if (isDraggingRef.current) {
           const rect = element.getBoundingClientRect();
           const canvasPos = screenToCanvasPoint({
             x: event.clientX - rect.left,
@@ -357,26 +386,16 @@ export function useCentralCanvasPointerHandlers({
     };
 
     const handleWindowPointerUp = () => {
-      if (isDragging) {
+      if (isDraggingRef.current) {
         onEndDrag.current();
       }
-      pendingDrag = null;
-      isDragging = false;
-    };
-
-    // ADR-043 Phase 5: Escape 키로 드래그 취소
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && (isDragging || pendingDrag)) {
-        event.preventDefault();
-        onCancelDrag.current();
-        pendingDrag = null;
-        isDragging = false;
-      }
+      pendingDragRef.current = null;
+      isDraggingRef.current = false;
     };
 
     const handlePointerMove = (event: PointerEvent) => {
       // pendingDrag가 없을 때만 커서 업데이트 (드래그 중 window 핸들러가 처리)
-      if (pendingDrag) return;
+      if (pendingDragRef.current) return;
 
       const rect = element.getBoundingClientRect();
       const canvasPos = screenToCanvasPoint({
@@ -408,14 +427,15 @@ export function useCentralCanvasPointerHandlers({
     element.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointermove", handleWindowPointerMove);
     window.addEventListener("pointerup", handleWindowPointerUp);
-    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      // effect 재실행/언마운트 시 드래그 상태 초기화
+      pendingDragRef.current = null;
+      isDraggingRef.current = false;
       element.removeEventListener("pointerdown", handlePointerDown);
       element.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointermove", handleWindowPointerMove);
       window.removeEventListener("pointerup", handleWindowPointerUp);
-      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [
     completeEditRef,
@@ -427,7 +447,6 @@ export function useCentralCanvasPointerHandlers({
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,
-    onCancelDrag,
     onEndDrag,
     onStartMove,
     onUpdateDrag,

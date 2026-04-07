@@ -9,7 +9,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useParticleBackground } from "./ParticleContext";
+import { useParticleBackground } from "./useParticleBackground";
 import { generatePointsFromContent } from "./canvasUtils";
 import {
   MORPH_IN_SPEED,

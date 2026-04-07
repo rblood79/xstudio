@@ -1,22 +1,24 @@
-import reactConfig from '@xstudio/config/eslint/react';
-import localRules from './eslint-local-rules/index.js';
+import reactConfig from "@xstudio/config/eslint/react";
+import localRules from "./eslint-local-rules/index.js";
 
 export default [
   ...reactConfig,
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     plugins: {
-      'local': {
+      local: {
         rules: localRules,
       },
     },
     rules: {
       // XStudio Anti-Pattern Detection Rules
-      'local/no-zustand-grouped-selectors': 'error',
-      'local/no-zustand-use-shallow': 'error',
-      'local/prefer-keyboard-shortcuts-registry': 'warn',
-      'local/prefer-copy-paste-hook': 'warn',
-      'local/no-eventtype-legacy-import': 'error',
+      "local/no-zustand-grouped-selectors": "error",
+      "local/no-zustand-use-shallow": "error",
+      "local/prefer-keyboard-shortcuts-registry": "warn",
+      "local/prefer-copy-paste-hook": "warn",
+      "local/no-eventtype-legacy-import": "error",
+      // TanStack Virtual v3 는 React Compiler 비호환 — "use no memo" 로 opt-out 완료
+      "react-hooks/incompatible-library": "off",
     },
   },
 ];

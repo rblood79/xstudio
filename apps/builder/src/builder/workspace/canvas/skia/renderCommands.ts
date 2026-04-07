@@ -17,7 +17,6 @@ import type { BoundingBox } from "../selection/types";
 import type { AIEffectNodeBounds } from "./types";
 import type { Element } from "../../../../types/core/store.types";
 import {
-  applyMaskLayerGradient,
   buildMaskGradientShader,
   determineMaskMode,
   applyMaskImage,

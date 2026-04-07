@@ -18,7 +18,7 @@
 import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
-import type { ComponentState, Shape } from "@xstudio/specs";
+import type { ComponentState } from "@xstudio/specs";
 import { InlineAlertSpec } from "@xstudio/specs";
 import { getSpecForTag } from "../sprites/tagSpecMap";
 import { specShapesToSkia } from "./specShapeConverter";
@@ -38,7 +38,6 @@ import {
 import {
   rearrangeShapesForColumn,
   measureSpecTextMinHeight,
-  parseOutlineShorthand,
 } from "./specBuildHelpers";
 
 // ---------------------------------------------------------------------------

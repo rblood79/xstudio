@@ -13,7 +13,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
-import { useParticleBackground } from "./ParticleContext";
+import { useParticleBackground } from "./useParticleBackground";
 import { generatePointsFromContent } from "./canvasUtils";
 import { MORPH_IN_SPEED, MORPH_OUT_SPEED, PARTICLE_COUNT } from "./constants";
 

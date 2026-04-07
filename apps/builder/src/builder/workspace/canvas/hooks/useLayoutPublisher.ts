@@ -19,7 +19,6 @@ import {
   buildPageChildrenMap,
   buildChildrenIdMap,
 } from "../scene/layoutCache";
-import { buildPageDirtyState } from "../scene/subtreeInvalidation";
 
 interface PageLayoutInput {
   pageId: string;
@@ -48,7 +47,6 @@ export function useLayoutPublisher(
         bodyElement,
         elementById,
         pageElements,
-        dirtyElementIds,
         pageWidth,
         pageHeight,
         wasmLayoutReady,
@@ -60,12 +58,6 @@ export function useLayoutPublisher(
         bodyElement,
         elementById,
         pageElements,
-      });
-      const pageDirtyState = buildPageDirtyState({
-        bodyElement,
-        dirtyElementIds,
-        elementsMap: elementById,
-        pageChildrenMap,
       });
       const pageElementsSignature = createPageElementsSignature(pageElements);
       const freshElements = pageElements.map(
@@ -82,7 +74,6 @@ export function useLayoutPublisher(
         childrenIdMap,
         elementById,
         pageChildrenMap,
-        pageDirtyState,
         pageElementsSignature,
         pageLayoutSignature,
         pageHeight,

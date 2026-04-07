@@ -68,37 +68,16 @@ export function getCachedRenderIdSet({
   return ids;
 }
 
-interface ViewportLike {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
-}
-
 interface GetCachedTopLevelCandidateIdsInput {
   bodyElementId: string | null;
   cacheKey: string;
   pageChildrenMap: Map<string | null, Element[]>;
-  viewport: ViewportLike;
-}
-
-function isInViewport(
-  bounds: { height: number; width: number; x: number; y: number },
-  viewport: ViewportLike,
-): boolean {
-  return !(
-    bounds.x + bounds.width < viewport.left ||
-    bounds.x > viewport.right ||
-    bounds.y + bounds.height < viewport.top ||
-    bounds.y > viewport.bottom
-  );
 }
 
 export function getCachedTopLevelCandidateIds({
   bodyElementId,
   cacheKey,
   pageChildrenMap,
-  viewport,
 }: GetCachedTopLevelCandidateIdsInput): Set<string> {
   const cached = topLevelCandidateCache.get(cacheKey);
   if (cached) {

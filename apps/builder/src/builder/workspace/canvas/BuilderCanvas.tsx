@@ -47,13 +47,12 @@ import {
 import { getElementBoundsSimple } from "./elementRegistry";
 import { GPUDebugOverlay } from "./utils/GPUDebugOverlay";
 import { useCanvasElementSelectionHandlers } from "./hooks/useCanvasElementSelectionHandlers";
-import { useCanvasBackgroundInteraction } from "./hooks/useCanvasBackgroundInteraction";
 import { useCentralCanvasPointerHandlers } from "./hooks/useCentralCanvasPointerHandlers";
 import { useCanvasRuntimeBootstrap } from "./hooks/useCanvasRuntimeBootstrap";
 import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
 import { useDragBridge } from "./hooks/useDragBridge";
-import { usePageDrag } from "./hooks/usePageDrag";
+
 import { buildSceneSnapshot } from "./scene";
 import {
   computeWorkflowEdges,
@@ -197,9 +196,6 @@ export function BuilderCanvas({
 
   const zoom = useViewportSyncStore((state) => state.zoom);
   const panOffset = useViewportSyncStore((state) => state.panOffset);
-
-  // 🆕 Multi-page: 페이지 타이틀 드래그
-  const { startDrag: startPageDrag } = usePageDrag(zoom);
 
   // Canvas sync actions
   const setCanvasReady = useCanvasLifecycleStore(
@@ -590,11 +586,6 @@ export function BuilderCanvas({
     setCanvasReady,
     setContextLost,
     syncPixiVersion,
-  });
-
-  const handleCanvasBackgroundClick = useCanvasBackgroundInteraction({
-    clearSelection,
-    setSelectedElement,
   });
 
   return (

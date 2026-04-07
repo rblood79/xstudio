@@ -98,7 +98,7 @@ function getNumericStyleValue(
 }
 
 /** Spec 경로 사용 여부: TAG_SPEC_MAP 등록 + TEXT_TAGS 미등록 또는 delegation 필요 */
-function useSpecPath(element: Element): boolean {
+function isSpecPath(element: Element): boolean {
   if (!getSpecForTag(element.tag)) return false;
   if (!TEXT_TAGS.has(element.tag)) return true;
   return SPEC_PREFERRED_TEXT_TAGS.has(element.tag);
@@ -359,7 +359,7 @@ export class StoreRenderBridge {
     elementsMap: Map<string, Element>,
     childrenMap: Map<string, Element[]> | null,
   ): import("./nodeRendererTypes").SkiaNodeData | null {
-    if (useSpecPath(element)) {
+    if (isSpecPath(element)) {
       const childElements = childrenMap?.get(id) ?? undefined;
       const nodeData = buildSpecNodeData({
         element,

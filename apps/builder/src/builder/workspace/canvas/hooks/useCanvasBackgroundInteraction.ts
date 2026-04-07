@@ -8,8 +8,7 @@ interface UseCanvasBackgroundInteractionParams {
 
 export function useCanvasBackgroundInteraction({
   clearSelection,
-  setSelectedElement,
-}: UseCanvasBackgroundInteractionParams) {
+}: Omit<UseCanvasBackgroundInteractionParams, "setSelectedElement">) {
   return useCallback(() => {
     const { editingContextId, exitEditingContext } = useStore.getState();
 
@@ -20,5 +19,5 @@ export function useCanvasBackgroundInteraction({
 
     // 페이지 영역 밖 클릭 → 선택 해제 (body 재선택 금지)
     clearSelection();
-  }, [clearSelection, setSelectedElement]);
+  }, [clearSelection]);
 }

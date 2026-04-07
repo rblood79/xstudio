@@ -28,7 +28,9 @@ const EMPTY_ELEMENTS: Element[] = [];
 export const LayersSection = memo(function LayersSection({
   currentPageId,
 }: LayersSectionProps) {
-  const [isTreeVisible, setIsTreeVisible] = useState(true);
+  const [isTreeVisible, setIsTreeVisible] = useState(
+    () => !!useStore.getState().pageElementsSnapshot[currentPageId]?.length,
+  );
   const currentPageElements = useStore(
     useCallback(
       (state) => state.pageElementsSnapshot[currentPageId] ?? EMPTY_ELEMENTS,
@@ -40,19 +42,19 @@ export const LayersSection = memo(function LayersSection({
     [currentPageElements],
   );
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    // snapshot이 있으면 즉시 표시, 없으면 다음 프레임까지 placeholder 유지
+    // snapshot이 있으면 다음 프레임에 표시, 없으면 placeholder 유지 후 백그라운드에서 표시
     // (페이지 삭제 → 전환 시 tree가 빈 상태로 flash되는 것 방지)
     const snapshot = useStore.getState().pageElementsSnapshot[currentPageId];
-    if (snapshot && snapshot.length > 0) {
-      setIsTreeVisible(true);
-      return;
-    }
+    const hasSnapshot = !!(snapshot && snapshot.length > 0);
 
-    setIsTreeVisible(false);
     let cancelBackgroundTask: (() => void) | undefined;
     const taskId = scheduleNextFrame(() => {
+      if (hasSnapshot) {
+        setIsTreeVisible(true);
+        return;
+      }
+      setIsTreeVisible(false);
       cancelBackgroundTask = scheduleCancelableBackgroundTask(() => {
         setIsTreeVisible(true);
       });

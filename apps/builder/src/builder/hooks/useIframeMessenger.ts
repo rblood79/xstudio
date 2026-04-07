@@ -819,7 +819,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     },
     [
       enqueuePreviewGeneratedElements,
-      flushPreviewGeneratedElements,
       setSelectedElement,
       elementsMap,
       processMessageQueue,

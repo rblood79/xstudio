@@ -47,7 +47,6 @@ import {
   buildPageFrameMap,
   getCachedChildOverflowContextMap,
   type OverflowContentInfo,
-  type ChildOverflowContext,
 } from "./skiaFrameHelpers";
 import { buildEdgeGeometryCache } from "./workflowHitTest";
 import { buildWorkflowElementBounds } from "./skiaFramePipeline";

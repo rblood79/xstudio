@@ -1398,7 +1398,6 @@ export function applyImplicitStyles(
     // value → 포맷된 텍스트 계산 (ElementSprite 미러링)
     const sliderValue = containerProps?.value;
     const sliderMin = Number(containerProps?.minValue ?? 0);
-    const sliderMax = Number(containerProps?.maxValue ?? 100);
     let sliderFormattedValue = "";
     if (showValue) {
       if (Array.isArray(sliderValue)) {

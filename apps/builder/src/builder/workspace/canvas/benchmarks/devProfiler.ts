@@ -25,16 +25,6 @@ interface ProfileSnapshot {
   memory: { jsHeapMB: number };
 }
 
-interface StressResult {
-  snapshots: ProfileSnapshot[];
-  summary: {
-    elementCounts: number[];
-    avgFrameTimes: number[];
-    scalingExponent: number;
-    verdict: string;
-  };
-}
-
 function takeSnapshot(): ProfileSnapshot {
   const m = useCanvasMetricsStore.getState().gpuMetrics;
   const mem = (

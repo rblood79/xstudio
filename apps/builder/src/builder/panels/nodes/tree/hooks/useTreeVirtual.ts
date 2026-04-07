@@ -62,6 +62,7 @@ export function useTreeVirtual<TNode>({
   overscan = 5,
   scrollRef: externalScrollRef,
 }: UseTreeVirtualOptions<TNode>): UseTreeVirtualResult<TNode> {
+  "use no memo";
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef ?? internalScrollRef;
 
@@ -111,7 +112,7 @@ export function useTreeVirtual<TNode>({
         virtualizer.scrollToIndex(index, { align: "center" });
       }
     },
-    [flattenedNodes, virtualizer]
+    [flattenedNodes, virtualizer],
   );
 
   // 스크롤 위치 복원 (레이아웃 이펙트)

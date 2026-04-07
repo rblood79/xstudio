@@ -1,4 +1,10 @@
-import React, { useRef, useMemo, useCallback, useEffect, useState } from "react";
+import React, {
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Key } from "react-stately";
 import type { BaseTreeNode, TreeItemState, DropPosition } from "./types";
@@ -34,7 +40,7 @@ interface VirtualizedTreeProps<TNode extends BaseTreeNode> {
     isValidDrop: (
       draggedKey: Key,
       targetKey: Key,
-      position: DropPosition
+      position: DropPosition,
     ) => boolean;
     onMove: (payload: {
       keys: Set<Key>;
@@ -80,6 +86,7 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
   "aria-label": ariaLabel,
   className,
 }: VirtualizedTreeProps<TNode>) {
+  "use no memo";
   const scrollRef = useRef<HTMLDivElement>(null);
   const [draggingKey, setDraggingKey] = useState<Key | null>(null);
   const [dropTarget, setDropTarget] = useState<{
@@ -140,7 +147,7 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
       event.preventDefault();
       onSelectionChange?.(new Set([key]));
     },
-    [onSelectionChange]
+    [onSelectionChange],
   );
 
   // 확장 토글
@@ -155,7 +162,7 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
       }
       onExpandedChange?.(newExpanded);
     },
-    [expandedKeys, onExpandedChange]
+    [expandedKeys, onExpandedChange],
   );
 
   // DnD 핸들러
@@ -169,7 +176,7 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
       event.dataTransfer.setData("application/x-tree-item", String(key));
       event.dataTransfer.effectAllowed = "move";
     },
-    [dnd]
+    [dnd],
   );
 
   const handleDragOver = useCallback(
@@ -194,7 +201,7 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
         event.dataTransfer.dropEffect = "none";
       }
     },
-    [dnd, draggingKey]
+    [dnd, draggingKey],
   );
 
   const handleDrop = useCallback(
@@ -217,7 +224,7 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
       setDraggingKey(null);
       setDropTarget(null);
     },
-    [dnd, draggingKey, dropTarget, flattenedNodes]
+    [dnd, draggingKey, dropTarget, flattenedNodes],
   );
 
   const handleDragEnd = useCallback(() => {

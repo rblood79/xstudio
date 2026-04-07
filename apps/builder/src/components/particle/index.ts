@@ -45,11 +45,10 @@ export {
 // Shaders
 export { PARTICLE_VERTEX_SHADER, PARTICLE_FRAGMENT_SHADER } from "./shaders";
 
-// Context & Hook
-export {
-  ParticleBackgroundProvider,
-  useParticleBackground,
-} from "./ParticleContext";
+// Context Provider
+export { ParticleBackgroundProvider } from "./ParticleContext";
+// Hook
+export { useParticleBackground } from "./useParticleBackground";
 
 // Components
 export { ParticleCanvas } from "./ParticleCanvas";

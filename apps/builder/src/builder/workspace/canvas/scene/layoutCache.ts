@@ -2,7 +2,6 @@ import type { Element } from "../../../../types/core/store.types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import { calculateFullTreeLayout } from "../layout/engines/fullTreeLayout";
 import { parseBorder, parsePadding } from "../layout/engines/utils";
-import type { PageDirtyState } from "./subtreeInvalidation";
 
 interface BuildPageChildrenMapInput {
   bodyElement: Element | null;
@@ -255,7 +254,6 @@ interface GetCachedPageLayoutInput {
   childrenIdMap: Map<string, string[]>;
   elementById: Map<string, Element>;
   pageChildrenMap: Map<string | null, Element[]>;
-  pageDirtyState: PageDirtyState;
   pageElementsSignature: string;
   pageLayoutSignature: string;
   pageHeight: number;
@@ -268,7 +266,6 @@ export function getCachedPageLayout({
   childrenIdMap,
   elementById,
   pageChildrenMap,
-  pageDirtyState,
   pageElementsSignature,
   pageLayoutSignature,
   pageHeight,

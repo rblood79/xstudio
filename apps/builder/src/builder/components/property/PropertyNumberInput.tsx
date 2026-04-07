@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useRef, useEffect, memo } from "react";
 import { NumberField, Input, Group, Button } from "react-aria-components";
 import { Minus, Plus } from "lucide-react";
 import { PropertyFieldset } from "./PropertyFieldset";
@@ -39,10 +39,18 @@ export const PropertyNumberInput = memo(
     const [localValue, setLocalValue] = useState<number | undefined>(value);
     const committedRef = useRef(false);
     const focusedElementIdRef = useRef<string | null>(null);
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
+    // 외부 value 또는 선택 요소가 바뀌면 렌더 중 즉시 동기화 (effect 불필요)
+    const [prevSync, setPrevSync] = useState({ value, selectedElementId });
+    if (
+      prevSync.value !== value ||
+      prevSync.selectedElementId !== selectedElementId
+    ) {
+      setPrevSync({ value, selectedElementId });
       setLocalValue(value);
+    }
+
+    // ref 리셋은 렌더 중 수행 불가 → effect로 분리
+    useEffect(() => {
       committedRef.current = false;
       focusedElementIdRef.current = null;
     }, [value, selectedElementId]);

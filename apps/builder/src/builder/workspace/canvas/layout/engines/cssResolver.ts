@@ -18,7 +18,6 @@
  */
 
 import { parseFontShorthand } from "./cssValueParser";
-import { DEFAULT_FONT_FAMILY } from "../../../../fonts/customFonts";
 
 // ============================================
 // 상속 가능 속성 목록

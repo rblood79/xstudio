@@ -9,11 +9,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef, memo } from "react";
-import {
-  PropertySection,
-  PropertyUnitInput,
-  PropertySelect,
-} from "../../../components";
+import { PropertySection, PropertyUnitInput } from "../../../components";
 import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
 import { Input } from "react-aria-components";
 import { SwatchIconButton } from "../../../components/ui";
@@ -90,15 +86,8 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
   // 선택 요소나 외부 값이 바뀌면 로컬 편집 세션을 새 대상 기준으로 리셋
   useEffect(() => {
     focusedElementIdRef.current = null;
-    const next = derivedValues;
-    queueMicrotask(() => setLocalValues(next));
-  }, [
-    derivedValues.top,
-    derivedValues.right,
-    derivedValues.bottom,
-    derivedValues.left,
-    selectedElementId,
-  ]);
+    queueMicrotask(() => setLocalValues(derivedValues));
+  }, [derivedValues, selectedElementId]);
 
   const handleChange = (
     direction: "Top" | "Right" | "Bottom" | "Left",

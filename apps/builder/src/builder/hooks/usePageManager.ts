@@ -263,10 +263,8 @@ export const usePageManager = ({
         console.error("요소 로드 에러:", error);
         return { success: false, error: error as Error };
       }
-      // setCurrentPageId is stable function from store
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [mergeElements, requestAutoSelectAfterUpdate],
+    [mergeElements, requestAutoSelectAfterUpdate, setSelectedElement],
   );
 
   /**
@@ -571,15 +569,16 @@ export const usePageManager = ({
         initializingRef.current = null;
         return { success: false, error: error as Error };
       }
-      // pageList, setCurrentPageId, setPages, initializePagePositions are stable
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [
-      fetchElements,
       hydrateProjectSnapshot,
       setLazyLoadingEnabled,
       setSelectedElement,
       initializePagePositions,
+      pageList,
+      setCurrentPageId,
+      setPages,
+      requestAutoSelectAfterUpdate,
     ],
   );
 
