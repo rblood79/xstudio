@@ -9,14 +9,14 @@
 
 import type { CanvasKit, Paint } from "canvaskit-wasm";
 import type { FillStyle } from "./types";
-import { amplifyGradientStops } from "./oklabInterpolation";
+import { maybeAmplifyOklab } from "./oklabInterpolation";
 
 /**
  * Float32Array[] → flat Float32Array 변환 (CanvasKit WASM 호환성 보장)
  * MakeLinearGradient 등은 InputFlexibleColorArray를 받지만,
  * flat Float32Array가 가장 안전한 형식이다.
  */
-function flattenColors(colors: Float32Array[]): Float32Array {
+export function flattenColors(colors: Float32Array[]): Float32Array {
   const result = new Float32Array(colors.length * 4);
   for (let i = 0; i < colors.length; i++) {
     result[i * 4] = colors[i][0];
@@ -90,13 +90,8 @@ export function applyFill(
     }
 
     case "linear-gradient": {
-      let fillColors = fill.colors;
-      let fillPositions = fill.positions;
-      if (fill.interpolation === "oklab") {
-        const amplified = amplifyGradientStops(fillColors, fillPositions);
-        fillColors = amplified.colors;
-        fillPositions = amplified.positions;
-      }
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
       const flatColors = flattenColors(fillColors);
       const shader = ck.Shader.MakeLinearGradient(
         fill.start,
@@ -121,13 +116,8 @@ export function applyFill(
     }
 
     case "radial-gradient": {
-      let fillColors = fill.colors;
-      let fillPositions = fill.positions;
-      if (fill.interpolation === "oklab") {
-        const amplified = amplifyGradientStops(fillColors, fillPositions);
-        fillColors = amplified.colors;
-        fillPositions = amplified.positions;
-      }
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
       const flatColors = flattenColors(fillColors);
       const shader = ck.Shader.MakeTwoPointConicalGradient(
         fill.center,
@@ -158,13 +148,8 @@ export function applyFill(
     }
 
     case "angular-gradient": {
-      let fillColors = fill.colors;
-      let fillPositions = fill.positions;
-      if (fill.interpolation === "oklab") {
-        const amplified = amplifyGradientStops(fillColors, fillPositions);
-        fillColors = amplified.colors;
-        fillPositions = amplified.positions;
-      }
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
       const flatColors = flattenColors(fillColors);
       // MakeSweepGradient(cx, cy, colors, positions, tileMode, localMatrix, flags)
       // localMatrix로 CSS conic-gradient(12시) → CanvasKit(3시) 보정

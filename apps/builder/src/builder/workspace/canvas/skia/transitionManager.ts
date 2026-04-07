@@ -4,8 +4,7 @@
  * StoreRenderBridge에서 스타일 변경 감지 → start() 호출.
  * SkiaRenderer.renderFrame()에서 tick() 호출 → dirty nodeIds 반환.
  */
-import { computeTransitionValue, parseEasing } from "./transitionEngine";
-import type { TransitionState } from "./transitionEngine";
+import { parseEasing } from "./transitionEngine";
 
 interface ActiveTransition {
   property: string;

@@ -26,6 +26,7 @@ import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
 import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
 import { onLayoutPublished } from "../layout";
 import type { TransitionManager } from "./transitionManager";
+import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
 
 function isTextElement(element: Element): boolean {
   return TEXT_TAGS.has(element.tag);
@@ -48,6 +49,9 @@ const SPEC_PREFERRED_TEXT_TAGS = new Set([
   "InlineAlert",
   "Description", // InlineAlert parent font delegation
 ]);
+
+/** Collection item 태그 — 기본 border/background 스타일 적용 대상 */
+const COLLECTION_ITEM_TAGS = new Set(["GridListItem", "ListBoxItem"]);
 
 const EMPTY_LAYOUT_MAP = new Map<string, ComputedLayout>();
 
@@ -75,40 +79,6 @@ export function parseTransitionShorthand(value: string): TransitionDef[] {
     return { property, duration, easing };
   });
 }
-
-/**
- * CSS transition 대상 numeric 속성 목록.
- * Element.props.style에서 읽을 때 사용하는 키 이름.
- */
-const NUMERIC_TRANSITION_PROPERTIES = new Set([
-  "opacity",
-  "width",
-  "height",
-  "borderRadius",
-  "fontSize",
-  "letterSpacing",
-  "lineHeight",
-  "paddingTop",
-  "paddingRight",
-  "paddingBottom",
-  "paddingLeft",
-  "marginTop",
-  "marginRight",
-  "marginBottom",
-  "marginLeft",
-  "top",
-  "right",
-  "bottom",
-  "left",
-  "gap",
-  "columnGap",
-  "rowGap",
-  "rotate",
-  "scaleX",
-  "scaleY",
-  "translateX",
-  "translateY",
-]);
 
 /**
  * element.props.style에서 numeric 속성값을 추출한다.
@@ -414,8 +384,7 @@ export class StoreRenderBridge {
     }
 
     // Box / fallback
-    const tag = (element.tag ?? "").toLowerCase();
-    const isCollectionItem = tag === "gridlistitem" || tag === "listboxitem";
+    const isCollectionItem = COLLECTION_ITEM_TAGS.has(element.tag);
     return (
       buildBoxNodeData({ element, layout, isCollectionItem }) ??
       buildSkiaNodeData(element, ctx)
@@ -452,11 +421,11 @@ export class StoreRenderBridge {
       const { property, duration, easing } = def;
       if (duration <= 0) continue;
 
-      // "all" 처리: NUMERIC_TRANSITION_PROPERTIES 전체 검사
+      // "all" 처리: ANIMATABLE_NUMERIC_PROPERTIES 전체 검사
       const targetProps =
         property === "all"
-          ? NUMERIC_TRANSITION_PROPERTIES
-          : NUMERIC_TRANSITION_PROPERTIES.has(property)
+          ? ANIMATABLE_NUMERIC_PROPERTIES
+          : ANIMATABLE_NUMERIC_PROPERTIES.has(property)
             ? new Set([property])
             : null;
 

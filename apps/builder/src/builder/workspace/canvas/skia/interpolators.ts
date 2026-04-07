@@ -13,13 +13,14 @@ export function lerpColor(
   a: Float32Array,
   b: Float32Array,
   t: number,
+  out?: Float32Array,
 ): Float32Array {
-  return new Float32Array([
-    a[0] + (b[0] - a[0]) * t,
-    a[1] + (b[1] - a[1]) * t,
-    a[2] + (b[2] - a[2]) * t,
-    a[3] + (b[3] - a[3]) * t,
-  ]);
+  const result = out ?? new Float32Array(4);
+  result[0] = a[0] + (b[0] - a[0]) * t;
+  result[1] = a[1] + (b[1] - a[1]) * t;
+  result[2] = a[2] + (b[2] - a[2]) * t;
+  result[3] = a[3] + (b[3] - a[3]) * t;
+  return result;
 }
 
 /** transform 분해 보간 */
@@ -70,7 +71,11 @@ export function lerpBoxShadow(
   };
 }
 
-const NUMERIC_PROPS = new Set([
+/**
+ * 숫자 보간 가능한 CSS 속성 (SSOT).
+ * StoreRenderBridge의 transition 감지 + interpolateProperty 양쪽에서 참조.
+ */
+export const ANIMATABLE_NUMERIC_PROPERTIES = new Set([
   "opacity",
   "width",
   "height",
@@ -86,6 +91,8 @@ const NUMERIC_PROPS = new Set([
   "marginBottom",
   "marginLeft",
   "gap",
+  "columnGap",
+  "rowGap",
   "fontSize",
   "letterSpacing",
   "lineHeight",
@@ -93,6 +100,11 @@ const NUMERIC_PROPS = new Set([
   "right",
   "bottom",
   "left",
+  "rotate",
+  "scaleX",
+  "scaleY",
+  "translateX",
+  "translateY",
 ]);
 
 /**
@@ -106,7 +118,7 @@ export function interpolateProperty(
   t: number,
 ): unknown {
   if (
-    NUMERIC_PROPS.has(prop) &&
+    ANIMATABLE_NUMERIC_PROPERTIES.has(prop) &&
     typeof start === "number" &&
     typeof end === "number"
   ) {

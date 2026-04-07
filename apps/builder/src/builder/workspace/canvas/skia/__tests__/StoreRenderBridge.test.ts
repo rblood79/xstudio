@@ -9,12 +9,16 @@ vi.mock("../fontManager", () => ({
   },
 }));
 
-// Mock @xstudio/specs
-vi.mock("@xstudio/specs", () => ({
-  hexStringToNumber: (hex: string) => parseInt(hex.replace("#", ""), 16),
-  lightColors: { neutral: "#1a1a1a" },
-  darkColors: { neutral: "#e5e5e5" },
-}));
+// Mock @xstudio/specs — importOriginal로 실제 Spec export 보존
+vi.mock("@xstudio/specs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@xstudio/specs")>();
+  return {
+    ...actual,
+    hexStringToNumber: (hex: string) => parseInt(hex.replace("#", ""), 16),
+    lightColors: { neutral: "#1a1a1a" },
+    darkColors: { neutral: "#e5e5e5" },
+  };
+});
 
 // Mock tagSpecMap (Spec import 차단)
 vi.mock("../../sprites/tagSpecMap", () => ({

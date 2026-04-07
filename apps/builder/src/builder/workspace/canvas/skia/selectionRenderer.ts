@@ -48,6 +48,7 @@ const DIMENSION_LABEL_OFFSET_Y = 8; // 선택 박스 하단으로부터의 오�
 const DIMENSION_LABEL_BG_R = 0x51 / 255; // 배경색 (#51a2ff)
 const DIMENSION_LABEL_BG_G = 0xa2 / 255;
 const DIMENSION_LABEL_BG_B = 0xff / 255;
+const DIMENSION_LABEL_LINE_HEIGHT = 16; // 레이블 줄 높이
 const DIMENSION_LABEL_BORDER_RADIUS = 4; // 배경 둥근 모서리
 
 // ============================================
@@ -265,8 +266,6 @@ export function renderDimensionLabels(
     const glyphIds = font.getGlyphIDs(dimensionText);
     const glyphWidths = font.getGlyphWidths(glyphIds);
     const textWidth = glyphWidths.reduce((sum, w) => sum + w, 0);
-    // 고정 line-height 16px (화면 기준, zoom 역스케일 적용)
-    const DIMENSION_LABEL_LINE_HEIGHT = 16;
     const textHeight = DIMENSION_LABEL_LINE_HEIGHT * invZoom;
 
     // 레이블 배경 크기 및 위치 계산

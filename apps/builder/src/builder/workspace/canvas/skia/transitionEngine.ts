@@ -1,9 +1,10 @@
 /**
  * CSS Transitions Engine (ADR-100 Phase 3)
  *
- * 순수 수학: cubic-bezier + lerp. 외부 의존성 없음.
- * Newton-Raphson 방법으로 cubic-bezier 역산.
+ * 순수 수학: cubic-bezier + easing. Newton-Raphson 방법으로 cubic-bezier 역산.
  */
+
+import { lerpNumber } from "./interpolators";
 
 /**
  * Cubic Bezier easing.
@@ -48,10 +49,8 @@ function sampleCurveDerivative(a: number, b: number, t: number): number {
   return (3 * (1 - 3 * b + 3 * a) * t + 2 * (3 * b - 6 * a)) * t + 3 * a;
 }
 
-/** Linear interpolation */
-export function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
+/** @deprecated Use lerpNumber from interpolators.ts */
+export const lerp = lerpNumber;
 
 /** CSS named easings */
 export const EASINGS = {
@@ -113,7 +112,7 @@ export function computeTransitionValue(
   const progress = elapsed / state.duration;
   const eased = state.easing(progress);
   return {
-    value: lerp(state.startValue, state.endValue, eased),
+    value: lerpNumber(state.startValue, state.endValue, eased),
     done: false,
   };
 }

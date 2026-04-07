@@ -484,71 +484,47 @@ export class SkiaRenderer {
    * @returns dirty 노드가 하나라도 있으면 true (프레임 승격용)
    */
   private applyAnimationOverrides(now: number): boolean {
-    const dirtyTransition =
-      this.transitionManager?.tick(now) ?? new Set<string>();
-    const dirtyAnimation = this.animationEngine?.tick(now) ?? new Set<string>();
+    // Early exit: transition/animation 모두 비활성이면 Set 할당 없이 반환
+    const tmActive = this.transitionManager?.isActive() ?? false;
+    const aeActive = this.animationEngine?.isActive() ?? false;
+    if (!tmActive && !aeActive) return false;
 
-    const allDirty = new Set([...dirtyTransition, ...dirtyAnimation]);
+    const dirtyTransition = tmActive
+      ? this.transitionManager!.tick(now)
+      : undefined;
+    const dirtyAnimation = aeActive
+      ? this.animationEngine!.tick(now)
+      : undefined;
+
+    // 둘 다 있으면 병합, 하나만 있으면 그대로 사용
+    const allDirty =
+      dirtyTransition && dirtyAnimation
+        ? new Set([...dirtyTransition, ...dirtyAnimation])
+        : (dirtyTransition ?? dirtyAnimation ?? new Set<string>());
     if (allDirty.size === 0) return false;
+
+    // transition(낮은 우선순위) → animation(높은 우선순위) 순으로 적용
+    const sources = [this.transitionManager, this.animationEngine].filter(
+      Boolean,
+    ) as Array<{ getCurrentValue(id: string, prop: string): unknown }>;
 
     for (const elementId of allDirty) {
       const node = getSkiaNode(elementId);
       if (!node) continue;
 
-      // Transition 값 적용 (animation보다 낮은 우선순위)
-      if (this.transitionManager) {
-        const opacity = this.transitionManager.getCurrentValue(
-          elementId,
-          "opacity",
-        );
-        if (opacity !== undefined) {
-          this.applyOpacityToNode(node, opacity);
-        }
-
-        const width = this.transitionManager.getCurrentValue(
-          elementId,
-          "width",
-        );
-        if (width !== undefined) node.width = width;
-
-        const height = this.transitionManager.getCurrentValue(
-          elementId,
-          "height",
-        );
-        if (height !== undefined) node.height = height;
-
-        const borderRadius = this.transitionManager.getCurrentValue(
-          elementId,
-          "borderRadius",
-        );
-        if (borderRadius !== undefined && node.box) {
-          node.box.borderRadius = borderRadius;
-        }
-      }
-
-      // Animation 값 적용 (transition보다 높은 우선순위 — 덮어쓰기)
-      if (this.animationEngine) {
-        const opacity = this.animationEngine.getCurrentValue(
-          elementId,
-          "opacity",
-        );
+      for (const source of sources) {
+        const opacity = source.getCurrentValue(elementId, "opacity");
         if (typeof opacity === "number") {
           this.applyOpacityToNode(node, opacity);
         }
 
-        const width = this.animationEngine.getCurrentValue(elementId, "width");
+        const width = source.getCurrentValue(elementId, "width");
         if (typeof width === "number") node.width = width;
 
-        const height = this.animationEngine.getCurrentValue(
-          elementId,
-          "height",
-        );
+        const height = source.getCurrentValue(elementId, "height");
         if (typeof height === "number") node.height = height;
 
-        const borderRadius = this.animationEngine.getCurrentValue(
-          elementId,
-          "borderRadius",
-        );
+        const borderRadius = source.getCurrentValue(elementId, "borderRadius");
         if (typeof borderRadius === "number" && node.box) {
           node.box.borderRadius = borderRadius;
         }

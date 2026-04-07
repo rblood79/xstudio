@@ -1453,6 +1453,72 @@ export function applyTransformOrigin(
 // CSS Filter → EffectStyle 변환
 // ============================================
 
+/**
+ * CSS filter 함수 이름 → color matrix 생성 함수 매핑.
+ * parseCSSFilter/parseCSSBackdropFilter 양쪽에서 공유.
+ */
+const COLOR_MATRIX_FILTER_MAP: Record<
+  string,
+  (arg: string) => Float32Array | null
+> = {
+  brightness: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? brightnessMatrix(val) : null;
+  },
+  contrast: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? contrastMatrix(val) : null;
+  },
+  saturate: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? saturateMatrix(val) : null;
+  },
+  "hue-rotate": (arg) => {
+    const degrees = parseFilterAngleArg(arg);
+    return degrees !== null ? hueRotateMatrix(degrees) : null;
+  },
+  grayscale: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? grayscaleMatrix(val) : null;
+  },
+  invert: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? invertMatrix(val) : null;
+  },
+  sepia: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? sepiaMatrix(val) : null;
+  },
+};
+
+/**
+ * color matrix filter 함수들을 순차 합성하여 단일 행렬을 반환한다.
+ * 합성 결과가 identity이면 null 반환 (GPU pass 불필요).
+ */
+function composeColorMatrixFromFn(
+  fn: string,
+  arg: string,
+  current: Float32Array | null,
+): Float32Array | null {
+  const factory = COLOR_MATRIX_FILTER_MAP[fn];
+  if (!factory) return current;
+  const mat = factory(arg);
+  if (!mat) return current;
+  return current ? multiplyColorMatrix(mat, current) : mat;
+}
+
+/** 합성된 color matrix가 identity이면 null, 아니면 그대로 반환 */
+function finalizeColorMatrix(
+  composed: Float32Array | null,
+): Float32Array | null {
+  if (!composed) return null;
+  const identity = identityColorMatrix();
+  for (let i = 0; i < 20; i++) {
+    if (Math.abs(composed[i] - identity[i]) > 1e-6) return composed;
+  }
+  return null;
+}
+
 /** 4x5 identity color matrix */
 function identityColorMatrix(): Float32Array {
   // prettier-ignore
@@ -1729,8 +1795,6 @@ function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
  */
 function parseCSSFilter(filter: string): EffectStyle[] {
   const results: EffectStyle[] = [];
-
-  // 각 필터 함수 추출
   const funcRegex = /([\w-]+)\(([^)]*)\)/g;
   let composedMatrix: Float32Array | null = null;
   let funcMatch: RegExpExecArray | null;
@@ -1739,124 +1803,22 @@ function parseCSSFilter(filter: string): EffectStyle[] {
     const fn = funcMatch[1];
     const arg = funcMatch[2].trim();
 
-    switch (fn) {
-      case "blur": {
-        const sigma = parseFloat(arg);
-        if (!isNaN(sigma) && sigma > 0) {
-          results.push({ type: "layer-blur", sigma });
-        }
-        break;
+    if (fn === "blur") {
+      const sigma = parseFloat(arg);
+      if (!isNaN(sigma) && sigma > 0) {
+        results.push({ type: "layer-blur", sigma });
       }
-
-      case "brightness": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = brightnessMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "contrast": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = contrastMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "saturate": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = saturateMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "hue-rotate": {
-        const degrees = parseFilterAngleArg(arg);
-        if (degrees !== null) {
-          const mat = hueRotateMatrix(degrees);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "grayscale": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          // 클램핑은 grayscaleMatrix 내부에서 처리
-          const mat = grayscaleMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "invert": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          // 클램핑은 invertMatrix 내부에서 처리
-          const mat = invertMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "sepia": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          // 클램핑은 sepiaMatrix 내부에서 처리
-          const mat = sepiaMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "drop-shadow": {
-        // arg: "4px 4px 10px rgba(0,0,0,0.5)" 형식
-        const shadow = parseDropShadowFilterArgs(arg);
-        if (shadow) {
-          results.push(shadow);
-        }
-        break;
-      }
-
-      default:
-        // 지원하지 않는 필터 함수는 무시
-        break;
+    } else if (fn === "drop-shadow") {
+      const shadow = parseDropShadowFilterArgs(arg);
+      if (shadow) results.push(shadow);
+    } else {
+      composedMatrix = composeColorMatrixFromFn(fn, arg, composedMatrix);
     }
   }
 
-  // 합성된 color matrix가 있으면 단일 이펙트로 추가
-  if (composedMatrix) {
-    // identity인지 확인 — identity이면 GPU pass 불필요
-    const identity = identityColorMatrix();
-    let isIdentity = true;
-    for (let i = 0; i < 20; i++) {
-      if (Math.abs(composedMatrix[i] - identity[i]) > 1e-6) {
-        isIdentity = false;
-        break;
-      }
-    }
-    if (!isIdentity) {
-      results.push({ type: "color-matrix", matrix: composedMatrix });
-    }
+  const finalMatrix = finalizeColorMatrix(composedMatrix);
+  if (finalMatrix) {
+    results.push({ type: "color-matrix", matrix: finalMatrix });
   }
 
   return results;
@@ -1882,108 +1844,20 @@ function parseCSSBackdropFilter(filter: string): BackdropFilterEffect | null {
     const fn = funcMatch[1];
     const arg = funcMatch[2].trim();
 
-    switch (fn) {
-      case "blur": {
-        const px = parseFloat(arg);
-        if (!isNaN(px) && px > 0) sigma = px;
-        break;
-      }
-      case "brightness": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = brightnessMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      case "contrast": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = contrastMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      case "saturate": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = saturateMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      case "hue-rotate": {
-        const degrees = parseFilterAngleArg(arg);
-        if (degrees !== null) {
-          const mat = hueRotateMatrix(degrees);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      case "grayscale": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = grayscaleMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      case "invert": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = invertMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      case "sepia": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = sepiaMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-      default:
-        // 지원하지 않는 backdrop-filter 함수는 무시
-        break;
+    if (fn === "blur") {
+      const px = parseFloat(arg);
+      if (!isNaN(px) && px > 0) sigma = px;
+    } else {
+      composedMatrix = composeColorMatrixFromFn(fn, arg, composedMatrix);
     }
   }
 
   if (sigma === 0 && composedMatrix === null) return null;
 
-  // identity 행렬이면 colorMatrix 생략 (GPU pass 불필요)
-  let finalColorMatrix: Float32Array | undefined;
-  if (composedMatrix) {
-    const identity = identityColorMatrix();
-    let isIdentity = true;
-    for (let i = 0; i < 20; i++) {
-      if (Math.abs(composedMatrix[i] - identity[i]) > 1e-6) {
-        isIdentity = false;
-        break;
-      }
-    }
-    if (!isIdentity) finalColorMatrix = composedMatrix;
-  }
-
   return {
     type: "backdrop-filter",
     sigma,
-    colorMatrix: finalColorMatrix,
+    colorMatrix: finalizeColorMatrix(composedMatrix) ?? undefined,
   };
 }
 

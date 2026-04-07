@@ -93,6 +93,21 @@ export function interpolateOklab(
  * @param positions - gradient 위치 [0-1]
  * @param subdivisions - 각 stop 쌍 사이에 삽입할 중간점 수 (기본 8)
  */
+/**
+ * oklab 보간이 필요한 경우 gradient stops를 증폭한다.
+ * interpolation이 "oklab"이 아니면 원본 그대로 반환.
+ */
+export function maybeAmplifyOklab(
+  colors: Float32Array[],
+  positions: number[],
+  interpolation?: string,
+): { colors: Float32Array[]; positions: number[] } {
+  if (interpolation === "oklab") {
+    return amplifyGradientStops(colors, positions);
+  }
+  return { colors, positions };
+}
+
 export function amplifyGradientStops(
   colors: Float32Array[],
   positions: number[],

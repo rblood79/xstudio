@@ -67,6 +67,9 @@ import { StoreRenderBridge } from "./StoreRenderBridge";
 import { getSharedLayoutMap } from "../layout/engines/fullTreeLayout";
 import { useStore } from "../../../stores";
 
+// Dev profiler — window.__XSTUDIO_PROFILER 노출 (side-effect import)
+import "../benchmarks/devProfiler";
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------

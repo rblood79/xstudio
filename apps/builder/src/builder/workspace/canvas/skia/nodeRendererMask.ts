@@ -10,7 +10,8 @@
 
 import type { CanvasKit, Canvas } from "canvaskit-wasm";
 import type { FillStyle } from "./types";
-import { amplifyGradientStops } from "./oklabInterpolation";
+import { maybeAmplifyOklab } from "./oklabInterpolation";
+import { flattenColors } from "./fills";
 
 // ============================================
 // SkSL Shader Source
@@ -69,27 +70,10 @@ export function buildMaskGradientShader(
   ck: CanvasKit,
   fill: FillStyle,
 ): { delete(): void } | null {
-  /** Float32Array[] → flat Float32Array */
-  function flattenColors(colors: Float32Array[]): Float32Array {
-    const result = new Float32Array(colors.length * 4);
-    for (let i = 0; i < colors.length; i++) {
-      result[i * 4] = colors[i][0];
-      result[i * 4 + 1] = colors[i][1];
-      result[i * 4 + 2] = colors[i][2];
-      result[i * 4 + 3] = colors[i][3];
-    }
-    return result;
-  }
-
   switch (fill.type) {
     case "linear-gradient": {
-      let fillColors = fill.colors;
-      let fillPositions = fill.positions;
-      if (fill.interpolation === "oklab") {
-        const amplified = amplifyGradientStops(fillColors, fillPositions);
-        fillColors = amplified.colors;
-        fillPositions = amplified.positions;
-      }
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
       return (
         ck.Shader.MakeLinearGradient(
           fill.start,
@@ -101,13 +85,8 @@ export function buildMaskGradientShader(
       );
     }
     case "radial-gradient": {
-      let fillColors = fill.colors;
-      let fillPositions = fill.positions;
-      if (fill.interpolation === "oklab") {
-        const amplified = amplifyGradientStops(fillColors, fillPositions);
-        fillColors = amplified.colors;
-        fillPositions = amplified.positions;
-      }
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
       return (
         ck.Shader.MakeTwoPointConicalGradient(
           fill.center,
@@ -121,13 +100,8 @@ export function buildMaskGradientShader(
       );
     }
     case "angular-gradient": {
-      let fillColors = fill.colors;
-      let fillPositions = fill.positions;
-      if (fill.interpolation === "oklab") {
-        const amplified = amplifyGradientStops(fillColors, fillPositions);
-        fillColors = amplified.colors;
-        fillPositions = amplified.positions;
-      }
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
       return (
         ck.Shader.MakeSweepGradient(
           fill.cx,
@@ -170,6 +144,62 @@ export function determineMaskMode(
 }
 
 // ============================================
+// Offscreen Surface Pool (GPU 리소스 재사용)
+// ============================================
+
+interface PooledSurface {
+  surface: {
+    getCanvas(): Canvas;
+    flush(): void;
+    makeImageSnapshot(): unknown;
+    delete(): void;
+  };
+  width: number;
+  height: number;
+}
+
+/** 동일 크기 surface를 재사용하여 매 프레임 GPU alloc/dealloc 방지 */
+let surfacePool: PooledSurface | null = null;
+
+function acquireSurface(
+  ck: CanvasKit,
+  w: number,
+  h: number,
+): PooledSurface | null {
+  const cw = Math.ceil(w);
+  const ch = Math.ceil(h);
+
+  // 기존 surface가 같은 크기이면 재사용
+  if (surfacePool && surfacePool.width === cw && surfacePool.height === ch) {
+    return surfacePool;
+  }
+
+  // 크기 다르면 이전 surface 해제 후 새로 생성
+  if (surfacePool) {
+    surfacePool.surface.delete();
+    surfacePool = null;
+  }
+
+  const surface = ck.MakeSurface(cw, ch);
+  if (!surface) return null;
+
+  surfacePool = {
+    surface: surface as PooledSurface["surface"],
+    width: cw,
+    height: ch,
+  };
+  return surfacePool;
+}
+
+/** mask surface pool 해제 (HMR/teardown 시 호출) */
+export function clearMaskSurfacePool(): void {
+  if (surfacePool) {
+    surfacePool.surface.delete();
+    surfacePool = null;
+  }
+}
+
+// ============================================
 // Core: applyMaskImage
 // ============================================
 
@@ -182,15 +212,7 @@ export function determineMaskMode(
  * 3. RuntimeEffect로 alpha/luminance 합성 후 main canvas에 drawRect
  *
  * 리소스 관리: 생성한 SkObject는 모두 함수 내에서 delete() 처리.
- * offscreen surface는 매 호출마다 생성/삭제 (추후 최적화 가능).
- *
- * @param ck            - CanvasKit 인스턴스
- * @param canvas        - 렌더 대상 메인 Canvas
- * @param width         - 마스크 적용 영역 너비 (px)
- * @param height        - 마스크 적용 영역 높이 (px)
- * @param maskShader    - 미리 생성된 mask Shader (CanvasKit.Shader). 호출 후 delete 호출자 책임
- * @param mode          - alpha 또는 luminance
- * @param renderContent - offscreen Canvas에 content를 렌더하는 콜백
+ * offscreen surface는 pooling으로 재사용 (동일 크기 시 GPU alloc 스킵).
  */
 export function applyMaskImage(
   ck: CanvasKit,
@@ -201,64 +223,58 @@ export function applyMaskImage(
   mode: "alpha" | "luminance",
   renderContent: (offCanvas: Canvas) => void,
 ): void {
-  // offscreen surface 생성
-  const surface = ck.MakeSurface(Math.ceil(width), Math.ceil(height));
-  if (!surface) return;
+  const pooled = acquireSurface(ck, width, height);
+  if (!pooled) return;
+
+  const offCanvas = pooled.surface.getCanvas();
+  offCanvas.clear(ck.TRANSPARENT);
+  renderContent(offCanvas);
+  pooled.surface.flush();
+
+  const snapshot = pooled.surface.makeImageSnapshot();
+  if (!snapshot) return;
+
+  let contentShader: { delete(): void } | null = null;
+  let resultShader: { delete(): void } | null = null;
+  const paint = new ck.Paint();
 
   try {
-    const offCanvas = surface.getCanvas();
-    offCanvas.clear(ck.TRANSPARENT);
-    renderContent(offCanvas);
-    surface.flush();
-
-    const snapshot = surface.makeImageSnapshot();
-    if (!snapshot) return;
-
-    let contentShader: { delete(): void } | null = null;
-    let resultShader: { delete(): void } | null = null;
-    const paint = new ck.Paint();
-
-    try {
-      // content snapshot → shader
-      contentShader = (
-        snapshot as {
-          makeShaderOptions(
-            tx: unknown,
-            ty: unknown,
-            fm: unknown,
-            mm: unknown,
-          ): { delete(): void };
-        }
-      ).makeShaderOptions(
-        ck.TileMode.Clamp,
-        ck.TileMode.Clamp,
-        ck.FilterMode.Linear,
-        ck.MipmapMode.None,
-      );
-
-      // RuntimeEffect 합성: uniforms [mode(int → float)]
-      const effect = getMaskEffect(ck) as {
-        makeShaderWithChildren(
-          uniforms: Float32Array,
-          children: unknown[],
+    contentShader = (
+      snapshot as {
+        makeShaderOptions(
+          tx: unknown,
+          ty: unknown,
+          fm: unknown,
+          mm: unknown,
         ): { delete(): void };
-      };
-      const uniforms = new Float32Array([mode === "alpha" ? 0 : 1]);
-      resultShader = effect.makeShaderWithChildren(uniforms, [
-        contentShader,
-        maskShader,
-      ]);
+      }
+    ).makeShaderOptions(
+      ck.TileMode.Clamp,
+      ck.TileMode.Clamp,
+      ck.FilterMode.Linear,
+      ck.MipmapMode.None,
+    );
 
-      paint.setShader(resultShader as Parameters<typeof paint.setShader>[0]);
-      canvas.drawRect(ck.LTRBRect(0, 0, width, height), paint);
-    } finally {
-      paint.delete();
-      resultShader?.delete();
-      contentShader?.delete();
-      snapshot.delete();
-    }
+    const effect = getMaskEffect(ck) as {
+      makeShaderWithChildren(
+        uniforms: Float32Array,
+        children: unknown[],
+      ): { delete(): void };
+    };
+    const uniforms = new Float32Array([mode === "alpha" ? 0 : 1]);
+    resultShader = effect.makeShaderWithChildren(uniforms, [
+      contentShader,
+      maskShader,
+    ]);
+
+    paint.setShader(resultShader as Parameters<typeof paint.setShader>[0]);
+    canvas.drawRect(ck.LTRBRect(0, 0, width, height), paint);
   } finally {
-    surface.delete();
+    paint.delete();
+    resultShader?.delete();
+    contentShader?.delete();
+    (snapshot as { delete(): void }).delete();
+    // surface는 pool에 유지 (delete 안 함)
   }
 }
 
@@ -316,4 +332,5 @@ export function clearMaskCache(): void {
     (cachedEffect as { delete(): void }).delete();
   }
   cachedEffect = null;
+  clearMaskSurfacePool();
 }

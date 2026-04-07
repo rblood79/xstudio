@@ -13,7 +13,11 @@ import { selectAtom } from "jotai/utils";
 import type { SelectedElement } from "../../../inspector/types";
 import { computeSyntheticStyle } from "../../../../services/computedStyleService";
 import type { SyntheticComputedStyle } from "../../../../services/computedStyleService";
-import { DEFAULT_FONT_FAMILY } from "../../../fonts/customFonts";
+import {
+  DEFAULT_FONT_FAMILY,
+  extractFirstFontFamily,
+  normalizeFontWeight,
+} from "../../../fonts/customFonts";
 import { inferSizeMode } from "../../../stores/utils/sizeModeResolver";
 import type { SizeMode } from "../../../stores/utils/sizeModeResolver";
 
@@ -881,12 +885,7 @@ export const fontFamilyAtom = selectAtom(
         element?.computedStyle?.fontFamily ??
         DEFAULT_FONT_FAMILY,
     );
-    // CSS font-family 체인에서 첫 번째 패밀리만 추출하여 드롭다운 매칭
-    const first = raw
-      .split(",")[0]
-      .trim()
-      .replace(/^["']|["']$/g, "");
-    return first || DEFAULT_FONT_FAMILY;
+    return extractFirstFontFamily(raw);
   },
   (a, b) => a === b,
 );
@@ -1018,33 +1017,24 @@ export const typographyValuesAtom = selectAtom(
     const computed = element.computedStyle ?? {};
     const synthetic = computeSyntheticStyle(element);
 
-    // CSS font-family 체인에서 첫 번째 패밀리만 추출
     const rawFamily = String(
       style.fontFamily ?? computed.fontFamily ?? DEFAULT_FONT_FAMILY,
     );
-    const firstFamily =
-      rawFamily
-        .split(",")[0]
-        .trim()
-        .replace(/^["']|["']$/g, "") || DEFAULT_FONT_FAMILY;
+    const firstFamily = extractFirstFontFamily(rawFamily);
 
     return {
       fontFamily: firstFamily,
       fontSize: String(
         style.fontSize ?? computed.fontSize ?? synthetic.fontSize ?? "16px",
       ),
-      fontWeight: (() => {
-        const raw = String(
+      fontWeight: normalizeFontWeight(
+        String(
           style.fontWeight ??
             computed.fontWeight ??
             synthetic.fontWeight ??
             "400",
-        );
-        // "normal" → "400", "bold" → "700" 정규화
-        if (raw === "normal") return "400";
-        if (raw === "bold") return "700";
-        return raw;
-      })(),
+        ),
+      ),
       fontStyle: String(style.fontStyle ?? computed.fontStyle ?? "normal"),
       lineHeight: String(
         style.lineHeight ??
