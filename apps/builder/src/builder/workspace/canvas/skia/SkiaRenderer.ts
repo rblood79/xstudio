@@ -19,6 +19,7 @@ import type { SkiaRenderable, FrameType, CameraState } from "./types";
 import { createGPUSurface } from "./createSurface";
 import { recordWasmMetric, flushWasmMetrics } from "../utils/gpuProfilerCore";
 import type { TransitionManager } from "./transitionManager";
+import type { AnimationEngine } from "./animationEngine";
 
 export class SkiaRenderer {
   private ck: CanvasKit;
@@ -85,6 +86,7 @@ export class SkiaRenderer {
    * StoreRenderBridge가 주입. null이면 transition 미사용.
    */
   public transitionManager: TransitionManager | null = null;
+  public animationEngine: AnimationEngine | null = null;
 
   constructor(
     ck: CanvasKit,
@@ -516,6 +518,10 @@ export class SkiaRenderer {
 
     // Active transition이 있으면 idle을 content로 승격하여 매 프레임 재렌더링
     if (frameType === "idle" && this.transitionManager?.isActive()) {
+      frameType = "content";
+    }
+    // Active animation이 있으면 idle을 content로 승격하여 매 프레임 재렌더링
+    if (frameType === "idle" && this.animationEngine?.isActive()) {
       frameType = "content";
     }
 
