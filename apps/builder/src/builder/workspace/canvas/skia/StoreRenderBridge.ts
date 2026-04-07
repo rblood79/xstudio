@@ -414,11 +414,8 @@ export class StoreRenderBridge {
     }
 
     // Box / fallback
-    const tag = (element.tag ?? "").toLowerCase();
-    const isCollectionItem = tag === "gridlistitem" || tag === "listboxitem";
     return (
-      buildBoxNodeData({ element, layout, isCollectionItem }) ??
-      buildSkiaNodeData(element, ctx)
+      buildBoxNodeData({ element, layout }) ?? buildSkiaNodeData(element, ctx)
     );
   }
 

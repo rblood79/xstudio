@@ -431,16 +431,14 @@ describe("buildTextNodeData", () => {
     expect(withTag!.text?.content).toBe("Heading");
   });
 
-  test("no style → still renders (style 없는 자식 요소도 렌더 가능)", () => {
+  test("no style → null", () => {
     const el = { id: "x", tag: "Text", props: { children: "Hi" } } as Element;
     const node = buildTextNodeData({
       element: el,
       layout: undefined,
       theme: "light",
     });
-    // style이 없어도 기본값으로 렌더 가능 (GridList 자식 등)
-    expect(node).not.toBeNull();
-    expect(node?.text?.content).toBe("Hi");
+    expect(node).toBeNull();
   });
 
   test("display:none → visible:false (not null)", () => {

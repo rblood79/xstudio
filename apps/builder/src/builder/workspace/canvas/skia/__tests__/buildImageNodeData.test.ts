@@ -176,14 +176,14 @@ describe("buildImageNodeData", () => {
     expect(node!.image!.altText).toBeUndefined();
   });
 
-  test("no style → still renders with defaults", () => {
+  test("no style → null", () => {
     const el = { id: "x", tag: "Image", props: { src: "a.jpg" } } as Element;
     const node = buildImageNodeData({
       element: el,
       layout: undefined,
       skImage: null,
     });
-    expect(node).not.toBeNull();
+    expect(node).toBeNull();
   });
 
   test("display:none → visible:false", () => {

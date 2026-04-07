@@ -686,19 +686,12 @@ export function applyImplicitStyles(
       flexDirection: "column",
       // CSS grid 1fr 트랙 내에서 축소되도록 minWidth: 0 (CSS minmax(0, 1fr) 동기화)
       minWidth: parentStyle.minWidth ?? 0,
-      overflow: parentStyle.overflow ?? "hidden",
       gap: parentStyle.gap ?? 2,
       paddingTop: parentStyle.paddingTop ?? 12,
       paddingBottom: parentStyle.paddingBottom ?? 12,
       paddingLeft: parentStyle.paddingLeft ?? 16,
       paddingRight: parentStyle.paddingRight ?? 16,
-      // 시각적 속성 — CSS .react-aria-GridListItem 동기화
-      // 색상값은 specs/primitives/colors.ts의 lightColors 기준 (dark mode는 themeWatcher에서 전환)
       borderWidth: parentStyle.borderWidth ?? 1,
-      borderColor: parentStyle.borderColor ?? "#d4d4d4",
-      borderStyle: parentStyle.borderStyle ?? "solid",
-      borderRadius: parentStyle.borderRadius ?? 8,
-      backgroundColor: parentStyle.backgroundColor ?? "#fafafa",
     });
     filteredChildren = injectCollectionItemFontStyles(filteredChildren);
   }

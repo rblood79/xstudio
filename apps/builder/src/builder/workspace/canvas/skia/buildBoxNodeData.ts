@@ -52,8 +52,8 @@ interface BoxBuildInput {
 export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
   const { element, layout, scrollState, isCollectionItem, isCardItem } = input;
 
-  const style =
-    (element.props?.style as Record<string, unknown> | undefined) ?? {};
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  if (!style) return null;
 
   const converted = convertStyle(
     style as Parameters<typeof convertStyle>[0],
@@ -140,7 +140,7 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
   // Border radius
   const defaultBr = borderRadius ?? 0;
   const br =
-    (isCardItem || isCollectionItem) &&
+    isCardItem &&
     (typeof defaultBr === "number" ? defaultBr : (defaultBr?.[0] ?? 0)) === 0
       ? 8
       : defaultBr;
@@ -212,8 +212,8 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
         (stroke.color & 0xff) / 255,
         stroke.alpha ?? 1,
       )
-    : isCardItem || isCollectionItem
-      ? Float32Array.of(0.83, 0.83, 0.83, 1) // #d4d4d4
+    : isCardItem
+      ? Float32Array.of(0.83, 0.83, 0.83, 1)
       : undefined;
 
   return {
@@ -242,8 +242,7 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
           : {}),
       borderRadius: br,
       strokeColor,
-      strokeWidth:
-        stroke?.width ?? (isCardItem || isCollectionItem ? 1 : undefined),
+      strokeWidth: stroke?.width ?? (isCardItem ? 1 : undefined),
     },
   } as SkiaNodeData;
 }
