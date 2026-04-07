@@ -19,6 +19,8 @@ import type { Element } from "../../../../types/core/store.types";
 import {
   applyMaskLayerGradient,
   buildMaskGradientShader,
+  determineMaskMode,
+  applyMaskImage,
 } from "./nodeRendererMask";
 import { getSkiaNode } from "./useSkiaNode";
 import { getDragVisualOffset, getSiblingOffset } from "./nodeRendererTree";
