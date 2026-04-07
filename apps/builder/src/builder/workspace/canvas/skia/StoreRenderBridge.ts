@@ -61,7 +61,7 @@ interface TransitionDef {
   easing: string;
 }
 
-function parseTransitionShorthand(value: string): TransitionDef[] {
+export function parseTransitionShorthand(value: string): TransitionDef[] {
   if (!value || value === "none") return [];
   return value.split(",").map((part) => {
     const tokens = part.trim().split(/\s+/);
