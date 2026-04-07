@@ -54,7 +54,6 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
 
   const style =
     (element.props?.style as Record<string, unknown> | undefined) ?? {};
-  // style이 없어도 isCollectionItem/isCardItem이면 기본 시각 속성으로 렌더 가능
 
   const converted = convertStyle(
     style as Parameters<typeof convertStyle>[0],

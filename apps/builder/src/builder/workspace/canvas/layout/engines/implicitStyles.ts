@@ -686,6 +686,7 @@ export function applyImplicitStyles(
       flexDirection: "column",
       // CSS grid 1fr 트랙 내에서 축소되도록 minWidth: 0 (CSS minmax(0, 1fr) 동기화)
       minWidth: parentStyle.minWidth ?? 0,
+      overflow: parentStyle.overflow ?? "hidden",
       gap: parentStyle.gap ?? 2,
       paddingTop: parentStyle.paddingTop ?? 12,
       paddingBottom: parentStyle.paddingBottom ?? 12,
