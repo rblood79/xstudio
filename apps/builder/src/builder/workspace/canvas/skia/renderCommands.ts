@@ -22,6 +22,7 @@ import {
   determineMaskMode,
   applyMaskImage,
 } from "./nodeRendererMask";
+import { getSkImage, loadSkImage } from "./imageCache";
 import { getSkiaNode } from "./useSkiaNode";
 import { getDragVisualOffset, getSiblingOffset } from "./nodeRendererTree";
 import {
@@ -848,6 +849,63 @@ export function executeRenderCommands(
               }
             },
           });
+        } else if (
+          cmd.maskImage &&
+          cmd.maskImage.type === "image" &&
+          cmd.maskImage.imageUrl
+        ) {
+          // image mask: imageCache에서 SkImage 조회
+          const maskSkImage = getSkImage(cmd.maskImage.imageUrl);
+          if (maskSkImage) {
+            const maskInfo = cmd.maskImage;
+            const maskWidth = cmd.width;
+            const maskHeight = cmd.height;
+            canvas.saveLayer();
+            maskLayerStack.push({
+              maskImage: maskInfo,
+              width: maskWidth,
+              height: maskHeight,
+              apply: () => {
+                const imgShader = (
+                  maskSkImage as {
+                    makeShaderOptions(
+                      tx: unknown,
+                      ty: unknown,
+                      fm: unknown,
+                      mm: unknown,
+                    ): { delete(): void };
+                  }
+                ).makeShaderOptions(
+                  ck.TileMode.Clamp,
+                  ck.TileMode.Clamp,
+                  ck.FilterMode.Linear,
+                  ck.MipmapMode.None,
+                );
+                try {
+                  const mode = determineMaskMode(
+                    maskInfo.imageUrl,
+                    undefined,
+                    maskInfo.mode,
+                  );
+                  applyMaskImage(
+                    ck,
+                    canvas,
+                    maskWidth,
+                    maskHeight,
+                    imgShader,
+                    mode,
+                    () => {},
+                  );
+                } finally {
+                  imgShader.delete();
+                }
+              },
+            });
+          } else {
+            // 이미지 미로딩 → 비동기 로드 트리거, 이번 프레임은 mask 없이
+            loadSkImage(cmd.maskImage.imageUrl);
+            maskLayerStack.push(null);
+          }
         } else {
           maskLayerStack.push(null);
         }
