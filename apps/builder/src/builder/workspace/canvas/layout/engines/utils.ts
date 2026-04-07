@@ -2825,6 +2825,30 @@ export const TEXT_LEAF_TAGS = new Set([
   "paragraph",
 ]);
 
+/** intrinsic 크기 키워드 — height/width에서 enrichWithIntrinsicSize가 개입해야 하는 값 */
+const INTRINSIC_SIZE_KEYWORDS = new Set([
+  "fit-content",
+  "min-content",
+  "max-content",
+  "auto",
+]);
+
+/** replaced element 태그 — 자연 치수(natural size)를 가져야 하는 요소 */
+const IMAGE_INTRINSIC_TAGS = new Set(["image", "avatar", "logo", "thumbnail"]);
+
+/** spec shapes 기반 입력 컴포넌트 — contentHeight=0이어도 height 주입이 필요한 태그 */
+const SPEC_SHAPES_INPUT_TAGS = new Set([
+  "dropdown",
+  "breadcrumbs",
+  // ProgressBar/Meter/ProgressCircle: spec shapes가 렌더링, height 미설정 시 0이 됨
+  "progressbar",
+  "progress",
+  "loadingbar",
+  "progresscircle",
+  "meter",
+  "gauge",
+]);
+
 /**
  * 리프 UI 컴포넌트에 intrinsic size(width/height)를 주입
  *
@@ -2857,48 +2881,30 @@ export function enrichWithIntrinsicSize(
   const isOverflowClipped = overflow !== "visible";
 
   const rawHeight = style?.height;
-  const INTRINSIC_HEIGHT_KEYWORDS = new Set([
-    "fit-content",
-    "min-content",
-    "max-content",
-    "auto",
-  ]);
   const needsHeight =
-    !rawHeight || INTRINSIC_HEIGHT_KEYWORDS.has(rawHeight as string);
+    !rawHeight || INTRINSIC_SIZE_KEYWORDS.has(rawHeight as string);
 
   const rawWidth = style?.width;
-  const INTRINSIC_WIDTH_KEYWORDS = new Set([
-    "fit-content",
-    "min-content",
-    "max-content",
-    "auto",
-  ]);
   // C1: 모든 요소에서 intrinsic width keyword(fit-content/min-content/max-content) 처리
   // INLINE_BLOCK 태그의 width:auto 자동 주입은 기존 동작 유지
   const hasExplicitIntrinsicWidthKeyword =
     typeof rawWidth === "string" &&
     rawWidth !== "auto" &&
-    INTRINSIC_WIDTH_KEYWORDS.has(rawWidth);
+    INTRINSIC_SIZE_KEYWORDS.has(rawWidth);
   // Flex 자식인 TEXT_LEAF_TAGS(Label, Description 등)도 intrinsic width 필요:
   // Block layout에서는 자동 stretch되지만, Flex layout에서는 Taffy가 content size를
   // 알 수 없어 width=0으로 처리함 (Checkbox/Radio/Switch 내부 Label 세로 출력 버그)
   // Image: replaced element — auto/fit-content 시 자연 치수 사용 필요
-  const IMAGE_INTRINSIC_TAGS = new Set([
-    "image",
-    "avatar",
-    "logo",
-    "thumbnail",
-  ]);
   const needsWidth =
     hasExplicitIntrinsicWidthKeyword ||
     (INLINE_BLOCK_TAGS.has(tag) &&
-      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
+      (!rawWidth || INTRINSIC_SIZE_KEYWORDS.has(rawWidth as string))) ||
     (isFlexChild &&
       TEXT_LEAF_TAGS.has(tag) &&
-      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
+      (!rawWidth || INTRINSIC_SIZE_KEYWORDS.has(rawWidth as string))) ||
     (IMAGE_INTRINSIC_TAGS.has(tag) &&
       typeof rawWidth === "string" &&
-      INTRINSIC_WIDTH_KEYWORDS.has(rawWidth));
+      INTRINSIC_SIZE_KEYWORDS.has(rawWidth));
 
   if (!needsHeight && !needsWidth) return element;
 
@@ -2934,17 +2940,6 @@ export function enrichWithIntrinsicSize(
   // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
   // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
   // Select: Compositional Architecture — Card와 동일하게 자식 기반 높이 + padding 경로
-  const SPEC_SHAPES_INPUT_TAGS = new Set([
-    "dropdown",
-    "breadcrumbs",
-    // ProgressBar/Meter/ProgressCircle: spec shapes가 렌더링, height 미설정 시 0이 됨
-    "progressbar",
-    "progress",
-    "loadingbar",
-    "progresscircle",
-    "meter",
-    "gauge",
-  ]);
   if (
     box.contentHeight <= 0 &&
     !needsWidth &&

@@ -130,22 +130,28 @@ export class SkiaFontManager {
     this.saveToCache(key, buffer).catch(() => {});
   }
 
+  /** family 이름으로 시작하는 모든 복합키를 반환 */
+  private keysForFamily(family: string): string[] {
+    const prefix = family + "::";
+    const keys: string[] = [];
+    for (const key of this.typefaces.keys()) {
+      if (key.startsWith(prefix)) keys.push(key);
+    }
+    return keys;
+  }
+
   /**
    * 특정 폰트 패밀리의 모든 변형을 언로드한다.
    * Typeface 메모리 해제 + FontMgr 재구성 트리거.
    */
   unloadFont(family: string): void {
-    const prefix = family + "::";
-    let deleted = false;
-    for (const [key, typeface] of this.typefaces) {
-      if (key.startsWith(prefix)) {
-        typeface.delete();
-        this.typefaces.delete(key);
-        this.buffers.delete(key);
-        deleted = true;
-      }
+    const keys = this.keysForFamily(family);
+    for (const key of keys) {
+      this.typefaces.get(key)!.delete();
+      this.typefaces.delete(key);
+      this.buffers.delete(key);
     }
-    if (deleted) {
+    if (keys.length > 0) {
       this.nameMap.delete(family);
       this.dirty = true;
     }
@@ -202,11 +208,7 @@ export class SkiaFontManager {
       return this.typefaces.has(makeKey(family, weight, style));
     }
     // family-only: 아무 변형이라도 존재하는지 확인
-    const prefix = family + "::";
-    for (const key of this.typefaces.keys()) {
-      if (key.startsWith(prefix)) return true;
-    }
-    return false;
+    return this.keysForFamily(family).length > 0;
   }
 
   /** 로드된 고유 폰트 패밀리 목록 (중복 제거) */
@@ -230,11 +232,8 @@ export class SkiaFontManager {
     if (weight !== undefined || style !== undefined) {
       return this.typefaces.get(makeKey(family, weight, style));
     }
-    const prefix = family + "::";
-    for (const [key, typeface] of this.typefaces) {
-      if (key.startsWith(prefix)) return typeface;
-    }
-    return undefined;
+    const key = this.keysForFamily(family)[0];
+    return key !== undefined ? this.typefaces.get(key) : undefined;
   }
 
   /** 모든 리소스 해제 */

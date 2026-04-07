@@ -173,7 +173,6 @@ export function tokenize(text: string, wordBreak: string = "normal"): Token[] {
  */
 export function preprocessTokens(tokens: Token[]): Token[] {
   const result: Token[] = [];
-  // slice()로 복사하여 in-place 수정해도 원본 불변
   const toks = tokens.map((t) => ({ ...t }));
 
   for (let i = 0; i < toks.length; i++) {

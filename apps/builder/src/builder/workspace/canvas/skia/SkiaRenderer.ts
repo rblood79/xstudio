@@ -497,10 +497,13 @@ export class SkiaRenderer {
       : undefined;
 
     // 둘 다 있으면 병합, 하나만 있으면 그대로 사용
-    const allDirty =
-      dirtyTransition && dirtyAnimation
-        ? new Set([...dirtyTransition, ...dirtyAnimation])
-        : (dirtyTransition ?? dirtyAnimation ?? new Set<string>());
+    let allDirty: Set<string>;
+    if (dirtyTransition && dirtyAnimation) {
+      allDirty = new Set<string>(dirtyTransition);
+      for (const id of dirtyAnimation) allDirty.add(id);
+    } else {
+      allDirty = dirtyTransition ?? dirtyAnimation ?? new Set<string>();
+    }
     if (allDirty.size === 0) return false;
 
     // transition(낮은 우선순위) → animation(높은 우선순위) 순으로 적용
@@ -569,11 +572,12 @@ export class SkiaRenderer {
   ): void {
     if (this.disposed || !this.contentNode) return;
 
-    this.tickDevMetrics(performance.now());
+    const now = performance.now();
+    this.tickDevMetrics(now);
 
     if (process.env.NODE_ENV === "development") {
       if (this.devFrameWindowStartMs <= 0) {
-        this.devFrameWindowStartMs = performance.now();
+        this.devFrameWindowStartMs = now;
         this.devFrameCount = 0;
         this.devIdleFrameCount = 0;
       }
@@ -590,7 +594,7 @@ export class SkiaRenderer {
       }
     }
 
-    const frameStart = performance.now();
+    const frameStart = now;
     let frameType = this.classifyFrame(
       registryVersion,
       camera,
@@ -600,7 +604,7 @@ export class SkiaRenderer {
 
     // transition/animation 보간값을 SkiaNodeData에 override.
     // dirty 노드가 있으면 idle을 content로 승격하여 매 프레임 재렌더링.
-    const hasAnimationChanges = this.applyAnimationOverrides(performance.now());
+    const hasAnimationChanges = this.applyAnimationOverrides(now);
     if (frameType === "idle" && hasAnimationChanges) {
       frameType = "content";
     }
@@ -613,18 +617,11 @@ export class SkiaRenderer {
         break;
 
       case "present":
-        this.present(cullingBounds, camera);
-        break;
-
       case "camera-only":
         this.present(cullingBounds, camera);
         break;
 
       case "content":
-        this.renderContent(cullingBounds, camera);
-        this.present(cullingBounds, camera);
-        break;
-
       case "full":
         this.renderContent(cullingBounds, camera);
         this.present(cullingBounds, camera);
@@ -636,8 +633,7 @@ export class SkiaRenderer {
     }
 
     if (process.env.NODE_ENV === "development") {
-      const now = performance.now();
-      const elapsed = now - this.devFrameWindowStartMs;
+      const elapsed = performance.now() - this.devFrameWindowStartMs;
       if (elapsed >= 1000 && this.devFrameCount > 0) {
         const ratio = this.devIdleFrameCount / this.devFrameCount;
         const nonIdle = this.devFrameCount - this.devIdleFrameCount;
@@ -645,7 +641,7 @@ export class SkiaRenderer {
         recordWasmMetric("idleFrameRatio", ratio);
         recordWasmMetric("presentFramesPerSec", presentsPerSec);
         flushWasmMetrics();
-        this.devFrameWindowStartMs = now;
+        this.devFrameWindowStartMs = performance.now();
         this.devFrameCount = 0;
         this.devIdleFrameCount = 0;
       }

@@ -61,6 +61,8 @@ export interface TextMeasurer {
   ): TextMeasureResult;
 }
 
+import { buildFontString } from "./canvas2dSegmentCache";
+
 // ============================================
 // Canvas 2D Implementation
 // ============================================
@@ -90,14 +92,7 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
     if (!ctx) {
       return text.length * (style.fontSize * 0.5);
     }
-    // fontStyle(italic/oblique)을 ctx.font 문자열에 포함
-    const fontStyleStr =
-      style.fontStyle === 1 || style.fontStyle === "italic"
-        ? "italic "
-        : style.fontStyle === 2 || style.fontStyle === "oblique"
-          ? "oblique "
-          : "";
-    ctx.font = `${fontStyleStr}${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
+    ctx.font = buildFontString(style);
     let width = ctx.measureText(text).width;
     // letterSpacing: 각 문자 사이 간격 수동 가산
     if (style.letterSpacing && style.letterSpacing !== 0) {

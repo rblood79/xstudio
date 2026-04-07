@@ -478,14 +478,9 @@ export function toTaffyDisplay(
     return { taffyDisplay: "none" };
   }
 
-  // flex (native) — inner가 flex이면 outer 무관 (flex, inline-flex 모두)
-  if (parsed.inner === "flex") {
-    return { taffyDisplay: "flex" };
-  }
-
-  // grid (native) — inner가 grid이면 outer 무관 (grid, inline-grid 모두)
-  if (parsed.inner === "grid") {
-    return { taffyDisplay: "grid" };
+  // flex/grid (native) — inner 값 그대로 사용, outer 무관 (inline-flex/inline-grid 포함)
+  if (parsed.inner === "flex" || parsed.inner === "grid") {
+    return { taffyDisplay: parsed.inner };
   }
 
   // inline-block (outer=inline, inner=flow-root) → 크기 고정 block 리프

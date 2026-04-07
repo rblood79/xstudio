@@ -205,6 +205,8 @@ declare global {
   }
 }
 
-window.__composition_PROFILER = profiler;
+if (import.meta.env.DEV) {
+  window.__composition_PROFILER = profiler;
+}
 
 export { profiler };
