@@ -289,6 +289,23 @@ export type { FontFaceAsset, FontRegistryV2 };
 /** 기본 폰트 패밀리 — body 상속, 스타일 패널 폴백 등에서 참조 */
 export const DEFAULT_FONT_FAMILY = "Pretendard";
 
+/** CSS font-family 체인에서 첫 번째 패밀리 이름만 추출 */
+export function extractFirstFontFamily(raw: string): string {
+  return (
+    raw
+      .split(",")[0]
+      .trim()
+      .replace(/^["']|["']$/g, "") || DEFAULT_FONT_FAMILY
+  );
+}
+
+/** CSS font-weight 문자열 → 숫자 문자열 정규화 ("normal"→"400", "bold"→"700") */
+export function normalizeFontWeight(raw: string): string {
+  if (raw === "normal") return "400";
+  if (raw === "bold") return "700";
+  return raw;
+}
+
 export const DEFAULT_FONT_OPTIONS = [
   { value: "reset", label: "Reset" },
   { value: "Pretendard", label: "Pretendard" },
@@ -355,6 +372,9 @@ export function getFontsourceUrl(family: string, weight: string): string {
   const slug = toFontsourceSlug(family);
   return `https://cdn.jsdelivr.net/npm/@fontsource/${slug}/files/${slug}-latin-${weight}-normal.woff2`;
 }
+
+/** Variable font: 100~900 전체 weight 지원 */
+const VARIABLE_FONT_FAMILIES = new Set(["Pretendard", "Inter"]);
 
 /** Google Fonts family → weights 빠른 조회 */
 const GOOGLE_FONT_WEIGHT_MAP = new Map<string, string[]>(
@@ -446,8 +466,8 @@ export function getFontWeightOptions(
 ): Array<{ value: string; label: string }> {
   let weights: string[];
 
-  if (family === "Pretendard") {
-    weights = ["400", "500", "600", "700"];
+  if (VARIABLE_FONT_FAMILIES.has(family)) {
+    weights = ["100", "200", "300", "400", "500", "600", "700", "800", "900"];
   } else if (GOOGLE_FONT_WEIGHT_MAP.has(family)) {
     weights = GOOGLE_FONT_WEIGHT_MAP.get(family)!;
   } else {

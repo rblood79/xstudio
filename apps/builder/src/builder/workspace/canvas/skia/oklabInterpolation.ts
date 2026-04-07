@@ -82,3 +82,69 @@ export function interpolateOklab(
   const [r, g, bl] = oklabToSrgb(L, a, b);
   return Float32Array.of(r, g, bl, alpha);
 }
+
+/**
+ * Gradient stop 증폭 — 각 인접 stop 쌍 사이에 oklab 보간 중간점 삽입.
+ *
+ * CanvasKit은 sRGB 공간에서만 gradient를 그릴 수 있으므로,
+ * oklab 보간 결과를 sRGB stop으로 변환하여 주입한다.
+ *
+ * @param colors - sRGB Float32Array[] (각 요소 [r, g, b, a])
+ * @param positions - gradient 위치 [0-1]
+ * @param subdivisions - 각 stop 쌍 사이에 삽입할 중간점 수 (기본 8)
+ */
+/**
+ * oklab 보간이 필요한 경우 gradient stops를 증폭한다.
+ * interpolation이 "oklab"이 아니면 원본 그대로 반환.
+ */
+export function maybeAmplifyOklab(
+  colors: Float32Array[],
+  positions: number[],
+  interpolation?: string,
+): { colors: Float32Array[]; positions: number[] } {
+  if (interpolation === "oklab") {
+    return amplifyGradientStops(colors, positions);
+  }
+  return { colors, positions };
+}
+
+export function amplifyGradientStops(
+  colors: Float32Array[],
+  positions: number[],
+  subdivisions = 8,
+): { colors: Float32Array[]; positions: number[] } {
+  if (colors.length < 2) return { colors, positions };
+
+  const outColors: Float32Array[] = [];
+  const outPositions: number[] = [];
+
+  for (let i = 0; i < colors.length - 1; i++) {
+    const c0 = colors[i];
+    const c1 = colors[i + 1];
+    const p0 = positions[i];
+    const p1 = positions[i + 1];
+
+    const [L0, a0, b0] = srgbToOklab(c0[0], c0[1], c0[2]);
+    const [L1, a1, b1] = srgbToOklab(c1[0], c1[1], c1[2]);
+
+    outColors.push(c0);
+    outPositions.push(p0);
+
+    for (let j = 1; j <= subdivisions; j++) {
+      const t = j / (subdivisions + 1);
+      const [r, g, bl] = oklabToSrgb(
+        L0 + (L1 - L0) * t,
+        a0 + (a1 - a0) * t,
+        b0 + (b1 - b0) * t,
+      );
+      const alpha = c0[3] + (c1[3] - c0[3]) * t;
+      outColors.push(Float32Array.of(r, g, bl, alpha));
+      outPositions.push(p0 + (p1 - p0) * t);
+    }
+  }
+
+  outColors.push(colors[colors.length - 1]);
+  outPositions.push(positions[positions.length - 1]);
+
+  return { colors: outColors, positions: outPositions };
+}

@@ -25,6 +25,8 @@ import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
 import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
 import { onLayoutPublished } from "../layout";
+import type { TransitionManager } from "./transitionManager";
+import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
 
 function isTextElement(element: Element): boolean {
   return TEXT_TAGS.has(element.tag);
@@ -48,7 +50,52 @@ const SPEC_PREFERRED_TEXT_TAGS = new Set([
   "Description", // InlineAlert parent font delegation
 ]);
 
+/** Collection item 태그 — 기본 border/background 스타일 적용 대상 */
+const COLLECTION_ITEM_TAGS = new Set(["GridListItem", "ListBoxItem"]);
+
 const EMPTY_LAYOUT_MAP = new Map<string, ComputedLayout>();
+
+// ---------------------------------------------------------------------------
+// CSS Transition 헬퍼
+// ---------------------------------------------------------------------------
+
+interface TransitionDef {
+  property: string;
+  duration: number; // ms
+  easing: string;
+}
+
+export function parseTransitionShorthand(value: string): TransitionDef[] {
+  if (!value || value === "none") return [];
+  return value.split(",").map((part) => {
+    const tokens = part.trim().split(/\s+/);
+    const property = tokens[0] ?? "all";
+    const durationStr = tokens[1] ?? "0s";
+    let duration = parseFloat(durationStr);
+    if (!durationStr.endsWith("ms") && durationStr.endsWith("s")) {
+      duration *= 1000;
+    }
+    const easing = tokens[2] ?? "ease";
+    return { property, duration, easing };
+  });
+}
+
+/**
+ * element.props.style에서 numeric 속성값을 추출한다.
+ * 문자열(예: "16px")인 경우 parseFloat으로 숫자 추출.
+ */
+function getNumericStyleValue(
+  style: Record<string, unknown>,
+  property: string,
+): number | undefined {
+  const val = style[property];
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+}
 
 /** Spec 경로 사용 여부: TAG_SPEC_MAP 등록 + TEXT_TAGS 미등록 또는 delegation 필요 */
 function useSpecPath(element: Element): boolean {
@@ -71,6 +118,8 @@ export class StoreRenderBridge {
   private pendingResync: (() => void) | null = null;
   /** 이전 elementsMap 참조 (증분 갱신용) */
   private prevElementsMap: Map<string, Element> | null = null;
+  /** CSS transition 애니메이션 매니저 (선택 연결) */
+  public transitionManager: TransitionManager | null = null;
 
   /**
    * Store에 연결하여 elementsMap 변경 시 skiaNodeRegistry를 갱신.
@@ -190,6 +239,7 @@ export class StoreRenderBridge {
         // 삭제된 요소
         unregisterSkiaNode(id);
         this.registeredIds.delete(id);
+        this.transitionManager?.remove(id);
         // 이미지 해제
         const oldSrc = this.loadedImageSrcs.get(id);
         if (oldSrc) {
@@ -197,6 +247,14 @@ export class StoreRenderBridge {
           this.loadedImageSrcs.delete(id);
         }
         continue;
+      }
+
+      // CSS transition 트리거: 이전 element가 있고 transitionManager가 연결된 경우
+      if (this.transitionManager && this.prevElementsMap) {
+        const prevElement = this.prevElementsMap.get(id);
+        if (prevElement && prevElement !== element) {
+          this.triggerTransitions(id, prevElement, element);
+        }
       }
 
       // 추가 또는 변경된 요소 rebuild
@@ -326,9 +384,66 @@ export class StoreRenderBridge {
     }
 
     // Box / fallback
+    const isCollectionItem = COLLECTION_ITEM_TAGS.has(element.tag);
     return (
-      buildBoxNodeData({ element, layout }) ?? buildSkiaNodeData(element, ctx)
+      buildBoxNodeData({ element, layout, isCollectionItem }) ??
+      buildSkiaNodeData(element, ctx)
     );
+  }
+
+  /**
+   * CSS transition 트리거: 이전/현재 element style 비교 후
+   * 변경된 numeric 속성에 대해 transitionManager.start() 호출.
+   */
+  private triggerTransitions(
+    elementId: string,
+    prevElement: Element,
+    nextElement: Element,
+  ): void {
+    const tm = this.transitionManager;
+    if (!tm) return;
+
+    const nextStyle = (nextElement.props as Record<string, unknown>)?.style as
+      | Record<string, unknown>
+      | undefined;
+    if (!nextStyle) return;
+
+    const transitionValue = nextStyle.transition as string | undefined;
+    if (!transitionValue || transitionValue === "none") return;
+
+    const defs = parseTransitionShorthand(transitionValue);
+    if (defs.length === 0) return;
+
+    const prevStyle = ((prevElement.props as Record<string, unknown>)?.style ??
+      {}) as Record<string, unknown>;
+
+    for (const def of defs) {
+      const { property, duration, easing } = def;
+      if (duration <= 0) continue;
+
+      // "all" 처리: ANIMATABLE_NUMERIC_PROPERTIES 전체 검사
+      const targetProps =
+        property === "all"
+          ? ANIMATABLE_NUMERIC_PROPERTIES
+          : ANIMATABLE_NUMERIC_PROPERTIES.has(property)
+            ? new Set([property])
+            : null;
+
+      if (!targetProps) continue;
+
+      for (const prop of targetProps) {
+        const prevVal = getNumericStyleValue(prevStyle, prop);
+        const nextVal = getNumericStyleValue(nextStyle, prop);
+
+        if (
+          prevVal !== undefined &&
+          nextVal !== undefined &&
+          prevVal !== nextVal
+        ) {
+          tm.start(elementId, prop, prevVal, nextVal, duration, easing);
+        }
+      }
+    }
   }
 
   /**

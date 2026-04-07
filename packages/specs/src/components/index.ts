@@ -10,6 +10,10 @@
 export { ButtonSpec } from "./Button.spec";
 export type { ButtonProps } from "./Button.spec";
 
+// Text
+export { TextSpec } from "./Text.spec";
+export type { TextProps } from "./Text.spec";
+
 // Badge
 export { BadgeSpec } from "./Badge.spec";
 export type { BadgeProps } from "./Badge.spec";

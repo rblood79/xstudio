@@ -9,13 +9,14 @@
 
 import type { CanvasKit, Paint } from "canvaskit-wasm";
 import type { FillStyle } from "./types";
+import { maybeAmplifyOklab } from "./oklabInterpolation";
 
 /**
  * Float32Array[] → flat Float32Array 변환 (CanvasKit WASM 호환성 보장)
  * MakeLinearGradient 등은 InputFlexibleColorArray를 받지만,
  * flat Float32Array가 가장 안전한 형식이다.
  */
-function flattenColors(colors: Float32Array[]): Float32Array {
+export function flattenColors(colors: Float32Array[]): Float32Array {
   const result = new Float32Array(colors.length * 4);
   for (let i = 0; i < colors.length; i++) {
     result[i * 4] = colors[i][0];
@@ -24,6 +25,46 @@ function flattenColors(colors: Float32Array[]): Float32Array {
     result[i * 4 + 3] = colors[i][3];
   }
   return result;
+}
+
+/**
+ * CSS radial-gradient 키워드를 반지름 수치로 변환.
+ *
+ * @param keyword - CSS extent-keyword (closest-side, farthest-side, closest-corner, farthest-corner)
+ * @param cx - 중심 x (요소 내 좌표)
+ * @param cy - 중심 y (요소 내 좌표)
+ * @param w  - 요소 너비
+ * @param h  - 요소 높이
+ * @returns rx, ry (ellipse 반지름)
+ */
+export function resolveRadialExtent(
+  keyword: string,
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+): { rx: number; ry: number } {
+  const left = cx,
+    right = w - cx,
+    top = cy,
+    bottom = h - cy;
+  switch (keyword) {
+    case "closest-side":
+      return { rx: Math.min(left, right), ry: Math.min(top, bottom) };
+    case "farthest-side":
+      return { rx: Math.max(left, right), ry: Math.max(top, bottom) };
+    case "closest-corner":
+      return {
+        rx: Math.sqrt(Math.min(left, right) ** 2 + Math.min(top, bottom) ** 2),
+        ry: Math.sqrt(Math.min(left, right) ** 2 + Math.min(top, bottom) ** 2),
+      };
+    case "farthest-corner":
+    default:
+      return {
+        rx: Math.sqrt(Math.max(left, right) ** 2 + Math.max(top, bottom) ** 2),
+        ry: Math.sqrt(Math.max(left, right) ** 2 + Math.max(top, bottom) ** 2),
+      };
+  }
 }
 
 /**
@@ -49,12 +90,14 @@ export function applyFill(
     }
 
     case "linear-gradient": {
-      const flatColors = flattenColors(fill.colors);
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
+      const flatColors = flattenColors(fillColors);
       const shader = ck.Shader.MakeLinearGradient(
         fill.start,
         fill.end,
         flatColors,
-        fill.positions,
+        fillPositions,
         fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
       );
       if (!shader) {
@@ -73,14 +116,16 @@ export function applyFill(
     }
 
     case "radial-gradient": {
-      const flatColors = flattenColors(fill.colors);
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
+      const flatColors = flattenColors(fillColors);
       const shader = ck.Shader.MakeTwoPointConicalGradient(
         fill.center,
         fill.startRadius,
         fill.center,
         fill.endRadius,
         flatColors,
-        fill.positions,
+        fillPositions,
         fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
       );
       if (!shader) {
@@ -103,14 +148,16 @@ export function applyFill(
     }
 
     case "angular-gradient": {
-      const flatColors = flattenColors(fill.colors);
+      const { colors: fillColors, positions: fillPositions } =
+        maybeAmplifyOklab(fill.colors, fill.positions, fill.interpolation);
+      const flatColors = flattenColors(fillColors);
       // MakeSweepGradient(cx, cy, colors, positions, tileMode, localMatrix, flags)
       // localMatrix로 CSS conic-gradient(12시) → CanvasKit(3시) 보정
       const shader = ck.Shader.MakeSweepGradient(
         fill.cx,
         fill.cy,
         flatColors,
-        fill.positions,
+        fillPositions,
         fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
         fill.rotationMatrix ?? null, // localMatrix로 -90° 보정
         0, // flags

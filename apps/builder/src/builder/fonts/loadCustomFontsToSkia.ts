@@ -14,8 +14,54 @@ import { GOOGLE_FONT_DEFS, getFontsourceUrl } from "./customFonts";
 /** 기본 폰트 + Google Fonts — unloadFont 대상에서 제외 */
 const PROTECTED_FAMILIES = new Set([
   "Pretendard",
+  "Inter",
   ...GOOGLE_FONT_DEFS.map((d) => d.family),
 ]);
+
+/**
+ * 빌트인 Variable 폰트를 Skia에 로드한다.
+ *
+ * Variable font = 모든 weight(100~900) + OpenType features 단일 파일.
+ * - Pretendard Variable: cv02/cv03/cv04/cv11 (single-story a) 지원
+ * - Inter Variable: cv01~cv11, ss01~ss08 지원
+ *
+ * public/fonts/ 에 위치한 woff2를 직접 fetch.
+ */
+export async function loadBuiltinFontsToSkia(): Promise<void> {
+  const builtins: Array<{ family: string; url: string; fallbackUrl?: string }> =
+    [
+      {
+        family: "Pretendard",
+        url: "/fonts/PretendardVariable.woff2",
+      },
+      {
+        family: "Inter",
+        url: "/fonts/InterVariable.woff2",
+      },
+    ];
+
+  for (const { family, url, fallbackUrl } of builtins) {
+    if (skiaFontManager.hasFont(family)) continue;
+    try {
+      await skiaFontManager.loadFont(family, url);
+    } catch (e) {
+      console.warn(`[loadBuiltinFontsToSkia] ${family} Variable 로드 실패:`, e);
+      if (fallbackUrl) {
+        try {
+          await skiaFontManager.loadFont(family, fallbackUrl);
+        } catch (e2) {
+          console.error(
+            `[loadBuiltinFontsToSkia] ${family} fallback도 실패:`,
+            e2,
+          );
+        }
+      }
+    }
+  }
+}
+
+/** @deprecated loadBuiltinFontsToSkia()로 대체 */
+export const loadPretendardToSkia = loadBuiltinFontsToSkia;
 
 /**
  * data URL → ArrayBuffer 변환.

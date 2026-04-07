@@ -161,15 +161,88 @@ export function renderText(
     }
   };
 
+  // G4: text-shadow 2-pass — shadow를 원본 텍스트보다 먼저 렌더.
+  // CSS 스펙: 첫 번째 shadow가 맨 위 → 역순 순회로 아래부터 렌더.
+  // ColorFilter.MakeMatrix로 원본 paragraph 색상을 shadow 색상으로 오버라이드.
+  const renderTextShadows = (
+    paragraph: Paragraph,
+    drawX: number,
+    drawY: number,
+  ): void => {
+    if (!node.text!.textShadows?.length) return;
+    for (let si = node.text!.textShadows.length - 1; si >= 0; si--) {
+      const shadow = node.text!.textShadows[si];
+      canvas.save();
+      canvas.translate(shadow.offsetX, shadow.offsetY);
+
+      let blurLayerAdded = false;
+      if (shadow.sigma > 0) {
+        const blurFilter = ck.ImageFilter.MakeBlur(
+          shadow.sigma,
+          shadow.sigma,
+          ck.TileMode.Decal,
+          null,
+        );
+        const blurPaint = new ck.Paint();
+        blurPaint.setImageFilter(blurFilter);
+        canvas.saveLayer(blurPaint);
+        blurPaint.delete();
+        blurFilter.delete();
+        blurLayerAdded = true;
+      }
+
+      // 행렬 레이아웃 (4x5 row-major):
+      //   [0  0  0  0  sr]  R' = sr
+      //   [0  0  0  0  sg]  G' = sg
+      //   [0  0  0  0  sb]  B' = sb
+      //   [0  0  0  sa 0 ]  A' = A * sa (원본 alpha에 shadow alpha 곱)
+      const sr = shadow.color[0];
+      const sg = shadow.color[1];
+      const sb = shadow.color[2];
+      const sa = shadow.color[3];
+      const shadowPaint = new ck.Paint();
+      shadowPaint.setColorFilter(
+        ck.ColorFilter.MakeMatrix([
+          0,
+          0,
+          0,
+          0,
+          sr,
+          0,
+          0,
+          0,
+          0,
+          sg,
+          0,
+          0,
+          0,
+          0,
+          sb,
+          0,
+          0,
+          0,
+          sa,
+          0,
+        ]),
+      );
+      canvas.saveLayer(shadowPaint);
+      shadowPaint.delete();
+
+      canvas.drawParagraph(paragraph, drawX, drawY);
+
+      canvas.restore(); // color filter saveLayer
+      if (blurLayerAdded) canvas.restore(); // blur saveLayer
+      canvas.restore(); // translate
+    }
+  };
+
   const cached = getCachedParagraph(key);
   if (cached) {
     const drawY = computeDrawY(cached);
     const cachedOffset = paragraphAlignOffsetCache.get(key) ?? 0;
-    canvas.drawParagraph(
-      cached,
-      node.text.paddingLeft + textIndent + cachedOffset,
-      drawY,
-    );
+    const drawX = node.text.paddingLeft + textIndent + cachedOffset;
+    renderTextShadows(cached, drawX, drawY);
+    canvas.drawParagraph(cached, drawX, drawY);
     return;
   }
 
@@ -379,6 +452,26 @@ export function renderText(
     }
 
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
+    // Variable font: fontFeatures + fontVariations(wght axis)를 pushStyle로 명시 적용.
+    // ParagraphStyle.textStyle만으로는 CanvasKit에서 Variable font의
+    // weight/fontFeatures가 렌더링에 반영되지 않는 문제 대응.
+    builder.pushStyle(
+      new ck.TextStyle({
+        fontFamilies: resolvedFamilies,
+        fontSize: node.text.fontSize,
+        fontStyle: { weight: fontWeight, slant: fontSlant, width: fontWidth },
+        color: node.text.color,
+        letterSpacing: node.text.letterSpacing ?? 0,
+        wordSpacing: node.text.wordSpacing ?? 0,
+        ...(heightMultiplierOpt !== undefined
+          ? { heightMultiplier: heightMultiplierOpt, halfLeading: true }
+          : {}),
+        ...(fontFeatureTags.length > 0
+          ? { fontFeatures: fontFeatureTags }
+          : {}),
+        fontVariations: [{ axis: "wght", value: node.text.fontWeight ?? 400 }],
+      }),
+    );
     builder.addText(renderableText);
     const paragraph = builder.build();
     paragraph.layout(effectiveLayoutWidth);
@@ -436,42 +529,9 @@ export function renderText(
       );
     }
 
-    // G4: text-shadow — shadow를 원본 텍스트보다 먼저 렌더 (2-pass)
-    if (node.text.textShadows?.length) {
-      for (const shadow of node.text.textShadows) {
-        canvas.save();
-        canvas.translate(shadow.offsetX, shadow.offsetY);
-
-        if (shadow.sigma > 0) {
-          const blurPaint = new ck.Paint();
-          blurPaint.setImageFilter(
-            ck.ImageFilter.MakeBlur(
-              shadow.sigma,
-              shadow.sigma,
-              ck.TileMode.Decal,
-              null,
-            ),
-          );
-          canvas.saveLayer(blurPaint);
-          blurPaint.delete();
-        }
-
-        canvas.drawParagraph(
-          paragraph,
-          node.text.paddingLeft + textIndent + alignOffset,
-          drawY,
-        );
-
-        if (shadow.sigma > 0) canvas.restore(); // blur saveLayer
-        canvas.restore(); // translate
-      }
-    }
-
-    canvas.drawParagraph(
-      paragraph,
-      node.text.paddingLeft + textIndent + alignOffset,
-      drawY,
-    );
+    const drawX = node.text.paddingLeft + textIndent + alignOffset;
+    renderTextShadows(paragraph, drawX, drawY);
+    canvas.drawParagraph(paragraph, drawX, drawY);
 
     if (shouldClip) {
       canvas.restore();

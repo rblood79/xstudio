@@ -180,6 +180,7 @@ export class SkiaFontManager {
     }
     this.fontMgr = mgr;
     this.dirty = false;
+
     return this.fontMgr;
   }
 

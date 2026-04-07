@@ -13,7 +13,11 @@ import { selectAtom } from "jotai/utils";
 import type { SelectedElement } from "../../../inspector/types";
 import { computeSyntheticStyle } from "../../../../services/computedStyleService";
 import type { SyntheticComputedStyle } from "../../../../services/computedStyleService";
-import { DEFAULT_FONT_FAMILY } from "../../../fonts/customFonts";
+import {
+  DEFAULT_FONT_FAMILY,
+  extractFirstFontFamily,
+  normalizeFontWeight,
+} from "../../../fonts/customFonts";
 import { inferSizeMode } from "../../../stores/utils/sizeModeResolver";
 import type { SizeMode } from "../../../stores/utils/sizeModeResolver";
 
@@ -875,12 +879,14 @@ export const appearanceValuesAtom = selectAtom(
 
 export const fontFamilyAtom = selectAtom(
   selectedElementAtom,
-  (element) =>
-    String(
+  (element) => {
+    const raw = String(
       element?.style?.fontFamily ??
         element?.computedStyle?.fontFamily ??
         DEFAULT_FONT_FAMILY,
-    ),
+    );
+    return extractFirstFontFamily(raw);
+  },
   (a, b) => a === b,
 );
 
@@ -1011,18 +1017,23 @@ export const typographyValuesAtom = selectAtom(
     const computed = element.computedStyle ?? {};
     const synthetic = computeSyntheticStyle(element);
 
+    const rawFamily = String(
+      style.fontFamily ?? computed.fontFamily ?? DEFAULT_FONT_FAMILY,
+    );
+    const firstFamily = extractFirstFontFamily(rawFamily);
+
     return {
-      fontFamily: String(
-        style.fontFamily ?? computed.fontFamily ?? DEFAULT_FONT_FAMILY,
-      ),
+      fontFamily: firstFamily,
       fontSize: String(
         style.fontSize ?? computed.fontSize ?? synthetic.fontSize ?? "16px",
       ),
-      fontWeight: String(
-        style.fontWeight ??
-          computed.fontWeight ??
-          synthetic.fontWeight ??
-          "normal",
+      fontWeight: normalizeFontWeight(
+        String(
+          style.fontWeight ??
+            computed.fontWeight ??
+            synthetic.fontWeight ??
+            "400",
+        ),
       ),
       fontStyle: String(style.fontStyle ?? computed.fontStyle ?? "normal"),
       lineHeight: String(

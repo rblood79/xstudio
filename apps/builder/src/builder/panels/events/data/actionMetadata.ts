@@ -24,13 +24,13 @@ import {
   Table,
   Save,
   Variable,
-} from 'lucide-react';
+} from "lucide-react";
 import type { ActionType, ActionMetadata } from "../types";
 
 /**
  * 액션 메타데이터 정의
  */
-export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
+export const ACTION_METADATA: Partial<Record<ActionType, ActionMetadata>> = {
   navigate: {
     label: "페이지 이동",
     description: "다른 페이지로 이동합니다",
@@ -42,21 +42,21 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Path",
         type: "text",
         required: true,
-        placeholder: "/dashboard"
+        placeholder: "/dashboard",
       },
       {
         name: "openInNewTab",
         label: "Open in new tab",
         type: "boolean",
-        defaultValue: false
+        defaultValue: false,
       },
       {
         name: "replace",
         label: "Replace history",
         type: "boolean",
-        defaultValue: false
-      }
-    ]
+        defaultValue: false,
+      },
+    ],
   },
 
   scrollTo: {
@@ -70,7 +70,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Element ID",
         type: "text",
         required: false,
-        placeholder: "element-id"
+        placeholder: "element-id",
       },
       {
         name: "position",
@@ -79,17 +79,17 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "top", label: "Top" },
           { value: "center", label: "Center" },
-          { value: "bottom", label: "Bottom" }
+          { value: "bottom", label: "Bottom" },
         ],
-        defaultValue: "top"
+        defaultValue: "top",
       },
       {
         name: "smooth",
         label: "Smooth scroll",
         type: "boolean",
-        defaultValue: true
-      }
-    ]
+        defaultValue: true,
+      },
+    ],
   },
 
   setState: {
@@ -103,22 +103,22 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Store Path",
         type: "text",
         required: true,
-        placeholder: "user.name"
+        placeholder: "user.name",
       },
       {
         name: "value",
         label: "Value",
         type: "text",
         required: true,
-        placeholder: "John Doe"
+        placeholder: "John Doe",
       },
       {
         name: "merge",
         label: "Merge with existing",
         type: "boolean",
-        defaultValue: false
-      }
-    ]
+        defaultValue: false,
+      },
+    ],
   },
 
   updateState: {
@@ -132,16 +132,16 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Store Path",
         type: "text",
         required: true,
-        placeholder: "cart.items"
+        placeholder: "cart.items",
       },
       {
         name: "value",
         label: "Value",
         type: "text",
         required: true,
-        placeholder: "{{response.data}}"
-      }
-    ]
+        placeholder: "{{response.data}}",
+      },
+    ],
   },
 
   apiCall: {
@@ -160,18 +160,18 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
           { value: "POST", label: "POST" },
           { value: "PUT", label: "PUT" },
           { value: "DELETE", label: "DELETE" },
-          { value: "PATCH", label: "PATCH" }
+          { value: "PATCH", label: "PATCH" },
         ],
-        defaultValue: "GET"
+        defaultValue: "GET",
       },
       {
         name: "endpoint",
         label: "Endpoint",
         type: "text",
         required: true,
-        placeholder: "/api/users"
-      }
-    ]
+        placeholder: "/api/users",
+      },
+    ],
   },
 
   showModal: {
@@ -185,21 +185,21 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Modal ID",
         type: "text",
         required: true,
-        placeholder: "confirm-dialog"
+        placeholder: "confirm-dialog",
       },
       {
         name: "backdrop",
         label: "Show backdrop",
         type: "boolean",
-        defaultValue: true
+        defaultValue: true,
       },
       {
         name: "closable",
         label: "Closable",
         type: "boolean",
-        defaultValue: true
-      }
-    ]
+        defaultValue: true,
+      },
+    ],
   },
 
   hideModal: {
@@ -213,9 +213,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Modal ID",
         type: "text",
         required: false,
-        placeholder: "confirm-dialog (empty = all)"
-      }
-    ]
+        placeholder: "confirm-dialog (empty = all)",
+      },
+    ],
   },
 
   showToast: {
@@ -229,7 +229,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Message",
         type: "text",
         required: true,
-        placeholder: "Successfully saved!"
+        placeholder: "Successfully saved!",
       },
       {
         name: "type",
@@ -240,17 +240,17 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
           { value: "success", label: "✓ Success" },
           { value: "error", label: "✗ Error" },
           { value: "warning", label: "⚠ Warning" },
-          { value: "info", label: "ℹ Info" }
+          { value: "info", label: "ℹ Info" },
         ],
-        defaultValue: "info"
+        defaultValue: "info",
       },
       {
         name: "duration",
         label: "Duration (ms)",
         type: "number",
-        defaultValue: 3000
-      }
-    ]
+        defaultValue: 3000,
+      },
+    ],
   },
 
   toggleVisibility: {
@@ -264,7 +264,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Element ID",
         type: "text",
         required: true,
-        placeholder: "sidebar"
+        placeholder: "sidebar",
       },
       {
         name: "show",
@@ -273,10 +273,10 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "", label: "Toggle" },
           { value: "true", label: "Show" },
-          { value: "false", label: "Hide" }
-        ]
-      }
-    ]
+          { value: "false", label: "Hide" },
+        ],
+      },
+    ],
   },
 
   validateForm: {
@@ -290,9 +290,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Form ID",
         type: "text",
         required: true,
-        placeholder: "signup-form"
-      }
-    ]
+        placeholder: "signup-form",
+      },
+    ],
   },
 
   resetForm: {
@@ -306,9 +306,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Form ID",
         type: "text",
         required: true,
-        placeholder: "signup-form"
-      }
-    ]
+        placeholder: "signup-form",
+      },
+    ],
   },
 
   submitForm: {
@@ -322,9 +322,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Form ID",
         type: "text",
         required: true,
-        placeholder: "signup-form"
-      }
-    ]
+        placeholder: "signup-form",
+      },
+    ],
   },
 
   copyToClipboard: {
@@ -338,7 +338,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Text",
         type: "text",
         required: true,
-        placeholder: "Text to copy"
+        placeholder: "Text to copy",
       },
       {
         name: "source",
@@ -347,11 +347,11 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "static", label: "Static text" },
           { value: "element", label: "Element content" },
-          { value: "state", label: "From state" }
+          { value: "state", label: "From state" },
         ],
-        defaultValue: "static"
-      }
-    ]
+        defaultValue: "static",
+      },
+    ],
   },
 
   customFunction: {
@@ -365,9 +365,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Code",
         type: "textarea",
         required: true,
-        placeholder: "console.log('Hello');"
-      }
-    ]
+        placeholder: "console.log('Hello');",
+      },
+    ],
   },
 
   setComponentState: {
@@ -381,16 +381,16 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Target Component",
         type: "text",
         required: true,
-        placeholder: "component-id"
+        placeholder: "component-id",
       },
       {
         name: "statePath",
         label: "State Path",
         type: "text",
         required: true,
-        placeholder: "selectedKeys, isOpen, value"
-      }
-    ]
+        placeholder: "selectedKeys, isOpen, value",
+      },
+    ],
   },
 
   triggerComponentAction: {
@@ -404,16 +404,16 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Target Component",
         type: "text",
         required: true,
-        placeholder: "component-id"
+        placeholder: "component-id",
       },
       {
         name: "action",
         label: "Action",
         type: "text",
         required: true,
-        placeholder: "select, clear, focus"
-      }
-    ]
+        placeholder: "select, clear, focus",
+      },
+    ],
   },
 
   updateFormField: {
@@ -427,9 +427,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Field Name",
         type: "text",
         required: true,
-        placeholder: "email, password"
-      }
-    ]
+        placeholder: "email, password",
+      },
+    ],
   },
 
   filterCollection: {
@@ -443,7 +443,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Target Collection",
         type: "text",
         required: true,
-        placeholder: "listbox-id"
+        placeholder: "listbox-id",
       },
       {
         name: "filterMode",
@@ -453,11 +453,11 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "text", label: "Text Search" },
           { value: "function", label: "Custom Function" },
-          { value: "field", label: "Field Match" }
+          { value: "field", label: "Field Match" },
         ],
-        defaultValue: "text"
-      }
-    ]
+        defaultValue: "text",
+      },
+    ],
   },
 
   selectItem: {
@@ -471,7 +471,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Target Collection",
         type: "text",
         required: true,
-        placeholder: "listbox-id"
+        placeholder: "listbox-id",
       },
       {
         name: "behavior",
@@ -481,11 +481,11 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "replace", label: "Replace" },
           { value: "add", label: "Add" },
-          { value: "toggle", label: "Toggle" }
+          { value: "toggle", label: "Toggle" },
         ],
-        defaultValue: "replace"
-      }
-    ]
+        defaultValue: "replace",
+      },
+    ],
   },
 
   clearSelection: {
@@ -499,9 +499,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Target Collection",
         type: "text",
         required: true,
-        placeholder: "listbox-id"
-      }
-    ]
+        placeholder: "listbox-id",
+      },
+    ],
   },
 
   // Data Panel Integration
@@ -516,15 +516,15 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "DataTable Name",
         type: "text",
         required: true,
-        placeholder: "users"
+        placeholder: "users",
       },
       {
         name: "forceRefresh",
         label: "Force Refresh",
         type: "boolean",
-        defaultValue: false
-      }
-    ]
+        defaultValue: false,
+      },
+    ],
   },
 
   syncComponent: {
@@ -538,14 +538,14 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Source Component",
         type: "text",
         required: true,
-        placeholder: "source-component-id"
+        placeholder: "source-component-id",
       },
       {
         name: "targetId",
         label: "Target Component",
         type: "text",
         required: true,
-        placeholder: "target-component-id"
+        placeholder: "target-component-id",
       },
       {
         name: "syncMode",
@@ -554,11 +554,11 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "replace", label: "Replace" },
           { value: "merge", label: "Merge" },
-          { value: "append", label: "Append" }
+          { value: "append", label: "Append" },
         ],
-        defaultValue: "replace"
-      }
-    ]
+        defaultValue: "replace",
+      },
+    ],
   },
 
   saveToDataTable: {
@@ -572,7 +572,7 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "DataTable Name",
         type: "text",
         required: true,
-        placeholder: "users"
+        placeholder: "users",
       },
       {
         name: "source",
@@ -581,9 +581,9 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         options: [
           { value: "response", label: "API Response" },
           { value: "variable", label: "Variable" },
-          { value: "static", label: "Static" }
+          { value: "static", label: "Static" },
         ],
-        defaultValue: "response"
+        defaultValue: "response",
       },
       {
         name: "saveMode",
@@ -593,11 +593,11 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
           { value: "replace", label: "Replace" },
           { value: "merge", label: "Merge" },
           { value: "append", label: "Append" },
-          { value: "upsert", label: "Upsert" }
+          { value: "upsert", label: "Upsert" },
         ],
-        defaultValue: "replace"
-      }
-    ]
+        defaultValue: "replace",
+      },
+    ],
   },
 
   // Variable
@@ -612,23 +612,23 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         label: "Variable Name",
         type: "text",
         required: true,
-        placeholder: "myVariable"
+        placeholder: "myVariable",
       },
       {
         name: "value",
         label: "Value",
         type: "text",
         required: true,
-        placeholder: "value"
+        placeholder: "value",
       },
       {
         name: "persist",
         label: "Persist to Storage",
         type: "boolean",
-        defaultValue: false
-      }
-    ]
-  }
+        defaultValue: false,
+      },
+    ],
+  },
 };
 
 /**
@@ -647,16 +647,18 @@ export const ACTION_CATEGORIES = {
     "triggerComponentAction",
     "filterCollection",
     "selectItem",
-    "clearSelection"
+    "clearSelection",
   ],
   form: ["validateForm", "resetForm", "submitForm", "updateFormField"],
-  utility: ["copyToClipboard", "customFunction"]
+  utility: ["copyToClipboard", "customFunction"],
 } as const;
 
 /**
  * 액션 메타데이터 가져오기
  */
-export function getActionMetadata(actionType: ActionType): ActionMetadata {
+export function getActionMetadata(
+  actionType: ActionType,
+): ActionMetadata | undefined {
   return ACTION_METADATA[actionType];
 }
 
@@ -665,7 +667,7 @@ export function getActionMetadata(actionType: ActionType): ActionMetadata {
  */
 export function getActionsByCategory(category: string): ActionType[] {
   const actions = ACTION_CATEGORIES[category as keyof typeof ACTION_CATEGORIES];
-  return actions ? [...actions] as ActionType[] : [];
+  return actions ? ([...actions] as ActionType[]) : [];
 }
 
 /**

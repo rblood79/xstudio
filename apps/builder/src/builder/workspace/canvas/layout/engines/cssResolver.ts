@@ -272,11 +272,12 @@ export interface ComputedStyle {
 export const ROOT_COMPUTED_STYLE: ComputedStyle = {
   color: "#000000",
   fontSize: 16,
-  fontFamily: `${DEFAULT_FONT_FAMILY}, sans-serif`,
+  fontFamily: `"Pretendard", "Inter Variable", monospace, system-ui, sans-serif`,
   fontWeight: 400,
   fontStyle: "normal",
   fontVariant: "normal",
   fontStretch: "normal",
+  lineHeight: 1.5,
   letterSpacing: 0,
   wordSpacing: 0,
   textAlign: "left",

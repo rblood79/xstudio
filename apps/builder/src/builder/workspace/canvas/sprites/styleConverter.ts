@@ -15,7 +15,11 @@ import { colord, extend } from "colord";
 import lchPlugin from "colord/plugins/lch";
 import labPlugin from "colord/plugins/lab";
 
-import type { EffectStyle, DropShadowEffect } from "../skia/types";
+import type {
+  BackdropFilterEffect,
+  DropShadowEffect,
+  EffectStyle,
+} from "../skia/types";
 import { resolveCSSSizeValue } from "../layout/engines/cssValueParser";
 import type { CSSValueContext } from "../layout/engines/cssValueParser";
 import {
@@ -1121,16 +1125,11 @@ export function buildSkiaEffects(
     }
   }
 
-  // 4. backdropFilter: blur(Xpx) → BackgroundBlurEffect
+  // 4. backdropFilter: blur() + saturate() + brightness() 등 체이닝 지원
   if (style.backdropFilter) {
-    const blurMatch = style.backdropFilter.match(
-      /blur\((\d+(?:\.\d+)?)(px)?\)/,
-    );
-    if (blurMatch) {
-      effects.push({
-        type: "background-blur",
-        sigma: parseFloat(blurMatch[1]),
-      });
+    const backdropEffect = parseCSSBackdropFilter(style.backdropFilter);
+    if (backdropEffect) {
+      effects.push(backdropEffect);
     }
   }
 
@@ -1454,6 +1453,72 @@ export function applyTransformOrigin(
 // CSS Filter → EffectStyle 변환
 // ============================================
 
+/**
+ * CSS filter 함수 이름 → color matrix 생성 함수 매핑.
+ * parseCSSFilter/parseCSSBackdropFilter 양쪽에서 공유.
+ */
+const COLOR_MATRIX_FILTER_MAP: Record<
+  string,
+  (arg: string) => Float32Array | null
+> = {
+  brightness: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? brightnessMatrix(val) : null;
+  },
+  contrast: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? contrastMatrix(val) : null;
+  },
+  saturate: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? saturateMatrix(val) : null;
+  },
+  "hue-rotate": (arg) => {
+    const degrees = parseFilterAngleArg(arg);
+    return degrees !== null ? hueRotateMatrix(degrees) : null;
+  },
+  grayscale: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? grayscaleMatrix(val) : null;
+  },
+  invert: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? invertMatrix(val) : null;
+  },
+  sepia: (arg) => {
+    const val = parseFilterNumericArg(arg, 1);
+    return val !== null ? sepiaMatrix(val) : null;
+  },
+};
+
+/**
+ * color matrix filter 함수들을 순차 합성하여 단일 행렬을 반환한다.
+ * 합성 결과가 identity이면 null 반환 (GPU pass 불필요).
+ */
+function composeColorMatrixFromFn(
+  fn: string,
+  arg: string,
+  current: Float32Array | null,
+): Float32Array | null {
+  const factory = COLOR_MATRIX_FILTER_MAP[fn];
+  if (!factory) return current;
+  const mat = factory(arg);
+  if (!mat) return current;
+  return current ? multiplyColorMatrix(mat, current) : mat;
+}
+
+/** 합성된 color matrix가 identity이면 null, 아니면 그대로 반환 */
+function finalizeColorMatrix(
+  composed: Float32Array | null,
+): Float32Array | null {
+  if (!composed) return null;
+  const identity = identityColorMatrix();
+  for (let i = 0; i < 20; i++) {
+    if (Math.abs(composed[i] - identity[i]) > 1e-6) return composed;
+  }
+  return null;
+}
+
 /** 4x5 identity color matrix */
 function identityColorMatrix(): Float32Array {
   // prettier-ignore
@@ -1730,8 +1795,6 @@ function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
  */
 function parseCSSFilter(filter: string): EffectStyle[] {
   const results: EffectStyle[] = [];
-
-  // 각 필터 함수 추출
   const funcRegex = /([\w-]+)\(([^)]*)\)/g;
   let composedMatrix: Float32Array | null = null;
   let funcMatch: RegExpExecArray | null;
@@ -1740,127 +1803,62 @@ function parseCSSFilter(filter: string): EffectStyle[] {
     const fn = funcMatch[1];
     const arg = funcMatch[2].trim();
 
-    switch (fn) {
-      case "blur": {
-        const sigma = parseFloat(arg);
-        if (!isNaN(sigma) && sigma > 0) {
-          results.push({ type: "layer-blur", sigma });
-        }
-        break;
+    if (fn === "blur") {
+      const sigma = parseFloat(arg);
+      if (!isNaN(sigma) && sigma > 0) {
+        results.push({ type: "layer-blur", sigma });
       }
-
-      case "brightness": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = brightnessMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "contrast": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = contrastMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "saturate": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          const mat = saturateMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "hue-rotate": {
-        const degrees = parseFilterAngleArg(arg);
-        if (degrees !== null) {
-          const mat = hueRotateMatrix(degrees);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "grayscale": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          // 클램핑은 grayscaleMatrix 내부에서 처리
-          const mat = grayscaleMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "invert": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          // 클램핑은 invertMatrix 내부에서 처리
-          const mat = invertMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "sepia": {
-        const val = parseFilterNumericArg(arg, 1);
-        if (val !== null) {
-          // 클램핑은 sepiaMatrix 내부에서 처리
-          const mat = sepiaMatrix(val);
-          composedMatrix = composedMatrix
-            ? multiplyColorMatrix(mat, composedMatrix)
-            : mat;
-        }
-        break;
-      }
-
-      case "drop-shadow": {
-        // arg: "4px 4px 10px rgba(0,0,0,0.5)" 형식
-        const shadow = parseDropShadowFilterArgs(arg);
-        if (shadow) {
-          results.push(shadow);
-        }
-        break;
-      }
-
-      default:
-        // 지원하지 않는 필터 함수는 무시
-        break;
+    } else if (fn === "drop-shadow") {
+      const shadow = parseDropShadowFilterArgs(arg);
+      if (shadow) results.push(shadow);
+    } else {
+      composedMatrix = composeColorMatrixFromFn(fn, arg, composedMatrix);
     }
   }
 
-  // 합성된 color matrix가 있으면 단일 이펙트로 추가
-  if (composedMatrix) {
-    // identity인지 확인 — identity이면 GPU pass 불필요
-    const identity = identityColorMatrix();
-    let isIdentity = true;
-    for (let i = 0; i < 20; i++) {
-      if (Math.abs(composedMatrix[i] - identity[i]) > 1e-6) {
-        isIdentity = false;
-        break;
-      }
-    }
-    if (!isIdentity) {
-      results.push({ type: "color-matrix", matrix: composedMatrix });
-    }
+  const finalMatrix = finalizeColorMatrix(composedMatrix);
+  if (finalMatrix) {
+    results.push({ type: "color-matrix", matrix: finalMatrix });
   }
 
   return results;
+}
+
+/**
+ * CSS backdrop-filter 문자열을 파싱하여 BackdropFilterEffect로 변환한다.
+ *
+ * 지원 함수:
+ * - blur(Xpx) → sigma (0이면 블러 없음)
+ * - brightness(X), contrast(X), saturate(X), hue-rotate(Xdeg),
+ *   grayscale(X), invert(X), sepia(X) → colorMatrix (합성)
+ *
+ * 아무 함수도 없으면 null 반환.
+ */
+function parseCSSBackdropFilter(filter: string): BackdropFilterEffect | null {
+  const funcRegex = /([\w-]+)\(([^)]*)\)/g;
+  let funcMatch: RegExpExecArray | null;
+  let sigma = 0;
+  let composedMatrix: Float32Array | null = null;
+
+  while ((funcMatch = funcRegex.exec(filter)) !== null) {
+    const fn = funcMatch[1];
+    const arg = funcMatch[2].trim();
+
+    if (fn === "blur") {
+      const px = parseFloat(arg);
+      if (!isNaN(px) && px > 0) sigma = px;
+    } else {
+      composedMatrix = composeColorMatrixFromFn(fn, arg, composedMatrix);
+    }
+  }
+
+  if (sigma === 0 && composedMatrix === null) return null;
+
+  return {
+    type: "backdrop-filter",
+    sigma,
+    colorMatrix: finalizeColorMatrix(composedMatrix) ?? undefined,
+  };
 }
 
 /**
@@ -1912,6 +1910,96 @@ function parseFilterAngleArg(arg: string): number | null {
   // deg (기본값)
   const deg = parseFloat(trimmed);
   return isNaN(deg) ? null : deg;
+}
+
+// ============================================
+// G4: text-shadow 파싱
+// ============================================
+
+import type { TextShadow } from "../skia/types";
+
+/**
+ * CSS text-shadow 문자열 → TextShadow[] 변환.
+ *
+ * 형식: "<offsetX> <offsetY> [blur-radius] [color], ..."
+ * CSS 스펙 상 첫 번째 shadow가 맨 위에 그려지므로,
+ * 반환 배열의 순서는 CSS 선언 순서와 동일하다.
+ * 렌더러(nodeRendererText.ts)에서 역순 순회(shadow-first 2-pass)로 처리.
+ *
+ * blur-radius → sigma 변환: sigma = blurRadius / 2.355
+ * (CSS blur-radius는 표준편차의 약 2배 = FWHM 기준)
+ */
+export function parseTextShadow(value: string): TextShadow[] {
+  if (!value || value === "none") return [];
+
+  // 쉼표로 분리 (단, 색상 함수 내 쉼표는 괄호 깊이로 구분)
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    else if (ch === "," && depth === 0) {
+      parts.push(value.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(value.slice(start).trim());
+
+  return parts.map((part) => {
+    // 토큰 분리: 괄호 그룹은 단일 토큰으로 처리
+    const tokens: string[] = [];
+    let tokenStart = 0;
+    let d = 0;
+    for (let i = 0; i <= part.length; i++) {
+      const ch = part[i];
+      if (ch === "(") d++;
+      else if (ch === ")") d--;
+
+      const isEnd = i === part.length;
+      const isDelim = (ch === " " || ch === "\t") && d === 0;
+
+      if (isEnd || isDelim) {
+        const tok = part.slice(tokenStart, i).trim();
+        if (tok) tokens.push(tok);
+        tokenStart = i + 1;
+      }
+    }
+
+    // 숫자(px) 토큰과 색상 토큰을 분리
+    const numericParts: number[] = [];
+    let colorToken = "";
+    for (const tok of tokens) {
+      const num = parseFloat(tok);
+      // px/em 등 단위 포함 또는 순수 숫자
+      if (!isNaN(num) && /^-?[\d.]+(px|em|rem)?$/.test(tok)) {
+        numericParts.push(num);
+      } else {
+        // 이미 색상 토큰이 있으면 공백으로 이어붙임 (oklch 등 multi-token 색상 대비)
+        colorToken += (colorToken ? " " : "") + tok;
+      }
+    }
+
+    const offsetX = numericParts[0] ?? 0;
+    const offsetY = numericParts[1] ?? 0;
+    const blurRadius = numericParts[2] ?? 0;
+    const sigma = blurRadius > 0 ? blurRadius / 2.355 : 0;
+
+    // 색상: cssColorToHex → colorIntToFloat32, alpha는 cssColorToAlpha에서 별도 추출
+    let color: Float32Array;
+    if (colorToken) {
+      const hex = cssColorToHex(colorToken, 0x000000);
+      const alpha = cssColorToAlpha(colorToken);
+      color = colorIntToFloat32(hex, alpha);
+    } else {
+      // CSS 스펙: color 생략 시 currentColor (렌더러에서 원본 텍스트 색상 상속)
+      // 파싱 단계에서는 불투명 검정으로 fallback
+      color = Float32Array.of(0, 0, 0, 1);
+    }
+
+    return { offsetX, offsetY, sigma, color };
+  });
 }
 
 export default convertStyle;

@@ -55,8 +55,15 @@ export function buildBaseNodeProps(
   element: Element,
   layout: ComputedLayout | undefined,
 ): BaseNodeProps | null {
-  const style =
-    (element.props?.style as Record<string, unknown> | undefined) ?? {};
+  const styleRaw = element.props?.style as
+    | Record<string, unknown>
+    | undefined
+    | null;
+
+  // style이 없고 layout도 없으면 렌더 불가 → null
+  if (!styleRaw && !layout) return null;
+
+  const style = styleRaw ?? {};
 
   const converted = convertStyle(
     style as Parameters<typeof convertStyle>[0],

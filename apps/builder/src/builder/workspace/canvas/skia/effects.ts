@@ -62,16 +62,24 @@ export function beginRenderEffects(
         }
 
         case "backdrop-filter": {
-          const filter = scope.track(
-            ck.ImageFilter.MakeBlur(
-              effect.sigma,
-              effect.sigma,
-              ck.TileMode.Clamp,
-              null,
-            ),
-          );
           const paint = scope.track(new ck.Paint());
-          paint.setImageFilter(filter);
+          if (effect.sigma > 0) {
+            const filter = scope.track(
+              ck.ImageFilter.MakeBlur(
+                effect.sigma,
+                effect.sigma,
+                ck.TileMode.Clamp,
+                null,
+              ),
+            );
+            paint.setImageFilter(filter);
+          }
+          if (effect.colorMatrix) {
+            const colorFilter = scope.track(
+              ck.ColorFilter.MakeMatrix(effect.colorMatrix),
+            );
+            paint.setColorFilter(colorFilter);
+          }
           canvas.saveLayer(paint);
           layerCount++;
           break;

@@ -41,13 +41,14 @@ const BADGE_COLOR_B = 0xb8 / 255;
 const BADGE_OPACITY = 0.6;
 
 /** Dimension 레이블 설정 */
-const DIMENSION_LABEL_FONT_SIZE = 11; // 화면상 폰트 크기 (px)
+const DIMENSION_LABEL_FONT_SIZE = 12; // 화면상 폰트 크기 (px)
 const DIMENSION_LABEL_PADDING_X = 6; // 레이블 수평 패딩
 const DIMENSION_LABEL_PADDING_Y = 3; // 레이블 수직 패딩
 const DIMENSION_LABEL_OFFSET_Y = 8; // 선택 박스 하단으로부터의 오프셋
 const DIMENSION_LABEL_BG_R = 0x51 / 255; // 배경색 (#51a2ff)
 const DIMENSION_LABEL_BG_G = 0xa2 / 255;
 const DIMENSION_LABEL_BG_B = 0xff / 255;
+const DIMENSION_LABEL_LINE_HEIGHT = 16; // 레이블 줄 높이
 const DIMENSION_LABEL_BORDER_RADIUS = 4; // 배경 둥근 모서리
 
 // ============================================
@@ -238,17 +239,19 @@ export function renderDimensionLabels(
     const dimensionText = `${width} × ${height}`;
 
     // Font + Paint를 사용한 직접 텍스트 렌더링
-    // Pretendard → Inter → system-ui 폴백 체인
+    // Variable font 내장 이름으로 매칭 (fontManager.nameMap 참조)
     const fontStyle = {
-      weight: ck.FontWeight.Normal,
+      weight: ck.FontWeight.Medium,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
     };
     const typeface =
+      fontMgr.matchFamilyStyle("Pretendard Variable", fontStyle) ??
+      fontMgr.matchFamilyStyle("Inter Variable", fontStyle) ??
       fontMgr.matchFamilyStyle("Pretendard", fontStyle) ??
       fontMgr.matchFamilyStyle("Inter", fontStyle) ??
       fontMgr.matchFamilyStyle("sans-serif", fontStyle) ??
-      fontMgr.matchFamilyStyle("", fontStyle); // 시스템 기본 폰트
+      fontMgr.matchFamilyStyle("", fontStyle);
 
     if (!typeface) {
       // 모든 폴백 실패 — 다음 프레임에서 재시도 (return하지 않고 no-font 경로로 진입하지 않음)
@@ -263,11 +266,7 @@ export function renderDimensionLabels(
     const glyphIds = font.getGlyphIDs(dimensionText);
     const glyphWidths = font.getGlyphWidths(glyphIds);
     const textWidth = glyphWidths.reduce((sum, w) => sum + w, 0);
-    // Font metrics 기반 높이 (추정값 제거)
-    const fontMetrics = font.getMetrics();
-    const textHeight = fontMetrics
-      ? Math.abs(fontMetrics.ascent) + Math.abs(fontMetrics.descent)
-      : fontSize * 1.2;
+    const textHeight = DIMENSION_LABEL_LINE_HEIGHT * invZoom;
 
     // 레이블 배경 크기 및 위치 계산
     const labelWidth = textWidth + paddingX * 2;
@@ -303,7 +302,13 @@ export function renderDimensionLabels(
 
     // 텍스트 렌더링 (baseline 기준이므로 Y 위치 조정)
     const textX = labelX + paddingX;
-    const textY = labelY + paddingY + fontSize * 0.85; // baseline 조정
+    // baseline: line-height 중앙 + ascent 보정
+    const fontMetrics = font.getMetrics();
+    const ascent = fontMetrics ? Math.abs(fontMetrics.ascent) : fontSize * 0.8;
+    const descent = fontMetrics
+      ? Math.abs(fontMetrics.descent)
+      : fontSize * 0.2;
+    const textY = labelY + paddingY + (textHeight + ascent - descent) / 2;
     canvas.drawText(dimensionText, textX, textY, textPaint, font);
   } finally {
     scope.dispose();

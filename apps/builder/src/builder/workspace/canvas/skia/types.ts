@@ -47,6 +47,8 @@ export interface LinearGradientFill {
   colors: Float32Array[];
   positions: number[];
   repeating?: boolean;
+  /** 색상 보간 공간. "oklab"이면 지각적 균일 보간 적용. 기본값: "srgb" */
+  interpolation?: "srgb" | "oklab";
 }
 
 export interface RadialGradientFill {
@@ -57,6 +59,8 @@ export interface RadialGradientFill {
   colors: Float32Array[];
   positions: number[];
   repeating?: boolean;
+  /** 색상 보간 공간. "oklab"이면 지각적 균일 보간 적용. 기본값: "srgb" */
+  interpolation?: "srgb" | "oklab";
 }
 
 export interface AngularGradientFill {
@@ -68,6 +72,8 @@ export interface AngularGradientFill {
   /** CSS conic-gradient(12시) → CanvasKit(3시) 보정용 회전 행렬 */
   rotationMatrix?: Float32Array;
   repeating?: boolean;
+  /** 색상 보간 공간. "oklab"이면 지각적 균일 보간 적용. 기본값: "srgb" */
+  interpolation?: "srgb" | "oklab";
 }
 
 export interface ImageFill {
@@ -138,15 +144,18 @@ export interface LayerBlurEffect {
 }
 
 /**
- * CSS backdrop-filter: blur(Xpx) — 요소 뒤 배경에 블러를 적용한다.
+ * CSS backdrop-filter: blur() saturate() brightness() 등 — 요소 뒤 배경에 복합 필터를 적용한다.
  *
- * saveLayer + ImageFilter.MakeBlur 조합으로 구현.
+ * saveLayer + ImageFilter.MakeBlur + ColorFilter.MakeMatrix 조합으로 구현.
  * sigma는 CSS blur 반지름을 2.355로 나눈 값(표준편차)이다.
+ * colorMatrix는 saturate/brightness/contrast 등 색상 함수들을 합성한 4x5 행렬이다.
  */
 export interface BackdropFilterEffect {
   type: "backdrop-filter";
-  /** 가우시안 블러 시그마 (cssBlurPx / 2.355) */
+  /** 가우시안 블러 시그마. 0이면 블러 없음 */
   sigma: number;
+  /** 추가 색상 행렬 (saturate, brightness 등). undefined이면 없음 */
+  colorMatrix?: Float32Array; // 4x5 = 20 요소
 }
 
 /**
@@ -192,6 +201,30 @@ export interface TextShadow {
   sigma: number;
   /** CanvasKit Color4f [r, g, b, a] 0-1 범위 */
   color: Float32Array;
+}
+
+// ============================================
+// Mask Image Types
+// ============================================
+
+/**
+ * CSS mask-image 스타일 정의.
+ *
+ * gradient 또는 image URL 기반 마스크를 alpha/luminance 모드로 적용한다.
+ * SkSL RuntimeEffect로 합성 (nodeRendererMask.ts).
+ */
+export interface MaskImageStyle {
+  type: "gradient" | "image";
+  /** gradient mask용 FillStyle */
+  gradient?: FillStyle;
+  /** image mask URL */
+  imageUrl?: string;
+  /** alpha (기본) 또는 luminance */
+  mode: "alpha" | "luminance";
+  /** mask-size */
+  size?: "contain" | "cover" | "auto";
+  /** mask-position [x%, y%] */
+  position?: [number, number];
 }
 
 // ============================================

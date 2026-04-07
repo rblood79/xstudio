@@ -790,8 +790,12 @@ export interface GridListItemElementProps extends BaseElementProps {
   isDisabled?: boolean;
 }
 
+export type TextSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+
 export interface TextElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  /** 텍스트 크기 프리셋 (기본 md). style.fontSize가 있으면 style 우선. */
+  size?: TextSize;
 }
 
 export interface DivElementProps extends BaseElementProps {
@@ -1731,7 +1735,8 @@ export function createDefaultGridListItemProps(): GridListItemElementProps {
 
 export function createDefaultTextProps(): TextElementProps {
   return {
-    children: "Text", // 기본 텍스트 내용 추가
+    children: "Text",
+    size: "md",
   };
 }
 
@@ -1743,7 +1748,9 @@ export function createDefaultBodyProps(): DivElementProps {
   return {
     style: {
       display: "block",
-      fontFamily: DEFAULT_FONT_FAMILY,
+      fontFamily: `"Pretendard", "Inter Variable", monospace, system-ui, sans-serif`,
+      color: "#1a1a1a",
+      backgroundColor: "#ffffff",
       overflow: "auto",
     },
   };

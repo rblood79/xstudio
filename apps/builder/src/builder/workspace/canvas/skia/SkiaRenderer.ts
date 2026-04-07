@@ -15,9 +15,17 @@
  */
 
 import type { CanvasKit, Canvas, Surface, Image } from "canvaskit-wasm";
-import type { SkiaRenderable, FrameType, CameraState } from "./types";
+import type {
+  SkiaRenderable,
+  FrameType,
+  CameraState,
+  OpacityEffect,
+} from "./types";
 import { createGPUSurface } from "./createSurface";
 import { recordWasmMetric, flushWasmMetrics } from "../utils/gpuProfilerCore";
+import type { TransitionManager } from "./transitionManager";
+import type { AnimationEngine } from "./animationEngine";
+import { getSkiaNode } from "./useSkiaNode";
 
 export class SkiaRenderer {
   private ck: CanvasKit;
@@ -78,6 +86,13 @@ export class SkiaRenderer {
   private devFrameCount = 0;
   private devIdleFrameCount = 0;
   private devFrameWindowStartMs = 0;
+
+  /**
+   * Active transition이 있는 경우 idle 프레임을 content로 승격시키기 위한 참조.
+   * StoreRenderBridge가 주입. null이면 transition 미사용.
+   */
+  public transitionManager: TransitionManager | null = null;
+  public animationEngine: AnimationEngine | null = null;
 
   constructor(
     ck: CanvasKit,
@@ -461,6 +476,82 @@ export class SkiaRenderer {
   }
 
   /**
+   * transition/animation 보간값을 SkiaNodeData에 직접 override한다.
+   *
+   * CSS 스펙에 따라 animation 값이 transition 값보다 우선한다.
+   * 따라서 transition 먼저 적용 후 animation으로 덮어쓴다.
+   *
+   * @returns dirty 노드가 하나라도 있으면 true (프레임 승격용)
+   */
+  private applyAnimationOverrides(now: number): boolean {
+    // Early exit: transition/animation 모두 비활성이면 Set 할당 없이 반환
+    const tmActive = this.transitionManager?.isActive() ?? false;
+    const aeActive = this.animationEngine?.isActive() ?? false;
+    if (!tmActive && !aeActive) return false;
+
+    const dirtyTransition = tmActive
+      ? this.transitionManager!.tick(now)
+      : undefined;
+    const dirtyAnimation = aeActive
+      ? this.animationEngine!.tick(now)
+      : undefined;
+
+    // 둘 다 있으면 병합, 하나만 있으면 그대로 사용
+    const allDirty =
+      dirtyTransition && dirtyAnimation
+        ? new Set([...dirtyTransition, ...dirtyAnimation])
+        : (dirtyTransition ?? dirtyAnimation ?? new Set<string>());
+    if (allDirty.size === 0) return false;
+
+    // transition(낮은 우선순위) → animation(높은 우선순위) 순으로 적용
+    const sources = [this.transitionManager, this.animationEngine].filter(
+      Boolean,
+    ) as Array<{ getCurrentValue(id: string, prop: string): unknown }>;
+
+    for (const elementId of allDirty) {
+      const node = getSkiaNode(elementId);
+      if (!node) continue;
+
+      for (const source of sources) {
+        const opacity = source.getCurrentValue(elementId, "opacity");
+        if (typeof opacity === "number") {
+          this.applyOpacityToNode(node, opacity);
+        }
+
+        const width = source.getCurrentValue(elementId, "width");
+        if (typeof width === "number") node.width = width;
+
+        const height = source.getCurrentValue(elementId, "height");
+        if (typeof height === "number") node.height = height;
+
+        const borderRadius = source.getCurrentValue(elementId, "borderRadius");
+        if (typeof borderRadius === "number" && node.box) {
+          node.box.borderRadius = borderRadius;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * SkiaNodeData의 effects 배열에 OpacityEffect를 추가하거나 기존 항목을 갱신한다.
+   */
+  private applyOpacityToNode(
+    node: { effects?: Array<{ type: string; value?: number }> },
+    opacity: number,
+  ): void {
+    if (!node.effects) node.effects = [];
+    const existingIdx = node.effects.findIndex((e) => e.type === "opacity");
+    const effect: OpacityEffect = { type: "opacity", value: opacity };
+    if (existingIdx >= 0) {
+      node.effects[existingIdx] = effect;
+    } else {
+      node.effects.push(effect);
+    }
+  }
+
+  /**
    * 이중 Surface 모드로 한 프레임을 렌더링한다.
    *
    * 프레임 분류에 따라 최소 작업만 수행:
@@ -500,12 +591,19 @@ export class SkiaRenderer {
     }
 
     const frameStart = performance.now();
-    const frameType = this.classifyFrame(
+    let frameType = this.classifyFrame(
       registryVersion,
       camera,
       overlayVersion,
       screenOverlayVersion,
     );
+
+    // transition/animation 보간값을 SkiaNodeData에 override.
+    // dirty 노드가 있으면 idle을 content로 승격하여 매 프레임 재렌더링.
+    const hasAnimationChanges = this.applyAnimationOverrides(performance.now());
+    if (frameType === "idle" && hasAnimationChanges) {
+      frameType = "content";
+    }
 
     switch (frameType) {
       case "idle":

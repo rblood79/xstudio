@@ -11,11 +11,18 @@
 import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
 import type { SkiaNodeData } from "./nodeRenderers";
 import type { ClipPathShape } from "../sprites/styleConverter";
-import type { EffectStyle } from "./types";
+import type { EffectStyle, MaskImageStyle } from "./types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import type { BoundingBox } from "../selection/types";
 import type { AIEffectNodeBounds } from "./types";
 import type { Element } from "../../../../types/core/store.types";
+import {
+  applyMaskLayerGradient,
+  buildMaskGradientShader,
+  determineMaskMode,
+  applyMaskImage,
+} from "./nodeRendererMask";
+import { getSkImage, loadSkImage } from "./imageCache";
 import { getSkiaNode } from "./useSkiaNode";
 import { getDragVisualOffset, getSiblingOffset } from "./nodeRendererTree";
 import {
@@ -33,6 +40,7 @@ import { beginRenderEffects, endRenderEffects } from "./effects";
 import { toSkiaBlendMode } from "./blendModes";
 import { WASM_FLAGS } from "../wasm-bindings/featureFlags";
 import * as spatialIndex from "../wasm-bindings/spatialIndex";
+import { resolveStickyY, resolveStickyX } from "../layout/stickyResolver";
 
 // ── Command 타입 ──────────────────────────────────────────────────────
 
@@ -54,6 +62,10 @@ interface ElementBeginCmd {
   clipPath?: ClipPathShape;
   blendMode?: string;
   effects?: EffectStyle[];
+  /** position: fixed 요소 — executeRenderCommands에서 camera 역보정 대상 */
+  isFixed?: boolean;
+  /** CSS mask-image — 요소 전체를 offscreen에 렌더 후 mask 합성 */
+  maskImage?: MaskImageStyle;
 }
 
 interface DrawCmd {
@@ -318,6 +330,7 @@ function syncSpatialIndex(boundsMap: Map<string, BoundingBox>): void {
  *
  * @param cmdOffsetX - 커맨드의 x에 추가할 오프셋 (페이지 오프셋용, 루트 호출에만 전달)
  * @param cmdOffsetY - 커맨드의 y에 추가할 오프셋 (페이지 오프셋용, 루트 호출에만 전달)
+ * @param parentElementId - 부모 elementId (sticky containerBottom/Right 계산용)
  */
 function visitElement(
   elementId: string,
@@ -329,6 +342,7 @@ function visitElement(
   layoutMap: Map<string, ComputedLayout>,
   cmdOffsetX: number = 0,
   cmdOffsetY: number = 0,
+  parentElementId: string | null = null,
 ): void {
   const skiaData = getSkiaNode(elementId);
   if (!skiaData) return;
@@ -356,13 +370,71 @@ function visitElement(
   // boundsMap에 절대 좌표 기록
   boundsMap.set(elementId, { x: absX, y: absY, width, height });
 
+  // position: sticky/fixed — 렌더 좌표 보정
+  // layoutMap의 y/x는 정적 레이아웃 기준이므로 스크롤 후 post-layout 보정 필요
+  let renderRelX = relX + cmdOffsetX;
+  let renderRelY = relY + cmdOffsetY;
+
+  // 부모 layout: sticky containerBottom/Right 계산용
+  const parentLayout = parentElementId
+    ? layoutMap.get(parentElementId)
+    : undefined;
+
+  if (skiaData.isFixed) {
+    // fixed: containerBottom=Infinity → 제한 없음. 스크롤 없이 뷰포트 고정
+    renderRelY = resolveStickyY({
+      elementY: relY,
+      stickyTop: skiaData.stickyTop ?? 0,
+      scrollOffset: 0,
+      containerTop: 0,
+      containerBottom: Infinity,
+      elementHeight: height,
+    });
+    renderRelX = resolveStickyX({
+      elementX: relX,
+      stickyLeft: skiaData.stickyLeft ?? 0,
+      scrollOffset: 0,
+      containerLeft: 0,
+      containerRight: Infinity,
+      elementWidth: width,
+    });
+  } else if (skiaData.isSticky) {
+    // sticky: 부모 scrollOffset 기준으로 보정
+    // parentAbsX/Y는 이미 부모의 scrollOffset이 차감된 절대 좌표
+    const parentScrollY = skiaData.scrollOffset?.scrollTop ?? 0;
+    const parentScrollX = skiaData.scrollOffset?.scrollLeft ?? 0;
+    // 부모 layout이 있으면 실제 크기로 containerBottom/Right 계산,
+    // 없으면 Infinity fallback (루트 body 등)
+    const containerBottom =
+      parentLayout != null ? parentLayout.height : Infinity;
+    const containerRight = parentLayout != null ? parentLayout.width : Infinity;
+    renderRelY =
+      resolveStickyY({
+        elementY: relY,
+        stickyTop: skiaData.stickyTop ?? 0,
+        scrollOffset: parentScrollY,
+        containerTop: 0,
+        containerBottom,
+        elementHeight: height,
+      }) + cmdOffsetY;
+    renderRelX =
+      resolveStickyX({
+        elementX: relX,
+        stickyLeft: skiaData.stickyLeft ?? 0,
+        scrollOffset: parentScrollX,
+        containerLeft: 0,
+        containerRight,
+        elementWidth: width,
+      }) + cmdOffsetX;
+  }
+
   // ELEMENT_BEGIN
   // cmdOffsetX/Y: 페이지 오프셋 (루트 body 호출 시에만 non-zero)
   // canvas.translate()에 페이지 위치가 반영되어야 다중 페이지가 올바른 위치에 렌더링됨
   commands.push({
     type: CMD_ELEMENT_BEGIN,
-    x: relX + cmdOffsetX,
-    y: relY + cmdOffsetY,
+    x: renderRelX,
+    y: renderRelY,
     width,
     height,
     elementId,
@@ -371,6 +443,8 @@ function visitElement(
     clipPath: skiaData.clipPath,
     blendMode: skiaData.blendMode,
     effects: skiaData.effects,
+    isFixed: skiaData.isFixed,
+    maskImage: skiaData.maskImage,
   });
 
   // 내부 자식 (text 등) → DRAW 커맨드
@@ -420,6 +494,9 @@ function visitElement(
         boundsMap,
         childrenMap,
         layoutMap,
+        0,
+        0,
+        elementId,
       );
     }
 
@@ -597,6 +674,17 @@ export function executeRenderCommands(
   // 드래그 반투명 레이어 추적 스택 (ELEMENT_BEGIN/END 쌍 대응)
   const dragAlphaStack: boolean[] = [];
 
+  // mask-image 레이어 스택: 요소별 마스크 정보 저장
+  // ELEMENT_BEGIN에서 mask 있으면 push, ELEMENT_END에서 pop 후 합성
+  interface MaskLayerEntry {
+    maskImage: MaskImageStyle;
+    width: number;
+    height: number;
+    /** mask를 실제로 적용하는 함수 (저장 시점의 canvas context 캡처) */
+    apply: () => void;
+  }
+  const maskLayerStack: Array<MaskLayerEntry | null> = [];
+
   const len = commands.length;
   for (let i = 0; i < len; i++) {
     const cmd = commands[i];
@@ -672,6 +760,11 @@ export function executeRenderCommands(
         }
 
         canvas.save();
+        // position: fixed — camera 역보정 인프라 (TODO: cameraX/Y 파라미터 수신 후 활성화)
+        // 현재는 buildRenderCommandStream에서 이미 보정된 좌표를 사용하므로
+        // translate는 일반 경로와 동일하게 처리.
+        // 향후: executeRenderCommands(ck, canvas, commands, bounds, fontMgr, cameraX, cameraY)
+        // 로 시그니처 확장 후 isFixed 요소에 canvas.translate(-cameraX, -cameraY) 적용.
         canvas.translate(cmd.x + dox, cmd.y + doy);
 
         // A-8: 드래그 중인 요소 반투명 처리
@@ -710,6 +803,111 @@ export function executeRenderCommands(
 
         if (cmd.effects) {
           beginRenderEffects(ck, canvas, cmd.effects);
+        }
+
+        // mask-image: 이 요소의 모든 드로콜을 offscreen에 캡처하기 위해
+        // saveLayer를 추가로 호출한다. ELEMENT_END에서 mask 합성 후 restore.
+        if (
+          cmd.maskImage &&
+          cmd.maskImage.type === "gradient" &&
+          cmd.maskImage.gradient
+        ) {
+          const maskInfo = cmd.maskImage;
+          const maskWidth = cmd.width;
+          const maskHeight = cmd.height;
+          canvas.saveLayer();
+          maskLayerStack.push({
+            maskImage: maskInfo,
+            width: maskWidth,
+            height: maskHeight,
+            apply: () => {
+              // saveLayer로 캡처된 layer 위에 DstIn 블렌드로 gradient mask 그리기
+              const maskShader = buildMaskGradientShader(
+                ck,
+                maskInfo.gradient!,
+              );
+              if (!maskShader) return;
+              try {
+                const mode = determineMaskMode(
+                  undefined,
+                  "gradient",
+                  maskInfo.mode,
+                );
+                applyMaskImage(
+                  ck,
+                  canvas,
+                  maskWidth,
+                  maskHeight,
+                  maskShader,
+                  mode,
+                  // content는 이미 saveLayer로 캡처되어 있으므로 빈 콜백
+                  // 실제 합성은 applyMaskImage 내부의 drawRect(DstIn)로 처리
+                  () => {},
+                );
+              } finally {
+                maskShader.delete();
+              }
+            },
+          });
+        } else if (
+          cmd.maskImage &&
+          cmd.maskImage.type === "image" &&
+          cmd.maskImage.imageUrl
+        ) {
+          // image mask: imageCache에서 SkImage 조회
+          const maskSkImage = getSkImage(cmd.maskImage.imageUrl);
+          if (maskSkImage) {
+            const maskInfo = cmd.maskImage;
+            const maskWidth = cmd.width;
+            const maskHeight = cmd.height;
+            canvas.saveLayer();
+            maskLayerStack.push({
+              maskImage: maskInfo,
+              width: maskWidth,
+              height: maskHeight,
+              apply: () => {
+                const imgShader = (
+                  maskSkImage as {
+                    makeShaderOptions(
+                      tx: unknown,
+                      ty: unknown,
+                      fm: unknown,
+                      mm: unknown,
+                    ): { delete(): void };
+                  }
+                ).makeShaderOptions(
+                  ck.TileMode.Clamp,
+                  ck.TileMode.Clamp,
+                  ck.FilterMode.Linear,
+                  ck.MipmapMode.None,
+                );
+                try {
+                  const mode = determineMaskMode(
+                    maskInfo.imageUrl,
+                    undefined,
+                    maskInfo.mode,
+                  );
+                  applyMaskImage(
+                    ck,
+                    canvas,
+                    maskWidth,
+                    maskHeight,
+                    imgShader,
+                    mode,
+                    () => {},
+                  );
+                } finally {
+                  imgShader.delete();
+                }
+              },
+            });
+          } else {
+            // 이미지 미로딩 → 비동기 로드 트리거, 이번 프레임은 mask 없이
+            loadSkImage(cmd.maskImage.imageUrl);
+            maskLayerStack.push(null);
+          }
+        } else {
+          maskLayerStack.push(null);
         }
         break;
       }
@@ -786,6 +984,12 @@ export function executeRenderCommands(
         // A-8: 드래그 반투명 레이어 복원
         const hadDragAlpha = dragAlphaStack.pop();
         if (hadDragAlpha) canvas.restore();
+        // mask-image: saveLayer 복원 후 mask gradient 합성
+        const maskEntry = maskLayerStack.pop();
+        if (maskEntry) {
+          canvas.restore(); // saveLayer(content) 복원
+          maskEntry.apply(); // DstIn gradient 드로콜
+        }
         canvas.restore();
         if (stackTop > 0) stackTop--;
         if (eidTop > 0) eidTop--;

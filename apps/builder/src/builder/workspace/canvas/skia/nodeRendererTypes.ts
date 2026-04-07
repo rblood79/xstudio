@@ -8,6 +8,7 @@ import type {
   DropShadowEffect,
   EffectStyle,
   FillStyle,
+  MaskImageStyle,
   TextShadow,
 } from "./types";
 
@@ -125,6 +126,8 @@ export interface SkiaNodeData {
     strokeColor: Float32Array;
     strokeWidth: number;
   };
+  /** CSS mask-image. nodeRendererMask.ts의 SkSL RuntimeEffect로 처리 */
+  maskImage?: MaskImageStyle;
   transform?: Float32Array;
   clipPath?: ClipPathShape;
   clipChildren?: boolean;
@@ -136,6 +139,14 @@ export interface SkiaNodeData {
   contentMinHeight?: number;
   zIndex?: number;
   isStackingContext?: boolean;
+  /** CSS position: sticky — visitElement에서 post-layout 좌표 보정 */
+  isSticky?: boolean;
+  /** CSS position: fixed — viewport 기준 고정 */
+  isFixed?: boolean;
+  /** sticky top 값 (px) */
+  stickyTop?: number;
+  /** sticky left 값 (px) */
+  stickyLeft?: number;
   children?: SkiaNodeData[];
 }
 

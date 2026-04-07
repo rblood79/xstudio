@@ -6,6 +6,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
+import type { EventType, ActionType } from "@/types/events/events.registry";
 
 // EventType은 registry 정본에서 derive (ADR-055)
 export type {
