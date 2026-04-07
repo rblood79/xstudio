@@ -33,6 +33,7 @@ import { beginRenderEffects, endRenderEffects } from "./effects";
 import { toSkiaBlendMode } from "./blendModes";
 import { WASM_FLAGS } from "../wasm-bindings/featureFlags";
 import * as spatialIndex from "../wasm-bindings/spatialIndex";
+import { resolveStickyY, resolveStickyX } from "../layout/stickyResolver";
 
 // ── Command 타입 ──────────────────────────────────────────────────────
 
@@ -54,6 +55,8 @@ interface ElementBeginCmd {
   clipPath?: ClipPathShape;
   blendMode?: string;
   effects?: EffectStyle[];
+  /** position: fixed 요소 — executeRenderCommands에서 camera 역보정 대상 */
+  isFixed?: boolean;
 }
 
 interface DrawCmd {
@@ -356,13 +359,66 @@ function visitElement(
   // boundsMap에 절대 좌표 기록
   boundsMap.set(elementId, { x: absX, y: absY, width, height });
 
+  // position: sticky/fixed — 렌더 좌표 보정
+  // layoutMap의 y/x는 정적 레이아웃 기준이므로 스크롤 후 post-layout 보정 필요
+  let renderRelX = relX + cmdOffsetX;
+  let renderRelY = relY + cmdOffsetY;
+
+  if (skiaData.isFixed) {
+    // fixed: containerBottom=Infinity → 제한 없음. 스크롤 없이 뷰포트 고정
+    renderRelY = resolveStickyY({
+      elementY: relY,
+      stickyTop: skiaData.stickyTop ?? 0,
+      scrollOffset: 0,
+      containerTop: 0,
+      containerBottom: Infinity,
+      elementHeight: height,
+    });
+    renderRelX = resolveStickyX({
+      elementX: relX,
+      stickyLeft: skiaData.stickyLeft ?? 0,
+      scrollOffset: 0,
+      containerLeft: 0,
+      containerRight: Infinity,
+      elementWidth: width,
+    });
+  } else if (skiaData.isSticky) {
+    // sticky: 부모 scrollOffset 기준으로 보정
+    // parentAbsX/Y는 이미 부모의 scrollOffset이 차감된 절대 좌표
+    // 부모 layout 크기를 containerBottom으로 사용
+    const parentScrollY = skiaData.scrollOffset?.scrollTop ?? 0;
+    const parentScrollX = skiaData.scrollOffset?.scrollLeft ?? 0;
+    // 부모의 contentBox height: layoutMap에서 부모 element id는 알 수 없으므로
+    // absY - relY(= parentAbsY)를 기준으로 역산한 컨테이너 bounds 사용
+    // 단순화: containerBottom은 부모 절대 좌표에 포함된 높이를 Infinity로 처리
+    // (부모 element의 layoutMap 결과를 직접 알 수 없는 구조 한계)
+    renderRelY =
+      resolveStickyY({
+        elementY: relY,
+        stickyTop: skiaData.stickyTop ?? 0,
+        scrollOffset: parentScrollY,
+        containerTop: 0,
+        containerBottom: Infinity,
+        elementHeight: height,
+      }) + cmdOffsetY;
+    renderRelX =
+      resolveStickyX({
+        elementX: relX,
+        stickyLeft: skiaData.stickyLeft ?? 0,
+        scrollOffset: parentScrollX,
+        containerLeft: 0,
+        containerRight: Infinity,
+        elementWidth: width,
+      }) + cmdOffsetX;
+  }
+
   // ELEMENT_BEGIN
   // cmdOffsetX/Y: 페이지 오프셋 (루트 body 호출 시에만 non-zero)
   // canvas.translate()에 페이지 위치가 반영되어야 다중 페이지가 올바른 위치에 렌더링됨
   commands.push({
     type: CMD_ELEMENT_BEGIN,
-    x: relX + cmdOffsetX,
-    y: relY + cmdOffsetY,
+    x: renderRelX,
+    y: renderRelY,
     width,
     height,
     elementId,
@@ -371,6 +427,7 @@ function visitElement(
     clipPath: skiaData.clipPath,
     blendMode: skiaData.blendMode,
     effects: skiaData.effects,
+    isFixed: skiaData.isFixed,
   });
 
   // 내부 자식 (text 등) → DRAW 커맨드
@@ -672,6 +729,11 @@ export function executeRenderCommands(
         }
 
         canvas.save();
+        // position: fixed — camera 역보정 인프라 (TODO: cameraX/Y 파라미터 수신 후 활성화)
+        // 현재는 buildRenderCommandStream에서 이미 보정된 좌표를 사용하므로
+        // translate는 일반 경로와 동일하게 처리.
+        // 향후: executeRenderCommands(ck, canvas, commands, bounds, fontMgr, cameraX, cameraY)
+        // 로 시그니처 확장 후 isFixed 요소에 canvas.translate(-cameraX, -cameraY) 적용.
         canvas.translate(cmd.x + dox, cmd.y + doy);
 
         // A-8: 드래그 중인 요소 반투명 처리

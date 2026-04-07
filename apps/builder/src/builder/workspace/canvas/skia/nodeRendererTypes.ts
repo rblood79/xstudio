@@ -139,6 +139,14 @@ export interface SkiaNodeData {
   contentMinHeight?: number;
   zIndex?: number;
   isStackingContext?: boolean;
+  /** CSS position: sticky — visitElement에서 post-layout 좌표 보정 */
+  isSticky?: boolean;
+  /** CSS position: fixed — viewport 기준 고정 */
+  isFixed?: boolean;
+  /** sticky top 값 (px) */
+  stickyTop?: number;
+  /** sticky left 값 (px) */
+  stickyLeft?: number;
   children?: SkiaNodeData[];
 }
 

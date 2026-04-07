@@ -103,6 +103,17 @@ export function buildSkiaNodeData(
     style as Record<string, unknown>,
   );
 
+  // position: sticky / fixed
+  const position = style.position as string | undefined;
+  const isSticky = position === "sticky";
+  const isFixed = position === "fixed";
+  const stickyTop = isSticky
+    ? parseFloat((style.top as string | undefined) ?? "0")
+    : undefined;
+  const stickyLeft = isSticky
+    ? parseFloat((style.left as string | undefined) ?? "0")
+    : undefined;
+
   // 스크롤 상태
   const scrollState = ctx.scrollMap?.get(element.id);
   const scrollOffset = scrollState
@@ -135,6 +146,8 @@ export function buildSkiaNodeData(
     zIndex,
     isStackingContext,
     clipPath,
+    ...(isSticky && { isSticky, stickyTop, stickyLeft }),
+    ...(isFixed && { isFixed }),
     box: {
       fillColor,
       borderRadius: borderRadius ?? 0,
