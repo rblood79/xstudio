@@ -47,6 +47,8 @@ export interface LinearGradientFill {
   colors: Float32Array[];
   positions: number[];
   repeating?: boolean;
+  /** 색상 보간 공간. "oklab"이면 지각적 균일 보간 적용. 기본값: "srgb" */
+  interpolation?: "srgb" | "oklab";
 }
 
 export interface RadialGradientFill {
@@ -57,6 +59,8 @@ export interface RadialGradientFill {
   colors: Float32Array[];
   positions: number[];
   repeating?: boolean;
+  /** 색상 보간 공간. "oklab"이면 지각적 균일 보간 적용. 기본값: "srgb" */
+  interpolation?: "srgb" | "oklab";
 }
 
 export interface AngularGradientFill {
@@ -68,6 +72,8 @@ export interface AngularGradientFill {
   /** CSS conic-gradient(12시) → CanvasKit(3시) 보정용 회전 행렬 */
   rotationMatrix?: Float32Array;
   repeating?: boolean;
+  /** 색상 보간 공간. "oklab"이면 지각적 균일 보간 적용. 기본값: "srgb" */
+  interpolation?: "srgb" | "oklab";
 }
 
 export interface ImageFill {

@@ -9,6 +9,7 @@
 
 import type { CanvasKit, Paint } from "canvaskit-wasm";
 import type { FillStyle } from "./types";
+import { amplifyGradientStops } from "./oklabInterpolation";
 
 /**
  * Float32Array[] → flat Float32Array 변환 (CanvasKit WASM 호환성 보장)
@@ -49,12 +50,19 @@ export function applyFill(
     }
 
     case "linear-gradient": {
-      const flatColors = flattenColors(fill.colors);
+      let fillColors = fill.colors;
+      let fillPositions = fill.positions;
+      if (fill.interpolation === "oklab") {
+        const amplified = amplifyGradientStops(fillColors, fillPositions);
+        fillColors = amplified.colors;
+        fillPositions = amplified.positions;
+      }
+      const flatColors = flattenColors(fillColors);
       const shader = ck.Shader.MakeLinearGradient(
         fill.start,
         fill.end,
         flatColors,
-        fill.positions,
+        fillPositions,
         fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
       );
       if (!shader) {
@@ -73,14 +81,21 @@ export function applyFill(
     }
 
     case "radial-gradient": {
-      const flatColors = flattenColors(fill.colors);
+      let fillColors = fill.colors;
+      let fillPositions = fill.positions;
+      if (fill.interpolation === "oklab") {
+        const amplified = amplifyGradientStops(fillColors, fillPositions);
+        fillColors = amplified.colors;
+        fillPositions = amplified.positions;
+      }
+      const flatColors = flattenColors(fillColors);
       const shader = ck.Shader.MakeTwoPointConicalGradient(
         fill.center,
         fill.startRadius,
         fill.center,
         fill.endRadius,
         flatColors,
-        fill.positions,
+        fillPositions,
         fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
       );
       if (!shader) {
@@ -103,14 +118,21 @@ export function applyFill(
     }
 
     case "angular-gradient": {
-      const flatColors = flattenColors(fill.colors);
+      let fillColors = fill.colors;
+      let fillPositions = fill.positions;
+      if (fill.interpolation === "oklab") {
+        const amplified = amplifyGradientStops(fillColors, fillPositions);
+        fillColors = amplified.colors;
+        fillPositions = amplified.positions;
+      }
+      const flatColors = flattenColors(fillColors);
       // MakeSweepGradient(cx, cy, colors, positions, tileMode, localMatrix, flags)
       // localMatrix로 CSS conic-gradient(12시) → CanvasKit(3시) 보정
       const shader = ck.Shader.MakeSweepGradient(
         fill.cx,
         fill.cy,
         flatColors,
-        fill.positions,
+        fillPositions,
         fill.repeating ? ck.TileMode.Repeat : ck.TileMode.Clamp,
         fill.rotationMatrix ?? null, // localMatrix로 -90° 보정
         0, // flags
