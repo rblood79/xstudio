@@ -132,7 +132,6 @@ export class StoreRenderBridge {
     getChildrenMap?: () => Map<string, Element[]>;
     subscribe: (callback: () => void) => () => void;
     getTheme?: () => "light" | "dark";
-    /** @deprecated 정적 theme — getTheme 사용 권장 */
     theme?: "light" | "dark";
   }): void {
     this.dispose();

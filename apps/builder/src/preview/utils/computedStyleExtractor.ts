@@ -25,73 +25,73 @@
  */
 export const COMPUTED_STYLE_WHITELIST = [
   // Layout (핵심)
-  'display',
-  'position',
-  'width',
-  'height',
-  'minWidth',
-  'minHeight',
-  'maxWidth',
-  'maxHeight',
+  "display",
+  "position",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
 
   // Box Model
-  'marginTop',
-  'marginRight',
-  'marginBottom',
-  'marginLeft',
-  'paddingTop',
-  'paddingRight',
-  'paddingBottom',
-  'paddingLeft',
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
 
   // Flexbox
-  'flexDirection',
-  'flexWrap',
-  'justifyContent',
-  'alignItems',
-  'alignContent',
-  'gap',
-  'rowGap',
-  'columnGap',
+  "flexDirection",
+  "flexWrap",
+  "justifyContent",
+  "alignItems",
+  "alignContent",
+  "gap",
+  "rowGap",
+  "columnGap",
 
   // Grid (기본)
-  'gridTemplateColumns',
-  'gridTemplateRows',
+  "gridTemplateColumns",
+  "gridTemplateRows",
 
   // Typography
-  'fontSize',
-  'fontWeight',
-  'fontFamily',
-  'lineHeight',
-  'letterSpacing',
-  'textAlign',
-  'color',
+  "fontSize",
+  "fontWeight",
+  "fontFamily",
+  "lineHeight",
+  "letterSpacing",
+  "textAlign",
+  "color",
 
   // Background
-  'backgroundColor',
-  'backgroundImage',
+  "backgroundColor",
+  "backgroundImage",
 
   // Border
-  'borderRadius',
-  'borderTopLeftRadius',
-  'borderTopRightRadius',
-  'borderBottomLeftRadius',
-  'borderBottomRightRadius',
-  'borderWidth',
-  'borderColor',
-  'borderStyle',
+  "borderRadius",
+  "borderTopLeftRadius",
+  "borderTopRightRadius",
+  "borderBottomLeftRadius",
+  "borderBottomRightRadius",
+  "borderWidth",
+  "borderColor",
+  "borderStyle",
 
   // Visibility
-  'visibility',
+  "visibility",
 
   // Effects
-  'opacity',
-  'overflow',
-  'overflowX',
-  'overflowY',
+  "opacity",
+  "overflow",
+  "overflowX",
+  "overflowY",
 
   // Transform
-  'transform',
+  "transform",
 ] as const;
 
 export type ComputedStyleProperty = (typeof COMPUTED_STYLE_WHITELIST)[number];
@@ -104,7 +104,7 @@ export type ComputedStyleProperty = (typeof COMPUTED_STYLE_WHITELIST)[number];
  * camelCase → kebab-case 변환
  * 예: marginTop → margin-top
  */
-function camelToKebab(str: string): string {
+export function camelToKebab(str: string): string {
   return str.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 }
 
@@ -125,7 +125,7 @@ function camelToKebab(str: string): string {
  * ```
  */
 export function extractComputedStyleSubset(
-  element: HTMLElement
+  element: HTMLElement,
 ): Record<string, string> {
   const computed = getComputedStyle(element);
   const result: Record<string, string> = {};
@@ -136,7 +136,7 @@ export function extractComputedStyleSubset(
     const value = computed.getPropertyValue(kebabProp);
 
     // 빈 값은 스킵 (payload 최소화)
-    if (value && value !== '' && value !== 'none' && value !== 'normal') {
+    if (value && value !== "" && value !== "none" && value !== "normal") {
       result[prop] = value;
     }
   }
@@ -150,7 +150,7 @@ export function extractComputedStyleSubset(
  * @deprecated Phase 6.2 이후 extractComputedStyleSubset() 사용 권장
  */
 export function extractFullComputedStyle(
-  element: HTMLElement
+  element: HTMLElement,
 ): Record<string, string> {
   const computed = getComputedStyle(element);
   const result: Record<string, string> = {};
@@ -185,7 +185,7 @@ export function extractFullComputedStyle(
 export function extractComputedStyleAsync(
   element: HTMLElement,
   callback: (style: Record<string, string>) => void,
-  options: { timeout?: number; useFullStyle?: boolean } = {}
+  options: { timeout?: number; useFullStyle?: boolean } = {},
 ): void {
   const { timeout = 100, useFullStyle = false } = options;
 
@@ -196,7 +196,7 @@ export function extractComputedStyleAsync(
     callback(style);
   };
 
-  if ('requestIdleCallback' in window) {
+  if ("requestIdleCallback" in window) {
     requestIdleCallback(doExtract, { timeout });
   } else {
     // fallback: setTimeout
@@ -229,7 +229,7 @@ export function createSelectionBundle(
   elementId: string,
   element: HTMLElement,
   tag: string,
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
 ): ElementSelectionBundle {
   return {
     elementId,
@@ -260,7 +260,7 @@ export function createSelectionBundle(
  */
 export function diffComputedStyle(
   prev: Record<string, string>,
-  next: Record<string, string>
+  next: Record<string, string>,
 ): Record<string, string> | null {
   const diff: Record<string, string> = {};
   let hasChanges = false;

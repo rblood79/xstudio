@@ -21,6 +21,23 @@ import type { RenderContext as SharedRenderContext } from "@xstudio/shared/types
 import type { PreviewElement, RenderContext } from "./types";
 import type { RuntimeElement } from "./store/types";
 import { EventEngine } from "../utils/events/eventEngine";
+import { camelToKebab } from "./utils/computedStyleExtractor";
+
+// body style 적용 상수 — useEffect 내 재생성 방지
+const CSS_UNITLESS = new Set([
+  "opacity",
+  "fontWeight",
+  "zIndex",
+  "lineHeight",
+  "flexGrow",
+  "flexShrink",
+  "order",
+]);
+// body color/backgroundColor는 항상 CSS 변수로 매핑 (dark mode 전환 지원)
+const BODY_THEME_MAP: Record<string, string> = {
+  color: "var(--fg)",
+  backgroundColor: "var(--bg)",
+};
 
 // ============================================
 // Module-level EventEngine Singleton
@@ -127,35 +144,19 @@ function CanvasContent() {
 
       // body element의 style 적용 및 추적
       if (bodyElement.props?.style) {
-        // unitless CSS properties (숫자 그대로 사용하는 속성)
-        const CSS_UNITLESS = new Set([
-          "opacity",
-          "fontWeight",
-          "zIndex",
-          "lineHeight",
-          "flexGrow",
-          "flexShrink",
-          "order",
-        ]);
         const style = bodyElement.props.style as Record<
           string,
           string | number
         >;
-        // body의 color/backgroundColor는 항상 CSS 변수 사용 (dark mode 전환 지원)
-        const BODY_THEME_PROPS = new Set(["color", "backgroundColor"]);
-        const BODY_THEME_MAP: Record<string, string> = {
-          color: "var(--fg)",
-          backgroundColor: "var(--bg)",
-        };
-
         Object.entries(style).forEach(([key, value]) => {
-          const cssKey = key.replace(/([A-Z])/g, "-$1").toLowerCase(); // camelCase → kebab-case
+          const cssKey = camelToKebab(key);
           // body color/bg는 CSS 변수로 대체 — DB 하드코딩 값 대신 테마 반영
-          const cssValue = BODY_THEME_PROPS.has(key)
-            ? BODY_THEME_MAP[key]
-            : typeof value === "number" && !CSS_UNITLESS.has(key)
-              ? `${value}px`
-              : String(value);
+          const cssValue =
+            key in BODY_THEME_MAP
+              ? BODY_THEME_MAP[key]
+              : typeof value === "number" && !CSS_UNITLESS.has(key)
+                ? `${value}px`
+                : String(value);
           document.body.style.setProperty(cssKey, cssValue);
           appliedStyleKeysRef.current.add(cssKey);
         });
