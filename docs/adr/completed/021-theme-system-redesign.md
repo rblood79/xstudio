@@ -619,7 +619,7 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 | 파일                                        | 작업     | 설명                                                                                    |
 | ------------------------------------------- | -------- | --------------------------------------------------------------------------------------- |
-| `stores/themeConfigStore.ts`                | **수정** | localStorage 영속화 (`xstudio-theme-config-{projectId}`) + `initThemeConfig(projectId)` |
+| `stores/themeConfigStore.ts`                | **수정** | localStorage 영속화 (`composition-theme-config-{projectId}`) + `initThemeConfig(projectId)` |
 | `utils/theme/generateThemeCSS.ts`           | **신규** | ThemeConfig → CSS 변수 문자열 (Publish/Export용)                                        |
 | `main/BuilderCore.tsx`                      | **수정** | initThemeConfig 호출 + handlePublish/Preview themeCSS 통합                              |
 | `packages/shared/src/utils/export.utils.ts` | **수정** | generateStaticHtml에 `themeCSS` 파라미터 추가                                           |

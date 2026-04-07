@@ -166,11 +166,11 @@ function applyThemeConfig(themeConfig?: {
   if (lines.length === 0) return;
 
   // 기존 스타일 태그 제거 (중복 방지)
-  const existing = document.getElementById("xstudio-theme-config");
+  const existing = document.getElementById("composition-theme-config");
   if (existing) existing.remove();
 
   const style = document.createElement("style");
-  style.id = "xstudio-theme-config";
+  style.id = "composition-theme-config";
   style.textContent = `:root {\n  ${lines.join("\n  ")}\n}`;
   document.head.appendChild(style);
 }
@@ -179,7 +179,7 @@ function applyThemeConfig(themeConfig?: {
 // Font Registry Helper (ADR-014 Phase D)
 // ============================================
 
-const GOOGLE_FONTS_CSS_ID = "xstudio-publish-google-fonts";
+const GOOGLE_FONTS_CSS_ID = "composition-publish-google-fonts";
 
 function injectGoogleFontsCss() {
   if (document.getElementById(GOOGLE_FONTS_CSS_ID)) return;
@@ -208,11 +208,11 @@ function injectFontRegistryFromData(fontRegistry?: FontRegistryV2) {
   if (!css) return;
 
   // 기존 스타일 태그 제거 (중복 방지)
-  const existing = document.getElementById("xstudio-publish-custom-fonts");
+  const existing = document.getElementById("composition-publish-custom-fonts");
   if (existing) existing.remove();
 
   const styleEl = document.createElement("style");
-  styleEl.id = "xstudio-publish-custom-fonts";
+  styleEl.id = "composition-publish-custom-fonts";
   styleEl.textContent = css;
   document.head.appendChild(styleEl);
 }
@@ -243,7 +243,7 @@ export function App() {
       if (!css) return;
 
       const styleEl = document.createElement("style");
-      styleEl.id = "xstudio-publish-custom-fonts";
+      styleEl.id = "composition-publish-custom-fonts";
       styleEl.textContent = css;
       document.head.appendChild(styleEl);
 
@@ -330,7 +330,7 @@ export function App() {
     }
 
     function loadFromSessionStorage(): boolean {
-      const previewData = sessionStorage.getItem("xstudio-preview-data");
+      const previewData = sessionStorage.getItem("composition-preview-data");
       if (previewData) {
         try {
           const parsed = JSON.parse(previewData);
