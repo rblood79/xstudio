@@ -144,15 +144,18 @@ export interface LayerBlurEffect {
 }
 
 /**
- * CSS backdrop-filter: blur(Xpx) — 요소 뒤 배경에 블러를 적용한다.
+ * CSS backdrop-filter: blur() saturate() brightness() 등 — 요소 뒤 배경에 복합 필터를 적용한다.
  *
- * saveLayer + ImageFilter.MakeBlur 조합으로 구현.
+ * saveLayer + ImageFilter.MakeBlur + ColorFilter.MakeMatrix 조합으로 구현.
  * sigma는 CSS blur 반지름을 2.355로 나눈 값(표준편차)이다.
+ * colorMatrix는 saturate/brightness/contrast 등 색상 함수들을 합성한 4x5 행렬이다.
  */
 export interface BackdropFilterEffect {
   type: "backdrop-filter";
-  /** 가우시안 블러 시그마 (cssBlurPx / 2.355) */
+  /** 가우시안 블러 시그마. 0이면 블러 없음 */
   sigma: number;
+  /** 추가 색상 행렬 (saturate, brightness 등). undefined이면 없음 */
+  colorMatrix?: Float32Array; // 4x5 = 20 요소
 }
 
 /**
