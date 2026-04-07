@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../../components";
-import { Button } from "@xstudio/shared/components";
+import { Button } from "@composition/shared/components";
 import { MessageCircle, Trash2, Bot } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useConversationStore } from "../../stores/conversation";

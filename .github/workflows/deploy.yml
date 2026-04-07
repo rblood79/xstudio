@@ -75,7 +75,7 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Build project
-        run: pnpm turbo run build --filter=@xstudio/builder
+        run: pnpm turbo run build --filter=@composition/builder
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

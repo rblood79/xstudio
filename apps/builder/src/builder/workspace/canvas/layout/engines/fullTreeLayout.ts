@@ -45,8 +45,8 @@ import {
   getParentTagsForChild,
 } from "../../../../utils/propagationRegistry";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
-import { InlineAlertSpec, fontFamily as specFontFamily } from "@xstudio/specs";
-import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
+import { InlineAlertSpec, fontFamily as specFontFamily } from "@composition/specs";
+import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { useScrollState } from "../../../../stores/scrollState";
 
 // ─── 모듈 수준 상수 ──────────────────────────────────────────────────

@@ -57,8 +57,8 @@ import { ComponentSearch } from "./ComponentSearch";
 import { useRecentComponents } from "../../hooks/useRecentComponents";
 import { useFavoriteComponents } from "../../hooks/useFavoriteComponents";
 import { useSectionCollapse } from "../styles/hooks/useSectionCollapse";
-import "@xstudio/shared/components/styles/ComponentList.css";
-import { Badge } from "@xstudio/shared/components/Badge";
+import "@composition/shared/components/styles/ComponentList.css";
+import { Badge } from "@composition/shared/components/Badge";
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {

@@ -50,7 +50,7 @@ import {
   mergeData,
   safeJsonParse,
 } from "../../utils/dataHelpers";
-import { exportProject } from "@xstudio/shared/utils";
+import { exportProject } from "@composition/shared/utils";
 import { loadFontRegistry } from "../fonts/customFonts";
 import { generateThemeCSS } from "../../utils/theme/generateThemeCSS";
 import { NEUTRAL_PALETTES } from "../../utils/theme/neutralToSkiaColors";

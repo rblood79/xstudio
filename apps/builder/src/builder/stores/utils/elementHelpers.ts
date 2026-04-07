@@ -1,5 +1,5 @@
 import { Element, ComponentElementProps } from "../../../types/core/store.types";
-import { ButtonSpec, getSizePreset } from '@xstudio/specs';
+import { ButtonSpec, getSizePreset } from '@composition/specs';
 
 /**
  * Element 조회 및 속성 관리 헬퍼 함수들

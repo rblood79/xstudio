@@ -18,8 +18,8 @@
 import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
-import type { ComponentState } from "@xstudio/specs";
-import { InlineAlertSpec } from "@xstudio/specs";
+import type { ComponentState } from "@composition/specs";
+import { InlineAlertSpec } from "@composition/specs";
 import { getSpecForTag } from "../sprites/tagSpecMap";
 import { specShapesToSkia } from "./specShapeConverter";
 import {
@@ -27,7 +27,7 @@ import {
   type TintPreset,
 } from "../../../../utils/theme/tintToSkiaColors";
 import { getParentTagsForChild } from "../../../utils/propagationRegistry";
-import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
+import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { formatProgressValue } from "../layout/engines/implicitStyles";
 import { PHANTOM_INDICATOR_CONFIGS } from "../layout/engines/utils";
 import {

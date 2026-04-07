@@ -8,7 +8,7 @@
  * Spec을 단일 소스(Single Source of Truth)로 사용.
  */
 
-import type { ComponentSpec, TextShape } from "@xstudio/specs";
+import type { ComponentSpec, TextShape } from "@composition/specs";
 import {
   ButtonSpec,
   BadgeSpec,
@@ -25,7 +25,7 @@ import {
   ProgressBarValueSpec,
   MeterValueSpec,
   SliderOutputSpec,
-} from "@xstudio/specs";
+} from "@composition/specs";
 
 /** Spec shapes에서 추출한 텍스트 스타일 */
 export interface SpecTextStyle {

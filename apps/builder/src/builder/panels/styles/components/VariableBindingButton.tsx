@@ -12,7 +12,7 @@
 import { memo, useCallback, useMemo } from "react";
 import { DialogTrigger, Button as AriaButton } from "react-aria-components";
 import { Link2, Link2Off } from "lucide-react";
-import { Popover } from "@xstudio/shared/components/Popover";
+import { Popover } from "@composition/shared/components/Popover";
 import { useTokens } from "../../../../stores/themeStore";
 import type { DesignToken } from "../../../../types/theme";
 import { iconSmall } from "../../../../utils/ui/uiConstants";

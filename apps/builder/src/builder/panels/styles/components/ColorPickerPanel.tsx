@@ -14,8 +14,8 @@ import {
   parseColor,
   type Color,
 } from 'react-aria-components';
-import { ColorArea } from '@xstudio/shared/components/ColorArea';
-import { ColorSlider } from '@xstudio/shared/components/ColorSlider';
+import { ColorArea } from '@composition/shared/components/ColorArea';
+import { ColorSlider } from '@composition/shared/components/ColorSlider';
 import { ColorInputModeSelector } from './ColorInputModeSelector';
 import { ColorInputFields } from './ColorInputFields';
 import { EyeDropperButton } from './EyeDropperButton';

@@ -1,3 +1,3 @@
-import reactConfig from '@xstudio/config/eslint/react';
+import reactConfig from '@composition/config/eslint/react';
 
 export default [...reactConfig];

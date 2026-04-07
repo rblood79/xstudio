@@ -12,7 +12,7 @@ import {
   ToggleButton as RAToggleButton,
   parseColor,
 } from "react-aria-components";
-import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
+import { ColorSwatch } from "@composition/shared/components/ColorSwatch";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import type { PanelProps } from "../core/types";
 import {

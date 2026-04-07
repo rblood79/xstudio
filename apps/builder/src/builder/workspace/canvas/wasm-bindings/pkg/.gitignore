@@ -1,5 +1,1 @@
-# wasm-pack 빌드 아티팩트 — .d.ts와 .wasm만 추적, .js는 빌드 시 생성
 *
-!.gitignore
-!*.d.ts
-!*.wasm

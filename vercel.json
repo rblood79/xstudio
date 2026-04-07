@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm turbo run build --filter=@xstudio/builder",
+  "buildCommand": "pnpm turbo run build --filter=@composition/builder",
   "outputDirectory": "apps/builder/dist",
   "installCommand": "pnpm install",
   "framework": "vite"

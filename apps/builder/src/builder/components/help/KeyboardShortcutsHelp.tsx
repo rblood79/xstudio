@@ -11,7 +11,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Button } from "@xstudio/shared/components";
+import { Button } from "@composition/shared/components";
 import { Keyboard, X, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { iconProps } from '../../../utils/ui/uiConstants';
 import {

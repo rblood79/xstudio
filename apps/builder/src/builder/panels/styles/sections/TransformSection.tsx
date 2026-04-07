@@ -16,7 +16,7 @@ import {
   PropertyUnitInput,
   PropertySelect,
 } from "../../../components";
-import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
+import { ToggleButton, ToggleButtonGroup } from "@composition/shared/components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import {

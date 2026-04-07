@@ -7,7 +7,7 @@
  * - buildPropagationUpdates (Inspector primary): childrenMap으로 중첩 경로 해석, Store에 값 기록
  * - resolvePropagatedProps (Skia/Layout fallback): 직접 자식 1단계만, Store에 값 없을 때 보완
  */
-import type { PropagationRule } from "@xstudio/specs";
+import type { PropagationRule } from "@composition/specs";
 import { getPropagationRules } from "./propagationRegistry";
 
 // ─── Types ──────────────────────────────────────────────────────────────────

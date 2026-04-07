@@ -14,7 +14,7 @@
 
 import { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { Key } from 'react-aria-components';
-import { Select, SelectItem } from '@xstudio/shared/components';
+import { Select, SelectItem } from '@composition/shared/components';
 import type {
   FillItem,
   GradientStop,

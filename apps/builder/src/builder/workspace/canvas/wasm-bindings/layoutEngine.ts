@@ -93,10 +93,13 @@ export async function initLayoutEngine(): Promise<void> {
 
   initPromise = (async () => {
     try {
+      // 절대 경로 변수 분리: TypeScript 정적 분석 우회 + @vite-ignore 런타임 처리 유지
+      const wasmModulePath =
+        "/packages/composition-layout/pkg/composition_layout.js" as string;
       const mod = (await import(
         /* webpackIgnore: true */
         /* @vite-ignore */
-        "/packages/xstudio-layout/pkg/xstudio_layout.js"
+        wasmModulePath
       )) as unknown as { default: () => Promise<WasmModule> };
 
       const wasm = await mod.default();

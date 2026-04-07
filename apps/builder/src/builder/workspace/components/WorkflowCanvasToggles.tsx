@@ -1,4 +1,4 @@
-import { Checkbox } from "@xstudio/shared/components";
+import { Checkbox } from "@composition/shared/components";
 import { useStore } from "../../stores";
 
 const EdgeStyleIcon: React.FC<{

@@ -6,7 +6,7 @@
  */
 
 import { atom } from 'jotai';
-import type { ComponentState } from '@xstudio/specs';
+import type { ComponentState } from '@composition/specs';
 
 /**
  * 요소별 컴포넌트 상태 미리보기 값.

@@ -20,7 +20,7 @@ import {
   Text,
   ValidationResult,
 } from "react-aria-components";
-import { getIconData } from "@xstudio/specs";
+import { getIconData } from "@composition/specs";
 import type { ComponentSize } from "../types";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 

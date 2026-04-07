@@ -4,7 +4,7 @@
  * 🚀 Phase 10 B2.3: Publish App 컴포넌트 레지스트리
  *
  * Element tag를 실제 React 컴포넌트로 매핑합니다.
- * @xstudio/shared의 컴포넌트를 사용하여 Builder Preview와 동일한 렌더링을 보장합니다.
+ * @composition/shared의 컴포넌트를 사용하여 Builder Preview와 동일한 렌더링을 보장합니다.
  *
  * @since 2025-12-11 Phase 10 B2.3
  * @updated 2025-01-02 shared 컴포넌트 통합
@@ -12,7 +12,7 @@
 
 import type { ComponentType } from "react";
 
-// @xstudio/shared 컴포넌트 import
+// @composition/shared 컴포넌트 import
 import {
   Button,
   TextField,
@@ -60,7 +60,7 @@ import {
   Modal,
   Popover,
   Tooltip,
-} from "@xstudio/shared/components";
+} from "@composition/shared/components";
 
 // ============================================
 // Component Registry Types
@@ -257,7 +257,7 @@ function createHeadingElement(): ComponentType<Record<string, unknown>> {
 registerDefaultComponents();
 
 /**
- * @xstudio/shared 컴포넌트 등록
+ * @composition/shared 컴포넌트 등록
  * Builder Preview와 동일한 React Aria 컴포넌트 사용
  */
 export function registerSharedComponents(): void {

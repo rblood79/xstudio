@@ -28,8 +28,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { DialogTrigger, Button as AriaButton } from "react-aria-components";
 import { Plus } from "lucide-react";
-import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
-import { Popover } from "@xstudio/shared/components/Popover";
+import { ColorSwatch } from "@composition/shared/components/ColorSwatch";
+import { Popover } from "@composition/shared/components/Popover";
 import { PropertySection } from "../../../components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps, iconSmall } from "../../../../utils/ui/uiConstants";

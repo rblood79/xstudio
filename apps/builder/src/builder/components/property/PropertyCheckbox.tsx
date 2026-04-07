@@ -1,6 +1,6 @@
 import React from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
-import { Checkbox } from "@xstudio/shared/components/list";
+import { Checkbox } from "@composition/shared/components/list";
 
 interface PropertyCheckboxProps {
     label: string;

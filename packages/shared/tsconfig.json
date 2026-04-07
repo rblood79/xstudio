@@ -1,5 +1,5 @@
 {
-  "extends": "@xstudio/config/tsconfig/library",
+  "extends": "@composition/config/tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",

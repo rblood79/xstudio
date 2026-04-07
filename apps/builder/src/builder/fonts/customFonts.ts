@@ -2,7 +2,7 @@ import {
   type CustomFontAsset,
   inferFontFormatFromName,
   stripExtension,
-} from "@xstudio/shared/utils";
+} from "@composition/shared/utils";
 import {
   loadFontRegistry,
   saveFontRegistry,
@@ -13,8 +13,8 @@ import {
   FONT_REGISTRY_STORAGE_KEY,
   type FontFaceAsset,
   type FontRegistryV2,
-} from "@xstudio/shared";
-import type { FontFormat } from "@xstudio/shared";
+} from "@composition/shared";
+import type { FontFormat } from "@composition/shared";
 
 const STYLE_ID = "xstudio-custom-fonts";
 

@@ -137,7 +137,7 @@ export default defineConfig(({ command }) => {
       format: "es",
       plugins: () => [wasm()],
     },
-    base: command === "build" ? "/xstudio/" : "/",
+    base: command === "build" ? "/composition/" : "/",
     build: {
       // 브라우저 호환성 명시 (필요시)
       // 'baseline-widely-available'은 Vite 7의 기본값
@@ -153,44 +153,44 @@ export default defineConfig(({ command }) => {
     resolve: {
       alias: [
         { find: "@", replacement: `${import.meta.dirname}/src` },
-        // @xstudio/shared aliases - must be ordered from most specific to least specific
+        // @composition/shared aliases - must be ordered from most specific to least specific
         {
-          find: /^@xstudio\/shared\/components\/styles\/(.*)$/,
+          find: /^@composition\/shared\/components\/styles\/(.*)$/,
           replacement: `${import.meta.dirname}/../../packages/shared/src/components/styles/$1`,
         },
         {
-          find: /^@xstudio\/shared\/components\/(.*)$/,
+          find: /^@composition\/shared\/components\/(.*)$/,
           replacement: `${import.meta.dirname}/../../packages/shared/src/components/$1`,
         },
         {
-          find: "@xstudio/shared/components",
+          find: "@composition/shared/components",
           replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.tsx`,
         },
         {
-          find: "@xstudio/shared/utils",
+          find: "@composition/shared/utils",
           replacement: `${import.meta.dirname}/../../packages/shared/src/utils/index.ts`,
         },
         {
-          find: "@xstudio/shared/types",
+          find: "@composition/shared/types",
           replacement: `${import.meta.dirname}/../../packages/shared/src/types/index.ts`,
         },
         {
-          find: "@xstudio/shared/renderers",
+          find: "@composition/shared/renderers",
           replacement: `${import.meta.dirname}/../../packages/shared/src/renderers/index.ts`,
         },
         {
-          find: "@xstudio/shared/hooks",
+          find: "@composition/shared/hooks",
           replacement: `${import.meta.dirname}/../../packages/shared/src/hooks/index.ts`,
         },
         {
-          find: "@xstudio/shared",
+          find: "@composition/shared",
           replacement: `${import.meta.dirname}/../../packages/shared/src/index.ts`,
         },
       ],
     },
     optimizeDeps: {
       // Rust WASM 모듈은 Vite 사전 번들링에서 제외
-      exclude: ["xstudio-wasm"],
+      exclude: ["composition-wasm"],
       // 주요 의존성의 사전 번들링 강제 (의존성 스캔 오류 방지)
       include: [
         "react",

@@ -11,7 +11,7 @@
  * @see ADR-021 Phase A
  */
 
-import { lightColors, darkColors } from "@xstudio/specs";
+import { lightColors, darkColors } from "@composition/specs";
 
 import { oklchToHex } from "./oklchToHex";
 

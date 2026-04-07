@@ -26,8 +26,8 @@ import {
   PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
   STATUSLIGHT_DIMENSIONS,
-} from "@xstudio/specs";
-import type { SizeSpec } from "@xstudio/specs";
+} from "@composition/specs";
+import type { SizeSpec } from "@composition/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   measureWrappedTextHeight,
@@ -460,7 +460,7 @@ const DEFAULT_WIDTH = 80;
 /**
  * 버튼 size별 설정
  *
- * @xstudio/specs ButtonSpec.sizes와 1:1 동기화
+ * @composition/specs ButtonSpec.sizes와 1:1 동기화
  * paddingLeft/paddingRight: ButtonSpec.sizes[size].paddingX (좌우 동일)
  * paddingY: ButtonSpec.sizes[size].paddingY (상하 동일)
  * fontSize: typography 토큰 resolved 값

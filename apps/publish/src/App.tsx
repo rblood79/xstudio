@@ -11,16 +11,16 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Element, Page } from "@xstudio/shared";
+import type { Element, Page } from "@composition/shared";
 import {
   loadProjectFromUrl,
   loadProjectFromFile,
   type ExportedProjectData,
   type ExportError,
   ExportErrorCode,
-} from "@xstudio/shared/utils";
-import { loadFontRegistry, buildRegistryFontFaceCss } from "@xstudio/shared";
-import type { FontRegistryV2 } from "@xstudio/shared";
+} from "@composition/shared/utils";
+import { loadFontRegistry, buildRegistryFontFaceCss } from "@composition/shared";
+import type { FontRegistryV2 } from "@composition/shared";
 import { PageRenderer } from "./renderer";
 import { PageNav } from "./components/PageNav";
 import { usePageRouting } from "./hooks/usePageRouting";

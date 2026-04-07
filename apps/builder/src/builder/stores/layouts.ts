@@ -93,7 +93,7 @@ export const createLayoutsSlice: StateCreator<LayoutsStore> = (set, get) => {
 
 export const useLayoutsStore = create<LayoutsStore>()(
   persist(createLayoutsSlice, {
-    name: "xstudio-layouts",
+    name: "composition-layouts",
     // currentLayoutId만 저장 (layouts 배열은 IndexedDB에서 로드)
     partialize: (state) => ({ currentLayoutId: state.currentLayoutId }),
   })

@@ -1,3 +1,3 @@
-import base from '@xstudio/config/eslint/base';
+import base from '@composition/config/eslint/base';
 
 export default [...base];

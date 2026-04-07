@@ -13,7 +13,7 @@ import { useStore } from "../../../stores";
 import type { Element } from "../../../../types/core/store.types";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { generateCustomId } from "../../../utils/idGeneration";
-import { TabsSpec } from "@xstudio/specs";
+import { TabsSpec } from "@composition/specs";
 
 const EMPTY_CHILDREN: Element[] = [];
 

@@ -6,7 +6,7 @@
  */
 
 import { FileTypeCorner } from "lucide-react";
-import type { FontFaceAsset } from "@xstudio/shared";
+import type { FontFaceAsset } from "@composition/shared";
 import { PropertySection, PropertyListItem } from "../../../components";
 
 interface FontFamilyGroupProps {

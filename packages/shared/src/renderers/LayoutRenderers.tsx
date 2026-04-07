@@ -30,7 +30,7 @@ import {
 } from "../components/ColorSwatchPicker";
 import { parseColor } from "react-aria-components";
 import { Slot } from "../components/Slot";
-import { getIconData } from "@xstudio/specs";
+import { getIconData } from "@composition/specs";
 import type {
   PreviewElement,
   RenderContext,

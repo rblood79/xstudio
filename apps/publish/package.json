@@ -1,5 +1,5 @@
 {
-  "name": "@xstudio/publish",
+  "name": "@composition/publish",
   "version": "0.1.0",
   "private": true,
   "description": "XStudio publish runtime for deployed applications",
@@ -17,13 +17,13 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@xstudio/shared": "workspace:*",
+    "@composition/shared": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-aria-components": "catalog:"
   },
   "devDependencies": {
-    "@xstudio/config": "workspace:*",
+    "@composition/config": "workspace:*",
     "eslint": "^10.0.2",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

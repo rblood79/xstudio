@@ -1,5 +1,5 @@
 {
-  "name": "@xstudio/shared",
+  "name": "@composition/shared",
   "version": "0.1.0",
   "private": true,
   "description": "XStudio shared types, utilities, components, and renderers",
@@ -68,12 +68,12 @@
     "react-aria-components": "catalog:",
     "react-stately": "^3.44.0",
     "tailwind-merge": "^3.5.0",
-    "@xstudio/specs": "workspace:*"
+    "@composition/specs": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@xstudio/config": "workspace:*",
+    "@composition/config": "workspace:*",
     "eslint": "^10.0.2",
     "typescript": "catalog:",
     "zod": "^4.3.6"

@@ -11,7 +11,7 @@
 
 import { memo, useCallback } from "react";
 import { AlertTriangle, Trash2, Merge, X } from "lucide-react";
-import { Button } from "@xstudio/shared/components";
+import { Button } from "@composition/shared/components";
 import { Dialog, DialogTrigger, Modal, Heading } from "react-aria-components";
 import type { ExistingSlotInfo, PresetApplyMode } from "./types";
 import { iconProps } from "../../../../../utils/ui/uiConstants";

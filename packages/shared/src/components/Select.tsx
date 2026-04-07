@@ -21,7 +21,7 @@ import {
   ValidationResult,
   composeRenderProps,
 } from "react-aria-components";
-import { getIconData } from "@xstudio/specs";
+import { getIconData } from "@composition/specs";
 import type {
   ComponentSize,
   DataBinding,

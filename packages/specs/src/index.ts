@@ -1,5 +1,5 @@
 /**
- * @xstudio/specs
+ * @composition/specs
  *
  * Component Spec Architecture - Single Source of Truth
  * Builder(WebGL)와 Publish(React)의 100% 시각적 일치 보장

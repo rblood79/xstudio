@@ -9,13 +9,13 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 
 // React Aria 컴포넌트 스타일
-import "@xstudio/shared/components/styles/index.css";
+import "@composition/shared/components/styles/index.css";
 
 // Pretendard 폰트 (Preview iframe은 별도 컨텍스트이므로 독립 로드 필요)
 import "pretendard/dist/web/static/pretendard.css";
 
 // 폰트 유틸리티
-import { loadFontRegistry, buildRegistryFontFaceCss } from "@xstudio/shared";
+import { loadFontRegistry, buildRegistryFontFaceCss } from "@composition/shared";
 
 // ============================================
 // Styles

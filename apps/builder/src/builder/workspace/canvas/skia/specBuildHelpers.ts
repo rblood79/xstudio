@@ -4,8 +4,8 @@
  * ElementSprite.tsx에서 추출. PixiJS 의존성 없음.
  */
 
-import type { Shape, TokenRef } from "@xstudio/specs";
-import { resolveToken } from "@xstudio/specs";
+import type { Shape, TokenRef } from "@composition/specs";
+import { resolveToken } from "@composition/specs";
 import { cssColorToHex } from "../sprites/styleConverter";
 import { measureWrappedTextHeight } from "../utils/textMeasure";
 

@@ -9,7 +9,7 @@
 
 import { idMapper } from "./idMapper";
 import { getRustWasm } from "./rustWasm";
-import type { SpatialIndex as SpatialIndexWasm } from "./pkg/xstudio_wasm";
+import type { SpatialIndex as SpatialIndexWasm } from "./pkg/composition_wasm";
 
 const SPATIAL_CELL_SIZE = 256;
 

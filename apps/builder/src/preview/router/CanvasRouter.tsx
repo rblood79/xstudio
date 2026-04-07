@@ -15,6 +15,7 @@ import {
   type NavigateFunction,
 } from "react-router-dom";
 import { RouterContext } from "./canvasRouterContext";
+import { useCanvasParams } from "./canvasRouterHooks";
 import { useRuntimeStore } from "../store";
 import type { RuntimeLayout } from "../store/types";
 import { generatePageUrl, hasDynamicParams } from "../../utils/urlGenerator";
@@ -32,7 +33,7 @@ interface PageRendererProps {
 function PageRenderer({ pageId, renderElements }: PageRendererProps) {
   const setCurrentPageId = useRuntimeStore((s) => s.setCurrentPageId);
   const setRouteParams = useRuntimeStore((s) => s.setRouteParams);
-  const params = useRouterParams();
+  const params = useCanvasParams();
 
   useEffect(() => {
     setCurrentPageId(pageId);

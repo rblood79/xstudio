@@ -25,7 +25,7 @@ import { buildBaseNodeProps } from "./buildBaseNodeProps";
 import { parsePadding } from "../sprites/paddingUtils";
 import { skiaFontManager } from "./fontManager";
 import { colord } from "colord";
-import { hexStringToNumber, lightColors, darkColors } from "@xstudio/specs";
+import { hexStringToNumber, lightColors, darkColors } from "@composition/specs";
 
 // ---------------------------------------------------------------------------
 // Types

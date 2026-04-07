@@ -15,7 +15,7 @@ import {
   TagSpec,
   resolveToken,
   type TokenRef,
-} from "@xstudio/specs";
+} from "@composition/specs";
 import {
   getSizePreset,
   getCheckboxSizePreset,

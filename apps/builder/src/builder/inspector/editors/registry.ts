@@ -1,6 +1,6 @@
 import { createElement, type ComponentType } from "react";
 import type { ComponentEditorProps } from "../types";
-import { componentMetadata } from "@xstudio/shared/components/metadata";
+import { componentMetadata } from "@composition/shared/components/metadata";
 import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
 import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";

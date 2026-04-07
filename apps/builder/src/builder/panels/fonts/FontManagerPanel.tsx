@@ -10,8 +10,8 @@ import { Type } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader, EmptyState } from "../../components";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { validateFontFile, FONT_LIMITS } from "@xstudio/shared";
-import type { FontRegistryV2 } from "@xstudio/shared";
+import { validateFontFile, FONT_LIMITS } from "@composition/shared";
+import type { FontRegistryV2 } from "@composition/shared";
 import {
   loadFontRegistry,
   addFontFace,

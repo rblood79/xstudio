@@ -29,7 +29,7 @@ import {
   Keyboard,
   Button,
 } from "react-aria-components";
-import { ToggleButtonGroup, ToggleButton } from "@xstudio/shared/components";
+import { ToggleButtonGroup, ToggleButton } from "@composition/shared/components";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
 import { ZoomControls } from "../workspace/ZoomControls";

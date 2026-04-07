@@ -1,6 +1,6 @@
 import { memo, useCallback } from "react";
 import type { Key } from "react-aria-components";
-import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
+import { ToggleButton, ToggleButtonGroup } from "@composition/shared/components";
 
 interface PropertySizeToggleProps {
   label: string;

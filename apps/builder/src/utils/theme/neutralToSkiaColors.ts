@@ -8,7 +8,7 @@
  * @see ADR-021 Phase B
  */
 
-import { lightColors, darkColors } from "@xstudio/specs";
+import { lightColors, darkColors } from "@composition/specs";
 
 // ============================================================================
 // Types

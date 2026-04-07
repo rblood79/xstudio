@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useRef, type KeyboardEvent } from "react";
-import type { Page } from "@xstudio/shared";
+import type { Page } from "@composition/shared";
 import "./PageNav.css";
 
 interface PageNavProps {

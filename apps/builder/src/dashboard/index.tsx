@@ -20,7 +20,7 @@ import {
   Tooltip,
   ToggleButtonGroup,
   ToggleButton,
-} from "@xstudio/shared/components";
+} from "@composition/shared/components";
 import { TooltipTrigger } from "react-aria-components";
 import { useAsyncQuery } from "../builder/hooks/useAsyncQuery";
 import { useAsyncMutation } from "../builder/hooks/useAsyncMutation";

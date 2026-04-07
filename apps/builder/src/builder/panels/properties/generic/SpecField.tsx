@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { ComponentSpec, FieldDef } from "@xstudio/specs";
+import type { ComponentSpec, FieldDef } from "@composition/specs";
 import {
   PropertyIconPicker,
   PropertyInput,

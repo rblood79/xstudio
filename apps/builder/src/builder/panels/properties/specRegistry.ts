@@ -1,4 +1,4 @@
-import type { ComponentSpec } from "@xstudio/specs";
+import type { ComponentSpec } from "@composition/specs";
 import {
   AccordionSpec,
   AutocompleteSpec,
@@ -74,7 +74,7 @@ import {
   TreeSpec,
   RangeCalendarSpec,
   TextSpec,
-} from "@xstudio/specs";
+} from "@composition/specs";
 
 /**
  * ADR-041 Property Editor spec registry.

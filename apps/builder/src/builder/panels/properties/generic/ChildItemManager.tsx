@@ -1,6 +1,6 @@
 import { memo, useMemo, useCallback } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { ChildrenManagerField } from "@xstudio/specs";
+import type { ChildrenManagerField } from "@composition/specs";
 import { useStore } from "../../../stores";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { generateCustomId } from "../../../utils/idGeneration";

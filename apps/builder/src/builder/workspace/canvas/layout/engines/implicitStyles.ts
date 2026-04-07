@@ -18,8 +18,8 @@ import {
   TABS_BAR_HEIGHT,
   TABS_PANEL_PADDING,
 } from "./utils";
-import { InlineAlertSpec } from "@xstudio/specs";
-import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
+import { InlineAlertSpec } from "@composition/specs";
+import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
 

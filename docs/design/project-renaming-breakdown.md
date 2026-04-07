@@ -148,6 +148,64 @@ wasm-pack build --target bundler --out-dir ../../../../../../wasm-bindings/pkg
 
 `rustWasm.ts`의 WASM import는 `/* @vite-ignore */`으로 Vite alias를 우회하므로, 파일명 불일치가 빌드 시점에 에러를 발생시키지 않고 **런타임에** `ERR_MODULE_NOT_FOUND`로 실패한다. Gate에서 반드시 `pnpm dev` 기동 후 WASM 로드 성공을 확인해야 한다.
 
+### 2-2.5. Layout WASM 패키지 변경 (2 파일)
+
+> `packages/xstudio-layout`은 Taffy WASM 레이아웃 엔진 패키지로, 원안에서 누락되었다. Canvas WASM(`xstudio-wasm`)과 별도로 처리해야 한다.
+
+#### `packages/xstudio-layout/Cargo.toml`
+
+```diff
+- name = "xstudio-layout"
++ name = "composition-layout"
+```
+
+#### `packages/xstudio-layout/pkg/package.json`
+
+```diff
+- "name": "xstudio-layout",
++ "name": "composition-layout",
+  "files": [
+-   "xstudio_layout_bg.wasm",
+-   "xstudio_layout.js",
+-   "xstudio_layout.d.ts"
++   "composition_layout_bg.wasm",
++   "composition_layout.js",
++   "composition_layout.d.ts"
+  ],
+- "main": "xstudio_layout.js",
++ "main": "composition_layout.js",
+- "types": "xstudio_layout.d.ts",
++ "types": "composition_layout.d.ts",
+```
+
+#### Layout WASM 동적 import 경로 (2 파일)
+
+**`apps/builder/src/builder/workspace/canvas/wasm-bindings/layoutEngine.ts`**:
+
+```diff
+- "/packages/xstudio-layout/pkg/xstudio_layout.js"
++ "/packages/composition-layout/pkg/composition_layout.js"
+```
+
+**`apps/builder/src/builder/stores/layouts.ts`**:
+
+- `xstudio-layout` 주석/참조 → `composition-layout`
+
+#### Layout WASM clean rebuild 필수:
+
+```bash
+cd packages/xstudio-layout
+cargo clean
+rm -rf pkg/
+wasm-pack build --target bundler --out-dir pkg
+```
+
+rebuild 후 `pkg/` 에 `composition_layout.js`, `composition_layout_bg.wasm`, `composition_layout.d.ts` 생성 확인.
+
+**런타임 검증 (CRITICAL)**: `layoutEngine.ts`의 동적 import는 Vite alias를 우회하므로 빌드 시점에 에러가 없어도 **런타임에 `ERR_MODULE_NOT_FOUND`로 실패**한다. Gate에서 반드시 `pnpm dev` 기동 후 레이아웃 엔진 초기화 성공을 확인해야 한다.
+
+---
+
 ### 2-3. Vite config alias (2 파일)
 
 **`apps/builder/vite.config.ts`** (7곳):
@@ -213,7 +271,9 @@ wasm-pack build --target bundler --out-dir ../../../../../../wasm-bindings/pkg
 
 ### 2-7. 소스 코드 Import 경로 일괄 변경
 
-**대상**: 88개 파일, 174개 참조
+**대상**: 93개 파일, 182개 참조
+
+> **2026-04-07 수치 갱신**: ADR-100(PixiJS 제거)으로 일부 감소, TextSpec·Variable fonts·Transition/Animation 신규 기능 추가로 순증.
 
 일괄 치환 전략:
 
@@ -339,9 +399,13 @@ Phase 6 (디렉토리, 선택)
 - [ ] Phase 2~4: TypeScript paths 변경 (4 파일)
 - [ ] Phase 2~4: ESLint config 변경 (3 파일)
 - [ ] Phase 2~4: 배포 설정 변경 (vercel.json, deploy.yml)
-- [ ] Phase 2~4: 88개 파일 import 경로 일괄 치환
+- [ ] Phase 2~4: 93개 파일 import 경로 일괄 치환
+- [ ] Phase 2~4: `packages/xstudio-layout/Cargo.toml` 패키지명 변경 (`composition-layout`)
+- [ ] Phase 2~4: `packages/xstudio-layout/pkg/package.json` 파일명 갱신
+- [ ] Phase 2~4: Layout WASM clean rebuild (`cargo clean` + `rm -rf pkg/` + `wasm-pack build`)
+- [ ] Phase 2~4: `layoutEngine.ts` 동적 import 경로 변경
 - [ ] Phase 2~4: `pnpm install && pnpm build && pnpm type-check` 성공
-- [ ] Phase 2~4: `pnpm dev` 기동 후 WASM 로드 성공 확인 (런타임 검증)
+- [ ] Phase 2~4: `pnpm dev` 기동 후 Canvas WASM + Layout WASM 양쪽 로드 성공 확인 (런타임 검증)
 - [ ] Phase 5: 문서 갱신 (README, CLAUDE.md, ADR 등)
 - [ ] Phase 5: `.claude/` 디렉토리/파일 갱신
 - [ ] Phase 5: Vercel 프로젝트 재연결

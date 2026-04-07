@@ -9,10 +9,10 @@
  */
 
 import { memo, useMemo } from "react";
-import type { Element } from "@xstudio/shared";
+import type { Element } from "@composition/shared";
 import { getComponent } from "../registry/ComponentRegistry";
-import { ActionExecutor } from "@xstudio/shared";
-import type { EventRuntimeContext } from "@xstudio/shared";
+import { ActionExecutor } from "@composition/shared";
+import type { EventRuntimeContext } from "@composition/shared";
 
 // 이벤트 타입 정의
 interface ElementEvent {
@@ -82,7 +82,7 @@ export const ElementRenderer = memo(function ElementRenderer({
             await actionExecutor.execute({
               type: action.type,
               config: action.payload || {},
-            } as import("@xstudio/shared").Action);
+            } as import("@composition/shared").Action);
           } catch (error) {
             console.error(`[Event] Action ${action.type} failed:`, error);
           }

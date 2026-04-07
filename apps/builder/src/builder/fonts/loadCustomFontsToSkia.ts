@@ -7,7 +7,7 @@
  * 동일 패밀리의 여러 weight/style 변형을 개별 로드한다.
  */
 
-import { loadFontRegistry, type FontFaceAsset } from "@xstudio/shared";
+import { loadFontRegistry, type FontFaceAsset } from "@composition/shared";
 import { skiaFontManager } from "../workspace/canvas/skia/fontManager";
 import { GOOGLE_FONT_DEFS, getFontsourceUrl } from "./customFonts";
 

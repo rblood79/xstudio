@@ -4,7 +4,7 @@
  * ElementSprite.tsx에서 추출. StoreRenderBridge에서도 재사용.
  */
 
-import type { ComponentSpec } from "@xstudio/specs";
+import type { ComponentSpec } from "@composition/specs";
 import {
   ButtonSpec,
   BadgeSpec,
@@ -94,7 +94,7 @@ import {
   IllustratedMessageSpec,
   CardViewSpec,
   TableViewSpec,
-} from "@xstudio/specs";
+} from "@composition/specs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {

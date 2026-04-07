@@ -15,8 +15,8 @@ import {
   DialogTrigger,
   Button as AriaButton,
 } from "react-aria-components";
-import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
-import { Popover } from "@xstudio/shared/components/Popover";
+import { ColorSwatch } from "@composition/shared/components/ColorSwatch";
+import { Popover } from "@composition/shared/components/Popover";
 import { Trash2 } from "lucide-react";
 import type {
   FillItem,

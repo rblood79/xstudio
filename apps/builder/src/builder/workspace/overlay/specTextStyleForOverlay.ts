@@ -7,7 +7,7 @@
  * @see specTextStyle.ts (레이아웃 측정용 — fontSize/fontWeight/fontFamily만)
  */
 
-import type { ComponentSpec, TextShape, Shape } from "@xstudio/specs";
+import type { ComponentSpec, TextShape, Shape } from "@composition/specs";
 import {
   ButtonSpec,
   BadgeSpec,
@@ -18,7 +18,7 @@ import {
   SwitchSpec,
   InputSpec,
   resolveColor,
-} from "@xstudio/specs";
+} from "@composition/specs";
 import type { TextStyleConfig } from "./TextEditOverlay";
 
 const TEXT_BEARING_SPECS: Record<

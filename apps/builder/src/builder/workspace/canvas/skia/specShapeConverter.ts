@@ -5,11 +5,11 @@
  * CanvasKit/Skia 렌더러가 이해하는 SkiaNodeData로 변환한다.
  */
 
-import type { Shape, ColorValue } from "@xstudio/specs";
-import { getIconData } from "@xstudio/specs";
+import type { Shape, ColorValue } from "@composition/specs";
+import { getIconData } from "@composition/specs";
 import type { SkiaNodeData } from "./nodeRenderers";
 import type { EffectStyle, FillStyle } from "./types";
-import { resolveColor, resolveToken, hexStringToNumber } from "@xstudio/specs";
+import { resolveColor, resolveToken, hexStringToNumber } from "@composition/specs";
 import { getSkImage, loadSkImage } from "./imageCache";
 
 // ========== Helpers ==========

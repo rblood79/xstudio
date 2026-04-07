@@ -6,7 +6,7 @@
  */
 
 import { memo } from "react";
-import { getIconData } from "@xstudio/specs";
+import { getIconData } from "@composition/specs";
 
 const ICON_SIZE_MAP: Record<string, number> = {
   xs: 16,

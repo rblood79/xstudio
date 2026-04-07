@@ -27,7 +27,7 @@ import {
   Scissors,
 } from "lucide-react";
 import { OVERFLOW_OPTIONS } from "../constants/styleOptions";
-import { shadows } from "@xstudio/specs";
+import { shadows } from "@composition/specs";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";

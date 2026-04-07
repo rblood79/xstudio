@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import type { Page } from "@xstudio/shared";
+import type { Page } from "@composition/shared";
 
 interface UsePageRoutingOptions {
   pages: Page[];

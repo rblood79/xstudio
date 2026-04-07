@@ -9,7 +9,7 @@
  */
 
 import { memo, useCallback } from 'react';
-import { ToggleButtonGroup, ToggleButton } from '@xstudio/shared/components';
+import { ToggleButtonGroup, ToggleButton } from '@composition/shared/components';
 import { Circle, Blend, Image } from 'lucide-react';
 import type { Selection } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';

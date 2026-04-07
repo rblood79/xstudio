@@ -1,4 +1,4 @@
-import type { VisibilityCondition } from "@xstudio/specs";
+import type { VisibilityCondition } from "@composition/specs";
 
 export function evaluateVisibility(
   condition: VisibilityCondition | undefined,

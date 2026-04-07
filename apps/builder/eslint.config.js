@@ -1,4 +1,4 @@
-import reactConfig from "@xstudio/config/eslint/react";
+import reactConfig from "@composition/config/eslint/react";
 import localRules from "./eslint-local-rules/index.js";
 
 export default [

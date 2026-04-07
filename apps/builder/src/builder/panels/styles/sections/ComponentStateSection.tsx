@@ -15,7 +15,7 @@ import { previewComponentStateAtom } from "../atoms/componentStateAtom";
 import { selectedElementAtom } from "../atoms/styleAtoms";
 import { PropertySection, PropertySelect } from "../../../components";
 import { Activity } from "lucide-react";
-import type { ComponentState } from "@xstudio/specs";
+import type { ComponentState } from "@composition/specs";
 
 const STATE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "default", label: "Default" },

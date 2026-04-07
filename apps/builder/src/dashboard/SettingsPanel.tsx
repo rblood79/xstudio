@@ -12,7 +12,7 @@ import {
   Select,
   SelectItem,
   Separator,
-} from "@xstudio/shared/components";
+} from "@composition/shared/components";
 import { DialogTrigger, Heading } from "react-aria-components";
 import { useSettingsStore } from "../stores/settingsStore";
 import { Settings, Info } from "lucide-react";

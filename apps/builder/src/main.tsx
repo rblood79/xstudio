@@ -25,7 +25,7 @@ import Builder from "./builder";
 import Signin from "./auth/Signin";
 
 // Lazy load PublishApp to prevent CSS conflicts (CSS loads only when route is accessed)
-const PublishApp = lazy(() => import("@xstudio/publish"));
+const PublishApp = lazy(() => import("@composition/publish"));
 import { supabase } from "./env/supabase.client";
 import { Session } from "@supabase/supabase-js";
 import {

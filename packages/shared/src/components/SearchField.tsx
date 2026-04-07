@@ -17,7 +17,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
-import { getIconData } from "@xstudio/specs";
+import { getIconData } from "@composition/specs";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
 import "./styles/SearchField.css";

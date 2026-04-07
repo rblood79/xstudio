@@ -3,7 +3,7 @@ import { Clock, History, Redo, Trash2, Undo } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader, EmptyState } from "../../components";
 import { ActionIconButton } from "../../components/ui";
-import { Button } from "@xstudio/shared/components";
+import { Button } from "@composition/shared/components";
 import { iconProps, iconSmall } from "../../../utils/ui/uiConstants";
 import { historyManager, type HistoryEntry } from "../../stores/history";
 import { useStore } from "../../stores";

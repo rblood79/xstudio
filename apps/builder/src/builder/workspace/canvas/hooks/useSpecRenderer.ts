@@ -1,7 +1,7 @@
 /**
  * useSpecRenderer - Spec 기반 렌더링 공유 유틸리티
  *
- * Legacy cssVariableReader에서 @xstudio/specs 기반으로 전환하기 위한
+ * Legacy cssVariableReader에서 @composition/specs 기반으로 전환하기 위한
  * Feature Flag 및 헬퍼 함수 제공
  *
  * @since 2026-02-12 Spec Migration Phase 0
@@ -13,8 +13,8 @@ import {
   getSizePreset as getSpecSizePreset,
   resolveColor,
   hexStringToNumber,
-} from '@xstudio/specs';
-import type { ComponentSpec, TokenRef } from '@xstudio/specs';
+} from '@composition/specs';
+import type { ComponentSpec, TokenRef } from '@composition/specs';
 
 // ============================================
 // Types

@@ -1,5 +1,5 @@
 import { createElement, memo, useMemo, type ComponentType } from "react";
-import type { ComponentSpec } from "@xstudio/specs";
+import type { ComponentSpec } from "@composition/specs";
 import { PropertyCustomId, PropertySection } from "../../../components";
 import { useStore } from "../../../stores";
 import type { ComponentEditorProps } from "../../../inspector/types";

@@ -9,8 +9,8 @@
  */
 
 import { memo, useMemo } from 'react';
-import type { Element, Page } from '@xstudio/shared';
-import { buildElementTree } from '@xstudio/shared';
+import type { Element, Page } from '@composition/shared';
+import { buildElementTree } from '@composition/shared';
 import { ElementRenderer } from './ElementRenderer';
 
 // ============================================

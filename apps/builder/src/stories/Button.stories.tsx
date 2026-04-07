@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "@xstudio/shared/components/Button";
-import type { ButtonVariant, ComponentSize } from "@xstudio/shared/types";
+import { Button } from "@composition/shared/components/Button";
+import type { ButtonVariant, ComponentSize } from "@composition/shared/types";
 
 const VARIANTS: ButtonVariant[] = [
   "accent",

@@ -1,5 +1,5 @@
 /**
- * @xstudio/shared
+ * @composition/shared
  *
  * 🚀 Phase 10 B2.2: 공유 패키지 메인 엔트리포인트
  *

@@ -27,7 +27,7 @@ import {
   fillsToSkiaFillStyle,
   cssBgImageToSkia,
 } from "../../../panels/styles/utils/fillToSkia";
-import { lightColors, darkColors } from "@xstudio/specs";
+import { lightColors, darkColors } from "@composition/specs";
 
 // ---------------------------------------------------------------------------
 // Types
