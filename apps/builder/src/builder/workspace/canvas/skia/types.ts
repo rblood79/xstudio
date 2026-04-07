@@ -204,6 +204,30 @@ export interface TextShadow {
 }
 
 // ============================================
+// Mask Image Types
+// ============================================
+
+/**
+ * CSS mask-image 스타일 정의.
+ *
+ * gradient 또는 image URL 기반 마스크를 alpha/luminance 모드로 적용한다.
+ * SkSL RuntimeEffect로 합성 (nodeRendererMask.ts).
+ */
+export interface MaskImageStyle {
+  type: "gradient" | "image";
+  /** gradient mask용 FillStyle */
+  gradient?: FillStyle;
+  /** image mask URL */
+  imageUrl?: string;
+  /** alpha (기본) 또는 luminance */
+  mode: "alpha" | "luminance";
+  /** mask-size */
+  size?: "contain" | "cover" | "auto";
+  /** mask-position [x%, y%] */
+  position?: [number, number];
+}
+
+// ============================================
 // AI Visual Feedback Types (G.3)
 // ============================================
 

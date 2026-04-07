@@ -8,6 +8,7 @@ import type {
   DropShadowEffect,
   EffectStyle,
   FillStyle,
+  MaskImageStyle,
   TextShadow,
 } from "./types";
 
@@ -125,6 +126,8 @@ export interface SkiaNodeData {
     strokeColor: Float32Array;
     strokeWidth: number;
   };
+  /** CSS mask-image. nodeRendererMask.ts의 SkSL RuntimeEffect로 처리 */
+  maskImage?: MaskImageStyle;
   transform?: Float32Array;
   clipPath?: ClipPathShape;
   clipChildren?: boolean;
