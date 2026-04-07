@@ -1749,6 +1749,8 @@ export function createDefaultBodyProps(): DivElementProps {
     style: {
       display: "block",
       fontFamily: `"Pretendard", "Inter Variable", monospace, system-ui, sans-serif`,
+      color: "#1a1a1a",
+      backgroundColor: "#ffffff",
       overflow: "auto",
     },
   };

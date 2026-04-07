@@ -39,7 +39,7 @@ const injectBaseStyles = () => {
 
     /* ── Body 기본 스타일 (React 루트이자 body element) ── */
     body {
-      font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      font-family: "Pretendard", "Inter Variable", monospace, system-ui, sans-serif;
       font-feature-settings: "cv02", "cv03", "cv04", "cv11";
       line-height: 1.5;
       color: var(--fg, #1a1a1a);

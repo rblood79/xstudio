@@ -875,12 +875,19 @@ export const appearanceValuesAtom = selectAtom(
 
 export const fontFamilyAtom = selectAtom(
   selectedElementAtom,
-  (element) =>
-    String(
+  (element) => {
+    const raw = String(
       element?.style?.fontFamily ??
         element?.computedStyle?.fontFamily ??
         DEFAULT_FONT_FAMILY,
-    ),
+    );
+    // CSS font-family 체인에서 첫 번째 패밀리만 추출하여 드롭다운 매칭
+    const first = raw
+      .split(",")[0]
+      .trim()
+      .replace(/^["']|["']$/g, "");
+    return first || DEFAULT_FONT_FAMILY;
+  },
   (a, b) => a === b,
 );
 
@@ -1011,19 +1018,33 @@ export const typographyValuesAtom = selectAtom(
     const computed = element.computedStyle ?? {};
     const synthetic = computeSyntheticStyle(element);
 
+    // CSS font-family 체인에서 첫 번째 패밀리만 추출
+    const rawFamily = String(
+      style.fontFamily ?? computed.fontFamily ?? DEFAULT_FONT_FAMILY,
+    );
+    const firstFamily =
+      rawFamily
+        .split(",")[0]
+        .trim()
+        .replace(/^["']|["']$/g, "") || DEFAULT_FONT_FAMILY;
+
     return {
-      fontFamily: String(
-        style.fontFamily ?? computed.fontFamily ?? DEFAULT_FONT_FAMILY,
-      ),
+      fontFamily: firstFamily,
       fontSize: String(
         style.fontSize ?? computed.fontSize ?? synthetic.fontSize ?? "16px",
       ),
-      fontWeight: String(
-        style.fontWeight ??
-          computed.fontWeight ??
-          synthetic.fontWeight ??
-          "normal",
-      ),
+      fontWeight: (() => {
+        const raw = String(
+          style.fontWeight ??
+            computed.fontWeight ??
+            synthetic.fontWeight ??
+            "400",
+        );
+        // "normal" → "400", "bold" → "700" 정규화
+        if (raw === "normal") return "400";
+        if (raw === "bold") return "700";
+        return raw;
+      })(),
       fontStyle: String(style.fontStyle ?? computed.fontStyle ?? "normal"),
       lineHeight: String(
         style.lineHeight ??

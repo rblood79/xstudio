@@ -18,6 +18,7 @@ import { isCanvasKitInitialized, getCanvasKit } from "./initCanvasKit";
 import { initAllWasm } from "../wasm-bindings/init";
 import { skiaFontManager } from "./fontManager";
 import {
+  loadBuiltinFontsToSkia,
   loadAllCustomFontsToSkia,
   loadGoogleFontsToSkia,
   syncCustomFontsWithSkia,
@@ -265,7 +266,8 @@ export function SkiaCanvas({
         if (cancelled) return;
 
         getCanvasKit(); // CanvasKit 초기화 확인
-        // 기본 폰트 로딩
+        // 기본 폰트 로딩 (빌트인 Variable → 커스텀 → Google Fonts)
+        await loadBuiltinFontsToSkia();
         await loadAllCustomFontsToSkia();
         await loadGoogleFontsToSkia();
         if (!cancelled) setReady(true);

@@ -446,8 +446,11 @@ export function getFontWeightOptions(
 ): Array<{ value: string; label: string }> {
   let weights: string[];
 
-  if (family === "Pretendard") {
-    weights = ["400", "500", "600", "700"];
+  // Variable font: 100~900 전체 weight 지원
+  const VARIABLE_FONT_FAMILIES = new Set(["Pretendard", "Inter"]);
+
+  if (VARIABLE_FONT_FAMILIES.has(family)) {
+    weights = ["100", "200", "300", "400", "500", "600", "700", "800", "900"];
   } else if (GOOGLE_FONT_WEIGHT_MAP.has(family)) {
     weights = GOOGLE_FONT_WEIGHT_MAP.get(family)!;
   } else {
