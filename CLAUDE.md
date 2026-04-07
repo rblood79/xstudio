@@ -1,6 +1,6 @@
-# XStudio - Claude Code Context
+# composition - Claude Code Context
 
-XStudio는 **노코드 웹 빌더** 애플리케이션입니다 (pnpm monorepo).
+composition는 **노코드 웹 빌더** 애플리케이션입니다 (pnpm monorepo).
 
 > **⚠️ 필수**: 코드 작업 시작 전 반드시 `.claude/skills/composition-patterns/SKILL.md`를 읽으세요.
 
@@ -15,28 +15,28 @@ pnpm storybook    # Storybook
 
 ## 프로젝트 구조
 
-```
 composition/
 ├── apps/
-│   ├── builder/          # 메인 빌더 앱 (에디터 + Canvas + Store)
-│   │   └── src/
-│   │       ├── builder/  # Builder UI (패널, 캔버스, 스토어)
-│   │       ├── preview/  # Preview (iframe 내부)
-│   │       └── services/ # Supabase, AI 서비스
-│   └── publish/          # 프로젝트 배포 앱
+│ ├── builder/ # 메인 빌더 앱 (에디터 + Canvas + Store)
+│ │ └── src/
+│ │ ├── builder/ # Builder UI (패널, 캔버스, 스토어)
+│ │ ├── preview/ # Preview (iframe 내부)
+│ │ └── services/ # Supabase, AI 서비스
+│ └── publish/ # 프로젝트 배포 앱
 ├── packages/
-│   ├── config/           # 공유 설정 (ESLint, TypeScript)
-│   ├── layout-flow/      # Taffy WASM 레이아웃 엔진
-│   ├── shared/           # 공유 유틸리티
-│   └── specs/            # 컴포넌트 스펙 (Skia 렌더링용)
+│ ├── config/ # 공유 설정 (ESLint, TypeScript)
+│ ├── layout-flow/ # Taffy WASM 레이아웃 엔진
+│ ├── shared/ # 공유 유틸리티
+│ └── specs/ # 컴포넌트 스펙 (Skia 렌더링용)
 ├── docs/
-│   ├── adr/              # ADR (Risk-First 템플릿)
-│   └── reference/        # 기술 문서
+│ ├── adr/ # ADR (Risk-First 템플릿)
+│ └── reference/ # 기술 문서
 └── .claude/
-    ├── hooks/            # 자동 품질 게이트 (type-check, protect, format)
-    ├── rules/            # Glob-scoped 컨텍스트 규칙 (파일 패턴별 자동 로드)
-    ├── agents/           # Agent 가이드 (architect, implementer, reviewer, evaluator 등)
-    └── skills/           # Code Patterns & Rules (SKILL.md)
+├── hooks/ # 자동 품질 게이트 (type-check, protect, format)
+├── rules/ # Glob-scoped 컨텍스트 규칙 (파일 패턴별 자동 로드)
+├── agents/ # Agent 가이드 (architect, implementer, reviewer, evaluator 등)
+└── skills/ # Code Patterns & Rules (SKILL.md)
+
 ```
 
 ## 핵심 아키텍처
@@ -88,22 +88,23 @@ composition/
 
 ## 참조 체계
 
-| 용도           | 경로                                                                                                     | 설명                                                                                  |
-| -------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 코드 패턴/규칙 | [SKILL.md](.claude/skills/composition-patterns/SKILL.md)                                                     | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                               |
-| 도메인 규칙    | [.claude/rules/](.claude/rules/)                                                                         | Glob-scoped — 해당 파일 작업 시 자동 로드                                             |
-| Agent 가이드   | [.claude/agents/](.claude/agents/)                                                                       | architect, implementer, evaluator, reviewer, debugger, documenter, refactorer, tester |
-| ADR 현황       | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 대시보드                                                                |
-| ADR 규칙       | [.claude/rules/adr-writing.md](.claude/rules/adr-writing.md)                                             | Risk-First 템플릿, 위험 평가, 금지 패턴 (`docs/adr/**` 자동 로드)                     |
-| 렌더링 상세    | [RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md)                                              | Dual Renderer, DirectContainer 패턴 상세                                              |
-| 컴포넌트 스펙  | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                                                              | Spec 단일 소스 아키텍처                                                               |
-| CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                                     | ITCSS + tv() 스타일링 상세                                                            |
-| CSS 자동 생성  | [docs/adr/completed/036-spec-first-single-source.md](docs/adr/completed/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                                      |
-| Spec↔CSS 경계  | [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)                                   | Leaf(Spec CSS) vs Container(수동 CSS) 분류표, 결정 흐름도                             |
+| 용도                 | 경로                                                                                                     | 설명                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 코드 패턴/규칙       | [SKILL.md](.claude/skills/composition-patterns/SKILL.md)                                                 | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                               |
+| 도메인 규칙          | [.claude/rules/](.claude/rules/)                                                                         | Glob-scoped — 해당 파일 작업 시 자동 로드                                             |
+| Agent 가이드         | [.claude/agents/](.claude/agents/)                                                                       | architect, implementer, evaluator, reviewer, debugger, documenter, refactorer, tester |
+| ADR 현황             | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 대시보드                                                                |
+| ADR 규칙             | [.claude/rules/adr-writing.md](.claude/rules/adr-writing.md)                                             | Risk-First 템플릿, 위험 평가, 금지 패턴 (`docs/adr/**` 자동 로드)                     |
+| 렌더링 아키텍처 결정 | [ADR-100](docs/adr/100-unified-skia-rendering-engine.md)                                                 | Unified Skia Engine — PixiJS 제거, 대안/결정/Gate                                     |
+| 렌더링 구현 상세     | [ADR-100 breakdown](docs/design/100-unified-skia-engine-breakdown.md)                                    | SceneGraph, Rust Layout, CSS3 렌더링 Phase 상세                                       |
+| 컴포넌트 스펙        | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                                                              | Spec 단일 소스 아키텍처                                                               |
+| CSS 상세             | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                                     | ITCSS + tv() 스타일링 상세                                                            |
+| CSS 자동 생성        | [docs/adr/completed/036-spec-first-single-source.md](docs/adr/completed/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                                      |
+| Spec↔CSS 경계        | [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)                                   | Leaf(Spec CSS) vs Container(수동 CSS) 분류표, 결정 흐름도                             |
 
 ## 렌더링 버그 수정 원칙
 
-3개 렌더링 타겟(CSS/Skia/PixiJS) × 5개 레이어(spec/factory/CSS renderer/WebGL renderer/editor).
+2개 렌더링 타겟(CSS/Skia) × 5개 레이어(spec/factory/CSS renderer/Skia renderer/editor). — PixiJS 제거 완료 (ADR-100 Phase 8-9)
 
 - **모든 경로 검증**: 한 경로만 수정하고 다른 경로 누락 금지 → `/cross-check` 스킬로 검증
 - **전체 경로 추적**: factory → spec → renderer → editor 하류 파손 확인
@@ -123,3 +124,4 @@ composition/
 **마지막 지침**:
 항상 **Plan 먼저 → Execute → Verify (`/cross-check` + `type-check`)** 순서를 지킨다.
 불확실한 부분은 질문을 먼저 하고, 가정하지 않는다.
+```
