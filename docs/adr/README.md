@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 36     |
 | 부분 완료                              | 9      |
-| 미구현 (Proposed/계획)                 | 12     |
-| **합계**                               | **57** |
+| 미구현 (Proposed/계획)                 | 13     |
+| **합계**                               | **58** |
 
 ---
 
@@ -88,6 +88,7 @@
 | [054](054-local-llm-architecture.md)                  | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)        | Proposed | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                       |  **P2**  |
 | [100](100-unified-skia-rendering-engine.md)           | Unified Skia Rendering Engine — PixiJS/Taffy 제거  | Accepted | Phase 8-9 완료. PixiJS 완전 제거 (85파일, -16,500줄). Phase 10(Rust Layout) 남음. Supersedes ADR-003, ADR-008              |  **P1**  |
 | [101](101-browser-native-rendering-engine.md)         | Browser-Native Rendering Engine — 렌더링 엔진 삭제 | Proposed | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008 |  **P1**  |
+| [056](056-base-typography-ssot.md)                    | Base Typography 단일 정본 (SSOT)                   | Proposed | BASE_TYPOGRAPHY TS 상수 → Canvas/Preview/Publish 3경로 정합. lineHeight 누락 수정                                          |  **P2**  |
 
 ## Events Panel 설계 문서군
 
