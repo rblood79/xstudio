@@ -181,19 +181,6 @@ export class SkiaFontManager {
     this.fontMgr = mgr;
     this.dirty = false;
 
-    // DEBUG: 로드된 폰트 패밀리 이름 + nameMap 확인
-    if (import.meta.env.DEV) {
-      const families: string[] = [];
-      for (let i = 0; i < mgr.countFamilies(); i++) {
-        families.push(mgr.getFamilyName(i));
-      }
-      console.log("[SkiaFontManager] FontMgr families:", families);
-      console.log(
-        "[SkiaFontManager] nameMap:",
-        Object.fromEntries(this.nameMap),
-      );
-    }
-
     return this.fontMgr;
   }
 
