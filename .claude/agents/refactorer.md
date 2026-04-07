@@ -1,6 +1,6 @@
 ---
 name: refactorer
-description: Refactors code, restructures modules, migrates patterns, and improves code organization for XStudio. Use when the user asks to refactor modules, migrate to new patterns, or restructure file organization.
+description: Refactors code, restructures modules, migrates patterns, and improves code organization for composition. Use when the user asks to refactor modules, migrate to new patterns, or restructure file organization.
 model: sonnet
 color: magenta
 tools:

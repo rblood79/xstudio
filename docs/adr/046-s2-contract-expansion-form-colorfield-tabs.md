@@ -8,20 +8,20 @@ Implemented (2026-03-29)
 
 ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전단계로서, **이미 존재하는 제품 계약과 Property Editor surface를 정렬**하는 결정을 다룬다.
 
-하지만 `Form`, `ColorField`, `Tabs`는 ADR-045만으로 해결되지 않는다. 이 세 컴포넌트는 React Spectrum S2 문서에 비해 XStudio의 제품 계약 자체가 덜 닫혀 있기 때문이다.
+하지만 `Form`, `ColorField`, `Tabs`는 ADR-045만으로 해결되지 않는다. 이 세 컴포넌트는 React Spectrum S2 문서에 비해 composition의 제품 계약 자체가 덜 닫혀 있기 때문이다.
 
 현재 상태는 다음과 같다.
 
 - `Form`
-  - XStudio 계약에는 `action`, `method`, `encType`, `target`, `autoFocus`, `restoreFocus`, `validationBehavior` 정도만 있다.
+  - composition 계약에는 `action`, `method`, `encType`, `target`, `autoFocus`, `restoreFocus`, `validationBehavior` 정도만 있다.
   - S2 문서에는 `labelPosition`, `labelAlign`, `necessityIndicator`, `isEmphasized`, `size` 등 상위 폼 계약이 더 있다.
   - 하지만 현재 preview는 `Form` 전용 renderer 없이 HTML fallback으로 처리되고, child field wrapper들도 parent `Form`의 layout/necessity contract를 자동 상속하지 않는다.
 - `ColorField`
-  - XStudio 계약은 `channel`, `colorSpace`, `isRequired` 중심으로 좁다.
+  - composition 계약은 `channel`, `colorSpace`, `isRequired` 중심으로 좁다.
   - editor는 이미 `variant`, `size`, `isInvalid`, `necessityIndicator` 같은 필드를 다루고 있어, 오히려 현재 타입보다 앞서 나가 있다.
   - S2 문서에는 `name`, `form`, `autoFocus`, `validationBehavior`, `labelPosition`, `labelAlign`, `necessityIndicator`, `size`가 존재한다.
 - `Tabs`
-  - XStudio builder 계약은 사실상 `orientation` 중심이다.
+  - composition builder 계약은 사실상 `orientation` 중심이다.
   - S2 문서에는 `density`가 명시돼 있고, shared 타입에도 관련 정의가 일부 존재한다.
   - 즉, builder unified contract가 shared 계약을 충분히 반영하지 못하고 있다.
 
@@ -145,14 +145,14 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
 - 일부 prop는 S2 문서에 있어도 제품 계약으로 채택되지 않을 수 있다.
 - 실제 구현 착수 전 계약 검토 비용이 늘어난다.
 - `ColorField.labelAlign`까지 포함해도, 나머지 보류 항목 때문에 S2 문서와 완전한 parity는 아직 아니다.
-- `Form.size`는 현재 XStudio의 field size 축(`xs/sm/md/lg/xl`)과 S2 `Form` size 축(`S/M/L/XL`)이 맞지 않아 계속 보류된다.
-- `Form.isEmphasized`는 현재 XStudio field 계열의 공통 시각 계약이 아니므로 계속 보류된다.
+- `Form.size`는 현재 composition의 field size 축(`xs/sm/md/lg/xl`)과 S2 `Form` size 축(`S/M/L/XL`)이 맞지 않아 계속 보류된다.
+- `Form.isEmphasized`는 현재 composition field 계열의 공통 시각 계약이 아니므로 계속 보류된다.
 
 ## References
 
 - [ADR-045](045-s2-property-editor-alignment.md): 기존 계약과 editor surface 정렬
 - [ADR-041](041-spec-driven-property-editor.md): 자동 생성 기반 Property Editor
-- [ADR-046 Breakdown](/Users/admin/work/xstudio/docs/design/adr-046-s2-contract-expansion-form-colorfield-tabs-breakdown.md)
-- [React Spectrum S2 Form](/Users/admin/work/xstudio/.agents/skills/react-spectrum-s2/references/components/Form.md)
-- [React Spectrum S2 ColorField](/Users/admin/work/xstudio/.agents/skills/react-spectrum-s2/references/components/ColorField.md)
-- [React Spectrum S2 Tabs](/Users/admin/work/xstudio/.agents/skills/react-spectrum-s2/references/components/Tabs.md)
+- [ADR-046 Breakdown](/Users/admin/work/composition/docs/design/adr-046-s2-contract-expansion-form-colorfield-tabs-breakdown.md)
+- [React Spectrum S2 Form](/Users/admin/work/composition/.agents/skills/react-spectrum-s2/references/components/Form.md)
+- [React Spectrum S2 ColorField](/Users/admin/work/composition/.agents/skills/react-spectrum-s2/references/components/ColorField.md)
+- [React Spectrum S2 Tabs](/Users/admin/work/composition/.agents/skills/react-spectrum-s2/references/components/Tabs.md)

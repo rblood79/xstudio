@@ -43,46 +43,46 @@
 
 ```typescript
 // tests/benchmarks/crud-performance.test.ts
-import { performance } from 'perf_hooks';
-import { db } from '../../src/services/database';
+import { performance } from "perf_hooks";
+import { db } from "../../src/services/database";
 
-describe('PGlite CRUD Performance Benchmarks', () => {
+describe("PGlite CRUD Performance Benchmarks", () => {
   let testProjectId: string;
 
   beforeAll(async () => {
     await db.initialize();
 
     // 테스트 프로젝트 생성
-    const [project] = await db.insert('projects', {
-      name: 'Performance Test Project',
+    const [project] = await db.insert("projects", {
+      name: "Performance Test Project",
     });
     testProjectId = project.id;
   });
 
   afterAll(async () => {
     // 테스트 데이터 정리
-    await db.delete('projects', testProjectId);
+    await db.delete("projects", testProjectId);
     await db.close();
   });
 
-  describe('INSERT Performance', () => {
-    it('should insert 1,000 elements in < 2 seconds', async () => {
+  describe("INSERT Performance", () => {
+    it("should insert 1,000 elements in < 2 seconds", async () => {
       const elements = Array.from({ length: 1000 }, (_, i) => ({
         page_id: testProjectId,
-        tag: 'Button',
-        props: { variant: 'primary', label: `Button ${i}` },
+        tag: "Button",
+        props: { variant: "primary", label: `Button ${i}` },
         order_num: i,
       }));
 
       const start = performance.now();
-      await db.insert('elements', elements);
+      await db.insert("elements", elements);
       const duration = performance.now() - start;
 
       console.log(`✅ Inserted 1,000 elements in ${duration.toFixed(2)}ms`);
       expect(duration).toBeLessThan(2000); // < 2초
     });
 
-    it('should batch insert 10,000 elements in < 10 seconds', async () => {
+    it("should batch insert 10,000 elements in < 10 seconds", async () => {
       const batchSize = 1000;
       const totalElements = 10000;
       const start = performance.now();
@@ -90,69 +90,78 @@ describe('PGlite CRUD Performance Benchmarks', () => {
       for (let i = 0; i < totalElements; i += batchSize) {
         const batch = Array.from({ length: batchSize }, (_, j) => ({
           page_id: testProjectId,
-          tag: 'Text',
+          tag: "Text",
           props: { content: `Text ${i + j}` },
           order_num: i + j,
         }));
 
-        await db.insert('elements', batch);
+        await db.insert("elements", batch);
       }
 
       const duration = performance.now() - start;
 
-      console.log(`✅ Batch inserted 10,000 elements in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Batch inserted 10,000 elements in ${duration.toFixed(2)}ms`,
+      );
       expect(duration).toBeLessThan(10000); // < 10초
     });
   });
 
-  describe('SELECT Performance', () => {
+  describe("SELECT Performance", () => {
     beforeAll(async () => {
       // 10,000개 요소 삽입
       const elements = Array.from({ length: 10000 }, (_, i) => ({
         page_id: testProjectId,
-        tag: 'Button',
-        props: { variant: i % 3 === 0 ? 'primary' : 'secondary', label: `Button ${i}` },
+        tag: "Button",
+        props: {
+          variant: i % 3 === 0 ? "primary" : "secondary",
+          label: `Button ${i}`,
+        },
         order_num: i,
       }));
-      await db.insert('elements', elements);
+      await db.insert("elements", elements);
     });
 
-    it('should select 10,000 elements in < 500ms', async () => {
+    it("should select 10,000 elements in < 500ms", async () => {
       const start = performance.now();
-      const elements = await db.select('elements', {
+      const elements = await db.select("elements", {
         where: { page_id: testProjectId },
-        orderBy: [{ column: 'order_num', ascending: true }],
+        orderBy: [{ column: "order_num", ascending: true }],
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Selected ${elements.length} elements in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Selected ${elements.length} elements in ${duration.toFixed(2)}ms`,
+      );
       expect(elements.length).toBe(10000);
       expect(duration).toBeLessThan(500); // < 500ms
     });
 
-    it('should filter by JSONB property in < 200ms', async () => {
+    it("should filter by JSONB property in < 200ms", async () => {
       const start = performance.now();
       const primaryButtons = await db.query(
         "SELECT * FROM elements WHERE props->>'variant' = $1",
-        ['primary']
+        ["primary"],
       );
       const duration = performance.now() - start;
 
-      console.log(`✅ Filtered ${primaryButtons.length} elements by JSONB in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Filtered ${primaryButtons.length} elements by JSONB in ${duration.toFixed(2)}ms`,
+      );
       expect(duration).toBeLessThan(200); // < 200ms
     });
   });
 
-  describe('UPDATE Performance', () => {
-    it('should update 1,000 elements in < 1 second', async () => {
-      const elements = await db.select('elements', {
+  describe("UPDATE Performance", () => {
+    it("should update 1,000 elements in < 1 second", async () => {
+      const elements = await db.select("elements", {
         where: { page_id: testProjectId },
         limit: 1000,
       });
 
       const start = performance.now();
       for (const element of elements) {
-        await db.update('elements', element.id, {
+        await db.update("elements", element.id, {
           props: { ...element.props, updated: true },
         });
       }
@@ -162,8 +171,8 @@ describe('PGlite CRUD Performance Benchmarks', () => {
       expect(duration).toBeLessThan(1000); // < 1초
     });
 
-    it('should batch update with transaction in < 500ms', async () => {
-      const elements = await db.select('elements', {
+    it("should batch update with transaction in < 500ms", async () => {
+      const elements = await db.select("elements", {
         where: { page_id: testProjectId },
         limit: 1000,
       });
@@ -171,29 +180,31 @@ describe('PGlite CRUD Performance Benchmarks', () => {
       const start = performance.now();
       await db.transaction(async (tx) => {
         for (const element of elements) {
-          await tx.query(
-            'UPDATE elements SET props = $1 WHERE id = $2',
-            [JSON.stringify({ ...element.props, batch_updated: true }), element.id]
-          );
+          await tx.query("UPDATE elements SET props = $1 WHERE id = $2", [
+            JSON.stringify({ ...element.props, batch_updated: true }),
+            element.id,
+          ]);
         }
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Batch updated 1,000 elements in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Batch updated 1,000 elements in ${duration.toFixed(2)}ms`,
+      );
       expect(duration).toBeLessThan(500); // < 500ms
     });
   });
 
-  describe('DELETE Performance', () => {
-    it('should delete 1,000 elements in < 500ms', async () => {
-      const elements = await db.select('elements', {
+  describe("DELETE Performance", () => {
+    it("should delete 1,000 elements in < 500ms", async () => {
+      const elements = await db.select("elements", {
         where: { page_id: testProjectId },
         limit: 1000,
       });
 
       const start = performance.now();
       for (const element of elements) {
-        await db.delete('elements', element.id);
+        await db.delete("elements", element.id);
       }
       const duration = performance.now() - start;
 
@@ -201,29 +212,31 @@ describe('PGlite CRUD Performance Benchmarks', () => {
       expect(duration).toBeLessThan(500); // < 500ms
     });
 
-    it('should cascade delete page with 10,000 elements in < 2 seconds', async () => {
+    it("should cascade delete page with 10,000 elements in < 2 seconds", async () => {
       // 새 페이지 생성
-      const [page] = await db.insert('pages', {
+      const [page] = await db.insert("pages", {
         project_id: testProjectId,
-        title: 'Cascade Test Page',
-        slug: 'cascade-test',
+        title: "Cascade Test Page",
+        slug: "cascade-test",
       });
 
       // 10,000개 요소 삽입
       const elements = Array.from({ length: 10000 }, (_, i) => ({
         page_id: page.id,
-        tag: 'Text',
+        tag: "Text",
         props: { content: `Text ${i}` },
         order_num: i,
       }));
-      await db.insert('elements', elements);
+      await db.insert("elements", elements);
 
       // 페이지 삭제 (CASCADE로 모든 요소도 삭제됨)
       const start = performance.now();
-      await db.delete('pages', page.id);
+      await db.delete("pages", page.id);
       const duration = performance.now() - start;
 
-      console.log(`✅ Cascade deleted page with 10,000 elements in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Cascade deleted page with 10,000 elements in ${duration.toFixed(2)}ms`,
+      );
       expect(duration).toBeLessThan(2000); // < 2초
     });
   });
@@ -232,16 +245,16 @@ describe('PGlite CRUD Performance Benchmarks', () => {
 
 #### 성능 기준 (권장)
 
-| 작업 | 데이터 크기 | 목표 시간 | 허용 시간 |
-|------|------------|----------|----------|
-| INSERT (단일) | 1개 | < 5ms | < 20ms |
-| INSERT (배치) | 1,000개 | < 500ms | < 2초 |
-| SELECT (전체) | 10,000개 | < 200ms | < 500ms |
-| SELECT (JSONB 필터) | 10,000개 | < 100ms | < 200ms |
-| UPDATE (단일) | 1개 | < 5ms | < 20ms |
-| UPDATE (트랜잭션) | 1,000개 | < 200ms | < 500ms |
-| DELETE (단일) | 1개 | < 5ms | < 20ms |
-| DELETE (CASCADE) | 10,000개 | < 1초 | < 2초 |
+| 작업                | 데이터 크기 | 목표 시간 | 허용 시간 |
+| ------------------- | ----------- | --------- | --------- |
+| INSERT (단일)       | 1개         | < 5ms     | < 20ms    |
+| INSERT (배치)       | 1,000개     | < 500ms   | < 2초     |
+| SELECT (전체)       | 10,000개    | < 200ms   | < 500ms   |
+| SELECT (JSONB 필터) | 10,000개    | < 100ms   | < 200ms   |
+| UPDATE (단일)       | 1개         | < 5ms     | < 20ms    |
+| UPDATE (트랜잭션)   | 1,000개     | < 200ms   | < 500ms   |
+| DELETE (단일)       | 1개         | < 5ms     | < 20ms    |
+| DELETE (CASCADE)    | 10,000개    | < 1초     | < 2초     |
 
 ---
 
@@ -251,10 +264,10 @@ describe('PGlite CRUD Performance Benchmarks', () => {
 
 ```typescript
 // tests/benchmarks/rpc-performance.test.ts
-import { performance } from 'perf_hooks';
-import { db } from '../../src/services/database';
+import { performance } from "perf_hooks";
+import { db } from "../../src/services/database";
 
-describe('PGlite RPC Performance Benchmarks', () => {
+describe("PGlite RPC Performance Benchmarks", () => {
   let testThemeId: string;
   let parentThemeId: string;
 
@@ -262,24 +275,24 @@ describe('PGlite RPC Performance Benchmarks', () => {
     await db.initialize();
 
     // 테스트 프로젝트 및 테마 생성
-    const [project] = await db.insert('projects', {
-      name: 'RPC Test Project',
+    const [project] = await db.insert("projects", {
+      name: "RPC Test Project",
     });
 
     // 부모 테마 생성
-    const [parentTheme] = await db.insert('design_themes', {
+    const [parentTheme] = await db.insert("design_themes", {
       project_id: project.id,
-      name: 'Parent Theme',
-      status: 'active',
+      name: "Parent Theme",
+      status: "active",
     });
     parentThemeId = parentTheme.id;
 
     // 자식 테마 생성 (상속)
-    const [childTheme] = await db.insert('design_themes', {
+    const [childTheme] = await db.insert("design_themes", {
       project_id: project.id,
-      name: 'Child Theme',
+      name: "Child Theme",
       parent_theme_id: parentThemeId,
-      status: 'active',
+      status: "active",
     });
     testThemeId = childTheme.id;
 
@@ -288,48 +301,50 @@ describe('PGlite RPC Performance Benchmarks', () => {
       project_id: project.id,
       theme_id: parentThemeId,
       name: `color.shade.${i}`,
-      type: 'color',
+      type: "color",
       value: { h: i % 360, s: 50, l: 50, a: 1 },
-      scope: 'raw',
+      scope: "raw",
     }));
-    await db.insert('design_tokens', tokens);
+    await db.insert("design_tokens", tokens);
 
     // 자식 테마에 토큰 100개 삽입 (오버라이드)
     const childTokens = Array.from({ length: 100 }, (_, i) => ({
       project_id: project.id,
       theme_id: testThemeId,
       name: `color.shade.${i}`,
-      type: 'color',
+      type: "color",
       value: { h: i % 360, s: 70, l: 60, a: 1 },
-      scope: 'raw',
+      scope: "raw",
     }));
-    await db.insert('design_tokens', childTokens);
+    await db.insert("design_tokens", childTokens);
   });
 
-  describe('resolve_theme_tokens', () => {
-    it('should resolve 1,100 tokens (with inheritance) in < 200ms', async () => {
+  describe("resolve_theme_tokens", () => {
+    it("should resolve 1,100 tokens (with inheritance) in < 200ms", async () => {
       const start = performance.now();
-      const tokens = await db.rpc('resolve_theme_tokens', {
+      const tokens = await db.rpc("resolve_theme_tokens", {
         p_theme_id: testThemeId,
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Resolved ${tokens.length} tokens in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Resolved ${tokens.length} tokens in ${duration.toFixed(2)}ms`,
+      );
       expect(tokens.length).toBe(1100); // 100 (child) + 1000 (parent)
       expect(duration).toBeLessThan(200); // < 200ms
     });
 
-    it('should handle 5-level deep inheritance in < 500ms', async () => {
+    it("should handle 5-level deep inheritance in < 500ms", async () => {
       // 5단계 상속 구조 생성
       let currentThemeId = parentThemeId;
-      const [project] = await db.select('projects', { limit: 1 });
+      const [project] = await db.select("projects", { limit: 1 });
 
       for (let i = 1; i <= 5; i++) {
-        const [theme] = await db.insert('design_themes', {
+        const [theme] = await db.insert("design_themes", {
           project_id: project.id,
           name: `Level ${i} Theme`,
           parent_theme_id: currentThemeId,
-          status: 'active',
+          status: "active",
         });
 
         // 각 레벨에 토큰 50개 추가
@@ -337,54 +352,58 @@ describe('PGlite RPC Performance Benchmarks', () => {
           project_id: project.id,
           theme_id: theme.id,
           name: `level${i}.token.${j}`,
-          type: 'color',
+          type: "color",
           value: { h: j * 7, s: 50, l: 50, a: 1 },
-          scope: 'raw',
+          scope: "raw",
         }));
-        await db.insert('design_tokens', tokens);
+        await db.insert("design_tokens", tokens);
 
         currentThemeId = theme.id;
       }
 
       // 가장 깊은 레벨 테마의 토큰 해석
       const start = performance.now();
-      const tokens = await db.rpc('resolve_theme_tokens', {
+      const tokens = await db.rpc("resolve_theme_tokens", {
         p_theme_id: currentThemeId,
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Resolved ${tokens.length} tokens (5-level) in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Resolved ${tokens.length} tokens (5-level) in ${duration.toFixed(2)}ms`,
+      );
       expect(tokens.length).toBeGreaterThan(0);
       expect(duration).toBeLessThan(500); // < 500ms
     });
   });
 
-  describe('duplicate_theme', () => {
-    it('should duplicate theme with 1,000 tokens in < 1 second', async () => {
+  describe("duplicate_theme", () => {
+    it("should duplicate theme with 1,000 tokens in < 1 second", async () => {
       const start = performance.now();
-      const newThemeId = await db.rpc('duplicate_theme', {
+      const newThemeId = await db.rpc("duplicate_theme", {
         p_source_theme_id: parentThemeId,
-        p_new_name: 'Duplicated Theme',
+        p_new_name: "Duplicated Theme",
         p_inherit: false, // 토큰 복사
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Duplicated theme with 1,000 tokens in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Duplicated theme with 1,000 tokens in ${duration.toFixed(2)}ms`,
+      );
       expect(newThemeId).toBeTruthy();
       expect(duration).toBeLessThan(1000); // < 1초
 
       // 토큰 복사 확인
-      const tokens = await db.select('design_tokens', {
+      const tokens = await db.select("design_tokens", {
         where: { theme_id: newThemeId },
       });
       expect(tokens.length).toBe(1000);
     });
 
-    it('should create inherited theme (no token copy) in < 50ms', async () => {
+    it("should create inherited theme (no token copy) in < 50ms", async () => {
       const start = performance.now();
-      const newThemeId = await db.rpc('duplicate_theme', {
+      const newThemeId = await db.rpc("duplicate_theme", {
         p_source_theme_id: parentThemeId,
-        p_new_name: 'Inherited Theme',
+        p_new_name: "Inherited Theme",
         p_inherit: true, // 토큰 복사 안 함
       });
       const duration = performance.now() - start;
@@ -394,50 +413,54 @@ describe('PGlite RPC Performance Benchmarks', () => {
       expect(duration).toBeLessThan(50); // < 50ms
 
       // 토큰 복사 안 됨 확인
-      const tokens = await db.select('design_tokens', {
+      const tokens = await db.select("design_tokens", {
         where: { theme_id: newThemeId },
       });
       expect(tokens.length).toBe(0);
     });
   });
 
-  describe('search_tokens', () => {
-    it('should search 1,000 tokens in < 100ms', async () => {
+  describe("search_tokens", () => {
+    it("should search 1,000 tokens in < 100ms", async () => {
       const start = performance.now();
-      const results = await db.rpc('search_tokens', {
+      const results = await db.rpc("search_tokens", {
         p_theme_id: testThemeId,
-        p_query: 'color',
+        p_query: "color",
         p_include_inherited: true,
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Searched ${results.length} tokens in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Searched ${results.length} tokens in ${duration.toFixed(2)}ms`,
+      );
       expect(results.length).toBeGreaterThan(0);
       expect(duration).toBeLessThan(100); // < 100ms
     });
   });
 
-  describe('bulk_upsert_tokens', () => {
-    it('should upsert 500 tokens in < 500ms', async () => {
-      const [project] = await db.select('projects', { limit: 1 });
-      const [theme] = await db.select('design_themes', { limit: 1 });
+  describe("bulk_upsert_tokens", () => {
+    it("should upsert 500 tokens in < 500ms", async () => {
+      const [project] = await db.select("projects", { limit: 1 });
+      const [theme] = await db.select("design_themes", { limit: 1 });
 
       const tokens = Array.from({ length: 500 }, (_, i) => ({
         project_id: project.id,
         theme_id: theme.id,
         name: `bulk.token.${i}`,
-        type: 'spacing',
-        value: { value: i * 4, unit: 'px' },
-        scope: 'raw',
+        type: "spacing",
+        value: { value: i * 4, unit: "px" },
+        scope: "raw",
       }));
 
       const start = performance.now();
-      const count = await db.rpc('bulk_upsert_tokens', {
+      const count = await db.rpc("bulk_upsert_tokens", {
         p_tokens: tokens,
       });
       const duration = performance.now() - start;
 
-      console.log(`✅ Bulk upserted ${count} tokens in ${duration.toFixed(2)}ms`);
+      console.log(
+        `✅ Bulk upserted ${count} tokens in ${duration.toFixed(2)}ms`,
+      );
       expect(count).toBe(500);
       expect(duration).toBeLessThan(500); // < 500ms
     });
@@ -447,14 +470,14 @@ describe('PGlite RPC Performance Benchmarks', () => {
 
 #### RPC 성능 기준 (권장)
 
-| RPC 함수 | 데이터 크기 | 목표 시간 | 허용 시간 |
-|----------|------------|----------|----------|
-| `resolve_theme_tokens` | 1,000 토큰 | < 100ms | < 200ms |
-| `resolve_theme_tokens` (5-level) | 250 토큰 | < 200ms | < 500ms |
-| `duplicate_theme` (복사) | 1,000 토큰 | < 500ms | < 1초 |
-| `duplicate_theme` (상속) | 0 토큰 | < 20ms | < 50ms |
-| `search_tokens` | 1,000 토큰 | < 50ms | < 100ms |
-| `bulk_upsert_tokens` | 500 토큰 | < 200ms | < 500ms |
+| RPC 함수                         | 데이터 크기 | 목표 시간 | 허용 시간 |
+| -------------------------------- | ----------- | --------- | --------- |
+| `resolve_theme_tokens`           | 1,000 토큰  | < 100ms   | < 200ms   |
+| `resolve_theme_tokens` (5-level) | 250 토큰    | < 200ms   | < 500ms   |
+| `duplicate_theme` (복사)         | 1,000 토큰  | < 500ms   | < 1초     |
+| `duplicate_theme` (상속)         | 0 토큰      | < 20ms    | < 50ms    |
+| `search_tokens`                  | 1,000 토큰  | < 50ms    | < 100ms   |
+| `bulk_upsert_tokens`             | 500 토큰    | < 200ms   | < 500ms   |
 
 ---
 
@@ -464,56 +487,62 @@ describe('PGlite RPC Performance Benchmarks', () => {
 
 ```typescript
 // tests/benchmarks/concurrency.test.ts
-import { performance } from 'perf_hooks';
-import { db } from '../../src/services/database';
+import { performance } from "perf_hooks";
+import { db } from "../../src/services/database";
 
-describe('PGlite Concurrency Tests', () => {
-  it('should handle 10 concurrent inserts without errors', async () => {
-    const [project] = await db.insert('projects', { name: 'Concurrency Test' });
+describe("PGlite Concurrency Tests", () => {
+  it("should handle 10 concurrent inserts without errors", async () => {
+    const [project] = await db.insert("projects", { name: "Concurrency Test" });
 
     const start = performance.now();
 
     // 10개 동시 삽입
     const promises = Array.from({ length: 10 }, (_, i) =>
-      db.insert('elements', {
+      db.insert("elements", {
         page_id: project.id,
-        tag: 'Button',
+        tag: "Button",
         props: { label: `Button ${i}` },
         order_num: i,
-      })
+      }),
     );
 
     const results = await Promise.all(promises);
     const duration = performance.now() - start;
 
-    console.log(`✅ 10 concurrent inserts completed in ${duration.toFixed(2)}ms`);
+    console.log(
+      `✅ 10 concurrent inserts completed in ${duration.toFixed(2)}ms`,
+    );
     expect(results.length).toBe(10);
     expect(duration).toBeLessThan(200); // < 200ms
   });
 
-  it('should handle transaction isolation correctly', async () => {
-    const [project] = await db.insert('projects', { name: 'Transaction Test' });
-    const [element] = await db.insert('elements', {
+  it("should handle transaction isolation correctly", async () => {
+    const [project] = await db.insert("projects", { name: "Transaction Test" });
+    const [element] = await db.insert("elements", {
       page_id: project.id,
-      tag: 'Counter',
+      tag: "Counter",
       props: { count: 0 },
       order_num: 0,
     });
 
     // 2개 트랜잭션 동시 실행 (카운터 증가)
     const tx1 = db.transaction(async (tx) => {
-      const [el] = await tx.query('SELECT * FROM elements WHERE id = $1', [element.id]);
-      await new Promise(resolve => setTimeout(resolve, 100)); // 의도적 지연
-      await tx.query('UPDATE elements SET props = $1 WHERE id = $2', [
+      const [el] = await tx.query("SELECT * FROM elements WHERE id = $1", [
+        element.id,
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // 의도적 지연
+      await tx.query("UPDATE elements SET props = $1 WHERE id = $2", [
         JSON.stringify({ count: el.props.count + 1 }),
         element.id,
       ]);
     });
 
     const tx2 = db.transaction(async (tx) => {
-      const [el] = await tx.query('SELECT * FROM elements WHERE id = $1', [element.id]);
-      await new Promise(resolve => setTimeout(resolve, 100)); // 의도적 지연
-      await tx.query('UPDATE elements SET props = $1 WHERE id = $2', [
+      const [el] = await tx.query("SELECT * FROM elements WHERE id = $1", [
+        element.id,
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // 의도적 지연
+      await tx.query("UPDATE elements SET props = $1 WHERE id = $2", [
         JSON.stringify({ count: el.props.count + 1 }),
         element.id,
       ]);
@@ -522,7 +551,10 @@ describe('PGlite Concurrency Tests', () => {
     await Promise.all([tx1, tx2]);
 
     // 최종 카운트 확인
-    const [finalElement] = await db.query('SELECT * FROM elements WHERE id = $1', [element.id]);
+    const [finalElement] = await db.query(
+      "SELECT * FROM elements WHERE id = $1",
+      [element.id],
+    );
 
     console.log(`✅ Final count: ${finalElement.props.count}`);
 
@@ -540,16 +572,16 @@ describe('PGlite Concurrency Tests', () => {
 
 ```typescript
 // tests/benchmarks/large-data.test.ts
-import { performance } from 'perf_hooks';
-import { db } from '../../src/services/database';
+import { performance } from "perf_hooks";
+import { db } from "../../src/services/database";
 
-describe('PGlite Large Data Tests', () => {
-  it('should handle 100,000 elements without memory issues', async () => {
-    const [project] = await db.insert('projects', { name: 'Large Data Test' });
-    const [page] = await db.insert('pages', {
+describe("PGlite Large Data Tests", () => {
+  it("should handle 100,000 elements without memory issues", async () => {
+    const [project] = await db.insert("projects", { name: "Large Data Test" });
+    const [page] = await db.insert("pages", {
       project_id: project.id,
-      title: 'Large Page',
-      slug: 'large-page',
+      title: "Large Page",
+      slug: "large-page",
     });
 
     const batchSize = 1000;
@@ -560,23 +592,27 @@ describe('PGlite Large Data Tests', () => {
     for (let i = 0; i < totalElements; i += batchSize) {
       const batch = Array.from({ length: batchSize }, (_, j) => ({
         page_id: page.id,
-        tag: 'Text',
+        tag: "Text",
         props: { content: `Text ${i + j}` },
         order_num: i + j,
       }));
 
-      await db.insert('elements', batch);
+      await db.insert("elements", batch);
 
       // 메모리 사용량 체크
       if (i % 10000 === 0) {
         const memUsage = process.memoryUsage();
-        console.log(`   ${i} elements inserted - Memory: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+        console.log(
+          `   ${i} elements inserted - Memory: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+        );
       }
     }
 
     const duration = performance.now() - start;
 
-    console.log(`✅ Inserted 100,000 elements in ${(duration / 1000).toFixed(2)}s`);
+    console.log(
+      `✅ Inserted 100,000 elements in ${(duration / 1000).toFixed(2)}s`,
+    );
     expect(duration).toBeLessThan(60000); // < 60초
 
     // 데이터베이스 크기 확인
@@ -584,16 +620,17 @@ describe('PGlite Large Data Tests', () => {
     console.log(`   Database size: ${(dbSize / 1024 / 1024).toFixed(2)} MB`);
   });
 
-  it('should query 100,000 elements with pagination efficiently', async () => {
+  it("should query 100,000 elements with pagination efficiently", async () => {
     const pageSize = 100;
     const totalPages = 1000; // 100,000 / 100 = 1,000 페이지
 
     const start = performance.now();
 
-    for (let page = 0; page < 10; page++) { // 처음 10 페이지만 테스트
+    for (let page = 0; page < 10; page++) {
+      // 처음 10 페이지만 테스트
       const results = await db.query(
-        'SELECT * FROM elements ORDER BY order_num LIMIT $1 OFFSET $2',
-        [pageSize, page * pageSize]
+        "SELECT * FROM elements ORDER BY order_num LIMIT $1 OFFSET $2",
+        [pageSize, page * pageSize],
       );
 
       expect(results.length).toBe(pageSize);
@@ -601,7 +638,9 @@ describe('PGlite Large Data Tests', () => {
 
     const duration = performance.now() - start;
 
-    console.log(`✅ Paginated through 1,000 elements in ${duration.toFixed(2)}ms`);
+    console.log(
+      `✅ Paginated through 1,000 elements in ${duration.toFixed(2)}ms`,
+    );
     expect(duration).toBeLessThan(500); // < 500ms for 10 pages
   });
 });
@@ -623,16 +662,16 @@ describe('PGlite Large Data Tests', () => {
  */
 export function getDefaultDbPath(): string {
   const platform = process.platform;
-  const appName = 'xstudio';
+  const appName = "composition";
 
   switch (platform) {
-    case 'darwin': // macOS
+    case "darwin": // macOS
       return `${process.env.HOME}/Library/Application Support/${appName}/database`;
 
-    case 'win32': // Windows
+    case "win32": // Windows
       return `${process.env.APPDATA}\\${appName}\\database`;
 
-    case 'linux': // Linux
+    case "linux": // Linux
       return `${process.env.HOME}/.config/${appName}/database`;
 
     default:
@@ -661,13 +700,13 @@ export function getBackupPath(): string {
 ```typescript
 // electron/main.ts
 
-import { app, dialog } from 'electron';
+import { app, dialog } from "electron";
 
 // Settings 메뉴에 추가
-ipcMain.handle('db:change-path', async () => {
+ipcMain.handle("db:change-path", async () => {
   const result = await dialog.showOpenDialog({
-    properties: ['openDirectory', 'createDirectory'],
-    title: 'Select Database Location',
+    properties: ["openDirectory", "createDirectory"],
+    title: "Select Database Location",
   });
 
   if (!result.canceled && result.filePaths.length > 0) {
@@ -680,7 +719,7 @@ ipcMain.handle('db:change-path', async () => {
     await moveDatabase(getCurrentDbPath(), newPath);
 
     // 설정 저장
-    app.setPath('userData', newPath);
+    app.setPath("userData", newPath);
 
     return { success: true, path: newPath };
   }
@@ -698,10 +737,10 @@ ipcMain.handle('db:change-path', async () => {
 ```typescript
 // src/services/backup/autoBackup.ts
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { db } from '../database';
-import { getBackupPath } from '../database/paths';
+import * as fs from "fs";
+import * as path from "path";
+import { db } from "../database";
+import { getBackupPath } from "../database/paths";
 
 export class AutoBackupService {
   private backupInterval: NodeJS.Timeout | null = null;
@@ -722,11 +761,16 @@ export class AutoBackupService {
     this.createBackup(maxBackups);
 
     // 주기적 백업 시작
-    this.backupInterval = setInterval(() => {
-      this.createBackup(maxBackups);
-    }, intervalHours * 60 * 60 * 1000);
+    this.backupInterval = setInterval(
+      () => {
+        this.createBackup(maxBackups);
+      },
+      intervalHours * 60 * 60 * 1000,
+    );
 
-    console.log(`✅ Auto backup started (interval: ${intervalHours}h, max: ${maxBackups})`);
+    console.log(
+      `✅ Auto backup started (interval: ${intervalHours}h, max: ${maxBackups})`,
+    );
   }
 
   /**
@@ -736,7 +780,7 @@ export class AutoBackupService {
     if (this.backupInterval) {
       clearInterval(this.backupInterval);
       this.backupInterval = null;
-      console.log('✅ Auto backup stopped');
+      console.log("✅ Auto backup stopped");
     }
   }
 
@@ -745,8 +789,8 @@ export class AutoBackupService {
    */
   async createBackup(maxBackups: number = 7): Promise<string> {
     const backupDir = getBackupPath();
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupName = `xstudio_backup_${timestamp}.pglite`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const backupName = `composition_backup_${timestamp}.pglite`;
     const backupPath = path.join(backupDir, backupName);
 
     try {
@@ -764,7 +808,7 @@ export class AutoBackupService {
 
       return backupPath;
     } catch (error) {
-      console.error('❌ Backup failed:', error);
+      console.error("❌ Backup failed:", error);
       throw error;
     }
   }
@@ -790,7 +834,7 @@ export class AutoBackupService {
 
       console.log(`✅ Restored from backup: ${backupPath}`);
     } catch (error) {
-      console.error('❌ Restore failed:', error);
+      console.error("❌ Restore failed:", error);
       throw error;
     }
   }
@@ -798,13 +842,18 @@ export class AutoBackupService {
   /**
    * List all backups
    */
-  async listBackups(): Promise<Array<{ name: string; path: string; size: number; date: Date }>> {
+  async listBackups(): Promise<
+    Array<{ name: string; path: string; size: number; date: Date }>
+  > {
     const backupDir = getBackupPath();
     const files = fs.readdirSync(backupDir);
 
     const backups = files
-      .filter(file => file.startsWith('xstudio_backup_') && file.endsWith('.pglite'))
-      .map(file => {
+      .filter(
+        (file) =>
+          file.startsWith("composition_backup_") && file.endsWith(".pglite"),
+      )
+      .map((file) => {
         const filePath = path.join(backupDir, file);
         const stats = fs.statSync(filePath);
 
@@ -823,7 +872,10 @@ export class AutoBackupService {
   /**
    * Delete old backups
    */
-  private async cleanOldBackups(backupDir: string, maxBackups: number): Promise<void> {
+  private async cleanOldBackups(
+    backupDir: string,
+    maxBackups: number,
+  ): Promise<void> {
     const backups = await this.listBackups();
 
     if (backups.length > maxBackups) {
@@ -864,7 +916,7 @@ export const autoBackup = new AutoBackupService();
 ```typescript
 // electron/main.ts
 
-import { autoBackup } from '../src/services/backup/autoBackup';
+import { autoBackup } from "../src/services/backup/autoBackup";
 
 app.whenReady().then(async () => {
   // 데이터베이스 초기화
@@ -877,16 +929,16 @@ app.whenReady().then(async () => {
 });
 
 // IPC 핸들러 추가
-ipcMain.handle('backup:create', async () => {
+ipcMain.handle("backup:create", async () => {
   const backupPath = await autoBackup.createBackup();
   return { success: true, path: backupPath };
 });
 
-ipcMain.handle('backup:list', async () => {
+ipcMain.handle("backup:list", async () => {
   return await autoBackup.listBackups();
 });
 
-ipcMain.handle('backup:restore', async (_event, backupPath: string) => {
+ipcMain.handle("backup:restore", async (_event, backupPath: string) => {
   await autoBackup.restoreBackup(backupPath);
   return { success: true };
 });
@@ -901,8 +953,8 @@ ipcMain.handle('backup:restore', async (_event, backupPath: string) => {
 ```typescript
 // src/services/database/exportImport.ts
 
-import * as fs from 'fs';
-import { db } from './index';
+import * as fs from "fs";
+import { db } from "./index";
 
 export class ExportImportService {
   /**
@@ -912,7 +964,13 @@ export class ExportImportService {
     const data: any = {};
 
     // 모든 테이블 데이터 추출
-    const tables = ['projects', 'pages', 'elements', 'design_themes', 'design_tokens'];
+    const tables = [
+      "projects",
+      "pages",
+      "elements",
+      "design_themes",
+      "design_tokens",
+    ];
 
     for (const table of tables) {
       data[table] = await db.select(table);
@@ -927,18 +985,24 @@ export class ExportImportService {
    * Import database from JSON
    */
   async importFromJson(filePath: string): Promise<void> {
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
     await db.transaction(async (tx) => {
       // 기존 데이터 삭제 (역순으로)
-      await tx.query('DELETE FROM design_tokens');
-      await tx.query('DELETE FROM design_themes');
-      await tx.query('DELETE FROM elements');
-      await tx.query('DELETE FROM pages');
-      await tx.query('DELETE FROM projects');
+      await tx.query("DELETE FROM design_tokens");
+      await tx.query("DELETE FROM design_themes");
+      await tx.query("DELETE FROM elements");
+      await tx.query("DELETE FROM pages");
+      await tx.query("DELETE FROM projects");
 
       // 새 데이터 삽입 (순서대로)
-      const tables = ['projects', 'pages', 'elements', 'design_themes', 'design_tokens'];
+      const tables = [
+        "projects",
+        "pages",
+        "elements",
+        "design_themes",
+        "design_tokens",
+      ];
 
       for (const table of tables) {
         if (data[table] && data[table].length > 0) {
@@ -955,8 +1019,14 @@ export class ExportImportService {
    */
   async exportToSql(filePath: string): Promise<void> {
     // pg_dump 스타일 SQL 생성
-    const tables = ['projects', 'pages', 'elements', 'design_themes', 'design_tokens'];
-    let sql = '';
+    const tables = [
+      "projects",
+      "pages",
+      "elements",
+      "design_themes",
+      "design_tokens",
+    ];
+    let sql = "";
 
     for (const table of tables) {
       const rows = await db.select(table);
@@ -967,18 +1037,20 @@ export class ExportImportService {
 
         for (const row of rows) {
           const keys = Object.keys(row);
-          const values = keys.map(key => {
+          const values = keys.map((key) => {
             const value = row[key];
-            if (value === null) return 'NULL';
-            if (typeof value === 'object') return `'${JSON.stringify(value)}'::jsonb`;
-            if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
+            if (value === null) return "NULL";
+            if (typeof value === "object")
+              return `'${JSON.stringify(value)}'::jsonb`;
+            if (typeof value === "string")
+              return `'${value.replace(/'/g, "''")}'`;
             return value;
           });
 
-          sql += `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${values.join(', ')});\n`;
+          sql += `INSERT INTO ${table} (${keys.join(", ")}) VALUES (${values.join(", ")});\n`;
         }
 
-        sql += '\n';
+        sql += "\n";
       }
     }
 
@@ -999,7 +1071,7 @@ export const exportImport = new ExportImportService();
 ```typescript
 // src/services/database/monitoring.ts
 
-import { db } from './index';
+import { db } from "./index";
 
 export class DatabaseMonitoring {
   /**
@@ -1013,7 +1085,13 @@ export class DatabaseMonitoring {
     const totalSize = await db.getDbSize();
 
     // 테이블별 크기
-    const tables = ['projects', 'pages', 'elements', 'design_themes', 'design_tokens'];
+    const tables = [
+      "projects",
+      "pages",
+      "elements",
+      "design_themes",
+      "design_tokens",
+    ];
     const tablesSizes: Array<{ table: string; size: number }> = [];
 
     for (const table of tables) {
@@ -1029,7 +1107,7 @@ export class DatabaseMonitoring {
       FROM pg_tables
       WHERE schemaname = 'public'
     `);
-    const indexesSize = parseInt(indexResult[0].size || '0');
+    const indexesSize = parseInt(indexResult[0].size || "0");
 
     return {
       totalSize,
@@ -1043,8 +1121,8 @@ export class DatabaseMonitoring {
    */
   async optimize(): Promise<void> {
     await db.vacuum();
-    await db.query('ANALYZE');
-    console.log('✅ Database optimized');
+    await db.query("ANALYZE");
+    console.log("✅ Database optimized");
   }
 
   /**
@@ -1079,7 +1157,7 @@ export interface ChangeLog {
   id: string;
   table_name: string;
   record_id: string;
-  operation: 'INSERT' | 'UPDATE' | 'DELETE';
+  operation: "INSERT" | "UPDATE" | "DELETE";
   data: any;
   synced: boolean;
   created_at: Date;
@@ -1128,7 +1206,13 @@ export async function setupChangeTracking(db: any): Promise<void> {
   `);
 
   // 각 테이블에 트리거 추가
-  const tables = ['projects', 'pages', 'elements', 'design_themes', 'design_tokens'];
+  const tables = [
+    "projects",
+    "pages",
+    "elements",
+    "design_themes",
+    "design_tokens",
+  ];
 
   for (const table of tables) {
     await db.query(`
@@ -1139,7 +1223,7 @@ export async function setupChangeTracking(db: any): Promise<void> {
     `);
   }
 
-  console.log('✅ Change tracking setup complete');
+  console.log("✅ Change tracking setup complete");
 }
 ```
 
@@ -1148,8 +1232,8 @@ export async function setupChangeTracking(db: any): Promise<void> {
 ```typescript
 // src/services/sync/syncService.ts
 
-import { db as localDb } from '../database';
-import { supabase } from '../database/supabaseAdapter';
+import { db as localDb } from "../database";
+import { supabase } from "../database/supabaseAdapter";
 
 export class SyncService {
   private isSyncing = false;
@@ -1167,9 +1251,12 @@ export class SyncService {
     this.sync();
 
     // 주기적 동기화
-    this.syncInterval = setInterval(() => {
-      this.sync();
-    }, intervalMinutes * 60 * 1000);
+    this.syncInterval = setInterval(
+      () => {
+        this.sync();
+      },
+      intervalMinutes * 60 * 1000,
+    );
 
     console.log(`✅ Auto sync started (interval: ${intervalMinutes}min)`);
   }
@@ -1181,7 +1268,7 @@ export class SyncService {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log('✅ Auto sync stopped');
+      console.log("✅ Auto sync stopped");
     }
   }
 
@@ -1190,14 +1277,14 @@ export class SyncService {
    */
   async sync(): Promise<{ pushed: number; pulled: number; conflicts: number }> {
     if (this.isSyncing) {
-      console.log('⚠️ Sync already in progress');
+      console.log("⚠️ Sync already in progress");
       return { pushed: 0, pulled: 0, conflicts: 0 };
     }
 
     this.isSyncing = true;
 
     try {
-      console.log('🔄 Starting sync...');
+      console.log("🔄 Starting sync...");
 
       // 1. Push local changes to Supabase
       const pushed = await this.pushChanges();
@@ -1208,11 +1295,13 @@ export class SyncService {
       // 3. Resolve conflicts
       const conflicts = await this.resolveConflicts();
 
-      console.log(`✅ Sync complete: Pushed ${pushed}, Pulled ${pulled}, Conflicts ${conflicts}`);
+      console.log(
+        `✅ Sync complete: Pushed ${pushed}, Pulled ${pulled}, Conflicts ${conflicts}`,
+      );
 
       return { pushed, pulled, conflicts };
     } catch (error) {
-      console.error('❌ Sync failed:', error);
+      console.error("❌ Sync failed:", error);
       throw error;
     } finally {
       this.isSyncing = false;
@@ -1225,7 +1314,7 @@ export class SyncService {
   private async pushChanges(): Promise<number> {
     // 동기화되지 않은 변경사항 가져오기
     const changes = await localDb.query<ChangeLog>(
-      'SELECT * FROM _change_log WHERE synced = FALSE ORDER BY created_at ASC'
+      "SELECT * FROM _change_log WHERE synced = FALSE ORDER BY created_at ASC",
     );
 
     let pushedCount = 0;
@@ -1233,23 +1322,27 @@ export class SyncService {
     for (const change of changes) {
       try {
         switch (change.operation) {
-          case 'INSERT':
+          case "INSERT":
             await supabase.insert(change.table_name, change.data);
             break;
 
-          case 'UPDATE':
-            await supabase.update(change.table_name, change.record_id, change.data);
+          case "UPDATE":
+            await supabase.update(
+              change.table_name,
+              change.record_id,
+              change.data,
+            );
             break;
 
-          case 'DELETE':
+          case "DELETE":
             await supabase.delete(change.table_name, change.record_id);
             break;
         }
 
         // 동기화 완료 표시
         await localDb.query(
-          'UPDATE _change_log SET synced = TRUE WHERE id = $1',
-          [change.id]
+          "UPDATE _change_log SET synced = TRUE WHERE id = $1",
+          [change.id],
         );
 
         pushedCount++;
@@ -1268,7 +1361,13 @@ export class SyncService {
   private async pullChanges(): Promise<number> {
     // 마지막 동기화 시간 이후 변경사항 가져오기
     const lastSync = await this.getLastSyncTime();
-    const tables = ['projects', 'pages', 'elements', 'design_themes', 'design_tokens'];
+    const tables = [
+      "projects",
+      "pages",
+      "elements",
+      "design_themes",
+      "design_tokens",
+    ];
 
     let pulledCount = 0;
 
@@ -1287,7 +1386,9 @@ export class SyncService {
           // 새 레코드 삽입
           await localDb.insert(table, record);
           pulledCount++;
-        } else if (new Date(record.updated_at) > new Date(localRecord[0].updated_at)) {
+        } else if (
+          new Date(record.updated_at) > new Date(localRecord[0].updated_at)
+        ) {
           // 업데이트된 레코드 갱신
           await localDb.update(table, record.id, record);
           pulledCount++;
@@ -1330,11 +1431,14 @@ export class SyncService {
    * Update last sync time
    */
   private async updateLastSyncTime(): Promise<void> {
-    await localDb.query(`
+    await localDb.query(
+      `
       INSERT INTO _sync_metadata (key, value)
       VALUES ('last_sync_time', $1)
       ON CONFLICT (key) DO UPDATE SET value = $1
-    `, [new Date().toISOString()]);
+    `,
+      [new Date().toISOString()],
+    );
   }
 }
 
@@ -1351,10 +1455,10 @@ export const syncService = new SyncService();
 // src/services/sync/conflictResolution.ts
 
 export type ConflictResolutionStrategy =
-  | 'local-wins'      // 로컬 우선
-  | 'remote-wins'     // 원격 우선
-  | 'timestamp-wins'  // 최신 타임스탬프 우선
-  | 'manual';         // 사용자 선택
+  | "local-wins" // 로컬 우선
+  | "remote-wins" // 원격 우선
+  | "timestamp-wins" // 최신 타임스탬프 우선
+  | "manual"; // 사용자 선택
 
 export interface Conflict {
   table: string;
@@ -1366,25 +1470,27 @@ export interface Conflict {
 }
 
 export class ConflictResolver {
-  constructor(private strategy: ConflictResolutionStrategy = 'timestamp-wins') {}
+  constructor(
+    private strategy: ConflictResolutionStrategy = "timestamp-wins",
+  ) {}
 
   /**
    * Resolve conflict
    */
   async resolve(conflict: Conflict): Promise<any> {
     switch (this.strategy) {
-      case 'local-wins':
+      case "local-wins":
         return conflict.localData;
 
-      case 'remote-wins':
+      case "remote-wins":
         return conflict.remoteData;
 
-      case 'timestamp-wins':
+      case "timestamp-wins":
         return conflict.localUpdatedAt > conflict.remoteUpdatedAt
           ? conflict.localData
           : conflict.remoteData;
 
-      case 'manual':
+      case "manual":
         return await this.manualResolve(conflict);
 
       default:
@@ -1416,7 +1522,7 @@ export class ConflictResolver {
 
 export interface QueuedOperation {
   id: string;
-  type: 'CREATE' | 'UPDATE' | 'DELETE';
+  type: "CREATE" | "UPDATE" | "DELETE";
   table: string;
   data: any;
   createdAt: Date;
@@ -1429,7 +1535,7 @@ export class OfflineQueue {
   /**
    * Add operation to queue
    */
-  add(operation: Omit<QueuedOperation, 'id' | 'createdAt' | 'retryCount'>) {
+  add(operation: Omit<QueuedOperation, "id" | "createdAt" | "retryCount">) {
     this.queue.push({
       ...operation,
       id: crypto.randomUUID(),
@@ -1437,7 +1543,9 @@ export class OfflineQueue {
       retryCount: 0,
     });
 
-    console.log(`➕ Added to offline queue: ${operation.type} ${operation.table}`);
+    console.log(
+      `➕ Added to offline queue: ${operation.type} ${operation.table}`,
+    );
   }
 
   /**
@@ -1453,7 +1561,7 @@ export class OfflineQueue {
         await this.uploadOperation(operation);
 
         // 큐에서 제거
-        this.queue = this.queue.filter(op => op.id !== operation.id);
+        this.queue = this.queue.filter((op) => op.id !== operation.id);
         success++;
       } catch (error) {
         console.error(`❌ Failed to process ${operation.id}:`, error);
@@ -1462,7 +1570,7 @@ export class OfflineQueue {
 
         if (operation.retryCount >= 3) {
           // 3회 실패 시 큐에서 제거
-          this.queue = this.queue.filter(op => op.id !== operation.id);
+          this.queue = this.queue.filter((op) => op.id !== operation.id);
           failed++;
         }
       }
@@ -1480,15 +1588,15 @@ export class OfflineQueue {
     const { type, table, data } = operation;
 
     switch (type) {
-      case 'CREATE':
+      case "CREATE":
         await supabase.insert(table, data);
         break;
 
-      case 'UPDATE':
+      case "UPDATE":
         await supabase.update(table, data.id, data);
         break;
 
-      case 'DELETE':
+      case "DELETE":
         await supabase.delete(table, data.id);
         break;
     }
@@ -1521,13 +1629,13 @@ export const offlineQueue = new OfflineQueue();
 ```typescript
 // tests/stability/crash-recovery.test.ts
 
-describe('Crash Recovery Tests', () => {
-  it('should recover from sudden shutdown during write', async () => {
+describe("Crash Recovery Tests", () => {
+  it("should recover from sudden shutdown during write", async () => {
     // 트랜잭션 중간에 강제 종료 시뮬레이션
     // ...
   });
 
-  it('should maintain data integrity after power failure', async () => {
+  it("should maintain data integrity after power failure", async () => {
     // 전원 차단 시뮬레이션
     // ...
   });
@@ -1539,13 +1647,13 @@ describe('Crash Recovery Tests', () => {
 ```typescript
 // tests/stability/data-integrity.test.ts
 
-describe('Data Integrity Tests', () => {
-  it('should maintain foreign key constraints', async () => {
+describe("Data Integrity Tests", () => {
+  it("should maintain foreign key constraints", async () => {
     // 외래키 제약 조건 테스트
     // ...
   });
 
-  it('should enforce unique constraints', async () => {
+  it("should enforce unique constraints", async () => {
     // 고유 제약 조건 테스트
     // ...
   });

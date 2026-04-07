@@ -377,7 +377,7 @@ export class SkiaFontManager {
 // HMR 안전 싱글톤 (initCanvasKit.ts 패턴)
 // ============================================
 
-const FM_GLOBAL_KEY = "__XSTUDIO_SKIA_FONT_MANAGER__";
+const FM_GLOBAL_KEY = "__composition_SKIA_FONT_MANAGER__";
 
 declare global {
   interface Window {

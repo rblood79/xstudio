@@ -1,7 +1,7 @@
 ---
 name: component-design
 description: Skill 문서를 활용한 컴포넌트 설계/구현 워크플로우. React Aria/Spectrum 문서 참조, IDE 타입 검증, Chrome 브라우저 검증을 단계별로 수행합니다.
-TRIGGER when: user mentions "새 컴포넌트", "컴포넌트 만들어", "컴포넌트 구현", "컴포넌트 설계", "S2 전환", "S2 기능 추가", "컴포넌트 추가", "new component", "implement component", "design component", or asks to create, design, or implement a new UI component for XStudio.
+TRIGGER when: user mentions "새 컴포넌트", "컴포넌트 만들어", "컴포넌트 구현", "컴포넌트 설계", "S2 전환", "S2 기능 추가", "컴포넌트 추가", "new component", "implement component", "design component", or asks to create, design, or implement a new UI component for composition.
 user-invocable: true
 scope: 새 컴포넌트 생성 또는 기존 컴포넌트의 구조적 변경 (단순 버그 수정, 스타일 변경은 제외)
 ---
@@ -46,20 +46,20 @@ Read .claude/skills/react-aria/references/interactions/usePress.md → 인터랙
 Read .claude/skills/react-spectrum/references/components/{ComponentName}.md
 ```
 
-Adobe의 Spectrum 2 디자인 시스템 구현을 참조하여 XStudio 컴포넌트와 비교한다.
+Adobe의 Spectrum 2 디자인 시스템 구현을 참조하여 composition 컴포넌트와 비교한다.
 
 ### 1-4. 조사 결과 정리
 
 - 사용할 React Aria hooks/components 목록
 - Props 인터페이스 설계 기준
 - 키보드/접근성 요구사항
-- XStudio 컨벤션과의 매핑 포인트
+- composition 컨벤션과의 매핑 포인트
 
 ## Phase 2: 구현
 
 composition-patterns 스킬의 규칙을 따르며 구현한다.
 
-### 구현 순서 (XStudio 컴포넌트)
+### 구현 순서 (composition 컴포넌트)
 
 1. **타입 정의** — `unified.types.ts`에 Props 타입 추가, `defaultPropsMap` 등록
 2. **Spec 작성** — `packages/specs/src/components/`에 Shape 기반 Spec 생성
@@ -72,7 +72,7 @@ composition-patterns 스킬의 규칙을 따르며 구현한다.
 
 - 외부 라이브러리 추가 설치 금지 (번들 500KB 제약)
 - React Aria hooks/components는 이미 프로젝트 의존성 — 직접 import 가능
-- React Aria 패턴을 XStudio 컨벤션에 맞게 변환:
+- React Aria 패턴을 composition 컨벤션에 맞게 변환:
   - 스타일링 → tv() + CSS
   - 상태 → Zustand 슬라이스
   - 렌더링 → Spec shapes + Skia
@@ -82,7 +82,7 @@ composition-patterns 스킬의 규칙을 따르며 구현한다.
 구현 완료 후 IDE MCP로 타입 진단을 확인한다.
 
 ```
-mcp__ide__getDiagnostics(uri: "file:///Users/admin/workspace/xstudio/{변경된 파일 경로}")
+mcp__ide__getDiagnostics(uri: "file:///Users/admin/workspace/composition/{변경된 파일 경로}")
 ```
 
 - 에러 0개 확인
@@ -134,7 +134,7 @@ mcp__claude-in-chrome__computer(action: "screenshot", tabId: {tabId})
 | React Aria hooks | (사용할 hooks/components 목록)           |
 | Props 인터페이스 | (핵심 props 설계)                        |
 | 접근성 요구사항  | (키보드 네비게이션, ARIA 패턴)           |
-| XStudio 매핑     | (tv() 스타일, Zustand 연동, Spec shapes) |
+| composition 매핑 | (tv() 스타일, Zustand 연동, Spec shapes) |
 
 ### Phase 2 구현 체크리스트
 

@@ -1,12 +1,13 @@
 # Mock API Endpoints
 
-XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔드포인트는 서로 다른 데이터 타입과 컬럼 구조를 반환합니다.
+composition에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔드포인트는 서로 다른 데이터 타입과 컬럼 구조를 반환합니다.
 
 ## 📋 전체 엔드포인트 목록
 
 ### 🔐 권한 및 역할 관리
 
 #### `/permissions` - 권한 목록
+
 - **타입**: `MockPermission[]`
 - **컬럼**:
   - `id` (string) - 권한 ID
@@ -15,6 +16,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `category` (string) - 카테고리 (user/project/organization/security/billing)
 
 #### `/roles` - 역할 목록
+
 - **타입**: `MockRole[]`
 - **컬럼**:
   - `id` (string) - 역할 ID
@@ -26,6 +28,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
 ### 🏢 조직 및 부서
 
 #### `/organizations` - 조직 목록
+
 - **타입**: `MockOrganization[]`
 - **컬럼**:
   - `id` (string) - 조직 ID
@@ -37,6 +40,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `primaryContactUserId` (string?) - 주 담당자 ID
 
 #### `/departments` - 부서 목록
+
 - **타입**: `MockDepartment[]`
 - **컬럼**:
   - `id` (string) - 부서 ID
@@ -48,6 +52,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
 ### 📁 프로젝트
 
 #### `/projects` - 프로젝트 목록
+
 - **타입**: `MockProject[]`
 - **컬럼**:
   - `id` (string) - 프로젝트 ID
@@ -62,6 +67,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `visibility` (string) - 공개 범위 (private/internal/public)
 
 #### `/project-memberships` - 프로젝트 멤버십
+
 - **타입**: `MockProjectMembership[]`
 - **컬럼**:
   - `id` (string) - 멤버십 ID
@@ -76,6 +82,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
 ### 👥 사용자
 
 #### `/users` - 개발자 및 디자이너
+
 - **타입**: `MockUserData[]` (필터링됨)
 - **필터**: 개발자, 디자이너, 분석가
 - **컬럼**:
@@ -99,21 +106,25 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `projectMembershipIds` (string[]) - 프로젝트 멤버십 ID 배열
 
 #### `/admins` - 관리자
+
 - **타입**: `MockUserData[]` (필터링됨)
 - **필터**: 매니저, 아키텍트, 보안 전문가
 - **컬럼**: `/users`와 동일
 
 #### `/developers` - 개발자만
+
 - **타입**: `MockUserData[]` (필터링됨)
 - **필터**: 역할에 "개발자" 포함
 - **컬럼**: `/users`와 동일
 
 #### `/managers` - 매니저만
+
 - **타입**: `MockUserData[]` (필터링됨)
 - **필터**: 역할에 "매니저" 포함
 - **컬럼**: `/users`와 동일
 
 #### `/companies` - 회사 목록
+
 - **타입**: 커스텀 (중복 제거)
 - **컬럼**:
   - `id` (number) - 회사 ID
@@ -122,6 +133,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `employeeCount` (number) - 직원 수
 
 #### `/company-employees` - 특정 회사 직원
+
 - **타입**: `MockUserData[]` (필터링됨)
 - **필터**: 테크노베이션, 디지털솔루션, 스마트시스템즈
 - **컬럼**: `/users`와 동일
@@ -129,6 +141,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
 ### 📝 감사 및 초대
 
 #### `/audit-logs` - 감사 로그
+
 - **타입**: `MockAuditLog[]`
 - **컬럼**:
   - `id` (string) - 로그 ID
@@ -142,6 +155,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `ipAddress` (string) - IP 주소
 
 #### `/invitations` - 초대 목록
+
 - **타입**: `MockInvitation[]`
 - **컬럼**:
   - `id` (string) - 초대 ID
@@ -156,6 +170,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
 ### 🔧 엔진 및 부품 (BOM)
 
 #### `/engines` - 엔진 목록
+
 - **타입**: `MockEngine[]`
 - **컬럼**:
   - `id` (string) - 엔진 ID
@@ -171,6 +186,7 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
   - `createdBy` (string) - 생성자 ID
 
 #### `/components` - 부품 목록 (계층 구조)
+
 - **타입**: `MockComponent[]`
 - **컬럼**:
   - `id` (string) - 부품 ID
@@ -242,13 +258,17 @@ XStudio에서 사용 가능한 Mock API 엔드포인트 목록입니다. 각 엔
 ## 🛠️ 트러블슈팅
 
 ### 모든 엔드포인트가 동일한 컬럼 반환?
+
 ✅ **해결됨** - 각 엔드포인트가 고유한 데이터 타입과 컬럼 구조를 반환하도록 수정됨
 
 ### 새로고침 없이 데이터 업데이트?
+
 ✅ **해결됨** - DataSourceSelector와 APICollectionEditor에서 Table props를 즉시 업데이트하도록 수정됨
 
 ### REST API 선택 시 기존 컬럼이 남아있음?
+
 ✅ **해결됨** - 다음 3가지 수정으로 완전 해결:
+
 1. **Layer 트리 필터링**: `deleted: true`인 Column 요소를 렌더링에서 제외
 2. **데이터베이스 삭제**: REST API 선택 시 Column 요소들을 DB에서 실제 삭제
 3. **Preview 필터링**: Preview 렌더링 시 삭제된 Column 제외

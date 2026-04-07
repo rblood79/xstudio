@@ -1,6 +1,6 @@
 # ADR-045 Breakdown: S2 Property Editor 정합성 정렬
 
-이 문서는 ADR-045의 구현 메모를 관리한다. 결정 자체는 [ADR-045](/Users/admin/work/xstudio/docs/adr/045-s2-property-editor-alignment.md)에 있고, 여기에는 컴포넌트별 실행 후보와 계약 확장 후보만 기록한다.
+이 문서는 ADR-045의 구현 메모를 관리한다. 결정 자체는 [ADR-045](/Users/admin/work/composition/docs/adr/045-s2-property-editor-alignment.md)에 있고, 여기에는 컴포넌트별 실행 후보와 계약 확장 후보만 기록한다.
 
 ## 목적
 
@@ -57,7 +57,7 @@
 
 ## 2. 계약 확장 후보
 
-아래 항목은 S2 문서에는 존재하지만, 현재 XStudio 계약에 없거나 경로가 불완전하다.
+아래 항목은 S2 문서에는 존재하지만, 현재 composition 계약에 없거나 경로가 불완전하다.
 
 ### ColorField
 
@@ -105,7 +105,7 @@
   - `variant`
   - `showIcon`
 - 메모:
-  - 현재 XStudio Tooltip 계약은 `placement`, `offset` 정도만 노출한다.
+  - 현재 composition Tooltip 계약은 `placement`, `offset` 정도만 노출한다.
   - `variant`, `showIcon`은 S2 Tooltip 문서 근거가 부족하므로 이번 범위에서 제거한다.
 
 ### Popover
@@ -143,7 +143,7 @@
 - 제외:
   - `closeOnSelect`
 - 메모:
-  - 현재 XStudio는 `Menu`와 trigger 계약이 분리되어 있지 않아, editor surface를 어디에 둘지 먼저 정해야 한다.
+  - 현재 composition는 `Menu`와 trigger 계약이 분리되어 있지 않아, editor surface를 어디에 둘지 먼저 정해야 한다.
 
 ## 3. 공통 정렬 후보
 

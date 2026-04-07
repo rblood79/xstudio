@@ -2,9 +2,10 @@
 
 ## Overview
 
-This document describes the comprehensive integration of Adobe's React Aria libraries into the xstudio project, enhancing accessibility, internationalization, and focus management across all components.
+This document describes the comprehensive integration of Adobe's React Aria libraries into the composition project, enhancing accessibility, internationalization, and focus management across all components.
 
 **Integrated Libraries:**
+
 - `@internationalized/date` (v3.10.0) - Timezone-aware date/time handling
 - `@internationalized/number` (v3.6.5) - Locale-aware number formatting
 - `@react-aria/focus` (v3.21.2) - Advanced focus management
@@ -24,6 +25,7 @@ This document describes the comprehensive integration of Adobe's React Aria libr
 Comprehensive date/time utility library with 40+ functions using `@internationalized/date`.
 
 **Key Features:**
+
 - Timezone-aware date operations
 - Safe date parsing with error handling
 - Date comparison and validation
@@ -34,41 +36,47 @@ Comprehensive date/time utility library with 40+ functions using `@international
 **Usage Examples:**
 
 ```typescript
-import { getCurrentDate, safeParseDateString, addDays, getThisWeek } from '../../utils/dateUtils';
+import {
+  getCurrentDate,
+  safeParseDateString,
+  addDays,
+  getThisWeek,
+} from "../../utils/dateUtils";
 
 // Get current date in specific timezone
-const seoulDate = getCurrentDate('Asia/Seoul');
-const nyDate = getCurrentDate('America/New_York');
+const seoulDate = getCurrentDate("Asia/Seoul");
+const nyDate = getCurrentDate("America/New_York");
 
 // Parse date strings safely
-const date = safeParseDateString('2025-11-10'); // CalendarDate | null
+const date = safeParseDateString("2025-11-10"); // CalendarDate | null
 
 // Date arithmetic
 const tomorrow = addDays(getCurrentDate(), 1);
 const nextMonth = addMonths(getCurrentDate(), 1);
 
 // Date ranges
-const thisWeek = getThisWeek('Asia/Seoul', 'ko-KR');
+const thisWeek = getThisWeek("Asia/Seoul", "ko-KR");
 // Returns: { start: CalendarDate, end: CalendarDate }
 ```
 
 **Available Functions:**
 
-| Category | Functions |
-|----------|-----------|
-| **Current Date/Time** | `getCurrentDate`, `getCurrentDateTime`, `getCurrentTime`, `getLocalTimezone` |
-| **Parsing** | `parseSimpleDate`, `safeParseDateString`, `parseDateRange`, `toCalendarDate`, `toZonedDateTime` |
-| **Comparisons** | `areSameDay`, `isBefore`, `isAfter`, `isBetween`, `isWeekend`, `isToday`, `isPast`, `isFuture` |
-| **Arithmetic** | `addDays`, `addMonths`, `addYears`, `subtractDays`, `subtractMonths`, `subtractYears` |
-| **Differences** | `daysBetween`, `monthsBetween`, `yearsBetween` |
-| **Ranges** | `getThisWeek`, `getThisMonth`, `getThisYear`, `getLastNDays`, `getNextNDays` |
-| **Utilities** | `getDaysInMonth`, `getFirstDayOfMonth`, `getLastDayOfMonth`, `getWeekNumber`, `isBusinessDay` |
+| Category              | Functions                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| **Current Date/Time** | `getCurrentDate`, `getCurrentDateTime`, `getCurrentTime`, `getLocalTimezone`                    |
+| **Parsing**           | `parseSimpleDate`, `safeParseDateString`, `parseDateRange`, `toCalendarDate`, `toZonedDateTime` |
+| **Comparisons**       | `areSameDay`, `isBefore`, `isAfter`, `isBetween`, `isWeekend`, `isToday`, `isPast`, `isFuture`  |
+| **Arithmetic**        | `addDays`, `addMonths`, `addYears`, `subtractDays`, `subtractMonths`, `subtractYears`           |
+| **Differences**       | `daysBetween`, `monthsBetween`, `yearsBetween`                                                  |
+| **Ranges**            | `getThisWeek`, `getThisMonth`, `getThisYear`, `getLastNDays`, `getNextNDays`                    |
+| **Utilities**         | `getDaysInMonth`, `getFirstDayOfMonth`, `getLastDayOfMonth`, `getWeekNumber`, `isBusinessDay`   |
 
 #### `src/utils/numberUtils.ts`
 
 Comprehensive number formatting library with 50+ functions using `@internationalized/number`.
 
 **Key Features:**
+
 - Locale-aware number formatting
 - Currency formatting (14+ currencies)
 - Unit formatting (30+ units)
@@ -80,23 +88,30 @@ Comprehensive number formatting library with 50+ functions using `@international
 **Usage Examples:**
 
 ```typescript
-import { formatCurrency, formatPercent, formatUnit, formatCompact, CURRENCIES, UNITS } from '../../utils/numberUtils';
+import {
+  formatCurrency,
+  formatPercent,
+  formatUnit,
+  formatCompact,
+  CURRENCIES,
+  UNITS,
+} from "../../utils/numberUtils";
 
 // Currency formatting
-formatCurrency(1000000, 'KRW', 'ko-KR'); // "₩1,000,000"
-formatCurrency(1000, 'USD', 'en-US'); // "$1,000.00"
+formatCurrency(1000000, "KRW", "ko-KR"); // "₩1,000,000"
+formatCurrency(1000, "USD", "en-US"); // "$1,000.00"
 
 // Percentage formatting
-formatPercent(0.75, 'ko-KR', 2); // "75.00%"
-formatPercentFrom100(75, 'ko-KR', 0); // "75%"
+formatPercent(0.75, "ko-KR", 2); // "75.00%"
+formatPercentFrom100(75, "ko-KR", 0); // "75%"
 
 // Unit formatting
-formatUnit(100, 'kilometer', 'ko-KR'); // "100km"
-formatUnit(25, 'celsius', 'ko-KR'); // "25°C"
+formatUnit(100, "kilometer", "ko-KR"); // "100km"
+formatUnit(25, "celsius", "ko-KR"); // "25°C"
 
 // Compact notation
-formatCompact(1500000, 'ko-KR'); // "150만"
-formatCompact(1500000, 'en-US'); // "1.5M"
+formatCompact(1500000, "ko-KR"); // "150만"
+formatCompact(1500000, "en-US"); // "1.5M"
 
 // File size formatting
 formatFileSize(1536000); // "1.5 MB"
@@ -104,8 +119,8 @@ formatFileSize(1536000); // "1.5 MB"
 
 **Available Constants:**
 
-| Currency | Unit Types | Special Formatters |
-|----------|------------|-------------------|
+| Currency                                                             | Unit Types                                                                         | Special Formatters                   |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------ |
 | KRW, USD, EUR, GBP, JPY, CNY, AUD, CAD, CHF, SEK, NZD, MXN, SGD, HKD | Length (14 units), Temperature (3), Weight (5), Volume (4), Speed (2), Digital (2) | File size, Phone number, Credit card |
 
 #### `src/utils/focusUtils.ts`
@@ -113,6 +128,7 @@ formatFileSize(1536000); // "1.5 MB"
 Focus management utilities with 30+ functions using `@react-aria/focus`.
 
 **Key Features:**
+
 - Focus ring management (keyboard-only visibility)
 - Focus scope and containment
 - Focusable element discovery
@@ -157,6 +173,7 @@ const releaseTrap = createFocusTrap(container, {
 **File:** `src/builder/components/DatePicker.tsx`
 
 **New Features:**
+
 - Timezone support with automatic detection
 - String date parsing for min/max values
 - `defaultToday` option for setting initial value
@@ -234,6 +251,7 @@ interface DatePickerProps<T extends DateValue> {
 **File:** `src/builder/components/NumberField.tsx`
 
 **New Features:**
+
 - Locale-aware number formatting
 - Currency, percent, and unit support
 - Compact notation
@@ -252,7 +270,7 @@ interface NumberFieldProps {
 
   /** Format style
    * @default 'decimal' */
-  formatStyle?: 'decimal' | 'currency' | 'percent' | 'unit';
+  formatStyle?: "decimal" | "currency" | "percent" | "unit";
 
   /** Currency code (for formatStyle='currency')
    * @default 'KRW'
@@ -265,7 +283,7 @@ interface NumberFieldProps {
 
   /** Notation style
    * @default 'standard' */
-  notation?: 'standard' | 'compact' | 'scientific' | 'engineering';
+  notation?: "standard" | "compact" | "scientific" | "engineering";
 
   /** Decimal places
    * @default undefined (automatic) */
@@ -311,6 +329,7 @@ interface NumberFieldProps {
 **File:** `src/builder/components/Meter.tsx`
 
 **New Features:**
+
 - Number/percent formatting
 - Custom formatter support
 - Value display control
@@ -327,7 +346,7 @@ interface MeterProps {
 
   /** Value format type
    * @default 'number' */
-  valueFormat?: 'number' | 'percent' | 'custom';
+  valueFormat?: "number" | "percent" | "custom";
 
   /** Show value label
    * @default true */
@@ -377,6 +396,7 @@ interface MeterProps {
 **File:** `src/builder/components/Modal.tsx`
 
 **New Features:**
+
 - Focus trap with FocusScope
 - Auto-focus on open
 - Focus restoration on close
@@ -429,6 +449,7 @@ interface ModalProps {
 **File:** `src/builder/components/Dialog.tsx`
 
 **Documentation Update:**
+
 - Added comprehensive JSDoc explaining focus management inheritance from Modal
 - Clarified that Dialog should be used within Modal/Popover for proper focus handling
 
@@ -460,6 +481,7 @@ interface ModalProps {
 **File:** `src/builder/components/TimeField.tsx`
 
 **New Features:**
+
 - Hour cycle support (12/24-hour format)
 - Placeholder text support
 
@@ -500,6 +522,7 @@ interface TimeFieldProps<T extends TimeValue> {
 **File:** `src/builder/components/Slider.tsx`
 
 **New Features:**
+
 - Number/percent/unit formatting
 - Custom formatter support
 - Value display control
@@ -516,7 +539,7 @@ interface SliderProps<T> {
 
   /** Value format type
    * @default 'number' */
-  valueFormat?: 'number' | 'percent' | 'unit' | 'custom';
+  valueFormat?: "number" | "percent" | "unit" | "custom";
 
   /** Unit (for valueFormat='unit')
    * @example 'kilometer', 'celsius', 'meter' */
@@ -575,6 +598,7 @@ interface SliderProps<T> {
 **File:** `src/builder/components/Button.tsx`
 
 **New Features:**
+
 - Keyboard-only focus ring using `useFocusRing` hook
 - Automatic focus-visible state management
 - Integration with existing variant system
@@ -619,6 +643,7 @@ export function Button(props: ButtonProps) {
 ```
 
 **Key Benefits:**
+
 - Focus ring only appears on keyboard navigation (Tab key)
 - Mouse clicks don't trigger focus ring
 - Improves visual clarity and accessibility
@@ -638,6 +663,7 @@ export function Button(props: ButtonProps) {
 **File:** `src/builder/components/Form.tsx`
 
 **New Features:**
+
 - Auto-focus first field on render
 - Focus restoration after form submission
 - Keyboard navigation within form
@@ -695,6 +721,7 @@ export function Form({ autoFocus = false, restoreFocus = false, children, ...pro
 **File:** `src/builder/components/Popover.tsx`
 
 **New Features:**
+
 - Focus containment within popover
 - Auto-focus on open
 - Focus restoration on close
@@ -795,28 +822,31 @@ export function Popover({
 
 All enhanced components maintain or improve WCAG 2.1 Level AA compliance:
 
-| Component | Accessibility Feature | WCAG Criterion |
-|-----------|----------------------|----------------|
-| **Button** | Keyboard-only focus ring | 2.4.7 Focus Visible |
-| **Form** | Auto-focus and restoration | 2.4.3 Focus Order |
-| **Popover** | Focus containment | 2.4.3 Focus Order |
-| **Modal** | Focus trap | 2.4.3 Focus Order |
-| **DatePicker** | Timezone awareness | 1.4.1 Use of Color (indirectly) |
-| **NumberField** | Locale-aware formatting | 3.1.2 Language of Parts |
-| **Slider** | Formatted value output | 1.3.1 Info and Relationships |
+| Component       | Accessibility Feature      | WCAG Criterion                  |
+| --------------- | -------------------------- | ------------------------------- |
+| **Button**      | Keyboard-only focus ring   | 2.4.7 Focus Visible             |
+| **Form**        | Auto-focus and restoration | 2.4.3 Focus Order               |
+| **Popover**     | Focus containment          | 2.4.3 Focus Order               |
+| **Modal**       | Focus trap                 | 2.4.3 Focus Order               |
+| **DatePicker**  | Timezone awareness         | 1.4.1 Use of Color (indirectly) |
+| **NumberField** | Locale-aware formatting    | 3.1.2 Language of Parts         |
+| **Slider**      | Formatted value output     | 1.3.1 Info and Relationships    |
 
 ### Keyboard Navigation Improvements
 
 **Focus Ring Behavior:**
+
 - Only visible when navigating with keyboard (Tab, Shift+Tab)
 - Not shown on mouse clicks
 - Clear visual indicator (CSS: `.focus-visible` class)
 
 **Focus Trap:**
+
 - Modal: Focus stays within modal until dismissed
 - Popover: Optional containment with `containFocus` prop
 
 **Focus Restoration:**
+
 - Automatically returns focus to trigger element after closing overlay
 - Maintains user's navigation context
 
@@ -827,11 +857,13 @@ All enhanced components maintain or improve WCAG 2.1 Level AA compliance:
 ### For Existing Components
 
 #### Before:
+
 ```typescript
 <DatePicker label="Event Date" />
 ```
 
 #### After (with new features):
+
 ```typescript
 <DatePicker
   label="Event Date"
@@ -846,6 +878,7 @@ All enhanced components maintain or improve WCAG 2.1 Level AA compliance:
 ### For Custom Components
 
 #### Using Date Utilities:
+
 ```typescript
 import { getCurrentDate, addDays, formatDateRange } from '../../utils/dateUtils';
 
@@ -859,6 +892,7 @@ function MyComponent() {
 ```
 
 #### Using Number Utilities:
+
 ```typescript
 import { formatCurrency, formatPercent } from '../../utils/numberUtils';
 
@@ -873,6 +907,7 @@ function PriceDisplay({ price, discount }) {
 ```
 
 #### Using Focus Utilities:
+
 ```typescript
 import { useFocusRing } from '../../utils/focusUtils';
 
@@ -896,13 +931,13 @@ function CustomButton({ children }) {
 
 ### Bundle Size
 
-| Library | Size (gzipped) | Impact |
-|---------|---------------|--------|
-| @internationalized/date | ~15 KB | Minimal |
-| @internationalized/number | ~8 KB | Minimal |
-| @react-aria/focus | ~6 KB | Minimal |
-| @react-aria/utils | ~4 KB | Minimal |
-| **Total** | **~33 KB** | **Low** |
+| Library                   | Size (gzipped) | Impact  |
+| ------------------------- | -------------- | ------- |
+| @internationalized/date   | ~15 KB         | Minimal |
+| @internationalized/number | ~8 KB          | Minimal |
+| @react-aria/focus         | ~6 KB          | Minimal |
+| @react-aria/utils         | ~4 KB          | Minimal |
+| **Total**                 | **~33 KB**     | **Low** |
 
 ### Runtime Performance
 
@@ -938,22 +973,24 @@ test('Button focus ring appears on Tab navigation', async () => {
 ### E2E Tests (Playwright)
 
 ```typescript
-test('Form auto-focus works', async ({ page }) => {
-  await page.goto('/form-demo');
-  const firstInput = page.getByLabel('Name');
+test("Form auto-focus works", async ({ page }) => {
+  await page.goto("/form-demo");
+  const firstInput = page.getByLabel("Name");
   await expect(firstInput).toBeFocused();
 });
 
-test('Modal focus trap works', async ({ page }) => {
-  await page.goto('/modal-demo');
-  await page.getByRole('button', { name: 'Open Modal' }).click();
+test("Modal focus trap works", async ({ page }) => {
+  await page.goto("/modal-demo");
+  await page.getByRole("button", { name: "Open Modal" }).click();
 
   // Tab should stay within modal
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
 
-  const focusedElement = await page.evaluate(() => document.activeElement?.tagName);
+  const focusedElement = await page.evaluate(
+    () => document.activeElement?.tagName,
+  );
   const modalContent = await page.locator('[role="dialog"]').textContent();
 
   // Focus should still be within modal
@@ -972,6 +1009,7 @@ test('Modal focus trap works', async ({ page }) => {
 #### Architecture
 
 **Files Created:**
+
 - `src/i18n/types.ts` - Type definitions for I18n system
 - `src/i18n/translations.ts` - Translation files for all supported locales
 - `src/i18n/locales.ts` - Locale configurations and utilities
@@ -982,12 +1020,12 @@ test('Modal focus trap works', async ({ page }) => {
 
 #### Supported Locales
 
-| Locale | Language | Direction | Currency | Time Format |
-|--------|----------|-----------|----------|-------------|
-| ko-KR | 한국어 (Korean) | LTR | KRW | 24h |
-| en-US | English | LTR | USD | 12h |
-| ja-JP | 日本語 (Japanese) | LTR | JPY | 24h |
-| zh-CN | 简体中文 (Simplified Chinese) | LTR | CNY | 24h |
+| Locale | Language                      | Direction | Currency | Time Format |
+| ------ | ----------------------------- | --------- | -------- | ----------- |
+| ko-KR  | 한국어 (Korean)               | LTR       | KRW      | 24h         |
+| en-US  | English                       | LTR       | USD      | 12h         |
+| ja-JP  | 日本語 (Japanese)             | LTR       | JPY      | 24h         |
+| zh-CN  | 简体中文 (Simplified Chinese) | LTR       | CNY      | 24h         |
 
 #### Key Features
 
@@ -1073,11 +1111,11 @@ export interface TranslationKeys {
 const { t } = useI18n();
 
 // Simple translation
-t('common.save'); // "Save" (en-US) or "저장" (ko-KR)
+t("common.save"); // "Save" (en-US) or "저장" (ko-KR)
 
 // With placeholders
-t('validation.minLength', { min: 8 }); // "Must be at least 8 characters"
-t('validation.max', { max: 100 }); // "Maximum value is 100"
+t("validation.minLength", { min: 8 }); // "Must be at least 8 characters"
+t("validation.max", { max: 100 }); // "Maximum value is 100"
 ```
 
 **4. LanguageSwitcher Component**
@@ -1129,12 +1167,12 @@ Each locale has full configuration:
 
 ```typescript
 export interface LocaleConfig {
-  locale: SupportedLocale;      // 'ko-KR', 'en-US', etc.
-  name: string;                  // '한국어', 'English', etc.
-  direction: Direction;          // 'ltr' or 'rtl'
-  dateFormat: string;            // 'YYYY년 MM월 DD일', 'MM/DD/YYYY', etc.
-  timeFormat: 12 | 24;           // 12-hour or 24-hour
-  currency: string;              // 'KRW', 'USD', etc.
+  locale: SupportedLocale; // 'ko-KR', 'en-US', etc.
+  name: string; // '한국어', 'English', etc.
+  direction: Direction; // 'ltr' or 'rtl'
+  dateFormat: string; // 'YYYY년 MM월 DD일', 'MM/DD/YYYY', etc.
+  timeFormat: 12 | 24; // 12-hour or 24-hour
+  currency: string; // 'KRW', 'USD', etc.
 }
 ```
 
@@ -1161,6 +1199,7 @@ System automatically updates `document.documentElement.dir = 'rtl'`.
 #### Keyboard Focus Management
 
 **Enhanced Components:**
+
 - **Switch** - useFocusRing for keyboard-only focus visibility
 - **Checkbox** - useFocusRing with TreeItem compatibility
 - **Radio** - useFocusRing with modernized structure
@@ -1187,19 +1226,21 @@ export function Switch({ children, variant, size, ...props }) {
 ```
 
 **Benefits:**
+
 - Focus ring only on Tab navigation (not mouse clicks)
 - WCAG 2.1 Level AA compliant
 - Consistent with Button, Form, Popover from Phase 3
 
 ### Builder UI Integration
 
-**Making React Aria features accessible in the xstudio builder system**
+**Making React Aria features accessible in the composition builder system**
 
 All enhanced components from Phase 1-4 now have Inspector controls for new properties, allowing users to configure React Aria features directly in the builder UI without writing code.
 
 #### Updated Component Editors
 
 **Files Modified:**
+
 - `src/builder/inspector/properties/editors/CalendarEditor.tsx`
 - `src/builder/inspector/properties/editors/SliderEditor.tsx`
 - `src/builder/inspector/properties/editors/MeterEditor.tsx`
@@ -1250,6 +1291,7 @@ All enhanced components from Phase 1-4 now have Inspector controls for new prope
 ```
 
 **Features:**
+
 - **Timezone Control**: Select timezone for calendar (e.g., Asia/Seoul, America/New_York)
 - **Default to Today**: Automatically set today's date as default
 - **Date Range Constraints**: Min/max date validation
@@ -1308,6 +1350,7 @@ All enhanced components from Phase 1-4 now have Inspector controls for new prope
 ```
 
 **Features:**
+
 - **Locale-aware Formatting**: Format numbers according to user's locale
 - **Value Format Types**: Number, Percent, Unit, Custom
 - **Conditional Unit Input**: Shows unit selector when format is 'unit'
@@ -1352,6 +1395,7 @@ All enhanced components from Phase 1-4 now have Inspector controls for new prope
 ```
 
 **Features:**
+
 - **Locale-aware Formatting**: Format values according to user's locale
 - **Value Format Types**: Number, Percent, Custom
 - **Show Value Toggle**: Display formatted value
@@ -1359,21 +1403,23 @@ All enhanced components from Phase 1-4 now have Inspector controls for new prope
 #### TimeFieldEditor
 
 **Already Supported:**
+
 - **hourCycle Control**: Select 12/24 hour format (lines 142-151)
 
 #### Editor UI Components
 
 All editors use consistent Property components from `src/builder/inspector/components/`:
 
-| Component | Usage | Example |
-|-----------|-------|---------|
-| **PropertyInput** | Text/string input | Timezone, locale, date strings |
-| **PropertySelect** | Dropdown selection | Value format, hour cycle |
-| **PropertySwitch** | Boolean toggle | Default to today, show value |
+| Component          | Usage              | Example                        |
+| ------------------ | ------------------ | ------------------------------ |
+| **PropertyInput**  | Text/string input  | Timezone, locale, date strings |
+| **PropertySelect** | Dropdown selection | Value format, hour cycle       |
+| **PropertySwitch** | Boolean toggle     | Default to today, show value   |
 
 #### Visual Indicators
 
 All controls use lucide-react icons for visual clarity:
+
 - **Globe** - Locale and timezone inputs
 - **DollarSign** - Value format selectors
 - **CalendarDays** - Date-related toggles
@@ -1397,15 +1443,16 @@ All controls use lucide-react icons for visual clarity:
 
 All inspector controls directly map to component props enhanced in earlier phases:
 
-| Phase | Component | Inspector Controls | Component Props |
-|-------|-----------|-------------------|-----------------|
-| **Phase 1** | DatePicker, Calendar | Timezone, Min/Max Date, Default to Today | `timezone`, `minDate`, `maxDate`, `defaultToday` |
-| **Phase 1** | NumberField, Slider, Meter, ProgressBar | Locale, Value Format, Unit, Show Value | `locale`, `valueFormat`, `unit`, `showValue` |
-| **Phase 2** | TimeField | Hour Cycle | `hourCycle` |
-| **Phase 3** | Button, Form, Popover | (Automatic focus management) | N/A (useFocusRing) |
-| **Phase 4** | DatePicker, NumberField | (Advanced formatting) | `formatStyle`, `currency`, `notation` |
+| Phase       | Component                               | Inspector Controls                       | Component Props                                  |
+| ----------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| **Phase 1** | DatePicker, Calendar                    | Timezone, Min/Max Date, Default to Today | `timezone`, `minDate`, `maxDate`, `defaultToday` |
+| **Phase 1** | NumberField, Slider, Meter, ProgressBar | Locale, Value Format, Unit, Show Value   | `locale`, `valueFormat`, `unit`, `showValue`     |
+| **Phase 2** | TimeField                               | Hour Cycle                               | `hourCycle`                                      |
+| **Phase 3** | Button, Form, Popover                   | (Automatic focus management)             | N/A (useFocusRing)                               |
+| **Phase 4** | DatePicker, NumberField                 | (Advanced formatting)                    | `formatStyle`, `currency`, `notation`            |
 
 **Benefits:**
+
 - **No Code Required**: Users configure React Aria features via UI
 - **Type Safety**: All prop updates use TypeScript-safe `updateProp()` function
 - **Immediate Feedback**: Changes reflected in Preview iframe instantly
@@ -1436,15 +1483,17 @@ All inspector controls directly map to component props enhanced in earlier phase
 ### Common Issues
 
 **Issue:** Date parsing returns null
+
 ```typescript
 // ❌ Wrong format
-safeParseDateString('11/10/2025'); // null
+safeParseDateString("11/10/2025"); // null
 
 // ✅ Correct format (ISO 8601)
-safeParseDateString('2025-11-10'); // CalendarDate
+safeParseDateString("2025-11-10"); // CalendarDate
 ```
 
 **Issue:** Focus ring not appearing
+
 ```typescript
 // Make sure CSS includes .focus-visible styles
 .react-aria-Button.focus-visible {
@@ -1454,10 +1503,11 @@ safeParseDateString('2025-11-10'); // CalendarDate
 ```
 
 **Issue:** Timezone mismatch
+
 ```typescript
 // Always use consistent timezone
-const date = getCurrentDate('Asia/Seoul');
-const zonedDate = toZonedDateTime(date, 'Asia/Seoul');
+const date = getCurrentDate("Asia/Seoul");
+const zonedDate = toZonedDateTime(date, "Asia/Seoul");
 ```
 
 ---
@@ -1481,8 +1531,9 @@ const zonedDate = toZonedDateTime(date, 'Asia/Seoul');
 
 **Document Version:** 2.0
 **Last Updated:** 2025-11-10
-**Author:** Claude Code (xstudio integration)
+**Author:** Claude Code (composition integration)
 
 **Changelog:**
+
 - v2.0 (2025-11-10): Added Phase 5 - I18n System and additional focus management enhancements
 - v1.0 (2025-11-10): Initial documentation for Phases 1-4

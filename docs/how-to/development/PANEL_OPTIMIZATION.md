@@ -1,4 +1,4 @@
-# XStudio Builder 패널 최적화 종합 계획
+# composition Builder 패널 최적화 종합 계획
 
 > **작성일**: 2025-12-09
 > **목표**: 12시간 이상 사용해도 처음과 같은 퍼포먼스를 유지하는 안정적인 빌더 시스템 구축
@@ -25,20 +25,20 @@
 
 ### 1.1 전체 패널 현황
 
-| 패널 | 상태 | 주요 문제 | 우선순위 |
-|------|------|----------|----------|
-| **MonitorPanel** | 🔴 Critical | RAF 기반 모니터링, 비활성 시 계속 실행 | **P0** |
-| **DataTablePanel** | 🟠 Medium | 4개 API 호출 (캐시 없음, but useEffect 내 isActive 체크) | **P2** |
-| **NodesPanel** | ✅ OK | Virtual Scrolling 이미 적용됨 (VirtualizedLayerTree, VirtualizedTree) | - |
-| **PropertiesPanel** | 🟠 High | 5개 selector 구독, Inspector 연동 | **P1** |
-| **StylesPanel** | 🟠 Medium | 4개 훅 구독, localStorage 접근 | **P2** |
-| **EventsPanel** | ✅ OK | Early return 패턴 적용됨 (Line 126-129) | - |
-| **ComponentsPanel** | 🟡 Low | 5개 selector 구독 | **P3** |
-| AIPanel | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
-| SettingsPanel | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
-| ThemesPanel | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
-| DataTableEditorPanel | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
-| CodePreviewPanel | ✅ OK | Props 기반, Lazy 코드 생성 | - |
+| 패널                 | 상태        | 주요 문제                                                             | 우선순위 |
+| -------------------- | ----------- | --------------------------------------------------------------------- | -------- |
+| **MonitorPanel**     | 🔴 Critical | RAF 기반 모니터링, 비활성 시 계속 실행                                | **P0**   |
+| **DataTablePanel**   | 🟠 Medium   | 4개 API 호출 (캐시 없음, but useEffect 내 isActive 체크)              | **P2**   |
+| **NodesPanel**       | ✅ OK       | Virtual Scrolling 이미 적용됨 (VirtualizedLayerTree, VirtualizedTree) | -        |
+| **PropertiesPanel**  | 🟠 High     | 5개 selector 구독, Inspector 연동                                     | **P1**   |
+| **StylesPanel**      | 🟠 Medium   | 4개 훅 구독, localStorage 접근                                        | **P2**   |
+| **EventsPanel**      | ✅ OK       | Early return 패턴 적용됨 (Line 126-129)                               | -        |
+| **ComponentsPanel**  | 🟡 Low      | 5개 selector 구독                                                     | **P3**   |
+| AIPanel              | ✅ OK       | 컴포넌트 분리 패턴 적용됨                                             | -        |
+| SettingsPanel        | ✅ OK       | 컴포넌트 분리 패턴 적용됨                                             | -        |
+| ThemesPanel          | ✅ OK       | 컴포넌트 분리 패턴 적용됨                                             | -        |
+| DataTableEditorPanel | ✅ OK       | 컴포넌트 분리 패턴 적용됨                                             | -        |
+| CodePreviewPanel     | ✅ OK       | Props 기반, Lazy 코드 생성                                            | -        |
 
 ### 1.2 좋은 패턴 (참고용)
 
@@ -71,30 +71,35 @@ function AIPanelContent() {
 
 #### 문제점
 
-| Line | 코드 | 문제 | 영향 |
-|------|------|------|------|
-| 42 | `useMemoryStats()` | `enabled` 파라미터 없음 | 비활성 시에도 메모리 통계 수집 |
-| 53 | `useWebVitals()` | `enabled` 파라미터 없음 | 비활성 시에도 Web Vitals 수집 |
-| 52 | `useFPSMonitor()` | 일부 최적화됨 | ✅ `enabled: isActive && activeTab === "realtime"` |
-| 76-86 | 토스트 알림 useEffect | `isActive` 가드 없음 | 숨겨진 패널에서 경고 알림 발생 |
-| 89-112 | 메모리 히스토리 수집 | `isActive` 가드 없음 | RAF 기반 업데이트 지속 |
+| Line   | 코드                  | 문제                    | 영향                                               |
+| ------ | --------------------- | ----------------------- | -------------------------------------------------- |
+| 42     | `useMemoryStats()`    | `enabled` 파라미터 없음 | 비활성 시에도 메모리 통계 수집                     |
+| 53     | `useWebVitals()`      | `enabled` 파라미터 없음 | 비활성 시에도 Web Vitals 수집                      |
+| 52     | `useFPSMonitor()`     | 일부 최적화됨           | ✅ `enabled: isActive && activeTab === "realtime"` |
+| 76-86  | 토스트 알림 useEffect | `isActive` 가드 없음    | 숨겨진 패널에서 경고 알림 발생                     |
+| 89-112 | 메모리 히스토리 수집  | `isActive` 가드 없음    | RAF 기반 업데이트 지속                             |
 
 #### 현재 코드
 
 ```tsx
 export function MonitorPanel({ isActive }: PanelProps) {
   // ⚠️ 문제: isActive 체크 전에 무거운 훅들이 실행됨
-  const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats();  // ❌
+  const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats(); // ❌
   const [memoryHistory, setMemoryHistory] = useState<number[]>([]);
-  const { fps } = useFPSMonitor({ enabled: isActive && activeTab === "realtime" });  // ✅ 일부 OK
-  const { vitals, collectLocalVitals } = useWebVitals();  // ❌
+  const { fps } = useFPSMonitor({
+    enabled: isActive && activeTab === "realtime",
+  }); // ✅ 일부 OK
+  const { vitals, collectLocalVitals } = useWebVitals(); // ❌
 
   // ⚠️ 문제: 토스트 알림이 isActive 무관하게 실행
   useEffect(() => {
     if (!stats?.browserMemory) return;
     const percent = stats.browserMemory.usagePercent;
     if (percent >= 75) {
-      showToast("error", `메모리 사용량이 위험 수준입니다 (${percent.toFixed(1)}%)`);  // ❌
+      showToast(
+        "error",
+        `메모리 사용량이 위험 수준입니다 (${percent.toFixed(1)}%)`,
+      ); // ❌
     }
   }, [stats?.browserMemory?.usagePercent, showToast]);
 
@@ -104,7 +109,7 @@ export function MonitorPanel({ isActive }: PanelProps) {
     // RAF로 매 프레임 업데이트 → 비활성 시에도 계속 실행됨
     requestAnimationFrame(() => {
       setMemoryHistory((prev) => {
-        const newHistory = [...prev, newValue];  // 배열 복사 + 추가 (메모리 증가)
+        const newHistory = [...prev, newValue]; // 배열 복사 + 추가 (메모리 증가)
         if (newHistory.length > MAX_HISTORY_POINTS) {
           return newHistory.slice(-MAX_HISTORY_POINTS);
         }
@@ -114,7 +119,7 @@ export function MonitorPanel({ isActive }: PanelProps) {
   }, [stats]);
 
   if (!isActive) {
-    return null;  // ❌ 이미 위의 Hook들이 실행된 후
+    return null; // ❌ 이미 위의 Hook들이 실행된 후
   }
   // ...
 }
@@ -144,11 +149,11 @@ GC 빈번 발생 → 프레임 드롭
 
 #### 문제점
 
-| Line | 코드 | 문제 | 영향 |
-|------|------|------|------|
-| 57-61 | `useDataStore` 6개 selector | `isActive` 체크 전 구독 | 상태 변경마다 리렌더 |
-| 64-67 | `useDataTableEditorStore` 4개 selector | `isActive` 체크 전 구독 | 편집 상태 변경 시 리렌더 |
-| 73-87 | 4개 API 동시 호출 | 캐시/진행중 요청 확인 없음 | 탭 전환마다 네트워크 부하 |
+| Line  | 코드                                   | 문제                       | 영향                      |
+| ----- | -------------------------------------- | -------------------------- | ------------------------- |
+| 57-61 | `useDataStore` 6개 selector            | `isActive` 체크 전 구독    | 상태 변경마다 리렌더      |
+| 64-67 | `useDataTableEditorStore` 4개 selector | `isActive` 체크 전 구독    | 편집 상태 변경 시 리렌더  |
+| 73-87 | 4개 API 동시 호출                      | 캐시/진행중 요청 확인 없음 | 탭 전환마다 네트워크 부하 |
 
 #### 현재 코드
 
@@ -203,11 +208,11 @@ export function DataTablePanel({ isActive }: PanelProps) {
 
 #### 문제점
 
-| Line | 코드 | 문제 |
-|------|------|------|
-| 27-29 | `useStore` 3개 selector | `currentPageId`, `pages`, `elements` 구독 |
-| 32-33 | `useEditModeStore`, `useLayoutsStore` | 모드/레이아웃 변경마다 리렌더 |
-| 36-38 | 3개 커스텀 훅 | `useIframeMessenger`, `usePageManager`, `useElementCreator` |
+| Line  | 코드                                  | 문제                                                        |
+| ----- | ------------------------------------- | ----------------------------------------------------------- |
+| 27-29 | `useStore` 3개 selector               | `currentPageId`, `pages`, `elements` 구독                   |
+| 32-33 | `useEditModeStore`, `useLayoutsStore` | 모드/레이아웃 변경마다 리렌더                               |
+| 36-38 | 3개 커스텀 훅                         | `useIframeMessenger`, `usePageManager`, `useElementCreator` |
 
 #### 현재 코드
 
@@ -247,9 +252,9 @@ export function NodesPanel({ isActive }: PanelProps) {
 
 #### 문제점
 
-| Line | 코드 | 문제 |
-|------|------|------|
-| 236 | `useInspectorState` | `selectedElement` 구독 |
+| Line    | 코드                    | 문제                                                                 |
+| ------- | ----------------------- | -------------------------------------------------------------------- |
+| 236     | `useInspectorState`     | `selectedElement` 구독                                               |
 | 270-274 | `useStore` 4개 selector | `multiSelectMode`, `selectedElementIds`, `currentPageId`, `elements` |
 
 #### 현재 코드
@@ -257,20 +262,20 @@ export function NodesPanel({ isActive }: PanelProps) {
 ```tsx
 export function PropertiesPanel({ isActive }: PanelProps) {
   // ⚠️ 문제: isActive 체크 전 구독
-  const selectedElement = useInspectorState((state) => state.selectedElement);  // ❌
+  const selectedElement = useInspectorState((state) => state.selectedElement); // ❌
 
   // ⚠️ 일부 최적화됨: getState() 사용
-  const removeElement = useStore.getState().removeElement;  // ✅ 구독 아님
-  const setSelectedElement = useStore.getState().setSelectedElement;  // ✅ 구독 아님
+  const removeElement = useStore.getState().removeElement; // ✅ 구독 아님
+  const setSelectedElement = useStore.getState().setSelectedElement; // ✅ 구독 아님
 
   // ⚠️ 문제: 직접 구독
-  const multiSelectMode = useStore((state) => state.multiSelectMode);  // ❌
-  const rawSelectedElementIds = useStore((state) => state.selectedElementIds);  // ❌
-  const currentPageId = useStore((state) => state.currentPageId);  // ❌
-  const elements = useStore((state) => state.elements);  // ❌
+  const multiSelectMode = useStore((state) => state.multiSelectMode); // ❌
+  const rawSelectedElementIds = useStore((state) => state.selectedElementIds); // ❌
+  const currentPageId = useStore((state) => state.currentPageId); // ❌
+  const elements = useStore((state) => state.elements); // ❌
 
   if (!isActive) {
-    return null;  // ❌ 구독은 이미 실행됨
+    return null; // ❌ 구독은 이미 실행됨
   }
   // ...
 }
@@ -284,23 +289,29 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
 #### 문제점
 
-| Line | 코드 | 문제 |
-|------|------|------|
-| 37 | `useInspectorState` | `selectedElement` 구독 |
-| 39-46 | 커스텀 훅들 | `useSectionCollapse`, `useStyleActions` |
+| Line  | 코드                | 문제                                    |
+| ----- | ------------------- | --------------------------------------- |
+| 37    | `useInspectorState` | `selectedElement` 구독                  |
+| 39-46 | 커스텀 훅들         | `useSectionCollapse`, `useStyleActions` |
 
 #### 현재 코드
 
 ```tsx
 export function StylesPanel({ isActive }: PanelProps) {
   // ⚠️ 문제: isActive 체크 전 구독
-  const selectedElement = useInspectorState((state) => state.selectedElement);  // ❌
+  const selectedElement = useInspectorState((state) => state.selectedElement); // ❌
   const [filter, setFilter] = useState<"all" | "modified">("all");
-  const { expandAll, collapseAll, collapsedSections, focusMode, toggleFocusMode } = useSectionCollapse();  // ❌
-  const { copyStyles, pasteStyles } = useStyleActions();  // ❌
+  const {
+    expandAll,
+    collapseAll,
+    collapsedSections,
+    focusMode,
+    toggleFocusMode,
+  } = useSectionCollapse(); // ❌
+  const { copyStyles, pasteStyles } = useStyleActions(); // ❌
 
   if (!isActive) {
-    return null;  // ❌ 훅들이 이미 실행된 후
+    return null; // ❌ 훅들이 이미 실행된 후
   }
   // ...
 }
@@ -314,8 +325,8 @@ export function StylesPanel({ isActive }: PanelProps) {
 
 #### 문제점
 
-| Line | 코드 | 문제 |
-|------|------|------|
+| Line    | 코드                    | 문제                                   |
+| ------- | ----------------------- | -------------------------------------- |
 | 123-124 | `useInspectorState` 2개 | `selectedElement`, `updateEvents` 구독 |
 
 #### 현재 코드
@@ -323,11 +334,11 @@ export function StylesPanel({ isActive }: PanelProps) {
 ```tsx
 export function EventsPanel({ isActive }: PanelProps) {
   // ⚠️ 문제: isActive 체크 전 구독
-  const selectedElement = useInspectorState((state) => state.selectedElement);  // ❌
-  const updateEvents = useInspectorState((state) => state.updateEvents);  // ❌
+  const selectedElement = useInspectorState((state) => state.selectedElement); // ❌
+  const updateEvents = useInspectorState((state) => state.updateEvents); // ❌
 
   if (!isActive) {
-    return null;  // ❌ 구독은 이미 실행됨
+    return null; // ❌ 구독은 이미 실행됨
   }
   // ...
 }
@@ -341,24 +352,24 @@ export function EventsPanel({ isActive }: PanelProps) {
 
 #### 문제점
 
-| Line | 코드 | 문제 |
-|------|------|------|
+| Line  | 코드                    | 문제                                               |
+| ----- | ----------------------- | -------------------------------------------------- |
 | 20-23 | `useStore` 3개 selector | `selectedElementId`, `currentPageId`, `addElement` |
-| 26-27 | 추가 store | `useEditModeStore`, `useLayoutsStore` |
+| 26-27 | 추가 store              | `useEditModeStore`, `useLayoutsStore`              |
 
 #### 현재 코드
 
 ```tsx
 export function ComponentsPanel({ isActive }: PanelProps) {
   // ⚠️ 문제: isActive 체크 전 구독
-  const selectedElementId = useStore((state) => state.selectedElementId);  // ❌
-  const currentPageId = useStore((state) => state.currentPageId);  // ❌
-  const addElement = useStore((state) => state.addElement);  // ❌
-  const editMode = useEditModeStore((state) => state.mode);  // ❌
-  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);  // ❌
+  const selectedElementId = useStore((state) => state.selectedElementId); // ❌
+  const currentPageId = useStore((state) => state.currentPageId); // ❌
+  const addElement = useStore((state) => state.addElement); // ❌
+  const editMode = useEditModeStore((state) => state.mode); // ❌
+  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId); // ❌
 
   if (!isActive) {
-    return null;  // ❌ 구독은 이미 실행됨
+    return null; // ❌ 구독은 이미 실행됨
   }
   // ...
 }
@@ -370,12 +381,12 @@ export function ComponentsPanel({ isActive }: PanelProps) {
 
 ### 3.1 핵심 목표
 
-| 목표 | 설명 | 측정 지표 |
-|------|------|----------|
-| **12시간 안정성** | 장시간 사용해도 성능 유지 | 메모리 < 200MB |
-| **초기 로딩 최적화** | 빠른 빌더 시작 | < 500ms |
-| **탭 전환 응답성** | 패널 전환 시 즉각 반응 | < 100ms |
-| **네트워크 효율화** | 중복 요청 제거 | 캐시 hit rate > 80% |
+| 목표                 | 설명                      | 측정 지표           |
+| -------------------- | ------------------------- | ------------------- |
+| **12시간 안정성**    | 장시간 사용해도 성능 유지 | 메모리 < 200MB      |
+| **초기 로딩 최적화** | 빠른 빌더 시작            | < 500ms             |
+| **탭 전환 응답성**   | 패널 전환 시 즉각 반응    | < 100ms             |
+| **네트워크 효율화**  | 중복 요청 제거            | 캐시 hit rate > 80% |
 
 ### 3.2 기술적 목표
 
@@ -499,9 +510,9 @@ User Action
 
 **파일**: `src/builder/panels/core/hooks/useLazyPanel.ts`
 
-```typescript
-import { lazy, Suspense, ComponentType, useState, useEffect } from 'react';
-import { LoadingSpinner } from '../common';
+````typescript
+import { lazy, Suspense, ComponentType, useState, useEffect } from "react";
+import { LoadingSpinner } from "../common";
 
 interface UseLazyPanelOptions {
   /** 패널 활성화 여부 */
@@ -541,7 +552,7 @@ interface UseLazyPanelReturn<T> {
  */
 export function useLazyPanel<T extends object>(
   loader: () => Promise<{ default: ComponentType<T> }>,
-  options: UseLazyPanelOptions
+  options: UseLazyPanelOptions,
 ): UseLazyPanelReturn<T> {
   const { enabled, delay = 0, keepAlive = false } = options;
 
@@ -608,14 +619,14 @@ export function useLazyPanel<T extends object>(
     error,
   };
 }
-```
+````
 
 #### 1.2 `usePanelLifecycle` Hook 생성
 
 **파일**: `src/builder/panels/core/hooks/usePanelLifecycle.ts`
 
-```typescript
-import { useEffect, useRef, useCallback } from 'react';
+````typescript
+import { useEffect, useRef, useCallback } from "react";
 
 interface UsePanelLifecycleOptions {
   /** 패널 활성화 여부 */
@@ -676,7 +687,7 @@ export function usePanelLifecycle(options: UsePanelLifecycleOptions) {
     };
   }, [cleanup]);
 }
-```
+````
 
 #### 1.3 패널별 적용 예시
 
@@ -697,9 +708,13 @@ export function MonitorPanel({ isActive }: PanelProps) {
 // src/builder/panels/monitor/MonitorPanelContent.tsx
 function MonitorPanelContent() {
   // ✅ Hook은 여기서 실행 (isActive=true 보장)
-  const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats({ enabled: true });
+  const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats({
+    enabled: true,
+  });
   const { fps } = useFPSMonitor({ enabled: activeTab === "realtime" });
-  const { vitals, collectLocalVitals } = useWebVitals({ enabled: activeTab === "realtime" });
+  const { vitals, collectLocalVitals } = useWebVitals({
+    enabled: activeTab === "realtime",
+  });
 
   // ... 나머지 로직
 }
@@ -714,8 +729,8 @@ function MonitorPanelContent() {
 **파일**: `src/builder/stores/selectors/panelSelectors.ts`
 
 ```typescript
-import { useStore } from '../index';
-import { shallow } from 'zustand/shallow';
+import { useStore } from "../index";
+import { shallow } from "zustand/shallow";
 
 // ============================================================================
 // Individual Selectors (가장 효율적)
@@ -725,10 +740,12 @@ import { shallow } from 'zustand/shallow';
 export const useCurrentPageId = () => useStore((state) => state.currentPageId);
 
 /** 선택된 요소 ID */
-export const useSelectedElementId = () => useStore((state) => state.selectedElementId);
+export const useSelectedElementId = () =>
+  useStore((state) => state.selectedElementId);
 
 /** 멀티셀렉트 모드 */
-export const useMultiSelectMode = () => useStore((state) => state.multiSelectMode);
+export const useMultiSelectMode = () =>
+  useStore((state) => state.multiSelectMode);
 
 /** 선택된 요소 ID 배열 */
 export const useSelectedElementIds = () =>
@@ -763,23 +780,25 @@ export const getStoreActions = () => {
 // ============================================================================
 
 /** NodesPanel용 selector */
-export const useNodesPanelState = () => useStore(
-  (state) => ({
-    currentPageId: state.currentPageId,
-    pages: state.pages,
-    // elements는 별도 구독 권장 (변경 빈도 높음)
-  }),
-  shallow
-);
+export const useNodesPanelState = () =>
+  useStore(
+    (state) => ({
+      currentPageId: state.currentPageId,
+      pages: state.pages,
+      // elements는 별도 구독 권장 (변경 빈도 높음)
+    }),
+    shallow,
+  );
 
 /** ComponentsPanel용 selector */
-export const useComponentsPanelState = () => useStore(
-  (state) => ({
-    selectedElementId: state.selectedElementId,
-    currentPageId: state.currentPageId,
-  }),
-  shallow
-);
+export const useComponentsPanelState = () =>
+  useStore(
+    (state) => ({
+      selectedElementId: state.selectedElementId,
+      currentPageId: state.currentPageId,
+    }),
+    shallow,
+  );
 ```
 
 #### 2.2 React Query 설정
@@ -833,31 +852,34 @@ export function QueryProvider({ children }: QueryProviderProps) {
 **파일**: `src/builder/panels/data/hooks/useDataTableQuery.ts`
 
 ```typescript
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDataStore } from '../../../stores/data';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDataStore } from "../../../stores/data";
 
 // Query Keys
 export const dataTableKeys = {
-  all: ['dataTables'] as const,
-  lists: () => [...dataTableKeys.all, 'list'] as const,
+  all: ["dataTables"] as const,
+  lists: () => [...dataTableKeys.all, "list"] as const,
   list: (projectId: string) => [...dataTableKeys.lists(), projectId] as const,
-  details: () => [...dataTableKeys.all, 'detail'] as const,
+  details: () => [...dataTableKeys.all, "detail"] as const,
   detail: (id: string) => [...dataTableKeys.details(), id] as const,
 };
 
 export const apiEndpointKeys = {
-  all: ['apiEndpoints'] as const,
-  list: (projectId: string) => [...apiEndpointKeys.all, 'list', projectId] as const,
+  all: ["apiEndpoints"] as const,
+  list: (projectId: string) =>
+    [...apiEndpointKeys.all, "list", projectId] as const,
 };
 
 export const variableKeys = {
-  all: ['variables'] as const,
-  list: (projectId: string) => [...variableKeys.all, 'list', projectId] as const,
+  all: ["variables"] as const,
+  list: (projectId: string) =>
+    [...variableKeys.all, "list", projectId] as const,
 };
 
 export const transformerKeys = {
-  all: ['transformers'] as const,
-  list: (projectId: string) => [...transformerKeys.all, 'list', projectId] as const,
+  all: ["transformers"] as const,
+  list: (projectId: string) =>
+    [...transformerKeys.all, "list", projectId] as const,
 };
 
 /**
@@ -870,7 +892,7 @@ export function useDataTablesQuery(projectId: string, enabled: boolean) {
     queryKey: dataTableKeys.list(projectId),
     queryFn: () => fetchDataTables(projectId),
     enabled: enabled && !!projectId,
-    staleTime: 5 * 60 * 1000,  // 5분 캐시
+    staleTime: 5 * 60 * 1000, // 5분 캐시
   });
 }
 
@@ -921,20 +943,32 @@ export function useTransformersQuery(projectId: string, enabled: boolean) {
  */
 export function useDataTableTabQuery(
   projectId: string,
-  activeTab: 'tables' | 'endpoints' | 'variables' | 'transformers',
-  enabled: boolean
+  activeTab: "tables" | "endpoints" | "variables" | "transformers",
+  enabled: boolean,
 ) {
   const queryClient = useQueryClient();
 
   // 활성 탭에 해당하는 쿼리만 실행
-  const tablesQuery = useDataTablesQuery(projectId, enabled && activeTab === 'tables');
-  const endpointsQuery = useApiEndpointsQuery(projectId, enabled && activeTab === 'endpoints');
-  const variablesQuery = useVariablesQuery(projectId, enabled && activeTab === 'variables');
-  const transformersQuery = useTransformersQuery(projectId, enabled && activeTab === 'transformers');
+  const tablesQuery = useDataTablesQuery(
+    projectId,
+    enabled && activeTab === "tables",
+  );
+  const endpointsQuery = useApiEndpointsQuery(
+    projectId,
+    enabled && activeTab === "endpoints",
+  );
+  const variablesQuery = useVariablesQuery(
+    projectId,
+    enabled && activeTab === "variables",
+  );
+  const transformersQuery = useTransformersQuery(
+    projectId,
+    enabled && activeTab === "transformers",
+  );
 
   // Prefetch: 다른 탭 미리 로드 (낮은 우선순위)
   const prefetchOtherTabs = () => {
-    if (activeTab !== 'tables') {
+    if (activeTab !== "tables") {
       queryClient.prefetchQuery({
         queryKey: dataTableKeys.list(projectId),
         queryFn: () => useDataStore.getState().fetchDataTables(projectId),
@@ -961,7 +995,7 @@ export function useDataTableTabQuery(
 
 **파일**: `src/builder/utils/CircularBuffer.ts`
 
-```typescript
+````typescript
 /**
  * 고정 크기 순환 버퍼
  *
@@ -983,7 +1017,7 @@ export class CircularBuffer<T> {
 
   constructor(private maxSize: number) {
     if (maxSize <= 0) {
-      throw new Error('Buffer size must be positive');
+      throw new Error("Buffer size must be positive");
     }
     this.buffer = new Array(maxSize);
   }
@@ -1041,15 +1075,15 @@ export class CircularBuffer<T> {
     return this.buffer[index];
   }
 }
-```
+````
 
 #### 3.2 useMemoryStats 최적화
 
 **파일**: `src/builder/panels/monitor/hooks/useMemoryStats.ts` (수정)
 
 ```typescript
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { CircularBuffer } from '../../../utils/CircularBuffer';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { CircularBuffer } from "../../../utils/CircularBuffer";
 
 interface UseMemoryStatsOptions {
   /** 모니터링 활성화 여부 */
@@ -1075,11 +1109,13 @@ interface UseMemoryStatsReturn {
   isOptimizing: boolean;
 }
 
-export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsReturn {
+export function useMemoryStats(
+  options: UseMemoryStatsOptions,
+): UseMemoryStatsReturn {
   const { enabled, intervalMs = 10000, maxHistorySize = 60 } = options;
 
   const [stats, setStats] = useState<MemoryStats | null>(null);
-  const [statusMessage, setStatusMessage] = useState('');
+  const [statusMessage, setStatusMessage] = useState("");
   const [isOptimizing, setIsOptimizing] = useState(false);
 
   // ✅ CircularBuffer 사용 (무한 배열 증가 방지)
@@ -1100,7 +1136,7 @@ export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsRe
     };
 
     if (!perf.memory) {
-      setStatusMessage('Memory API not available (Chrome/Edge only)');
+      setStatusMessage("Memory API not available (Chrome/Edge only)");
       return;
     }
 
@@ -1108,7 +1144,8 @@ export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsRe
       usedJSHeapSize: perf.memory.usedJSHeapSize,
       totalJSHeapSize: perf.memory.totalJSHeapSize,
       jsHeapSizeLimit: perf.memory.jsHeapSizeLimit,
-      usagePercent: (perf.memory.usedJSHeapSize / perf.memory.jsHeapSizeLimit) * 100,
+      usagePercent:
+        (perf.memory.usedJSHeapSize / perf.memory.jsHeapSizeLimit) * 100,
     };
 
     setStats(newStats);
@@ -1119,11 +1156,11 @@ export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsRe
 
     // 상태 메시지 업데이트
     if (newStats.usagePercent >= 75) {
-      setStatusMessage('Memory usage critical!');
+      setStatusMessage("Memory usage critical!");
     } else if (newStats.usagePercent >= 60) {
-      setStatusMessage('Memory usage high');
+      setStatusMessage("Memory usage high");
     } else {
-      setStatusMessage('');
+      setStatusMessage("");
     }
   }, []);
 
@@ -1139,7 +1176,7 @@ export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsRe
     }
 
     // 활성화: interval 시작
-    collectStats();  // 즉시 한 번 수집
+    collectStats(); // 즉시 한 번 수집
     intervalIdRef.current = setInterval(collectStats, intervalMs);
 
     return () => {
@@ -1159,7 +1196,7 @@ export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsRe
     setHistory([]);
 
     // GC 힌트 (Chrome에서만 동작)
-    if (typeof gc !== 'undefined') {
+    if (typeof gc !== "undefined") {
       gc();
     }
 
@@ -1184,7 +1221,7 @@ export function useMemoryStats(options: UseMemoryStatsOptions): UseMemoryStatsRe
 **파일**: `src/builder/utils/performanceMonitor.ts`
 
 ```typescript
-import { queryClient } from '../providers/QueryProvider';
+import { queryClient } from "../providers/QueryProvider";
 
 interface PerformanceMetrics {
   longTaskCount: number;
@@ -1206,8 +1243,8 @@ class PerformanceMonitor {
     totalBlockingTime: 0,
     lastCleanup: Date.now(),
   };
-  private readonly CLEANUP_THRESHOLD = 10;  // Long Task 10회 이상
-  private readonly CLEANUP_INTERVAL = 60000;  // 최소 1분 간격
+  private readonly CLEANUP_THRESHOLD = 10; // Long Task 10회 이상
+  private readonly CLEANUP_INTERVAL = 60000; // 최소 1분 간격
 
   constructor() {
     this.init();
@@ -1215,7 +1252,7 @@ class PerformanceMonitor {
 
   private init() {
     // Long Task Observer
-    if ('PerformanceObserver' in window) {
+    if ("PerformanceObserver" in window) {
       try {
         this.observer = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
@@ -1224,7 +1261,9 @@ class PerformanceMonitor {
               this.metrics.totalBlockingTime += entry.duration;
 
               if (import.meta.env.DEV) {
-                console.warn(`[Performance] Long Task detected: ${entry.duration.toFixed(2)}ms`);
+                console.warn(
+                  `[Performance] Long Task detected: ${entry.duration.toFixed(2)}ms`,
+                );
               }
 
               this.checkAndCleanup();
@@ -1232,9 +1271,9 @@ class PerformanceMonitor {
           }
         });
 
-        this.observer.observe({ entryTypes: ['longtask'] });
+        this.observer.observe({ entryTypes: ["longtask"] });
       } catch (e) {
-        console.warn('[Performance] Long Task API not supported');
+        console.warn("[Performance] Long Task API not supported");
       }
     }
   }
@@ -1254,14 +1293,14 @@ class PerformanceMonitor {
 
   private triggerCleanup() {
     if (import.meta.env.DEV) {
-      console.log('[Performance] Triggering auto cleanup...');
+      console.log("[Performance] Triggering auto cleanup...");
     }
 
     // 1. React Query 캐시 정리 (stale 데이터만)
     queryClient.invalidateQueries();
 
     // 2. GC 힌트 (Chrome에서만)
-    if (typeof gc !== 'undefined') {
+    if (typeof gc !== "undefined") {
       gc();
     }
 
@@ -1271,7 +1310,7 @@ class PerformanceMonitor {
     this.metrics.lastCleanup = Date.now();
 
     if (import.meta.env.DEV) {
-      console.log('[Performance] Cleanup completed');
+      console.log("[Performance] Cleanup completed");
     }
   }
 
@@ -1303,10 +1342,12 @@ export const performanceMonitor = new PerformanceMonitor();
 NodesPanel의 Virtual Scrolling은 **이미 Sidebar 컴포넌트에 구현**되어 있습니다:
 
 **기존 구현 파일**:
+
 - `src/builder/sidebar/VirtualizedLayerTree.tsx` - Layer Tree용 가상 스크롤링
 - `src/builder/sidebar/components/VirtualizedTree.tsx` - 일반 Tree용 가상 스크롤링
 
 **주요 특징**:
+
 ```typescript
 // VirtualizedLayerTree.tsx (Line 422-427)
 const virtualizer = useVirtualizer({
@@ -1323,6 +1364,7 @@ if (flattenedItems.length < 50) {
 ```
 
 **추가 최적화 포인트** (선택적):
+
 - `VirtualizedTree.tsx`에 keyboard navigation, ARIA 지원 이미 포함
 - `TreeItemRow`가 React.memo로 메모이제이션됨
 
@@ -1344,7 +1386,7 @@ if (flattenedItems.length < 50) {
 type IdleCallback = () => void;
 
 interface IdleSchedulerOptions {
-  timeout?: number;  // 최대 대기 시간 (ms)
+  timeout?: number; // 최대 대기 시간 (ms)
 }
 
 class IdleScheduler {
@@ -1374,7 +1416,7 @@ class IdleScheduler {
           try {
             callback();
           } catch (error) {
-            console.error('[IdleScheduler] Task failed:', error);
+            console.error("[IdleScheduler] Task failed:", error);
           }
         }
       }
@@ -1391,9 +1433,9 @@ class IdleScheduler {
 
   private requestIdle(
     callback: (deadline?: IdleDeadline) => void,
-    options: IdleSchedulerOptions
+    options: IdleSchedulerOptions,
   ) {
-    if ('requestIdleCallback' in window) {
+    if ("requestIdleCallback" in window) {
       requestIdleCallback(callback, { timeout: options.timeout || 1000 });
     } else {
       // Fallback: setTimeout
@@ -1422,32 +1464,32 @@ export const idleScheduler = new IdleScheduler();
 
 ### 6.1 신규 생성 파일
 
-| 파일 경로 | 용도 | Phase |
-|-----------|------|-------|
-| `src/builder/panels/core/hooks/useLazyPanel.ts` | 조건부 패널 마운트 | Phase 1 |
-| `src/builder/panels/core/hooks/usePanelLifecycle.ts` | 패널 생명주기 관리 | Phase 1 |
-| `src/builder/stores/selectors/panelSelectors.ts` | 최적화된 Zustand selector | Phase 2 |
-| `src/builder/providers/QueryProvider.tsx` | React Query 설정 | Phase 2 |
-| `src/builder/panels/data/hooks/useDataTableQuery.ts` | DataTable Query 래퍼 | Phase 2 |
-| `src/builder/utils/CircularBuffer.ts` | 순환 버퍼 | Phase 3 |
-| `src/builder/utils/performanceMonitor.ts` | 성능 모니터링 | Phase 4 |
-| `src/builder/utils/idleScheduler.ts` | Idle 작업 스케줄러 | Phase 4 |
-| `src/builder/panels/nodes/components/VirtualElementList.tsx` | 가상 스크롤 목록 | Phase 3 |
+| 파일 경로                                                    | 용도                      | Phase   |
+| ------------------------------------------------------------ | ------------------------- | ------- |
+| `src/builder/panels/core/hooks/useLazyPanel.ts`              | 조건부 패널 마운트        | Phase 1 |
+| `src/builder/panels/core/hooks/usePanelLifecycle.ts`         | 패널 생명주기 관리        | Phase 1 |
+| `src/builder/stores/selectors/panelSelectors.ts`             | 최적화된 Zustand selector | Phase 2 |
+| `src/builder/providers/QueryProvider.tsx`                    | React Query 설정          | Phase 2 |
+| `src/builder/panels/data/hooks/useDataTableQuery.ts`         | DataTable Query 래퍼      | Phase 2 |
+| `src/builder/utils/CircularBuffer.ts`                        | 순환 버퍼                 | Phase 3 |
+| `src/builder/utils/performanceMonitor.ts`                    | 성능 모니터링             | Phase 4 |
+| `src/builder/utils/idleScheduler.ts`                         | Idle 작업 스케줄러        | Phase 4 |
+| `src/builder/panels/nodes/components/VirtualElementList.tsx` | 가상 스크롤 목록          | Phase 3 |
 
 ### 6.2 수정 파일
 
-| 파일 | 변경 내용 | Phase |
-|------|----------|-------|
-| `src/builder/panels/monitor/MonitorPanel.tsx` | Gateway 패턴, enabled 파라미터 | Phase 1, 3 |
-| `src/builder/panels/monitor/hooks/useMemoryStats.ts` | enabled 추가, CircularBuffer | Phase 3 |
-| `src/builder/panels/monitor/hooks/useWebVitals.ts` | enabled 파라미터 추가 | Phase 3 |
-| `src/builder/panels/datatable/DataTablePanel.tsx` | Gateway 패턴, React Query | Phase 1, 2 |
-| `src/builder/panels/nodes/NodesPanel.tsx` | ✅ Virtual Scrolling 이미 적용 (Gateway 패턴만 검토) | Phase 1 |
-| `src/builder/panels/properties/PropertiesPanel.tsx` | Gateway 패턴, selector 최적화 | Phase 1, 2 |
-| `src/builder/panels/styles/StylesPanel.tsx` | Gateway 패턴 | Phase 1 |
-| `src/builder/panels/events/EventsPanel.tsx` | Gateway 패턴 | Phase 1 |
-| `src/builder/panels/components/ComponentsPanel.tsx` | Gateway 패턴 | Phase 1 |
-| `src/main.tsx` or `src/App.tsx` | QueryProvider 추가 | Phase 2 |
+| 파일                                                 | 변경 내용                                            | Phase      |
+| ---------------------------------------------------- | ---------------------------------------------------- | ---------- |
+| `src/builder/panels/monitor/MonitorPanel.tsx`        | Gateway 패턴, enabled 파라미터                       | Phase 1, 3 |
+| `src/builder/panels/monitor/hooks/useMemoryStats.ts` | enabled 추가, CircularBuffer                         | Phase 3    |
+| `src/builder/panels/monitor/hooks/useWebVitals.ts`   | enabled 파라미터 추가                                | Phase 3    |
+| `src/builder/panels/datatable/DataTablePanel.tsx`    | Gateway 패턴, React Query                            | Phase 1, 2 |
+| `src/builder/panels/nodes/NodesPanel.tsx`            | ✅ Virtual Scrolling 이미 적용 (Gateway 패턴만 검토) | Phase 1    |
+| `src/builder/panels/properties/PropertiesPanel.tsx`  | Gateway 패턴, selector 최적화                        | Phase 1, 2 |
+| `src/builder/panels/styles/StylesPanel.tsx`          | Gateway 패턴                                         | Phase 1    |
+| `src/builder/panels/events/EventsPanel.tsx`          | Gateway 패턴                                         | Phase 1    |
+| `src/builder/panels/components/ComponentsPanel.tsx`  | Gateway 패턴                                         | Phase 1    |
+| `src/main.tsx` or `src/App.tsx`                      | QueryProvider 추가                                   | Phase 2    |
 
 ---
 
@@ -1455,11 +1497,11 @@ export const idleScheduler = new IdleScheduler();
 
 ### 7.1 필수 도입: @tanstack/react-query
 
-| 항목 | 내용 |
-|------|------|
-| **라이브러리** | `@tanstack/react-query` |
-| **버전** | `^5.x` |
-| **번들 사이즈** | ~13KB (gzip) |
+| 항목            | 내용                    |
+| --------------- | ----------------------- |
+| **라이브러리**  | `@tanstack/react-query` |
+| **버전**        | `^5.x`                  |
+| **번들 사이즈** | ~13KB (gzip)            |
 
 #### 도입 이유
 
@@ -1489,12 +1531,12 @@ export const idleScheduler = new IdleScheduler();
 
 #### 기대 효과
 
-| 지표 | Before | After | 개선율 |
-|------|--------|-------|--------|
-| 탭 전환 시 API 호출 | 4회 | 0회 (캐시 hit) | **100%↓** |
-| 네트워크 요청 | 매번 발생 | 5분 캐시 | **90%↓** |
-| 메모리 (서버 상태) | Zustand에 혼재 | 자동 GC | **자동 관리** |
-| 에러 처리 | 수동 구현 | 자동 재시도 | **내장** |
+| 지표                | Before         | After          | 개선율        |
+| ------------------- | -------------- | -------------- | ------------- |
+| 탭 전환 시 API 호출 | 4회            | 0회 (캐시 hit) | **100%↓**     |
+| 네트워크 요청       | 매번 발생      | 5분 캐시       | **90%↓**      |
+| 메모리 (서버 상태)  | Zustand에 혼재 | 자동 GC        | **자동 관리** |
+| 에러 처리           | 수동 구현      | 자동 재시도    | **내장**      |
 
 #### 설치 명령어
 
@@ -1508,35 +1550,35 @@ npm install -D @tanstack/react-query-devtools
 
 ### 7.2 이미 설치된 라이브러리 활용
 
-| 라이브러리 | 현재 사용 | 최적화 활용 |
-|-----------|----------|------------|
+| 라이브러리                | 현재 사용 | 최적화 활용              |
+| ------------------------- | --------- | ------------------------ |
 | `@tanstack/react-virtual` | ✅ 설치됨 | NodesPanel 가상 스크롤링 |
-| `immer` | ✅ 설치됨 | Zustand 불변 업데이트 |
-| `lodash` | ✅ 설치됨 | debounce, throttle |
-| `zustand` | ✅ 설치됨 | shallow 비교 활용 |
+| `immer`                   | ✅ 설치됨 | Zustand 불변 업데이트    |
+| `lodash`                  | ✅ 설치됨 | debounce, throttle       |
+| `zustand`                 | ✅ 설치됨 | shallow 비교 활용        |
 
 ---
 
 ### 7.3 React 내장 기능 활용 (추가 설치 불필요)
 
-| 기능 | 용도 |
-|------|------|
-| `scheduler` | requestIdleCallback 기반 Idle 작업 |
-| `React.lazy` + `Suspense` | 패널 Lazy Loading |
-| `useSyncExternalStore` | Zustand tearing 방지 |
-| `useTransition` | 비긴급 업데이트 defer |
+| 기능                      | 용도                               |
+| ------------------------- | ---------------------------------- |
+| `scheduler`               | requestIdleCallback 기반 Idle 작업 |
+| `React.lazy` + `Suspense` | 패널 Lazy Loading                  |
+| `useSyncExternalStore`    | Zustand tearing 방지               |
+| `useTransition`           | 비긴급 업데이트 defer              |
 
 ---
 
 ### 7.4 도입하지 않는 라이브러리
 
-| 라이브러리 | 이유 |
-|-----------|------|
+| 라이브러리     | 이유                                   |
+| -------------- | -------------------------------------- |
 | `react-window` | `@tanstack/react-virtual` 이미 사용 중 |
-| `reselect` | Zustand selector로 충분 |
-| `swr` | React Query가 더 적합 (복잡한 캐싱) |
-| `jotai` | Zustand 마이그레이션 비용 큼 |
-| `mobx` | 현재 아키텍처와 맞지 않음 |
+| `reselect`     | Zustand selector로 충분                |
+| `swr`          | React Query가 더 적합 (복잡한 캐싱)    |
+| `jotai`        | Zustand 마이그레이션 비용 큼           |
+| `mobx`         | 현재 아키텍처와 맞지 않음              |
 
 ---
 
@@ -1544,14 +1586,14 @@ npm install -D @tanstack/react-query-devtools
 
 ### 8.1 성능 지표 개선
 
-| 지표 | Before | After | 개선율 |
-|------|--------|-------|--------|
-| **초기 로딩 시간** | ~800ms | ~400ms | **50%↓** |
-| **12시간 후 메모리** | ~500MB+ | ~150MB | **70%↓** |
-| **탭 전환 응답** | ~200ms | ~50ms | **75%↓** |
-| **Long Task 빈도** | 10+/분 | 1-2/분 | **80%↓** |
-| **API 호출 횟수 (DataTable)** | 매번 4개 | 캐시 hit 시 0 | **90%↓** |
-| **비활성 패널 리렌더** | 모든 상태 변경 시 | 0회 | **100%↓** |
+| 지표                          | Before            | After         | 개선율    |
+| ----------------------------- | ----------------- | ------------- | --------- |
+| **초기 로딩 시간**            | ~800ms            | ~400ms        | **50%↓**  |
+| **12시간 후 메모리**          | ~500MB+           | ~150MB        | **70%↓**  |
+| **탭 전환 응답**              | ~200ms            | ~50ms         | **75%↓**  |
+| **Long Task 빈도**            | 10+/분            | 1-2/분        | **80%↓**  |
+| **API 호출 횟수 (DataTable)** | 매번 4개          | 캐시 hit 시 0 | **90%↓**  |
+| **비활성 패널 리렌더**        | 모든 상태 변경 시 | 0회           | **100%↓** |
 
 ### 8.2 메모리 사용량 시뮬레이션
 
@@ -1593,12 +1635,12 @@ After (최적화 후):
 
 ### 8.3 사용자 경험 개선
 
-| 시나리오 | Before | After |
-|----------|--------|-------|
-| 패널 탭 빠른 전환 | 매번 API 호출 → 로딩 | 캐시 hit → 즉시 표시 |
-| 장시간 작업 | 점점 느려짐 | 일관된 성능 |
-| 대량 요소 편집 | 스크롤 버벅임 | 가상 스크롤로 부드러움 |
-| 백그라운드 패널 | 리소스 낭비 | 완전히 비활성화 |
+| 시나리오          | Before               | After                  |
+| ----------------- | -------------------- | ---------------------- |
+| 패널 탭 빠른 전환 | 매번 API 호출 → 로딩 | 캐시 hit → 즉시 표시   |
+| 장시간 작업       | 점점 느려짐          | 일관된 성능            |
+| 대량 요소 편집    | 스크롤 버벅임        | 가상 스크롤로 부드러움 |
+| 백그라운드 패널   | 리소스 낭비          | 완전히 비활성화        |
 
 ---
 
@@ -1646,25 +1688,25 @@ Phase 5: 테스트 & 검증
 
 ### 9.2 상세 일정
 
-| Phase | 작업 | 예상 시간 |
-|-------|------|----------|
-| **Phase 1** | Panel Gateway 패턴 | - |
-| 1.1 | useLazyPanel, usePanelLifecycle 구현 | - |
-| 1.2 | MonitorPanel Gateway 적용 | - |
-| 1.3 | 나머지 6개 패널 Gateway 적용 | - |
-| **Phase 2** | React Query 도입 | - |
-| 2.1 | @tanstack/react-query 설치 | - |
-| 2.2 | QueryProvider 설정 | - |
-| 2.3 | DataTablePanel Query 적용 | - |
-| 2.4 | panelSelectors.ts 구현 | - |
-| **Phase 3** | Resource Management | - |
-| 3.1 | CircularBuffer 구현 | - |
-| 3.2 | useMemoryStats 최적화 | - |
-| 3.3 | VirtualElementList 구현 | - |
-| **Phase 4** | Performance Monitor | - |
-| 4.1 | performanceMonitor 구현 | - |
-| 4.2 | idleScheduler 구현 | - |
-| **Phase 5** | 테스트 & 검증 | - |
+| Phase       | 작업                                 | 예상 시간 |
+| ----------- | ------------------------------------ | --------- |
+| **Phase 1** | Panel Gateway 패턴                   | -         |
+| 1.1         | useLazyPanel, usePanelLifecycle 구현 | -         |
+| 1.2         | MonitorPanel Gateway 적용            | -         |
+| 1.3         | 나머지 6개 패널 Gateway 적용         | -         |
+| **Phase 2** | React Query 도입                     | -         |
+| 2.1         | @tanstack/react-query 설치           | -         |
+| 2.2         | QueryProvider 설정                   | -         |
+| 2.3         | DataTablePanel Query 적용            | -         |
+| 2.4         | panelSelectors.ts 구현               | -         |
+| **Phase 3** | Resource Management                  | -         |
+| 3.1         | CircularBuffer 구현                  | -         |
+| 3.2         | useMemoryStats 최적화                | -         |
+| 3.3         | VirtualElementList 구현              | -         |
+| **Phase 4** | Performance Monitor                  | -         |
+| 4.1         | performanceMonitor 구현              | -         |
+| 4.2         | idleScheduler 구현                   | -         |
+| **Phase 5** | 테스트 & 검증                        | -         |
 
 ---
 
@@ -1675,7 +1717,7 @@ Phase 5: 테스트 & 검증
 ```tsx
 // src/builder/panels/monitor/MonitorPanel.tsx
 
-import { PanelProps } from '../core/types';
+import { PanelProps } from "../core/types";
 
 /**
  * MonitorPanel - Gateway Component
@@ -1695,11 +1737,11 @@ export function MonitorPanel({ isActive }: PanelProps) {
 
 // src/builder/panels/monitor/MonitorPanelContent.tsx
 
-import { useState, useCallback } from 'react';
-import { useMemoryStats } from './hooks/useMemoryStats';
-import { useFPSMonitor } from './hooks/useFPSMonitor';
-import { useWebVitals } from './hooks/useWebVitals';
-import { usePanelLifecycle } from '../core/hooks/usePanelLifecycle';
+import { useState, useCallback } from "react";
+import { useMemoryStats } from "./hooks/useMemoryStats";
+import { useFPSMonitor } from "./hooks/useFPSMonitor";
+import { useWebVitals } from "./hooks/useWebVitals";
+import { usePanelLifecycle } from "../core/hooks/usePanelLifecycle";
 
 /**
  * MonitorPanelContent - 실제 로직 담당
@@ -1708,34 +1750,30 @@ import { usePanelLifecycle } from '../core/hooks/usePanelLifecycle';
  * ✅ 모든 모니터링 Hook에 enabled 파라미터 전달
  */
 function MonitorPanelContent() {
-  const [activeTab, setActiveTab] = useState<string>('memory');
+  const [activeTab, setActiveTab] = useState<string>("memory");
 
   // ✅ enabled 파라미터로 조건부 실행
   const { stats, history, optimize, isOptimizing } = useMemoryStats({
-    enabled: true  // 이미 isActive=true인 상태
+    enabled: true, // 이미 isActive=true인 상태
   });
 
   const { fps } = useFPSMonitor({
-    enabled: activeTab === 'realtime'
+    enabled: activeTab === "realtime",
   });
 
   const { vitals, collectLocalVitals } = useWebVitals({
-    enabled: activeTab === 'realtime'
+    enabled: activeTab === "realtime",
   });
 
   // 생명주기 관리
   usePanelLifecycle({
     isActive: true,
-    panelId: 'monitor',
-    onActivate: () => console.log('[Monitor] Activated'),
-    onDeactivate: () => console.log('[Monitor] Deactivated'),
+    panelId: "monitor",
+    onActivate: () => console.log("[Monitor] Activated"),
+    onDeactivate: () => console.log("[Monitor] Deactivated"),
   });
 
-  return (
-    <div className="monitor-panel">
-      {/* ... UI 렌더링 */}
-    </div>
-  );
+  return <div className="monitor-panel">{/* ... UI 렌더링 */}</div>;
 }
 ```
 
@@ -1744,7 +1782,7 @@ function MonitorPanelContent() {
 ```tsx
 // src/builder/panels/datatable/DataTablePanel.tsx
 
-import { PanelProps } from '../core/types';
+import { PanelProps } from "../core/types";
 
 export function DataTablePanel({ isActive }: PanelProps) {
   if (!isActive) {
@@ -1756,39 +1794,37 @@ export function DataTablePanel({ isActive }: PanelProps) {
 
 // src/builder/panels/datatable/DataTablePanelContent.tsx
 
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   useDataTablesQuery,
   useApiEndpointsQuery,
   useVariablesQuery,
   useTransformersQuery,
-} from './hooks/useDataTableQuery';
+} from "./hooks/useDataTableQuery";
 
 function DataTablePanelContent() {
   const { projectId } = useParams<{ projectId: string }>();
-  const [activeTab, setActiveTab] = useState<DataTableTab>('tables');
+  const [activeTab, setActiveTab] = useState<DataTableTab>("tables");
 
   // ✅ React Query 사용 - 탭별 조건부 fetch
   const { data: dataTables, isLoading: tablesLoading } = useDataTablesQuery(
-    projectId || '',
-    activeTab === 'tables'  // tables 탭일 때만 fetch
+    projectId || "",
+    activeTab === "tables", // tables 탭일 때만 fetch
   );
 
   const { data: endpoints, isLoading: endpointsLoading } = useApiEndpointsQuery(
-    projectId || '',
-    activeTab === 'endpoints'  // endpoints 탭일 때만 fetch
+    projectId || "",
+    activeTab === "endpoints", // endpoints 탭일 때만 fetch
   );
 
   const { data: variables, isLoading: variablesLoading } = useVariablesQuery(
-    projectId || '',
-    activeTab === 'variables'
+    projectId || "",
+    activeTab === "variables",
   );
 
-  const { data: transformers, isLoading: transformersLoading } = useTransformersQuery(
-    projectId || '',
-    activeTab === 'transformers'
-  );
+  const { data: transformers, isLoading: transformersLoading } =
+    useTransformersQuery(projectId || "", activeTab === "transformers");
 
   // 현재 탭의 로딩 상태
   const isLoading = {
@@ -1801,9 +1837,7 @@ function DataTablePanelContent() {
   return (
     <div className="datatable-panel">
       {/* Tab Bar */}
-      <div className="panel-tabs">
-        {/* ... 탭 버튼들 */}
-      </div>
+      <div className="panel-tabs">{/* ... 탭 버튼들 */}</div>
 
       {/* Content */}
       <div className="panel-contents">
@@ -1811,10 +1845,12 @@ function DataTablePanelContent() {
           <LoadingSpinner />
         ) : (
           <>
-            {activeTab === 'tables' && <DataTableList data={dataTables} />}
-            {activeTab === 'endpoints' && <ApiEndpointList data={endpoints} />}
-            {activeTab === 'variables' && <VariableList data={variables} />}
-            {activeTab === 'transformers' && <TransformerList data={transformers} />}
+            {activeTab === "tables" && <DataTableList data={dataTables} />}
+            {activeTab === "endpoints" && <ApiEndpointList data={endpoints} />}
+            {activeTab === "variables" && <VariableList data={variables} />}
+            {activeTab === "transformers" && (
+              <TransformerList data={transformers} />
+            )}
           </>
         )}
       </div>
@@ -1827,9 +1863,9 @@ function DataTablePanelContent() {
 
 ## 변경 이력
 
-| 날짜 | 버전 | 변경 내용 |
-|------|------|----------|
-| 2025-12-09 | 1.0 | 초안 작성 |
+| 날짜       | 버전 | 변경 내용 |
+| ---------- | ---- | --------- |
+| 2025-12-09 | 1.0  | 초안 작성 |
 
 ---
 

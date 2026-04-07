@@ -6,7 +6,7 @@
 
 ## 개요
 
-`SaveService`는 XStudio의 데이터 저장을 담당하는 핵심 서비스입니다.
+`SaveService`는 composition의 데이터 저장을 담당하는 핵심 서비스입니다.
 
 ### 아키텍처 변경 (2025-12-29)
 
@@ -34,7 +34,10 @@ class SaveService {
   static getInstance(): SaveService;
 
   // 속성 변경 저장 (IndexedDB 즉시 저장)
-  async savePropertyChange(payload: SavePayload, options?: SaveOptions): Promise<void>;
+  async savePropertyChange(
+    payload: SavePayload,
+    options?: SaveOptions,
+  ): Promise<void>;
 
   // 검증 오류 관리
   getValidationErrors(): ValidationError[];
@@ -42,7 +45,7 @@ class SaveService {
 
   // 성능 메트릭
   getPerformanceMetrics(): PerformanceMetrics;
-  getDetailedReport(): { metrics, validationErrors, summary };
+  getDetailedReport(): { metrics; validationErrors; summary };
   resetMetrics(): void;
 }
 ```
@@ -51,16 +54,16 @@ class SaveService {
 
 ```typescript
 interface SavePayload {
-  table: 'elements' | 'pages' | 'projects';
+  table: "elements" | "pages" | "projects";
   id: string;
   data: Record<string, unknown>;
 }
 
 interface SaveOptions {
-  shouldSave?: boolean;           // 저장 여부 (기본: true)
-  source?: string;                // 상호작용 소스
-  recordHistory?: boolean;        // 히스토리 기록 여부
-  allowPreviewSaves?: boolean;    // 프리뷰 저장 허용
+  shouldSave?: boolean; // 저장 여부 (기본: true)
+  source?: string; // 상호작용 소스
+  recordHistory?: boolean; // 히스토리 기록 여부
+  allowPreviewSaves?: boolean; // 프리뷰 저장 허용
   validateSerialization?: boolean; // 직렬화 검증
 }
 ```
@@ -82,11 +85,11 @@ IndexedDB 즉시 저장 ✅
 ## 사용 예시
 
 ```typescript
-import { saveService } from '../../services/save';
+import { saveService } from "../../services/save";
 
 // 요소 속성 저장
 await saveService.savePropertyChange({
-  table: 'elements',
+  table: "elements",
   id: elementId,
   data: { props: newProps },
 });
@@ -117,15 +120,18 @@ window.saveServiceUtils.resetMetrics();
 ## 제거된 기능 (2025-12-29)
 
 ### 실시간/수동 모드
+
 - `isRealtimeMode` 속성 제거
 - `pendingChanges` Map 제거
 - `saveAllPendingChanges()` 메서드 제거
 - `syncToCloud()` 메서드 제거
 
 ### 관련 삭제 파일
+
 - `src/builder/stores/saveMode.ts` - Save Mode 상태 관리
 
 ### Settings Panel 변경
+
 - Save Mode 섹션 제거 (Auto/Manual 토글)
 
 ## 아키텍처 결정 배경
@@ -140,6 +146,7 @@ window.saveServiceUtils.resetMetrics();
 ### 향후 동기화
 
 클라우드 동기화가 필요한 경우:
+
 - 별도의 `SyncService` 구현 예정
 - 명시적인 "클라우드에 업로드" 액션으로 제공
 - 백그라운드 동기화 옵션 고려
@@ -155,7 +162,7 @@ window.saveServiceUtils.resetMetrics();
 
 ```typescript
 // ❌ 제거됨
-import { useSaveModeStore } from '../stores/saveMode';
+import { useSaveModeStore } from "../stores/saveMode";
 const isRealtime = useSaveModeStore((s) => s.isRealtimeMode);
 
 // ✅ 더 이상 필요 없음

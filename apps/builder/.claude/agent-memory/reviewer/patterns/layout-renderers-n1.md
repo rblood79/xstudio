@@ -20,4 +20,4 @@ const children = elements
 
 **How to apply:** 신규 렌더러 리뷰 시 최우선으로 체크. `RenderContext`에 `childrenMap: Map<string, PreviewElement[]>` 도입 제안과 연결.
 
-발견일: 2026-03-27 (xstudio-review-diff2.txt, 8개 파일)
+발견일: 2026-03-27 (composition-review-diff2.txt, 8개 파일)

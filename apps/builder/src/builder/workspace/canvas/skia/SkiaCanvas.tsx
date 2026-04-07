@@ -71,7 +71,7 @@ import {
   resolveSkiaTheme,
 } from "../../../../stores/themeConfigStore";
 
-// Dev profiler — window.__XSTUDIO_PROFILER 노출 (side-effect import)
+// Dev profiler — window.__composition_PROFILER 노출 (side-effect import)
 import "../benchmarks/devProfiler";
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# XStudio — Progress Tracker
+# composition — Progress Tracker
 
 > 이 파일은 세션 간 진행 상황을 추적합니다.
 > 각 에이전트는 세션 시작 시 이 파일을 읽고, 종료 시 업데이트합니다.
@@ -10,7 +10,7 @@
 
 ## 최근 완료된 작업
 
-- ADR-044 완료 — xstudio → composition 전체 리네이밍 (패키지명 + WASM + 문서 + .claude) (2026-04-07)
+- ADR-044 완료 — composition → composition 전체 리네이밍 (패키지명 + WASM + 문서 + .claude) (2026-04-07)
 - ESLint/TypeScript 전면 수정 — eslint-disable 없이 근본 해결 전체 완료 (2026-04-07)
 - `__tests__/` 디렉토리 + `apps/builder/scripts/` 성능 테스트 파일 제거 (2026-04-07)
 - ADR-100 Phase 10 완료 — CSS3 렌더링 확장 + 안정화 통합 (2026-04-07)

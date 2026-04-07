@@ -7,7 +7,7 @@
 
 목표는 다음과 같다.
 
-- Pencil 스타일 selection drag lifecycle을 XStudio에 이식
+- Pencil 스타일 selection drag lifecycle을 composition에 이식
 - PixiJS 인터랙션과 Skia 렌더 좌표를 분리
 - drag start vacate, adjacent insertion, guide line fallback을 명시적 규칙으로 고정
 - 기존 요소 트리 이동 기능과 충돌하지 않게 구현 경계를 분리
@@ -20,7 +20,7 @@
 
 ### 1. 행동 기준 고정
 
-- [x] Pencil에서 확인한 행동을 XStudio 용어로 다시 적어둠
+- [x] Pencil에서 확인한 행동을 composition 용어로 다시 적어둠
   - **drag start vacate**: 드래그 시작 시 원래 위치에 "빈 자리" 표시 (opacity 감소 또는 placeholder)
   - **adjacent insertion**: 인접 형제 요소 사이로 끌면 삽입 위치 표시 (drop indicator line)
   - **guide line fallback**: 인접하지 않은 위치에서는 가이드라인으로 drop 위치 유도

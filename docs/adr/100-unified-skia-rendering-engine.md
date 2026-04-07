@@ -10,7 +10,7 @@ Supersedes: [ADR-003](completed/003-canvas-rendering.md) (PixiJS Canvas Renderin
 
 ### 문제
 
-XStudio Builder Canvas는 현재 **3개의 독립 엔진**이 동시 운영되는 Dual Renderer 아키텍처:
+composition Builder Canvas는 현재 **3개의 독립 엔진**이 동시 운영되는 Dual Renderer 아키텍처:
 
 - **CanvasKit/Skia WASM**: 실제 화면 렌더링 (100%)
 - **PixiJS v8.14.3**: 씬 그래프 + 이벤트 레이어 (alpha=0, WebGL 컨텍스트 #2)
@@ -90,7 +90,7 @@ Zustand Store
 
 - [Taffy v0.10.0](https://github.com/DioxusLabs/taffy) (MIT, ⭐3.1k) **포크** — flex/grid/block + `grid-template-areas` 이미 구현됨
 - `position: sticky` 추가 — [Stickyfill](https://github.com/wilddeer/stickyfill) (MIT) 3단계 상태 전환 알고리즘 참조
-- Spatial Index — 기존 XStudio WASM spatial index(`wasm/src/spatial_index.rs`)를 crate에 이식 (외부 의존성 0)
+- Spatial Index — 기존 composition WASM spatial index(`wasm/src/spatial_index.rs`)를 crate에 이식 (외부 의존성 0)
 - ~~float/clear, table, inline, multicol~~ — **삭제** (ROI ≈ 0)
 - **텍스트 측정 하이브리드**: Canvas 2D(줄바꿈 위치 결정 = CSS 일치) → Break Hint(\n) 주입 → CanvasKit Paragraph(실제 높이 반환 = 렌더 일치) → Paragraph 캐시 공유(측정=렌더 동일 객체). **현재의 줄바꿈 붕괴 문제를 구조적으로 제거.** ADR-051 Supersede
 - 단일 WASM 바이너리 (`composition-layout.wasm`, ~250KB 예상) — **외부 Rust 의존성: Taffy fork 1개만**
@@ -124,7 +124,7 @@ Zustand Store
 
 **유사 제품 아키텍처 검증:**
 
-- [OpenPencil](https://github.com/open-pencil/open-pencil) (MIT, ⭐4k) — CanvasKit + Yoga WASM + RBush. **XStudio와 거의 동일 스택**, 가장 직접적 참조
+- [OpenPencil](https://github.com/open-pencil/open-pencil) (MIT, ⭐4k) — CanvasKit + Yoga WASM + RBush. **composition와 거의 동일 스택**, 가장 직접적 참조
 - [Graphite](https://github.com/GraphiteEditor/Graphite) (Apache-2.0, ⭐25k) — Rust 100% 아키텍처 (tiny-skia/Vello)
 - [Penpot](https://github.com/penpot/penpot) (MPL-2, ⭐38k) — 바이너리 직렬화로 JS-WASM 경계 최소화
 
@@ -191,7 +191,7 @@ PixiJS만 제거하고 Taffy는 유지. CSS3 레이아웃 갭(float/table/inline
 ROI 다이어트 후 HIGH 위험 0개. 잔존 MEDIUM 위험에 대한 완화:
 
 1. **Taffy v0.10.0 fork**: flex/grid/block + `grid-template-areas`가 이미 구현됨 (⭐3.1k, MIT, Servo/Blitz/Zed 등 프로덕션 사용). 신규 구현은 **sticky만** (~200줄, [Stickyfill](https://github.com/wilddeer/stickyfill) 알고리즘 참조)
-2. **외부 의존성 최소화**: Rust 의존성 Taffy fork 1개만. Spatial index는 기존 XStudio WASM 코드 이식, transition 엔진은 ~130줄 자체 구현 (Popmotion 알고리즘 참조)
+2. **외부 의존성 최소화**: Rust 의존성 Taffy fork 1개만. Spatial index는 기존 composition WASM 코드 이식, transition 엔진은 ~130줄 자체 구현 (Popmotion 알고리즘 참조)
 3. **CSS3 렌더링은 CanvasKit 내장 API만**: backdrop-filter, text-shadow, mask 모두 추가 라이브러리 불필요. [React Native Skia](https://github.com/Shopify/react-native-skia)(⭐8.3k) 구현 패턴 참조
 4. **유사 제품 아키텍처 검증**: [OpenPencil](https://github.com/open-pencil/open-pencil)(CanvasKit+Yoga WASM)이 거의 동일 스택으로 동작 확인. [Penpot](https://github.com/penpot/penpot)(Skia WASM+타일 캐싱)이 대규모 캔버스 성능 검증
 5. **SceneGraph 참조 패턴 풍부**: [AntV G](https://github.com/antvis/G)(CanvasKit 브리지), [ZRender](https://github.com/ecomfe/zrender)(dirty rect), [Penpot](https://github.com/penpot/penpot)(타일 캐싱) — 각 패턴이 프로덕션 검증됨
@@ -200,7 +200,7 @@ ROI 다이어트 후 HIGH 위험 0개. 잔존 MEDIUM 위험에 대한 완화:
 
 ### 기각 사유
 
-- **대안 B (Taffy 유지)**: Taffy는 외부 의존성이며 XStudio 특화 확장(sticky, grid-template-areas, spatial index 통합)이 불가. 장기적으로 레이아웃 엔진을 자체 제어해야 엔터프라이즈 요구사항 대응 가능.
+- **대안 B (Taffy 유지)**: Taffy는 외부 의존성이며 composition 특화 확장(sticky, grid-template-areas, spatial index 통합)이 불가. 장기적으로 레이아웃 엔진을 자체 제어해야 엔터프라이즈 요구사항 대응 가능.
 - **대안 C (브라우저 위임)**: 엔터프라이즈급 멀티페이지 동시 편집(5000+ 요소)에서 DOM reflow 비용이 60fps 제약과 구조적으로 충돌.
 
 > 구현 상세: [100-unified-skia-engine-breakdown.md](../design/100-unified-skia-engine-breakdown.md)

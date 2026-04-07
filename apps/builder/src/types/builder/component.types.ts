@@ -2,12 +2,12 @@
  * G.1 Component-Instance System Types
  *
  * Master-Instance 패턴 전용 타입 정의.
- * Pencil의 reusable/ref/descendants 패턴을 XStudio에 적용.
+ * Pencil의 reusable/ref/descendants 패턴을 composition에 적용.
  *
  * @see docs/WASM_DOC_IMPACT_ANALYSIS.md §G.1
  */
 
-import type { Element } from './unified.types';
+import type { Element } from "./unified.types";
 
 /** Master 컴포넌트 요약 정보 (UI 목록 표시용) */
 export interface MasterComponentSummary {
@@ -27,7 +27,7 @@ export interface ResolvedInstanceProps {
   /** 최종 병합된 props */
   props: Record<string, unknown>;
   /** 각 prop의 출처 */
-  sources: Record<string, 'master' | 'override' | 'descendant' | 'default'>;
+  sources: Record<string, "master" | "override" | "descendant" | "default">;
 }
 
 /** Master 변경 이벤트 (instance 전파에 사용) */

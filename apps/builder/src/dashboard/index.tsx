@@ -522,7 +522,7 @@ function Dashboard() {
       <header className="dashboard-header">
         <div className="dashboard-header-left">
           <SquarePlus size={18} />
-          <h1>XStudio</h1>
+          <h1>composition</h1>
         </div>
 
         <div className="dashboard-header-right">
@@ -627,7 +627,7 @@ function Dashboard() {
 
       {/* Footer */}
       <footer className="dashboard-footer">
-        <span>XStudio — Local-first Web Builder</span>
+        <span>composition — Local-first Web Builder</span>
       </footer>
 
       {/* Settings Panel */}

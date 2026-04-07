@@ -1,6 +1,6 @@
-# XStudio 문서 (Documentation)
+# composition 문서 (Documentation)
 
-XStudio 프로젝트의 기술 문서를 [Diátaxis 프레임워크](https://diataxis.fr/)에 따라 구성했습니다.
+composition 프로젝트의 기술 문서를 [Diátaxis 프레임워크](https://diataxis.fr/)에 따라 구성했습니다.
 
 ---
 
@@ -37,24 +37,24 @@ docs/
 
 > 전체 현황 및 우선순위는 **[ADR 관리 대시보드](./adr/README.md)** 참조
 
-| ADR | 제목 | 상태 |
-|-----|------|------|
-| [001](./adr/001-state-management.md) | 상태 관리 (Zustand) | Accepted |
-| [002](./adr/002-styling-approach.md) | 스타일링 (ITCSS + Tailwind) | Accepted |
-| [003](./adr/003-canvas-rendering.md) | Canvas 렌더링 (CanvasKit/Skia + PixiJS) | Superseded |
-| [004](./adr/004-preview-isolation.md) | Preview 격리 (iframe + postMessage) | Accepted |
-| [005](./adr/005-css-text-wrapping.md) | CSS 텍스트 래핑 에뮬레이션 | Implemented |
-| [006](./adr/006-child-composition-remaining.md) | Child Composition 잔여 작업 | Implemented |
-| [007](./adr/007-project-export.md) | 프로젝트 내보내기 | Implemented |
-| [008](./adr/008-layout-engine.md) | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented |
-| [009](./adr/009-full-tree-wasm-layout.md) | Full-Tree WASM 레이아웃 | Partial (Phase 0~2) |
-| [010](./adr/010-events-panel.md) | Events Panel | Partial (P0~P1) |
-| [011](./adr/011-ai-assistant-design.md) | AI Assistant 설계 (Groq Tool Calling) | Partial (A1~A4) |
-| [012](./adr/012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 강화 | Proposed |
-| [013](./adr/013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩 | Proposed |
-| [014](./adr/014-fonts.md) | 폰트 시스템 | Proposed |
-| [015](./adr/015-sitemap-layout.md) | Sitemap 레이아웃 | Proposed |
-| [016](./adr/016-photoshop-ui-ux.md) | Photoshop UI/UX 적용 계획 | Proposed |
+| ADR                                                     | 제목                                    | 상태                |
+| ------------------------------------------------------- | --------------------------------------- | ------------------- |
+| [001](./adr/001-state-management.md)                    | 상태 관리 (Zustand)                     | Accepted            |
+| [002](./adr/002-styling-approach.md)                    | 스타일링 (ITCSS + Tailwind)             | Accepted            |
+| [003](./adr/003-canvas-rendering.md)                    | Canvas 렌더링 (CanvasKit/Skia + PixiJS) | Superseded          |
+| [004](./adr/004-preview-isolation.md)                   | Preview 격리 (iframe + postMessage)     | Accepted            |
+| [005](./adr/005-css-text-wrapping.md)                   | CSS 텍스트 래핑 에뮬레이션              | Implemented         |
+| [006](./adr/006-child-composition-remaining.md)         | Child Composition 잔여 작업             | Implemented         |
+| [007](./adr/007-project-export.md)                      | 프로젝트 내보내기                       | Implemented         |
+| [008](./adr/008-layout-engine.md)                       | 캔버스 레이아웃 엔진 전환 (전략 D)      | Implemented         |
+| [009](./adr/009-full-tree-wasm-layout.md)               | Full-Tree WASM 레이아웃                 | Partial (Phase 0~2) |
+| [010](./adr/010-events-panel.md)                        | Events Panel                            | Partial (P0~P1)     |
+| [011](./adr/011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)   | Partial (A1~A4)     |
+| [012](./adr/012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 강화         | Proposed            |
+| [013](./adr/013-quick-connect-data-binding.md)          | Quick Connect 데이터 바인딩             | Proposed            |
+| [014](./adr/014-fonts.md)                               | 폰트 시스템                             | Proposed            |
+| [015](./adr/015-sitemap-layout.md)                      | Sitemap 레이아웃                        | Proposed            |
+| [016](./adr/016-photoshop-ui-ux.md)                     | Photoshop UI/UX 적용 계획               | Proposed            |
 
 ---
 
@@ -63,6 +63,7 @@ docs/
 > 학습 중심의 실습 가이드입니다.
 
 ### Features
+
 - [Tree 컴포넌트 가이드](./tutorials/features/TREE_COMPONENT.md)
 
 ---
@@ -72,12 +73,15 @@ docs/
 > 특정 문제를 해결하기 위한 단계별 가이드입니다.
 
 ### Migration (마이그레이션)
+
 - [React Query 스타일 마이그레이션](./how-to/migration/REACT_QUERY_STYLE.md)
 
 ### Troubleshooting (문제 해결)
+
 - [Rate Limit 해결](./how-to/troubleshooting/RATE_LIMIT.md)
 
 ### Development (개발)
+
 - [기여 가이드](./how-to/development/CONTRIBUTING.md)
 - [README 작성 가이드](./how-to/development/README_WRITING.md)
 - [Skeleton 시스템 구현](./how-to/development/SKELETON_SYSTEM.md)
@@ -95,13 +99,16 @@ docs/
 > 기술적 상세 정보를 제공하는 참조 문서입니다.
 
 ### API
+
 - [API 엔드포인트](./reference/api/ENDPOINTS.md)
 
 ### Schemas (스키마)
+
 - [IndexedDB 스키마](./reference/schemas/INDEXDB.md)
 - [Supabase 스키마](./reference/schemas/SUPABASE.md)
 
 ### Structure (구조)
+
 - [Hooks 구조](./reference/STRUCTURE_HOOKS.md) - Builder hooks 구조 및 사용 패턴
 - [Store 구조](./reference/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
 - [Monorepo 구조](./reference/MONOREPO.md) - 모노레포 패키지 구조
@@ -109,6 +116,7 @@ docs/
 - [Workflow 설계](./legacy/WORKFLOW.md) (legacy)
 
 ### Components (컴포넌트)
+
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)
 - [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
 - [React Aria 라이브러리 통합](./reference/components/REACT_ARIA_LIBRARIES.md)
@@ -140,6 +148,7 @@ docs/
 - [Project File Web](./reference/components/PROJECT_FILE_WEB.md)
 
 ### Status (상태)
+
 - [완료된 기능](./reference/status/COMPLETED.md)
 - [계획된 기능](./reference/status/PLANNED.md)
 - [미구현 기능](./reference/status/UNIMPLEMENTED.md)
@@ -152,6 +161,7 @@ docs/
 > 개념과 아키텍처를 설명하는 문서입니다.
 
 ### Architecture (아키텍처)
+
 - [페이지 타입 분리](./explanation/architecture/PAGE_TYPES.md)
 - [데이터 아키텍처](./explanation/architecture/DATA_ARCHITECTURE.md)
 - [History Panel 설계](./explanation/architecture/HISTORY_PANEL.md)
@@ -159,6 +169,7 @@ docs/
 - [Drag & Drop 설계](./explanation/architecture/DRAG_DROP_DESIGN.md)
 
 ### Research (리서치)
+
 - [빌더 아키텍처 비교](./explanation/research/BUILDER_COMPARISON.md)
 - [React Spectrum 비교](./explanation/research/REACT_SPECTRUM_COMPARISON.md)
 - [스타일 파싱 최적화](./explanation/research/STYLE_PARSING.md)
@@ -168,6 +179,7 @@ docs/
 - [Photoshop 벤치마크](./explanation/research/PHOTOSHOP_BENCHMARK.md)
 
 ### Pencil 분석
+
 - [Pencil 역공학 추출물](./pencil-extracted/) - Pencil Desktop 소스 분석
 
 ---
@@ -184,12 +196,12 @@ docs/
 
 새로운 문서를 추가할 때는 Diátaxis 프레임워크에 따라 적절한 폴더에 배치해주세요:
 
-| 문서 유형 | 폴더 | 예시 |
-|----------|------|------|
-| 학습용 실습 가이드 | `tutorials/` | 시작하기, 첫 컴포넌트 만들기 |
-| 문제 해결 가이드 | `how-to/` | 마이그레이션, 버그 수정 |
-| 기술 참조 | `reference/` | API, 스키마, 상태 |
-| 개념 설명 | `explanation/` | 아키텍처, 설계 결정 |
+| 문서 유형          | 폴더           | 예시                         |
+| ------------------ | -------------- | ---------------------------- |
+| 학습용 실습 가이드 | `tutorials/`   | 시작하기, 첫 컴포넌트 만들기 |
+| 문제 해결 가이드   | `how-to/`      | 마이그레이션, 버그 수정      |
+| 기술 참조          | `reference/`   | API, 스키마, 상태            |
+| 개념 설명          | `explanation/` | 아키텍처, 설계 결정          |
 
 ### 파일 명명 규칙
 

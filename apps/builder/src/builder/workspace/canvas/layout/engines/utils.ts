@@ -2577,7 +2577,7 @@ export function calculateContentHeight(
   const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
   if (defaultHeight !== undefined) return defaultHeight;
 
-  // 7. Text/Heading 등 XStudio 커스텀 태그: CSS line-height: 1.5 상속
+  // 7. Text/Heading 등 composition 커스텀 태그: CSS line-height: 1.5 상속
   // Preview iframe의 :root { line-height: 1.5 } (Tailwind CSS v4 기본)이
   // Text 컴포넌트에 상속되므로 fontSize * 1.5를 명시적으로 전달
   // (Button 등 UI 컴포넌트는 line-height: normal → step 2에서 fontBoundingBox 기반 처리)
@@ -3564,7 +3564,7 @@ export function applyCommonTaffyStyle(
   if (border.left !== 0) result.borderLeft = border.left;
 
   // Taffy 0.9는 style.size를 border-box로 처리합니다.
-  // XStudio의 * { box-sizing: border-box } 값을 그대로 전달하면
+  // composition의 * { box-sizing: border-box } 값을 그대로 전달하면
   // Taffy가 내부적으로 content = size - padding - border를 계산합니다.
   // layout.size도 border-box를 반환하므로 추가 변환 불필요.
 

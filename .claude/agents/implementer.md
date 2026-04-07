@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Implements new features, creates components, writes business logic, and integrates APIs for XStudio. Use when the user asks to build components, add functionality, or create service integrations.
+description: Implements new features, creates components, writes business logic, and integrates APIs for composition. Use when the user asks to build components, add functionality, or create service integrations.
 model: sonnet
 color: green
 tools:
@@ -34,7 +34,7 @@ maxTurns: 30
 1. `Read .claude/skills/react-aria/references/components/{ComponentName}.md` → API, 예제, 접근성 패턴 참조
 2. `Read .claude/skills/react-aria/references/guides/` → 가이드 (collections, selection, forms 등)
 3. `Read .claude/skills/react-spectrum/references/components/{ComponentName}.md` → Spectrum S2 디자인 시스템 비교 (선택)
-4. 참조 결과를 XStudio 컨벤션(tv(), Zustand, Spec)에 맞게 내재화
+4. 참조 결과를 composition 컨벤션(tv(), Zustand, Spec)에 맞게 내재화
 
 ### IDE MCP (타입 검증)
 
@@ -119,7 +119,7 @@ gh search code "[패턴 키워드]" --language=TypeScript
 
 **적용 시점**:
 
-- S2에만 있는 기능을 XStudio에 추가할 때 (예: TagGroup `maxRows`, 가상 스크롤 등)
+- S2에만 있는 기능을 composition에 추가할 때 (예: TagGroup `maxRows`, 가상 스크롤 등)
 - S2의 동작 방식이 단순 CSS가 아닌 복잡한 DOM 측정/상태 관리를 포함할 때
 - Skill 문서의 Props 설명만으로 구현 방법이 불명확할 때
 
@@ -138,11 +138,11 @@ gh search code "[패턴 키워드]" --language=TypeScript
    ```
 
 3. **핵심 패턴 추출** — DOM 측정 방식, 상태 관리 흐름, 무한 루프 방지, 성능 최적화 등
-4. **XStudio 컨벤션으로 내재화** — tv(), Zustand, Spec 패턴에 맞게 변환
+4. **composition 컨벤션으로 내재화** — tv(), Zustand, Spec 패턴에 맞게 변환
 
 **검증된 S2 패턴 사례**:
 
-| S2 기능            | 핵심 메커니즘                                                                                                                                                          | XStudio 적용                                                |
+| S2 기능            | 핵심 메커니즘                                                                                                                                                          | composition 적용                                            |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | TagGroup `maxRows` | 숨겨진 미러 DOM(`inert`+`visibility:hidden`)에서 `getBoundingClientRect().y`로 행 측정 → `flushSync`로 `visibleTagCount` 설정 → 실제 DOM은 `slice(0, visibleTagCount)` | `TagGroup.tsx` — span 미러 + `queueMicrotask` + `flushSync` |
 
@@ -162,7 +162,7 @@ gh search code "[패턴 키워드]" --language=TypeScript
 
 ### 참조 우선순위
 
-1. **XStudio 기존 코드** — 프로젝트 내 유사 구현이 이미 있는지 먼저 확인
+1. **composition 기존 코드** — 프로젝트 내 유사 구현이 이미 있는지 먼저 확인
 2. **React Spectrum S2 GitHub 소스** — S2 기능 추가/변환 시 실제 구현 참조 (API 문서 < 소스코드)
 3. **사용 중인 라이브러리의 공식 소스** — React-Aria, PixiJS, Taffy 등의 구현 참조
 4. **검증된 오픈소스** — GitHub Stars 1k+ 프로젝트의 관련 구현
@@ -171,7 +171,7 @@ gh search code "[패턴 키워드]" --language=TypeScript
 ### 조사 생략 조건
 
 - 단순 버그 수정, 스타일 변경, 설정 수정 등 패턴 참조가 불필요한 작업
-- XStudio 내 이미 확립된 패턴의 반복 적용 (예: 새 Spec 추가)
+- composition 내 이미 확립된 패턴의 반복 적용 (예: 새 Spec 추가)
 
 ## CRITICAL 규칙 (반드시 준수)
 

@@ -404,7 +404,7 @@ curl http://localhost:11434/api/chat -d '{
 | 모델   | qwen3:14b (9GB)       | **qwen3.5:35b-a3b (18.5GB)** | qwen3:32b (25GB) | `ollama list`                        |
 | 합격률 | 33% (5/15)            | **73% (11/15)**              | 80% (12/15)      | —                                    |
 
-### 0-8. 환경 변수 설정 (XStudio 개발용)
+### 0-8. 환경 변수 설정 (composition 개발용)
 
 ```bash
 # .env.local (apps/builder/)
@@ -1068,7 +1068,7 @@ export function createOpenAIProvider(apiKey: string) {
 ### 설정 UI — 모델 선택 (Pencil / Google Stitch 참조)
 
 Pencil은 언어 + 모델 선택을 제공하고, Google Stitch도 모델 선택이 가능하다.
-XStudio는 **로컬 모델 + 온라인 모델**을 통합 UI에서 선택할 수 있도록 한다.
+composition는 **로컬 모델 + 온라인 모델**을 통합 UI에서 선택할 수 있도록 한다.
 
 ```typescript
 // builder/panels/ai/components/LLMSettings.tsx
@@ -1422,7 +1422,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 import { safeStorage } from "electron";
 import Store from "electron-store";
 
-const store = new Store({ encryptionKey: "xstudio-ai" });
+const store = new Store({ encryptionKey: "composition-ai" });
 
 ipcMain.handle("key-storage:get", (_, provider: string) => {
   const encrypted = store.get(`apiKeys.${provider}`) as Buffer | undefined;
@@ -1596,13 +1596,13 @@ Tier 2 — 요청 시 동적 로드 (도구 호출로 주입, ~3-10K tok/건):
   └── get_component_docs(name) → 해당 컴포넌트의 React Aria/Spectrum 상세 문서
 ```
 
-### Tier 1: XStudio Component Catalog
+### Tier 1: composition Component Catalog
 
-React Aria/Spectrum 문서에서 XStudio에 맞게 파생한 축약 카탈로그. 빌드 타임에 생성 가능.
+React Aria/Spectrum 문서에서 composition에 맞게 파생한 축약 카탈로그. 빌드 타임에 생성 가능.
 
 ```typescript
 // services/ai/catalog/componentCatalog.ts
-// 빌드 스크립트로 React Aria/Spectrum 문서 + XStudio Spec에서 자동 생성
+// 빌드 스크립트로 React Aria/Spectrum 문서 + composition Spec에서 자동 생성
 
 export const COMPONENT_CATALOG = `
 ## 사용 가능한 컴포넌트 (7개 카테고리, 65+개)
@@ -1693,15 +1693,15 @@ export const getComponentDocsTool: LLMTool = {
 };
 
 // 구현: .claude/skills/react-aria/references/components/{name}.md 로드
-// XStudio Spec props와 병합하여 반환
+// composition Spec props와 병합하여 반환
 export async function executeGetComponentDocs(args: {
   componentName: string;
 }): Promise<string> {
   // 1. React Aria 문서 로드
   const ariaDoc = await loadReactAriaDoc(args.componentName);
-  // 2. XStudio Spec에서 실제 지원 props 추출
+  // 2. composition Spec에서 실제 지원 props 추출
   const specProps = getSpecProps(args.componentName);
-  // 3. 병합: React Aria 문서 + XStudio 실제 지원 범위
+  // 3. 병합: React Aria 문서 + composition 실제 지원 범위
   return mergeDocWithSpec(ariaDoc, specProps);
 }
 ```
@@ -1711,10 +1711,10 @@ export async function executeGetComponentDocs(args: {
 ```
 React Aria 문서 (52개 .md)
   + React Spectrum 문서 (71개 .md)
-  + XStudio Spec 정의 (packages/specs/src/)
-  + XStudio Factory 정의 (componentDefinitions/)
+  + composition Spec 정의 (packages/specs/src/)
+  + composition Factory 정의 (componentDefinitions/)
   ↓ 빌드 스크립트
-XStudio Component Catalog (Tier 1 요약 + Tier 2 상세)
+composition Component Catalog (Tier 1 요약 + Tier 2 상세)
 ```
 
 ### 파일 변경표
@@ -2212,7 +2212,7 @@ type AgentEvent =
 
 ### 접근성 AI 감사 (Accessibility Audit)
 
-Stark AI 참조. XStudio는 React Aria 기반이라 ARIA 패턴이 이미 내장되어 있어 구현이 자연스럽다.
+Stark AI 참조. composition는 React Aria 기반이라 ARIA 패턴이 이미 내장되어 있어 구현이 자연스럽다.
 
 ```typescript
 // services/ai/tools/auditAccessibility.ts
@@ -2268,7 +2268,7 @@ export const auditAccessibilityTool: LLMTool = {
 ### 브랜드 기반 자동 테마 (Brand Theme Generation)
 
 Squarespace Blueprint, Wix 참조. 브랜드 자산을 입력하면 디자인 토큰을 자동 생성.
-XStudio의 Tint Color System(ADR-021)과 직접 연동.
+composition의 Tint Color System(ADR-021)과 직접 연동.
 
 ```typescript
 // services/ai/tools/generateBrandTheme.ts
@@ -2318,7 +2318,7 @@ export const generateBrandThemeTool: LLMTool = {
 ```
 사용자: "Tech 스타트업 SaaS 느낌으로 테마 만들어줘, 주 색상은 #6366f1"
   ↓
-generate_brand_theme(brandName: "XStudio", primaryColor: "#6366f1", industry: "saas", mood: "professional")
+generate_brand_theme(brandName: "composition", primaryColor: "#6366f1", industry: "saas", mood: "professional")
   ↓
 AI가 Tint System 연동:
   - --tint 변수를 #6366f1 (indigo) 기반으로 설정

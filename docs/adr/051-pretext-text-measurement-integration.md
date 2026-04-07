@@ -17,7 +17,7 @@ ADR-051 채택 전이지만, 대안 B의 핵심 원리(Canvas 2D = CSS = Layout 
 
 ## Context
 
-XStudio는 3개 렌더링 타겟(CSS/DOM Preview, Skia/WebGL Canvas, PixiJS Event)을 가지며, 텍스트 렌더링에서 CSS↔Skia 간 구조적 불일치가 존재한다.
+composition는 3개 렌더링 타겟(CSS/DOM Preview, Skia/WebGL Canvas, PixiJS Event)을 가지며, 텍스트 렌더링에서 CSS↔Skia 간 구조적 불일치가 존재한다.
 
 **근본 원인**: 측정과 렌더링 모두 CanvasKit(HarfBuzz WASM)을 사용하지만, 사용자가 비교하는 CSS Preview는 브라우저 네이티브 폰트 엔진을 사용한다.
 
@@ -61,7 +61,7 @@ XStudio는 3개 렌더링 타겟(CSS/DOM Preview, Skia/WebGL Canvas, PixiJS Even
 
 ### 대안 B: Canvas 2D 측정 내재화 (Pretext 원리 적용)
 
-- 설명: Pretext의 핵심 원리(Canvas 2D `measureText()` + 세그먼트 캐시 + greedy line-breaking)를 XStudio 내부에 직접 구현. 외부 의존 0. 측정은 Canvas 2D(CSS와 동일 엔진), 렌더링은 CanvasKit(Break Hint `\n`으로 줄바꿈 강제).
+- 설명: Pretext의 핵심 원리(Canvas 2D `measureText()` + 세그먼트 캐시 + greedy line-breaking)를 composition 내부에 직접 구현. 외부 의존 0. 측정은 Canvas 2D(CSS와 동일 엔진), 렌더링은 CanvasKit(Break Hint `\n`으로 줄바꿈 강제).
 - 위험:
   - 기술: MEDIUM — Canvas 2D `measureText()` vs CSS DOM 서브픽셀 차이 ~0.01-0.5px, CJK `Intl.Segmenter` 정확도 검증 필요
   - 성능: LOW — 캐시 warm 시 `computeLines()` ~0.01ms/text, 현재 대비 10-65× 개선

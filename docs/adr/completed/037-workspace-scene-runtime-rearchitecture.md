@@ -10,7 +10,7 @@ Implemented (2026-03-13) — Phase 0~6 구현 완료
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
@@ -30,7 +30,7 @@ XStudio Team
 
 ### 문제 1. 상위 엔트리에서 파생 계산과 입력 오케스트레이션이 과도하게 결합됨
 
-현재 [BuilderCanvas.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)는 다음 책임을 동시에 가진다.
+현재 [BuilderCanvas.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)는 다음 책임을 동시에 가진다.
 
 - store 구독 조합
 - page/frame 파생 데이터 계산
@@ -45,9 +45,9 @@ XStudio Team
 
 ### 문제 2. Scene 파생 데이터가 React 렌더 시점에 재계산됨
 
-[ElementsLayer.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/components/ElementsLayer.tsx),
+[ElementsLayer.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/components/ElementsLayer.tsx),
 legacy page data memo 경로,
-[SelectionLayer.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx)에서는
+[SelectionLayer.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx)에서는
 각각 다음 계산이 분산되어 있다.
 
 - `pageChildrenMap`
@@ -64,19 +64,19 @@ legacy page data memo 경로,
 
 현재 선택 박스 바운드는 최소 두 경로에서 계산된다.
 
-- [BuilderCanvas.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)의 `computeSelectionBoundsForHitTest`
-- [SelectionLayer.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx)의 `computeSelectionBounds`
+- [BuilderCanvas.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)의 `computeSelectionBoundsForHitTest`
+- [SelectionLayer.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx)의 `computeSelectionBounds`
 
 또한 pointerdown, drag session, handle hit test, body hit test가
-[useCentralCanvasPointerHandlers.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/hooks/useCentralCanvasPointerHandlers.ts)에
+[useCentralCanvasPointerHandlers.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/hooks/useCentralCanvasPointerHandlers.ts)에
 결합되어 있어 입력 정책 변경 시 회귀 위험이 높다.
 
 ### 문제 4. Skia 렌더 루프가 사실상 두 번째 상태 시스템이 됨
 
-[SkiaOverlay.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)는
+[SkiaOverlay.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)는
 ticker 내부에서 `useStore.getState()`를 반복 호출하고,
 `overlayVersionRef`를 수동으로 증가시키며,
-[skiaFramePipeline.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/skiaFramePipeline.ts)도
+[skiaFramePipeline.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/skiaFramePipeline.ts)도
 프레임마다 store를 직접 다시 읽는다.
 
 결과:
@@ -87,7 +87,7 @@ ticker 내부에서 `useStore.getState()`를 반복 호출하고,
 
 ### 문제 5. canvasSync가 핫패스 상태와 진단 상태를 함께 담음
 
-[canvasSync.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/canvasSync.ts)는
+[canvasSync.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/canvasSync.ts)는
 viewport mirror, lifecycle flag, GPU metrics를 함께 관리한다.
 
 결과:
@@ -97,7 +97,7 @@ viewport mirror, lifecycle flag, GPU metrics를 함께 관리한다.
 
 ### 문제 6. 컬링과 레이아웃이 여전히 페이지 전체 단위로 재평가되는 구간이 남아 있음
 
-[useViewportCulling.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts)는
+[useViewportCulling.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts)는
 fallback 경로에서 O(N) `getBounds()` 필터링을 수행하며,
 `ElementsLayer`는 페이지 단위 full-tree layout 결과를 다시 만들 수 있다.
 
@@ -323,14 +323,14 @@ fallback 경로에서 O(N) `getBounds()` 필터링을 수행하며,
 
 예시:
 
-| 변경 원인                  | layoutMap | treeBounds | selection | workflow | content render | overlay render |
-| -------------------------- | --------- | ---------- | --------- | -------- | -------------- | -------------- |
-| element style 변경         | 재계산    | 재계산     | 재계산    | 경우별   | yes            | yes            |
-| viewport pan/zoom          | no        | no         | no        | no       | no             | yes            |
-| page position 변경         | no        | 재계산     | 재계산    | yes      | yes            | yes            |
-| 선택 변경                  | no        | no         | 재계산    | no       | no             | yes            |
-| workflow toggle/hover      | no        | no         | no        | 재계산   | no             | yes            |
-| theme/font/image resource  | 경우별    | 경우별     | no        | no       | yes            | yes            |
+| 변경 원인                 | layoutMap | treeBounds | selection | workflow | content render | overlay render |
+| ------------------------- | --------- | ---------- | --------- | -------- | -------------- | -------------- |
+| element style 변경        | 재계산    | 재계산     | 재계산    | 경우별   | yes            | yes            |
+| viewport pan/zoom         | no        | no         | no        | no       | no             | yes            |
+| page position 변경        | no        | 재계산     | 재계산    | yes      | yes            | yes            |
+| 선택 변경                 | no        | no         | 재계산    | no       | no             | yes            |
+| workflow toggle/hover     | no        | no         | no        | 재계산   | no             | yes            |
+| theme/font/image resource | 경우별    | 경우별     | no        | no       | yes            | yes            |
 
 ### Decision 3. SelectionModel을 도입한다
 

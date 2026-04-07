@@ -8,7 +8,7 @@
 
 ## 📋 개요
 
-XStudio 프로젝트는 **두 가지 다른 Page 타입**을 사용합니다:
+composition 프로젝트는 **두 가지 다른 Page 타입**을 사용합니다:
 
 1. **API Layer**: `ApiPage` (Supabase Database schema)
 2. **Store Layer**: `Page` (Zustand state management)
@@ -22,11 +22,13 @@ XStudio 프로젝트는 **두 가지 다른 Page 타입**을 사용합니다:
 ### 왜 두 가지 타입이 필요한가?
 
 **API Layer (Database)**:
+
 - Supabase 데이터베이스 스키마를 직접 반영
 - RESTful API 응답 형식
 - 필드명: `title` (데이터베이스 컬럼명)
 
 **Store Layer (State Management)**:
+
 - Zustand 상태 관리 최적화
 - 컴포넌트에서 사용하기 편리한 형식
 - 필드명: `name` (UI/UX 관점에서 더 직관적)
@@ -43,7 +45,7 @@ XStudio 프로젝트는 **두 가지 다른 Page 타입**을 사용합니다:
 export interface Page {
   id: string;
   project_id: string;
-  title: string;           // 🔑 주목: "title" 필드
+  title: string; // 🔑 주목: "title" 필드
   slug: string;
   parent_id: string | null;
   order_num: number;
@@ -53,10 +55,11 @@ export interface Page {
   deleted?: boolean;
 }
 
-export type ApiPage = Page;  // Type alias for clarity
+export type ApiPage = Page; // Type alias for clarity
 ```
 
 **특징**:
+
 - Supabase `pages` 테이블 스키마와 일치
 - CRUD 작업에서 사용
 - API 응답 형식
@@ -70,7 +73,7 @@ export type ApiPage = Page;  // Type alias for clarity
 ```typescript
 export interface Page {
   id: string;
-  name: string;            // 🔑 주목: "name" 필드 (title이 아님!)
+  name: string; // 🔑 주목: "name" 필드 (title이 아님!)
   slug: string;
   parent_id: string | null;
   order_num: number;
@@ -79,6 +82,7 @@ export interface Page {
 ```
 
 **특징**:
+
 - Zustand store에서 사용
 - UI 컴포넌트가 직접 접근
 - 간소화된 필드 (created_at, updated_at 등 제외)
@@ -92,19 +96,19 @@ export interface Page {
 API에서 데이터를 가져와서 Store에 저장할 때:
 
 ```typescript
-import { Page as ApiPage } from '../../services/api/PagesApiService';
-import type { Page } from '../../types/builder/unified.types';
+import { Page as ApiPage } from "../../services/api/PagesApiService";
+import type { Page } from "../../types/builder/unified.types";
 
 // API 응답
 const apiPages: ApiPage[] = await pagesApi.getPages(projectId);
 
 // Store로 변환
-const storePages: Page[] = apiPages.map(apiPage => ({
+const storePages: Page[] = apiPages.map((apiPage) => ({
   id: apiPage.id,
-  name: apiPage.title,        // 🔑 title → name 변환
+  name: apiPage.title, // 🔑 title → name 변환
   slug: apiPage.slug,
   parent_id: apiPage.parent_id,
-  order_num: apiPage.order_num
+  order_num: apiPage.order_num,
 }));
 
 // Store 업데이트
@@ -120,20 +124,20 @@ Store 데이터를 API로 전송할 때:
 ```typescript
 // Store에서 가져온 page
 const storePage: Page = {
-  id: 'page-1',
-  name: 'Home Page',
-  slug: 'home',
+  id: "page-1",
+  name: "Home Page",
+  slug: "home",
   parent_id: null,
-  order_num: 0
+  order_num: 0,
 };
 
 // API 요청용으로 변환
 const apiPageData: Partial<ApiPage> = {
   id: storePage.id,
-  title: storePage.name,      // 🔑 name → title 변환
+  title: storePage.name, // 🔑 name → title 변환
   slug: storePage.slug,
   parent_id: storePage.parent_id,
-  order_num: storePage.order_num
+  order_num: storePage.order_num,
 };
 
 // API 호출
@@ -149,8 +153,8 @@ await pagesApi.updatePage(storePage.id, apiPageData);
 ```typescript
 // src/utils/pageConversion.ts
 
-import type { Page as ApiPage } from '../services/api/PagesApiService';
-import type { Page } from '../types/builder/unified.types';
+import type { Page as ApiPage } from "../services/api/PagesApiService";
+import type { Page } from "../types/builder/unified.types";
 
 /**
  * API Page → Store Page 변환
@@ -161,7 +165,7 @@ export function apiPageToStorePage(apiPage: ApiPage): Page {
     name: apiPage.title,
     slug: apiPage.slug,
     parent_id: apiPage.parent_id,
-    order_num: apiPage.order_num
+    order_num: apiPage.order_num,
   };
 }
 
@@ -174,12 +178,13 @@ export function storePageToApiPage(storePage: Page): Partial<ApiPage> {
     title: storePage.name,
     slug: storePage.slug,
     parent_id: storePage.parent_id,
-    order_num: storePage.order_num
+    order_num: storePage.order_num,
   };
 }
 ```
 
 **사용 예시**:
+
 ```typescript
 // API → Store
 const storePages = apiPages.map(apiPageToStorePage);
@@ -197,12 +202,15 @@ const apiPageData = storePageToApiPage(storePage);
 **파일**: `src/builder/hooks/usePageManager.ts`
 
 ```typescript
-import { useState, useCallback } from 'react';
-import { pagesApi, type Page as ApiPage } from '../../services/api/PagesApiService';
-import type { Page } from '../../types/builder/unified.types';
+import { useState, useCallback } from "react";
+import {
+  pagesApi,
+  type Page as ApiPage,
+} from "../../services/api/PagesApiService";
+import type { Page } from "../../types/builder/unified.types";
 
 export interface UsePageManagerReturn {
-  pages: ApiPage[];  // 🔑 반환 타입은 ApiPage
+  pages: ApiPage[]; // 🔑 반환 타입은 ApiPage
   createPage: (title: string) => Promise<void>;
   deletePage: (pageId: string) => Promise<void>;
 }
@@ -212,30 +220,33 @@ export function usePageManager(projectId: string): UsePageManagerReturn {
 
   const fetchPages = useCallback(async () => {
     const data = await pagesApi.getPages(projectId);
-    setPages(data);  // ApiPage[] 저장
+    setPages(data); // ApiPage[] 저장
   }, [projectId]);
 
-  const createPage = useCallback(async (title: string) => {
-    const newPage = await pagesApi.createPage({
-      project_id: projectId,
-      title,  // API는 title 사용
-      slug: title.toLowerCase().replace(/\s+/g, '-'),
-      parent_id: null,
-      order_num: pages.length
-    });
+  const createPage = useCallback(
+    async (title: string) => {
+      const newPage = await pagesApi.createPage({
+        project_id: projectId,
+        title, // API는 title 사용
+        slug: title.toLowerCase().replace(/\s+/g, "-"),
+        parent_id: null,
+        order_num: pages.length,
+      });
 
-    // 🔑 Store Page 형식으로 변환하여 추가
-    const currentPages = pages;
-    const storePage: Page = {
-      id: newPage.id,
-      name: newPage.title,  // title → name
-      slug: newPage.slug,
-      parent_id: null,
-      order_num: newPage.order_num
-    };
+      // 🔑 Store Page 형식으로 변환하여 추가
+      const currentPages = pages;
+      const storePage: Page = {
+        id: newPage.id,
+        name: newPage.title, // title → name
+        slug: newPage.slug,
+        parent_id: null,
+        order_num: newPage.order_num,
+      };
 
-    setPages([...currentPages, storePage]);
-  }, [projectId, pages]);
+      setPages([...currentPages, storePage]);
+    },
+    [projectId, pages],
+  );
 
   return { pages, createPage, deletePage };
 }
@@ -342,12 +353,12 @@ const [pages, setPages] = useState<Page[]>([]);  // ❌ title 필드 사용
 
 ```typescript
 // ❌ WRONG - 어떤 Page 타입인지 불명확
-import { Page } from '../../services/api/PagesApiService';
-import { Page } from '../../types/builder/unified.types';  // ❌ 이름 충돌!
+import { Page } from "../../services/api/PagesApiService";
+import { Page } from "../../types/builder/unified.types"; // ❌ 이름 충돌!
 
 // ✅ CORRECT - 타입 별칭 사용
-import { Page as ApiPage } from '../../services/api/PagesApiService';
-import type { Page } from '../../types/builder/unified.types';
+import { Page as ApiPage } from "../../services/api/PagesApiService";
+import type { Page } from "../../types/builder/unified.types";
 ```
 
 ### ❌ Anti-Pattern 3: 변환 누락
@@ -380,8 +391,8 @@ setCurrentPage(storePage);
 
 ```typescript
 // ✅ ALWAYS use type alias for API Page
-import { Page as ApiPage } from '../../services/api/PagesApiService';
-import type { Page } from '../../types/builder/unified.types';
+import { Page as ApiPage } from "../../services/api/PagesApiService";
+import type { Page } from "../../types/builder/unified.types";
 ```
 
 ### 2. 변환 함수 작성
@@ -400,10 +411,10 @@ export function apiPageToStorePage(apiPage: ApiPage): Page {
 // Convert API Page (title) → Store Page (name)
 const storePage: Page = {
   id: apiPage.id,
-  name: apiPage.title,  // title → name
+  name: apiPage.title, // title → name
   slug: apiPage.slug,
   parent_id: apiPage.parent_id,
-  order_num: apiPage.order_num
+  order_num: apiPage.order_num,
 };
 ```
 
@@ -413,19 +424,19 @@ const storePage: Page = {
 // ✅ Type guard for runtime validation
 function isApiPage(page: unknown): page is ApiPage {
   return (
-    typeof page === 'object' &&
+    typeof page === "object" &&
     page !== null &&
-    'title' in page &&  // API Page has 'title'
-    'id' in page
+    "title" in page && // API Page has 'title'
+    "id" in page
   );
 }
 
 function isStorePage(page: unknown): page is Page {
   return (
-    typeof page === 'object' &&
+    typeof page === "object" &&
     page !== null &&
-    'name' in page &&  // Store Page has 'name'
-    'id' in page
+    "name" in page && // Store Page has 'name'
+    "id" in page
   );
 }
 ```
@@ -456,6 +467,7 @@ function isStorePage(page: unknown): page is Page {
 ```
 
 **질문**:
+
 1. **데이터 출처가 API인가?** → `ApiPage` 사용
 2. **데이터가 Store에 저장되는가?** → `Page` 사용
 3. **API ↔ Store 전환이 필요한가?** → 변환 함수 사용
@@ -464,28 +476,31 @@ function isStorePage(page: unknown): page is Page {
 
 ## 📊 타입 필드 비교표
 
-| 항목 | API Layer (ApiPage) | Store Layer (Page) |
-|------|---------------------|-------------------|
-| **위치** | `src/services/api/PagesApiService.ts` | `src/types/builder/unified.types.ts` |
-| **주요 필드** | `title` (String) | `name` (String) |
-| **기타 필드** | `project_id`, `created_at`, `updated_at`, `is_home` | 최소 필드만 유지 |
-| **사용처** | API 요청/응답, Supabase | Zustand Store, UI Components |
-| **변환 필요** | ✅ Store 저장 전 변환 필요 | ✅ API 호출 전 변환 필요 |
+| 항목          | API Layer (ApiPage)                                 | Store Layer (Page)                   |
+| ------------- | --------------------------------------------------- | ------------------------------------ |
+| **위치**      | `src/services/api/PagesApiService.ts`               | `src/types/builder/unified.types.ts` |
+| **주요 필드** | `title` (String)                                    | `name` (String)                      |
+| **기타 필드** | `project_id`, `created_at`, `updated_at`, `is_home` | 최소 필드만 유지                     |
+| **사용처**    | API 요청/응답, Supabase                             | Zustand Store, UI Components         |
+| **변환 필요** | ✅ Store 저장 전 변환 필요                          | ✅ API 호출 전 변환 필요             |
 
 ---
 
 ## 🔗 관련 파일
 
 ### Type Definitions
+
 - `src/services/api/PagesApiService.ts` - ApiPage 정의
 - `src/types/builder/unified.types.ts` - Store Page 정의
 
 ### Conversion Points (변환 발생 위치)
+
 - `src/builder/hooks/usePageManager.ts` - API → Store 변환
 - `src/builder/nodes/Pages.tsx` - 삭제 시 Store → API 변환
 - `src/builder/panels/nodes/NodesPanel.tsx` - Store → UnifiedPage 래퍼
 
 ### Tests (추가 권장)
+
 - `src/builder/hooks/__tests__/usePageManager.test.ts`
 - `src/utils/__tests__/pageConversion.test.ts`
 
@@ -498,53 +513,53 @@ function isStorePage(page: unknown): page is Page {
 ```typescript
 // src/utils/__tests__/pageConversion.test.ts
 
-import { describe, it, expect } from 'vitest';
-import { apiPageToStorePage, storePageToApiPage } from '../pageConversion';
-import type { Page as ApiPage } from '../../services/api/PagesApiService';
-import type { Page } from '../../types/builder/unified.types';
+import { describe, it, expect } from "vitest";
+import { apiPageToStorePage, storePageToApiPage } from "../pageConversion";
+import type { Page as ApiPage } from "../../services/api/PagesApiService";
+import type { Page } from "../../types/builder/unified.types";
 
-describe('Page Conversion Utilities', () => {
-  it('should convert API Page to Store Page', () => {
+describe("Page Conversion Utilities", () => {
+  it("should convert API Page to Store Page", () => {
     const apiPage: ApiPage = {
-      id: 'page-1',
-      project_id: 'proj-1',
-      title: 'Home Page',
-      slug: 'home',
+      id: "page-1",
+      project_id: "proj-1",
+      title: "Home Page",
+      slug: "home",
       parent_id: null,
       order_num: 0,
       is_home: true,
-      created_at: '2025-01-01',
-      updated_at: '2025-01-01'
+      created_at: "2025-01-01",
+      updated_at: "2025-01-01",
     };
 
     const storePage = apiPageToStorePage(apiPage);
 
     expect(storePage).toEqual({
-      id: 'page-1',
-      name: 'Home Page',  // title → name
-      slug: 'home',
+      id: "page-1",
+      name: "Home Page", // title → name
+      slug: "home",
       parent_id: null,
-      order_num: 0
+      order_num: 0,
     });
   });
 
-  it('should convert Store Page to API Page', () => {
+  it("should convert Store Page to API Page", () => {
     const storePage: Page = {
-      id: 'page-1',
-      name: 'Home Page',
-      slug: 'home',
+      id: "page-1",
+      name: "Home Page",
+      slug: "home",
       parent_id: null,
-      order_num: 0
+      order_num: 0,
     };
 
     const apiPageData = storePageToApiPage(storePage);
 
     expect(apiPageData).toEqual({
-      id: 'page-1',
-      title: 'Home Page',  // name → title
-      slug: 'home',
+      id: "page-1",
+      title: "Home Page", // name → title
+      slug: "home",
       parent_id: null,
-      order_num: 0
+      order_num: 0,
     });
   });
 });

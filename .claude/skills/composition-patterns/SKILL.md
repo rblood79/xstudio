@@ -1,14 +1,14 @@
 ---
 name: composition-patterns
-description: Defines code patterns, rules, and best practices for XStudio Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Use when writing, reviewing, refactoring, or debugging any XStudio code, or when making architectural decisions about the builder.
-TRIGGER when: user mentions "코드 패턴", "규칙 확인", "컨벤션 체크", "아키텍처 규칙", "XStudio 규칙", "패턴 체크", "코드 리뷰 기준", "code patterns", "conventions", "architecture rules", or asks about XStudio coding standards, Spec rules, rendering conventions, or state management patterns.
+description: Defines code patterns, rules, and best practices for composition Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Use when writing, reviewing, refactoring, or debugging any composition code, or when making architectural decisions about the builder.
+TRIGGER when: user mentions "코드 패턴", "규칙 확인", "컨벤션 체크", "아키텍처 규칙", "composition 규칙", "패턴 체크", "코드 리뷰 기준", "code patterns", "conventions", "architecture rules", or asks about composition coding standards, Spec rules, rendering conventions, or state management patterns.
 user-invocable: true
-scope: XStudio Builder codebase (apps/builder, packages/specs, packages/shared, packages/layout-flow)
+scope: composition Builder codebase (apps/builder, packages/specs, packages/shared, packages/layout-flow)
 ---
 
-# XStudio Patterns Skill
+# composition Patterns Skill
 
-XStudio Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
+composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
 > **상세 규칙은 `.claude/rules/`에 glob-scoped로 자동 로드됩니다.**
 > 이 파일은 규칙 인덱스 + 에이전트 프로토콜을 제공합니다.
@@ -158,12 +158,12 @@ XStudio Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
 - "캔버스에서 텍스트가 잘려요" → ✅ 캔버스 렌더링 규칙 참조 필요
 - "Zustand store에 슬라이스 추가하려면?" → ✅ 상태 관리 규칙 참조
-- "이 코드가 XStudio 컨벤션에 맞나?" → ✅ 규칙 인덱스 조회
+- "이 코드가 composition 컨벤션에 맞나?" → ✅ 규칙 인덱스 조회
 - "Spec 파일 새로 만들 때 주의사항?" → ✅ Spec 빌드/등록 규칙
 
 ### Negative (발동하면 안 되는 경우)
 
 - "README 업데이트해줘" → ❌ 문서 작업, 코드 패턴 무관
 - "git commit 해줘" → ❌ Git 작업
-- "이 React 훅 설명해줘" (일반 React) → ❌ XStudio 특화 아님
+- "이 React 훅 설명해줘" (일반 React) → ❌ composition 특화 아님
 - "TypeScript 타입 추론 원리가 뭐야?" → ❌ 일반 TS 지식

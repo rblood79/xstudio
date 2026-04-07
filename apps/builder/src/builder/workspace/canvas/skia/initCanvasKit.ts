@@ -9,8 +9,8 @@
 
 import type { CanvasKit } from "canvaskit-wasm";
 
-const CK_GLOBAL_KEY = "__XSTUDIO_CANVASKIT_INSTANCE__";
-const CK_PROMISE_KEY = "__XSTUDIO_CANVASKIT_PROMISE__";
+const CK_GLOBAL_KEY = "__composition_CANVASKIT_INSTANCE__";
+const CK_PROMISE_KEY = "__composition_CANVASKIT_PROMISE__";
 
 declare global {
   interface Window {

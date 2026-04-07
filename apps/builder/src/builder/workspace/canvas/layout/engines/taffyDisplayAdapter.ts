@@ -42,14 +42,14 @@
  *
  * @see packages/layout-flow/src/types.ts — Display, OuterDisplay, InnerDisplay 타입
  * @see packages/layout-flow/src/style.ts — Style.blockify(), Style.display 기본값
- * @see packages/layout-flow/src/adapters/xstudio-adapter.ts — parseDisplay(), classifyChild()
+ * @see packages/layout-flow/src/adapters/composition-adapter.ts — parseDisplay(), classifyChild()
  * @see packages/layout-flow/src/layout-box.ts — FormattingBox.isInlineLevel()
  * @see ADR-009 (docs/adr/009-full-tree-wasm-layout.md)
  * @since 2026-02-28
  */
 
-import type { Element } from '../../../../../types/core/store.types';
-import { INLINE_BLOCK_TAGS } from './utils';
+import type { Element } from "../../../../../types/core/store.types";
+import { INLINE_BLOCK_TAGS } from "./utils";
 
 // ============================================
 // CSS Display Level 3 타입 — Dropflow 원본 기반
@@ -65,7 +65,7 @@ import { INLINE_BLOCK_TAGS } from './utils';
  *
  * @see packages/layout-flow/src/types.ts:47 — OuterDisplay
  */
-type OuterDisplay = 'inline' | 'block' | 'none';
+type OuterDisplay = "inline" | "block" | "none";
 
 /**
  * 요소의 내부 display 타입 (내부 formatting context 종류)
@@ -82,7 +82,7 @@ type OuterDisplay = 'inline' | 'block' | 'none';
  *
  * @see packages/layout-flow/src/types.ts:48 — InnerDisplay
  */
-type InnerDisplay = 'flow' | 'flow-root' | 'flex' | 'grid' | 'none';
+type InnerDisplay = "flow" | "flow-root" | "flex" | "grid" | "none";
 
 /**
  * CSS Display Level 3 이원 display 구조
@@ -102,12 +102,12 @@ type Display = { outer: OuterDisplay; inner: InnerDisplay };
 /**
  * 자식 요소의 display 분류
  *
- * Dropflow 원본의 classifyChild() (xstudio-adapter.ts:394-414)에서
+ * Dropflow 원본의 classifyChild() (composition-adapter.ts:394-414)에서
  * 'replaced' 제외 (Taffy adapter에서는 태그 정보 없이 display 문자열만 사용).
  *
- * @see packages/layout-flow/src/adapters/xstudio-adapter.ts:394 — ChildDisplayClass
+ * @see packages/layout-flow/src/adapters/composition-adapter.ts:394 — ChildDisplayClass
  */
-type ChildDisplayClass = 'block' | 'inline' | 'none';
+type ChildDisplayClass = "block" | "inline" | "none";
 
 // ============================================
 // Taffy 변환 결과 타입
@@ -121,11 +121,11 @@ type ChildDisplayClass = 'block' | 'inline' | 'none';
  */
 export interface TaffyDisplayConfig {
   /** Taffy 내부 display 모드 */
-  taffyDisplay: 'flex' | 'block' | 'grid' | 'none';
+  taffyDisplay: "flex" | "block" | "grid" | "none";
   /** flex 방향 (taffyDisplay === 'flex'일 때 유효) */
-  flexDirection?: 'row' | 'column';
+  flexDirection?: "row" | "column";
   /** flex 줄바꿈 (taffyDisplay === 'flex'일 때 유효) */
-  flexWrap?: 'nowrap' | 'wrap';
+  flexWrap?: "nowrap" | "wrap";
   /** 교차축 정렬 (taffyDisplay === 'flex'일 때 유효) */
   alignItems?: string;
   /** flex line 정렬 (taffyDisplay === 'flex' + flexWrap일 때 유효) */
@@ -141,24 +141,35 @@ export interface TaffyDisplayConfig {
 // ============================================
 
 /**
- * XStudio UI 컴포넌트 중 vertical-align: middle이 기본인 태그.
+ * composition UI 컴포넌트 중 vertical-align: middle이 기본인 태그.
  *
  * CSS/React Aria에서 설정됨 (Button.css, ToggleButton.css 등).
  * 브라우저 UA stylesheet에서도 button/input 계열은 middle이 기본.
  *
  * NOTE: Dropflow 원본은 DOM 기반이라 UA stylesheet에서 처리.
- * XStudio는 prop 기반 컴포넌트이므로 태그 목록으로 관리.
+ * composition는 prop 기반 컴포넌트이므로 태그 목록으로 관리.
  */
 export const VERTICAL_ALIGN_MIDDLE_TAGS: ReadonlySet<string> = new Set([
-  'button', 'submitbutton', 'fancybutton', 'togglebutton',
-  'checkbox', 'radio', 'switch',
-  'togglebuttongroup',
-  'badge', 'tag', 'chip',
-  'textfield', 'numberfield', 'searchfield',
-  'select', 'combobox',
-  'colorpicker',
-  'datepicker', 'daterangepicker',
-  'slider',
+  "button",
+  "submitbutton",
+  "fancybutton",
+  "togglebutton",
+  "checkbox",
+  "radio",
+  "switch",
+  "togglebuttongroup",
+  "badge",
+  "tag",
+  "chip",
+  "textfield",
+  "numberfield",
+  "searchfield",
+  "select",
+  "combobox",
+  "colorpicker",
+  "datepicker",
+  "daterangepicker",
+  "slider",
 ]);
 
 // ============================================
@@ -166,7 +177,7 @@ export const VERTICAL_ALIGN_MIDDLE_TAGS: ReadonlySet<string> = new Set([
 // ============================================
 
 /** block 폴백 결과 (미인식 display 값 및 inline → block) */
-const BLOCK_FALLBACK: TaffyDisplayConfig = { taffyDisplay: 'block' };
+const BLOCK_FALLBACK: TaffyDisplayConfig = { taffyDisplay: "block" };
 
 // ============================================
 // 내부 헬퍼
@@ -190,20 +201,24 @@ const BLOCK_FALLBACK: TaffyDisplayConfig = { taffyDisplay: 'block' };
  */
 function resolveInlineBlockAlignItems(childElements: Element[]): string {
   const map: Record<string, string> = {
-    top: 'flex-start',
-    middle: 'center',
-    bottom: 'flex-end',
-    baseline: 'baseline',
+    top: "flex-start",
+    middle: "center",
+    bottom: "flex-end",
+    baseline: "baseline",
   };
 
   const explicitAligns = childElements
-    .map(el => (el.props?.style as Record<string, unknown> | undefined)?.verticalAlign as string | undefined)
-    .filter((va): va is string => va !== undefined && va !== '');
+    .map(
+      (el) =>
+        (el.props?.style as Record<string, unknown> | undefined)
+          ?.verticalAlign as string | undefined,
+    )
+    .filter((va): va is string => va !== undefined && va !== "");
 
   // 하위 호환성: vertical-align을 명시한 자식이 없으면 기존 'center' 유지
-  if (explicitAligns.length === 0) return 'center';
+  if (explicitAligns.length === 0) return "center";
 
-  return map[explicitAligns[0]] ?? 'center';
+  return map[explicitAligns[0]] ?? "center";
 }
 
 /**
@@ -216,16 +231,16 @@ function resolveInlineBlockAlignItems(childElements: Element[]): string {
  * - alignContent: 'flex-start' — CSS line box는 상단부터 쌓임 (Taffy 기본 stretch 방지)
  */
 const INLINE_BLOCK_PARENT_CONFIG: TaffyDisplayConfig = {
-  taffyDisplay: 'flex',
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  alignContent: 'flex-start',
+  taffyDisplay: "flex",
+  flexDirection: "row",
+  flexWrap: "wrap",
+  alignItems: "center",
+  alignContent: "flex-start",
 };
 
 /** inline-block 자신이 사용하는 크기 고정 block 리프 설정 */
 const INLINE_BLOCK_LEAF_CONFIG: TaffyDisplayConfig = {
-  taffyDisplay: 'block',
+  taffyDisplay: "block",
   flexGrow: 0,
   flexShrink: 0,
 };
@@ -237,7 +252,7 @@ const INLINE_BLOCK_LEAF_CONFIG: TaffyDisplayConfig = {
 /**
  * CSS display 문자열을 Display 이원 구조로 파싱.
  *
- * Dropflow 원본 (xstudio-adapter.ts:313-330)을 기반으로 하되,
+ * Dropflow 원본 (composition-adapter.ts:313-330)을 기반으로 하되,
  * Taffy가 처리하는 flex/grid를 inner display로 확장.
  *
  * CSS Display Level 3 매핑:
@@ -251,36 +266,36 @@ const INLINE_BLOCK_LEAF_CONFIG: TaffyDisplayConfig = {
  * - inline-grid  → { outer: 'inline', inner: 'grid' }
  * - none         → { outer: 'none',   inner: 'none' }
  *
- * @see packages/layout-flow/src/adapters/xstudio-adapter.ts:313 — parseDisplay()
+ * @see packages/layout-flow/src/adapters/composition-adapter.ts:313 — parseDisplay()
  * @see https://www.w3.org/TR/css-display-3/#the-display-properties
  */
 function parseDisplay(value: string | undefined): Display {
   switch (value?.trim().toLowerCase()) {
-    case 'block':
-      return { outer: 'block', inner: 'flow' };
-    case 'inline':
-      return { outer: 'inline', inner: 'flow' };
-    case 'inline-block':
-      return { outer: 'inline', inner: 'flow-root' };
-    case 'flow-root':
-      return { outer: 'block', inner: 'flow-root' };
-    case 'flex':
-      return { outer: 'block', inner: 'flex' };
-    case 'inline-flex':
-      return { outer: 'inline', inner: 'flex' };
-    case 'grid':
-      return { outer: 'block', inner: 'grid' };
-    case 'inline-grid':
-      return { outer: 'inline', inner: 'grid' };
-    case 'none':
-      return { outer: 'none', inner: 'none' };
+    case "block":
+      return { outer: "block", inner: "flow" };
+    case "inline":
+      return { outer: "inline", inner: "flow" };
+    case "inline-block":
+      return { outer: "inline", inner: "flow-root" };
+    case "flow-root":
+      return { outer: "block", inner: "flow-root" };
+    case "flex":
+      return { outer: "block", inner: "flex" };
+    case "inline-flex":
+      return { outer: "inline", inner: "flex" };
+    case "grid":
+      return { outer: "block", inner: "grid" };
+    case "inline-grid":
+      return { outer: "inline", inner: "grid" };
+    case "none":
+      return { outer: "none", inner: "none" };
     default:
       if (import.meta.env.DEV) {
         console.warn(
           `[taffyDisplayAdapter] Unrecognized CSS display value: "${value}". Falling back to block.`,
         );
       }
-      return { outer: 'block', inner: 'flow' };
+      return { outer: "block", inner: "flow" };
   }
 }
 
@@ -291,18 +306,19 @@ function parseDisplay(value: string | undefined): Display {
  * Display 객체를 조작한 후 문자열로 반환할 때 사용.
  */
 function displayToString(d: Display): string {
-  if (d.outer === 'none') return 'none';
-  if (d.inner === 'flex') return d.outer === 'inline' ? 'inline-flex' : 'flex';
-  if (d.inner === 'grid') return d.outer === 'inline' ? 'inline-grid' : 'grid';
-  if (d.inner === 'flow-root') return d.outer === 'inline' ? 'inline-block' : 'flow-root';
+  if (d.outer === "none") return "none";
+  if (d.inner === "flex") return d.outer === "inline" ? "inline-flex" : "flex";
+  if (d.inner === "grid") return d.outer === "inline" ? "inline-grid" : "grid";
+  if (d.inner === "flow-root")
+    return d.outer === "inline" ? "inline-block" : "flow-root";
   // inner === 'flow'
-  return d.outer === 'inline' ? 'inline' : 'block';
+  return d.outer === "inline" ? "inline" : "block";
 }
 
 /**
  * 자식 display 분류 — Dropflow classifyChild() 패턴.
  *
- * Dropflow 원본 (xstudio-adapter.ts:400-414):
+ * Dropflow 원본 (composition-adapter.ts:400-414):
  * - display === 'none'                          → 'none'
  * - display === 'inline' || 'inline-block'      → 'inline'
  * - display === 'block' / 'flex' / 'grid' / ... → 'block'
@@ -311,18 +327,21 @@ function displayToString(d: Display): string {
  * Dropflow 원본과 동일하게 'block'으로 분류한다.
  * (IFC 시뮬레이션이 아닌 Taffy native flex/grid 경로를 타야 함)
  *
- * @see packages/layout-flow/src/adapters/xstudio-adapter.ts:400 — classifyChild()
+ * @see packages/layout-flow/src/adapters/composition-adapter.ts:400 — classifyChild()
  */
 function classifyChildDisplay(display: string): ChildDisplayClass {
   const parsed = parseDisplay(display);
-  if (parsed.outer === 'none') return 'none';
+  if (parsed.outer === "none") return "none";
   // Dropflow 원본 패턴: inline/inline-block만 inline 분류
   // inner가 flow 또는 flow-root인 경우만 IFC 참여 대상
   // inline-flex(inner:flex), inline-grid(inner:grid)는 block 분류
-  if (parsed.outer === 'inline' && (parsed.inner === 'flow' || parsed.inner === 'flow-root')) {
-    return 'inline';
+  if (
+    parsed.outer === "inline" &&
+    (parsed.inner === "flow" || parsed.inner === "flow-root")
+  ) {
+    return "inline";
   }
-  return 'block';
+  return "block";
 }
 
 // ============================================
@@ -352,8 +371,8 @@ function classifyChildDisplay(display: string): ChildDisplayClass {
  */
 export function blockifyDisplay(display: string): string {
   const parsed = parseDisplay(display);
-  if (parsed.outer === 'inline') {
-    return displayToString({ outer: 'block', inner: parsed.inner });
+  if (parsed.outer === "inline") {
+    return displayToString({ outer: "block", inner: parsed.inner });
   }
   return display;
 }
@@ -371,16 +390,19 @@ export function blockifyDisplay(display: string): string {
  *
  * @see utils.ts — INLINE_BLOCK_TAGS
  */
-export function getElementDisplay(element: { tag?: string; props?: { style?: unknown } }): string {
-  const style = ((element.props?.style) ?? {}) as Record<string, unknown>;
-  if (typeof style.display === 'string' && style.display.length > 0) {
+export function getElementDisplay(element: {
+  tag?: string;
+  props?: { style?: unknown };
+}): string {
+  const style = (element.props?.style ?? {}) as Record<string, unknown>;
+  if (typeof style.display === "string" && style.display.length > 0) {
     return style.display;
   }
-  const tag = (element.tag ?? '').toLowerCase();
+  const tag = (element.tag ?? "").toLowerCase();
   if (INLINE_BLOCK_TAGS.has(tag)) {
-    return 'inline-block';
+    return "inline-block";
   }
-  return 'block';
+  return "block";
 }
 
 /**
@@ -392,7 +414,7 @@ export function getElementDisplay(element: { tag?: string; props?: { style?: unk
  * @see packages/layout-flow/src/layout-box.ts:523 — FormattingBox.isInlineLevel()
  */
 export function isInlineLevel(display: string): boolean {
-  return parseDisplay(display).outer === 'inline';
+  return parseDisplay(display).outer === "inline";
 }
 
 /**
@@ -406,9 +428,12 @@ export function isInlineLevel(display: string): boolean {
  * - 자식 display가 inline-level이 아님 (block, flex, grid 등)
  * - 자식에 명시적 width가 없거나 'auto'
  */
-export function needsBlockChildFullWidth(childDisplay: string, childWidth: unknown): boolean {
+export function needsBlockChildFullWidth(
+  childDisplay: string,
+  childWidth: unknown,
+): boolean {
   if (isInlineLevel(childDisplay)) return false;
-  if (childWidth != null && childWidth !== 'auto') return false;
+  if (childWidth != null && childWidth !== "auto") return false;
   return true;
 }
 
@@ -449,35 +474,35 @@ export function toTaffyDisplay(
   const parsed = parseDisplay(display);
 
   // none → none
-  if (parsed.outer === 'none') {
-    return { taffyDisplay: 'none' };
+  if (parsed.outer === "none") {
+    return { taffyDisplay: "none" };
   }
 
   // flex (native) — inner가 flex이면 outer 무관 (flex, inline-flex 모두)
-  if (parsed.inner === 'flex') {
-    return { taffyDisplay: 'flex' };
+  if (parsed.inner === "flex") {
+    return { taffyDisplay: "flex" };
   }
 
   // grid (native) — inner가 grid이면 outer 무관 (grid, inline-grid 모두)
-  if (parsed.inner === 'grid') {
-    return { taffyDisplay: 'grid' };
+  if (parsed.inner === "grid") {
+    return { taffyDisplay: "grid" };
   }
 
   // inline-block (outer=inline, inner=flow-root) → 크기 고정 block 리프
   // 부모가 flex row wrap으로 전환된 컨테이너 안에 들어감
-  if (parsed.outer === 'inline' && parsed.inner === 'flow-root') {
+  if (parsed.outer === "inline" && parsed.inner === "flow-root") {
     return INLINE_BLOCK_LEAF_CONFIG;
   }
 
   // 순수 inline (outer=inline, inner=flow) → block 폴백
   // Taffy는 inline formatting context를 지원하지 않으므로 block으로 격상
-  if (parsed.outer === 'inline') {
+  if (parsed.outer === "inline") {
     return BLOCK_FALLBACK;
   }
 
   // block 부모 + inline-level 자식 → flex row wrap으로 IFC 시뮬레이션
   // classifyChildDisplay()로 Dropflow classifyChild() 패턴 적용
-  if (childDisplays.some(cd => classifyChildDisplay(cd) === 'inline')) {
+  if (childDisplays.some((cd) => classifyChildDisplay(cd) === "inline")) {
     // ADR-006 P2-3: vertical-align 명시 자식이 있으면 alignItems를 동적으로 결정
     if (childElements !== undefined && childElements.length > 0) {
       const alignItems = resolveInlineBlockAlignItems(childElements);

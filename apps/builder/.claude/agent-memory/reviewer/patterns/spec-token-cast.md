@@ -22,4 +22,4 @@ radius: resolveToken(size.borderRadius) as number,
 
 **How to apply:** Spec shapes() 함수 내 `size.*` 또는 `variant.*` 참조 시 타입이 TokenRef일 가능성 있으면 반드시 resolveToken() 확인.
 
-발견일: 2026-03-27 (ActionMenu.spec.ts, xstudio-review-diff2.txt)
+발견일: 2026-03-27 (ActionMenu.spec.ts, composition-review-diff2.txt)

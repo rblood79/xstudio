@@ -38,7 +38,7 @@ const koKR: TranslationKeys = {
     deselectAll: "모두 선택 해제",
   },
   builder: {
-    title: "XStudio 빌더",
+    title: "composition 빌더",
     newProject: "새 프로젝트",
     openProject: "프로젝트 열기",
     saveProject: "프로젝트 저장",
@@ -186,7 +186,7 @@ const enUS: TranslationKeys = {
     deselectAll: "Deselect All",
   },
   builder: {
-    title: "XStudio Builder",
+    title: "composition Builder",
     newProject: "New Project",
     openProject: "Open Project",
     saveProject: "Save Project",
@@ -334,7 +334,7 @@ const jaJP: TranslationKeys = {
     deselectAll: "すべて選択解除",
   },
   builder: {
-    title: "XStudio ビルダー",
+    title: "composition ビルダー",
     newProject: "新しいプロジェクト",
     openProject: "プロジェクトを開く",
     saveProject: "プロジェクトを保存",
@@ -482,7 +482,7 @@ const zhCN: TranslationKeys = {
     deselectAll: "取消全选",
   },
   builder: {
-    title: "XStudio 构建器",
+    title: "composition 构建器",
     newProject: "新建项目",
     openProject: "打开项目",
     saveProject: "保存项目",

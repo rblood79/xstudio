@@ -1,6 +1,6 @@
 ---
 name: tester
-description: Writes unit tests (Vitest), component tests (React Testing Library), Storybook stories, and E2E tests (Playwright) for XStudio. Use when the user asks for tests, stories, or test infrastructure setup.
+description: Writes unit tests (Vitest), component tests (React Testing Library), Storybook stories, and E2E tests (Playwright) for composition. Use when the user asks for tests, stories, or test infrastructure setup.
 model: sonnet
 color: cyan
 tools:
@@ -52,7 +52,7 @@ maxTurns: 25
 - Canvas 인터랙션 테스트 (선택, 드래그, 리사이즈)
 - `pnpm exec playwright test`로 실행
 
-## XStudio 테스트 고려사항
+## composition 테스트 고려사항
 
 ### Canvas 테스트
 

@@ -8,13 +8,13 @@
 
 ## 📋 Executive Summary
 
-This document outlines the comprehensive implementation plan for integrating **Electron** with **PGlite** (PostgreSQL WASM) into XStudio. This integration enables XStudio to operate as a standalone desktop application with local database capabilities, while maintaining compatibility with the existing web-based Supabase architecture.
+This document outlines the comprehensive implementation plan for integrating **Electron** with **PGlite** (PostgreSQL WASM) into composition. This integration enables composition to operate as a standalone desktop application with local database capabilities, while maintaining compatibility with the existing web-based Supabase architecture.
 
 ### Key Objectives
 
-1. **Dual-Mode Support**: Enable XStudio to run in both **Electron (offline)** and **Web Browser (online)** modes
+1. **Dual-Mode Support**: Enable composition to run in both **Electron (offline)** and **Web Browser (online)** modes
 2. **Local Database**: Integrate PGlite for offline PostgreSQL database within Electron
-3. **Project File Format**: Create `.xstudio` file format (PGlite database files) for project portability
+3. **Project File Format**: Create `.composition` file format (PGlite database files) for project portability
 4. **Database Abstraction**: Implement unified Database Abstraction Layer (DAL) for Supabase/PGlite compatibility
 5. **Static Site Publishing**: Enable HTML/CSS/JS generation without requiring user Node.js installation
 6. **Cloud Sync (Optional)**: Support bidirectional sync between local PGlite and Supabase cloud
@@ -36,7 +36,7 @@ This document outlines the comprehensive implementation plan for integrating **E
    - Seamless transition between offline/online modes
 
 3. **Project File Sharing**
-   - Export/import `.xstudio` files (self-contained PGlite databases)
+   - Export/import `.composition` files (self-contained PGlite databases)
    - Share projects via USB drives, email, or file servers
    - No cloud dependency for collaboration
 
@@ -53,7 +53,7 @@ This document outlines the comprehensive implementation plan for integrating **E
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        XStudio Application                       │
+│                        composition Application                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌────────────────┐           ┌──────────────────┐              │
@@ -85,7 +85,7 @@ This document outlines the comprehensive implementation plan for integrating **E
 │ └─────────────────┘         └──────────────────────┘            │
 │                                      │                           │
 │                             ┌────────▼────────┐                  │
-│                             │ .xstudio File   │                  │
+│                             │ .composition File   │                  │
 │                             │ (PGlite DB)     │                  │
 │                             └─────────────────┘                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -98,6 +98,7 @@ This document outlines the comprehensive implementation plan for integrating **E
 **Purpose**: Provide unified interface for database operations regardless of backend (Supabase or PGlite).
 
 **Interface Definition**:
+
 ```typescript
 // src/services/database/DbAdapter.ts
 export interface DbAdapter {
@@ -146,9 +147,10 @@ export interface DbAdapter {
 **Purpose**: Implement DbAdapter interface using PGlite (PostgreSQL WASM).
 
 **Implementation**:
+
 ```typescript
 // src/services/database/PGliteAdapter.ts
-import { PGlite } from '@electric-sql/pglite';
+import { PGlite } from "@electric-sql/pglite";
 
 export class PGliteAdapter implements DbAdapter {
   private db: PGlite | null = null;
@@ -181,8 +183,8 @@ export class PGliteAdapter implements DbAdapter {
   // Implement all DbAdapter methods...
   async getElements(pageId: string): Promise<Element[]> {
     const result = await this.db!.query(
-      'SELECT * FROM elements WHERE page_id = $1 ORDER BY order_num',
-      [pageId]
+      "SELECT * FROM elements WHERE page_id = $1 ORDER BY order_num",
+      [pageId],
     );
     return result.rows.map(this.rowToElement);
   }
@@ -196,9 +198,10 @@ export class PGliteAdapter implements DbAdapter {
 **Purpose**: Implement DbAdapter interface using existing Supabase client.
 
 **Implementation**:
+
 ```typescript
 // src/services/database/SupabaseAdapter.ts
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 export class SupabaseAdapter implements DbAdapter {
   private supabase: ReturnType<typeof createClient>;
@@ -218,10 +221,10 @@ export class SupabaseAdapter implements DbAdapter {
   // Implement all DbAdapter methods using Supabase client...
   async getElements(pageId: string): Promise<Element[]> {
     const { data, error } = await this.supabase
-      .from('elements')
-      .select('*')
-      .eq('page_id', pageId)
-      .order('order_num');
+      .from("elements")
+      .select("*")
+      .eq("page_id", pageId)
+      .order("order_num");
 
     if (error) throw error;
     return data.map(this.rowToElement);
@@ -236,11 +239,12 @@ export class SupabaseAdapter implements DbAdapter {
 **Purpose**: Provide singleton access to appropriate DbAdapter based on runtime environment.
 
 **Implementation**:
+
 ```typescript
 // src/services/database/index.ts
-import { DbAdapter } from './DbAdapter';
-import { PGliteAdapter } from './PGliteAdapter';
-import { SupabaseAdapter } from './SupabaseAdapter';
+import { DbAdapter } from "./DbAdapter";
+import { PGliteAdapter } from "./PGliteAdapter";
+import { SupabaseAdapter } from "./SupabaseAdapter";
 
 let dbInstance: DbAdapter | null = null;
 
@@ -265,13 +269,14 @@ export function resetDatabase(): void {
 }
 ```
 
-#### 5. Project File (.xstudio)
+#### 5. Project File (.composition)
 
 **Purpose**: Self-contained PGlite database file for project portability.
 
 **File Structure**:
+
 ```
-my-project.xstudio
+my-project.composition
 ├── (PGlite database files - binary format)
 ├── /pgdata/           # PostgreSQL data directory
 │   ├── base/          # Database files
@@ -280,6 +285,7 @@ my-project.xstudio
 ```
 
 **ProjectFile Class**:
+
 ```typescript
 // src/services/projectFile/ProjectFile.ts
 export class ProjectFile {
@@ -299,7 +305,10 @@ export class ProjectFile {
   }
 
   // Create new project file
-  static async create(filePath: string, project: Partial<Project>): Promise<ProjectFile> {
+  static async create(
+    filePath: string,
+    project: Partial<Project>,
+  ): Promise<ProjectFile> {
     const file = new ProjectFile(filePath);
     await file.db.connect();
     await file.db.createProject(project);
@@ -322,7 +331,7 @@ export class ProjectFile {
     await supabase.connect();
 
     // Copy all data from PGlite to Supabase
-    const project = await this.db.getProject('...');
+    const project = await this.db.getProject("...");
     await supabase.createProject(project);
 
     const pages = await this.db.getPages(project.id);
@@ -340,7 +349,7 @@ export class ProjectFile {
     filePath: string,
     projectId: string,
     supabaseUrl: string,
-    anonKey: string
+    anonKey: string,
   ): Promise<ProjectFile> {
     const supabase = new SupabaseAdapter(supabaseUrl, anonKey);
     await supabase.connect();
@@ -369,11 +378,12 @@ export class ProjectFile {
 **Purpose**: Manage application lifecycle, file system operations, and IPC communication.
 
 **Implementation**:
+
 ```typescript
 // electron/main.ts
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import path from 'path';
-import fs from 'fs';
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import path from "path";
+import fs from "fs";
 
 let mainWindow: BrowserWindow | null = null;
 let currentProjectPath: string | null = null;
@@ -384,24 +394,24 @@ function createWindow() {
     width: 1400,
     height: 900,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
   if (import.meta.env.DEV) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL("http://localhost:5173");
   } else {
-    mainWindow.loadFile('dist/index.html');
+    mainWindow.loadFile("dist/index.html");
   }
 }
 
 // File operations
-ipcMain.handle('project:new', async () => {
+ipcMain.handle("project:new", async () => {
   const result = await dialog.showSaveDialog({
-    filters: [{ name: 'XStudio Project', extensions: ['xstudio'] }],
-    defaultPath: 'untitled.xstudio',
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
+    defaultPath: "untitled.composition",
   });
 
   if (!result.canceled && result.filePath) {
@@ -411,10 +421,10 @@ ipcMain.handle('project:new', async () => {
   return null;
 });
 
-ipcMain.handle('project:open', async () => {
+ipcMain.handle("project:open", async () => {
   const result = await dialog.showOpenDialog({
-    filters: [{ name: 'XStudio Project', extensions: ['xstudio'] }],
-    properties: ['openFile'],
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
+    properties: ["openFile"],
   });
 
   if (!result.canceled && result.filePaths.length > 0) {
@@ -424,14 +434,14 @@ ipcMain.handle('project:open', async () => {
   return null;
 });
 
-ipcMain.handle('project:save', async () => {
+ipcMain.handle("project:save", async () => {
   // PGlite auto-persists, just return success
   return true;
 });
 
-ipcMain.handle('project:saveAs', async () => {
+ipcMain.handle("project:saveAs", async () => {
   const result = await dialog.showSaveDialog({
-    filters: [{ name: 'XStudio Project', extensions: ['xstudio'] }],
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
   });
 
   if (!result.canceled && result.filePath) {
@@ -445,12 +455,12 @@ ipcMain.handle('project:saveAs', async () => {
   return null;
 });
 
-ipcMain.handle('project:getCurrentPath', () => {
+ipcMain.handle("project:getCurrentPath", () => {
   return currentProjectPath;
 });
 
 // Publishing
-ipcMain.handle('project:publish', async (event, outputPath: string) => {
+ipcMain.handle("project:publish", async (event, outputPath: string) => {
   // Use PublishService to generate HTML/CSS/JS
   const publishService = new PublishService(currentProjectPath!);
   const result = await publishService.publish({
@@ -469,21 +479,22 @@ app.whenReady().then(createWindow);
 **Purpose**: Expose safe IPC methods to renderer process.
 
 **Implementation**:
+
 ```typescript
 // electron/preload.ts
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld('electron', {
+contextBridge.exposeInMainWorld("electron", {
   // Project file operations
-  newProject: () => ipcRenderer.invoke('project:new'),
-  openProject: () => ipcRenderer.invoke('project:open'),
-  saveProject: () => ipcRenderer.invoke('project:save'),
-  saveProjectAs: () => ipcRenderer.invoke('project:saveAs'),
-  getCurrentProjectPath: () => ipcRenderer.invoke('project:getCurrentPath'),
+  newProject: () => ipcRenderer.invoke("project:new"),
+  openProject: () => ipcRenderer.invoke("project:open"),
+  saveProject: () => ipcRenderer.invoke("project:save"),
+  saveProjectAs: () => ipcRenderer.invoke("project:saveAs"),
+  getCurrentProjectPath: () => ipcRenderer.invoke("project:getCurrentPath"),
 
   // Publishing
   publishProject: (outputPath: string) =>
-    ipcRenderer.invoke('project:publish', outputPath),
+    ipcRenderer.invoke("project:publish", outputPath),
 
   // Environment detection
   isElectron: true,
@@ -492,9 +503,10 @@ contextBridge.exposeInMainWorld('electron', {
 
 #### 8. Publish Service
 
-**Purpose**: Generate static HTML/CSS/JS files from XStudio project.
+**Purpose**: Generate static HTML/CSS/JS files from composition project.
 
 **Implementation**:
+
 ```typescript
 // src/services/publish/PublishService.ts
 export interface PublishOptions {
@@ -518,8 +530,8 @@ export class PublishService {
     await this.db.connect();
 
     // 1. Create output directory
-    const fs = window.electron ? require('fs') : null;
-    if (!fs) throw new Error('Publishing only available in Electron');
+    const fs = window.electron ? require("fs") : null;
+    if (!fs) throw new Error("Publishing only available in Electron");
 
     fs.mkdirSync(options.outputPath, { recursive: true });
     fs.mkdirSync(`${options.outputPath}/css`, { recursive: true });
@@ -528,7 +540,7 @@ export class PublishService {
     }
 
     // 2. Load project data
-    const project = await this.db.getProject('...');
+    const project = await this.db.getProject("...");
     const pages = await this.db.getPages(project.id);
     const tokens = await this.db.getTokens(project.id);
     const themes = await this.db.getThemes(project.id);
@@ -540,7 +552,7 @@ export class PublishService {
     for (const page of pages) {
       const elements = await this.db.getElements(page.id);
       const html = htmlGenerator.generate(page, elements, project);
-      const fileName = `${page.slug || 'index'}.html`;
+      const fileName = `${page.slug || "index"}.html`;
       fs.writeFileSync(`${options.outputPath}/${fileName}`, html);
       filesCreated.push(fileName);
     }
@@ -551,19 +563,19 @@ export class PublishService {
     // Theme CSS (design tokens)
     const themeCSS = cssGenerator.generateTheme(tokens, themes);
     fs.writeFileSync(`${options.outputPath}/css/theme.css`, themeCSS);
-    filesCreated.push('css/theme.css');
+    filesCreated.push("css/theme.css");
 
     // Component CSS
     const componentCSS = cssGenerator.generateComponents();
     fs.writeFileSync(`${options.outputPath}/css/components.css`, componentCSS);
-    filesCreated.push('css/components.css');
+    filesCreated.push("css/components.css");
 
     // 5. Generate JavaScript (optional)
     if (options.includeJavaScript) {
       const jsGenerator = new JSGenerator();
       const mainJS = jsGenerator.generate(pages);
       fs.writeFileSync(`${options.outputPath}/js/main.js`, mainJS);
-      filesCreated.push('js/main.js');
+      filesCreated.push("js/main.js");
     }
 
     await this.db.disconnect();
@@ -586,6 +598,7 @@ export class PublishService {
 **Objective**: Create unified database interface and adapters.
 
 **Tasks**:
+
 1. ✅ Define `DbAdapter` interface
 2. ✅ Implement `SupabaseAdapter` (refactor existing services)
 3. ✅ Create database service factory
@@ -593,6 +606,7 @@ export class PublishService {
 5. ✅ Write unit tests for adapters
 
 **Files to Create/Modify**:
+
 - `src/services/database/DbAdapter.ts` (new)
 - `src/services/database/SupabaseAdapter.ts` (new)
 - `src/services/database/index.ts` (new)
@@ -601,6 +615,7 @@ export class PublishService {
 - `src/services/api/ProjectsApiService.ts` (modify)
 
 **Dependencies**:
+
 ```json
 {
   "dependencies": {
@@ -614,6 +629,7 @@ export class PublishService {
 **Objective**: Implement PGlite adapter and migrations.
 
 **Tasks**:
+
 1. ✅ Install PGlite dependencies
 2. ✅ Implement `PGliteAdapter`
 3. ✅ Create SQL migrations (same schema as Supabase)
@@ -622,12 +638,14 @@ export class PublishService {
 6. ✅ Write integration tests
 
 **Files to Create**:
+
 - `src/services/database/PGliteAdapter.ts`
 - `src/services/database/migrations/001_initial_schema.sql`
 - `src/services/database/migrations/002_add_design_tokens.sql`
 - `src/services/database/migrations/index.ts`
 
 **Dependencies**:
+
 ```json
 {
   "dependencies": {
@@ -637,6 +655,7 @@ export class PublishService {
 ```
 
 **SQL Migrations**:
+
 ```sql
 -- migrations/001_initial_schema.sql
 CREATE TABLE projects (
@@ -680,6 +699,7 @@ CREATE TABLE elements (
 **Objective**: Configure Electron application with IPC handlers.
 
 **Tasks**:
+
 1. ✅ Install Electron dependencies
 2. ✅ Create `electron/main.ts` (main process)
 3. ✅ Create `electron/preload.ts` (preload script)
@@ -688,12 +708,14 @@ CREATE TABLE elements (
 6. ✅ Test Electron app launch
 
 **Files to Create**:
+
 - `electron/main.ts`
 - `electron/preload.ts`
 - `electron.vite.config.ts`
 - `src/types/electron.d.ts` (TypeScript declarations)
 
 **Dependencies**:
+
 ```json
 {
   "devDependencies": {
@@ -706,6 +728,7 @@ CREATE TABLE elements (
 ```
 
 **TypeScript Declarations**:
+
 ```typescript
 // src/types/electron.d.ts
 interface Window {
@@ -726,20 +749,21 @@ interface Window {
 ```
 
 **Vite Configuration**:
+
 ```typescript
 // electron.vite.config.ts
-import { defineConfig } from 'vite';
-import electron from 'vite-plugin-electron';
-import react from '@vitejs/plugin-react-swc';
+import { defineConfig } from "vite";
+import electron from "vite-plugin-electron";
+import react from "@vitejs/plugin-react-swc";
 
 export default defineConfig({
   plugins: [
     react(),
     electron({
-      entry: 'electron/main.ts',
+      entry: "electron/main.ts",
       vite: {
         build: {
-          outDir: 'dist-electron',
+          outDir: "dist-electron",
         },
       },
     }),
@@ -749,9 +773,10 @@ export default defineConfig({
 
 ### Phase 4: ProjectFile Class (2-3 days)
 
-**Objective**: Implement .xstudio file format and operations.
+**Objective**: Implement .composition file format and operations.
 
 **Tasks**:
+
 1. ✅ Create `ProjectFile` class
 2. ✅ Implement `open()`, `create()`, `save()`, `close()` methods
 3. ✅ Implement `exportToSupabase()` method
@@ -760,11 +785,13 @@ export default defineConfig({
 6. ✅ Write integration tests
 
 **Files to Create**:
+
 - `src/services/projectFile/ProjectFile.ts`
 - `src/services/projectFile/SyncService.ts`
 - `src/services/projectFile/types.ts`
 
 **Sync Service** (Optional - for cloud sync):
+
 ```typescript
 // src/services/projectFile/SyncService.ts
 export class SyncService {
@@ -805,6 +832,7 @@ export class SyncService {
 **Objective**: Implement static site generation.
 
 **Tasks**:
+
 1. ✅ Create `PublishService` class
 2. ✅ Implement `HTMLGenerator` (Element tree → HTML)
 3. ✅ Implement `CSSGenerator` (Tokens → CSS)
@@ -813,6 +841,7 @@ export class SyncService {
 6. ✅ Test publishing with complex projects
 
 **Files to Create**:
+
 - `src/services/publish/PublishService.ts`
 - `src/services/publish/HTMLGenerator.ts`
 - `src/services/publish/CSSGenerator.ts`
@@ -820,14 +849,15 @@ export class SyncService {
 - `src/services/publish/types.ts`
 
 **HTMLGenerator Details**:
+
 ```typescript
 // src/services/publish/HTMLGenerator.ts
 export class HTMLGenerator {
   generate(page: Page, elements: Element[], project: Project): string {
-    const rootElements = elements.filter(el => !el.parent_id);
+    const rootElements = elements.filter((el) => !el.parent_id);
     const bodyHTML = rootElements
-      .map(el => this.generateElement(el, elements))
-      .join('\n');
+      .map((el) => this.generateElement(el, elements))
+      .join("\n");
 
     return `
 <!DOCTYPE html>
@@ -850,16 +880,16 @@ export class HTMLGenerator {
   private generateElement(element: Element, allElements: Element[]): string {
     const { tag, props } = element;
     const children = allElements
-      .filter(el => el.parent_id === element.id)
+      .filter((el) => el.parent_id === element.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
     // Convert React Aria component to HTML
     switch (tag) {
-      case 'Button':
+      case "Button":
         return this.generateButton(element, props);
-      case 'TextField':
+      case "TextField":
         return this.generateTextField(element, props);
-      case 'Container':
+      case "Container":
         return this.generateContainer(element, children, allElements);
       // ... handle all component types
       default:
@@ -870,9 +900,9 @@ export class HTMLGenerator {
   private generateButton(element: Element, props: any): string {
     const attrs = this.generateAttributes(element, props);
     const styles = this.generateStyles(props.style);
-    const className = props.className || '';
+    const className = props.className || "";
 
-    return `<button${attrs}${styles} class="${className}">${props.children || ''}</button>`;
+    return `<button${attrs}${styles} class="${className}">${props.children || ""}</button>`;
   }
 
   // ... other component generators
@@ -884,6 +914,7 @@ export class HTMLGenerator {
 **Objective**: Update UI to support Electron features.
 
 **Tasks**:
+
 1. ✅ Add File menu (New/Open/Save/SaveAs/Publish)
 2. ✅ Update BuilderHeader with Electron-specific actions
 3. ✅ Add Publish dialog with output path selection
@@ -892,11 +923,13 @@ export class HTMLGenerator {
 6. ✅ Test full workflow in Electron
 
 **Files to Modify**:
+
 - `src/builder/main/BuilderHeader.tsx`
 - `src/builder/main/BuilderCore.tsx`
 - `src/services/save/saveService.ts`
 
 **Files to Create**:
+
 - `src/components/PublishDialog.tsx`
 - `src/components/FileMenu.tsx`
 
@@ -905,6 +938,7 @@ export class HTMLGenerator {
 **Objective**: Comprehensive testing and documentation.
 
 **Tasks**:
+
 1. ✅ Write unit tests for all new services
 2. ✅ Write integration tests for Electron IPC
 3. ✅ Write E2E tests for Electron app
@@ -913,6 +947,7 @@ export class HTMLGenerator {
 6. ✅ Create user documentation
 
 **Test Coverage Goals**:
+
 - DbAdapter implementations: 90%+
 - PublishService: 85%+
 - ProjectFile: 90%+
@@ -923,7 +958,7 @@ export class HTMLGenerator {
 ## 📂 Final File Structure
 
 ```
-xstudio/
+composition/
 ├── electron/
 │   ├── main.ts                    # Main process
 │   ├── preload.ts                 # Preload script
@@ -942,7 +977,7 @@ xstudio/
 │   │   │   └── index.ts           # Factory
 │   │   │
 │   │   ├── projectFile/
-│   │   │   ├── ProjectFile.ts     # .xstudio file management
+│   │   │   ├── ProjectFile.ts     # .composition file management
 │   │   │   ├── SyncService.ts     # Cloud sync (optional)
 │   │   │   └── types.ts
 │   │   │
@@ -973,16 +1008,16 @@ xstudio/
 
 ## ⏱️ Timeline & Estimates
 
-| Phase | Duration | Dependencies | Deliverable |
-|-------|----------|--------------|-------------|
-| **Phase 1**: Database Abstraction Layer | 2-3 days | None | Working DbAdapter with Supabase |
-| **Phase 2**: PGlite Integration | 3-4 days | Phase 1 | PGlite adapter + migrations |
-| **Phase 3**: Electron Setup | 2-3 days | Phase 2 | Working Electron app |
-| **Phase 4**: ProjectFile Class | 2-3 days | Phase 2, 3 | .xstudio file operations |
-| **Phase 5**: Publishing System | 3-4 days | Phase 2, 3 | Static site generation |
-| **Phase 6**: UI Integration | 2-3 days | All previous | Complete Electron UI |
-| **Phase 7**: Testing & Documentation | 2-3 days | All previous | Tests + docs |
-| **Total** | **16-23 days** | - | Production-ready |
+| Phase                                   | Duration       | Dependencies | Deliverable                     |
+| --------------------------------------- | -------------- | ------------ | ------------------------------- |
+| **Phase 1**: Database Abstraction Layer | 2-3 days       | None         | Working DbAdapter with Supabase |
+| **Phase 2**: PGlite Integration         | 3-4 days       | Phase 1      | PGlite adapter + migrations     |
+| **Phase 3**: Electron Setup             | 2-3 days       | Phase 2      | Working Electron app            |
+| **Phase 4**: ProjectFile Class          | 2-3 days       | Phase 2, 3   | .composition file operations    |
+| **Phase 5**: Publishing System          | 3-4 days       | Phase 2, 3   | Static site generation          |
+| **Phase 6**: UI Integration             | 2-3 days       | All previous | Complete Electron UI            |
+| **Phase 7**: Testing & Documentation    | 2-3 days       | All previous | Tests + docs                    |
+| **Total**                               | **16-23 days** | -            | Production-ready                |
 
 **Conservative Estimate**: 23 days (~4.5 weeks)
 **Optimistic Estimate**: 16 days (~3 weeks)
@@ -1028,11 +1063,11 @@ xstudio/
 ## ✅ Success Criteria
 
 1. **Dual-Mode Operation**
-   - ✅ XStudio runs in both Electron and web browser
+   - ✅ composition runs in both Electron and web browser
    - ✅ Same codebase for both environments (minimal conditional logic)
 
 2. **Data Persistence**
-   - ✅ .xstudio files can be created, opened, and saved
+   - ✅ .composition files can be created, opened, and saved
    - ✅ Data persists correctly between sessions
    - ✅ No data loss during file operations
 
@@ -1043,7 +1078,7 @@ xstudio/
 
 4. **Performance**
    - ✅ PGlite operations < 100ms for typical CRUD (95th percentile)
-   - ✅ .xstudio file size < 10MB for typical projects
+   - ✅ .composition file size < 10MB for typical projects
    - ✅ Publishing completes in < 5 seconds for 10-page projects
 
 5. **Reliability**
@@ -1056,16 +1091,19 @@ xstudio/
 ## 📚 References
 
 ### Documentation
+
 - [PGlite Documentation](https://github.com/electric-sql/pglite)
 - [Electron Documentation](https://www.electronjs.org/docs)
 - [Supabase Documentation](https://supabase.com/docs)
 
-### Related XStudio Documents
+### Related composition Documents
+
 - `docs/supabase-schema.md` - Database schema reference
 - `src/types/builder/unified.types.ts` - Core type definitions
 - `src/services/api/` - Existing API services to refactor
 
 ### Similar Projects
+
 - [VSCode](https://github.com/microsoft/vscode) - Electron architecture
 - [Obsidian](https://obsidian.md/) - Local-first with cloud sync
 - [Figma Desktop](https://www.figma.com/) - Dual web/desktop app
@@ -1090,7 +1128,7 @@ xstudio/
    - Integration plugins (WordPress, Shopify, etc.)
 
 4. **Version Control** (Phase 11)
-   - Git-like versioning for .xstudio files
+   - Git-like versioning for .composition files
    - Branching and merging
    - Diff viewer for changes
 

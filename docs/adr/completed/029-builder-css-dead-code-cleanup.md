@@ -57,7 +57,7 @@ var(--color-surface-700)  /* → --gray-700 또는 시맨틱 변수 */
 /* ... 등 */
 ```
 
-외부 프레임워크(OpenAI 스타일 가이드 추정)에서 복사된 변수로, XStudio 어디에서도 참조하지 않는 완전한 dead code.
+외부 프레임워크(OpenAI 스타일 가이드 추정)에서 복사된 변수로, composition 어디에서도 참조하지 않는 완전한 dead code.
 
 ### `--builder-surface-bg`, `--builder-text` 미정의
 

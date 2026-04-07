@@ -1,6 +1,6 @@
 > **⚠️ 레거시 문서**: 현재 아키텍처와 일치하지 않을 수 있습니다. 역사적 참조 목적.
 
-# XStudio 아키텍처 재설계 계획
+# composition 아키텍처 재설계 계획
 
 > **작성일**: 2025-11-26
 > **버전**: 1.0
@@ -11,6 +11,7 @@
 ## 1. 현재 문제점 요약
 
 ### 1.1 iframe 격리 실패
+
 ```
 [현재 구조]
 Builder App ─── BrowserRouter ───┐
@@ -25,6 +26,7 @@ iframe ─── (같은 앱) ────────────├── /pre
 ```
 
 ### 1.2 이벤트 시스템 문제
+
 ```
 [현재 흐름]
 User clicks → EventEngine → navigate action
@@ -40,6 +42,7 @@ User clicks → EventEngine → navigate action
 ```
 
 ### 1.3 데이터 바인딩 문제
+
 ```
 [현재 구조]
 - DataBinding이 Builder 컨텍스트에서 처리
@@ -124,6 +127,7 @@ interface PreviewToBuilder {
 ```
 
 **핵심 변경: `NAVIGATE_TO_PAGE` 제거**
+
 - Preview 내부에서 MemoryRouter로 직접 처리
 - Builder에게 위임하지 않음
 
@@ -134,6 +138,7 @@ interface PreviewToBuilder {
 ### Phase 1: Preview 격리 (srcdoc + MemoryRouter)
 
 #### 1.1 폴더 구조
+
 ```
 src/
 ├── builder/                    # Builder 앱 (기존)
@@ -168,20 +173,21 @@ src/
 ```
 
 #### 1.2 Vite 빌드 설정
+
 ```typescript
 // vite.config.ts
 export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        'preview-runtime': resolve(__dirname, 'src/preview-runtime/index.tsx'),
+        main: resolve(__dirname, "index.html"),
+        "preview-runtime": resolve(__dirname, "src/preview-runtime/index.tsx"),
       },
       output: {
         entryFileNames: (chunkInfo) => {
-          return chunkInfo.name === 'preview-runtime'
-            ? 'preview-runtime.[hash].js'
-            : '[name].[hash].js';
+          return chunkInfo.name === "preview-runtime"
+            ? "preview-runtime.[hash].js"
+            : "[name].[hash].js";
         },
       },
     },
@@ -190,6 +196,7 @@ export default defineConfig({
 ```
 
 #### 1.3 srcdoc 템플릿
+
 ```typescript
 // src/builder/main/BuilderWorkspace.tsx
 const generatePreviewHtml = (previewBundle: string, previewCSS: string) => `
@@ -211,11 +218,12 @@ const generatePreviewHtml = (previewBundle: string, previewCSS: string) => `
 <iframe
   srcdoc={generatePreviewHtml(previewBundle, previewCSS)}
   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-  title="XStudio Preview"
+  title="composition Preview"
 />
 ```
 
 #### 1.4 Preview Runtime 진입점
+
 ```typescript
 // src/preview-runtime/index.tsx
 import { createRoot } from 'react-dom/client';
@@ -238,6 +246,7 @@ createRoot(document.getElementById('preview-root')!).render(
 ```
 
 #### 1.5 MemoryRouter 통합
+
 ```typescript
 // src/preview-runtime/router/PreviewRouter.tsx
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -269,6 +278,7 @@ export function PreviewRouter() {
 ### Phase 2: 이벤트 시스템 재설계
 
 #### 2.1 EventEngine 독립화
+
 ```typescript
 // src/preview-runtime/events/EventEngine.ts
 export class PreviewEventEngine {
@@ -276,32 +286,39 @@ export class PreviewEventEngine {
   private router: MemoryRouterInstance;
   private dataManager: DataManager;
 
-  constructor(deps: { store: PreviewStore; router: any; dataManager: DataManager }) {
+  constructor(deps: {
+    store: PreviewStore;
+    router: any;
+    dataManager: DataManager;
+  }) {
     this.store = deps.store;
     this.router = deps.router;
     this.dataManager = deps.dataManager;
   }
 
-  async executeAction(action: EventAction, context: EventContext): Promise<void> {
+  async executeAction(
+    action: EventAction,
+    context: EventContext,
+  ): Promise<void> {
     switch (action.type) {
-      case 'navigate':
+      case "navigate":
         // MemoryRouter로 직접 네비게이션 (부모 위임 X)
         this.router.navigate(action.config.path);
         break;
 
-      case 'setState':
+      case "setState":
         // 독립 스토어에 상태 저장
         this.store.setState(action.config.key, action.config.value);
         break;
 
-      case 'apiCall':
+      case "apiCall":
         // Preview 내부에서 직접 API 호출
         await this.dataManager.fetch(action.config.dataSourceId);
         break;
 
-      case 'showModal':
-      case 'hideModal':
-      case 'toggleVisibility':
+      case "showModal":
+      case "hideModal":
+      case "toggleVisibility":
         // UI 액션은 DOM 직접 조작 또는 스토어 업데이트
         this.executeUIAction(action, context);
         break;
@@ -313,6 +330,7 @@ export class PreviewEventEngine {
 ```
 
 #### 2.2 컴포넌트 API 노출
+
 ```typescript
 // src/preview-runtime/components/ComponentRegistry.ts
 export class ComponentRegistry {
@@ -332,11 +350,11 @@ export class ComponentRegistry {
       scrollIntoView: () => instance.ref?.scrollIntoView(),
 
       // 컴포넌트별 API
-      ...(instance.type === 'Table' && {
+      ...(instance.type === "Table" && {
         setFilter: (filter) => instance.setFilter(filter),
         refresh: () => instance.refresh(),
       }),
-      ...(instance.type === 'Select' && {
+      ...(instance.type === "Select" && {
         open: () => instance.open(),
         close: () => instance.close(),
         setValue: (value) => instance.setValue(value),
@@ -347,30 +365,38 @@ export class ComponentRegistry {
 ```
 
 #### 2.3 Scope 기능
+
 ```typescript
 // src/preview-runtime/events/ScopeResolver.ts
 export class ScopeResolver {
   resolveTarget(
-    scope: 'self' | 'parent' | 'firstAncestor' | 'global',
+    scope: "self" | "parent" | "firstAncestor" | "global",
     selector: string,
     currentElementId: string,
-    elements: Element[]
+    elements: Element[],
   ): string | null {
     switch (scope) {
-      case 'self':
+      case "self":
         return currentElementId;
 
-      case 'parent':
-        const current = elements.find(e => e.id === currentElementId);
+      case "parent":
+        const current = elements.find((e) => e.id === currentElementId);
         return current?.parent_id || null;
 
-      case 'firstAncestor':
+      case "firstAncestor":
         // selector로 지정된 클래스/태그를 가진 첫 번째 조상 찾기
-        return this.findAncestorBySelector(currentElementId, selector, elements);
+        return this.findAncestorBySelector(
+          currentElementId,
+          selector,
+          elements,
+        );
 
-      case 'global':
+      case "global":
         // customId 또는 ID로 찾기
-        return elements.find(e => e.customId === selector || e.id === selector)?.id || null;
+        return (
+          elements.find((e) => e.customId === selector || e.id === selector)
+            ?.id || null
+        );
     }
   }
 }
@@ -381,6 +407,7 @@ export class ScopeResolver {
 ### Phase 3: 데이터 시스템 재설계
 
 #### 3.1 Data Source Panel UI
+
 ```typescript
 // src/builder/inspector/data/DataSourcePanel.tsx
 export function DataSourcePanel() {
@@ -430,6 +457,7 @@ interface DataSource {
 ```
 
 #### 3.2 DataManager 구현
+
 ```typescript
 // src/preview-runtime/data/DataManager.ts
 export class DataManager {
@@ -437,7 +465,10 @@ export class DataManager {
   private cache: Map<string, CachedData> = new Map();
   private subscribers: Map<string, Set<Subscriber>> = new Map();
 
-  async fetch(sourceId: string, params?: Record<string, unknown>): Promise<DataState> {
+  async fetch(
+    sourceId: string,
+    params?: Record<string, unknown>,
+  ): Promise<DataState> {
     const source = this.dataSources.get(sourceId);
     if (!source) throw new Error(`Data source not found: ${sourceId}`);
 
@@ -446,19 +477,23 @@ export class DataManager {
     if (cached) return cached;
 
     // Loading 상태 알림
-    this.notifySubscribers(sourceId, { loading: true, error: null, data: null });
+    this.notifySubscribers(sourceId, {
+      loading: true,
+      error: null,
+      data: null,
+    });
 
     try {
       let data: unknown;
 
       switch (source.type) {
-        case 'rest':
+        case "rest":
           data = await this.fetchRest(source, params);
           break;
-        case 'supabase':
+        case "supabase":
           data = await this.fetchSupabase(source, params);
           break;
-        case 'static':
+        case "static":
           data = source.data;
           break;
       }
@@ -475,7 +510,6 @@ export class DataManager {
       const state = { loading: false, error: null, data };
       this.notifySubscribers(sourceId, state);
       return state;
-
     } catch (error) {
       // Error 상태 알림
       const state = { loading: false, error: error.message, data: null };
@@ -498,6 +532,7 @@ export class DataManager {
 ```
 
 #### 3.3 BindingResolver 구현
+
 ```typescript
 // src/preview-runtime/data/BindingResolver.ts
 export class BindingResolver {
@@ -512,7 +547,7 @@ export class BindingResolver {
     for (const match of matches) {
       const path = match[1].trim();
       const value = this.evaluatePath(path, context);
-      result = result.replace(match[0], String(value ?? ''));
+      result = result.replace(match[0], String(value ?? ""));
     }
 
     return result;
@@ -520,24 +555,24 @@ export class BindingResolver {
 
   private evaluatePath(path: string, context: BindingContext): unknown {
     // state.xxx → 전역/페이지/컴포넌트 상태
-    if (path.startsWith('state.')) {
+    if (path.startsWith("state.")) {
       return this.store.getState(path.slice(6));
     }
 
     // data.xxx → 데이터 소스
-    if (path.startsWith('data.')) {
-      const [, sourceName, ...rest] = path.split('.');
+    if (path.startsWith("data.")) {
+      const [, sourceName, ...rest] = path.split(".");
       const sourceData = this.dataManager.getState(sourceName)?.data;
-      return this.getNestedValue(sourceData, rest.join('.'));
+      return this.getNestedValue(sourceData, rest.join("."));
     }
 
     // item.xxx → 반복 컨텍스트
-    if (path.startsWith('item.')) {
+    if (path.startsWith("item.")) {
       return this.getNestedValue(context.item, path.slice(5));
     }
 
     // index → 반복 인덱스
-    if (path === 'index') {
+    if (path === "index") {
       return context.index;
     }
 
@@ -548,6 +583,7 @@ export class BindingResolver {
 ```
 
 #### 3.4 컴포넌트 바인딩 UI
+
 ```typescript
 // src/builder/inspector/properties/common/DataBindingInput.tsx
 export function DataBindingInput({
@@ -598,6 +634,7 @@ export function DataBindingInput({
 ### Phase 4: 상태 관리 체계화
 
 #### 4.1 상태 계층 구조
+
 ```typescript
 // src/preview-runtime/store/previewStore.ts
 interface PreviewState {
@@ -614,65 +651,70 @@ interface PreviewState {
   currentPageId: string | null;
 }
 
-export const createPreviewStore = () => create<PreviewState>((set, get) => ({
-  appState: {},
-  pageStates: new Map(),
-  componentStates: new Map(),
-  currentPageId: null,
+export const createPreviewStore = () =>
+  create<PreviewState>((set, get) => ({
+    appState: {},
+    pageStates: new Map(),
+    componentStates: new Map(),
+    currentPageId: null,
 
-  // 상태 설정 (계층 자동 결정)
-  setState: (path: string, value: unknown) => {
-    const [scope, ...rest] = path.split('.');
-    const key = rest.join('.');
+    // 상태 설정 (계층 자동 결정)
+    setState: (path: string, value: unknown) => {
+      const [scope, ...rest] = path.split(".");
+      const key = rest.join(".");
 
-    switch (scope) {
-      case 'app':
-        set((s) => ({ appState: { ...s.appState, [key]: value } }));
-        break;
-      case 'page':
-        const pageId = get().currentPageId;
-        if (pageId) {
+      switch (scope) {
+        case "app":
+          set((s) => ({ appState: { ...s.appState, [key]: value } }));
+          break;
+        case "page":
+          const pageId = get().currentPageId;
+          if (pageId) {
+            set((s) => {
+              const pageStates = new Map(s.pageStates);
+              const pageState = pageStates.get(pageId) || {};
+              pageStates.set(pageId, { ...pageState, [key]: value });
+              return { pageStates };
+            });
+          }
+          break;
+        case "component":
+          // elementId.key 형식
+          const [elementId, propKey] = key.split(".");
           set((s) => {
-            const pageStates = new Map(s.pageStates);
-            const pageState = pageStates.get(pageId) || {};
-            pageStates.set(pageId, { ...pageState, [key]: value });
-            return { pageStates };
+            const componentStates = new Map(s.componentStates);
+            const componentState = componentStates.get(elementId) || {};
+            componentStates.set(elementId, {
+              ...componentState,
+              [propKey]: value,
+            });
+            return { componentStates };
           });
-        }
-        break;
-      case 'component':
-        // elementId.key 형식
-        const [elementId, propKey] = key.split('.');
-        set((s) => {
-          const componentStates = new Map(s.componentStates);
-          const componentState = componentStates.get(elementId) || {};
-          componentStates.set(elementId, { ...componentState, [propKey]: value });
-          return { componentStates };
-        });
-        break;
-    }
-  },
+          break;
+      }
+    },
 
-  // 상태 조회
-  getState: (path: string) => {
-    const [scope, ...rest] = path.split('.');
-    const key = rest.join('.');
-    const state = get();
+    // 상태 조회
+    getState: (path: string) => {
+      const [scope, ...rest] = path.split(".");
+      const key = rest.join(".");
+      const state = get();
 
-    switch (scope) {
-      case 'app':
-        return state.appState[key];
-      case 'page':
-        return state.pageStates.get(state.currentPageId || '')?.[key];
-      case 'component':
-        const [elementId, propKey] = key.split('.');
-        return state.componentStates.get(elementId)?.[propKey];
-    }
-  },
-}));
+      switch (scope) {
+        case "app":
+          return state.appState[key];
+        case "page":
+          return state.pageStates.get(state.currentPageId || "")?.[key];
+        case "component":
+          const [elementId, propKey] = key.split(".");
+          return state.componentStates.get(elementId)?.[propKey];
+      }
+    },
+  }));
 ```
 
 #### 4.2 State Inspector UI
+
 ```typescript
 // src/builder/inspector/state/StateInspector.tsx
 export function StateInspector() {
@@ -711,19 +753,20 @@ export function StateInspector() {
 ### Phase 5: 퍼블리싱 준비
 
 #### 5.1 빌드 분리
+
 ```typescript
 // scripts/build-preview-runtime.ts
-import { build } from 'vite';
+import { build } from "vite";
 
 async function buildPreviewRuntime() {
   await build({
-    configFile: 'vite.preview.config.ts',
+    configFile: "vite.preview.config.ts",
     build: {
-      outDir: 'dist/preview-runtime',
+      outDir: "dist/preview-runtime",
       lib: {
-        entry: 'src/preview-runtime/index.tsx',
-        formats: ['es'],
-        fileName: 'preview-runtime',
+        entry: "src/preview-runtime/index.tsx",
+        formats: ["es"],
+        fileName: "preview-runtime",
       },
       rollupOptions: {
         external: [], // 모든 의존성 번들링
@@ -734,6 +777,7 @@ async function buildPreviewRuntime() {
 ```
 
 #### 5.2 퍼블리싱 시 라우터 전환
+
 ```typescript
 // src/preview-runtime/router/createRouter.ts
 export function createRouter(mode: 'preview' | 'published', pages: Page[]) {
@@ -761,6 +805,7 @@ export function createRouter(mode: 'preview' | 'published', pages: Page[]) {
 ```
 
 #### 5.3 Static Export
+
 ```typescript
 // src/preview-runtime/export/staticExport.ts
 export async function generateStaticSite(project: Project): Promise<ExportResult> {
@@ -800,6 +845,7 @@ export async function generateStaticSite(project: Project): Promise<ExportResult
 ## 4. 마이그레이션 전략
 
 ### 4.1 점진적 마이그레이션
+
 ```
 Week 1-2: Phase 1 (Preview 격리)
 - srcdoc 방식으로 전환
@@ -827,9 +873,12 @@ Week 10: Phase 5 (퍼블리싱)
 ```
 
 ### 4.2 호환성 보장
+
 ```typescript
 // 기존 이벤트 정의 호환 레이어
-function migrateEventDefinition(oldEvent: OldEventDefinition): NewEventDefinition {
+function migrateEventDefinition(
+  oldEvent: OldEventDefinition,
+): NewEventDefinition {
   return {
     trigger: oldEvent.event,
     condition: oldEvent.condition,
@@ -845,12 +894,12 @@ function migrateEventDefinition(oldEvent: OldEventDefinition): NewEventDefinitio
 
 ## 5. 리스크 및 대응
 
-| 리스크 | 영향 | 대응 |
-|--------|------|------|
-| srcdoc 번들 크기 증가 | 초기 로딩 느려짐 | 코드 스플리팅, 지연 로딩 |
-| 기존 프로젝트 호환성 | 사용자 불만 | 마이그레이션 도구 제공 |
-| postMessage 성능 | 대량 업데이트 시 지연 | 배치 처리, 쓰로틀링 |
-| 인증 토큰 보안 | 토큰 노출 가능성 | 단기 토큰, 프록시 서버 |
+| 리스크                | 영향                  | 대응                     |
+| --------------------- | --------------------- | ------------------------ |
+| srcdoc 번들 크기 증가 | 초기 로딩 느려짐      | 코드 스플리팅, 지연 로딩 |
+| 기존 프로젝트 호환성  | 사용자 불만           | 마이그레이션 도구 제공   |
+| postMessage 성능      | 대량 업데이트 시 지연 | 배치 처리, 쓰로틀링      |
+| 인증 토큰 보안        | 토큰 노출 가능성      | 단기 토큰, 프록시 서버   |
 
 ---
 

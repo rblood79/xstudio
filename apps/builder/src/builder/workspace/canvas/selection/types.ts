@@ -320,7 +320,7 @@ export function hitTestSelectionBounds(
  * Transform 핸들 히트 테스트 — 8방향 핸들 중 히트된 것을 반환
  *
  * Pencil은 별도 핸들 히트 테스트가 없지만(selection bounds 단일 영역),
- * XStudio는 8방향 리사이즈를 지원하므로 좌표 기반으로 히트 판정.
+ * composition는 8방향 리사이즈를 지원하므로 좌표 기반으로 히트 판정.
  *
  * @returns 히트된 HandleConfig, 없으면 null
  */

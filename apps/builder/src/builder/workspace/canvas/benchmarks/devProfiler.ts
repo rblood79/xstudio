@@ -2,9 +2,9 @@
  * 개발용 실시간 성능 프로파일러.
  *
  * 브라우저 콘솔에서 실행:
- *   window.__XSTUDIO_PROFILER.start()   — 5초간 메트릭 수집
- *   window.__XSTUDIO_PROFILER.report()  — 현재 메트릭 스냅샷
- *   window.__XSTUDIO_PROFILER.stress(n) — n개 요소 생성 후 프로파일링
+ *   window.__composition_PROFILER.start()   — 5초간 메트릭 수집
+ *   window.__composition_PROFILER.report()  — 현재 메트릭 스냅샷
+ *   window.__composition_PROFILER.stress(n) — n개 요소 생성 후 프로파일링
  */
 
 import { useCanvasMetricsStore } from "../stores";
@@ -93,7 +93,7 @@ function collectFrameTimes(durationMs: number): Promise<{
 
 async function start(durationSec = 5): Promise<void> {
   console.log(
-    `%c[XStudio Profiler] ${durationSec}초간 메트릭 수집 시작...`,
+    `%c[composition Profiler] ${durationSec}초간 메트릭 수집 시작...`,
     "color: #3b82f6; font-weight: bold",
   );
 
@@ -105,7 +105,7 @@ async function start(durationSec = 5): Promise<void> {
   const last = snapshots[snapshots.length - 1];
 
   console.log(
-    `%c[XStudio Profiler] 수집 완료`,
+    `%c[composition Profiler] 수집 완료`,
     "color: #22c55e; font-weight: bold",
   );
   console.table({
@@ -201,10 +201,10 @@ const profiler = { start, report, hotpath, takeSnapshot };
 
 declare global {
   interface Window {
-    __XSTUDIO_PROFILER: typeof profiler;
+    __composition_PROFILER: typeof profiler;
   }
 }
 
-window.__XSTUDIO_PROFILER = profiler;
+window.__composition_PROFILER = profiler;
 
 export { profiler };

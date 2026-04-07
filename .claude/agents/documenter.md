@@ -1,6 +1,6 @@
 ---
 name: documenter
-description: Writes technical documentation, creates ADRs in docs/adr/ format, and updates reference docs for XStudio. Use when the user asks for documentation, ADR creation, or technical writing.
+description: Writes technical documentation, creates ADRs in docs/adr/ format, and updates reference docs for composition. Use when the user asks for documentation, ADR creation, or technical writing.
 model: sonnet
 color: pink
 tools:
@@ -90,9 +90,9 @@ Proposed | Accepted | Deprecated | Superseded
 2. **구조**: 명확한 제목, 글머리 기호, 테이블로 가독성 확보
 3. **코드 예시**: 컨텍스트가 있는 실행 가능한 코드 예시 포함
 4. **교차 참조**: 관련 문서, ADR, SKILL.md 규칙에 링크
-5. **독자**: XStudio 코드베이스에 처음인 개발자를 위해 작성
+5. **독자**: composition 코드베이스에 처음인 개발자를 위해 작성
 
-## XStudio 컨텍스트 참조
+## composition 컨텍스트 참조
 
 ### 핵심 아키텍처 개념
 

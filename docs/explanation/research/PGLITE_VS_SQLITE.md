@@ -1,30 +1,30 @@
 # PGlite vs SQLite 비교 분석
 
 **작성일**: 2025-11-07
-**프로젝트**: XStudio Electron Local Database
+**프로젝트**: composition Electron Local Database
 
 ---
 
 ## 📊 요약 비교표
 
-| 항목 | **PGlite (구현 완료)** | SQLite + better-sqlite3 |
-|------|------------------------|-------------------------|
-| **PostgreSQL 호환성** | ✅ 100% 호환 | ❌ 변환 작업 필요 |
-| **기존 스키마 사용** | ✅ 그대로 사용 | ❌ 마이그레이션 필요 |
-| **RPC 함수** | ✅ 4개 함수 그대로 작동 | ❌ 재구현 필요 (2-3일) |
-| **JSONB 지원** | ✅ 완벽 지원 | ⚠️ JSON 함수만 (문법 차이) |
-| **네이티브 빌드** | ✅ 불필요 (WASM) | ❌ 플랫폼별 빌드 필요 |
-| **크기** | 3MB | 1MB |
-| **배포 복잡도** | ✅ 간단 (WASM) | ⚠️ 중간 (네이티브 모듈) |
-| **구현 시간** | ✅ **완료 (0일)** | ❌ **5-8일 추가** |
+| 항목                  | **PGlite (구현 완료)**  | SQLite + better-sqlite3    |
+| --------------------- | ----------------------- | -------------------------- |
+| **PostgreSQL 호환성** | ✅ 100% 호환            | ❌ 변환 작업 필요          |
+| **기존 스키마 사용**  | ✅ 그대로 사용          | ❌ 마이그레이션 필요       |
+| **RPC 함수**          | ✅ 4개 함수 그대로 작동 | ❌ 재구현 필요 (2-3일)     |
+| **JSONB 지원**        | ✅ 완벽 지원            | ⚠️ JSON 함수만 (문법 차이) |
+| **네이티브 빌드**     | ✅ 불필요 (WASM)        | ❌ 플랫폼별 빌드 필요      |
+| **크기**              | 3MB                     | 1MB                        |
+| **배포 복잡도**       | ✅ 간단 (WASM)          | ⚠️ 중간 (네이티브 모듈)    |
+| **구현 시간**         | ✅ **완료 (0일)**       | ❌ **5-8일 추가**          |
 
 ---
 
-## 🎯 XStudio의 특수 상황
+## 🎯 composition의 특수 상황
 
 ### 1. 복잡한 RPC 함수 의존도
 
-XStudio는 Supabase에 4개의 복잡한 PostgreSQL RPC 함수를 사용합니다:
+composition는 Supabase에 4개의 복잡한 PostgreSQL RPC 함수를 사용합니다:
 
 #### 1.1. `resolve_theme_tokens` - 재귀 쿼리
 
@@ -156,7 +156,7 @@ $$ LANGUAGE plpgsql;
 
 ### 2. JSONB 필드 의존도
 
-XStudio의 핵심 테이블들은 JSONB 필드를 많이 사용합니다:
+composition의 핵심 테이블들은 JSONB 필드를 많이 사용합니다:
 
 #### 2.1. elements 테이블
 
@@ -166,9 +166,9 @@ interface Element {
   page_id: string;
   parent_id: string | null;
   tag: string;
-  props: JSONB;           // 컴포넌트 속성 (variant, size, label, etc.)
+  props: JSONB; // 컴포넌트 속성 (variant, size, label, etc.)
   order_num: number;
-  data_binding: JSONB;    // API 바인딩 설정 (baseUrl, endpoint, etc.)
+  data_binding: JSONB; // API 바인딩 설정 (baseUrl, endpoint, etc.)
   created_at: Date;
   updated_at: Date;
 }
@@ -183,7 +183,7 @@ interface DesignToken {
   theme_id: string;
   name: string;
   type: string;
-  value: JSONB;           // 토큰 값 (색상, 간격, 글꼴 크기 등)
+  value: JSONB; // 토큰 값 (색상, 간격, 글꼴 크기 등)
   scope: string;
   alias_of: string | null;
   css_variable: string | null;
@@ -195,6 +195,7 @@ interface DesignToken {
 #### 2.3. JSONB 쿼리 예시
 
 **PostgreSQL (PGlite)**:
+
 ```sql
 -- 특정 variant를 가진 요소 찾기
 SELECT * FROM elements WHERE props->>'variant' = 'primary';
@@ -210,6 +211,7 @@ SELECT * FROM elements WHERE props ? 'dataBinding';
 ```
 
 **SQLite**:
+
 ```sql
 -- 특정 variant를 가진 요소 찾기
 SELECT * FROM elements WHERE json_extract(props, '$.variant') = 'primary';
@@ -265,6 +267,7 @@ CREATE TABLE projects (
 ```
 
 **변환 비용**:
+
 - 모든 `id UUID` → `id TEXT` 변환
 - UUID 생성 로직을 JavaScript로 이동
 - 기존 Supabase UUID 데이터 마이그레이션
@@ -308,6 +311,7 @@ END;
 ```
 
 **변환 비용**:
+
 - 모든 `TIMESTAMPTZ` → `TEXT` 변환
 - 트리거 재작성 (5개 테이블)
 - 날짜 비교 쿼리 수정
@@ -319,6 +323,7 @@ END;
 ### 1. 스키마 변환 (예상 시간: 2-3일)
 
 #### 작업 내용:
+
 - UUID → TEXT 변환
 - JSONB → TEXT (JSON) 변환
 - TIMESTAMPTZ → TEXT 변환
@@ -326,6 +331,7 @@ END;
 - 트리거 재작성
 
 #### 영향 받는 테이블:
+
 - `projects` (id UUID → TEXT)
 - `pages` (id, project_id UUID → TEXT)
 - `elements` (id, page_id, parent_id UUID → TEXT, props/data_binding JSONB → TEXT)
@@ -362,6 +368,7 @@ src/services/theme/
 #### 쿼리 변환 예시:
 
 **Before (PGlite)**:
+
 ```typescript
 // ElementsApiService.ts
 async getElements(pageId: string) {
@@ -387,6 +394,7 @@ async updateElementProps(elementId: string, props: any) {
 ```
 
 **After (SQLite)**:
+
 ```typescript
 // ElementsApiService.ts
 async getElements(pageId: string) {
@@ -417,13 +425,15 @@ async updateElementProps(elementId: string, props: any) {
 #### 3.1. `resolve_theme_tokens` 재구현
 
 **Before (PostgreSQL RPC)**:
+
 ```typescript
-const tokens = await supabase.rpc('resolve_theme_tokens', {
+const tokens = await supabase.rpc("resolve_theme_tokens", {
   p_theme_id: themeId,
 });
 ```
 
 **After (JavaScript)**:
+
 ```typescript
 async function resolveThemeTokens(themeId: string, maxDepth = 10) {
   const tokens: any[] = [];
@@ -433,22 +443,21 @@ async function resolveThemeTokens(themeId: string, maxDepth = 10) {
     if (depth >= maxDepth || visited.has(id)) return;
     visited.add(id);
 
-    const theme = await db.query(
-      'SELECT * FROM design_themes WHERE id = ?',
-      [id]
-    );
+    const theme = await db.query("SELECT * FROM design_themes WHERE id = ?", [
+      id,
+    ]);
 
     if (!theme[0]) return;
 
     const themeTokens = await db.query(
-      'SELECT * FROM design_tokens WHERE theme_id = ?',
-      [id]
+      "SELECT * FROM design_tokens WHERE theme_id = ?",
+      [id],
     );
 
     // 토큰 중복 제거 로직
-    themeTokens.forEach(token => {
+    themeTokens.forEach((token) => {
       const existing = tokens.find(
-        t => t.name === token.name && t.scope === token.scope
+        (t) => t.name === token.name && t.scope === token.scope,
       );
       if (!existing) {
         tokens.push({
@@ -473,30 +482,32 @@ async function resolveThemeTokens(themeId: string, maxDepth = 10) {
 #### 3.2. `duplicate_theme` 재구현
 
 **Before (PostgreSQL RPC)**:
+
 ```typescript
-const newThemeId = await supabase.rpc('duplicate_theme', {
+const newThemeId = await supabase.rpc("duplicate_theme", {
   p_source_theme_id: sourceId,
-  p_new_name: 'New Theme',
+  p_new_name: "New Theme",
   p_inherit: false,
 });
 ```
 
 **After (JavaScript with Transaction)**:
+
 ```typescript
 async function duplicateTheme(
   sourceThemeId: string,
   newName: string,
-  inherit: boolean = false
+  inherit: boolean = false,
 ) {
   return await db.transaction(async (tx) => {
     // 1. 원본 테마 조회
     const sourceTheme = await tx.query(
-      'SELECT * FROM design_themes WHERE id = ?',
-      [sourceThemeId]
+      "SELECT * FROM design_themes WHERE id = ?",
+      [sourceThemeId],
     );
 
     if (!sourceTheme[0]) {
-      throw new Error('원본 테마를 찾을 수 없습니다');
+      throw new Error("원본 테마를 찾을 수 없습니다");
     }
 
     // 2. 새 테마 생성
@@ -509,16 +520,16 @@ async function duplicateTheme(
         sourceTheme[0].project_id,
         newName,
         inherit ? sourceThemeId : null,
-        'draft',
+        "draft",
         1,
-      ]
+      ],
     );
 
     // 3. 토큰 복사 (상속 모드가 아닐 때만)
     if (!inherit) {
       const tokens = await tx.query(
-        'SELECT * FROM design_tokens WHERE theme_id = ?',
-        [sourceThemeId]
+        "SELECT * FROM design_tokens WHERE theme_id = ?",
+        [sourceThemeId],
       );
 
       for (const token of tokens) {
@@ -536,7 +547,7 @@ async function duplicateTheme(
             token.scope,
             token.alias_of,
             token.css_variable,
-          ]
+          ],
         );
       }
     }
@@ -549,15 +560,17 @@ async function duplicateTheme(
 #### 3.3. `search_tokens` 재구현
 
 **Before (PostgreSQL RPC)**:
+
 ```typescript
-const results = await supabase.rpc('search_tokens', {
+const results = await supabase.rpc("search_tokens", {
   p_theme_id: themeId,
-  p_query: 'color',
+  p_query: "color",
   p_include_inherited: true,
 });
 ```
 
 **After (JavaScript with FTS5)**:
+
 ```typescript
 // SQLite FTS5 인덱스 생성
 await db.query(`
@@ -568,13 +581,13 @@ await db.query(`
 async function searchTokens(
   themeId: string,
   query: string,
-  includeInherited: boolean = true
+  includeInherited: boolean = true,
 ) {
   if (includeInherited) {
     // 상속 토큰 포함
     const tokens = await resolveThemeTokens(themeId);
-    return tokens.filter(t =>
-      t.name.toLowerCase().includes(query.toLowerCase())
+    return tokens.filter((t) =>
+      t.name.toLowerCase().includes(query.toLowerCase()),
     );
   } else {
     // 현재 테마만
@@ -582,7 +595,7 @@ async function searchTokens(
       `SELECT * FROM design_tokens
        WHERE theme_id = ? AND name LIKE ?
        ORDER BY name`,
-      [themeId, `%${query}%`]
+      [themeId, `%${query}%`],
     );
   }
 }
@@ -591,6 +604,7 @@ async function searchTokens(
 #### 3.4. `bulk_upsert_tokens` 재구현
 
 **Before (PostgreSQL RPC)**:
+
 ```typescript
 const count = await supabase.rpc('bulk_upsert_tokens', {
   p_tokens: [
@@ -601,6 +615,7 @@ const count = await supabase.rpc('bulk_upsert_tokens', {
 ```
 
 **After (JavaScript with Transaction)**:
+
 ```typescript
 async function bulkUpsertTokens(tokens: any[]) {
   return await db.transaction(async (tx) => {
@@ -631,7 +646,7 @@ async function bulkUpsertTokens(tokens: any[]) {
           token.scope,
           token.alias_of,
           token.css_variable,
-        ]
+        ],
       );
 
       count++;
@@ -649,6 +664,7 @@ async function bulkUpsertTokens(tokens: any[]) {
 #### 4.1. electron-builder 설정
 
 **package.json**:
+
 ```json
 {
   "build": {
@@ -773,13 +789,13 @@ CREATE TABLE elements (
 
 ```typescript
 // 변경 없음
-const tokens = await db.rpc('resolve_theme_tokens', {
+const tokens = await db.rpc("resolve_theme_tokens", {
   p_theme_id: themeId,
 });
 
-const newThemeId = await db.rpc('duplicate_theme', {
+const newThemeId = await db.rpc("duplicate_theme", {
   p_source_theme_id: sourceId,
-  p_new_name: 'New Theme',
+  p_new_name: "New Theme",
   p_inherit: false,
 });
 ```
@@ -788,16 +804,15 @@ const newThemeId = await db.rpc('duplicate_theme', {
 
 ```typescript
 // 기존 Supabase 쿼리 그대로 사용
-const elements = await db.select('elements', {
+const elements = await db.select("elements", {
   where: { page_id: pageId },
-  orderBy: [{ column: 'order_num', ascending: true }],
+  orderBy: [{ column: "order_num", ascending: true }],
 });
 
 // JSONB 쿼리도 동일
-await db.query(
-  "SELECT * FROM elements WHERE props->>'variant' = $1",
-  ['primary']
-);
+await db.query("SELECT * FROM elements WHERE props->>'variant' = $1", [
+  "primary",
+]);
 ```
 
 ---
@@ -876,11 +891,11 @@ await db.query(
 
 #### 배포 파일 크기 비교
 
-| 구성 요소 | PGlite | SQLite |
-|----------|--------|--------|
-| 데이터베이스 라이브러리 | 3MB (WASM) | 1MB |
-| 네이티브 모듈 | 0MB | 5-7MB (Windows/Mac/Linux 각각) |
-| **총합** | **3MB** | **6-8MB** |
+| 구성 요소               | PGlite     | SQLite                         |
+| ----------------------- | ---------- | ------------------------------ |
+| 데이터베이스 라이브러리 | 3MB (WASM) | 1MB                            |
+| 네이티브 모듈           | 0MB        | 5-7MB (Windows/Mac/Linux 각각) |
+| **총합**                | **3MB**    | **6-8MB**                      |
 
 ---
 
@@ -889,7 +904,7 @@ await db.query(
 #### Electron 앱 전체 크기 비교
 
 ```
-XStudio Electron App:
+composition Electron App:
 ├── Electron runtime:    ~120MB
 ├── Chromium:           ~80MB
 ├── Node.js:            ~40MB
@@ -954,40 +969,44 @@ PGlite의 3MB는 전체 앱 크기의 **1.2%**에 불과합니다.
 
 ### 추천: PGlite ⭐⭐⭐⭐⭐
 
-| 기준 | PGlite | SQLite |
-|------|--------|--------|
-| **구현 시간** | ✅ **0일 (완료)** | ❌ 5-8일 |
-| **스키마 호환** | ✅ **100%** | ❌ 변환 필요 |
-| **RPC 함수** | ✅ **그대로 작동** | ❌ 재구현 (2-3일) |
-| **JSONB 지원** | ✅ **완벽** | ⚠️ JSON1 (문법 차이) |
-| **UUID 지원** | ✅ **네이티브** | ❌ TEXT로 저장 |
-| **배포 복잡도** | ✅ **간단 (WASM)** | ⚠️ 중간 (네이티브) |
-| **유지보수** | ✅ **쉬움** | ⚠️ 어려움 |
-| **실제 크기** | ✅ **3MB** | ⚠️ 6-8MB (네이티브 포함) |
+| 기준            | PGlite             | SQLite                   |
+| --------------- | ------------------ | ------------------------ |
+| **구현 시간**   | ✅ **0일 (완료)**  | ❌ 5-8일                 |
+| **스키마 호환** | ✅ **100%**        | ❌ 변환 필요             |
+| **RPC 함수**    | ✅ **그대로 작동** | ❌ 재구현 (2-3일)        |
+| **JSONB 지원**  | ✅ **완벽**        | ⚠️ JSON1 (문법 차이)     |
+| **UUID 지원**   | ✅ **네이티브**    | ❌ TEXT로 저장           |
+| **배포 복잡도** | ✅ **간단 (WASM)** | ⚠️ 중간 (네이티브)       |
+| **유지보수**    | ✅ **쉬움**        | ⚠️ 어려움                |
+| **실제 크기**   | ✅ **3MB**         | ⚠️ 6-8MB (네이티브 포함) |
 
 ---
 
 ## 📝 결론
 
-XStudio는 다음 이유로 **PGlite가 훨씬 적합**합니다:
+composition는 다음 이유로 **PGlite가 훨씬 적합**합니다:
 
 ### 1. 기존 인프라 100% 재사용 ⚡
+
 - ✅ Supabase 스키마 그대로 사용
 - ✅ RPC 함수 4개 그대로 작동
 - ✅ JSONB/UUID/TIMESTAMPTZ 완벽 지원
 
 ### 2. 5-8일 개발 시간 절약 💰
+
 - ✅ 스키마 변환 불필요
 - ✅ 쿼리 마이그레이션 불필요
 - ✅ RPC 함수 재구현 불필요
 
 ### 3. 이미 구현 완료 ✨
+
 - ✅ Database Abstraction Layer
 - ✅ Electron IPC 통신
 - ✅ 환경 자동 감지
 - ✅ Migration 시스템
 
 ### 4. 배포 간편 🚀
+
 - ✅ WASM 기반 (플랫폼별 빌드 불필요)
 - ✅ 3MB 경량
 - ✅ Cross-platform

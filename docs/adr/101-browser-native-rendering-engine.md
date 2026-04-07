@@ -13,7 +13,7 @@ Supersedes: [ADR-003](completed/003-canvas-rendering.md) (PixiJS Canvas Renderin
 
 ### Step 1: 요구사항을 덜 바보같이 만들어라
 
-현재 XStudio는 **브라우저가 이미 완벽하게 하는 일을 다시 만들고 있다.**
+현재 composition는 **브라우저가 이미 완벽하게 하는 일을 다시 만들고 있다.**
 
 | 우리가 만든 것                         | 브라우저가 이미 하는 것                          |
 | -------------------------------------- | ------------------------------------------------ |
@@ -76,7 +76,7 @@ Supersedes: [ADR-003](completed/003-canvas-rendering.md) (PixiJS Canvas Renderin
 
 **Builder Canvas ≡ Preview iframe.**
 
-현재 XStudio는 같은 요소를 **두 번** 렌더링하고 있다:
+현재 composition는 같은 요소를 **두 번** 렌더링하고 있다:
 
 1. Builder Canvas: Skia + PixiJS + Taffy로 **CSS를 시뮬레이션**
 2. Preview iframe: 브라우저 CSS로 **실제 렌더링**

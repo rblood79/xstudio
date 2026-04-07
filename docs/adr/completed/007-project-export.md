@@ -577,7 +577,7 @@ function decompressProject(compressed: Uint8Array): string {
   return pako.ungzip(compressed, { to: "string" });
 }
 
-// 파일 확장자: .xstudio.gz
+// 파일 확장자: .composition.gz
 ```
 
 **난이도**: ⭐
@@ -1263,7 +1263,7 @@ interface DebugLog {
 // 브라우저 콘솔에서 접근 가능한 전역 객체
 declare global {
   interface Window {
-    __XSTUDIO_DEBUG__: {
+    __composition_DEBUG__: {
       projectData: ExportedProjectData | null;
       eventRuntime: PublishEventRuntime | null;
       logs: DebugLog[];
@@ -1274,9 +1274,9 @@ declare global {
 }
 
 // 사용 예시 (브라우저 콘솔)
-// > __XSTUDIO_DEBUG__.projectData
-// > __XSTUDIO_DEBUG__.logs.filter(l => l.level === 'error')
-// > __XSTUDIO_DEBUG__.exportLogs()  // JSON 문자열로 내보내기
+// > __composition_DEBUG__.projectData
+// > __composition_DEBUG__.logs.filter(l => l.level === 'error')
+// > __composition_DEBUG__.exportLogs()  // JSON 문자열로 내보내기
 ```
 
 ---
@@ -1472,7 +1472,7 @@ describe("parseProjectData", () => {
 ```typescript
 // apps/publish/src/sw.ts (예정)
 
-const CACHE_NAME = "xstudio-publish-v1";
+const CACHE_NAME = "composition-publish-v1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -1564,9 +1564,9 @@ function OfflineIndicator() {
 ```json
 // apps/publish/public/manifest.json (예정)
 {
-  "name": "XStudio Publish",
+  "name": "composition Publish",
   "short_name": "Publish",
-  "description": "XStudio 프로젝트 미리보기",
+  "description": "composition 프로젝트 미리보기",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

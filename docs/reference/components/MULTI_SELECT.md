@@ -10,18 +10,22 @@ This document outlines potential improvements and enhancements for the multi-ele
 ## 🔧 2026-02-06 Hotfix: Lasso Selection 좌표계 불일치
 
 **증상**
+
 - 드래그 라쏘 박스 내부에 요소가 있어도 선택되지 않음
 - 선택 영역이 실제 렌더 위치와 어긋나 보임
 
 **원인**
+
 - 라쏘 박스는 글로벌 좌표, 요소 bounds는 로컬/혼합 좌표로 비교되어 AABB 충돌 판정 실패
 - Selection 유틸에서 SpatialIndex 기반 경로와 전달 bounds 경로가 혼재
 
 **수정**
+
 - `BuilderCanvas.tsx`: 라쏘 좌표를 글로벌 기준으로 정규화, 요소 bounds는 `elementRegistry.getBounds()` 우선 사용
 - `SelectionLayer.utils.ts`: 전달된 bounds 기반 AABB 교차 검사로 단순화
 
 **영향 파일**
+
 - `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 - `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.utils.ts`
 
@@ -36,6 +40,7 @@ This document outlines potential improvements and enhancements for the multi-ele
 **Goal**: Allow editing common properties across multiple selected elements
 
 **Implementation**:
+
 ```tsx
 // src/builder/panels/common/BatchPropertyEditor.tsx
 export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
@@ -60,7 +65,11 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
           </>
         }
         value={prop.isMixed && !isPending ? "" : String(currentValue)}
-        placeholder={prop.isMixed ? `Mixed (${prop.uniqueValues.length} values)` : undefined}
+        placeholder={
+          prop.isMixed
+            ? `Mixed (${prop.uniqueValues.length} values)`
+            : undefined
+        }
       />
     );
   };
@@ -74,12 +83,14 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 ```
 
 **Files Created/Modified**:
+
 - `src/builder/panels/common/BatchPropertyEditor.tsx` - Main component (303 lines)
 - `src/builder/panels/properties/utils/batchPropertyUtils.ts` - Utility functions (243 lines)
 - `src/builder/panels/common/index.css` - Batch editor styles
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Integration with handleBatchUpdate
 
 **Features Implemented**:
+
 - ✅ Common property detection (properties exist in ALL selected elements)
 - ✅ Mixed value detection (deep equality check with JSON.stringify)
 - ✅ Staged updates (pending changes until "Apply All")
@@ -91,6 +102,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 - ✅ Apply All/Reset buttons
 
 **Property Type Detection**:
+
 - **Color**: backgroundColor, color, borderColor, fill, stroke
 - **Dimension**: width, height, padding, margin, gap, borderRadius, borderWidth
 - **Boolean**: isDisabled, isRequired, isSelected, isChecked, isOpen
@@ -98,6 +110,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 - **Number**: opacity, zIndex, order, tabIndex, step
 
 **UI Features**:
+
 - Mixed badge (warning color) for inconsistent values
 - Pending badge (primary color) for uncommitted changes
 - Mixed count indicator in header (e.g., "⚠ 5개 속성이 다른 값을 가지고 있습니다")
@@ -107,6 +120,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 - Reset button to discard changes
 
 **User Flow**:
+
 1. Select 3+ elements with some common properties
 2. See common properties in Batch Editor (below Status Indicator)
 3. Edit properties → See "Pending" badge
@@ -115,6 +129,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 6. Or click "Reset" → Discard all pending changes
 
 **Edge Cases Handled**:
+
 - No common properties → Show empty state
 - All properties mixed → Show mixed-only filter option
 - Non-editable properties filtered (id, customId, key, data-element-id)
@@ -129,6 +144,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 **Goal**: Show selection count and provide quick actions
 
 **Implementation**:
+
 ```tsx
 // src/builder/panels/common/MultiSelectStatusIndicator.tsx
 <div className="multi-select-status">
@@ -163,11 +179,13 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 ```
 
 **Files Created/Modified**:
+
 - `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Enhanced component (310 lines)
 - `src/builder/panels/common/index.css` - Added badge, group, shortcut styles
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Pass primary element props
 
 **Features Implemented**:
+
 - ✅ Selection count display (large, color-coded number)
 - ✅ Primary element badge (shows type of first selected element)
 - ✅ Action grouping (5 categories: Edit, Organize, Align, Distribute, Manage)
@@ -177,6 +195,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 - ✅ Accessibility (aria-labels with shortcuts)
 
 **Action Groups**:
+
 1. **편집** (Edit): Copy All (⌘⇧C), Paste (⌘⇧V)
 2. **구성** (Organize): Group (⌘G)
 3. **정렬** (Align): Left/Center/Right/Top/Middle/Bottom (6 icon buttons)
@@ -184,6 +203,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 5. **관리** (Manage): Delete All (⌦), Clear Selection (Esc)
 
 **CSS Additions** (5 new classes):
+
 - `.primary-element-badge` - Type badge in header
 - `.action-group` - Group container
 - `.group-label` - Category labels (uppercase)
@@ -191,6 +211,7 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 - `.shortcut-hint` - Monospace shortcut badges
 
 **User Experience**:
+
 - Clearer organization → Find actions faster
 - Shortcut hints → Learn workflows quicker
 - Primary badge → Know which element drives Inspector
@@ -261,27 +282,91 @@ export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
 | `Cmd+?` | Show Keyboard Shortcuts Help |
 
 **Implementation**:
+
 ```typescript
 // src/builder/panels/properties/PropertiesPanel.tsx
-const shortcuts = useMemo(() => [
-  { key: 'c', modifier: 'cmdShift', handler: handleCopyProperties, description: 'Copy Properties' },
-  { key: 'v', modifier: 'cmdShift', handler: handlePasteProperties, description: 'Paste Properties' },
-  { key: 'c', modifier: 'cmd', handler: handleCopyAll, description: 'Copy All Elements' },
-  { key: 'v', modifier: 'cmd', handler: handlePasteAll, description: 'Paste Elements' },
-  { key: 'd', modifier: 'cmd', handler: handleDuplicate, description: 'Duplicate Selection' },
-  { key: 'a', modifier: 'cmd', handler: handleSelectAll, description: 'Select All' },
-  { key: 'Escape', modifier: 'none', handler: handleEscapeClearSelection, description: 'Clear Selection' },
-  { key: 'g', modifier: 'cmd', handler: handleGroupSelection, description: 'Group Selection' },
-  { key: 'g', modifier: 'cmdShift', handler: handleUngroupSelection, description: 'Ungroup Selection' },
-  { key: 'l', modifier: 'cmdShift', handler: () => handleAlign('left'), description: 'Align Left' },
-  // ... all 24 shortcuts
-  { key: '?', modifier: 'cmd', handler: () => setShowKeyboardHelp((prev) => !prev), description: 'Toggle Keyboard Shortcuts Help' },
-], [/* dependencies */]);
+const shortcuts = useMemo(
+  () => [
+    {
+      key: "c",
+      modifier: "cmdShift",
+      handler: handleCopyProperties,
+      description: "Copy Properties",
+    },
+    {
+      key: "v",
+      modifier: "cmdShift",
+      handler: handlePasteProperties,
+      description: "Paste Properties",
+    },
+    {
+      key: "c",
+      modifier: "cmd",
+      handler: handleCopyAll,
+      description: "Copy All Elements",
+    },
+    {
+      key: "v",
+      modifier: "cmd",
+      handler: handlePasteAll,
+      description: "Paste Elements",
+    },
+    {
+      key: "d",
+      modifier: "cmd",
+      handler: handleDuplicate,
+      description: "Duplicate Selection",
+    },
+    {
+      key: "a",
+      modifier: "cmd",
+      handler: handleSelectAll,
+      description: "Select All",
+    },
+    {
+      key: "Escape",
+      modifier: "none",
+      handler: handleEscapeClearSelection,
+      description: "Clear Selection",
+    },
+    {
+      key: "g",
+      modifier: "cmd",
+      handler: handleGroupSelection,
+      description: "Group Selection",
+    },
+    {
+      key: "g",
+      modifier: "cmdShift",
+      handler: handleUngroupSelection,
+      description: "Ungroup Selection",
+    },
+    {
+      key: "l",
+      modifier: "cmdShift",
+      handler: () => handleAlign("left"),
+      description: "Align Left",
+    },
+    // ... all 24 shortcuts
+    {
+      key: "?",
+      modifier: "cmd",
+      handler: () => setShowKeyboardHelp((prev) => !prev),
+      description: "Toggle Keyboard Shortcuts Help",
+    },
+  ],
+  [
+    /* dependencies */
+  ],
+);
 
-useKeyboardShortcutsRegistry(shortcuts, [/* handlers */]);
+useKeyboardShortcutsRegistry(shortcuts, [
+  /* handlers */
+]);
 ```
 
 **Keyboard Shortcuts Help Panel**:
+
 ```typescript
 // src/builder/panels/common/KeyboardShortcutsHelp.tsx
 export function KeyboardShortcutsHelp({ isOpen, onClose }) {
@@ -317,12 +402,14 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 ```
 
 **Files Created/Modified**:
+
 - `src/builder/panels/common/KeyboardShortcutsHelp.tsx` (NEW - 228 lines)
 - `src/builder/panels/common/index.css` (UPDATED - added 176 lines of styles)
 - `src/builder/panels/common/index.ts` (UPDATED - export added)
 - `src/builder/panels/properties/PropertiesPanel.tsx` (UPDATED - integrated help UI)
 
 **Features Implemented**:
+
 - ✅ **24 keyboard shortcuts** across 7 categories
 - ✅ **Help panel** with Cmd+? toggle
 - ✅ **Collapsible categories** for organized view
@@ -333,6 +420,7 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 - ✅ **Searchable shortcuts** (visual scan optimized)
 
 **UI Features**:
+
 - Modal overlay with backdrop blur
 - Collapsible category sections (7 categories)
 - Formatted keyboard keys (⌘+Shift+C style)
@@ -342,6 +430,7 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 - Builder token system styling
 
 **User Experience**:
+
 - Press `Cmd+?` → Help panel opens
 - Click overlay or X button → Help panel closes
 - Click category header → Expand/collapse shortcuts
@@ -359,6 +448,7 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 **Goal**: Filter selection by element type, tag, or properties
 
 **UI Design**:
+
 ```
 ┌─────────────────────────────────────┐
 │ 🔍 선택 필터                  [X]    │
@@ -372,14 +462,16 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 ```
 
 **Features**:
+
 - ✅ Filter by component type/tag (Button, Input, Card, etc.)
-- ✅ Filter by custom properties (className, style, data-* attributes)
+- ✅ Filter by custom properties (className, style, data-\* attributes)
 - ✅ Property value search (case-insensitive substring match)
 - ✅ Collapsible UI (collapsed by default)
 - ✅ Clear/Reset functionality
 - ✅ Unique type/tag extraction from current page elements
 
 **Implementation**:
+
 ```typescript
 // src/builder/panels/common/SelectionFilter.tsx
 
@@ -473,14 +565,17 @@ export function SelectionFilter({
 ```
 
 **Files Created**:
+
 - `src/builder/panels/common/SelectionFilter.tsx` (218 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/common/index.css` - Added selection filter styles (lines 1110-1160)
 - `src/builder/panels/common/index.ts` - Export SelectionFilter
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Integration (line 801-804)
 
 **Features Implemented**:
+
 - ✅ Four filter modes: All, Type, Tag, Property
 - ✅ Unique type/tag extraction with useMemo optimization
 - ✅ Property value search with case-insensitive substring matching
@@ -499,17 +594,20 @@ export function SelectionFilter({
    - Key + Value: Substring match (case-insensitive)
 
 **UI Components Used**:
+
 - `PropertySelect` - Filter type and tag selection
 - `PropertyInput` - Property key/value inputs
 - `Button` - Apply, Clear, Expand/Collapse
 
 **Edge Cases Handled**:
+
 - Empty allElements → No unique types/tags
 - Invalid property key → Early return false
 - Empty property value → Existence check only
 - No matching elements → Return empty array
 
 **User Flow**:
+
 1. Click "필터" button → Filter panel expands
 2. Select filter type (All/Type/Tag/Property)
 3. (Type/Tag mode) Select tag from dropdown
@@ -518,6 +616,7 @@ export function SelectionFilter({
 6. Click "초기화" → Filter reset, all elements selected
 
 **Integration**:
+
 ```typescript
 // PropertiesPanel.tsx
 <SelectionFilter
@@ -539,6 +638,7 @@ export function SelectionFilter({
 **Goal**: Create element groups from selected elements
 
 **Features**:
+
 - ✅ Create `<Group>` container element
 - ✅ Move selected elements inside group
 - ✅ Maintain relative positions
@@ -547,6 +647,7 @@ export function SelectionFilter({
 - ✅ Auto-select created group
 
 **UI Flow**:
+
 1. Select multiple elements (2+)
 2. Click "Group" button or `Cmd+G`
 3. Group element created with unique ID
@@ -555,12 +656,13 @@ export function SelectionFilter({
 6. Group auto-selected in Inspector
 
 **Implementation**:
+
 ```typescript
 // src/builder/stores/utils/elementGrouping.ts
 export function createGroupFromSelection(
   elementIds: string[],
   elementsMap: Map<string, Element>,
-  pageId: string
+  pageId: string,
 ): GroupCreationResult {
   // Get selected elements
   const selectedElements = elementIds
@@ -570,7 +672,7 @@ export function createGroupFromSelection(
   // Find common parent
   const firstParentId = selectedElements[0].parent_id;
   const allSameParent = selectedElements.every(
-    (el) => el.parent_id === firstParentId
+    (el) => el.parent_id === firstParentId,
   );
   const groupParentId = allSameParent ? firstParentId : null;
 
@@ -582,8 +684,10 @@ export function createGroupFromSelection(
     return { left, top };
   });
 
-  const avgLeft = positions.reduce((sum, p) => sum + p.left, 0) / positions.length;
-  const avgTop = positions.reduce((sum, p) => sum + p.top, 0) / positions.length;
+  const avgLeft =
+    positions.reduce((sum, p) => sum + p.left, 0) / positions.length;
+  const avgTop =
+    positions.reduce((sum, p) => sum + p.top, 0) / positions.length;
 
   // Create Group element
   const groupElement: Element = {
@@ -618,13 +722,16 @@ export function createGroupFromSelection(
 ```
 
 **Files Created**:
+
 - `src/builder/stores/utils/elementGrouping.ts` (228 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/properties/PropertiesPanel.tsx` - handleGroupSelection (lines 399-437)
 - `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Group button with Cmd+G shortcut
 
 **Features Implemented**:
+
 - ✅ Keyboard shortcut `Cmd+G`
 - ✅ Calculate average position for group placement
 - ✅ Common parent detection (all same parent → group takes that parent)
@@ -644,6 +751,7 @@ export function createGroupFromSelection(
 **Goal**: Break apart grouped elements
 
 **Features**:
+
 - ✅ Select group element
 - ✅ Click "Ungroup" or `Cmd+Shift+G`
 - ✅ Children move to group's parent
@@ -653,11 +761,12 @@ export function createGroupFromSelection(
 - ✅ Auto-select first child after ungroup
 
 **Implementation**:
+
 ```typescript
 // src/builder/stores/utils/elementGrouping.ts
 export function ungroupElement(
   groupId: string,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): UngroupResult {
   const groupElement = elementsMap.get(groupId);
 
@@ -667,7 +776,7 @@ export function ungroupElement(
 
   // Get children of group
   const children = Array.from(elementsMap.values()).filter(
-    (el) => el.parent_id === groupId
+    (el) => el.parent_id === groupId,
   );
 
   if (children.length === 0) {
@@ -679,11 +788,12 @@ export function ungroupElement(
 
   // Calculate next order_num
   const siblings = Array.from(elementsMap.values()).filter(
-    (el) => el.parent_id === newParentId && el.id !== groupId
+    (el) => el.parent_id === newParentId && el.id !== groupId,
   );
-  let nextOrderNum = siblings.length > 0
-    ? Math.max(...siblings.map((s) => s.order_num || 0)) + 1
-    : 0;
+  let nextOrderNum =
+    siblings.length > 0
+      ? Math.max(...siblings.map((s) => s.order_num || 0)) + 1
+      : 0;
 
   const updatedChildren = children.map((child) => ({
     ...child,
@@ -697,9 +807,11 @@ export function ungroupElement(
 ```
 
 **Files Modified**:
+
 - `src/builder/panels/properties/PropertiesPanel.tsx` - handleUngroupSelection (lines 439-462)
 
 **Features Implemented**:
+
 - ✅ Keyboard shortcut `Cmd+Shift+G`
 - ✅ Move children to group's parent
 - ✅ Calculate next order_num for siblings
@@ -721,19 +833,25 @@ export function ungroupElement(
 **Goal**: Align selected elements relative to each other
 
 **Alignment Options**:
+
 - **Horizontal**: Left, Center, Right
 - **Vertical**: Top, Middle, Bottom
 
 **Implementation**:
+
 ```typescript
 // src/builder/stores/utils/elementAlignment.ts
 export type AlignmentType =
-  | "left" | "center" | "right"
-  | "top" | "middle" | "bottom";
+  | "left"
+  | "center"
+  | "right"
+  | "top"
+  | "middle"
+  | "bottom";
 
 function calculateAlignmentTarget(
   bounds: ElementBounds[],
-  type: AlignmentType
+  type: AlignmentType,
 ): number {
   switch (type) {
     case "left":
@@ -757,9 +875,11 @@ function calculateAlignmentTarget(
 ```
 
 **Files Created**:
+
 - `src/builder/stores/utils/elementAlignment.ts` (241 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Added 6 alignment buttons
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Added handleAlign handler + 6 keyboard shortcuts
 
@@ -774,6 +894,7 @@ function calculateAlignmentTarget(
 | `Cmd+Shift+B` | Bottom | Align to bottommost edge |
 
 **Algorithm Features**:
+
 - Min/Max calculation for edges (left/right/top/bottom)
 - Average center calculation for horizontal/vertical centering
 - Requires 2+ selected elements
@@ -788,10 +909,12 @@ function calculateAlignmentTarget(
 **Goal**: Evenly distribute selected elements
 
 **Distribution Options**:
+
 - **Horizontal**: Even spacing between elements
 - **Vertical**: Even spacing between elements
 
 **Implementation**:
+
 ```typescript
 // src/builder/stores/utils/elementDistribution.ts
 export type DistributionType = "horizontal" | "vertical";
@@ -806,7 +929,7 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
 
   // Calculate total width and available space
   const totalWidth = sorted.reduce((sum, b) => sum + b.width, 0);
-  const availableSpace = (last.left + last.width) - first.left - totalWidth;
+  const availableSpace = last.left + last.width - first.left - totalWidth;
 
   // Calculate even spacing
   const spacing = availableSpace / (sorted.length - 1);
@@ -828,9 +951,11 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
 ```
 
 **Files Created**:
+
 - `src/builder/stores/utils/elementDistribution.ts` (276 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Added 2 distribution buttons
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Added handleDistribute handler + 2 keyboard shortcuts
 
@@ -841,6 +966,7 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
 | `Cmd+Alt+Shift+V` | Vertical | Distribute elements vertically with even spacing |
 
 **Algorithm Features**:
+
 - Sort elements by position (left for horizontal, top for vertical)
 - Keep first and last elements fixed
 - Calculate even spacing = (total space - total element size) / (count - 1)
@@ -859,6 +985,7 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
 **Goal**: Copy and paste multiple selected elements
 
 **Features**:
+
 - ✅ Copy all selected elements to clipboard
 - ✅ Maintain parent-child relationships
 - ✅ Preserve relative positions with external parent tracking
@@ -870,6 +997,7 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
 - ✅ Keyboard shortcuts (Cmd+C, Cmd+V)
 
 **Implementation**:
+
 ```typescript
 // src/builder/utils/multiElementCopy.ts
 
@@ -878,7 +1006,7 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
  */
 export function copyMultipleElements(
   elementIds: string[],
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): CopiedElementsData {
   const elementsToCopy = elementIds
     .map((id) => elementsMap.get(id))
@@ -906,7 +1034,10 @@ export function copyMultipleElements(
   while (queue.length > 0) {
     const current = queue.shift()!;
     for (const [_, element] of elementsMap) {
-      if (element.parent_id === current.id && !allElementsIncludingDescendants.has(element)) {
+      if (
+        element.parent_id === current.id &&
+        !allElementsIncludingDescendants.has(element)
+      ) {
         allElementsIncludingDescendants.add(element);
         queue.push(element);
       }
@@ -927,7 +1058,7 @@ export function copyMultipleElements(
 export function pasteMultipleElements(
   copiedData: CopiedElementsData,
   currentPageId: string,
-  offset: { x: number; y: number } = { x: 10, y: 10 }
+  offset: { x: number; y: number } = { x: 10, y: 10 },
 ): Element[] {
   // Create ID mapping: old ID → new ID
   const idMap = new Map<string, string>();
@@ -954,7 +1085,10 @@ export function pasteMultipleElements(
     // Apply offset to root elements
     let updatedProps = { ...element.props };
     if (copiedData.rootIds.includes(element.id)) {
-      const currentStyle = (element.props.style || {}) as Record<string, unknown>;
+      const currentStyle = (element.props.style || {}) as Record<
+        string,
+        unknown
+      >;
       const left = parsePixels(currentStyle.left);
       const top = parsePixels(currentStyle.top);
 
@@ -985,9 +1119,11 @@ export function pasteMultipleElements(
 /**
  * Clipboard serialization with magic marker
  */
-export function serializeCopiedElements(copiedData: CopiedElementsData): string {
+export function serializeCopiedElements(
+  copiedData: CopiedElementsData,
+): string {
   const serializable = {
-    __xstudio_elements__: true, // Magic marker
+    __composition_elements__: true, // Magic marker
     version: 1,
     elements: copiedData.elements,
     rootIds: copiedData.rootIds,
@@ -1001,12 +1137,14 @@ export function serializeCopiedElements(copiedData: CopiedElementsData): string 
 /**
  * Clipboard deserialization with validation
  */
-export function deserializeCopiedElements(json: string): CopiedElementsData | null {
+export function deserializeCopiedElements(
+  json: string,
+): CopiedElementsData | null {
   try {
     const parsed = JSON.parse(json);
 
     // Validate magic marker
-    if (!parsed.__xstudio_elements__) {
+    if (!parsed.__composition_elements__) {
       return null; // Not our clipboard data
     }
 
@@ -1023,21 +1161,24 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
 ```
 
 **Files Created**:
+
 - `src/builder/utils/multiElementCopy.ts` (264 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/properties/PropertiesPanel.tsx` - handleCopyAll, handlePasteAll (lines 120-212)
 - `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Copy/Paste buttons with shortcuts
 
 **Features Implemented**:
+
 - ✅ Keyboard shortcuts `Cmd+C` (Copy) and `Cmd+V` (Paste)
 - ✅ External parent tracking (elements whose parents are NOT selected)
 - ✅ Root element identification (top-level or external parent)
 - ✅ BFS traversal for all descendants (automatic child copying)
 - ✅ ID mapping with generateId() for unique IDs
 - ✅ Position offset for root elements (10px by default)
-- ✅ Clipboard serialization with `__xstudio_elements__` magic marker
-- ✅ Validation on deserialize (prevents pasting non-XStudio data)
+- ✅ Clipboard serialization with `__composition_elements__` magic marker
+- ✅ Validation on deserialize (prevents pasting non-composition data)
 - ✅ History integration via trackMultiPaste
 - ✅ UI buttons in MultiSelectStatusIndicator (⌘⇧C, ⌘⇧V hints)
 
@@ -1060,14 +1201,16 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
    - Add offset and reformat (e.g., 100 + 10 → "110px")
 
 **Edge Cases Handled**:
+
 - Empty selection → Early return
-- No clipboard data → Warning (silent for non-XStudio clipboard)
+- No clipboard data → Warning (silent for non-composition clipboard)
 - Invalid JSON → Silent return (expected for regular text)
 - External parents → Preserved with original parent_id
 - Nested structures → All descendants copied automatically
 - Duplicate paste → Each paste gets new IDs
 
 **User Flow**:
+
 1. Select 1 or more elements (multi-select mode)
 2. Press `Cmd+C` or click "모두 복사" button
 3. Elements copied to clipboard with JSON serialization
@@ -1088,25 +1231,31 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
 **Goal**: Quickly duplicate selected elements
 
 **Implementation**:
+
 ```typescript
 // src/builder/panels/properties/PropertiesPanel.tsx
 const handleDuplicate = useCallback(async () => {
   if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) {
-    console.warn('[Duplicate] No elements selected or no page active');
+    console.warn("[Duplicate] No elements selected or no page active");
     return;
   }
 
   try {
-    console.log(`[Duplicate] Duplicating ${selectedElementIds.length} elements`);
+    console.log(
+      `[Duplicate] Duplicating ${selectedElementIds.length} elements`,
+    );
 
     // Copy current selection with relationship preservation
     const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
 
     // Paste with 10px offset (standard offset for duplicate)
-    const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+    const newElements = pasteMultipleElements(copiedData, currentPageId, {
+      x: 10,
+      y: 10,
+    });
 
     if (newElements.length === 0) {
-      console.warn('[Duplicate] No elements to duplicate');
+      console.warn("[Duplicate] No elements to duplicate");
       return;
     }
 
@@ -1123,29 +1272,42 @@ const handleDuplicate = useCallback(async () => {
 
     if (setSelectedElements) {
       setSelectedElements(newElementIds);
-      console.log(`✅ [Duplicate] Duplicated and selected ${newElements.length} elements`);
+      console.log(
+        `✅ [Duplicate] Duplicated and selected ${newElements.length} elements`,
+      );
     }
   } catch (error) {
-    console.error('❌ [Duplicate] Failed to duplicate elements:', error);
+    console.error("❌ [Duplicate] Failed to duplicate elements:", error);
   }
-}, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
+}, [
+  multiSelectMode,
+  selectedElementIds,
+  currentPageId,
+  elementsMap,
+  addElement,
+]);
 
 // Keyboard shortcut registration
-const shortcuts = useMemo(() => [
-  {
-    key: 'd',
-    modifier: 'cmd' as const,
-    handler: handleDuplicate,
-    description: 'Duplicate Selection',
-  },
-  // ... other shortcuts
-], [handleDuplicate]);
+const shortcuts = useMemo(
+  () => [
+    {
+      key: "d",
+      modifier: "cmd" as const,
+      handler: handleDuplicate,
+      description: "Duplicate Selection",
+    },
+    // ... other shortcuts
+  ],
+  [handleDuplicate],
+);
 ```
 
 **Files Modified**:
+
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Enhanced duplicate handler (lines 279-321)
 
 **Features Implemented**:
+
 - ✅ Keyboard shortcut `Cmd+D`
 - ✅ Duplicate with 10px offset (right and down)
 - ✅ Maintain parent-child relationships using existing infrastructure
@@ -1155,6 +1317,7 @@ const shortcuts = useMemo(() => [
 - ✅ Proper error handling and console logging
 
 **Technical Details**:
+
 - Reuses `copyMultipleElements()` for relationship preservation
 - Reuses `pasteMultipleElements()` for ID regeneration and offset
 - Uses `trackMultiPaste()` for history tracking (same as Paste operation)
@@ -1162,6 +1325,7 @@ const shortcuts = useMemo(() => [
 - Works with any number of selected elements (1 to 100+)
 
 **User Flow**:
+
 1. Select 1 or more elements (multi-select mode)
 2. Press `Cmd+D` (or use duplicate button when added)
 3. Elements duplicated with 10px offset
@@ -1169,6 +1333,7 @@ const shortcuts = useMemo(() => [
 5. Undo reverses entire operation
 
 **Edge Cases Handled**:
+
 - No elements selected → Early return with warning
 - No current page → Early return with warning
 - Empty paste result → Early return with warning
@@ -1199,6 +1364,7 @@ const shortcuts = useMemo(() => [
 8. ✅ **Delete All** - `trackMultiDelete()`
 
 **Implementation**:
+
 ```typescript
 // src/builder/stores/utils/historyHelpers.ts
 
@@ -1208,7 +1374,7 @@ const shortcuts = useMemo(() => [
 export function trackBatchUpdate(
   elementIds: string[],
   updates: Record<string, unknown>,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): void {
   const batchUpdates = elementIds.map((id) => {
     const element = elementsMap.get(id);
@@ -1220,7 +1386,7 @@ export function trackBatchUpdate(
   });
 
   historyManager.addEntry({
-    type: 'batch',
+    type: "batch",
     elementId: elementIds[0],
     elementIds: elementIds,
     data: { batchUpdates },
@@ -1232,10 +1398,10 @@ export function trackBatchUpdate(
  */
 export function trackGroupCreation(
   groupElement: Element,
-  childElements: Element[]
+  childElements: Element[],
 ): void {
   historyManager.addEntry({
-    type: 'group',
+    type: "group",
     elementId: groupElement.id,
     elementIds: childElements.map((el) => el.id),
     data: {
@@ -1255,10 +1421,10 @@ export function trackGroupCreation(
 export function trackUngroup(
   groupId: string,
   childElements: Element[],
-  groupElement: Element
+  groupElement: Element,
 ): void {
   historyManager.addEntry({
-    type: 'ungroup',
+    type: "ungroup",
     elementId: groupId,
     elementIds: childElements.map((el) => el.id),
     data: {
@@ -1278,7 +1444,7 @@ export function trackUngroup(
 export function trackMultiDelete(elements: Element[]): void {
   elements.forEach((element) => {
     historyManager.addEntry({
-      type: 'remove',
+      type: "remove",
       elementId: element.id,
       data: {
         element: element,
@@ -1294,7 +1460,7 @@ export function trackMultiDelete(elements: Element[]): void {
 export function trackMultiPaste(newElements: Element[]): void {
   newElements.forEach((element) => {
     historyManager.addEntry({
-      type: 'add',
+      type: "add",
       elementId: element.id,
       data: { element: element },
     });
@@ -1303,12 +1469,13 @@ export function trackMultiPaste(newElements: Element[]): void {
 ```
 
 **Usage in PropertiesPanel**:
+
 ```typescript
 // Batch Property Update
 const handleBatchUpdate = async (updates) => {
   trackBatchUpdate(selectedElementIds, updates, elementsMap);
   await Promise.all(
-    selectedElementIds.map((id) => updateElementProps(id, updates))
+    selectedElementIds.map((id) => updateElementProps(id, updates)),
   );
 };
 
@@ -1321,10 +1488,12 @@ const handleAlign = async (type: AlignmentType) => {
   });
 
   trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
-  await Promise.all(updates.map((update) => {
-    const updatedStyle = { ...element.props.style, ...update.style };
-    return updateElementProps(update.id, { style: updatedStyle });
-  }));
+  await Promise.all(
+    updates.map((update) => {
+      const updatedStyle = { ...element.props.style, ...update.style };
+      return updateElementProps(update.id, { style: updatedStyle });
+    }),
+  );
 };
 
 // Distribution
@@ -1336,16 +1505,21 @@ const handleDistribute = async (type: DistributionType) => {
   });
 
   trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
-  await Promise.all(updates.map((update) => {
-    const updatedStyle = { ...element.props.style, ...update.style };
-    return updateElementProps(update.id, { style: updatedStyle });
-  }));
+  await Promise.all(
+    updates.map((update) => {
+      const updatedStyle = { ...element.props.style, ...update.style };
+      return updateElementProps(update.id, { style: updatedStyle });
+    }),
+  );
 };
 
 // Paste
 const handlePasteAll = async () => {
   const copiedData = deserializeCopiedElements(clipboardText);
-  const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+  const newElements = pasteMultipleElements(copiedData, currentPageId, {
+    x: 10,
+    y: 10,
+  });
   await Promise.all(newElements.map((element) => addElement(element)));
 
   trackMultiPaste(newElements);
@@ -1354,7 +1528,10 @@ const handlePasteAll = async () => {
 // Duplicate
 const handleDuplicate = async () => {
   const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
-  const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+  const newElements = pasteMultipleElements(copiedData, currentPageId, {
+    x: 10,
+    y: 10,
+  });
   await Promise.all(newElements.map((element) => addElement(element)));
 
   trackMultiPaste(newElements);
@@ -1365,10 +1542,12 @@ const handleGroupSelection = async () => {
   const { groupElement, updatedChildren } = createGroupFromSelection(
     selectedElementIds,
     elementsMap,
-    currentPageId
+    currentPageId,
   );
   await addElement(groupElement);
-  await Promise.all(updatedChildren.map((child) => updateElement(child.id, child)));
+  await Promise.all(
+    updatedChildren.map((child) => updateElement(child.id, child)),
+  );
 
   trackGroupCreation(groupElement, updatedChildren);
 };
@@ -1376,11 +1555,16 @@ const handleGroupSelection = async () => {
 // Ungroup
 const handleUngroupSelection = async () => {
   const groupElementForHistory = elementsMap.get(selectedElement.id);
-  const { updatedChildren, groupIdToDelete } = ungroupElement(selectedElement.id, elementsMap);
+  const { updatedChildren, groupIdToDelete } = ungroupElement(
+    selectedElement.id,
+    elementsMap,
+  );
 
   trackUngroup(groupIdToDelete, updatedChildren, groupElementForHistory);
 
-  await Promise.all(updatedChildren.map((child) => updateElement(child.id, child)));
+  await Promise.all(
+    updatedChildren.map((child) => updateElement(child.id, child)),
+  );
   await removeElement(groupIdToDelete);
 };
 
@@ -1397,10 +1581,12 @@ const handleDeleteAll = async () => {
 ```
 
 **Files Created/Modified**:
+
 - `src/builder/stores/utils/historyHelpers.ts` (EXISTING - 255 lines)
 - `src/builder/panels/properties/PropertiesPanel.tsx` (UPDATED - added trackMultiDelete)
 
 **Features Implemented**:
+
 - ✅ **8 tracked operations** covering all multi-select actions
 - ✅ **Single undo entry** for batch operations
 - ✅ **Relationship preservation** in group/ungroup
@@ -1409,6 +1595,7 @@ const handleDeleteAll = async () => {
 - ✅ **Memory efficient** - CommandDataStore integration
 
 **History Entry Types**:
+
 - `batch` - Batch property updates, alignment, distribution
 - `group` - Group creation
 - `ungroup` - Group dissolution
@@ -1416,6 +1603,7 @@ const handleDeleteAll = async () => {
 - `remove` - Element deletion
 
 **Undo/Redo Flow**:
+
 1. User performs multi-select operation
 2. Operation tracked in history with full context
 3. User presses Cmd+Z (undo)
@@ -1424,12 +1612,14 @@ const handleDeleteAll = async () => {
 6. History manager reapplies operation
 
 **Memory Optimization**:
+
 - CommandDataStore compresses element data
 - Element caching for frequent operations
 - Maximum 50 entries per page
 - Automatic cleanup of old entries
 
 **User Experience**:
+
 - All multi-select operations undoable
 - Single undo entry for batch changes
 - Consistent undo/redo behavior
@@ -1452,6 +1642,7 @@ const handleDeleteAll = async () => {
 **Solution**: Virtual scrolling with RAF-based viewport tracking
 
 **Implementation**:
+
 ```typescript
 // useVisibleOverlays.ts - RAF-based viewport tracking
 const updateViewport = () => {
@@ -1473,13 +1664,13 @@ const updateViewport = () => {
 };
 
 // Passive event listeners for better performance
-iframe.contentWindow.addEventListener('scroll', updateViewport, {
-  passive: true
+iframe.contentWindow.addEventListener("scroll", updateViewport, {
+  passive: true,
 });
 
 // AABB collision detection
 const visibleOverlays = useMemo(() => {
-  return overlays.filter(overlay => {
+  return overlays.filter((overlay) => {
     const { rect } = overlay;
     return !(
       rect.right < viewport.left ||
@@ -1492,10 +1683,12 @@ const visibleOverlays = useMemo(() => {
 ```
 
 **Files Created**:
+
 - `src/builder/overlay/hooks/useVisibleOverlays.ts` (175 lines)
 - `src/builder/hooks/useRAFThrottle.ts` (115 lines)
 
 **Performance Results**:
+
 - 100 elements: 60fps (vs 30fps before)
 - CPU usage: 30-40% reduction
 - Memory: 50% reduction (single RAF vs timer overhead)
@@ -1512,6 +1705,7 @@ const visibleOverlays = useMemo(() => {
 **Solution**: `requestAnimationFrame` auto-syncs to 60fps
 
 **Implementation**:
+
 ```typescript
 // useRAFThrottle.ts
 export function useRAFThrottle<T>(value: T): T {
@@ -1541,6 +1735,7 @@ export function useRAFThrottle<T>(value: T): T {
 ```
 
 **Benefits**:
+
 - ✅ Auto-synced to browser's repaint cycle (60fps)
 - ✅ Auto-pauses when tab inactive (battery efficient)
 - ✅ No timer overhead (single RAF per cycle)
@@ -1558,6 +1753,7 @@ export function useRAFThrottle<T>(value: T): T {
 **Goal**: Remember previous selections for quick re-selection
 
 **Features**:
+
 - ✅ Store last 5 selections (MAX_HISTORY_SIZE)
 - ✅ Auto-generated labels (e.g., "3 Buttons", "2 Inputs, 1 Card")
 - ✅ Timestamp display (relative time: "2 mins ago", "1 hour ago")
@@ -1568,6 +1764,7 @@ export function useRAFThrottle<T>(value: T): T {
 - ✅ Real-time updates with subscription pattern
 
 **UI Design**:
+
 ```
 ┌─────────────────────────────────────┐
 │ 📜 Selection History      [5] [🗑]  │
@@ -1586,6 +1783,7 @@ export function useRAFThrottle<T>(value: T): T {
 ```
 
 **Implementation**:
+
 ```typescript
 // src/builder/utils/selectionMemory.ts
 
@@ -1593,11 +1791,11 @@ export function useRAFThrottle<T>(value: T): T {
  * Selection history entry
  */
 export interface SelectionHistoryEntry {
-  id: string;                  // Unique ID
-  elementIds: string[];        // Element IDs in this selection
-  timestamp: number;           // When selected
-  label: string;               // Human-readable label
-  pageId: string;              // Page ID
+  id: string; // Unique ID
+  elementIds: string[]; // Element IDs in this selection
+  timestamp: number; // When selected
+  label: string; // Human-readable label
+  pageId: string; // Page ID
 }
 
 /**
@@ -1613,7 +1811,7 @@ class SelectionMemoryStore {
   addSelection(
     elementIds: string[],
     elements: Element[],
-    pageId: string
+    pageId: string,
   ): SelectionHistoryEntry | null {
     // Create label from selected elements
     const label = this.createLabel(elementIds, elements);
@@ -1679,6 +1877,7 @@ export const selectionMemory = new SelectionMemoryStore();
 ```
 
 **UI Component**:
+
 ```tsx
 // src/builder/panels/common/SelectionMemory.tsx
 
@@ -1697,7 +1896,7 @@ export function SelectionMemory({
 
   // Filter by current page
   const pageHistory = history.filter(
-    (entry) => !currentPageId || entry.pageId === currentPageId
+    (entry) => !currentPageId || entry.pageId === currentPageId,
   );
 
   return (
@@ -1711,15 +1910,18 @@ export function SelectionMemory({
 ```
 
 **Files Created**:
+
 - `src/builder/utils/selectionMemory.ts` (194 lines)
 - `src/builder/panels/common/SelectionMemory.tsx` (150 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/common/index.css` - Added selection memory styles (lines 1282-1421)
 - `src/builder/panels/common/index.ts` - Export SelectionMemory
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Integration with tracking (lines 827-836)
 
 **Features Implemented**:
+
 - ✅ Automatic label generation from element tags
 - ✅ Relative timestamp formatting ("just now", "2 mins ago", "1 hour ago")
 - ✅ Page-specific filtering (only show history for current page)
@@ -1730,12 +1932,14 @@ export function SelectionMemory({
 - ✅ Builder token styling
 
 **Label Generation Algorithm**:
+
 1. Count elements by tag (Map<string, number>)
 2. Sort tags by count (descending)
 3. Take top 2 most common tags
 4. Format: "3 Buttons" or "2 Inputs, 1 Card"
 
 **Timestamp Formatting**:
+
 - < 1 min: "just now"
 - < 1 hour: "X mins ago"
 - < 1 day: "X hours ago"
@@ -1744,11 +1948,13 @@ export function SelectionMemory({
 
 **Tracking Integration**:
 Selection memory automatically tracks when:
+
 - Filter applied via SelectionFilter
 - Smart selection applied
 - Multi-select operations (alignment, distribution, group, etc.)
 
 **User Flow**:
+
 1. Select multiple elements → Auto-tracked in history
 2. Perform actions (align, group, etc.) → History updated
 3. Click Selection Memory entry → Elements restored
@@ -1756,12 +1962,14 @@ Selection memory automatically tracks when:
 5. Click Clear All → Confirm and clear all history
 
 **Storage**:
+
 - In-memory only (not persisted to database)
 - Maximum 5 entries per session
 - Cleared on page refresh
 - Page-specific filtering
 
 **Edge Cases Handled**:
+
 - Empty history → Show empty state
 - Same selection twice → Creates new entry (with new timestamp)
 - Page switch → Only show history for current page
@@ -1778,6 +1986,7 @@ Selection memory automatically tracks when:
 **Goal**: AI-powered selection suggestions based on element relationships and patterns
 
 **Features**:
+
 - ✅ Select similar elements (same tag + className)
 - ✅ Select siblings (same parent)
 - ✅ Select children (all descendants with BFS)
@@ -1787,6 +1996,7 @@ Selection memory automatically tracks when:
 - ✅ Select similar styles (70%+ property match)
 
 **UI Design**:
+
 ```
 ┌─────────────────────────────────────┐
 │ ✨ Smart Select            [7]      │
@@ -1809,6 +2019,7 @@ Selection memory automatically tracks when:
 ```
 
 **Implementation**:
+
 ```typescript
 // src/builder/utils/smartSelection.ts
 
@@ -1817,7 +2028,7 @@ Selection memory automatically tracks when:
  */
 export function selectSimilar(
   referenceId: string,
-  allElements: Element[]
+  allElements: Element[],
 ): string[] {
   const reference = allElements.find((el) => el.id === referenceId);
   if (!reference) return [];
@@ -1829,7 +2040,7 @@ export function selectSimilar(
       (el) =>
         el.id !== referenceId &&
         el.tag === reference.tag &&
-        (el.props.className as string || "") === referenceClassName
+        ((el.props.className as string) || "") === referenceClassName,
     )
     .map((el) => el.id);
 }
@@ -1839,16 +2050,14 @@ export function selectSimilar(
  */
 export function selectSiblings(
   referenceId: string,
-  allElements: Element[]
+  allElements: Element[],
 ): string[] {
   const reference = allElements.find((el) => el.id === referenceId);
   if (!reference) return [];
 
   return allElements
     .filter(
-      (el) =>
-        el.id !== referenceId &&
-        el.parent_id === reference.parent_id
+      (el) => el.id !== referenceId && el.parent_id === reference.parent_id,
     )
     .map((el) => el.id);
 }
@@ -1858,7 +2067,7 @@ export function selectSiblings(
  */
 export function selectChildren(
   referenceId: string,
-  allElements: Element[]
+  allElements: Element[],
 ): string[] {
   const childIds: string[] = [];
   const queue = [referenceId];
@@ -1867,7 +2076,7 @@ export function selectChildren(
   while (queue.length > 0) {
     const currentId = queue.shift()!;
     const children = allElements.filter(
-      (el) => el.parent_id === currentId && !visited.has(el.id)
+      (el) => el.parent_id === currentId && !visited.has(el.id),
     );
 
     children.forEach((child) => {
@@ -1886,12 +2095,15 @@ export function selectChildren(
 export function selectSameStyle(
   referenceId: string,
   allElements: Element[],
-  threshold: number = 0.7
+  threshold: number = 0.7,
 ): string[] {
   const reference = allElements.find((el) => el.id === referenceId);
   if (!reference) return [];
 
-  const referenceStyle = (reference.props.style || {}) as Record<string, unknown>;
+  const referenceStyle = (reference.props.style || {}) as Record<
+    string,
+    unknown
+  >;
   const referenceKeys = Object.keys(referenceStyle);
 
   return allElements
@@ -1900,10 +2112,12 @@ export function selectSameStyle(
 
       const elStyle = (el.props.style || {}) as Record<string, unknown>;
       const matchingKeys = referenceKeys.filter(
-        (key) => referenceStyle[key] === elStyle[key]
+        (key) => referenceStyle[key] === elStyle[key],
       );
 
-      const similarity = matchingKeys.length / Math.max(referenceKeys.length, Object.keys(elStyle).length);
+      const similarity =
+        matchingKeys.length /
+        Math.max(referenceKeys.length, Object.keys(elStyle).length);
       return similarity >= threshold;
     })
     .map((el) => el.id);
@@ -1914,13 +2128,14 @@ export function selectSameStyle(
  */
 export function getAllSuggestions(
   referenceId: string,
-  allElements: Element[]
+  allElements: Element[],
 ): SuggestionResult[] {
   // Returns array of suggestions with type, elementIds, count, description
 }
 ```
 
 **UI Component**:
+
 ```tsx
 // src/builder/panels/common/SmartSelection.tsx
 
@@ -1955,15 +2170,18 @@ export function SmartSelection({
 ```
 
 **Files Created**:
+
 - `src/builder/utils/smartSelection.ts` (316 lines)
 - `src/builder/panels/common/SmartSelection.tsx` (113 lines)
 
 **Files Modified**:
+
 - `src/builder/panels/common/index.css` - Added smart selection styles (lines 1159-1281)
 - `src/builder/panels/common/index.ts` - Export SmartSelection
 - `src/builder/panels/properties/PropertiesPanel.tsx` - Integration (lines 807-824)
 
 **Features Implemented**:
+
 - ✅ 7 suggestion types with icons
 - ✅ BFS algorithm for descendants
 - ✅ Style similarity calculation (70% threshold)
@@ -1975,27 +2193,30 @@ export function SmartSelection({
 
 **Suggestion Types**:
 
-| Type | Icon | Description | Algorithm |
-|------|------|-------------|-----------|
-| **similar** | ✨ Sparkles | Same tag + className | Exact match on both |
-| **siblings** | 👥 Users | Same parent | parent_id equality |
-| **children** | 🌲 GitBranch | All descendants | BFS traversal |
-| **parent** | 📦 Box | Parent element | Direct parent lookup |
-| **sameType** | 🏷️ Tag | Same tag only | tag equality |
-| **sameClass** | 🎨 Palette | Same className only | className equality |
-| **sameStyle** | 📝 Type | Similar styles | 70%+ property match |
+| Type          | Icon         | Description          | Algorithm            |
+| ------------- | ------------ | -------------------- | -------------------- |
+| **similar**   | ✨ Sparkles  | Same tag + className | Exact match on both  |
+| **siblings**  | 👥 Users     | Same parent          | parent_id equality   |
+| **children**  | 🌲 GitBranch | All descendants      | BFS traversal        |
+| **parent**    | 📦 Box       | Parent element       | Direct parent lookup |
+| **sameType**  | 🏷️ Tag       | Same tag only        | tag equality         |
+| **sameClass** | 🎨 Palette   | Same className only  | className equality   |
+| **sameStyle** | 📝 Type      | Similar styles       | 70%+ property match  |
 
 **Style Similarity Algorithm**:
+
 1. Extract style properties from reference element
 2. For each element, count matching style properties
 3. Calculate similarity = matching / max(reference keys, element keys)
 4. Return elements with similarity ≥ 0.7 (70%)
 
 **Empty State**:
+
 - Shown when no suggestions available
 - Helpful hint: "Select an element with siblings, children, or similar elements"
 
 **User Flow**:
+
 1. Select element (becomes reference)
 2. Smart Selection panel shows 1-7 suggestions
 3. Each suggestion shows type, description, and count
@@ -2006,11 +2227,13 @@ export function SmartSelection({
 Smart selections automatically tracked in selection memory for quick restore.
 
 **Performance**:
+
 - useMemo caching prevents recalculation
 - O(n) complexity for most operations
-- BFS for children: O(n * d) where d = max depth
+- BFS for children: O(n \* d) where d = max depth
 
 **Edge Cases Handled**:
+
 - No reference element → Panel hidden
 - No matching elements → Suggestion not shown
 - Reference deleted → Panel clears
@@ -2022,23 +2245,23 @@ Smart selections automatically tracked in selection memory for quick restore.
 
 ## 📊 Implementation Priority Matrix
 
-| Phase | Feature | Priority | Complexity | Estimated Days | Status |
-|-------|---------|----------|------------|----------------|--------|
-| **2** | **Batch Property Editor** | 🔴 High | Medium | 3-5 | ✅ **Complete** |
-| **2** | **Multi-Select Status Indicator** | 🔴 High | Low | 1-2 | ✅ **Complete** |
-| **3** | **Keyboard Shortcuts** | 🟡 Medium | Low | 1-2 | ✅ **Complete** |
-| **3** | **Selection Filters** | 🟡 Medium | Medium | 2-3 | ✅ **Complete** |
-| **4** | **Group Selection** | 🟡 Medium | Med-High | 4-6 | ✅ **Complete** |
-| **4** | **Ungroup Selection** | 🟡 Medium | Low | 1-2 | ✅ **Complete** |
-| **5** | **Element Alignment** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
-| **5** | **Element Distribution** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
-| **6** | **Multi-Element Copy/Paste** | 🔴 High | Med-High | 4-5 | ✅ **Complete** |
-| **6** | **Duplicate Selection** | 🔴 High | Low | 1 | ✅ **Complete** |
-| **7** | **History Integration** | 🔴 High | Medium | 2-3 | ✅ **Complete** |
-| **8** | **Virtual Scrolling** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
-| **8** | **RAF-Based Throttling** | 🟢 Low | Low | 1 | ✅ **Complete** |
-| **9** | **Selection Memory** | 🟢 Low | Low | 1-2 | ✅ **Complete** |
-| **9** | **Smart Selection** | 🟢 Low | Medium | 3-4 | ✅ **Complete** |
+| Phase | Feature                           | Priority  | Complexity | Estimated Days | Status          |
+| ----- | --------------------------------- | --------- | ---------- | -------------- | --------------- |
+| **2** | **Batch Property Editor**         | 🔴 High   | Medium     | 3-5            | ✅ **Complete** |
+| **2** | **Multi-Select Status Indicator** | 🔴 High   | Low        | 1-2            | ✅ **Complete** |
+| **3** | **Keyboard Shortcuts**            | 🟡 Medium | Low        | 1-2            | ✅ **Complete** |
+| **3** | **Selection Filters**             | 🟡 Medium | Medium     | 2-3            | ✅ **Complete** |
+| **4** | **Group Selection**               | 🟡 Medium | Med-High   | 4-6            | ✅ **Complete** |
+| **4** | **Ungroup Selection**             | 🟡 Medium | Low        | 1-2            | ✅ **Complete** |
+| **5** | **Element Alignment**             | 🟢 Low    | Medium     | 2-3            | ✅ **Complete** |
+| **5** | **Element Distribution**          | 🟢 Low    | Medium     | 2-3            | ✅ **Complete** |
+| **6** | **Multi-Element Copy/Paste**      | 🔴 High   | Med-High   | 4-5            | ✅ **Complete** |
+| **6** | **Duplicate Selection**           | 🔴 High   | Low        | 1              | ✅ **Complete** |
+| **7** | **History Integration**           | 🔴 High   | Medium     | 2-3            | ✅ **Complete** |
+| **8** | **Virtual Scrolling**             | 🟢 Low    | Medium     | 2-3            | ✅ **Complete** |
+| **8** | **RAF-Based Throttling**          | 🟢 Low    | Low        | 1              | ✅ **Complete** |
+| **9** | **Selection Memory**              | 🟢 Low    | Low        | 1-2            | ✅ **Complete** |
+| **9** | **Smart Selection**               | 🟢 Low    | Medium     | 3-4            | ✅ **Complete** |
 
 **Total Estimated Effort**: 30-47 days (6-9 weeks)
 
@@ -2049,30 +2272,37 @@ Smart selections automatically tracked in selection memory for quick restore.
 ### ✅ Completed Sprints
 
 **Sprint 1 (1 week): Essential Editing** ✅ **COMPLETE**
+
 - ✅ Multi-Select Status Indicator (1-2 days) - Completed 2025-11-16
 - ✅ Batch Property Editor (3-5 days) - Completed 2025-11-16
 
 **Sprint 5 (1 week): Alignment & Distribution** ✅ **COMPLETE**
+
 - ✅ Element Alignment (2-3 days) - Completed 2025-11-16
 - ✅ Element Distribution (2-3 days) - Completed 2025-11-16
 
 **Sprint 7 (1 week): Performance** ✅ **COMPLETE**
+
 - ✅ Virtual Scrolling (2-3 days) - Completed 2025-11-16
 - ✅ RAF-Based Throttling (1 day) - Completed 2025-11-16
 
 **Sprint 2: Copy/Paste/Duplicate** ✅ **COMPLETE**
+
 - ✅ Multi-Element Copy/Paste (4-5 days) - Completed 2025-11-16
 - ✅ Duplicate Selection (1 day) - Completed 2025-11-16
 
 **Sprint 3: Keyboard Shortcuts & History** ✅ **COMPLETE**
+
 - ✅ Keyboard Shortcuts Help Panel (1-2 days) - Completed 2025-11-16
 - ✅ History Integration (2-3 days) - Completed 2025-11-16
 
 **Sprint 4: Grouping & Organization** ✅ **COMPLETE**
+
 - ✅ Group Selection (4-6 days) - Completed 2025-11-16
 - ✅ Ungroup Selection (1-2 days) - Completed 2025-11-16
 
 **Sprint 6: Advanced Features** ✅ **COMPLETE**
+
 - ✅ Smart Selection (3-4 days) - Completed 2025-11-16
 - ✅ Selection Memory (1-2 days) - Completed 2025-11-16
 
@@ -2095,9 +2325,9 @@ Smart selections automatically tracked in selection memory for quick restore.
 
 `editingContextId`는 현재 사용자가 "진입한" 컨테이너를 나타내는 상태로, 선택 가능한 요소의 범위를 결정한다.
 
-| 값 | 의미 | 선택 가능 범위 |
-|----|------|---------------|
-| `null` | 루트 레벨 | body의 직계 자식만 선택 가능 |
+| 값                 | 의미               | 선택 가능 범위                   |
+| ------------------ | ------------------ | -------------------------------- |
+| `null`             | 루트 레벨          | body의 직계 자식만 선택 가능     |
 | `string` (요소 ID) | 해당 컨테이너 내부 | 컨테이너의 직계 자식만 선택 가능 |
 
 **상태 정의** (`src/builder/stores/selection.ts`):
@@ -2118,6 +2348,7 @@ export interface SelectionState {
 ```
 
 **핵심 동작**:
+
 - `setEditingContext(contextId)`: editingContext를 직접 설정하고, 기존 선택을 **모두 초기화**한다.
 - `enterEditingContext(elementId)`: 자식이 있는 컨테이너에 한 단계 진입한다. 기존 선택을 초기화한다.
 - `exitEditingContext()`: 한 단계 위로 복귀하고, 빠져나온 컨테이너를 선택 상태로 설정한다.
@@ -2145,7 +2376,7 @@ export function resolveClickTarget(
       const parentId = element.parent_id;
       if (!parentId) return null;
       const parentElement = elementsMap.get(parentId);
-      if (parentElement?.tag === 'body') return current;
+      if (parentElement?.tag === "body") return current;
     } else {
       // 특정 컨테이너 내부: parent_id가 editingContextId인 요소를 찾는다
       if (element.parent_id === editingContextId) return current;
@@ -2159,6 +2390,7 @@ export function resolveClickTarget(
 ```
 
 **알고리즘 흐름**:
+
 1. 클릭된 요소(가장 깊은 leaf)에서 시작
 2. parent chain을 따라 올라감
 3. `editingContextId === null`이면 parent가 `body`인 요소를 찾음
@@ -2173,6 +2405,7 @@ export function resolveClickTarget(
 계층적 선택 모델은 다중 선택(Multi-Select)과 자연스럽게 통합된다. `resolveClickTarget`이 모든 선택 동작의 진입점이므로, 다중 선택 시에도 동일한 깊이 레벨에서만 요소가 선택된다.
 
 **Cmd/Ctrl+Click (다중 선택)**:
+
 - 사용자가 Cmd+Click으로 요소를 추가 선택할 때, 클릭된 요소는 먼저 `resolveClickTarget`을 통해 해석된다.
 - 해석된 대상(resolvedTarget)은 항상 현재 editingContext의 직계 자식이므로, 서로 다른 깊이의 요소가 동시에 선택되는 상황이 원천적으로 방지된다.
 
@@ -2184,6 +2417,7 @@ export function resolveClickTarget(
 ```
 
 **컨테이너 진입 시 선택 초기화**:
+
 - `enterEditingContext(elementId)`를 호출하면 `selectedElementIds`와 `selectedElementIdsSet`이 빈 배열/Set으로 초기화된다.
 - 이전 레벨에서의 다중 선택 상태가 새로운 컨텍스트로 이월되지 않는다.
 
@@ -2203,6 +2437,7 @@ enterEditingContext: (elementId) => {
 ```
 
 **exitEditingContext 동작**:
+
 - 한 단계 위로 복귀할 때, 빠져나온 컨테이너가 자동으로 선택된다.
 - 부모의 부모가 `body`이면 editingContext는 `null`(루트)로 설정된다.
 
@@ -2224,9 +2459,9 @@ export function resolveEditingContextForTreeSelection(
   if (!parentId) return null;
 
   const parentElement = elementsMap.get(parentId);
-  if (parentElement?.tag === 'body') return null;  // body 직계 자식 → 루트 레벨
+  if (parentElement?.tag === "body") return null; // body 직계 자식 → 루트 레벨
 
-  return parentId;  // 부모 컨테이너를 editingContext로 설정
+  return parentId; // 부모 컨테이너를 editingContext로 설정
 }
 ```
 
@@ -2252,21 +2487,21 @@ const handleItemClick = useCallback(
 **동작 예시**:
 
 | 선택 대상 | 요소의 부모 | 부모의 tag | 결과 editingContextId |
-|-----------|------------|-----------|----------------------|
-| `Card` | `body` | `body` | `null` (루트) |
-| `Button` | `Card` | `Card` | `Card`의 ID |
-| `Icon` | `Button` | `Button` | `Button`의 ID |
+| --------- | ----------- | ---------- | --------------------- |
+| `Card`    | `body`      | `body`     | `null` (루트)         |
+| `Button`  | `Card`      | `Card`     | `Card`의 ID           |
+| `Icon`    | `Button`    | `Button`   | `Button`의 ID         |
 
 이를 통해 레이어 트리에서 깊은 요소를 직접 선택하더라도, 캔버스의 editingContext가 자동으로 해당 깊이로 조정되어 후속 캔버스 클릭이 올바른 레벨에서 동작한다.
 
 ### 관련 파일 요약
 
-| 파일 | 역할 |
-|------|------|
-| `src/builder/stores/selection.ts` | editingContextId 상태 및 enter/exit/set 액션 정의 |
-| `src/builder/utils/hierarchicalSelection.ts` | `resolveClickTarget`, `resolveEditingContextForTreeSelection`, `getAncestorChain`, `hasEditableChildren` 순수 함수 |
-| `src/builder/workspace/canvas/BuilderCanvas.tsx` | 캔버스 클릭/더블클릭 시 `resolveClickTarget` 호출, `enterEditingContext` 트리거 |
-| `src/builder/panels/nodes/LayersSection.tsx` | 레이어 트리 선택 시 `resolveEditingContextForTreeSelection`으로 context 자동 조정 |
+| 파일                                             | 역할                                                                                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `src/builder/stores/selection.ts`                | editingContextId 상태 및 enter/exit/set 액션 정의                                                                  |
+| `src/builder/utils/hierarchicalSelection.ts`     | `resolveClickTarget`, `resolveEditingContextForTreeSelection`, `getAncestorChain`, `hasEditableChildren` 순수 함수 |
+| `src/builder/workspace/canvas/BuilderCanvas.tsx` | 캔버스 클릭/더블클릭 시 `resolveClickTarget` 호출, `enterEditingContext` 트리거                                    |
+| `src/builder/panels/nodes/LayersSection.tsx`     | 레이어 트리 선택 시 `resolveEditingContextForTreeSelection`으로 context 자동 조정                                  |
 
 ---
 

@@ -19,7 +19,10 @@ import {
   type ExportError,
   ExportErrorCode,
 } from "@composition/shared/utils";
-import { loadFontRegistry, buildRegistryFontFaceCss } from "@composition/shared";
+import {
+  loadFontRegistry,
+  buildRegistryFontFaceCss,
+} from "@composition/shared";
 import type { FontRegistryV2 } from "@composition/shared";
 import { PageRenderer } from "./renderer";
 import { PageNav } from "./components/PageNav";
@@ -352,7 +355,7 @@ export function App() {
           injectFontRegistryFromData(parsed.fontRegistry);
 
           // 사용 후 삭제 (새로고침 시 다시 로드하지 않음)
-          // sessionStorage.removeItem('xstudio-preview-data');
+          // sessionStorage.removeItem('composition-preview-data');
           return true;
         } catch (error) {
           console.warn("[Publish] Failed to parse sessionStorage data:", error);
@@ -470,7 +473,7 @@ export function App() {
         onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
       >
         <div className="dropzone-content">
-          <h1>XStudio Publish</h1>
+          <h1>composition Publish</h1>
           <p id="dropzone-instructions">
             JSON 파일을 드래그하거나 Enter 키를 눌러 파일을 선택하세요
           </p>

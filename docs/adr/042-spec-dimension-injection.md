@@ -10,7 +10,7 @@ Proposed
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 

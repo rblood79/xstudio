@@ -1,25 +1,25 @@
 # ADR-023 S2 Props 전수 조사 비교표 (2026-03-05)
 
-> XStudio Spec 현재 상태 vs React Spectrum S2 공식 API 비교
+> composition Spec 현재 상태 vs React Spectrum S2 공식 API 비교
 
 ## 범례
 
-- **일치**: XStudio가 S2와 동일
+- **일치**: composition가 S2와 동일
 - **M3 잔존**: variant에 primary/secondary/tertiary/error 등 M3 네이밍 사용 중
-- **미반영**: S2에 존재하는 prop이 XStudio에 없음
-- **XS 전용**: XStudio 자체 확장 (S2에 없음)
+- **미반영**: S2에 존재하는 prop이 composition에 없음
+- **XS 전용**: composition 자체 확장 (S2에 없음)
 - **N/A**: S2에 해당 컴포넌트 없거나 해당 prop 없음
 
 ---
 
 ## 1. variant 비교표
 
-| 컴포넌트              | XStudio 현재 variant                                                                                        | S2 공식 variant                                                                                             | 상태                                                                                       |
+| 컴포넌트              | composition 현재 variant                                                                                    | S2 공식 variant                                                                                             | 상태                                                                                       |
 | --------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | **Button**            | accent, primary, secondary, negative, premium, genai + fillStyle(fill,outline,subtle)                       | accent, primary, secondary, negative, premium, genai + fillStyle(fill,outline)                              | 일치                                                                                       |
 | **Badge**             | accent, informative, neutral, positive, notice, negative + 13 named colors + fillStyle(bold,subtle,outline) | accent, informative, neutral, positive, notice, negative + 19 named colors + fillStyle(bold,subtle,outline) | **부분 일치** (named color 6종 미반영: gray, chartreuse, celery, seafoam, brown, cinnamon) |
 | **ToggleButton**      | isEmphasized, isQuiet (boolean)                                                                             | isEmphasized, isQuiet (boolean)                                                                             | 일치                                                                                       |
-| **Card**              | default, elevated, outlined                                                                                 | primary, secondary, tertiary, quiet                                                                         | **불일치** (XStudio 자체 네이밍)                                                           |
+| **Card**              | default, elevated, outlined                                                                                 | primary, secondary, tertiary, quiet                                                                         | **불일치** (composition 자체 네이밍)                                                       |
 | **Checkbox**          | default, emphasized                                                                                         | isEmphasized (boolean)                                                                                      | **부분 일치** (variant 대신 boolean이어야 함)                                              |
 | **Switch**            | default, emphasized                                                                                         | isEmphasized (boolean)                                                                                      | **부분 일치** (variant 대신 boolean이어야 함)                                              |
 | **Link**              | primary, secondary                                                                                          | primary, secondary                                                                                          | 일치                                                                                       |
@@ -93,51 +93,51 @@
 
 ## 2. size 비교표
 
-| 컴포넌트              | XStudio sizes 키 | S2 공식 size                    | 상태                                        |
-| --------------------- | ---------------- | ------------------------------- | ------------------------------------------- |
-| **Button**            | xs, sm, md, lg   | S, M, L, XL                     | **네이밍 불일치** (xs/sm/md/lg vs S/M/L/XL) |
-| **Badge**             | xs, sm, md, lg   | S, M, L, XL                     | **네이밍 불일치**                           |
-| **TextField**         | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **TextArea**          | sm, md, lg       | N/A (S2에 size 없음)            | XS 전용                                     |
-| **Checkbox**          | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **CheckboxGroup**     | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Switch**            | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Radio**             | sm, md, lg       | N/A (RadioGroup에서 제어)       | XS 전용                                     |
-| **RadioGroup**        | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Slider**            | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Link**              | xs, sm, md, lg   | N/A (S2에 size 없음)            | XS 전용                                     |
-| **Card**              | sm, md, lg       | S, M, L, XL, XS                 | **네이밍 불일치** + XS/XL 미반영            |
-| **Dialog**            | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Meter**             | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **ToggleButton**      | xs, sm, md, lg   | S, M, L, XL, XS                 | **네이밍 불일치**                           |
-| **ToggleButtonGroup** | sm, md, lg       | S, M, L, XL, XS                 | **네이밍 불일치** + XS/XL 미반영            |
-| **ComboBox**          | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **NumberField**       | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **SearchField**       | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **DateField**         | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **DatePicker**        | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **DateRangePicker**   | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **TimeField**         | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **ColorField**        | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **TagGroup**          | sm, md, lg       | S, M, L                         | **네이밍 불일치**                           |
-| **Tabs**              | sm, md, lg       | N/A (S2에 size 없음, density만) | XS 전용                                     |
-| **Breadcrumbs**       | sm, md, lg       | M, L                            | **네이밍 불일치** + S 불필요                |
-| **Menu**              | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Popover**           | sm, md, lg       | S, M, L                         | **네이밍 불일치**                           |
-| **Form**              | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **ProgressBar**       | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **Disclosure**        | sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
-| **DropZone**          | sm, md, lg       | S, M, L                         | **네이밍 불일치**                           |
-| **ColorSwatchPicker** | sm, md, lg       | S, M, L, XS                     | **네이밍 불일치** + XS 미반영               |
-| **ColorSwatch**       | sm, md, lg       | S, M, L, XS                     | **네이밍 불일치** + XS 미반영               |
+| 컴포넌트              | composition sizes 키 | S2 공식 size                    | 상태                                        |
+| --------------------- | -------------------- | ------------------------------- | ------------------------------------------- |
+| **Button**            | xs, sm, md, lg       | S, M, L, XL                     | **네이밍 불일치** (xs/sm/md/lg vs S/M/L/XL) |
+| **Badge**             | xs, sm, md, lg       | S, M, L, XL                     | **네이밍 불일치**                           |
+| **TextField**         | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **TextArea**          | sm, md, lg           | N/A (S2에 size 없음)            | XS 전용                                     |
+| **Checkbox**          | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **CheckboxGroup**     | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Switch**            | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Radio**             | sm, md, lg           | N/A (RadioGroup에서 제어)       | XS 전용                                     |
+| **RadioGroup**        | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Slider**            | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Link**              | xs, sm, md, lg       | N/A (S2에 size 없음)            | XS 전용                                     |
+| **Card**              | sm, md, lg           | S, M, L, XL, XS                 | **네이밍 불일치** + XS/XL 미반영            |
+| **Dialog**            | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Meter**             | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **ToggleButton**      | xs, sm, md, lg       | S, M, L, XL, XS                 | **네이밍 불일치**                           |
+| **ToggleButtonGroup** | sm, md, lg           | S, M, L, XL, XS                 | **네이밍 불일치** + XS/XL 미반영            |
+| **ComboBox**          | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **NumberField**       | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **SearchField**       | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **DateField**         | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **DatePicker**        | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **DateRangePicker**   | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **TimeField**         | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **ColorField**        | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **TagGroup**          | sm, md, lg           | S, M, L                         | **네이밍 불일치**                           |
+| **Tabs**              | sm, md, lg           | N/A (S2에 size 없음, density만) | XS 전용                                     |
+| **Breadcrumbs**       | sm, md, lg           | M, L                            | **네이밍 불일치** + S 불필요                |
+| **Menu**              | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Popover**           | sm, md, lg           | S, M, L                         | **네이밍 불일치**                           |
+| **Form**              | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **ProgressBar**       | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **Disclosure**        | sm, md, lg           | S, M, L, XL                     | **네이밍 불일치** + XL 미반영               |
+| **DropZone**          | sm, md, lg           | S, M, L                         | **네이밍 불일치**                           |
+| **ColorSwatchPicker** | sm, md, lg           | S, M, L, XS                     | **네이밍 불일치** + XS 미반영               |
+| **ColorSwatch**       | sm, md, lg           | S, M, L, XS                     | **네이밍 불일치** + XS 미반영               |
 
-> **모든** XStudio 컴포넌트가 `sm/md/lg` 체계 — S2의 `S/M/L/XL` 체계와 100% 불일치
+> **모든** composition 컴포넌트가 `sm/md/lg` 체계 — S2의 `S/M/L/XL` 체계와 100% 불일치
 
 ---
 
 ## 3. isEmphasized / isQuiet 패턴 비교
 
-| 컴포넌트              | XStudio 현재                                              | S2 공식                         | 상태                                          |
+| 컴포넌트              | composition 현재                                          | S2 공식                         | 상태                                          |
 | --------------------- | --------------------------------------------------------- | ------------------------------- | --------------------------------------------- |
 | **Checkbox**          | variant: "default" \| "emphasized"                        | isEmphasized: boolean           | **패턴 불일치** (variant → boolean 전환 필요) |
 | **Switch**            | variant: "default" \| "emphasized"                        | isEmphasized: boolean           | **패턴 불일치**                               |
@@ -152,7 +152,7 @@
 
 ---
 
-## 4. S2에만 존재하는 prop (XStudio 미반영)
+## 4. S2에만 존재하는 prop (composition 미반영)
 
 | S2 prop                                  | 적용 컴포넌트                                                | 설명                            |
 | ---------------------------------------- | ------------------------------------------------------------ | ------------------------------- |

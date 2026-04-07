@@ -8,7 +8,7 @@ Proposed (2026-03-07) → **Completed (2026-03-09)** — Phase 0~4 전체 완료
 
 ### 문제 정의
 
-XStudio는 React Aria Components 기반으로 76개 Spec과 관련 인프라를 구현했다. 그러나 React Spectrum S2에는 React Aria에 없는 **고수준 복합 컴포넌트**가 약 20개 존재하며, 이들은 실제 웹 애플리케이션에서 자주 사용되는 UI 패턴이다.
+composition는 React Aria Components 기반으로 76개 Spec과 관련 인프라를 구현했다. 그러나 React Spectrum S2에는 React Aria에 없는 **고수준 복합 컴포넌트**가 약 20개 존재하며, 이들은 실제 웹 애플리케이션에서 자주 사용되는 UI 패턴이다.
 
 **현재 상태** (전수 조사 기준):
 
@@ -23,7 +23,7 @@ XStudio는 React Aria Components 기반으로 76개 Spec과 관련 인프라를 
 
 ### React Aria vs React Spectrum S2 비교
 
-| 계층                  | 역할                                | XStudio 현황                          |
+| 계층                  | 역할                                | composition 현황                      |
 | --------------------- | ----------------------------------- | ------------------------------------- |
 | React Aria Components | 비정형 접근성 프리미티브 (unstyled) | 76개 Spec 완성, **Factory 13개 누락** |
 | React Spectrum S2     | Adobe 디자인 시스템 (styled + 복합) | **22개 미구현**                       |
@@ -194,7 +194,7 @@ apps/builder/src/builder/factories/ComponentFactory.ts                   — cre
 | 1   | Card variant 이름 S2 정합성 검토 | primary/secondary/tertiary → S2 명칭 대조 |  낮음  |
 | 2   | Size 표기법 통일                 | sm/md/lg vs S/M/L 혼용 정리               |  낮음  |
 
-> **결론**: XStudio 커스텀 확장 variant는 유지하되, S2 표준 variant를 반드시 포함.
+> **결론**: composition 커스텀 확장 variant는 유지하되, S2 표준 variant를 반드시 포함.
 
 #### Phase 0 작업량 추정
 

@@ -1,4 +1,4 @@
-# XStudio — 개인 워크플로 설정 (gitignore)
+# composition — 개인 워크플로 설정 (gitignore)
 
 ## 개인 설정
 

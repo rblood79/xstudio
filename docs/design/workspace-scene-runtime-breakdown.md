@@ -54,15 +54,15 @@ Phase 0
 
 ## Phase별 현황
 
-| Phase | 설명                               | 위험 | 예상 효과                       | 핵심 산출물                              | 상태                |
-| :---: | ---------------------------------- | :--: | ------------------------------- | ---------------------------------------- | ------------------- |
-|   0   | Baseline & Budget                  |  L   | 회귀 감지 기반 확보             | baseline 문서, metrics budget            | 완료 (2026-03-13)  |
-|   1   | SceneSnapshot Foundation           |  M   | scene 파생 데이터 수렴          | `buildSceneSnapshot`, snapshot types     | 완료 (2026-03-13)  |
-|   2   | SelectionModel / PointerSession    |  M   | 입력 경계 명확화, 중복 제거     | `selectionModel`, `pointerSession`       | 완료 (2026-03-13)  |
-|   3   | Renderer Input Contract            |  M   | Skia/Pixi 입력 단일화           | snapshot adapter, invalidation packet    | 완료 (2026-03-13)  |
-|   4   | Incremental Layout / Multi-Culling |  H   | 대형 문서 성능 향상             | subtree cache, group culling             | 완료 (2026-03-13)  |
-|   5   | canvasSync Split                   |  M   | 핫패스 상태와 metrics 분리      | 3개 store 분리                           | 완료 (2026-03-13)  |
-|   6   | Legacy Cleanup                     |  M   | old/new 경로 제거, 구조 수렴    | legacy helper 제거, import 정리          | 완료 (2026-03-13)  |
+| Phase | 설명                               | 위험 | 예상 효과                    | 핵심 산출물                           | 상태              |
+| :---: | ---------------------------------- | :--: | ---------------------------- | ------------------------------------- | ----------------- |
+|   0   | Baseline & Budget                  |  L   | 회귀 감지 기반 확보          | baseline 문서, metrics budget         | 완료 (2026-03-13) |
+|   1   | SceneSnapshot Foundation           |  M   | scene 파생 데이터 수렴       | `buildSceneSnapshot`, snapshot types  | 완료 (2026-03-13) |
+|   2   | SelectionModel / PointerSession    |  M   | 입력 경계 명확화, 중복 제거  | `selectionModel`, `pointerSession`    | 완료 (2026-03-13) |
+|   3   | Renderer Input Contract            |  M   | Skia/Pixi 입력 단일화        | snapshot adapter, invalidation packet | 완료 (2026-03-13) |
+|   4   | Incremental Layout / Multi-Culling |  H   | 대형 문서 성능 향상          | subtree cache, group culling          | 완료 (2026-03-13) |
+|   5   | canvasSync Split                   |  M   | 핫패스 상태와 metrics 분리   | 3개 store 분리                        | 완료 (2026-03-13) |
+|   6   | Legacy Cleanup                     |  M   | old/new 경로 제거, 구조 수렴 | legacy helper 제거, import 정리       | 완료 (2026-03-13) |
 
 ---
 
@@ -250,14 +250,14 @@ apps/builder/src/builder/workspace/canvas/stores/
 
 ## File Mapping
 
-| 현재 파일                                                                                                     | 문제                                      | ADR-037 이후 주 소유자                  |
-| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------- |
-| [BuilderCanvas.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx) | 엔트리 + 파생 계산 + interaction 혼합     | shell/orchestrator                      |
-| legacy page data memo 경로 | page data 파생이 hook 내부에 고정됨       | `scene/buildSceneSnapshot.ts`           |
-| [SelectionLayer.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx) | selection bounds 계산과 view가 결합됨     | `interaction/selectionModel.ts` + view  |
-| [useCentralCanvasPointerHandlers.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/hooks/useCentralCanvasPointerHandlers.ts) | 거대 effect 기반 입력 처리                | `interaction/pointerRouter.ts`          |
-| [SkiaOverlay.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx) | ticker 내부 store 직접 접근               | renderer adapter + snapshot input       |
-| [canvasSync.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/canvasSync.ts)         | 핫패스 상태와 metrics 혼합                | `stores/*` 3분할                        |
+| 현재 파일                                                                                                                                              | 문제                                  | ADR-037 이후 주 소유자                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- | -------------------------------------- |
+| [BuilderCanvas.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)                                         | 엔트리 + 파생 계산 + interaction 혼합 | shell/orchestrator                     |
+| legacy page data memo 경로                                                                                                                             | page data 파생이 hook 내부에 고정됨   | `scene/buildSceneSnapshot.ts`          |
+| [SelectionLayer.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx)                             | selection bounds 계산과 view가 결합됨 | `interaction/selectionModel.ts` + view |
+| [useCentralCanvasPointerHandlers.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/hooks/useCentralCanvasPointerHandlers.ts) | 거대 effect 기반 입력 처리            | `interaction/pointerRouter.ts`         |
+| [SkiaOverlay.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)                                        | ticker 내부 store 직접 접근           | renderer adapter + snapshot input      |
+| [canvasSync.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/canvasSync.ts)                                                 | 핫패스 상태와 metrics 혼합            | `stores/*` 3분할                       |
 
 ---
 

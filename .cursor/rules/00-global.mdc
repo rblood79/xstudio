@@ -1,8 +1,11 @@
 ---
 alwaysApply: true
 ---
-# XStudio Global Rules
+
+# composition Global Rules
+
 [type]: Always
+
 - React 19 + TypeScript 5 + RAC + Zustand + Tailwind v4 + Supabase
 - **No inline Tailwind** in .tsx; use tv() + semantic CSS classes
 - **No @apply** in CSS (Tailwind v4 금지); use @layer + CSS variables
@@ -13,4 +16,4 @@ alwaysApply: true
 - postMessage origin validation; queue until PREVIEW_READY
 - **History**: Record before state mutation (Undo/Redo support)
 - **O(1) Lookup**: Use elementsMap/childrenMap, not array.find()
-- CSS variables for theming (--builder-*, --action-*)
+- CSS variables for theming (--builder-_, --action-_)

@@ -29,7 +29,7 @@
 
 ## Current Pain Points
 
-현재 [BuilderCanvas.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)는
+현재 [BuilderCanvas.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)는
 아래 파생 계산을 직접 수행하거나 hook 결과를 조합한다.
 
 - `depthMap`

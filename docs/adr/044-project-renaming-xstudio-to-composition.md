@@ -1,4 +1,4 @@
-# ADR-044: 프로젝트 리네이밍 — xstudio → composition
+# ADR-044: 프로젝트 리네이밍 — composition → composition
 
 ## Status
 
@@ -14,11 +14,11 @@ Implemented — 2026-04-07
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
-- 전체 ADR 문서 내 "xstudio" 참조 일괄 갱신 대상
+- 전체 ADR 문서 내 "composition" 참조 일괄 갱신 대상
 - [Project Renaming Breakdown](../design/project-renaming-breakdown.md): 실행 설계
 
 ---
@@ -27,7 +27,7 @@ XStudio Team
 
 ### 문제: 프로젝트 정체성과 이름의 불일치
 
-"XStudio"라는 이름이 프로젝트의 본질(노코드 웹 빌더, 컴포넌트 합성 기반 디자인 도구)을 충분히 반영하지 못한다. "Composition"으로 리네이밍하여 **컴포넌트 합성(Composition)** 중심의 제품 정체성을 명확히 한다.
+"composition"라는 이름이 프로젝트의 본질(노코드 웹 빌더, 컴포넌트 합성 기반 디자인 도구)을 충분히 반영하지 못한다. "Composition"으로 리네이밍하여 **컴포넌트 합성(Composition)** 중심의 제품 정체성을 명확히 한다.
 
 ### 영향 범위
 
@@ -49,7 +49,7 @@ XStudio Team
 ### Hard Constraints
 
 1. **빌드 중단 최소화**: 코드 변경의 중간 상태에서 빌드가 깨지므로, 패키지명+alias+import 변경은 단일 커밋으로 묶어야 한다.
-2. **GitHub 리다이렉트 보존**: 이전 URL(`rblood79/xstudio`)의 자동 리다이렉트가 같은 이름의 새 repo 생성 시 소멸한다 — 리네이밍 후 구 이름으로 repo를 만들면 안 된다.
+2. **GitHub 리다이렉트 보존**: 이전 URL(`rblood79/composition`)의 자동 리다이렉트가 같은 이름의 새 repo 생성 시 소멸한다 — 리네이밍 후 구 이름으로 repo를 만들면 안 된다.
 3. **배포 연속성**: GitHub repo rename 후 Vercel/GitHub Actions 연동이 즉시 끊어질 수 있다 — 배포 파이프라인 복구를 같은 작업 세션에서 완료해야 한다.
 4. **Canvas WASM 바이너리 호환**: `apps/builder/.../wasm/Cargo.toml`의 `name`과 wasm-pack 출력 파일명(`composition_wasm_bg.wasm`, `composition_wasm.js`)이 연동되므로, WASM rebuild가 필수다.
 5. **Layout WASM 바이너리 호환**: `packages/composition-layout/Cargo.toml`의 `name`과 출력 파일명(`composition_layout_bg.wasm`, `composition_layout.js`)도 동일하게 연동된다. `layoutEngine.ts`의 동적 import 경로(`/packages/composition-layout/pkg/composition_layout.js`)도 함께 변경해야 하며, **런타임 검증이 별도로 필요**하다.
@@ -107,15 +107,15 @@ XStudio Team
 
 | 변경 전                                     | 변경 후                   |
 | ------------------------------------------- | ------------------------- |
-| GitHub repo: `rblood79/xstudio`             | `rblood79/composition`    |
-| 루트 패키지: `xstudio`                      | `composition`             |
+| GitHub repo: `rblood79/composition`         | `rblood79/composition`    |
+| 루트 패키지: `composition`                  | `composition`             |
 | 네임스페이스: `@composition/*`              | `@composition/*`          |
 | Canvas WASM: `composition-wasm`             | `composition-wasm`        |
 | Layout WASM: `composition-layout`           | `composition-layout`      |
 | Layout WASM 파일: `composition_layout_bg.*` | `composition_layout_bg.*` |
-| 빌드 base path: `/xstudio/`                 | `/composition/`           |
+| 빌드 base path: `/composition/`             | `/composition/`           |
 | Vercel 도메인                               | 재연결                    |
-| 문서 내 모든 "xstudio" 참조                 | "composition"             |
+| 문서 내 모든 "composition" 참조             | "composition"             |
 
 세부 구현 phase와 파일 목록은 [Project Renaming Breakdown](../design/project-renaming-breakdown.md)에서 관리한다.
 
@@ -123,12 +123,12 @@ XStudio Team
 
 ## Gates
 
-| 시점      | 조건                | 통과 기준                                                                                                | 실패 시 rollback 범위            |
-| --------- | ------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| Phase 0   | 빌드 기준선         | `pnpm build && pnpm type-check` 성공                                                                     | 없음 (사전 준비)                 |
-| Phase 1   | GitHub repo rename  | 로컬 + CI remote URL 정상 연결                                                                           | GitHub에서 `xstudio`로 재rename  |
-| Phase 2~4 | 코드 변경 단일 커밋 | `pnpm install && pnpm build && pnpm type-check` 성공 + dev 서버 Canvas WASM + Layout WASM 양쪽 로드 확인 | `git revert` 1회                 |
-| Phase 5   | 문서 + 인프라 갱신  | Vercel 배포 성공 + 문서 내 `xstudio` 잔존 참조 0건                                                       | 문서 커밋 revert + Vercel 재연결 |
+| 시점      | 조건                | 통과 기준                                                                                                | 실패 시 rollback 범위               |
+| --------- | ------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Phase 0   | 빌드 기준선         | `pnpm build && pnpm type-check` 성공                                                                     | 없음 (사전 준비)                    |
+| Phase 1   | GitHub repo rename  | 로컬 + CI remote URL 정상 연결                                                                           | GitHub에서 `composition`로 재rename |
+| Phase 2~4 | 코드 변경 단일 커밋 | `pnpm install && pnpm build && pnpm type-check` 성공 + dev 서버 Canvas WASM + Layout WASM 양쪽 로드 확인 | `git revert` 1회                    |
+| Phase 5   | 문서 + 인프라 갱신  | Vercel 배포 성공 + 문서 내 `composition` 잔존 참조 0건                                                   | 문서 커밋 revert + Vercel 재연결    |
 
 ---
 

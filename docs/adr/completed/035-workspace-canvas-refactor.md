@@ -10,7 +10,7 @@ Implemented (Phase 0~8 완료, baseline 수집 + invalidation/panel runtime gate
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
@@ -42,13 +42,13 @@ XStudio Team
 
 주요 신호:
 
-- [BuilderCanvas.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)
-- [SkiaOverlay.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)
-- [nodeRenderers.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts)
-- [Workspace.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/Workspace.tsx)
-- [CanvasScrollbar.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/scrollbar/CanvasScrollbar.tsx)
-- [canvasSync.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/canvasSync.ts)
-- [cssVariableReader.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts)
+- [BuilderCanvas.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)
+- [SkiaOverlay.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)
+- [nodeRenderers.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts)
+- [Workspace.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/Workspace.tsx)
+- [CanvasScrollbar.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/scrollbar/CanvasScrollbar.tsx)
+- [canvasSync.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/canvasSync.ts)
+- [cssVariableReader.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts)
 
 현재 확인된 구조적 문제는 다음과 같다.
 
@@ -234,17 +234,17 @@ Phase 0 ─┬─→ Phase 1 (trivial)
                                  └──→ Phase 5 (all prior phases 완료 후)
 ```
 
-| 순서 | Phase   | 잔여 작업                                                                 |  완성도  | 위험 | 상태      |
-| :--: | ------- | ------------------------------------------------------------------------- | :------: | :--: | --------- |
-|  1   | Phase 0 | baseline 문서 작성 + 실측값 수집 + authenticated builder smoke 확보       | **100%** |  L   | **완료**  |
-|  2   | Phase 1 | Workspace.tsx 책임 주석 + 문서화                                          | **100%** |  L   | **완료**  |
-|  3   | Phase 8 | WASM pkg를 `apps/builder/wasm-bindings/pkg`로 이동, script/import 정리    | **100%** |  L   | **완료**  |
-|  4   | Phase 3 | `renderInvalidation.ts` 추적 유틸 보강 + unit test gate 추가              | **100%** |  L   | **완료**  |
-|  5   | Phase 2 | canvasSync deprecation 완료, viewport 단일 원천 확립                      | **100%** |  M   | **완료**  |
-|  6   | Phase 6 | cssVariableReader 4분할 완료 + size key 정규화 (`xs/sm/md/lg/xl` 호환)    | **100%** |  M   | **완료**  |
-|  7   | Phase 4 | SkiaOverlay 분해, skiaOverlayBuilder/skiaFramePlan/skiaFramePipeline 추출 | **100%** |  M   | **완료**  |
-|  8   | Phase 7 | CanvasScrollbar querySelector 제거, panel runtime test gate 추가          | **100%** |  M   | **완료**  |
-|  9   | Phase 5 | nodeRenderers.ts extract-only 분해 (8파일 barrel 구조)                    | **100%** |  H   | **완료**  |
+| 순서 | Phase   | 잔여 작업                                                                 |  완성도  | 위험 | 상태     |
+| :--: | ------- | ------------------------------------------------------------------------- | :------: | :--: | -------- |
+|  1   | Phase 0 | baseline 문서 작성 + 실측값 수집 + authenticated builder smoke 확보       | **100%** |  L   | **완료** |
+|  2   | Phase 1 | Workspace.tsx 책임 주석 + 문서화                                          | **100%** |  L   | **완료** |
+|  3   | Phase 8 | WASM pkg를 `apps/builder/wasm-bindings/pkg`로 이동, script/import 정리    | **100%** |  L   | **완료** |
+|  4   | Phase 3 | `renderInvalidation.ts` 추적 유틸 보강 + unit test gate 추가              | **100%** |  L   | **완료** |
+|  5   | Phase 2 | canvasSync deprecation 완료, viewport 단일 원천 확립                      | **100%** |  M   | **완료** |
+|  6   | Phase 6 | cssVariableReader 4분할 완료 + size key 정규화 (`xs/sm/md/lg/xl` 호환)    | **100%** |  M   | **완료** |
+|  7   | Phase 4 | SkiaOverlay 분해, skiaOverlayBuilder/skiaFramePlan/skiaFramePipeline 추출 | **100%** |  M   | **완료** |
+|  8   | Phase 7 | CanvasScrollbar querySelector 제거, panel runtime test gate 추가          | **100%** |  M   | **완료** |
+|  9   | Phase 5 | nodeRenderers.ts extract-only 분해 (8파일 barrel 구조)                    | **100%** |  H   | **완료** |
 
 이 순서의 원칙은 다음과 같다.
 
@@ -962,28 +962,28 @@ ESLint 수정 내역:
 
 ### 종료 상태
 
-| Phase   | 완성도 | 완료 근거                                                     |
-| ------- | :----: | ------------------------------------------------------------- |
-| Phase 0 |  100%  | baseline 문서 수치 확정 + authenticated builder smoke 확보    |
-| Phase 1 |  100%  | Workspace shell 책임 문서화 완료                              |
-| Phase 2 |  100%  | viewport single source of truth 정착                          |
-| Phase 3 |  100%  | invalidation model 구현 + unit test gate                      |
-| Phase 4 |  100%  | Skia frame pipeline 분리                                      |
-| Phase 5 |  100%  | node renderer extract-only 분해                               |
-| Phase 6 |  100%  | cssVariableReader 분리 + size key 정규화                      |
-| Phase 7 |  100%  | panel layout runtime 전환 + unit test gate                    |
-| Phase 8 |  100%  | generated WASM artifact source tree 외부 분리                 |
+| Phase   | 완성도 | 완료 근거                                                  |
+| ------- | :----: | ---------------------------------------------------------- |
+| Phase 0 |  100%  | baseline 문서 수치 확정 + authenticated builder smoke 확보 |
+| Phase 1 |  100%  | Workspace shell 책임 문서화 완료                           |
+| Phase 2 |  100%  | viewport single source of truth 정착                       |
+| Phase 3 |  100%  | invalidation model 구현 + unit test gate                   |
+| Phase 4 |  100%  | Skia frame pipeline 분리                                   |
+| Phase 5 |  100%  | node renderer extract-only 분해                            |
+| Phase 6 |  100%  | cssVariableReader 분리 + size key 정규화                   |
+| Phase 7 |  100%  | panel layout runtime 전환 + unit test gate                 |
+| Phase 8 |  100%  | generated WASM artifact source tree 외부 분리              |
 
 ---
 
 ## References
 
-- [Workspace.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/Workspace.tsx)
-- [BuilderCanvas.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)
-- [SkiaOverlay.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)
-- [nodeRenderers.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts)
-- [CanvasScrollbar.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/scrollbar/CanvasScrollbar.tsx)
-- [ViewportController.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/viewport/ViewportController.ts)
-- [useViewportControl.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/viewport/useViewportControl.ts)
-- [canvasSync.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/canvasSync.ts)
-- [cssVariableReader.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts)
+- [Workspace.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/Workspace.tsx)
+- [BuilderCanvas.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)
+- [SkiaOverlay.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)
+- [nodeRenderers.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts)
+- [CanvasScrollbar.tsx](/Users/admin/work/composition/apps/builder/src/builder/workspace/scrollbar/CanvasScrollbar.tsx)
+- [ViewportController.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/viewport/ViewportController.ts)
+- [useViewportControl.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/viewport/useViewportControl.ts)
+- [canvasSync.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/canvasSync.ts)
+- [cssVariableReader.ts](/Users/admin/work/composition/apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts)

@@ -10,15 +10,15 @@
 
 ## Implementation Progress
 
-| Phase   | Status | Description                        |
-| ------- | ------ | ---------------------------------- |
-| Phase 1 | ✅     | Foundation (Types, DB)             |
-| Phase 2 | ✅     | Page Creation UI (Router)          |
-| Phase 3 | ✅     | Dynamic Route Parameters           |
-| Phase 4 | ✅     | Property Editors                   |
-| Phase 5 | ✅     | NodesPanel Tree                    |
-| Phase 6 | ✅     | Testing & Polish                   |
-| Phase 7 | 📋     | Data Panel Integration (advanced)  |
+| Phase   | Status | Description                       |
+| ------- | ------ | --------------------------------- |
+| Phase 1 | ✅     | Foundation (Types, DB)            |
+| Phase 2 | ✅     | Page Creation UI (Router)         |
+| Phase 3 | ✅     | Dynamic Route Parameters          |
+| Phase 4 | ✅     | Property Editors                  |
+| Phase 5 | ✅     | NodesPanel Tree                   |
+| Phase 6 | ✅     | Testing & Polish                  |
+| Phase 7 | 📋     | Data Panel Integration (advanced) |
 
 ---
 
@@ -30,7 +30,7 @@
 | v2.0 | 2025-11-29 | Data Panel 통합, 동적 라우트 지원, Visual Picker 연동 |
 | v2.1 | 2025-11-30 | Phase 3 동적 라우트 구현 완료                         |
 | v2.2 | 2025-11-30 | Phase 4-5 완료 확인 (이미 구현됨)                     |
-| v2.3 | 2025-11-30 | Phase 6 Testing & Polish 완료                        |
+| v2.3 | 2025-11-30 | Phase 6 Testing & Polish 완료                         |
 
 ---
 
@@ -38,7 +38,7 @@
 
 ### 1.1 Problem Statement
 
-현재 XStudio의 페이지 라우팅 시스템:
+현재 composition의 페이지 라우팅 시스템:
 
 - 페이지 생성 시 slug가 `/page-1`, `/page-2` 형태로 자동 생성
 - 중첩 경로 (`/products/category/item`) 지원 없음
@@ -151,7 +151,10 @@ export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
  * Layout 업데이트 시 필요한 필드
  */
 export type LayoutUpdate = Partial<
-  Pick<Layout, "name" | "description" | "slug" | "notFoundPageId" | "inheritNotFound">
+  Pick<
+    Layout,
+    "name" | "description" | "slug" | "notFoundPageId" | "inheritNotFound"
+  >
 >; // ✅ slug, 404 필드 추가
 ```
 
@@ -219,7 +222,7 @@ if (!db.objectStoreNames.contains("layouts")) {
   layoutsStore.createIndex("order_num", "order_num", { unique: false }); // ✅ 추가
   layoutsStore.createIndex("slug", "slug", { unique: false }); // ✅ 추가
   console.log(
-    "[IndexedDB] Created store: layouts with order_num, slug indexes"
+    "[IndexedDB] Created store: layouts with order_num, slug indexes",
   );
 } else {
   // 기존 스토어에 인덱스 추가
@@ -414,7 +417,7 @@ function normalizeUrl(url: string): string {
 export function hasCircularReference(
   pageId: string,
   newParentId: string | null,
-  allPages: Page[]
+  allPages: Page[],
 ): boolean {
   if (!newParentId) return false;
 
@@ -555,7 +558,7 @@ export function extractRouteParams(slug: string): string[] {
  */
 export function matchRouteParams(
   pattern: string,
-  url: string
+  url: string,
 ): Record<string, string> | null {
   const patternParts = pattern.split("/").filter(Boolean);
   const urlParts = url.split("/").filter(Boolean);
@@ -586,7 +589,7 @@ export function matchRouteParams(
  */
 export function generateUrlWithParams(
   pattern: string,
-  params: Record<string, string>
+  params: Record<string, string>,
 ): string {
   return pattern.replace(/:([a-zA-Z][a-zA-Z0-9]*)/g, (_, name) => {
     return params[name] || `:${name}`;
@@ -806,7 +809,7 @@ const addPage = async (params: AddPageParams): Promise<ApiResult<ApiPage>> => {
     const currentPages = useStore.getState().pages;
     const maxOrderNum = currentPages.reduce(
       (max, page) => Math.max(max, page.order_num || 0),
-      -1
+      -1,
     );
 
     const db = await getDB();
@@ -1181,7 +1184,7 @@ const sendLayoutsToCanvas = useCallback((layouts: Layout[]) => {
       type: "UPDATE_LAYOUTS",
       layouts: canvasLayouts,
     },
-    "*"
+    "*",
   );
 }, []);
 
@@ -1189,7 +1192,7 @@ const sendLayoutsToCanvas = useCallback((layouts: Layout[]) => {
 useEffect(() => {
   const unsubscribe = useLayoutsStore.subscribe(
     (state) => state.layouts,
-    (layouts) => sendLayoutsToCanvas(layouts)
+    (layouts) => sendLayoutsToCanvas(layouts),
   );
   return unsubscribe;
 }, [sendLayoutsToCanvas]);
@@ -1375,106 +1378,130 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 
 ### Phase 3: Property Editors - P1
 
-| Task                          | File                                                        | Description            |
-| ----------------------------- | ----------------------------------------------------------- | ---------------------- |
+| Task                          | File                                                     | Description            |
+| ----------------------------- | -------------------------------------------------------- | ---------------------- |
 | PageEditor 컴포넌트 생성      | `src/builder/panels/properties/editors/PageEditor.tsx`   | 페이지 속성 편집기     |
 | LayoutEditor에 slug 필드 추가 | `src/builder/panels/properties/editors/LayoutEditor.tsx` | Base Slug 입력 필드    |
-| URL 미리보기 컴포넌트         | `src/builder/components/UrlPreview.tsx`                     | 실시간 URL 미리보기    |
-| 깊은 중첩 경고 UI             | `src/builder/panels/properties/`                            | nestingDepth >= 3 경고 |
+| URL 미리보기 컴포넌트         | `src/builder/components/UrlPreview.tsx`                  | 실시간 URL 미리보기    |
+| 깊은 중첩 경고 UI             | `src/builder/panels/properties/`                         | nestingDepth >= 3 경고 |
 
 ### Phase 4: Property Editors - P1 ✅ COMPLETE (Already Implemented)
 
-| Task                          | File                                                          | Status | Description            |
-| ----------------------------- | ------------------------------------------------------------- | ------ | ---------------------- |
-| LayoutSlugEditor              | `src/builder/panels/properties/editors/LayoutSlugEditor.tsx`  | ✅     | Layout slug 편집       |
-| PageParentSelector            | `src/builder/panels/properties/editors/PageParentSelector.tsx`| ✅     | Parent 선택 + slug 편집|
-| PageBodyEditor 통합           | `src/builder/panels/properties/editors/PageBodyEditor.tsx`    | ✅     | Layout/Parent 통합 UI  |
-| URL 미리보기                  | `generatePageUrl` 사용                                        | ✅     | 실시간 URL 표시        |
+| Task                | File                                                           | Status | Description             |
+| ------------------- | -------------------------------------------------------------- | ------ | ----------------------- |
+| LayoutSlugEditor    | `src/builder/panels/properties/editors/LayoutSlugEditor.tsx`   | ✅     | Layout slug 편집        |
+| PageParentSelector  | `src/builder/panels/properties/editors/PageParentSelector.tsx` | ✅     | Parent 선택 + slug 편집 |
+| PageBodyEditor 통합 | `src/builder/panels/properties/editors/PageBodyEditor.tsx`     | ✅     | Layout/Parent 통합 UI   |
+| URL 미리보기        | `generatePageUrl` 사용                                         | ✅     | 실시간 URL 표시         |
 
 #### Phase 4 구현 상세
 
 **1. LayoutSlugEditor.tsx** - Layout의 base slug 편집
+
 - slug 입력 필드
 - 실시간 URL 프리뷰
 - 해당 Layout 사용하는 모든 페이지 URL 표시
 
 **2. PageParentSelector.tsx** - Page의 parent 선택 및 slug 편집
+
 - Parent page 선택 드롭다운
 - Page slug 입력 필드
 - `generatePageUrl` 함수로 최종 URL 계산
 - 순환 참조 방지 (자기 자신 및 자손 제외)
 
 **3. PageBodyEditor.tsx** - 통합 편집 UI
+
 - PageLayoutSelector 포함
 - PageParentSelector 포함
 - 일관된 페이지 속성 편집 경험
 
 ### Phase 5: NodesPanel 트리 표시 - P1 ✅ COMPLETE (Already Implemented)
 
-| Task                     | File                                       | Status | Description           |
-| ------------------------ | ------------------------------------------ | ------ | --------------------- |
-| renderTree 함수          | `src/builder/sidebar/index.tsx`            | ✅     | parent_id 재귀 렌더링 |
-| hasChildren 함수         | `src/builder/sidebar/index.tsx`            | ✅     | 자식 존재 확인        |
-| CSS 들여쓰기             | `src/builder/nodes/index.css`              | ✅     | data-depth 스타일     |
-| PagesTab 통합            | `src/builder/nodes/PagesTab/PagesTab.tsx`  | ✅     | Pages + Layers 래핑   |
+| Task             | File                                      | Status | Description           |
+| ---------------- | ----------------------------------------- | ------ | --------------------- |
+| renderTree 함수  | `src/builder/sidebar/index.tsx`           | ✅     | parent_id 재귀 렌더링 |
+| hasChildren 함수 | `src/builder/sidebar/index.tsx`           | ✅     | 자식 존재 확인        |
+| CSS 들여쓰기     | `src/builder/nodes/index.css`             | ✅     | data-depth 스타일     |
+| PagesTab 통합    | `src/builder/nodes/PagesTab/PagesTab.tsx` | ✅     | Pages + Layers 래핑   |
 
 #### Phase 5 구현 상세
 
 **1. renderTree 함수** (`sidebar/index.tsx:495-877`)
+
 ```typescript
-const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
+const renderTree = <
+  T extends { id: string; parent_id?: string | null; order_num?: number },
+>(
   items: T[],
   getLabel: (item: T) => string,
   onClick: (item: T) => void,
   onDelete: (item: T) => Promise<void>,
   parentId: string | null = null,
-  depth: number = 0
+  depth: number = 0,
 ): React.ReactNode => {
   // parent_id 기반 필터링
   let filteredItems = items.filter((item) => {
     if (item.deleted === true) return false;
-    const matchesParent = item.parent_id === parentId ||
+    const matchesParent =
+      item.parent_id === parentId ||
       (parentId === null && item.parent_id === undefined);
     return matchesParent;
   });
 
   // 재귀적 자식 렌더링
-  hasChildNodes && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)
-}
+  hasChildNodes &&
+    renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1);
+};
 ```
 
 **2. CSS 들여쓰기** (`nodes/index.css:214-236`)
+
 ```css
-.element[data-depth="0"] .elementItem { padding-left: var(--spacing-sm); }
-.element[data-depth="1"] .elementItem { padding-left: calc(var(--spacing-lg) * 1 + var(--spacing-sm)); }
-.element[data-depth="2"] .elementItem { padding-left: calc(var(--spacing-lg) * 2 + var(--spacing-sm)); }
-.element[data-depth="3"] .elementItem { padding-left: calc(var(--spacing-lg) * 3 + var(--spacing-sm)); }
-.element[data-depth="4"] .elementItem { padding-left: calc(var(--spacing-lg) * 4 + var(--spacing-sm)); }
-.element[data-depth="5"] .elementItem { padding-left: calc(var(--spacing-lg) * 5 + var(--spacing-sm)); }
+.element[data-depth="0"] .elementItem {
+  padding-left: var(--spacing-sm);
+}
+.element[data-depth="1"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 1 + var(--spacing-sm));
+}
+.element[data-depth="2"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 2 + var(--spacing-sm));
+}
+.element[data-depth="3"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 3 + var(--spacing-sm));
+}
+.element[data-depth="4"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 4 + var(--spacing-sm));
+}
+.element[data-depth="5"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 5 + var(--spacing-sm));
+}
 ```
 
 **3. Pages.tsx** (`nodes/Pages.tsx:121-131`)
+
 - `renderTree` 호출로 페이지 계층 표시
 - AddPageDialog와 통합
 
 ### Phase 6: Testing & Polish - P2 ✅ COMPLETE
 
-| Task                              | Status | Description                                  |
-| --------------------------------- | ------ | -------------------------------------------- |
-| TypeScript 체크                   | ✅     | 0 errors (`npx tsc --noEmit` 통과)           |
-| ESLint 체크                       | ✅     | 0 errors (minor warnings only)               |
-| Vitest 테스트                     | ✅     | 21개 테스트 모두 통과                        |
-| 단위 테스트 (urlGenerator)        | ⏳     | 향후 추가 예정                               |
-| E2E 테스트 (페이지 생성 플로우)   | ⏳     | 향후 추가 예정                               |
+| Task                            | Status | Description                        |
+| ------------------------------- | ------ | ---------------------------------- |
+| TypeScript 체크                 | ✅     | 0 errors (`npx tsc --noEmit` 통과) |
+| ESLint 체크                     | ✅     | 0 errors (minor warnings only)     |
+| Vitest 테스트                   | ✅     | 21개 테스트 모두 통과              |
+| 단위 테스트 (urlGenerator)      | ⏳     | 향후 추가 예정                     |
+| E2E 테스트 (페이지 생성 플로우) | ⏳     | 향후 추가 예정                     |
 
 #### Phase 6 구현 상세
 
 **1. 코드 품질 검증**
+
 - TypeScript: 모든 타입 에러 해결
 - ESLint: 에러 0개 (react-refresh 관련 minor warnings만 존재)
 - Vitest: 기존 21개 테스트 모두 통과
 
 **2. 관련 파일 상태**
+
 - `urlGenerator.ts` - 동적 라우트 함수 정상 작동
 - `CanvasRouter.tsx` - useCanvasParams, 라우트 정렬 정상
 - `PageParentSelector.tsx` - Parent 선택 + slug 편집 정상
@@ -1482,18 +1509,19 @@ const renderTree = <T extends { id: string; parent_id?: string | null; order_num
 - `PageBodyEditor.tsx` - 통합 편집 UI 정상
 
 **3. 향후 테스트 계획**
+
 - `urlGenerator.test.ts` - generatePageUrl, hasCircularReference 단위 테스트
 - `slugValidator.test.ts` - validateSlug, generateSlugFromTitle 단위 테스트
 - E2E 테스트 - 다이얼로그 → 페이지 생성 → URL 확인 플로우
 
 ### Phase 7: 동적 라우트 (v2.0) - P1 ✅ COMPLETE
 
-| Task                             | File                                   | Status | Description                      |
-| -------------------------------- | -------------------------------------- | ------ | -------------------------------- |
-| 동적 라우트 유틸리티 확장        | `src/utils/urlGenerator.ts`            | ✅     | 동적 파라미터 추출/매칭 함수     |
-| Canvas 라우트 파라미터 훅        | `src/canvas/router/CanvasRouter.tsx`   | ✅     | useCanvasParams 훅               |
-| RuntimeStore 라우트 파라미터     | `src/canvas/store/runtimeStore.ts`     | ✅     | routeParams 상태/액션            |
-| 라우트 정렬 (정적 우선)          | `src/canvas/router/CanvasRouter.tsx`   | ✅     | 정적 라우트가 동적보다 먼저 매칭 |
+| Task                         | File                                 | Status | Description                      |
+| ---------------------------- | ------------------------------------ | ------ | -------------------------------- |
+| 동적 라우트 유틸리티 확장    | `src/utils/urlGenerator.ts`          | ✅     | 동적 파라미터 추출/매칭 함수     |
+| Canvas 라우트 파라미터 훅    | `src/canvas/router/CanvasRouter.tsx` | ✅     | useCanvasParams 훅               |
+| RuntimeStore 라우트 파라미터 | `src/canvas/store/runtimeStore.ts`   | ✅     | routeParams 상태/액션            |
+| 라우트 정렬 (정적 우선)      | `src/canvas/router/CanvasRouter.tsx` | ✅     | 정적 라우트가 동적보다 먼저 매칭 |
 
 #### Phase 7 구현 세부 내용
 
@@ -1501,19 +1529,19 @@ const renderTree = <T extends { id: string; parent_id?: string | null; order_num
 
 ```typescript
 // 동적 파라미터 추출
-extractDynamicParams('/products/:categoryId/:itemId')
+extractDynamicParams("/products/:categoryId/:itemId");
 // → ['categoryId', 'itemId']
 
 // 동적 라우트 여부 확인
-hasDynamicParams('/products/:id') // → true
-hasDynamicParams('/products/shoes') // → false
+hasDynamicParams("/products/:id"); // → true
+hasDynamicParams("/products/shoes"); // → false
 
 // 파라미터 값 채우기
-fillDynamicParams('/products/:id', { id: '123' })
+fillDynamicParams("/products/:id", { id: "123" });
 // → '/products/123'
 
 // URL 매칭
-matchDynamicUrl('/products/:id', '/products/123')
+matchDynamicUrl("/products/:id", "/products/123");
 // → { id: '123' }
 ```
 
@@ -1538,8 +1566,8 @@ useEffect(() => {
 }, [params, setRouteParams]);
 
 // useDataSource에서 변수 치환
-const { data } = useDataSource('getProduct', {
-  params: { productId: '{{route.productId}}' }
+const { data } = useDataSource("getProduct", {
+  params: { productId: "{{route.productId}}" },
 });
 ```
 
@@ -1549,7 +1577,7 @@ const { data } = useDataSource('getProduct', {
 // 정적 라우트가 동적 라우트보다 먼저 매칭되도록 정렬
 // /products/new → /products/:id 순서로 정렬
 routeConfigs.sort((a, b) => {
-  if (a.isDynamic && !b.isDynamic) return 1;  // 동적은 뒤로
+  if (a.isDynamic && !b.isDynamic) return 1; // 동적은 뒤로
   if (!a.isDynamic && b.isDynamic) return -1; // 정적은 앞으로
   return bSegments - aSegments; // 더 구체적인 경로 먼저
 });
@@ -1557,14 +1585,14 @@ routeConfigs.sort((a, b) => {
 
 ### Phase 8: Data Panel 통합 (v2.0) - P1
 
-| Task                          | File                                                      | Description                     |
-| ----------------------------- | --------------------------------------------------------- | ------------------------------- |
-| Visual Picker 라우트 카테고리 | `src/builder/panels/data/VariablePicker.tsx`              | `route` 카테고리 추가           |
+| Task                          | File                                                   | Description                     |
+| ----------------------------- | ------------------------------------------------------ | ------------------------------- |
+| Visual Picker 라우트 카테고리 | `src/builder/panels/data/VariablePicker.tsx`           | `route` 카테고리 추가           |
 | 라우트 파라미터 바인딩 UI     | `src/builder/panels/properties/editors/PageEditor.tsx` | Data Bindings 섹션              |
-| useRouteDataBinding 훅        | `src/canvas/hooks/useRouteDataBinding.ts`                | 라우트 변경 시 자동 데이터 로드 |
-| 바인딩 표현식 확장            | `src/utils/bindingResolver.ts`                            | `{{route.paramName}}` 지원      |
-| Transformer context 확장      | `src/stores/dataPanel/transformerExecutor.ts`             | `context.route` 접근            |
-| API Endpoint 라우트 치환      | `src/stores/dataPanel/apiExecutor.ts`                     | URL에서 `{{route.xxx}}` 치환    |
+| useRouteDataBinding 훅        | `src/canvas/hooks/useRouteDataBinding.ts`              | 라우트 변경 시 자동 데이터 로드 |
+| 바인딩 표현식 확장            | `src/utils/bindingResolver.ts`                         | `{{route.paramName}}` 지원      |
+| Transformer context 확장      | `src/stores/dataPanel/transformerExecutor.ts`          | `context.route` 접근            |
+| API Endpoint 라우트 치환      | `src/stores/dataPanel/apiExecutor.ts`                  | URL에서 `{{route.xxx}}` 치환    |
 
 ### Phase 9: Data Panel 통합 고급 (v2.0) - P2
 
@@ -1572,7 +1600,7 @@ routeConfigs.sort((a, b) => {
 | ------------------------ | ------------------------------------ | --------------------------------- |
 | 자동 API 엔드포인트 생성 | `src/stores/dataPanel/`              | DataBinding 설정 시 자동 API 생성 |
 | 라우트 검증              | `src/utils/routeValidator.ts`        | 라우트 파라미터 유효성 검증       |
-| 404 페이지 처리          | `src/canvas/router/`                | 잘못된 파라미터 시 에러 페이지    |
+| 404 페이지 처리          | `src/canvas/router/`                 | 잘못된 파라미터 시 에러 페이지    |
 | SSG/SSR 프리렌더링 힌트  | `src/types/builder/unified.types.ts` | 정적 경로 목록 생성 지원          |
 
 ### 구현 일정 요약
@@ -1849,8 +1877,8 @@ export interface Project {
   // ... 기존 필드
 
   // ✅ NEW: 에러 페이지 설정
-  defaultNotFoundPageId?: string;  // 프로젝트 기본 404 페이지
-  defaultErrorPageId?: string;     // 프로젝트 기본 500 에러 페이지
+  defaultNotFoundPageId?: string; // 프로젝트 기본 404 페이지
+  defaultErrorPageId?: string; // 프로젝트 기본 500 에러 페이지
 }
 ```
 
@@ -1927,40 +1955,40 @@ function PageRenderer({ pageId, layoutId, renderElements }: PageRendererProps) {
 
 #### 구현 우선순위
 
-| 항목 | 우선순위 | 설명 |
-|------|----------|------|
-| 프로젝트 기본 404 | **P0** | 필수 - 모든 미매칭 경로 처리 |
-| Layout별 404 | **P1** | 권장 - 섹션별 일관된 UX |
-| 데이터 로드 실패 → 404 연동 | **P1** | 필수 - 동적 라우트에서 핵심 |
-| 500 에러 페이지 | **P2** | 선택 - API 에러 처리 |
+| 항목                        | 우선순위 | 설명                         |
+| --------------------------- | -------- | ---------------------------- |
+| 프로젝트 기본 404           | **P0**   | 필수 - 모든 미매칭 경로 처리 |
+| Layout별 404                | **P1**   | 권장 - 섹션별 일관된 UX      |
+| 데이터 로드 실패 → 404 연동 | **P1**   | 필수 - 동적 라우트에서 핵심  |
+| 500 에러 페이지             | **P2**   | 선택 - API 에러 처리         |
 
 ---
 
 ## 11. Migration Strategy
 
-  ### 11.1 Existing Data Migration
+### 11.1 Existing Data Migration
 
-  ```typescript
-  // 기존 페이지의 slug는 그대로 유지 (절대 경로)
-  // Layout에 slug를 추가해도 기존 페이지는 영향 없음
+```typescript
+// 기존 페이지의 slug는 그대로 유지 (절대 경로)
+// Layout에 slug를 추가해도 기존 페이지는 영향 없음
 
-  // 예시: 기존 데이터
-  { id: 'p1', slug: '/page-1', layout_id: 'layout-1' }
+// 예시: 기존 데이터
+{ id: 'p1', slug: '/page-1', layout_id: 'layout-1' }
 
-  // Layout에 slug 추가 후
-  Layout: { id: 'layout-1', slug: '/products' }
+// Layout에 slug 추가 후
+Layout: { id: 'layout-1', slug: '/products' }
 
-  // 기존 페이지는 여전히 /page-1 으로 접근 가능
-  // (절대 경로이므로 Layout.slug 무시)
-  ```
+// 기존 페이지는 여전히 /page-1 으로 접근 가능
+// (절대 경로이므로 Layout.slug 무시)
+```
 
-  ### 11.2 Backward Compatibility
+### 11.2 Backward Compatibility
 
-  - 절대 경로 (`/`로 시작)는 항상 그대로 사용
-  - Layout.slug는 선택적 (undefined 허용)
-  - 기존 페이지 수정 없이 동작
+- 절대 경로 (`/`로 시작)는 항상 그대로 사용
+- Layout.slug는 선택적 (undefined 허용)
+- 기존 페이지 수정 없이 동작
 
-  ***
+---
 
 ## 12. Success Criteria
 
@@ -2030,5 +2058,5 @@ function PageRenderer({ pageId, layoutId, renderElements }: PageRendererProps) {
 - [Next.js App Router](https://nextjs.org/docs/app/building-your-application/routing)
 - [Framer Page Structure](https://janeui.com/articles/framer-page-structure)
 - [React Router Nested Routes](https://reactrouter.com/start/declarative/routing)
-- [XStudio Layout/Slot System](./LAYOUT_PRESET_SYSTEM.md)
-- [XStudio Data Panel System](./DATA_PANEL_SYSTEM.md)
+- [composition Layout/Slot System](./LAYOUT_PRESET_SYSTEM.md)
+- [composition Data Panel System](./DATA_PANEL_SYSTEM.md)

@@ -45,7 +45,7 @@ export class SkiaRenderer {
    * Snapshot(blit) 리샘플링 정책
    *
    * Pencil은 zoom mismatch 시 drawImageCubic 계열로 보간을 사용하는 것으로 알려져 있다.
-   * xstudio도 zoomRatio != 1인 경우(스케일링 발생)에 cubic 보간을 우선 사용한다.
+   * composition도 zoomRatio != 1인 경우(스케일링 발생)에 cubic 보간을 우선 사용한다.
    *
    * Mitchell-Netravali (B=C=1/3): 일반적인 UI 확대/축소에 무난한 기본값.
    */

@@ -28,12 +28,12 @@
 
 ### 명시적 보류
 
-| prop                       | 이유                                           |
-| -------------------------- | ---------------------------------------------- |
-| Form.size                  | XStudio field size 축과 S2 Form size 축 불일치 |
-| Form.isEmphasized          | 공통 시각 계약 아님                            |
-| Tooltip.trigger            | styling hook 성격 (G5 위반)                    |
-| Tabs.isQuiet, isEmphasized | 채택 근거 부족                                 |
+| prop                       | 이유                                               |
+| -------------------------- | -------------------------------------------------- |
+| Form.size                  | composition field size 축과 S2 Form size 축 불일치 |
+| Form.isEmphasized          | 공통 시각 계약 아님                                |
+| Tooltip.trigger            | styling hook 성격 (G5 위반)                        |
+| Tabs.isQuiet, isEmphasized | 채택 근거 부족                                     |
 
 ---
 
@@ -86,7 +86,7 @@
 4. Preview renderer에서 props 전달 확인
 5. 타입 체크 + 브라우저 검증
 
-**React Aria 구조 주의**: `containerPadding`, `crossOffset`, `shouldFlip`은 `<TooltipTrigger>` props. XStudio에서 Tooltip 요소에 저장되지만, 렌더링 시 trigger로 전달해야 함.
+**React Aria 구조 주의**: `containerPadding`, `crossOffset`, `shouldFlip`은 `<TooltipTrigger>` props. composition에서 Tooltip 요소에 저장되지만, 렌더링 시 trigger로 전달해야 함.
 
 ### 4. Popover — overlay props 추가
 
@@ -124,7 +124,7 @@
 
 1. `MenuProps` 인터페이스에 props 추가
 2. `Menu.spec.ts` properties에 fields 추가
-3. shared `Menu.tsx` — 이 props는 `<MenuTrigger>`에 전달됨. XStudio에서 Menu 컴포넌트가 trigger를 래핑하는 구조 확인 필요
+3. shared `Menu.tsx` — 이 props는 `<MenuTrigger>`에 전달됨. composition에서 Menu 컴포넌트가 trigger를 래핑하는 구조 확인 필요
 4. Preview renderer(`renderMenu` 또는 관련 함수)에서 MenuTrigger로 props 전달
 5. 타입 체크 + 브라우저 검증
 

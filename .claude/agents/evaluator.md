@@ -122,7 +122,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:6006
 - [ ] FAIL — 재작업 필요 (사유: ...)
 ```
 
-## XStudio 특화 검증 포인트
+## composition 특화 검증 포인트
 
 ### Canvas 렌더링 검증
 

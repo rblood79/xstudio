@@ -1,7 +1,7 @@
 # 프로젝트별 파일 모드 + 온라인 동기화 아키텍처
 
 **작성일**: 2025-11-07
-**목적**: XStudio의 프로젝트별 파일 시스템과 온라인 동기화 구현 가이드
+**목적**: composition의 프로젝트별 파일 시스템과 온라인 동기화 구현 가이드
 
 ---
 
@@ -12,34 +12,34 @@
 ```
 사용자 PC (로컬)                     클라우드 (Supabase)
 ├── Documents/                        ├── projects
-│   ├── MyWebsite.xstudio            │   ├── project-1 (MyWebsite)
+│   ├── MyWebsite.composition            │   ├── project-1 (MyWebsite)
 │   │   ├── project_id: abc-123      │   ├── project-2 (Portfolio)
 │   │   ├── pages (5개)              │   └── project-3 (EcommerceStore)
 │   │   ├── elements (100개)         │
 │   │   └── design_tokens (50개)     ├── pages (project-1의 페이지)
 │   │                                 ├── elements (project-1의 요소)
-│   ├── Portfolio.xstudio            └── design_tokens (project-1의 토큰)
+│   ├── Portfolio.composition            └── design_tokens (project-1의 토큰)
 │   │   └── project_id: def-456
 │   │
-│   └── EcommerceStore.xstudio
+│   └── EcommerceStore.composition
 │       └── project_id: ghi-789
 ```
 
 ---
 
-## 📁 프로젝트 파일 구조 (.xstudio)
+## 📁 프로젝트 파일 구조 (.composition)
 
-### .xstudio 파일 = PGlite 데이터베이스
+### .composition 파일 = PGlite 데이터베이스
 
 ```typescript
-// .xstudio 파일의 메타데이터 테이블
+// .composition 파일의 메타데이터 테이블
 interface ProjectMetadata {
-  project_id: string;           // Supabase project ID (동기화용)
-  sync_status: 'local-only' | 'synced' | 'conflict';
+  project_id: string; // Supabase project ID (동기화용)
+  sync_status: "local-only" | "synced" | "conflict";
   last_sync_at: Date | null;
   cloud_updated_at: Date | null;
   local_updated_at: Date;
-  sync_enabled: boolean;        // 사용자가 온라인 동기화 활성화 여부
+  sync_enabled: boolean; // 사용자가 온라인 동기화 활성화 여부
 }
 ```
 
@@ -52,7 +52,7 @@ interface ProjectMetadata {
 ```
 사용자 작업:
 1. File > New Project
-2. MyWebsite.xstudio 파일 생성
+2. MyWebsite.composition 파일 생성
 3. 페이지/컴포넌트 추가
 4. 저장 (Cmd+S) → 로컬 파일만 업데이트
 
@@ -67,7 +67,7 @@ interface ProjectMetadata {
 ```
 사용자 작업:
 1. File > New Project
-2. MyWebsite.xstudio 파일 생성
+2. MyWebsite.composition 파일 생성
 3. Settings > Enable Cloud Sync ✅
 4. 페이지/컴포넌트 추가
 5. 저장 (Cmd+S) → 로컬 + 클라우드 동시 저장
@@ -82,17 +82,17 @@ interface ProjectMetadata {
 
 ```
 PC 1 (사무실):
-1. MyWebsite.xstudio 작업
+1. MyWebsite.composition 작업
 2. 저장 → 클라우드 동기화
 
 PC 2 (집):
 1. File > Open from Cloud
 2. MyWebsite 프로젝트 선택
-3. MyWebsite.xstudio 다운로드
+3. MyWebsite.composition 다운로드
 4. 작업 후 저장 → 클라우드 동기화
 
 PC 1 (다음날):
-1. MyWebsite.xstudio 열기
+1. MyWebsite.composition 열기
 2. "Cloud version is newer. Sync now?" 알림
 3. 클라우드 → 로컬 동기화
 ```
@@ -109,12 +109,12 @@ PC 1 (다음날):
 // src/services/database/projectFile.ts
 
 export interface ProjectFileInfo {
-  filePath: string;           // /Users/name/Documents/MyWebsite.xstudio
-  projectId: string;          // abc-123 (Supabase project ID)
-  projectName: string;        // MyWebsite
+  filePath: string; // /Users/name/Documents/MyWebsite.composition
+  projectId: string; // abc-123 (Supabase project ID)
+  projectName: string; // MyWebsite
   lastModified: Date;
   fileSize: number;
-  syncStatus: 'local-only' | 'synced' | 'conflict' | 'pending';
+  syncStatus: "local-only" | "synced" | "conflict" | "pending";
   syncEnabled: boolean;
 }
 
@@ -130,7 +130,10 @@ export class ProjectFile {
   /**
    * Create new project file
    */
-  static async create(filePath: string, projectName: string): Promise<ProjectFile> {
+  static async create(
+    filePath: string,
+    projectName: string,
+  ): Promise<ProjectFile> {
     const projectFile = new ProjectFile(filePath);
 
     // PGlite 인스턴스 생성
@@ -141,15 +144,15 @@ export class ProjectFile {
 
     // 프로젝트 생성
     const projectId = uuidv4();
-    await projectFile.db.insert('projects', {
+    await projectFile.db.insert("projects", {
       id: projectId,
       name: projectName,
     });
 
     // 메타데이터 생성
-    await projectFile.db.insert('_project_metadata', {
+    await projectFile.db.insert("_project_metadata", {
       project_id: projectId,
-      sync_status: 'local-only',
+      sync_status: "local-only",
       sync_enabled: false,
       local_updated_at: new Date(),
     });
@@ -187,13 +190,12 @@ export class ProjectFile {
    */
   async save(): Promise<void> {
     // 모든 변경사항 커밋
-    await this.db!.query('VACUUM');
+    await this.db!.query("VACUUM");
 
     // 메타데이터 업데이트
-    await this.db!.query(
-      'UPDATE _project_metadata SET local_updated_at = $1',
-      [new Date()]
-    );
+    await this.db!.query("UPDATE _project_metadata SET local_updated_at = $1", [
+      new Date(),
+    ]);
 
     console.log(`✅ Project saved: ${this.filePath}`);
   }
@@ -203,7 +205,7 @@ export class ProjectFile {
    */
   async getInfo(): Promise<ProjectFileInfo> {
     const stats = fs.statSync(this.filePath);
-    const project = await this.db!.select('projects', { limit: 1 });
+    const project = await this.db!.select("projects", { limit: 1 });
 
     return {
       filePath: this.filePath,
@@ -220,36 +222,34 @@ export class ProjectFile {
    * Enable cloud sync
    */
   async enableSync(): Promise<void> {
-    if (!await hasInternetAccess()) {
-      throw new Error('No internet connection');
+    if (!(await hasInternetAccess())) {
+      throw new Error("No internet connection");
     }
 
     // 메타데이터 업데이트
-    await this.db!.query(
-      'UPDATE _project_metadata SET sync_enabled = $1',
-      [true]
-    );
+    await this.db!.query("UPDATE _project_metadata SET sync_enabled = $1", [
+      true,
+    ]);
 
     this.metadata!.sync_enabled = true;
 
     // 초기 동기화
     await this.syncToCloud();
 
-    console.log('✅ Cloud sync enabled');
+    console.log("✅ Cloud sync enabled");
   }
 
   /**
    * Disable cloud sync
    */
   async disableSync(): Promise<void> {
-    await this.db!.query(
-      'UPDATE _project_metadata SET sync_enabled = $1',
-      [false]
-    );
+    await this.db!.query("UPDATE _project_metadata SET sync_enabled = $1", [
+      false,
+    ]);
 
     this.metadata!.sync_enabled = false;
 
-    console.log('✅ Cloud sync disabled');
+    console.log("✅ Cloud sync disabled");
   }
 
   /**
@@ -257,26 +257,26 @@ export class ProjectFile {
    */
   async syncToCloud(): Promise<void> {
     if (!this.metadata!.sync_enabled) {
-      throw new Error('Cloud sync is disabled');
+      throw new Error("Cloud sync is disabled");
     }
 
-    console.log('🔄 Syncing to cloud...');
+    console.log("🔄 Syncing to cloud...");
 
     // 프로젝트 데이터 조회
-    const project = await this.db!.select('projects', { limit: 1 });
-    const pages = await this.db!.select('pages');
-    const elements = await this.db!.select('elements');
-    const themes = await this.db!.select('design_themes');
-    const tokens = await this.db!.select('design_tokens');
+    const project = await this.db!.select("projects", { limit: 1 });
+    const pages = await this.db!.select("pages");
+    const elements = await this.db!.select("elements");
+    const themes = await this.db!.select("design_themes");
+    const tokens = await this.db!.select("design_tokens");
 
     // Supabase에 업로드
     const supabase = await getSupabaseClient();
 
-    await supabase.from('projects').upsert(project);
-    await supabase.from('pages').upsert(pages);
-    await supabase.from('elements').upsert(elements);
-    await supabase.from('design_themes').upsert(themes);
-    await supabase.from('design_tokens').upsert(tokens);
+    await supabase.from("projects").upsert(project);
+    await supabase.from("pages").upsert(pages);
+    await supabase.from("elements").upsert(elements);
+    await supabase.from("design_themes").upsert(themes);
+    await supabase.from("design_tokens").upsert(tokens);
 
     // 메타데이터 업데이트
     await this.db!.query(
@@ -284,10 +284,10 @@ export class ProjectFile {
        sync_status = $1,
        last_sync_at = $2,
        cloud_updated_at = $2`,
-      ['synced', new Date()]
+      ["synced", new Date()],
     );
 
-    console.log('✅ Synced to cloud');
+    console.log("✅ Synced to cloud");
   }
 
   /**
@@ -295,48 +295,48 @@ export class ProjectFile {
    */
   async syncFromCloud(): Promise<void> {
     if (!this.metadata!.sync_enabled) {
-      throw new Error('Cloud sync is disabled');
+      throw new Error("Cloud sync is disabled");
     }
 
-    console.log('🔄 Syncing from cloud...');
+    console.log("🔄 Syncing from cloud...");
 
     const supabase = await getSupabaseClient();
     const projectId = this.metadata!.project_id;
 
     // 클라우드 데이터 조회
     const { data: pages } = await supabase
-      .from('pages')
-      .select('*')
-      .eq('project_id', projectId);
+      .from("pages")
+      .select("*")
+      .eq("project_id", projectId);
 
-    const pageIds = pages.map(p => p.id);
+    const pageIds = pages.map((p) => p.id);
     const { data: elements } = await supabase
-      .from('elements')
-      .select('*')
-      .in('page_id', pageIds);
+      .from("elements")
+      .select("*")
+      .in("page_id", pageIds);
 
     const { data: themes } = await supabase
-      .from('design_themes')
-      .select('*')
-      .eq('project_id', projectId);
+      .from("design_themes")
+      .select("*")
+      .eq("project_id", projectId);
 
-    const themeIds = themes.map(t => t.id);
+    const themeIds = themes.map((t) => t.id);
     const { data: tokens } = await supabase
-      .from('design_tokens')
-      .select('*')
-      .in('theme_id', themeIds);
+      .from("design_tokens")
+      .select("*")
+      .in("theme_id", themeIds);
 
     // 로컬 데이터 교체
     await this.db!.transaction(async (tx) => {
-      await tx.query('DELETE FROM design_tokens');
-      await tx.query('DELETE FROM design_themes');
-      await tx.query('DELETE FROM elements');
-      await tx.query('DELETE FROM pages');
+      await tx.query("DELETE FROM design_tokens");
+      await tx.query("DELETE FROM design_themes");
+      await tx.query("DELETE FROM elements");
+      await tx.query("DELETE FROM pages");
 
-      if (pages.length > 0) await tx.insert('pages', pages);
-      if (elements.length > 0) await tx.insert('elements', elements);
-      if (themes.length > 0) await tx.insert('design_themes', themes);
-      if (tokens.length > 0) await tx.insert('design_tokens', tokens);
+      if (pages.length > 0) await tx.insert("pages", pages);
+      if (elements.length > 0) await tx.insert("elements", elements);
+      if (themes.length > 0) await tx.insert("design_themes", themes);
+      if (tokens.length > 0) await tx.insert("design_tokens", tokens);
     });
 
     // 메타데이터 업데이트
@@ -344,10 +344,10 @@ export class ProjectFile {
       `UPDATE _project_metadata SET
        sync_status = $1,
        last_sync_at = $2`,
-      ['synced', new Date()]
+      ["synced", new Date()],
     );
 
-    console.log('✅ Synced from cloud');
+    console.log("✅ Synced from cloud");
   }
 
   /**
@@ -364,9 +364,9 @@ export class ProjectFile {
 
     const supabase = await getSupabaseClient();
     const { data: project } = await supabase
-      .from('projects')
-      .select('updated_at')
-      .eq('id', this.metadata!.project_id)
+      .from("projects")
+      .select("updated_at")
+      .eq("id", this.metadata!.project_id)
       .single();
 
     if (!project) {
@@ -378,7 +378,8 @@ export class ProjectFile {
 
     const cloudNewer = cloudUpdatedAt > localUpdatedAt;
     const localNewer = localUpdatedAt > cloudUpdatedAt;
-    const conflict = Math.abs(cloudUpdatedAt.getTime() - localUpdatedAt.getTime()) > 60000; // 1분 이상 차이
+    const conflict =
+      Math.abs(cloudUpdatedAt.getTime() - localUpdatedAt.getTime()) > 60000; // 1분 이상 차이
 
     return { cloudNewer, localNewer, conflict };
   }
@@ -388,7 +389,7 @@ export class ProjectFile {
    */
   private async initializeSchema(): Promise<void> {
     // 기존 migrations.ts의 스키마 사용
-    const { MIGRATIONS } = await import('./migrations');
+    const { MIGRATIONS } = await import("./migrations");
 
     for (const migration of MIGRATIONS) {
       await this.db!.query(migration.sql);
@@ -411,10 +412,12 @@ export class ProjectFile {
    * Load metadata
    */
   private async loadMetadata(): Promise<ProjectMetadata> {
-    const result = await this.db!.query('SELECT * FROM _project_metadata LIMIT 1');
+    const result = await this.db!.query(
+      "SELECT * FROM _project_metadata LIMIT 1",
+    );
 
     if (result.length === 0) {
-      throw new Error('Project metadata not found');
+      throw new Error("Project metadata not found");
     }
 
     return result[0] as ProjectMetadata;
@@ -448,7 +451,7 @@ interface RecentProject {
 }
 
 export class RecentProjectsService {
-  private static STORAGE_KEY = 'xstudio-recent-projects';
+  private static STORAGE_KEY = "composition-recent-projects";
   private static MAX_RECENT = 10;
 
   /**
@@ -458,7 +461,7 @@ export class RecentProjectsService {
     const recent = this.getAll();
 
     // 중복 제거
-    const filtered = recent.filter(p => p.filePath !== filePath);
+    const filtered = recent.filter((p) => p.filePath !== filePath);
 
     // 맨 앞에 추가
     filtered.unshift({
@@ -488,7 +491,7 @@ export class RecentProjectsService {
     const recent = JSON.parse(data) as RecentProject[];
 
     // 파일 존재 여부 확인
-    return recent.filter(p => fs.existsSync(p.filePath));
+    return recent.filter((p) => fs.existsSync(p.filePath));
   }
 
   /**
@@ -496,7 +499,7 @@ export class RecentProjectsService {
    */
   static remove(filePath: string): void {
     const recent = this.getAll();
-    const filtered = recent.filter(p => p.filePath !== filePath);
+    const filtered = recent.filter((p) => p.filePath !== filePath);
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filtered));
   }
 
@@ -535,34 +538,34 @@ export class CloudProjectsService {
 
     // 프로젝트 목록 조회
     const { data: projects } = await supabase
-      .from('projects')
-      .select('*')
-      .order('updated_at', { ascending: false });
+      .from("projects")
+      .select("*")
+      .order("updated_at", { ascending: false });
 
     // 각 프로젝트의 페이지/요소 개수 조회
     const cloudProjects: CloudProject[] = [];
 
     for (const project of projects) {
       const { count: pageCount } = await supabase
-        .from('pages')
-        .select('*', { count: 'exact', head: true })
-        .eq('project_id', project.id);
+        .from("pages")
+        .select("*", { count: "exact", head: true })
+        .eq("project_id", project.id);
 
       const { data: pages } = await supabase
-        .from('pages')
-        .select('id')
-        .eq('project_id', project.id);
+        .from("pages")
+        .select("id")
+        .eq("project_id", project.id);
 
-      const pageIds = pages.map(p => p.id);
+      const pageIds = pages.map((p) => p.id);
 
       const { count: elementCount } = await supabase
-        .from('elements')
-        .select('*', { count: 'exact', head: true })
-        .in('page_id', pageIds);
+        .from("elements")
+        .select("*", { count: "exact", head: true })
+        .in("page_id", pageIds);
 
       // 로컬 복사본 확인
       const recent = RecentProjectsService.getAll();
-      const localCopy = recent.find(r => r.projectId === project.id);
+      const localCopy = recent.find((r) => r.projectId === project.id);
 
       cloudProjects.push({
         id: project.id,
@@ -581,18 +584,21 @@ export class CloudProjectsService {
   /**
    * Download project from cloud
    */
-  static async download(projectId: string, filePath: string): Promise<ProjectFile> {
+  static async download(
+    projectId: string,
+    filePath: string,
+  ): Promise<ProjectFile> {
     const supabase = await getSupabaseClient();
 
     // 프로젝트 조회
     const { data: project } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', projectId)
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
       .single();
 
     if (!project) {
-      throw new Error('Project not found in cloud');
+      throw new Error("Project not found in cloud");
     }
 
     // 로컬 프로젝트 파일 생성
@@ -600,33 +606,33 @@ export class CloudProjectsService {
 
     // 클라우드에서 데이터 가져오기
     const { data: pages } = await supabase
-      .from('pages')
-      .select('*')
-      .eq('project_id', projectId);
+      .from("pages")
+      .select("*")
+      .eq("project_id", projectId);
 
-    const pageIds = pages.map(p => p.id);
+    const pageIds = pages.map((p) => p.id);
     const { data: elements } = await supabase
-      .from('elements')
-      .select('*')
-      .in('page_id', pageIds);
+      .from("elements")
+      .select("*")
+      .in("page_id", pageIds);
 
     const { data: themes } = await supabase
-      .from('design_themes')
-      .select('*')
-      .eq('project_id', projectId);
+      .from("design_themes")
+      .select("*")
+      .eq("project_id", projectId);
 
-    const themeIds = themes.map(t => t.id);
+    const themeIds = themes.map((t) => t.id);
     const { data: tokens } = await supabase
-      .from('design_tokens')
-      .select('*')
-      .in('theme_id', themeIds);
+      .from("design_tokens")
+      .select("*")
+      .in("theme_id", themeIds);
 
     // 로컬 파일에 데이터 저장
     await projectFile.db!.transaction(async (tx) => {
-      if (pages.length > 0) await tx.insert('pages', pages);
-      if (elements.length > 0) await tx.insert('elements', elements);
-      if (themes.length > 0) await tx.insert('design_themes', themes);
-      if (tokens.length > 0) await tx.insert('design_tokens', tokens);
+      if (pages.length > 0) await tx.insert("pages", pages);
+      if (elements.length > 0) await tx.insert("elements", elements);
+      if (themes.length > 0) await tx.insert("design_themes", themes);
+      if (tokens.length > 0) await tx.insert("design_tokens", tokens);
     });
 
     // 동기화 활성화
@@ -652,10 +658,7 @@ export class CloudProjectsService {
     const supabase = await getSupabaseClient();
 
     // CASCADE로 모든 관련 데이터 삭제
-    await supabase
-      .from('projects')
-      .delete()
-      .eq('id', projectId);
+    await supabase.from("projects").delete().eq("id", projectId);
 
     console.log(`✅ Project deleted from cloud: ${projectId}`);
   }
@@ -669,9 +672,9 @@ export class CloudProjectsService {
 ```typescript
 // electron/main.ts
 
-import { ProjectFile } from '../src/services/database/projectFile';
-import { RecentProjectsService } from '../src/services/database/recentProjects';
-import { CloudProjectsService } from '../src/services/database/cloudProjects';
+import { ProjectFile } from "../src/services/database/projectFile";
+import { RecentProjectsService } from "../src/services/database/recentProjects";
+import { CloudProjectsService } from "../src/services/database/cloudProjects";
 
 let currentProject: ProjectFile | null = null;
 
@@ -680,13 +683,11 @@ let currentProject: ProjectFile | null = null;
 // ============================================
 
 // File > New Project
-ipcMain.handle('project:new', async () => {
+ipcMain.handle("project:new", async () => {
   const result = await dialog.showSaveDialog({
-    title: 'Create New Project',
-    defaultPath: 'MyProject.xstudio',
-    filters: [
-      { name: 'XStudio Project', extensions: ['xstudio'] }
-    ],
+    title: "Create New Project",
+    defaultPath: "MyProject.composition",
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
   });
 
   if (!result.canceled) {
@@ -696,11 +697,15 @@ ipcMain.handle('project:new', async () => {
     }
 
     // 새 프로젝트 생성
-    currentProject = await ProjectFile.create(result.filePath, 'My Project');
+    currentProject = await ProjectFile.create(result.filePath, "My Project");
 
     // 최근 목록 추가
     const info = await currentProject.getInfo();
-    RecentProjectsService.add(result.filePath, info.projectName, info.projectId);
+    RecentProjectsService.add(
+      result.filePath,
+      info.projectName,
+      info.projectId,
+    );
 
     return { success: true, projectInfo: info };
   }
@@ -709,13 +714,11 @@ ipcMain.handle('project:new', async () => {
 });
 
 // File > Open Project
-ipcMain.handle('project:open', async () => {
+ipcMain.handle("project:open", async () => {
   const result = await dialog.showOpenDialog({
-    title: 'Open Project',
-    filters: [
-      { name: 'XStudio Project', extensions: ['xstudio'] }
-    ],
-    properties: ['openFile'],
+    title: "Open Project",
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
+    properties: ["openFile"],
   });
 
   if (!result.canceled) {
@@ -729,7 +732,11 @@ ipcMain.handle('project:open', async () => {
 
     // 최근 목록 추가
     const info = await currentProject.getInfo();
-    RecentProjectsService.add(result.filePaths[0], info.projectName, info.projectId);
+    RecentProjectsService.add(
+      result.filePaths[0],
+      info.projectName,
+      info.projectId,
+    );
 
     // 클라우드 동기화 체크
     const syncCheck = await currentProject.checkCloudSync();
@@ -745,7 +752,7 @@ ipcMain.handle('project:open', async () => {
 });
 
 // File > Open Recent
-ipcMain.handle('project:openRecent', async (_event, filePath: string) => {
+ipcMain.handle("project:openRecent", async (_event, filePath: string) => {
   // 기존 프로젝트 닫기
   if (currentProject) {
     await currentProject.close();
@@ -762,9 +769,9 @@ ipcMain.handle('project:openRecent', async (_event, filePath: string) => {
 });
 
 // File > Save
-ipcMain.handle('project:save', async () => {
+ipcMain.handle("project:save", async () => {
   if (!currentProject) {
-    throw new Error('No project is open');
+    throw new Error("No project is open");
   }
 
   await currentProject.save();
@@ -779,17 +786,15 @@ ipcMain.handle('project:save', async () => {
 });
 
 // File > Save As
-ipcMain.handle('project:saveAs', async () => {
+ipcMain.handle("project:saveAs", async () => {
   if (!currentProject) {
-    throw new Error('No project is open');
+    throw new Error("No project is open");
   }
 
   const result = await dialog.showSaveDialog({
-    title: 'Save Project As',
-    defaultPath: 'MyProject.xstudio',
-    filters: [
-      { name: 'XStudio Project', extensions: ['xstudio'] }
-    ],
+    title: "Save Project As",
+    defaultPath: "MyProject.composition",
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
   });
 
   if (!result.canceled) {
@@ -803,7 +808,11 @@ ipcMain.handle('project:saveAs', async () => {
 
     // 최근 목록 추가
     const newInfo = await currentProject.getInfo();
-    RecentProjectsService.add(result.filePath, newInfo.projectName, newInfo.projectId);
+    RecentProjectsService.add(
+      result.filePath,
+      newInfo.projectName,
+      newInfo.projectId,
+    );
 
     return { success: true, projectInfo: newInfo };
   }
@@ -812,7 +821,7 @@ ipcMain.handle('project:saveAs', async () => {
 });
 
 // File > Close Project
-ipcMain.handle('project:close', async () => {
+ipcMain.handle("project:close", async () => {
   if (currentProject) {
     await currentProject.save();
     await currentProject.close();
@@ -827,9 +836,9 @@ ipcMain.handle('project:close', async () => {
 // ============================================
 
 // Cloud > Enable Sync
-ipcMain.handle('project:enableSync', async () => {
+ipcMain.handle("project:enableSync", async () => {
   if (!currentProject) {
-    throw new Error('No project is open');
+    throw new Error("No project is open");
   }
 
   await currentProject.enableSync();
@@ -838,9 +847,9 @@ ipcMain.handle('project:enableSync', async () => {
 });
 
 // Cloud > Disable Sync
-ipcMain.handle('project:disableSync', async () => {
+ipcMain.handle("project:disableSync", async () => {
   if (!currentProject) {
-    throw new Error('No project is open');
+    throw new Error("No project is open");
   }
 
   await currentProject.disableSync();
@@ -849,9 +858,9 @@ ipcMain.handle('project:disableSync', async () => {
 });
 
 // Cloud > Sync Now
-ipcMain.handle('project:syncNow', async () => {
+ipcMain.handle("project:syncNow", async () => {
   if (!currentProject) {
-    throw new Error('No project is open');
+    throw new Error("No project is open");
   }
 
   const syncCheck = await currentProject.checkCloudSync();
@@ -859,62 +868,70 @@ ipcMain.handle('project:syncNow', async () => {
   if (syncCheck.cloudNewer) {
     // 클라우드가 최신
     const choice = await dialog.showMessageBox({
-      type: 'question',
-      title: 'Cloud Sync',
-      message: 'The cloud version is newer. What would you like to do?',
-      buttons: ['Download from Cloud', 'Upload to Cloud', 'Cancel'],
+      type: "question",
+      title: "Cloud Sync",
+      message: "The cloud version is newer. What would you like to do?",
+      buttons: ["Download from Cloud", "Upload to Cloud", "Cancel"],
       defaultId: 0,
     });
 
     if (choice.response === 0) {
       await currentProject.syncFromCloud();
-      return { success: true, action: 'downloaded' };
+      return { success: true, action: "downloaded" };
     } else if (choice.response === 1) {
       await currentProject.syncToCloud();
-      return { success: true, action: 'uploaded' };
+      return { success: true, action: "uploaded" };
     }
   } else {
     // 로컬이 최신
     await currentProject.syncToCloud();
-    return { success: true, action: 'uploaded' };
+    return { success: true, action: "uploaded" };
   }
 
   return { success: false };
 });
 
 // Cloud > Download Project
-ipcMain.handle('project:downloadFromCloud', async (_event, projectId: string) => {
-  const result = await dialog.showSaveDialog({
-    title: 'Download Project',
-    defaultPath: 'MyProject.xstudio',
-    filters: [
-      { name: 'XStudio Project', extensions: ['xstudio'] }
-    ],
-  });
+ipcMain.handle(
+  "project:downloadFromCloud",
+  async (_event, projectId: string) => {
+    const result = await dialog.showSaveDialog({
+      title: "Download Project",
+      defaultPath: "MyProject.composition",
+      filters: [{ name: "composition Project", extensions: ["composition"] }],
+    });
 
-  if (!result.canceled) {
-    // 기존 프로젝트 닫기
-    if (currentProject) {
-      await currentProject.close();
+    if (!result.canceled) {
+      // 기존 프로젝트 닫기
+      if (currentProject) {
+        await currentProject.close();
+      }
+
+      // 클라우드에서 다운로드
+      currentProject = await CloudProjectsService.download(
+        projectId,
+        result.filePath,
+      );
+
+      // 최근 목록 추가
+      const info = await currentProject.getInfo();
+      RecentProjectsService.add(
+        result.filePath,
+        info.projectName,
+        info.projectId,
+      );
+
+      return { success: true, projectInfo: info };
     }
 
-    // 클라우드에서 다운로드
-    currentProject = await CloudProjectsService.download(projectId, result.filePath);
-
-    // 최근 목록 추가
-    const info = await currentProject.getInfo();
-    RecentProjectsService.add(result.filePath, info.projectName, info.projectId);
-
-    return { success: true, projectInfo: info };
-  }
-
-  return { success: false };
-});
+    return { success: false };
+  },
+);
 
 // Cloud > Upload Project
-ipcMain.handle('project:uploadToCloud', async () => {
+ipcMain.handle("project:uploadToCloud", async () => {
   if (!currentProject) {
-    throw new Error('No project is open');
+    throw new Error("No project is open");
   }
 
   await CloudProjectsService.upload(currentProject);
@@ -923,7 +940,7 @@ ipcMain.handle('project:uploadToCloud', async () => {
 });
 
 // Cloud > View All Projects
-ipcMain.handle('project:listCloud', async () => {
+ipcMain.handle("project:listCloud", async () => {
   const projects = await CloudProjectsService.getAll();
   return projects;
 });
@@ -932,11 +949,11 @@ ipcMain.handle('project:listCloud', async () => {
 // Recent Projects
 // ============================================
 
-ipcMain.handle('project:getRecent', async () => {
+ipcMain.handle("project:getRecent", async () => {
   return RecentProjectsService.getAll();
 });
 
-ipcMain.handle('project:clearRecent', async () => {
+ipcMain.handle("project:clearRecent", async () => {
   RecentProjectsService.clear();
   return { success: true };
 });
@@ -975,7 +992,7 @@ export function WelcomeScreen() {
   return (
     <div className="welcome-screen">
       <header>
-        <h1>Welcome to XStudio</h1>
+        <h1>Welcome to composition</h1>
         <p>Create beautiful websites with ease</p>
       </header>
 
@@ -1043,7 +1060,7 @@ export function WelcomeScreen() {
 
 export function ProjectSettings() {
   const [syncEnabled, setSyncEnabled] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('local-only');
+  const [syncStatus, setSyncStatus] = useState("local-only");
 
   const handleToggleSync = async () => {
     if (syncEnabled) {
@@ -1092,11 +1109,11 @@ export function ProjectSettings() {
 
 ## 📊 동기화 전략 비교
 
-| 전략 | 장점 | 단점 | 추천 |
-|------|------|------|------|
-| **수동 동기화** | 사용자 제어, 충돌 최소 | 동기화 잊을 수 있음 | ⭐⭐⭐ |
-| **자동 동기화** | 편리, 항상 최신 | 충돌 위험, 네트워크 비용 | ⭐⭐ |
-| **저장 시 동기화** | 균형적 | 저장 속도 느려질 수 있음 | ⭐⭐⭐⭐ |
+| 전략               | 장점                   | 단점                     | 추천     |
+| ------------------ | ---------------------- | ------------------------ | -------- |
+| **수동 동기화**    | 사용자 제어, 충돌 최소 | 동기화 잊을 수 있음      | ⭐⭐⭐   |
+| **자동 동기화**    | 편리, 항상 최신        | 충돌 위험, 네트워크 비용 | ⭐⭐     |
+| **저장 시 동기화** | 균형적                 | 저장 속도 느려질 수 있음 | ⭐⭐⭐⭐ |
 
 **권장: 저장 시 동기화 + 수동 동기화 옵션**
 

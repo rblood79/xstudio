@@ -68,7 +68,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
           id="previewFrame"
           src="/preview.html"
           style={{ width: "100%", height: "100%", border: "none" }}
-          title="XStudio Preview"
+          title="composition Preview"
           onLoad={onIframeLoad}
         />
         {children}

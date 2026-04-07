@@ -25,7 +25,7 @@
 
 ### 1.1 Problem Statement
 
-현재 XStudio의 데이터 관리:
+현재 composition의 데이터 관리:
 
 - `MOCK_DATA`는 컴포넌트 테스트용 샘플 데이터
 - 실제 외부 API 연동 구조 없음
@@ -35,9 +35,9 @@
 
 Frontend 개발자가 Backend API 없이도 화면을 먼저 개발할 수 있는 **데이터 추상화 시스템** 구축
 
-### 1.3 XStudio 포지셔닝 (업계 최고 수준)
+### 1.3 composition 포지셔닝 (업계 최고 수준)
 
-| 기능 영역       | XStudio 접근법                            | 벤치마크         | 점수         |
+| 기능 영역       | composition 접근법                        | 벤치마크         | 점수         |
 | --------------- | ----------------------------------------- | ---------------- | ------------ |
 | **데이터 저장** | DataTable (스키마 + Mock + Runtime)       | Bubble           | ⭐⭐⭐⭐     |
 | **바인딩 UX**   | Visual Picker + 무스타쉬                  | Webflow + Retool | ⭐⭐⭐⭐⭐   |
@@ -378,7 +378,7 @@ type VariableType = "string" | "number" | "boolean" | "object" | "array";
 
 **역할:** 컴포넌트 속성과 데이터 연결 (노코드 UI + 고급 직접입력)
 
-**XStudio 바인딩 UX (⭐⭐⭐⭐⭐ - Webflow 수준 쉬움 + Retool 파워)**
+**composition 바인딩 UX (⭐⭐⭐⭐⭐ - Webflow 수준 쉬움 + Retool 파워)**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -479,7 +479,7 @@ interface BindingExpression {
 
 **역할:** API 응답 데이터 변환 (Plasmic 수준 유연성 + 노코드 접근성)
 
-**XStudio 변환 시스템 (⭐⭐⭐⭐⭐ - 업계 최고)**
+**composition 변환 시스템 (⭐⭐⭐⭐⭐ - 업계 최고)**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -540,7 +540,7 @@ interface BindingExpression {
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                  │
 │  💡 차별점: Plasmic은 Level 3만 지원                             │
-│            XStudio는 Level 1~3 모두 지원!                        │
+│            composition는 Level 1~3 모두 지원!                        │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -619,15 +619,15 @@ interface TransformContext {
 }
 ```
 
-**비교: XStudio vs 경쟁사**
+**비교: composition vs 경쟁사**
 
-| 빌더        | Level 1 | Level 2 | Level 3 | 총점       |
-| ----------- | ------- | ------- | ------- | ---------- |
-| **XStudio** | ✅      | ✅      | ✅      | ⭐⭐⭐⭐⭐ |
-| Plasmic     | ❌      | ❌      | ✅      | ⭐⭐⭐     |
-| Retool      | ❌      | ✅      | ❌      | ⭐⭐⭐     |
-| Appsmith    | ❌      | ✅      | ❌      | ⭐⭐⭐     |
-| Webflow     | ❌      | ❌      | ❌      | ⭐         |
+| 빌더            | Level 1 | Level 2 | Level 3 | 총점       |
+| --------------- | ------- | ------- | ------- | ---------- |
+| **composition** | ✅      | ✅      | ✅      | ⭐⭐⭐⭐⭐ |
+| Plasmic         | ❌      | ❌      | ✅      | ⭐⭐⭐     |
+| Retool          | ❌      | ✅      | ❌      | ⭐⭐⭐     |
+| Appsmith        | ❌      | ✅      | ❌      | ⭐⭐⭐     |
+| Webflow         | ❌      | ❌      | ❌      | ⭐         |
 
 ---
 
@@ -1003,14 +1003,14 @@ interface DataState {
   // Actions - Runtime
   setRuntimeData: (
     dataTableName: string,
-    data: Record<string, unknown>[]
+    data: Record<string, unknown>[],
   ) => void;
   clearRuntimeData: (dataTableName: string) => void;
 
   // Actions - API Execution (with Transformer integration)
   executeApi: (
     endpointId: string,
-    params?: Record<string, unknown>
+    params?: Record<string, unknown>,
   ) => Promise<void>;
 
   // Getters
@@ -1041,7 +1041,7 @@ export const useDataStore = create<DataState>()(
           dataTables: state.dataTables.map((dt) =>
             dt.id === id
               ? { ...dt, ...updates, updated_at: new Date().toISOString() }
-              : dt
+              : dt,
           ),
         }));
       },
@@ -1064,7 +1064,7 @@ export const useDataStore = create<DataState>()(
           apiEndpoints: state.apiEndpoints.map((ep) =>
             ep.id === id
               ? { ...ep, ...updates, updated_at: new Date().toISOString() }
-              : ep
+              : ep,
           ),
         }));
       },
@@ -1087,7 +1087,7 @@ export const useDataStore = create<DataState>()(
           variables: state.variables.map((v) =>
             v.id === id
               ? { ...v, ...updates, updated_at: new Date().toISOString() }
-              : v
+              : v,
           ),
         }));
       },
@@ -1103,7 +1103,7 @@ export const useDataStore = create<DataState>()(
         if (variable) {
           set((state) => ({
             variables: state.variables.map((v) =>
-              v.name === name ? { ...v, defaultValue: value } : v
+              v.name === name ? { ...v, defaultValue: value } : v,
             ),
           }));
         }
@@ -1124,7 +1124,7 @@ export const useDataStore = create<DataState>()(
           transformers: state.transformers.map((t) =>
             t.id === id
               ? { ...t, ...updates, updated_at: new Date().toISOString() }
-              : t
+              : t,
           ),
         }));
       },
@@ -1167,7 +1167,7 @@ export const useDataStore = create<DataState>()(
                   const value = item[mapping.sourceKey];
                   mapped[mapping.targetKey] = applyFieldTransform(
                     value,
-                    mapping.transform
+                    mapping.transform,
                   );
                 });
                 return mapped;
@@ -1207,7 +1207,7 @@ export const useDataStore = create<DataState>()(
                 `
                 ${code}
                 return ${functionName}(data, context);
-              `
+              `,
               );
               return await fn(inputData, context);
             } catch (error) {
@@ -1226,10 +1226,10 @@ export const useDataStore = create<DataState>()(
           get().dataTables.map((dt) => [
             dt.name,
             get().getDataTableData(dt.name),
-          ])
+          ]),
         ),
         variables: Object.fromEntries(
-          get().variables.map((v) => [v.name, v.defaultValue])
+          get().variables.map((v) => [v.name, v.defaultValue]),
         ),
         api: {
           fetch: async (url, options) => {
@@ -1383,7 +1383,7 @@ export const useDataStore = create<DataState>()(
           if (endpoint.targetDataTable) {
             get().setRuntimeData(
               endpoint.targetDataTable,
-              Array.isArray(data) ? data : [data]
+              Array.isArray(data) ? data : [data],
             );
           }
         } finally {
@@ -1414,14 +1414,14 @@ export const useDataStore = create<DataState>()(
       },
     }),
     {
-      name: "xstudio-data-store",
+      name: "composition-data-store",
       partialize: (state) => ({
         dataTables: state.dataTables,
         apiEndpoints: state.apiEndpoints,
         variables: state.variables.filter((v) => v.persist),
       }),
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -1768,27 +1768,28 @@ function renderListBox(element: Element, children: React.ReactNode) {
 
 #### 지원 컴포넌트 목록
 
-| 컴포넌트 | 파일 위치 | 특이사항 |
-|----------|-----------|----------|
-| ListBox | `src/shared/components/ListBox.tsx` | 기본 리스트 컴포넌트 |
-| GridList | `src/shared/components/GridList.tsx` | 그리드 레이아웃 |
-| Select | `src/shared/components/Select.tsx` | 드롭다운 선택 |
-| ComboBox | `src/shared/components/ComboBox.tsx` | 검색 가능한 드롭다운 |
-| Menu | `src/shared/components/Menu.tsx` | 메뉴 리스트 |
-| Tree | `src/shared/components/Tree.tsx` | 계층적 트리 구조 |
-| Table | `src/shared/components/Table.tsx` | 테이블 데이터 |
-| TagGroup | `src/shared/components/TagGroup.tsx` | 태그 그룹, removedItemIds 지원 |
-| RadioGroup | `src/shared/components/RadioGroup.tsx` | 라디오 버튼 그룹 |
-| CheckboxGroup | `src/shared/components/CheckboxGroup.tsx` | 체크박스 그룹 |
-| Tabs | `src/shared/components/Tabs.tsx` | 탭 네비게이션 |
-| Breadcrumbs | `src/shared/components/Breadcrumbs.tsx` | 경로 탐색 |
-| ToggleButtonGroup | `src/shared/components/ToggleButtonGroup.tsx` | 토글 버튼 그룹 |
+| 컴포넌트          | 파일 위치                                     | 특이사항                       |
+| ----------------- | --------------------------------------------- | ------------------------------ |
+| ListBox           | `src/shared/components/ListBox.tsx`           | 기본 리스트 컴포넌트           |
+| GridList          | `src/shared/components/GridList.tsx`          | 그리드 레이아웃                |
+| Select            | `src/shared/components/Select.tsx`            | 드롭다운 선택                  |
+| ComboBox          | `src/shared/components/ComboBox.tsx`          | 검색 가능한 드롭다운           |
+| Menu              | `src/shared/components/Menu.tsx`              | 메뉴 리스트                    |
+| Tree              | `src/shared/components/Tree.tsx`              | 계층적 트리 구조               |
+| Table             | `src/shared/components/Table.tsx`             | 테이블 데이터                  |
+| TagGroup          | `src/shared/components/TagGroup.tsx`          | 태그 그룹, removedItemIds 지원 |
+| RadioGroup        | `src/shared/components/RadioGroup.tsx`        | 라디오 버튼 그룹               |
+| CheckboxGroup     | `src/shared/components/CheckboxGroup.tsx`     | 체크박스 그룹                  |
+| Tabs              | `src/shared/components/Tabs.tsx`              | 탭 네비게이션                  |
+| Breadcrumbs       | `src/shared/components/Breadcrumbs.tsx`       | 경로 탐색                      |
+| ToggleButtonGroup | `src/shared/components/ToggleButtonGroup.tsx` | 토글 버튼 그룹                 |
 
 #### DataBinding 형식
 
 두 가지 DataBinding 형식이 존재합니다:
 
 **1. PropertyDataBinding 형식 (Inspector UI에서 설정)**
+
 ```typescript
 // Inspector의 PropertyDataBinding 컴포넌트에서 생성
 {
@@ -1798,6 +1799,7 @@ function renderListBox(element: Element, children: React.ReactNode) {
 ```
 
 **2. DataBinding 형식 (프로그래밍 방식)**
+
 ```typescript
 // 직접 element.dataBinding에 설정
 {
@@ -1906,26 +1908,26 @@ Canvas Runtime에서 데이터 소스에 접근하는 통합 훅:
 
 ```typescript
 // DataTable/API 데이터 fetch
-const { data, loading, error, refetch } = useDataSource('users');
+const { data, loading, error, refetch } = useDataSource("users");
 
 // API Endpoint 실행
-const { data, loading, error, execute } = useDataSource('fetchUsers', {
+const { data, loading, error, execute } = useDataSource("fetchUsers", {
   autoFetch: true,
-  params: { page: 1 }
+  params: { page: 1 },
 });
 
 // Variable 접근
-const { value, setValue, exists } = useVariable('currentUserId');
+const { value, setValue, exists } = useVariable("currentUserId");
 
 // Route Parameters
 const params = useRouteParams(); // { productId: '123' }
 
 // 데이터 바인딩
 const userName = useDataBinding({
-  source: 'dataTable',
-  name: 'users',
-  path: 'items[0].name',
-  defaultValue: 'Unknown'
+  source: "dataTable",
+  name: "users",
+  path: "items[0].name",
+  defaultValue: "Unknown",
 });
 ```
 
@@ -1967,6 +1969,7 @@ interface DataBindingValue {
 ```
 
 기능:
+
 - 소스 타입 선택 (DataTable, API, Variable, Route Param)
 - Data Store에서 소스 목록 자동 로드
 - 데이터 경로 설정 (`items[0].name`, `user.email`)
@@ -1974,22 +1977,24 @@ interface DataBindingValue {
 
 ### Phase 6: Testing & Polish - 0.5주 ✅ COMPLETE
 
-| Task                | Priority | Status | Description                  |
-| ------------------- | -------- | ------ | ---------------------------- |
+| Task                | Priority | Status | Description                   |
+| ------------------- | -------- | ------ | ----------------------------- |
 | Unit tests          | P2       | ✅     | 기존 테스트 21개 모두 통과    |
-| TypeScript check    | P1       | ✅     | 0 errors                     |
-| ESLint              | P1       | ✅     | 0 errors, 17 warnings (minor)|
+| TypeScript check    | P1       | ✅     | 0 errors                      |
+| ESLint              | P1       | ✅     | 0 errors, 17 warnings (minor) |
 | Documentation       | P2       | ✅     | Phase 완료 상태 반영          |
 | MOCK_DATA migration | P2       | ⏳     | 향후 작업으로 연기            |
 
 #### Phase 6 구현 상세
 
 **1. 코드 품질 검증**
+
 - TypeScript: 모든 타입 에러 해결 (`npx tsc --noEmit` 통과)
 - ESLint: 에러 0개, 경고 17개 (react-refresh 관련 minor 경고)
 - Vitest: 21개 테스트 모두 통과
 
 **2. 수정된 파일**
+
 - `DatasetPanel.tsx` - 사용하지 않는 import 제거
 - `ApiEndpointList.tsx` - 사용하지 않는 타입 import 제거
 - `DataTableList.tsx` - 사용하지 않는 타입 import 제거
@@ -2225,14 +2230,15 @@ import { createClient } from "@supabase/supabase-js";
 Deno.serve(async (req) => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
   // 1. 사용자 세션 검증
   const authHeader = req.headers.get("Authorization");
-  const { data: { user }, error } = await supabase.auth.getUser(
-    authHeader?.replace("Bearer ", "")
-  );
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(authHeader?.replace("Bearer ", ""));
   if (error || !user) {
     return new Response("Unauthorized", { status: 401 });
   }
@@ -2263,13 +2269,13 @@ Deno.serve(async (req) => {
 
 #### 구현 우선순위
 
-| 항목 | 우선순위 | 설명 |
-|------|----------|------|
-| executionMode 필드 추가 | **P1** | client/server 선택 |
-| Supabase Edge Function 템플릿 | **P1** | api-proxy 기본 구현 |
-| Vault 시크릿 연동 | **P1** | 비밀키 안전 저장 |
-| UI 설정 화면 | **P2** | Server Configuration |
-| 응답 필터링 | **P2** | 민감 정보 제거 |
+| 항목                          | 우선순위 | 설명                 |
+| ----------------------------- | -------- | -------------------- |
+| executionMode 필드 추가       | **P1**   | client/server 선택   |
+| Supabase Edge Function 템플릿 | **P1**   | api-proxy 기본 구현  |
+| Vault 시크릿 연동             | **P1**   | 비밀키 안전 저장     |
+| UI 설정 화면                  | **P2**   | Server Configuration |
+| 응답 필터링                   | **P2**   | 민감 정보 제거       |
 
 ---
 
@@ -2332,23 +2338,27 @@ interface DataTransformer {
 ### Phase 1: 기본 기능 (P0)
 
 **DataTable:**
+
 - [ ] DataTable CRUD 기능 동작
 - [ ] Schema Editor UI 완성
 - [ ] Mock Data Editor UI 완성
 - [ ] useMockData 토글로 Mock/API 전환
 
 **API Endpoint:**
+
 - [ ] API Endpoint 설정 UI 완성
 - [ ] Request Builder (Method, URL, Headers, Query, Body)
 - [ ] Response Mapping (dataPath, fieldMappings)
 - [ ] Test Request 기능
 
 **Variables:**
+
 - [ ] Variables CRUD 기능 동작
 - [ ] Global/Page scope 지원
 - [ ] persist 옵션 (localStorage 저장)
 
 **Integration:**
+
 - [ ] Collection 컴포넌트에서 dataSource 바인딩
 - [ ] Event에서 API Call → DataTable 업데이트
 - [ ] Visual Picker UI (데이터 소스 선택)
@@ -2846,10 +2856,9 @@ function ListBoxRenderer({ element }) {
   const { dataBinding } = element.props;
 
   // 데이터 바인딩이 있으면 데이터 소스에서 로드
-  const { data, loading, error } = useDataSource(
-    dataBinding?.name || '',
-    { autoFetch: !!dataBinding }
-  );
+  const { data, loading, error } = useDataSource(dataBinding?.name || "", {
+    autoFetch: !!dataBinding,
+  });
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage error={error} />;
@@ -2940,14 +2949,12 @@ function ListBoxRenderer({ element }) {
 ```tsx
 // useVariable 훅으로 결과 표시
 function SubmitResultDisplay() {
-  const { value } = useVariable('formSubmitResult');
+  const { value } = useVariable("formSubmitResult");
 
   if (!value) return null;
 
   return (
-    <div className={value.success ? 'success' : 'error'}>
-      {value.message}
-    </div>
+    <div className={value.success ? "success" : "error"}>{value.message}</div>
   );
 }
 ```
@@ -3097,12 +3104,12 @@ const [creatorMode, setCreatorMode] = useState<"empty" | "preset">("preset");
 
 ### 18.4 에디터 타입별 탭 구성
 
-| 에디터 | 탭 구성 |
-|--------|---------|
-| **DataTableCreator** | mode-selection (빈 테이블 / Preset) |
-| **DataTableEditor** | Schema, Table, Settings |
+| 에디터                | 탭 구성                              |
+| --------------------- | ------------------------------------ |
+| **DataTableCreator**  | mode-selection (빈 테이블 / Preset)  |
+| **DataTableEditor**   | Schema, Table, Settings              |
 | **ApiEndpointEditor** | Basic, Headers, Body, Response, Test |
-| **VariableEditor** | Basic, Validation, Transform |
+| **VariableEditor**    | Basic, Validation, Transform         |
 
 ### 18.5 모드 타입 (editorTypes.ts)
 

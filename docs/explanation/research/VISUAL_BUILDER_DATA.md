@@ -7,19 +7,19 @@
 
 ## 1. 빌더별 요약 비교표
 
-| 빌더 | 유형 | 데이터 저장 | 데이터 연결 | 바인딩 방식 | 외부 API | 강점 |
-|------|------|------------|------------|------------|----------|------|
-| **Webflow** | 웹사이트 | CMS Collection | Dataset | 필드 바인딩 | 제한적 (코드 필요) | SEO, 정적 콘텐츠 |
-| **Bubble** | 풀스택 앱 | 내장 DB | Data Type | Thing 기반 | API Connector | 완전한 앱 빌더 |
-| **Retool** | 내부 도구 | 외부 DB/API | Query + Transformer | `{{query.data}}` | 네이티브 지원 | 다양한 DB 연결 |
-| **Framer** | 디자인 | CMS + Fetch | Variables | 토큰 바인딩 | Fetch (노코드) | 디자인 중심 |
-| **Plasmic** | 헤드리스 | 외부 CMS | DataProvider | Context 기반 | Code Component | 개발자 친화적 |
-| **Builder.io** | 헤드리스 CMS | Data Models | State | `state.*` | Content API | 멀티 프레임워크 |
-| **Appsmith** | 내부 도구 | Datasource | Query | `{{}}` 무스타쉬 | 네이티브 지원 | 리액티브 바인딩 |
-| **OutSystems** | 엔터프라이즈 | Entity | Aggregate | 비주얼 쿼리 | 자동 생성 | 자동화 |
-| **Wix Velo** | 웹사이트 | Collection | Dataset | 자동 바인딩 | External DB 지원 | 노코드 + 코드 |
-| **FlutterFlow** | 모바일 앱 | Firebase/Supabase | Backend Query | JSON Path | API Call | 모바일 특화 |
-| **Mendix** | 엔터프라이즈 | Domain Model | Microflow | 매핑 | OpenAPI 자동 | 엔터프라이즈 통합 |
+| 빌더            | 유형         | 데이터 저장       | 데이터 연결         | 바인딩 방식      | 외부 API           | 강점              |
+| --------------- | ------------ | ----------------- | ------------------- | ---------------- | ------------------ | ----------------- |
+| **Webflow**     | 웹사이트     | CMS Collection    | Dataset             | 필드 바인딩      | 제한적 (코드 필요) | SEO, 정적 콘텐츠  |
+| **Bubble**      | 풀스택 앱    | 내장 DB           | Data Type           | Thing 기반       | API Connector      | 완전한 앱 빌더    |
+| **Retool**      | 내부 도구    | 외부 DB/API       | Query + Transformer | `{{query.data}}` | 네이티브 지원      | 다양한 DB 연결    |
+| **Framer**      | 디자인       | CMS + Fetch       | Variables           | 토큰 바인딩      | Fetch (노코드)     | 디자인 중심       |
+| **Plasmic**     | 헤드리스     | 외부 CMS          | DataProvider        | Context 기반     | Code Component     | 개발자 친화적     |
+| **Builder.io**  | 헤드리스 CMS | Data Models       | State               | `state.*`        | Content API        | 멀티 프레임워크   |
+| **Appsmith**    | 내부 도구    | Datasource        | Query               | `{{}}` 무스타쉬  | 네이티브 지원      | 리액티브 바인딩   |
+| **OutSystems**  | 엔터프라이즈 | Entity            | Aggregate           | 비주얼 쿼리      | 자동 생성          | 자동화            |
+| **Wix Velo**    | 웹사이트     | Collection        | Dataset             | 자동 바인딩      | External DB 지원   | 노코드 + 코드     |
+| **FlutterFlow** | 모바일 앱    | Firebase/Supabase | Backend Query       | JSON Path        | API Call           | 모바일 특화       |
+| **Mendix**      | 엔터프라이즈 | Domain Model      | Microflow           | 매핑             | OpenAPI 자동       | 엔터프라이즈 통합 |
 
 ---
 
@@ -37,12 +37,14 @@
 ```
 
 **특징:**
+
 - 정적 콘텐츠에 최적화
 - SEO 친화적 (빌드 타임 생성)
 - 외부 API 연동 제한적
 - 블로그, 포트폴리오, 마케팅 사이트에 적합
 
 **Webflow 상세:**
+
 ```
 Collection Fields:
 ├─ name (Text)
@@ -71,6 +73,7 @@ Collection Page:
 ```
 
 **특징:**
+
 - 다양한 DB 직접 연결 (PostgreSQL, MySQL, MongoDB)
 - REST/GraphQL API 네이티브 지원
 - JavaScript로 데이터 변환
@@ -78,6 +81,7 @@ Collection Page:
 - 대시보드, 어드민 패널에 적합
 
 **Retool 상세:**
+
 ```
 Resources (Datasources):
 ├─ PostgreSQL: prod-database
@@ -96,6 +100,7 @@ Widget Binding:
 ```
 
 **Appsmith 상세:**
+
 ```
 Datasource:
 ├─ Type: PostgreSQL
@@ -125,6 +130,7 @@ Input Change → Query Auto-Run → Widget Auto-Update
 ```
 
 **특징:**
+
 - 스키마 기반 데이터 타입 정의
 - 이벤트 기반 워크플로우
 - 앱 상태 관리 통합
@@ -132,6 +138,7 @@ Input Change → Query Auto-Run → Widget Auto-Update
 - SaaS, 모바일 앱에 적합
 
 **Bubble 상세:**
+
 ```
 Data Types:
 ├─ User
@@ -156,6 +163,7 @@ Data Display:
 ```
 
 **FlutterFlow 상세:**
+
 ```
 Backend Options:
 ├─ Firebase Firestore (Real-time)
@@ -191,6 +199,7 @@ Real-time: Firestore 변경 → UI 자동 업데이트
 ```
 
 **특징:**
+
 - 개발자가 데이터 로직 작성 (React Component)
 - 디자이너가 Studio에서 바인딩
 - 최대 유연성
@@ -198,6 +207,7 @@ Real-time: Firestore 변경 → UI 자동 업데이트
 - 기존 코드베이스 통합에 적합
 
 **Plasmic 상세:**
+
 ```typescript
 // Code Component (개발자 작성)
 function ProductFetcher({ children }) {
@@ -232,6 +242,7 @@ function ProductFetcher({ children }) {
 ```
 
 **특징:**
+
 - 비주얼 도메인 모델링
 - 자동 CRUD UI 생성
 - OpenAPI에서 자동 임포트
@@ -240,6 +251,7 @@ function ProductFetcher({ children }) {
 - 대규모 기업 애플리케이션에 적합
 
 **OutSystems 상세:**
+
 ```
 Domain Model (Visual Designer):
 ┌─────────────┐         ┌─────────────┐
@@ -263,18 +275,19 @@ REST API Integration:
 
 ### 3.1 데이터 소스 연결
 
-| 빌더 | 내장 DB | PostgreSQL | MySQL | MongoDB | REST API | GraphQL | Firebase | Supabase |
-|------|--------|------------|-------|---------|----------|---------|----------|----------|
-| Webflow | ✅ CMS | ❌ | ❌ | ❌ | ⚠️ Code | ❌ | ❌ | ❌ |
-| Bubble | ✅ | ❌ | ❌ | ❌ | ✅ Plugin | ❌ | ✅ Plugin | ❌ |
-| Retool | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Framer | ✅ CMS | ❌ | ❌ | ❌ | ✅ Fetch | ❌ | ❌ | ❌ |
-| Plasmic | ❌ | ✅ Code | ✅ Code | ✅ Code | ✅ Code | ✅ Code | ✅ Code | ✅ Code |
-| Appsmith | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| FlutterFlow | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
-| **XStudio** | ✅ DataTable | 🔮 예정 | 🔮 예정 | ❌ | ✅ | ❌ | ❌ | ❌ |
+| 빌더            | 내장 DB      | PostgreSQL | MySQL   | MongoDB | REST API  | GraphQL | Firebase  | Supabase |
+| --------------- | ------------ | ---------- | ------- | ------- | --------- | ------- | --------- | -------- |
+| Webflow         | ✅ CMS       | ❌         | ❌      | ❌      | ⚠️ Code   | ❌      | ❌        | ❌       |
+| Bubble          | ✅           | ❌         | ❌      | ❌      | ✅ Plugin | ❌      | ✅ Plugin | ❌       |
+| Retool          | ✅           | ✅         | ✅      | ✅      | ✅        | ✅      | ✅        | ✅       |
+| Framer          | ✅ CMS       | ❌         | ❌      | ❌      | ✅ Fetch  | ❌      | ❌        | ❌       |
+| Plasmic         | ❌           | ✅ Code    | ✅ Code | ✅ Code | ✅ Code   | ✅ Code | ✅ Code   | ✅ Code  |
+| Appsmith        | ✅           | ✅         | ✅      | ✅      | ✅        | ✅      | ✅        | ✅       |
+| FlutterFlow     | ❌           | ❌         | ❌      | ❌      | ✅        | ❌      | ✅        | ✅       |
+| **composition** | ✅ DataTable | 🔮 예정    | 🔮 예정 | ❌      | ✅        | ❌      | ❌        | ❌       |
 
-> **XStudio 내장 DB = DataTable**
+> **composition 내장 DB = DataTable**
+>
 > - 스키마 정의 (key, type, required, default)
 > - Mock 데이터 저장 (UI 개발용)
 > - Runtime 데이터 캐싱 (API 응답 저장)
@@ -283,19 +296,19 @@ REST API Integration:
 
 ### 3.2 바인딩 문법
 
-| 빌더 | 문법 | 예시 | 학습 난이도 |
-|------|------|------|------------|
-| Webflow | 필드 선택 UI | (drag & drop) | ⭐ 쉬움 |
-| Bubble | 표현식 빌더 | `Current User's Orders:first item's total` | ⭐⭐⭐ 높음 |
-| Retool | 무스타쉬 | `{{query1.data[0].name}}` | ⭐⭐ 보통 |
-| Framer | 토큰 | `:city` in URL, bind to variable | ⭐ 쉬움 |
-| Plasmic | 동적 값 | `$ctx.products.length` | ⭐⭐ 보통 |
-| Builder.io | State 접근 | `state.products[0].name` | ⭐⭐ 보통 |
-| Appsmith | 무스타쉬 | `{{Table1.selectedRow.id}}` | ⭐⭐ 보통 |
-| FlutterFlow | JSON Path | `item['user']['name']` | ⭐⭐ 보통 |
-| **XStudio** | **하이브리드** | Visual Picker → `{{users[0].name}}` 자동 생성 | ⭐ 쉬움 |
+| 빌더            | 문법           | 예시                                          | 학습 난이도 |
+| --------------- | -------------- | --------------------------------------------- | ----------- |
+| Webflow         | 필드 선택 UI   | (drag & drop)                                 | ⭐ 쉬움     |
+| Bubble          | 표현식 빌더    | `Current User's Orders:first item's total`    | ⭐⭐⭐ 높음 |
+| Retool          | 무스타쉬       | `{{query1.data[0].name}}`                     | ⭐⭐ 보통   |
+| Framer          | 토큰           | `:city` in URL, bind to variable              | ⭐ 쉬움     |
+| Plasmic         | 동적 값        | `$ctx.products.length`                        | ⭐⭐ 보통   |
+| Builder.io      | State 접근     | `state.products[0].name`                      | ⭐⭐ 보통   |
+| Appsmith        | 무스타쉬       | `{{Table1.selectedRow.id}}`                   | ⭐⭐ 보통   |
+| FlutterFlow     | JSON Path      | `item['user']['name']`                        | ⭐⭐ 보통   |
+| **composition** | **하이브리드** | Visual Picker → `{{users[0].name}}` 자동 생성 | ⭐ 쉬움     |
 
-> **XStudio 바인딩 UX**: Visual Picker + 무스타쉬 하이브리드
+> **composition 바인딩 UX**: Visual Picker + 무스타쉬 하이브리드
 >
 > ```
 > ┌─────────────────────────────────────────┐
@@ -324,24 +337,25 @@ REST API Integration:
 > ```
 >
 > **장점**:
+>
 > - 노코드 사용자: 드래그 드랍 / 클릭으로 바인딩
 > - 개발자: Advanced Mode에서 직접 무스타쉬 작성
 > - 자동완성: 타이핑 시 데이터 소스 자동 제안
 
 ### 3.3 데이터 변환
 
-| 빌더 | 변환 방식 | 언어 | 제한사항 | 유연성 |
-|------|----------|------|----------|--------|
-| Webflow | ❌ 없음 | - | CMS 구조 그대로 사용 | ⭐ |
-| Bubble | 표현식 | Bubble 표현식 | 복잡한 변환 어려움 | ⭐⭐ |
-| Retool | Transformer | JavaScript | Read-only (side effect 불가) | ⭐⭐⭐⭐ |
-| Framer | ❌ 없음 | - | API 응답 그대로 사용 | ⭐ |
-| Plasmic | Code Component | JavaScript/TypeScript | 코드 작성 필요 | ⭐⭐⭐⭐⭐ |
-| Appsmith | JS Objects | JavaScript | Async 지원 | ⭐⭐⭐⭐ |
-| FlutterFlow | Custom Functions | Dart | 제한적 | ⭐⭐ |
-| **XStudio** | **3단계 하이브리드** | JS/TS | 노코드→로우코드→풀코드 | ⭐⭐⭐⭐⭐ |
+| 빌더            | 변환 방식            | 언어                  | 제한사항                     | 유연성     |
+| --------------- | -------------------- | --------------------- | ---------------------------- | ---------- |
+| Webflow         | ❌ 없음              | -                     | CMS 구조 그대로 사용         | ⭐         |
+| Bubble          | 표현식               | Bubble 표현식         | 복잡한 변환 어려움           | ⭐⭐       |
+| Retool          | Transformer          | JavaScript            | Read-only (side effect 불가) | ⭐⭐⭐⭐   |
+| Framer          | ❌ 없음              | -                     | API 응답 그대로 사용         | ⭐         |
+| Plasmic         | Code Component       | JavaScript/TypeScript | 코드 작성 필요               | ⭐⭐⭐⭐⭐ |
+| Appsmith        | JS Objects           | JavaScript            | Async 지원                   | ⭐⭐⭐⭐   |
+| FlutterFlow     | Custom Functions     | Dart                  | 제한적                       | ⭐⭐       |
+| **composition** | **3단계 하이브리드** | JS/TS                 | 노코드→로우코드→풀코드       | ⭐⭐⭐⭐⭐ |
 
-> **XStudio 변환**: 3단계 하이브리드 시스템 (Plasmic 수준 + 노코드 접근성)
+> **composition 변환**: 3단계 하이브리드 시스템 (Plasmic 수준 + 노코드 접근성)
 >
 > ```
 > ┌─────────────────────────────────────────────────────────────┐
@@ -373,41 +387,42 @@ REST API Integration:
 > └─────────────────────────────────────────────────────────────┘
 > ```
 >
-> **차별점**: Plasmic은 Level 3만 지원 → XStudio는 Level 1~3 모두 지원
+> **차별점**: Plasmic은 Level 3만 지원 → composition는 Level 1~3 모두 지원
 
 ### 3.4 실시간 업데이트
 
-| 빌더 | 지원 | 방식 | 제한사항 | 적합 용도 |
-|------|------|------|----------|----------|
-| Webflow | ❌ | - | 정적 사이트 | 콘텐츠 사이트 |
-| Bubble | ✅ | 내장 DB 변경 감지 | Bubble DB만 | SaaS 앱 |
-| Retool | ⚠️ | Polling | WebSocket 제한적 | 대시보드 |
-| Framer | ❌ | - | Fetch는 1회성 | 마케팅 사이트 |
-| FlutterFlow | ✅ | Firestore Realtime | Firestore만 | 모바일 앱 |
-| Appsmith | ⚠️ | Polling, WebSocket | 설정 필요 | 어드민 패널 |
-| **XStudio** | ⚠️ | Event-driven Refresh | WebSocket 미지원 | 엔터프라이즈 어드민 |
+| 빌더            | 지원 | 방식                 | 제한사항         | 적합 용도           |
+| --------------- | ---- | -------------------- | ---------------- | ------------------- |
+| Webflow         | ❌   | -                    | 정적 사이트      | 콘텐츠 사이트       |
+| Bubble          | ✅   | 내장 DB 변경 감지    | Bubble DB만      | SaaS 앱             |
+| Retool          | ⚠️   | Polling              | WebSocket 제한적 | 대시보드            |
+| Framer          | ❌   | -                    | Fetch는 1회성    | 마케팅 사이트       |
+| FlutterFlow     | ✅   | Firestore Realtime   | Firestore만      | 모바일 앱           |
+| Appsmith        | ⚠️   | Polling, WebSocket   | 설정 필요        | 어드민 패널         |
+| **composition** | ⚠️   | Event-driven Refresh | WebSocket 미지원 | 엔터프라이즈 어드민 |
 
-> **XStudio 전략**: 실시간 WebSocket 대신 **Event-driven Refresh** 방식 채택
+> **composition 전략**: 실시간 WebSocket 대신 **Event-driven Refresh** 방식 채택
+>
 > - `onPageLoad` → API 호출 → DataTable 갱신
 > - `onInterval` → 주기적 폴링 (선택적)
 > - `onComponentEvent` → 사용자 액션 트리거
 > - **이유**: 외부 REST API 기반이므로 WebSocket 실시간은 비현실적, 이벤트 기반 갱신이 실용적
 
-### 3.5 XStudio 종합 포지셔닝
+### 3.5 composition 종합 포지셔닝
 
-| 기능 영역 | XStudio 접근법 | 벤치마크 빌더 | 차별점 |
-|----------|--------------|--------------|--------|
-| **데이터 저장** | DataTable (스키마 + Mock + Runtime) | Bubble Data Type | 내장 DB로 독립 동작 + API 연동 가능 |
-| **API 연동** | REST API Endpoint | Retool Resource | 노코드 필드 매핑 + 선택적 Transformer |
-| **상태 관리** | Variables (Global/Page) | Appsmith App State | localStorage 영속화 옵션 |
-| **바인딩** | **Visual Picker + 무스타쉬** | Webflow (UI) + Retool (문법) | 노코드 클릭 + 고급 직접입력 |
-| **변환** | **3단계 하이브리드** (노코드→로우코드→풀코드) | Plasmic + Retool | Plasmic 유연성 + 노코드 접근성 |
-| **실시간** | Event-driven Refresh | Appsmith Polling | 실용적 (REST 기반) |
-| **타겟 유저** | SI/엔터프라이즈 | Retool/Appsmith | 기업 내부 시스템 통합 |
+| 기능 영역       | composition 접근법                            | 벤치마크 빌더                | 차별점                                |
+| --------------- | --------------------------------------------- | ---------------------------- | ------------------------------------- |
+| **데이터 저장** | DataTable (스키마 + Mock + Runtime)           | Bubble Data Type             | 내장 DB로 독립 동작 + API 연동 가능   |
+| **API 연동**    | REST API Endpoint                             | Retool Resource              | 노코드 필드 매핑 + 선택적 Transformer |
+| **상태 관리**   | Variables (Global/Page)                       | Appsmith App State           | localStorage 영속화 옵션              |
+| **바인딩**      | **Visual Picker + 무스타쉬**                  | Webflow (UI) + Retool (문법) | 노코드 클릭 + 고급 직접입력           |
+| **변환**        | **3단계 하이브리드** (노코드→로우코드→풀코드) | Plasmic + Retool             | Plasmic 유연성 + 노코드 접근성        |
+| **실시간**      | Event-driven Refresh                          | Appsmith Polling             | 실용적 (REST 기반)                    |
+| **타겟 유저**   | SI/엔터프라이즈                               | Retool/Appsmith              | 기업 내부 시스템 통합                 |
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         XStudio 포지셔닝 맵                              │
+│                         composition 포지셔닝 맵                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │                    코드 필요 ↑                                          │
@@ -426,7 +441,7 @@ REST API Integration:
 │                              │                                          │
 │                    개인/SMB ↓                                           │
 │                                                                         │
-│  💡 XStudio = Retool 수준 기능 + 노코드 친화적 UX + 엔터프라이즈 타겟   │
+│  💡 composition = Retool 수준 기능 + 노코드 친화적 UX + 엔터프라이즈 타겟   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -475,7 +490,7 @@ REST API Integration:
 5. Actions로 데이터 조작
 ```
 
-### 4.5 XStudio 권장 워크플로우 (제안)
+### 4.5 composition 권장 워크플로우 (제안)
 
 ```
 1. DataTable 정의 (스키마 + Mock 데이터)
@@ -496,31 +511,31 @@ REST API Integration:
 
 ---
 
-## 5. XStudio 적용을 위한 핵심 인사이트
+## 5. composition 적용을 위한 핵심 인사이트
 
 ### 5.1 채택할 패턴
 
-| 출처 | 채택할 요소 | 이유 |
-|------|------------|------|
-| Retool | Query + Transformer 구조 | 유연한 데이터 변환 |
-| Appsmith | 리액티브 바인딩 `{{}}` | 직관적인 문법 |
-| Bubble | Data Type 스키마 정의 | 타입 안전성 |
-| FlutterFlow | Mock → Real 전환 | 개발 효율성 |
-| Plasmic | DataProvider 개념 | 컴포넌트 분리 |
+| 출처        | 채택할 요소              | 이유               |
+| ----------- | ------------------------ | ------------------ |
+| Retool      | Query + Transformer 구조 | 유연한 데이터 변환 |
+| Appsmith    | 리액티브 바인딩 `{{}}`   | 직관적인 문법      |
+| Bubble      | Data Type 스키마 정의    | 타입 안전성        |
+| FlutterFlow | Mock → Real 전환         | 개발 효율성        |
+| Plasmic     | DataProvider 개념        | 컴포넌트 분리      |
 
 ### 5.2 피할 패턴
 
-| 패턴 | 이유 |
-|------|------|
+| 패턴                  | 이유                 |
+| --------------------- | -------------------- |
 | Webflow CMS 고정 구조 | 외부 API 연동 어려움 |
-| Bubble 독자 표현식 | 학습 곡선 높음 |
-| OutSystems 복잡성 | 오버엔지니어링 |
+| Bubble 독자 표현식    | 학습 곡선 높음       |
+| OutSystems 복잡성     | 오버엔지니어링       |
 
-### 5.3 XStudio Data Panel 핵심 설계
+### 5.3 composition Data Panel 핵심 설계
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    XStudio Data Panel                        │
+│                    composition Data Panel                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  1. DataTable (Bubble Data Type + Mock 데이터)              │
@@ -553,6 +568,7 @@ REST API Integration:
 ## 6. 참고 자료
 
 ### 공식 문서
+
 - [Webflow CMS API](https://developers.webflow.com/data/docs/working-with-the-cms)
 - [Bubble Data Types](https://manual.bubble.io/help-guides/data/the-database/data-types-and-fields)
 - [Retool Transformers](https://docs.retool.com/queries/guides/transformers)
@@ -566,5 +582,6 @@ REST API Integration:
 - [Mendix REST Consumption](https://www.mendix.com/evaluation-guide/app-lifecycle/develop/integration/service-consumption/)
 
 ### 커뮤니티 비교
+
 - [TanStack Router vs React Router](https://betterstack.com/community/comparisons/tanstack-router-vs-react-router/)
 - [Best backends for FlutterFlow](https://www.lowcode.agency/blog/best-backends-for-flutterflow)

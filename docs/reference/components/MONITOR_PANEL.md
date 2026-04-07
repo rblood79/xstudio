@@ -6,8 +6,8 @@
 
 **상태: 🎉 전체 구현 완료**
 
-| Phase | 상태 | 완료일 |
-|-------|------|--------|
+| Phase   | 상태    | 완료일     |
+| ------- | ------- | ---------- |
 | Phase 1 | ✅ 완료 | 2025-12-04 |
 | Phase 2 | ✅ 완료 | 2025-12-04 |
 | Phase 3 | ✅ 완료 | 2025-12-04 |
@@ -80,12 +80,12 @@ ESLint: 0 errors ✅
 
 ### 사용 가능한 라이브러리 (package.json 기준)
 
-| 라이브러리 | 버전 | 용도 | 추천 활용처 |
-|-----------|------|------|-------------|
-| ~~@xyflow/react~~ | ~~12.10.0~~ | ~~플로우 다이어그램~~ | 제거됨 — 대안 필요 시 HTML/CSS 기반 구현 권장 |
-| **three** | 0.181.2 | 3D 그래픽 | 고급 메모리 시각화 (선택적) |
-| **@tanstack/react-virtual** | 3.13.12 | 가상 스크롤링 | 긴 히스토리 목록 렌더링 |
-| **lucide-react** | 0.553.0 | 아이콘 | UI 아이콘 |
+| 라이브러리                  | 버전        | 용도                  | 추천 활용처                                   |
+| --------------------------- | ----------- | --------------------- | --------------------------------------------- |
+| ~~@xyflow/react~~           | ~~12.10.0~~ | ~~플로우 다이어그램~~ | 제거됨 — 대안 필요 시 HTML/CSS 기반 구현 권장 |
+| **three**                   | 0.181.2     | 3D 그래픽             | 고급 메모리 시각화 (선택적)                   |
+| **@tanstack/react-virtual** | 3.13.12     | 가상 스크롤링         | 긴 히스토리 목록 렌더링                       |
+| **lucide-react**            | 0.553.0     | 아이콘                | UI 아이콘                                     |
 
 > **참고**: SVG 기반 차트도 여전히 유효한 옵션이며, 경량 구현이 필요한 경우 사용 가능합니다.
 
@@ -93,14 +93,14 @@ ESLint: 0 errors ✅
 
 **총 14-18시간** (1명 개발자 기준, Full Implementation)
 
-| Phase | 예상 시간 | 설명 | 의존성 |
-|-------|-----------|------|--------|
-| Phase 1 | 1.5-2h | 레거시 제거 | 없음 |
-| Phase 2 | 2.5-3.5h | Panel 인프라 (Bottom Slot + Registry) | Phase 1 |
-| Phase 3 | 3-4h | Core Monitor (Memory/History Charts) | Phase 2 |
-| Phase 4 | 1.5-2h | 알림 시스템 (Toast + Threshold) | Phase 3 |
-| Phase 5 | 2.5-3h | 실시간 모니터링 (Realtime Chart, FPS, Web Vitals) | Phase 3 |
-| Phase 6 | 3-3.5h | 분석 도구 (Component Memory, Export, 최적화) | Phase 3-5 |
+| Phase   | 예상 시간 | 설명                                              | 의존성    |
+| ------- | --------- | ------------------------------------------------- | --------- |
+| Phase 1 | 1.5-2h    | 레거시 제거                                       | 없음      |
+| Phase 2 | 2.5-3.5h  | Panel 인프라 (Bottom Slot + Registry)             | Phase 1   |
+| Phase 3 | 3-4h      | Core Monitor (Memory/History Charts)              | Phase 2   |
+| Phase 4 | 1.5-2h    | 알림 시스템 (Toast + Threshold)                   | Phase 3   |
+| Phase 5 | 2.5-3h    | 실시간 모니터링 (Realtime Chart, FPS, Web Vitals) | Phase 3   |
+| Phase 6 | 3-3.5h    | 분석 도구 (Component Memory, Export, 최적화)      | Phase 3-5 |
 
 ### Phase 구조 최적화 요약
 
@@ -115,6 +115,7 @@ Phase 1: 청소           → Phase 2: 인프라 구축
 ```
 
 **변경 사항:**
+
 - ✅ Phase 3+4 통합: Monitor Panel + Registry → Core Monitor
 - ✅ Phase 5 재정의: 성능 최적화 → 실시간 모니터링으로 변경
 - ✅ Phase 6+7 재구성: 기능별 그룹화 (알림/실시간/분석)
@@ -136,6 +137,7 @@ Phase 1: 청소           → Phase 2: 인프라 구축
 **목표**: 기존 monitor 시스템의 모든 흔적을 완전히 제거하여 새로운 패널 시스템 구축을 위한 깨끗한 기반 마련
 
 **삭제 대상**:
+
 - 파일 4개 (monitor 폴더 포함)
 - Import 7개 위치
 - BuilderCore lifecycle 코드 2곳
@@ -162,6 +164,7 @@ rm -f src/stories/*[Mm]onitor*.stories.tsx
 ```
 
 **삭제 확인**:
+
 ```bash
 # 삭제 확인 명령
 ls src/builder/monitor/        # → "No such file or directory"
@@ -178,13 +181,15 @@ grep -r "useMemoryMonitor\|memoryMonitor" src/ --include="*.test.*" --include="*
 **파일**: `src/builder/main/BuilderCore.tsx`
 
 #### 변경 1: Import 제거 (line 상단)
+
 ```typescript
 // ❌ 제거
-import { Monitor } from '../monitor';
-import { memoryMonitor } from '../stores/memoryMonitor';
+import { Monitor } from "../monitor";
+import { memoryMonitor } from "../stores/memoryMonitor";
 ```
 
 #### 변경 2: Lifecycle 코드 제거 (line 260-273)
+
 ```typescript
 // ❌ 제거 전체 블록
 if (import.meta.env.DEV) {
@@ -197,6 +202,7 @@ if (import.meta.env.DEV) {
 ```
 
 #### 변경 3: JSX 제거 (line 518-520)
+
 ```tsx
 // ❌ 제거
 <footer className="footer">
@@ -210,6 +216,7 @@ if (import.meta.env.DEV) {
 ### 🎯 Step 1.3: Import 참조 제거 (30분)
 
 **검색 명령**:
+
 ```bash
 # 모든 monitor import 찾기
 grep -r "from.*monitor" src/builder/
@@ -218,16 +225,18 @@ grep -r "useMemoryMonitor" src/builder/
 ```
 
 **제거 대상 패턴**:
+
 ```typescript
-import { Monitor } from './monitor';
-import { memoryMonitor } from './stores/memoryMonitor';
-import { useMemoryMonitor } from './hooks/useMemoryMonitor';
-import type { MemoryMonitor } from '../stores/memoryMonitor';
+import { Monitor } from "./monitor";
+import { memoryMonitor } from "./stores/memoryMonitor";
+import { useMemoryMonitor } from "./hooks/useMemoryMonitor";
+import type { MemoryMonitor } from "../stores/memoryMonitor";
 ```
 
 ### 🎯 Step 1.4: CSS 정리 (15분)
 
 #### footer.css 수정
+
 **파일**: `src/builder/styles/4-layout/footer.css`
 
 ```css
@@ -241,15 +250,19 @@ import type { MemoryMonitor } from '../stores/memoryMonitor';
 ### 🎯 Step 1.5: 문서 업데이트 (30분)
 
 #### CLAUDE.md 업데이트
+
 **파일**: `CLAUDE.md`
 
 **제거할 섹션** (line 검색: "Monitor System"):
+
 ```markdown
 ### Monitor System (Footer)
+
 ... (전체 섹션 삭제)
 ```
 
 **추가할 섹션**:
+
 ```markdown
 ### Monitor Panel (Bottom Panel)
 
@@ -258,6 +271,7 @@ import type { MemoryMonitor } from '../stores/memoryMonitor';
 **Location**: `src/builder/panels/monitor/`
 
 **Features**:
+
 - Memory usage monitoring (메모리 사용량 추적)
 - Performance optimization (메모리 최적화 버튼)
 - Mini chart visualization (zero dependencies, SVG 기반)
@@ -265,13 +279,16 @@ import type { MemoryMonitor } from '../stores/memoryMonitor';
 ```
 
 #### COMPLETED_FEATURES.md 업데이트
+
 **파일**: `docs/COMPLETED_FEATURES.md`
 
 ```markdown
 <!-- 변경 전 -->
+
 11. ✅ **Monitor System** - Real-time performance tracking in footer
 
 <!-- 변경 후 -->
+
 11. ✅ **Monitor Panel** - Bottom panel with memory monitoring (refactored 2025-01)
 ```
 
@@ -314,6 +331,7 @@ grep -r "from.*monitor" src/builder/
 **목표**: 기존 left/right 패널 시스템을 확장하여 bottom 위치를 지원하는 새로운 PanelSlot 구축
 
 **핵심 설계**:
+
 - Bottom은 left/right와 독립 (별도 state)
 - Resize 지원 (150px ~ 600px, 기본 200px)
 - Close 버튼 포함
@@ -324,6 +342,7 @@ grep -r "from.*monitor" src/builder/
 **파일**: `src/builder/hooks/panels/usePanelLayout.ts`
 
 #### 추가할 State
+
 ```typescript
 interface PanelLayoutState {
   // 기존 (유지)
@@ -335,10 +354,10 @@ interface PanelLayoutState {
   showRight: boolean;
 
   // 🆕 Bottom panel 추가
-  bottomPanels: PanelId[];           // ['monitor']
-  activeBottomPanels: PanelId[];     // [] (기본 닫힘)
-  showBottom: boolean;                // false (기본 닫힘)
-  bottomHeight: number;               // 200 (px)
+  bottomPanels: PanelId[]; // ['monitor']
+  activeBottomPanels: PanelId[]; // [] (기본 닫힘)
+  showBottom: boolean; // false (기본 닫힘)
+  bottomHeight: number; // 200 (px)
 
   // 🆕 Bottom panel actions
   toggleBottomPanel: (panelId: PanelId) => void;
@@ -348,17 +367,19 @@ interface PanelLayoutState {
 ```
 
 #### 초기값
+
 ```typescript
 const initialState: PanelLayoutState = {
   // ... 기존 값
-  bottomPanels: ['monitor'],
-  activeBottomPanels: [],        // 닫힌 상태
+  bottomPanels: ["monitor"],
+  activeBottomPanels: [], // 닫힌 상태
   showBottom: false,
   bottomHeight: 200,
 };
 ```
 
 #### Action 구현
+
 ```typescript
 toggleBottomPanel: (panelId) => {
   set((state) => {
@@ -465,6 +486,7 @@ function handleResizeStart(
 ```
 
 **핵심 기능**:
+
 1. **Conditional Rendering**: showBottom이 false면 null 반환
 2. **Resize Handle**: 드래그로 높이 조절 (150-600px)
 3. **Close Button**: × 버튼으로 패널 닫기
@@ -473,21 +495,23 @@ function handleResizeStart(
 ### ♿ 접근성/키보드 UX 필수 요구사항
 
 #### Esc 키로 패널 닫기
+
 ```typescript
 // BottomPanelSlot.tsx에 추가
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && showBottom) {
+    if (e.key === "Escape" && showBottom) {
       closeBottomPanel();
     }
   };
 
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
 }, [showBottom, closeBottomPanel]);
 ```
 
 #### Resize Handle 키보드 포커스
+
 ```tsx
 <div
   className="resize-handle"
@@ -507,16 +531,16 @@ useEffect(() => {
 function handleResizeKeyboard(
   e: React.KeyboardEvent,
   currentHeight: number,
-  setHeight: (h: number) => void
+  setHeight: (h: number) => void,
 ) {
   const step = e.shiftKey ? 50 : 10; // Shift로 큰 단위 이동
 
   switch (e.key) {
-    case 'ArrowUp':
+    case "ArrowUp":
       e.preventDefault();
       setHeight(currentHeight + step);
       break;
-    case 'ArrowDown':
+    case "ArrowDown":
       e.preventDefault();
       setHeight(currentHeight - step);
       break;
@@ -525,18 +549,20 @@ function handleResizeKeyboard(
 ```
 
 #### 필수 ARIA 속성
-| 요소 | ARIA 속성 | 값 |
-|------|-----------|-----|
-| 패널 컨테이너 | `role` | `region` |
-| 패널 컨테이너 | `aria-label` | `"메모리 모니터 패널"` |
-| Close 버튼 | `aria-label` | `"패널 닫기 (Esc)"` |
-| Resize 핸들 | `role` | `separator` |
-| Resize 핸들 | `aria-orientation` | `horizontal` |
-| Resize 핸들 | `aria-describedby` | `resize-hint` (설명 연결) |
-| 차트 SVG | `aria-label` | `"메모리 사용량 추이 차트"` |
-| Trend 아이콘 | `aria-label` | `"Trend: up/down/stable"` |
+
+| 요소          | ARIA 속성          | 값                          |
+| ------------- | ------------------ | --------------------------- |
+| 패널 컨테이너 | `role`             | `region`                    |
+| 패널 컨테이너 | `aria-label`       | `"메모리 모니터 패널"`      |
+| Close 버튼    | `aria-label`       | `"패널 닫기 (Esc)"`         |
+| Resize 핸들   | `role`             | `separator`                 |
+| Resize 핸들   | `aria-orientation` | `horizontal`                |
+| Resize 핸들   | `aria-describedby` | `resize-hint` (설명 연결)   |
+| 차트 SVG      | `aria-label`       | `"메모리 사용량 추이 차트"` |
+| Trend 아이콘  | `aria-label`       | `"Trend: up/down/stable"`   |
 
 #### 스크린 리더용 숨김 텍스트 CSS
+
 ```css
 .sr-only {
   position: absolute;
@@ -621,6 +647,7 @@ function handleResizeKeyboard(
 ### 🎯 Step 2.4: BuilderCore 레이아웃 수정 (30분)
 
 #### Grid CSS 수정
+
 **파일**: `src/builder/styles/4-layout/grid.css`
 
 ```css
@@ -642,17 +669,18 @@ function handleResizeKeyboard(
     "header header header"
     "left-sidebar canvas right-inspector"
     "bottom bottom bottom";
-  grid-template-rows: var(--header-height) 1fr auto;  /* auto로 변경 */
+  grid-template-rows: var(--header-height) 1fr auto; /* auto로 변경 */
   grid-template-columns: var(--sidebar-width) 1fr var(--inspector-width);
 }
 ```
 
 #### BuilderCore.tsx JSX 수정
+
 **파일**: `src/builder/main/BuilderCore.tsx`
 
 ```tsx
 // Import 추가
-import { BottomPanelSlot } from '../panels/core/BottomPanelSlot';
+import { BottomPanelSlot } from "../panels/core/BottomPanelSlot";
 
 // JSX (line 518 근처)
 return (
@@ -686,9 +714,10 @@ type PanelContainerProps = {
 ```
 
 **CSS 추가**:
+
 ```css
 .panel-container-bottom {
-  flex-direction: row;  /* bottom은 가로 배치 */
+  flex-direction: row; /* bottom은 가로 배치 */
   height: 100%;
 }
 ```
@@ -698,10 +727,11 @@ type PanelContainerProps = {
 **목적**: 사용자가 선호하는 패널 레이아웃(열림/닫힘 상태, 높이)을 유지
 
 #### localStorage 저장/복원
+
 ```typescript
 // usePanelLayout.ts에 추가
 
-const STORAGE_KEY = 'xstudio-bottom-panel-state';
+const STORAGE_KEY = "composition-bottom-panel-state";
 
 interface BottomPanelPersistedState {
   showBottom: boolean;
@@ -715,7 +745,7 @@ function saveBottomPanelState(state: BottomPanelPersistedState): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
     // localStorage 비활성화 또는 quota 초과 시 무시
-    console.warn('Failed to save bottom panel state:', e);
+    console.warn("Failed to save bottom panel state:", e);
   }
 }
 
@@ -727,19 +757,20 @@ function loadBottomPanelState(): Partial<BottomPanelPersistedState> {
       return JSON.parse(stored);
     }
   } catch (e) {
-    console.warn('Failed to load bottom panel state:', e);
+    console.warn("Failed to load bottom panel state:", e);
   }
   return {};
 }
 ```
 
 #### 초기값에 복원 로직 통합
+
 ```typescript
 const persistedState = loadBottomPanelState();
 
 const initialState: PanelLayoutState = {
   // ... 기존 값
-  bottomPanels: ['monitor'],
+  bottomPanels: ["monitor"],
   activeBottomPanels: persistedState.activeBottomPanels || [],
   showBottom: persistedState.showBottom ?? false,
   bottomHeight: persistedState.bottomHeight ?? 200,
@@ -747,6 +778,7 @@ const initialState: PanelLayoutState = {
 ```
 
 #### 변경 시 자동 저장
+
 ```typescript
 // subscribe로 변경 감지
 usePanelLayout.subscribe(
@@ -758,7 +790,7 @@ usePanelLayout.subscribe(
   (current) => {
     saveBottomPanelState(current);
   },
-  { equalityFn: shallow }
+  { equalityFn: shallow },
 );
 ```
 
@@ -770,14 +802,14 @@ usePanelLayout.subscribe(
 
 ```typescript
 // 기존 export에 추가
-export { BottomPanelSlot } from './BottomPanelSlot';
+export { BottomPanelSlot } from "./BottomPanelSlot";
 ```
 
 **CSS Import 추가**:
 **파일**: `src/builder/panels/core/index.css` (또는 메인 CSS 진입점)
 
 ```css
-@import './bottom-panel-slot.css';
+@import "./bottom-panel-slot.css";
 ```
 
 ### ✅ Phase 2 완료 체크리스트
@@ -825,6 +857,7 @@ console.log(activeBottomPanels); // → []
 **목표**: 메모리 관리 중심의 경량 모니터링 패널 구현 (Zero 의존성)
 
 **핵심 기능**:
+
 - 메모리 사용량 모니터링 (필수)
 - 메모리 최적화 버튼
 - 미니 차트 (SVG, zero dependencies)
@@ -840,6 +873,7 @@ mkdir -p src/builder/panels/monitor/components
 ```
 
 **최종 폴더 구조**:
+
 ```
 src/builder/panels/monitor/
 ├── index.ts                    # 모듈 export
@@ -857,8 +891,8 @@ src/builder/panels/monitor/
 **파일**: `src/builder/panels/monitor/hooks/useMemoryStats.ts` (새 파일, 80줄)
 
 ```typescript
-import { useState, useEffect, useRef } from 'react';
-import { historyManager } from '../../../stores/history';
+import { useState, useEffect, useRef } from "react";
+import { historyManager } from "../../../stores/history";
 
 interface MemoryStats {
   totalEntries: number;
@@ -871,12 +905,12 @@ interface MemoryStats {
 
 export function useMemoryStats() {
   const [stats, setStats] = useState<MemoryStats | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const intervalRef = useRef<number | null>(null);
 
   // 🚀 성능 최적화: RequestIdleCallback 사용
   const collectStats = () => {
-    if ('requestIdleCallback' in window) {
+    if ("requestIdleCallback" in window) {
       requestIdleCallback(() => {
         const newStats = getMemoryStats();
         setStats(newStats);
@@ -903,10 +937,10 @@ export function useMemoryStats() {
 
   const optimize = () => {
     historyManager.optimizeMemory();
-    setStatusMessage('✨ 메모리 최적화 완료');
+    setStatusMessage("✨ 메모리 최적화 완료");
     collectStats(); // 즉시 다시 수집
 
-    setTimeout(() => setStatusMessage(''), 3000);
+    setTimeout(() => setStatusMessage(""), 3000);
   };
 
   return { stats, optimize, statusMessage };
@@ -924,23 +958,24 @@ function getMemoryStats(): MemoryStats {
     compressionRatio: commandStats.compressionRatio,
     recommendation: analyzeMemory(
       commandStats.estimatedMemoryUsage,
-      commandStats.compressionRatio
-    )
+      commandStats.compressionRatio,
+    ),
   };
 }
 
 function analyzeMemory(usage: number, ratio: number): string {
   if (usage > 10 * 1024 * 1024) {
-    return '⚠️ High memory usage (> 10MB). Consider optimizing.';
+    return "⚠️ High memory usage (> 10MB). Consider optimizing.";
   }
   if (ratio < 0.2) {
-    return '⚠️ Low compression ratio (< 20%). Check data structure.';
+    return "⚠️ Low compression ratio (< 20%). Check data structure.";
   }
-  return '✅ Memory usage normal.';
+  return "✅ Memory usage normal.";
 }
 ```
 
 **핵심 포인트**:
+
 1. **RequestIdleCallback**: 브라우저 idle 상태에서만 수집 → 퍼포먼스 영향 최소화
 2. **10초 간격**: 기존과 동일 (충분히 빠름)
 3. **Safari fallback**: requestIdleCallback 미지원 브라우저 대응
@@ -998,11 +1033,13 @@ function getMemoryStats(): MemoryStats {
 
 ```tsx
 // MonitorPanel.tsx에 추가
-{!stats.isBrowserMemorySupported && (
-  <div className="browser-memory-fallback">
-    <span>ℹ️ 브라우저 메모리 정보는 Chrome/Edge에서만 지원됩니다.</span>
-  </div>
-)}
+{
+  !stats.isBrowserMemorySupported && (
+    <div className="browser-memory-fallback">
+      <span>ℹ️ 브라우저 메모리 정보는 Chrome/Edge에서만 지원됩니다.</span>
+    </div>
+  );
+}
 ```
 
 #### 에러 발생 시 Graceful Degradation
@@ -1010,15 +1047,15 @@ function getMemoryStats(): MemoryStats {
 ```typescript
 const collectStats = () => {
   try {
-    if ('requestIdleCallback' in window) {
+    if ("requestIdleCallback" in window) {
       requestIdleCallback(() => {
         try {
           const newStats = getMemoryStats();
           setStats(newStats);
           setError(null);
         } catch (e) {
-          setError('메모리 통계 수집 중 오류가 발생했습니다.');
-          console.warn('[MonitorPanel] Stats collection error:', e);
+          setError("메모리 통계 수집 중 오류가 발생했습니다.");
+          console.warn("[MonitorPanel] Stats collection error:", e);
         }
       });
     } else {
@@ -1028,14 +1065,14 @@ const collectStats = () => {
           setStats(newStats);
           setError(null);
         } catch (e) {
-          setError('메모리 통계 수집 중 오류가 발생했습니다.');
-          console.warn('[MonitorPanel] Stats collection error:', e);
+          setError("메모리 통계 수집 중 오류가 발생했습니다.");
+          console.warn("[MonitorPanel] Stats collection error:", e);
         }
       }, 0);
     }
   } catch (e) {
-    setError('메모리 모니터링을 시작할 수 없습니다.');
-    console.error('[MonitorPanel] Critical error:', e);
+    setError("메모리 모니터링을 시작할 수 없습니다.");
+    console.error("[MonitorPanel] Critical error:", e);
   }
 };
 ```
@@ -1050,29 +1087,33 @@ const collectStats = () => {
 
 ```typescript
 // ❌ NEVER DO THIS
-console.log('Elements:', elements);  // 사용자 데이터 노출
-console.log('Memory dump:', JSON.stringify(historyManager));  // 전체 덤프
+console.log("Elements:", elements); // 사용자 데이터 노출
+console.log("Memory dump:", JSON.stringify(historyManager)); // 전체 덤프
 
 // ✅ SAFE - 수치 정보만 로깅
-console.log('[MonitorPanel] Memory usage:', stats.estimatedMemoryUsage, 'bytes');
-console.log('[MonitorPanel] Entry count:', stats.totalEntries);
+console.log(
+  "[MonitorPanel] Memory usage:",
+  stats.estimatedMemoryUsage,
+  "bytes",
+);
+console.log("[MonitorPanel] Entry count:", stats.totalEntries);
 ```
 
 #### 로깅 정책
 
-| 로그 레벨 | 허용 정보 | 금지 정보 |
-|-----------|-----------|-----------|
-| `info` | 수치 메트릭 (bytes, count) | 객체 내용 |
-| `warn` | 에러 타입, 메시지 | 스택트레이스 내 데이터 |
-| `error` | 에러 발생 여부 | 원본 에러 객체 |
-| `debug` | 함수 호출 흐름 | 파라미터 값 |
+| 로그 레벨 | 허용 정보                  | 금지 정보              |
+| --------- | -------------------------- | ---------------------- |
+| `info`    | 수치 메트릭 (bytes, count) | 객체 내용              |
+| `warn`    | 에러 타입, 메시지          | 스택트레이스 내 데이터 |
+| `error`   | 에러 발생 여부             | 원본 에러 객체         |
+| `debug`   | 함수 호출 흐름             | 파라미터 값            |
 
 #### 개발 환경 전용 로깅
 
 ```typescript
 // 개발 환경에서만 상세 로그 출력
 if (import.meta.env.DEV) {
-  console.debug('[MonitorPanel] Stats updated:', {
+  console.debug("[MonitorPanel] Stats updated:", {
     entries: stats.totalEntries,
     memory: formatBytes(stats.estimatedMemoryUsage),
   });
@@ -1164,6 +1205,7 @@ function formatBytes(bytes: number): string {
 ```
 
 **SVG 기반 차트 장점**:
+
 - ✅ 가볍고 빠름
 - ✅ CSS variables 사용 (테마 대응)
 - ✅ Responsive (viewBox)
@@ -1278,6 +1320,7 @@ function getMinimapColor(node: Node): string {
 ```
 
 **ReactFlow 기반 차트 장점**:
+
 - ✅ 인터랙티브 (줌, 팬, 선택)
 - ✅ 노드/엣지 기반 복잡한 관계 표현
 - ✅ MiniMap으로 전체 뷰 제공
@@ -1329,11 +1372,11 @@ function HistoryList({ entries }: { entries: HistoryEntry[] }) {
 
 **품질 우선 완성형**으로 3가지 시각화를 모두 구현합니다.
 
-| 기능 | 구현 방식 | 파일 | 용도 |
-|------|-----------|------|------|
-| **메모리 추이 차트** | SVG | `MemoryChart.tsx` | 실시간 메모리 사용량 시계열 |
-| **히스토리 플로우** | ReactFlow | `HistoryFlowChart.tsx` | Undo/Redo 히스토리 시각화 |
-| **히스토리 목록** | @tanstack/react-virtual | `HistoryList.tsx` | 상세 히스토리 목록 (가상 스크롤) |
+| 기능                 | 구현 방식               | 파일                   | 용도                             |
+| -------------------- | ----------------------- | ---------------------- | -------------------------------- |
+| **메모리 추이 차트** | SVG                     | `MemoryChart.tsx`      | 실시간 메모리 사용량 시계열      |
+| **히스토리 플로우**  | ReactFlow               | `HistoryFlowChart.tsx` | Undo/Redo 히스토리 시각화        |
+| **히스토리 목록**    | @tanstack/react-virtual | `HistoryList.tsx`      | 상세 히스토리 목록 (가상 스크롤) |
 
 #### 탭 기반 뷰 전환 UI
 
@@ -1489,6 +1532,7 @@ function formatTime(timestamp: number): string {
 ```
 
 **CSS 추가** (`monitor-panel.css`):
+
 ```css
 /* History List */
 .history-list {
@@ -1535,9 +1579,15 @@ function formatTime(timestamp: number): string {
   justify-content: center;
 }
 
-.history-entry-row.add .entry-icon { color: var(--success); }
-.history-entry-row.update .entry-icon { color: var(--primary); }
-.history-entry-row.delete .entry-icon { color: var(--error); }
+.history-entry-row.add .entry-icon {
+  color: var(--success);
+}
+.history-entry-row.update .entry-icon {
+  color: var(--primary);
+}
+.history-entry-row.delete .entry-icon {
+  color: var(--error);
+}
 
 .history-entry-row .entry-type {
   font-weight: var(--font-weight-medium);
@@ -1711,6 +1761,7 @@ function getMinimapColor(node: Node): string {
 ```
 
 **CSS 추가** (`monitor-panel.css`):
+
 ```css
 /* History Flow Chart */
 .history-flow-chart {
@@ -1787,6 +1838,7 @@ export function MemoryActions({
 ```
 
 **핵심 기능**:
+
 - `onOptimize`: 최적화 버튼 클릭 핸들러
 - `recommendation`: 현재 메모리 상태 권장사항 표시
 - `isOptimizing`: 최적화 진행 중 버튼 비활성화
@@ -2034,8 +2086,12 @@ function formatBytes(bytes: number): string {
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Stats Cards */
@@ -2080,9 +2136,15 @@ function formatBytes(bytes: number): string {
     line-height: 1;
   }
 
-  .trend.up { color: var(--error); }
-  .trend.down { color: var(--success); }
-  .trend.stable { color: var(--on-surface-variant); }
+  .trend.up {
+    color: var(--error);
+  }
+  .trend.down {
+    color: var(--success);
+  }
+  .trend.stable {
+    color: var(--on-surface-variant);
+  }
 
   /* Tabs */
   .monitor-tabs {
@@ -2221,19 +2283,19 @@ function formatBytes(bytes: number): string {
 
 ```typescript
 // Main panel export
-export { MonitorPanel } from './MonitorPanel';
+export { MonitorPanel } from "./MonitorPanel";
 
 // Hooks
-export { useMemoryStats } from './hooks/useMemoryStats';
+export { useMemoryStats } from "./hooks/useMemoryStats";
 
 // Components (exported for testing and potential reuse)
-export { MemoryChart } from './components/MemoryChart';
-export { HistoryFlowChart } from './components/HistoryFlowChart';
-export { HistoryList } from './components/HistoryList';
-export { MemoryActions } from './components/MemoryActions';
+export { MemoryChart } from "./components/MemoryChart";
+export { HistoryFlowChart } from "./components/HistoryFlowChart";
+export { HistoryList } from "./components/HistoryList";
+export { MemoryActions } from "./components/MemoryActions";
 
 // Types
-export type { HistoryEntry } from './components/HistoryList';
+export type { HistoryEntry } from "./components/HistoryList";
 ```
 
 **CSS Import 추가**:
@@ -2241,7 +2303,7 @@ export type { HistoryEntry } from './components/HistoryList';
 
 ```css
 /* Monitor Panel */
-@import '../panels/monitor/monitor-panel.css';
+@import "../panels/monitor/monitor-panel.css";
 ```
 
 ### ✅ Phase 3 완료 체크리스트
@@ -2287,23 +2349,23 @@ grep -r "monitor-panel.css" src/builder/styles/
 **파일**: `src/builder/panels/core/panelConfigs.ts`
 
 ```typescript
-import { Activity } from 'lucide-react';
-import { MonitorPanel } from '../monitor/MonitorPanel';
+import { Activity } from "lucide-react";
+import { MonitorPanel } from "../monitor/MonitorPanel";
 
 // panelDefinitions 배열에 추가
 const panelDefinitions: PanelConfig[] = [
   // ... 기존 패널들
   {
-    id: 'monitor',
-    name: '모니터',
-    nameEn: 'Monitor',
+    id: "monitor",
+    name: "모니터",
+    nameEn: "Monitor",
     icon: Activity,
     component: MonitorPanel,
-    category: 'system',
-    defaultPosition: 'bottom',
+    category: "system",
+    defaultPosition: "bottom",
     minWidth: 600,
-    description: 'Memory usage monitoring and optimization'
-  }
+    description: "Memory usage monitoring and optimization",
+  },
 ];
 ```
 
@@ -2314,14 +2376,23 @@ const panelDefinitions: PanelConfig[] = [
 ```typescript
 // PanelId 타입 확장
 export type PanelId =
-  | 'nodes' | 'components' | 'library' | 'dataset' | 'datasetEditor'
-  | 'theme' | 'ai'
-  | 'user' | 'settings'
-  | 'properties' | 'styles' | 'data' | 'events'
-  | 'monitor'; // 🆕 추가
+  | "nodes"
+  | "components"
+  | "library"
+  | "dataset"
+  | "datasetEditor"
+  | "theme"
+  | "ai"
+  | "user"
+  | "settings"
+  | "properties"
+  | "styles"
+  | "data"
+  | "events"
+  | "monitor"; // 🆕 추가
 
 // PanelPosition 타입 확장
-export type PanelPosition = 'left' | 'right' | 'bottom'; // 🆕 bottom 추가
+export type PanelPosition = "left" | "right" | "bottom"; // 🆕 bottom 추가
 ```
 
 ### 🎯 Step 4.3: Header Toggle 버튼 (10분)
@@ -2329,12 +2400,12 @@ export type PanelPosition = 'left' | 'right' | 'bottom'; // 🆕 bottom 추가
 **파일**: `src/builder/header/BuilderHeader.tsx`
 
 ```tsx
-import { Activity } from 'lucide-react';
-import { usePanelLayout } from '../hooks/panels/usePanelLayout';
+import { Activity } from "lucide-react";
+import { usePanelLayout } from "../hooks/panels/usePanelLayout";
 
 export function BuilderHeader() {
   const { activeBottomPanels, toggleBottomPanel } = usePanelLayout();
-  const isMonitorActive = activeBottomPanels.includes('monitor');
+  const isMonitorActive = activeBottomPanels.includes("monitor");
 
   return (
     <header className="builder-header">
@@ -2345,7 +2416,7 @@ export function BuilderHeader() {
         <button
           className="monitor-toggle"
           data-active={isMonitorActive}
-          onClick={() => toggleBottomPanel('monitor')}
+          onClick={() => toggleBottomPanel("monitor")}
           aria-label="Toggle Monitor Panel"
           title="Toggle Monitor (Ctrl+Shift+M)"
         >
@@ -2361,6 +2432,7 @@ export function BuilderHeader() {
 ```
 
 **CSS 추가** (`src/builder/styles/4-layout/header.css`):
+
 ```css
 .header-actions .monitor-toggle {
   display: flex;
@@ -2392,21 +2464,24 @@ export function BuilderHeader() {
 **파일**: `src/builder/header/BuilderHeader.tsx` (또는 별도 hook)
 
 ```typescript
-import { useMemo } from 'react';
-import { useKeyboardShortcutsRegistry } from '../hooks/useKeyboardShortcutsRegistry';
+import { useMemo } from "react";
+import { useKeyboardShortcutsRegistry } from "../hooks/useKeyboardShortcutsRegistry";
 
 export function BuilderHeader() {
   const { toggleBottomPanel } = usePanelLayout();
 
   // 🆕 키보드 단축키 등록
-  const shortcuts = useMemo(() => [
-    {
-      key: 'm',
-      modifier: 'ctrlShift',
-      handler: () => toggleBottomPanel('monitor'),
-      description: 'Toggle Monitor Panel'
-    }
-  ], [toggleBottomPanel]);
+  const shortcuts = useMemo(
+    () => [
+      {
+        key: "m",
+        modifier: "ctrlShift",
+        handler: () => toggleBottomPanel("monitor"),
+        description: "Toggle Monitor Panel",
+      },
+    ],
+    [toggleBottomPanel],
+  );
 
   useKeyboardShortcutsRegistry(shortcuts, [toggleBottomPanel]);
 
@@ -2469,35 +2544,35 @@ grep -r "Shift.*m\|m.*Shift" src/builder/hooks/useKeyboardShortcuts*.ts
 ```typescript
 class SizeEstimator {
   private cache = new Map<string, number>();
-  private hitCount = 0;   // 🆕 캐시 히트 카운트
-  private missCount = 0;  // 🆕 캐시 미스 카운트
+  private hitCount = 0; // 🆕 캐시 히트 카운트
+  private missCount = 0; // 🆕 캐시 미스 카운트
 
   estimate(obj: unknown, key?: string): number {
     // 캐시 히트
     if (key && this.cache.has(key)) {
-      this.hitCount++;  // 🆕 히트 카운트 증가
+      this.hitCount++; // 🆕 히트 카운트 증가
       return this.cache.get(key)!;
     }
 
-    this.missCount++;  // 🆕 미스 카운트 증가
+    this.missCount++; // 🆕 미스 카운트 증가
 
     let size = 0;
 
     // Primitive fast path
     switch (typeof obj) {
-      case 'string':
+      case "string":
         size = obj.length * 2; // UTF-16
         break;
-      case 'number':
+      case "number":
         size = 8;
         break;
-      case 'boolean':
+      case "boolean":
         size = 4;
         break;
-      case 'undefined':
+      case "undefined":
         size = 0;
         break;
-      case 'object':
+      case "object":
         if (obj === null) {
           size = 0;
         } else if (Array.isArray(obj)) {
@@ -2526,7 +2601,7 @@ class SizeEstimator {
 
   clear(): void {
     this.cache.clear();
-    this.hitCount = 0;   // 🆕 카운트도 리셋
+    this.hitCount = 0; // 🆕 카운트도 리셋
     this.missCount = 0;
   }
 
@@ -2542,7 +2617,12 @@ class SizeEstimator {
   }
 
   // 🆕 캐시 통계 반환 (디버깅용)
-  getCacheStats(): { hits: number; misses: number; hitRate: number; size: number } {
+  getCacheStats(): {
+    hits: number;
+    misses: number;
+    hitRate: number;
+    size: number;
+  } {
     return {
       hits: this.hitCount,
       misses: this.missCount,
@@ -2585,6 +2665,7 @@ getMemoryStats(): CommandStoreMemoryStats {
 ```
 
 **성능 비교**:
+
 ```
 기존 (JSON.stringify):  ~80ms (100개 commands)
 개선 (SizeEstimator):   ~8ms  (캐시 히트 시)
@@ -2610,14 +2691,14 @@ console.timeEnd('memory-stats');
 
 #### 필수 측정 항목
 
-| 지표 | 측정 방법 | 기준값 | 비고 |
-|------|-----------|--------|------|
-| **getMemoryStats 실행 시간** | `console.time()` | < 10ms | 캐시 히트 시 |
-| **getMemoryStats 실행 시간 (cold)** | `console.time()` | < 100ms | 캐시 미스 시 |
-| **SizeEstimator 캐시 히트율** | `sizeEstimator.getCacheHitRate()` | > 80% | 정상 사용 시 |
-| **CPU 사용률 (패널 열림)** | Performance 프로파일링 | < 5% | idle 시간 기준 |
-| **CPU 사용률 (패널 닫힘)** | Performance 프로파일링 | 0% | 수집 중단 확인 |
-| **메모리 히스토리 GC 영향** | Memory 프로파일링 | < 1MB/min | GC 증가분 |
+| 지표                                | 측정 방법                         | 기준값    | 비고           |
+| ----------------------------------- | --------------------------------- | --------- | -------------- |
+| **getMemoryStats 실행 시간**        | `console.time()`                  | < 10ms    | 캐시 히트 시   |
+| **getMemoryStats 실행 시간 (cold)** | `console.time()`                  | < 100ms   | 캐시 미스 시   |
+| **SizeEstimator 캐시 히트율**       | `sizeEstimator.getCacheHitRate()` | > 80%     | 정상 사용 시   |
+| **CPU 사용률 (패널 열림)**          | Performance 프로파일링            | < 5%      | idle 시간 기준 |
+| **CPU 사용률 (패널 닫힘)**          | Performance 프로파일링            | 0%        | 수집 중단 확인 |
+| **메모리 히스토리 GC 영향**         | Memory 프로파일링                 | < 1MB/min | GC 증가분      |
 
 #### GC 부담 측정
 
@@ -2635,7 +2716,9 @@ function measureGCImpact() {
   // 또는 --expose-gc 플래그로 Node 실행 시 gc()
 
   const memoryAfter = performance.memory?.usedJSHeapSize;
-  console.log(`GC 부담: ${(memoryAfter - memoryBefore) / 1024}KB per ${iterations} calls`);
+  console.log(
+    `GC 부담: ${(memoryAfter - memoryBefore) / 1024}KB per ${iterations} calls`,
+  );
 }
 ```
 
@@ -2646,7 +2729,7 @@ function measureGCImpact() {
 let collectCount = 0;
 const originalCollect = window.__monitorCollectStats;
 
-window.__monitorCollectStats = function() {
+window.__monitorCollectStats = function () {
   collectCount++;
   console.log(`[DEBUG] Stats collected: ${collectCount}`);
   return originalCollect?.apply(this, arguments);
@@ -2689,6 +2772,7 @@ echo "Memory overhead: XX KB" >> perf-report.txt
 ## 📦 최종 파일 구조 요약
 
 ### 새 파일 (13개, ~900줄)
+
 ```
 src/builder/panels/
 ├── core/
@@ -2711,6 +2795,7 @@ src/builder/stores/utils/
 ```
 
 ### 수정 파일 (9개)
+
 ```
 src/builder/main/BuilderCore.tsx
 src/builder/header/BuilderHeader.tsx
@@ -2724,6 +2809,7 @@ src/builder/styles/index.css               🆕 (monitor-panel.css import 추가
 ```
 
 ### 삭제 파일 (4개, ~645줄)
+
 ```
 src/builder/monitor/            (폴더)
 src/builder/hooks/useMemoryMonitor.ts
@@ -2736,6 +2822,7 @@ src/builder/styles/4-layout/footer.css (일부)
 ## ✅ 전체 성공 기준
 
 ### 기능 요구사항
+
 - [x] 기존 monitor 완전 삭제
 - [x] `src/builder/panels/monitor/` 이전
 - [x] PanelRegistry 등록
@@ -2745,12 +2832,14 @@ src/builder/styles/4-layout/footer.css (일부)
 - [x] 미니 차트 (Zero 의존성)
 
 ### 성능 요구사항
+
 - [x] UI 블로킹 없음 (RequestIdleCallback)
 - [x] CPU < 5%
 - [x] 메모리 오버헤드 < 1MB
 - [x] 패널 비활성 시 수집 중단
 
 ### 기술 요구사항
+
 - [x] Zero 추가 의존성
 - [x] SVG 기반 차트
 - [x] TypeScript strict mode
@@ -2779,80 +2868,80 @@ src/builder/styles/4-layout/footer.css (일부)
 **파일**: `src/builder/stores/utils/__tests__/sizeEstimator.test.ts`
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { sizeEstimator } from '../sizeEstimator';
+import { describe, it, expect, beforeEach } from "vitest";
+import { sizeEstimator } from "../sizeEstimator";
 
-describe('SizeEstimator', () => {
+describe("SizeEstimator", () => {
   beforeEach(() => {
     sizeEstimator.clear();
   });
 
-  describe('캐시 히트/미스', () => {
-    it('같은 키로 두 번째 호출 시 캐시 히트', () => {
-      const obj = { name: 'test', value: 123 };
+  describe("캐시 히트/미스", () => {
+    it("같은 키로 두 번째 호출 시 캐시 히트", () => {
+      const obj = { name: "test", value: 123 };
 
-      const size1 = sizeEstimator.estimate(obj, 'test_key');
-      const size2 = sizeEstimator.estimate(obj, 'test_key');
+      const size1 = sizeEstimator.estimate(obj, "test_key");
+      const size2 = sizeEstimator.estimate(obj, "test_key");
 
       expect(size1).toBe(size2);
       expect(sizeEstimator.getCacheSize()).toBe(1);
     });
 
-    it('다른 키로 호출 시 캐시 미스', () => {
-      const obj = { name: 'test' };
+    it("다른 키로 호출 시 캐시 미스", () => {
+      const obj = { name: "test" };
 
-      sizeEstimator.estimate(obj, 'key1');
-      sizeEstimator.estimate(obj, 'key2');
+      sizeEstimator.estimate(obj, "key1");
+      sizeEstimator.estimate(obj, "key2");
 
       expect(sizeEstimator.getCacheSize()).toBe(2);
     });
 
-    it('invalidate 후 캐시 미스', () => {
-      const obj = { name: 'test' };
-      sizeEstimator.estimate(obj, 'key1');
+    it("invalidate 후 캐시 미스", () => {
+      const obj = { name: "test" };
+      sizeEstimator.estimate(obj, "key1");
 
-      sizeEstimator.invalidate('key1');
+      sizeEstimator.invalidate("key1");
 
       expect(sizeEstimator.getCacheSize()).toBe(0);
     });
   });
 
   // 🆕 캐시 히트율 테스트 추가
-  describe('캐시 히트율', () => {
-    it('초기 상태에서 히트율 0', () => {
+  describe("캐시 히트율", () => {
+    it("초기 상태에서 히트율 0", () => {
       expect(sizeEstimator.getCacheHitRate()).toBe(0);
     });
 
-    it('캐시 히트 후 히트율 증가', () => {
-      const obj = { name: 'test' };
+    it("캐시 히트 후 히트율 증가", () => {
+      const obj = { name: "test" };
 
       // 1st call: miss
-      sizeEstimator.estimate(obj, 'key1');
+      sizeEstimator.estimate(obj, "key1");
       expect(sizeEstimator.getCacheHitRate()).toBe(0); // 0/1
 
       // 2nd call: hit
-      sizeEstimator.estimate(obj, 'key1');
+      sizeEstimator.estimate(obj, "key1");
       expect(sizeEstimator.getCacheHitRate()).toBe(0.5); // 1/2
 
       // 3rd call: hit
-      sizeEstimator.estimate(obj, 'key1');
+      sizeEstimator.estimate(obj, "key1");
       expect(sizeEstimator.getCacheHitRate()).toBeCloseTo(0.667, 2); // 2/3
     });
 
-    it('clear 후 히트율 리셋', () => {
-      const obj = { name: 'test' };
-      sizeEstimator.estimate(obj, 'key1');
-      sizeEstimator.estimate(obj, 'key1');
+    it("clear 후 히트율 리셋", () => {
+      const obj = { name: "test" };
+      sizeEstimator.estimate(obj, "key1");
+      sizeEstimator.estimate(obj, "key1");
 
       sizeEstimator.clear();
 
       expect(sizeEstimator.getCacheHitRate()).toBe(0);
     });
 
-    it('getCacheStats 전체 통계 반환', () => {
-      const obj = { name: 'test' };
-      sizeEstimator.estimate(obj, 'key1'); // miss
-      sizeEstimator.estimate(obj, 'key1'); // hit
+    it("getCacheStats 전체 통계 반환", () => {
+      const obj = { name: "test" };
+      sizeEstimator.estimate(obj, "key1"); // miss
+      sizeEstimator.estimate(obj, "key1"); // hit
 
       const stats = sizeEstimator.getCacheStats();
 
@@ -2863,19 +2952,19 @@ describe('SizeEstimator', () => {
     });
   });
 
-  describe('사이즈 계산', () => {
-    it('string 크기 계산 (UTF-16)', () => {
-      const size = sizeEstimator.estimate('hello');
+  describe("사이즈 계산", () => {
+    it("string 크기 계산 (UTF-16)", () => {
+      const size = sizeEstimator.estimate("hello");
       expect(size).toBe(10); // 5 chars * 2 bytes
     });
 
-    it('number 크기 계산', () => {
+    it("number 크기 계산", () => {
       const size = sizeEstimator.estimate(123);
       expect(size).toBe(8); // 8 bytes for number
     });
 
-    it('nested object 크기 계산', () => {
-      const obj = { a: { b: 'c' } };
+    it("nested object 크기 계산", () => {
+      const obj = { a: { b: "c" } };
       const size = sizeEstimator.estimate(obj);
       expect(size).toBeGreaterThan(0);
     });
@@ -2888,11 +2977,11 @@ describe('SizeEstimator', () => {
 **파일**: `src/builder/hooks/panels/__tests__/usePanelLayout.test.ts`
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { usePanelLayout } from '../usePanelLayout';
+import { describe, it, expect, beforeEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { usePanelLayout } from "../usePanelLayout";
 
-describe('usePanelLayout - Bottom Panel', () => {
+describe("usePanelLayout - Bottom Panel", () => {
   beforeEach(() => {
     // Reset store state
     usePanelLayout.setState({
@@ -2902,33 +2991,33 @@ describe('usePanelLayout - Bottom Panel', () => {
     });
   });
 
-  describe('toggleBottomPanel', () => {
-    it('닫힌 상태에서 토글 시 패널 열림', () => {
+  describe("toggleBottomPanel", () => {
+    it("닫힌 상태에서 토글 시 패널 열림", () => {
       const { result } = renderHook(() => usePanelLayout());
 
       act(() => {
-        result.current.toggleBottomPanel('monitor');
+        result.current.toggleBottomPanel("monitor");
       });
 
       expect(result.current.showBottom).toBe(true);
-      expect(result.current.activeBottomPanels).toContain('monitor');
+      expect(result.current.activeBottomPanels).toContain("monitor");
     });
 
-    it('열린 상태에서 토글 시 패널 닫힘', () => {
+    it("열린 상태에서 토글 시 패널 닫힘", () => {
       const { result } = renderHook(() => usePanelLayout());
 
       act(() => {
-        result.current.toggleBottomPanel('monitor');
-        result.current.toggleBottomPanel('monitor');
+        result.current.toggleBottomPanel("monitor");
+        result.current.toggleBottomPanel("monitor");
       });
 
       expect(result.current.showBottom).toBe(false);
-      expect(result.current.activeBottomPanels).not.toContain('monitor');
+      expect(result.current.activeBottomPanels).not.toContain("monitor");
     });
   });
 
-  describe('setBottomHeight', () => {
-    it('높이 설정 (정상 범위)', () => {
+  describe("setBottomHeight", () => {
+    it("높이 설정 (정상 범위)", () => {
       const { result } = renderHook(() => usePanelLayout());
 
       act(() => {
@@ -2938,7 +3027,7 @@ describe('usePanelLayout - Bottom Panel', () => {
       expect(result.current.bottomHeight).toBe(300);
     });
 
-    it('최소값 미만 시 최소값으로 고정', () => {
+    it("최소값 미만 시 최소값으로 고정", () => {
       const { result } = renderHook(() => usePanelLayout());
 
       act(() => {
@@ -2948,7 +3037,7 @@ describe('usePanelLayout - Bottom Panel', () => {
       expect(result.current.bottomHeight).toBe(150);
     });
 
-    it('최대값 초과 시 최대값으로 고정', () => {
+    it("최대값 초과 시 최대값으로 고정", () => {
       const { result } = renderHook(() => usePanelLayout());
 
       act(() => {
@@ -2959,12 +3048,12 @@ describe('usePanelLayout - Bottom Panel', () => {
     });
   });
 
-  describe('closeBottomPanel', () => {
-    it('패널 닫기 시 상태 초기화', () => {
+  describe("closeBottomPanel", () => {
+    it("패널 닫기 시 상태 초기화", () => {
       const { result } = renderHook(() => usePanelLayout());
 
       act(() => {
-        result.current.toggleBottomPanel('monitor');
+        result.current.toggleBottomPanel("monitor");
         result.current.closeBottomPanel();
       });
 
@@ -2980,12 +3069,12 @@ describe('usePanelLayout - Bottom Panel', () => {
 **파일**: `src/builder/panels/monitor/hooks/__tests__/useMemoryStats.test.ts`
 
 ```typescript
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useMemoryStats } from '../useMemoryStats';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { useMemoryStats } from "../useMemoryStats";
 
 // Mock historyManager
-vi.mock('../../../../stores/history', () => ({
+vi.mock("../../../../stores/history", () => ({
   historyManager: {
     getMemoryStats: vi.fn(() => ({
       totalEntries: 10,
@@ -3000,7 +3089,7 @@ vi.mock('../../../../stores/history', () => ({
   },
 }));
 
-describe('useMemoryStats', () => {
+describe("useMemoryStats", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -3009,7 +3098,7 @@ describe('useMemoryStats', () => {
     vi.useRealTimers();
   });
 
-  it('초기 로딩 후 stats 반환', async () => {
+  it("초기 로딩 후 stats 반환", async () => {
     const { result } = renderHook(() => useMemoryStats());
 
     // RequestIdleCallback 시뮬레이션
@@ -3021,7 +3110,7 @@ describe('useMemoryStats', () => {
     expect(result.current.stats?.totalEntries).toBe(10);
   });
 
-  it('optimize 호출 시 statusMessage 업데이트', async () => {
+  it("optimize 호출 시 statusMessage 업데이트", async () => {
     const { result } = renderHook(() => useMemoryStats());
 
     await act(async () => {
@@ -3032,14 +3121,14 @@ describe('useMemoryStats', () => {
       result.current.optimize();
     });
 
-    expect(result.current.statusMessage).toContain('최적화');
+    expect(result.current.statusMessage).toContain("최적화");
 
     // 3초 후 메시지 사라짐
     act(() => {
       vi.advanceTimersByTime(3000);
     });
 
-    expect(result.current.statusMessage).toBe('');
+    expect(result.current.statusMessage).toBe("");
   });
 });
 ```
@@ -3049,89 +3138,89 @@ describe('useMemoryStats', () => {
 **파일**: `e2e/monitor-panel.spec.ts`
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Monitor Panel E2E', () => {
+test.describe("Monitor Panel E2E", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/builder');
-    await page.waitForSelector('.builder-container');
+    await page.goto("/builder");
+    await page.waitForSelector(".builder-container");
   });
 
-  test('헤더 버튼 → 열기 → 리사이즈 → 닫기 플로우', async ({ page }) => {
+  test("헤더 버튼 → 열기 → 리사이즈 → 닫기 플로우", async ({ page }) => {
     // 1. 헤더에서 Monitor 버튼 찾기
-    const monitorButton = page.locator('.monitor-toggle');
+    const monitorButton = page.locator(".monitor-toggle");
     await expect(monitorButton).toBeVisible();
 
     // 2. 클릭하여 패널 열기
     await monitorButton.click();
 
     // 3. Bottom panel 열림 확인
-    const bottomPanel = page.locator('.bottom-panel-slot');
+    const bottomPanel = page.locator(".bottom-panel-slot");
     await expect(bottomPanel).toBeVisible();
 
     // 4. MonitorPanel 내용 확인
-    await expect(page.locator('.monitor-panel')).toBeVisible();
-    await expect(page.locator('.stat-card')).toHaveCount(5);
+    await expect(page.locator(".monitor-panel")).toBeVisible();
+    await expect(page.locator(".stat-card")).toHaveCount(5);
 
     // 5. 리사이즈 핸들 드래그
-    const resizeHandle = page.locator('.bottom-panel-slot .resize-handle');
-    const initialHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+    const resizeHandle = page.locator(".bottom-panel-slot .resize-handle");
+    const initialHeight = await bottomPanel.evaluate((el) => el.offsetHeight);
 
     await resizeHandle.hover();
     await page.mouse.down();
     await page.mouse.move(0, -100, { steps: 10 });
     await page.mouse.up();
 
-    const newHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+    const newHeight = await bottomPanel.evaluate((el) => el.offsetHeight);
     expect(newHeight).toBeGreaterThan(initialHeight);
 
     // 6. Close 버튼으로 닫기
-    await page.locator('.bottom-panel-slot .close-btn').click();
+    await page.locator(".bottom-panel-slot .close-btn").click();
     await expect(bottomPanel).not.toBeVisible();
   });
 
-  test('Esc 키로 패널 닫기', async ({ page }) => {
+  test("Esc 키로 패널 닫기", async ({ page }) => {
     // 패널 열기
-    await page.locator('.monitor-toggle').click();
-    await expect(page.locator('.bottom-panel-slot')).toBeVisible();
+    await page.locator(".monitor-toggle").click();
+    await expect(page.locator(".bottom-panel-slot")).toBeVisible();
 
     // Esc 키 누르기
-    await page.keyboard.press('Escape');
+    await page.keyboard.press("Escape");
 
     // 패널 닫힘 확인
-    await expect(page.locator('.bottom-panel-slot')).not.toBeVisible();
+    await expect(page.locator(".bottom-panel-slot")).not.toBeVisible();
   });
 
-  test('키보드로 리사이즈', async ({ page }) => {
-    await page.locator('.monitor-toggle').click();
+  test("키보드로 리사이즈", async ({ page }) => {
+    await page.locator(".monitor-toggle").click();
 
-    const bottomPanel = page.locator('.bottom-panel-slot');
-    const initialHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+    const bottomPanel = page.locator(".bottom-panel-slot");
+    const initialHeight = await bottomPanel.evaluate((el) => el.offsetHeight);
 
     // 리사이즈 핸들에 포커스
-    await page.locator('.resize-handle').focus();
+    await page.locator(".resize-handle").focus();
 
     // 화살표 위로 높이 증가
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
 
-    const newHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+    const newHeight = await bottomPanel.evaluate((el) => el.offsetHeight);
     expect(newHeight).toBeGreaterThan(initialHeight);
   });
 
-  test('Optimize 버튼 동작', async ({ page }) => {
-    await page.locator('.monitor-toggle').click();
+  test("Optimize 버튼 동작", async ({ page }) => {
+    await page.locator(".monitor-toggle").click();
 
     // Optimize 버튼 클릭
-    const optimizeBtn = page.locator('.optimize-btn');
+    const optimizeBtn = page.locator(".optimize-btn");
     await optimizeBtn.click();
 
     // 상태 메시지 표시 확인
-    await expect(page.locator('.status-message')).toContainText('최적화');
+    await expect(page.locator(".status-message")).toContainText("최적화");
 
     // 3초 후 메시지 사라짐
     await page.waitForTimeout(3500);
-    await expect(page.locator('.status-message')).not.toBeVisible();
+    await expect(page.locator(".status-message")).not.toBeVisible();
   });
 });
 ```
@@ -3141,78 +3230,84 @@ test.describe('Monitor Panel E2E', () => {
 **파일**: `e2e/monitor-panel-a11y.spec.ts`
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
-test.describe('Monitor Panel Accessibility', () => {
+test.describe("Monitor Panel Accessibility", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/builder');
-    await page.locator('.monitor-toggle').click();
-    await page.waitForSelector('.monitor-panel');
+    await page.goto("/builder");
+    await page.locator(".monitor-toggle").click();
+    await page.waitForSelector(".monitor-panel");
   });
 
-  test('axe 접근성 검사 통과', async ({ page }) => {
+  test("axe 접근성 검사 통과", async ({ page }) => {
     const results = await new AxeBuilder({ page })
-      .include('.bottom-panel-slot')
+      .include(".bottom-panel-slot")
       .analyze();
 
     expect(results.violations).toHaveLength(0);
   });
 
-  test('ARIA role 및 label 확인', async ({ page }) => {
+  test("ARIA role 및 label 확인", async ({ page }) => {
     // Panel container
-    const panel = page.locator('.bottom-panel-slot');
-    await expect(panel).toHaveAttribute('role', 'region');
+    const panel = page.locator(".bottom-panel-slot");
+    await expect(panel).toHaveAttribute("role", "region");
 
     // Resize handle
-    const resizeHandle = page.locator('.resize-handle');
-    await expect(resizeHandle).toHaveAttribute('role', 'separator');
-    await expect(resizeHandle).toHaveAttribute('aria-orientation', 'horizontal');
-    await expect(resizeHandle).toHaveAttribute('aria-describedby', 'resize-hint');
+    const resizeHandle = page.locator(".resize-handle");
+    await expect(resizeHandle).toHaveAttribute("role", "separator");
+    await expect(resizeHandle).toHaveAttribute(
+      "aria-orientation",
+      "horizontal",
+    );
+    await expect(resizeHandle).toHaveAttribute(
+      "aria-describedby",
+      "resize-hint",
+    );
 
     // Close button
-    const closeBtn = page.locator('.close-btn');
-    await expect(closeBtn).toHaveAttribute('aria-label');
+    const closeBtn = page.locator(".close-btn");
+    await expect(closeBtn).toHaveAttribute("aria-label");
 
     // Chart SVG
-    const chart = page.locator('.memory-chart svg');
-    await expect(chart).toHaveAttribute('aria-label');
+    const chart = page.locator(".memory-chart svg");
+    await expect(chart).toHaveAttribute("aria-label");
   });
 
-  test('Tab 순서 확인', async ({ page }) => {
+  test("Tab 순서 확인", async ({ page }) => {
     // Monitor button에서 시작
-    await page.locator('.monitor-toggle').focus();
+    await page.locator(".monitor-toggle").focus();
 
     // Tab으로 resize handle로 이동
-    await page.keyboard.press('Tab');
-    await expect(page.locator('.resize-handle')).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(".resize-handle")).toBeFocused();
 
     // Tab으로 close button으로 이동
-    await page.keyboard.press('Tab');
-    await expect(page.locator('.close-btn')).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(".close-btn")).toBeFocused();
 
     // Tab으로 optimize button으로 이동
-    await page.keyboard.press('Tab');
-    await expect(page.locator('.optimize-btn')).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(".optimize-btn")).toBeFocused();
   });
 
-  test('스크린 리더 텍스트 확인', async ({ page }) => {
+  test("스크린 리더 텍스트 확인", async ({ page }) => {
     // sr-only 텍스트 존재 확인
-    const srOnly = page.locator('.sr-only');
+    const srOnly = page.locator(".sr-only");
     await expect(srOnly).toBeAttached();
 
     // 실제 내용 확인 (시각적으로 숨겨져 있어도 DOM에 존재)
     const text = await srOnly.textContent();
-    expect(text).toContain('화살표 키');
+    expect(text).toContain("화살표 키");
   });
 
-  test('고대비 모드 테스트', async ({ page }) => {
+  test("고대비 모드 테스트", async ({ page }) => {
     // 고대비 모드 에뮬레이션
-    await page.emulateMedia({ forcedColors: 'active' });
+    await page.emulateMedia({ forcedColors: "active" });
 
     // 패널이 여전히 보이는지 확인
-    await expect(page.locator('.monitor-panel')).toBeVisible();
-    await expect(page.locator('.stat-card')).toHaveCount(5);
+    await expect(page.locator(".monitor-panel")).toBeVisible();
+    await expect(page.locator(".stat-card")).toHaveCount(5);
   });
 });
 ```
@@ -3220,6 +3315,7 @@ test.describe('Monitor Panel Accessibility', () => {
 ### QA 체크리스트 종합
 
 #### 기능 테스트
+
 - [ ] Header Monitor 버튼 클릭 → 패널 열림
 - [ ] Close 버튼 클릭 → 패널 닫힘
 - [ ] Esc 키 → 패널 닫힘
@@ -3232,6 +3328,7 @@ test.describe('Monitor Panel Accessibility', () => {
 - [ ] 패널 닫을 때 수집 중단
 
 #### 접근성 테스트
+
 - [ ] axe 검사 통과 (violations = 0)
 - [ ] Tab 키로 모든 컨트롤 탐색 가능
 - [ ] ARIA role, label 모두 설정됨
@@ -3240,18 +3337,21 @@ test.describe('Monitor Panel Accessibility', () => {
 - [ ] 150% 확대에서 레이아웃 유지
 
 #### 성능 테스트
+
 - [ ] getMemoryStats < 10ms (캐시 히트)
 - [ ] CPU < 5% (패널 열림)
 - [ ] CPU = 0% (패널 닫힘, 수집 중단)
 - [ ] 메모리 오버헤드 < 500KB
 
 #### 브라우저 호환성
+
 - [ ] Chrome 120+
 - [ ] Firefox 120+ (performance.memory 미지원 fallback)
 - [ ] Safari 17+ (requestIdleCallback 미지원 fallback)
 - [ ] Edge 120+
 
 #### 에러 처리
+
 - [ ] performance.memory 미지원 시 fallback UI 표시
 - [ ] 통계 수집 에러 시 에러 메시지 표시
 - [ ] localStorage 비활성화 시 정상 동작 (저장 실패 무시)
@@ -3269,12 +3369,14 @@ test.describe('Monitor Panel Accessibility', () => {
 **목표**: 경쟁 제품 분석 기반 고급 기능 추가 (Figma, Chrome DevTools, Supabase 스타일)
 
 **구현 항목**:
+
 - Threshold 경고 시스템 (60%/75% 시각적 표시)
 - Export 기능 (CSV/JSON 내보내기)
 - Toast/Notification 시스템 (경고 알림)
 - Core Web Vitals (LCP/FID/CLS 측정)
 
 **추가 파일 구조**:
+
 ```
 src/builder/panels/monitor/
 ├── components/
@@ -3330,12 +3432,12 @@ src/builder/hooks/
 **파일**: `src/builder/panels/monitor/components/ThresholdIndicator.tsx`
 
 ```tsx
-import { AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
 
 interface ThresholdIndicatorProps {
   value: number;
-  warningThreshold?: number;  // default: 60
-  dangerThreshold?: number;   // default: 75
+  warningThreshold?: number; // default: 60
+  dangerThreshold?: number; // default: 75
   label?: string;
 }
 
@@ -3343,23 +3445,35 @@ export function ThresholdIndicator({
   value,
   warningThreshold = 60,
   dangerThreshold = 75,
-  label = 'Memory Usage',
+  label = "Memory Usage",
 }: ThresholdIndicatorProps) {
   const threshold =
-    value >= dangerThreshold ? 'danger' :
-    value >= warningThreshold ? 'warning' : 'safe';
+    value >= dangerThreshold
+      ? "danger"
+      : value >= warningThreshold
+        ? "warning"
+        : "safe";
 
   const Icon =
-    threshold === 'danger' ? AlertCircle :
-    threshold === 'warning' ? AlertTriangle : CheckCircle;
+    threshold === "danger"
+      ? AlertCircle
+      : threshold === "warning"
+        ? AlertTriangle
+        : CheckCircle;
 
   return (
     <div className="threshold-indicator" data-threshold={threshold}>
       <Icon size={16} aria-hidden="true" />
       <span className="sr-only">
-        {threshold === 'danger' ? '위험: ' : threshold === 'warning' ? '경고: ' : '정상: '}
+        {threshold === "danger"
+          ? "위험: "
+          : threshold === "warning"
+            ? "경고: "
+            : "정상: "}
       </span>
-      <span>{label}: {value}%</span>
+      <span>
+        {label}: {value}%
+      </span>
     </div>
   );
 }
@@ -3376,8 +3490,10 @@ export function ThresholdIndicator({
 
   {/* Threshold 라인 - 60% 경고 */}
   <line
-    x1="0" y1={height * 0.4}
-    x2={width} y2={height * 0.4}
+    x1="0"
+    y1={height * 0.4}
+    x2={width}
+    y2={height * 0.4}
     stroke="var(--threshold-warning)"
     strokeDasharray="4 2"
     strokeWidth="1"
@@ -3386,8 +3502,10 @@ export function ThresholdIndicator({
 
   {/* Threshold 라인 - 75% 위험 */}
   <line
-    x1="0" y1={height * 0.25}
-    x2={width} y2={height * 0.25}
+    x1="0"
+    y1={height * 0.25}
+    x2={width}
+    y2={height * 0.25}
     stroke="var(--threshold-danger)"
     strokeDasharray="4 2"
     strokeWidth="1"
@@ -3395,10 +3513,20 @@ export function ThresholdIndicator({
   />
 
   {/* 라벨 */}
-  <text x="4" y={height * 0.4 - 4} fill="var(--threshold-warning)" fontSize="10">
+  <text
+    x="4"
+    y={height * 0.4 - 4}
+    fill="var(--threshold-warning)"
+    fontSize="10"
+  >
     60%
   </text>
-  <text x="4" y={height * 0.25 - 4} fill="var(--threshold-danger)" fontSize="10">
+  <text
+    x="4"
+    y={height * 0.25 - 4}
+    fill="var(--threshold-danger)"
+    fontSize="10"
+  >
     75%
   </text>
 </svg>
@@ -3413,47 +3541,55 @@ export function ThresholdIndicator({
 **파일**: `src/builder/panels/monitor/components/ExportButton.tsx`
 
 ```tsx
-import { Download } from 'lucide-react';
-import { Button } from 'react-aria-components';
-import type { MemoryStats } from '../hooks/useMemoryStats';
+import { Download } from "lucide-react";
+import { Button } from "react-aria-components";
+import type { MemoryStats } from "../hooks/useMemoryStats";
 
 interface ExportButtonProps {
   stats: MemoryStats | null;
-  format?: 'csv' | 'json';
+  format?: "csv" | "json";
 }
 
-export function ExportButton({ stats, format = 'json' }: ExportButtonProps) {
+export function ExportButton({ stats, format = "json" }: ExportButtonProps) {
   const handleExport = () => {
     if (!stats) return;
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     let content: string;
     let mimeType: string;
     let extension: string;
 
-    if (format === 'csv') {
+    if (format === "csv") {
       // UTF-8 BOM for Korean support
-      const BOM = '\uFEFF';
-      const headers = ['Metric', 'Value', 'Timestamp'];
+      const BOM = "\uFEFF";
+      const headers = ["Metric", "Value", "Timestamp"];
       const rows = [
-        ['Total Entries', stats.totalEntries, timestamp],
-        ['Command Count', stats.commandStoreStats.commandCount, timestamp],
-        ['Cache Size', stats.commandStoreStats.cacheSize, timestamp],
-        ['Memory Usage (bytes)', stats.commandStoreStats.estimatedMemoryUsage, timestamp],
-        ['Compression Ratio', stats.commandStoreStats.compressionRatio, timestamp],
+        ["Total Entries", stats.totalEntries, timestamp],
+        ["Command Count", stats.commandStoreStats.commandCount, timestamp],
+        ["Cache Size", stats.commandStoreStats.cacheSize, timestamp],
+        [
+          "Memory Usage (bytes)",
+          stats.commandStoreStats.estimatedMemoryUsage,
+          timestamp,
+        ],
+        [
+          "Compression Ratio",
+          stats.commandStoreStats.compressionRatio,
+          timestamp,
+        ],
       ];
-      content = BOM + [headers, ...rows].map(row => row.join(',')).join('\n');
-      mimeType = 'text/csv;charset=utf-8';
-      extension = 'csv';
+      content = BOM + [headers, ...rows].map((row) => row.join(",")).join("\n");
+      mimeType = "text/csv;charset=utf-8";
+      extension = "csv";
     } else {
       content = JSON.stringify(stats, null, 2);
-      mimeType = 'application/json';
-      extension = 'json';
+      mimeType = "application/json";
+      extension = "json";
     }
 
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `monitor-stats-${timestamp}.${extension}`;
     link.click();
@@ -3512,17 +3648,17 @@ export function ExportButton({ stats, format = 'json' }: ExportButtonProps) {
 **파일**: `src/builder/components/Toast.tsx`
 
 ```tsx
-import { X, AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import { Button } from 'react-aria-components';
-import './styles/Toast.css';
+import { X, AlertCircle, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { Button } from "react-aria-components";
+import "./styles/Toast.css";
 
-export type ToastType = 'success' | 'warning' | 'error' | 'info';
+export type ToastType = "success" | "warning" | "error" | "info";
 
 export interface ToastProps {
   id: string;
   type: ToastType;
   message: string;
-  duration?: number;  // ms, 0 = persistent
+  duration?: number; // ms, 0 = persistent
   onDismiss: (id: string) => void;
 }
 
@@ -3533,7 +3669,13 @@ const ICONS = {
   info: Info,
 };
 
-export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastProps) {
+export function Toast({
+  id,
+  type,
+  message,
+  duration = 5000,
+  onDismiss,
+}: ToastProps) {
   const Icon = ICONS[type];
 
   // Auto-dismiss
@@ -3542,12 +3684,7 @@ export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastPr
   }
 
   return (
-    <div
-      className="toast"
-      data-type={type}
-      role="alert"
-      aria-live="polite"
-    >
+    <div className="toast" data-type={type} role="alert" aria-live="polite">
       <Icon size={16} className="toast-icon" aria-hidden="true" />
       <span className="toast-message">{message}</span>
       <Button
@@ -3567,29 +3704,25 @@ export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastPr
 **파일**: `src/builder/components/ToastContainer.tsx`
 
 ```tsx
-import { Toast, type ToastProps } from './Toast';
+import { Toast, type ToastProps } from "./Toast";
 
 interface ToastContainerProps {
-  toasts: Omit<ToastProps, 'onDismiss'>[];
+  toasts: Omit<ToastProps, "onDismiss">[];
   onDismiss: (id: string) => void;
-  position?: 'top-right' | 'bottom-right' | 'bottom-center';
+  position?: "top-right" | "bottom-right" | "bottom-center";
 }
 
 export function ToastContainer({
   toasts,
   onDismiss,
-  position = 'bottom-right'
+  position = "bottom-right",
 }: ToastContainerProps) {
   if (toasts.length === 0) return null;
 
   return (
     <div className="toast-container" data-position={position}>
       {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          {...toast}
-          onDismiss={onDismiss}
-        />
+        <Toast key={toast.id} {...toast} onDismiss={onDismiss} />
       ))}
     </div>
   );
@@ -3601,8 +3734,8 @@ export function ToastContainer({
 **파일**: `src/builder/hooks/useToast.ts`
 
 ```tsx
-import { useState, useCallback, useRef } from 'react';
-import type { ToastType } from '../components/Toast';
+import { useState, useCallback, useRef } from "react";
+import type { ToastType } from "../components/Toast";
 
 interface ToastItem {
   id: string;
@@ -3618,25 +3751,28 @@ export function useToast() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const lastShownRef = useRef<Map<string, number>>(new Map());
 
-  const showToast = useCallback((
-    type: ToastType,
-    message: string,
-    options?: { duration?: number; dedupeKey?: string }
-  ) => {
-    const { duration = 5000, dedupeKey } = options ?? {};
+  const showToast = useCallback(
+    (
+      type: ToastType,
+      message: string,
+      options?: { duration?: number; dedupeKey?: string },
+    ) => {
+      const { duration = 5000, dedupeKey } = options ?? {};
 
-    // 중복 체크
-    if (dedupeKey) {
-      const lastShown = lastShownRef.current.get(dedupeKey);
-      if (lastShown && Date.now() - lastShown < COOLDOWN_MS) {
-        return; // 쿨다운 중
+      // 중복 체크
+      if (dedupeKey) {
+        const lastShown = lastShownRef.current.get(dedupeKey);
+        if (lastShown && Date.now() - lastShown < COOLDOWN_MS) {
+          return; // 쿨다운 중
+        }
+        lastShownRef.current.set(dedupeKey, Date.now());
       }
-      lastShownRef.current.set(dedupeKey, Date.now());
-    }
 
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setToasts((prev) => [...prev, { id, type, message, duration }]);
-  }, []);
+      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      setToasts((prev) => [...prev, { id, type, message, duration }]);
+    },
+    [],
+  );
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -3745,11 +3881,11 @@ export function useToast() {
 
 ```tsx
 // useToast 훅 추가
-import { useToast } from '../../hooks/useToast';
-import { ToastContainer } from '../../components/ToastContainer';
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../../components/ToastContainer";
 
 export function MonitorPanel() {
-  const { stats, /* ... */ } = useMemoryStats();
+  const { stats /* ... */ } = useMemoryStats();
   const { toasts, showToast, dismissToast } = useToast();
 
   // Threshold 알림
@@ -3759,12 +3895,16 @@ export function MonitorPanel() {
     const memoryPercent = calculateMemoryPercent(stats);
 
     if (memoryPercent >= 75) {
-      showToast('error', `메모리 사용량이 ${memoryPercent}%에 도달했습니다. 최적화를 권장합니다.`, {
-        dedupeKey: 'memory-danger',
-      });
+      showToast(
+        "error",
+        `메모리 사용량이 ${memoryPercent}%에 도달했습니다. 최적화를 권장합니다.`,
+        {
+          dedupeKey: "memory-danger",
+        },
+      );
     } else if (memoryPercent >= 60) {
-      showToast('warning', `메모리 사용량이 ${memoryPercent}%입니다.`, {
-        dedupeKey: 'memory-warning',
+      showToast("warning", `메모리 사용량이 ${memoryPercent}%입니다.`, {
+        dedupeKey: "memory-warning",
       });
     }
   }, [stats, showToast]);
@@ -3787,12 +3927,12 @@ export function MonitorPanel() {
 **파일**: `src/builder/panels/monitor/hooks/useWebVitals.ts`
 
 ```tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
 export interface WebVitals {
-  lcp: number | null;  // Largest Contentful Paint (ms)
-  fid: number | null;  // First Input Delay (ms)
-  cls: number | null;  // Cumulative Layout Shift (score)
+  lcp: number | null; // Largest Contentful Paint (ms)
+  fid: number | null; // First Input Delay (ms)
+  cls: number | null; // Cumulative Layout Shift (score)
   ttfb: number | null; // Time to First Byte (ms)
 }
 
@@ -3807,20 +3947,20 @@ export function useWebVitals() {
   // Canvas iframe으로부터 메시지 수신
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'WEB_VITALS_UPDATE') {
+      if (event.data.type === "WEB_VITALS_UPDATE") {
         setVitals(event.data.vitals);
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   // Canvas에 Web Vitals 수집 요청
   const requestVitals = useCallback(() => {
-    const iframe = document.querySelector<HTMLIFrameElement>('.canvas-iframe');
+    const iframe = document.querySelector<HTMLIFrameElement>(".canvas-iframe");
     if (iframe?.contentWindow) {
-      iframe.contentWindow.postMessage({ type: 'REQUEST_WEB_VITALS' }, '*');
+      iframe.contentWindow.postMessage({ type: "REQUEST_WEB_VITALS" }, "*");
     }
   }, []);
 
@@ -3888,8 +4028,8 @@ async function collectWebVitals(): Promise<{
 **파일**: `src/builder/panels/monitor/components/WebVitalsCard.tsx`
 
 ```tsx
-import { Gauge, MousePointer, Layout, Clock } from 'lucide-react';
-import type { WebVitals } from '../hooks/useWebVitals';
+import { Gauge, MousePointer, Layout, Clock } from "lucide-react";
+import type { WebVitals } from "../hooks/useWebVitals";
 
 interface WebVitalsCardProps {
   vitals: WebVitals;
@@ -3904,19 +4044,25 @@ const THRESHOLDS = {
 };
 
 function getStatus(metric: keyof typeof THRESHOLDS, value: number | null) {
-  if (value === null) return 'unknown';
+  if (value === null) return "unknown";
   const { good, poor } = THRESHOLDS[metric];
-  if (value <= good) return 'good';
-  if (value <= poor) return 'needs-improvement';
-  return 'poor';
+  if (value <= good) return "good";
+  if (value <= poor) return "needs-improvement";
+  return "poor";
 }
 
 export function WebVitalsCard({ vitals }: WebVitalsCardProps) {
   const metrics = [
-    { key: 'lcp', label: 'LCP', value: vitals.lcp, unit: 'ms', icon: Gauge },
-    { key: 'fid', label: 'FID', value: vitals.fid, unit: 'ms', icon: MousePointer },
-    { key: 'cls', label: 'CLS', value: vitals.cls, unit: '', icon: Layout },
-    { key: 'ttfb', label: 'TTFB', value: vitals.ttfb, unit: 'ms', icon: Clock },
+    { key: "lcp", label: "LCP", value: vitals.lcp, unit: "ms", icon: Gauge },
+    {
+      key: "fid",
+      label: "FID",
+      value: vitals.fid,
+      unit: "ms",
+      icon: MousePointer,
+    },
+    { key: "cls", label: "CLS", value: vitals.cls, unit: "", icon: Layout },
+    { key: "ttfb", label: "TTFB", value: vitals.ttfb, unit: "ms", icon: Clock },
   ] as const;
 
   return (
@@ -3932,7 +4078,7 @@ export function WebVitalsCard({ vitals }: WebVitalsCardProps) {
             <Icon size={14} aria-hidden="true" />
             <span className="web-vital-label">{label}</span>
             <span className="web-vital-value">
-              {value !== null ? `${value}${unit}` : '—'}
+              {value !== null ? `${value}${unit}` : "—"}
             </span>
           </div>
         ))}
@@ -4013,18 +4159,21 @@ export function WebVitalsCard({ vitals }: WebVitalsCardProps) {
 ### ✅ Phase 6 QA 체크리스트
 
 #### Threshold 경고
+
 - [ ] 60% 이상 시 노란색 경고 표시
 - [ ] 75% 이상 시 빨간색 위험 표시
 - [ ] 차트에 threshold 라인 표시
 - [ ] 스크린 리더에 상태 읽힘
 
 #### Export 기능
+
 - [ ] JSON 내보내기 동작
 - [ ] CSV 내보내기 동작 (한글 정상)
 - [ ] 비활성화 상태 (stats 없을 때)
 - [ ] 파일명에 타임스탬프 포함
 
 #### Toast/Notification
+
 - [ ] 60% 도달 시 warning toast
 - [ ] 75% 도달 시 error toast
 - [ ] 5분 쿨다운 (중복 방지)
@@ -4032,6 +4181,7 @@ export function WebVitalsCard({ vitals }: WebVitalsCardProps) {
 - [ ] 5초 후 자동 사라짐
 
 #### Core Web Vitals
+
 - [ ] LCP 측정 및 표시
 - [ ] CLS 측정 및 표시
 - [ ] TTFB 측정 및 표시
@@ -4051,12 +4201,14 @@ export function WebVitalsCard({ vitals }: WebVitalsCardProps) {
 **목표**: Figma/Chrome DevTools 수준의 고급 모니터링 기능 구현
 
 **구현 항목**:
+
 - 실시간 시계열 그래프 (최근 60초 데이터)
 - FPS 모니터 (렌더링 성능)
 - 컴포넌트별 메모리 분석 (Figma 스타일)
 - Threshold 커스터마이징
 
 **추가 파일 구조**:
+
 ```
 src/builder/panels/monitor/
 ├── components/
@@ -4081,25 +4233,30 @@ src/builder/panels/monitor/
 **파일**: `src/builder/panels/monitor/hooks/useTimeSeriesData.ts`
 
 ```typescript
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export interface DataPoint {
   timestamp: number;
-  memoryUsage: number;      // bytes
-  memoryPercent: number;    // 0-100
+  memoryUsage: number; // bytes
+  memoryPercent: number; // 0-100
   historyEntries: number;
   cacheSize: number;
 }
 
 interface UseTimeSeriesOptions {
-  maxPoints?: number;       // default: 60 (60초)
-  intervalMs?: number;      // default: 1000 (1초)
+  maxPoints?: number; // default: 60 (60초)
+  intervalMs?: number; // default: 1000 (1초)
   enabled?: boolean;
 }
 
 export function useTimeSeriesData(
-  getStats: () => { memoryUsage: number; memoryPercent: number; historyEntries: number; cacheSize: number } | null,
-  options: UseTimeSeriesOptions = {}
+  getStats: () => {
+    memoryUsage: number;
+    memoryPercent: number;
+    historyEntries: number;
+    cacheSize: number;
+  } | null,
+  options: UseTimeSeriesOptions = {},
 ) {
   const { maxPoints = 60, intervalMs = 1000, enabled = true } = options;
   const [data, setData] = useState<DataPoint[]>([]);
@@ -4159,14 +4316,14 @@ export function useTimeSeriesData(
 **파일**: `src/builder/panels/monitor/components/RealtimeChart.tsx`
 
 ```tsx
-import { useMemo } from 'react';
-import type { DataPoint } from '../hooks/useTimeSeriesData';
+import { useMemo } from "react";
+import type { DataPoint } from "../hooks/useTimeSeriesData";
 
 interface RealtimeChartProps {
   data: DataPoint[];
   width?: number;
   height?: number;
-  metric?: 'memoryPercent' | 'historyEntries' | 'cacheSize';
+  metric?: "memoryPercent" | "historyEntries" | "cacheSize";
   showThresholds?: boolean;
 }
 
@@ -4174,7 +4331,7 @@ export function RealtimeChart({
   data,
   width = 400,
   height = 120,
-  metric = 'memoryPercent',
+  metric = "memoryPercent",
   showThresholds = true,
 }: RealtimeChartProps) {
   const padding = { top: 10, right: 10, bottom: 20, left: 40 };
@@ -4184,12 +4341,12 @@ export function RealtimeChart({
   // 데이터 범위 계산
   const { minValue, maxValue, pathD, points } = useMemo(() => {
     if (data.length === 0) {
-      return { minValue: 0, maxValue: 100, pathD: '', points: [] };
+      return { minValue: 0, maxValue: 100, pathD: "", points: [] };
     }
 
     const values = data.map((d) => d[metric]);
-    const min = metric === 'memoryPercent' ? 0 : Math.min(...values);
-    const max = metric === 'memoryPercent' ? 100 : Math.max(...values) * 1.1;
+    const min = metric === "memoryPercent" ? 0 : Math.min(...values);
+    const max = metric === "memoryPercent" ? 100 : Math.max(...values) * 1.1;
     const range = max - min || 1;
 
     const pts = data.map((d, i) => ({
@@ -4199,7 +4356,9 @@ export function RealtimeChart({
       time: d.timestamp,
     }));
 
-    const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const path = pts
+      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+      .join(" ");
 
     return { minValue: min, maxValue: max, pathD: path, points: pts };
   }, [data, metric, chartWidth, chartHeight, padding]);
@@ -4226,7 +4385,10 @@ export function RealtimeChart({
       const y = padding.top + chartHeight - (i / steps) * chartHeight;
       labels.push({
         y,
-        label: metric === 'memoryPercent' ? `${Math.round(value)}%` : Math.round(value).toString(),
+        label:
+          metric === "memoryPercent"
+            ? `${Math.round(value)}%`
+            : Math.round(value).toString(),
       });
     }
     return labels;
@@ -4256,7 +4418,7 @@ export function RealtimeChart({
       </g>
 
       {/* Threshold 라인 */}
-      {showThresholds && metric === 'memoryPercent' && (
+      {showThresholds && metric === "memoryPercent" && (
         <g className="threshold-lines" aria-hidden="true">
           {/* 60% 경고 */}
           <line
@@ -4286,8 +4448,16 @@ export function RealtimeChart({
         <g className="chart-area">
           <defs>
             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-primary-500)" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="var(--color-primary-500)" stopOpacity="0.05" />
+              <stop
+                offset="0%"
+                stopColor="var(--color-primary-500)"
+                stopOpacity="0.3"
+              />
+              <stop
+                offset="100%"
+                stopColor="var(--color-primary-500)"
+                stopOpacity="0.05"
+              />
             </linearGradient>
           </defs>
           <path
@@ -4351,7 +4521,7 @@ export function RealtimeChart({
 
       {/* 스크린 리더용 현재 값 */}
       <text className="sr-only">
-        Current {metric}: {points[points.length - 1]?.value.toFixed(1) ?? 'N/A'}
+        Current {metric}: {points[points.length - 1]?.value.toFixed(1) ?? "N/A"}
       </text>
     </svg>
   );
@@ -4405,14 +4575,14 @@ export function RealtimeChart({
 **파일**: `src/builder/panels/monitor/hooks/useFPSMonitor.ts`
 
 ```typescript
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface FPSData {
   current: number;
   average: number;
   min: number;
   max: number;
-  history: number[];  // 최근 60개
+  history: number[]; // 최근 60개
 }
 
 interface UseFPSMonitorOptions {
@@ -4446,11 +4616,16 @@ export function useFPSMonitor(options: UseFPSMonitorOptions = {}) {
       const currentFPS = Math.round((frameCountRef.current * 1000) / elapsed);
 
       // 히스토리 업데이트
-      historyRef.current = [...historyRef.current.slice(-(historySize - 1)), currentFPS];
+      historyRef.current = [
+        ...historyRef.current.slice(-(historySize - 1)),
+        currentFPS,
+      ];
 
       // 통계 계산
       const history = historyRef.current;
-      const average = Math.round(history.reduce((a, b) => a + b, 0) / history.length);
+      const average = Math.round(
+        history.reduce((a, b) => a + b, 0) / history.length,
+      );
       const min = Math.min(...history);
       const max = Math.max(...history);
 
@@ -4503,17 +4678,17 @@ export function useFPSMonitor(options: UseFPSMonitorOptions = {}) {
 **파일**: `src/builder/panels/monitor/components/FPSMeter.tsx`
 
 ```tsx
-import { Activity } from 'lucide-react';
-import type { useFPSMonitor } from '../hooks/useFPSMonitor';
+import { Activity } from "lucide-react";
+import type { useFPSMonitor } from "../hooks/useFPSMonitor";
 
 interface FPSMeterProps {
-  fps: ReturnType<typeof useFPSMonitor>['fps'];
+  fps: ReturnType<typeof useFPSMonitor>["fps"];
 }
 
-function getFPSStatus(fps: number): 'good' | 'warning' | 'poor' {
-  if (fps >= 55) return 'good';
-  if (fps >= 30) return 'warning';
-  return 'poor';
+function getFPSStatus(fps: number): "good" | "warning" | "poor" {
+  if (fps >= 55) return "good";
+  if (fps >= 30) return "warning";
+  return "poor";
 }
 
 export function FPSMeter({ fps }: FPSMeterProps) {
@@ -4699,8 +4874,8 @@ export function FPSMeter({ fps }: FPSMeterProps) {
 **파일**: `src/builder/panels/monitor/hooks/useComponentMemory.ts`
 
 ```typescript
-import { useState, useEffect, useCallback } from 'react';
-import { useStore } from '../../../stores';
+import { useState, useEffect, useCallback } from "react";
+import { useStore } from "../../../stores";
 
 export interface ComponentMemoryInfo {
   elementId: string;
@@ -4715,22 +4890,22 @@ export interface ComponentMemoryInfo {
 
 interface UseComponentMemoryOptions {
   enabled?: boolean;
-  sortBy?: 'memory' | 'children' | 'depth';
+  sortBy?: "memory" | "children" | "depth";
   limit?: number;
 }
 
 // 객체 크기 추정 (바이트)
 function estimateObjectSize(obj: unknown): number {
   if (obj === null || obj === undefined) return 0;
-  if (typeof obj === 'boolean') return 4;
-  if (typeof obj === 'number') return 8;
-  if (typeof obj === 'string') return (obj as string).length * 2;
+  if (typeof obj === "boolean") return 4;
+  if (typeof obj === "number") return 8;
+  if (typeof obj === "string") return (obj as string).length * 2;
 
   if (Array.isArray(obj)) {
     return obj.reduce((sum, item) => sum + estimateObjectSize(item), 0);
   }
 
-  if (typeof obj === 'object') {
+  if (typeof obj === "object") {
     return Object.entries(obj).reduce((sum, [key, value]) => {
       return sum + key.length * 2 + estimateObjectSize(value);
     }, 0);
@@ -4742,7 +4917,7 @@ function estimateObjectSize(obj: unknown): number {
 // 요소의 깊이 계산
 function getElementDepth(
   elementId: string,
-  elements: { id: string; parent_id: string | null }[]
+  elements: { id: string; parent_id: string | null }[],
 ): number {
   let depth = 0;
   let current = elements.find((el) => el.id === elementId);
@@ -4759,19 +4934,21 @@ function getElementDepth(
 // 자식 요소 수 계산
 function countChildren(
   elementId: string,
-  elements: { id: string; parent_id: string | null }[]
+  elements: { id: string; parent_id: string | null }[],
 ): number {
   const directChildren = elements.filter((el) => el.parent_id === elementId);
   return directChildren.reduce(
     (sum, child) => sum + 1 + countChildren(child.id, elements),
-    0
+    0,
   );
 }
 
 export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
-  const { enabled = true, sortBy = 'memory', limit = 20 } = options;
+  const { enabled = true, sortBy = "memory", limit = 20 } = options;
   const elements = useStore((state) => state.elements);
-  const [componentMemory, setComponentMemory] = useState<ComponentMemoryInfo[]>([]);
+  const [componentMemory, setComponentMemory] = useState<ComponentMemoryInfo[]>(
+    [],
+  );
   const [totalMemory, setTotalMemory] = useState(0);
 
   const analyze = useCallback(() => {
@@ -4789,7 +4966,8 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
       const customIdSize = (el.customId?.length ?? 0) * 2;
       const tagSize = (el.tag?.length ?? 0) * 2;
 
-      const memoryBytes = baseSize + idSize + customIdSize + tagSize + propsSize;
+      const memoryBytes =
+        baseSize + idSize + customIdSize + tagSize + propsSize;
       const childCount = countChildren(el.id, elements);
       const depth = getElementDepth(el.id, elements);
 
@@ -4817,11 +4995,11 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
     // 정렬
     memoryInfos.sort((a, b) => {
       switch (sortBy) {
-        case 'memory':
+        case "memory":
           return b.memoryBytes - a.memoryBytes;
-        case 'children':
+        case "children":
           return b.childCount - a.childCount;
-        case 'depth':
+        case "depth":
           return a.depth - b.depth;
         default:
           return 0;
@@ -4845,10 +5023,20 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
 **파일**: `src/builder/panels/monitor/components/ComponentMemoryList.tsx`
 
 ```tsx
-import { useState } from 'react';
-import { Box, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button, Select, SelectValue, Popover, ListBox, ListBoxItem } from 'react-aria-components';
-import { useComponentMemory, type ComponentMemoryInfo } from '../hooks/useComponentMemory';
+import { useState } from "react";
+import { Box, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Button,
+  Select,
+  SelectValue,
+  Popover,
+  ListBox,
+  ListBoxItem,
+} from "react-aria-components";
+import {
+  useComponentMemory,
+  type ComponentMemoryInfo,
+} from "../hooks/useComponentMemory";
 
 interface ComponentMemoryListProps {
   enabled?: boolean;
@@ -4860,14 +5048,18 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function getMemoryStatus(percentage: number): 'low' | 'medium' | 'high' {
-  if (percentage >= 10) return 'high';
-  if (percentage >= 5) return 'medium';
-  return 'low';
+function getMemoryStatus(percentage: number): "low" | "medium" | "high" {
+  if (percentage >= 10) return "high";
+  if (percentage >= 5) return "medium";
+  return "low";
 }
 
-export function ComponentMemoryList({ enabled = true }: ComponentMemoryListProps) {
-  const [sortBy, setSortBy] = useState<'memory' | 'children' | 'depth'>('memory');
+export function ComponentMemoryList({
+  enabled = true,
+}: ComponentMemoryListProps) {
+  const [sortBy, setSortBy] = useState<"memory" | "children" | "depth">(
+    "memory",
+  );
   const [expanded, setExpanded] = useState(true);
   const { componentMemory, totalMemory, refresh } = useComponentMemory({
     enabled,
@@ -4910,7 +5102,11 @@ export function ComponentMemoryList({ enabled = true }: ComponentMemoryListProps
             </Popover>
           </Select>
 
-          <Button className="refresh-btn" onPress={refresh} aria-label="Refresh">
+          <Button
+            className="refresh-btn"
+            onPress={refresh}
+            aria-label="Refresh"
+          >
             ↻
           </Button>
         </div>
@@ -4948,8 +5144,12 @@ function ComponentMemoryItem({ info }: { info: ComponentMemoryInfo }) {
       </div>
 
       <div className="component-memory-item-details">
-        <span className="component-memory-size">{formatBytes(info.memoryBytes)}</span>
-        <span className="component-memory-percent">({info.percentage.toFixed(1)}%)</span>
+        <span className="component-memory-size">
+          {formatBytes(info.memoryBytes)}
+        </span>
+        <span className="component-memory-percent">
+          ({info.percentage.toFixed(1)}%)
+        </span>
       </div>
 
       <div className="component-memory-bar-container">
@@ -5149,13 +5349,20 @@ function ComponentMemoryItem({ info }: { info: ComponentMemoryInfo }) {
 **파일**: `src/builder/panels/monitor/components/ThresholdSettings.tsx`
 
 ```tsx
-import { useState, useEffect } from 'react';
-import { Settings, X } from 'lucide-react';
-import { Button, Dialog, DialogTrigger, Modal, Slider, Label } from 'react-aria-components';
+import { useState, useEffect } from "react";
+import { Settings, X } from "lucide-react";
+import {
+  Button,
+  Dialog,
+  DialogTrigger,
+  Modal,
+  Slider,
+  Label,
+} from "react-aria-components";
 
 export interface ThresholdConfig {
-  warning: number;  // default: 60
-  danger: number;   // default: 75
+  warning: number; // default: 60
+  danger: number; // default: 75
 }
 
 interface ThresholdSettingsProps {
@@ -5163,7 +5370,7 @@ interface ThresholdSettingsProps {
   onChange: (config: ThresholdConfig) => void;
 }
 
-const STORAGE_KEY = 'xstudio-monitor-thresholds';
+const STORAGE_KEY = "composition-monitor-thresholds";
 
 // localStorage에서 설정 로드
 export function loadThresholdConfig(): ThresholdConfig {
@@ -5187,7 +5394,10 @@ function saveThresholdConfig(config: ThresholdConfig) {
   }
 }
 
-export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) {
+export function ThresholdSettings({
+  config,
+  onChange,
+}: ThresholdSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localConfig, setLocalConfig] = useState(config);
 
@@ -5213,7 +5423,10 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
-      <Button className="threshold-settings-btn" aria-label="Threshold settings">
+      <Button
+        className="threshold-settings-btn"
+        aria-label="Threshold settings"
+      >
         <Settings size={14} />
       </Button>
 
@@ -5233,7 +5446,9 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
                   <Label>Warning Threshold: {localConfig.warning}%</Label>
                   <Slider
                     value={localConfig.warning}
-                    onChange={(value) => setLocalConfig((prev) => ({ ...prev, warning: value }))}
+                    onChange={(value) =>
+                      setLocalConfig((prev) => ({ ...prev, warning: value }))
+                    }
                     minValue={30}
                     maxValue={90}
                     step={5}
@@ -5242,7 +5457,9 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
                     <div className="slider-track">
                       <div
                         className="slider-fill warning"
-                        style={{ width: `${((localConfig.warning - 30) / 60) * 100}%` }}
+                        style={{
+                          width: `${((localConfig.warning - 30) / 60) * 100}%`,
+                        }}
                       />
                       <div className="slider-thumb" />
                     </div>
@@ -5256,7 +5473,9 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
                   <Label>Danger Threshold: {localConfig.danger}%</Label>
                   <Slider
                     value={localConfig.danger}
-                    onChange={(value) => setLocalConfig((prev) => ({ ...prev, danger: value }))}
+                    onChange={(value) =>
+                      setLocalConfig((prev) => ({ ...prev, danger: value }))
+                    }
                     minValue={40}
                     maxValue={95}
                     step={5}
@@ -5265,7 +5484,9 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
                     <div className="slider-track">
                       <div
                         className="slider-fill danger"
-                        style={{ width: `${((localConfig.danger - 40) / 55) * 100}%` }}
+                        style={{
+                          width: `${((localConfig.danger - 40) / 55) * 100}%`,
+                        }}
                       />
                       <div className="slider-thumb" />
                     </div>
@@ -5285,7 +5506,9 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
                     </div>
                     <div
                       className="threshold-zone warning"
-                      style={{ width: `${localConfig.danger - localConfig.warning}%` }}
+                      style={{
+                        width: `${localConfig.danger - localConfig.warning}%`,
+                      }}
                     >
                       Warning
                     </div>
@@ -5495,33 +5718,40 @@ export function ThresholdSettings({ config, onChange }: ThresholdSettingsProps) 
 **파일**: `src/builder/panels/monitor/MonitorPanel.tsx` (최종 업데이트)
 
 ```tsx
-import { useState, useCallback, useEffect } from 'react';
-import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
-import { useMemoryStats } from './hooks/useMemoryStats';
-import { useTimeSeriesData } from './hooks/useTimeSeriesData';
-import { useFPSMonitor } from './hooks/useFPSMonitor';
-import { useWebVitals } from './hooks/useWebVitals';
-import { useToast } from '../../hooks/useToast';
-import { MemoryChart } from './components/MemoryChart';
-import { RealtimeChart } from './components/RealtimeChart';
-import { HistoryFlowChart } from './components/HistoryFlowChart';
-import { HistoryList } from './components/HistoryList';
-import { FPSMeter } from './components/FPSMeter';
-import { ComponentMemoryList } from './components/ComponentMemoryList';
-import { WebVitalsCard } from './components/WebVitalsCard';
-import { ExportButton } from './components/ExportButton';
-import { ThresholdIndicator } from './components/ThresholdIndicator';
-import { ThresholdSettings, loadThresholdConfig, type ThresholdConfig } from './components/ThresholdSettings';
-import { ToastContainer } from '../../components/ToastContainer';
-import { MemoryActions } from './components/MemoryActions';
-import './monitor-panel.css';
+import { useState, useCallback, useEffect } from "react";
+import { Tabs, TabList, Tab, TabPanel } from "react-aria-components";
+import { useMemoryStats } from "./hooks/useMemoryStats";
+import { useTimeSeriesData } from "./hooks/useTimeSeriesData";
+import { useFPSMonitor } from "./hooks/useFPSMonitor";
+import { useWebVitals } from "./hooks/useWebVitals";
+import { useToast } from "../../hooks/useToast";
+import { MemoryChart } from "./components/MemoryChart";
+import { RealtimeChart } from "./components/RealtimeChart";
+import { HistoryFlowChart } from "./components/HistoryFlowChart";
+import { HistoryList } from "./components/HistoryList";
+import { FPSMeter } from "./components/FPSMeter";
+import { ComponentMemoryList } from "./components/ComponentMemoryList";
+import { WebVitalsCard } from "./components/WebVitalsCard";
+import { ExportButton } from "./components/ExportButton";
+import { ThresholdIndicator } from "./components/ThresholdIndicator";
+import {
+  ThresholdSettings,
+  loadThresholdConfig,
+  type ThresholdConfig,
+} from "./components/ThresholdSettings";
+import { ToastContainer } from "../../components/ToastContainer";
+import { MemoryActions } from "./components/MemoryActions";
+import "./monitor-panel.css";
 
 export function MonitorPanel() {
-  const [activeTab, setActiveTab] = useState<'realtime' | 'memory' | 'flow' | 'history' | 'components'>('realtime');
-  const [thresholdConfig, setThresholdConfig] = useState<ThresholdConfig>(loadThresholdConfig);
+  const [activeTab, setActiveTab] = useState<
+    "realtime" | "memory" | "flow" | "history" | "components"
+  >("realtime");
+  const [thresholdConfig, setThresholdConfig] =
+    useState<ThresholdConfig>(loadThresholdConfig);
 
   const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats();
-  const { fps } = useFPSMonitor({ enabled: activeTab === 'realtime' });
+  const { fps } = useFPSMonitor({ enabled: activeTab === "realtime" });
   const { vitals, requestVitals } = useWebVitals();
   const { toasts, showToast, dismissToast } = useToast();
 
@@ -5537,7 +5767,7 @@ export function MonitorPanel() {
   }, [stats]);
 
   const { data: timeSeriesData } = useTimeSeriesData(getStatsForTimeSeries, {
-    enabled: activeTab === 'realtime',
+    enabled: activeTab === "realtime",
     maxPoints: 60,
     intervalMs: 1000,
   });
@@ -5548,19 +5778,27 @@ export function MonitorPanel() {
     const memoryPercent = calculateMemoryPercent(stats);
 
     if (memoryPercent >= thresholdConfig.danger) {
-      showToast('error', `메모리 사용량이 ${memoryPercent.toFixed(0)}%에 도달했습니다. 최적화를 권장합니다.`, {
-        dedupeKey: 'memory-danger',
-      });
+      showToast(
+        "error",
+        `메모리 사용량이 ${memoryPercent.toFixed(0)}%에 도달했습니다. 최적화를 권장합니다.`,
+        {
+          dedupeKey: "memory-danger",
+        },
+      );
     } else if (memoryPercent >= thresholdConfig.warning) {
-      showToast('warning', `메모리 사용량이 ${memoryPercent.toFixed(0)}%입니다.`, {
-        dedupeKey: 'memory-warning',
-      });
+      showToast(
+        "warning",
+        `메모리 사용량이 ${memoryPercent.toFixed(0)}%입니다.`,
+        {
+          dedupeKey: "memory-warning",
+        },
+      );
     }
   }, [stats, thresholdConfig, showToast]);
 
   // Web Vitals 주기적 요청
   useEffect(() => {
-    if (activeTab === 'realtime') {
+    if (activeTab === "realtime") {
       requestVitals();
       const interval = setInterval(requestVitals, 5000);
       return () => clearInterval(interval);
@@ -5581,11 +5819,17 @@ export function MonitorPanel() {
         <div className="monitor-panel-actions">
           <ExportButton stats={stats} format="json" />
           <ExportButton stats={stats} format="csv" />
-          <ThresholdSettings config={thresholdConfig} onChange={setThresholdConfig} />
+          <ThresholdSettings
+            config={thresholdConfig}
+            onChange={setThresholdConfig}
+          />
         </div>
       </div>
 
-      <Tabs selectedKey={activeTab} onSelectionChange={(key) => setActiveTab(key as typeof activeTab)}>
+      <Tabs
+        selectedKey={activeTab}
+        onSelectionChange={(key) => setActiveTab(key as typeof activeTab)}
+      >
         <TabList className="monitor-tabs" aria-label="Monitor views">
           <Tab id="realtime">Realtime</Tab>
           <Tab id="memory">Memory</Tab>
@@ -5615,8 +5859,14 @@ export function MonitorPanel() {
           <div className="realtime-stats">
             <StatCard label="Memory" value={`${memoryPercent.toFixed(1)}%`} />
             <StatCard label="Entries" value={stats?.totalEntries ?? 0} />
-            <StatCard label="Cache" value={stats?.commandStoreStats.cacheSize ?? 0} />
-            <StatCard label="Compression" value={`${((stats?.commandStoreStats.compressionRatio ?? 0) * 100).toFixed(0)}%`} />
+            <StatCard
+              label="Cache"
+              value={stats?.commandStoreStats.cacheSize ?? 0}
+            />
+            <StatCard
+              label="Compression"
+              value={`${((stats?.commandStoreStats.compressionRatio ?? 0) * 100).toFixed(0)}%`}
+            />
           </div>
         </TabPanel>
 
@@ -5638,7 +5888,7 @@ export function MonitorPanel() {
         </TabPanel>
 
         <TabPanel id="components" className="monitor-tab-content">
-          <ComponentMemoryList enabled={activeTab === 'components'} />
+          <ComponentMemoryList enabled={activeTab === "components"} />
         </TabPanel>
       </Tabs>
 
@@ -5648,10 +5898,15 @@ export function MonitorPanel() {
 }
 
 // 유틸리티 함수
-function calculateMemoryPercent(stats: NonNullable<ReturnType<typeof useMemoryStats>['stats']>): number {
+function calculateMemoryPercent(
+  stats: NonNullable<ReturnType<typeof useMemoryStats>["stats"]>,
+): number {
   // 예상 최대 메모리 기준 백분율 계산 (10MB 기준)
   const maxMemory = 10 * 1024 * 1024;
-  return Math.min(100, (stats.commandStoreStats.estimatedMemoryUsage / maxMemory) * 100);
+  return Math.min(
+    100,
+    (stats.commandStoreStats.estimatedMemoryUsage / maxMemory) * 100,
+  );
 }
 
 // StatCard 컴포넌트
@@ -5670,6 +5925,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 ### ✅ Phase 7 QA 체크리스트
 
 #### 실시간 시계열 그래프
+
 - [ ] 1초마다 데이터 포인트 추가
 - [ ] 최대 60초 데이터 유지 (FIFO)
 - [ ] Threshold 라인 표시
@@ -5679,6 +5935,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 - [ ] 탭 전환 시 수집 중단/재개
 
 #### FPS 모니터
+
 - [ ] requestAnimationFrame 기반 측정
 - [ ] Current/Avg/Min/Max 표시
 - [ ] 30fps 미만 시 warning 표시
@@ -5686,6 +5943,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 - [ ] 미니 바 차트 렌더링
 
 #### 컴포넌트별 메모리
+
 - [ ] 요소별 메모리 추정 표시
 - [ ] 정렬 옵션 (Memory/Children/Depth)
 - [ ] 상위 15개 표시
@@ -5694,6 +5952,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 - [ ] 접기/펼치기 동작
 
 #### Threshold 커스터마이징
+
 - [ ] 설정 다이얼로그 열기/닫기
 - [ ] Warning threshold 슬라이더 동작
 - [ ] Danger threshold 슬라이더 동작
@@ -5707,12 +5966,12 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 ## 📊 최종 기능 완성도
 
-| 카테고리 | 이전 | 현재 |
-|----------|------|------|
-| 핵심 기능 | 95% | **100%** |
-| 개선 기능 | 90% | **100%** |
-| 고급 기능 | 40% | **100%** |
-| UX/접근성 | 98% | **100%** |
+| 카테고리  | 이전 | 현재     |
+| --------- | ---- | -------- |
+| 핵심 기능 | 95%  | **100%** |
+| 개선 기능 | 90%  | **100%** |
+| 고급 기능 | 40%  | **100%** |
+| UX/접근성 | 98%  | **100%** |
 
 **종합 기능 완성도: 100/100** 🎉
 
@@ -5724,24 +5983,26 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 ### 🔄 구현 순서 매핑
 
-| 새 Phase | 구현 내용 | 문서 참조 위치 |
-|----------|-----------|----------------|
-| **Phase 1** | 레거시 제거 | 기존 Phase 1 그대로 |
-| **Phase 2** | Panel 인프라 | 기존 Phase 2 + Phase 4 (Registry) |
-| **Phase 3** | Core Monitor | 기존 Phase 3 (MemoryChart, HistoryFlowChart, HistoryList) |
-| **Phase 4** | 알림 시스템 | 기존 Phase 6 Step 6.1 (Threshold) + Step 6.3 (Toast) |
-| **Phase 5** | 실시간 모니터링 | 기존 Phase 7 Step 7.1-7.2 + Phase 6 Step 6.4 |
-| **Phase 6** | 분석 도구 | 기존 Phase 7 Step 7.3-7.4 + Phase 6 Step 6.2 + Phase 5 |
+| 새 Phase    | 구현 내용       | 문서 참조 위치                                            |
+| ----------- | --------------- | --------------------------------------------------------- |
+| **Phase 1** | 레거시 제거     | 기존 Phase 1 그대로                                       |
+| **Phase 2** | Panel 인프라    | 기존 Phase 2 + Phase 4 (Registry)                         |
+| **Phase 3** | Core Monitor    | 기존 Phase 3 (MemoryChart, HistoryFlowChart, HistoryList) |
+| **Phase 4** | 알림 시스템     | 기존 Phase 6 Step 6.1 (Threshold) + Step 6.3 (Toast)      |
+| **Phase 5** | 실시간 모니터링 | 기존 Phase 7 Step 7.1-7.2 + Phase 6 Step 6.4              |
+| **Phase 6** | 분석 도구       | 기존 Phase 7 Step 7.3-7.4 + Phase 6 Step 6.2 + Phase 5    |
 
 ### 📝 상세 매핑
 
 #### NEW Phase 2: Panel 인프라 (2.5-3.5h)
+
 ```
 기존 Phase 2: Bottom Panel Slot 전체
 + 기존 Phase 4: Registry 등록 전체
 ```
 
 #### NEW Phase 4: 알림 시스템 (1.5-2h)
+
 ```
 기존 Phase 6 Step 6.1: Threshold 경고 시스템 (CSS, ThresholdIndicator, MemoryChart threshold 라인)
 + 기존 Phase 6 Step 6.3: Toast/Notification 시스템 (Toast, ToastContainer, useToast)
@@ -5749,6 +6010,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 ```
 
 #### NEW Phase 5: 실시간 모니터링 (2.5-3h)
+
 ```
 기존 Phase 7 Step 7.1: 실시간 시계열 그래프 (useTimeSeriesData, RealtimeChart)
 + 기존 Phase 7 Step 7.2: FPS 모니터 (useFPSMonitor, FPSMeter)
@@ -5756,6 +6018,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 ```
 
 #### NEW Phase 6: 분석 도구 (3-3.5h)
+
 ```
 기존 Phase 7 Step 7.3: 컴포넌트별 메모리 분석 (useComponentMemory, ComponentMemoryList)
 + 기존 Phase 7 Step 7.4: Threshold 커스터마이징 (ThresholdSettings)
@@ -5773,6 +6036,7 @@ Phase 1 → Phase 2 → Phase 3 → [Phase 4 || Phase 5] → Phase 6
 ```
 
 **Phase 4와 5는 서로 의존성이 없으므로 2명이 병렬 작업 가능**
+
 - 개발자 A: Phase 4 (알림 시스템) - 1.5-2h
 - 개발자 B: Phase 5 (실시간 모니터링) - 2.5-3h
 
@@ -5831,17 +6095,17 @@ src/builder/
 
 ### 기능 매트릭스
 
-| 기능 | Figma | DevTools | XStudio |
-|------|:-----:|:--------:|:-------:|
-| 메모리 모니터링 | ✅ | ✅ | ✅ |
-| 실시간 그래프 | ✅ | ✅ | ✅ |
-| FPS 모니터 | ✅ | ✅ | ✅ |
-| Core Web Vitals | - | ✅ | ✅ |
-| 컴포넌트별 메모리 | ✅ | - | ✅ |
-| Threshold 경고 | ✅ | ✅ | ✅ |
-| Threshold 커스텀 | - | ✅ | ✅ |
-| Export CSV/JSON | - | ✅ | ✅ |
-| Toast 알림 | ✅ | - | ✅ |
-| 히스토리 플로우 | - | - | ✅ |
+| 기능              | Figma | DevTools | composition |
+| ----------------- | :---: | :------: | :---------: |
+| 메모리 모니터링   |  ✅   |    ✅    |     ✅      |
+| 실시간 그래프     |  ✅   |    ✅    |     ✅      |
+| FPS 모니터        |  ✅   |    ✅    |     ✅      |
+| Core Web Vitals   |   -   |    ✅    |     ✅      |
+| 컴포넌트별 메모리 |  ✅   |    -     |     ✅      |
+| Threshold 경고    |  ✅   |    ✅    |     ✅      |
+| Threshold 커스텀  |   -   |    ✅    |     ✅      |
+| Export CSV/JSON   |   -   |    ✅    |     ✅      |
+| Toast 알림        |  ✅   |    -     |     ✅      |
+| 히스토리 플로우   |   -   |    -     |     ✅      |
 
-**XStudio Monitor Panel = Figma + Chrome DevTools 장점 결합** 🚀
+**composition Monitor Panel = Figma + Chrome DevTools 장점 결합** 🚀

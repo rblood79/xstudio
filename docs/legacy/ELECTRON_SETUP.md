@@ -1,6 +1,6 @@
-# XStudio Electron Setup Guide
+# composition Electron Setup Guide
 
-This guide explains how to set up and build XStudio as an Electron desktop application with local PGlite database support.
+This guide explains how to set up and build composition as an Electron desktop application with local PGlite database support.
 
 ## 📋 Table of Contents
 
@@ -46,7 +46,7 @@ Add Electron-specific scripts:
 
 ```json
 {
-  "name": "xstudio",
+  "name": "composition",
   "version": "1.0.0",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -57,15 +57,12 @@ Add Electron-specific scripts:
     "electron:preview": "npm run build && electron dist-electron/main.js"
   },
   "build": {
-    "appId": "com.xstudio.app",
-    "productName": "XStudio",
+    "appId": "com.composition.app",
+    "productName": "composition",
     "directories": {
       "output": "release"
     },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*"
-    ],
+    "files": ["dist/**/*", "dist-electron/**/*"],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": ["dmg", "zip"]
@@ -119,20 +116,20 @@ Create `electron/tsconfig.json`:
 Update `vite.config.ts` to handle Electron builds:
 
 ```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc';
-import path from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.ELECTRON === 'true' ? './' : '/',
+  base: process.env.ELECTRON === "true" ? "./" : "/",
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     emptyOutDir: true,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 });
@@ -162,6 +159,7 @@ npm run electron:dev
 ```
 
 This will:
+
 1. Start Vite dev server on `http://localhost:5173`
 2. Launch Electron window
 3. Hot reload on file changes
@@ -170,13 +168,14 @@ This will:
 
 During development, PGlite database is stored at:
 
-- **macOS**: `~/Library/Application Support/xstudio/xstudio.pglite`
-- **Windows**: `%APPDATA%/xstudio/xstudio.pglite`
-- **Linux**: `~/.config/xstudio/xstudio.pglite`
+- **macOS**: `~/Library/Application Support/composition/composition.pglite`
+- **Windows**: `%APPDATA%/composition/composition.pglite`
+- **Linux**: `~/.config/composition/composition.pglite`
 
 ### 3. Debug Logs
 
 Open DevTools in Electron:
+
 - Main process: Check terminal output
 - Renderer process: DevTools console (auto-opens in dev mode)
 
@@ -191,6 +190,7 @@ npm run electron:build
 ```
 
 This will:
+
 1. Build Vite app (`dist/`)
 2. Compile Electron main process (`dist-electron/`)
 3. Package app with `electron-builder`
@@ -199,9 +199,9 @@ This will:
 
 Build artifacts are in `release/`:
 
-- **macOS**: `XStudio-1.0.0.dmg`, `XStudio-1.0.0-mac.zip`
-- **Windows**: `XStudio Setup 1.0.0.exe`, `XStudio 1.0.0.exe` (portable)
-- **Linux**: `XStudio-1.0.0.AppImage`, `xstudio_1.0.0_amd64.deb`, `xstudio-1.0.0.x86_64.rpm`
+- **macOS**: `composition-1.0.0.dmg`, `composition-1.0.0-mac.zip`
+- **Windows**: `composition Setup 1.0.0.exe`, `composition 1.0.0.exe` (portable)
+- **Linux**: `composition-1.0.0.AppImage`, `composition_1.0.0_amd64.deb`, `composition-1.0.0.x86_64.rpm`
 
 ---
 
@@ -212,14 +212,15 @@ Build artifacts are in `release/`:
 For environments without internet access (폐쇄망):
 
 1. **Build the app**:
+
    ```bash
    npm run electron:build
    ```
 
 2. **Distribute installer**:
-   - Windows: `XStudio Setup 1.0.0.exe` or `XStudio 1.0.0.exe` (portable, no installation)
-   - macOS: `XStudio-1.0.0.dmg`
-   - Linux: `XStudio-1.0.0.AppImage` (no installation)
+   - Windows: `composition Setup 1.0.0.exe` or `composition 1.0.0.exe` (portable, no installation)
+   - macOS: `composition-1.0.0.dmg`
+   - Linux: `composition-1.0.0.AppImage` (no installation)
 
 3. **No additional dependencies**:
    - ✅ PGlite is bundled in the app
@@ -236,7 +237,7 @@ For environments with internet access:
 
 2. **User preference**: Saved in `localStorage`:
    ```typescript
-   localStorage.setItem('xstudio-db-preference', 'pglite'); // or 'supabase'
+   localStorage.setItem("composition-db-preference", "pglite"); // or 'supabase'
    ```
 
 ---
@@ -247,7 +248,7 @@ For environments with internet access:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    XStudio Launch                        │
+│                    composition Launch                        │
 └────────────────────┬────────────────────────────────────┘
                      │
                      ▼
@@ -332,7 +333,7 @@ For environments with internet access:
 ### File Structure
 
 ```
-xstudio/
+composition/
 ├── electron/
 │   ├── main.ts              # Electron main process
 │   ├── preload.ts           # IPC bridge (contextBridge)
@@ -364,7 +365,7 @@ xstudio/
 **Solution**: Ensure `initializeDatabase()` is called before using `db`:
 
 ```typescript
-import { initializeDatabase } from './services/database';
+import { initializeDatabase } from "./services/database";
 
 // App initialization
 await initializeDatabase();
@@ -375,6 +376,7 @@ await initializeDatabase();
 **Symptoms**: `window.electron is undefined`
 
 **Solution**:
+
 1. Check `electron/preload.ts` is loaded in BrowserWindow config
 2. Verify `contextIsolation: true` in `webPreferences`
 
@@ -383,9 +385,10 @@ await initializeDatabase();
 **Symptoms**: `table already exists` or `migration failed`
 
 **Solution**:
+
 - Delete database file and restart:
   ```bash
-  rm ~/Library/Application\ Support/xstudio/xstudio.pglite  # macOS
+  rm ~/Library/Application\ Support/composition/composition.pglite  # macOS
   ```
 - Migrations run automatically on first launch
 
@@ -410,9 +413,9 @@ await db.vacuum();
 **Switch from PGlite to Supabase** (internet mode):
 
 ```typescript
-import { switchDb } from './services/database';
+import { switchDb } from "./services/database";
 
-await switchDb('supabase');
+await switchDb("supabase");
 ```
 
 **WARNING**: This closes the current database. Save all changes first!
@@ -424,37 +427,36 @@ await switchDb('supabase');
 ### Database API
 
 ```typescript
-import { db } from './services/database';
+import { db } from "./services/database";
 
 // Select
-const projects = await db.select('projects', {
+const projects = await db.select("projects", {
   where: { created_by: userId },
-  orderBy: [{ column: 'created_at', ascending: false }],
+  orderBy: [{ column: "created_at", ascending: false }],
   limit: 10,
 });
 
 // Insert
-const newProject = await db.insert('projects', {
-  name: 'My Project',
+const newProject = await db.insert("projects", {
+  name: "My Project",
   created_by: userId,
 });
 
 // Update
-await db.update('projects', projectId, {
-  name: 'Updated Name',
+await db.update("projects", projectId, {
+  name: "Updated Name",
 });
 
 // Delete
-await db.delete('projects', projectId);
+await db.delete("projects", projectId);
 
 // Raw SQL
-const results = await db.query(
-  'SELECT * FROM projects WHERE name ILIKE $1',
-  ['%search%']
-);
+const results = await db.query("SELECT * FROM projects WHERE name ILIKE $1", [
+  "%search%",
+]);
 
 // RPC function
-const tokens = await db.rpc('resolve_theme_tokens', {
+const tokens = await db.rpc("resolve_theme_tokens", {
   p_theme_id: themeId,
 });
 ```
@@ -468,7 +470,7 @@ import {
   hasInternetAccess,
   getUserDbPreference,
   setUserDbPreference,
-} from './services/database';
+} from "./services/database";
 
 // Detect environment
 const envInfo = await detectEnvironment();
@@ -476,16 +478,16 @@ console.log(envInfo.environment); // 'web' | 'electron-closed' | 'electron-inter
 
 // Check platform
 if (isElectron()) {
-  console.log('Running in Electron');
+  console.log("Running in Electron");
 }
 
 // Check internet
 if (await hasInternetAccess()) {
-  console.log('Internet available');
+  console.log("Internet available");
 }
 
 // User preference
-setUserDbPreference('pglite'); // or 'supabase'
+setUserDbPreference("pglite"); // or 'supabase'
 const pref = getUserDbPreference();
 ```
 
@@ -505,7 +507,7 @@ const pref = getUserDbPreference();
 - [PGlite Documentation](https://github.com/electric-sql/pglite)
 - [Electron Documentation](https://www.electronjs.org/docs)
 - [Electron Builder](https://www.electron.build/)
-- [XStudio Component Migration](./implementation/COMPONENT_MIGRATION_PLAN.md)
+- [composition Component Migration](./implementation/COMPONENT_MIGRATION_PLAN.md)
 
 ---
 

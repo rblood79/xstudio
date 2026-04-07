@@ -4,7 +4,7 @@
 
 ## 개요
 
-XStudio의 WebGL 캔버스는 PixiJS 기반으로 구현되며, 줌(Zoom)과 팬(Pan) 인터랙션을 지원합니다.
+composition의 WebGL 캔버스는 PixiJS 기반으로 구현되며, 줌(Zoom)과 팬(Pan) 인터랙션을 지원합니다.
 
 ## 인터랙션 목록
 
@@ -902,7 +902,7 @@ overlayVersionRef++ → Skia 리페인트 트리거
 
 ### 커서 스타일 (Pencil 방식 통일)
 
-Pencil의 `StateManager.handlePointerMove`는 항상 `setCursor("default")`를 호출하며, 요소 종류에 따라 커서를 변경하지 않는다. xstudio도 동일하게 모든 캔버스 요소의 커서를 `default`로 통일.
+Pencil의 `StateManager.handlePointerMove`는 항상 `setCursor("default")`를 호출하며, 요소 종류에 따라 커서를 변경하지 않는다. composition도 동일하게 모든 캔버스 요소의 커서를 `default`로 통일.
 
 | 상황                       | 커서                          |
 | -------------------------- | ----------------------------- |

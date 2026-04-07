@@ -14,10 +14,10 @@
 
 **삭제된 의존성:**
 
-| 프로젝트      | 삭제 사유                                                                 | 대체                                            |
-| ------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
-| ~~geo-index~~ | XStudio에 이미 Rust WASM spatial index 존재 (`wasm/src/spatial_index.rs`) | 기존 코드를 `composition-layout` crate에 이식       |
-| ~~Popmotion~~ | CSS easing/spring/keyframe 보간은 ~130줄 순수 수학                        | 자체 구현 (cubic-bezier + damped spring + lerp) |
+| 프로젝트      | 삭제 사유                                                                     | 대체                                            |
+| ------------- | ----------------------------------------------------------------------------- | ----------------------------------------------- |
+| ~~geo-index~~ | composition에 이미 Rust WASM spatial index 존재 (`wasm/src/spatial_index.rs`) | 기존 코드를 `composition-layout` crate에 이식   |
+| ~~Popmotion~~ | CSS easing/spring/keyframe 보간은 ~130줄 순수 수학                            | 자체 구현 (cubic-bezier + damped spring + lerp) |
 
 ### 아키텍처 패턴 참조
 
@@ -28,21 +28,21 @@
 | Skia WASM + 타일 캐싱          | **Penpot** render-wasm (MPL-2, ⭐38k)                                         | `penpot/penpot/render-wasm/`                     |
 | backdrop-filter/mask 구현      | **React Native Skia** (MIT, ⭐8.3k) — saveLayer + ImageFilter 패턴            | `Shopify/react-native-skia/packages/skia/src/`   |
 | position: sticky 알고리즘      | **Stickyfill** (MIT, ⭐2.3k) — 3단계 상태 전환 (normal→fixed→absolute-bottom) | `wilddeer/stickyfill/src/`                       |
-| CanvasKit + WASM 레이아웃 통합 | **OpenPencil** (MIT, ⭐4k) — XStudio와 거의 동일 스택                         | `open-pencil/open-pencil/`                       |
+| CanvasKit + WASM 레이아웃 통합 | **OpenPencil** (MIT, ⭐4k) — composition와 거의 동일 스택                     | `open-pencil/open-pencil/`                       |
 | Rust 100% 에디터 아키텍처      | **Graphite** (Apache-2.0, ⭐25k) — Rust 렌더링 + JS thin UI                   | `GraphiteEditor/Graphite/`                       |
 | JS-WASM 경계 최적화            | **Penpot** — 바이너리 직렬화 (104byte/shape), linear memory 직접 조작         | `penpot/penpot/render-wasm/src/`                 |
 | Stylo+Taffy+Parley 통합 패턴   | **Blitz** (MIT, ⭐3.5k) — 모듈별 독립 사용 가능한 아키텍처                    | `DioxusLabs/blitz/`                              |
 
 ### CSS3 렌더링 — 추가 라이브러리 불필요
 
-| 기능                  | CanvasKit 내장 API                                                 | 참조 구현                             |
-| --------------------- | ------------------------------------------------------------------ | ------------------------------------- |
-| backdrop-filter       | `saveLayer(bounds, null, backdropFilter)` + `ImageFilter.MakeBlur` | React Native Skia `BackdropBlur`      |
-| text-shadow           | `TextStyle.shadows` + `ImageFilter.MakeDropShadow`                 | CanvasKit Paragraph API               |
-| mask-image            | `MaskFilter` + `RuntimeEffect.Make` (SkSL shader)                  | React Native Skia alpha mask          |
-| sepia/invert          | `ColorFilter.MakeMatrix` (5x4 color matrix)                        | 이미 XStudio `effects.ts`에 패턴 존재 |
-| outline-style         | `Paint.setPathEffect(DashPathEffect.Make)`                         | Skia 공식 API                         |
-| background-blend-mode | `Paint.setBlendMode` (18종 이미 구현)                              | 이미 XStudio `blendModes.ts`          |
+| 기능                  | CanvasKit 내장 API                                                 | 참조 구현                                 |
+| --------------------- | ------------------------------------------------------------------ | ----------------------------------------- |
+| backdrop-filter       | `saveLayer(bounds, null, backdropFilter)` + `ImageFilter.MakeBlur` | React Native Skia `BackdropBlur`          |
+| text-shadow           | `TextStyle.shadows` + `ImageFilter.MakeDropShadow`                 | CanvasKit Paragraph API                   |
+| mask-image            | `MaskFilter` + `RuntimeEffect.Make` (SkSL shader)                  | React Native Skia alpha mask              |
+| sepia/invert          | `ColorFilter.MakeMatrix` (5x4 color matrix)                        | 이미 composition `effects.ts`에 패턴 존재 |
+| outline-style         | `Paint.setPathEffect(DashPathEffect.Make)`                         | Skia 공식 API                             |
+| background-blend-mode | `Paint.setBlendMode` (18종 이미 구현)                              | 이미 composition `blendModes.ts`          |
 
 ## 목차
 
@@ -416,11 +416,11 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # 유일한 외부 의존성 — Taffy v0.10.0 fork (flex/grid/block/areas 검증됨)
-# git = "https://github.com/xstudio/taffy-fork" or path = "../taffy-fork"
+# git = "https://github.com/composition/taffy-fork" or path = "../taffy-fork"
 taffy = { version = "0.10", features = ["grid", "block_layout"] }
 
 # Spatial Index — 기존 wasm/src/spatial_index.rs 이식 (외부 의존성 0)
-# geo-index 삭제: XStudio에 이미 검증된 cell-based grid 구현 존재
+# geo-index 삭제: composition에 이미 검증된 cell-based grid 구현 존재
 
 # WASM 바인딩
 wasm-bindgen = "0.2"

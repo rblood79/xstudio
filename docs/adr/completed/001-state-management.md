@@ -2,11 +2,12 @@
 
 **Status:** Accepted
 **Date:** 2024-01-01
-**Decision Makers:** XStudio Team
+**Decision Makers:** composition Team
 
 ## Context
 
-XStudio Builder는 복잡한 상태 관리가 필요합니다:
+composition Builder는 복잡한 상태 관리가 필요합니다:
+
 - 수천 개의 Element 트리 관리
 - 실시간 Selection/Multi-selection
 - Undo/Redo 히스토리
@@ -19,12 +20,12 @@ XStudio Builder는 복잡한 상태 관리가 필요합니다:
 
 ## Alternatives Considered
 
-| 옵션 | 장점 | 단점 |
-|------|------|------|
-| Redux Toolkit | 풍부한 생태계, DevTools | 보일러플레이트, 번들 크기 |
-| Jotai | 원자적 상태, 작은 크기 | 복잡한 파생 상태 어려움 |
-| Zustand | 간결한 API, 작은 번들, 슬라이스 패턴 | 상대적으로 작은 생태계 |
-| MobX | 자동 추적, 반응형 | 프록시 오버헤드, 학습 곡선 |
+| 옵션          | 장점                                 | 단점                       |
+| ------------- | ------------------------------------ | -------------------------- |
+| Redux Toolkit | 풍부한 생태계, DevTools              | 보일러플레이트, 번들 크기  |
+| Jotai         | 원자적 상태, 작은 크기               | 복잡한 파생 상태 어려움    |
+| Zustand       | 간결한 API, 작은 번들, 슬라이스 패턴 | 상대적으로 작은 생태계     |
+| MobX          | 자동 추적, 반응형                    | 프록시 오버헤드, 학습 곡선 |
 
 ## Rationale
 
@@ -37,11 +38,13 @@ XStudio Builder는 복잡한 상태 관리가 필요합니다:
 ## Consequences
 
 ### Positive
+
 - 간결한 코드로 복잡한 상태 관리
 - HMR 지원으로 개발 경험 향상
 - Map 기반 O(1) 인덱싱과 자연스럽게 통합
 
 ### Negative
+
 - Redux DevTools보다 제한적인 디버깅
 - 복잡한 비동기 로직은 별도 처리 필요
 

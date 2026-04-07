@@ -14,7 +14,7 @@
 
 ## Phase 1: size XL 일괄 추가 (17개 컴포넌트)
 
-S2는 `'S'|'M'|'L'|'XL'` 4단계, XStudio는 `'sm'|'md'|'lg'` 3단계만 정의.
+S2는 `'S'|'M'|'L'|'XL'` 4단계, composition는 `'sm'|'md'|'lg'` 3단계만 정의.
 
 ### 대상
 
@@ -30,7 +30,7 @@ DateField, DatePicker, DateRangePicker, Dialog, Form, Meter, NumberField, Progre
 
 ### 참고
 
-- XStudio는 내부적으로 소문자(`sm/md/lg/xl`), S2는 대문자(`S/M/L/XL`). casing 차이는 의도적 (ADR-036 Spec 네이밍 규칙).
+- composition는 내부적으로 소문자(`sm/md/lg/xl`), S2는 대문자(`S/M/L/XL`). casing 차이는 의도적 (ADR-036 Spec 네이밍 규칙).
 - 일부 컴포넌트는 이미 `xs`도 정의됨 (Button, NumberField, Select 등). S2에 `XS`는 없으나 빌더 확장으로 유지.
 
 ## Phase 2: 공통 field props 일괄 추가
@@ -41,23 +41,23 @@ S2의 `SpectrumLabelableProps`를 상속하는 모든 field 컴포넌트에 `con
 
 **대상**: CheckboxGroup, ColorField, ComboBox, DateField, DatePicker, DateRangePicker, NumberField, RadioGroup, SearchField, Select, Slider, TagGroup, TextArea, TextField, TimeField
 
-**XStudio 적용**: `contextualHelp?: string` (S2는 ReactNode이나 빌더에서 string으로 축소)
+**composition 적용**: `contextualHelp?: string` (S2는 ReactNode이나 빌더에서 string으로 축소)
 
 ### 2-B. labelAlign (10개 컴포넌트)
 
 **대상**: Meter, NumberField, RadioGroup, SearchField, Select, Slider, TagGroup, TextArea, TextField, TimeField
 
-**XStudio 적용**: `labelAlign?: 'start' | 'end'`
+**composition 적용**: `labelAlign?: 'start' | 'end'`
 
 ### 2-C. isEmphasized (4개 컴포넌트)
 
 **대상**: Form, Radio, Slider, TagGroup
 
-**XStudio 적용**: `isEmphasized?: boolean`
+**composition 적용**: `isEmphasized?: boolean`
 
 ## Phase 3: staticColor 'auto' 추가 (4개 컴포넌트)
 
-S2는 `staticColor: 'white' | 'black' | 'auto'`, XStudio는 `'white' | 'black'`만.
+S2는 `staticColor: 'white' | 'black' | 'auto'`, composition는 `'white' | 'black'`만.
 
 **대상**: Button, Meter, ProgressBar, ProgressCircle
 
@@ -95,23 +95,23 @@ S2 추가: `seafoam`, `pink`, `turquoise`, `cinnamon`, `brown`, `silver`, `yello
 
 ### 5-C. Toast variant 리네이밍
 
-| XStudio 현재 | S2         | 변경     |
-| ------------ | ---------- | -------- |
-| `success`    | `positive` | 리네이밍 |
-| `warning`    | `notice`   | 리네이밍 |
-| `error`      | `negative` | 리네이밍 |
-| `info`       | `info`     | 유지     |
+| composition 현재 | S2         | 변경     |
+| ---------------- | ---------- | -------- |
+| `success`        | `positive` | 리네이밍 |
+| `warning`        | `notice`   | 리네이밍 |
+| `error`          | `negative` | 리네이밍 |
+| `info`           | `info`     | 유지     |
 
 ### 5-D. Toast position 값 변경
 
-| XStudio 현재    | S2             |
-| --------------- | -------------- |
-| `top-right`     | `top end`      |
-| `top-left`      | `top start`    |
-| `top-center`    | `top`          |
-| `bottom-right`  | `bottom end`   |
-| `bottom-left`   | `bottom start` |
-| `bottom-center` | `bottom`       |
+| composition 현재 | S2             |
+| ---------------- | -------------- |
+| `top-right`      | `top end`      |
+| `top-left`       | `top start`    |
+| `top-center`     | `top`          |
+| `bottom-right`   | `bottom end`   |
+| `bottom-left`    | `bottom start` |
+| `bottom-center`  | `bottom`       |
 
 ## Phase별 변경 체크리스트
 

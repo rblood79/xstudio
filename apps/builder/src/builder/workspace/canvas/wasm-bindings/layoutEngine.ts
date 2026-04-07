@@ -144,7 +144,7 @@ export function isLayoutEngineReady(): boolean {
  * Usage:
  * ```ts
  * await initLayoutEngine();
- * const engine = new XStudioLayout();
+ * const engine = new compositionLayout();
  * if (!engine.isAvailable()) return;
  *
  * const child = engine.createNodeRaw('{"width":"100px","height":"50px"}');
@@ -156,7 +156,7 @@ export function isLayoutEngineReady(): boolean {
  * const layout = engine.getLayout(child); // { x: 0, y: 0, width: 100, height: 50 }
  * ```
  */
-export class XStudioLayout {
+export class compositionLayout {
   /** Whether the WASM engine is available and initialized. */
   isAvailable(): boolean {
     return isLayoutEngineReady();
@@ -170,7 +170,7 @@ export class XStudioLayout {
    */
   createNodeRaw(styleJson: string): LayoutNodeHandle {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     return wasmEngine.create_node(styleJson);
   }
 
@@ -184,7 +184,7 @@ export class XStudioLayout {
     children: LayoutNodeHandle[],
   ): LayoutNodeHandle {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     return wasmEngine.create_node_with_children(
       styleJson,
       new Uint32Array(children),
@@ -201,7 +201,7 @@ export class XStudioLayout {
    */
   updateStyleRaw(handle: LayoutNodeHandle, styleJson: string): UpdateResult {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     return wasmEngine.update_style(handle, styleJson) as UpdateResult;
   }
 
@@ -210,14 +210,14 @@ export class XStudioLayout {
   /** Set children for a node (replaces existing children). */
   setChildren(handle: LayoutNodeHandle, children: LayoutNodeHandle[]): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.set_children(handle, new Uint32Array(children));
   }
 
   /** Remove a node from the tree and free its handle. */
   removeNode(handle: LayoutNodeHandle): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.remove_node(handle);
   }
 
@@ -228,7 +228,7 @@ export class XStudioLayout {
    */
   markDirty(handle: LayoutNodeHandle): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.mark_dirty(handle);
   }
 
@@ -241,14 +241,14 @@ export class XStudioLayout {
     availableHeight: number,
   ): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.compute_layout(root, availableWidth, availableHeight);
   }
 
   /** Get the computed layout for a single node. */
   getLayout(handle: LayoutNodeHandle): LayoutResult {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     const json = wasmEngine.get_layout(handle);
     try {
       return JSON.parse(json) as LayoutResult;
@@ -266,7 +266,7 @@ export class XStudioLayout {
     handles: LayoutNodeHandle[],
   ): Map<LayoutNodeHandle, LayoutResult> {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     const floats = wasmEngine.get_layouts_batch(new Uint32Array(handles));
     const result = new Map<LayoutNodeHandle, LayoutResult>();
 
@@ -292,7 +292,7 @@ export class XStudioLayout {
    */
   buildTreeBatch(nodesJson: string): LayoutNodeHandle[] {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     const raw = wasmEngine.build_tree_batch(nodesJson);
     return Array.from(raw);
   }
@@ -308,7 +308,7 @@ export class XStudioLayout {
   /** Clear the entire tree and reset all handles. */
   clear(): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.clear();
   }
 
@@ -329,21 +329,21 @@ export class XStudioLayout {
    */
   spatialUpsert(id: number, x: number, y: number, w: number, h: number): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.spatial_upsert(id, x, y, w, h);
   }
 
   /** Remove an entry from the spatial index. */
   spatialRemove(id: number): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.spatial_remove(id);
   }
 
   /** Query all nodes whose bounding boxes contain the given point. */
   spatialQueryPoint(x: number, y: number): Uint32Array {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     return wasmEngine.spatial_query_point(x, y);
   }
 
@@ -355,14 +355,14 @@ export class XStudioLayout {
     bottom: number,
   ): Uint32Array {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     return wasmEngine.spatial_query_rect(left, top, right, bottom);
   }
 
   /** Clear the spatial index. */
   spatialClear(): void {
     if (!wasmEngine)
-      throw new Error("XStudioLayout: WASM engine not initialized");
+      throw new Error("compositionLayout: WASM engine not initialized");
     wasmEngine.spatial_clear();
   }
 }

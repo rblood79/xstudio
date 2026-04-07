@@ -1,6 +1,6 @@
 ---
 name: debugger
-description: Debugs issues, tracks down bugs, analyzes performance problems, and investigates crashes in XStudio. Use when the user reports rendering bugs, FPS drops, state management errors, or communication failures.
+description: Debugs issues, tracks down bugs, analyzes performance problems, and investigates crashes in composition. Use when the user reports rendering bugs, FPS drops, state management errors, or communication failures.
 model: sonnet
 color: red
 tools:
@@ -30,7 +30,7 @@ maxTurns: 25
 4. **수정 제안** → 근본 원인 기반 최소한의 수정안 도출 (수정 적용은 implementer에게 위임하거나, 사용자 확인 후 직접 수행)
 5. **검증** → 수정이 회귀 없이 문제를 해결하는지 확인
 
-## XStudio 아키텍처 레이어
+## composition 아키텍처 레이어
 
 ### 렌더링 파이프라인
 

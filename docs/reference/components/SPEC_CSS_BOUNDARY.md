@@ -1,13 +1,13 @@
 # Spec과 수동 CSS의 경계
 
 **날짜:** 2026-03-18 (초판)
-**대상 독자:** XStudio 컴포넌트 개발에 처음 합류한 개발자
+**대상 독자:** composition 컴포넌트 개발에 처음 합류한 개발자
 
 ---
 
 ## 개요
 
-XStudio는 동일한 컴포넌트를 두 가지 방식으로 렌더링한다.
+composition는 동일한 컴포넌트를 두 가지 방식으로 렌더링한다.
 
 - **Preview / Publish (DOM)**: React Aria 컴포넌트 + CSS 스타일링
 - **Builder Canvas (Skia)**: `ComponentSpec.render.shapes()`가 생성한 shapes → CanvasKit 렌더링

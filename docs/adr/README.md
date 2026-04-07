@@ -74,43 +74,43 @@
 
 ### 미구현
 
-| ADR                                                   | 제목                                               | 상태            | 규모                                                                                                                       | 우선순위 |
-| ----------------------------------------------------- | -------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)              | Quick Connect 데이터 바인딩                        | Proposed        | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                            |  **P3**  |
-| [020](020-design-kit-improvement.md)                  | Design Kit 패널 분석 및 개선                       | Proposed        | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                   |    P4    |
-| [015](015-sitemap-layout.md)                          | Sitemap Hierarchy 워크플로우 엣지                  | Proposed        | 변경 대상 8파일, 코드 미생성                                                                                               |    P5    |
-| [016](016-photoshop-ui-ux.md)                         | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed        | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                     |    P5    |
-| [032](032-events-data-integration.md)                 | Events Platform 재설계 + Data 통합                 | Proposed        | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                     |  **P3**  |
-| [034](034-events-panel-renovation.md)                 | Events Panel Renovation                            | Proposed        | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                  |  **P3**  |
-| [038](038-figma-import.md)                            | Figma 디자인 임포트 시스템                         | Proposed        | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                  |  **P3**  |
-| [044](044-project-renaming-xstudio-to-composition.md) | 프로젝트 리네이밍 xstudio → composition            | **Implemented** | 6 Phase — GitHub repo + 패키지명 + 131파일 변경 + 문서 + 인프라 일괄 전환 (2026-04-07)                                     |    P4    |
-| [051](051-pretext-text-measurement-integration.md)    | Pretext 텍스트 측정/레이아웃 통합 (SSOT)           | Proposed        | 5 Phase (A~E) — CSS↔Skia 정합성 단일 소스, 2-Pass 2500× 가속, Break Hint Injection                                         |  **P2**  |
-| [054](054-local-llm-architecture.md)                  | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)        | Proposed        | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                       |  **P2**  |
-| [100](100-unified-skia-rendering-engine.md)           | Unified Skia Rendering Engine — PixiJS/Taffy 제거  | Accepted        | Phase 8-9 완료. PixiJS 완전 제거 (85파일, -16,500줄). Phase 10(Rust Layout) 남음. Supersedes ADR-003, ADR-008              |  **P1**  |
-| [101](101-browser-native-rendering-engine.md)         | Browser-Native Rendering Engine — 렌더링 엔진 삭제 | Proposed        | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008 |  **P1**  |
-| [056](056-base-typography-ssot.md)                    | Base Typography 단일 정본 (SSOT)                   | Proposed        | BASE_TYPOGRAPHY TS 상수 → Canvas/Preview/Publish 3경로 정합. lineHeight 누락 수정                                          |  **P2**  |
+| ADR                                                       | 제목                                               | 상태            | 규모                                                                                                                       | 우선순위 |
+| --------------------------------------------------------- | -------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md)                  | Quick Connect 데이터 바인딩                        | Proposed        | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                            |  **P3**  |
+| [020](020-design-kit-improvement.md)                      | Design Kit 패널 분석 및 개선                       | Proposed        | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                   |    P4    |
+| [015](015-sitemap-layout.md)                              | Sitemap Hierarchy 워크플로우 엣지                  | Proposed        | 변경 대상 8파일, 코드 미생성                                                                                               |    P5    |
+| [016](016-photoshop-ui-ux.md)                             | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed        | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                     |    P5    |
+| [032](032-events-data-integration.md)                     | Events Platform 재설계 + Data 통합                 | Proposed        | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                     |  **P3**  |
+| [034](034-events-panel-renovation.md)                     | Events Panel Renovation                            | Proposed        | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                  |  **P3**  |
+| [038](038-figma-import.md)                                | Figma 디자인 임포트 시스템                         | Proposed        | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                  |  **P3**  |
+| [044](044-project-renaming-composition-to-composition.md) | 프로젝트 리네이밍 composition → composition        | **Implemented** | 6 Phase — GitHub repo + 패키지명 + 131파일 변경 + 문서 + 인프라 일괄 전환 (2026-04-07)                                     |    P4    |
+| [051](051-pretext-text-measurement-integration.md)        | Pretext 텍스트 측정/레이아웃 통합 (SSOT)           | Proposed        | 5 Phase (A~E) — CSS↔Skia 정합성 단일 소스, 2-Pass 2500× 가속, Break Hint Injection                                         |  **P2**  |
+| [054](054-local-llm-architecture.md)                      | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)        | Proposed        | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                       |  **P2**  |
+| [100](100-unified-skia-rendering-engine.md)               | Unified Skia Rendering Engine — PixiJS/Taffy 제거  | Accepted        | Phase 8-9 완료. PixiJS 완전 제거 (85파일, -16,500줄). Phase 10(Rust Layout) 남음. Supersedes ADR-003, ADR-008              |  **P1**  |
+| [101](101-browser-native-rendering-engine.md)             | Browser-Native Rendering Engine — 렌더링 엔진 삭제 | Proposed        | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008 |  **P1**  |
+| [056](056-base-typography-ssot.md)                        | Base Typography 단일 정본 (SSOT)                   | Proposed        | BASE_TYPOGRAPHY TS 상수 → Canvas/Preview/Publish 3경로 정합. lineHeight 누락 수정                                          |  **P2**  |
 
 ## Events Panel 설계 문서군
 
 - [ADR-032](032-events-data-integration.md): 이벤트 플랫폼 상위 아키텍처
 - [ADR-034](034-events-panel-renovation.md): Events Panel 전면 UX 개편 결정
-- [events-panel-wireframe.md](/Users/admin/work/xstudio/docs/design/events-panel-wireframe.md): 화면 구조 와이어프레임
-- [events-panel-state-model.md](/Users/admin/work/xstudio/docs/design/events-panel-state-model.md): 패널 상태 모델
-- [events-panel-recipe-system.md](/Users/admin/work/xstudio/docs/design/events-panel-recipe-system.md): recipe 시스템 상세 설계
-- [events-panel-binding-diagnostics.md](/Users/admin/work/xstudio/docs/design/events-panel-binding-diagnostics.md): binding diagnostics 설계
-- [events-panel-review-checklist.md](/Users/admin/work/xstudio/docs/design/events-panel-review-checklist.md): 설계 리뷰 체크리스트
+- [events-panel-wireframe.md](/Users/admin/work/composition/docs/design/events-panel-wireframe.md): 화면 구조 와이어프레임
+- [events-panel-state-model.md](/Users/admin/work/composition/docs/design/events-panel-state-model.md): 패널 상태 모델
+- [events-panel-recipe-system.md](/Users/admin/work/composition/docs/design/events-panel-recipe-system.md): recipe 시스템 상세 설계
+- [events-panel-binding-diagnostics.md](/Users/admin/work/composition/docs/design/events-panel-binding-diagnostics.md): binding diagnostics 설계
+- [events-panel-review-checklist.md](/Users/admin/work/composition/docs/design/events-panel-review-checklist.md): 설계 리뷰 체크리스트
 
 ## Workspace Runtime 설계 문서군
 
 - [ADR-035](035-workspace-canvas-refactor.md): 1차 runtime 구조 정리
-- [workspace-canvas-refactor-breakdown.md](/Users/admin/work/xstudio/docs/design/workspace-canvas-refactor-breakdown.md): ADR-035 작업 분해
+- [workspace-canvas-refactor-breakdown.md](/Users/admin/work/composition/docs/design/workspace-canvas-refactor-breakdown.md): ADR-035 작업 분해
 - [ADR-037](037-workspace-scene-runtime-rearchitecture.md): Scene Snapshot/Interaction Model 후속 구조 재구성 완료
 - [ADR-039](039-page-scoped-rendering.md): visible page 중심 page-scoped rendering 완료
 - [ADR-040](completed/040-visible-page-delta-runtime.md): visible page + delta update 모델로 상태 동기화 계약 전환 완료
 - [039-phase-0-baseline.md](039-phase-0-baseline.md): ADR-039 baseline 및 budget
 - [037-phase-0-baseline.md](037-phase-0-baseline.md): ADR-037 phase gate 기준
-- [workspace-scene-runtime-breakdown.md](/Users/admin/work/xstudio/docs/design/workspace-scene-runtime-breakdown.md): ADR-037 실행 분해
-- [workspace-scene-phase-1-scenesnapshot.md](/Users/admin/work/xstudio/docs/design/workspace-scene-phase-1-scenesnapshot.md): Phase 1 상세 구현 설계
+- [workspace-scene-runtime-breakdown.md](/Users/admin/work/composition/docs/design/workspace-scene-runtime-breakdown.md): ADR-037 실행 분해
+- [workspace-scene-phase-1-scenesnapshot.md](/Users/admin/work/composition/docs/design/workspace-scene-phase-1-scenesnapshot.md): Phase 1 상세 구현 설계
 
 ---
 
@@ -211,7 +211,7 @@ ADR-032 (Events Platform 재설계)
 - **ADR-009**: SharedArrayBuffer + OffscreenCanvas Worker 잔여 (대부분 성능 이미 확보)
 - **ADR-020**: Design Kit 패널 — Kit v2 스키마/Factory 연동/History 통합 미착수
 - **ADR-026 잔여**: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램 — Phase 1-4 완료
-- **ADR-044**: 프로젝트 리네이밍 xstudio → composition — 기능 가치 없음, 유지보수 작업
+- **ADR-044**: 프로젝트 리네이밍 composition → composition — 기능 가치 없음, 유지보수 작업
 
 ### P5: ADR-010 + ADR-011 A5 + ADR-012 P3-1 + ADR-015 + ADR-016
 
@@ -287,7 +287,7 @@ ADR-032 (Events Platform 재설계)
 | 2026-03-13 | **ADR-035 Phase 6 key normalization + 상태 문서 정리** — `cssComponentPresets.ts`의 size preset getter에 `xs/sm/md/lg/xl` ↔ `XS/S/M/L/XL` 정규화 레이어 추가. `computedStyleService`가 읽는 Button/Input/Radio/ProgressBar/Badge/Card/TextField/TextArea 등 공용 preset 경로에서 lower/upper key 계약 불일치 제거. ADR-035/README 상태를 실제 코드 기준으로 갱신: Phase 3/7은 부분 구현, Phase 8은 격리 규칙 반영 후 gate 대기 상태로 정정.                                                                                                                                                                                                                                                                                                                                         |
 | 2026-03-13 | **ADR-037 Implemented** — Workspace Scene Runtime 재구성 Phase 0~6 전체 완료. `SceneSnapshot`/`SceneIndex` 도입, `SelectionModel`/`PointerSession` 분리, `rendererInput`/`invalidationPacket`로 renderer 입력 단일화, `layoutCache`/`cullingCache`/`subtreeInvalidation` 연결, `canvasSync`를 viewport/lifecycle/metrics store로 분리, legacy helper 및 compatibility usage 정리. 완료 섹션 이동, 현황 카운트 갱신 (완료 22, 미구현 7)                                                                                                                                                                                                                                                                                                                                              |
 | 2026-03-13 | **ADR-036 Proposed** — Spec-First Single Source: CSS 자동 생성 기반 이중 렌더링 통합. 3중 동기화 문제(CSS 13K줄 + Spec 19K줄 + SIZE_CONFIG) 해결 방안. 대안 C 채택: Spec `variants`/`sizes`/`states` 메타데이터를 Single Source로 승격, `CSSGenerator.ts`(기존 276줄 POC) 확장하여 CSS 자동 생성. 4 Phase 로드맵 (Phase 0: SIZE_CONFIG 제거, Phase 1: CSSGenerator 확장, Phase 2: 단순 ~40개 전환, Phase 3: 복합 ~30개 2-layer 분리). 현황 카운트 수정 (부분완료 7→8, 합계 36→37). P3 우선순위 배치, 다음 진행 목표 #21 추가                                                                                                                                                                                                                                                        |
-| 2026-03-13 | **ADR-038 Proposed** — Figma 디자인 임포트 시스템. Figma REST API → XStudio Element 변환 엔진. 4 Phase: Core Structure(MVP ~60% 재현) → Visual Fidelity(~80%) → Component System(~90%) → Edge Cases(~95%). 하이브리드 아키텍처: Supabase Edge Function(API 프록시+이미지) + 클라이언트(변환 엔진). Auto Layout→flex 직접 매핑, Component/Instance→master/instance, Pencil(.pen) 호환 파이프라인 공유 가능. 미구현→8, 합계→38                                                                                                                                                                                                                                                                                                                                                        |
+| 2026-03-13 | **ADR-038 Proposed** — Figma 디자인 임포트 시스템. Figma REST API → composition Element 변환 엔진. 4 Phase: Core Structure(MVP ~60% 재현) → Visual Fidelity(~80%) → Component System(~90%) → Edge Cases(~95%). 하이브리드 아키텍처: Supabase Edge Function(API 프록시+이미지) + 클라이언트(변환 엔진). Auto Layout→flex 직접 매핑, Component/Instance→master/instance, Pencil(.pen) 호환 파이프라인 공유 가능. 미구현→8, 합계→38                                                                                                                                                                                                                                                                                                                                                    |
 | 2026-03-11 | **ADR-033 Implemented** — Phase 0~3 전체 완료. Phase 0: M3 잔여 토큰 제거(Tree.css, GridList.css) + 순수 중복 제거(RadioGroup, CheckboxGroup, Slider FieldError/Label 블록). Phase 1: Input/TextArea 구조 변수화(`--input-padding/font-size/line-height/border`, 12개 필드 컴포넌트 부모 위임). Phase 2: Button 구조 변수화(`--btn-display/justify/gap/border/radius/padding/font-size/line-height/cursor/transition`, size variants 변수 전환, 7개 컴포넌트 부모 위임). Phase 3: Label(`--label-font-size/font-weight/color/margin`) + FieldError(`--error-font-size/margin`) 변수화, 13개 컴포넌트 부모 위임. 현황 카운트 갱신 (완료 21, 미구현 5)                                                                                                                                |
 | 2026-03-14 | **ADR-035/037/039 `completed/` 이동** — Implemented 상태의 3건을 `completed/` 디렉토리로 이동, README 링크 갱신. **ADR-041 미구현 섹션 등록** — Spec-Driven Property Editor (107개 에디터 자동 생성, ADR-036 후속). 다음 진행 목표를 2026-03-14 기준으로 전면 갱신 — 완료 #1~#20 축약, 잔여 7건 우선순위 재배치 (ADR-040→032→034→013→038→036→041). 현황 카운트 갱신 (미구현 9→10, 합계 40→41)                                                                                                                                                                                                                                                                                                                                                                                       |
 | 2026-03-26 | **ADR-047 Implemented** — S2 Popover/Overlay CSS 정합성 정렬. Layer 1+2 완료 — DatePicker/DateRangePicker 버그 수정 + Popover/Tooltip 계열 S2 패턴 정렬 (7개 CSS)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

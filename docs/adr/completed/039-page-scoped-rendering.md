@@ -10,7 +10,7 @@ Implemented
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
@@ -31,7 +31,7 @@ XStudio Team
 
 ### 문제 1. Scene 파생 계산이 전체 페이지 기준이다
 
-[buildSceneSnapshot.ts](/Users/admin/workspace/xstudio/docs/adr/039-page-scoped-rendering.md) 단계에서
+[buildSceneSnapshot.ts](/Users/admin/workspace/composition/docs/adr/039-page-scoped-rendering.md) 단계에서
 매번 다음 값이 전체 페이지 기준으로 재생성된다.
 
 - `allPageData`
@@ -401,9 +401,9 @@ overlay도 두 층으로 분리한다.
 
 ## References
 
-- [BuilderCanvas.tsx](/Users/admin/workspace/xstudio/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)
-- [buildSceneSnapshot.ts](/Users/admin/workspace/xstudio/apps/builder/src/builder/workspace/canvas/scene/buildSceneSnapshot.ts)
-- [buildSceneIndex.ts](/Users/admin/workspace/xstudio/apps/builder/src/builder/workspace/canvas/scene/buildSceneIndex.ts)
-- [skiaFramePipeline.ts](/Users/admin/workspace/xstudio/apps/builder/src/builder/workspace/canvas/skia/skiaFramePipeline.ts)
-- [SkiaOverlay.tsx](/Users/admin/workspace/xstudio/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)
-- [SkiaRenderer.ts](/Users/admin/workspace/xstudio/apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts)
+- [BuilderCanvas.tsx](/Users/admin/workspace/composition/apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx)
+- [buildSceneSnapshot.ts](/Users/admin/workspace/composition/apps/builder/src/builder/workspace/canvas/scene/buildSceneSnapshot.ts)
+- [buildSceneIndex.ts](/Users/admin/workspace/composition/apps/builder/src/builder/workspace/canvas/scene/buildSceneIndex.ts)
+- [skiaFramePipeline.ts](/Users/admin/workspace/composition/apps/builder/src/builder/workspace/canvas/skia/skiaFramePipeline.ts)
+- [SkiaOverlay.tsx](/Users/admin/workspace/composition/apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx)
+- [SkiaRenderer.ts](/Users/admin/workspace/composition/apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts)

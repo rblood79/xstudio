@@ -7,7 +7,7 @@ RULES_DIR="$PROJECT_DIR/rules"
 
 echo "=== PreCompact Context Snapshot ==="
 echo ""
-echo "## Project: XStudio NoCode Builder"
+echo "## Project: composition NoCode Builder"
 echo "## Pipeline: Memory→Index→History→DB→Preview→Rebalance"
 echo "## Engines: Taffy WASM (Flex/Grid/Block), CanvasKit/Skia (render), PixiJS (events)"
 echo ""

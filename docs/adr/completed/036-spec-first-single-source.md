@@ -10,7 +10,7 @@ Implemented
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
@@ -27,7 +27,7 @@ XStudio Team
 
 ## Context
 
-XStudio는 Skia/WebGL 캔버스 (빌더) + DOM (Preview/Publish) 이중 렌더링 아키텍처를 사용한다.
+composition는 Skia/WebGL 캔버스 (빌더) + DOM (Preview/Publish) 이중 렌더링 아키텍처를 사용한다.
 현재 컴포넌트 시각 정의가 3곳에 분산되어 있어 **3중 동기화 고통**이 존재한다.
 
 ### 문제 1. 스타일 정의 3중 분산
@@ -213,18 +213,18 @@ Button의 padding을 12px → 16px로 바꾸려면:
 
 **업계 비교:**
 
-| 도구        | 렌더러                   | 편집 성능 | 퍼블리싱     | 단일 솔루션 |
-| ----------- | ------------------------ | --------- | ------------ | ----------- |
-| Figma       | Skia/WebGPU              | 최고      | **없음**     | **아님**    |
-| Webflow     | DOM 직접                 | DOM 한계  | DOM 배포     | 성능 제한   |
-| Framer      | React DOM                | DOM 한계  | React SSR    | 성능 제한   |
-| Plasmic     | React DOM                | DOM 한계  | 코드젠       | 성능 제한   |
-| Penpot      | SVG (DOM)                | 중간      | HTML/CSS     | 성능 제한   |
-| **XStudio** | **Skia + DOM 이중 출력** | **최고**  | **DOM 배포** | **유일**    |
+| 도구            | 렌더러                   | 편집 성능 | 퍼블리싱     | 단일 솔루션 |
+| --------------- | ------------------------ | --------- | ------------ | ----------- |
+| Figma           | Skia/WebGPU              | 최고      | **없음**     | **아님**    |
+| Webflow         | DOM 직접                 | DOM 한계  | DOM 배포     | 성능 제한   |
+| Framer          | React DOM                | DOM 한계  | React SSR    | 성능 제한   |
+| Plasmic         | React DOM                | DOM 한계  | 코드젠       | 성능 제한   |
+| Penpot          | SVG (DOM)                | 중간      | HTML/CSS     | 성능 제한   |
+| **composition** | **Skia + DOM 이중 출력** | **최고**  | **DOM 배포** | **유일**    |
 
-XStudio는 Mitosis의 IR(중간 표현) → 멀티 타겟 컴파일과 동일한 구조다. ComponentSpec이 Skia shapes와 CSS 양쪽의 단일 소스 역할을 한다. Figma가 "임의 벡터 → CSS"를 포기한 이유는 입력이 비구조적이었기 때문이지만, XStudio의 Spec은 `variants`/`sizes`/`states`/`shapes()` 타입 시스템으로 이미 구조화되어 있다.
+composition는 Mitosis의 IR(중간 표현) → 멀티 타겟 컴파일과 동일한 구조다. ComponentSpec이 Skia shapes와 CSS 양쪽의 단일 소스 역할을 한다. Figma가 "임의 벡터 → CSS"를 포기한 이유는 입력이 비구조적이었기 때문이지만, composition의 Spec은 `variants`/`sizes`/`states`/`shapes()` 타입 시스템으로 이미 구조화되어 있다.
 
-> **XStudio는 고성능 캔버스 편집 + 프로덕션 웹 퍼블리싱을 단일 워크플로우로 제공하는 업계 유일의 도구**이며, ADR-036은 이 아키텍처의 핵심 비용(Spec↔CSS 이중 유지)을 자동화로 제거하는 인프라다.
+> **composition는 고성능 캔버스 편집 + 프로덕션 웹 퍼블리싱을 단일 워크플로우로 제공하는 업계 유일의 도구**이며, ADR-036은 이 아키텍처의 핵심 비용(Spec↔CSS 이중 유지)을 자동화로 제거하는 인프라다.
 
 ---
 
@@ -2360,7 +2360,7 @@ steps:
 4. **Tier 분리로 복잡도 관리**: Tier 1(Primitive, ~22개) + Tier 2(Composite layout+delegation, ~17개)로 생성 책임을 명확히 분리
 5. **기존 인프라 활용**: ADR-018 utility(`.button-base`, `.inset`, `.indicator`) + ADR-033 변수 위임(`--btn-*`, `--input-*`)이 Tier 1/2 자동 생성의 기반
 6. **React Aria Composition 정합**: CSS 생성 구조가 React Aria Components의 Primitive composition 원칙과 정확히 일치
-7. **Figma→XStudio 파이프라인 강화 (잠재적)**: ADR-038(Proposed) 구현 후 연계 가능
+7. **Figma→composition 파이프라인 강화 (잠재적)**: ADR-038(Proposed) 구현 후 연계 가능
 
 ### Negative
 

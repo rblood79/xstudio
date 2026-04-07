@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-XStudio 협업을 위한 간단한 가이드입니다. 변경은 작게, 관측 가능하게, 기존 패턴에 맞춰 진행하세요.
+composition 협업을 위한 간단한 가이드입니다. 변경은 작게, 관측 가능하게, 기존 패턴에 맞춰 진행하세요.
 
 ## Assistant Response Language
 
@@ -58,7 +58,7 @@ This file provides guidance to AI coding assistants (Claude Code, Cursor AI, Git
 
 ## Project Overview
 
-XStudio is a web-based UI builder/design studio built with React 19, TypeScript, React Aria Components, Zustand, Tailwind v4, and Supabase. It enables users to create websites through an intuitive drag-and-drop interface with real-time preview.
+composition is a web-based UI builder/design studio built with React 19, TypeScript, React Aria Components, Zustand, Tailwind v4, and Supabase. It enables users to create websites through an intuitive drag-and-drop interface with real-time preview.
 
 **Key Features:**
 
@@ -2968,7 +2968,7 @@ Copilot learns from code patterns. Tips:
 
 # CURSOR.md
 
-This file provides guidance for using Cursor IDE's advanced features (especially Composer) when working with this XStudio codebase.
+This file provides guidance for using Cursor IDE's advanced features (especially Composer) when working with this composition codebase.
 
 > **Note:** This document is optimized for Cursor IDE's Composer and Chat features. For general coding guidelines and project architecture details, see [CLAUDE.md](./CLAUDE.md).
 
@@ -2979,11 +2979,11 @@ Cursor IDE provides powerful AI-assisted coding capabilities through two main in
 1. **Composer** - Multi-file editing with plan-based execution
 2. **Chat** - Interactive codebase exploration and single-file assistance
 
-This guide focuses on leveraging these features effectively within the XStudio project structure.
+This guide focuses on leveraging these features effectively within the composition project structure.
 
 ## Project Overview
 
-XStudio is a web-based UI builder/design studio built with React 19, TypeScript, React Aria Components, Zustand, Tailwind v4, and Supabase. It enables users to create websites through an intuitive drag-and-drop interface with real-time preview.
+composition is a web-based UI builder/design studio built with React 19, TypeScript, React Aria Components, Zustand, Tailwind v4, and Supabase. It enables users to create websites through an intuitive drag-and-drop interface with real-time preview.
 
 **Key Features:**
 
@@ -2997,7 +2997,7 @@ XStudio is a web-based UI builder/design studio built with React 19, TypeScript,
 
 ### Plan Mode
 
-Composer's Plan Mode allows you to break down complex tasks into manageable steps. When working with XStudio:
+Composer's Plan Mode allows you to break down complex tasks into manageable steps. When working with composition:
 
 **Best Practices:**
 
@@ -3014,7 +3014,7 @@ Composer's Plan Mode allows you to break down complex tasks into manageable step
 
 ### Multi-File Editing
 
-Composer excels at making coordinated changes across multiple files. XStudio's architecture benefits from this:
+Composer excels at making coordinated changes across multiple files. composition's architecture benefits from this:
 
 **Common Multi-File Scenarios:**
 
@@ -3046,7 +3046,7 @@ Composer excels at making coordinated changes across multiple files. XStudio's a
 
 ### Step-by-Step Task Breakdown
 
-Composer automatically breaks down tasks into logical steps. For XStudio, common patterns include:
+Composer automatically breaks down tasks into logical steps. For composition, common patterns include:
 
 **Component Addition Pattern:**
 
@@ -3069,7 +3069,7 @@ Composer automatically breaks down tasks into logical steps. For XStudio, common
 
 ### Codebase Indexing
 
-Cursor automatically indexes your codebase. For XStudio, this means:
+Cursor automatically indexes your codebase. For composition, this means:
 
 **What Gets Indexed:**
 
@@ -3096,7 +3096,7 @@ and follow the Action Token System for variants (primary, secondary, surface)."
 
 **Context-Aware Queries:**
 
-Cursor understands XStudio's architecture. You can ask:
+Cursor understands composition's architecture. You can ask:
 
 - "How does the element store handle undo/redo?"
 - "Where are component styles defined?"
@@ -3127,7 +3127,7 @@ When working on a component, Cursor can help you find:
 
 Cursor IDE uses `.cursor/rules` directory with `.mdc` files for project-specific rules. This is the standard approach for defining project rules.
 
-**To set up rules for XStudio:**
+**To set up rules for composition:**
 
 1. Create `.cursor/rules` directory in project root
 2. Create `.mdc` files for different rule categories
@@ -3145,7 +3145,7 @@ Cursor IDE uses `.cursor/rules` directory with `.mdc` files for project-specific
 **Recommended `.cursor/rules/coding-standards.mdc` content:**
 
 ```markdown
-# XStudio Coding Standards
+# composition Coding Standards
 
 - Always follow patterns in CLAUDE.md
 - Use factory pattern for store modules (see src/builder/stores/utils/)
@@ -3161,7 +3161,7 @@ Cursor IDE uses `.cursor/rules` directory with `.mdc` files for project-specific
 **Recommended `.cursor/rules/architecture-patterns.mdc` content:**
 
 ```markdown
-# XStudio Architecture Patterns
+# composition Architecture Patterns
 
 ## Store Module Pattern
 
@@ -3182,7 +3182,7 @@ Cursor IDE uses `.cursor/rules` directory with `.mdc` files for project-specific
 - All updates follow this triple-layer sync pattern
 ```
 
-### Setting Up Rules for XStudio
+### Setting Up Rules for composition
 
 **Critical Rules to Include:**
 
@@ -3206,7 +3206,7 @@ For detailed guidelines, architecture patterns, and comprehensive documentation,
 
 ### Directory Structure
 
-Understanding XStudio's structure helps Composer make better decisions:
+Understanding composition's structure helps Composer make better decisions:
 
 ```
 src/
@@ -3408,7 +3408,7 @@ const componentStyles = tv({
    - Ask about architectural decisions
 
 4. **Leverage Codebase Context:**
-   - Cursor understands XStudio's architecture
+   - Cursor understands composition's architecture
    - Reference existing patterns in prompts
    - Let Composer learn from existing code
 
@@ -3418,7 +3418,7 @@ const componentStyles = tv({
 
 **Use CURSOR.md for:**
 
-- Understanding how to use Cursor IDE features with XStudio
+- Understanding how to use Cursor IDE features with composition
 - Composer workflow guidance
 - Chat feature optimization
 - Multi-file editing strategies

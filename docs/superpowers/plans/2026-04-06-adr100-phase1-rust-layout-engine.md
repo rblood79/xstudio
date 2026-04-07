@@ -21,16 +21,16 @@
 
 ## 파일 맵
 
-| 역할                 | 파일                                                 |            상태             |
-| -------------------- | ---------------------------------------------------- | :-------------------------: |
-| Rust 엔진 코어       | `packages/composition-layout/src/lib.rs`                 | 수정 (스켈레톤 → 전체 구현) |
-| Rust 스타일 파싱     | `packages/composition-layout/src/style.rs`               |            신규             |
-| Rust 변경 감지       | `packages/composition-layout/src/change_detection.rs`    |            신규             |
-| Rust spatial index   | `packages/composition-layout/src/spatial.rs`             |            신규             |
-| Rust 테스트          | `packages/composition-layout/tests/layout_parity.rs`     |            신규             |
-| TS 래퍼 (신규 엔진)  | `apps/builder/src/.../wasm-bindings/layoutEngine.ts` |            신규             |
-| TS feature flag 분기 | `apps/builder/src/.../wasm-bindings/layoutBridge.ts` |            신규             |
-| 기존 Taffy 래퍼      | `apps/builder/src/.../wasm-bindings/taffyLayout.ts`  |      유지 (수정 없음)       |
+| 역할                 | 파일                                                  |            상태             |
+| -------------------- | ----------------------------------------------------- | :-------------------------: |
+| Rust 엔진 코어       | `packages/composition-layout/src/lib.rs`              | 수정 (스켈레톤 → 전체 구현) |
+| Rust 스타일 파싱     | `packages/composition-layout/src/style.rs`            |            신규             |
+| Rust 변경 감지       | `packages/composition-layout/src/change_detection.rs` |            신규             |
+| Rust spatial index   | `packages/composition-layout/src/spatial.rs`          |            신규             |
+| Rust 테스트          | `packages/composition-layout/tests/layout_parity.rs`  |            신규             |
+| TS 래퍼 (신규 엔진)  | `apps/builder/src/.../wasm-bindings/layoutEngine.ts`  |            신규             |
+| TS feature flag 분기 | `apps/builder/src/.../wasm-bindings/layoutBridge.ts`  |            신규             |
+| 기존 Taffy 래퍼      | `apps/builder/src/.../wasm-bindings/taffyLayout.ts`   |      유지 (수정 없음)       |
 
 ---
 
@@ -294,7 +294,7 @@ mod style;
 - [ ] **Step 3: cargo test (컴파일 확인)**
 
 ```bash
-cd /Users/admin/work/xstudio/packages/composition-layout
+cd /Users/admin/work/composition/packages/composition-layout
 cargo check
 ```
 
@@ -669,7 +669,7 @@ mod tests {
 - [ ] **Step 2: cargo test**
 
 ```bash
-cd /Users/admin/work/xstudio/packages/composition-layout
+cd /Users/admin/work/composition/packages/composition-layout
 cargo test --lib
 ```
 

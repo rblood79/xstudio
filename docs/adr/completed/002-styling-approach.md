@@ -2,11 +2,12 @@
 
 **Status:** Accepted
 **Date:** 2024-01-01
-**Decision Makers:** XStudio Team
+**Decision Makers:** composition Team
 
 ## Context
 
-XStudio는 두 가지 영역의 스타일링이 필요합니다:
+composition는 두 가지 영역의 스타일링이 필요합니다:
+
 1. **Builder UI**: 에디터 인터페이스 (Header, Sidebar, Inspector)
 2. **Preview**: 사용자가 만드는 컴포넌트 (테마 커스터마이징 가능)
 
@@ -19,12 +20,12 @@ XStudio는 두 가지 영역의 스타일링이 필요합니다:
 
 ## Alternatives Considered
 
-| 옵션 | 장점 | 단점 |
-|------|------|------|
-| CSS Modules | 스코프 격리 | 동적 스타일 어려움 |
-| Styled Components | CSS-in-JS 유연성 | 런타임 오버헤드 |
-| Tailwind @apply | 익숙함 | v4에서 금지됨 |
-| tailwind-variants | 타입 안전, 조건부 스타일 | 학습 필요 |
+| 옵션              | 장점                     | 단점               |
+| ----------------- | ------------------------ | ------------------ |
+| CSS Modules       | 스코프 격리              | 동적 스타일 어려움 |
+| Styled Components | CSS-in-JS 유연성         | 런타임 오버헤드    |
+| Tailwind @apply   | 익숙함                   | v4에서 금지됨      |
+| tailwind-variants | 타입 안전, 조건부 스타일 | 학습 필요          |
 
 ## Rationale
 
@@ -36,23 +37,25 @@ XStudio는 두 가지 영역의 스타일링이 필요합니다:
 ## ITCSS Layer Structure
 
 ```css
-@layer dashboard;        /* Lowest priority */
-@layer builder-system;   /* Builder UI */
-@layer preview-system;   /* Preview components */
-@layer shared-tokens;    /* Common tokens */
-@layer base;             /* Base styles */
-@layer components;       /* React Aria components */
-@layer utilities;        /* Highest priority */
+@layer dashboard; /* Lowest priority */
+@layer builder-system; /* Builder UI */
+@layer preview-system; /* Preview components */
+@layer shared-tokens; /* Common tokens */
+@layer base; /* Base styles */
+@layer components; /* React Aria components */
+@layer utilities; /* Highest priority */
 ```
 
 ## Consequences
 
 ### Positive
+
 - 예측 가능한 CSS 우선순위
 - Builder/Preview 스타일 완전 분리
 - 테마 커스터마이징 용이
 
 ### Negative
+
 - @layer 이해 필요
 - CSS 파일 구조 학습 곡선
 

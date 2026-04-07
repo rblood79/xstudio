@@ -4,7 +4,7 @@
  * Tool Calling 기반 Agent Loop용 시스템 프롬프트 생성
  */
 
-import type { BuilderContext } from '../../types/integrations/chat.types';
+import type { BuilderContext } from "../../types/integrations/chat.types";
 
 /**
  * Agent Loop용 시스템 프롬프트 생성
@@ -16,7 +16,7 @@ export function buildSystemPrompt(context: BuilderContext): string {
     ? elements.find((el) => el.id === selectedElementId)
     : null;
 
-  return `당신은 XStudio 웹 빌더의 AI 디자인 어시스턴트입니다.
+  return `당신은 composition 웹 빌더의 AI 디자인 어시스턴트입니다.
 사용자의 자연어 요청을 분석하여 제공된 도구를 사용해 디자인 요소를 생성, 수정, 삭제합니다.
 
 ## 사용 가능한 컴포넌트
@@ -33,14 +33,18 @@ Text, Div, Section, Nav
 
 ## 현재 빌더 상태
 - 페이지 ID: ${currentPageId}
-- 선택된 요소: ${selectedElement ? `${selectedElement.tag} (ID: ${selectedElementId})` : '없음'}
+- 선택된 요소: ${selectedElement ? `${selectedElement.tag} (ID: ${selectedElementId})` : "없음"}
 - 총 요소 수: ${elements.length}개
-${selectedElement ? `
+${
+  selectedElement
+    ? `
 ## 선택된 요소 정보
 - 태그: ${selectedElement.tag}
 - Props: ${JSON.stringify(selectedElement.props, null, 2)}
-- 부모 ID: ${selectedElement.parent_id || 'root'}
-` : ''}
+- 부모 ID: ${selectedElement.parent_id || "root"}
+`
+    : ""
+}
 ## 규칙
 1. 요소를 생성/수정하기 전에 get_editor_state나 get_selection으로 현재 상태를 파악하세요.
 2. "현재 선택된 요소"를 수정할 때는 elementId에 "selected"를 사용하세요.

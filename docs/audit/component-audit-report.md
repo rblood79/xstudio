@@ -1,4 +1,4 @@
-# XStudio 컴포넌트 전수 조사 보고서
+# composition 컴포넌트 전수 조사 보고서
 
 > **작성일**: 2026-03-07
 > **목적**: ADR-030 (S2 Spectrum 전용 컴포넌트) 실행 전 기존 컴포넌트 완성도 점검
@@ -238,14 +238,14 @@ Spec은 존재하지만 Factory 정의가 **없는** 컴포넌트:
 
 ### 4.3 불필요한 프로퍼티 (S2에 없는 옵션)
 
-| 컴포넌트  | XStudio 전용 프로퍼티                                | S2 해당 없음 이유                        | 조치               |
+| 컴포넌트  | composition 전용 프로퍼티                            | S2 해당 없음 이유                        | 조치               |
 | --------- | ---------------------------------------------------- | ---------------------------------------- | ------------------ |
 | TextField | variant: "accent", "neutral", "purple", "positive"   | S2는 default만 존재                      | 유지 (커스텀 확장) |
 | Button    | variant: "premium", "genai"                          | S2는 accent/primary/secondary/negative만 | 유지 (커스텀 확장) |
 | Badge     | variant: 17개 named colors                           | S2도 유사하게 많은 named colors 보유     | 유지               |
 | Card      | variant: "primary", "secondary", "tertiary", "quiet" | S2와 이름 다름                           | 검토 필요          |
 
-> **결론**: XStudio 커스텀 확장 variant는 유지하되, S2 표준 variant는 반드시 포함해야 함.
+> **결론**: composition 커스텀 확장 variant는 유지하되, S2 표준 variant는 반드시 포함해야 함.
 
 ---
 

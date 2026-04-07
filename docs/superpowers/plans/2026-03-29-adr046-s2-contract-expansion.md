@@ -289,7 +289,7 @@ git commit -m "feat(popover): add overlay props + size — crossOffset, shouldFl
 - Modify: `packages/shared/src/components/Menu.tsx` (MenuButton에서 MenuTrigger로 props 전달)
 - Modify: `packages/shared/src/renderers/LayoutRenderers.tsx:1583-1607` (renderActionMenu에서 props 전달)
 
-Menu는 XStudio에서 `MenuButton` 컴포넌트로 구현되며, 내부에서 `<MenuTrigger>` + `<Button>` + `<Popover>` + `<Menu>` 구조를 사용한다. `align`, `direction`, `shouldFlip`은 `<MenuTrigger>` props.
+Menu는 composition에서 `MenuButton` 컴포넌트로 구현되며, 내부에서 `<MenuTrigger>` + `<Button>` + `<Popover>` + `<Menu>` 구조를 사용한다. `align`, `direction`, `shouldFlip`은 `<MenuTrigger>` props.
 
 - [ ] **Step 1: Menu.spec.ts Props 인터페이스에 props 추가**
 
@@ -401,7 +401,7 @@ git commit -m "feat(menu): add trigger positioning props — align, direction, s
 - [ ] **Step 1: Spec 빌드**
 
 ```bash
-cd /Users/admin/work/xstudio && pnpm build:specs
+cd /Users/admin/work/composition && pnpm build:specs
 ```
 
 Expected: 에러 없음

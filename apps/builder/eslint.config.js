@@ -11,7 +11,7 @@ export default [
       },
     },
     rules: {
-      // XStudio Anti-Pattern Detection Rules
+      // composition Anti-Pattern Detection Rules
       "local/no-zustand-grouped-selectors": "error",
       "local/no-zustand-use-shallow": "error",
       "local/prefer-keyboard-shortcuts-registry": "warn",

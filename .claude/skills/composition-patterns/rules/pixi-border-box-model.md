@@ -23,8 +23,10 @@ const minRequiredHeight = paddingTop + textHeight + paddingBottom;
 ```tsx
 // ✅ border-box 모델: border + padding + content
 const borderWidth = 1; // 컴포넌트의 border 두께
-const minRequiredWidth = borderWidth + paddingLeft + textWidth + paddingRight + borderWidth;
-const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom + borderWidth;
+const minRequiredWidth =
+  borderWidth + paddingLeft + textWidth + paddingRight + borderWidth;
+const minRequiredHeight =
+  borderWidth + paddingTop + textHeight + paddingBottom + borderWidth;
 ```
 
 ## 체크리스트
@@ -32,6 +34,7 @@ const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom 
 새 WebGL 컴포넌트 구현 시:
 
 1. **CSS 파일 확인**: 해당 컴포넌트의 border 스타일 확인
+
    ```css
    .react-aria-Button {
      border: 1px solid var(--border-color);
@@ -39,10 +42,21 @@ const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom 
    ```
 
 2. **크기 계산에 border 포함**: 4방향 border를 모두 고려
+
    ```tsx
    // 4방향 border가 다를 수 있음
-   const minRequiredWidth = borderWidthLeft + paddingLeft + contentWidth + paddingRight + borderWidthRight;
-   const minRequiredHeight = borderWidthTop + paddingTop + contentHeight + paddingBottom + borderWidthBottom;
+   const minRequiredWidth =
+     borderWidthLeft +
+     paddingLeft +
+     contentWidth +
+     paddingRight +
+     borderWidthRight;
+   const minRequiredHeight =
+     borderWidthTop +
+     paddingTop +
+     contentHeight +
+     paddingBottom +
+     borderWidthBottom;
    ```
 
 3. **유사 컴포넌트와 비교 검증**: 동일한 padding/size를 사용하는 컴포넌트와 높이 비교
@@ -54,7 +68,12 @@ const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom 
 
 - **PixiButton.tsx:284** - 올바른 border-box 계산 예시
   ```tsx
-  const minRequiredHeight = borderWidthTop + paddingTop + textHeight + paddingBottom + borderWidthBottom;
+  const minRequiredHeight =
+    borderWidthTop +
+    paddingTop +
+    textHeight +
+    paddingBottom +
+    borderWidthBottom;
   ```
 
 ## 관련 파일
@@ -63,7 +82,7 @@ const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom 
 - `src/builder/workspace/canvas/ui/PixiToggleButton.tsx` - 수정 예시
 - `src/builder/workspace/canvas/utils/cssVariableReader.ts` - 크기 프리셋
 - `src/builder/workspace/canvas/layout/engines/utils.ts` - enrichWithIntrinsicSize, applyCommonTaffyStyle
-- `packages/layout-flow/src/adapters/xstudio-adapter.ts` - Dropflow boxSizing: 'border-box'
+- `packages/layout-flow/src/adapters/composition-adapter.ts` - Dropflow boxSizing: 'border-box'
 
 ## 레이아웃 엔진 box-sizing 아키텍처 (2026-02-26)
 
@@ -83,10 +102,10 @@ injectedStyle.width = injectWidth;
 
 ### 엔진별 box-sizing 처리
 
-| 엔진 | box-sizing | 변환 위치 |
-|------|-----------|----------|
-| Dropflow | border-box (네이티브) | `xstudio-adapter.ts`: `boxSizing: 'border-box'` 고정 |
-| Taffy | content-box → border-box 변환 | `applyCommonTaffyStyle()`: width/height에서 padding+border 차감 |
+| 엔진     | box-sizing                    | 변환 위치                                                       |
+| -------- | ----------------------------- | --------------------------------------------------------------- |
+| Dropflow | border-box (네이티브)         | `composition-adapter.ts`: `boxSizing: 'border-box'` 고정        |
+| Taffy    | content-box → border-box 변환 | `applyCommonTaffyStyle()`: width/height에서 padding+border 차감 |
 
 ### 주의사항
 

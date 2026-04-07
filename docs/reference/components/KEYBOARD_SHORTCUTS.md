@@ -1,4 +1,4 @@
-# XStudio Keyboard Shortcuts System
+# composition Keyboard Shortcuts System
 
 > **Version:** 3.1
 > **Last Updated:** 2026-02-06
@@ -9,50 +9,56 @@
 ## Executive Summary
 
 ### 구현 완료 상태
+
 - **51개 단축키** 중앙 설정 파일에 정의
 - **단일 레지스트리 패턴** 적용
 - **7개 스코프** 기반 충돌 해결
 
 ### 구현된 기능
+
 - Enhanced registry with **capture phase**, **priority system**, **scope-aware** filtering
 - **5개 구현 Phase** 완료 (Phase 0+1 ~ Phase 5)
 - Industry-aligned design inspired by **Figma** and **Photoshop Web**
 
 ### Key Metrics
 
-| Metric | Before | After Phase 5 | Status |
-|--------|--------|---------------|--------|
-| Centralized Shortcuts | 45% | 95%+ | ✅ 완료 |
-| Conflict Detection | ❌ | ✅ | ✅ 완료 |
-| Context-Aware | ❌ | ✅ | ✅ 완료 |
-| DevTools Debugger | ❌ | ✅ | ✅ 완료 |
+| Metric                | Before | After Phase 5 | Status  |
+| --------------------- | ------ | ------------- | ------- |
+| Centralized Shortcuts | 45%    | 95%+          | ✅ 완료 |
+| Conflict Detection    | ❌     | ✅            | ✅ 완료 |
+| Context-Aware         | ❌     | ✅            | ✅ 완료 |
+| DevTools Debugger     | ❌     | ✅            | ✅ 완료 |
 
 ### Performance Benchmarks
 
-| Metric | Current | Target | Measurement |
-|--------|---------|--------|-------------|
-| Event Listeners | 17개 | 2개 | `getEventListeners(window)` |
-| Keydown → Handler | ~5ms | ~1ms | Performance.mark() |
-| Memory (shortcuts) | 분산 | ~10KB | DevTools Heap |
-| Bundle Size Impact | - | +2KB | Vite build analysis |
+| Metric             | Current | Target | Measurement                 |
+| ------------------ | ------- | ------ | --------------------------- |
+| Event Listeners    | 17개    | 2개    | `getEventListeners(window)` |
+| Keydown → Handler  | ~5ms    | ~1ms   | Performance.mark()          |
+| Memory (shortcuts) | 분산    | ~10KB  | DevTools Heap               |
+| Bundle Size Impact | -       | +2KB   | Vite build analysis         |
 
 ---
 
 ## 2026-02-06 운영 패치: Cmd/Ctrl+V 이중 실행
 
 ### 증상
+
 - 요소 선택 후 붙여넣기(`Cmd/Ctrl+V`) 시 1회 입력에 요소가 2개 생성됨
 
 ### 원인
+
 - 글로벌 단축키(`useGlobalKeyboardShortcuts`)와 `PropertiesPanel` 로컬 단축키가 동일 키 조합을 동시에 처리
 - `PropertiesPanel`의 registry 등록에 `activeScope`가 전달되지 않아 scope 필터가 실질적으로 비활성
 
 ### 수정
+
 - `PropertiesPanel.tsx`에 `useActiveScope()` 추가
 - `Cmd/Ctrl+C`, `Cmd/Ctrl+V`, `Cmd/Ctrl+Shift+C`, `Cmd/Ctrl+Shift+V`를 `scope: 'panel:properties'`로 제한
 - `useKeyboardShortcutsRegistry(..., { activeScope })`로 scope 필터 활성화
 
 ### 수정 파일
+
 - `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`
 
 ---
@@ -61,54 +67,55 @@
 
 ### 아키텍처 비교
 
-| 항목 | 현재 (Before) | 구현 후 (After) |
-|------|--------------|-----------------|
-| **단축키 정의 위치** | 22개 파일에 분산 | `keyboardShortcuts.json` 단일 파일 |
-| **등록 방식** | 3가지 패턴 혼재 | `useKeyboardShortcutsRegistry` 통합 |
-| **설정 포맷** | 하드코딩 | JSON 기반 설정 |
-| **이벤트 타겟** | window/document 혼용 | 표준화된 타겟 선택 |
+| 항목                 | 현재 (Before)        | 구현 후 (After)                     |
+| -------------------- | -------------------- | ----------------------------------- |
+| **단축키 정의 위치** | 22개 파일에 분산     | `keyboardShortcuts.json` 단일 파일  |
+| **등록 방식**        | 3가지 패턴 혼재      | `useKeyboardShortcutsRegistry` 통합 |
+| **설정 포맷**        | 하드코딩             | JSON 기반 설정                      |
+| **이벤트 타겟**      | window/document 혼용 | 표준화된 타겟 선택                  |
 
 ### 기능 비교
 
-| 기능 | 현재 (Before) | 구현 후 (After) |
-|------|--------------|-----------------|
-| **중앙 집중 관리** | ❌ 45%만 레지스트리 사용 | ✅ 100% 레지스트리 통합 |
-| **Capture Phase** | ❌ 별도 구현 필요 | ✅ `capture: true` 옵션 |
-| **입력 필드 내 동작** | ❌ 일괄 차단 | ✅ `allowInInput` 선택적 허용 |
-| **Shift 수식어** | ❌ 미지원 | ✅ `'shift'` modifier 추가 |
-| **스코프 시스템** | ❌ 없음 | ✅ 7개 스코프 정의 |
-| **우선순위** | ❌ 등록 순서 의존 | ✅ `priority` 기반 처리 |
-| **충돌 감지** | ❌ 런타임 오류 발생 | ✅ 개발 시점 경고 |
+| 기능                  | 현재 (Before)            | 구현 후 (After)               |
+| --------------------- | ------------------------ | ----------------------------- |
+| **중앙 집중 관리**    | ❌ 45%만 레지스트리 사용 | ✅ 100% 레지스트리 통합       |
+| **Capture Phase**     | ❌ 별도 구현 필요        | ✅ `capture: true` 옵션       |
+| **입력 필드 내 동작** | ❌ 일괄 차단             | ✅ `allowInInput` 선택적 허용 |
+| **Shift 수식어**      | ❌ 미지원                | ✅ `'shift'` modifier 추가    |
+| **스코프 시스템**     | ❌ 없음                  | ✅ 7개 스코프 정의            |
+| **우선순위**          | ❌ 등록 순서 의존        | ✅ `priority` 기반 처리       |
+| **충돌 감지**         | ❌ 런타임 오류 발생      | ✅ 개발 시점 경고             |
 
 ### 개발자 경험 (DX) 비교
 
-| 항목 | 현재 (Before) | 구현 후 (After) |
-|------|--------------|-----------------|
-| **단축키 추가** | 파일마다 다른 방식 | 통일된 인터페이스 |
-| **디버깅** | console.log 수동 삽입 | DevTools 내장 디버거 |
-| **충돌 해결** | 수동 테스트 필요 | 자동 충돌 경고 (개발 시점) |
-| **문서화** | 별도 관리 필요 | JSON에서 자동 생성 |
+| 항목            | 현재 (Before)         | 구현 후 (After)            |
+| --------------- | --------------------- | -------------------------- |
+| **단축키 추가** | 파일마다 다른 방식    | 통일된 인터페이스          |
+| **디버깅**      | console.log 수동 삽입 | DevTools 내장 디버거       |
+| **충돌 해결**   | 수동 테스트 필요      | 자동 충돌 경고 (개발 시점) |
+| **문서화**      | 별도 관리 필요        | JSON에서 자동 생성         |
 
 ### 사용자 경험 (UX) 비교
 
-| 항목 | 현재 (Before) | 구현 후 (After) |
-|------|--------------|-----------------|
-| **도움말 패널** | 기본 목록 | 검색 + 카테고리 탭 |
+| 항목               | 현재 (Before)   | 구현 후 (After)    |
+| ------------------ | --------------- | ------------------ |
+| **도움말 패널**    | 기본 목록       | 검색 + 카테고리 탭 |
 | **입력 필드 충돌** | Cmd+Z 작동 안함 | 컨텍스트 인식 동작 |
-| **동일 키 충돌** | 예측 불가 동작 | 스코프별 분리 |
+| **동일 키 충돌**   | 예측 불가 동작  | 스코프별 분리      |
 
 ### 코드 복잡도 비교
 
-| 측정 항목 | 현재 (Before) | 구현 후 (After) | 변화 |
-|----------|--------------|-----------------|------|
-| 단축키 관련 파일 수 | 22개 | 5개 | -77% |
-| 중복 이벤트 리스너 | 17개 | 2개 | -88% |
-| 단축키당 코드 라인 | ~15줄 | ~5줄 | -67% |
-| 테스트 가능성 | 낮음 | 높음 | ⬆️ |
+| 측정 항목           | 현재 (Before) | 구현 후 (After) | 변화 |
+| ------------------- | ------------- | --------------- | ---- |
+| 단축키 관련 파일 수 | 22개          | 5개             | -77% |
+| 중복 이벤트 리스너  | 17개          | 2개             | -88% |
+| 단축키당 코드 라인  | ~15줄         | ~5줄            | -67% |
+| 테스트 가능성       | 낮음          | 높음            | ⬆️   |
 
 ### 파일 구조 비교
 
 #### Before (현재)
+
 ```
 src/builder/
 ├── hooks/
@@ -134,6 +141,7 @@ src/builder/
 ```
 
 #### After (구현 완료)
+
 ```
 src/builder/
 ├── config/
@@ -174,13 +182,13 @@ src/builder/
 
 ### 삭제/이동 대상 (완료)
 
-| 파일 | 액션 | 상태 | 비고 |
-|------|------|------|------|
-| `useKeyboardShortcuts.ts` | 🗑️ 삭제 | ✅ 완료 | `useGlobalKeyboardShortcuts.ts`로 통합 |
-| `useZoomShortcuts.ts` | 🗑️ 삭제 | ✅ 완료 | `useGlobalKeyboardShortcuts.ts`로 통합 |
-| `useCopyPasteActions.ts` | 📌 유지 | ✅ 검토 완료 | 패널 컨텍스트 의존, 스코프로 분리 |
-| `useBlockKeyboard.ts` | 📌 유지 | ✅ 검토 완료 | 패널 컨텍스트 의존, 스코프로 분리 |
-| `PropertiesPanel.tsx` | 📌 유지 | ✅ 검토 완료 | 컴포넌트 로컬 단축키로 유지 |
+| 파일                      | 액션    | 상태         | 비고                                   |
+| ------------------------- | ------- | ------------ | -------------------------------------- |
+| `useKeyboardShortcuts.ts` | 🗑️ 삭제 | ✅ 완료      | `useGlobalKeyboardShortcuts.ts`로 통합 |
+| `useZoomShortcuts.ts`     | 🗑️ 삭제 | ✅ 완료      | `useGlobalKeyboardShortcuts.ts`로 통합 |
+| `useCopyPasteActions.ts`  | 📌 유지 | ✅ 검토 완료 | 패널 컨텍스트 의존, 스코프로 분리      |
+| `useBlockKeyboard.ts`     | 📌 유지 | ✅ 검토 완료 | 패널 컨텍스트 의존, 스코프로 분리      |
+| `PropertiesPanel.tsx`     | 📌 유지 | ✅ 검토 완료 | 컴포넌트 로컬 단축키로 유지            |
 
 ### 의존성 그래프
 
@@ -226,6 +234,7 @@ src/builder/
 ```
 
 **Import 의존성 요약:**
+
 ```
 keyboardShortcuts.ts ← useGlobalKeyboardShortcuts.ts ← Builder.tsx
 keyboard.ts (types)  ← useKeyboardShortcutsRegistry.ts
@@ -235,12 +244,12 @@ keyboard.ts (types)  ← useKeyboardShortcutsRegistry.ts
 
 ### 유지되는 컴포넌트 로컬 단축키
 
-| 컴포넌트 | 단축키 | 이유 |
-|----------|--------|------|
+| 컴포넌트            | 단축키        | 이유                           |
+| ------------------- | ------------- | ------------------------------ |
 | `PropertyUnitInput` | Arrow Up/Down | 값 조절이 컴포넌트 상태에 의존 |
-| `PropertyCustomId` | Enter/Escape | 유효성 검사 로직과 긴밀히 연결 |
-| `TextEditOverlay` | 텍스트 편집 | 콘텐츠 편집 모드 전용 |
-| `AIPanel` | Enter (제출) | 폼 제출 로직과 직접 연결 |
+| `PropertyCustomId`  | Enter/Escape  | 유효성 검사 로직과 긴밀히 연결 |
+| `TextEditOverlay`   | 텍스트 편집   | 콘텐츠 편집 모드 전용          |
+| `AIPanel`           | Enter (제출)  | 폼 제출 로직과 직접 연결       |
 
 ---
 
@@ -263,22 +272,22 @@ keyboard.ts (types)  ← useKeyboardShortcutsRegistry.ts
 
 Despite having `useKeyboardShortcutsRegistry`, shortcuts are scattered with 3 different patterns:
 
-| Pattern | Files | Shortcuts | Centralized |
-|---------|-------|-----------|-------------|
-| Direct `addEventListener` | 8 | ~20 | ❌ |
-| React `onKeyDown` | 9 | ~15 | ❌ |
-| `useKeyboardShortcutsRegistry` | 4 | ~32 | ✅ |
+| Pattern                        | Files | Shortcuts | Centralized |
+| ------------------------------ | ----- | --------- | ----------- |
+| Direct `addEventListener`      | 8     | ~20       | ❌          |
+| React `onKeyDown`              | 9     | ~15       | ❌          |
+| `useKeyboardShortcutsRegistry` | 4     | ~32       | ✅          |
 
 ### 1.2 Registry Limitations
 
-| Limitation | Impact | Required Fix |
-|------------|--------|--------------|
-| No `capture` phase | Can't intercept browser defaults | `capture: true` option |
-| Input field blocking | Undo/Redo don't work in inputs | `allowInInput` option |
-| No `shift` modifier | Tab navigation broken | Add `'shift'` modifier |
-| No scope system | Same key conflicts | `scope` property |
-| No priority | Conflict resolution impossible | `priority` property |
-| No `stopPropagation` | Event bubbling issues | `stopPropagation` option |
+| Limitation           | Impact                           | Required Fix             |
+| -------------------- | -------------------------------- | ------------------------ |
+| No `capture` phase   | Can't intercept browser defaults | `capture: true` option   |
+| Input field blocking | Undo/Redo don't work in inputs   | `allowInInput` option    |
+| No `shift` modifier  | Tab navigation broken            | Add `'shift'` modifier   |
+| No scope system      | Same key conflicts               | `scope` property         |
+| No priority          | Conflict resolution impossible   | `priority` property      |
+| No `stopPropagation` | Event bubbling issues            | `stopPropagation` option |
 
 ### 1.3 Current Implementation Map
 
@@ -308,25 +317,27 @@ src/builder/
 
 ### 2.1 Figma vs Photoshop Comparison
 
-| Feature | Figma | Photoshop Web | XStudio (Proposed) |
-|---------|-------|---------------|-------------------|
-| **Storage** | JSON + localStorage + DB | .kys files + Workspace | JSON config |
-| **Categories** | Tab-based | 4 types | 8 categories |
-| **Context-Aware** | ✅ State-based | ✅ Taskspaces | ✅ Scope system |
-| **Conflict Detection** | ✅ Runtime | ✅ Warning dialog | ✅ Priority + DevTools |
-| **International KB** | ✅ 2.5k+ layouts | ✅ OS-level | ⚡ Phase 6 |
-| **Customization** | ❌ | ✅ Full | ⚡ Phase 7 |
-| **Help Panel** | ✅ Gamified | ✅ Searchable | ✅ Enhanced |
+| Feature                | Figma                    | Photoshop Web          | composition (Proposed) |
+| ---------------------- | ------------------------ | ---------------------- | ---------------------- |
+| **Storage**            | JSON + localStorage + DB | .kys files + Workspace | JSON config            |
+| **Categories**         | Tab-based                | 4 types                | 8 categories           |
+| **Context-Aware**      | ✅ State-based           | ✅ Taskspaces          | ✅ Scope system        |
+| **Conflict Detection** | ✅ Runtime               | ✅ Warning dialog      | ✅ Priority + DevTools |
+| **International KB**   | ✅ 2.5k+ layouts         | ✅ OS-level            | ⚡ Phase 6             |
+| **Customization**      | ❌                       | ✅ Full                | ⚡ Phase 7             |
+| **Help Panel**         | ✅ Gamified              | ✅ Searchable          | ✅ Enhanced            |
 
 ### 2.2 Key Innovations to Adopt
 
 **From Figma:**
+
 - JSON-based shortcut configuration
 - Keyboard API for layout detection
 - Dual storage (localStorage + backend)
 - Gamified help panel with usage tracking
 
 **From Photoshop:**
+
 - 4-category system (we extend to 8)
 - Conflict warning dialog
 - Hold-to-activate temporary tools
@@ -334,16 +345,17 @@ src/builder/
 
 ### 2.3 UX Best Practices
 
-| Practice | Description | Status |
-|----------|-------------|--------|
-| Echo conventions | ⌘+C, ⌘+V, ⌘+Z | ✅ Done |
-| Fence novel shortcuts | Context-specific keys | 🔧 Need scope |
-| ESC exits modals | Universal escape | ✅ Done |
-| ? shows help | Help shortcut | ✅ Cmd+? |
-| Single-key caution | Avoid in text fields | 🔧 Need filtering |
-| Discoverability | Tooltips with shortcuts | ⚡ Phase 5 |
+| Practice              | Description             | Status            |
+| --------------------- | ----------------------- | ----------------- |
+| Echo conventions      | ⌘+C, ⌘+V, ⌘+Z           | ✅ Done           |
+| Fence novel shortcuts | Context-specific keys   | 🔧 Need scope     |
+| ESC exits modals      | Universal escape        | ✅ Done           |
+| ? shows help          | Help shortcut           | ✅ Cmd+?          |
+| Single-key caution    | Avoid in text fields    | 🔧 Need filtering |
+| Discoverability       | Tooltips with shortcuts | ⚡ Phase 5        |
 
 **Sources:**
+
 - [Figma: International Keyboard Shortcuts](https://www.figma.com/blog/behind-the-scenes-international-keyboard-shortcuts/)
 - [Adobe: Customize Keyboard Shortcuts](https://helpx.adobe.com/photoshop/using/customizing-keyboard-shortcuts.html)
 - [Knock: How to Design Great Shortcuts](https://knock.app/blog/how-to-design-great-keyboard-shortcuts)
@@ -358,11 +370,16 @@ src/builder/
 // src/builder/hooks/useKeyboardShortcutsRegistry.ts
 
 export type KeyboardModifier =
-  | 'cmd' | 'cmdShift' | 'cmdAlt'
-  | 'ctrl' | 'ctrlShift' | 'ctrlAlt'  // NEW: 패널 토글용
-  | 'alt' | 'altShift'
-  | 'shift'           // NEW
-  | 'none';
+  | "cmd"
+  | "cmdShift"
+  | "cmdAlt"
+  | "ctrl"
+  | "ctrlShift"
+  | "ctrlAlt" // NEW: 패널 토글용
+  | "alt"
+  | "altShift"
+  | "shift" // NEW
+  | "none";
 
 export interface KeyboardShortcut {
   // Core
@@ -373,13 +390,13 @@ export interface KeyboardShortcut {
 
   // Behavior
   preventDefault?: boolean;
-  stopPropagation?: boolean;    // NEW
-  allowInInput?: boolean;       // NEW
+  stopPropagation?: boolean; // NEW
+  allowInInput?: boolean; // NEW
 
   // Organization
   category: ShortcutCategory;
   scope: ShortcutScope | ShortcutScope[];
-  priority: number;             // NEW (higher = first)
+  priority: number; // NEW (higher = first)
 
   // Metadata
   id: string;
@@ -389,9 +406,9 @@ export interface KeyboardShortcut {
 }
 
 export interface RegistryOptions {
-  eventType?: 'keydown' | 'keyup';
-  capture?: boolean;            // NEW
-  target?: 'window' | 'document';
+  eventType?: "keydown" | "keyup";
+  capture?: boolean; // NEW
+  target?: "window" | "document";
 }
 ```
 
@@ -399,14 +416,14 @@ export interface RegistryOptions {
 
 ```typescript
 export enum ShortcutCategory {
-  SYSTEM = 'system',           // Undo, Redo, Save (priority: 100)
-  NAVIGATION = 'navigation',   // Zoom, Pan (priority: 90)
-  PANELS = 'panels',           // Panel toggles (priority: 80)
-  CANVAS = 'canvas',           // Element manipulation (priority: 70)
-  TOOLS = 'tools',             // Tool selection (priority: 60)
-  PROPERTIES = 'properties',   // Property editing (priority: 50)
-  EVENTS = 'events',           // Events panel (priority: 50)
-  NODES = 'nodes',             // Nodes panel (priority: 50)
+  SYSTEM = "system", // Undo, Redo, Save (priority: 100)
+  NAVIGATION = "navigation", // Zoom, Pan (priority: 90)
+  PANELS = "panels", // Panel toggles (priority: 80)
+  CANVAS = "canvas", // Element manipulation (priority: 70)
+  TOOLS = "tools", // Tool selection (priority: 60)
+  PROPERTIES = "properties", // Property editing (priority: 50)
+  EVENTS = "events", // Events panel (priority: 50)
+  NODES = "nodes", // Nodes panel (priority: 50)
 }
 ```
 
@@ -414,18 +431,18 @@ export enum ShortcutCategory {
 
 ```typescript
 export type ShortcutScope =
-  | 'global'           // Always active
-  | 'canvas-focused'   // Canvas has focus
-  | 'panel:properties' // Properties panel active
-  | 'panel:events'     // Events panel active
-  | 'panel:nodes'      // Nodes panel active
-  | 'modal'            // Modal is open
-  | 'text-editing';    // Text input focused
+  | "global" // Always active
+  | "canvas-focused" // Canvas has focus
+  | "panel:properties" // Properties panel active
+  | "panel:events" // Events panel active
+  | "panel:nodes" // Nodes panel active
+  | "modal" // Modal is open
+  | "text-editing"; // Text input focused
 
 // Same key, different scopes = no conflict
 const shortcuts = [
-  { key: 'c', modifier: 'cmd', scope: 'canvas-focused', handler: copyElements },
-  { key: 'c', modifier: 'cmd', scope: 'panel:events', handler: copyActions },
+  { key: "c", modifier: "cmd", scope: "canvas-focused", handler: copyElements },
+  { key: "c", modifier: "cmd", scope: "panel:events", handler: copyActions },
 ];
 ```
 
@@ -476,7 +493,7 @@ export function detectConflicts(shortcuts: KeyboardShortcut[]): ConflictInfo[] {
         conflicts.push({
           existing: prev,
           new: shortcut,
-          resolution: shortcut.priority > prev.priority ? 'override' : 'skip',
+          resolution: shortcut.priority > prev.priority ? "override" : "skip",
         });
       }
     }
@@ -484,8 +501,8 @@ export function detectConflicts(shortcuts: KeyboardShortcut[]): ConflictInfo[] {
   }
 
   // Dev-time warning
-  if (process.env.NODE_ENV === 'development' && conflicts.length > 0) {
-    console.warn('⚠️ Keyboard shortcut conflicts:', conflicts);
+  if (process.env.NODE_ENV === "development" && conflicts.length > 0) {
+    console.warn("⚠️ Keyboard shortcut conflicts:", conflicts);
   }
 
   return conflicts;
@@ -498,13 +515,13 @@ export function detectConflicts(shortcuts: KeyboardShortcut[]): ConflictInfo[] {
 
 ### Phase Overview
 
-| Phase | Description | Status | 완료일 |
-|-------|-------------|--------|--------|
+| Phase   | Description                       | Status  | 완료일     |
+| ------- | --------------------------------- | ------- | ---------- |
 | **0+1** | Enhance Registry + Core Migration | ✅ 완료 | 2025-12-28 |
-| **2** | JSON Config | ✅ 완료 | 2025-12-28 |
-| **3** | Single Registration Point | ✅ 완료 | 2025-12-28 |
-| **4** | Category & Scope System | ✅ 완료 | 2025-12-28 |
-| **5** | DevTools & Help Panel | ✅ 완료 | 2025-12-28 |
+| **2**   | JSON Config                       | ✅ 완료 | 2025-12-28 |
+| **3**   | Single Registration Point         | ✅ 완료 | 2025-12-28 |
+| **4**   | Category & Scope System           | ✅ 완료 | 2025-12-28 |
+| **5**   | DevTools & Help Panel             | ✅ 완료 | 2025-12-28 |
 
 **전체 구현 완료:** 2025-12-28
 
@@ -526,15 +543,16 @@ Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 각 Phase별 롤백 방법을 명시합니다. 문제 발생 시 빠른 복구가 가능하도록 설계되었습니다.
 
-| Phase | 롤백 방법 | 롤백 시간 | 체크포인트 |
-|-------|----------|----------|-----------|
-| **0+1** | 레거시 훅 파일 복원 (`git checkout`) | ~5분 | `useKeyboardShortcuts.ts`, `useZoomShortcuts.ts` 삭제 전 |
-| **2** | `keyboardShortcuts.ts` 삭제, 인라인 정의로 복원 | ~10분 | JSON 설정 파일 생성 전 |
-| **3** | `useGlobalKeyboardShortcuts.ts` 삭제, 개별 훅 복원 | ~15분 | Builder.tsx 수정 전 |
-| **4** | 스코프 로직 제거, 단순 필터링으로 복원 | ~10분 | `useActiveScope.ts` 생성 전 |
-| **5** | DevTools 컴포넌트 제거 (프로덕션 영향 없음) | ~2분 | 독립적 |
+| Phase   | 롤백 방법                                          | 롤백 시간 | 체크포인트                                               |
+| ------- | -------------------------------------------------- | --------- | -------------------------------------------------------- |
+| **0+1** | 레거시 훅 파일 복원 (`git checkout`)               | ~5분      | `useKeyboardShortcuts.ts`, `useZoomShortcuts.ts` 삭제 전 |
+| **2**   | `keyboardShortcuts.ts` 삭제, 인라인 정의로 복원    | ~10분     | JSON 설정 파일 생성 전                                   |
+| **3**   | `useGlobalKeyboardShortcuts.ts` 삭제, 개별 훅 복원 | ~15분     | Builder.tsx 수정 전                                      |
+| **4**   | 스코프 로직 제거, 단순 필터링으로 복원             | ~10분     | `useActiveScope.ts` 생성 전                              |
+| **5**   | DevTools 컴포넌트 제거 (프로덕션 영향 없음)        | ~2분      | 독립적                                                   |
 
 **롤백 Git 태그 규칙:**
+
 ```bash
 # Phase 시작 전 태그 생성
 git tag -a keyboard-phase-0-start -m "Before keyboard shortcuts Phase 0+1"
@@ -545,10 +563,11 @@ git checkout keyboard-phase-0-start -- src/builder/workspace/useZoomShortcuts.ts
 ```
 
 **Feature Flag (선택사항):**
+
 ```typescript
 // src/builder/config/featureFlags.ts
 export const FEATURE_FLAGS = {
-  USE_NEW_KEYBOARD_SYSTEM: import.meta.env.VITE_NEW_KEYBOARD === 'true',
+  USE_NEW_KEYBOARD_SYSTEM: import.meta.env.VITE_NEW_KEYBOARD === "true",
 };
 
 // Builder.tsx
@@ -556,7 +575,7 @@ if (FEATURE_FLAGS.USE_NEW_KEYBOARD_SYSTEM) {
   useGlobalKeyboardShortcuts();
 } else {
   useKeyboardShortcuts(); // 레거시
-  useZoomShortcuts();     // 레거시
+  useZoomShortcuts(); // 레거시
 }
 ```
 
@@ -571,64 +590,71 @@ if (FEATURE_FLAGS.USE_NEW_KEYBOARD_SYSTEM) {
 #### Part A: 레지스트리 확장 (Day 1-2)
 
 #### 0.1 타입 정의 확장
+
 ```typescript
 // src/builder/hooks/useKeyboardShortcutsRegistry.ts
 
 export type KeyboardModifier =
-  | 'cmd' | 'cmdShift' | 'cmdAlt'
-  | 'ctrl' | 'ctrlShift' | 'ctrlAlt'  // 신규: 패널 토글용 (macOS/Windows 동일)
-  | 'alt' | 'altShift'
-  | 'shift'           // 신규
-  | 'none';
+  | "cmd"
+  | "cmdShift"
+  | "cmdAlt"
+  | "ctrl"
+  | "ctrlShift"
+  | "ctrlAlt" // 신규: 패널 토글용 (macOS/Windows 동일)
+  | "alt"
+  | "altShift"
+  | "shift" // 신규
+  | "none";
 
 export interface KeyboardShortcut {
   key: string;
-  code?: string;      // 물리 키 코드 (선택)
+  code?: string; // 물리 키 코드 (선택)
   modifier: KeyboardModifier;
   handler: () => void;
   preventDefault?: boolean;
-  stopPropagation?: boolean;    // 신규
-  allowInInput?: boolean;       // 신규
-  priority?: number;            // 신규 (높을수록 먼저 처리)
+  stopPropagation?: boolean; // 신규
+  allowInInput?: boolean; // 신규
+  priority?: number; // 신규 (높을수록 먼저 처리)
 }
 
 export interface RegistryOptions {
-  eventType?: 'keydown' | 'keyup';
-  capture?: boolean;            // 신규
-  target?: 'window' | 'document';
+  eventType?: "keydown" | "keyup";
+  capture?: boolean; // 신규
+  target?: "window" | "document";
 }
 ```
 
 #### 0.2 구현 세부사항
 
-| 작업 | 설명 | 파일 |
-|------|------|------|
-| `capture` 옵션 | 이벤트 캡처 단계 처리 | `useKeyboardShortcutsRegistry.ts` |
-| `allowInInput` | 입력 필드 내 단축키 허용 여부 | `useKeyboardShortcutsRegistry.ts` |
-| `stopPropagation` | 이벤트 전파 중단 | `useKeyboardShortcutsRegistry.ts` |
-| `priority` | 우선순위 기반 정렬 처리 | `useKeyboardShortcutsRegistry.ts` |
-| `shift` modifier | Shift+Tab 등 지원 | `matchesShortcut.ts` |
+| 작업              | 설명                          | 파일                              |
+| ----------------- | ----------------------------- | --------------------------------- |
+| `capture` 옵션    | 이벤트 캡처 단계 처리         | `useKeyboardShortcutsRegistry.ts` |
+| `allowInInput`    | 입력 필드 내 단축키 허용 여부 | `useKeyboardShortcutsRegistry.ts` |
+| `stopPropagation` | 이벤트 전파 중단              | `useKeyboardShortcutsRegistry.ts` |
+| `priority`        | 우선순위 기반 정렬 처리       | `useKeyboardShortcutsRegistry.ts` |
+| `shift` modifier  | Shift+Tab 등 지원             | `matchesShortcut.ts`              |
 
 #### 0.3 구현 코드
+
 ```typescript
 export function useKeyboardShortcutsRegistry(
   shortcuts: KeyboardShortcut[],
   deps: React.DependencyList = [],
-  options: RegistryOptions = {}
+  options: RegistryOptions = {},
 ): void {
-  const { eventType = 'keydown', capture = false, target = 'window' } = options;
+  const { eventType = "keydown", capture = false, target = "window" } = options;
 
   useEffect(() => {
     const handleKeyEvent = (event: KeyboardEvent) => {
       const targetEl = event.target as HTMLElement;
       const isInputField =
-        targetEl.tagName === 'INPUT' ||
-        targetEl.tagName === 'TEXTAREA' ||
+        targetEl.tagName === "INPUT" ||
+        targetEl.tagName === "TEXTAREA" ||
         targetEl.isContentEditable;
 
       // 우선순위 기준 정렬 (내림차순)
-      const sorted = [...shortcuts].sort((a, b) =>
-        (b.priority || 0) - (a.priority || 0)
+      const sorted = [...shortcuts].sort(
+        (a, b) => (b.priority || 0) - (a.priority || 0),
       );
 
       for (const shortcut of sorted) {
@@ -644,9 +670,10 @@ export function useKeyboardShortcutsRegistry(
       }
     };
 
-    const eventTarget = target === 'document' ? document : window;
+    const eventTarget = target === "document" ? document : window;
     eventTarget.addEventListener(eventType, handleKeyEvent, { capture });
-    return () => eventTarget.removeEventListener(eventType, handleKeyEvent, { capture });
+    return () =>
+      eventTarget.removeEventListener(eventType, handleKeyEvent, { capture });
   }, [...deps]);
 }
 ```
@@ -658,8 +685,8 @@ export function useKeyboardShortcutsRegistry(
 
 ```typescript
 // ❌ 잘못된 방식 - selector 캐싱 문제 발생 가능
-const undo = useStore(s => s.undo);
-const redo = useStore(s => s.redo);
+const undo = useStore((s) => s.undo);
+const redo = useStore((s) => s.redo);
 
 // ✅ 올바른 방식 - 현재 코드와 동일
 const handler = () => {
@@ -682,14 +709,15 @@ if (isInputField && !shortcut.allowInInput) continue;
 ```
 
 #### 0.4 테스트 케이스
+
 ```typescript
 // tests/unit/useKeyboardShortcutsRegistry.test.ts
-describe('useKeyboardShortcutsRegistry', () => {
-  it('capture: true일 때 캡처 단계에서 이벤트 처리', () => {});
-  it('allowInInput: true일 때 입력 필드에서도 동작', () => {});
-  it('priority 높은 단축키가 먼저 실행됨', () => {});
-  it('stopPropagation: true일 때 이벤트 전파 중단', () => {});
-  it('shift modifier 정상 동작', () => {});
+describe("useKeyboardShortcutsRegistry", () => {
+  it("capture: true일 때 캡처 단계에서 이벤트 처리", () => {});
+  it("allowInInput: true일 때 입력 필드에서도 동작", () => {});
+  it("priority 높은 단축키가 먼저 실행됨", () => {});
+  it("stopPropagation: true일 때 이벤트 전파 중단", () => {});
+  it("shift modifier 정상 동작", () => {});
 });
 ```
 
@@ -699,63 +727,88 @@ describe('useKeyboardShortcutsRegistry', () => {
 
 #### 0+1.5 마이그레이션 대상
 
-| 파일 | 단축키 | 옵션 | 우선순위 |
-|------|--------|------|----------|
-| `useKeyboardShortcuts.ts` | Cmd+Z, Cmd+Shift+Z | `allowInInput: true`, `capture: true` | 100 |
-| `useZoomShortcuts.ts` | Cmd+=/-/0/1/2 | `capture: true` | 90 |
-| `useCopyPasteActions.ts` | Cmd+C/V, Delete | `scope: ['canvas-focused', 'panel:events']` | 50 |
-| `useBlockKeyboard.ts` | Arrow, Escape | `scope: ['canvas-focused', 'panel:events']` | 50 |
-| `PropertiesPanel.tsx` | Tab, Shift+Tab | `modifier: 'shift'` | 50 |
+| 파일                      | 단축키             | 옵션                                        | 우선순위 |
+| ------------------------- | ------------------ | ------------------------------------------- | -------- |
+| `useKeyboardShortcuts.ts` | Cmd+Z, Cmd+Shift+Z | `allowInInput: true`, `capture: true`       | 100      |
+| `useZoomShortcuts.ts`     | Cmd+=/-/0/1/2      | `capture: true`                             | 90       |
+| `useCopyPasteActions.ts`  | Cmd+C/V, Delete    | `scope: ['canvas-focused', 'panel:events']` | 50       |
+| `useBlockKeyboard.ts`     | Arrow, Escape      | `scope: ['canvas-focused', 'panel:events']` | 50       |
+| `PropertiesPanel.tsx`     | Tab, Shift+Tab     | `modifier: 'shift'`                         | 50       |
 
 #### 1.2 마이그레이션 단계
 
 **Day 1: 시스템 단축키**
+
 ```typescript
 // useKeyboardShortcuts.ts → useGlobalKeyboardShortcuts.ts로 이동
 
 // Before (useKeyboardShortcuts.ts)
-document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-    e.preventDefault();
-    if (e.shiftKey) redo();
-    else undo();
-  }
-}, { capture: true });
+document.addEventListener(
+  "keydown",
+  (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    }
+  },
+  { capture: true },
+);
 
 // After (useGlobalKeyboardShortcuts.ts 내부)
-useKeyboardShortcutsRegistry([
-  {
-    key: 'z',
-    modifier: 'cmd',
-    handler: undo,
-    allowInInput: true,
-    priority: 100,
-  },
-  {
-    key: 'z',
-    modifier: 'cmdShift',
-    handler: redo,
-    allowInInput: true,
-    priority: 100,
-  },
-], [], { capture: true, target: 'document' });
+useKeyboardShortcutsRegistry(
+  [
+    {
+      key: "z",
+      modifier: "cmd",
+      handler: undo,
+      allowInInput: true,
+      priority: 100,
+    },
+    {
+      key: "z",
+      modifier: "cmdShift",
+      handler: redo,
+      allowInInput: true,
+      priority: 100,
+    },
+  ],
+  [],
+  { capture: true, target: "document" },
+);
 ```
 
 **Day 2: Zoom 단축키**
+
 ```typescript
 // useZoomShortcuts.ts 제거
 
 // After
-useKeyboardShortcutsRegistry([
-  { key: '=', modifier: 'cmd', handler: () => zoomTo(zoom + 0.1), priority: 90 },
-  { key: '-', modifier: 'cmd', handler: () => zoomTo(zoom - 0.1), priority: 90 },
-  { key: '0', modifier: 'cmd', handler: () => fitToScreen(), priority: 90 },
-  { key: '1', modifier: 'cmd', handler: () => zoomTo(1), priority: 90 },
-  { key: '2', modifier: 'cmd', handler: () => zoomTo(2), priority: 90 },
-], [], { capture: true });
+useKeyboardShortcutsRegistry(
+  [
+    {
+      key: "=",
+      modifier: "cmd",
+      handler: () => zoomTo(zoom + 0.1),
+      priority: 90,
+    },
+    {
+      key: "-",
+      modifier: "cmd",
+      handler: () => zoomTo(zoom - 0.1),
+      priority: 90,
+    },
+    { key: "0", modifier: "cmd", handler: () => fitToScreen(), priority: 90 },
+    { key: "1", modifier: "cmd", handler: () => zoomTo(1), priority: 90 },
+    { key: "2", modifier: "cmd", handler: () => zoomTo(2), priority: 90 },
+  ],
+  [],
+  { capture: true },
+);
 ```
 
 **Day 3: 패널 단축키 + 테스트**
+
 ```typescript
 // useCopyPasteActions.ts, useBlockKeyboard.ts 통합
 // E2E 테스트 작성
@@ -763,25 +816,26 @@ useKeyboardShortcutsRegistry([
 
 #### 1.3 유지할 컴포넌트 로컬 단축키
 
-| 컴포넌트 | 단축키 | 이유 |
-|----------|--------|------|
+| 컴포넌트          | 단축키        | 이유                           |
+| ----------------- | ------------- | ------------------------------ |
 | PropertyUnitInput | Arrow Up/Down | 값 조절이 컴포넌트 상태에 의존 |
-| PropertyCustomId | Enter/Escape | 유효성 검사 로직 연결 |
-| TextEditOverlay | 텍스트 편집 | 콘텐츠 편집 모드 전용 |
-| AIPanel | Enter (제출) | 폼 제출 로직 연결 |
+| PropertyCustomId  | Enter/Escape  | 유효성 검사 로직 연결          |
+| TextEditOverlay   | 텍스트 편집   | 콘텐츠 편집 모드 전용          |
+| AIPanel           | Enter (제출)  | 폼 제출 로직 연결              |
 
 #### 1.4 E2E 테스트
+
 ```typescript
 // tests/e2e/keyboard-shortcuts.spec.ts
-test.describe('Keyboard Shortcuts Migration', () => {
-  test('Undo/Redo가 입력 필드에서도 동작', async ({ page }) => {
-    await page.fill('[data-testid="property-input"]', 'test');
-    await page.keyboard.press('Control+z');
-    await expect(page.locator('[data-testid="toast"]')).toContainText('Undo');
+test.describe("Keyboard Shortcuts Migration", () => {
+  test("Undo/Redo가 입력 필드에서도 동작", async ({ page }) => {
+    await page.fill('[data-testid="property-input"]', "test");
+    await page.keyboard.press("Control+z");
+    await expect(page.locator('[data-testid="toast"]')).toContainText("Undo");
   });
 
-  test('Zoom 단축키가 브라우저 확대 차단', async ({ page }) => {
-    await page.keyboard.press('Control+=');
+  test("Zoom 단축키가 브라우저 확대 차단", async ({ page }) => {
+    await page.keyboard.press("Control+=");
     const browserZoom = await page.evaluate(() => window.visualViewport?.scale);
     expect(browserZoom).toBe(1); // 브라우저 확대 안됨
   });
@@ -795,34 +849,35 @@ test.describe('Keyboard Shortcuts Migration', () => {
 **목표:** 단축키 정의를 JSON 설정 파일로 분리
 
 #### 2.1 설정 파일 구조
+
 ```typescript
 // src/builder/config/keyboardShortcuts.ts
 export const SHORTCUT_DEFINITIONS = {
   // System
   undo: {
-    key: 'z',
-    modifier: 'cmd',
-    category: 'system',
+    key: "z",
+    modifier: "cmd",
+    category: "system",
     priority: 100,
     allowInInput: true,
-    description: 'Undo',
+    description: "Undo",
   },
   redo: {
-    key: 'z',
-    modifier: 'cmdShift',
-    category: 'system',
+    key: "z",
+    modifier: "cmdShift",
+    category: "system",
     priority: 100,
     allowInInput: true,
-    description: 'Redo',
+    description: "Redo",
   },
 
   // Navigation
   zoomIn: {
-    key: '=',
-    modifier: 'cmd',
-    category: 'navigation',
+    key: "=",
+    modifier: "cmd",
+    category: "navigation",
     priority: 90,
-    description: 'Zoom In',
+    description: "Zoom In",
   },
   // ... 67개 단축키
 } as const;
@@ -832,12 +887,12 @@ export type ShortcutId = keyof typeof SHORTCUT_DEFINITIONS;
 
 #### 2.2 작업 목록
 
-| 작업 | 설명 |
-|------|------|
-| 설정 파일 생성 | `keyboardShortcuts.ts` 생성 및 67개 단축키 정의 |
-| 타입 정의 | `ShortcutId`, `ShortcutDefinition` 타입 |
-| 핸들러 분리 | 설정(definition)과 핸들러(handler) 분리 |
-| 도움말 데이터 연동 | `KeyboardShortcutsHelp.tsx`에서 설정 파일 사용 |
+| 작업               | 설명                                            |
+| ------------------ | ----------------------------------------------- |
+| 설정 파일 생성     | `keyboardShortcuts.ts` 생성 및 67개 단축키 정의 |
+| 타입 정의          | `ShortcutId`, `ShortcutDefinition` 타입         |
+| 핸들러 분리        | 설정(definition)과 핸들러(handler) 분리         |
+| 도움말 데이터 연동 | `KeyboardShortcutsHelp.tsx`에서 설정 파일 사용  |
 
 ---
 
@@ -846,10 +901,11 @@ export type ShortcutId = keyof typeof SHORTCUT_DEFINITIONS;
 **목표:** 모든 전역 단축키를 한 곳에서 등록
 
 #### 3.1 통합 훅 구조
+
 ```typescript
 // src/builder/hooks/useGlobalKeyboardShortcuts.ts
 
-import { SHORTCUT_DEFINITIONS } from '../config/keyboardShortcuts';
+import { SHORTCUT_DEFINITIONS } from "../config/keyboardShortcuts";
 
 export function useGlobalKeyboardShortcuts() {
   const { undo, redo } = useStore.getState();
@@ -872,24 +928,32 @@ export function useGlobalKeyboardShortcuts() {
   };
 
   // 시스템 단축키 (capture phase)
-  const systemShortcuts = useMemo(() =>
-    Object.entries(SHORTCUT_DEFINITIONS)
-      .filter(([_, def]) => def.category === 'system' || def.category === 'navigation')
-      .map(([id, def]) => ({ ...def, handler: handlers[id as ShortcutId] })),
-    [handlers]
+  const systemShortcuts = useMemo(
+    () =>
+      Object.entries(SHORTCUT_DEFINITIONS)
+        .filter(
+          ([_, def]) =>
+            def.category === "system" || def.category === "navigation",
+        )
+        .map(([id, def]) => ({ ...def, handler: handlers[id as ShortcutId] })),
+    [handlers],
   );
 
   useKeyboardShortcutsRegistry(systemShortcuts, [], {
     capture: true,
-    target: 'document'
+    target: "document",
   });
 
   // 일반 단축키
-  const normalShortcuts = useMemo(() =>
-    Object.entries(SHORTCUT_DEFINITIONS)
-      .filter(([_, def]) => def.category !== 'system' && def.category !== 'navigation')
-      .map(([id, def]) => ({ ...def, handler: handlers[id as ShortcutId] })),
-    [handlers]
+  const normalShortcuts = useMemo(
+    () =>
+      Object.entries(SHORTCUT_DEFINITIONS)
+        .filter(
+          ([_, def]) =>
+            def.category !== "system" && def.category !== "navigation",
+        )
+        .map(([id, def]) => ({ ...def, handler: handlers[id as ShortcutId] })),
+    [handlers],
   );
 
   useKeyboardShortcutsRegistry(normalShortcuts, []);
@@ -897,6 +961,7 @@ export function useGlobalKeyboardShortcuts() {
 ```
 
 #### 3.2 BuilderCore에 적용
+
 ```typescript
 // src/builder/main/BuilderCore.tsx
 
@@ -916,12 +981,12 @@ export function BuilderCore() {
 
 #### 3.3 레거시 코드 제거
 
-| 삭제 대상 | 대체 | 호출 위치 수정 |
-|----------|------|---------------|
-| `useKeyboardShortcuts.ts` | `useGlobalKeyboardShortcuts` | `BuilderCore.tsx:164` |
-| `useZoomShortcuts.ts` | `useGlobalKeyboardShortcuts` | `Workspace.tsx:68` 제거 |
-| `useCopyPasteActions.ts` 키보드 부분 | `useGlobalKeyboardShortcuts` | Events 패널 |
-| `useBlockKeyboard.ts` 일부 | `useGlobalKeyboardShortcuts` | Events 패널 |
+| 삭제 대상                            | 대체                         | 호출 위치 수정          |
+| ------------------------------------ | ---------------------------- | ----------------------- |
+| `useKeyboardShortcuts.ts`            | `useGlobalKeyboardShortcuts` | `BuilderCore.tsx:164`   |
+| `useZoomShortcuts.ts`                | `useGlobalKeyboardShortcuts` | `Workspace.tsx:68` 제거 |
+| `useCopyPasteActions.ts` 키보드 부분 | `useGlobalKeyboardShortcuts` | Events 패널             |
+| `useBlockKeyboard.ts` 일부           | `useGlobalKeyboardShortcuts` | Events 패널             |
 
 **주의:** `useCopyPasteActions.ts`의 `useCopyPasteActions()` 훅(클립보드 상태 관리)은 유지하고, `useActionKeyboardShortcuts()` 훅만 통합합니다.
 
@@ -932,49 +997,50 @@ export function BuilderCore() {
 **목표:** 스코프 기반 단축키 필터링으로 충돌 해결
 
 #### 4.1 스코프 정의
+
 ```typescript
 // src/builder/types/keyboard.ts
 
 export type ShortcutScope =
-  | 'global'           // 항상 활성
-  | 'canvas-focused'   // 캔버스 포커스 시
-  | 'panel:properties' // Properties 패널 활성 시
-  | 'panel:events'     // Events 패널 활성 시
-  | 'panel:nodes'      // Nodes 패널 활성 시
-  | 'modal'            // 모달 열림 시
-  | 'text-editing';    // 텍스트 편집 중 (input/textarea/contenteditable)
+  | "global" // 항상 활성
+  | "canvas-focused" // 캔버스 포커스 시
+  | "panel:properties" // Properties 패널 활성 시
+  | "panel:events" // Events 패널 활성 시
+  | "panel:nodes" // Nodes 패널 활성 시
+  | "modal" // 모달 열림 시
+  | "text-editing"; // 텍스트 편집 중 (input/textarea/contenteditable)
 
 export type ShortcutCategory =
-  | 'system'      // Undo, Redo, Save (priority: 100)
-  | 'navigation'  // Zoom, Pan (priority: 90)
-  | 'panels'      // Panel toggles (priority: 80)
-  | 'canvas'      // Element manipulation (priority: 70)
-  | 'properties'  // Property editing (priority: 50)
-  | 'events'      // Events panel (priority: 50)
-  | 'nodes';      // Nodes panel (priority: 50)
+  | "system" // Undo, Redo, Save (priority: 100)
+  | "navigation" // Zoom, Pan (priority: 90)
+  | "panels" // Panel toggles (priority: 80)
+  | "canvas" // Element manipulation (priority: 70)
+  | "properties" // Property editing (priority: 50)
+  | "events" // Events panel (priority: 50)
+  | "nodes"; // Nodes panel (priority: 50)
 ```
 
 #### 4.1.1 text-editing 스코프 동작 정의
 
 `text-editing` 스코프에서는 대부분의 단축키가 비활성화되어 텍스트 입력에 집중합니다.
 
-| 단축키 | text-editing에서 | 이유 |
-|--------|------------------|------|
-| `Cmd+Z` / `Cmd+Shift+Z` | ✅ 허용 | Undo/Redo는 입력 필드에서도 필수 (`allowInInput: true`) |
-| `Cmd+C` / `Cmd+V` / `Cmd+X` | ✅ 허용 | 기본 클립보드는 브라우저에 위임 (커스텀 핸들러 비활성) |
-| `Cmd+=` / `Cmd+-` | ✅ 허용 | Zoom은 전역 필요 (`allowInInput: true`) |
-| `Escape` | ✅ 허용 | 편집 모드 종료 용도 |
-| `Delete` / `Backspace` | ❌ 차단 | 텍스트 삭제에 사용 (요소 삭제 방지) |
-| `Arrow Keys` | ❌ 차단 | 텍스트 커서 이동에 사용 |
-| `Tab` / `Shift+Tab` | ❌ 차단 | 포커스 이동에 사용 |
-| Single keys (`V`, `B`, etc.) | ❌ 차단 | 문자 입력에 사용 |
+| 단축키                       | text-editing에서 | 이유                                                    |
+| ---------------------------- | ---------------- | ------------------------------------------------------- |
+| `Cmd+Z` / `Cmd+Shift+Z`      | ✅ 허용          | Undo/Redo는 입력 필드에서도 필수 (`allowInInput: true`) |
+| `Cmd+C` / `Cmd+V` / `Cmd+X`  | ✅ 허용          | 기본 클립보드는 브라우저에 위임 (커스텀 핸들러 비활성)  |
+| `Cmd+=` / `Cmd+-`            | ✅ 허용          | Zoom은 전역 필요 (`allowInInput: true`)                 |
+| `Escape`                     | ✅ 허용          | 편집 모드 종료 용도                                     |
+| `Delete` / `Backspace`       | ❌ 차단          | 텍스트 삭제에 사용 (요소 삭제 방지)                     |
+| `Arrow Keys`                 | ❌ 차단          | 텍스트 커서 이동에 사용                                 |
+| `Tab` / `Shift+Tab`          | ❌ 차단          | 포커스 이동에 사용                                      |
+| Single keys (`V`, `B`, etc.) | ❌ 차단          | 문자 입력에 사용                                        |
 
 ```typescript
 // text-editing 스코프 감지
 const isTextEditing = (target: HTMLElement): boolean => {
   return (
-    target.tagName === 'INPUT' ||
-    target.tagName === 'TEXTAREA' ||
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
     target.isContentEditable ||
     target.closest('[data-text-editing="true"]') !== null
   );
@@ -985,35 +1051,37 @@ const isTextEditing = (target: HTMLElement): boolean => {
 
 `cmd` modifier는 플랫폼에 따라 자동 변환됩니다.
 
-| Modifier | macOS | Windows/Linux |
-|----------|-------|---------------|
-| `cmd` | ⌘ Command | Ctrl |
-| `cmdShift` | ⌘⇧ | Ctrl+Shift |
-| `cmdAlt` | ⌘⌥ | Ctrl+Alt |
-| `alt` | ⌥ Option | Alt |
-| `ctrl` | ^ Control | Ctrl (별도 처리) |
+| Modifier   | macOS     | Windows/Linux    |
+| ---------- | --------- | ---------------- |
+| `cmd`      | ⌘ Command | Ctrl             |
+| `cmdShift` | ⌘⇧        | Ctrl+Shift       |
+| `cmdAlt`   | ⌘⌥        | Ctrl+Alt         |
+| `alt`      | ⌥ Option  | Alt              |
+| `ctrl`     | ^ Control | Ctrl (별도 처리) |
 
 ```typescript
 // src/builder/utils/keyboardUtils.ts
 
 export function isCmdKey(event: KeyboardEvent): boolean {
   // macOS: metaKey (⌘), Windows/Linux: ctrlKey
-  return navigator.platform.includes('Mac') ? event.metaKey : event.ctrlKey;
+  return navigator.platform.includes("Mac") ? event.metaKey : event.ctrlKey;
 }
 
-export function formatShortcutForPlatform(shortcut: ShortcutDefinition): string {
-  const isMac = navigator.platform.includes('Mac');
+export function formatShortcutForPlatform(
+  shortcut: ShortcutDefinition,
+): string {
+  const isMac = navigator.platform.includes("Mac");
   const modifierSymbols = {
-    cmd: isMac ? '⌘' : 'Ctrl+',
-    shift: isMac ? '⇧' : 'Shift+',
-    alt: isMac ? '⌥' : 'Alt+',
-    ctrl: isMac ? '⌃' : 'Ctrl+',
+    cmd: isMac ? "⌘" : "Ctrl+",
+    shift: isMac ? "⇧" : "Shift+",
+    alt: isMac ? "⌥" : "Alt+",
+    ctrl: isMac ? "⌃" : "Ctrl+",
   };
   // ...
 }
 ```
 
-**패널 토글 단축키 (Ctrl+Shift+*):**
+**패널 토글 단축키 (Ctrl+Shift+\*):**
 
 패널 토글은 `Ctrl+Shift` 조합을 사용하며, macOS에서도 `Ctrl`을 사용합니다 (⌘가 아님).
 이는 `Cmd+Shift+*`가 시스템 단축키와 충돌할 수 있기 때문입니다.
@@ -1025,64 +1093,68 @@ export function formatShortcutForPlatform(shortcut: ShortcutDefinition): string 
 ```
 
 #### 4.2 활성 스코프 감지 훅
+
 ```typescript
 // src/builder/hooks/useActiveScope.ts
 
 export function useActiveScope(): ShortcutScope {
-  const activePanel = useActivePanelStore(s => s.activePanel);
-  const isModalOpen = useModalStore(s => s.isOpen);
-  const isTextEditing = useTextEditStore(s => s.isEditing);
+  const activePanel = useActivePanelStore((s) => s.activePanel);
+  const isModalOpen = useModalStore((s) => s.isOpen);
+  const isTextEditing = useTextEditStore((s) => s.isEditing);
   const focusedElement = useFocusedElement();
 
-  if (isModalOpen) return 'modal';
-  if (isTextEditing) return 'text-editing';
-  if (focusedElement?.dataset.scope === 'canvas') return 'canvas-focused';
-  if (activePanel === 'properties') return 'panel:properties';
-  if (activePanel === 'events') return 'panel:events';
-  if (activePanel === 'nodes') return 'panel:nodes';
-  return 'global';
+  if (isModalOpen) return "modal";
+  if (isTextEditing) return "text-editing";
+  if (focusedElement?.dataset.scope === "canvas") return "canvas-focused";
+  if (activePanel === "properties") return "panel:properties";
+  if (activePanel === "events") return "panel:events";
+  if (activePanel === "nodes") return "panel:nodes";
+  return "global";
 }
 ```
 
 #### 4.3 스코프 기반 필터링
+
 ```typescript
 export function useGlobalKeyboardShortcuts() {
   const activeScope = useActiveScope();
 
-  const activeShortcuts = useMemo(() =>
-    ALL_SHORTCUTS.filter(s => {
-      // global은 항상 활성
-      if (s.scope === 'global') return true;
-      // 배열이면 포함 여부 확인
-      if (Array.isArray(s.scope)) return s.scope.includes(activeScope);
-      // 단일 스코프면 일치 확인
-      return s.scope === activeScope;
-    }),
-    [activeScope]
+  const activeShortcuts = useMemo(
+    () =>
+      ALL_SHORTCUTS.filter((s) => {
+        // global은 항상 활성
+        if (s.scope === "global") return true;
+        // 배열이면 포함 여부 확인
+        if (Array.isArray(s.scope)) return s.scope.includes(activeScope);
+        // 단일 스코프면 일치 확인
+        return s.scope === activeScope;
+      }),
+    [activeScope],
   );
 
   useKeyboardShortcutsRegistry(activeShortcuts, [activeScope], {
     capture: true,
-    target: 'document',
+    target: "document",
   });
 }
 ```
 
 #### 4.4 충돌 해결 예시
+
 ```typescript
 // 같은 Cmd+C가 스코프에 따라 다르게 동작
 const shortcuts = [
   {
-    key: 'c',
-    modifier: 'cmd',
-    scope: 'canvas-focused',  // 캔버스에서만
-    handler: copyElements
+    key: "c",
+    modifier: "cmd",
+    scope: "canvas-focused", // 캔버스에서만
+    handler: copyElements,
   },
   {
-    key: 'c',
-    modifier: 'cmd',
-    scope: 'panel:events',    // Events 패널에서만
-    handler: copyActions
+    key: "c",
+    modifier: "cmd",
+    scope: "panel:events", // Events 패널에서만
+    handler: copyActions,
   },
 ];
 ```
@@ -1094,6 +1166,7 @@ const shortcuts = [
 **목표:** 개발 디버거 및 도움말 패널 개선
 
 #### 5.1 Shortcut Debugger (개발 전용)
+
 ```typescript
 // src/builder/devtools/ShortcutDebugger.tsx
 
@@ -1127,6 +1200,7 @@ export function ShortcutDebugger() {
 ```
 
 #### 5.2 Help Panel 개선
+
 ```typescript
 // src/builder/components/help/KeyboardHelpPanel.tsx
 
@@ -1180,6 +1254,7 @@ export function KeyboardHelpPanel() {
 ```
 
 #### 5.3 충돌 감지 (개발 시점)
+
 ```typescript
 // src/builder/utils/detectShortcutConflicts.ts
 
@@ -1199,8 +1274,8 @@ export function detectConflicts(): ConflictInfo[] {
     keyMap.set(key, [...existing, def]);
   }
 
-  if (process.env.NODE_ENV === 'development' && conflicts.length > 0) {
-    console.warn('⚠️ Keyboard shortcut conflicts detected:', conflicts);
+  if (process.env.NODE_ENV === "development" && conflicts.length > 0) {
+    console.warn("⚠️ Keyboard shortcut conflicts detected:", conflicts);
   }
 
   return conflicts;
@@ -1213,19 +1288,19 @@ export function detectConflicts(): ConflictInfo[] {
 
 ### 5.1 테스트 커버리지 목표
 
-| 테스트 유형 | 범위 | 도구 |
-|------------|------|------|
-| **Unit Test** | 레지스트리 로직, 매칭 함수 | Vitest |
-| **Integration** | 스코프 전환, 충돌 감지 | Vitest + Testing Library |
-| **E2E** | 실제 단축키 동작, 입력 필드 상호작용 | Playwright |
+| 테스트 유형     | 범위                                 | 도구                     |
+| --------------- | ------------------------------------ | ------------------------ |
+| **Unit Test**   | 레지스트리 로직, 매칭 함수           | Vitest                   |
+| **Integration** | 스코프 전환, 충돌 감지               | Vitest + Testing Library |
+| **E2E**         | 실제 단축키 동작, 입력 필드 상호작용 | Playwright               |
 
 ### 5.2 품질 지표
 
-| 지표 | 현재 | 목표 (Phase 3) | 목표 (Phase 5) |
-|------|------|----------------|----------------|
-| 테스트 커버리지 | 0% | 80% | 90% |
-| 충돌 감지율 | 0% | 100% | 100% |
-| 중앙화율 | 45% | 95% | 100% |
+| 지표            | 현재 | 목표 (Phase 3) | 목표 (Phase 5) |
+| --------------- | ---- | -------------- | -------------- |
+| 테스트 커버리지 | 0%   | 80%            | 90%            |
+| 충돌 감지율     | 0%   | 100%           | 100%           |
+| 중앙화율        | 45%  | 95%            | 100%           |
 
 ---
 
@@ -1233,69 +1308,69 @@ export function detectConflicts(): ConflictInfo[] {
 
 ### A.1 System Shortcuts
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Cmd+Z` | Undo | system | global |
-| `Cmd+Shift+Z` | Redo | system | global |
+| Shortcut      | Action | Category | Scope  |
+| ------------- | ------ | -------- | ------ |
+| `Cmd+Z`       | Undo   | system   | global |
+| `Cmd+Shift+Z` | Redo   | system   | global |
 
 ### A.2 Navigation Shortcuts
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Cmd+=` | Zoom In | navigation | global |
-| `Cmd+-` | Zoom Out | navigation | global |
-| `Cmd+0` | Fit to Screen | navigation | global |
-| `Cmd+1` | Zoom 100% | navigation | global |
-| `Cmd+2` | Zoom 200% | navigation | global |
+| Shortcut | Action        | Category   | Scope  |
+| -------- | ------------- | ---------- | ------ |
+| `Cmd+=`  | Zoom In       | navigation | global |
+| `Cmd+-`  | Zoom Out      | navigation | global |
+| `Cmd+0`  | Fit to Screen | navigation | global |
+| `Cmd+1`  | Zoom 100%     | navigation | global |
+| `Cmd+2`  | Zoom 200%     | navigation | global |
 
 ### A.3 Panel Shortcuts
 
 > **Note:** 패널 토글은 `Ctrl+Shift` 조합을 사용합니다 (macOS/Windows 동일).
 > macOS에서도 `⌘`가 아닌 `⌃ Ctrl`을 사용하여 시스템 단축키 충돌을 방지합니다.
 
-| Shortcut | Action | Category | Scope | Modifier |
-|----------|--------|----------|-------|----------|
-| `Ctrl+Shift+N` | Toggle Nodes | panels | global | `ctrlShift` |
-| `Ctrl+Shift+C` | Toggle Components | panels | global | `ctrlShift` |
-| `Ctrl+Shift+P` | Toggle Properties | panels | global | `ctrlShift` |
-| `Ctrl+Shift+S` | Toggle Styles | panels | global | `ctrlShift` |
-| `Ctrl+Shift+E` | Toggle Events | panels | global | `ctrlShift` |
-| `Ctrl+Shift+H` | Toggle History | panels | global | `ctrlShift` |
-| `Ctrl+,` | Open Settings | panels | global | `ctrl` |
+| Shortcut       | Action            | Category | Scope  | Modifier    |
+| -------------- | ----------------- | -------- | ------ | ----------- |
+| `Ctrl+Shift+N` | Toggle Nodes      | panels   | global | `ctrlShift` |
+| `Ctrl+Shift+C` | Toggle Components | panels   | global | `ctrlShift` |
+| `Ctrl+Shift+P` | Toggle Properties | panels   | global | `ctrlShift` |
+| `Ctrl+Shift+S` | Toggle Styles     | panels   | global | `ctrlShift` |
+| `Ctrl+Shift+E` | Toggle Events     | panels   | global | `ctrlShift` |
+| `Ctrl+Shift+H` | Toggle History    | panels   | global | `ctrlShift` |
+| `Ctrl+,`       | Open Settings     | panels   | global | `ctrl`      |
 
 ### A.4 Canvas Shortcuts
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Cmd+C` | Copy elements | canvas | `['canvas-focused', 'panel:events']` |
-| `Cmd+V` | Paste elements | canvas | `['canvas-focused', 'panel:events']` |
-| `Cmd+D` | Duplicate | canvas | canvas-focused |
-| `Cmd+A` | Select all | canvas | canvas-focused |
-| `Escape` | Clear selection | canvas | `['canvas-focused', 'panel:events']` |
-| `Tab` | Next element | canvas | canvas-focused |
-| `Shift+Tab` | Previous element | canvas | canvas-focused |
-| `Backspace` | Delete | canvas | `['canvas-focused', 'panel:events']` |
+| Shortcut    | Action           | Category | Scope                                |
+| ----------- | ---------------- | -------- | ------------------------------------ |
+| `Cmd+C`     | Copy elements    | canvas   | `['canvas-focused', 'panel:events']` |
+| `Cmd+V`     | Paste elements   | canvas   | `['canvas-focused', 'panel:events']` |
+| `Cmd+D`     | Duplicate        | canvas   | canvas-focused                       |
+| `Cmd+A`     | Select all       | canvas   | canvas-focused                       |
+| `Escape`    | Clear selection  | canvas   | `['canvas-focused', 'panel:events']` |
+| `Tab`       | Next element     | canvas   | canvas-focused                       |
+| `Shift+Tab` | Previous element | canvas   | canvas-focused                       |
+| `Backspace` | Delete           | canvas   | `['canvas-focused', 'panel:events']` |
 
 ### A.5 Grouping & Alignment
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Cmd+G` | Group | canvas | canvas-focused |
-| `Cmd+Shift+G` | Ungroup | canvas | canvas-focused |
-| `Cmd+Shift+L` | Align Left | canvas | canvas-focused |
-| `Cmd+Shift+H` | Align H Center | canvas | canvas-focused |
-| `Cmd+Shift+R` | Align Right | canvas | canvas-focused |
-| `Cmd+Shift+T` | Align Top | canvas | canvas-focused |
-| `Cmd+Shift+M` | Align V Middle | canvas | canvas-focused |
-| `Cmd+Shift+B` | Align Bottom | canvas | canvas-focused |
-| `Cmd+Shift+D` | Distribute H | canvas | canvas-focused |
-| `Alt+Shift+V` | Distribute V | canvas | canvas-focused |
+| Shortcut      | Action         | Category | Scope          |
+| ------------- | -------------- | -------- | -------------- |
+| `Cmd+G`       | Group          | canvas   | canvas-focused |
+| `Cmd+Shift+G` | Ungroup        | canvas   | canvas-focused |
+| `Cmd+Shift+L` | Align Left     | canvas   | canvas-focused |
+| `Cmd+Shift+H` | Align H Center | canvas   | canvas-focused |
+| `Cmd+Shift+R` | Align Right    | canvas   | canvas-focused |
+| `Cmd+Shift+T` | Align Top      | canvas   | canvas-focused |
+| `Cmd+Shift+M` | Align V Middle | canvas   | canvas-focused |
+| `Cmd+Shift+B` | Align Bottom   | canvas   | canvas-focused |
+| `Cmd+Shift+D` | Distribute H   | canvas   | canvas-focused |
+| `Alt+Shift+V` | Distribute V   | canvas   | canvas-focused |
 
 ### A.6 Properties Shortcuts
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Cmd+Shift+C` | Copy properties | properties | panel:properties |
+| Shortcut      | Action           | Category   | Scope            |
+| ------------- | ---------------- | ---------- | ---------------- |
+| `Cmd+Shift+C` | Copy properties  | properties | panel:properties |
 | `Cmd+Shift+V` | Paste properties | properties | panel:properties |
 
 ### A.7 Events Panel Shortcuts
@@ -1303,31 +1378,31 @@ export function detectConflicts(): ConflictInfo[] {
 > **Note:** Copy/Paste/Delete/Escape는 Canvas와 공유되며, 스코프 배열로 정의됩니다.
 > 핸들러 내부에서 현재 컨텍스트에 따라 동작이 분기됩니다.
 
-| Shortcut | Action | Category | Scope | Note |
-|----------|--------|----------|-------|------|
-| `Cmd+C` | Copy actions | events | (A.4 참조) | Canvas와 핸들러 공유 |
-| `Cmd+V` | Paste actions | events | (A.4 참조) | Canvas와 핸들러 공유 |
-| `Delete` | Delete actions | events | (A.4 참조) | Canvas와 핸들러 공유 |
-| `Arrow Up/Down` | Navigate actions | events | `['canvas-focused', 'panel:events']` | |
-| `Escape` | Deselect | events | (A.4 참조) | Canvas와 핸들러 공유 |
+| Shortcut        | Action           | Category | Scope                                | Note                 |
+| --------------- | ---------------- | -------- | ------------------------------------ | -------------------- |
+| `Cmd+C`         | Copy actions     | events   | (A.4 참조)                           | Canvas와 핸들러 공유 |
+| `Cmd+V`         | Paste actions    | events   | (A.4 참조)                           | Canvas와 핸들러 공유 |
+| `Delete`        | Delete actions   | events   | (A.4 참조)                           | Canvas와 핸들러 공유 |
+| `Arrow Up/Down` | Navigate actions | events   | `['canvas-focused', 'panel:events']` |                      |
+| `Escape`        | Deselect         | events   | (A.4 참조)                           | Canvas와 핸들러 공유 |
 
 ### A.8 Tree Navigation
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Arrow Down` | Next item | nodes | panel:nodes |
-| `Arrow Up` | Previous item | nodes | panel:nodes |
-| `Home` | First item | nodes | panel:nodes |
-| `End` | Last item | nodes | panel:nodes |
-| `Enter/Space` | Select item | nodes | panel:nodes |
-| `Arrow Right` | Expand | nodes | panel:nodes |
-| `Arrow Left` | Collapse | nodes | panel:nodes |
+| Shortcut      | Action        | Category | Scope       |
+| ------------- | ------------- | -------- | ----------- |
+| `Arrow Down`  | Next item     | nodes    | panel:nodes |
+| `Arrow Up`    | Previous item | nodes    | panel:nodes |
+| `Home`        | First item    | nodes    | panel:nodes |
+| `End`         | Last item     | nodes    | panel:nodes |
+| `Enter/Space` | Select item   | nodes    | panel:nodes |
+| `Arrow Right` | Expand        | nodes    | panel:nodes |
+| `Arrow Left`  | Collapse      | nodes    | panel:nodes |
 
 ### A.9 Help & Misc
 
-| Shortcut | Action | Category | Scope |
-|----------|--------|----------|-------|
-| `Cmd+?` | Toggle help | system | global |
+| Shortcut | Action      | Category | Scope  |
+| -------- | ----------- | -------- | ------ |
+| `Cmd+?`  | Toggle help | system   | global |
 
 ---
 
@@ -1335,31 +1410,31 @@ export function detectConflicts(): ConflictInfo[] {
 
 ### B.1 Property Input Components
 
-| Component | Location | Shortcuts |
-|-----------|----------|-----------|
+| Component         | Location               | Shortcuts            |
+| ----------------- | ---------------------- | -------------------- |
 | PropertyUnitInput | `components/property/` | Enter, Arrow Up/Down |
-| PropertyCustomId | `components/property/` | Enter, Escape |
-| PropertyColor | `components/property/` | Enter |
-| PropertyInput | `components/property/` | Enter |
+| PropertyCustomId  | `components/property/` | Enter, Escape        |
+| PropertyColor     | `components/property/` | Enter                |
+| PropertyInput     | `components/property/` | Enter                |
 
 ### B.2 Keyboard Hooks
 
-| Hook | Location | Purpose |
-|------|----------|---------|
-| useKeyboardShortcuts | `hooks/` | Undo/Redo (legacy) |
-| useKeyboardShortcutsRegistry | `hooks/` | Central registry |
-| useTreeKeyboardNavigation | `hooks/` | Tree navigation |
-| useZoomShortcuts | `workspace/` | Zoom controls (legacy) |
+| Hook                         | Location     | Purpose                |
+| ---------------------------- | ------------ | ---------------------- |
+| useKeyboardShortcuts         | `hooks/`     | Undo/Redo (legacy)     |
+| useKeyboardShortcutsRegistry | `hooks/`     | Central registry       |
+| useTreeKeyboardNavigation    | `hooks/`     | Tree navigation        |
+| useZoomShortcuts             | `workspace/` | Zoom controls (legacy) |
 
 ### B.3 Shared vs Custom
 
-| Shared (`src/shared`) | Custom (`src/builder`) | Reason |
-|----------------------|------------------------|--------|
-| NumberField | PropertyUnitInput | CSS units + shorthand parsing |
-| TextField | PropertyInput | Simpler API + multiline |
-| ColorPicker | PropertyColor | Drag state + onChangeEnd |
-| - | PropertyCustomId | Element ID validation |
-| Tree | useTreeKeyboardNavigation | Builder-specific behavior |
+| Shared (`src/shared`) | Custom (`src/builder`)    | Reason                        |
+| --------------------- | ------------------------- | ----------------------------- |
+| NumberField           | PropertyUnitInput         | CSS units + shorthand parsing |
+| TextField             | PropertyInput             | Simpler API + multiline       |
+| ColorPicker           | PropertyColor             | Drag state + onChangeEnd      |
+| -                     | PropertyCustomId          | Element ID validation         |
+| Tree                  | useTreeKeyboardNavigation | Builder-specific behavior     |
 
 ---
 
@@ -1399,31 +1474,37 @@ src/builder/
 ## 구현 요약 (Phase 0+1 ~ Phase 5)
 
 ### Phase 0+1: Enhance Registry + Core Migration ✅
+
 - `useKeyboardShortcutsRegistry` 확장 (capture, allowInInput, priority, scope)
 - `useGlobalKeyboardShortcuts` 생성 (Undo/Redo/Zoom 통합)
 - `BuilderCore.tsx`에서 호출, `Workspace.tsx`에서 `useZoomShortcuts` 제거
 
 ### Phase 2: JSON Config ✅
+
 - `src/builder/config/keyboardShortcuts.ts` 생성 (51개 단축키 정의)
 - `src/builder/types/keyboard.ts` 생성 (타입 정의)
 - 설정과 핸들러 분리 구조
 
 ### Phase 3: Single Registration Point ✅
+
 - `useKeyboardShortcuts.ts` 삭제
 - `useZoomShortcuts.ts` 삭제
 - `config/index.ts`, `types/index.ts` export 정리
 
 ### Phase 4: Category & Scope System ✅
+
 - `useActiveScope.ts` 훅 생성 (7개 스코프 감지)
 - 레지스트리에 `activeScope` 옵션 추가
 - 스코프 기반 단축키 필터링 구현
 
 ### Phase 5: DevTools & Help Panel ✅
+
 - `ShortcutDebugger.tsx` 생성 (개발 전용)
 - `KeyboardShortcutsHelp.tsx` 개선 (검색, 카테고리 탭, 설정 파일 연동)
 - `detectShortcutConflicts.ts` 충돌 감지 유틸리티
 
 ### Phase 6: 패널 단축키 완전 통합 ✅
+
 - `useGlobalKeyboardShortcuts.ts`에 Copy/Paste/Delete 핸들러 추가
 - 스코프 기반 핸들러 분기 (`getScopedHandler`)
 - Canvas vs Events 패널 자동 분기 처리
@@ -1435,11 +1516,11 @@ src/builder/
 
 ### Phase Overview
 
-| Phase | Description | Priority | Effort | 상태 |
-|-------|-------------|----------|--------|------|
-| **7** | 툴팁 & 디스커버러빌리티 | 🟢 Low | 2일 | ✅ 완료 |
-| **8** | 국제 키보드 지원 | 🟡 Medium | 4일 | 📄 문서만 |
-| **9** | 사용자 커스터마이징 | 🟢 Low | 5일 | 📄 문서만 |
+| Phase | Description             | Priority  | Effort | 상태      |
+| ----- | ----------------------- | --------- | ------ | --------- |
+| **7** | 툴팁 & 디스커버러빌리티 | 🟢 Low    | 2일    | ✅ 완료   |
+| **8** | 국제 키보드 지원        | 🟡 Medium | 4일    | 📄 문서만 |
+| **9** | 사용자 커스터마이징     | 🟢 Low    | 5일    | 📄 문서만 |
 
 ---
 
@@ -1451,11 +1532,11 @@ src/builder/
 
 #### 6.1 현재 상태
 
-| 훅 | 위치 | 단축키 | 통합 난이도 |
-|----|------|--------|------------|
-| `useCopyPasteActions` | Events 패널 | Cmd+C/V, Delete | 🟡 Medium |
-| `useBlockKeyboard` | Events 패널 | Arrow, Escape | 🟡 Medium |
-| `useActionKeyboardShortcuts` | Events 패널 | 전체 | 🟡 Medium |
+| 훅                           | 위치        | 단축키          | 통합 난이도 |
+| ---------------------------- | ----------- | --------------- | ----------- |
+| `useCopyPasteActions`        | Events 패널 | Cmd+C/V, Delete | 🟡 Medium   |
+| `useBlockKeyboard`           | Events 패널 | Arrow, Escape   | 🟡 Medium   |
+| `useActionKeyboardShortcuts` | Events 패널 | 전체            | 🟡 Medium   |
 
 #### 6.2 구현 계획
 
@@ -1466,27 +1547,45 @@ export function useGlobalKeyboardShortcuts() {
   const activeScope = useActiveScope();
 
   // 기존 핸들러
-  const systemHandlers = useSystemHandlers();      // Undo/Redo
+  const systemHandlers = useSystemHandlers(); // Undo/Redo
   const navigationHandlers = useNavigationHandlers(); // Zoom
 
   // 📦 Phase 6: 패널 핸들러 추가
-  const canvasHandlers = useCanvasHandlers();      // Copy/Paste/Delete (canvas)
-  const eventsHandlers = useEventsHandlers();      // Copy/Paste/Delete (events)
+  const canvasHandlers = useCanvasHandlers(); // Copy/Paste/Delete (canvas)
+  const eventsHandlers = useEventsHandlers(); // Copy/Paste/Delete (events)
 
   // 스코프 기반 핸들러 선택
-  const handlers = useMemo(() => ({
-    ...systemHandlers,
-    ...navigationHandlers,
-    // 스코프에 따라 다른 핸들러 바인딩
-    copy: activeScope === 'panel:events' ? eventsHandlers.copy : canvasHandlers.copy,
-    paste: activeScope === 'panel:events' ? eventsHandlers.paste : canvasHandlers.paste,
-    delete: activeScope === 'panel:events' ? eventsHandlers.delete : canvasHandlers.delete,
-  }), [activeScope, systemHandlers, navigationHandlers, canvasHandlers, eventsHandlers]);
+  const handlers = useMemo(
+    () => ({
+      ...systemHandlers,
+      ...navigationHandlers,
+      // 스코프에 따라 다른 핸들러 바인딩
+      copy:
+        activeScope === "panel:events"
+          ? eventsHandlers.copy
+          : canvasHandlers.copy,
+      paste:
+        activeScope === "panel:events"
+          ? eventsHandlers.paste
+          : canvasHandlers.paste,
+      delete:
+        activeScope === "panel:events"
+          ? eventsHandlers.delete
+          : canvasHandlers.delete,
+    }),
+    [
+      activeScope,
+      systemHandlers,
+      navigationHandlers,
+      canvasHandlers,
+      eventsHandlers,
+    ],
+  );
 
   // 단일 레지스트리 호출
   useKeyboardShortcutsRegistry(shortcuts, [shortcuts, activeScope], {
     capture: true,
-    target: 'document',
+    target: "document",
     activeScope,
   });
 }
@@ -1494,13 +1593,13 @@ export function useGlobalKeyboardShortcuts() {
 
 #### 6.3 작업 목록
 
-| 작업 | 설명 | 예상 시간 |
-|------|------|----------|
-| `useCanvasHandlers` 훅 분리 | 캔버스 Copy/Paste/Delete 로직 추출 | 4h |
-| `useEventsHandlers` 훅 분리 | Events 패널 Copy/Paste/Delete 로직 추출 | 4h |
-| `useGlobalKeyboardShortcuts` 확장 | 스코프 기반 핸들러 선택 로직 | 4h |
-| 레거시 훅 정리 | `useCopyPasteActions`, `useBlockKeyboard` 제거 | 2h |
-| E2E 테스트 | 스코프별 동작 검증 | 4h |
+| 작업                              | 설명                                           | 예상 시간 |
+| --------------------------------- | ---------------------------------------------- | --------- |
+| `useCanvasHandlers` 훅 분리       | 캔버스 Copy/Paste/Delete 로직 추출             | 4h        |
+| `useEventsHandlers` 훅 분리       | Events 패널 Copy/Paste/Delete 로직 추출        | 4h        |
+| `useGlobalKeyboardShortcuts` 확장 | 스코프 기반 핸들러 선택 로직                   | 4h        |
+| 레거시 훅 정리                    | `useCopyPasteActions`, `useBlockKeyboard` 제거 | 2h        |
+| E2E 테스트                        | 스코프별 동작 검증                             | 4h        |
 
 #### 6.4 삭제 대상
 
@@ -1513,11 +1612,11 @@ src/builder/panels/events/hooks/
 #### 6.5 테스트 케이스
 
 ```typescript
-describe('Phase 6: 패널 단축키 통합', () => {
-  it('canvas-focused에서 Cmd+C → 요소 복사', () => {});
-  it('panel:events에서 Cmd+C → 액션 복사', () => {});
-  it('스코프 전환 시 핸들러 변경 확인', () => {});
-  it('Delete 키가 스코프별로 다르게 동작', () => {});
+describe("Phase 6: 패널 단축키 통합", () => {
+  it("canvas-focused에서 Cmd+C → 요소 복사", () => {});
+  it("panel:events에서 Cmd+C → 액션 복사", () => {});
+  it("스코프 전환 시 핸들러 변경 확인", () => {});
+  it("Delete 키가 스코프별로 다르게 동작", () => {});
 });
 ```
 
@@ -1529,11 +1628,11 @@ describe('Phase 6: 패널 단축키 통합', () => {
 
 #### 7.1 구현 기능
 
-| 기능 | 설명 | 위치 |
-|------|------|------|
-| 버튼 툴팁 | hover 시 단축키 표시 | 전역 |
-| 메뉴 아이템 | 단축키 표시 (오른쪽 정렬) | ContextMenu, MenuBar |
-| 커맨드 팔레트 | Cmd+K로 열기, 검색 가능 | 전역 |
+| 기능          | 설명                      | 위치                 |
+| ------------- | ------------------------- | -------------------- |
+| 버튼 툴팁     | hover 시 단축키 표시      | 전역                 |
+| 메뉴 아이템   | 단축키 표시 (오른쪽 정렬) | ContextMenu, MenuBar |
+| 커맨드 팔레트 | Cmd+K로 열기, 검색 가능   | 전역                 |
 
 #### 7.2 ShortcutTooltip 컴포넌트
 
@@ -1583,14 +1682,15 @@ export function ShortcutTooltip({
 ```
 
 **사용 예시:**
+
 ```tsx
-import { ShortcutTooltip } from '../components/overlay/ShortcutTooltip';
+import { ShortcutTooltip } from "../components/overlay/ShortcutTooltip";
 
 <ShortcutTooltip shortcutId="undo">
   <Button onPress={handleUndo}>
     <Undo2 />
   </Button>
-</ShortcutTooltip>
+</ShortcutTooltip>;
 ```
 
 #### 7.2.1 CSS 스타일
@@ -1619,7 +1719,9 @@ import { ShortcutTooltip } from '../components/overlay/ShortcutTooltip';
   /* react-aria animation */
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 150ms ease-out, transform 150ms ease-out;
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
 }
 
 .shortcut-tooltip[data-entering],
@@ -1763,12 +1865,12 @@ export function CommandPalette() {
 
 #### 7.5 작업 목록 (구현 완료)
 
-| 작업 | 설명 | 상태 |
-|------|------|------|
-| `ShortcutTooltip` 컴포넌트 | tsx + css 1:1 매칭 | ✅ |
-| 툴바 버튼 적용 | Undo/Redo 버튼에 ShortcutTooltip 적용 (BuilderHeader, HistoryPanel) | ✅ |
-| `MenuItem` 확장 | shortcutId prop 추가로 단축키 표시 지원 | ✅ |
-| `CommandPalette` 구현 | Cmd+K 커맨드 팔레트 | ✅ |
+| 작업                       | 설명                                                                | 상태 |
+| -------------------------- | ------------------------------------------------------------------- | ---- |
+| `ShortcutTooltip` 컴포넌트 | tsx + css 1:1 매칭                                                  | ✅   |
+| 툴바 버튼 적용             | Undo/Redo 버튼에 ShortcutTooltip 적용 (BuilderHeader, HistoryPanel) | ✅   |
+| `MenuItem` 확장            | shortcutId prop 추가로 단축키 표시 지원                             | ✅   |
+| `CommandPalette` 구현      | Cmd+K 커맨드 팔레트                                                 | ✅   |
 
 #### 7.6 구현 파일
 
@@ -1797,11 +1899,11 @@ src/builder/components/overlay/
 
 #### 8.1 문제점
 
-| 키보드 | `=` 키 위치 | `Z` 키 위치 | 영향 |
-|--------|------------|------------|------|
-| US QWERTY | Shift+= | Z | 기준 |
-| French AZERTY | = (별도) | W 위치 | Cmd+Z → Cmd+W 의도 |
-| German QWERTZ | = (별도) | Y 위치 | Cmd+Z → Cmd+Y 의도 |
+| 키보드        | `=` 키 위치 | `Z` 키 위치 | 영향               |
+| ------------- | ----------- | ----------- | ------------------ |
+| US QWERTY     | Shift+=     | Z           | 기준               |
+| French AZERTY | = (별도)    | W 위치      | Cmd+Z → Cmd+W 의도 |
+| German QWERTZ | = (별도)    | Y 위치      | Cmd+Z → Cmd+Y 의도 |
 
 #### 8.2 Keyboard Layout API 활용
 
@@ -1809,23 +1911,23 @@ src/builder/components/overlay/
 // src/builder/utils/keyboardLayout.ts
 
 interface LayoutInfo {
-  layout: string;           // 'en-US', 'fr-FR', 'de-DE'
+  layout: string; // 'en-US', 'fr-FR', 'de-DE'
   isAZERTY: boolean;
   isQWERTZ: boolean;
 }
 
 export async function detectKeyboardLayout(): Promise<LayoutInfo> {
   // Keyboard API 지원 확인
-  if ('keyboard' in navigator && 'getLayoutMap' in navigator.keyboard) {
+  if ("keyboard" in navigator && "getLayoutMap" in navigator.keyboard) {
     const layoutMap = await navigator.keyboard.getLayoutMap();
 
     // 레이아웃 감지 (KeyZ의 실제 문자로 판단)
-    const keyZ = layoutMap.get('KeyZ');
+    const keyZ = layoutMap.get("KeyZ");
 
     return {
       layout: navigator.language,
-      isAZERTY: keyZ === 'w',
-      isQWERTZ: keyZ === 'y',
+      isAZERTY: keyZ === "w",
+      isQWERTZ: keyZ === "y",
     };
   }
 
@@ -1833,8 +1935,8 @@ export async function detectKeyboardLayout(): Promise<LayoutInfo> {
   const lang = navigator.language.toLowerCase();
   return {
     layout: lang,
-    isAZERTY: lang.startsWith('fr'),
-    isQWERTZ: lang.startsWith('de') || lang.startsWith('de-ch'),
+    isAZERTY: lang.startsWith("fr"),
+    isQWERTZ: lang.startsWith("de") || lang.startsWith("de-ch"),
   };
 }
 ```
@@ -1845,14 +1947,14 @@ export async function detectKeyboardLayout(): Promise<LayoutInfo> {
 // src/builder/config/keyboardLayouts.ts
 
 export const LAYOUT_KEY_MAPS: Record<string, Record<string, string>> = {
-  'azerty': {
-    'z': 'w',  // Undo: Cmd+W (물리적 Z 위치)
-    'a': 'q',  // Select All: Cmd+Q (물리적 A 위치)
+  azerty: {
+    z: "w", // Undo: Cmd+W (물리적 Z 위치)
+    a: "q", // Select All: Cmd+Q (물리적 A 위치)
     // ...
   },
-  'qwertz': {
-    'z': 'y',  // Undo: Cmd+Y (물리적 Z 위치)
-    'y': 'z',  // Redo용 (필요시)
+  qwertz: {
+    z: "y", // Undo: Cmd+Y (물리적 Z 위치)
+    y: "z", // Redo용 (필요시)
     // ...
   },
 };
@@ -1876,7 +1978,7 @@ export function getPhysicalKey(logicalKey: string, layout: LayoutInfo): string {
 export function useKeyboardShortcutsRegistry(
   shortcuts: KeyboardShortcut[],
   deps: React.DependencyList = [],
-  options: RegistryOptions = {}
+  options: RegistryOptions = {},
 ) {
   const [layout, setLayout] = useState<LayoutInfo | null>(null);
 
@@ -1888,7 +1990,7 @@ export function useKeyboardShortcutsRegistry(
   const adjustedShortcuts = useMemo(() => {
     if (!layout) return shortcuts;
 
-    return shortcuts.map(s => ({
+    return shortcuts.map((s) => ({
       ...s,
       key: getPhysicalKey(s.key, layout),
     }));
@@ -1922,22 +2024,22 @@ export function KeyboardShortcutsHelp() {
 
 #### 8.6 작업 목록
 
-| 작업 | 설명 | 예상 시간 |
-|------|------|----------|
-| `detectKeyboardLayout` 유틸 | Keyboard API 기반 레이아웃 감지 | 4h |
-| `keyboardLayouts.ts` 설정 | AZERTY, QWERTZ 매핑 테이블 | 4h |
-| 레지스트리 통합 | 레이아웃 기반 키 변환 | 4h |
-| 도움말 패널 업데이트 | 레이아웃별 키 표시 | 2h |
-| 테스트 | 다양한 레이아웃 시뮬레이션 | 4h |
+| 작업                        | 설명                            | 예상 시간 |
+| --------------------------- | ------------------------------- | --------- |
+| `detectKeyboardLayout` 유틸 | Keyboard API 기반 레이아웃 감지 | 4h        |
+| `keyboardLayouts.ts` 설정   | AZERTY, QWERTZ 매핑 테이블      | 4h        |
+| 레지스트리 통합             | 레이아웃 기반 키 변환           | 4h        |
+| 도움말 패널 업데이트        | 레이아웃별 키 표시              | 2h        |
+| 테스트                      | 다양한 레이아웃 시뮬레이션      | 4h        |
 
 #### 8.7 브라우저 지원
 
-| 브라우저 | Keyboard API | Fallback |
-|----------|--------------|----------|
-| Chrome 69+ | ✅ | - |
-| Edge 79+ | ✅ | - |
-| Firefox | ❌ | 언어 기반 추정 |
-| Safari | ❌ | 언어 기반 추정 |
+| 브라우저   | Keyboard API | Fallback       |
+| ---------- | ------------ | -------------- |
+| Chrome 69+ | ✅           | -              |
+| Edge 79+   | ✅           | -              |
+| Firefox    | ❌           | 언어 기반 추정 |
+| Safari     | ❌           | 언어 기반 추정 |
 
 ---
 
@@ -1972,17 +2074,20 @@ interface UserShortcutConfig {
 ```typescript
 // src/builder/stores/shortcutCustomization.ts
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { ShortcutId } from '../config/keyboardShortcuts';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { ShortcutId } from "../config/keyboardShortcuts";
 
-const STORAGE_KEY = 'xstudio-keyboard-shortcuts';
+const STORAGE_KEY = "composition-keyboard-shortcuts";
 
 interface ShortcutCustomizationState {
   overrides: Map<ShortcutId, UserShortcutOverride>;
 
   // Actions
-  setOverride: (id: ShortcutId, override: Partial<UserShortcutOverride>) => void;
+  setOverride: (
+    id: ShortcutId,
+    override: Partial<UserShortcutOverride>,
+  ) => void;
   removeOverride: (id: ShortcutId) => void;
   resetAll: () => void;
   exportConfig: () => string;
@@ -2015,7 +2120,7 @@ export const useShortcutCustomization = create<ShortcutCustomizationState>(
 
       exportConfig: () => {
         const config: UserShortcutConfig = {
-          version: '1.0.0',
+          version: "1.0.0",
           overrides: Array.from(get().overrides.values()),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -2037,8 +2142,8 @@ export const useShortcutCustomization = create<ShortcutCustomizationState>(
         }
       },
     }),
-    { name: STORAGE_KEY }
-  )
+    { name: STORAGE_KEY },
+  ),
 );
 ```
 
@@ -2184,28 +2289,28 @@ export function useGlobalKeyboardShortcuts() {
 
 #### 9.5 작업 목록
 
-| 작업 | 설명 | 예상 시간 |
-|------|------|----------|
-| `useShortcutCustomization` 스토어 | Zustand persist 기반 저장소 | 4h |
-| `ShortcutCustomizer` UI | 설정 패널 UI 구현 | 8h |
-| 키 녹화 기능 | 실시간 키 입력 감지 | 4h |
-| 충돌 감지 | 커스텀 단축키 충돌 경고 | 4h |
-| Import/Export | JSON 기반 설정 공유 | 4h |
-| 레지스트리 통합 | 오버라이드 적용 로직 | 4h |
-| 테스트 | 커스터마이징 E2E 테스트 | 4h |
+| 작업                              | 설명                        | 예상 시간 |
+| --------------------------------- | --------------------------- | --------- |
+| `useShortcutCustomization` 스토어 | Zustand persist 기반 저장소 | 4h        |
+| `ShortcutCustomizer` UI           | 설정 패널 UI 구현           | 8h        |
+| 키 녹화 기능                      | 실시간 키 입력 감지         | 4h        |
+| 충돌 감지                         | 커스텀 단축키 충돌 경고     | 4h        |
+| Import/Export                     | JSON 기반 설정 공유         | 4h        |
+| 레지스트리 통합                   | 오버라이드 적용 로직        | 4h        |
+| 테스트                            | 커스터마이징 E2E 테스트     | 4h        |
 
 #### 9.6 충돌 처리 전략
 
 ```typescript
 // 충돌 시 선택지 제공
 interface ConflictResolution {
-  action: 'replace' | 'swap' | 'cancel';
+  action: "replace" | "swap" | "cancel";
   targetId?: ShortcutId;
 }
 
 function showConflictDialog(
   newId: ShortcutId,
-  conflicts: ShortcutId[]
+  conflicts: ShortcutId[],
 ): Promise<ConflictResolution> {
   // 다이얼로그 표시
   // - Replace: 기존 단축키 비활성화
@@ -2230,12 +2335,12 @@ Phase 0-5 ✅ (완료)
 
 ### 전체 완성도 로드맵
 
-| 완성도 | Phase | 기능 | 상태 |
-|--------|-------|------|------|
-| 80% | Phase 0-5 | 핵심 시스템 | ✅ 완료 |
-| 85% | Phase 6 | 패널 단축키 완전 통합 | ✅ 완료 |
-| 90% | Phase 7 | 툴팁, 커맨드 팔레트 | ✅ 완료 |
-| 95% | Phase 8 | 국제 키보드 지원 | 📄 문서만 |
-| 100% | Phase 9 | 사용자 커스터마이징 | 📄 문서만 |
+| 완성도 | Phase     | 기능                  | 상태      |
+| ------ | --------- | --------------------- | --------- |
+| 80%    | Phase 0-5 | 핵심 시스템           | ✅ 완료   |
+| 85%    | Phase 6   | 패널 단축키 완전 통합 | ✅ 완료   |
+| 90%    | Phase 7   | 툴팁, 커맨드 팔레트   | ✅ 완료   |
+| 95%    | Phase 8   | 국제 키보드 지원      | 📄 문서만 |
+| 100%   | Phase 9   | 사용자 커스터마이징   | 📄 문서만 |
 
 > **Note:** Phase 8, 9는 오버스펙으로 판단하여 문서만 완성. 필요시 추후 구현.

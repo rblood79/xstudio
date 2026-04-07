@@ -22,7 +22,7 @@ ADR-017(M3 제거 + Tint System)과 ADR-018(CSS 구조 재작성) 완료 후, CS
 
 ### 왜 React Spectrum S2인가
 
-1. **XStudio는 React Aria Components 기반** — S2는 동일 기반 위에 구축된 검증된 색상 체계
+1. **composition는 React Aria Components 기반** — S2는 동일 기반 위에 구축된 검증된 색상 체계
 2. **역할 기반 네이밍** — S2의 `accent`/`neutral`/`negative`가 M3의 `primary`/`secondary`/`error`보다 직관적
 3. **레이어 시스템** — `base` > `layer-1` > `layer-2` > `elevated`가 CSS 변수 계층과 자연스럽게 매핑
 4. **상태색 확장** — `informative`, `positive`, `notice` 시맨틱 토큰이 현재 누락된 색상 역할을 채움
@@ -55,9 +55,9 @@ ADR-017(M3 제거 + Tint System)과 ADR-018(CSS 구조 재작성) 완료 후, CS
 
 **포커스 (outlineColor)**: `focus-ring`
 
-### S2 vs 현재 XStudio 매핑
+### S2 vs 현재 composition 매핑
 
-| S2 토큰           | 현재 XStudio CSS 변수                           | 현재 Spec TokenRef (M3)             |
+| S2 토큰           | 현재 composition CSS 변수                       | 현재 Spec TokenRef (M3)             |
 | ----------------- | ----------------------------------------------- | ----------------------------------- |
 | `accent`          | `--highlight-background`                        | `{color.primary}`                   |
 | `accent-subtle`   | `--highlight-overlay` / tint-300                | `{color.primary-container}`         |
@@ -81,7 +81,7 @@ ADR-017(M3 제거 + Tint System)과 ADR-018(CSS 구조 재작성) 완료 후, CS
 1. **네이밍**: S2는 역할 기반(`accent`, `neutral`, `negative`), M3는 순서 기반(`primary`, `secondary`, `tertiary`)
 2. **레이어**: S2 `base` > `layer-1` > `layer-2` > `elevated` vs M3 `surface` > `surface-container` > `surface-container-high`
 3. **Subtle 패턴**: S2 `-subtle` (연한 배경) vs M3 `-container`
-4. **상태색**: S2 `informative`/`positive`/`notice` 시맨틱 vs XStudio `--color-info-*` 팔레트 직접 참조
+4. **상태색**: S2 `informative`/`positive`/`notice` 시맨틱 vs composition `--color-info-*` 팔레트 직접 참조
 5. **on-\* 범위**: S2는 `on-accent`/`on-negative`만 명시, 나머지는 CSS에 위임
 
 ### ⚠️ 주의사항

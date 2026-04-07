@@ -42,7 +42,7 @@ ThemeConfig (사용자 설정)
 
 ### 문제 정의
 
-현재 XStudio의 테마 시스템은 초기에 설계되어 다음 문제를 가진다:
+현재 composition의 테마 시스템은 초기에 설계되어 다음 문제를 가진다:
 
 1. **Theme Studio가 새 창(`window.open`)으로 분리됨** — Builder 워크플로우 단절
 2. **ThemesPanel이 읽기 전용** — 토큰 목록만 표시, 편집 불가 → "Theme Studio 열기" 버튼이 유일한 인터랙션
@@ -173,31 +173,31 @@ Radix Themes는 **단일 `accentColor` prop으로 12-step 시맨틱 스케일을
 // Step 11~12: Text (low-contrast, high-contrast)
 ```
 
-**XStudio Tint System + S2 토큰 대응 (ADR-022 기반):**
+**composition Tint System + S2 토큰 대응 (ADR-022 기반):**
 
-| Radix Step | 용도               | XStudio Tint 대응 | S2 Spec 토큰 (ADR-022)   | CSS 시맨틱 변수                 |
-| ---------- | ------------------ | ----------------- | ------------------------ | ------------------------------- |
-| 1          | App background     | —                 | —                        | —                               |
-| 2          | Subtle background  | `--tint-200`      | `{color.accent-subtle}`  | `var(--color-primary-100)`      |
-| 3~5        | Interactive        | `--tint-300~500`  | —                        | color-mix 자동 파생             |
-| 6~8        | Borders            | `--tint-600~800`  | —                        | color-mix 자동 파생             |
-| 9          | **Solid bg**       | `--tint-900`      | `{color.accent}`         | `--highlight-background` (기존) |
-| 10         | Solid hover        | `--tint-1000`     | `{color.accent-hover}`   | color-mix 85%                   |
-| —          | Solid pressed      | `--tint-1100`     | `{color.accent-pressed}` | color-mix 75%                   |
-| —          | On accent text     | —                 | `{color.on-accent}`      | `--highlight-foreground`        |
-| 11         | Low-contrast text  | `--tint-1100`     | —                        | `--focus-ring-color`            |
-| 12         | High-contrast text | `--tint-1200`     | —                        | `--link-color`                  |
+| Radix Step | 용도               | composition Tint 대응 | S2 Spec 토큰 (ADR-022)   | CSS 시맨틱 변수                 |
+| ---------- | ------------------ | --------------------- | ------------------------ | ------------------------------- |
+| 1          | App background     | —                     | —                        | —                               |
+| 2          | Subtle background  | `--tint-200`          | `{color.accent-subtle}`  | `var(--color-primary-100)`      |
+| 3~5        | Interactive        | `--tint-300~500`      | —                        | color-mix 자동 파생             |
+| 6~8        | Borders            | `--tint-600~800`      | —                        | color-mix 자동 파생             |
+| 9          | **Solid bg**       | `--tint-900`          | `{color.accent}`         | `--highlight-background` (기존) |
+| 10         | Solid hover        | `--tint-1000`         | `{color.accent-hover}`   | color-mix 85%                   |
+| —          | Solid pressed      | `--tint-1100`         | `{color.accent-pressed}` | color-mix 75%                   |
+| —          | On accent text     | —                     | `{color.on-accent}`      | `--highlight-foreground`        |
+| 11         | Low-contrast text  | `--tint-1100`         | —                        | `--focus-ring-color`            |
+| 12         | High-contrast text | `--tint-1200`         | —                        | `--link-color`                  |
 
 → Radix 12-step 중 step 9~10 + on-accent이 S2 `accent` 계열과 직접 대응. Step 1~8, 11~12는 CSS `--tint-*` 변수로만 커버 (Spec 토큰 불필요).
 
 ### 핵심 인사이트
 
 1. **인라인 편집이 표준** — Webflow, Framer, Figma, Penpot, Plasmic, Wix 모두 빌더 내 패널에서 테마 편집
-2. **소수 색상 → 자동 파생이 트렌드** — Squarespace(5색→10테마), Radix(1색→12step), XStudio Tint(1색→16스케일)
-3. **OKLCH가 대세** — shadcn/ui, Tailwind v4 모두 채택. XStudio 이미 사용 중
+2. **소수 색상 → 자동 파생이 트렌드** — Squarespace(5색→10테마), Radix(1색→12step), composition Tint(1색→16스케일)
+3. **OKLCH가 대세** — shadcn/ui, Tailwind v4 모두 채택. composition 이미 사용 중
 4. **CSS 변수 기반 전환** — 모든 시스템이 CSS 변수 교체로 테마 전환. DB 기반은 없음
 5. **2계층 구조 보편화** — Primitive(원시) → Semantic(시맨틱) 참조 패턴
-6. **컴포넌트 레벨 accent가 차별 포인트** — Radix의 `color` prop은 유일한 컴포넌트 단위 accent 오버라이드 → XStudio에 `data-accent` 속성으로 도입 가능
+6. **컴포넌트 레벨 accent가 차별 포인트** — Radix의 `color` prop은 유일한 컴포넌트 단위 accent 오버라이드 → composition에 `data-accent` 속성으로 도입 가능
 7. **W3C DTCG (2025.10 안정판)** — 벤더 중립 JSON 토큰 포맷 표준화. Builder.io가 선두 채택. 향후 Figma/Penpot 호환 고려 시 참조
 8. **Pencil의 N차원 축은 과도** — 빌더 사용자에게는 Light/Dark + accent 선택 수준이 적정. 축 추가는 Advanced 옵션으로
 
@@ -531,7 +531,7 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 **목표**: ThemeConfig를 IndexedDB에 저장/복원, Publish 앱에서 정적 테마 적용
 
-**전제**: XStudio는 IndexedDB 기반 로컬 저장. Supabase는 대시보드에서 사용자가 명시적으로 연동할 때만 접근.
+**전제**: composition는 IndexedDB 기반 로컬 저장. Supabase는 대시보드에서 사용자가 명시적으로 연동할 때만 접근.
 
 **작업 범위:**
 
@@ -585,8 +585,8 @@ function generateThemeCSS(config: ThemeConfig): string {
 **Radix 패턴과 차이:**
 
 - Radix: React prop (`<Button color="red">`) → CSS class 주입
-- XStudio: `data-accent` 속성 → CSS 변수 스코프 전환 (React 없이 순수 CSS)
-- XStudio 장점: Preview/Publish 양쪽에서 동일 CSS로 동작, Skia도 동일 로직
+- composition: `data-accent` 속성 → CSS 변수 스코프 전환 (React 없이 순수 CSS)
+- composition 장점: Preview/Publish 양쪽에서 동일 CSS로 동작, Skia도 동일 로직
 
 **위험**: M (CSS 스코프 관리 복잡도, Skia 서브트리 색상 오버라이드 구현)
 
@@ -617,13 +617,13 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 **설계 변경**: IndexedDB → **localStorage** 선택 (ThemeConfig은 ~100B JSON, DB 마이그레이션 불필요)
 
-| 파일                                        | 작업     | 설명                                                                                    |
-| ------------------------------------------- | -------- | --------------------------------------------------------------------------------------- |
+| 파일                                        | 작업     | 설명                                                                                        |
+| ------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
 | `stores/themeConfigStore.ts`                | **수정** | localStorage 영속화 (`composition-theme-config-{projectId}`) + `initThemeConfig(projectId)` |
-| `utils/theme/generateThemeCSS.ts`           | **신규** | ThemeConfig → CSS 변수 문자열 (Publish/Export용)                                        |
-| `main/BuilderCore.tsx`                      | **수정** | initThemeConfig 호출 + handlePublish/Preview themeCSS 통합                              |
-| `packages/shared/src/utils/export.utils.ts` | **수정** | generateStaticHtml에 `themeCSS` 파라미터 추가                                           |
-| `apps/publish/src/App.tsx`                  | **수정** | sessionStorage에서 themeConfig 복원 → CSS 변수 주입                                     |
+| `utils/theme/generateThemeCSS.ts`           | **신규** | ThemeConfig → CSS 변수 문자열 (Publish/Export용)                                            |
+| `main/BuilderCore.tsx`                      | **수정** | initThemeConfig 호출 + handlePublish/Preview themeCSS 통합                                  |
+| `packages/shared/src/utils/export.utils.ts` | **수정** | generateStaticHtml에 `themeCSS` 파라미터 추가                                               |
+| `apps/publish/src/App.tsx`                  | **수정** | sessionStorage에서 themeConfig 복원 → CSS 변수 주입                                         |
 
 ### 패치 내역
 

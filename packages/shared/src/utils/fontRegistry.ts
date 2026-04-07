@@ -19,7 +19,7 @@ import { FONT_LIMITS } from "../types/font.types";
 // Storage Key
 // ============================================
 
-export const FONT_REGISTRY_STORAGE_KEY = "xstudio.font-registry";
+export const FONT_REGISTRY_STORAGE_KEY = "composition.font-registry";
 
 // ============================================
 // Registry CRUD

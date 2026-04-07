@@ -16,7 +16,8 @@ import type { SelectedElement } from "../inspector/types";
 
 // 통합 스토어 타입
 interface Store
-  extends ElementsState,
+  extends
+    ElementsState,
     SelectionState,
     SettingsState,
     PanelLayoutSlice,
@@ -28,8 +29,8 @@ type UseStoreType = UseBoundStore<StoreApi<Store>>;
 // HMR로 인한 store 재생성 방지: window 객체에 고정
 declare global {
   interface Window {
-    __XSTUDIO_STORE__?: UseStoreType;
-    __XSTUDIO_STORE_ID__?: string;
+    __composition_STORE__?: UseStoreType;
+    __composition_STORE_ID__?: string;
   }
 }
 
@@ -37,11 +38,11 @@ declare global {
 let useStore: UseStoreType;
 
 const hasExistingStore =
-  typeof window !== "undefined" && window.__XSTUDIO_STORE__;
+  typeof window !== "undefined" && window.__composition_STORE__;
 
 if (hasExistingStore) {
   // 기존 인스턴스 재사용
-  useStore = window.__XSTUDIO_STORE__!;
+  useStore = window.__composition_STORE__!;
 } else {
   // 새로운 인스턴스 생성
   useStore = create<Store>((set, get, store) => ({
@@ -54,8 +55,8 @@ if (hasExistingStore) {
   }));
 
   if (typeof window !== "undefined") {
-    window.__XSTUDIO_STORE__ = useStore;
-    window.__XSTUDIO_STORE_ID__ = Math.random().toString(36).substring(7);
+    window.__composition_STORE__ = useStore;
+    window.__composition_STORE_ID__ = Math.random().toString(36).substring(7);
   }
 }
 
@@ -68,14 +69,14 @@ export const getStoreState = () => {
     typeof window !== "undefined" &&
     window !== window.top &&
     window.parent &&
-    (window.parent as typeof window).__XSTUDIO_STORE__
+    (window.parent as typeof window).__composition_STORE__
   ) {
-    return (window.parent as typeof window).__XSTUDIO_STORE__!.getState();
+    return (window.parent as typeof window).__composition_STORE__!.getState();
   }
 
   // 일반적인 경우
-  if (typeof window !== "undefined" && window.__XSTUDIO_STORE__) {
-    return window.__XSTUDIO_STORE__.getState();
+  if (typeof window !== "undefined" && window.__composition_STORE__) {
+    return window.__composition_STORE__.getState();
   }
   return useStore.getState();
 };
@@ -129,11 +130,15 @@ export const useSelectedElementData = (): SelectedElement | null => {
     if (!element) return null;
 
     // selectedElementProps가 비어있으면 element에서 직접 추출
-    const props = selectedElementProps && Object.keys(selectedElementProps).length > 0
-      ? selectedElementProps
-      : element.props;
+    const props =
+      selectedElementProps && Object.keys(selectedElementProps).length > 0
+        ? selectedElementProps
+        : element.props;
 
-    const { style, computedStyle, events, ...otherProps } = props as Record<string, unknown>;
+    const { style, computedStyle, events, ...otherProps } = props as Record<
+      string,
+      unknown
+    >;
 
     return {
       id: element.id,
@@ -189,26 +194,36 @@ export const useDeferredSelectedElementId = (): string | null => {
  *
  * @returns 지연된 SelectedElement | null
  */
-export const useDeferredSelectedElementDataConcurrent = (): SelectedElement | null => {
-  const currentData = useDebouncedSelectedElementData();
-  return useDeferredValue(currentData);
-};
+export const useDeferredSelectedElementDataConcurrent =
+  (): SelectedElement | null => {
+    const currentData = useDebouncedSelectedElementData();
+    return useDeferredValue(currentData);
+  };
 
 /**
  * Inspector 액션 훅 (스타일, 속성, 이벤트 업데이트)
  * 기존 useInspectorState의 액션들을 대체
  * 🚀 개별 selector로 분리하여 무한 루프 방지
  */
-export const useUpdateStyle = () => useStore((state) => state.updateSelectedStyle);
-export const useUpdateStyles = () => useStore((state) => state.updateSelectedStyles);
-export const useUpdateProperty = () => useStore((state) => state.updateSelectedProperty);
-export const useUpdateProperties = () => useStore((state) => state.updateSelectedProperties);
-export const useUpdateCustomId = () => useStore((state) => state.updateSelectedCustomId);
-export const useUpdateDataBinding = () => useStore((state) => state.updateSelectedDataBinding);
-export const useUpdateEvents = () => useStore((state) => state.updateSelectedEvents);
+export const useUpdateStyle = () =>
+  useStore((state) => state.updateSelectedStyle);
+export const useUpdateStyles = () =>
+  useStore((state) => state.updateSelectedStyles);
+export const useUpdateProperty = () =>
+  useStore((state) => state.updateSelectedProperty);
+export const useUpdateProperties = () =>
+  useStore((state) => state.updateSelectedProperties);
+export const useUpdateCustomId = () =>
+  useStore((state) => state.updateSelectedCustomId);
+export const useUpdateDataBinding = () =>
+  useStore((state) => state.updateSelectedDataBinding);
+export const useUpdateEvents = () =>
+  useStore((state) => state.updateSelectedEvents);
 export const useAddEvent = () => useStore((state) => state.addSelectedEvent);
-export const useUpdateEvent = () => useStore((state) => state.updateSelectedEvent);
-export const useRemoveEvent = () => useStore((state) => state.removeSelectedEvent);
+export const useUpdateEvent = () =>
+  useStore((state) => state.updateSelectedEvent);
+export const useRemoveEvent = () =>
+  useStore((state) => state.removeSelectedEvent);
 
 /**
  * 🔧 레거시 호환: useInspectorActions (개별 hook 조합)

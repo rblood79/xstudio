@@ -19,12 +19,12 @@
 
 /* Tailwind base styles (includes :root, @font-face, @layer base, @layer components) */
 
-/* XStudio Theme Variables (CSS custom properties only)
+/* composition Theme Variables (CSS custom properties only)
  * Component CSS is loaded via JS module imports (individual .tsx files)
  * to avoid Vite creating duplicate <style> tags */
 @import "../../../packages/shared/src/components/theme.css";
 
-/* XStudio Builder Styles */
+/* composition Builder Styles */
 @import "./builder/styles/index.css";
 
 /* React Query Devtools - 버튼 위치 조정 (우측 세로 중앙) */

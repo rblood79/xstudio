@@ -1,5 +1,5 @@
 /**
- * Local ESLint Rules for XStudio
+ * Local ESLint Rules for composition
  *
  * Custom rules to prevent anti-patterns discovered during refactoring.
  *
@@ -7,16 +7,18 @@
  */
 
 export default {
-  'no-zustand-grouped-selectors': {
+  "no-zustand-grouped-selectors": {
     meta: {
-      type: 'problem',
+      type: "problem",
       docs: {
-        description: 'Disallow Zustand grouped selectors with object returns (causes infinite loops)',
-        category: 'Best Practices',
+        description:
+          "Disallow Zustand grouped selectors with object returns (causes infinite loops)",
+        category: "Best Practices",
         recommended: true,
       },
       messages: {
-        groupedSelector: 'Avoid Zustand grouped selectors with object returns. Use individual selectors instead to prevent infinite loops. See CHANGELOG.md for details.',
+        groupedSelector:
+          "Avoid Zustand grouped selectors with object returns. Use individual selectors instead to prevent infinite loops. See CHANGELOG.md for details.",
       },
       schema: [],
     },
@@ -25,18 +27,18 @@ export default {
         CallExpression(node) {
           // Detect: useStore((state) => ({ field1: state.field1, ... }))
           if (
-            node.callee.name === 'useStore' &&
+            node.callee.name === "useStore" &&
             node.arguments.length === 1 &&
-            node.arguments[0].type === 'ArrowFunctionExpression'
+            node.arguments[0].type === "ArrowFunctionExpression"
           ) {
             const selectorFn = node.arguments[0];
             const body = selectorFn.body;
 
             // Check if returning an object expression directly
-            if (body.type === 'ObjectExpression') {
+            if (body.type === "ObjectExpression") {
               context.report({
                 node,
-                messageId: 'groupedSelector',
+                messageId: "groupedSelector",
               });
             }
           }
@@ -45,16 +47,18 @@ export default {
     },
   },
 
-  'no-zustand-use-shallow': {
+  "no-zustand-use-shallow": {
     meta: {
-      type: 'problem',
+      type: "problem",
       docs: {
-        description: 'Disallow useShallow wrapper with Zustand (causes infinite loops)',
-        category: 'Best Practices',
+        description:
+          "Disallow useShallow wrapper with Zustand (causes infinite loops)",
+        category: "Best Practices",
         recommended: true,
       },
       messages: {
-        useShallowDetected: 'Avoid useShallow wrapper with Zustand. Use individual selectors instead. See CHANGELOG.md for details.',
+        useShallowDetected:
+          "Avoid useShallow wrapper with Zustand. Use individual selectors instead. See CHANGELOG.md for details.",
       },
       schema: [],
     },
@@ -63,14 +67,14 @@ export default {
         CallExpression(node) {
           // Detect: useStore(useShallow(...))
           if (
-            node.callee.name === 'useStore' &&
+            node.callee.name === "useStore" &&
             node.arguments.length === 1 &&
-            node.arguments[0].type === 'CallExpression' &&
-            node.arguments[0].callee.name === 'useShallow'
+            node.arguments[0].type === "CallExpression" &&
+            node.arguments[0].callee.name === "useShallow"
           ) {
             context.report({
               node,
-              messageId: 'useShallowDetected',
+              messageId: "useShallowDetected",
             });
           }
         },
@@ -78,16 +82,18 @@ export default {
     },
   },
 
-  'prefer-keyboard-shortcuts-registry': {
+  "prefer-keyboard-shortcuts-registry": {
     meta: {
-      type: 'suggestion',
+      type: "suggestion",
       docs: {
-        description: 'Suggest using useKeyboardShortcutsRegistry instead of manual event listeners',
-        category: 'Best Practices',
+        description:
+          "Suggest using useKeyboardShortcutsRegistry instead of manual event listeners",
+        category: "Best Practices",
         recommended: false,
       },
       messages: {
-        manualListener: 'Consider using useKeyboardShortcutsRegistry hook instead of manual keyboard event listeners. See src/builder/hooks/useKeyboardShortcutsRegistry.ts',
+        manualListener:
+          "Consider using useKeyboardShortcutsRegistry hook instead of manual keyboard event listeners. See src/builder/hooks/useKeyboardShortcutsRegistry.ts",
       },
       schema: [],
     },
@@ -96,16 +102,16 @@ export default {
         CallExpression(node) {
           // Detect: window.addEventListener('keydown', ...)
           if (
-            node.callee.type === 'MemberExpression' &&
-            node.callee.object.name === 'window' &&
-            node.callee.property.name === 'addEventListener' &&
+            node.callee.type === "MemberExpression" &&
+            node.callee.object.name === "window" &&
+            node.callee.property.name === "addEventListener" &&
             node.arguments.length >= 2 &&
-            node.arguments[0].type === 'Literal' &&
-            node.arguments[0].value === 'keydown'
+            node.arguments[0].type === "Literal" &&
+            node.arguments[0].value === "keydown"
           ) {
             context.report({
               node,
-              messageId: 'manualListener',
+              messageId: "manualListener",
             });
           }
         },
@@ -113,16 +119,17 @@ export default {
     },
   },
 
-  'prefer-copy-paste-hook': {
+  "prefer-copy-paste-hook": {
     meta: {
-      type: 'suggestion',
+      type: "suggestion",
       docs: {
-        description: 'Suggest using useCopyPaste hook for clipboard operations',
-        category: 'Best Practices',
+        description: "Suggest using useCopyPaste hook for clipboard operations",
+        category: "Best Practices",
         recommended: false,
       },
       messages: {
-        manualClipboard: 'Consider using useCopyPaste hook instead of manual clipboard operations. See src/builder/hooks/useCopyPaste.ts',
+        manualClipboard:
+          "Consider using useCopyPaste hook instead of manual clipboard operations. See src/builder/hooks/useCopyPaste.ts",
       },
       schema: [],
     },
@@ -131,14 +138,15 @@ export default {
         MemberExpression(node) {
           // Detect: navigator.clipboard.writeText(...) or navigator.clipboard.readText(...)
           if (
-            node.object.type === 'MemberExpression' &&
-            node.object.object.name === 'navigator' &&
-            node.object.property.name === 'clipboard' &&
-            (node.property.name === 'writeText' || node.property.name === 'readText')
+            node.object.type === "MemberExpression" &&
+            node.object.object.name === "navigator" &&
+            node.object.property.name === "clipboard" &&
+            (node.property.name === "writeText" ||
+              node.property.name === "readText")
           ) {
             context.report({
               node,
-              messageId: 'manualClipboard',
+              messageId: "manualClipboard",
             });
           }
         },
@@ -146,16 +154,17 @@ export default {
     },
   },
 
-  'no-eventtype-legacy-import': {
+  "no-eventtype-legacy-import": {
     meta: {
-      type: 'problem',
+      type: "problem",
       docs: {
-        description: 'Disallow importing EventType from legacy paths',
-        category: 'Best Practices',
+        description: "Disallow importing EventType from legacy paths",
+        category: "Best Practices",
         recommended: true,
       },
       messages: {
-        legacyImport: 'Import EventType from "@/types/events/events.types" instead of legacy paths. See CHANGELOG.md for details.',
+        legacyImport:
+          'Import EventType from "@/types/events/events.types" instead of legacy paths. See CHANGELOG.md for details.',
       },
       schema: [],
     },
@@ -165,21 +174,21 @@ export default {
           // Detect imports from legacy event type paths
           const source = node.source.value;
           if (
-            typeof source === 'string' &&
-            (source.includes('/events/types/eventTypes') ||
-             source.includes('/inspector/events/types/eventTypes'))
+            typeof source === "string" &&
+            (source.includes("/events/types/eventTypes") ||
+              source.includes("/inspector/events/types/eventTypes"))
           ) {
             // Check if importing EventType specifically
             const hasEventTypeImport = node.specifiers.some(
               (spec) =>
-                spec.type === 'ImportSpecifier' &&
-                spec.imported.name === 'EventType'
+                spec.type === "ImportSpecifier" &&
+                spec.imported.name === "EventType",
             );
 
             if (hasEventTypeImport) {
               context.report({
                 node,
-                messageId: 'legacyImport',
+                messageId: "legacyImport",
               });
             }
           }

@@ -184,7 +184,7 @@ function normalizeFormatProps(props) {
 - `valueLabel: ReactNode` — 커스텀 값 레이블 (비어있으면 value에서 자동 생성)
 - `showValueLabel: boolean` — 값 레이블 표시 여부
 
-**XStudio 적용**:
+**composition 적용**:
 
 - **`showValue` 제거** — S2에 없는 prop
 - **`valueLabel: string` 추가** — 커스텀 값 텍스트 (S2 ReactNode의 빌더 축소). 비어있으면 value + formatOptions로 자동 생성
@@ -214,7 +214,7 @@ let outputValue = (
 } // 항상 표시
 ```
 
-**XStudio 적용**:
+**composition 적용**:
 
 - `showValue` prop 제거 — S2에 없는 prop
 - SliderOutput은 항상 표시 (S2 동작과 일치)
@@ -246,7 +246,7 @@ let outputValue = (
 - S2: `autoCorrect: string` (HTML 표준 "on"/"off")
 - 프로퍼티 패널: boolean field → enum field ("on"/"off")
 
-> **S2 divergence 명시**: S2는 `autoCorrect?: string` (제한 없는 string). XStudio는 `"on" | "off"` 유니온으로 유효 값만 허용. 실질적으로 호환되나 정확한 타입 일치는 아님.
+> **S2 divergence 명시**: S2는 `autoCorrect?: string` (제한 없는 string). composition는 `"on" | "off"` 유니온으로 유효 값만 허용. 실질적으로 호환되나 정확한 타입 일치는 아님.
 
 ### 데이터 normalization
 

@@ -32,7 +32,7 @@ Preview 화면에서 DatePicker 캘린더 버튼 클릭 시 Popover가 나타나
 
 S2 Popover 소스(`@react-spectrum/s2/src/Popover.tsx`)에서 확인된 패턴:
 
-| 속성                           | XStudio (현재)                                                                      | S2 (Adobe)                                              |
+| 속성                           | composition (현재)                                                                  | S2 (Adobe)                                              |
 | ------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `contain`                      | `layout style paint` (5개 파일)                                                     | 없음                                                    |
 | `transform` 상시               | `translate3d(0,0,0)` 상시 (Popover + Dialog + Calendar + ListBox + Menu + MenuItem) | 진입/퇴장 애니메이션 시에만 `translateY`/`translateX`   |

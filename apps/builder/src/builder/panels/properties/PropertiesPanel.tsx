@@ -805,7 +805,7 @@ function PropertiesPanelContent() {
       const copiedData = deserializeCopiedElements(clipboardText);
       if (!copiedData) {
         console.warn(
-          "[Paste] Clipboard does not contain valid XStudio element data",
+          "[Paste] Clipboard does not contain valid composition element data",
         );
         return;
       }

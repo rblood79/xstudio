@@ -1,13 +1,16 @@
 # ADR-013: Quick Connect — Collection 컴포넌트 데이터 바인딩 자동화
 
 ## Status
+
 Proposed
 
 ## Date
+
 2026-03-02 (effective date — 검토 완료 기준)
 
 ## Decision Makers
-XStudio Team
+
+composition Team
 
 ---
 
@@ -17,24 +20,26 @@ Collection 컴포넌트(ListBox, Select, ComboBox, GridList, Menu, Table)에 데
 
 ### 업계 표준 분석
 
-| 빌더 | 데이터 소스 자동 생성 | 삭제 시 데이터 | 패턴 |
-|------|:---:|:---:|------|
-| Webflow | ❌ | 유지 | 기존 CMS Collection 선택 |
-| Retool | ❌ (데모만) | 유지 | 쿼리 기반 느슨 결합 |
-| Framer | ❌ | 유지 | CMS Collection 선택 |
-| Bubble.io | ❌ | 유지 | Type + 쿼리 2단계 |
-| **XStudio (제안)** | **Quick Connect로 생성** | **유지** | **Preset 기반 1클릭** |
+| 빌더                   |  데이터 소스 자동 생성   | 삭제 시 데이터 | 패턴                     |
+| ---------------------- | :----------------------: | :------------: | ------------------------ |
+| Webflow                |            ❌            |      유지      | 기존 CMS Collection 선택 |
+| Retool                 |       ❌ (데모만)        |      유지      | 쿼리 기반 느슨 결합      |
+| Framer                 |            ❌            |      유지      | CMS Collection 선택      |
+| Bubble.io              |            ❌            |      유지      | Type + 쿼리 2단계        |
+| **composition (제안)** | **Quick Connect로 생성** |    **유지**    | **Preset 기반 1클릭**    |
 
 ---
 
 ## Context
 
 ### 현재 워크플로우 (3단계)
+
 1. Dataset 패널 → DataTable 수동 생성
 2. Property Editor → DataBinding 소스/테이블 수동 선택
 3. (ListBox만) "Field 자동 생성" 클릭
 
 ### 문제점
+
 - Factory가 의미 없는 정적 아이템(Item 1, 2, 3) 생성
 - 데이터 연결까지 3단계 수동 작업 필요
 - 초보자에게 높은 학습 곡선
@@ -46,12 +51,14 @@ Collection 컴포넌트(ListBox, Select, ComboBox, GridList, Menu, Table)에 데
 ### React Aria 정합성 원칙
 
 #### Dynamic Collections (기본 경로)
+
 React Aria 표준: `items` prop + render function으로 데이터 렌더링.
-XStudio의 `dataBinding` → `useCollectionData` 훅 → `items` prop이 이 패턴을 정확히 구현.
+composition의 `dataBinding` → `useCollectionData` 훅 → `items` prop이 이 패턴을 정확히 구현.
 
 **Quick Connect의 기본 동작 = DataTable 생성 + dataBinding 설정만으로 충분.**
 
 #### 슬롯 시스템 (template 경로)
+
 React Aria의 표준 슬롯: `slot="label"`, `slot="description"`, `slot="selection"`, `slot="drag"`.
 사용자가 template을 커스터마이징할 때 이 슬롯 패턴을 따라야 함.
 
@@ -71,6 +78,7 @@ React Aria의 표준 슬롯: `slot="label"`, `slot="description"`, `slot="select
 ```
 
 **ListBox vs GridList 사용 기준:**
+
 - ListBox: 선택 전용 (인터랙티브 요소 **불가** — React Aria 제약)
 - GridList: 선택 + 인터랙티브 (Checkbox, Switch 등 **허용**)
 
@@ -80,11 +88,11 @@ React Aria의 표준 슬롯: `slot="label"`, `slot="description"`, `slot="select
 
 ### 수정 대상
 
-| 파일 | 제거할 기본 아이템 | 유지할 구조 |
-|------|-------------------|------------|
-| `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | ListBoxItem×3, SelectItem×1, ComboBoxItem×1, GridListItem×4 | Select/ComboBox 구조적 자식 (Label, Trigger 등) |
-| `apps/builder/src/builder/factories/definitions/NavigationComponents.ts` | MenuItem×3 | — |
-| `apps/builder/src/builder/factories/definitions/TableComponents.ts` | _(이미 빈 구조 — 변경 불필요)_ | TableHeader + TableBody (빈 구조) |
+| 파일                                                                     | 제거할 기본 아이템                                          | 유지할 구조                                     |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------- | ----------------------------------------------- |
+| `apps/builder/src/builder/factories/definitions/SelectionComponents.ts`  | ListBoxItem×3, SelectItem×1, ComboBoxItem×1, GridListItem×4 | Select/ComboBox 구조적 자식 (Label, Trigger 등) |
+| `apps/builder/src/builder/factories/definitions/NavigationComponents.ts` | MenuItem×3                                                  | —                                               |
+| `apps/builder/src/builder/factories/definitions/TableComponents.ts`      | _(이미 빈 구조 — 변경 불필요)_                              | TableHeader + TableBody (빈 구조)               |
 
 ### 변경 결과
 
@@ -109,14 +117,14 @@ renderEmptyState={() => (
 
 수정 대상 (`packages/shared/src/components/`):
 
-| 컴포넌트 | 적용 포인트 | 비고 |
-|----------|-----------|------|
-| `ListBox.tsx` | `<ListBox renderEmptyState={...}>` | React Aria 기본 지원 (`renderEmptyState` prop) |
-| `GridList.tsx` | `<GridList renderEmptyState={...}>` | React Aria 기본 지원 |
-| `Select.tsx` | `<ListBox>` 내부 (Select의 popup) | Select 자체가 아닌 내부 ListBox에 적용 |
-| `ComboBox.tsx` | `<ListBox>` 내부 (ComboBox의 popup) | ComboBox 자체가 아닌 내부 ListBox에 적용 |
-| `Menu.tsx` | `<Menu renderEmptyState={...}>` | React Aria 기본 지원 |
-| `Table.tsx` | `<tbody>` 내부 행 0개 분기에서 placeholder `<tr>` 렌더링 | 커스텀 TanStack 가상화 구조이므로 React Aria `renderEmptyState` 미사용. `rows.length === 0` 조건에서 colspan 전체 placeholder row 표시 |
+| 컴포넌트       | 적용 포인트                                              | 비고                                                                                                                                   |
+| -------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `ListBox.tsx`  | `<ListBox renderEmptyState={...}>`                       | React Aria 기본 지원 (`renderEmptyState` prop)                                                                                         |
+| `GridList.tsx` | `<GridList renderEmptyState={...}>`                      | React Aria 기본 지원                                                                                                                   |
+| `Select.tsx`   | `<ListBox>` 내부 (Select의 popup)                        | Select 자체가 아닌 내부 ListBox에 적용                                                                                                 |
+| `ComboBox.tsx` | `<ListBox>` 내부 (ComboBox의 popup)                      | ComboBox 자체가 아닌 내부 ListBox에 적용                                                                                               |
+| `Menu.tsx`     | `<Menu renderEmptyState={...}>`                          | React Aria 기본 지원                                                                                                                   |
+| `Table.tsx`    | `<tbody>` 내부 행 0개 분기에서 placeholder `<tr>` 렌더링 | 커스텀 TanStack 가상화 구조이므로 React Aria `renderEmptyState` 미사용. `rows.length === 0` 조건에서 colspan 전체 placeholder row 표시 |
 
 ---
 
@@ -124,14 +132,14 @@ renderEmptyState={() => (
 
 ### 컴포넌트별 동작
 
-| 컴포넌트 | Quick Connect 동작 | React Aria 패턴 |
-|----------|-------------------|----------------|
-| **ListBox** | DataTable + dataBinding | Dynamic Collections |
-| **GridList** | DataTable + dataBinding | Dynamic Collections |
-| **Select** | DataTable + dataBinding | Dynamic Collections |
-| **ComboBox** | DataTable + dataBinding | Dynamic Collections |
-| **Menu** | DataTable + dataBinding | Dynamic Collections |
-| **Table** | DataTable + dataBinding (기존 `ADD_COLUMN_ELEMENTS` 파이프라인이 Column 자동 생성) | Column 정의 필수 |
+| 컴포넌트     | Quick Connect 동작                                                                 | React Aria 패턴     |
+| ------------ | ---------------------------------------------------------------------------------- | ------------------- |
+| **ListBox**  | DataTable + dataBinding                                                            | Dynamic Collections |
+| **GridList** | DataTable + dataBinding                                                            | Dynamic Collections |
+| **Select**   | DataTable + dataBinding                                                            | Dynamic Collections |
+| **ComboBox** | DataTable + dataBinding                                                            | Dynamic Collections |
+| **Menu**     | DataTable + dataBinding                                                            | Dynamic Collections |
+| **Table**    | DataTable + dataBinding (기존 `ADD_COLUMN_ELEMENTS` 파이프라인이 Column 자동 생성) | Column 정의 필수    |
 
 - ListBox/GridList: `item.name || item.title || item.label` 자동 매핑 (이미 구현됨)
 - Table: 기존 런타임 파이프라인(`Table.tsx detectColumnsFromData → TableRenderer.tsx onColumnsDetected → postMessage("ADD_COLUMN_ELEMENTS") → useIframeMessenger.ts`)이 dataBinding 설정 후 Column을 자동 생성하므로 별도 훅 불필요
@@ -145,7 +153,9 @@ interface UseQuickConnectOptions {
   elementId: string;
   componentTag: string;
   currentDataBinding?: DataBindingValue | null;
-  onDataBindingChange: (binding: DataBindingValue | null) => void | Promise<void>;
+  onDataBindingChange: (
+    binding: DataBindingValue | null,
+  ) => void | Promise<void>;
 }
 
 interface UseQuickConnectResult {
@@ -156,6 +166,7 @@ interface UseQuickConnectResult {
 ```
 
 로직:
+
 1. `useDataStore.getState()`에서 `createDataTable`, `currentProjectId`, `dataTables` 접근
 2. 이름 고유성: `name.trim().toLowerCase()` 기준으로 `dataTables` 내 중복 검사 → 충돌 시 suffix 추가 (`Users_2`)
 3. `createDataTable()` 호출 → `await onDataBindingChange()` (Table은 기존 `ADD_COLUMN_ELEMENTS` 파이프라인이 자동 처리)
@@ -184,23 +195,24 @@ Table 재실행 시 Column 처리: 기존 Column Elements **전체 교체** (rep
 
 ### 수정할 파일
 
-| 파일 | 변경 내용 |
-|------|---------|
-| `hooks/index.ts` | `useQuickConnect` export |
-| `components/property/index.ts` | `QuickConnectButton` export |
-| `components/index.ts` | `QuickConnectButton` re-export 추가 (에디터들이 `'../../../components'` 루트 barrel을 통해 import하는 패턴 유지) |
-| `ListBoxEditor.tsx` | `inferFieldType` + `handleAutoGenerateFields` 제거, Quick Connect 추가 |
-| `TableEditor.tsx` | `useQuickConnect` + QuickConnectButton (Column은 기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용) |
-| `GridListEditor.tsx` | `useQuickConnect` + QuickConnectButton |
-| `SelectEditor.tsx` | `useQuickConnect` + QuickConnectButton |
-| `ComboBoxEditor.tsx` | `useQuickConnect` + QuickConnectButton |
-| `MenuEditor.tsx` | `useQuickConnect` + QuickConnectButton |
+| 파일                           | 변경 내용                                                                                                        |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `hooks/index.ts`               | `useQuickConnect` export                                                                                         |
+| `components/property/index.ts` | `QuickConnectButton` export                                                                                      |
+| `components/index.ts`          | `QuickConnectButton` re-export 추가 (에디터들이 `'../../../components'` 루트 barrel을 통해 import하는 패턴 유지) |
+| `ListBoxEditor.tsx`            | `inferFieldType` + `handleAutoGenerateFields` 제거, Quick Connect 추가                                           |
+| `TableEditor.tsx`              | `useQuickConnect` + QuickConnectButton (Column은 기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용)                     |
+| `GridListEditor.tsx`           | `useQuickConnect` + QuickConnectButton                                                                           |
+| `SelectEditor.tsx`             | `useQuickConnect` + QuickConnectButton                                                                           |
+| `ComboBoxEditor.tsx`           | `useQuickConnect` + QuickConnectButton                                                                           |
+| `MenuEditor.tsx`               | `useQuickConnect` + QuickConnectButton                                                                           |
 
 ---
 
 ## 에디터 통합 패턴
 
 ### 모든 컴포넌트 (Table 제외)
+
 ```tsx
 const { quickConnect, isConnected, isConnecting } = useQuickConnect({
   elementId, componentTag: 'ListBox',
@@ -218,10 +230,13 @@ const { quickConnect, isConnected, isConnecting } = useQuickConnect({
 ```
 
 ### Table (기존 ADD_COLUMN_ELEMENTS 파이프라인 활용)
+
 ```tsx
 const { quickConnect, isConnected, isConnecting } = useQuickConnect({
-  elementId, componentTag: 'Table',
-  currentDataBinding, onDataBindingChange: handleDataBindingChange,
+  elementId,
+  componentTag: "Table",
+  currentDataBinding,
+  onDataBindingChange: handleDataBindingChange,
 });
 // dataBinding 설정 후 Preview의 TableRenderer가 데이터를 감지하면
 // ADD_COLUMN_ELEMENTS postMessage → useIframeMessenger가 Column 자동 생성
@@ -253,18 +268,18 @@ useQuickConnect:
 
 ## 주의사항
 
-| 항목 | 대응 |
-|------|------|
-| **이름 고유성** | `name.trim().toLowerCase()` 기준으로 `dataTables` 내 중복 검사 → 충돌 시 suffix 추가 (`Users_2`). `Users` vs `users` 충돌 방지 |
-| **currentProjectId null** | console.error + 조용히 실패 |
-| **Stale Closure** | async 내 `useDataStore.getState()` 사용 |
-| **Quick Connect 재실행** | 기존 DataTable 유지 + 새 DataTable 생성 + 바인딩 교체 |
-| **Table columnCreationRequestedRef 캐시** | `TableRenderer.tsx` 모듈 레벨 `Set<string>` 캐시는 `dataBinding.source` 타입 변경 시에만 clear됨. 동일 타입 재연결 시 Column 생성 차단됨. **해결: 3-Phase null-dataBinding 접근법** (Phase 4-B 상세 설계 참조) — `dataBinding=null` 중간 단계로 source 타입 변경을 강제하여 캐시 clear 트리거 |
-| **Undo/Redo** | 현재 `ADD_COLUMN_ELEMENTS` 경로는 `useStore.setState()` 직접 반영이므로 히스토리 스택을 타지 않음. DataTable도 Data Store 독립. Quick Connect 전체가 Undo 대상 밖이며, 되돌리기는 수동 바인딩 해제 + Column 삭제로 대응. 향후 히스토리 통합 시 `ADD_COLUMN_ELEMENTS` 핸들러에 `recordHistory()` 추가 필요 |
-| **기존 수동 경로** | PropertyDataBinding + "바인딩 제거" 버튼 유지 |
-| **Spec shapes 빈 상태** | 구현 전 6개 컴포넌트 placeholder 렌더링 검증 필수 |
-| **PixiListBox/PixiList fallback** | 구 패턴 컴포넌트(`PixiListBox`, `PixiList`)는 자식이 없으면 하드코딩 기본값(Item 1~3/1~5)을 강제 주입함. Factory 아이템 제거 시 캔버스에 여전히 기본값이 표시되어 Preview와 불일치 발생. **구현 시 fallback 로직을 `dataBinding` 유무로 분기하거나 제거 필요.** (PixiSelect/PixiGridList은 A등급 패턴으로 리팩토링 완료, 영향 없음) |
-| **Quick Connect 실패 롤백** | `createDataTable` 호출 전 `prevBinding`을 보존한다. `createDataTable` 성공 후 `onDataBindingChange` 실패 시 catch 블록에서 **(1) `onDataBindingChange(prevBinding)`으로 기존 바인딩 복구 시도** 후 **(2) `deleteDataTable(id)`로 생성된 DataTable 삭제**를 수행한다. 두 단계 중 하나라도 실패하면 console.error 로깅 후 조용히 실패 (사용자는 Dataset 패널에서 수동 복구 가능) |
+| 항목                                      | 대응                                                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **이름 고유성**                           | `name.trim().toLowerCase()` 기준으로 `dataTables` 내 중복 검사 → 충돌 시 suffix 추가 (`Users_2`). `Users` vs `users` 충돌 방지                                                                                                                                                                                                                                                 |
+| **currentProjectId null**                 | console.error + 조용히 실패                                                                                                                                                                                                                                                                                                                                                    |
+| **Stale Closure**                         | async 내 `useDataStore.getState()` 사용                                                                                                                                                                                                                                                                                                                                        |
+| **Quick Connect 재실행**                  | 기존 DataTable 유지 + 새 DataTable 생성 + 바인딩 교체                                                                                                                                                                                                                                                                                                                          |
+| **Table columnCreationRequestedRef 캐시** | `TableRenderer.tsx` 모듈 레벨 `Set<string>` 캐시는 `dataBinding.source` 타입 변경 시에만 clear됨. 동일 타입 재연결 시 Column 생성 차단됨. **해결: 3-Phase null-dataBinding 접근법** (Phase 4-B 상세 설계 참조) — `dataBinding=null` 중간 단계로 source 타입 변경을 강제하여 캐시 clear 트리거                                                                                  |
+| **Undo/Redo**                             | 현재 `ADD_COLUMN_ELEMENTS` 경로는 `useStore.setState()` 직접 반영이므로 히스토리 스택을 타지 않음. DataTable도 Data Store 독립. Quick Connect 전체가 Undo 대상 밖이며, 되돌리기는 수동 바인딩 해제 + Column 삭제로 대응. 향후 히스토리 통합 시 `ADD_COLUMN_ELEMENTS` 핸들러에 `recordHistory()` 추가 필요                                                                      |
+| **기존 수동 경로**                        | PropertyDataBinding + "바인딩 제거" 버튼 유지                                                                                                                                                                                                                                                                                                                                  |
+| **Spec shapes 빈 상태**                   | 구현 전 6개 컴포넌트 placeholder 렌더링 검증 필수                                                                                                                                                                                                                                                                                                                              |
+| **PixiListBox/PixiList fallback**         | 구 패턴 컴포넌트(`PixiListBox`, `PixiList`)는 자식이 없으면 하드코딩 기본값(Item 1~3/1~5)을 강제 주입함. Factory 아이템 제거 시 캔버스에 여전히 기본값이 표시되어 Preview와 불일치 발생. **구현 시 fallback 로직을 `dataBinding` 유무로 분기하거나 제거 필요.** (PixiSelect/PixiGridList은 A등급 패턴으로 리팩토링 완료, 영향 없음)                                            |
+| **Quick Connect 실패 롤백**               | `createDataTable` 호출 전 `prevBinding`을 보존한다. `createDataTable` 성공 후 `onDataBindingChange` 실패 시 catch 블록에서 **(1) `onDataBindingChange(prevBinding)`으로 기존 바인딩 복구 시도** 후 **(2) `deleteDataTable(id)`로 생성된 DataTable 삭제**를 수행한다. 두 단계 중 하나라도 실패하면 console.error 로깅 후 조용히 실패 (사용자는 Dataset 패널에서 수동 복구 가능) |
 
 ---
 
@@ -286,6 +301,7 @@ Phase 3-A (hook)와 3-B (UI)는 병렬 가능. Phase 4-A → 4-B → 4-C 순차.
 #### 1-A. Spec shapes 빈 상태 분석 — 수정 불필요
 
 Factory 아이템 제거 시 `_hasChildren=false` → spec이 자체 placeholder 렌더링:
+
 - ListBox.spec: `['Item 1','Item 2','Item 3']` 자체 렌더링
 - GridList.spec: `DEFAULT_ITEMS` 4개
 - Menu.spec: `['Edit','Copy','Paste','---','Delete']`
@@ -296,10 +312,10 @@ Canvas에서 "비어 보이는" 현상 없음. Spec 수정 불필요.
 
 #### 1-B. PixiListBox/PixiList fallback 분기 처리
 
-| 파일 | 수정 위치 | 변경 |
-|------|----------|------|
-| `apps/builder/src/builder/workspace/canvas/ui/PixiListBox.tsx` | L114~118 (fallback 반환부) | `element.props?.dataBinding` 존재 시 빈 배열 `[]` 반환, 없으면 기존 하드코딩 유지 |
-| `apps/builder/src/builder/workspace/canvas/ui/PixiList.tsx` | L56~63 (`parseListItems` fallback) | `props?.dataBinding` 존재 시 빈 배열 반환 |
+| 파일                                                           | 수정 위치                          | 변경                                                                              |
+| -------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------- |
+| `apps/builder/src/builder/workspace/canvas/ui/PixiListBox.tsx` | L114~118 (fallback 반환부)         | `element.props?.dataBinding` 존재 시 빈 배열 `[]` 반환, 없으면 기존 하드코딩 유지 |
+| `apps/builder/src/builder/workspace/canvas/ui/PixiList.tsx`    | L56~63 (`parseListItems` fallback) | `props?.dataBinding` 존재 시 빈 배열 반환                                         |
 
 ---
 
@@ -322,14 +338,14 @@ Canvas에서 "비어 보이는" 현상 없음. Spec 수정 불필요.
 
 #### 2-B. 공유 컴포넌트 Empty State 추가
 
-| 파일 (`packages/shared/src/components/`) | 적용 방식 | 주요 수정 위치 |
-|---|---|---|
-| `ListBox.tsx` | `<AriaListBox renderEmptyState={...}>` | L554~558 등 모든 AriaListBox 호출부 |
-| `GridList.tsx` | `<AriaGridList renderEmptyState={...}>` | L289~293 등 |
-| `Select.tsx` | 내부 `<ListBox renderEmptyState={...}>` | L321~327 (popup ListBox) |
-| `ComboBox.tsx` | 내부 `<ListBox renderEmptyState={...}>` | L155, 253, 309, 392 등 |
-| `Menu.tsx` | `<Menu renderEmptyState={...}>` | L403 등 모든 Menu 호출부 |
-| `Table.tsx` | `<tbody>` 내 `rows.length === 0` 분기 placeholder `<tr>` | L1359 (rowVirtualizer.map 앞) |
+| 파일 (`packages/shared/src/components/`) | 적용 방식                                                | 주요 수정 위치                      |
+| ---------------------------------------- | -------------------------------------------------------- | ----------------------------------- |
+| `ListBox.tsx`                            | `<AriaListBox renderEmptyState={...}>`                   | L554~558 등 모든 AriaListBox 호출부 |
+| `GridList.tsx`                           | `<AriaGridList renderEmptyState={...}>`                  | L289~293 등                         |
+| `Select.tsx`                             | 내부 `<ListBox renderEmptyState={...}>`                  | L321~327 (popup ListBox)            |
+| `ComboBox.tsx`                           | 내부 `<ListBox renderEmptyState={...}>`                  | L155, 253, 309, 392 등              |
+| `Menu.tsx`                               | `<Menu renderEmptyState={...}>`                          | L403 등 모든 Menu 호출부            |
+| `Table.tsx`                              | `<tbody>` 내 `rows.length === 0` 분기 placeholder `<tr>` | L1359 (rowVirtualizer.map 앞)       |
 
 Empty state 메시지: `"데이터를 연결하세요"` (`.collection-empty-state` 클래스)
 
@@ -342,6 +358,7 @@ Empty state 메시지: `"데이터를 연결하세요"` (`.collection-empty-stat
 **`apps/builder/src/builder/hooks/useQuickConnect.ts`**
 
 핵심 로직:
+
 1. `useDataStore.getState()`로 stale closure 방지
 2. 이름 고유성: `name.trim().toLowerCase()` 기준 중복 검사 → suffix
 3. `createDataTable()` → `await onDataBindingChange(newBinding)`
@@ -349,6 +366,7 @@ Empty state 메시지: `"데이터를 연결하세요"` (`.collection-empty-stat
 5. preset이 null이면 빈 테이블 생성
 
 재사용할 기존 코드:
+
 - `useDataStore`: `stores/data.ts` — `createDataTable`, `deleteDataTable`, `dataTables`, `currentProjectId`
 - `DataTableCreate` 타입: `types/builder/data.types.ts` L82~86
 - `DataTablePreset` / `PRESET_CATEGORIES`: `panels/datatable/presets/index.ts`
@@ -358,6 +376,7 @@ Empty state 메시지: `"데이터를 연결하세요"` (`.collection-empty-stat
 **`apps/builder/src/builder/components/property/QuickConnectButton.tsx`** + **`.css`**
 
 UI 구조 (`ActionTypePicker` 패턴 참조):
+
 ```
 DialogTrigger
   ├── Button "[Zap] Quick Connect"
@@ -376,44 +395,79 @@ CSS: `@layer components { }` + BEM-like + M3 변수
 **참조 패턴**: `ActionTypePicker.tsx` 구조를 그대로 따름. 기존 코드베이스에 Popover+검색+카테고리 리스트 조합의 선례가 없으므로 ActionTypePicker가 유일한 참조점.
 
 **카테고리 헤더 구현** — `ListBoxSection` 미사용:
+
 ```tsx
 // ActionTypePicker 패턴: flatMap으로 헤더 + 아이템을 평면 배열로 생성
 const filteredItems = useMemo(() => {
-  return PRESET_CATEGORIES.flatMap(category => {
-    const presets = getPresetsByCategory(category.id)
-      .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  return PRESET_CATEGORIES.flatMap((category) => {
+    const presets = getPresetsByCategory(category.id).filter((p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
     if (presets.length === 0) return [];
     return [
-      { type: 'header' as const, id: `header-${category.id}`, label: category.label },
-      ...presets.map(p => ({ type: 'preset' as const, ...p })),
+      {
+        type: "header" as const,
+        id: `header-${category.id}`,
+        label: category.label,
+      },
+      ...presets.map((p) => ({ type: "preset" as const, ...p })),
     ];
   });
 }, [searchTerm]);
 
 // ListBox 내부: 헤더는 pointer-events: none으로 비인터랙티브 처리
 <ListBox selectionMode="single" onSelectionChange={handleSelect}>
-  {filteredItems.map(item =>
-    item.type === 'header'
-      ? <ListBoxItem key={item.id} id={item.id} textValue={item.label}
-          className="quick-connect-group-label">
-          {item.label}
-        </ListBoxItem>
-      : <ListBoxItem key={item.id} id={item.id} textValue={item.name}>
-          <Icon name={item.icon} size={16} />
-          {item.name}
-        </ListBoxItem>
+  {filteredItems.map((item) =>
+    item.type === "header" ? (
+      <ListBoxItem
+        key={item.id}
+        id={item.id}
+        textValue={item.label}
+        className="quick-connect-group-label"
+      >
+        {item.label}
+      </ListBoxItem>
+    ) : (
+      <ListBoxItem key={item.id} id={item.id} textValue={item.name}>
+        <Icon name={item.icon} size={16} />
+        {item.name}
+      </ListBoxItem>
+    ),
   )}
-</ListBox>
+</ListBox>;
 ```
 
 **Preset 아이콘 처리** — `icon` 필드는 Lucide 문자열 이름(`"User"`, `"Key"` 등):
+
 ```tsx
 // iconMap으로 문자열 → React 컴포넌트 변환 (14개 preset 전용)
-import { User, Key, Lock, ShoppingCart, Package, Mail, /* ... */ } from 'lucide-react';
+import {
+  User,
+  Key,
+  Lock,
+  ShoppingCart,
+  Package,
+  Mail /* ... */,
+} from "lucide-react";
 
-const PRESET_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
-  User, Key, Lock, ShoppingCart, Package, Mail,
-  FileText, Calendar, MapPin, Star, Tag, Briefcase, Heart, Image,
+const PRESET_ICON_MAP: Record<
+  string,
+  React.ComponentType<{ size?: number }>
+> = {
+  User,
+  Key,
+  Lock,
+  ShoppingCart,
+  Package,
+  Mail,
+  FileText,
+  Calendar,
+  MapPin,
+  Star,
+  Tag,
+  Briefcase,
+  Heart,
+  Image,
 };
 
 // 사용: const IconComponent = PRESET_ICON_MAP[preset.icon] ?? Database;
@@ -426,12 +480,31 @@ const PRESET_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = 
 **Popover props**: `placement="bottom start"`, `offset={4}`, `showArrow={false}`, `containFocus={true}`
 
 **CSS 핵심 클래스** (EventsPanel.css의 ActionTypePicker 스타일 참조):
+
 ```css
 @layer components {
-  .quick-connect-popover { max-height: 320px; min-width: 260px; overflow-y: auto; }
-  .quick-connect-search { display: flex; gap: var(--spacing-sm); border-bottom: 1px solid var(--color-border); padding: var(--spacing-sm); }
-  .quick-connect-group-label { cursor: default; pointer-events: none; font-size: 11px; font-weight: 600; color: var(--color-text-secondary); padding: var(--spacing-xs) var(--spacing-sm); }
-  .quick-connect-item[data-focused] { background: var(--color-surface-100); }
+  .quick-connect-popover {
+    max-height: 320px;
+    min-width: 260px;
+    overflow-y: auto;
+  }
+  .quick-connect-search {
+    display: flex;
+    gap: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-sm);
+  }
+  .quick-connect-group-label {
+    cursor: default;
+    pointer-events: none;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  .quick-connect-item[data-focused] {
+    background: var(--color-surface-100);
+  }
 }
 ```
 
@@ -447,16 +520,17 @@ const PRESET_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = 
 
 **제거 대상 의존성 맵** (모두 자기 완결적 — 다른 코드에서 참조하지 않음):
 
-| 제거 대상 | 라인 | 의존하는 import/selector |
-|-----------|------|------------------------|
-| `inferFieldType` 함수 | L108~125 | 없음 (handleAutoGenerateFields 전용) |
-| `handleAutoGenerateFields` 함수 | L128~223 | `getDB`, `addElement`, `generateCustomId`, `ElementUtils`, `Element` 타입, `currentPageId`, `useDataTables` |
-| `existingFields` useMemo | 의존: templateItem, getChildElements | `getChildElements` selector |
-| `templateItem` useMemo | 의존: getChildElements | `getChildElements` selector |
-| Auto-Generate 버튼 UI | L609~649 | `Wand2` (lucide icon), `Database` (lucide icon) |
-| `handleDataBindingChange` 복잡 로직 | L278~293 | `removeElement` selector, `window.confirm` |
+| 제거 대상                           | 라인                                 | 의존하는 import/selector                                                                                    |
+| ----------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `inferFieldType` 함수               | L108~125                             | 없음 (handleAutoGenerateFields 전용)                                                                        |
+| `handleAutoGenerateFields` 함수     | L128~223                             | `getDB`, `addElement`, `generateCustomId`, `ElementUtils`, `Element` 타입, `currentPageId`, `useDataTables` |
+| `existingFields` useMemo            | 의존: templateItem, getChildElements | `getChildElements` selector                                                                                 |
+| `templateItem` useMemo              | 의존: getChildElements               | `getChildElements` selector                                                                                 |
+| Auto-Generate 버튼 UI               | L609~649                             | `Wand2` (lucide icon), `Database` (lucide icon)                                                             |
+| `handleDataBindingChange` 복잡 로직 | L278~293                             | `removeElement` selector, `window.confirm`                                                                  |
 
 **제거할 Store selector** (L65~67):
+
 ```diff
 - const addElement = useStore(s => s.addElement);
 - const removeElement = useStore(s => s.removeElement);
@@ -464,6 +538,7 @@ const PRESET_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = 
 ```
 
 **제거할 import**:
+
 ```diff
 - import { Database, Wand2 } from 'lucide-react';  // Database는 Quick Connect가 사용하면 유지
 - import { getDB } from '../../../../services/supabase';
@@ -474,22 +549,28 @@ const PRESET_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = 
 ```
 
 **`handleDataBindingChange` 단순화** (L271~297 → 1줄):
+
 ```typescript
 // Before: Field 삭제 confirm + templateItem 삭제 + existingFields 삭제 (~30줄)
 // After:
-const handleDataBindingChange = useCallback((binding: DataBindingValue | null) => {
-  onUpdate({ ...currentProps, dataBinding: binding || undefined });
-}, [currentProps, onUpdate]);
+const handleDataBindingChange = useCallback(
+  (binding: DataBindingValue | null) => {
+    onUpdate({ ...currentProps, dataBinding: binding || undefined });
+  },
+  [currentProps, onUpdate],
+);
 ```
 
 **추가할 코드** (dataBindingSection useMemo 내부, PropertyDataBinding 위):
+
 ```tsx
-import { useQuickConnect } from '../../../hooks';
-import { QuickConnectButton } from '../../../components';
+import { useQuickConnect } from "../../../hooks";
+import { QuickConnectButton } from "../../../components";
 
 // 훅 호출 (컴포넌트 본문)
 const { quickConnect, isConnected, isConnecting } = useQuickConnect({
-  elementId, componentTag: 'ListBox',
+  elementId,
+  componentTag: "ListBox",
   currentDataBinding: currentProps?.dataBinding,
   onDataBindingChange: handleDataBindingChange,
 });
@@ -499,7 +580,7 @@ const { quickConnect, isConnected, isConnecting } = useQuickConnect({
   onQuickConnect={quickConnect}
   isConnected={isConnected}
   isConnecting={isConnecting}
-/>
+/>;
 ```
 
 **영향 없는 섹션** (8개 — 수정 불필요):
@@ -524,40 +605,54 @@ if (prevSourceRef !== currentSource) {       // "dataTable" → "dataTable"은 f
 **해결: 3-Phase null-dataBinding 접근법**
 
 ```typescript
-const handleQuickConnect = useCallback(async (preset: DataTablePreset | null) => {
-  const tableHeaderId = tableHeaderElement?.id;
-  if (!tableHeaderId) return;
+const handleQuickConnect = useCallback(
+  async (preset: DataTablePreset | null) => {
+    const tableHeaderId = tableHeaderElement?.id;
+    if (!tableHeaderId) return;
 
-  // Phase 0: 기존 Column+ColumnGroup 존재 시 확인
-  const columnIds = [...actualColumns, ...actualColumnGroups].map(e => e.id);
-  if (columnIds.length > 0) {
-    const confirmed = window.confirm('기존 컬럼을 새 스키마로 교체합니다.');
-    if (!confirmed) return;
-    await removeElements(columnIds);
-  }
+    // Phase 0: 기존 Column+ColumnGroup 존재 시 확인
+    const columnIds = [...actualColumns, ...actualColumnGroups].map(
+      (e) => e.id,
+    );
+    if (columnIds.length > 0) {
+      const confirmed = window.confirm("기존 컬럼을 새 스키마로 교체합니다.");
+      if (!confirmed) return;
+      await removeElements(columnIds);
+    }
 
-  // Phase 1: dataBinding을 null로 설정 → source "dataTable" → "none" 전환
-  //          → TableRenderer의 prevSourceRef 변경 → 캐시 clear 트리거
-  handleDataBindingChange(null);
+    // Phase 1: dataBinding을 null로 설정 → source "dataTable" → "none" 전환
+    //          → TableRenderer의 prevSourceRef 변경 → 캐시 clear 트리거
+    handleDataBindingChange(null);
 
-  // Phase 2: 다음 tick에서 새 dataBinding 설정
-  //          → source "none" → "dataTable" 전환 → 캐시가 비어있으므로 Column 생성 정상 진행
-  await new Promise(resolve => setTimeout(resolve, 0));
-  await quickConnect(preset);
-}, [tableHeaderElement, actualColumns, actualColumnGroups, quickConnect, handleDataBindingChange]);
+    // Phase 2: 다음 tick에서 새 dataBinding 설정
+    //          → source "none" → "dataTable" 전환 → 캐시가 비어있으므로 Column 생성 정상 진행
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await quickConnect(preset);
+  },
+  [
+    tableHeaderElement,
+    actualColumns,
+    actualColumnGroups,
+    quickConnect,
+    handleDataBindingChange,
+  ],
+);
 ```
 
 **왜 이 접근이 작동하는가**:
+
 1. `handleDataBindingChange(null)` → Preview의 TableRenderer가 `dataBinding.source`를 `undefined`(= 없음)로 인식
 2. `prevSourceRef`가 `"dataTable"` → `undefined`로 변경 → `columnCreationRequestedRef.clear()` 실행
 3. 다음 tick에서 `quickConnect(preset)` → 새 dataBinding 설정 → source가 다시 `"dataTable"`
 4. requestKey가 새로 생성되지만 캐시가 비어있으므로 `columnCreationRequestedRef.has(key)` = false → Column 생성 진행
 
 **대안 검토 (기각)**:
+
 - `columnCreationRequestedRef`에 직접 접근하여 clear → 모듈 레벨 변수이므로 Builder에서 접근 불가 (Preview iframe 격리)
 - requestKey에 timestamp 추가 → TableRenderer 코드 수정 필요 (범위 초과)
 
 추가:
+
 - `useQuickConnect` 훅 호출
 - `handleQuickConnect` 래퍼 (위 3-Phase 로직)
 - `<QuickConnectButton onQuickConnect={handleQuickConnect}>` (Data Binding 섹션 L306~313)
@@ -566,12 +661,12 @@ const handleQuickConnect = useCallback(async (preset: DataTablePreset | null) =>
 
 #### 4-C. 나머지 4개 에디터 — 동일 패턴
 
-| 파일 | componentTag | Data Binding 섹션 |
-|------|-------------|-----------------|
-| `GridListEditor.tsx` | `'GridList'` | L213~220 |
-| `SelectEditor.tsx` | `'Select'` | L421~432 (useMemo) |
+| 파일                 | componentTag | Data Binding 섹션  |
+| -------------------- | ------------ | ------------------ |
+| `GridListEditor.tsx` | `'GridList'` | L213~220           |
+| `SelectEditor.tsx`   | `'Select'`   | L421~432 (useMemo) |
 | `ComboBoxEditor.tsx` | `'ComboBox'` | L399~410 (useMemo) |
-| `MenuEditor.tsx` | `'Menu'` | L70~77 |
+| `MenuEditor.tsx`     | `'Menu'`     | L70~77             |
 
 각 에디터에 추가: import + `useQuickConnect` 훅 + `<QuickConnectButton>` (PropertyDataBinding 위)
 
@@ -581,11 +676,11 @@ const handleQuickConnect = useCallback(async (preset: DataTablePreset | null) =>
 
 #### 5-A. Barrel Export 업데이트
 
-| 파일 | 추가 내용 |
-|------|----------|
-| `hooks/index.ts` | `export { useQuickConnect } from './useQuickConnect'` (Data Management 카테고리 L19 부근) |
-| `components/property/index.ts` | `export { QuickConnectButton } from './QuickConnectButton'` (L12 이후) |
-| `components/index.ts` | `QuickConnectButton` re-export 추가 (L23 PropertyDataBinding 다음) |
+| 파일                           | 추가 내용                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------- |
+| `hooks/index.ts`               | `export { useQuickConnect } from './useQuickConnect'` (Data Management 카테고리 L19 부근) |
+| `components/property/index.ts` | `export { QuickConnectButton } from './QuickConnectButton'` (L12 이후)                    |
+| `components/index.ts`          | `QuickConnectButton` re-export 추가 (L23 PropertyDataBinding 다음)                        |
 
 #### 5-B. 타입 체크
 
@@ -616,20 +711,26 @@ cd apps/builder && pnpm exec tsc --noEmit
 ## Alternatives Considered
 
 ### A. Factory에서 DataTable 자동 생성 (기각)
+
 컴포넌트 생성 시 자동으로 DataTable 생성. 기각 이유:
+
 - 데이터/UI 강결합 (삭제 시 정리 복잡)
 - DataTable 공유 불가 (1:1 바인딩)
 - 업계 표준과 불일치 (5개 빌더 모두 자동 생성 안 함)
 
 ### B. 기존 수동 경로만 유지 (기각)
+
 현재 시스템 유지. 기각 이유:
+
 - 3단계 수동 작업 = 높은 학습 곡선
 - Retool 등 경쟁 빌더 대비 UX 열위
 
 ### C. Field 자동 생성 (수정됨)
+
 ListBox/GridList에 Field 자식 자동 생성. 수정 이유:
+
 - React Aria의 Dynamic Collections 패턴과 불일치
-- XStudio의 커스텀 확장 (slot 시스템 밖)
+- composition의 커스텀 확장 (slot 시스템 밖)
 - dataBinding만으로 동적 렌더링이 이미 작동
 
 ---
@@ -651,34 +752,34 @@ ListBox/GridList에 Field 자식 자동 생성. 수정 이유:
 
 ### 컬렉션 컴포넌트 존재 확인 (✅ 완료)
 
-| 컴포넌트 | Factory 파일 | Factory 기본 아이템 현황 |
-|----------|-------------|----------------------|
-| ListBox | `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | ✅ ListBoxItem×3 포함 (문서 내용과 일치) |
-| GridList | 동일 파일 | ✅ GridListItem×4 포함 (문서 내용과 일치) |
-| Select | 동일 파일 | ✅ Label + SelectTrigger 구조 (SelectItem은 없음) |
-| ComboBox | 동일 파일 | ✅ ComboBoxItem×1 포함 (문서 내용과 일치) |
-| Menu | `apps/builder/src/builder/factories/definitions/NavigationComponents.ts` | ✅ MenuItem×3 포함 (문서 내용과 일치) |
-| Table | `apps/builder/src/builder/factories/definitions/TableComponents.ts` | ✅ TableHeader + TableBody 빈 구조 (문서 내용과 일치) |
+| 컴포넌트 | Factory 파일                                                             | Factory 기본 아이템 현황                              |
+| -------- | ------------------------------------------------------------------------ | ----------------------------------------------------- |
+| ListBox  | `apps/builder/src/builder/factories/definitions/SelectionComponents.ts`  | ✅ ListBoxItem×3 포함 (문서 내용과 일치)              |
+| GridList | 동일 파일                                                                | ✅ GridListItem×4 포함 (문서 내용과 일치)             |
+| Select   | 동일 파일                                                                | ✅ Label + SelectTrigger 구조 (SelectItem은 없음)     |
+| ComboBox | 동일 파일                                                                | ✅ ComboBoxItem×1 포함 (문서 내용과 일치)             |
+| Menu     | `apps/builder/src/builder/factories/definitions/NavigationComponents.ts` | ✅ MenuItem×3 포함 (문서 내용과 일치)                 |
+| Table    | `apps/builder/src/builder/factories/definitions/TableComponents.ts`      | ✅ TableHeader + TableBody 빈 구조 (문서 내용과 일치) |
 
 ### 데이터 바인딩 기존 구현 확인 (✅ 완료)
 
-| 항목 | 확인 결과 |
-|------|----------|
-| `useCollectionData.ts` | ✅ 존재. `DataBinding` 타입 사용, DataTable Store 지원 포함 |
-| `useDataStore` (createDataTable, dataTables) | ✅ `stores/data.ts`에서 import 확인 |
-| `DataTablePreset` / `PRESET_CATEGORIES` | ✅ `panels/datatable/presets/index.ts` — `PRESET_CATEGORIES`, `DATATABLE_PRESETS`, `getPresetsByCategory` export 확인 |
-| `PixiListBox.tsx` | ✅ `apps/builder/src/builder/workspace/canvas/ui/PixiListBox.tsx` 존재 |
-| `PixiList.tsx` | ✅ `apps/builder/src/builder/workspace/canvas/ui/PixiList.tsx` 존재 |
+| 항목                                         | 확인 결과                                                                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `useCollectionData.ts`                       | ✅ 존재. `DataBinding` 타입 사용, DataTable Store 지원 포함                                                           |
+| `useDataStore` (createDataTable, dataTables) | ✅ `stores/data.ts`에서 import 확인                                                                                   |
+| `DataTablePreset` / `PRESET_CATEGORIES`      | ✅ `panels/datatable/presets/index.ts` — `PRESET_CATEGORIES`, `DATATABLE_PRESETS`, `getPresetsByCategory` export 확인 |
+| `PixiListBox.tsx`                            | ✅ `apps/builder/src/builder/workspace/canvas/ui/PixiListBox.tsx` 존재                                                |
+| `PixiList.tsx`                               | ✅ `apps/builder/src/builder/workspace/canvas/ui/PixiList.tsx` 존재                                                   |
 
 ### Quick Connect 미구현 확인 (전제 조건 현황)
 
-| 항목 | 상태 |
-|------|------|
-| `useQuickConnect.ts` | ❌ 미구현 — `apps/builder/src/builder/hooks/` 에 없음 |
-| `QuickConnectButton.tsx` | ❌ 미구현 — `components/property/` 에 없음 |
-| 에디터 6개에 Quick Connect 통합 | ❌ 미구현 |
-| Factory 기본 아이템 제거 | ❌ 미구현 (현재 ListBoxItem×3, GridListItem×4, MenuItem×3, ComboBoxItem×1 포함) |
-| Empty State 추가 | ❌ 미구현 |
+| 항목                            | 상태                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `useQuickConnect.ts`            | ❌ 미구현 — `apps/builder/src/builder/hooks/` 에 없음                           |
+| `QuickConnectButton.tsx`        | ❌ 미구현 — `components/property/` 에 없음                                      |
+| 에디터 6개에 Quick Connect 통합 | ❌ 미구현                                                                       |
+| Factory 기본 아이템 제거        | ❌ 미구현 (현재 ListBoxItem×3, GridListItem×4, MenuItem×3, ComboBoxItem×1 포함) |
+| Empty State 추가                | ❌ 미구현                                                                       |
 
 ### 파일 경로 정확성
 

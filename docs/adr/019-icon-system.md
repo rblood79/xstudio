@@ -25,7 +25,7 @@ Implemented (2026-03-08) — Phase A+B+C+D 완료, Phase E 향후
 
 ### 문제
 
-XStudio의 WebGL/Skia 렌더링 파이프라인에는 아이콘 렌더링 기능이 **완전히 구현**되어 있다:
+composition의 WebGL/Skia 렌더링 파이프라인에는 아이콘 렌더링 기능이 **완전히 구현**되어 있다:
 
 - `IconFontShape` 타입 + `lucideIcons.ts` SVG path 레지스트리
 - `specShapeConverter.ts` — `icon_font` → `icon_path` SkiaNodeData 변환

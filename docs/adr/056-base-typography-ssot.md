@@ -45,7 +45,7 @@ Base typography (font-family, font-size, line-height)가 Canvas/Preview/Publish 
 ### 대안 B: TypeScript 상수 단일 정본 (BASE_TYPOGRAPHY 객체)
 
 - 설명: `apps/builder/src/builder/fonts/` 에 `BASE_TYPOGRAPHY` 상수 하나를 두고 3곳이 모두 참조. `DEFAULT_FONT_FAMILY`를 `BASE_TYPOGRAPHY.fontFamily`로 통합. `ROOT_COMPUTED_STYLE`에 `lineHeight` 추가.
-- 근거: Plasmic(오픈소스 노코드 빌더)이 `ProjectConfig.defaultStyles` 객체를 단일 정본으로 사용하는 패턴. XStudio에서 `DEFAULT_FONT_FAMILY`가 이미 동일 방식으로 3곳 import 중.
+- 근거: Plasmic(오픈소스 노코드 빌더)이 `ProjectConfig.defaultStyles` 객체를 단일 정본으로 사용하는 패턴. composition에서 `DEFAULT_FONT_FAMILY`가 이미 동일 방식으로 3곳 import 중.
 - 위험:
   - 기술: L — TS 상수 export/import는 검증된 패턴. `DEFAULT_FONT_FAMILY`가 이미 동작 중
   - 성능: L — 빌드타임 상수. 런타임 비용 없음
@@ -123,7 +123,7 @@ ThemesPanel (기존 ADR-021)
 ```
 ThemesPanel.setBaseTypography()
   → themeConfigStore (Zustand)
-    → localStorage 영속화 (키: "xstudio-theme-config-{projectId}")
+    → localStorage 영속화 (키: "composition-theme-config-{projectId}")
     → themeVersion++ (Skia 재렌더 트리거)
     → ROOT_COMPUTED_STYLE 동적 갱신
     → Preview postMessage (CSS 변수 주입)
@@ -147,7 +147,7 @@ ThemesPanel.setBaseTypography()
 
 - **대안 A 기각**: Canvas가 DOM `getComputedStyle`에 의존하면 Skia 초기화 순서에 race condition 가능. themeConfigStore 직접 읽기가 더 안전
 - **대안 B 기각**: 정적 상수는 정합성 수정만 가능하고 사용자 변경 불가. C의 구현 비용이 거의 동일한데 확장성이 훨씬 높음
-- **대안 D 기각**: Vite plugin 빌드 파이프라인은 현재 XStudio 스택에 없는 새 의존성. 불필요한 인프라
+- **대안 D 기각**: Vite plugin 빌드 파이프라인은 현재 composition 스택에 없는 새 의존성. 불필요한 인프라
 
 > 구현 상세: [056-base-typography-ssot-breakdown.md](../design/056-base-typography-ssot-breakdown.md)
 

@@ -52,15 +52,15 @@ tmux -V  # tmux 3.6a 이상 확인
 
 `.claude/agents/` 디렉토리에 7개 에이전트가 정의되어 있다:
 
-| 에이전트 | 모델 | 색상 | 용도 |
-|---------|------|------|------|
-| **architect** | Opus | 🔵 blue | 아키텍처 설계, 시스템 디자인, ADR 작성 |
-| **refactorer** | Opus | 🟣 magenta | 코드 리팩토링, 구조 개선, 패턴 전환 |
-| **debugger** | Opus | 🔴 red | 버그 디버깅, 근본 원인 분석, 성능 추적 |
-| **implementer** | Sonnet | 🟢 green | 기능 구현, 컴포넌트 작성, API 연동 |
-| **reviewer** | Sonnet | 🟡 yellow | 코드 리뷰, 품질 검사, 컨벤션 준수 |
-| **tester** | Sonnet | 🔷 cyan | 테스트 작성 (unit, Playwright, Storybook) |
-| **documenter** | Sonnet | 🩷 pink | 문서화, ADR 작성, 기술 문서 업데이트 |
+| 에이전트        | 모델   | 색상       | 용도                                      |
+| --------------- | ------ | ---------- | ----------------------------------------- |
+| **architect**   | Opus   | 🔵 blue    | 아키텍처 설계, 시스템 디자인, ADR 작성    |
+| **refactorer**  | Opus   | 🟣 magenta | 코드 리팩토링, 구조 개선, 패턴 전환       |
+| **debugger**    | Opus   | 🔴 red     | 버그 디버깅, 근본 원인 분석, 성능 추적    |
+| **implementer** | Sonnet | 🟢 green   | 기능 구현, 컴포넌트 작성, API 연동        |
+| **reviewer**    | Sonnet | 🟡 yellow  | 코드 리뷰, 품질 검사, 컨벤션 준수         |
+| **tester**      | Sonnet | 🔷 cyan    | 테스트 작성 (unit, Playwright, Storybook) |
+| **documenter**  | Sonnet | 🩷 pink    | 문서화, ADR 작성, 기술 문서 업데이트      |
 
 ### 3.2 모델 선택 기준
 
@@ -71,13 +71,13 @@ tmux -V  # tmux 3.6a 이상 확인
 
 ```markdown
 ---
-name: agent-name          # 에이전트 식별자
-model: opus | sonnet      # 사용할 모델
-color: blue               # 터미널 색상 표시
-tools: ["Read", "Grep"]   # (선택) 도구 제한. 생략 시 전체 접근
+name: agent-name # 에이전트 식별자
+model: opus | sonnet # 사용할 모델
+color: blue # 터미널 색상 표시
+tools: ["Read", "Grep"] # (선택) 도구 제한. 생략 시 전체 접근
 ---
 
-[시스템 프롬프트 - XStudio 규칙 + 역할별 지침]
+[시스템 프롬프트 - composition 규칙 + 역할별 지침]
 ```
 
 ## 4. 사용 방법
@@ -109,6 +109,7 @@ TeamCreate("feature-auth", "인증 기능 구현 팀")
 ```
 
 생성되는 파일:
+
 ```
 ~/.claude/teams/feature-auth/config.json    # 팀 설정
 ~/.claude/tasks/feature-auth/               # 공유 task list
@@ -169,6 +170,7 @@ SendMessage(type: "shutdown_request", recipient: "test-1")
 ```
 
 자동 구성 예시:
+
 1. **architect** (Opus) → 기능 설계 및 컴포넌트 구조 결정
 2. **implementer x2** (Sonnet) → UI 컴포넌트 + 상태 관리 병렬 구현
 3. **tester** (Sonnet) → 테스트 작성
@@ -180,6 +182,7 @@ SendMessage(type: "shutdown_request", recipient: "test-1")
 ```
 
 자동 구성 예시:
+
 1. **refactorer** (Opus) → 리팩토링 계획 및 핵심 변환
 2. **implementer** (Sonnet) → 패턴 전환 실행
 3. **reviewer** (Sonnet) → 변환 결과 검증
@@ -191,6 +194,7 @@ SendMessage(type: "shutdown_request", recipient: "test-1")
 ```
 
 자동 구성 예시:
+
 1. **debugger** (Opus) → 근본 원인 분석
 2. **implementer** (Sonnet) → 수정 구현
 3. **tester** (Sonnet) → 회귀 테스트 작성
@@ -202,6 +206,7 @@ SendMessage(type: "shutdown_request", recipient: "test-1")
 ```
 
 자동 구성 예시:
+
 1. **reviewer** (Sonnet) → SKILL.md 규칙 기반 코드 리뷰
 2. **tester** (Sonnet) → 테스트 커버리지 분석
 
@@ -212,6 +217,7 @@ SendMessage(type: "shutdown_request", recipient: "test-1")
 `.claude/agents/[name].md` 파일을 편집하여 시스템 프롬프트나 도구 제한을 변경할 수 있다.
 
 예: reviewer에 Bash 도구 추가
+
 ```yaml
 tools: ["Read", "Grep", "Glob", "Bash"]
 ```
@@ -244,11 +250,11 @@ You are a security specialist...
 
 `tools` 필드로 에이전트가 사용할 수 있는 도구를 제한할 수 있다:
 
-| 용도 | tools 설정 |
-|------|-----------|
-| 읽기 전용 분석 | `["Read", "Grep", "Glob"]` |
-| 문서 작성 | `["Read", "Write", "Grep", "Glob"]` |
-| 전체 접근 | 필드 생략 |
+| 용도           | tools 설정                          |
+| -------------- | ----------------------------------- |
+| 읽기 전용 분석 | `["Read", "Grep", "Glob"]`          |
+| 문서 작성      | `["Read", "Write", "Grep", "Glob"]` |
+| 전체 접근      | 필드 생략                           |
 
 ## 7. 비용 최적화
 
@@ -256,15 +262,15 @@ You are a security specialist...
 
 Opus는 Sonnet 대비 약 5배 비용이 높다. 역할별 모델 할당으로 비용을 최적화한다:
 
-| 작업 유형 | 모델 | 근거 |
-|----------|------|------|
-| 아키텍처 설계 | Opus | 복잡한 추론, 트레이드오프 분석 |
-| 리팩토링 계획 | Opus | 다중 파일 영향 분석 |
-| 버그 디버깅 | Opus | 근본 원인 추적 |
-| 기능 구현 | Sonnet | 패턴 따라 코드 작성 |
-| 코드 리뷰 | Sonnet | 체크리스트 기반 검토 |
-| 테스트 작성 | Sonnet | 패턴 기반 반복 작업 |
-| 문서화 | Sonnet | 구조화된 글쓰기 |
+| 작업 유형     | 모델   | 근거                           |
+| ------------- | ------ | ------------------------------ |
+| 아키텍처 설계 | Opus   | 복잡한 추론, 트레이드오프 분석 |
+| 리팩토링 계획 | Opus   | 다중 파일 영향 분석            |
+| 버그 디버깅   | Opus   | 근본 원인 추적                 |
+| 기능 구현     | Sonnet | 패턴 따라 코드 작성            |
+| 코드 리뷰     | Sonnet | 체크리스트 기반 검토           |
+| 테스트 작성   | Sonnet | 패턴 기반 반복 작업            |
+| 문서화        | Sonnet | 구조화된 글쓰기                |
 
 ### 7.2 팀 크기 가이드라인
 
@@ -284,6 +290,7 @@ tmux attach -t [session]   # 세션 연결
 ### teammate가 응답하지 않음
 
 Team Lead에서 메시지를 보내 teammate를 깨울 수 있다:
+
 ```
 SendMessage(type: "message", recipient: "impl-1", content: "진행 상황 알려줘")
 ```

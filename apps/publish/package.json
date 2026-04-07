@@ -2,7 +2,7 @@
   "name": "@composition/publish",
   "version": "0.1.0",
   "private": true,
-  "description": "XStudio publish runtime for deployed applications",
+  "description": "composition publish runtime for deployed applications",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {

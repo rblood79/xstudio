@@ -23,12 +23,12 @@
 
 ## 아키텍처/설계 (구조 변경)
 
-| 파일                       | 레거시 사유                |
-| -------------------------- | -------------------------- |
-| DATA_SYNC.md               | Local-first 전환으로 무효  |
-| FILE_SYNC.md               | 동기화 아키텍처 변경       |
-| PERF_PROBLEM.md            | 초기 성능 분석 (해결 완료) |
-| PENCIL_VS_XSTUDIO_UI_UX.md | 초기 설계 참고용           |
+| 파일                           | 레거시 사유                |
+| ------------------------------ | -------------------------- |
+| DATA_SYNC.md                   | Local-first 전환으로 무효  |
+| FILE_SYNC.md                   | 동기화 아키텍처 변경       |
+| PERF_PROBLEM.md                | 초기 성능 분석 (해결 완료) |
+| PENCIL_VS_composition_UI_UX.md | 초기 설계 참고용           |
 
 ## 기타
 

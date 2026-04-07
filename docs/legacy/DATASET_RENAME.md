@@ -30,14 +30,14 @@
 
 ### 3.1 포함 범위
 
-| 영역 | 대상 |
-|------|------|
-| **프런트엔드** | React 컴포넌트, 훅, 컨텍스트, 스토어 키, 테스트 명칭 |
-| **데이터 계층** | 타입 정의(TypeScript), 직렬화 포맷(JSON/LocalStorage), Supabase/DB 스키마 명칭 |
-| **API 계약** | REST/RPC 경로, 요청/응답 payload 필드명, 타입 가드 |
-| **이벤트 시스템** | Action Type, Action Editor, Variable Schema |
-| **CSS** | 클래스명, data-* 속성 |
-| **문서/가이드** | 개발자 문서, 마이그레이션 가이드, 예제 코드 |
+| 영역              | 대상                                                                           |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **프런트엔드**    | React 컴포넌트, 훅, 컨텍스트, 스토어 키, 테스트 명칭                           |
+| **데이터 계층**   | 타입 정의(TypeScript), 직렬화 포맷(JSON/LocalStorage), Supabase/DB 스키마 명칭 |
+| **API 계약**      | REST/RPC 경로, 요청/응답 payload 필드명, 타입 가드                             |
+| **이벤트 시스템** | Action Type, Action Editor, Variable Schema                                    |
+| **CSS**           | 클래스명, data-\* 속성                                                         |
+| **문서/가이드**   | 개발자 문서, 마이그레이션 가이드, 예제 코드                                    |
 
 ### 3.2 비범위 (Non-goals)
 
@@ -52,89 +52,89 @@
 
 ### 4.1 파일 영향 범위
 
-| 카테고리 | 파일 수 | 비고 |
-|----------|---------|------|
-| Types & Store | 3 | 핵심 타입, Store |
-| Panel 파일 | 28 | 폴더명 + 파일명 + 내용 |
-| Component & Factory | 6 | 컴포넌트, 렌더러, 메타데이터 |
-| Events 시스템 | 14 | Action Type, Editor, Utils |
-| Hooks & Utils | 4 | 공통 훅 |
-| CSS | 6 | 클래스명 변경 |
-| 문서 | 15+ | CLAUDE.md, docs/ |
-| **총계** | **~76개** | |
+| 카테고리            | 파일 수   | 비고                         |
+| ------------------- | --------- | ---------------------------- |
+| Types & Store       | 3         | 핵심 타입, Store             |
+| Panel 파일          | 28        | 폴더명 + 파일명 + 내용       |
+| Component & Factory | 6         | 컴포넌트, 렌더러, 메타데이터 |
+| Events 시스템       | 14        | Action Type, Editor, Utils   |
+| Hooks & Utils       | 4         | 공통 훅                      |
+| CSS                 | 6         | 클래스명 변경                |
+| 문서                | 15+       | CLAUDE.md, docs/             |
+| **총계**            | **~76개** |                              |
 
 ### 4.2 주요 네이밍 변경 - 전체 목록
 
 #### 4.2.1 타입 (11개)
 
-| Before | After |
-|--------|-------|
-| `DatasetStatus` | `DataTableStatus` |
-| `DatasetTransform` | `DataTableTransform` |
-| `DatasetConfig` | `DataTableConfig` |
-| `DatasetState` | `DataTableState` |
-| `DatasetStoreState` | `DataTableStoreState` |
-| `DatasetStoreActions` | `DataTableStoreActions` |
-| `DatasetStore` | `DataTableStore` |
-| `DatasetProps` | `DataTableProps` |
+| Before                 | After                    |
+| ---------------------- | ------------------------ |
+| `DatasetStatus`        | `DataTableStatus`        |
+| `DatasetTransform`     | `DataTableTransform`     |
+| `DatasetConfig`        | `DataTableConfig`        |
+| `DatasetState`         | `DataTableState`         |
+| `DatasetStoreState`    | `DataTableStoreState`    |
+| `DatasetStoreActions`  | `DataTableStoreActions`  |
+| `DatasetStore`         | `DataTableStore`         |
+| `DatasetProps`         | `DataTableProps`         |
 | `DatasetConsumerProps` | `DataTableConsumerProps` |
-| `UseDatasetResult` | `UseDataTableResult` |
-| `isDatasetConfig()` | `isDataTableConfig()` |
+| `UseDatasetResult`     | `UseDataTableResult`     |
+| `isDatasetConfig()`    | `isDataTableConfig()`    |
 
 #### 4.2.2 Store 함수/변수 (17개)
 
-| Before | After |
-|--------|-------|
-| `useDatasetStore` | `useDataTableStore` |
-| `datasets` (Map) | `dataTables` (Map) |
-| `datasetStates` (Map) | `dataTableStates` (Map) |
-| `registerDataset()` | `registerDataTable()` |
-| `unregisterDataset()` | `unregisterDataTable()` |
-| `loadDataset()` | `loadDataTable()` |
-| `refreshDataset()` | `refreshDataTable()` |
-| `refreshAllDatasets()` | `refreshAllDataTables()` |
-| `getDatasetData()` | `getDataTableData()` |
-| `getDatasetState()` | `getDataTableState()` |
-| `updateDatasetConfig()` | `updateDataTableConfig()` |
-| `clearAllDatasets()` | `clearAllDataTables()` |
-| `useDataset()` | `useDataTable()` |
-| `useDatasetActions()` | `useDataTableActions()` |
-| `useAllDatasets()` | `useAllDataTables()` |
-| `fetchDatasetData()` | `fetchDataTableData()` |
+| Before                        | After                           |
+| ----------------------------- | ------------------------------- |
+| `useDatasetStore`             | `useDataTableStore`             |
+| `datasets` (Map)              | `dataTables` (Map)              |
+| `datasetStates` (Map)         | `dataTableStates` (Map)         |
+| `registerDataset()`           | `registerDataTable()`           |
+| `unregisterDataset()`         | `unregisterDataTable()`         |
+| `loadDataset()`               | `loadDataTable()`               |
+| `refreshDataset()`            | `refreshDataTable()`            |
+| `refreshAllDatasets()`        | `refreshAllDataTables()`        |
+| `getDatasetData()`            | `getDataTableData()`            |
+| `getDatasetState()`           | `getDataTableState()`           |
+| `updateDatasetConfig()`       | `updateDataTableConfig()`       |
+| `clearAllDatasets()`          | `clearAllDataTables()`          |
+| `useDataset()`                | `useDataTable()`                |
+| `useDatasetActions()`         | `useDataTableActions()`         |
+| `useAllDatasets()`            | `useAllDataTables()`            |
+| `fetchDatasetData()`          | `fetchDataTableData()`          |
 | `createInitialDatasetState()` | `createInitialDataTableState()` |
 
 #### 4.2.3 Props (2개)
 
-| Before | After | 파일 |
-|--------|-------|------|
+| Before               | After                  | 파일                                        |
+| -------------------- | ---------------------- | ------------------------------------------- |
 | `datasetId?: string` | `dataTableId?: string` | `DatasetConsumerProps`, `useCollectionData` |
-| `datasetName: ''` | `dataTableName: ''` | `BlockActionEditor.tsx` 기본값 |
+| `datasetName: ''`    | `dataTableName: ''`    | `BlockActionEditor.tsx` 기본값              |
 
 #### 4.2.4 Panel ID (2개)
 
-| Before | After |
-|--------|-------|
-| `dataset` | `datatable` |
+| Before          | After             |
+| --------------- | ----------------- |
+| `dataset`       | `datatable`       |
 | `datasetEditor` | `datatableEditor` |
 
 #### 4.2.5 Action Types (2개)
 
-| Before | After |
-|--------|-------|
-| `loadDataset` | `loadDataTable` |
+| Before          | After             |
+| --------------- | ----------------- |
+| `loadDataset`   | `loadDataTable`   |
 | `saveToDataset` | `saveToDataTable` |
 
 #### 4.2.6 Variable Schema 키 (1개)
 
-| Before | After |
-|--------|-------|
+| Before             | After                |
+| ------------------ | -------------------- |
 | `dataset: { ... }` | `datatable: { ... }` |
 
 #### 4.2.7 localStorage 키 패턴 (1개)
 
-| Before | After |
-|--------|-------|
-| `xstudio_dataset_cache_*` | `xstudio_datatable_cache_*` |
+| Before                        | After                           |
+| ----------------------------- | ------------------------------- |
+| `composition_dataset_cache_*` | `composition_datatable_cache_*` |
 
 #### 4.2.8 CSS 클래스 (28개)
 
@@ -179,72 +179,72 @@
 
 #### 4.2.9 기본값 문자열 (3개)
 
-| 파일 | Before | After |
-|------|--------|-------|
-| `DataComponents.ts` | `dataset-${Date.now()}` | `datatable-${Date.now()}` |
-| `DataComponents.ts` | `name: "New Dataset"` | `name: "New DataTable"` |
-| `Dataset.tsx` | `id="users-dataset"` (주석) | `id="users-datatable"` |
+| 파일                | Before                      | After                     |
+| ------------------- | --------------------------- | ------------------------- |
+| `DataComponents.ts` | `dataset-${Date.now()}`     | `datatable-${Date.now()}` |
+| `DataComponents.ts` | `name: "New Dataset"`       | `name: "New DataTable"`   |
+| `Dataset.tsx`       | `id="users-dataset"` (주석) | `id="users-datatable"`    |
 
 #### 4.2.10 로그 메시지 (~35개)
 
-| 파일 | Before | After |
-|------|--------|-------|
-| `dataset.ts` | `📊 Dataset registered:` | `📊 DataTable registered:` |
-| `dataset.ts` | `🗑️ Dataset unregistered:` | `🗑️ DataTable unregistered:` |
-| `dataset.ts` | `⚠️ Dataset not found:` | `⚠️ DataTable not found:` |
-| `dataset.ts` | `📦 Dataset memory cache hit:` | `📦 DataTable memory cache hit:` |
-| `dataset.ts` | `📦 Dataset localStorage cache hit:` | `📦 DataTable localStorage cache hit:` |
-| `dataset.ts` | `🔄 Dataset loading:` | `🔄 DataTable loading:` |
-| `dataset.ts` | `✅ Dataset loaded:` | `✅ DataTable loaded:` |
-| `dataset.ts` | `❌ Dataset load error:` | `❌ DataTable load error:` |
-| `dataset.ts` | `🔄 Refreshing all datasets` | `🔄 Refreshing all dataTables` |
-| `dataset.ts` | `✅ All datasets refreshed` | `✅ All dataTables refreshed` |
-| `dataset.ts` | `👥 Consumer added to` | (유지) |
-| `dataset.ts` | `👤 Consumer removed from` | (유지) |
-| `dataset.ts` | `📝 Dataset config updated:` | `📝 DataTable config updated:` |
-| `dataset.ts` | `🧹 All datasets cleared` | `🧹 All dataTables cleared` |
-| `dataset.ts` | `🗑️ Dataset cache expired:` | `🗑️ DataTable cache expired:` |
-| `dataset.ts` | `📦 Dataset cache restored from localStorage:` | `📦 DataTable cache restored from localStorage:` |
-| `dataset.ts` | `💾 Dataset cache saved to localStorage:` | `💾 DataTable cache saved to localStorage:` |
-| `dataset.ts` | `🗑️ Dataset cache cleared:` | `🗑️ DataTable cache cleared:` |
-| `Dataset.tsx` | `⚠️ Dataset: id prop is required` | `⚠️ DataTable: id prop is required` |
-| `Dataset.tsx` | `⚠️ Dataset ${id}: dataBinding prop is required` | `⚠️ DataTable ${id}: dataBinding prop is required` |
-| `Dataset.tsx` | `🔄 Dataset ${id}: dataBinding changed` | `🔄 DataTable ${id}: dataBinding changed` |
-| `Dataset.tsx` | `⏱️ Dataset ${id}: Auto-refresh every` | `⏱️ DataTable ${id}: Auto-refresh every` |
-| `DataRenderers.tsx` | `📊 [Canvas] Dataset loading:` | `📊 [Canvas] DataTable loading:` |
-| `DataRenderers.tsx` | `✅ [Canvas] Dataset loaded:` | `✅ [Canvas] DataTable loaded:` |
-| `DataRenderers.tsx` | `❌ [Canvas] Dataset error:` | `❌ [Canvas] DataTable error:` |
-| `DataRenderers.tsx` | `⏱️ [Canvas] Dataset auto-refresh:` | `⏱️ [Canvas] DataTable auto-refresh:` |
+| 파일                | Before                                           | After                                              |
+| ------------------- | ------------------------------------------------ | -------------------------------------------------- |
+| `dataset.ts`        | `📊 Dataset registered:`                         | `📊 DataTable registered:`                         |
+| `dataset.ts`        | `🗑️ Dataset unregistered:`                       | `🗑️ DataTable unregistered:`                       |
+| `dataset.ts`        | `⚠️ Dataset not found:`                          | `⚠️ DataTable not found:`                          |
+| `dataset.ts`        | `📦 Dataset memory cache hit:`                   | `📦 DataTable memory cache hit:`                   |
+| `dataset.ts`        | `📦 Dataset localStorage cache hit:`             | `📦 DataTable localStorage cache hit:`             |
+| `dataset.ts`        | `🔄 Dataset loading:`                            | `🔄 DataTable loading:`                            |
+| `dataset.ts`        | `✅ Dataset loaded:`                             | `✅ DataTable loaded:`                             |
+| `dataset.ts`        | `❌ Dataset load error:`                         | `❌ DataTable load error:`                         |
+| `dataset.ts`        | `🔄 Refreshing all datasets`                     | `🔄 Refreshing all dataTables`                     |
+| `dataset.ts`        | `✅ All datasets refreshed`                      | `✅ All dataTables refreshed`                      |
+| `dataset.ts`        | `👥 Consumer added to`                           | (유지)                                             |
+| `dataset.ts`        | `👤 Consumer removed from`                       | (유지)                                             |
+| `dataset.ts`        | `📝 Dataset config updated:`                     | `📝 DataTable config updated:`                     |
+| `dataset.ts`        | `🧹 All datasets cleared`                        | `🧹 All dataTables cleared`                        |
+| `dataset.ts`        | `🗑️ Dataset cache expired:`                      | `🗑️ DataTable cache expired:`                      |
+| `dataset.ts`        | `📦 Dataset cache restored from localStorage:`   | `📦 DataTable cache restored from localStorage:`   |
+| `dataset.ts`        | `💾 Dataset cache saved to localStorage:`        | `💾 DataTable cache saved to localStorage:`        |
+| `dataset.ts`        | `🗑️ Dataset cache cleared:`                      | `🗑️ DataTable cache cleared:`                      |
+| `Dataset.tsx`       | `⚠️ Dataset: id prop is required`                | `⚠️ DataTable: id prop is required`                |
+| `Dataset.tsx`       | `⚠️ Dataset ${id}: dataBinding prop is required` | `⚠️ DataTable ${id}: dataBinding prop is required` |
+| `Dataset.tsx`       | `🔄 Dataset ${id}: dataBinding changed`          | `🔄 DataTable ${id}: dataBinding changed`          |
+| `Dataset.tsx`       | `⏱️ Dataset ${id}: Auto-refresh every`           | `⏱️ DataTable ${id}: Auto-refresh every`           |
+| `DataRenderers.tsx` | `📊 [Canvas] Dataset loading:`                   | `📊 [Canvas] DataTable loading:`                   |
+| `DataRenderers.tsx` | `✅ [Canvas] Dataset loaded:`                    | `✅ [Canvas] DataTable loaded:`                    |
+| `DataRenderers.tsx` | `❌ [Canvas] Dataset error:`                     | `❌ [Canvas] DataTable error:`                     |
+| `DataRenderers.tsx` | `⏱️ [Canvas] Dataset auto-refresh:`              | `⏱️ [Canvas] DataTable auto-refresh:`              |
 
 #### 4.2.11 events.types.ts 레이블 (2개)
 
-| Before | After |
-|--------|-------|
-| `loadDataset: 'Dataset 로드'` | `loadDataTable: 'DataTable 로드'` |
+| Before                            | After                                 |
+| --------------------------------- | ------------------------------------- |
+| `loadDataset: 'Dataset 로드'`     | `loadDataTable: 'DataTable 로드'`     |
 | `saveToDataset: 'Dataset에 저장'` | `saveToDataTable: 'DataTable에 저장'` |
 
 #### 4.2.12 useVariableSchema.ts 변수명 (2개)
 
-| Before | After |
-|--------|-------|
-| `const datasetSchema` | `const dataTableSchema` |
+| Before                   | After                        |
+| ------------------------ | ---------------------------- |
+| `const datasetSchema`    | `const dataTableSchema`      |
 | `dataset: datasetSchema` | `datatable: dataTableSchema` |
 
 #### 4.2.13 VariableBindingEditor.tsx (2개)
 
-| Before | After |
-|--------|-------|
+| Before                                                  | After                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
 | `{ key: 'dataset', type: 'dataset', label: 'Dataset' }` | `{ key: 'datatable', type: 'datatable', label: 'DataTable' }` |
-| `dataset?: Record<string, SchemaNode>` (interface) | `datatable?: Record<string, SchemaNode>` |
+| `dataset?: Record<string, SchemaNode>` (interface)      | `datatable?: Record<string, SchemaNode>`                      |
 
 #### 4.2.14 metadata.ts (4개)
 
-| Before | After |
-|--------|-------|
-| `type: "Dataset"` | `type: "DataTable"` |
-| `label: "Dataset"` | `label: "DataTable"` |
-| `editorName: "DatasetEditor"` | `editorName: "DataTableEditor"` |
-| 컴포넌트 키 `Dataset: { ... }` | `DataTable: { ... }` |
+| Before                         | After                           |
+| ------------------------------ | ------------------------------- |
+| `type: "Dataset"`              | `type: "DataTable"`             |
+| `label: "Dataset"`             | `label: "DataTable"`            |
+| `editorName: "DatasetEditor"`  | `editorName: "DataTableEditor"` |
+| 컴포넌트 키 `Dataset: { ... }` | `DataTable: { ... }`            |
 
 ---
 
@@ -254,17 +254,17 @@
 
 ### Phase 개요
 
-| Phase | 내용 | 파일 수 | 위험도 | 예상 시간 |
-|-------|------|---------|--------|----------|
-| **Phase 1** | Types & Store 변경 | 3 | 🔴 High | 25분 |
-| **Phase 2** | Panel 폴더/파일 변경 | 28 | 🟡 Medium | 35분 |
-| **Phase 3** | Component & Factory 변경 | 6 | 🟡 Medium | 25분 |
-| **Phase 4** | Events 시스템 변경 | 14 | 🟡 Medium | 30분 |
-| **Phase 5** | Hooks & Utils 변경 | 4 | 🟢 Low | 15분 |
-| **Phase 6** | CSS 변경 | 6 | 🟢 Low | 15분 |
-| **Phase 7** | 문서 업데이트 | 15+ | 🟢 Low | 30분 |
-| **Phase 8** | 테스트 & 검증 | - | 🟡 Medium | 25분 |
-| **총계** | | **~76개** | | **~3시간 20분** |
+| Phase       | 내용                     | 파일 수   | 위험도    | 예상 시간       |
+| ----------- | ------------------------ | --------- | --------- | --------------- |
+| **Phase 1** | Types & Store 변경       | 3         | 🔴 High   | 25분            |
+| **Phase 2** | Panel 폴더/파일 변경     | 28        | 🟡 Medium | 35분            |
+| **Phase 3** | Component & Factory 변경 | 6         | 🟡 Medium | 25분            |
+| **Phase 4** | Events 시스템 변경       | 14        | 🟡 Medium | 30분            |
+| **Phase 5** | Hooks & Utils 변경       | 4         | 🟢 Low    | 15분            |
+| **Phase 6** | CSS 변경                 | 6         | 🟢 Low    | 15분            |
+| **Phase 7** | 문서 업데이트            | 15+       | 🟢 Low    | 30분            |
+| **Phase 8** | 테스트 & 검증            | -         | 🟡 Medium | 25분            |
+| **총계**    |                          | **~76개** |           | **~3시간 20분** |
 
 ---
 
@@ -277,6 +277,7 @@
 **파일**: `src/types/dataset.types.ts` → `src/types/datatable.types.ts`
 
 **변경 목록 (11개)**:
+
 - [ ] `DatasetStatus` → `DataTableStatus`
 - [ ] `DatasetTransform` → `DataTableTransform`
 - [ ] `DatasetConfig` → `DataTableConfig`
@@ -290,6 +291,7 @@
 - [ ] `isDatasetConfig()` → `isDataTableConfig()`
 
 **추가 변경**:
+
 - [ ] `DatasetConsumerProps.datasetId` → `DataTableConsumerProps.dataTableId`
 
 #### 1.2 Store 파일 변경
@@ -297,6 +299,7 @@
 **파일**: `src/builder/stores/dataset.ts` → `src/builder/stores/datatable.ts`
 
 **변경 목록 (17개)**:
+
 - [ ] `useDatasetStore` → `useDataTableStore`
 - [ ] `datasets` → `dataTables`
 - [ ] `datasetStates` → `dataTableStates`
@@ -319,15 +322,16 @@
 
 ```typescript
 // Before
-const getCacheKey = (id: string) => `xstudio_dataset_cache_${id}`;
+const getCacheKey = (id: string) => `composition_dataset_cache_${id}`;
 
 // After
-const getCacheKey = (id: string) => `xstudio_datatable_cache_${id}`;
+const getCacheKey = (id: string) => `composition_datatable_cache_${id}`;
 ```
 
 #### 1.4 로그 메시지 변경 (~18개)
 
 **Store 내 모든 로그 메시지**:
+
 - [ ] `📊 Dataset registered:` → `📊 DataTable registered:`
 - [ ] `🗑️ Dataset unregistered:` → `🗑️ DataTable unregistered:`
 - [ ] `⚠️ Dataset not found:` → `⚠️ DataTable not found:`
@@ -346,6 +350,7 @@ const getCacheKey = (id: string) => `xstudio_datatable_cache_${id}`;
 - [ ] `🗑️ Dataset cache cleared:` → `🗑️ DataTable cache cleared:`
 
 #### 1.5 검증
+
 - [ ] TypeScript 컴파일 오류 확인
 - [ ] 의존성 파일들 import 오류 수집
 
@@ -388,6 +393,7 @@ export { DataTablePanel } from "./DataTablePanel";
 **파일**: `src/builder/panels/core/panelConfigs.ts`
 
 **변경 사항**:
+
 - [ ] import 경로 변경
 - [ ] `id: "dataset"` → `id: "datatable"`
 - [ ] `id: "datasetEditor"` → `id: "datatableEditor"`
@@ -405,6 +411,7 @@ export { DataTablePanel } from "./DataTablePanel";
 #### 2.6 내부 컴포넌트 import 변경
 
 **파일들**:
+
 - [ ] `components/DataTableList.tsx` - `useDatasetStore` → `useDataTableStore`
 - [ ] `components/ApiEndpointList.tsx` - `useDatasetStore` → `useDataTableStore`
 - [ ] `components/VariableList.tsx` - `useDatasetStore` → `useDataTableStore`
@@ -433,6 +440,7 @@ export { DataTablePanel } from "./DataTablePanel";
 - [ ] export 문 변경
 
 #### 2.10 검증
+
 - [ ] Panel 렌더링 확인
 - [ ] Panel 전환 동작 확인
 
@@ -447,6 +455,7 @@ export { DataTablePanel } from "./DataTablePanel";
 **파일**: `src/builder/components/Dataset.tsx` → `src/builder/components/DataTable.tsx`
 
 **변경 사항**:
+
 - [ ] import 타입 변경
 - [ ] 컴포넌트명 `Dataset` → `DataTable`
 - [ ] 함수명 참조 변경
@@ -460,6 +469,7 @@ export { DataTablePanel } from "./DataTablePanel";
 **파일**: `src/builder/panels/properties/editors/DatasetEditor.tsx` → `DataTableEditor.tsx`
 
 **변경 사항**:
+
 - [ ] import 변경
 - [ ] 컴포넌트명 `DatasetEditor` → `DataTableEditor`
 
@@ -472,6 +482,7 @@ export { DataTablePanel } from "./DataTablePanel";
 **파일**: `src/builder/factories/definitions/DataComponents.ts`
 
 **변경 사항**:
+
 - [ ] 주석 변경
 - [ ] `createDatasetDefinition` → `createDataTableDefinition`
 - [ ] `const datasetId = \`dataset-${Date.now()}\`` → `const dataTableId = \`datatable-${Date.now()}\``
@@ -490,6 +501,7 @@ export { DataTablePanel } from "./DataTablePanel";
 **파일**: `src/canvas/renderers/DataRenderers.tsx`
 
 **변경 사항**:
+
 - [ ] `DatasetComponent` → `DataTableComponent`
 - [ ] `datasetId` 변수 → `dataTableId` (내부 변수)
 - [ ] `renderDataset` → `renderDataTable`
@@ -509,6 +521,7 @@ export { DataTablePanel } from "./DataTablePanel";
 - [ ] 컴포넌트 키 `Dataset: { ... }` → `DataTable: { ... }`
 
 #### 3.6 검증
+
 - [ ] 컴포넌트 드래그앤드롭
 - [ ] Inspector 속성 편집
 - [ ] Preview 렌더링
@@ -530,12 +543,14 @@ export { DataTablePanel } from "./DataTablePanel";
 #### 4.2 Action Editor 파일 변경
 
 **파일명 변경**:
+
 ```bash
 mv LoadDatasetActionEditor.tsx LoadDataTableActionEditor.tsx
 mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 ```
 
 **내용 변경**:
+
 - [ ] `LoadDatasetActionEditor` → `LoadDataTableActionEditor`
 - [ ] `SaveToDatasetActionEditor` → `SaveToDataTableActionEditor`
 
@@ -613,6 +628,7 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 - [ ] 관련 참조 변경
 
 #### 4.13 검증
+
 - [ ] Event 추가/편집
 - [ ] Action 실행
 - [ ] Variable 바인딩
@@ -628,6 +644,7 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 **파일**: `src/builder/hooks/useCollectionData.ts`
 
 **변경 사항**:
+
 - [ ] import 경로 변경 (`../stores/dataset` → `../stores/datatable`)
 - [ ] `useDatasetStore` → `useDataTableStore`
 - [ ] `datasetId` prop → `dataTableId` prop
@@ -643,6 +660,7 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 - [ ] 관련 참조 변경
 
 #### 5.3 검증
+
 - [ ] Collection 데이터 로드
 - [ ] Condition 평가
 
@@ -650,7 +668,7 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 
 ### Phase 6: CSS 변경 🟢
 
-**목표**: 모든 CSS 클래스명 및 data-* 속성 변경
+**목표**: 모든 CSS 클래스명 및 data-\* 속성 변경
 
 #### 6.1 DataTablePanel.css 변경 (이전 DatasetPanel.css)
 
@@ -692,6 +710,7 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 #### 6.6 Panel 내부 Editor CSS 주석 변경
 
 **파일들** (`src/builder/panels/datatable/editors/`):
+
 - [ ] `ApiEndpointEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`, `DatasetEditorPanel` → `DataTableEditorPanel`
 - [ ] `VariableEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`
 - [ ] `DataTableEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`
@@ -700,11 +719,13 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 #### 6.7 TSX 파일 className 변경
 
 **파일들**:
+
 - [ ] `DataTablePanel.tsx` - `className="dataset-panel"` → `className="datatable-panel"`
 - [ ] `DataTableEditorPanel.tsx` - `className="dataset-editor-panel"` → `className="datatable-editor-panel"`
 - [ ] 관련 컴포넌트 내 클래스명 참조
 
 #### 6.8 검증
+
 - [ ] 스타일 적용 확인
 - [ ] 다크 모드 스타일 확인
 
@@ -723,20 +744,21 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 
 #### 7.2 docs/ 문서 변경
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `PLANNED_FEATURES.md` | Dataset → DataTable |
-| `COMPLETED_FEATURES.md` | Dataset → DataTable |
-| `features/DATATABLE_PRESET_SYSTEM.md` | 유지 (이미 DataTable) |
-| `features/DATA_PANEL_SYSTEM.md` | Dataset 참조 변경 |
-| `features/DATA_SYNC_ARCHITECTURE.md` | Dataset 참조 변경 |
-| `PANEL_SYSTEM.md` | Dataset → DataTable |
-| `EVENTS_PANEL_REDESIGN.md` | loadDataset → loadDataTable |
-| `event-test-guide.md` | 관련 예시 변경 |
-| `guides/TREE_COMPONENT_GUIDE.md` | 관련 참조 변경 |
-| `CHANGELOG.md` | 이번 변경 내역 추가 |
+| 파일                                  | 변경 내용                   |
+| ------------------------------------- | --------------------------- |
+| `PLANNED_FEATURES.md`                 | Dataset → DataTable         |
+| `COMPLETED_FEATURES.md`               | Dataset → DataTable         |
+| `features/DATATABLE_PRESET_SYSTEM.md` | 유지 (이미 DataTable)       |
+| `features/DATA_PANEL_SYSTEM.md`       | Dataset 참조 변경           |
+| `features/DATA_SYNC_ARCHITECTURE.md`  | Dataset 참조 변경           |
+| `PANEL_SYSTEM.md`                     | Dataset → DataTable         |
+| `EVENTS_PANEL_REDESIGN.md`            | loadDataset → loadDataTable |
+| `event-test-guide.md`                 | 관련 예시 변경              |
+| `guides/TREE_COMPONENT_GUIDE.md`      | 관련 참조 변경              |
+| `CHANGELOG.md`                        | 이번 변경 내역 추가         |
 
 #### 7.3 검증
+
 - [ ] 문서 링크 유효성
 - [ ] 코드 예시 정확성
 
@@ -761,14 +783,14 @@ npm run build
 
 #### 8.2 기능 테스트
 
-| 테스트 항목 | 확인 사항 |
-|-------------|----------|
-| **Panel** | DataTable Panel 열기/닫기, Editor Panel 전환 |
+| 테스트 항목   | 확인 사항                                       |
+| ------------- | ----------------------------------------------- |
+| **Panel**     | DataTable Panel 열기/닫기, Editor Panel 전환    |
 | **Component** | DataTable 컴포넌트 드래그앤드롭, Preview 렌더링 |
-| **Inspector** | DataTable 속성 편집, DataBinding 설정 |
-| **Events** | loadDataTable 액션 추가/실행 |
-| **Variable** | `{{datatable.*}}` 바인딩 |
-| **CSS** | 스타일 적용, 다크 모드 |
+| **Inspector** | DataTable 속성 편집, DataBinding 설정           |
+| **Events**    | loadDataTable 액션 추가/실행                    |
+| **Variable**  | `{{datatable.*}}` 바인딩                        |
+| **CSS**       | 스타일 적용, 다크 모드                          |
 
 #### 8.3 E2E 테스트 (해당 시)
 
@@ -777,6 +799,7 @@ npm run test:e2e
 ```
 
 #### 8.4 검증 체크리스트
+
 - [ ] `npm run type-check` 통과
 - [ ] `npm run lint` 통과
 - [ ] `npm run build` 성공
@@ -786,11 +809,11 @@ npm run test:e2e
 
 ## 6. 리스크 및 완화
 
-| 리스크 | 영향 | 완화 방안 |
-|--------|------|----------|
-| **대량 파일 변경** | 코드리뷰 가독성 저하 | Phase별 분리 커밋 + PR 설명 |
-| **테스트 스냅샷 변경** | CI 실패 | 스냅샷 일괄 업데이트 |
-| **CSS 누락** | 스타일 깨짐 | 전체 CSS 클래스 목록 체크리스트 |
+| 리스크                 | 영향                 | 완화 방안                       |
+| ---------------------- | -------------------- | ------------------------------- |
+| **대량 파일 변경**     | 코드리뷰 가독성 저하 | Phase별 분리 커밋 + PR 설명     |
+| **테스트 스냅샷 변경** | CI 실패              | 스냅샷 일괄 업데이트            |
+| **CSS 누락**           | 스타일 깨짐          | 전체 CSS 클래스 목록 체크리스트 |
 
 ---
 
@@ -806,6 +829,7 @@ npm run test:e2e
 ## 8. 실행 체크리스트
 
 ### 사전 준비
+
 - [ ] 현재 브랜치 확인: `claude/rename-dataset-to-datatable-*`
 - [ ] 작업 전 커밋 완료
 - [ ] TypeScript 컴파일 성공 확인
@@ -813,6 +837,7 @@ npm run test:e2e
 ### Phase별 실행
 
 **Phase 1: Types & Store**
+
 - [ ] `dataset.types.ts` → `datatable.types.ts` (11개 타입)
 - [ ] `dataset.ts` → `datatable.ts` (17개 함수/변수)
 - [ ] localStorage 키 변경
@@ -820,6 +845,7 @@ npm run test:e2e
 - [ ] TypeScript 컴파일 확인
 
 **Phase 2: Panel**
+
 - [ ] 폴더명 변경: `dataset/` → `datatable/`
 - [ ] 파일명 변경 (5개)
 - [ ] `index.ts` 변경
@@ -828,6 +854,7 @@ npm run test:e2e
 - [ ] 내부 컴포넌트 import 변경 (8개 파일)
 
 **Phase 3: Component & Factory**
+
 - [ ] `Dataset.tsx` → `DataTable.tsx`
 - [ ] Inspector `DatasetEditor.tsx` → `DataTableEditor.tsx`
 - [ ] Factory 정의 변경 (DataComponents.ts)
@@ -836,6 +863,7 @@ npm run test:e2e
 - [ ] Metadata 변경
 
 **Phase 4: Events**
+
 - [ ] `events.registry.ts` 액션 타입 변경 (`loadDataset` → `loadDataTable`)
 - [ ] Action Editor 파일명 변경 (2개)
 - [ ] `ActionEditor.tsx` case문 변경
@@ -848,24 +876,28 @@ npm run test:e2e
 - [ ] `VariableBindingEditor.tsx` 변경
 
 **Phase 5: Hooks & Utils**
+
 - [ ] `useCollectionData.ts` 변경 (import, prop, 변수명)
 - [ ] `ConditionEditor.tsx` 확인
 
 **Phase 6: CSS**
+
 - [ ] `DataTablePanel.css` 클래스명 변경 (7개)
 - [ ] `DataTableEditorPanel.css` 클래스명 변경 (1개)
 - [ ] `common/index.css` 클래스명 변경 (8개)
-- [ ] `list-group.css` data-* 속성 변경 (1개)
+- [ ] `list-group.css` data-\* 속성 변경 (1개)
 - [ ] `EventsPanel.css` 클래스명 변경 (2개)
 - [ ] Panel 내부 Editor CSS 주석 변경 (4개 파일)
 - [ ] TSX 파일 className 변경
 
 **Phase 7: 문서**
+
 - [ ] `CLAUDE.md` 업데이트
 - [ ] `docs/` 문서들 업데이트 (10개 파일)
 - [ ] `CHANGELOG.md` 추가
 
 **Phase 8: 테스트 & 검증**
+
 - [ ] `npm run type-check` 통과
 - [ ] `npm run lint` 통과
 - [ ] `npm run build` 성공
@@ -895,36 +927,36 @@ git revert <commit-hash>
 
 ### 파일명 변경 (총 12개)
 
-| # | 현재 경로 | 변경 후 경로 |
-|---|----------|-------------|
-| 1 | `src/types/dataset.types.ts` | `src/types/datatable.types.ts` |
-| 2 | `src/builder/stores/dataset.ts` | `src/builder/stores/datatable.ts` |
-| 3 | `src/builder/panels/dataset/` | `src/builder/panels/datatable/` |
-| 4 | `DatasetPanel.tsx` | `DataTablePanel.tsx` |
-| 5 | `DatasetPanel.css` | `DataTablePanel.css` |
-| 6 | `DatasetEditorPanel.tsx` | `DataTableEditorPanel.tsx` |
-| 7 | `DatasetEditorPanel.css` | `DataTableEditorPanel.css` |
-| 8 | `stores/datasetEditorStore.ts` | `stores/dataTableEditorStore.ts` |
-| 9 | `src/builder/components/Dataset.tsx` | `src/builder/components/DataTable.tsx` |
-| 10 | `src/builder/panels/properties/editors/DatasetEditor.tsx` | `DataTableEditor.tsx` |
-| 11 | `LoadDatasetActionEditor.tsx` | `LoadDataTableActionEditor.tsx` |
-| 12 | `SaveToDatasetActionEditor.tsx` | `SaveToDataTableActionEditor.tsx` |
+| #   | 현재 경로                                                 | 변경 후 경로                           |
+| --- | --------------------------------------------------------- | -------------------------------------- |
+| 1   | `src/types/dataset.types.ts`                              | `src/types/datatable.types.ts`         |
+| 2   | `src/builder/stores/dataset.ts`                           | `src/builder/stores/datatable.ts`      |
+| 3   | `src/builder/panels/dataset/`                             | `src/builder/panels/datatable/`        |
+| 4   | `DatasetPanel.tsx`                                        | `DataTablePanel.tsx`                   |
+| 5   | `DatasetPanel.css`                                        | `DataTablePanel.css`                   |
+| 6   | `DatasetEditorPanel.tsx`                                  | `DataTableEditorPanel.tsx`             |
+| 7   | `DatasetEditorPanel.css`                                  | `DataTableEditorPanel.css`             |
+| 8   | `stores/datasetEditorStore.ts`                            | `stores/dataTableEditorStore.ts`       |
+| 9   | `src/builder/components/Dataset.tsx`                      | `src/builder/components/DataTable.tsx` |
+| 10  | `src/builder/panels/properties/editors/DatasetEditor.tsx` | `DataTableEditor.tsx`                  |
+| 11  | `LoadDatasetActionEditor.tsx`                             | `LoadDataTableActionEditor.tsx`        |
+| 12  | `SaveToDatasetActionEditor.tsx`                           | `SaveToDataTableActionEditor.tsx`      |
 
 ### 변경 항목 통계
 
-| 카테고리 | 개수 |
-|----------|------|
-| 타입 변경 | 11 |
-| Store 함수/변수 변경 | 17 |
-| Props 변경 | 2 |
-| Panel ID 변경 | 2 |
-| Action Type 변경 | 2 |
-| CSS 클래스 변경 | 28 |
-| 로그 메시지 변경 | ~35 |
-| 기본값 문자열 변경 | 3 |
-| Variable Schema 변경 | 2 |
-| 문서 파일 변경 | 10+ |
-| **총 변경 항목** | **~112개** |
+| 카테고리             | 개수       |
+| -------------------- | ---------- |
+| 타입 변경            | 11         |
+| Store 함수/변수 변경 | 17         |
+| Props 변경           | 2          |
+| Panel ID 변경        | 2          |
+| Action Type 변경     | 2          |
+| CSS 클래스 변경      | 28         |
+| 로그 메시지 변경     | ~35        |
+| 기본값 문자열 변경   | 3          |
+| Variable Schema 변경 | 2          |
+| 문서 파일 변경       | 10+        |
+| **총 변경 항목**     | **~112개** |
 
 ---
 

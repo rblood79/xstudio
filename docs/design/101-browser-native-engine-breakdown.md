@@ -768,7 +768,7 @@ generateComponentCSS(spec: ComponentSpec): string;
 ### Phase 1: Live DOM Renderer (1주)
 
 - [ ] DOMBridge 구현 (Store→DOM 동기화)
-- [ ] Tag→HTML 매핑 (모든 XStudio 컴포넌트)
+- [ ] Tag→HTML 매핑 (모든 composition 컴포넌트)
 - [ ] CSS 스타일 적용 (인라인 + 클래스)
 - [ ] Shadow DOM CSS 격리
 - [ ] 100개 요소 렌더링 검증

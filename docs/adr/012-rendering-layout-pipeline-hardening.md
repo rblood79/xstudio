@@ -14,7 +14,7 @@ Partial
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ---
 
@@ -1596,7 +1596,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-009 Phase 3~5와 병렬
 ### P4-4. 폰트 로딩 완료 후 레이아웃 재계산
 
 - **파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
-- **문제**: `xstudio:fonts-ready` 이벤트가 로컬 `useState`만 변경 → fullTreeLayoutMap useMemo deps에 미포함
+- **문제**: `composition:fonts-ready` 이벤트가 로컬 `useState`만 변경 → fullTreeLayoutMap useMemo deps에 미포함
 - **수정**: `setFontsReadyTick(t => t + 1)` → `useStore.getState().invalidateLayout()` (로컬 state 제거)
 
 ### P4-5. `LAYOUT_AFFECTING_PROPS` — 비-style 프로퍼티의 layoutVersion 증가

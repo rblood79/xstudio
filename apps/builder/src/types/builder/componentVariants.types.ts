@@ -107,7 +107,7 @@ export type S2CardVariant = "primary" | "secondary" | "tertiary" | "quiet";
 export type MeterVariant = "informative" | "positive" | "warning" | "critical";
 
 // ============================================================================
-// Panel (XStudio-specific layout variants)
+// Panel (composition-specific layout variants)
 // ============================================================================
 
 export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";

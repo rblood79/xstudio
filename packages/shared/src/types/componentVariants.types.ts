@@ -189,7 +189,7 @@ export function normalizeCardVariant(variant?: string): CardVariant {
 
 /**
  * Panel visual variants
- * Used by: Panel component (XStudio 고유)
+ * Used by: Panel component (composition 고유)
  */
 export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";
 
@@ -199,23 +199,23 @@ export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";
 
 /**
  * Separator visual variants
- * Used by: Separator component (XStudio 고유)
+ * Used by: Separator component (composition 고유)
  */
 export type SeparatorVariant = "default" | "solid" | "dashed" | "dotted";
 
 // ============================================================================
-// Table Variants (XStudio 고유)
+// Table Variants (composition 고유)
 // ============================================================================
 
 /**
  * Table Header visual variants
- * Used by: TableHeader component (XStudio 고유)
+ * Used by: TableHeader component (composition 고유)
  */
 export type TableHeaderVariant = "default" | "primary" | "secondary";
 
 /**
  * Table Body visual variants
- * Used by: TableBody component (XStudio 고유)
+ * Used by: TableBody component (composition 고유)
  */
 export type TableBodyVariant = "default" | "striped";
 

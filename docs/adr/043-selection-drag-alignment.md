@@ -10,7 +10,7 @@ Implemented — Phase 0~6 전체 완료 (2026-03-30). 후속 ADR-049에서 Penci
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
@@ -25,7 +25,7 @@ XStudio Team
 
 ## Context
 
-XStudio의 selection drag는 이미 부분적으로 구현되어 있다. 특히 `useDragInteraction.ts`에는 move/resize/lasso의 드래그 상태와 deferred commit에 가까운 흐름이 존재한다. 다만 Pencil의 selection drag 패턴과 완전히 정렬되어 있지는 않다.
+composition의 selection drag는 이미 부분적으로 구현되어 있다. 특히 `useDragInteraction.ts`에는 move/resize/lasso의 드래그 상태와 deferred commit에 가까운 흐름이 존재한다. 다만 Pencil의 selection drag 패턴과 완전히 정렬되어 있지는 않다.
 
 Pencil 쪽 패턴은 다음과 같다.
 
@@ -34,7 +34,7 @@ Pencil 쪽 패턴은 다음과 같다.
 3. 인접하지 않은 위치에서는 가이드라인이 drop 위치를 유도한다.
 4. 실제 commit은 drop 시점에만 발생한다.
 
-XStudio는 여기서 한 단계 더 복잡하다.
+composition는 여기서 한 단계 더 복잡하다.
 
 1. 선택 및 이동은 PixiJS 레이어에서 시작한다.
 2. 실제 렌더는 Skia(CanvasKit) 오버레이가 담당한다.

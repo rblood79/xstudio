@@ -1,4 +1,4 @@
-# XStudio CSS Architecture - ITCSS
+# composition CSS Architecture - ITCSS
 
 **Date:** 2025-11-08 (초판) / 2026-03-06 (최종 갱신)
 **Version:** 3.2 (ActionIconButton 도입 — builder 전용 아이콘 버튼)
@@ -7,7 +7,7 @@
 
 ## 📊 Overview
 
-XStudio uses **ITCSS (Inverted Triangle CSS)** architecture for scalable and maintainable styling. The CSS is organized in layers of increasing specificity, from generic to explicit.
+composition uses **ITCSS (Inverted Triangle CSS)** architecture for scalable and maintainable styling. The CSS is organized in layers of increasing specificity, from generic to explicit.
 
 ---
 

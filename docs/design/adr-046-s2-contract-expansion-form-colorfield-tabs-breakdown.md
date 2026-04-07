@@ -1,6 +1,6 @@
 # ADR-046 Breakdown: Form, ColorField, Tabs 계약 확장
 
-이 문서는 [ADR-046](/Users/admin/work/xstudio/docs/adr/046-s2-contract-expansion-form-colorfield-tabs.md)의 구현 전 검토 메모다.
+이 문서는 [ADR-046](/Users/admin/work/composition/docs/adr/046-s2-contract-expansion-form-colorfield-tabs.md)의 구현 전 검토 메모다.
 
 ## 목표
 
@@ -240,7 +240,7 @@
   - `ElementSprite`에서 가장 가까운 부모 `Form`의
     - `labelPosition`
     - `necessityIndicator`
-    를 `TextField`, `NumberField`, `SearchField`, `ColorField`에 fallback으로 주입
+      를 `TextField`, `NumberField`, `SearchField`, `ColorField`에 fallback으로 주입
   - child own prop이 있으면 parent fallback을 덮어쓰지 않는다
 
 ### 검증 상태
@@ -267,7 +267,7 @@
 - child field는 그 폭을 사용해
   - label 영역 폭 고정
   - label 내부 `text-align` 적용
-  을 함께 수행해야 한다.
+    을 함께 수행해야 한다.
 
 ### 제안 경로
 
@@ -275,16 +275,16 @@
    - `data-label-align`
    - `--form-label-width`
    - `--form-label-align`
-   같은 공통 CSS 변수/속성을 제공
+     같은 공통 CSS 변수/속성을 제공
 2. shared field CSS
    - `TextField`
    - `NumberField`
    - `SearchField`
    - `ColorField`
-   의 `data-label-position="side"` 경로를 단순 flex가 아니라
+     의 `data-label-position="side"` 경로를 단순 flex가 아니라
    - 고정 label column
    - flexible control column
-   구조로 전환
+     구조로 전환
 3. canvas layout engine
    - `implicitStyles.ts`에서 side-label field의 Label child 폭을 동일 규칙으로 계산
 4. canvas/spec
@@ -306,7 +306,7 @@
   - `NumberField`
   - `SearchField`
   - `ColorField`
-  의 side-label 경로를 grid 기반 label column 구조로 전환
+    의 side-label 경로를 grid 기반 label column 구조로 전환
 - preview renderer
   - `renderForm`이 `labelAlign`을 `Form`에 전달하도록 반영
 
@@ -317,7 +317,7 @@
     - Label 고정 폭
     - control flex
     - FieldError/Description 들여쓰기
-    규칙을 반영
+      규칙을 반영
   - 적용 대상:
     - `TextField`
     - `NumberField`
@@ -336,17 +336,17 @@
 ### 보류 이유
 
 - S2 `Form`은 `S | M | L | XL` 축을 사용한다.
-- 현재 XStudio field 계열은 공통으로 `xs | sm | md | lg | xl` 축을 사용한다.
-- 하지만 XStudio 내부도 단일 축이 아니다.
+- 현재 composition field 계열은 공통으로 `xs | sm | md | lg | xl` 축을 사용한다.
+- 하지만 composition 내부도 단일 축이 아니다.
   - `TextField`, `NumberField`, `SearchField`, `ColorField`는 주로 `xs | sm | md | lg | xl`
   - `Checkbox`, `Radio`, `Switch`, `Tooltip`, `Separator` 같은 계열은 `sm | md | lg`
 - 즉 `Form.size`를 상위 계약으로 도입하면
-  - S2 `Form` 축 → XStudio 5단계 축 매핑
-  - S2 `Form` 축 → XStudio 3단계 축 매핑
-  두 종류를 동시에 정의해야 한다.
+  - S2 `Form` 축 → composition 5단계 축 매핑
+  - S2 `Form` 축 → composition 3단계 축 매핑
+    두 종류를 동시에 정의해야 한다.
 - shared component, preview renderer, canvas layout, spec이 모두 현재 개별 축을 전제로 작성돼 있다.
 - 이 상태에서 `Form.size`를 바로 도입하면 최소한 아래 중 하나를 먼저 정해야 한다.
-  - `Form.size`를 XStudio size 축으로 재정의할지
+  - `Form.size`를 composition size 축으로 재정의할지
   - S2 축을 유지하고 field 축으로 변환할지
   - 둘 다 유지하되 mapping layer를 둘지
 
@@ -373,7 +373,7 @@
 
 ### 보류 이유
 
-- S2 문서에는 `Form.isEmphasized`가 존재하지만, 현재 XStudio field 계열에는 공통된 "emphasized" 의미가 없다.
+- S2 문서에는 `Form.isEmphasized`가 존재하지만, 현재 composition field 계열에는 공통된 "emphasized" 의미가 없다.
 - 현재 코드 기준으로 `isEmphasized`를 직접 지원하는 것은 주로
   - `Checkbox`
   - `CheckboxGroup`
@@ -382,13 +382,13 @@
   - `Slider`
   - `ToggleButton`
   - `ToggleButtonGroup`
-  같은 선택/토글 계열이다.
+    같은 선택/토글 계열이다.
 - 반면 이번 ADR에서 핵심으로 다루는 field 계열은 주로
   - `TextField`
   - `NumberField`
   - `SearchField`
   - `ColorField`
- 이고, 이들은 `variant` 중심으로 시각 모드를 표현한다.
+    이고, 이들은 `variant` 중심으로 시각 모드를 표현한다.
 - 따라서 `Form.isEmphasized`를 상위 fallback으로 넣으면 다음 문제가 생긴다.
   - 어떤 자식 컴포넌트에 적용되는지 일관되지 않다.
   - `variant` 기반 field와 의미가 충돌한다.
@@ -400,7 +400,7 @@
   - `labelPosition`
   - `labelAlign`
   - `necessityIndicator`
-  이다.
+    이다.
 - `isEmphasized`는 현재 `Form`에서 field 계열로 전파하는 경로가 없다.
 - 현재 `isEmphasized`를 직접 지원하는 구현 경로는 주로
   - `Checkbox`
@@ -410,7 +410,7 @@
   - `Slider`
   - `ToggleButton`
   - `ToggleButtonGroup`
-  에 한정된다.
+    에 한정된다.
 - 반면 `FormEditor`, shared `Form` API, preview `renderForm`에는 `isEmphasized` surface가 없다.
 
 ### 채택 전 선행 조건
@@ -438,7 +438,7 @@
   - 자식 적용 대상 집합 정의
   - preview/shared/canvas/spec의 공통 의미 정의
   - fallback 규칙 구현
-  이 먼저 필요하다.
+    이 먼저 필요하다.
 
 ### ADR-041로 넘길 수 있는 상태
 

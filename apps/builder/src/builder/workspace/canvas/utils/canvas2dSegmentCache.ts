@@ -2,7 +2,7 @@
  * Canvas 2D Segment Cache — ADR-051
  *
  * Pretext 원리(Canvas 2D measureText + 세그먼트 캐시 + greedy line-breaking)를
- * XStudio 내부에 직접 구현. 외부 의존 0.
+ * composition 내부에 직접 구현. 외부 의존 0.
  *
  * 3-Tier 정밀도 전략:
  *   Tier 1 — lineFitEpsilon: 서브픽셀 줄 끝 허용 오차 (Pretext 검증)

@@ -1,4 +1,4 @@
-# XStudio 모노레포 구조
+# composition 모노레포 구조
 
 > **작성일**: 2025-12-31
 > **상태**: ✅ 완료 (Completed) - 2025-12-31
@@ -11,7 +11,7 @@
 ### 1.1 현재 구조
 
 ```
-xstudio/ (pnpm + Turborepo 모노레포)
+composition/ (pnpm + Turborepo 모노레포)
 ├── apps/
 │   ├── builder/              # 메인 빌더 앱 (@composition/builder)
 │   │   ├── src/
@@ -67,12 +67,12 @@ xstudio/ (pnpm + Turborepo 모노레포)
 
 ### 1.2 패키지 구조
 
-| 패키지 | 역할 | 의존성 |
-|--------|------|--------|
-| `@composition/builder` | 메인 빌더 앱 | @composition/shared, @composition/config |
-| `@composition/publish` | 배포 런타임 | @composition/shared |
-| `@composition/shared` | 순수 공유 코드 (types, utils) | 없음 |
-| `@composition/config` | 공유 설정 (tsconfig, eslint) | 없음 |
+| 패키지                 | 역할                          | 의존성                                   |
+| ---------------------- | ----------------------------- | ---------------------------------------- |
+| `@composition/builder` | 메인 빌더 앱                  | @composition/shared, @composition/config |
+| `@composition/publish` | 배포 런타임                   | @composition/shared                      |
+| `@composition/shared`  | 순수 공유 코드 (types, utils) | 없음                                     |
+| `@composition/config`  | 공유 설정 (tsconfig, eslint)  | 없음                                     |
 
 > **Note**: 공유 컴포넌트(Button, Badge 등)와 렌더러는 `packages/shared/`에 위치합니다.
 > Builder 전용 UI 컴포넌트(PanelHeader, PropertySection 등)는 `apps/builder/src/builder/components/`에 있습니다.
@@ -152,11 +152,11 @@ pnpm storybook
 
 **핵심 원칙:**
 
-| 영역 | 컴포넌트 위치 | 렌더링 방식 |
-|------|-------------|------------|
+| 영역                | 컴포넌트 위치                                   | 렌더링 방식    |
+| ------------------- | ----------------------------------------------- | -------------- |
 | **Builder (WebGL)** | `apps/builder/src/builder/workspace/canvas/ui/` | Pixi.js Canvas |
-| **Preview (React)** | `packages/shared/components/` | React DOM |
-| **Publish (React)** | `packages/shared/components/` | React DOM |
+| **Preview (React)** | `packages/shared/components/`                   | React DOM      |
+| **Publish (React)** | `packages/shared/components/`                   | React DOM      |
 
 **컴포넌트 이중 구조:**
 
@@ -216,6 +216,7 @@ dist/
 ```
 
 **동작 방식:**
+
 1. 사용자가 페이지 접속
 2. React 앱 로드 (`index.js`)
 3. `project.json` fetch
@@ -223,6 +224,7 @@ dist/
 5. 화면 표시
 
 **적합한 경우:**
+
 - 데이터가 자주 변경되는 사이트
 - API 연동이 필요한 경우
 - 사용자 인터랙션이 많은 앱
@@ -243,24 +245,26 @@ dist/
 ```
 
 **동작 방식:**
+
 1. 빌드 시점에 JSON → HTML 변환
 2. 각 페이지별 정적 HTML 생성
 3. 배포 후 즉시 HTML 제공
 4. (선택) 하이드레이션으로 인터랙션 추가
 
 **적합한 경우:**
+
 - SEO가 중요한 마케팅 사이트
 - 정적 콘텐츠 위주 (블로그, 포트폴리오)
 - CDN 배포로 빠른 로딩 필요
 
 #### 모드별 운영 지표 및 모니터링
 
-| 지표 | 런타임 모드 (SPA) | 정적 빌드 (SSG) | 측정 도구 |
-|-----|-----------------|----------------|----------|
-| First Contentful Paint (FCP) | 1.5-2.5초 | 0.5-1.0초 | Lighthouse |
-| Time to Interactive (TTI) | 2.5-4.0초 | 1.0-2.0초 | Web Vitals |
-| 번들 크기 | ~200KB (React 포함) | ~50KB (하이드레이션 시) | Bundlephobia |
-| SEO 점수 | 60-80 | 90-100 | Lighthouse |
+| 지표                         | 런타임 모드 (SPA)   | 정적 빌드 (SSG)         | 측정 도구    |
+| ---------------------------- | ------------------- | ----------------------- | ------------ |
+| First Contentful Paint (FCP) | 1.5-2.5초           | 0.5-1.0초               | Lighthouse   |
+| Time to Interactive (TTI)    | 2.5-4.0초           | 1.0-2.0초               | Web Vitals   |
+| 번들 크기                    | ~200KB (React 포함) | ~50KB (하이드레이션 시) | Bundlephobia |
+| SEO 점수                     | 60-80               | 90-100                  | Lighthouse   |
 
 **API 실패 시 폴백 전략 (SPA 전용)**:
 
@@ -268,32 +272,32 @@ dist/
 // apps/publish/src/utils/dataLoader.ts
 export async function loadProjectData() {
   try {
-    const response = await fetch('/api/project');
-    if (!response.ok) throw new Error('API 실패');
+    const response = await fetch("/api/project");
+    if (!response.ok) throw new Error("API 실패");
     return await response.json();
   } catch (error) {
-    console.warn('API 실패, 로컬 캐시 사용:', error);
+    console.warn("API 실패, 로컬 캐시 사용:", error);
 
     // 폴백 1: 로컬 스토리지 캐시
-    const cached = localStorage.getItem('project-cache');
+    const cached = localStorage.getItem("project-cache");
     if (cached) return JSON.parse(cached);
 
     // 폴백 2: 빌드 시 포함된 정적 데이터
-    return import('./fallback-data.json');
+    return import("./fallback-data.json");
   }
 }
 ```
 
 **모드 선택 가이드라인**:
 
-| 요구사항 | 권장 모드 |
-|---------|----------|
-| SEO 필수 | SSG |
-| 실시간 데이터 표시 | SPA |
-| CDN 캐싱 최대화 | SSG |
-| 사용자 로그인 필요 | SPA |
-| 빠른 초기 로딩 | SSG |
-| API 기반 동적 콘텐츠 | SPA |
+| 요구사항             | 권장 모드 |
+| -------------------- | --------- |
+| SEO 필수             | SSG       |
+| 실시간 데이터 표시   | SPA       |
+| CDN 캐싱 최대화      | SSG       |
+| 사용자 로그인 필요   | SPA       |
+| 빠른 초기 로딩       | SSG       |
+| API 기반 동적 콘텐츠 | SPA       |
 
 #### 퍼블리싱 UI 흐름
 
@@ -348,8 +352,8 @@ export async function loadProjectData() {
 
 ```typescript
 // apps/publish/vite.config.ts
-import { defineConfig, Plugin } from 'vite';
-import react from '@vitejs/plugin-react-swc';
+import { defineConfig, Plugin } from "vite";
+import react from "@vitejs/plugin-react-swc";
 // SSG 구현 시 필요한 모듈 (실제 사용 시 import)
 // import fs from 'fs/promises';
 // import path from 'path';
@@ -357,10 +361,10 @@ import react from '@vitejs/plugin-react-swc';
 // SSG 플러그인 정의 (예시 구현)
 function ssgPlugin(options: { routes: () => Promise<string[]> }): Plugin {
   return {
-    name: 'vite-plugin-ssg',
-    apply: 'build',
+    name: "vite-plugin-ssg",
+    apply: "build",
     async closeBundle() {
-      if (process.env.BUILD_MODE !== 'ssg') return;
+      if (process.env.BUILD_MODE !== "ssg") return;
 
       const routes = await options.routes();
       console.log(`SSG: ${routes.length} pages to generate`);
@@ -374,10 +378,7 @@ async function loadProjectData() {
   // IndexedDB 또는 API에서 페이지 데이터 로드
   // 실제 구현 시 데이터 소스에 맞게 수정 필요
   return {
-    pages: [
-      { slug: '/' },
-      { slug: '/about' },
-    ],
+    pages: [{ slug: "/" }, { slug: "/about" }],
   };
 }
 
@@ -385,12 +386,13 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     // SSG 모드일 때 정적 HTML 생성
-    process.env.BUILD_MODE === 'ssg' && ssgPlugin({
-      routes: async () => {
-        const data = await loadProjectData();
-        return data.pages.map(page => page.slug);
-      },
-    }),
+    process.env.BUILD_MODE === "ssg" &&
+      ssgPlugin({
+        routes: async () => {
+          const data = await loadProjectData();
+          return data.pages.map((page) => page.slug);
+        },
+      }),
   ].filter(Boolean),
 }));
 ```
@@ -409,8 +411,8 @@ export default defineConfig(({ mode }) => ({
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 
 # pnpm 10+ 형식: catalogs + default 사용
 catalogs:
@@ -425,7 +427,7 @@ catalogs:
     # 빌드 도구
     typescript: ~5.9.3
     vite: ^7.3.0
-    '@vitejs/plugin-react-swc': ^4.2.2
+    "@vitejs/plugin-react-swc": ^4.2.2
     cross-env: ^7.0.3
 
     # 상태 관리
@@ -434,9 +436,9 @@ catalogs:
     immer: ^10.1.1
 
     # 타입 정의
-    '@types/react': ^19.2.7
-    '@types/react-dom': ^19.2.3
-    '@types/node': ^24.10.2
+    "@types/react": ^19.2.7
+    "@types/react-dom": ^19.2.3
+    "@types/node": ^24.10.2
 ```
 
 > **Note**: `onlyBuiltDependencies`는 **루트** `.npmrc`에 별도로 설정합니다.
@@ -475,6 +477,7 @@ onlyBuiltDependencies[]=puppeteer
 **목표**: pnpm catalog로 의존성 버전 중앙 관리
 
 **작업 내용**:
+
 1. `pnpm-workspace.yaml`에 catalogs 섹션 추가 (pnpm 10+ 형식)
 2. `.npmrc`에 `onlyBuiltDependencies` 설정
 3. **packages 경로에서 `.` 제거 준비** (Phase 3 이후 적용)
@@ -485,6 +488,7 @@ onlyBuiltDependencies[]=puppeteer
 > `@composition/shared`는 각 앱(apps/builder, apps/publish)의 package.json에서 참조합니다.
 
 **pnpm-workspace.yaml 변경:**
+
 ```yaml
 # 현재 (루트가 앱 역할)
 packages:
@@ -498,6 +502,7 @@ packages:
 ```
 
 **Vite 버전 통일:**
+
 ```bash
 # packages/publish의 Vite 6 → 7 업그레이드
 cd packages/publish
@@ -509,12 +514,14 @@ pnpm add -D vite@^7.3.0
 ```
 
 **수정 파일**:
+
 - `/pnpm-workspace.yaml`
 - `/package.json`
 - `/packages/shared/package.json`
 - `/packages/publish/package.json` (Vite 버전 업그레이드)
 
 **검증**:
+
 ```bash
 pnpm install
 pnpm why typescript  # 모든 패키지에서 동일 버전 확인
@@ -588,6 +595,7 @@ fi
 ```
 
 **사용 방법:**
+
 ```bash
 # 스크립트 실행
 chmod +x scripts/verify-catalog.sh
@@ -605,6 +613,7 @@ pnpm run verify:catalog
 **목표**: TypeScript, ESLint 설정 중앙화
 
 **디렉토리 구조**:
+
 ```
 packages/config/
 ├── package.json
@@ -617,6 +626,7 @@ packages/config/
 ```
 
 **packages/config/package.json**:
+
 ```json
 {
   "name": "@composition/config",
@@ -632,6 +642,7 @@ packages/config/
 ```
 
 **tsconfig/base.json**:
+
 ```json
 {
   "$schema": "https://json.schemastore.org/tsconfig",
@@ -653,6 +664,7 @@ packages/config/
 ```
 
 **tsconfig/react-app.json**:
+
 ```json
 {
   "extends": "./base.json",
@@ -666,6 +678,7 @@ packages/config/
 ```
 
 **tsconfig/library.json**:
+
 ```json
 {
   "extends": "./base.json",
@@ -690,11 +703,13 @@ packages/config/
 > **주의**: 렌더러 이동은 builder 이동 완료 후 진행해야 import 경로 충돌을 방지할 수 있습니다.
 
 **Step 1: 디렉토리 생성**
+
 ```bash
 mkdir -p apps/builder
 ```
 
 **Step 2: Builder 파일 이동** (git mv 사용으로 이력 보존)
+
 ```bash
 git mv src/ apps/builder/src/
 git mv public/ apps/builder/public/
@@ -710,6 +725,7 @@ git mv .env.example apps/builder/.env.example
 ```
 
 **Step 2.5: 디렉토리 리네이밍** (혼동 방지)
+
 ```bash
 # canvas/ → preview/ 리네이밍 (Pixi.js workspace/canvas와 구분)
 git mv apps/builder/src/canvas/ apps/builder/src/preview/
@@ -722,6 +738,7 @@ git mv apps/builder/src/canvas/ apps/builder/src/preview/
 > `apps/builder/src/builder/workspace/canvas/` (WebGL 편집 화면)와 혼동을 줄 수 있음
 
 **Step 3: 빌드 검증** (렌더러 이동 전 중간 검증)
+
 ```bash
 cd apps/builder
 pnpm install
@@ -793,27 +810,27 @@ apps/publish/src/
 
 ```typescript
 // 변경 전 (apps/builder/src/preview/App.tsx)
-import { TextField } from '../../shared/components/list';
-import { renderTextField } from './renderers/FormRenderers';
+import { TextField } from "../../shared/components/list";
+import { renderTextField } from "./renderers/FormRenderers";
 
 // 변경 후 (apps/builder/src/preview/App.tsx)
-import { TextField } from '@composition/shared/components';
-import { renderTextField } from '@composition/shared/renderers';
+import { TextField } from "@composition/shared/components";
+import { renderTextField } from "@composition/shared/renderers";
 
 // apps/publish/src/App.tsx (동일한 import)
-import { TextField } from '@composition/shared/components';
-import { renderTextField } from '@composition/shared/renderers';
+import { TextField } from "@composition/shared/components";
+import { renderTextField } from "@composition/shared/renderers";
 ```
 
 **컴포넌트 분류 기준:**
 
-| 컴포넌트 유형 | 위치 | 사용처 |
-|--------------|------|--------|
-| UI 컴포넌트 | `packages/shared/src/components/` | Preview, Publish |
-| 렌더러 | `packages/shared/src/renderers/` | Preview, Publish |
-| 공용 타입 | `packages/shared/src/types/` | Builder, Preview, Publish |
-| Pixi 컴포넌트 | `apps/builder/src/builder/workspace/canvas/ui/` | Builder WebGL |
-| Builder 전용 UI | `apps/builder/src/builder/components/` | Builder Inspector, Panels |
+| 컴포넌트 유형   | 위치                                            | 사용처                    |
+| --------------- | ----------------------------------------------- | ------------------------- |
+| UI 컴포넌트     | `packages/shared/src/components/`               | Preview, Publish          |
+| 렌더러          | `packages/shared/src/renderers/`                | Preview, Publish          |
+| 공용 타입       | `packages/shared/src/types/`                    | Builder, Preview, Publish |
+| Pixi 컴포넌트   | `apps/builder/src/builder/workspace/canvas/ui/` | Builder WebGL             |
+| Builder 전용 UI | `apps/builder/src/builder/components/`          | Builder Inspector, Panels |
 
 **Builder 전용 컴포넌트 (이동 안함):**
 
@@ -836,49 +853,52 @@ apps/builder/src/builder/components/   # Builder 전용 (이동 안함)
 > 마이그레이션 후 import 경로만 `@composition/shared/components`로 변경하면 됩니다.
 
 **Step 5: Import 경로 업데이트** (렌더러 이동 직후 즉시 수행)
+
 ```bash
 # 변경이 필요한 파일 검색
 grep -r "from.*['\"].*renderers" apps/builder/src/preview/ --include="*.tsx" --include="*.ts"
 ```
 
-   **분리 후 구조**:
-   ```
-   apps/builder/src/preview/          # Builder 프리뷰 전용 (구 canvas/)
-   ├── App.tsx                        # 프리뷰 앱 진입점
-   ├── index.tsx                      # srcdoc iframe 진입점
-   ├── messaging/                     # postMessage 핸들러
-   ├── router/                        # 프리뷰 라우팅
-   ├── store/                         # 프리뷰 상태
-   └── (renderers/ → packages/shared/src/renderers/로 이동됨)
+**분리 후 구조**:
 
-   packages/shared/src/
-   ├── components/                    # React UI 컴포넌트
-   │   ├── TextField.tsx
-   │   ├── ListBox.tsx
-   │   ├── styles/
-   │   └── index.ts
-   ├── renderers/                     # 렌더러 (components 병렬)
-   │   ├── FormRenderers.tsx
-   │   ├── LayoutRenderers.tsx
-   │   ├── DateRenderers.tsx
-   │   ├── SelectionRenderers.tsx
-   │   ├── TableRenderer.tsx
-   │   ├── CollectionRenderers.tsx
-   │   └── index.ts
-   ├── types/
-   └── utils/
-   ```
+```
+apps/builder/src/preview/          # Builder 프리뷰 전용 (구 canvas/)
+├── App.tsx                        # 프리뷰 앱 진입점
+├── index.tsx                      # srcdoc iframe 진입점
+├── messaging/                     # postMessage 핸들러
+├── router/                        # 프리뷰 라우팅
+├── store/                         # 프리뷰 상태
+└── (renderers/ → packages/shared/src/renderers/로 이동됨)
+
+packages/shared/src/
+├── components/                    # React UI 컴포넌트
+│   ├── TextField.tsx
+│   ├── ListBox.tsx
+│   ├── styles/
+│   └── index.ts
+├── renderers/                     # 렌더러 (components 병렬)
+│   ├── FormRenderers.tsx
+│   ├── LayoutRenderers.tsx
+│   ├── DateRenderers.tsx
+│   ├── SelectionRenderers.tsx
+│   ├── TableRenderer.tsx
+│   ├── CollectionRenderers.tsx
+│   └── index.ts
+├── types/
+└── utils/
+```
 
 4. **Import 경로 업데이트**
+
    ```typescript
    // apps/builder/src/preview/App.tsx (변경 전)
-   import { FormRenderers } from './renderers';
+   import { FormRenderers } from "./renderers";
 
    // apps/builder/src/preview/App.tsx (변경 후)
-   import { FormRenderers } from '@composition/shared/renderers';
+   import { FormRenderers } from "@composition/shared/renderers";
 
    // apps/publish/src/App.tsx
-   import { FormRenderers } from '@composition/shared/renderers';
+   import { FormRenderers } from "@composition/shared/renderers";
    ```
 
 **렌더러 계약 검증 테스트 계획**:
@@ -888,15 +908,15 @@ grep -r "from.*['\"].*renderers" apps/builder/src/preview/ --include="*.tsx" --i
 ```typescript
 // packages/shared/src/components/renderers/__tests__/contract.test.ts
 
-import { describe, it, expect } from 'vitest';
-import { FormRenderers, LayoutRenderers } from '../index';
+import { describe, it, expect } from "vitest";
+import { FormRenderers, LayoutRenderers } from "../index";
 
 // Props 타입 계약 검증
-describe('Renderer Props Contract', () => {
-  it('FormRenderers should accept standard props', () => {
+describe("Renderer Props Contract", () => {
+  it("FormRenderers should accept standard props", () => {
     const props = {
-      id: 'test-input',
-      value: '',
+      id: "test-input",
+      value: "",
       onChange: () => {},
       disabled: false,
     };
@@ -904,37 +924,37 @@ describe('Renderer Props Contract', () => {
     expect(() => FormRenderers.TextInput(props)).not.toThrow();
   });
 
-  it('LayoutRenderers should accept children and style props', () => {
+  it("LayoutRenderers should accept children and style props", () => {
     const props = {
       children: null,
       style: { padding: 16 },
-      className: 'container',
+      className: "container",
     };
     expect(() => LayoutRenderers.Container(props)).not.toThrow();
   });
 });
 
 // 스타일 토큰 계약 검증
-describe('Style Token Contract', () => {
-  it('should use consistent spacing tokens', () => {
+describe("Style Token Contract", () => {
+  it("should use consistent spacing tokens", () => {
     // 공유 스타일 토큰이 builder/publish에서 동일하게 적용되는지 확인
-    expect(FormRenderers.getSpacing('md')).toBe(16);
-    expect(LayoutRenderers.getSpacing('md')).toBe(16);
+    expect(FormRenderers.getSpacing("md")).toBe(16);
+    expect(LayoutRenderers.getSpacing("md")).toBe(16);
   });
 });
 
 // 이벤트 시그니처 계약 검증
-describe('Event Signature Contract', () => {
-  it('onChange should receive consistent event shape', () => {
+describe("Event Signature Contract", () => {
+  it("onChange should receive consistent event shape", () => {
     const mockOnChange = vi.fn();
     const input = FormRenderers.TextInput({ onChange: mockOnChange });
 
     // 시뮬레이션된 이벤트가 동일한 형태인지 확인
-    fireEvent.change(input, { target: { value: 'test' } });
+    fireEvent.change(input, { target: { value: "test" } });
     expect(mockOnChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        target: expect.objectContaining({ value: 'test' })
-      })
+        target: expect.objectContaining({ value: "test" }),
+      }),
     );
   });
 });
@@ -949,6 +969,7 @@ describe('Event Signature Contract', () => {
 | 시각적 일관성 | Chromatic 스냅샷 | 픽셀 차이 0% |
 
 5. **apps/builder/package.json 생성**
+
    ```json
    {
      "name": "@composition/builder",
@@ -985,6 +1006,7 @@ describe('Event Signature Contract', () => {
    ```
 
 6. **apps/builder/tsconfig.json 생성**
+
    ```json
    {
      "extends": "@composition/config/tsconfig/react-app",
@@ -1013,6 +1035,7 @@ describe('Event Signature Contract', () => {
    ```
 
 **검증 체크리스트**:
+
 ```bash
 # 1. workspace 링크 확인
 pnpm list --depth 0
@@ -1040,6 +1063,7 @@ pnpm -F @composition/builder run check-types
 **작업 내용**:
 
 1. **디렉토리 이동**
+
    ```bash
    git mv packages/publish/ apps/publish/
    ```
@@ -1053,29 +1077,31 @@ pnpm -F @composition/builder run check-types
        "react": "catalog:",
        "react-dom": "catalog:"
      },
-    "devDependencies": {
-      "@composition/config": "workspace:*",
-      "typescript": "catalog:",
-      "vite": "catalog:",
-      "cross-env": "catalog:"
-    }
-  }
-  ```
+     "devDependencies": {
+       "@composition/config": "workspace:*",
+       "typescript": "catalog:",
+       "vite": "catalog:",
+       "cross-env": "catalog:"
+     }
+   }
+   ```
+
+````
 
 3. **vite.config.ts 업데이트** (Vite 7 호환)
 
 4. **tsconfig.json 업데이트**
-   ```json
-   {
-     "extends": "@composition/config/tsconfig/react-app",
-     "compilerOptions": {
-       "paths": {
-         "@composition/shared": ["../../packages/shared/src"],
-         "@composition/shared/*": ["../../packages/shared/src/*"]
-       }
+ ```json
+ {
+   "extends": "@composition/config/tsconfig/react-app",
+   "compilerOptions": {
+     "paths": {
+       "@composition/shared": ["../../packages/shared/src"],
+       "@composition/shared/*": ["../../packages/shared/src/*"]
      }
    }
-   ```
+ }
+````
 
 5. **@composition/shared 연동** (핵심 통합 작업)
 
@@ -1090,25 +1116,25 @@ pnpm -F @composition/builder run check-types
      ListBox,
      DatePicker,
      // ... 기타 컴포넌트
-   } from '@composition/shared/components';
+   } from "@composition/shared/components";
 
    import {
      renderTextField,
      renderListBox,
      // ... 기타 렌더러
-   } from '@composition/shared/renderers';
+   } from "@composition/shared/renderers";
 
    // React Aria 컴포넌트 등록
-   registerComponent('TextField', {
+   registerComponent("TextField", {
      component: TextField,
-     displayName: 'TextField',
-     category: 'input',
+     displayName: "TextField",
+     category: "input",
    });
 
-   registerComponent('ListBox', {
+   registerComponent("ListBox", {
      component: ListBox,
-     displayName: 'ListBox',
-     category: 'collection',
+     displayName: "ListBox",
+     category: "collection",
    });
 
    // ... 기타 컴포넌트 등록
@@ -1146,10 +1172,11 @@ pnpm -F @composition/builder run check-types
    /* apps/publish/src/styles/index.css */
 
    /* @composition/shared 스타일 import */
-   @import '@composition/shared/components/styles/index.css';
+   @import "@composition/shared/components/styles/index.css";
    ```
 
 **검증 체크리스트**:
+
 ```bash
 # 1. 의존성 링크 확인
 cd apps/publish && pnpm list --depth 0
@@ -1174,6 +1201,7 @@ pnpm exec tsc --noEmit
 **목표**: Just-in-Time 타입 패턴 적용
 
 **package.json 업데이트**:
+
 ```json
 {
   "name": "@composition/shared",
@@ -1214,6 +1242,7 @@ pnpm exec tsc --noEmit
 ```
 
 **tsconfig.json 업데이트**:
+
 ```json
 {
   "extends": "@composition/config/tsconfig/library",
@@ -1226,6 +1255,7 @@ pnpm exec tsc --noEmit
 ```
 
 **검증 체크리스트**:
+
 ```bash
 # 1. exports 경로 확인
 node -e "console.log(require.resolve('@composition/shared'))"
@@ -1250,9 +1280,10 @@ pnpm exec madge --circular packages/shared/src
 **목표**: 루트를 순수 워크스페이스로 전환
 
 **루트 package.json**:
+
 ```json
 {
-  "name": "xstudio",
+  "name": "composition",
   "private": true,
   "packageManager": "pnpm@10.26.2",
   "scripts": {
@@ -1272,40 +1303,41 @@ pnpm exec madge --circular packages/shared/src
 
 **이동할 파일들**:
 
-| 파일 | 이동 위치 | 비고 |
-|------|----------|------|
-| `src/` | `apps/builder/src/` | Phase 3에서 처리 |
-| `public/` | `apps/builder/public/` | Phase 3에서 처리 |
-| `index.html` | `apps/builder/index.html` | Phase 3에서 처리 |
-| `vite.config.ts` | `apps/builder/vite.config.ts` | Phase 3에서 처리 |
-| `vite.preview.config.ts` | `apps/builder/vite.preview.config.ts` | Phase 3에서 처리 |
-| `tsconfig.app.json` | `apps/builder/tsconfig.app.json` | Phase 3에서 처리 |
-| `tsconfig.node.json` | `apps/builder/tsconfig.node.json` | Phase 3에서 처리 |
-| `vitest.workspace.ts` | `apps/builder/vitest.workspace.ts` | Vitest 워크스페이스 설정 |
-| `postcss.config.js` | `apps/builder/postcss.config.js` | PostCSS 설정 |
-| `eslint.config.js` | 루트 유지 또는 `packages/config/` | 전사 공용 설정 |
-| `eslint-local-rules/` | `apps/builder/eslint-local-rules/` | Builder 전용 규칙 |
-| `.storybook/` | `apps/builder/.storybook/` | 4.7에서 상세 설명 |
-| `tests/` | `apps/builder/tests/` | 단위 테스트 |
+| 파일                     | 이동 위치                             | 비고                     |
+| ------------------------ | ------------------------------------- | ------------------------ |
+| `src/`                   | `apps/builder/src/`                   | Phase 3에서 처리         |
+| `public/`                | `apps/builder/public/`                | Phase 3에서 처리         |
+| `index.html`             | `apps/builder/index.html`             | Phase 3에서 처리         |
+| `vite.config.ts`         | `apps/builder/vite.config.ts`         | Phase 3에서 처리         |
+| `vite.preview.config.ts` | `apps/builder/vite.preview.config.ts` | Phase 3에서 처리         |
+| `tsconfig.app.json`      | `apps/builder/tsconfig.app.json`      | Phase 3에서 처리         |
+| `tsconfig.node.json`     | `apps/builder/tsconfig.node.json`     | Phase 3에서 처리         |
+| `vitest.workspace.ts`    | `apps/builder/vitest.workspace.ts`    | Vitest 워크스페이스 설정 |
+| `postcss.config.js`      | `apps/builder/postcss.config.js`      | PostCSS 설정             |
+| `eslint.config.js`       | 루트 유지 또는 `packages/config/`     | 전사 공용 설정           |
+| `eslint-local-rules/`    | `apps/builder/eslint-local-rules/`    | Builder 전용 규칙        |
+| `.storybook/`            | `apps/builder/.storybook/`            | 4.7에서 상세 설명        |
+| `tests/`                 | `apps/builder/tests/`                 | 단위 테스트              |
 
 **삭제할 파일들**:
 
-| 파일 | 이유 |
-|------|------|
+| 파일            | 이유                                |
+| --------------- | ----------------------------------- |
 | `test-results/` | 테스트 실행 결과물 (gitignore 대상) |
-| `scripts/` | 테스트용 스크립트 (필요시 이동) |
+| `scripts/`      | 테스트용 스크립트 (필요시 이동)     |
 
 **루트에 유지할 파일들**:
 
-| 파일 | 이유 |
-|------|------|
-| `docs/` | 프로젝트 전체 문서 |
-| `.github/` | CI/CD 워크플로우 |
+| 파일               | 이유                                           |
+| ------------------ | ---------------------------------------------- |
+| `docs/`            | 프로젝트 전체 문서                             |
+| `.github/`         | CI/CD 워크플로우                               |
 | `eslint.config.js` | 전사 공용 ESLint (또는 packages/config로 이동) |
-| `.gitignore` | 업데이트 필요 (4.8 참조) |
-| `README.md` | 프로젝트 소개 |
+| `.gitignore`       | 업데이트 필요 (4.8 참조)                       |
+| `README.md`        | 프로젝트 소개                                  |
 
 **추가 이동 명령어**:
+
 ```bash
 # Vitest 워크스페이스 설정
 git mv vitest.workspace.ts apps/builder/vitest.workspace.ts
@@ -1330,6 +1362,7 @@ rm -rf scripts/
 ```
 
 **루트 tsconfig.json** (선택적 - solution style):
+
 ```json
 {
   "files": [],
@@ -1349,6 +1382,7 @@ rm -rf scripts/
 **목표**: 빌드 캐싱 및 병렬 실행
 
 **turbo.json**:
+
 ```json
 {
   "$schema": "https://turbo.build/schema.json",
@@ -1387,6 +1421,7 @@ rm -rf scripts/
 ```
 
 **turbo 설치**:
+
 ```bash
 pnpm add -Dw turbo
 ```
@@ -1398,26 +1433,31 @@ pnpm add -Dw turbo
 **검증 체크리스트**:
 
 1. **의존성 설치**
+
    ```bash
    pnpm install
    ```
 
 2. **타입 체크**
+
    ```bash
    turbo run check-types
    ```
 
 3. **빌드 테스트**
+
    ```bash
    turbo run build
    ```
 
 4. **개발 서버**
+
    ```bash
    turbo run dev --filter=@composition/builder
    ```
 
 5. **린트**
+
    ```bash
    turbo run lint
    ```
@@ -1428,6 +1468,7 @@ pnpm add -Dw turbo
    ```
 
 **성능 확인**:
+
 ```bash
 # Turborepo 캐시 상태 확인
 turbo run build --summarize
@@ -1444,6 +1485,7 @@ turbo run build          # 캐시 사용
 ### 4.1 Git 이력 보존
 
 파일 이동 시 반드시 `git mv` 사용:
+
 ```bash
 git mv src/ apps/builder/src/
 ```
@@ -1457,7 +1499,7 @@ git mv src/ apps/builder/src/
 모노레포에서 환경변수는 **앱별로 분리**하는 것을 권장합니다:
 
 ```
-xstudio/
+composition/
 ├── .env.example              # 루트: 공통 환경변수 템플릿
 ├── apps/
 │   ├── builder/
@@ -1472,14 +1514,15 @@ xstudio/
 
 **환경변수 분리 기준:**
 
-| 변수 유형 | 위치 | 예시 |
-|----------|------|------|
-| 앱별 API 엔드포인트 | `apps/[app]/.env` | `VITE_API_URL` |
-| 앱별 포트 설정 | `apps/[app]/.env` | `VITE_PORT=5173` |
-| 공통 서비스 키 | 루트 `.env` 또는 CI 시크릿 | `TURBO_TOKEN` |
-| 민감한 정보 | CI/CD 시크릿만 | `DATABASE_URL` |
+| 변수 유형           | 위치                       | 예시             |
+| ------------------- | -------------------------- | ---------------- |
+| 앱별 API 엔드포인트 | `apps/[app]/.env`          | `VITE_API_URL`   |
+| 앱별 포트 설정      | `apps/[app]/.env`          | `VITE_PORT=5173` |
+| 공통 서비스 키      | 루트 `.env` 또는 CI 시크릿 | `TURBO_TOKEN`    |
+| 민감한 정보         | CI/CD 시크릿만             | `DATABASE_URL`   |
 
 **Vite 환경변수 로드 순서:**
+
 ```
 .env                # 항상 로드
 .env.local          # 항상 로드, gitignore 대상
@@ -1488,6 +1531,7 @@ xstudio/
 ```
 
 **마이그레이션 시 주의:**
+
 - 기존 루트 `.env` 파일을 `apps/builder/.env`로 복사
 - `VITE_` 접두사가 있는 변수만 클라이언트에 노출됨
 - `.gitignore`에 `apps/*/.env.local` 패턴 추가
@@ -1549,11 +1593,11 @@ xstudio/
 
 #### 워크스페이스 경로 변경 요약
 
-| 항목 | 기존 경로 | 신규 경로 |
-|-----|----------|----------|
-| 빌더 빌드 출력 | `./dist` | `apps/builder/dist` |
+| 항목               | 기존 경로               | 신규 경로           |
+| ------------------ | ----------------------- | ------------------- |
+| 빌더 빌드 출력     | `./dist`                | `apps/builder/dist` |
 | 퍼블리시 빌드 출력 | `packages/publish/dist` | `apps/publish/dist` |
-| 캐시 디렉토리 | `node_modules/.cache` | `.turbo` |
+| 캐시 디렉토리      | `node_modules/.cache`   | `.turbo`            |
 
 ### 4.5 ESLint 설정
 
@@ -1561,38 +1605,38 @@ xstudio/
 
 #### 위치 선택 기준
 
-| 규칙 유형 | 권장 위치 | 이유 |
-|----------|----------|------|
+| 규칙 유형              | 권장 위치                          | 이유                     |
+| ---------------------- | ---------------------------------- | ------------------------ |
 | Pixi.js/Canvas 관련 룰 | `apps/builder/eslint-local-rules/` | Builder 전용 그래픽 로직 |
-| WebGL 메모리 관리 룰 | `apps/builder/eslint-local-rules/` | Builder 전용 |
-| API/데이터 검증 룰 | `packages/config/eslint/` | 전사 공용 |
-| React Aria 접근성 룰 | `packages/config/eslint/` | 전사 공용 |
-| 네이밍 컨벤션 룰 | `packages/config/eslint/` | 전사 공용 |
+| WebGL 메모리 관리 룰   | `apps/builder/eslint-local-rules/` | Builder 전용             |
+| API/데이터 검증 룰     | `packages/config/eslint/`          | 전사 공용                |
+| React Aria 접근성 룰   | `packages/config/eslint/`          | 전사 공용                |
+| 네이밍 컨벤션 룰       | `packages/config/eslint/`          | 전사 공용                |
 
 #### 옵션 A: 전사 공용 설정 (packages/config)
 
 ```javascript
 // packages/config/eslint/base.js
 module.exports = {
-  extends: ['eslint:recommended', 'plugin:react/recommended'],
-  plugins: ['@composition/eslint-local-rules'],
+  extends: ["eslint:recommended", "plugin:react/recommended"],
+  plugins: ["@composition/eslint-local-rules"],
   rules: {
-    '@composition/eslint-local-rules/no-unsafe-api-call': 'error',
-    '@composition/eslint-local-rules/require-aria-label': 'warn',
+    "@composition/eslint-local-rules/no-unsafe-api-call": "error",
+    "@composition/eslint-local-rules/require-aria-label": "warn",
   },
 };
 
 // apps/builder/eslint.config.js
-import baseConfig from '@composition/config/eslint';
+import baseConfig from "@composition/config/eslint";
 
 export default [
   ...baseConfig,
   {
     // Builder 전용 규칙 추가
-    plugins: { 'local-rules': localRules },
+    plugins: { "local-rules": localRules },
     rules: {
-      'local-rules/no-direct-pixi-dispose': 'error',
-      'local-rules/require-webgl-cleanup': 'error',
+      "local-rules/no-direct-pixi-dispose": "error",
+      "local-rules/require-webgl-cleanup": "error",
     },
   },
 ];
@@ -1604,19 +1648,19 @@ export default [
 // apps/builder/eslint-local-rules/index.js
 module.exports = {
   rules: {
-    'no-direct-pixi-dispose': require('./rules/no-direct-pixi-dispose'),
-    'require-webgl-cleanup': require('./rules/require-webgl-cleanup'),
+    "no-direct-pixi-dispose": require("./rules/no-direct-pixi-dispose"),
+    "require-webgl-cleanup": require("./rules/require-webgl-cleanup"),
   },
 };
 
 // apps/builder/eslint.config.js
-import localRules from './eslint-local-rules';
+import localRules from "./eslint-local-rules";
 
 export default [
   {
-    plugins: { 'local-rules': localRules },
+    plugins: { "local-rules": localRules },
     rules: {
-      'local-rules/no-direct-pixi-dispose': 'error',
+      "local-rules/no-direct-pixi-dispose": "error",
     },
   },
 ];
@@ -1630,13 +1674,13 @@ export default [
 
 ```
 # 기존 구조 (추정)
-xstudio/
+composition/
 ├── e2e/                      # 또는 tests/
 │   └── *.spec.ts
 └── playwright.config.ts
 
 # 목표 구조
-xstudio/
+composition/
 ├── apps/builder/
 │   ├── e2e/                  # Builder E2E 테스트
 │   │   └── *.spec.ts
@@ -1645,24 +1689,26 @@ xstudio/
 ```
 
 **playwright.config.ts 수정:**
+
 ```typescript
 // apps/builder/playwright.config.ts
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: "./e2e",
   webServer: {
-    command: 'pnpm run dev',
+    command: "pnpm run dev",
     port: 5173,
-    cwd: __dirname,  // apps/builder 기준
+    cwd: __dirname, // apps/builder 기준
   },
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: "http://localhost:5173",
   },
 });
 ```
 
 **turbo.json에 e2e task 추가:**
+
 ```json
 {
   "tasks": {
@@ -1678,7 +1724,7 @@ export default defineConfig({
 
 ```
 # 목표 구조
-xstudio/
+composition/
 ├── apps/builder/
 │   ├── src/
 │   │   └── **/*.test.ts      # 컴포넌트 옆 테스트 (co-location)
@@ -1690,25 +1736,27 @@ xstudio/
 ```
 
 **vitest.workspace.ts 이동 후 수정:**
+
 ```typescript
 // apps/builder/vitest.workspace.ts
-import { defineWorkspace } from 'vitest/config';
+import { defineWorkspace } from "vitest/config";
 
 export default defineWorkspace([
   {
-    extends: './vite.config.ts',
+    extends: "./vite.config.ts",
     test: {
-      name: 'builder',
-      root: '.',
-      include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
-      environment: 'jsdom',
-      setupFiles: ['./vitest.setup.ts'],
+      name: "builder",
+      root: ".",
+      include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
+      environment: "jsdom",
+      setupFiles: ["./vitest.setup.ts"],
     },
   },
 ]);
 ```
 
 **apps/builder/package.json 스크립트:**
+
 ```json
 {
   "scripts": {
@@ -1720,6 +1768,7 @@ export default defineWorkspace([
 ```
 
 **turbo.json에 test task 설정:**
+
 ```json
 {
   "tasks": {
@@ -1760,11 +1809,11 @@ rm -rf test-results/
 
 **처리 방안:**
 
-| 파일 유형 | 처리 |
-|----------|------|
-| 성능 테스트 스크립트 | `apps/builder/scripts/`로 이동 또는 삭제 |
-| 일회성 마이그레이션 스크립트 | 마이그레이션 완료 후 삭제 |
-| 빌드/배포 스크립트 | 루트 `scripts/`에 유지 (필요 시) |
+| 파일 유형                    | 처리                                     |
+| ---------------------------- | ---------------------------------------- |
+| 성능 테스트 스크립트         | `apps/builder/scripts/`로 이동 또는 삭제 |
+| 일회성 마이그레이션 스크립트 | 마이그레이션 완료 후 삭제                |
+| 빌드/배포 스크립트           | 루트 `scripts/`에 유지 (필요 시)         |
 
 ```bash
 # 마이그레이션 시 정리
@@ -1796,43 +1845,40 @@ pnpm add -D @storybook/react-vite @storybook/addon-essentials @storybook/addon-a
 
 #### 경로 수정 체크리스트
 
-| 항목 | 수정 전 | 수정 후 |
-|------|--------|---------|
-| stories 경로 | `../src/**/*.stories.*` | 동일 (상대 경로 유지) |
-| shared 스토리 | - | `../../../packages/shared/src/**/*.stories.*` |
-| staticDirs | `../public` | 동일 |
-| alias `@` | `./src` | `../src` |
-| alias `@composition/shared` | - | `../../../packages/shared/src` |
+| 항목                        | 수정 전                 | 수정 후                                       |
+| --------------------------- | ----------------------- | --------------------------------------------- |
+| stories 경로                | `../src/**/*.stories.*` | 동일 (상대 경로 유지)                         |
+| shared 스토리               | -                       | `../../../packages/shared/src/**/*.stories.*` |
+| staticDirs                  | `../public`             | 동일                                          |
+| alias `@`                   | `./src`                 | `../src`                                      |
+| alias `@composition/shared` | -                       | `../../../packages/shared/src`                |
 
 #### 이동 후 설정 변경 예시
 
 ```typescript
 // apps/builder/.storybook/main.ts
-import type { StorybookConfig } from '@storybook/react-vite';
-import { mergeConfig } from 'vite';
-import path from 'path';
+import type { StorybookConfig } from "@storybook/react-vite";
+import { mergeConfig } from "vite";
+import path from "path";
 
 const config: StorybookConfig = {
   stories: [
-    '../src/**/*.mdx',
-    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    "../src/**/*.mdx",
+    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
     // shared 패키지 스토리도 포함
-    '../../../packages/shared/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    "../../../packages/shared/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
   ],
 
   // 정적 에셋 디렉토리 (경로 변경 필수)
   staticDirs: [
-    '../public',
-    { from: '../../../packages/shared/public', to: '/shared-assets' },
+    "../public",
+    { from: "../../../packages/shared/public", to: "/shared-assets" },
   ],
 
-  addons: [
-    '@storybook/addon-essentials',
-    '@storybook/addon-a11y',
-  ],
+  addons: ["@storybook/addon-essentials", "@storybook/addon-a11y"],
 
   framework: {
-    name: '@storybook/react-vite',
+    name: "@storybook/react-vite",
     options: {},
   },
 
@@ -1840,8 +1886,11 @@ const config: StorybookConfig = {
     return mergeConfig(config, {
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '../src'),
-          '@composition/shared': path.resolve(__dirname, '../../../packages/shared/src'),
+          "@": path.resolve(__dirname, "../src"),
+          "@composition/shared": path.resolve(
+            __dirname,
+            "../../../packages/shared/src",
+          ),
         },
       },
     });
@@ -1853,11 +1902,11 @@ export default config;
 
 ```typescript
 // apps/builder/.storybook/preview.ts
-import type { Preview } from '@storybook/react';
+import type { Preview } from "@storybook/react";
 
 // import 경로 변경
-import '../src/styles/globals.css';
-import '@composition/shared/styles/components.css';
+import "../src/styles/globals.css";
+import "@composition/shared/styles/components.css";
 
 const preview: Preview = {
   parameters: {
@@ -1956,13 +2005,13 @@ node_modules/
 
 **변경 사항 요약:**
 
-| 기존 패턴 | 신규 패턴 | 이유 |
-|----------|----------|------|
-| `dist/` | `apps/*/dist/` | 앱별 빌드 디렉토리 |
-| `.env.local` | `apps/*/.env.local` | 앱별 환경변수 |
-| `coverage/` | `apps/*/coverage/` | 앱별 테스트 커버리지 |
-| - | `.turbo/` | Turborepo 캐시 |
-| `test-results/` | `apps/*/test-results/` | 앱별 테스트 결과 |
+| 기존 패턴       | 신규 패턴              | 이유                 |
+| --------------- | ---------------------- | -------------------- |
+| `dist/`         | `apps/*/dist/`         | 앱별 빌드 디렉토리   |
+| `.env.local`    | `apps/*/.env.local`    | 앱별 환경변수        |
+| `coverage/`     | `apps/*/coverage/`     | 앱별 테스트 커버리지 |
+| -               | `.turbo/`              | Turborepo 캐시       |
+| `test-results/` | `apps/*/test-results/` | 앱별 테스트 결과     |
 
 **마이그레이션 시 실행:**
 
@@ -1985,11 +2034,11 @@ git status --ignored
 
 **변환 대상:**
 
-| 기존 경로 | 변환 후 |
-|----------|--------|
+| 기존 경로                        | 변환 후                          |
+| -------------------------------- | -------------------------------- |
 | `../../shared/components/Button` | `@composition/shared/components` |
-| `../../shared/types/element` | `@composition/shared/types` |
-| `../../../shared/utils/helpers` | `@composition/shared/utils` |
+| `../../shared/types/element`     | `@composition/shared/types`      |
+| `../../../shared/utils/helpers`  | `@composition/shared/utils`      |
 
 **자동화 스크립트:**
 
@@ -2053,23 +2102,23 @@ grep -r "from ['\"]\.\..*shared" apps/ --include="*.ts" --include="*.tsx" | head
 // scripts/transform-imports.js
 // 사용: npx jscodeshift -t scripts/transform-imports.js apps/builder/src
 
-module.exports = function(fileInfo, api) {
+module.exports = function (fileInfo, api) {
   const j = api.jscodeshift;
   const root = j(fileInfo.source);
 
   // Import 경로 변환 맵
   const pathMappings = {
-    '../shared/components': '@composition/shared/components',
-    '../../shared/components': '@composition/shared/components',
-    '../shared/types': '@composition/shared/types',
-    '../../shared/types': '@composition/shared/types',
-    '../shared/utils': '@composition/shared/utils',
-    '../../shared/utils': '@composition/shared/utils',
-    '../shared/renderers': '@composition/shared/renderers',
-    '../../shared/renderers': '@composition/shared/renderers',
+    "../shared/components": "@composition/shared/components",
+    "../../shared/components": "@composition/shared/components",
+    "../shared/types": "@composition/shared/types",
+    "../../shared/types": "@composition/shared/types",
+    "../shared/utils": "@composition/shared/utils",
+    "../../shared/utils": "@composition/shared/utils",
+    "../shared/renderers": "@composition/shared/renderers",
+    "../../shared/renderers": "@composition/shared/renderers",
   };
 
-  root.find(j.ImportDeclaration).forEach(path => {
+  root.find(j.ImportDeclaration).forEach((path) => {
     const source = path.node.source.value;
 
     for (const [oldPath, newPath] of Object.entries(pathMappings)) {
@@ -2081,7 +2130,7 @@ module.exports = function(fileInfo, api) {
     }
   });
 
-  return root.toSource({ quote: 'single' });
+  return root.toSource({ quote: "single" });
 };
 ```
 
@@ -2109,15 +2158,15 @@ git stash pop
 
 각 Phase는 독립적으로 롤백 가능:
 
-| Phase | 롤백 방법 |
-|-------|----------|
-| 1 | catalog 제거, 기존 버전 복원 |
-| 2 | packages/config/ 삭제, 기존 tsconfig 복원 |
-| 3 | apps/builder/ → 루트로 역이동 |
-| 4 | apps/publish/ → packages/publish/로 역이동 |
-| 5 | exports 필드 제거, 기존 설정 복원 |
-| 6 | 루트 package.json 복원 |
-| 7 | turbo.json 삭제, 기존 스크립트 복원 |
+| Phase | 롤백 방법                                  |
+| ----- | ------------------------------------------ |
+| 1     | catalog 제거, 기존 버전 복원               |
+| 2     | packages/config/ 삭제, 기존 tsconfig 복원  |
+| 3     | apps/builder/ → 루트로 역이동              |
+| 4     | apps/publish/ → packages/publish/로 역이동 |
+| 5     | exports 필드 제거, 기존 설정 복원          |
+| 6     | 루트 package.json 복원                     |
+| 7     | turbo.json 삭제, 기존 스크립트 복원        |
 
 ### 5.2 Git 브랜치 전략
 
@@ -2159,13 +2208,13 @@ git revert <commit-hash>
 
 마이그레이션 성공 여부를 판단하는 정량적 기준:
 
-| 메트릭 | 측정 방법 | 목표 |
-|--------|----------|------|
-| **빌드 시간** | `time turbo run build` | 캐시 적중 시 90% 단축 |
-| **타입 체크 시간** | `time turbo run check-types` | 증분 빌드 80% 단축 |
-| **콜드 빌드** | 캐시 없이 전체 빌드 | 기존 대비 동등 또는 개선 |
-| **번들 사이즈** | `apps/builder/dist` 용량 | 기존 대비 ±5% 이내 |
-| **개발 서버 시작** | `turbo run dev` | 5초 이내 |
+| 메트릭             | 측정 방법                    | 목표                     |
+| ------------------ | ---------------------------- | ------------------------ |
+| **빌드 시간**      | `time turbo run build`       | 캐시 적중 시 90% 단축    |
+| **타입 체크 시간** | `time turbo run check-types` | 증분 빌드 80% 단축       |
+| **콜드 빌드**      | 캐시 없이 전체 빌드          | 기존 대비 동등 또는 개선 |
+| **번들 사이즈**    | `apps/builder/dist` 용량     | 기존 대비 ±5% 이내       |
+| **개발 서버 시작** | `turbo run dev`              | 5초 이내                 |
 
 **측정 스크립트:**
 
@@ -2201,18 +2250,18 @@ du -sh apps/builder/dist/ >> benchmark.txt
 
 **Phase별 테스트 체크리스트:**
 
-| Phase | 테스트 항목 | 검증 명령어 |
-|-------|-----------|------------|
-| **1** | 의존성 설치 | `pnpm install --frozen-lockfile` |
-| **1** | Catalog 버전 확인 | `./scripts/verify-catalog.sh` |
-| **2** | Config 패키지 참조 | `pnpm -F @composition/builder run check-types` |
-| **3** | Builder 빌드 | `turbo run build --filter=@composition/builder` |
-| **3** | Preview 렌더링 | E2E 테스트 실행 |
-| **4** | Publish 빌드 | `turbo run build --filter=@composition/publish` |
-| **5** | Shared 패키지 export | `pnpm -F @composition/builder run check-types` |
-| **6** | 루트 스크립트 | `turbo run build` |
-| **7** | Turborepo 캐시 | `turbo run build` (2회 연속) |
-| **8** | 전체 E2E | `turbo run test:e2e` |
+| Phase | 테스트 항목          | 검증 명령어                                     |
+| ----- | -------------------- | ----------------------------------------------- |
+| **1** | 의존성 설치          | `pnpm install --frozen-lockfile`                |
+| **1** | Catalog 버전 확인    | `./scripts/verify-catalog.sh`                   |
+| **2** | Config 패키지 참조   | `pnpm -F @composition/builder run check-types`  |
+| **3** | Builder 빌드         | `turbo run build --filter=@composition/builder` |
+| **3** | Preview 렌더링       | E2E 테스트 실행                                 |
+| **4** | Publish 빌드         | `turbo run build --filter=@composition/publish` |
+| **5** | Shared 패키지 export | `pnpm -F @composition/builder run check-types`  |
+| **6** | 루트 스크립트        | `turbo run build`                               |
+| **7** | Turborepo 캐시       | `turbo run build` (2회 연속)                    |
+| **8** | 전체 E2E             | `turbo run test:e2e`                            |
 
 **자동화 테스트 스크립트:**
 
@@ -2325,37 +2374,39 @@ echo "🎉 마이그레이션 테스트 완료!"
 
 ```typescript
 // tests/e2e/rendering-parity.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Preview & Publish 렌더링 동일성', () => {
-  test('동일한 디자인이 Preview와 Publish에서 같게 렌더링됨', async ({ page }) => {
+test.describe("Preview & Publish 렌더링 동일성", () => {
+  test("동일한 디자인이 Preview와 Publish에서 같게 렌더링됨", async ({
+    page,
+  }) => {
     // Preview 스크린샷
-    await page.goto('http://localhost:5173/preview/test-page');
-    await page.waitForLoadState('networkidle');
+    await page.goto("http://localhost:5173/preview/test-page");
+    await page.waitForLoadState("networkidle");
     const previewScreenshot = await page.screenshot();
 
     // Publish 스크린샷
-    await page.goto('http://localhost:4173/test-page');
-    await page.waitForLoadState('networkidle');
+    await page.goto("http://localhost:4173/test-page");
+    await page.waitForLoadState("networkidle");
     const publishScreenshot = await page.screenshot();
 
     // 시각적 비교 (threshold 허용)
-    expect(previewScreenshot).toMatchSnapshot('preview.png', {
+    expect(previewScreenshot).toMatchSnapshot("preview.png", {
       threshold: 0.1, // 10% 차이 허용
     });
-    expect(publishScreenshot).toMatchSnapshot('publish.png', {
+    expect(publishScreenshot).toMatchSnapshot("publish.png", {
       threshold: 0.1,
     });
   });
 
-  test('shared 컴포넌트가 양쪽에서 동일하게 동작', async ({ page }) => {
+  test("shared 컴포넌트가 양쪽에서 동일하게 동작", async ({ page }) => {
     // Preview에서 버튼 클릭
-    await page.goto('http://localhost:5173/preview/test-page');
+    await page.goto("http://localhost:5173/preview/test-page");
     await page.click('[data-testid="shared-button"]');
     const previewState = await page.textContent('[data-testid="state"]');
 
     // Publish에서 버튼 클릭
-    await page.goto('http://localhost:4173/test-page');
+    await page.goto("http://localhost:4173/test-page");
     await page.click('[data-testid="shared-button"]');
     const publishState = await page.textContent('[data-testid="state"]');
 
@@ -2374,9 +2425,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'pnpm-workspace.yaml'
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-workspace.yaml"
 
 jobs:
   test-migration:
@@ -2387,7 +2438,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

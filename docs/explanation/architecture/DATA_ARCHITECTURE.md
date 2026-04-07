@@ -14,24 +14,24 @@
 5. [Retool Resources](#4-retool-resources)
 6. [Bubble Repeating Groups](#5-bubble-repeating-groups)
 7. [아키텍처 패턴 비교](#아키텍처-패턴-비교)
-8. [XStudio 적용 가이드](#xstudio-적용-가이드)
+8. [composition 적용 가이드](#composition-적용-가이드)
 
 ---
 
 ## 개요
 
-현대 웹빌더들은 **중앙 집중식 데이터 관리**와 **선언적 데이터 바인딩**을 핵심으로 합니다. 이 문서는 5개 주요 플랫폼의 동적 데이터 아키텍처를 분석하여 XStudio의 Dataset 컴포넌트 설계에 활용할 베스트 프랙티스를 도출합니다.
+현대 웹빌더들은 **중앙 집중식 데이터 관리**와 **선언적 데이터 바인딩**을 핵심으로 합니다. 이 문서는 5개 주요 플랫폼의 동적 데이터 아키텍처를 분석하여 composition의 Dataset 컴포넌트 설계에 활용할 베스트 프랙티스를 도출합니다.
 
 ### 공통 패턴
 
 모든 플랫폼이 공유하는 핵심 패턴:
 
-| 패턴 | 설명 | 예시 |
-|------|------|------|
-| **Data Source 추상화** | 데이터 소스를 컴포넌트와 분리 | Collection, Resource, Variable |
-| **선언적 바인딩** | UI에서 클릭/드롭다운으로 데이터 연결 | Purple dot, Expression Editor |
-| **단방향 데이터 플로우** | 데이터 소스 → 컴포넌트 (읽기 전용) | CMS → List, API → Table |
-| **자동 동기화** | 데이터 변경 시 UI 자동 업데이트 | Real-time CMS sync |
+| 패턴                     | 설명                                 | 예시                           |
+| ------------------------ | ------------------------------------ | ------------------------------ |
+| **Data Source 추상화**   | 데이터 소스를 컴포넌트와 분리        | Collection, Resource, Variable |
+| **선언적 바인딩**        | UI에서 클릭/드롭다운으로 데이터 연결 | Purple dot, Expression Editor  |
+| **단방향 데이터 플로우** | 데이터 소스 → 컴포넌트 (읽기 전용)   | CMS → List, API → Table        |
+| **자동 동기화**          | 데이터 변경 시 UI 자동 업데이트      | Real-time CMS sync             |
 
 ---
 
@@ -66,6 +66,7 @@ Collection: "Products" {
 ```
 
 **특징:**
+
 - **Schema-first**: 필드 타입을 사전 정의 (PlainText, RichText, Number, Image, Reference, Multi-reference 등)
 - **Relational**: Collection 간 참조 관계 지원
 - **Validation**: 필수 필드, 고유 값, 제약조건 설정
@@ -86,6 +87,7 @@ Collection List Component
 ```
 
 **특징:**
+
 - **Template-based**: 1개 아이템 디자인 → N개 아이템 자동 복제
 - **Server-side filtering**: 데이터베이스 레벨에서 필터링/정렬
 - **Nested Collections**: Collection 내부에 또 다른 Collection List 가능
@@ -185,6 +187,7 @@ Collections (2 types)
 #### 2.1 Unmanaged Collections (사용자 생성)
 
 **특징:**
+
 - Framer UI에서 직접 생성/편집
 - 수동 데이터 입력 (CSV 임포트 가능)
 - 컴포넌트가 읽기 전용으로 접근
@@ -209,6 +212,7 @@ function ProductList() {
 #### 2.2 Managed Collections (플러그인 제어)
 
 **특징:**
+
 - **Full control**: 플러그인이 스키마 + 데이터 완전 제어
 - **Sync-based**: 외부 데이터 소스와 자동 동기화
 - **Read-only to users**: 사용자는 읽기만 가능 (일부 필드는 `userEditable` 설정 가능)
@@ -217,7 +221,7 @@ function ProductList() {
 
 ```typescript
 // framer.config.ts
-import { framer } from "framer-plugin"
+import { framer } from "framer-plugin";
 
 // 1. Collection 스키마 정의
 framer.configureManagedCollection({
@@ -227,38 +231,38 @@ framer.configureManagedCollection({
       id: "title",
       name: "Title",
       type: "string",
-      userEditable: true,  // 사용자 편집 허용
+      userEditable: true, // 사용자 편집 허용
     },
     {
       id: "content",
       name: "Content",
       type: "formattedText",
-      userEditable: false,  // 플러그인만 수정 가능
+      userEditable: false, // 플러그인만 수정 가능
     },
     {
       id: "lastSync",
       name: "Last Synced",
       type: "date",
       userEditable: false,
-    }
+    },
   ],
-})
+});
 
 // 2. 데이터 동기화
 framer.syncManagedCollection(async () => {
   // Notion API에서 데이터 가져오기
-  const notionPages = await fetchNotionPages()
+  const notionPages = await fetchNotionPages();
 
   // Framer CMS 형식으로 변환
-  return notionPages.map(page => ({
+  return notionPages.map((page) => ({
     id: page.id,
     fieldData: {
       title: page.properties.title,
       content: page.content,
       lastSync: new Date().toISOString(),
-    }
-  }))
-})
+    },
+  }));
+});
 ```
 
 #### 2.3 컴포넌트 연동
@@ -281,21 +285,21 @@ framer.syncManagedCollection(async () => {
 **Code Component:**
 
 ```tsx
-import { useCollection } from "framer"
+import { useCollection } from "framer";
 
 export function ProductGrid() {
-  const [products, { isLoading, error }] = useCollection("products")
+  const [products, { isLoading, error }] = useCollection("products");
 
-  if (isLoading) return <Spinner />
-  if (error) return <Error message={error} />
+  if (isLoading) return <Spinner />;
+  if (error) return <Error message={error} />;
 
   return (
     <div className="grid">
-      {products.map(product => (
+      {products.map((product) => (
         <ProductCard key={product.id} {...product} />
       ))}
     </div>
-  )
+  );
 }
 ```
 
@@ -339,10 +343,10 @@ framer.configureManagedCollection({
       id: "category",
       name: "Category",
       type: "collectionReference",
-      collectionId: "categories",  // 같은 플러그인의 다른 Collection
-    }
-  ]
-})
+      collectionId: "categories", // 같은 플러그인의 다른 Collection
+    },
+  ],
+});
 ```
 
 ### 장점
@@ -384,16 +388,17 @@ Components (동적 렌더링)
 
 #### 3.1 Variable Types
 
-| Type | Use Case | Example |
-|------|----------|---------|
-| **String** | 단순 텍스트 | `title = "Welcome"` |
-| **Number** | 숫자 데이터 | `price = 99` |
-| **Boolean** | 토글 상태 | `isLoggedIn = true` |
-| **JSON** | 구조화 데이터 | `user = { name: "John", age: 30 }` |
+| Type        | Use Case      | Example                            |
+| ----------- | ------------- | ---------------------------------- |
+| **String**  | 단순 텍스트   | `title = "Welcome"`                |
+| **Number**  | 숫자 데이터   | `price = 99`                       |
+| **Boolean** | 토글 상태     | `isLoggedIn = true`                |
+| **JSON**    | 구조화 데이터 | `user = { name: "John", age: 30 }` |
 
 #### 3.2 Resource Variables (API 데이터)
 
 **특징:**
+
 - **Backend fetch**: 서버 사이드에서 API 호출 (클라이언트에 키 노출 안 됨)
 - **Automatic refresh**: 설정한 간격으로 자동 재요청
 - **Error handling**: 로딩/에러 상태 자동 관리
@@ -566,12 +571,12 @@ Components ({{ queryName.data }} binding)
 
 **Resource 타입:**
 
-| Type | Example | Features |
-|------|---------|----------|
-| **REST API** | `https://api.stripe.com` | Headers, Auth, Rate limiting |
-| **SQL Database** | PostgreSQL, MySQL | Connection pooling, SSL |
-| **GraphQL** | Shopify API | Schema introspection |
-| **NoSQL** | MongoDB, Firebase | Document queries |
+| Type             | Example                  | Features                     |
+| ---------------- | ------------------------ | ---------------------------- |
+| **REST API**     | `https://api.stripe.com` | Headers, Auth, Rate limiting |
+| **SQL Database** | PostgreSQL, MySQL        | Connection pooling, SSL      |
+| **GraphQL**      | Shopify API              | Schema introspection         |
+| **NoSQL**        | MongoDB, Firebase        | Document queries             |
 
 **Resource 설정 예시:**
 
@@ -918,23 +923,23 @@ Data source:
 
 ### 데이터 소스 추상화 방식
 
-| 플랫폼 | 추상화 레이어 | 데이터 타입 | 외부 API |
-|--------|---------------|-------------|----------|
-| **Webflow** | CMS Collection | Schema-first | ❌ (Zapier 필요) |
-| **Framer** | Managed/Unmanaged Collection | TypeScript types | ✅ (Plugin) |
-| **Webstudio** | Resource Variable | JSON | ✅ (REST) |
-| **Retool** | Resource + Query | SQL/GraphQL | ✅ (50+) |
-| **Bubble** | Database + Search | Data Types | ⚠️ (API Connector) |
+| 플랫폼        | 추상화 레이어                | 데이터 타입      | 외부 API           |
+| ------------- | ---------------------------- | ---------------- | ------------------ |
+| **Webflow**   | CMS Collection               | Schema-first     | ❌ (Zapier 필요)   |
+| **Framer**    | Managed/Unmanaged Collection | TypeScript types | ✅ (Plugin)        |
+| **Webstudio** | Resource Variable            | JSON             | ✅ (REST)          |
+| **Retool**    | Resource + Query             | SQL/GraphQL      | ✅ (50+)           |
+| **Bubble**    | Database + Search            | Data Types       | ⚠️ (API Connector) |
 
 ### 컴포넌트 바인딩 메커니즘
 
-| 플랫폼 | 바인딩 방식 | 예시 |
-|--------|-------------|------|
-| **Webflow** | Purple Dot (Visual) | Click → Select field |
-| **Framer** | Props + Hooks | `{product.name}`, `useCollection()` |
-| **Webstudio** | Expression Editor | `${productsApi.data[0].name}` |
-| **Retool** | Template Literals | `{{ getProducts.data }}` |
-| **Bubble** | Dropdown Selector | Current cell's Product's Name |
+| 플랫폼        | 바인딩 방식         | 예시                                |
+| ------------- | ------------------- | ----------------------------------- |
+| **Webflow**   | Purple Dot (Visual) | Click → Select field                |
+| **Framer**    | Props + Hooks       | `{product.name}`, `useCollection()` |
+| **Webstudio** | Expression Editor   | `${productsApi.data[0].name}`       |
+| **Retool**    | Template Literals   | `{{ getProducts.data }}`            |
+| **Bubble**    | Dropdown Selector   | Current cell's Product's Name       |
 
 ### 데이터 플로우 패턴
 
@@ -966,36 +971,36 @@ Data source:
 
 ### 실시간 동기화
 
-| 플랫폼 | 실시간 업데이트 | 메커니즘 |
-|--------|----------------|----------|
-| **Webflow** | ❌ | Static generation |
-| **Framer** | ✅ | Plugin polling |
-| **Webstudio** | ⚠️ | Resource refresh interval |
-| **Retool** | ✅ | WebSocket (일부 DB) |
-| **Bubble** | ✅ | Built-in real-time DB |
+| 플랫폼        | 실시간 업데이트 | 메커니즘                  |
+| ------------- | --------------- | ------------------------- |
+| **Webflow**   | ❌              | Static generation         |
+| **Framer**    | ✅              | Plugin polling            |
+| **Webstudio** | ⚠️              | Resource refresh interval |
+| **Retool**    | ✅              | WebSocket (일부 DB)       |
+| **Bubble**    | ✅              | Built-in real-time DB     |
 
 ### 중복 데이터 처리
 
 **문제:** 여러 컴포넌트가 같은 데이터를 필요로 할 때
 
-| 플랫폼 | 해결 방법 | 데이터 재사용 |
-|--------|-----------|---------------|
-| **Webflow** | Collection List 재사용 | ⚠️ (각 List가 별도 쿼리) |
-| **Framer** | `useCollection()` 공유 | ✅ (React state 공유) |
-| **Webstudio** | Resource Variable 공유 | ✅ (전역 변수) |
-| **Retool** | Query 재사용 | ✅ (Query 캐싱) |
-| **Bubble** | Custom State 공유 | ⚠️ (수동 State 관리) |
+| 플랫폼        | 해결 방법              | 데이터 재사용            |
+| ------------- | ---------------------- | ------------------------ |
+| **Webflow**   | Collection List 재사용 | ⚠️ (각 List가 별도 쿼리) |
+| **Framer**    | `useCollection()` 공유 | ✅ (React state 공유)    |
+| **Webstudio** | Resource Variable 공유 | ✅ (전역 변수)           |
+| **Retool**    | Query 재사용           | ✅ (Query 캐싱)          |
+| **Bubble**    | Custom State 공유      | ⚠️ (수동 State 관리)     |
 
 ---
 
-## XStudio 적용 가이드
+## composition 적용 가이드
 
 ### 권장 아키텍처: 하이브리드 모델
 
-XStudio는 다음 3가지 모델을 모두 지원하는 **하이브리드 접근**을 권장합니다:
+composition는 다음 3가지 모델을 모두 지원하는 **하이브리드 접근**을 권장합니다:
 
 ```
-XStudio Data Architecture
+composition Data Architecture
 ├─ 1. Direct Binding (현재 구현)
 │  └─ Component → dataBinding prop → API/MOCK_DATA
 │
@@ -1032,6 +1037,7 @@ XStudio Data Architecture
 ```
 
 **장점:**
+
 - ✅ 데이터 중복 fetch 제거 (Retool Query 재사용 패턴)
 - ✅ 중앙 집중식 관리 (Webflow Collection 패턴)
 - ✅ 백워드 호환 (`dataBinding` prop 유지)
@@ -1053,6 +1059,7 @@ PropertySelect
 ```
 
 **구현:**
+
 - `src/builder/inspector/properties/editors/DatasetSelector.tsx`
 - Dataset 목록 자동 감지 (useDatasetStore)
 - 드롭다운으로 간편 선택
@@ -1079,6 +1086,7 @@ PropertySelect
 ```
 
 **구현:**
+
 - Monaco Editor 통합 (CustomFunctionActionEditor 재사용)
 - Expression 파서 (JavaScript subset)
 - Auto-complete (dataset 필드 제안)
@@ -1107,6 +1115,7 @@ Datasets Panel (새 패널)
 ```
 
 **기능:**
+
 - Dataset 생성/편집/삭제
 - 사용 중인 컴포넌트 목록 (dependency tracking)
 - 수동 새로고침 버튼
@@ -1114,12 +1123,12 @@ Datasets Panel (새 패널)
 
 ### 구현 우선순위
 
-| Phase | 기능 | 난이도 | 영향도 | 우선순위 |
-|-------|------|--------|--------|----------|
-| 1 | Dataset 컴포넌트 | 중 | 높음 | 🔴 High |
-| 2 | Visual Binding UI | 하 | 중간 | 🟡 Medium |
-| 3 | Expression Editor | 상 | 중간 | 🟢 Low |
-| 4 | Dataset Panel | 중 | 하 | 🟢 Low |
+| Phase | 기능              | 난이도 | 영향도 | 우선순위  |
+| ----- | ----------------- | ------ | ------ | --------- |
+| 1     | Dataset 컴포넌트  | 중     | 높음   | 🔴 High   |
+| 2     | Visual Binding UI | 하     | 중간   | 🟡 Medium |
+| 3     | Expression Editor | 상     | 중간   | 🟢 Low    |
+| 4     | Dataset Panel     | 중     | 하     | 🟢 Low    |
 
 ### 기술 스택 권장사항
 
@@ -1127,17 +1136,20 @@ Datasets Panel (새 패널)
 
 ```typescript
 // src/builder/stores/dataset.ts
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface DatasetState {
-  datasets: Map<string, {
-    id: string;
-    data: unknown[];
-    loading: boolean;
-    error: Error | null;
-    lastUpdated: number;
-    usedBy: string[];  // Component IDs
-  }>;
+  datasets: Map<
+    string,
+    {
+      id: string;
+      data: unknown[];
+      loading: boolean;
+      error: Error | null;
+      lastUpdated: number;
+      usedBy: string[]; // Component IDs
+    }
+  >;
 
   // Actions
   registerDataset: (id: string, config: DataBinding) => void;
@@ -1155,12 +1167,15 @@ useEffect(() => {
   const datasets = useDatasetStore.getState().datasets;
 
   datasets.forEach((state, datasetId) => {
-    iframe?.contentWindow?.postMessage({
-      type: "DATASET_UPDATE",
-      datasetId,
-      data: state.data,
-      loading: state.loading,
-    }, "*");
+    iframe?.contentWindow?.postMessage(
+      {
+        type: "DATASET_UPDATE",
+        datasetId,
+        data: state.data,
+        loading: state.loading,
+      },
+      "*",
+    );
   });
 }, [datasets]);
 ```
@@ -1243,18 +1258,21 @@ useEffect(() => {
    - 필수 아님 (Webflow는 없음)
    - 구현 복잡도 높음 (Polling vs WebSocket)
 
-### XStudio 전략
+### composition 전략
 
 **단기 (Phase 1-2):**
+
 - Dataset 컴포넌트 구현 (Framer Managed Collection 패턴)
 - Visual Binding UI (Webflow Purple Dot 방식)
 - Backward compatibility 유지 (Direct Binding)
 
 **중기 (Phase 3):**
+
 - Expression Editor (Webstudio 패턴)
 - Dataset Panel (Retool Resources 패턴)
 
 **장기 (Future):**
+
 - Plugin system (Framer 패턴)
 - Real-time sync (Bubble 패턴)
 - Advanced caching & offline support
@@ -1262,6 +1280,7 @@ useEffect(() => {
 ---
 
 **참고 문서:**
+
 - Webflow CMS: https://university.webflow.com/lesson/collection-list
 - Framer CMS API: https://www.framer.com/developers/cms
 - Webstudio Variables: https://docs.webstudio.is/university/foundations/variables
@@ -1269,4 +1288,4 @@ useEffect(() => {
 - Bubble Database: https://manual.bubble.io/help-guides/design/elements/containers/repeating-groups
 
 **작성:** AI Assistant (Claude)
-**검토 필요:** XStudio 개발팀
+**검토 필요:** composition 개발팀

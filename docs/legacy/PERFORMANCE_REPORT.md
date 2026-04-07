@@ -3,7 +3,7 @@
 # Performance Report: React Query 스타일 최적화 시스템
 
 **작성일:** 2025-11-17
-**프로젝트:** XStudio Builder
+**프로젝트:** composition Builder
 **최적화 범위:** Phase 2~5 (LRU Cache, Request Deduplication, Realtime Batching, Performance Monitor)
 
 ---
@@ -12,14 +12,14 @@
 
 ### Overall Performance Improvements
 
-| 메트릭 | Before | After | 개선율 | 영향 |
-|--------|--------|-------|--------|------|
-| **중복 요청** | 100% (N번 실행) | 33% (1번 실행) | **↓ 67%** | 🔥 Critical |
-| **캐시 히트율** | 0% | 50-80% | **↑ ∞** | 🔥 Critical |
-| **Realtime 오버헤드** | 100% (개별 처리) | 10-20% (배칭) | **↓ 80-90%** | ⚡ High |
-| **메모리 누수 위험** | 무제한 증가 | LRU 제한 | **✅ 해결** | ⚡ High |
-| **성능 가시성** | 0% (없음) | 100% (실시간) | **↑ ∞** | 💡 Medium |
-| **번들 크기** | 기준 | +0KB | **0%** | ✅ No Impact |
+| 메트릭                | Before           | After          | 개선율       | 영향         |
+| --------------------- | ---------------- | -------------- | ------------ | ------------ |
+| **중복 요청**         | 100% (N번 실행)  | 33% (1번 실행) | **↓ 67%**    | 🔥 Critical  |
+| **캐시 히트율**       | 0%               | 50-80%         | **↑ ∞**      | 🔥 Critical  |
+| **Realtime 오버헤드** | 100% (개별 처리) | 10-20% (배칭)  | **↓ 80-90%** | ⚡ High      |
+| **메모리 누수 위험**  | 무제한 증가      | LRU 제한       | **✅ 해결**  | ⚡ High      |
+| **성능 가시성**       | 0% (없음)        | 100% (실시간)  | **↑ ∞**      | 💡 Medium    |
+| **번들 크기**         | 기준             | +0KB           | **0%**       | ✅ No Impact |
 
 **결론:** 외부 라이브러리 없이 React Query 수준의 성능 최적화 달성 (**90%+ 기능 구현**)
 
@@ -32,9 +32,7 @@
 ```typescript
 // ❌ Before: 매번 Supabase 직접 호출
 const fetchTokens = async () => {
-  const { data } = await supabase
-    .from('design_tokens')
-    .select('*');
+  const { data } = await supabase.from("design_tokens").select("*");
   return data;
 };
 
@@ -50,7 +48,7 @@ const fetchTokens = async () => {
 ```typescript
 // ✅ After: useAsyncData로 모든 최적화 자동 적용
 const { data } = useAsyncData({
-  queryKey: 'design-tokens',
+  queryKey: "design-tokens",
   queryFn: async () => fetchTokens(),
   staleTime: 5 * 60 * 1000, // 5분 캐시
 });
@@ -97,12 +95,14 @@ Component C: deduplicate('tokens', fetch) → 0ms (재사용)
 ```
 
 **측정 결과 (통합 테스트):**
+
 - 총 요청: 3회
 - 실제 실행: 1회
 - 중복 제거: 2회
 - **Deduplication Rate: 66.67%**
 
 **실제 시나리오:**
+
 ```
 예시: PropertiesPanel, StylesPanel, ThemesPanel이 동시에 design_tokens 요청
 
@@ -119,6 +119,7 @@ After:
 ```
 
 **절약 효과:**
+
 - 네트워크 요청: **↓ 67%**
 - 서버 부하: **↓ 67%**
 - 클라이언트 파싱: **↓ 67%**
@@ -155,12 +156,14 @@ t=3s:  cache.get('tokens')  → 0ms    // Cache HIT ✅
 ```
 
 **측정 결과 (통합 테스트):**
+
 - 총 요청: 2회 (첫 요청 + 재요청)
 - 캐시 히트: 1회
 - 캐시 미스: 1회
 - **Cache Hit Rate: 50%**
 
 **실제 시나리오:**
+
 ```
 예시: Inspector에서 design_tokens를 5분 동안 계속 참조
 
@@ -176,6 +179,7 @@ After (5분 TTL 캐시):
 ```
 
 **LRU Eviction 효과:**
+
 ```typescript
 // Before: 무제한 증가
 Map size: 0 → 50 → 100 → 200 → ... → OOM (메모리 부족)
@@ -185,6 +189,7 @@ Map size: 0 → 50 → 100 → 100 (LRU evict) → 100 ✅
 ```
 
 **메모리 안정성:**
+
 - 최대 메모리: **100 items x 평균 5KB = 500KB** (제한적)
 - Before: **무제한 증가** → 잠재적 메모리 누수
 
@@ -227,6 +232,7 @@ t=100ms:  flush([event1...event10]) → process 5ms
 ```
 
 **측정 결과 (통합 테스트):**
+
 - 수신 이벤트: 5개
 - 필터된 이벤트: 0개
 - 배치 처리: 5개
@@ -234,6 +240,7 @@ t=100ms:  flush([event1...event10]) → process 5ms
 - **Avg Batch Size: 5.0**
 
 **실제 시나리오:**
+
 ```
 예시: Theme 편집 시 10개 design_tokens 동시 업데이트
 
@@ -251,11 +258,13 @@ After (100ms 배칭):
 ```
 
 **CPU 오버헤드:**
+
 - Before: **10 x 5ms = 50ms** (개별 처리)
 - After: **1 x 5ms = 5ms** (배치 처리)
 - **절약: 90%** ✅
 
 **필터링 효과:**
+
 ```typescript
 // 실제 테스트 결과 (filter by table)
 Received: 10 events
@@ -325,6 +334,7 @@ Filter Efficiency: 50% (불필요한 이벤트 제거)
 ```
 
 **실제 활용:**
+
 ```
 1. 캐시 히트율 낮음 (< 40%) 발견
    → staleTime 5분 → 10분으로 조정
@@ -419,6 +429,7 @@ Filter Efficiency: 50% (불필요한 이벤트 제거)
 ```
 
 **전체 테스트 결과:**
+
 - ✅ **15/15 passed (100%)**
 - ✅ Total Duration: **1.72s**
 - ✅ TypeScript: **0 errors**
@@ -460,10 +471,12 @@ const cache = new SmartCache({ max: 100, ttl: 5 * 60 * 1000 });
 ```
 
 **메모리 안정성:**
+
 - Before: **무제한 증가** → 잠재적 OOM
 - After: **최대 500KB** → 안정적
 
 **추가 메모리 최적화:**
+
 ```typescript
 // TTL 5분: 오래된 항목 자동 삭제
 t=0:   set('key1', data)
@@ -541,6 +554,7 @@ After (100ms Batching):
 ```
 
 **일일 절약 추정 (8시간 작업 기준):**
+
 ```
 시나리오 1: 페이지 로드 10회
   - Before: 30 requests
@@ -625,7 +639,7 @@ function addEvent(event) {
 ```typescript
 // ✅ 한 줄로 모든 최적화 적용
 const { data } = useAsyncData({
-  queryKey: 'design-tokens',
+  queryKey: "design-tokens",
   queryFn: fetchTokens,
   staleTime: 5 * 60 * 1000,
 });
@@ -634,11 +648,13 @@ const { data } = useAsyncData({
 ```
 
 **코드 복잡도:**
+
 - Before: **~100 lines** (수동 구현)
 - After: **4 lines** (선언적)
 - **96% 코드 감소** ✅
 
 **유지보수성:**
+
 - Before: **각 컴포넌트마다 중복 로직**
 - After: **중앙 집중식 관리**
 - **DRY 원칙 준수** ✅
@@ -695,30 +711,31 @@ After:
 
 ### React Query 90%+ 기능 달성
 
-| 기능 | React Query | 구현 여부 | 달성률 |
-|------|-------------|-----------|--------|
-| **Query Caching** | ✅ | ✅ SmartCache (LRU+TTL) | 100% |
-| **Request Deduplication** | ✅ | ✅ RequestDeduplicator | 100% |
-| **Stale Time** | ✅ | ✅ staleTime 옵션 | 100% |
-| **Cache Time** | ✅ | ✅ TTL 옵션 | 100% |
-| **Refetch** | ✅ | ✅ refetch() 함수 | 100% |
-| **Loading State** | ✅ | ✅ isLoading | 100% |
-| **Error State** | ✅ | ✅ error, isError | 100% |
-| **Success Callback** | ✅ | ✅ onSuccess | 100% |
-| **Error Callback** | ✅ | ✅ onError | 100% |
-| **Refetch Interval** | ✅ | ✅ refetchInterval | 100% |
-| **Enabled** | ✅ | ✅ enabled 옵션 | 100% |
-| **Cache Invalidation** | ✅ | ✅ invalidateQuery() | 100% |
-| **Performance Monitor** | ✅ (DevTools) | ✅ Dashboard | 100% |
-| **Infinite Queries** | ✅ | ❌ | 0% |
-| **Mutations** | ✅ | ⚠️ useAsyncAction (70%) | 70% |
-| **Optimistic Updates** | ✅ | ❌ | 0% |
-| **Prefetching** | ✅ | ❌ | 0% |
+| 기능                      | React Query   | 구현 여부               | 달성률 |
+| ------------------------- | ------------- | ----------------------- | ------ |
+| **Query Caching**         | ✅            | ✅ SmartCache (LRU+TTL) | 100%   |
+| **Request Deduplication** | ✅            | ✅ RequestDeduplicator  | 100%   |
+| **Stale Time**            | ✅            | ✅ staleTime 옵션       | 100%   |
+| **Cache Time**            | ✅            | ✅ TTL 옵션             | 100%   |
+| **Refetch**               | ✅            | ✅ refetch() 함수       | 100%   |
+| **Loading State**         | ✅            | ✅ isLoading            | 100%   |
+| **Error State**           | ✅            | ✅ error, isError       | 100%   |
+| **Success Callback**      | ✅            | ✅ onSuccess            | 100%   |
+| **Error Callback**        | ✅            | ✅ onError              | 100%   |
+| **Refetch Interval**      | ✅            | ✅ refetchInterval      | 100%   |
+| **Enabled**               | ✅            | ✅ enabled 옵션         | 100%   |
+| **Cache Invalidation**    | ✅            | ✅ invalidateQuery()    | 100%   |
+| **Performance Monitor**   | ✅ (DevTools) | ✅ Dashboard            | 100%   |
+| **Infinite Queries**      | ✅            | ❌                      | 0%     |
+| **Mutations**             | ✅            | ⚠️ useAsyncAction (70%) | 70%    |
+| **Optimistic Updates**    | ✅            | ❌                      | 0%     |
+| **Prefetching**           | ✅            | ❌                      | 0%     |
 
 **총 달성률: 13/17 = 76%**
 **핵심 기능 달성률: 13/15 = 87%** (Infinite/Optimistic 제외)
 
 **추가 구현사항:**
+
 - ✅ Realtime Event Batching (React Query에 없음)
 - ✅ Zero Dependencies (React Query는 외부 라이브러리)
 - ✅ 완전한 커스터마이징
@@ -739,18 +756,21 @@ After:
 ### Benefits
 
 **단기 이익 (즉시):**
+
 - ✅ 네트워크 요청 67% 감소
 - ✅ 캐시 히트율 50-80%
 - ✅ Realtime 오버헤드 90% 감소
 - ✅ 메모리 안정성 확보
 
 **장기 이익 (6개월+):**
+
 - ✅ 서버 비용 절감 (Supabase 쿼리 수 감소)
 - ✅ 개발 생산성 향상 (디버깅 시간 80% 감소)
 - ✅ 유지보수성 향상 (코드 중복 96% 감소)
 - ✅ 확장성 확보 (100 concurrent users 대응)
 
 **ROI 추정:**
+
 ```
 투자: 2시간 개발
 절약:
@@ -778,12 +798,14 @@ ROI: 10,300% (2시간 투자 → 208시간 절약)
    - 성능 개선 검증 완료
 
 2. **✅ PerformanceDashboard 활성화**
+
    ```typescript
    // src/builder/main/BuilderCore.tsx
    {import.meta.env.DEV && <PerformanceDashboard />}
    ```
 
 3. **✅ 기존 컴포넌트 마이그레이션**
+
    ```typescript
    // Before
    const [data, setData] = useState(null);
@@ -793,7 +815,7 @@ ROI: 10,300% (2시간 투자 → 208시간 절약)
 
    // After
    const { data } = useAsyncData({
-     queryKey: 'design-tokens',
+     queryKey: "design-tokens",
      queryFn: fetchTokens,
    });
    ```
@@ -801,12 +823,14 @@ ROI: 10,300% (2시간 투자 → 208시간 절약)
 ### Future Enhancements
 
 **Phase 6 (선택사항):**
+
 - Infinite Queries (무한 스크롤)
 - Optimistic Updates (낙관적 업데이트)
 - Prefetching (사전 로딩)
 - Background Refetching (백그라운드 갱신)
 
 **예상 추가 개선:**
+
 - Infinite Queries: 페이지네이션 성능 100% 개선
 - Optimistic Updates: 사용자 체감 속도 50% 개선
 - Prefetching: 페이지 전환 200ms → 0ms
@@ -825,19 +849,20 @@ ROI: 10,300% (2시간 투자 → 208시간 절약)
 
 ### Performance Summary
 
-| 메트릭 | 개선율 | 영향도 |
-|--------|--------|--------|
-| 중복 요청 | **↓ 67%** | 🔥 Critical |
-| 캐시 히트 | **↑ 50-80%** | 🔥 Critical |
-| Realtime | **↓ 90%** | ⚡ High |
-| 메모리 | **안정화** | ⚡ High |
-| 코드 복잡도 | **↓ 96%** | 💡 Medium |
+| 메트릭      | 개선율       | 영향도      |
+| ----------- | ------------ | ----------- |
+| 중복 요청   | **↓ 67%**    | 🔥 Critical |
+| 캐시 히트   | **↑ 50-80%** | 🔥 Critical |
+| Realtime    | **↓ 90%**    | ⚡ High     |
+| 메모리      | **안정화**   | ⚡ High     |
+| 코드 복잡도 | **↓ 96%**    | 💡 Medium   |
 
 ### Final Verdict
 
 **✅ Production Ready**
 
 이 최적화 시스템은:
+
 - 즉시 프로덕션 배포 가능
 - 외부 라이브러리 의존성 없음
 - 완전한 테스트 커버리지 확보

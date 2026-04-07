@@ -1,7 +1,7 @@
 # CSS Level 3 엔진 정합성 체크리스트
 
 > **최종 갱신**: 2026-04-06
-> **목적**: XStudio 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
+> **목적**: composition 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
 > **엔진**: TaffyFlexEngine (Taffy WASM) · TaffyGridEngine (Taffy WASM) · TaffyBlockEngine (Taffy WASM)
 > **렌더러**: CanvasKit/Skia WASM
 
@@ -732,7 +732,7 @@ Icon Name ("activity") → Codepoint (57400) → String.fromCodePoint()
 → getFillPath() → 벡터 경로 캐싱
 ```
 
-**XStudio 적용 방안:**
+**composition 적용 방안:**
 
 | #   | 작업                                   | 비고                                                |
 | --- | -------------------------------------- | --------------------------------------------------- |
@@ -1251,11 +1251,11 @@ const pad = hasUserValue ? parsePadding(style) : null; // ✅ 통합 파싱
 
 ### Taffy 0.9 Box Model
 
-| 속성                    | 의미                                                      |
-| ----------------------- | --------------------------------------------------------- |
-| `style.size`            | **border-box** (padding+border 포함)                      |
-| `layout.size`           | **border-box** 반환                                       |
-| `applyCommonTaffyStyle` | 변환 불필요 — XStudio `box-sizing:border-box` 그대로 전달 |
+| 속성                    | 의미                                                          |
+| ----------------------- | ------------------------------------------------------------- |
+| `style.size`            | **border-box** (padding+border 포함)                          |
+| `layout.size`           | **border-box** 반환                                           |
+| `applyCommonTaffyStyle` | 변환 불필요 — composition `box-sizing:border-box` 그대로 전달 |
 
 ### Spec Shapes 배경색 검증
 

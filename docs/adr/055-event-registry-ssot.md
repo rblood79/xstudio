@@ -155,7 +155,7 @@ export const EVENT_METADATA: Record<EventType, EventMetadata> = { ... };
 단점: `eventCategories.ts`는 여전히 별도 파일로 존재 (UI 아이콘 분리). `metadata.ts`의 `supportedEvents`는 string[]로 남음 (shared 독립성 + 더 넓은 이벤트 명세 계층).
 
 - 위험: 기술(LOW) / 성능(LOW) / 유지보수(LOW) / 마이그레이션(LOW)
-  - 기술(LOW): `satisfies` + conditional type은 TS 4.9+ 표준. XStudio가 TS 5 사용 중 — 문제없음.
+  - 기술(LOW): `satisfies` + conditional type은 TS 4.9+ 표준. composition가 TS 5 사용 중 — 문제없음.
   - 유지보수(LOW): 정본 이벤트 정의 추가는 registry 1곳만 수정. 컴포넌트 연결은 metadata.ts + eventCategories.ts에서 추가 수정 필요하지만, `Record<EventType>` 계약이 누락을 컴파일 타임에 감지.
   - 마이그레이션(LOW): `eventTypes.ts`의 수동 union을 registry re-export로 교체. `events.types.ts`의 `EVENT_TYPE_LABELS`도 re-export로 교체. 기존 컨슈머 import 경로는 re-export 레이어로 유지.
 

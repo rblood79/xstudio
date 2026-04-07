@@ -77,7 +77,7 @@ Preview iframe은 별도 document이므로 builder-system이 적용되지 않는
 | 패턴                     | 사용 프로젝트                                 | 격리 강도 | 복잡도                |
 | ------------------------ | --------------------------------------------- | --------- | --------------------- |
 | **iframe 격리**          | Builder.io, Gutenberg, Storybook, CodeSandbox | Hard      | 중 (postMessage 필요) |
-| **WebGL/Canvas 우회**    | Figma, XStudio(Skia)                          | 완벽      | 높음 (이미 구현됨)    |
+| **WebGL/Canvas 우회**    | Figma, composition(Skia)                      | 완벽      | 높음 (이미 구현됨)    |
 | **CSS Selector Scoping** | Webflow, Plasmic                              | Soft      | 낮음                  |
 
 10개 프로젝트 중 **물리적 CSS 파일 분리를 사용하는 사례는 0건**이다. 모두 런타임 격리(iframe, selector scope, WebGL)를 사용한다.

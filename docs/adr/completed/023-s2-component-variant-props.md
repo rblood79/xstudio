@@ -23,7 +23,7 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 | TextField 등    | `variant: "default" \| "primary" \| "secondary" \| "tertiary" \| "error"` | `variant: "default" \| "accent" \| "secondary" \| "tertiary" \| "error"` + `isEmphasized`                                                                   |
 | Checkbox/Switch | `variant: "default" \| "primary" \| "secondary" \| "error"`               | `isEmphasized` boolean + `isInvalid`                                                                                                                        |
 
-**핵심 불일치**: S2에서 `primary`는 "검은/중립 채움 버튼"이고, XStudio에서는 "파란 강조 버튼"을 의미. 이 혼동이 S2 컴포넌트 확장 시 장기적 부채.
+**핵심 불일치**: S2에서 `primary`는 "검은/중립 채움 버튼"이고, composition에서는 "파란 강조 버튼"을 의미. 이 혼동이 S2 컴포넌트 확장 시 장기적 부채.
 
 ### Hard Constraints
 
@@ -38,7 +38,7 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 
 - 설명: Button `variant: "accent" | "primary" | "secondary" | "negative"`, Badge `fillStyle`, Checkbox `isEmphasized` 등 S2 API 그대로 채택
 - 위험:
-  - 기술: **M** — S2 Button의 `primary`=검정 vs XStudio의 `primary`=파란 → 의미 반전, 사용자 혼란
+  - 기술: **M** — S2 Button의 `primary`=검정 vs composition의 `primary`=파란 → 의미 반전, 사용자 혼란
   - 성능: **L** — 런타임 영향 없음
   - 유지보수: **L** — S2 문서와 1:1 대응으로 장기적 유지보수 용이
   - 마이그레이션: **H** — Factory 20+, Inspector Panel, IndexedDB 런타임 마이그레이션, CSS data-variant 셀렉터 전체 변경
@@ -71,14 +71,14 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 
 **변환 규칙**:
 
-| 현재        | S2 신규    | 비고                     |
-| ----------- | ---------- | ------------------------ |
-| `primary`   | `accent`   | 파란 강조                |
-| `secondary` | `neutral`  | 중립/회색                |
-| `tertiary`  | `purple`   | XStudio 전용 (S2에 없음) |
-| `error`     | `negative` | 에러/위험                |
-| `default`   | `default`  | 변경 없음                |
-| `surface`   | `surface`  | Badge 등, 변경 없음      |
+| 현재        | S2 신규    | 비고                         |
+| ----------- | ---------- | ---------------------------- |
+| `primary`   | `accent`   | 파란 강조                    |
+| `secondary` | `neutral`  | 중립/회색                    |
+| `tertiary`  | `purple`   | composition 전용 (S2에 없음) |
+| `error`     | `negative` | 에러/위험                    |
+| `default`   | `default`  | 변경 없음                    |
+| `surface`   | `surface`  | Badge 등, 변경 없음          |
 
 **대상 파일**:
 
@@ -118,4 +118,4 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 
 - Phase 1 마이그레이션 중 50+ 파일 동시 변경 → 충돌 위험
 - 런타임 마이그레이션 필요 (기존 IndexedDB 프로젝트 데이터)
-- `tertiary`→`purple`은 S2에 없는 XStudio 전용 확장 → 향후 S2 업데이트와 괴리 가능
+- `tertiary`→`purple`은 S2에 없는 composition 전용 확장 → 향후 S2 업데이트와 괴리 가능

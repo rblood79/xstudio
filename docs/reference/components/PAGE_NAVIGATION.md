@@ -2,7 +2,7 @@
 
 ## 개요
 
-XStudio 빌더에서 Button onClick 이벤트를 통한 페이지 간 내비게이션 기능을 구현했습니다.
+composition 빌더에서 Button onClick 이벤트를 통한 페이지 간 내비게이션 기능을 구현했습니다.
 
 **구현 날짜:** 2025-11-06
 **관련 이슈:** 빌더 모드에서 페이지 이동 기능 구현
@@ -43,10 +43,10 @@ Preview iframe 자동 업데이트 (기존 sync 로직)
 
 ### 환경별 동작
 
-| 모드 | 감지 방법 | 내비게이션 방식 |
-|------|-----------|----------------|
-| **빌더 모드** | `window.self !== window.top` | postMessage → 부모가 페이지 로드 |
-| **퍼블리시 모드** | `window.self === window.top` | React Router (향후 구현) |
+| 모드              | 감지 방법                    | 내비게이션 방식                  |
+| ----------------- | ---------------------------- | -------------------------------- |
+| **빌더 모드**     | `window.self !== window.top` | postMessage → 부모가 페이지 로드 |
+| **퍼블리시 모드** | `window.self === window.top` | React Router (향후 구현)         |
 
 ---
 
@@ -60,13 +60,14 @@ Preview iframe 자동 업데이트 (기존 sync 로직)
 
 ```typescript
 export interface NavigateActionValue {
-    path: string;              // ✅ url → path 변경
-    openInNewTab?: boolean;    // ✅ newTab → openInNewTab 변경
-    replace?: boolean;
+  path: string; // ✅ url → path 변경
+  openInNewTab?: boolean; // ✅ newTab → openInNewTab 변경
+  replace?: boolean;
 }
 ```
 
 **변경 이유:**
+
 - Inspector의 `NavigateConfig`는 이미 `path` 필드 사용
 - 일관성 확보로 혼란 방지
 
@@ -95,7 +96,7 @@ export type MessageType =
   | ThemeVarsMessage
   | UpdateThemeTokensMessage
   | AddColumnElementsMessage
-  | NavigateToPageMessage;  // ✅ 추가
+  | NavigateToPageMessage; // ✅ 추가
 ```
 
 ---
@@ -204,13 +205,20 @@ useEffect(() => {
     const targetPage = pages.find((p) => p.slug === path);
 
     if (targetPage) {
-      console.log("[BuilderCore] Navigating to page:", targetPage.title, targetPage.id);
+      console.log(
+        "[BuilderCore] Navigating to page:",
+        targetPage.title,
+        targetPage.id,
+      );
       // 페이지 elements 로드
       await fetchElements(targetPage.id);
     } else {
       console.warn(`[BuilderCore] Page not found for path: ${path}`);
       // 페이지를 찾지 못한 경우 사용자에게 알림
-      handleError(new Error(`페이지를 찾을 수 없습니다: ${path}`), "페이지 이동");
+      handleError(
+        new Error(`페이지를 찾을 수 없습니다: ${path}`),
+        "페이지 이동",
+      );
     }
   };
 
@@ -246,7 +254,7 @@ useEffect(() => {
  */
 export const handleNavigateToPage = (
   data: MessageType,
-  onNavigate?: (path: string) => void
+  onNavigate?: (path: string) => void,
 ) => {
   if (data.type === "NAVIGATE_TO_PAGE" && onNavigate) {
     const { path } = data.payload as { path: string };
@@ -261,7 +269,7 @@ export const handleNavigateToPage = (
 
 ### 준비
 
-1. XStudio 빌더 실행: `npm run dev`
+1. composition 빌더 실행: `npm run dev`
 2. 프로젝트 생성 또는 기존 프로젝트 열기
 3. 최소 2개 페이지 필요:
    - Home (`/`)
@@ -272,6 +280,7 @@ export const handleNavigateToPage = (
 #### ✅ TC1: 기본 페이지 이동
 
 **Steps:**
+
 1. Home 페이지(`/`)로 이동
 2. Button 컴포넌트 배치
 3. Inspector > Events 탭에서 onClick 이벤트 추가
@@ -279,6 +288,7 @@ export const handleNavigateToPage = (
 5. Preview에서 버튼 클릭
 
 **Expected:**
+
 - 콘솔에 `[BuilderCore] Received NAVIGATE_TO_PAGE: /dashboard` 출력
 - Dashboard 페이지로 전환
 - Preview가 Dashboard의 elements를 표시
@@ -287,29 +297,35 @@ export const handleNavigateToPage = (
 #### ✅ TC2: 새 탭에서 열기
 
 **Steps:**
+
 1. Button의 onClick 이벤트에서 "Open in New Tab" 체크
 2. Preview에서 버튼 클릭
 
 **Expected:**
+
 - 새 브라우저 탭이 열림
 - 현재 페이지는 변경 없음
 
 #### ✅ TC3: 외부 URL 이동
 
 **Steps:**
+
 1. Navigate 액션의 path에 `https://google.com` 입력
 2. Preview에서 버튼 클릭
 
 **Expected:**
+
 - Google로 전체 페이지 이동 (기존 방식)
 
 #### ✅ TC4: 존재하지 않는 페이지
 
 **Steps:**
+
 1. Navigate 액션의 path에 `/nonexistent` 입력
 2. Preview에서 버튼 클릭
 
 **Expected:**
+
 - 콘솔 경고: `[BuilderCore] Page not found for path: /nonexistent`
 - 에러 알림 표시: "페이지를 찾을 수 없습니다: /nonexistent"
 
@@ -332,6 +348,7 @@ export const handleNavigateToPage = (
 ### 퍼블리시 모드 구현 시 필요한 작업
 
 1. **퍼블리시 라우트 생성**
+
    ```typescript
    // src/main.tsx
    <Route path="/site/:projectId/*" element={<PublishedSite />} />
@@ -344,6 +361,7 @@ export const handleNavigateToPage = (
    - React Router 통합
 
 3. **React Router 페이지 라우팅**
+
    ```typescript
    pages.forEach(page => {
      <Route path={page.slug} element={<PageRenderer pageId={page.id} />} />
@@ -351,6 +369,7 @@ export const handleNavigateToPage = (
    ```
 
 4. **EventEngine에 navigate 함수 주입**
+
    ```typescript
    // PublishedSite에서
    const navigate = useNavigate();
@@ -379,18 +398,22 @@ export const handleNavigateToPage = (
 ## 장점
 
 ### ✅ 확장성
+
 - 빌더/퍼블리시 모드 분기 구조로 향후 확장 용이
 - React Router 통합 준비 완료
 
 ### ✅ 일관성
+
 - 타입 정의 통일 (`path`, `openInNewTab`)
 - 기존 postMessage 패턴 재사용
 
 ### ✅ 보안
+
 - 환경 감지로 잘못된 컨텍스트에서 실행 방지
 - URL 검증 로직 포함
 
 ### ✅ 사용성
+
 - SPA 방식으로 페이지 전환 (리로드 없음)
 - 에러 핸들링으로 사용자 피드백 제공
 
@@ -401,12 +424,14 @@ export const handleNavigateToPage = (
 ### 내부 페이지 경로 규칙
 
 내부 페이지로 인식되는 패턴:
+
 - ✅ `/` (루트)
 - ✅ `/dashboard`
 - ✅ `/about`
 - ✅ `/users/profile`
 
 외부 URL로 인식되는 패턴:
+
 - ✅ `https://example.com`
 - ✅ `http://example.com`
 - ✅ `//cdn.example.com`
@@ -438,6 +463,7 @@ CREATE TABLE pages (
 ### 문제: 두 가지 이벤트 타입 시스템 공존
 
 **기존 타입 (`/src/types/events.ts`)**:
+
 ```typescript
 {
   event_type: "onClick",
@@ -446,6 +472,7 @@ CREATE TABLE pages (
 ```
 
 **새 타입 (`/src/builder/inspector/events/types/eventTypes.ts`)**:
+
 ```typescript
 {
   event: "onClick",
@@ -456,22 +483,25 @@ CREATE TABLE pages (
 ### 해결 방법: 하위 호환성 지원
 
 **1. eventHandlers.ts 수정**
+
 ```typescript
 // event_type 또는 event 모두 지원
 const type = e.event_type || e.event;
 ```
 
 **2. EventEngine 수정**
+
 ```typescript
 // config 또는 value 모두 지원
-const value = (actionData.config || actionData.value || {});
+const value = actionData.config || actionData.value || {};
 ```
 
 **3. React Aria 호환**
+
 ```typescript
 // onClick → onPress 자동 매핑
-if (eventType === 'onClick') {
-  eventHandlers['onPress'] = handler;
+if (eventType === "onClick") {
+  eventHandlers["onPress"] = handler;
 }
 ```
 
@@ -482,6 +512,7 @@ if (eventType === 'onClick') {
 빌더 모드에서의 페이지 내비게이션 기능이 성공적으로 구현되었습니다.
 
 ### ✅ 완료된 기능
+
 - Button onClick 이벤트로 페이지 간 이동
 - 두 가지 이벤트 타입 시스템 하위 호환성
 - React Aria Button과의 호환 (onClick → onPress 매핑)
@@ -489,4 +520,5 @@ if (eventType === 'onClick') {
 - postMessage 기반 안전한 iframe 통신
 
 ### 🚀 향후 작업
+
 사용자는 이제 Button onClick 이벤트를 통해 페이지 간 이동을 테스트할 수 있으며, 향후 퍼블리시 모드로의 확장도 원활하게 진행할 수 있는 구조가 마련되었습니다.

@@ -10,7 +10,7 @@ Proposed (v2, 2026-03-12)
 
 ## Decision Makers
 
-XStudio Team
+composition Team
 
 ## Related ADRs
 
@@ -41,14 +41,14 @@ XStudio Team
 
 핵심 변화는 이것이다.
 
-| 현재 | v2 |
-| --- | --- |
-| 컴포넌트별 추천 이벤트 수동 매핑 | capability 기반 추천 파생 |
-| 액션 메타데이터와 실행 코드 분리 | `EffectSpec`에서 UI + 검증 + 실행 통합 |
-| Quick Connect 후 핸들러 즉시 생성 | recipe 적용으로 생성 이유와 재생성 경로 보존 |
-| `tableName`, `fieldName` 문자열 참조 | stable id 기반 `BindingRef` 참조 |
-| JS 문자열 조건식 | 제한된 DSL 또는 AST 기반 조건 |
-| 단일 거대 `EventsPanel`에서 혼합 편집 | 목적별 섹션과 단계형 UX로 재구성 |
+| 현재                                  | v2                                           |
+| ------------------------------------- | -------------------------------------------- |
+| 컴포넌트별 추천 이벤트 수동 매핑      | capability 기반 추천 파생                    |
+| 액션 메타데이터와 실행 코드 분리      | `EffectSpec`에서 UI + 검증 + 실행 통합       |
+| Quick Connect 후 핸들러 즉시 생성     | recipe 적용으로 생성 이유와 재생성 경로 보존 |
+| `tableName`, `fieldName` 문자열 참조  | stable id 기반 `BindingRef` 참조             |
+| JS 문자열 조건식                      | 제한된 DSL 또는 AST 기반 조건                |
+| 단일 거대 `EventsPanel`에서 혼합 편집 | 목적별 섹션과 단계형 UX로 재구성             |
 
 ---
 
@@ -58,12 +58,12 @@ XStudio Team
 
 현행 이벤트 시스템은 다음과 같은 분산 구조를 가진다.
 
-- 이벤트 타입 레지스트리: [events.registry.ts](/Users/admin/work/xstudio/apps/builder/src/types/events/events.registry.ts)
-- 패널 타입 정의: [eventTypes.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/types/eventTypes.ts)
-- 액션 메타데이터: [actionMetadata.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/data/actionMetadata.ts)
+- 이벤트 타입 레지스트리: [events.registry.ts](/Users/admin/work/composition/apps/builder/src/types/events/events.registry.ts)
+- 패널 타입 정의: [eventTypes.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/types/eventTypes.ts)
+- 액션 메타데이터: [actionMetadata.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/data/actionMetadata.ts)
 - 이벤트 추천 데이터: `eventCategories.ts`
-- 패널 측 실행 보조기: [eventExecutor.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/execution/eventExecutor.ts)
-- 실제 런타임 실행기: [eventEngine.ts](/Users/admin/work/xstudio/apps/builder/src/utils/events/eventEngine.ts)
+- 패널 측 실행 보조기: [eventExecutor.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/execution/eventExecutor.ts)
+- 실제 런타임 실행기: [eventEngine.ts](/Users/admin/work/composition/apps/builder/src/utils/events/eventEngine.ts)
 
 이 상태에서 확인된 핵심 문제는 다음과 같다.
 
@@ -106,7 +106,7 @@ ADR-013은 Quick Connect를 통해 data binding을 제안하지만,
 
 ### 문제 4: 문자열 기반 조건식과 참조는 취약하다
 
-현재 [conditionEvaluator.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/execution/conditionEvaluator.ts)는
+현재 [conditionEvaluator.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/execution/conditionEvaluator.ts)는
 JavaScript 문자열을 평가하는 구조다.
 
 이 접근의 문제:
@@ -120,7 +120,7 @@ JavaScript 문자열을 평가하는 구조다.
 
 ### 문제 5: alias와 이중 타입이 아키텍처 복잡도를 키운다
 
-[events.registry.ts](/Users/admin/work/xstudio/apps/builder/src/types/events/events.registry.ts)는
+[events.registry.ts](/Users/admin/work/composition/apps/builder/src/types/events/events.registry.ts)는
 camelCase와 snake_case alias를 함께 허용한다.
 패널 타입 정의도 별도로 존재한다.
 
@@ -132,7 +132,7 @@ camelCase와 snake_case alias를 함께 허용한다.
 
 ### 문제 6: 현재 Events Panel UX가 너무 어렵고 복잡하다
 
-현재 [EventsPanel.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/EventsPanel.tsx)는
+현재 [EventsPanel.tsx](/Users/admin/work/composition/apps/builder/src/builder/panels/events/EventsPanel.tsx)는
 추천, 핸들러 목록, 블록 편집, 액션 추가, 디버깅, Quick Connect 성격의 안내가
 한 화면 안에서 뒤섞여 있다.
 
@@ -316,7 +316,12 @@ type BindingRef =
 
 ```ts
 type ConditionNode =
-  | { type: "comparison"; left: BindingRef; op: "==" | "!=" | ">" | "<"; right: BindingRef }
+  | {
+      type: "comparison";
+      left: BindingRef;
+      op: "==" | "!=" | ">" | "<";
+      right: BindingRef;
+    }
   | { type: "and"; children: ConditionNode[] }
   | { type: "or"; children: ConditionNode[] }
   | { type: "not"; child: ConditionNode };
@@ -397,7 +402,7 @@ type ConditionNode =
 5. diagnostics 확인
 6. 필요 시 recipe 재적용 또는 수동 override
 
-이 구조에서 [EventsPanel.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/EventsPanel.tsx)는
+이 구조에서 [EventsPanel.tsx](/Users/admin/work/composition/apps/builder/src/builder/panels/events/EventsPanel.tsx)는
 상태 조합과 섹션 배치만 담당하는 얇은 shell이 된다.
 
 ### Runtime Layer
@@ -744,9 +749,9 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 
 - [ADR-010](010-events-panel.md)
 - [ADR-013](013-quick-connect-data-binding.md)
-- [react-aria skill](/Users/admin/work/xstudio/.agents/skills/react-aria/SKILL.md)
-- [events.registry.ts](/Users/admin/work/xstudio/apps/builder/src/types/events/events.registry.ts)
-- [eventTypes.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/types/eventTypes.ts)
-- [actionMetadata.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/data/actionMetadata.ts)
-- [eventExecutor.ts](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/execution/eventExecutor.ts)
-- [eventEngine.ts](/Users/admin/work/xstudio/apps/builder/src/utils/events/eventEngine.ts)
+- [react-aria skill](/Users/admin/work/composition/.agents/skills/react-aria/SKILL.md)
+- [events.registry.ts](/Users/admin/work/composition/apps/builder/src/types/events/events.registry.ts)
+- [eventTypes.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/types/eventTypes.ts)
+- [actionMetadata.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/data/actionMetadata.ts)
+- [eventExecutor.ts](/Users/admin/work/composition/apps/builder/src/builder/panels/events/execution/eventExecutor.ts)
+- [eventEngine.ts](/Users/admin/work/composition/apps/builder/src/utils/events/eventEngine.ts)

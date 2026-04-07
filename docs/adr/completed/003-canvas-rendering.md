@@ -3,7 +3,7 @@
 **Status:** Superseded (2026-02-05)
 **Date:** 2024-01-01
 **Last Updated:** 2026-03-03
-**Decision Makers:** XStudio Team
+**Decision Makers:** composition Team
 
 > **Superseded By:** Pencil 방식 CanvasKit/Skia 2-pass 렌더러(컨텐츠 캐시 + present(blit) + 오버레이 분리).
 > PixiJS는 렌더링이 아니라 **씬 그래프/히트테스트(EventBoundary)/이벤트** 전용 레이어로 유지.
@@ -19,7 +19,7 @@
 
 ## Context
 
-XStudio Builder는 시각적 캔버스 에디터가 필요합니다:
+composition Builder는 시각적 캔버스 에디터가 필요합니다:
 
 - 수백~수천 개의 요소 렌더링
 - 60fps 인터랙션 (드래그, 리사이즈, 선택)

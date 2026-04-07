@@ -1,7 +1,7 @@
 /**
  * CanvasKit/Skia 렌더링 타입 정의
  *
- * Pencil의 renderSkia() 패턴을 xstudio에 도입하기 위한 인터페이스.
+ * Pencil의 renderSkia() 패턴을 composition에 도입하기 위한 인터페이스.
  *
  * @see docs/RENDERING_ARCHITECTURE.md §5.3 renderSkia() 패턴 도입
  */
@@ -16,7 +16,7 @@ import type { CanvasKit, Canvas } from "canvaskit-wasm";
  * CanvasKit Canvas에 직접 렌더링할 수 있는 노드 인터페이스
  *
  * Pencil의 모든 씬 노드가 구현하는 renderSkia() 패턴.
- * xstudio의 Sprite 계층(BoxSprite, TextSprite, ImageSprite 등)에 구현한다.
+ * composition의 Sprite 계층(BoxSprite, TextSprite, ImageSprite 등)에 구현한다.
  */
 export interface SkiaRenderable {
   renderSkia(canvas: Canvas, cullingBounds: DOMRect): void;

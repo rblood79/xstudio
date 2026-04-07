@@ -11,7 +11,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        XStudio Platform                          │
+│                        composition Platform                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌────────────────────────┐        ┌────────────────────────┐   │
@@ -21,9 +21,9 @@
 │              │                                  │                │
 │              │                                  │                │
 │  ┌───────────▼────────────┐        ┌───────────▼────────────┐   │
-│  │  Local .xstudio Files  │        │    (No Local Files)    │   │
+│  │  Local .composition Files  │        │    (No Local Files)    │   │
 │  │  ┌──────────────────┐  │        │                        │   │
-│  │  │ MyWebsite.xstudio│  │        │    Direct Connection   │   │
+│  │  │ MyWebsite.composition│  │        │    Direct Connection   │   │
 │  │  │   (PGlite DB)    │◄─┼────────┼───────────┐            │   │
 │  │  └──────────────────┘  │        │           │            │   │
 │  │           │             │        │           │            │   │
@@ -54,20 +54,20 @@
 
 ```
 1️⃣ Electron (사무실 PC)
-   - MyWebsite.xstudio 생성
+   - MyWebsite.composition 생성
    - 페이지/컴포넌트 추가
    - Settings > Enable Cloud Sync ✅
    - 저장 → Supabase에 자동 업로드
 
 2️⃣ 웹 브라우저 (집 또는 다른 PC)
-   - https://xstudio.app 접속
+   - https://composition.app 접속
    - 로그인
    - 프로젝트 목록에서 "MyWebsite" 확인 ✅
    - 웹에서 직접 편집 가능
    - 저장 → Supabase에 직접 저장
 
 3️⃣ Electron (다음날)
-   - MyWebsite.xstudio 열기
+   - MyWebsite.composition 열기
    - "Cloud version is newer. Sync now?" 알림
    - 동기화 → 웹에서 작업한 내용 다운로드 ✅
 ```
@@ -78,7 +78,7 @@
 
 ```
 1️⃣ 웹 브라우저
-   - https://xstudio.app 접속
+   - https://composition.app 접속
    - New Project 클릭
    - "Portfolio" 프로젝트 생성
    - 페이지/컴포넌트 추가
@@ -87,7 +87,7 @@
 2️⃣ Electron (나중에)
    - File > Open from Cloud
    - "Portfolio" 프로젝트 선택
-   - 저장 위치 선택: ~/Documents/Portfolio.xstudio
+   - 저장 위치 선택: ~/Documents/Portfolio.composition
    - 다운로드 → 로컬 파일 생성 ✅
    - 이후 Electron에서 작업 가능
 ```
@@ -98,7 +98,7 @@
 
 ```
 1️⃣ Electron (폐쇄망 PC)
-   - MyProject.xstudio 생성
+   - MyProject.composition 생성
    - 동기화 비활성화 (기본값)
    - 완전 오프라인 작업
    - 로컬 파일로만 저장
@@ -116,7 +116,7 @@
 #### 1.1. Electron 파일 모드
 
 ```typescript
-// MyWebsite.xstudio 파일 내부
+// MyWebsite.composition 파일 내부
 
 // _project_metadata 테이블
 {
@@ -163,7 +163,7 @@
 export async function getDatabase(): Promise<DbAdapter> {
   const envInfo = await detectEnvironment();
 
-  if (envInfo.environment === 'web') {
+  if (envInfo.environment === "web") {
     // 웹 브라우저: Supabase 직접 연결
     return new SupabaseAdapter({
       url: import.meta.env.VITE_SUPABASE_URL,
@@ -177,6 +177,7 @@ export async function getDatabase(): Promise<DbAdapter> {
 ```
 
 **웹 브라우저는 기존 방식 그대로 유지:**
+
 - ✅ Supabase에 직접 연결
 - ✅ 모든 프로젝트 목록 조회
 - ✅ 실시간 협업 가능 (Supabase Realtime)
@@ -201,8 +202,8 @@ export function ProjectList() {
     const db = await getDatabase();
 
     // Supabase에서 모든 프로젝트 조회
-    const allProjects = await db.select('projects', {
-      orderBy: [{ column: 'updated_at', ascending: false }],
+    const allProjects = await db.select("projects", {
+      orderBy: [{ column: "updated_at", ascending: false }],
     });
 
     setProjects(allProjects);
@@ -223,6 +224,7 @@ export function ProjectList() {
 ```
 
 **결과:**
+
 - ✅ Electron에서 동기화한 프로젝트가 웹 목록에 표시됨
 - ✅ 웹에서 생성한 프로젝트도 Electron에서 다운로드 가능
 
@@ -233,7 +235,7 @@ export function ProjectList() {
 ```typescript
 // Electron: File > Open from Cloud
 
-ipcMain.handle('project:openFromCloud', async () => {
+ipcMain.handle("project:openFromCloud", async () => {
   // 1. 클라우드 프로젝트 목록 표시
   const cloudProjects = await CloudProjectsService.getAll();
 
@@ -244,11 +246,9 @@ ipcMain.handle('project:openFromCloud', async () => {
 
   // 3. 저장 위치 선택
   const result = await dialog.showSaveDialog({
-    title: 'Download Project',
-    defaultPath: `${selectedProject.name}.xstudio`,
-    filters: [
-      { name: 'XStudio Project', extensions: ['xstudio'] }
-    ],
+    title: "Download Project",
+    defaultPath: `${selectedProject.name}.composition`,
+    filters: [{ name: "composition Project", extensions: ["composition"] }],
   });
 
   if (result.canceled) return { success: false };
@@ -256,7 +256,7 @@ ipcMain.handle('project:openFromCloud', async () => {
   // 4. 클라우드에서 다운로드
   const projectFile = await CloudProjectsService.download(
     selectedProject.id,
-    result.filePath
+    result.filePath,
   );
 
   // 5. 프로젝트 열기
@@ -284,17 +284,13 @@ export function ProjectCard({ project }: { project: Project }) {
 
       {/* 동기화 상태 표시 */}
       <div className="sync-status">
-        {project.sync_source === 'electron' && (
+        {project.sync_source === "electron" && (
           <span>💻 Synced from Desktop</span>
         )}
-        {project.sync_source === 'web' && (
-          <span>🌐 Created on Web</span>
-        )}
+        {project.sync_source === "web" && <span>🌐 Created on Web</span>}
       </div>
 
-      <button onClick={() => openProject(project.id)}>
-        Open in Web
-      </button>
+      <button onClick={() => openProject(project.id)}>Open in Web</button>
     </div>
   );
 }
@@ -314,14 +310,14 @@ export function ProjectCard({ project }: { project: Project }) {
 
 export async function checkSyncConflict(
   projectId: string,
-  localUpdatedAt: Date
+  localUpdatedAt: Date,
 ): Promise<SyncConflict | null> {
   const supabase = await getSupabaseClient();
 
   const { data: project } = await supabase
-    .from('projects')
-    .select('updated_at')
-    .eq('id', projectId)
+    .from("projects")
+    .select("updated_at")
+    .eq("id", projectId)
     .single();
 
   const cloudUpdatedAt = new Date(project.updated_at);
@@ -329,10 +325,10 @@ export async function checkSyncConflict(
   // 양쪽 모두 수정됨 (1분 이상 차이)
   if (Math.abs(cloudUpdatedAt.getTime() - localUpdatedAt.getTime()) > 60000) {
     return {
-      type: 'conflict',
+      type: "conflict",
       localUpdatedAt,
       cloudUpdatedAt,
-      message: 'Both local and cloud versions have been modified',
+      message: "Both local and cloud versions have been modified",
     };
   }
 
@@ -344,15 +340,15 @@ export async function checkSyncConflict(
 
 ```typescript
 export enum ConflictResolution {
-  KEEP_LOCAL = 'keep-local',       // 로컬 우선 (클라우드 덮어쓰기)
-  KEEP_CLOUD = 'keep-cloud',       // 클라우드 우선 (로컬 덮어쓰기)
-  CREATE_COPY = 'create-copy',     // 복사본 생성
-  MANUAL = 'manual',               // 수동 병합
+  KEEP_LOCAL = "keep-local", // 로컬 우선 (클라우드 덮어쓰기)
+  KEEP_CLOUD = "keep-cloud", // 클라우드 우선 (로컬 덮어쓰기)
+  CREATE_COPY = "create-copy", // 복사본 생성
+  MANUAL = "manual", // 수동 병합
 }
 
 export async function resolveConflict(
   projectFile: ProjectFile,
-  resolution: ConflictResolution
+  resolution: ConflictResolution,
 ): Promise<void> {
   switch (resolution) {
     case ConflictResolution.KEEP_LOCAL:
@@ -366,9 +362,12 @@ export async function resolveConflict(
       break;
 
     case ConflictResolution.CREATE_COPY:
-      // 로컬 파일을 "MyProject (Conflict Copy).xstudio"로 저장
+      // 로컬 파일을 "MyProject (Conflict Copy).composition"로 저장
       const info = await projectFile.getInfo();
-      const copyPath = info.filePath.replace('.xstudio', ' (Conflict Copy).xstudio');
+      const copyPath = info.filePath.replace(
+        ".composition",
+        " (Conflict Copy).composition",
+      );
       fs.copyFileSync(info.filePath, copyPath);
 
       // 원본은 클라우드 버전으로 교체
@@ -392,9 +391,7 @@ export function SyncConflictDialog({ conflict }: { conflict: SyncConflict }) {
   return (
     <dialog>
       <h2>⚠️ Sync Conflict Detected</h2>
-      <p>
-        This project has been modified in multiple locations:
-      </p>
+      <p>This project has been modified in multiple locations:</p>
 
       <div className="conflict-info">
         <div className="local-version">
@@ -428,17 +425,17 @@ export function SyncConflictDialog({ conflict }: { conflict: SyncConflict }) {
 
 ## 📊 플랫폼별 기능 비교
 
-| 기능 | Electron (파일 모드) | 웹 브라우저 |
-|------|---------------------|------------|
-| **프로젝트 생성** | ✅ .xstudio 파일 | ✅ Supabase 직접 |
-| **프로젝트 열기** | ✅ 파일 선택 | ✅ 목록 선택 |
-| **오프라인 작업** | ✅ 완전 지원 | ❌ 인터넷 필수 |
-| **파일 공유** | ✅ USB/이메일 | ❌ 링크만 가능 |
-| **동기화** | ✅ 선택적 | ✅ 항상 (실시간) |
-| **협업** | ⚠️ 동기화 필요 | ✅ 실시간 |
-| **백업** | ✅ 파일 복사 | ✅ 클라우드 자동 |
-| **버전 관리** | ✅ Git 가능 | ❌ 불가능 |
-| **프로젝트 간 전환** | ⚠️ 파일 열기 | ✅ 빠름 |
+| 기능                 | Electron (파일 모드) | 웹 브라우저      |
+| -------------------- | -------------------- | ---------------- |
+| **프로젝트 생성**    | ✅ .composition 파일 | ✅ Supabase 직접 |
+| **프로젝트 열기**    | ✅ 파일 선택         | ✅ 목록 선택     |
+| **오프라인 작업**    | ✅ 완전 지원         | ❌ 인터넷 필수   |
+| **파일 공유**        | ✅ USB/이메일        | ❌ 링크만 가능   |
+| **동기화**           | ✅ 선택적            | ✅ 항상 (실시간) |
+| **협업**             | ⚠️ 동기화 필요       | ✅ 실시간        |
+| **백업**             | ✅ 파일 복사         | ✅ 클라우드 자동 |
+| **버전 관리**        | ✅ Git 가능          | ❌ 불가능        |
+| **프로젝트 간 전환** | ⚠️ 파일 열기         | ✅ 빠름          |
 
 ---
 
@@ -460,7 +457,7 @@ export function SyncConflictDialog({ conflict }: { conflict: SyncConflict }) {
 └──────────┬──────────┘         └──────────┬──────────┘
            │                               │
            │ 1. Create Project             │ 1. Create Project
-           │    MyWebsite.xstudio          │    "Portfolio"
+           │    MyWebsite.composition          │    "Portfolio"
            │                               │
            │ 2. Enable Sync ✅             │ 2. Auto Saved to
            │                               │    Supabase ✅
@@ -496,27 +493,32 @@ export function SyncConflictDialog({ conflict }: { conflict: SyncConflict }) {
 ## ✅ 구현 체크리스트
 
 ### Phase 1: 프로젝트 파일 시스템 (1-2일)
+
 - [ ] ProjectFile 클래스 구현
 - [ ] Local-only 모드 (동기화 비활성화)
 - [ ] File > New, Open, Save 메뉴
 
 ### Phase 2: 클라우드 동기화 (1-2일)
+
 - [ ] Enable/Disable Sync 기능
 - [ ] syncToCloud() / syncFromCloud() 구현
 - [ ] 충돌 감지 로직
 
 ### Phase 3: 웹 브라우저 통합 (1일)
+
 - [ ] 웹에서 프로젝트 목록 조회 (기존 유지)
 - [ ] Electron 동기화 프로젝트 표시
 - [ ] 프로젝트 메타데이터 표시
 
 ### Phase 4: Cross-Platform 기능 (1-2일)
+
 - [ ] Electron: Open from Cloud
 - [ ] Electron: Upload to Cloud
 - [ ] 충돌 해결 UI
 - [ ] 동기화 상태 표시
 
 ### Phase 5: 테스트 (1-2일)
+
 - [ ] Electron → 웹 동기화 테스트
 - [ ] 웹 → Electron 다운로드 테스트
 - [ ] 충돌 시나리오 테스트
@@ -537,7 +539,7 @@ export function SyncConflictDialog({ conflict }: { conflict: SyncConflict }) {
    - ✅ 폐쇄망 환경에 적합
 
 2. **Electron + 웹 공유 프로젝트** (동기화 활성화)
-   - ✅ Electron에서 .xstudio 파일로 작업
+   - ✅ Electron에서 .composition 파일로 작업
    - ✅ 웹에서 클라우드 직접 작업
    - ✅ 양방향 동기화
 
@@ -548,6 +550,7 @@ export function SyncConflictDialog({ conflict }: { conflict: SyncConflict }) {
 ### 🎯 최고의 조합
 
 이 아키텍처는 **두 가지 장점을 모두 제공**합니다:
+
 - ✅ Electron: 파일 기반 관리 (오프라인, 공유, 백업)
 - ✅ 웹: 클라우드 직접 접근 (협업, 접근성)
 

@@ -242,11 +242,11 @@ layoutNextInlineFlowLine(prepared, maxWidth, start?) → InlineFlowLine | null
 - **서술적 함수명**: `carryTrailingForwardStickyAcrossCJKBoundary()`, `isLeftStickyPunctuationSegment()`
 - **Branded type으로 API 안전성 확보**
 
-## 12. XStudio 연관성 분석
+## 12. composition 연관성 분석
 
-Pretext는 **XStudio의 `canvaskitTextMeasurer.ts`가 해결하는 것과 동일한 문제**를 다룬다.
+Pretext는 **composition의 `canvaskitTextMeasurer.ts`가 해결하는 것과 동일한 문제**를 다룬다.
 
-| 측면          | XStudio (현재)               | Pretext                             |
+| 측면          | composition (현재)           | Pretext                             |
 | ------------- | ---------------------------- | ----------------------------------- |
 | 측정 엔진     | CanvasKit WASM Paragraph API | 브라우저 Canvas `measureText()`     |
 | 줄바꿈        | CanvasKit 내장 (ICU)         | 자체 구현 (Intl.Segmenter + greedy) |
