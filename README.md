@@ -1,4 +1,4 @@
-# XStudio
+# composition
 
 **Visual Application Builder**
 
@@ -36,7 +36,7 @@ pnpm wasm:build
 ## Project Structure
 
 ```
-xstudio/
+composition/
 ├── apps/
 │   ├── builder/     # 메인 빌더 앱 (@composition/builder)
 │   └── publish/     # 배포 런타임 (@composition/publish)
