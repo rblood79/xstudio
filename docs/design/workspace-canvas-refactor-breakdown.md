@@ -369,7 +369,7 @@ type InvalidationReason =
 
 모든 phase는 아래 gate를 통과해야 완료로 간주한다.
 
-1. `pnpm -F @xstudio/builder type-check`
+1. `pnpm -F @composition/builder type-check`
 2. 핵심 수동 렌더링 비교 통과
 3. 성능 baseline 대비 회귀 없음
 4. phase 범위가 1커밋으로 rollback 가능

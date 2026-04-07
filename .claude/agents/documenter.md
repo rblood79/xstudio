@@ -11,7 +11,7 @@ tools:
   - Glob
   - Bash
 skills:
-  - xstudio-patterns
+  - composition-patterns
 memory: project
 maxTurns: 20
 ---
@@ -106,7 +106,7 @@ Proposed | Accepted | Deprecated | Superseded
 ### 참조해야 할 핵심 파일
 
 - `CLAUDE.md` — 프로젝트 개요 및 규칙
-- `.claude/skills/xstudio-patterns/SKILL.md` — 코드 패턴 및 규칙
+- `.claude/skills/composition-patterns/SKILL.md` — 코드 패턴 및 규칙
 - `docs/adr/` — 기존 아키텍처 결정
 
 ## 출력 가이드라인

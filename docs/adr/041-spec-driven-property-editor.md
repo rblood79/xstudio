@@ -939,8 +939,8 @@ function inferLabel(key: string): string {
 
 ```typescript
 // apps/builder/src/builder/workspace/canvas/sprites/specRegistry.ts (신규)
-import { ButtonSpec, BadgeSpec, ... } from "@xstudio/specs";
-import type { ComponentSpec } from "@xstudio/specs";
+import { ButtonSpec, BadgeSpec, ... } from "@composition/specs";
+import type { ComponentSpec } from "@composition/specs";
 
 /** tag → ComponentSpec 매핑. ElementSprite + registry 양쪽에서 사용. */
 export const TAG_SPEC_MAP: Record<string, ComponentSpec<Record<string, unknown>>> = {

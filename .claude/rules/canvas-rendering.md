@@ -11,7 +11,7 @@ globs:
 
 # Canvas 렌더링 규칙
 
-> 구현 상세는 [canvas-details.md](../skills/xstudio-patterns/reference/canvas-details.md) 참조
+> 구현 상세는 [canvas-details.md](../skills/composition-patterns/reference/canvas-details.md) 참조
 
 ## 1. Dual Renderer 핵심
 
@@ -102,5 +102,5 @@ ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeas
 
 ## 상세 레퍼런스
 
-- [Canvas 렌더링 구현 상세](../skills/xstudio-patterns/reference/canvas-details.md)
+- [Canvas 렌더링 구현 상세](../skills/composition-patterns/reference/canvas-details.md)
 - [SPEC_CSS_BOUNDARY.md](../../docs/reference/components/SPEC_CSS_BOUNDARY.md)

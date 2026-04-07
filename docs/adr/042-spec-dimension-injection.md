@@ -291,7 +291,7 @@ for (const shape of shapes) {
 
 ## References
 
-- `.claude/skills/xstudio-patterns/rules/spec-container-dimension-injection.md` — 코드 패턴 상세
+- `.claude/skills/composition-patterns/rules/spec-container-dimension-injection.md` — 코드 패턴 상세
 - `.claude/rules/canvas-rendering.md` — Canvas 렌더링 규칙 (Spec Container Dimension Injection 섹션)
 - `apps/builder/src/.../sprites/ElementSprite.tsx` — specProps 주입 경로
 - `apps/builder/src/.../skia/specShapeConverter.ts` — Shape → SkiaNodeData 변환

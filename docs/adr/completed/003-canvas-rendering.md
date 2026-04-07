@@ -104,7 +104,7 @@ Phase 0-4 Rust WASM 모듈을 빌드/활성화하여 캔버스 성능 가속:
 
 > **Note (2026-02-02):** 기존 환경변수 Feature Flag(`VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`, `VITE_WASM_LAYOUT_WORKER`, `VITE_RENDER_MODE`, `VITE_SKIA_DUAL_SURFACE`)는 모두 제거되고 값이 하드코딩됨. `featureFlags.ts`의 `WASM_FLAGS`는 전부 `true`, `getRenderMode()`는 `'skia'` 고정.
 
-**빌드 산출물:** `wasm-bindings/pkg/xstudio_wasm_bg.wasm` (70KB)
+**빌드 산출물:** `wasm-bindings/pkg/composition_wasm_bg.wasm` (70KB)
 **상세:** `docs/RENDERING_ARCHITECTURE.md` Phase 0-4
 
 ## Update: Skia Border-Box 렌더링 수정 (2026-02-02)
@@ -729,7 +729,7 @@ const drawContainerHitRect = useCallback(
 
 ### 관련 규칙
 
-- **[pixi-hitarea-absolute](/.claude/skills/xstudio-patterns/rules/pixi-hitarea-absolute.md)** — 히트 영역 배치 패턴 (이 Update로 "Non-layout 히트 영역" 섹션 추가)
+- **[pixi-hitarea-absolute](/.claude/skills/composition-patterns/rules/pixi-hitarea-absolute.md)** — 히트 영역 배치 패턴 (이 Update로 "Non-layout 히트 영역" 섹션 추가)
 
 **상세:** `apps/builder/src/.../sprites/ElementSprite.tsx` (drawContainerHitRect, handleContainerPointerDown)
 
@@ -902,5 +902,5 @@ const parentDelegatedSize = useStore((state) => {
 ## References
 
 - `apps/builder/src/builder/workspace/canvas/` - Canvas 구현
-- `.claude/skills/xstudio-patterns/rules/pixi-*.md` - PIXI 규칙
+- `.claude/skills/composition-patterns/rules/pixi-*.md` - PIXI 규칙
 - `docs/adr/008-layout-engine.md` - 레이아웃 엔진 전략

@@ -82,4 +82,4 @@ const button = tv({
 
 - `docs/reference/components/CSS_ARCHITECTURE.md` - ITCSS 상세
 - `apps/builder/src/builder/styles/` - 스타일 디렉토리
-- `.claude/skills/xstudio-patterns/rules/style-*.md` - 관련 규칙
+- `.claude/skills/composition-patterns/rules/style-*.md` - 관련 규칙

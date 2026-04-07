@@ -107,7 +107,7 @@
 | 모듈                         | 용도                              | 초기화 위치                                                                                                                                           |
 | ---------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CanvasKit (`canvaskit-wasm`) | 디자인 노드/오버레이 렌더링       | `skia/initCanvasKit.ts`                                                                                                                               |
-| Rust WASM (`xstudio_wasm`)   | Taffy 레이아웃(Flex/Grid) 가속    | `wasm-bindings/rustWasm.ts`, `wasm-bindings/taffyLayout.ts`                                                                                           |
+| Rust WASM (`composition_wasm`)   | Taffy 레이아웃(Flex/Grid) 가속    | `wasm-bindings/rustWasm.ts`, `wasm-bindings/taffyLayout.ts`                                                                                           |
 | SpatialIndex WASM            | 뷰포트 컬링/히트테스트 가속(옵션) | `wasm-bindings/spatialIndex.ts` (현재 기본 비활성화 — Phase 5 CanvasKit 내부 AABB 컬링이 뷰포트 컬링 대체. 라쏘 선택 `query_rect` 재연동만 잔존 과제) |
 
 ### 기존 캐싱 메커니즘
@@ -174,7 +174,7 @@ apps/builder/src/builder/workspace/canvas/
 
 ```toml
 [package]
-name = "xstudio-wasm"
+name = "composition-wasm"
 version = "0.1.0"
 edition = "2021"
 
@@ -220,14 +220,14 @@ lto = true
 >
 > ```typescript
 > // ✅ 올바른 초기화 (rustWasm.ts)
-> const mod = await import("./pkg/xstudio_wasm");
+> const mod = await import("./pkg/composition_wasm");
 > if (typeof mod.default === "function") {
 >   await mod.default(); // __wbg_init() → wasm 바인딩 초기화
 > }
 > mod.ping(); // 이제 정상 동작
 >
 > // ❌ 잘못된 초기화 — import만으로는 wasm 바인딩 미초기화
-> const mod = await import("./pkg/xstudio_wasm");
+> const mod = await import("./pkg/composition_wasm");
 > mod.ping(); // TypeError: Cannot read properties of undefined
 > ```
 
@@ -244,7 +244,7 @@ export default defineConfig({
   optimizeDeps: {
     // wasm-bindings/pkg의 실제 패키지명과 일치시킨다.
     // wasm-pack --target bundler 출력의 package.json "name" 필드를 확인.
-    exclude: ["xstudio-spatial-index", "xstudio-layout"],
+    exclude: ["xstudio-spatial-index", "composition-layout"],
   },
 });
 ```
@@ -334,7 +334,7 @@ export function getRenderMode(): RenderMode {
 
 - [x] Rust + wasm-pack 프로젝트 초기화 _(rustc 1.93.0, wasm-pack 0.14.0)_
 - [x] Vite WASM 플러그인 설정 _(vite-plugin-wasm 3.5.0)_
-- [x] 빌드 파이프라인 검증 (dev + production) _(pkg/xstudio_wasm_bg.wasm 70KB)_
+- [x] 빌드 파이프라인 검증 (dev + production) _(pkg/composition_wasm_bg.wasm 70KB)_
 - [ ] ~~벤치마크 유틸리티 작성~~ — **보류**: CanvasKit Phase 5 도입 후 렌더링 파이프라인이 변경되어 기존 벤치마크 시나리오 재설계 필요. 현재 성능 측정은 Chrome DevTools Performance 탭 + console.time 기반으로 수행 중
 - [ ] ~~기준선 데이터 수집 (4개 시나리오)~~ — **보류**: 벤치마크 유틸리티 보류와 동일 사유
 - [x] Feature Flag 인프라 구축 _(featureFlags.ts, 하드코딩 플래그)_
@@ -614,7 +614,7 @@ impl SpatialIndex {
 **`wasm-bindings/spatialIndex.ts`:**
 
 ```typescript
-import init, { SpatialIndex } from "./pkg/xstudio_wasm";
+import init, { SpatialIndex } from "./pkg/composition_wasm";
 import { idMapper } from "./idMapper";
 
 let spatialIndex: SpatialIndex | null = null;
@@ -1243,7 +1243,7 @@ impl GridLayoutEngine {
 **`wasm-bindings/layoutAccelerator.ts`:**
 
 ```typescript
-import init, { BlockLayoutEngine, GridLayoutEngine } from "./pkg/xstudio_wasm";
+import init, { BlockLayoutEngine, GridLayoutEngine } from "./pkg/composition_wasm";
 import { WASM_FLAGS } from "./featureFlags";
 
 let blockEngine: BlockLayoutEngine | null = null;
@@ -1946,7 +1946,7 @@ type WorkerResponse =
 import init, {
   BlockLayoutEngine,
   GridLayoutEngine,
-} from "../../../../../wasm-bindings/pkg/xstudio_wasm";
+} from "../../../../../wasm-bindings/pkg/composition_wasm";
 // SpatialIndex는 메인 스레드 전용 — Worker에서는 사용하지 않음 (4.7절 참조)
 
 let blockEngine: BlockLayoutEngine;
@@ -3484,7 +3484,7 @@ function someOperation(args) {
 Phase 0: 환경 구축 및 벤치마크 기준선 ✅ (2026-02-02 구현 완료)
   └─ Rust 1.93.0 + wasm-pack 0.14.0 설정
   └─ Vite WASM 플러그인 (vite-plugin-wasm 3.5.0)
-  └─ WASM 빌드 완료 (xstudio_wasm_bg.wasm 70KB)
+  └─ WASM 빌드 완료 (composition_wasm_bg.wasm 70KB)
   └─ Feature Flag 인프라 (featureFlags.ts 하드코딩, 환경변수 분기 제거)
   └─ 벤치마크 유틸리티 (미완)
   └─ 실측 기준선 수집 (미완)

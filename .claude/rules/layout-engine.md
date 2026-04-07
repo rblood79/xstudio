@@ -9,7 +9,7 @@ globs:
 
 # 레이아웃 엔진 규칙
 
-> 구현 상세는 [layout-details.md](.claude/skills/xstudio-patterns/reference/layout-details.md) 참조
+> 구현 상세는 [layout-details.md](.claude/skills/composition-patterns/reference/layout-details.md) 참조
 
 ## 엔진 선택
 

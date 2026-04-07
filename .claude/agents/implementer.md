@@ -12,7 +12,7 @@ tools:
   - Bash
   - NotebookEdit
 skills:
-  - xstudio-patterns
+  - composition-patterns
 memory: project
 maxTurns: 30
 ---

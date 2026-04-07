@@ -69,6 +69,6 @@ if [ -f "$PROGRESS_FILE" ]; then
 fi
 
 echo "## Key Files"
-echo "- SKILL.md: .claude/skills/xstudio-patterns/SKILL.md"
+echo "- SKILL.md: .claude/skills/composition-patterns/SKILL.md"
 echo "- Rules: .claude/rules/ (canvas-rendering, layout-engine, state-management, css-tokens)"
 echo "=== End Snapshot ==="

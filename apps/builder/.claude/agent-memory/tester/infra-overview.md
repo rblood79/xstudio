@@ -15,21 +15,21 @@ StoreRenderBridge 및 skia 관련 테스트 파일에서 공통으로 필요한 
 | 모듈                       | 이유                                       |
 | -------------------------- | ------------------------------------------ |
 | `../fontManager`           | window 없는 환경에서 폰트 로딩 차단        |
-| `@xstudio/specs`           | Spec 객체 import 차단 (WASM 의존)          |
+| `@composition/specs`           | Spec 객체 import 차단 (WASM 의존)          |
 | `../../sprites/tagSpecMap` | TAG_SPEC_MAP / TEXT_TAGS / IMAGE_TAGS 제공 |
 | `../buildSpecNodeData`     | Spec 렌더링 경로 차단                      |
 | `../imageCache`            | 비동기 이미지 로딩 차단                    |
 | `../useSkiaNode`           | skiaNodeRegistry 글로벌 상태 격리          |
 | `../layout`                | onLayoutPublished 구독 차단                |
 
-## @xstudio/specs mock 패턴 (CRITICAL)
+## @composition/specs mock 패턴 (CRITICAL)
 
 단순 객체 mock 사용 시 "No X export is defined" 에러 발생.
 **반드시 importOriginal 패턴 사용**:
 
 ```typescript
-vi.mock("@xstudio/specs", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@xstudio/specs")>();
+vi.mock("@composition/specs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@composition/specs")>();
   return {
     ...actual,
     // 오버라이드 필요한 항목만
@@ -37,7 +37,7 @@ vi.mock("@xstudio/specs", async (importOriginal) => {
 });
 ```
 
-**Why:** `@xstudio/specs`는 ButtonSpec, LabelSpec 등 수십 개 export를 가지며,
+**Why:** `@composition/specs`는 ButtonSpec, LabelSpec 등 수십 개 export를 가지며,
 다른 모듈(specTextStyle.ts, utils.ts 등)이 이를 직접 import함.
 단순 mock 시 사용되는 export가 없다는 에러가 chain으로 전파됨.
 

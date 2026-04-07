@@ -7,7 +7,7 @@ tags: [spec, layout, sync]
 
 컴포넌트 수치(padding, fontSize, borderWidth 등)는 **3곳에서 동일하게** 유지해야 합니다:
 
-1. `@xstudio/specs` — ComponentSpec (예: `ButtonSpec.sizes.md.paddingX`)
+1. `@composition/specs` — ComponentSpec (예: `ButtonSpec.sizes.md.paddingX`)
 2. Builder 내부 상수 (예: `BUTTON_SIZE_CONFIG`)
 3. CSS 토큰 (예: `Button.css`의 `--spacing-*`)
 
@@ -176,7 +176,7 @@ const effectiveBorderRadius = isUIComponent ? 6 : 0;
 - [ ] `apps/builder/.../canvas/ui/Pixi[Component].tsx` (이벤트 레이어 전용, alpha=0)
 - [ ] `apps/builder/.../sprites/ElementSprite.tsx` (Skia 폴백 — `convertStyle()` 사용 필수)
 - [ ] CSS 파일의 토큰/변수
-- [ ] `pnpm --filter @xstudio/specs build` 실행
+- [ ] `pnpm --filter @composition/specs build` 실행
 - [ ] `apps/builder/.../skia/specShapeConverter.ts` (색상/크기 변환)
 - [ ] `apps/builder/.../layout/engines/utils.ts` (`INLINE_FORM_HEIGHTS`, `INLINE_FORM_INDICATOR_WIDTHS`)
 - [ ] spec shapes의 모든 시각 속성이 `props.style?.X` 오버라이드를 지원하는지 확인

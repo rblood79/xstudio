@@ -60,4 +60,4 @@ export const useStore = create<Store>()((...args) => ({
 
 - `apps/builder/src/builder/stores/index.ts` - 스토어 정의
 - `apps/builder/src/builder/stores/elements.ts` - Elements 슬라이스
-- `.claude/skills/xstudio-patterns/rules/zustand-*.md` - 관련 규칙
+- `.claude/skills/composition-patterns/rules/zustand-*.md` - 관련 규칙

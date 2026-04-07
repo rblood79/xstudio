@@ -27,7 +27,7 @@
 
 ## Verification Gate
 
-1. `pnpm -F @xstudio/builder type-check`
+1. `pnpm -F @composition/builder type-check`
 2. `vitest`로 scene snapshot / renderer input / visible-page root 추출 계약 검증
 3. visible page 기준 command stream cache key 분리 확인
 4. document overlay와 page overlay 입력 분리 확인

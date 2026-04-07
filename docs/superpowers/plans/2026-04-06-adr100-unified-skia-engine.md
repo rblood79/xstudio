@@ -440,9 +440,9 @@ git commit -m "feat(adr-100): margin collapse usage audit script"
 
 **Files:**
 
-- Create: `packages/xstudio-layout/Cargo.toml`
-- Create: `packages/xstudio-layout/src/lib.rs`
-- Create: `packages/xstudio-layout/.cargo/config.toml`
+- Create: `packages/composition-layout/Cargo.toml`
+- Create: `packages/composition-layout/src/lib.rs`
+- Create: `packages/composition-layout/.cargo/config.toml`
 - Modify: `package.json` (wasm 빌드 스크립트)
 
 **Prerequisites:** `rustup`, `wasm-pack` 설치 필요.
@@ -460,9 +460,9 @@ wasm-pack --version
 - [ ] **Step 2: Cargo.toml 생성**
 
 ```toml
-# packages/xstudio-layout/Cargo.toml
+# packages/composition-layout/Cargo.toml
 [package]
-name = "xstudio-layout"
+name = "composition-layout"
 version = "0.1.0"
 edition = "2021"
 
@@ -495,7 +495,7 @@ strip = true
 - [ ] **Step 3: lib.rs 스켈레톤 생성**
 
 ```rust
-// packages/xstudio-layout/src/lib.rs
+// packages/composition-layout/src/lib.rs
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -535,7 +535,7 @@ mod tests {
 - [ ] **Step 4: .cargo/config.toml (WASM 타겟 설정)**
 
 ```toml
-# packages/xstudio-layout/.cargo/config.toml
+# packages/composition-layout/.cargo/config.toml
 [build]
 target = "wasm32-unknown-unknown"
 ```
@@ -543,10 +543,10 @@ target = "wasm32-unknown-unknown"
 - [ ] **Step 5: 빌드 테스트**
 
 ```bash
-cd packages/xstudio-layout
+cd packages/composition-layout
 cargo test  # 네이티브 테스트
 wasm-pack build --target web --release  # WASM 빌드
-ls pkg/  # xstudio_layout.js, xstudio_layout_bg.wasm 확인
+ls pkg/  # composition_layout.js, composition_layout_bg.wasm 확인
 ```
 
 Expected: WASM 빌드 성공, pkg/ 디렉토리에 .js + .wasm 파일 생성.
@@ -555,14 +555,14 @@ Expected: WASM 빌드 성공, pkg/ 디렉토리에 .js + .wasm 파일 생성.
 
 ```json
 // package.json (루트) — scripts에 추가
-"build:layout": "cd packages/xstudio-layout && wasm-pack build --target web --release && wasm-opt -Os -o pkg/xstudio_layout_opt.wasm pkg/xstudio_layout_bg.wasm"
+"build:layout": "cd packages/composition-layout && wasm-pack build --target web --release && wasm-opt -Os -o pkg/composition_layout_opt.wasm pkg/composition_layout_bg.wasm"
 ```
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add packages/xstudio-layout/ package.json
-git commit -m "feat(adr-100): initialize xstudio-layout Rust WASM crate with Taffy dependency"
+git add packages/composition-layout/ package.json
+git commit -m "feat(adr-100): initialize composition-layout Rust WASM crate with Taffy dependency"
 ```
 
 ---

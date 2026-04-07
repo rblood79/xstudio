@@ -361,7 +361,7 @@ UI 구조 (`ActionTypePicker` 패턴 참조):
 ```
 DialogTrigger
   ├── Button "[Zap] Quick Connect"
-  └── Popover (280px, @xstudio/shared/components/Popover)
+  └── Popover (280px, @composition/shared/components/Popover)
       ├── 검색 input
       └── ListBox
           ├── "빈 테이블" 옵션

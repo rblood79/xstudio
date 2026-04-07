@@ -2233,8 +2233,8 @@ packages/shared/src/components/styles/
 // 루트 package.json
 {
   "scripts": {
-    "build:specs": "pnpm --filter @xstudio/specs build",
-    "validate:sync": "pnpm --filter @xstudio/specs validate:sync",
+    "build:specs": "pnpm --filter @composition/specs build",
+    "validate:sync": "pnpm --filter @composition/specs validate:sync",
     "precommit": "pnpm type-check && pnpm validate:sync"  // CI + pre-commit
   }
 }

@@ -13,7 +13,7 @@
 ```
 xstudio/ (pnpm + Turborepo 모노레포)
 ├── apps/
-│   ├── builder/              # 메인 빌더 앱 (@xstudio/builder)
+│   ├── builder/              # 메인 빌더 앱 (@composition/builder)
 │   │   ├── src/
 │   │   │   ├── builder/      # Pixi.js 기반 Canvas 편집기
 │   │   │   │   ├── workspace/canvas/  # WebGL 편집 화면
@@ -35,14 +35,14 @@ xstudio/ (pnpm + Turborepo 모노레포)
 │   │   ├── vite.config.ts
 │   │   └── tsconfig.json
 │   │
-│   └── publish/              # 배포 런타임 (@xstudio/publish)
+│   └── publish/              # 배포 런타임 (@composition/publish)
 │       ├── src/
 │       ├── package.json
 │       ├── vite.config.ts
 │       └── tsconfig.json
 │
 ├── packages/
-│   ├── shared/               # 순수 공유 라이브러리 (@xstudio/shared)
+│   ├── shared/               # 순수 공유 라이브러리 (@composition/shared)
 │   │   ├── src/
 │   │   │   ├── components/   # 공유 UI (Button, Badge, TextField 등)
 │   │   │   ├── renderers/    # PageRenderer, ElementRenderer
@@ -51,7 +51,7 @@ xstudio/ (pnpm + Turborepo 모노레포)
 │   │   │   └── utils/        # 공유 유틸리티 (export.utils 등)
 │   │   └── package.json
 │   │
-│   └── config/               # 공유 설정 (@xstudio/config)
+│   └── config/               # 공유 설정 (@composition/config)
 │       ├── tsconfig/
 │       │   ├── base.json
 │       │   ├── react-app.json
@@ -69,10 +69,10 @@ xstudio/ (pnpm + Turborepo 모노레포)
 
 | 패키지 | 역할 | 의존성 |
 |--------|------|--------|
-| `@xstudio/builder` | 메인 빌더 앱 | @xstudio/shared, @xstudio/config |
-| `@xstudio/publish` | 배포 런타임 | @xstudio/shared |
-| `@xstudio/shared` | 순수 공유 코드 (types, utils) | 없음 |
-| `@xstudio/config` | 공유 설정 (tsconfig, eslint) | 없음 |
+| `@composition/builder` | 메인 빌더 앱 | @composition/shared, @composition/config |
+| `@composition/publish` | 배포 런타임 | @composition/shared |
+| `@composition/shared` | 순수 공유 코드 (types, utils) | 없음 |
+| `@composition/config` | 공유 설정 (tsconfig, eslint) | 없음 |
 
 > **Note**: 공유 컴포넌트(Button, Badge 등)와 렌더러는 `packages/shared/`에 위치합니다.
 > Builder 전용 UI 컴포넌트(PanelHeader, PropertySection 등)는 `apps/builder/src/builder/components/`에 있습니다.
@@ -121,7 +121,7 @@ xstudio/ (pnpm + Turborepo 모노레포)
                                        ▼
                           ┌─────────────────────┐
                           │  Publish (React)    │
-                          │  @xstudio/publish   │
+                          │  @composition/publish   │
                           ├─────────────────────┤
                           │  최종 배포 런타임    │
                           │  독립 실행          │
@@ -457,7 +457,7 @@ onlyBuiltDependencies[]=puppeteer
   "dependencies": {
     "react": "catalog:",
     "react-dom": "catalog:",
-    "@xstudio/shared": "workspace:*"
+    "@composition/shared": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:",
@@ -482,7 +482,7 @@ onlyBuiltDependencies[]=puppeteer
 5. **Vite 버전 통일** (6 → 7)
 
 > **Note**: 루트 package.json은 워크스페이스 전용이므로 의존성을 추가하지 않습니다.
-> `@xstudio/shared`는 각 앱(apps/builder, apps/publish)의 package.json에서 참조합니다.
+> `@composition/shared`는 각 앱(apps/builder, apps/publish)의 package.json에서 참조합니다.
 
 **pnpm-workspace.yaml 변경:**
 ```yaml
@@ -619,7 +619,7 @@ packages/config/
 **packages/config/package.json**:
 ```json
 {
-  "name": "@xstudio/config",
+  "name": "@composition/config",
   "version": "0.0.0",
   "private": true,
   "exports": {
@@ -781,12 +781,12 @@ apps/builder/src/
 ├── builder/               # Pixi.js 편집기 (WebGL)
 │   └── workspace/canvas/ui/  # Pixi 컴포넌트 (여기에 유지)
 ├── preview/               # React 프리뷰 (iframe)
-│   ├── App.tsx            # @xstudio/shared 사용
+│   ├── App.tsx            # @composition/shared 사용
 │   └── ...
 └── (shared/ 제거됨)
 
 apps/publish/src/
-└── App.tsx                # @xstudio/shared 사용 (동일한 렌더링)
+└── App.tsx                # @composition/shared 사용 (동일한 렌더링)
 ```
 
 **Import 경로 변경:**
@@ -797,12 +797,12 @@ import { TextField } from '../../shared/components/list';
 import { renderTextField } from './renderers/FormRenderers';
 
 // 변경 후 (apps/builder/src/preview/App.tsx)
-import { TextField } from '@xstudio/shared/components';
-import { renderTextField } from '@xstudio/shared/renderers';
+import { TextField } from '@composition/shared/components';
+import { renderTextField } from '@composition/shared/renderers';
 
 // apps/publish/src/App.tsx (동일한 import)
-import { TextField } from '@xstudio/shared/components';
-import { renderTextField } from '@xstudio/shared/renderers';
+import { TextField } from '@composition/shared/components';
+import { renderTextField } from '@composition/shared/renderers';
 ```
 
 **컴포넌트 분류 기준:**
@@ -833,7 +833,7 @@ apps/builder/src/builder/components/   # Builder 전용 (이동 안함)
 ```
 
 > **주의**: 이 컴포넌트들은 `packages/shared/components/`를 import하여 사용합니다.
-> 마이그레이션 후 import 경로만 `@xstudio/shared/components`로 변경하면 됩니다.
+> 마이그레이션 후 import 경로만 `@composition/shared/components`로 변경하면 됩니다.
 
 **Step 5: Import 경로 업데이트** (렌더러 이동 직후 즉시 수행)
 ```bash
@@ -875,10 +875,10 @@ grep -r "from.*['\"].*renderers" apps/builder/src/preview/ --include="*.tsx" --i
    import { FormRenderers } from './renderers';
 
    // apps/builder/src/preview/App.tsx (변경 후)
-   import { FormRenderers } from '@xstudio/shared/renderers';
+   import { FormRenderers } from '@composition/shared/renderers';
 
    // apps/publish/src/App.tsx
-   import { FormRenderers } from '@xstudio/shared/renderers';
+   import { FormRenderers } from '@composition/shared/renderers';
    ```
 
 **렌더러 계약 검증 테스트 계획**:
@@ -951,7 +951,7 @@ describe('Event Signature Contract', () => {
 5. **apps/builder/package.json 생성**
    ```json
    {
-     "name": "@xstudio/builder",
+     "name": "@composition/builder",
      "private": true,
      "version": "0.0.0",
      "type": "module",
@@ -965,7 +965,7 @@ describe('Event Signature Contract', () => {
        "lint": "eslint src"
      },
      "dependencies": {
-       "@xstudio/shared": "workspace:*",
+       "@composition/shared": "workspace:*",
        "react": "catalog:",
        "react-dom": "catalog:",
        "react-router": "catalog:",
@@ -976,7 +976,7 @@ describe('Event Signature Contract', () => {
        // ... 기존 의존성
      },
      "devDependencies": {
-       "@xstudio/config": "workspace:*",
+       "@composition/config": "workspace:*",
        "typescript": "catalog:",
        "vite": "catalog:",
        "@vitejs/plugin-react-swc": "catalog:"
@@ -987,7 +987,7 @@ describe('Event Signature Contract', () => {
 6. **apps/builder/tsconfig.json 생성**
    ```json
    {
-     "extends": "@xstudio/config/tsconfig/react-app",
+     "extends": "@composition/config/tsconfig/react-app",
      "compilerOptions": {
        "baseUrl": ".",
        "paths": {
@@ -1016,19 +1016,19 @@ describe('Event Signature Contract', () => {
 ```bash
 # 1. workspace 링크 확인
 pnpm list --depth 0
-# @xstudio/shared workspace:* 링크 확인
+# @composition/shared workspace:* 링크 확인
 
 # 2. TypeScript project references 검증
 pnpm exec tsc --showConfig | head -30
 # "references" 섹션에 shared 패키지 포함 확인
 
 # 3. 빌드 테스트 (앱 단위)
-pnpm -F @xstudio/builder run build
+pnpm -F @composition/builder run build
 
 # 4. 타입 체크 (앱 단위)
-pnpm -F @xstudio/builder run check-types
+pnpm -F @composition/builder run check-types
 # 또는 turbo 사용 시:
-# turbo run check-types --filter=@xstudio/builder
+# turbo run check-types --filter=@composition/builder
 ```
 
 ---
@@ -1047,14 +1047,14 @@ pnpm -F @xstudio/builder run check-types
 2. **package.json 업데이트**
    ```json
    {
-     "name": "@xstudio/publish",
+     "name": "@composition/publish",
      "dependencies": {
-       "@xstudio/shared": "workspace:*",
+       "@composition/shared": "workspace:*",
        "react": "catalog:",
        "react-dom": "catalog:"
      },
     "devDependencies": {
-      "@xstudio/config": "workspace:*",
+      "@composition/config": "workspace:*",
       "typescript": "catalog:",
       "vite": "catalog:",
       "cross-env": "catalog:"
@@ -1067,20 +1067,20 @@ pnpm -F @xstudio/builder run check-types
 4. **tsconfig.json 업데이트**
    ```json
    {
-     "extends": "@xstudio/config/tsconfig/react-app",
+     "extends": "@composition/config/tsconfig/react-app",
      "compilerOptions": {
        "paths": {
-         "@xstudio/shared": ["../../packages/shared/src"],
-         "@xstudio/shared/*": ["../../packages/shared/src/*"]
+         "@composition/shared": ["../../packages/shared/src"],
+         "@composition/shared/*": ["../../packages/shared/src/*"]
        }
      }
    }
    ```
 
-5. **@xstudio/shared 연동** (핵심 통합 작업)
+5. **@composition/shared 연동** (핵심 통합 작업)
 
    현재 `packages/publish`는 기본 HTML 요소만 등록되어 있습니다.
-   `@xstudio/shared/components`와 `@xstudio/shared/renderers`를 연동해야 합니다.
+   `@composition/shared/components`와 `@composition/shared/renderers`를 연동해야 합니다.
 
    ```typescript
    // apps/publish/src/registry/ComponentRegistry.tsx 수정
@@ -1090,13 +1090,13 @@ pnpm -F @xstudio/builder run check-types
      ListBox,
      DatePicker,
      // ... 기타 컴포넌트
-   } from '@xstudio/shared/components';
+   } from '@composition/shared/components';
 
    import {
      renderTextField,
      renderListBox,
      // ... 기타 렌더러
-   } from '@xstudio/shared/renderers';
+   } from '@composition/shared/renderers';
 
    // React Aria 컴포넌트 등록
    registerComponent('TextField', {
@@ -1122,7 +1122,7 @@ pnpm -F @xstudio/builder run check-types
      renderListBox,
      renderDatePicker,
      // ...
-   } from '@xstudio/shared/renderers';
+   } from '@composition/shared/renderers';
 
    // 렌더러 매핑
    const rendererMap: Record<string, RenderFunction> = {
@@ -1145,15 +1145,15 @@ pnpm -F @xstudio/builder run check-types
    ```css
    /* apps/publish/src/styles/index.css */
 
-   /* @xstudio/shared 스타일 import */
-   @import '@xstudio/shared/components/styles/index.css';
+   /* @composition/shared 스타일 import */
+   @import '@composition/shared/components/styles/index.css';
    ```
 
 **검증 체크리스트**:
 ```bash
 # 1. 의존성 링크 확인
 cd apps/publish && pnpm list --depth 0
-# @xstudio/shared, @xstudio/config 링크 확인
+# @composition/shared, @composition/config 링크 확인
 
 # 2. Vite 버전 호환성 확인
 pnpm exec vite --version
@@ -1176,7 +1176,7 @@ pnpm exec tsc --noEmit
 **package.json 업데이트**:
 ```json
 {
-  "name": "@xstudio/shared",
+  "name": "@composition/shared",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -1207,7 +1207,7 @@ pnpm exec tsc --noEmit
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@xstudio/config": "workspace:*",
+    "@composition/config": "workspace:*",
     "typescript": "catalog:"
   }
 }
@@ -1216,7 +1216,7 @@ pnpm exec tsc --noEmit
 **tsconfig.json 업데이트**:
 ```json
 {
-  "extends": "@xstudio/config/tsconfig/library",
+  "extends": "@composition/config/tsconfig/library",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"
@@ -1228,7 +1228,7 @@ pnpm exec tsc --noEmit
 **검증 체크리스트**:
 ```bash
 # 1. exports 경로 확인
-node -e "console.log(require.resolve('@xstudio/shared'))"
+node -e "console.log(require.resolve('@composition/shared'))"
 # packages/shared/src/index.ts 경로 확인
 
 # 2. 타입 내보내기 확인
@@ -1256,7 +1256,7 @@ pnpm exec madge --circular packages/shared/src
   "private": true,
   "packageManager": "pnpm@10.26.2",
   "scripts": {
-    "dev": "turbo run dev --filter=@xstudio/builder",
+    "dev": "turbo run dev --filter=@composition/builder",
     "build": "turbo run build",
     "build:all": "turbo run build:all",
     "check-types": "turbo run check-types",
@@ -1414,7 +1414,7 @@ pnpm add -Dw turbo
 
 4. **개발 서버**
    ```bash
-   turbo run dev --filter=@xstudio/builder
+   turbo run dev --filter=@composition/builder
    ```
 
 5. **린트**
@@ -1528,7 +1528,7 @@ xstudio/
 ```json
 // vercel.json
 {
-  "buildCommand": "pnpm turbo run build --filter=@xstudio/builder",
+  "buildCommand": "pnpm turbo run build --filter=@composition/builder",
   "outputDirectory": "apps/builder/dist",
   "installCommand": "pnpm install",
   "framework": "vite"
@@ -1540,7 +1540,7 @@ xstudio/
 ```toml
 # netlify.toml
 [build]
-  command = "pnpm turbo run build --filter=@xstudio/publish"
+  command = "pnpm turbo run build --filter=@composition/publish"
   publish = "apps/publish/dist"
 
 [build.environment]
@@ -1575,15 +1575,15 @@ xstudio/
 // packages/config/eslint/base.js
 module.exports = {
   extends: ['eslint:recommended', 'plugin:react/recommended'],
-  plugins: ['@xstudio/eslint-local-rules'],
+  plugins: ['@composition/eslint-local-rules'],
   rules: {
-    '@xstudio/eslint-local-rules/no-unsafe-api-call': 'error',
-    '@xstudio/eslint-local-rules/require-aria-label': 'warn',
+    '@composition/eslint-local-rules/no-unsafe-api-call': 'error',
+    '@composition/eslint-local-rules/require-aria-label': 'warn',
   },
 };
 
 // apps/builder/eslint.config.js
-import baseConfig from '@xstudio/config/eslint';
+import baseConfig from '@composition/config/eslint';
 
 export default [
   ...baseConfig,
@@ -1802,7 +1802,7 @@ pnpm add -D @storybook/react-vite @storybook/addon-essentials @storybook/addon-a
 | shared 스토리 | - | `../../../packages/shared/src/**/*.stories.*` |
 | staticDirs | `../public` | 동일 |
 | alias `@` | `./src` | `../src` |
-| alias `@xstudio/shared` | - | `../../../packages/shared/src` |
+| alias `@composition/shared` | - | `../../../packages/shared/src` |
 
 #### 이동 후 설정 변경 예시
 
@@ -1841,7 +1841,7 @@ const config: StorybookConfig = {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '../src'),
-          '@xstudio/shared': path.resolve(__dirname, '../../../packages/shared/src'),
+          '@composition/shared': path.resolve(__dirname, '../../../packages/shared/src'),
         },
       },
     });
@@ -1857,7 +1857,7 @@ import type { Preview } from '@storybook/react';
 
 // import 경로 변경
 import '../src/styles/globals.css';
-import '@xstudio/shared/styles/components.css';
+import '@composition/shared/styles/components.css';
 
 const preview: Preview = {
   parameters: {
@@ -1906,7 +1906,7 @@ async viteFinal(config) {
 // 루트 package.json (turbo 연동)
 {
   "scripts": {
-    "storybook": "turbo run storybook --filter=@xstudio/builder"
+    "storybook": "turbo run storybook --filter=@composition/builder"
   }
 }
 ```
@@ -1987,9 +1987,9 @@ git status --ignored
 
 | 기존 경로 | 변환 후 |
 |----------|--------|
-| `../../shared/components/Button` | `@xstudio/shared/components` |
-| `../../shared/types/element` | `@xstudio/shared/types` |
-| `../../../shared/utils/helpers` | `@xstudio/shared/utils` |
+| `../../shared/components/Button` | `@composition/shared/components` |
+| `../../shared/types/element` | `@composition/shared/types` |
+| `../../../shared/utils/helpers` | `@composition/shared/utils` |
 
 **자동화 스크립트:**
 
@@ -2018,13 +2018,13 @@ sed_replace() {
   fi
 }
 
-# apps/builder 내 src/shared 참조를 @xstudio/shared로 변환
+# apps/builder 내 src/shared 참조를 @composition/shared로 변환
 find apps/builder/src \( -name "*.ts" -o -name "*.tsx" \) | while read file; do
-  # ../shared/ 또는 ../../shared/ 패턴을 @xstudio/shared로 변환
+  # ../shared/ 또는 ../../shared/ 패턴을 @composition/shared로 변환
   sed_replace "$file" \
-    -e 's|from ["'"'"']\.\./shared/|from "@xstudio/shared/|g' \
-    -e 's|from ["'"'"']\.\./\.\./shared/|from "@xstudio/shared/|g' \
-    -e 's|from ["'"'"']\.\./\.\./\.\./shared/|from "@xstudio/shared/|g'
+    -e 's|from ["'"'"']\.\./shared/|from "@composition/shared/|g' \
+    -e 's|from ["'"'"']\.\./\.\./shared/|from "@composition/shared/|g' \
+    -e 's|from ["'"'"']\.\./\.\./\.\./shared/|from "@composition/shared/|g'
 done
 
 echo "✅ apps/builder import 변환 완료"
@@ -2032,8 +2032,8 @@ echo "✅ apps/builder import 변환 완료"
 # apps/publish 내 참조 변환
 find apps/publish/src \( -name "*.ts" -o -name "*.tsx" \) | while read file; do
   sed_replace "$file" \
-    -e 's|from ["'"'"']\.\./shared/|from "@xstudio/shared/|g' \
-    -e 's|from ["'"'"']\.\./\.\./shared/|from "@xstudio/shared/|g'
+    -e 's|from ["'"'"']\.\./shared/|from "@composition/shared/|g' \
+    -e 's|from ["'"'"']\.\./\.\./shared/|from "@composition/shared/|g'
 done
 
 echo "✅ apps/publish import 변환 완료"
@@ -2059,14 +2059,14 @@ module.exports = function(fileInfo, api) {
 
   // Import 경로 변환 맵
   const pathMappings = {
-    '../shared/components': '@xstudio/shared/components',
-    '../../shared/components': '@xstudio/shared/components',
-    '../shared/types': '@xstudio/shared/types',
-    '../../shared/types': '@xstudio/shared/types',
-    '../shared/utils': '@xstudio/shared/utils',
-    '../../shared/utils': '@xstudio/shared/utils',
-    '../shared/renderers': '@xstudio/shared/renderers',
-    '../../shared/renderers': '@xstudio/shared/renderers',
+    '../shared/components': '@composition/shared/components',
+    '../../shared/components': '@composition/shared/components',
+    '../shared/types': '@composition/shared/types',
+    '../../shared/types': '@composition/shared/types',
+    '../shared/utils': '@composition/shared/utils',
+    '../../shared/utils': '@composition/shared/utils',
+    '../shared/renderers': '@composition/shared/renderers',
+    '../../shared/renderers': '@composition/shared/renderers',
   };
 
   root.find(j.ImportDeclaration).forEach(path => {
@@ -2205,11 +2205,11 @@ du -sh apps/builder/dist/ >> benchmark.txt
 |-------|-----------|------------|
 | **1** | 의존성 설치 | `pnpm install --frozen-lockfile` |
 | **1** | Catalog 버전 확인 | `./scripts/verify-catalog.sh` |
-| **2** | Config 패키지 참조 | `pnpm -F @xstudio/builder run check-types` |
-| **3** | Builder 빌드 | `turbo run build --filter=@xstudio/builder` |
+| **2** | Config 패키지 참조 | `pnpm -F @composition/builder run check-types` |
+| **3** | Builder 빌드 | `turbo run build --filter=@composition/builder` |
 | **3** | Preview 렌더링 | E2E 테스트 실행 |
-| **4** | Publish 빌드 | `turbo run build --filter=@xstudio/publish` |
-| **5** | Shared 패키지 export | `pnpm -F @xstudio/builder run check-types` |
+| **4** | Publish 빌드 | `turbo run build --filter=@composition/publish` |
+| **5** | Shared 패키지 export | `pnpm -F @composition/builder run check-types` |
 | **6** | 루트 스크립트 | `turbo run build` |
 | **7** | Turborepo 캐시 | `turbo run build` (2회 연속) |
 | **8** | 전체 E2E | `turbo run test:e2e` |
@@ -2245,7 +2245,7 @@ test_phase3() {
   echo "=== Phase 3: Builder 이동 테스트 ==="
   [ -d "apps/builder/src" ] || exit 1
   [ -f "apps/builder/package.json" ] || exit 1
-  turbo run build --filter=@xstudio/builder
+  turbo run build --filter=@composition/builder
   echo "✅ Phase 3 테스트 통과"
 }
 
@@ -2253,7 +2253,7 @@ test_phase4() {
   echo "=== Phase 4: Publish 이동 테스트 ==="
   [ -d "apps/publish/src" ] || exit 1
   [ -f "apps/publish/package.json" ] || exit 1
-  turbo run build --filter=@xstudio/publish
+  turbo run build --filter=@composition/publish
   echo "✅ Phase 4 테스트 통과"
 }
 
@@ -2262,7 +2262,7 @@ test_phase5() {
   [ -d "packages/shared/src/components" ] || exit 1
   [ -d "packages/shared/src/renderers" ] || exit 1
   # export 경로 테스트
-  node -e "require.resolve('@xstudio/shared/components')" 2>/dev/null || true
+  node -e "require.resolve('@composition/shared/components')" 2>/dev/null || true
   echo "✅ Phase 5 테스트 통과"
 }
 
@@ -2289,7 +2289,7 @@ test_phase8() {
   turbo run lint
   # E2E 테스트 (설정된 경우)
   if [ -f "apps/builder/playwright.config.ts" ]; then
-    turbo run test:e2e --filter=@xstudio/builder
+    turbo run test:e2e --filter=@composition/builder
   fi
   echo "✅ Phase 8 테스트 통과"
 }

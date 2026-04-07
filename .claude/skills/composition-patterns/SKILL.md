@@ -1,5 +1,5 @@
 ---
-name: xstudio-patterns
+name: composition-patterns
 description: Defines code patterns, rules, and best practices for XStudio Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Use when writing, reviewing, refactoring, or debugging any XStudio code, or when making architectural decisions about the builder.
 TRIGGER when: user mentions "코드 패턴", "규칙 확인", "컨벤션 체크", "아키텍처 규칙", "XStudio 규칙", "패턴 체크", "코드 리뷰 기준", "code patterns", "conventions", "architecture rules", or asks about XStudio coding standards, Spec rules, rendering conventions, or state management patterns.
 user-invocable: true

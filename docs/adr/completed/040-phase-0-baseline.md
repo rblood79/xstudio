@@ -71,8 +71,8 @@ delta 우선 송신 경계:
 
 ## Verification Gate
 
-1. `pnpm -F @xstudio/builder type-check`
-2. `TMPDIR=/tmp pnpm -F @xstudio/builder exec vitest run src/builder/stores/__tests__/pageShellActions.test.ts`
+1. `pnpm -F @composition/builder type-check`
+2. `TMPDIR=/tmp pnpm -F @composition/builder exec vitest run src/builder/stores/__tests__/pageShellActions.test.ts`
 3. page add 시 비활성 페이지 변경으로 `panel.layers.render`가 재발하지 않는지 확인
 4. page delete 시 현재 페이지가 유지되는 경우 layers snapshot 참조가 유지되는지 확인
 

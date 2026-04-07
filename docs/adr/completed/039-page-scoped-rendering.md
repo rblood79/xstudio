@@ -360,7 +360,7 @@ overlay도 두 층으로 분리한다.
 
 각 phase 완료 후 아래를 검증한다.
 
-1. `pnpm -F @xstudio/builder type-check`
+1. `pnpm -F @composition/builder type-check`
 2. visible/invisible page 전환 시 렌더 결과 동일성 확인
 3. page add 연속 실행 시 long task 지속 시간 비교
 4. 25+ page 시나리오에서 page add/select/move 비용 비교

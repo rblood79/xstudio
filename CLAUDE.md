@@ -2,7 +2,7 @@
 
 XStudio는 **노코드 웹 빌더** 애플리케이션입니다 (pnpm monorepo).
 
-> **⚠️ 필수**: 코드 작업 시작 전 반드시 `.claude/skills/xstudio-patterns/SKILL.md`를 읽으세요.
+> **⚠️ 필수**: 코드 작업 시작 전 반드시 `.claude/skills/composition-patterns/SKILL.md`를 읽으세요.
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ pnpm storybook    # Storybook
 ## 프로젝트 구조
 
 ```
-xstudio/
+composition/
 ├── apps/
 │   ├── builder/          # 메인 빌더 앱 (에디터 + Canvas + Store)
 │   │   └── src/
@@ -71,7 +71,7 @@ xstudio/
 ## CRITICAL 규칙 (10개) → `.claude/rules/` 자동 로드
 
 위반 시 즉시 수정. 파일 편집 시 glob-scoped rule이 자동 주입됩니다.
-전체 목록 및 상세: [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)
+전체 목록 및 상세: [SKILL.md](.claude/skills/composition-patterns/SKILL.md)
 
 ## 상태 변경 파이프라인
 
@@ -90,7 +90,7 @@ xstudio/
 
 | 용도           | 경로                                                                                                     | 설명                                                                                  |
 | -------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 코드 패턴/규칙 | [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)                                                     | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                               |
+| 코드 패턴/규칙 | [SKILL.md](.claude/skills/composition-patterns/SKILL.md)                                                     | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                               |
 | 도메인 규칙    | [.claude/rules/](.claude/rules/)                                                                         | Glob-scoped — 해당 파일 작업 시 자동 로드                                             |
 | Agent 가이드   | [.claude/agents/](.claude/agents/)                                                                       | architect, implementer, evaluator, reviewer, debugger, documenter, refactorer, tester |
 | ADR 현황       | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 대시보드                                                                |

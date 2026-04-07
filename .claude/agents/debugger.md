@@ -9,7 +9,7 @@ tools:
   - Glob
   - Bash
 skills:
-  - xstudio-patterns
+  - composition-patterns
 memory: project
 maxTurns: 25
 ---

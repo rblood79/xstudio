@@ -11,7 +11,7 @@ tools:
   - Write
   - Edit
 skills:
-  - xstudio-patterns
+  - composition-patterns
 memory: project
 maxTurns: 20
 ---

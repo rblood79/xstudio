@@ -93,7 +93,7 @@ Zustand Store
 - Spatial Index — 기존 XStudio WASM spatial index(`wasm/src/spatial_index.rs`)를 crate에 이식 (외부 의존성 0)
 - ~~float/clear, table, inline, multicol~~ — **삭제** (ROI ≈ 0)
 - **텍스트 측정 하이브리드**: Canvas 2D(줄바꿈 위치 결정 = CSS 일치) → Break Hint(\n) 주입 → CanvasKit Paragraph(실제 높이 반환 = 렌더 일치) → Paragraph 캐시 공유(측정=렌더 동일 객체). **현재의 줄바꿈 붕괴 문제를 구조적으로 제거.** ADR-051 Supersede
-- 단일 WASM 바이너리 (`xstudio-layout.wasm`, ~250KB 예상) — **외부 Rust 의존성: Taffy fork 1개만**
+- 단일 WASM 바이너리 (`composition-layout.wasm`, ~250KB 예상) — **외부 Rust 의존성: Taffy fork 1개만**
 
 **SceneGraph (자체 구현, 검증된 패턴 참조):**
 

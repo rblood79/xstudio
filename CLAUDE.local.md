@@ -42,4 +42,4 @@ pnpm storybook              # Storybook
 ## 메모
 
 - PostToolUse type-check 제거됨 → Stop hook만 type-check 실행 (매 편집마다 45s 대기 제거)
-- 규칙 다이어트 적용: rules/ 파일은 원칙만, 상세는 skills/xstudio-patterns/reference/
+- 규칙 다이어트 적용: rules/ 파일은 원칙만, 상세는 skills/composition-patterns/reference/

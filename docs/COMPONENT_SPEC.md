@@ -224,7 +224,7 @@ Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트
 3. **Token Reference**: 값은 토큰으로 참조 (하드코딩 금지)
 4. **Renderer Agnostic**: Spec은 렌더러에 독립적
 5. **Type Safe**: 모든 Spec은 TypeScript로 타입 검증
-6. **Build-Sync**: Spec 소스 변경 후 반드시 `@xstudio/specs` 빌드 실행 (dist 미갱신 시 소비자가 구 버전 참조)
+6. **Build-Sync**: Spec 소스 변경 후 반드시 `@composition/specs` 빌드 실행 (dist 미갱신 시 소비자가 구 버전 참조)
 
 ---
 
@@ -2277,21 +2277,21 @@ jobs:
         run: pnpm install
 
       - name: Type Check
-        run: pnpm --filter @xstudio/specs tsc --noEmit
+        run: pnpm --filter @composition/specs tsc --noEmit
 
       - name: Unit Tests
-        run: pnpm --filter @xstudio/specs test:coverage
+        run: pnpm --filter @composition/specs test:coverage
         env:
           MIN_COVERAGE: 80
 
       - name: Token Validation
-        run: pnpm --filter @xstudio/specs validate:tokens
+        run: pnpm --filter @composition/specs validate:tokens
 
       - name: CSS Generation Test
-        run: pnpm --filter @xstudio/specs generate:css --dry-run
+        run: pnpm --filter @composition/specs generate:css --dry-run
 
       - name: Phase 0 Gate Check
-        run: pnpm --filter @xstudio/specs validate:phase0
+        run: pnpm --filter @composition/specs validate:phase0
 ```
 
 #### 3.8.4 검증 리포트 템플릿
@@ -2612,8 +2612,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
 import { forwardRef } from 'react';
 import { Button as RACButton, type ButtonProps as RACButtonProps } from 'react-aria-components';
-import { ButtonSpec, type ButtonProps as SpecButtonProps } from '@xstudio/specs';
-import { renderToReact } from '@xstudio/specs/renderers';
+import { ButtonSpec, type ButtonProps as SpecButtonProps } from '@composition/specs';
+import { renderToReact } from '@composition/specs/renderers';
 import { Skeleton } from './Skeleton';
 
 export interface ButtonProps extends RACButtonProps, SpecButtonProps {}
@@ -2909,10 +2909,10 @@ interface CSSValueContext {
 
 </details>
 
-#### 4.7.4.0 `@xstudio/specs` 빌드 동기화 (CRITICAL)
+#### 4.7.4.0 `@composition/specs` 빌드 동기화 (CRITICAL)
 
-`@xstudio/specs` 패키지는 **tsup으로 빌드된 `dist/`** 를 통해 내보냅니다.
-`src/` 파일을 수정한 후 빌드하지 않으면, 소비자(`@xstudio/builder` 등)는
+`@composition/specs` 패키지는 **tsup으로 빌드된 `dist/`** 를 통해 내보냅니다.
+`src/` 파일을 수정한 후 빌드하지 않으면, 소비자(`@composition/builder` 등)는
 **이전 dist의 값을 계속 참조**합니다.
 
 ```
@@ -2920,7 +2920,7 @@ interface CSSValueContext {
 
 1. Button.spec.ts (src) paddingX: 16 → 24 수정  ✅ 소스 변경
 2. utils.ts (builder 내부) BUTTON_SIZE_CONFIG padding: 16 → 24  ✅ 즉시 반영
-3. pnpm --filter @xstudio/specs build 미실행  ❌ dist 미갱신
+3. pnpm --filter @composition/specs build 미실행  ❌ dist 미갱신
 4. PixiButton이 import하는 ButtonSpec은 dist/의 구 버전 (paddingX=16)
 5. Layout 엔진은 새 padding(24) 적용, PixiButton은 구 padding(16) → 공백 발생
 
@@ -2931,26 +2931,26 @@ interface CSSValueContext {
 
 | 변경 대상                         | 필요 작업                                      |
 | --------------------------------- | ---------------------------------------------- |
-| `packages/specs/src/**` 파일 수정 | `pnpm --filter @xstudio/specs build` 실행 필수 |
+| `packages/specs/src/**` 파일 수정 | `pnpm --filter @composition/specs build` 실행 필수 |
 | `apps/builder/src/**` 파일 수정   | 추가 빌드 불필요 (Vite HMR 즉시 반영)          |
 | specs + builder 동시 수정         | specs 빌드 후 builder 개발 서버 재시작         |
 
-**개발 시 권장**: `pnpm --filter @xstudio/specs dev` (watch 모드)를 별도 터미널에서 실행하면
+**개발 시 권장**: `pnpm --filter @composition/specs dev` (watch 모드)를 별도 터미널에서 실행하면
 소스 변경 시 자동으로 dist가 갱신됩니다.
 
 ```bash
 # 터미널 1: specs watch 모드
-pnpm --filter @xstudio/specs dev
+pnpm --filter @composition/specs dev
 
 # 터미널 2: builder 개발 서버
-pnpm --filter @xstudio/builder dev
+pnpm --filter @composition/builder dev
 ```
 
 **새 컴포넌트 Spec 작성 시 체크리스트**:
 
 1. ✅ `packages/specs/src/components/Xxx.spec.ts` 작성
 2. ✅ `packages/specs/src/index.ts`에서 export 추가
-3. ✅ `pnpm --filter @xstudio/specs build` 실행
+3. ✅ `pnpm --filter @composition/specs build` 실행
 4. ✅ builder에서 import 후 동작 확인
 5. ✅ `BUTTON_SIZE_CONFIG` 등 builder 내부 상수와 Spec 값이 **동일한지** 확인
 
@@ -5964,7 +5964,7 @@ const PARENT_VARIANT_TO_LABEL = {
 ```json
 // packages/specs/package.json
 {
-  "name": "@xstudio/specs",
+  "name": "@composition/specs",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -6054,8 +6054,8 @@ const PARENT_VARIANT_TO_LABEL = {
 }
 ```
 
-> **CRITICAL**: `@xstudio/specs`는 `dist/`를 통해 내보내므로, 소스 수정 후 반드시
-> `pnpm --filter @xstudio/specs build`를 실행해야 합니다. 미실행 시 소비자 앱이
+> **CRITICAL**: `@composition/specs`는 `dist/`를 통해 내보내므로, 소스 수정 후 반드시
+> `pnpm --filter @composition/specs build`를 실행해야 합니다. 미실행 시 소비자 앱이
 > 구 버전을 참조하여 레이아웃↔렌더링 불일치가 발생합니다.
 > 자세한 내용은 [4.7.4.0 빌드 동기화](#4740-xstudiospecs-빌드-동기화-critical) 참조.
 
@@ -6098,7 +6098,7 @@ const PARENT_VARIANT_TO_LABEL = {
 ```typescript
 // packages/specs/src/adapters/storeAdapter.ts
 
-import type { Element } from "@xstudio/builder/types";
+import type { Element } from "@composition/builder/types";
 import type { ComponentSpec } from "../types";
 import { ButtonSpec } from "../components/Button.spec";
 import { TextFieldSpec } from "../components/TextField.spec";
@@ -6157,9 +6157,9 @@ export function specPropsToElement<T>(
 // apps/builder/src/builder/workspace/canvas/ElementSprite.tsx (개념)
 
 import { useEditorStore } from '../../../../store/editorStore';
-import { elementToSpecProps, getSpecForElement } from '@xstudio/specs/adapters';
+import { elementToSpecProps, getSpecForElement } from '@composition/specs/adapters';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import type { ButtonProps } from '@xstudio/specs';
+import type { ButtonProps } from '@composition/specs';
 
 function ElementSpriteButton({ elementId }: { elementId: string }) {
   // Zustand에서 element 가져오기
@@ -6456,7 +6456,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
       - run: pnpm install
-      - run: pnpm --filter @xstudio/specs test:coverage
+      - run: pnpm --filter @composition/specs test:coverage
       - uses: codecov/codecov-action@v3
 
   visual-tests:
@@ -6465,9 +6465,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
       - run: pnpm install
-      - run: pnpm --filter @xstudio/specs build
+      - run: pnpm --filter @composition/specs build
       - run: npx playwright install --with-deps
-      - run: pnpm --filter @xstudio/specs test:visual
+      - run: pnpm --filter @composition/specs test:visual
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
@@ -7501,10 +7501,10 @@ ComponentSpec 렌더링 실패 시 fallback 동작:
 
 ### ComponentSpec 인터페이스 버전 관리
 
-현재 Spec 인터페이스는 **implicit versioning** (파일 수정 시 `@xstudio/specs` 빌드 필요):
+현재 Spec 인터페이스는 **implicit versioning** (파일 수정 시 `@composition/specs` 빌드 필요):
 
 ```
-Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 핫리로드
+Spec 수정 → pnpm --filter @composition/specs build → dist/ 갱신 → Builder 핫리로드
 ```
 
 **Breaking Change 시 체크리스트:**
@@ -7512,7 +7512,7 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 1. `packages/specs/src/types/shape.types.ts` — Shape 유니온 변경 시 `specShapeConverter.ts` case 추가 필수
 2. `packages/specs/src/types/component.types.ts` — RenderSpec 시그니처 변경 시 75개 spec 파일 일괄 수정
 3. `packages/specs/src/types/token.types.ts` — TokenRef 변경 시 tokenResolver.ts + cssVariableReader.ts 동기화
-4. 변경 후 반드시 `pnpm --filter @xstudio/specs build` 실행 (CRITICAL: v1.11에서 발견된 빌드 동기화 이슈 참조)
+4. 변경 후 반드시 `pnpm --filter @composition/specs build` 실행 (CRITICAL: v1.11에서 발견된 빌드 동기화 이슈 참조)
 
 ---
 
@@ -7531,7 +7531,7 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 | 2026-01-29 | 1.8  | Button 구현 점검 — 코드↔문서 동기화: (1) RadiusTokens 값 교정 (md:8→6, lg:12→8, xl:16→12, CSS 변수 기준), (2) typography에 fontWeight/lineHeight 객체 추가, (3) ButtonProps에 text/label 필드 추가 및 style 타입을 Record로 변경, (4) ButtonSpec variants/sizes에 `as TokenRef` 캐스트 추가, (5) lg size borderRadius를 `{radius.lg}`로 수정, (6) disabled state에 pointerEvents 추가, (7) focusVisible outline을 var(--primary) 형식으로 수정, (8) render.shapes에 text 폴백 체인(children → text → label) 반영                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 2026-01-29 | 1.9  | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가 (Section 4.7.4): (1) typeof === 'number' 패턴 사용 금지 → parseCSSSize() 필수, (2) % / vw / vh는 부모 content area 기준 해석 (parentContentArea = 부모 width - padding - border), (3) padding shorthand(parsePadding) + border width 4방향(parseBorderWidth) 파싱 필수, (4) 적용 필수 컴포넌트 18개 목록 명시, (5) Yoga 경로에서 vh/vw → % 문자열 변환 정책 (styleToLayout.ts)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 2026-01-29 | 1.10 | Button 레이아웃 버그 패치 4건 + 컴포넌트 상태 추적표 (Section 4.7.4.1~4.7.4.4): (1) padding/border 이중 적용 방지 — SELF_PADDING_TAGS(Button, SubmitButton, FancyButton, ToggleButton) + stripSelfRenderedProps (BuilderCanvas.tsx), (2) BlockEngine border-box 크기 계산 — content-box → border-box 변환으로 block/inline-block 요소 겹침 해결 (BlockEngine.ts), (3) baseline 정렬 수정 — VERTICALLY_CENTERED_TAGS(button/fancybutton/togglebutton/input/select) height/2 반환으로 CSS 웹 모드와 동일한 수직 중앙 정렬 (utils.ts), (4) spec 기본 borderWidth 적용 — inline style 미지정 시 variantColors.border 존재하면 1px 기본값 (PixiButton.tsx), (5) 적용 필수 컴포넌트 18개 상태 추적표 추가 — PixiFancyButton/PixiToggleButton은 SELF_PADDING_TAGS 등록 완료, typeof 패턴 전환은 미완료(잔여 작업)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| 2026-01-30 | 1.11 | Button auto width 불일치 수정 + Spec 빌드 동기화 규칙 (Section 4.7.4.0): (1) ButtonSpec sizes paddingX 수정 — md:16→24, lg:24→32, xl:32→40 (CSS 토큰과 일치), (2) BUTTON_SIZE_CONFIG paddingLeft/Right 동기화, (3) fontFamily 통일 — Pretendard를 specs fontFamily.sans에 추가, PixiButton·utils.ts·Button.spec.ts에서 specs 상수 참조로 교체, (4) `@xstudio/specs` 빌드 동기화 규칙 추가 (CRITICAL) — dist/ 미갱신 시 layout↔rendering 값 불일치 발생 사례 문서화, (5) 핵심 원칙에 Build-Sync 추가, (6) 9.3 스크립트 섹션을 실제 tsup 빌드 도구와 동기화, (7) 값 동기화 대상 테이블 (Spec↔Builder 내부 상수↔CSS 토큰) 및 @sync 주석 정책 명시                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 2026-01-30 | 1.11 | Button auto width 불일치 수정 + Spec 빌드 동기화 규칙 (Section 4.7.4.0): (1) ButtonSpec sizes paddingX 수정 — md:16→24, lg:24→32, xl:32→40 (CSS 토큰과 일치), (2) BUTTON_SIZE_CONFIG paddingLeft/Right 동기화, (3) fontFamily 통일 — Pretendard를 specs fontFamily.sans에 추가, PixiButton·utils.ts·Button.spec.ts에서 specs 상수 참조로 교체, (4) `@composition/specs` 빌드 동기화 규칙 추가 (CRITICAL) — dist/ 미갱신 시 layout↔rendering 값 불일치 발생 사례 문서화, (5) 핵심 원칙에 Build-Sync 추가, (6) 9.3 스크립트 섹션을 실제 tsup 빌드 도구와 동기화, (7) 값 동기화 대상 테이블 (Spec↔Builder 내부 상수↔CSS 토큰) 및 @sync 주석 정책 명시                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 2026-01-30 | 1.12 | Button borderWidth/레이아웃 이중 계산 수정 (Section 4.7.4.4~4.7.4.8): (1) 전 variant에 border/borderHover 추가 — CSS `border: 1px solid`와 동기화 (Button.spec.ts), (2) specDefaultBorderWidth=1 고정 — variant.border 유무 무관 (PixiButton.tsx), (3) borderHoverColor 분리 — hover/pressed 상태 별도 border 색상 (PixiButton.tsx, PixiRenderer.ts), (4) parseBoxModel 폼 요소 기본값 — inline style 미지정 시 BUTTON_SIZE_CONFIG padding/border 적용 (utils.ts), (5) calculateContentWidth 순수 텍스트 반환 — 폼 요소 padding/border를 parseBoxModel으로 분리하여 이중 계산 제거 (utils.ts), (6) 텍스트 측정 엔진 통일 — PixiButton 너비 측정을 Canvas 2D measureTextWidth로 교체 (PixiButton.tsx), (7) createDefaultButtonProps borderWidth:'1px' 기본값 — Style Panel 0 표시 해결 (unified.types.ts), (8) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가 (utils.ts), (9) 값 동기화 테이블에 borderWidth 항목 추가                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 2026-01-31 | 1.13 | 버튼 display/레이아웃 버그 수정 5건 (Section 4.7.4.2, 4.7.4.5): (1) parseBoxModel 폼 요소 자동 border-box — 명시적 width/height를 border-box로 취급하여 padding+border 차감 (treatAsBorderBox), PixiButton self-rendering과 BlockEngine content-box 합산 간 이중 계산 해결 (utils.ts), (2) calculateContentHeight에서 padding 이중 계산 제거 — content-box 기준 textHeight만 반환 (utils.ts), (3) Body borderWidth 처리 — renderWithCustomEngine의 availableWidth에서 border 차감 추가, 자식 offset은 padding만 적용 (Yoga가 border offset 자동 처리) (BuilderCanvas.tsx), (4) §4.7.4.2에 v1.13 border-box 참고 추가                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 2026-02-01 | 1.14 | Phase 5+ CanvasKit/Skia 구현 코드 대조 검증 12건 반영: (1) §1 아키텍처 개요 — Skia 렌더링 실제 위치(apps/builder/.../skia/) 명시, (2) §2 렌더러 설명 — CanvasKitRenderer → nodeRenderers.ts 파이프라인 정정, (3) §2 파일 목록 — CanvasKitRenderer.ts → 외부 구현 참조 코멘트, (4) §3 TextShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (5) §3 ShadowShape — 실제 구현 위치(skia/types.ts EffectStyle) 명시, (6) §3 BorderShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (7) §4 Clipping — clipRect ✅/clipRRect·overflow 미구현 상태 표기, (8) §4 Gradient — 타입별 구현 상태 + fills.ts 라인 참조, (9) §7 색상 변환 — "설계 예시" + Color4f 인라인 사용 명시, (10) §8 렌더러 파일 — 설계 예시 + nodeRenderers.ts 참조, (11) §12 테스트 헬퍼 — "구현 예정 — 현재 미구현" 표기, (12) §12 캐시 전략 — 구현 상태 컬럼 추가(Paint·Paragraph ⚠️ 미구현, Font·Surface·DirtyRect ✅)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |

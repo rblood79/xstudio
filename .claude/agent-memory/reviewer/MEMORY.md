@@ -88,7 +88,7 @@
 - **`injectCollectionItemFontStyles` childrenMap stale props 위험**: `implicitStyles.ts`의 `injectCollectionItemFontStyles`에서 `child.props?.style` 직접 참조 — child가 childrenMap 경유 시 stale. zustand-childrenmap-staleness 반복 패턴
 - **`resolveContainerWidth` dead export**: `tokenResolver.ts:238`에 export되어 있으나 `packages/specs/src/` 및 `apps/` 전체 grep 결과 import 사용처 없음 — 확인 후 제거 또는 `@internal` 표시
 - **fit-content width 재계산 Step 3 vs Step 4 의도적 시점 분리**: `fullTreeLayout.ts:1163-1188`에 Step 3(DFS implicitStyle 패치 직후)에 fit-content width 재계산 블록이 추가됨 — `enrichWithIntrinsicSize`(Step 4)와 동일 `INTRINSIC_WIDTH_KEYWORDS` + `measureTextWidth` 경로를 사용하나, fontSize가 implicitStyles에서 새로 주입된 경우에 한해 선행 보정하는 목적. 완전 중복이 아니므로 통합 불가. 단, fontFamily/fontWeight 추출 3줄은 `resolveFontProps(mod, orig)` 헬퍼로 추출해 `implicitStyles.ts:504`와 공유 가능
-- **`specFontFamily.sans` vs `DEFAULT_FONT_FAMILY` fallback 이중 소스**: `measureTextWidth` 기본값/fullTreeLayout 새 블록은 `specFontFamily.sans`(@xstudio/specs), `cssResolver.ts ROOT_COMPUTED_STYLE`은 `DEFAULT_FONT_FAMILY`(customFonts.ts) — 두 값이 같은지 assert 또는 주석 명시 필요. 다르면 측정/렌더 불일치 버그
+- **`specFontFamily.sans` vs `DEFAULT_FONT_FAMILY` fallback 이중 소스**: `measureTextWidth` 기본값/fullTreeLayout 새 블록은 `specFontFamily.sans`(@composition/specs), `cssResolver.ts ROOT_COMPUTED_STYLE`은 `DEFAULT_FONT_FAMILY`(customFonts.ts) — 두 값이 같은지 assert 또는 주석 명시 필요. 다르면 측정/렌더 불일치 버그
 - **Step 4.5 O(N) 전체 배치 순회 — autoHeightCandidates 미추적**: 매 레이아웃 계산마다 `batch.length` 전체를 순회하여 auto/fit-content height 요소를 탐색 — DFS enrichment 단계에서 intrinsic height 계산이 실행된 노드만 `Set<number>`로 추적하면 순회 대상 한정 가능 (fullTreeLayout.ts:1753)
 - **`gridTemplateColumns` 변경 감지에 JSON.stringify 이중 직렬화**: display 전환 감지 루프에서 grid 노드마다 `JSON.stringify(prevParsed.gridTemplateColumns)` + `JSON.stringify(node.style.gridTemplateColumns)` 2회 직렬화 — `persistentTaffyTree`에 `gridColsHashMap` 별도 저장 또는 `_lastJsonMap` 부분 비교로 대체 가능 (fullTreeLayout.ts:1709)
 - **`injectCollectionItemFontStyles` — 값 동일 시 early-return 없음**: Text/Description 자식이 이미 올바른 fontSize/fontWeight/width를 보유해도 3중 spread shallow copy 수행 — 값 일치 시 `return child` early-return으로 불필요한 객체 생성 제거 가능
@@ -129,7 +129,7 @@
 - field 컴포넌트: 입력 영역 배경 `--bg-inset` / `{color.layer-2}` 통일
 - `propagationRegistry.ts`의 `CAST` 헬퍼: Phase 1 임시 패턴 — Phase 3 대량 등록 전에 제네릭 시그니처로 교체 필요
 - **폰트 레지스트리 동기화 useEffect 복제**: `xstudio:custom-fonts-updated` + `StorageEvent(FONT_REGISTRY_STORAGE_KEY)` 이중 채널 구독 패턴이 `FontManagerPanel.tsx`와 `TypographySection.tsx`에 동일하게 복제 — `useFontRegistry()` 커스텀 훅으로 추출 필요
-- **`loadFontRegistry` 이중 import 경로**: `customFonts.ts`가 re-export하는데도 `@xstudio/shared/utils`에서 직접 import하는 패턴 — `customFonts.ts` 단일 진입점으로 통합 필요
+- **`loadFontRegistry` 이중 import 경로**: `customFonts.ts`가 re-export하는데도 `@composition/shared/utils`에서 직접 import하는 패턴 — `customFonts.ts` 단일 진입점으로 통합 필요
 - **`deriveTextBehaviorPreset` normal 조건 round-trip 불일치**: `handleTextBehaviorChange`에서 normal 저장 시 빈 문자열(`""`)로 저장하나 감지 조건은 `"normal"/"clip"/"visible"` 기대 — 저장값과 감지 조건을 같은 기준으로 통일 필요
 - **`StoreRenderBridge.detectChangedIds` ↔ store `dirtyElementIds` 이중 변경 추적**: `prevElementsMap` O(N) 순회와 store의 `dirtyElementIds` Set이 동일한 "변경된 element ID" 정보를 독립적으로 관리 — `dirtyElementIds` 범위 확인 후 단일 소스로 통합 필요
 - **`buildNodeForElement` 라우팅 ↔ `ElementSprite.tsx` `isUIComponent` 분기 중복**: `useSpecPath()`/`isTextElement()`/`isImageElement()` + `SPEC_PREFERRED_TEXT_TAGS` 상수가 StoreRenderBridge 내부에만 존재 — `tagSpecMap.ts`에 `resolveSkiaNodeBuilder()` 추출로 공유 필요

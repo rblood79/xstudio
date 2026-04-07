@@ -139,7 +139,7 @@ selection/workflow/AI overlay 계산이 `SkiaOverlay`에 밀집되어 있다.
 본 ADR의 잔여 phase는 아래 운영 규칙을 강제한다.
 
 1. **Phase 0 선행 완료 필수**: baseline 성능 수치와 수동 시각 비교 체크리스트 없이 후속 phase 진행 금지
-2. **Phase 단위 gate 검증 필수**: 각 phase 완료 후 `pnpm -F @xstudio/builder type-check`와 수동 렌더링 비교를 모두 통과해야 다음 phase 진행 가능
+2. **Phase 단위 gate 검증 필수**: 각 phase 완료 후 `pnpm -F @composition/builder type-check`와 수동 렌더링 비교를 모두 통과해야 다음 phase 진행 가능
 3. **Phase당 1커밋 원칙**: 문제 발생 시 해당 phase만 즉시 rollback/revert 가능해야 함
 4. **동작 변경과 구조 변경 분리**: 구조 분해 phase에서 동작 개선이나 최적화 로직을 섞지 않음
 5. **Hot path 후순위 배치**: `nodeRenderers.ts` 분해는 모든 저위험/중위험 phase 이후 마지막에 수행

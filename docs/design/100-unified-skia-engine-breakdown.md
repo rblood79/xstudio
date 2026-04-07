@@ -16,7 +16,7 @@
 
 | 프로젝트      | 삭제 사유                                                                 | 대체                                            |
 | ------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
-| ~~geo-index~~ | XStudio에 이미 Rust WASM spatial index 존재 (`wasm/src/spatial_index.rs`) | 기존 코드를 `xstudio-layout` crate에 이식       |
+| ~~geo-index~~ | XStudio에 이미 Rust WASM spatial index 존재 (`wasm/src/spatial_index.rs`) | 기존 코드를 `composition-layout` crate에 이식       |
 | ~~Popmotion~~ | CSS easing/spring/keyframe 보간은 ~130줄 순수 수학                        | 자체 구현 (cubic-bezier + damped spring + lerp) |
 
 ### 아키텍처 패턴 참조
@@ -263,7 +263,7 @@ class CanvasKitWebGPUBackend implements GPUBackend { ... }
 ### 구조
 
 ```
-xstudio-layout/ (새 Rust crate)
+composition-layout/ (새 Rust crate)
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs              # WASM 진입점, wasm-bindgen exports
@@ -407,7 +407,7 @@ engine.set_text_measure_func(
 ```toml
 # Cargo.toml
 [package]
-name = "xstudio-layout"
+name = "composition-layout"
 version = "0.1.0"
 edition = "2021"
 
@@ -443,7 +443,7 @@ strip = true         # 디버그 심볼 제거
 ```bash
 wasm-pack build --target web --release
 # 후처리 (10-20% 추가 감소)
-wasm-opt -Os -o xstudio_layout_opt.wasm xstudio_layout_bg.wasm
+wasm-opt -Os -o composition_layout_opt.wasm composition_layout_bg.wasm
 ```
 
 예상 WASM 크기: ~200-300KB (gzip ~80-120KB)
@@ -1506,7 +1506,7 @@ apps/builder/src/builder/workspace/canvas/
 └── types/pixi-react.d.ts                 # 타입
 
 packages/layout-flow/ (또는 Taffy WASM 관련)
-└── (Taffy 패키지 전체 → 새 xstudio-layout crate로 대체)
+└── (Taffy 패키지 전체 → 새 composition-layout crate로 대체)
 
 wasm-bindings/
 └── taffyLayout.ts                        # → layoutEngine.ts로 교체
@@ -2116,16 +2116,16 @@ flag 활성화 → 6주 안정 → 이전 코드 soft-delete (주석 + dead code
 unified-engine-ci:
   steps:
     # 1. Rust WASM 빌드
-    - name: Build xstudio-layout WASM
+    - name: Build composition-layout WASM
       run: |
-        cd packages/xstudio-layout
+        cd packages/composition-layout
         wasm-pack build --target web --release
-        wasm-opt -Os -o pkg/xstudio_layout_opt.wasm pkg/xstudio_layout_bg.wasm
+        wasm-opt -Os -o pkg/composition_layout_opt.wasm pkg/composition_layout_bg.wasm
 
     # 2. WASM 바이너리 크기 검증
     - name: Check WASM size
       run: |
-        SIZE=$(stat -f%z pkg/xstudio_layout_opt.wasm)
+        SIZE=$(stat -f%z pkg/composition_layout_opt.wasm)
         if [ $SIZE -gt 400000 ]; then
           echo "❌ WASM size ${SIZE} > 400KB limit"
           exit 1

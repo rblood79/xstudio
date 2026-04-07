@@ -38,11 +38,11 @@ pnpm wasm:build
 ```
 xstudio/
 ├── apps/
-│   ├── builder/     # 메인 빌더 앱 (@xstudio/builder)
-│   └── publish/     # 배포 런타임 (@xstudio/publish)
+│   ├── builder/     # 메인 빌더 앱 (@composition/builder)
+│   └── publish/     # 배포 런타임 (@composition/publish)
 ├── packages/
-│   ├── shared/      # 공유 타입/유틸 (@xstudio/shared)
-│   └── config/      # 공유 설정 (@xstudio/config)
+│   ├── shared/      # 공유 타입/유틸 (@composition/shared)
+│   └── config/      # 공유 설정 (@composition/config)
 └── docs/            # 문서
 ```
 

@@ -9,7 +9,7 @@ globs:
 
 # 상태 관리 규칙
 
-> 구현 상세는 [state-details.md](.claude/skills/xstudio-patterns/reference/state-details.md) 참조
+> 구현 상세는 [state-details.md](.claude/skills/composition-patterns/reference/state-details.md) 참조
 
 ## Zustand 패턴
 

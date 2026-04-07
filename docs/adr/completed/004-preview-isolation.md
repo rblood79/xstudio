@@ -116,4 +116,4 @@ class IframeMessenger {
 
 - `apps/builder/src/utils/dom/iframeMessenger.ts` - Messenger 구현
 - `apps/builder/src/preview/` - Preview 앱
-- `.claude/skills/xstudio-patterns/rules/postmessage-*.md` - 관련 규칙
+- `.claude/skills/composition-patterns/rules/postmessage-*.md` - 관련 규칙

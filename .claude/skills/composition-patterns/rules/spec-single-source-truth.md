@@ -54,7 +54,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 };
 
 // React - Spec 사용
-import { renderToReact } from '@xstudio/specs/renderers';
+import { renderToReact } from '@composition/specs/renderers';
 const Button = (props) => renderToReact(ButtonSpec, props);
 
 // Skia - 동일한 Spec 사용 (ElementSprite.tsx)

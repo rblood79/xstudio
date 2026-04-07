@@ -340,7 +340,7 @@ store는 다음 성질을 가져야 한다.
 
 각 phase 완료 후 다음을 검증한다.
 
-1. `pnpm -F @xstudio/builder type-check`
+1. `pnpm -F @composition/builder type-check`
 2. page add/select/delete smoke 테스트 통과
 3. 현재 페이지 동일 기준에서 `elementCount` 단계 증가 burst가 제거되었는지 확인
 4. 10/25/50 page, 100/1000 element 시나리오에서 long task slope 비교

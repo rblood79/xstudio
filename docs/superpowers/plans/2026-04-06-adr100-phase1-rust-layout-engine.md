@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 기존 Taffy WASM 바인딩과 100% 호환되는 새 `xstudio-layout` Rust crate 완성. Feature flag로 기존/신규 엔진 전환.
+**Goal:** 기존 Taffy WASM 바인딩과 100% 호환되는 새 `composition-layout` Rust crate 완성. Feature flag로 기존/신규 엔진 전환.
 
 **Architecture:** Taffy 0.10.0을 직접 사용하는 Rust WASM crate. 기존 `WasmTaffyLayoutEngine` 인터페이스를 동일하게 노출. 추가로 `style_hash` 변경 감지, `UpdateResult` display 전환 감지를 Rust 네이티브로 구현.
 
@@ -15,7 +15,7 @@
 - ADR: `docs/adr/100-unified-skia-rendering-engine.md`
 - Breakdown: `docs/design/100-unified-skia-engine-breakdown.md` (섹션 4 + 4.5)
 
-**Prerequisite:** Phase 0 완료 (`packages/xstudio-layout/` crate 초기화됨, Taffy 0.10.0 의존성 확인)
+**Prerequisite:** Phase 0 완료 (`packages/composition-layout/` crate 초기화됨, Taffy 0.10.0 의존성 확인)
 
 ---
 
@@ -23,11 +23,11 @@
 
 | 역할                 | 파일                                                 |            상태             |
 | -------------------- | ---------------------------------------------------- | :-------------------------: |
-| Rust 엔진 코어       | `packages/xstudio-layout/src/lib.rs`                 | 수정 (스켈레톤 → 전체 구현) |
-| Rust 스타일 파싱     | `packages/xstudio-layout/src/style.rs`               |            신규             |
-| Rust 변경 감지       | `packages/xstudio-layout/src/change_detection.rs`    |            신규             |
-| Rust spatial index   | `packages/xstudio-layout/src/spatial.rs`             |            신규             |
-| Rust 테스트          | `packages/xstudio-layout/tests/layout_parity.rs`     |            신규             |
+| Rust 엔진 코어       | `packages/composition-layout/src/lib.rs`                 | 수정 (스켈레톤 → 전체 구현) |
+| Rust 스타일 파싱     | `packages/composition-layout/src/style.rs`               |            신규             |
+| Rust 변경 감지       | `packages/composition-layout/src/change_detection.rs`    |            신규             |
+| Rust spatial index   | `packages/composition-layout/src/spatial.rs`             |            신규             |
+| Rust 테스트          | `packages/composition-layout/tests/layout_parity.rs`     |            신규             |
 | TS 래퍼 (신규 엔진)  | `apps/builder/src/.../wasm-bindings/layoutEngine.ts` |            신규             |
 | TS feature flag 분기 | `apps/builder/src/.../wasm-bindings/layoutBridge.ts` |            신규             |
 | 기존 Taffy 래퍼      | `apps/builder/src/.../wasm-bindings/taffyLayout.ts`  |      유지 (수정 없음)       |
@@ -38,14 +38,14 @@
 
 **Files:**
 
-- Create: `packages/xstudio-layout/src/style.rs`
+- Create: `packages/composition-layout/src/style.rs`
 
 이 모듈은 JSON 스타일 문자열을 Taffy `Style` 구조체로 변환합니다. 기존 `normalizeStyle()` + Rust `taffy_bridge.rs`의 역할을 통합.
 
 - [ ] **Step 1: style.rs 생성 — JSON → Taffy Style 변환**
 
 ```rust
-// packages/xstudio-layout/src/style.rs
+// packages/composition-layout/src/style.rs
 use serde_json::Value;
 use taffy::prelude::*;
 
@@ -294,14 +294,14 @@ mod style;
 - [ ] **Step 3: cargo test (컴파일 확인)**
 
 ```bash
-cd /Users/admin/work/xstudio/packages/xstudio-layout
+cd /Users/admin/work/xstudio/packages/composition-layout
 cargo check
 ```
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add packages/xstudio-layout/src/style.rs packages/xstudio-layout/src/lib.rs
+git add packages/composition-layout/src/style.rs packages/composition-layout/src/lib.rs
 git commit -m "feat(adr-100): Rust style parser — JSON to Taffy Style conversion"
 ```
 
@@ -311,14 +311,14 @@ git commit -m "feat(adr-100): Rust style parser — JSON to Taffy Style conversi
 
 **Files:**
 
-- Modify: `packages/xstudio-layout/src/lib.rs`
+- Modify: `packages/composition-layout/src/lib.rs`
 
 기존 `WasmTaffyLayoutEngine` 인터페이스와 동일한 WASM export 구현.
 
 - [ ] **Step 1: lib.rs 전면 교체 — Taffy TaffyTree 연동**
 
 ```rust
-// packages/xstudio-layout/src/lib.rs
+// packages/composition-layout/src/lib.rs
 mod style;
 
 use std::collections::HashMap;
@@ -669,7 +669,7 @@ mod tests {
 - [ ] **Step 2: cargo test**
 
 ```bash
-cd /Users/admin/work/xstudio/packages/xstudio-layout
+cd /Users/admin/work/xstudio/packages/composition-layout
 cargo test --lib
 ```
 
@@ -684,7 +684,7 @@ wasm-pack build --target web --release
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add packages/xstudio-layout/
+git add packages/composition-layout/
 git commit -m "feat(adr-100): LayoutEngine core — Taffy API + style_hash + UpdateResult"
 ```
 
@@ -694,7 +694,7 @@ git commit -m "feat(adr-100): LayoutEngine core — Taffy API + style_hash + Upd
 
 **Files:**
 
-- Create: `packages/xstudio-layout/src/spatial.rs`
+- Create: `packages/composition-layout/src/spatial.rs`
 
 기존 Rust WASM spatial index (cell-based grid) 로직을 새 crate에 이식.
 
@@ -807,7 +807,7 @@ export function createLayoutEngine(): LayoutAPI {
 
 **Files:**
 
-- Create: `packages/xstudio-layout/tests/layout_parity.rs`
+- Create: `packages/composition-layout/tests/layout_parity.rs`
 
 기존 Taffy WASM의 레이아웃 결과와 새 엔진의 결과를 비교하는 Rust 테스트.
 
