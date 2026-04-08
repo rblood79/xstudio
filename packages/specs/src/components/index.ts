@@ -256,6 +256,8 @@ export type { MenuProps } from "./Menu.spec";
 // Breadcrumbs
 export { BreadcrumbsSpec } from "./Breadcrumbs.spec";
 export type { BreadcrumbsProps } from "./Breadcrumbs.spec";
+export { BreadcrumbSpec } from "./Breadcrumb.spec";
+export type { BreadcrumbItemProps } from "./Breadcrumb.spec";
 
 // Pagination
 export { PaginationSpec } from "./Pagination.spec";

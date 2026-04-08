@@ -9,17 +9,14 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import type { ComponentSpec, TokenRef } from "../types";
 import { PointerOff } from "lucide-react";
-import { measureSpecTextWidth } from "../renderers/utils/measureText";
 
 /**
  * Breadcrumbs Props — RSP API 기준
  */
 export interface BreadcrumbsProps {
-  /** Controls spacing and layout size. RSP API: 'S' | 'M' | 'L', default 'L' */
+  /** Controls spacing and layout size. RSP API: 'S' | 'M' | 'L', default 'M' */
   size?: "S" | "M" | "L";
   /** Always shows root item when collapsed */
   showRoot?: boolean;
@@ -34,13 +31,13 @@ export interface BreadcrumbsProps {
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
-  /** ElementSprite에서 주입: 자식 Breadcrumb 텍스트 배열 (Skia 렌더링용) */
+  /** @deprecated 레거시 — Skia는 Breadcrumb 자식 spec이 텍스트를 그림 */
   _crumbs?: string[];
 }
 
 /**
  * Breadcrumbs Component Spec
- * RSP size default: 'L'
+ * RSP size default: 'M'
  */
 export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   name: "Breadcrumbs",
@@ -49,7 +46,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   element: "nav",
 
   defaultVariant: "default",
-  defaultSize: "L",
+  defaultSize: "M",
 
   variants: {
     default: {
@@ -57,7 +54,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       backgroundHover: "{color.base}" as TokenRef,
       backgroundPressed: "{color.base}" as TokenRef,
       text: "{color.neutral-subdued}" as TokenRef,
-      textHover: "{color.accent}" as TokenRef,
+      textHover: "{color.neutral}" as TokenRef,
     },
   },
 
@@ -68,7 +65,6 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
-      gap: 4,
     },
     M: {
       height: 24,
@@ -76,7 +72,6 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
-      gap: 8,
     },
     L: {
       height: 24,
@@ -84,12 +79,15 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
-      gap: 10,
     },
   },
 
   states: {
     hover: {},
+    disabled: {
+      opacity: 0.38,
+      pointerEvents: "none",
+    },
     focusVisible: {
       outline: "2px solid var(--accent)",
       outlineOffset: "2px",
@@ -140,104 +138,11 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
-      const ff = fontFamily.sans;
-      // CSS 기본 구분자: › (RIGHT SINGLE ANGLE QUOTATION MARK)
-      const separator = props.separator ?? "›";
-      const crumbs =
-        props._crumbs && props._crumbs.length > 0
-          ? props._crumbs
-          : ["Home", "Products", "Detail"];
-      const shapes: Shape[] = [];
-
-      // fontSize: TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
-      const resolvedFontSize =
-        typeof size.fontSize === "number"
-          ? size.fontSize
-          : ((resolveToken(size.fontSize as TokenRef) as number) ?? 16);
-      // CSS 구분자 간격: padding: 0 var(--spacing) = 0 4px
-      const separatorPadding = 4;
-
-      // 브레드크럼 아이템 생성
-      let x = 0;
-      const height = size.height || 24;
-      const containerWidth =
-        typeof props._containerWidth === "number" && props._containerWidth > 0
-          ? props._containerWidth
-          : 0;
-      // ADR-051: separator 폭 실측 (추정값 제거)
-      const sepText = String(props.separator ?? "/");
-      const sepMeasuredWidth = measureSpecTextWidth(
-        sepText,
-        resolvedFontSize,
-        ff,
-      );
-      const sepCount = Math.max(0, crumbs.length - 1);
-      const totalSepWidth =
-        sepCount * (separatorPadding * 2 + sepMeasuredWidth);
-      const crumbMaxWidth =
-        containerWidth > 0
-          ? Math.max(
-              resolvedFontSize * 2,
-              (containerWidth - totalSepWidth) / crumbs.length,
-            )
-          : 0;
-
-      for (let i = 0; i < crumbs.length; i++) {
-        const isLast = i === crumbs.length - 1;
-        // ADR-051: crumb 폭 실측
-        const estimatedTextWidth =
-          containerWidth > 0
-            ? crumbMaxWidth
-            : measureSpecTextWidth(crumbs[i], resolvedFontSize, ff, 600);
-
-        shapes.push({
-          type: "text" as const,
-          x,
-          y: height / 2,
-          text: crumbs[i],
-          fontSize: resolvedFontSize,
-          fontFamily: ff,
-          fontWeight: isLast ? 600 : 400,
-          fill: isLast
-            ? ("{color.accent}" as TokenRef)
-            : ("{color.neutral-subdued}" as TokenRef),
-          align: "left" as const,
-          baseline: "middle" as const,
-          maxWidth: estimatedTextWidth + resolvedFontSize,
-        });
-
-        x += estimatedTextWidth;
-
-        // 구분자 (CSS: padding 0 4px)
-        if (!isLast) {
-          x += separatorPadding;
-          shapes.push({
-            type: "text" as const,
-            x,
-            y: height / 2,
-            text: separator,
-            fontSize: resolvedFontSize,
-            fontFamily: ff,
-            fontWeight: 400,
-            fill: "{color.neutral-subdued}" as TokenRef,
-            align: "left" as const,
-            baseline: "middle" as const,
-            maxWidth: sepMeasuredWidth + resolvedFontSize,
-          });
-          x += separatorPadding + sepMeasuredWidth;
-        }
-      }
-
-      return shapes;
-    },
+    // Skia 텍스트/구분자는 자식 Breadcrumb.spec이 담당 (Taffy 셀과 1:1)
+    shapes: () => [],
 
     react: () => ({
       "aria-label": "Breadcrumb",
-    }),
-
-    pixi: () => ({
-      eventMode: "static" as const,
     }),
   },
 };

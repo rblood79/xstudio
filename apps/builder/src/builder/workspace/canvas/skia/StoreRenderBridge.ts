@@ -20,7 +20,10 @@ import { buildSkiaNodeData, type BuildContext } from "./buildSkiaNodeData";
 import { buildBoxNodeData } from "./buildBoxNodeData";
 import { buildTextNodeData } from "./buildTextNodeData";
 import { buildImageNodeData } from "./buildImageNodeData";
-import { buildSpecNodeData } from "./buildSpecNodeData";
+import {
+  buildSpecNodeData,
+  CHILD_COMPOSITION_EXCLUDE_TAGS,
+} from "./buildSpecNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
 import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
@@ -243,7 +246,19 @@ export class StoreRenderBridge {
       theme,
     };
 
+    // CHILD_COMPOSITION_EXCLUDE_TAGS 부모의 자식이 변경된 경우
+    // 부모 ID도 rebuild 대상에 포함 (예: Breadcrumb 텍스트 수정 → 부모 레이아웃/스펙 동기화)
+    const expandedIds = new Set(changedIds);
     for (const id of changedIds) {
+      const element = elementsMap.get(id);
+      if (!element?.parent_id) continue;
+      const parent = elementsMap.get(element.parent_id);
+      if (parent && CHILD_COMPOSITION_EXCLUDE_TAGS.has(parent.tag)) {
+        expandedIds.add(element.parent_id);
+      }
+    }
+
+    for (const id of expandedIds) {
       const element = elementsMap.get(id);
       if (!element) {
         // 삭제된 요소
@@ -360,7 +375,15 @@ export class StoreRenderBridge {
     childrenMap: Map<string, Element[]> | null,
   ): import("./nodeRendererTypes").SkiaNodeData | null {
     if (isSpecPath(element)) {
-      const childElements = childrenMap?.get(id) ?? undefined;
+      // childrenMap은 props 변경 시 rebuild되지 않는다 (구조 변경만 rebuild).
+      // CHILD_COMPOSITION_EXCLUDE_TAGS는 자식 props로 shapes를 만들므로(_crumbs 등)
+      // 각 자식을 elementsMap에서 새 참조로 교체하여 stale data를 방지한다.
+      const rawChildElements = childrenMap?.get(id);
+      const childElements = rawChildElements
+        ? CHILD_COMPOSITION_EXCLUDE_TAGS.has(element.tag)
+          ? rawChildElements.map((child) => elementsMap.get(child.id) ?? child)
+          : rawChildElements
+        : undefined;
       const nodeData = buildSpecNodeData({
         element,
         layout,

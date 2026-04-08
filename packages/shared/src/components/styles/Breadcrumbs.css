@@ -5,22 +5,30 @@
 
     display: flex;
     align-items: center;
+    gap: 0;
     list-style: none;
     margin: 0;
     padding: 0;
     font-size: var(--text-lg);
     color: var(--fg);
 
+    .react-aria-Breadcrumb {
+      display: inline-flex;
+      align-items: center;
+    }
+
     .react-aria-Breadcrumb:not(:last-child)::after {
       content: "\203A";
       content: "\203A" / "";
       alt: " ";
-      padding: 0 var(--spacing);
+      padding: 0 var(--spacing-sm);
       color: var(--fg-muted);
+      line-height: 1;
     }
 
     .react-aria-Link {
       color: var(--fg-muted);
+      font-size: inherit;
       outline: none;
       position: relative;
       text-decoration: none;
@@ -67,13 +75,17 @@
 
     &[data-size="M"] {
       font-size: var(--text-base);
+
+      .react-aria-Breadcrumb:not(:last-child)::after {
+        padding: 0 var(--spacing-sm);
+      }
     }
 
     &[data-size="L"] {
       font-size: var(--text-lg);
 
       .react-aria-Breadcrumb:not(:last-child)::after {
-        padding: 0 var(--spacing-sm);
+        padding: 0 var(--spacing-md);
       }
     }
   }

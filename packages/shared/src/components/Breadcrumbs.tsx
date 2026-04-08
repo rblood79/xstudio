@@ -12,7 +12,7 @@ import "./styles/Breadcrumbs.css";
 
 /**
  * RSP API: https://react-spectrum.adobe.com/react-spectrum/Breadcrumbs.html
- * size: 'S' | 'M' | 'L' (default 'L')
+ * size: 'S' | 'M' | 'L' (default 'M')
  */
 
 export interface BreadcrumbsExtendedProps<
@@ -20,7 +20,7 @@ export interface BreadcrumbsExtendedProps<
 > extends BreadcrumbsProps<T> {
   /**
    * Controls spacing and layout size. RSP API: 'S' | 'M' | 'L'
-   * @default 'L'
+   * @default 'M'
    */
   size?: "S" | "M" | "L";
   /**
@@ -47,14 +47,14 @@ export interface BreadcrumbsExtendedProps<
  * Breadcrumbs — React Spectrum S2 API 기반
  *
  * @example
- * <Breadcrumbs size="L">
+ * <Breadcrumbs size="M">
  *   <Breadcrumb><Link href="/">Home</Link></Breadcrumb>
  *   <Breadcrumb><Link href="/products">Products</Link></Breadcrumb>
  *   <Breadcrumb><Link>Current Page</Link></Breadcrumb>
  * </Breadcrumbs>
  */
 export function Breadcrumbs<T extends object>({
-  size = "L",
+  size = "M",
   dataBinding,
   columnMapping,
   isLoading: externalLoading,

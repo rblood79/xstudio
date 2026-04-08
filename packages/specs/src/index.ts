@@ -91,6 +91,8 @@ export {
   // Spacing
   spacing,
   getSpacingToken,
+  breadcrumbSeparatorAfterPaddingXPx,
+  normalizeBreadcrumbRspSizeKey,
   // Typography
   typography,
   fontFamily,
@@ -279,6 +281,8 @@ export type { MenuProps } from "./components/Menu.spec";
 
 export { BreadcrumbsSpec } from "./components/Breadcrumbs.spec";
 export type { BreadcrumbsProps } from "./components/Breadcrumbs.spec";
+export { BreadcrumbSpec } from "./components/Breadcrumb.spec";
+export type { BreadcrumbItemProps } from "./components/Breadcrumb.spec";
 
 export { PaginationSpec } from "./components/Pagination.spec";
 export type { PaginationProps } from "./components/Pagination.spec";

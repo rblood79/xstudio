@@ -18,7 +18,10 @@
 import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
-import type { ComponentState } from "@composition/specs";
+import {
+  normalizeBreadcrumbRspSizeKey,
+  type ComponentState,
+} from "@composition/specs";
 import { getSpecForTag } from "../sprites/tagSpecMap";
 import { specShapesToSkia } from "./specShapeConverter";
 import {
@@ -89,7 +92,7 @@ const CONTAINER_DIMENSION_TAGS = new Set([
   "Switcher",
 ]);
 
-const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+export const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
   "Tabs",
   "Breadcrumbs",
   "TagGroup",
@@ -138,6 +141,13 @@ function resolveParentDelegatedSize(
   element: Element,
   elementsMap: Map<string, Element>,
 ): string | null {
+  if (element.tag === "Breadcrumb" && element.parent_id) {
+    const parent = elementsMap.get(element.parent_id);
+    if (parent?.tag === "Breadcrumbs") {
+      return (getProps(parent).size as string) ?? "M";
+    }
+  }
+
   const delegationParents = getParentTagsForChild(element.tag);
   if (!delegationParents || !element.parent_id) return null;
 
@@ -151,6 +161,37 @@ function resolveParentDelegatedSize(
     currentId = ancestor.parent_id;
   }
   return null;
+}
+
+/** Breadcrumb → 부모 Breadcrumbs의 구분자·마지막 여부·비활성 */
+function resolveBreadcrumbItemContext(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): {
+  _isLast: boolean;
+  _separator: string;
+  _parentIsDisabled: boolean;
+} | null {
+  if (element.tag !== "Breadcrumb" || !element.parent_id) return null;
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent || parent.tag !== "Breadcrumbs") return null;
+
+  const pp = getProps(parent);
+  const siblings: Element[] = [];
+  for (const el of elementsMap.values()) {
+    if (el.parent_id === parent.id && el.tag === "Breadcrumb") {
+      siblings.push(el);
+    }
+  }
+  siblings.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+  const idx = siblings.findIndex((s) => s.id === element.id);
+  if (idx === -1) return null;
+
+  return {
+    _isLast: idx === siblings.length - 1,
+    _separator: String(pp.separator ?? "›"),
+    _parentIsDisabled: Boolean(pp.isDisabled),
+  };
 }
 
 /** ToggleButton group position */
@@ -486,7 +527,11 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
 
   // Parent-delegated size
   const delegatedSize = resolveParentDelegatedSize(element, elementsMap);
-  const size = (props.size as string) ?? delegatedSize ?? spec.defaultSize;
+  const rawSize = (props.size as string) ?? delegatedSize ?? spec.defaultSize;
+  const size =
+    element.tag === "Breadcrumb"
+      ? normalizeBreadcrumbRspSizeKey(rawSize)
+      : rawSize;
   const variant = (props.variant as string) ?? spec.defaultVariant;
 
   const variantSpec =
@@ -501,8 +546,10 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // ---------- specProps 준비 ----------
   let specProps: Record<string, unknown> = { ...props };
 
-  // Size injection (delegated overrides default)
-  if (delegatedSize && !props.size) {
+  // Size injection — Breadcrumb은 항상 RSP 키 S|M|L (Skia shapes·패딩·typography 토큰 정합)
+  if (element.tag === "Breadcrumb") {
+    specProps = { ...specProps, size };
+  } else if (delegatedSize && !props.size) {
     specProps = { ...specProps, size: delegatedSize };
   }
 
@@ -522,6 +569,15 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   const dateProps = resolveDateInputParent(element, elementsMap);
   if (dateProps) {
     specProps = { ...specProps, ...dateProps };
+  }
+
+  const breadcrumbCtx = resolveBreadcrumbItemContext(element, elementsMap);
+  if (breadcrumbCtx) {
+    specProps = {
+      ...specProps,
+      _isLast: breadcrumbCtx._isLast,
+      _separator: breadcrumbCtx._separator,
+    };
   }
 
   // Label necessity indicator
@@ -616,21 +672,6 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     }
   }
 
-  // Breadcrumbs _crumbs injection — 실제 자식 텍스트를 Skia 렌더러에 전달
-  if (tag === "Breadcrumbs" && childElements && childElements.length > 0) {
-    const crumbs: string[] = [];
-    for (const child of childElements) {
-      const childProps = child.props as Record<string, unknown> | undefined;
-      const label = String(
-        childProps?.children ?? childProps?.label ?? childProps?.title ?? "",
-      );
-      if (label) crumbs.push(label);
-    }
-    if (crumbs.length > 0) {
-      specProps = { ...specProps, _crumbs: crumbs };
-    }
-  }
-
   // Container dimension injection
   if (CONTAINER_DIMENSION_TAGS.has(tag)) {
     specProps = {
@@ -643,6 +684,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // ---------- component state ----------
   const componentState: ComponentState = (() => {
     if (specProps.isDisabled || specProps.disabled) return "disabled";
+    if (breadcrumbCtx?._parentIsDisabled) return "disabled";
     return "default";
   })();
 

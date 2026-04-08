@@ -20,9 +20,8 @@
   /* Default size */
   height: 24px;
   padding: 0px 0px;
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   border-radius: var(--radius-none);
-  gap: 10px;
 }
 
 .react-aria-Breadcrumbs[data-variant="default"] {
@@ -31,7 +30,7 @@
 
   &[data-hovered] {
     background: var(--bg);
-    color: var(--accent);
+    color: var(--fg);
   }
 
   &[data-pressed] {
@@ -44,7 +43,6 @@
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
-  gap: 4px;
 }
 
 .react-aria-Breadcrumbs[data-size="M"] {
@@ -52,7 +50,6 @@
   padding: 0px 0px;
   font-size: var(--text-base);
   border-radius: var(--radius-none);
-  gap: 8px;
 }
 
 .react-aria-Breadcrumbs[data-size="L"] {
@@ -60,7 +57,6 @@
   padding: 0px 0px;
   font-size: var(--text-lg);
   border-radius: var(--radius-none);
-  gap: 10px;
 }
 
 .react-aria-Breadcrumbs[data-hovered] {

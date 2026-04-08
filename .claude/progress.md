@@ -100,15 +100,16 @@
 
 ## 세션 로그
 
-| 날짜       | 작업 요약                                                                                               | 결과 |
-| ---------- | ------------------------------------------------------------------------------------------------------- | ---- |
-| 2026-04-08 | InlineAlert Spec 정합성 수정 (descFontSize sm 13→12, Skia Description 라우팅, CSSGenerator border 버그) | 완료 |
-| 2026-04-07 | 테스트 파일 제거 + ESLint/TypeScript 전면 수정 (7개 파일, 근본 해결) + /simplify                        | 완료 |
-| 2026-04-07 | Dynamic theming (SkiaCanvas + BoxNode) + ADR-056 Base Typography                                        | 완료 |
-| 2026-04-07 | ADR-100 Phase 10 CSS3 확장 (mask, transition, sticky, variable font) + 안정화                           | 완료 |
-| 2026-04-06 | ADR-100 Phase 9 PixiJS 제거 + ADR-055 이벤트 레지스트리 SSOT + Overflow Scroll                          | 완료 |
-| 2026-04-05 | ADR-052/053 S2 Props + ADR-008 텍스트 래핑 Phase 1~3 + ADR 구조 선행 원칙                               | 완료 |
-| 2026-04-03 | ADR-050 Container Overflow (WebGL clipping + hatching) + CanvasKit 버전 고정                            | 완료 |
-| 2026-04-02 | Preview iframe 마이그레이션 (srcdoc→src) + Layout Prop Reactivity                                       | 완료 |
-| 2026-04-01 | ADR-021 Theme System Phase A~E + Rendering Parity Audit (33 spec size)                                  | 완료 |
-| 2026-03-31 | ADR-048 후속 버그 수정 + DatePicker 기능 확장 (size propagation, visibleMonths 등)                      | 완료 |
+| 날짜       | 작업 요약                                                                                                                                                                         | 결과 |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 2026-04-08 | Tabs 컨테이너 레이아웃 완성 (TAG_SPEC_MAP/CONTAINER_DIMENSION_TAGS/\_isSelected/orientation 주입, TabPanels 활성 패널 필터링, CSS 정합성) + Breadcrumbs cross-check 5개 이슈 수정 | 완료 |
+| 2026-04-08 | InlineAlert Spec 정합성 수정 (descFontSize sm 13→12, Skia Description 라우팅, CSSGenerator border 버그)                                                                           | 완료 |
+| 2026-04-07 | 테스트 파일 제거 + ESLint/TypeScript 전면 수정 (7개 파일, 근본 해결) + /simplify                                                                                                  | 완료 |
+| 2026-04-07 | Dynamic theming (SkiaCanvas + BoxNode) + ADR-056 Base Typography                                                                                                                  | 완료 |
+| 2026-04-07 | ADR-100 Phase 10 CSS3 확장 (mask, transition, sticky, variable font) + 안정화                                                                                                     | 완료 |
+| 2026-04-06 | ADR-100 Phase 9 PixiJS 제거 + ADR-055 이벤트 레지스트리 SSOT + Overflow Scroll                                                                                                    | 완료 |
+| 2026-04-05 | ADR-052/053 S2 Props + ADR-008 텍스트 래핑 Phase 1~3 + ADR 구조 선행 원칙                                                                                                         | 완료 |
+| 2026-04-03 | ADR-050 Container Overflow (WebGL clipping + hatching) + CanvasKit 버전 고정                                                                                                      | 완료 |
+| 2026-04-02 | Preview iframe 마이그레이션 (srcdoc→src) + Layout Prop Reactivity                                                                                                                 | 완료 |
+| 2026-04-01 | ADR-021 Theme System Phase A~E + Rendering Parity Audit (33 spec size)                                                                                                            | 완료 |
+| 2026-03-31 | ADR-048 후속 버그 수정 + DatePicker 기능 확장 (size propagation, visibleMonths 등)                                                                                                | 완료 |

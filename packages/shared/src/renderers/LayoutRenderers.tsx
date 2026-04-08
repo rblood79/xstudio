@@ -1098,6 +1098,8 @@ export const renderBreadcrumbs = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      data-size={(element.props.size as string) || "M"}
+      data-variant={(element.props.variant as string) || "default"}
       aria-label={
         typeof element.props["aria-label"] === "string"
           ? element.props["aria-label"]

@@ -45,7 +45,10 @@ import {
   getParentTagsForChild,
 } from "../../../../utils/propagationRegistry";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
-import { InlineAlertSpec, fontFamily as specFontFamily } from "@composition/specs";
+import {
+  InlineAlertSpec,
+  fontFamily as specFontFamily,
+} from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { useScrollState } from "../../../../stores/scrollState";
 
@@ -1296,11 +1299,7 @@ function traversePostOrder(
     }
   }
 
-  // Breadcrumbs: filteredChildren=[]로 Taffy 자식 노드를 만들지 않지만,
-  // enrichWithIntrinsicSize에는 원본 자식(rawChildren)을 전달하여
-  // calculateContentWidth가 각 Breadcrumb 텍스트로 fit-content 폭을 산출하도록 함
-  const enrichChildren =
-    containerTag === "breadcrumbs" ? rawChildren : filteredChildren;
+  const enrichChildren = filteredChildren;
 
   let enriched: Element = enrichWithIntrinsicSize(
     element,

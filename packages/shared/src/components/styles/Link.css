@@ -7,7 +7,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--spacing);
-    font-weight: 500;
+    font-weight: 400;
     text-decoration: none;
     cursor: pointer;
     transition: all 200ms;

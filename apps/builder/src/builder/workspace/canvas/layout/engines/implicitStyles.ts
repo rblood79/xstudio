@@ -18,7 +18,14 @@ import {
   TABS_BAR_HEIGHT,
   TABS_PANEL_PADDING,
 } from "./utils";
-import { InlineAlertSpec } from "@composition/specs";
+import { extractSpecTextStyle } from "../../utils/specTextStyle";
+import {
+  InlineAlertSpec,
+  BreadcrumbsSpec,
+  fontFamily as specFontFamily,
+  breadcrumbSeparatorAfterPaddingXPx,
+  normalizeBreadcrumbRspSizeKey,
+} from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
@@ -814,8 +821,80 @@ export function applyImplicitStyles(
   }
 
   // ── Breadcrumbs ────────────────────────────────────────────────────
+  // Taffy: flex-row + 자식 Breadcrumb마다 실측 폭(텍스트 + 비-마지막 구분자 영역) 주입
+  // Skia 텍스트/구분자는 Breadcrumb.spec (부모 Breadcrumbs spec shapes는 비어 있음)
   if (containerTag === "breadcrumbs") {
-    filteredChildren = [];
+    const rspSize = normalizeBreadcrumbRspSizeKey(
+      String(containerProps?.size ?? "M"),
+    );
+    const breadcrumbsHeight = BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
+    const separator = String((containerProps?.separator as string) ?? "›");
+    const separatorPadding = breadcrumbSeparatorAfterPaddingXPx(rspSize);
+
+    const specStyle = extractSpecTextStyle("breadcrumbs", {
+      size: rspSize,
+    });
+    const fontSize = specStyle?.fontSize ?? 16;
+    const fontWeight = specStyle?.fontWeight ?? 400;
+    const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
+
+    const sorted = [...children].sort(
+      (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
+    );
+    const crumbElements = sorted.filter((c) => c.tag === "Breadcrumb");
+    let crumbIndex = 0;
+
+    filteredChildren = sorted.map((child) => {
+      if (child.tag !== "Breadcrumb") {
+        return child;
+      }
+      const isLast = crumbIndex === crumbElements.length - 1;
+      crumbIndex += 1;
+      const childProps = child.props as Record<string, unknown> | undefined;
+      const label = String(
+        childProps?.children ?? childProps?.label ?? childProps?.title ?? "",
+      );
+      const crumbFontWeight = isLast ? 600 : fontWeight;
+      const textW = label
+        ? measureTextWidth(label, fontSize, ffamily, crumbFontWeight)
+        : 0;
+      const sepExtra = isLast
+        ? 0
+        : separatorPadding * 2 +
+          measureTextWidth(separator, fontSize, ffamily, 400);
+      const itemWidth = Math.ceil(textW + sepExtra);
+
+      const cs = (child.props?.style ?? {}) as Record<string, unknown>;
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            display: cs.display ?? "flex",
+            flexDirection: cs.flexDirection ?? "row",
+            alignItems: cs.alignItems ?? "center",
+            flexShrink: cs.flexShrink ?? 0,
+            flexGrow: cs.flexGrow ?? 0,
+            width: itemWidth,
+            minWidth: itemWidth,
+            height: breadcrumbsHeight,
+            minHeight: breadcrumbsHeight,
+          },
+        },
+      };
+    });
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: parentStyle.flexWrap ?? "nowrap",
+      height: breadcrumbsHeight,
+      minHeight: breadcrumbsHeight,
+      gap: 0,
+    });
   }
 
   // ── Tabs ───────────────────────────────────────────────────────────
@@ -874,7 +953,7 @@ export function applyImplicitStyles(
       });
     } else {
       // 구식 flat 구조 (TabList 없음): 기존 동작 유지
-      filteredChildren = activePanel ? [activePanel] : [];
+      filteredChildren = directPanel ? [directPanel] : [];
       effectiveParent = withParentStyle(containerEl, {
         ...parentStyle,
         display: "flex",

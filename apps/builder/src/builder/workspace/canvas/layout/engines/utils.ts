@@ -15,6 +15,7 @@ import type { Margin, BoxModel, VerticalAlign } from "./types";
 import type { Element } from "../../../../../types/core/store.types";
 import {
   fontFamily as specFontFamily,
+  BreadcrumbsSpec,
   InputSpec,
   ButtonSpec,
   BadgeSpec,
@@ -23,6 +24,8 @@ import {
   TabSpec,
   CardSpec,
   resolveToken,
+  breadcrumbSeparatorAfterPaddingXPx,
+  normalizeBreadcrumbRspSizeKey,
   PROGRESSBAR_DIMENSIONS,
   PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
@@ -884,22 +887,23 @@ export function calculateContentWidth(
   // fullTreeLayout.ts에서 rawChildren을 enrichChildren으로 전달하여 자식 기반 계산 가능
   if (tag === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? "L";
+    const rspSize = normalizeBreadcrumbRspSizeKey(String(props?.size ?? "M"));
     const separator = (props?.separator as string) ?? "›";
 
-    // Spec에서 실제 font style 추출 (children prop 전달 필수)
     const specStyle = extractSpecTextStyle("breadcrumbs", {
-      size: sizeName,
-      _crumbs: ["x"],
+      size: rspSize,
     });
     const fontSize = specStyle?.fontSize ?? 16;
     const fontWeight = specStyle?.fontWeight ?? 400;
     const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
 
-    // 자식 Breadcrumb 요소에서 레이블 추출 (ToggleButtonGroup 패턴)
+    // 자식 Breadcrumb 요소에서 레이블 추출 (order_num 순 정렬 필수)
     const crumbs: string[] = [];
     if (childElements && childElements.length > 0) {
-      for (const child of childElements) {
+      const sorted = [...childElements].sort(
+        (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
+      );
+      for (const child of sorted) {
         const childProps = child.props as Record<string, unknown> | undefined;
         const label = String(
           childProps?.children ?? childProps?.label ?? childProps?.title ?? "",
@@ -912,8 +916,7 @@ export function calculateContentWidth(
       crumbs.push("Home", "Products", "Detail");
     }
 
-    // Spec shapes의 separatorPadding (Breadcrumbs.spec.ts line 106)
-    const separatorPadding = 4;
+    const separatorPadding = breadcrumbSeparatorAfterPaddingXPx(rspSize);
 
     // 1) 실측 기반 폭 (모든 텍스트를 measureTextWidth로 계산)
     let measuredWidth = 0;
@@ -937,12 +940,11 @@ export function calculateContentWidth(
     let specX = 0;
     for (let i = 0; i < crumbs.length; i++) {
       const isLast = i === crumbs.length - 1;
-      specX += measureTextWidth(crumbs[i], fontSize, ffamily, 600);
+      const crumbWeight = isLast ? 600 : fontWeight;
+      specX += measureTextWidth(crumbs[i], fontSize, ffamily, crumbWeight);
       if (!isLast) {
-        specX += separatorPadding;
-        specX +=
-          separatorPadding +
-          measureTextWidth(separator, fontSize, ffamily, 400);
+        const sepW = measureTextWidth(separator, fontSize, ffamily, 400);
+        specX += separatorPadding + sepW + separatorPadding;
       }
     }
     const specRenderWidth = specX;
@@ -2267,20 +2269,11 @@ export function calculateContentHeight(
   }
 
   // 4.2. Breadcrumbs: display:flex, align-items:center — 높이 = spec size.height
-  // RSP API: S=16px, M=24px, L=24px (default L)
+  // RSP API: S=16px, M=24px, L=24px (default M)
   if (tag === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? "L";
-    const BREADCRUMBS_HEIGHTS: Record<string, number> = {
-      S: 16,
-      M: 24,
-      L: 24,
-      // backward compat — 기존 데이터 sm/md/lg 허용
-      sm: 16,
-      md: 24,
-      lg: 24,
-    };
-    return BREADCRUMBS_HEIGHTS[sizeName] ?? 24;
+    const rspSize = normalizeBreadcrumbRspSizeKey(String(props?.size ?? "M"));
+    return BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
   }
 
   // 4.5. 컨테이너 컴포넌트: childElements 기반 높이 계산 (lineHeight보다 먼저 처리)

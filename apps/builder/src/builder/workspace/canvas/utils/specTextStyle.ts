@@ -18,7 +18,8 @@ import {
   RadioSpec,
   SwitchSpec,
   InputSpec,
-  BreadcrumbsSpec,
+  BreadcrumbSpec,
+  normalizeBreadcrumbRspSizeKey,
   StatusLightSpec,
   SelectValueSpec,
   MenuSpec,
@@ -54,7 +55,8 @@ const TEXT_BEARING_SPECS: Record<
   radio: { spec: RadioSpec, defaultSize: "md" },
   switch: { spec: SwitchSpec, defaultSize: "md" },
   input: { spec: InputSpec, defaultSize: "sm" },
-  breadcrumbs: { spec: BreadcrumbsSpec, defaultSize: "L" },
+  /** `breadcrumbs` 태그는 extractSpecTextStyle 내부에서 BreadcrumbSpec으로 처리 */
+  breadcrumb: { spec: BreadcrumbSpec, defaultSize: "M" },
   statuslight: { spec: StatusLightSpec, defaultSize: "md" },
   selectvalue: { spec: SelectValueSpec, defaultSize: "md" },
   menu: {
@@ -90,11 +92,15 @@ export function extractSpecTextStyle(
   tag: string,
   props?: Record<string, unknown>,
 ): SpecTextStyle | null {
-  const entry = TEXT_BEARING_SPECS[tag.toLowerCase()];
+  const lower = tag.toLowerCase();
+  const mapKey = lower === "breadcrumbs" ? "breadcrumb" : lower;
+  const entry = TEXT_BEARING_SPECS[mapKey];
   if (!entry) return null;
 
   const { spec } = entry;
-  const sizeName = (props?.size as string) ?? entry.defaultSize;
+  const rawSize = (props?.size as string) ?? entry.defaultSize;
+  const sizeName =
+    mapKey === "breadcrumb" ? normalizeBreadcrumbRspSizeKey(rawSize) : rawSize;
   const variantName = (props?.variant as string) ?? spec.defaultVariant;
 
   const variant =
@@ -102,7 +108,19 @@ export function extractSpecTextStyle(
   const size = spec.sizes[sizeName] ?? spec.sizes[spec.defaultSize];
   if (!variant || !size) return null;
 
-  const shapes = spec.render.shapes(props ?? {}, variant, size, "default");
+  const propsForShapes: Record<string, unknown> =
+    lower === "breadcrumbs"
+      ? {
+          ...props,
+          size: sizeName,
+          children: "x",
+          _isLast: true,
+        }
+      : mapKey === "breadcrumb"
+        ? { ...props, size: sizeName }
+        : { ...(props ?? {}) };
+
+  const shapes = spec.render.shapes(propsForShapes, variant, size, "default");
 
   const textShape = shapes.find(
     (s): s is TextShape & { type: "text" } => s.type === "text",

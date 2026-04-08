@@ -2,6 +2,8 @@
 
 ## 리뷰 빈출 이슈 패턴
 
+- **Tabs 조상 조회 패턴 N중 복제 (implicitStyles + buildSpecNodeData)**: `tabpanels`/`tablist` 블록에서 `containerEl.parent_id ? elementById.get(...) : undefined` + `tabsProps?.size ?? "md"` 패턴 2회 복제 (implicitStyles.ts:891-927). `resolveTabIsSelected`/`resolveTabOrientation`도 동일한 `for (depth < 3) ... if (ancestor.tag === "Tabs")` 루프 2회 복제 (buildSpecNodeData.ts:385-422). `getTabsAncestorProps()` / `findAncestorByTag()` 헬퍼 추출 필요
+
 - **Spec 공용 field 정의 복제 (staticColor/isInvalid 등)**: `staticColor` enum field가 Button/ToggleButton/ProgressBar/Meter/Link/ProgressCircle 6개 파일에 동일 구조로 복제. `isInvalid`/`isDisabled`/`isReadOnly` boolean field도 10개 이상 Spec 파일에서 복제. `sharedSections.ts`에 `STATIC_COLOR_FIELD`, `IS_INVALID_FIELD`, `IS_DISABLED_FIELD`, `IS_READONLY_FIELD` 상수로 추출 필요. 단, `label` 포함 여부와 `emptyToUndefined`/`icon` 세부 값이 파일마다 다를 수 있으므로 통합 전 확인 필수
 - **Store 타입 → 엔진 함수 캐스팅**: Store의 `childrenMap`/`elementsMap`을 엔진 유틸 파라미터 타입으로 `as Map<string, ...>` 캐스팅하는 패턴 — 엔진 인터페이스가 Store 타입의 최소 구조만 요구하도록 설계 필요
 - **Spec propagation rules copy-paste**: 유사 컴포넌트(DatePicker/DateRangePicker, CheckboxGroup/RadioGroup, **GridListItem/ListBoxItem** 등) 간 propagation 규칙 배열을 통째로 복제하는 패턴 — 공통 규칙은 팩토리 함수로 추출해야 함 (`makeGroupSizePropagationRules`, `createCollectionItemPropagationSpec` 패턴 제안). GridListItem/ListBoxItemPropagationSpec은 `name` 필드만 다른 완전 복제 사례 (82fb0bb6)

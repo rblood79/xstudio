@@ -15,7 +15,12 @@ export {
 } from "./colors";
 
 // Spacing
-export { spacing, getSpacingToken } from "./spacing";
+export {
+  spacing,
+  getSpacingToken,
+  breadcrumbSeparatorAfterPaddingXPx,
+  normalizeBreadcrumbRspSizeKey,
+} from "./spacing";
 
 // Typography
 export {
