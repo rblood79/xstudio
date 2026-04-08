@@ -20,7 +20,6 @@ import { skiaFontManager } from "./fontManager";
 import {
   loadBuiltinFontsToSkia,
   loadAllCustomFontsToSkia,
-  loadGoogleFontsToSkia,
   syncCustomFontsWithSkia,
 } from "../../../fonts/loadCustomFontsToSkia";
 import { registerImageLoadCallback } from "./imageCache";
@@ -287,10 +286,9 @@ export function SkiaCanvas({
         if (cancelled) return;
 
         getCanvasKit(); // CanvasKit 초기화 확인
-        // 기본 폰트 로딩 (빌트인 Variable → 커스텀 → Google Fonts)
+        // 기본 폰트 로딩 (빌트인 Variable → 커스텀)
         await loadBuiltinFontsToSkia();
         await loadAllCustomFontsToSkia();
-        await loadGoogleFontsToSkia();
         if (!cancelled) setReady(true);
       } catch (e) {
         console.error("[SkiaCanvas] WASM/Font 초기화 실패:", e);

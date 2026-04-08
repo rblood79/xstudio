@@ -9,14 +9,30 @@
 
 import { loadFontRegistry, type FontFaceAsset } from "@composition/shared";
 import { skiaFontManager } from "../workspace/canvas/skia/fontManager";
-import { GOOGLE_FONT_DEFS, getFontsourceUrl } from "./customFonts";
 
-/** 기본 폰트 + Google Fonts — unloadFont 대상에서 제외 */
-const PROTECTED_FAMILIES = new Set([
-  "Pretendard",
-  "Inter",
-  ...GOOGLE_FONT_DEFS.map((d) => d.family),
-]);
+/** 빌트인 폰트 — unloadFont 대상에서 제외 */
+const PROTECTED_FAMILIES = new Set(["Pretendard", "Inter"]);
+
+/**
+ * Canvas 2D 측정 경로(USE_CANVAS2D_MEASURE)를 위해 document.fonts에도 폰트를 등록한다.
+ * CanvasKit은 CSS @font-face를 사용하지 않으므로 두 경로가 별도로 로드해야 한다.
+ * Pretendard는 index.css의 @import로 이미 로드되어 있으므로 스킵.
+ */
+async function registerFontInBrowser(
+  family: string,
+  url: string,
+): Promise<void> {
+  if (typeof document === "undefined" || !document.fonts) return;
+  // 이미 브라우저에 로드된 폰트는 스킵
+  if (document.fonts.check(`12px "${family}"`)) return;
+  try {
+    const face = new FontFace(family, `url(${url})`);
+    await face.load();
+    document.fonts.add(face);
+  } catch (e) {
+    console.warn(`[registerFontInBrowser] ${family} CSS 등록 실패:`, e);
+  }
+}
 
 /**
  * 빌트인 Variable 폰트를 Skia에 로드한다.
@@ -44,11 +60,18 @@ export async function loadBuiltinFontsToSkia(): Promise<void> {
     if (skiaFontManager.hasFont(family)) continue;
     try {
       await skiaFontManager.loadFont(family, url);
+      // Canvas 2D 측정 경로를 위해 document.fonts에도 등록 (Pretendard 제외: 이미 CSS로 로드됨)
+      if (family !== "Pretendard") {
+        await registerFontInBrowser(family, url);
+      }
     } catch (e) {
       console.warn(`[loadBuiltinFontsToSkia] ${family} Variable 로드 실패:`, e);
       if (fallbackUrl) {
         try {
           await skiaFontManager.loadFont(family, fallbackUrl);
+          if (family !== "Pretendard") {
+            await registerFontInBrowser(family, fallbackUrl);
+          }
         } catch (e2) {
           console.error(
             `[loadBuiltinFontsToSkia] ${family} fallback도 실패:`,
@@ -121,7 +144,7 @@ export async function loadAllCustomFontsToSkia(): Promise<number> {
 
 /**
  * 레지스트리와 SkiaFontManager를 동기화한다.
- * - 레지스트리에 없는 폰트 → Skia에서 제거 (Pretendard 제외)
+ * - 레지스트리에 없는 폰트 → Skia에서 제거 (빌트인 제외)
  * - 레지스트리에 있지만 Skia에 없는 폰트 → 로드
  * @returns 새로 로드된 폰트 수
  */
@@ -144,46 +167,4 @@ export async function syncCustomFontsWithSkia(): Promise<number> {
     if (ok) loaded++;
   }
   return loaded;
-}
-
-// ============================================
-// Google Fonts → Skia 로드
-// ============================================
-
-/**
- * GOOGLE_FONT_DEFS에 정의된 모든 Google Fonts를 SkiaFontManager에 로드한다.
- *
- * fontsource CDN(jsdelivr)에서 각 weight의 latin woff2를 직접 가져온다.
- * 각 weight당 하나의 완전한 woff2 파일 — subset 파싱 불필요.
- * CJK 글리프는 Pretendard fallback으로 처리.
- *
- * @returns 로드된 font face 수
- */
-export async function loadGoogleFontsToSkia(): Promise<number> {
-  let totalLoaded = 0;
-
-  for (const def of GOOGLE_FONT_DEFS) {
-    // 이미 모든 weight가 로드되었으면 스킵
-    const allLoaded = def.weights.every((w) =>
-      skiaFontManager.hasFont(def.family, w),
-    );
-    if (allLoaded) continue;
-
-    for (const weight of def.weights) {
-      if (skiaFontManager.hasFont(def.family, weight)) continue;
-
-      const url = getFontsourceUrl(def.family, weight);
-      try {
-        await skiaFontManager.loadFont(def.family, url, weight);
-        totalLoaded++;
-      } catch (e) {
-        console.warn(
-          `[loadGoogleFontsToSkia] ${def.family} ${weight} 로드 실패:`,
-          e,
-        );
-      }
-    }
-  }
-
-  return totalLoaded;
 }
