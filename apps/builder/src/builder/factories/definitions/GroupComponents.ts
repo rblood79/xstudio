@@ -624,6 +624,7 @@ export function createBreadcrumbsDefinition(
       tag: "Breadcrumbs",
       props: {
         "aria-label": "Breadcrumbs",
+        size: "L",
         isDisabled: false,
       } as ComponentElementProps,
       ...ownerFields,

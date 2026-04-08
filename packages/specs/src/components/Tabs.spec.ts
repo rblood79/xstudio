@@ -12,9 +12,6 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
-import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import { Ratio, PointerOff, MousePointer2 } from "lucide-react";
 
 /**
@@ -31,8 +28,6 @@ export interface TabsProps {
   defaultSelectedKey?: string;
   isDisabled?: boolean;
   showIndicator?: boolean;
-  /** 컨테이너 시스템에서 주입하는 실제 Tab 레이블 */
-  _tabLabels?: string[];
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
@@ -191,115 +186,12 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
-      const isVertical = props.orientation === "vertical";
-
-      // 사용자 스타일 우선
-      const borderColor =
-        props.style?.borderColor ??
-        (variant.border || ("{color.border}" as TokenRef));
-
-      const ff = fontFamily.sans;
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
-
-      // 실제 Tab children 레이블 (컨테이너 시스템에서 주입) or 기본값
-      const tabLabels =
-        props._tabLabels && props._tabLabels.length > 0
-          ? props._tabLabels
-          : ["Tab 1", "Tab 2"];
-      const selectedIdx = 0; // 기본 첫 번째 탭 선택
-
-      // CSS 정합: 각 Tab은 content 폭 기반 (flex item auto width)
-      // containerWidth 균등 분할은 CSS와 불일치 → 항상 텍스트 실측 폭 사용
-      const estimateTabWidth = (label: string): number => {
-        return Math.max(
-          48,
-          Math.ceil(measureSpecTextWidth(label, fontSize, ff)) +
-            size.paddingX * 2,
-        );
-      };
-
-      const shapes: Shape[] = [];
-
-      // 탭 버튼 Shape 생성
-      let tabX = 0;
-      let tabY = 0;
-      for (let i = 0; i < tabLabels.length; i++) {
-        const isSelected = i === selectedIdx;
-        const tabWidth = isVertical ? 120 : estimateTabWidth(tabLabels[i]);
-
-        // 탭 배경
-        shapes.push({
-          type: "rect" as const,
-          x: isVertical ? 0 : tabX,
-          y: isVertical ? tabY : 0,
-          width: tabWidth,
-          height: size.height,
-          fill: isSelected ? variant.backgroundHover : variant.background,
-        });
-
-        // 탭 텍스트
-        shapes.push({
-          type: "text" as const,
-          x: isVertical ? 0 : tabX,
-          y: (isVertical ? tabY : 0) + size.height / 2,
-          text: tabLabels[i],
-          fontSize,
-          fontFamily: ff,
-          fontWeight: isSelected ? 600 : 400,
-          fill: isSelected ? (variant.textHover ?? variant.text) : variant.text,
-          align: "center" as const,
-          baseline: "middle" as const,
-          maxWidth: tabWidth,
-        });
-
-        // 선택된 탭의 하단/우측 인디케이터 — rect로 직각 보장
-        if (isSelected && props.showIndicator !== false) {
-          const indicatorThickness = 3;
-          shapes.push({
-            type: "rect" as const,
-            x: isVertical ? tabWidth - indicatorThickness : tabX,
-            y: isVertical ? tabY : size.height - indicatorThickness,
-            width: isVertical ? indicatorThickness : tabWidth,
-            height: isVertical ? size.height : indicatorThickness,
-            fill: "{color.accent}" as TokenRef,
-          });
-        }
-
-        if (isVertical) {
-          tabY += size.height;
-        } else {
-          tabX += tabWidth;
-        }
-      }
-
-      // 탭 리스트 하단/우측 구분선
-      shapes.push({
-        type: "line" as const,
-        x1: 0,
-        y1: isVertical ? 0 : size.height,
-        x2: isVertical ? 0 : ("auto" as unknown as number),
-        y2: isVertical ? ("auto" as unknown as number) : size.height,
-        stroke: borderColor,
-        strokeWidth: 1,
-      });
-
-      return shapes;
-    },
+    // Container layout — TabList/Tab이 각자 렌더링 담당
+    // CSS: display:flex; flex-direction:column 구조와 동일
+    shapes: (): Shape[] => [],
 
     react: (props) => ({
       "data-orientation": props.orientation || "horizontal",
-    }),
-
-    pixi: () => ({
-      eventMode: "static" as const,
     }),
   },
 };

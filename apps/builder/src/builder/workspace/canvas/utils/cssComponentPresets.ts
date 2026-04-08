@@ -1436,15 +1436,15 @@ const BREADCRUMBS_SIZE_MAPPING: Record<
   string,
   { fontSize: string; gap: string }
 > = {
-  S: { fontSize: "--text-xs", gap: "--spacing-xs" },
-  M: { fontSize: "--text-sm", gap: "--spacing" },
-  L: { fontSize: "--text-base", gap: "--spacing-sm" },
+  S: { fontSize: "--text-sm", gap: "--spacing-xs" },
+  M: { fontSize: "--text-base", gap: "--spacing" },
+  L: { fontSize: "--text-lg", gap: "--spacing-sm" },
 };
 
 const BREADCRUMBS_FALLBACKS: Record<string, BreadcrumbsSizePreset> = {
-  S: { fontSize: 12, gap: 4, padding: 4 },
-  M: { fontSize: 14, gap: 8, padding: 8 },
-  L: { fontSize: 16, gap: 10, padding: 12 },
+  S: { fontSize: 14, gap: 4, padding: 4 },
+  M: { fontSize: 16, gap: 8, padding: 8 },
+  L: { fontSize: 18, gap: 10, padding: 12 },
 };
 
 /**
@@ -1470,54 +1470,6 @@ export function getBreadcrumbsSizePreset(size: string): BreadcrumbsSizePreset {
     gap,
     padding: fallback.padding,
   };
-}
-
-/**
- * Breadcrumbs 색상 프리셋
- */
-export interface BreadcrumbsColorPreset {
-  textColor: number;
-  currentColor: number;
-  separatorColor: number;
-}
-
-const BREADCRUMBS_COLOR_FALLBACKS: Record<string, BreadcrumbsColorPreset> = {
-  default: {
-    textColor: 0x6b7280,
-    currentColor: 0x374151,
-    separatorColor: 0x9ca3af,
-  },
-  primary: {
-    textColor: 0x6b7280,
-    currentColor: 0x3b82f6,
-    separatorColor: 0x9ca3af,
-  },
-  secondary: {
-    textColor: 0x6b7280,
-    currentColor: 0x6366f1,
-    separatorColor: 0x9ca3af,
-  },
-  tertiary: {
-    textColor: 0x6b7280,
-    currentColor: 0xec4899,
-    separatorColor: 0x9ca3af,
-  },
-  error: {
-    textColor: 0x6b7280,
-    currentColor: 0xef4444,
-    separatorColor: 0x9ca3af,
-  },
-};
-
-/**
- * Breadcrumbs 색상 프리셋 읽기
- */
-export function getBreadcrumbsColorPreset(
-  variant: string,
-): BreadcrumbsColorPreset {
-  return (
-    BREADCRUMBS_COLOR_FALLBACKS[variant] || BREADCRUMBS_COLOR_FALLBACKS.default
-  );
 }
 
 // ============================================

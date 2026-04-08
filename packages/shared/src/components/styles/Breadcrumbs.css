@@ -1,6 +1,6 @@
 @layer components {
   .react-aria-Breadcrumbs {
-    /* Local color variable — variant overrides only this */
+    /* Local color variable */
     --breadcrumb-accent: var(--accent);
 
     display: flex;
@@ -8,7 +8,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
     color: var(--fg);
 
     .react-aria-Breadcrumb:not(:last-child)::after {
@@ -34,7 +34,7 @@
 
       &[data-current] {
         color: var(--breadcrumb-accent);
-        font-weight: 500;
+        font-weight: 600;
       }
 
       &[data-focus-visible]:after {
@@ -55,61 +55,25 @@
       }
     }
 
-    /* ===== Color Variants ===== */
+    /* ===== Size Variants (RSP API: S | M | L) ===== */
 
-    &[data-variant="secondary"] {
-      --breadcrumb-accent: var(--bg-inset);
-    }
-
-    &[data-variant="tertiary"] {
-      --breadcrumb-accent: var(--color-purple-600);
-    }
-
-    &[data-variant="error"] {
-      --breadcrumb-accent: var(--negative);
-    }
-
-    &[data-variant="filled"] {
-      background: var(--bg-raised);
-      padding: var(--spacing-xs) var(--spacing);
-      border-radius: var(--radius-md);
-
-      .react-aria-Link {
-        color: var(--fg);
-      }
-    }
-
-    /* ===== Size Variants ===== */
-
-    &[data-size="sm"] {
-      font-size: var(--text-xs);
+    &[data-size="S"] {
+      font-size: var(--text-sm);
 
       .react-aria-Breadcrumb:not(:last-child)::after {
         padding: 0 var(--spacing-xs);
       }
-
-      &[data-variant="filled"] {
-        padding: var(--spacing-2xs) var(--spacing-xs);
-      }
     }
 
-    &[data-size="md"] {
+    &[data-size="M"] {
       font-size: var(--text-base);
-
-      &[data-variant="filled"] {
-        padding: var(--spacing-xs) var(--spacing);
-      }
     }
 
-    &[data-size="lg"] {
-      font-size: var(--text-base);
+    &[data-size="L"] {
+      font-size: var(--text-lg);
 
       .react-aria-Breadcrumb:not(:last-child)::after {
         padding: 0 var(--spacing-sm);
-      }
-
-      &[data-variant="filled"] {
-        padding: var(--spacing-sm) var(--spacing-md);
       }
     }
   }

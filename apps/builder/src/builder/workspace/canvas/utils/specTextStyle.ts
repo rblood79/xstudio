@@ -54,7 +54,7 @@ const TEXT_BEARING_SPECS: Record<
   radio: { spec: RadioSpec, defaultSize: "md" },
   switch: { spec: SwitchSpec, defaultSize: "md" },
   input: { spec: InputSpec, defaultSize: "sm" },
-  breadcrumbs: { spec: BreadcrumbsSpec, defaultSize: "md" },
+  breadcrumbs: { spec: BreadcrumbsSpec, defaultSize: "L" },
   statuslight: { spec: StatusLightSpec, defaultSize: "md" },
   selectvalue: { spec: SelectValueSpec, defaultSize: "md" },
   menu: {

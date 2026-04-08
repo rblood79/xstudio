@@ -37,12 +37,10 @@
 
   &[data-hovered] {
     background: transparent;
-    border-color: transparent;
   }
 
   &[data-pressed] {
     background: transparent;
-    border-color: transparent;
   }
 }
 

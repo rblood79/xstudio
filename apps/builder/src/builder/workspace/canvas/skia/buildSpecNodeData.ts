@@ -62,6 +62,8 @@ const CONTAINER_DIMENSION_TAGS = new Set([
   "Tag",
   "Breadcrumbs",
   "Tabs",
+  "TabList",
+  "Tab",
   "Toast",
   "ProgressBar",
   "ProgressBarTrack",
@@ -369,6 +371,57 @@ function resolveTagGroupAllowsRemoving(
   return Boolean(getProps(ancestor).allowsRemoving);
 }
 
+/** Tab → ancestor Tabs selectedKey 비교 → _isSelected 주입 */
+function resolveTabIsSelected(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): boolean | null {
+  if (element.tag !== "Tab" || !element.parent_id) return null;
+
+  const tabId = getProps(element).tabId as string | undefined;
+  if (!tabId) return null;
+
+  // 부모 TabList → 조상 Tabs 탐색 (최대 3 depth)
+  let currentId: string | null | undefined = element.parent_id;
+  for (let depth = 0; depth < 3 && currentId; depth++) {
+    const ancestor = elementsMap.get(currentId);
+    if (!ancestor) break;
+    if (ancestor.tag === "Tabs") {
+      const ap = getProps(ancestor);
+      const selectedKey =
+        (ap.selectedKey as string | undefined) ??
+        (ap.defaultSelectedKey as string | undefined);
+      if (selectedKey != null) {
+        return selectedKey === tabId;
+      }
+      // selectedKey 미설정 시 첫 번째 Tab이 선택됨 → 부모 조회 불가, 기본 false
+      return false;
+    }
+    currentId = ancestor.parent_id;
+  }
+  return null;
+}
+
+/** Tab/TabList → ancestor Tabs orientation 위임 */
+function resolveTabOrientation(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): string | null {
+  if (element.tag !== "Tab" && element.tag !== "TabList") return null;
+  if (!element.parent_id) return null;
+
+  let currentId: string | null | undefined = element.parent_id;
+  for (let depth = 0; depth < 3 && currentId; depth++) {
+    const ancestor = elementsMap.get(currentId);
+    if (!ancestor) break;
+    if (ancestor.tag === "Tabs") {
+      return (getProps(ancestor).orientation as string) ?? "horizontal";
+    }
+    currentId = ancestor.parent_id;
+  }
+  return null;
+}
+
 /** Label in nowrap parent detection */
 function isLabelInNowrapParent(
   element: Element,
@@ -544,10 +597,37 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     specProps = { ...specProps, allowsRemoving: true };
   }
 
+  // Tab _isSelected injection
+  const tabIsSelected = resolveTabIsSelected(element, elementsMap);
+  if (tabIsSelected !== null) {
+    specProps = { ...specProps, _isSelected: tabIsSelected };
+  }
+
+  // Tab/TabList orientation delegation from ancestor Tabs
+  const tabOrientation = resolveTabOrientation(element, elementsMap);
+  if (tabOrientation !== null && !specProps.orientation) {
+    specProps = { ...specProps, orientation: tabOrientation };
+  }
+
   // _hasChildren injection
   if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
     if (childElements && childElements.length > 0) {
       specProps = { ...specProps, _hasChildren: true };
+    }
+  }
+
+  // Breadcrumbs _crumbs injection — 실제 자식 텍스트를 Skia 렌더러에 전달
+  if (tag === "Breadcrumbs" && childElements && childElements.length > 0) {
+    const crumbs: string[] = [];
+    for (const child of childElements) {
+      const childProps = child.props as Record<string, unknown> | undefined;
+      const label = String(
+        childProps?.children ?? childProps?.label ?? childProps?.title ?? "",
+      );
+      if (label) crumbs.push(label);
+    }
+    if (crumbs.length > 0) {
+      specProps = { ...specProps, _crumbs: crumbs };
     }
   }
 

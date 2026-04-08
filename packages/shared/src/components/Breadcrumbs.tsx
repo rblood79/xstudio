@@ -4,7 +4,6 @@ import {
   Breadcrumb,
   Link,
 } from "react-aria-components";
-import type { ComponentSize } from "../types";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import { useCollectionData } from "../hooks";
@@ -12,24 +11,18 @@ import { Skeleton } from "./Skeleton";
 import "./styles/Breadcrumbs.css";
 
 /**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
+ * RSP API: https://react-spectrum.adobe.com/react-spectrum/Breadcrumbs.html
+ * size: 'S' | 'M' | 'L' (default 'L')
  */
 
 export interface BreadcrumbsExtendedProps<
   T extends object,
 > extends BreadcrumbsProps<T> {
   /**
-   * M3 variant
-   * @default 'primary'
+   * Controls spacing and layout size. RSP API: 'S' | 'M' | 'L'
+   * @default 'L'
    */
-  variant?: string;
-  /**
-   * Size variant
-   * @default 'md'
-   */
-  size?: ComponentSize;
+  size?: "S" | "M" | "L";
   /**
    * Data binding for dynamic breadcrumb items
    */
@@ -51,30 +44,17 @@ export interface BreadcrumbsExtendedProps<
 }
 
 /**
- * Breadcrumbs Component with Material Design 3 support
- *
- * M3 Features:
- * - 5 variants: primary, secondary, tertiary, error, filled
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
- * Features:
- * - Navigation hierarchy
- * - Current page indicator
- * - Keyboard accessible
- * - Responsive separators
- * - DataBinding support for dynamic breadcrumb items
+ * Breadcrumbs — React Spectrum S2 API 기반
  *
  * @example
- * <Breadcrumbs variant="primary" size="md">
+ * <Breadcrumbs size="L">
  *   <Breadcrumb><Link href="/">Home</Link></Breadcrumb>
  *   <Breadcrumb><Link href="/products">Products</Link></Breadcrumb>
  *   <Breadcrumb><Link>Current Page</Link></Breadcrumb>
  * </Breadcrumbs>
  */
 export function Breadcrumbs<T extends object>({
-  variant = "primary",
-  size = "md",
+  size = "L",
   dataBinding,
   columnMapping,
   isLoading: externalLoading,
@@ -106,7 +86,6 @@ export function Breadcrumbs<T extends object>({
             ? `react-aria-Breadcrumbs ${props.className}`
             : "react-aria-Breadcrumbs"
         }
-        data-variant={variant}
         data-size={size}
         aria-busy="true"
         aria-label="Loading breadcrumbs..."
@@ -126,7 +105,7 @@ export function Breadcrumbs<T extends object>({
               key={i}
               style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-              <Skeleton componentVariant="breadcrumb" size={size} index={i} />
+              <Skeleton componentVariant="breadcrumb" size="md" index={i} />
               {i < skeletonCount - 1 && (
                 <span style={{ color: "var(--color-gray-400)" }}>/</span>
               )}
@@ -164,7 +143,6 @@ export function Breadcrumbs<T extends object>({
         <RACBreadcrumbs
           {...props}
           className={breadcrumbsClassName}
-          data-variant={variant}
           data-size={size}
         >
           <Breadcrumb>
@@ -179,7 +157,6 @@ export function Breadcrumbs<T extends object>({
         <RACBreadcrumbs
           {...props}
           className={breadcrumbsClassName}
-          data-variant={variant}
           data-size={size}
         >
           <Breadcrumb>
@@ -194,7 +171,6 @@ export function Breadcrumbs<T extends object>({
         <RACBreadcrumbs
           {...props}
           className={breadcrumbsClassName}
-          data-variant={variant}
           data-size={size}
         >
           {children}
@@ -210,7 +186,6 @@ export function Breadcrumbs<T extends object>({
         <RACBreadcrumbs
           {...props}
           className={breadcrumbsClassName}
-          data-variant={variant}
           data-size={size}
         >
           <Breadcrumb>
@@ -225,7 +200,6 @@ export function Breadcrumbs<T extends object>({
         <RACBreadcrumbs
           {...props}
           className={breadcrumbsClassName}
-          data-variant={variant}
           data-size={size}
         >
           <Breadcrumb>
@@ -240,7 +214,6 @@ export function Breadcrumbs<T extends object>({
         <RACBreadcrumbs
           {...props}
           className={breadcrumbsClassName}
-          data-variant={variant}
           data-size={size}
         >
           {boundData.map((item, index) => (
@@ -262,7 +235,6 @@ export function Breadcrumbs<T extends object>({
     <RACBreadcrumbs
       {...props}
       className={breadcrumbsClassName}
-      data-variant={variant}
       data-size={size}
     >
       {children}

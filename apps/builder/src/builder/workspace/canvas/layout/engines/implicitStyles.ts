@@ -825,27 +825,129 @@ export function applyImplicitStyles(
     const tabPanelPadding =
       TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
 
-    // Dual Lookup: 직속 Panel 또는 TabPanels 내부 Panel
-    let panelChildren = children.filter((c) => c.tag === "Panel");
-    if (panelChildren.length === 0) {
-      const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
-      if (tabPanelsEl) {
-        panelChildren = getChildElements(tabPanelsEl.id).filter(
-          (c) => c.tag === "Panel",
-        );
-      }
-    }
-    const activePanel = panelChildren[0];
-    filteredChildren = activePanel ? [activePanel] : [];
+    const tabListEl = children.find((c) => c.tag === "TabList");
+    const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
+    // 직속 Panel (TabPanels 없는 구조)
+    const directPanel = children.find((c) => c.tag === "Panel");
 
+    if (tabListEl) {
+      // 새 구조 (TabList 존재): TabList에 고정 height 주입 → Taffy 레이아웃 포함
+      // → spatialIndex에 bounds 등록 → 캔버스에서 TabList/Tab 선택 가능
+      const injectedTabList: Element = {
+        ...tabListEl,
+        props: {
+          ...tabListEl.props,
+          style: {
+            ...((tabListEl.props?.style as Record<string, unknown>) ?? {}),
+            height: tabBarHeight,
+            minHeight: tabBarHeight,
+            width: "100%",
+            display: "flex",
+            flexDirection: "row",
+          },
+        },
+      };
+      // CSS: .react-aria-TabPanel { padding: var(--spacing-md) }
+      // TabPanels 또는 직속 Panel에 size별 padding 주입
+      const panelContainer = tabPanelsEl ?? directPanel;
+      const injectedPanelContainer: Element | undefined = panelContainer
+        ? {
+            ...panelContainer,
+            props: {
+              ...panelContainer.props,
+              style: {
+                ...((panelContainer.props?.style as Record<string, unknown>) ??
+                  {}),
+                padding: tabPanelPadding,
+              },
+            },
+          }
+        : undefined;
+      filteredChildren = [
+        injectedTabList,
+        ...(injectedPanelContainer ? [injectedPanelContainer] : []),
+      ];
+      effectiveParent = withParentStyle(containerEl, {
+        ...parentStyle,
+        display: "flex",
+        flexDirection: "column",
+      });
+    } else {
+      // 구식 flat 구조 (TabList 없음): 기존 동작 유지
+      filteredChildren = activePanel ? [activePanel] : [];
+      effectiveParent = withParentStyle(containerEl, {
+        ...parentStyle,
+        display: "flex",
+        flexDirection: "column",
+        paddingTop: tabBarHeight,
+      });
+    }
+  }
+
+  // ── TabPanels ────────────────────────────────────────────────────────
+  // CSS: .react-aria-TabPanel { padding: var(--spacing-md) }
+  // → TabPanels는 활성 Panel 하나만 렌더링, 나머지 숨김
+  if (containerTag === "tabpanels") {
+    const tabsParent = containerEl.parent_id
+      ? elementById.get(containerEl.parent_id)
+      : undefined;
+    const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
+    const sizeName = (tabsProps?.size as string) ?? "md";
+    const tabPanelPadding =
+      TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
+    const selectedKey =
+      (tabsProps?.selectedKey as string | undefined) ??
+      (tabsProps?.defaultSelectedKey as string | undefined);
+
+    // 활성 Panel: selectedKey 매칭 또는 첫 번째
+    const panelItems = children.filter((c) => c.tag === "Panel");
+    const activePanel = selectedKey
+      ? (panelItems.find(
+          (p) => (p.props as Record<string, unknown>)?.tabId === selectedKey,
+        ) ?? panelItems[0])
+      : panelItems[0];
+
+    filteredChildren = activePanel ? [activePanel] : [];
     effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
+      ...(containerEl.props?.style as Record<string, unknown> | undefined),
       display: "flex",
       flexDirection: "column",
-      paddingTop: tabBarHeight + tabPanelPadding,
-      paddingLeft: tabPanelPadding,
-      paddingRight: tabPanelPadding,
-      paddingBottom: tabPanelPadding,
+      padding: tabPanelPadding,
+      flexGrow: 1,
+    });
+  }
+
+  // ── TabList ─────────────────────────────────────────────────────────
+  if (containerTag === "tablist") {
+    // Tabs 조상에서 size 조회
+    const tabsParent = containerEl.parent_id
+      ? elementById.get(containerEl.parent_id)
+      : undefined;
+    const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
+    const sizeName = (tabsProps?.size as string) ?? "md";
+    const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
+
+    // Tab 자식에 height 주입 → 각 Tab 선택 가능
+    filteredChildren = children.map((child) => {
+      if (child.tag !== "Tab") return child;
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...((child.props?.style as Record<string, unknown>) ?? {}),
+            height: tabBarHeight,
+            minHeight: tabBarHeight,
+          },
+        },
+      } as Element;
+    });
+    effectiveParent = withParentStyle(containerEl, {
+      ...(containerEl.props?.style as Record<string, unknown> | undefined),
+      display: "flex",
+      flexDirection: "row",
+      height: tabBarHeight,
+      width: "100%",
     });
   }
 

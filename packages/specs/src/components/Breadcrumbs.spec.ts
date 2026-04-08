@@ -1,8 +1,10 @@
 /**
  * Breadcrumbs Component Spec
  *
- * React Aria 기반 브레드크럼 컴포넌트
- * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
+ * React Spectrum S2 API 기반 브레드크럼 컴포넌트
+ * Single Source of Truth - React와 Skia 모두에서 동일한 시각적 결과
+ *
+ * RSP API 레퍼런스: https://react-spectrum.adobe.com/react-spectrum/Breadcrumbs.html
  *
  * @packageDocumentation
  */
@@ -14,15 +16,21 @@ import { PointerOff } from "lucide-react";
 import { measureSpecTextWidth } from "../renderers/utils/measureText";
 
 /**
- * Breadcrumbs Props
+ * Breadcrumbs Props — RSP API 기준
  */
 export interface BreadcrumbsProps {
-  variant?: "default" | "accent";
-  size?: "sm" | "md" | "lg";
-  separator?: string;
+  /** Controls spacing and layout size. RSP API: 'S' | 'M' | 'L', default 'L' */
+  size?: "S" | "M" | "L";
+  /** Always shows root item when collapsed */
   showRoot?: boolean;
+  /** Places last item on new line */
   isMultiline?: boolean;
+  /** Disables all breadcrumbs */
   isDisabled?: boolean;
+  /** Auto-focuses last item on render */
+  autoFocusCurrent?: boolean;
+  /** Separator character (composition extension) */
+  separator?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
@@ -32,15 +40,16 @@ export interface BreadcrumbsProps {
 
 /**
  * Breadcrumbs Component Spec
+ * RSP size default: 'L'
  */
 export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   name: "Breadcrumbs",
-  description: "React Aria 기반 브레드크럼 네비게이션 컴포넌트",
+  description: "React Spectrum S2 기반 브레드크럼 네비게이션 컴포넌트",
   archetype: "simple",
   element: "nav",
 
   defaultVariant: "default",
-  defaultSize: "md",
+  defaultSize: "L",
 
   variants: {
     default: {
@@ -50,17 +59,10 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       text: "{color.neutral-subdued}" as TokenRef,
       textHover: "{color.accent}" as TokenRef,
     },
-    accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-      textHover: "{color.accent}" as TokenRef,
-    },
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -68,7 +70,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -76,7 +78,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -138,7 +140,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, _variant, size, _state = "default") => {
       const ff = fontFamily.sans;
       // CSS 기본 구분자: › (RIGHT SINGLE ANGLE QUOTATION MARK)
       const separator = props.separator ?? "›";
@@ -152,7 +154,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       const resolvedFontSize =
         typeof size.fontSize === "number"
           ? size.fontSize
-          : ((resolveToken(size.fontSize as TokenRef) as number) ?? 14);
+          : ((resolveToken(size.fontSize as TokenRef) as number) ?? 16);
       // CSS 구분자 간격: padding: 0 var(--spacing) = 0 4px
       const separatorPadding = 4;
 
@@ -197,7 +199,9 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
           fontSize: resolvedFontSize,
           fontFamily: ff,
           fontWeight: isLast ? 600 : 400,
-          fill: isLast ? variant.text : ("{color.neutral-subdued}" as TokenRef),
+          fill: isLast
+            ? ("{color.accent}" as TokenRef)
+            : ("{color.neutral-subdued}" as TokenRef),
           align: "left" as const,
           baseline: "middle" as const,
           maxWidth: estimatedTextWidth + resolvedFontSize,

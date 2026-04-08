@@ -20,9 +20,9 @@
   /* Default size */
   height: 24px;
   padding: 0px 0px;
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   border-radius: var(--radius-none);
-  gap: 8px;
+  gap: 10px;
 }
 
 .react-aria-Breadcrumbs[data-variant="default"] {
@@ -39,21 +39,7 @@
   }
 }
 
-.react-aria-Breadcrumbs[data-variant="accent"] {
-  background: var(--bg);
-  color: var(--fg-muted);
-
-  &[data-hovered] {
-    background: var(--bg);
-    color: var(--accent);
-  }
-
-  &[data-pressed] {
-    background: var(--bg);
-  }
-}
-
-.react-aria-Breadcrumbs[data-size="sm"] {
+.react-aria-Breadcrumbs[data-size="S"] {
   height: 16px;
   padding: 0px 0px;
   font-size: var(--text-sm);
@@ -61,7 +47,7 @@
   gap: 4px;
 }
 
-.react-aria-Breadcrumbs[data-size="md"] {
+.react-aria-Breadcrumbs[data-size="M"] {
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-base);
@@ -69,7 +55,7 @@
   gap: 8px;
 }
 
-.react-aria-Breadcrumbs[data-size="lg"] {
+.react-aria-Breadcrumbs[data-size="L"] {
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-lg);

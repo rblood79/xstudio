@@ -20,6 +20,7 @@ import {
   BadgeSpec,
   TagSpec,
   ToggleButtonSpec,
+  TabSpec,
   CardSpec,
   resolveToken,
   PROGRESSBAR_DIMENSIONS,
@@ -530,6 +531,9 @@ const TAG_SIZE_CONFIG = deriveSizeConfig(TagSpec.sizes);
 // ADR-036: ToggleButtonSpec.sizes에서 파생
 const TOGGLEBUTTON_SIZE_CONFIG = deriveSizeConfig(ToggleButtonSpec.sizes);
 
+// ADR-036: TabSpec.sizes에서 파생
+const TAB_SIZE_CONFIG = deriveSizeConfig(TabSpec.sizes);
+
 // ADR-036: CardSpec.sizes에서 파생
 const CARD_SIZE_CONFIG: Record<string, { padding: number }> =
   Object.fromEntries(
@@ -560,6 +564,7 @@ const INLINE_UI_SIZE_CONFIGS: Record<
   tag: TAG_SIZE_CONFIG,
   chip: BADGE_SIZE_CONFIG,
   togglebutton: TOGGLEBUTTON_SIZE_CONFIG,
+  tab: TAB_SIZE_CONFIG,
   submitbutton: BUTTON_SIZE_CONFIG,
   fancybutton: BUTTON_SIZE_CONFIG,
 };
@@ -879,7 +884,7 @@ export function calculateContentWidth(
   // fullTreeLayout.ts에서 rawChildren을 enrichChildren으로 전달하여 자식 기반 계산 가능
   if (tag === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? "md";
+    const sizeName = (props?.size as string) ?? "L";
     const separator = (props?.separator as string) ?? "›";
 
     // Spec에서 실제 font style 추출 (children prop 전달 필수)
@@ -887,7 +892,7 @@ export function calculateContentWidth(
       size: sizeName,
       _crumbs: ["x"],
     });
-    const fontSize = specStyle?.fontSize ?? 14;
+    const fontSize = specStyle?.fontSize ?? 16;
     const fontWeight = specStyle?.fontWeight ?? 400;
     const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
 
@@ -2261,13 +2266,16 @@ export function calculateContentHeight(
     return hasTitle ? heights.withTitle : heights.noTitle;
   }
 
-  // 4.2. Breadcrumbs: display:flex, align-items:center — 높이 = lineHeight
-  // CSS에 명시적 height 없음, 텍스트 line-height로 결정
-  // sm: text-xs(12px) * ~1.33 ≈ 16px, md/lg: text-base(16px) * 1.5 = 24px
+  // 4.2. Breadcrumbs: display:flex, align-items:center — 높이 = spec size.height
+  // RSP API: S=16px, M=24px, L=24px (default L)
   if (tag === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? "md";
+    const sizeName = (props?.size as string) ?? "L";
     const BREADCRUMBS_HEIGHTS: Record<string, number> = {
+      S: 16,
+      M: 24,
+      L: 24,
+      // backward compat — 기존 데이터 sm/md/lg 허용
       sm: 16,
       md: 24,
       lg: 24,
@@ -2812,6 +2820,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "breadcrumbs",
   "icon",
   "menu",
+  "tab",
 ]);
 
 /**

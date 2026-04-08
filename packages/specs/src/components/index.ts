@@ -244,6 +244,10 @@ export type { TreeProps } from "./Tree.spec";
 // Tabs
 export { TabsSpec } from "./Tabs.spec";
 export type { TabsProps } from "./Tabs.spec";
+export { TabListSpec } from "./TabList.spec";
+export type { TabListProps } from "./TabList.spec";
+export { TabSpec } from "./Tab.spec";
+export type { TabProps } from "./Tab.spec";
 
 // Menu
 export { MenuSpec } from "./Menu.spec";

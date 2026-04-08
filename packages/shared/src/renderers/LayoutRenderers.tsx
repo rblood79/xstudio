@@ -1103,7 +1103,7 @@ export const renderBreadcrumbs = (
           ? element.props["aria-label"]
           : undefined
       }
-      size={element.props.size as ComponentSize | undefined}
+      size={element.props.size as "S" | "M" | "L" | undefined}
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
