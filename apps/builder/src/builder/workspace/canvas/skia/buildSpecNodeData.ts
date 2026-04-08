@@ -682,7 +682,9 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   }
 
   // ---------- component state ----------
+  // Breadcrumb 마지막 항목: Preview CSS와 동일 — isDisabled·부모 isDisabled와 무관하게 비활성 opacity/톤 미적용
   const componentState: ComponentState = (() => {
+    if (breadcrumbCtx?._isLast) return "default";
     if (specProps.isDisabled || specProps.disabled) return "disabled";
     if (breadcrumbCtx?._parentIsDisabled) return "disabled";
     return "default";

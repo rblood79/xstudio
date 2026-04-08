@@ -3,6 +3,7 @@
  *
  * Skia: 각 크럼 + 비-마지막이면 구분자(›)를 이 셀 안에서 그린다.
  * 부모 Breadcrumbs는 컨테이너만 담당(render.shapes 빈 배열).
+ * 마지막 항목: buildSpecNodeData가 disabled state를 쓰지 않음 — Preview CSS(마지막은 opacity·비활성 톤 미적용)와 동일.
  *
  * @packageDocumentation
  */

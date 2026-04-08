@@ -68,9 +68,9 @@
 }
 
 .react-aria-Breadcrumbs[data-disabled] {
-  opacity: 0.38;
-  cursor: not-allowed;
-  pointer-events: none;
+  opacity: 1;
+  cursor: default;
+  pointer-events: auto;
 }
 
 @media (forced-colors: active) {

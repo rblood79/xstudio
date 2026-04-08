@@ -84,9 +84,11 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
 
   states: {
     hover: {},
+    /* 마지막 항목(현재 페이지)은 레퍼런스대로 흐리지 않음 — opacity는 자손 선택자로만 적용 */
     disabled: {
-      opacity: 0.38,
-      pointerEvents: "none",
+      opacity: 1,
+      pointerEvents: "auto",
+      cursor: "default",
     },
     focusVisible: {
       outline: "2px solid var(--accent)",
