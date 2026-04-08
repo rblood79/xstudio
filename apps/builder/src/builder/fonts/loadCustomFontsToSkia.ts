@@ -17,16 +17,25 @@ const PROTECTED_FAMILIES = new Set(["Pretendard", "Inter"]);
  * Canvas 2D 측정 경로(USE_CANVAS2D_MEASURE)를 위해 document.fonts에도 폰트를 등록한다.
  * CanvasKit은 CSS @font-face를 사용하지 않으므로 두 경로가 별도로 로드해야 한다.
  * Pretendard는 index.css의 @import로 이미 로드되어 있으므로 스킵.
+ *
+ * weight/style descriptor를 전달하여 브라우저가 올바른 face를 매핑하도록 한다.
+ * 미전달 시 font-weight: 700 요청에도 400 face가 매핑되어 fake-bold 처리됨.
  */
 async function registerFontInBrowser(
   family: string,
   url: string,
+  weight?: string,
+  style?: string,
 ): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return;
-  // 이미 브라우저에 로드된 폰트는 스킵
-  if (document.fonts.check(`12px "${family}"`)) return;
+  // weight/style 포함한 특정 face가 이미 로드되어 있으면 스킵
+  const checkStr = `${weight ?? 400} ${style === "italic" ? "italic " : ""}12px "${family}"`;
+  if (document.fonts.check(checkStr)) return;
   try {
-    const face = new FontFace(family, `url(${url})`);
+    const descriptors: FontFaceDescriptors = {};
+    if (weight) descriptors.weight = weight;
+    if (style) descriptors.style = style;
+    const face = new FontFace(family, `url(${url})`, descriptors);
     await face.load();
     document.fonts.add(face);
   } catch (e) {
@@ -114,9 +123,12 @@ async function loadSingleFontToSkia(face: FontFaceAsset): Promise<boolean> {
     if (face.source.type === "data-url-temp") {
       const buffer = await dataUrlToArrayBuffer(face.source.url);
       skiaFontManager.loadFontFromBuffer(family, buffer, weight, style);
+      // Canvas 2D 측정 경로를 위해 document.fonts에도 등록 (weight/style descriptor 포함)
+      await registerFontInBrowser(family, face.source.url, weight, style);
     } else {
       // project-asset, remote-url
       await skiaFontManager.loadFont(family, face.source.url, weight, style);
+      await registerFontInBrowser(family, face.source.url, weight, style);
     }
     return true;
   } catch (e) {

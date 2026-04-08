@@ -235,6 +235,7 @@ export function preprocessTokens(tokens: Token[]): Token[] {
 
 /** Map<fontKey, Map<tokenText, width>> */
 const segmentCaches = new Map<string, Map<string, number>>();
+const pendingFontLoads = new Map<string, Promise<void>>();
 
 let sharedCtx:
   | CanvasRenderingContext2D
@@ -243,15 +244,44 @@ let sharedCtx:
 
 let fontsReady = false;
 
+function notifyFontsReady(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("composition:fonts-ready"));
+}
+
+function queueFontLoad(fontString: string, sampleText: string): void {
+  if (typeof document === "undefined" || !document.fonts) return;
+  if (pendingFontLoads.has(fontString)) return;
+
+  const loadPromise = document.fonts
+    .load(fontString, sampleText)
+    .then(() => {
+      fontsReady = true;
+      segmentCaches.clear();
+      notifyFontsReady();
+    })
+    .catch(() => {
+      // 브라우저가 로드를 거부하거나 폰트가 없으면 다음 측정에서 다시 시도한다.
+    })
+    .finally(() => {
+      pendingFontLoads.delete(fontString);
+    });
+
+  pendingFontLoads.set(fontString, loadPromise);
+}
+
 // 폰트 로딩 상태 추적
 if (typeof document !== "undefined" && document.fonts) {
   document.fonts.ready.then(() => {
     fontsReady = true;
+    segmentCaches.clear();
+    notifyFontsReady();
   });
   document.fonts.addEventListener("loadingdone", () => {
     // 새 폰트 로드 시 기존 캐시 무효화 (fallback 폰트 결과 제거)
     segmentCaches.clear();
     fontsReady = true;
+    notifyFontsReady();
   });
 }
 
@@ -281,9 +311,14 @@ export function getOrMeasureWidth(
   fontString: string,
 ): number {
   const ctx = getCtx();
+  const isFontLoaded =
+    typeof document !== "undefined" && document.fonts
+      ? document.fonts.check(fontString, token)
+      : fontsReady;
 
-  // 폰트 미로드 → 캐싱 없이 직접 측정
-  if (!fontsReady) {
+  // 폰트 미로드 → 캐싱 없이 직접 측정하고 비동기 로드 트리거
+  if (!isFontLoaded) {
+    queueFontLoad(fontString, token);
     ctx.font = fontString;
     return ctx.measureText(token).width;
   }

@@ -269,6 +269,11 @@ if (typeof document !== "undefined" && document.fonts) {
     // 폰트 로드 완료 후 레이아웃 재계산 트리거
     window.dispatchEvent(new CustomEvent("composition:fonts-ready"));
   });
+  document.fonts.addEventListener("loadingdone", () => {
+    _fontsReady = true;
+    _fontMetricsCache.clear();
+    window.dispatchEvent(new CustomEvent("composition:fonts-ready"));
+  });
 }
 
 /**

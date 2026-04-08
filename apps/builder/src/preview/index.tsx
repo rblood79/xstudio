@@ -16,6 +16,7 @@ import "pretendard/dist/web/static/pretendard.css";
 
 // 폰트 유틸리티
 import { loadFontRegistry, buildRegistryFontFaceCss } from "@composition/shared";
+import { injectBuiltinFontStyle } from "../fonts/builtinFonts";
 
 // ============================================
 // Styles
@@ -91,6 +92,7 @@ const injectCustomFonts = () => {
 // ============================================
 
 function initPreviewRuntime() {
+  injectBuiltinFontStyle();
   injectBaseStyles();
   injectCustomFonts();
 

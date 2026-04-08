@@ -15,6 +15,7 @@ import { isReactQueryDevtoolsEnabled } from "./utils/featureFlags";
 // Side-effect import to initialize monitors and attach to window
 import "./utils/longTaskMonitor";
 import "./utils/postMessageMonitor";
+import "./fonts/initBuiltinFonts";
 import "./builder/fonts/initCustomFonts";
 
 // Single CSS entry point - all imports handled in index.css via @import
