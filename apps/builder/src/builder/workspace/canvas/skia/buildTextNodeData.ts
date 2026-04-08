@@ -281,6 +281,7 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
         : {}),
       paddingLeft: padding.left,
       paddingTop: padding.top,
+      paddingBottom: padding.bottom,
       maxWidth: w - padding.left - padding.right,
       // verticalAlign
       ...(flexAlignment?.verticalAlign

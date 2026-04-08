@@ -19,7 +19,6 @@ import type { Element } from "../../../../types/core/store.types";
 import type { SkiaNodeData } from "./nodeRendererTypes";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import type { ComponentState } from "@composition/specs";
-import { InlineAlertSpec } from "@composition/specs";
 import { getSpecForTag } from "../sprites/tagSpecMap";
 import { specShapesToSkia } from "./specShapeConverter";
 import {
@@ -38,6 +37,7 @@ import {
 import {
   rearrangeShapesForColumn,
   measureSpecTextMinHeight,
+  normalizeMiddleBaselineTextLineHeight,
 } from "./specBuildHelpers";
 
 // ---------------------------------------------------------------------------
@@ -322,38 +322,6 @@ function resolveSliderProps(
   };
 }
 
-/** InlineAlert → Heading/Description font delegation */
-function resolveInlineAlertFont(
-  element: Element,
-  elementsMap: Map<string, Element>,
-): { fontSize: number; fontWeight: number } | null {
-  if (element.tag !== "Heading" && element.tag !== "Description") return null;
-  if (!element.parent_id) return null;
-
-  const parent = elementsMap.get(element.parent_id);
-  if (!parent || parent.tag !== "InlineAlert") return null;
-
-  const pp = getProps(parent);
-  const sizeName = (pp.size as string) ?? "md";
-  const specSize = (InlineAlertSpec.sizes[sizeName] ??
-    InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as unknown as Record<
-    string,
-    unknown
-  >;
-
-  if (element.tag === "Heading") {
-    return {
-      fontSize: (specSize.headingFontSize as number) ?? 16,
-      fontWeight: (specSize.headingFontWeight as number) ?? 700,
-    };
-  }
-  // Description
-  return {
-    fontSize: (specSize.descFontSize as number) ?? 14,
-    fontWeight: (specSize.descFontWeight as number) ?? 400,
-  };
-}
-
 /** SelectIcon/ComboBoxTrigger → parent/grandparent iconName */
 function resolveIconDelegation(
   element: Element,
@@ -535,20 +503,6 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     };
   }
 
-  // InlineAlert → Heading/Description font delegation
-  const inlineAlertFont = resolveInlineAlertFont(element, elementsMap);
-  if (inlineAlertFont) {
-    const existingStyle = (specProps.style || {}) as Record<string, unknown>;
-    specProps = {
-      ...specProps,
-      style: {
-        ...existingStyle,
-        fontSize: existingStyle.fontSize ?? inlineAlertFont.fontSize,
-        fontWeight: existingStyle.fontWeight ?? inlineAlertFont.fontWeight,
-      },
-    };
-  }
-
   // ProgressBar/Meter value propagation
   const progressProps = resolveProgressProps(element, elementsMap);
   if (progressProps) {
@@ -635,6 +589,11 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     variantSpec,
     sizeSpec,
     componentState,
+  );
+
+  normalizeMiddleBaselineTextLineHeight(
+    shapes,
+    sizeSpec as unknown as Record<string, unknown>,
   );
 
   // ---------- Column layout ----------

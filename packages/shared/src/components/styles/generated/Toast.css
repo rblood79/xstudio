@@ -32,12 +32,10 @@
 
   &[data-hovered] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 
   &[data-pressed] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 }
 
@@ -48,12 +46,10 @@
 
   &[data-hovered] {
     background: var(--color-green-100);
-    border-color: var(--color-green-100);
   }
 
   &[data-pressed] {
     background: var(--color-green-100);
-    border-color: var(--color-green-100);
   }
 }
 
@@ -64,12 +60,10 @@
 
   &[data-hovered] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 
   &[data-pressed] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 }
 
@@ -80,12 +74,10 @@
 
   &[data-hovered] {
     background: var(--color-purple-100);
-    border-color: var(--color-purple-100);
   }
 
   &[data-pressed] {
     background: var(--color-purple-100);
-    border-color: var(--color-purple-100);
   }
 }
 

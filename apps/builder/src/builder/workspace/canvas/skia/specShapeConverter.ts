@@ -9,7 +9,11 @@ import type { Shape, ColorValue } from "@composition/specs";
 import { getIconData } from "@composition/specs";
 import type { SkiaNodeData } from "./nodeRenderers";
 import type { EffectStyle, FillStyle } from "./types";
-import { resolveColor, resolveToken, hexStringToNumber } from "@composition/specs";
+import {
+  resolveColor,
+  resolveToken,
+  hexStringToNumber,
+} from "@composition/specs";
 import { getSkImage, loadSkImage } from "./imageCache";
 
 // ========== Helpers ==========
@@ -409,6 +413,7 @@ export function specShapesToSkia(
             ...(shape.strokeDasharray
               ? { strokeDasharray: shape.strokeDasharray }
               : {}),
+            ...(shape.strokeCap ? { strokeCap: shape.strokeCap } : {}),
           },
         };
 
@@ -695,6 +700,10 @@ export function specShapesToSkia(
           }
         }
         // baseline='top' → paddingTop = y (already)
+        const paddingBottom = Math.max(
+          0,
+          containerHeight - Math.max(0, paddingTop) - lineHeightPx,
+        );
 
         // Calculate paddingLeft based on align
         // align="right" + x>0: x는 우측 경계 → paddingLeft=0, maxWidth=x
@@ -786,6 +795,7 @@ export function specShapesToSkia(
             decoration,
             paddingLeft,
             paddingTop: Math.max(0, paddingTop),
+            paddingBottom,
             maxWidth,
             autoCenter: false,
           },

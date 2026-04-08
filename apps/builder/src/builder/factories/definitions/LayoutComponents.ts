@@ -29,6 +29,7 @@ export function createTabsDefinition(
       props: {
         defaultSelectedKey: tab1Id,
         orientation: "horizontal",
+        showIndicator: true,
         style: {
           width: "100%",
         },
@@ -222,6 +223,7 @@ export function createCardDefinition(
               children: "Card description text goes here.",
               style: {
                 display: "block",
+                width: "100%",
                 fontSize: "14px",
                 fontWeight: "400",
                 lineHeight: "1.5",

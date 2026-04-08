@@ -114,12 +114,13 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
 
   variants: {
     // S2에서 Tabs는 단일 스타일 (accent 기반 indicator)
+    // 선택된 탭 텍스트: --fg ({color.neutral}), CSS [data-selected]과 동일
     default: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral-subdued}" as TokenRef,
-      textHover: "{color.accent}" as TokenRef,
+      textHover: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
   },
@@ -215,16 +216,9 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
           : ["Tab 1", "Tab 2"];
       const selectedIdx = 0; // 기본 첫 번째 탭 선택
 
-      // containerWidth 기반 탭 너비 (Phase 2: 추정 제거)
-      const containerWidth =
-        typeof props._containerWidth === "number" && props._containerWidth > 0
-          ? props._containerWidth
-          : 0;
+      // CSS 정합: 각 Tab은 content 폭 기반 (flex item auto width)
+      // containerWidth 균등 분할은 CSS와 불일치 → 항상 텍스트 실측 폭 사용
       const estimateTabWidth = (label: string): number => {
-        if (containerWidth > 0) {
-          return Math.max(48, containerWidth / tabLabels.length);
-        }
-        // fallback: containerWidth 미주입 시 실측 폭 사용
         return Math.max(
           48,
           Math.ceil(measureSpecTextWidth(label, fontSize, ff)) +
@@ -266,16 +260,16 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
           maxWidth: tabWidth,
         });
 
-        // 선택된 탭의 하단 인디케이터
-        if (isSelected) {
+        // 선택된 탭의 하단/우측 인디케이터 — rect로 직각 보장
+        if (isSelected && props.showIndicator !== false) {
+          const indicatorThickness = 3;
           shapes.push({
-            type: "line" as const,
-            x1: isVertical ? 0 : tabX,
-            y1: isVertical ? tabY + size.height : size.height - 2,
-            x2: isVertical ? 0 : tabX + tabWidth,
-            y2: isVertical ? tabY + size.height : size.height - 2,
-            stroke: "{color.accent}" as TokenRef,
-            strokeWidth: 3,
+            type: "rect" as const,
+            x: isVertical ? tabWidth - indicatorThickness : tabX,
+            y: isVertical ? tabY : size.height - indicatorThickness,
+            width: isVertical ? indicatorThickness : tabWidth,
+            height: isVertical ? size.height : indicatorThickness,
+            fill: "{color.accent}" as TokenRef,
           });
         }
 

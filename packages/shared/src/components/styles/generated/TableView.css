@@ -36,12 +36,10 @@
 
   &[data-hovered] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 
   &[data-pressed] {
     background: color-mix(in srgb, var(--bg-muted) 75%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
   }
 }
 
@@ -52,12 +50,10 @@
 
   &[data-hovered] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 
   &[data-pressed] {
     background: color-mix(in srgb, var(--bg-muted) 75%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
   }
 }
 

@@ -40,12 +40,10 @@
 
   &[data-hovered] {
     background: color-mix(in srgb, var(--bg-muted) 85%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
   }
 
   &[data-pressed] {
     background: color-mix(in srgb, var(--bg-muted) 75%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
   }
 }
 

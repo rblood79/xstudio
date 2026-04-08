@@ -169,6 +169,7 @@ export const renderTabs = (
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
+      size={(element.props.size as ComponentSize) || "md"}
       isDisabled={Boolean(element.props.isDisabled)}
       dataBinding={
         (isPropertyBinding ? dataBinding : element.dataBinding) as
@@ -189,7 +190,8 @@ export const renderTabs = (
           (element.props.density as "compact" | "regular" | undefined) ||
           "regular"
         }
-        showIndicator={Boolean(element.props.showIndicator)}
+        size={(element.props.size as ComponentSize) || "md"}
+        showIndicator={element.props.showIndicator !== false}
       >
         {tabChildren.map((tab) => {
           // tabId prop을 React Aria key로 사용 (defaultSelectedKey와 매칭)
@@ -1569,7 +1571,7 @@ export const renderInlineAlert = (
       key={element.id}
       data-element-id={element.id}
       data-custom-id={element.customId}
-      data-variant={(element.props.variant as string) || "informative"}
+      data-variant={(element.props.variant as string) || "info"}
       data-size={(element.props.size as string) || "md"}
       role="alert"
       className={`react-aria-InlineAlert ${element.props.className || ""}`}

@@ -11,7 +11,14 @@ export function renderLine(
   paint.setAntiAlias(true);
   paint.setStyle(ck.PaintStyle.Stroke);
   paint.setStrokeWidth(node.line.strokeWidth);
-  paint.setStrokeCap(ck.StrokeCap.Round);
+  const cap = node.line.strokeCap;
+  paint.setStrokeCap(
+    cap === "butt"
+      ? ck.StrokeCap.Butt
+      : cap === "square"
+        ? ck.StrokeCap.Square
+        : ck.StrokeCap.Round,
+  );
   paint.setColor(node.line.strokeColor);
 
   let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;

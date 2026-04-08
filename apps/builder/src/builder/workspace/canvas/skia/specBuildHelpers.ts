@@ -86,6 +86,54 @@ export function rearrangeShapesForColumn(
 }
 
 // ---------------------------------------------------------------------------
+// normalizeMiddleBaselineTextLineHeight
+// ---------------------------------------------------------------------------
+
+function resolveLineHeightValue(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return value > 0 ? value : undefined;
+  }
+
+  if (typeof value === "string") {
+    if (value.startsWith("{")) {
+      const resolved = resolveToken(value as TokenRef);
+      const numeric =
+        typeof resolved === "number"
+          ? resolved
+          : parseFloat(String(resolved ?? ""));
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+    }
+
+    const numeric = parseFloat(value);
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+  }
+
+  return undefined;
+}
+
+/**
+ * `baseline: middle` 텍스트는 수직 중앙 배치 계산과 실제 Paragraph 렌더링이
+ * 동일한 line-height를 공유해야 상하 padding이 대칭으로 보인다.
+ *
+ * Button spec은 sizeSpec.lineHeight를 갖고 있지만 개별 text shape에는
+ * lineHeight를 항상 적지 않으므로, 여기서 middle-baseline 텍스트에 주입한다.
+ */
+export function normalizeMiddleBaselineTextLineHeight(
+  shapes: Shape[],
+  sizeSpec: Record<string, unknown>,
+): void {
+  const resolvedLineHeight = resolveLineHeightValue(sizeSpec.lineHeight);
+  if (!resolvedLineHeight) return;
+
+  for (const shape of shapes) {
+    if (shape.type !== "text") continue;
+    if (shape.baseline !== "middle") continue;
+    if (shape.lineHeight !== undefined) continue;
+    shape.lineHeight = resolvedLineHeight;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // measureSpecTextMinHeight — 텍스트 줄바꿈 시 최소 높이 계산
 // ---------------------------------------------------------------------------
 

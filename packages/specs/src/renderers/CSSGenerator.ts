@@ -26,6 +26,11 @@ const ARCHETYPE_BASE_STYLES: Record<ArchetypeId, string[]> = {
     `    align-items: center;`,
     `    box-sizing: border-box;`,
   ],
+  text: [
+    `    display: block;`,
+    `    width: 100%;`,
+    `    box-sizing: border-box;`,
+  ],
   button: [
     `    display: inline-flex;`,
     `    align-items: center;`,
@@ -150,10 +155,6 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
         lines.push(
           `    border-color: ${tokenToCSSVar(variantSpec.borderHover)};`,
         );
-      } else if (variantSpec.border) {
-        lines.push(
-          `    border-color: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
-        );
       }
       lines.push("  }");
       lines.push("");
@@ -163,11 +164,6 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
       lines.push(
         `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
       );
-      if (variantSpec.border) {
-        lines.push(
-          `    border-color: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
-        );
-      }
       lines.push("  }");
       lines.push("}");
       lines.push("");

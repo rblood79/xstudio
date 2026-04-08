@@ -40,7 +40,7 @@
   .react-aria-Tab .react-aria-SelectionIndicator {
     position: absolute;
     background: var(--tab-accent);
-    border-radius: var(--radius-full);
+    border-radius: 0;
     pointer-events: none;
     transition:
       translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -174,7 +174,7 @@
   .react-aria-Tabs[data-density="compact"],
   .react-aria-TabList[data-density="compact"] {
     .react-aria-Tab {
-      padding: var(--spacing-sm) var(--spacing-md);
+      padding: var(--spacing-2xs) var(--spacing-sm);
       font-size: var(--text-sm);
     }
 

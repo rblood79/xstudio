@@ -28,6 +28,10 @@ import { saveService } from "../../services/save";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import type { BatchPropsUpdate } from "./utils/elementUpdate";
+import {
+  collectDirtyElementSubtree,
+  LAYOUT_AFFECTING_PROP_KEYS,
+} from "./utils/layoutInvalidation";
 
 // ============================================
 // Types
@@ -200,44 +204,8 @@ export const createInspectorActionsSlice: StateCreator<
     // 🚀 단일 set() 호출 - 배칭으로 리렌더링 최소화
     // ADR-006 P3-1: 레이아웃 영향 prop 변경 시 layoutVersion 증가 → fullTreeLayoutMap 재계산 트리거
     // style 변경 외에도 size, label, children, text 등 레이아웃에 영향을 미치는 prop 포함
-    const LAYOUT_AFFECTING_PROPS = new Set([
-      "style",
-      "size",
-      "layout",
-      "columns",
-      "label",
-      "children",
-      "text",
-      "placeholder",
-      "orientation",
-      "items",
-      "iconName",
-      "iconPosition",
-      "allowsRemoving",
-      "maxRows",
-      "value",
-      "minValue",
-      "maxValue",
-      "variant",
-      "granularity",
-      "hourCycle",
-      "locale",
-      "calendar",
-      "calendarSystem",
-      "necessityIndicator",
-      "isRequired",
-      "labelPosition",
-      "overflow",
-      "iconName",
-      "iconPosition",
-      "minValue",
-      "maxValue",
-      "formatOptions",
-      "showValueLabel",
-      "valueLabel",
-    ]);
     const hasLayoutChange = Object.keys(propsUpdate).some((key) =>
-      LAYOUT_AFFECTING_PROPS.has(key),
+      LAYOUT_AFFECTING_PROP_KEYS.has(key),
     );
     set((prevState) => {
       const stateUpdate: Partial<CombinedState> = {
@@ -255,17 +223,7 @@ export const createInspectorActionsSlice: StateCreator<
       // dirtyElementIds: 변경 요소 + 하위 자식 전체 등록 (delegation prop이 자식 레이아웃에 영향)
       if (hasLayoutChange) {
         const dirtyIds = new Set(prevState.dirtyElementIds);
-        dirtyIds.add(elementId);
-        // 하위 자식 전체 dirty 등록 (allowsRemoving, size 등 delegation prop)
-        const queue = [elementId];
-        while (queue.length > 0) {
-          const parentId = queue.pop()!;
-          const children = prevState.childrenMap.get(parentId) ?? [];
-          for (const child of children) {
-            dirtyIds.add(child.id);
-            queue.push(child.id);
-          }
-        }
+        collectDirtyElementSubtree(elementId, prevState.childrenMap, dirtyIds);
         (stateUpdate as Record<string, unknown>).layoutVersion =
           prevState.layoutVersion + 1;
         (stateUpdate as Record<string, unknown>).dirtyElementIds = dirtyIds;
@@ -449,12 +407,21 @@ export const createInspectorActionsSlice: StateCreator<
 
       // ADR-006 P3-1: style 프리뷰도 layoutVersion 증가 → 캔버스 레이아웃 즉시 반영
       set(
-        (prevState) =>
-          ({
+        (prevState) => {
+          const dirtyIds = new Set(prevState.dirtyElementIds);
+          collectDirtyElementSubtree(
+            selectedElementId,
+            prevState.childrenMap,
+            dirtyIds,
+          );
+
+          return {
             elements: newElements,
             elementsMap: newElementsMap,
             layoutVersion: prevState.layoutVersion + 1,
-          }) as Partial<CombinedState>,
+            dirtyElementIds: dirtyIds,
+          } as Partial<CombinedState>;
+        },
       );
     },
 
@@ -478,7 +445,31 @@ export const createInspectorActionsSlice: StateCreator<
         if (value === "" || value === null || value === undefined) {
           delete currentStyle[property];
         } else {
-          currentStyle[property] = value;
+          const NUMERIC_STYLE_PROPS = new Set([
+            "fontSize",
+            "fontWeight",
+            "lineHeight",
+            "letterSpacing",
+            "opacity",
+            "padding",
+            "paddingTop",
+            "paddingRight",
+            "paddingBottom",
+            "paddingLeft",
+            "gap",
+            "rowGap",
+            "columnGap",
+            "borderWidth",
+            "borderRadius",
+          ]);
+          if (NUMERIC_STYLE_PROPS.has(property)) {
+            const num = parseFloat(value);
+            (currentStyle as Record<string, unknown>)[property] = !isNaN(num)
+              ? num
+              : value;
+          } else {
+            currentStyle[property] = value;
+          }
         }
       });
 

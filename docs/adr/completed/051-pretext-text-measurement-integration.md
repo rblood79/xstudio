@@ -2,7 +2,13 @@
 
 ## Status
 
-Proposed — 2026-04-04
+Superseded by [ADR-100](../100-unified-skia-rendering-engine.md) — 2026-04-08
+
+Canvas 2D + CanvasKit 하이브리드 단일 소스 접근이 ADR-100 아키텍처에 통합됨. 별도 Pretext 레이어 없이 Unified Skia 경로에서 처리.
+
+---
+
+_원본 Status:_ Proposed — 2026-04-04
 
 ### 2026-04-05 패치 — Layout 보정 제거 + 렌더링 post-layout 교정
 

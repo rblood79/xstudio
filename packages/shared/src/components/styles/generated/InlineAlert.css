@@ -35,12 +35,10 @@
 
   &[data-hovered] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 
   &[data-pressed] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 }
 
@@ -51,12 +49,10 @@
 
   &[data-hovered] {
     background: var(--color-info-100);
-    border-color: var(--color-info-100);
   }
 
   &[data-pressed] {
     background: var(--color-info-100);
-    border-color: var(--color-info-100);
   }
 }
 
@@ -67,12 +63,10 @@
 
   &[data-hovered] {
     background: var(--color-green-100);
-    border-color: var(--color-green-100);
   }
 
   &[data-pressed] {
     background: var(--color-green-100);
-    border-color: var(--color-green-100);
   }
 }
 
@@ -83,12 +77,10 @@
 
   &[data-hovered] {
     background: var(--color-warning-100);
-    border-color: var(--color-warning-100);
   }
 
   &[data-pressed] {
     background: var(--color-warning-100);
-    border-color: var(--color-warning-100);
   }
 }
 
@@ -99,12 +91,10 @@
 
   &[data-hovered] {
     background: var(--color-error-100);
-    border-color: var(--color-error-100);
   }
 
   &[data-pressed] {
     background: var(--color-error-100);
-    border-color: var(--color-error-100);
   }
 }
 
@@ -155,7 +145,7 @@
 }
 
 .react-aria-InlineAlert[data-size="sm"] .react-aria-Description {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
 }
 

@@ -2,7 +2,11 @@
 
 ## Status
 
-Implemented (Foundation + Phase 0~4 구현 완료. Phase 2 Binary Protocol 부분 구현(TypedArray 완료, SharedArrayBuffer 미구현). Phase 3 Flat Render List(renderCommands.ts), Phase 4 R-tree Viewport Culling(spatialIndex.ts) 구현 완료. Layout Worker(layoutWorker.ts + LayoutScheduler.ts)는 레이아웃 계산용 Web Worker로 별도 구현 완료. Phase 5 OffscreenCanvas Worker Rendering 미구현. CSS 일반 규칙 적용 완료, Dropflow → Taffy 단일 엔진 전환 완료)
+Superseded by [ADR-100](../100-unified-skia-rendering-engine.md) — 2026-04-08
+
+PixiJS 씬 그래프(Phase 0~2 전제)가 ADR-100 Phase 8-9에서 완전 제거됨. Taffy WASM 레이아웃(Phase 0, PersistentTaffyTree)은 ADR-100 Phase 10(Rust Layout)으로 교체 예정. Phase 5 OffscreenCanvas Worker는 미구현 상태로 종료.
+
+구현 완료 항목(Phase 0~4): TypedArray Binary Protocol, Flat Render List(renderCommands.ts), R-tree Viewport Culling(spatialIndex.ts), Layout Worker(layoutWorker.ts + LayoutScheduler.ts) — 코드베이스에 잔존하나 ADR-100 전환 완료 시 제거 대상.
 
 ## Date
 

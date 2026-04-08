@@ -243,6 +243,12 @@ export interface FontMetrics {
   lineHeight: number;
 }
 
+export interface ActualTextBounds {
+  ascent: number;
+  descent: number;
+  height: number;
+}
+
 /**
  * 폰트 메트릭 캐시
  *
@@ -373,6 +379,48 @@ export function measureFontMetrics(
   }
 
   return fallback;
+}
+
+/**
+ * 실제 텍스트 콘텐츠의 bounding box를 측정한다.
+ *
+ * `measureFontMetrics()`는 라틴 샘플 문자열 기준이라 한글/숫자/아이콘 조합에서
+ * 실제 시각적 중심과 다를 수 있다. 버튼 텍스트 수직 정렬 보정용.
+ */
+export function measureActualTextBounds(
+  text: string,
+  fontFamily: string,
+  fontSize: number,
+  fontWeight: string | number = 400,
+): ActualTextBounds {
+  const ctx = getMeasureCtx();
+  if (ctx && text) {
+    try {
+      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      const metrics = ctx.measureText(text);
+      if (
+        typeof metrics.actualBoundingBoxAscent === "number" &&
+        typeof metrics.actualBoundingBoxDescent === "number"
+      ) {
+        const ascent = metrics.actualBoundingBoxAscent;
+        const descent = metrics.actualBoundingBoxDescent;
+        return {
+          ascent,
+          descent,
+          height: ascent + descent,
+        };
+      }
+    } catch {
+      // fallback below
+    }
+  }
+
+  const fallback = measureFontMetrics(fontFamily, fontSize, fontWeight);
+  return {
+    ascent: fallback.ascent,
+    descent: fallback.descent,
+    height: fallback.fontHeight,
+  };
 }
 
 /**

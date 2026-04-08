@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Builder (main app)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5173"],
+      "cwd": "apps/builder",
+      "port": 5173
+    },
+    {
+      "name": "Publish",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "@composition/publish", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "Storybook",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "@composition/builder", "storybook"],
+      "port": 6006
+    },
+    {
+      "name": "Specs (watch)",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:specs"],
+      "port": null
+    }
+  ]
+}

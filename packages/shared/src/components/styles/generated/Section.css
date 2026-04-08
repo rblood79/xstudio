@@ -103,12 +103,10 @@
 
   &[data-hovered] {
     background: var(--bg);
-    border-color: var(--bg);
   }
 
   &[data-pressed] {
     background: var(--bg);
-    border-color: var(--bg);
   }
 }
 

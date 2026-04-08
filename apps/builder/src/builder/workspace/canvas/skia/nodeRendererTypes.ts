@@ -73,6 +73,7 @@ export interface SkiaNodeData {
     decoration?: number;
     paddingLeft: number;
     paddingTop: number;
+    paddingBottom?: number;
     maxWidth: number;
     autoCenter?: boolean;
     verticalAlign?: "top" | "middle" | "bottom" | "baseline";
@@ -105,6 +106,7 @@ export interface SkiaNodeData {
     strokeColor: Float32Array;
     strokeWidth: number;
     strokeDasharray?: number[];
+    strokeCap?: "butt" | "round" | "square";
   };
   arc?: {
     cx: number;

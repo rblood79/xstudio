@@ -31,12 +31,10 @@
 
   &[data-hovered] {
     background: var(--bg-inset);
-    border-color: var(--bg-inset);
   }
 
   &[data-pressed] {
     background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
   }
 }
 
@@ -47,12 +45,10 @@
 
   &[data-hovered] {
     background: var(--accent-subtle);
-    border-color: var(--accent-subtle);
   }
 
   &[data-pressed] {
     background: var(--accent-subtle);
-    border-color: var(--accent-subtle);
   }
 }
 

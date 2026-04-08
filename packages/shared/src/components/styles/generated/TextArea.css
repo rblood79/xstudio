@@ -38,7 +38,6 @@
 
   &[data-pressed] {
     background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
   }
 }
 
@@ -54,7 +53,6 @@
 
   &[data-pressed] {
     background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
   }
 }
 
@@ -70,7 +68,6 @@
 
   &[data-pressed] {
     background: var(--color-error-100);
-    border-color: var(--color-error-100);
   }
 }
 

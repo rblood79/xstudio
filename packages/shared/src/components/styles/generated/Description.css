@@ -1,15 +1,15 @@
 /* ============================================================
  * AUTO-GENERATED from DescriptionSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/Description.spec.ts
- * Archetype: simple
+ * Archetype: text
  * ============================================================ */
 
 @layer components {
 
 .react-aria-Description {
-  /* Base styles — archetype: simple */
-    display: inline-flex;
-    align-items: center;
+  /* Base styles — archetype: text */
+    display: block;
+    width: 100%;
     box-sizing: border-box;
 
   /* Default variant */

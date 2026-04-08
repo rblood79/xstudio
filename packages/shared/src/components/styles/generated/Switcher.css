@@ -37,12 +37,10 @@
 
   &[data-hovered] {
     background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
   }
 
   &[data-pressed] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 }
 
@@ -53,12 +51,10 @@
 
   &[data-hovered] {
     background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
   }
 
   &[data-pressed] {
     background: var(--bg-muted);
-    border-color: var(--bg-muted);
   }
 }
 

@@ -190,7 +190,7 @@ export function createInlineAlertDefinition(
     parent: {
       tag: "InlineAlert",
       props: {
-        variant: "informative",
+        variant: "info",
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -212,7 +212,7 @@ export function createInlineAlertDefinition(
         props: {
           children:
             "There was an error processing your request. Please try again.",
-          className: "alert-description",
+          className: "react-aria-Description",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,

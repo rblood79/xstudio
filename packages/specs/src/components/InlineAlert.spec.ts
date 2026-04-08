@@ -83,7 +83,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
       gap: 8,
       headingFontSize: 14,
       headingFontWeight: 700,
-      descFontSize: 13,
+      descFontSize: 12,
       descFontWeight: 400,
     },
     md: {
@@ -162,8 +162,13 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
           : resolveToken(borderRadius as TokenRef);
       const resolvedBr = typeof br === "number" ? br : 6;
 
+      const borderColor =
+        (props.style?.borderColor as string | undefined) ??
+        variant.border ??
+        ("{color.border}" as TokenRef);
+
       const shapes: Shape[] = [
-        // 배경 roundRect (accent border-left는 CSS에서 처리)
+        // 배경 roundRect
         {
           id: "bg",
           type: "roundRect" as const,
@@ -173,6 +178,13 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
           height: "auto" as unknown as number,
           radius: resolvedBr,
           fill: bgColor,
+        },
+        // 테두리 (CSS border: 1px solid 대응)
+        {
+          type: "border" as const,
+          target: "bg",
+          borderWidth: 1,
+          color: borderColor,
         },
       ];
 

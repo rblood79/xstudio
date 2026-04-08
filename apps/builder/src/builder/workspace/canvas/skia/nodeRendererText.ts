@@ -20,7 +20,10 @@ import {
   needsFallback,
   measureWithCanvas2D,
 } from "../utils/canvas2dSegmentCache";
-import type { TextMeasureStyle } from "../utils/textMeasure";
+import {
+  measureActualTextBounds,
+  type TextMeasureStyle,
+} from "../utils/textMeasure";
 import { SkiaDisposable } from "./disposable";
 import { skiaFontManager } from "./fontManager";
 import {
@@ -32,6 +35,12 @@ import type { SkiaNodeData } from "./nodeRendererTypes";
 
 const paragraphCache = new Map<string, Paragraph>();
 const paragraphAlignOffsetCache = new Map<string, number>();
+
+function containsIdeographicText(text: string): boolean {
+  return /[\u1100-\u11ff\u3130-\u318f\u3400-\u9fff\uac00-\ud7af\u3040-\u30ff]/.test(
+    text,
+  );
+}
 
 function clearParagraphCache(): void {
   for (const paragraph of paragraphCache.values()) {
@@ -143,6 +152,35 @@ export function renderText(
 
   const computeDrawY = (paragraph: Paragraph): number => {
     const verticalAlign = node.text!.verticalAlign;
+    const hasExplicitBottomPadding =
+      typeof node.text!.paddingBottom === "number" &&
+      node.text!.paddingBottom >= 0;
+
+    if (
+      hasExplicitBottomPadding &&
+      (!verticalAlign ||
+        verticalAlign === "top" ||
+        verticalAlign === "baseline")
+    ) {
+      const primaryFamily = node.text!.fontFamilies[0] ?? "sans-serif";
+      const metrics = measureActualTextBounds(
+        processedText,
+        primaryFamily,
+        node.text!.fontSize,
+        node.text!.fontWeight ?? 400,
+      );
+      const baselineOffset = containsIdeographicText(processedText)
+        ? paragraph.getIdeographicBaseline()
+        : paragraph.getAlphabeticBaseline();
+      const glyphTopOffset = baselineOffset - metrics.ascent;
+      const contentHeight =
+        node.height - node.text!.paddingTop - (node.text!.paddingBottom ?? 0);
+      const centeredGlyphTop =
+        node.text!.paddingTop +
+        Math.max(0, (contentHeight - metrics.height) / 2);
+      return centeredGlyphTop - glyphTopOffset;
+    }
+
     if (
       !verticalAlign ||
       verticalAlign === "top" ||

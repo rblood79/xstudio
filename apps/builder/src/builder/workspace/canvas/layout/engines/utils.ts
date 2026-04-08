@@ -1593,9 +1593,9 @@ export function calculateContentHeight(
           props?.children ?? props?.text ?? props?.label ?? "",
         );
         if (textContent) {
-          // Button/Badge 등 inline-flex UI 컴포넌트는 CSS에서 텍스트 줄바꿈 안 함
-          // whiteSpace 기본값을 "nowrap"으로 설정 (CSS inline-flex 동작과 일치)
-          const ws = (style?.whiteSpace as string) ?? "nowrap";
+          // Button/Badge 등은 CSS 기본 white-space: normal → width 제약 시 줄바꿈 허용
+          // 사용자가 white-space를 명시적으로 설정한 경우만 그 값을 사용
+          const ws = (style?.whiteSpace as string) ?? "normal";
           const fw = parseNumericValue(style?.fontWeight) ?? 500;
           const wbVal = (style?.wordBreak as string) ?? undefined;
           const owVal = (style?.overflowWrap as string) ?? undefined;
@@ -1608,6 +1608,7 @@ export function calculateContentHeight(
             maxTextWidth,
             wbVal,
             owVal,
+            effectiveLineHeight,
           );
           if (measured.height > textHeight + 0.5) {
             const wrappedHeight = Math.max(measured.height, minContentHeight);
@@ -2940,10 +2941,13 @@ export function enrichWithIntrinsicSize(
   // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
   // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
   // Select: Compositional Architecture — Card와 동일하게 자식 기반 높이 + padding 경로
+  // INLINE_BLOCK_TAGS(button, badge 등)은 명시적 고정 width가 있을 때 needsWidth=false가 되어
+  // 이 early return에 걸리지만, 텍스트 줄바꿈 시 높이 재계산이 필요하므로 반드시 예외 처리해야 함.
   if (
     box.contentHeight <= 0 &&
     !needsWidth &&
     !SPEC_SHAPES_INPUT_TAGS.has(tag) &&
+    !INLINE_BLOCK_TAGS.has(tag) &&
     !IMAGE_INTRINSIC_TAGS.has(tag) &&
     !(childElements && childElements.length > 0)
   ) {
@@ -2976,7 +2980,12 @@ export function enrichWithIntrinsicSize(
           TEXT_LEAF_TAGS.has(tag)
         ? calculateContentHeight(
             element,
-            availableWidth,
+            // INLINE_BLOCK 태그에 명시적 고정 너비(px)가 있으면 자신의 border-box 너비로
+            // 텍스트 줄바꿈을 계산해야 함. 부모의 availableWidth를 사용하면 버튼 크기를
+            // 초과한 너비로 측정되어 줄바꿈이 발생하지 않고 높이가 늘어나지 않는 버그 발생.
+            INLINE_BLOCK_TAGS.has(tag) && (parseNumericValue(rawWidth) ?? 0) > 0
+              ? (parseNumericValue(rawWidth) as number)
+              : availableWidth,
             undefined,
             getChildElements,
             _computedStyle,
@@ -2988,7 +2997,27 @@ export function enrichWithIntrinsicSize(
     // spec shapes가 내부 padding 없이 렌더링하므로 추가 padding/border 불필요
     const isSpecShapesInput = SPEC_SHAPES_INPUT_TAGS.has(tag);
     if (!isSpecShapesInput) {
-      injectHeight += box.padding.top + box.padding.bottom;
+      // BUTTON_LIKE_BOX_TAGS(button 등): inline padding이 설정된 경우
+      // applyCommonTaffyStyle은 parsePadding(style)로 inline 값을 Taffy에 전달하지만,
+      // box.padding은 parseBoxModel 내부 sizeConfig 로직으로 spec 값을 반환할 수 있다.
+      // 이 불일치로 인해 injectHeight(spec 기반)와 Taffy padding(inline)이 달라져
+      // content area가 좁아지고 텍스트가 잘리는 버그 발생.
+      // 따라서 inline padding이 설정된 경우 parsePadding(style)을 직접 사용하여
+      // applyCommonTaffyStyle이 Taffy에 전달하는 값과 동일한 패딩으로 injectHeight 계산.
+      if (BUTTON_LIKE_BOX_TAGS.has(tag)) {
+        const hasInlinePad =
+          style?.padding !== undefined ||
+          style?.paddingTop !== undefined ||
+          style?.paddingRight !== undefined ||
+          style?.paddingBottom !== undefined ||
+          style?.paddingLeft !== undefined;
+        const effectivePad = hasInlinePad
+          ? parsePadding(style, availableWidth)
+          : box.padding;
+        injectHeight += effectivePad.top + effectivePad.bottom;
+      } else {
+        injectHeight += box.padding.top + box.padding.bottom;
+      }
       injectHeight += box.border.top + box.border.bottom;
     }
     // DC-6: overflow cap — availableHeight가 있고 overflow가 클리핑되면 초과분 제한
@@ -3353,10 +3382,12 @@ export function measureTextWithWhiteSpace(
   maxWidth: number,
   wordBreak?: string,
   overflowWrap?: string,
+  lineHeightOverride?: number,
 ): { width: number; height: number } {
   // CSS line-height: normal 근사값 (fontBoundingBox 기반)
+  // lineHeightOverride가 있으면 spec/config 기반 lineHeight 우선 사용
   const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
-  const lineHeight = fm.lineHeight;
+  const lineHeight = lineHeightOverride ?? fm.lineHeight;
 
   // ADR-008: word-break/overflow-wrap 타입 캐스팅
   const wb = wordBreak as "normal" | "break-all" | "keep-all" | undefined;
@@ -3391,7 +3422,7 @@ export function measureTextWithWhiteSpace(
           fontWeight,
           fontFamily,
           maxWidth,
-          undefined,
+          lineHeightOverride,
           wb,
           ow,
         ),
@@ -3407,7 +3438,7 @@ export function measureTextWithWhiteSpace(
           fontWeight,
           fontFamily,
           maxWidth,
-          undefined,
+          lineHeightOverride,
           wb,
           ow,
         ),

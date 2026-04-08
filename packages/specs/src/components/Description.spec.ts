@@ -29,7 +29,7 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
   name: "Description",
   description: "compound 컴포넌트의 보조 설명 텍스트 렌더링",
   element: "p",
-  archetype: "simple",
+  archetype: "text",
 
   defaultVariant: "default",
   defaultSize: "md",

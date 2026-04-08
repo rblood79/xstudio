@@ -1397,7 +1397,7 @@ export function createDefaultTabsProps(): TabsElementProps {
     density: "regular",
     orientation: "horizontal",
     isDisabled: false,
-    showIndicator: false,
+    showIndicator: true,
     // CSS base: display:flex; flex-direction:column (generated)
     // width:100%는 CSS에 미포함이므로 유지
     style: {

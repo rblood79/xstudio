@@ -44,7 +44,8 @@ export type ArchetypeId =
   | "collection" // ListBox/Item, Menu/Item
   | "overlay" // Popover, Dialog, Toast
   | "calendar" // Calendar/Cell
-  | "alert"; // InlineAlert
+  | "alert" // InlineAlert
+  | "text"; // Description, Heading — block-level text, fills parent width
 
 /**
  * 컴포넌트 스펙 - 단일 소스

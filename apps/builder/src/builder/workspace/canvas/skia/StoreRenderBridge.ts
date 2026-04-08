@@ -27,6 +27,7 @@ import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
 import { onLayoutPublished } from "../layout";
 import type { TransitionManager } from "./transitionManager";
 import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
+import { InlineAlertSpec } from "@composition/specs";
 
 function isTextElement(element: Element): boolean {
   return TEXT_TAGS.has(element.tag);
@@ -47,7 +48,6 @@ const SPEC_PREFERRED_TEXT_TAGS = new Set([
   "Label",
   "FieldError",
   "InlineAlert",
-  "Description", // InlineAlert parent font delegation
 ]);
 
 /** Collection item 태그 — 기본 border/background 스타일 적용 대상 */
@@ -375,7 +375,47 @@ export class StoreRenderBridge {
     }
 
     if (isTextElement(element)) {
-      return buildTextNodeData({ element, layout, theme: ctx.theme });
+      // InlineAlert → Heading/Description font delegation (Skia 렌더링 경로)
+      // fullTreeLayout의 주입은 레이아웃 계산용으로만 쓰이고 store에 반영 안됨
+      let effectiveElement = element;
+      if (
+        (element.tag === "Heading" || element.tag === "Description") &&
+        element.parent_id
+      ) {
+        const parent = elementsMap.get(element.parent_id);
+        if (parent?.tag === "InlineAlert") {
+          const parentSize =
+            ((parent.props as Record<string, unknown>)?.size as string) ?? "md";
+          const specSize = (InlineAlertSpec.sizes[parentSize] ??
+            InlineAlertSpec.sizes[
+              InlineAlertSpec.defaultSize
+            ]) as unknown as Record<string, unknown>;
+          const cs = (element.props?.style ?? {}) as Record<string, unknown>;
+          const isHeading = element.tag === "Heading";
+          const fontSize = isHeading
+            ? (specSize.headingFontSize as number)
+            : (specSize.descFontSize as number);
+          const fontWeight = isHeading
+            ? (specSize.headingFontWeight as number)
+            : (specSize.descFontWeight as number);
+          effectiveElement = {
+            ...element,
+            props: {
+              ...element.props,
+              style: {
+                ...cs,
+                fontSize: cs.fontSize ?? fontSize,
+                fontWeight: cs.fontWeight ?? fontWeight,
+              },
+            },
+          };
+        }
+      }
+      return buildTextNodeData({
+        element: effectiveElement,
+        layout,
+        theme: ctx.theme,
+      });
     }
 
     if (isImageElement(element)) {
