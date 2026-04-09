@@ -39,6 +39,12 @@ export function useLayoutPublisher(
     pagesRef.current = pages;
   });
 
+  // 차원 서명: breakpoint(pageWidth/Height) 변경은 layoutVersion을 bump하지 않지만
+  // getCachedPageLayout의 cache key에 포함되므로 재발행이 필요하다.
+  const dimensionKey = pages
+    .map(({ pageId, input }) => `${pageId}:${input.pageWidth}:${input.pageHeight}`)
+    .join("|");
+
   useEffect(() => {
     const currentPages = pagesRef.current;
 
@@ -83,5 +89,5 @@ export function useLayoutPublisher(
 
       publishLayoutMap(layoutMap, bodyElement.page_id ?? undefined);
     }
-  }, [layoutVersion]); // layoutVersion 변경 시 재계산
+  }, [layoutVersion, dimensionKey]);
 }
