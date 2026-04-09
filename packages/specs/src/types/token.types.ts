@@ -174,6 +174,10 @@ export interface TypographyTokens {
   "text-base--line-height": number; // 24
   "text-lg--line-height": number; // 28
   "text-xl--line-height": number; // 30
+  "text-2xl--line-height": number; // 32
+  "text-3xl--line-height": number; // 36
+  "text-4xl--line-height": number; // 40
+  "text-5xl--line-height": number; // 48
 }
 
 /**

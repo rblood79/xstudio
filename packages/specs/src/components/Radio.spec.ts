@@ -8,19 +8,10 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily, typography } from "../primitives/typography";
+import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Type, Hash, PointerOff, PenOff, Sparkles } from "lucide-react";
-
-/** fontSize(px) → CSS lineHeight(px) 매핑 */
-const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
-  10: typography["text-2xs--line-height"],
-  12: typography["text-xs--line-height"],
-  14: typography["text-sm--line-height"],
-  16: typography["text-base--line-height"],
-  18: typography["text-lg--line-height"],
-};
 
 /**
  * Radio Props
@@ -283,7 +274,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
         const textAlign =
           (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-        const lineHeight = FONT_SIZE_TO_LINE_HEIGHT[fontSize] ?? fontSize * 1.5;
+        const lineHeight = getLabelLineHeight(fontSize);
 
         shapes.push({
           type: "text" as const,

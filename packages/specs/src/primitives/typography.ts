@@ -36,6 +36,14 @@ export const typography: TypographyTokens = {
   "text-lg--line-height": 28,
   // CSS: --text-xl--line-height: 20 * 1.5 = 30
   "text-xl--line-height": 30,
+  // CSS: --text-2xl--line-height: calc(2 / 1.5) ≈ 1.333 → 24 * 1.333 = 32
+  "text-2xl--line-height": 32,
+  // CSS: --text-3xl--line-height: calc(2.25 / 1.875) = 1.2 → 30 * 1.2 = 36
+  "text-3xl--line-height": 36,
+  // CSS: --text-4xl--line-height: calc(2.5 / 2.25) ≈ 1.111 → 36 * 1.111 = 40
+  "text-4xl--line-height": 40,
+  // CSS: --text-5xl--line-height: calc(3 / 3) = 1.0 → 48 * 1.0 = 48
+  "text-5xl--line-height": 48,
 };
 
 /**
@@ -83,6 +91,10 @@ const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
   16: typography["text-base--line-height"],
   18: typography["text-lg--line-height"],
   20: typography["text-xl--line-height"],
+  24: typography["text-2xl--line-height"],
+  30: typography["text-3xl--line-height"],
+  36: typography["text-4xl--line-height"],
+  48: typography["text-5xl--line-height"],
 };
 
 export function getLabelLineHeight(fontSize: number): number {
