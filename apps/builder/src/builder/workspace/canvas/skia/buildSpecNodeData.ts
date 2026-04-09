@@ -637,10 +637,19 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     specProps = { ...specProps, allowsRemoving: true };
   }
 
-  // Tab _isSelected injection
+  // Tab _isSelected + _showIndicator injection
   const tabIsSelected = resolveTabIsSelected(element, elementsMap);
   if (tabIsSelected !== null) {
     specProps = { ...specProps, _isSelected: tabIsSelected };
+  }
+
+  // Tab: 부모 Tabs의 showIndicator 주입 (기본 true)
+  if (element.tag === "Tab") {
+    const tabsAncestor = findAncestorByTag(element, "Tabs", elementsMap, 3);
+    if (tabsAncestor) {
+      const showInd = getProps(tabsAncestor).showIndicator;
+      specProps = { ...specProps, _showIndicator: showInd !== false };
+    }
   }
 
   // Tab/TabList orientation delegation from ancestor Tabs

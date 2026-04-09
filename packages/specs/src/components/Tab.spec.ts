@@ -21,6 +21,8 @@ export interface TabProps {
   tabId?: string;
   /** buildSpecNodeData 주입: 이 탭이 선택됐는지 */
   _isSelected?: boolean;
+  /** buildSpecNodeData 주입: 부모 Tabs의 showIndicator */
+  _showIndicator?: boolean;
   isDisabled?: boolean;
   orientation?: "horizontal" | "vertical";
   /** CONTAINER_DIMENSION_TAGS 주입: Taffy 계산 폭 */
@@ -118,7 +120,8 @@ export const TabSpec: ComponentSpec<TabProps> = {
 
       // 선택된 탭: accent 인디케이터 (full-width)
       // CSS 정합: sm=2px, md=3px, lg=4px
-      if (isSelected) {
+      // showIndicator=false → 인디케이터 미표시 (부모 Tabs prop)
+      if (isSelected && props._showIndicator !== false) {
         const indicatorThickness: Record<number, number> = {
           21: 2, // sm height
           29: 3, // md height
