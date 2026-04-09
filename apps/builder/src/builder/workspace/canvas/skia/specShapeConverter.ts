@@ -16,6 +16,7 @@ import {
 } from "@composition/specs";
 import { getSkImage, loadSkImage } from "./imageCache";
 import { measureWrappedTextHeight } from "../utils/textMeasure";
+import { getLabelLineHeight } from "@composition/specs";
 
 // ========== Helpers ==========
 
@@ -680,12 +681,13 @@ export function specShapesToSkia(
         // Resolve lineHeight:
         // - shape.lineHeight <= 5 → 배수값 (1.5 등) → fontSize * 배수
         // - shape.lineHeight > 5  → px값으로 직접 사용
-        // - undefined → 기본값 fontSize * 1.2
+        // - undefined → CSS typography 토큰 기반 (getLabelLineHeight)
+        const defaultLineHeight = getLabelLineHeight(fontSize);
         const lineHeightPx = shape.lineHeight
           ? shape.lineHeight <= 5
             ? fontSize * shape.lineHeight
-            : resolveNum(shape.lineHeight, theme, fontSize * 1.2)
-          : fontSize * 1.2;
+            : resolveNum(shape.lineHeight, theme, defaultLineHeight)
+          : defaultLineHeight;
 
         // 줄바꿈 시 실제 텍스트 블록 높이 계산 (단일줄이면 lineHeightPx)
         let textBlockHeight = lineHeightPx;

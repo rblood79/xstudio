@@ -99,6 +99,7 @@ export {
   fontWeight,
   lineHeight,
   getTypographyToken,
+  getLabelLineHeight,
   // Radius
   radius,
   getRadiusToken,
