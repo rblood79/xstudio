@@ -4,22 +4,45 @@
 
 Proposed — 2026-04-09
 
+## 원칙 — Spec SSOT + Symmetric Consumers (ADR-036 준수)
+
+본 ADR의 모든 의사결정은 다음 원칙에 기반한다:
+
+1. **Spec이 SSOT**. `typography` 토큰을 포함한 spec 정의가 유일한 source이며, Preview/Publish(DOM/CSS)와 Builder(Skia)는 모두 이 spec의 **대등한 consumer**다. 어느 consumer도 다른 consumer의 기준이 아니다.
+
+2. **CSS와 Skia는 symmetric pipeline**. "CSS가 기준, Skia가 따라간다"가 아니라, 두 경로가 동일 spec source로부터 동일 결과를 산출하는지 교차 검증한다.
+   - `typography` 토큰 → CSS 변수 → browser CSS engine → Preview/Publish
+   - `typography` 토큰 → spec `shapes()` → Skia → Builder Canvas
+
+3. **ADR-057의 본질**. 현재 `Text`/`Heading`이 `buildTextNodeData`로 `element.props.style`을 직접 소비하는 구조는 spec SSOT를 우회한다 (ADR-036 위반). ADR-057은 "CSS↔Skia 맞춤"이 아니라 **"잘못 배치된 consumer를 spec source로 복귀시키는 작업"**이다.
+
+4. **Phase 0 feature parity의 의미**. 13개 항목은 "CSS가 가진 기능을 Skia가 못 가짐"이 아니라 **"spec shape 인터페이스에 정의되어야 할 속성이 누락됨"**이다. Phase 0은 spec 인터페이스 확장 작업이지 Skia 보완 작업이 아니다.
+
+5. **≤1px 정합성의 의미**. 두 consumer가 동일 source로부터 대칭 파생되는지 검증하는 것. 회귀 발생 시 **"어느 consumer가 spec을 잘못 해석했는가"**로 분류하며, CSS/Skia 중 어느 쪽도 특권화하지 않는다.
+
+   | 증상                          | 1차 조사 지점           | 가능한 원인                                         |
+   | ----------------------------- | ----------------------- | --------------------------------------------------- |
+   | Preview만 틀림                | CSS consumer 경로       | CSSGenerator, `@layer components` cascade, variable |
+   | Skia만 틀림                   | Skia consumer 경로      | `specShapeConverter`, `nodeRendererText`            |
+   | Preview + Skia 동일 방향 오류 | Spec source             | 토큰 값 / `spec.sizes` / `spec.variants` 정의       |
+   | Preview + Skia 상이 방향 오류 | 양쪽 consumer 독립 오역 | spec 인터페이스 모호성                              |
+
 ## Context
 
 `Text`, `Heading`, `Paragraph`, `Kbd`, `Code` 등 텍스트 리프 컴포넌트가 Spec-First 아키텍처(ADR-036)에 통합되지 않은 채 예외 경로(`TEXT_TAGS` → `buildTextNodeData.ts`)로 렌더링된다. 웹 페이지 콘텐츠의 대부분을 차지하는 텍스트가 SSOT 시스템의 외부에 있는 상태가 빌더의 완성도를 구조적으로 제약한다.
 
 ### 현재 혼재 상태
 
-| 컴포넌트      | spec 존재 | `shapes()` 정의 | `skipCSSGeneration` | 렌더 경로                                  |
-| ------------- | --------- | --------------- | ------------------- | ------------------------------------------ |
-| `Label`       | ✅        | ✅              | `true`              | `SPEC_PREFERRED_TEXT_TAGS` → spec 경로     |
-| `Description` | ✅        | ✅              | ❌                  | spec 경로                                  |
-| `InlineAlert` | ✅        | ✅              | ❌                  | `SPEC_PREFERRED_TEXT_TAGS` → spec 경로     |
-| `Text`        | ✅        | **`() => []`**  | `true`              | **`buildTextNodeData` 예외 경로**          |
-| `Heading`     | ✅        | **`() => []`**  | `true`              | **`buildTextNodeData` 예외 경로**          |
-| `Paragraph`   | **❌**    | —               | —                   | **spec 부재, `TEXT_TAGS`에만 등록**        |
-| `Kbd`         | **❌**    | —               | —                   | **spec 부재, `TEXT_TAGS`에만 등록**        |
-| `Code`        | **❌**    | —               | —                   | **spec 부재, `TEXT_TAGS`에만 등록**        |
+| 컴포넌트      | spec 존재 | `shapes()` 정의 | `skipCSSGeneration` | 렌더 경로                              |
+| ------------- | --------- | --------------- | ------------------- | -------------------------------------- |
+| `Label`       | ✅        | ✅              | `true`              | `SPEC_PREFERRED_TEXT_TAGS` → spec 경로 |
+| `Description` | ✅        | ✅              | ❌                  | spec 경로                              |
+| `InlineAlert` | ✅        | ✅              | ❌                  | `SPEC_PREFERRED_TEXT_TAGS` → spec 경로 |
+| `Text`        | ✅        | **`() => []`**  | `true`              | **`buildTextNodeData` 예외 경로**      |
+| `Heading`     | ✅        | **`() => []`**  | `true`              | **`buildTextNodeData` 예외 경로**      |
+| `Paragraph`   | **❌**    | —               | —                   | **spec 부재, `TEXT_TAGS`에만 등록**    |
+| `Kbd`         | **❌**    | —               | —                   | **spec 부재, `TEXT_TAGS`에만 등록**    |
+| `Code`        | **❌**    | —               | —                   | **spec 부재, `TEXT_TAGS`에만 등록**    |
 
 ### 문제 증상 (2026-04-09 발생)
 
@@ -102,12 +125,12 @@ Proposed — 2026-04-09
 
 ### Risk Threshold Check
 
-| 대안                             | 기술   | 성능 | 유지보수 | 마이그레이션 | HIGH+ 개수 |
-| -------------------------------- | ------ | ---- | -------- | ------------ | :--------: |
-| A (현재 패치 유지)               | L      | L    | **H**    | L            |     1      |
-| B (부분 통합)                    | M      | L    | M        | L            |     0      |
-| C (**전면 Spec-First 통합**)     | **H**  | L    | L(장기)  | **H**        |     2      |
-| D (spec 인터페이스 확장)         | **H**  | L    | M        | **H**        |     2      |
+| 대안                         | 기술  | 성능 | 유지보수 | 마이그레이션 | HIGH+ 개수 |
+| ---------------------------- | ----- | ---- | -------- | ------------ | :--------: |
+| A (현재 패치 유지)           | L     | L    | **H**    | L            |     1      |
+| B (부분 통합)                | M     | L    | M        | L            |     0      |
+| C (**전면 Spec-First 통합**) | **H** | L    | L(장기)  | **H**        |     2      |
+| D (spec 인터페이스 확장)     | **H** | L    | M        | **H**        |     2      |
 
 루프 판정: 대안 B는 HIGH+ 없음. 대안 A는 유지보수 HIGH 1개 (현재 드리프트 위험 영속화). 대안 C는 기술/마이그레이션 HIGH 2개이지만 **장기 유지보수 L**이며 Phase 구조로 리스크 관리 가능. 대안 D는 spec 인터페이스 변경이 ADR-036 기반을 흔들어 비권장.
 
@@ -182,15 +205,15 @@ Proposed — 2026-04-09
 
 잔존 HIGH 위험: 기술 / 마이그레이션. Phase 경계에서 검증으로 관리.
 
-| Gate                              | 시점           | 통과 조건                                                                                | 실패 시 대안                            |
-| --------------------------------- | -------------- | ---------------------------------------------------------------------------------------- | --------------------------------------- |
-| Phase 0 feature parity            | Phase 0 완료   | Button/Badge/Label/Description/InlineAlert 시각 회귀 ≤1px, 기존 13개 feature 동작 검증   | Phase 0 롤백, ADR 재설계                |
-| 5-layer 버그 재발 방지            | Phase 0 완료   | `button-text-wrapping-css-skia-parity.md` 체크리스트 5항목 통과                          | `buildTextNodeData` 유지, Phase 중단    |
-| Heading 시각 회귀                 | Phase 1 완료   | Heading size 변경 시 CSS/Skia 모두 반영, xs~3xl 모든 사이즈 ≤1px 정합                    | Phase 1 롤백, Phase 0 재검토            |
-| Text size 버그 근본 해결          | Phase 2 완료   | 현재 5-point patch 제거 후 Text size 변경이 CSS/Skia에 반영되는지 재검증                 | 5-point patch 일부 복원                 |
-| TEXT_LEAF_TAGS flex layout        | 각 Phase 완료  | Checkbox/Radio/Switch 내부 Label 세로 출력 버그 미재발, 2-pass reflow 정상                | TEXT_LEAF_TAGS 분리 유지                |
-| Paragraph/Kbd/Code 기본 동작      | Phase 3 완료   | 신설 spec의 default size/variant로 렌더링 정상                                           | 점진적 속성 추가                        |
-| `buildTextNodeData` 호출 없음     | Phase 4 완료   | grep 검사로 신규 호출자 없음                                                             | 호출자 재마이그레이션                   |
+| Gate                          | 시점          | 통과 조건                                                                              | 실패 시 대안                         |
+| ----------------------------- | ------------- | -------------------------------------------------------------------------------------- | ------------------------------------ |
+| Phase 0 feature parity        | Phase 0 완료  | Button/Badge/Label/Description/InlineAlert 시각 회귀 ≤1px, 기존 13개 feature 동작 검증 | Phase 0 롤백, ADR 재설계             |
+| 5-layer 버그 재발 방지        | Phase 0 완료  | `button-text-wrapping-css-skia-parity.md` 체크리스트 5항목 통과                        | `buildTextNodeData` 유지, Phase 중단 |
+| Heading 시각 회귀             | Phase 1 완료  | Heading size 변경 시 CSS/Skia 모두 반영, xs~3xl 모든 사이즈 ≤1px 정합                  | Phase 1 롤백, Phase 0 재검토         |
+| Text size 버그 근본 해결      | Phase 2 완료  | 현재 5-point patch 제거 후 Text size 변경이 CSS/Skia에 반영되는지 재검증               | 5-point patch 일부 복원              |
+| TEXT_LEAF_TAGS flex layout    | 각 Phase 완료 | Checkbox/Radio/Switch 내부 Label 세로 출력 버그 미재발, 2-pass reflow 정상             | TEXT_LEAF_TAGS 분리 유지             |
+| Paragraph/Kbd/Code 기본 동작  | Phase 3 완료  | 신설 spec의 default size/variant로 렌더링 정상                                         | 점진적 속성 추가                     |
+| `buildTextNodeData` 호출 없음 | Phase 4 완료  | grep 검사로 신규 호출자 없음                                                           | 호출자 재마이그레이션                |
 
 ## Consequences
 
