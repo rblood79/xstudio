@@ -32,6 +32,7 @@ import {
   STATUSLIGHT_DIMENSIONS,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
+import { TabsSpec, TabPanelsSpec } from "@composition/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   measureWrappedTextHeight,
@@ -935,22 +936,7 @@ export function calculateContentWidth(
       }
     }
 
-    // 2) Spec shapes 실측 폭 (specShapeConverter x좌표 기준)
-    // ADR-051: 추정값(fontSize * 0.55) 대신 measureTextWidth 실측
-    let specX = 0;
-    for (let i = 0; i < crumbs.length; i++) {
-      const isLast = i === crumbs.length - 1;
-      const crumbWeight = isLast ? 600 : fontWeight;
-      specX += measureTextWidth(crumbs[i], fontSize, ffamily, crumbWeight);
-      if (!isLast) {
-        const sepW = measureTextWidth(separator, fontSize, ffamily, 400);
-        specX += separatorPadding + sepW + separatorPadding;
-      }
-    }
-    const specRenderWidth = specX;
-
-    // 둘 중 더 큰 값 사용: Spec x좌표 기반 렌더링이 containerWidth 안에 들어오도록 보장
-    return Math.ceil(Math.max(measuredWidth, specRenderWidth));
+    return Math.ceil(measuredWidth);
   }
 
   // 1.3. ProgressCircle: diameter 기반 고정 크기
@@ -1385,17 +1371,13 @@ export function calculateContentWidth(
  * 브라우저 CSS와 유사한 기본 크기 적용
  */
 
-/** @sync Button.spec.ts padding pattern + Tabs.css */
-export const TABS_BAR_HEIGHT: Record<string, number> = {
-  sm: 21,
-  md: 29,
-  lg: 41,
-};
-export const TABS_PANEL_PADDING: Record<string, number> = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-};
+/** @sync TabsSpec.sizes — Spec이 SSOT */
+export const TABS_BAR_HEIGHT: Record<string, number> = Object.fromEntries(
+  Object.entries(TabsSpec.sizes).map(([k, v]) => [k, v.height]),
+);
+export const TABS_PANEL_PADDING: Record<string, number> = Object.fromEntries(
+  Object.entries(TabPanelsSpec.sizes).map(([k, v]) => [k, v.paddingX]),
+);
 
 const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   // 버튼/인풋 계열

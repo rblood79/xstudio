@@ -181,6 +181,7 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
           baseline: "middle" as const,
           maxWidth: sepMeasuredWidth + resolvedFontSize,
         });
+        x += sepMeasuredWidth + afterPadX;
       }
 
       return shapes;

@@ -42,6 +42,7 @@ import {
   measureSpecTextMinHeight,
   normalizeMiddleBaselineTextLineHeight,
 } from "./specBuildHelpers";
+import { findAncestorByTag } from "./ancestorLookup";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -422,25 +423,15 @@ function resolveTabIsSelected(
   const tabId = getProps(element).tabId as string | undefined;
   if (!tabId) return null;
 
-  // 부모 TabList → 조상 Tabs 탐색 (최대 3 depth)
-  let currentId: string | null | undefined = element.parent_id;
-  for (let depth = 0; depth < 3 && currentId; depth++) {
-    const ancestor = elementsMap.get(currentId);
-    if (!ancestor) break;
-    if (ancestor.tag === "Tabs") {
-      const ap = getProps(ancestor);
-      const selectedKey =
-        (ap.selectedKey as string | undefined) ??
-        (ap.defaultSelectedKey as string | undefined);
-      if (selectedKey != null) {
-        return selectedKey === tabId;
-      }
-      // selectedKey 미설정 시 첫 번째 Tab이 선택됨 → 부모 조회 불가, 기본 false
-      return false;
-    }
-    currentId = ancestor.parent_id;
-  }
-  return null;
+  const tabs = findAncestorByTag(element, "Tabs", elementsMap, 3);
+  if (!tabs) return null;
+
+  const ap = getProps(tabs);
+  const selectedKey =
+    (ap.selectedKey as string | undefined) ??
+    (ap.defaultSelectedKey as string | undefined);
+  if (selectedKey != null) return selectedKey === tabId;
+  return false;
 }
 
 /** Tab/TabList → ancestor Tabs orientation 위임 */
@@ -451,16 +442,9 @@ function resolveTabOrientation(
   if (element.tag !== "Tab" && element.tag !== "TabList") return null;
   if (!element.parent_id) return null;
 
-  let currentId: string | null | undefined = element.parent_id;
-  for (let depth = 0; depth < 3 && currentId; depth++) {
-    const ancestor = elementsMap.get(currentId);
-    if (!ancestor) break;
-    if (ancestor.tag === "Tabs") {
-      return (getProps(ancestor).orientation as string) ?? "horizontal";
-    }
-    currentId = ancestor.parent_id;
-  }
-  return null;
+  const tabs = findAncestorByTag(element, "Tabs", elementsMap, 3);
+  if (!tabs) return null;
+  return (getProps(tabs).orientation as string) ?? "horizontal";
 }
 
 /** Label in nowrap parent detection */

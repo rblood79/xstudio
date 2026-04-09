@@ -27,6 +27,7 @@ import {
   normalizeBreadcrumbRspSizeKey,
 } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
+import { findAncestorByTag } from "../../skia/ancestorLookup";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
 
@@ -967,9 +968,7 @@ export function applyImplicitStyles(
   // CSS: .react-aria-TabPanel { padding: var(--spacing-md) }
   // → TabPanels는 활성 Panel 하나만 렌더링, 나머지 숨김
   if (containerTag === "tabpanels") {
-    const tabsParent = containerEl.parent_id
-      ? elementById.get(containerEl.parent_id)
-      : undefined;
+    const tabsParent = findAncestorByTag(containerEl, "Tabs", elementById, 3);
     const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
     const sizeName = (tabsProps?.size as string) ?? "md";
     const tabPanelPadding =
@@ -999,9 +998,7 @@ export function applyImplicitStyles(
   // ── TabList ─────────────────────────────────────────────────────────
   if (containerTag === "tablist") {
     // Tabs 조상에서 size 조회
-    const tabsParent = containerEl.parent_id
-      ? elementById.get(containerEl.parent_id)
-      : undefined;
+    const tabsParent = findAncestorByTag(containerEl, "Tabs", elementById, 3);
     const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
     const sizeName = (tabsProps?.size as string) ?? "md";
     const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;

@@ -124,8 +124,14 @@ export const TabSpec: ComponentSpec<TabProps> = {
       });
 
       // 선택된 탭: accent 인디케이터 (full-width)
+      // CSS 정합: sm=2px, md=3px, lg=4px
       if (isSelected) {
-        const thickness = 3;
+        const indicatorThickness: Record<number, number> = {
+          21: 2, // sm height
+          29: 3, // md height
+          41: 4, // lg height
+        };
+        const thickness = indicatorThickness[h] ?? 3;
         shapes.push({
           type: "rect" as const,
           x: isVertical ? w - thickness : 0,
