@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Tag,
   PointerOff,
@@ -303,16 +303,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       // Menu는 트리거 버튼이므로 자식(MenuItem) 유무와 무관하게 항상 텍스트 렌더링
       const text = props.children || "Menu";
 
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        14,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

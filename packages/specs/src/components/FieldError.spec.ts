@@ -10,7 +10,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 /**
  * FieldError Props
@@ -84,16 +84,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
 
       const width = (props.style?.width as number) || "auto";
 
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 12;
+      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 12);
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =

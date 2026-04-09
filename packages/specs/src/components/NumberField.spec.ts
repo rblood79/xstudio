@@ -10,7 +10,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Globe,
   DollarSign,
@@ -644,16 +644,10 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             : parseFloat(String(styleBw)) || 0
           : defaultBw;
 
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        14,
+      );
 
       const labelLineHeight = getLabelLineHeight(fontSize);
       const labelGap = 8;

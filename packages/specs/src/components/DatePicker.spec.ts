@@ -7,7 +7,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Layout,
   Globe,
@@ -119,14 +119,7 @@ export function buildDatePickerShapes(input: DatePickerShapesInput): Shape[] {
     defaultCW;
 
   const style = (props.style as Record<string, unknown> | undefined) ?? {};
-  const rawFontSize = style.fontSize ?? sizeEntry.fontSize;
-  const resolvedFs =
-    typeof rawFontSize === "number"
-      ? rawFontSize
-      : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-        ? resolveToken(rawFontSize as TokenRef)
-        : rawFontSize;
-  const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+  const fontSize = resolveSpecFontSize((style.fontSize as string | number | undefined) ?? (sizeEntry.fontSize as string | number | undefined), 14);
   const ff = (style.fontFamily as string) || fontFamily.sans;
 
   const textColor =

@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   FIELD_TRIGGER_VARIABLES,
   FIELD_AUTO_HEIGHT_VARIABLES,
@@ -469,15 +469,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           : defaultBw;
 
       // size.fontSize는 TokenRef 문자열('{typography.text-sm}')일 수 있으므로
-      // resolveToken으로 숫자 변환 후 산술 연산에 사용
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      // resolveSpecFontSize로 숫자 변환 후 산술 연산에 사용
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
 
       // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
       const labelLineHeight = getLabelLineHeight(fontSize);

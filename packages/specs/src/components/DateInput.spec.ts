@@ -8,7 +8,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 export interface DateInputProps {
   variant?: "default" | "accent" | "negative";
@@ -199,17 +199,10 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
       const inputHeight = INPUT_HEIGHT[sizeName] ?? INPUT_HEIGHT.md;
       const paddingX = INPUT_PADDING_X[sizeName] ?? INPUT_PADDING_X.md;
 
-      // fontSize: Spec sizes의 TokenRef를 resolveToken()으로 숫자 변환 (단일 소스)
+      // fontSize: Spec sizes의 TokenRef를 resolveSpecFontSize()로 숫자 변환 (단일 소스)
       const sizeEntry =
         DateInputSpec.sizes[sizeName as keyof typeof DateInputSpec.sizes];
-      const rawFontSize = props.style?.fontSize ?? sizeEntry?.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? sizeEntry?.fontSize, 14);
       const borderRadius =
         INPUT_BORDER_RADIUS[sizeName] ?? INPUT_BORDER_RADIUS.md;
       const containerWidth =

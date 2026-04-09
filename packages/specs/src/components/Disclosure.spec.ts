@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Type, ToggleLeft, PointerOff, Parentheses } from "lucide-react";
 
 /**
@@ -137,14 +137,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
         (variant.border || ("{color.border}" as TokenRef));
 
       const textColor = props.style?.color ?? variant.text;
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

@@ -10,7 +10,7 @@
 import { Link, Type, PointerOff } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 /**
  * Avatar Props
@@ -165,14 +165,7 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
       // 이니셜 텍스트
       const text =
         props.initials || props.alt?.slice(0, 2).toUpperCase() || "?";
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 12;
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 12);
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

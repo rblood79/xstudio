@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Layout,
   Tag,
@@ -263,16 +263,10 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       const shapes: Shape[] = [];
 
       // Propagation 정합성: props.size 명시 시 size.fontSize 우선
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        16,
+      );
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";

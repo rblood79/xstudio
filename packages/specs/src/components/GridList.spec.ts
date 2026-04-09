@@ -10,7 +10,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Grid, Binary, Rows, SquareX, PointerOff, Square } from "lucide-react";
 import { FILTERING_SECTION } from "../utils/sharedSections";
 
@@ -213,14 +213,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       const items =
         props.items && props.items.length > 0 ? props.items : DEFAULT_ITEMS;
       const gap = (size.gap as unknown as number) ?? 12;
-      const rawFontSize = size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(size.fontSize, 14);
       // description font size: CSS 정합성 — sm:text-2xs(10), md:text-xs(12), lg:text-sm(14)
       const descFontSize = fontSize - 2;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;

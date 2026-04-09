@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   List,
   SquareX,
@@ -219,14 +219,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";

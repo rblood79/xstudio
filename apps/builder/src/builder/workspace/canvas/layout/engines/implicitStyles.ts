@@ -902,8 +902,14 @@ export function applyImplicitStyles(
   if (containerTag === "tabs") {
     const sizeName = (containerProps?.size as string) ?? "md";
     const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
-    const tabPanelPadding =
-      TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
+    const density = (containerProps?.density as string) ?? "compact";
+    // CSS 정합: size 명시 → size 기반 padding, size 미명시 → density 기반
+    // density="regular" → lg padding(16px), density="compact" → size 기본(md=12px)
+    const tabPanelPadding = containerProps?.size
+      ? (TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md)
+      : density === "regular"
+        ? (TABS_PANEL_PADDING.lg ?? 16)
+        : (TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md);
 
     const tabListEl = children.find((c) => c.tag === "TabList");
     const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
@@ -971,8 +977,12 @@ export function applyImplicitStyles(
     const tabsParent = findAncestorByTag(containerEl, "Tabs", elementById, 3);
     const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
     const sizeName = (tabsProps?.size as string) ?? "md";
-    const tabPanelPadding =
-      TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
+    const density = (tabsProps?.density as string) ?? "compact";
+    const tabPanelPadding = tabsProps?.size
+      ? (TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md)
+      : density === "regular"
+        ? (TABS_PANEL_PADDING.lg ?? 16)
+        : (TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md);
     const selectedKey =
       (tabsProps?.selectedKey as string | undefined) ??
       (tabsProps?.defaultSelectedKey as string | undefined);

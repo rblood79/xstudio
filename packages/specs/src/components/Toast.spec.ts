@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Tag, FileText, Clock, Bell, Layout } from "lucide-react";
 
 /**
@@ -240,14 +240,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
           : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

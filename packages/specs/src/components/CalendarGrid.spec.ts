@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 /**
  * CalendarGrid Props
@@ -117,15 +117,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
     shapes: (props, variant, size) => {
       const sizeName = props.size ?? "md";
       const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.md;
-      const rawFontSize = size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize =
-        typeof resolvedFs === "number" ? resolvedFs : dims.fontSize;
+      const fontSize = resolveSpecFontSize(size.fontSize, dims.fontSize);
       const cellSize = dims.iconSize + 4;
       const gap = dims.gap;
       const ff = fontFamily.sans;

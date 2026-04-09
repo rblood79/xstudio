@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Heading, FileText, ArrowLeftRight } from "lucide-react";
 
 /**
@@ -93,14 +94,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
       const dims =
         ILLUSTRATION_DIMENSIONS[sizeName] ?? ILLUSTRATION_DIMENSIONS.md;
 
-      const rawFs = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs =
-        typeof rawFs === "number"
-          ? rawFs
-          : typeof rawFs === "string" && rawFs.startsWith("{")
-            ? resolveToken(rawFs as TokenRef)
-            : rawFs;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
 
       const headingFsRaw = size.headingFontSize;
       const headingFsResolved =

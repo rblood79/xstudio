@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Keyboard,
   AlertTriangle,
@@ -466,16 +466,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           : defaultBw;
 
       // fontSize: Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 16);
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =

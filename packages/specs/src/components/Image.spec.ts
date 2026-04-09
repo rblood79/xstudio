@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef, ImageShape } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Image, FileText, Maximize, PointerOff } from "lucide-react";
 
 /**
@@ -106,14 +106,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const rawFs = size.fontSize;
-      const resolvedFs =
-        typeof rawFs === "number"
-          ? rawFs
-          : typeof rawFs === "string" && rawFs.startsWith("{")
-            ? resolveToken(rawFs as TokenRef)
-            : rawFs;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(size.fontSize, 14);
 
       // Child Composition: 자식 Element가 있으면 스킵
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;

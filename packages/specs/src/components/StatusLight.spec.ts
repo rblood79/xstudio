@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Type, Parentheses } from "lucide-react";
 
 /**
@@ -304,14 +304,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       // 라벨 텍스트
       const text = props.children;
       if (text) {
-        const rawFontSize = props.style?.fontSize ?? size.fontSize;
-        const resolvedFs =
-          typeof rawFontSize === "number"
-            ? rawFontSize
-            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-              ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize;
-        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+        const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
         const fwRaw = props.style?.fontWeight;
         const fw =
           fwRaw != null

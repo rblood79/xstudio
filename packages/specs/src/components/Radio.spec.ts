@@ -10,7 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, typography } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Type, Hash, PointerOff, PenOff, Sparkles } from "lucide-react";
 
 /** fontSize(px) → CSS lineHeight(px) 매핑 */
@@ -275,16 +275,10 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       const labelText = props.children || props.label || props.text;
       if (!hasChildren && labelText) {
         const textColor = props.style?.color ?? variant.text;
-        const rawFontSize = props.size
-          ? size.fontSize
-          : (props.style?.fontSize ?? size.fontSize);
-        const resolvedFs =
-          typeof rawFontSize === "number"
-            ? rawFontSize
-            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-              ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize;
-        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+        const fontSize = resolveSpecFontSize(
+          props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+          16,
+        );
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;
         const textAlign =
           (props.style?.textAlign as "left" | "center" | "right") || "left";

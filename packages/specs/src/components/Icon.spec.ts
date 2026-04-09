@@ -8,7 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Image, Pen } from "lucide-react";
 
 export interface IconProps {
@@ -142,17 +142,10 @@ export const IconSpec: ComponentSpec<IconProps> = {
       const iconSize = size.iconSize ?? 24;
 
       // 인라인 fontSize가 있으면 크기 오버라이드
-      const rawFontSize = props.style?.fontSize;
-      const resolvedFs =
-        rawFontSize != null
-          ? typeof rawFontSize === "number"
-            ? rawFontSize
-            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-              ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize
-          : undefined;
       const effectiveSize =
-        (typeof resolvedFs === "number" ? resolvedFs : undefined) ?? iconSize;
+        props.style?.fontSize != null
+          ? resolveSpecFontSize(props.style.fontSize, iconSize)
+          : iconSize;
 
       const fill = props.style?.color ?? variant.text;
       const iconName = props.iconName ?? "circle";

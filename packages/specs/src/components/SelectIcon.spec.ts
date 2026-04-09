@@ -8,7 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 export interface SelectIconProps {
   variant?: "default";
@@ -97,17 +97,10 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
     shapes: (props, variant, size) => {
       const iconSize = size.iconSize ?? 18;
 
-      const rawFontSize = props.style?.fontSize;
-      const resolvedFs =
-        rawFontSize != null
-          ? typeof rawFontSize === "number"
-            ? rawFontSize
-            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-              ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize
-          : undefined;
       const effectiveSize =
-        (typeof resolvedFs === "number" ? resolvedFs : undefined) ?? iconSize;
+        props.style?.fontSize != null
+          ? resolveSpecFontSize(props.style.fontSize, iconSize)
+          : iconSize;
 
       // 배경색: 사용자 설정 우선, 'transparent'는 미설정으로 처리
       const userBg = props.style?.backgroundColor;

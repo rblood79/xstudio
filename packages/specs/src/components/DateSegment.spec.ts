@@ -11,7 +11,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 /**
  * 세그먼트 타입 - 날짜 또는 시간 단위
@@ -138,16 +138,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
         const literalText = String(props.value ?? props.placeholder ?? "");
         if (!literalText) return [];
 
-        const rawFs = props.size
-          ? size.fontSize
-          : (props.style?.fontSize ?? size.fontSize);
-        const resolvedFs =
-          typeof rawFs === "number"
-            ? rawFs
-            : typeof rawFs === "string" && rawFs.startsWith("{")
-              ? resolveToken(rawFs as TokenRef)
-              : rawFs;
-        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+        const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 14);
         const ff = (props.style?.fontFamily as string) || fontFamily.mono;
 
         return [
@@ -191,16 +182,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
 
       const bgAlpha = props.isFocused ? 1.0 : 0.7;
 
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 14);
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =

@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { measureSpecTextWidth } from "../renderers/utils/measureText";
 import {
   Layout,
@@ -424,17 +424,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       // Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFontSize =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : 14;
-      const numericFontSize =
-        typeof resolvedFontSize === "number" ? resolvedFontSize : 14;
+      const numericFontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 14);
 
       const shapes: Shape[] = [];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;

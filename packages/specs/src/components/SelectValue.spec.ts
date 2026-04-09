@@ -9,7 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 export interface SelectValueProps {
   variant?: "default";
@@ -98,16 +98,10 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
 
       // props.size가 명시적으로 설정된 경우 size.fontSize를 우선 사용
       // (propagation이 size prop만 변경하고 style.fontSize는 갱신하지 않으므로)
-      const rawFontSize = props.size
-        ? size.fontSize
-        : (props.style?.fontSize ?? size.fontSize);
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        14,
+      );
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =
