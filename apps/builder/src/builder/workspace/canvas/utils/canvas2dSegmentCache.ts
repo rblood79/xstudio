@@ -545,8 +545,15 @@ export function verifyLines(
           break;
         }
       }
-      verified.push(lineTokens.slice(0, fit));
-      carry = lineTokens.slice(fit);
+      // CSS trailing space hang: carry에 공백만 남으면 이전 줄에 붙임
+      const kept = lineTokens.slice(0, fit);
+      const rest = lineTokens.slice(fit);
+      // 공백 토큰들을 kept 줄 끝에 유지 (줄바꿈에 기여하지 않음)
+      while (rest.length > 0 && /^\s+$/.test(rest[0])) {
+        kept.push(rest.shift()!);
+      }
+      verified.push(kept);
+      carry = rest;
     }
   }
 

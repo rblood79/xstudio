@@ -520,6 +520,12 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         const textAlign =
           (props.style?.textAlign as "left" | "center" | "right") || "center";
 
+        // lineHeight: spec size 토큰 → 숫자 (specShapeConverter가 정확한 줄바꿈 높이 계산용)
+        const rawLh = props.style?.lineHeight ?? (size as unknown as Record<string, unknown>).lineHeight;
+        const lineHeight = rawLh != null && rawLh !== undefined
+          ? resolveSpecFontSize(rawLh as string | number | undefined, fontSize * 1.2)
+          : undefined;
+
         shapes.push({
           type: "text" as const,
           x: paddingX,
@@ -531,6 +537,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           fill: textColor,
           align: textAlign,
           baseline: "middle" as const,
+          lineHeight,
         });
       }
 

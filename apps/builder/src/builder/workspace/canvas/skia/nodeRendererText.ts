@@ -162,6 +162,18 @@ export function renderText(
         verticalAlign === "top" ||
         verticalAlign === "baseline")
     ) {
+      const paraHeight = paragraph.getHeight();
+      const lineMetrics = paragraph.getLineMetrics();
+      const isMultiLine = lineMetrics.length > 1;
+
+      // 다줄 텍스트: paragraph.getHeight() 기반 수직 중앙 (글리프 미세 조정 불필요)
+      if (isMultiLine) {
+        const contentHeight =
+          node.height - node.text!.paddingTop - (node.text!.paddingBottom ?? 0);
+        return node.text!.paddingTop + Math.max(0, (contentHeight - paraHeight) / 2);
+      }
+
+      // 단일줄: 글리프 기반 수직 중앙 (기존 로직)
       const primaryFamily = node.text!.fontFamilies[0] ?? "sans-serif";
       const metrics = measureActualTextBounds(
         processedText,

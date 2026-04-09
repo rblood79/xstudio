@@ -151,11 +151,18 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
     const allowBreakWord = ow === "break-word" || ow === "anywhere";
 
     for (const word of words) {
+      const isSpace = /^\s+$/.test(word);
       let wordWidth = this._measureWord(ctx, word, style);
       // 공백 토큰: wordSpacing 가산
-      if (style.wordSpacing && style.wordSpacing !== 0 && /^\s+$/.test(word)) {
+      if (style.wordSpacing && style.wordSpacing !== 0 && isSpace) {
         const spaceCount = (word.match(/ /g) ?? []).length;
         wordWidth += style.wordSpacing * spaceCount;
+      }
+      // CSS trailing space hang: 공백이 줄 끝을 넘으면 줄바꿈하지 않고 hang 처리
+      // (줄바꿈은 공백 뒤의 다음 단어에서 판단)
+      if (isSpace) {
+        currentLineWidth += wordWidth;
+        continue;
       }
       if (currentLineWidth + wordWidth > maxWidth && currentLineWidth > 0) {
         // ADR-008: overflow-wrap: break-word — 단어가 maxWidth보다 크면 문자 단위 분할

@@ -15,6 +15,7 @@ import {
   hexStringToNumber,
 } from "@composition/specs";
 import { getSkImage, loadSkImage } from "./imageCache";
+import { measureWrappedTextHeight } from "../utils/textMeasure";
 
 // ========== Helpers ==========
 
@@ -686,23 +687,36 @@ export function specShapesToSkia(
             : resolveNum(shape.lineHeight, theme, fontSize * 1.2)
           : fontSize * 1.2;
 
+        // 줄바꿈 시 실제 텍스트 블록 높이 계산 (단일줄이면 lineHeightPx)
+        let textBlockHeight = lineHeightPx;
+        if (shape.baseline === "middle" && shape.y === 0) {
+          const effectiveMaxWidth =
+            shape.maxWidth ?? (shape.x > 0 ? containerWidth - shape.x * 2 : containerWidth);
+          if (effectiveMaxWidth > 0 && effectiveMaxWidth < containerWidth) {
+            const ff = shape.fontFamily ?? "Inter";
+            const fw = typeof shape.fontWeight === "number" ? shape.fontWeight : 400;
+            const measured = measureWrappedTextHeight(
+              shape.text, fontSize, fw, ff, effectiveMaxWidth, lineHeightPx,
+            );
+            if (measured > lineHeightPx + 0.5) {
+              textBlockHeight = measured;
+            }
+          }
+        }
+
         // Calculate paddingTop based on baseline
         let paddingTop = shape.y;
         if (shape.baseline === "middle") {
           if (shape.y > 0) {
-            // shape.y > 0: y는 텍스트 수직 중앙이 위치해야 할 지점
-            // (Checkbox, Radio, Switch 등 인디케이터 중심에 텍스트 정렬)
             paddingTop = Math.max(0, shape.y - lineHeightPx / 2);
           } else {
-            // shape.y === 0: 컨테이너 전체를 기준으로 수직 중앙 정렬
-            // (Button, Input, Badge 등)
-            paddingTop = (containerHeight - lineHeightPx) / 2;
+            // 컨테이너 전체 기준 수직 중앙 (Button, Input, Badge 등)
+            paddingTop = Math.max(0, (containerHeight - textBlockHeight) / 2);
           }
         }
-        // baseline='top' → paddingTop = y (already)
         const paddingBottom = Math.max(
           0,
-          containerHeight - Math.max(0, paddingTop) - lineHeightPx,
+          containerHeight - Math.max(0, paddingTop) - textBlockHeight,
         );
 
         // Calculate paddingLeft based on align
