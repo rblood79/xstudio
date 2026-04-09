@@ -8,7 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
+import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Layout,
@@ -265,7 +265,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           : (props.style?.width as number) || 240;
       const rows = props.rows || 3;
       const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
-      const lineHeight = fontSize * 1.5;
+      const lineHeight = getLabelLineHeight(fontSize);
       const height = Math.max(
         size.height,
         rows * lineHeight + size.paddingY * 2,
@@ -334,7 +334,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
 
       // label offset 동적 계산 (fontSize 기반)
       const labelFontSize = fontSize - 2;
-      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelHeight = getLabelLineHeight(labelFontSize);
       const labelGap = size.gap ?? 8;
       const labelOffset = props.label ? labelHeight + labelGap : 0;
 
@@ -380,6 +380,8 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       }
 
       // 입력 텍스트 / 플레이스홀더
+      // NOTE: lineHeight 미명시 — specShapeConverter의 getLabelLineHeight fallback
+      //       경로 통일. (strutStyle heightMultiplier 분기 회피)
       const displayText = props.value || props.placeholder || "";
       if (displayText) {
         shapes.push({
@@ -394,7 +396,6 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
             : ("{color.neutral-subdued}" as TokenRef),
           align: textAlign,
           baseline: "top" as const,
-          lineHeight: 1.5,
           maxWidth: width - paddingX * 2,
         });
       }

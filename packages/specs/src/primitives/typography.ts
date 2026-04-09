@@ -100,3 +100,24 @@ const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
 export function getLabelLineHeight(fontSize: number): number {
   return FONT_SIZE_TO_LINE_HEIGHT[fontSize] ?? Math.ceil(fontSize * 1.5);
 }
+
+/**
+ * Text/Heading/Description 등 텍스트 리프 컴포넌트의 size preset → fontSize 매핑.
+ * Text.spec.ts의 `sizes` 정의와 동기화 유지.
+ */
+const TEXT_SIZE_PRESETS: Record<string, number> = {
+  xs: typography["text-xs"],
+  sm: typography["text-sm"],
+  md: typography["text-base"],
+  lg: typography["text-lg"],
+  xl: typography["text-xl"],
+  "2xl": typography["text-2xl"],
+  "3xl": typography["text-3xl"],
+  "4xl": typography["text-4xl"],
+  "5xl": typography["text-5xl"],
+};
+
+export function getTextPresetFontSize(preset: string | undefined): number {
+  if (!preset) return TEXT_SIZE_PRESETS.md;
+  return TEXT_SIZE_PRESETS[preset] ?? TEXT_SIZE_PRESETS.md;
+}

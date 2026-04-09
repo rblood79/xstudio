@@ -30,7 +30,11 @@ import {
 } from "../components/ColorSwatchPicker";
 import { parseColor } from "react-aria-components";
 import { Slot } from "../components/Slot";
-import { getIconData } from "@composition/specs";
+import {
+  getIconData,
+  getLabelLineHeight,
+  getTextPresetFontSize,
+} from "@composition/specs";
 import type {
   PreviewElement,
   RenderContext,
@@ -676,12 +680,24 @@ export const renderText = (
 
   const TextTag = (element.props.as || "p") as string;
 
+  // Text.spec.ts size prop → fontSize/lineHeight 주입.
+  // 사용자 style.fontSize가 명시되어 있으면 해당 값 우선.
+  const sizePreset = (element.props.size as string) || "md";
+  const userStyle = (element.props.style ?? {}) as React.CSSProperties;
+  const presetFontSize = getTextPresetFontSize(sizePreset);
+  const mergedStyle: React.CSSProperties = {
+    fontSize: `${presetFontSize}px`,
+    lineHeight: `${getLabelLineHeight(presetFontSize)}px`,
+    ...userStyle,
+  };
+
   return React.createElement(
     TextTag,
     {
       key: element.id,
       "data-element-id": element.id,
-      style: element.props.style,
+      "data-size": sizePreset,
+      style: mergedStyle,
       className: element.props.className,
     },
     element.props.children,

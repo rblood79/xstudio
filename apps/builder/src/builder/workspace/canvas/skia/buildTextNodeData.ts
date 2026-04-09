@@ -25,7 +25,13 @@ import { buildBaseNodeProps } from "./buildBaseNodeProps";
 import { parsePadding } from "../sprites/paddingUtils";
 import { skiaFontManager } from "./fontManager";
 import { colord } from "colord";
-import { hexStringToNumber, lightColors, darkColors } from "@composition/specs";
+import {
+  hexStringToNumber,
+  lightColors,
+  darkColors,
+  getLabelLineHeight,
+  getTextPresetFontSize,
+} from "@composition/specs";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -93,22 +99,6 @@ function resolveFlexAlignment(style: Record<string, unknown> | undefined): {
     ? { textAlign: toHAlign(jc), verticalAlign: toVAlign(ai) }
     : { textAlign: toHAlign(ai), verticalAlign: toVAlign(jc) };
 }
-
-// ---------------------------------------------------------------------------
-// Text Size Presets — TextSpec.sizes의 TokenRef를 resolve한 px 값.
-// TextSpec(packages/specs/src/components/Text.spec.ts)과 동기화 유지.
-// ---------------------------------------------------------------------------
-
-const TEXT_SIZE_MAP: Record<string, { fontSize: number; lineHeight: number }> =
-  {
-    xs: { fontSize: 12, lineHeight: 16 },
-    sm: { fontSize: 14, lineHeight: 20 },
-    md: { fontSize: 16, lineHeight: 24 },
-    lg: { fontSize: 18, lineHeight: 28 },
-    xl: { fontSize: 20, lineHeight: 28 },
-    "2xl": { fontSize: 24, lineHeight: 32 },
-    "3xl": { fontSize: 30, lineHeight: 36 },
-  };
 
 // ---------------------------------------------------------------------------
 // Font helpers
@@ -188,10 +178,15 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
   const textColor = colorIntToFloat32(effectiveFill, 1);
 
   // ---------- Size preset → fontSize/lineHeight ----------
-  const sizePreset = (props?.size as string) ?? "md";
-  const sizeConfig = TEXT_SIZE_MAP[sizePreset] ?? TEXT_SIZE_MAP.md;
-  // style.fontSize가 명시되어 있으면 style 우선, 없으면 preset 사용
-  const effectiveFontSize = textStyle.fontSize || sizeConfig.fontSize;
+  // style.fontSize가 명시되어 있으면 style 우선, 없으면 size preset 사용.
+  // NOTE: textStyle.fontSize는 parseCSSSize fallback(16)이 적용되어 항상 값을
+  //       가지므로 `textStyle.fontSize || preset` 패턴은 preset을 무시한다.
+  //       → 원본 style.fontSize 존재 여부로 판단.
+  const hasExplicitFontSize =
+    style.fontSize !== undefined && style.fontSize !== null;
+  const effectiveFontSize = hasExplicitFontSize
+    ? textStyle.fontSize
+    : getTextPresetFontSize(props?.size as string | undefined);
 
   // ---------- Font properties ----------
   const numericFontWeight = parseFontWeight(textStyle.fontWeight);
@@ -249,12 +244,12 @@ export function buildTextNodeData(input: TextBuildInput): SkiaNodeData | null {
       color: textColor,
       align: flexAlignment?.textAlign ?? textStyle.align,
       letterSpacing: textStyle.letterSpacing,
-      // lineHeight: style.lineHeight 명시 > leading > size preset > 폰트 기본값
+      // lineHeight: style.lineHeight 명시 > leading > getLabelLineHeight(SSOT)
       ...(textStyle.leading > 0
         ? { lineHeight: textStyle.leading + effectiveFontSize }
         : style.lineHeight
           ? {}
-          : { lineHeight: sizeConfig.lineHeight }),
+          : { lineHeight: getLabelLineHeight(effectiveFontSize) }),
       // textDecoration → CanvasKit bitmask
       ...(hasDecoration
         ? {
