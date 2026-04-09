@@ -129,6 +129,8 @@ export {
   tokenToCSSVar,
   resolveBoxShadow,
   hexStringToNumber,
+  // FontSize resolver
+  resolveSpecFontSize,
 } from "./renderers";
 
 export type { ReactRenderResult, PixiRenderContext } from "./renderers";

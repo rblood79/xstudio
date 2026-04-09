@@ -2309,7 +2309,16 @@ export function calculateContentHeight(
           );
         }
       }
-      const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
+      const selectedKey =
+        (props?.selectedKey as string | undefined) ??
+        (props?.defaultSelectedKey as string | undefined);
+      const activePanel = selectedKey
+        ? (panelChildren.find(
+            (p) =>
+              (p.props as Record<string, unknown> | undefined)?.tabId ===
+              selectedKey,
+          ) ?? panelChildren[0])
+        : panelChildren[0];
       if (activePanel) {
         const panelGrandChildren = getChildElements?.(activePanel.id);
         const panelHeight = calculateContentHeight(

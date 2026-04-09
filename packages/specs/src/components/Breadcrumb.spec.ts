@@ -142,11 +142,9 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
 
       const labelFw = isLast ? 600 : 400;
       const disabled = state === "disabled";
-      const labelFill: TokenRef | string = disabled
-        ? ("{color.neutral-subdued}" as TokenRef)
-        : isLast
-          ? ("{color.accent}" as TokenRef)
-          : ("{color.neutral-subdued}" as TokenRef);
+      const labelFill: TokenRef | string = !disabled && isLast
+        ? ("{color.accent}" as TokenRef)
+        : ("{color.neutral-subdued}" as TokenRef);
 
       if (text) {
         const estW = measureSpecTextWidth(text, resolvedFontSize, ff, labelFw);

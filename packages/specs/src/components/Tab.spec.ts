@@ -12,7 +12,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
-import { resolveToken } from "../renderers/utils/tokenResolver";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 export interface TabProps {
   /** Tab 레이블 텍스트 */
@@ -90,14 +90,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
       const label = props.title ?? "";
 
       const ff = fontFamily.sans;
-      const rawFs = size.fontSize;
-      const resolvedFs =
-        typeof rawFs === "number"
-          ? rawFs
-          : typeof rawFs === "string" && rawFs.startsWith("{")
-            ? resolveToken(rawFs as TokenRef)
-            : rawFs;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+      const fontSize = resolveSpecFontSize(size.fontSize, 14);
 
       const h = size.height;
       const px = size.paddingX;

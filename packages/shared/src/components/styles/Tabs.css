@@ -79,7 +79,7 @@
     position: relative;
     padding: var(--spacing-xs) var(--spacing-md);
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
     outline: none;
     color: var(--fg-muted);
@@ -101,6 +101,7 @@
 
     &[data-selected] {
       color: var(--fg);
+      font-weight: 600;
     }
 
     &[data-disabled] {

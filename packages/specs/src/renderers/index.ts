@@ -38,3 +38,6 @@ export {
   resolveBoxShadow,
   hexStringToNumber,
 } from './utils/tokenResolver';
+
+// FontSize resolver
+export { resolveSpecFontSize } from './utils/resolveSpecFontSize';
