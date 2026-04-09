@@ -56,6 +56,8 @@ interface SpecBuildInput {
   childElements?: Element[];
   /** 부모 체인 조회용 (Phase 8) */
   elementsMap: Map<string, Element>;
+  /** 형제 조회용 — resolveBreadcrumbItemContext, resolveToggleGroupPosition */
+  childrenMap?: Map<string, Element[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -168,6 +170,7 @@ function resolveParentDelegatedSize(
 function resolveBreadcrumbItemContext(
   element: Element,
   elementsMap: Map<string, Element>,
+  childrenMap?: Map<string, Element[]>,
 ): {
   _isLast: boolean;
   _separator: string;
@@ -178,12 +181,19 @@ function resolveBreadcrumbItemContext(
   if (!parent || parent.tag !== "Breadcrumbs") return null;
 
   const pp = getProps(parent);
-  const siblings: Element[] = [];
-  for (const el of elementsMap.values()) {
-    if (el.parent_id === parent.id && el.tag === "Breadcrumb") {
-      siblings.push(el);
-    }
-  }
+  // childrenMap이 있으면 O(siblings)로 조회, 없으면 fallback O(n)
+  const rawSiblings = childrenMap?.get(parent.id);
+  const siblings = rawSiblings
+    ? rawSiblings.filter((el) => el.tag === "Breadcrumb")
+    : (() => {
+        const result: Element[] = [];
+        for (const el of elementsMap.values()) {
+          if (el.parent_id === parent.id && el.tag === "Breadcrumb") {
+            result.push(el);
+          }
+        }
+        return result;
+      })();
   siblings.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
   const idx = siblings.findIndex((s) => s.id === element.id);
   if (idx === -1) return null;
@@ -507,9 +517,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   const togglePos = resolveToggleGroupPosition(
     element,
     elementsMap,
-    input.childElements !== undefined
-      ? buildChildrenMapFromElements(elementsMap)
-      : null,
+    input.childrenMap ?? null,
   );
   if (togglePos) {
     specProps = { ...specProps, _groupPosition: togglePos };
@@ -521,7 +529,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     specProps = { ...specProps, ...dateProps };
   }
 
-  const breadcrumbCtx = resolveBreadcrumbItemContext(element, elementsMap);
+  const breadcrumbCtx = resolveBreadcrumbItemContext(element, elementsMap, input.childrenMap);
   if (breadcrumbCtx) {
     specProps = {
       ...specProps,
@@ -865,27 +873,3 @@ function applyInlineBorderOverlay(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * elementsMap에서 간이 childrenMap 구축 (ToggleButton position 계산용).
- * StoreRenderBridge가 childrenMap을 전달하지 않는 경우의 fallback.
- */
-function buildChildrenMapFromElements(
-  elementsMap: Map<string, Element>,
-): Map<string, Element[]> {
-  const map = new Map<string, Element[]>();
-  for (const [, el] of elementsMap) {
-    if (el.parent_id) {
-      let siblings = map.get(el.parent_id);
-      if (!siblings) {
-        siblings = [];
-        map.set(el.parent_id, siblings);
-      }
-      siblings.push(el);
-    }
-  }
-  return map;
-}

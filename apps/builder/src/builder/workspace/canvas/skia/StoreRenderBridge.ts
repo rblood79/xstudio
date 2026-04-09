@@ -405,6 +405,7 @@ export class StoreRenderBridge {
         theme: ctx.theme,
         childElements,
         elementsMap,
+        childrenMap: childrenMap ?? undefined,
       });
       if (nodeData) return nodeData;
       return (
