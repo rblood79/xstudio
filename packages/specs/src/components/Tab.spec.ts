@@ -14,6 +14,13 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
+/** CSS 정합: size별 indicator 두께 (height → thickness) */
+const INDICATOR_THICKNESS: Record<number, number> = {
+  21: 2, // sm
+  29: 3, // md
+  41: 4, // lg
+};
+
 export interface TabProps {
   /** Tab 레이블 텍스트 */
   title?: string;
@@ -122,12 +129,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
       // CSS 정합: sm=2px, md=3px, lg=4px
       // showIndicator=false → 인디케이터 미표시 (부모 Tabs prop)
       if (isSelected && props._showIndicator !== false) {
-        const indicatorThickness: Record<number, number> = {
-          21: 2, // sm height
-          29: 3, // md height
-          41: 4, // lg height
-        };
-        const thickness = indicatorThickness[h] ?? 3;
+        const thickness = INDICATOR_THICKNESS[h] ?? 3;
         shapes.push({
           type: "rect" as const,
           x: isVertical ? w - thickness : 0,

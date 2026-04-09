@@ -246,15 +246,12 @@ export class StoreRenderBridge {
       theme,
     };
 
-    // CHILD_COMPOSITION_EXCLUDE_TAGS: 부모↔자식 양방향 rebuild 확장
-    // 1) 자식 변경 → 부모 rebuild (예: Breadcrumb 텍스트 수정 → Breadcrumbs)
-    // 2) 부모 변경 → 자식 rebuild (예: Tabs showIndicator → Tab indicator 토글)
+    // 부모 prop(showIndicator 등)이 자식 spec shapes에 영향 → 양방향 rebuild 확장
     const expandedIds = new Set(changedIds);
     for (const id of changedIds) {
       const element = elementsMap.get(id);
       if (!element) continue;
 
-      // 자식→부모 확장
       if (element.parent_id) {
         const parent = elementsMap.get(element.parent_id);
         if (parent && CHILD_COMPOSITION_EXCLUDE_TAGS.has(parent.tag)) {
@@ -262,13 +259,11 @@ export class StoreRenderBridge {
         }
       }
 
-      // 부모→자식 확장: 부모 prop(showIndicator, selectedKey 등)이 자식 렌더링에 영향
       if (CHILD_COMPOSITION_EXCLUDE_TAGS.has(element.tag) && childrenMap) {
         const children = childrenMap.get(id);
         if (children) {
           for (const child of children) {
             expandedIds.add(child.id);
-            // 손자까지 확장 (Tabs→TabList→Tab, Tabs→TabPanels→Panel)
             const grandchildren = childrenMap.get(child.id);
             if (grandchildren) {
               for (const gc of grandchildren) expandedIds.add(gc.id);

@@ -413,40 +413,6 @@ function resolveTagGroupAllowsRemoving(
   return Boolean(getProps(ancestor).allowsRemoving);
 }
 
-/** Tab → ancestor Tabs selectedKey 비교 → _isSelected 주입 */
-function resolveTabIsSelected(
-  element: Element,
-  elementsMap: Map<string, Element>,
-): boolean | null {
-  if (element.tag !== "Tab" || !element.parent_id) return null;
-
-  const tabId = getProps(element).tabId as string | undefined;
-  if (!tabId) return null;
-
-  const tabs = findAncestorByTag(element, "Tabs", elementsMap, 3);
-  if (!tabs) return null;
-
-  const ap = getProps(tabs);
-  const selectedKey =
-    (ap.selectedKey as string | undefined) ??
-    (ap.defaultSelectedKey as string | undefined);
-  if (selectedKey != null) return selectedKey === tabId;
-  return false;
-}
-
-/** Tab/TabList → ancestor Tabs orientation 위임 */
-function resolveTabOrientation(
-  element: Element,
-  elementsMap: Map<string, Element>,
-): string | null {
-  if (element.tag !== "Tab" && element.tag !== "TabList") return null;
-  if (!element.parent_id) return null;
-
-  const tabs = findAncestorByTag(element, "Tabs", elementsMap, 3);
-  if (!tabs) return null;
-  return (getProps(tabs).orientation as string) ?? "horizontal";
-}
-
 /** Label in nowrap parent detection */
 function isLabelInNowrapParent(
   element: Element,
@@ -637,25 +603,37 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     specProps = { ...specProps, allowsRemoving: true };
   }
 
-  // Tab _isSelected + _showIndicator injection
-  const tabIsSelected = resolveTabIsSelected(element, elementsMap);
-  if (tabIsSelected !== null) {
-    specProps = { ...specProps, _isSelected: tabIsSelected };
-  }
+  // Tab/TabList: 조상 Tabs 1회 조회 → _isSelected, _showIndicator, orientation 주입
+  if (element.tag === "Tab" || element.tag === "TabList") {
+    const tabsAncestor = element.parent_id
+      ? findAncestorByTag(element, "Tabs", elementsMap, 3)
+      : undefined;
 
-  // Tab: 부모 Tabs의 showIndicator 주입 (기본 true)
-  if (element.tag === "Tab") {
-    const tabsAncestor = findAncestorByTag(element, "Tabs", elementsMap, 3);
-    if (tabsAncestor) {
-      const showInd = getProps(tabsAncestor).showIndicator;
-      specProps = { ...specProps, _showIndicator: showInd !== false };
+    if (tabsAncestor && element.tag === "Tab") {
+      const ap = getProps(tabsAncestor);
+      // _isSelected
+      const tabId = getProps(element).tabId as string | undefined;
+      if (tabId) {
+        const selectedKey =
+          (ap.selectedKey as string | undefined) ??
+          (ap.defaultSelectedKey as string | undefined);
+        specProps = {
+          ...specProps,
+          _isSelected: selectedKey != null ? selectedKey === tabId : false,
+        };
+      }
+      // _showIndicator
+      specProps = { ...specProps, _showIndicator: ap.showIndicator !== false };
     }
-  }
 
-  // Tab/TabList orientation delegation from ancestor Tabs
-  const tabOrientation = resolveTabOrientation(element, elementsMap);
-  if (tabOrientation !== null && !specProps.orientation) {
-    specProps = { ...specProps, orientation: tabOrientation };
+    // orientation (Tab + TabList 모두)
+    if (tabsAncestor && !specProps.orientation) {
+      specProps = {
+        ...specProps,
+        orientation:
+          (getProps(tabsAncestor).orientation as string) ?? "horizontal",
+      };
+    }
   }
 
   // _hasChildren injection
