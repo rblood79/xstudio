@@ -18,6 +18,7 @@ import {
   Trash2,
   HelpCircle,
   Info,
+  Columns,
 } from "lucide-react";
 import {
   Key,
@@ -29,11 +30,16 @@ import {
   Keyboard,
   Button,
 } from "react-aria-components";
-import { ToggleButtonGroup, ToggleButton } from "@composition/shared/components";
+import {
+  ToggleButtonGroup,
+  ToggleButton,
+} from "@composition/shared/components";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
 import { ZoomControls } from "../workspace/ZoomControls";
 import { ActionIconButton } from "../components/ui";
+import { useCompareModeStore } from "../workspace/canvas/stores";
+
 export interface Breakpoint {
   id: string;
   label: string;
@@ -85,6 +91,10 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   const { layout, toggleBottomPanel, openPanelAsModal } = usePanelLayout();
   const isMonitorOpen =
     layout.showBottom && layout.activeBottomPanels.includes("monitor");
+  const isCompareMode = useCompareModeStore((state) => state.isCompareMode);
+  const toggleCompareMode = useCompareModeStore(
+    (state) => state.toggleCompareMode,
+  );
 
   return (
     <nav className="header">
@@ -237,6 +247,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           selectionMode="multiple"
           selectedKeys={
             new Set([
+              ...(isCompareMode ? ["compare"] : []),
               ...(isMonitorOpen ? ["monitor"] : []),
               ...(showWorkflowOverlay ? ["workflow"] : []),
             ])
@@ -244,11 +255,17 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           indicator={true}
           onSelectionChange={(keys) => {
             const selectedKeys = new Set(keys);
+            const wasCompareMode = isCompareMode;
+            const isCompareNowSelected = selectedKeys.has("compare");
             const wasMonitorOpen = isMonitorOpen;
             const isMonitorNowSelected = selectedKeys.has("monitor");
             const wasWorkflow = showWorkflowOverlay;
             const isWorkflowNowSelected = selectedKeys.has("workflow");
 
+            // Compare mode 토글
+            if (wasCompareMode !== isCompareNowSelected) {
+              toggleCompareMode();
+            }
             // Monitor 토글
             if (wasMonitorOpen !== isMonitorNowSelected) {
               toggleBottomPanel("monitor");
@@ -260,6 +277,18 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           }}
           aria-label="View options"
         >
+          <ToggleButton
+            id="compare"
+            aria-label={
+              isCompareMode ? "Skia Only Mode" : "Compare Mode (Preview + Skia)"
+            }
+          >
+            <Columns
+              color={isCompareMode ? "var(--color-white)" : iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
+          </ToggleButton>
           <ToggleButton id="monitor" aria-label="Toggle Monitor Panel">
             <Activity
               color={isMonitorOpen ? "var(--color-white)" : iconProps.color}

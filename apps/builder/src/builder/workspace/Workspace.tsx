@@ -19,8 +19,8 @@
 
 import { useRef } from "react";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
-import { useCanvasLifecycleStore } from "./canvas/stores";
-import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
+import { useCanvasLifecycleStore, useCompareModeStore } from "./canvas/stores";
+import { isWebGLCanvas } from "../../utils/featureFlags";
 import { CanvasScrollbar } from "./scrollbar";
 import { WorkflowCanvasToggles } from "./components/WorkflowCanvasToggles";
 import { WorkspaceCompareMode } from "./components/WorkspaceCompareMode";
@@ -39,7 +39,7 @@ export function Workspace({
 
   // Feature flags
   const useWebGL = isWebGLCanvas();
-  const compareMode = isCanvasCompareMode();
+  const compareMode = useCompareModeStore((state) => state.isCompareMode);
 
   const { compareSplit, handleResizeEnd, handleResizeMove, handleResizeStart } =
     useWorkspaceCompareSplit({
@@ -54,12 +54,8 @@ export function Workspace({
   });
 
   // Canvas sync store
-  const isCanvasReady = useCanvasLifecycleStore(
-    (state) => state.isCanvasReady,
-  );
-  const isContextLost = useCanvasLifecycleStore(
-    (state) => state.isContextLost,
-  );
+  const isCanvasReady = useCanvasLifecycleStore((state) => state.isCanvasReady);
+  const isContextLost = useCanvasLifecycleStore((state) => state.isContextLost);
 
   // 비교 모드: iframe + PixiJS 동시 표시
   if (compareMode && fallbackCanvas) {

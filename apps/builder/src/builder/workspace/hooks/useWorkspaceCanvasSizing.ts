@@ -175,6 +175,8 @@ export function useWorkspaceCanvasSizing({
     };
   }, [containerRef]);
 
+  const lastCompareModeRef = useRef(compareMode);
+
   useEffect(() => {
     const breakpointKey = selectedBreakpoint
       ? `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
@@ -188,6 +190,17 @@ export function useWorkspaceCanvasSizing({
       lastCenteredKeyRef.current = breakpointKey;
     }
   }, [canvasSize.height, canvasSize.width, centerCanvas, selectedBreakpoint]);
+
+  // Compare mode 토글 시 viewport 재센터링
+  useEffect(() => {
+    if (lastCompareModeRef.current !== compareMode) {
+      lastCompareModeRef.current = compareMode;
+      // 약간의 지연 후 센터링 (레이아웃 변경 완료 대기)
+      requestAnimationFrame(() => {
+        centerCanvasAt100Ref.current();
+      });
+    }
+  }, [compareMode]);
 
   useEffect(() => {
     const container = containerRef.current;

@@ -15,4 +15,5 @@ export {
   initialGPUMetrics,
   type CanvasMetricsState,
 } from "./canvasMetrics";
+export { useCompareModeStore, type CompareModeState } from "./compareMode";
 export type { GPUMetrics, CanvasViewportSnapshot } from "./types";
