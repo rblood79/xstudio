@@ -513,5 +513,9 @@ export { AccordionSpec } from "./components/Accordion.spec";
 export { ModalSpec } from "./components/Modal.spec";
 export { TailSwatchSpec } from "./components/TailSwatch.spec";
 
-// ─── Runtime (ADR-058 Pre-Phase 0) ──────────────────────────────────────────
-export { getElementForTag } from "./runtime/tagToElement";
+// ─── Runtime (ADR-058 Pre-Phase 0 + Phase 1) ───────────────────────────────
+export {
+  getElementForTag,
+  hasSpec,
+  getDefaultSizeForTag,
+} from "./runtime/tagToElement";

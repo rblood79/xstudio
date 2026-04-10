@@ -30,11 +30,7 @@ import {
 } from "../components/ColorSwatchPicker";
 import { parseColor } from "react-aria-components";
 import { Slot } from "../components/Slot";
-import {
-  getIconData,
-  getLabelLineHeight,
-  getTextPresetFontSize,
-} from "@composition/specs";
+import { getIconData } from "@composition/specs";
 import type {
   PreviewElement,
   RenderContext,
@@ -665,45 +661,8 @@ export const renderButton = (
   );
 };
 
-/**
- * Text 렌더링
- */
-export const renderText = (
-  element: PreviewElement,
-  context: RenderContext,
-): React.ReactNode => {
-  const { elements, renderElement } = context;
-
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  const TextTag = (element.props.as || "p") as string;
-
-  // Text.spec.ts size prop → fontSize/lineHeight 주입.
-  // 사용자 style.fontSize가 명시되어 있으면 해당 값 우선.
-  const sizePreset = (element.props.size as string) || "md";
-  const userStyle = (element.props.style ?? {}) as React.CSSProperties;
-  const presetFontSize = getTextPresetFontSize(sizePreset);
-  const mergedStyle: React.CSSProperties = {
-    fontSize: `${presetFontSize}px`,
-    lineHeight: `${getLabelLineHeight(presetFontSize)}px`,
-    ...userStyle,
-  };
-
-  return React.createElement(
-    TextTag,
-    {
-      key: element.id,
-      "data-element-id": element.id,
-      "data-size": sizePreset,
-      style: mergedStyle,
-      className: element.props.className,
-    },
-    element.props.children,
-    ...children.map((child) => renderElement(child, child.id)),
-  );
-};
+// ADR-058 Phase 1: renderText 제거 — Text는 Spec 경로 + getElementForTag fallback으로 처리
+// (buildSpecNodeData가 Skia 렌더링, Text.css가 auto-generated).
 
 /**
  * Tooltip 렌더링

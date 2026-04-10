@@ -30,7 +30,6 @@ import {
   PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
   STATUSLIGHT_DIMENSIONS,
-  getTextPresetFontSize,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
 import { TabsSpec, TabPanelsSpec } from "@composition/specs";
@@ -1274,16 +1273,11 @@ export function calculateContentWidth(
     const specStyle = needsSpecFallback
       ? extractSpecTextStyle(tag, element.props as Record<string, unknown>)
       : null;
-    // Text.spec.ts: extractSpecTextStyle가 빈 shapes[] 때문에 null 반환
-    // → size preset에서 직접 fontSize 해석
-    const textPresetFs =
-      tag === "text" && props?.size
-        ? getTextPresetFontSize(props.size as string)
-        : undefined;
+    // ADR-058 Phase 1: Text가 Spec 경로로 전환되면서 extractSpecTextStyle이
+    // 실제 shape에서 fontSize를 읽어오므로 5-point patch 분기 제거.
     const fontSize =
       parseNumericValue(style?.fontSize) ??
       specStyle?.fontSize ??
-      textPresetFs ??
       computedStyle?.fontSize ??
       16;
     const fontFamily =
@@ -2512,17 +2506,9 @@ export function calculateContentHeight(
       props?.children ?? props?.text ?? props?.label ?? "",
     );
     if (textContent) {
-      // Text.spec.ts size prop은 style.fontSize와 별개 경로로 fontSize를 결정.
-      // style 우선, 없으면 size preset, 그래도 없으면 computedStyle/기본값.
-      const presetFs =
-        tag === "text" && props?.size
-          ? getTextPresetFontSize(props.size as string)
-          : undefined;
+      // ADR-058 Phase 1: Text가 Spec 경로로 전환되면서 5-point patch 분기 제거.
       const fs0 =
-        parseNumericValue(style?.fontSize) ??
-        presetFs ??
-        computedStyle?.fontSize ??
-        16;
+        parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize ?? 16;
       const fw0 =
         parseNumericValue(style?.fontWeight) ??
         computedStyle?.fontWeight ??
@@ -2933,15 +2919,11 @@ export function enrichWithIntrinsicSize(
     );
     if (textContent) {
       const styleRecord = style as Record<string, unknown> | undefined;
-      // Text.spec.ts size prop → fontSize 해석 (style.fontSize 우선)
-      const presetFs =
-        tag === "text" && props?.size
-          ? getTextPresetFontSize(props.size as string)
-          : undefined;
+      // ADR-058 Phase 1: Text가 Spec 경로로 전환되면서 5-point patch 분기 제거.
       const fontSize =
         typeof styleRecord?.fontSize === "number"
           ? styleRecord.fontSize
-          : (presetFs ?? _computedStyle?.fontSize ?? 16);
+          : (_computedStyle?.fontSize ?? 16);
       resolvedIntrinsicWidth =
         rawWidth === "min-content"
           ? calculateMinContentWidth(textContent, fontSize)

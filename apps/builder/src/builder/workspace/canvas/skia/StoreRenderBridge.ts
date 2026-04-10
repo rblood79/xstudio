@@ -41,16 +41,17 @@ function isImageElement(element: Element): boolean {
 }
 
 /**
- * TEXT_TAGS ∩ TAG_SPEC_MAP 중 parent delegation이 필요한 태그.
- * 이 태그들은 buildSpecNodeData (spec 경로)로 라우팅하여
- * parentDelegatedSize, necessityIndicator, labelAlignment 등을 처리.
- * 나머지 TEXT_TAGS (Text, Heading, Kbd, Code)는
- * buildTextNodeData (텍스트 경로)로 라우팅하여 inline CSS style 지원.
+ * TEXT_TAGS ∩ TAG_SPEC_MAP 중 Spec 경로(buildSpecNodeData)로 라우팅되는 태그.
+ * ADR-058 Phase 1: Text 추가 — Spec-First 마이그레이션으로 레거시 buildTextNodeData에서
+ * 분리되어 spec shapes() + auto-generated CSS 경로로 이동.
+ * 나머지 TEXT_TAGS (Heading, Kbd, Code)는 여전히 buildTextNodeData 경로
+ * (Phase 2/3에서 순차 마이그레이션 예정).
  */
 const SPEC_PREFERRED_TEXT_TAGS = new Set([
   "Label",
   "FieldError",
   "InlineAlert",
+  "Text",
 ]);
 
 /** Collection item 태그 — 기본 border/background 스타일 적용 대상 */

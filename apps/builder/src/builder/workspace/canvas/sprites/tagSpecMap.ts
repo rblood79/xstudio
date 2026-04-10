@@ -8,6 +8,7 @@ import type { ComponentSpec } from "@composition/specs";
 import {
   ButtonSpec,
   BadgeSpec,
+  TextSpec,
   CardSpec,
   DialogSpec,
   LinkSpec,
@@ -103,6 +104,7 @@ import {
 export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   // Core components
   Button: ButtonSpec,
+  Text: TextSpec,
   CheckboxGroup: CheckboxGroupSpec,
   Checkbox: CheckboxSpec,
   Switch: SwitchSpec,

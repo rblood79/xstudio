@@ -1,13 +1,17 @@
 /**
  * Text Component Spec
  *
- * 텍스트 요소의 size 프리셋과 properties 정의.
- * TEXT_TAGS 경로(buildTextNodeData)로 렌더링되므로 shapes는 빈 배열.
- * skipCSSGeneration: true — CSS 자동 생성 불필요.
+ * ADR-058 Phase 1: Spec-First 마이그레이션
+ * - archetype "text" (display:block + width:100%)
+ * - auto-generated CSS (skipCSSGeneration 제거)
+ * - render.shapes() 실제 text shape 반환 → buildSpecNodeData 경로로 라우팅
+ * - 5-point patch 제거 후에도 fontSize/lineHeight가 spec source에서 SSOT
  */
 
-import type { ComponentSpec, TokenRef } from "../types";
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { Type } from "lucide-react";
+import { fontFamily } from "../primitives/typography";
+import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
 export interface TextProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
@@ -20,7 +24,7 @@ export const TextSpec: ComponentSpec<TextProps> = {
   name: "Text",
   description: "텍스트 요소",
   element: "p",
-  skipCSSGeneration: true,
+  archetype: "text",
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -137,6 +141,59 @@ export const TextSpec: ComponentSpec<TextProps> = {
   },
 
   render: {
-    shapes: () => [],
+    shapes: (props, variant, size) => {
+      const text = String(props.children ?? props.text ?? "");
+      if (!text) return [];
+
+      // props.size가 명시적으로 설정된 경우 size.fontSize를 우선 사용.
+      // (size propagation은 props.size만 변경하고 style.fontSize는 갱신하지 않음)
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        16,
+      );
+
+      const fwRaw = props.style?.fontWeight;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
+
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textColor = props.style?.color ?? variant.text;
+
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
+
+      // Text는 block-level paragraph. baseline: "top" + y: 0으로
+      // 컨테이너 상단에서부터 텍스트 흐름 시작.
+      // lineHeight는 size preset의 TokenRef를 그대로 전달 → specShapeConverter가 resolve.
+      const shapes: Shape[] = [
+        {
+          type: "text" as const,
+          x: 0,
+          y: 0,
+          text,
+          fontSize,
+          fontFamily: ff,
+          fontWeight,
+          fill: textColor,
+          align: textAlign,
+          baseline: "top" as const,
+          lineHeight: size.lineHeight as unknown as number,
+        },
+      ];
+
+      return shapes;
+    },
+
+    react: (props) => ({
+      "data-size": props.size || "md",
+    }),
+
+    pixi: () => ({
+      eventMode: "none" as const,
+    }),
   },
 };

@@ -8,100 +8,101 @@
 
 .react-aria-Text {
   /* Base styles — archetype: text */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
+    width: 100%;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
 
   /* Default variant */
-  background: undefined;
-  color: undefined;
+  background: transparent;
+  color: var(--fg);
   border: none;
 
   /* Default size */
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-base);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-base--line-height);
 }
 
 .react-aria-Text[data-variant="default"] {
-  background: undefined;
-  color: undefined;
+  background: transparent;
+  color: var(--fg);
 
   &[data-hovered] {
-    background: undefined;
+    background: transparent;
   }
 
   &[data-pressed] {
-    background: undefined;
+    background: transparent;
   }
 }
 
 .react-aria-Text[data-size="xs"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-xs);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-xs--line-height);
 }
 
 .react-aria-Text[data-size="sm"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-sm);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-sm--line-height);
 }
 
 .react-aria-Text[data-size="md"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-base);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-base--line-height);
 }
 
 .react-aria-Text[data-size="lg"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-lg);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-lg--line-height);
 }
 
 .react-aria-Text[data-size="xl"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-xl);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-xl--line-height);
 }
 
 .react-aria-Text[data-size="2xl"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-2xl);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-2xl--line-height);
 }
 
 .react-aria-Text[data-size="3xl"] {
   height: auto;
-  padding: undefinedpx undefinedpx;
+  padding: 0px 0px;
   font-size: var(--text-3xl);
-  border-radius: undefined;
+  border-radius: var(--radius-none);
   line-height: var(--text-3xl--line-height);
+}
+
+.react-aria-Text[data-hovered] {
 }
 
 .react-aria-Text[data-focus-visible] {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.react-aria-Text[data-pressed] {
 }
 
 .react-aria-Text[data-disabled] {

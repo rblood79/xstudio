@@ -233,3 +233,20 @@ export function getElementForTag(
   // 함수형 element는 Pre-Phase 0 범위 밖 — Phase 2에서 분기 추가
   return tag.toLowerCase();
 }
+
+/**
+ * 해당 tag가 spec registry에 등록되어 있는지 반환한다.
+ * ADR-058 Phase 1: Preview fallback 렌더링이 `react-aria-*` className과
+ * `data-size` 등 spec 기반 attribute를 자동 주입할지 판정하는 데 사용.
+ */
+export function hasSpec(tag: string): boolean {
+  return tag in TAG_SPEC_MAP;
+}
+
+/**
+ * spec registry에서 해당 tag의 defaultSize를 반환한다. 미등록 태그는 undefined.
+ */
+export function getDefaultSizeForTag(tag: string): string | undefined {
+  const spec = TAG_SPEC_MAP[tag];
+  return spec?.defaultSize as string | undefined;
+}

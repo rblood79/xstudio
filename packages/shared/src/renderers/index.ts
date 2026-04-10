@@ -61,7 +61,8 @@ export const rendererMap: Record<
   CardPreview: LayoutRenderers.renderCardPreview,
   CardFooter: LayoutRenderers.renderCardFooter,
   Button: LayoutRenderers.renderButton,
-  Text: LayoutRenderers.renderText,
+  // ADR-058 Phase 1: Text는 Spec 경로로 전환됨. rendererMap 바인딩 제거 →
+  // Preview resolveHtmlTag fallback이 getElementForTag("Text") → "p"로 해결.
   Tooltip: LayoutRenderers.renderTooltip,
   ProgressBar: LayoutRenderers.renderProgressBar,
   Meter: LayoutRenderers.renderMeter,

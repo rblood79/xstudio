@@ -17,7 +17,11 @@ import { CanvasRouter, setGlobalNavigate } from "./router";
 import { MessageHandler, messageSender } from "./messaging";
 import { useNavigate } from "react-router-dom";
 import { rendererMap } from "@composition/shared/renderers";
-import { getElementForTag } from "@composition/specs";
+import {
+  getElementForTag,
+  hasSpec,
+  getDefaultSizeForTag,
+} from "@composition/specs";
 import type { RenderContext as SharedRenderContext } from "@composition/shared/types";
 import type { PreviewElement, RenderContext } from "./types";
 import type { RuntimeElement } from "./store/types";
@@ -374,12 +378,30 @@ function CanvasContent() {
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // Props 정리
+      // ADR-058 Phase 1: spec registry에 등록된 태그는 React Aria className과
+      // data-size/variant를 자동 주입 — 이전에 rendererMap 함수가 수동 주입하던 것을
+      // fallback 경로에서도 동일하게 보장. Auto-generated CSS selector
+      // (.react-aria-Text[data-size="md"] 등)가 매칭되어야 하므로 필수.
+      const specBacked = hasSpec(el.tag);
+      const tagProps = el.props as
+        | { size?: string; variant?: string; className?: string }
+        | undefined;
+      const specClassName = specBacked ? `react-aria-${el.tag}` : undefined;
+      const mergedClassName =
+        [specClassName, tagProps?.className].filter(Boolean).join(" ") ||
+        undefined;
       const cleanProps: Record<string, unknown> = {
         key: key || el.id,
         "data-element-id": el.id,
         style: el.props?.style,
-        className: el.props?.className,
+        className: mergedClassName,
       };
+      if (specBacked) {
+        const sizeValue =
+          tagProps?.size ?? getDefaultSizeForTag(el.tag) ?? "md";
+        cleanProps["data-size"] = sizeValue;
+        if (tagProps?.variant) cleanProps["data-variant"] = tagProps.variant;
+      }
 
       // 자식 콘텐츠
       const content =
