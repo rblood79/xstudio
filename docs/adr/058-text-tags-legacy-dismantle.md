@@ -7,9 +7,9 @@ Accepted — 2026-04-10
 - **Pre-Phase 0** (Preview Resolver 일반화): Implemented — `475d8168`
 - **Pre-Phase 1** (CSSGenerator 안정화): Resolved — 코드 수정 불필요 (CSSGenerator는 이미 undefined 0건 생성)
 - **Phase 1** (Text 마이그레이션): Implemented — `df336f00`
-- **Phase 2** (Heading 마이그레이션 + `ComponentSpec.element` 함수형 확장): Implemented — 2026-04-10
-- **Phase 3** (Paragraph/Kbd/Code spec 신설): Pending
-- **Phase 4** (`buildTextNodeData` 폐지): Pending
+- **Phase 2** (Heading 마이그레이션 + `ComponentSpec.element` 함수형 확장): Implemented — `6d230558` (2026-04-10)
+- **Phase 3** (Paragraph/Kbd/Code spec 신설): Implemented — `507869b0` (2026-04-10). 부수 발견: Phase 1/2에서 누락된 `generated/Text.css`, `generated/Heading.css` import도 `packages/shared/src/components/styles/index.css`에 함께 추가
+- **Phase 4** (`buildTextNodeData` 폐지): Pending — 잔존 호출자: Description/Label/FieldError/InlineAlert
 
 ## 원칙
 
