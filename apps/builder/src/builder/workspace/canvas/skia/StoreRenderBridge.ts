@@ -18,7 +18,6 @@ import type { Element } from "../../../../types/core/store.types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import { buildSkiaNodeData, type BuildContext } from "./buildSkiaNodeData";
 import { buildBoxNodeData } from "./buildBoxNodeData";
-import { buildTextNodeData } from "./buildTextNodeData";
 import { buildImageNodeData } from "./buildImageNodeData";
 import {
   buildSpecNodeData,
@@ -26,35 +25,15 @@ import {
 } from "./buildSpecNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
-import { getSpecForTag, TEXT_TAGS, IMAGE_TAGS } from "../sprites/tagSpecMap";
+import { getSpecForTag, IMAGE_TAGS } from "../sprites/tagSpecMap";
 import { onLayoutPublished } from "../layout";
 import type { TransitionManager } from "./transitionManager";
 import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
 import { InlineAlertSpec } from "@composition/specs";
 
-function isTextElement(element: Element): boolean {
-  return TEXT_TAGS.has(element.tag);
-}
-
 function isImageElement(element: Element): boolean {
   return IMAGE_TAGS.has(element.tag);
 }
-
-/**
- * TEXT_TAGS ∩ TAG_SPEC_MAP 중 Spec 경로(buildSpecNodeData)로 라우팅되는 태그.
- * ADR-058 Phase 1: Text 추가 — Spec-First 마이그레이션으로 레거시 buildTextNodeData에서
- * 분리되어 spec shapes() + auto-generated CSS 경로로 이동.
- * ADR-058 Phase 2: Heading은 TEXT_TAGS에서 제거되어 TAG_SPEC_MAP 등록만으로 spec 경로
- * 자동 라우팅 — 여기 추가 불필요.
- * 나머지 TEXT_TAGS (Description, Kbd, Code, Label, InlineAlert)는 여전히 buildTextNodeData 경로
- * (Phase 3/4에서 순차 마이그레이션 예정).
- */
-const SPEC_PREFERRED_TEXT_TAGS = new Set([
-  "Label",
-  "FieldError",
-  "InlineAlert",
-  "Text",
-]);
 
 /** Collection item 태그 — 기본 border/background 스타일 적용 대상 */
 const COLLECTION_ITEM_TAGS = new Set(["GridListItem", "ListBoxItem"]);
@@ -103,11 +82,13 @@ function getNumericStyleValue(
   return undefined;
 }
 
-/** Spec 경로 사용 여부: TAG_SPEC_MAP 등록 + TEXT_TAGS 미등록 또는 delegation 필요 */
+/**
+ * Spec 경로 사용 여부: TAG_SPEC_MAP 등록 여부.
+ * ADR-058 Phase 4: `buildTextNodeData` 완전 폐지로 TEXT_TAGS 분기 로직 제거.
+ * 모든 text 컴포넌트가 spec 경로(`buildSpecNodeData`)로 통일됨.
+ */
 function isSpecPath(element: Element): boolean {
-  if (!getSpecForTag(element.tag)) return false;
-  if (!TEXT_TAGS.has(element.tag)) return true;
-  return SPEC_PREFERRED_TEXT_TAGS.has(element.tag);
+  return !!getSpecForTag(element.tag);
 }
 
 // ---------------------------------------------------------------------------
@@ -454,14 +435,6 @@ export class StoreRenderBridge {
         buildBoxNodeData({ element: effectiveElement, layout }) ??
         buildSkiaNodeData(effectiveElement, ctx)
       );
-    }
-
-    if (isTextElement(effectiveElement)) {
-      return buildTextNodeData({
-        element: effectiveElement,
-        layout,
-        theme: ctx.theme,
-      });
     }
 
     if (isImageElement(element)) {

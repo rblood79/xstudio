@@ -502,7 +502,7 @@ export function cssColorToHex(
 
 /**
  * PixiJS hex color (0xRRGGBB) → Float32Array [r, g, b, a] (0-1 범위).
- * buildBoxNodeData, buildTextNodeData, buildImageNodeData 등에서 공용.
+ * buildBoxNodeData, buildImageNodeData, buildSpecNodeData 등에서 공용.
  */
 export function colorIntToFloat32(color: number, alpha: number): Float32Array {
   return Float32Array.of(

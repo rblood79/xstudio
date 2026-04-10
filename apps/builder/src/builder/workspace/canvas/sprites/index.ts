@@ -3,7 +3,8 @@
  *
  * styleConverter, tagSpecMap, paddingUtils만 유지.
  * BoxSprite, TextSprite, ImageSprite, ElementSprite는 삭제됨
- * → buildBoxNodeData, buildTextNodeData, buildImageNodeData, buildSpecNodeData가 대체.
+ * → buildBoxNodeData, buildImageNodeData, buildSpecNodeData가 대체.
+ * (ADR-058 Phase 4: buildTextNodeData도 폐지되어 buildSpecNodeData로 통합됨)
  */
 
 // Style Converter

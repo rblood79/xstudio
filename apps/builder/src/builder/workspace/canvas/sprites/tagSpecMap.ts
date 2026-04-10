@@ -221,21 +221,10 @@ export function getSpecForTag(tag: string): ComponentSpec<any> | null {
   return TAG_SPEC_MAP[tag] ?? null;
 }
 
-/**
- * 텍스트 렌더링 대상 태그 (TextSprite / buildTextNodeData 경로)
- *
- * ADR-058 Phase 1: `Text`는 TEXT_TAGS + SPEC_PREFERRED_TEXT_TAGS로 유지 (spec 경로 라우팅)
- * ADR-058 Phase 2: `Heading` 제거 — TAG_SPEC_MAP 등록으로 spec 경로 자동 라우팅
- * ADR-058 Phase 3: `Kbd`/`Code` 제거 — 신규 spec (KbdSpec/CodeSpec) 등록으로 spec 경로 자동 라우팅.
- *                   `Paragraph`는 원래 TEXT_TAGS에 없었으며 Phase 3에서 새 spec으로 직접 등록.
- * Phase 4에서 Description/Label/InlineAlert spec 전환 검토 + `buildTextNodeData` 폐지 예정.
- */
-export const TEXT_TAGS = new Set([
-  "Text",
-  "Label",
-  "Description",
-  "InlineAlert",
-]);
+// ADR-058 Phase 4: `TEXT_TAGS` 및 `buildTextNodeData` 경로 완전 폐지.
+// 모든 text 컴포넌트(Text/Heading/Paragraph/Kbd/Code/Label/Description/FieldError/InlineAlert)가
+// spec 경로(buildSpecNodeData)로 통일됨. `StoreRenderBridge.isSpecPath`는 단순히
+// TAG_SPEC_MAP 등록 여부만 확인.
 
 /** 이미지 렌더링 대상 태그 (ImageSprite / buildImageNodeData 경로) */
 export const IMAGE_TAGS = new Set(["Image", "Avatar", "Logo", "Thumbnail"]);

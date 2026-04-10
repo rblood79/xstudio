@@ -162,7 +162,3 @@ export function buildSkiaNodeData(
 
   return nodeData;
 }
-
-/**
- * @deprecated buildTextNodeData.ts 사용. 이 함수는 제거 예정.
- */

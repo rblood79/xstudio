@@ -3,7 +3,7 @@
  *
  * convertStyle + buildSkiaEffects + layout dimensions + visibility +
  * zIndex + stackingContext + CSS transform + clipPath 패턴을
- * 단일 함수로 통합하여 buildBoxNodeData/buildTextNodeData/buildImageNodeData에서 재사용.
+ * 단일 함수로 통합하여 buildBoxNodeData/buildImageNodeData/buildSpecNodeData에서 재사용.
  */
 
 import type { Element } from "../../../../types/core/store.types";
