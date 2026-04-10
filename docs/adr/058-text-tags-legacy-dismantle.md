@@ -2,14 +2,27 @@
 
 ## Status
 
-Accepted — 2026-04-10
+Accepted — 2026-04-10 (Phase 1~4 Implemented, Phase 5 Proposed)
 
 - **Pre-Phase 0** (Preview Resolver 일반화): Implemented — `475d8168`
 - **Pre-Phase 1** (CSSGenerator 안정화): Resolved — 코드 수정 불필요 (CSSGenerator는 이미 undefined 0건 생성)
 - **Phase 1** (Text 마이그레이션): Implemented — `df336f00`
 - **Phase 2** (Heading 마이그레이션 + `ComponentSpec.element` 함수형 확장): Implemented — `6d230558` (2026-04-10)
 - **Phase 3** (Paragraph/Kbd/Code spec 신설): Implemented — `507869b0` (2026-04-10). 부수 발견: Phase 1/2에서 누락된 `generated/Text.css`, `generated/Heading.css` import도 `packages/shared/src/components/styles/index.css`에 함께 추가
-- **Phase 4** (`buildTextNodeData` 폐지): Pending — 잔존 호출자: Description/Label/FieldError/InlineAlert
+- **Phase 4** (`buildTextNodeData` 폐지): Implemented — `86e0ce73` (2026-04-10). 9/9 text 컴포넌트 Skia 경로 통일 (Canvas SSOT 완성). 후속 `cd65d597`에서 Description/FieldError `spec.element`를 실제 React Aria 렌더 결과(`"span"`)와 일치시킴
+- **Phase 5** (DOM 축 SSOT 완성): Proposed — Phase 4 완료 후 발견된 "DOM 축 미러 문제" 해결. `rendererMap`의 4개 React Aria 호출부(Label/Description/FieldError/InlineAlert)에 `spec.element`를 `elementType` prop으로 주입하여 spec이 Preview DOM을 **결정**하도록 함 (현재는 "사실 일치" 수준). 상세: breakdown Phase 5 섹션
+
+## Phase 4 완료 후 잔존 SSOT 갭 (Post-Phase 4 Discovery)
+
+Phase 4 완료 시점에 Canvas/Skia 축은 완전한 SSOT가 달성되었으나, 엄격한 Spec-First SSOT 기준(spec 변경 → 모든 consumer 자동 반영)에서 **3개의 갭**이 잔존한다:
+
+|   갭   | 축                     | 영향                                                                                                             | 해결 경로                                                          |
+| :----: | :--------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| **G1** | CSS 축                 | Label만 `skipCSSGeneration: true`로 수동 CSS 사용 (8/9 auto-gen)                                                 | `base.css`의 `--label-font-size` 메커니즘 재설계 필요. 스코프 별도 |
+| **G2** | DOM 축                 | Label/Description/FieldError/InlineAlert의 rendererMap이 `spec.element` 미사용 — 하드코딩 또는 React Aria 기본값 | **Phase 5에서 해결** — `elementType` prop 주입                     |
+| **G3** | Typography features 축 | 13개 feature는 user style prop → override loop 구조. spec variants/sizes에 feature 기본값 미정의                 | 의도된 설계 (user override 우선). ADR 범위 밖                      |
+
+**G2가 "SSOT 선언"의 무게에 가장 직결**되므로 Phase 5로 승격. G1은 별도 검토 대기.
 
 ## 원칙
 

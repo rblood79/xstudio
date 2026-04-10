@@ -358,6 +358,7 @@ Heading 컴포넌트를 spec 경로로 전환. Heading은 **선행 인프라 확
    - `packages/specs` 빌드 산출물에서 spec 파일들의 타입 시그니처 변화 없음 확인
    - 번들 사이즈 변화 ±1KB 이내 (함수형 element는 tree-shaking 대상이 아닐 수 있음)
 4. **런타임 전수 검증** — `getElementForTag` 분기 처리 실측:
+
    ```typescript
    // tagToElement.ts 실측 동작 확인
    if (typeof spec.element === "string") return spec.element;
@@ -366,6 +367,7 @@ Heading 컴포넌트를 spec 경로로 전환. Heading은 **선행 인프라 확
 
    - 기존 22+ spec이 여전히 string 분기로 fall through
    - Heading만 function 분기로 처리
+
 5. **Heading level 엣지 케이스**:
    - `level: 0` → `h1` (clamp 1)
    - `level: 7` → `h6` (clamp 6)
@@ -497,6 +499,124 @@ Heading 컴포넌트를 spec 경로로 전환. Heading은 **선행 인프라 확
 
 - 잔존 호출자 존재 시 재마이그레이션 (Phase 4 연기)
 - `TEXT_TAGS` 분기 정리 시 회귀 발생: 분기 정리만 별도 Phase로 지연
+
+---
+
+## Phase 5 — DOM 축 SSOT 완성 (Post-Phase 4 Follow-up)
+
+### 목적
+
+Phase 4까지 Skia/CSS 축은 spec 기반 SSOT가 달성되었으나, **Preview DOM 축**에서 4개 컴포넌트(Label/Description/FieldError/InlineAlert)가 여전히 `rendererMap`의 하드코딩 또는 React Aria 기본값에 의존하며 `spec.element`를 무시한다. 즉 "spec을 바꿔도 DOM은 안 바뀌는" 상태로, 이는 SSOT 정의 위반이다.
+
+Phase 5는 `spec.element`를 rendererMap의 React Aria 컴포넌트에 `elementType` prop으로 주입하여, spec이 실제로 Preview DOM을 **결정**하도록 한다.
+
+### 전제
+
+- Phase 4 완료 (Canvas/Skia 축 SSOT)
+- `ComponentSpec.element` 함수형 타입 지원 (Phase 2에서 도입)
+- 대상 컴포넌트의 `spec.element`가 실제 렌더 DOM과 이미 일치 상태 (`cd65d597` Description/FieldError 수정)
+
+### 범위
+
+|  #  | 컴포넌트    | 현재 렌더 DOM | spec.element | 경로                                | 변경 내용                                                              |
+| :-: | :---------- | :-----------: | :----------: | :---------------------------------- | :--------------------------------------------------------------------- |
+|  1  | InlineAlert |    `<div>`    |   `"div"`    | `LayoutRenderers.renderInlineAlert` | 하드코딩 `<div>` → `React.createElement(InlineAlertSpec.element, ...)` |
+|  2  | Description |   `<span>`    |   `"span"`   | `FormRenderers.renderDescription`   | `<Description>`에 `elementType={DescriptionSpec.element}` prop 주입    |
+|  3  | FieldError  |   `<span>`    |   `"span"`   | `FormRenderers.renderFieldError`    | `<FieldError>`에 `elementType` prop 주입                               |
+|  4  | Label       |   `<label>`   |  `"label"`   | `FormRenderers.renderLabel`         | `<Label>`에 `elementType` prop 주입 + **접근성 주석**                  |
+
+실제 DOM 변경은 **0건**. 순수 데이터 흐름 배선 작업이며 `spec.element` 값을 바꾸지 않는 한 시각적 회귀 없음.
+
+### 4축 Risk 평가
+
+| 축                    |    등급    | 근거                                                                                                               |
+| :-------------------- | :--------: | :----------------------------------------------------------------------------------------------------------------- |
+| 기술 위험             |  **LOW**   | `elementType` prop은 React Aria 공식 수용. 변경 = prop 1개 추가                                                    |
+| 성능 위험             |  **LOW**   | 런타임 비용 0                                                                                                      |
+| 유지보수 위험         |  **LOW**   | SSOT 도입으로 이중 관리 해소 (실제 감소)                                                                           |
+| 마이그레이션 위험     |  **LOW**   | 실질 DOM 변경 0건 — 현재 상태와 동일                                                                               |
+| 접근성 위험 (Label만) | **MEDIUM** | 미래 누군가 `LabelSpec.element`를 `"label"` 외 값으로 바꾸면 HTML `<label for="">` 네이티브 연결 silent regression |
+
+### 잠재적 함정
+
+1. **React Aria `<Description>` 컴포넌트의 prop forwarding 실측 필요**
+   - 내부가 `<Text slot="description" {...props}>`로 spread인지 사전 확인
+   - react-aria-components 1.15.1 `Text.mjs` 소스상 `elementType` default는 `'span'`이며 props로 override 가능. `<Description>` 자체가 forward하는지는 실측 필수
+   - 실측 방법: `<Description elementType="p">test</Description>` 삽입 → DOM에 `<p class="react-aria-Description">` 확인
+
+2. **TypeScript 타입 좁히기**
+   - `ComponentSpec.element`는 `keyof HTMLElementTagNameMap | "fragment" | ((props) => string)` (Phase 2)
+   - React Aria `elementType`은 정적 string만 수용
+   - 4개 대상은 모두 정적 string이지만 **`typeof` 가드 필수**:
+     ```tsx
+     const elType =
+       typeof LabelSpec.element === "string" ? LabelSpec.element : "label";
+     ```
+
+3. **Label 접근성 사일런트 regression**
+   - spec.element 타입이 느슨하여 컴파일 타임 방지 불가
+   - 최소 방어: JSDoc `@accessibility` 주석 + eslint-disable 근거 주석
+   - 추가 방어 (선택): `ComponentSpec`에 `elementLocked?: boolean` 또는 `accessibilityCritical?: boolean` 필드 도입 (별도 PR)
+
+### 작업 순서
+
+1. **InlineAlert 전환** (5분)
+   - `LayoutRenderers.renderInlineAlert`의 `<div>` 리터럴 → `React.createElement(InlineAlertSpec.element, {...})`
+   - typeof 가드 적용
+2. **Description 전환** (15분)
+   - `<Description>` prop forwarding 실측 (canary 테스트)
+   - 실측 통과 시 `<Description elementType={...}>` 적용
+3. **FieldError 전환** (15분)
+   - validation context 구성 (`<TextField isInvalid>`)
+   - `<FieldError elementType={...}>` 적용 + 실측
+4. **Label 전환** (30분)
+   - `LabelSpec.element` JSDoc 접근성 경고 주석 추가
+   - `<Label elementType={...}>` 적용
+   - 수동 form 연결 테스트 (label 클릭 → input focus 이동)
+5. **Live 회귀 검증** (30분)
+   - 9개 text 컴포넌트 전부 Preview + Canvas 무변화 확인
+   - outerHTML diff 0건
+   - 콘솔 에러 0건
+6. **type-check + 커밋** (10분)
+
+**총 예상**: 약 2시간
+
+### Gates
+
+| Gate                                    | 시점                | 통과 조건                                                                                          | 실패 시 대안                                                       |
+| :-------------------------------------- | :------------------ | :------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| `<Description>` prop forwarding 검증    | 작업 시작 전 canary | canary 테스트에서 `elementType` prop이 실제 DOM에 반영되는지 확인                                  | React Aria 호출부를 `<Text slot="description">` 직접 사용으로 우회 |
+| InlineAlert/Description/FieldError 전환 | 각 커밋             | 전환 후 DOM 무변화, 콘솔 에러 0건                                                                  | 개별 rollback                                                      |
+| Label 접근성 보존                       | Label 전환 완료     | `<label>` 태그 유지 확인, `for`/`id` 연결 정상, 클릭 시 input focus                                | Label 전환만 취소, 다른 3개는 유지                                 |
+| 전체 회귀                               | Phase 5 완료        | 9/9 text 컴포넌트 무회귀, `pnpm type-check` 통과                                                   | 문제 컴포넌트만 rollback                                           |
+| 접근성 장기 보호                        | Phase 5 완료 후     | `LabelSpec.element`에 접근성 경고 주석 존재, 또는 `ComponentSpec.elementLocked` 필드 제안 ADR 작성 | 문서화로만 대체                                                    |
+
+### 검증 체크리스트
+
+- [ ] `<Description elementType="p">test</Description>` canary가 `<p class="react-aria-Description">` 생성
+- [ ] `InlineAlert` Preview DOM이 `spec.element` 기반 생성 (현재 `<div>` 유지)
+- [ ] `Description` Preview DOM이 `spec.element` 기반 생성 (현재 `<span>` 유지)
+- [ ] `FieldError` Preview DOM이 `spec.element` 기반 생성 (validation context에서 `<span>` 유지)
+- [ ] `Label` Preview DOM이 `spec.element` 기반 생성 (`<label>` 유지)
+- [ ] Label 클릭 → 연결된 input focus 이동 정상
+- [ ] 9개 text 컴포넌트 `outerHTML` Phase 5 전후 diff 0건
+- [ ] `LabelSpec.element` JSDoc 접근성 경고 주석 존재
+- [ ] `pnpm type-check` 통과
+- [ ] dev 실행 시 콘솔 에러 0건
+
+### 실패 시 대안
+
+- `<Description>`/`<FieldError>`가 `elementType` forwarding 미지원 시: 해당 컴포넌트만 rollback하고 `spec.element` 주석으로 "rendererMap 하드코딩 구간" 명시
+- Label 접근성 검증 실패 시: Label만 기존 하드코딩 유지, 다른 3개는 전환 완료
+- TypeScript 타입 충돌 발견 시: `typeof` 가드 대신 명시적 캐스트 + JSDoc 근거 주석
+
+### Phase 5 이후 남은 SSOT 갭
+
+Phase 5 완료 후에도 **G1 (Label CSS 축)** 이 잔존한다. `LabelSpec.skipCSSGeneration: true` 제거를 위해서는:
+
+- `base.css`의 `--label-font-size` CSS 변수 상속 메커니즘 재설계
+- 또는 Label spec sizes에 값을 직접 명시하고 compound 부모가 override
+- 별도 ADR 또는 Phase 6으로 분리
 
 ---
 
