@@ -31,11 +31,17 @@ import {
 import { getParentTagsForChild } from "../../../utils/propagationRegistry";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { formatProgressValue } from "../layout/engines/implicitStyles";
-import { PHANTOM_INDICATOR_CONFIGS } from "../layout/engines/utils";
+import {
+  PHANTOM_INDICATOR_CONFIGS,
+  parseLineHeight,
+} from "../layout/engines/utils";
 import {
   parseCSSSize,
   cssColorToHex,
   colorIntToFloat32,
+  parseTextShadow,
+  parseTextDecoration,
+  parseDecorationColor,
 } from "../sprites/styleConverter";
 import {
   rearrangeShapesForColumn,
@@ -529,7 +535,11 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     specProps = { ...specProps, ...dateProps };
   }
 
-  const breadcrumbCtx = resolveBreadcrumbItemContext(element, elementsMap, input.childrenMap);
+  const breadcrumbCtx = resolveBreadcrumbItemContext(
+    element,
+    elementsMap,
+    input.childrenMap,
+  );
   if (breadcrumbCtx) {
     specProps = {
       ...specProps,
@@ -746,20 +756,122 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // Focus ring: componentState가 focusVisible/focused를 지원하게 되면 활성화
   // 현재 componentState는 "default" | "disabled"만 가능
 
-  // ---------- Text wrapping props (nowrap parent) ----------
+  // ---------- Text style overrides (ADR-057 Phase A/B: style → child.text) ----------
+  // 기존 whiteSpace-only override를 13개 필드로 일반화.
+  // Phase A (Layout 영향 6): whiteSpace, wordBreak, overflowWrap, lineHeight, textIndent, clipText
+  // Phase B (Paint 영향 7): textDecoration(+style/color), textOverflow, wordSpacing,
+  //                        fontVariant, fontStretch, textShadow, verticalAlign
+  // Tag/Badge 기본 nowrap + Label-in-nowrap-parent 특수 케이스 유지.
   if (specNode.children) {
     const labelNowrap = isLabelInNowrapParent(element, elementsMap);
     const isNowrapTag = tag === "Tag" || tag === "Badge";
+    const hasOverflowClip =
+      style.overflow === "hidden" || style.overflow === "clip";
 
     for (const child of specNode.children) {
-      if (child.type === "text" && child.text) {
-        const effectiveWhiteSpace =
-          (style.whiteSpace as string) ??
-          (labelNowrap || isNowrapTag ? "nowrap" : undefined);
-        if (effectiveWhiteSpace) {
-          child.text.whiteSpace =
-            effectiveWhiteSpace as typeof child.text.whiteSpace;
+      if (child.type !== "text" || !child.text) continue;
+
+      // ===== Phase A — Layout 영향 =====
+
+      // 1. whiteSpace — style 우선, 없으면 Tag/Badge/Label-in-nowrap-parent 기본값
+      const effectiveWhiteSpace =
+        (style.whiteSpace as string) ??
+        (labelNowrap || isNowrapTag ? "nowrap" : undefined);
+      if (effectiveWhiteSpace) {
+        child.text.whiteSpace =
+          effectiveWhiteSpace as typeof child.text.whiteSpace;
+      }
+
+      // 2. wordBreak
+      if (style.wordBreak) {
+        child.text.wordBreak = style.wordBreak as typeof child.text.wordBreak;
+      }
+
+      // 3. overflowWrap
+      if (style.overflowWrap) {
+        child.text.overflowWrap =
+          style.overflowWrap as typeof child.text.overflowWrap;
+      }
+
+      // 4. lineHeight — style.lineHeight 명시 시 spec 기본값 override
+      if (style.lineHeight != null && style.lineHeight !== "normal") {
+        const parsed = parseLineHeight(style, child.text.fontSize);
+        if (parsed != null && parsed > 0) {
+          child.text.lineHeight = parsed;
         }
+      }
+
+      // 5. textIndent
+      if (style.textIndent != null) {
+        child.text.textIndent = parseCSSSize(
+          style.textIndent as string | number,
+          undefined,
+          0,
+        );
+      }
+
+      // 6. clipText — style.overflow: hidden | clip 파생
+      if (hasOverflowClip) {
+        child.text.clipText = true;
+      }
+
+      // ===== Phase B — Paint 영향 =====
+
+      // 7. textDecoration — style 풀셋(underline/overline/line-through 조합) override
+      if (style.textDecoration != null && style.textDecoration !== "none") {
+        const mask = parseTextDecoration(style.textDecoration as string);
+        if (mask > 0) {
+          child.text.decoration = mask;
+        }
+      }
+      // 7a. decorationStyle
+      if (style.textDecorationStyle) {
+        child.text.decorationStyle =
+          style.textDecorationStyle as typeof child.text.decorationStyle;
+      }
+      // 7b. decorationColor
+      if (style.textDecorationColor) {
+        const dc = parseDecorationColor(style.textDecorationColor as string);
+        if (dc) child.text.decorationColor = dc;
+      }
+
+      // 8. textOverflow
+      if (style.textOverflow) {
+        child.text.textOverflow =
+          style.textOverflow as typeof child.text.textOverflow;
+      }
+
+      // 9. wordSpacing
+      if (style.wordSpacing != null) {
+        child.text.wordSpacing = parseCSSSize(
+          style.wordSpacing as string | number,
+          undefined,
+          0,
+        );
+      }
+
+      // 10. fontVariant (small-caps 등)
+      if (style.fontVariant && style.fontVariant !== "normal") {
+        child.text.fontVariant = style.fontVariant as string;
+      }
+
+      // 11. fontStretch (condensed 등)
+      if (style.fontStretch && style.fontStretch !== "normal") {
+        child.text.fontStretch = style.fontStretch as string;
+      }
+
+      // 12. textShadow — CSS text-shadow → TextShadow[] 배열
+      if (style.textShadow && style.textShadow !== "none") {
+        const shadows = parseTextShadow(style.textShadow as string);
+        if (shadows.length > 0) {
+          child.text.textShadows = shadows;
+        }
+      }
+
+      // 13. verticalAlign
+      if (style.verticalAlign) {
+        child.text.verticalAlign =
+          style.verticalAlign as typeof child.text.verticalAlign;
       }
     }
   }
@@ -872,4 +984,3 @@ function applyInlineBorderOverlay(
     );
   }
 }
-

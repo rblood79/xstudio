@@ -132,8 +132,21 @@ export interface TextShape {
   /** 자간 (px) */
   letterSpacing?: number;
 
-  /** 텍스트 장식 */
-  textDecoration?: "none" | "underline" | "line-through";
+  /**
+   * 텍스트 장식 (CSS `text-decoration-line`)
+   *
+   * 단일 값 또는 공백 구분 조합 허용:
+   * `"none" | "underline" | "overline" | "line-through"` +
+   * `"underline overline"`, `"underline line-through"`, `"overline line-through"`,
+   * `"underline overline line-through"`
+   */
+  textDecoration?: string;
+
+  /** 텍스트 장식 스타일 (CSS `text-decoration-style`) */
+  decorationStyle?: "solid" | "dashed" | "dotted" | "double" | "wavy";
+
+  /** 텍스트 장식 색상 (CSS `text-decoration-color`) */
+  decorationColor?: string;
 
   /** 텍스트 변환 */
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";

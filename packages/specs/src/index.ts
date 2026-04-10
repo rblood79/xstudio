@@ -512,3 +512,6 @@ export { FieldSpec } from "./components/Field.spec";
 export { AccordionSpec } from "./components/Accordion.spec";
 export { ModalSpec } from "./components/Modal.spec";
 export { TailSwatchSpec } from "./components/TailSwatch.spec";
+
+// ─── Runtime (ADR-058 Pre-Phase 0) ──────────────────────────────────────────
+export { getElementForTag } from "./runtime/tagToElement";

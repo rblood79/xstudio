@@ -170,7 +170,9 @@ export function renderText(
       if (isMultiLine) {
         const contentHeight =
           node.height - node.text!.paddingTop - (node.text!.paddingBottom ?? 0);
-        return node.text!.paddingTop + Math.max(0, (contentHeight - paraHeight) / 2);
+        return (
+          node.text!.paddingTop + Math.max(0, (contentHeight - paraHeight) / 2)
+        );
       }
 
       // 단일줄: 글리프 기반 수직 중앙 (기존 로직)
@@ -505,6 +507,37 @@ export function renderText(
     // Variable font: fontFeatures + fontVariations(wght axis)를 pushStyle로 명시 적용.
     // ParagraphStyle.textStyle만으로는 CanvasKit에서 Variable font의
     // weight/fontFeatures가 렌더링에 반영되지 않는 문제 대응.
+    //
+    // ⚠️ ADR-057 Phase B: pushStyle의 TextStyle이 paraStyle.textStyle을 덮어쓰므로
+    // decoration(+style/color)도 여기에 포함해야 한다. 빠뜨리면 paraStyle의 decoration이
+    // 덮어써져서 underline/overline/line-through가 전혀 그려지지 않는다.
+    const decorationTextStyleFields = node.text.decoration
+      ? {
+          decoration: node.text.decoration,
+          decorationColor: node.text.decorationColor ?? node.text.color,
+          decorationThickness: 1,
+          ...(() => {
+            if (
+              !node.text!.decorationStyle ||
+              node.text!.decorationStyle === "solid"
+            ) {
+              return {};
+            }
+            const ckDs = (
+              ck as unknown as Record<string, Record<string, EmbindEnumEntity>>
+            ).DecorationStyle;
+            if (!ckDs) return {};
+            const styleMap: Record<string, EmbindEnumEntity | undefined> = {
+              dashed: ckDs.Dashed,
+              dotted: ckDs.Dotted,
+              double: ckDs.Double,
+              wavy: ckDs.Wavy,
+            };
+            const resolved = styleMap[node.text!.decorationStyle];
+            return resolved ? { decorationStyle: resolved } : {};
+          })(),
+        }
+      : {};
     builder.pushStyle(
       new ck.TextStyle({
         fontFamilies: resolvedFamilies,
@@ -519,6 +552,7 @@ export function renderText(
         ...(fontFeatureTags.length > 0
           ? { fontFeatures: fontFeatureTags }
           : {}),
+        ...decorationTextStyleFields,
         fontVariations: [{ axis: "wght", value: node.text.fontWeight ?? 400 }],
       }),
     );
@@ -539,10 +573,16 @@ export function renderText(
     // hintedText에 \n이 없는데(Canvas 2D가 한 줄 판정) CanvasKit이 줄바꿈한 경우
     // → CanvasKit 자체 측정(getMaxIntrinsicWidth)으로 재layout
     // \n이 있는 다줄 텍스트는 의도된 줄바꿈이므로 건드리지 않음
+    //
+    // ⚠️ ADR-057 Phase A: break-all / break-word / anywhere 경로는
+    // ZWS 삽입 또는 preprocessBreakWordText 변환으로 legitimate wrap을 만든다.
+    // renderableText가 원본 processedText와 다르면 그 변환 결과를 신뢰하고
+    // 교정 로직을 스킵 — 그렇지 않으면 break-all의 4줄 wrap이 1줄로 잘못 복구된다.
     if (
       !isEllipsis &&
       layoutMaxWidth < 100000 &&
-      !renderableText.includes("\n")
+      !renderableText.includes("\n") &&
+      renderableText === processedText
     ) {
       const lineMetrics = paragraph.getLineMetrics();
       if (lineMetrics.length > 1) {

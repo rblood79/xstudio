@@ -17,6 +17,10 @@ import {
 import { getSkImage, loadSkImage } from "./imageCache";
 import { measureWrappedTextHeight } from "../utils/textMeasure";
 import { getLabelLineHeight } from "@composition/specs";
+import {
+  parseTextDecoration,
+  parseDecorationColor,
+} from "../sprites/styleConverter";
 
 // ========== Helpers ==========
 
@@ -693,12 +697,19 @@ export function specShapesToSkia(
         let textBlockHeight = lineHeightPx;
         if (shape.baseline === "middle" && shape.y === 0) {
           const effectiveMaxWidth =
-            shape.maxWidth ?? (shape.x > 0 ? containerWidth - shape.x * 2 : containerWidth);
+            shape.maxWidth ??
+            (shape.x > 0 ? containerWidth - shape.x * 2 : containerWidth);
           if (effectiveMaxWidth > 0 && effectiveMaxWidth < containerWidth) {
             const ff = shape.fontFamily ?? "Inter";
-            const fw = typeof shape.fontWeight === "number" ? shape.fontWeight : 400;
+            const fw =
+              typeof shape.fontWeight === "number" ? shape.fontWeight : 400;
             const measured = measureWrappedTextHeight(
-              shape.text, fontSize, fw, ff, effectiveMaxWidth, lineHeightPx,
+              shape.text,
+              fontSize,
+              fw,
+              ff,
+              effectiveMaxWidth,
+              lineHeightPx,
             );
             if (measured > lineHeightPx + 0.5) {
               textBlockHeight = measured;
@@ -770,14 +781,14 @@ export function specShapesToSkia(
             ]
           : ["Inter", "system-ui", "sans-serif"];
 
-        // textDecoration → CanvasKit 비트마스크 변환
-        // underline=1, overline=2, lineThrough=4
-        let decoration: number | undefined;
-        if (shape.textDecoration === "underline") {
-          decoration = 1;
-        } else if (shape.textDecoration === "line-through") {
-          decoration = 4;
-        }
+        // textDecoration → CanvasKit 비트마스크 변환 (ADR-057 Phase B 풀셋)
+        // underline=1, overline=2, lineThrough=4, 조합 지원
+        // decorationStyle + decorationColor 동시 처리
+        const decorationMask = parseTextDecoration(shape.textDecoration);
+        const decoration: number | undefined =
+          decorationMask > 0 ? decorationMask : undefined;
+        const decorationStyle = shape.decorationStyle;
+        const decorationColorF32 = parseDecorationColor(shape.decorationColor);
 
         // textTransform → 텍스트 콘텐츠 변환
         let textContent = shape.text;
@@ -809,6 +820,10 @@ export function specShapesToSkia(
             lineHeight:
               shape.lineHeight !== undefined ? lineHeightPx : undefined,
             decoration,
+            ...(decorationStyle ? { decorationStyle } : {}),
+            ...(decorationColorF32
+              ? { decorationColor: decorationColorF32 }
+              : {}),
             paddingLeft,
             paddingTop: Math.max(0, paddingTop),
             paddingBottom,

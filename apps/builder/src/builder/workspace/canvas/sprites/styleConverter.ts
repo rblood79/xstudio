@@ -2002,4 +2002,37 @@ export function parseTextShadow(value: string): TextShadow[] {
   });
 }
 
+/**
+ * CSS text-decoration-line 문자열 → CanvasKit DecorationStyle 비트마스크
+ *
+ * CanvasKit 비트마스크: underline=1, overline=2, lineThrough=4
+ * CSS 문자열은 공백 구분 (예: "underline overline", "line-through underline")
+ *
+ * 반환값 0 = 데코레이션 없음 (none 포함)
+ */
+export function parseTextDecoration(decoration: string | undefined): number {
+  if (!decoration || decoration === "none") return 0;
+  const lower = decoration.toLowerCase();
+  return (
+    (lower.includes("underline") ? 1 : 0) |
+    (lower.includes("overline") ? 2 : 0) |
+    (lower.includes("line-through") ? 4 : 0)
+  );
+}
+
+/**
+ * CSS text-decoration-color 문자열 → Float32Array(RGBA 0~1)
+ *
+ * colord 기반 파싱. 잘못된 문자열은 undefined 반환.
+ */
+export function parseDecorationColor(
+  colorStr: string | undefined,
+): Float32Array | undefined {
+  if (!colorStr) return undefined;
+  const parsed = colord(colorStr);
+  if (!parsed.isValid()) return undefined;
+  const rgba = parsed.toRgb();
+  return Float32Array.of(rgba.r / 255, rgba.g / 255, rgba.b / 255, rgba.a);
+}
+
 export default convertStyle;

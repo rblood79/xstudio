@@ -17,6 +17,7 @@ import { CanvasRouter, setGlobalNavigate } from "./router";
 import { MessageHandler, messageSender } from "./messaging";
 import { useNavigate } from "react-router-dom";
 import { rendererMap } from "@composition/shared/renderers";
+import { getElementForTag } from "@composition/specs";
 import type { RenderContext as SharedRenderContext } from "@composition/shared/types";
 import type { PreviewElement, RenderContext } from "./types";
 import type { RuntimeElement } from "./store/types";
@@ -463,7 +464,10 @@ function CanvasContent() {
           case "ColorSlider":
             return "div";
           default:
-            return tag.toLowerCase();
+            // ADR-058 Pre-Phase 0: switch 미매칭 태그는 spec registry 조회.
+            // Text → "p", Heading/Description 외 나머지 태그의 `spec.element` 정적 값 반환.
+            // 미등록 태그는 `tag.toLowerCase()` fallback (기존 default 동작과 동일).
+            return getElementForTag(tag, props);
         }
       };
 
