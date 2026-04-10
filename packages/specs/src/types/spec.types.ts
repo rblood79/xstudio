@@ -69,8 +69,19 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
    */
   skipCSSGeneration?: boolean;
 
-  /** 기본 HTML 태그 (React용) */
-  element: keyof HTMLElementTagNameMap | "fragment";
+  /**
+   * 기본 HTML 태그 (React용)
+   *
+   * ADR-058 Phase 2: 함수형 element 지원 추가.
+   * - 정적 string: 기존 22+ spec — 항상 동일한 HTML 태그 (예: Button `button`)
+   * - 함수형: props 기반 동적 해석 (예: Heading level → `h1`~`h6`)
+   *
+   * `packages/specs/src/runtime/tagToElement.ts#getElementForTag`가 typeof 분기로 처리.
+   */
+  element:
+    | keyof HTMLElementTagNameMap
+    | "fragment"
+    | ((props: Record<string, unknown>) => string);
 
   /**
    * 포털/오버레이 설정 (Dialog, Tooltip, Popover 등)

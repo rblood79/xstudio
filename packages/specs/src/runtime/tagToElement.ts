@@ -5,8 +5,9 @@
  * Preview App의 `resolveHtmlTag` fallback 경로가 이 함수를 호출하여
  * spec registry 기반으로 element를 결정한다.
  *
- * Pre-Phase 0 범위: **정적 `spec.element` 문자열만** 지원.
- * 동적(함수형) element는 Phase 2에서 `ComponentSpec.element` 함수형 확장과 함께 추가한다.
+ * Phase 2부터 **정적 문자열 + 함수형** 양쪽 지원.
+ * - 정적: 기존 대다수 spec — 고정 HTML 태그
+ * - 함수형: Heading 등 props에 따라 동적으로 태그 결정 (예: level → `h1~h6`)
  *
  * 등록되지 않은 태그는 `tag.toLowerCase()` fallback (기존 `resolveHtmlTag` default 동작과 동일).
  */
@@ -215,22 +216,28 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
 /**
  * 컴포넌트 tag에 대응하는 HTML element 이름을 반환한다.
  *
- * - spec이 등록되어 있고 `element`가 정적 문자열이면 그대로 반환
- * - spec이 없거나 `element`가 함수/미설정이면 `tag.toLowerCase()` fallback
+ * - spec 미등록: `tag.toLowerCase()` fallback
+ * - `spec.element`가 정적 문자열: 그대로 반환
+ * - `spec.element`가 함수: `spec.element(props ?? {})` 호출 결과 반환
+ *   (예: Heading은 `level` prop에 따라 `h1~h6` 동적 반환)
  *
- * Phase 2에서 `ComponentSpec.element` 함수형 타입 확장 후 동적 해석(예: Heading level)을
- * 지원하도록 분기가 추가된다. 현재는 정적 해석만 수행.
+ * 함수형 결과가 비어있거나 유효하지 않으면 `tag.toLowerCase()` fallback.
  */
 export function getElementForTag(
   tag: string,
-  _props?: Record<string, unknown>,
+  props?: Record<string, unknown>,
 ): string {
   const spec = TAG_SPEC_MAP[tag];
   if (!spec) return tag.toLowerCase();
 
-  if (typeof spec.element === "string") return spec.element;
-
-  // 함수형 element는 Pre-Phase 0 범위 밖 — Phase 2에서 분기 추가
+  const el = spec.element;
+  if (typeof el === "string") return el;
+  if (typeof el === "function") {
+    const resolved = el(props ?? {});
+    return typeof resolved === "string" && resolved.length > 0
+      ? resolved
+      : tag.toLowerCase();
+  }
   return tag.toLowerCase();
 }
 

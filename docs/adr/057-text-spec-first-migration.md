@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-10
+Implemented — 2026-04-10 (commit `475d8168`)
 
 ## 원칙 — Spec SSOT + Symmetric Consumers (ADR-036 준수)
 

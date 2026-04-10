@@ -417,10 +417,6 @@ function CanvasContent() {
         props?: Record<string, unknown>,
       ): string => {
         switch (tag) {
-          case "Heading": {
-            const level = Number(props?.level) || 3;
-            return `h${Math.min(Math.max(level, 1), 6)}`;
-          }
           case "Description":
             return "p";
           // Overlay 복합 컴포넌트
@@ -486,9 +482,11 @@ function CanvasContent() {
           case "ColorSlider":
             return "div";
           default:
-            // ADR-058 Pre-Phase 0: switch 미매칭 태그는 spec registry 조회.
-            // Text → "p", Heading/Description 외 나머지 태그의 `spec.element` 정적 값 반환.
-            // 미등록 태그는 `tag.toLowerCase()` fallback (기존 default 동작과 동일).
+            // ADR-058 Pre-Phase 0 + Phase 2: switch 미매칭 태그는 spec registry 조회.
+            // - Text → "p" (정적)
+            // - Heading → props.level 기반 `h1~h6` (함수형, Phase 2)
+            // - 나머지 spec 등록 태그의 정적 `spec.element` 값 반환
+            // - 미등록 태그는 `tag.toLowerCase()` fallback
             return getElementForTag(tag, props);
         }
       };

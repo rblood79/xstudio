@@ -44,8 +44,10 @@ function isImageElement(element: Element): boolean {
  * TEXT_TAGS ∩ TAG_SPEC_MAP 중 Spec 경로(buildSpecNodeData)로 라우팅되는 태그.
  * ADR-058 Phase 1: Text 추가 — Spec-First 마이그레이션으로 레거시 buildTextNodeData에서
  * 분리되어 spec shapes() + auto-generated CSS 경로로 이동.
- * 나머지 TEXT_TAGS (Heading, Kbd, Code)는 여전히 buildTextNodeData 경로
- * (Phase 2/3에서 순차 마이그레이션 예정).
+ * ADR-058 Phase 2: Heading은 TEXT_TAGS에서 제거되어 TAG_SPEC_MAP 등록만으로 spec 경로
+ * 자동 라우팅 — 여기 추가 불필요.
+ * 나머지 TEXT_TAGS (Description, Kbd, Code, Label, InlineAlert)는 여전히 buildTextNodeData 경로
+ * (Phase 3/4에서 순차 마이그레이션 예정).
  */
 const SPEC_PREFERRED_TEXT_TAGS = new Set([
   "Label",
@@ -390,18 +392,57 @@ export class StoreRenderBridge {
     elementsMap: Map<string, Element>,
     childrenMap: Map<string, Element[]> | null,
   ): import("./nodeRendererTypes").SkiaNodeData | null {
-    if (isSpecPath(element)) {
+    // InlineAlert → Heading/Description font delegation (Skia 렌더링 경로)
+    // fullTreeLayout + implicitStyles의 주입은 레이아웃 계산용이라 store에 반영 안됨.
+    // ADR-058 Phase 2: Heading이 spec 경로로 이동했으므로 lift-up 필수 — spec/text
+    // 양쪽 경로가 동일한 effectiveElement를 바라보게 한다.
+    let effectiveElement = element;
+    if (
+      (element.tag === "Heading" || element.tag === "Description") &&
+      element.parent_id
+    ) {
+      const parent = elementsMap.get(element.parent_id);
+      if (parent?.tag === "InlineAlert") {
+        const parentSize =
+          ((parent.props as Record<string, unknown>)?.size as string) ?? "md";
+        const specSize = (InlineAlertSpec.sizes[parentSize] ??
+          InlineAlertSpec.sizes[
+            InlineAlertSpec.defaultSize
+          ]) as unknown as Record<string, unknown>;
+        const cs = (element.props?.style ?? {}) as Record<string, unknown>;
+        const isHeading = element.tag === "Heading";
+        const fontSize = isHeading
+          ? (specSize.headingFontSize as number)
+          : (specSize.descFontSize as number);
+        const fontWeight = isHeading
+          ? (specSize.headingFontWeight as number)
+          : (specSize.descFontWeight as number);
+        effectiveElement = {
+          ...element,
+          props: {
+            ...element.props,
+            style: {
+              ...cs,
+              fontSize: cs.fontSize ?? fontSize,
+              fontWeight: cs.fontWeight ?? fontWeight,
+            },
+          },
+        };
+      }
+    }
+
+    if (isSpecPath(effectiveElement)) {
       // childrenMap은 props 변경 시 rebuild되지 않는다 (구조 변경만 rebuild).
       // CHILD_COMPOSITION_EXCLUDE_TAGS는 자식 props로 shapes를 만들므로(_crumbs 등)
       // 각 자식을 elementsMap에서 새 참조로 교체하여 stale data를 방지한다.
       const rawChildElements = childrenMap?.get(id);
       const childElements = rawChildElements
-        ? CHILD_COMPOSITION_EXCLUDE_TAGS.has(element.tag)
+        ? CHILD_COMPOSITION_EXCLUDE_TAGS.has(effectiveElement.tag)
           ? rawChildElements.map((child) => elementsMap.get(child.id) ?? child)
           : rawChildElements
         : undefined;
       const nodeData = buildSpecNodeData({
-        element,
+        element: effectiveElement,
         layout,
         theme: ctx.theme,
         childElements,
@@ -410,47 +451,12 @@ export class StoreRenderBridge {
       });
       if (nodeData) return nodeData;
       return (
-        buildBoxNodeData({ element, layout }) ?? buildSkiaNodeData(element, ctx)
+        buildBoxNodeData({ element: effectiveElement, layout }) ??
+        buildSkiaNodeData(effectiveElement, ctx)
       );
     }
 
-    if (isTextElement(element)) {
-      // InlineAlert → Heading/Description font delegation (Skia 렌더링 경로)
-      // fullTreeLayout의 주입은 레이아웃 계산용으로만 쓰이고 store에 반영 안됨
-      let effectiveElement = element;
-      if (
-        (element.tag === "Heading" || element.tag === "Description") &&
-        element.parent_id
-      ) {
-        const parent = elementsMap.get(element.parent_id);
-        if (parent?.tag === "InlineAlert") {
-          const parentSize =
-            ((parent.props as Record<string, unknown>)?.size as string) ?? "md";
-          const specSize = (InlineAlertSpec.sizes[parentSize] ??
-            InlineAlertSpec.sizes[
-              InlineAlertSpec.defaultSize
-            ]) as unknown as Record<string, unknown>;
-          const cs = (element.props?.style ?? {}) as Record<string, unknown>;
-          const isHeading = element.tag === "Heading";
-          const fontSize = isHeading
-            ? (specSize.headingFontSize as number)
-            : (specSize.descFontSize as number);
-          const fontWeight = isHeading
-            ? (specSize.headingFontWeight as number)
-            : (specSize.descFontWeight as number);
-          effectiveElement = {
-            ...element,
-            props: {
-              ...element.props,
-              style: {
-                ...cs,
-                fontSize: cs.fontSize ?? fontSize,
-                fontWeight: cs.fontWeight ?? fontWeight,
-              },
-            },
-          };
-        }
-      }
+    if (isTextElement(effectiveElement)) {
       return buildTextNodeData({
         element: effectiveElement,
         layout,

@@ -75,6 +75,7 @@ import {
   ColorSwatchPickerSpec,
   LabelSpec,
   FieldErrorSpec,
+  HeadingSpec,
   DescriptionSpec,
   SliderTrackSpec,
   ProgressBarTrackSpec,
@@ -185,6 +186,7 @@ export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   // child specs (compound 컴포넌트 하위 요소)
   Label: LabelSpec,
   FieldError: FieldErrorSpec,
+  Heading: HeadingSpec,
   Description: DescriptionSpec,
   SliderTrack: SliderTrackSpec,
   ProgressBarTrack: ProgressBarTrackSpec,
@@ -213,9 +215,14 @@ export function getSpecForTag(tag: string): ComponentSpec<any> | null {
   return TAG_SPEC_MAP[tag] ?? null;
 }
 
-/** 텍스트 렌더링 대상 태그 (TextSprite / buildTextNodeData 경로) */
+/**
+ * 텍스트 렌더링 대상 태그 (TextSprite / buildTextNodeData 경로)
+ *
+ * ADR-058 Phase 1: `Text`는 TEXT_TAGS + SPEC_PREFERRED_TEXT_TAGS로 유지 (spec 경로 라우팅)
+ * ADR-058 Phase 2: `Heading` 제거 — TAG_SPEC_MAP 등록으로 spec 경로 자동 라우팅
+ * Phase 3/4에서 Kbd/Code도 spec 전환 후 완전 폐지 예정.
+ */
 export const TEXT_TAGS = new Set([
-  "Heading",
   "Text",
   "Label",
   "Description",

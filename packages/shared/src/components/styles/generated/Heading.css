@@ -1,0 +1,121 @@
+/* ============================================================
+ * AUTO-GENERATED from HeadingSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Heading.spec.ts
+ * Archetype: text
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Heading {
+  /* Base styles — archetype: text */
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+
+  /* Default variant */
+  background: transparent;
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  line-height: var(--text-base--line-height);
+}
+
+.react-aria-Heading[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
+  }
+
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-Heading[data-size="xs"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+  line-height: var(--text-xs--line-height);
+}
+
+.react-aria-Heading[data-size="sm"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+  line-height: var(--text-sm--line-height);
+}
+
+.react-aria-Heading[data-size="md"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  line-height: var(--text-base--line-height);
+}
+
+.react-aria-Heading[data-size="lg"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+  line-height: var(--text-lg--line-height);
+}
+
+.react-aria-Heading[data-size="xl"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-xl);
+  border-radius: var(--radius-none);
+  line-height: var(--text-xl--line-height);
+}
+
+.react-aria-Heading[data-size="2xl"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-2xl);
+  border-radius: var(--radius-none);
+  line-height: var(--text-2xl--line-height);
+}
+
+.react-aria-Heading[data-size="3xl"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-3xl);
+  border-radius: var(--radius-none);
+  line-height: var(--text-3xl--line-height);
+}
+
+.react-aria-Heading[data-hovered] {
+}
+
+.react-aria-Heading[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.react-aria-Heading[data-pressed] {
+}
+
+.react-aria-Heading[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Heading {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */
