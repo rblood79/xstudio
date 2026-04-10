@@ -2820,6 +2820,9 @@ export const TEXT_LEAF_TAGS = new Set([
   "description",
   "label",
   "paragraph",
+  // ADR-058 Phase 3: 신설 Kbd/Code spec이 렌더하는 lowercase 시맨틱 태그
+  "kbd",
+  "code",
 ]);
 
 /** intrinsic 크기 키워드 — height/width에서 enrichWithIntrinsicSize가 개입해야 하는 값 */

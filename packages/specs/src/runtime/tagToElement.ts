@@ -88,6 +88,9 @@ import { NavSpec } from "../components/Nav.spec";
 import { LabelSpec } from "../components/Label.spec";
 import { FieldErrorSpec } from "../components/FieldError.spec";
 import { HeadingSpec } from "../components/Heading.spec";
+import { ParagraphSpec } from "../components/Paragraph.spec";
+import { KbdSpec } from "../components/Kbd.spec";
+import { CodeSpec } from "../components/Code.spec";
 import { DisclosureHeaderSpec } from "../components/DisclosureHeader.spec";
 import { DescriptionSpec } from "../components/Description.spec";
 import { SliderOutputSpec } from "../components/SliderOutput.spec";
@@ -198,6 +201,9 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   Label: LabelSpec,
   FieldError: FieldErrorSpec,
   Heading: HeadingSpec,
+  Paragraph: ParagraphSpec,
+  Kbd: KbdSpec,
+  Code: CodeSpec,
   Description: DescriptionSpec,
   DateSegment: DateSegmentSpec,
   TimeSegment: DateSegmentSpec,

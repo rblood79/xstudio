@@ -76,6 +76,9 @@ import {
   LabelSpec,
   FieldErrorSpec,
   HeadingSpec,
+  ParagraphSpec,
+  KbdSpec,
+  CodeSpec,
   DescriptionSpec,
   SliderTrackSpec,
   ProgressBarTrackSpec,
@@ -187,6 +190,9 @@ export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   Label: LabelSpec,
   FieldError: FieldErrorSpec,
   Heading: HeadingSpec,
+  Paragraph: ParagraphSpec,
+  Kbd: KbdSpec,
+  Code: CodeSpec,
   Description: DescriptionSpec,
   SliderTrack: SliderTrackSpec,
   ProgressBarTrack: ProgressBarTrackSpec,
@@ -220,14 +226,14 @@ export function getSpecForTag(tag: string): ComponentSpec<any> | null {
  *
  * ADR-058 Phase 1: `Text`는 TEXT_TAGS + SPEC_PREFERRED_TEXT_TAGS로 유지 (spec 경로 라우팅)
  * ADR-058 Phase 2: `Heading` 제거 — TAG_SPEC_MAP 등록으로 spec 경로 자동 라우팅
- * Phase 3/4에서 Kbd/Code도 spec 전환 후 완전 폐지 예정.
+ * ADR-058 Phase 3: `Kbd`/`Code` 제거 — 신규 spec (KbdSpec/CodeSpec) 등록으로 spec 경로 자동 라우팅.
+ *                   `Paragraph`는 원래 TEXT_TAGS에 없었으며 Phase 3에서 새 spec으로 직접 등록.
+ * Phase 4에서 Description/Label/InlineAlert spec 전환 검토 + `buildTextNodeData` 폐지 예정.
  */
 export const TEXT_TAGS = new Set([
   "Text",
   "Label",
   "Description",
-  "Kbd",
-  "Code",
   "InlineAlert",
 ]);
 

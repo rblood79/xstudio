@@ -335,6 +335,18 @@ export type { FieldErrorProps } from "./FieldError.spec";
 export { HeadingSpec } from "./Heading.spec";
 export type { HeadingProps } from "./Heading.spec";
 
+// Paragraph (ADR-058 Phase 3)
+export { ParagraphSpec } from "./Paragraph.spec";
+export type { ParagraphProps } from "./Paragraph.spec";
+
+// Kbd (ADR-058 Phase 3)
+export { KbdSpec } from "./Kbd.spec";
+export type { KbdProps } from "./Kbd.spec";
+
+// Code (ADR-058 Phase 3)
+export { CodeSpec } from "./Code.spec";
+export type { CodeProps } from "./Code.spec";
+
 // DisclosureHeader
 export { DisclosureHeaderSpec } from "./DisclosureHeader.spec";
 export type { DisclosureHeaderProps } from "./DisclosureHeader.spec";

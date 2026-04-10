@@ -76,6 +76,13 @@
 @import "./generated/Checkbox.css";
 @import "./generated/Radio.css";
 
+/* Text primitives (ADR-058 Phase 1~3: Spec-First 전환) */
+@import "./generated/Text.css";
+@import "./generated/Heading.css";
+@import "./generated/Paragraph.css";
+@import "./generated/Kbd.css";
+@import "./generated/Code.css";
+
 /* ============================================
    COMPOSED COMPONENTS — Container: 수동 CSS 주도
    ============================================ */
