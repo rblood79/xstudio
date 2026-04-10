@@ -28,7 +28,10 @@ export interface DescriptionProps {
 export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
   name: "Description",
   description: "compound 컴포넌트의 보조 설명 텍스트 렌더링",
-  element: "p",
+  // ADR-058 Phase 4 후속: React Aria `<Description>`의 실제 DOM 태그와 일치.
+  // react-aria-components의 `<Text>` 기반(slot="description")이며 기본 elementType이 `"span"`.
+  // 이전 "p"는 오해 — rendererMap이 `elementType` prop을 전달하지 않아 실제로는 span 렌더됨.
+  element: "span",
   archetype: "text",
 
   defaultVariant: "default",
@@ -84,7 +87,10 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
 
       const width = (props.style?.width as number) || "auto";
 
-      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 12);
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        12,
+      );
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =

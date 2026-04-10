@@ -28,7 +28,9 @@ export interface FieldErrorProps {
 export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
   name: "FieldError",
   description: "compound 컴포넌트의 에러 메시지 텍스트 렌더링",
-  element: "p",
+  // ADR-058 Phase 4 후속: React Aria `<FieldError>`의 실제 DOM 태그와 일치.
+  // 내부적으로 `<Text slot="errorMessage">`로 위임 → 기본 elementType `"span"`.
+  element: "span",
   archetype: "simple",
 
   defaultVariant: "default",
@@ -84,7 +86,10 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
 
       const width = (props.style?.width as number) || "auto";
 
-      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 12);
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        12,
+      );
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =
