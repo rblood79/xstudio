@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-10 (Phase 1~4 Implemented, Phase 5 Proposed)
+Implemented — 2026-04-11 (Phase 1~4 완료, Phase 5 Deferred)
 
 - **Pre-Phase 0** (Preview Resolver 일반화): Implemented — `475d8168`
 - **Pre-Phase 1** (CSSGenerator 안정화): Resolved — 코드 수정 불필요 (CSSGenerator는 이미 undefined 0건 생성)
@@ -10,19 +10,74 @@ Accepted — 2026-04-10 (Phase 1~4 Implemented, Phase 5 Proposed)
 - **Phase 2** (Heading 마이그레이션 + `ComponentSpec.element` 함수형 확장): Implemented — `6d230558` (2026-04-10)
 - **Phase 3** (Paragraph/Kbd/Code spec 신설): Implemented — `507869b0` (2026-04-10). 부수 발견: Phase 1/2에서 누락된 `generated/Text.css`, `generated/Heading.css` import도 `packages/shared/src/components/styles/index.css`에 함께 추가
 - **Phase 4** (`buildTextNodeData` 폐지): Implemented — `86e0ce73` (2026-04-10). 9/9 text 컴포넌트 Skia 경로 통일 (Canvas SSOT 완성). 후속 `cd65d597`에서 Description/FieldError `spec.element`를 실제 React Aria 렌더 결과(`"span"`)와 일치시킴
-- **Phase 5** (DOM 축 SSOT 완성): Proposed — Phase 4 완료 후 발견된 "DOM 축 미러 문제" 해결. `rendererMap`의 4개 React Aria 호출부(Label/Description/FieldError/InlineAlert)에 `spec.element`를 `elementType` prop으로 주입하여 spec이 Preview DOM을 **결정**하도록 함 (현재는 "사실 일치" 수준). 상세: breakdown Phase 5 섹션
+- **Phase 5** (DOM 축 SSOT 완성): **Deferred — 2026-04-11**. Phase 4 완료 후 발견된 G2 갭(rendererMap이 `spec.element` 미사용)은 실존하나, **본 ADR의 원래 목표(5-point patch 근본 제거 + Canvas/Skia + CSS auto-gen SSOT 달성)는 Phase 4로 완전 달성**되었다. Phase 5는 "개념적 SSOT 완성"을 위한 미학적 작업으로, 원 ADR 스코프 밖이며 cost/benefit이 비대칭적이어서 현 시점에서 착수하지 않음. 상세 판단 근거는 아래 §Phase 5 Deferral Rationale 참조
 
 ## Phase 4 완료 후 잔존 SSOT 갭 (Post-Phase 4 Discovery)
 
 Phase 4 완료 시점에 Canvas/Skia 축은 완전한 SSOT가 달성되었으나, 엄격한 Spec-First SSOT 기준(spec 변경 → 모든 consumer 자동 반영)에서 **3개의 갭**이 잔존한다:
 
-|   갭   | 축                     | 영향                                                                                                             | 해결 경로                                                          |
-| :----: | :--------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
-| **G1** | CSS 축                 | Label만 `skipCSSGeneration: true`로 수동 CSS 사용 (8/9 auto-gen)                                                 | `base.css`의 `--label-font-size` 메커니즘 재설계 필요. 스코프 별도 |
-| **G2** | DOM 축                 | Label/Description/FieldError/InlineAlert의 rendererMap이 `spec.element` 미사용 — 하드코딩 또는 React Aria 기본값 | **Phase 5에서 해결** — `elementType` prop 주입                     |
-| **G3** | Typography features 축 | 13개 feature는 user style prop → override loop 구조. spec variants/sizes에 feature 기본값 미정의                 | 의도된 설계 (user override 우선). ADR 범위 밖                      |
+|   갭   | 축                     | 영향                                                                                                             | 처리 상태                                                                                                                       |
+| :----: | :--------------------- | :--------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| **G1** | CSS 축                 | Label만 `skipCSSGeneration: true`로 수동 CSS 사용 (8/9 auto-gen)                                                 | Deferred — `base.css`의 `--label-font-size` 메커니즘 재설계 필요. 스코프 별도. 후속 ADR 또는 composition-patterns 작업으로 분리 |
+| **G2** | DOM 축                 | Label/Description/FieldError/InlineAlert의 rendererMap이 `spec.element` 미사용 — 하드코딩 또는 React Aria 기본값 | **Deferred — Phase 5 Deferred**. 아래 Rationale 참조                                                                            |
+| **G3** | Typography features 축 | 13개 feature는 user style prop → override loop 구조. spec variants/sizes에 feature 기본값 미정의                 | 의도된 설계 (user override 우선). ADR 범위 밖                                                                                   |
 
-**G2가 "SSOT 선언"의 무게에 가장 직결**되므로 Phase 5로 승격. G1은 별도 검토 대기.
+## Phase 5 Deferral Rationale (2026-04-11)
+
+Phase 5(DOM 축 SSOT 완성)는 breakdown 문서에 작업 계획이 상세히 작성되어 있으나 **현 시점에서 착수하지 않기로 결정**했다. 판단 근거:
+
+### 1. 사용자 가치 0
+
+Phase 5 작업의 실질 DOM 변경은 **0건**이다. `spec.element`가 현재 React Aria 렌더 결과와 이미 일치(`cd65d597`)하므로, `elementType` prop을 주입하더라도 Preview DOM/Skia Canvas/CSS 어느 것도 시각적으로 변하지 않는다. 약 2시간의 작업 산출물은 **"spec.element가 DOM을 결정한다"는 개념적 만족감**이며 사용자 경험에는 영향이 없다.
+
+### 2. 본 ADR 원래 목표는 Phase 4로 달성
+
+본 ADR의 Context/Decision이 명시한 목표는:
+
+- 5-point patch 근본 제거 ✅ (Phase 1)
+- `buildTextNodeData` 완전 폐지 ✅ (Phase 4)
+- Text/Heading/Paragraph/Kbd/Code의 spec 경로 전환 ✅ (Phase 1~3)
+- Spec-First 원칙 준수 (Canvas/Skia + CSS auto-gen) ✅ (Phase 1~4)
+
+Phase 5는 **Phase 4 완료 후 사후 발견된 갭**에 대한 작업이며 본 ADR의 원래 선언 범위 밖이다.
+
+### 3. 새로운 silent regression 경로 도입
+
+Phase 5는 `LabelSpec.element` → `<Label>` 컴포넌트에 `elementType` prop으로 주입하는 결합을 도입한다. 현재는 React Aria 라이브러리가 `'label'`을 하드코딩 default로 보유하여 **우리가 망가뜨릴 수 없는** 안전망을 제공한다. Phase 5 이후에는 미래에 누군가 `LabelSpec.element`를 `"div"` 등으로 변경 시 HTML `<label for="">` 네이티브 form 연결이 **silent로** 깨질 수 있다. 접근성 관점에서 현 상태가 더 robust하다.
+
+### 4. React Aria 버전 결합 증가
+
+Phase 5는 `react-aria-components`의 `elementType` prop forwarding에 의존한다. 현재는 이 prop을 사용하지 않으므로 버전 업그레이드에 무관하나, Phase 5 이후에는 해당 prop의 존재/시그니처 유지가 회귀 벡터가 된다.
+
+### 5. CLAUDE.md 원칙 충돌
+
+프로젝트 CLAUDE.md는 명시한다:
+
+> "Don't add features, refactor, or introduce abstractions beyond what the task requires. Don't design for hypothetical future requirements."
+
+Phase 5는 "미래에 spec.element를 바꾸고 싶을 때"라는 가상 시나리오를 위한 작업이다. 실제로 이 시나리오는 4개 대상에서 현실적으로 발생하지 않는다:
+
+- **Label**: 접근성 때문에 절대 `<label>` 외 값으로 변경 불가
+- **Description/FieldError**: React Aria가 의도한 `<span>`이 semantic하게 정확
+- **InlineAlert**: `<div role="alert">` 외 변경 사유 없음. 바꾼다면 한 줄 수정으로 족함
+
+### 6. "미러 상태"는 정당한 균형
+
+`spec.element = "span"`이 React Aria 렌더 결과를 정직하게 문서화하는 **한 방향 미러 관계**는 legitimate state이다. 양방향 coupling 강제가 이를 "개선"하는 것이 아니며, 오히려 "어느 쪽이 ground truth인가"를 불명확하게 만든다. 현재 구조에서는 **React Aria 라이브러리가 ground truth**이며 `spec.element`는 그 사실을 문서화한다. 명확한 책임 분리이다.
+
+### 7. 기회비용
+
+동일 2시간 + 검증 부하를 G1 (Label CSS auto-gen)에 투입하면 실질적 이중 관리 해소가 가능하다. G2(Phase 5)는 완성해도 "개념적 완성"에 그친다.
+
+### 재개 조건
+
+Phase 5를 재개해야 할 실질 조건이 발생하면 착수 검토:
+
+- rendererMap의 React Aria 호출부에서 `elementType` 동적 제어가 실제로 필요한 사용 사례 등장
+- ADR-036 Spec-First 원칙의 엄격 해석이 audit 대상이 되는 경우
+- `ComponentSpec`에 `accessibilityCritical`/`elementLocked` 필드가 도입되어 접근성 silent regression 방지책이 마련된 경우
+
+그 전까지는 **Phase 5 작업 계획은 breakdown 문서에 보존**하되 코드 변경은 하지 않는다.
 
 ## 원칙
 

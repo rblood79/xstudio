@@ -504,6 +504,8 @@ Heading 컴포넌트를 spec 경로로 전환. Heading은 **선행 인프라 확
 
 ## Phase 5 — DOM 축 SSOT 완성 (Post-Phase 4 Follow-up)
 
+> **Status: Deferred (2026-04-11)** — 본 Phase는 cost/benefit 비대칭으로 현 시점 착수하지 않는다. ADR-058 §Phase 5 Deferral Rationale 참조. 실질 DOM 변경 0건 + Label 접근성 silent regression 신규 경로 도입 + CLAUDE.md "hypothetical future 설계 금지" 원칙 충돌. 작업 계획은 재개 조건 발생 시 참조용으로 아래에 보존한다.
+
 ### 목적
 
 Phase 4까지 Skia/CSS 축은 spec 기반 SSOT가 달성되었으나, **Preview DOM 축**에서 4개 컴포넌트(Label/Description/FieldError/InlineAlert)가 여전히 `rendererMap`의 하드코딩 또는 React Aria 기본값에 의존하며 `spec.element`를 무시한다. 즉 "spec을 바꿔도 DOM은 안 바뀌는" 상태로, 이는 SSOT 정의 위반이다.
