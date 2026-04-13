@@ -1,5 +1,7 @@
 # ADR-036: Spec-First Single Source — Spec shapes 기반 CSS 자동 생성
 
+> **SSOT domain**: D3 (시각 스타일). 본 ADR의 "Spec=SSOT"는 **시각 domain 한정**. D1(DOM/접근성)은 RAC 권위, D2(Props)는 RSP 참조. 정본: [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](../063-ssot-chain-charter.md).
+
 ## Status
 
 Implemented

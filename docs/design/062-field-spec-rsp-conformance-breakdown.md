@@ -21,31 +21,33 @@
 **총 variant 값 8종**: `default / accent / neutral / purple / negative / positive / error / filled`
 **isQuiet 누락 6개**: TextArea / SearchField / ColorField / DateField / TimeField / ComboBox
 
-## Variant 값별 의미 재배치 매핑
+## Variant 값별 처리 정책
 
-| 기존 variant 값 | 의도 분류          | 재배치 경로                                            | 비고                    |
-| --------------- | ------------------ | ------------------------------------------------------ | ----------------------- |
-| `default`       | 기본               | 제거 — 기본은 variant 없음                             | —                       |
-| `accent`        | 강조 색 (시각 tint)| 전역 tint system (`--tint`) — **per-instance 소실 허용** | ADR-022, Negative 참조  |
-| `neutral`       | 기본과 동일        | 제거 — 실질적 default                                  | 사용처 확인             |
-| `purple`        | 테마 색            | 전역 tint — **per-instance 소실 허용**                 | ADR-022, Negative 참조  |
-| `negative`      | 오류 표시          | `isInvalid` 상태로 통합                                | React Aria 표준         |
-| `positive`      | 성공 표시          | 제거 후 사용처 조사 → `data-valid` or 삭제             | RSP에도 명시 없음       |
-| `error`         | `negative` 동의어  | `isInvalid`로 통합                                     | ColorField 전용         |
-| `filled`        | 시각 스타일 변종   | 사용처 0 확인 시 삭제 / 필요 시 별도 컴포넌트          | dead code 가능성 높음   |
+마이그레이션 변환 없음. 단순 제거 후 **Spec 레벨 strip**(TypeScript prop 타입 제거 → spread 시 자연 무시).
+
+| 기존 variant 값 | 처리                               | 사용자 대응 경로                                          |
+| --------------- | ---------------------------------- | --------------------------------------------------------- |
+| `default`       | 제거 (의미 동일)                   | —                                                         |
+| `accent`        | 제거                               | 전역 `--tint` 설정 or element-level `style` CSS override  |
+| `neutral`       | 제거 (default와 동일)              | —                                                         |
+| `purple`        | 제거                               | 전역 `--tint: var(--purple)` or element-level CSS override |
+| `negative`      | 제거                               | `isInvalid={true}` 수동 교체 (시각 회귀 감수)             |
+| `positive`      | 제거                               | 정책 미정 (디자인 확정 시 후속 ADR)                       |
+| `error`         | 제거 (ColorField `negative` 동의어)| `isInvalid={true}` 수동 교체                              |
+| `filled`        | 제거 (ColorField 전용)             | 정성적 관찰 (사용자 피드백) → 필요 시 후속 ADR로 `fillStyle` 승격 |
 
 ## Phase 구조
 
-### Phase 0 — 사용처 실측 (CRITICAL 선행)
+### Phase 0 — 사용처 사전 확인 (완료)
 
-1. `apps/` 디렉토리에서 11개 컴포넌트별 `variant="..."` prop 호출 grep (예비 조사 2026-04-13: 0건 확인)
-2. DB 저장 프로젝트의 element props 샘플에서 `variant` 키 분포 조사 (Supabase query — 권한/환경 사전 확보 필요)
-3. variant별 사용 카운트 표 작성 → 실제 제거 가능 범위 확정
-4. **ColorField `filled` 전용 분기 판정** (Gate G1 일부):
-   - 사용처 0 → 본 ADR 범위 내 삭제 (Phase 1c)
-   - 사용처 >0 → **본 ADR Phase 1 중단, 후속 ADR 발의** (`fillStyle` prop 승격 or ColorField-Filled 별도 컴포넌트 설계)
+1. `apps/` 디렉토리에서 11개 컴포넌트별 `variant="..."` prop 호출 grep — **완료 2026-04-13: 0건**
+2. `spec.variants` / `spec.defaultVariant` / `props.variant` 전수 grep — **완료 2026-04-13: 58건 (11파일)**
+   - Skia 렌더러 3 / 훅 1 / Spec 렌더러 3 / Shared 렌더러 2 / UI 1 / Validator 2 = **11파일**
+   - `unified.types.ts` variant 타입 선언 15건
 
-Phase 0 산출물: `docs/design/062-variant-usage-audit.md` 별도 문서
+Supabase DB 조사는 수행하지 않음 — 프로젝트 데이터가 IndexedDB 분산 저장이라 중앙 집계 불가, 또한 마이그레이션 기능 미도입으로 사전 count 활용처 없음.
+
+ColorField `filled` 처리: telemetry 미도입 확정 (인프라 부재). 단순 제거 + 정성적 관찰. 실행 계획은 ADR 본문 Negative Consequences 참조 (수집 주체=개발자, 기간=머지 후 6주, threshold=filled 요청 1건 이상).
 
 ### Phase 1 — Spec 정리 (컴포넌트 단위, 3그룹)
 
@@ -53,10 +55,25 @@ Phase 0 산출물: `docs/design/062-variant-usage-audit.md` 별도 문서
 - **1b**: NumberField / DatePicker / DateRangePicker / Select (variant 제거, isQuiet 이미 있음)
 - **1c**: TextArea / SearchField / ColorField / DateField / TimeField / ComboBox (variant 제거 + isQuiet 신규 추가)
 
-각 컴포넌트별 작업:
-1. `XxxSpec.ts` — `variant` prop 삭제, `variants` 객체 삭제 (or 단일화), `isQuiet` prop 신설(필요 시)
-2. `pnpm build:specs` — generated CSS 검증 (0 byte diff on non-target 컴포넌트)
-3. `Xxx.css` — variant 블록 전부 삭제, `[data-quiet]` 블록 신설, `isInvalid` 경로 통합
+각 컴포넌트별 작업 (동일 커밋에 포함 — 중간 상태 런타임 오류 방지):
+1. `XxxSpec.ts` — `variant` prop 타입 삭제, `variants` 객체 삭제, `defaultVariant` 삭제, `isQuiet` prop 신설(필요 시)
+2. **런타임 소비자 11파일** 해당 컴포넌트 variant lookup 경로 제거 or 기본 색상 토큰 직접 참조:
+   - `apps/builder/src/builder/workspace/canvas/skia/buildSpecNodeData.ts`
+   - `apps/builder/src/builder/workspace/canvas/utils/specTextStyle.ts`
+   - `apps/builder/src/builder/workspace/overlay/specTextStyleForOverlay.ts`
+   - `apps/builder/src/builder/workspace/canvas/hooks/useSpecRenderer.ts`
+   - `packages/specs/src/renderers/ReactRenderer.ts`
+   - `packages/specs/src/renderers/PixiRenderer.ts`
+   - `packages/specs/src/renderers/CSSGenerator.ts`
+   - `packages/shared/src/renderers/FormRenderers.tsx`
+   - `packages/shared/src/renderers/LayoutRenderers.tsx`
+   - `apps/builder/src/builder/panels/properties/generic/SpecField.tsx`
+   - `apps/builder/src/types/builder/unified.types.ts` (해당 컴포넌트 variant 타입 블록)
+3. `packages/specs/scripts/validate-specs.ts` — `variants` 부재를 허용하도록 규칙 완화 (Field 계열 한정 or 전역)
+4. `packages/specs/scripts/validate-tokens.ts` — `variants` 부재 시 스킵 로직
+5. `pnpm build:specs` — generated CSS 검증 (0 byte diff on non-target 컴포넌트)
+6. `Xxx.css` — variant 블록 전부 삭제, `[data-quiet]` 블록 신설, `isInvalid` 경로 통합
+7. `pnpm type-check` 통과 확인 (G1)
 
 ### Phase 2 — CSS consumer 정리
 
@@ -70,55 +87,43 @@ Phase 0 산출물: `docs/design/062-variant-usage-audit.md` 별도 문서
 - 색상은 `isInvalid` 상태 인자로 대체
 - `parallel-verify` skill로 11/11 컴포넌트 일괄 대칭 회귀 (기본 경로)
   - fallback: `/cross-check` 11회 순차 실행
-- Gate G3 통과 기준: 11/11 대칭 + 실패 시 실패 컴포넌트 격리 + Skia shapes 재작업
+- Gate G2 통과 기준: 11/11 대칭 + 실패 시 실패 컴포넌트 격리 + Skia shapes 재작업
 
-### Phase 4 — 마이그레이션
+### Phase 4 — 접근성·테스트·검증
 
-- 런타임 `variant` prop 무시 로직 (store load 시 warn + strip)
-- 기존 `variant="negative|error"` → `isInvalid: true` 자동 변환 (마이그레이션 스크립트 or load hook)
-- 기존 `variant="accent|purple"` → tint 전역 설정 제안 + strip
-
-### Phase 5 — 검증
-
+- 기존 Storybook 스토리에서 `variant="..."` 사용분을 isInvalid/isQuiet 기반으로 마이그레이션 or 삭제
+- Storybook 스크린샷 diff 리뷰 (의도적 시각 변경만 승인, 회귀 없음 확인) — G3
+- Unit/integration 테스트 중 variant 의존 테스트 isInvalid 기반으로 전환
 - ADR-036 재승격 (Field 컴포넌트 variant 개념 제거로 Spec 단일화 강화)
 - React Aria 규칙 문서 업데이트 (`react-aria-skill.md`)
-- 11개 컴포넌트 `/cross-check` 대칭 회귀 통과
+- ADR-059 본문/README의 "Blocked by ADR-062" 표시 제거 (단 ADR-059는 여전히 size/state/composition 블로커로 Proposed 유지)
 
-## 파일 변경 규모 (예상)
+## 파일 변경 규모 (예상) — 핵심 코드 34파일 + Storybook/테스트 ~20파일 = 총 ~54파일
 
-| 레이어             | 파일 수    | 변경 규모 |
-| ------------------ | ---------- | --------- |
-| packages/specs     | 11         | MEDIUM    |
-| packages/shared/css| 11         | HIGH      |
-| apps/builder store | 2-3        | LOW       |
-| 마이그레이션 스크립트 | 1 (신규) | LOW       |
+| 레이어                                       | 파일 수 | 변경 규모 |
+| -------------------------------------------- | ------- | --------- |
+| packages/specs (Spec 타입+variants+defaultVariant) | 11      | MEDIUM    |
+| packages/shared/css                          | 11      | HIGH      |
+| Skia 런타임 (buildSpecNodeData/specTextStyle×2) | 3    | MEDIUM    |
+| 공용 훅 (useSpecRenderer)                    | 1       | LOW       |
+| Spec 렌더러 (React/Pixi/CSSGenerator)        | 3       | HIGH      |
+| Shared 렌더러 (Form/LayoutRenderers)         | 2       | MEDIUM    |
+| Properties UI (SpecField)                    | 1       | LOW       |
+| Validator (validate-specs/validate-tokens)   | 2       | MEDIUM    |
+| Builder 타입 (unified.types.ts 15건)         | 1       | LOW       |
+| Storybook 스토리 + 테스트                    | ~20     | MEDIUM    |
+| 마이그레이션 스크립트                        | 0       | — (미도입)|
+| **총계**                                     | **~54** | —         |
 
 ## Gate별 통과 조건
 
-| Gate              | 시점               | 통과 조건                                                         | 실패 시 대안                         |
-| ----------------- | ------------------ | ----------------------------------------------------------------- | ------------------------------------ |
-| G1: 사용처 실측   | Phase 0 완료       | apps/DB 조사 완료, variant별 카운트 확정                          | Phase 1 진입 금지                    |
-| G2: Spec 정리     | Phase 1 각 컴포넌트 완료 | `pnpm type-check` 통과, `pnpm build:specs` 0 byte diff (외부) | 해당 컴포넌트 revert, 다음 단위 진행 |
-| G3: 대칭 회귀     | Phase 3 완료       | 11/11 컴포넌트 `/cross-check` 통과                                | 실패 컴포넌트 Skia 재작업            |
-| G4: 마이그레이션  | Phase 4 완료       | 기존 DB 프로젝트 로드 시 시각 회귀 0                              | load hook 로직 재설계                |
-
-## 마이그레이션 세부 전략
-
-### 런타임 처리 우선순위
-
-1. `variant="negative"` or `variant="error"` → `isInvalid: true` 자동 주입 + `variant` 키 제거
-2. `variant="accent"` → 사용자 공지(toast/log) + `variant` 키 제거 (**per-instance 색상 의도 소실 허용** — 정책 결정)
-3. `variant="purple"` → 사용자 공지 + `variant` 키 제거 (사용자가 전역 `--tint` 변경 or element-level `style={{"--tint":"var(--purple)"}}` CSS override 선택)
-4. `variant="positive"` → `variant` 키 제거 + 디자인 정책 확정까지 별도 시각 처리 없음
-5. `variant="filled"` (ColorField 전용) → **Phase 0 G1에서 판정된 분기에 따라**: 사용처 0이면 strip, >0이면 본 ADR 중단 후 후속 ADR
-6. `variant="default"` / `variant="neutral"` → 단순 `variant` 키 제거
-
-### 마이그레이션 적용 시점
-
-- 프로젝트 load 시 1회 자동 변환 + save 시 영구 반영
-- 별도 "Legacy variant detected" 배너 표시 (한 번만)
+| Gate                   | 시점                   | 통과 조건                                                                               | 실패 시 대안                         |
+| ---------------------- | ---------------------- | --------------------------------------------------------------------------------------- | ------------------------------------ |
+| G1: Spec+소비자 정리   | Phase 1 각 컴포넌트     | type-check 통과, build:specs 0 byte diff (외부 컴포넌트), validator 통과(규칙 완화 포함) | 해당 컴포넌트 revert, 다음 단위 진행 |
+| G2: 대칭 회귀          | Phase 3 완료           | 11/11 컴포넌트 `parallel-verify` 대칭 통과                                              | 실패 컴포넌트 Skia 재작업            |
+| G3: 접근성·테스트      | Phase 4 완료           | Storybook 스크린샷 diff 리뷰 승인 + unit/integration 테스트 pass                        | 회귀 시나리오별 보강                 |
 
 ## 롤백 전략
 
 - 각 Phase 별 독립 커밋. Phase N 실패 시 N-1로 revert.
-- Phase 4(마이그레이션)가 가장 위험 → feature flag 뒤에 배포 후 점진 활성화
+- 컴포넌트 단위 커밋으로 부분 롤백 가능.

@@ -1,10 +1,12 @@
 # ADR-059: Composite Field `skipCSSGeneration` 해체 — Spec SSOT 확장
 
+> **SSOT domain**: D3 (시각 스타일). 본 ADR은 수동 CSS를 Spec 파생으로 전환하여 D3 symmetric consumer 복원. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md).
+
 ## Status
 
 Proposed — 2026-04-11
 
-**Blocked by [ADR-062](062-field-spec-rsp-conformance.md)** — 2026-04-13 Phase 1 Step 1 시험대에서 Field variant 개념이 RSP 표준 밖임이 드러남. Spec의 variant 정리 완료 전 `skipCSSGeneration` 해체 시 잘못된 개념이 CSSGenerator 출력에 고착됨. ADR-062 완료 후 재개.
+**Partially blocked by [ADR-062](062-field-spec-rsp-conformance.md)** — 2026-04-13 Phase 1 Step 1 시험대에서 Field variant 개념이 RSP 표준 밖임이 드러남. ADR-062 완료는 **variant 이름 불일치 블로커만 해제**. 본 ADR의 나머지 블로커(size 3중 불일치, state selectors, bridge 변수, base defaults, filled variant, composition 계약 부재 — breakdown §3대 블로커 참조)는 **별도 선행 과제**로 ADR-062 완료 후 독립 처리 필요.
 
 ## 원칙
 

@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 41     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 15     |
-| **합계**                               | **64** |
+| 미구현 (Proposed/계획)                 | 16     |
+| **합계**                               | **65** |
 
 ---
 
@@ -91,10 +91,11 @@
 | [056](056-base-typography-ssot.md)               | Base Typography 단일 정본 (SSOT)                                      | Proposed    | BASE_TYPOGRAPHY TS 상수 → Canvas/Preview/Publish 3경로 정합. lineHeight 누락 수정                                                                                                                           |  **P2**  |
 | [057](057-text-spec-first-migration.md)          | specShapeConverter Text Shape Feature Parity 이식                     | Implemented | Phase A (Layout 6) + Phase B (Paint 7) — 13개 feature parity 이식 완료 (`475d8168`)                                                                                                                         |  **P2**  |
 | [058](058-text-tags-legacy-dismantle.md)         | TEXT_TAGS 예외 경로 해체 — Text/Heading/Paragraph/Kbd/Code Spec-First | Implemented | Phase 1~4 완료 — 5-point patch 근본 제거, `buildTextNodeData` 폐지, Canvas/Skia + CSS auto-gen SSOT 달성 (9/9 text 컴포넌트). Phase 5(DOM 축 미러) Deferred — cost/benefit 비대칭 (ADR §Deferral Rationale) |  **P2**  |
-| [059](059-composite-field-skip-css-dismantle.md) | Composite Field `skipCSSGeneration` 해체 — Spec SSOT 확장             | Proposed ⛔ | **Blocked by ADR-062** (Field variant 정리 선행). 5 Phase — CSSGenerator Composite 확장 + Field 7개 시험대 + Select/ComboBox + DatePicker + 잔존 48개. 59개 `skipCSSGeneration: true` + 23개 `@sync` 주석 해체 |  **P2**  |
+| [059](059-composite-field-skip-css-dismantle.md) | Composite Field `skipCSSGeneration` 해체 — Spec SSOT 확장             | Proposed ⛔ | **Partially blocked by ADR-062** (variant 이름 블로커만 해제). 나머지 블로커(size 3중 불일치, state/composition 계약)는 별도 선행. 5 Phase — CSSGenerator Composite 확장 + Field 7개 시험대 + Select/ComboBox + DatePicker + 잔존 48개. 59개 `skipCSSGeneration: true` + 23개 `@sync` 주석 해체 |  **P2**  |
 | [060](060-form-control-indicator-schema.md)      | Form Control Indicator 스키마 확장 — 매직 테이블 해체                 | Implemented | Phase 1~5 완료 (2026-04-13) — `spec.sizes.*.indicator` 신설. Checkbox/Radio/Switch/Slider + SliderTrack/SliderThumb **6개 매직 테이블 해체** (계획보다 2개 확장). 공유 상수 중복 소멸                       |  **P2**  |
 | [061](061-focus-ring-tokenization.md)            | Focus Ring 토큰화 — 50개 리터럴 해체                                  | Implemented | Phase 1~5 완료 (2026-04-13) — 53개 spec TokenRef 전환, `StateEffect.outline/outlineOffset` 레거시 필드 제거, CSSGenerator fallback 토큰화. 리터럴 0건                                                       |  **P2**  |
-| [062](062-field-spec-rsp-conformance.md)         | Field 컴포넌트 Spec 정리 — RSP 참조 기반 variant 제거 + isQuiet 보강  | Proposed    | 11개 Field 컴포넌트의 비표준 `variant` prop 제거 + 6개 누락 `isQuiet` 보강. ADR-059 v2 종속 선행 작업. 5 Phase — 사용처 실측 → Spec 정리 → CSS/Skia 대칭 → 마이그레이션                                     |  **P2**  |
+| [062](062-field-spec-rsp-conformance.md)         | Field 컴포넌트 Spec 정리 — RSP 참조 기반 variant 제거 + isQuiet 보강  | Proposed    | 11개 Field 컴포넌트의 비표준 `variant` prop 제거 + 6개 누락 `isQuiet` 보강. 실제 변경 규모 34파일/58+ 수정 지점(Spec/CSS/Skia/훅/Renderer/Validator/Types). 마이그레이션 미도입. 대안 A/B/C 중 A 선택(HIGH 1 수용). 4 Phase                   |  **P2**  |
+| [063](063-ssot-chain-charter.md)                 | SSOT 체인 정본 정의 — 3-Domain 분할 (RAC/RSP/Spec)                    | Proposed    | Charter ADR — 3-domain 분할(D1 DOM/접근성=RAC, D2 Props=RSP참조, D3 시각=Spec SSOT) 명문화. 정본 규칙 `.claude/rules/ssot-hierarchy.md` 신설. 기존 관행 명문화 (실질 코드 변경 0). ADR-036/057/058/059/062 소급 재해석                |  **P1**  |
 
 ## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
 
