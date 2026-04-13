@@ -60,6 +60,10 @@ composition은 3-domain 분할을 이미 암묵적으로 적용해 왔다:
 
 추가 고려: `validate-specs.ts`가 현재 `variants` 부재를 에러로 판정 → **validator 규칙 완화**도 본 ADR 범위.
 
+**선행 의존 (Precondition)**:
+
+- **[ADR-064](064-componentspec-shapes-variant-removal.md)** 완료 필수 — `RenderSpec.shapes` 시그니처에서 `variant` 파라미터 제거 + 83 Spec self-lookup 전환. 본 ADR의 Field 개별 `variants` 객체 제거는 ADR-064가 caller의 lookup 책임을 해제한 이후에만 안전. ADR-064 미완료 상태에서 Field `variants` 삭제 시 런타임 오류.
+
 **Hard Constraints**:
 
 1. RSP 표준 API 준수 — `variant` prop 부재, `isQuiet: boolean` 제공

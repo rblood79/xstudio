@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 41     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 16     |
-| **합계**                               | **65** |
+| 미구현 (Proposed/계획)                 | 17     |
+| **합계**                               | **66** |
 
 ---
 
@@ -96,6 +96,7 @@
 | [061](061-focus-ring-tokenization.md)            | Focus Ring 토큰화 — 50개 리터럴 해체                                  | Implemented | Phase 1~5 완료 (2026-04-13) — 53개 spec TokenRef 전환, `StateEffect.outline/outlineOffset` 레거시 필드 제거, CSSGenerator fallback 토큰화. 리터럴 0건                                                       |  **P2**  |
 | [062](062-field-spec-rsp-conformance.md)         | Field 컴포넌트 Spec 정리 — RSP 참조 기반 variant 제거 + isQuiet 보강  | Proposed    | 11개 Field 컴포넌트의 비표준 `variant` prop 제거 + 6개 누락 `isQuiet` 보강. 실제 변경 규모 34파일/58+ 수정 지점(Spec/CSS/Skia/훅/Renderer/Validator/Types). 마이그레이션 미도입. 대안 A/B/C 중 A 선택(HIGH 1 수용). 4 Phase                   |  **P2**  |
 | [063](063-ssot-chain-charter.md)                 | SSOT 체인 정본 정의 — 3-Domain 분할 (RAC/RSP/Spec)                    | Proposed    | Charter ADR — 3-domain 분할(D1 DOM/접근성=RAC, D2 Props=RSP참조, D3 시각=Spec SSOT) 명문화. 정본 규칙 `.claude/rules/ssot-hierarchy.md` 신설. 기존 관행 명문화 (실질 코드 변경 0). ADR-036/057/058/059/062 소급 재해석                |  **P1**  |
+| [064](064-componentspec-shapes-variant-removal.md) | ComponentSpec shapes API — variant 파라미터 제거 + self-lookup       | Proposed    | 86파일 mechanical edit (타입 1 + caller 2 + 83 Spec). `shapes(props, variant, size, state)` → `shapes(props, size, state)` + Spec 내부 self-lookup. ADR-062 전제. HIGH 0                                                                          |  **P2**  |
 
 ## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
 
