@@ -210,5 +210,47 @@ ADR-036 Phase 4가 완료로 체크되었으나, 실제 코드베이스에는 **
 - **`resolveSpecFontSize` 129개소 집약** — 본 ADR 완료 후 전 컴포넌트 단일 helper로 통합 (ADR-058 Phase 1 확장)
 - **`utils/fieldDelegation.ts` 완전 폐지** — Phase 5
 - **ADR-036 상태 재평가** — "Implemented" → "Partially Implemented" 하향 조정 후 본 ADR + ADR-058 + ADR-060/061 완료 시 재승격
-- **ADR-060 (Form Control Indicator)** 병행 — Checkbox/Radio/Switch/Slider의 매직 테이블 해체
-- **ADR-061 (Focus Ring 토큰화)** 병행 — 50개 리터럴 제거
+- ~~**ADR-060 (Form Control Indicator)** 병행~~ — Implemented (2026-04-13)
+- ~~**ADR-061 (Focus Ring 토큰화)** 병행~~ — Implemented (2026-04-13)
+
+## 착수 가이드 (새 세션 시작 시)
+
+본 ADR은 범위가 크고(59개 컴포넌트 + CSSGenerator 확장) 선행 설계 결정이 다수 있어, **코딩 직진 대신 선행 조사 단계**가 필수이다. ADR-060/061에서 얻은 교훈:
+
+1. **계획 외 매직 테이블/패턴 조기 발견** — ADR-060은 계획 4개 → 실측 6개로 확장. ADR-059도 `@sync` 주석 23개가 실제 어느 파일과 동기화되는지 실측 필요
+2. **공유 상수 타입 narrowing** — `DATE_PICKER_STATES` 같은 공유 states 상수는 `as const` 없으면 DTS 빌드 실패
+3. **bulk 치환 효율성** — 패턴이 동일할 때 perl 스크립트로 bulk 치환이 빠름. 단, 예외 패턴(Tabs의 inset variant 등)은 개별 처리
+4. **검증 2단계** — `pnpm type-check` + `pnpm build:specs` 양쪽이 다른 오류를 잡는다 (DTS 빌드는 type-check보다 엄격)
+
+### 선행 조사 4가지 (Pre-Phase 0 진입 전)
+
+1. **`@sync` 주석 전수 실측** — 13개 파일의 23개 주석이 각각 어떤 값과 동기화되는지 매핑
+   ```
+   grep -rn "@sync" packages/specs/src/components/
+   ```
+2. **Field 7개 composition.delegation 구조 비교** — TextField/NumberField/SearchField/ColorField/DateField/TimeField/TextArea의 delegation 배열 구조 + variables 네이밍 패턴(`--tf-*`, `--select-*` 등) 실측
+3. **Pre-Phase 0 설계 결정** — breakdown이 제시한 `"auto"` 파생 규칙의 구체화. 변수 prefix 결정 방식(컴포넌트명/archetype별/명시 선언) 중 선택. `superpowers:brainstorming` 스킬 사용 권장
+4. **CSS 시맨틱 diff 도구 준비** — Phase 1 Gate의 "byte diff 0건(공백/순서 제외)" 검증을 위한 diff 방법 결정. `css-diff` CLI 또는 수작업 정규화 스크립트
+
+### 재시작 프롬프트
+
+새 세션에서 아래 프롬프트를 그대로 사용:
+
+```text
+ADR-059 Composite Field skipCSSGeneration 해체 작업을 시작합니다.
+
+배경: ADR-036 재승격 체인 마지막 잔존 위반. ADR-057/058/060/061 완료.
+참고: docs/adr/059-composite-field-skip-css-dismantle.md + breakdown
+
+코딩 전 선행 조사 4가지 (docs/adr/059 §착수 가이드 참조):
+
+1. @sync 주석 전수 실측 (grep 23개소 매핑)
+2. Field 7개 composition.delegation 구조 비교
+3. Pre-Phase 0 설계 — "auto" 파생 규칙 (superpowers:brainstorming 사용)
+4. CSS 시맨틱 diff 도구 결정
+
+worktree 격리 필요성도 판단해주세요 (superpowers:using-git-worktrees).
+
+4개 조사 완료 후 요약 보고 → 사용자 확인 → Pre-Phase 0 코드 수정 착수 순서로
+진행합니다. MEMORY.md의 adr059-launch-plan.md에 상세 맥락이 있습니다.
+```
