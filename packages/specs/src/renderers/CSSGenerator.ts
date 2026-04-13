@@ -277,12 +277,16 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   const archetype = spec.archetype;
 
   // Composite는 composition.layout에서 base styles 파생
+  // ADR-059 v2 Pre-Phase 0-D.5: layout 생략 시 archetype base fallback
   let baseStyles: string[];
   if (spec.composition) {
-    baseStyles = [
-      ...(COMPOSITION_LAYOUT_STYLES[spec.composition.layout] ??
-        COMPOSITION_LAYOUT_STYLES["flex-column"]),
-    ];
+    if (spec.composition.layout) {
+      baseStyles = [...COMPOSITION_LAYOUT_STYLES[spec.composition.layout]];
+    } else {
+      baseStyles = archetype
+        ? [...(ARCHETYPE_BASE_STYLES[archetype] ?? DEFAULT_BASE_STYLES)]
+        : [...DEFAULT_BASE_STYLES];
+    }
     // ADR-059 v2 Pre-Phase 0-D.3: containerStyles 병합
     if (spec.composition.containerStyles) {
       for (const [prop, value] of Object.entries(

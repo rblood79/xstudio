@@ -278,8 +278,14 @@ export type FieldDef =
  * 모든 Composite는 동일 패턴: Container(layout) + Primitive[] + --var override
  */
 export interface CompositionSpec {
-  /** container layout 규칙 */
-  layout: "flex-column" | "flex-row" | "grid" | "inline-flex";
+  /**
+   * container layout 규칙 (optional — 생략 시 spec.archetype 기반 base 사용)
+   *
+   * ADR-059 v2 Pre-Phase 0-D.5: 기존 archetype base 를 유지하면서 delegation/
+   * containerVariants 만 추가하려는 경우 생략 가능. 생략 시 generateBaseStyles 가
+   * archetype fallback 으로 동작.
+   */
+  layout?: "flex-column" | "flex-row" | "grid" | "inline-flex";
 
   /** gap (optional) */
   gap?: string;

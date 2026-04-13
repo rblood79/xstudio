@@ -14,40 +14,30 @@
     font-family: var(--font-sans);
 
   /* Default size */
-  height: 80px;
-  padding: 10px 14px;
   font-size: var(--text-base);
   border-radius: var(--radius-md);
   gap: 6px;
 }
 
 .react-aria-TextArea[data-size="sm"] {
-  height: 64px;
-  padding: 6px 10px;
   font-size: var(--text-sm);
   border-radius: var(--radius-sm);
   gap: 4px;
 }
 
 .react-aria-TextArea[data-size="md"] {
-  height: 80px;
-  padding: 10px 14px;
   font-size: var(--text-base);
   border-radius: var(--radius-md);
   gap: 6px;
 }
 
 .react-aria-TextArea[data-size="lg"] {
-  height: 120px;
-  padding: 12px 16px;
   font-size: var(--text-lg);
   border-radius: var(--radius-md);
   gap: 8px;
 }
 
 .react-aria-TextArea[data-size="xl"] {
-  height: 160px;
-  padding: 16px 24px;
   font-size: var(--text-xl);
   border-radius: var(--radius-lg);
   gap: 10px;
@@ -69,6 +59,39 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-TextArea[data-size="xs"] .react-aria-Label {
+  --ta-label-size: var(--text-2xs);
+  --ta-label-line-height: var(--text-2xs--line-height);
+}
+
+.react-aria-TextArea[data-size="sm"] .react-aria-Label {
+  --ta-label-size: var(--text-xs);
+  --ta-label-line-height: var(--text-xs--line-height);
+}
+
+.react-aria-TextArea[data-size="md"] .react-aria-Label {
+  --ta-label-size: var(--text-sm);
+  --ta-label-line-height: var(--text-sm--line-height);
+}
+
+.react-aria-TextArea[data-size="lg"] .react-aria-Label {
+  --ta-label-size: var(--text-base);
+  --ta-label-line-height: var(--text-base--line-height);
+}
+
+.react-aria-TextArea[data-size="xl"] .react-aria-Label {
+  --ta-label-size: var(--text-lg);
+  --ta-label-line-height: var(--text-lg--line-height);
+}
+
+.react-aria-TextArea .react-aria-Label {
+  --label-font-size: var(--ta-label-size);
+  --label-line-height: var(--ta-label-line-height);
+}
+
 
 @media (forced-colors: active) {
   .react-aria-TextArea {
