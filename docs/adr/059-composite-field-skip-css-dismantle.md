@@ -4,6 +4,8 @@
 
 Proposed — 2026-04-11
 
+**Blocked by [ADR-062](062-field-spec-rsp-conformance.md)** — 2026-04-13 Phase 1 Step 1 시험대에서 Field variant 개념이 RSP 표준 밖임이 드러남. Spec의 variant 정리 완료 전 `skipCSSGeneration` 해체 시 잘못된 개념이 CSSGenerator 출력에 고착됨. ADR-062 완료 후 재개.
+
 ## 원칙
 
 본 ADR의 원칙 선언은 [ADR-057 §원칙](./057-text-spec-first-migration.md#원칙--spec-ssot--symmetric-consumers-adr-036-준수)과 [ADR-058 §원칙](./058-text-tags-legacy-dismantle.md#원칙)을 그대로 상속한다.
