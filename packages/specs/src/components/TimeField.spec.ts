@@ -268,7 +268,8 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   propagation: {
     rules: [
       { parentProp: "size", childPath: "Label", override: true },
-      { parentProp: "size", childPath: "TimeSegment", override: true },
+      { parentProp: "size", childPath: "DateInput", override: true },
+      { parentProp: "size", childPath: "DateSegment", override: true },
       {
         parentProp: "label",
         childPath: "Label",

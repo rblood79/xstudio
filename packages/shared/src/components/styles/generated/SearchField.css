@@ -252,6 +252,26 @@
   height: var(--sf-icon-size);
 }
 
+.react-aria-SearchField[data-size="xs"] .searchfield-container {
+  --sf-container-padding: var(--spacing-3xs) var(--spacing-3xs) var(--spacing-3xs) var(--spacing-xs);
+}
+
+.react-aria-SearchField[data-size="sm"] .searchfield-container {
+  --sf-container-padding: var(--spacing-2xs) var(--spacing-2xs) var(--spacing-2xs) var(--spacing-sm);
+}
+
+.react-aria-SearchField[data-size="md"] .searchfield-container {
+  --sf-container-padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md);
+}
+
+.react-aria-SearchField[data-size="lg"] .searchfield-container {
+  --sf-container-padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-lg);
+}
+
+.react-aria-SearchField[data-size="xl"] .searchfield-container {
+  --sf-container-padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xl);
+}
+
 .react-aria-SearchField .searchfield-container:where(:hover:not(:has([data-disabled]))) {
   border-color: var(--border-hover);
   background: var(--bg-overlay);
@@ -280,7 +300,7 @@
   align-items: center;
   width: 100%;
   gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md);
+  padding: var(--sf-container-padding);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg-inset);

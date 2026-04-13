@@ -530,14 +530,35 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       {
         childSelector: ".searchfield-container",
         prefix: "sf-container",
+        variables: {
+          xs: {
+            "--sf-container-padding":
+              "var(--spacing-3xs) var(--spacing-3xs) var(--spacing-3xs) var(--spacing-xs)",
+          },
+          sm: {
+            "--sf-container-padding":
+              "var(--spacing-2xs) var(--spacing-2xs) var(--spacing-2xs) var(--spacing-sm)",
+          },
+          md: {
+            "--sf-container-padding":
+              "var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md)",
+          },
+          lg: {
+            "--sf-container-padding":
+              "var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-lg)",
+          },
+          xl: {
+            "--sf-container-padding":
+              "var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xl)",
+          },
+        },
         bridges: {
           display: "flex",
           "flex-direction": "row",
           "align-items": "center",
           width: "100%",
           gap: "var(--spacing-xs)",
-          padding:
-            "var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md)",
+          padding: "var(--sf-container-padding)",
           border: "1px solid var(--border)",
           "border-radius": "var(--radius-md)",
           background: "var(--bg-inset)",
