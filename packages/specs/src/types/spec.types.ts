@@ -311,6 +311,9 @@ export interface CompositionSpec {
    * 중첩: 해당 selector 뒤에 `nested.selector` 그대로 append (예: `> .react-aria-Label`).
    */
   containerVariants?: Record<string, Record<string, ContainerVariantStyles>>;
+
+  /** CSS Variable Delegation — size별 자식 변수 override */
+  delegation: DelegationSpec[];
 }
 
 export interface ContainerVariantStyles {
