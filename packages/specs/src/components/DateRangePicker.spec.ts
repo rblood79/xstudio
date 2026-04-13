@@ -9,7 +9,6 @@ import type { ComponentSpec } from "../types";
 import {
   buildDatePlaceholder,
   buildDatePickerShapes,
-  DATE_PICKER_VARIANTS,
   DATE_PICKER_SIZES,
   DATE_PICKER_STATES,
 } from "./DatePicker.spec";
@@ -34,7 +33,6 @@ import {
 } from "lucide-react";
 
 export interface DateRangePickerProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg" | "xl";
   startDate?: string;
   endDate?: string;
@@ -66,10 +64,8 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
-  variants: DATE_PICKER_VARIANTS,
   sizes: DATE_PICKER_SIZES,
   states: DATE_PICKER_STATES,
 
@@ -109,7 +105,6 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       {
         title: "Appearance",
         fields: [
-          { type: "variant" },
           { type: "size" },
           {
             key: "labelPosition",
@@ -377,21 +372,6 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         override: true,
       },
 
-      // variant
-      { parentProp: "variant", childPath: "Calendar" },
-      { parentProp: "variant", childPath: "RangeCalendar" },
-      { parentProp: "variant", childPath: "Label" },
-      { parentProp: "variant", childPath: ["Calendar", "CalendarHeader"] },
-      { parentProp: "variant", childPath: ["Calendar", "CalendarGrid"] },
-      {
-        parentProp: "variant",
-        childPath: ["RangeCalendar", "CalendarHeader"],
-      },
-      {
-        parentProp: "variant",
-        childPath: ["RangeCalendar", "CalendarGrid"],
-      },
-
       // locale
       { parentProp: "locale", childPath: "Calendar" },
       { parentProp: "locale", childPath: ["Calendar", "CalendarHeader"] },
@@ -436,7 +416,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   },
 
   render: {
-    shapes: (props, variant, _size, _state = "default") => {
+    shapes: (props, _size, _state = "default") => {
       // Compositional: 자식이 있으면 투명 컨테이너
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return [];
@@ -450,7 +430,6 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
 
       return buildDatePickerShapes({
         props: props as unknown as Record<string, unknown>,
-        variant: variant as unknown as Record<string, unknown>,
         sizeEntry: _size as unknown as Record<string, unknown>,
         displayText,
         hasValue: !!(props.startDate && props.endDate),

@@ -44,6 +44,8 @@
     /* Size locals (md default) */
     --sf-label-size: var(--text-sm);
     --sf-hint-size: var(--text-xs);
+    --sf-input-size: var(--text-sm);
+    --sf-input-line-height: var(--text-sm--line-height);
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -52,7 +54,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -63,30 +65,40 @@
     &[data-size="xs"] {
       --sf-label-size: var(--text-2xs);
       --sf-hint-size: var(--text-2xs);
+      --sf-input-size: var(--text-2xs);
+      --sf-input-line-height: var(--text-2xs--line-height);
       --sf-btn-size: 10px;
       --sf-icon-size: 10px;
     }
     &[data-size="sm"] {
       --sf-label-size: var(--text-xs);
       --sf-hint-size: var(--text-xs);
+      --sf-input-size: var(--text-xs);
+      --sf-input-line-height: var(--text-xs--line-height);
       --sf-btn-size: 14px;
       --sf-icon-size: 12px;
     }
     &[data-size="md"] {
       --sf-label-size: var(--text-sm);
       --sf-hint-size: var(--text-xs);
+      --sf-input-size: var(--text-sm);
+      --sf-input-line-height: var(--text-sm--line-height);
       --sf-btn-size: 18px;
       --sf-icon-size: 16px;
     }
     &[data-size="lg"] {
       --sf-label-size: var(--text-base);
       --sf-hint-size: var(--text-sm);
+      --sf-input-size: var(--text-base);
+      --sf-input-line-height: var(--text-base--line-height);
       --sf-btn-size: 22px;
       --sf-icon-size: 18px;
     }
     &[data-size="xl"] {
       --sf-label-size: var(--text-lg);
       --sf-hint-size: var(--text-base);
+      --sf-input-size: var(--text-lg);
+      --sf-input-line-height: var(--text-lg--line-height);
       --sf-btn-size: 28px;
       --sf-icon-size: 22px;
     }
@@ -99,7 +111,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -166,7 +178,8 @@
       outline: none;
       background: transparent;
       color: var(--fg);
-      font-size: var(--sf-label-size);
+      font-size: var(--sf-input-size);
+      line-height: var(--sf-input-line-height);
 
       &::placeholder {
         color: var(--fg-muted);
@@ -226,7 +239,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       .searchfield-container {
         border-color: var(--field-accent);
 
@@ -273,6 +286,33 @@
     .react-aria-FieldError {
       font-size: var(--sf-hint-size);
       color: var(--negative);
+    }
+
+    /* ===== Quiet (target searchfield-container) ===== */
+    &[data-quiet="true"] .searchfield-container {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    &[data-quiet="true"] .searchfield-container:hover:not(:has([data-disabled])):not(:has([data-focused])) {
+      background: transparent;
+      border-color: transparent;
+      border-bottom-color: var(--border-hover);
+    }
+
+    &[data-quiet="true"] .searchfield-container:has([data-focused]) {
+      outline: none;
+      background: transparent;
+      border-color: transparent;
+      border-bottom-color: var(--accent);
+    }
+
+    &[data-quiet="true"] .searchfield-container:has([data-invalid]) {
+      border-color: transparent;
+      border-bottom-color: var(--negative);
     }
   }
 }

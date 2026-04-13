@@ -185,7 +185,8 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
   },
 
   render: {
-    shapes: (props, variant, _size, state = "default") => {
+    shapes: (props, _size, state = "default") => {
+      const variant = DateInputSpec.variants![(props as { variant?: keyof typeof DateInputSpec.variants }).variant ?? DateInputSpec.defaultVariant!];
       const extra = props as Record<string, unknown>;
       const sizeName = (extra.size as string) || "md";
       const parentTag = (extra._parentTag as string) || "DateField";

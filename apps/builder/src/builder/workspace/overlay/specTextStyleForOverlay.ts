@@ -55,14 +55,10 @@ export function extractFullSpecTextStyle(
 
   const { spec } = entry;
   const sizeName = (props?.size as string) ?? entry.defaultSize;
-  const variantName = (props?.variant as string) ?? spec.defaultVariant;
-
-  const variant =
-    spec.variants[variantName] ?? spec.variants[spec.defaultVariant];
   const size = spec.sizes[sizeName] ?? spec.sizes[spec.defaultSize];
-  if (!variant || !size) return null;
+  if (!size) return null;
 
-  const shapes = spec.render.shapes(props ?? {}, variant, size, "default");
+  const shapes = spec.render.shapes(props ?? {}, size, "default");
 
   const textShape = shapes.find(
     (s): s is TextShape & { type: "text" } => s.type === "text",

@@ -62,6 +62,7 @@ export interface DateFieldProps<T extends DateValue> extends Omit<
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
   hideTimeZone?: boolean;
   shouldForceLeadingZeros?: boolean;
   placeholderValue?: string;
@@ -84,6 +85,7 @@ export function DateField<T extends DateValue>({
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  isQuiet,
   hideTimeZone,
   shouldForceLeadingZeros,
   placeholderValue,
@@ -127,6 +129,7 @@ export function DateField<T extends DateValue>({
       data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       defaultValue={defaultValue}
       placeholderValue={parsedPlaceholderValue as T | undefined}
       minValue={parsedMinValue as T | undefined}

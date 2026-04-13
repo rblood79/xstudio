@@ -172,7 +172,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = ToggleButtonSpec.variants![(props as { variant?: keyof typeof ToggleButtonSpec.variants }).variant ?? ToggleButtonSpec.defaultVariant!];
       // S2: isEmphasized → selected 시 accent, 기본 → selected 시 neutral-subtle
       const selectedKey = props.isEmphasized ? "emphasized" : "default";
 

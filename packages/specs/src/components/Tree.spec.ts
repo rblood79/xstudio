@@ -238,7 +238,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, state = "default") => {
+    shapes: (_props, size, state = "default") => {
+      const variant = TreeSpec.variants![TreeSpec.defaultVariant!];
       const borderRadius = size.borderRadius;
 
       const ff = fontFamily.sans;

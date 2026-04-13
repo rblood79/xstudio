@@ -149,7 +149,8 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = DialogSpec.variants![(props as { variant?: keyof typeof DialogSpec.variants }).variant ?? DialogSpec.defaultVariant!];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       const borderRadius = size.borderRadius;

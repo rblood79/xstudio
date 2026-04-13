@@ -119,7 +119,8 @@ export const KbdSpec: ComponentSpec<KbdProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = KbdSpec.variants![(props as { variant?: keyof typeof KbdSpec.variants }).variant ?? KbdSpec.defaultVariant!];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 

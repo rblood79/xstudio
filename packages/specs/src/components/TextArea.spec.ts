@@ -24,8 +24,8 @@ import {
  * TextArea Props
  */
 export interface TextAreaProps {
-  variant?: "default" | "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   placeholder?: string;
   name?: string;
@@ -78,35 +78,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   element: "div",
   archetype: "input-base",
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
-    accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-      borderHover: "{color.accent-hover}" as TokenRef,
-    },
-    negative: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-      borderHover: "{color.negative-hover}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -257,7 +229,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -284,16 +256,16 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? variant.backgroundHover
+          ? ("{color.layer-1}" as TokenRef)
           : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+            ? ("{color.layer-1}" as TokenRef)
+            : ("{color.layer-2}" as TokenRef));
 
       const borderColor =
         props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+        (state === "hover"
+          ? ("{color.border-hover}" as TokenRef)
+          : ("{color.border}" as TokenRef));
 
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
@@ -317,7 +289,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
       const stylePx =
         props.style?.paddingLeft ??

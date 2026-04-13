@@ -379,7 +379,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = SliderSpec.variants![(props as { variant?: keyof typeof SliderSpec.variants }).variant ?? SliderSpec.defaultVariant!];
       const variantName = props.variant ?? "default";
       const sliderDims = {
         trackHeight: size.indicator?.trackHeight ?? 8,

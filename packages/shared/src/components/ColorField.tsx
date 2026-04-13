@@ -36,6 +36,7 @@ export interface ColorFieldProps extends AriaColorFieldProps {
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
   labelAlign?: "start" | "center" | "end";
+  isQuiet?: boolean;
 }
 
 /**
@@ -65,6 +66,7 @@ export function ColorField({
   necessityIndicator,
   labelPosition = "top",
   labelAlign,
+  isQuiet,
   ...props
 }: ColorFieldProps) {
   const colorFieldClassName = composeRenderProps(
@@ -83,6 +85,7 @@ export function ColorField({
       data-size={size}
       data-label-position={labelPosition}
       data-label-align={labelAlign}
+      data-quiet={isQuiet ? "true" : undefined}
     >
       {label && (
         <Label>

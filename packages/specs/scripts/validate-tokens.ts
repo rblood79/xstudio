@@ -51,8 +51,8 @@ function parseTokenRef(ref: string): { category: string; name: string } | null {
 function extractTokenRefs(spec: ComponentSpec<unknown>): { ref: string; location: string }[] {
   const refs: { ref: string; location: string }[] = [];
 
-  // variants
-  Object.entries(spec.variants).forEach(([name, variant]) => {
+  // variants (ADR-062: optional — Field 계열은 variants 없음)
+  Object.entries(spec.variants ?? {}).forEach(([name, variant]) => {
     const variantRefs: [string, TokenRef | undefined][] = [
       ['background', variant.background],
       ['backgroundHover', variant.backgroundHover],

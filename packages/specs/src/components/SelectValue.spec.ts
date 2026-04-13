@@ -92,7 +92,8 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = SelectValueSpec.variants![(props as { variant?: keyof typeof SelectValueSpec.variants }).variant ?? SelectValueSpec.defaultVariant!];
       const text = props.children || props.placeholder || "";
       if (!text) return [];
 

@@ -108,7 +108,8 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = DisclosureSpec.variants![(props as { variant?: keyof typeof DisclosureSpec.variants }).variant ?? DisclosureSpec.defaultVariant!];
       const title = props.title || "Disclosure";
 
       // 사용자 스타일 우선

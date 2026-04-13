@@ -138,7 +138,8 @@ export const IconSpec: ComponentSpec<IconProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = IconSpec.variants![(props as { variant?: keyof typeof IconSpec.variants }).variant ?? IconSpec.defaultVariant!];
       const iconSize = size.iconSize ?? 24;
 
       // 인라인 fontSize가 있으면 크기 오버라이드

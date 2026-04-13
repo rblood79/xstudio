@@ -112,7 +112,7 @@ export const ProgressBarTrackSpec: ComponentSpec<ProgressBarTrackProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size) => {
+    shapes: (props, size) => {
       const variantName = props.variant ?? "default";
       const fillColor =
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;

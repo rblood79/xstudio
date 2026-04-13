@@ -228,7 +228,8 @@ export const FormSpec: ComponentSpec<FormProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = FormSpec.variants![(props as { variant?: keyof typeof FormSpec.variants }).variant ?? FormSpec.defaultVariant!];
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       const width = "auto" as const;
 

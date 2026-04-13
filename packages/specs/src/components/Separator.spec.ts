@@ -163,7 +163,8 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = SeparatorSpec.variants![(props as { variant?: keyof typeof SeparatorSpec.variants }).variant ?? SeparatorSpec.defaultVariant!];
       const isVertical = props.orientation === "vertical";
       const fillColor = variant.border ?? variant.text;
       const thickness = size.height;

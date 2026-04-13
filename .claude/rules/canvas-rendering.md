@@ -11,6 +11,8 @@ globs:
 
 # Canvas 렌더링 규칙
 
+> **SSOT 체인 연계 (CRITICAL)**: Skia 렌더는 [ssot-hierarchy.md](ssot-hierarchy.md) **D3(시각 스타일)의 direct consumer**. CSS/DOM consumer와 **대등(symmetric)** — 한쪽이 다른 쪽 기준 아님. 대칭 = "시각 결과의 동일성" (구현 방법 자유). Spec이 D1(DOM) 침범 금지.
+>
 > 구현 상세는 [canvas-details.md](../skills/composition-patterns/reference/canvas-details.md) 참조
 
 ## 1. Dual Renderer 핵심

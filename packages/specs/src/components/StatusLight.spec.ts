@@ -275,7 +275,8 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = StatusLightSpec.variants![(props as { variant?: keyof typeof StatusLightSpec.variants }).variant ?? StatusLightSpec.defaultVariant!];
       const dotSize = size.dotSize ?? 10;
       const dotRadius = dotSize / 2;
       const gap = size.gap ?? 8;

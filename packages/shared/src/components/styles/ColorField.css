@@ -1,5 +1,22 @@
 @layer components {
   .react-aria-ColorField {
+    &[data-quiet="true"] .react-aria-Input {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    &[data-quiet="true"] .react-aria-Input:where([data-focused]) {
+      outline: none;
+      border-bottom-color: var(--accent);
+    }
+
+    &[data-quiet="true"] .react-aria-Input:where([data-invalid]) {
+      border-bottom-color: var(--negative);
+    }
+
     display: flex;
     flex-direction: column;
     width: fit-content;
@@ -52,7 +69,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
     &[data-variant="filled"] {
@@ -123,11 +140,11 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-focus-color: var(--field-accent);
     }
 
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-border: var(--negative);
     }
 

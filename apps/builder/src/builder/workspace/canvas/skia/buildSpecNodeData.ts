@@ -498,12 +498,8 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     element.tag === "Breadcrumb"
       ? normalizeBreadcrumbRspSizeKey(rawSize)
       : rawSize;
-  const variant = (props.variant as string) ?? spec.defaultVariant;
-
-  const variantSpec =
-    spec.variants[variant] ?? spec.variants[spec.defaultVariant];
   const sizeSpec = spec.sizes[size] ?? spec.sizes[spec.defaultSize];
-  if (!variantSpec || !sizeSpec) return null;
+  if (!sizeSpec) return null;
 
   // ---------- flexDirection → column detection ----------
   const flexDir = (style.flexDirection as string) || "";
@@ -699,7 +695,6 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // ---------- shapes 생성 ----------
   const shapes = spec.render.shapes(
     specProps,
-    variantSpec,
     sizeSpec,
     componentState,
   );

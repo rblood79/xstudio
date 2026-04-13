@@ -96,7 +96,8 @@ export const ListSpec: ComponentSpec<ListProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = ListSpec.variants![(props as { variant?: keyof typeof ListSpec.variants }).variant ?? ListSpec.defaultVariant!];
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       const width = "auto" as const;
 

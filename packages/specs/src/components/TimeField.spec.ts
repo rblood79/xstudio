@@ -16,11 +16,12 @@ import {
   CheckSquare,
   HelpCircle,
   FileText,
+  Minimize2,
 } from "lucide-react";
 
 export interface TimeFieldProps {
-  variant?: "default" | "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   description?: string;
   errorMessage?: string;
@@ -46,32 +47,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-    negative: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -106,6 +82,72 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
       borderRadius: 0 as unknown as TokenRef,
       gap: 10,
     },
+  },
+
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  // 주의: prefix는 `time-field-*` (TextField `tf-*` 와 충돌 차단)
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "time-field-label",
+        variables: {
+          sm: { "--time-field-label-size": "var(--text-xs)" },
+          md: { "--time-field-label-size": "var(--text-sm)" },
+          lg: { "--time-field-label-size": "var(--text-base)" },
+          xl: { "--time-field-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-DateInput",
+        prefix: "time-field-input",
+        variables: {
+          sm: {
+            "--time-field-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
+            "--time-field-input-size": "var(--text-xs)",
+            "--time-field-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--time-field-input-padding": "var(--spacing-xs) var(--spacing-md)",
+            "--time-field-input-size": "var(--text-sm)",
+            "--time-field-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--time-field-input-padding": "var(--spacing-sm) var(--spacing-lg)",
+            "--time-field-input-size": "var(--text-base)",
+            "--time-field-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--time-field-input-padding": "var(--spacing-md) var(--spacing-xl)",
+            "--time-field-input-size": "var(--text-lg)",
+            "--time-field-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      // 0-F.3: DateSegment (React Aria TimeField 내부 시간 편집 요소)
+      {
+        childSelector: ".react-aria-DateSegment",
+        prefix: "time-field-segment",
+        variables: {
+          sm: { "--time-field-segment-size": "var(--text-xs)" },
+          md: { "--time-field-segment-size": "var(--text-sm)" },
+          lg: { "--time-field-segment-size": "var(--text-base)" },
+          xl: { "--time-field-segment-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "time-field-hint",
+        variables: {
+          sm: { "--time-field-hint-size": "var(--text-xs)" },
+          md: { "--time-field-hint-size": "var(--text-xs)" },
+          lg: { "--time-field-hint-size": "var(--text-sm)" },
+          xl: { "--time-field-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
   },
 
   propagation: {
@@ -195,6 +237,12 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "hideTimeZone",

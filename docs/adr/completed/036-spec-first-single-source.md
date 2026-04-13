@@ -1,5 +1,7 @@
 # ADR-036: Spec-First Single Source — Spec shapes 기반 CSS 자동 생성
 
+> **SSOT domain**: D3 (시각 스타일). 본 ADR의 "Spec=SSOT"는 **시각 domain 한정**. D1(DOM/접근성)은 RAC 권위, D2(Props)는 RSP 참조. 정본: [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](../063-ssot-chain-charter.md).
+
 ## Status
 
 Implemented
@@ -26,6 +28,8 @@ composition Team
 ---
 
 ## Context
+
+> **D3 한정 명시 (2026-04-13 재확인)**: 본 ADR의 "Spec=SSOT" 원칙은 [charter ADR-063](../063-ssot-chain-charter.md)의 **D3(시각 스타일) domain 한정** 적용. D1(DOM/접근성)은 Adobe RAC 권위, D2(Props/API)는 RSP 참조 기반. "시각 정의 3중 분산"의 해결 범위도 D3에 국한되며, 본 ADR이 DOM 구조/접근성/props API 결정에 관여하는 것은 아님.
 
 composition는 Skia/WebGL 캔버스 (빌더) + DOM (Preview/Publish) 이중 렌더링 아키텍처를 사용한다.
 현재 컴포넌트 시각 정의가 3곳에 분산되어 있어 **3중 동기화 고통**이 존재한다.

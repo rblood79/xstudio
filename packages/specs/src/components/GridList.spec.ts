@@ -200,7 +200,8 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = GridListSpec.variants![(props as { variant?: keyof typeof GridListSpec.variants }).variant ?? GridListSpec.defaultVariant!];
       const DEFAULT_ITEMS: GridListItem[] = [
         { id: "i1", label: "Item 1", description: "Description" },
         { id: "i2", label: "Item 2", description: "Description" },

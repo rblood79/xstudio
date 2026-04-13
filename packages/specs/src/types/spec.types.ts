@@ -113,14 +113,14 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
     pixiLayer?: "content" | "overlay" | "modal" | "toast";
   };
 
-  /** Variant 정의 */
-  variants: Record<string, VariantSpec>;
+  /** Variant 정의 (optional — ADR-062: RSP 미규정 Field 계열은 variants 없음) */
+  variants?: Record<string, VariantSpec>;
 
   /** Size 정의 */
   sizes: Record<string, SizeSpec>;
 
-  /** 기본 variant */
-  defaultVariant: string;
+  /** 기본 variant (optional — variants와 함께 부재 가능) */
+  defaultVariant?: string;
 
   /** 기본 size */
   defaultSize: string;
@@ -295,8 +295,32 @@ export interface DelegationSpec {
   /** 자식 CSS 선택자 (예: '.react-aria-Button', '.react-aria-Input') */
   childSelector: string;
 
-  /** size → { CSS변수명 → 값 } 매핑 */
-  variables: Record<string, Record<string, string>>;
+  /**
+   * CSS 변수 네임스페이스 prefix (ADR-059 v2 Pre-Phase 0-A)
+   *
+   * variable-based delegation에서 이 delegation이 선언하는 변수군의 prefix를 명시한다.
+   * `--{prefix}-*` 패턴으로 자동 도출/충돌 검증에 사용.
+   *
+   * - 설정 예: `prefix: "text-field-input"` → 선언 변수는 `--text-field-input-*` 로 강제
+   * - 생략 가능: direct-property delegation (`background`, `padding` 등 CSS 속성 직접 기입) 에서는 prefix 개념 부적용
+   * - 동일 prefix 재사용은 Pre-Phase 0-D 에서 build-time 검증 예정
+   */
+  prefix?: string;
+
+  /**
+   * size → { CSS변수명 → 값 } 매핑
+   *
+   * ADR-059 v2 Pre-Phase 0-C: `"auto"` 값 지원.
+   * `"auto"` 선언 시 빌드 시점에 `spec.sizes` 에서 아래 표준 5개 변수를 파생:
+   *   --{prefix}-padding    : `${paddingY}px ${paddingX}px`
+   *   --{prefix}-height     : `${height}px`            (height > 0 일 때만)
+   *   --{prefix}-font-size  : tokenToCSSVar(fontSize)
+   *   --{prefix}-gap        : `${gap}px`
+   *   --{prefix}-radius     : tokenToCSSVar(borderRadius)
+   * 파생 로직: `runtime/deriveAutoDelegationVariables.ts`.
+   * `"auto"` 선택 시 `prefix` 필드 필수.
+   */
+  variables: "auto" | Record<string, Record<string, string>>;
 }
 
 // ─── ADR-048: S2 Context 기반 선언적 Props Propagation ──────────────────────
@@ -521,14 +545,12 @@ export interface RenderSpec<Props> {
    * React와 PIXI 모두에서 사용하는 도형 구조
    *
    * @param props - 컴포넌트 props
-   * @param variant - 현재 variant 스펙
    * @param size - 현재 size 스펙
    * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
    * @returns 렌더링할 도형 배열
    */
   shapes: (
     props: Props,
-    variant: VariantSpec,
     size: SizeSpec,
     state: ComponentState,
   ) => Shape[];

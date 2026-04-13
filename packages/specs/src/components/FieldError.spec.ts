@@ -80,7 +80,8 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = FieldErrorSpec.variants![(props as { variant?: keyof typeof FieldErrorSpec.variants }).variant ?? FieldErrorSpec.defaultVariant!];
       const text = props.children ?? "";
       if (!text) return [];
 

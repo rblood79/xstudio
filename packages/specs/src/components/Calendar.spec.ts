@@ -245,7 +245,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, state = "default") => {
+    shapes: (_props, size, state = "default") => {
+      const variant = CalendarSpec.variants![CalendarSpec.defaultVariant!];
       const borderRadius = size.borderRadius;
       const cellSize = (size.iconSize ?? 28) + 4;
       const gap = (size.gap as unknown as number) || 6;

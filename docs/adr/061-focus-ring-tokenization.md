@@ -1,5 +1,7 @@
 # ADR-061: Focus Ring 토큰화 — 50개 리터럴 해체
 
+> **SSOT domain**: D3 (시각 스타일). Focus ring 리터럴 50건을 TokenRef로 전환하여 Spec 시각 SSOT 강화. D3 내부 정리. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md).
+
 ## Status
 
 Implemented — 2026-04-13

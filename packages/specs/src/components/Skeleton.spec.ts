@@ -77,7 +77,8 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = SkeletonSpec.variants![(props as { variant?: keyof typeof SkeletonSpec.variants }).variant ?? SkeletonSpec.defaultVariant!];
       const skeletonType = props.skeletonVariant || "text";
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0

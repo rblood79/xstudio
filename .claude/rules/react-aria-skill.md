@@ -10,6 +10,8 @@ globs:
 
 # React Aria 문서 참조 규칙
 
+> **SSOT 체인 연계 (CRITICAL)**: 본 규칙은 [ssot-hierarchy.md](ssot-hierarchy.md) 3-domain 분할의 **D1(DOM/접근성, RAC 절대 권위) + D2(Props/API, RSP 참조)** 운영 규칙. D1에서 Spec 관여 금지, D2에서 RSP 참조 기반 선별 마이그레이션. 상세 원칙은 정본 규칙 참조.
+
 ## 컴포넌트 구현 시 React Aria 문서 참조 (Skill)
 
 새 UI 컴포넌트를 구현하거나 기존 컴포넌트를 수정할 때, **프로젝트 내 React Aria Skill 문서**를 참조하여 공식 API와 접근성 패턴을 확인한다.

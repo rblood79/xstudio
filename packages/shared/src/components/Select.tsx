@@ -77,6 +77,7 @@ export interface SelectProps<T extends object> extends Omit<
   isLoading?: boolean;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
 }
 
 export function Select<T extends object>({
@@ -97,6 +98,7 @@ export function Select<T extends object>({
   renderMultipleValue: _renderMultipleValue,
   isLoading: externalLoading,
   labelPosition = "top",
+  isQuiet,
   ...props
 }: SelectProps<T>) {
   const selectRef = useRef<HTMLDivElement>(null);
@@ -287,6 +289,7 @@ export function Select<T extends object>({
       data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       className={composeRenderProps(props.className, (cls) =>
         cls ? `react-aria-Select ${cls}` : "react-aria-Select",
       )}

@@ -113,7 +113,7 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
       const ff = fontFamily.sans;
       const text = String(
         props.children ?? props.label ?? props.title ?? "",

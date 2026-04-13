@@ -88,7 +88,8 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = IllustratedMessageSpec.variants![(props as { variant?: keyof typeof IllustratedMessageSpec.variants }).variant ?? IllustratedMessageSpec.defaultVariant!];
       const textColor = props.style?.color ?? variant.text;
       const sizeName = props.size ?? "md";
       const dims =

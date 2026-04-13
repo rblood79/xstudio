@@ -93,7 +93,8 @@ export const TabSpec: ComponentSpec<TabProps> = {
   },
 
   render: {
-    shapes: (props, variant, size): Shape[] => {
+    shapes: (props, size): Shape[] => {
+      const variant = TabSpec.variants![(props as { variant?: keyof typeof TabSpec.variants }).variant ?? TabSpec.defaultVariant!];
       const isSelected = props._isSelected === true;
       const isVertical = props.orientation === "vertical";
       const label = props.title ?? "";

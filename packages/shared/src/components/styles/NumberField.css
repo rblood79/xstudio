@@ -58,7 +58,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -112,7 +112,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -182,7 +182,7 @@
     &[data-variant="primary"] .react-aria-Group,
     &[data-variant="secondary"] .react-aria-Group,
     &[data-variant="tertiary"] .react-aria-Group,
-    &[data-variant="error"] .react-aria-Group {
+    &[data-invalid="true"] .react-aria-Group {
       border-color: var(--field-accent);
     }
 
@@ -210,11 +210,11 @@
         .react-aria-Button[data-hovered]:not([data-disabled])
       )
       .react-aria-Group,
-    &[data-variant="error"]:has(
+    &[data-invalid="true"]:has(
         .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .react-aria-Group,
-    &[data-variant="error"]:has(
+    &[data-invalid="true"]:has(
         .react-aria-Button[data-hovered]:not([data-disabled])
       )
       .react-aria-Group {
@@ -301,7 +301,7 @@
     &[data-variant="primary"] .react-aria-Button,
     &[data-variant="secondary"] .react-aria-Button,
     &[data-variant="tertiary"] .react-aria-Button,
-    &[data-variant="error"] .react-aria-Button {
+    &[data-invalid="true"] .react-aria-Button {
       background: var(--field-accent-container);
       color: var(--field-on-accent);
 
@@ -330,5 +330,37 @@
 
     --error-font-size: var(--nf-hint-size);
     --error-margin: var(--spacing-xs);
+
+    /* ===== Quiet overrides (end of block for cascade priority) ===== */
+    &[data-quiet="true"] .react-aria-Group {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    &[data-quiet="true"]:has(.react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])) .react-aria-Group,
+    &[data-quiet="true"]:has(.react-aria-Button[data-hovered]:not([data-disabled])) .react-aria-Group {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-bottom-color: var(--border-hover);
+    }
+
+    &[data-quiet="true"]:has(.react-aria-Input[data-focused]:not([data-disabled])) .react-aria-Group,
+    &[data-quiet="true"]:has(.react-aria-Input[data-focus-within]:not([data-disabled])) .react-aria-Group,
+    &[data-quiet="true"]:has(.react-aria-Button[data-focus-visible]:not([data-disabled])) .react-aria-Group {
+      outline: none;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-bottom-color: var(--accent);
+    }
+
+    &[data-quiet="true"][data-invalid] .react-aria-Group {
+      border-color: transparent;
+      border-bottom-color: var(--negative);
+    }
   }
 }

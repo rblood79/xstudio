@@ -106,7 +106,8 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = SliderOutputSpec.variants![(props as { variant?: keyof typeof SliderOutputSpec.variants }).variant ?? SliderOutputSpec.defaultVariant!];
       const text = props.children ?? "";
       if (!text) return [];
 

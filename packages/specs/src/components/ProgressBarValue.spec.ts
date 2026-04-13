@@ -90,7 +90,8 @@ export const ProgressBarValueSpec: ComponentSpec<ProgressBarValueProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = ProgressBarValueSpec.variants![(props as { variant?: keyof typeof ProgressBarValueSpec.variants }).variant ?? ProgressBarValueSpec.defaultVariant!];
       const text = props.children ?? "";
       if (!text) return [];
 

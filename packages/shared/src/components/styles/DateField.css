@@ -1,5 +1,22 @@
 @layer components {
   .react-aria-DateField {
+    &[data-quiet="true"] .react-aria-DateInput {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    &[data-quiet="true"] .react-aria-DateInput:where([data-focused]) {
+      outline: none;
+      border-bottom-color: var(--accent);
+    }
+
+    &[data-quiet="true"] .react-aria-DateInput:where([data-invalid]) {
+      border-bottom-color: var(--negative);
+    }
+
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
@@ -34,7 +51,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -93,7 +110,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -118,7 +135,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-border: var(--field-accent);
       --inset-hover-border: var(--field-accent);
       --inset-hover-bg: var(--field-accent-container);
@@ -200,7 +217,7 @@
     &[data-variant="primary"] .react-aria-DateSegment:focus,
     &[data-variant="secondary"] .react-aria-DateSegment:focus,
     &[data-variant="tertiary"] .react-aria-DateSegment:focus,
-    &[data-variant="error"] .react-aria-DateSegment:focus {
+    &[data-invalid="true"] .react-aria-DateSegment:focus {
       background: var(--field-accent-container);
       color: var(--field-on-accent);
     }

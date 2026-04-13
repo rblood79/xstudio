@@ -22,14 +22,15 @@ import {
   AlignLeft,
   HelpCircle,
   Image,
+  Minimize2,
 } from "lucide-react";
 
 /**
  * SearchField Props
  */
 export interface SearchFieldProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   placeholder?: string;
   defaultValue?: string;
@@ -87,7 +88,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: {
@@ -143,6 +143,12 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "labelAlign",
@@ -232,22 +238,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
     ],
   },
 
-  // 컨테이너는 투명 — .searchfield-container가 border/background 담당
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-  },
-
   sizes: {
     sm: {
       height: 0,
@@ -300,6 +290,79 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
     },
   },
 
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  // (skipCSSGeneration: true 유지 — 이 단계는 prefix/selector 선언만, CSS 출력 변화 없음)
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "sf-label",
+        variables: {
+          sm: { "--sf-label-size": "var(--text-xs)" },
+          md: { "--sf-label-size": "var(--text-sm)" },
+          lg: { "--sf-label-size": "var(--text-base)" },
+          xl: { "--sf-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        prefix: "sf-input",
+        variables: {
+          sm: {
+            "--sf-input-size": "var(--text-xs)",
+            "--sf-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--sf-input-size": "var(--text-sm)",
+            "--sf-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--sf-input-size": "var(--text-base)",
+            "--sf-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--sf-input-size": "var(--text-lg)",
+            "--sf-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "sf-hint",
+        variables: {
+          sm: { "--sf-hint-size": "var(--text-xs)" },
+          md: { "--sf-hint-size": "var(--text-xs)" },
+          lg: { "--sf-hint-size": "var(--text-sm)" },
+          xl: { "--sf-hint-size": "var(--text-base)" },
+        },
+      },
+      // 0-F.2: SearchField 고유 — 검색 아이콘 (leading)
+      {
+        childSelector: ".search-icon",
+        prefix: "sf-icon",
+        variables: {
+          sm: { "--sf-icon-size": "12px" },
+          md: { "--sf-icon-size": "16px" },
+          lg: { "--sf-icon-size": "18px" },
+          xl: { "--sf-icon-size": "22px" },
+        },
+      },
+      // 0-F.2: SearchField 고유 — Clear 버튼 (trailing)
+      {
+        childSelector: ".react-aria-Button",
+        prefix: "sf-btn",
+        variables: {
+          sm: { "--sf-btn-size": "14px" },
+          md: { "--sf-btn-size": "18px" },
+          lg: { "--sf-btn-size": "22px" },
+          xl: { "--sf-btn-size": "28px" },
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [
       { parentProp: "size", childPath: "SearchFieldWrapper", override: true },
@@ -323,7 +386,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -341,17 +404,9 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
       const bgColor =
         props.style?.backgroundColor ??
-        (state === "hover"
-          ? variant.backgroundHover
-          : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+        ("{color.transparent}" as TokenRef);
 
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+      const borderColor = props.style?.borderColor;
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -381,7 +436,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
       const textColor =
         props.style?.color ??
-        (props.value ? variant.text : ("{color.neutral-subdued}" as TokenRef));
+        (props.value ? ("{color.neutral}" as TokenRef) : ("{color.neutral-subdued}" as TokenRef));
 
       const stylePx =
         props.style?.paddingLeft ??
@@ -413,7 +468,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           fontSize: labelFontSize,
           fontFamily: ff,
           fontWeight,
-          fill: variant.text,
+          fill: "{color.neutral}" as TokenRef,
           align: textAlign,
           baseline: "top" as const,
         });

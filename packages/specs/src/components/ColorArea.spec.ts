@@ -151,7 +151,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const areaSize = size.height; // 정사각형
       const borderRadius = size.borderRadius;
       const thumbSize = size.iconSize ?? 18;

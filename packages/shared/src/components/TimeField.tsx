@@ -52,6 +52,7 @@ export interface TimeFieldProps<T extends TimeValue> extends Omit<
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
   hideTimeZone?: boolean;
   shouldForceLeadingZeros?: boolean;
   /** @example "09:00" */
@@ -72,6 +73,7 @@ export function TimeField<T extends TimeValue>({
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  isQuiet,
   hideTimeZone,
   shouldForceLeadingZeros,
   placeholderValue,
@@ -106,6 +108,7 @@ export function TimeField<T extends TimeValue>({
       data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       hourCycle={hourCycle}
       placeholderValue={parsedPlaceholderValue}
       hideTimeZone={hideTimeZone}

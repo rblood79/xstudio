@@ -243,7 +243,8 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = LinkSpec.variants![(props as { variant?: keyof typeof LinkSpec.variants }).variant ?? LinkSpec.defaultVariant!];
       const text = props.children || props.text || "";
 
       // 상태에 따른 텍스트색 선택 (사용자 스타일 우선)

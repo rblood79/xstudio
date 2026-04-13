@@ -1,5 +1,7 @@
 # ADR-058: TEXT_TAGS 예외 경로 해체 — Text/Heading/Paragraph/Kbd/Code Spec-First 전환
 
+> **SSOT domain**: D3 (시각 스타일) 위주. Phase 5 Deferred는 D1(DOM 축) RAC 구조 수용 = 3-domain 분할 정합. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md).
+
 ## Status
 
 Implemented — 2026-04-11 (Phase 1~4 완료, Phase 5 Deferred)

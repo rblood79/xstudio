@@ -97,7 +97,8 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = ImageSpec.variants![(props as { variant?: keyof typeof ImageSpec.variants }).variant ?? ImageSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

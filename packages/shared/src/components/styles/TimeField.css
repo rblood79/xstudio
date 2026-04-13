@@ -1,5 +1,22 @@
 @layer components {
   .react-aria-TimeField {
+    &[data-quiet="true"] .react-aria-DateInput {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    &[data-quiet="true"] .react-aria-DateInput:where([data-focused]) {
+      outline: none;
+      border-bottom-color: var(--accent);
+    }
+
+    &[data-quiet="true"] .react-aria-DateInput:where([data-invalid]) {
+      border-bottom-color: var(--negative);
+    }
+
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
@@ -19,13 +36,13 @@
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
     /* Size locals (md default) — @sync Button.css size variants */
-    --tf-label-size: var(--text-sm);
-    --tf-input-padding: var(--spacing-xs) var(--spacing-md);
-    --tf-input-size: var(--text-sm);
-    --tf-input-line-height: var(--text-sm--line-height);
-    --tf-input-min-width: 150px;
-    --tf-segment-size: var(--text-sm);
-    --tf-hint-size: var(--text-xs);
+    --time-field-label-size: var(--text-sm);
+    --time-field-input-padding: var(--spacing-xs) var(--spacing-md);
+    --time-field-input-size: var(--text-sm);
+    --time-field-input-line-height: var(--text-sm--line-height);
+    --time-field-input-min-width: 150px;
+    --time-field-segment-size: var(--text-sm);
+    --time-field-hint-size: var(--text-xs);
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -34,66 +51,66 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
     /* ===== Size ===== */
     &[data-size="xs"] {
-      --tf-label-size: var(--text-2xs);
-      --tf-input-padding: var(--spacing-3xs) var(--spacing-xs);
-      --tf-input-size: var(--text-2xs);
-      --tf-input-line-height: var(--text-2xs--line-height);
-      --tf-input-min-width: 100px;
-      --tf-segment-size: var(--text-2xs);
-      --tf-hint-size: var(--text-2xs);
+      --time-field-label-size: var(--text-2xs);
+      --time-field-input-padding: var(--spacing-3xs) var(--spacing-xs);
+      --time-field-input-size: var(--text-2xs);
+      --time-field-input-line-height: var(--text-2xs--line-height);
+      --time-field-input-min-width: 100px;
+      --time-field-segment-size: var(--text-2xs);
+      --time-field-hint-size: var(--text-2xs);
     }
     &[data-size="sm"] {
-      --tf-label-size: var(--text-xs);
-      --tf-input-padding: var(--spacing-2xs) var(--spacing-sm);
-      --tf-input-size: var(--text-xs);
-      --tf-input-line-height: var(--text-xs--line-height);
-      --tf-input-min-width: 120px;
-      --tf-segment-size: var(--text-xs);
-      --tf-hint-size: var(--text-xs);
+      --time-field-label-size: var(--text-xs);
+      --time-field-input-padding: var(--spacing-2xs) var(--spacing-sm);
+      --time-field-input-size: var(--text-xs);
+      --time-field-input-line-height: var(--text-xs--line-height);
+      --time-field-input-min-width: 120px;
+      --time-field-segment-size: var(--text-xs);
+      --time-field-hint-size: var(--text-xs);
     }
     &[data-size="md"] {
-      --tf-label-size: var(--text-sm);
-      --tf-input-padding: var(--spacing-xs) var(--spacing-md);
-      --tf-input-size: var(--text-sm);
-      --tf-input-line-height: var(--text-sm--line-height);
-      --tf-input-min-width: 150px;
-      --tf-segment-size: var(--text-sm);
-      --tf-hint-size: var(--text-xs);
+      --time-field-label-size: var(--text-sm);
+      --time-field-input-padding: var(--spacing-xs) var(--spacing-md);
+      --time-field-input-size: var(--text-sm);
+      --time-field-input-line-height: var(--text-sm--line-height);
+      --time-field-input-min-width: 150px;
+      --time-field-segment-size: var(--text-sm);
+      --time-field-hint-size: var(--text-xs);
     }
     &[data-size="lg"] {
-      --tf-label-size: var(--text-base);
-      --tf-input-padding: var(--spacing-sm) var(--spacing-lg);
-      --tf-input-size: var(--text-base);
-      --tf-input-line-height: var(--text-base--line-height);
-      --tf-input-min-width: 180px;
-      --tf-segment-size: var(--text-base);
-      --tf-hint-size: var(--text-sm);
+      --time-field-label-size: var(--text-base);
+      --time-field-input-padding: var(--spacing-sm) var(--spacing-lg);
+      --time-field-input-size: var(--text-base);
+      --time-field-input-line-height: var(--text-base--line-height);
+      --time-field-input-min-width: 180px;
+      --time-field-segment-size: var(--text-base);
+      --time-field-hint-size: var(--text-sm);
     }
     &[data-size="xl"] {
-      --tf-label-size: var(--text-lg);
-      --tf-input-padding: var(--spacing-md) var(--spacing-xl);
-      --tf-input-size: var(--text-lg);
-      --tf-input-line-height: var(--text-lg--line-height);
-      --tf-input-min-width: 220px;
-      --tf-segment-size: var(--text-lg);
-      --tf-hint-size: var(--text-base);
+      --time-field-label-size: var(--text-lg);
+      --time-field-input-padding: var(--spacing-md) var(--spacing-xl);
+      --time-field-input-size: var(--text-lg);
+      --time-field-input-line-height: var(--text-lg--line-height);
+      --time-field-input-min-width: 220px;
+      --time-field-segment-size: var(--text-lg);
+      --time-field-hint-size: var(--text-base);
     }
 
     /* ===== Label ===== */
-    --label-font-size: var(--tf-label-size);
+    --label-font-size: var(--time-field-label-size);
     --label-font-weight: 600;
     --label-margin: var(--spacing-xs);
 
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -101,14 +118,14 @@
     /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
     .react-aria-DateInput {
       display: inline-flex;
-      padding: var(--tf-input-padding);
+      padding: var(--time-field-input-padding);
       border: 1px solid;
       border-radius: var(--border-radius);
       width: 100%;
       white-space: nowrap;
       forced-color-adjust: none;
-      font-size: var(--tf-input-size);
-      line-height: var(--tf-input-line-height);
+      font-size: var(--time-field-input-size);
+      line-height: var(--time-field-input-line-height);
       transition:
         border-color 200ms ease,
         background-color 200ms ease;
@@ -118,7 +135,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-border: var(--field-accent);
       --inset-hover-border: var(--field-accent);
       --inset-hover-bg: var(--field-accent-container);
@@ -161,7 +178,7 @@
       text-align: end;
       color: var(--fg);
       border-radius: var(--radius-xs);
-      font-size: var(--tf-segment-size);
+      font-size: var(--time-field-segment-size);
       transition: all 150ms ease;
 
       &[data-type="literal"] {
@@ -199,18 +216,18 @@
     &[data-variant="primary"] .react-aria-DateSegment:focus,
     &[data-variant="secondary"] .react-aria-DateSegment:focus,
     &[data-variant="tertiary"] .react-aria-DateSegment:focus,
-    &[data-variant="error"] .react-aria-DateSegment:focus {
+    &[data-invalid="true"] .react-aria-DateSegment:focus {
       background: var(--field-accent-container);
       color: var(--field-on-accent);
     }
 
     /* ===== Description / FieldError ===== */
     [slot="description"] {
-      font-size: var(--tf-hint-size);
+      font-size: var(--time-field-hint-size);
       color: var(--fg-muted);
     }
 
-    --error-font-size: var(--tf-hint-size);
+    --error-font-size: var(--time-field-hint-size);
     --error-margin: var(--spacing-xs);
   }
 }

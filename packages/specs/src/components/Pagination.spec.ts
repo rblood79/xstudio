@@ -90,7 +90,8 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = PaginationSpec.variants![(props as { variant?: keyof typeof PaginationSpec.variants }).variant ?? PaginationSpec.defaultVariant!];
       const totalPages = props.totalPages || 5;
       const currentPage = props.currentPage || 1;
       const buttonSize = size.height;

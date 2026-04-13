@@ -39,19 +39,16 @@ export function renderToPixi<Props extends Record<string, unknown>>(
 ): void {
   const { graphics, theme, width, height, state = "default" } = context;
 
-  const variant = (props.variant as string) || spec.defaultVariant;
   const size = (props.size as string) || spec.defaultSize;
-
-  const variantSpec = spec.variants[variant];
   const sizeSpec = spec.sizes[size];
 
-  if (!variantSpec || !sizeSpec) {
-    console.warn(`Invalid variant/size: ${variant}/${size}`);
+  if (!sizeSpec) {
+    console.warn(`Invalid size: ${size}`);
     return;
   }
 
   // Shapes 생성 (state 파라미터 전달)
-  const shapes = spec.render.shapes(props, variantSpec, sizeSpec, state);
+  const shapes = spec.render.shapes(props, sizeSpec, state);
 
   // Graphics 초기화
   graphics.clear();

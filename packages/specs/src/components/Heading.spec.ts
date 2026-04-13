@@ -181,7 +181,8 @@ export const HeadingSpec: ComponentSpec<HeadingProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = HeadingSpec.variants![(props as { variant?: keyof typeof HeadingSpec.variants }).variant ?? HeadingSpec.defaultVariant!];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 

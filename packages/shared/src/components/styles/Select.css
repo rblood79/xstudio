@@ -46,7 +46,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -111,7 +111,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -133,7 +133,8 @@
 
       &[data-pressed]:not([data-disabled]) {
         background: var(--accent-subtle);
-        border-color: var(--accent);
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
       }
 
       &[data-focus-visible] {
@@ -158,7 +159,7 @@
     &[data-variant="primary"] .react-aria-Button,
     &[data-variant="secondary"] .react-aria-Button,
     &[data-variant="tertiary"] .react-aria-Button,
-    &[data-variant="error"] .react-aria-Button {
+    &[data-invalid="true"] .react-aria-Button {
       border-color: var(--field-accent);
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
@@ -253,6 +254,37 @@
 
     --error-font-size: var(--select-hint-size);
     --error-margin: var(--spacing-xs);
+
+    /* ===== Quiet overrides (end of block for cascade priority) ===== */
+    &[data-quiet="true"] .react-aria-Button {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    &[data-quiet="true"] .react-aria-Button[data-hovered]:not([data-pressed]):not([data-disabled]) {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-bottom-color: var(--border-hover);
+    }
+
+    &[data-quiet="true"] .react-aria-Button[data-focus-visible]:not([data-disabled]),
+    &[data-quiet="true"] .react-aria-Button[data-focused]:not([data-disabled]),
+    &[data-quiet="true"] .react-aria-Button[data-pressed]:not([data-disabled]) {
+      outline: none;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      border-bottom-color: var(--accent);
+    }
+
+    &[data-quiet="true"][data-invalid] .react-aria-Button {
+      border-color: transparent;
+      border-bottom-color: var(--negative);
+    }
   }
 
   /* ========== Popover ========== */
@@ -323,7 +355,7 @@
   .react-aria-Select[data-variant="primary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="secondary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="tertiary"][data-selection-mode="multiple"],
-  .react-aria-Select[data-variant="error"][data-selection-mode="multiple"] {
+  .react-aria-Select[data-invalid="true"][data-selection-mode="multiple"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       &[data-selected]::before {
         background: var(--field-accent);

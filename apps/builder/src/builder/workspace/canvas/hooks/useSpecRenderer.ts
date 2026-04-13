@@ -57,7 +57,7 @@ export function useSpecVariantColors(
   theme: 'light' | 'dark' = 'light',
 ): SpecVariantColors {
   return useMemo(() => {
-    const variantSpec = spec.variants[variant] || spec.variants[spec.defaultVariant];
+    const variantSpec = spec.variants?.[variant] || spec.variants?.[spec.defaultVariant ?? ""];
     return getSpecVariantColors(variantSpec, theme);
   }, [spec, variant, theme]);
 }

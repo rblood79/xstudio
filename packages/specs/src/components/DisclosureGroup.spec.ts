@@ -88,7 +88,8 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, state = "default") => {
+    shapes: (_props, size, state = "default") => {
+      const variant = DisclosureGroupSpec.variants![DisclosureGroupSpec.defaultVariant!];
       const borderRadius = size.borderRadius;
 
       const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;

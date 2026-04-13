@@ -93,7 +93,8 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = SwitcherSpec.variants![(props as { variant?: keyof typeof SwitcherSpec.variants }).variant ?? SwitcherSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

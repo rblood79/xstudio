@@ -173,6 +173,7 @@ export const renderTextField = (
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
+      isQuiet={Boolean(element.props.isQuiet || false)}
       necessityIndicator={
         (element.props.necessityIndicator as "icon" | "label" | undefined) ??
         inheritedProps.necessityIndicator
@@ -242,6 +243,7 @@ export const renderNumberField = (
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
+      isQuiet={Boolean(element.props.isQuiet || false)}
       necessityIndicator={
         (element.props.necessityIndicator as "icon" | "label" | undefined) ??
         inheritedProps.necessityIndicator
@@ -311,6 +313,7 @@ export const renderSearchField = (
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
+      isQuiet={Boolean(element.props.isQuiet || false)}
       necessityIndicator={
         (element.props.necessityIndicator as "icon" | "label" | undefined) ??
         inheritedProps.necessityIndicator

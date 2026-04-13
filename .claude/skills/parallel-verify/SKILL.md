@@ -7,6 +7,8 @@ user_invocable: true
 
 # Parallel Verify: 컴포넌트 패밀리별 병렬 검증
 
+> **SSOT 체인 내 위상**: [ssot-hierarchy.md](../../rules/ssot-hierarchy.md) **D3(시각 스타일) 대칭 집행 수단 (패밀리 일괄)**. 각 컴포넌트에서 Builder(Skia)와 Preview(DOM+CSS)가 동일 Spec에서 시각 결과를 대칭으로 산출하는지 집단 검증.
+
 변경된 컴포넌트를 패밀리별로 그룹화하고, 각 패밀리를 병렬 서브에이전트로 검증합니다.
 
 ## Phase 1: 변경 컴포넌트 식별 및 그룹화

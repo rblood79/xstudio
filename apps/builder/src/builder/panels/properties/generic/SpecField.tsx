@@ -93,7 +93,7 @@ export const SpecField = memo(function SpecField({
   switch (field.type) {
     case "variant": {
       const key = field.key ?? "variant";
-      const options = Object.keys(spec.variants).map((value) => ({
+      const options = Object.keys(spec.variants ?? {}).map((value) => ({
         value,
         label: inferLabel(value),
       }));

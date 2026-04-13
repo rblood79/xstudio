@@ -114,17 +114,19 @@ function validateSpec(spec: ComponentSpec<unknown>, fileName: string): Validatio
     result.errors.push(`${prefix} Missing 'element' field`);
   }
 
-  if (!spec.variants || Object.keys(spec.variants).length === 0) {
-    result.errors.push(`${prefix} Missing 'variants' field`);
+  // variants는 optional (ADR-062: RSP 미규정 Field 계열은 variants 없음)
+  if (spec.variants != null && Object.keys(spec.variants).length === 0) {
+    result.warnings.push(`${prefix} 'variants' is empty object — consider removing it`);
   }
 
   if (!spec.sizes || Object.keys(spec.sizes).length === 0) {
     result.errors.push(`${prefix} Missing 'sizes' field`);
   }
 
-  if (!spec.defaultVariant) {
-    result.errors.push(`${prefix} Missing 'defaultVariant' field`);
-  } else if (spec.variants && !spec.variants[spec.defaultVariant]) {
+  // defaultVariant도 variants와 함께 optional
+  if (spec.variants != null && !spec.defaultVariant) {
+    result.errors.push(`${prefix} 'variants' defined but 'defaultVariant' missing`);
+  } else if (spec.defaultVariant && spec.variants && !spec.variants[spec.defaultVariant]) {
     result.errors.push(`${prefix} defaultVariant '${spec.defaultVariant}' not found in variants`);
   }
 

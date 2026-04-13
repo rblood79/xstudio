@@ -17,6 +17,7 @@ import type {
 } from "../types";
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
+import { deriveAutoDelegationVariables } from "../runtime/deriveAutoDelegationVariables";
 
 // ─── Archetype별 base styles ────────────────────────────────────────────────
 
@@ -134,10 +135,8 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("}");
   lines.push("");
 
-  // Variant 스타일 — Composite 컨테이너는 자식이 시각적 속성을 관리하므로 skip
-  if (spec.composition) {
-    // variant 출력 건너뜀
-  } else
+  // Variant 스타일 — Composite 컨테이너 또는 variants 없는 Spec(ADR-062 Field 계열)은 skip
+  if (!spec.composition && spec.variants != null)
     for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
       lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
       lines.push(...generateVariantStyles(variantSpec));
@@ -289,7 +288,9 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
       : DEFAULT_BASE_STYLES;
   }
 
-  const defaultVariant = spec.variants[spec.defaultVariant];
+  const defaultVariant = spec.variants != null && spec.defaultVariant != null
+    ? spec.variants[spec.defaultVariant]
+    : undefined;
   const defaultSize = spec.sizes[spec.defaultSize];
 
   const lines = [`  /* Base styles — archetype: ${archetype ?? "default"} */`];
@@ -648,7 +649,13 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
 
   // delegation: size별 자식 변수 override
   for (const delegation of comp.delegation) {
-    const { childSelector, variables } = delegation;
+    const { childSelector } = delegation;
+
+    // ADR-059 v2 0-C: "auto" 선언 시 spec.sizes 에서 파생
+    const variables =
+      delegation.variables === "auto"
+        ? deriveAutoDelegationVariables(spec, delegation)
+        : delegation.variables;
 
     for (const [sizeName, vars] of Object.entries(variables)) {
       const entries = Object.entries(vars);

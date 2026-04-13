@@ -80,7 +80,8 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = MaskedFrameSpec.variants![(props as { variant?: keyof typeof MaskedFrameSpec.variants }).variant ?? MaskedFrameSpec.defaultVariant!];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 

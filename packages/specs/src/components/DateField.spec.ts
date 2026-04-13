@@ -19,11 +19,12 @@ import {
   Tag,
   FileText,
   HelpCircle,
+  Minimize2,
 } from "lucide-react";
 
 export interface DateFieldProps {
-  variant?: "default" | "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   granularity?: "day" | "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
@@ -43,32 +44,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-    negative: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -103,6 +79,71 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       borderRadius: 0 as unknown as TokenRef,
       gap: 10,
     },
+  },
+
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "df-label",
+        variables: {
+          sm: { "--df-label-size": "var(--text-xs)" },
+          md: { "--df-label-size": "var(--text-sm)" },
+          lg: { "--df-label-size": "var(--text-base)" },
+          xl: { "--df-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-DateInput",
+        prefix: "df-input",
+        variables: {
+          sm: {
+            "--df-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
+            "--df-input-size": "var(--text-xs)",
+            "--df-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--df-input-padding": "var(--spacing-xs) var(--spacing-md)",
+            "--df-input-size": "var(--text-sm)",
+            "--df-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--df-input-padding": "var(--spacing-sm) var(--spacing-lg)",
+            "--df-input-size": "var(--text-base)",
+            "--df-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--df-input-padding": "var(--spacing-md) var(--spacing-xl)",
+            "--df-input-size": "var(--text-lg)",
+            "--df-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      // 0-F.3: DateSegment (내부 숫자 편집 요소) 전용 계약
+      {
+        childSelector: ".react-aria-DateSegment",
+        prefix: "df-segment",
+        variables: {
+          sm: { "--df-segment-size": "var(--text-xs)" },
+          md: { "--df-segment-size": "var(--text-sm)" },
+          lg: { "--df-segment-size": "var(--text-base)" },
+          xl: { "--df-segment-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "df-hint",
+        variables: {
+          sm: { "--df-hint-size": "var(--text-xs)" },
+          md: { "--df-hint-size": "var(--text-xs)" },
+          lg: { "--df-hint-size": "var(--text-sm)" },
+          xl: { "--df-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
   },
 
   propagation: {
@@ -180,6 +221,12 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "hideTimeZone",

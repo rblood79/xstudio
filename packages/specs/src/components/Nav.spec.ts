@@ -87,7 +87,8 @@ export const NavSpec: ComponentSpec<NavProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = NavSpec.variants![(props as { variant?: keyof typeof NavSpec.variants }).variant ?? NavSpec.defaultVariant!];
       const shapes: Shape[] = [];
 
       const bgColor = props.style?.backgroundColor ?? variant.background;

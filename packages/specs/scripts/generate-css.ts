@@ -8,6 +8,10 @@
 
 import { generateAllCSS } from '../src/renderers/CSSGenerator';
 import type { ComponentSpec } from '../src/types';
+import {
+  validateDelegationPrefixes,
+  formatViolations,
+} from '../src/runtime/validateDelegationPrefixes';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -58,6 +62,14 @@ async function main(): Promise<void> {
       console.log('\n⚠️  No valid specs found');
       return;
     }
+
+    // ADR-059 v2 Pre-Phase 0-D: delegation prefix SSOT 검증
+    const violations = validateDelegationPrefixes(specs);
+    if (violations.length > 0) {
+      console.error('\n' + formatViolations(violations));
+      process.exit(1);
+    }
+    console.log(`\n✓ Delegation prefix 검증 통과 (${specs.length} specs)`);
 
     // CSS 생성
     console.log('\n📝 Generating CSS files...\n');

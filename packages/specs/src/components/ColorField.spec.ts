@@ -20,14 +20,15 @@ import {
   PenOff,
   Layout,
   HelpCircle,
+  Minimize2,
 } from "lucide-react";
 
 /**
  * ColorField Props
  */
 export interface ColorFieldProps {
-  variant?: "default" | "accent" | "neutral" | "error" | "filled";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   value?: string;
   defaultValue?: string;
   label?: string;
@@ -69,7 +70,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: {
@@ -167,10 +167,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         title: "Appearance",
         fields: [
           {
-            type: "variant",
-            label: "Variant",
-          },
-          {
             type: "size",
             label: "Size",
             options: [
@@ -191,6 +187,12 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "labelAlign",
@@ -238,49 +240,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         ],
       },
     ],
-  },
-
-  variants: {
-    default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
-    accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-      borderHover: "{color.accent-hover}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
-    error: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-      borderHover: "{color.negative-hover}" as TokenRef,
-    },
-    filled: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
   },
 
   sizes: {
@@ -331,6 +290,72 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
     },
   },
 
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "cf-label",
+        variables: {
+          xs: { "--cf-label-size": "var(--text-2xs)" },
+          sm: { "--cf-label-size": "var(--text-xs)" },
+          md: { "--cf-label-size": "var(--text-sm)" },
+          lg: { "--cf-label-size": "var(--text-base)" },
+          xl: { "--cf-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        prefix: "cf-input",
+        variables: {
+          xs: {
+            "--cf-input-padding": "var(--spacing-3xs) var(--spacing-xs)",
+            "--cf-input-size": "var(--text-2xs)",
+            "--cf-input-line-height": "var(--text-2xs--line-height)",
+            "--cf-input-max-width": "9ch",
+          },
+          sm: {
+            "--cf-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
+            "--cf-input-size": "var(--text-xs)",
+            "--cf-input-line-height": "var(--text-xs--line-height)",
+            "--cf-input-max-width": "10ch",
+          },
+          md: {
+            "--cf-input-padding": "var(--spacing-xs) var(--spacing-md)",
+            "--cf-input-size": "var(--text-sm)",
+            "--cf-input-line-height": "var(--text-sm--line-height)",
+            "--cf-input-max-width": "12ch",
+          },
+          lg: {
+            "--cf-input-padding": "var(--spacing-sm) var(--spacing-lg)",
+            "--cf-input-size": "var(--text-base)",
+            "--cf-input-line-height": "var(--text-base--line-height)",
+            "--cf-input-max-width": "14ch",
+          },
+          xl: {
+            "--cf-input-padding": "var(--spacing-md) var(--spacing-xl)",
+            "--cf-input-size": "var(--text-lg)",
+            "--cf-input-line-height": "var(--text-lg--line-height)",
+            "--cf-input-max-width": "16ch",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "cf-hint",
+        variables: {
+          xs: { "--cf-hint-size": "var(--text-2xs)" },
+          sm: { "--cf-hint-size": "var(--text-xs)" },
+          md: { "--cf-hint-size": "var(--text-xs)" },
+          lg: { "--cf-hint-size": "var(--text-sm)" },
+          xl: { "--cf-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [{ parentProp: "size", childPath: "Label", override: true }],
   },
@@ -349,7 +374,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -365,13 +390,9 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             : parseFloat(String(styleBr)) || 0
           : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? ("{color.layer-2}" as TokenRef);
 
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+      const borderColor = props.style?.borderColor ?? ("{color.border}" as TokenRef);
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -399,7 +420,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
       const stylePx =
         props.style?.paddingLeft ??

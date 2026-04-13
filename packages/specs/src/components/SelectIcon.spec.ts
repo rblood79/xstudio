@@ -94,7 +94,8 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = SelectIconSpec.variants![(props as { variant?: keyof typeof SelectIconSpec.variants }).variant ?? SelectIconSpec.defaultVariant!];
       const iconSize = size.iconSize ?? 18;
 
       const effectiveSize =

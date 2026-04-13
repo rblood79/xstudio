@@ -198,7 +198,8 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = TooltipSpec.variants![(props as { variant?: keyof typeof TooltipSpec.variants }).variant ?? TooltipSpec.defaultVariant!];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       const sizeName = props.size ?? "md";

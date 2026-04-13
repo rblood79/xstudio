@@ -81,7 +81,8 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = DescriptionSpec.variants![(props as { variant?: keyof typeof DescriptionSpec.variants }).variant ?? DescriptionSpec.defaultVariant!];
       const text = props.children ?? "";
       if (!text) return [];
 
