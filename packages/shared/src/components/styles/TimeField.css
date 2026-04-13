@@ -34,7 +34,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -93,7 +93,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -118,7 +118,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-border: var(--field-accent);
       --inset-hover-border: var(--field-accent);
       --inset-hover-bg: var(--field-accent-container);
@@ -199,7 +199,7 @@
     &[data-variant="primary"] .react-aria-DateSegment:focus,
     &[data-variant="secondary"] .react-aria-DateSegment:focus,
     &[data-variant="tertiary"] .react-aria-DateSegment:focus,
-    &[data-variant="error"] .react-aria-DateSegment:focus {
+    &[data-invalid="true"] .react-aria-DateSegment:focus {
       background: var(--field-accent-container);
       color: var(--field-on-accent);
     }

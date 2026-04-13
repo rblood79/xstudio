@@ -45,7 +45,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -110,7 +110,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -179,7 +179,7 @@
     &[data-variant="primary"] .combobox-container,
     &[data-variant="secondary"] .combobox-container,
     &[data-variant="tertiary"] .combobox-container,
-    &[data-variant="error"] .combobox-container {
+    &[data-invalid="true"] .combobox-container {
       border-color: var(--field-accent);
     }
 
@@ -207,11 +207,11 @@
         .react-aria-Button[data-hovered]:not([data-disabled])
       )
       .combobox-container,
-    &[data-variant="error"]:has(
+    &[data-invalid="true"]:has(
         .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .combobox-container,
-    &[data-variant="error"]:has(
+    &[data-invalid="true"]:has(
         .react-aria-Button[data-hovered]:not([data-disabled])
       )
       .combobox-container {
@@ -290,7 +290,7 @@
     &[data-variant="primary"] .react-aria-Button,
     &[data-variant="secondary"] .react-aria-Button,
     &[data-variant="tertiary"] .react-aria-Button,
-    &[data-variant="error"] .react-aria-Button {
+    &[data-invalid="true"] .react-aria-Button {
       background: var(--field-accent-container);
       color: var(--field-on-accent);
 

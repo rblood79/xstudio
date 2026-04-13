@@ -52,7 +52,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
     &[data-variant="filled"] {
@@ -123,11 +123,11 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-focus-color: var(--field-accent);
     }
 
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --inset-border: var(--negative);
     }
 

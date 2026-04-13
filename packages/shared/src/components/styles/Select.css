@@ -46,7 +46,7 @@
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --field-accent: var(--negative);
     }
 
@@ -111,7 +111,7 @@
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],
-    &[data-variant="error"] {
+    &[data-invalid="true"] {
       --label-color: var(--field-accent);
     }
 
@@ -158,7 +158,7 @@
     &[data-variant="primary"] .react-aria-Button,
     &[data-variant="secondary"] .react-aria-Button,
     &[data-variant="tertiary"] .react-aria-Button,
-    &[data-variant="error"] .react-aria-Button {
+    &[data-invalid="true"] .react-aria-Button {
       border-color: var(--field-accent);
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
@@ -323,7 +323,7 @@
   .react-aria-Select[data-variant="primary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="secondary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="tertiary"][data-selection-mode="multiple"],
-  .react-aria-Select[data-variant="error"][data-selection-mode="multiple"] {
+  .react-aria-Select[data-invalid="true"][data-selection-mode="multiple"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       &[data-selected]::before {
         background: var(--field-accent);
