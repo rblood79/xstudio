@@ -87,3 +87,6 @@ target-install/
 # TypeScript compiled output (tsc -b) alongside source files
 apps/builder/src/**/*.js
 !apps/builder/src/**/*.config.js
+
+# Git worktrees (superpowers skill)
+.worktrees/
