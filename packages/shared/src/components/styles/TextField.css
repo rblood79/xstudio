@@ -25,15 +25,6 @@
       min-width: 0;
     }
 
-    /* Accent locals */
-    --field-accent: var(--accent);
-    --field-accent-container: color-mix(
-      in srgb,
-      var(--field-accent) 15%,
-      white
-    );
-    --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
-
     /* Size locals (md default) — @sync Button.css size variants */
     --tf-label-size: var(--text-sm);
     --tf-label-margin: 2px;
@@ -146,29 +137,6 @@
         color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
-      }
-    }
-
-    /* ===== Filled Variant ===== */
-    &[data-variant="filled"] .react-aria-Input {
-      background: var(--accent-subtle);
-      border-color: transparent;
-      border-bottom: 2px solid var(--border);
-      border-radius: var(--border-radius) var(--border-radius) 0 0;
-
-      &[data-focused] {
-        outline: none;
-        border-bottom-color: var(--accent);
-        background: var(--bg-overlay);
-      }
-
-      &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--bg-overlay);
-        border-bottom-color: var(--border-hover);
-      }
-
-      &[data-invalid] {
-        border-bottom-color: var(--negative);
       }
     }
 

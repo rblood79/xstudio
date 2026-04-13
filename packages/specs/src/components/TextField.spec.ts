@@ -29,7 +29,7 @@ import {
  * TextField Props
  */
 export interface TextFieldProps {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -249,6 +249,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   // @sync Button.spec.ts sizes — Input height = Button height
   sizes: {
+    xs: {
+      height: 18,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      gap: 2,
+    },
     sm: {
       height: 22,
       paddingX: 8,
@@ -308,6 +316,10 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             "--tf-label-size": "var(--text-base)",
             "--tf-label-margin": "4px",
           },
+          xl: {
+            "--tf-label-size": "var(--text-lg)",
+            "--tf-label-margin": "6px",
+          },
         },
       },
       {
@@ -334,6 +346,11 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             "--tf-input-size": "var(--text-base)",
             "--tf-input-line-height": "var(--text-base--line-height)",
           },
+          xl: {
+            "--tf-input-padding": "var(--spacing-md) var(--spacing-xl)",
+            "--tf-input-size": "var(--text-lg)",
+            "--tf-input-line-height": "var(--text-lg--line-height)",
+          },
         },
       },
       {
@@ -342,8 +359,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         variables: {
           xs: { "--tf-hint-size": "var(--text-2xs)" },
           sm: { "--tf-hint-size": "var(--text-xs)" },
-          md: { "--tf-hint-size": "var(--text-xs)" },
-          lg: { "--tf-hint-size": "var(--text-sm)" },
+          md: { "--tf-hint-size": "var(--text-sm)" },
+          lg: { "--tf-hint-size": "var(--text-base)" },
+          xl: { "--tf-hint-size": "var(--text-lg)" },
         },
       },
     ],
