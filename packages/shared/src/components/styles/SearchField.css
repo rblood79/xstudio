@@ -166,7 +166,8 @@
       outline: none;
       background: transparent;
       color: var(--fg);
-      font-size: var(--sf-label-size);
+      font-size: var(--sf-input-size);
+      line-height: var(--sf-input-line-height);
 
       &::placeholder {
         color: var(--fg-muted);

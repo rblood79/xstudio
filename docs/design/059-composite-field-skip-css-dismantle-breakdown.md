@@ -189,6 +189,57 @@ css-diff /tmp/TextField.css.before /tmp/TextField.css.after
 - `build:specs` → validator R1/R2/R3 통과 (현재도 통과 — validator 는 CSS 미스캔)
 - 제안: validator 에 R4 추가 고려 — "prefix 선언됐으나 `packages/shared/src/components/styles/` 에서 미참조 시 경고"
 
+## Phase 1 Step 1 시험대 결과 (2026-04-13)
+
+TextField.spec.ts `skipCSSGeneration: true → false` 1회 실행 후 `generated/TextField.css` 출력 비교. Step 1 진입 **불가** 판정. 아래 구조적 블로커 3종 선행 필요.
+
+### Gap 매트릭스 (generated vs manual TextField.css)
+
+| 항목 | Generated (Spec 기반) | Manual TextField.css | 판정 |
+| --- | --- | --- | --- |
+| base layout | `align-items: flex-start` + `box-sizing` | `width: fit-content` + 없음 | Spec에 fit-content 누락 |
+| `data-label-position="side"` | 없음 | grid override 블록 | Spec 미표현 |
+| variants | Spec variant(accent/neutral/purple/negative/positive) 색상 미생성 | `secondary/tertiary/error/filled` (다른 이름) | 양쪽 엉킴 — dead code |
+| size xs | Spec sizes 미선언 | CSS에 존재 | Spec 누락 |
+| size xl delegation | Spec delegation 미선언 | CSS에 존재 | Spec delegation 누락 |
+| `--tf-label-margin` base default | delegation에만 | base level md 기본 | generated 미생성 |
+| `--tf-input-padding` base default | delegation에만 | base level md 기본 | generated 미생성 |
+| Input state 셀렉터 | 없음 | hover/focus/invalid/disabled border | Spec StateEffect 계약 부재 |
+| `[data-variant="filled"] .react-aria-Input` | 없음 | 복합 블록 | filled가 Spec variant에 부재 |
+| `[slot="description"]` hint | 없음 | `--tf-hint-size` consumer | Spec description 계약 부재 |
+| bridge 변수 (`--label-font-size` ← `--tf-label-size`) | 없음 | Label/Input/Description 다리 | CSSGenerator 미지원 |
+| focus-visible outline | `--focus-ring-width` (ADR-061 토큰) | Input 직접 `outline: 2px solid var(--accent)` | 정책 불일치 |
+
+### 3대 구조적 블로커
+
+1. **Variant 네이밍 완전 불일치 (CRITICAL, 독립 프로덕션 버그)**
+   - Spec: `accent/neutral/purple/negative/positive` (5)
+   - CSS: `primary/secondary/tertiary/error/filled` (5)
+   - Spec이 emit하는 `data-variant` 값과 CSS selector 값이 완전 불일치 → CSS variant 블록 전체가 dead code
+   - ADR-059와 독립. **Pre-Phase 0-G 대상**.
+
+2. **Size 도메인 3중 불일치 (HIGH)**
+   - Spec sizes: `sm/md/lg/xl` (4)
+   - Spec delegation variables: `xs/sm/md/lg` (4, xs 있고 xl 없음)
+   - CSS: `xs/sm/md/lg/xl` (5)
+   - **Pre-Phase 0-H 대상**.
+
+3. **State/Composition 계약 부재 (MEDIUM)**
+   - DelegationSpec이 변수 발행만 지원 — state selector, base default, bridge 변수, filled variant 특별처리 미지원
+   - CSSGenerator 확장 필요 — **Phase 1 Step 2 설계 대상**
+
+### 블로커 해제 순서 (Pre-Phase 0-G/0-H)
+
+| Step | 작업 | 리스크 | 비고 |
+| --- | --- | --- | --- |
+| 0-G | Variant 네이밍 정렬 — CSS dead block 제거 + Spec(accent/neutral/purple/negative/positive) 기준 CSS 재작성 | MEDIUM | filled는 Spec variant로 승격 후보 |
+| 0-H | Size 도메인 정렬 — Spec sizes에 xs 추가, delegation variables에 xl 추가 | LOW | 3중 도메인 일치 |
+| 0-I | Step 1 재실행 — 의미 있는 generated vs manual 비교 | — | 0-G/0-H 이후 |
+
+### 판정
+
+Phase 1 Step 1은 "시험대 = 데이터 수집" 단계로 종료. `skipCSSGeneration: true` revert 후 증거는 본 섹션에 보존. 0-G부터 순차 착수.
+
 ## 롤백 전략
 
 - Phase 1 실패 시: 전환된 컴포넌트의 `skipCSSGeneration: true` 복원, 수동 CSS 복원, `@sync` 주석 복원
