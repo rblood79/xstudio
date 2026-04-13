@@ -656,7 +656,7 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
     const variables =
       delegation.variables === "auto"
         ? deriveAutoDelegationVariables(spec, delegation)
-        : delegation.variables;
+        : (delegation.variables ?? {});
 
     for (const [sizeName, vars] of Object.entries(variables)) {
       const entries = Object.entries(vars);

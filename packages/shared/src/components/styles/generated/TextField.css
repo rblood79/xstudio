@@ -159,6 +159,11 @@
   --error-font-size: var(--tf-hint-size);
 }
 
+.react-aria-TextField [slot="description"] {
+  font-size: var(--tf-hint-size);
+  color: var(--fg-muted);
+}
+
 
 @media (forced-colors: active) {
   .react-aria-TextField {

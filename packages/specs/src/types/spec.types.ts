@@ -320,7 +320,7 @@ export interface DelegationSpec {
    * 파생 로직: `runtime/deriveAutoDelegationVariables.ts`.
    * `"auto"` 선택 시 `prefix` 필드 필수.
    */
-  variables: "auto" | Record<string, Record<string, string>>;
+  variables?: "auto" | Record<string, Record<string, string>>;
 
   /**
    * Bridge 변수 — size에 의존하지 않는 변수 재노출 (ADR-059 v2 Pre-Phase 0-D.1)

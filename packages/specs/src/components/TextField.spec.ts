@@ -377,6 +377,13 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           "--error-font-size": "var(--tf-hint-size)",
         },
       },
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--tf-hint-size)",
+          color: "var(--fg-muted)",
+        },
+      },
     ],
   },
 
