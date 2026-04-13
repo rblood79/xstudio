@@ -148,7 +148,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

@@ -194,7 +194,8 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = PopoverSpec.variants![(props as { variant?: keyof typeof PopoverSpec.variants }).variant ?? PopoverSpec.defaultVariant!];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       const borderRadius = size.borderRadius;

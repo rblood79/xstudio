@@ -70,7 +70,8 @@ export const TabListSpec: ComponentSpec<TabListProps> = {
   },
 
   render: {
-    shapes: (props, variant, size): Shape[] => {
+    shapes: (props, size): Shape[] => {
+      const variant = TabListSpec.variants![(props as { variant?: keyof typeof TabListSpec.variants }).variant ?? TabListSpec.defaultVariant!];
       const isVertical = props.orientation === "vertical";
       const w = props._containerWidth ?? 200;
       const h = size.height;

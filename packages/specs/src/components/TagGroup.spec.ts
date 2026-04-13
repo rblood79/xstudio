@@ -349,7 +349,8 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = TagGroupSpec.variants![(props as { variant?: keyof typeof TagGroupSpec.variants }).variant ?? TagGroupSpec.defaultVariant!];
       const shapes: Shape[] = [];
       const rawTagFontSize = size.fontSize;
       const resolvedTagFs =

@@ -153,7 +153,8 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = PanelSpec.variants![(props as { variant?: keyof typeof PanelSpec.variants }).variant ?? PanelSpec.defaultVariant!];
       const title = props.title;
 
       // 사용자 스타일 우선

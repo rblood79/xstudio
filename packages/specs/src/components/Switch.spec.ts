@@ -177,7 +177,8 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = SwitchSpec.variants![(props as { variant?: keyof typeof SwitchSpec.variants }).variant ?? SwitchSpec.defaultVariant!];
       const variantName = props.variant ?? "default";
       const switchSize = {
         trackWidth: size.indicator?.trackWidth ?? 36,

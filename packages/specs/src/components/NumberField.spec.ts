@@ -603,7 +603,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = NumberFieldSpec.variants![(props as { variant?: keyof typeof NumberFieldSpec.variants }).variant ?? NumberFieldSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

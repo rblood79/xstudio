@@ -141,7 +141,8 @@ export const TextSpec: ComponentSpec<TextProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = TextSpec.variants![(props as { variant?: keyof typeof TextSpec.variants }).variant ?? TextSpec.defaultVariant!];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 

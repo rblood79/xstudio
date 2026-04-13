@@ -114,7 +114,8 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = CalendarGridSpec.variants![(props as { variant?: keyof typeof CalendarGridSpec.variants }).variant ?? CalendarGridSpec.defaultVariant!];
       const sizeName = props.size ?? "md";
       const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.md;
       const fontSize = resolveSpecFontSize(size.fontSize, dims.fontSize);

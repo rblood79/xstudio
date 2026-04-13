@@ -113,7 +113,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   },
 
   render: {
-    shapes: (props, _variant, _size) => {
+    shapes: (props, _size) => {
       const sizeName = props.size ?? "md";
       const sliderIndicator = getSliderIndicator(SliderSpec, sizeName);
       const trackDims = { trackHeight: sliderIndicator.trackHeight };

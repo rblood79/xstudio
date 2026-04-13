@@ -103,7 +103,8 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = DropZoneSpec.variants![(props as { variant?: keyof typeof DropZoneSpec.variants }).variant ?? DropZoneSpec.defaultVariant!];
       const label = props.label || "Drop files here";
       const isActive = props.isDropTarget || state === "hover";
 

@@ -545,14 +545,12 @@ export interface RenderSpec<Props> {
    * React와 PIXI 모두에서 사용하는 도형 구조
    *
    * @param props - 컴포넌트 props
-   * @param variant - 현재 variant 스펙
    * @param size - 현재 size 스펙
    * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
    * @returns 렌더링할 도형 배열
    */
   shapes: (
     props: Props,
-    variant: VariantSpec,
     size: SizeSpec,
     state: ComponentState,
   ) => Shape[];

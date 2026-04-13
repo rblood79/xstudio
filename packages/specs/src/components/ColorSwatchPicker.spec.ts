@@ -177,7 +177,8 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = ColorSwatchPickerSpec.variants![(props as { variant?: keyof typeof ColorSwatchPickerSpec.variants }).variant ?? ColorSwatchPickerSpec.defaultVariant!];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 

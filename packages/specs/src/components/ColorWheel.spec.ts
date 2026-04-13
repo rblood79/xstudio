@@ -121,7 +121,7 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const outerRadius = size.height / 2;
       const innerRadius = outerRadius * 0.7;
       const thumbSize = size.iconSize ?? 18;

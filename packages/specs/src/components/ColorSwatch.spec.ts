@@ -133,7 +133,8 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = ColorSwatchSpec.variants![(props as { variant?: keyof typeof ColorSwatchSpec.variants }).variant ?? ColorSwatchSpec.defaultVariant!];
       const swatchSize = size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값

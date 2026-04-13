@@ -436,7 +436,8 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   },
 
   render: {
-    shapes: (props, variant, _size, _state = "default") => {
+    shapes: (props, _size, _state = "default") => {
+      const variant = DateRangePickerSpec.variants![(props as { variant?: keyof typeof DateRangePickerSpec.variants }).variant ?? DateRangePickerSpec.defaultVariant!];
       // Compositional: 자식이 있으면 투명 컨테이너
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return [];

@@ -127,7 +127,8 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = AvatarSpec.variants![(props as { variant?: keyof typeof AvatarSpec.variants }).variant ?? AvatarSpec.defaultVariant!];
       const diameter = (size as unknown as { height: number }).height ?? 32;
       const radius = diameter / 2;
 

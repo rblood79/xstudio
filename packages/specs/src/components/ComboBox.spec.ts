@@ -422,7 +422,8 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = ComboBoxSpec.variants![(props as { variant?: keyof typeof ComboBoxSpec.variants }).variant ?? ComboBoxSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

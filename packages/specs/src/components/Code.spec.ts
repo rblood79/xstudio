@@ -114,7 +114,8 @@ export const CodeSpec: ComponentSpec<CodeProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = CodeSpec.variants![(props as { variant?: keyof typeof CodeSpec.variants }).variant ?? CodeSpec.defaultVariant!];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 

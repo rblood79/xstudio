@@ -254,7 +254,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const shapes: Shape[] = [];
 
       // Propagation 정합성: props.size 명시 시 size.fontSize 우선

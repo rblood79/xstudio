@@ -131,7 +131,8 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = DateSegmentSpec.variants![(props as { variant?: keyof typeof DateSegmentSpec.variants }).variant ?? DateSegmentSpec.defaultVariant!];
       // literal 세그먼트(/, : 등)는 배경 없이 텍스트만 렌더링
       if (props.isLiteral) {
         const literalText = String(props.value ?? props.placeholder ?? "");

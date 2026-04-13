@@ -196,7 +196,8 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = RadioSpec.variants![(props as { variant?: keyof typeof RadioSpec.variants }).variant ?? RadioSpec.defaultVariant!];
       const variantName = props.variant ?? "default";
       const outer = size.indicator?.boxSize ?? 20;
       const inner = size.indicator?.dotSize ?? 8;

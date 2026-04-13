@@ -124,7 +124,8 @@ export const TagSpec: ComponentSpec<TagProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = TagSpec.variants![(props as { variant?: keyof typeof TagSpec.variants }).variant ?? TagSpec.defaultVariant!];
       const parseNumericStyleValue = (
         value: string | number | undefined,
         fallback: number,

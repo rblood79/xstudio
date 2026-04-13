@@ -186,7 +186,8 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = CheckboxSpec.variants![(props as { variant?: keyof typeof CheckboxSpec.variants }).variant ?? CheckboxSpec.defaultVariant!];
       const variantName = props.variant ?? "default";
       const boxSize = size.indicator?.boxSize ?? 20;
       const gap = size.gap ?? 8;

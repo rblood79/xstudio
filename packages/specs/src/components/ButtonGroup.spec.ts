@@ -135,7 +135,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const shapes: Shape[] = [];
 
       // 자식 Button이 렌더링 담당

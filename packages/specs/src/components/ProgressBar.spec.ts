@@ -322,7 +322,8 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = ProgressBarSpec.variants![(props as { variant?: keyof typeof ProgressBarSpec.variants }).variant ?? ProgressBarSpec.defaultVariant!];
       const variantName = props.variant ?? "default";
       const sizeName = props.size ?? "md";
       const barDims =

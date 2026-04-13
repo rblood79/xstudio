@@ -110,7 +110,8 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = ProgressCircleSpec.variants![(props as { variant?: keyof typeof ProgressCircleSpec.variants }).variant ?? ProgressCircleSpec.defaultVariant!];
       const sizeName = props.size ?? "md";
       const dims =
         PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.md;

@@ -198,7 +198,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = ListBoxSpec.variants![(props as { variant?: keyof typeof ListBoxSpec.variants }).variant ?? ListBoxSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

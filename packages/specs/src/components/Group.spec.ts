@@ -83,7 +83,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
       const isVertical = props.orientation !== "horizontal";
 
       // Child Composition: 자식 Element가 있으면 spec shapes 스킵 (TRANSPARENT)

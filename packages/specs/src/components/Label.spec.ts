@@ -134,7 +134,8 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = LabelSpec.variants![(props as { variant?: keyof typeof LabelSpec.variants }).variant ?? LabelSpec.defaultVariant!];
       const text = props.children ?? props.label ?? "";
       if (!text) return [];
 

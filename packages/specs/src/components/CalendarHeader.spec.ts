@@ -106,7 +106,8 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = CalendarHeaderSpec.variants![(props as { variant?: keyof typeof CalendarHeaderSpec.variants }).variant ?? CalendarHeaderSpec.defaultVariant!];
       const sizeName = props.size ?? "md";
       const dims = CALENDAR_HEADER_DIMS[sizeName] ?? CALENDAR_HEADER_DIMS.md;
       const fontSize = resolveSpecFontSize(size.fontSize, dims.fontSize);

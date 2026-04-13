@@ -247,7 +247,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = MenuSpec.variants![(props as { variant?: keyof typeof MenuSpec.variants }).variant ?? MenuSpec.defaultVariant!];
       const width = "auto" as const;
 
       const styleBr = props.style?.borderRadius;

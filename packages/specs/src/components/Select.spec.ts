@@ -429,7 +429,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = SelectSpec.variants![(props as { variant?: keyof typeof SelectSpec.variants }).variant ?? SelectSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

@@ -118,7 +118,8 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
+    shapes: (props, size, state = "default") => {
+      const variant = SelectTriggerSpec.variants![(props as { variant?: keyof typeof SelectTriggerSpec.variants }).variant ?? SelectTriggerSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

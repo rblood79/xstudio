@@ -143,7 +143,8 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = TableViewSpec.variants![(props as { variant?: keyof typeof TableViewSpec.variants }).variant ?? TableViewSpec.defaultVariant!];
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const borderColor = variant.border ?? ("{color.border}" as TokenRef);
 

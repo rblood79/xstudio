@@ -146,7 +146,8 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = InlineAlertSpec.variants![(props as { variant?: keyof typeof InlineAlertSpec.variants }).variant ?? InlineAlertSpec.defaultVariant!];
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const styleBr = props.style?.borderRadius;

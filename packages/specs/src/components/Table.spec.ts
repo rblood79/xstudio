@@ -117,7 +117,8 @@ export const TableSpec: ComponentSpec<TableProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = TableSpec.variants![(props as { variant?: keyof typeof TableSpec.variants }).variant ?? TableSpec.defaultVariant!];
       // 샘플 데이터 fallback — props가 없을 때 캔버스에 기본 테이블을 표시
       const DEFAULT_COLUMNS: TableColumn[] = [
         { id: "name", label: "Name", width: 120 },

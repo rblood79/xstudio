@@ -331,7 +331,8 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, size, _state = "default") => {
+      const variant = MeterSpec.variants![(props as { variant?: keyof typeof MeterSpec.variants }).variant ?? MeterSpec.defaultVariant!];
       const variantName = props.variant ?? "informative";
       const sizeName = props.size ?? "md";
       const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md;

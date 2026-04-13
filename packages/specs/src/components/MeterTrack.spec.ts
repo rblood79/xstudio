@@ -120,7 +120,7 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size) => {
+    shapes: (props, size) => {
       const variantName = props.variant ?? "informative";
       const fillColor =
         METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;

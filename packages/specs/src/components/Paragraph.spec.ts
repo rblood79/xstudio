@@ -142,7 +142,8 @@ export const ParagraphSpec: ComponentSpec<ParagraphProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, size) => {
+      const variant = ParagraphSpec.variants![(props as { variant?: keyof typeof ParagraphSpec.variants }).variant ?? ParagraphSpec.defaultVariant!];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 
