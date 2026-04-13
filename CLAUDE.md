@@ -64,9 +64,35 @@ composition/
 - **버그 수정**: Systematic Debugging 4단계 root-cause 스킬
 - **구현**: TDD (RED-GREEN-REFACTOR) 사이클 기본
 - **렌더링 수정 후**: `/cross-check` 스킬 최종 검증
-- **ADR 생성**: "ADR 생성" 자연어 → `/create-adr` 스킬 (번호 자동 할당 + Risk-First 템플릿)
+- **ADR 생성**: "ADR 생성" 자연어 → `/new-adr` 스킬 (번호 자동 할당 + Risk-First 템플릿)
 - **단순 작업** (한 줄 수정, 설정 변경): 스킬 스킵 가능
 - CRITICAL/HIGH 이슈: 즉시 수정, 스킵 금지
+
+## Agent 라우팅 매트릭스
+
+| 요청 유형          | 1차 agent    | 2차 검증                | 관련 skill                             |
+| ------------------ | ------------ | ----------------------- | -------------------------------------- |
+| 새 기능/컴포넌트   | implementer  | reviewer → evaluator    | brainstorming → component-design       |
+| 버그 재현/수정     | debugger     | reviewer                | systematic-debugging → cross-check     |
+| 아키텍처 설계/ADR  | architect    | reviewer                | create-adr / review-adr                |
+| 대규모 리팩토링    | refactorer   | reviewer                | using-git-worktrees                    |
+| UI 실동작 검증     | evaluator    | —                       | cross-check                            |
+| 테스트 작성        | tester       | —                       | test-driven-development                |
+| 문서 작성          | documenter   | —                       | —                                      |
+| 코드베이스 탐색    | Explore      | —                       | —                                      |
+
+## Slash Commands (표준 워크플로)
+
+| Command         | 동작                                                      |
+| --------------- | --------------------------------------------------------- |
+| `/cross-check`  | CSS↔Skia 정합성 검증                                      |
+| `/new-adr`      | ADR 생성 (번호 자동 + Risk-First)                         |
+| `/impl`         | brainstorm → plan → implement → review → evaluate         |
+| `/fix`          | systematic-debugging → debugger → cross-check             |
+| `/review`       | verification-before-completion → reviewer agent           |
+| `/sweep`        | parallel-verify (패밀리 일괄)                             |
+
+자세한 skill 목록과 사용 빈도: [skills/INDEX.md](.claude/skills/INDEX.md)
 
 ## CRITICAL 규칙 (10개) → `.claude/rules/` 자동 로드
 
@@ -79,12 +105,17 @@ composition/
 
 ## 자동 품질 게이트 (Hooks)
 
-| Hook            | 시점             | 동작                                                         |
-| --------------- | ---------------- | ------------------------------------------------------------ |
-| **Stop**        | 작업 완료 시     | `.ts/.tsx` 변경 있으면 `pnpm type-check` — 실패 시 작업 중단 |
-| **PreToolUse**  | Edit/Write 전    | `.env`, credentials 등 민감 파일 편집 차단                   |
-| **PostToolUse** | Edit/Write 후    | Prettier 자동 포맷                                           |
-| **PreCompact**  | 컨텍스트 압축 시 | 핵심 규칙 재주입                                             |
+| Hook                  | 시점             | 동작                                                               |
+| --------------------- | ---------------- | ------------------------------------------------------------------ |
+| **SessionStart**      | 세션 시작 시     | agent/skill 로스터 + 라우팅 규칙 주입                              |
+| **UserPromptSubmit**  | 프롬프트 전송 시 | 9개 키워드 카테고리 감지 → 관련 skill/agent 힌트 주입               |
+| **Stop**              | 작업 완료 시     | `.ts/.tsx` 변경 있으면 `pnpm type-check` — 실패 시 작업 중단       |
+| **SubagentStop**      | 서브에이전트 종료 | 결과를 `.claude/stats/agents.jsonl`에 기록 (주간 리포트용)        |
+| **PreToolUse**        | Edit/Write 전    | `.env`, credentials 등 민감 파일 편집 차단                         |
+| **PostToolUse**       | Edit/Write 후    | Prettier 자동 포맷                                                 |
+| **PreCompact**        | 컨텍스트 압축 시 | 핵심 규칙 재주입                                                   |
+
+주간 리포트 수동 실행: `.claude/hooks/weekly-report.sh [days]`
 
 ## 참조 체계
 

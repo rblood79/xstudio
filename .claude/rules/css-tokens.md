@@ -1,3 +1,13 @@
+---
+description: CSS 토큰 S2 + React Aria 하이브리드 네이밍 규칙 (ADR-022)
+globs:
+  - "**/*.css"
+  - "**/theme/**"
+  - "**/*theme*.ts"
+  - "**/*theme*.tsx"
+  - "**/tokens/**"
+---
+
 # CSS 토큰 규칙 — S2 + React Aria Hybrid Naming (ADR-022)
 
 ## 시맨틱 변수 네이밍 규칙 (CRITICAL)
