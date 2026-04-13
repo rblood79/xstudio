@@ -214,6 +214,20 @@
   --sf-btn-size: 28px;
 }
 
+.react-aria-SearchField .react-aria-Button {
+  position: static;
+  flex: 0 0 auto;
+  width: var(--sf-btn-size);
+  height: var(--sf-btn-size);
+  padding: 0;
+  border: none;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  forced-color-adjust: none;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
 .react-aria-SearchField .react-aria-Button:where([data-hovered]:not([data-disabled])) {
   background: var(--accent-subtle);
 }
@@ -231,20 +245,6 @@
   background: color-mix(in srgb, var(--fg) 12%, transparent);
   color: color-mix(in srgb, var(--fg) 38%, transparent);
   cursor: not-allowed;
-}
-
-.react-aria-SearchField .react-aria-Button {
-  position: static;
-  flex: 0 0 auto;
-  width: var(--sf-btn-size);
-  height: var(--sf-btn-size);
-  padding: 0;
-  border: none;
-  background: var(--bg-overlay);
-  color: var(--fg);
-  forced-color-adjust: none;
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
 }
 
 .react-aria-SearchField .react-aria-Button svg {
@@ -272,6 +272,20 @@
   --sf-container-padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xl);
 }
 
+.react-aria-SearchField .searchfield-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  gap: var(--spacing-xs);
+  padding: var(--sf-container-padding);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-inset);
+  transition: border-color 200ms ease, background-color 200ms ease;
+  cursor: text;
+}
+
 .react-aria-SearchField .searchfield-container:where(:hover:not(:has([data-disabled]))) {
   border-color: var(--border-hover);
   background: var(--bg-overlay);
@@ -292,20 +306,6 @@
   opacity: 0.38;
   cursor: not-allowed;
   background: var(--bg-muted);
-}
-
-.react-aria-SearchField .searchfield-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  gap: var(--spacing-xs);
-  padding: var(--sf-container-padding);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-inset);
-  transition: border-color 200ms ease, background-color 200ms ease;
-  cursor: text;
 }
 
 .react-aria-SearchField[data-label-position="side"] {

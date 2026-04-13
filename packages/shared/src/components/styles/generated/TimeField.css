@@ -157,6 +157,19 @@
   --time-field-segment-size: var(--text-lg);
 }
 
+.react-aria-TimeField .react-aria-DateSegment {
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  height: auto;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--fg);
+  border-radius: var(--radius-xs);
+  font-size: var(--time-field-segment-size);
+  transition: all 150ms ease;
+}
+
 .react-aria-TimeField .react-aria-DateSegment:where([data-type="literal"]) {
   padding: 0;
 }
@@ -186,19 +199,6 @@
 .react-aria-TimeField .react-aria-DateSegment:where([data-disabled]) {
   color: color-mix(in srgb, var(--fg) 38%, transparent);
   cursor: not-allowed;
-}
-
-.react-aria-TimeField .react-aria-DateSegment {
-  padding: 0 2px;
-  border: none;
-  background: transparent;
-  height: auto;
-  font-variant-numeric: tabular-nums;
-  text-align: end;
-  color: var(--fg);
-  border-radius: var(--radius-xs);
-  font-size: var(--time-field-segment-size);
-  transition: all 150ms ease;
 }
 
 .react-aria-TimeField[data-size="xs"] .react-aria-FieldError {
