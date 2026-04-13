@@ -11,7 +11,7 @@ import { Label, FieldError } from "./Field";
 import type { ComponentSize } from "../types";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
-import "./styles/ColorField.css";
+import "./styles/generated/ColorField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환

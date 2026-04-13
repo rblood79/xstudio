@@ -68,7 +68,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   name: "ColorField",
   description: "React Aria 기반 색상 입력 필드 (color swatch + hex input)",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultSize: "md",
 
@@ -294,6 +294,70 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
+    containerStyles: {
+      width: "fit-content",
+      color: "var(--fg)",
+    },
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            display: "grid",
+            "grid-template-columns":
+              "var(--form-label-width, max-content) minmax(0, 1fr)",
+            "column-gap": "var(--form-field-gap, var(--spacing-md))",
+            "row-gap": "var(--spacing-xs)",
+            "align-items": "start",
+            width: "100%",
+          },
+          nested: [
+            {
+              selector: "> .react-aria-Label",
+              styles: {
+                "grid-column": "1",
+                "justify-self": "stretch",
+                "text-align": "var(--form-label-align, start)",
+              },
+            },
+            {
+              selector: "> :not(.react-aria-Label)",
+              styles: { "grid-column": "2", "min-width": "0" },
+            },
+          ],
+        },
+      },
+      "label-align": {
+        center: { styles: { "--form-label-align": "center" } },
+        end: { styles: { "--form-label-align": "end" } },
+      },
+      quiet: {
+        true: {
+          nested: [
+            {
+              selector: ".react-aria-Input",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-radius": "0",
+                "border-bottom": "1px solid var(--border)",
+              },
+            },
+            {
+              selector: ".react-aria-Input:where([data-focused])",
+              styles: {
+                outline: "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".react-aria-Input:where([data-invalid])",
+              styles: { "border-bottom-color": "var(--negative)" },
+            },
+          ],
+        },
+      },
+    },
     delegation: [
       {
         childSelector: ".react-aria-Label",
@@ -304,6 +368,11 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
           md: { "--cf-label-size": "var(--text-sm)" },
           lg: { "--cf-label-size": "var(--text-base)" },
           xl: { "--cf-label-size": "var(--text-lg)" },
+        },
+        bridges: {
+          "--label-font-size": "var(--cf-label-size)",
+          "--label-font-weight": "600",
+          "--label-margin": "var(--spacing-xs)",
         },
       },
       {
@@ -341,16 +410,34 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             "--cf-input-max-width": "16ch",
           },
         },
+        bridges: {
+          "--input-padding": "var(--cf-input-padding)",
+          "--input-font-size": "var(--cf-input-size)",
+          "--input-line-height": "var(--cf-input-line-height)",
+          "border-radius": "var(--radius-sm)",
+          "max-width": "var(--cf-input-max-width)",
+          "box-sizing": "border-box",
+        },
       },
       {
         childSelector: ".react-aria-FieldError",
         prefix: "cf-hint",
         variables: {
           xs: { "--cf-hint-size": "var(--text-2xs)" },
-          sm: { "--cf-hint-size": "var(--text-xs)" },
+          sm: { "--cf-hint-size": "var(--text-2xs)" },
           md: { "--cf-hint-size": "var(--text-xs)" },
           lg: { "--cf-hint-size": "var(--text-sm)" },
           xl: { "--cf-hint-size": "var(--text-base)" },
+        },
+        bridges: {
+          "--error-font-size": "var(--cf-hint-size)",
+        },
+      },
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--cf-hint-size)",
+          color: "var(--fg-muted)",
         },
       },
     ],
@@ -390,9 +477,11 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             : parseFloat(String(styleBr)) || 0
           : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor ?? ("{color.layer-2}" as TokenRef);
+      const bgColor =
+        props.style?.backgroundColor ?? ("{color.layer-2}" as TokenRef);
 
-      const borderColor = props.style?.borderColor ?? ("{color.border}" as TokenRef);
+      const borderColor =
+        props.style?.borderColor ?? ("{color.border}" as TokenRef);
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =

@@ -132,7 +132,7 @@
 @import "./Popover.css"; /* animations, placement, Dialog position:static override */
 
 /* Advanced Color Components — skipCSSGeneration, 수동 CSS */
-@import "./ColorField.css";
+@import "./generated/ColorField.css";
 @import "./ColorSwatchPicker.css";
 
 /* Menu Components — skipCSSGeneration, 수동 CSS */
