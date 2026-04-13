@@ -86,7 +86,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   name: "SearchField",
   description: "React Aria 기반 검색 입력 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultSize: "md",
 
@@ -295,21 +295,114 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
+    containerStyles: {
+      width: "fit-content",
+    },
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            display: "grid",
+            "grid-template-columns":
+              "var(--form-label-width, max-content) minmax(0, 1fr)",
+            "column-gap": "var(--form-field-gap, var(--spacing-md))",
+            "row-gap": "var(--spacing-xs)",
+            "align-items": "start",
+            width: "100%",
+          },
+          nested: [
+            {
+              selector: "> .react-aria-Label",
+              styles: {
+                "grid-column": "1",
+                "justify-self": "stretch",
+                "text-align": "var(--form-label-align, start)",
+              },
+            },
+            {
+              selector: "> :not(.react-aria-Label)",
+              styles: { "grid-column": "2", "min-width": "0" },
+            },
+          ],
+        },
+      },
+      quiet: {
+        true: {
+          nested: [
+            {
+              selector: ".searchfield-container",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-radius": "0",
+                "border-bottom": "1px solid var(--border)",
+              },
+            },
+            {
+              selector:
+                ".searchfield-container:hover:not(:has([data-disabled])):not(:has([data-focused]))",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "border-bottom-color": "var(--border-hover)",
+              },
+            },
+            {
+              selector: ".searchfield-container:has([data-focused])",
+              styles: {
+                outline: "none",
+                background: "transparent",
+                "border-color": "transparent",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".searchfield-container:has([data-invalid])",
+              styles: {
+                "border-color": "transparent",
+                "border-bottom-color": "var(--negative)",
+              },
+            },
+          ],
+        },
+      },
+      empty: {
+        true: {
+          nested: [
+            {
+              selector: ".react-aria-Button",
+              styles: { display: "none" },
+            },
+          ],
+        },
+      },
+    },
     delegation: [
       {
         childSelector: ".react-aria-Label",
         prefix: "sf-label",
         variables: {
+          xs: { "--sf-label-size": "var(--text-2xs)" },
           sm: { "--sf-label-size": "var(--text-xs)" },
           md: { "--sf-label-size": "var(--text-sm)" },
           lg: { "--sf-label-size": "var(--text-base)" },
           xl: { "--sf-label-size": "var(--text-lg)" },
+        },
+        bridges: {
+          "--label-font-size": "var(--sf-label-size)",
+          "--label-font-weight": "600",
+          "--label-margin": "0",
         },
       },
       {
         childSelector: ".react-aria-Input",
         prefix: "sf-input",
         variables: {
+          xs: {
+            "--sf-input-size": "var(--text-2xs)",
+            "--sf-input-line-height": "var(--text-2xs--line-height)",
+          },
           sm: {
             "--sf-input-size": "var(--text-xs)",
             "--sf-input-line-height": "var(--text-xs--line-height)",
@@ -327,37 +420,149 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             "--sf-input-line-height": "var(--text-lg--line-height)",
           },
         },
+        bridges: {
+          flex: "1",
+          "min-width": "0",
+          padding: "0",
+          border: "none",
+          outline: "none",
+          background: "transparent",
+          color: "var(--fg)",
+          "font-size": "var(--sf-input-size)",
+          "line-height": "var(--sf-input-line-height)",
+        },
       },
       {
         childSelector: ".react-aria-FieldError",
         prefix: "sf-hint",
         variables: {
+          xs: { "--sf-hint-size": "var(--text-2xs)" },
           sm: { "--sf-hint-size": "var(--text-xs)" },
           md: { "--sf-hint-size": "var(--text-xs)" },
           lg: { "--sf-hint-size": "var(--text-sm)" },
           xl: { "--sf-hint-size": "var(--text-base)" },
         },
+        bridges: {
+          "font-size": "var(--sf-hint-size)",
+          color: "var(--negative)",
+        },
       },
-      // 0-F.2: SearchField 고유 — 검색 아이콘 (leading)
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--sf-hint-size)",
+          color: "var(--fg-muted)",
+        },
+      },
       {
         childSelector: ".search-icon",
         prefix: "sf-icon",
         variables: {
+          xs: { "--sf-icon-size": "10px" },
           sm: { "--sf-icon-size": "12px" },
           md: { "--sf-icon-size": "16px" },
           lg: { "--sf-icon-size": "18px" },
           xl: { "--sf-icon-size": "22px" },
         },
+        bridges: {
+          display: "flex",
+          "align-items": "center",
+          "justify-content": "center",
+          "flex-shrink": "0",
+          color: "var(--fg-muted)",
+        },
       },
-      // 0-F.2: SearchField 고유 — Clear 버튼 (trailing)
+      {
+        childSelector: ".search-icon svg",
+        bridges: {
+          width: "var(--sf-icon-size)",
+          height: "var(--sf-icon-size)",
+        },
+      },
       {
         childSelector: ".react-aria-Button",
         prefix: "sf-btn",
         variables: {
+          xs: { "--sf-btn-size": "10px" },
           sm: { "--sf-btn-size": "14px" },
           md: { "--sf-btn-size": "18px" },
           lg: { "--sf-btn-size": "22px" },
           xl: { "--sf-btn-size": "28px" },
+        },
+        bridges: {
+          position: "static",
+          flex: "0 0 auto",
+          width: "var(--sf-btn-size)",
+          height: "var(--sf-btn-size)",
+          padding: "0",
+          border: "none",
+          background: "var(--bg-overlay)",
+          color: "var(--fg)",
+          "forced-color-adjust": "none",
+          "box-shadow": "var(--shadow-sm)",
+          cursor: "pointer",
+        },
+        states: {
+          "[data-hovered]:not([data-disabled])": {
+            background: "var(--accent-subtle)",
+          },
+          "[data-pressed]:not([data-disabled])": {
+            background: "color-mix(in srgb, var(--fg) 12%, var(--bg-overlay))",
+          },
+          "[data-focus-visible]": {
+            outline: "2px solid var(--accent)",
+            "outline-offset": "2px",
+          },
+          "[data-disabled]": {
+            background: "color-mix(in srgb, var(--fg) 12%, transparent)",
+            color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+            cursor: "not-allowed",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-Button svg",
+        bridges: {
+          width: "var(--sf-icon-size)",
+          height: "var(--sf-icon-size)",
+        },
+      },
+      {
+        childSelector: ".searchfield-container",
+        prefix: "sf-container",
+        bridges: {
+          display: "flex",
+          "flex-direction": "row",
+          "align-items": "center",
+          width: "100%",
+          gap: "var(--spacing-xs)",
+          padding:
+            "var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md)",
+          border: "1px solid var(--border)",
+          "border-radius": "var(--radius-md)",
+          background: "var(--bg-inset)",
+          transition: "border-color 200ms ease, background-color 200ms ease",
+          cursor: "text",
+        },
+        states: {
+          ":hover:not(:has([data-disabled]))": {
+            "border-color": "var(--border-hover)",
+            background: "var(--bg-overlay)",
+          },
+          ":has([data-focused])": {
+            "border-color": "var(--accent)",
+            outline: "2px solid var(--accent)",
+            "outline-offset": "-1px",
+            background: "var(--bg-overlay)",
+          },
+          ":has([data-invalid])": {
+            "border-color": "var(--negative)",
+          },
+          ":has([data-disabled])": {
+            opacity: "0.38",
+            cursor: "not-allowed",
+            background: "var(--bg-muted)",
+          },
         },
       },
     ],
@@ -403,8 +608,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           : (size.borderRadius as unknown as number);
 
       const bgColor =
-        props.style?.backgroundColor ??
-        ("{color.transparent}" as TokenRef);
+        props.style?.backgroundColor ?? ("{color.transparent}" as TokenRef);
 
       const borderColor = props.style?.borderColor;
 
@@ -436,7 +640,9 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
       const textColor =
         props.style?.color ??
-        (props.value ? ("{color.neutral}" as TokenRef) : ("{color.neutral-subdued}" as TokenRef));
+        (props.value
+          ? ("{color.neutral}" as TokenRef)
+          : ("{color.neutral-subdued}" as TokenRef));
 
       const stylePx =
         props.style?.paddingLeft ??
