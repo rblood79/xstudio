@@ -1,148 +1,360 @@
-# ADR-059 Breakdown: Composite Field `skipCSSGeneration` 해체
+# ADR-059 v2 Breakdown: Composite Field CSS SSOT 확립 — 대칭 파이프라인 복귀
 
-> 상위 ADR: [059-composite-field-skip-css-dismantle.md](../adr/059-composite-field-skip-css-dismantle.md)
+> 상위 ADR: [059-composite-field-skip-css-dismantle.md](../adr/059-composite-field-skip-css-dismantle.md) (v2, 2026-04-13)
+>
+> **v1→v2 변경**: 2층 구조(generated + 수동 override) 기각, 수동 CSS 완전 삭제 + spec.states 확장 결정. byte diff Gate 폐기, `/cross-check` 대칭 검증으로 대체
+
+## 전제: 선행 조사 실측 결과
+
+| Field       | skipCSSGeneration | delegation | prefix      | 비고                           |
+| ----------- | :---------------: | :--------: | ----------- | ------------------------------ |
+| TextField   |       true        |    3개     | `--tf-*`    | Phase 1 시험대 적격            |
+| NumberField |       true        |    4개     | `--nf-*`    | ComboBox 복제 (Phase 2로 이동) |
+| SearchField |       true        |  ❌ 부재   | `--sf-*`    | delegation 신설 필요           |
+| ColorField  |       true        |  ❌ 부재   | `--cf-*`    | delegation 신설 필요           |
+| DateField   |       true        |  ❌ 부재   | `--df-*`    | delegation 신설 필요           |
+| TimeField   |       true        |  ❌ 부재   | `--tf-*`    | 🚨 TextField와 prefix 충돌     |
+| TextArea    |     **false**     |  ❌ 부재   | `--label-*` | 일관성 위반                    |
+
+`@sync` 23건 / 13파일 중 Field 계열 9건(TextField 1 + NumberField 8). 나머지 14건은 Phase 2~4 범위.
 
 ## 파일 인벤토리
 
-### CSSGenerator (Pre-Phase 0 수정 대상)
+### CSSGenerator (Pre-Phase 0-D 수정 대상)
 
-| 파일                                                         | 역할                                                     |
-| ------------------------------------------------------------ | -------------------------------------------------------- |
-| `packages/specs/src/runtime/CSSGenerator.ts`                 | `skipCSSGeneration` 분기, Composite 생성 로직            |
-| `packages/specs/src/runtime/compositeCssGenerator.ts` (신설) | Archetype 별 composition.delegation 자동 생성 규칙       |
-| `packages/specs/src/runtime/tokenResolver.ts`                | `spec.sizes` → CSS 변수 매핑 헬퍼                        |
-| `packages/specs/src/types/spec.types.ts`                     | `composition.delegation.variables` 타입 `auto` 옵션 추가 |
+| 파일                                                                  | 역할                                                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `packages/specs/src/renderers/CSSGenerator.ts`                        | `skipCSSGeneration` 분기, `generateCompositionCSS` 확장 지점 |
+| `packages/specs/src/types/spec.types.ts`                              | `CompositionSpec.delegation` 타입 확장 (prefix 필드 추가)    |
+| `packages/specs/src/renderers/utils/tokenResolver.ts`                 | `spec.sizes.*` → CSS 변수 값 파생 헬퍼                       |
+| `packages/specs/src/renderers/utils/stateCSSGenerator.ts` (신설 가능) | `spec.states` → 상태별 CSS 블록 생성                         |
 
-### Phase 1 — Field 계열 7개
+### Phase 1 — TextField 시험대
 
-| Spec 파일                                           | 수동 CSS 파일                                           | `@sync` 주석 위치                   |
-| --------------------------------------------------- | ------------------------------------------------------- | ----------------------------------- |
-| `packages/specs/src/components/TextField.spec.ts`   | `packages/shared/src/components/styles/TextField.css`   | `TextField.spec.ts:309`             |
-| `packages/specs/src/components/NumberField.spec.ts` | `packages/shared/src/components/styles/NumberField.css` | `NumberField.spec.ts` (`@sync` 8개) |
-| `packages/specs/src/components/SearchField.spec.ts` | `packages/shared/src/components/styles/SearchField.css` | TBD                                 |
-| `packages/specs/src/components/ColorField.spec.ts`  | `packages/shared/src/components/styles/ColorField.css`  | TBD                                 |
-| `packages/specs/src/components/DateField.spec.ts`   | `packages/shared/src/components/styles/DateField.css`   | TBD                                 |
-| `packages/specs/src/components/TimeField.spec.ts`   | `packages/shared/src/components/styles/TimeField.css`   | TBD                                 |
-| `packages/specs/src/components/TextArea.spec.ts`    | `packages/shared/src/components/styles/TextArea.css`    | TBD                                 |
+| 파일                                                  | 작업                                                                    |
+| ----------------------------------------------------- | ----------------------------------------------------------------------- |
+| `packages/specs/src/components/TextField.spec.ts`     | `skipCSSGeneration: false`, `delegation.prefix` 선언, `@sync` 주석 제거 |
+| `packages/shared/src/components/styles/TextField.css` | **삭제**                                                                |
+| `packages/shared/src/components/styles/index.css`     | TextField.css import 제거                                               |
 
-### Phase 2~4 대상 (요약)
+### Phase 1.5 — SearchField/ColorField/DateField/TimeField/TextArea
 
-- **Phase 2**: `Select.spec.ts`, `ComboBox.spec.ts` + Popover 렌더링 경로
-- **Phase 3**: `DatePicker.spec.ts`, `DateRangePicker.spec.ts`, `Calendar.spec.ts` 연동 검증
-- **Phase 4**: Menu/Dialog/Modal/Tabs/Form/Toolbar/Breadcrumb/Tree/Table/Tab/Disclosure/Accordion 등 ~48개
+각 컴포넌트 spec 수정 + 수동 CSS 파일 삭제 + import 제거.  
+**TimeField는 Pre-Phase 0-A에서 prefix 리네임 선행** (예: `--tf-*` → `--time-*`).
 
-### Phase 5 — 상수 테이블 폐지
+### Phase 2 — Select/ComboBox/NumberField
 
-- `apps/builder/src/builder/workspace/canvas/utils/fieldDelegation.ts` (`FIELD_TRIGGER_VARIABLES`, `FIELD_AUTO_HEIGHT_VARIABLES`)
+Popover 렌더링 경로(ADR-047) 무회귀 필수. NumberField의 ComboBox 의존성 해소 시점.
 
-## Pre-Phase 0 작업 순서
+### Phase 3 — DatePicker/DateRangePicker
 
-1. **CSSGenerator 확장 스키마 설계**
-   - `composition.delegation.variables.md = "auto"` 선언 시 spec.sizes에서 자동 파생
-   - 파생 규칙 table (예시):
-     | 시맨틱 변수 | spec.sizes 소스 |
-     | ---------------------- | ---------------------------------------------------- |
-     | `--tf-input-padding` | `${size.paddingY}px ${size.paddingX}px` |
-     | `--tf-input-height` | `${size.height}px` |
-     | `--tf-input-font-size` | `var(${resolveToken(size.fontSize)})` |
-     | `--tf-input-gap` | `${size.gap}px` |
-     | `--tf-input-radius` | `var(${resolveToken(size.borderRadius)})` |
-2. **simple 컴포넌트 회귀 테스트** — Button/Badge/Link/Tag 등 `skipCSSGeneration: false` 컴포넌트의 CSS 생성 결과 byte diff 0건 확인
-3. **Archetype 분류 확정** — Field / Overlay / Picker / Composite-Container 4가지 archetype에 대한 생성 규칙 정의
-4. **단위 테스트**: `compositeCssGenerator.test.ts` 신설. 샘플 spec 주입 → 기대 CSS 문자열 비교
+Calendar 내부 절대 좌표 (ADR-050 overflow clipping) 무회귀.
 
-## Phase 1 작업 순서 (Field 계열)
+### Phase 4 — 잔존 Composite (~48개)
 
-### Step 1. TextField 시험대
+Archetype 단위 그룹 전환 (Menu/Dialog/Modal/Tabs/Form/Toolbar/Tree/Table 등). 5~8개씩 sub-phase.
 
-1. `TextField.spec.ts`의 `skipCSSGeneration: true` → `false` 전환
-2. `composition.delegation.variables.md = "auto"` 선언
+### Phase 5 — 상수 테이블 폐지 + 재승격
+
+- `apps/builder/src/builder/workspace/canvas/utils/fieldDelegation.ts` — `FIELD_TRIGGER_VARIABLES`, `FIELD_AUTO_HEIGHT_VARIABLES` 폐지
+- `docs/adr/README.md` — ADR-036 "Fully Implemented" 재승격 표기
+
+---
+
+## Pre-Phase 0-A — Naming SSOT
+
+### 목적
+
+CSS 변수 prefix를 spec 내부 선언으로 흡수. 비-spec 네이밍(ad-hoc prefix) 제거, prefix 충돌 구조적 불가능화.
+
+### 작업
+
+1. **타입 확장** — `DelegationSpec`에 `prefix: string` 필드 추가:
+   ```ts
+   export interface DelegationSpec {
+     childSelector: string;
+     prefix: string; // 신설 — "text-field-input" 등 명시
+     variables: Record<SizeName, Record<string, string>>;
+   }
+   ```
+2. **기존 prefix spec 내부 확정** — TextField/NumberField의 현 prefix(`--tf-*`, `--nf-*`)를 `composition.delegation[i].prefix`로 선언
+3. **TimeField prefix 충돌 제거** — `--tf-*` → 선택(`--time-field-*` 권장, 축약 금지). 수동 CSS 파일 내 기존 `--tf-*` 참조 0건 검증
+4. **lint 규칙 신설** (선택) — 동일 prefix 재사용 빌드 실패
+
+### 통과 조건
+
+- `grep "composition.delegation" packages/specs/src/components/` 결과 중 prefix 미선언 0
+- TimeField `--tf-*` 참조 0
+- `pnpm type-check` / `pnpm build:specs` 통과
+
+### 롤백
+
+타입 필드 optional 유지하여 기존 delegation 구조 호환. 실패 시 필드 제거만으로 복원.
+
+---
+
+## Pre-Phase 0-B — Delegation 완전성
+
+### 목적
+
+SearchField/ColorField/DateField/TimeField 4개에 `composition.delegation` 신설. TextArea 일관성 회복. CSS consumer 구조 100% spec 선언.
+
+### 작업
+
+1. 각 Field의 수동 CSS 파일 실측 → 필요 selector 추출 (Label/Input/Button/FieldError 등)
+2. `composition.delegation` 배열 신설, 각 selector당 prefix + size variants 선언
+3. TextArea는 `skipCSSGeneration: true`로 통일 (Phase 1.5에서 해체)
+
+### 통과 조건
+
+- 4개 Field 모두 delegation 배열 존재
+- 수동 CSS에서 관찰된 selector와 delegation 선언 selector 집합 일치
+- `pnpm type-check` 통과
+
+### 롤백
+
+delegation 제거만으로 복원 (CSSGenerator 미확장 상태이므로 CSS 출력 영향 없음).
+
+---
+
+## Pre-Phase 0-C — 공유 SSOT 승격 + 복제 관계 명시
+
+### 목적
+
+`BUTTON_SIZE_CONFIG` 등 암묵 공유 SSOT를 명시화. NumberField ↔ ComboBox 복제 관계를 Phase 순서에 반영.
+
+### 작업
+
+1. **BUTTON_SIZE_CONFIG 실측** — 7개 `@sync` 참조 점 확인 (TextField/Select/SelectTrigger/Input/Panel/Tag/Tabs)
+2. **공유 토큰/spec 참조 결정** — 옵션:
+   - (a) `packages/specs/src/shared/buttonSize.ts`로 명시 export, 참조 spec이 `import`
+   - (b) Button spec의 `sizes`를 직접 참조 가능한 헬퍼 (`referenceSize(ButtonSpec, sizeName)`) 도입
+3. `@sync` 주석 7건 제거, import/참조로 대체
+4. **NumberField ↔ ComboBox 복제 관계 명시** — NumberField spec 파일 상단 JSDoc에 "ComboBox delegation 패턴 재사용, Phase 2 선행 필요" 명시. Phase 1 범위에서 제외
+
+### 통과 조건
+
+- `grep "BUTTON_SIZE_CONFIG" packages/specs/src/components/` 참조 명시 import로 전환
+- `@sync.*BUTTON_SIZE_CONFIG` 주석 0
+- NumberField spec에 Phase 2 선행 의존성 JSDoc 명시
+
+### 롤백
+
+공유 토큰 파일 제거 + 개별 spec 재복제. 위험 작음(정적 상수).
+
+---
+
+## Pre-Phase 0-D — States + Auto-derivation
+
+### 목적
+
+CSSGenerator 확장: `spec.sizes` + `spec.states` + `delegation.prefix` 3개 축에서 CSS 100% 생성. 수동 CSS 표현력 완전 흡수.
+
+### 작업
+
+1. **auto-derivation 규칙** — `delegation.variables.md = "auto"` 선언 시 spec.sizes에서 자동 파생:
+
+   | 변수 (예: prefix="text-field-input") | 파생 규칙                                 |
+   | ------------------------------------ | ----------------------------------------- |
+   | `--text-field-input-padding`         | `${size.paddingY}px ${size.paddingX}px`   |
+   | `--text-field-input-height`          | `${size.height}px`                        |
+   | `--text-field-input-font-size`       | `var(${resolveToken(size.fontSize)})`     |
+   | `--text-field-input-radius`          | `var(${resolveToken(size.borderRadius)})` |
+   | `--text-field-input-gap`             | `${size.gap}px`                           |
+
+2. **States 확장** — `spec.states.hover/focused/disabled/invalid` CSS 블록 자동 생성 (ADR-061 focusRing 패턴 일반화):
+   ```css
+   .react-aria-TextField[data-hovered] {
+     /* states.hover */
+   }
+   .react-aria-TextField[data-focus-visible] {
+     /* states.focused */
+   }
+   .react-aria-TextField[data-invalid] {
+     /* states.invalid */
+   }
+   ```
+3. **기존 simple 컴포넌트 무회귀** — Button/Badge/Link/Tag 등 `skipCSSGeneration: false` 53개 CSS 생성 byte diff 0 확인
+4. **단위 테스트** — `compositeCssGenerator.test.ts`: 샘플 spec → 기대 CSS 문자열
+
+### 통과 조건
+
+- 기존 53개 simple 컴포넌트 `generated/*.css` byte diff 0
+- 단위 테스트 통과
+- `pnpm build:specs` 통과 (DTS 포함)
+
+### 롤백
+
+CSSGenerator 확장 revert. Phase 1 진입 차단.
+
+---
+
+## Phase 1 — TextField 시험대
+
+### 목적
+
+Pre-Phase 0 성과의 실증. 1개 컴포넌트를 **수동 CSS 파일 삭제 + `/cross-check` 대칭 검증**까지 완주.
+
+### 작업
+
+1. `TextField.spec.ts` — `skipCSSGeneration: false`
+2. `composition.delegation[i].variables = "auto"` 전환
 3. `@sync` 주석 제거 (L309)
-4. `pnpm build:specs` → `packages/shared/src/components/styles/generated/TextField.css` 생성 확인
-5. 기존 수동 `TextField.css`와 시맨틱 diff 실행
-6. 차이점 있으면 spec.sizes 값 수정 또는 파생 규칙 수정 (hand-written CSS는 수정 금지)
-7. 수동 `TextField.css`를 generated 파일 import + 수동 override (React Aria 상태별) 분리 구조로 재작성
-8. Preview screenshot diff (xs/sm/md/lg/xl 5사이즈 × default/hover/focus/disabled/invalid 5상태 = 25 샷)
+4. `pnpm build:specs` → `packages/shared/src/components/styles/generated/TextField.css` 생성
+5. **수동 `TextField.css` 삭제**
+6. `styles/index.css` import 갱신
+7. Preview 렌더링 및 Builder Canvas 시각 확인 (xs/sm/md/lg/xl × default/hover/focus/disabled/invalid)
+8. `/cross-check` skill 실행 — Preview ↔ Builder 시각 일치 확인
 
-### Step 2. NumberField/SearchField 복제
+### 통과 조건
 
-- TextField 패턴 복제. 각 컴포넌트 고유 변수 (spinner, clear button 등)는 수동 override 경로 유지
+- `packages/shared/src/components/styles/TextField.css` 파일 존재 안 함
+- `grep "@sync" packages/specs/src/components/TextField.spec.ts` = 0
+- `/cross-check` 통과
+- Storybook 전 스토리 렌더링 확인 (수동)
+- 60fps / 번들 <500KB / type-check 통과
 
-### Step 3. Color/Date/Time Field 확장
+### 롤백
 
-- `ColorField`, `DateField`, `TimeField` — 내부 Segment/Swatch 렌더링 경로 추가 검증
-- `TextArea` — multi-line 높이 계산 경로 무회귀
+- spec `skipCSSGeneration: true` 복원
+- TextField.css 복원 (git)
+- @sync 주석 복원
 
-### Step 4. Phase 1 Gate 검증
+---
 
-- 모든 7개 컴포넌트에 대해:
-  - CSS byte diff 0 (시맨틱 단위)
-  - Preview screenshot ≤1px
-  - `@sync` 주석 0건
-  - Storybook 테스트 통과
-  - `pnpm type-check` 통과
-  - Canvas 60fps 유지
+## Phase 1.5 — SearchField/ColorField/DateField/TimeField/TextArea
 
-## Phase 2~4 요약
+TextField 패턴 적용. 각 컴포넌트별 sub-step:
 
-- **Phase 2 (Select/ComboBox)**: Popover 렌더링 경로 ADR-047 무회귀. `Select.composition.delegation`은 trigger/popover/option 3개 child selector를 가지므로 archetype 규칙 확장 필요
-- **Phase 3 (DatePicker/DateRangePicker)**: Calendar 절대 좌표 (ADR-050 overflow clipping) 무회귀. Popover 자식 레이아웃 제외 규칙 (canvas-rendering.md §6) 확인
-- **Phase 4 (잔존 48개)**: Archetype 별 그룹 전환. 한 번에 5~8개씩 Sub-Phase
+1. spec의 `delegation.variables = "auto"` 전환
+2. 수동 CSS 삭제
+3. `/cross-check`
+4. Storybook 수동 확인
 
-## Phase 5 — 상수 테이블 폐지 + ADR-036 재승격
+**주의**: TimeField는 Pre-Phase 0-A에서 prefix 리네임 선행 완료되어야 함.
 
-1. `utils/fieldDelegation.ts`의 `FIELD_TRIGGER_VARIABLES`, `FIELD_AUTO_HEIGHT_VARIABLES` 사용처 grep
-2. CSS 자동 생성 결과로 치환 가능한 항목 제거
-3. 파일 완전 삭제 또는 legacy export 유지 (dead code 확인 후 결정)
-4. `@sync` 주석 13개 파일 전수 제거 확인
-5. `docs/adr/README.md` 업데이트 — ADR-036 "Implemented" 유지 근거로 ADR-059 완료 링크 추가
+### 통과 조건
 
-## 회귀 진단 절차
+- 5개 컴포넌트 수동 CSS 파일 0
+- Field 계열 `@sync` 주석 0 (NumberField 제외)
+- `/cross-check` 통과
+- 60fps / 번들 / type-check 통과
 
-### 단위 1: CSS byte diff
+---
 
-```bash
-# 전환 전 수동 CSS 스냅샷
-cp packages/shared/src/components/styles/TextField.css /tmp/TextField.css.before
+## Phase 2 — Select/ComboBox/NumberField
 
-# 전환 후 자동 생성 vs 수동 override 합성
-cat packages/shared/src/components/styles/generated/TextField.css \
-    packages/shared/src/components/styles/TextField.override.css \
-    > /tmp/TextField.css.after
+### 추가 고려사항
 
-# 시맨틱 diff (공백/순서 정규화)
-css-diff /tmp/TextField.css.before /tmp/TextField.css.after
-```
+- **Popover 렌더링 경로 (ADR-047)** — Select/ComboBox 드롭다운 표시 무회귀
+- **NumberField ↔ ComboBox** — ComboBox 해체 완료 후 NumberField의 복제 delegation 을 ComboBox 참조로 변환 가능성 평가
+- Archetype 규칙 확장 — trigger/popover/option 3개 child selector
 
-### 단위 2: Preview screenshot
+### 통과 조건
 
-- Storybook + Playwright visual regression
-- `xs/sm/md/lg/xl × default/hover/focus/disabled/invalid` = 25 샷
-- threshold: ≤1px, ≤0.5% pixel diff
+- 3개 컴포넌트 수동 CSS 0, `@sync` 0
+- Popover 드롭다운 시각 일치
+- `/cross-check` 통과
 
-### 단위 3: Canvas rendering (Skia)
+---
 
-- `/cross-check` skill 실행
-- spec.sizes 값 변경 없음 → Skia 무회귀
+## Phase 3 — DatePicker/DateRangePicker
 
-## 체크리스트 (Phase 1 완료 시)
+### 추가 고려사항
 
-- [ ] `TextField.spec.ts` skipCSSGeneration false
-- [ ] `NumberField.spec.ts` skipCSSGeneration false
-- [ ] `SearchField.spec.ts` skipCSSGeneration false
-- [ ] `ColorField.spec.ts` skipCSSGeneration false
-- [ ] `DateField.spec.ts` skipCSSGeneration false
-- [ ] `TimeField.spec.ts` skipCSSGeneration false
-- [ ] `TextArea.spec.ts` skipCSSGeneration false
-- [ ] 7개 컴포넌트 `@sync` 주석 0건
-- [ ] 7개 `generated/*.css` 파일 생성 확인
-- [ ] CSS byte diff 0건 (시맨틱)
-- [ ] Screenshot diff ≤1px × 25 샷 × 7 컴포넌트
-- [ ] Storybook 전 스토리 통과
-- [ ] `pnpm type-check` 통과
-- [ ] Canvas 60fps 유지
-- [ ] 2-pass re-enrichment 무회귀 (Label/Checkbox 내부 미재발)
-- [ ] ADR-042 dimension injection 무회귀
+- Calendar 내부 절대 좌표 (ADR-050 overflow clipping)
+- Popover 자식 레이아웃 제외 규칙 (canvas-rendering.md §6)
+- DATE_PICKER_STATES 공유 상수 `as const` narrowing (ADR-061 학습)
+
+---
+
+## Phase 4 — 잔존 Composite ~48개
+
+Archetype 그룹화 (5~8개씩 sub-phase):
+
+- Menu/MenuItem/MenuTrigger
+- Dialog/Modal/Popover
+- Tabs/Tab/TabList/TabPanel
+- Form/Fieldset
+- Toolbar/ToolbarItem
+- Breadcrumb/BreadcrumbItem
+- Tree/TreeItem
+- Table/TableHeader/TableBody/TableRow/Cell
+- Disclosure/Accordion
+
+각 그룹별 완료 시 `/cross-check` + 60fps + 번들 Gate.
+
+---
+
+## Phase 5 — 최종 검증 + 재승격
+
+### 작업
+
+1. `grep -rn "skipCSSGeneration.*true" packages/specs/src/components/` = 0
+2. `grep -rn "@sync" packages/specs/src/components/` = 0
+3. `utils/fieldDelegation.ts` — `FIELD_TRIGGER_VARIABLES`/`FIELD_AUTO_HEIGHT_VARIABLES` 사용처 grep, 미사용 확인 후 파일 삭제
+4. `docs/adr/README.md` — ADR-036 "Implemented" → "Fully Implemented" 재승격. ADR-059 Implemented 표기
+5. ADR-059 Status → Implemented
+
+### 통과 조건
+
+- 위 grep 3건 모두 0
+- `utils/fieldDelegation.ts` 파일 존재 안 함
+- Canvas 60fps / 번들 <500KB 최종
+- `/cross-check` 전 Composite 통과
+
+---
+
+## 회귀 진단 절차 (v2)
+
+### 검증 원칙
+
+v1의 "기존 수동 CSS ↔ generated CSS byte diff 0" Gate는 **폐기**. 기존 수동 CSS는 오염된 consumer 상태이며 reference 자격 없음.
+
+### 단위 1: CSS 생성 무회귀 (Pre-Phase 0-D만)
+
+기존 `skipCSSGeneration: false` simple 컴포넌트 53개의 generated CSS가 확장 전/후 동일. byte diff 도구는 이 단일 목적에만 사용.
+
+### 단위 2: 대칭 파이프라인 검증 (`/cross-check`)
+
+- Preview (DOM+CSS) 렌더링 캡처
+- Builder Canvas (Skia) 렌더링 캡처
+- 두 결과가 시각 일치 (≤1px 허용)
+- 동일 spec 소스에서 두 consumer가 동일 결과 산출
+
+### 단위 3: SSOT 순도 정량 Gate
+
+- `grep "skipCSSGeneration.*true"` 카운트
+- `grep "@sync"` 카운트
+- 수동 CSS 파일 잔존 카운트
+
+---
+
+## 체크리스트 (최종 완료 시)
+
+### Pre-Phase 0
+
+- [ ] 0-A: delegation.prefix 타입 확장, 기존 Field prefix 선언, TimeField 충돌 제거
+- [ ] 0-B: 4개 Field delegation 신설 + TextArea 일관성 회복
+- [ ] 0-C: BUTTON_SIZE_CONFIG 명시화, NumberField Phase 2 의존성 기술
+- [ ] 0-D: CSSGenerator 확장 (states + auto), simple 컴포넌트 53개 byte diff 0
+
+### Phase 1~5
+
+- [ ] Phase 1: TextField 수동 CSS 삭제, `/cross-check` 통과
+- [ ] Phase 1.5: 5개 Field 해체 완료
+- [ ] Phase 2: Select/ComboBox/NumberField 해체, Popover 무회귀
+- [ ] Phase 3: DatePicker/DateRangePicker 해체, Calendar 무회귀
+- [ ] Phase 4: 잔존 48개 Archetype 그룹 전환
+- [ ] Phase 5: `@sync` 0건, skipCSSGeneration 0건, fieldDelegation.ts 폐지, ADR-036 재승격
+
+### 원칙 준수 검증
+
+- [ ] 수동 CSS 파일 0 (대상 Composite 범위)
+- [ ] `/cross-check` 대칭 검증 통과
+- [ ] v1 "byte diff Gate" 미사용 (대칭 원리 위반 방지)
+
+---
 
 ## Pre-Phase 0-E 사전 진단 결과 (2026-04-13)
 
@@ -242,6 +454,16 @@ Phase 1 Step 1은 "시험대 = 데이터 수집" 단계로 종료. `skipCSSGener
 
 ## 롤백 전략
 
-- Phase 1 실패 시: 전환된 컴포넌트의 `skipCSSGeneration: true` 복원, 수동 CSS 복원, `@sync` 주석 복원
-- Pre-Phase 0 실패 시: CSSGenerator 확장 revert, Phase 1 차단
-- Phase 5 실패 시: `utils/fieldDelegation.ts` 복원
+### Phase 단위 rollback
+
+- 대상: 1개 Phase 분 spec 변경 + 삭제된 수동 CSS 파일 복원
+- 방법: git revert (Phase 커밋 단위 분리 필수)
+
+### Pre-Phase 0 실패
+
+- 0-A~0-C 실패: 각 단계 revert 가능. 타입 확장 optional이므로 breaking 없음
+- 0-D 실패 (CSSGenerator 확장 회귀): 확장 revert. Phase 1 진입 차단
+
+### 최종 재승격 실패
+
+- Phase 5 grep 0건 불충족 시: 개별 잔존 컴포넌트 해체로 분할

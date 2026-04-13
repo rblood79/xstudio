@@ -1,262 +1,239 @@
-# ADR-059: Composite Field `skipCSSGeneration` 해체 — Spec SSOT 확장
-
-> **SSOT domain**: D3 (시각 스타일). 본 ADR은 수동 CSS를 Spec 파생으로 전환하여 D3 symmetric consumer 복원. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md).
+# ADR-059: Composite Field CSS SSOT 확립 — 대칭 파이프라인 복귀
 
 ## Status
 
-Proposed — 2026-04-11 (ADR-062 Implemented 2026-04-13 — variant 블로커 해제됨)
+Proposed (v2) — 2026-04-13 (선행 조사 결과 반영 재작성, v1: 2026-04-11)
 
-**Remaining blockers** (ADR-062 무관): size 3중 불일치, state selectors, bridge 변수, base defaults, filled variant, composition 계약 부재 — breakdown §3대 블로커 참조. 이들은 **본 ADR 고유 선행 과제**로 순차 처리.
+## 원칙 — Spec SSOT / Symmetric Consumers
 
-## 원칙
+**Spec이 SSOT**이다. typography 토큰을 포함한 spec 정의가 유일한 source이며, **Preview/Publish (DOM/CSS)와 Builder (Skia)는 대등한 consumer**다. 어느 consumer도 다른 consumer의 기준이 아니다.
 
-본 ADR의 원칙 선언은 [ADR-057 §원칙](./057-text-spec-first-migration.md#원칙--spec-ssot--symmetric-consumers-adr-036-준수)과 [ADR-058 §원칙](./058-text-tags-legacy-dismantle.md#원칙)을 그대로 상속한다.
+CSS와 Skia는 symmetric pipeline:
 
-핵심:
+```
+typography 토큰 ─┬─→ CSS 변수 ─→ browser CSS engine ─→ Preview/Publish
+                │
+                └─→ spec shapes() ─→ Skia ─────────────→ Builder Canvas
+```
 
-- **Spec이 SSOT**, CSS/Skia는 대등한 consumer
-- **ADR-059의 본질**: ADR-036 "Spec-First Single Source"가 Phase 3a에서 Composite Container 해체를 미완료로 남긴 결과, 59개 Field/Composite 컴포넌트가 `skipCSSGeneration: true` 예외 경로에 고착되었다. 본 ADR은 이 잔존 예외 경로를 해체하여 Composite 컴포넌트도 Spec SSOT로 복귀시킨다. "CSS↔Skia 맞춤"이 아니라 **"누락된 consumer 재배치"**이다.
+**ADR-059의 본질**: Composite Field에서 CSS consumer가 spec 외부에 독자 진실(수동 CSS 파일 + `@sync` 주석 + 비선언 네이밍 + 복제 delegation)을 보유한 상태를 해체하여, 두 pipeline이 spec을 대등하게 소비하는 상태로 복귀시킨다. **"수동 CSS를 자동 CSS로 교체"가 아니라 "CSS consumer의 비-spec 진실 제거"**이다.
+
+ADR-057/058/060/061의 공통 패턴을 계승: 비-spec 진실을 유지한 채 자동화를 끼워넣는 방식을 기각하고, **비-spec 진실 자체를 삭제**한다.
 
 ## Context
 
-> **Charter 정합 목적 (2026-04-13 추가)**: 본 ADR은 [charter ADR-063](063-ssot-chain-charter.md) **D3(시각 스타일)의 symmetric consumer 복원**이 근본 목적. `skipCSSGeneration: true` + 수동 CSS = CSS가 Spec에서 파생되지 않는 상태 = D3 규칙 위반(CSS가 준-SSOT 지위). 본 ADR은 이를 해체하여 Spec → CSSGenerator → CSS 경로로 단일화. Skia consumer와 CSS consumer가 동일 Spec source에서 시각 결과 동일성을 산출하는 **대칭 복원**. 단, variant 블로커는 ADR-062(D2 정리)로 분리됨.
+### v1 전제의 실측 반증 (2026-04-13)
 
-ADR-036 Phase 4가 완료로 체크되었으나, 실제 코드베이스에는 **59개의 `skipCSSGeneration: true` 컴포넌트**가 잔존한다 (2026-04-11 실측, `packages/specs/src/components/`). ADR-057/058이 Text/Heading/Paragraph/Kbd/Code 5개를 해체하는 동안 Composite Container 계열은 손대지 못했다.
+v1(2026-04-11) breakdown은 "Field 7개가 TextField와 구조적으로 유사해 패턴 복제로 해체 가능"을 가정했다. 선행 조사 결과 이 가정이 4축에서 파손:
 
-본 ADR은 이 59개 중 **Field 계열 (TextField/NumberField/SearchField/ColorField/DateField/TimeField/TextArea 7개)**을 Phase 1 시험대로 삼고, 후속 Phase에서 Select/ComboBox/DatePicker/Form 계열로 확장한다.
+| #   | SSOT 위반 축          | 실측 내용                                                                                                                                |
+| --- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Delegation 미선언** | SearchField/ColorField/DateField/TimeField 4개 Field가 `composition.delegation` **자체 없음** — spec이 CSS consumer 구조를 선언하지 않음 |
+| 2   | **비-spec 네이밍**    | CSS 변수 prefix (`--tf-*`, `--nf-*`) spec 외부에서 결정. **TimeField ↔ TextField 가 동일 `--tf-*` prefix 충돌**                          |
+| 3   | **복제 SSOT**         | NumberField의 `@sync` 주석 8개가 ComboBox 참조 — NumberField의 실제 SSOT는 ComboBox. Phase 1 단순 해체 불가                              |
+| 4   | **암묵 공유 SSOT**    | `BUTTON_SIZE_CONFIG` 7개 spec이 `@sync` 주석으로 참조 연명                                                                               |
+| 5   | **일관성 위반**       | TextArea만 `skipCSSGeneration: false` + delegation 없음 — spec/CSS 양쪽에 불완전 구조                                                    |
 
-### 현재 예외 상태 (실측)
+### 기존 예외 상태
 
-| 경로             | 현상태                                                                                                                               |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Spec**         | `spec.sizes.md = { height: 30, paddingX: 12, paddingY: 4, fontSize: "{typography.text-sm}" }` — Skia 전용                            |
-| **CSS (수동)**   | `packages/shared/src/components/styles/TextField.css` — hand-written, spec 값과 독립                                                 |
-| **composition**  | `spec.composition.delegation[i].variables.md["--tf-input-padding"] = "var(--spacing-xs) var(--spacing-md)"` — 수동 CSS 변수와 매핑용 |
-| **CSSGenerator** | `if (spec.skipCSSGeneration) return null;` → 전체 생성 스킵                                                                          |
+| 경로                       | 현상태                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| **Spec sizes**             | `spec.sizes.md = { height: 30, paddingX: 12, ... }` — Skia consumer만 소비              |
+| **수동 CSS**               | `packages/shared/src/components/styles/TextField.css` — CSS consumer 독자 진실          |
+| **composition.delegation** | `variables.md["--tf-input-padding"] = "8px 16px"` — 수동 CSS 매핑용 (spec.sizes와 독립) |
+| **CSSGenerator**           | `if (spec.skipCSSGeneration) return null;` — CSS consumer 전체 우회                     |
+| **@sync 주석**             | 13개 파일 23개소 — 비대칭 drift를 주석으로 연명                                         |
 
-**결과**: `sizes.md.paddingX = 12`가 `--tf-input-padding: var(--spacing-xs) var(--spacing-md)` (= 8px 16px)와 **수치적으로 일치한다는 보장 없음**. 두 값이 각각 다른 파일에서 독립적으로 편집되며, 정합성은 리뷰어의 육안 검사에 의존한다.
+결과: `sizes.md.paddingX = 12`가 `--tf-input-padding: 8px 16px`와 수치 일치할 구조적 보장 없음. 두 consumer의 기준값이 독립 source에서 편집됨.
 
-### SSOT 위반 증거
+### 선행 ADR 완료 패턴 (계승 대상)
 
-1. **`@sync` 주석 23개** (13개 파일) — 개발자가 "반드시 동기화해야 한다"는 경고를 수동으로 적어둔 지점. 자동 검증 없음
-   - `TextField.spec.ts:309` — `// @sync Button.spec.ts sizes — Input height = Button height`
-   - `Select.spec.ts:305` — `// @sync BUTTON_SIZE_CONFIG (utils.ts)`
-   - `ComboBox.spec.ts:265` — `// @sync Select.spec.ts sizes`
-   - `NumberField.spec.ts`, `Tag.spec.ts` 등 8개 파일
-2. **`resolveSpecFontSize` 129개소 분산 호출** — 각 spec의 `render.shapes()` 함수에서 개별 호출. ADR-058 Phase 1이 Text에서만 집약
-3. **Composite delegation 상수 테이블** — `utils/fieldDelegation.ts`의 `FIELD_TRIGGER_VARIABLES`, `FIELD_AUTO_HEIGHT_VARIABLES`가 spec.sizes 외부에 존재
+- **ADR-057/058** (Text): buildTextNodeData 폐지 — CSS/Skia가 spec 직접 소비
+- **ADR-060** (indicator): 6개 매직 테이블 → `spec.sizes.*.indicator` SSOT
+- **ADR-061** (focus ring): 50개 리터럴 → `{focus.ring.*}` TokenRef. `StateEffect.outline` 완전 제거. 상태별 스타일도 spec 소비
 
-### Text 케이스와의 구조적 동형성
-
-| 축               | Text (ADR-058)                                | Composite Field (ADR-059)                      |
-| ---------------- | --------------------------------------------- | ---------------------------------------------- |
-| 예외 플래그      | `skipCSSGeneration: true` + `() => []` shapes | `skipCSSGeneration: true` + 정상 shapes        |
-| 분산 consumer    | 5곳 (buildTextNodeData + 4 layout 유틸)       | CSS 파일 + composition.delegation + sizes      |
-| 수동 동기화 흔적 | 5-point patch (`f140f173`)                    | `@sync` 주석 23개                              |
-| 증상             | size prop 변경 미반영                         | paddingX 변경 시 CSS 누락 가능성               |
-| 해법 방향        | 예외 경로 제거 + spec 통합                    | CSSGenerator 확장 + composition 변수 자동 생성 |
+세 ADR의 공통 원리: **비-spec 진실 "제거"**, "동기화" 아님.
 
 ### Hard Constraints
 
-1. **Preview DOM 구조 불변** — React Aria hooks가 생성하는 DOM tree (Label/Input/FieldError 등 중첩 구조) 보존
-2. **CSS cascade 정상 동작** — `@layer components` 래핑 유지, 사용자 override 경로 불변
-3. **외관 ≤1px** — 전환 전/후 screenshot diff 범위
-4. **60fps 유지** — CSS 생성 규모 증가가 초기 렌더 시간에 영향 없음
-5. **`@sync` 주석 완전 제거** — 제거되지 않으면 근본 해결 아님
-6. **ADR-042 Spec Dimension Injection 호환** — `_containerWidth`/`_containerHeight` 주입 경로 무회귀
-7. **Sectional rollback 가능** — Phase 단위 rollback 경계 명확
+1. Preview DOM 구조 불변 (React Aria hooks 생성 트리)
+2. CSS consumer와 Skia consumer가 **spec만** 소비 — 수동 CSS 파일 0, `@sync` 주석 0이 최종 상태
+3. 두 consumer 시각 결과 교차 일치 (`/cross-check`)
+4. 60fps / <500KB 번들 유지
+5. ADR-042 Spec Dimension Injection 무회귀
+6. Phase 경계 rollback 가능
 
 ### Soft Constraints
 
-- `composition.delegation` 선언 형식 유지 (제거가 아닌 auto-generation)
-- ADR-056 Base Typography SSOT와 단일 주입 지점 공유
-- 향후 신규 Composite 컴포넌트 추가 시 `skipCSSGeneration: true` 없이 바로 생성
+- 네이밍 규약이 spec 내부 선언에서 파생 (prefix도 spec이 결정)
+- 상태별 스타일(`:hover/:focus/[data-invalid]`)은 ADR-061 패턴(`spec.states`)을 Composite로 확장
 
 ## 의존성
 
-- **ADR-036 Phase 4** (선행 완료): Tier 2 Composite CSS 생성 메타데이터 (`composition.delegation`) — 본 ADR의 시작점
-- **ADR-057/058** (선행 완료): Text Spec-First 해체 패턴의 참조 모델
-- **ADR-056** (병행 권장): Base Typography SSOT — Composite 해체 시 typography 주입 지점 일원화
+- **ADR-036 Phase 4** 선행 완료 (composition.delegation 메타데이터)
+- **ADR-057/058** 선행 완료 (해체 패턴 참조)
+- **ADR-060/061** 선행 완료 (spec.states/indicator SSOT 확장 근거)
+- **ADR-056** 병행 권장 (Base Typography SSOT)
 
 ## Alternatives Considered
 
-### 대안 A: 현상 유지 (`skipCSSGeneration: true` 영속화)
+### 대안 A: 현상 유지
 
-- 설명: 59개 예외 경로 유지. 신규 Composite 컴포넌트는 동일 패턴으로 추가
-- 근거: 최소 변경, 회귀 위험 제로
-- 위험:
-  - 기술: L — 변경 없음
-  - 성능: L
-  - 유지보수: **H** — `@sync` 주석 23개 영속화, CSS↔spec 수동 검증 부담 증가, Composite가 SSOT 외부 영구 고립
-  - 마이그레이션: L
+- 설명: 59개 `skipCSSGeneration: true` 유지
+- 위험: 기술 L / 성능 L / 유지보수 **CRIT** / 마이그레이션 L
+  - SearchField/ColorField/DateField/TimeField는 delegation 없이 수동 CSS만 살아있음 — SSOT 위반 심화
+  - TimeField `--tf-*` prefix 충돌 영구화
+  - ADR-036 재승격 체인 미완결
 
-### 대안 B: 일괄 전환 (59개 동시 해체)
+### 대안 B: 2층 구조 (generated + 수동 override)
 
-- 설명: 단일 Phase에서 59개 컴포넌트 `skipCSSGeneration: false` 전환 + CSSGenerator 확장
-- 근거: 작업 기간 단축, 패턴 일관성
-- 위험:
-  - 기술: **H** — Composite 59개 동시 회귀 가능, rollback 단위 거대
-  - 성능: M — CSS 번들 크기 급증 가능성 (측정 전 불명확)
-  - 유지보수: L
-  - 마이그레이션: **H** — 실패 시 전체 롤백
+- 설명: CSSGenerator가 자동 생성 CSS 파일을 만들고, 기존 수동 CSS는 "React Aria 상태별 override 전용"으로 축소 유지
+- 위험: 기술 M / 성능 L / 유지보수 **H** / 마이그레이션 L
+  - CSS consumer를 "2차 권위"로 승격 — 대칭 파이프라인 원리 위반
+  - 수동 override 파일 잔존 시 `@sync` 구조도 부분 잔존
+  - v1 ADR-059 암묵 방향 — **본 v2에서 기각**
 
-### 대안 C: CSSGenerator 확장 + Archetype 별 점진 전환 (본 제안)
+### 대안 C: CSS consumer 비-spec 진실 완전 제거, 점진 전환 (본 제안)
 
 - 설명:
-  1. CSSGenerator를 확장하여 `composition.delegation.variables`를 `spec.sizes` 값에서 자동 생성
-  2. Field 계열 7개를 Phase 1 시험대로 전환
-  3. Select/ComboBox 2개 Phase 2
-  4. DatePicker/DateRangePicker/TimePicker Phase 3
-  5. 잔존 Composite (Form/Menu/Dialog/Modal/Tabs 등) Phase 4
-- 근거:
-  - Field 7개는 구조가 가장 단순 (`flex-column` + 단일 Input delegate)
-  - CSSGenerator 확장이 선행되면 후속 Phase는 flag 전환 + 수동 CSS 삭제로 축소
-  - Phase 경계 rollback 가능
-- 위험:
-  - 기술: M — CSSGenerator 확장 시 기존 53개 simple 컴포넌트 회귀 가능성
-  - 성능: L — 번들 크기는 증분 측정 가능
-  - 유지보수: L
-  - 마이그레이션: M — Phase 경계 명확
+  1. **Naming SSOT** — `composition.delegation.prefix` 명시 선언 필드 도입. 기존 prefix(`--tf-*` 등) spec 내부에서 확정. TimeField → 충돌 없는 prefix로 리네임
+  2. **Delegation 완전성** — 4개 Field에 delegation 신설. CSS consumer 구조 100% spec이 선언
+  3. **공유 SSOT 승격** — `BUTTON_SIZE_CONFIG` → spec 참조 표준화. NumberField=ComboBox 복제 관계 명시화 (Phase 2 선행 처리)
+  4. **States 확장** — `spec.states.*`를 Composite에 확장 (ADR-061 패턴). React Aria `:hover/:focus/[data-invalid]` 상태 스타일이 spec 소비
+  5. **Auto-derivation** — CSSGenerator가 위 선언에서 100% 생성
+  6. **수동 CSS 파일 삭제** — override 층 없이 완전 제거
+- 위험: 기술 M / 성능 L / 유지보수 L / 마이그레이션 M
+  - CSSGenerator 스키마 확장 (prefix, states, shared refs) — ADR-061이 focusRing 단일 축에서 실증한 패턴의 다축 확장
+  - Phase 경계 = "대상 컴포넌트 수동 CSS 파일 삭제 단위" 로 rollback 시점 명확
 
-### 대안 D: `skipCSSGeneration: true` 유지 + 검증 도구만 추가
+### 대안 D: 단일 시험대 (TextField 1개만 해체)
 
-- 설명: CSSGenerator는 손대지 않고, build-time lint 도구가 `spec.sizes`와 수동 CSS 파일의 수치 불일치를 감지
-- 근거: 롤백 안전성, 기존 구조 보존
-- 위험:
-  - 기술: M — CSS 파일 파싱 복잡도 (CSS custom property 해석)
-  - 성능: L
-  - 유지보수: **M** — SSOT가 여전히 두 곳(spec + CSS), 검증만 자동화
-  - 마이그레이션: L
+- 설명: TextField만 해체해 패턴 실증. 나머지 6개 방치
+- 위험: 기술 L / 성능 L / 유지보수 **H** / 마이그레이션 L
+  - ADR-036 "Fully Implemented" 재승격 불가
+  - TimeField prefix 충돌 방치
+  - v2 본문에서는 "Phase 1 시험대"로 흡수 (독립 대안 자격 없음)
 
-### 대안 E: 수동 CSS 파일 완전 삭제 + Spec만 유지
+### 대안 E: 일괄 전환 (59개 동시)
 
-- 설명: `TextField.css` 등 수동 CSS 파일을 제거하고 CSSGenerator가 100% 생성
-- 근거: SSOT 단일화 극단
-- 위험:
-  - 기술: **H** — 수동 CSS에는 React Aria hover/focus/invalid 상태별 세부 조정이 포함됨. CSSGenerator가 이를 표현하려면 스키마 대폭 확장 필요
-  - 성능: L
-  - 유지보수: L
-  - 마이그레이션: **CRITICAL** — 표현력 부족으로 회귀 필수
+- 설명: 단일 Phase에서 59개 동시 해체
+- 위험: 기술 **H** / 성능 M / 유지보수 L / 마이그레이션 **H**
+
+### 대안 F: 검증 도구만 추가 (v1의 대안 D)
+
+- 설명: CSSGenerator 유지, build-time lint가 수동 CSS ↔ spec.sizes 수치 불일치 감지
+- 위험: 기술 M / 성능 L / 유지보수 **H** / 마이그레이션 L
+  - 두 source 유지한 채 일치 검증 — 대칭 파이프라인 원리 위반 (CSS가 준-SSOT)
 
 ### Risk Threshold Check
 
-| 대안                             | 기술  | 성능 | 유지보수 | 마이그레이션 | HIGH+ 개수 |
-| -------------------------------- | ----- | ---- | -------- | ------------ | :--------: |
-| A (현상 유지)                    | L     | L    | **H**    | L            |     1      |
-| B (일괄 전환)                    | **H** | M    | L        | **H**        |     2      |
-| C (**CSSGenerator 확장 + 점진**) | M     | L    | L        | M            |     0      |
-| D (검증 도구만)                  | M     | L    | M        | L            |     0      |
-| E (수동 CSS 삭제)                | **H** | L    | L        | **CRIT**     |     2      |
+| 대안                 | 기술  | 성능 | 유지보수 | 마이그레이션 | HIGH+ |
+| -------------------- | :---: | :--: | :------: | :----------: | :---: |
+| A 현상 유지          |   L   |  L   | **CRIT** |      L       |   1   |
+| B 2층 구조           |   M   |  L   |  **H**   |      L       |   1   |
+| **C 완전 제거 점진** | **M** |  L   |    L     |    **M**     |   0   |
+| D 단일 시험대        |   L   |  L   |  **H**   |      L       |   1   |
+| E 일괄               | **H** |  M   |    L     |    **H**     |   2   |
+| F 검증만             |   M   |  L   |  **H**   |      L       |   1   |
 
-루프 판정: 대안 A는 유지보수 H 1개(SSOT 위반 영속화). 대안 B/E는 2개 이상. 대안 D는 HIGH+ 없지만 SSOT 단일화 목표 미달성. 대안 C가 HIGH+ 없고 점진 검증 가능한 유일한 해법.
-
-**선택 기준**: SSOT 단일화 + rollback 단위 최소화 + CSS 표현력 유지.
+루프 판정: 대안 C만 HIGH+ 없고 SSOT 목적 달성. B/F는 "두 source 유지" = 대칭 원리 위반. A/D는 위반 영속/확산. E는 회귀 추적 불가.
 
 ## Decision
 
-**대안 C: CSSGenerator 확장 + Archetype 별 점진 전환**을 선택한다.
+**대안 C: CSS consumer 비-spec 진실 완전 제거, 점진 전환**을 선택한다.
 
-기각 사유:
+### 기각 사유
 
-- **대안 A**: `@sync` 주석 23개가 SSOT 외부 영구 고립의 증거
-- **대안 B**: 59개 동시 전환은 회귀 원인 추적 불가, Phase 경계 없이 rollback 불가
-- **대안 D**: 검증 도구는 SSOT 단일화가 아닌 "두 source의 일치 확인"이며, 근본 해결 아님
-- **대안 E**: 수동 CSS의 React Aria 상태 조정 로직은 Spec 스키마가 표현하지 못함. 표현력 확장이 본 ADR 범위를 초과
+- **A**: CRIT 유지보수 위험. 4개 Field delegation 부재 + TimeField 충돌 방치
+- **B**: CSS consumer를 준-SSOT로 승격 — 원칙 위반. v1 breakdown이 이 방향으로 기울었음 → v2에서 명시 기각
+- **D**: 목적(ADR-036 재승격) 미달성
+- **E**: 회귀 추적 불가
+- **F**: 두 source 병존은 동기화 자동화일 뿐 SSOT 단일화 아님
 
-### 실행 구조 (요약)
+### 위험 수용 근거
 
-- **Pre-Phase 0** (모든 Phase 선행): CSSGenerator Composite 생성 엔진 확장 — `composition.delegation.variables`를 `spec.sizes` 값에서 자동 도출하는 파생 규칙 도입. 기존 simple 컴포넌트 경로 무회귀 검증
-- **Phase 1** — **Field 계열 7개 해체** (TextField/NumberField/SearchField/ColorField/DateField/TimeField/TextArea) — `skipCSSGeneration: false` 전환, 수동 CSS와 자동 생성 결과 diff 0
-- **Phase 2** — **Select/ComboBox 2개 해체** — Popover 자식 렌더링 경로 (ADR-047) 무회귀 필수
-- **Phase 3** — **DatePicker/DateRangePicker 2개 해체** — Calendar 내부 절대 좌표 (ADR-050) 무회귀
-- **Phase 4** — **잔존 Composite (~48개)** Menu/Dialog/Modal/Tabs/Form 등 — Archetype별 그룹 전환
-- **Phase 5** — `@sync` 주석 완전 제거 + `utils/fieldDelegation.ts` 상수 테이블 폐지 + ADR-036 재승격
+- 기술 M: CSSGenerator 3축 확장(prefix / states / shared refs)은 ADR-061 focusRing 단일 축 실증 패턴의 연장. DTS 빌드 위험은 `as const` narrowing 규약으로 관리 (ADR-061 학습)
+- 마이그레이션 M: Phase 경계를 **"대상 컴포넌트 수동 CSS 파일 삭제 단위"** 로 확정 — rollback 시점은 파일 단위로 이진 명확
 
-각 Phase의 작업 순서, 파일 변경 목록, 검증 체크리스트는 breakdown 문서 참조.
+### Pre-Phase 4 sub-phase 분해
 
-> 구현 상세: [059-composite-field-skip-css-dismantle-breakdown.md](../design/059-composite-field-skip-css-dismantle-breakdown.md)
+v1 breakdown의 단일 Pre-Phase 0(auto-derivation 메커니즘)을 **의존성 순서로 4단계 분해**:
+
+- **Pre-Phase 0-A (Naming SSOT)** — `composition.delegation.prefix` 선언 필드 추가, 기존 prefix spec 내부 확정, TimeField prefix 충돌 제거
+- **Pre-Phase 0-B (Delegation 완전성)** — SearchField/ColorField/DateField/TimeField 4개 delegation 신설, TextArea 일관성 회복
+- **Pre-Phase 0-C (공유 SSOT + 복제 해체)** — `BUTTON_SIZE_CONFIG` 참조 표준화, NumberField↔ComboBox 복제를 Phase 2 선행 전제로 명시
+- **Pre-Phase 0-D (States + Auto-derivation)** — CSSGenerator 확장 (sizes + states + prefix → 100% 생성). 기존 53개 simple 컴포넌트 무회귀 검증
+
+### Phase 배열
+
+- **Phase 1** — TextField 시험대 (1개 완전 해체, 수동 CSS 파일 삭제, `@sync` 제거, `/cross-check` 대칭성 검증)
+- **Phase 1.5** — SearchField/ColorField/DateField/TimeField/TextArea 5개 해체 (NumberField 제외)
+- **Phase 2** — Select/ComboBox/NumberField 해체. ADR-047 Popover 무회귀
+- **Phase 3** — DatePicker/DateRangePicker 해체. ADR-050 overflow clipping 무회귀
+- **Phase 4** — 잔존 Composite ~48개 Archetype 그룹 전환
+- **Phase 5** — `@sync` 잔존 grep 0, `utils/fieldDelegation.ts` 폐지, ADR-036 재승격
+
+> 구현 상세: [059-composite-field-skip-css-dismantle-breakdown.md](../design/059-composite-field-skip-css-dismantle-breakdown.md) — v2 재작성 필요
 
 ## Gates
 
-잔존 HIGH 위험: 없음. Pre-Phase 0의 CSSGenerator 확장이 기존 simple 컴포넌트에 영향을 주지 않는지가 최대 위험이며 Gate로 관리한다.
+**검증 원칙 변경**: v1의 "기존 수동 CSS ↔ generated CSS byte diff 0" Gate는 **폐기**. 기존 수동 CSS는 오염된 consumer 상태이며 reference 자격 없음. v2는 **spec을 source로 하는 두 consumer의 대칭 검증**으로 대체.
 
-| Gate                           | 시점             | 통과 조건                                                                                                             | 실패 시 대안                 |
-| ------------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| CSSGenerator 확장 무회귀       | Pre-Phase 0 완료 | 기존 `skipCSSGeneration: false` 컴포넌트 (Button/Badge 등) CSS 생성 결과 byte diff 0건, Storybook screenshot diff 0건 | 확장 롤백, 설계 재검토       |
-| Field 자동 생성 diff           | Phase 1 완료     | TextField 등 7개 자동 생성 CSS vs 기존 수동 CSS 시맨틱 diff 0건 (공백/순서 제외), Preview 렌더링 ≤1px                 | Phase 1 롤백, 수동 CSS 복원  |
-| `@sync` 제거 (Phase 1 해당)    | Phase 1 완료     | Field 7개 spec 파일의 `@sync` 주석 grep 0건                                                                           | 주석 복원, 근본 해결 재검토  |
-| Select/ComboBox Popover 무회귀 | Phase 2 완료     | ADR-047 Popover 테스트 통과, 드롭다운 표시 ≤1px                                                                       | Phase 2 롤백                 |
-| DatePicker Calendar 무회귀     | Phase 3 완료     | ADR-050 overflow clipping 무회귀, Calendar 절대 좌표 ≤1px                                                             | Phase 3 롤백                 |
-| 전체 `skipCSSGeneration` 제거  | Phase 4 완료     | `grep "skipCSSGeneration.*true"` 0건 (ADR-058 Phase 4 통합 시점에서의 잔존 포함)                                      | 잔존 컴포넌트 개별 재전환    |
-| `@sync` 주석 완전 제거         | Phase 5 완료     | 13개 파일의 23개 `@sync` 주석 grep 0건, `utils/fieldDelegation.ts` 상수 테이블 폐지 확인                              | 주석 복원 후 원인 재조사     |
-| 60fps 유지                     | 각 Phase 완료    | Canvas FPS 60, 초기 로드 <3s, 번들 <500KB                                                                             | Phase 롤백                   |
-| 2-pass re-enrichment 무회귀    | 각 Phase 완료    | `processedElementsMap` 경로 (layout-engine.md) 무회귀                                                                 | layout-engine 경로 분리 유지 |
+| Gate                | 시점          | 통과 조건                                                                                        | 실패 시 대안         |
+| ------------------- | ------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
+| Prefix 충돌 제거    | Pre-Phase 0-A | `composition.delegation.prefix` 미선언 Field 0, 동일 prefix 재사용 0, TimeField `--tf-*` 참조 0  | prefix 스키마 재설계 |
+| Delegation 완전성   | Pre-Phase 0-B | Field 7개 모두 delegation 선언, 필수 selector(Label/Input/Button/FieldError) 누락 0              | delegation 재설계    |
+| 공유 SSOT 표준화    | Pre-Phase 0-C | `BUTTON_SIZE_CONFIG` `@sync` 주석 0, NumberField Phase 2 의존성 명시                             | 공유 토큰 재설계     |
+| CSSGenerator 무회귀 | Pre-Phase 0-D | 기존 53개 simple 컴포넌트 CSS 생성 byte diff 0 (확장 자체의 회귀 없음)                           | 확장 롤백            |
+| Phase N 대칭성      | 각 Phase 완료 | 대상 컴포넌트: 수동 CSS 파일 **삭제**, `@sync` 0, **`/cross-check` Preview ↔ Builder 시각 일치** | Phase 롤백           |
+| 60fps / 번들        | 각 Phase      | 60fps, 번들 <500KB                                                                               | Phase 롤백           |
+| Popover 무회귀      | Phase 2       | ADR-047 드롭다운 시각 일치                                                                       | Phase 2 롤백         |
+| Calendar 무회귀     | Phase 3       | ADR-050 overflow clipping 무회귀                                                                 | Phase 3 롤백         |
+| 최종 SSOT 순도      | Phase 5       | `grep "skipCSSGeneration.*true"` = 0, `grep "@sync"` = 0, 대상 Composite 수동 CSS 파일 = 0       | 잔존 개별 해체       |
 
 ## Consequences
 
 ### Positive
 
-- **ADR-036 Spec-First 완전 준수** — 59개 Composite가 SSOT로 복귀, ADR-036이 진정으로 Implemented 상태 달성
-- **`@sync` 주석 23개 소멸** — 수동 동기화 부담 제거
-- **`resolveSpecFontSize` 129개소 집약 기반** — ADR-058 Phase 1 패턴을 Composite까지 확장 가능
-- **신규 Composite 추가 비용 절감** — `skipCSSGeneration: true` 플래그 없이 바로 생성, 수동 CSS 파일 불필요
-- **ADR-056 시너지** — Base Typography SSOT 단일 주입 지점으로 Composite도 편입
-- **CSS 변수 파생 규칙 확립** — `spec.sizes` → `--tf-input-padding` 자동 매핑 규약 정립
+- **대칭 파이프라인 복귀** — 59개 Composite가 spec-only consumer 상태
+- **수동 CSS 파일 제거** — React Aria 상태 override 포함 완전 제거. CSS consumer의 비-spec 진실 0
+- **`@sync` 주석 23개 소멸** — 수동 동기화의 구조적 원인 제거
+- **네이밍 규약 spec 흡수** — prefix 충돌 구조적 불가능
+- **공유 SSOT 명시화** — 암묵 참조(`BUTTON_SIZE_CONFIG` 7회) 정리
+- **ADR-036 "Fully Implemented" 재승격** — Phase 5 완료 시 체인 완결
 
 ### Negative
 
-- **Pre-Phase 0 선행 부담** — CSSGenerator Composite 엔진 확장이 Phase 1 진입 전 완료되어야 함
-- **5 Phase coordinated 변경** — 중단 시 부분 통합 상태 유지. Phase 경계 커밋 및 rollback 가능성 확보 필수
-- **수동 CSS 삭제의 점진 범위** — 완전 삭제가 아닌 "자동 생성과 동등한 부분만 삭제". React Aria 상태별 세부 조정은 수동 override 경로에 잔존 (소프트 부채)
-- **검증 부담** — 각 Phase 완료 시 CSS byte-level diff + Preview screenshot diff 2중 검증 필요
-- **Archetype 별 세밀한 규칙** — Field vs Overlay vs Picker 각각 composition 생성 규칙이 다름
+- **CSSGenerator 스키마 확장 범위 증가** — prefix/states/shared refs 3축 (v1 대비 확장)
+- **Pre-Phase 4 sub-phase** — 조사/설계 기간 증가
+- **검증 방식 전환 학습 비용** — byte diff → cross-check, 수동 Storybook 병행
+- **Playwright visual regression 부재** — 자동화 부족, 별도 ADR 후보
 
 ### 후속 작업
 
-- **`resolveSpecFontSize` 129개소 집약** — 본 ADR 완료 후 전 컴포넌트 단일 helper로 통합 (ADR-058 Phase 1 확장)
-- **`utils/fieldDelegation.ts` 완전 폐지** — Phase 5
-- **ADR-036 상태 재평가** — "Implemented" → "Partially Implemented" 하향 조정 후 본 ADR + ADR-058 + ADR-060/061 완료 시 재승격
-- ~~**ADR-060 (Form Control Indicator)** 병행~~ — Implemented (2026-04-13)
-- ~~**ADR-061 (Focus Ring 토큰화)** 병행~~ — Implemented (2026-04-13)
+- `utils/fieldDelegation.ts` 완전 폐지 — Phase 5
+- ADR-036 상태 재평가 — Phase 5 완료 시 "Fully Implemented" 재승격
+- Playwright visual regression 도입 검토 (별도 ADR 후보)
 
-## 착수 가이드 (새 세션 시작 시)
-
-본 ADR은 범위가 크고(59개 컴포넌트 + CSSGenerator 확장) 선행 설계 결정이 다수 있어, **코딩 직진 대신 선행 조사 단계**가 필수이다. ADR-060/061에서 얻은 교훈:
-
-1. **계획 외 매직 테이블/패턴 조기 발견** — ADR-060은 계획 4개 → 실측 6개로 확장. ADR-059도 `@sync` 주석 23개가 실제 어느 파일과 동기화되는지 실측 필요
-2. **공유 상수 타입 narrowing** — `DATE_PICKER_STATES` 같은 공유 states 상수는 `as const` 없으면 DTS 빌드 실패
-3. **bulk 치환 효율성** — 패턴이 동일할 때 perl 스크립트로 bulk 치환이 빠름. 단, 예외 패턴(Tabs의 inset variant 등)은 개별 처리
-4. **검증 2단계** — `pnpm type-check` + `pnpm build:specs` 양쪽이 다른 오류를 잡는다 (DTS 빌드는 type-check보다 엄격)
-
-### 선행 조사 4가지 (Pre-Phase 0 진입 전)
-
-1. **`@sync` 주석 전수 실측** — 13개 파일의 23개 주석이 각각 어떤 값과 동기화되는지 매핑
-   ```
-   grep -rn "@sync" packages/specs/src/components/
-   ```
-2. **Field 7개 composition.delegation 구조 비교** — TextField/NumberField/SearchField/ColorField/DateField/TimeField/TextArea의 delegation 배열 구조 + variables 네이밍 패턴(`--tf-*`, `--select-*` 등) 실측
-3. **Pre-Phase 0 설계 결정** — breakdown이 제시한 `"auto"` 파생 규칙의 구체화. 변수 prefix 결정 방식(컴포넌트명/archetype별/명시 선언) 중 선택. `superpowers:brainstorming` 스킬 사용 권장
-4. **CSS 시맨틱 diff 도구 준비** — Phase 1 Gate의 "byte diff 0건(공백/순서 제외)" 검증을 위한 diff 방법 결정. `css-diff` CLI 또는 수작업 정규화 스크립트
-
-### 재시작 프롬프트
+## 재시작 프롬프트 (v2)
 
 새 세션에서 아래 프롬프트를 그대로 사용:
 
 ```text
-ADR-059 Composite Field skipCSSGeneration 해체 작업을 시작합니다.
+ADR-059 v2 Composite Field CSS SSOT 확립 작업을 계속합니다.
 
-배경: ADR-036 재승격 체인 마지막 잔존 위반. ADR-057/058/060/061 완료.
-참고: docs/adr/059-composite-field-skip-css-dismantle.md + breakdown
+원칙: Spec=SSOT, CSS/Skia는 대등 consumer, symmetric pipeline.
+v2 본문: docs/adr/059-composite-field-skip-css-dismantle.md (2026-04-13 재작성)
+v1→v2 변경 핵심: 2층 구조(B안) 기각, 수동 CSS 완전 삭제 + states 확장 결정
 
-코딩 전 선행 조사 4가지 (docs/adr/059 §착수 가이드 참조):
+Pre-Phase 4단계:
+  0-A Naming SSOT (prefix 선언 + TimeField 충돌 제거)
+  0-B Delegation 완전성 (4개 Field + TextArea)
+  0-C 공유 SSOT (BUTTON_SIZE_CONFIG + NumberField↔ComboBox)
+  0-D States + Auto-derivation (CSSGenerator 확장)
 
-1. @sync 주석 전수 실측 (grep 23개소 매핑)
-2. Field 7개 composition.delegation 구조 비교
-3. Pre-Phase 0 설계 — "auto" 파생 규칙 (superpowers:brainstorming 사용)
-4. CSS 시맨틱 diff 도구 결정
+선행 조사 결과는 MEMORY.md/adr059-launch-plan.md 및 본 ADR §Context 참조.
+breakdown 문서는 v2 기준으로 재작성 필요.
 
-worktree 격리 필요성도 판단해주세요 (superpowers:using-git-worktrees).
-
-4개 조사 완료 후 요약 보고 → 사용자 확인 → Pre-Phase 0 코드 수정 착수 순서로
-진행합니다. MEMORY.md의 adr059-launch-plan.md에 상세 맥락이 있습니다.
+Pre-Phase 0-A 착수 전 worktree 진입 권장 (superpowers:using-git-worktrees).
 ```

@@ -1,3 +1,13 @@
+---
+description: CSS 토큰 S2 + React Aria 하이브리드 네이밍 규칙 (ADR-022)
+globs:
+  - "**/*.css"
+  - "**/theme/**"
+  - "**/*theme*.ts"
+  - "**/*theme*.tsx"
+  - "**/tokens/**"
+---
+
 # CSS 토큰 규칙 — S2 + React Aria Hybrid Naming (ADR-022)
 
 > **SSOT 체인 연계 (CRITICAL)**: CSS는 [ssot-hierarchy.md](ssot-hierarchy.md) **D3(시각 스타일)의 direct consumer** (CSSGenerator 경유). Skia consumer와 **대등(symmetric)**. 수동 CSS가 Spec에서 파생 아닌 경우 D3 위반 (ADR-059로 해체 진행). `@sync` 주석으로 CSS↔CSS 참조는 consumer-to-consumer 금지 패턴.
