@@ -42,17 +42,14 @@
     --tf-input-line-height: var(--text-sm--line-height);
     --tf-hint-size: var(--text-xs);
 
-    /* ===== Variant ===== */
-    &[data-variant="secondary"] {
-      --field-accent: var(--bg-inset);
+    /* ===== Quiet (isQuiet) ===== */
+    &[data-quiet="true"] {
+      --tf-border: transparent;
+      --tf-bg: transparent;
     }
 
-    &[data-variant="tertiary"] {
-      --field-accent: var(--color-purple-600);
-    }
-
-    &[data-variant="error"] {
-      --field-accent: var(--negative);
+    &[data-quiet="true"] .react-aria-Input {
+      border-bottom: 1px solid var(--border);
     }
 
     /* ===== Size ===== */
@@ -106,13 +103,6 @@
     --label-font-size: var(--tf-label-size);
     --label-font-weight: 600;
     --label-margin: var(--tf-label-margin);
-
-    &[data-variant="primary"],
-    &[data-variant="secondary"],
-    &[data-variant="tertiary"],
-    &[data-variant="error"] {
-      --label-color: var(--field-accent);
-    }
 
     /* ===== Input ===== */
     --input-padding: var(--tf-input-padding);

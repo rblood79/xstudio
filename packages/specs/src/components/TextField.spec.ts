@@ -29,13 +29,6 @@ import {
  * TextField Props
  */
 export interface TextFieldProps {
-  variant?:
-    | "default"
-    | "accent"
-    | "neutral"
-    | "purple"
-    | "negative"
-    | "positive";
   size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
@@ -93,7 +86,6 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: {
@@ -255,57 +247,6 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     ],
   },
 
-  variants: {
-    default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.accent}" as TokenRef,
-    },
-    accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.accent}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.neutral-subtle}" as TokenRef,
-    },
-    purple: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.purple}" as TokenRef,
-    },
-    negative: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-      borderHover: "{color.negative-hover}" as TokenRef,
-    },
-    positive: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-      borderHover: "{color.accent-hover}" as TokenRef,
-    },
-  },
-
   // @sync Button.spec.ts sizes — Input height = Button height
   sizes: {
     sm: {
@@ -442,7 +383,6 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = TextFieldSpec.variants![(props as { variant?: keyof typeof TextFieldSpec.variants }).variant ?? TextFieldSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -459,17 +399,15 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
       const bgColor =
         props.style?.backgroundColor ??
-        (state === "hover"
-          ? variant.backgroundHover
-          : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+        (state === "hover" || state === "pressed"
+          ? ("{color.layer-1}" as TokenRef)
+          : ("{color.layer-2}" as TokenRef));
 
       const borderColor =
         props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+        (state === "hover"
+          ? ("{color.accent}" as TokenRef)
+          : ("{color.border}" as TokenRef));
 
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
@@ -499,7 +437,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
       const stylePx =
         props.style?.paddingLeft ??

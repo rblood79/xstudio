@@ -101,12 +101,8 @@ export function extractSpecTextStyle(
   const rawSize = (props?.size as string) ?? entry.defaultSize;
   const sizeName =
     mapKey === "breadcrumb" ? normalizeBreadcrumbRspSizeKey(rawSize) : rawSize;
-  const variantName = (props?.variant as string) ?? spec.defaultVariant;
-
-  const variant =
-    spec.variants[variantName] ?? spec.variants[spec.defaultVariant];
   const size = spec.sizes[sizeName] ?? spec.sizes[spec.defaultSize];
-  if (!variant || !size) return null;
+  if (!size) return null;
 
   const propsForShapes: Record<string, unknown> =
     lower === "breadcrumbs"
@@ -120,7 +116,7 @@ export function extractSpecTextStyle(
         ? { ...props, size: sizeName }
         : { ...(props ?? {}) };
 
-  const shapes = spec.render.shapes(propsForShapes, variant, size, "default");
+  const shapes = spec.render.shapes(propsForShapes, size, "default");
 
   const textShape = shapes.find(
     (s): s is TextShape & { type: "text" } => s.type === "text",

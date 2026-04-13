@@ -113,14 +113,14 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
     pixiLayer?: "content" | "overlay" | "modal" | "toast";
   };
 
-  /** Variant 정의 */
-  variants: Record<string, VariantSpec>;
+  /** Variant 정의 (optional — ADR-062: RSP 미규정 Field 계열은 variants 없음) */
+  variants?: Record<string, VariantSpec>;
 
   /** Size 정의 */
   sizes: Record<string, SizeSpec>;
 
-  /** 기본 variant */
-  defaultVariant: string;
+  /** 기본 variant (optional — variants와 함께 부재 가능) */
+  defaultVariant?: string;
 
   /** 기본 size */
   defaultSize: string;

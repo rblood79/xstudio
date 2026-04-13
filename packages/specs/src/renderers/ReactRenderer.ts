@@ -33,18 +33,20 @@ export function renderToReact<Props extends Record<string, unknown>>(
   const variant = (props.variant as string) || spec.defaultVariant;
   const size = (props.size as string) || spec.defaultSize;
 
-  const variantSpec = spec.variants[variant];
-  const sizeSpec = spec.sizes[size];
+  const variantSpec = variant != null ? spec.variants?.[variant] : undefined;
 
-  if (!variantSpec || !sizeSpec) {
+  if (spec.variants != null && !variantSpec) {
     console.warn(`Invalid variant/size: ${variant}/${size}`);
   }
 
   // 기본 data 속성
   const dataAttributes: Record<string, string> = {
-    'data-variant': variant,
     'data-size': size,
   };
+  // variants가 있는 Spec만 data-variant 출력 (ADR-062: Field 계열 제외)
+  if (spec.variants != null && variant != null) {
+    dataAttributes['data-variant'] = variant;
+  }
 
   // 컴포넌트별 추가 속성
   if (spec.render.react) {
