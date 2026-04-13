@@ -4,7 +4,7 @@
 
 ## Status
 
-Proposed — 2026-04-13
+Implemented — 2026-04-13 (Phase 1~3 완료, Phase 4 문서/상태 갱신 중)
 
 ## Context
 

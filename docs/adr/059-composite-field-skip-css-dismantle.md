@@ -4,9 +4,9 @@
 
 ## Status
 
-Proposed — 2026-04-11
+Proposed — 2026-04-11 (ADR-062 Implemented 2026-04-13 — variant 블로커 해제됨)
 
-**Partially blocked by [ADR-062](062-field-spec-rsp-conformance.md)** — 2026-04-13 Phase 1 Step 1 시험대에서 Field variant 개념이 RSP 표준 밖임이 드러남. ADR-062 완료는 **variant 이름 불일치 블로커만 해제**. 본 ADR의 나머지 블로커(size 3중 불일치, state selectors, bridge 변수, base defaults, filled variant, composition 계약 부재 — breakdown §3대 블로커 참조)는 **별도 선행 과제**로 ADR-062 완료 후 독립 처리 필요.
+**Remaining blockers** (ADR-062 무관): size 3중 불일치, state selectors, bridge 변수, base defaults, filled variant, composition 계약 부재 — breakdown §3대 블로커 참조. 이들은 **본 ADR 고유 선행 과제**로 순차 처리.
 
 ## 원칙
 
