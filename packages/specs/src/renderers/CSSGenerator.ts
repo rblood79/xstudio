@@ -288,9 +288,10 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
       : DEFAULT_BASE_STYLES;
   }
 
-  const defaultVariant = spec.variants != null && spec.defaultVariant != null
-    ? spec.variants[spec.defaultVariant]
-    : undefined;
+  const defaultVariant =
+    spec.variants != null && spec.defaultVariant != null
+      ? spec.variants[spec.defaultVariant]
+      : undefined;
   const defaultSize = spec.sizes[spec.defaultSize];
 
   const lines = [`  /* Base styles — archetype: ${archetype ?? "default"} */`];
@@ -667,6 +668,19 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
       }
       lines.push("}");
       lines.push("");
+    }
+
+    // ADR-059 v2 Pre-Phase 0-D.1: Bridge 변수 (size 비분기)
+    if (delegation.bridges) {
+      const bridgeEntries = Object.entries(delegation.bridges);
+      if (bridgeEntries.length > 0) {
+        lines.push(`${sel} ${childSelector} {`);
+        for (const [varName, value] of bridgeEntries) {
+          lines.push(`  ${varName}: ${value};`);
+        }
+        lines.push("}");
+        lines.push("");
+      }
     }
   }
 

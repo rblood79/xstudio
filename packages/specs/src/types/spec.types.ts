@@ -321,6 +321,26 @@ export interface DelegationSpec {
    * `"auto"` 선택 시 `prefix` 필드 필수.
    */
   variables: "auto" | Record<string, Record<string, string>>;
+
+  /**
+   * Bridge 변수 — size에 의존하지 않는 변수 재노출 (ADR-059 v2 Pre-Phase 0-D.1)
+   *
+   * `childSelector` 범위 내에서 `{ 신규변수명: 값 }` 을 그대로 발행.
+   * 주로 delegation prefix 변수 (`--tf-label-size`) 를 범용 변수
+   * (`--label-font-size`) 로 재노출하여 primitive CSS 와의 계약을 유지한다.
+   *
+   * - 생성 selector: `.react-aria-{SpecName} {childSelector}` (사이즈 비분기)
+   * - 값: CSS 변수 참조 또는 리터럴 허용
+   *
+   * 예:
+   * ```
+   * bridges: {
+   *   "--label-font-size": "var(--tf-label-size)",
+   *   "--label-font-weight": "600",
+   * }
+   * ```
+   */
+  bridges?: Record<string, string>;
 }
 
 // ─── ADR-048: S2 Context 기반 선언적 Props Propagation ──────────────────────
@@ -549,11 +569,7 @@ export interface RenderSpec<Props> {
    * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
    * @returns 렌더링할 도형 배열
    */
-  shapes: (
-    props: Props,
-    size: SizeSpec,
-    state: ComponentState,
-  ) => Shape[];
+  shapes: (props: Props, size: SizeSpec, state: ComponentState) => Shape[];
 
   /**
    * React 특화 속성

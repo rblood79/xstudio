@@ -84,7 +84,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   name: "TextField",
   description: "React Aria 기반 텍스트 입력 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultSize: "md",
 
@@ -321,6 +321,11 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             "--tf-label-margin": "6px",
           },
         },
+        bridges: {
+          "--label-font-size": "var(--tf-label-size)",
+          "--label-font-weight": "600",
+          "--label-margin": "var(--tf-label-margin)",
+        },
       },
       {
         childSelector: ".react-aria-Input",
@@ -352,6 +357,11 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             "--tf-input-line-height": "var(--text-lg--line-height)",
           },
         },
+        bridges: {
+          "--input-padding": "var(--tf-input-padding)",
+          "--input-font-size": "var(--tf-input-size)",
+          "--input-line-height": "var(--tf-input-line-height)",
+        },
       },
       {
         childSelector: ".react-aria-FieldError",
@@ -362,6 +372,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           md: { "--tf-hint-size": "var(--text-sm)" },
           lg: { "--tf-hint-size": "var(--text-base)" },
           xl: { "--tf-hint-size": "var(--text-lg)" },
+        },
+        bridges: {
+          "--error-font-size": "var(--tf-hint-size)",
         },
       },
     ],
