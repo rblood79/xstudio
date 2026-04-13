@@ -279,9 +279,18 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   // Composite는 composition.layout에서 base styles 파생
   let baseStyles: string[];
   if (spec.composition) {
-    baseStyles =
-      COMPOSITION_LAYOUT_STYLES[spec.composition.layout] ??
-      COMPOSITION_LAYOUT_STYLES["flex-column"];
+    baseStyles = [
+      ...(COMPOSITION_LAYOUT_STYLES[spec.composition.layout] ??
+        COMPOSITION_LAYOUT_STYLES["flex-column"]),
+    ];
+    // ADR-059 v2 Pre-Phase 0-D.3: containerStyles 병합
+    if (spec.composition.containerStyles) {
+      for (const [prop, value] of Object.entries(
+        spec.composition.containerStyles,
+      )) {
+        baseStyles.push(`    ${prop}: ${value};`);
+      }
+    }
   } else {
     baseStyles = archetype
       ? (ARCHETYPE_BASE_STYLES[archetype] ?? DEFAULT_BASE_STYLES)
@@ -680,6 +689,36 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
         }
         lines.push("}");
         lines.push("");
+      }
+    }
+  }
+
+  // ADR-059 v2 Pre-Phase 0-D.3: containerVariants
+  if (comp.containerVariants) {
+    for (const [dataAttr, valueMap] of Object.entries(comp.containerVariants)) {
+      for (const [attrValue, variant] of Object.entries(valueMap)) {
+        const variantSel = `${sel}[data-${dataAttr}="${attrValue}"]`;
+
+        if (variant.styles && Object.keys(variant.styles).length > 0) {
+          lines.push(`${variantSel} {`);
+          for (const [prop, value] of Object.entries(variant.styles)) {
+            lines.push(`  ${prop}: ${value};`);
+          }
+          lines.push("}");
+          lines.push("");
+        }
+
+        if (variant.nested) {
+          for (const nested of variant.nested) {
+            if (Object.keys(nested.styles).length === 0) continue;
+            lines.push(`${variantSel} ${nested.selector} {`);
+            for (const [prop, value] of Object.entries(nested.styles)) {
+              lines.push(`  ${prop}: ${value};`);
+            }
+            lines.push("}");
+            lines.push("");
+          }
+        }
       }
     }
   }

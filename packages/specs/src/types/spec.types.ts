@@ -284,8 +284,39 @@ export interface CompositionSpec {
   /** gap (optional) */
   gap?: string;
 
-  /** CSS Variable Delegation — size별 자식 변수 override */
-  delegation: DelegationSpec[];
+  /**
+   * 컨테이너 base styles 확장 (ADR-059 v2 Pre-Phase 0-D.3)
+   *
+   * `layout` 이 제공하지 않는 컨테이너 레벨 CSS 속성을 추가한다 (`width: fit-content` 등).
+   * generateBaseStyles 출력에 병합.
+   */
+  containerStyles?: Record<string, string>;
+
+  /**
+   * 컨테이너 variant (ADR-059 v2 Pre-Phase 0-D.3)
+   *
+   * RAC data-* attribute 기반 컨테이너 variant 선언. S2 `style({ variants })` 와 isomorphic.
+   *
+   * 구조: `{ [dataAttr]: { [attrValue]: ContainerVariantStyles } }`
+   * - `dataAttr`: `data-` 접두 제외 kebab-case (예: `quiet`, `label-position`)
+   * - `attrValue`: 속성 값 (boolean 은 `"true"`/`"false"`, enum 은 해당 값)
+   *
+   * 생성 selector: `.react-aria-{SpecName}[data-{dataAttr}="{attrValue}"]`
+   * 중첩: 해당 selector 뒤에 `nested.selector` 그대로 append (예: `> .react-aria-Label`).
+   */
+  containerVariants?: Record<string, Record<string, ContainerVariantStyles>>;
+}
+
+export interface ContainerVariantStyles {
+  /** 컨테이너 variant 선택자에 직접 적용할 CSS 속성 */
+  styles?: Record<string, string>;
+
+  /** 컨테이너 variant 하위 중첩 selector */
+  nested?: Array<{
+    /** 컨테이너 selector 뒤에 append 할 CSS selector (예: `> .react-aria-Label`) */
+    selector: string;
+    styles: Record<string, string>;
+  }>;
 }
 
 /**

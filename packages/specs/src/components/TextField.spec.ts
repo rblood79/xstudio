@@ -295,6 +295,61 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
+    containerStyles: {
+      width: "fit-content",
+    },
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            display: "grid",
+            "grid-template-columns":
+              "var(--form-label-width, max-content) minmax(0, 1fr)",
+            "column-gap": "var(--form-field-gap, var(--spacing-md))",
+            "row-gap": "var(--spacing-xs)",
+            "align-items": "start",
+            width: "100%",
+          },
+          nested: [
+            {
+              selector: "> .react-aria-Label",
+              styles: {
+                "grid-column": "1",
+                "justify-self": "stretch",
+                "text-align": "var(--form-label-align, start)",
+              },
+            },
+            {
+              selector: "> :not(.react-aria-Label)",
+              styles: {
+                "grid-column": "2",
+                "min-width": "0",
+              },
+            },
+          ],
+        },
+      },
+      quiet: {
+        true: {
+          styles: {
+            "--tf-border": "transparent",
+            "--tf-bg": "transparent",
+          },
+          nested: [
+            {
+              selector: ".react-aria-Input",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-radius": "0",
+                "border-bottom": "1px solid var(--border)",
+              },
+            },
+          ],
+        },
+      },
+    },
     delegation: [
       {
         childSelector: ".react-aria-Label",
