@@ -295,6 +295,18 @@ export interface DelegationSpec {
   /** 자식 CSS 선택자 (예: '.react-aria-Button', '.react-aria-Input') */
   childSelector: string;
 
+  /**
+   * CSS 변수 네임스페이스 prefix (ADR-059 v2 Pre-Phase 0-A)
+   *
+   * variable-based delegation에서 이 delegation이 선언하는 변수군의 prefix를 명시한다.
+   * `--{prefix}-*` 패턴으로 자동 도출/충돌 검증에 사용.
+   *
+   * - 설정 예: `prefix: "text-field-input"` → 선언 변수는 `--text-field-input-*` 로 강제
+   * - 생략 가능: direct-property delegation (`background`, `padding` 등 CSS 속성 직접 기입) 에서는 prefix 개념 부적용
+   * - 동일 prefix 재사용은 Pre-Phase 0-D 에서 build-time 검증 예정
+   */
+  prefix?: string;
+
   /** size → { CSS변수명 → 값 } 매핑 */
   variables: Record<string, Record<string, string>>;
 }

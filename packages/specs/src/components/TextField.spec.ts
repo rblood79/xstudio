@@ -349,6 +349,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     delegation: [
       {
         childSelector: ".react-aria-Label",
+        prefix: "tf-label",
         variables: {
           xs: { "--tf-label-size": "var(--text-2xs)" },
           sm: { "--tf-label-size": "var(--text-xs)" },
@@ -358,6 +359,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       },
       {
         childSelector: ".react-aria-Input",
+        prefix: "tf-input",
         variables: {
           xs: {
             "--tf-input-padding": "var(--spacing-3xs) var(--spacing-xs)",
@@ -383,6 +385,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       },
       {
         childSelector: ".react-aria-FieldError",
+        prefix: "tf-hint",
         variables: {
           xs: { "--tf-hint-size": "var(--text-2xs)" },
           sm: { "--tf-hint-size": "var(--text-xs)" },
