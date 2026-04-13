@@ -331,6 +331,62 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
     },
   },
 
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "cf-label",
+        variables: {
+          xs: { "--cf-label-size": "var(--text-2xs)" },
+          sm: { "--cf-label-size": "var(--text-xs)" },
+          md: { "--cf-label-size": "var(--text-sm)" },
+          lg: { "--cf-label-size": "var(--text-base)" },
+          xl: { "--cf-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        prefix: "cf-input",
+        variables: {
+          xs: {
+            "--cf-input-size": "var(--text-2xs)",
+            "--cf-input-line-height": "var(--text-2xs--line-height)",
+          },
+          sm: {
+            "--cf-input-size": "var(--text-xs)",
+            "--cf-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--cf-input-size": "var(--text-sm)",
+            "--cf-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--cf-input-size": "var(--text-base)",
+            "--cf-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--cf-input-size": "var(--text-lg)",
+            "--cf-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "cf-hint",
+        variables: {
+          xs: { "--cf-hint-size": "var(--text-2xs)" },
+          sm: { "--cf-hint-size": "var(--text-xs)" },
+          md: { "--cf-hint-size": "var(--text-xs)" },
+          lg: { "--cf-hint-size": "var(--text-sm)" },
+          xl: { "--cf-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [{ parentProp: "size", childPath: "Label", override: true }],
   },

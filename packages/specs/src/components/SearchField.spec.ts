@@ -300,6 +300,57 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
     },
   },
 
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  // (skipCSSGeneration: true 유지 — 이 단계는 prefix/selector 선언만, CSS 출력 변화 없음)
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "sf-label",
+        variables: {
+          sm: { "--sf-label-size": "var(--text-xs)" },
+          md: { "--sf-label-size": "var(--text-sm)" },
+          lg: { "--sf-label-size": "var(--text-base)" },
+          xl: { "--sf-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        prefix: "sf-input",
+        variables: {
+          sm: {
+            "--sf-input-size": "var(--text-xs)",
+            "--sf-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--sf-input-size": "var(--text-sm)",
+            "--sf-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--sf-input-size": "var(--text-base)",
+            "--sf-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--sf-input-size": "var(--text-lg)",
+            "--sf-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "sf-hint",
+        variables: {
+          sm: { "--sf-hint-size": "var(--text-xs)" },
+          md: { "--sf-hint-size": "var(--text-xs)" },
+          lg: { "--sf-hint-size": "var(--text-sm)" },
+          xl: { "--sf-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [
       { parentProp: "size", childPath: "SearchFieldWrapper", override: true },

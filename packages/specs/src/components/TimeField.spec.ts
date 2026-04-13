@@ -108,6 +108,57 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
     },
   },
 
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  // 주의: prefix는 `time-field-*` (TextField `tf-*` 와 충돌 차단)
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "time-field-label",
+        variables: {
+          sm: { "--time-field-label-size": "var(--text-xs)" },
+          md: { "--time-field-label-size": "var(--text-sm)" },
+          lg: { "--time-field-label-size": "var(--text-base)" },
+          xl: { "--time-field-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-DateInput",
+        prefix: "time-field-input",
+        variables: {
+          sm: {
+            "--time-field-input-size": "var(--text-xs)",
+            "--time-field-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--time-field-input-size": "var(--text-sm)",
+            "--time-field-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--time-field-input-size": "var(--text-base)",
+            "--time-field-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--time-field-input-size": "var(--text-lg)",
+            "--time-field-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "time-field-hint",
+        variables: {
+          sm: { "--time-field-hint-size": "var(--text-xs)" },
+          md: { "--time-field-hint-size": "var(--text-xs)" },
+          lg: { "--time-field-hint-size": "var(--text-sm)" },
+          xl: { "--time-field-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [
       { parentProp: "size", childPath: "Label", override: true },

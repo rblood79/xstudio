@@ -105,6 +105,56 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
     },
   },
 
+  // ADR-059 v2 Pre-Phase 0-B: Composite delegation SSOT 선언
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "df-label",
+        variables: {
+          sm: { "--df-label-size": "var(--text-xs)" },
+          md: { "--df-label-size": "var(--text-sm)" },
+          lg: { "--df-label-size": "var(--text-base)" },
+          xl: { "--df-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-DateInput",
+        prefix: "df-input",
+        variables: {
+          sm: {
+            "--df-input-size": "var(--text-xs)",
+            "--df-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--df-input-size": "var(--text-sm)",
+            "--df-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--df-input-size": "var(--text-base)",
+            "--df-input-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--df-input-size": "var(--text-lg)",
+            "--df-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "df-hint",
+        variables: {
+          sm: { "--df-hint-size": "var(--text-xs)" },
+          md: { "--df-hint-size": "var(--text-xs)" },
+          lg: { "--df-hint-size": "var(--text-sm)" },
+          xl: { "--df-hint-size": "var(--text-base)" },
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [
       { parentProp: "size", childPath: "Label", override: true },
