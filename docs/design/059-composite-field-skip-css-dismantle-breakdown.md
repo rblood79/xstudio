@@ -144,6 +144,51 @@ css-diff /tmp/TextField.css.before /tmp/TextField.css.after
 - [ ] 2-pass re-enrichment 무회귀 (Label/Checkbox 내부 미재발)
 - [ ] ADR-042 dimension injection 무회귀
 
+## Pre-Phase 0-E 사전 진단 결과 (2026-04-13)
+
+5개 Composite Field 수동 CSS 에서 `var(--{prefix}-*)` 참조를 정적 grep 하여 0-B 선언과의 정합성 매트릭스를 산출. (grep: `var\(--(tf|sf|cf|df|time-field)-[a-z-]+\)` @ `packages/shared/src/components/styles/{TextField,SearchField,ColorField,DateField,TimeField}.css`)
+
+| Field | 0-B 선언 | 실제 CSS 소비 | Dead (선언/미소비) | Undeclared (소비/미선언) |
+| ---------- | ------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------ | -------------------------------------- |
+| TextField | tf-label-size, tf-input-{padding,size,line-height}, tf-hint-size | 동일 + tf-label-margin | 0 | `tf-label-margin` |
+| SearchField | sf-label-size, sf-input-{size,line-height}, sf-hint-size | sf-label-size, sf-icon-size, sf-btn-size, sf-hint-size | **sf-input-size, sf-input-line-height** | `sf-icon-size`, `sf-btn-size` |
+| ColorField | cf-label-size, cf-input-{size,line-height}, cf-hint-size | 동일 + cf-input-padding, cf-input-max-width | 0 | `cf-input-padding`, `cf-input-max-width` |
+| DateField | df-label-size, df-input-{size,line-height}, df-hint-size | 동일 + df-input-padding, df-segment-size | 0 | `df-input-padding`, `df-segment-size` |
+| **TimeField** | **time-field-\* (label/input/hint)** | **tf-\* (!!) — TextField prefix 재사용 중** | **time-field-\* 3개 전부 dead** | `tf-segment-size` (TextField 에도 없음) |
+
+### 블로커 (Phase 1 진입 전 해제 필수)
+
+1. **TimeField.css `tf-*` prefix 충돌** (CRITICAL)
+   - 증상: TimeField 전용 CSS 가 TextField 네임스페이스를 공유 — TextField 의 size variant override 가 TimeField 로 의도치 않게 누출
+   - 영향: 0-B 의 `time-field-*` 선언은 현재 전부 dead code
+   - 조치: TimeField.css 의 모든 `--tf-*` → `--time-field-*` 로 리네이밍 후 hand-written CSS 단독 회귀 확인 (CSS-only diff, Skia 영향 없음)
+   - 주의: 공통 `tf-segment-size` 는 어디에도 선언 없는 dangling — 제거 또는 selector 기반 대체
+
+2. **SearchField 0-B 선언 오류** (HIGH)
+   - 증상: 선언된 `sf-input-size`, `sf-input-line-height` 는 CSS 어디에도 참조 없음. 실제 CSS 는 `sf-icon-size`, `sf-btn-size` 참조
+   - 조치: 0-B SearchField composition.delegation 수정 — input-size/line-height 제거, icon/btn delegation 신설 (또는 size-level 변수로 재정렬)
+
+3. **auto 5변수 외 추가 변수 다수** (MEDIUM)
+   - 소비 중인 수동 변수: `-label-margin` (TF), `-icon-size` (SF), `-btn-size` (SF), `-max-width` (CF), `-segment-size` (DF)
+   - auto 파생 표준 5변수만으로는 현재 hand-written CSS 대체 불가 → Phase 1 는 **hybrid** 방식 필수
+     - `variables: "auto"` : 표준 5변수
+     - `variables: { md: { "--{prefix}-icon-size": ... } }` 형태로 추가 선언 병기 (type-system 변경 없음, 기존 union 그대로 수용)
+   - 또는 auto 확장 v2: `variables: { mode: "auto", extra: { ... } }` — 타입 변경 필요. 현 단계는 hybrid 선호
+
+### 블로커 해제 작업 순서 (0-F 제안)
+
+| # | 작업 | 리스크 |
+| --- | ------------------------------------------- | ---- |
+| 0-F.1 | TimeField.css `tf-*` → `time-field-*` 리네이밍 | LOW (CSS-only, Preview 회귀 테스트 가능) |
+| 0-F.2 | SearchField 0-B 선언 수정 (icon/btn 포함) | LOW (선언만, skipCSSGeneration:true 유지 → 출력 0) |
+| 0-F.3 | breakdown 문서의 Phase 1 체크리스트에 "auto + hybrid extra" 설계 반영 | LOW (문서만) |
+
+### 검증 방법
+
+- 블로커 3개 해제 후 동일 grep 재실행 → dead/undeclared 항목 0 목표
+- `build:specs` → validator R1/R2/R3 통과 (현재도 통과 — validator 는 CSS 미스캔)
+- 제안: validator 에 R4 추가 고려 — "prefix 선언됐으나 `packages/shared/src/components/styles/` 에서 미참조 시 경고"
+
 ## 롤백 전략
 
 - Phase 1 실패 시: 전환된 컴포넌트의 `skipCSSGeneration: true` 복원, 수동 CSS 복원, `@sync` 주석 복원
