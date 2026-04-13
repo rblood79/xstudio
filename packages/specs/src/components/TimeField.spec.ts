@@ -193,6 +193,27 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           "line-height": "var(--time-field-input-line-height)",
           transition: "border-color 200ms ease, background-color 200ms ease",
         },
+        states: {
+          "[data-hovered]:not([data-focus-within]):not([data-disabled])": {
+            "border-color": "var(--border-hover)",
+            background: "var(--bg-overlay)",
+          },
+          "[data-focus-within]": {
+            outline: "2px solid var(--accent)",
+            "outline-offset": "-1px",
+            "border-color": "var(--accent)",
+          },
+          "[data-invalid]": { "border-color": "var(--negative)" },
+          "[data-invalid][data-focus-within]": {
+            "outline-color": "var(--negative)",
+          },
+          "[data-disabled]": {
+            "border-color": "color-mix(in srgb, var(--fg) 12%, transparent)",
+            color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+            cursor: "not-allowed",
+            opacity: "0.38",
+          },
+        },
       },
       {
         childSelector: ".react-aria-DateSegment",

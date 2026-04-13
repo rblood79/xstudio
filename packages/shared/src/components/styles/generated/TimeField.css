@@ -123,6 +123,32 @@
   --time-field-input-min-width: 220px;
 }
 
+.react-aria-TimeField .react-aria-DateInput:where([data-hovered]:not([data-focus-within]):not([data-disabled])) {
+  border-color: var(--border-hover);
+  background: var(--bg-overlay);
+}
+
+.react-aria-TimeField .react-aria-DateInput:where([data-focus-within]) {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.react-aria-TimeField .react-aria-DateInput:where([data-invalid]) {
+  border-color: var(--negative);
+}
+
+.react-aria-TimeField .react-aria-DateInput:where([data-invalid][data-focus-within]) {
+  outline-color: var(--negative);
+}
+
+.react-aria-TimeField .react-aria-DateInput:where([data-disabled]) {
+  border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+  color: color-mix(in srgb, var(--fg) 38%, transparent);
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
 .react-aria-TimeField .react-aria-DateInput {
   display: inline-flex;
   padding: var(--time-field-input-padding);
