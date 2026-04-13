@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 
 export interface DatePickerProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg" | "xl";
   value?: string;
   placeholder?: string;
@@ -92,7 +91,6 @@ export function buildDatePlaceholder(locale: string): string {
 /** DatePicker / DateRangePicker 공유 shapes 빌더 */
 export interface DatePickerShapesInput {
   props: Record<string, unknown>;
-  variant: Record<string, unknown>;
   sizeEntry: Record<string, unknown>;
   displayText: string;
   hasValue: boolean;
@@ -100,7 +98,7 @@ export interface DatePickerShapesInput {
 }
 
 export function buildDatePickerShapes(input: DatePickerShapesInput): Shape[] {
-  const { props, variant, sizeEntry, displayText, hasValue } = input;
+  const { props, sizeEntry, displayText, hasValue } = input;
   const defaultCW = input.defaultContainerWidth ?? 200;
 
   const sizeName = (props.size as string) || "md";
@@ -129,14 +127,14 @@ export function buildDatePickerShapes(input: DatePickerShapesInput): Shape[] {
   const textColor =
     (style.color as string | undefined) ??
     (hasValue
-      ? (variant.text as string)
+      ? ("{color.neutral}" as TokenRef)
       : ("{color.neutral-subdued}" as TokenRef));
   const bgColor =
     (style.backgroundColor as string | undefined) ??
-    (variant.background as string);
+    ("{color.layer-2}" as TokenRef);
   const borderColor =
     (style.borderColor as string | undefined) ??
-    (variant.border as string | undefined);
+    ("{color.border}" as TokenRef);
 
   const btnAreaWidth = iconSz + pad.right + gap;
   const textMaxWidth = containerWidth - pad.left - btnAreaWidth;
@@ -184,24 +182,6 @@ export function buildDatePickerShapes(input: DatePickerShapesInput): Shape[] {
     },
   ];
 }
-
-/** DatePicker/DateRangePicker 공유 variants */
-export const DATE_PICKER_VARIANTS = {
-  default: {
-    background: "{color.layer-2}" as TokenRef,
-    backgroundHover: "{color.layer-2}" as TokenRef,
-    backgroundPressed: "{color.layer-2}" as TokenRef,
-    text: "{color.neutral}" as TokenRef,
-    border: "{color.border}" as TokenRef,
-  },
-  accent: {
-    background: "{color.layer-2}" as TokenRef,
-    backgroundHover: "{color.layer-2}" as TokenRef,
-    backgroundPressed: "{color.layer-2}" as TokenRef,
-    text: "{color.neutral}" as TokenRef,
-    border: "{color.accent}" as TokenRef,
-  },
-};
 
 /** DatePicker/DateRangePicker 공유 sizes */
 export const DATE_PICKER_SIZES = {
@@ -268,10 +248,8 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
-  variants: DATE_PICKER_VARIANTS,
   sizes: DATE_PICKER_SIZES,
   states: DATE_PICKER_STATES,
 
@@ -311,7 +289,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       {
         title: "Appearance",
         fields: [
-          { type: "variant" },
           { type: "size" },
           {
             key: "labelPosition",
@@ -545,13 +522,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         override: true,
       },
 
-      // variant → 직접 자식
-      { parentProp: "variant", childPath: "Calendar" },
-      { parentProp: "variant", childPath: "Label" },
-      // variant → Calendar 서브트리
-      { parentProp: "variant", childPath: ["Calendar", "CalendarHeader"] },
-      { parentProp: "variant", childPath: ["Calendar", "CalendarGrid"] },
-
       // locale → Calendar 서브트리
       { parentProp: "locale", childPath: "Calendar" },
       { parentProp: "locale", childPath: ["Calendar", "CalendarHeader"] },
@@ -575,7 +545,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
 
   render: {
     shapes: (props, _size, _state = "default") => {
-      const variant = DatePickerSpec.variants![(props as { variant?: keyof typeof DatePickerSpec.variants }).variant ?? DatePickerSpec.defaultVariant!];
       // Compositional: 자식이 있으면 투명 컨테이너
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return [];
@@ -586,7 +555,6 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
 
       return buildDatePickerShapes({
         props: props as unknown as Record<string, unknown>,
-        variant: variant as unknown as Record<string, unknown>,
         sizeEntry: _size as unknown as Record<string, unknown>,
         displayText,
         hasValue: !!props.value,
