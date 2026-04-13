@@ -252,8 +252,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -264,7 +263,10 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           ? props._containerWidth
           : (props.style?.width as number) || 240;
       const rows = props.rows || 3;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const lineHeight = getLabelLineHeight(fontSize);
       const height = Math.max(
         size.height,

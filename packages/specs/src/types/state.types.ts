@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { ShadowTokenRef } from './token.types';
+import type { ShadowTokenRef, TokenRef } from "./token.types";
 
 /**
  * 상태별 스타일 정의
@@ -50,9 +50,13 @@ export interface StateEffect {
   /** 스케일 (1 = 100%) */
   scale?: number;
 
-  /** 아웃라인 (focus ring) */
-  outline?: string;
-  outlineOffset?: string;
+  /**
+   * Focus ring TokenRef (ADR-061)
+   *
+   * `{focus.ring.default}` | `{focus.ring.inset}` 형태.
+   * CSSGenerator가 TokenRef를 해석하여 outline + outlineOffset CSS 속성을 자동 생성한다.
+   */
+  focusRing?: TokenRef;
 
   /** 커서 */
   cursor?: string;
@@ -61,5 +65,5 @@ export interface StateEffect {
   transition?: string;
 
   /** 포인터 이벤트 */
-  pointerEvents?: 'none' | 'auto';
+  pointerEvents?: "none" | "auto";
 }

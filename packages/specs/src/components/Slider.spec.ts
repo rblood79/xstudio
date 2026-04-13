@@ -82,17 +82,6 @@ export const SLIDER_FILL_COLORS: Record<
   },
 };
 
-/** 사이즈별 트랙/핸들 치수 (PROGRESSBAR_DIMENSIONS barHeight 동기) */
-export const SLIDER_DIMENSIONS: Record<
-  string,
-  { trackHeight: number; thumbSize: number }
-> = {
-  sm: { trackHeight: 4, thumbSize: 14 },
-  md: { trackHeight: 8, thumbSize: 18 },
-  lg: { trackHeight: 12, thumbSize: 22 },
-  xl: { trackHeight: 16, thumbSize: 26 },
-};
-
 /**
  * Slider Component Spec
  */
@@ -136,6 +125,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      indicator: { trackHeight: 4, thumbSize: 14 },
     },
     md: {
       height: 8,
@@ -144,6 +134,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      indicator: { trackHeight: 8, thumbSize: 18 },
     },
     lg: {
       height: 12,
@@ -152,6 +143,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      indicator: { trackHeight: 12, thumbSize: 22 },
     },
     xl: {
       height: 16,
@@ -160,6 +152,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      indicator: { trackHeight: 16, thumbSize: 26 },
     },
   },
 
@@ -172,8 +165,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -389,8 +381,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "md";
-      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
+      const sliderDims = {
+        trackHeight: size.indicator?.trackHeight ?? 8,
+        thumbSize: size.indicator?.thumbSize ?? 18,
+      };
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
       const width =
@@ -424,7 +418,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       // Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
-      const numericFontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 14);
+      const numericFontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        14,
+      );
 
       const shapes: Shape[] = [];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;

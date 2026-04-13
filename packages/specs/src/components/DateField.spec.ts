@@ -272,7 +272,9 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
     hover: {},
     pressed: {},
     disabled: { opacity: 0.38 },
-    focusVisible: {},
+    focusVisible: {
+      focusRing: "{focus.ring.default}",
+    },
   },
 
   render: {

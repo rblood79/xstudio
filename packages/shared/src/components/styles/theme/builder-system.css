@@ -77,8 +77,11 @@
     --accent-pressed: var(--color-gray-600);
     --accent-subtle: rgba(107, 114, 128, 0.15);
 
-    /* ===== Focus ===== */
+    /* ===== Focus (ADR-061) ===== */
     --focus-ring: var(--color-blue-400);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --focus-ring-inset-offset: -2px;
 
     /* ===== Status (Light) ===== */
     --negative: var(--color-red-500);

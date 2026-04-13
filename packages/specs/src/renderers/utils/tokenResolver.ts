@@ -219,6 +219,46 @@ export function resolveBoxShadow(
 }
 
 /**
+ * Focus Ring Token (ADR-061)
+ *
+ * Spec의 `states.focusVisible.focusRing` TokenRef를 CSS outline/offset 쌍으로 변환.
+ *
+ * - `{focus.ring.default}` → 기본 외부 focus ring (2px solid accent, offset 2px)
+ * - `{focus.ring.inset}` → 컨테이너 내부 focus ring (offset 음수)
+ *
+ * 색상은 기존 `--focus-ring` CSS 변수를 재사용 (preview/builder system의 semantic token).
+ * width/offset은 `--focus-ring-width`, `--focus-ring-offset` 변수에서 파생.
+ */
+const FOCUS_RING_TOKENS: Record<string, { outline: string; offset: string }> = {
+  "focus.ring.default": {
+    outline: "var(--focus-ring-width) solid var(--focus-ring)",
+    offset: "var(--focus-ring-offset)",
+  },
+  "focus.ring.inset": {
+    outline: "var(--focus-ring-width) solid var(--focus-ring)",
+    offset: "var(--focus-ring-inset-offset)",
+  },
+};
+
+export type FocusRingTokenRef = "{focus.ring.default}" | "{focus.ring.inset}";
+
+export function isFocusRingTokenRef(ref: string): ref is FocusRingTokenRef {
+  return ref === "{focus.ring.default}" || ref === "{focus.ring.inset}";
+}
+
+export function resolveFocusRingToken(ref: TokenRef): {
+  outline: string;
+  outlineOffset: string;
+} {
+  const key = ref.replace(/^\{|\}$/g, "");
+  const token = FOCUS_RING_TOKENS[key];
+  if (!token) {
+    throw new Error(`Unknown focus ring token: ${ref}`);
+  }
+  return { outline: token.outline, outlineOffset: token.offset };
+}
+
+/**
  * hex 문자열을 숫자로 변환
  */
 export function hexStringToNumber(hex: string): number {

@@ -1,10 +1,11 @@
 /**
  * Slider Component Styles
  *
- * Spec dimensions (SLIDER_DIMENSIONS — PROGRESSBAR_DIMENSIONS barHeight 동기):
+ * Spec indicator (ADR-060 — SliderSpec.sizes.*.indicator SSOT):
  *   sm: trackHeight=4, thumbSize=14
  *   md: trackHeight=8, thumbSize=18
  *   lg: trackHeight=12, thumbSize=22
+ *   xl: trackHeight=16, thumbSize=26
  */
 
 @layer components {

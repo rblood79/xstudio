@@ -39,22 +39,6 @@ export const SWITCH_SELECTED_TRACK_COLORS: Record<string, TokenRef> = {
   emphasized: "{color.accent}" as TokenRef,
 };
 
-/** 사이즈별 트랙/썸 치수 */
-export const SWITCH_DIMENSIONS: Record<
-  string,
-  {
-    trackWidth: number;
-    trackHeight: number;
-    thumbSize: number;
-    thumbOffset: number;
-  }
-> = {
-  sm: { trackWidth: 32, trackHeight: 18, thumbSize: 14, thumbOffset: 2 },
-  md: { trackWidth: 36, trackHeight: 20, thumbSize: 16, thumbOffset: 2 },
-  lg: { trackWidth: 44, trackHeight: 24, thumbSize: 20, thumbOffset: 2 },
-  xl: { trackWidth: 52, trackHeight: 28, thumbSize: 24, thumbOffset: 2 },
-};
-
 /**
  * Switch Component Spec
  */
@@ -90,6 +74,12 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
+      indicator: {
+        trackWidth: 32,
+        trackHeight: 18,
+        thumbSize: 14,
+        thumbOffset: 2,
+      },
     },
     md: {
       height: 0,
@@ -98,6 +88,12 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
+      indicator: {
+        trackWidth: 36,
+        trackHeight: 20,
+        thumbSize: 16,
+        thumbOffset: 2,
+      },
     },
     lg: {
       height: 0,
@@ -106,6 +102,12 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 12,
+      indicator: {
+        trackWidth: 44,
+        trackHeight: 24,
+        thumbSize: 20,
+        thumbOffset: 2,
+      },
     },
     xl: {
       height: 0,
@@ -114,6 +116,12 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 14,
+      indicator: {
+        trackWidth: 52,
+        trackHeight: 28,
+        thumbSize: 24,
+        thumbOffset: 2,
+      },
     },
   },
 
@@ -126,8 +134,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -172,8 +179,12 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "md";
-      const switchSize = SWITCH_DIMENSIONS[sizeName] ?? SWITCH_DIMENSIONS.md;
+      const switchSize = {
+        trackWidth: size.indicator?.trackWidth ?? 36,
+        trackHeight: size.indicator?.trackHeight ?? 20,
+        thumbSize: size.indicator?.thumbSize ?? 16,
+        thumbOffset: size.indicator?.thumbOffset ?? 2,
+      };
       const gap = size.gap ?? 10;
 
       const isChecked = props.isSelected;
@@ -237,7 +248,10 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       const labelText = props.children || props.label;
       if (!hasChildren && labelText) {
         const textColor = props.style?.color ?? variant.text;
-        const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 16);
+        const fontSize = resolveSpecFontSize(
+          props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+          16,
+        );
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;
         const textAlign =
           (props.style?.textAlign as "left" | "center" | "right") || "left";

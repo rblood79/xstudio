@@ -191,7 +191,6 @@ export type { SearchFieldProps } from "./components/SearchField.spec";
 
 export {
   CheckboxSpec,
-  CHECKBOX_BOX_SIZES,
   CHECKBOX_CHECKED_COLORS,
 } from "./components/Checkbox.spec";
 export type { CheckboxProps } from "./components/Checkbox.spec";
@@ -199,11 +198,7 @@ export type { CheckboxProps } from "./components/Checkbox.spec";
 export { CheckboxGroupSpec } from "./components/CheckboxGroup.spec";
 export type { CheckboxGroupProps } from "./components/CheckboxGroup.spec";
 
-export {
-  RadioSpec,
-  RADIO_SELECTED_COLORS,
-  RADIO_DIMENSIONS,
-} from "./components/Radio.spec";
+export { RadioSpec, RADIO_SELECTED_COLORS } from "./components/Radio.spec";
 export type { RadioProps } from "./components/Radio.spec";
 
 export { RadioGroupSpec } from "./components/RadioGroup.spec";
@@ -212,7 +207,6 @@ export type { RadioGroupProps } from "./components/RadioGroup.spec";
 export {
   SwitchSpec,
   SWITCH_SELECTED_TRACK_COLORS,
-  SWITCH_DIMENSIONS,
 } from "./components/Switch.spec";
 export type { SwitchProps } from "./components/Switch.spec";
 
@@ -228,11 +222,7 @@ export type { ComboBoxProps } from "./components/ComboBox.spec";
 export { ListBoxSpec } from "./components/ListBox.spec";
 export type { ListBoxProps } from "./components/ListBox.spec";
 
-export {
-  SliderSpec,
-  SLIDER_FILL_COLORS,
-  SLIDER_DIMENSIONS,
-} from "./components/Slider.spec";
+export { SliderSpec, SLIDER_FILL_COLORS } from "./components/Slider.spec";
 export type { SliderProps } from "./components/Slider.spec";
 
 export {
@@ -434,16 +424,10 @@ export type { DisclosureHeaderProps } from "./components/DisclosureHeader.spec";
 export { DescriptionSpec } from "./components/Description.spec";
 export type { DescriptionProps } from "./components/Description.spec";
 
-export {
-  SliderTrackSpec,
-  SLIDER_TRACK_DIMENSIONS,
-} from "./components/SliderTrack.spec";
+export { SliderTrackSpec } from "./components/SliderTrack.spec";
 export type { SliderTrackProps } from "./components/SliderTrack.spec";
 
-export {
-  SliderThumbSpec,
-  SLIDER_THUMB_SIZES,
-} from "./components/SliderThumb.spec";
+export { SliderThumbSpec } from "./components/SliderThumb.spec";
 export type { SliderThumbProps } from "./components/SliderThumb.spec";
 
 export { SliderOutputSpec } from "./components/SliderOutput.spec";

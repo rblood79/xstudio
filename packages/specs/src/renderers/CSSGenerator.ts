@@ -16,7 +16,7 @@ import type {
   SizeSpec,
 } from "../types";
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
-import { tokenToCSSVar } from "./utils/tokenResolver";
+import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
 
 // ─── Archetype별 base styles ────────────────────────────────────────────────
 
@@ -575,12 +575,6 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
   // focused
   if (states?.focused) {
     lines.push(`.react-aria-${spec.name}[data-focused] {`);
-    if (states.focused.outline) {
-      lines.push(`  outline: ${states.focused.outline};`);
-    }
-    if (states.focused.outlineOffset) {
-      lines.push(`  outline-offset: ${states.focused.outlineOffset};`);
-    }
     if (states.focused.boxShadow) {
       lines.push(
         `  box-shadow: ${resolveBoxShadow(states.focused.boxShadow)};`,
@@ -593,23 +587,18 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
     lines.push("");
   }
 
-  // focusVisible (기본값 제공)
+  // focusVisible (ADR-061: focusRing TokenRef 기반. 미설정 시 default ring)
   lines.push(`.react-aria-${spec.name}[data-focus-visible] {`);
-  if (states?.focusVisible) {
-    lines.push(
-      `  outline: ${states.focusVisible.outline ?? "2px solid var(--accent)"};`,
-    );
-    lines.push(
-      `  outline-offset: ${states.focusVisible.outlineOffset ?? "2px"};`,
-    );
-    if (states.focusVisible.boxShadow) {
+  {
+    const ringRef = states?.focusVisible?.focusRing ?? "{focus.ring.default}";
+    const resolved = resolveFocusRingToken(ringRef);
+    lines.push(`  outline: ${resolved.outline};`);
+    lines.push(`  outline-offset: ${resolved.outlineOffset};`);
+    if (states?.focusVisible?.boxShadow) {
       lines.push(
         `  box-shadow: ${resolveBoxShadow(states.focusVisible.boxShadow)};`,
       );
     }
-  } else {
-    lines.push("  outline: 2px solid var(--accent);");
-    lines.push("  outline-offset: 2px;");
   }
   lines.push("}");
   lines.push("");

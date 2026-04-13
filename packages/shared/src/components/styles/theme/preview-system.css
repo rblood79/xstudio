@@ -215,8 +215,11 @@
       oklch(from var(--tint-1000) l c h / 15%)
     );
 
-    /* Focus */
+    /* Focus (ADR-061) */
     --focus-ring: var(--color-focus-ring, var(--tint-1000));
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --focus-ring-inset-offset: -2px;
 
     /* Status */
     --negative: var(--color-invalid, var(--color-error-400));

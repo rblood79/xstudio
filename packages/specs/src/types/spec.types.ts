@@ -467,6 +467,49 @@ export interface SizeSpec {
 
   /** 스트로크 너비 (optional, px) — ProgressCircle 등 원형/호 도형 */
   strokeWidth?: number;
+
+  // --- ADR-060: Form Control Indicator 치수 ------------------------------
+
+  /**
+   * Form control indicator 치수 (ADR-060)
+   *
+   * archetype === "toggle-indicator" | "slider" 컴포넌트의 내부 시각 요소 치수.
+   * 레거시 매직 테이블 (CHECKBOX_BOX_SIZES, RADIO_DIMENSIONS, SWITCH_DIMENSIONS,
+   * SLIDER_DIMENSIONS)을 대체하여 spec.sizes SSOT에 통합한다.
+   */
+  indicator?: IndicatorSpec;
+}
+
+/**
+ * Form control indicator 치수 (ADR-060)
+ *
+ * 컴포넌트별 유효 필드:
+ * - Checkbox: boxSize, boxRadius
+ * - Radio: boxSize, dotSize
+ * - Switch: trackWidth, trackHeight, thumbSize, thumbOffset, dotSize
+ * - Slider: trackHeight, thumbSize
+ */
+export interface IndicatorSpec {
+  /** 박스/원 외곽 크기 (Checkbox box, Radio outer circle) */
+  boxSize?: number;
+
+  /** 박스 radius (Checkbox 모서리) */
+  boxRadius?: number;
+
+  /** 내부 점/마크 크기 (Radio dot, Switch thumb dot) */
+  dotSize?: number;
+
+  /** 트랙 폭 (Switch) */
+  trackWidth?: number;
+
+  /** 트랙 높이 (Switch, Slider) */
+  trackHeight?: number;
+
+  /** 썸(thumb) 크기 (Switch, Slider) */
+  thumbSize?: number;
+
+  /** 썸 offset — 트랙 내부 여백 (Switch) */
+  thumbOffset?: number;
 }
 
 /**

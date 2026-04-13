@@ -25,13 +25,6 @@ export interface SliderThumbProps {
   style?: Record<string, string | number | undefined>;
 }
 
-/** 사이즈별 썸 치수 (SLIDER_DIMENSIONS.thumbSize 동기) */
-export const SLIDER_THUMB_SIZES: Record<string, { thumbSize: number }> = {
-  sm: { thumbSize: 14 },
-  md: { thumbSize: 18 },
-  lg: { thumbSize: 22 },
-};
-
 /**
  * SliderThumb Component Spec
  */
@@ -102,8 +95,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 

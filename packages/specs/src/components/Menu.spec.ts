@@ -148,8 +148,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   states: {
     hover: {},
     focusVisible: {
-      outline: "2px solid var(--focus-ring)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
     disabled: {
       opacity: 0.38,

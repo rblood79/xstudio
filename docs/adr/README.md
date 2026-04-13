@@ -1,15 +1,15 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-10 (ADR-057 재범위/ADR-058 신규 — Text Spec-First 2단계 분리)
+> **최종 업데이트**: 2026-04-13 (ADR-060 Implemented — Form Control Indicator 6개 매직 테이블 해체)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 39     |
+| 완료 (Accepted/Implemented/Superseded) | 41     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 13     |
-| **합계**                               | **60** |
+| 미구현 (Proposed/계획)                 | 14     |
+| **합계**                               | **63** |
 
 ---
 
@@ -76,21 +76,36 @@
 
 ### 미구현
 
-| ADR                                           | 제목                                                                  | 상태        | 규모                                                                                                                                                                                                        | 우선순위 |
-| --------------------------------------------- | --------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)      | Quick Connect 데이터 바인딩                                           | Proposed    | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                                                                                             |  **P3**  |
-| [020](020-design-kit-improvement.md)          | Design Kit 패널 분석 및 개선                                          | Proposed    | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                                                                                                    |    P4    |
-| [015](015-sitemap-layout.md)                  | Sitemap Hierarchy 워크플로우 엣지                                     | Proposed    | 변경 대상 8파일, 코드 미생성                                                                                                                                                                                |    P5    |
-| [016](016-photoshop-ui-ux.md)                 | Photoshop 벤치마크 기반 UI/UX (v2)                                    | Proposed    | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                                                                                                      |    P5    |
-| [032](032-events-data-integration.md)         | Events Platform 재설계 + Data 통합                                    | Proposed    | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                                                                                                      |  **P3**  |
-| [034](034-events-panel-renovation.md)         | Events Panel Renovation                                               | Proposed    | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                                                                                                   |  **P3**  |
-| [038](038-figma-import.md)                    | Figma 디자인 임포트 시스템                                            | Proposed    | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                                                                                   |  **P3**  |
-| [054](054-local-llm-architecture.md)          | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)                           | Proposed    | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                                                                                        |  **P2**  |
-| [100](100-unified-skia-rendering-engine.md)   | Unified Skia Rendering Engine — PixiJS/Taffy 제거                     | Accepted    | Phase 8-9 완료. PixiJS 완전 제거 (85파일, -16,500줄). Phase 10(Rust Layout) 남음. Supersedes ADR-003, ADR-008                                                                                               |  **P1**  |
-| [101](101-browser-native-rendering-engine.md) | Browser-Native Rendering Engine — 렌더링 엔진 삭제                    | Proposed    | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008                                                                                  |  **P1**  |
-| [056](056-base-typography-ssot.md)            | Base Typography 단일 정본 (SSOT)                                      | Proposed    | BASE_TYPOGRAPHY TS 상수 → Canvas/Preview/Publish 3경로 정합. lineHeight 누락 수정                                                                                                                           |  **P2**  |
-| [057](057-text-spec-first-migration.md)       | specShapeConverter Text Shape Feature Parity 이식                     | Implemented | Phase A (Layout 6) + Phase B (Paint 7) — 13개 feature parity 이식 완료 (`475d8168`)                                                                                                                         |  **P2**  |
-| [058](058-text-tags-legacy-dismantle.md)      | TEXT_TAGS 예외 경로 해체 — Text/Heading/Paragraph/Kbd/Code Spec-First | Implemented | Phase 1~4 완료 — 5-point patch 근본 제거, `buildTextNodeData` 폐지, Canvas/Skia + CSS auto-gen SSOT 달성 (9/9 text 컴포넌트). Phase 5(DOM 축 미러) Deferred — cost/benefit 비대칭 (ADR §Deferral Rationale) |  **P2**  |
+| ADR                                              | 제목                                                                  | 상태        | 규모                                                                                                                                                                                                        | 우선순위 |
+| ------------------------------------------------ | --------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md)         | Quick Connect 데이터 바인딩                                           | Proposed    | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                                                                                             |  **P3**  |
+| [020](020-design-kit-improvement.md)             | Design Kit 패널 분석 및 개선                                          | Proposed    | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                                                                                                    |    P4    |
+| [015](015-sitemap-layout.md)                     | Sitemap Hierarchy 워크플로우 엣지                                     | Proposed    | 변경 대상 8파일, 코드 미생성                                                                                                                                                                                |    P5    |
+| [016](016-photoshop-ui-ux.md)                    | Photoshop 벤치마크 기반 UI/UX (v2)                                    | Proposed    | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                                                                                                                                      |    P5    |
+| [032](032-events-data-integration.md)            | Events Platform 재설계 + Data 통합                                    | Proposed    | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                                                                                                      |  **P3**  |
+| [034](034-events-panel-renovation.md)            | Events Panel Renovation                                               | Proposed    | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                                                                                                   |  **P3**  |
+| [038](038-figma-import.md)                       | Figma 디자인 임포트 시스템                                            | Proposed    | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                                                                                   |  **P3**  |
+| [054](054-local-llm-architecture.md)             | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)                           | Proposed    | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                                                                                        |  **P2**  |
+| [100](100-unified-skia-rendering-engine.md)      | Unified Skia Rendering Engine — PixiJS/Taffy 제거                     | Accepted    | Phase 8-9 완료. PixiJS 완전 제거 (85파일, -16,500줄). Phase 10(Rust Layout) 남음. Supersedes ADR-003, ADR-008                                                                                               |  **P1**  |
+| [101](101-browser-native-rendering-engine.md)    | Browser-Native Rendering Engine — 렌더링 엔진 삭제                    | Proposed    | 6 Phase (0~5) — PixiJS+Taffy+Skia 전부 삭제, 브라우저 네이티브 DOM/CSS 렌더링, DOM 풀링, ~6주. Supersedes ADR-003, ADR-008                                                                                  |  **P1**  |
+| [056](056-base-typography-ssot.md)               | Base Typography 단일 정본 (SSOT)                                      | Proposed    | BASE_TYPOGRAPHY TS 상수 → Canvas/Preview/Publish 3경로 정합. lineHeight 누락 수정                                                                                                                           |  **P2**  |
+| [057](057-text-spec-first-migration.md)          | specShapeConverter Text Shape Feature Parity 이식                     | Implemented | Phase A (Layout 6) + Phase B (Paint 7) — 13개 feature parity 이식 완료 (`475d8168`)                                                                                                                         |  **P2**  |
+| [058](058-text-tags-legacy-dismantle.md)         | TEXT_TAGS 예외 경로 해체 — Text/Heading/Paragraph/Kbd/Code Spec-First | Implemented | Phase 1~4 완료 — 5-point patch 근본 제거, `buildTextNodeData` 폐지, Canvas/Skia + CSS auto-gen SSOT 달성 (9/9 text 컴포넌트). Phase 5(DOM 축 미러) Deferred — cost/benefit 비대칭 (ADR §Deferral Rationale) |  **P2**  |
+| [059](059-composite-field-skip-css-dismantle.md) | Composite Field `skipCSSGeneration` 해체 — Spec SSOT 확장             | Proposed    | 5 Phase — CSSGenerator Composite 확장 + Field 7개 시험대 + Select/ComboBox + DatePicker + 잔존 48개. 59개 `skipCSSGeneration: true` + 23개 `@sync` 주석 해체                                                |  **P2**  |
+| [060](060-form-control-indicator-schema.md)      | Form Control Indicator 스키마 확장 — 매직 테이블 해체                 | Implemented | Phase 1~5 완료 (2026-04-13) — `spec.sizes.*.indicator` 신설. Checkbox/Radio/Switch/Slider + SliderTrack/SliderThumb **6개 매직 테이블 해체** (계획보다 2개 확장). 공유 상수 중복 소멸                       |  **P2**  |
+| [061](061-focus-ring-tokenization.md)            | Focus Ring 토큰화 — 50개 리터럴 해체                                  | Implemented | Phase 1~5 완료 (2026-04-13) — 53개 spec TokenRef 전환, `StateEffect.outline/outlineOffset` 레거시 필드 제거, CSSGenerator fallback 토큰화. 리터럴 0건                                                       |  **P2**  |
+
+## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
+
+ADR-036 "Spec-First Single Source"가 Implemented로 체크되었지만 실제로는 잔존 예외 경로가 5축 존재했다. 다음 ADR 체인이 각 축을 해체한다:
+
+- [ADR-057](057-text-spec-first-migration.md) — Text shape feature parity 이식 (Implemented)
+- [ADR-058](058-text-tags-legacy-dismantle.md) — Text/Heading/Paragraph/Kbd/Code 예외 경로 해체 (Implemented)
+- [ADR-059](059-composite-field-skip-css-dismantle.md) — 59개 Composite `skipCSSGeneration: true` 해체 (Proposed)
+- [ADR-060](060-form-control-indicator-schema.md) — Checkbox/Radio/Switch/Slider 매직 테이블 해체 (Implemented 2026-04-13, 6개 테이블)
+- [ADR-061](061-focus-ring-tokenization.md) — Focus Ring 50개 리터럴 토큰화 (Implemented 2026-04-13)
+
+체인 완료 시 ADR-036을 "Fully Implemented"로 재승격.
 
 ## Events Panel 설계 문서군
 

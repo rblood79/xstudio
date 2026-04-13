@@ -65,16 +65,6 @@ export const CHECKBOX_CHECKED_COLORS: Record<
   },
 };
 
-/** 사이즈별 박스 크기 및 radius (Skia shapes 전용) */
-export const CHECKBOX_BOX_SIZES: Record<
-  string,
-  { size: number; radius: number }
-> = {
-  sm: { size: 16, radius: 4 },
-  md: { size: 20, radius: 4 },
-  lg: { size: 24, radius: 6 },
-};
-
 /**
  * Checkbox Component Spec
  */
@@ -110,6 +100,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
+      indicator: { boxSize: 16, boxRadius: 4 },
     },
     md: {
       height: 0,
@@ -118,6 +109,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
+      indicator: { boxSize: 20, boxRadius: 4 },
     },
     lg: {
       height: 0,
@@ -126,6 +118,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 10,
+      indicator: { boxSize: 24, boxRadius: 6 },
     },
   },
 
@@ -138,8 +131,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -196,9 +188,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "md";
-      const boxDims = CHECKBOX_BOX_SIZES[sizeName] ?? CHECKBOX_BOX_SIZES.md;
-      const boxSize = boxDims.size;
+      const boxSize = size.indicator?.boxSize ?? 20;
       const gap = size.gap ?? 8;
 
       const isChecked = props.isSelected;
@@ -212,7 +202,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           ? typeof styleBr === "number"
             ? styleBr
             : parseFloat(String(styleBr)) || 0
-          : boxDims.radius;
+          : (size.indicator?.boxRadius ?? 4);
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =

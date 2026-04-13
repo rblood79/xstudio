@@ -274,7 +274,9 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
     hover: {},
     pressed: {},
     disabled: { opacity: 0.38 },
-    focusVisible: {},
+    focusVisible: {
+      focusRing: "{focus.ring.default}",
+    },
   },
 
   render: {

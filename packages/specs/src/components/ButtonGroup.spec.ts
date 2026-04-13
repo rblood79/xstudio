@@ -94,8 +94,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 

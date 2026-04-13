@@ -71,11 +71,7 @@ export { SearchFieldSpec } from "./SearchField.spec";
 export type { SearchFieldProps } from "./SearchField.spec";
 
 // Checkbox
-export {
-  CheckboxSpec,
-  CHECKBOX_BOX_SIZES,
-  CHECKBOX_CHECKED_COLORS,
-} from "./Checkbox.spec";
+export { CheckboxSpec, CHECKBOX_CHECKED_COLORS } from "./Checkbox.spec";
 export type { CheckboxProps } from "./Checkbox.spec";
 
 // CheckboxGroup
@@ -83,11 +79,7 @@ export { CheckboxGroupSpec } from "./CheckboxGroup.spec";
 export type { CheckboxGroupProps } from "./CheckboxGroup.spec";
 
 // Radio
-export {
-  RadioSpec,
-  RADIO_SELECTED_COLORS,
-  RADIO_DIMENSIONS,
-} from "./Radio.spec";
+export { RadioSpec, RADIO_SELECTED_COLORS } from "./Radio.spec";
 export type { RadioProps } from "./Radio.spec";
 
 // RadioGroup
@@ -95,11 +87,7 @@ export { RadioGroupSpec } from "./RadioGroup.spec";
 export type { RadioGroupProps } from "./RadioGroup.spec";
 
 // Switch
-export {
-  SwitchSpec,
-  SWITCH_SELECTED_TRACK_COLORS,
-  SWITCH_DIMENSIONS,
-} from "./Switch.spec";
+export { SwitchSpec, SWITCH_SELECTED_TRACK_COLORS } from "./Switch.spec";
 export type { SwitchProps } from "./Switch.spec";
 
 // Form
@@ -119,11 +107,7 @@ export { ListBoxSpec } from "./ListBox.spec";
 export type { ListBoxProps } from "./ListBox.spec";
 
 // Slider
-export {
-  SliderSpec,
-  SLIDER_FILL_COLORS,
-  SLIDER_DIMENSIONS,
-} from "./Slider.spec";
+export { SliderSpec, SLIDER_FILL_COLORS } from "./Slider.spec";
 export type { SliderProps } from "./Slider.spec";
 
 // Meter
@@ -356,11 +340,11 @@ export { DescriptionSpec } from "./Description.spec";
 export type { DescriptionProps } from "./Description.spec";
 
 // SliderTrack
-export { SliderTrackSpec, SLIDER_TRACK_DIMENSIONS } from "./SliderTrack.spec";
+export { SliderTrackSpec } from "./SliderTrack.spec";
 export type { SliderTrackProps } from "./SliderTrack.spec";
 
 // SliderThumb
-export { SliderThumbSpec, SLIDER_THUMB_SIZES } from "./SliderThumb.spec";
+export { SliderThumbSpec } from "./SliderThumb.spec";
 export type { SliderThumbProps } from "./SliderThumb.spec";
 
 // SliderOutput

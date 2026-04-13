@@ -11,6 +11,7 @@ export type {
   ComponentState,
   VariantSpec,
   SizeSpec,
+  IndicatorSpec,
   RenderSpec,
   CompositionSpec,
   DelegationSpec,

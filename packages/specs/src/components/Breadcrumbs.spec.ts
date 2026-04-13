@@ -91,8 +91,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       cursor: "default",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 

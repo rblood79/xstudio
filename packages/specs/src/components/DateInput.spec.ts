@@ -180,8 +180,7 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
     pressed: {},
     disabled: { opacity: 0.38 },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 

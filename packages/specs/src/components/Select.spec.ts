@@ -395,8 +395,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -470,7 +469,10 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       // size.fontSize는 TokenRef 문자열('{typography.text-sm}')일 수 있으므로
       // resolveSpecFontSize로 숫자 변환 후 산술 연산에 사용
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        14,
+      );
 
       // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
       const labelLineHeight = getLabelLineHeight(fontSize);

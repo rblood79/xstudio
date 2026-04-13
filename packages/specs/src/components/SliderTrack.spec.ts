@@ -9,7 +9,8 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { SLIDER_FILL_COLORS, SLIDER_DIMENSIONS } from "./Slider.spec";
+import { SLIDER_FILL_COLORS, SliderSpec } from "./Slider.spec";
+import { getSliderIndicator } from "../renderers/utils/indicatorResolver";
 
 /**
  * SliderTrack Props
@@ -27,15 +28,6 @@ export interface SliderTrackProps {
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;
 }
-
-/** 사이즈별 트랙 치수 (PROGRESSBAR_DIMENSIONS barHeight 동기) */
-export const SLIDER_TRACK_DIMENSIONS: Record<string, { trackHeight: number }> =
-  {
-    sm: { trackHeight: 4 },
-    md: { trackHeight: 8 },
-    lg: { trackHeight: 12 },
-    xl: { trackHeight: 16 },
-  };
 
 /**
  * SliderTrack Component Spec
@@ -73,9 +65,10 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   },
 
   // preview CSS용: borderRadius none (shapes가 직접 처리)
+  // ADR-060: height는 부모 Slider.sizes.*.indicator.trackHeight SSOT에서 파생
   sizes: {
     sm: {
-      height: SLIDER_TRACK_DIMENSIONS.sm.trackHeight,
+      height: getSliderIndicator(SliderSpec, "sm").trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -83,7 +76,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       gap: 0,
     },
     md: {
-      height: SLIDER_TRACK_DIMENSIONS.md.trackHeight,
+      height: getSliderIndicator(SliderSpec, "md").trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -91,7 +84,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       gap: 0,
     },
     lg: {
-      height: SLIDER_TRACK_DIMENSIONS.lg.trackHeight,
+      height: getSliderIndicator(SliderSpec, "lg").trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
@@ -99,7 +92,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       gap: 0,
     },
     xl: {
-      height: SLIDER_TRACK_DIMENSIONS.xl.trackHeight,
+      height: getSliderIndicator(SliderSpec, "xl").trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
@@ -122,8 +115,8 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   render: {
     shapes: (props, _variant, _size) => {
       const sizeName = props.size ?? "md";
-      const trackDims =
-        SLIDER_TRACK_DIMENSIONS[sizeName] ?? SLIDER_TRACK_DIMENSIONS.md;
+      const sliderIndicator = getSliderIndicator(SliderSpec, sizeName);
+      const trackDims = { trackHeight: sliderIndicator.trackHeight };
       const variantName = props.variant ?? "default";
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
@@ -136,8 +129,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       const trackRadius = trackHeight / 2;
 
       // thumb 크기 기준 세로 중앙 배치: track bar를 레이아웃 영역 가운데에 위치
-      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
-      const thumbSize = sliderDims.thumbSize;
+      const thumbSize = sliderIndicator.thumbSize;
       const trackY = (thumbSize - trackHeight) / 2;
 
       const min = props.minValue ?? 0;

@@ -388,8 +388,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -464,7 +463,10 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             : parseFloat(String(styleBw)) || 0
           : defaultBw;
 
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        14,
+      );
 
       // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
       const labelLineHeight = getLabelLineHeight(fontSize);

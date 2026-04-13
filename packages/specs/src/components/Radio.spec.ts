@@ -61,17 +61,6 @@ export const RADIO_SELECTED_COLORS: Record<
   },
 };
 
-/** 사이즈별 원 크기 */
-export const RADIO_DIMENSIONS: Record<
-  string,
-  { outer: number; inner: number }
-> = {
-  sm: { outer: 16, inner: 6 },
-  md: { outer: 20, inner: 8 },
-  lg: { outer: 24, inner: 10 },
-  xl: { outer: 28, inner: 12 },
-};
-
 /**
  * Radio Component Spec
  */
@@ -119,6 +108,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
+      indicator: { boxSize: 16, dotSize: 6 },
     },
     md: {
       height: 0,
@@ -127,6 +117,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
+      indicator: { boxSize: 20, dotSize: 8 },
     },
     lg: {
       height: 0,
@@ -135,6 +126,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 10,
+      indicator: { boxSize: 24, dotSize: 10 },
     },
     xl: {
       height: 0,
@@ -143,6 +135,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       fontSize: "{typography.text-xl}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 12,
+      indicator: { boxSize: 28, dotSize: 12 },
     },
   },
 
@@ -155,8 +148,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -206,12 +198,12 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "md";
-      const radioSize = RADIO_DIMENSIONS[sizeName] ?? RADIO_DIMENSIONS.md;
+      const outer = size.indicator?.boxSize ?? 20;
+      const inner = size.indicator?.dotSize ?? 8;
       const selectedColors =
         RADIO_SELECTED_COLORS[variantName] ?? RADIO_SELECTED_COLORS.default;
       const gap = size.gap ?? 8;
-      const outerRadius = radioSize.outer / 2;
+      const outerRadius = outer / 2;
 
       // 사용자 스타일 우선
       const styleBw = props.style?.borderWidth;
@@ -256,7 +248,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
           type: "circle" as const,
           x: outerRadius,
           y: outerRadius,
-          radius: radioSize.inner / 2,
+          radius: inner / 2,
           fill: selectedColors.dot,
         });
       }
@@ -278,7 +270,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
 
         shapes.push({
           type: "text" as const,
-          x: radioSize.outer + gap,
+          x: outer + gap,
           y: outerRadius,
           text: labelText,
           fontSize,

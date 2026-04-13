@@ -92,8 +92,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 

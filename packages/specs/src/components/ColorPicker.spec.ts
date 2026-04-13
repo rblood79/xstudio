@@ -111,8 +111,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -167,7 +166,10 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
           : 1;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

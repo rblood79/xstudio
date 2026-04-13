@@ -421,8 +421,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       pointerEvents: "none",
     },
     focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
+      focusRing: "{focus.ring.default}",
     },
   },
 
@@ -466,7 +465,10 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           : defaultBw;
 
       // fontSize: Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
-      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 16);
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        16,
+      );
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =

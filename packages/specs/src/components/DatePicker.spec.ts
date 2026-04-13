@@ -119,7 +119,11 @@ export function buildDatePickerShapes(input: DatePickerShapesInput): Shape[] {
     defaultCW;
 
   const style = (props.style as Record<string, unknown> | undefined) ?? {};
-  const fontSize = resolveSpecFontSize((style.fontSize as string | number | undefined) ?? (sizeEntry.fontSize as string | number | undefined), 14);
+  const fontSize = resolveSpecFontSize(
+    (style.fontSize as string | number | undefined) ??
+      (sizeEntry.fontSize as string | number | undefined),
+    14,
+  );
   const ff = (style.fontFamily as string) || fontFamily.sans;
 
   const textColor =
@@ -254,8 +258,7 @@ export const DATE_PICKER_STATES = {
   pressed: {},
   disabled: { opacity: 0.38, pointerEvents: "none" as const },
   focusVisible: {
-    outline: "2px solid var(--accent)",
-    outlineOffset: "2px",
+    focusRing: "{focus.ring.default}" as const,
   },
 };
 
