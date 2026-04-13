@@ -19,7 +19,7 @@ import type { ComponentSize } from "../types";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 import { Skeleton } from "./Skeleton";
 
-import "./styles/TextField.css";
+import "./styles/generated/TextField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
