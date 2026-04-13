@@ -45,6 +45,7 @@ export interface TextFieldProps extends AriaTextFieldProps {
   /** Show loading skeleton instead of input */
   isLoading?: boolean;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
 }
 
 export function TextField({
@@ -62,6 +63,7 @@ export function TextField({
   necessityIndicator,
   isLoading,
   labelPosition = "top",
+  isQuiet,
   ...props
 }: TextFieldProps) {
   if (isLoading) {
@@ -85,6 +87,7 @@ export function TextField({
       )}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       value={value}
       onChange={onChange}
       isRequired={isRequired}

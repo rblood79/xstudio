@@ -76,6 +76,7 @@ export interface DateRangePickerProps<T extends DateValue> extends Omit<
   endName?: string;
   form?: string;
   validationBehavior?: "native" | "aria";
+  isQuiet?: boolean;
 }
 
 export function DateRangePicker<T extends DateValue>({
@@ -103,6 +104,7 @@ export function DateRangePicker<T extends DateValue>({
   maxValue,
   necessityIndicator,
   labelPosition = "top",
+  isQuiet,
   hideTimeZone,
   pageBehavior,
   maxVisibleMonths,
@@ -158,6 +160,7 @@ export function DateRangePicker<T extends DateValue>({
       data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       granularity={effectiveGranularity}
       placeholderValue={placeholderValue}
       defaultValue={defaultValue}

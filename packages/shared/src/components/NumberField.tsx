@@ -45,6 +45,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
 }
 
 export function NumberField({
@@ -54,6 +55,7 @@ export function NumberField({
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  isQuiet,
   formatOptions,
   ...props
 }: NumberFieldProps) {
@@ -67,6 +69,7 @@ export function NumberField({
       )}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       formatOptions={formatOptions}
     >
       {label && (

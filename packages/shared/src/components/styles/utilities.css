@@ -155,4 +155,37 @@
       cursor: default;
     }
   }
+
+  /* =========================================
+     Quiet state — when parent has data-quiet="true"
+     Overrides .inset to produce inline minimal look:
+     transparent bg/border + bottom underline only.
+     Applies to all fields using .inset utility.
+     ========================================= */
+  [data-quiet="true"] .inset {
+    background: transparent;
+    border-color: transparent;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    outline: none;
+
+    &:where([data-hovered]:not([data-focused]):not([data-focus-within]):not([data-disabled])) {
+      background: transparent;
+      border-color: transparent;
+      border-bottom-color: var(--border-hover);
+    }
+
+    &:where([data-focused]),
+    &:where([data-focus-within]) {
+      outline: none;
+      background: transparent;
+      border-color: transparent;
+      border-bottom-color: var(--accent);
+    }
+
+    &:where([data-invalid]) {
+      border-color: transparent;
+      border-bottom-color: var(--negative);
+    }
+  }
 }

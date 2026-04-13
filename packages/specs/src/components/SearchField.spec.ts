@@ -22,6 +22,7 @@ import {
   AlignLeft,
   HelpCircle,
   Image,
+  Minimize2,
 } from "lucide-react";
 
 /**
@@ -142,6 +143,12 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "labelAlign",

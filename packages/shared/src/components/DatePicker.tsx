@@ -82,6 +82,7 @@ export interface DatePickerProps<T extends DateValue> extends Omit<
   maxValue?: string | DateValue;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
   hideTimeZone?: boolean;
   pageBehavior?: "visible" | "single";
   /** 동시에 표시할 최대 월 수 (1~3) */
@@ -117,6 +118,7 @@ export function DatePicker<T extends DateValue>({
   maxValue,
   necessityIndicator,
   labelPosition = "top",
+  isQuiet,
   hideTimeZone,
   pageBehavior,
   maxVisibleMonths,
@@ -184,6 +186,7 @@ export function DatePicker<T extends DateValue>({
       data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
       granularity={effectiveGranularity}
       placeholderValue={placeholderValue}
       defaultValue={defaultValue}

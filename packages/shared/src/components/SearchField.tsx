@@ -30,6 +30,7 @@ export interface SearchFieldProps extends AriaSearchFieldProps {
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  isQuiet?: boolean;
 }
 
 export function SearchField({
@@ -40,6 +41,7 @@ export function SearchField({
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  isQuiet,
   ...props
 }: SearchFieldProps) {
   const searchIconData = getIconData("search");
@@ -55,6 +57,7 @@ export function SearchField({
       )}
       data-size={size}
       data-label-position={labelPosition}
+      data-quiet={isQuiet ? "true" : undefined}
     >
       {label && (
         <Label>

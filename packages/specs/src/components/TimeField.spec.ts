@@ -16,6 +16,7 @@ import {
   CheckSquare,
   HelpCircle,
   FileText,
+  Minimize2,
 } from "lucide-react";
 
 export interface TimeFieldProps {
@@ -236,6 +237,12 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "hideTimeZone",

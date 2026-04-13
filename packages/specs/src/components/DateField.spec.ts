@@ -19,6 +19,7 @@ import {
   Tag,
   FileText,
   HelpCircle,
+  Minimize2,
 } from "lucide-react";
 
 export interface DateFieldProps {
@@ -220,6 +221,12 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
           {
             key: "hideTimeZone",

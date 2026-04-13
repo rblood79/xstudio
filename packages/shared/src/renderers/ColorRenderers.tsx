@@ -141,6 +141,7 @@ export const renderColorField = (
       }
       isDisabled={Boolean(element.props.isDisabled)}
       isInvalid={Boolean(element.props.isInvalid)}
+      isQuiet={Boolean(element.props.isQuiet || false)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isRequired={Boolean(element.props.isRequired)}
       autoFocus={Boolean(element.props.autoFocus)}

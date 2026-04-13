@@ -808,6 +808,7 @@ export const renderSelect = (
       isDisabled={Boolean(elementProps.isDisabled)}
       isRequired={Boolean(elementProps.isRequired)}
       isInvalid={Boolean(elementProps.isInvalid)}
+      isQuiet={Boolean(elementProps.isQuiet || false)}
       necessityIndicator={
         elementProps.necessityIndicator as "icon" | "label" | undefined
       }
@@ -1077,6 +1078,7 @@ export const renderComboBox = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      isQuiet={Boolean(element.props.isQuiet || false)}
       autoFocus={Boolean(element.props.autoFocus)}
       menuTrigger={
         (element.props.menuTrigger as "input" | "focus" | "manual") || "focus"

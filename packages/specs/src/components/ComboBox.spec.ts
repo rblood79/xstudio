@@ -25,6 +25,7 @@ import {
   Menu,
   AlertTriangle,
   HelpCircle,
+  Minimize2,
 } from "lucide-react";
 
 /**
@@ -138,6 +139,12 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
         ],
       },
