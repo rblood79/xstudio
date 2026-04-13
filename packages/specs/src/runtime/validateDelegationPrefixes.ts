@@ -7,7 +7,6 @@
  *  R1. prefix 형식: 소문자 kebab-case (`^[a-z][a-z0-9-]*[a-z0-9]$`)
  *  R2. prefix 전역 유일성: (specName, childSelector) 튜플 기준 다른 위치에서 동일 prefix 재사용 금지
  *  R3. prefix 선언 시 `variables` 내 모든 CSS 변수 키가 `--{prefix}-*` 로 시작해야 함
- *  R4. 반대로 동일 delegation 내에 다른 prefix 이름의 변수 섞임 금지 (R3 의 대우)
  *
  * prefix 가 생략된 delegation (direct-property 방식) 은 검증 대상에서 제외.
  *

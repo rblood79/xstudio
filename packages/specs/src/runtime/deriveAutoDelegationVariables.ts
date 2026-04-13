@@ -15,7 +15,7 @@
  */
 
 import type { ComponentSpec, DelegationSpec } from "../types/spec.types";
-import type { TokenRef } from "../types/token.types";
+import { type TokenRef, isValidTokenRef } from "../types/token.types";
 import { tokenToCSSVar } from "../renderers/utils/tokenResolver";
 
 type SizeBucket = {
@@ -29,7 +29,7 @@ type SizeBucket = {
 };
 
 function isTokenRef(v: unknown): v is TokenRef {
-  return typeof v === "string" && /^\{\w+\..+\}$/.test(v);
+  return typeof v === "string" && isValidTokenRef(v);
 }
 
 export function deriveAutoDelegationVariables<Props>(

@@ -2,6 +2,9 @@
 
 ## 리뷰 빈출 이슈 패턴
 
+- **`isTokenRef` 인라인 재선언 — `isValidTokenRef` 미사용**: `deriveAutoDelegationVariables.ts`에서 `function isTokenRef(v: unknown): v is TokenRef` 를 파일 내 선언. `token.types.ts`에 `isValidTokenRef`가 이미 export됨. 두 정규식이 미세하게 다름(`isTokenRef`는 관대한 `\{\w+\..+\}`, `isValidTokenRef`는 카테고리 열거 패턴) — 신규 TokenRef 판별 함수 추가 시 의도적 관대함인지 확인 후 기존 헬퍼 재사용 또는 `token.types.ts`에 `isAnyTokenRef` 추가로 공유
+- **shapes self-lookup 패턴 — 72개 Spec 파일 동일 캐스팅 복제**: ADR-064 shapes API에서 variant 파라미터 제거 후 각 shapes() 클로저 내부에서 `const variant = XxxSpec.variants![(props as { variant?: keyof typeof XxxSpec.variants }).variant ?? XxxSpec.defaultVariant!]` 를 복제. 런타임 비용은 O(1) 객체 룩업이므로 성능 영향 없음. 다만 `as { variant?: keyof typeof XxxSpec.variants }` 캐스팅이 boilerplate. `getVariantSpec(spec, props)` 헬퍼로 추출 가능하나 현재 동작 이슈 없음 — false positive로 처리
+
 - **Tabs 조상 조회 패턴 N중 복제 (implicitStyles + buildSpecNodeData)**: `tabpanels`/`tablist` 블록에서 `containerEl.parent_id ? elementById.get(...) : undefined` + `tabsProps?.size ?? "md"` 패턴 2회 복제 (implicitStyles.ts:891-927). `resolveTabIsSelected`/`resolveTabOrientation`도 동일한 `for (depth < 3) ... if (ancestor.tag === "Tabs")` 루프 2회 복제 (buildSpecNodeData.ts:385-422). `getTabsAncestorProps()` / `findAncestorByTag()` 헬퍼 추출 필요
 
 - **Spec 공용 field 정의 복제 (staticColor/isInvalid 등)**: `staticColor` enum field가 Button/ToggleButton/ProgressBar/Meter/Link/ProgressCircle 6개 파일에 동일 구조로 복제. `isInvalid`/`isDisabled`/`isReadOnly` boolean field도 10개 이상 Spec 파일에서 복제. `sharedSections.ts`에 `STATIC_COLOR_FIELD`, `IS_INVALID_FIELD`, `IS_DISABLED_FIELD`, `IS_READONLY_FIELD` 상수로 추출 필요. 단, `label` 포함 여부와 `emptyToUndefined`/`icon` 세부 값이 파일마다 다를 수 있으므로 통합 전 확인 필수
