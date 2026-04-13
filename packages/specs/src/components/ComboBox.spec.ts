@@ -31,8 +31,8 @@ import {
  * ComboBox Props
  */
 export interface ComboBoxProps {
-  variant?: "default" | "accent" | "negative";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   placeholder?: string;
   name?: string;
@@ -75,7 +75,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: {
@@ -241,27 +240,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
     ],
   },
 
-  variants: {
-    default: {
-      background: "{color.elevated}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    accent: {
-      background: "{color.elevated}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    negative: {
-      background: "{color.elevated}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-  },
-
   // @sync Select.spec.ts sizes — CSS height = lineHeight + paddingY×2 + borderWidth×2
   sizes: {
     xs: {
@@ -423,7 +401,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = ComboBoxSpec.variants![(props as { variant?: keyof typeof ComboBoxSpec.variants }).variant ?? ComboBoxSpec.defaultVariant!];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -438,22 +415,18 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             : parseFloat(String(styleBr)) || 0
           : (size.borderRadius as unknown as number);
 
-      // backgroundColor: 'transparent'는 factory 기본값 → spec variant 사용
+      // backgroundColor: 'transparent'는 factory 기본값 → 직접 토큰 사용
       const userBg = props.style?.backgroundColor;
       const bgColor =
         userBg != null && userBg !== "transparent"
           ? userBg
           : state === "hover"
-            ? variant.backgroundHover
+            ? ("{color.layer-1}" as TokenRef)
             : state === "pressed"
-              ? variant.backgroundPressed
-              : variant.background;
+              ? ("{color.layer-1}" as TokenRef)
+              : ("{color.elevated}" as TokenRef);
 
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+      const borderColor = props.style?.borderColor;
 
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
@@ -488,7 +461,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
       const stylePx =
         props.style?.paddingLeft ??

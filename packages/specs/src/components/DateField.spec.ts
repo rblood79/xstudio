@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 
 export interface DateFieldProps {
-  variant?: "default" | "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   granularity?: "day" | "hour" | "minute" | "second";
   hourCycle?: 12 | 24;
@@ -43,32 +43,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-    negative: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.transparent}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {

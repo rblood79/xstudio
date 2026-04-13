@@ -28,8 +28,8 @@ import {
  * SearchField Props
  */
 export interface SearchFieldProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   label?: string;
   placeholder?: string;
   defaultValue?: string;
@@ -87,7 +87,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: {
@@ -230,22 +229,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         ],
       },
     ],
-  },
-
-  // 컨테이너는 투명 — .searchfield-container가 border/background 담당
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
   },
 
   sizes: {
@@ -396,8 +379,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   },
 
   render: {
-    shapes: (props, size, state = "default") => {
-      const variant = SearchFieldSpec.variants![(props as { variant?: keyof typeof SearchFieldSpec.variants }).variant ?? SearchFieldSpec.defaultVariant!];
+    shapes: (props, size, _state = "default") => {
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -415,17 +397,9 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
       const bgColor =
         props.style?.backgroundColor ??
-        (state === "hover"
-          ? variant.backgroundHover
-          : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+        ("{color.transparent}" as TokenRef);
 
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+      const borderColor = props.style?.borderColor;
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -455,7 +429,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
       const textColor =
         props.style?.color ??
-        (props.value ? variant.text : ("{color.neutral-subdued}" as TokenRef));
+        (props.value ? ("{color.neutral}" as TokenRef) : ("{color.neutral-subdued}" as TokenRef));
 
       const stylePx =
         props.style?.paddingLeft ??
@@ -487,7 +461,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           fontSize: labelFontSize,
           fontFamily: ff,
           fontWeight,
-          fill: variant.text,
+          fill: "{color.neutral}" as TokenRef,
           align: textAlign,
           baseline: "top" as const,
         });

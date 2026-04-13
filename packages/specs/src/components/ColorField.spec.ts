@@ -26,8 +26,8 @@ import {
  * ColorField Props
  */
 export interface ColorFieldProps {
-  variant?: "default" | "accent" | "neutral" | "error" | "filled";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isQuiet?: boolean;
   value?: string;
   defaultValue?: string;
   label?: string;
@@ -69,7 +69,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   element: "div",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: {
@@ -167,10 +166,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         title: "Appearance",
         fields: [
           {
-            type: "variant",
-            label: "Variant",
-          },
-          {
             type: "size",
             label: "Size",
             options: [
@@ -238,49 +233,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         ],
       },
     ],
-  },
-
-  variants: {
-    default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
-    accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-      borderHover: "{color.accent-hover}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
-    error: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-      borderHover: "{color.negative-hover}" as TokenRef,
-    },
-    filled: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
-    },
   },
 
   sizes: {
@@ -415,8 +367,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   },
 
   render: {
-    shapes: (props, size, state = "default") => {
-      const variant = ColorFieldSpec.variants![(props as { variant?: keyof typeof ColorFieldSpec.variants }).variant ?? ColorFieldSpec.defaultVariant!];
+    shapes: (props, size, _state = "default") => {
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -432,13 +383,9 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
             : parseFloat(String(styleBr)) || 0
           : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? ("{color.layer-2}" as TokenRef);
 
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+      const borderColor = props.style?.borderColor ?? ("{color.border}" as TokenRef);
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -466,7 +413,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
       const stylePx =
         props.style?.paddingLeft ??
