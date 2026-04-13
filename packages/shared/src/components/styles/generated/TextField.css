@@ -130,6 +130,12 @@
   --tf-input-line-height: var(--text-lg--line-height);
 }
 
+.react-aria-TextField .react-aria-Input {
+  --input-padding: var(--tf-input-padding);
+  --input-font-size: var(--tf-input-size);
+  --input-line-height: var(--tf-input-line-height);
+}
+
 .react-aria-TextField .react-aria-Input:where([data-hovered]:not([data-focused]):not([data-disabled])) {
   border-color: var(--border-hover);
 }
@@ -153,12 +159,6 @@
   color: color-mix(in srgb, var(--fg) 38%, transparent);
   cursor: not-allowed;
   opacity: 0.38;
-}
-
-.react-aria-TextField .react-aria-Input {
-  --input-padding: var(--tf-input-padding);
-  --input-font-size: var(--tf-input-size);
-  --input-line-height: var(--tf-input-line-height);
 }
 
 .react-aria-TextField[data-size="xs"] .react-aria-FieldError {
