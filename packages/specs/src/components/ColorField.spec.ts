@@ -352,24 +352,34 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         prefix: "cf-input",
         variables: {
           xs: {
+            "--cf-input-padding": "var(--spacing-3xs) var(--spacing-xs)",
             "--cf-input-size": "var(--text-2xs)",
             "--cf-input-line-height": "var(--text-2xs--line-height)",
+            "--cf-input-max-width": "9ch",
           },
           sm: {
+            "--cf-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
             "--cf-input-size": "var(--text-xs)",
             "--cf-input-line-height": "var(--text-xs--line-height)",
+            "--cf-input-max-width": "10ch",
           },
           md: {
+            "--cf-input-padding": "var(--spacing-xs) var(--spacing-md)",
             "--cf-input-size": "var(--text-sm)",
             "--cf-input-line-height": "var(--text-sm--line-height)",
+            "--cf-input-max-width": "12ch",
           },
           lg: {
+            "--cf-input-padding": "var(--spacing-sm) var(--spacing-lg)",
             "--cf-input-size": "var(--text-base)",
             "--cf-input-line-height": "var(--text-base--line-height)",
+            "--cf-input-max-width": "14ch",
           },
           xl: {
+            "--cf-input-padding": "var(--spacing-md) var(--spacing-xl)",
             "--cf-input-size": "var(--text-lg)",
             "--cf-input-line-height": "var(--text-lg--line-height)",
+            "--cf-input-max-width": "16ch",
           },
         },
       },

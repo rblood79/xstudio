@@ -348,6 +348,28 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           xl: { "--sf-hint-size": "var(--text-base)" },
         },
       },
+      // 0-F.2: SearchField 고유 — 검색 아이콘 (leading)
+      {
+        childSelector: ".search-icon",
+        prefix: "sf-icon",
+        variables: {
+          sm: { "--sf-icon-size": "12px" },
+          md: { "--sf-icon-size": "16px" },
+          lg: { "--sf-icon-size": "18px" },
+          xl: { "--sf-icon-size": "22px" },
+        },
+      },
+      // 0-F.2: SearchField 고유 — Clear 버튼 (trailing)
+      {
+        childSelector: ".react-aria-Button",
+        prefix: "sf-btn",
+        variables: {
+          sm: { "--sf-btn-size": "14px" },
+          md: { "--sf-btn-size": "18px" },
+          lg: { "--sf-btn-size": "22px" },
+          xl: { "--sf-btn-size": "28px" },
+        },
+      },
     ],
   },
 

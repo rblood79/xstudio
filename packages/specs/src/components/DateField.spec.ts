@@ -125,21 +125,36 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
         prefix: "df-input",
         variables: {
           sm: {
+            "--df-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
             "--df-input-size": "var(--text-xs)",
             "--df-input-line-height": "var(--text-xs--line-height)",
           },
           md: {
+            "--df-input-padding": "var(--spacing-xs) var(--spacing-md)",
             "--df-input-size": "var(--text-sm)",
             "--df-input-line-height": "var(--text-sm--line-height)",
           },
           lg: {
+            "--df-input-padding": "var(--spacing-sm) var(--spacing-lg)",
             "--df-input-size": "var(--text-base)",
             "--df-input-line-height": "var(--text-base--line-height)",
           },
           xl: {
+            "--df-input-padding": "var(--spacing-md) var(--spacing-xl)",
             "--df-input-size": "var(--text-lg)",
             "--df-input-line-height": "var(--text-lg--line-height)",
           },
+        },
+      },
+      // 0-F.3: DateSegment (내부 숫자 편집 요소) 전용 계약
+      {
+        childSelector: ".react-aria-DateSegment",
+        prefix: "df-segment",
+        variables: {
+          sm: { "--df-segment-size": "var(--text-xs)" },
+          md: { "--df-segment-size": "var(--text-sm)" },
+          lg: { "--df-segment-size": "var(--text-base)" },
+          xl: { "--df-segment-size": "var(--text-lg)" },
         },
       },
       {

@@ -351,10 +351,22 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         childSelector: ".react-aria-Label",
         prefix: "tf-label",
         variables: {
-          xs: { "--tf-label-size": "var(--text-2xs)" },
-          sm: { "--tf-label-size": "var(--text-xs)" },
-          md: { "--tf-label-size": "var(--text-sm)" },
-          lg: { "--tf-label-size": "var(--text-base)" },
+          xs: {
+            "--tf-label-size": "var(--text-2xs)",
+            "--tf-label-margin": "0px",
+          },
+          sm: {
+            "--tf-label-size": "var(--text-xs)",
+            "--tf-label-margin": "0px",
+          },
+          md: {
+            "--tf-label-size": "var(--text-sm)",
+            "--tf-label-margin": "2px",
+          },
+          lg: {
+            "--tf-label-size": "var(--text-base)",
+            "--tf-label-margin": "4px",
+          },
         },
       },
       {

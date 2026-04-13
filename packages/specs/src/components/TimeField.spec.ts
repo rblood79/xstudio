@@ -129,21 +129,36 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         prefix: "time-field-input",
         variables: {
           sm: {
+            "--time-field-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
             "--time-field-input-size": "var(--text-xs)",
             "--time-field-input-line-height": "var(--text-xs--line-height)",
           },
           md: {
+            "--time-field-input-padding": "var(--spacing-xs) var(--spacing-md)",
             "--time-field-input-size": "var(--text-sm)",
             "--time-field-input-line-height": "var(--text-sm--line-height)",
           },
           lg: {
+            "--time-field-input-padding": "var(--spacing-sm) var(--spacing-lg)",
             "--time-field-input-size": "var(--text-base)",
             "--time-field-input-line-height": "var(--text-base--line-height)",
           },
           xl: {
+            "--time-field-input-padding": "var(--spacing-md) var(--spacing-xl)",
             "--time-field-input-size": "var(--text-lg)",
             "--time-field-input-line-height": "var(--text-lg--line-height)",
           },
+        },
+      },
+      // 0-F.3: DateSegment (React Aria TimeField 내부 시간 편집 요소)
+      {
+        childSelector: ".react-aria-DateSegment",
+        prefix: "time-field-segment",
+        variables: {
+          sm: { "--time-field-segment-size": "var(--text-xs)" },
+          md: { "--time-field-segment-size": "var(--text-sm)" },
+          lg: { "--time-field-segment-size": "var(--text-base)" },
+          xl: { "--time-field-segment-size": "var(--text-lg)" },
         },
       },
       {
