@@ -165,6 +165,7 @@
   [data-quiet="true"] .inset {
     background: transparent;
     border-color: transparent;
+    box-shadow: none;
     border-radius: 0;
     border-bottom: 1px solid var(--border);
     outline: none;

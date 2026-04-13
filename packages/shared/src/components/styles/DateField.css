@@ -3,6 +3,7 @@
     &[data-quiet="true"] .react-aria-DateInput {
       background: transparent;
       border-color: transparent;
+      box-shadow: none;
       border-radius: 0;
       border-bottom: 1px solid var(--border);
     }
