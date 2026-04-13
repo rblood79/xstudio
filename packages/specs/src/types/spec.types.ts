@@ -307,8 +307,20 @@ export interface DelegationSpec {
    */
   prefix?: string;
 
-  /** size → { CSS변수명 → 값 } 매핑 */
-  variables: Record<string, Record<string, string>>;
+  /**
+   * size → { CSS변수명 → 값 } 매핑
+   *
+   * ADR-059 v2 Pre-Phase 0-C: `"auto"` 값 지원.
+   * `"auto"` 선언 시 빌드 시점에 `spec.sizes` 에서 아래 표준 5개 변수를 파생:
+   *   --{prefix}-padding    : `${paddingY}px ${paddingX}px`
+   *   --{prefix}-height     : `${height}px`            (height > 0 일 때만)
+   *   --{prefix}-font-size  : tokenToCSSVar(fontSize)
+   *   --{prefix}-gap        : `${gap}px`
+   *   --{prefix}-radius     : tokenToCSSVar(borderRadius)
+   * 파생 로직: `runtime/deriveAutoDelegationVariables.ts`.
+   * `"auto"` 선택 시 `prefix` 필드 필수.
+   */
+  variables: "auto" | Record<string, Record<string, string>>;
 }
 
 // ─── ADR-048: S2 Context 기반 선언적 Props Propagation ──────────────────────

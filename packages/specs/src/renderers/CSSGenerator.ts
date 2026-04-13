@@ -17,6 +17,7 @@ import type {
 } from "../types";
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
+import { deriveAutoDelegationVariables } from "../runtime/deriveAutoDelegationVariables";
 
 // ─── Archetype별 base styles ────────────────────────────────────────────────
 
@@ -648,7 +649,13 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
 
   // delegation: size별 자식 변수 override
   for (const delegation of comp.delegation) {
-    const { childSelector, variables } = delegation;
+    const { childSelector } = delegation;
+
+    // ADR-059 v2 0-C: "auto" 선언 시 spec.sizes 에서 파생
+    const variables =
+      delegation.variables === "auto"
+        ? deriveAutoDelegationVariables(spec, delegation)
+        : delegation.variables;
 
     for (const [sizeName, vars] of Object.entries(variables)) {
       const entries = Object.entries(vars);

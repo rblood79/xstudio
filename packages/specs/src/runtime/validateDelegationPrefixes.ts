@@ -74,12 +74,15 @@ export function validateDelegationPrefixes(
       }
 
       // R3: 변수 키 네임스페이스
+      // ADR-059 v2 0-C: "auto" 는 deriver 가 prefix 를 강제 주입하므로 검증 대상 제외
       const expectedPrefix = `--${prefix}-`;
       const badKeys: string[] = [];
-      for (const sizeBucket of Object.values(variables ?? {})) {
-        for (const key of Object.keys(sizeBucket)) {
-          if (!key.startsWith(expectedPrefix)) {
-            badKeys.push(key);
+      if (variables !== "auto") {
+        for (const sizeBucket of Object.values(variables ?? {})) {
+          for (const key of Object.keys(sizeBucket)) {
+            if (!key.startsWith(expectedPrefix)) {
+              badKeys.push(key);
+            }
           }
         }
       }
