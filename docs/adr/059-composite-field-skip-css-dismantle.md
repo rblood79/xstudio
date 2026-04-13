@@ -19,6 +19,8 @@ Proposed — 2026-04-11
 
 ## Context
 
+> **Charter 정합 목적 (2026-04-13 추가)**: 본 ADR은 [charter ADR-063](063-ssot-chain-charter.md) **D3(시각 스타일)의 symmetric consumer 복원**이 근본 목적. `skipCSSGeneration: true` + 수동 CSS = CSS가 Spec에서 파생되지 않는 상태 = D3 규칙 위반(CSS가 준-SSOT 지위). 본 ADR은 이를 해체하여 Spec → CSSGenerator → CSS 경로로 단일화. Skia consumer와 CSS consumer가 동일 Spec source에서 시각 결과 동일성을 산출하는 **대칭 복원**. 단, variant 블로커는 ADR-062(D2 정리)로 분리됨.
+
 ADR-036 Phase 4가 완료로 체크되었으나, 실제 코드베이스에는 **59개의 `skipCSSGeneration: true` 컴포넌트**가 잔존한다 (2026-04-11 실측, `packages/specs/src/components/`). ADR-057/058이 Text/Heading/Paragraph/Kbd/Code 5개를 해체하는 동안 Composite Container 계열은 손대지 못했다.
 
 본 ADR은 이 59개 중 **Field 계열 (TextField/NumberField/SearchField/ColorField/DateField/TimeField/TextArea 7개)**을 Phase 1 시험대로 삼고, 후속 Phase에서 Select/ComboBox/DatePicker/Form 계열로 확장한다.
