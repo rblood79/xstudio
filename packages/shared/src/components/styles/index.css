@@ -119,7 +119,7 @@
 @import "./NumberField.css";
 @import "./SearchField.css";
 @import "./generated/DateField.css";
-@import "./TimeField.css";
+@import "./generated/TimeField.css";
 
 /* Collection Components */
 @import "./ListBox.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
