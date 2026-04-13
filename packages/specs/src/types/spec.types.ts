@@ -372,6 +372,27 @@ export interface DelegationSpec {
    * ```
    */
   bridges?: Record<string, string>;
+
+  /**
+   * 자식 요소 상태 selector (ADR-059 v2 Pre-Phase 0-D.4)
+   *
+   * RAC data-attribute 기반 상태에 대한 자식 요소 스타일.
+   * `childSelector:where({stateSelector})` 로 emit.
+   *
+   * key 는 `:where()` 내부에 들어가는 selector 문자열:
+   *   - `"[data-focused]"` — 포커스
+   *   - `"[data-hovered]:not([data-focused]):not([data-disabled])"` — 복합 조건
+   *   - `"[data-invalid][data-focused]"` — 복합 속성
+   *
+   * 예:
+   * ```
+   * states: {
+   *   "[data-focused]": { outline: "2px solid var(--accent)" },
+   *   "[data-invalid]": { "border-color": "var(--negative)" },
+   * }
+   * ```
+   */
+  states?: Record<string, Record<string, string>>;
 }
 
 // ─── ADR-048: S2 Context 기반 선언적 Props Propagation ──────────────────────

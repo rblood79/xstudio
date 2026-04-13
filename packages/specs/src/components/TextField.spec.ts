@@ -346,6 +346,19 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
                 "border-bottom": "1px solid var(--border)",
               },
             },
+            {
+              selector: ".react-aria-Input:where([data-focused])",
+              styles: {
+                outline: "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".react-aria-Input:where([data-invalid])",
+              styles: {
+                "border-bottom-color": "var(--negative)",
+              },
+            },
           ],
         },
       },
@@ -416,6 +429,28 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           "--input-padding": "var(--tf-input-padding)",
           "--input-font-size": "var(--tf-input-size)",
           "--input-line-height": "var(--tf-input-line-height)",
+        },
+        states: {
+          "[data-hovered]:not([data-focused]):not([data-disabled])": {
+            "border-color": "var(--border-hover)",
+          },
+          "[data-focused]": {
+            outline: "2px solid var(--accent)",
+            "outline-offset": "-1px",
+            "border-color": "var(--accent)",
+          },
+          "[data-invalid]": {
+            "border-color": "var(--negative)",
+          },
+          "[data-invalid][data-focused]": {
+            "outline-color": "var(--negative)",
+          },
+          "[data-disabled]": {
+            "border-color": "color-mix(in srgb, var(--fg) 12%, transparent)",
+            color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+            cursor: "not-allowed",
+            opacity: "0.38",
+          },
         },
       },
       {

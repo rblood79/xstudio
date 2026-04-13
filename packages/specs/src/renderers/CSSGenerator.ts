@@ -679,6 +679,19 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
       lines.push("");
     }
 
+    // ADR-059 v2 Pre-Phase 0-D.4: 자식 상태 selector
+    if (delegation.states) {
+      for (const [stateSel, styles] of Object.entries(delegation.states)) {
+        if (Object.keys(styles).length === 0) continue;
+        lines.push(`${sel} ${childSelector}:where(${stateSel}) {`);
+        for (const [prop, value] of Object.entries(styles)) {
+          lines.push(`  ${prop}: ${value};`);
+        }
+        lines.push("}");
+        lines.push("");
+      }
+    }
+
     // ADR-059 v2 Pre-Phase 0-D.1: Bridge 변수 (size 비분기)
     if (delegation.bridges) {
       const bridgeEntries = Object.entries(delegation.bridges);
