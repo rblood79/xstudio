@@ -277,20 +277,34 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   const archetype = spec.archetype;
 
   // Composite는 composition.layout에서 base styles 파생
+  // ADR-059 v2 Pre-Phase 0-D.5: layout 생략 시 archetype base fallback
   let baseStyles: string[];
   if (spec.composition) {
-    baseStyles =
-      COMPOSITION_LAYOUT_STYLES[spec.composition.layout] ??
-      COMPOSITION_LAYOUT_STYLES["flex-column"];
+    if (spec.composition.layout) {
+      baseStyles = [...COMPOSITION_LAYOUT_STYLES[spec.composition.layout]];
+    } else {
+      baseStyles = archetype
+        ? [...(ARCHETYPE_BASE_STYLES[archetype] ?? DEFAULT_BASE_STYLES)]
+        : [...DEFAULT_BASE_STYLES];
+    }
+    // ADR-059 v2 Pre-Phase 0-D.3: containerStyles 병합
+    if (spec.composition.containerStyles) {
+      for (const [prop, value] of Object.entries(
+        spec.composition.containerStyles,
+      )) {
+        baseStyles.push(`    ${prop}: ${value};`);
+      }
+    }
   } else {
     baseStyles = archetype
       ? (ARCHETYPE_BASE_STYLES[archetype] ?? DEFAULT_BASE_STYLES)
       : DEFAULT_BASE_STYLES;
   }
 
-  const defaultVariant = spec.variants != null && spec.defaultVariant != null
-    ? spec.variants[spec.defaultVariant]
-    : undefined;
+  const defaultVariant =
+    spec.variants != null && spec.defaultVariant != null
+      ? spec.variants[spec.defaultVariant]
+      : undefined;
   const defaultSize = spec.sizes[spec.defaultSize];
 
   const lines = [`  /* Base styles — archetype: ${archetype ?? "default"} */`];
@@ -655,7 +669,7 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
     const variables =
       delegation.variables === "auto"
         ? deriveAutoDelegationVariables(spec, delegation)
-        : delegation.variables;
+        : (delegation.variables ?? {});
 
     for (const [sizeName, vars] of Object.entries(variables)) {
       const entries = Object.entries(vars);
@@ -667,6 +681,62 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
       }
       lines.push("}");
       lines.push("");
+    }
+
+    // ADR-059 v2 Pre-Phase 0-D.4: 자식 상태 selector
+    if (delegation.states) {
+      for (const [stateSel, styles] of Object.entries(delegation.states)) {
+        if (Object.keys(styles).length === 0) continue;
+        lines.push(`${sel} ${childSelector}:where(${stateSel}) {`);
+        for (const [prop, value] of Object.entries(styles)) {
+          lines.push(`  ${prop}: ${value};`);
+        }
+        lines.push("}");
+        lines.push("");
+      }
+    }
+
+    // ADR-059 v2 Pre-Phase 0-D.1: Bridge 변수 (size 비분기)
+    if (delegation.bridges) {
+      const bridgeEntries = Object.entries(delegation.bridges);
+      if (bridgeEntries.length > 0) {
+        lines.push(`${sel} ${childSelector} {`);
+        for (const [varName, value] of bridgeEntries) {
+          lines.push(`  ${varName}: ${value};`);
+        }
+        lines.push("}");
+        lines.push("");
+      }
+    }
+  }
+
+  // ADR-059 v2 Pre-Phase 0-D.3: containerVariants
+  if (comp.containerVariants) {
+    for (const [dataAttr, valueMap] of Object.entries(comp.containerVariants)) {
+      for (const [attrValue, variant] of Object.entries(valueMap)) {
+        const variantSel = `${sel}[data-${dataAttr}="${attrValue}"]`;
+
+        if (variant.styles && Object.keys(variant.styles).length > 0) {
+          lines.push(`${variantSel} {`);
+          for (const [prop, value] of Object.entries(variant.styles)) {
+            lines.push(`  ${prop}: ${value};`);
+          }
+          lines.push("}");
+          lines.push("");
+        }
+
+        if (variant.nested) {
+          for (const nested of variant.nested) {
+            if (Object.keys(nested.styles).length === 0) continue;
+            lines.push(`${variantSel} ${nested.selector} {`);
+            for (const [prop, value] of Object.entries(nested.styles)) {
+              lines.push(`  ${prop}: ${value};`);
+            }
+            lines.push("}");
+            lines.push("");
+          }
+        }
+      }
     }
   }
 

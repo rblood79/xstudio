@@ -20,7 +20,7 @@ import type { ComponentSize } from "../types";
 import { getIconData } from "@composition/specs";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
-import "./styles/SearchField.css";
+import "./styles/generated/SearchField.css";
 
 export interface SearchFieldProps extends AriaSearchFieldProps {
   label?: string;

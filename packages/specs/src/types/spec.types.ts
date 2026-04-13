@@ -278,14 +278,54 @@ export type FieldDef =
  * 모든 Composite는 동일 패턴: Container(layout) + Primitive[] + --var override
  */
 export interface CompositionSpec {
-  /** container layout 규칙 */
-  layout: "flex-column" | "flex-row" | "grid" | "inline-flex";
+  /**
+   * container layout 규칙 (optional — 생략 시 spec.archetype 기반 base 사용)
+   *
+   * ADR-059 v2 Pre-Phase 0-D.5: 기존 archetype base 를 유지하면서 delegation/
+   * containerVariants 만 추가하려는 경우 생략 가능. 생략 시 generateBaseStyles 가
+   * archetype fallback 으로 동작.
+   */
+  layout?: "flex-column" | "flex-row" | "grid" | "inline-flex";
 
   /** gap (optional) */
   gap?: string;
 
+  /**
+   * 컨테이너 base styles 확장 (ADR-059 v2 Pre-Phase 0-D.3)
+   *
+   * `layout` 이 제공하지 않는 컨테이너 레벨 CSS 속성을 추가한다 (`width: fit-content` 등).
+   * generateBaseStyles 출력에 병합.
+   */
+  containerStyles?: Record<string, string>;
+
+  /**
+   * 컨테이너 variant (ADR-059 v2 Pre-Phase 0-D.3)
+   *
+   * RAC data-* attribute 기반 컨테이너 variant 선언. S2 `style({ variants })` 와 isomorphic.
+   *
+   * 구조: `{ [dataAttr]: { [attrValue]: ContainerVariantStyles } }`
+   * - `dataAttr`: `data-` 접두 제외 kebab-case (예: `quiet`, `label-position`)
+   * - `attrValue`: 속성 값 (boolean 은 `"true"`/`"false"`, enum 은 해당 값)
+   *
+   * 생성 selector: `.react-aria-{SpecName}[data-{dataAttr}="{attrValue}"]`
+   * 중첩: 해당 selector 뒤에 `nested.selector` 그대로 append (예: `> .react-aria-Label`).
+   */
+  containerVariants?: Record<string, Record<string, ContainerVariantStyles>>;
+
   /** CSS Variable Delegation — size별 자식 변수 override */
   delegation: DelegationSpec[];
+}
+
+export interface ContainerVariantStyles {
+  /** 컨테이너 variant 선택자에 직접 적용할 CSS 속성 */
+  styles?: Record<string, string>;
+
+  /** 컨테이너 variant 하위 중첩 selector */
+  nested?: Array<{
+    /** 컨테이너 selector 뒤에 append 할 CSS selector (예: `> .react-aria-Label`) */
+    selector: string;
+    styles: Record<string, string>;
+  }>;
 }
 
 /**
@@ -320,7 +360,48 @@ export interface DelegationSpec {
    * 파생 로직: `runtime/deriveAutoDelegationVariables.ts`.
    * `"auto"` 선택 시 `prefix` 필드 필수.
    */
-  variables: "auto" | Record<string, Record<string, string>>;
+  variables?: "auto" | Record<string, Record<string, string>>;
+
+  /**
+   * Bridge 변수 — size에 의존하지 않는 변수 재노출 (ADR-059 v2 Pre-Phase 0-D.1)
+   *
+   * `childSelector` 범위 내에서 `{ 신규변수명: 값 }` 을 그대로 발행.
+   * 주로 delegation prefix 변수 (`--tf-label-size`) 를 범용 변수
+   * (`--label-font-size`) 로 재노출하여 primitive CSS 와의 계약을 유지한다.
+   *
+   * - 생성 selector: `.react-aria-{SpecName} {childSelector}` (사이즈 비분기)
+   * - 값: CSS 변수 참조 또는 리터럴 허용
+   *
+   * 예:
+   * ```
+   * bridges: {
+   *   "--label-font-size": "var(--tf-label-size)",
+   *   "--label-font-weight": "600",
+   * }
+   * ```
+   */
+  bridges?: Record<string, string>;
+
+  /**
+   * 자식 요소 상태 selector (ADR-059 v2 Pre-Phase 0-D.4)
+   *
+   * RAC data-attribute 기반 상태에 대한 자식 요소 스타일.
+   * `childSelector:where({stateSelector})` 로 emit.
+   *
+   * key 는 `:where()` 내부에 들어가는 selector 문자열:
+   *   - `"[data-focused]"` — 포커스
+   *   - `"[data-hovered]:not([data-focused]):not([data-disabled])"` — 복합 조건
+   *   - `"[data-invalid][data-focused]"` — 복합 속성
+   *
+   * 예:
+   * ```
+   * states: {
+   *   "[data-focused]": { outline: "2px solid var(--accent)" },
+   *   "[data-invalid]": { "border-color": "var(--negative)" },
+   * }
+   * ```
+   */
+  states?: Record<string, Record<string, string>>;
 }
 
 // ─── ADR-048: S2 Context 기반 선언적 Props Propagation ──────────────────────
@@ -549,11 +630,7 @@ export interface RenderSpec<Props> {
    * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
    * @returns 렌더링할 도형 배열
    */
-  shapes: (
-    props: Props,
-    size: SizeSpec,
-    state: ComponentState,
-  ) => Shape[];
+  shapes: (props: Props, size: SizeSpec, state: ComponentState) => Shape[];
 
   /**
    * React 특화 속성

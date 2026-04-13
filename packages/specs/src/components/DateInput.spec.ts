@@ -149,6 +149,14 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
   },
 
   sizes: {
+    xs: {
+      height: 20,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      gap: 0,
+    },
     sm: {
       height: 22,
       paddingX: 8,
@@ -173,6 +181,14 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 0,
     },
+    xl: {
+      height: 54,
+      paddingX: 24,
+      paddingY: 12,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      gap: 0,
+    },
   },
 
   states: {
@@ -186,7 +202,11 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
 
   render: {
     shapes: (props, _size, state = "default") => {
-      const variant = DateInputSpec.variants![(props as { variant?: keyof typeof DateInputSpec.variants }).variant ?? DateInputSpec.defaultVariant!];
+      const variant =
+        DateInputSpec.variants![
+          (props as { variant?: keyof typeof DateInputSpec.variants })
+            .variant ?? DateInputSpec.defaultVariant!
+        ];
       const extra = props as Record<string, unknown>;
       const sizeName = (extra.size as string) || "md";
       const parentTag = (extra._parentTag as string) || "DateField";
@@ -202,7 +222,10 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
       // fontSize: Spec sizes의 TokenRef를 resolveSpecFontSize()로 숫자 변환 (단일 소스)
       const sizeEntry =
         DateInputSpec.sizes[sizeName as keyof typeof DateInputSpec.sizes];
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? sizeEntry?.fontSize, 14);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? sizeEntry?.fontSize,
+        14,
+      );
       const borderRadius =
         INPUT_BORDER_RADIUS[sizeName] ?? INPUT_BORDER_RADIUS.md;
       const containerWidth =

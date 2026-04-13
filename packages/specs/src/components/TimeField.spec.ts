@@ -45,7 +45,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   name: "TimeField",
   description: "투명 column 컨테이너 — DateInput이 입력 영역 렌더링",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultSize: "md",
 
@@ -89,62 +89,177 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            "flex-direction": "row",
+            "align-items": "flex-start",
+          },
+        },
+      },
+      quiet: {
+        true: {
+          nested: [
+            {
+              selector: ".react-aria-DateInput",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-radius": "0",
+                "border-bottom": "1px solid var(--border)",
+              },
+            },
+            {
+              selector: ".react-aria-DateInput:where([data-focused])",
+              styles: {
+                outline: "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".react-aria-DateInput:where([data-invalid])",
+              styles: { "border-bottom-color": "var(--negative)" },
+            },
+          ],
+        },
+      },
+    },
     delegation: [
       {
         childSelector: ".react-aria-Label",
         prefix: "time-field-label",
         variables: {
+          xs: { "--time-field-label-size": "var(--text-2xs)" },
           sm: { "--time-field-label-size": "var(--text-xs)" },
           md: { "--time-field-label-size": "var(--text-sm)" },
           lg: { "--time-field-label-size": "var(--text-base)" },
           xl: { "--time-field-label-size": "var(--text-lg)" },
+        },
+        bridges: {
+          "--label-font-size": "var(--time-field-label-size)",
+          "--label-font-weight": "600",
+          "--label-margin": "var(--spacing-xs)",
         },
       },
       {
         childSelector: ".react-aria-DateInput",
         prefix: "time-field-input",
         variables: {
+          xs: {
+            "--time-field-input-padding":
+              "var(--spacing-3xs) var(--spacing-xs)",
+            "--time-field-input-size": "var(--text-2xs)",
+            "--time-field-input-line-height": "var(--text-2xs--line-height)",
+            "--time-field-input-min-width": "100px",
+          },
           sm: {
-            "--time-field-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
+            "--time-field-input-padding":
+              "var(--spacing-2xs) var(--spacing-sm)",
             "--time-field-input-size": "var(--text-xs)",
             "--time-field-input-line-height": "var(--text-xs--line-height)",
+            "--time-field-input-min-width": "120px",
           },
           md: {
             "--time-field-input-padding": "var(--spacing-xs) var(--spacing-md)",
             "--time-field-input-size": "var(--text-sm)",
             "--time-field-input-line-height": "var(--text-sm--line-height)",
+            "--time-field-input-min-width": "150px",
           },
           lg: {
             "--time-field-input-padding": "var(--spacing-sm) var(--spacing-lg)",
             "--time-field-input-size": "var(--text-base)",
             "--time-field-input-line-height": "var(--text-base--line-height)",
+            "--time-field-input-min-width": "180px",
           },
           xl: {
             "--time-field-input-padding": "var(--spacing-md) var(--spacing-xl)",
             "--time-field-input-size": "var(--text-lg)",
             "--time-field-input-line-height": "var(--text-lg--line-height)",
+            "--time-field-input-min-width": "220px",
           },
         },
+        bridges: {
+          display: "inline-flex",
+          padding: "var(--time-field-input-padding)",
+          border: "1px solid",
+          "border-radius": "var(--border-radius)",
+          width: "100%",
+          "min-width": "var(--time-field-input-min-width)",
+          "white-space": "nowrap",
+          "forced-color-adjust": "none",
+          "font-size": "var(--time-field-input-size)",
+          "line-height": "var(--time-field-input-line-height)",
+          transition: "border-color 200ms ease, background-color 200ms ease",
+        },
       },
-      // 0-F.3: DateSegment (React Aria TimeField 내부 시간 편집 요소)
       {
         childSelector: ".react-aria-DateSegment",
         prefix: "time-field-segment",
         variables: {
+          xs: { "--time-field-segment-size": "var(--text-2xs)" },
           sm: { "--time-field-segment-size": "var(--text-xs)" },
           md: { "--time-field-segment-size": "var(--text-sm)" },
           lg: { "--time-field-segment-size": "var(--text-base)" },
           xl: { "--time-field-segment-size": "var(--text-lg)" },
+        },
+        bridges: {
+          padding: "0 2px",
+          border: "none",
+          background: "transparent",
+          height: "auto",
+          "font-variant-numeric": "tabular-nums",
+          "text-align": "end",
+          color: "var(--fg)",
+          "border-radius": "var(--radius-xs)",
+          "font-size": "var(--time-field-segment-size)",
+          transition: "all 150ms ease",
+        },
+        states: {
+          '[data-type="literal"]': { padding: "0" },
+          "[data-placeholder]": {
+            color: "var(--fg-muted)",
+            opacity: "0.6",
+          },
+          ":focus": {
+            color: "var(--fg)",
+            background: "var(--accent-subtle)",
+            outline: "none",
+            "border-radius": "var(--radius-xs)",
+            "caret-color": "transparent",
+          },
+          "[data-invalid]": { color: "var(--negative)" },
+          "[data-invalid]:focus": {
+            background: "color-mix(in srgb, var(--negative) 15%, transparent)",
+            color: "var(--negative)",
+          },
+          "[data-disabled]": {
+            color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+            cursor: "not-allowed",
+          },
         },
       },
       {
         childSelector: ".react-aria-FieldError",
         prefix: "time-field-hint",
         variables: {
+          xs: { "--time-field-hint-size": "var(--text-2xs)" },
           sm: { "--time-field-hint-size": "var(--text-xs)" },
           md: { "--time-field-hint-size": "var(--text-xs)" },
           lg: { "--time-field-hint-size": "var(--text-sm)" },
           xl: { "--time-field-hint-size": "var(--text-base)" },
+        },
+        bridges: {
+          "--error-font-size": "var(--time-field-hint-size)",
+          "--error-margin": "var(--spacing-xs)",
+        },
+      },
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--time-field-hint-size)",
+          color: "var(--fg-muted)",
         },
       },
     ],
@@ -153,7 +268,8 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   propagation: {
     rules: [
       { parentProp: "size", childPath: "Label", override: true },
-      { parentProp: "size", childPath: "TimeSegment", override: true },
+      { parentProp: "size", childPath: "DateInput", override: true },
+      { parentProp: "size", childPath: "DateSegment", override: true },
       {
         parentProp: "label",
         childPath: "Label",

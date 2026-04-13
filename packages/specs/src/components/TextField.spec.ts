@@ -29,7 +29,7 @@ import {
  * TextField Props
  */
 export interface TextFieldProps {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -84,7 +84,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   name: "TextField",
   description: "React Aria 기반 텍스트 입력 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultSize: "md",
 
@@ -249,6 +249,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   // @sync Button.spec.ts sizes — Input height = Button height
   sizes: {
+    xs: {
+      height: 18,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      gap: 2,
+    },
     sm: {
       height: 22,
       paddingX: 8,
@@ -287,6 +295,74 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
+    containerStyles: {
+      width: "fit-content",
+    },
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            display: "grid",
+            "grid-template-columns":
+              "var(--form-label-width, max-content) minmax(0, 1fr)",
+            "column-gap": "var(--form-field-gap, var(--spacing-md))",
+            "row-gap": "var(--spacing-xs)",
+            "align-items": "start",
+            width: "100%",
+          },
+          nested: [
+            {
+              selector: "> .react-aria-Label",
+              styles: {
+                "grid-column": "1",
+                "justify-self": "stretch",
+                "text-align": "var(--form-label-align, start)",
+              },
+            },
+            {
+              selector: "> :not(.react-aria-Label)",
+              styles: {
+                "grid-column": "2",
+                "min-width": "0",
+              },
+            },
+          ],
+        },
+      },
+      quiet: {
+        true: {
+          styles: {
+            "--tf-border": "transparent",
+            "--tf-bg": "transparent",
+          },
+          nested: [
+            {
+              selector: ".react-aria-Input",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-radius": "0",
+                "border-bottom": "1px solid var(--border)",
+              },
+            },
+            {
+              selector: ".react-aria-Input:where([data-focused])",
+              styles: {
+                outline: "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".react-aria-Input:where([data-invalid])",
+              styles: {
+                "border-bottom-color": "var(--negative)",
+              },
+            },
+          ],
+        },
+      },
+    },
     delegation: [
       {
         childSelector: ".react-aria-Label",
@@ -308,6 +384,15 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             "--tf-label-size": "var(--text-base)",
             "--tf-label-margin": "4px",
           },
+          xl: {
+            "--tf-label-size": "var(--text-lg)",
+            "--tf-label-margin": "6px",
+          },
+        },
+        bridges: {
+          "--label-font-size": "var(--tf-label-size)",
+          "--label-font-weight": "600",
+          "--label-margin": "var(--tf-label-margin)",
         },
       },
       {
@@ -334,6 +419,38 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             "--tf-input-size": "var(--text-base)",
             "--tf-input-line-height": "var(--text-base--line-height)",
           },
+          xl: {
+            "--tf-input-padding": "var(--spacing-md) var(--spacing-xl)",
+            "--tf-input-size": "var(--text-lg)",
+            "--tf-input-line-height": "var(--text-lg--line-height)",
+          },
+        },
+        bridges: {
+          "--input-padding": "var(--tf-input-padding)",
+          "--input-font-size": "var(--tf-input-size)",
+          "--input-line-height": "var(--tf-input-line-height)",
+        },
+        states: {
+          "[data-hovered]:not([data-focused]):not([data-disabled])": {
+            "border-color": "var(--border-hover)",
+          },
+          "[data-focused]": {
+            outline: "2px solid var(--accent)",
+            "outline-offset": "-1px",
+            "border-color": "var(--accent)",
+          },
+          "[data-invalid]": {
+            "border-color": "var(--negative)",
+          },
+          "[data-invalid][data-focused]": {
+            "outline-color": "var(--negative)",
+          },
+          "[data-disabled]": {
+            "border-color": "color-mix(in srgb, var(--fg) 12%, transparent)",
+            color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+            cursor: "not-allowed",
+            opacity: "0.38",
+          },
         },
       },
       {
@@ -342,8 +459,19 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         variables: {
           xs: { "--tf-hint-size": "var(--text-2xs)" },
           sm: { "--tf-hint-size": "var(--text-xs)" },
-          md: { "--tf-hint-size": "var(--text-xs)" },
-          lg: { "--tf-hint-size": "var(--text-sm)" },
+          md: { "--tf-hint-size": "var(--text-sm)" },
+          lg: { "--tf-hint-size": "var(--text-base)" },
+          xl: { "--tf-hint-size": "var(--text-lg)" },
+        },
+        bridges: {
+          "--error-font-size": "var(--tf-hint-size)",
+        },
+      },
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--tf-hint-size)",
+          color: "var(--fg-muted)",
         },
       },
     ],

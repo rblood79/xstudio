@@ -115,6 +115,41 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
     },
   },
 
+  composition: {
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "ta-label",
+        variables: {
+          xs: {
+            "--ta-label-size": "var(--text-2xs)",
+            "--ta-label-line-height": "var(--text-2xs--line-height)",
+          },
+          sm: {
+            "--ta-label-size": "var(--text-xs)",
+            "--ta-label-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--ta-label-size": "var(--text-sm)",
+            "--ta-label-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--ta-label-size": "var(--text-base)",
+            "--ta-label-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--ta-label-size": "var(--text-lg)",
+            "--ta-label-line-height": "var(--text-lg--line-height)",
+          },
+        },
+        bridges: {
+          "--label-font-size": "var(--ta-label-size)",
+          "--label-line-height": "var(--ta-label-line-height)",
+        },
+      },
+    ],
+  },
+
   propagation: {
     rules: [{ parentProp: "size", childPath: "Label", override: true }],
   },

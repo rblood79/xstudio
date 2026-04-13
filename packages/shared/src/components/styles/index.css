@@ -114,12 +114,12 @@
    ============================================ */
 
 /* Text Input Components — skipCSSGeneration, 수동 CSS */
-@import "./TextField.css";
-@import "./TextArea.css";
+@import "./generated/TextField.css";
+@import "./generated/TextArea.css";
 @import "./NumberField.css";
-@import "./SearchField.css";
-@import "./DateField.css";
-@import "./TimeField.css";
+@import "./generated/SearchField.css";
+@import "./generated/DateField.css";
+@import "./generated/TimeField.css";
 
 /* Collection Components */
 @import "./ListBox.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
@@ -132,7 +132,7 @@
 @import "./Popover.css"; /* animations, placement, Dialog position:static override */
 
 /* Advanced Color Components — skipCSSGeneration, 수동 CSS */
-@import "./ColorField.css";
+@import "./generated/ColorField.css";
 @import "./ColorSwatchPicker.css";
 
 /* Menu Components — skipCSSGeneration, 수동 CSS */

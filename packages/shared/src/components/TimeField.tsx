@@ -21,7 +21,7 @@ import { Time } from "@internationalized/date";
 import type { ComponentSize } from "../types";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
-import "./styles/TimeField.css";
+import "./styles/generated/TimeField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환

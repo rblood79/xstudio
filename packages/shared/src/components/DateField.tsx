@@ -22,7 +22,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
-import "./styles/DateField.css";
+import "./styles/generated/DateField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
