@@ -1,0 +1,85 @@
+/* ============================================================
+ * AUTO-GENERATED from DialogSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Dialog.spec.ts
+ * Archetype: overlay
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Dialog {
+  /* Base styles — archetype: overlay */
+    position: fixed;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-xl);
+  gap: 12px;
+}
+
+.react-aria-Dialog[data-size="xs"] {
+  height: auto;
+  padding: 2px 2px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-Dialog[data-size="sm"] {
+  height: auto;
+  padding: 4px 4px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 8px;
+}
+
+.react-aria-Dialog[data-size="md"] {
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-xl);
+  gap: 12px;
+}
+
+.react-aria-Dialog[data-size="lg"] {
+  height: auto;
+  padding: 12px 12px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-2xl);
+  gap: 16px;
+}
+
+.react-aria-Dialog[data-size="xl"] {
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-xl);
+  border-radius: var(--radius-2xl);
+  gap: 20px;
+}
+
+.react-aria-Dialog[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Dialog[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Dialog {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-Dialog {
+    transition-duration: 0s !important;
+  }
+}
+
+} /* @layer components */

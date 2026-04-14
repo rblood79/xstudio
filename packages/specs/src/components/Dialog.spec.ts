@@ -15,7 +15,6 @@ import { MessageSquare, ToggleLeft, Parentheses } from "lucide-react";
  * Dialog Props
  */
 export interface DialogProps {
-  variant?: "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
   children?: string;
   title?: string;
@@ -35,9 +34,8 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   description: "React Aria 기반 다이얼로그 컴포넌트",
   archetype: "overlay",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "accent",
   defaultSize: "md",
 
   properties: {
@@ -88,21 +86,6 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
     pixiLayer: "modal",
   },
 
-  variants: {
-    accent: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    negative: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.negative}" as TokenRef,
-    },
-  },
-
   sizes: {
     xs: {
       height: 0,
@@ -150,7 +133,12 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = DialogSpec.variants![(props as { variant?: keyof typeof DialogSpec.variants }).variant ?? DialogSpec.defaultVariant!];
+      const DIALOG_DEFAULTS = {
+        background: "{color.layer-1}" as TokenRef,
+        backgroundHover: "{color.layer-1}" as TokenRef,
+        backgroundPressed: "{color.layer-1}" as TokenRef,
+        text: "{color.neutral}" as TokenRef,
+      };
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       const borderRadius = size.borderRadius;
@@ -186,7 +174,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
           width: "auto",
           height: "auto",
           radius: borderRadius as unknown as number,
-          fill: resolveStateColors(variant, state).background,
+          fill: resolveStateColors(DIALOG_DEFAULTS, state).background,
         },
       ];
       if (hasChildren) return shapes;

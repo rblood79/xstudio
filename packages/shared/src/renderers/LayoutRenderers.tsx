@@ -742,7 +742,6 @@ export const renderDialog = (
     <Dialog
       key={element.id}
       data-element-id={element.id}
-      data-variant={element.props.variant || "default"}
       data-size={element.props.size || "md"}
       style={element.props.style}
       className={element.props.className}

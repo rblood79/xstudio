@@ -1,6 +1,6 @@
 import { Dialog as RACDialog, DialogProps } from "react-aria-components";
 import type { ComponentSize } from "../types";
-import "./styles/Dialog.css";
+import "./styles/generated/Dialog.css";
 
 /**
  * Dialog Component with Material Design 3 support
