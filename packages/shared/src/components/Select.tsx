@@ -48,8 +48,6 @@ export interface SelectProps<T extends object> extends Omit<
   itemKey?: keyof T | ((item: T) => React.Key);
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
-  // M3 props
-  variant?: string;
   size?: ComponentSize;
   /**
    * React Aria 1.13.0: 선택 모드
@@ -89,7 +87,6 @@ export function Select<T extends object>({
   placeholder,
   dataBinding,
   columnMapping,
-  variant = "default",
   size = "md",
   iconName,
   selectionMode = "single",
@@ -286,7 +283,6 @@ export function Select<T extends object>({
     <AriaSelect
       {...props}
       ref={selectRef}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-quiet={isQuiet ? "true" : undefined}

@@ -18,6 +18,7 @@ import {
   Hash,
   CheckSquare,
   HelpCircle,
+  Minimize2,
 } from "lucide-react";
 
 /**
@@ -203,6 +204,12 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
               { value: "side", label: "Side" },
             ],
             defaultValue: "top",
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Minimize2,
           },
         ],
       },

@@ -50,8 +50,6 @@ export interface ComboBoxProps<T extends object> extends Omit<
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   popoverClassName?: string;
-  // M3 props
-  variant?: string;
   size?: ComponentSize;
   /** 트리거 아이콘 이름 (Lucide 아이콘) */
   iconName?: string;
@@ -76,7 +74,6 @@ export function ComboBox<T extends object>({
   dataBinding,
   columnMapping,
   popoverClassName,
-  variant = "default",
   size = "md",
   iconName,
   isLoading: externalLoading,
@@ -259,7 +256,6 @@ export function ComboBox<T extends object>({
       inputValue={inputValue}
       onInputChange={onInputChange}
       className={comboBoxClassName}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-quiet={isQuiet ? "true" : undefined}

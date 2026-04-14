@@ -1054,10 +1054,6 @@ export const renderComboBox = (
       style={element.props.style}
       className={element.props.className}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
-      variant={
-        (element.props.variant as "default" | "accent" | "negative") ||
-        "default"
-      }
       iconName={
         element.props.iconName ? String(element.props.iconName) : undefined
       }

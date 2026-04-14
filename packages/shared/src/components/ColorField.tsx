@@ -21,11 +21,6 @@ import "./styles/generated/ColorField.css";
 
 export interface ColorFieldProps extends AriaColorFieldProps {
   /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: string;
-  /**
    * Size variant
    * @default 'md'
    */
@@ -42,11 +37,6 @@ export interface ColorFieldProps extends AriaColorFieldProps {
 /**
  * ColorField Component with Material Design 3 support
  *
- * M3 Features:
- * - 5 variants: primary, secondary, tertiary, error, filled
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
  * Features:
  * - Color input with hex value display
  * - Keyboard navigation
@@ -54,11 +44,10 @@ export interface ColorFieldProps extends AriaColorFieldProps {
  * - Error message display
  *
  * @example
- * <ColorField variant="primary" size="md" label="Background Color" />
- * <ColorField variant="error" errorMessage="Invalid color" />
+ * <ColorField size="md" label="Background Color" />
+ * <ColorField isInvalid errorMessage="Invalid color" />
  */
 export function ColorField({
-  variant = "default",
   size = "md",
   label,
   description,
@@ -81,7 +70,6 @@ export function ColorField({
     <AriaColorField
       {...props}
       className={colorFieldClassName}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-label-align={labelAlign}

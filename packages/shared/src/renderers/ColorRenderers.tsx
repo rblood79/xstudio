@@ -119,10 +119,7 @@ export const renderColorField = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      variant={String(element.props.variant || "default")}
-      size={
-        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"
-      }
+      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       label={element.props.label ? String(element.props.label) : undefined}
       description={
         element.props.description
