@@ -328,6 +328,21 @@ export interface CompositionSpec {
     nested?: Array<{ selector: string; styles: Record<string, string> }>;
   }>;
 
+  /**
+   * 애니메이션 선언 (ADR-059 v2 Phase 4-infra 0-D.7)
+   *
+   * `@keyframes {specName}-{animName}` 로 emit.
+   * `reducedMotion` 는 `@media (prefers-reduced-motion: reduce)` 내 root 셀렉터
+   * 에 override 로 emit.
+   */
+  animations?: Record<
+    string,
+    {
+      keyframes: Record<string, Record<string, string>>;
+      reducedMotion?: Record<string, string>;
+    }
+  >;
+
   /** CSS Variable Delegation — size별 자식 변수 override */
   delegation: DelegationSpec[];
 }
