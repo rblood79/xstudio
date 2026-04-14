@@ -21,7 +21,7 @@ import type {
 
 import { useCollectionData } from "../hooks";
 import { Skeleton } from "./Skeleton";
-import "./styles/Tabs.css";
+import "./styles/generated/Tabs.css";
 
 /**
  * Phase 4: data-* 패턴 전환

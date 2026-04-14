@@ -6,7 +6,7 @@ import {
 } from "react-aria-components";
 import { FocusScope } from "@react-aria/focus";
 import type { ComponentSize } from "../types";
-import "./styles/Modal.css";
+import "./styles/generated/Modal.css";
 
 export interface ModalProps extends ModalOverlayProps {
   /**

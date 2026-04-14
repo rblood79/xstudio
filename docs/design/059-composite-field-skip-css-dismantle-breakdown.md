@@ -302,7 +302,7 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 | 1   | SearchField       | 없음                             | no                  |     (iv)      | — (이미 Phase 1.5 완료)                                 | —                                                                                                                                                                                       |   N/A    |
 | 2   | DateInput         | default/accent/negative          | inherit(DateField)  | (iii-inherit) | 유지 (부모 DateField propagation)                       | —                                                                                                                                                                                       |  defer   |
 | 3   | Tree              | default/accent                   | no                  |     (iii)     | 유지 (내부 스위치)                                      | —                                                                                                                                                                                       |    B4    |
-| 4   | ToggleButtonGroup | default                          | no (verify desync)  |  (iii-dead)   | dead → 삭제                                             | — (shared wrapper verify)                                                                                                                                                               |    B1    |
+| 4   | ToggleButtonGroup | default                          | no                  |  (iii-dead)   | dead → 삭제 (B0.1 verify 확정)                          | —                                                                                                                                                                                       |    B1    |
 | 5   | TagGroup          | default/accent/neutral/negative  | no                  |     (iii)     | 유지 (내부 스위치)                                      | —                                                                                                                                                                                       |    B4    |
 | 6   | Tag               | default/selected                 | no                  |     (iii)     | selected = 상태(data-selected)로 유지                   | —                                                                                                                                                                                       |    B4    |
 | 7   | Table             | default/striped/bordered         | no                  |     (iii)     | 유지 (RSP density prop 대응 여부 검토)                  | —                                                                                                                                                                                       |    B4    |
@@ -332,9 +332,9 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 | 31  | Breadcrumb        | default                          | no                  | (iii-dead→iv) | dead → 삭제                                             | —                                                                                                                                                                                       |    B1    |
 | 32  | SliderThumb       | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 따름                                               | —                                                                                                                                                                                       | B3(부모) |
 | 33  | Tabs              | default                          | no                  |  (iii-dead)   | dead → 삭제                                             | —                                                                                                                                                                                       |    B1    |
-| 34  | TabPanels         | 없음                             | yes (verify)        |     (ii?)     | —                                                       | variant prop 제거 (verify)                                                                                                                                                              |    B1    |
+| 34  | TabPanels         | 없음                             | no                  |     (iv)      | — (B0.1 verify: agent 오보 정정, renderer=null return)  | —                                                                                                                                                                                       |    B1    |
 | 35  | Field             | default                          | no                  | (iv-virtual)  | 데이터 매핑 virtual spec 유지                           | —                                                                                                                                                                                       |  defer   |
-| 36  | Modal             | 없음                             | no (agent) / verify |     (iv?)     | agent 판정 (iv), 메모리 desync 흔적 — verify            | verify                                                                                                                                                                                  |    B1    |
+| 36  | Modal             | 없음                             | no                  |     (iv)      | — (B0.1 verify: ModalProps variant 없음, renderModal 전달 없음) | —                                                                                                                                                                                       |    B1    |
 | 37  | DisclosureHeader  | 없음                             | no                  |     (iv)      | — (native h3)                                           | —                                                                                                                                                                                       |    B1    |
 | 38  | TailSwatch        | 없음                             | no                  |     (iv)      | —                                                       | —                                                                                                                                                                                       |    B1    |
 | +   | Accordion         | 없음                             | no                  |     (iv)      | —                                                       | —                                                                                                                                                                                       |    B1    |
@@ -384,6 +384,35 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 - 축 1 (Spec.variants): 완료 — 위 표 column 3
 - 축 2 (Wrapper variant prop): 진행 중 — 2026-04-14 배경 agent 실행 중
 - 축 3 (RSP 공식): **완료 — B0.2 (2026-04-14)** — (i) cell 10 컴포넌트 RSP 공식 대조 완료 (Card/Dialog/Disclosure/DropZone/Label/Menu/Slider/ColorWheel/ColorSlider/ColorPicker). 분기 집계: (i-a) 제거 8개 · (i-a+b) Card(quiet→isQuiet 1개) · (i-c) ColorPicker compound 정당화 1개. B2 진입 Gate "D2 매트릭스 분류 확정" 충족.
+
+---
+
+## B1 실행 결과 (2026-04-14, feature/adr-059-b1-low-risk)
+
+B0.1 + B1.1~B1.11 완료. 11 컴포넌트 D3 해체 + D2 부채 2건 해제.
+
+### Commits
+
+| Commit | 내용 |
+|---|---|
+| `274154b8` | B0.1 verify — Modal/TabPanels/ToggleButtonGroup/Slot cell 확정 |
+| `3fd3327a` | B1.1 Breadcrumb skipCSSGeneration:false |
+| `d40c70c6` | B1.2-5 Accordion/DisclosureHeader/TailSwatch/Tab skipCSSGeneration:false |
+| `1f82832b` | B1.11 TabPanels skipCSSGeneration:false |
+| `e27665c7` | B1.7+9+10 Tabs/Modal/ToggleButtonGroup — 수동 CSS 삭제 (−608L) |
+| `942968ea` | B1.6+8 TabList/Slot — dead variant 선언 제거 |
+| `3cf1117a` | Slot.tsx import path 후속 수정 |
+
+### 지표
+
+- skipCSSGeneration:true: 11개 감소
+- 수동 CSS 4개 삭제(-608L): Slot, Tabs, Modal, ToggleButtonGroup
+- Generated CSS 11개 신규
+- D2 부채 해제 2건: Slot, TabList dead variant 선언 제거
+
+### Known concerns
+
+- Modal `.react-aria-TextField` nested 마진 삭제 — visual regression 가능성 (reviewer 시각 확인)
 
 ---
 

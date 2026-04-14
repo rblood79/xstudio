@@ -1,0 +1,71 @@
+/* ============================================================
+ * AUTO-GENERATED from ModalSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Modal.spec.ts
+ * Archetype: overlay
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Modal {
+  /* Base styles — archetype: overlay */
+    position: fixed;
+    box-sizing: border-box;
+
+  /* Default variant */
+  background: transparent;
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 24px 24px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 8px;
+}
+
+.react-aria-Modal[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
+  }
+
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-Modal[data-size="md"] {
+  height: auto;
+  padding: 24px 24px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 8px;
+}
+
+.react-aria-Modal[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Modal[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Modal {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-Modal {
+    transition-duration: 0s !important;
+  }
+}
+
+} /* @layer components */

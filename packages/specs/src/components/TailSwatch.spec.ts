@@ -20,7 +20,7 @@ export const TailSwatchSpec: ComponentSpec<TailSwatchProps> = {
   description: "색상 스왓치 컴포넌트",
   archetype: "simple",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",

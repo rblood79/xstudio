@@ -43,7 +43,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
   name: "Tab",
   description: "개별 탭 버튼 — 텍스트 + 선택 인디케이터",
   element: "button",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",

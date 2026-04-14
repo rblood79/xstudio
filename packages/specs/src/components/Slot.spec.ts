@@ -16,7 +16,6 @@ import { FileText, Type, AlertCircle } from "lucide-react";
  * Slot Props
  */
 export interface SlotProps {
-  variant?: "default";
   size?: "sm" | "md" | "lg";
   label?: string;
   name?: string;
@@ -28,24 +27,19 @@ export interface SlotProps {
 /**
  * Slot Component Spec
  */
+const SLOT_DEFAULTS = {
+  background: "{color.base}" as TokenRef,
+  text: "{color.neutral-subdued}" as TokenRef,
+  border: "{color.border}" as TokenRef,
+};
+
 export const SlotSpec: ComponentSpec<SlotProps> = {
   name: "Slot",
   description: "플레이스홀더 슬롯 컨테이너 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -109,7 +103,6 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = SlotSpec.variants![(props as { variant?: keyof typeof SlotSpec.variants }).variant ?? SlotSpec.defaultVariant!];
       const label = props.label || "Slot";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
@@ -129,10 +122,9 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
             : parseFloat(String(styleBw)) || 0
           : 1;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? SLOT_DEFAULTS.background;
       const borderColor =
-        props.style?.borderColor ??
-        (variant.border || ("{color.border}" as TokenRef));
+        props.style?.borderColor ?? SLOT_DEFAULTS.border;
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx =
@@ -158,7 +150,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "center";
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? SLOT_DEFAULTS.text;
 
       const shapes: Shape[] = [
         // 배경

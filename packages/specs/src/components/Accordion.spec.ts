@@ -15,7 +15,7 @@ export const AccordionSpec: ComponentSpec<AccordionProps> = {
   description: "아코디언 컴포넌트",
   archetype: undefined,
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",
