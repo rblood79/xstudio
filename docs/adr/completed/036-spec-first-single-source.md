@@ -4,11 +4,11 @@
 
 ## Status
 
-Implemented
+Implemented (후속 ADR-057/058/059/060/061/062로 D3 SSOT 적용 범위 확장 — 2026-04-14 완결)
 
 ## Date
 
-2026-03-13 (2026-03-14 재검토, 2026-03-15 구현 완성도 보강, 2026-03-16 구현 완료)
+2026-03-13 (2026-03-14 재검토, 2026-03-15 구현 완성도 보강, 2026-03-16 구현 완료, 2026-04-14 후속 ADR 체인 완결 기록 추가)
 
 ## Decision Makers
 
@@ -24,6 +24,19 @@ composition Team
 - [ADR-038](../038-figma-import.md): Figma 디자인 임포트 시스템
 - [ADR-033](033-css-property-ssot-consolidation.md): CSS 속성 SSOT 통합 — 구조 변수화
 - [ADR-041](../041-spec-driven-property-editor.md): Spec 기반 프로퍼티 에디터 자동 생성
+
+### D3 SSOT 적용 범위 확장 체인 (2026-04 완결)
+
+본 ADR에서 수립한 "Spec=D3 SSOT" 원칙을 후속 ADR들이 실제 파손 지점에 적용하여 범위를 확장했다:
+
+- [ADR-057](../057-text-component-spec-first-phase1.md) / [ADR-058](../058-text-tags-legacy-dismantle.md) — TEXT_TAGS 예외 경로 해체 (9/9 text 컴포넌트 Canvas/Skia SSOT + 8/9 CSS auto-gen)
+- [ADR-060](../060-form-control-indicator-schema.md) — Form Control Indicator 6개 매직 테이블 해체
+- [ADR-061](../061-focus-ring-tokenization.md) — Focus Ring 53개 spec TokenRef 전환
+- [ADR-062](../062-field-spec-rsp-conformance.md) — Field variant 제거 + isQuiet 보강 (D2 부채 정리)
+- [ADR-059](../059-composite-field-skip-css-dismantle.md) — Composite Field `skipCSSGeneration` 해체 (38→19, Tier 3 예외 9개 공식화, Phase 5 closure 2026-04-14)
+- [ADR-063](../063-ssot-chain-charter.md) — SSOT 체인 정본 Charter (3-Domain 분할 명문화)
+
+체인 완결 결과: ADR-036의 **D3 domain 한정 원칙**이 수립되었고, 실행 불가능한 잔존분(Tier 3 구조 예외)이 각 후속 ADR에 명시적으로 문서화되었다. `skipCSSGeneration:true=0` 엄격 조건은 현실적 의미가 없어 "Tier 3 예외 전수 + 구조적 사유 명시"로 대체됨.
 
 ---
 
