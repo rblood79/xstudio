@@ -341,6 +341,30 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           },
         },
       },
+      disabled: {
+        true: {
+          nested: [
+            {
+              selector: ".react-aria-Button",
+              styles: {
+                background: "color-mix(in srgb, var(--fg) 4%, transparent)",
+                "border-color":
+                  "color-mix(in srgb, var(--fg) 12%, transparent)",
+                color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+                cursor: "not-allowed",
+                opacity: "0.38",
+              },
+            },
+            {
+              selector: ".react-aria-Button .select-chevron",
+              styles: {
+                background: "color-mix(in srgb, var(--fg) 12%, transparent)",
+                color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+              },
+            },
+          ],
+        },
+      },
       quiet: {
         true: {
           nested: [
