@@ -832,6 +832,35 @@ function generateMediaQueries<Props>(spec: ComponentSpec<Props>): string[] {
   return lines;
 }
 
+// ─── Phase 4.5a 0-D.10: Selector Validation ───────────────────────────────────
+
+const FORBIDDEN_SELECTOR_CHARS = /[{};@]/;
+
+function validateRootSelectorKey(key: string, specName: string): void {
+  if (!key.startsWith("&")) {
+    throw new Error(
+      `[CSSGenerator] ${specName}: rootSelectors key must start with "&". Got: ${JSON.stringify(key)}`,
+    );
+  }
+  if (FORBIDDEN_SELECTOR_CHARS.test(key)) {
+    throw new Error(
+      `[CSSGenerator] ${specName}: rootSelectors key contains forbidden chars ({};@). Got: ${JSON.stringify(key)}`,
+    );
+  }
+}
+
+function validateNestedSelectorKey(
+  key: string,
+  specName: string,
+  context: string,
+): void {
+  if (FORBIDDEN_SELECTOR_CHARS.test(key)) {
+    throw new Error(
+      `[CSSGenerator] ${specName}: ${context} selector contains forbidden chars ({};@). Got: ${JSON.stringify(key)}`,
+    );
+  }
+}
+
 // ─── Phase 4-infra2: Animation Name Rewrite ────────────────────────────────
 
 /**
