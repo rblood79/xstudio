@@ -105,7 +105,7 @@
 
 /* Simple Compositions — skipCSSGeneration, 수동 CSS */
 @import "./Disclosure.css";
-@import "./Form.css";
+@import "./generated/Form.css";
 @import "./generated/InlineAlert.css";
 @import "./generated/Tooltip.css";
 

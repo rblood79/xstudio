@@ -1,6 +1,6 @@
-import { Form as RACForm, FormProps } from 'react-aria-components';
-import { FocusScope } from '@react-aria/focus';
-import './styles/Form.css';
+import { Form as RACForm, FormProps } from "react-aria-components";
+import { FocusScope } from "@react-aria/focus";
+import "./styles/generated/Form.css";
 
 export interface ExtendedFormProps extends FormProps {
   /**
