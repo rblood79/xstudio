@@ -140,7 +140,7 @@
 @import "./Autocomplete.css"; /* generated 없음 — 수동 유지 */
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */
-@import "./Select.css";
+@import "./generated/Select.css";
 @import "./generated/ComboBox.css";
 
 /* Complex Pickers — skipCSSGeneration, 수동 CSS */

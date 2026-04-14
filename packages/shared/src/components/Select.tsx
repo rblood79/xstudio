@@ -33,7 +33,7 @@ import { useCollectionData } from "../hooks";
 import type { NecessityIndicator } from "./Field";
 import { renderNecessityIndicator } from "./Field";
 import { Skeleton } from "./Skeleton";
-import "./styles/Select.css";
+import "./styles/generated/Select.css";
 
 export interface SelectProps<T extends object> extends Omit<
   AriaSelectProps<T>,

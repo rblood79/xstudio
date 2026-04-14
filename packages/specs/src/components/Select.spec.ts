@@ -11,10 +11,6 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
-  FIELD_TRIGGER_VARIABLES,
-  FIELD_AUTO_HEIGHT_VARIABLES,
-} from "../utils/fieldDelegation";
-import {
   Hash,
   SquareX,
   CheckSquare,
@@ -85,7 +81,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   name: "Select",
   description: "React Aria 기반 드롭다운 셀렉트 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultSize: "md",
 
@@ -333,31 +329,281 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
+    containerStyles: {
+      color: "var(--fg)",
+    },
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            "flex-direction": "row",
+            "align-items": "flex-start",
+          },
+        },
+      },
+      quiet: {
+        true: {
+          nested: [
+            {
+              selector: ".react-aria-Button",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-radius": "0",
+                "border-bottom": "1px solid var(--border)",
+              },
+            },
+            {
+              selector:
+                ".react-aria-Button[data-hovered]:not([data-pressed]):not([data-disabled])",
+              styles: {
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-bottom-color": "var(--border-hover)",
+              },
+            },
+            {
+              selector:
+                ".react-aria-Button[data-focus-visible]:not([data-disabled])",
+              styles: {
+                outline: "none",
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".react-aria-Button[data-focused]:not([data-disabled])",
+              styles: {
+                outline: "none",
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: ".react-aria-Button[data-pressed]:not([data-disabled])",
+              styles: {
+                outline: "none",
+                background: "transparent",
+                "border-color": "transparent",
+                "box-shadow": "none",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector: "&[data-invalid] .react-aria-Button",
+              styles: {
+                "border-color": "transparent",
+                "border-bottom-color": "var(--negative)",
+              },
+            },
+          ],
+        },
+      },
+    },
+    externalStyles: [
+      {
+        selector: '.react-aria-Popover[data-trigger="Select"]',
+        styles: {
+          "min-width": "var(--trigger-width)",
+          "max-height": "300px",
+          overflow: "auto",
+          border: "1px solid var(--border)",
+          "border-radius": "var(--border-radius)",
+          background: "var(--bg-raised)",
+          "box-shadow": "var(--shadow-lg)",
+          contain: "layout style",
+        },
+        nested: [
+          {
+            selector: ".react-aria-ListBox",
+            styles: {
+              border: "none",
+              background: "transparent",
+              "max-height": "none",
+              "min-height": "24px",
+            },
+          },
+        ],
+      },
+    ],
     delegation: [
-      // Label은 LabelSpec에서 variant 기반으로 color/font-size 결정 (단일 소스)
+      {
+        childSelector: ".react-aria-Label",
+        prefix: "select-label",
+        variables: {
+          xs: { "--select-label-size": "var(--text-2xs)" },
+          sm: { "--select-label-size": "var(--text-xs)" },
+          md: { "--select-label-size": "var(--text-sm)" },
+          lg: { "--select-label-size": "var(--text-base)" },
+          xl: { "--select-label-size": "var(--text-lg)" },
+        },
+        bridges: {
+          "--label-font-size": "var(--select-label-size)",
+          "--label-font-weight": "600",
+          "--label-margin": "var(--spacing-xs)",
+        },
+      },
       {
         childSelector: ".react-aria-Button",
-        variables: FIELD_TRIGGER_VARIABLES,
+        prefix: "select-btn",
+        variables: {
+          xs: {
+            "--select-btn-padding":
+              "var(--spacing-3xs) var(--spacing-3xs) var(--spacing-3xs) var(--spacing-xs)",
+            "--select-btn-font-size": "var(--text-2xs)",
+            "--select-btn-line-height": "var(--text-2xs--line-height)",
+          },
+          sm: {
+            "--select-btn-padding":
+              "var(--spacing-2xs) var(--spacing-2xs) var(--spacing-2xs) var(--spacing-sm)",
+            "--select-btn-font-size": "var(--text-xs)",
+            "--select-btn-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--select-btn-padding":
+              "var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md)",
+            "--select-btn-font-size": "var(--text-sm)",
+            "--select-btn-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--select-btn-padding":
+              "var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-lg)",
+            "--select-btn-font-size": "var(--text-base)",
+            "--select-btn-line-height": "var(--text-base--line-height)",
+          },
+          xl: {
+            "--select-btn-padding":
+              "var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xl)",
+            "--select-btn-font-size": "var(--text-lg)",
+            "--select-btn-line-height": "var(--text-lg--line-height)",
+          },
+        },
+        bridges: {
+          width: "100%",
+          padding: "var(--select-btn-padding)",
+          "text-align": "left",
+          border: "1px solid var(--border)",
+          "border-radius": "var(--border-radius)",
+          background: "var(--bg-inset)",
+          color: "var(--fg)",
+          "forced-color-adjust": "none",
+          "font-size": "var(--select-btn-font-size)",
+          "line-height": "var(--select-btn-line-height)",
+        },
+        states: {
+          "[data-hovered]:not([data-pressed]):not([data-disabled])": {
+            "border-color": "var(--border-hover)",
+            background: "var(--bg-overlay)",
+          },
+          "[data-pressed]:not([data-disabled])": {
+            background: "var(--accent-subtle)",
+            outline: "2px solid var(--accent)",
+            "outline-offset": "-1px",
+          },
+          "[data-focus-visible]": {
+            outline: "2px solid var(--accent)",
+            "outline-offset": "-1px",
+          },
+          "[data-disabled]": {
+            background: "color-mix(in srgb, var(--fg) 4%, transparent)",
+            "border-color": "color-mix(in srgb, var(--fg) 12%, transparent)",
+            color: "color-mix(in srgb, var(--fg) 38%, transparent)",
+            cursor: "not-allowed",
+            opacity: "0.38",
+          },
+        },
       },
       {
         childSelector: ".react-aria-SelectValue",
-        variables: FIELD_AUTO_HEIGHT_VARIABLES,
+        bridges: {
+          "font-size": "var(--select-btn-font-size)",
+          color: "var(--fg)",
+          flex: "1",
+          display: "flex",
+          "white-space": "nowrap",
+          "text-overflow": "ellipsis",
+          overflow: "hidden",
+        },
+        states: {
+          "[data-placeholder]": {
+            "font-style": "normal",
+            color: "var(--fg-muted)",
+            opacity: "0.6",
+          },
+        },
       },
       {
-        childSelector: ".react-aria-ListBox .react-aria-ListBoxItem",
+        childSelector: '.react-aria-SelectValue [slot="description"]',
+        bridges: {
+          display: "none",
+        },
+      },
+      {
+        childSelector: ".select-chevron",
+        prefix: "select-chevron",
         variables: {
+          xs: {
+            "--select-chevron-size": "14px",
+            "--select-chevron-margin": "var(--spacing-xs)",
+          },
           sm: {
-            padding: "var(--spacing-sm) var(--spacing)",
-            "font-size": "var(--text-xs)",
+            "--select-chevron-size": "16px",
+            "--select-chevron-margin": "var(--spacing-sm)",
           },
           md: {
-            padding: "var(--spacing-sm) var(--spacing-md)",
-            "font-size": "var(--text-sm)",
+            "--select-chevron-size": "18px",
+            "--select-chevron-margin": "var(--spacing)",
           },
           lg: {
-            padding: "var(--spacing) var(--spacing-lg)",
-            "font-size": "var(--text-base)",
+            "--select-chevron-size": "22px",
+            "--select-chevron-margin": "var(--spacing-md)",
           },
+          xl: {
+            "--select-chevron-size": "28px",
+            "--select-chevron-margin": "var(--spacing-lg)",
+          },
+        },
+        bridges: {
+          display: "flex",
+          "align-items": "center",
+          "justify-content": "center",
+          width: "var(--select-chevron-size)",
+          height: "var(--select-chevron-size)",
+          "margin-left": "var(--select-chevron-margin)",
+          "border-radius": "var(--radius-xs)",
+          background: "var(--bg-overlay)",
+          color: "var(--fg)",
+          transition: "all 150ms ease",
+          "forced-color-adjust": "none",
+          "box-shadow": "var(--shadow-sm)",
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        prefix: "select-hint",
+        variables: {
+          xs: { "--select-hint-size": "var(--text-2xs)" },
+          sm: { "--select-hint-size": "var(--text-2xs)" },
+          md: { "--select-hint-size": "var(--text-xs)" },
+          lg: { "--select-hint-size": "var(--text-sm)" },
+          xl: { "--select-hint-size": "var(--text-base)" },
+        },
+        bridges: {
+          "--error-font-size": "var(--select-hint-size)",
+          "--error-margin": "var(--spacing-xs)",
+        },
+      },
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--select-hint-size)",
+          color: "var(--fg-muted)",
         },
       },
     ],

@@ -1,0 +1,336 @@
+/* ============================================================
+ * AUTO-GENERATED from SelectSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Select.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Select {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    color: var(--fg);
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 6px;
+  --icon-size: 18px;
+}
+
+.react-aria-Select[data-size="xs"] {
+  font-size: var(--text-2xs);
+  border-radius: var(--radius-xs);
+  gap: 2px;
+  --icon-size: 10px;
+}
+
+.react-aria-Select[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+  --icon-size: 14px;
+}
+
+.react-aria-Select[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 6px;
+  --icon-size: 18px;
+}
+
+.react-aria-Select[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 8px;
+  --icon-size: 22px;
+}
+
+.react-aria-Select[data-size="xl"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  gap: 10px;
+  --icon-size: 28px;
+}
+
+.react-aria-Select[data-hovered] {
+}
+
+.react-aria-Select[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Select[data-pressed] {
+}
+
+.react-aria-Select[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-Select[data-size="xs"] .react-aria-Label {
+  --select-label-size: var(--text-2xs);
+}
+
+.react-aria-Select[data-size="sm"] .react-aria-Label {
+  --select-label-size: var(--text-xs);
+}
+
+.react-aria-Select[data-size="md"] .react-aria-Label {
+  --select-label-size: var(--text-sm);
+}
+
+.react-aria-Select[data-size="lg"] .react-aria-Label {
+  --select-label-size: var(--text-base);
+}
+
+.react-aria-Select[data-size="xl"] .react-aria-Label {
+  --select-label-size: var(--text-lg);
+}
+
+.react-aria-Select .react-aria-Label {
+  --label-font-size: var(--select-label-size);
+  --label-font-weight: 600;
+  --label-margin: var(--spacing-xs);
+}
+
+.react-aria-Select[data-size="xs"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-3xs) var(--spacing-3xs) var(--spacing-3xs) var(--spacing-xs);
+  --select-btn-font-size: var(--text-2xs);
+  --select-btn-line-height: var(--text-2xs--line-height);
+}
+
+.react-aria-Select[data-size="sm"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-2xs) var(--spacing-2xs) var(--spacing-2xs) var(--spacing-sm);
+  --select-btn-font-size: var(--text-xs);
+  --select-btn-line-height: var(--text-xs--line-height);
+}
+
+.react-aria-Select[data-size="md"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md);
+  --select-btn-font-size: var(--text-sm);
+  --select-btn-line-height: var(--text-sm--line-height);
+}
+
+.react-aria-Select[data-size="lg"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-lg);
+  --select-btn-font-size: var(--text-base);
+  --select-btn-line-height: var(--text-base--line-height);
+}
+
+.react-aria-Select[data-size="xl"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xl);
+  --select-btn-font-size: var(--text-lg);
+  --select-btn-line-height: var(--text-lg--line-height);
+}
+
+.react-aria-Select .react-aria-Button {
+  width: 100%;
+  padding: var(--select-btn-padding);
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--bg-inset);
+  color: var(--fg);
+  forced-color-adjust: none;
+  font-size: var(--select-btn-font-size);
+  line-height: var(--select-btn-line-height);
+}
+
+.react-aria-Select .react-aria-Button:where([data-hovered]:not([data-pressed]):not([data-disabled])) {
+  border-color: var(--border-hover);
+  background: var(--bg-overlay);
+}
+
+.react-aria-Select .react-aria-Button:where([data-pressed]:not([data-disabled])) {
+  background: var(--accent-subtle);
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.react-aria-Select .react-aria-Button:where([data-focus-visible]) {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.react-aria-Select .react-aria-Button:where([data-disabled]) {
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+  color: color-mix(in srgb, var(--fg) 38%, transparent);
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.react-aria-Select .react-aria-SelectValue {
+  font-size: var(--select-btn-font-size);
+  color: var(--fg);
+  flex: 1;
+  display: flex;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.react-aria-Select .react-aria-SelectValue:where([data-placeholder]) {
+  font-style: normal;
+  color: var(--fg-muted);
+  opacity: 0.6;
+}
+
+.react-aria-Select .react-aria-SelectValue [slot="description"] {
+  display: none;
+}
+
+.react-aria-Select[data-size="xs"] .select-chevron {
+  --select-chevron-size: 14px;
+  --select-chevron-margin: var(--spacing-xs);
+}
+
+.react-aria-Select[data-size="sm"] .select-chevron {
+  --select-chevron-size: 16px;
+  --select-chevron-margin: var(--spacing-sm);
+}
+
+.react-aria-Select[data-size="md"] .select-chevron {
+  --select-chevron-size: 18px;
+  --select-chevron-margin: var(--spacing);
+}
+
+.react-aria-Select[data-size="lg"] .select-chevron {
+  --select-chevron-size: 22px;
+  --select-chevron-margin: var(--spacing-md);
+}
+
+.react-aria-Select[data-size="xl"] .select-chevron {
+  --select-chevron-size: 28px;
+  --select-chevron-margin: var(--spacing-lg);
+}
+
+.react-aria-Select .select-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--select-chevron-size);
+  height: var(--select-chevron-size);
+  margin-left: var(--select-chevron-margin);
+  border-radius: var(--radius-xs);
+  background: var(--bg-overlay);
+  color: var(--fg);
+  transition: all 150ms ease;
+  forced-color-adjust: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.react-aria-Select[data-size="xs"] .react-aria-FieldError {
+  --select-hint-size: var(--text-2xs);
+}
+
+.react-aria-Select[data-size="sm"] .react-aria-FieldError {
+  --select-hint-size: var(--text-2xs);
+}
+
+.react-aria-Select[data-size="md"] .react-aria-FieldError {
+  --select-hint-size: var(--text-xs);
+}
+
+.react-aria-Select[data-size="lg"] .react-aria-FieldError {
+  --select-hint-size: var(--text-sm);
+}
+
+.react-aria-Select[data-size="xl"] .react-aria-FieldError {
+  --select-hint-size: var(--text-base);
+}
+
+.react-aria-Select .react-aria-FieldError {
+  --error-font-size: var(--select-hint-size);
+  --error-margin: var(--spacing-xs);
+}
+
+.react-aria-Select [slot="description"] {
+  font-size: var(--select-hint-size);
+  color: var(--fg-muted);
+}
+
+.react-aria-Popover[data-trigger="Select"] {
+  min-width: var(--trigger-width);
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-lg);
+  contain: layout style;
+}
+
+.react-aria-Popover[data-trigger="Select"] .react-aria-ListBox {
+  border: none;
+  background: transparent;
+  max-height: none;
+  min-height: 24px;
+}
+
+.react-aria-Select[data-label-position="side"] {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.react-aria-Select[data-quiet="true"] .react-aria-Button {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.react-aria-Select[data-quiet="true"] .react-aria-Button[data-hovered]:not([data-pressed]):not([data-disabled]) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--border-hover);
+}
+
+.react-aria-Select[data-quiet="true"] .react-aria-Button[data-focus-visible]:not([data-disabled]) {
+  outline: none;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--accent);
+}
+
+.react-aria-Select[data-quiet="true"] .react-aria-Button[data-focused]:not([data-disabled]) {
+  outline: none;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--accent);
+}
+
+.react-aria-Select[data-quiet="true"] .react-aria-Button[data-pressed]:not([data-disabled]) {
+  outline: none;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--accent);
+}
+
+.react-aria-Select[data-quiet="true"][data-invalid] .react-aria-Button {
+  border-color: transparent;
+  border-bottom-color: var(--negative);
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-Select {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */
