@@ -30,6 +30,7 @@ export interface PanelProps {
 export const PanelSpec: ComponentSpec<PanelProps> = {
   name: "Panel",
   description: "React Aria 기반 패널 컨테이너 컴포넌트",
+  archetype: "collection",
   element: "div",
 
   defaultVariant: "default",

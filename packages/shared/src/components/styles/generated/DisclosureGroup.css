@@ -49,11 +49,6 @@
 
 /* ── Tier 2: Composite Delegation ── */
 
-.react-aria-DisclosureGroup[data-disabled="true"] {
-  opacity: 0.38;
-  pointer-events: none;
-}
-
 
 @media (forced-colors: active) {
   .react-aria-DisclosureGroup {

@@ -92,16 +92,6 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       "border-radius": "var(--radius-md)",
       overflow: "hidden",
     },
-    containerVariants: {
-      disabled: {
-        true: {
-          styles: {
-            opacity: "0.38",
-            "pointer-events": "none",
-          },
-        },
-      },
-    },
     delegation: [],
   },
 

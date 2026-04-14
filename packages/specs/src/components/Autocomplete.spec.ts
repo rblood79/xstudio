@@ -123,17 +123,6 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
   composition: {
     containerStyles: {},
     staticSelectors: {
-      ".my-autocomplete": {
-        display: "flex",
-        "flex-direction": "column",
-        gap: "12px",
-        "max-width": "300px",
-        height: "180px",
-        border: "1px solid var(--border)",
-        padding: "16px",
-        "border-radius": "10px",
-        background: "var(--bg-overlay)",
-      },
       ".react-aria-SearchField": {
         width: "100%",
       },
