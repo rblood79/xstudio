@@ -797,7 +797,6 @@ export const renderMenu = (
       id={element.customId}
       data-element-id={element.id}
       label={String(element.props.children || element.props.label || "Menu")}
-      variant={(element.props.variant as string) || "primary"}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       style={element.props.style}
       className={element.props.className}

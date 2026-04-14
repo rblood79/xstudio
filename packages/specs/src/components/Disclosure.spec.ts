@@ -11,13 +11,12 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
-import { Type, ToggleLeft, PointerOff, Parentheses } from "lucide-react";
+import { Type, ToggleLeft, PointerOff } from "lucide-react";
 
 /**
  * Disclosure Props
  */
 export interface DisclosureProps {
-  variant?: "default" | "accent" | "surface";
   size?: "sm" | "md" | "lg";
   isExpanded?: boolean;
   title?: string;
@@ -31,34 +30,9 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
   name: "Disclosure",
   description: "React Aria 기반 디스클로저 (아코디언) 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-    },
-    surface: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -109,7 +83,14 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = DisclosureSpec.variants![(props as { variant?: keyof typeof DisclosureSpec.variants }).variant ?? DisclosureSpec.defaultVariant!];
+      // variant 제거 (ADR-059 B2.2): default 색상 토큰 상수 사용
+      const defaultVariantColors = {
+        background: "{color.base}" as TokenRef,
+        backgroundHover: "{color.layer-2}" as TokenRef,
+        backgroundPressed: "{color.layer-1}" as TokenRef,
+        text: "{color.neutral}" as TokenRef,
+        border: "{color.border}" as TokenRef,
+      };
       const title = props.title || "Disclosure";
 
       // 사용자 스타일 우선
@@ -131,12 +112,12 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
 
       const bgColor =
         props.style?.backgroundColor ??
-        resolveStateColors(variant, state).background;
+        resolveStateColors(defaultVariantColors, state).background;
       const borderColor =
         props.style?.borderColor ??
-        (variant.border || ("{color.border}" as TokenRef));
+        (defaultVariantColors.border || ("{color.border}" as TokenRef));
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? defaultVariantColors.text;
       const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
       const fwRaw = props.style?.fontWeight;
       const fw =
@@ -273,7 +254,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       },
       {
         title: "Appearance",
-        fields: [{ type: "variant", icon: Parentheses }, { type: "size" }],
+        fields: [{ type: "size" }],
       },
       {
         title: "State",

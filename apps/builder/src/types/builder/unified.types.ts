@@ -937,7 +937,6 @@ export interface FormElementProps extends BaseElementProps {
 export interface DisclosureElementProps extends BaseElementProps {
   children?: React.ReactNode;
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "quiet";
   title?: string;
   isExpanded?: boolean;
   defaultExpanded?: boolean;
@@ -955,7 +954,6 @@ export interface DisclosureGroupElementProps extends BaseElementProps {
 export interface DropZoneElementProps extends BaseElementProps {
   children?: React.ReactNode;
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "illustrated";
   label?: string;
   description?: string;
   isDisabled?: boolean;

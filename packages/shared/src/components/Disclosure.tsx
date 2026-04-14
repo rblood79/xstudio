@@ -8,14 +8,9 @@ import {
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
 
-import "./styles/Disclosure.css";
+import "./styles/generated/Disclosure.css";
 
 export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -55,7 +50,6 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
  * </Disclosure>
  */
 export function Disclosure({
-  variant = "primary",
   size = "md",
   title,
   children,
@@ -73,7 +67,6 @@ export function Disclosure({
     <AriaDisclosure
       {...props}
       className={disclosureClassName}
-      data-variant={variant}
       data-size={size}
     >
       <Heading>

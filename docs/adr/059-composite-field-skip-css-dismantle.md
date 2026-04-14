@@ -2,6 +2,7 @@
 
 ## Status
 
+Proposed (v2.1 amendment) — 2026-04-14 (Phase 4 D2+D3 통합 재설계)
 Proposed (v2) — 2026-04-13 (선행 조사 결과 반영 재작성, v1: 2026-04-11)
 
 ## 원칙 — Spec SSOT / Symmetric Consumers
@@ -214,6 +215,151 @@ v1 breakdown의 단일 Pre-Phase 0(auto-derivation 메커니즘)을 **의존성 
 - `utils/fieldDelegation.ts` 완전 폐지 — Phase 5
 - ADR-036 상태 재평가 — Phase 5 완료 시 "Fully Implemented" 재승격
 - Playwright visual regression 도입 검토 (별도 ADR 후보)
+
+---
+
+## Phase 4 재설계 (v2.1 amendment — 2026-04-14)
+
+> **변경 요약**: 원 ADR-059 v2의 Phase 4("잔존 Composite ~48개 Archetype 그룹 전환")는 **D3 대칭 복원**만 스코프였음. 2026-04-14 실측 결과 잔존 38 컴포넌트 중 다수가 D2 부채(RSP 미규정 custom variant)를 수반하여 D3-only 해체로는 SSOT 체인 완결 불가. Phase 4를 **D2+D3 통합 재설계**로 확장한다.
+
+### Context (amendment)
+
+#### 원 ADR-059 v2의 Phase 4 전제 파손
+
+v2 Phase 4는 "skipCSSGeneration:true → false 전환 + 수동 CSS 삭제" (D3 축) 만으로 정의됐다. ADR-062(Field variant 제거) 완료 후 잔존 컴포넌트 38개를 실측한 결과:
+
+| 발견                                     | 규모                                           | 원 전제에서 누락  |
+| ---------------------------------------- | ---------------------------------------------- | ----------------- |
+| Spec.variants에 RSP 미규정 keys 보유     | 약 22개 (확인 필요)                            | D2 축 판정 없음   |
+| Wrapper가 variant prop 노출              | 다수 (확인 필요)                               | D2 축 판정 없음   |
+| Wrapper/Spec variant desync              | 최소 3개 (Modal/SearchField/ToggleButtonGroup) | v2에서 감지 안 됨 |
+| Custom-extension 컴포넌트 (RAC/RSP 부재) | 최소 1개 (Panel)                               | D2 경계 모호      |
+
+_(정확한 수치는 § 분류 매트릭스 audit 결과로 확정)_
+
+D3 해체만 수행 시 Spec의 RSP 미규정 variants 필드가 잔존 → CSSGenerator가 그 variant를 CSS로 emit → 사용자 API의 D2 위반이 Spec SSOT에 구조적으로 박힘. Phase 5 재승격 시점에 D2 부채 추가 정리 불가피 → 2-pass 회귀 비용.
+
+#### SSOT 정본과의 정렬 의무
+
+`.claude/rules/ssot-hierarchy.md` §1 D2 + §6 금지 패턴: "Spec에 RSP 미규정 prop 도입 (D2 위반) — ADR-062". ADR-062는 Field family 한정. 본 amendment는 잔존 38 컴포넌트에 동일 원칙을 **D3 해체와 동시** 적용한다.
+
+핵심 구분 (§1 D2 문구 정밀 해석):
+
+- **Spec.variants 필드 = D3 내부 시각 스위치** — wrapper가 사용자 API로 노출하지 않는 한 D2 위반 아님
+- **Wrapper의 variant prop = D2 사용자 API** — RSP 미규정이면 §6 위반
+
+#### Hard constraints (amendment)
+
+1. 원 v2의 hard constraints 6개 전부 승계 (DOM 불변 / spec-only consumer / cross-check / 60fps / ADR-042 / Phase rollback)
+2. **추가**: Wrapper의 variant prop 중 RSP 미규정은 전부 제거 또는 ADR에 "composition 고유 확장" 정당화 명시
+3. **추가**: Spec.variants 필드 잔존 시 사용자 API 미노출 (wrapper level에서 소비하지 않음) 필수
+
+### Alternatives Considered (amendment)
+
+#### 대안 α: D3만 먼저 해체, D2 별도 후속 ADR
+
+- 설명: 원 v2 Phase 4 그대로 진행 (skipCSS 해체만), D2 부채는 Phase 5 후 ADR-062b 신설로 처리
+- 위험: 기술 L / 성능 L / 유지보수 **H** / 마이그레이션 **H**
+  - 동일 컴포넌트 2회 수정 → 회귀 검증 2배
+  - Spec 중간 상태(skipCSS:false + RSP 미규정 variants 잔존)가 main 머지 → 재승격 시 ADR-036 "Fully Implemented" 조건 미달
+  - ADR-062 완료 + ADR-059 D3 + ADR-062b D2 = 3개 ADR로 파편화
+
+#### 대안 β: D2+D3 통합 재설계 (본 amendment)
+
+- 설명: 38 컴포넌트 각각에 대해 Spec.variants + Wrapper prop + 수동 CSS + skipCSS 4축을 단일 결정 단위로 묶어 batch 해체
+- 위험: 기술 M / 성능 L / 유지보수 L / 마이그레이션 M
+  - ADR 하나(059)에 판정 일관성 유지
+  - 각 컴포넌트 1회 수정 → 회귀 검증 1회
+  - Wrapper API breaking change는 ADR-062 선례대로 Phase 경계 단위로 롤백 가능
+
+#### 대안 γ: Phase 5 부분 재승격 + 22 컴포넌트 deferred
+
+- 설명: 현 Phase 4.5a 상태를 "Partial Fully Implemented"로 ADR-036 재승격, 22개 variant 컴포넌트는 영구 예외
+- 위험: 기술 L / 성능 L / 유지보수 **CRIT** / 마이그레이션 L
+  - ADR-036 완결성 훼손
+  - 영구 예외는 사실상 D2 부채 영속화
+  - SSOT 정본 §6 위반 용인 선례 — 체인 전체 권위 약화
+
+#### Risk Threshold Check
+
+| 대안          | 기술 | 성능 | 유지보수 | 마이그레이션 | HIGH+ |
+| ------------- | :--: | :--: | :------: | :----------: | :---: |
+| α D3 선행     |  L   |  L   |  **H**   |    **H**     |   2   |
+| **β 통합**    |  M   |  L   |    L     |      M       |   0   |
+| γ 부분 재승격 |  L   |  L   | **CRIT** |      L       |   1   |
+
+β만 HIGH+ 없고 SSOT 체인 완결 달성. α는 회귀 검증 2배 + 3 ADR 파편화. γ는 정본 위반 영속화.
+
+### Decision (amendment)
+
+**대안 β: D2+D3 통합 재설계**를 선택한다. 원 Phase 4의 Archetype 그룹 배열은 존속하되, 각 그룹 내부에 **4-cell D2 판정 매트릭스**와 **per-component target 표**를 추가 의무화한다.
+
+#### 기각 사유 (amendment)
+
+- **α**: 유지보수/마이그레이션 양축 HIGH — ADR 파편화가 장기 비용
+- **γ**: 유지보수 CRIT — ssot-hierarchy.md §6 위반 용인 선례 생성, 체인 권위 붕괴
+
+#### 4-Cell D2 판정 매트릭스
+
+각 컴포넌트의 현 상태를 (Spec.variants 존재 여부 × Wrapper variant prop 노출 여부)로 4-cell 분류:
+
+|                         | Spec.variants 존재                                                                                   | Spec.variants 없음                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| **Wrapper prop 노출**   | **(i) 판정 필요** — wrapper prop RSP 대조 후 (i-a)제거/(i-b)RSP rename/(i-c)composition 정당화 3분기 | **(ii) Desync** — wrapper prop 제거 (ADR-062 선례) |
+| **Wrapper prop 미노출** | **(iii) D2 준수** — Spec.variants는 내부 시각 스위치로 유지, D3 해체만 수행                          | **(iv) 정상** — D3 해체만 수행                     |
+
+(i) 세부 분기 판정 순서:
+
+1. Wrapper prop 값이 RSP 공식과 **완전 일치** → 정상, D3 해체만
+2. Wrapper prop이 RSP에 있으나 **이름/값 다름** → (i-b) RSP 준수 rename + Spec.variants도 정합
+3. Wrapper prop이 RSP에 **없음** + RAC+custom으로 달성 가능 → (i-a) 제거 (ADR-062 isQuiet 선례)
+4. Wrapper prop이 RSP에 **없음** + composition 고유 필수 (예: Panel slot 구조) → (i-c) ADR에 "composition 연장" 명시 정당화
+
+#### Per-component 분류 요약 (audit 축 1+2 완료 — 2026-04-14)
+
+38 컴포넌트의 전체 per-component target 표(38 row, 축 3 RSP 대조 pending)는 [breakdown 문서 Per-Component Target 표](../design/059-composite-field-skip-css-dismantle-breakdown.md#per-component-target-표-audit-완료--2026-04-14) 참조. Cell 집계:
+
+| Cell 그룹                                   | 개수 | 예시                                                                                                     |
+| ------------------------------------------- | :--: | -------------------------------------------------------------------------------------------------------- |
+| (i) / (i-a) wrapper prop 제거 + Spec 재판정 |  10  | Card, Dialog, Disclosure, DropZone, Label, Menu, Slider, ColorWheel, ColorSlider, (ColorPicker 후보 i-c) |
+| (i-dead) dead + wrapper prop 제거           |  2   | Slot, TabList                                                                                            |
+| (ii) verify desync                          |  1   | TabPanels                                                                                                |
+| (iii) 내부 스위치 유지, D3 해체만           |  9   | Tree, TagGroup, Tag, Table, ListBox, Group, GridList, ColorSwatchPicker, ColorArea                       |
+| (iii-inherit) compound child                |  7   | SliderTrack/Output/Thumb, DateInput/Segment, CalendarGrid/Header                                         |
+| (iii-dead / iv-dead) dead 삭제 후보         |  4   | ToggleButtonGroup, Tab, Tabs, Breadcrumb                                                                 |
+| (iv) wrapper/spec 둘 다 없음 또는 정상      |  4   | Accordion, DisclosureHeader, TailSwatch, Modal(verify)                                                   |
+| defer/virtual                               |  2   | Field(virtual), SearchField(Phase 1.5 완료)                                                              |
+
+Batch 실행 순서는 breakdown의 "Batch 계획" 섹션에서 B1 → B2 → B3 → B4 → B-defer → B-final 로 정의. B1(dead/desync 저위험)과 B2(ADR-062 선례 확장)에 리스크 집중, B3/B4 는 안정된 패턴 반복.
+
+구현 상세 및 batch 계획: [059-composite-field-skip-css-dismantle-breakdown.md](../design/059-composite-field-skip-css-dismantle-breakdown.md) Phase 4 재설계 섹션.
+
+### Gates (amendment — 원 Gates 위에 추가)
+
+| Gate                           | 시점            | 통과 조건                                                                                            | 실패 시 대안                   |
+| ------------------------------ | --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------ |
+| D2 매트릭스 분류 확정          | Phase 4 진입 전 | 38 컴포넌트 전부 (i/ii/iii/iv) cell 판정 + (i) 세부 (a/b/c) 분기 판정                                | audit 재실행                   |
+| Wrapper D2 정합                | 각 batch 완료   | 대상 컴포넌트 wrapper의 RSP 미규정 variant prop 0 (또는 ADR에 composition 정당화 명시)               | batch 롤백                     |
+| Spec.variants 정합             | 각 batch 완료   | 대상 컴포넌트 Spec.variants가 (a)삭제 / (b)RSP 정합 rename / (c)내부 스위치 유지 중 하나로 판정 완료 | batch 롤백                     |
+| Breaking API 마이그레이션      | 각 batch 완료   | wrapper variant prop 제거 시 호출지 수정 완료, type-check 통과                                       | batch 롤백                     |
+| composition 고유 정당화 문서화 | (i-c) 해당 시   | 해당 컴포넌트 ADR 본문에 "RAC/RSP 부재 근거 + 시각 대칭 가능 증빙" 기록                              | 대안 설계 (RAC primitive 조합) |
+
+### Consequences (amendment)
+
+#### Positive
+
+- **ADR-036 "Fully Implemented" 재승격 조건 완비** — D2+D3 양축 정리
+- **ADR 파편화 방지** — ADR-062b 불필요, ADR-059 단일 체인으로 완결
+- **2-pass 회귀 제거** — 각 컴포넌트 1회 수정
+- **composition 고유 확장 정책 명시화** — (i-c) 분기가 공식 프로세스로 등록되어 향후 유사 판단 기준 확보
+
+#### Negative
+
+- **Wrapper API breaking change** — (i-a) 경로 컴포넌트는 호출지 수정 필요 (ADR-062 Field 선례 확장 범위)
+- **Audit 초기 비용** — 38 × 3축 조사 필수 (Phase 4 진입 전 1회)
+- **(i-c) 판단 주관성** — "composition 고유 필수" 기준이 회색지대 가능 → Gate의 "정당화 문서화" 의무로 완화
+
+---
 
 ## 재시작 프롬프트 (v2)
 

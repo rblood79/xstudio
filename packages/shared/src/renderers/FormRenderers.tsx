@@ -941,9 +941,6 @@ export const renderDropZone = (
       key={element.id}
       data-element-id={element.id}
       data-custom-id={element.customId}
-      variant={
-        (element.props.variant as "default" | "primary" | "dashed") || "default"
-      }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       label={
         typeof element.props.label === "string"

@@ -357,7 +357,6 @@ export const renderCard = (
             ? String(element.props.accentColor)
             : undefined
         }
-        variant={(element.props.variant as string) || "primary"}
         cardType={
           (element.props.cardType as
             | "default"
@@ -420,7 +419,6 @@ export const renderCard = (
           ? element.props.footer
           : undefined
       }
-      variant={(element.props.variant as string) || "primary"}
       cardType={
         (element.props.cardType as "default" | "asset" | "user" | "product") ||
         undefined
@@ -742,7 +740,6 @@ export const renderDialog = (
     <Dialog
       key={element.id}
       data-element-id={element.id}
-      data-variant={element.props.variant || "default"}
       data-size={element.props.size || "md"}
       style={element.props.style}
       className={element.props.className}
@@ -1734,7 +1731,6 @@ export const renderDisclosure = (
       id={element.customId}
       data-element-id={element.id}
       title={title}
-      variant={(element.props.variant as string) || "default"}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       defaultExpanded={Boolean(element.props.isExpanded ?? true)}
       style={element.props.style}
