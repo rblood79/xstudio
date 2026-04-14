@@ -52,7 +52,7 @@
 @import "./generated/ToggleButton.css";
 
 /* Standalone Components (base.css only) */
-@import "./Card.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./generated/Card.css";
 @import "./Content.css"; /* 구조 유틸리티 — Spec 없음 */
 @import "./Field.css"; /* 구조 유틸리티 — Spec 없음 */
 @import "./Group.css"; /* Container — skipCSSGeneration, 수동 CSS */

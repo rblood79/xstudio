@@ -357,7 +357,6 @@ export const renderCard = (
             ? String(element.props.accentColor)
             : undefined
         }
-        variant={(element.props.variant as string) || "primary"}
         cardType={
           (element.props.cardType as
             | "default"
@@ -420,7 +419,6 @@ export const renderCard = (
           ? element.props.footer
           : undefined
       }
-      variant={(element.props.variant as string) || "primary"}
       cardType={
         (element.props.cardType as "default" | "asset" | "user" | "product") ||
         undefined
