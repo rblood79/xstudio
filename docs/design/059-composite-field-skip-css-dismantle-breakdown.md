@@ -295,7 +295,7 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 >
 > **Cell 약어**: (i-dead) = wrapper prop 있으나 Spec.variants가 사실상 dead (1 key 또는 unused), (iii-inherit) = compound child가 부모에서 상속, (iii-dead) / (iv-dead) = variants/prop 한쪽만 있고 실사용 dead.
 >
-> **verify 표시**: agent 데이터와 프로젝트 메모리 불일치 — batch 진입 전 재확인 필요.
+> **verify 해제 (2026-04-14)**: B0.1 `274154b8` + B1 배치에서 Modal/TabPanels/ToggleButtonGroup/Slot cell 확정 완료. 잔여 `(verify)` 표시 없음.
 
 | #   | Component         | Spec.variants                    | Wrapper prop       |     Cell      | Target Spec.variants                                            | Target Wrapper                                                                                                                                                                          |  Batch   |
 | --- | ----------------- | -------------------------------- | ------------------ | :-----------: | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
@@ -343,14 +343,14 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 
 - **(i) / (i-a): 10개** — Card, ColorWheel, ColorSlider, Dialog, Disclosure, DropZone, Label, Menu, Slider, (+ ColorPicker compound 후보)
 - **(i-dead): 2개** — Slot, TabList
-- **(ii) verify: 1개** — TabPanels (spec 없음 + wrapper yes 보고)
+- **(ii) verify: 0개** — TabPanels는 B0.1에서 (iv)로 정정 (renderer=null return)
 - **(iii): 9개** — Tree, TagGroup, Tag, Table, ListBox, Group, GridList, ColorSwatchPicker, ColorArea
 - **(iii-inherit): 7개** — SliderTrack/Output/Thumb (Slider 부모), DateInput/DateSegment (DateField 부모), CalendarGrid/Header (Calendar 부모)
 - **(iii-dead / iv-dead): 3개** — ToggleButtonGroup, Tab, Tabs, Breadcrumb(dead default), 삭제 후보
-- **(iv): 4개** — Accordion, DisclosureHeader, TailSwatch, Modal(verify)
+- **(iv): 5개** — Accordion, DisclosureHeader, TailSwatch, Modal, TabPanels (B0.1 확정)
 - **defer/virtual: 2개** — Field(데이터 매핑), SearchField(이미 완료)
 
-축 3(RSP 공식 대조) pending: (i) cell 10개 + TabPanels verify. Batch 진입 전 per-component RSP props 재조사 필수.
+축 3(RSP 공식 대조): B0.2 (2026-04-14)에서 (i) cell 10개 대조 완료. TabPanels verify는 B0.1에서 (iv)로 정정 후 별도 RSP 대조 불필요.
 
 ### Batch 계획 (audit 결과 반영)
 
