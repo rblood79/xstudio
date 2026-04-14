@@ -116,7 +116,7 @@
 /* Text Input Components — skipCSSGeneration, 수동 CSS */
 @import "./generated/TextField.css";
 @import "./generated/TextArea.css";
-@import "./NumberField.css";
+@import "./generated/NumberField.css";
 @import "./generated/SearchField.css";
 @import "./generated/DateField.css";
 @import "./generated/TimeField.css";
