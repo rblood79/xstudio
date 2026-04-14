@@ -711,6 +711,31 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
     }
   }
 
+  // ADR-059 v2 Pre-Phase 0-D.6: externalStyles (portal 등 root 외부 selector)
+  if (comp.externalStyles) {
+    for (const ext of comp.externalStyles) {
+      if (ext.styles && Object.keys(ext.styles).length > 0) {
+        lines.push(`${ext.selector} {`);
+        for (const [prop, value] of Object.entries(ext.styles)) {
+          lines.push(`  ${prop}: ${value};`);
+        }
+        lines.push("}");
+        lines.push("");
+      }
+      if (ext.nested) {
+        for (const n of ext.nested) {
+          if (Object.keys(n.styles).length === 0) continue;
+          lines.push(`${ext.selector} ${n.selector} {`);
+          for (const [prop, value] of Object.entries(n.styles)) {
+            lines.push(`  ${prop}: ${value};`);
+          }
+          lines.push("}");
+          lines.push("");
+        }
+      }
+    }
+  }
+
   // ADR-059 v2 Pre-Phase 0-D.3: containerVariants
   if (comp.containerVariants) {
     for (const [dataAttr, valueMap] of Object.entries(comp.containerVariants)) {

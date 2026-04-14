@@ -312,6 +312,22 @@ export interface CompositionSpec {
    */
   containerVariants?: Record<string, Record<string, ContainerVariantStyles>>;
 
+  /**
+   * 외부 selector 스타일 (ADR-059 v2 Pre-Phase 0-D.6)
+   *
+   * 컴포넌트 root 외부에 존재하는 elements 대상 스타일. 주요 용도:
+   * Portal 렌더링 컴포넌트 — Popover/Dialog 가 DOM 에서 root 와 sibling
+   * 이지만 `data-trigger` 등으로 연결될 때.
+   *
+   * selector 는 full CSS 이며 root prefix 가 붙지 않는다.
+   * 예: `.react-aria-Popover[data-trigger="ComboBox"]`
+   */
+  externalStyles?: Array<{
+    selector: string;
+    styles?: Record<string, string>;
+    nested?: Array<{ selector: string; styles: Record<string, string> }>;
+  }>;
+
   /** CSS Variable Delegation — size별 자식 변수 override */
   delegation: DelegationSpec[];
 }
