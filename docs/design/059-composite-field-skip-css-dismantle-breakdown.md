@@ -387,6 +387,51 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 
 ---
 
+## B1 실행 결과 (2026-04-14, feature/adr-059-b1-low-risk)
+
+B0.1 + B1.1~B1.11 완료. 11 컴포넌트 D3 해체 + D2 부채 2건 해제.
+
+### Commits (branch: `feature/adr-059-b1-low-risk`)
+
+| Commit | 내용 |
+|---|---|
+| `274154b8` | B0.1 verify — Modal/TabPanels/ToggleButtonGroup/Slot cell 확정 |
+| `3fd3327a` | B1.1 Breadcrumb skipCSSGeneration:false |
+| `d40c70c6` | B1.2-5 Accordion/DisclosureHeader/TailSwatch/Tab skipCSSGeneration:false |
+| `1f82832b` | B1.11 TabPanels skipCSSGeneration:false |
+| `e27665c7` | B1.7+9+10 Tabs/Modal/ToggleButtonGroup — 수동 CSS 삭제 (−608L) |
+| `942968ea` | B1.6+8 TabList/Slot — dead variant 선언 제거 |
+| `3cf1117a` | Slot.tsx import path 후속 수정 |
+
+### 결과 지표
+
+| 지표 | 전 | 후 | 변화 |
+|---|:---:|:---:|:---:|
+| `skipCSSGeneration: true` 카운트 | 38 | 27 | -11 |
+| 수동 CSS 파일 수 (대상 4개) | 4 | 0 | -4 |
+| 수동 CSS 라인 | ≥608 | 0 | -608L |
+| generated CSS 신규 | 0 | 11 | +11 |
+| D2 부채 해제 | — | — | 2건 (Slot, TabList dead variant 선언) |
+
+### 주의 (Concerns)
+
+- **Modal `.react-aria-TextField` nested 마진 삭제**: 수동 Modal.css에 있던 `Modal 내 TextField 마진` 정의가 generated CSS에 포함되지 않음. B-final `/sweep` Modal 스토리 시각 회귀 확인 필수. 회귀 발견 시 TextField spec 또는 Modal spec에서 emit 규칙 보강.
+- **build strokeCap + wasm/pkg 에러**: 잔존 build 실패 2종(specShapeConverter `strokeCap`, `./pkg/composition_wasm` 미발견)은 B1 작업과 무관한 pre-existing + 워크트리 WASM 미빌드 상태. 메인 브랜치에서도 동일 조건일 것으로 추정. 본 PR scope 외.
+
+### 검증 통과
+
+- `pnpm type-check`: 3/3 PASS (cached)
+- `pnpm build:specs`: PASS
+- 11 generated CSS 모두 생성 확인
+- 4 수동 CSS 파일 삭제 확인
+
+### Pending
+
+- **cross-check / sweep**: 수동 실측은 Gate에서 일괄 진행 (PR review 단계)
+- **B2+ 진입 전 B0.2 (RSP 대조)**: defer 상태
+
+---
+
 ## Phase 4 — 잔존 Composite ~48개 (superseded by v2.1 amendment)
 
 > **Superseded**: 위 "Phase 4 재설계 (v2.1 amendment)" 로 대체. 아래 원문은 이력 추적 목적 보존.
