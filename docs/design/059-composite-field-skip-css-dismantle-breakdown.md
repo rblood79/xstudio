@@ -387,6 +387,50 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 
 ---
 
+## B2 실행 결과 (2026-04-14, feature/adr-059-b2-variant-removal)
+
+B0.2 RSP 대조(commit b1badff3) 기반 5 컴포넌트 wrapper variant prop + 수동 CSS 일괄 해체. ADR-062 Field isQuiet 선례를 Card에 복제.
+
+### Commits
+
+| Commit | 내용 |
+|---|---|
+| `90d765e5` | B2.1 DropZone — variant 제거 (default/accent) |
+| `219ce6de` | B2.2 Disclosure — variant 제거 (default/accent/surface) |
+| `6a169c68` | B2.3 Menu — variant 제거 (primary/secondary/accent/negative) |
+| `8f9cb3d6` | B2.4 Dialog — variant 제거 (accent/negative) |
+| `0e13ddee` | B2.5 Card — variant 제거 + isQuiet 통합 |
+
+### 지표 (B2)
+
+- skipCSSGeneration:true: 5개 감소
+- 수동 CSS 5개 삭제, generated CSS 5개 생성
+- JSX wrapper variant prop 제거 5 컴포넌트
+
+### 시각 변경 (Known visual regressions)
+
+- Disclosure.surface 배경 차이 제거 → default 통합
+- Menu 4 variant 시각 차이 제거 → default 단일
+- Dialog.negative text color 제거 → role='alertdialog' + 내부 Button variant 권장
+- Card.tertiary shadow 제거 → style.boxShadow 직접 설정
+- Card.secondary 2px border 제거 → 1px 기본 + style.borderColor 활성화
+- Card.quiet → isQuiet prop 통합
+
+### Breaking API
+
+- `<DropZone|Disclosure|Menu|Dialog variant=...>` 전부 제거
+- `<Card variant='primary|secondary|tertiary'>` 제거
+- `<Card variant='quiet'>` → `<Card isQuiet>` 마이그레이션
+- Card Properties 패널에서 variant 편집 필드 사라짐
+
+### B0.2 Cell 집계
+
+- (i-a) 순수 제거: DropZone/Disclosure/Menu/Dialog (4)
+- (i-a+b) 제거+isQuiet 통합: Card (1)
+- (i-c) composition 정당화: ColorPicker (B4 대상)
+
+---
+
 ## Phase 4 — 잔존 Composite ~48개 (superseded by v2.1 amendment)
 
 > **Superseded**: 위 "Phase 4 재설계 (v2.1 amendment)" 로 대체. 아래 원문은 이력 추적 목적 보존.
