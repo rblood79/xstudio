@@ -16,7 +16,7 @@
  */
 
 import React from "react";
-import "./styles/Slot.css";
+import "./styles/generated/Slot.css";
 
 export interface SlotProps {
   /** Slot 식별자 (예: "content", "sidebar", "navigation") */
