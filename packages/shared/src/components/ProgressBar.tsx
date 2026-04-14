@@ -16,7 +16,6 @@ import { formatPercent, formatNumber } from "../utils/core/numberUtils";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/generated/ProgressBar.css";
-import "./styles/ProgressBar.css";
 
 export interface ProgressBarProps extends AriaProgressBarProps {
   label?: string;

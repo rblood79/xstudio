@@ -46,8 +46,7 @@
 @import "./EventSection.css"; /* 빌더 전용 */
 @import "./generated/Link.css";
 @import "./Meter.css"; /* skipCSSGeneration — 수동 CSS 통합 */
-@import "./generated/ProgressBar.css"; /* ADR-059 Phase 4.4 — Spec 자동 생성 */
-@import "./ProgressBar.css"; /* a11y overrides only (forced-colors) */
+@import "./generated/ProgressBar.css"; /* ADR-059 Phase 4.4 — Spec 자동 생성 (forced-colors 포함) */
 @import "./generated/Switch.css";
 @import "./Switch.css";
 @import "./generated/ToggleButton.css";
