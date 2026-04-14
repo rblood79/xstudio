@@ -101,7 +101,7 @@
 @import "./generated/RadioGroup.css";
 @import "./TagGroup.css";
 @import "./ToggleButtonGroup.css";
-@import "./DisclosureGroup.css";
+@import "./generated/DisclosureGroup.css";
 
 /* Simple Compositions — skipCSSGeneration, 수동 CSS */
 @import "./Disclosure.css";
