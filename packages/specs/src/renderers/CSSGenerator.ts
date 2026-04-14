@@ -243,6 +243,13 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("");
   lines.push(...generateMediaQueries(spec));
 
+  // ─── Phase 4-infra2: Static selectors (@layer 내부, size selector 앞) ───
+  const staticRules = generateStaticSelectorRules(spec);
+  if (staticRules.length > 0) {
+    lines.push("");
+    lines.push(...staticRules);
+  }
+
   // ─── Phase 4-infra2 0-D.9: Size selectors (@layer 내부) ───
   const sizeSelectorRules = generateSizeSelectorRules(spec);
   if (sizeSelectorRules.length > 0) {
@@ -866,6 +873,35 @@ function rewriteAnimationNames<Props>(
     }
   }
   return result;
+}
+
+// ─── Phase 4-infra2: Static Selectors ───────────────────────────────────────
+
+/**
+ * `composition.staticSelectors` → root 하위 고정 자식 selector rules emit.
+ * variant 와 무관한 slot (`.bar`, `.fill` 등). Skia consumer 무시.
+ * `@layer components` 내부에 emit. 미선언 시 빈 배열 → 출력 변화 0.
+ */
+function generateStaticSelectorRules<Props>(
+  spec: ComponentSpec<Props>,
+): string[] {
+  const staticSelectors = spec.composition?.staticSelectors;
+  if (!staticSelectors) return [];
+
+  const lines: string[] = [];
+  const rootSel = `.react-aria-${spec.name}`;
+
+  for (const [selector, rawStyles] of Object.entries(staticSelectors)) {
+    const styles = rewriteAnimationNames(rawStyles, spec);
+    lines.push(`  ${rootSel} ${selector} {`);
+    for (const [prop, value] of Object.entries(styles)) {
+      lines.push(`    ${prop}: ${value};`);
+    }
+    lines.push(`  }`);
+    lines.push("");
+  }
+
+  return lines;
 }
 
 // ─── Phase 4-infra2 0-D.9: Size Selectors ──────────────────────────────────

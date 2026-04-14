@@ -108,3 +108,61 @@ describe("sizeSelectors emit (0-D.9)", () => {
     expect(css).toContain("padding: 8px;");
   });
 });
+
+describe("staticSelectors emit", () => {
+  function makeSpec(
+    overrides: Partial<ComponentSpec["composition"]> = {},
+  ): ComponentSpec {
+    return {
+      name: "StaticBar",
+      archetype: "container",
+      sizes: { md: {} },
+      composition: { layout: "flex-column", delegation: [], ...overrides },
+    } as unknown as ComponentSpec;
+  }
+
+  it("staticSelectors 선언 시 root 하위 고정 selector emit", () => {
+    const css = generateCSS(
+      makeSpec({
+        staticSelectors: {
+          ".bar": { height: "8px", background: "red" },
+        },
+      }),
+    )!;
+    expect(css).toContain(".react-aria-StaticBar .bar");
+    expect(css).toContain("height: 8px;");
+    expect(css).toContain("background: red;");
+  });
+
+  it("staticSelectors 미선언 시 추가 selector 없음", () => {
+    const css = generateCSS(makeSpec())!;
+    expect(css).not.toMatch(/\.react-aria-StaticBar \./);
+  });
+
+  it("staticSelectors 는 @layer components 내부에 위치", () => {
+    const css = generateCSS(
+      makeSpec({
+        staticSelectors: { ".bar": { height: "8px" } },
+      }),
+    )!;
+    const layerClose = css.indexOf("} /* @layer components */");
+    const staticRule = css.indexOf(".react-aria-StaticBar .bar");
+    expect(staticRule).toBeGreaterThan(-1);
+    expect(staticRule).toBeLessThan(layerClose);
+  });
+
+  it("staticSelectors 복수 selector 모두 emit", () => {
+    const css = generateCSS(
+      makeSpec({
+        staticSelectors: {
+          ".bar": { height: "8px" },
+          ".fill": { background: "var(--accent)" },
+          ".value": { color: "var(--fg-muted)" },
+        },
+      }),
+    )!;
+    expect(css).toContain(".react-aria-StaticBar .bar");
+    expect(css).toContain(".react-aria-StaticBar .fill");
+    expect(css).toContain(".react-aria-StaticBar .value");
+  });
+});
