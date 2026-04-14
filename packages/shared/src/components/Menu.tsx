@@ -41,8 +41,6 @@ export interface MenuButtonProps<T>
   label?: string;
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
-  // M3 props
-  variant?: string;
   size?: ComponentSize;
 }
 
@@ -51,7 +49,6 @@ export function MenuButton<T extends object>({
   children,
   dataBinding,
   columnMapping,
-  variant = "primary",
   size = "md",
   ...props
 }: MenuButtonProps<T>) {
@@ -122,13 +119,13 @@ export function MenuButton<T extends object>({
     if (loading) {
       return (
         <MenuTrigger {...props}>
-          <Button data-variant={variant} data-size={size}>
+          <Button data-size={size}>
             {label}
           </Button>
           <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
-              data-variant={variant}
+             
               data-size={size}
             >
               <AriaMenuItem key="loading" textValue="Loading">
@@ -144,13 +141,13 @@ export function MenuButton<T extends object>({
     if (error) {
       return (
         <MenuTrigger {...props}>
-          <Button data-variant={variant} data-size={size}>
+          <Button data-size={size}>
             {label}
           </Button>
           <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
-              data-variant={variant}
+             
               data-size={size}
             >
               <AriaMenuItem key="error" textValue="Error">
@@ -229,7 +226,7 @@ export function MenuButton<T extends object>({
                 <Menu
                   items={submenuItems as Iterable<T>}
                   className={getMenuClassName()}
-                  data-variant={variant}
+                 
                   data-size={size}
                 >
                   {(subItem) => renderMenuItem(subItem as unknown as MenuItem)}
@@ -257,14 +254,14 @@ export function MenuButton<T extends object>({
 
       return (
         <MenuTrigger {...props}>
-          <Button data-variant={variant} data-size={size}>
+          <Button data-size={size}>
             {label}
           </Button>
           <Popover data-size={size}>
             <Menu
               items={menuItems as Iterable<T>}
               className={getMenuClassName()}
-              data-variant={variant}
+             
               data-size={size}
             >
               {(item) => renderMenuItem(item as unknown as MenuItem)}
@@ -277,13 +274,13 @@ export function MenuButton<T extends object>({
     // 데이터 없음
     return (
       <MenuTrigger {...props}>
-        <Button data-variant={variant} data-size={size}>
+        <Button data-size={size}>
           {label}
         </Button>
         <Popover data-size={size}>
           <Menu
             className={getMenuClassName()}
-            data-variant={variant}
+           
             data-size={size}
           >
             {children}
@@ -391,7 +388,7 @@ export function MenuButton<T extends object>({
                   console.log("Submenu item selected:", key);
                 }}
                 className={getMenuClassName()}
-                data-variant={variant}
+               
                 data-size={size}
               >
                 {(subItem) => renderMenuItem(subItem)}
@@ -412,7 +409,7 @@ export function MenuButton<T extends object>({
 
     return (
       <MenuTrigger {...props}>
-        <Button data-variant={variant} data-size={size}>
+        <Button data-size={size}>
           {label}
         </Button>
         <Popover>
@@ -425,7 +422,7 @@ export function MenuButton<T extends object>({
               // 이벤트 핸들러 실행 가능
             }}
             className={getMenuClassName()}
-            data-variant={variant}
+           
             data-size={size}
           >
             {(item) => renderMenuItem(item)}
@@ -438,14 +435,14 @@ export function MenuButton<T extends object>({
   // Static Children 또는 Loading/Error 상태
   return (
     <MenuTrigger {...props}>
-      <Button data-variant={variant} data-size={size}>
+      <Button data-size={size}>
         {label}
       </Button>
       <Popover>
         <Menu
           {...props}
           className={getMenuClassName()}
-          data-variant={variant}
+         
           data-size={size}
         >
           {loading && (
