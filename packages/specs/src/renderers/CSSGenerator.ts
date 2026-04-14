@@ -243,6 +243,13 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("");
   lines.push(...generateMediaQueries(spec));
 
+  // ─── Phase 4-infra2 0-D.9: Size selectors (@layer 내부) ───
+  const sizeSelectorRules = generateSizeSelectorRules(spec);
+  if (sizeSelectorRules.length > 0) {
+    lines.push("");
+    lines.push(...sizeSelectorRules);
+  }
+
   lines.push("");
   lines.push("} /* @layer components */");
 
@@ -808,6 +815,36 @@ function generateMediaQueries<Props>(spec: ComponentSpec<Props>): string[] {
     lines.push("    transition-duration: 0s !important;");
     lines.push("  }");
     lines.push("}");
+  }
+
+  return lines;
+}
+
+// ─── Phase 4-infra2 0-D.9: Size Selectors ──────────────────────────────────
+
+/**
+ * `composition.sizeSelectors` → per-size child selector rules emit.
+ * `@layer components` 내부에 emit. 미선언 시 빈 배열 반환 → 출력 변화 0.
+ */
+function generateSizeSelectorRules<Props>(
+  spec: ComponentSpec<Props>,
+): string[] {
+  const sizeSelectors = spec.composition?.sizeSelectors;
+  if (!sizeSelectors) return [];
+
+  const lines: string[] = [];
+  const rootSel = `.react-aria-${spec.name}`;
+
+  for (const [sizeKey, selectors] of Object.entries(sizeSelectors)) {
+    for (const [selector, styles] of Object.entries(selectors)) {
+      const fullSel = `${rootSel}[data-size="${sizeKey}"] ${selector}`;
+      lines.push(`  ${fullSel} {`);
+      for (const [prop, value] of Object.entries(styles)) {
+        lines.push(`    ${prop}: ${value};`);
+      }
+      lines.push(`  }`);
+      lines.push("");
+    }
   }
 
   return lines;
