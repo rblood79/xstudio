@@ -395,6 +395,12 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
           },
         },
       },
+      size: {
+        sm: { styles: { "--label-font-size": "var(--text-xs)" } },
+        md: { styles: { "--label-font-size": "var(--text-sm)" } },
+        lg: { styles: { "--label-font-size": "var(--text-base)" } },
+        xl: { styles: { "--label-font-size": "var(--text-lg)" } },
+      },
     },
     sizeSelectors: {
       sm: {

@@ -99,6 +99,22 @@
   pointer-events: none;
 }
 
+.react-aria-ProgressBar[data-size="sm"] {
+  --label-font-size: var(--text-xs);
+}
+
+.react-aria-ProgressBar[data-size="md"] {
+  --label-font-size: var(--text-sm);
+}
+
+.react-aria-ProgressBar[data-size="lg"] {
+  --label-font-size: var(--text-base);
+}
+
+.react-aria-ProgressBar[data-size="xl"] {
+  --label-font-size: var(--text-lg);
+}
+
 
 @media (forced-colors: active) {
   .react-aria-ProgressBar {

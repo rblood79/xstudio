@@ -5031,6 +5031,7 @@ exports[`CSSGenerator snapshot baseline > Meter 1`] = `
     background: var(--fill-color);
     height: 100%;
     transition: width 200ms ease-out;
+    forced-color-adjust: auto;
   }
 
 
@@ -6180,6 +6181,22 @@ exports[`CSSGenerator snapshot baseline > ProgressBar 1`] = `
   opacity: 0.38;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.react-aria-ProgressBar[data-size="sm"] {
+  --label-font-size: var(--text-xs);
+}
+
+.react-aria-ProgressBar[data-size="md"] {
+  --label-font-size: var(--text-sm);
+}
+
+.react-aria-ProgressBar[data-size="lg"] {
+  --label-font-size: var(--text-base);
+}
+
+.react-aria-ProgressBar[data-size="xl"] {
+  --label-font-size: var(--text-lg);
 }
 
 

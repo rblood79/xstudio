@@ -353,6 +353,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
         background: "var(--fill-color)",
         height: "100%",
         transition: "width 200ms ease-out",
+        "forced-color-adjust": "auto",
       },
     },
     containerVariants: {
