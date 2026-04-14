@@ -437,6 +437,21 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       color: "var(--fg)",
     },
     containerVariants: {
+      disabled: {
+        true: {
+          nested: [
+            {
+              selector: ".react-aria-Group",
+              styles: {
+                background: "color-mix(in srgb, var(--fg) 4%, transparent)",
+                "border-color":
+                  "color-mix(in srgb, var(--fg) 12%, transparent)",
+                opacity: "0.38",
+              },
+            },
+          ],
+        },
+      },
       "label-position": {
         side: {
           styles: {
@@ -598,11 +613,6 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
           },
           ":has([data-invalid])": {
             "border-color": "var(--negative)",
-          },
-          ":has([data-disabled])": {
-            background: "color-mix(in srgb, var(--fg) 4%, transparent)",
-            "border-color": "color-mix(in srgb, var(--fg) 12%, transparent)",
-            opacity: "0.38",
           },
         },
       },

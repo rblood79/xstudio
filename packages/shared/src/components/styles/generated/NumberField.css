@@ -143,12 +143,6 @@
   border-color: var(--negative);
 }
 
-.react-aria-NumberField .react-aria-Group:where(:has([data-disabled])) {
-  background: color-mix(in srgb, var(--fg) 4%, transparent);
-  border-color: color-mix(in srgb, var(--fg) 12%, transparent);
-  opacity: 0.38;
-}
-
 .react-aria-NumberField[data-size="xs"] .react-aria-Input {
   --nf-input-font-size: var(--text-2xs);
   --nf-input-line-height: var(--text-2xs--line-height);
@@ -283,6 +277,12 @@
 .react-aria-NumberField [slot="description"] {
   font-size: var(--nf-hint-size);
   color: var(--fg-muted);
+}
+
+.react-aria-NumberField[data-disabled="true"] .react-aria-Group {
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+  opacity: 0.38;
 }
 
 .react-aria-NumberField[data-label-position="side"] {
