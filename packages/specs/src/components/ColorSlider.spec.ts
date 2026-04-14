@@ -14,7 +14,6 @@ import { Sliders, ArrowLeftRight, PointerOff } from "lucide-react";
  * ColorSlider Props
  */
 export interface ColorSliderProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   channel?: "hue" | "saturation" | "lightness" | "brightness" | "alpha";
   colorSpace?: "rgb" | "hsl" | "hsb";
@@ -44,13 +43,6 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       backgroundPressed: "{color.base}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
-    },
-    accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -111,7 +103,8 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
               { value: "hsl", label: "HSL" },
               { value: "hsb", label: "HSB" },
             ],
-           defaultValue: "rgb" },
+            defaultValue: "rgb",
+          },
           {
             key: "channel",
             type: "enum",
@@ -127,7 +120,8 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
               { value: "blue", label: "Blue" },
               { value: "alpha", label: "Alpha" },
             ],
-           defaultValue: "hue" },
+            defaultValue: "hue",
+          },
           {
             key: "orientation",
             type: "enum",
@@ -137,7 +131,8 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "horizontal" },
+            defaultValue: "horizontal",
+          },
         ],
       },
       {

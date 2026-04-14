@@ -14,7 +14,6 @@ import { Hash, PointerOff } from "lucide-react";
  * ColorWheel Props
  */
 export interface ColorWheelProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   hue?: number;
   outerRadius?: number;
@@ -42,13 +41,6 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
       backgroundPressed: "{color.base}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
-    },
-    accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -104,13 +96,15 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
             type: "number",
             label: "Outer Radius",
             icon: Hash,
-           defaultValue: 96 },
+            defaultValue: 96,
+          },
           {
             key: "innerRadius",
             type: "number",
             label: "Inner Radius",
             icon: Hash,
-           defaultValue: 72 },
+            defaultValue: 72,
+          },
         ],
       },
       {
