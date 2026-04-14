@@ -1,0 +1,88 @@
+/* ============================================================
+ * AUTO-GENERATED from AutocompleteSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Autocomplete.spec.ts
+ * Archetype: collection
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Autocomplete {
+  /* Base styles — archetype: collection */
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Autocomplete[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-Autocomplete[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Autocomplete[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Autocomplete[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Autocomplete[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-Autocomplete {
+    forced-color-adjust: auto;
+  }
+}
+
+
+  .react-aria-Autocomplete .my-autocomplete {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 300px;
+    height: 180px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    border-radius: 10px;
+    background: var(--bg-overlay);
+  }
+
+  .react-aria-Autocomplete .react-aria-SearchField {
+    width: 100%;
+  }
+
+  .react-aria-Autocomplete .react-aria-Menu[data-empty] {
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+  }
+
+  .react-aria-Autocomplete .react-aria-MenuItem[href] {
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+
+} /* @layer components */

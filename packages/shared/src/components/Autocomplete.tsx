@@ -8,7 +8,7 @@ import {
 
 import { SearchField } from "./SearchField";
 
-import "./styles/Autocomplete.css";
+import "./styles/generated/Autocomplete.css";
 
 export interface AutocompleteProps<T extends object> extends Omit<
   AriaAutocompleteProps,

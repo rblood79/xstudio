@@ -20,7 +20,6 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
   description: "자동완성 컴포넌트",
   archetype: "collection",
   element: "div",
-  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -78,7 +77,8 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
               { value: "accent", label: "Accent sensitive" },
               { value: "variant", label: "Full sensitivity" },
             ],
-           defaultValue: "base" },
+            defaultValue: "base",
+          },
         ],
       },
     ],
@@ -119,6 +119,36 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
     },
   },
   states: {},
+
+  composition: {
+    containerStyles: {},
+    staticSelectors: {
+      ".my-autocomplete": {
+        display: "flex",
+        "flex-direction": "column",
+        gap: "12px",
+        "max-width": "300px",
+        height: "180px",
+        border: "1px solid var(--border)",
+        padding: "16px",
+        "border-radius": "10px",
+        background: "var(--bg-overlay)",
+      },
+      ".react-aria-SearchField": {
+        width: "100%",
+      },
+      ".react-aria-Menu[data-empty]": {
+        "align-items": "center",
+        "justify-content": "center",
+        "font-style": "italic",
+      },
+      ".react-aria-MenuItem[href]": {
+        "text-decoration": "none",
+        cursor: "pointer",
+      },
+    },
+    delegation: [],
+  },
 
   render: {
     shapes: () => [],

@@ -137,7 +137,7 @@
 
 /* Menu Components — skipCSSGeneration, 수동 CSS */
 @import "./Menu.css";
-@import "./Autocomplete.css"; /* generated 없음 — 수동 유지 */
+@import "./generated/Autocomplete.css";
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */
 @import "./generated/Select.css";
