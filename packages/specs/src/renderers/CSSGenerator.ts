@@ -257,6 +257,13 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
     lines.push(...sizeSelectorRules);
   }
 
+  // ─── Phase 4.5a 0-D.10: Root selectors (@layer 내부) ───
+  const rootSelectorRules = generateRootSelectorRules(spec);
+  if (rootSelectorRules.length > 0) {
+    lines.push("");
+    lines.push(...rootSelectorRules);
+  }
+
   lines.push("");
   lines.push("} /* @layer components */");
 
@@ -958,6 +965,56 @@ function generateSizeSelectorRules<Props>(
       }
       lines.push(`  }`);
       lines.push("");
+    }
+  }
+
+  return lines;
+}
+
+// ─── Phase 4.5a 0-D.10: Root Selectors ─────────────────────────────────────
+
+/**
+ * `composition.rootSelectors` → root pseudo selector rules emit.
+ * raw selector 의 `&` 를 `.react-aria-{Name}` 으로 치환.
+ * `@layer components` 내부. 미선언 시 빈 배열 → 출력 변화 0.
+ */
+function generateRootSelectorRules<Props>(
+  spec: ComponentSpec<Props>,
+): string[] {
+  const rootSelectors = spec.composition?.rootSelectors;
+  if (!rootSelectors) return [];
+
+  const lines: string[] = [];
+  const rootSel = `.react-aria-${spec.name}`;
+
+  for (const [key, entry] of Object.entries(rootSelectors)) {
+    validateRootSelectorKey(key, spec.name);
+    const fullSel = rootSel + key.slice(1); // strip leading `&`
+
+    const styles = entry.styles
+      ? rewriteAnimationNames(entry.styles, spec)
+      : null;
+
+    if (styles && Object.keys(styles).length > 0) {
+      lines.push(`  ${fullSel} {`);
+      for (const [prop, value] of Object.entries(styles)) {
+        lines.push(`    ${prop}: ${value};`);
+      }
+      lines.push(`  }`);
+      lines.push("");
+    }
+
+    if (entry.nested) {
+      for (const [nestedKey, rawNestedStyles] of Object.entries(entry.nested)) {
+        validateNestedSelectorKey(nestedKey, spec.name, "rootSelectors.nested");
+        const nestedStyles = rewriteAnimationNames(rawNestedStyles, spec);
+        lines.push(`  ${fullSel} ${nestedKey} {`);
+        for (const [prop, value] of Object.entries(nestedStyles)) {
+          lines.push(`    ${prop}: ${value};`);
+        }
+        lines.push(`  }`);
+        lines.push("");
+      }
     }
   }
 
