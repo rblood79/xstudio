@@ -295,7 +295,7 @@ export function Select<T extends object>({
       )}
       aria-label={ariaLabel}
       placeholder={placeholder}
-      isDisabled={hasDataBinding && (loading || !!error)}
+      isDisabled={props.isDisabled || (hasDataBinding && (loading || !!error))}
       data-selection-mode={selectionMode}
     >
       {() => (
