@@ -32,7 +32,7 @@ import type { ComponentSize } from "../types";
 import type { NecessityIndicator } from "./Field";
 import { renderNecessityIndicator } from "./Field";
 
-import "./styles/DateRangePicker.css";
+import "./styles/generated/DateRangePicker.css";
 
 export interface DateRangePickerProps<T extends DateValue> extends Omit<
   AriaDateRangePickerProps<T>,

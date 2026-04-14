@@ -146,7 +146,7 @@
 /* Complex Pickers — skipCSSGeneration, 수동 CSS */
 @import "./ColorPicker.css";
 @import "./generated/DatePicker.css";
-@import "./DateRangePicker.css";
+@import "./generated/DateRangePicker.css";
 
 /* Navigation & Layout */
 @import "./Slot.css"; /* Container — skipCSSGeneration, 수동 CSS */
