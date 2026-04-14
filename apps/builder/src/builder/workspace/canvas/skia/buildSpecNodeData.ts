@@ -107,6 +107,7 @@ export const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
   "TagGroup",
   "Table",
   "Tree",
+  "Menu",
 ]);
 
 const NOWRAP_PARENTS = new Set([
@@ -692,7 +693,11 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   }
 
   // ---------- shapes 생성 ----------
-  const shapes = spec.render.shapes(specProps, sizeSpec, componentState);
+  const shapes = spec.render.shapes(
+    specProps,
+    sizeSpec,
+    componentState,
+  );
 
   normalizeMiddleBaselineTextLineHeight(
     shapes,

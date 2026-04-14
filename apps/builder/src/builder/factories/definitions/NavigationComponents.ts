@@ -42,11 +42,32 @@ export function createMenuDefinition(
       parent_id: parentId,
       order_num: orderNum,
     },
-    // MenuItem은 Popover overlay runtime 전용 — Canvas element tree의 store child
-    // 아님. Spec 없는 MenuItem을 store child로 두면 Taffy가 자식 합산 기반 Menu
-    // height를 0으로 계산하여 Skia 0-height 버그 발생. 사용자는 Properties panel
-    // "Add MenuItem" UI를 통해 추가 (별도 데이터 경로).
-    children: [],
+    children: [
+      {
+        tag: "MenuItem",
+        props: {
+          children: "Menu Item 1",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "MenuItem",
+        props: {
+          children: "Menu Item 2",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "MenuItem",
+        props: {
+          children: "Menu Item 3",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+    ],
   };
 }
 

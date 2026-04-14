@@ -34,11 +34,19 @@ export interface MenuProps {
   style?: Record<string, string | number | undefined>;
 }
 
+/** S2 size별 MenuItem 치수 */
+export const MENU_ITEM_DIMENSIONS: Record<
+  string,
+  { minHeight: number; edgeToText: number; iconSize: number }
+> = {
+  sm: { minHeight: 24, edgeToText: 9, iconSize: 14 },
+  md: { minHeight: 32, edgeToText: 12, iconSize: 20 },
+  lg: { minHeight: 40, edgeToText: 15, iconSize: 20 },
+  xl: { minHeight: 48, edgeToText: 18, iconSize: 20 },
+};
+
 /**
  * Menu Component Spec (S2)
- *
- * Builder Canvas에서 Menu element는 트리거 버튼으로 렌더됨 (Button 파생).
- * Popover/MenuItem overlay는 런타임 오픈 시에만 표시. sizes는 Button과 정합.
  *
  * overlay: popover (포털, 배경 클릭으로 닫기)
  */
@@ -61,31 +69,16 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     pixiLayer: "overlay",
   },
 
-  // @sync ButtonSpec.sizes — Menu는 Button 파생 트리거. padding/fontSize/lineHeight/iconSize 동일
   sizes: {
-    xs: {
-      height: 0,
-      paddingX: 4,
-      paddingY: 1,
-      fontSize: "{typography.text-2xs}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
-      iconSize: 12,
-      gap: 4,
-      lineHeight: "{typography.text-2xs--line-height}" as TokenRef,
-      borderWidth: 1,
-      iconGap: 4,
-    },
     sm: {
       height: 0,
       paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
-      iconSize: 14,
-      gap: 6,
       lineHeight: "{typography.text-xs--line-height}" as TokenRef,
       borderWidth: 1,
-      iconGap: 6,
+      gap: 6,
     },
     md: {
       height: 0,
@@ -93,11 +86,9 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
-      iconSize: 16,
-      gap: 8,
       lineHeight: "{typography.text-sm--line-height}" as TokenRef,
       borderWidth: 1,
-      iconGap: 8,
+      gap: 8,
     },
     lg: {
       height: 0,
@@ -105,11 +96,9 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
-      iconSize: 20,
-      gap: 10,
       lineHeight: "{typography.text-base--line-height}" as TokenRef,
       borderWidth: 1,
-      iconGap: 10,
+      gap: 10,
     },
     xl: {
       height: 0,
@@ -117,11 +106,9 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
-      iconSize: 24,
-      gap: 12,
       lineHeight: "{typography.text-lg--line-height}" as TokenRef,
       borderWidth: 1,
-      iconGap: 12,
+      gap: 12,
     },
   },
 
@@ -134,6 +121,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       opacity: 0.38,
       pointerEvents: "none",
     },
+  },
+
+  propagation: {
+    rules: [{ parentProp: "size", childPath: "MenuItem", override: true }],
   },
 
   properties: {
@@ -203,6 +194,19 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             defaultValue: true,
           },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
+        ],
+      },
+      {
+        title: "Item Management",
+        fields: [
+          {
+            key: "items",
+            type: "children-manager",
+            label: "Menu Items",
+            childTag: "MenuItem",
+            defaultChildProps: { children: "Menu Item", textValue: "" },
+            labelProp: "children",
+          },
         ],
       },
     ],
