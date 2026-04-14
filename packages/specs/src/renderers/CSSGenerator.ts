@@ -713,8 +713,9 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
 
     // ADR-059 v2 Pre-Phase 0-D.4: 자식 상태 selector
     if (delegation.states) {
-      for (const [stateSel, styles] of Object.entries(delegation.states)) {
-        if (Object.keys(styles).length === 0) continue;
+      for (const [stateSel, rawStyles] of Object.entries(delegation.states)) {
+        if (Object.keys(rawStyles).length === 0) continue;
+        const styles = rewriteAnimationNames(rawStyles, spec);
         lines.push(`${sel} ${childSelector}:where(${stateSel}) {`);
         for (const [prop, value] of Object.entries(styles)) {
           lines.push(`  ${prop}: ${value};`);
@@ -729,8 +730,9 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
   if (comp.externalStyles) {
     for (const ext of comp.externalStyles) {
       if (ext.styles && Object.keys(ext.styles).length > 0) {
+        const extStyles = rewriteAnimationNames(ext.styles, spec);
         lines.push(`${ext.selector} {`);
-        for (const [prop, value] of Object.entries(ext.styles)) {
+        for (const [prop, value] of Object.entries(extStyles)) {
           lines.push(`  ${prop}: ${value};`);
         }
         lines.push("}");
@@ -739,8 +741,9 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
       if (ext.nested) {
         for (const n of ext.nested) {
           if (Object.keys(n.styles).length === 0) continue;
+          const nestedExtStyles = rewriteAnimationNames(n.styles, spec);
           lines.push(`${ext.selector} ${n.selector} {`);
-          for (const [prop, value] of Object.entries(n.styles)) {
+          for (const [prop, value] of Object.entries(nestedExtStyles)) {
             lines.push(`  ${prop}: ${value};`);
           }
           lines.push("}");
@@ -757,8 +760,9 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
         const variantSel = `${sel}[data-${dataAttr}="${attrValue}"]`;
 
         if (variant.styles && Object.keys(variant.styles).length > 0) {
+          const variantStyles = rewriteAnimationNames(variant.styles, spec);
           lines.push(`${variantSel} {`);
-          for (const [prop, value] of Object.entries(variant.styles)) {
+          for (const [prop, value] of Object.entries(variantStyles)) {
             lines.push(`  ${prop}: ${value};`);
           }
           lines.push("}");
@@ -773,8 +777,9 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
             const combined = nested.selector.startsWith("&")
               ? `${variantSel}${nested.selector.slice(1)}`
               : `${variantSel} ${nested.selector}`;
+            const nestedStyles = rewriteAnimationNames(nested.styles, spec);
             lines.push(`${combined} {`);
-            for (const [prop, value] of Object.entries(nested.styles)) {
+            for (const [prop, value] of Object.entries(nestedStyles)) {
               lines.push(`  ${prop}: ${value};`);
             }
             lines.push("}");
@@ -820,6 +825,49 @@ function generateMediaQueries<Props>(spec: ComponentSpec<Props>): string[] {
   return lines;
 }
 
+// ─── Phase 4-infra2: Animation Name Rewrite ────────────────────────────────
+
+/**
+ * style 값 내부 animation/animation-name 을 `{specName}-{animName}` 으로 rewrite.
+ * spec.composition.animations 에 선언된 이름만 치환. 외부 이름은 보존.
+ *
+ * - `animation-name: foo` → `animation-name: ProgressBar-foo`
+ * - `animation: foo 1.5s ease` → `animation: ProgressBar-foo 1.5s ease`
+ * - `animation: other 1s` (animations 미선언) → 그대로
+ */
+function rewriteAnimationNames<Props>(
+  styles: Record<string, string>,
+  spec: ComponentSpec<Props>,
+): Record<string, string> {
+  const animations = spec.composition?.animations;
+  if (!animations) return styles;
+  const declaredNames = new Set(Object.keys(animations));
+  if (declaredNames.size === 0) return styles;
+
+  const prefix = (name: string): string =>
+    declaredNames.has(name) ? `${spec.name}-${name}` : name;
+
+  const result: Record<string, string> = {};
+  for (const [prop, value] of Object.entries(styles)) {
+    if (prop === "animation-name") {
+      result[prop] = prefix(value.trim());
+    } else if (prop === "animation") {
+      const trimmed = value.trim();
+      const firstSpace = trimmed.indexOf(" ");
+      if (firstSpace === -1) {
+        result[prop] = prefix(trimmed);
+      } else {
+        const firstToken = trimmed.slice(0, firstSpace);
+        const rest = trimmed.slice(firstSpace);
+        result[prop] = `${prefix(firstToken)}${rest}`;
+      }
+    } else {
+      result[prop] = value;
+    }
+  }
+  return result;
+}
+
 // ─── Phase 4-infra2 0-D.9: Size Selectors ──────────────────────────────────
 
 /**
@@ -836,7 +884,8 @@ function generateSizeSelectorRules<Props>(
   const rootSel = `.react-aria-${spec.name}`;
 
   for (const [sizeKey, selectors] of Object.entries(sizeSelectors)) {
-    for (const [selector, styles] of Object.entries(selectors)) {
+    for (const [selector, rawStyles] of Object.entries(selectors)) {
+      const styles = rewriteAnimationNames(rawStyles, spec);
       const fullSel = `${rootSel}[data-size="${sizeKey}"] ${selector}`;
       lines.push(`  ${fullSel} {`);
       for (const [prop, value] of Object.entries(styles)) {
