@@ -20,6 +20,20 @@
   line-height: var(--text-sm--line-height);
   border-width: 1px;
   gap: 8px;
+  --icon-size: 16px;
+  --icon-gap: 8px;
+}
+
+.react-aria-Menu[data-size="xs"] {
+  height: auto;
+  padding: 1px 4px;
+  font-size: var(--text-2xs);
+  border-radius: var(--radius-sm);
+  line-height: var(--text-2xs--line-height);
+  border-width: 1px;
+  gap: 4px;
+  --icon-size: 12px;
+  --icon-gap: 4px;
 }
 
 .react-aria-Menu[data-size="sm"] {
@@ -30,6 +44,8 @@
   line-height: var(--text-xs--line-height);
   border-width: 1px;
   gap: 6px;
+  --icon-size: 14px;
+  --icon-gap: 6px;
 }
 
 .react-aria-Menu[data-size="md"] {
@@ -40,6 +56,8 @@
   line-height: var(--text-sm--line-height);
   border-width: 1px;
   gap: 8px;
+  --icon-size: 16px;
+  --icon-gap: 8px;
 }
 
 .react-aria-Menu[data-size="lg"] {
@@ -50,6 +68,8 @@
   line-height: var(--text-base--line-height);
   border-width: 1px;
   gap: 10px;
+  --icon-size: 20px;
+  --icon-gap: 10px;
 }
 
 .react-aria-Menu[data-size="xl"] {
@@ -60,6 +80,8 @@
   line-height: var(--text-lg--line-height);
   border-width: 1px;
   gap: 12px;
+  --icon-size: 24px;
+  --icon-gap: 12px;
 }
 
 .react-aria-Menu[data-hovered] {
