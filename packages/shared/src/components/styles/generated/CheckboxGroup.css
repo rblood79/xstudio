@@ -1,0 +1,106 @@
+/* ============================================================
+ * AUTO-GENERATED from CheckboxGroupSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/CheckboxGroup.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-CheckboxGroup {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    color: var(--fg);
+    --label-font-size: var(--text-sm);
+    --label-line-height: var(--text-sm--line-height);
+    --cb-items-gap: 12px;
+    --cb-hint-size: var(--text-xs);
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  gap: 12px;
+}
+
+.react-aria-CheckboxGroup[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+  gap: 8px;
+}
+
+.react-aria-CheckboxGroup[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  gap: 12px;
+}
+
+.react-aria-CheckboxGroup[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+  gap: 16px;
+}
+
+.react-aria-CheckboxGroup[data-hovered] {
+}
+
+.react-aria-CheckboxGroup[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-CheckboxGroup[data-pressed] {
+}
+
+.react-aria-CheckboxGroup[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-CheckboxGroup [slot="description"] {
+  font-size: var(--cb-hint-size);
+}
+
+.react-aria-CheckboxGroup[data-size="sm"] {
+  --label-font-size: var(--text-xs);
+  --label-line-height: var(--text-xs--line-height);
+  --cb-items-gap: 8px;
+}
+
+.react-aria-CheckboxGroup[data-size="lg"] {
+  --label-font-size: var(--text-base);
+  --label-line-height: var(--text-base--line-height);
+  --cb-items-gap: 16px;
+}
+
+.react-aria-CheckboxGroup[data-label-position="side"] {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.react-aria-CheckboxGroup[data-orientation="vertical"] .checkbox-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-items-gap, var(--spacing-md));
+}
+
+.react-aria-CheckboxGroup[data-orientation="horizontal"] .checkbox-items {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--cb-items-gap, var(--spacing-md));
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-CheckboxGroup {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

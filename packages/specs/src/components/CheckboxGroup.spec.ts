@@ -58,7 +58,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
   name: "CheckboxGroup",
   description: "React Aria 기반 체크박스 그룹 컨테이너 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -105,11 +105,77 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
     },
   },
 
-  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
   composition: {
     layout: "flex-column",
-    gap: "var(--spacing-sm)",
-    delegation: [],
+    gap: "var(--spacing-xs)",
+    containerStyles: {
+      color: "var(--fg)",
+      "--label-font-size": "var(--text-sm)",
+      "--label-line-height": "var(--text-sm--line-height)",
+      "--cb-items-gap": "12px",
+      "--cb-hint-size": "var(--text-xs)",
+    },
+    containerVariants: {
+      size: {
+        sm: {
+          styles: {
+            "--label-font-size": "var(--text-xs)",
+            "--label-line-height": "var(--text-xs--line-height)",
+            "--cb-items-gap": "8px",
+          },
+        },
+        lg: {
+          styles: {
+            "--label-font-size": "var(--text-base)",
+            "--label-line-height": "var(--text-base--line-height)",
+            "--cb-items-gap": "16px",
+          },
+        },
+      },
+      "label-position": {
+        side: {
+          styles: {
+            "flex-direction": "row",
+            "align-items": "flex-start",
+          },
+        },
+      },
+      orientation: {
+        vertical: {
+          nested: [
+            {
+              selector: ".checkbox-items",
+              styles: {
+                display: "flex",
+                "flex-direction": "column",
+                gap: "var(--cb-items-gap, var(--spacing-md))",
+              },
+            },
+          ],
+        },
+        horizontal: {
+          nested: [
+            {
+              selector: ".checkbox-items",
+              styles: {
+                display: "flex",
+                "flex-direction": "row",
+                "align-items": "center",
+                gap: "var(--cb-items-gap, var(--spacing-md))",
+              },
+            },
+          ],
+        },
+      },
+    },
+    delegation: [
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--cb-hint-size)",
+        },
+      },
+    ],
   },
 
   states: {
