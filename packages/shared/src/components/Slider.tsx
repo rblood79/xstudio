@@ -42,11 +42,6 @@ export interface SliderProps<T> extends AriaSliderProps<T> {
    */
   customFormatter?: (value: number) => string;
   /**
-   * Visual variant
-   * @default 'default'
-   */
-  variant?: "default" | "accent" | "neutral";
-  /**
    * Show loading skeleton instead of slider
    * @default false
    */
@@ -66,7 +61,6 @@ export function Slider<T extends number | number[]>({
   locale = "ko-KR",
   formatOptions,
   customFormatter,
-  variant = "default",
   isLoading,
   ...props
 }: SliderProps<T>) {
@@ -107,7 +101,6 @@ export function Slider<T extends number | number[]>({
       {...props}
       className={sliderClassName}
       data-emphasized={isEmphasized || undefined}
-      data-variant={variant}
       data-size={size}
     >
       {label && <Label>{label}</Label>}

@@ -38,8 +38,6 @@ export interface DateRangePickerProps<T extends DateValue> extends Omit<
   AriaDateRangePickerProps<T>,
   "minValue" | "maxValue"
 > {
-  /** @default 'default' */
-  variant?: "default" | "accent";
   /** @default 'md' */
   size?: ComponentSize;
   label?: string;
@@ -80,7 +78,6 @@ export interface DateRangePickerProps<T extends DateValue> extends Omit<
 }
 
 export function DateRangePicker<T extends DateValue>({
-  variant = "default",
   size = "md",
   label,
   description,
@@ -157,7 +154,6 @@ export function DateRangePicker<T extends DateValue>({
     <AriaDateRangePicker
       {...props}
       className={dateRangePickerClassName}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-quiet={isQuiet ? "true" : undefined}
@@ -221,7 +217,7 @@ export function DateRangePicker<T extends DateValue>({
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
       <Popover>
-        <Dialog data-size={size} data-variant={variant}>
+        <Dialog data-size={size}>
           <div className="date-picker-popup">
             <RangeCalendar
               data-size={size}

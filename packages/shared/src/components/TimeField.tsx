@@ -48,7 +48,6 @@ export interface TimeFieldProps<T extends TimeValue> extends Omit<
    */
   placeholder?: string;
   // S2 props
-  variant?: string;
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
@@ -69,7 +68,6 @@ export function TimeField<T extends TimeValue>({
   errorMessage,
   hourCycle = 24,
   placeholder,
-  variant = "default",
   size = "md",
   necessityIndicator,
   labelPosition = "top",
@@ -105,7 +103,6 @@ export function TimeField<T extends TimeValue>({
           ? `react-aria-TimeField ${className}`
           : "react-aria-TimeField",
       )}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-quiet={isQuiet ? "true" : undefined}

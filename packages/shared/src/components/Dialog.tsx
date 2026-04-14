@@ -34,13 +34,11 @@ import "./styles/generated/Dialog.css";
  */
 
 export interface DialogExtendedProps extends DialogProps {
-  variant?: string;
   size?: ComponentSize;
   isDismissable?: boolean;
 }
 
 export function Dialog({
-  variant = "primary",
   size = "md",
   isDismissable,
   ...props
@@ -56,7 +54,6 @@ export function Dialog({
     <RACDialog
       {...props}
       className={dialogClassName}
-      data-variant={variant}
       data-size={size}
       data-dismissible={isDismissable || undefined}
     />

@@ -159,7 +159,6 @@ export const renderDatePicker = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      variant={(variant as "default" | "accent") || "default"}
       size={(size as "sm" | "md" | "lg") || "md"}
       locale={locale}
       calendarSystem={calendarSystem}
@@ -252,7 +251,6 @@ export const renderDateRangePicker = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      variant={(element.props.variant as "default" | "accent") || "default"}
       size={(size as "sm" | "md" | "lg") || "md"}
       label={String(element.props.label || "Date Range Picker")}
       description={String(element.props.description || "")}
@@ -361,7 +359,6 @@ export const renderDateField = (
       size={
         (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || undefined
       }
-      variant={String(element.props.variant || "default")}
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
@@ -435,7 +432,6 @@ export const renderTimeField = (
       size={
         (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || undefined
       }
-      variant={String(element.props.variant || "default")}
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}

@@ -303,7 +303,7 @@ export function ListBox<T extends object>({
           className={`react-aria-ListBox virtualized ${variant}`}
           style={{ height }}
         >
-          <CollectionLoadingState size="md" variant={variant} height={height} />
+          <CollectionLoadingState size="md" height={height} />
         </div>
       );
     }
@@ -318,7 +318,6 @@ export function ListBox<T extends object>({
           <CollectionErrorDisplay
             error={error}
             onRetry={reload}
-            variant={variant}
             height={height}
           />
         </div>

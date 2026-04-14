@@ -10,9 +10,9 @@
  * - 빈 상태 표시
  */
 
-import React from 'react';
-import { AlertCircle, RefreshCw, Loader2, Inbox } from 'lucide-react';
-import './CollectionErrorState.css';
+import React from "react";
+import { AlertCircle, RefreshCw, Loader2, Inbox } from "lucide-react";
+import "./CollectionErrorState.css";
 
 interface CollectionErrorStateProps {
   /** 로딩 중 여부 */
@@ -26,9 +26,7 @@ interface CollectionErrorStateProps {
   /** 빈 상태 메시지 */
   emptyMessage?: string;
   /** 컴포넌트 크기 */
-  size?: 'sm' | 'md' | 'lg';
-  /** variant */
-  variant?: string;
+  size?: "sm" | "md" | "lg";
   /** 커스텀 높이 */
   height?: number | string;
 }
@@ -37,16 +35,18 @@ interface CollectionErrorStateProps {
  * 로딩 상태 컴포넌트
  */
 export function CollectionLoadingState({
-  size = 'md',
-  variant,
+  size = "md",
   height,
-}: Pick<CollectionErrorStateProps, 'size' | 'variant' | 'height'>) {
+}: Pick<CollectionErrorStateProps, "size" | "height">) {
   return (
     <div
-      className={`collection-state collection-loading ${size} ${variant || ''}`}
+      className={`collection-state collection-loading ${size}`}
       style={height ? { height } : undefined}
     >
-      <Loader2 className="collection-state-spinner" size={size === 'sm' ? 16 : size === 'lg' ? 24 : 20} />
+      <Loader2
+        className="collection-state-spinner"
+        size={size === "sm" ? 16 : size === "lg" ? 24 : 20}
+      />
       <span className="collection-state-text">데이터 로딩 중...</span>
     </div>
   );
@@ -58,20 +58,21 @@ export function CollectionLoadingState({
 export function CollectionErrorDisplay({
   error,
   onRetry,
-  size = 'md',
-  variant,
+  size = "md",
   height,
-}: Pick<CollectionErrorStateProps, 'error' | 'onRetry' | 'size' | 'variant' | 'height'>) {
+}: Pick<CollectionErrorStateProps, "error" | "onRetry" | "size" | "height">) {
   return (
     <div
-      className={`collection-state collection-error ${size} ${variant || ''}`}
+      className={`collection-state collection-error ${size}`}
       style={height ? { height } : undefined}
     >
       <div className="collection-error-icon">
-        <AlertCircle size={size === 'sm' ? 16 : size === 'lg' ? 24 : 20} />
+        <AlertCircle size={size === "sm" ? 16 : size === "lg" ? 24 : 20} />
       </div>
       <div className="collection-error-content">
-        <span className="collection-error-message">{error || '데이터를 불러오지 못했습니다'}</span>
+        <span className="collection-error-message">
+          {error || "데이터를 불러오지 못했습니다"}
+        </span>
         {onRetry && (
           <button
             type="button"
@@ -91,22 +92,20 @@ export function CollectionErrorDisplay({
  * 빈 상태 컴포넌트
  */
 export function CollectionEmptyState({
-  message = '표시할 데이터가 없습니다',
-  size = 'md',
-  variant,
+  message = "표시할 데이터가 없습니다",
+  size = "md",
   height,
 }: {
   message?: string;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: string;
+  size?: "sm" | "md" | "lg";
   height?: number | string;
 }) {
   return (
     <div
-      className={`collection-state collection-empty ${size} ${variant || ''}`}
+      className={`collection-state collection-empty ${size}`}
       style={height ? { height } : undefined}
     >
-      <Inbox size={size === 'sm' ? 16 : size === 'lg' ? 24 : 20} />
+      <Inbox size={size === "sm" ? 16 : size === "lg" ? 24 : 20} />
       <span className="collection-state-text">{message}</span>
     </div>
   );
@@ -125,12 +124,11 @@ export function CollectionState({
   onRetry,
   isEmpty,
   emptyMessage,
-  size = 'md',
-  variant,
+  size = "md",
   height,
 }: CollectionErrorStateProps) {
   if (loading) {
-    return <CollectionLoadingState size={size} variant={variant} height={height} />;
+    return <CollectionLoadingState size={size} height={height} />;
   }
 
   if (error) {
@@ -139,7 +137,6 @@ export function CollectionState({
         error={error}
         onRetry={onRetry}
         size={size}
-        variant={variant}
         height={height}
       />
     );
@@ -150,7 +147,6 @@ export function CollectionState({
       <CollectionEmptyState
         message={emptyMessage}
         size={size}
-        variant={variant}
         height={height}
       />
     );

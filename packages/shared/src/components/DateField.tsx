@@ -58,7 +58,6 @@ export interface DateFieldProps<T extends DateValue> extends Omit<
    */
   maxValue?: string | DateValue;
   // S2 props
-  variant?: string;
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
@@ -81,7 +80,6 @@ export function DateField<T extends DateValue>({
   defaultToday = false,
   minValue,
   maxValue,
-  variant = "default",
   size = "md",
   necessityIndicator,
   labelPosition = "top",
@@ -126,7 +124,6 @@ export function DateField<T extends DateValue>({
           ? `react-aria-DateField ${className}`
           : "react-aria-DateField",
       )}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-quiet={isQuiet ? "true" : undefined}

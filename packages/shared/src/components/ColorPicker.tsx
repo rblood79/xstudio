@@ -25,11 +25,6 @@ export interface ColorPickerProps extends Omit<
   "children"
 > {
   /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: string;
-  /**
    * Size variant
    * @default 'md'
    */
@@ -40,12 +35,7 @@ export interface ColorPickerProps extends Omit<
 }
 
 /**
- * ColorPicker Component with Material Design 3 support
- *
- * M3 Features:
- * - 3 variants: primary, secondary, tertiary
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
+ * ColorPicker Component
  *
  * Features:
  * - Color selection with visual picker
@@ -54,30 +44,24 @@ export interface ColorPickerProps extends Omit<
  * - Customizable color sliders and area
  *
  * @example
- * <ColorPicker variant="primary" size="md" />
- * <ColorPicker variant="secondary">
+ * <ColorPicker size="md" />
+ * <ColorPicker>
  *   <ColorArea colorSpace="rgb" xChannel="red" yChannel="green" />
  * </ColorPicker>
  */
 export function ColorPicker({
-  variant = "primary",
   size = "md",
   children,
   className,
   ...props
 }: ColorPickerProps) {
-  // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
   const baseClassName = typeof className === "string" ? className : undefined;
   const colorPickerClassName = baseClassName
     ? `react-aria-ColorPicker ${baseClassName}`
     : "react-aria-ColorPicker";
 
   return (
-    <div
-      className={colorPickerClassName}
-      data-variant={variant}
-      data-size={size}
-    >
+    <div className={colorPickerClassName} data-size={size}>
       <AriaColorPicker {...props}>
         <DialogTrigger>
           <Button className="color-picker-button">

@@ -37,11 +37,6 @@ export interface CheckboxGroupProps extends Omit<
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   /**
-   * Visual variant for child Checkbox buttons
-   * @default 'default'
-   */
-  variant?: string;
-  /**
    * Size for child Checkbox buttons
    * @default 'md'
    */
@@ -58,7 +53,6 @@ export function CheckboxGroup({
   orientation = "vertical",
   dataBinding,
   columnMapping,
-  variant = "default",
   size = "md",
   labelPosition = "top",
   ...props
@@ -118,7 +112,7 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          data-checkbox-variant={variant}
+          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -145,7 +139,7 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          data-checkbox-variant={variant}
+          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -177,7 +171,7 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          data-checkbox-variant={variant}
+          
           data-checkbox-size={size}
           data-label-position={labelPosition}
         >
@@ -203,7 +197,7 @@ export function CheckboxGroup({
         {...props}
         className={checkboxGroupClassName}
         data-orientation={orientation}
-        data-checkbox-variant={variant}
+        
         data-checkbox-size={size}
         data-label-position={labelPosition}
       >
@@ -232,7 +226,7 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          data-checkbox-variant={variant}
+          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -259,7 +253,7 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          data-checkbox-variant={variant}
+          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -300,7 +294,7 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          data-checkbox-variant={variant}
+          
           data-checkbox-size={size}
           data-label-position={labelPosition}
         >
@@ -347,7 +341,7 @@ export function CheckboxGroup({
       {...props}
       className={checkboxGroupClassName}
       data-orientation={orientation}
-      data-checkbox-variant={variant}
+      
       data-checkbox-size={size}
       data-label-position={labelPosition}
     >

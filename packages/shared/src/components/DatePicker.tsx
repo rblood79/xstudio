@@ -38,8 +38,6 @@ export interface DatePickerProps<T extends DateValue> extends Omit<
   AriaDatePickerProps<T>,
   "minValue" | "maxValue" | "defaultValue"
 > {
-  /** @default 'default' */
-  variant?: "default" | "accent";
   /** @default 'md' */
   size?: ComponentSize;
   label?: string;
@@ -97,7 +95,6 @@ export interface DatePickerProps<T extends DateValue> extends Omit<
 }
 
 export function DatePicker<T extends DateValue>({
-  variant = "default",
   size = "md",
   label,
   description,
@@ -183,7 +180,6 @@ export function DatePicker<T extends DateValue>({
     <AriaDatePicker
       {...props}
       className={datePickerClassName}
-      data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
       data-quiet={isQuiet ? "true" : undefined}
@@ -235,7 +231,7 @@ export function DatePicker<T extends DateValue>({
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
       <Popover>
-        <Dialog data-size={size} data-variant={variant}>
+        <Dialog data-size={size}>
           <div className="date-picker-popup">
             <Calendar
               data-size={size}
