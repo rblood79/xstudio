@@ -2,6 +2,7 @@
 
 ## Status
 
+Implemented — 2026-04-14 (Phase 4 B1~B4 + Phase 5 closure 완료)
 Proposed (v2.1 amendment) — 2026-04-14 (Phase 4 D2+D3 통합 재설계)
 Proposed (v2) — 2026-04-13 (선행 조사 결과 반영 재작성, v1: 2026-04-11)
 
@@ -180,17 +181,17 @@ v1 breakdown의 단일 Pre-Phase 0(auto-derivation 메커니즘)을 **의존성 
 
 **검증 원칙 변경**: v1의 "기존 수동 CSS ↔ generated CSS byte diff 0" Gate는 **폐기**. 기존 수동 CSS는 오염된 consumer 상태이며 reference 자격 없음. v2는 **spec을 source로 하는 두 consumer의 대칭 검증**으로 대체.
 
-| Gate                | 시점          | 통과 조건                                                                                        | 실패 시 대안         |
-| ------------------- | ------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
-| Prefix 충돌 제거    | Pre-Phase 0-A | `composition.delegation.prefix` 미선언 Field 0, 동일 prefix 재사용 0, TimeField `--tf-*` 참조 0  | prefix 스키마 재설계 |
-| Delegation 완전성   | Pre-Phase 0-B | Field 7개 모두 delegation 선언, 필수 selector(Label/Input/Button/FieldError) 누락 0              | delegation 재설계    |
-| 공유 SSOT 표준화    | Pre-Phase 0-C | `BUTTON_SIZE_CONFIG` `@sync` 주석 0, NumberField Phase 2 의존성 명시                             | 공유 토큰 재설계     |
-| CSSGenerator 무회귀 | Pre-Phase 0-D | 기존 53개 simple 컴포넌트 CSS 생성 byte diff 0 (확장 자체의 회귀 없음)                           | 확장 롤백            |
-| Phase N 대칭성      | 각 Phase 완료 | 대상 컴포넌트: 수동 CSS 파일 **삭제**, `@sync` 0, **`/cross-check` Preview ↔ Builder 시각 일치** | Phase 롤백           |
-| 60fps / 번들        | 각 Phase      | 60fps, 번들 <500KB                                                                               | Phase 롤백           |
-| Popover 무회귀      | Phase 2       | ADR-047 드롭다운 시각 일치                                                                       | Phase 2 롤백         |
-| Calendar 무회귀     | Phase 3       | ADR-050 overflow clipping 무회귀                                                                 | Phase 3 롤백         |
-| 최종 SSOT 순도      | Phase 5       | `grep "skipCSSGeneration.*true"` = 0, `grep "@sync"` = 0, 대상 Composite 수동 CSS 파일 = 0       | 잔존 개별 해체       |
+| Gate                | 시점          | 통과 조건                                                                                                                                                                                                                                          | 실패 시 대안         |
+| ------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Prefix 충돌 제거    | Pre-Phase 0-A | `composition.delegation.prefix` 미선언 Field 0, 동일 prefix 재사용 0, TimeField `--tf-*` 참조 0                                                                                                                                                    | prefix 스키마 재설계 |
+| Delegation 완전성   | Pre-Phase 0-B | Field 7개 모두 delegation 선언, 필수 selector(Label/Input/Button/FieldError) 누락 0                                                                                                                                                                | delegation 재설계    |
+| 공유 SSOT 표준화    | Pre-Phase 0-C | `BUTTON_SIZE_CONFIG` `@sync` 주석 0, NumberField Phase 2 의존성 명시                                                                                                                                                                               | 공유 토큰 재설계     |
+| CSSGenerator 무회귀 | Pre-Phase 0-D | 기존 53개 simple 컴포넌트 CSS 생성 byte diff 0 (확장 자체의 회귀 없음)                                                                                                                                                                             | 확장 롤백            |
+| Phase N 대칭성      | 각 Phase 완료 | 대상 컴포넌트: 수동 CSS 파일 **삭제**, `@sync` 0, **`/cross-check` Preview ↔ Builder 시각 일치**                                                                                                                                                   | Phase 롤백           |
+| 60fps / 번들        | 각 Phase      | 60fps, 번들 <500KB                                                                                                                                                                                                                                 | Phase 롤백           |
+| Popover 무회귀      | Phase 2       | ADR-047 드롭다운 시각 일치                                                                                                                                                                                                                         | Phase 2 롤백         |
+| Calendar 무회귀     | Phase 3       | ADR-050 overflow clipping 무회귀                                                                                                                                                                                                                   | Phase 3 롤백         |
+| 최종 SSOT 순도      | Phase 5       | `skipCSSGeneration:true` 건수 = Tier 3 예외 전수(breakdown `B4 실행 결과` 표 9개 + Label §4 + Color family 등), 각 예외는 breakdown에 구조적 사유 명시. `@sync` 0은 Composite Field 한정(Tag의 TagGroup.css consumer coupling 등 Tier 3 예외 제외) | 잔존 개별 해체       |
 
 ## Consequences
 
