@@ -1,5 +1,17 @@
 # Child Composition & Spec Patterns
 
+## 목차
+
+- 자식 조합 패턴 (Child Composition Pattern) — L3
+- Canvas 2D ↔ CanvasKit 폭 측정 오차 보정 (CRITICAL) — L461
+- TokenRef fontSize 해석 (Spec Shapes) — L490
+- Breadcrumbs spec shapes 패턴 — L549
+- INLINE_FORM dimensions Spec 일치 (CRITICAL) — L597
+- Phantom Indicator + 너비 정합성 (CRITICAL) — L635
+- TextMeasurer 스타일 정합성 (CRITICAL) — L667
+
+---
+
 ### 자식 조합 패턴 (Child Composition Pattern) (2026-02-24)
 
 Figma, Pencil App, HTML+CSS DOM 구조와 일치하도록 컴포넌트를 자식 조합형으로 전환하는 패턴입니다.

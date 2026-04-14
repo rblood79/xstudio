@@ -93,6 +93,28 @@ user_invocable: true
 
 발견된 이슈는 즉시 수정합니다. 수정 후 `pnpm build:specs && pnpm type-check`로 검증합니다.
 
+### Phase 4.1: Validate → Fix → Repeat 루프 (CRITICAL)
+
+단발성 검증이 아닌 **수렴 루프**로 실행합니다. Playbook §6.3 Feedback Loop 패턴 적용.
+
+```
+while (이슈 테이블에 미해결 CRITICAL/HIGH 존재):
+    1. Validate — Phase 2~3 재실행 (수정 대상 레이어만)
+    2. Fix      — CRITICAL/HIGH 즉시 수정
+    3. Verify   — pnpm build:specs && pnpm type-check
+    4. Re-scan  — 수정이 다른 레이어에 회귀 유발했는지 Phase 2 재확인
+루프 종료 조건: CRITICAL/HIGH 0건, 또는 3회 반복 후에도 수렴 실패 시 사용자에게 보고
+```
+
+**종료 게이트 (모두 통과 필수)**:
+
+- [ ] CRITICAL 이슈 0건
+- [ ] HIGH 이슈 0건 또는 사용자 수용 근거 명시
+- [ ] `pnpm type-check` 성공
+- [ ] 마지막 Fix가 새 이슈를 유발하지 않음 (회귀 재검증 완료)
+
+3회 초과 루프 시 근본 원인 의심 → systematic-debugging 스킬 전환.
+
 ## Phase 5: 시각 파리티 검증 (선택 — dev 서버 실행 시)
 
 개발 서버(`localhost:5173`)와 Storybook(`localhost:6006`) 중 실행 중인 것이 있으면 Chrome MCP로 Preview(CSS)와 Canvas(Skia) 렌더링을 시각적으로 비교합니다.

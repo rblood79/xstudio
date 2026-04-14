@@ -1,5 +1,15 @@
 # Component Registry & Tag Sets
 
+## 목차
+
+- 컴포넌트 등급 현황 (A/B+/B/D) — L3
+- Complex Component 목록 및 `COMPLEX_COMPONENT_TAGS` — L17
+- `CHILD_COMPOSITION_EXCLUDE_TAGS` — L103
+- `NON_CONTAINER_TAGS` — L124
+- rearrangeShapesForColumn 가드 (SPEC_RENDERS_ALL_TAGS_SET) — L161
+
+---
+
 ### 컴포넌트 등급 현황 (Wave 4 완료, 2026-02-19 / Breadcrumbs 승격 2026-02-23)
 
 모든 Pixi 컴포넌트가 A 또는 B+ 등급으로 전환 완료됐습니다.

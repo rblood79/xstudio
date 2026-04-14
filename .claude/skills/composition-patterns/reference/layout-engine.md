@@ -1,5 +1,22 @@
 # Layout Engine Patterns
 
+## 목차
+
+- 레이아웃 엔진 핵심 패턴 (엔진 선택 / DirectContainer / LayoutComputedSizeContext) — L3~L62
+- enrichWithIntrinsicSize (텍스트 크기 주입) — L63
+- Card Nested Tree 레이아웃 — L104
+- Tabs 컨테이너 높이 계산 — L160
+- Compositional Component 레이아웃 패턴 (CRITICAL) — L185
+- Full-Tree WASM Layout 좌표계 규칙 — L220
+- enrichWithIntrinsicSize에 implicit-styled 자식 전달 — L287
+- ElementSprite CSS keyword → pixel 해석 — L319
+- CSS min-width:auto 에뮬레이션 (step 4.8) — L338
+- layoutVersion 계약 (ADR-012 P4) — L362
+- 레이아웃 엔진 개선 이력 (line-height / TextSprite / INLINE_BLOCK / Switch / Card / TagGroup) — L401~L548
+- Tag fit-content 폭 + flex-row 레이아웃 — L549
+
+---
+
 ## 레이아웃 엔진 핵심 패턴
 
 > Wave 3-4 (2026-02-19) 이후 현행 아키텍처.
