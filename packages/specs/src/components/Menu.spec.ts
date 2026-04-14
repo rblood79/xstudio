@@ -136,10 +136,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     },
   },
 
-  propagation: {
-    rules: [{ parentProp: "size", childPath: "MenuItem", override: true }],
-  },
-
   properties: {
     sections: [
       {
@@ -207,19 +203,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             defaultValue: true,
           },
           { key: "isDisabled", type: "boolean", icon: PointerOff },
-        ],
-      },
-      {
-        title: "Item Management",
-        fields: [
-          {
-            key: "items",
-            type: "children-manager",
-            label: "Menu Items",
-            childTag: "MenuItem",
-            defaultChildProps: { children: "Menu Item", textValue: "" },
-            labelProp: "children",
-          },
         ],
       },
     ],
