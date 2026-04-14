@@ -429,7 +429,6 @@ export const renderLabel = (
       <span
         key={element.id}
         data-element-id={element.id}
-        data-variant={(element.props.variant as string) || "default"}
         className="react-aria-Label"
       >
         {content}
@@ -442,7 +441,6 @@ export const renderLabel = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      data-variant={(element.props.variant as string) || "default"}
     >
       {content}
     </Label>
