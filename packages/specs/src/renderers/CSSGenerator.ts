@@ -754,7 +754,12 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
         if (variant.nested) {
           for (const nested of variant.nested) {
             if (Object.keys(nested.styles).length === 0) continue;
-            lines.push(`${variantSel} ${nested.selector} {`);
+            // `&` prefix → compound (동일 요소 결합, 공백 없음)
+            // 예: `&:has(...) .child` → `{variantSel}:has(...) .child`
+            const combined = nested.selector.startsWith("&")
+              ? `${variantSel}${nested.selector.slice(1)}`
+              : `${variantSel} ${nested.selector}`;
+            lines.push(`${combined} {`);
             for (const [prop, value] of Object.entries(nested.styles)) {
               lines.push(`  ${prop}: ${value};`);
             }

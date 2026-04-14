@@ -359,7 +359,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             },
             {
               selector:
-                ":has(.react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])) .combobox-container",
+                "&:has(.react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])) .combobox-container",
               styles: {
                 background: "transparent",
                 "border-color": "transparent",
@@ -368,7 +368,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             },
             {
               selector:
-                ":has(.react-aria-Button[data-hovered]:not([data-disabled])) .combobox-container",
+                "&:has(.react-aria-Button[data-hovered]:not([data-disabled])) .combobox-container",
               styles: {
                 background: "transparent",
                 "border-color": "transparent",
@@ -377,7 +377,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             },
             {
               selector:
-                ":has(.react-aria-Input[data-focused]:not([data-disabled])) .combobox-container",
+                "&:has(.react-aria-Input[data-focused]:not([data-disabled])) .combobox-container",
               styles: {
                 outline: "none",
                 background: "transparent",
@@ -387,7 +387,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             },
             {
               selector:
-                ":has(.react-aria-Input[data-focus-within]:not([data-disabled])) .combobox-container",
+                "&:has(.react-aria-Input[data-focus-within]:not([data-disabled])) .combobox-container",
               styles: {
                 outline: "none",
                 background: "transparent",
@@ -397,7 +397,17 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             },
             {
               selector:
-                ":has(.react-aria-Button[data-focus-visible]:not([data-disabled])) .combobox-container",
+                "&:has(.react-aria-Button[data-focus-visible]:not([data-disabled])) .combobox-container",
+              styles: {
+                outline: "none",
+                background: "transparent",
+                "border-color": "transparent",
+                "border-bottom-color": "var(--accent)",
+              },
+            },
+            {
+              selector:
+                "&:has(.react-aria-Button[data-pressed]:not([data-disabled])) .combobox-container",
               styles: {
                 outline: "none",
                 background: "transparent",

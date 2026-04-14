@@ -364,33 +364,40 @@
   border-bottom: 1px solid var(--border);
 }
 
-.react-aria-ComboBox[data-quiet="true"] :has(.react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])) .combobox-container {
+.react-aria-ComboBox[data-quiet="true"]:has(.react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])) .combobox-container {
   background: transparent;
   border-color: transparent;
   border-bottom-color: var(--border-hover);
 }
 
-.react-aria-ComboBox[data-quiet="true"] :has(.react-aria-Button[data-hovered]:not([data-disabled])) .combobox-container {
+.react-aria-ComboBox[data-quiet="true"]:has(.react-aria-Button[data-hovered]:not([data-disabled])) .combobox-container {
   background: transparent;
   border-color: transparent;
   border-bottom-color: var(--border-hover);
 }
 
-.react-aria-ComboBox[data-quiet="true"] :has(.react-aria-Input[data-focused]:not([data-disabled])) .combobox-container {
+.react-aria-ComboBox[data-quiet="true"]:has(.react-aria-Input[data-focused]:not([data-disabled])) .combobox-container {
   outline: none;
   background: transparent;
   border-color: transparent;
   border-bottom-color: var(--accent);
 }
 
-.react-aria-ComboBox[data-quiet="true"] :has(.react-aria-Input[data-focus-within]:not([data-disabled])) .combobox-container {
+.react-aria-ComboBox[data-quiet="true"]:has(.react-aria-Input[data-focus-within]:not([data-disabled])) .combobox-container {
   outline: none;
   background: transparent;
   border-color: transparent;
   border-bottom-color: var(--accent);
 }
 
-.react-aria-ComboBox[data-quiet="true"] :has(.react-aria-Button[data-focus-visible]:not([data-disabled])) .combobox-container {
+.react-aria-ComboBox[data-quiet="true"]:has(.react-aria-Button[data-focus-visible]:not([data-disabled])) .combobox-container {
+  outline: none;
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: var(--accent);
+}
+
+.react-aria-ComboBox[data-quiet="true"]:has(.react-aria-Button[data-pressed]:not([data-disabled])) .combobox-container {
   outline: none;
   background: transparent;
   border-color: transparent;
