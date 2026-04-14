@@ -416,6 +416,42 @@ B0.1 + B1.1~B1.11 완료. 11 컴포넌트 D3 해체 + D2 부채 2건 해제.
 
 ---
 
+## B3 실행 결과 (2026-04-14, feature/adr-059-b3-slider-label)
+
+B0.2 RSP 대조 기반 Slider family(4) + Label(1) = 5 컴포넌트 wrapper variant prop 해체. Slider family는 수동 CSS 삭제 완료, Label은 canvas-rendering §4 규칙 준수로 수동 CSS 유지.
+
+### Commits
+
+| Commit | 내용 |
+|---|---|
+| `c88ff8ad` | B3.1 Slider family (Slider + SliderTrack + SliderOutput + SliderThumb) 일괄 해체 |
+| `b457e3c3` | B3.2 Label — wrapper prop 제거 (수동 CSS 유지, i-dead 패턴) |
+
+### 지표
+
+- skipCSSGeneration:true: 4개 감소 (Slider family) + Label은 유지
+- 수동 CSS 1개 삭제 (Slider.css) + Label.css 유지
+- Generated CSS 4개 신규 (Slider/SliderTrack/SliderOutput/SliderThumb)
+- Wrapper variant prop 제거: 5 컴포넌트 (Slider + Label renderer 2곳)
+
+### 시각 변경
+
+- Slider/SliderTrack/SliderOutput/SliderThumb: default/accent/neutral 색상 제거 → default (accent color) 단일
+- Label: 5개 text color variant(default/accent/neutral/purple/negative) 제거 → neutral 단일. purple/negative 필요 시 `style={{color: ...}}` 또는 parent field `--field-accent` 변수 사용
+
+### Breaking API
+
+- `<Slider variant=...>` 호출지 제거
+- SliderElementProps.variant(default/filled union) 제거
+- `<Label variant=...>` 호출지 제거
+
+### Label 규칙 준수 (canvas-rendering §4)
+
+- rules/canvas-rendering.md: "Label generated CSS 부활 금지 — 부모 CSS 변수 상속 깨짐"
+- B3.2는 D2(Wrapper prop) 제거만 수행. D3 CSS 해체(skipCSSGeneration:true 유지)는 별도 ADR 또는 §4 규칙 완화 후 진행.
+
+---
+
 ## B2 실행 결과 (2026-04-14, feature/adr-059-b2-variant-removal)
 
 B0.2 RSP 대조(commit b1badff3) 기반 5 컴포넌트 wrapper variant prop + 수동 CSS 일괄 해체. ADR-062 Field isQuiet 선례를 Card에 복제.
