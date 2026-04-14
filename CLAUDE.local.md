@@ -39,6 +39,12 @@ pnpm type-check             # 타입 체크
 pnpm storybook              # Storybook
 ```
 
+## 장기 세션 관리
+
+- 30분 또는 주요 단계 완료 시점마다 WIP 커밋 분할 (API 과부하/usage limit 중단 대비)
+- 위험한 다중 파일 작업 전: 현재 진행상황 WIP 커밋 후 진행
+- 세션 중단 대비: 남은 작업을 간결 메모로 남기고 다음 세션에서 이어가기
+
 ## 메모
 
 - PostToolUse type-check 제거됨 → Stop hook만 type-check 실행 (매 편집마다 45s 대기 제거)
