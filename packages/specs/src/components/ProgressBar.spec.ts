@@ -68,7 +68,6 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   name: "ProgressBar",
   description: "React Aria 기반 프로그레스바 컴포넌트",
   archetype: "progress",
-  skipCSSGeneration: true,
   element: "div",
 
   defaultVariant: "default",
@@ -307,6 +306,142 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
     focusVisible: {},
   },
 
+  composition: {
+    layout: "grid",
+    containerStyles: {
+      "grid-template-areas": '"label value" "bar bar"',
+      "grid-template-columns": "1fr auto",
+      "box-sizing": "border-box",
+      "row-gap": "var(--spacing-xs)",
+      "column-gap": "var(--spacing-md)",
+      width: "100%",
+      color: "var(--fg)",
+      "font-size": "var(--text-sm)",
+      "--label-font-size": "var(--text-sm)",
+      "--fill-color": "var(--accent)",
+      "--track-color": "var(--accent-subtle)",
+    },
+    staticSelectors: {
+      ".react-aria-Label": {
+        "grid-area": "label",
+        "white-space": "nowrap",
+      },
+      ".value": {
+        "grid-area": "value",
+        "font-size": "var(--text-sm)",
+        color: "var(--fg-muted)",
+        "white-space": "nowrap",
+      },
+      ".bar": {
+        "grid-area": "bar",
+        "box-shadow": "var(--inset-shadow-xs)",
+        "forced-color-adjust": "none",
+        height: "var(--spacing-sm)",
+        "border-radius": "var(--radius-sm)",
+        overflow: "hidden",
+        "will-change": "transform",
+        background: "var(--track-color)",
+      },
+      ".fill": {
+        "border-radius": "var(--radius-sm)",
+        background: "var(--fill-color)",
+        height: "100%",
+        transition: "width 200ms ease-out",
+      },
+    },
+    containerVariants: {
+      variant: {
+        default: {
+          styles: {
+            "--fill-color": "var(--accent)",
+            "--track-color": "var(--accent-subtle)",
+          },
+        },
+        accent: {
+          styles: {
+            "--fill-color": "var(--accent)",
+            "--track-color": "var(--accent-subtle)",
+          },
+        },
+        neutral: {
+          styles: {
+            "--fill-color": "var(--fg-muted)",
+            "--track-color": "var(--bg-muted)",
+          },
+        },
+      },
+      indeterminate: {
+        true: {
+          nested: [
+            {
+              selector: ".fill",
+              styles: {
+                width: "120px",
+                "border-radius": "inherit",
+                animation:
+                  "ProgressBar-indeterminate 1.5s infinite ease-in-out",
+                "will-change": "transform",
+              },
+            },
+          ],
+        },
+      },
+      disabled: {
+        true: {
+          styles: {
+            opacity: "0.38",
+            cursor: "not-allowed",
+            "pointer-events": "none",
+          },
+        },
+      },
+    },
+    sizeSelectors: {
+      sm: {
+        ".bar": {
+          height: "var(--spacing-xs)",
+          "border-radius": "var(--radius-sm)",
+        },
+        ".fill": { "border-radius": "var(--radius-sm)" },
+        ".value": { "font-size": "var(--text-xs)" },
+      },
+      md: {
+        ".bar": {
+          height: "var(--spacing-sm)",
+          "border-radius": "var(--radius-sm)",
+        },
+        ".fill": { "border-radius": "var(--radius-sm)" },
+        ".value": { "font-size": "var(--text-sm)" },
+      },
+      lg: {
+        ".bar": {
+          height: "var(--spacing-md)",
+          "border-radius": "var(--radius-lg)",
+        },
+        ".fill": { "border-radius": "var(--radius-md)" },
+        ".value": { "font-size": "var(--text-base)" },
+      },
+      xl: {
+        ".bar": {
+          height: "var(--spacing-lg)",
+          "border-radius": "var(--radius-lg)",
+        },
+        ".fill": { "border-radius": "var(--radius-lg)" },
+        ".value": { "font-size": "var(--text-lg)" },
+      },
+    },
+    animations: {
+      indeterminate: {
+        keyframes: {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(250px)" },
+        },
+        reducedMotion: { "transition-duration": "0s" },
+      },
+    },
+    delegation: [],
+  },
+
   propagation: {
     rules: [
       {
@@ -323,7 +458,11 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ProgressBarSpec.variants![(props as { variant?: keyof typeof ProgressBarSpec.variants }).variant ?? ProgressBarSpec.defaultVariant!];
+      const variant =
+        ProgressBarSpec.variants![
+          (props as { variant?: keyof typeof ProgressBarSpec.variants })
+            .variant ?? ProgressBarSpec.defaultVariant!
+        ];
       const variantName = props.variant ?? "default";
       const sizeName = props.size ?? "md";
       const barDims =
@@ -354,7 +493,10 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       const bgColor =
         props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

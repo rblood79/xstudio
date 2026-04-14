@@ -15,7 +15,7 @@ import type { ComponentSizeSubset } from "../types";
 import { formatPercent, formatNumber } from "../utils/core/numberUtils";
 import { Skeleton } from "./Skeleton";
 
-import "./styles/ProgressBar.css";
+import "./styles/generated/ProgressBar.css";
 
 export interface ProgressBarProps extends AriaProgressBarProps {
   label?: string;
@@ -76,6 +76,7 @@ export function ProgressBar({
   valueLabel,
   labelPosition = "top",
   isLoading,
+  isIndeterminate,
   ...props
 }: ProgressBarProps) {
   if (isLoading) {
@@ -109,9 +110,13 @@ export function ProgressBar({
     return formatPercent(value / 100, locale, 0);
   };
 
+  // indeterminate 여부: prop 명시 또는 value가 undefined/null인 경우
+  const isIndet = isIndeterminate ?? props.value == null;
+
   return (
     <AriaProgressBar
       {...props}
+      isIndeterminate={isIndeterminate}
       formatOptions={safeFormatOptions}
       className={composeRenderProps(props.className, (className) =>
         className
@@ -121,6 +126,7 @@ export function ProgressBar({
       data-variant={variant}
       data-size={size}
       data-label-position={labelPosition}
+      data-indeterminate={isIndet ? "true" : undefined}
     >
       {({ percentage, valueText }) => (
         <>

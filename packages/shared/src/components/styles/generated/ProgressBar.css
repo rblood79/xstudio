@@ -1,0 +1,214 @@
+/* ============================================================
+ * AUTO-GENERATED from ProgressBarSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ProgressBar.spec.ts
+ * Archetype: progress
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-ProgressBar {
+  /* Base styles — archetype: progress */
+    display: grid;
+    box-sizing: border-box;
+    grid-template-areas: "label value" "bar bar";
+    grid-template-columns: 1fr auto;
+    box-sizing: border-box;
+    row-gap: var(--spacing-xs);
+    column-gap: var(--spacing-md);
+    width: 100%;
+    color: var(--fg);
+    font-size: var(--text-sm);
+    --label-font-size: var(--text-sm);
+    --fill-color: var(--accent);
+    --track-color: var(--accent-subtle);
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.react-aria-ProgressBar[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.react-aria-ProgressBar[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.react-aria-ProgressBar[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-ProgressBar[data-size="xl"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-ProgressBar[data-hovered] {
+}
+
+.react-aria-ProgressBar[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-ProgressBar[data-pressed] {
+}
+
+.react-aria-ProgressBar[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-ProgressBar[data-variant="default"] {
+  --fill-color: var(--accent);
+  --track-color: var(--accent-subtle);
+}
+
+.react-aria-ProgressBar[data-variant="accent"] {
+  --fill-color: var(--accent);
+  --track-color: var(--accent-subtle);
+}
+
+.react-aria-ProgressBar[data-variant="neutral"] {
+  --fill-color: var(--fg-muted);
+  --track-color: var(--bg-muted);
+}
+
+.react-aria-ProgressBar[data-indeterminate="true"] .fill {
+  width: 120px;
+  border-radius: inherit;
+  animation: ProgressBar-indeterminate 1.5s infinite ease-in-out;
+  will-change: transform;
+}
+
+.react-aria-ProgressBar[data-disabled="true"] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-ProgressBar {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ProgressBar {
+    transition-duration: 0s !important;
+  }
+}
+
+  .react-aria-ProgressBar .react-aria-Label {
+    grid-area: label;
+    white-space: nowrap;
+  }
+
+  .react-aria-ProgressBar .value {
+    grid-area: value;
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+
+  .react-aria-ProgressBar .bar {
+    grid-area: bar;
+    box-shadow: var(--inset-shadow-xs);
+    forced-color-adjust: none;
+    height: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    will-change: transform;
+    background: var(--track-color);
+  }
+
+  .react-aria-ProgressBar .fill {
+    border-radius: var(--radius-sm);
+    background: var(--fill-color);
+    height: 100%;
+    transition: width 200ms ease-out;
+  }
+
+
+  .react-aria-ProgressBar[data-size="sm"] .bar {
+    height: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-ProgressBar[data-size="sm"] .fill {
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-ProgressBar[data-size="sm"] .value {
+    font-size: var(--text-xs);
+  }
+
+  .react-aria-ProgressBar[data-size="md"] .bar {
+    height: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-ProgressBar[data-size="md"] .fill {
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-ProgressBar[data-size="md"] .value {
+    font-size: var(--text-sm);
+  }
+
+  .react-aria-ProgressBar[data-size="lg"] .bar {
+    height: var(--spacing-md);
+    border-radius: var(--radius-lg);
+  }
+
+  .react-aria-ProgressBar[data-size="lg"] .fill {
+    border-radius: var(--radius-md);
+  }
+
+  .react-aria-ProgressBar[data-size="lg"] .value {
+    font-size: var(--text-base);
+  }
+
+  .react-aria-ProgressBar[data-size="xl"] .bar {
+    height: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+  }
+
+  .react-aria-ProgressBar[data-size="xl"] .fill {
+    border-radius: var(--radius-lg);
+  }
+
+  .react-aria-ProgressBar[data-size="xl"] .value {
+    font-size: var(--text-lg);
+  }
+
+
+} /* @layer components */
+
+@keyframes ProgressBar-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ProgressBar {
+    transition-duration: 0s;
+  }
+}
