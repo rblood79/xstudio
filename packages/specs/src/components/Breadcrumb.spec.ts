@@ -33,7 +33,7 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
   description: "Breadcrumbs 내 단일 경로 조각 (Skia는 자식 단위 렌더)",
   archetype: "simple",
   element: "li",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "M",
