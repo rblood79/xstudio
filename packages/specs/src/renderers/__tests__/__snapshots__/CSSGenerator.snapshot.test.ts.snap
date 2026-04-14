@@ -6010,6 +6010,117 @@ exports[`CSSGenerator snapshot baseline > NumberField 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > Panel 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from PanelSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Panel.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Panel {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-raised);
+    border: 1px solid var(--border);
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Panel[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Panel[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Panel[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 10px;
+}
+
+.react-aria-Panel[data-hovered] {
+}
+
+.react-aria-Panel[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Panel[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-Panel {
+    forced-color-adjust: auto;
+  }
+}
+
+
+  .react-aria-Panel .panel-title {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--fg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .react-aria-Panel .panel-content {
+    padding: var(--spacing-xs) var(--spacing-md);
+    flex: 1;
+    min-height: 64px;
+  }
+
+  .react-aria-Panel .panel-tab {
+    border-radius: 0;
+    border: none;
+    padding: 0;
+  }
+
+  .react-aria-Panel .panel-sidebar {
+    background: var(--bg-inset);
+  }
+
+  .react-aria-Panel .panel-card {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .react-aria-Panel .panel-modal {
+    max-width: 600px;
+  }
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > Paragraph 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from ParagraphSpec — DO NOT EDIT MANUALLY

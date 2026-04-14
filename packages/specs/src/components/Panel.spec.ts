@@ -31,7 +31,6 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
   name: "Panel",
   description: "React Aria 기반 패널 컨테이너 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -152,9 +151,54 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
     ],
   },
 
+  composition: {
+    containerStyles: {
+      width: "100%",
+      display: "flex",
+      "flex-direction": "column",
+      "border-radius": "var(--radius-md)",
+      "background-color": "var(--bg-raised)",
+      border: "1px solid var(--border)",
+    },
+    staticSelectors: {
+      ".panel-title": {
+        padding: "var(--spacing-xs) var(--spacing-md)",
+        "font-weight": "600",
+        "font-size": "var(--text-sm)",
+        "line-height": "var(--text-sm--line-height)",
+        color: "var(--fg)",
+        "border-bottom": "1px solid var(--border)",
+      },
+      ".panel-content": {
+        padding: "var(--spacing-xs) var(--spacing-md)",
+        flex: "1",
+        "min-height": "64px",
+      },
+      ".panel-tab": {
+        "border-radius": "0",
+        border: "none",
+        padding: "0",
+      },
+      ".panel-sidebar": {
+        background: "var(--bg-inset)",
+      },
+      ".panel-card": {
+        "box-shadow": "var(--shadow-sm)",
+      },
+      ".panel-modal": {
+        "max-width": "600px",
+      },
+    },
+    delegation: [],
+  },
+
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = PanelSpec.variants![(props as { variant?: keyof typeof PanelSpec.variants }).variant ?? PanelSpec.defaultVariant!];
+      const variant =
+        PanelSpec.variants![
+          (props as { variant?: keyof typeof PanelSpec.variants }).variant ??
+            PanelSpec.defaultVariant!
+        ];
       const title = props.title;
 
       // 사용자 스타일 우선
@@ -232,7 +276,10 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       // 타이틀이 있는 경우
       if (title) {
         const textColor = props.style?.color ?? variant.text;
-        const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+        const fontSize = resolveSpecFontSize(
+          props.style?.fontSize ?? size.fontSize,
+          16,
+        );
         const fwRaw = props.style?.fontWeight;
         const fw =
           fwRaw != null
