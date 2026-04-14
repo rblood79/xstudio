@@ -22,7 +22,7 @@ import type { NecessityIndicator } from "./Field";
 import { renderNecessityIndicator } from "./Field";
 import { useCollectionData } from "../hooks";
 
-import "./styles/RadioGroup.css";
+import "./styles/generated/RadioGroup.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환

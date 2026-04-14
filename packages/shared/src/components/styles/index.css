@@ -97,15 +97,15 @@
 @import "./RangeCalendar.css"; /* generated 없음 — 수동 유지 */
 
 /* Group Components — skipCSSGeneration, 수동 CSS */
-@import "./CheckboxGroup.css";
-@import "./RadioGroup.css";
+@import "./generated/CheckboxGroup.css";
+@import "./generated/RadioGroup.css";
 @import "./TagGroup.css";
 @import "./ToggleButtonGroup.css";
 @import "./DisclosureGroup.css";
 
 /* Simple Compositions — skipCSSGeneration, 수동 CSS */
 @import "./Disclosure.css";
-@import "./Form.css";
+@import "./generated/Form.css";
 @import "./generated/InlineAlert.css";
 @import "./generated/Tooltip.css";
 

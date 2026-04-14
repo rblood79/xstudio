@@ -1,0 +1,89 @@
+/* ============================================================
+ * AUTO-GENERATED from FormSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Form.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Form {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    align-items: start;
+    --form-label-width: auto;
+    --form-label-align: start;
+    --form-field-gap: var(--spacing-md);
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 16px;
+}
+
+.react-aria-Form[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 12px;
+}
+
+.react-aria-Form[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 16px;
+}
+
+.react-aria-Form[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  gap: 20px;
+}
+
+.react-aria-Form[data-size="xl"] {
+  font-size: var(--text-xl);
+  border-radius: var(--radius-2xl);
+  gap: 24px;
+}
+
+.react-aria-Form[data-hovered] {
+}
+
+.react-aria-Form[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Form[data-pressed] {
+}
+
+.react-aria-Form[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-Form[data-label-position="side"] {
+  --form-label-width: 11rem;
+}
+
+.react-aria-Form[data-label-align="center"] {
+  --form-label-align: center;
+}
+
+.react-aria-Form[data-label-align="end"] {
+  --form-label-align: end;
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-Form {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

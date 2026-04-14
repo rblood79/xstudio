@@ -59,7 +59,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   name: "RadioGroup",
   description: "React Aria 기반 라디오 그룹 컨테이너 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -114,11 +114,77 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
     },
   },
 
-  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
   composition: {
     layout: "flex-column",
-    gap: "var(--spacing-sm)",
-    delegation: [],
+    gap: "var(--spacing-xs)",
+    containerStyles: {
+      color: "var(--fg)",
+      "--label-font-size": "var(--text-sm)",
+      "--label-line-height": "var(--text-sm--line-height)",
+      "--radio-items-gap": "12px",
+      "--rg-hint-size": "var(--text-xs)",
+    },
+    containerVariants: {
+      size: {
+        sm: {
+          styles: {
+            "--label-font-size": "var(--text-xs)",
+            "--label-line-height": "var(--text-xs--line-height)",
+            "--radio-items-gap": "8px",
+          },
+        },
+        lg: {
+          styles: {
+            "--label-font-size": "var(--text-base)",
+            "--label-line-height": "var(--text-base--line-height)",
+            "--radio-items-gap": "16px",
+          },
+        },
+      },
+      "label-position": {
+        side: {
+          styles: {
+            "flex-direction": "row",
+            "align-items": "flex-start",
+          },
+        },
+      },
+      orientation: {
+        vertical: {
+          nested: [
+            {
+              selector: ".radio-items",
+              styles: {
+                display: "flex",
+                "flex-direction": "column",
+                gap: "var(--radio-items-gap, var(--spacing-md))",
+              },
+            },
+          ],
+        },
+        horizontal: {
+          nested: [
+            {
+              selector: ".radio-items",
+              styles: {
+                display: "flex",
+                "flex-direction": "row",
+                "align-items": "center",
+                gap: "var(--radio-items-gap, var(--spacing-md))",
+              },
+            },
+          ],
+        },
+      },
+    },
+    delegation: [
+      {
+        childSelector: '[slot="description"]',
+        bridges: {
+          "font-size": "var(--rg-hint-size)",
+        },
+      },
+    ],
   },
 
   states: {

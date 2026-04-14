@@ -16,7 +16,7 @@ import type { NecessityIndicator } from "./Field";
 import { renderNecessityIndicator } from "./Field";
 import { useCollectionData } from "../hooks";
 
-import "./styles/CheckboxGroup.css";
+import "./styles/generated/CheckboxGroup.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환

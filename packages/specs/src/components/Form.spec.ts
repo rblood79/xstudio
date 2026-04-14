@@ -53,7 +53,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
   name: "Form",
   description: "React Aria 기반 폼 컨테이너 컴포넌트",
   element: "form",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -227,9 +227,46 @@ export const FormSpec: ComponentSpec<FormProps> = {
     focusVisible: {},
   },
 
+  composition: {
+    layout: "flex-column",
+    gap: "16px",
+    containerStyles: {
+      "align-items": "start",
+      "--form-label-width": "auto",
+      "--form-label-align": "start",
+      "--form-field-gap": "var(--spacing-md)",
+    },
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            "--form-label-width": "11rem",
+          },
+        },
+      },
+      "label-align": {
+        center: {
+          styles: {
+            "--form-label-align": "center",
+          },
+        },
+        end: {
+          styles: {
+            "--form-label-align": "end",
+          },
+        },
+      },
+    },
+    delegation: [],
+  },
+
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = FormSpec.variants![(props as { variant?: keyof typeof FormSpec.variants }).variant ?? FormSpec.defaultVariant!];
+      const variant =
+        FormSpec.variants![
+          (props as { variant?: keyof typeof FormSpec.variants }).variant ??
+            FormSpec.defaultVariant!
+        ];
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       const width = "auto" as const;
 
@@ -245,7 +282,10 @@ export const FormSpec: ComponentSpec<FormProps> = {
           : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null
