@@ -21,7 +21,7 @@ export const DisclosureHeaderSpec: ComponentSpec<DisclosureHeaderProps> = {
   description: "Disclosure 트리거 헤더 (h1~h6 시맨틱)",
   element: "h3",
   archetype: "simple",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",

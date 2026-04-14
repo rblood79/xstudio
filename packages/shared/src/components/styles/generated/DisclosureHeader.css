@@ -1,0 +1,65 @@
+/* ============================================================
+ * AUTO-GENERATED from DisclosureHeaderSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/DisclosureHeader.spec.ts
+ * Archetype: simple
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-DisclosureHeader {
+  /* Base styles — archetype: simple */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default variant */
+  background: transparent;
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-DisclosureHeader[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
+  }
+
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-DisclosureHeader[data-size="md"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-DisclosureHeader[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-DisclosureHeader[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-DisclosureHeader {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */
