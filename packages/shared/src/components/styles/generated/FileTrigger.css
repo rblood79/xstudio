@@ -11,48 +11,19 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: fit-content;
     box-sizing: border-box;
     cursor: pointer;
     user-select: none;
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
+    display: inline-block;
 
-  /* Default variant */
-  background: var(--bg-overlay);
-  color: var(--fg);
-  border: 1px solid var(--border);
-}
-
-.react-aria-FileTrigger[data-variant="default"] {
-  background: var(--bg-overlay);
-  color: var(--fg);
-  border-color: var(--border);
-
-  &[data-hovered] {
-    background: var(--bg-muted);
-    border-color: var(--bg-muted);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-muted);
-    border-color: var(--bg-muted);
-  }
-}
-
-.react-aria-FileTrigger[data-variant="accent"] {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-  border-color: var(--accent);
-
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--accent) 85%, black);
-    border-color: color-mix(in srgb, var(--accent) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--accent) 75%, black);
-    border-color: color-mix(in srgb, var(--accent) 75%, black);
-  }
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+  --icon-size: 16px;
 }
 
 .react-aria-FileTrigger[data-icon-only] {
@@ -61,8 +32,6 @@
 }
 
 .react-aria-FileTrigger[data-size="sm"] {
-  height: 32px;
-  padding: 4px 12px;
   font-size: var(--text-sm);
   border-radius: var(--radius-sm);
   gap: 6px;
@@ -70,17 +39,13 @@
 }
 
 .react-aria-FileTrigger[data-size="md"] {
-  height: 40px;
-  padding: 8px 24px;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   border-radius: var(--radius-md);
   gap: 8px;
   --icon-size: 16px;
 }
 
 .react-aria-FileTrigger[data-size="lg"] {
-  height: 48px;
-  padding: 12px 32px;
   font-size: var(--text-lg);
   border-radius: var(--radius-lg);
   gap: 10px;
@@ -91,8 +56,8 @@
 }
 
 .react-aria-FileTrigger[data-focus-visible] {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .react-aria-FileTrigger[data-pressed] {
@@ -105,6 +70,9 @@
   pointer-events: none;
 }
 
+/* ── Tier 2: Composite Delegation ── */
+
+
 @media (forced-colors: active) {
   .react-aria-FileTrigger {
     forced-color-adjust: auto;
@@ -116,5 +84,18 @@
     transition-duration: 0s !important;
   }
 }
+
+  .react-aria-FileTrigger input[type='file'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
 
 } /* @layer components */

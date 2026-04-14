@@ -1,9 +1,9 @@
 import {
   FileTrigger as AriaFileTrigger,
   FileTriggerProps as AriaFileTriggerProps,
-} from 'react-aria-components';
+} from "react-aria-components";
 
-import './styles/FileTrigger.css';
+import "./styles/generated/FileTrigger.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -31,7 +31,7 @@ export interface FileTriggerProps extends AriaFileTriggerProps {
    * Default camera for media capture
    * @default undefined
    */
-  defaultCamera?: 'user' | 'environment';
+  defaultCamera?: "user" | "environment";
 }
 
 /**

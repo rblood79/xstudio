@@ -64,7 +64,7 @@
 @import "./ChatMessage.css"; /* 빌더 전용 */
 @import "./ColorSlider.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./ColorWheel.css"; /* Container — skipCSSGeneration, 수동 CSS */
-@import "./Pagination.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./generated/Pagination.css";
 @import "./Panel.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./generated/Separator.css";
 @import "./SortIcon.css"; /* Table 부속 — 수동 유지 */

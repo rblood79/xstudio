@@ -37,8 +37,6 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   description: "React Aria 기반 파일 선택 트리거 컴포넌트",
   element: "button",
   archetype: "button",
-  skipCSSGeneration: true,
-
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -104,9 +102,33 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
     },
   },
 
+  composition: {
+    containerStyles: {
+      display: "inline-block",
+    },
+    staticSelectors: {
+      "input[type='file']": {
+        position: "absolute",
+        width: "1px",
+        height: "1px",
+        padding: "0",
+        margin: "-1px",
+        overflow: "hidden",
+        clip: "rect(0, 0, 0, 0)",
+        "white-space": "nowrap",
+        border: "0",
+      },
+    },
+    delegation: [],
+  },
+
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = FileTriggerSpec.variants![(props as { variant?: keyof typeof FileTriggerSpec.variants }).variant ?? FileTriggerSpec.defaultVariant!];
+      const variant =
+        FileTriggerSpec.variants![
+          (props as { variant?: keyof typeof FileTriggerSpec.variants })
+            .variant ?? FileTriggerSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
       const borderRadius =
@@ -180,7 +202,10 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
           : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null
