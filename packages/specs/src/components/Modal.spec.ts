@@ -14,7 +14,7 @@ export const ModalSpec: ComponentSpec<ModalProps> = {
   description: "모달 오버레이 컴포넌트",
   archetype: "overlay",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
   defaultVariant: "default",
   defaultSize: "md",

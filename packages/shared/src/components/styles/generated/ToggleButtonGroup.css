@@ -1,0 +1,79 @@
+/* ============================================================
+ * AUTO-GENERATED from ToggleButtonGroupSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ToggleButtonGroup.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-ToggleButtonGroup {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+}
+
+.react-aria-ToggleButtonGroup[data-size="xs"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+}
+
+.react-aria-ToggleButtonGroup[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.react-aria-ToggleButtonGroup[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+}
+
+.react-aria-ToggleButtonGroup[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+}
+
+.react-aria-ToggleButtonGroup[data-size="xl"] {
+  font-size: var(--text-xl);
+  border-radius: var(--radius-xl);
+}
+
+.react-aria-ToggleButtonGroup[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-ToggleButtonGroup[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-ToggleButtonGroup[data-size="sm"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-sm);
+}
+
+.react-aria-ToggleButtonGroup[data-size="md"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-md);
+}
+
+.react-aria-ToggleButtonGroup[data-size="lg"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-lg);
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-ToggleButtonGroup {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

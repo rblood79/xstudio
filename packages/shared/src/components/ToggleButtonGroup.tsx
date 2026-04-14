@@ -12,7 +12,7 @@ import type {
   ComponentSizeSubset,
 } from "../types";
 import { useCollectionData } from "../hooks";
-import "./styles/ToggleButtonGroup.css";
+import "./styles/generated/ToggleButtonGroup.css";
 
 // ToggleButtonGroup용 Context - indicator 상태 공유
 export const ToggleButtonGroupIndicatorContext = createContext(false);

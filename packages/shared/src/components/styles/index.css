@@ -100,7 +100,7 @@
 @import "./generated/CheckboxGroup.css";
 @import "./generated/RadioGroup.css";
 @import "./TagGroup.css";
-@import "./ToggleButtonGroup.css";
+@import "./generated/ToggleButtonGroup.css";
 @import "./generated/DisclosureGroup.css";
 
 /* Simple Compositions — skipCSSGeneration, 수동 CSS */
@@ -126,7 +126,7 @@
 @import "./GridList.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
 
 /* Overlay Components */
-@import "./Modal.css"; /* Foundation — Spec 없음 */
+@import "./generated/Modal.css";
 @import "./Dialog.css";
 @import "./generated/Popover.css";
 @import "./Popover.css"; /* animations, placement, Dialog position:static override */
@@ -150,7 +150,7 @@
 
 /* Navigation & Layout */
 @import "./Slot.css"; /* Container — skipCSSGeneration, 수동 CSS */
-@import "./Tabs.css"; /* Composite — skipCSSGeneration, 수동 CSS */
+@import "./generated/Tabs.css";
 @import "./generated/Toolbar.css"; /* ADR-059 Phase 4.5a — Spec 자동 생성 */
 @import "./Tree.css"; /* Tier 3 — 수동 유지 (재귀 nesting, :has() 선택자) */
 
