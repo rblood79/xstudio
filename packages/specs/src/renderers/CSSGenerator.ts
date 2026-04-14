@@ -928,6 +928,7 @@ function generateStaticSelectorRules<Props>(
   const rootSel = `.react-aria-${spec.name}`;
 
   for (const [selector, rawStyles] of Object.entries(staticSelectors)) {
+    validateNestedSelectorKey(selector, spec.name, "staticSelectors");
     const styles = rewriteAnimationNames(rawStyles, spec);
     lines.push(`  ${rootSel} ${selector} {`);
     for (const [prop, value] of Object.entries(styles)) {
