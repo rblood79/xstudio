@@ -367,6 +367,30 @@ export interface CompositionSpec {
    */
   sizeSelectors?: Record<string, Record<string, Record<string, string>>>;
 
+  /**
+   * CSS 전용 root pseudo selector (ADR-059 v2 Phase 4.5a 0-D.10).
+   *
+   * raw selector fragment. `&` prefix 필수 (root `.react-aria-{Name}` 기준으로 치환됨).
+   * 허용: `:not()`, `:where()`, `:has()`, 속성 selector `[...]`, combinators.
+   * 금지 문자: `{`, `}`, `;`, `@` (build-time validation).
+   *
+   * emit: `.react-aria-{Name}{fragment-with-&-replaced} { ...styles; {nested-selector} {...} }`
+   *
+   * 예시:
+   *   rootSelectors: {
+   *     "&:not([aria-orientation=\"vertical\"])": {
+   *       styles: { flex: "1 1 auto" }
+   *     }
+   *   }
+   */
+  rootSelectors?: Record<
+    string,
+    {
+      styles?: Record<string, string>;
+      nested?: Record<string, Record<string, string>>;
+    }
+  >;
+
   /** CSS Variable Delegation — size별 자식 변수 override */
   delegation: DelegationSpec[];
 }

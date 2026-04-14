@@ -64,8 +64,8 @@
 @import "./ChatMessage.css"; /* 빌더 전용 */
 @import "./ColorSlider.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./ColorWheel.css"; /* Container — skipCSSGeneration, 수동 CSS */
-@import "./Pagination.css"; /* Container — skipCSSGeneration, 수동 CSS */
-@import "./Panel.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./generated/Pagination.css";
+@import "./generated/Panel.css";
 @import "./generated/Separator.css";
 @import "./SortIcon.css"; /* Table 부속 — 수동 유지 */
 
@@ -101,7 +101,7 @@
 @import "./generated/RadioGroup.css";
 @import "./TagGroup.css";
 @import "./ToggleButtonGroup.css";
-@import "./DisclosureGroup.css";
+@import "./generated/DisclosureGroup.css";
 
 /* Simple Compositions — skipCSSGeneration, 수동 CSS */
 @import "./Disclosure.css";
@@ -137,7 +137,7 @@
 
 /* Menu Components — skipCSSGeneration, 수동 CSS */
 @import "./Menu.css";
-@import "./Autocomplete.css"; /* generated 없음 — 수동 유지 */
+@import "./generated/Autocomplete.css";
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */
 @import "./generated/Select.css";
@@ -151,7 +151,7 @@
 /* Navigation & Layout */
 @import "./Slot.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./Tabs.css"; /* Composite — skipCSSGeneration, 수동 CSS */
-@import "./Toolbar.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./generated/Toolbar.css"; /* ADR-059 Phase 4.5a — Spec 자동 생성 */
 @import "./Tree.css"; /* Tier 3 — 수동 유지 (재귀 nesting, :has() 선택자) */
 
 /* Data Display */

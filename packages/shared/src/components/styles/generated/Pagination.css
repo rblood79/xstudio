@@ -1,0 +1,109 @@
+/* ============================================================
+ * AUTO-GENERATED from PaginationSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Pagination.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Pagination {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    --btn-radius: var(--radius-md);
+    --btn-font-size: var(--text-base);
+    --btn-transition: background-color 200ms, opacity 200ms;
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Pagination[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.react-aria-Pagination[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Pagination[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Pagination[data-hovered] {
+}
+
+.react-aria-Pagination[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Pagination[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-Pagination {
+    forced-color-adjust: auto;
+  }
+}
+
+
+  .react-aria-Pagination .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .react-aria-Pagination .pagination-info {
+    font-size: var(--text-base);
+    color: var(--fg-muted);
+    text-align: center;
+  }
+
+  .react-aria-Pagination .pagination-ellipsis {
+    color: var(--fg-muted);
+  }
+
+  .react-aria-Pagination .react-aria-Button[data-current="true"] {
+    background-color: var(--accent);
+    color: var(--fg-on-accent);
+  }
+
+  .react-aria-Pagination .react-aria-Button:not([data-current="true"]) {
+    background-color: var(--bg-overlay);
+    color: var(--fg);
+  }
+
+  .react-aria-Pagination .react-aria-Button:not([data-current="true"]):hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--bg-overlay) 92%, black);
+  }
+
+  .react-aria-Pagination .react-aria-Button:disabled {
+    opacity: 0.38;
+  }
+
+
+} /* @layer components */

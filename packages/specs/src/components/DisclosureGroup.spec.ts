@@ -28,8 +28,6 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   name: "DisclosureGroup",
   description: "React Aria 기반 디스클로저 그룹 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
-
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -87,9 +85,20 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
     },
   },
 
+  composition: {
+    layout: "flex-column",
+    containerStyles: {
+      "font-size": "var(--text-base)",
+      "border-radius": "var(--radius-md)",
+      overflow: "hidden",
+    },
+    delegation: [],
+  },
+
   render: {
     shapes: (_props, size, state = "default") => {
-      const variant = DisclosureGroupSpec.variants![DisclosureGroupSpec.defaultVariant!];
+      const variant =
+        DisclosureGroupSpec.variants![DisclosureGroupSpec.defaultVariant!];
       const borderRadius = size.borderRadius;
 
       const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;

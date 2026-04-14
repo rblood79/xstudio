@@ -3485,6 +3485,69 @@ exports[`CSSGenerator snapshot baseline > Description 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > DisclosureGroup 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from DisclosureGroupSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/DisclosureGroup.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-DisclosureGroup {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    font-size: var(--text-base);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.react-aria-DisclosureGroup[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.react-aria-DisclosureGroup[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.react-aria-DisclosureGroup[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-lg);
+}
+
+.react-aria-DisclosureGroup[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-DisclosureGroup[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-DisclosureGroup {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > FieldError 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from FieldErrorSpec — DO NOT EDIT MANUALLY
@@ -3568,6 +3631,110 @@ exports[`CSSGenerator snapshot baseline > FieldError 1`] = `
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > FileTrigger 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from FileTriggerSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/FileTrigger.spec.ts
+ * Archetype: button
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-FileTrigger {
+  /* Base styles — archetype: button */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+    display: inline-block;
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+  --icon-size: 16px;
+}
+
+.react-aria-FileTrigger[data-icon-only] {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.react-aria-FileTrigger[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  gap: 6px;
+  --icon-size: 14px;
+}
+
+.react-aria-FileTrigger[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+  --icon-size: 16px;
+}
+
+.react-aria-FileTrigger[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-lg);
+  gap: 10px;
+  --icon-size: 20px;
+}
+
+.react-aria-FileTrigger[data-hovered] {
+}
+
+.react-aria-FileTrigger[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-FileTrigger[data-pressed] {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.react-aria-FileTrigger[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-FileTrigger {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-FileTrigger {
+    transition-duration: 0s !important;
+  }
+}
+
+  .react-aria-FileTrigger input[type='file'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 
 
 } /* @layer components */"
@@ -5833,6 +6000,224 @@ exports[`CSSGenerator snapshot baseline > NumberField 1`] = `
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Pagination 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from PaginationSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Pagination.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Pagination {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    --btn-radius: var(--radius-md);
+    --btn-font-size: var(--text-base);
+    --btn-transition: background-color 200ms, opacity 200ms;
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Pagination[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.react-aria-Pagination[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Pagination[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Pagination[data-hovered] {
+}
+
+.react-aria-Pagination[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Pagination[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-Pagination {
+    forced-color-adjust: auto;
+  }
+}
+
+
+  .react-aria-Pagination .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .react-aria-Pagination .pagination-info {
+    font-size: var(--text-base);
+    color: var(--fg-muted);
+    text-align: center;
+  }
+
+  .react-aria-Pagination .pagination-ellipsis {
+    color: var(--fg-muted);
+  }
+
+  .react-aria-Pagination .react-aria-Button[data-current="true"] {
+    background-color: var(--accent);
+    color: var(--fg-on-accent);
+  }
+
+  .react-aria-Pagination .react-aria-Button:not([data-current="true"]) {
+    background-color: var(--bg-overlay);
+    color: var(--fg);
+  }
+
+  .react-aria-Pagination .react-aria-Button:not([data-current="true"]):hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--bg-overlay) 92%, black);
+  }
+
+  .react-aria-Pagination .react-aria-Button:disabled {
+    opacity: 0.38;
+  }
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Panel 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from PanelSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Panel.spec.ts
+ * Archetype: collection
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Panel {
+  /* Base styles — archetype: collection */
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-raised);
+    border: 1px solid var(--border);
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Panel[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: 6px;
+}
+
+.react-aria-Panel[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Panel[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 10px;
+}
+
+.react-aria-Panel[data-hovered] {
+}
+
+.react-aria-Panel[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Panel[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-Panel {
+    forced-color-adjust: auto;
+  }
+}
+
+
+  .react-aria-Panel .panel-title {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--fg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .react-aria-Panel .panel-content {
+    padding: var(--spacing-xs) var(--spacing-md);
+    flex: 1;
+    min-height: 64px;
+  }
+
+  .react-aria-Panel .panel-tab {
+    border-radius: 0;
+    border: none;
+    padding: 0;
+  }
+
+  .react-aria-Panel .panel-sidebar {
+    background: var(--bg-inset);
+  }
+
+  .react-aria-Panel .panel-card {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .react-aria-Panel .panel-modal {
+    max-width: 600px;
+  }
 
 
 } /* @layer components */"
@@ -9810,6 +10195,113 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Toolbar 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from ToolbarSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Toolbar.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Toolbar {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: fit-content;
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Toolbar[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-Toolbar[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Toolbar[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-lg);
+  gap: 10px;
+}
+
+.react-aria-Toolbar[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Toolbar[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-Toolbar[data-orientation="horizontal"] {
+  flex-direction: row;
+}
+
+.react-aria-Toolbar[data-orientation="vertical"] {
+  flex-direction: column;
+  align-items: start;
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-Toolbar {
+    forced-color-adjust: auto;
+  }
+}
+
+
+  .react-aria-Toolbar .react-aria-Group {
+    display: contents;
+  }
+
+  .react-aria-Toolbar .react-aria-ToggleButton {
+    width: 32px;
+  }
+
+  .react-aria-Toolbar .react-aria-Separator {
+    align-self: stretch;
+    background-color: var(--bg-muted);
+  }
+
+  .react-aria-Toolbar .react-aria-Separator[aria-orientation="vertical"] {
+    width: 1px;
+    margin: 0px 10px;
+  }
+
+  .react-aria-Toolbar .react-aria-Separator:not([aria-orientation="vertical"]) {
+    border: none;
+    height: 1px;
+    width: 100%;
+    margin: 10px 0;
+  }
+
 
 } /* @layer components */"
 `;
