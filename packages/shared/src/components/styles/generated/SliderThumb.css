@@ -1,0 +1,66 @@
+/* ============================================================
+ * AUTO-GENERATED from SliderThumbSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SliderThumb.spec.ts
+ * Archetype: slider
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-SliderThumb {
+  /* Base styles — archetype: slider */
+    display: grid;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-size="sm"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-size="md"] {
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-size="lg"] {
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-hovered] {
+}
+
+.react-aria-SliderThumb[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-SliderThumb[data-pressed] {
+}
+
+.react-aria-SliderThumb[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-SliderThumb {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

@@ -16,7 +16,6 @@ import { getSliderIndicator } from "../renderers/utils/indicatorResolver";
  * SliderTrack Props
  */
 export interface SliderTrackProps {
-  variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg" | "xl";
   /** 단일 값 또는 범위 값 (부모 Slider에서 상속) */
   value?: number | number[];
@@ -37,32 +36,9 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   description: "슬라이더 트랙 배경 + 채우기 바 렌더링",
   element: "div",
   archetype: "slider",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  // preview CSS용: 투명 배경 (시각적 렌더링은 shapes가 담당)
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-  },
 
   // preview CSS용: borderRadius none (shapes가 직접 처리)
   // ADR-060: height는 부모 Slider.sizes.*.indicator.trackHeight SSOT에서 파생
@@ -117,7 +93,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       const sizeName = props.size ?? "md";
       const sliderIndicator = getSliderIndicator(SliderSpec, sizeName);
       const trackDims = { trackHeight: sliderIndicator.trackHeight };
-      const variantName = props.variant ?? "default";
+      const variantName = "default";
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
 
