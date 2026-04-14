@@ -297,64 +297,65 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 >
 > **verify 표시**: agent 데이터와 프로젝트 메모리 불일치 — batch 진입 전 재확인 필요.
 
-| #   | Component         | Spec.variants                    | Wrapper prop        |     Cell      | Target Spec.variants                                          | Target Wrapper                             |  Batch   |
-| --- | ----------------- | -------------------------------- | ------------------- | :-----------: | ------------------------------------------------------------- | ------------------------------------------ | :------: |
-| 1   | SearchField       | 없음                             | no                  |     (iv)      | — (이미 Phase 1.5 완료)                                       | —                                          |   N/A    |
-| 2   | DateInput         | default/accent/negative          | inherit(DateField)  | (iii-inherit) | 유지 (부모 DateField propagation)                             | —                                          |  defer   |
-| 3   | Tree              | default/accent                   | no                  |     (iii)     | 유지 (내부 스위치)                                            | —                                          |    B4    |
-| 4   | ToggleButtonGroup | default                          | no                  |  (iii-dead)   | dead → 삭제                                                   | —                                          |    B1    |
-| 5   | TagGroup          | default/accent/neutral/negative  | no                  |     (iii)     | 유지 (내부 스위치)                                            | —                                          |    B4    |
-| 6   | Tag               | default/selected                 | no                  |     (iii)     | selected = 상태(data-selected)로 유지                         | —                                          |    B4    |
-| 7   | Table             | default/striped/bordered         | no                  |     (iii)     | 유지 (RSP density prop 대응 여부 검토)                        | —                                          |    B4    |
-| 8   | TabList           | default                          | yes                 |   (i-dead)    | dead → 삭제                                                   | variant prop 제거                          |    B1    |
-| 9   | Tab               | default                          | no                  |  (iii-dead)   | dead → 삭제                                                   | —                                          |    B1    |
-| 10  | Slot              | default                          | yes                 |   (i-dead)    | dead → 삭제                                                   | variant prop 제거                          |    B1    |
-| 11  | SliderTrack       | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 Slider 결정 따름                                         | —                                          | B3(부모) |
-| 12  | SliderOutput      | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 따름                                                     | —                                          | B3(부모) |
-| 13  | Slider            | default/accent/neutral           | yes                 |      (i)      | (i-a) 제거 권장 — RSP Slider variant 없음                     | variant prop 제거                          |    B3    |
-| 14  | Menu              | primary/secondary/accent         | yes                 |      (i)      | (i-a) 제거 — RSP Menu variant 없음                            | variant prop 제거                          |    B2    |
-| 15  | ListBox           | default/accent                   | no                  |     (iii)     | 유지 (내부 스위치)                                            | —                                          |    B4    |
-| 16  | Label             | default/accent/neutral           | yes                 |      (i)      | (i-a) 제거 — RSP Label variant 없음                           | variant prop 제거                          |    B3    |
-| 17  | Group             | default/accent                   | no                  |     (iii)     | 유지                                                          | —                                          |    B4    |
-| 18  | GridList          | default/accent                   | no                  |     (iii)     | 유지                                                          | —                                          |    B4    |
-| 19  | DropZone          | default/accent                   | yes                 |      (i)      | (i-a) accent=`data-drop-target` state로 이동                  | variant prop 제거                          |    B2    |
-| 20  | Disclosure        | default/accent/surface           | yes                 |      (i)      | (i-a) 제거 — RSP Disclosure variant 없음                      | variant prop 제거                          |    B2    |
-| 21  | Dialog            | accent/negative                  | yes                 |      (i)      | (i-a) 제거 — RSP size 기반 재정렬                             | variant prop 제거                          |    B2    |
-| 22  | DateSegment       | default/accent/negative          | inherit(DateField)  | (iii-inherit) | 부모 따름                                                     | —                                          |  defer   |
-| 23  | ColorWheel        | default/accent                   | yes                 |      (i)      | (i-a) 제거 권장                                               | variant prop 제거                          |    B4    |
-| 24  | ColorSwatchPicker | default/accent                   | no                  |     (iii)     | 유지                                                          | —                                          |    B4    |
-| 25  | ColorSlider       | default/accent                   | yes                 |      (i)      | (i-a) 제거 권장                                               | variant prop 제거                          |    B4    |
-| 26  | ColorPicker       | default/compact/expanded         | unknown (compound)  |    (i-c?)     | 구조 모드(compact/expanded) — composition 정당화 후보         | verify, prop 유지 검토                     |    B4    |
-| 27  | ColorArea         | default/accent                   | no                  |     (iii)     | 유지                                                          | —                                          |    B4    |
-| 28  | Card              | primary/secondary/tertiary/quiet | yes                 |      (i)      | (i-a) primary/secondary/tertiary 제거, quiet는 `isQuiet` 추출 | variant 제거 + isQuiet 추가 (ADR-062 선례) |    B2    |
-| 29  | CalendarHeader    | default/accent                   | inherit(Calendar)   | (iii-inherit) | 부모 따름                                                     | —                                          |  defer   |
-| 30  | CalendarGrid      | default/accent                   | inherit(Calendar)   | (iii-inherit) | 부모 따름                                                     | —                                          |  defer   |
-| 31  | Breadcrumb        | default                          | no                  | (iii-dead→iv) | dead → 삭제                                                   | —                                          |    B1    |
-| 32  | SliderThumb       | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 따름                                                     | —                                          | B3(부모) |
-| 33  | Tabs              | default                          | no                  |  (iii-dead)   | dead → 삭제                                                   | —                                          |    B1    |
-| 34  | TabPanels         | 없음                             | no                  |     (iv)      | — (B0.1 verify: agent 오보 정정, renderer=null return, Props variant 없음) | —                                          |    B1    |
-| 35  | Field             | default                          | no                  | (iv-virtual)  | 데이터 매핑 virtual spec 유지                                 | —                                          |  defer   |
-| 36  | Modal             | 없음                             | no                  |     (iv)      | — (B0.1 verify: ModalProps variant 없음, renderModal에 variant/data-variant 전달 없음) | —                                          |    B1    |
-| 37  | DisclosureHeader  | 없음                             | no                  |     (iv)      | — (native h3)                                                 | —                                          |    B1    |
-| 38  | TailSwatch        | 없음                             | no                  |     (iv)      | —                                                             | —                                          |    B1    |
-| +   | Accordion         | 없음                             | no                  |     (iv)      | —                                                             | —                                          |    B1    |
+| #   | Component         | Spec.variants                    | Wrapper prop        |     Cell      | Target Spec.variants                                    | Target Wrapper                                                                                                                                                                          |  Batch   |
+| --- | ----------------- | -------------------------------- | ------------------- | :-----------: | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
+| 1   | SearchField       | 없음                             | no                  |     (iv)      | — (이미 Phase 1.5 완료)                                 | —                                                                                                                                                                                       |   N/A    |
+| 2   | DateInput         | default/accent/negative          | inherit(DateField)  | (iii-inherit) | 유지 (부모 DateField propagation)                       | —                                                                                                                                                                                       |  defer   |
+| 3   | Tree              | default/accent                   | no                  |     (iii)     | 유지 (내부 스위치)                                      | —                                                                                                                                                                                       |    B4    |
+| 4   | ToggleButtonGroup | default                          | no                  |  (iii-dead)   | dead → 삭제 (B0.1 verify 확정)                          | —                                                                                                                                                                                       |    B1    |
+| 5   | TagGroup          | default/accent/neutral/negative  | no                  |     (iii)     | 유지 (내부 스위치)                                      | —                                                                                                                                                                                       |    B4    |
+| 6   | Tag               | default/selected                 | no                  |     (iii)     | selected = 상태(data-selected)로 유지                   | —                                                                                                                                                                                       |    B4    |
+| 7   | Table             | default/striped/bordered         | no                  |     (iii)     | 유지 (RSP density prop 대응 여부 검토)                  | —                                                                                                                                                                                       |    B4    |
+| 8   | TabList           | default                          | yes                 |   (i-dead)    | dead → 삭제                                             | variant prop 제거                                                                                                                                                                       |    B1    |
+| 9   | Tab               | default                          | no                  |  (iii-dead)   | dead → 삭제                                             | —                                                                                                                                                                                       |    B1    |
+| 10  | Slot              | default                          | yes                 |   (i-dead)    | dead → 삭제                                             | variant prop 제거                                                                                                                                                                       |    B1    |
+| 11  | SliderTrack       | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 Slider 결정 따름                                   | —                                                                                                                                                                                       | B3(부모) |
+| 12  | SliderOutput      | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 따름                                               | —                                                                                                                                                                                       | B3(부모) |
+| 13  | Slider            | default/accent/neutral           | yes                 |      (i)      | (i-a) 제거 권장 — RSP Slider variant 없음               | variant prop 제거 · RSP: variant=no, 대체=`isFilled`/`fillOffset`/`trackGradient`/`orientation` → (i-a)                                                                                 |    B3    |
+| 14  | Menu              | primary/secondary/accent         | yes                 |      (i)      | (i-a) 제거 — RSP Menu variant 없음                      | variant prop 제거 · RSP: variant=no, 대체=`selectionMode`/`items`/`autoFocus` → (i-a)                                                                                                   |    B2    |
+| 15  | ListBox           | default/accent                   | no                  |     (iii)     | 유지 (내부 스위치)                                      | —                                                                                                                                                                                       |    B4    |
+| 16  | Label             | default/accent/neutral           | yes                 |      (i)      | (i-a) 제거 — RSP Label variant 없음                     | variant prop 제거 · RSP/RAC: variant=no (native `<label>` 래퍼), 대체 없음 → (i-a)                                                                                                      |    B3    |
+| 17  | Group             | default/accent                   | no                  |     (iii)     | 유지                                                    | —                                                                                                                                                                                       |    B4    |
+| 18  | GridList          | default/accent                   | no                  |     (iii)     | 유지                                                    | —                                                                                                                                                                                       |    B4    |
+| 19  | DropZone          | default/accent                   | yes                 |      (i)      | (i-a) accent=`data-drop-target` state로 이동            | variant prop 제거 · RAC: variant=no, 대체=render state `data-drop-target`/`data-focus-visible` → (i-a)                                                                                  |    B2    |
+| 20  | Disclosure        | default/accent/surface           | yes                 |      (i)      | (i-a) 제거 — RSP Disclosure variant 없음                | variant prop 제거 · RAC: variant=no, 대체=`isExpanded`/`defaultExpanded`/`isDisabled` → (i-a)                                                                                           |    B2    |
+| 21  | Dialog            | accent/negative                  | yes                 |      (i)      | (i-a) 제거 — RSP size 기반 재정렬                       | variant prop 제거 · RSP: variant=no, 대체=`size`(S/M/L)/`isDismissable`/`role`(dialog\|alertdialog) → (i-a)                                                                             |    B2    |
+| 22  | DateSegment       | default/accent/negative          | inherit(DateField)  | (iii-inherit) | 부모 따름                                               | —                                                                                                                                                                                       |  defer   |
+| 23  | ColorWheel        | default/accent                   | yes                 |      (i)      | (i-a) 제거 권장                                         | variant prop 제거 · RSP: variant=no, 대체=`size`(DimensionValue)/`isDisabled` → (i-a)                                                                                                   |    B4    |
+| 24  | ColorSwatchPicker | default/accent                   | no                  |     (iii)     | 유지                                                    | —                                                                                                                                                                                       |    B4    |
+| 25  | ColorSlider       | default/accent                   | yes                 |      (i)      | (i-a) 제거 권장                                         | variant prop 제거 · RSP: variant=no, 대체=`channel`/`colorSpace`/`orientation`/`contextualHelp` → (i-a)                                                                                 |    B4    |
+| 26  | ColorPicker       | default/compact/expanded         | unknown (compound)  |     (i-c)     | 구조 모드(compact/expanded) — composition 정당화        | RSP: variant=no, `size`(XS/S/M/L)+`rounding`(default/none/full). compact/expanded는 RSP 미규정 compound children 조합 — composition 구조 prop으로 정당화 → (i-c)                        |    B4    |
+| 27  | ColorArea         | default/accent                   | no                  |     (iii)     | 유지                                                    | —                                                                                                                                                                                       |    B4    |
+| 28  | Card              | primary/secondary/tertiary/quiet | yes                 |    (i-a+b)    | primary/secondary/tertiary 제거, quiet는 `isQuiet` 추출 | variant 제거 + isQuiet 추가 · RSP S2: variant=no(제거됨), `isQuiet`/`size`(S/M/L)/`orientation`. primary/secondary/tertiary → (i-a) 제거, quiet → (i-b) `isQuiet` rename (ADR-062 선례) |    B2    |
+| 29  | CalendarHeader    | default/accent                   | inherit(Calendar)   | (iii-inherit) | 부모 따름                                               | —                                                                                                                                                                                       |  defer   |
+| 30  | CalendarGrid      | default/accent                   | inherit(Calendar)   | (iii-inherit) | 부모 따름                                               | —                                                                                                                                                                                       |  defer   |
+| 31  | Breadcrumb        | default                          | no                  | (iii-dead→iv) | dead → 삭제                                             | —                                                                                                                                                                                       |    B1    |
+| 32  | SliderThumb       | default/accent/neutral           | inherit(Slider)     | (iii-inherit) | 부모 따름                                               | —                                                                                                                                                                                       | B3(부모) |
+| 33  | Tabs              | default                          | no                  |  (iii-dead)   | dead → 삭제                                             | —                                                                                                                                                                                       |    B1    |
+| 34  | TabPanels         | 없음                             | no                  |     (iv)      | — (B0.1 verify: agent 오보 정정, renderer=null return)  | —                                                                                                                                                                                       |    B1    |
+| 35  | Field             | default                          | no                  | (iv-virtual)  | 데이터 매핑 virtual spec 유지                           | —                                                                                                                                                                                       |  defer   |
+| 36  | Modal             | 없음                             | no                  |     (iv)      | — (B0.1 verify: ModalProps variant 없음, renderModal 전달 없음) | —                                                                                                                                                                                       |    B1    |
+| 37  | DisclosureHeader  | 없음                             | no                  |     (iv)      | — (native h3)                                           | —                                                                                                                                                                                       |    B1    |
+| 38  | TailSwatch        | 없음                             | no                  |     (iv)      | —                                                       | —                                                                                                                                                                                       |    B1    |
+| +   | Accordion         | 없음                             | no                  |     (iv)      | —                                                       | —                                                                                                                                                                                       |    B1    |
 
-**Cell 집계** (B0.1 verify 반영 — 2026-04-14):
+**Cell 집계**:
 
 - **(i) / (i-a): 10개** — Card, ColorWheel, ColorSlider, Dialog, Disclosure, DropZone, Label, Menu, Slider, (+ ColorPicker compound 후보)
 - **(i-dead): 2개** — Slot, TabList
+- **(ii) verify: 1개** — TabPanels (spec 없음 + wrapper yes 보고)
 - **(iii): 9개** — Tree, TagGroup, Tag, Table, ListBox, Group, GridList, ColorSwatchPicker, ColorArea
 - **(iii-inherit): 7개** — SliderTrack/Output/Thumb (Slider 부모), DateInput/DateSegment (DateField 부모), CalendarGrid/Header (Calendar 부모)
-- **(iii-dead): 3개** — ToggleButtonGroup(B0.1: wrapper 없음 확인), Tab, Tabs, Breadcrumb(dead default), 삭제 후보
-- **(iv): 6개** — Accordion, DisclosureHeader, TailSwatch, Modal(B0.1 확정), TabPanels(B0.1 재분류: (ii?)→(iv)), + SearchField(완료)
-- **defer/virtual: 2개** — Field(데이터 매핑), DateInput(이미 완료)
+- **(iii-dead / iv-dead): 3개** — ToggleButtonGroup, Tab, Tabs, Breadcrumb(dead default), 삭제 후보
+- **(iv): 4개** — Accordion, DisclosureHeader, TailSwatch, Modal(verify)
+- **defer/virtual: 2개** — Field(데이터 매핑), SearchField(이미 완료)
 
 축 3(RSP 공식 대조) pending: (i) cell 10개 + TabPanels verify. Batch 진입 전 per-component RSP props 재조사 필수.
 
 ### Batch 계획 (audit 결과 반영)
 
 - **B0 (Audit 완료)** — 본 표 채움 + 축 3 (i) cell 컴포넌트 RSP 대조. ADR Gates "D2 매트릭스 분류 확정" 통과.
-- **B1 (Dead/Desync 선행, 저위험)** — `≈11개`: Slot, TabList, Tab, Tabs, Breadcrumb, ToggleButtonGroup, Accordion, DisclosureHeader, TailSwatch, Modal, TabPanels (모두 B0.1 verify 완료). wrapper variant prop 제거 + dead variants Spec 필드 삭제. RSP 대조 최소(대부분 dead). 기대 -200L 수준.
+- **B1 (Dead/Desync 선행, 저위험)** — `≈12개`: Slot, TabList, Tab, Tabs, Breadcrumb, ToggleButtonGroup, Accordion, DisclosureHeader, TailSwatch, Modal(verify), TabPanels(verify), (+ 잔존 dead variant 삭제). wrapper variant prop 제거 + dead variants Spec 필드 삭제. RSP 대조 최소(대부분 dead). 기대 -200L 수준.
 - **B2 (ADR-062 선례 확장, wrapper breaking)** — `≈5개`: Dialog, Modal(if wrapper confirmed), Menu, Disclosure, DropZone, Card. RSP 공식 대조 후 wrapper variant prop 제거 또는 RSP prop(isQuiet/size 등)로 rename. Card의 quiet → `isQuiet`는 ADR-062 Field 선례 직접 복제.
 - **B3 (Slider family + Label)** — `≈5개 (1 parent + 3 compound + Label)`: Slider/SliderTrack/SliderOutput/SliderThumb 일괄 + Label. wrapper prop 제거 + Spec.variants dead 여부 재검 (semantic color만이면 삭제).
 - **B4 (Container/Display composite)** — `≈15개`: Table, Tag, TagGroup, Tree, GridList, ListBox, Group, ColorArea, ColorSwatchPicker, ColorSlider, ColorWheel, ColorPicker(composition 정당화 가능). (iii)는 D3 해체만, (i) Color siblings는 wrapper prop 제거 동반.
@@ -381,9 +382,8 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 ### Audit 진행 상태 (live)
 
 - 축 1 (Spec.variants): 완료 — 위 표 column 3
-- 축 2 (Wrapper variant prop): 완료 — 2026-04-14 배경 agent + B0.1 verify 최종 확정
-- 축 3 (RSP 공식): 대기 — 축 2 완료 후 (i) 셀 컴포넌트 한정 WebFetch 조사
-- **축 2 verify 완료 — B0.1 (2026-04-14)**: Modal(iv), TabPanels(iv, (ii?) 정정), ToggleButtonGroup(iii-dead, wrapper 없음 확인), Slot(i-dead 유지)
+- 축 2 (Wrapper variant prop): 진행 중 — 2026-04-14 배경 agent 실행 중
+- 축 3 (RSP 공식): **완료 — B0.2 (2026-04-14)** — (i) cell 10 컴포넌트 RSP 공식 대조 완료 (Card/Dialog/Disclosure/DropZone/Label/Menu/Slider/ColorWheel/ColorSlider/ColorPicker). 분기 집계: (i-a) 제거 8개 · (i-a+b) Card(quiet→isQuiet 1개) · (i-c) ColorPicker compound 정당화 1개. B2 진입 Gate "D2 매트릭스 분류 확정" 충족.
 
 ---
 
@@ -391,7 +391,7 @@ TextField 패턴 적용. 각 컴포넌트별 sub-step:
 
 B0.1 + B1.1~B1.11 완료. 11 컴포넌트 D3 해체 + D2 부채 2건 해제.
 
-### Commits (branch: `feature/adr-059-b1-low-risk`)
+### Commits
 
 | Commit | 내용 |
 |---|---|
@@ -403,32 +403,60 @@ B0.1 + B1.1~B1.11 완료. 11 컴포넌트 D3 해체 + D2 부채 2건 해제.
 | `942968ea` | B1.6+8 TabList/Slot — dead variant 선언 제거 |
 | `3cf1117a` | Slot.tsx import path 후속 수정 |
 
-### 결과 지표
+### 지표
 
-| 지표 | 전 | 후 | 변화 |
-|---|:---:|:---:|:---:|
-| `skipCSSGeneration: true` 카운트 | 38 | 27 | -11 |
-| 수동 CSS 파일 수 (대상 4개) | 4 | 0 | -4 |
-| 수동 CSS 라인 | ≥608 | 0 | -608L |
-| generated CSS 신규 | 0 | 11 | +11 |
-| D2 부채 해제 | — | — | 2건 (Slot, TabList dead variant 선언) |
+- skipCSSGeneration:true: 11개 감소
+- 수동 CSS 4개 삭제(-608L): Slot, Tabs, Modal, ToggleButtonGroup
+- Generated CSS 11개 신규
+- D2 부채 해제 2건: Slot, TabList dead variant 선언 제거
 
-### 주의 (Concerns)
+### Known concerns
 
-- **Modal `.react-aria-TextField` nested 마진 삭제**: 수동 Modal.css에 있던 `Modal 내 TextField 마진` 정의가 generated CSS에 포함되지 않음. B-final `/sweep` Modal 스토리 시각 회귀 확인 필수. 회귀 발견 시 TextField spec 또는 Modal spec에서 emit 규칙 보강.
-- **build strokeCap + wasm/pkg 에러**: 잔존 build 실패 2종(specShapeConverter `strokeCap`, `./pkg/composition_wasm` 미발견)은 B1 작업과 무관한 pre-existing + 워크트리 WASM 미빌드 상태. 메인 브랜치에서도 동일 조건일 것으로 추정. 본 PR scope 외.
+- Modal `.react-aria-TextField` nested 마진 삭제 — visual regression 가능성 (reviewer 시각 확인)
 
-### 검증 통과
+---
 
-- `pnpm type-check`: 3/3 PASS (cached)
-- `pnpm build:specs`: PASS
-- 11 generated CSS 모두 생성 확인
-- 4 수동 CSS 파일 삭제 확인
+## B2 실행 결과 (2026-04-14, feature/adr-059-b2-variant-removal)
 
-### Pending
+B0.2 RSP 대조(commit b1badff3) 기반 5 컴포넌트 wrapper variant prop + 수동 CSS 일괄 해체. ADR-062 Field isQuiet 선례를 Card에 복제.
 
-- **cross-check / sweep**: 수동 실측은 Gate에서 일괄 진행 (PR review 단계)
-- **B2+ 진입 전 B0.2 (RSP 대조)**: defer 상태
+### Commits
+
+| Commit | 내용 |
+|---|---|
+| `90d765e5` | B2.1 DropZone — variant 제거 (default/accent) |
+| `219ce6de` | B2.2 Disclosure — variant 제거 (default/accent/surface) |
+| `6a169c68` | B2.3 Menu — variant 제거 (primary/secondary/accent/negative) |
+| `8f9cb3d6` | B2.4 Dialog — variant 제거 (accent/negative) |
+| `0e13ddee` | B2.5 Card — variant 제거 + isQuiet 통합 |
+
+### 지표 (B2)
+
+- skipCSSGeneration:true: 5개 감소
+- 수동 CSS 5개 삭제, generated CSS 5개 생성
+- JSX wrapper variant prop 제거 5 컴포넌트
+
+### 시각 변경 (Known visual regressions)
+
+- Disclosure.surface 배경 차이 제거 → default 통합
+- Menu 4 variant 시각 차이 제거 → default 단일
+- Dialog.negative text color 제거 → role='alertdialog' + 내부 Button variant 권장
+- Card.tertiary shadow 제거 → style.boxShadow 직접 설정
+- Card.secondary 2px border 제거 → 1px 기본 + style.borderColor 활성화
+- Card.quiet → isQuiet prop 통합
+
+### Breaking API
+
+- `<DropZone|Disclosure|Menu|Dialog variant=...>` 전부 제거
+- `<Card variant='primary|secondary|tertiary'>` 제거
+- `<Card variant='quiet'>` → `<Card isQuiet>` 마이그레이션
+- Card Properties 패널에서 variant 편집 필드 사라짐
+
+### B0.2 Cell 집계
+
+- (i-a) 순수 제거: DropZone/Disclosure/Menu/Dialog (4)
+- (i-a+b) 제거+isQuiet 통합: Card (1)
+- (i-c) composition 정당화: ColorPicker (B4 대상)
 
 ---
 

@@ -14,7 +14,6 @@ import {
   ExternalLink,
   ToggleLeft,
   PointerOff,
-  Parentheses,
   Palette,
   Image,
   Layout,
@@ -25,7 +24,6 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  * Card Props
  */
 export interface CardProps {
-  variant?: "primary" | "secondary" | "tertiary" | "quiet";
   cardType?: "default" | "asset" | "user" | "product";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   density?: "compact" | "regular" | "spacious";
@@ -57,42 +55,9 @@ export const CardSpec: ComponentSpec<CardProps> = {
   name: "Card",
   description: "React Aria 기반 카드 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "primary",
   defaultSize: "md",
-
-  variants: {
-    // primary: 기본 카드 (배경 있음)
-    primary: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    // secondary: 테두리 있는 카드
-    secondary: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    // tertiary: 흰색 배경 + 그림자로 높이감 표현
-    tertiary: {
-      background: "{color.elevated}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    // quiet: 투명 배경
-    quiet: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-  },
 
   sizes: {
     xs: {
@@ -187,7 +152,6 @@ export const CardSpec: ComponentSpec<CardProps> = {
       {
         title: "Appearance",
         fields: [
-          { type: "variant", icon: Parentheses },
           {
             key: "cardType",
             type: "enum",
@@ -262,7 +226,6 @@ export const CardSpec: ComponentSpec<CardProps> = {
             key: "preview",
             type: "string",
             label: "Preview Image URL",
-            visibleWhen: { key: "variant", equals: "gallery" },
           },
         ],
       },
@@ -312,15 +275,22 @@ export const CardSpec: ComponentSpec<CardProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = CardSpec.variants![(props as { variant?: keyof typeof CardSpec.variants }).variant ?? CardSpec.defaultVariant!];
+      const CARD_DEFAULTS = {
+        background: (props.isQuiet
+          ? "{color.transparent}"
+          : "{color.layer-2}") as TokenRef,
+        backgroundHover: "{color.layer-1}" as TokenRef,
+        backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      };
+
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? variant.backgroundHover
+          ? CARD_DEFAULTS.backgroundHover
           : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+            ? CARD_DEFAULTS.backgroundPressed
+            : CARD_DEFAULTS.background);
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =
@@ -331,20 +301,6 @@ export const CardSpec: ComponentSpec<CardProps> = {
           : size.borderRadius;
 
       const shapes: Shape[] = [];
-
-      // tertiary variant: shadow
-      if (props.variant === "tertiary") {
-        shapes.push({
-          type: "shadow" as const,
-          target: "bg",
-          offsetX: 0,
-          offsetY: state === "hover" ? 6 : 4,
-          blur: state === "hover" ? 8 : 6,
-          spread: -1,
-          color: "rgba(0, 0, 0, 0.1)",
-          alpha: 0.1,
-        });
-      }
 
       // 배경
       shapes.push({
@@ -358,16 +314,15 @@ export const CardSpec: ComponentSpec<CardProps> = {
         fill: bgColor,
       });
 
-      // 테두리
-      const borderColor = props.style?.borderColor ?? variant.border;
+      // 테두리 (user override only)
+      const borderColor = props.style?.borderColor;
       const styleBw = props.style?.borderWidth;
-      const defaultBw = props.variant === "secondary" ? 2 : 1;
       const borderWidth =
         styleBw != null
           ? typeof styleBw === "number"
             ? styleBw
             : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+          : 1;
       if (borderColor) {
         shapes.push({
           type: "border" as const,

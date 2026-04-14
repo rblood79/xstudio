@@ -12,7 +12,6 @@ import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
   Tag,
-  Parentheses,
   PointerOff,
   CheckSquare,
   MessageSquare,
@@ -22,7 +21,6 @@ import {
  * DropZone Props
  */
 export interface DropZoneProps {
-  variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   label?: string;
   isDropTarget?: boolean;
@@ -39,27 +37,9 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   description: "React Aria 기반 파일 드롭 존 컴포넌트",
   element: "div",
   archetype: "simple",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
-      text: "{color.accent}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -104,7 +84,13 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = DropZoneSpec.variants![(props as { variant?: keyof typeof DropZoneSpec.variants }).variant ?? DropZoneSpec.defaultVariant!];
+      // B2.1: variant 제거 — default 시각 토큰 상수화
+      const DROPZONE_DEFAULTS = {
+        background: "{color.base}" as TokenRef,
+        backgroundHover: "{color.layer-2}" as TokenRef,
+        text: "{color.neutral-subdued}" as TokenRef,
+        border: "{color.border}" as TokenRef,
+      };
       const label = props.label || "Drop files here";
       const isActive = props.isDropTarget || state === "hover";
 
@@ -127,12 +113,12 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
 
       const bgColor =
         props.style?.backgroundColor ??
-        (isActive ? variant.backgroundHover : variant.background);
+        (isActive ? DROPZONE_DEFAULTS.backgroundHover : DROPZONE_DEFAULTS.background);
       const borderColor =
         props.style?.borderColor ??
         (isActive
           ? ("{color.accent}" as TokenRef)
-          : variant.border || ("{color.border}" as TokenRef));
+          : DROPZONE_DEFAULTS.border);
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx =
@@ -160,7 +146,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
         (props.style?.textAlign as "left" | "center" | "right") || "center";
       const textColor =
         props.style?.color ??
-        (isActive ? ("{color.accent}" as TokenRef) : variant.text);
+        (isActive ? ("{color.accent}" as TokenRef) : DROPZONE_DEFAULTS.text);
 
       const shapes: Shape[] = [
         // 배경
@@ -233,7 +219,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       },
       {
         title: "Appearance",
-        fields: [{ type: "variant", icon: Parentheses }, { type: "size" }],
+        fields: [{ type: "size" }],
       },
       {
         title: "State",

@@ -8,22 +8,9 @@ import {
 import { Upload } from 'lucide-react';
 import type { ComponentSize } from '../types';
 
-import './styles/DropZone.css';
-
-/**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
- */
-
-export type DropZoneVariant = 'default' | 'primary' | 'dashed';
+import './styles/generated/DropZone.css';
 
 export interface DropZoneProps extends AriaDropZoneProps {
-  /**
-   * M3 variant
-   * @default 'default'
-   */
-  variant?: DropZoneVariant;
   /**
    * Size variant
    * @default 'md'
@@ -40,26 +27,20 @@ export interface DropZoneProps extends AriaDropZoneProps {
 }
 
 /**
- * DropZone Component with Material Design 3 support
- *
- * M3 Features:
- * - 3 variants: default, primary, dashed
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
+ * DropZone Component
  *
  * Features:
  * - Drag and drop file handling
- * - Visual feedback on drag over
+ * - Visual feedback on drag over (data-drop-target from RAC)
  * - Accessible keyboard interaction
  * - Custom content support
  *
  * @example
- * <DropZone variant="dashed" onDrop={handleDrop}>
+ * <DropZone onDrop={handleDrop}>
  *   <Text slot="label">Drop files here</Text>
  * </DropZone>
  */
 export function DropZone({
-  variant = 'default',
   size = 'md',
   label,
   description,
@@ -81,7 +62,6 @@ export function DropZone({
     <AriaDropZone
       {...props}
       className={dropZoneClassName}
-      data-variant={variant}
       data-size={size}
     >
       {children || (
