@@ -29,7 +29,6 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
   name: "Pagination",
   description: "React Aria 기반 페이지네이션 컴포넌트",
   element: "nav",
-  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -91,7 +90,11 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = PaginationSpec.variants![(props as { variant?: keyof typeof PaginationSpec.variants }).variant ?? PaginationSpec.defaultVariant!];
+      const variant =
+        PaginationSpec.variants![
+          (props as { variant?: keyof typeof PaginationSpec.variants })
+            .variant ?? PaginationSpec.defaultVariant!
+        ];
       const totalPages = props.totalPages || 5;
       const currentPage = props.currentPage || 1;
       const buttonSize = size.height;
@@ -107,7 +110,10 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "center";
@@ -205,5 +211,46 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       eventMode: "static" as const,
       cursor: "pointer",
     }),
+  },
+
+  composition: {
+    containerStyles: {
+      display: "flex",
+      "flex-direction": "column",
+      gap: "var(--spacing-sm)",
+      "--btn-radius": "var(--radius-md)",
+      "--btn-font-size": "var(--text-base)",
+      "--btn-transition": "background-color 200ms, opacity 200ms",
+    },
+    staticSelectors: {
+      ".pagination-controls": {
+        display: "flex",
+        "align-items": "center",
+        gap: "6px",
+      },
+      ".pagination-info": {
+        "font-size": "var(--text-base)",
+        color: "var(--fg-muted)",
+        "text-align": "center",
+      },
+      ".pagination-ellipsis": {
+        color: "var(--fg-muted)",
+      },
+      '.react-aria-Button[data-current="true"]': {
+        "background-color": "var(--accent)",
+        color: "var(--fg-on-accent)",
+      },
+      '.react-aria-Button:not([data-current="true"])': {
+        "background-color": "var(--bg-overlay)",
+        color: "var(--fg)",
+      },
+      '.react-aria-Button:not([data-current="true"]):hover:not(:disabled)': {
+        "background-color": "color-mix(in srgb, var(--bg-overlay) 92%, black)",
+      },
+      ".react-aria-Button:disabled": {
+        opacity: "0.38",
+      },
+    },
+    delegation: [],
   },
 };
