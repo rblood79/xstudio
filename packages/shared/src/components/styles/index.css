@@ -141,7 +141,7 @@
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */
 @import "./Select.css";
-@import "./ComboBox.css";
+@import "./generated/ComboBox.css";
 
 /* Complex Pickers — skipCSSGeneration, 수동 CSS */
 @import "./ColorPicker.css";
