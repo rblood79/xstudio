@@ -955,7 +955,6 @@ export interface DisclosureGroupElementProps extends BaseElementProps {
 export interface DropZoneElementProps extends BaseElementProps {
   children?: React.ReactNode;
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "illustrated";
   label?: string;
   description?: string;
   isDisabled?: boolean;
