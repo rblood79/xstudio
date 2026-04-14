@@ -27,7 +27,6 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   name: "Toolbar",
   description: "React Aria 기반 툴바 컴포넌트",
   element: "div",
-  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -88,7 +87,11 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ToolbarSpec.variants![(props as { variant?: keyof typeof ToolbarSpec.variants }).variant ?? ToolbarSpec.defaultVariant!];
+      const variant =
+        ToolbarSpec.variants![
+          (props as { variant?: keyof typeof ToolbarSpec.variants }).variant ??
+            ToolbarSpec.defaultVariant!
+        ];
       const isVertical = props.orientation === "vertical";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
@@ -148,6 +151,53 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
     }),
   },
 
+  composition: {
+    containerStyles: {
+      display: "flex",
+      "flex-wrap": "wrap",
+      gap: "8px",
+      width: "fit-content",
+    },
+    containerVariants: {
+      orientation: {
+        horizontal: {
+          styles: {
+            "flex-direction": "row",
+          },
+        },
+        vertical: {
+          styles: {
+            "flex-direction": "column",
+            "align-items": "start",
+          },
+        },
+      },
+    },
+    staticSelectors: {
+      ".react-aria-Group": {
+        display: "contents",
+      },
+      ".react-aria-ToggleButton": {
+        width: "32px",
+      },
+      ".react-aria-Separator": {
+        "align-self": "stretch",
+        "background-color": "var(--bg-muted)",
+      },
+      '.react-aria-Separator[aria-orientation="vertical"]': {
+        width: "1px",
+        margin: "0px 10px",
+      },
+      '.react-aria-Separator:not([aria-orientation="vertical"])': {
+        border: "none",
+        height: "1px",
+        width: "100%",
+        margin: "10px 0",
+      },
+    },
+    delegation: [],
+  },
+
   properties: {
     sections: [
       {
@@ -162,7 +212,8 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
-           defaultValue: "horizontal" },
+            defaultValue: "horizontal",
+          },
         ],
       },
     ],

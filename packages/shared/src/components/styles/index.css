@@ -151,7 +151,7 @@
 /* Navigation & Layout */
 @import "./Slot.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./Tabs.css"; /* Composite — skipCSSGeneration, 수동 CSS */
-@import "./Toolbar.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./generated/Toolbar.css"; /* ADR-059 Phase 4.5a — Spec 자동 생성 */
 @import "./Tree.css"; /* Tier 3 — 수동 유지 (재귀 nesting, :has() 선택자) */
 
 /* Data Display */
