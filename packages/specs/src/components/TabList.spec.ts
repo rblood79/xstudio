@@ -17,26 +17,19 @@ export interface TabListProps {
   style?: Record<string, string | number | undefined>;
 }
 
+const TABLIST_DEFAULTS = {
+  border: "{color.border}" as TokenRef,
+};
+
 export const TabListSpec: ComponentSpec<TabListProps> = {
   name: "TabList",
   description: "Tab 버튼 컨테이너 — 하단 구분선 렌더링",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
 
   properties: { sections: [] },
-
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -71,12 +64,11 @@ export const TabListSpec: ComponentSpec<TabListProps> = {
 
   render: {
     shapes: (props, size): Shape[] => {
-      const variant = TabListSpec.variants![(props as { variant?: keyof typeof TabListSpec.variants }).variant ?? TabListSpec.defaultVariant!];
       const isVertical = props.orientation === "vertical";
       const w = props._containerWidth ?? 200;
       const h = size.height;
 
-      const borderColor = variant.border ?? ("{color.border}" as TokenRef);
+      const borderColor = TABLIST_DEFAULTS.border;
 
       // 하단(horizontal) 또는 우측(vertical) 구분선
       return [

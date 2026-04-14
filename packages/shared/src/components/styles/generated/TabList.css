@@ -1,0 +1,66 @@
+/* ============================================================
+ * AUTO-GENERATED from TabListSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/TabList.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-TabList {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default size */
+  height: 29px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-size="sm"] {
+  height: 21px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-size="md"] {
+  height: 29px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-size="lg"] {
+  height: 41px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-TabList[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-TabList {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

@@ -149,7 +149,7 @@
 @import "./generated/DateRangePicker.css";
 
 /* Navigation & Layout */
-@import "./Slot.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./generated/Slot.css";
 @import "./generated/Tabs.css";
 @import "./generated/Toolbar.css"; /* ADR-059 Phase 4.5a — Spec 자동 생성 */
 @import "./Tree.css"; /* Tier 3 — 수동 유지 (재귀 nesting, :has() 선택자) */
