@@ -16,8 +16,6 @@ import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
  * Label Props
  */
 export interface LabelProps {
-  /** Label 자체 variant 또는 parent field의 --field-accent 매핑 */
-  variant?: "default" | "accent" | "neutral" | "purple" | "negative";
   size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
@@ -38,46 +36,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   archetype: "simple",
   skipCSSGeneration: true,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    // standalone Label (parent가 field가 아닐 때)
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    // accent — 기본 텍스트 색상 (S2 accent 색상 대신 neutral 사용)
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    // S2 neutral — 보조 필드 라벨 (neutral-subdued)
-    neutral: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-    },
-    // S2 purple — Named Color 라벨 (purple-600)
-    purple: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.purple}" as TokenRef,
-    },
-    // S2 negative — 에러 필드 라벨 (invalid-color)
-    negative: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.negative}" as TokenRef,
-    },
-  },
 
   sizes: {
     xs: {
@@ -135,7 +94,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = LabelSpec.variants![(props as { variant?: keyof typeof LabelSpec.variants }).variant ?? LabelSpec.defaultVariant!];
+      const LABEL_DEFAULT_TEXT: TokenRef = "{color.neutral}" as TokenRef;
       const text = props.children ?? props.label ?? "";
       if (!text) return [];
 
@@ -158,7 +117,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? LABEL_DEFAULT_TEXT;
 
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";

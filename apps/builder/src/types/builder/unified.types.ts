@@ -364,7 +364,6 @@ export interface ComboBoxElementProps extends BaseElementProps {
 
 export interface SliderElementProps extends BaseElementProps {
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "filled";
   label?: string;
   value?: number;
   defaultValue?: number;

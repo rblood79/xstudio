@@ -1,0 +1,73 @@
+/* ============================================================
+ * AUTO-GENERATED from SliderTrackSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SliderTrack.spec.ts
+ * Archetype: slider
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-SliderTrack {
+  /* Base styles — archetype: slider */
+    display: grid;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="sm"] {
+  height: 4px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="md"] {
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="lg"] {
+  height: 12px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="xl"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-hovered] {
+}
+
+.react-aria-SliderTrack[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-SliderTrack[data-pressed] {
+}
+
+.react-aria-SliderTrack[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-SliderTrack {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

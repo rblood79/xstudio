@@ -32,7 +32,6 @@ import {
  * Slider Props
  */
 export interface SliderProps {
-  variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg" | "xl";
   label?: string;
   name?: string;
@@ -89,33 +88,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   name: "Slider",
   description: "React Aria 기반 슬라이더 컴포넌트",
   archetype: "slider",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
   element: "div",
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  // preview CSS용: 배경 투명 (track 배경은 SliderTrack child가 담당)
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -380,8 +356,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = SliderSpec.variants![(props as { variant?: keyof typeof SliderSpec.variants }).variant ?? SliderSpec.defaultVariant!];
-      const variantName = props.variant ?? "default";
+      const variantName = "default";
       const sliderDims = {
         trackHeight: size.indicator?.trackHeight ?? 8,
         thumbSize: size.indicator?.thumbSize ?? 18,
@@ -408,7 +383,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       // 트랙 배경: CSS var(--bg-muted) = {color.neutral-subtle} 통일
       const trackBgColor =
         props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

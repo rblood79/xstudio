@@ -14,7 +14,6 @@ import type { ComponentSpec, TokenRef } from "../types";
  * SliderThumb Props
  */
 export interface SliderThumbProps {
-  variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg";
   /** 트랙 내 위치 계산용 (0-100 퍼센트) */
   value?: number;
@@ -33,31 +32,9 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   description: "슬라이더 드래그 핸들 (원형) 렌더링",
   element: "div",
   archetype: "slider",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent}" as TokenRef,
-      backgroundPressed: "{color.accent}" as TokenRef,
-      text: "{color.on-accent}" as TokenRef,
-    },
-    accent: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent}" as TokenRef,
-      backgroundPressed: "{color.accent}" as TokenRef,
-      text: "{color.on-accent}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.white}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {

@@ -1261,9 +1261,6 @@ export const renderSlider = (
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       isDisabled={Boolean(element.props.isDisabled)}
       isEmphasized={Boolean(element.props.isEmphasized)}
-      variant={
-        (element.props.variant as "default" | "accent" | "neutral") || "default"
-      }
       formatOptions={
         element.props.formatOptions as Intl.NumberFormatOptions | undefined
       }

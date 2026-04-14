@@ -16,7 +16,6 @@ import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
  * SliderOutput Props
  */
 export interface SliderOutputProps {
-  variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg" | "xl";
   /** 표시할 값 텍스트 (포맷팅된 문자열) */
   children?: string;
@@ -31,31 +30,9 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
   description: "슬라이더 현재 값 텍스트 렌더링",
   element: "output",
   archetype: "simple",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "default",
   defaultSize: "md",
-
-  variants: {
-    default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.accent}" as TokenRef,
-    },
-    neutral: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-    },
-  },
 
   sizes: {
     sm: {
@@ -107,7 +84,6 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = SliderOutputSpec.variants![(props as { variant?: keyof typeof SliderOutputSpec.variants }).variant ?? SliderOutputSpec.defaultVariant!];
       const text = props.children ?? "";
       if (!text) return [];
 
@@ -126,7 +102,7 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "right";
