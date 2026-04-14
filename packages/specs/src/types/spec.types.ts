@@ -343,6 +343,22 @@ export interface CompositionSpec {
     }
   >;
 
+  /**
+   * CSS 전용 per-size nested child selectors (ADR-059 v2 Phase 4-infra2 0-D.9)
+   *
+   * Skia consumer는 shapes로 size별 dimension 처리 → 이 필드 무시 (CSS only).
+   * emit: `.react-aria-{SpecName}[data-size="{size}"] {selector} { ...styles }`
+   *
+   * 구조:
+   *   sizeSelectors: {
+   *     sm: {
+   *       ".bar": { height: "4px", "border-radius": "2px" },
+   *       ".fill": { "border-radius": "2px" }
+   *     }
+   *   }
+   */
+  sizeSelectors?: Record<string, Record<string, Record<string, string>>>;
+
   /** CSS Variable Delegation — size별 자식 변수 override */
   delegation: DelegationSpec[];
 }
