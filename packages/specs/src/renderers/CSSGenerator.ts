@@ -246,6 +246,13 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("");
   lines.push("} /* @layer components */");
 
+  // ─── Phase 4-infra: Animation at-rules (@layer 바깥) ───
+  const atRules = generateAnimationAtRules(spec);
+  if (atRules.length > 0) {
+    lines.push("");
+    lines.push(...atRules);
+  }
+
   return lines.join("\n");
 }
 
@@ -801,6 +808,55 @@ function generateMediaQueries<Props>(spec: ComponentSpec<Props>): string[] {
     lines.push("    transition-duration: 0s !important;");
     lines.push("  }");
     lines.push("}");
+  }
+
+  return lines;
+}
+
+// ─── Phase 4-infra 0-D.7/0-D.8: Animation At-Rules ──────────────────────────
+
+/**
+ * `composition.animations` → `@keyframes` + `@media (prefers-reduced-motion)` emit.
+ * @layer components **바깥**에 배치하여 cascade 영향 없음.
+ * animations 미선언 시 빈 배열 반환 → 기존 출력 변화 0.
+ */
+function generateAnimationAtRules<Props>(spec: ComponentSpec<Props>): string[] {
+  const animations = spec.composition?.animations;
+  if (!animations) return [];
+
+  const lines: string[] = [];
+  const rootSel = `.react-aria-${spec.name}`;
+
+  for (const [animName, animDef] of Object.entries(animations)) {
+    const keyframeName = `${spec.name}-${animName}`;
+    lines.push(`@keyframes ${keyframeName} {`);
+    for (const [stop, props] of Object.entries(animDef.keyframes)) {
+      lines.push(`  ${stop} {`);
+      for (const [prop, value] of Object.entries(
+        props as Record<string, string>,
+      )) {
+        lines.push(`    ${prop}: ${value};`);
+      }
+      lines.push(`  }`);
+    }
+    lines.push(`}`);
+    lines.push("");
+  }
+
+  const reducedBlocks: string[] = [];
+  for (const animDef of Object.values(animations)) {
+    if (!animDef.reducedMotion) continue;
+    for (const [prop, value] of Object.entries(animDef.reducedMotion)) {
+      reducedBlocks.push(`    ${prop}: ${value};`);
+    }
+  }
+  if (reducedBlocks.length > 0) {
+    lines.push(`@media (prefers-reduced-motion: reduce) {`);
+    lines.push(`  ${rootSel} {`);
+    lines.push(...reducedBlocks);
+    lines.push(`  }`);
+    lines.push(`}`);
+    lines.push("");
   }
 
   return lines;
