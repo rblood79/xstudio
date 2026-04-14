@@ -21,7 +21,7 @@ import type { ComponentSize } from "../types";
 import { Plus, Minus } from "lucide-react";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
-import "./styles/NumberField.css";
+import "./styles/generated/NumberField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환

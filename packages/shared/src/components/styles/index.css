@@ -116,7 +116,7 @@
 /* Text Input Components — skipCSSGeneration, 수동 CSS */
 @import "./generated/TextField.css";
 @import "./generated/TextArea.css";
-@import "./NumberField.css";
+@import "./generated/NumberField.css";
 @import "./generated/SearchField.css";
 @import "./generated/DateField.css";
 @import "./generated/TimeField.css";
@@ -140,8 +140,8 @@
 @import "./Autocomplete.css"; /* generated 없음 — 수동 유지 */
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */
-@import "./Select.css";
-@import "./ComboBox.css";
+@import "./generated/Select.css";
+@import "./generated/ComboBox.css";
 
 /* Complex Pickers — skipCSSGeneration, 수동 CSS */
 @import "./ColorPicker.css";

@@ -33,7 +33,7 @@ import { useCollectionData } from "../hooks";
 import type { NecessityIndicator } from "./Field";
 import { renderNecessityIndicator } from "./Field";
 import { Skeleton } from "./Skeleton";
-import "./styles/Select.css";
+import "./styles/generated/Select.css";
 
 export interface SelectProps<T extends object> extends Omit<
   AriaSelectProps<T>,
@@ -295,7 +295,7 @@ export function Select<T extends object>({
       )}
       aria-label={ariaLabel}
       placeholder={placeholder}
-      isDisabled={hasDataBinding && (loading || !!error)}
+      isDisabled={props.isDisabled || (hasDataBinding && (loading || !!error))}
       data-selection-mode={selectionMode}
     >
       {() => (
