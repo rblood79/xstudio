@@ -66,7 +66,6 @@ export const METER_DIMENSIONS: Record<string, { barHeight: number }> = {
  */
 export const MeterSpec: ComponentSpec<MeterProps> = {
   name: "Meter",
-  skipCSSGeneration: true,
   description: "React Aria 기반 미터 컴포넌트",
   archetype: "progress",
   element: "div",
@@ -316,6 +315,118 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
     focusVisible: {},
   },
 
+  composition: {
+    layout: "grid",
+    containerStyles: {
+      "grid-template-areas": '"label value" "bar bar"',
+      "grid-template-columns": "1fr auto",
+      "box-sizing": "border-box",
+      "row-gap": "var(--spacing-xs)",
+      "column-gap": "var(--spacing-md)",
+      width: "100%",
+      color: "var(--fg)",
+      "font-size": "var(--text-sm)",
+      "--label-font-size": "var(--text-sm)",
+      "--fill-color": "var(--color-info-600)",
+    },
+    staticSelectors: {
+      ".react-aria-Label": {
+        "grid-area": "label",
+        "white-space": "nowrap",
+      },
+      ".value": {
+        "grid-area": "value",
+        "font-size": "var(--text-sm)",
+        color: "var(--fg-muted)",
+        "white-space": "nowrap",
+      },
+      ".bar": {
+        "grid-area": "bar",
+        "box-shadow": "var(--inset-shadow-xs)",
+        "forced-color-adjust": "none",
+        height: "var(--spacing-sm)",
+        "border-radius": "var(--radius-sm)",
+        overflow: "hidden",
+        background: "var(--accent-subtle)",
+      },
+      ".fill": {
+        background: "var(--fill-color)",
+        height: "100%",
+        transition: "width 200ms ease-out",
+      },
+    },
+    containerVariants: {
+      variant: {
+        informative: {
+          styles: {
+            "--fill-color": "var(--color-info-600)",
+          },
+        },
+        positive: {
+          styles: {
+            "--fill-color": "var(--color-green-600)",
+          },
+        },
+        warning: {
+          styles: {
+            "--fill-color": "var(--color-warning-600)",
+          },
+        },
+        critical: {
+          styles: {
+            "--fill-color": "var(--negative)",
+          },
+        },
+      },
+      size: {
+        sm: { styles: { "--label-font-size": "var(--text-xs)" } },
+        md: { styles: { "--label-font-size": "var(--text-sm)" } },
+        lg: { styles: { "--label-font-size": "var(--text-base)" } },
+        xl: { styles: { "--label-font-size": "var(--text-lg)" } },
+      },
+      disabled: {
+        true: {
+          styles: {
+            opacity: "0.38",
+            cursor: "not-allowed",
+            "pointer-events": "none",
+          },
+        },
+      },
+    },
+    sizeSelectors: {
+      sm: {
+        ".bar": {
+          height: "var(--spacing-xs)",
+          "border-radius": "var(--radius-sm)",
+        },
+        ".value": { "font-size": "var(--text-xs)" },
+      },
+      md: {
+        ".bar": {
+          height: "var(--spacing-sm)",
+          "border-radius": "var(--radius-sm)",
+        },
+        ".value": { "font-size": "var(--text-sm)" },
+      },
+      lg: {
+        ".bar": {
+          height: "var(--spacing-md)",
+          "border-radius": "var(--radius-lg)",
+        },
+        ".value": { "font-size": "var(--text-base)" },
+      },
+      xl: {
+        ".bar": {
+          height: "var(--spacing-lg)",
+          "border-radius": "var(--radius-lg)",
+        },
+        ".value": { "font-size": "var(--text-lg)" },
+      },
+    },
+    delegation: [],
+  },
+
   propagation: {
     rules: [
       {
@@ -332,7 +443,11 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = MeterSpec.variants![(props as { variant?: keyof typeof MeterSpec.variants }).variant ?? MeterSpec.defaultVariant!];
+      const variant =
+        MeterSpec.variants![
+          (props as { variant?: keyof typeof MeterSpec.variants }).variant ??
+            MeterSpec.defaultVariant!
+        ];
       const variantName = props.variant ?? "informative";
       const sizeName = props.size ?? "md";
       const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md;
@@ -363,7 +478,10 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       const bgColor =
         props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null
