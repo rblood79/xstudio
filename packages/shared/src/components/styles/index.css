@@ -135,8 +135,8 @@
 @import "./generated/ColorField.css";
 @import "./ColorSwatchPicker.css";
 
-/* Menu Components — skipCSSGeneration, 수동 CSS */
-@import "./Menu.css";
+/* Menu Components */
+@import "./generated/Menu.css";
 @import "./generated/Autocomplete.css";
 
 /* Selection Components — skipCSSGeneration, 수동 CSS */

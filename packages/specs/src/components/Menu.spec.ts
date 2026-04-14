@@ -23,7 +23,6 @@ import {
  * Menu Props (S2 기준)
  */
 export interface MenuProps {
-  variant?: "primary" | "secondary" | "accent" | "negative";
   size?: "sm" | "md" | "lg" | "xl";
   align?: "start" | "end";
   direction?: "bottom" | "top" | "left" | "right";
@@ -56,9 +55,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   description: "React Aria 기반 드롭다운 메뉴 컴포넌트",
   archetype: "collection",
   element: "div",
-  skipCSSGeneration: true,
+  skipCSSGeneration: false,
 
-  defaultVariant: "primary",
   defaultSize: "md",
 
   overlay: {
@@ -69,37 +67,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     closeOnEscape: true,
     trapFocus: true,
     pixiLayer: "overlay",
-  },
-
-  variants: {
-    primary: {
-      background: "{color.neutral}" as TokenRef,
-      backgroundHover: "{color.neutral-hover}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
-      text: "{color.base}" as TokenRef,
-      border: "{color.neutral}" as TokenRef,
-    },
-    secondary: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    accent: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent-hover}" as TokenRef,
-      backgroundPressed: "{color.accent-pressed}" as TokenRef,
-      text: "{color.on-accent}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-    },
-    negative: {
-      background: "{color.negative}" as TokenRef,
-      backgroundHover: "{color.negative-hover}" as TokenRef,
-      backgroundPressed: "{color.negative-pressed}" as TokenRef,
-      text: "{color.on-negative}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-    },
   },
 
   sizes: {
@@ -177,7 +144,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       {
         title: "Appearance",
         fields: [
-          { type: "variant" },
           { type: "size" },
           {
             key: "align",
@@ -248,7 +214,6 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = MenuSpec.variants![(props as { variant?: keyof typeof MenuSpec.variants }).variant ?? MenuSpec.defaultVariant!];
       const width = "auto" as const;
 
       const styleBr = props.style?.borderRadius;
@@ -269,16 +234,15 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? variant.backgroundHover
+          ? ("{color.neutral-hover}" as TokenRef)
           : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+            ? ("{color.neutral-pressed}" as TokenRef)
+            : ("{color.neutral}" as TokenRef));
 
-      const textColor = props.style?.color ?? variant.text;
+      const textColor = props.style?.color ?? ("{color.base}" as TokenRef);
 
       const borderColor =
-        props.style?.borderColor ??
-        (variant.border || ("{color.border}" as TokenRef));
+        props.style?.borderColor ?? ("{color.border}" as TokenRef);
 
       const shapes: Shape[] = [
         {
