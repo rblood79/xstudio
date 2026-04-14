@@ -270,11 +270,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
         },
       ];
 
-      // Child Composition: 자식 Element가 있으면 shell만 반환
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
-      // 타이틀이 있는 경우
+      // 타이틀이 있는 경우 (hasChildren 여부와 무관하게 먼저 추가)
       if (title) {
         const textColor = props.style?.color ?? variant.text;
         const fontSize = resolveSpecFontSize(
@@ -305,6 +301,8 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
           align: textAlign,
         });
         // 타이틀 하단 구분선
+        // NOTE: y1/y2는 단일 줄 기준 고정값. multi-line 시 divider 위치 불일치는
+        // shape API에 동적 참조 메커니즘이 없어 follow-up 이슈로 추적.
         shapes.push({
           type: "line" as const,
           x1: 0,
@@ -315,6 +313,10 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
           strokeWidth: 1,
         });
       }
+
+      // Child Composition: 자식 Element가 있으면 title/border 이후 shell 반환
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
 
       // 콘텐츠 컨테이너
       shapes.push({
