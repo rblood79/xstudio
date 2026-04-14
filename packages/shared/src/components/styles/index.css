@@ -103,8 +103,8 @@
 @import "./ToggleButtonGroup.css";
 @import "./generated/DisclosureGroup.css";
 
-/* Simple Compositions — skipCSSGeneration, 수동 CSS */
-@import "./Disclosure.css";
+/* Simple Compositions */
+@import "./generated/Disclosure.css";
 @import "./generated/Form.css";
 @import "./generated/InlineAlert.css";
 @import "./generated/Tooltip.css";

@@ -1734,7 +1734,6 @@ export const renderDisclosure = (
       id={element.customId}
       data-element-id={element.id}
       title={title}
-      variant={(element.props.variant as string) || "default"}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       defaultExpanded={Boolean(element.props.isExpanded ?? true)}
       style={element.props.style}

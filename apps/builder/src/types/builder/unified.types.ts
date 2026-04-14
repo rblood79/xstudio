@@ -937,7 +937,6 @@ export interface FormElementProps extends BaseElementProps {
 export interface DisclosureElementProps extends BaseElementProps {
   children?: React.ReactNode;
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "quiet";
   title?: string;
   isExpanded?: boolean;
   defaultExpanded?: boolean;
