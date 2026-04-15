@@ -45,6 +45,18 @@
   &[data-pressed] {
     background: color-mix(in srgb, var(--bg-muted) 75%, black);
   }
+
+  &[data-selected] {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+
+  &[data-emphasized][data-selected] {
+    background: var(--accent);
+    color: var(--fg-on-accent);
+    border-color: var(--accent);
+  }
 }
 
 .react-aria-ToggleButton[data-icon-only] {
