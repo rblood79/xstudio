@@ -14,11 +14,16 @@ Implemented — 2026-04-15 (Proposed 2026-04-13)
 2. **범위 오해 유발** — ADR-062 초안은 Field 11개 "variant 제거"만을 다루려 했으나, caller의 lookup 로직은 83 Spec 전체가 공유 → Field만 제거 시 caller 분기 필요 → 지속 복잡도.
 3. **Spec 자율성 약화** — Spec이 "어떤 variant 스펙을 사용할지" 결정권이 자신에게 있음에도 caller가 주입. variant 이름 컨벤션 변경, default 변경, 조건부 variant 선택 등 Spec 내부 로직 이식 불가.
 
-2026-04-13 실측:
+2026-04-13 실측 (2026-04-15 보완):
 
 - `RenderSpec.shapes` 시그니처: `spec.types.ts:553`
-- 호출 지점: PixiRenderer.ts:54 / buildSpecNodeData.ts:700 (2곳)
-- Spec 파일: 83개 — `variant.X` 실사용 78파일 (215건), `_variant` 무시 13파일
+- 호출 지점: 4곳
+  - `apps/builder/.../buildSpecNodeData.ts:719` — Skia 렌더 메인 path
+  - `apps/builder/.../utils/specTextStyle.ts:124` — 텍스트 스타일 추출 (레이아웃 측정)
+  - `apps/builder/.../overlay/specTextStyleForOverlay.ts:61` — 오버레이 텍스트 스타일
+  - ~~`packages/specs/src/renderers/PixiRenderer.ts`~~ — dead caller였으며 2026-04-15 PixiRenderer 완전 제거 (commit `80d4e631`)
+- Spec 파일: 107개 — self-lookup 전환 61파일, variant 미사용/비활성 46파일
+  - (초기 실측은 83개였으나 후속 컴포넌트 추가로 증가)
 
 **Hard Constraints**:
 
