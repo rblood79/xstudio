@@ -36,13 +36,7 @@ export {
   isCopyDisabledAtom,
 } from "./styleAtoms";
 
-// Fill section atoms (Color Picker Phase 1)
-export {
-  fillsAtom,
-  activeFillIndexAtom,
-  activeFillAtom,
-  colorInputModeAtom,
-} from "./fillAtoms";
+// Fill section atoms — REMOVED (ADR-067 Phase 5, migrated to useFillValues + useFillUIStore)
 
 // Component State Preview atom (Phase A)
 export { previewComponentStateAtom } from "./componentStateAtom";

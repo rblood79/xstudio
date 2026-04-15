@@ -33,7 +33,7 @@ import { Popover } from "@composition/shared/components/Popover";
 import { PropertySection } from "../../../components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps, iconSmall } from "../../../../utils/ui/uiConstants";
-import { useFillValuesJotai } from "../hooks/useFillValuesJotai";
+import { useFillValues } from "../hooks/useFillValues";
 import { useFillActions } from "../hooks/useFillActions";
 import type {
   FillItem,
@@ -94,7 +94,7 @@ function SortableFillRow({
  * Jotai atom에서 직접 값 구독
  */
 const FillSectionContent = memo(function FillSectionContent() {
-  const { fills } = useFillValuesJotai();
+  const { fills } = useFillValues();
   const {
     removeFill,
     reorderFill,
@@ -165,7 +165,7 @@ const FillSectionContent = memo(function FillSectionContent() {
  * PropertySection 래퍼 없이 Background 콘텐츠만 제공
  */
 export const FillSectionInline = memo(function FillSectionInline() {
-  const { fills } = useFillValuesJotai();
+  const { fills } = useFillValues();
   const { addFill } = useFillActions();
 
   const handleAdd = useCallback(() => {
@@ -205,7 +205,7 @@ export const FillSectionInline = memo(function FillSectionInline() {
  * - 추가 Fill(2번째~): 그리드 아래 FillLayerRow 리스트
  */
 export const FillBackgroundInline = memo(function FillBackgroundInline() {
-  const { fills } = useFillValuesJotai();
+  const { fills } = useFillValues();
   const selectedId = useComposedStore((s) => s.selectedElementId);
   const styleValues = useAppearanceValues(selectedId);
   const {

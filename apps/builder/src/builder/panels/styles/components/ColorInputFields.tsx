@@ -12,8 +12,7 @@
  */
 
 import { memo, useState, useCallback, useEffect, useRef } from "react";
-import { useAtomValue } from "jotai";
-import { colorInputModeAtom } from "../atoms/fillAtoms";
+import { useFillUIStore } from "../hooks/useFillValues";
 import type { ColorInputMode } from "../../../../types/builder/fill.types";
 import {
   hex8ToRgba,
@@ -300,7 +299,7 @@ export const ColorInputFields = memo(function ColorInputFields({
   value,
   onChange,
 }: ColorInputFieldsProps) {
-  const mode = useAtomValue(colorInputModeAtom);
+  const mode = useFillUIStore((s) => s.colorInputMode);
   const FieldComponent = FIELD_MAP[mode];
   return <FieldComponent value={value} onChange={onChange} />;
 });
