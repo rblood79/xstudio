@@ -164,6 +164,61 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
         `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
       );
       lines.push("  }");
+
+      // ─── ADR-059 B5: selected 상태 ───
+      if (variantSpec.selectedBackground) {
+        lines.push("");
+        lines.push("  &[data-selected] {");
+        lines.push(
+          `    background: ${tokenToCSSVar(variantSpec.selectedBackground)};`,
+        );
+        if (variantSpec.selectedText) {
+          lines.push(`    color: ${tokenToCSSVar(variantSpec.selectedText)};`);
+        }
+        if (variantSpec.selectedBorder) {
+          lines.push(
+            `    border-color: ${tokenToCSSVar(variantSpec.selectedBorder)};`,
+          );
+        }
+        if (variantSpec.selectedBackgroundHover) {
+          lines.push("");
+          lines.push("    &[data-hovered] {");
+          lines.push(
+            `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundHover)};`,
+          );
+          lines.push("    }");
+        }
+        if (variantSpec.selectedBackgroundPressed) {
+          lines.push("");
+          lines.push("    &[data-pressed] {");
+          lines.push(
+            `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundPressed)};`,
+          );
+          lines.push("    }");
+        }
+        lines.push("  }");
+      }
+
+      // ─── ADR-059 B5: emphasized × selected 조합 ───
+      if (variantSpec.emphasizedSelectedBackground) {
+        lines.push("");
+        lines.push("  &[data-emphasized][data-selected] {");
+        lines.push(
+          `    background: ${tokenToCSSVar(variantSpec.emphasizedSelectedBackground)};`,
+        );
+        if (variantSpec.emphasizedSelectedText) {
+          lines.push(
+            `    color: ${tokenToCSSVar(variantSpec.emphasizedSelectedText)};`,
+          );
+        }
+        if (variantSpec.emphasizedSelectedBorder) {
+          lines.push(
+            `    border-color: ${tokenToCSSVar(variantSpec.emphasizedSelectedBorder)};`,
+          );
+        }
+        lines.push("  }");
+      }
+
       lines.push("}");
       lines.push("");
 
