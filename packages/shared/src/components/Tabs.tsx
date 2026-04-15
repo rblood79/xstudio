@@ -326,38 +326,41 @@ export function TabList<T extends object>({
     return className ? `react-aria-TabList ${className}` : "react-aria-TabList";
   });
 
-  // showIndicator가 true면 SharedElementTransition으로 감싸기
-  // SelectionIndicator는 각 Tab 내부에서 렌더링됨
-  if (showIndicator) {
-    return (
-      <RACTabList
-        {...props}
-        className={tabListClassName}
-        data-density={density}
-        data-size={size}
-        data-show-indicator="true"
-      >
-        <SharedElementTransition>
-          <TabListIndicatorContext.Provider value={true}>
-            {children as ReactNode}
-          </TabListIndicatorContext.Provider>
-        </SharedElementTransition>
-      </RACTabList>
-    );
-  }
-
-  // 기본: CSS ::before 기반 인디케이터
-  return (
+  // ADR-066: RACTabList는 Collection dynamic rendering을 위해 children이 함수 또는
+  // 정적 JSX여야 함. Provider를 RACTabList 내부에 두면 children이 Provider 요소로
+  // 래핑되어 Collection 프로토콜 위반 → "Functions are not valid as a React child"
+  // 오류 발생. Provider는 RACTabList 바깥에서 감싼다.
+  const tabList = showIndicator ? (
+    <RACTabList
+      {...props}
+      className={tabListClassName}
+      data-density={density}
+      data-size={size}
+      data-show-indicator="true"
+    >
+      {children}
+    </RACTabList>
+  ) : (
     <RACTabList
       {...props}
       className={tabListClassName}
       data-density={density}
       data-size={size}
     >
-      <TabListIndicatorContext.Provider value={false}>
-        {children as ReactNode}
-      </TabListIndicatorContext.Provider>
+      {children}
     </RACTabList>
+  );
+
+  const wrapped = (
+    <TabListIndicatorContext.Provider value={showIndicator}>
+      {tabList}
+    </TabListIndicatorContext.Provider>
+  );
+
+  return showIndicator ? (
+    <SharedElementTransition>{wrapped}</SharedElementTransition>
+  ) : (
+    wrapped
   );
 }
 
