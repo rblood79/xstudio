@@ -263,7 +263,7 @@ export { TreeSpec } from "./components/Tree.spec";
 export type { TreeProps } from "./components/Tree.spec";
 
 export { TabsSpec } from "./components/Tabs.spec";
-export type { TabsProps } from "./components/Tabs.spec";
+export type { TabsProps, TabItem } from "./components/Tabs.spec";
 export { TabListSpec } from "./components/TabList.spec";
 export type { TabListProps } from "./components/TabList.spec";
 export { TabPanelsSpec } from "./components/TabPanels.spec";

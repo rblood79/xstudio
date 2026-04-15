@@ -17,6 +17,11 @@ import { Ratio, PointerOff, MousePointer2 } from "lucide-react";
 /**
  * Tabs Props
  */
+export interface TabItem {
+  id: string;
+  title: string;
+}
+
 export interface TabsProps {
   variant?: "default";
   density?: "compact" | "regular";
@@ -28,6 +33,11 @@ export interface TabsProps {
   defaultSelectedKey?: string;
   isDisabled?: boolean;
   showIndicator?: boolean;
+  /**
+   * Tab items — SSOT (ADR-066).
+   * RAC Collection Items 패턴. items[i].id ↔ TabPanel.customId 페어링.
+   */
+  items?: TabItem[];
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   style?: Record<string, string | number | undefined>;

@@ -3,7 +3,6 @@ export { ListBoxItemEditor } from "./ListBoxItemEditor";
 export { GridListItemEditor } from "./GridListItemEditor";
 export { SelectItemEditor } from "./SelectItemEditor";
 export { TabsEditor } from "./TabsEditor";
-export { TabEditor } from "./TabEditor";
 export { TableEditor } from "./TableEditor";
 export { TableHeaderEditor } from "./TableHeaderEditor";
 export { TableBodyEditor } from "./TableBodyEditor";

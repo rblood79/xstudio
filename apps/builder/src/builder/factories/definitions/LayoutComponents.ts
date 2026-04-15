@@ -13,9 +13,13 @@ export function createTabsDefinition(
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  // 초기 Tab들을 위한 UUID 생성
-  const tab1Id = ElementUtils.generateId();
-  const tab2Id = ElementUtils.generateId();
+  // ADR-066: items SSOT — Tab element 소멸, TabPanel만 유지 (itemId 페어링)
+  const item1Id = ElementUtils.generateId();
+  const item2Id = ElementUtils.generateId();
+  const items = [
+    { id: item1Id, title: "Tab 1" },
+    { id: item2Id, title: "Tab 2" },
+  ];
 
   // ⭐ Layout/Slot System
   const ownerFields = layoutId
@@ -27,7 +31,8 @@ export function createTabsDefinition(
     parent: {
       tag: "Tabs",
       props: {
-        defaultSelectedKey: tab1Id,
+        items,
+        defaultSelectedKey: item1Id,
         orientation: "horizontal",
         showIndicator: true,
         style: {
@@ -44,26 +49,6 @@ export function createTabsDefinition(
         props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
-        children: [
-          {
-            tag: "Tab",
-            props: {
-              title: "Tab 1",
-              tabId: tab1Id,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-          {
-            tag: "Tab",
-            props: {
-              title: "Tab 2",
-              tabId: tab2Id,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 2,
-          },
-        ],
       },
       {
         tag: "TabPanels",
@@ -74,8 +59,7 @@ export function createTabsDefinition(
           {
             tag: "TabPanel",
             props: {
-              title: "Panel 1",
-              tabId: tab1Id,
+              itemId: item1Id,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -83,8 +67,7 @@ export function createTabsDefinition(
           {
             tag: "TabPanel",
             props: {
-              title: "Panel 2",
-              tabId: tab2Id,
+              itemId: item2Id,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 2,
