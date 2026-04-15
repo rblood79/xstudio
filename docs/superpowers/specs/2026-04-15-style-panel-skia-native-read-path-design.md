@@ -52,7 +52,7 @@ inline (element.style.*)
 
 ### Non-goals (본 spec 범위 밖)
 
-- 선택 입력 파이프라인(A/B축) 최적화 — 별도 ADR-069로 분리. 특히 `selectedElementId` commit 이전의 hitTest/pointerdown/startTransition 경계는 본 spec 범위 밖
+- 선택 입력 파이프라인(A/B축) 최적화 — **별도 후속 ADR (번호 미정)**. 특히 `selectedElementId` commit 이전의 hitTest/pointerdown/startTransition 경계는 본 spec 범위 밖
 - BuilderCanvas 구독 슬림화
 - DB schema / Preview postMessage 프로토콜 변경
 

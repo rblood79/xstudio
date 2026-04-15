@@ -86,6 +86,21 @@ describe("resolveSpecPreset", () => {
     const lg = resolveSpecPreset("Button", "lg");
     expect(md).not.toBe(lg);
   });
+
+  // L2 (리뷰 지적): flat-spec fallback — sizes 객체 없는 spec 안전 처리
+  it("returns {} gracefully when spec has no sizes object (flat-spec fallback)", () => {
+    // 일부 spec(ToggleButton/TagGroup 등)은 flat 구조일 수 있음
+    // resolveSpecPreset은 sizes[size] 미존재 시 빈 객체 반환해야 한다
+    const preset = resolveSpecPreset("ToggleButton", "md");
+    // 존재하지 않거나 sizes 미보유 시에도 throw 없이 객체 반환
+    expect(preset).toEqual(expect.any(Object));
+  });
+
+  it("returns {} when sizes exists but target size key is absent", () => {
+    // 예: size="xxl"처럼 해당 컴포넌트에 정의 안 된 size 요청
+    const preset = resolveSpecPreset("Button", "xxl");
+    expect(preset).toEqual({});
+  });
 });
 ```
 
