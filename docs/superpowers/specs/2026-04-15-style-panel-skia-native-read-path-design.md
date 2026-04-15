@@ -52,10 +52,11 @@ inline (element.style.*)
 
 ### Non-goals (본 spec 범위 밖)
 
-- 선택 입력 파이프라인(A/B축) 최적화 — 별도 ADR-069로 분리
+- 선택 입력 파이프라인(A/B축) 최적화 — 별도 ADR-069로 분리. 특히 `selectedElementId` commit 이전의 hitTest/pointerdown/startTransition 경계는 본 spec 범위 밖
 - BuilderCanvas 구독 슬림화
-- Appearance propagation chain 설계 — phase 3에서 다룸
 - DB schema / Preview postMessage 프로토콜 변경
+
+(Appearance propagation chain은 Non-goal이 아니라 Phase 4 범위에 포함 — §5 Phases 참조)
 
 ## 3. 확정된 결정
 
@@ -150,14 +151,18 @@ const values = useTransformValues(id);
 
 ## 5. Phases (Jotai 완전 제거 경로)
 
-| Phase         | 범위                                                                  | 산출                                                                          | 검증                                              |
-| ------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
-| **1 (pilot)** | Transform 섹션만 Zustand 직접 전환                                    | `useTransformValue` + `resolveSpecPreset` + TransformSection 수정             | FPS 유지 + 패널 paint 측정                        |
-| **2**         | Layout/Typography/Spacing 이관                                        | 대응 `use*Value` hooks. `styleAtoms.ts` Transform/Layout/Typography 부분 제거 | 섹션 단위 시각 회귀                               |
-| **3**         | Appearance 이관 (**propagation chain 설계 필요**)                     | `resolvePropagatedProp` 유틸 (ADR-048 레지스트리 기반)                        | propagation 정합 (size=lg Card → 자식 Label 반영) |
-| **4**         | Fill/ComponentState 이관 + bridge/selectedElementAtom/styleAtoms 삭제 | Jotai deps 제거, `package.json`에서 jotai 삭제                                | 전체 패널 스모크 + `pnpm type-check`              |
+> **재분할 근거**: TransformSection은 `useTransformValuesJotai` 외에도 `widthSizeModeAtom` / `parentDisplayAtom` / `parentFlexDirectionAtom` / `selfAlignmentKeysAtom`에 의존 (`sections/TransformSection.tsx:138-154`). 또한 Layout/Typography/Spacing과 Fill/ComponentState는 각각 결합도가 낮은 항목 — 원 4-phase는 독립 PR 경계를 보장하지 못함. 따라서 6-phase로 재분할하고, Transform pilot에는 4개 보조 selector 이관을 함께 포함.
 
-각 phase는 **독립 PR + ADR-068 Gate 통과 후 다음 phase**. phase 사이 일시 비대칭은 수용.
+| Phase         | 범위                                                                                                                                  | 산출                                                                                                                | 검증                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **1 (pilot)** | Transform 섹션 + Transform 보조 selector 4종(`widthSizeMode`/`parentDisplay`/`parentFlexDirection`/`selfAlignment`) Zustand 직접 전환 | `useTransformValue` + `resolveSpecPreset` + `useTransformAuxiliary` + `TransformSection` 수정 (기존 atom 참조 제거) | Transform 섹션 paint metric (G1) + Canvas FPS 회귀 0                 |
+| **2**         | Layout/Spacing 섹션 이관                                                                                                              | `useLayoutValue` 계열 hooks. `styleAtoms.ts` Layout/Spacing 부분 제거                                               | Layout 섹션 시각 회귀 0 + flex/grid prop 편집 정합성                 |
+| **3**         | Typography 섹션 이관                                                                                                                  | `useTypographyValue`. `styleAtoms.ts` Typography 부분 제거. `resolveSpecPreset`에 text primitive 확장               | fontSize/lineHeight/family 표시 일치                                 |
+| **4**         | Appearance 이관 — **propagation chain 설계 포함**                                                                                     | `useAppearanceValue` + `resolvePropagatedProp` 유틸 (ADR-048 레지스트리 기반)                                       | propagation 정합 (size=lg Card → 자식 Label 반영, 기존 동작과 동일)  |
+| **5**         | Fill 섹션 이관                                                                                                                        | `useFillValue` + `fillAtoms.ts` 제거                                                                                | ColorInput/Gradient 편집 정합성                                      |
+| **6**         | ComponentState + panel shell(bridge/selectedElementAtom/styleAtoms) 제거 + `jotai` dependency 삭제                                    | `useZustandJotaiBridge`/`selectedElementAtom`/`styleAtoms` 파일 삭제. `package.json` jotai 제거                     | 전체 패널 스모크 + `pnpm type-check` + `grep -r "from [\"']jotai"` 0 |
+
+각 phase는 **독립 PR + ADR-068 Gate 통과 후 다음 phase**. phase 사이 일시 비대칭은 수용 (Jotai/Zustand 혼재 섹션 공존, 단일 디렉터리 내).
 
 ## 6. Transform 섹션 prop별 Read Source
 
@@ -216,11 +221,13 @@ const values = useTransformValues(id);
 
 ### Gates
 
-| Gate | 시점       | 통과 조건                                                                 | 실패 시 대안                                   |
-| ---- | ---------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
-| G1   | Phase 1 끝 | Transform 섹션 paint latency ≥ 기존 대비 2배 개선 + FPS 회귀 0            | resolveSpecPreset 내부만 롤백 후 재측정        |
-| G2   | Phase 3 끝 | propagation chain 정합 (size=lg Card → 자식 Label 반영, 기존 동작과 동일) | propagation 유틸을 ADR-048 레지스트리로 재조정 |
-| G3   | Phase 4 끝 | `jotai` dependency 삭제 + `pnpm type-check` 통과 + 전체 패널 시각 회귀 0  | 남은 atoms를 Zustand로 이관하거나 phase 분할   |
+**측정 범위 원칙 (공통)**: 모든 Gate는 **`selectedElementId`/`layoutVersion`이 store에 commit된 이후 패널이 값을 resolve/present하는 시간**만 측정한다. 클릭 → commit 이전의 hitTest/pointerdown/startTransition 경계는 ADR-069 범위이며 본 Gate에 포함하지 않음.
+
+| Gate | 시점       | 통과 조건                                                                                                                                                                                                                                                                                                                               | 실패 시 대안                                                                                             |
+| ---- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| G1   | Phase 1 끝 | **(a) 수량 지표**: Transform 섹션 렌더 동안 `computeSyntheticStyle` 호출 0회 (PerformanceObserver/console trace). **(b) 지연 지표**: same scenario(100 요소 페이지에서 동일 element 선택) × 30 samples, median Transform value resolve+paint **≤ 8ms 또는 baseline 대비 median 30–40% 개선**, p95 회귀 없음. **(c)** Canvas FPS 60 유지 | resolveSpecPreset/useTransformValue 내부 롤백 후 재측정. 필요 시 phase 1 scope 축소 (보조 selector 분리) |
+| G2   | Phase 4 끝 | propagation chain 정합: size=lg Card → 자식 Label `fontSize` 정확히 반영 (기존 동작과 동일). 6개 이상 propagation 시나리오 스냅샷 테스트                                                                                                                                                                                                | propagation 유틸을 ADR-048 레지스트리로 재조정                                                           |
+| G3   | Phase 6 끝 | `grep -r "from ['\"]jotai" apps/builder/src` → 0 hit + `package.json`에서 `jotai` 제거 + `pnpm type-check` 통과 + 전체 패널 시각 회귀 0                                                                                                                                                                                                 | 남은 atoms를 Zustand로 이관하거나 phase 분할                                                             |
 
 ## 11. Success Criteria
 
@@ -228,7 +235,7 @@ const values = useTransformValues(id);
 - [ ] `buildSelectedElement` O(depth) 탐색 제거 또는 Transform 범위에서 우회
 - [ ] `useTransformValue` 선택당 <1ms (Chrome DevTools)
 - [ ] drag 중 Transform placeholder live 갱신 (시각 확인)
-- [ ] Phase 4 종결 시 `grep -r "from ['\"]jotai"` apps/builder/src → 0 hit
+- [ ] Phase 6 종결 시 `grep -r "from ['\"]jotai"` apps/builder/src → 0 hit
 - [ ] Preview/Publish 렌더 변경 0 (쓰기 경로 불변)
 
 ## 12. 참고
