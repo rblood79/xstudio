@@ -18,7 +18,7 @@ inline (element.style.*) → computed (element.computedStyle.*) → synthetic (c
 
 ### SSOT 체인 내 위상 (D1/D2/D3)
 
-- **D1 (DOM/접근성)**: 변경 없음 — 패널 UI는 RAC 사용하지 않음
+- **D1 (DOM/접근성)**: 변경 없음 — 스타일 패널 UI 자체는 RAC(Select/ListBox/NumberField 등)를 사용하지만, 본 ADR은 **패널의 read path(Spec/layoutMap 소비 경로)** 만 변경. RAC 컴포넌트 자체의 DOM/ARIA 구조는 건드리지 않음. 패널이 표시하는 대상(= 선택된 요소)이 RAC 여부와 무관
 - **D2 (Props/API)**: 변경 없음 — 패널이 표시하는 prop 집합 동일
 - **D3 (시각 스타일)**: **정렬 대상** — 패널이 D3 SSOT(Spec) + 런타임 파생(layoutMap, propagation)을 **직접 consumer**로 참조하도록 복귀. CSS consumer(CSSGenerator 출력)의 흉내를 역참조하지 않는다
 
@@ -103,7 +103,7 @@ inline (element.style.*) → computed (element.computedStyle.*) → synthetic (c
 
 - **D3 대칭 원칙 복원**: 패널이 D3 SSOT(Spec)를 직접 consume, CSS 흉내 레이어 제거
 - **생태계 단일화**: Jotai 완전 제거 → Zustand만 남음. `useZustandJotaiBridge`, `buildSelectedElement`, `selectedElementAtom`, `styleAtoms.ts`, 5개 `use*ValuesJotai` 훅 삭제
-- **성능 개선**: synthetic 캐시 제거 + O(depth) 부모 탐색 제거. G1 (b) median 30–40% 개선 목표
+- **성능 개선**: synthetic 캐시 제거 + O(depth) 부모 탐색 제거. Phase 1에서는 Transform value resolve 시간(React Profiler 기준) median ≤ 4ms / p95 ≤ 8ms 달성(G1 (b)), end-to-end 선택→패널 paint latency는 bridge 제거가 완료되는 Phase 6 종결 시점에 30–40% 개선 검증(G3)
 - **pencil/Figma 동형 UX**: drag/resize 중 placeholder 실효값이 실시간 추적 (live granular)
 - **ESLint 룰과 정합**: 개별 primitive selector 패턴은 프로젝트 컨벤션과 일치
 

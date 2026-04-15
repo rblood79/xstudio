@@ -1038,62 +1038,63 @@ git commit -m "refactor(styles): remove Transform-only Jotai atoms + useTransfor
 
 - Create: `docs/superpowers/measurements/2026-04-15-adr067-phase1-paint-latency.md`
 
-**배경**: G1 지표 (b) 선택→Transform 섹션 paint latency, (c) Canvas FPS 60 유지. 측정 스크립트는 일회성이므로 코드 추가 없이 Chrome DevTools로 수행.
+**배경**: G1 지표 (b) **Transform value resolve 전용 시간** (bridge 비용 제외, React Profiler 기반) + (c) Canvas FPS 60 유지 (drag/resize 중). end-to-end paint latency의 30–40% 개선은 **G3(Phase 6 종결 시점)에서 최종 평가**하므로 본 Task에서 측정하지 않음. Phase 1 단독으로는 bridge가 아직 남아있어 end-to-end 측정 시 bridge 비용이 지배하기 때문.
 
-- [ ] **Step 1: Baseline 측정 (이전 commit 기준)**
+- [ ] **Step 1: G1 (b) 측정 — Transform value resolve 시간만**
 
-```bash
-git stash  # 현재 변경 임시 저장
-git checkout <BASE_COMMIT>   # Phase 1 시작 전 commit (f486a9cb 직전)
-pnpm dev
-```
+절차:
 
-- Chrome DevTools → Performance → Record
-- 빌더에서 동일한 100-element 페이지 생성 (또는 기존 테스트용 fixture 사용)
-- "Button 선택 → Transform 섹션 paint" 반복 30회
-- 각 이벤트의 **Event 처리 시작 → Paint 완료** duration 기록 (User Timing API 또는 Performance Monitor)
+1. `pnpm dev`로 현 브랜치(Phase 1 적용) 실행
+2. React DevTools Profiler 탭에서 Record 시작
+3. 빌더에서 100-element 페이지에서 Button 요소 선택 → Transform 섹션 렌더 → 선택 해제 반복 30회
+4. 각 사이클에서 **`TransformSectionContent` 컴포넌트의 Actual duration** 수집 (React Profiler의 flamegraph → commit별 component render time)
+5. 30 samples의 median / p95 계산
 
 결과를 문서에 기록:
 
 ```markdown
-## Baseline (pre-Phase 1)
+## G1 (b) — Transform Value Resolve (React Profiler)
 
-| Sample | duration (ms) |
-| ------ | ------------- |
-| 1–30   | ...           |
+| Sample | TransformSectionContent render (ms) |
+| ------ | ----------------------------------- |
+| 1–30   | ...                                 |
 
-- median: X ms
-- p95: Y ms
+- median: X ms (통과 조건: ≤ 4ms)
+- p95: Y ms (통과 조건: ≤ 8ms)
 ```
 
-- [ ] **Step 2: Phase 1 적용 버전 측정**
+- [ ] **Step 2: G1 (c) FPS 측정 — drag/resize 중 60fps 유지**
 
-```bash
-git checkout <THIS_BRANCH>
-git stash pop
-pnpm dev
-```
+절차:
 
-동일 scenario × 30회 측정. 결과 기록.
+1. `pnpm dev` 유지
+2. Chrome DevTools → Rendering → **FPS meter** 체크
+3. 요소 하나 선택 → 캔버스에서 **1초 이상 연속 drag** (또는 resize handle로 연속 resize)
+4. drag 중 FPS meter가 **60fps에 지속적으로 붙어있는지** 시각 확인 (스크린샷 첨부)
 
-- [ ] **Step 3: G1 (b)(c) 판정**
+결과:
 
 ```markdown
-## Phase 1 (post)
+## G1 (c) — Canvas FPS during drag/resize
 
-| Sample | duration (ms) |
-| ------ | ------------- |
+- scenario: 100-element 페이지, Button 선택 후 1초 연속 drag
+- 측정: Chrome DevTools Rendering FPS meter
+- 결과: 평균 ~60fps / 최소 ~58fps (스크린샷 첨부)
+- 통과: PASS / FAIL
+```
 
-- median: X' ms
-- p95: Y' ms
+- [ ] **Step 3: G1 판정 요약**
 
-## G1 판정
+```markdown
+## G1 종합 판정
 
-- (b) median: `baseline_median * 0.6 <= X' <= baseline_median * 0.7` (30–40% 개선) **또는** `X' <= 8ms`
-- (b) p95: `Y' <= Y` (회귀 없음)
-- (c) FPS: Chrome DevTools "Rendering → FPS meter"로 드래그 중 60fps 유지 시각 확인
+- (a) `computeSyntheticStyle` 호출 0회 (Task 7 Step 5 기록 참조): **PASS / FAIL**
+- (b) Transform value resolve median ≤ 4ms, p95 ≤ 8ms: **PASS / FAIL**
+- (c) drag/resize 중 60fps 유지: **PASS / FAIL**
 
-**판정: PASS / FAIL**
+> end-to-end paint latency 30–40% 개선은 G3(Phase 6 종결)에서 평가. 본 Task 범위 밖.
+
+**최종 판정 (G1): PASS / FAIL**
 ```
 
 - [ ] **Step 4: 실패 시 대안**
