@@ -7,7 +7,7 @@ import {
 } from "react-aria-components";
 import type { ComponentSizeSubset } from "../types";
 import { useToggleButtonGroupIndicator } from "./ToggleButtonGroup";
-import "./styles/ToggleButton.css";
+import "./styles/generated/ToggleButton.css";
 
 export interface ToggleButtonExtendedProps extends ToggleButtonProps {
   /**
