@@ -27,6 +27,11 @@ export const TabListSpec: ComponentSpec<TabListProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  composition: {
+    layout: "flex-row",
+    delegation: [],
+  },
+
   defaultSize: "md",
 
   properties: { sections: [] },

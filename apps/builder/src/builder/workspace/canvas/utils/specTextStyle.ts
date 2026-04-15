@@ -26,6 +26,7 @@ import {
   ProgressBarValueSpec,
   MeterValueSpec,
   SliderOutputSpec,
+  TabSpec,
 } from "@composition/specs";
 
 /** Spec shapes에서 추출한 텍스트 스타일 */
@@ -48,6 +49,10 @@ const TEXT_BEARING_SPECS: Record<
   tag: { spec: BadgeSpec, defaultSize: "sm" },
   chip: { spec: BadgeSpec, defaultSize: "sm" },
   togglebutton: { spec: ToggleButtonSpec, defaultSize: "md" },
+  tab: {
+    spec: TabSpec as ComponentSpec<Record<string, unknown>>,
+    defaultSize: "md",
+  },
   link: { spec: LinkSpec, defaultSize: "md" },
   a: { spec: LinkSpec, defaultSize: "md" },
   linkbutton: { spec: LinkSpec, defaultSize: "md" },

@@ -8,39 +8,27 @@
 
 .react-aria-TabList {
   /* Base styles — archetype: default */
-    display: inline-flex;
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
 
   /* Default size */
-  height: 29px;
-  padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
 }
 
 .react-aria-TabList[data-size="sm"] {
-  height: 21px;
-  padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-TabList[data-size="md"] {
-  height: 29px;
-  padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
 }
 
 .react-aria-TabList[data-size="lg"] {
-  height: 41px;
-  padding: 0px 0px;
   font-size: var(--text-base);
   border-radius: var(--radius-none);
 }
@@ -55,6 +43,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ── Tier 2: Composite Delegation ── */
+
 
 @media (forced-colors: active) {
   .react-aria-TabList {
