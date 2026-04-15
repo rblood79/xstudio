@@ -19,9 +19,9 @@
     font-family: var(--font-sans);
 
   /* Default variant */
-  background: var(--fg);
-  color: var(--bg);
-  border: 1px solid var(--fg);
+  --button-color: var(--fg);
+  --button-text: var(--bg);
+  --button-border: var(--fg);
 
   /* Default size */
   height: auto;
@@ -36,92 +36,45 @@
 }
 
 .react-aria-Button[data-variant="accent"] {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-  border-color: var(--accent);
+  --button-color: var(--accent);
+  --button-text: var(--fg-on-accent);
+  --button-border: var(--accent);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--accent) 85%, black);
-    border-color: color-mix(in srgb, var(--accent) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--accent) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="primary"] {
-  background: var(--fg);
-  color: var(--bg);
-  border-color: var(--fg);
+  --button-color: var(--fg);
+  --button-text: var(--bg);
+  --button-border: var(--fg);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--bg-muted) 85%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--bg-muted) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="secondary"] {
-  background: var(--bg-overlay);
-  color: var(--fg);
-  border-color: var(--border);
+  --button-color: var(--bg-overlay);
+  --button-text: var(--fg);
+  --button-border: var(--border);
 
-  &[data-hovered] {
-    background: var(--bg-muted);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-muted);
-  }
 }
 
 .react-aria-Button[data-variant="negative"] {
-  background: var(--negative);
-  color: var(--color-white);
-  border-color: var(--negative);
+  --button-color: var(--negative);
+  --button-text: var(--color-white);
+  --button-border: var(--negative);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--negative) 85%, black);
-    border-color: color-mix(in srgb, var(--negative) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--negative) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="premium"] {
-  background: var(--color-purple-600);
-  color: var(--color-white);
-  border-color: var(--color-purple-600);
+  --button-color: var(--color-purple-600);
+  --button-text: var(--color-white);
+  --button-border: var(--color-purple-600);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--color-purple-600) 85%, black);
-    border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="genai"] {
-  background: var(--color-purple-600);
-  color: var(--color-white);
-  border-color: var(--color-purple-600);
+  --button-color: var(--color-purple-600);
+  --button-text: var(--color-white);
+  --button-border: var(--color-purple-600);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--color-purple-600) 85%, black);
-    border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-  }
 }
 
 .react-aria-Button[data-icon-only] {

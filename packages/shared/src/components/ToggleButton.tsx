@@ -54,7 +54,12 @@ export function ToggleButton({
           : "react-aria-ToggleButton button-base",
       )}
     >
-      {showIndicator && <SelectionIndicator />}
+      {showIndicator && (
+        <SelectionIndicator
+          className="react-aria-SelectionIndicator button-base"
+          data-selected
+        />
+      )}
       {children as ReactNode}
     </RACToggleButton>
   );

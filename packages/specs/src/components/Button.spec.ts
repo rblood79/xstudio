@@ -60,6 +60,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   name: "Button",
   description: "React Aria 기반 버튼 컴포넌트",
   archetype: "button",
+  cssEmitMode: "button-base",
   element: "button",
 
   defaultVariant: "primary",
@@ -307,7 +308,11 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = ButtonSpec.variants![(props as { variant?: keyof typeof ButtonSpec.variants }).variant ?? ButtonSpec.defaultVariant!];
+      const variant =
+        ButtonSpec.variants![
+          (props as { variant?: keyof typeof ButtonSpec.variants }).variant ??
+            ButtonSpec.defaultVariant!
+        ];
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       // props.style.width를 직접 사용하면 bgBox 추출이 실패하고 렌더링이 깨짐
       const width = "auto" as const;
