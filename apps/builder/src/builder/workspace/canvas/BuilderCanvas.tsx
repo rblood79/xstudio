@@ -32,7 +32,7 @@ import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 // GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
 import { screenToViewportPoint } from "./viewport/viewportTransforms";
-import { TextEditOverlay, TabListActionOverlay, useTextEdit } from "../overlay";
+import { TextEditOverlay, useTextEdit } from "../overlay";
 import {
   computeSelectionBounds,
   resolveSelectedElementsForPage,
@@ -661,22 +661,6 @@ export function BuilderCanvas({
       )}
 
       <GPUDebugOverlay />
-
-      {/* ADR-066: Tabs 선택 시 TabList 우측 +/- 오버레이 */}
-      {(() => {
-        const selectedTabsId = selectedElementIds.find((id) => {
-          const el = useStore.getState().elementsMap.get(id);
-          return el?.tag === "Tabs";
-        });
-        if (!selectedTabsId) return null;
-        return (
-          <TabListActionOverlay
-            tabsElementId={selectedTabsId}
-            zoom={zoom}
-            panOffset={panOffset}
-          />
-        );
-      })()}
 
       {/* 텍스트 편집 오버레이 (B1.5) */}
       {editState && editState.elementId && (
