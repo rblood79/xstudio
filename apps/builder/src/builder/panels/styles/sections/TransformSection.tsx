@@ -9,14 +9,17 @@
  * ADR-026 Phase 1: Size Mode (Fixed/Fill/Fit) 세그먼트 컨트롤
  */
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import type { Key } from "react-aria-components";
 import {
   PropertySection,
   PropertyUnitInput,
   PropertySelect,
 } from "../../../components";
-import { ToggleButton, ToggleButtonGroup } from "@composition/shared/components";
+import {
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@composition/shared/components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
@@ -33,17 +36,17 @@ import {
   Unlock,
 } from "lucide-react";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
-import { useTransformValuesJotai } from "../hooks/useTransformValuesJotai";
+import { useTransformValues } from "../hooks/useTransformValues";
+import {
+  useWidthSizeMode,
+  useHeightSizeMode,
+  useParentDisplay,
+  useParentFlexDirection,
+  useSelfAlignmentKeys,
+} from "../hooks/useTransformAuxiliary";
+import { useStore } from "../../../stores/elements";
 import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import { useViewportSyncStore } from "../../../workspace/canvas/stores";
-import { useAtomValue } from "jotai";
-import {
-  widthSizeModeAtom,
-  heightSizeModeAtom,
-  parentDisplayAtom,
-  parentFlexDirectionAtom,
-  selfAlignmentKeysAtom,
-} from "../atoms/styleAtoms";
 import {
   resolveSizeMode,
   sizeModeToStyleUpdates,
@@ -135,7 +138,28 @@ const SizeModeToggle = memo(function SizeModeToggle({
 const TransformSectionContent = memo(function TransformSectionContent() {
   const { updateStyleImmediate, updateStylePreview, updateStylesImmediate } =
     useOptimizedStyleActions();
-  const styleValues = useTransformValuesJotai();
+  const selectedId = useStore((s) => s.selectedElementId);
+  const bundle = useTransformValues(selectedId);
+
+  // 기존 styleValues 인터페이스 어댑터 (문자열 값)
+  const styleValues = useMemo(() => {
+    if (!bundle) return null;
+    const toStr = (v: string | number | undefined, fallback = ""): string =>
+      v === undefined || v === null ? fallback : String(v);
+    return {
+      width: toStr(bundle.width.inline, "auto"),
+      height: toStr(bundle.height.inline, "auto"),
+      top: toStr(bundle.top.inline, "auto"),
+      left: toStr(bundle.left.inline, "auto"),
+      minWidth: toStr(bundle.minWidth.inline),
+      maxWidth: toStr(bundle.maxWidth.inline),
+      minHeight: toStr(bundle.minHeight.inline),
+      maxHeight: toStr(bundle.maxHeight.inline),
+      aspectRatio: toStr(bundle.aspectRatio.inline),
+      isBody: bundle.isBody,
+    };
+  }, [bundle]);
+
   const canvasSize = useViewportSyncStore((state) => state.canvasSize);
   const hasConstraints = !!(
     styleValues?.minWidth ||
@@ -146,12 +170,12 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   );
   const [showConstraints, setShowConstraints] = useState(hasConstraints);
 
-  // ADR-026: Size Mode atoms
-  const widthMode = useAtomValue(widthSizeModeAtom);
-  const heightMode = useAtomValue(heightSizeModeAtom);
-  const parentDisplay = useAtomValue(parentDisplayAtom);
-  const parentFlexDirection = useAtomValue(parentFlexDirectionAtom);
-  const selfAlignmentKeys = useAtomValue(selfAlignmentKeysAtom);
+  // ADR-026: Size Mode (Zustand hooks)
+  const widthMode = useWidthSizeMode(selectedId);
+  const heightMode = useHeightSizeMode(selectedId);
+  const parentDisplay = useParentDisplay(selectedId);
+  const parentFlexDirection = useParentFlexDirection(selectedId);
+  const selfAlignmentKeys = useSelfAlignmentKeys(selectedId);
 
   const handleSizeModeChange = useCallback(
     (axis: "width" | "height", mode: SizeMode) => {
