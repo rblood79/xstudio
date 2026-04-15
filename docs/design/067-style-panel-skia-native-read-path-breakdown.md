@@ -1227,3 +1227,64 @@ git commit -m "memory(adr067): Phase 1 transform pilot complete"
 - ADR-067 spec이 승인되어 있음 (`docs/superpowers/specs/2026-04-15-style-panel-skia-native-read-path-design.md`)
 - 프로젝트 로컬 ESLint 룰이 `useStore(useShallow(...))`를 금지함을 숙지 (`apps/builder/eslint-local-rules/index.js:55-80`)
 - `getSharedLayoutMap` / `onLayoutPublished` API가 안정적 (ADR-100 Phase 6 완료 이후)
+
+---
+
+# Phase 2: Layout + Spacing 섹션 이관
+
+**Base**: Phase 1 완료 (HEAD `437a4adb`). Transform 패턴 복제.
+
+**대상**: `apps/builder/src/builder/panels/styles/sections/LayoutSection.tsx` (Spacing 통합됨 — Layout 6 props + Spacing 10 props = 16 props)
+
+**제거 atoms** (`atoms/styleAtoms.ts`):
+- `layoutValuesAtom` (16 props 집약)
+- `flexDirectionKeysAtom` / `flexAlignmentKeysAtom` / `justifyContentSpacingKeysAtom` / `flexWrapKeysAtom`
+- 개별 `paddingTopAtom` ~ `marginLeftAtom` (8개) — LayoutSection 외 미사용 확인 후 제거
+- `useLayoutValuesJotai.ts` 삭제
+
+**신규 훅**:
+- `useLayoutValues()` — 6 layout + 10 spacing 집약 (3-tier: inline / effective / specDefault)
+- `useLayoutAuxiliary()` — 4 derived key arrays (flexDirection, flexAlignment, justifyContentSpacing, flexWrap)
+
+## **Phase 1 계획 수정사항 적용 (필수)**
+
+1. **Element 스키마**: `el.tag` / `el.props` / `el.parent_id` (NOT `type`/`properties`/`parentId`)
+2. **useStore 경로**: `from "../../../stores"` (composed). `stores/elements` 사용 금지
+
+## Task 분할
+
+### Task 1: `specPresetResolver` Layout preset 확장
+- `LayoutSpecPreset` 인터페이스 추가 (gap, paddingTop/Right/Bottom/Left, marginTop/Right/Bottom/Left — number)
+- `resolveLayoutSpecPreset(type, size)` 함수 추가 (기존 Transform resolver와 동일 패턴, 별도 캐시)
+- 단위 테스트: 실존 spec 1개 (gap 있음) + flat spec fallback + missing type → {}
+
+### Task 2: `useLayoutValues` 훅
+- 16 props × 3-tier 집약, primitive selector + useSyncExternalStore + resolveLayoutSpecPreset
+- 리턴: `{ [prop]: { inline, effective, specDefault } }` 구조 (Phase 1 `useTransformValues`와 동형)
+- 테스트: inline 우선 / layout fallback / specDefault fallback
+
+### Task 3: `useLayoutAuxiliary` 훅
+- `useFlexDirectionKeys` / `useFlexAlignmentKeys` / `useJustifyContentSpacingKeys` / `useFlexWrapKeys`
+- primitive selector로 display/flexDirection/justifyContent/alignItems 구독 후 useMemo 조립
+- 테스트: display=block → ["block"], flex row center-left → ["leftCenter"] 등
+
+### Task 4: LayoutSection 전환
+- `useLayoutValuesJotai()` + 4 `useAtomValue` 제거
+- `useLayoutValues()` + `useLayoutAuxiliary()` 사용
+- 기존 string 인터페이스 유지용 adapter `styleValues` useMemo (Phase 1 패턴 그대로)
+- 수동 검증: display 토글 / alignment 9-grid / padding/margin 값 표시
+
+### Task 5: Jotai atoms 제거
+- `layoutValuesAtom` + 4 keys atoms 삭제
+- 개별 padding*/margin* atoms 사용처 grep → 없으면 삭제
+- `useLayoutValuesJotai.ts` 삭제 + `hooks/index.ts`(있다면) export 정리
+
+### Task 6: G1 (a)(b) 측정
+- Layout 섹션만 펼친 상태 (`localStorage.styles-panel-collapse` transform+others collapsed)
+- (a) `computeSyntheticStyle` 호출 0회 (계측 후 revert)
+- (b) resolve 시간 median ≤ 4ms / p95 ≤ 8ms (30 samples 권장, 분포 안정 시 12+ OK)
+
+### Task 7: 문서화
+- `docs/superpowers/measurements/2026-04-15-adr067-phase2-g1-metrics.md` 작성
+- ADR-067 Status에 "Phase 2 Implemented — YYYY-MM-DD" 추가
+- memory `adr067-phase2-layout-spacing.md` 신규 + `next-session-prompt.md` Phase 3용 갱신

@@ -1,6 +1,10 @@
 // specPresetResolver.test.ts
 import { describe, it, expect, beforeEach } from "vitest";
-import { resolveSpecPreset, clearSpecPresetCache } from "./specPresetResolver";
+import {
+  resolveSpecPreset,
+  resolveLayoutSpecPreset,
+  clearSpecPresetCache,
+} from "./specPresetResolver";
 
 describe("resolveSpecPreset", () => {
   beforeEach(() => clearSpecPresetCache());
@@ -50,5 +54,40 @@ describe("resolveSpecPreset", () => {
     // 예: size="xxl"처럼 해당 컴포넌트에 정의 안 된 size 요청
     const preset = resolveSpecPreset("Kbd", "xxl");
     expect(preset).toEqual({});
+  });
+});
+
+describe("resolveLayoutSpecPreset", () => {
+  beforeEach(() => clearSpecPresetCache());
+
+  it("returns {} for undefined type", () => {
+    expect(resolveLayoutSpecPreset(undefined, undefined)).toEqual({});
+  });
+
+  it("returns {} for unknown tag", () => {
+    expect(resolveLayoutSpecPreset("UnknownTag", "md")).toEqual({});
+  });
+
+  it("returns {} for absent size key", () => {
+    expect(resolveLayoutSpecPreset("Kbd", "xxl")).toEqual({});
+  });
+
+  it("caches by (type, size) — same input returns same reference", () => {
+    const a = resolveLayoutSpecPreset("Kbd", "md");
+    const b = resolveLayoutSpecPreset("Kbd", "md");
+    expect(a).toBe(b);
+  });
+
+  it("only includes keys whose numeric values are defined in spec", () => {
+    // gap/padding*/margin* 중 spec에 정의된 것만 number로 포함 — 미정의는 undefined
+    const preset = resolveLayoutSpecPreset("Kbd", "md");
+    for (const k of Object.keys(preset) as (keyof typeof preset)[]) {
+      expect(typeof preset[k]).toBe("number");
+    }
+  });
+
+  it("returns object gracefully for flat-spec components", () => {
+    const preset = resolveLayoutSpecPreset("ToggleButton", "md");
+    expect(preset).toEqual(expect.any(Object));
   });
 });

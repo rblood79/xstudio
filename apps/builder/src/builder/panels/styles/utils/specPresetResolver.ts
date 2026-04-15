@@ -10,8 +10,21 @@ export interface TransformSpecPreset {
   aspectRatio?: number;
 }
 
+export interface LayoutSpecPreset {
+  gap?: number;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  marginTop?: number;
+  marginRight?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+}
+
 type CacheKey = string; // `${type}:${size}`
-const cache = new Map<CacheKey, TransformSpecPreset>();
+const transformCache = new Map<CacheKey, TransformSpecPreset>();
+const layoutCache = new Map<CacheKey, LayoutSpecPreset>();
 
 export function resolveSpecPreset(
   type: string | undefined,
@@ -19,7 +32,7 @@ export function resolveSpecPreset(
 ): TransformSpecPreset {
   if (!type) return {};
   const key = `${type}:${size ?? "md"}`;
-  const cached = cache.get(key);
+  const cached = transformCache.get(key);
   if (cached) return cached;
 
   const spec = TAG_SPEC_MAP[type];
@@ -27,20 +40,34 @@ export function resolveSpecPreset(
     spec,
     size ?? "md",
   );
-  cache.set(key, preset);
+  transformCache.set(key, preset);
+  return preset;
+}
+
+export function resolveLayoutSpecPreset(
+  type: string | undefined,
+  size: string | undefined,
+): LayoutSpecPreset {
+  if (!type) return {};
+  const key = `${type}:${size ?? "md"}`;
+  const cached = layoutCache.get(key);
+  if (cached) return cached;
+
+  const spec = TAG_SPEC_MAP[type];
+  const preset: LayoutSpecPreset = extractLayoutPreset(spec, size ?? "md");
+  layoutCache.set(key, preset);
   return preset;
 }
 
 export function clearSpecPresetCache(): void {
-  cache.clear();
+  transformCache.clear();
+  layoutCache.clear();
 }
 
 function extractTransformPreset(
   spec: unknown,
   size: string,
 ): TransformSpecPreset {
-  // Spec 구조: spec.sizes[size] 또는 spec.dimensions
-  // 숫자로만 반환 (CSS 문자열 변환 금지)
   const anySpec = spec as
     | { sizes?: Record<string, Record<string, unknown>> }
     | undefined;
@@ -55,6 +82,31 @@ function extractTransformPreset(
     "maxWidth",
     "maxHeight",
     "aspectRatio",
+  ] as const;
+  for (const k of numericKeys) {
+    const v = sizeEntry[k];
+    if (typeof v === "number") preset[k] = v;
+  }
+  return preset;
+}
+
+function extractLayoutPreset(spec: unknown, size: string): LayoutSpecPreset {
+  const anySpec = spec as
+    | { sizes?: Record<string, Record<string, unknown>> }
+    | undefined;
+  const sizeEntry = anySpec?.sizes?.[size];
+  if (!sizeEntry) return {};
+  const preset: LayoutSpecPreset = {};
+  const numericKeys = [
+    "gap",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "marginTop",
+    "marginRight",
+    "marginBottom",
+    "marginLeft",
   ] as const;
   for (const k of numericKeys) {
     const v = sizeEntry[k];
