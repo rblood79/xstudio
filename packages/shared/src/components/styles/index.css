@@ -65,7 +65,6 @@
 @import "./ColorSlider.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./ColorWheel.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./generated/Pagination.css";
-@import "./generated/Panel.css";
 @import "./generated/Separator.css";
 @import "./SortIcon.css"; /* Table 부속 — 수동 유지 */
 
