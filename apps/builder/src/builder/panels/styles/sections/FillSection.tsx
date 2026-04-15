@@ -44,7 +44,8 @@ import { FillType } from "../../../../types/builder/fill.types";
 import { FillLayerRow } from "../components/FillLayerRow";
 import { FillDetailPopover } from "../components/FillDetailPopover";
 import { gradientStopsToCss, normalizeToHex8 } from "../utils/colorUtils";
-import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";
+import { useAppearanceValues } from "../hooks/useAppearanceValues";
+import { useStore as useComposedStore } from "../../../stores";
 
 import "./FillSection.css";
 
@@ -205,7 +206,8 @@ export const FillSectionInline = memo(function FillSectionInline() {
  */
 export const FillBackgroundInline = memo(function FillBackgroundInline() {
   const { fills } = useFillValuesJotai();
-  const styleValues = useAppearanceValuesJotai();
+  const selectedId = useComposedStore((s) => s.selectedElementId);
+  const styleValues = useAppearanceValues(selectedId);
   const {
     addFill,
     removeFill,

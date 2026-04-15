@@ -30,7 +30,7 @@ import { OVERFLOW_OPTIONS } from "../constants/styleOptions";
 import { shadows } from "@composition/specs";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
-import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";
+import { useAppearanceValues } from "../hooks/useAppearanceValues";
 import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import { useStore } from "../../../stores";
@@ -70,8 +70,8 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStylePreview } =
     useOptimizedStyleActions();
-  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
-  const styleValues = useAppearanceValuesJotai();
+  const selectedId = useStore((s) => s.selectedElementId);
+  const styleValues = useAppearanceValues(selectedId);
 
   if (!styleValues) return null;
 

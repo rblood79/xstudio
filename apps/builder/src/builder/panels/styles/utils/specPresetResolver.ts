@@ -22,6 +22,11 @@ export interface LayoutSpecPreset {
   marginLeft?: number;
 }
 
+export interface AppearanceSpecPreset {
+  borderRadius?: number;
+  borderWidth?: number;
+}
+
 export interface TypographySpecPreset {
   fontSize?: number;
   fontWeight?: string;
@@ -34,6 +39,7 @@ type CacheKey = string; // `${type}:${size}`
 const transformCache = new Map<CacheKey, TransformSpecPreset>();
 const layoutCache = new Map<CacheKey, LayoutSpecPreset>();
 const typographyCache = new Map<CacheKey, TypographySpecPreset>();
+const appearanceCache = new Map<CacheKey, AppearanceSpecPreset>();
 
 export function resolveSpecPreset(
   type: string | undefined,
@@ -86,10 +92,47 @@ export function resolveTypographySpecPreset(
   return preset;
 }
 
+export function resolveAppearanceSpecPreset(
+  type: string | undefined,
+  size: string | undefined,
+): AppearanceSpecPreset {
+  if (!type) return {};
+  const key = `${type}:${size ?? "md"}`;
+  const cached = appearanceCache.get(key);
+  if (cached) return cached;
+
+  const spec = TAG_SPEC_MAP[type];
+  const preset: AppearanceSpecPreset = extractAppearancePreset(
+    spec,
+    size ?? "md",
+  );
+  appearanceCache.set(key, preset);
+  return preset;
+}
+
 export function clearSpecPresetCache(): void {
   transformCache.clear();
   layoutCache.clear();
   typographyCache.clear();
+  appearanceCache.clear();
+}
+
+function extractAppearancePreset(
+  spec: unknown,
+  size: string,
+): AppearanceSpecPreset {
+  const anySpec = spec as
+    | { sizes?: Record<string, Record<string, unknown>> }
+    | undefined;
+  const sizeEntry = anySpec?.sizes?.[size];
+  if (!sizeEntry) return {};
+  const preset: AppearanceSpecPreset = {};
+  const numericKeys = ["borderRadius", "borderWidth"] as const;
+  for (const k of numericKeys) {
+    const v = sizeEntry[k];
+    if (typeof v === "number") preset[k] = v;
+  }
+  return preset;
 }
 
 function extractTypographyPreset(

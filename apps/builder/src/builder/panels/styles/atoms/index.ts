@@ -25,13 +25,7 @@ export {
 
   // Layout section atoms — REMOVED (ADR-067 Phase 2, migrated to useLayoutValues/useLayoutAuxiliary)
 
-  // Appearance section atoms (5 properties)
-  backgroundColorAtom,
-  borderColorAtom,
-  borderWidthAtom,
-  borderRadiusAtom,
-  borderStyleAtom,
-  appearanceValuesAtom,
+  // Appearance section atoms — REMOVED (ADR-067 Phase 4, migrated to useAppearanceValues)
 
   // Typography section atoms — REMOVED (ADR-067 Phase 3, migrated to useTypographyValues)
 
