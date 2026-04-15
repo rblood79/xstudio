@@ -76,15 +76,15 @@ inline (element.style.*)
 [Pilot: Transform 섹션]
 
 useTransformValue(id, 'width')
-  └─ useStore(useShallow(s => {
-       const el = s.elementsMap.get(id);
-       return {
-         inline:      el?.properties?.style?.width,          // 사용자 override
-         effective:   s.layoutMap.get(id)?.width,            // Taffy 실효값 (live)
-         specDefault: resolveSpecPreset(el).width,           // Spec SSOT (직접)
-       };
-     }))
+  └─ inline   = useStore((s) => s.elementsMap.get(id)?.properties?.style?.width)
+     effective = useStore((s) => s.layoutMap.get(id)?.width)
+     type      = useStore((s) => s.elementsMap.get(id)?.type)
+     size      = useStore((s) => s.elementsMap.get(id)?.properties?.size)
+  → specDefault = useMemo(() => resolveSpecPreset(type, size).width, [type, size])
+  → return { inline, effective, specDefault }
 ```
+
+**구현 제약 (CRITICAL)**: 프로젝트 로컬 ESLint 룰(`apps/builder/eslint-local-rules/index.js:55-80`)이 `useStore(useShallow(...))`를 **금지**한다 (infinite loop 방지). 따라서 3-tier를 object selector + useShallow로 묶지 않고, **개별 primitive selector + `useMemo` 조립** 패턴을 사용한다. 각 selector는 primitive 값을 반환하므로 기본 Object.is equality로 충분 — 불필요한 리렌더 없음.
 
 **3-tier는 sequential fallback이 아니라 역할 분리**. `inline`은 input value에 바인딩, `effective`/`specDefault`는 placeholder/edit-seed 전용. 즉 input value는 inline이 없으면 빈 문자열이고, placeholder는 `effective ?? specDefault ?? 'auto'` 순으로 표시.
 
