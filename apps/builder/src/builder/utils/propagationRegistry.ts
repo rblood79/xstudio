@@ -34,6 +34,7 @@ import {
   CardSpec,
   GridListSpec,
   ListBoxSpec,
+  ToggleButtonGroupSpec,
 } from "@composition/specs";
 
 // ─── Collection Item propagation-only specs ─────────────────────────────────
@@ -183,6 +184,7 @@ registerPropagationSpec("RangeCalendar", RangeCalendarSpec);
 registerPropagationSpec("Card", CardSpec);
 registerPropagationSpec("GridList", GridListSpec);
 registerPropagationSpec("ListBox", ListBoxSpec);
+registerPropagationSpec("ToggleButtonGroup", ToggleButtonGroupSpec);
 // Collection Item → 자식 Text/Description 전파
 registerPropagationSpec(
   "GridListItem",

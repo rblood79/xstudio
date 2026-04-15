@@ -8,7 +8,7 @@
  */
 
 import type { Shape } from "./shape.types";
-import type { TokenRef } from "./token.types";
+import type { TokenRef, ShadowTokenRef } from "./token.types";
 import type { StateStyles } from "./state.types";
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -136,6 +136,18 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
 
   /** ADR-048: S2 Context 에뮬레이션 — 부모→자식 props 전파 규칙 */
   propagation?: PropagationSpec;
+
+  /** ADR-059 B5: Selection indicator 모드 스타일 (ToggleButtonGroup 등) */
+  indicatorMode?: IndicatorModeSpec;
+
+  /**
+   * CSS 색상 property emit 전략 (ADR-059 B5).
+   *
+   * - "direct" (default): background / color / border-color 직접 emit
+   * - "button-base": --button-color / --button-text / --button-border custom property emit
+   *   (RAC .button-base utility protocol 참여 — archetype="button" 표준)
+   */
+  cssEmitMode?: "direct" | "button-base";
 
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
@@ -566,6 +578,45 @@ export interface VariantSpec {
 
   /** subtle fillStyle — 텍스트 색상 (optional) */
   subtleText?: TokenRef;
+
+  // ─── ADR-059 B5: Selected 상태 색상 ───
+  /** 선택 상태 배경색 (optional) */
+  selectedBackground?: TokenRef;
+  /** 선택 + hover 배경색 (optional) */
+  selectedBackgroundHover?: TokenRef;
+  /** 선택 + pressed 배경색 (optional) */
+  selectedBackgroundPressed?: TokenRef;
+  /** 선택 상태 텍스트 색상 (optional) */
+  selectedText?: TokenRef;
+  /** 선택 상태 테두리 색상 (optional) */
+  selectedBorder?: TokenRef;
+
+  /** data-emphasized 조합 — 선택 시 accent 강조 (optional) */
+  emphasizedSelectedBackground?: TokenRef;
+  emphasizedSelectedText?: TokenRef;
+  emphasizedSelectedBorder?: TokenRef;
+}
+
+/**
+ * Indicator Mode 스펙 (ADR-059 B5)
+ *
+ * ToggleButtonGroup 등 "selection indicator" UI를 가지는 컴포넌트용.
+ * CSSGenerator가 `.react-aria-${name}[data-indicator="true"]` 컨테이너와
+ * 내부 `.react-aria-SelectionIndicator` 룰을 자동 생성한다.
+ */
+export interface IndicatorModeSpec {
+  /** indicator 배경 토큰 */
+  background: TokenRef;
+  /** indicator 위 선택 버튼 텍스트 색상 */
+  selectedText: TokenRef;
+  /** indicator pressed 배경 (optional) */
+  backgroundPressed?: TokenRef;
+  /** border-radius 토큰 (default: {radius.sm}) */
+  borderRadius?: TokenRef;
+  /** box-shadow 토큰 (default: {shadow.sm}) */
+  boxShadow?: string | ShadowTokenRef;
+  /** transition 지속 ms (default: 200) */
+  transitionMs?: number;
 }
 
 /**

@@ -14,7 +14,10 @@ import {
   PropertyColor,
   PropertySelect,
 } from "../../../components";
-import { ToggleButton, ToggleButtonGroup } from "@composition/shared/components";
+import {
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@composition/shared/components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
@@ -35,9 +38,10 @@ import {
   Baseline,
   TextWrap,
 } from "lucide-react";
+import { useStore } from "../../../stores";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
-import { useTypographyValuesJotai } from "../hooks/useTypographyValuesJotai";
+import { useTypographyValues } from "../hooks/useTypographyValues";
 import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import {
   DEFAULT_FONT_OPTIONS,
@@ -58,8 +62,8 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStylePreview } =
     useOptimizedStyleActions();
-  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
-  const styleValues = useTypographyValuesJotai();
+  const selectedId = useStore((s) => s.selectedElementId);
+  const styleValues = useTypographyValues(selectedId);
   const [registryFaces, setRegistryFaces] = useState(() =>
     loadFontRegistry().faces.map(({ family, weight }) => ({ family, weight })),
   );

@@ -6,8 +6,11 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSizeSubset } from "../types";
-import { useToggleButtonGroupIndicator } from "./ToggleButtonGroup";
-import "./styles/ToggleButton.css";
+import {
+  useToggleButtonGroupEmphasized,
+  useToggleButtonGroupIndicator,
+} from "./ToggleButtonGroup";
+import "./styles/generated/ToggleButton.css";
 
 export interface ToggleButtonExtendedProps extends ToggleButtonProps {
   /**
@@ -41,11 +44,14 @@ export function ToggleButton({
   ...props
 }: ToggleButtonExtendedProps) {
   const showIndicator = useToggleButtonGroupIndicator();
+  const groupEmphasized = useToggleButtonGroupEmphasized();
+  const effectiveEmphasized = isEmphasized || groupEmphasized;
 
   return (
     <RACToggleButton
       {...props}
-      data-emphasized={isEmphasized || undefined}
+      data-variant="default"
+      data-emphasized={effectiveEmphasized || undefined}
       data-quiet={isQuiet || undefined}
       data-size={size}
       className={composeRenderProps(props.className, (cls) =>
@@ -54,7 +60,12 @@ export function ToggleButton({
           : "react-aria-ToggleButton button-base",
       )}
     >
-      {showIndicator && <SelectionIndicator />}
+      {showIndicator && (
+        <SelectionIndicator
+          className="react-aria-SelectionIndicator button-base"
+          data-selected
+        />
+      )}
       {children as ReactNode}
     </RACToggleButton>
   );

@@ -1,14 +1,16 @@
 /**
- * useAppearanceValues - Appearance 섹션 전용 스타일 값 훅
+ * useAppearanceValues - Appearance 섹션 전용 Zustand 스타일 값 훅
  *
- * 🚀 Phase 22: 섹션별 훅 분리로 성능 최적화
- * - Appearance 섹션의 5개 속성만 의존성으로 사용
- * - 다른 섹션의 스타일 변경 시 재계산 방지 (82% 성능 개선)
+ * ADR-067 Phase 4: Jotai 제거, Spec preset direct lookup
  */
 
-import { useMemo } from 'react';
-import type { SelectedElement } from '../../../inspector/types';
-import { getStyleValue } from './useStyleValues';
+import { useMemo } from "react";
+import { useStore } from "../../../stores";
+import {
+  resolveAppearanceSpecPreset,
+  type AppearanceSpecPreset,
+} from "../utils/specPresetResolver";
+import { numToPx, firstDefined } from "../utils/styleValueHelpers";
 
 export interface AppearanceStyleValues {
   backgroundColor: string;
@@ -16,26 +18,48 @@ export interface AppearanceStyleValues {
   borderWidth: string;
   borderRadius: string;
   borderStyle: string;
+  boxShadow: string;
+  overflow: string;
 }
 
-/**
- * Appearance 섹션 전용 스타일 값 훅
- * backgroundColor, border 관련 5개 속성 추적
- */
 export function useAppearanceValues(
-  selectedElement: SelectedElement | null
+  id: string | null,
 ): AppearanceStyleValues | null {
-  // React Compiler 호환: selectedElement 전체를 의존성으로 사용
-  // 세부 속성 최적화는 상위 컴포넌트에서 selector를 통해 처리
-  return useMemo(() => {
-    if (!selectedElement) return null;
+  const style = useStore((s) => {
+    if (!id) return undefined;
+    const el = s.elementsMap.get(id);
+    return el?.props?.style as Record<string, unknown> | undefined;
+  });
+  const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
+  const size = useStore((s) => {
+    if (!id) return undefined;
+    return s.elementsMap.get(id)?.props?.size as string | undefined;
+  });
 
+  const specPreset = useMemo<AppearanceSpecPreset>(
+    () => resolveAppearanceSpecPreset(type, size),
+    [type, size],
+  );
+
+  return useMemo(() => {
+    if (!id) return null;
+    const s = style ?? {};
     return {
-      backgroundColor: getStyleValue(selectedElement, 'backgroundColor', '#FFFFFF'),
-      borderColor: getStyleValue(selectedElement, 'borderColor', '#000000'),
-      borderWidth: getStyleValue(selectedElement, 'borderWidth', '0px'),
-      borderRadius: getStyleValue(selectedElement, 'borderRadius', '0px'),
-      borderStyle: getStyleValue(selectedElement, 'borderStyle', 'solid'),
+      backgroundColor: firstDefined(s.backgroundColor, undefined, "#FFFFFF"),
+      borderColor: firstDefined(s.borderColor, undefined, "#000000"),
+      borderWidth: firstDefined(
+        s.borderWidth,
+        numToPx(specPreset.borderWidth),
+        "0px",
+      ),
+      borderRadius: firstDefined(
+        s.borderRadius,
+        numToPx(specPreset.borderRadius),
+        "0px",
+      ),
+      borderStyle: firstDefined(s.borderStyle, undefined, "solid"),
+      boxShadow: firstDefined(s.boxShadow, undefined, "none"),
+      overflow: firstDefined(s.overflow, undefined, "visible"),
     };
-  }, [selectedElement]);
+  }, [id, style, specPreset]);
 }

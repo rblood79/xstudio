@@ -702,7 +702,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       // 🚀 Performance: 2단계 set()으로 분리하여 paint 차단 최소화
       // - Phase 1 (즉시): 캔버스 하이라이트용 상태 (selectedElementId, Ids, IdsSet)
       // - Phase 2 (RAF): 인스펙터용 상태 (selectedElementProps)
-      //   → useZustandJotaiBridge의 useLayoutEffect가 Phase 1에서 element.props fallback으로
+      //   → StylesPanel 훅들이 Phase 1에서 element.props fallback으로
       //     기본값을 사용하고, Phase 2에서 완전한 props로 갱신
       if (elementId && !hasExternalProps) {
         let selectedElementIds: string[];

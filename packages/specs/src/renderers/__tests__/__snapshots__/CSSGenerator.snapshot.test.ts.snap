@@ -624,6 +624,92 @@ exports[`CSSGenerator snapshot baseline > Badge 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > Breadcrumb 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from BreadcrumbSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Breadcrumb.spec.ts
+ * Archetype: simple
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Breadcrumb {
+  /* Base styles — archetype: simple */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default variant */
+  background: var(--bg);
+  color: var(--fg-muted);
+  border: none;
+
+  /* Default size */
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Breadcrumb[data-variant="default"] {
+  background: var(--bg);
+  color: var(--fg-muted);
+
+  &[data-hovered] {
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  &[data-pressed] {
+    background: var(--bg);
+  }
+}
+
+.react-aria-Breadcrumb[data-size="S"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Breadcrumb[data-size="M"] {
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Breadcrumb[data-size="L"] {
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Breadcrumb[data-hovered] {
+}
+
+.react-aria-Breadcrumb[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Breadcrumb[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Breadcrumb {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > Breadcrumbs 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from BreadcrumbsSpec — DO NOT EDIT MANUALLY
@@ -732,9 +818,9 @@ exports[`CSSGenerator snapshot baseline > Button 1`] = `
     font-family: var(--font-sans);
 
   /* Default variant */
-  background: var(--fg);
-  color: var(--bg);
-  border: 1px solid var(--fg);
+  --button-color: var(--fg);
+  --button-text: var(--bg);
+  --button-border: var(--fg);
 
   /* Default size */
   height: auto;
@@ -749,92 +835,45 @@ exports[`CSSGenerator snapshot baseline > Button 1`] = `
 }
 
 .react-aria-Button[data-variant="accent"] {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-  border-color: var(--accent);
+  --button-color: var(--accent);
+  --button-text: var(--fg-on-accent);
+  --button-border: var(--accent);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--accent) 85%, black);
-    border-color: color-mix(in srgb, var(--accent) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--accent) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="primary"] {
-  background: var(--fg);
-  color: var(--bg);
-  border-color: var(--fg);
+  --button-color: var(--fg);
+  --button-text: var(--bg);
+  --button-border: var(--fg);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--bg-muted) 85%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--bg-muted) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="secondary"] {
-  background: var(--bg-overlay);
-  color: var(--fg);
-  border-color: var(--border);
+  --button-color: var(--bg-overlay);
+  --button-text: var(--fg);
+  --button-border: var(--border);
 
-  &[data-hovered] {
-    background: var(--bg-muted);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-muted);
-  }
 }
 
 .react-aria-Button[data-variant="negative"] {
-  background: var(--negative);
-  color: var(--color-white);
-  border-color: var(--negative);
+  --button-color: var(--negative);
+  --button-text: var(--color-white);
+  --button-border: var(--negative);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--negative) 85%, black);
-    border-color: color-mix(in srgb, var(--negative) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--negative) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="premium"] {
-  background: var(--color-purple-600);
-  color: var(--color-white);
-  border-color: var(--color-purple-600);
+  --button-color: var(--color-purple-600);
+  --button-text: var(--color-white);
+  --button-border: var(--color-purple-600);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--color-purple-600) 85%, black);
-    border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="genai"] {
-  background: var(--color-purple-600);
-  color: var(--color-white);
-  border-color: var(--color-purple-600);
+  --button-color: var(--color-purple-600);
+  --button-text: var(--color-white);
+  --button-border: var(--color-purple-600);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--color-purple-600) 85%, black);
-    border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-  }
 }
 
 .react-aria-Button[data-icon-only] {
@@ -1145,6 +1184,102 @@ exports[`CSSGenerator snapshot baseline > Calendar 1`] = `
 
 @media (forced-colors: active) {
   .react-aria-Calendar {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Card 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from CardSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Card.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Card {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default size */
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+}
+
+.react-aria-Card[data-size="xs"] {
+  height: auto;
+  padding: 4px 4px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+.react-aria-Card[data-size="sm"] {
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Card[data-size="md"] {
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+}
+
+.react-aria-Card[data-size="lg"] {
+  height: auto;
+  padding: 24px 24px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  gap: 16px;
+}
+
+.react-aria-Card[data-size="xl"] {
+  height: auto;
+  padding: 32px 32px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  gap: 20px;
+}
+
+.react-aria-Card[data-hovered] {
+}
+
+.react-aria-Card[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Card[data-pressed] {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.react-aria-Card[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Card {
     forced-color-adjust: auto;
   }
 }
@@ -3485,6 +3620,182 @@ exports[`CSSGenerator snapshot baseline > Description 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > Dialog 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from DialogSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Dialog.spec.ts
+ * Archetype: overlay
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Dialog {
+  /* Base styles — archetype: overlay */
+    position: fixed;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-xl);
+  gap: 12px;
+}
+
+.react-aria-Dialog[data-size="xs"] {
+  height: auto;
+  padding: 2px 2px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-Dialog[data-size="sm"] {
+  height: auto;
+  padding: 4px 4px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 8px;
+}
+
+.react-aria-Dialog[data-size="md"] {
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-xl);
+  gap: 12px;
+}
+
+.react-aria-Dialog[data-size="lg"] {
+  height: auto;
+  padding: 12px 12px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-2xl);
+  gap: 16px;
+}
+
+.react-aria-Dialog[data-size="xl"] {
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-xl);
+  border-radius: var(--radius-2xl);
+  gap: 20px;
+}
+
+.react-aria-Dialog[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Dialog[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Dialog {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-Dialog {
+    transition-duration: 0s !important;
+  }
+}
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Disclosure 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from DisclosureSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Disclosure.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Disclosure {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default size */
+  height: auto;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  line-height: var(--text-sm--line-height);
+  border-width: 1px;
+  gap: 8px;
+  --icon-size: 16px;
+}
+
+.react-aria-Disclosure[data-size="sm"] {
+  height: auto;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  line-height: var(--text-xs--line-height);
+  border-width: 1px;
+  gap: 6px;
+  --icon-size: 14px;
+}
+
+.react-aria-Disclosure[data-size="md"] {
+  height: auto;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  line-height: var(--text-sm--line-height);
+  border-width: 1px;
+  gap: 8px;
+  --icon-size: 16px;
+}
+
+.react-aria-Disclosure[data-size="lg"] {
+  height: auto;
+  padding: 8px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  line-height: var(--text-base--line-height);
+  border-width: 1px;
+  gap: 10px;
+  --icon-size: 20px;
+}
+
+.react-aria-Disclosure[data-hovered] {
+}
+
+.react-aria-Disclosure[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Disclosure[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Disclosure {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > DisclosureGroup 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from DisclosureGroupSpec — DO NOT EDIT MANUALLY
@@ -3540,6 +3851,149 @@ exports[`CSSGenerator snapshot baseline > DisclosureGroup 1`] = `
 
 @media (forced-colors: active) {
   .react-aria-DisclosureGroup {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > DisclosureHeader 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from DisclosureHeaderSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/DisclosureHeader.spec.ts
+ * Archetype: simple
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-DisclosureHeader {
+  /* Base styles — archetype: simple */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default variant */
+  background: transparent;
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-DisclosureHeader[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
+  }
+
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-DisclosureHeader[data-size="md"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-DisclosureHeader[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-DisclosureHeader[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-DisclosureHeader {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > DropZone 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from DropZoneSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/DropZone.spec.ts
+ * Archetype: simple
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-DropZone {
+  /* Base styles — archetype: simple */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 120px;
+  padding: 24px 24px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+  --icon-size: 32px;
+}
+
+.react-aria-DropZone[data-size="sm"] {
+  height: 80px;
+  padding: 16px 16px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+  --icon-size: 24px;
+}
+
+.react-aria-DropZone[data-size="md"] {
+  height: 120px;
+  padding: 24px 24px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+  --icon-size: 32px;
+}
+
+.react-aria-DropZone[data-size="lg"] {
+  height: 160px;
+  padding: 32px 32px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  gap: 16px;
+  --icon-size: 40px;
+}
+
+.react-aria-DropZone[data-hovered] {
+}
+
+.react-aria-DropZone[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-DropZone[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-DropZone {
     forced-color-adjust: auto;
   }
 }
@@ -5048,6 +5502,95 @@ exports[`CSSGenerator snapshot baseline > MaskedFrame 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > Menu 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from MenuSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Menu.spec.ts
+ * Archetype: collection
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Menu {
+  /* Base styles — archetype: collection */
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: auto;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  line-height: var(--text-sm--line-height);
+  border-width: 1px;
+  gap: 8px;
+}
+
+.react-aria-Menu[data-size="sm"] {
+  height: auto;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  line-height: var(--text-xs--line-height);
+  border-width: 1px;
+  gap: 6px;
+}
+
+.react-aria-Menu[data-size="md"] {
+  height: auto;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  line-height: var(--text-sm--line-height);
+  border-width: 1px;
+  gap: 8px;
+}
+
+.react-aria-Menu[data-size="lg"] {
+  height: auto;
+  padding: 8px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  line-height: var(--text-base--line-height);
+  border-width: 1px;
+  gap: 10px;
+}
+
+.react-aria-Menu[data-size="xl"] {
+  height: auto;
+  padding: 12px 24px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  line-height: var(--text-lg--line-height);
+  border-width: 1px;
+  gap: 12px;
+}
+
+.react-aria-Menu[data-hovered] {
+}
+
+.react-aria-Menu[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Menu[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Menu {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > Meter 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from MeterSpec — DO NOT EDIT MANUALLY
@@ -6111,112 +6654,6 @@ exports[`CSSGenerator snapshot baseline > Pagination 1`] = `
 
   .react-aria-Pagination .react-aria-Button:disabled {
     opacity: 0.38;
-  }
-
-
-} /* @layer components */"
-`;
-
-exports[`CSSGenerator snapshot baseline > Panel 1`] = `
-"/* ============================================================
- * AUTO-GENERATED from PanelSpec — DO NOT EDIT MANUALLY
- * Source: packages/specs/src/components/Panel.spec.ts
- * Archetype: collection
- * ============================================================ */
-
-@layer components {
-
-.react-aria-Panel {
-  /* Base styles — archetype: collection */
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    border-radius: var(--radius-md);
-    background-color: var(--bg-raised);
-    border: 1px solid var(--border);
-
-  /* Default size */
-  font-size: var(--text-sm);
-  border-radius: var(--radius-md);
-  gap: 8px;
-}
-
-.react-aria-Panel[data-size="sm"] {
-  font-size: var(--text-xs);
-  border-radius: var(--radius-md);
-  gap: 6px;
-}
-
-.react-aria-Panel[data-size="md"] {
-  font-size: var(--text-sm);
-  border-radius: var(--radius-md);
-  gap: 8px;
-}
-
-.react-aria-Panel[data-size="lg"] {
-  font-size: var(--text-base);
-  border-radius: var(--radius-lg);
-  gap: 10px;
-}
-
-.react-aria-Panel[data-hovered] {
-}
-
-.react-aria-Panel[data-focus-visible] {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.react-aria-Panel[data-disabled] {
-  opacity: 0.38;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* ── Tier 2: Composite Delegation ── */
-
-
-@media (forced-colors: active) {
-  .react-aria-Panel {
-    forced-color-adjust: auto;
-  }
-}
-
-
-  .react-aria-Panel .panel-title {
-    padding: var(--spacing-xs) var(--spacing-md);
-    font-weight: 600;
-    font-size: var(--text-sm);
-    line-height: var(--text-sm--line-height);
-    color: var(--fg);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .react-aria-Panel .panel-content {
-    padding: var(--spacing-xs) var(--spacing-md);
-    flex: 1;
-    min-height: 64px;
-  }
-
-  .react-aria-Panel .panel-tab {
-    border-radius: 0;
-    border: none;
-    padding: 0;
-  }
-
-  .react-aria-Panel .panel-sidebar {
-    background: var(--bg-inset);
-  }
-
-  .react-aria-Panel .panel-card {
-    box-shadow: var(--shadow-sm);
-  }
-
-  .react-aria-Panel .panel-modal {
-    max-width: 600px;
   }
 
 
@@ -8527,6 +8964,387 @@ exports[`CSSGenerator snapshot baseline > Skeleton 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > Slider 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from SliderSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Slider.spec.ts
+ * Archetype: slider
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Slider {
+  /* Base styles — archetype: slider */
+    display: grid;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+.react-aria-Slider[data-size="sm"] {
+  height: 4px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+.react-aria-Slider[data-size="md"] {
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+.react-aria-Slider[data-size="lg"] {
+  height: 12px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+.react-aria-Slider[data-size="xl"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+.react-aria-Slider[data-hovered] {
+}
+
+.react-aria-Slider[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Slider[data-pressed] {
+}
+
+.react-aria-Slider[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Slider {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > SliderOutput 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from SliderOutputSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SliderOutput.spec.ts
+ * Archetype: simple
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-SliderOutput {
+  /* Base styles — archetype: simple */
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+  line-height: 20px;
+}
+
+.react-aria-SliderOutput[data-size="sm"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+  line-height: 16px;
+}
+
+.react-aria-SliderOutput[data-size="md"] {
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+  line-height: 20px;
+}
+
+.react-aria-SliderOutput[data-size="lg"] {
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  line-height: 24px;
+}
+
+.react-aria-SliderOutput[data-size="xl"] {
+  height: 28px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+  line-height: 28px;
+}
+
+.react-aria-SliderOutput[data-hovered] {
+}
+
+.react-aria-SliderOutput[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-SliderOutput[data-pressed] {
+}
+
+.react-aria-SliderOutput[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-SliderOutput {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > SliderThumb 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from SliderThumbSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SliderThumb.spec.ts
+ * Archetype: slider
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-SliderThumb {
+  /* Base styles — archetype: slider */
+    display: grid;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-size="sm"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-size="md"] {
+  height: 20px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-size="lg"] {
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-SliderThumb[data-hovered] {
+}
+
+.react-aria-SliderThumb[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-SliderThumb[data-pressed] {
+}
+
+.react-aria-SliderThumb[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-SliderThumb {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > SliderTrack 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from SliderTrackSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SliderTrack.spec.ts
+ * Archetype: slider
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-SliderTrack {
+  /* Base styles — archetype: slider */
+    display: grid;
+    box-sizing: border-box;
+
+  /* Default size */
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="sm"] {
+  height: 4px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="md"] {
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="lg"] {
+  height: 12px;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-size="xl"] {
+  height: 16px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-SliderTrack[data-hovered] {
+}
+
+.react-aria-SliderTrack[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-SliderTrack[data-pressed] {
+}
+
+.react-aria-SliderTrack[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-SliderTrack {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Slot 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from SlotSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Slot.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Slot {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default size */
+  height: 60px;
+  padding: 12px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Slot[data-size="sm"] {
+  height: 40px;
+  padding: 8px 8px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.react-aria-Slot[data-size="md"] {
+  height: 60px;
+  padding: 12px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
+
+.react-aria-Slot[data-size="lg"] {
+  height: 80px;
+  padding: 16px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+}
+
+.react-aria-Slot[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Slot[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Slot {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > StatusLight 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from StatusLightSpec — DO NOT EDIT MANUALLY
@@ -9087,6 +9905,158 @@ exports[`CSSGenerator snapshot baseline > Switcher 1`] = `
 } /* @layer components */"
 `;
 
+exports[`CSSGenerator snapshot baseline > Tab 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from TabSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Tab.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Tab {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default variant */
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+
+  /* Default size */
+  height: 29px;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+  font-weight: 500;
+}
+
+.react-aria-Tab[data-variant="default"] {
+  background: transparent;
+  color: var(--fg-muted);
+
+  &[data-hovered] {
+    background: transparent;
+    color: var(--fg);
+  }
+
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-Tab[data-size="sm"] {
+  height: 21px;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+  font-weight: 500;
+}
+
+.react-aria-Tab[data-size="md"] {
+  height: 29px;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+  font-weight: 500;
+}
+
+.react-aria-Tab[data-size="lg"] {
+  height: 41px;
+  padding: 8px 16px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+  font-weight: 500;
+}
+
+.react-aria-Tab[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-Tab[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Tab {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > TabList 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from TabListSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/TabList.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-TabList {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-TabList[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-TabList[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+
+@media (forced-colors: active) {
+  .react-aria-TabList {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
 exports[`CSSGenerator snapshot baseline > TableView 1`] = `
 "/* ============================================================
  * AUTO-GENERATED from TableViewSpec — DO NOT EDIT MANUALLY
@@ -9173,6 +10143,84 @@ exports[`CSSGenerator snapshot baseline > TableView 1`] = `
 
 @media (forced-colors: active) {
   .react-aria-TableView {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > Tabs 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from TabsSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Tabs.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-Tabs {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+
+  /* Default size */
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Tabs[data-size="sm"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Tabs[data-size="md"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Tabs[data-size="lg"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-Tabs[data-hovered] {
+}
+
+.react-aria-Tabs[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-inset-offset);
+}
+
+.react-aria-Tabs[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-Tabs[data-size="sm"] .react-aria-Tab {
+  --tab-padding: var(--spacing-2xs) var(--spacing-sm);
+  --tab-font-size: var(--text-xs);
+}
+
+.react-aria-Tabs[data-size="md"] .react-aria-Tab {
+  --tab-padding: var(--spacing-xs) var(--spacing-md);
+  --tab-font-size: var(--text-sm);
+}
+
+.react-aria-Tabs[data-size="lg"] .react-aria-Tab {
+  --tab-padding: var(--spacing-sm) var(--spacing-lg);
+  --tab-font-size: var(--text-base);
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-Tabs {
     forced-color-adjust: auto;
   }
 }
@@ -10083,9 +11131,9 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
     font-family: var(--font-sans);
 
   /* Default variant */
-  background: var(--bg-muted);
-  color: var(--fg);
-  border: 1px solid transparent;
+  --button-color: var(--bg-muted);
+  --button-text: var(--fg);
+  --button-border: transparent;
 
   /* Default size */
   height: auto;
@@ -10098,16 +11146,21 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
 }
 
 .react-aria-ToggleButton[data-variant="default"] {
-  background: var(--bg-muted);
-  color: var(--fg);
-  border-color: transparent;
+  --button-color: var(--bg-muted);
+  --button-text: var(--fg);
+  --button-border: transparent;
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--bg-muted) 85%, black);
+
+  &[data-selected] {
+    --button-color: var(--fg);
+    --button-text: var(--bg);
+    --button-border: var(--fg);
   }
 
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--bg-muted) 75%, black);
+  &[data-emphasized][data-selected] {
+    --button-color: var(--accent);
+    --button-text: var(--fg-on-accent);
+    --button-border: var(--accent);
   }
 }
 
@@ -10195,6 +11248,133 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */"
+`;
+
+exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
+"/* ============================================================
+ * AUTO-GENERATED from ToggleButtonGroupSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ToggleButtonGroup.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-ToggleButtonGroup {
+  /* Base styles — archetype: default */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
+
+  /* Default size */
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+}
+
+.react-aria-ToggleButtonGroup[data-size="xs"] {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+}
+
+.react-aria-ToggleButtonGroup[data-size="sm"] {
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.react-aria-ToggleButtonGroup[data-size="md"] {
+  font-size: var(--text-base);
+  border-radius: var(--radius-lg);
+}
+
+.react-aria-ToggleButtonGroup[data-size="lg"] {
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+}
+
+.react-aria-ToggleButtonGroup[data-size="xl"] {
+  font-size: var(--text-xl);
+  border-radius: var(--radius-xl);
+}
+
+.react-aria-ToggleButtonGroup[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-ToggleButtonGroup[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-ToggleButtonGroup[data-size="sm"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-sm);
+}
+
+.react-aria-ToggleButtonGroup[data-size="md"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-md);
+}
+
+.react-aria-ToggleButtonGroup[data-size="lg"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-lg);
+}
+
+
+/* ── Indicator Mode ── */
+.react-aria-ToggleButtonGroup[data-indicator="true"] {
+  --indicator-bg: var(--bg-overlay);
+  --indicator-text: var(--fg-on-accent);
+}
+
+.react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-sm);
+  --button-color: var(--indicator-bg);
+  --button-text: var(--indicator-text);
+  --button-border: var(--indicator-bg);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  transition: translate 200ms cubic-bezier(0.16, 1, 0.3, 1), width 200ms cubic-bezier(0.16, 1, 0.3, 1), height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton {
+  position: relative;
+  --button-color: transparent;
+  --button-border: transparent;
+  border-width: 0;
+}
+
+.react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected] {
+  --button-color: transparent;
+  --button-border: transparent;
+  --button-text: var(--indicator-text);
+}
+
+.react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected][data-pressed] {
+  --button-color: transparent;
+  --button-border: transparent;
+  --button-text: var(--fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+    transition: none;
+  }
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-ToggleButtonGroup {
+    forced-color-adjust: auto;
+  }
+}
+
 
 } /* @layer components */"
 `;

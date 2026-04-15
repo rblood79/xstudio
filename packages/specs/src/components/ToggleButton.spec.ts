@@ -60,6 +60,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   name: "ToggleButton",
   description: "React Aria 기반 토글 버튼 컴포넌트",
   archetype: "button",
+  cssEmitMode: "button-base",
   element: "button",
 
   defaultVariant: "default",
@@ -73,6 +74,16 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       backgroundPressed: "{color.neutral-pressed}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.transparent}" as TokenRef,
+
+      // ADR-059 B5 — selected (기존 TOGGLE_SELECTED_COLORS.default 이관)
+      selectedBackground: "{color.neutral}" as TokenRef,
+      selectedText: "{color.base}" as TokenRef,
+      selectedBorder: "{color.neutral}" as TokenRef,
+
+      // ADR-059 B5 — emphasized × selected (기존 TOGGLE_SELECTED_COLORS.emphasized 이관)
+      emphasizedSelectedBackground: "{color.accent}" as TokenRef,
+      emphasizedSelectedText: "{color.on-accent}" as TokenRef,
+      emphasizedSelectedBorder: "{color.accent}" as TokenRef,
     },
   },
 
@@ -173,7 +184,11 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = ToggleButtonSpec.variants![(props as { variant?: keyof typeof ToggleButtonSpec.variants }).variant ?? ToggleButtonSpec.defaultVariant!];
+      const variant =
+        ToggleButtonSpec.variants![
+          (props as { variant?: keyof typeof ToggleButtonSpec.variants })
+            .variant ?? ToggleButtonSpec.defaultVariant!
+        ];
       // S2: isEmphasized → selected 시 accent, 기본 → selected 시 neutral-subtle
       const selectedKey = props.isEmphasized ? "emphasized" : "default";
 
@@ -295,7 +310,10 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
             : size.paddingX;
 
         // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-        const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+        const fontSize = resolveSpecFontSize(
+          props.style?.fontSize ?? size.fontSize,
+          16,
+        );
         const fwRaw = props.style?.fontWeight;
         const fw =
           fwRaw != null

@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { ComponentSpec, Shape, TokenRef, ShadowTokenRef } from "../types";
 import {
   Eye,
   ArrowLeftRight,
@@ -57,6 +57,15 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
     },
   },
 
+  // ADR-059 B5
+  indicatorMode: {
+    background: "{color.layer-1}" as TokenRef,
+    selectedText: "{color.on-accent}" as TokenRef,
+    borderRadius: "{radius.sm}" as TokenRef,
+    boxShadow: "{shadow.sm}" as ShadowTokenRef,
+    transitionMs: 200,
+  },
+
   sizes: {
     xs: {
       height: 0,
@@ -98,6 +107,18 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
       borderRadius: "{radius.xl}" as TokenRef,
       gap: 0,
     },
+  },
+
+  // ADR-048: 부모→자식 props 전파 (ADR-059 B5)
+  propagation: {
+    rules: [
+      {
+        parentProp: "isEmphasized",
+        childPath: "ToggleButton",
+        override: false,
+      },
+      { parentProp: "size", childPath: "ToggleButton", override: false },
+    ],
   },
 
   // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
@@ -195,7 +216,11 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ToggleButtonGroupSpec.variants![(props as { variant?: keyof typeof ToggleButtonGroupSpec.variants }).variant ?? ToggleButtonGroupSpec.defaultVariant!];
+      const variant =
+        ToggleButtonGroupSpec.variants![
+          (props as { variant?: keyof typeof ToggleButtonGroupSpec.variants })
+            .variant ?? ToggleButtonGroupSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 

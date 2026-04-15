@@ -1,22 +1,18 @@
-/**
- * useLayoutValues - Layout 섹션 전용 스타일 값 훅
- *
- * 🚀 Phase 22: 섹션별 훅 분리로 성능 최적화
- * - Layout 섹션의 속성만 의존성으로 사용
- * - 다른 섹션의 스타일 변경 시 재계산 방지
- */
-
-import { useMemo } from 'react';
-import type { SelectedElement } from '../../../inspector/types';
-import { getStyleValue } from './useStyleValues';
+import { useMemo } from "react";
+import { useStore } from "../../../stores";
+import {
+  resolveLayoutSpecPreset,
+  type LayoutSpecPreset,
+} from "../utils/specPresetResolver";
+import { numToPx, firstDefined } from "../utils/styleValueHelpers";
 
 export interface LayoutStyleValues {
   display: string;
   flexDirection: string;
-  flexWrap: string;
   alignItems: string;
   justifyContent: string;
   gap: string;
+  flexWrap: string;
   padding: string;
   paddingTop: string;
   paddingRight: string;
@@ -29,34 +25,75 @@ export interface LayoutStyleValues {
   marginLeft: string;
 }
 
-/**
- * Layout 섹션 전용 스타일 값 훅
- * display, flex 관련, gap, padding, margin 속성 추적
- */
-export function useLayoutValues(
-  selectedElement: SelectedElement | null
-): LayoutStyleValues | null {
-  // React Compiler 호환: selectedElement 전체를 의존성으로 사용
-  return useMemo(() => {
-    if (!selectedElement) return null;
+export function useLayoutValues(id: string | null): LayoutStyleValues | null {
+  const style = useStore((s) => {
+    if (!id) return undefined;
+    const el = s.elementsMap.get(id);
+    return el?.props?.style as Record<string, unknown> | undefined;
+  });
+  const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
+  const size = useStore((s) => {
+    if (!id) return undefined;
+    return s.elementsMap.get(id)?.props?.size as string | undefined;
+  });
 
+  const specPreset = useMemo<LayoutSpecPreset>(
+    () => resolveLayoutSpecPreset(type, size),
+    [type, size],
+  );
+
+  return useMemo(() => {
+    if (!id) return null;
+    const s = style ?? {};
     return {
-      display: getStyleValue(selectedElement, 'display', 'block'),
-      flexDirection: getStyleValue(selectedElement, 'flexDirection', 'row'),
-      flexWrap: getStyleValue(selectedElement, 'flexWrap', 'nowrap'),
-      alignItems: getStyleValue(selectedElement, 'alignItems', ''),
-      justifyContent: getStyleValue(selectedElement, 'justifyContent', ''),
-      gap: getStyleValue(selectedElement, 'gap', '0px'),
-      padding: getStyleValue(selectedElement, 'padding', '0px'),
-      paddingTop: getStyleValue(selectedElement, 'paddingTop', ''),
-      paddingRight: getStyleValue(selectedElement, 'paddingRight', ''),
-      paddingBottom: getStyleValue(selectedElement, 'paddingBottom', ''),
-      paddingLeft: getStyleValue(selectedElement, 'paddingLeft', ''),
-      margin: getStyleValue(selectedElement, 'margin', '0px'),
-      marginTop: getStyleValue(selectedElement, 'marginTop', ''),
-      marginRight: getStyleValue(selectedElement, 'marginRight', ''),
-      marginBottom: getStyleValue(selectedElement, 'marginBottom', ''),
-      marginLeft: getStyleValue(selectedElement, 'marginLeft', ''),
+      display: firstDefined(s.display, undefined, "block"),
+      flexDirection: firstDefined(s.flexDirection, undefined, "row"),
+      alignItems: firstDefined(s.alignItems, undefined, ""),
+      justifyContent: firstDefined(s.justifyContent, undefined, ""),
+      gap: firstDefined(s.gap, numToPx(specPreset.gap), "0px"),
+      flexWrap: firstDefined(s.flexWrap, undefined, "nowrap"),
+      padding: firstDefined(s.padding, undefined, "0px"),
+      paddingTop: firstDefined(
+        s.paddingTop,
+        numToPx(specPreset.paddingTop),
+        "0px",
+      ),
+      paddingRight: firstDefined(
+        s.paddingRight,
+        numToPx(specPreset.paddingRight),
+        "0px",
+      ),
+      paddingBottom: firstDefined(
+        s.paddingBottom,
+        numToPx(specPreset.paddingBottom),
+        "0px",
+      ),
+      paddingLeft: firstDefined(
+        s.paddingLeft,
+        numToPx(specPreset.paddingLeft),
+        "0px",
+      ),
+      margin: firstDefined(s.margin, undefined, "0px"),
+      marginTop: firstDefined(
+        s.marginTop,
+        numToPx(specPreset.marginTop),
+        "0px",
+      ),
+      marginRight: firstDefined(
+        s.marginRight,
+        numToPx(specPreset.marginRight),
+        "0px",
+      ),
+      marginBottom: firstDefined(
+        s.marginBottom,
+        numToPx(specPreset.marginBottom),
+        "0px",
+      ),
+      marginLeft: firstDefined(
+        s.marginLeft,
+        numToPx(specPreset.marginLeft),
+        "0px",
+      ),
     };
-  }, [selectedElement]);
+  }, [id, style, specPreset]);
 }

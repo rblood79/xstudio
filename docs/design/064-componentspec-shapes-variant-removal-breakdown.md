@@ -9,26 +9,31 @@
   - variant 실사용: 78파일 (215건 `variant.X` 소비)
   - `_variant` 무시: 13파일 (mechanical 삭제)
   - `shapes: () => []` 또는 기타: 잔여
-- `packages/specs/src/renderers/PixiRenderer.ts` — `spec.render.shapes(props, variantSpec, ...)` 호출부 1곳
-- `apps/builder/src/builder/workspace/canvas/skia/buildSpecNodeData.ts` — 동일 호출부 1곳
-- **총 ~86 파일**
+- `apps/builder/src/builder/workspace/canvas/skia/buildSpecNodeData.ts` — Skia 렌더 메인 호출부
+- `apps/builder/src/builder/workspace/canvas/utils/specTextStyle.ts` — 텍스트 스타일 추출
+- `apps/builder/src/builder/workspace/overlay/specTextStyleForOverlay.ts` — 오버레이 텍스트 스타일
+- ~~`packages/specs/src/renderers/PixiRenderer.ts`~~ — Phase 0 당시 존재했으나 dead code였으며 2026-04-15 제거 (ADR-100 Phase 10+)
+- **총 ~95 파일** (commit `40fa47cb` 실측)
 
 ## API 계약 변경
 
 **Before**:
+
 ```ts
 shapes: (props, variant, size, state) => {
-  fill: variant.background
-}
+  fill: variant.background;
+};
 // caller: spec.render.shapes(props, variantSpec, sizeSpec, state)
 ```
 
 **After (self-lookup)**:
+
 ```ts
 shapes: (props, size, state) => {
-  const variant = TextFieldSpec.variants[props.variant ?? TextFieldSpec.defaultVariant];
-  fill: variant.background
-}
+  const variant =
+    TextFieldSpec.variants[props.variant ?? TextFieldSpec.defaultVariant];
+  fill: variant.background;
+};
 // caller: spec.render.shapes(props, sizeSpec, state)
 ```
 
@@ -59,15 +64,16 @@ shapes: (props, size, state) => {
 
 ### Phase 2 — 후속 정리
 
-- 사용되지 않는 `VariantSpec` 파라미터 타입 export 제거 (import 체인 점검)
-- ADR-062 재개 신호
+- `VariantSpec` 타입은 **유지 정당**: CSSGenerator/ReactRenderer/state.types.ts에서 여전히 사용 중(variant별 색상 정의용 데이터 구조). caller-chain에서 파라미터로 전달되는 경로만 제거하는 것이 본 ADR 목표였으며 달성됨
+- ADR-062 재개 신호 — 완료 (commit `4a08be1e` Phase 1c variant 제거)
+- PixiRenderer.ts dead code 제거 — 완료 (ADR-100 Phase 10+, commit `80d4e631`)
 
 ## Gate
 
-| Gate | 시점 | 통과 조건 | 실패 시 대안 |
-| ---- | ---- | --------- | ------------ |
-| G1 | Phase 0 커밋 직후 | type-check pass + build:specs 0 byte diff + Storybook 스모크 pass | 전체 revert, 원인 분석 후 재시도 |
-| G2 | Phase 1 완료 | parallel-verify 5/5 대칭 통과 | 실패 Spec self-lookup 로직 재검토 |
+| Gate | 시점              | 통과 조건                                                         | 실패 시 대안                      |
+| ---- | ----------------- | ----------------------------------------------------------------- | --------------------------------- |
+| G1   | Phase 0 커밋 직후 | type-check pass + build:specs 0 byte diff + Storybook 스모크 pass | 전체 revert, 원인 분석 후 재시도  |
+| G2   | Phase 1 완료      | parallel-verify 5/5 대칭 통과                                     | 실패 Spec self-lookup 로직 재검토 |
 
 ## 롤백
 

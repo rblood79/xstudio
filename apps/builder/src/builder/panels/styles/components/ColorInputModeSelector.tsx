@@ -2,29 +2,26 @@
  * ColorInputModeSelector - 색상 입력 모드 선택기
  *
  * 5가지 모드: RGBA, HEX, CSS, HSL, HSB
- * Jotai colorInputModeAtom에서 읽기/쓰기
- *
- * @since 2026-02-10 Color Picker Phase 1
+ * useFillUIStore (Zustand)에서 읽기/쓰기
  */
 
-import { memo, useCallback } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
-import type { ColorInputMode } from '../../../../types/builder/fill.types';
-import { colorInputModeAtom } from '../atoms/fillAtoms';
+import { memo, useCallback } from "react";
+import type { ColorInputMode } from "../../../../types/builder/fill.types";
+import { useFillUIStore } from "../hooks/useFillValues";
 
-import './ColorInputModeSelector.css';
+import "./ColorInputModeSelector.css";
 
 const MODES: { value: ColorInputMode; label: string }[] = [
-  { value: 'hex', label: 'HEX' },
-  { value: 'rgba', label: 'RGBA' },
-  { value: 'css', label: 'CSS' },
-  { value: 'hsl', label: 'HSL' },
-  { value: 'hsb', label: 'HSB' },
+  { value: "hex", label: "HEX" },
+  { value: "rgba", label: "RGBA" },
+  { value: "css", label: "CSS" },
+  { value: "hsl", label: "HSL" },
+  { value: "hsb", label: "HSB" },
 ];
 
 export const ColorInputModeSelector = memo(function ColorInputModeSelector() {
-  const mode = useAtomValue(colorInputModeAtom);
-  const setMode = useSetAtom(colorInputModeAtom);
+  const mode = useFillUIStore((s) => s.colorInputMode);
+  const setMode = useFillUIStore((s) => s.setColorInputMode);
 
   const handleChange = useCallback(
     (newMode: ColorInputMode) => {
@@ -34,7 +31,11 @@ export const ColorInputModeSelector = memo(function ColorInputModeSelector() {
   );
 
   return (
-    <div className="color-input-mode-selector" role="radiogroup" aria-label="Color input mode">
+    <div
+      className="color-input-mode-selector"
+      role="radiogroup"
+      aria-label="Color input mode"
+    >
       {MODES.map((m) => (
         <button
           key={m.value}

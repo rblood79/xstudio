@@ -3,12 +3,9 @@
  *
  * Phase 2: Color + Gradient 다중 레이어
  * - PropertySection 래퍼 + 내부 Content 분리
- * - Jotai atom 구독 (fillsAtom)
+ * - Zustand 구독 (useFillValues)
  * - @dnd-kit/sortable 드래그 순서 변경
  * - memo 최적화
- *
- * @since 2026-02-10 Color Picker Phase 1
- * @updated 2026-02-10 Gradient Phase 2
  */
 
 import { memo, useCallback, useMemo } from "react";
@@ -33,7 +30,7 @@ import { Popover } from "@composition/shared/components/Popover";
 import { PropertySection } from "../../../components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps, iconSmall } from "../../../../utils/ui/uiConstants";
-import { useFillValuesJotai } from "../hooks/useFillValuesJotai";
+import { useFillValues } from "../hooks/useFillValues";
 import { useFillActions } from "../hooks/useFillActions";
 import type {
   FillItem,
@@ -44,7 +41,8 @@ import { FillType } from "../../../../types/builder/fill.types";
 import { FillLayerRow } from "../components/FillLayerRow";
 import { FillDetailPopover } from "../components/FillDetailPopover";
 import { gradientStopsToCss, normalizeToHex8 } from "../utils/colorUtils";
-import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";
+import { useAppearanceValues } from "../hooks/useAppearanceValues";
+import { useStore as useComposedStore } from "../../../stores";
 
 import "./FillSection.css";
 
@@ -93,7 +91,7 @@ function SortableFillRow({
  * Jotai atom에서 직접 값 구독
  */
 const FillSectionContent = memo(function FillSectionContent() {
-  const { fills } = useFillValuesJotai();
+  const { fills } = useFillValues();
   const {
     removeFill,
     reorderFill,
@@ -164,7 +162,7 @@ const FillSectionContent = memo(function FillSectionContent() {
  * PropertySection 래퍼 없이 Background 콘텐츠만 제공
  */
 export const FillSectionInline = memo(function FillSectionInline() {
-  const { fills } = useFillValuesJotai();
+  const { fills } = useFillValues();
   const { addFill } = useFillActions();
 
   const handleAdd = useCallback(() => {
@@ -204,8 +202,9 @@ export const FillSectionInline = memo(function FillSectionInline() {
  * - 추가 Fill(2번째~): 그리드 아래 FillLayerRow 리스트
  */
 export const FillBackgroundInline = memo(function FillBackgroundInline() {
-  const { fills } = useFillValuesJotai();
-  const styleValues = useAppearanceValuesJotai();
+  const { fills } = useFillValues();
+  const selectedId = useComposedStore((s) => s.selectedElementId);
+  const styleValues = useAppearanceValues(selectedId);
   const {
     addFill,
     removeFill,
