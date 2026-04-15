@@ -23,30 +23,7 @@ export {
   topAtom,
   leftAtom,
 
-  // Layout section atoms (16 properties)
-  displayAtom,
-  flexDirectionAtom,
-  alignItemsAtom,
-  justifyContentAtom,
-  gapAtom,
-  flexWrapAtom,
-  paddingAtom,
-  paddingTopAtom,
-  paddingRightAtom,
-  paddingBottomAtom,
-  paddingLeftAtom,
-  marginAtom,
-  marginTopAtom,
-  marginRightAtom,
-  marginBottomAtom,
-  marginLeftAtom,
-  layoutValuesAtom,
-
-  // Layout alignment keys atoms (ToggleButtonGroup용)
-  flexDirectionKeysAtom,
-  flexAlignmentKeysAtom,
-  justifyContentSpacingKeysAtom,
-  flexWrapKeysAtom,
+  // Layout section atoms — REMOVED (ADR-067 Phase 2, migrated to useLayoutValues/useLayoutAuxiliary)
 
   // Appearance section atoms (5 properties)
   backgroundColorAtom,
