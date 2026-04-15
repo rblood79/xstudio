@@ -46,7 +46,6 @@
     "hellpeq": "^1.0.1",
     "immer": "catalog:",
     "intervaq": "^2.1.2",
-    "jotai": "catalog:",
     "lodash": "^4.17.23",
     "lucide-react": "^0.575.0",
     "nanoid": "^5.1.6",
