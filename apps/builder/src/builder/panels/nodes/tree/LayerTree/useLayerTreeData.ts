@@ -140,9 +140,6 @@ function convertToLayerTreeNodes(
 function getDisplayName(item: ElementTreeItem): string {
   const props = item.props as ElementProps | undefined;
 
-  if (item.tag === "Tab") {
-    return `Tab: ${props?.title || "Untitled"}`;
-  }
   if (item.tag === "TabList") return "Tab List";
   if (item.tag === "TabPanels") return "Tab Panels";
   if (item.tag === "TabPanel") {

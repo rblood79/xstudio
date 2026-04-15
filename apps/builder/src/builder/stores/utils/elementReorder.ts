@@ -85,55 +85,10 @@ export function computeReorderUpdates(
     const isTableHeaderChildren = parentTag === "TableHeader";
 
     if (isTabsChildren) {
-      // Tabs 하위의 Tab과 Panel을 tabId 기반으로 쌍을 맞춰서 정렬
-      const tabs = children
-        .filter((el) => el.tag === "Tab")
-        .sort((a, b) => {
-          const orderDiff = (a.order_num || 0) - (b.order_num || 0);
-          if (orderDiff === 0) {
-            const titleA = getPropValue(a.props, "title");
-            const titleB = getPropValue(b.props, "title");
-            return titleA.localeCompare(titleB);
-          }
-          return orderDiff;
-        });
-
-      const panels = children
-        .filter((el) => el.tag === "TabPanel")
-        .sort((a, b) => {
-          const orderDiff = (a.order_num || 0) - (b.order_num || 0);
-          if (orderDiff === 0) {
-            const titleA = getPropValue(a.props, "title");
-            const titleB = getPropValue(b.props, "title");
-            return titleA.localeCompare(titleB);
-          }
-          return orderDiff;
-        });
-
-      sorted = [];
-      const usedPanelIds = new Set<string>();
-
-      tabs.forEach((tab) => {
-        sorted.push(tab);
-        const tabId = getPropValue(tab.props, "tabId");
-        if (tabId) {
-          const matchingPanel = panels.find((panel) => {
-            const panelTabId = getPropValue(panel.props, "tabId");
-            return panelTabId === tabId && !usedPanelIds.has(panel.id);
-          });
-          if (matchingPanel) {
-            sorted.push(matchingPanel);
-            usedPanelIds.add(matchingPanel.id);
-          }
-        }
-      });
-
-      // 매칭되지 않은 Panel들 추가 (orphaned)
-      panels.forEach((panel) => {
-        if (!usedPanelIds.has(panel.id)) {
-          sorted.push(panel);
-        }
-      });
+      // ADR-066: Tab element 소멸. TabList/TabPanels만 order_num 정렬.
+      sorted = [...children].sort(
+        (a, b) => (a.order_num || 0) - (b.order_num || 0),
+      );
     } else if (isTableHeaderChildren) {
       sorted = [...children].sort((a, b) => {
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);

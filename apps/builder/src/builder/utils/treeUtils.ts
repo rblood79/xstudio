@@ -124,80 +124,13 @@ export function buildTreeFromElements(
 }
 
 /**
- * Tabs 하위 요소들을 구조에 맞게 정렬
+ * Tabs 하위 요소들을 구조에 맞게 정렬 (ADR-066)
  *
- * 두 가지 구조 지원:
- * 1. 새 구조 (Phase 0): Tabs > [TabList > [Tab, Tab], Panel, Panel]
- *    → TabList, Panel 순서로 order_num 정렬
- * 2. 기존 flat 구조: Tabs > [Tab, Tab, Panel, Panel]
- *    → Tab-Panel 쌍으로 tabId 기준 그룹화
- *
- * @param items - Tabs의 자식 요소들
- * @returns 정렬된 요소 배열
+ * 구조: Tabs > [TabList, TabPanels] — Tab element 소멸, items SSOT.
+ * order_num 기준 정렬.
  */
 function sortTabsChildren(items: Element[]): Element[] {
-  // 새 구조 감지: TabList 자식이 있으면 Phase 0 이후 구조
-  const hasTabList = items.some((item) => item.tag === "TabList");
-
-  if (hasTabList) {
-    // 새 구조: order_num 기준 정렬 (TabList, Panel 모두 포함)
-    return [...items].sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }
-
-  // 기존 flat 구조: Tab-Panel 쌍으로 그룹화
-  const tabs = items
-    .filter((item) => item.tag === "Tab")
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  const panels = items
-    .filter((item) => item.tag === "TabPanel")
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  const pairedItems: Element[] = [];
-  const usedPanelIds = new Set<string>();
-
-  tabs.forEach((tab) => {
-    pairedItems.push(tab);
-
-    const tabProps = tab.props as ElementProps;
-    const tabId = tabProps?.tabId;
-
-    if (tabId) {
-      const matchingPanel = panels.find((panel) => {
-        const panelProps = panel.props as ElementProps;
-        return panelProps?.tabId === tabId;
-      });
-
-      if (matchingPanel && !usedPanelIds.has(matchingPanel.id)) {
-        pairedItems.push(matchingPanel);
-        usedPanelIds.add(matchingPanel.id);
-      }
-    } else {
-      console.warn(
-        "⚠️ Tab에 tabId가 없음, order_num 기반 fallback 사용:",
-        tab.id,
-      );
-      const fallbackPanel = panels.find(
-        (panel) =>
-          !usedPanelIds.has(panel.id) &&
-          Math.abs((panel.order_num || 0) - (tab.order_num || 0)) <= 1,
-      );
-
-      if (fallbackPanel) {
-        pairedItems.push(fallbackPanel);
-        usedPanelIds.add(fallbackPanel.id);
-      }
-    }
-  });
-
-  panels.forEach((panel) => {
-    if (!usedPanelIds.has(panel.id)) {
-      console.warn("⚠️ 매칭되지 않은 Panel:", panel.id);
-      pairedItems.push(panel);
-    }
-  });
-
-  return pairedItems;
+  return [...items].sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 }
 
 /**

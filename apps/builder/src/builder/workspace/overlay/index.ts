@@ -7,9 +7,10 @@
  */
 
 // Components
-export { TextEditOverlay } from './TextEditOverlay';
-export type { TextEditOverlayProps, TextStyleConfig } from './TextEditOverlay';
+export { TextEditOverlay } from "./TextEditOverlay";
+export type { TextEditOverlayProps, TextStyleConfig } from "./TextEditOverlay";
+export { TabListActionOverlay } from "./TabListActionOverlay";
 
 // Hooks
-export { useTextEdit } from './useTextEdit';
-export type { TextEditState, UseTextEditReturn } from './useTextEdit';
+export { useTextEdit } from "./useTextEdit";
+export type { TextEditState, UseTextEditReturn } from "./useTextEdit";

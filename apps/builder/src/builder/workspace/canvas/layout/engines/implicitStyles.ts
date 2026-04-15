@@ -999,11 +999,11 @@ export function applyImplicitStyles(
       (tabsProps?.selectedKey as string | undefined) ??
       (tabsProps?.defaultSelectedKey as string | undefined);
 
-    // 활성 TabPanel: selectedKey 매칭 또는 첫 번째
+    // 활성 TabPanel: itemId가 selectedKey와 매칭 (ADR-066). 없으면 첫 번째.
     const panelItems = children.filter((c) => c.tag === "TabPanel");
     const activePanel = selectedKey
       ? (panelItems.find(
-          (p) => (p.props as Record<string, unknown>)?.tabId === selectedKey,
+          (p) => (p.props as Record<string, unknown>)?.itemId === selectedKey,
         ) ?? panelItems[0])
       : panelItems[0];
 
@@ -1019,27 +1019,33 @@ export function applyImplicitStyles(
 
   // ── TabList ─────────────────────────────────────────────────────────
   if (containerTag === "tablist") {
-    // Tabs 조상에서 size 조회
+    // ADR-066: Tab element는 존재하지 않음. Tabs.props.items에서 가상 Tab 생성.
     const tabsParent = findAncestorByTag(containerEl, "Tabs", elementById, 3);
     const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
     const sizeName = (tabsProps?.size as string) ?? "md";
     const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
+    const items =
+      (tabsProps?.items as Array<{ id: string; title: string }> | undefined) ??
+      [];
 
-    // Tab 자식에 height 주입 → 각 Tab 선택 가능
-    filteredChildren = children.map((child) => {
-      if (child.tag !== "Tab") return child;
-      return {
-        ...child,
-        props: {
-          ...child.props,
-          style: {
-            ...((child.props?.style as Record<string, unknown>) ?? {}),
-            height: tabBarHeight,
-            minHeight: tabBarHeight,
-          },
+    // items 기반 가상 Tab element 생성 (store row 아님, 렌더 전용 ephemeral)
+    filteredChildren = items.map((item, i) => ({
+      id: `${tabsParent?.id ?? containerEl.id}:virtualTab:${item.id}`,
+      tag: "Tab",
+      props: {
+        title: item.title,
+        tabId: item.id,
+        _virtual: true,
+        style: {
+          height: tabBarHeight,
+          minHeight: tabBarHeight,
         },
-      } as Element;
-    });
+      },
+      parent_id: containerEl.id,
+      order_num: i + 1,
+      page_id: containerEl.page_id,
+    })) as Element[];
+
     effectiveParent = withParentStyle(containerEl, {
       ...(containerEl.props?.style as Record<string, unknown> | undefined),
       display: "flex",

@@ -2314,10 +2314,11 @@ export function calculateContentHeight(
       const selectedKey =
         (props?.selectedKey as string | undefined) ??
         (props?.defaultSelectedKey as string | undefined);
+      // ADR-066: TabPanel.props.itemId로 페어링
       const activePanel = selectedKey
         ? (panelChildren.find(
             (p) =>
-              (p.props as Record<string, unknown> | undefined)?.tabId ===
+              (p.props as Record<string, unknown> | undefined)?.itemId ===
               selectedKey,
           ) ?? panelChildren[0])
         : panelChildren[0];

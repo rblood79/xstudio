@@ -373,22 +373,10 @@ export class HierarchyManager {
 
     switch (parent.tag) {
       case "Tabs": {
-        // Tab과 Panel을 쌍으로 그룹화
-        const tabs = elements
-          .filter((el) => el.parent_id === parentId && el.tag === "Tab")
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-        const panels = elements
-          .filter((el) => el.parent_id === parentId && el.tag === "TabPanel")
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-        // Tab과 Panel을 쌍으로 결합
-        const pairedItems: Element[] = [];
-        for (let i = 0; i < Math.max(tabs.length, panels.length); i++) {
-          if (tabs[i]) pairedItems.push(tabs[i]);
-          if (panels[i]) pairedItems.push(panels[i]);
-        }
-        return pairedItems;
+        // ADR-066: Tab element 소멸. TabList + TabPanels만 자식으로 반환.
+        return children.filter(
+          (child) => child.tag === "TabList" || child.tag === "TabPanels",
+        );
       }
 
       case "Tree": {

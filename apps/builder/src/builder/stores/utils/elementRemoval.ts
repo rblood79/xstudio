@@ -143,38 +143,8 @@ function collectElementsToRemove(
     }
   }
 
-  // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
-  if (element.tag === "Tab" || element.tag === "TabPanel") {
-    const tabId = (element.props as { tabId?: string }).tabId;
-    const parentElement = elements.find((el) => el.id === element.parent_id);
-
-    if (parentElement && parentElement.tag === "Tabs") {
-      let relatedElement: Element | undefined;
-
-      if (tabId) {
-        relatedElement = elements.find(
-          (el) =>
-            el.parent_id === parentElement.id &&
-            el.tag !== element.tag &&
-            (el.props as { tabId?: string }).tabId === tabId,
-        );
-      }
-
-      // fallback: order_num 기반
-      if (!relatedElement) {
-        relatedElement = elements.find(
-          (el) =>
-            el.parent_id === parentElement.id &&
-            el.tag !== element.tag &&
-            Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1,
-        );
-      }
-
-      if (relatedElement) {
-        childElements = [...childElements, relatedElement];
-      }
-    }
-  }
+  // ADR-066: Tab element 소멸. TabPanel 개별 삭제는 cascade 자식만 처리
+  // (items 동기화는 TabsEditor.removeTabItem 경로에서만 보장).
 
   const allElementsToRemove = [element, ...childElements];
 

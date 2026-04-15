@@ -979,19 +979,6 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
   {
-    type: "Tab",
-    label: "Tab",
-    category: "Items",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "TabEditor",
-      dataBindingType: null,
-      // React Aria: onHoverStart, onHoverEnd, onPress
-      supportedEvents: ["onMouseEnter", "onMouseLeave"],
-    },
-  },
-  {
     type: "Breadcrumb",
     label: "Breadcrumb",
     category: "Items",
