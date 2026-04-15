@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-15 (ADR-067 Accepted — 스타일 패널 Skia-native Read Path 전환, Jotai 제거 6-phase, Phase 1 구현 착수)
+> **최종 업데이트**: 2026-04-15 (ADR-067 **Phase 1 Implemented** — Transform 섹션 Zustand 전환 + G1(a)(b) PASS, Phase 2~6 진행 대기)
 
 ## 현황 요약
 
