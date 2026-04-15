@@ -33,6 +33,7 @@ export type {
   CustomFieldComponentProps,
   PropagationRule,
   PropagationSpec,
+  IndicatorModeSpec,
 } from "./spec.types";
 
 // Shape Types

@@ -8,7 +8,7 @@
  */
 
 import type { Shape } from "./shape.types";
-import type { TokenRef } from "./token.types";
+import type { TokenRef, ShadowTokenRef } from "./token.types";
 import type { StateStyles } from "./state.types";
 import type { ComponentType } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -136,6 +136,9 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
 
   /** ADR-048: S2 Context 에뮬레이션 — 부모→자식 props 전파 규칙 */
   propagation?: PropagationSpec;
+
+  /** ADR-059 B5: Selection indicator 모드 스타일 (ToggleButtonGroup 등) */
+  indicatorMode?: IndicatorModeSpec;
 
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
@@ -583,6 +586,28 @@ export interface VariantSpec {
   emphasizedSelectedBackground?: TokenRef;
   emphasizedSelectedText?: TokenRef;
   emphasizedSelectedBorder?: TokenRef;
+}
+
+/**
+ * Indicator Mode 스펙 (ADR-059 B5)
+ *
+ * ToggleButtonGroup 등 "selection indicator" UI를 가지는 컴포넌트용.
+ * CSSGenerator가 `.react-aria-${name}[data-indicator="true"]` 컨테이너와
+ * 내부 `.react-aria-SelectionIndicator` 룰을 자동 생성한다.
+ */
+export interface IndicatorModeSpec {
+  /** indicator 배경 토큰 */
+  background: TokenRef;
+  /** indicator 위 선택 버튼 텍스트 색상 */
+  selectedText: TokenRef;
+  /** indicator pressed 배경 (optional) */
+  backgroundPressed?: TokenRef;
+  /** border-radius 토큰 (default: {radius.sm}) */
+  borderRadius?: TokenRef;
+  /** box-shadow 토큰 (default: {shadow.sm}) */
+  boxShadow?: string | ShadowTokenRef;
+  /** transition 지속 ms (default: 200) */
+  transitionMs?: number;
 }
 
 /**
