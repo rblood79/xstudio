@@ -11,6 +11,8 @@ export const LAYOUT_AFFECTING_PROP_KEYS = new Set([
   "layout",
   "columns",
   "label",
+  "title",
+  "description",
   "children",
   "text",
   "placeholder",
