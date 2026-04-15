@@ -95,7 +95,8 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
               { value: "grid", label: "Grid" },
               { value: "waterfall", label: "Waterfall" },
             ],
-           defaultValue: "grid" },
+            defaultValue: "grid",
+          },
           { type: "variant" },
           { type: "size" },
           {
@@ -108,9 +109,22 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
               { value: "regular", label: "Regular" },
               { value: "spacious", label: "Spacious" },
             ],
-           defaultValue: "regular" },
-          { key: "columns", type: "number", label: "Columns", icon: Hash , defaultValue: 3 },
-          { key: "gap", type: "number", label: "Gap", icon: Hash , defaultValue: 16 },
+            defaultValue: "regular",
+          },
+          {
+            key: "columns",
+            type: "number",
+            label: "Columns",
+            icon: Hash,
+            defaultValue: 3,
+          },
+          {
+            key: "gap",
+            type: "number",
+            label: "Gap",
+            icon: Hash,
+            defaultValue: 16,
+          },
         ],
       },
       {
@@ -126,7 +140,8 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
-           defaultValue: "none" },
+            defaultValue: "none",
+          },
           {
             key: "selectionStyle",
             type: "enum",
@@ -136,14 +151,15 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
               { value: "checkbox", label: "Checkbox" },
               { value: "highlight", label: "Highlight" },
             ],
-           defaultValue: "checkbox" },
+            defaultValue: "checkbox",
+          },
         ],
       },
     ],
   },
 
   render: {
-    shapes: (_props, _variant, _size, _state = "default") => {
+    shapes: (_props, _size, _state = "default") => {
       // CardView는 순수 컨테이너 — 자식 Card가 실제 렌더링
       return [];
     },

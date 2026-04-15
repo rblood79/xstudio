@@ -111,7 +111,7 @@ export const AvatarGroupSpec: ComponentSpec<AvatarGroupProps> = {
   },
 
   render: {
-    shapes: (_props, _variant, _size, _state = "default") => {
+    shapes: (_props, _size, _state = "default") => {
       // AvatarGroup은 투명 컨테이너 — Avatar 자식은 compositional 렌더링
       const shapes: Shape[] = [];
 
