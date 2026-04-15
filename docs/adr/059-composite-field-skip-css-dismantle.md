@@ -373,6 +373,30 @@ Batch 실행 순서는 breakdown의 "Batch 계획" 섹션에서 B1 → B2 → B3
 
 관련 commit: a796d1a5, 7ba4c3ad, c13470c9, fdfcbce9, 0a55673a, cd7f002e, a1256596
 
+#### Phase 5 후속 수정 (2026-04-16)
+
+cssEmitMode + `.button-base` protocol 도입 후 시각 검증 과정에서 발견된 누락들 보완:
+
+1. **CSSGenerator 아키텍처 변경** (`c113607a`, `6e22a412`):
+   - `ComponentSpec.cssEmitMode?: "direct" | "button-base"` 신설
+   - `emitColorLine()` helper로 variant/selected/emphasizedSelected/indicatorMode 전 경로 통일
+   - `button-base` 모드: `background/color/border-color` → `--button-color/--button-text/--button-border` custom property emit
+   - `.button-base` utility가 color-mix로 hover/pressed 자동 파생하므로 해당 룰 emit 생략
+   - Button.spec, ToggleButton.spec에 `cssEmitMode: "button-base"` 적용
+
+2. **shared/ToggleButton.tsx `data-variant="default"` 속성** (`23a62514`):
+   - Generated CSS `[data-variant="default"]` 스코프 룰이 매치되려면 DOM에 해당 속성 필요
+   - ToggleButton은 기존에 속성을 emit하지 않아 selected/emphasizedSelected 룰 전체가 미적용
+
+3. **ToggleButtonGroup → ToggleButton `isEmphasized` 전파** (`af48c90f`, `fb20ae7a`, `de8d7d08`):
+   - **DOM/CSS 측**: `ToggleButtonGroupEmphasizedContext` 신설 → Group의 `isEmphasized`를 자식 ToggleButton Context로 전파 → `data-emphasized` 속성 자동 설정. 기존 `ToggleButtonGroupIndicatorContext` 패턴 재사용.
+   - **Skia 측**: ADR-048 `propagation.rules`에 `{parentProp: "isEmphasized", childPath: "ToggleButton"}` 선언 + `apps/builder/src/builder/utils/propagationRegistry.ts`에 `ToggleButtonGroupSpec` 등록. 자식 element props에 전파되어 `render.shapes`가 분기 가능.
+   - `size` prop도 동일 메커니즘으로 전파.
+
+4. **RAC 공식 패턴 준수**: `<SelectionIndicator className="react-aria-SelectionIndicator button-base" data-selected />` — RAC 레퍼런스 `ToggleButtonGroup.md` 패턴. indicatorMode rule이 `--button-color: var(--indicator-bg)`을 SelectionIndicator에 emit하고 `.button-base`가 소비하여 SSOT 체인 일관성 유지.
+
+시각 대칭 검증 완료: isEmphasized + selected 조합 CSS/Skia 양쪽 accent 적용, size 전파 양쪽 동작.
+
 ---
 
 ## 재시작 프롬프트 (v2)
