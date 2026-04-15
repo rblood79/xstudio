@@ -7,7 +7,7 @@ import {
 
 function useParentId(id: string | null): string | null {
   return useStore((s) =>
-    id ? (s.elementsMap.get(id)?.parentId ?? null) : null,
+    id ? (s.elementsMap.get(id)?.parent_id ?? null) : null,
   );
 }
 
@@ -16,7 +16,7 @@ export function useParentDisplay(id: string | null): string {
   return useStore((s) => {
     if (!parentId) return "block";
     const p = s.elementsMap.get(parentId);
-    const style = p?.properties?.style as Record<string, unknown> | undefined;
+    const style = p?.props?.style as Record<string, unknown> | undefined;
     return (style?.display as string) ?? "block";
   });
 }
@@ -26,7 +26,7 @@ export function useParentFlexDirection(id: string | null): string {
   return useStore((s) => {
     if (!parentId) return "row";
     const p = s.elementsMap.get(parentId);
-    const style = p?.properties?.style as Record<string, unknown> | undefined;
+    const style = p?.props?.style as Record<string, unknown> | undefined;
     return (style?.flexDirection as string) ?? "row";
   });
 }
@@ -35,10 +35,8 @@ function useSizeMode(id: string | null, axis: "width" | "height"): SizeMode {
   const style = useStore((s) => {
     if (!id) return null;
     return (
-      (s.elementsMap.get(id)?.properties?.style as Record<
-        string,
-        unknown
-      > | null) ?? null
+      (s.elementsMap.get(id)?.props?.style as Record<string, unknown> | null) ??
+      null
     );
   });
   const parentDisplay = useParentDisplay(id);
@@ -81,14 +79,14 @@ export function useSelfAlignmentKeys(id: string | null): string[] {
   const parentDisplay = useParentDisplay(id);
   const alignSelf = useStore((s) => {
     if (!id) return "";
-    const style = s.elementsMap.get(id)?.properties?.style as
+    const style = s.elementsMap.get(id)?.props?.style as
       | Record<string, unknown>
       | undefined;
     return String(style?.alignSelf ?? "");
   });
   const justifySelf = useStore((s) => {
     if (!id) return "";
-    const style = s.elementsMap.get(id)?.properties?.style as
+    const style = s.elementsMap.get(id)?.props?.style as
       | Record<string, unknown>
       | undefined;
     return String(style?.justifySelf ?? "");

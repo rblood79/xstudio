@@ -14,8 +14,8 @@ describe("useTransformValue (width)", () => {
           "el-1",
           {
             id: "el-1",
-            type: "Button",
-            properties: { size: "md", style: { width: "180px" } },
+            tag: "Button",
+            props: { size: "md", style: { width: "180px" } },
           } as any,
         ],
       ]),

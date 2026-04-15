@@ -18,9 +18,9 @@ describe("useTransformAuxiliary", () => {
           "el-1",
           {
             id: "el-1",
-            type: "Button",
-            parentId: "p-1",
-            properties: {
+            tag: "Button",
+            parent_id: "p-1",
+            props: {
               style: {
                 width: "180px",
                 alignSelf: "center",
@@ -33,8 +33,8 @@ describe("useTransformAuxiliary", () => {
           "p-1",
           {
             id: "p-1",
-            type: "Frame",
-            properties: { style: { display: "flex", flexDirection: "row" } },
+            tag: "Frame",
+            props: { style: { display: "flex", flexDirection: "row" } },
           } as any,
         ],
       ]),
@@ -72,7 +72,7 @@ describe("useTransformAuxiliary", () => {
       const map = new Map(s.elementsMap);
       map.set("p-1", {
         ...map.get("p-1"),
-        properties: { style: { display: "block" } },
+        props: { style: { display: "block" } },
       });
       return { elementsMap: map };
     });

@@ -40,7 +40,7 @@ export function useTransformValue(
   const inline = useStore((s) => {
     if (!id) return undefined;
     const el = s.elementsMap.get(id);
-    const style = el?.properties?.style as Record<string, unknown> | undefined;
+    const style = el?.props?.style as Record<string, unknown> | undefined;
     return style?.[prop] as string | number | undefined;
   });
 
@@ -52,10 +52,10 @@ export function useTransformValue(
   );
 
   // Spec resolution: primitive selectors for type + size
-  const type = useStore((s) => (id ? s.elementsMap.get(id)?.type : undefined));
+  const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
   const size = useStore((s) => {
     if (!id) return undefined;
-    return s.elementsMap.get(id)?.properties?.size as string | undefined;
+    return s.elementsMap.get(id)?.props?.size as string | undefined;
   });
   const specDefault = useMemo(() => {
     if (!type) return undefined;

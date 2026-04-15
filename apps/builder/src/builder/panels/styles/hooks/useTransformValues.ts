@@ -29,7 +29,7 @@ export function useTransformValues(
   const aspectRatio = useTransformValue(id, "aspectRatio");
   const isBody = useStore((s) => {
     if (!id) return false;
-    return s.elementsMap.get(id)?.type?.toLowerCase() === "body";
+    return s.elementsMap.get(id)?.tag?.toLowerCase() === "body";
   });
 
   return useMemo(() => {
