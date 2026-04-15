@@ -2,6 +2,7 @@
 
 ## Status
 
+Implemented — 2026-04-15 (Phase 5 B5 ToggleButton indicator SSOT 완결)
 Implemented — 2026-04-14 (Phase 4 B1~B4 + Phase 5 closure 완료)
 Proposed (v2.1 amendment) — 2026-04-14 (Phase 4 D2+D3 통합 재설계)
 Proposed (v2) — 2026-04-13 (선행 조사 결과 반영 재작성, v1: 2026-04-11)
@@ -359,6 +360,18 @@ Batch 실행 순서는 breakdown의 "Batch 계획" 섹션에서 B1 → B2 → B3
 - **Wrapper API breaking change** — (i-a) 경로 컴포넌트는 호출지 수정 필요 (ADR-062 Field 선례 확장 범위)
 - **Audit 초기 비용** — 38 × 3축 조사 필수 (Phase 4 진입 전 1회)
 - **(i-c) 판단 주관성** — "composition 고유 필수" 기준이 회색지대 가능 → Gate의 "정당화 문서화" 의무로 완화
+
+---
+
+## Phase 5 (B5) — ToggleButton/ToggleButtonGroup indicator SSOT 완결 (2026-04-15)
+
+- `VariantSpec.selected*` / `emphasizedSelected*` 필드 신설 → CSSGenerator가 `[data-selected]` + `[data-emphasized][data-selected]` 룰 자동 emit
+- `ComponentSpec.indicatorMode` 서브-스키마 신설 → `[data-indicator="true"]` + `.react-aria-SelectionIndicator` CSS 자동 생성
+- `TOGGLE_SELECTED_COLORS` 값이 `ToggleButton.spec.variants.default.selected*` / `emphasizedSelected*`로 이관 (Skia `render.shapes`는 상수 참조 유지 — 후속 과제로 variants 참조 전환 권장)
+- 수동 `ToggleButton.css` (141L) 삭제 + `ToggleButton.tsx` import를 generated 경로로 전환
+- `@sync` consumer-to-consumer 참조 해소 → SSOT D3 symmetric 복원
+
+관련 commit: a796d1a5, 7ba4c3ad, c13470c9, fdfcbce9, 0a55673a, cd7f002e, a1256596
 
 ---
 
