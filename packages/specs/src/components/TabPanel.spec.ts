@@ -23,6 +23,7 @@ export interface TabPanelProps {
 export const TabPanelSpec: ComponentSpec<TabPanelProps> = {
   name: "TabPanel",
   description: "Tabs 활성 콘텐츠 컨테이너 (RAC TabPanel)",
+  archetype: "collection",
   element: "div",
   skipCSSGeneration: false,
 

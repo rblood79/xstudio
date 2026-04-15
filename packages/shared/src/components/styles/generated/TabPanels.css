@@ -1,21 +1,16 @@
 /* ============================================================
  * AUTO-GENERATED from TabPanelsSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/TabPanels.spec.ts
- * Archetype: default
+ * Archetype: collection
  * ============================================================ */
 
 @layer components {
 
 .react-aria-TabPanels {
-  /* Base styles — archetype: default */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* Base styles — archetype: collection */
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
 
   /* Default variant */
   background: transparent;
