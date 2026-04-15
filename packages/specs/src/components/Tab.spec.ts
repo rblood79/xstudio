@@ -67,6 +67,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
       paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
+      fontWeight: 500,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
@@ -75,6 +76,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
       paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
+      fontWeight: 500,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
@@ -83,6 +85,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
       paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
+      fontWeight: 500,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
@@ -94,7 +97,11 @@ export const TabSpec: ComponentSpec<TabProps> = {
 
   render: {
     shapes: (props, size): Shape[] => {
-      const variant = TabSpec.variants![(props as { variant?: keyof typeof TabSpec.variants }).variant ?? TabSpec.defaultVariant!];
+      const variant =
+        TabSpec.variants![
+          (props as { variant?: keyof typeof TabSpec.variants }).variant ??
+            TabSpec.defaultVariant!
+        ];
       const isSelected = props._isSelected === true;
       const isVertical = props.orientation === "vertical";
       const label = props.title ?? "";
@@ -121,7 +128,7 @@ export const TabSpec: ComponentSpec<TabProps> = {
         text: label,
         fontSize,
         fontFamily: ff,
-        fontWeight: isSelected ? 600 : 400,
+        fontWeight: size.fontWeight ?? 500,
         fill: textColor,
         baseline: "middle" as const,
       });

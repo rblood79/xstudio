@@ -22,10 +22,9 @@
     position: relative;
   }
 
-  /* selected 상태 — 생성 CSS의 variant 블록에 selected 미포함 */
+  /* selected 상태 — 색상만 변경 (font-weight는 spec sizes에서 500 고정) */
   .react-aria-Tab[data-selected] {
     color: var(--fg);
-    font-weight: 600;
   }
 
   /* ========== 기본 모드: ::before 선/막대 ========== */
