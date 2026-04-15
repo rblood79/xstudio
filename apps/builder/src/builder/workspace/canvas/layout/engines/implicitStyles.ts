@@ -37,7 +37,8 @@ function resolveTabPanelPadding(
   hasExplicitSize: boolean,
   density: string,
 ): number {
-  if (hasExplicitSize) return TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
+  if (hasExplicitSize)
+    return TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
   if (density === "regular") return TABS_PANEL_PADDING.lg;
   return TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
 }
@@ -916,12 +917,18 @@ export function applyImplicitStyles(
     const sizeName = (containerProps?.size as string) ?? "md";
     const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
     const density = (containerProps?.density as string) ?? "compact";
-    const tabPanelPadding = resolveTabPanelPadding(sizeName, !!containerProps?.size, density);
+    const tabPanelPadding = resolveTabPanelPadding(
+      sizeName,
+      !!containerProps?.size,
+      density,
+    );
 
     const tabListEl = children.find((c) => c.tag === "TabList");
     const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
-    // 직속 Panel (TabPanels 없는 구조)
-    const directPanel = children.find((c) => c.tag === "Panel");
+    // 직속 TabPanel/Panel (TabPanels 없는 legacy flat 구조)
+    const directPanel = children.find(
+      (c) => c.tag === "TabPanel" || c.tag === "Panel",
+    );
 
     if (tabListEl) {
       // 새 구조 (TabList 존재): TabList에 고정 height 주입 → Taffy 레이아웃 포함
@@ -985,13 +992,19 @@ export function applyImplicitStyles(
     const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
     const sizeName = (tabsProps?.size as string) ?? "md";
     const density = (tabsProps?.density as string) ?? "compact";
-    const tabPanelPadding = resolveTabPanelPadding(sizeName, !!tabsProps?.size, density);
+    const tabPanelPadding = resolveTabPanelPadding(
+      sizeName,
+      !!tabsProps?.size,
+      density,
+    );
     const selectedKey =
       (tabsProps?.selectedKey as string | undefined) ??
       (tabsProps?.defaultSelectedKey as string | undefined);
 
-    // 활성 Panel: selectedKey 매칭 또는 첫 번째
-    const panelItems = children.filter((c) => c.tag === "Panel");
+    // 활성 TabPanel: selectedKey 매칭 또는 첫 번째 (legacy "Panel" fallback)
+    const panelItems = children.filter(
+      (c) => c.tag === "TabPanel" || c.tag === "Panel",
+    );
     const activePanel = selectedKey
       ? (panelItems.find(
           (p) => (p.props as Record<string, unknown>)?.tabId === selectedKey,

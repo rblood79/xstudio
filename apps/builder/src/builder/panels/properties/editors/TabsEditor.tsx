@@ -1,9 +1,6 @@
 import { useMemo, useCallback, memo } from "react";
 import { AppWindow, Plus } from "lucide-react";
-import {
-  PropertySelect,
-  PropertySection,
-} from "../../../components";
+import { PropertySelect, PropertySection } from "../../../components";
 import { GenericPropertyEditor } from "../generic";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/ui/uiConstants";
@@ -51,7 +48,9 @@ export const TabsHybridAfterSections = memo(function TabsHybridAfterSections({
       const tabKey = (tab.props.tabId as string) || tab.id;
       return {
         value: tabKey,
-        label: ("title" in tab.props ? tab.props.title : "Untitled Tab") as string,
+        label: ("title" in tab.props
+          ? tab.props.title
+          : "Untitled Tab") as string,
       };
     });
   }, [tabChildren]);
@@ -106,17 +105,16 @@ export const TabsHybridAfterSections = memo(function TabsHybridAfterSections({
 
       <PropertySection title={PROPERTY_LABELS.TAB_MANAGEMENT}>
         <div className="tab-overview">
-          <p className="tab-overview-text">Total tabs: {tabChildren.length || 0}</p>
+          <p className="tab-overview-text">
+            Total tabs: {tabChildren.length || 0}
+          </p>
           <p className="section-overview-help">
             Select individual tabs from layer tree to edit their properties
           </p>
         </div>
 
         <div className="tab-actions">
-          <button
-            className="control-button add"
-            onClick={addNewTab}
-          >
+          <button className="control-button add" onClick={addNewTab}>
             <Plus
               color={iconProps.color}
               strokeWidth={iconProps.strokeWidth}
@@ -166,7 +164,10 @@ async function createNewTab(
 
   const tabSiblings = elements.filter((el) => el.parent_id === tabParentId);
   const panelSiblings = elements.filter((el) => el.parent_id === panelParentId);
-  const maxTabOrder = Math.max(0, ...tabSiblings.map((el) => el.order_num || 0));
+  const maxTabOrder = Math.max(
+    0,
+    ...tabSiblings.map((el) => el.order_num || 0),
+  );
   const maxPanelOrder = Math.max(
     0,
     ...panelSiblings.map((el) => el.order_num || 0),
@@ -191,11 +192,10 @@ async function createNewTab(
 
   const newPanelElement = {
     id: ElementUtils.generateId(),
-    customId: generateCustomId("Panel", elements),
+    customId: generateCustomId("TabPanel", elements),
     page_id: pageId,
-    tag: "Panel",
+    tag: "TabPanel",
     props: {
-      variant: "tab",
       title: newTabElement.props.title,
       tabIndex: newTabIndex,
       style: {},
@@ -245,7 +245,9 @@ async function createNewTab(
   }
 }
 
-async function resolvePageId(currentPageId: string | null): Promise<string | null> {
+async function resolvePageId(
+  currentPageId: string | null,
+): Promise<string | null> {
   if (currentPageId) return currentPageId;
 
   const pathParts = window.location.pathname.split("/");

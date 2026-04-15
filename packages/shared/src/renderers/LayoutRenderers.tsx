@@ -134,12 +134,18 @@ export const renderTabs = (
     }
   }
 
-  // 1단계: 직속 자식에서 Panel 검색 (기존 구조 호환)
+  // TabPanel 우선, legacy "Panel" fallback (backward compat)
+  const isTabPanelTag = (t: string | undefined) =>
+    t === "TabPanel" || t === "Panel";
+
+  // 1단계: 직속 자식 (legacy flat 구조)
   let panelChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Panel")
+    .filter(
+      (child) => child.parent_id === element.id && isTabPanelTag(child.tag),
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  // 2단계: TabPanels 아래에서 Panel 검색 (새 구조)
+  // 2단계: TabPanels 아래 (정상 구조)
   if (panelChildren.length === 0) {
     const tabPanelsElement = elements.find(
       (child) => child.parent_id === element.id && child.tag === "TabPanels",
@@ -148,7 +154,7 @@ export const renderTabs = (
       panelChildren = elements
         .filter(
           (child) =>
-            child.parent_id === tabPanelsElement.id && child.tag === "Panel",
+            child.parent_id === tabPanelsElement.id && isTabPanelTag(child.tag),
         )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     }
@@ -222,31 +228,17 @@ export const renderTabs = (
         // tabId prop을 React Aria key로 사용 (Tab id와 매칭)
         const tabKey = (tab.props.tabId as string) || tab.id;
         return (
-          <TabPanel key={correspondingPanel.id} id={tabKey}>
-            <Panel
-              key={correspondingPanel.id}
-              data-element-id={correspondingPanel.id}
-              variant={
-                (correspondingPanel.props.variant as
-                  | "default"
-                  | "tab"
-                  | "sidebar"
-                  | "card"
-                  | "modal") || "tab"
-              }
-              title={
-                typeof correspondingPanel.props.title === "string"
-                  ? correspondingPanel.props.title
-                  : undefined
-              }
-              style={correspondingPanel.props.style}
-              className={correspondingPanel.props.className}
-            >
-              {elements
-                .filter((child) => child.parent_id === correspondingPanel.id)
-                .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-                .map((child) => renderElement(child, child.id))}
-            </Panel>
+          <TabPanel
+            key={correspondingPanel.id}
+            id={tabKey}
+            data-element-id={correspondingPanel.id}
+            style={correspondingPanel.props.style}
+            className={correspondingPanel.props.className}
+          >
+            {elements
+              .filter((child) => child.parent_id === correspondingPanel.id)
+              .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+              .map((child) => renderElement(child, child.id))}
           </TabPanel>
         );
       })}

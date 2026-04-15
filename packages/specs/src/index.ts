@@ -268,6 +268,8 @@ export { TabListSpec } from "./components/TabList.spec";
 export type { TabListProps } from "./components/TabList.spec";
 export { TabPanelsSpec } from "./components/TabPanels.spec";
 export type { TabPanelsProps } from "./components/TabPanels.spec";
+export { TabPanelSpec } from "./components/TabPanel.spec";
+export type { TabPanelProps } from "./components/TabPanel.spec";
 export { TabSpec } from "./components/Tab.spec";
 export type { TabProps } from "./components/Tab.spec";
 

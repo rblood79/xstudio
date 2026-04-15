@@ -46,6 +46,7 @@ import { TreeSpec } from "../components/Tree.spec";
 import { TabsSpec } from "../components/Tabs.spec";
 import { TabListSpec } from "../components/TabList.spec";
 import { TabPanelsSpec } from "../components/TabPanels.spec";
+import { TabPanelSpec } from "../components/TabPanel.spec";
 import { TabSpec } from "../components/Tab.spec";
 import { MenuSpec } from "../components/Menu.spec";
 import { BreadcrumbsSpec } from "../components/Breadcrumbs.spec";
@@ -158,6 +159,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   Tabs: TabsSpec,
   TabList: TabListSpec,
   TabPanels: TabPanelsSpec,
+  TabPanel: TabPanelSpec,
   Tab: TabSpec,
   Menu: MenuSpec,
   Breadcrumbs: BreadcrumbsSpec,

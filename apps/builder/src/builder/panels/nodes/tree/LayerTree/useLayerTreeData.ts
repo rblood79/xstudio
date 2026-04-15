@@ -148,6 +148,9 @@ function getDisplayName(item: ElementTreeItem): string {
   if (item.tag === "Panel") {
     return `Panel: ${props?.title || "Untitled"}`;
   }
+  if (item.tag === "TabPanel") {
+    return `TabPanel: ${props?.title || "Untitled"}`;
+  }
   if (item.tag === "TableHeader") return "thead";
   if (item.tag === "TableBody") return "tbody";
   if (item.tag === "Column") {

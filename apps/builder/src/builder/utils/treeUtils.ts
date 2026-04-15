@@ -4,10 +4,10 @@
  * flat Element[] 배열을 hierarchical ElementTreeItem[] 구조로 변환
  */
 
-import type { Element } from '../../types/core/store.types';
-import type { ElementTreeItem } from '../../types/builder/stately.types';
-import type { ElementProps } from '../../types/integrations/supabase.types';
-import type { DataBinding } from '../../types/builder/unified.types';
+import type { Element } from "../../types/core/store.types";
+import type { ElementTreeItem } from "../../types/builder/stately.types";
+import type { ElementProps } from "../../types/integrations/supabase.types";
+import type { DataBinding } from "../../types/builder/unified.types";
 
 /**
  * flat Element 배열을 hierarchical ElementTreeItem 구조로 변환
@@ -44,7 +44,7 @@ import type { DataBinding } from '../../types/builder/unified.types';
  */
 export function buildTreeFromElements(
   elements: Element[],
-  parentId: string | null = null
+  parentId: string | null = null,
 ): ElementTreeItem[] {
   // Phase 1.3 최적화: Map 기반 조회로 O(n²) → O(n)
   // 첫 호출에서만 Map 생성 (한 번만 실행)
@@ -60,7 +60,7 @@ export function buildTreeFromElements(
 
       elementsMap.set(el.id, el);
 
-      const key = el.parent_id || 'root';
+      const key = el.parent_id || "root";
       if (!childrenMap.has(key)) {
         childrenMap.set(key, []);
       }
@@ -72,29 +72,29 @@ export function buildTreeFromElements(
       let children = childrenMap.get(parentKey) || [];
 
       // 부모가 root가 아니면 특수 정렬 로직 적용
-      if (parentKey !== 'root') {
+      if (parentKey !== "root") {
         const parentElement = elementsMap.get(parentKey);
 
         // Tabs 특수 정렬: Tab과 Panel을 tabId 기준으로 쌍으로 그룹화
-        if (parentElement && parentElement.tag === 'Tabs') {
+        if (parentElement && parentElement.tag === "Tabs") {
           children = sortTabsChildren(children);
         }
         // Table 특수 정렬은 보류 (기존 로직 유지)
-        else if (parentElement && parentElement.tag === 'Table') {
+        else if (parentElement && parentElement.tag === "Table") {
           children = [...children].sort(
-            (a, b) => (a.order_num || 0) - (b.order_num || 0)
+            (a, b) => (a.order_num || 0) - (b.order_num || 0),
           );
         }
         // 일반 정렬: order_num 기준
         else {
           children = [...children].sort(
-            (a, b) => (a.order_num || 0) - (b.order_num || 0)
+            (a, b) => (a.order_num || 0) - (b.order_num || 0),
           );
         }
       } else {
         // 루트 레벨은 order_num 기준 정렬
         children = [...children].sort(
-          (a, b) => (a.order_num || 0) - (b.order_num || 0)
+          (a, b) => (a.order_num || 0) - (b.order_num || 0),
         );
       }
 
@@ -115,11 +115,11 @@ export function buildTreeFromElements(
       });
     };
 
-    return buildTree('root');
+    return buildTree("root");
   }
 
   // 이 경로는 실행되지 않음 (deprecated - 하위 호환성만 유지)
-  console.warn('buildTreeFromElements: 비권장 경로 실행 (parentId 전달)');
+  console.warn("buildTreeFromElements: 비권장 경로 실행 (parentId 전달)");
   return [];
 }
 
@@ -137,22 +137,20 @@ export function buildTreeFromElements(
  */
 function sortTabsChildren(items: Element[]): Element[] {
   // 새 구조 감지: TabList 자식이 있으면 Phase 0 이후 구조
-  const hasTabList = items.some((item) => item.tag === 'TabList');
+  const hasTabList = items.some((item) => item.tag === "TabList");
 
   if (hasTabList) {
     // 새 구조: order_num 기준 정렬 (TabList, Panel 모두 포함)
-    return [...items].sort(
-      (a, b) => (a.order_num || 0) - (b.order_num || 0)
-    );
+    return [...items].sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }
 
   // 기존 flat 구조: Tab-Panel 쌍으로 그룹화
   const tabs = items
-    .filter((item) => item.tag === 'Tab')
+    .filter((item) => item.tag === "Tab")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const panels = items
-    .filter((item) => item.tag === 'Panel')
+    .filter((item) => item.tag === "TabPanel" || item.tag === "Panel")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const pairedItems: Element[] = [];
@@ -175,11 +173,14 @@ function sortTabsChildren(items: Element[]): Element[] {
         usedPanelIds.add(matchingPanel.id);
       }
     } else {
-      console.warn('⚠️ Tab에 tabId가 없음, order_num 기반 fallback 사용:', tab.id);
+      console.warn(
+        "⚠️ Tab에 tabId가 없음, order_num 기반 fallback 사용:",
+        tab.id,
+      );
       const fallbackPanel = panels.find(
         (panel) =>
           !usedPanelIds.has(panel.id) &&
-          Math.abs((panel.order_num || 0) - (tab.order_num || 0)) <= 1
+          Math.abs((panel.order_num || 0) - (tab.order_num || 0)) <= 1,
       );
 
       if (fallbackPanel) {
@@ -191,7 +192,7 @@ function sortTabsChildren(items: Element[]): Element[] {
 
   panels.forEach((panel) => {
     if (!usedPanelIds.has(panel.id)) {
-      console.warn('⚠️ 매칭되지 않은 Panel:', panel.id);
+      console.warn("⚠️ 매칭되지 않은 Panel:", panel.id);
       pairedItems.push(panel);
     }
   });
@@ -218,9 +219,9 @@ export function flattenTreeToElements(tree: ElementTreeItem[]): Element[] {
         props: item.props as ElementProps,
         deleted: item.deleted,
         dataBinding: item.dataBinding as DataBinding | undefined,
-        page_id: '', // 필요 시 추가
-        created_at: '', // 필요 시 추가
-        updated_at: '', // 필요 시 추가
+        page_id: "", // 필요 시 추가
+        created_at: "", // 필요 시 추가
+        updated_at: "", // 필요 시 추가
       };
 
       result.push(element);
@@ -244,7 +245,7 @@ export function flattenTreeToElements(tree: ElementTreeItem[]): Element[] {
  */
 export function findTreeItemById(
   tree: ElementTreeItem[],
-  id: string
+  id: string,
 ): ElementTreeItem | undefined {
   for (const item of tree) {
     if (item.id === id) {
@@ -297,7 +298,7 @@ const sortCache = new WeakMap<Element[], Map<string, Element[]>>();
 function getCachedSortResult(
   items: Element[],
   parentId: string,
-  sortFn: () => Element[]
+  sortFn: () => Element[],
 ): Element[] {
   let parentCache = sortCache.get(items);
   if (!parentCache) {
@@ -344,7 +345,9 @@ export function sortTableChildren<T extends Element>(items: T[]): T[] {
 /**
  * 일반적인 order_num 기반 정렬
  */
-export function sortByOrderNum<T extends { order_num?: number }>(items: T[]): T[] {
+export function sortByOrderNum<T extends { order_num?: number }>(
+  items: T[],
+): T[] {
   return [...items].sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 }
 
@@ -361,28 +364,28 @@ export function sortChildrenByParentTag<T extends Element>(
   items: T[],
   children: T[],
   parentTag: string | undefined,
-  parentId: string
+  parentId: string,
 ): T[] {
   if (!parentTag) {
     return getCachedSortResult(items as Element[], parentId, () =>
-      sortByOrderNum(children)
+      sortByOrderNum(children),
     ) as T[];
   }
 
   switch (parentTag) {
     case "Tabs":
       return getCachedSortResult(items as Element[], parentId, () =>
-        sortTabsChildren(children as Element[])
+        sortTabsChildren(children as Element[]),
       ) as T[];
 
     case "Table":
       return getCachedSortResult(items as Element[], parentId, () =>
-        sortTableChildren(children)
+        sortTableChildren(children),
       ) as T[];
 
     default:
       return getCachedSortResult(items as Element[], parentId, () =>
-        sortByOrderNum(children)
+        sortByOrderNum(children),
       ) as T[];
   }
 }

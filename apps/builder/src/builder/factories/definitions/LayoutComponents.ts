@@ -72,20 +72,18 @@ export function createTabsDefinition(
         order_num: 2,
         children: [
           {
-            tag: "Panel",
+            tag: "TabPanel",
             props: {
               title: "Panel 1",
-              variant: "tab",
               tabId: tab1Id,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
           },
           {
-            tag: "Panel",
+            tag: "TabPanel",
             props: {
               title: "Panel 2",
-              variant: "tab",
               tabId: tab2Id,
             } as ComponentElementProps,
             ...ownerFields,

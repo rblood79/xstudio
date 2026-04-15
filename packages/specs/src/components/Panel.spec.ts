@@ -195,11 +195,12 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
+      const variantKey =
+        (props as { variant?: keyof typeof PanelSpec.variants }).variant ??
+        PanelSpec.defaultVariant!;
       const variant =
-        PanelSpec.variants![
-          (props as { variant?: keyof typeof PanelSpec.variants }).variant ??
-            PanelSpec.defaultVariant!
-        ];
+        PanelSpec.variants![variantKey] ??
+        PanelSpec.variants![PanelSpec.defaultVariant!];
       const title = props.title;
 
       // 사용자 스타일 우선
