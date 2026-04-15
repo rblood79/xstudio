@@ -10,7 +10,10 @@
 
 import React, { useState, useMemo, useEffect, useRef, memo } from "react";
 import { PropertySection, PropertyUnitInput } from "../../../components";
-import { ToggleButton, ToggleButtonGroup } from "@composition/shared/components";
+import {
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@composition/shared/components";
 import { Input } from "react-aria-components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
@@ -31,16 +34,15 @@ import {
 } from "lucide-react";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
-import { useLayoutValuesJotai } from "../hooks/useLayoutValuesJotai";
-import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
-import { useAtomValue } from "jotai";
-import { useStore } from "../../../stores";
+import { useLayoutValues } from "../hooks/useLayoutValues";
 import {
-  flexDirectionKeysAtom,
-  flexAlignmentKeysAtom,
-  justifyContentSpacingKeysAtom,
-  flexWrapKeysAtom,
-} from "../atoms/styleAtoms";
+  useFlexDirectionKeys,
+  useFlexAlignmentKeys,
+  useJustifyContentSpacingKeys,
+  useFlexWrapKeys,
+} from "../hooks/useLayoutAuxiliary";
+import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
+import { useStore } from "../../../stores";
 
 // 4방향 값 추출은 이제 useLayoutValues 훅에서 처리됨
 
@@ -208,14 +210,13 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
   const { updateStyleImmediate, updateStylePreview } =
     useOptimizedStyleActions();
 
-  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
-  const styleValues = useLayoutValuesJotai();
-
-  // 🚀 Phase 3: alignment keys atoms 사용 (selectedElementAtom 직접 구독 제거)
-  const flexDirectionKeys = useAtomValue(flexDirectionKeysAtom);
-  const flexAlignmentKeys = useAtomValue(flexAlignmentKeysAtom);
-  const justifyContentSpacingKeys = useAtomValue(justifyContentSpacingKeysAtom);
-  const flexWrapKeys = useAtomValue(flexWrapKeysAtom);
+  // ADR-067 Phase 2: Zustand 직접 구독 + Spec 직접 lookup
+  const selectedId = useStore((s) => s.selectedElementId);
+  const styleValues = useLayoutValues(selectedId);
+  const flexDirectionKeys = useFlexDirectionKeys(selectedId);
+  const flexAlignmentKeys = useFlexAlignmentKeys(selectedId);
+  const justifyContentSpacingKeys = useJustifyContentSpacingKeys(selectedId);
+  const flexWrapKeys = useFlexWrapKeys(selectedId);
 
   // FourWayGrid는 local state + blur 커밋이므로 즉시 업데이트
   const handlePaddingChange = (
