@@ -17,11 +17,12 @@ Implemented — 2026-04-15 (Proposed 2026-04-13)
 2026-04-13 실측 (2026-04-15 보완):
 
 - `RenderSpec.shapes` 시그니처: `spec.types.ts:553`
-- 호출 지점: 4곳
+- 호출 지점: 런타임 3곳
   - `apps/builder/.../buildSpecNodeData.ts:719` — Skia 렌더 메인 path
   - `apps/builder/.../utils/specTextStyle.ts:124` — 텍스트 스타일 추출 (레이아웃 측정)
   - `apps/builder/.../overlay/specTextStyleForOverlay.ts:61` — 오버레이 텍스트 스타일
-  - ~~`packages/specs/src/renderers/PixiRenderer.ts`~~ — dead caller였으며 2026-04-15 PixiRenderer 완전 제거 (commit `80d4e631`)
+  - (참고) ~~`packages/specs/src/renderers/PixiRenderer.ts`~~ — 과거 dead caller였으며 2026-04-15 완전 제거 (commit `80d4e631`)
+  - (참고) `packages/specs/scripts/validate-specs.ts:139` — 빌드 시 시그니처 존재 검증 전용 (함수 실제 호출 아님)
 - Spec 파일: 107개 — self-lookup 전환 61파일, variant 미사용/비활성 46파일
   - (초기 실측은 83개였으나 후속 컴포넌트 추가로 증가)
 
@@ -118,5 +119,5 @@ Implemented — 2026-04-15 (Proposed 2026-04-13)
 ### Negative
 
 - 대규모 diff — 코드 리뷰 부담 (초기 실측 83파일 → 확정 95 files, commit `40fa47cb`)
-- self-reference 패턴(`TextFieldSpec.variants` 내부 참조)이 전 Spec에 반복 (초기 78 → 확정 61) — 반복 패턴 수용
+- self-reference 패턴(`TextFieldSpec.variants` 내부 참조)이 전환 대상 Spec 61개(107 중)에 반복 (초기 실측 78 중 변경 수렴값) — 반복 패턴 수용
 - variant 미사용 Spec(`shapes: () => []` 등)은 시그니처만 변경 — 무해하나 diff 잡음
