@@ -103,11 +103,35 @@ const CONTAINER_DIMENSION_TAGS = new Set([
 
 export const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
   "Tabs",
+  "TabPanels",
+  "TabPanel",
   "Breadcrumbs",
   "TagGroup",
   "Table",
   "Tree",
   "Menu",
+  // CRITICAL — spec.render.shapes()가 _hasChildren으로 분기
+  "ListBox",
+  "GridList",
+  "RadioGroup",
+  "CheckboxGroup",
+  "Select",
+  "ComboBox",
+  // HIGH
+  "Dialog",
+  "Popover",
+  "Disclosure",
+  "DisclosureGroup",
+  "Calendar",
+  "ColorPicker",
+  // MEDIUM
+  "ButtonGroup",
+  "ToggleButtonGroup",
+  "Form",
+  "Toolbar",
+  "Section",
+  "Card",
+  "Tooltip",
 ]);
 
 const NOWRAP_PARENTS = new Set([
@@ -693,11 +717,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   }
 
   // ---------- shapes 생성 ----------
-  const shapes = spec.render.shapes(
-    specProps,
-    sizeSpec,
-    componentState,
-  );
+  const shapes = spec.render.shapes(specProps, sizeSpec, componentState);
 
   normalizeMiddleBaselineTextLineHeight(
     shapes,
