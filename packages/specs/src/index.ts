@@ -117,8 +117,7 @@ export {
   renderToReact,
   generateCSSVariables,
   generateSizeVariables,
-  // PIXI Renderer
-  renderToPixi,
+  // Variant/Size resolvers (Skia/Canvas 공용)
   getVariantColors,
   getSizePreset,
   // CSS Generator
@@ -134,7 +133,7 @@ export {
   resolveSpecFontSize,
 } from "./renderers";
 
-export type { ReactRenderResult, PixiRenderContext } from "./renderers";
+export type { ReactRenderResult } from "./renderers";
 
 // ─── Components ──────────────────────────────────────────────────────────────
 export { ButtonSpec } from "./components/Button.spec";

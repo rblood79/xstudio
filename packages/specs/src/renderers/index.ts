@@ -11,24 +11,15 @@ export {
   renderToReact,
   generateCSSVariables,
   generateSizeVariables,
-} from './ReactRenderer';
+} from "./ReactRenderer";
 
-export type { ReactRenderResult } from './ReactRenderer';
+export type { ReactRenderResult } from "./ReactRenderer";
 
-// PIXI Renderer
-export {
-  renderToPixi,
-  getVariantColors,
-  getSizePreset,
-} from './PixiRenderer';
-
-export type { PixiRenderContext } from './PixiRenderer';
+// Variant/Size resolvers (Skia/Canvas 공용, ADR-100 PixiRenderer 제거 후 분리)
+export { getVariantColors, getSizePreset } from "./utils/variantColors";
 
 // CSS Generator
-export {
-  generateCSS,
-  generateAllCSS,
-} from './CSSGenerator';
+export { generateCSS, generateAllCSS } from "./CSSGenerator";
 
 // Token Resolver Utils
 export {
@@ -37,7 +28,7 @@ export {
   tokenToCSSVar,
   resolveBoxShadow,
   hexStringToNumber,
-} from './utils/tokenResolver';
+} from "./utils/tokenResolver";
 
 // FontSize resolver
-export { resolveSpecFontSize } from './utils/resolveSpecFontSize';
+export { resolveSpecFontSize } from "./utils/resolveSpecFontSize";
