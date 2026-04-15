@@ -27,6 +27,7 @@ import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
 import { getSpecForTag, IMAGE_TAGS } from "../sprites/tagSpecMap";
 import { onLayoutPublished } from "../layout";
+import { getSyntheticElementsMap } from "../layout/engines/fullTreeLayout";
 import type { TransitionManager } from "./transitionManager";
 import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
 import { InlineAlertSpec } from "@composition/specs";
@@ -197,7 +198,13 @@ export class StoreRenderBridge {
     elementsMap: Map<string, Element>,
   ): Set<string> | null {
     if (!this.prevElementsMap) return null;
-    if (this.prevElementsMap === elementsMap) return new Set();
+    if (this.prevElementsMap === elementsMap) {
+      // store 참조는 동일해도 synthetic(virtual Tab)이 items 변경 등으로 갱신될 수
+      // 있으므로 항상 synthetic ids를 변경 집합에 포함한다.
+      const synthetic = new Set<string>();
+      for (const id of getSyntheticElementsMap().keys()) synthetic.add(id);
+      return synthetic;
+    }
 
     const changed = new Set<string>();
 
@@ -210,6 +217,12 @@ export class StoreRenderBridge {
     // 삭제된 요소
     for (const id of this.prevElementsMap.keys()) {
       if (!elementsMap.has(id)) changed.add(id);
+    }
+
+    // ADR-066: synthetic element(가상 Tab)도 매 sync마다 rebuild 대상.
+    // layout 변경 시 items/size가 반영될 수 있음.
+    for (const id of getSyntheticElementsMap().keys()) {
+      changed.add(id);
     }
 
     return changed;
@@ -257,8 +270,12 @@ export class StoreRenderBridge {
       }
     }
 
+    // ADR-066: synthetic elements (virtual Tab 등)도 증분 처리. 렌더링을 위해
+    // Skia node가 필요하며 items 등 변경 시 rebuild 필요.
+    const syntheticMap = getSyntheticElementsMap();
+
     for (const id of expandedIds) {
-      const element = elementsMap.get(id);
+      const element = elementsMap.get(id) ?? syntheticMap.get(id);
       if (!element) {
         // 삭제된 요소
         unregisterSkiaNode(id);
@@ -315,7 +332,16 @@ export class StoreRenderBridge {
     const currentIds = new Set<string>();
     const currentImageSrcs = new Map<string, string>();
 
-    for (const [id, element] of elementsMap) {
+    // ADR-066: synthetic elements (virtual Tab 등) 합산 처리. elementsMap에 없는
+    // virtual id를 Skia node registry에도 등록해야 renderCommands visitElement가
+    // 렌더링한다.
+    const syntheticMap = getSyntheticElementsMap();
+    const iterableEntries: Array<[string, Element]> = [
+      ...elementsMap.entries(),
+      ...[...syntheticMap.entries()].filter(([id]) => !elementsMap.has(id)),
+    ];
+
+    for (const [id, element] of iterableEntries) {
       currentIds.add(id);
 
       const layout = ctx.layoutMap.get(id) ?? undefined;
