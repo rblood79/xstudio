@@ -627,24 +627,6 @@ export const componentMetadata: ComponentMeta[] = [
 
   // Layout
   {
-    type: "Panel",
-    label: "Panel",
-    category: "Layout",
-    icon: "📦",
-    inspector: {
-      hasCustomEditor: false,
-      dataBindingType: null,
-      // Custom container - supports basic mouse events
-      supportedEvents: [
-        "onClick",
-        "onMouseEnter",
-        "onMouseLeave",
-        "onFocus",
-        "onBlur",
-      ],
-    },
-  },
-  {
     type: "Card",
     label: "Card",
     category: "Layout",

@@ -22,7 +22,7 @@ export function buildSystemPrompt(context: BuilderContext): string {
 ## 사용 가능한 컴포넌트
 Button, TextField, Checkbox, Radio, ToggleButton, ToggleButtonGroup,
 CheckboxGroup, RadioGroup, Select, ComboBox, Slider,
-Tabs, Panel, Tree, Calendar, DatePicker, DateRangePicker,
+Tabs, Tree, Calendar, DatePicker, DateRangePicker,
 Switch, Table, Card, TagGroup, ListBox, GridList,
 Text, Div, Section, Nav
 

@@ -94,7 +94,6 @@ export const COMPONENT_METHODS: Record<string, string[]> = {
   Meter: ["setValue"],
 
   // Container Components
-  Panel: ["show", "hide", "toggle"],
   Card: ["show", "hide", "toggle"],
 };
 
@@ -112,7 +111,7 @@ export const useComponentRegistry = create<ComponentRegistryState>(
         if (exists) {
           return {
             components: state.components.map((c) =>
-              c.id === component.id ? component : c
+              c.id === component.id ? component : c,
             ),
           };
         }
@@ -132,7 +131,7 @@ export const useComponentRegistry = create<ComponentRegistryState>(
     updateComponentState: (id, newState) => {
       set((state) => ({
         components: state.components.map((c) =>
-          c.id === id ? { ...c, state: { ...c.state, ...newState } } : c
+          c.id === id ? { ...c, state: { ...c.state, ...newState } } : c,
         ),
       }));
     },
@@ -152,7 +151,7 @@ export const useComponentRegistry = create<ComponentRegistryState>(
     clearRegistry: () => {
       set({ components: [] });
     },
-  })
+  }),
 );
 
 /**

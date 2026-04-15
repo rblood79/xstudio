@@ -84,7 +84,6 @@ const contentComp = [
 ] as const;
 
 const layoutComp = [
-  { tag: "Panel", label: "panel", icon: InspectionPanel },
   { tag: "Card", label: "card", icon: AppWindowMac },
   { tag: "Group", label: "group", icon: GroupIcon },
   { tag: "Tabs", label: "tabs", icon: AppWindow },

@@ -107,12 +107,6 @@ export type S2CardVariant = "primary" | "secondary" | "tertiary" | "quiet";
 export type MeterVariant = "informative" | "positive" | "warning" | "critical";
 
 // ============================================================================
-// Panel (composition-specific layout variants)
-// ============================================================================
-
-export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";
-
-// ============================================================================
 // Separator (style variants, not color-based)
 // ============================================================================
 

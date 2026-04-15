@@ -159,7 +159,7 @@ export type StaticColor = "auto" | "black" | "white";
 export type TabsDensity = "compact" | "regular";
 
 // ============================================================================
-// Card/Panel Variants
+// Card Variants
 // ============================================================================
 
 /**
@@ -186,12 +186,6 @@ export function normalizeCardVariant(variant?: string): CardVariant {
   };
   return LEGACY_MAP[variant ?? ""] ?? (variant as CardVariant) ?? "primary";
 }
-
-/**
- * Panel visual variants
- * Used by: Panel component (composition 고유)
- */
-export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";
 
 // ============================================================================
 // Separator Variants
