@@ -60,7 +60,7 @@ export function useTransformValue(
   const specDefault = useMemo(() => {
     if (!type) return undefined;
     const p: TransformSpecPreset = resolveSpecPreset(type, size);
-    return p[prop];
+    return (p as Record<string, number | undefined>)[prop];
   }, [type, size, prop]);
 
   return useMemo(() => {

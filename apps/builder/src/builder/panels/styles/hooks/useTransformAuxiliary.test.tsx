@@ -69,9 +69,10 @@ describe("useTransformAuxiliary", () => {
 
   it("useSelfAlignmentKeys returns [] for block parent", () => {
     useStore.setState((s: any) => {
-      const map = new Map(s.elementsMap);
+      const map = new Map<string, any>(s.elementsMap);
+      const existing = map.get("p-1") ?? {};
       map.set("p-1", {
-        ...map.get("p-1"),
+        ...existing,
         props: { style: { display: "block" } },
       });
       return { elementsMap: map };
