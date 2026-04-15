@@ -12,24 +12,24 @@
  * @since 2026-02-10 Gradient Phase 2
  */
 
-import { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import type { Key } from 'react-aria-components';
-import { Select, SelectItem } from '@composition/shared/components';
+import { memo, useState, useCallback, useMemo, useEffect, useRef } from "react";
+import type { Key } from "react-aria-components";
+import { Select, SelectItem } from "@composition/shared/components";
 import type {
   FillItem,
   GradientStop,
   LinearGradientFillItem,
   RadialGradientFillItem,
   AngularGradientFillItem,
-} from '../../../../types/builder/fill.types';
-import { FillType } from '../../../../types/builder/fill.types';
-import { hex8ToRgba, rgbaToHex8 } from '../utils/colorUtils';
-import { GradientBar } from './GradientBar';
-import { ColorPickerPanel } from './ColorPickerPanel';
-import { GradientControls } from './GradientControls';
-import { GradientStopList } from './GradientStopList';
+} from "../../../../types/builder/fill.types";
+import { FillType } from "../../../../types/builder/fill.types";
+import { hex8ToRgba, rgbaToHex8 } from "../utils/colorUtils";
+import { GradientBar } from "./GradientBar";
+import { ColorPickerPanel } from "./ColorPickerPanel";
+import { GradientControls } from "./GradientControls";
+import { GradientStopList } from "./GradientStopList";
 
-import './GradientEditor.css';
+import "./GradientEditor.css";
 
 type GradientFill =
   | LinearGradientFillItem
@@ -37,7 +37,11 @@ type GradientFill =
   | AngularGradientFillItem;
 
 /** 그래디언트 하위 타입 (Mesh 포함) */
-type GradientSubType = FillType.LinearGradient | FillType.RadialGradient | FillType.AngularGradient | FillType.MeshGradient;
+type GradientSubType =
+  | FillType.LinearGradient
+  | FillType.RadialGradient
+  | FillType.AngularGradient
+  | FillType.MeshGradient;
 
 interface GradientEditorProps {
   fill: GradientFill;
@@ -53,10 +57,10 @@ interface GradientEditorProps {
 // ============================================
 
 const GRADIENT_SUB_TYPE_OPTIONS: { id: GradientSubType; name: string }[] = [
-  { id: FillType.LinearGradient, name: 'Linear' },
-  { id: FillType.RadialGradient, name: 'Radial' },
-  { id: FillType.AngularGradient, name: 'Angular' },
-  { id: FillType.MeshGradient, name: 'Mesh' },
+  { id: FillType.LinearGradient, name: "Linear" },
+  { id: FillType.RadialGradient, name: "Radial" },
+  { id: FillType.AngularGradient, name: "Angular" },
+  { id: FillType.MeshGradient, name: "Mesh" },
 ];
 
 // ============================================
@@ -72,7 +76,7 @@ function buildGradientCss(stops: GradientStop[]): string {
   const parts = sorted.map(
     (s) => `${s.color.slice(0, 7)} ${(s.position * 100).toFixed(1)}%`,
   );
-  return `linear-gradient(90deg, ${parts.join(', ')})`;
+  return `linear-gradient(90deg, ${parts.join(", ")})`;
 }
 
 /** 두 hex8 색상의 선형 보간 */
@@ -90,9 +94,10 @@ function interpolateColor(color1: string, color2: string, t: number): string {
 /** 지정된 position에서의 보간 색상 계산 */
 function getColorAtPosition(stops: GradientStop[], position: number): string {
   const sorted = [...stops].sort((a, b) => a.position - b.position);
-  if (sorted.length === 0) return '#000000FF';
+  if (sorted.length === 0) return "#000000FF";
   if (position <= sorted[0].position) return sorted[0].color;
-  if (position >= sorted[sorted.length - 1].position) return sorted[sorted.length - 1].color;
+  if (position >= sorted[sorted.length - 1].position)
+    return sorted[sorted.length - 1].color;
 
   for (let i = 0; i < sorted.length - 1; i++) {
     if (position >= sorted[i].position && position <= sorted[i + 1].position) {
@@ -118,7 +123,7 @@ export const GradientEditor = memo(function GradientEditor({
 
   // 🚀 Performance: Solid color 방식 적용
   // 드래그 중: onChange → updateFillPreview → elementsMap만 업데이트 (Canvas 프리뷰)
-  //            selectedElementProps 미변경 → fillsAtom 재계산 없음 → 부모 리렌더 없음
+  //            selectedElementProps 미변경 → useFillValues 재계산 없음 → 부모 리렌더 없음
   // 드래그 종료: onChangeEnd → updateFill → 히스토리 + DB 저장
   // Stop 위치 드래그: localStops 상태로 핸들 위치 관리 + onChange로 Canvas 프리뷰
   // Color 드래그: ColorPickerPanelInner.localColor가 UI 담당 + onChange로 Canvas 프리뷰
@@ -144,14 +149,18 @@ export const GradientEditor = memo(function GradientEditor({
   // ColorPickerPanel은 key={value}로 remount하므로, 드래그 중 color 변경 시
   // 이 값을 업데이트하면 매 프레임 remount 발생 → 극심한 랙
   // 드래그 중에는 committedStopColor를 유지하고, 종료 시에만 갱신
-  const [committedStopColor, setCommittedStopColor] = useState(activeStop?.color ?? '#000000FF');
+  const [committedStopColor, setCommittedStopColor] = useState(
+    activeStop?.color ?? "#000000FF",
+  );
 
   // 활성 스톱이 변경되면 (다른 스톱 선택) committed color 동기화
-  const [prevActiveStopKey, setPrevActiveStopKey] = useState(`${activeStopIndex}-${fill.stops}`);
+  const [prevActiveStopKey, setPrevActiveStopKey] = useState(
+    `${activeStopIndex}-${fill.stops}`,
+  );
   const activeStopKey = `${activeStopIndex}-${fill.stops}`;
   if (prevActiveStopKey !== activeStopKey) {
     setPrevActiveStopKey(activeStopKey);
-    setCommittedStopColor(activeStop?.color ?? '#000000FF');
+    setCommittedStopColor(activeStop?.color ?? "#000000FF");
   }
 
   const gradientCss = useMemo(() => buildGradientCss(localStops), [localStops]);
@@ -209,9 +218,12 @@ export const GradientEditor = memo(function GradientEditor({
   );
 
   const handleStopAddFromList = useCallback(() => {
-    const midPosition = localStops.length >= 2
-      ? (localStops[localStops.length - 2].position + localStops[localStops.length - 1].position) / 2
-      : 0.5;
+    const midPosition =
+      localStops.length >= 2
+        ? (localStops[localStops.length - 2].position +
+            localStops[localStops.length - 1].position) /
+          2
+        : 0.5;
     const color = getColorAtPosition(localStops, midPosition);
     const newStops = [...localStops, { color, position: midPosition }];
     setActiveStopIndex(newStops.length - 1);
@@ -281,16 +293,16 @@ export const GradientEditor = memo(function GradientEditor({
   return (
     <div className="gradient-editor">
       <div className="react-aria-control react-aria-Group">
-      <Select
-        aria-label="Gradient type"
-        size="sm"
-        selectedKey={fill.type}
-        onSelectionChange={handleSubTypeChange}
-        items={GRADIENT_SUB_TYPE_OPTIONS}
-        className="gradient-type-select"
-      >
-        {(item) => <SelectItem>{item.name}</SelectItem>}
-      </Select>
+        <Select
+          aria-label="Gradient type"
+          size="sm"
+          selectedKey={fill.type}
+          onSelectionChange={handleSubTypeChange}
+          items={GRADIENT_SUB_TYPE_OPTIONS}
+          className="gradient-type-select"
+        >
+          {(item) => <SelectItem>{item.name}</SelectItem>}
+        </Select>
       </div>
       <GradientBar
         stops={localStops}

@@ -191,10 +191,7 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
 }
 
 /**
- * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
- * - 섹션이 열릴 때만 마운트됨
- * - Jotai atom에서 직접 값 구독 (props 불필요)
- * - 🚀 selectedElementAtom 직접 구독 제거 - alignment atoms 사용
+ * LayoutSection 내부 컨텐츠 — 섹션이 열릴 때만 마운트
  */
 const LayoutSectionContent = memo(function LayoutSectionContent() {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);

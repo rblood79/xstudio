@@ -3,12 +3,9 @@
  *
  * Phase 2: Color + Gradient 다중 레이어
  * - PropertySection 래퍼 + 내부 Content 분리
- * - Jotai atom 구독 (fillsAtom)
+ * - Zustand 구독 (useFillValues)
  * - @dnd-kit/sortable 드래그 순서 변경
  * - memo 최적화
- *
- * @since 2026-02-10 Color Picker Phase 1
- * @updated 2026-02-10 Gradient Phase 2
  */
 
 import { memo, useCallback, useMemo } from "react";

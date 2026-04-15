@@ -2,9 +2,7 @@
  * ColorInputModeSelector - 색상 입력 모드 선택기
  *
  * 5가지 모드: RGBA, HEX, CSS, HSL, HSB
- * Jotai colorInputModeAtom에서 읽기/쓰기
- *
- * @since 2026-02-10 Color Picker Phase 1
+ * useFillUIStore (Zustand)에서 읽기/쓰기
  */
 
 import { memo, useCallback } from "react";
