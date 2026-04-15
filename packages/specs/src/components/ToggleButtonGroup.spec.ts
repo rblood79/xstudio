@@ -109,6 +109,18 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
     },
   },
 
+  // ADR-048: 부모→자식 props 전파 (ADR-059 B5)
+  propagation: {
+    rules: [
+      {
+        parentProp: "isEmphasized",
+        childPath: "ToggleButton",
+        override: false,
+      },
+      { parentProp: "size", childPath: "ToggleButton", override: false },
+    ],
+  },
+
   // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
   composition: {
     layout: "flex-row",
