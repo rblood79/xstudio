@@ -17,9 +17,17 @@ import "./styles/generated/ToggleButtonGroup.css";
 // ToggleButtonGroup용 Context - indicator 상태 공유
 export const ToggleButtonGroupIndicatorContext = createContext(false);
 
+// ToggleButtonGroup용 Context - isEmphasized 상태 공유 (자식 ToggleButton에 전파)
+export const ToggleButtonGroupEmphasizedContext = createContext(false);
+
 // ToggleButton에서 indicator 컨텍스트 사용
 export function useToggleButtonGroupIndicator() {
   return useContext(ToggleButtonGroupIndicatorContext);
+}
+
+// ToggleButton에서 emphasized 컨텍스트 사용
+export function useToggleButtonGroupEmphasized() {
+  return useContext(ToggleButtonGroupEmphasizedContext);
 }
 
 export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
@@ -122,11 +130,13 @@ export function ToggleButtonGroup({
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton button-base">
-              ⏳ 로딩 중...
-            </RACToggleButton>
-          </ToggleButtonGroupIndicatorContext.Provider>
+          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+              <RACToggleButton className="react-aria-ToggleButton button-base">
+                ⏳ 로딩 중...
+              </RACToggleButton>
+            </ToggleButtonGroupIndicatorContext.Provider>
+          </ToggleButtonGroupEmphasizedContext.Provider>
         </RACToggleButtonGroup>
       );
     }
@@ -143,11 +153,13 @@ export function ToggleButtonGroup({
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton button-base">
-              ❌ 오류
-            </RACToggleButton>
-          </ToggleButtonGroupIndicatorContext.Provider>
+          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+              <RACToggleButton className="react-aria-ToggleButton button-base">
+                ❌ 오류
+              </RACToggleButton>
+            </ToggleButtonGroupIndicatorContext.Provider>
+          </ToggleButtonGroupEmphasizedContext.Provider>
         </RACToggleButtonGroup>
       );
     }
@@ -167,9 +179,11 @@ export function ToggleButtonGroup({
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
         >
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            {children as ReactNode}
-          </ToggleButtonGroupIndicatorContext.Provider>
+          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+              {children as ReactNode}
+            </ToggleButtonGroupIndicatorContext.Provider>
+          </ToggleButtonGroupEmphasizedContext.Provider>
         </RACToggleButtonGroup>
       );
     }
@@ -184,9 +198,11 @@ export function ToggleButtonGroup({
         data-togglebutton-size={size}
         className={toggleButtonGroupClassName}
       >
-        <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-          {children as ReactNode}
-        </ToggleButtonGroupIndicatorContext.Provider>
+        <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+            {children as ReactNode}
+          </ToggleButtonGroupIndicatorContext.Provider>
+        </ToggleButtonGroupEmphasizedContext.Provider>
       </RACToggleButtonGroup>
     );
   }
@@ -205,11 +221,13 @@ export function ToggleButtonGroup({
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton button-base">
-              ⏳ 로딩 중...
-            </RACToggleButton>
-          </ToggleButtonGroupIndicatorContext.Provider>
+          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+              <RACToggleButton className="react-aria-ToggleButton button-base">
+                ⏳ 로딩 중...
+              </RACToggleButton>
+            </ToggleButtonGroupIndicatorContext.Provider>
+          </ToggleButtonGroupEmphasizedContext.Provider>
         </RACToggleButtonGroup>
       );
     }
@@ -226,11 +244,13 @@ export function ToggleButtonGroup({
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton button-base">
-              ❌ 오류
-            </RACToggleButton>
-          </ToggleButtonGroupIndicatorContext.Provider>
+          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+              <RACToggleButton className="react-aria-ToggleButton button-base">
+                ❌ 오류
+              </RACToggleButton>
+            </ToggleButtonGroupIndicatorContext.Provider>
+          </ToggleButtonGroupEmphasizedContext.Provider>
         </RACToggleButtonGroup>
       );
     }
@@ -259,18 +279,20 @@ export function ToggleButtonGroup({
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
         >
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            {buttonItems.map((item) => (
-              <RACToggleButton
-                key={item.id}
-                id={item.id}
-                isDisabled={item.isDisabled}
-                className="react-aria-ToggleButton button-base"
-              >
-                {item.label}
-              </RACToggleButton>
-            ))}
-          </ToggleButtonGroupIndicatorContext.Provider>
+          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+              {buttonItems.map((item) => (
+                <RACToggleButton
+                  key={item.id}
+                  id={item.id}
+                  isDisabled={item.isDisabled}
+                  className="react-aria-ToggleButton button-base"
+                >
+                  {item.label}
+                </RACToggleButton>
+              ))}
+            </ToggleButtonGroupIndicatorContext.Provider>
+          </ToggleButtonGroupEmphasizedContext.Provider>
         </RACToggleButtonGroup>
       );
     }
@@ -286,9 +308,11 @@ export function ToggleButtonGroup({
       data-togglebutton-size={size}
       className={toggleButtonGroupClassName}
     >
-      <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-        {children as ReactNode}
-      </ToggleButtonGroupIndicatorContext.Provider>
+      <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+        <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+          {children as ReactNode}
+        </ToggleButtonGroupIndicatorContext.Provider>
+      </ToggleButtonGroupEmphasizedContext.Provider>
     </RACToggleButtonGroup>
   );
 }
