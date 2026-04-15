@@ -1,4 +1,4 @@
-# ADR-068 Phase 1 — Transform Pilot Implementation Plan
+# ADR-067 Phase 1 — Transform Pilot Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -977,8 +977,8 @@ pnpm dev
 
 ```bash
 mkdir -p docs/superpowers/measurements
-cat > docs/superpowers/measurements/2026-04-15-adr068-phase1-csy-calls.md <<'EOF'
-# ADR-068 Phase 1 — computeSyntheticStyle Call Count
+cat > docs/superpowers/measurements/2026-04-15-adr067-phase1-csy-calls.md <<'EOF'
+# ADR-067 Phase 1 — computeSyntheticStyle Call Count
 
 Date: 2026-04-15
 Scenario: Button 요소 선택, Transform 섹션만 열림 (다른 섹션 접힘)
@@ -1012,7 +1012,7 @@ git commit -m "refactor(styles): remove Transform-only Jotai atoms + useTransfor
 - transformValuesAtom/widthSizeModeAtom/heightSizeModeAtom/parentDisplayAtom/parentFlexDirectionAtom/selfAlignmentKeysAtom 제거 (Transform 전용)
 - G1 (a) 통과: computeSyntheticStyle 호출 0회 (Transform 섹션)
 
-측정: docs/superpowers/measurements/2026-04-15-adr068-phase1-csy-calls.md"
+측정: docs/superpowers/measurements/2026-04-15-adr067-phase1-csy-calls.md"
 ```
 
 ---
@@ -1021,7 +1021,7 @@ git commit -m "refactor(styles): remove Transform-only Jotai atoms + useTransfor
 
 **Files:**
 
-- Create: `docs/superpowers/measurements/2026-04-15-adr068-phase1-paint-latency.md`
+- Create: `docs/superpowers/measurements/2026-04-15-adr067-phase1-paint-latency.md`
 
 **배경**: G1 지표 (b) 선택→Transform 섹션 paint latency, (c) Canvas FPS 60 유지. 측정 스크립트는 일회성이므로 코드 추가 없이 Chrome DevTools로 수행.
 
@@ -1094,13 +1094,13 @@ G1 (b) 또는 (c)가 실패하면:
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add docs/superpowers/measurements/2026-04-15-adr068-phase1-paint-latency.md
-git commit -m "measure(adr068): Phase 1 G1 metrics — paint latency + FPS"
+git add docs/superpowers/measurements/2026-04-15-adr067-phase1-paint-latency.md
+git commit -m "measure(adr067): Phase 1 G1 metrics — paint latency + FPS"
 ```
 
 ---
 
-## Task 9: 최종 검증 + ADR-068 Status 업데이트
+## Task 9: 최종 검증 + ADR-067 Status 업데이트
 
 **Files:**
 
@@ -1139,9 +1139,9 @@ pnpm dev
 - Preview iframe에서 Button, Frame, Flex 컨테이너 렌더 결과가 Phase 1 이전과 동일한지 시각 비교
 - Spec을 거치지 않는 쓰기 경로(`updateElementProps`)가 변경되지 않았으므로 회귀 없어야 함
 
-- [ ] **Step 5: ADR-068 Status 업데이트 (있으면)**
+- [ ] **Step 5: ADR-067 Status 업데이트 (있으면)**
 
-`/new-adr` skill로 ADR-068이 이미 생성되어 있으면 Status를 `Proposed` → `Phase 1 Implemented`로 갱신, `docs/adr/README.md`의 진행 상태도 갱신. 아직 ADR-068이 없으면 이 Task는 스킵하고 별도 세션에서 `/new-adr`로 생성.
+`/new-adr` skill로 ADR-067이 이미 생성되어 있으면 Status를 `Proposed` → `Phase 1 Implemented`로 갱신, `docs/adr/README.md`의 진행 상태도 갱신. 아직 ADR-067이 없으면 이 Task는 스킵하고 별도 세션에서 `/new-adr`로 생성.
 
 - [ ] **Step 6: 메모리 업데이트**
 
@@ -1150,16 +1150,16 @@ cat >> /Users/admin/.claude/projects/-Users-admin-work-composition/memory/MEMORY
 
 ## Skia-native Style Panel 전환
 
-- [ADR-068 Phase 1 완료](adr068-phase1-transform-pilot.md) — Transform 섹션 Zustand 직접 전환. computeSyntheticStyle 호출 0회 달성, Jotai Transform atoms 제거 (2026-04-15)
+- [ADR-067 Phase 1 완료](adr067-phase1-transform-pilot.md) — Transform 섹션 Zustand 직접 전환. computeSyntheticStyle 호출 0회 달성, Jotai Transform atoms 제거 (2026-04-15)
 EOF
 ```
 
 별도 메모리 파일 작성:
 
 ```bash
-cat > /Users/admin/.claude/projects/-Users-admin-work-composition/memory/adr068-phase1-transform-pilot.md <<'EOF'
+cat > /Users/admin/.claude/projects/-Users-admin-work-composition/memory/adr067-phase1-transform-pilot.md <<'EOF'
 ---
-name: ADR-068 Phase 1 — Transform Pilot
+name: ADR-067 Phase 1 — Transform Pilot
 description: 스타일 패널 Skia-native read path 전환 — Transform 섹션 Zustand 직접 전환 완료
 type: project
 ---
@@ -1175,8 +1175,8 @@ Transform 섹션과 보조 selector 5종(widthSizeMode/heightSizeMode/parentDisp
 ## 참조
 
 - Spec: `docs/superpowers/specs/2026-04-15-style-panel-skia-native-read-path-design.md`
-- Plan: `docs/superpowers/plans/2026-04-15-adr068-phase1-transform-pilot.md`
-- 측정: `docs/superpowers/measurements/2026-04-15-adr068-phase1-*.md`
+- Plan: `docs/superpowers/plans/2026-04-15-adr067-phase1-transform-pilot.md`
+- 측정: `docs/superpowers/measurements/2026-04-15-adr067-phase1-*.md`
 EOF
 ```
 
@@ -1184,7 +1184,7 @@ EOF
 
 ```bash
 git add /Users/admin/.claude/projects/-Users-admin-work-composition/memory/
-git commit -m "memory(adr068): Phase 1 transform pilot complete"
+git commit -m "memory(adr067): Phase 1 transform pilot complete"
 ```
 
 ---
@@ -1208,6 +1208,6 @@ git commit -m "memory(adr068): Phase 1 transform pilot complete"
 
 ## Dependencies / Preconditions
 
-- ADR-068 spec이 승인되어 있음 (`docs/superpowers/specs/2026-04-15-style-panel-skia-native-read-path-design.md`)
+- ADR-067 spec이 승인되어 있음 (`docs/superpowers/specs/2026-04-15-style-panel-skia-native-read-path-design.md`)
 - 프로젝트 로컬 ESLint 룰이 `useStore(useShallow(...))`를 금지함을 숙지 (`apps/builder/eslint-local-rules/index.js:55-80`)
 - `getSharedLayoutMap` / `onLayoutPublished` API가 안정적 (ADR-100 Phase 6 완료 이후)

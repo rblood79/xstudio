@@ -101,37 +101,36 @@ const CONTAINER_DIMENSION_TAGS = new Set([
   "Switcher",
 ]);
 
+// spec.render.shapes()가 _hasChildren 분기를 갖는 컨테이너.
+// 자식 변경 시 부모 Skia 노드 재빌드 필요 (StoreRenderBridge.incrementalSync 참조).
 export const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
-  "Tabs",
-  "TabPanels",
-  "TabPanel",
   "Breadcrumbs",
-  "TagGroup",
-  "Table",
-  "Tree",
-  "Menu",
-  // CRITICAL — spec.render.shapes()가 _hasChildren으로 분기
-  "ListBox",
-  "GridList",
-  "RadioGroup",
+  "ButtonGroup",
+  "Calendar",
+  "Card",
   "CheckboxGroup",
-  "Select",
+  "ColorPicker",
   "ComboBox",
-  // HIGH
   "Dialog",
-  "Popover",
   "Disclosure",
   "DisclosureGroup",
-  "Calendar",
-  "ColorPicker",
-  // MEDIUM
-  "ButtonGroup",
-  "ToggleButtonGroup",
   "Form",
-  "Toolbar",
+  "GridList",
+  "ListBox",
+  "Menu",
+  "Popover",
+  "RadioGroup",
   "Section",
-  "Card",
+  "Select",
+  "TabPanel",
+  "TabPanels",
+  "Table",
+  "Tabs",
+  "TagGroup",
+  "ToggleButtonGroup",
+  "Toolbar",
   "Tooltip",
+  "Tree",
 ]);
 
 const NOWRAP_PARENTS = new Set([

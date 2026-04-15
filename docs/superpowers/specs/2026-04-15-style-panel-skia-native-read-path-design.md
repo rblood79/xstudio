@@ -1,8 +1,8 @@
 # 스타일 패널 Skia-native Read Path 전환 (Jotai 제거)
 
 > Design spec — 2026-04-15
-> 대상 ADR (예정): ADR-068
-> 선행 원칙 ADR (예정): ADR-067 "Panel Read = Source-Specific, Write = elementsMap.properties"
+> 대상 ADR: ADR-067 (단일 ADR로 원칙 + 실행 통합)
+> 구현 breakdown: `docs/design/067-style-panel-skia-native-read-path-breakdown.md`
 
 ## 1. Context
 
@@ -162,7 +162,7 @@ const values = useTransformValues(id);
 | **5**         | Fill 섹션 이관                                                                                                                        | `useFillValue` + `fillAtoms.ts` 제거                                                                                | ColorInput/Gradient 편집 정합성                                      |
 | **6**         | ComponentState + panel shell(bridge/selectedElementAtom/styleAtoms) 제거 + `jotai` dependency 삭제                                    | `useZustandJotaiBridge`/`selectedElementAtom`/`styleAtoms` 파일 삭제. `package.json` jotai 제거                     | 전체 패널 스모크 + `pnpm type-check` + `grep -r "from [\"']jotai"` 0 |
 
-각 phase는 **독립 PR + ADR-068 Gate 통과 후 다음 phase**. phase 사이 일시 비대칭은 수용 (Jotai/Zustand 혼재 섹션 공존, 단일 디렉터리 내).
+각 phase는 **독립 PR + ADR-067 Gate 통과 후 다음 phase**. phase 사이 일시 비대칭은 수용 (Jotai/Zustand 혼재 섹션 공존, 단일 디렉터리 내).
 
 ## 6. Transform 섹션 prop별 Read Source
 

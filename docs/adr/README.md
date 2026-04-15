@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-14 (ADR-059 Implemented — v2.1 Phase 4 B1~B4 + Phase 5 closure 완료, fieldDelegation.ts 폐지)
+> **최종 업데이트**: 2026-04-15 (ADR-067 Proposed — 스타일 패널 Skia-native Read Path 전환, Jotai 제거 6-phase)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 42     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 16     |
-| **합계**                               | **66** |
+| 미구현 (Proposed/계획)                 | 17     |
+| **합계**                               | **67** |
 
 ---
 
@@ -99,6 +99,7 @@
 | [064](064-componentspec-shapes-variant-removal.md) | ComponentSpec shapes API — variant 파라미터 제거 + self-lookup                      | Implemented | (2026-04-15) `shapes(props, variant, size, state)` → `shapes(props, size, state)` + Spec 내부 self-lookup 완료. 타입 + caller 2 + Spec 전체 전환. 본 세션 종결 시 잔존 2파일(CardView/AvatarGroup `_variant` dummy) 제거. `build:specs` 0 byte diff + type-check 3/3 통과                                                                                                                                                                                                                                                                  |  **P2**  |
 | [065](065-panel-component-removal.md)              | Panel 컴포넌트 제거 — SSOT D2 위반 해소                                             | Implemented | (2026-04-15) Panel spec/wrapper/CSS/등록 5곳/runtime fallback 6곳/UI 노출 3곳/PanelVariant 타입 2곳/AI 프롬프트·도구/이벤트 레지스트리/Publish 레지스트리/cssComponentPresets ~150줄 전면 제거. 대체: Card/Section/Group. Tabs 역할은 ADR-064 직후 TabPanel spec 신설로 이관 완료. CSS 108→107, `type-check` 3/3 통과. 마이그레이션 미수행(사용자 명시)                                                                                                                                                                                    |  **P2**  |
 | [066](066-tabs-items-ssot-migration.md)            | Tabs items SSOT 전환 — RAC Collection Items 패턴 정합                               | Implemented | (2026-04-15) Tab element 소멸 + `Tabs.props.items` 단일 SSOT. TabPanel element는 자식 subtree 호스팅 유지. items[i].id ↔ TabPanel.props.itemId 페어링. TabsEditor Item Management + TabList 우측 +/- DOM 오버레이(`TabListActionOverlay`). implicitStyles/utils/HierarchyManager/treeUtils/elementReorder/elementRemoval/useLayerTreeData Tab element 로직 전면 제거. `tabsItemActions.ts` shared helper. Phase 1~7 모두 pnpm type-check 3/3 통과, CSS 107 유지. 구현 상세: [breakdown](design/066-tabs-items-ssot-migration-breakdown.md) |  **P2**  |
+| [067](067-style-panel-skia-native-read-path.md)    | 스타일 패널 Skia-native Read Path 전환 (Jotai 제거)                                 | Proposed    | 6 Phase — Transform pilot(+보조 selector 4종) → Layout/Spacing → Typography → Appearance+propagation → Fill → ComponentState+shell+jotai dep 삭제. `computeSyntheticStyle`(CSS 흉내) 제거, D3 대칭 복원. ESLint `useShallow` 금지 제약으로 개별 primitive selector + `useMemo` 조립. 구현 상세: [breakdown](design/067-style-panel-skia-native-read-path-breakdown.md)                                                                                                                                                                     |  **P2**  |
 
 ## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
 
