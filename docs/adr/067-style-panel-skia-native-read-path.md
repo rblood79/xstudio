@@ -112,6 +112,6 @@ inline (element.style.*) → computed (element.computedStyle.*) → synthetic (c
 - **6 phase 마이그레이션 기간 동안 일시 비대칭**: Jotai/Zustand 섹션 공존. 단일 디렉터리 내 한정되나 리뷰 부담 존재
 - **`useShallow` 대신 개별 selector + `useMemo` 조립**: object selector 사용 시 더 간결할 수 있으나 ESLint 룰 제약
 - **Phase 4 propagation chain 설계 부담**: ADR-048 레지스트리 기반 `resolvePropagatedProp` 유틸 신설 필요 (HIGH 아님이나 non-trivial)
-- **baseline 측정 필요**: G1 (b)/G3 end-to-end 기준 설정을 위해 Phase 1 시작 전 commit에서 30 samples 측정 수행
+- **baseline 측정 필요 (G3 전용)**: G3 end-to-end 30–40% 개선 기준 설정을 위해 Phase 1 시작 전 commit에서 30 samples 측정 수행. G1 (b)는 절대 기준(median ≤ 4ms / p95 ≤ 8ms)이므로 baseline 불필요
 - **Bridge 비용은 Phase 6까지 잔존**: `StylesPanel.tsx:58`의 `useZustandJotaiBridge()`는 Layout/Appearance/Typography/Fill/ComponentState 섹션이 계속 사용하므로 Phase 6 종결 시점까지 실행됨. Phase 1 단독에서는 bridge 비용이 지배적이어서 end-to-end median 개선을 Phase 1에서 측정하면 측정 오차가 크다 → G1 (b)를 "Transform value resolve 전용 시간"으로 scope 축소 (Gates 참조)
 - **Spec 구조 가정의 위험**: `resolveSpecPreset`이 `spec.sizes[size]` 구조를 가정. 일부 spec(ToggleButton, TagGroup 등)은 flat 구조일 수 있어 breakdown Task 1에 flat-spec fallback 테스트 필수 포함
