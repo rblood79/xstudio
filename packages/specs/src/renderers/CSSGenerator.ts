@@ -294,6 +294,13 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
     lines.push(...generateCompositionCSS(spec));
   }
 
+  // ─── ADR-059 B5: Indicator Mode ───
+  if (spec.indicatorMode) {
+    lines.push("");
+    lines.push(`/* ── Indicator Mode ── */`);
+    lines.push(...generateIndicatorModeCSS(spec));
+  }
+
   // ─── Phase 3b: @media 공통 패턴 ───
   lines.push("");
   lines.push(...generateMediaQueries(spec));
@@ -858,6 +865,82 @@ function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
       }
     }
   }
+
+  return lines;
+}
+
+// ─── ADR-059 B5: Indicator Mode CSS ─────────────────────────────────────────
+
+function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
+  const im = spec.indicatorMode;
+  if (!im) return [];
+  const base = `.react-aria-${spec.name}[data-indicator="true"]`;
+  const radius = tokenToCSSVar(im.borderRadius ?? ("{radius.sm}" as TokenRef));
+  const shadow = im.boxShadow
+    ? (resolveBoxShadow(im.boxShadow as string | ShadowTokenRef) ??
+      "var(--shadow-sm)")
+    : "var(--shadow-sm)";
+  const transition = im.transitionMs ?? 200;
+  const lines: string[] = [];
+
+  lines.push(`${base} {`);
+  lines.push(`  --indicator-bg: ${tokenToCSSVar(im.background)};`);
+  lines.push(`  --indicator-text: ${tokenToCSSVar(im.selectedText)};`);
+  lines.push("}");
+  lines.push("");
+
+  lines.push(
+    `${base} .react-aria-ToggleButton .react-aria-SelectionIndicator {`,
+  );
+  lines.push(`  position: absolute;`);
+  lines.push(`  inset: 0;`);
+  lines.push(`  z-index: -1;`);
+  lines.push(`  border-radius: ${radius};`);
+  lines.push(`  background: var(--indicator-bg);`);
+  lines.push(`  box-shadow: ${shadow};`);
+  lines.push(`  pointer-events: none;`);
+  lines.push(
+    `  transition: translate ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), width ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), height ${transition}ms cubic-bezier(0.16, 1, 0.3, 1);`,
+  );
+  lines.push("}");
+  lines.push("");
+
+  lines.push(`${base} .react-aria-ToggleButton {`);
+  lines.push(`  position: relative;`);
+  lines.push(`  background-color: transparent;`);
+  lines.push(`  border-width: 0;`);
+  lines.push("}");
+  lines.push("");
+
+  lines.push(`${base} .react-aria-ToggleButton[data-selected] {`);
+  lines.push(`  background: transparent;`);
+  lines.push(`  color: var(--indicator-text);`);
+  lines.push("}");
+  lines.push("");
+
+  lines.push(`${base} .react-aria-ToggleButton[data-selected][data-pressed] {`);
+  lines.push(`  background: transparent;`);
+  lines.push(`  color: var(--fg);`);
+  lines.push("}");
+  lines.push("");
+
+  if (im.backgroundPressed) {
+    lines.push(
+      `${base} .react-aria-ToggleButton[data-pressed]:not([data-selected]) {`,
+    );
+    lines.push(`  background: ${tokenToCSSVar(im.backgroundPressed)};`);
+    lines.push("}");
+    lines.push("");
+  }
+
+  lines.push(`@media (prefers-reduced-motion: reduce) {`);
+  lines.push(
+    `  ${base} .react-aria-ToggleButton .react-aria-SelectionIndicator {`,
+  );
+  lines.push(`    transition: none;`);
+  lines.push(`  }`);
+  lines.push("}");
+  lines.push("");
 
   return lines;
 }
