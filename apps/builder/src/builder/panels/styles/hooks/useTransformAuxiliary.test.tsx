@@ -8,7 +8,7 @@ import {
   useParentFlexDirection,
   useSelfAlignmentKeys,
 } from "./useTransformAuxiliary";
-import { useStore } from "../../../stores/elements";
+import { useStore } from "../../../stores";
 
 describe("useTransformAuxiliary", () => {
   beforeEach(() => {

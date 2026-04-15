@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useTransformValue } from "./useTransformValue";
-import { useStore } from "../../../stores/elements";
+import { useStore } from "../../../stores";
 import * as layout from "../../../workspace/canvas/layout/engines/fullTreeLayout";
 import * as preset from "../utils/specPresetResolver";
 

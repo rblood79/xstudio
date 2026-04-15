@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useStore } from "../../../stores/elements";
+import { useStore } from "../../../stores";
 import {
   inferSizeMode,
   type SizeMode,

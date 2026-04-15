@@ -44,7 +44,7 @@ import {
   useParentFlexDirection,
   useSelfAlignmentKeys,
 } from "../hooks/useTransformAuxiliary";
-import { useStore } from "../../../stores/elements";
+import { useStore } from "../../../stores";
 import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import { useViewportSyncStore } from "../../../workspace/canvas/stores";
 import {
