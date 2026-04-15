@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { ComponentSpec, Shape, TokenRef, ShadowTokenRef } from "../types";
 import {
   Eye,
   ArrowLeftRight,
@@ -55,6 +55,15 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
+  },
+
+  // ADR-059 B5
+  indicatorMode: {
+    background: "{color.layer-1}" as TokenRef,
+    selectedText: "{color.on-accent}" as TokenRef,
+    borderRadius: "{radius.sm}" as TokenRef,
+    boxShadow: "{shadow.sm}" as ShadowTokenRef,
+    transitionMs: 200,
   },
 
   sizes: {
@@ -195,7 +204,11 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ToggleButtonGroupSpec.variants![(props as { variant?: keyof typeof ToggleButtonGroupSpec.variants }).variant ?? ToggleButtonGroupSpec.defaultVariant!];
+      const variant =
+        ToggleButtonGroupSpec.variants![
+          (props as { variant?: keyof typeof ToggleButtonGroupSpec.variants })
+            .variant ?? ToggleButtonGroupSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
