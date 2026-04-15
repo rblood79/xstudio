@@ -33,19 +33,7 @@ export {
   borderStyleAtom,
   appearanceValuesAtom,
 
-  // Typography section atoms (11 properties)
-  fontFamilyAtom,
-  fontSizeAtom,
-  fontWeightAtom,
-  fontStyleAtom,
-  lineHeightAtom,
-  letterSpacingAtom,
-  colorAtom,
-  textAlignAtom,
-  textDecorationAtom,
-  textTransformAtom,
-  verticalAlignAtom,
-  typographyValuesAtom,
+  // Typography section atoms — REMOVED (ADR-067 Phase 3, migrated to useTypographyValues)
 
   // StylesPanel용 atoms
   hasSelectedElementAtom,
