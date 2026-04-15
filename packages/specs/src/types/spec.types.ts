@@ -566,6 +566,23 @@ export interface VariantSpec {
 
   /** subtle fillStyle — 텍스트 색상 (optional) */
   subtleText?: TokenRef;
+
+  // ─── ADR-059 B5: Selected 상태 색상 ───
+  /** 선택 상태 배경색 (optional) */
+  selectedBackground?: TokenRef;
+  /** 선택 + hover 배경색 (optional) */
+  selectedBackgroundHover?: TokenRef;
+  /** 선택 + pressed 배경색 (optional) */
+  selectedBackgroundPressed?: TokenRef;
+  /** 선택 상태 텍스트 색상 (optional) */
+  selectedText?: TokenRef;
+  /** 선택 상태 테두리 색상 (optional) */
+  selectedBorder?: TokenRef;
+
+  /** data-emphasized 조합 — 선택 시 accent 강조 (optional) */
+  emphasizedSelectedBackground?: TokenRef;
+  emphasizedSelectedText?: TokenRef;
+  emphasizedSelectedBorder?: TokenRef;
 }
 
 /**
