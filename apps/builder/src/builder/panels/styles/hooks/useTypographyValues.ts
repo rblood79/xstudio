@@ -15,6 +15,7 @@ import {
   extractFirstFontFamily,
   normalizeFontWeight,
 } from "../../../fonts/customFonts";
+import { numToPx, firstDefined } from "../utils/styleValueHelpers";
 
 export interface TypographyStyleValues {
   fontFamily: string;
@@ -35,23 +36,6 @@ export interface TypographyStyleValues {
   overflow: string;
   textBehaviorPreset: string;
   isFontSizeFromPreset?: boolean;
-}
-
-function numToPx(n: number | undefined): string | undefined {
-  if (n === undefined) return undefined;
-  return `${n}px`;
-}
-
-function firstDefined(
-  inline: unknown,
-  specPx: string | undefined,
-  fallback: string,
-): string {
-  if (inline !== undefined && inline !== null && inline !== "") {
-    return String(inline);
-  }
-  if (specPx !== undefined) return specPx;
-  return fallback;
 }
 
 function deriveTextBehaviorPreset(

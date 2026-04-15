@@ -10,6 +10,11 @@ export interface TransformSpecPreset {
   aspectRatio?: number;
 }
 
+export interface AppearanceSpecPreset {
+  borderRadius?: number;
+  borderWidth?: number;
+}
+
 export interface LayoutSpecPreset {
   gap?: number;
   paddingTop?: number;
@@ -22,11 +27,6 @@ export interface LayoutSpecPreset {
   marginLeft?: number;
 }
 
-export interface AppearanceSpecPreset {
-  borderRadius?: number;
-  borderWidth?: number;
-}
-
 export interface TypographySpecPreset {
   fontSize?: number;
   fontWeight?: string;
@@ -35,176 +35,101 @@ export interface TypographySpecPreset {
   fontFamily?: string;
 }
 
-type CacheKey = string; // `${type}:${size}`
-const transformCache = new Map<CacheKey, TransformSpecPreset>();
-const layoutCache = new Map<CacheKey, LayoutSpecPreset>();
-const typographyCache = new Map<CacheKey, TypographySpecPreset>();
-const appearanceCache = new Map<CacheKey, AppearanceSpecPreset>();
+type SpecShape =
+  | { sizes?: Record<string, Record<string, unknown>> }
+  | undefined;
+type PresetExtractor<T> = (sizeEntry: Record<string, unknown>) => T;
 
-export function resolveSpecPreset(
-  type: string | undefined,
-  size: string | undefined,
-): TransformSpecPreset {
-  if (!type) return {};
-  const key = `${type}:${size ?? "md"}`;
-  const cached = transformCache.get(key);
-  if (cached) return cached;
+const allCaches: Array<Map<string, unknown>> = [];
 
-  const spec = TAG_SPEC_MAP[type];
-  const preset: TransformSpecPreset = extractTransformPreset(
-    spec,
-    size ?? "md",
-  );
-  transformCache.set(key, preset);
-  return preset;
+function createResolver<T extends object>(
+  extractor: PresetExtractor<T>,
+): (type: string | undefined, size: string | undefined) => T {
+  const cache = new Map<string, T>();
+  allCaches.push(cache as Map<string, unknown>);
+  const empty = Object.freeze({}) as T;
+  return (type, size) => {
+    if (!type) return empty;
+    const key = `${type}:${size ?? "md"}`;
+    const cached = cache.get(key);
+    if (cached) return cached;
+    const spec = TAG_SPEC_MAP[type] as SpecShape;
+    const sizeEntry = spec?.sizes?.[size ?? "md"];
+    const preset = sizeEntry ? extractor(sizeEntry) : ({} as T);
+    cache.set(key, preset);
+    return preset;
+  };
 }
 
-export function resolveLayoutSpecPreset(
-  type: string | undefined,
-  size: string | undefined,
-): LayoutSpecPreset {
-  if (!type) return {};
-  const key = `${type}:${size ?? "md"}`;
-  const cached = layoutCache.get(key);
-  if (cached) return cached;
-
-  const spec = TAG_SPEC_MAP[type];
-  const preset: LayoutSpecPreset = extractLayoutPreset(spec, size ?? "md");
-  layoutCache.set(key, preset);
-  return preset;
+function pickNumeric<T extends object>(
+  sizeEntry: Record<string, unknown>,
+  keys: readonly string[],
+): T {
+  const out: Record<string, number> = {};
+  for (const k of keys) {
+    const v = sizeEntry[k];
+    if (typeof v === "number") out[k] = v;
+  }
+  return out as unknown as T;
 }
 
-export function resolveTypographySpecPreset(
-  type: string | undefined,
-  size: string | undefined,
-): TypographySpecPreset {
-  if (!type) return {};
-  const key = `${type}:${size ?? "md"}`;
-  const cached = typographyCache.get(key);
-  if (cached) return cached;
+const TRANSFORM_KEYS = [
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "aspectRatio",
+] as const;
 
-  const spec = TAG_SPEC_MAP[type];
-  const preset: TypographySpecPreset = extractTypographyPreset(
-    spec,
-    size ?? "md",
-  );
-  typographyCache.set(key, preset);
-  return preset;
-}
+const APPEARANCE_KEYS = ["borderRadius", "borderWidth"] as const;
 
-export function resolveAppearanceSpecPreset(
-  type: string | undefined,
-  size: string | undefined,
-): AppearanceSpecPreset {
-  if (!type) return {};
-  const key = `${type}:${size ?? "md"}`;
-  const cached = appearanceCache.get(key);
-  if (cached) return cached;
+const LAYOUT_KEYS = [
+  "gap",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+] as const;
 
-  const spec = TAG_SPEC_MAP[type];
-  const preset: AppearanceSpecPreset = extractAppearancePreset(
-    spec,
-    size ?? "md",
-  );
-  appearanceCache.set(key, preset);
-  return preset;
-}
+const TYPOGRAPHY_NUMERIC_KEYS = [
+  "fontSize",
+  "lineHeight",
+  "letterSpacing",
+] as const;
+
+export const resolveSpecPreset = createResolver<TransformSpecPreset>(
+  (sizeEntry) => pickNumeric(sizeEntry, TRANSFORM_KEYS),
+);
+
+export const resolveAppearanceSpecPreset = createResolver<AppearanceSpecPreset>(
+  (sizeEntry) => pickNumeric(sizeEntry, APPEARANCE_KEYS),
+);
+
+export const resolveLayoutSpecPreset = createResolver<LayoutSpecPreset>(
+  (sizeEntry) => pickNumeric(sizeEntry, LAYOUT_KEYS),
+);
+
+export const resolveTypographySpecPreset = createResolver<TypographySpecPreset>(
+  (sizeEntry) => {
+    const preset: TypographySpecPreset = pickNumeric(
+      sizeEntry,
+      TYPOGRAPHY_NUMERIC_KEYS,
+    );
+    const fontWeight = sizeEntry.fontWeight;
+    if (typeof fontWeight === "number") preset.fontWeight = String(fontWeight);
+    else if (typeof fontWeight === "string") preset.fontWeight = fontWeight;
+    const fontFamily = sizeEntry.fontFamily;
+    if (typeof fontFamily === "string") preset.fontFamily = fontFamily;
+    return preset;
+  },
+);
 
 export function clearSpecPresetCache(): void {
-  transformCache.clear();
-  layoutCache.clear();
-  typographyCache.clear();
-  appearanceCache.clear();
-}
-
-function extractAppearancePreset(
-  spec: unknown,
-  size: string,
-): AppearanceSpecPreset {
-  const anySpec = spec as
-    | { sizes?: Record<string, Record<string, unknown>> }
-    | undefined;
-  const sizeEntry = anySpec?.sizes?.[size];
-  if (!sizeEntry) return {};
-  const preset: AppearanceSpecPreset = {};
-  const numericKeys = ["borderRadius", "borderWidth"] as const;
-  for (const k of numericKeys) {
-    const v = sizeEntry[k];
-    if (typeof v === "number") preset[k] = v;
-  }
-  return preset;
-}
-
-function extractTypographyPreset(
-  spec: unknown,
-  size: string,
-): TypographySpecPreset {
-  const anySpec = spec as
-    | { sizes?: Record<string, Record<string, unknown>> }
-    | undefined;
-  const sizeEntry = anySpec?.sizes?.[size];
-  if (!sizeEntry) return {};
-  const preset: TypographySpecPreset = {};
-  const numericKeys = ["fontSize", "lineHeight", "letterSpacing"] as const;
-  for (const k of numericKeys) {
-    const v = sizeEntry[k];
-    if (typeof v === "number") preset[k] = v;
-  }
-  const fontWeight = sizeEntry.fontWeight;
-  if (typeof fontWeight === "number") preset.fontWeight = String(fontWeight);
-  else if (typeof fontWeight === "string") preset.fontWeight = fontWeight;
-  const fontFamily = sizeEntry.fontFamily;
-  if (typeof fontFamily === "string") preset.fontFamily = fontFamily;
-  return preset;
-}
-
-function extractTransformPreset(
-  spec: unknown,
-  size: string,
-): TransformSpecPreset {
-  const anySpec = spec as
-    | { sizes?: Record<string, Record<string, unknown>> }
-    | undefined;
-  const sizeEntry = anySpec?.sizes?.[size];
-  if (!sizeEntry) return {};
-  const preset: TransformSpecPreset = {};
-  const numericKeys = [
-    "width",
-    "height",
-    "minWidth",
-    "minHeight",
-    "maxWidth",
-    "maxHeight",
-    "aspectRatio",
-  ] as const;
-  for (const k of numericKeys) {
-    const v = sizeEntry[k];
-    if (typeof v === "number") preset[k] = v;
-  }
-  return preset;
-}
-
-function extractLayoutPreset(spec: unknown, size: string): LayoutSpecPreset {
-  const anySpec = spec as
-    | { sizes?: Record<string, Record<string, unknown>> }
-    | undefined;
-  const sizeEntry = anySpec?.sizes?.[size];
-  if (!sizeEntry) return {};
-  const preset: LayoutSpecPreset = {};
-  const numericKeys = [
-    "gap",
-    "paddingTop",
-    "paddingRight",
-    "paddingBottom",
-    "paddingLeft",
-    "marginTop",
-    "marginRight",
-    "marginBottom",
-    "marginLeft",
-  ] as const;
-  for (const k of numericKeys) {
-    const v = sizeEntry[k];
-    if (typeof v === "number") preset[k] = v;
-  }
-  return preset;
+  for (const cache of allCaches) cache.clear();
 }

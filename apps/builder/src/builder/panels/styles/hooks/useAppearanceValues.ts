@@ -10,6 +10,7 @@ import {
   resolveAppearanceSpecPreset,
   type AppearanceSpecPreset,
 } from "../utils/specPresetResolver";
+import { numToPx, firstDefined } from "../utils/styleValueHelpers";
 
 export interface AppearanceStyleValues {
   backgroundColor: string;
@@ -19,23 +20,6 @@ export interface AppearanceStyleValues {
   borderStyle: string;
   boxShadow: string;
   overflow: string;
-}
-
-function numToPx(n: number | undefined): string | undefined {
-  if (n === undefined) return undefined;
-  return `${n}px`;
-}
-
-function firstDefined(
-  inline: unknown,
-  specPx: string | undefined,
-  fallback: string,
-): string {
-  if (inline !== undefined && inline !== null && inline !== "") {
-    return String(inline);
-  }
-  if (specPx !== undefined) return specPx;
-  return fallback;
 }
 
 export function useAppearanceValues(

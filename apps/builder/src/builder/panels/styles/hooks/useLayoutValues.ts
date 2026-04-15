@@ -4,6 +4,7 @@ import {
   resolveLayoutSpecPreset,
   type LayoutSpecPreset,
 } from "../utils/specPresetResolver";
+import { numToPx, firstDefined } from "../utils/styleValueHelpers";
 
 export interface LayoutStyleValues {
   display: string;
@@ -22,23 +23,6 @@ export interface LayoutStyleValues {
   marginRight: string;
   marginBottom: string;
   marginLeft: string;
-}
-
-function numToPx(n: number | undefined): string | undefined {
-  if (n === undefined) return undefined;
-  return `${n}px`;
-}
-
-function firstDefined(
-  inline: unknown,
-  specPx: string | undefined,
-  fallback: string,
-): string {
-  if (inline !== undefined && inline !== null && inline !== "") {
-    return String(inline);
-  }
-  if (specPx !== undefined) return specPx;
-  return fallback;
 }
 
 export function useLayoutValues(id: string | null): LayoutStyleValues | null {
