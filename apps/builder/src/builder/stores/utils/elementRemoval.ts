@@ -144,11 +144,7 @@ function collectElementsToRemove(
   }
 
   // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
-  if (
-    element.tag === "Tab" ||
-    element.tag === "TabPanel" ||
-    element.tag === "Panel"
-  ) {
+  if (element.tag === "Tab" || element.tag === "TabPanel") {
     const tabId = (element.props as { tabId?: string }).tabId;
     const parentElement = elements.find((el) => el.id === element.parent_id);
 

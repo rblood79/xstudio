@@ -379,11 +379,7 @@ export class HierarchyManager {
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
         const panels = elements
-          .filter(
-            (el) =>
-              el.parent_id === parentId &&
-              (el.tag === "TabPanel" || el.tag === "Panel"),
-          )
+          .filter((el) => el.parent_id === parentId && el.tag === "TabPanel")
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
         // Tab과 Panel을 쌍으로 결합

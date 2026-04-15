@@ -99,7 +99,7 @@ export function computeReorderUpdates(
         });
 
       const panels = children
-        .filter((el) => el.tag === "TabPanel" || el.tag === "Panel")
+        .filter((el) => el.tag === "TabPanel")
         .sort((a, b) => {
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {

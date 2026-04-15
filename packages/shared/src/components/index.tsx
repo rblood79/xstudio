@@ -78,7 +78,6 @@ export { Pagination } from "./Pagination";
 export { Group } from "./Group";
 export { Separator } from "./Separator";
 export { Toolbar } from "./Toolbar";
-export { Panel } from "./Panel";
 export { Heading, Text as ContentText } from "./Content";
 export { Card } from "./Card";
 export { Slot } from "./Slot";

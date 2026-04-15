@@ -59,7 +59,6 @@ import { DisclosureSpec } from "../components/Disclosure.spec";
 import { DisclosureGroupSpec } from "../components/DisclosureGroup.spec";
 import { ToolbarSpec } from "../components/Toolbar.spec";
 import { ToastSpec } from "../components/Toast.spec";
-import { PanelSpec } from "../components/Panel.spec";
 import { GroupSpec } from "../components/Group.spec";
 import { SlotSpec } from "../components/Slot.spec";
 import { SkeletonSpec } from "../components/Skeleton.spec";
@@ -173,7 +172,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   DisclosureHeader: DisclosureHeaderSpec,
   Toolbar: ToolbarSpec,
   Toast: ToastSpec,
-  Panel: PanelSpec,
   Group: GroupSpec,
   Slot: SlotSpec,
   Skeleton: SkeletonSpec,

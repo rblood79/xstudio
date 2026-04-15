@@ -150,7 +150,7 @@ function sortTabsChildren(items: Element[]): Element[] {
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const panels = items
-    .filter((item) => item.tag === "TabPanel" || item.tag === "Panel")
+    .filter((item) => item.tag === "TabPanel")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const pairedItems: Element[] = [];

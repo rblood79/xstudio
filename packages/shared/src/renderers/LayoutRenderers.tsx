@@ -4,7 +4,6 @@ import {
   TabList,
   Tab,
   TabPanel,
-  Panel,
   Card,
   Dialog,
   Popover,
@@ -134,18 +133,14 @@ export const renderTabs = (
     }
   }
 
-  // TabPanel 우선, legacy "Panel" fallback (backward compat)
-  const isTabPanelTag = (t: string | undefined) =>
-    t === "TabPanel" || t === "Panel";
-
-  // 1단계: 직속 자식 (legacy flat 구조)
+  // 1단계: 직속 자식 TabPanel (legacy flat 구조)
   let panelChildren = elements
     .filter(
-      (child) => child.parent_id === element.id && isTabPanelTag(child.tag),
+      (child) => child.parent_id === element.id && child.tag === "TabPanel",
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  // 2단계: TabPanels 아래 (정상 구조)
+  // 2단계: TabPanels 아래 TabPanel (정상 구조)
   if (panelChildren.length === 0) {
     const tabPanelsElement = elements.find(
       (child) => child.parent_id === element.id && child.tag === "TabPanels",
@@ -154,7 +149,7 @@ export const renderTabs = (
       panelChildren = elements
         .filter(
           (child) =>
-            child.parent_id === tabPanelsElement.id && isTabPanelTag(child.tag),
+            child.parent_id === tabPanelsElement.id && child.tag === "TabPanel",
         )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     }
@@ -266,50 +261,6 @@ export const renderTabPanels = (
   _context: RenderContext,
 ): React.ReactNode => {
   return null;
-};
-
-/**
- * Panel 렌더링
- */
-export const renderPanel = (
-  element: PreviewElement,
-  context: RenderContext,
-): React.ReactNode => {
-  const { elements, renderElement } = context;
-
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  return (
-    <Panel
-      key={element.id}
-      id={element.customId}
-      data-element-id={element.id}
-      data-accent={
-        element.props.accentColor
-          ? String(element.props.accentColor)
-          : undefined
-      }
-      variant={
-        (element.props.variant as
-          | "default"
-          | "tab"
-          | "sidebar"
-          | "card"
-          | "modal") || "default"
-      }
-      title={
-        typeof element.props.title === "string"
-          ? element.props.title
-          : undefined
-      }
-      style={element.props.style}
-      className={element.props.className}
-    >
-      {children.map((child) => renderElement(child, child.id))}
-    </Panel>
-  );
 };
 
 /**

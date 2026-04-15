@@ -925,10 +925,8 @@ export function applyImplicitStyles(
 
     const tabListEl = children.find((c) => c.tag === "TabList");
     const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
-    // 직속 TabPanel/Panel (TabPanels 없는 legacy flat 구조)
-    const directPanel = children.find(
-      (c) => c.tag === "TabPanel" || c.tag === "Panel",
-    );
+    // 직속 TabPanel (TabPanels 없는 flat 구조)
+    const directPanel = children.find((c) => c.tag === "TabPanel");
 
     if (tabListEl) {
       // 새 구조 (TabList 존재): TabList에 고정 height 주입 → Taffy 레이아웃 포함
@@ -1001,10 +999,8 @@ export function applyImplicitStyles(
       (tabsProps?.selectedKey as string | undefined) ??
       (tabsProps?.defaultSelectedKey as string | undefined);
 
-    // 활성 TabPanel: selectedKey 매칭 또는 첫 번째 (legacy "Panel" fallback)
-    const panelItems = children.filter(
-      (c) => c.tag === "TabPanel" || c.tag === "Panel",
-    );
+    // 활성 TabPanel: selectedKey 매칭 또는 첫 번째
+    const panelItems = children.filter((c) => c.tag === "TabPanel");
     const activePanel = selectedKey
       ? (panelItems.find(
           (p) => (p.props as Record<string, unknown>)?.tabId === selectedKey,

@@ -305,9 +305,6 @@ export type { ToolbarProps } from "./components/Toolbar.spec";
 export { ToastSpec } from "./components/Toast.spec";
 export type { ToastProps } from "./components/Toast.spec";
 
-export { PanelSpec } from "./components/Panel.spec";
-export type { PanelProps } from "./components/Panel.spec";
-
 export { GroupSpec } from "./components/Group.spec";
 export type { GroupProps } from "./components/Group.spec";
 

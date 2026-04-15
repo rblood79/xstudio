@@ -47,7 +47,6 @@ import {
   Pagination,
   Separator,
   Toolbar,
-  Panel,
   Card,
   Disclosure,
   DisclosureGroup,
@@ -433,11 +432,6 @@ export function registerSharedComponents(): void {
   registerComponent("Toolbar", {
     component: Toolbar as ComponentType<Record<string, unknown>>,
     displayName: "Toolbar",
-    category: "layout",
-  });
-  registerComponent("Panel", {
-    component: Panel as ComponentType<Record<string, unknown>>,
-    displayName: "Panel",
     category: "layout",
   });
   registerComponent("Card", {

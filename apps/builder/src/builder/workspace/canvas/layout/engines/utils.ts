@@ -2302,14 +2302,12 @@ export function calculateContentHeight(
         TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
-      const isTabPanelTag = (t: string | undefined) =>
-        t === "TabPanel" || t === "Panel";
-      let panelChildren = childElements.filter((c) => isTabPanelTag(c.tag));
+      let panelChildren = childElements.filter((c) => c.tag === "TabPanel");
       if (panelChildren.length === 0) {
         const tabPanelsEl = childElements.find((c) => c.tag === "TabPanels");
         if (tabPanelsEl && getChildElements) {
-          panelChildren = getChildElements(tabPanelsEl.id).filter((c) =>
-            isTabPanelTag(c.tag),
+          panelChildren = getChildElements(tabPanelsEl.id).filter(
+            (c) => c.tag === "TabPanel",
           );
         }
       }

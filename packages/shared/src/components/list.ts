@@ -18,7 +18,6 @@ export * from "./ListBox";
 export * from "./GridList";
 export * from "./Tabs";
 export * from "./Tree";
-export * from "./Panel";
 export * from "./Calendar";
 export * from "./DatePicker";
 export * from "./DateRangePicker";
