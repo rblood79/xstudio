@@ -18,8 +18,6 @@ import {
   extractFirstFontFamily,
   normalizeFontWeight,
 } from "../../../fonts/customFonts";
-import { inferSizeMode } from "../../../stores/utils/sizeModeResolver";
-import type { SizeMode } from "../../../stores/utils/sizeModeResolver";
 
 // ============================================
 // Base Atoms
@@ -289,48 +287,6 @@ export const leftAtom = selectAtom(
   (a, b) => a === b,
 );
 
-/**
- * Transform 섹션 전체 값 (그룹 atom)
- * 🚀 selectAtom으로 equality 체크 추가 - 불필요한 리렌더링 방지
- * 🚀 컴포넌트 기본 CSS 값 표시 (inline style이 없을 때)
- */
-export const transformValuesAtom = selectAtom(
-  selectedElementAtom,
-  (element) => {
-    if (!element) return null;
-    const result = {
-      width: getTransformValue(element.type, element.style?.width, "width"),
-      height: getTransformValue(element.type, element.style?.height, "height"),
-      top: String(element.style?.top ?? "auto"),
-      left: String(element.style?.left ?? "auto"),
-      isBody: element.type?.toLowerCase() === "body",
-      // ADR-026 Phase 2: Min/Max + Aspect Ratio
-      minWidth: String(element.style?.minWidth ?? ""),
-      maxWidth: String(element.style?.maxWidth ?? ""),
-      minHeight: String(element.style?.minHeight ?? ""),
-      maxHeight: String(element.style?.maxHeight ?? ""),
-      aspectRatio: String(element.style?.aspectRatio ?? ""),
-    };
-    return result;
-  },
-  (a, b) => {
-    if (a === null && b === null) return true;
-    if (a === null || b === null) return false;
-    return (
-      a.width === b.width &&
-      a.height === b.height &&
-      a.top === b.top &&
-      a.left === b.left &&
-      a.isBody === b.isBody &&
-      a.minWidth === b.minWidth &&
-      a.maxWidth === b.maxWidth &&
-      a.minHeight === b.minHeight &&
-      a.maxHeight === b.maxHeight &&
-      a.aspectRatio === b.aspectRatio
-    );
-  },
-);
-
 // ============================================
 // ADR-026 Phase 2: Min/Max + Aspect Ratio Atoms
 // ============================================
@@ -362,103 +318,6 @@ export const maxHeightAtom = selectAtom(
 export const aspectRatioAtom = selectAtom(
   selectedElementAtom,
   (element) => String(element?.style?.aspectRatio ?? ""),
-  (a, b) => a === b,
-);
-
-// ============================================
-// ADR-026 Phase 3: Self-Alignment Atom
-// ============================================
-
-/**
- * Self-Alignment 9-grid 토글 키
- * align-self/justify-self 조합을 9방향 위치로 매핑
- * 부모가 flex/grid일 때만 유효
- */
-export const selfAlignmentKeysAtom = selectAtom(
-  selectedElementAtom,
-  (element): string[] => {
-    if (!element) return [];
-
-    const parentDisplay = element.parentDisplay ?? "block";
-    const isFlexOrGrid =
-      parentDisplay === "flex" ||
-      parentDisplay === "inline-flex" ||
-      parentDisplay === "grid" ||
-      parentDisplay === "inline-grid";
-
-    if (!isFlexOrGrid) return [];
-
-    const style = element.style ?? {};
-    const alignSelf = String(style.alignSelf ?? "");
-    const justifySelf = String(style.justifySelf ?? "");
-
-    const verticalMap: Record<string, string> = {
-      "flex-start": "Top",
-      start: "Top",
-      center: "Center",
-      "flex-end": "Bottom",
-      end: "Bottom",
-      stretch: "",
-    };
-    const horizontalMap: Record<string, string> = {
-      "flex-start": "left",
-      start: "left",
-      center: "center",
-      "flex-end": "right",
-      end: "right",
-      stretch: "",
-    };
-
-    const vertical = verticalMap[alignSelf] ?? "";
-    const horizontal = horizontalMap[justifySelf] ?? "";
-
-    if (!vertical && !horizontal) return [];
-    return [`${horizontal}${vertical}`];
-  },
-  (a, b) => a.length === b.length && a.every((v, i) => v === b[i]),
-);
-
-// ============================================
-// ADR-026: Size Mode Atoms
-// ============================================
-
-/** 부모 요소의 display 값 */
-export const parentDisplayAtom = selectAtom(
-  selectedElementAtom,
-  (element): string => element?.parentDisplay ?? "block",
-  (a, b) => a === b,
-);
-
-/** 부모 요소의 flex-direction 값 */
-export const parentFlexDirectionAtom = selectAtom(
-  selectedElementAtom,
-  (element): string => element?.parentFlexDirection ?? "row",
-  (a, b) => a === b,
-);
-
-/** Width Size Mode (역추론) */
-export const widthSizeModeAtom = selectAtom(
-  selectedElementAtom,
-  (element): SizeMode => {
-    if (!element) return "fit";
-    const style = (element.style ?? {}) as Record<string, unknown>;
-    const parentDisplay = element.parentDisplay ?? "block";
-    const parentFlexDirection = element.parentFlexDirection ?? "row";
-    return inferSizeMode(style, "width", parentDisplay, parentFlexDirection);
-  },
-  (a, b) => a === b,
-);
-
-/** Height Size Mode (역추론) */
-export const heightSizeModeAtom = selectAtom(
-  selectedElementAtom,
-  (element): SizeMode => {
-    if (!element) return "fit";
-    const style = (element.style ?? {}) as Record<string, unknown>;
-    const parentDisplay = element.parentDisplay ?? "block";
-    const parentFlexDirection = element.parentFlexDirection ?? "row";
-    return inferSizeMode(style, "height", parentDisplay, parentFlexDirection);
-  },
   (a, b) => a === b,
 );
 

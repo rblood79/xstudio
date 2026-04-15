@@ -22,7 +22,6 @@ export {
   heightAtom,
   topAtom,
   leftAtom,
-  transformValuesAtom,
 
   // Layout section atoms (16 properties)
   displayAtom,
@@ -76,7 +75,7 @@ export {
   selectedStyleAtom,
   modifiedCountAtom,
   isCopyDisabledAtom,
-} from './styleAtoms';
+} from "./styleAtoms";
 
 // Fill section atoms (Color Picker Phase 1)
 export {
@@ -84,7 +83,7 @@ export {
   activeFillIndexAtom,
   activeFillAtom,
   colorInputModeAtom,
-} from './fillAtoms';
+} from "./fillAtoms";
 
 // Component State Preview atom (Phase A)
-export { previewComponentStateAtom } from './componentStateAtom';
+export { previewComponentStateAtom } from "./componentStateAtom";
