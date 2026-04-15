@@ -154,6 +154,7 @@
 @import "./generated/Tab.css";
 @import "./generated/TabPanels.css";
 @import "./generated/TabPanel.css";
+@import "./TabsIndicator.css"; /* manual supplement — ::before + SelectionIndicator 패턴 */
 @import "./generated/Toolbar.css"; /* ADR-059 Phase 4.5a — Spec 자동 생성 */
 @import "./Tree.css"; /* Tier 3 — 수동 유지 (재귀 nesting, :has() 선택자) */
 
