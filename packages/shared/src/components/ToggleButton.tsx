@@ -45,6 +45,7 @@ export function ToggleButton({
   return (
     <RACToggleButton
       {...props}
+      data-variant="default"
       data-emphasized={isEmphasized || undefined}
       data-quiet={isQuiet || undefined}
       data-size={size}
