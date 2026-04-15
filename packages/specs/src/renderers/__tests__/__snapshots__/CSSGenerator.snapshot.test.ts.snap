@@ -818,9 +818,9 @@ exports[`CSSGenerator snapshot baseline > Button 1`] = `
     font-family: var(--font-sans);
 
   /* Default variant */
-  background: var(--fg);
-  color: var(--bg);
-  border: 1px solid var(--fg);
+  --button-color: var(--fg);
+  --button-text: var(--bg);
+  --button-border: var(--fg);
 
   /* Default size */
   height: auto;
@@ -835,92 +835,45 @@ exports[`CSSGenerator snapshot baseline > Button 1`] = `
 }
 
 .react-aria-Button[data-variant="accent"] {
-  background: var(--accent);
-  color: var(--fg-on-accent);
-  border-color: var(--accent);
+  --button-color: var(--accent);
+  --button-text: var(--fg-on-accent);
+  --button-border: var(--accent);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--accent) 85%, black);
-    border-color: color-mix(in srgb, var(--accent) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--accent) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="primary"] {
-  background: var(--fg);
-  color: var(--bg);
-  border-color: var(--fg);
+  --button-color: var(--fg);
+  --button-text: var(--bg);
+  --button-border: var(--fg);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--bg-muted) 85%, black);
-    border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--bg-muted) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="secondary"] {
-  background: var(--bg-overlay);
-  color: var(--fg);
-  border-color: var(--border);
+  --button-color: var(--bg-overlay);
+  --button-text: var(--fg);
+  --button-border: var(--border);
 
-  &[data-hovered] {
-    background: var(--bg-muted);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-muted);
-  }
 }
 
 .react-aria-Button[data-variant="negative"] {
-  background: var(--negative);
-  color: var(--color-white);
-  border-color: var(--negative);
+  --button-color: var(--negative);
+  --button-text: var(--color-white);
+  --button-border: var(--negative);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--negative) 85%, black);
-    border-color: color-mix(in srgb, var(--negative) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--negative) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="premium"] {
-  background: var(--color-purple-600);
-  color: var(--color-white);
-  border-color: var(--color-purple-600);
+  --button-color: var(--color-purple-600);
+  --button-text: var(--color-white);
+  --button-border: var(--color-purple-600);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--color-purple-600) 85%, black);
-    border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-  }
 }
 
 .react-aria-Button[data-variant="genai"] {
-  background: var(--color-purple-600);
-  color: var(--color-white);
-  border-color: var(--color-purple-600);
+  --button-color: var(--color-purple-600);
+  --button-text: var(--color-white);
+  --button-border: var(--color-purple-600);
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--color-purple-600) 85%, black);
-    border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-  }
 }
 
 .react-aria-Button[data-icon-only] {
@@ -11178,9 +11131,9 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
     font-family: var(--font-sans);
 
   /* Default variant */
-  background: var(--bg-muted);
-  color: var(--fg);
-  border: 1px solid transparent;
+  --button-color: var(--bg-muted);
+  --button-text: var(--fg);
+  --button-border: transparent;
 
   /* Default size */
   height: auto;
@@ -11193,28 +11146,21 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
 }
 
 .react-aria-ToggleButton[data-variant="default"] {
-  background: var(--bg-muted);
-  color: var(--fg);
-  border-color: transparent;
+  --button-color: var(--bg-muted);
+  --button-text: var(--fg);
+  --button-border: transparent;
 
-  &[data-hovered] {
-    background: color-mix(in srgb, var(--bg-muted) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: color-mix(in srgb, var(--bg-muted) 75%, black);
-  }
 
   &[data-selected] {
-    background: var(--fg);
-    color: var(--bg);
-    border-color: var(--fg);
+    --button-color: var(--fg);
+    --button-text: var(--bg);
+    --button-border: var(--fg);
   }
 
   &[data-emphasized][data-selected] {
-    background: var(--accent);
-    color: var(--fg-on-accent);
-    border-color: var(--accent);
+    --button-color: var(--accent);
+    --button-text: var(--fg-on-accent);
+    --button-border: var(--accent);
   }
 }
 
@@ -11389,7 +11335,9 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
   inset: 0;
   z-index: -1;
   border-radius: var(--radius-sm);
-  background: var(--indicator-bg);
+  --button-color: var(--indicator-bg);
+  --button-text: var(--indicator-text);
+  --button-border: var(--indicator-bg);
   box-shadow: var(--shadow-sm);
   pointer-events: none;
   transition: translate 200ms cubic-bezier(0.16, 1, 0.3, 1), width 200ms cubic-bezier(0.16, 1, 0.3, 1), height 200ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -11397,18 +11345,21 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton {
   position: relative;
-  background-color: transparent;
+  --button-color: transparent;
+  --button-border: transparent;
   border-width: 0;
 }
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected] {
-  background: transparent;
-  color: var(--indicator-text);
+  --button-color: transparent;
+  --button-border: transparent;
+  --button-text: var(--indicator-text);
 }
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected][data-pressed] {
-  background: transparent;
-  color: var(--fg);
+  --button-color: transparent;
+  --button-border: transparent;
+  --button-text: var(--fg);
 }
 
 @media (prefers-reduced-motion: reduce) {

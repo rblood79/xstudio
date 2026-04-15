@@ -19,6 +19,31 @@ import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
 import { deriveAutoDelegationVariables } from "../runtime/deriveAutoDelegationVariables";
 
+// ─── ADR-059 B5: cssEmitMode helper ─────────────────────────────────────────
+
+type ColorKind = "background" | "text" | "border";
+
+function emitColorLine(
+  kind: ColorKind,
+  tokenRef: string,
+  mode: "direct" | "button-base",
+  indent: string = "  ",
+): string {
+  const DIRECT_PROPS: Record<ColorKind, string> = {
+    background: "background",
+    text: "color",
+    border: "border-color",
+  };
+  const BUTTON_BASE_PROPS: Record<ColorKind, string> = {
+    background: "--button-color",
+    text: "--button-text",
+    border: "--button-border",
+  };
+  const prop =
+    mode === "button-base" ? BUTTON_BASE_PROPS[kind] : DIRECT_PROPS[kind];
+  return `${indent}${prop}: ${tokenRef};`;
+}
+
 // ─── Archetype별 base styles ────────────────────────────────────────────────
 
 const ARCHETYPE_BASE_STYLES: Record<ArchetypeId, string[]> = {
@@ -136,65 +161,89 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("");
 
   // Variant 스타일 — Composite 컨테이너 또는 variants 없는 Spec(ADR-062 Field 계열)은 skip
+  const variantMode = spec.cssEmitMode ?? "direct";
   if (!spec.composition && spec.variants != null)
     for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
       lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
-      lines.push(...generateVariantStyles(variantSpec));
+      lines.push(...generateVariantStyles(variantSpec, variantMode));
       lines.push("");
 
-      // hover 상태
-      lines.push("  &[data-hovered] {");
-      lines.push(
-        `    background: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
-      );
-      if (variantSpec.textHover) {
-        lines.push(`    color: ${tokenToCSSVar(variantSpec.textHover)};`);
-      }
-      if (variantSpec.borderHover) {
+      // hover/pressed — button-base 모드에서는 .button-base utility가 color-mix로 자동 파생
+      if (variantMode !== "button-base") {
+        // hover 상태
+        lines.push("  &[data-hovered] {");
         lines.push(
-          `    border-color: ${tokenToCSSVar(variantSpec.borderHover)};`,
+          `    background: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
         );
-      }
-      lines.push("  }");
-      lines.push("");
+        if (variantSpec.textHover) {
+          lines.push(`    color: ${tokenToCSSVar(variantSpec.textHover)};`);
+        }
+        if (variantSpec.borderHover) {
+          lines.push(
+            `    border-color: ${tokenToCSSVar(variantSpec.borderHover)};`,
+          );
+        }
+        lines.push("  }");
+        lines.push("");
 
-      // pressed 상태
-      lines.push("  &[data-pressed] {");
-      lines.push(
-        `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
-      );
-      lines.push("  }");
+        // pressed 상태
+        lines.push("  &[data-pressed] {");
+        lines.push(
+          `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
+        );
+        lines.push("  }");
+      }
 
       // ─── ADR-059 B5: selected 상태 ───
       if (variantSpec.selectedBackground) {
         lines.push("");
         lines.push("  &[data-selected] {");
         lines.push(
-          `    background: ${tokenToCSSVar(variantSpec.selectedBackground)};`,
+          emitColorLine(
+            "background",
+            tokenToCSSVar(variantSpec.selectedBackground),
+            variantMode,
+            "    ",
+          ),
         );
         if (variantSpec.selectedText) {
-          lines.push(`    color: ${tokenToCSSVar(variantSpec.selectedText)};`);
+          lines.push(
+            emitColorLine(
+              "text",
+              tokenToCSSVar(variantSpec.selectedText),
+              variantMode,
+              "    ",
+            ),
+          );
         }
         if (variantSpec.selectedBorder) {
           lines.push(
-            `    border-color: ${tokenToCSSVar(variantSpec.selectedBorder)};`,
+            emitColorLine(
+              "border",
+              tokenToCSSVar(variantSpec.selectedBorder),
+              variantMode,
+              "    ",
+            ),
           );
         }
-        if (variantSpec.selectedBackgroundHover) {
-          lines.push("");
-          lines.push("    &[data-hovered] {");
-          lines.push(
-            `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundHover)};`,
-          );
-          lines.push("    }");
-        }
-        if (variantSpec.selectedBackgroundPressed) {
-          lines.push("");
-          lines.push("    &[data-pressed] {");
-          lines.push(
-            `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundPressed)};`,
-          );
-          lines.push("    }");
+        // selected × hover/pressed — button-base에서는 스킵
+        if (variantMode !== "button-base") {
+          if (variantSpec.selectedBackgroundHover) {
+            lines.push("");
+            lines.push("    &[data-hovered] {");
+            lines.push(
+              `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundHover)};`,
+            );
+            lines.push("    }");
+          }
+          if (variantSpec.selectedBackgroundPressed) {
+            lines.push("");
+            lines.push("    &[data-pressed] {");
+            lines.push(
+              `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundPressed)};`,
+            );
+            lines.push("    }");
+          }
         }
         lines.push("  }");
       }
@@ -204,16 +253,31 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
         lines.push("");
         lines.push("  &[data-emphasized][data-selected] {");
         lines.push(
-          `    background: ${tokenToCSSVar(variantSpec.emphasizedSelectedBackground)};`,
+          emitColorLine(
+            "background",
+            tokenToCSSVar(variantSpec.emphasizedSelectedBackground),
+            variantMode,
+            "    ",
+          ),
         );
         if (variantSpec.emphasizedSelectedText) {
           lines.push(
-            `    color: ${tokenToCSSVar(variantSpec.emphasizedSelectedText)};`,
+            emitColorLine(
+              "text",
+              tokenToCSSVar(variantSpec.emphasizedSelectedText),
+              variantMode,
+              "    ",
+            ),
           );
         }
         if (variantSpec.emphasizedSelectedBorder) {
           lines.push(
-            `    border-color: ${tokenToCSSVar(variantSpec.emphasizedSelectedBorder)};`,
+            emitColorLine(
+              "border",
+              tokenToCSSVar(variantSpec.emphasizedSelectedBorder),
+              variantMode,
+              "    ",
+            ),
           );
         }
         lines.push("  }");
@@ -228,14 +292,31 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
           `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="outline"] {`,
         );
         lines.push(
-          `  background: ${tokenToCSSVar(variantSpec.outlineBackground ?? ("{color.transparent}" as TokenRef))};`,
+          emitColorLine(
+            "background",
+            tokenToCSSVar(
+              variantSpec.outlineBackground ??
+                ("{color.transparent}" as TokenRef),
+            ),
+            variantMode,
+          ),
         );
         if (variantSpec.outlineText) {
-          lines.push(`  color: ${tokenToCSSVar(variantSpec.outlineText)};`);
+          lines.push(
+            emitColorLine(
+              "text",
+              tokenToCSSVar(variantSpec.outlineText),
+              variantMode,
+            ),
+          );
         }
         if (variantSpec.outlineBorder) {
           lines.push(
-            `  border-color: ${tokenToCSSVar(variantSpec.outlineBorder)};`,
+            emitColorLine(
+              "border",
+              tokenToCSSVar(variantSpec.outlineBorder),
+              variantMode,
+            ),
           );
         }
         lines.push("}");
@@ -248,12 +329,24 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
           `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="subtle"] {`,
         );
         lines.push(
-          `  background: ${tokenToCSSVar(variantSpec.subtleBackground)};`,
+          emitColorLine(
+            "background",
+            tokenToCSSVar(variantSpec.subtleBackground),
+            variantMode,
+          ),
         );
         if (variantSpec.subtleText) {
-          lines.push(`  color: ${tokenToCSSVar(variantSpec.subtleText)};`);
+          lines.push(
+            emitColorLine(
+              "text",
+              tokenToCSSVar(variantSpec.subtleText),
+              variantMode,
+            ),
+          );
         }
-        lines.push("  border: none;");
+        if (variantMode === "direct") {
+          lines.push("  border: none;");
+        }
         lines.push("}");
         lines.push("");
       }
@@ -402,17 +495,32 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
 
   // default variant 색상 — Composite 컨테이너는 자식이 관리하므로 skip
   if (defaultVariant && !spec.composition) {
+    const mode = spec.cssEmitMode ?? "direct";
     lines.push("");
     lines.push("  /* Default variant */");
-    lines.push(`  background: ${tokenToCSSVar(defaultVariant.background)};`);
-    lines.push(`  color: ${tokenToCSSVar(defaultVariant.text)};`);
+    lines.push(
+      emitColorLine(
+        "background",
+        tokenToCSSVar(defaultVariant.background),
+        mode,
+      ),
+    );
+    lines.push(emitColorLine("text", tokenToCSSVar(defaultVariant.text), mode));
     if (defaultVariant.border) {
       const bw = defaultSize?.borderWidth ?? 1;
-      lines.push(
-        `  border: ${bw}px solid ${tokenToCSSVar(defaultVariant.border)};`,
-      );
+      if (mode === "button-base") {
+        lines.push(
+          emitColorLine("border", tokenToCSSVar(defaultVariant.border), mode),
+        );
+      } else {
+        lines.push(
+          `  border: ${bw}px solid ${tokenToCSSVar(defaultVariant.border)};`,
+        );
+      }
     } else {
-      lines.push("  border: none;");
+      if (mode === "direct") {
+        lines.push("  border: none;");
+      }
     }
   }
 
@@ -435,18 +543,26 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
 
 // ─── Variant Styles ─────────────────────────────────────────────────────────
 
-function generateVariantStyles(variant: VariantSpec): string[] {
+function generateVariantStyles(
+  variant: VariantSpec,
+  mode: "direct" | "button-base" = "direct",
+): string[] {
   const lines = [
-    `  background: ${tokenToCSSVar(variant.background)};`,
-    `  color: ${tokenToCSSVar(variant.text)};`,
+    emitColorLine("background", tokenToCSSVar(variant.background), mode),
+    emitColorLine("text", tokenToCSSVar(variant.text), mode),
   ];
 
   if (variant.border) {
-    lines.push(`  border-color: ${tokenToCSSVar(variant.border)};`);
+    lines.push(emitColorLine("border", tokenToCSSVar(variant.border), mode));
   }
 
   if (variant.backgroundAlpha !== undefined && variant.backgroundAlpha < 1) {
-    lines.push("  background: transparent;");
+    // backgroundAlpha < 1 → 투명 처리 (button-base도 동일하게 transparent)
+    lines.push(
+      mode === "button-base"
+        ? "  --button-color: transparent;"
+        : "  background: transparent;",
+    );
   }
 
   return lines;
@@ -896,7 +1012,9 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  inset: 0;`);
   lines.push(`  z-index: -1;`);
   lines.push(`  border-radius: ${radius};`);
-  lines.push(`  background: var(--indicator-bg);`);
+  lines.push(`  --button-color: var(--indicator-bg);`);
+  lines.push(`  --button-text: var(--indicator-text);`);
+  lines.push(`  --button-border: var(--indicator-bg);`);
   lines.push(`  box-shadow: ${shadow};`);
   lines.push(`  pointer-events: none;`);
   lines.push(
@@ -907,20 +1025,23 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
 
   lines.push(`${base} .react-aria-ToggleButton {`);
   lines.push(`  position: relative;`);
-  lines.push(`  background-color: transparent;`);
+  lines.push(`  --button-color: transparent;`);
+  lines.push(`  --button-border: transparent;`);
   lines.push(`  border-width: 0;`);
   lines.push("}");
   lines.push("");
 
   lines.push(`${base} .react-aria-ToggleButton[data-selected] {`);
-  lines.push(`  background: transparent;`);
-  lines.push(`  color: var(--indicator-text);`);
+  lines.push(`  --button-color: transparent;`);
+  lines.push(`  --button-border: transparent;`);
+  lines.push(`  --button-text: var(--indicator-text);`);
   lines.push("}");
   lines.push("");
 
   lines.push(`${base} .react-aria-ToggleButton[data-selected][data-pressed] {`);
-  lines.push(`  background: transparent;`);
-  lines.push(`  color: var(--fg);`);
+  lines.push(`  --button-color: transparent;`);
+  lines.push(`  --button-border: transparent;`);
+  lines.push(`  --button-text: var(--fg);`);
   lines.push("}");
   lines.push("");
 

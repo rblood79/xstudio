@@ -140,6 +140,15 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   /** ADR-059 B5: Selection indicator 모드 스타일 (ToggleButtonGroup 등) */
   indicatorMode?: IndicatorModeSpec;
 
+  /**
+   * CSS 색상 property emit 전략 (ADR-059 B5).
+   *
+   * - "direct" (default): background / color / border-color 직접 emit
+   * - "button-base": --button-color / --button-text / --button-border custom property emit
+   *   (RAC .button-base utility protocol 참여 — archetype="button" 표준)
+   */
+  cssEmitMode?: "direct" | "button-base";
+
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
 }
