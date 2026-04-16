@@ -65,6 +65,8 @@ import { viewportState as mutableViewport } from "../viewport/viewportState";
 import { StoreRenderBridge } from "./StoreRenderBridge";
 import { getSharedLayoutMap } from "../layout/engines/fullTreeLayout";
 import { useStore } from "../../../stores";
+// ADR-069 Phase 0 observability: labeled duration tracking
+import { observe } from "../../../utils/perfMarks";
 import {
   useThemeConfigStore,
   resolveSkiaTheme,
@@ -367,7 +369,12 @@ export function SkiaCanvas({
     let rafId = 0;
     let running = true;
 
-    const renderFrame = () => {
+    // ADR-069 Phase 0: renderFrameCore는 원본 로직을 그대로 보존.
+    // 아래 renderFrame wrapper가 observe()로 "render.frame" 라벨에 계측을 주입한다.
+    // 내부 buildSkiaFrameContent / buildFrameRenderPlan / renderer.render 세 단계도
+    // 각각 서브 라벨(render.content.build / render.plan.build / render.skia.draw)로
+    // 분해 계측하여 Violation 발생 시 어느 단계가 지배적인지 즉시 식별 가능.
+    const renderFrameCore = (): void => {
       if (!running) return;
       rafId = requestAnimationFrame(renderFrame);
 
@@ -582,18 +589,20 @@ export function SkiaCanvas({
       }
 
       // Content build — Command Stream 경로 (cameraContainer: null → PixiJS 불필요)
-      const contentResult = buildSkiaFrameContent({
-        aiState: packet.ai,
-        registryVersion,
-        pagePosVersion: contentPagePositionVersion,
-        cameraContainer: null, // SceneGraph 모드: PixiJS Container 불필요
-        cameraX,
-        cameraY,
-        cameraZoom,
-        ck,
-        fontMgr,
-        rendererInput: currentRendererInput,
-      });
+      const contentResult = observe("render.content.build", () =>
+        buildSkiaFrameContent({
+          aiState: packet.ai,
+          registryVersion,
+          pagePosVersion: contentPagePositionVersion,
+          cameraContainer: null, // SceneGraph 모드: PixiJS Container 불필요
+          cameraX,
+          cameraY,
+          cameraZoom,
+          ck,
+          fontMgr,
+          rendererInput: currentRendererInput,
+        }),
+      );
 
       if (!contentResult) {
         renderer.clearFrame();
@@ -611,29 +620,31 @@ export function SkiaCanvas({
         cameraZoom,
         overlayVersion: overlayVersionRef.current,
       });
-      const framePlan = buildFrameRenderPlan({
-        ck,
-        elementsMap: currentRendererInput.elementsMap,
-        fontMgr,
-        invalidationPacket: packet,
-        snapshot,
-        sharedScene,
-        nodeBoundsMap,
-        hasAIEffects,
-        contentNode,
-        allPageFrames: allPageFramesRef.current,
-        visiblePageFrames: visiblePageFramesRef.current,
-        workflowHoverState: workflowHoverStateRef.current,
-        elementHoverState: elementHoverStateRef.current,
-        dropIndicatorState: dropIndicator,
-        minimapVisible: minimapVisibleRef.current,
-        minimapConfig: minimapConfigRef.current,
-        skiaCanvasWidth: skiaCanvas.width,
-        skiaCanvasHeight: skiaCanvas.height,
-        dpr,
-        prevEdgeGeometryCache: edgeGeometryCacheRef.current,
-        prevEdgeGeometryCacheKey: edgeGeometryCacheKeyRef.current,
-      });
+      const framePlan = observe("render.plan.build", () =>
+        buildFrameRenderPlan({
+          ck,
+          elementsMap: currentRendererInput.elementsMap,
+          fontMgr,
+          invalidationPacket: packet,
+          snapshot,
+          sharedScene,
+          nodeBoundsMap,
+          hasAIEffects,
+          contentNode,
+          allPageFrames: allPageFramesRef.current,
+          visiblePageFrames: visiblePageFramesRef.current,
+          workflowHoverState: workflowHoverStateRef.current,
+          elementHoverState: elementHoverStateRef.current,
+          dropIndicatorState: dropIndicator,
+          minimapVisible: minimapVisibleRef.current,
+          minimapConfig: minimapConfigRef.current,
+          skiaCanvasWidth: skiaCanvas.width,
+          skiaCanvasHeight: skiaCanvas.height,
+          dpr,
+          prevEdgeGeometryCache: edgeGeometryCacheRef.current,
+          prevEdgeGeometryCacheKey: edgeGeometryCacheKeyRef.current,
+        }),
+      );
 
       treeBoundsMapRef.current = framePlan.sharedScene.treeBoundsMap;
       renderer.setContentNode(framePlan.contentNode);
@@ -651,12 +662,21 @@ export function SkiaCanvas({
         edgeGeometryCacheKeyRef.current = "";
       }
 
-      renderer.render(
-        framePlan.cullingBounds,
-        registryVersion,
-        cameraState,
-        overlayVersionRef.current,
-      );
+      observe("render.skia.draw", () => {
+        renderer.render(
+          framePlan.cullingBounds,
+          registryVersion,
+          cameraState,
+          overlayVersionRef.current,
+        );
+      });
+    };
+
+    // ADR-069 Phase 0: 계측 wrapper — rafId 재등록 대상 함수.
+    // renderFrameCore는 내부에서 `requestAnimationFrame(renderFrame)`을 호출하므로,
+    // 루프가 지속되는 동안 매 프레임 observe()가 "render.frame" duration을 기록한다.
+    const renderFrame = (): void => {
+      observe("render.frame", () => renderFrameCore());
     };
 
     // RAF 시작
