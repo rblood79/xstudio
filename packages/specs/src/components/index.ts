@@ -39,7 +39,7 @@ export { SeparatorSpec } from "./Separator.spec";
 export type { SeparatorProps } from "./Separator.spec";
 
 // ToggleButton
-export { ToggleButtonSpec, TOGGLE_SELECTED_COLORS } from "./ToggleButton.spec";
+export { ToggleButtonSpec } from "./ToggleButton.spec";
 export type { ToggleButtonProps } from "./ToggleButton.spec";
 
 // ToggleButtonGroup

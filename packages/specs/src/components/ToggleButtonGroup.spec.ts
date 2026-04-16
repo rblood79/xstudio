@@ -124,6 +124,9 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
   composition: {
     layout: "flex-row",
+    containerStyles: {
+      width: "fit-content",
+    },
     delegation: [
       {
         childSelector: ".react-aria-ToggleButton",

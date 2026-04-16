@@ -163,10 +163,7 @@ export type { SectionProps } from "./components/Section.spec";
 export { SeparatorSpec } from "./components/Separator.spec";
 export type { SeparatorProps } from "./components/Separator.spec";
 
-export {
-  ToggleButtonSpec,
-  TOGGLE_SELECTED_COLORS,
-} from "./components/ToggleButton.spec";
+export { ToggleButtonSpec } from "./components/ToggleButton.spec";
 export type { ToggleButtonProps } from "./components/ToggleButton.spec";
 
 export { ToggleButtonGroupSpec } from "./components/ToggleButtonGroup.spec";

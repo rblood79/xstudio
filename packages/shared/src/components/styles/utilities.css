@@ -37,6 +37,30 @@
       );
     }
 
+    &:where([data-selected]) {
+      background: var(--button-color);
+      color: var(--button-text, var(--color-white));
+      border-color: var(--button-border, var(--button-color));
+    }
+
+    &:where([data-selected][data-hovered]) {
+      background: color-mix(in srgb, var(--button-color) 85%, black);
+      border-color: color-mix(
+        in srgb,
+        var(--button-border, var(--button-color)) 85%,
+        black
+      );
+    }
+
+    &:where([data-selected][data-pressed]) {
+      background: color-mix(in srgb, var(--button-color) 75%, black);
+      border-color: color-mix(
+        in srgb,
+        var(--button-border, var(--button-color)) 75%,
+        black
+      );
+    }
+
     &:where([data-focus-visible]) {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
@@ -170,7 +194,11 @@
     border-bottom: 1px solid var(--border);
     outline: none;
 
-    &:where([data-hovered]:not([data-focused]):not([data-focus-within]):not([data-disabled])) {
+    &:where(
+      [data-hovered]:not([data-focused]):not([data-focus-within]):not(
+          [data-disabled]
+        )
+    ) {
       background: transparent;
       border-color: transparent;
       border-bottom-color: var(--border-hover);

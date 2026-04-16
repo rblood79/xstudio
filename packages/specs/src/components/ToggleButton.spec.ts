@@ -39,20 +39,6 @@ export interface ToggleButtonProps {
   };
 }
 
-/** isSelected 시 컬러 (S2: default = Button primary 색상, emphasized = accent) */
-export const TOGGLE_SELECTED_COLORS = {
-  default: {
-    bg: "{color.neutral}" as TokenRef,
-    text: "{color.base}" as TokenRef,
-    border: "{color.neutral}" as TokenRef,
-  },
-  emphasized: {
-    bg: "{color.accent}" as TokenRef,
-    text: "{color.on-accent}" as TokenRef,
-    border: "{color.accent}" as TokenRef,
-  },
-};
-
 /**
  * ToggleButton Component Spec
  */
@@ -75,12 +61,10 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.transparent}" as TokenRef,
 
-      // ADR-059 B5 — selected (기존 TOGGLE_SELECTED_COLORS.default 이관)
       selectedBackground: "{color.neutral}" as TokenRef,
       selectedText: "{color.base}" as TokenRef,
       selectedBorder: "{color.neutral}" as TokenRef,
 
-      // ADR-059 B5 — emphasized × selected (기존 TOGGLE_SELECTED_COLORS.emphasized 이관)
       emphasizedSelectedBackground: "{color.accent}" as TokenRef,
       emphasizedSelectedText: "{color.on-accent}" as TokenRef,
       emphasizedSelectedBorder: "{color.accent}" as TokenRef,
@@ -189,9 +173,6 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
           (props as { variant?: keyof typeof ToggleButtonSpec.variants })
             .variant ?? ToggleButtonSpec.defaultVariant!
         ];
-      // S2: isEmphasized → selected 시 accent, 기본 → selected 시 neutral-subtle
-      const selectedKey = props.isEmphasized ? "emphasized" : "default";
-
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
       const baseBorderRadius =
@@ -241,10 +222,18 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         borderColor =
           props.style?.borderColor ?? ("{color.transparent}" as TokenRef);
       } else if (props.isSelected) {
-        const selected = TOGGLE_SELECTED_COLORS[selectedKey];
-        bgColor = props.style?.backgroundColor ?? selected.bg;
-        textColor = props.style?.color ?? selected.text;
-        borderColor = props.style?.borderColor ?? selected.border;
+        const isEmp = props.isEmphasized;
+        bgColor =
+          props.style?.backgroundColor ??
+          (isEmp
+            ? variant.emphasizedSelectedBackground
+            : variant.selectedBackground);
+        textColor =
+          props.style?.color ??
+          (isEmp ? variant.emphasizedSelectedText : variant.selectedText);
+        borderColor =
+          props.style?.borderColor ??
+          (isEmp ? variant.emphasizedSelectedBorder : variant.selectedBorder);
       } else {
         bgColor =
           props.style?.backgroundColor ??

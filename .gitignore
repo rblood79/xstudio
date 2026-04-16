@@ -28,6 +28,7 @@ dist
 /playwright-report
 /coverage
 packages/*/coverage/
+__tests__/
 
 .cache
 .vercel

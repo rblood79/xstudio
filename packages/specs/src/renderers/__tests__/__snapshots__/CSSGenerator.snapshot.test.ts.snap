@@ -11267,6 +11267,7 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
     flex-direction: row;
     align-items: center;
     box-sizing: border-box;
+    width: fit-content;
 
   /* Default size */
   font-size: var(--text-base);
@@ -11328,14 +11329,14 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
 .react-aria-ToggleButtonGroup[data-indicator="true"] {
   --indicator-bg: var(--bg-overlay);
   --indicator-text: var(--fg-on-accent);
+  --button-color: var(--bg-muted);
 }
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
   position: absolute;
   inset: 0;
   z-index: -1;
-  border-radius: var(--radius-sm);
-  --button-color: var(--indicator-bg);
+  border-radius: var(--btn-border-radius);
   --button-text: var(--indicator-text);
   --button-border: var(--indicator-bg);
   box-shadow: var(--shadow-sm);
@@ -11345,21 +11346,18 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton {
   position: relative;
-  --button-color: transparent;
-  --button-border: transparent;
+  z-index: 0;
+  background: transparent;
+  border-color: transparent;
   border-width: 0;
 }
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected] {
-  --button-color: transparent;
-  --button-border: transparent;
-  --button-text: var(--indicator-text);
+  color: var(--indicator-text);
 }
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected][data-pressed] {
-  --button-color: transparent;
-  --button-border: transparent;
-  --button-text: var(--fg);
+  color: var(--fg);
 }
 
 @media (prefers-reduced-motion: reduce) {

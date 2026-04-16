@@ -56,7 +56,7 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
  * S2 variant 전환: isEmphasized / isQuiet data-* 패턴
  * - data-emphasized: accent color 강조 (선택 시)
  * - data-quiet: 배경 없는 quiet 스타일
- * - data-togglebutton-size: 크기 (그룹 컨텍스트)
+ * - data-size: 크기
  */
 export function ToggleButtonGroup({
   indicator = false,
@@ -100,10 +100,12 @@ export function ToggleButtonGroup({
 
   const toggleButtonGroupClassName = composeRenderProps(
     props.className,
-    (cls) =>
-      cls
-        ? `react-aria-ToggleButtonGroup ${cls}`
-        : "react-aria-ToggleButtonGroup",
+    (cls) => {
+      const base = indicator
+        ? "react-aria-ToggleButtonGroup button-base"
+        : "react-aria-ToggleButtonGroup";
+      return cls ? `${base} ${cls}` : base;
+    },
   );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ToggleButton 렌더링
@@ -124,9 +126,9 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
-          data-togglebutton-quiet={isQuiet ? "true" : "false"}
-          data-togglebutton-size={size}
+          data-emphasized={isEmphasized || undefined}
+          data-quiet={isQuiet || undefined}
+          data-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
@@ -147,9 +149,9 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
-          data-togglebutton-quiet={isQuiet ? "true" : "false"}
-          data-togglebutton-size={size}
+          data-emphasized={isEmphasized || undefined}
+          data-quiet={isQuiet || undefined}
+          data-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
@@ -174,9 +176,9 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
-          data-togglebutton-quiet={isQuiet ? "true" : "false"}
-          data-togglebutton-size={size}
+          data-emphasized={isEmphasized || undefined}
+          data-quiet={isQuiet || undefined}
+          data-size={size}
           className={toggleButtonGroupClassName}
         >
           <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
@@ -195,7 +197,7 @@ export function ToggleButtonGroup({
         data-indicator={indicator ? "true" : "false"}
         data-emphasized={isEmphasized || undefined}
         data-quiet={isQuiet || undefined}
-        data-togglebutton-size={size}
+        data-size={size}
         className={toggleButtonGroupClassName}
       >
         <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
@@ -215,9 +217,9 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
-          data-togglebutton-quiet={isQuiet ? "true" : "false"}
-          data-togglebutton-size={size}
+          data-emphasized={isEmphasized || undefined}
+          data-quiet={isQuiet || undefined}
+          data-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
@@ -238,9 +240,9 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
-          data-togglebutton-quiet={isQuiet ? "true" : "false"}
-          data-togglebutton-size={size}
+          data-emphasized={isEmphasized || undefined}
+          data-quiet={isQuiet || undefined}
+          data-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
@@ -274,9 +276,9 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
-          data-togglebutton-quiet={isQuiet ? "true" : "false"}
-          data-togglebutton-size={size}
+          data-emphasized={isEmphasized || undefined}
+          data-quiet={isQuiet || undefined}
+          data-size={size}
           className={toggleButtonGroupClassName}
         >
           <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
@@ -305,7 +307,7 @@ export function ToggleButtonGroup({
       data-indicator={indicator ? "true" : "false"}
       data-emphasized={isEmphasized || undefined}
       data-quiet={isQuiet || undefined}
-      data-togglebutton-size={size}
+      data-size={size}
       className={toggleButtonGroupClassName}
     >
       <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>

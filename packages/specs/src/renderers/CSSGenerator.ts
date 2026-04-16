@@ -991,7 +991,6 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   const im = spec.indicatorMode;
   if (!im) return [];
   const base = `.react-aria-${spec.name}[data-indicator="true"]`;
-  const radius = tokenToCSSVar(im.borderRadius ?? ("{radius.sm}" as TokenRef));
   const shadow = im.boxShadow
     ? (resolveBoxShadow(im.boxShadow as string | ShadowTokenRef) ??
       "var(--shadow-sm)")
@@ -1002,6 +1001,7 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`${base} {`);
   lines.push(`  --indicator-bg: ${tokenToCSSVar(im.background)};`);
   lines.push(`  --indicator-text: ${tokenToCSSVar(im.selectedText)};`);
+  lines.push(`  --button-color: var(--bg-muted);`);
   lines.push("}");
   lines.push("");
 
@@ -1011,8 +1011,7 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  position: absolute;`);
   lines.push(`  inset: 0;`);
   lines.push(`  z-index: -1;`);
-  lines.push(`  border-radius: ${radius};`);
-  lines.push(`  --button-color: var(--indicator-bg);`);
+  lines.push(`  border-radius: var(--btn-border-radius);`);
   lines.push(`  --button-text: var(--indicator-text);`);
   lines.push(`  --button-border: var(--indicator-bg);`);
   lines.push(`  box-shadow: ${shadow};`);
@@ -1025,23 +1024,20 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
 
   lines.push(`${base} .react-aria-ToggleButton {`);
   lines.push(`  position: relative;`);
-  lines.push(`  --button-color: transparent;`);
-  lines.push(`  --button-border: transparent;`);
+  lines.push(`  z-index: 0;`);
+  lines.push(`  background: transparent;`);
+  lines.push(`  border-color: transparent;`);
   lines.push(`  border-width: 0;`);
   lines.push("}");
   lines.push("");
 
   lines.push(`${base} .react-aria-ToggleButton[data-selected] {`);
-  lines.push(`  --button-color: transparent;`);
-  lines.push(`  --button-border: transparent;`);
-  lines.push(`  --button-text: var(--indicator-text);`);
+  lines.push(`  color: var(--indicator-text);`);
   lines.push("}");
   lines.push("");
 
   lines.push(`${base} .react-aria-ToggleButton[data-selected][data-pressed] {`);
-  lines.push(`  --button-color: transparent;`);
-  lines.push(`  --button-border: transparent;`);
-  lines.push(`  --button-text: var(--fg);`);
+  lines.push(`  color: var(--fg);`);
   lines.push("}");
   lines.push("");
 
