@@ -51,11 +51,9 @@ export const renderListBox = (
   const { elements, updateElementProps } = context;
 
   // 실제 ListBoxItem 자식 요소들을 찾기
-  const listBoxChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "ListBoxItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const listBoxChildren = (context.childrenMap.get(element.id) ?? []).filter(
+    (child) => child.tag === "ListBoxItem",
+  );
 
   // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -285,9 +283,7 @@ export const renderListBoxItem = (
   const { elements } = context;
 
   // 모든 자식 요소를 찾기 (Composition 패턴: Text, Description, Field 등)
-  const childElements = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const childElements = context.childrenMap.get(element.id) ?? [];
 
   // 스켈레톤 플레이스홀더 체크
   const isSkeleton = Boolean(element.props.isSkeleton);
@@ -377,9 +373,7 @@ export const renderDataField = (
   }
 
   // 자식 요소가 있으면 렌더링
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <DataField
@@ -421,11 +415,9 @@ export const renderGridList = (
   const { elements, updateElementProps } = context;
 
   // 실제 GridListItem 자식 요소들을 찾기
-  const gridListChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "GridListItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const gridListChildren = (context.childrenMap.get(element.id) ?? []).filter(
+    (child) => child.tag === "GridListItem",
+  );
 
   // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -579,9 +571,7 @@ export const renderGridListItem = (
   const { elements } = context;
 
   // 모든 자식 요소를 찾기 (Composition 패턴: Text, Description, Field 등)
-  const childElements = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const childElements = context.childrenMap.get(element.id) ?? [];
 
   // 스켈레톤 플레이스홀더 체크
   const isSkeleton = Boolean(element.props.isSkeleton);
@@ -643,11 +633,9 @@ export const renderSelect = (
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
-  const selectItemChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "SelectItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const selectItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
+    (child) => child.tag === "SelectItem",
+  );
 
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -670,9 +658,7 @@ export const renderSelect = (
   const elementProps = { ...element.props };
 
   // Child element에서 props 읽기 (compositional 패턴)
-  const allSelectChildren = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const allSelectChildren = context.childrenMap.get(element.id) ?? [];
   const selectLabelEl = allSelectChildren.find((c) => c.tag === "Label");
   const triggerEl = allSelectChildren.find((c) => c.tag === "SelectTrigger");
   const triggerChildren = triggerEl
@@ -917,11 +903,9 @@ export const renderComboBox = (
   const { elements, updateElementProps } = context;
 
   // 실제 ComboBoxItem 자식 요소들을 찾기
-  const comboBoxItemChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "ComboBoxItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const comboBoxItemChildren = (
+    context.childrenMap.get(element.id) ?? []
+  ).filter((child) => child.tag === "ComboBoxItem");
 
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -1028,9 +1012,7 @@ export const renderComboBox = (
       });
 
   // Child element에서 props 읽기 (compositional 패턴)
-  const allChildren = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const allChildren = context.childrenMap.get(element.id) ?? [];
   const labelEl = allChildren.find((c) => c.tag === "Label");
   const wrapperEl = allChildren.find((c) => c.tag === "ComboBoxWrapper");
   const wrapperChildren = wrapperEl

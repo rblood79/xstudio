@@ -43,27 +43,21 @@ export const renderTree = (
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
-  const treeItemChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "TreeItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const treeItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
+    (child) => child.tag === "TreeItem",
+  );
 
   const renderTreeItemsRecursively = (
     items: PreviewElement[],
   ): React.ReactNode => {
     return items.map((item) => {
-      const childTreeItems = elements
-        .filter(
-          (child) => child.parent_id === item.id && child.tag === "TreeItem",
-        )
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-      const otherChildren = elements
-        .filter(
-          (child) => child.parent_id === item.id && child.tag !== "TreeItem",
-        )
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      const itemChildren = context.childrenMap.get(item.id) ?? [];
+      const childTreeItems = itemChildren.filter(
+        (child) => child.tag === "TreeItem",
+      );
+      const otherChildren = itemChildren.filter(
+        (child) => child.tag !== "TreeItem",
+      );
 
       const displayTitle = String(
         item.props.title ||
@@ -165,17 +159,11 @@ export const renderTreeItem = (
 ): React.ReactNode => {
   const { elements } = context;
 
-  const childTreeItems = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "TreeItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  const otherChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag !== "TreeItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const ownChildren = context.childrenMap.get(element.id) ?? [];
+  const childTreeItems = ownChildren.filter(
+    (child) => child.tag === "TreeItem",
+  );
+  const otherChildren = ownChildren.filter((child) => child.tag !== "TreeItem");
 
   const displayTitle = String(
     element.props.title ||
@@ -568,9 +556,9 @@ export const renderTag = (
   const { elements } = context;
 
   // Field 자식 요소 찾기
-  const fieldChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Field")
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const fieldChildren = (context.childrenMap.get(element.id) ?? []).filter(
+    (child) => child.tag === "Field",
+  );
 
   // Field children이 있으면 DataField 렌더링 (단, 데이터는 없으므로 라벨만 표시)
   if (fieldChildren.length > 0) {
@@ -647,11 +635,9 @@ export const renderToggleButtonGroup = (
   const orientation = element.props.orientation as "horizontal" | "vertical";
   const indicator = Boolean(element.props.indicator);
 
-  const toggleButtonChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "ToggleButton",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const toggleButtonChildren = (
+    context.childrenMap.get(element.id) ?? []
+  ).filter((child) => child.tag === "ToggleButton");
 
   const selectedKeys = new Set<string>(
     getSelectedChildIds(toggleButtonChildren),
@@ -700,9 +686,7 @@ export const renderToggleButton = (
 ): React.ReactNode => {
   const { elements, elementsMap, updateElementProps } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   const isInGroup = element.parent_id
     ? elementsMap.get(element.parent_id)?.tag === "ToggleButtonGroup"
@@ -757,11 +741,9 @@ export const renderMenu = (
   const { elements, renderElement } = context;
 
   // Static 방법: 직접 추가된 MenuItem 자식 요소들 찾기
-  const menuItemChildren = elements
-    .filter(
-      (child) => child.parent_id === element.id && child.tag === "MenuItem",
-    )
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const menuItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
+    (child) => child.tag === "MenuItem",
+  );
 
   return (
     <MenuButton
@@ -793,9 +775,7 @@ export const renderMenuItem = (
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <MenuItem
@@ -826,9 +806,7 @@ export const renderToolbar = (
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <Toolbar

@@ -41,9 +41,7 @@ export const renderTable = (
   const { elements } = context;
 
   // TableHeader 찾기
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   const tableHeaderElement = children.find(
     (child) => child.tag === "TableHeader",

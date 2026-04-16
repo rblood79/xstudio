@@ -84,9 +84,7 @@ export const renderForm = (
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <Form
@@ -275,9 +273,7 @@ export const renderSearchField = (
   const inheritedProps = resolveInheritedFormFieldProps(element, context);
 
   // Child element에서 props 읽기 (compositional 패턴)
-  const childElements = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const childElements = context.childrenMap.get(element.id) ?? [];
 
   const labelEl = childElements.find((c) => c.tag === "Label");
   const wrapperEl = childElements.find((c) => c.tag === "SearchFieldWrapper");
@@ -405,9 +401,7 @@ export const renderLabel = (
 ): React.ReactNode => {
   const { elements, elementsMap, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   const content = (
     <>
@@ -451,9 +445,7 @@ export const renderDescription = (
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <Description
@@ -482,9 +474,7 @@ export const renderFieldError = (
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <FieldError
@@ -509,9 +499,7 @@ export const renderCheckbox = (
 ): React.ReactNode => {
   const { elements, updateElementProps, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <Checkbox
@@ -569,9 +557,7 @@ export const renderCheckboxGroup = (
   const { elements, updateElementProps, renderElement } = context;
 
   // Compositional: Label + CheckboxItems(중간 컨테이너) + Checkbox(레거시) 자식 분리
-  const allChildren = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const allChildren = context.childrenMap.get(element.id) ?? [];
 
   const labelChild = allChildren.find((child) => child.tag === "Label");
   const checkboxItemsChild = allChildren.find(
@@ -688,9 +674,7 @@ export const renderRadio = (
 ): React.ReactNode => {
   const { elements, elementsMap, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   // 부모 또는 조부모가 RadioGroup인지 확인
   // Factory 구조: RadioGroup > RadioItems > Radio
@@ -759,9 +743,7 @@ export const renderRadioGroup = (
   const { elements, updateElementProps, renderElement } = context;
 
   // Compositional: Label + RadioItems(중간 컨테이너) + Radio(레거시) 자식 분리
-  const allChildren = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const allChildren = context.childrenMap.get(element.id) ?? [];
 
   const labelChild = allChildren.find((child) => child.tag === "Label");
   const radioItemsChild = allChildren.find(
@@ -878,9 +860,7 @@ export const renderFileTrigger = (
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <FileTrigger
@@ -923,9 +903,7 @@ export const renderDropZone = (
   const eventHandlers =
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const children = context.childrenMap.get(element.id) ?? [];
 
   return (
     <DropZone
