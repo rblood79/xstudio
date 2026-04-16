@@ -1,6 +1,17 @@
 import { useMemo } from "react";
 import { useStore } from "../../../stores";
-import { useTransformValue, type TransformTier } from "./useTransformValue";
+import { useElementStyleContext } from "./useElementStyleContext";
+import { useLayoutValue } from "./useLayoutValue";
+import {
+  resolveSpecPreset,
+  type TransformSpecPreset,
+} from "../utils/specPresetResolver";
+
+export interface TransformTier {
+  inline: string | number | undefined;
+  effective: number | undefined;
+  specDefault: number | undefined;
+}
 
 export interface TransformValuesBundle {
   width: TransformTier;
@@ -18,45 +29,48 @@ export interface TransformValuesBundle {
 export function useTransformValues(
   id: string | null,
 ): TransformValuesBundle | null {
-  const width = useTransformValue(id, "width");
-  const height = useTransformValue(id, "height");
-  const top = useTransformValue(id, "top");
-  const left = useTransformValue(id, "left");
-  const minWidth = useTransformValue(id, "minWidth");
-  const maxWidth = useTransformValue(id, "maxWidth");
-  const minHeight = useTransformValue(id, "minHeight");
-  const maxHeight = useTransformValue(id, "maxHeight");
-  const aspectRatio = useTransformValue(id, "aspectRatio");
+  const { style, type, size } = useElementStyleContext(id);
+
+  const effWidth = useLayoutValue(id, "width");
+  const effHeight = useLayoutValue(id, "height");
+  const effLeft = useLayoutValue(id, "x");
+  const effTop = useLayoutValue(id, "y");
+
   const isBody = useStore((s) => {
     if (!id) return false;
     return s.elementsMap.get(id)?.tag?.toLowerCase() === "body";
   });
 
+  const specPreset = useMemo<TransformSpecPreset>(
+    () => resolveSpecPreset(type, size),
+    [type, size],
+  );
+
   return useMemo(() => {
-    if (!id || !width || !height) return null;
+    if (!id) return null;
+    const styleRec = (style ?? {}) as Record<
+      string,
+      string | number | undefined
+    >;
+    const presetRec = specPreset as Record<string, number | undefined>;
+
+    const tier = (prop: string, effective?: number): TransformTier => ({
+      inline: styleRec[prop],
+      effective,
+      specDefault: presetRec[prop],
+    });
+
     return {
-      width,
-      height,
-      top: top!,
-      left: left!,
-      minWidth: minWidth!,
-      maxWidth: maxWidth!,
-      minHeight: minHeight!,
-      maxHeight: maxHeight!,
-      aspectRatio: aspectRatio!,
+      width: tier("width", effWidth),
+      height: tier("height", effHeight),
+      top: tier("top", effTop),
+      left: tier("left", effLeft),
+      minWidth: tier("minWidth"),
+      maxWidth: tier("maxWidth"),
+      minHeight: tier("minHeight"),
+      maxHeight: tier("maxHeight"),
+      aspectRatio: tier("aspectRatio"),
       isBody,
     };
-  }, [
-    id,
-    width,
-    height,
-    top,
-    left,
-    minWidth,
-    maxWidth,
-    minHeight,
-    maxHeight,
-    aspectRatio,
-    isBody,
-  ]);
+  }, [id, style, specPreset, effWidth, effHeight, effTop, effLeft, isBody]);
 }
