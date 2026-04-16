@@ -1,4 +1,12 @@
 @layer builder-system {
+  [data-context="builder"] {
+    .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      .react-aria-ToggleButton {
+        --button-color: var(--indicator-bg);
+        --btn-border-radius: var(--radius-sm);
+      }
+    }
+  }
   .section {
     /* Styles Panel - Section-specific layouts */
     &[data-section-id="layout"] .section-content {
