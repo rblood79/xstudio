@@ -38,8 +38,6 @@ export const renderTable = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
-
   // TableHeader 찾기
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -49,14 +47,9 @@ export const renderTable = (
 
   // Column Elements 찾기
   const columnElements = tableHeaderElement
-    ? elements
-        .filter(
-          (el) =>
-            el.parent_id === tableHeaderElement.id &&
-            el.tag === "Column" &&
-            !el.deleted,
-        )
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    ? (context.childrenMap.get(tableHeaderElement.id) ?? []).filter(
+        (el) => el.tag === "Column" && !el.deleted,
+      )
     : children.filter((child) => child.tag === "Column" && !child.deleted);
 
   // Column 정의 생성
@@ -316,12 +309,8 @@ export const renderTable = (
 
   // Column Group Element에서 추출한 그룹 데이터 생성
   const columnGroups = tableHeaderElement
-    ? elements
-        .filter(
-          (el) =>
-            el.parent_id === tableHeaderElement.id && el.tag === "ColumnGroup",
-        )
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    ? (context.childrenMap.get(tableHeaderElement.id) ?? [])
+        .filter((el) => el.tag === "ColumnGroup")
         .map((groupEl) => {
           const props = groupEl.props as ElementProps;
 

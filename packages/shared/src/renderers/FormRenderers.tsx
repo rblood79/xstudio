@@ -82,7 +82,7 @@ export const renderForm = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -269,7 +269,7 @@ export const renderSearchField = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { updateElementProps } = context;
   const inheritedProps = resolveInheritedFormFieldProps(element, context);
 
   // Child element에서 props 읽기 (compositional 패턴)
@@ -278,9 +278,7 @@ export const renderSearchField = (
   const labelEl = childElements.find((c) => c.tag === "Label");
   const wrapperEl = childElements.find((c) => c.tag === "SearchFieldWrapper");
   const wrapperChildren = wrapperEl
-    ? elements
-        .filter((c) => c.parent_id === wrapperEl.id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    ? (context.childrenMap.get(wrapperEl.id) ?? [])
     : [];
   const inputEl = wrapperChildren.find((c) => c.tag === "SearchInput");
 
@@ -399,7 +397,7 @@ export const renderLabel = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, elementsMap, renderElement } = context;
+  const { elementsMap, renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -443,7 +441,7 @@ export const renderDescription = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -472,7 +470,7 @@ export const renderFieldError = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -497,7 +495,7 @@ export const renderCheckbox = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps, renderElement } = context;
+  const { updateElementProps, renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -636,12 +634,9 @@ export const renderCheckboxGroup = (
       <div className="checkbox-items">
         {checkboxChildren.map((checkbox) => {
           // Checkbox의 자식 Label 요소 검색
-          const checkboxLabelChildren = elements
-            .filter(
-              (child) =>
-                child.parent_id === checkbox.id && child.tag === "Label",
-            )
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+          const checkboxLabelChildren = (
+            context.childrenMap.get(checkbox.id) ?? []
+          ).filter((child) => child.tag === "Label");
 
           return (
             <Checkbox
@@ -681,7 +676,7 @@ export const renderRadio = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, elementsMap, renderElement } = context;
+  const { elementsMap, renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -868,7 +863,7 @@ export const renderFileTrigger = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -909,7 +904,7 @@ export const renderDropZone = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
   const eventHandlers =
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 

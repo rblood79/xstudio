@@ -102,7 +102,7 @@ export const renderTabs = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, childrenMap, updateElementProps, renderElement } = context;
+  const { childrenMap, updateElementProps, renderElement } = context;
 
   // PropertyDataBinding 형식 감지
   const dataBinding = element.dataBinding || element.props.dataBinding;
@@ -188,10 +188,9 @@ export const renderTabs = (
             style={panel.props.style}
             className={panel.props.className}
           >
-            {elements
-              .filter((child) => child.parent_id === panel.id)
-              .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-              .map((child) => renderElement(child, child.id))}
+            {(context.childrenMap.get(panel.id) ?? []).map((child) =>
+              renderElement(child, child.id),
+            )}
           </TabPanel>
         );
       })}
@@ -228,7 +227,7 @@ export const renderCard = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const allChildren = context.childrenMap.get(element.id) ?? [];
 
@@ -347,7 +346,7 @@ export const renderCardHeader = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -374,7 +373,7 @@ export const renderCardContent = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -419,7 +418,7 @@ export const renderCardPreview = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -443,7 +442,7 @@ export const renderCardFooter = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -466,7 +465,7 @@ export const renderButton = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -558,7 +557,7 @@ export const renderTooltip = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -617,7 +616,7 @@ export const renderDialog = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -646,7 +645,7 @@ export const renderPopover = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -839,7 +838,7 @@ export const renderGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -877,7 +876,7 @@ export const renderModal = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
   const eventHandlers =
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 
@@ -923,7 +922,7 @@ export const renderBreadcrumbs = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
   const eventHandlers =
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 
@@ -995,7 +994,7 @@ export const renderLink = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1048,7 +1047,7 @@ export const renderBadge = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1088,7 +1087,7 @@ export const renderSlot = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement, editMode } = context;
+  const { renderElement, editMode } = context;
 
   // Layout 편집 모드인지 확인
   const isLayoutEditMode = editMode === "layout";
@@ -1123,7 +1122,7 @@ export const renderToast = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
   const eventHandlers =
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 
@@ -1178,7 +1177,7 @@ export const renderPagination = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
   const eventHandlers =
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 
@@ -1316,7 +1315,7 @@ export const renderAvatarGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1397,7 +1396,7 @@ export const renderInlineAlert = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1427,7 +1426,7 @@ export const renderButtonGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1466,7 +1465,7 @@ export const renderNav = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1498,7 +1497,7 @@ export const renderAccordion = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1526,7 +1525,7 @@ export const renderDisclosureGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1556,7 +1555,7 @@ export const renderDisclosure = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1613,7 +1612,7 @@ export const renderDisclosureContent = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
   const children = context.childrenMap.get(element.id) ?? [];
 
   return (
@@ -1666,8 +1665,6 @@ export const renderColorSwatchPicker = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
-
   const swatchChildren = (context.childrenMap.get(element.id) ?? []).filter(
     (child) => child.tag === "ColorSwatch",
   );
@@ -1937,7 +1934,7 @@ export const renderCardView = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -1970,7 +1967,7 @@ export const renderTableView = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 

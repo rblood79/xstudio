@@ -48,7 +48,7 @@ export const renderListBox = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { updateElementProps } = context;
 
   // 실제 ListBoxItem 자식 요소들을 찾기
   const listBoxChildren = (context.childrenMap.get(element.id) ?? []).filter(
@@ -82,13 +82,10 @@ export const renderListBox = (
   if (hasValidTemplate) {
     const listBoxItemTemplate = listBoxChildren[0];
 
-    // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
-    const fieldChildren = context.elements
-      .filter(
-        (child) =>
-          child.parent_id === listBoxItemTemplate.id && child.tag === "Field",
-      )
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    // Field 자식들 찾기 - context.childrenMap O(1) lookup
+    const fieldChildren = (
+      context.childrenMap.get(listBoxItemTemplate.id) ?? []
+    ).filter((child) => child.tag === "Field");
 
     const renderItemFunction = (item: Record<string, unknown>) => {
       return (
@@ -280,8 +277,6 @@ export const renderListBoxItem = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
-
   // 모든 자식 요소를 찾기 (Composition 패턴: Text, Description, Field 등)
   const childElements = context.childrenMap.get(element.id) ?? [];
 
@@ -337,7 +332,7 @@ export const renderDataField = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, elementsMap } = context;
+  const { elementsMap } = context;
 
   // dataBinding이 있고 source가 "parent"인 경우 부모 데이터에서 값 추출
   let value = element.props.value;
@@ -412,7 +407,7 @@ export const renderGridList = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { updateElementProps } = context;
 
   // 실제 GridListItem 자식 요소들을 찾기
   const gridListChildren = (context.childrenMap.get(element.id) ?? []).filter(
@@ -441,14 +436,10 @@ export const renderGridList = (
         // GridListItem 템플릿을 각 데이터 항목에 대해 렌더링
         const gridListItemTemplate = gridListChildren[0];
 
-        // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
-        const fieldChildren = context.elements
-          .filter(
-            (child) =>
-              child.parent_id === gridListItemTemplate.id &&
-              child.tag === "Field",
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        // Field 자식들 찾기 - context.childrenMap O(1) lookup
+        const fieldChildren = (
+          context.childrenMap.get(gridListItemTemplate.id) ?? []
+        ).filter((child) => child.tag === "Field");
 
         return (
           <GridListItem
@@ -568,8 +559,6 @@ export const renderGridListItem = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
-
   // 모든 자식 요소를 찾기 (Composition 패턴: Text, Description, Field 등)
   const childElements = context.childrenMap.get(element.id) ?? [];
 
@@ -631,7 +620,7 @@ export const renderSelect = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { updateElementProps } = context;
 
   const selectItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
     (child) => child.tag === "SelectItem",
@@ -662,9 +651,7 @@ export const renderSelect = (
   const selectLabelEl = allSelectChildren.find((c) => c.tag === "Label");
   const triggerEl = allSelectChildren.find((c) => c.tag === "SelectTrigger");
   const triggerChildren = triggerEl
-    ? elements
-        .filter((c) => c.parent_id === triggerEl.id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    ? (context.childrenMap.get(triggerEl.id) ?? [])
     : [];
   const selectValueEl = triggerChildren.find((c) => c.tag === "SelectValue");
 
@@ -698,13 +685,9 @@ export const renderSelect = (
         const selectItemTemplate = selectItemChildren[0];
 
         // Field 자식들 찾기
-        const fieldChildren = context.elements
-          .filter(
-            (child) =>
-              child.parent_id === selectItemTemplate.id &&
-              child.tag === "Field",
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        const fieldChildren = (
+          context.childrenMap.get(selectItemTemplate.id) ?? []
+        ).filter((child) => child.tag === "Field");
 
         return (
           <SelectItem
@@ -900,7 +883,7 @@ export const renderComboBox = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { updateElementProps } = context;
 
   // 실제 ComboBoxItem 자식 요소들을 찾기
   const comboBoxItemChildren = (
@@ -930,13 +913,9 @@ export const renderComboBox = (
         const comboBoxItemTemplate = comboBoxItemChildren[0];
 
         // Field 자식들 찾기
-        const fieldChildren = context.elements
-          .filter(
-            (child) =>
-              child.parent_id === comboBoxItemTemplate.id &&
-              child.tag === "Field",
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        const fieldChildren = (
+          context.childrenMap.get(comboBoxItemTemplate.id) ?? []
+        ).filter((child) => child.tag === "Field");
 
         // textValue 계산 - 보이는 Field 값들을 연결하여 검색 가능한 텍스트 생성
         const textValue = fieldChildren
@@ -1016,9 +995,7 @@ export const renderComboBox = (
   const labelEl = allChildren.find((c) => c.tag === "Label");
   const wrapperEl = allChildren.find((c) => c.tag === "ComboBoxWrapper");
   const wrapperChildren = wrapperEl
-    ? elements
-        .filter((c) => c.parent_id === wrapperEl.id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    ? (context.childrenMap.get(wrapperEl.id) ?? [])
     : [];
   const inputEl = wrapperChildren.find((c) => c.tag === "ComboBoxInput");
 

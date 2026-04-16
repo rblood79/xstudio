@@ -41,7 +41,7 @@ export const renderTree = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { updateElementProps } = context;
 
   const treeItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
     (child) => child.tag === "TreeItem",
@@ -157,8 +157,6 @@ export const renderTreeItem = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
-
   const ownChildren = context.childrenMap.get(element.id) ?? [];
   const childTreeItems = ownChildren.filter(
     (child) => child.tag === "TreeItem",
@@ -553,8 +551,6 @@ export const renderTag = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
-
   // Field 자식 요소 찾기
   const fieldChildren = (context.childrenMap.get(element.id) ?? []).filter(
     (child) => child.tag === "Field",
@@ -686,7 +682,7 @@ export const renderToggleButton = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, elementsMap, updateElementProps } = context;
+  const { elementsMap, updateElementProps } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -740,7 +736,7 @@ export const renderMenu = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   // Static 방법: 직접 추가된 MenuItem 자식 요소들 찾기
   const menuItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
@@ -775,7 +771,7 @@ export const renderMenuItem = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
@@ -806,7 +802,7 @@ export const renderToolbar = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { renderElement } = context;
 
   const children = context.childrenMap.get(element.id) ?? [];
 
