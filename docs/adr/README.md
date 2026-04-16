@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-16 (ADR-068 **Proposed** — Menu items SSOT + MenuItem Spec 신설로 Skia 0-height 근본 해결 + D2/D3 동시 정합. ADR-066 패턴 확장, ADR-064 G2 PASS 종결)
+> **최종 업데이트**: 2026-04-16 (ADR-069 **Proposed** — 입력·프레임 Violation 완화: same-turn store write 병합 + FrameRenderPlan 부분 캐시. pointerdown 150ms + rAF 88ms Violation 근본 해결)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 42     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 17     |
-| **합계**                               | **67** |
+| 미구현 (Proposed/계획)                 | 18     |
+| **합계**                               | **68** |
 
 ---
 
@@ -100,6 +100,7 @@
 | [066](066-tabs-items-ssot-migration.md)            | Tabs items SSOT 전환 — RAC Collection Items 패턴 정합                               | Implemented | (2026-04-15) Tab element 소멸 + `Tabs.props.items` 단일 SSOT. TabPanel element는 자식 subtree 호스팅 유지. items[i].id ↔ TabPanel.props.itemId 페어링. TabsEditor Item Management + TabList 우측 +/- DOM 오버레이(`TabListActionOverlay`). implicitStyles/utils/HierarchyManager/treeUtils/elementReorder/elementRemoval/useLayerTreeData Tab element 로직 전면 제거. `tabsItemActions.ts` shared helper. Phase 1~7 모두 pnpm type-check 3/3 통과, CSS 107 유지. 구현 상세: [breakdown](design/066-tabs-items-ssot-migration-breakdown.md) |  **P2**  |
 | [067](067-style-panel-skia-native-read-path.md)    | 스타일 패널 Skia-native Read Path 전환 (Jotai 제거)                                 | Accepted    | 6 Phase — Transform pilot(+보조 selector 4종) → Layout/Spacing → Typography → Appearance+propagation → Fill → ComponentState+shell+jotai dep 삭제. `computeSyntheticStyle`(CSS 흉내) 제거, D3 대칭 복원. ESLint `useShallow` 금지 제약으로 개별 primitive selector + `useMemo` 조립. 구현 상세: [breakdown](design/067-style-panel-skia-native-read-path-breakdown.md)                                                                                                                                                                     |  **P2**  |
 | [068](068-menu-items-ssot-and-menuitem-spec.md)    | Menu items SSOT + MenuItem Spec 신설 (D2 + D3 동시 정합)                            | Proposed    | items SSOT (RAC pattern, ADR-066 정합) + MenuItem Spec 신설로 Menu Skia 0-height 근본 해결. D2(Props/API)+D3(시각) SSOT 동시 정합. 5 대안 평가, E(items+Spec 결합) 선택. Q1=최소 props, Q2=인스펙터, Q3=빈 메뉴 허용, Q4=Select/ComboBox는 별도 ADR, Q5=popover 닫힘. 구현 상세: [breakdown](design/068-menu-items-ssot-and-menuitem-spec-breakdown.md)                                                                                                                                                                                    |  **P2**  |
+| [069](069-input-frame-violation-mitigation.md)     | 입력·프레임 Violation 완화 — same-turn store write 병합 + FrameRenderPlan 부분 캐시 | Proposed    | pointerdown 150~170ms + rAF 88ms Violation 근본 해결. 3 대안 평가(A/B/C/D), A(store write 병합)+B(plan 부분 캐시) 결합 채택, C(SelectionModel 전면)는 별도 ADR, D(프로덕션 검증)는 Phase 0 편입. 3-domain 경계 밖 runtime 성능 영역. 4 Phase(baseline→write 병합→fan-out→plan 캐시). 구현 상세: [breakdown](design/069-input-frame-violation-mitigation-breakdown.md)                                                                                                                                                                      |  **P2**  |
 
 ## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
 
