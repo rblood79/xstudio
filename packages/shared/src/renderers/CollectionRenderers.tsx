@@ -657,8 +657,6 @@ export const renderToggleButtonGroup = (
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  // SSOT: 자식 ToggleButton element의 isSelected를 수집하여 RAC controlled selectedKeys로.
-  // RadioGroup/CheckboxGroup과 동일 철학 — group은 child state의 derived view.
   const selectedKeys = new Set<string>(
     toggleButtonChildren
       .filter((c) => Boolean(c.props.isSelected))
@@ -717,11 +715,7 @@ export const renderToggleButton = (
       parent.id === element.parent_id && parent.tag === "ToggleButtonGroup",
   );
 
-  // SSOT: element.props.isSelected.
-  // - Standalone: RAC useToggleButton이 isSelected 존중
-  // - In group: RAC useToggleButtonGroupItem은 props.isSelected 무시, groupState.selectedKeys.has(id) 기준.
-  //   → 상위 renderToggleButtonGroup이 자식 isSelected → selectedKeys로 표출하므로 양쪽 경로 모두 정합.
-  // id는 element.id(UUID) 사용 — group의 selectedKeys Set과 일치해야 하므로 SSOT 통일.
+  // id는 element.id — group의 selectedKeys Set과 키 일치 필수.
   return (
     <ToggleButton
       key={element.id}
