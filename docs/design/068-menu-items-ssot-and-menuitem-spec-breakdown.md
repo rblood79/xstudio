@@ -23,28 +23,31 @@
 
 ### 변경 대상 파일 (실제 저장소 기준 — 2026-04-17 2차 정정)
 
-| #   | 영역                          | 파일                                                                                           | 변경 유형                                                                                               |
-| --- | ----------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 1   | **types SSOT (신설)**         | `packages/specs/src/types/menu-items.ts` (Q8=가')                                              | 신규 — `StoredMenuItem` + `RuntimeMenuItem` 두 인터페이스 정의                                          |
-| 2   | types index                   | `packages/specs/src/types/index.ts`                                                            | `menu-items.ts` re-export                                                                               |
-| 3   | Spec                          | `packages/specs/src/components/Menu.spec.ts`                                                   | items prop 추가 (`StoredMenuItem[]`), propagation 재정의, Item Management 필드 → `items-manager`        |
-| 4   | Spec (신설)                   | `packages/specs/src/components/MenuItem.spec.ts`                                               | 신규 파일 — CSS 자동 생성 전용                                                                          |
-| 5   | Spec index                    | `packages/specs/src/components/index.ts`                                                       | MenuItemSpec export 추가                                                                                |
-| 6   | Specs root                    | `packages/specs/src/index.ts`                                                                  | MenuItemSpec re-export                                                                                  |
-| 7   | **인스펙터 필드 타입 (신설)** | `packages/specs/src/types/spec.types.ts`                                                       | `ItemsManagerField` 인터페이스 신설 (Q9=a) — `ChildrenManagerField`와 별개. `FieldDef` 유니온에 추가    |
-| 8   | shared Menu                   | `packages/shared/src/components/Menu.tsx:29-37`                                                | 기존 `MenuItem` 인터페이스 → **`StoredMenuItem`/`RuntimeMenuItem`으로 대체**. specs에서 import (Q8=가') |
-| 9   | **index.css 수동 import**     | `packages/shared/src/components/styles/index.css:137` (Menu Components 섹션)                   | `@import "./generated/MenuItem.css";` 1줄 추가 (Q10=i)                                                  |
-| 10  | Factory                       | `apps/builder/src/builder/factories/definitions/NavigationComponents.ts`                       | createMenuDefinition children 제거 + items=[3개 `StoredMenuItem`] 기본                                  |
-| 11  | Store reducer                 | `apps/builder/src/builder/stores/elements/...` (items reducer 진입점)                          | addMenuItem/removeMenuItem/updateMenuItem (`Partial<StoredMenuItem>` 시그니처)                          |
-| 12  | Inspector UI                  | `apps/builder/src/builder/properties/.../children-manager.tsx` (또는 신설 `items-manager.tsx`) | `ItemsManagerField` 처리 컴포넌트 — items 배열 mutation reducer 호출                                    |
-| 13  | Inspector — 폐기              | `apps/builder/src/builder/panels/properties/editors/MenuItemEditor.tsx`                        | 파일 삭제 — per-item 13 props는 items 인스펙터의 인라인 폼으로 대체 (Q7=ii)                             |
-| 14  | Layer panel                   | `apps/builder/src/builder/layers/...`                                                          | MenuItem element 노드 비표시 (Menu 자식 0 표시는 정상)                                                  |
-| 15  | **Preview 런타임**            | `packages/shared/src/renderers/CollectionRenderers.tsx:735-765` (renderMenu)                   | childrenMap 직접 읽기 → `element.props.items` (`StoredMenuItem[]`) → `RuntimeMenuItem[]` 1회 변환       |
-| 16  | metadata                      | `packages/shared/src/components/metadata.ts:891-902`                                           | MenuItem entry — `hasCustomEditor: true` → false (per-item editor 폐기). supportedEvents는 유지         |
-| 17  | tagSpecMap (제외)             | ~~`apps/builder/src/builder/workspace/canvas/skia/elements/tagSpecMap.ts`~~                    | **변경 없음** (Q5=i — Builder Skia에 MenuItem 등록 미적용)                                              |
-| 18  | TEXT_BEARING (제외)           | ~~`apps/builder/src/builder/workspace/canvas/skia/utils/specTextStyle.ts`~~                    | **변경 없음** (Q5=i)                                                                                    |
-| 19  | Skia 렌더 (제외)              | ~~`apps/builder/src/builder/workspace/canvas/skia/.../buildSpecNodeData.ts`~~                  | **변경 없음** — Menu trigger는 기존 Menu.spec render로 정상 height (자식 부재)                          |
-| 20  | 마이그레이션                  | (없음)                                                                                         | 개발 단계 — 기존 저장 broken 수용. 읽기 전용 호환 미제공 (Q7=ii)                                        |
+| #   | 영역                          | 파일                                                                                           | 변경 유형                                                                                                                  |
+| --- | ----------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **types SSOT (신설)**         | `packages/specs/src/types/menu-items.ts` (Q8=가')                                              | 신규 — `StoredMenuItem` + `RuntimeMenuItem` 두 인터페이스 정의                                                             |
+| 2   | types index                   | `packages/specs/src/types/index.ts`                                                            | `menu-items.ts` re-export                                                                                                  |
+| 3   | Spec                          | `packages/specs/src/components/Menu.spec.ts`                                                   | items prop 추가 (`StoredMenuItem[]`), propagation 재정의, Item Management 필드 → `items-manager`                           |
+| 4   | Spec (신설)                   | `packages/specs/src/components/MenuItem.spec.ts`                                               | 신규 파일 — CSS 자동 생성 전용                                                                                             |
+| 5   | Spec index                    | `packages/specs/src/components/index.ts`                                                       | MenuItemSpec export 추가                                                                                                   |
+| 6   | Specs root                    | `packages/specs/src/index.ts`                                                                  | MenuItemSpec re-export                                                                                                     |
+| 7   | **인스펙터 필드 타입 (신설)** | `packages/specs/src/types/spec.types.ts`                                                       | `ItemsManagerField` 인터페이스 신설 (Q9=a) — `ChildrenManagerField`와 별개. `FieldDef` 유니온에 추가                       |
+| 8   | shared Menu                   | `packages/shared/src/components/Menu.tsx:29-37`                                                | 기존 `MenuItem` 인터페이스 → **`StoredMenuItem`/`RuntimeMenuItem`으로 대체**. specs에서 import (Q8=가')                    |
+| 9   | **index.css 수동 import**     | `packages/shared/src/components/styles/index.css:137` (Menu Components 섹션)                   | `@import "./generated/MenuItem.css";` 1줄 추가 (Q10=i)                                                                     |
+| 10  | Factory                       | `apps/builder/src/builder/factories/definitions/NavigationComponents.ts`                       | createMenuDefinition children 제거 + items=[3개 `StoredMenuItem`] 기본                                                     |
+| 11  | Store reducer                 | `apps/builder/src/builder/stores/elements/...` (items reducer 진입점)                          | addMenuItem/removeMenuItem/updateMenuItem (`Partial<StoredMenuItem>` 시그니처)                                             |
+| 12  | Inspector UI                  | `apps/builder/src/builder/properties/.../children-manager.tsx` (또는 신설 `items-manager.tsx`) | `ItemsManagerField` 처리 컴포넌트 — items 배열 mutation reducer 호출                                                       |
+| 13  | Inspector — 폐기              | `apps/builder/src/builder/panels/properties/editors/MenuItemEditor.tsx`                        | 파일 삭제 — per-item 13 props는 items 인스펙터의 인라인 폼으로 대체 (Q7=ii)                                                |
+| 14  | Layer panel                   | `apps/builder/src/builder/layers/...`                                                          | MenuItem element 노드 비표시 (Menu 자식 0 표시는 정상)                                                                     |
+| 15  | **Preview 런타임**            | `packages/shared/src/renderers/CollectionRenderers.tsx:735-765` (renderMenu)                   | childrenMap 직접 읽기 → `element.props.items` (`StoredMenuItem[]`) → `RuntimeMenuItem[]` 1회 변환                          |
+| 16  | metadata                      | `packages/shared/src/components/metadata.ts:891-902`                                           | MenuItem entry — `hasCustomEditor: true` → false (per-item editor 폐기). supportedEvents는 유지                            |
+| 17  | tagSpecMap (제외)             | ~~`apps/builder/src/builder/workspace/canvas/skia/elements/tagSpecMap.ts`~~                    | **변경 없음** (Q5=i — Builder Skia에 MenuItem 등록 미적용)                                                                 |
+| 18  | TEXT_BEARING (제외)           | ~~`apps/builder/src/builder/workspace/canvas/skia/utils/specTextStyle.ts`~~                    | **변경 없음** (Q5=i)                                                                                                       |
+| 19  | Skia 렌더 (제외)              | ~~`apps/builder/src/builder/workspace/canvas/skia/.../buildSpecNodeData.ts`~~                  | **변경 없음** — Menu trigger는 기존 Menu.spec render로 정상 height (자식 부재)                                             |
+| 20  | 마이그레이션                  | (없음)                                                                                         | 개발 단계 — 기존 저장 broken 수용. 읽기 전용 호환 미제공 (Q7=ii)                                                           |
+| 21  | **RenderContext 확장 (신설)** | `packages/shared/src/types/renderer.types.ts:95-115`                                           | `resolveActionId?: (id: string) => (() => void) \| undefined` 필드 추가 (Q11=나). Builder/Publish가 provider에서 각자 주입 |
+| 22  | Builder resolver provider     | `apps/builder/src/preview/...` (RenderContext provider 지점)                                   | `events.registry.ts` resolver를 context에 주입                                                                             |
+| 23  | Publish resolver provider     | `apps/publish/.../` (RenderContext provider 지점)                                              | Publish 이벤트 시스템 resolver 주입 (또는 no-op)                                                                           |
 
 ### 호출 지점 매핑
 
@@ -310,17 +313,20 @@ return (
 );
 ```
 
-**After**:
+**After** (Q11=나 — resolveActionId를 context에서 주입받음):
 
 ```tsx
 import type { StoredMenuItem, RuntimeMenuItem } from "@composition/specs/types";
-import { resolveActionId } from "../events/EVENT_REGISTRY"; // ADR-055 참조
+// Q11=(나): shared 렌더러는 EVENT_REGISTRY에 직접 의존하지 않음
 
-function toRuntime(item: StoredMenuItem): RuntimeMenuItem {
+function toRuntime(
+  item: StoredMenuItem,
+  resolve?: (id: string) => (() => void) | undefined,
+): RuntimeMenuItem {
   return {
     ...item,
-    onAction: item.onActionId ? resolveActionId(item.onActionId) : undefined,
-    children: item.children?.map(toRuntime),
+    onAction: item.onActionId ? resolve?.(item.onActionId) : undefined,
+    children: item.children?.map((c) => toRuntime(c, resolve)),
   };
 }
 
@@ -329,7 +335,7 @@ export const renderMenu = (
   context: RenderContext,
 ): React.ReactNode => {
   const stored = (element.props.items ?? []) as StoredMenuItem[];
-  const runtime = stored.map(toRuntime);
+  const runtime = stored.map((it) => toRuntime(it, context.resolveActionId));
   return (
     <MenuButton
       key={element.id}
