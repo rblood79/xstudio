@@ -146,6 +146,12 @@ export interface ElementsState {
   ) => void;
   activatePage: (pageId: string, elementId?: string | null) => void;
   setCurrentPageId: (pageId: string) => void;
+  // ADR-069 Phase 1: 페이지 전환 + 선택을 단일 set()으로 병합
+  // clearSelection + setCurrentPageId + setSelectedElement 3회 notify → 1회
+  selectElementWithPageTransition: (
+    elementId: string,
+    targetPageId: string | null,
+  ) => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   goToHistoryIndex: (targetIndex: number) => Promise<void>;
@@ -1074,6 +1080,62 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         console.log("[perf] store.set-current-page", {
           durationMs: Number(duration.toFixed(1)),
           pageId,
+        });
+      }
+    },
+
+    // ADR-069 Phase 1: 페이지 전환 + 선택 동시 처리 — 단일 set() 보장
+    // 기존 3-set 조합(clearSelection + setCurrentPageId + setSelectedElement)은
+    // 외부 store notify를 3회 발생시켜 구독자 fan-out이 누적된다.
+    // 본 action은 selection + currentPageId + editingContextId + multiSelectMode를
+    // 한 번의 set()에 병합하고, props hydrate는 기존 Phase2 패턴(scheduleNextFrame)
+    // 을 그대로 유지한다.
+    selectElementWithPageTransition: (elementId, targetPageId) => {
+      const startTime = performance.now();
+      cancelHydrateSelectedProps();
+
+      const currentState = get();
+      const shouldChangePage =
+        targetPageId != null && targetPageId !== currentState.currentPageId;
+
+      if (shouldChangePage) {
+        historyManager.setCurrentPage(targetPageId);
+      }
+
+      // Phase 1 (즉시): 캔버스 하이라이트용 상태 병합
+      set({
+        ...(shouldChangePage
+          ? { currentPageId: targetPageId, editingContextId: null }
+          : {}),
+        selectedElementId: elementId,
+        selectedElementIds: [elementId],
+        selectedElementIdsSet: new Set([elementId]),
+        multiSelectMode: false,
+      });
+
+      // Phase 2 (다음 프레임): 인스펙터용 props hydrate
+      scheduleNextFrame(() => {
+        const latestState = get();
+        if (latestState.selectedElementId !== elementId) return;
+
+        const element =
+          latestState.elementsMap.get(elementId) ??
+          findElementById(latestState.elements, elementId);
+        const initialProps = element ? createCompleteProps(element) : {};
+
+        set({ selectedElementProps: initialProps });
+      });
+
+      // computedStyle 백그라운드 hydration
+      scheduleHydrateSelectedProps(elementId);
+
+      const duration = performance.now() - startTime;
+      if (duration >= 8) {
+        console.log("[perf] store.select-with-page-transition", {
+          durationMs: Number(duration.toFixed(1)),
+          elementId,
+          targetPageId,
+          pageChanged: shouldChangePage,
         });
       }
     },

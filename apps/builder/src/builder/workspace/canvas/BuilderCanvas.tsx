@@ -158,6 +158,10 @@ export function BuilderCanvas({
   const selectedElementId = useStore((state) => state.selectedElementId);
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
+  // ADR-069 Phase 1: 페이지 전환 + 선택 병합 action
+  const selectElementWithPageTransition = useStore(
+    (state) => state.selectElementWithPageTransition,
+  );
   const editingContextId = useStore((state) => state.editingContextId);
   const invalidateLayout = useStore((state) => state.invalidateLayout);
 
@@ -567,6 +571,7 @@ export function BuilderCanvas({
     useCanvasElementSelectionHandlers({
       clearSelection,
       isEditing,
+      selectElementWithPageTransition,
       setCurrentPageId,
       setSelectedElement,
       setSelectedElements,

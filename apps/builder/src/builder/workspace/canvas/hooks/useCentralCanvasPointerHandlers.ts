@@ -169,6 +169,11 @@ export function useCentralCanvasPointerHandlers({
         y: event.clientY - rect.top,
       });
 
+      // ADR-069 Phase 1-C(deferred): computeSelectionBoundsForHitTest 2회 호출(L172/L242)은
+      // 각각 (1) 이전 selection 기준 리사이즈 핸들 감지, (2) 새 selection 기준 pendingDrag
+      // bounds 설정을 담당한다. 단일 요소 Map 조회 기반이라 이론상 저렴(O(1) per selected
+      // element)하므로 조건부 skip은 Phase 0 baseline 측정에서 실제 비용이 확인된 후에
+      // 재평가한다. 지금 최적화는 premature.
       const selectionBounds = computeSelectionBoundsForHitTest();
       selectionBoundsRef.current = selectionBounds;
 
