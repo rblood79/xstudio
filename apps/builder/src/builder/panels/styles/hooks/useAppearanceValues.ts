@@ -3,12 +3,12 @@
  */
 
 import { useMemo } from "react";
-import { useStore } from "../../../stores";
 import {
   resolveAppearanceSpecPreset,
   type AppearanceSpecPreset,
 } from "../utils/specPresetResolver";
 import { numToPx, firstDefined } from "../utils/styleValueHelpers";
+import { useElementStyleContext } from "./useElementStyleContext";
 
 export interface AppearanceStyleValues {
   backgroundColor: string;
@@ -23,16 +23,7 @@ export interface AppearanceStyleValues {
 export function useAppearanceValues(
   id: string | null,
 ): AppearanceStyleValues | null {
-  const style = useStore((s) => {
-    if (!id) return undefined;
-    const el = s.elementsMap.get(id);
-    return el?.props?.style as Record<string, unknown> | undefined;
-  });
-  const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
-  const size = useStore((s) => {
-    if (!id) return undefined;
-    return s.elementsMap.get(id)?.props?.size as string | undefined;
-  });
+  const { style, type, size } = useElementStyleContext(id);
 
   const specPreset = useMemo<AppearanceSpecPreset>(
     () => resolveAppearanceSpecPreset(type, size),

@@ -17,6 +17,7 @@ import type {
   ColumnMapping,
   DataBinding,
 } from "../types";
+import { getSelectedChildIds } from "./selection";
 
 /**
  * Collection 관련 컴포넌트 렌더러
@@ -658,9 +659,7 @@ export const renderToggleButtonGroup = (
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const selectedKeys = new Set<string>(
-    toggleButtonChildren
-      .filter((c) => Boolean(c.props.isSelected))
-      .map((c) => c.id),
+    getSelectedChildIds(toggleButtonChildren),
   );
 
   return (

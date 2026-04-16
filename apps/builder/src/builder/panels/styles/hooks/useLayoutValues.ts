@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { useStore } from "../../../stores";
 import {
   resolveLayoutSpecPreset,
   type LayoutSpecPreset,
 } from "../utils/specPresetResolver";
 import { numToPx, firstDefined } from "../utils/styleValueHelpers";
+import { useElementStyleContext } from "./useElementStyleContext";
 
 export interface LayoutStyleValues {
   display: string;
@@ -26,16 +26,7 @@ export interface LayoutStyleValues {
 }
 
 export function useLayoutValues(id: string | null): LayoutStyleValues | null {
-  const style = useStore((s) => {
-    if (!id) return undefined;
-    const el = s.elementsMap.get(id);
-    return el?.props?.style as Record<string, unknown> | undefined;
-  });
-  const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
-  const size = useStore((s) => {
-    if (!id) return undefined;
-    return s.elementsMap.get(id)?.props?.size as string | undefined;
-  });
+  const { style, type, size } = useElementStyleContext(id);
 
   const specPreset = useMemo<LayoutSpecPreset>(
     () => resolveLayoutSpecPreset(type, size),

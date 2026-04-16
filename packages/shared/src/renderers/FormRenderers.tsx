@@ -19,6 +19,7 @@ import {
 import { MyColorSwatches } from "../components/TailSwatch";
 import { parseColor, type Color } from "react-aria-components";
 import type { PreviewElement, RenderContext } from "../types";
+import { getSelectedChildIds } from "./selection";
 
 /**
  * Form 관련 컴포넌트 렌더러
@@ -437,11 +438,7 @@ export const renderLabel = (
   }
 
   return (
-    <Label
-      key={element.id}
-      id={element.customId}
-      data-element-id={element.id}
-    >
+    <Label key={element.id} id={element.customId} data-element-id={element.id}>
       {content}
     </Label>
   );
@@ -595,9 +592,7 @@ export const renderCheckboxGroup = (
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // isSelected: true인 체크박스들의 ID를 value 배열로 생성
-  const selectedValues = checkboxChildren
-    .filter((checkbox) => checkbox.props.isSelected)
-    .map((checkbox) => checkbox.id);
+  const selectedValues = getSelectedChildIds(checkboxChildren);
 
   // 그룹 라벨: Label 자식 Element의 텍스트 사용 (renderElement 호출 제거 — 이중 렌더링 방지)
   const groupLabel =
