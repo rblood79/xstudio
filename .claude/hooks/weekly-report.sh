@@ -63,4 +63,11 @@ for s in "brainstorming" "writing-plans" "verification-before-completion" "syste
   fi
 done
 
+# INDEX.md 자동 갱신 (update-index.sh 연동)
+if [ -x "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/update-index.sh" ]; then
+  echo ""
+  echo "--- INDEX.md 갱신 ---"
+  "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/update-index.sh" "$days"
+fi
+
 exit 0

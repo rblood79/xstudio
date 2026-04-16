@@ -45,7 +45,87 @@ pnpm storybook              # Storybook
 - 위험한 다중 파일 작업 전: 현재 진행상황 WIP 커밋 후 진행
 - 세션 중단 대비: 남은 작업을 간결 메모로 남기고 다음 세션에서 이어가기
 
+## Claude Code 2.1.x 활용 (2.1.110 기준)
+
+### 세션 시작 플래그
+
+| 플래그                     | 용도                                  | 언제 쓰는가                    |
+| -------------------------- | ------------------------------------- | ------------------------------ |
+| `--effort max`             | 최고 품질 추론                        | 복잡한 설계/리팩토링           |
+| `--fork-session`           | 세션 복제 후 분기                     | 실험적 경로 테스트             |
+| `--from-pr <NNN>`          | PR 연동 세션                          | PR 리뷰/수정 재개              |
+| `--worktree <name>`        | git worktree 격리                     | 대규모 변경                    |
+| `--tmux`                   | iTerm2/tmux 네이티브 패널             | 병렬 세션 `--worktree` 조합 시 |
+| `--max-budget-usd <N>`     | 세션당 예산 상한                      | `-p` 스크립트 실행 시 보호     |
+| `--bare`                   | 최소 모드 (hooks/MCP/auto-memory OFF) | 빠른 일회성 질문               |
+| `--chrome` / `--no-chrome` | Chrome 통합 on/off                    | evaluator agent UI 검증 시 on  |
+
+### Prompt Cache 최적화
+
+`.claude/settings.json`에 `excludeDynamicSystemPromptSections: true` 설정됨 — cwd/env/git status를 시스템 프롬프트에서 분리해 cross-user cache 재사용률↑. 효과 확인: 장기 세션 토큰 비용 감소.
+
+### 출력 스타일
+
+`.claude/output-styles/` 내 미리 정의된 모드 (2.1.x 호환):
+
+- `debug-mode` — root-cause 규율. 증상 덮기 금지, 가설→검증→수정 순서
+- `plan-mode` — 코드 수정 금지, 구조/대안/위험만 탐색
+
+사용법: `/output-style debug-mode` (세션 중 전환) 또는 `--output-style plan-mode` (세션 시작 시).
+
+### auto-mode 확인
+
+```bash
+claude auto-mode config      # 현재 유효 규칙 (설정+기본값 병합)
+claude auto-mode defaults    # 기본 allow/soft_deny/environment
+claude auto-mode critique    # 커스텀 규칙 AI 피드백
+```
+
+composition은 현재 기본값만 사용. 커스텀 규칙은 `~/.claude/settings.json` 의 `autoMode` 키로 설정 (프로젝트별 오버라이드 가능).
+
+## 사용 통계 / 주간 리포트
+
+```bash
+# 주간 리포트 (INDEX.md 자동 갱신 포함)
+.claude/hooks/weekly-report.sh 7
+
+# INDEX.md 사용 빈도만 갱신 (기본 30일)
+.claude/hooks/update-index.sh 30
+```
+
+### 자동 기록
+
+| 파일                        | 트리거                       | 스키마                                                               |
+| --------------------------- | ---------------------------- | -------------------------------------------------------------------- |
+| `stats/agents.jsonl`        | SubagentStop hook            | `{ts, agent_type, agent_id, session_id}` — 서브에이전트 종료마다 1건 |
+| `stats/agents.legacy.jsonl` | (격리 보존)                  | 구 스키마 183건 — 참고용                                             |
+| `stats/daily-log.jsonl`     | SessionStart hook (하루 1회) | `{date, sessions, turns, skills:{...}, agents:{...}}` — 누적 카운트  |
+
+### daily-log.jsonl 활용
+
+매일 최초 세션 접속 시 자동 기록되는 누적 스냅샷. 일간 활동량은 인접 2일 diff로 계산:
+
+```bash
+# 전일 대비 diff (어제 ~ 오늘 사이 skill 활동)
+jq -s '
+  .[-1] as $t | .[-2] as $y
+  | $t.skills | to_entries
+  | map(. as $e | .key as $k
+    | {key: $k, value: ($e.value - (($y.skills[$k]) // 0))})
+  | map(select(.value > 0)) | from_entries
+' .claude/stats/daily-log.jsonl
+
+# 주간 트렌드 (최근 7일 요약)
+jq -s '.[-7:] | map({date, turns, skill_kinds: (.skills | length), agent_kinds: (.agents | length)})' .claude/stats/daily-log.jsonl
+```
+
+### 주의
+
+- INDEX.md 하단의 `<!-- usage-stats-begin ~ end -->` 블록은 `update-index.sh` 자동 생성 — 수동 편집 금지
+- `daily-stats-snapshot.sh`는 SessionStart에서 백그라운드 실행 → 세션 시작 블로킹 없음
+
 ## 메모
 
 - PostToolUse type-check 제거됨 → Stop hook만 type-check 실행 (매 편집마다 45s 대기 제거)
 - 규칙 다이어트 적용: rules/ 파일은 원칙만, 상세는 skills/composition-patterns/reference/
+- `.claude/settings.json` 의 `Bash(*)` 존재 시 개별 `Bash(cmd:*)` 항목은 redundant (2.1.x 재정비 결과)

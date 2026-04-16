@@ -151,6 +151,14 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:6006
 - 2~3회 실패 시 무한 재시도 금지 — 사용자에게 상황 보고
 - 탭 ID는 세션 간 재사용 금지 — 항상 `tabs_context_mcp`로 최신 확인
 
+## Memory 활용 (세션 간 지식 축적)
+
+검증 완료 후 `.claude/agent-memory/evaluator/MEMORY.md`에 아래를 기록한다:
+
+- **검증 환경 변경**: 포트, 테스트 계정, 시드 데이터
+- **재현 가능한 실패 패턴**: 반복 발견된 시각 불일치·FPS 저하 케이스
+- **Chrome MCP 노하우**: 측정·스크린샷 캡처 중 회피한 함정
+
 ## 출력 가이드라인
 
 - 모든 판정에 스크린샷 또는 콘솔 출력 근거를 첨부

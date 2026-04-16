@@ -109,6 +109,14 @@ Proposed | Accepted | Deprecated | Superseded
 - `.claude/skills/composition-patterns/SKILL.md` — 코드 패턴 및 규칙
 - `docs/adr/` — 기존 아키텍처 결정
 
+## Memory 활용 (세션 간 지식 축적)
+
+문서 작업 완료 후 `.claude/agent-memory/documenter/MEMORY.md`에 아래를 기록한다:
+
+- **docs/ 구조 변경**: 새 디렉토리, 레거시 이동, 인덱스 파일 갱신
+- **ADR 번호 할당 현황**: 번호 충돌 방지를 위한 최신 상태
+- **반복 편집 템플릿**: 흔히 변경되는 섹션 패턴 (e.g. Status 전이, Gates 업데이트)
+
 ## 출력 가이드라인
 
 - 문서는 간결하되 충분히 상세하게

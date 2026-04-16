@@ -2,6 +2,11 @@
 # SessionStart hook — 세션 시작 시 composition 전용 agent/skill 로스터 및 권장 워크플로 주입
 set -euo pipefail
 
+# 일별 통계 스냅샷 (하루 1회만 기록, 백그라운드 실행으로 세션 시작 블로킹 없음)
+if [ -x "$CLAUDE_PROJECT_DIR/.claude/hooks/daily-stats-snapshot.sh" ]; then
+  "$CLAUDE_PROJECT_DIR/.claude/hooks/daily-stats-snapshot.sh" >/dev/null 2>&1 &
+fi
+
 cat <<'EOF'
 <composition-workflow-roster>
 # composition 전용 워크플로 (자동 주입 — SessionStart)

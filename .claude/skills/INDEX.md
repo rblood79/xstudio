@@ -39,3 +39,45 @@
 - 2주 후 목표: ≥ 60% (18/30)
 - 미사용 핵심 3종: `brainstorming`, `writing-plans`, `verification-before-completion`
 - UserPromptSubmit hook(`route-prompt.sh`)이 키워드 기반으로 자동 힌트 주입
+
+<!-- usage-stats-begin -->
+<!-- 자동 생성: .claude/hooks/update-index.sh — 수동 편집 금지 -->
+
+## 📊 최근 30일 사용 빈도 (갱신: 2026-04-16)
+
+### Skills
+
+| Skill | 호출 수 |
+| --- | ---: |
+| superpowers:writing-plans | 6 |
+| superpowers:brainstorming | 6 |
+| superpowers:subagent-driven-development | 5 |
+| review-adr | 5 |
+| cross-check | 5 |
+| composition-patterns | 4 |
+| superpowers:using-superpowers | 2 |
+| superpowers:using-git-worktrees | 2 |
+| superpowers:systematic-debugging | 2 |
+| update-config | 1 |
+| superpowers:executing-plans | 1 |
+| react-spectrum | 1 |
+| parallel-verify | 1 |
+| create-adr | 1 |
+| claude-code-guide | 1 |
+
+### Agents
+
+| Agent | 호출 수 |
+| --- | ---: |
+| implementer | 54 |
+| Explore | 35 |
+| reviewer | 15 |
+| debugger | 7 |
+| codex:codex-rescue | 6 |
+| general-purpose | 4 |
+| tester | 2 |
+| refactorer | 2 |
+| evaluator | 2 |
+| documenter | 2 |
+
+<!-- usage-stats-end -->

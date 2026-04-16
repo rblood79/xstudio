@@ -1,11 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(*)",
-      "Bash(node scripts/:*)",
-      "Bash(npx playwright:*)",
-      "Bash(pnpm run check:*)",
-      "Bash(pnpm run perf:*)"
+      "Bash(*)"
     ]
   },
   "alwaysThinkingEnabled": true,
@@ -88,5 +84,6 @@
         ]
       }
     ]
-  }
+  },
+  "excludeDynamicSystemPromptSections": true
 }
