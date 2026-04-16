@@ -65,6 +65,9 @@ function getEventEngine(): EventEngine {
 function CanvasContent() {
   const elements = useRuntimeStore((s) => s.elements) as PreviewElement[];
   const updateElementProps = useRuntimeStore((s) => s.updateElementProps);
+  const batchUpdateElementProps = useRuntimeStore(
+    (s) => s.batchUpdateElementProps,
+  );
   const setElements = useRuntimeStore((s) => s.setElements);
   const currentLayoutId = useRuntimeStore((s) => s.currentLayoutId);
   const currentPageId = useRuntimeStore((s) => s.currentPageId);
@@ -373,6 +376,7 @@ function CanvasContent() {
       elementsMap,
       childrenMap,
       updateElementProps,
+      batchUpdateElementProps,
       setElements: (newElements: PreviewElement[]) => {
         setElements(newElements as RuntimeElement[]);
       },
@@ -385,6 +389,7 @@ function CanvasContent() {
       elementsMap,
       childrenMap,
       updateElementProps,
+      batchUpdateElementProps,
       setElements,
       eventEngine,
     ],

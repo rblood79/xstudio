@@ -5,7 +5,7 @@
  * postMessage를 통해서만 데이터를 수신합니다.
  */
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties } from "react";
 
 // Element 타입 (Runtime에서 사용하는 최소 타입)
 export interface RuntimeElement {
@@ -31,7 +31,7 @@ export interface RuntimePage {
   slug: string;
   order_num: number;
   layout_id?: string | null;
-  parent_id?: string | null;  // Nested Routes 지원
+  parent_id?: string | null; // Nested Routes 지원
 }
 
 // Layout 타입 (Nested Routes & Slug System)
@@ -52,9 +52,9 @@ export interface ThemeVar {
 export interface DataSource {
   id: string;
   name: string;
-  type: 'rest' | 'supabase' | 'static' | 'graphql';
+  type: "rest" | "supabase" | "static" | "graphql";
   url?: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   headers?: Record<string, string>;
   body?: string;
   table?: string;
@@ -62,7 +62,7 @@ export interface DataSource {
   realtime?: boolean;
   data?: unknown;
   transform?: string;
-  autoFetch?: 'onLoad' | 'manual';
+  autoFetch?: "onLoad" | "manual";
   cacheTTL?: number;
 }
 
@@ -85,7 +85,7 @@ export interface RuntimeDataTable {
 export interface RuntimeApiEndpoint {
   id: string;
   name: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   baseUrl: string;
   path: string;
   headers?: Record<string, string>;
@@ -99,10 +99,10 @@ export interface RuntimeApiEndpoint {
 export interface RuntimeVariable {
   id: string;
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  type: "string" | "number" | "boolean" | "object" | "array";
   defaultValue?: unknown;
   persist: boolean;
-  scope: 'global' | 'page' | 'component';
+  scope: "global" | "page" | "component";
   page_id?: string;
 }
 
@@ -129,6 +129,12 @@ export interface RuntimeStoreState extends StateHierarchy {
   elements: RuntimeElement[];
   setElements: (elements: RuntimeElement[]) => void;
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
+  /**
+   * 여러 요소 props를 한 번의 set()으로 일괄 적용 (Preview 단일 commit 보장)
+   */
+  batchUpdateElementProps: (
+    updates: Array<{ id: string; props: Record<string, unknown> }>,
+  ) => void;
 
   // 🚀 Phase 4: Delta Update Actions
   addElement: (element: RuntimeElement) => void;

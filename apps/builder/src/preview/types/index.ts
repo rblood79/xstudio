@@ -32,6 +32,10 @@ export interface RenderContext {
   /** parent_id 기반 자식 조회 인덱스 — order_num 정렬됨 */
   childrenMap: Map<string, PreviewElement[]>;
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
+  /** 여러 element props를 한 번에 업데이트 (단일 commit) */
+  batchUpdateElementProps: (
+    updates: Array<{ id: string; props: Record<string, unknown> }>,
+  ) => void;
   setElements: (elements: PreviewElement[]) => void;
   eventEngine: EventEngine;
   projectId?: string;

@@ -554,7 +554,12 @@ export const renderCheckboxGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps, renderElement } = context;
+  const {
+    elements,
+    updateElementProps,
+    batchUpdateElementProps,
+    renderElement,
+  } = context;
 
   // Compositional: Label + CheckboxItems(중간 컨테이너) + Checkbox(레거시) 자식 분리
   const allChildren = context.childrenMap.get(element.id) ?? [];
@@ -607,21 +612,25 @@ export const renderCheckboxGroup = (
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={async (newSelectedValues) => {
-        const updatedProps = {
-          ...element.props,
-          value: newSelectedValues,
-        };
-        updateElementProps(element.id, updatedProps);
-
+        const batch: Array<{ id: string; props: Record<string, unknown> }> = [
+          {
+            id: element.id,
+            props: { ...element.props, value: newSelectedValues },
+          },
+        ];
         for (const checkbox of checkboxChildren) {
           const isSelected = newSelectedValues.includes(checkbox.id);
           if (checkbox.props.isSelected !== isSelected) {
-            updateElementProps(checkbox.id, {
-              ...checkbox.props,
-              isSelected,
-            } as Record<string, unknown>);
+            batch.push({
+              id: checkbox.id,
+              props: { ...checkbox.props, isSelected } as Record<
+                string,
+                unknown
+              >,
+            });
           }
         }
+        batchUpdateElementProps(batch);
       }}
     >
       <div className="checkbox-items">
@@ -740,7 +749,7 @@ export const renderRadioGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps, renderElement } = context;
+  const { elements, batchUpdateElementProps, renderElement } = context;
 
   // Compositional: Label + RadioItems(중간 컨테이너) + Radio(레거시) 자식 분리
   const allChildren = context.childrenMap.get(element.id) ?? [];
@@ -787,22 +796,23 @@ export const renderRadioGroup = (
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(selectedValue) => {
-        const updatedProps = {
-          ...element.props,
-          value: selectedValue,
-        };
-        updateElementProps(element.id, updatedProps);
-
+        const batch: Array<{ id: string; props: Record<string, unknown> }> = [
+          {
+            id: element.id,
+            props: { ...element.props, value: selectedValue },
+          },
+        ];
         // 개별 Radio의 isSelected도 동기화
         for (const radio of radioChildren) {
           const isSelected = radio.props.value === selectedValue;
           if (radio.props.isSelected !== isSelected) {
-            updateElementProps(radio.id, {
-              ...radio.props,
-              isSelected,
-            } as Record<string, unknown>);
+            batch.push({
+              id: radio.id,
+              props: { ...radio.props, isSelected } as Record<string, unknown>,
+            });
           }
         }
+        batchUpdateElementProps(batch);
       }}
     >
       <div className="radio-items">

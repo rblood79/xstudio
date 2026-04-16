@@ -630,7 +630,7 @@ export const renderToggleButtonGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { elements, batchUpdateElementProps } = context;
 
   const orientation = element.props.orientation as "horizontal" | "vertical";
   const indicator = Boolean(element.props.indicator);
@@ -659,15 +659,17 @@ export const renderToggleButtonGroup = (
       selectedKeys={selectedKeys}
       onSelectionChange={(keys) => {
         const nextKeys = new Set(Array.from(keys).map((k) => String(k)));
+        const batch: Array<{ id: string; props: Record<string, unknown> }> = [];
         toggleButtonChildren.forEach((child) => {
           const shouldBeSelected = nextKeys.has(child.id);
           if (Boolean(child.props.isSelected) !== shouldBeSelected) {
-            updateElementProps(child.id, {
-              ...child.props,
-              isSelected: shouldBeSelected,
+            batch.push({
+              id: child.id,
+              props: { ...child.props, isSelected: shouldBeSelected },
             });
           }
         });
+        if (batch.length > 0) batchUpdateElementProps(batch);
       }}
     >
       {toggleButtonChildren.map((toggleButton) =>

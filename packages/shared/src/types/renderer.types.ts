@@ -101,6 +101,10 @@ export interface RenderContext {
   childrenMap: Map<string, PreviewElement[]>;
   /** element props 업데이트 함수 */
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
+  /** 여러 element props를 한 번에 업데이트 (단일 commit, group 자식 sync 등) */
+  batchUpdateElementProps: (
+    updates: Array<{ id: string; props: Record<string, unknown> }>,
+  ) => void;
   /** elements 전체 교체 함수 */
   setElements: (elements: PreviewElement[]) => void;
   /** 재귀 렌더링 함수 */
