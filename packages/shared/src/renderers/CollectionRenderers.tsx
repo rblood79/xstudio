@@ -212,16 +212,15 @@ export const renderTagGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps, setElements } = context;
+  const { elements, childrenMap, updateElementProps, setElements } = context;
 
   // Tag 자식 검색: TagGroup 직접 자식 또는 TagList 중간 레이어 하위 모두 지원
-  const tagListChild = elements.find(
-    (child) => child.parent_id === element.id && child.tag === "TagList",
-  );
+  const tagListChild = childrenMap
+    .get(element.id)
+    ?.find((child) => child.tag === "TagList");
   const tagParentId = tagListChild ? tagListChild.id : element.id;
-  const tagChildren = elements
-    .filter((child) => child.parent_id === tagParentId && child.tag === "Tag")
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const tagChildren =
+    childrenMap.get(tagParentId)?.filter((child) => child.tag === "Tag") ?? [];
 
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -239,9 +238,7 @@ export const renderTagGroup = (
   // Tag 템플릿에 Field children이 있는지 미리 확인
   const tagTemplate = tagChildren.length > 0 ? tagChildren[0] : null;
   const fieldChildrenInTemplate = tagTemplate
-    ? elements.filter(
-        (child) => child.parent_id === tagTemplate.id && child.tag === "Field",
-      )
+    ? (childrenMap.get(tagTemplate.id)?.filter((c) => c.tag === "Field") ?? [])
     : [];
   const hasFieldChildren = fieldChildrenInTemplate.length > 0;
 
@@ -258,12 +255,10 @@ export const renderTagGroup = (
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
         const tagTemplate = tagChildren[0];
-        const fieldChildren = context.elements
-          .filter(
-            (child) =>
-              child.parent_id === tagTemplate.id && child.tag === "Field",
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        const fieldChildren =
+          context.childrenMap
+            .get(tagTemplate.id)
+            ?.filter((child) => child.tag === "Field") ?? [];
 
         return (
           <Tag

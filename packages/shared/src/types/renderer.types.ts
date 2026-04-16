@@ -97,6 +97,8 @@ export interface RenderContext {
   elements: PreviewElement[];
   /** id 기반 O(1) 조회용 인덱스 (provider가 elements와 함께 빌드) */
   elementsMap: Map<string, PreviewElement>;
+  /** parent_id 기반 자식 조회 인덱스 — order_num 정렬됨 */
+  childrenMap: Map<string, PreviewElement[]>;
   /** element props 업데이트 함수 */
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
   /** elements 전체 교체 함수 */

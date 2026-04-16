@@ -343,17 +343,35 @@ function CanvasContent() {
     };
   }, [handleLinkClick]);
 
-  // id 기반 O(1) 조회 인덱스 (RenderContext에 함께 노출)
+  // id/parent_id 기반 O(1) 조회 인덱스 (RenderContext에 함께 노출)
   const elementsMap = useMemo(
     () => new Map(elements.map((el) => [el.id, el])),
     [elements],
   );
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, PreviewElement[]>();
+    for (const el of elements) {
+      const pid = el.parent_id;
+      if (!pid) continue;
+      let bucket = map.get(pid);
+      if (!bucket) {
+        bucket = [];
+        map.set(pid, bucket);
+      }
+      bucket.push(el);
+    }
+    for (const bucket of map.values()) {
+      bucket.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }
+    return map;
+  }, [elements]);
 
   // RenderContext 생성
   const renderContext: RenderContext = useMemo(
     () => ({
       elements,
       elementsMap,
+      childrenMap,
       updateElementProps,
       setElements: (newElements: PreviewElement[]) => {
         setElements(newElements as RuntimeElement[]);
@@ -362,7 +380,14 @@ function CanvasContent() {
       renderElement: (el: PreviewElement, key?: string) =>
         renderElementInternalRef.current(el, key),
     }),
-    [elements, elementsMap, updateElementProps, setElements, eventEngine],
+    [
+      elements,
+      elementsMap,
+      childrenMap,
+      updateElementProps,
+      setElements,
+      eventEngine,
+    ],
   );
 
   // Element 렌더링 함수 (내부)

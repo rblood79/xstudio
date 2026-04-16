@@ -102,7 +102,7 @@ export const renderTabs = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps, renderElement } = context;
+  const { elements, childrenMap, updateElementProps, renderElement } = context;
 
   // PropertyDataBinding 형식 감지
   const dataBinding = element.dataBinding || element.props.dataBinding;
@@ -118,14 +118,13 @@ export const renderTabs = (
     (element.props.items as Array<{ id: string; title: string }>) ?? [];
 
   // TabPanel element는 TabPanels 아래에 존재, itemId로 items와 페어링.
-  const tabPanelsElement = elements.find(
-    (child) => child.parent_id === element.id && child.tag === "TabPanels",
-  );
+  const tabPanelsElement = childrenMap
+    .get(element.id)
+    ?.find((child) => child.tag === "TabPanels");
   const panelChildren = tabPanelsElement
-    ? elements.filter(
-        (child) =>
-          child.parent_id === tabPanelsElement.id && child.tag === "TabPanel",
-      )
+    ? (childrenMap
+        .get(tabPanelsElement.id)
+        ?.filter((child) => child.tag === "TabPanel") ?? [])
     : [];
   const findPanelForItem = (itemId: string) =>
     panelChildren.find(
@@ -718,12 +717,10 @@ export const renderProgressBar = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
+  const { childrenMap } = context;
 
   // Child element에서 label 읽기 (compositional 패턴)
-  const labelEl = elements.find(
-    (c) => c.parent_id === element.id && c.tag === "Label",
-  );
+  const labelEl = childrenMap.get(element.id)?.find((c) => c.tag === "Label");
   const label = labelEl
     ? String(labelEl.props?.children || "")
     : String(element.props.label || "");
@@ -775,12 +772,12 @@ export const renderMeter = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
+  const { childrenMap } = context;
 
   // Child element에서 label 읽기 (compositional 패턴)
-  const meterLabelEl = elements.find(
-    (c) => c.parent_id === element.id && c.tag === "Label",
-  );
+  const meterLabelEl = childrenMap
+    .get(element.id)
+    ?.find((c) => c.tag === "Label");
   const meterLabel = meterLabelEl
     ? String(meterLabelEl.props?.children || "")
     : String(element.props.label || "");
