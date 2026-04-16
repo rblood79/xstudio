@@ -340,14 +340,11 @@ export function resetLongTasks(label?: LongTaskLabel): void {
   }
 }
 
-let longTaskObserverStarted = false;
-
 function initLongTaskObserver(): void {
-  if (longTaskObserverStarted) return;
   if (typeof window === "undefined") return;
   if (typeof PerformanceObserver === "undefined") return;
   try {
-    // Feature-detect 'longtask' support without throwing in unsupported browsers.
+    // Feature-detect 'longtask' without throwing in unsupported browsers (Safari).
     const supported = (
       PerformanceObserver as unknown as {
         supportedEntryTypes?: readonly string[];
@@ -361,9 +358,8 @@ function initLongTaskObserver(): void {
       }
     });
     observer.observe({ entryTypes: ["longtask"] });
-    longTaskObserverStarted = true;
   } catch {
-    // Some browsers (Safari) throw on unsupported entryType — silently skip.
+    // Unsupported entryType — silently skip.
   }
 }
 

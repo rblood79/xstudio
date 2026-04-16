@@ -112,8 +112,6 @@ export function useAutoRecovery(options?: {
   const isRecoveringRef = useRef(false);
   const lastCheckTimeRef = useRef(0);
 
-  // Store 액션
-  // ADR-069 Phase 2-B: stable action 구독 제거 (clearAllPages → getState lazy)
   const currentPageId = useStore((state) => state.currentPageId);
 
   /**
@@ -146,10 +144,7 @@ export function useAutoRecovery(options?: {
       try {
         // 1단계: 비활성 페이지 언로드
         console.log("  Step 1: Unloading inactive pages...");
-        const { clearAllPages } = useStore.getState();
-        if (clearAllPages) {
-          clearAllPages();
-        }
+        useStore.getState().clearAllPages();
 
         // 2단계: 히스토리 정리 (trim 메서드 미구현 - 스킵)
         console.log("  Step 2: History trimming skipped (not implemented)");

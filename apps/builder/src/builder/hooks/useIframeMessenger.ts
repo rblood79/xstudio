@@ -110,14 +110,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const previewGeneratedElementsRef = useRef<Map<string, Element>>(new Map());
   const previewGeneratedElementsFlushIdRef = useRef<number | null>(null);
 
-  // 🚀 최적화: elements 구독 제거 - iframe 동기화는 BuilderCore에서 store.subscribe로 처리
-  // const elements = useStore((state) => state.elements);  // REMOVED
-  // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
-  // ADR-069 Phase 2-B: setSelectedElement 구독 제거 → 사용처에서 useStore.getState() lazy 호출
-  // updateElementProps는 useZundoActions에서 가져옴
-
-  // ⭐ Layout/Slot System: Page 정보 구독
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
 

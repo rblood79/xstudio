@@ -71,9 +71,7 @@ export function useCollectionItemManager(
     null,
   );
 
-  // ADR-069 Phase 2-B: stable action 구독 3건 제거 (addElement/updateElementProps/removeElement → getState lazy)
   const currentPageId = useStore((state) => state.currentPageId);
-  // ADR-040: childrenMap O(1) 조회 (전체 elements 배열 순회 제거)
   const rawChildren =
     useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
 

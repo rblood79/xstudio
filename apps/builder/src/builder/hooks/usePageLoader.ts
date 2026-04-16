@@ -47,7 +47,6 @@ export interface UsePageLoaderReturn {
  * ```
  */
 export function usePageLoader(autoLoad = true): UsePageLoaderReturn {
-  // ADR-069 Phase 2-B: stable action 구독 3건 제거 (lazyLoadPageElements/preloadPage/getLRUStats)
   const currentPageId = useStore((state) => state.currentPageId);
   const loadedPages = useStore((state) => state.loadedPages);
   const loadingPages = useStore((state) => state.loadingPages);
@@ -132,7 +131,6 @@ export function usePageLoader(autoLoad = true): UsePageLoaderReturn {
  * ```
  */
 export function useAdjacentPagePreload(): void {
-  // ADR-069 Phase 2-B: stable action 구독 1건 제거 (preloadPage)
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
   const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);

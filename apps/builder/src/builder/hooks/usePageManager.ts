@@ -90,12 +90,6 @@ export const usePageManager = ({
   const pendingActivationFrameRef = useRef<number | null>(null);
   const pendingActivationPageIdRef = useRef<string | null>(null);
 
-  // ADR-069 Phase 2-B: stable action 구독 11건 제거 → 사용처에서 useStore.getState()로 lazy 호출
-  //   activatePage / setCurrentPageId / setPages / hydrateProjectSnapshot / mergeElements /
-  //   setSelectedElement / appendPageShell / setLazyLoadingEnabled / initializePagePositions /
-  //   lazyLoadPageElements / isPageLoaded
-  // Zustand action은 store 생성 시점 정의 후 불변이므로 subscribe 불필요.
-  // reactive 값만 구독 유지: pages, lazyLoadingEnabled
   const pages = useStore((state) => state.pages);
   const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
 
@@ -492,22 +486,26 @@ export const usePageManager = ({
               null,
           };
         });
-        const store = useStore.getState();
-        store.setPages(storePages);
+        const {
+          setPages,
+          initializePagePositions,
+          setLazyLoadingEnabled,
+          pageLayoutDirection,
+        } = useStore.getState();
+        setPages(storePages);
 
         // 🆕 Multi-page: 페이지 위치 초기화 (현재 방향 + canvasSize 기반)
         const currentCanvasSize = useViewportSyncStore.getState().canvasSize;
-        const currentDirection = store.pageLayoutDirection;
-        store.initializePagePositions(
+        initializePagePositions(
           storePages,
           currentCanvasSize.width,
           currentCanvasSize.height,
           PAGE_STACK_GAP,
-          currentDirection,
+          pageLayoutDirection,
         );
 
         // 🚀 Pencil 방식: 전체 페이지 요소를 한 번에 로드 (Lazy Loading 비활성화)
-        store.setLazyLoadingEnabled(false);
+        setLazyLoadingEnabled(false);
 
         const pageIdSet = new Set(projectPages.map((p) => p.id));
         const allElements = await db.elements.getAll();
@@ -541,8 +539,8 @@ export const usePageManager = ({
           const homePage = apiPages.find((p) => p.order_num === 0);
           const pageToSelect = homePage || apiPages[0];
 
-          const postHydrateStore = useStore.getState();
-          postHydrateStore.setCurrentPageId(pageToSelect.id);
+          const { setCurrentPageId, setSelectedElement } = useStore.getState();
+          setCurrentPageId(pageToSelect.id);
           setSelectedPageId(pageToSelect.id);
 
           const bodyElement = mergedElements.find(
@@ -552,7 +550,7 @@ export const usePageManager = ({
             if (requestAutoSelectAfterUpdate) {
               requestAutoSelectAfterUpdate(bodyElement.id);
             }
-            postHydrateStore.setSelectedElement(bodyElement.id);
+            setSelectedElement(bodyElement.id);
           }
         }
 
@@ -578,9 +576,9 @@ export const usePageManager = ({
       if (!pageId) return;
       if (!lazyLoadingEnabled) return;
 
-      const store = useStore.getState();
+      const { isPageLoaded, lazyLoadPageElements } = useStore.getState();
       // 이미 로드됨 - 스킵
-      if (store.isPageLoaded(pageId)) {
+      if (isPageLoaded(pageId)) {
         console.log(
           `📦 [loadPageIfNeeded] Page already loaded: ${pageId.slice(0, 8)}`,
         );
@@ -589,7 +587,7 @@ export const usePageManager = ({
 
       // Lazy Load 실행
       console.log(`🔄 [loadPageIfNeeded] Loading page: ${pageId.slice(0, 8)}`);
-      await store.lazyLoadPageElements(pageId);
+      await lazyLoadPageElements(pageId);
     },
     [lazyLoadingEnabled],
   );
