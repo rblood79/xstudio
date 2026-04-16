@@ -3,9 +3,7 @@
  *
  * Flex direction, Alignment, Gap, Padding, Margin 편집
  * 4방향 확장 모드: direction-alignment-grid 스타일 패턴 사용
- *
- * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
- * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
+ * 접힌 섹션의 훅 실행을 방지하기 위해 내용 컴포넌트 분리.
  */
 
 import React, { useState, useMemo, useEffect, useRef, memo } from "react";
@@ -138,57 +136,42 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
 
   return (
     <div className="four-way-grid">
-      <Input
-        className="react-aria-Input four-way-top"
-        value={localValues.top}
-        onChange={(e) => handleChange("Top", e.target.value)}
-        onFocus={() => {
-          focusedElementIdRef.current = selectedElementId ?? null;
-        }}
-        onBlur={() => commitValue("Top")}
-        onKeyDown={(e) => handleKeyDown(e, "Top")}
-        placeholder="T"
-        aria-label="Top"
-      />
-      <Input
-        className="react-aria-Input four-way-left"
-        value={localValues.left}
-        onChange={(e) => handleChange("Left", e.target.value)}
-        onFocus={() => {
-          focusedElementIdRef.current = selectedElementId ?? null;
-        }}
-        onBlur={() => commitValue("Left")}
-        onKeyDown={(e) => handleKeyDown(e, "Left")}
-        placeholder="L"
-        aria-label="Left"
-      />
-      <Input
-        className="react-aria-Input four-way-right"
-        value={localValues.right}
-        onChange={(e) => handleChange("Right", e.target.value)}
-        onFocus={() => {
-          focusedElementIdRef.current = selectedElementId ?? null;
-        }}
-        onBlur={() => commitValue("Right")}
-        onKeyDown={(e) => handleKeyDown(e, "Right")}
-        placeholder="R"
-        aria-label="Right"
-      />
-      <Input
-        className="react-aria-Input four-way-bottom"
-        value={localValues.bottom}
-        onChange={(e) => handleChange("Bottom", e.target.value)}
-        onFocus={() => {
-          focusedElementIdRef.current = selectedElementId ?? null;
-        }}
-        onBlur={() => commitValue("Bottom")}
-        onKeyDown={(e) => handleKeyDown(e, "Bottom")}
-        placeholder="B"
-        aria-label="Bottom"
-      />
+      {FOUR_WAY_DIRECTIONS.map(({ direction, slot, placeholder }) => {
+        const key = direction.toLowerCase() as
+          | "top"
+          | "left"
+          | "right"
+          | "bottom";
+        return (
+          <Input
+            key={direction}
+            className={`react-aria-Input four-way-${slot}`}
+            value={localValues[key]}
+            onChange={(e) => handleChange(direction, e.target.value)}
+            onFocus={() => {
+              focusedElementIdRef.current = selectedElementId ?? null;
+            }}
+            onBlur={() => commitValue(direction)}
+            onKeyDown={(e) => handleKeyDown(e, direction)}
+            placeholder={placeholder}
+            aria-label={direction}
+          />
+        );
+      })}
     </div>
   );
 }
+
+const FOUR_WAY_DIRECTIONS = [
+  { direction: "Top", slot: "top", placeholder: "T" },
+  { direction: "Left", slot: "left", placeholder: "L" },
+  { direction: "Right", slot: "right", placeholder: "R" },
+  { direction: "Bottom", slot: "bottom", placeholder: "B" },
+] as const satisfies ReadonlyArray<{
+  direction: "Top" | "Left" | "Right" | "Bottom";
+  slot: string;
+  placeholder: string;
+}>;
 
 /**
  * LayoutSection 내부 컨텐츠 — 섹션이 열릴 때만 마운트
@@ -529,10 +512,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
 });
 
 /**
- * LayoutSection - 외부 래퍼
- * - PropertySection만 관리
- * - 🚀 Phase 3: Jotai 기반 - props 불필요
- * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
+ * LayoutSection - 외부 래퍼 (PropertySection 관리)
  */
 const LAYOUT_PROPS = [
   "display",

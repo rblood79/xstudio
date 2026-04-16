@@ -1,7 +1,5 @@
 /**
  * StylesPanel - 스타일 편집 패널
- *
- * ADR-067 Phase 6 완료: Jotai 완전 제거 (Zustand 단일 생태계)
  */
 
 import { useState, useMemo, useCallback, memo } from "react";

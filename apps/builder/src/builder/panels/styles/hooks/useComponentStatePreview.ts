@@ -1,6 +1,5 @@
 /**
- * Component State Preview Store — ADR-067 Phase 6
- * Replaces Jotai previewComponentStateAtom with Zustand store
+ * Component State Preview Store
  */
 
 import { create } from "zustand";

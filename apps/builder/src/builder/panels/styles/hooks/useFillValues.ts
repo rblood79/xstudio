@@ -1,7 +1,5 @@
 /**
  * useFillValues - Fill 섹션 전용 Zustand 훅
- *
- * ADR-067 Phase 5: Jotai 제거
  * - fills: element.props.fills 직접 구독
  * - activeFillIndex / colorInputMode: 스타일 패널 UI 전용 zustand store
  */

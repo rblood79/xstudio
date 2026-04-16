@@ -137,9 +137,6 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
 
   const archetype = spec.archetype;
 
-  // G4-pre Switch 특수 경로 제거 — Checkbox/Radio와 동일하게 일반 경로 사용
-  // indicator는 수동 CSS(Switch.css)가 담당
-
   const lines: string[] = [];
 
   // 파일 헤더
@@ -998,13 +995,17 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   const transition = im.transitionMs ?? 200;
   const lines: string[] = [];
 
+  // Group: bg-muted 배경 (via .button-base)
   lines.push(`${base} {`);
-  lines.push(`  --indicator-bg: ${tokenToCSSVar(im.background)};`);
-  lines.push(`  --indicator-text: ${tokenToCSSVar(im.selectedText)};`);
   lines.push(`  --button-color: var(--bg-muted);`);
   lines.push("}");
   lines.push("");
 
+  // SelectionIndicator — pill의 위치/크기만 담당.
+  // 색상(--button-color/--button-text/--button-border)은 parent ToggleButton의 variant CSS에서 상속:
+  //   [data-variant="default"][data-selected]        → --button-color: var(--fg)    (dark pill)
+  //   [data-variant="default"][data-emphasized][data-selected] → --button-color: var(--accent) (accent pill)
+  // 이것이 standalone selected ToggleButton과 동일한 시각을 보장.
   lines.push(
     `${base} .react-aria-ToggleButton .react-aria-SelectionIndicator {`,
   );
@@ -1012,16 +1013,25 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  inset: 0;`);
   lines.push(`  z-index: -1;`);
   lines.push(`  border-radius: var(--btn-border-radius);`);
-  lines.push(`  --button-text: var(--indicator-text);`);
-  lines.push(`  --button-border: var(--indicator-bg);`);
   lines.push(`  box-shadow: ${shadow};`);
   lines.push(`  pointer-events: none;`);
+  // SelectionIndicator는 data-selected가 하드코딩되어 있으므로 parent ToggleButton 선택 상태로 visibility 제어
+  lines.push(`  opacity: 0;`);
   lines.push(
-    `  transition: translate ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), width ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), height ${transition}ms cubic-bezier(0.16, 1, 0.3, 1);`,
+    `  transition: opacity ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), translate ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), width ${transition}ms cubic-bezier(0.16, 1, 0.3, 1), height ${transition}ms cubic-bezier(0.16, 1, 0.3, 1);`,
   );
   lines.push("}");
   lines.push("");
 
+  // Parent ToggleButton[data-selected]일 때만 SelectionIndicator 표시
+  lines.push(
+    `${base} .react-aria-ToggleButton[data-selected] .react-aria-SelectionIndicator {`,
+  );
+  lines.push(`  opacity: 1;`);
+  lines.push("}");
+  lines.push("");
+
+  // ToggleButton 컨테이너 — 투명, 색상은 parent variant CSS의 --button-text 상속
   lines.push(`${base} .react-aria-ToggleButton {`);
   lines.push(`  position: relative;`);
   lines.push(`  z-index: 0;`);
@@ -1029,16 +1039,6 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  border-color: transparent;`);
   lines.push(`  border-width: 0;`);
   lines.push(`  color: var(--button-text);`);
-  lines.push("}");
-  lines.push("");
-
-  lines.push(`${base} .react-aria-ToggleButton[data-selected] {`);
-  lines.push(`  color: var(--indicator-text);`);
-  lines.push("}");
-  lines.push("");
-
-  lines.push(`${base} .react-aria-ToggleButton[data-selected][data-pressed] {`);
-  lines.push(`  color: var(--fg);`);
   lines.push("}");
   lines.push("");
 

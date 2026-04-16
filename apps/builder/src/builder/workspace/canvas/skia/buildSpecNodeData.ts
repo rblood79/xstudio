@@ -234,38 +234,52 @@ function resolveBreadcrumbItemContext(
   };
 }
 
-/** ToggleButton group position */
-function resolveToggleGroupPosition(
+/** ToggleButton group position + indicator mode */
+function resolveToggleGroupContext(
   element: Element,
   elementsMap: Map<string, Element>,
   childrenMap: Map<string, Element[]> | null,
 ): {
-  orientation: string;
-  isFirst: boolean;
-  isLast: boolean;
-  isOnly: boolean;
-} | null {
-  if (element.tag !== "ToggleButton" || !element.parent_id) return null;
+  position: {
+    orientation: string;
+    isFirst: boolean;
+    isLast: boolean;
+    isOnly: boolean;
+  } | null;
+  indicatorMode: boolean;
+} {
+  if (element.tag !== "ToggleButton" || !element.parent_id) {
+    return { position: null, indicatorMode: false };
+  }
 
   const parent = elementsMap.get(element.parent_id);
-  if (!parent || parent.tag !== "ToggleButtonGroup") return null;
+  if (!parent || parent.tag !== "ToggleButtonGroup") {
+    return { position: null, indicatorMode: false };
+  }
 
-  const orientation = (getProps(parent).orientation as string) || "horizontal";
+  const parentProps = getProps(parent);
+  const orientation = (parentProps.orientation as string) || "horizontal";
+  const indicatorMode = Boolean(parentProps.indicator);
 
   const siblings = childrenMap?.get(parent.id);
-  if (!siblings || siblings.length === 0) return null;
+  if (!siblings || siblings.length === 0) {
+    return { position: null, indicatorMode };
+  }
 
   const sorted = [...siblings].sort(
     (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
   );
   const index = sorted.findIndex((s) => s.id === element.id);
-  if (index === -1) return null;
+  if (index === -1) return { position: null, indicatorMode };
 
   return {
-    orientation,
-    isFirst: index === 0,
-    isLast: index === sorted.length - 1,
-    isOnly: sorted.length === 1,
+    position: {
+      orientation,
+      isFirst: index === 0,
+      isLast: index === sorted.length - 1,
+      isOnly: sorted.length === 1,
+    },
+    indicatorMode,
   };
 }
 
@@ -538,14 +552,17 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
     specProps = { ...specProps, size: delegatedSize };
   }
 
-  // ToggleButton group position
-  const togglePos = resolveToggleGroupPosition(
+  // ToggleButton group position + indicator mode
+  const toggleCtx = resolveToggleGroupContext(
     element,
     elementsMap,
     input.childrenMap ?? null,
   );
-  if (togglePos) {
-    specProps = { ...specProps, _groupPosition: togglePos };
+  if (toggleCtx.position) {
+    specProps = { ...specProps, _groupPosition: toggleCtx.position };
+  }
+  if (toggleCtx.indicatorMode) {
+    specProps = { ...specProps, _indicatorMode: true };
   }
 
   // DateInput parent delegation
@@ -969,9 +986,14 @@ function applyInlineBorderOverlay(
   const bw = parseCSSSize(borderWidth as string | number);
   if (bw <= 0) return;
 
-  // Skip fully transparent borders — matches CSS behavior
   const borderColorStr = style.borderColor as string | undefined;
-  const normalized = borderColorStr?.trim().toLowerCase();
+
+  // borderColor가 명시되지 않으면 spec의 border(대부분 transparent)를 덮어쓰지 않음
+  // Spec이 이미 transparent로 렌더링했다면 그대로 유지 (CSS currentColor 회색 fallback 방지)
+  if (borderColorStr == null) return;
+
+  // Skip fully transparent borders — matches CSS behavior
+  const normalized = borderColorStr.trim().toLowerCase();
   if (
     normalized === "transparent" ||
     normalized === "rgba(0,0,0,0)" ||
@@ -991,9 +1013,7 @@ function applyInlineBorderOverlay(
   }
 
   // borderColor
-  const borderHex = borderColorStr
-    ? cssColorToHex(borderColorStr, 0x808080)
-    : 0x808080;
+  const borderHex = cssColorToHex(borderColorStr, 0x808080);
   specNode.box.strokeColor = colorIntToFloat32(borderHex, 1);
   specNode.box.strokeWidth = bw;
 

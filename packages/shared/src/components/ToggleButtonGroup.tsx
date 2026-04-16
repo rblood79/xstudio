@@ -14,18 +14,13 @@ import type {
 import { useCollectionData } from "../hooks";
 import "./styles/generated/ToggleButtonGroup.css";
 
-// ToggleButtonGroup용 Context - indicator 상태 공유
 export const ToggleButtonGroupIndicatorContext = createContext(false);
-
-// ToggleButtonGroup용 Context - isEmphasized 상태 공유 (자식 ToggleButton에 전파)
 export const ToggleButtonGroupEmphasizedContext = createContext(false);
 
-// ToggleButton에서 indicator 컨텍스트 사용
 export function useToggleButtonGroupIndicator() {
   return useContext(ToggleButtonGroupIndicatorContext);
 }
 
-// ToggleButton에서 emphasized 컨텍스트 사용
 export function useToggleButtonGroupEmphasized() {
   return useContext(ToggleButtonGroupEmphasizedContext);
 }
@@ -47,17 +42,10 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
    * @default 'md'
    */
   size?: ComponentSizeSubset;
-  // 데이터 바인딩
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
 }
 
-/**
- * S2 variant 전환: isEmphasized / isQuiet data-* 패턴
- * - data-emphasized: accent color 강조 (선택 시)
- * - data-quiet: 배경 없는 quiet 스타일
- * - data-size: 크기
- */
 export function ToggleButtonGroup({
   indicator = false,
   isEmphasized = false,
@@ -68,7 +56,6 @@ export function ToggleButtonGroup({
   children,
   ...props
 }: ToggleButtonGroupExtendedProps) {
-  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,
     loading,
@@ -82,10 +69,6 @@ export function ToggleButtonGroup({
     ],
   });
 
-  // React Aria 1.13.0: SelectionIndicator로 대체 (MutationObserver 제거)
-
-  // DataBinding이 있고 데이터가 로드되었을 때 동적 ToggleButton 생성
-  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
   const isPropertyBinding =
     dataBinding &&
     "source" in dataBinding &&
@@ -108,156 +91,44 @@ export function ToggleButtonGroup({
     },
   );
 
-  // ColumnMapping이 있으면 각 데이터 항목마다 ToggleButton 렌더링
-  // ListBox와 동일한 패턴
+  const shell = (content: ReactNode, isDisabled = false) => (
+    <RACToggleButtonGroup
+      {...props}
+      data-indicator={indicator ? "true" : "false"}
+      data-emphasized={isEmphasized || undefined}
+      data-quiet={isQuiet || undefined}
+      data-size={size}
+      className={toggleButtonGroupClassName}
+      isDisabled={isDisabled || props.isDisabled}
+    >
+      <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
+        <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
+          {content}
+        </ToggleButtonGroupIndicatorContext.Provider>
+      </ToggleButtonGroupEmphasizedContext.Provider>
+    </RACToggleButtonGroup>
+  );
+
+  const loadingContent = (
+    <RACToggleButton className="react-aria-ToggleButton button-base">
+      ⏳ 로딩 중...
+    </RACToggleButton>
+  );
+  const errorContent = (
+    <RACToggleButton className="react-aria-ToggleButton button-base">
+      ❌ 오류
+    </RACToggleButton>
+  );
+
   if (hasDataBinding && columnMapping) {
-    console.log(
-      "🎯 ToggleButtonGroup: columnMapping 감지 - 데이터로 ToggleButton 렌더링",
-      {
-        columnMapping,
-        hasChildren: !!children,
-        dataCount: boundData.length,
-      },
-    );
-
-    // Loading 상태
-    if (loading) {
-      return (
-        <RACToggleButtonGroup
-          {...props}
-          data-indicator={indicator ? "true" : "false"}
-          data-emphasized={isEmphasized || undefined}
-          data-quiet={isQuiet || undefined}
-          data-size={size}
-          className={toggleButtonGroupClassName}
-          isDisabled
-        >
-          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-              <RACToggleButton className="react-aria-ToggleButton button-base">
-                ⏳ 로딩 중...
-              </RACToggleButton>
-            </ToggleButtonGroupIndicatorContext.Provider>
-          </ToggleButtonGroupEmphasizedContext.Provider>
-        </RACToggleButtonGroup>
-      );
-    }
-
-    // Error 상태
-    if (error) {
-      return (
-        <RACToggleButtonGroup
-          {...props}
-          data-indicator={indicator ? "true" : "false"}
-          data-emphasized={isEmphasized || undefined}
-          data-quiet={isQuiet || undefined}
-          data-size={size}
-          className={toggleButtonGroupClassName}
-          isDisabled
-        >
-          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-              <RACToggleButton className="react-aria-ToggleButton button-base">
-                ❌ 오류
-              </RACToggleButton>
-            </ToggleButtonGroupIndicatorContext.Provider>
-          </ToggleButtonGroupEmphasizedContext.Provider>
-        </RACToggleButtonGroup>
-      );
-    }
-
-    // 데이터가 있을 때: children 템플릿 사용
-    if (boundData.length > 0) {
-      console.log(
-        "✅ ToggleButtonGroup with columnMapping - using children template",
-      );
-
-      return (
-        <RACToggleButtonGroup
-          {...props}
-          data-indicator={indicator ? "true" : "false"}
-          data-emphasized={isEmphasized || undefined}
-          data-quiet={isQuiet || undefined}
-          data-size={size}
-          className={toggleButtonGroupClassName}
-        >
-          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-              {children as ReactNode}
-            </ToggleButtonGroupIndicatorContext.Provider>
-          </ToggleButtonGroupEmphasizedContext.Provider>
-        </RACToggleButtonGroup>
-      );
-    }
-
-    // 데이터 없음
-    return (
-      <RACToggleButtonGroup
-        {...props}
-        data-indicator={indicator ? "true" : "false"}
-        data-emphasized={isEmphasized || undefined}
-        data-quiet={isQuiet || undefined}
-        data-size={size}
-        className={toggleButtonGroupClassName}
-      >
-        <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-          <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            {children as ReactNode}
-          </ToggleButtonGroupIndicatorContext.Provider>
-        </ToggleButtonGroupEmphasizedContext.Provider>
-      </RACToggleButtonGroup>
-    );
+    if (loading) return shell(loadingContent, true);
+    if (error) return shell(errorContent, true);
+    return shell(children as ReactNode);
   }
 
-  // Dynamic Collection: 동적으로 ToggleButton 생성 (columnMapping 없을 때)
   if (hasDataBinding) {
-    // Loading 상태
-    if (loading) {
-      return (
-        <RACToggleButtonGroup
-          {...props}
-          data-indicator={indicator ? "true" : "false"}
-          data-emphasized={isEmphasized || undefined}
-          data-quiet={isQuiet || undefined}
-          data-size={size}
-          className={toggleButtonGroupClassName}
-          isDisabled
-        >
-          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-              <RACToggleButton className="react-aria-ToggleButton button-base">
-                ⏳ 로딩 중...
-              </RACToggleButton>
-            </ToggleButtonGroupIndicatorContext.Provider>
-          </ToggleButtonGroupEmphasizedContext.Provider>
-        </RACToggleButtonGroup>
-      );
-    }
-
-    // Error 상태
-    if (error) {
-      return (
-        <RACToggleButtonGroup
-          {...props}
-          data-indicator={indicator ? "true" : "false"}
-          data-emphasized={isEmphasized || undefined}
-          data-quiet={isQuiet || undefined}
-          data-size={size}
-          className={toggleButtonGroupClassName}
-          isDisabled
-        >
-          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-              <RACToggleButton className="react-aria-ToggleButton button-base">
-                ❌ 오류
-              </RACToggleButton>
-            </ToggleButtonGroupIndicatorContext.Provider>
-          </ToggleButtonGroupEmphasizedContext.Provider>
-        </RACToggleButtonGroup>
-      );
-    }
-
-    // 데이터가 로드되었을 때
+    if (loading) return shell(loadingContent, true);
+    if (error) return shell(errorContent, true);
     if (boundData.length > 0) {
       const buttonItems = boundData.map((item, index) => ({
         id: String(item.id || item.value || index),
@@ -266,55 +137,20 @@ export function ToggleButtonGroup({
         ),
         isDisabled: Boolean(item.isDisabled),
       }));
-
-      console.log(
-        "✅ ToggleButtonGroup Dynamic Collection - items:",
-        buttonItems,
-      );
-
-      return (
-        <RACToggleButtonGroup
-          {...props}
-          data-indicator={indicator ? "true" : "false"}
-          data-emphasized={isEmphasized || undefined}
-          data-quiet={isQuiet || undefined}
-          data-size={size}
-          className={toggleButtonGroupClassName}
-        >
-          <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-            <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-              {buttonItems.map((item) => (
-                <RACToggleButton
-                  key={item.id}
-                  id={item.id}
-                  isDisabled={item.isDisabled}
-                  className="react-aria-ToggleButton button-base"
-                >
-                  {item.label}
-                </RACToggleButton>
-              ))}
-            </ToggleButtonGroupIndicatorContext.Provider>
-          </ToggleButtonGroupEmphasizedContext.Provider>
-        </RACToggleButtonGroup>
+      return shell(
+        buttonItems.map((item) => (
+          <RACToggleButton
+            key={item.id}
+            id={item.id}
+            isDisabled={item.isDisabled}
+            className="react-aria-ToggleButton button-base"
+          >
+            {item.label}
+          </RACToggleButton>
+        )),
       );
     }
   }
 
-  // Static Children (기존 방식)
-  return (
-    <RACToggleButtonGroup
-      {...props}
-      data-indicator={indicator ? "true" : "false"}
-      data-emphasized={isEmphasized || undefined}
-      data-quiet={isQuiet || undefined}
-      data-size={size}
-      className={toggleButtonGroupClassName}
-    >
-      <ToggleButtonGroupEmphasizedContext.Provider value={isEmphasized}>
-        <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-          {children as ReactNode}
-        </ToggleButtonGroupIndicatorContext.Provider>
-      </ToggleButtonGroupEmphasizedContext.Provider>
-    </RACToggleButtonGroup>
-  );
+  return shell(children as ReactNode);
 }

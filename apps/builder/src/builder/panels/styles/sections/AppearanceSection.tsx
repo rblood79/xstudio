@@ -2,10 +2,8 @@
  * AppearanceSection - Appearance 스타일 편집 섹션
  *
  * Background + Border 편집 (단일 섹션)
- *
- * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
- * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
- * 🎨 Color Picker Phase 1: isFillV2Enabled() → FillSectionContent 분기
+ * 접힌 섹션의 훅 실행을 방지하기 위해 내용 컴포넌트 분리.
+ * isFillV2Enabled() 플래그에 따라 Fill V2 컨텐츠 분기.
  */
 
 import { memo, lazy, Suspense } from "react";
@@ -60,14 +58,8 @@ function boxShadowToPresetKey(cssValue: string): string {
   return cssToPresetMap.get(cssValue) ?? cssValue;
 }
 
-/**
- * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
- * - 섹션이 열릴 때만 마운트됨
- * - Jotai atom에서 직접 값 구독 (props 불필요)
- */
 const AppearanceSectionContent = memo(function AppearanceSectionContent() {
   const { updateStyle } = useStyleActions();
-  // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStylePreview } =
     useOptimizedStyleActions();
   const selectedId = useStore((s) => s.selectedElementId);
@@ -201,10 +193,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
 });
 
 /**
- * AppearanceSection - 외부 래퍼
- * - PropertySection만 관리
- * - 🚀 Phase 3: Jotai 기반 - props 불필요
- * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
+ * AppearanceSection - 외부 래퍼 (PropertySection 관리)
  */
 const APPEARANCE_PROPS = [
   "backgroundColor",

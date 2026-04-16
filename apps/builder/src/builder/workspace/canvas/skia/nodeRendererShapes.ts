@@ -7,6 +7,8 @@ export function renderLine(
   node: SkiaNodeData,
 ): void {
   if (!node.line) return;
+  // Skip fully transparent strokes — Skia paint doesn't always respect alpha=0
+  if (node.line.strokeColor[3] <= 0) return;
   const paint = new ck.Paint();
   paint.setAntiAlias(true);
   paint.setStyle(ck.PaintStyle.Stroke);

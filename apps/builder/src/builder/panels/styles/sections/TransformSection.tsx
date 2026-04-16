@@ -1,12 +1,8 @@
 /**
  * TransformSection - Transform 스타일 편집 섹션
  *
- * Size (with ADR-026 Size Mode), Position 편집
- * Note: Alignment는 Layout 섹션의 3x3 Flex alignment로 통합됨
- *
- * Phase 3: Jotai 기반 Fine-grained Reactivity
- * Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
- * ADR-026 Phase 1: Size Mode (Fixed/Fill/Fit) 세그먼트 컨트롤
+ * Size (ADR-026 Size Mode), Position 편집.
+ * Alignment는 Layout 섹션의 3x3 Flex alignment로 통합됨.
  */
 
 import { memo, useCallback, useMemo, useState } from "react";
@@ -71,6 +67,21 @@ const ASPECT_RATIO_OPTIONS = [
   { value: "3 / 4", label: "3:4 Portrait" },
 ];
 
+const SELF_ALIGN_POSITION_MAP: Record<
+  string,
+  { horizontal: string; vertical: string }
+> = {
+  leftTop: { horizontal: "start", vertical: "start" },
+  centerTop: { horizontal: "center", vertical: "start" },
+  rightTop: { horizontal: "end", vertical: "start" },
+  leftCenter: { horizontal: "start", vertical: "center" },
+  centerCenter: { horizontal: "center", vertical: "center" },
+  rightCenter: { horizontal: "end", vertical: "center" },
+  leftBottom: { horizontal: "start", vertical: "end" },
+  centerBottom: { horizontal: "center", vertical: "end" },
+  rightBottom: { horizontal: "end", vertical: "end" },
+};
+
 /**
  * Size Mode 세그먼트 컨트롤 (ADR-026)
  * Fixed / Fill / Fit 3버튼 토글
@@ -130,11 +141,6 @@ const SizeModeToggle = memo(function SizeModeToggle({
   );
 });
 
-/**
- * Phase 3/23: 내부 컨텐츠 컴포넌트
- * - 섹션이 열릴 때만 마운트됨
- * - Jotai atom에서 직접 값 구독 (props 불필요)
- */
 const TransformSectionContent = memo(function TransformSectionContent() {
   const { updateStyleImmediate, updateStylePreview, updateStylesImmediate } =
     useOptimizedStyleActions();
@@ -217,21 +223,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         updateStylesImmediate({ alignSelf: "", justifySelf: "" });
         return;
       }
-      const positionMap: Record<
-        string,
-        { horizontal: string; vertical: string }
-      > = {
-        leftTop: { horizontal: "start", vertical: "start" },
-        centerTop: { horizontal: "center", vertical: "start" },
-        rightTop: { horizontal: "end", vertical: "start" },
-        leftCenter: { horizontal: "start", vertical: "center" },
-        centerCenter: { horizontal: "center", vertical: "center" },
-        rightCenter: { horizontal: "end", vertical: "center" },
-        leftBottom: { horizontal: "start", vertical: "end" },
-        centerBottom: { horizontal: "center", vertical: "end" },
-        rightBottom: { horizontal: "end", vertical: "end" },
-      };
-      const pos = positionMap[value];
+      const pos = SELF_ALIGN_POSITION_MAP[value];
       if (pos) {
         updateStylesImmediate({
           alignSelf: pos.vertical,
@@ -522,10 +514,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
 });
 
 /**
- * TransformSection - 외부 래퍼
- * - PropertySection만 관리
- * - Phase 3: Jotai 기반 - props 불필요
- * - Phase 4.2c: useResetStyles 경량 훅 사용
+ * TransformSection - 외부 래퍼 (PropertySection 관리)
  */
 const TRANSFORM_PROPS = [
   "width",

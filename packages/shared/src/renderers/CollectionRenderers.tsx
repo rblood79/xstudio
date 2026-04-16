@@ -657,6 +657,14 @@ export const renderToggleButtonGroup = (
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // SSOT: 자식 ToggleButton element의 isSelected를 수집하여 RAC controlled selectedKeys로.
+  // RadioGroup/CheckboxGroup과 동일 철학 — group은 child state의 derived view.
+  const selectedKeys = new Set<string>(
+    toggleButtonChildren
+      .filter((c) => Boolean(c.props.isSelected))
+      .map((c) => c.id),
+  );
+
   return (
     <ToggleButtonGroup
       key={element.id}
@@ -670,15 +678,18 @@ export const renderToggleButtonGroup = (
       isEmphasized={Boolean(element.props.isEmphasized)}
       isQuiet={Boolean(element.props.isQuiet)}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
-      defaultSelectedKeys={
-        Array.isArray(element.props.value) ? element.props.value : []
-      }
-      onSelectionChange={async (selectedKeys) => {
-        const updatedProps = {
-          ...element.props,
-          value: Array.from(selectedKeys).map((key) => String(key)),
-        };
-        updateElementProps(element.id, updatedProps);
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) => {
+        const nextKeys = new Set(Array.from(keys).map((k) => String(k)));
+        toggleButtonChildren.forEach((child) => {
+          const shouldBeSelected = nextKeys.has(child.id);
+          if (Boolean(child.props.isSelected) !== shouldBeSelected) {
+            updateElementProps(child.id, {
+              ...child.props,
+              isSelected: shouldBeSelected,
+            });
+          }
+        });
       }}
     >
       {toggleButtonChildren.map((toggleButton) =>
@@ -706,64 +717,38 @@ export const renderToggleButton = (
       parent.id === element.parent_id && parent.tag === "ToggleButtonGroup",
   );
 
-  const parentGroup = isInGroup
-    ? elements.find((parent) => parent.id === element.parent_id)
-    : null;
-
+  // SSOT: element.props.isSelected.
+  // - Standalone: RAC useToggleButton이 isSelected 존중
+  // - In group: RAC useToggleButtonGroupItem은 props.isSelected 무시, groupState.selectedKeys.has(id) 기준.
+  //   → 상위 renderToggleButtonGroup이 자식 isSelected → selectedKeys로 표출하므로 양쪽 경로 모두 정합.
+  // id는 element.id(UUID) 사용 — group의 selectedKeys Set과 일치해야 하므로 SSOT 통일.
   return (
     <ToggleButton
       key={element.id}
-      id={element.customId}
+      id={element.id}
       data-element-id={element.id}
-      isSelected={
-        isInGroup
-          ? Array.isArray(parentGroup?.props.value) &&
-            parentGroup.props.value.includes(element.id)
-          : Boolean(element.props.isSelected)
-      }
+      data-custom-id={element.customId}
+      isSelected={Boolean(element.props.isSelected)}
       defaultSelected={
         typeof element.props.defaultSelected === "boolean"
           ? element.props.defaultSelected
           : undefined
       }
       isDisabled={Boolean(element.props.isDisabled)}
-      isEmphasized={
-        !isInGroup ? Boolean(element.props.isEmphasized) : undefined
-      }
-      size={
-        !isInGroup
-          ? (element.props.size as "sm" | "md" | "lg") || "md"
-          : undefined
-      }
+      isEmphasized={Boolean(element.props.isEmphasized)}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       style={element.props.style}
       className={element.props.className}
-      onPress={() => {
-        if (isInGroup && parentGroup) {
-          const currentValue = Array.isArray(parentGroup.props.value)
-            ? parentGroup.props.value
-            : [];
-          let newValue;
-
-          if (parentGroup.props.selectionMode === "multiple") {
-            newValue = currentValue.includes(element.id)
-              ? currentValue.filter((id: string) => id !== element.id)
-              : [...currentValue, element.id];
-          } else {
-            newValue = currentValue.includes(element.id) ? [] : [element.id];
-          }
-
-          updateElementProps(parentGroup.id, {
-            ...parentGroup.props,
-            value: newValue,
-          } as Record<string, unknown>);
-        } else {
-          const updatedProps = {
-            ...element.props,
-            isSelected: !element.props.isSelected,
-          };
-          updateElementProps(element.id, updatedProps);
-        }
-      }}
+      onPress={
+        isInGroup
+          ? undefined
+          : () => {
+              updateElementProps(element.id, {
+                ...element.props,
+                isSelected: !element.props.isSelected,
+              });
+            }
+      }
     >
       {typeof element.props.children === "string"
         ? element.props.children

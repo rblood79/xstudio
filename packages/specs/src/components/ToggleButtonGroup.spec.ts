@@ -49,11 +49,11 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
+      border: "{color.transparent}" as TokenRef,
     },
   },
 
@@ -110,14 +110,15 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   },
 
   // ADR-048: 부모→자식 props 전파 (ADR-059 B5)
+  // override: true — RadioGroup/CheckboxGroup과 동일. group size 변경 시 자식 size도 일괄 반영.
   propagation: {
     rules: [
       {
         parentProp: "isEmphasized",
         childPath: "ToggleButton",
-        override: false,
+        override: true,
       },
-      { parentProp: "size", childPath: "ToggleButton", override: false },
+      { parentProp: "size", childPath: "ToggleButton", override: true },
     ],
   },
 
@@ -225,7 +226,12 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
             .variant ?? ToggleButtonGroupSpec.defaultVariant!
         ];
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      // indicator 모드: CSS의 .button-base + --button-color: var(--bg-muted) 와 일치하도록 bg-muted 사용
+      const bgColor =
+        props.style?.backgroundColor ??
+        (props.indicator
+          ? ("{color.neutral-subtle}" as TokenRef)
+          : variant.background);
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =

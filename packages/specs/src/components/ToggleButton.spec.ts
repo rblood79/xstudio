@@ -37,6 +37,8 @@ export interface ToggleButtonProps {
     isLast: boolean;
     isOnly: boolean;
   };
+  /** 부모 ToggleButtonGroup의 indicator 모드 전파 (propagation.rules 경유) */
+  _indicatorMode?: boolean;
 }
 
 /**
@@ -214,7 +216,15 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       let textColor: TokenRef | string | number | undefined;
       let borderColor: TokenRef | string | number | undefined;
 
-      if (props.isQuiet && !props.isSelected) {
+      // indicator 모드 + 비선택: 투명 (그룹 bg-muted가 보임)
+      // 선택 시에는 standalone selected와 동일한 variant 색상 사용 (아래 isSelected 분기)
+      if (props._indicatorMode && !props.isSelected) {
+        bgColor =
+          props.style?.backgroundColor ?? ("{color.transparent}" as TokenRef);
+        textColor = props.style?.color ?? variant.text;
+        borderColor =
+          props.style?.borderColor ?? ("{color.transparent}" as TokenRef);
+      } else if (props.isQuiet && !props.isSelected) {
         // quiet 모드: 배경/테두리 없음
         bgColor =
           props.style?.backgroundColor ?? ("{color.transparent}" as TokenRef);

@@ -1,7 +1,5 @@
 /**
  * ComponentStateSection - 컴포넌트 상태 미리보기 섹션
- *
- * ADR-067 Phase 6: Jotai 제거, Zustand UI store 사용
  */
 
 import { memo, useCallback } from "react";

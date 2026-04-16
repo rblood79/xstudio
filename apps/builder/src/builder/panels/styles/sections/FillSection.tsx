@@ -88,7 +88,6 @@ function SortableFillRow({
 
 /**
  * 내부 컨텐츠 - 섹션이 열릴 때만 마운트
- * Jotai atom에서 직접 값 구독
  */
 const FillSectionContent = memo(function FillSectionContent() {
   const { fills } = useFillValues();

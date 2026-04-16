@@ -1296,14 +1296,8 @@ export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
     isQuiet: false,
     isSelected: false,
     isDisabled: false,
-    // CSS base: display:flex; border:1px solid var(--outline-variant); width:fit-content
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "fit-content",
-      borderWidth: "1px",
-    },
+    // 스타일은 spec/generated CSS가 담당 — inline borderWidth를 제거하지 않으면
+    // applyInlineBorderOverlay가 borderColor 없이 회색 fallback border를 렌더링
   };
 }
 

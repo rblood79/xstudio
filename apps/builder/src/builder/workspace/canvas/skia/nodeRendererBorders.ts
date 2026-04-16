@@ -73,10 +73,13 @@ function renderSolidBorder(
   isArrayRadius: boolean,
   strokeStyle: "solid" | "dashed" | "dotted" | undefined,
 ): void {
+  // Final safety: Skia paint doesn't always respect alpha=0 — skip transparent strokes
+  const strokeColor = node.box!.strokeColor!;
+  if (strokeColor[3] <= 0) return;
   const inset = sw / 2;
   paint.setStyle(ck.PaintStyle.Stroke);
   paint.setStrokeWidth(sw);
-  paint.setColor(node.box!.strokeColor!);
+  paint.setColor(strokeColor);
 
   let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
   if (strokeStyle === "dashed") {
@@ -118,6 +121,8 @@ function renderDoubleBorder(
   hasRadius: boolean,
   isArrayRadius: boolean,
 ): void {
+  // Final safety: skip transparent strokes
+  if (node.box!.strokeColor![3] <= 0) return;
   if (sw < 3) {
     renderSolidBorder(
       ck,
@@ -177,6 +182,8 @@ function renderGrooveRidgeBorder(
 ): void {
   const halfSw = sw / 2;
   const color = node.box!.strokeColor!;
+  // Final safety: skip transparent strokes
+  if (color[3] <= 0) return;
   const alpha = color[3];
   const baseHex = parseSkiaColor(color);
 
@@ -232,6 +239,8 @@ function renderInsetOutsetBorder(
 ): void {
   const color = node.box!.strokeColor!;
   const alpha = color[3];
+  // Final safety: skip transparent strokes
+  if (alpha <= 0) return;
   const baseHex = parseSkiaColor(color);
 
   const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
@@ -471,7 +480,8 @@ export function renderBox(
     if (
       node.box.outlineColor &&
       node.box.outlineWidth &&
-      node.box.outlineWidth > 0
+      node.box.outlineWidth > 0 &&
+      node.box.outlineColor[3] > 0
     ) {
       const ow = node.box.outlineWidth;
       const oo = node.box.outlineOffset ?? 0;
@@ -518,7 +528,7 @@ export function renderBox(
       }
     }
 
-    if (node.arc) {
+    if (node.arc && node.arc.strokeColor[3] > 0) {
       const arcPaint = new ck.Paint();
       arcPaint.setAntiAlias(true);
       arcPaint.setStyle(ck.PaintStyle.Stroke);

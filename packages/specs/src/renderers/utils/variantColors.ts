@@ -61,8 +61,7 @@ export function getSizePreset(
   borderRadius: number;
   iconSize: number;
   gap: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  [key: string]: number | undefined;
 } {
   const fontSize = resolveToken(sizeSpec.fontSize, theme);
   const borderRadius = resolveToken(sizeSpec.borderRadius, theme);

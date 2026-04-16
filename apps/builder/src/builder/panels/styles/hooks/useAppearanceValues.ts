@@ -1,7 +1,5 @@
 /**
  * useAppearanceValues - Appearance 섹션 전용 Zustand 스타일 값 훅
- *
- * ADR-067 Phase 4: Jotai 제거, Spec preset direct lookup
  */
 
 import { useMemo } from "react";
