@@ -100,10 +100,10 @@ Implemented — 2026-04-15 (Proposed 2026-04-13)
 
 ## Gates
 
-| Gate | 시점              | 통과 조건                                                                                                   | 실패 시 대안                      |
-| ---- | ----------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| G1   | Phase 0 커밋 직후 | `pnpm type-check` pass + `pnpm build:specs` generated CSS 0 byte diff (전 컴포넌트) + Storybook 스모크 기동 | 전체 revert, 원인 분석 후 재시도  |
-| G2   | Phase 1 완료      | `parallel-verify` 5 샘플(Button/Badge/TextField/Card/Switch) 대칭 통과                                      | 실패 Spec self-lookup 로직 재검토 |
+| Gate | 시점              | 통과 조건                                                                                                   | 결과                                                                                                                                                                    |
+| ---- | ----------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1   | Phase 0 커밋 직후 | `pnpm type-check` pass + `pnpm build:specs` generated CSS 0 byte diff (전 컴포넌트) + Storybook 스모크 기동 | **PASS** — commit `40fa47cb`(2026-04-15)                                                                                                                                |
+| G2   | Phase 1 완료      | `parallel-verify` 5 샘플(Button/Badge/TextField/Card/Switch) 대칭 통과                                      | **PASS** — 2026-04-16. parallel-verify 5-레이어 × 5 샘플 = 25/25 PASS (Spec/Factory/CSS/Skia/Preview), type-check 3 tasks pass, build:specs 107 CSS 생성 + 0 byte diff. |
 
 **잔존 HIGH 위험**: 없음.
 
