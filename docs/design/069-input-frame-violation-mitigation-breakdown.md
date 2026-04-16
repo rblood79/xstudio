@@ -209,3 +209,116 @@ Performance 기록 → Main thread → 해당 pointerdown task 선택
 ```
 
 Phase 0 baseline 문서에 이 절차를 표준화하여 Phase 1/2/3 각각 after 측정에서 동일 방법으로 비교.
+
+## Addendum — 2026-04-17 (Phase 1 실측 이후 재조정)
+
+> ADR 본문 Addendum 참조. 본 breakdown의 Phase 3(FrameRenderPlan 부분 캐시)는 **철회 권고**. Phase 2 앞에 **관찰성 2.0 단계(Phase 2-0)**를 추가한다.
+
+### Phase 2-0 — 관찰성 2.0 (longtask PerformanceObserver)
+
+`observe()` wrapper는 함수 본체만 측정하므로 Chrome task 전체 시간(React commit + subscriber fan-out 포함)을 놓친다. Phase 2 착수 전 선행하여 before/after 비교 가능하도록 longtask 관찰자를 추가한다.
+
+#### 2-0-1. `perfMarks.ts` 확장
+
+- `measurementTraces` 링버퍼 추가 (5s / 최대 256 entries). `observe`/`observeAsync`/`markEnd`에서 `pushTrace(label, start, end)` 호출
+- `PerformanceObserver({ entryTypes: ['longtask'] })` 등록 — SSR 가드 + feature-detect(`supportedEntryTypes`) + try/catch
+- 각 longtask entry의 `[startTime, startTime+duration]`과 `measurementTraces`의 overlap 최댓값으로 라벨 분류:
+  - `input.*` 매치 → `longtask.input`
+  - `render.*` 매치 → `longtask.render`
+  - 매치 없음 → `longtask.unclassified`
+- 기존 p50/p95/p99/violations 통계 구조 재사용 + `topAttributions`(script name 상위 5개) 추가
+- `window.__composition_PERF__` 확장: `snapshotLongTask(label)` / `snapshotLongTasks()` / `resetLongTasks()`
+
+#### 체크리스트
+
+- [x] `apps/builder/src/builder/utils/perfMarks.ts` 확장
+- [x] `pnpm type-check` PASS
+- [ ] 실 브라우저에서 `__composition_PERF__.snapshotLongTasks()` 동작 확인 (사용자 수동 조작, MCP 제어 탭은 `visibilityState: 'hidden'` 이슈로 부정확)
+- [ ] baseline 측정: 페이지 전환 클릭 20회 → `longtask.input` p50/p95/violations50ms 기록
+
+### Phase 2 — 구독 fan-out 축소 (재조정된 1순위)
+
+ADR 본문 Addendum의 Gate G2'("`longtask.input` p95 < 50ms + violations50ms 0건, 연속 20 클릭")를 목표로 한다.
+
+#### 2-A. BuilderCanvas 광역 구독 분해 — **스킵 결정 (2026-04-17)**
+
+**감사 결과 요약**:
+
+- `BuilderCanvas.tsx` L140~244 총 45건 `useStore`/`useViewportSyncStore`/`useAIVisualFeedbackStore`/`useCanvasLifecycleStore`/`useLayoutsStore` 호출
+- 45건의 용도 분포:
+  - stable actions(`setSelectedElement` 등) 12건 — 리렌더 유발 없음 (reference stable)
+  - `sceneSnapshot` useMemo deps 14건
+  - `skiaRendererInput` useMemo deps 9건
+  - `rendererInvalidationPacket` useMemo deps 19건
+  - 기타 effect/callback 5건
+- **JSX 자체는 단순** (`SkiaCanvasLazy` + `ViewportControlBridge` + `TextEditOverlay` + WASM 배너). BuilderCanvas는 "canvas용 데이터 조립기" 성격이며 45건 구독은 3개 useMemo 조립로 수렴
+- 각 deps는 3 useMemo 결과에 **구조적으로 필요한 값**이라 제거 불가. ADR-067 선례의 "primitive + useMemo 조립"은 **이미 현재 형태**
+
+**정량 근거 — 실제 Violation 주범 분포**:
+
+```
+selectedElement* (Id/Ids/Props) 구독 파일 수: 24
+currentPageId 구독 파일 수:                 20
+elements 배열 구독 파일 수:                  4
+BuilderCanvas 본체:                         1
+```
+
+Chrome Violation `click 430~510ms × 2 + message 200ms` 주기 패턴은 BuilderCanvas 1 subscriber가 아닌 **24 files + 각 파일 내부 여러 subscriber(PropertyUnitInput 등 row 단위)의 연쇄 commit**에서 발생. BuilderCanvas의 3-useMemo 재실행은 `render.content.build` 0.01ms 측정값으로 이미 충분히 낮음.
+
+**결론**: Phase 2-A는 스킵. 재분해 여지 구조적으로 작고, Phase 2-B ROI가 압도적. 미래 재검토 불필요.
+
+#### 2-B. 실측 기반 타겟팅 (D안) — 실제 Phase 2 본 작업
+
+Profiler 실측을 선행하여 **실제 commit 시간이 큰 상위 컴포넌트만 수정**. 24 files 일괄 감사로 확장하지 않는다.
+
+##### 2-B-0. React DevTools Profiler 녹화
+
+- 사용자 수동 녹화(MCP 제어 탭은 `visibilityState: 'hidden'` 이슈로 부정확)
+- 시나리오: 다른 페이지 요소 클릭 1회
+- 캡처:
+  - Commits 탭: 첫 commit + 연쇄 commit 개수 + 각 duration
+  - Ranked 탭: exclusive commit time 상위 10 컴포넌트
+  - "Why did this render?" 주요 render 원인(prop/state/hook)
+- 상위 5~10 타겟 → 2-B-1 수정 대상 확정
+
+##### 2-B-1. 상위 타겟 id-only + lazy subscribe 전환
+
+ADR-067 패턴 재적용:
+
+- `selectedElementProps` 전체 구독 → `selectedElementId`만 구독 + 하위에서 lazy `useStore(s => s.elementsMap.get(id))`
+- 배열/Map 전체 구독 → version counter + `useStore.getState()` lazy lookup
+- `useShallow` 금지 — primitive selector + `useMemo`로 조립
+
+##### 2-B-2. 스타일 패널 섹션 감사 (ADR-067 후속 확인)
+
+ADR-067 Phase 6까지 Jotai 제거 + Zustand native 전환 완료. 그러나 TransformSection/LayoutSection/TypographySection/AppearanceSection/ComponentStateSection 5개 섹션이 **각자 `selectedElement*` 직접 구독** 상태. Profiler 결과 이들이 상위에 포함되면 공통 컨텍스트(`useElementStyleContext` — 이미 도입됨)로 축소 가능.
+
+#### 2-B. 인스펙터 / 레이어 / 스타일 패널
+
+- 인스펙터: `selectedElementProps` 전체 구독 의심 → id-only 구독 + lazy subscribe (`useStore(s => s.elementsMap.get(id))`)
+- 레이어 패널: `elements` 전체 구독 의심 → `childrenMap` 기반 lazy 구독 (이미 부분 적용됨, 감사만)
+- 스타일 패널: ADR-067 Phase 6까지 Zustand-native 완료. 추가 최적화 여지 적을 것으로 예상 — 측정 후 판단
+
+#### 체크리스트
+
+- [ ] Phase 2-0 완료 후 baseline `longtask.input` p95 기록
+- [ ] 2-A: `BuilderCanvas.tsx` selector 감사 리포트 작성 (구독자 목록 + 각 값의 소비처)
+- [ ] 2-A: 미소비 구독 제거 + primitive selector + `useMemo` 조립 (ADR-067 패턴)
+- [ ] `pnpm type-check` PASS
+- [ ] 2-A 후 `longtask.input` p95 측정 → baseline 대비 개선 확인
+- [ ] 2-B: Inspector/Layer/Styles 패널 감사 + 필요 시 id-only 전환
+- [ ] 2-B 후 `longtask.input` p95 측정 → G2' 통과 여부 확인
+- [ ] Chrome MCP 4 시나리오 회귀 PASS (ADR-043 drag + ADR-027 inline edit + multi-selection shift/meta)
+
+### Phase 3 — FrameRenderPlan 부분 캐시 (철회 권고)
+
+실측 결과 render pipeline 전체(`render.frame` 0.07~0.22ms, `render.content.build` / `plan.build` / `skia.draw` 각각 0.01ms)가 이미 한계 근처이므로 **대안 B의 ROI가 현저히 낮다**. 본 ADR 범위에서 제외한다.
+
+- 재발 조건(workflow overlay 확장, AI flash 빈도 증가 등)에서 rAF 계열 longtask(`longtask.render`)가 다시 observable해질 경우 **별도 ADR로 신규 발의**
+- 본 breakdown의 3-1 / 3-2 / 3-3 설계 스케치는 후속 ADR의 참고 자료로 보존
+
+### Phase 4 — 종결 기준 (Addendum 적용)
+
+- Gate G2' 통과 → ADR Status: Proposed → Implemented
+- `docs/adr/README.md` 테이블 갱신, 세션 메모리 업데이트
+- Phase 3 관련 선언("대안 B 철회")을 ADR-069 후속 ADR(필요 시) 근거로 명시
