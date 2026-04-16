@@ -11,10 +11,13 @@
  * @since 2025-12-10 Phase 7 Auto Recovery
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import { performanceMonitor, type PerformanceMetrics } from '../utils/performanceMonitor';
-import { useStore } from '../stores';
-import { pageCache } from '../utils/LRUPageCache';
+import { useEffect, useRef, useCallback } from "react";
+import {
+  performanceMonitor,
+  type PerformanceMetrics,
+} from "../utils/performanceMonitor";
+import { useStore } from "../stores";
+import { pageCache } from "../utils/LRUPageCache";
 
 // ============================================
 // Types
@@ -110,7 +113,7 @@ export function useAutoRecovery(options?: {
   const lastCheckTimeRef = useRef(0);
 
   // Store 액션
-  const clearAllPages = useStore((state) => state.clearAllPages);
+  // ADR-069 Phase 2-B: stable action 구독 제거 (clearAllPages → getState lazy)
   const currentPageId = useStore((state) => state.currentPageId);
 
   /**
@@ -119,7 +122,7 @@ export function useAutoRecovery(options?: {
   const executeRecovery = useCallback(
     async (reason: string): Promise<void> => {
       if (isRecoveringRef.current) {
-        console.warn('[AutoRecovery] Recovery already in progress');
+        console.warn("[AutoRecovery] Recovery already in progress");
         return;
       }
 
@@ -129,28 +132,30 @@ export function useAutoRecovery(options?: {
         statsRef.current.lastRecoveryTime &&
         now - statsRef.current.lastRecoveryTime < config.recoveryCooldown
       ) {
-        console.warn('[AutoRecovery] In cooldown period');
+        console.warn("[AutoRecovery] In cooldown period");
         return;
       }
 
       isRecoveringRef.current = true;
-      const healthBefore = performanceMonitor.getLastMetrics()?.healthScore ?? 0;
+      const healthBefore =
+        performanceMonitor.getLastMetrics()?.healthScore ?? 0;
 
       console.warn(`🔧 [AutoRecovery] Starting recovery: ${reason}`);
-      console.log('  Health before:', healthBefore);
+      console.log("  Health before:", healthBefore);
 
       try {
         // 1단계: 비활성 페이지 언로드
-        console.log('  Step 1: Unloading inactive pages...');
+        console.log("  Step 1: Unloading inactive pages...");
+        const { clearAllPages } = useStore.getState();
         if (clearAllPages) {
           clearAllPages();
         }
 
         // 2단계: 히스토리 정리 (trim 메서드 미구현 - 스킵)
-        console.log('  Step 2: History trimming skipped (not implemented)');
+        console.log("  Step 2: History trimming skipped (not implemented)");
 
         // 3단계: LRU 캐시 정리 (현재 페이지 제외)
-        console.log('  Step 3: Clearing caches...');
+        console.log("  Step 3: Clearing caches...");
         const cachedPages = pageCache.getPageIds();
         cachedPages.forEach((pageId) => {
           if (pageId !== currentPageId) {
@@ -159,8 +164,11 @@ export function useAutoRecovery(options?: {
         });
 
         // 4단계: 가비지 컬렉션 힌트 (Chrome only)
-        if ('gc' in window && typeof (window as Window & { gc?: () => void }).gc === 'function') {
-          console.log('  Step 4: Requesting GC...');
+        if (
+          "gc" in window &&
+          typeof (window as Window & { gc?: () => void }).gc === "function"
+        ) {
+          console.log("  Step 4: Requesting GC...");
           (window as Window & { gc?: () => void }).gc?.();
         }
 
@@ -186,27 +194,29 @@ export function useAutoRecovery(options?: {
 
         console.log(`✅ [AutoRecovery] Recovery complete`);
         console.log(`  Health after: ${metricsAfter.healthScore}`);
-        console.log(`  Improvement: +${metricsAfter.healthScore - healthBefore}`);
+        console.log(
+          `  Improvement: +${metricsAfter.healthScore - healthBefore}`,
+        );
 
         // 콜백 호출
         options?.onRecovery?.(reason, { ...statsRef.current });
       } catch (error) {
-        console.error('[AutoRecovery] Recovery failed:', error);
+        console.error("[AutoRecovery] Recovery failed:", error);
       } finally {
         isRecoveringRef.current = false;
       }
     },
-    [clearAllPages, currentPageId, config.recoveryCooldown, options]
+    [currentPageId, config.recoveryCooldown, options],
   );
 
   /**
    * 수동 복구 트리거
    */
   const triggerRecovery = useCallback(
-    (reason = 'manual') => {
+    (reason = "manual") => {
       executeRecovery(reason);
     },
-    [executeRecovery]
+    [executeRecovery],
   );
 
   /**
@@ -226,14 +236,21 @@ export function useAutoRecovery(options?: {
       lastCheckTimeRef.current = now;
 
       // 경고 상태
-      if (metrics.healthScore < config.warningHealthScore && metrics.healthScore >= config.criticalHealthScore) {
-        console.warn(`⚠️ [AutoRecovery] Warning: Health ${metrics.healthScore}%`);
+      if (
+        metrics.healthScore < config.warningHealthScore &&
+        metrics.healthScore >= config.criticalHealthScore
+      ) {
+        console.warn(
+          `⚠️ [AutoRecovery] Warning: Health ${metrics.healthScore}%`,
+        );
         options?.onWarning?.(metrics);
       }
 
       // 심각 상태 - 자동 복구
       if (metrics.healthScore < config.criticalHealthScore) {
-        console.error(`🚨 [AutoRecovery] Critical: Health ${metrics.healthScore}%`);
+        console.error(
+          `🚨 [AutoRecovery] Critical: Health ${metrics.healthScore}%`,
+        );
         executeRecovery(`critical_health_${metrics.healthScore}`);
       }
     });
@@ -242,7 +259,14 @@ export function useAutoRecovery(options?: {
       unsubscribe();
       performanceMonitor.stopAutoCollect();
     };
-  }, [config.enabled, config.checkInterval, config.criticalHealthScore, config.warningHealthScore, executeRecovery, options]);
+  }, [
+    config.enabled,
+    config.checkInterval,
+    config.criticalHealthScore,
+    config.warningHealthScore,
+    executeRecovery,
+    options,
+  ]);
 
   return {
     stats: statsRef.current,
@@ -260,7 +284,7 @@ export function useAutoRecovery(options?: {
  * (React 컴포넌트 외부에서 호출 가능)
  */
 export async function emergencyRecovery(): Promise<void> {
-  console.error('🚨 [EmergencyRecovery] Starting emergency recovery...');
+  console.error("🚨 [EmergencyRecovery] Starting emergency recovery...");
 
   try {
     // 1. 히스토리 대폭 정리 (trim 메서드 미구현 - 스킵)
@@ -270,13 +294,13 @@ export async function emergencyRecovery(): Promise<void> {
     pageCache.clear();
 
     // 3. GC 힌트
-    if ('gc' in window) {
+    if ("gc" in window) {
       (window as Window & { gc?: () => void }).gc?.();
     }
 
-    console.log('✅ [EmergencyRecovery] Complete');
+    console.log("✅ [EmergencyRecovery] Complete");
   } catch (error) {
-    console.error('[EmergencyRecovery] Failed:', error);
+    console.error("[EmergencyRecovery] Failed:", error);
   }
 }
 
@@ -285,14 +309,17 @@ export async function emergencyRecovery(): Promise<void> {
  */
 export function setupMemoryPressureListener(): () => void {
   // Chrome의 메모리 압박 API (실험적)
-  if ('memory' in performance) {
+  if ("memory" in performance) {
     const checkMemory = () => {
-      const memory = (performance as Performance & {
-        memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number };
-      }).memory;
+      const memory = (
+        performance as Performance & {
+          memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number };
+        }
+      ).memory;
 
       if (memory) {
-        const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
+        const usagePercent =
+          (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
         if (usagePercent > 90) {
           emergencyRecovery();
         }

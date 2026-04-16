@@ -114,7 +114,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   // const elements = useStore((state) => state.elements);  // REMOVED
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
-  const setSelectedElement = useStore((state) => state.setSelectedElement);
+  // ADR-069 Phase 2-B: setSelectedElement 구독 제거 → 사용처에서 useStore.getState() lazy 호출
   // updateElementProps는 useZundoActions에서 가져옴
 
   // ⭐ Layout/Slot System: Page 정보 구독
@@ -719,7 +719,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           } else {
             // 일반 클릭: 단일 선택 (computedStyle 없이 즉시 선택 - Option B+C)
             // computedStyle은 별도 메시지(ELEMENT_COMPUTED_STYLE)로 나중에 도착
-            setSelectedElement(
+            useStore.getState().setSelectedElement(
               newElementId,
               event.data.payload?.props,
               event.data.payload?.style,
@@ -788,7 +788,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       if (event.data.type === "element-click" && event.data.elementId) {
         // 🚀 Phase 19: startTransition으로 선택 업데이트를 비긴급 처리 (INP 개선)
         startTransition(() => {
-          setSelectedElement(event.data.elementId, event.data.payload?.props);
+          useStore
+            .getState()
+            .setSelectedElement(
+              event.data.elementId,
+              event.data.payload?.props,
+            );
         });
 
         // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
@@ -819,7 +824,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     },
     [
       enqueuePreviewGeneratedElements,
-      setSelectedElement,
       elementsMap,
       processMessageQueue,
       sendElementsToIframe,

@@ -8,8 +8,8 @@
  * @since 2025-12-10 Phase 5 Lazy Loading + LRU Cache
  */
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useStore } from '../stores';
+import { useCallback, useEffect, useRef } from "react";
+import { useStore } from "../stores";
 
 export interface UsePageLoaderReturn {
   /** 현재 페이지가 로딩 중인지 */
@@ -47,13 +47,11 @@ export interface UsePageLoaderReturn {
  * ```
  */
 export function usePageLoader(autoLoad = true): UsePageLoaderReturn {
+  // ADR-069 Phase 2-B: stable action 구독 3건 제거 (lazyLoadPageElements/preloadPage/getLRUStats)
   const currentPageId = useStore((state) => state.currentPageId);
   const loadedPages = useStore((state) => state.loadedPages);
   const loadingPages = useStore((state) => state.loadingPages);
   const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
-  const lazyLoadPageElements = useStore((state) => state.lazyLoadPageElements);
-  const preloadPageAction = useStore((state) => state.preloadPage);
-  const getLRUStats = useStore((state) => state.getLRUStats);
 
   const isLoadingRef = useRef(false);
 
@@ -64,29 +62,23 @@ export function usePageLoader(autoLoad = true): UsePageLoaderReturn {
   /**
    * 페이지 로드
    */
-  const loadPage = useCallback(
-    async (pageId: string): Promise<void> => {
-      if (isLoadingRef.current) return;
-      isLoadingRef.current = true;
+  const loadPage = useCallback(async (pageId: string): Promise<void> => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
 
-      try {
-        await lazyLoadPageElements(pageId);
-      } finally {
-        isLoadingRef.current = false;
-      }
-    },
-    [lazyLoadPageElements]
-  );
+    try {
+      await useStore.getState().lazyLoadPageElements(pageId);
+    } finally {
+      isLoadingRef.current = false;
+    }
+  }, []);
 
   /**
    * 페이지 프리로드
    */
-  const preloadPage = useCallback(
-    (pageId: string): void => {
-      preloadPageAction(pageId);
-    },
-    [preloadPageAction]
-  );
+  const preloadPage = useCallback((pageId: string): void => {
+    useStore.getState().preloadPage(pageId);
+  }, []);
 
   /**
    * 현재 페이지 자동 로드
@@ -98,15 +90,23 @@ export function usePageLoader(autoLoad = true): UsePageLoaderReturn {
     if (isLoaded || isLoading) return;
 
     loadPage(currentPageId);
-  }, [currentPageId, autoLoad, lazyLoadingEnabled, isLoaded, isLoading, loadPage]);
+  }, [
+    currentPageId,
+    autoLoad,
+    lazyLoadingEnabled,
+    isLoaded,
+    isLoading,
+    loadPage,
+  ]);
 
   /**
    * LRU 통계
    */
+  const lruStats = useStore.getState().getLRUStats();
   const stats = {
-    loadedPages: getLRUStats().size,
-    maxPages: getLRUStats().maxPages,
-    hitRate: getLRUStats().hitRate,
+    loadedPages: lruStats.size,
+    maxPages: lruStats.maxPages,
+    hitRate: lruStats.hitRate,
   };
 
   return {
@@ -132,9 +132,9 @@ export function usePageLoader(autoLoad = true): UsePageLoaderReturn {
  * ```
  */
 export function useAdjacentPagePreload(): void {
+  // ADR-069 Phase 2-B: stable action 구독 1건 제거 (preloadPage)
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
-  const preloadPage = useStore((state) => state.preloadPage);
   const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
 
   useEffect(() => {
@@ -148,6 +148,7 @@ export function useAdjacentPagePreload(): void {
 
     // 인접 페이지 프리로드 (이전, 다음)
     const adjacentIndices = [currentIndex - 1, currentIndex + 1];
+    const { preloadPage } = useStore.getState();
 
     adjacentIndices.forEach((index) => {
       if (index >= 0 && index < pages.length) {
@@ -156,7 +157,7 @@ export function useAdjacentPagePreload(): void {
         preloadPage(pageId);
       }
     });
-  }, [currentPageId, pages, preloadPage, lazyLoadingEnabled]);
+  }, [currentPageId, pages, lazyLoadingEnabled]);
 }
 
 /**

@@ -90,26 +90,13 @@ export const usePageManager = ({
   const pendingActivationFrameRef = useRef<number | null>(null);
   const pendingActivationPageIdRef = useRef<string | null>(null);
 
+  // ADR-069 Phase 2-B: stable action 구독 11건 제거 → 사용처에서 useStore.getState()로 lazy 호출
+  //   activatePage / setCurrentPageId / setPages / hydrateProjectSnapshot / mergeElements /
+  //   setSelectedElement / appendPageShell / setLazyLoadingEnabled / initializePagePositions /
+  //   lazyLoadPageElements / isPageLoaded
+  // Zustand action은 store 생성 시점 정의 후 불변이므로 subscribe 불필요.
+  // reactive 값만 구독 유지: pages, lazyLoadingEnabled
   const pages = useStore((state) => state.pages);
-  const activatePage = useStore((state) => state.activatePage);
-  const setCurrentPageId = useStore((state) => state.setCurrentPageId);
-  const setPages = useStore((state) => state.setPages);
-  const hydrateProjectSnapshot = useStore(
-    (state) => state.hydrateProjectSnapshot,
-  );
-  const mergeElements = useStore((state) => state.mergeElements);
-  const setSelectedElement = useStore((state) => state.setSelectedElement);
-  const appendPageShell = useStore((state) => state.appendPageShell);
-  const setLazyLoadingEnabled = useStore(
-    (state) => state.setLazyLoadingEnabled,
-  );
-  const initializePagePositions = useStore(
-    (state) => state.initializePagePositions,
-  );
-
-  // 🚀 Phase 5: Lazy Loading 관련 상태
-  const lazyLoadPageElements = useStore((state) => state.lazyLoadPageElements);
-  const isPageLoaded = useStore((state) => state.isPageLoaded);
   const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
 
   const cancelPendingActivation = useCallback(() => {
@@ -140,11 +127,11 @@ export const usePageManager = ({
 
         pendingActivationPageIdRef.current = null;
         startTransition(() => {
-          activatePage(pageId, elementId);
+          useStore.getState().activatePage(pageId, elementId);
         });
       });
     },
-    [activatePage, cancelPendingActivation],
+    [cancelPendingActivation],
   );
 
   const runWithPageCreationLock = useCallback(
@@ -239,7 +226,7 @@ export const usePageManager = ({
           mergedElements = Array.from(mergedMap.values());
           loadedPageElements = elementsData;
 
-          mergeElements(allElements);
+          useStore.getState().mergeElements(allElements);
         }
 
         // 페이지 선택 상태 업데이트 (setCurrentPageId는 호출자에서 처리)
@@ -255,7 +242,7 @@ export const usePageManager = ({
 
         // body 요소 자동 선택
         if (bodyElement) {
-          setSelectedElement(bodyElement.id);
+          useStore.getState().setSelectedElement(bodyElement.id);
         }
 
         return { success: true, data: mergedElements };
@@ -264,7 +251,7 @@ export const usePageManager = ({
         return { success: false, error: error as Error };
       }
     },
-    [mergeElements, requestAutoSelectAfterUpdate, setSelectedElement],
+    [requestAutoSelectAfterUpdate],
   );
 
   /**
@@ -315,9 +302,11 @@ export const usePageManager = ({
 
         const nextPosition = computeNextPagePosition();
 
-        appendPageShell(newPage, bodyElement, nextPosition, {
-          activate: false,
-        });
+        useStore
+          .getState()
+          .appendPageShell(newPage, bodyElement, nextPosition, {
+            activate: false,
+          });
 
         schedulePageActivation(newPage.id, bodyElement.id);
         enqueuePagePersistence(async () => {
@@ -392,9 +381,11 @@ export const usePageManager = ({
 
         if (!layoutId) {
           const nextPosition = computeNextPagePosition();
-          appendPageShell(newPage, bodyElement, nextPosition, {
-            activate: false,
-          });
+          useStore
+            .getState()
+            .appendPageShell(newPage, bodyElement, nextPosition, {
+              activate: false,
+            });
           schedulePageActivation(newPage.id, bodyElement.id);
           enqueuePagePersistence(async () => {
             const persistenceDb = await getDB();
@@ -410,6 +401,7 @@ export const usePageManager = ({
           });
         } else {
           cancelPendingActivation();
+          const { setCurrentPageId, setPages } = useStore.getState();
           setCurrentPageId(newPage.id);
           setPages([...currentPages, newPage]);
           enqueuePagePersistence(async () => {
@@ -500,12 +492,13 @@ export const usePageManager = ({
               null,
           };
         });
-        setPages(storePages);
+        const store = useStore.getState();
+        store.setPages(storePages);
 
         // 🆕 Multi-page: 페이지 위치 초기화 (현재 방향 + canvasSize 기반)
         const currentCanvasSize = useViewportSyncStore.getState().canvasSize;
-        const currentDirection = useStore.getState().pageLayoutDirection;
-        initializePagePositions(
+        const currentDirection = store.pageLayoutDirection;
+        store.initializePagePositions(
           storePages,
           currentCanvasSize.width,
           currentCanvasSize.height,
@@ -514,7 +507,7 @@ export const usePageManager = ({
         );
 
         // 🚀 Pencil 방식: 전체 페이지 요소를 한 번에 로드 (Lazy Loading 비활성화)
-        setLazyLoadingEnabled(false);
+        store.setLazyLoadingEnabled(false);
 
         const pageIdSet = new Set(projectPages.map((p) => p.id));
         const allElements = await db.elements.getAll();
@@ -541,14 +534,15 @@ export const usePageManager = ({
         layoutElements.forEach((el) => mergedMap.set(el.id, el));
         const mergedElements = Array.from(mergedMap.values());
 
-        hydrateProjectSnapshot(mergedElements);
+        useStore.getState().hydrateProjectSnapshot(mergedElements);
 
         // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
         if (apiPages.length > 0) {
           const homePage = apiPages.find((p) => p.order_num === 0);
           const pageToSelect = homePage || apiPages[0];
 
-          setCurrentPageId(pageToSelect.id);
+          const postHydrateStore = useStore.getState();
+          postHydrateStore.setCurrentPageId(pageToSelect.id);
           setSelectedPageId(pageToSelect.id);
 
           const bodyElement = mergedElements.find(
@@ -558,7 +552,7 @@ export const usePageManager = ({
             if (requestAutoSelectAfterUpdate) {
               requestAutoSelectAfterUpdate(bodyElement.id);
             }
-            setSelectedElement(bodyElement.id);
+            postHydrateStore.setSelectedElement(bodyElement.id);
           }
         }
 
@@ -570,16 +564,7 @@ export const usePageManager = ({
         return { success: false, error: error as Error };
       }
     },
-    [
-      hydrateProjectSnapshot,
-      setLazyLoadingEnabled,
-      setSelectedElement,
-      initializePagePositions,
-      pageList,
-      setCurrentPageId,
-      setPages,
-      requestAutoSelectAfterUpdate,
-    ],
+    [pageList, requestAutoSelectAfterUpdate],
   );
 
   /**
@@ -593,8 +578,9 @@ export const usePageManager = ({
       if (!pageId) return;
       if (!lazyLoadingEnabled) return;
 
+      const store = useStore.getState();
       // 이미 로드됨 - 스킵
-      if (isPageLoaded(pageId)) {
+      if (store.isPageLoaded(pageId)) {
         console.log(
           `📦 [loadPageIfNeeded] Page already loaded: ${pageId.slice(0, 8)}`,
         );
@@ -603,9 +589,9 @@ export const usePageManager = ({
 
       // Lazy Load 실행
       console.log(`🔄 [loadPageIfNeeded] Loading page: ${pageId.slice(0, 8)}`);
-      await lazyLoadPageElements(pageId);
+      await store.lazyLoadPageElements(pageId);
     },
-    [isPageLoaded, lazyLoadPageElements, lazyLoadingEnabled],
+    [lazyLoadingEnabled],
   );
 
   return {

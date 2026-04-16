@@ -71,10 +71,7 @@ export function useCollectionItemManager(
     null,
   );
 
-  // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
-  const addElement = useStore((state) => state.addElement);
-  const updateElementProps = useStore((state) => state.updateElementProps);
-  const removeElement = useStore((state) => state.removeElement);
+  // ADR-069 Phase 2-B: stable action 구독 3건 제거 (addElement/updateElementProps/removeElement → getState lazy)
   const currentPageId = useStore((state) => state.currentPageId);
   // ADR-040: childrenMap O(1) 조회 (전체 elements 배열 순회 제거)
   const rawChildren =
@@ -144,19 +141,12 @@ export function useCollectionItemManager(
       if (error) throw error;
       if (!data) throw new Error("Failed to create element");
 
-      addElement(data as Element);
+      useStore.getState().addElement(data as Element);
       console.log(`새 ${childTag} 추가됨:`, data);
     } catch (error) {
       console.error(`${childTag} 추가 중 오류:`, error);
     }
-  }, [
-    children.length,
-    childTag,
-    elementId,
-    currentPageId,
-    defaultItemProps,
-    addElement,
-  ]);
+  }, [children.length, childTag, elementId, currentPageId, defaultItemProps]);
 
   /**
    * 특정 Item 삭제
@@ -179,7 +169,7 @@ export function useCollectionItemManager(
         }
 
         // Zustand store에서 제거
-        await removeElement(itemId);
+        await useStore.getState().removeElement(itemId);
 
         // 선택 상태 해제
         setSelectedItemIndex(null);
@@ -189,7 +179,7 @@ export function useCollectionItemManager(
         console.error(`${childTag} 삭제 중 오류:`, error);
       }
     },
-    [childTag, removeElement],
+    [childTag],
   );
 
   /**
@@ -198,9 +188,9 @@ export function useCollectionItemManager(
    */
   const updateItem = useCallback(
     (itemId: string, props: Record<string, unknown>) => {
-      updateElementProps(itemId, props);
+      useStore.getState().updateElementProps(itemId, props);
     },
-    [updateElementProps],
+    [],
   );
 
   return {
