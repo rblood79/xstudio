@@ -11337,6 +11337,7 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
   inset: 0;
   z-index: -1;
   border-radius: var(--btn-border-radius);
+  --button-color: var(--indicator-bg);
   --button-text: var(--indicator-text);
   --button-border: var(--indicator-bg);
   box-shadow: var(--shadow-sm);
@@ -11350,6 +11351,7 @@ exports[`CSSGenerator snapshot baseline > ToggleButtonGroup 1`] = `
   background: transparent;
   border-color: transparent;
   border-width: 0;
+  color: var(--button-text);
 }
 
 .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected] {

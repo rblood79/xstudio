@@ -1012,6 +1012,7 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  inset: 0;`);
   lines.push(`  z-index: -1;`);
   lines.push(`  border-radius: var(--btn-border-radius);`);
+  lines.push(`  --button-color: var(--indicator-bg);`);
   lines.push(`  --button-text: var(--indicator-text);`);
   lines.push(`  --button-border: var(--indicator-bg);`);
   lines.push(`  box-shadow: ${shadow};`);
@@ -1028,6 +1029,7 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  background: transparent;`);
   lines.push(`  border-color: transparent;`);
   lines.push(`  border-width: 0;`);
+  lines.push(`  color: var(--button-text);`);
   lines.push("}");
   lines.push("");
 

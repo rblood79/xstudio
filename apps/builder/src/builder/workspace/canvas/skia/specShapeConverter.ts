@@ -492,6 +492,8 @@ export function specShapesToSkia(
         // M-6: partial border — sides 지정 시 개별 변 렌더링
         if (shape.sides) {
           const strokeColor = colorValueToFloat32(shape.color, theme);
+          // Skip fully transparent borders (alpha === 0) — matches CSS behavior
+          if (strokeColor[3] === 0) break;
           const bw = shape.borderWidth;
           const tw =
             targetNode?.width ??
@@ -628,6 +630,8 @@ export function specShapesToSkia(
 
         if (targetNode) {
           const strokeColor = colorValueToFloat32(shape.color, theme);
+          // Skip fully transparent borders (alpha === 0) — matches CSS behavior
+          if (strokeColor[3] === 0) break;
 
           // If the target is the background box
           if (targetNode.box === bgBox && bgBox) {
@@ -640,6 +644,10 @@ export function specShapesToSkia(
             targetNode.box.strokeStyle = shape.style ?? "solid";
           }
         } else {
+          const strokeColor = colorValueToFloat32(shape.color, theme);
+          // Skip fully transparent borders (alpha === 0) — matches CSS behavior
+          if (strokeColor[3] === 0) break;
+
           // No target found - render as standalone border box
           const bx = shape.x ?? 0;
           const by = shape.y ?? 0;
@@ -663,7 +671,7 @@ export function specShapesToSkia(
             box: {
               fillColor: TRANSPARENT,
               borderRadius: br,
-              strokeColor: colorValueToFloat32(shape.color, theme),
+              strokeColor,
               strokeWidth: shape.borderWidth,
               strokeStyle: shape.style ?? "solid",
             },

@@ -81,11 +81,11 @@
                 border-radius: 50%;
               }
 
-              &[data-selected] {
+              /*&[data-selected] {
                 .alignment-dot {
                   background-color: var(--fg-on-accent);
                 }
-              }
+              }*/
             }
           }
         }
@@ -349,11 +349,11 @@
               border-radius: 50%;
             }
 
-            &[data-selected] {
+            /*&[data-selected] {
               .alignment-dot {
                 background-color: var(--fg-on-accent);
               }
-            }
+            }*/
           }
         }
       }

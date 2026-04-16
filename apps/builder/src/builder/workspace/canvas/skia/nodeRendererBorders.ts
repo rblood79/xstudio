@@ -409,7 +409,11 @@ export function renderBox(
       fillShader.delete();
     }
 
-    if (node.box.strokeColor && node.box.strokeWidth) {
+    if (
+      node.box.strokeColor &&
+      node.box.strokeWidth &&
+      node.box.strokeColor[3] > 0
+    ) {
       const sw = node.box.strokeWidth;
       const strokeStyle = node.box.strokeStyle;
       paint.setShader(null);

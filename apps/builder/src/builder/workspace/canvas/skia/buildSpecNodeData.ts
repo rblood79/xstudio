@@ -969,6 +969,19 @@ function applyInlineBorderOverlay(
   const bw = parseCSSSize(borderWidth as string | number);
   if (bw <= 0) return;
 
+  // Skip fully transparent borders — matches CSS behavior
+  const borderColorStr = style.borderColor as string | undefined;
+  const normalized = borderColorStr?.trim().toLowerCase();
+  if (
+    normalized === "transparent" ||
+    normalized === "rgba(0,0,0,0)" ||
+    normalized === "rgba(0, 0, 0, 0)" ||
+    normalized === "#0000" ||
+    normalized === "#00000000"
+  ) {
+    return;
+  }
+
   // box가 없으면 생성
   if (!specNode.box) {
     specNode.box = {
@@ -978,7 +991,6 @@ function applyInlineBorderOverlay(
   }
 
   // borderColor
-  const borderColorStr = style.borderColor as string | undefined;
   const borderHex = borderColorStr
     ? cssColorToHex(borderColorStr, 0x808080)
     : 0x808080;
