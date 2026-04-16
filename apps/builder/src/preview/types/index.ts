@@ -27,6 +27,8 @@ export interface PreviewElement {
  */
 export interface RenderContext {
   elements: PreviewElement[];
+  /** id 기반 O(1) 조회용 인덱스 (provider가 elements와 함께 빌드) */
+  elementsMap: Map<string, PreviewElement>;
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
   setElements: (elements: PreviewElement[]) => void;
   eventEngine: EventEngine;

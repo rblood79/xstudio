@@ -703,16 +703,15 @@ export const renderToggleButton = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { elements, elementsMap, updateElementProps } = context;
 
   const children = elements
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const isInGroup = elements.some(
-    (parent) =>
-      parent.id === element.parent_id && parent.tag === "ToggleButtonGroup",
-  );
+  const isInGroup = element.parent_id
+    ? elementsMap.get(element.parent_id)?.tag === "ToggleButtonGroup"
+    : false;
 
   // id는 element.id — group의 selectedKeys Set과 키 일치 필수.
   return (

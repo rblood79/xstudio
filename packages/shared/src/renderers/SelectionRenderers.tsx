@@ -341,7 +341,7 @@ export const renderDataField = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements } = context;
+  const { elements, elementsMap } = context;
 
   // dataBinding이 있고 source가 "parent"인 경우 부모 데이터에서 값 추출
   let value = element.props.value;
@@ -353,7 +353,9 @@ export const renderDataField = (
     const path = element.dataBinding.config?.path as string | undefined;
 
     // 부모 element 찾기 (ListBoxItem, GridListItem 등)
-    const parent = elements.find((el) => el.id === element.parent_id);
+    const parent = element.parent_id
+      ? elementsMap.get(element.parent_id)
+      : undefined;
 
     if (parent && path) {
       // 부모의 value에서 데이터 추출

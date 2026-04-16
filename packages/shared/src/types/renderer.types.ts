@@ -7,8 +7,8 @@
  * @since 2025-01-02
  */
 
-import type { ReactNode, CSSProperties } from 'react';
-import type { DataBinding } from './element.types';
+import type { ReactNode, CSSProperties } from "react";
+import type { DataBinding } from "./element.types";
 
 // ============================================
 // Element Props Types
@@ -24,7 +24,7 @@ export interface ElementProps {
   className?: string;
   text?: string;
   children?: ReactNode;
-  'data-element-id'?: string;
+  "data-element-id"?: string;
   // 동적 props 허용
   [key: string]: unknown;
 }
@@ -76,7 +76,7 @@ export interface RuntimeServices {
   /** 이벤트 핸들러 생성 */
   createEventHandlerMap?: (
     element: PreviewElement,
-    context: RenderContext
+    context: RenderContext,
   ) => Record<string, (e: Event) => void>;
 }
 
@@ -95,6 +95,8 @@ export interface DataState {
 export interface RenderContext {
   /** 현재 페이지의 모든 elements */
   elements: PreviewElement[];
+  /** id 기반 O(1) 조회용 인덱스 (provider가 elements와 함께 빌드) */
+  elementsMap: Map<string, PreviewElement>;
   /** element props 업데이트 함수 */
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
   /** elements 전체 교체 함수 */
@@ -104,7 +106,7 @@ export interface RenderContext {
   /** 프로젝트 ID (optional) */
   projectId?: string;
   /** 편집 모드 */
-  editMode?: 'page' | 'layout';
+  editMode?: "page" | "layout";
   /** 런타임 서비스 (DI) */
   services?: RuntimeServices;
   /** 이벤트 엔진 (optional) */
@@ -122,7 +124,7 @@ export interface RenderContext {
  */
 export type RenderFunction = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ) => ReactNode;
 
 /**

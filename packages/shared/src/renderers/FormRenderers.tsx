@@ -37,14 +37,12 @@ type InheritedFormFieldProps = {
 
 function findNearestAncestorForm(
   element: PreviewElement,
-  elements: PreviewElement[],
+  elementsMap: Map<string, PreviewElement>,
 ): PreviewElement | null {
   let currentParentId = element.parent_id;
 
   while (currentParentId) {
-    const parent = elements.find(
-      (candidate) => candidate.id === currentParentId,
-    );
+    const parent = elementsMap.get(currentParentId);
     if (!parent) return null;
     if (parent.tag === "Form") return parent;
     currentParentId = parent.parent_id;
@@ -57,7 +55,7 @@ export function resolveInheritedFormFieldProps(
   element: PreviewElement,
   context: RenderContext,
 ): InheritedFormFieldProps {
-  const formElement = findNearestAncestorForm(element, context.elements);
+  const formElement = findNearestAncestorForm(element, context.elementsMap);
   if (!formElement) return {};
 
   return {
@@ -405,7 +403,7 @@ export const renderLabel = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { elements, elementsMap, renderElement } = context;
 
   const children = elements
     .filter((child) => child.parent_id === element.id)
@@ -422,7 +420,7 @@ export const renderLabel = (
 
   // 부모가 <label> 요소면 <span>으로 렌더 (label 중첩 방지)
   const parentTag = element.parent_id
-    ? elements.find((e) => e.id === element.parent_id)?.tag
+    ? elementsMap.get(element.parent_id)?.tag
     : null;
 
   if (parentTag && LABEL_AS_SPAN_PARENTS.has(parentTag)) {
@@ -688,7 +686,7 @@ export const renderRadio = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { elements, elementsMap, renderElement } = context;
 
   const children = elements
     .filter((child) => child.parent_id === element.id)
@@ -696,11 +694,11 @@ export const renderRadio = (
 
   // 부모 또는 조부모가 RadioGroup인지 확인
   // Factory 구조: RadioGroup > RadioItems > Radio
-  const parentElement = elements.find(
-    (parent) => parent.id === element.parent_id,
-  );
+  const parentElement = element.parent_id
+    ? elementsMap.get(element.parent_id)
+    : undefined;
   const grandparentElement = parentElement?.parent_id
-    ? elements.find((gp) => gp.id === parentElement.parent_id)
+    ? elementsMap.get(parentElement.parent_id)
     : null;
   const isInsideRadioGroup =
     parentElement?.tag === "RadioGroup" ||

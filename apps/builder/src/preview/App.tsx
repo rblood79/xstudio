@@ -343,10 +343,17 @@ function CanvasContent() {
     };
   }, [handleLinkClick]);
 
+  // id 기반 O(1) 조회 인덱스 (RenderContext에 함께 노출)
+  const elementsMap = useMemo(
+    () => new Map(elements.map((el) => [el.id, el])),
+    [elements],
+  );
+
   // RenderContext 생성
   const renderContext: RenderContext = useMemo(
     () => ({
       elements,
+      elementsMap,
       updateElementProps,
       setElements: (newElements: PreviewElement[]) => {
         setElements(newElements as RuntimeElement[]);
@@ -355,7 +362,7 @@ function CanvasContent() {
       renderElement: (el: PreviewElement, key?: string) =>
         renderElementInternalRef.current(el, key),
     }),
-    [elements, updateElementProps, setElements, eventEngine],
+    [elements, elementsMap, updateElementProps, setElements, eventEngine],
   );
 
   // Element 렌더링 함수 (내부)
