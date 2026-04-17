@@ -1,9 +1,17 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
+import type {
+  StoredSelectItem,
+  StoredComboBoxItem,
+} from "@composition/specs/types";
 
 /**
- * Select 컴포넌트 정의
+ * Select 컴포넌트 정의 (ADR-073 P6)
+ *
+ * items prop 으로 SelectItem 데이터를 직렬화 가능한 StoredSelectItem[] 형태로 관리.
+ * SelectItem 자식 element는 더 이상 생성하지 않는다.
+ * Label / SelectTrigger (SelectValue + SelectIcon) sub-element 는 유지.
  */
 export function createSelectDefinition(
   context: ComponentCreationContext,
@@ -16,6 +24,13 @@ export function createSelectDefinition(
   const ownerFields = layoutId
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
+
+  const items: StoredSelectItem[] = [
+    { id: crypto.randomUUID(), label: "Aardvark", value: "aardvark" },
+    { id: crypto.randomUUID(), label: "Cat", value: "cat" },
+    { id: crypto.randomUUID(), label: "Dog", value: "dog" },
+    { id: crypto.randomUUID(), label: "Kangaroo", value: "kangaroo" },
+  ];
 
   return {
     tag: "Select",
@@ -31,6 +46,7 @@ export function createSelectDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
+        items,
         style: {
           width: "100%",
         },
@@ -83,52 +99,16 @@ export function createSelectDefinition(
           },
         ],
       },
-      {
-        tag: "SelectItem",
-        props: {
-          label: "Aardvark",
-          value: "aardvark",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-      },
-      {
-        tag: "SelectItem",
-        props: {
-          label: "Cat",
-          value: "cat",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
-      },
-      {
-        tag: "SelectItem",
-        props: {
-          label: "Dog",
-          value: "dog",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 4,
-      },
-      {
-        tag: "SelectItem",
-        props: {
-          label: "Kangaroo",
-          value: "kangaroo",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 5,
-      },
     ],
   };
 }
 
 /**
- * ComboBox 컴포넌트 정의
+ * ComboBox 컴포넌트 정의 (ADR-073 P6)
+ *
+ * items prop 으로 ComboBoxItem 데이터를 직렬화 가능한 StoredComboBoxItem[] 형태로 관리.
+ * ComboBoxItem 자식 element는 더 이상 생성하지 않는다.
+ * Label / ComboBoxWrapper (ComboBoxInput + ComboBoxTrigger) sub-element 는 유지.
  */
 export function createComboBoxDefinition(
   context: ComponentCreationContext,
@@ -141,6 +121,13 @@ export function createComboBoxDefinition(
   const ownerFields = layoutId
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
+
+  const items: StoredComboBoxItem[] = [
+    { id: crypto.randomUUID(), label: "Aardvark", value: "aardvark" },
+    { id: crypto.randomUUID(), label: "Cat", value: "cat" },
+    { id: crypto.randomUUID(), label: "Dog", value: "dog" },
+    { id: crypto.randomUUID(), label: "Kangaroo", value: "kangaroo" },
+  ];
 
   return {
     tag: "ComboBox",
@@ -158,6 +145,7 @@ export function createComboBoxDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
+        items,
         style: {
           width: "100%",
         },
@@ -210,46 +198,6 @@ export function createComboBoxDefinition(
             order_num: 1,
           },
         ],
-      },
-      {
-        tag: "ComboBoxItem",
-        props: {
-          label: "Aardvark",
-          value: "aardvark",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-      },
-      {
-        tag: "ComboBoxItem",
-        props: {
-          label: "Cat",
-          value: "cat",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
-      },
-      {
-        tag: "ComboBoxItem",
-        props: {
-          label: "Dog",
-          value: "dog",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 4,
-      },
-      {
-        tag: "ComboBoxItem",
-        props: {
-          label: "Kangaroo",
-          value: "kangaroo",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 5,
       },
     ],
   };
