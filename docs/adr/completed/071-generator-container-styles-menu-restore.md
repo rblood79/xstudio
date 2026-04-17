@@ -1,10 +1,11 @@
 # ADR-071: Generator `containerStyles` 인프라 + Menu 정방향 복원
 
-> **SSOT domain**: D3 (시각 스타일) — non-composite Spec이 popover/dropdown 컨테이너 시각을 Spec SSOT에 편입하는 최초 사례. CSSGenerator에 `containerStyles` top-level 필드 신설 + `{color.raised}` TokenRef 신설 + Menu container 수동 CSS(ADR-070 Addendum 1 debt) 해체. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), 선례: [ADR-036](completed/036-spec-first-single-source.md), [ADR-059](completed/059-composite-field-skip-css-dismantle.md), [ADR-070 Addendum 1](completed/070-popover-item-css-ssot.md).
+> **SSOT domain**: D3 (시각 스타일) — non-composite Spec이 popover/dropdown 컨테이너 시각을 Spec SSOT에 편입하는 최초 사례. CSSGenerator에 `containerStyles` top-level 필드 신설 + `{color.raised}` TokenRef 신설 + Menu container 수동 CSS(ADR-070 Addendum 1 debt) 해체. 정본: [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md), 선례: [ADR-036](036-spec-first-single-source.md), [ADR-059](059-composite-field-skip-css-dismantle.md), [ADR-070 Addendum 1](070-popover-item-css-ssot.md).
 
 ## Status
 
-Proposed — 2026-04-17
+Implemented — 2026-04-18
+(Proposed 2026-04-17 → Implemented 2026-04-18 / 10 commits `2098af27`→`8ed33889`)
 
 ## Context
 
@@ -129,7 +130,7 @@ Menu Spec은 실제로 **2개 논리 요소**를 하나의 Spec에 담고 있다
 - **대안 C 기각**: `spec.composition` 의 기존 의미("Composite 컨테이너 + 자식이 색상 관리 + layout/containerVariants 포함 블록") 를 Menu 같은 non-composite spec이 부분 차용하면 판정 로직이 불분명해짐. API 단일화 이득보다 의미 희석 비용이 큼.
 - **대안 D 기각**: 근본이나 element tree 전면 개편 규모. 현 debt(Menu container 수동 CSS 1건) 해체에 과잉. 대안 B 인프라 정착 이후 선택적 재검토.
 
-> 구현 상세: [071-generator-container-styles-menu-restore-breakdown.md](../design/071-generator-container-styles-menu-restore-breakdown.md)
+> 구현 상세: [071-generator-container-styles-menu-restore-breakdown.md](../../design/071-generator-container-styles-menu-restore-breakdown.md)
 
 ## Gates
 
@@ -183,3 +184,36 @@ ADR 승인 시 다음 잔존 위험을 **명시적으로 수용**한다. 모두 
 | **ADR-E (선택)** | Menu/MenuTrigger Spec 구조 분리 — D3 symmetric 완전 회복                                           | 본 ADR 은 S3 semantic 으로 이원성 구조화. 추가 분리는 선택적.                                            |
 
 권장 진행 순서: **본 ADR-071** → **ADR-B** → **ADR-C**. ADR-B/C 는 독립 축(D2/D3) 이므로 순서 교환 가능.
+
+**갱신 (2026-04-18)**: ADR-B 는 **ADR-073** (Select/ComboBox items SSOT) 로 Implemented 종결. ADR-C 는 **ADR-076** 으로 번호 이동(같은 날 ADR-074/075 가 캔버스 입력 파이프라인 / longtask fan-out 을 선점). ADR-D / ADR-E 는 선택적 잔여.
+
+## Implementation (2026-04-18)
+
+P1~P3 완료, 10 commits land. `{color.raised}` TokenRef 신설 + `ContainerStylesSchema` 인프라 + Menu `skipCSSGeneration: true` 해체 + 수동 `Menu.css` 삭제 + Spec-first 경로 복원. ADR-070 Addendum 1 debt 청산.
+
+| Phase | SHA        | 내용                                                                                           |
+| ----- | ---------- | ---------------------------------------------------------------------------------------------- |
+| docs  | `20ded96b` | ADR + breakdown Codex review 반영                                                              |
+| P1.1  | `2098af27` | `{color.raised}` TokenRef 추가 (popover container 표준)                                        |
+| P1.2  | `2e4dcea0` | `{spacing.2xs}` primitive 등록                                                                 |
+| P2.1  | `f1f12a9c` | `ContainerStylesSchema` 타입 + `emitContainerStyles` helper                                    |
+| P2.2  | `9b8766c5` | `generateBaseStyles` S3 axis `containerStyles` 분기 추가                                       |
+| P2.2+ | `528a7e5b` | `padding/borderRadius` double-emit 방지 (containerStyles 존재 시 sizes 경로 skip)              |
+| P3.1  | `0a3cc0b1` | `Menu.spec` `containerStyles` 정의 + `skipCSSGeneration` 제거                                  |
+| P3.1+ | `f66c6d7e` | variants skip 주석 refine (Menu 는 containerStyles 경로)                                       |
+| P3.2  | `85a66329` | 수동 `Menu.css` 해체 + Spec-first CSS 경로 복원                                                |
+| P3.2+ | `8ed33889` | `border-width` double-emit 방지 (containerStyles.border 존재 시 generator 자동 border 축 skip) |
+
+**누적 검증**:
+
+- `pnpm type-check` 3/3 PASS (모든 Phase)
+- `@composition/specs` test — `tokenResolver.test.ts` + `CSSGenerator.containerStyles.test.ts` (ADR-071 전용) PASS
+- Menu `skipCSSGeneration: false` + 수동 `Menu.css` 삭제 확증 (`find apps packages -name Menu.css` → `generated/Menu.css` 만 존재)
+- Menu `.react-aria-Menu` base CSS 는 containerStyles 경로로 emit — `background: var(--bg-raised)` 주입 복원
+
+**Gate 결과**:
+
+- G1 (ADR-070 debt 청산) — 수동 `Menu.css` 삭제 ✅
+- G2 (Menu light/dark 팔레트 정상화) — `{color.raised}` 체인 동작 ✅
+- G3 (Spec-first 경로 복원) — ADR-036 / ADR-059 / ADR-063 역행 debt 해소 ✅
+- G4 (`containerStyles` 인프라 재사용성) — ADR-076 (ListBox) 에서 재활용 예정
