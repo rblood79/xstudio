@@ -12,6 +12,7 @@ import type { SpacingTokens } from "../types/token.types";
  * 간격 토큰
  */
 export const spacing: SpacingTokens = {
+  "2xs": 2, // ← ADR-071 신설. --spacing-2xs: 0.125rem = 2px 정합
   xs: 4,
   sm: 8,
   md: 16,

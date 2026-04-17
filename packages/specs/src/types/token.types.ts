@@ -144,6 +144,7 @@ export interface ColorTokens {
  * 간격 토큰
  */
 export interface SpacingTokens {
+  "2xs": number; // 2 (0.125rem) — ADR-071
   xs: number; // 4
   sm: number; // 8
   md: number; // 16
