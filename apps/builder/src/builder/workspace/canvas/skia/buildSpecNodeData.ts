@@ -134,7 +134,7 @@ export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "Form",
   "GridList",
   "ListBox",
-  "Menu",
+  // ADR-068: Menu는 items SSOT 전환 — _hasChildren 분기 제거, 더 이상 EXCLUDE 대상 아님
   "Popover",
   "RadioGroup",
   "Section",

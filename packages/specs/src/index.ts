@@ -66,6 +66,9 @@ export type {
   // State Types
   StateStyles,
   StateEffect,
+  // Menu Items Types (ADR-068)
+  StoredMenuItem,
+  RuntimeMenuItem,
 } from "./types";
 
 export { isValidTokenRef } from "./types";
@@ -271,6 +274,9 @@ export type { TabProps } from "./components/Tab.spec";
 
 export { MenuSpec } from "./components/Menu.spec";
 export type { MenuProps } from "./components/Menu.spec";
+
+export { MenuItemSpec } from "./components/MenuItem.spec";
+export type { MenuItemProps } from "./components/MenuItem.spec";
 
 export { BreadcrumbsSpec } from "./components/Breadcrumbs.spec";
 export type { BreadcrumbsProps } from "./components/Breadcrumbs.spec";

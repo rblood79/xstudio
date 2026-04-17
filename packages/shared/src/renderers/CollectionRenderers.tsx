@@ -17,7 +17,23 @@ import type {
   ColumnMapping,
   DataBinding,
 } from "../types";
+import type { StoredMenuItem, RuntimeMenuItem } from "@composition/specs/types";
 import { getSelectedChildIds } from "./selection";
+
+/**
+ * Stored → Runtime 변환 (Q11=나: EVENT_REGISTRY에 직접 의존 금지)
+ * resolveActionId는 RenderContext를 통해 주입받음
+ */
+function toRuntimeMenuItem(
+  item: StoredMenuItem,
+  resolve?: (id: string) => (() => void) | undefined,
+): RuntimeMenuItem {
+  return {
+    ...item,
+    onAction: item.onActionId ? resolve?.(item.onActionId) : undefined,
+    children: item.children?.map((c) => toRuntimeMenuItem(c, resolve)),
+  };
+}
 
 /**
  * Collection 관련 컴포넌트 렌더러
@@ -729,18 +745,16 @@ export const renderToggleButton = (
 
 /**
  * Menu 렌더링
- * Static 방법: MenuItem 자식을 직접 추가
- * Dynamic 방법: dataBinding을 통해 동적으로 MenuItem 생성 (MenuButton 컴포넌트에서 처리)
+ * items SSOT 경로: element.props.items (StoredMenuItem[]) → RuntimeMenuItem[] 변환 후 MenuButton에 전달
+ * dataBinding 경로: useCollectionData 결과 사용 (기존 유지)
  */
 export const renderMenu = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { renderElement } = context;
-
-  // Static 방법: 직접 추가된 MenuItem 자식 요소들 찾기
-  const menuItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "MenuItem",
+  const stored = (element.props.items ?? []) as StoredMenuItem[];
+  const runtime = stored.map((it) =>
+    toRuntimeMenuItem(it, context.resolveActionId),
   );
 
   return (
@@ -748,8 +762,9 @@ export const renderMenu = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      label={String(element.props.children || element.props.label || "Menu")}
+      label={String(element.props.label || element.props.children || "Menu")}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
+      items={runtime}
       style={element.props.style}
       className={element.props.className}
       dataBinding={
@@ -757,10 +772,7 @@ export const renderMenu = (
           | DataBinding
           | undefined
       }
-    >
-      {/* Static 방법: MenuItem 자식 렌더링 (dataBinding이 없을 때만) */}
-      {menuItemChildren.map((child) => renderElement(child, child.id))}
-    </MenuButton>
+    />
   );
 };
 

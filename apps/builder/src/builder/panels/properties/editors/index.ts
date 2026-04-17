@@ -16,7 +16,6 @@ export { BreadcrumbEditor } from "./BreadcrumbEditor";
 // ⭐ Phase 6: BodyEditor 분리
 export { PageBodyEditor } from "./PageBodyEditor";
 export { LayoutBodyEditor } from "./LayoutBodyEditor";
-export { MenuItemEditor } from "./MenuItemEditor";
 // ⭐ Layout/Slot 관련
 export { LayoutSlugEditor } from "./LayoutSlugEditor";
 // ⭐ Data 관련

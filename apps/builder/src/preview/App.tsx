@@ -383,6 +383,9 @@ function CanvasContent() {
       eventEngine,
       renderElement: (el: PreviewElement, key?: string) =>
         renderElementInternalRef.current(el, key),
+      // Q11=나: shared 렌더러는 EVENT_REGISTRY에 직접 의존 금지 → context 주입
+      // 현재 단계에서는 noop resolver (P6에서 이벤트 연결 확장 예정)
+      resolveActionId: (_id: string) => undefined,
     }),
     [
       elements,

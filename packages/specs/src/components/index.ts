@@ -237,6 +237,10 @@ export type { TabProps } from "./Tab.spec";
 export { MenuSpec } from "./Menu.spec";
 export type { MenuProps } from "./Menu.spec";
 
+// MenuItem (ADR-068 — CSS 자동 생성 전용, Builder Skia 미등록 Q5=i)
+export { MenuItemSpec } from "./MenuItem.spec";
+export type { MenuItemProps } from "./MenuItem.spec";
+
 // Breadcrumbs
 export { BreadcrumbsSpec } from "./Breadcrumbs.spec";
 export type { BreadcrumbsProps } from "./Breadcrumbs.spec";

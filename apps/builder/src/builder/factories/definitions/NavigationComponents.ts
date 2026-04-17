@@ -1,15 +1,13 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
+import type { StoredMenuItem } from "@composition/specs/types";
 
 /**
- * Menu 컴포넌트 정의
+ * Menu 컴포넌트 정의 (ADR-068 P4)
  *
- * CSS DOM 구조 대응:
- *   Menu (parent, tag="Menu")
- *     ├─ MenuItem (tag="MenuItem", children="Menu Item 1")
- *     ├─ MenuItem (tag="MenuItem", children="Menu Item 2")
- *     └─ MenuItem (tag="MenuItem", children="Menu Item 3")
+ * items prop 으로 MenuItem 데이터를 직렬화 가능한 StoredMenuItem[] 형태로 관리.
+ * MenuItem 자식 element는 더 이상 생성하지 않는다.
  */
 export function createMenuDefinition(
   context: ComponentCreationContext,
@@ -23,16 +21,22 @@ export function createMenuDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
+  const items: StoredMenuItem[] = [
+    { id: crypto.randomUUID(), label: "Menu Item 1" },
+    { id: crypto.randomUUID(), label: "Menu Item 2" },
+    { id: crypto.randomUUID(), label: "Menu Item 3" },
+  ];
+
   return {
     tag: "Menu",
     parent: {
       tag: "Menu",
       props: {
-        children: "Menu",
         "aria-label": "Menu",
         variant: "primary",
         size: "md",
         selectionMode: "none",
+        items,
         style: {
           width: "fit-content",
           display: "block",
@@ -42,32 +46,7 @@ export function createMenuDefinition(
       parent_id: parentId,
       order_num: orderNum,
     },
-    children: [
-      {
-        tag: "MenuItem",
-        props: {
-          children: "Menu Item 1",
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 1,
-      },
-      {
-        tag: "MenuItem",
-        props: {
-          children: "Menu Item 2",
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-      },
-      {
-        tag: "MenuItem",
-        props: {
-          children: "Menu Item 3",
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
-      },
-    ],
+    children: [],
   };
 }
 
