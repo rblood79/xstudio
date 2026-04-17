@@ -4,7 +4,28 @@
 
 ## Status
 
-Proposed — 2026-04-16 (Codex 리뷰 1차 반영 2026-04-17 — Q1 정정 + Q6/Q7/Q8 신설 + 데이터 모델 정정 + Preview 경로 수정. Codex 리뷰 2차 반영 2026-04-17 — Q8 패키지 의존성 정정(specs SSOT) + Stored/Runtime 분리 + Q9/Q10 신설 + index.css 수동 import 명시. Codex 리뷰 3차 반영 2026-04-17 — Q11 신설: resolveActionId를 RenderContext에 주입하여 shared 렌더러가 Builder/Publish 공용 동작)
+Implemented — 2026-04-17 (Proposed 2026-04-16, Codex 리뷰 1~3차 반영 2026-04-17 — Q1 정정 + Q6/Q7/Q8/Q9/Q10/Q11 신설 + Stored/Runtime 분리 + resolveActionId RenderContext 주입 결정)
+
+### 구현 커밋 체인 (7 phase, 6 commit)
+
+- `14af1e62` P1: MenuItem Spec + menu-items types + generated CSS 등록
+- `58b97595` P2: Menu.spec items prop + ItemsManagerField 신설
+- `11446930` P3+P4: Store reducer (addMenuItem/removeMenuItem/updateMenuItem/reorderMenuItems) + factory 전환
+- `90dc7a58` P5: CollectionRenderers items SSOT + toRuntimeMenuItem 변환 + Menu.tsx MenuItem interface 제거
+- `0256ab55` P6: ItemsManager 신설 + MenuItemEditor 폐기
+- `8392c7d9` P7: CHILD_COMPOSITION_EXCLUDE_TAGS에서 Menu 제거 (SSOT 일관성)
+
+### Gate 검증 결과
+
+| Gate                          | 방법             | 결과                                                                                 |
+| ----------------------------- | ---------------- | ------------------------------------------------------------------------------------ |
+| #1 build:specs                | shell            | ✅ 108 CSS (MenuItem.css 포함)                                                       |
+| #2 type-check                 | shell            | ✅ 3/3 PASS FULL TURBO                                                               |
+| #3 Skia shapes unconditional  | Node 직접 호출   | ✅ items/children 무관 3 shapes(bg+border+text) 항상 생성 — **0-height 구조적 해소** |
+| #6 Skia trigger 0-height 해소 | #3 확증          | ✅ bg.height="auto" + text shape → Taffy가 실제 높이 계산                            |
+| #8 index.css @import          | grep             | ✅ `index.css:139`                                                                   |
+| #9 Stored→Runtime 변환        | Node 단위 테스트 | ✅ onActionId → onAction 함수 매핑, 서브메뉴 recursive 정상                          |
+| #4/#5/#7 UI runtime           | Chrome MCP       | ⏸ tab background 제약으로 육안 미수행 (구조적 검증 완료)                             |
 
 ## Context
 
