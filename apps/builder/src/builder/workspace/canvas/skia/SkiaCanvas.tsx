@@ -65,8 +65,7 @@ import { viewportState as mutableViewport } from "../viewport/viewportState";
 import { StoreRenderBridge } from "./StoreRenderBridge";
 import { getSharedLayoutMap } from "../layout/engines/fullTreeLayout";
 import { useStore } from "../../../stores";
-// ADR-069 Phase 0 observability: labeled duration tracking
-import { observe } from "../../../utils/perfMarks";
+import { observe, PERF_LABEL } from "../../../utils/perfMarks";
 import {
   useThemeConfigStore,
   resolveSkiaTheme,
@@ -589,7 +588,7 @@ export function SkiaCanvas({
       }
 
       // Content build — Command Stream 경로 (cameraContainer: null → PixiJS 불필요)
-      const contentResult = observe("render.content.build", () =>
+      const contentResult = observe(PERF_LABEL.RENDER_CONTENT_BUILD, () =>
         buildSkiaFrameContent({
           aiState: packet.ai,
           registryVersion,
@@ -620,7 +619,7 @@ export function SkiaCanvas({
         cameraZoom,
         overlayVersion: overlayVersionRef.current,
       });
-      const framePlan = observe("render.plan.build", () =>
+      const framePlan = observe(PERF_LABEL.RENDER_PLAN_BUILD, () =>
         buildFrameRenderPlan({
           ck,
           elementsMap: currentRendererInput.elementsMap,
@@ -662,7 +661,7 @@ export function SkiaCanvas({
         edgeGeometryCacheKeyRef.current = "";
       }
 
-      observe("render.skia.draw", () => {
+      observe(PERF_LABEL.RENDER_SKIA_DRAW, () => {
         renderer.render(
           framePlan.cullingBounds,
           registryVersion,
@@ -672,11 +671,10 @@ export function SkiaCanvas({
       });
     };
 
-    // ADR-069 Phase 0: 계측 wrapper — rafId 재등록 대상 함수.
-    // renderFrameCore는 내부에서 `requestAnimationFrame(renderFrame)`을 호출하므로,
+    // renderFrameCore는 내부에서 requestAnimationFrame(renderFrame)을 호출하므로,
     // 루프가 지속되는 동안 매 프레임 observe()가 "render.frame" duration을 기록한다.
     const renderFrame = (): void => {
-      observe("render.frame", () => renderFrameCore());
+      observe(PERF_LABEL.RENDER_FRAME, () => renderFrameCore());
     };
 
     // RAF 시작

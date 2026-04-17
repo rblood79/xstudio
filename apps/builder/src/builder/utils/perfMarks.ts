@@ -1,34 +1,69 @@
 /**
  * Performance Marks — labeled duration tracker
  *
- * ADR-069 Phase 0 measurement infrastructure.
+ * ADR-069 observability infrastructure.
  *
  * Purpose: automate Gate G1/G2 verification without relying on manual
  * Chrome DevTools Performance recordings. Captures labeled durations,
  * maintains ring buffer per label, and exposes p50/p95/p99/violation
  * statistics via `window.__composition_PERF__`.
  *
- * Overhead: two `performance.now()` + one array push per observation.
- * Negligible relative to the work being measured. Enabled in both dev
- * and prod — production snapshots are the primary data source for the
- * ADR's gates.
+ * Two observation modes share the same buffer Map:
+ * - observe(label, fn) — synchronous wrapper (function-body duration)
+ * - PerformanceObserver('longtask') — browser task-level duration,
+ *   classified into "longtask.input" / "longtask.render" /
+ *   "longtask.unclassified" by timestamp overlap with recent observe() traces.
  *
  * Usage:
- *   observe("input.pointerdown", () => handlePointerDown(event));
- *   // Later in DevTools console:
+ *   observe(PERF_LABEL.INPUT_POINTERDOWN, () => handlePointerDown(event));
+ *   // In DevTools console:
  *   window.__composition_PERF__.snapshot("input.pointerdown");
+ *   window.__composition_PERF__.snapshotLongTasks();
  */
+
+// ============================================================
+// Label constants
+// ============================================================
+
+/**
+ * Canonical label strings for observe() call sites.
+ * Using the constant prevents typos and lets the compiler catch missing
+ * wire-ups when a new measurement point is added.
+ */
+export const PERF_LABEL = {
+  INPUT_POINTERDOWN: "input.pointerdown",
+  RENDER_FRAME: "render.frame",
+  RENDER_CONTENT_BUILD: "render.content.build",
+  RENDER_PLAN_BUILD: "render.plan.build",
+  RENDER_SKIA_DRAW: "render.skia.draw",
+} as const;
+
+// Long-task classification: observe() label prefix → longtask bucket.
+// Adding a category (e.g. "layout.") is a one-line change here.
+const LONGTASK_CATEGORIES = [
+  { prefix: "input.", label: "longtask.input" },
+  { prefix: "render.", label: "longtask.render" },
+] as const;
+
+const LONGTASK_LABELS = [
+  "longtask.input",
+  "longtask.render",
+  "longtask.unclassified",
+] as const;
+type LongTaskLabel = (typeof LONGTASK_LABELS)[number];
+
+// ============================================================
+// Internal types / state
+// ============================================================
 
 const BUFFER_SIZE = 1000;
 const VIOLATION_THRESHOLDS = [50, 100] as const;
 
-// --- Long Task correlation (ADR-069 Phase 2 관찰성 2.0) ---
-//
-// observe() wrapper는 함수 본체 duration만 측정한다. Chrome이 집계하는
-// "task 전체 시간"은 wrapper 종료 직후 동기적으로 이어지는 React commit +
-// subscriber fan-out + scheduler.development.js message handler를 포함한다.
-// 따라서 PerformanceObserver('longtask')로 task 경계를 직접 관찰하고,
-// 최근 observe() 호출 trace와 시간 겹침으로 분류한다.
+// observe() wrapper measures only the function body. Chrome's task-level
+// duration (including the following React commit + subscriber fan-out) is
+// captured separately by a PerformanceObserver('longtask'), which uses this
+// trace ring to classify each longtask by temporal overlap with the most
+// recent observe() calls.
 const TRACE_RING_MAX = 256;
 const TRACE_AGE_WINDOW_MS = 5_000;
 
@@ -41,6 +76,8 @@ interface LabelBuffer {
   violations50ms: number;
   /** Count of durations exceeding 100 ms threshold. */
   violations100ms: number;
+  /** Attribution counts — populated only for longtask.* labels. */
+  attributions?: Map<string, number>;
 }
 
 interface MeasurementTrace {
@@ -51,9 +88,7 @@ interface MeasurementTrace {
 
 export interface PerfSnapshot {
   label: string;
-  /** Samples retained in ring buffer (capped at BUFFER_SIZE). */
   count: number;
-  /** Total samples observed (uncapped). */
   totalCount: number;
   mean: number;
   p50: number;
@@ -64,23 +99,16 @@ export interface PerfSnapshot {
   violations50ms: number;
   /** Count of durations > 100 ms (severe). */
   violations100ms: number;
+  /** Top attributions (up to 5) — only present for longtask.* labels. */
+  topAttributions?: Array<{ name: string; count: number }>;
 }
 
 const buffers = new Map<string, LabelBuffer>();
 const measurementTraces: MeasurementTrace[] = [];
 
-function pushTrace(label: string, start: number, end: number): void {
-  measurementTraces.push({ label, start, end });
-  // Drop aged-out entries (older than window) from the head.
-  const cutoff = end - TRACE_AGE_WINDOW_MS;
-  while (measurementTraces.length > 0 && measurementTraces[0].end < cutoff) {
-    measurementTraces.shift();
-  }
-  // Cap overall size (defensive).
-  while (measurementTraces.length > TRACE_RING_MAX) {
-    measurementTraces.shift();
-  }
-}
+// ============================================================
+// Recording primitives
+// ============================================================
 
 function getOrCreateBuffer(label: string): LabelBuffer {
   let buf = buffers.get(label);
@@ -96,7 +124,7 @@ function getOrCreateBuffer(label: string): LabelBuffer {
   return buf;
 }
 
-function record(label: string, duration: number): void {
+function record(label: string, duration: number, attribution?: string): void {
   const buf = getOrCreateBuffer(label);
   buf.durations.push(duration);
   if (buf.durations.length > BUFFER_SIZE) {
@@ -105,12 +133,34 @@ function record(label: string, duration: number): void {
   buf.totalCount += 1;
   if (duration > VIOLATION_THRESHOLDS[0]) buf.violations50ms += 1;
   if (duration > VIOLATION_THRESHOLDS[1]) buf.violations100ms += 1;
+  if (attribution) {
+    if (!buf.attributions) buf.attributions = new Map();
+    buf.attributions.set(
+      attribution,
+      (buf.attributions.get(attribution) ?? 0) + 1,
+    );
+  }
 }
+
+function pushTrace(label: string, start: number, end: number): void {
+  measurementTraces.push({ label, start, end });
+  const cutoff = end - TRACE_AGE_WINDOW_MS;
+  while (measurementTraces.length > 0 && measurementTraces[0].end < cutoff) {
+    measurementTraces.shift();
+  }
+  while (measurementTraces.length > TRACE_RING_MAX) {
+    measurementTraces.shift();
+  }
+}
+
+// ============================================================
+// Public measurement API
+// ============================================================
 
 /**
  * Wrap a synchronous function and record its duration under `label`.
- * Also emits `performance.measure()` so durations appear in DevTools
- * Performance panel flame graph (bonus observability).
+ * Also emits `performance.measure()` so durations appear in the DevTools
+ * Performance panel flame graph.
  */
 export function observe<T>(label: string, fn: () => T): T {
   const beginMark = `composition:${label}:begin`;
@@ -133,9 +183,6 @@ export function observe<T>(label: string, fn: () => T): T {
   }
 }
 
-/**
- * Async variant — duration covers the promise resolution.
- */
 export async function observeAsync<T>(
   label: string,
   fn: () => Promise<T>,
@@ -166,6 +213,10 @@ export function markEnd(label: string, beginTimestamp: number): number {
   return duration;
 }
 
+// ============================================================
+// Snapshot API
+// ============================================================
+
 function percentile(sorted: readonly number[], p: number): number {
   if (sorted.length === 0) return 0;
   const idx = Math.min(sorted.length - 1, Math.floor(sorted.length * p));
@@ -177,7 +228,7 @@ export function getSnapshot(label: string): PerfSnapshot | null {
   if (!buf || buf.durations.length === 0) return null;
   const sorted = [...buf.durations].sort((a, b) => a - b);
   const sum = sorted.reduce((a, b) => a + b, 0);
-  return {
+  const snapshot: PerfSnapshot = {
     label,
     count: sorted.length,
     totalCount: buf.totalCount,
@@ -189,12 +240,25 @@ export function getSnapshot(label: string): PerfSnapshot | null {
     violations50ms: buf.violations50ms,
     violations100ms: buf.violations100ms,
   };
+  if (buf.attributions && buf.attributions.size > 0) {
+    snapshot.topAttributions = [...buf.attributions.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+  }
+  return snapshot;
 }
 
 export function getAllSnapshots(): PerfSnapshot[] {
   return [...buffers.keys()]
     .map((label) => getSnapshot(label))
     .filter((s): s is PerfSnapshot => s !== null);
+}
+
+export function getAllLongTaskSnapshots(): PerfSnapshot[] {
+  return LONGTASK_LABELS.map((label) => getSnapshot(label)).filter(
+    (s): s is PerfSnapshot => s !== null,
+  );
 }
 
 export function resetPerfMarks(label?: string): void {
@@ -205,15 +269,17 @@ export function resetPerfMarks(label?: string): void {
   }
 }
 
+export function resetLongTasks(label?: LongTaskLabel): void {
+  if (label) {
+    buffers.delete(label);
+  } else {
+    for (const l of LONGTASK_LABELS) buffers.delete(l);
+  }
+}
+
 // ============================================================
-// Long Task Observer (ADR-069 Phase 2 관찰성 2.0)
+// Long Task Observer
 // ============================================================
-//
-// Chrome은 50ms 초과 task를 Violation으로 보고한다. observe() wrapper는
-// 함수 본체만 측정하므로, wrapper 종료 이후의 React commit + subscriber
-// fan-out + scheduler message handler를 놓친다. PerformanceObserver로
-// task 전체를 잡고, 최근 observe() 호출 trace와 시간 겹침으로
-// longtask.input / longtask.render / longtask.unclassified 로 분류한다.
 
 interface LongTaskAttribution {
   containerType?: string;
@@ -223,42 +289,8 @@ interface LongTaskAttribution {
   name?: string;
 }
 
-interface LongTaskBuffer extends LabelBuffer {
-  /** Script/container attribution counts — useful for inspection only. */
-  attributions: Map<string, number>;
-}
-
-export interface LongTaskSnapshot extends PerfSnapshot {
-  /** Top attributions (by frequency), up to 5 — for diagnostic inspection. */
-  topAttributions: Array<{ name: string; count: number }>;
-}
-
-const longTaskBuffers = new Map<string, LongTaskBuffer>();
-const LONG_TASK_LABELS = [
-  "longtask.input",
-  "longtask.render",
-  "longtask.unclassified",
-] as const;
-type LongTaskLabel = (typeof LONG_TASK_LABELS)[number];
-
-function getOrCreateLongTaskBuffer(label: LongTaskLabel): LongTaskBuffer {
-  let buf = longTaskBuffers.get(label);
-  if (!buf) {
-    buf = {
-      durations: [],
-      totalCount: 0,
-      violations50ms: 0,
-      violations100ms: 0,
-      attributions: new Map(),
-    };
-    longTaskBuffers.set(label, buf);
-  }
-  return buf;
-}
-
 function classifyLongTask(startTime: number, duration: number): LongTaskLabel {
   const end = startTime + duration;
-  // Find the trace with the largest overlap with the longtask window.
   let bestLabel: string | null = null;
   let bestOverlap = 0;
   for (const trace of measurementTraces) {
@@ -269,75 +301,30 @@ function classifyLongTask(startTime: number, duration: number): LongTaskLabel {
     }
   }
   if (bestLabel) {
-    if (bestLabel.startsWith("input.")) return "longtask.input";
-    if (bestLabel.startsWith("render.")) return "longtask.render";
+    for (const { prefix, label } of LONGTASK_CATEGORIES) {
+      if (bestLabel.startsWith(prefix)) return label;
+    }
   }
   return "longtask.unclassified";
 }
 
 function recordLongTask(entry: PerformanceEntry): void {
-  const duration = entry.duration;
-  const label = classifyLongTask(entry.startTime, duration);
-  const buf = getOrCreateLongTaskBuffer(label);
-  buf.durations.push(duration);
-  if (buf.durations.length > BUFFER_SIZE) buf.durations.shift();
-  buf.totalCount += 1;
-  if (duration > VIOLATION_THRESHOLDS[0]) buf.violations50ms += 1;
-  if (duration > VIOLATION_THRESHOLDS[1]) buf.violations100ms += 1;
-  // Attribution capture — optional per spec, mostly empty for SPA main-document tasks.
+  const label = classifyLongTask(entry.startTime, entry.duration);
+  // Per spec, attribution is usually empty for SPA main-document tasks.
   const attrs = (entry as unknown as { attribution?: LongTaskAttribution[] })
     .attribution;
+  let attrKey: string | undefined;
   if (attrs && attrs.length > 0) {
     const first = attrs[0];
-    const key =
+    attrKey =
       first.containerSrc ||
       first.containerName ||
       first.containerId ||
       first.containerType ||
       first.name ||
       "self";
-    buf.attributions.set(key, (buf.attributions.get(key) ?? 0) + 1);
   }
-}
-
-export function getLongTaskSnapshot(
-  label: LongTaskLabel,
-): LongTaskSnapshot | null {
-  const buf = longTaskBuffers.get(label);
-  if (!buf || buf.durations.length === 0) return null;
-  const sorted = [...buf.durations].sort((a, b) => a - b);
-  const sum = sorted.reduce((a, b) => a + b, 0);
-  const topAttributions = [...buf.attributions.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, count]) => ({ name, count }));
-  return {
-    label,
-    count: sorted.length,
-    totalCount: buf.totalCount,
-    mean: Number((sum / sorted.length).toFixed(2)),
-    p50: Number(percentile(sorted, 0.5).toFixed(2)),
-    p95: Number(percentile(sorted, 0.95).toFixed(2)),
-    p99: Number(percentile(sorted, 0.99).toFixed(2)),
-    max: Number(sorted[sorted.length - 1].toFixed(2)),
-    violations50ms: buf.violations50ms,
-    violations100ms: buf.violations100ms,
-    topAttributions,
-  };
-}
-
-export function getAllLongTaskSnapshots(): LongTaskSnapshot[] {
-  return LONG_TASK_LABELS.map((label) => getLongTaskSnapshot(label)).filter(
-    (s): s is LongTaskSnapshot => s !== null,
-  );
-}
-
-export function resetLongTasks(label?: LongTaskLabel): void {
-  if (label) {
-    longTaskBuffers.delete(label);
-  } else {
-    longTaskBuffers.clear();
-  }
+  record(label, entry.duration, attrKey);
 }
 
 let longTaskObserverStarted = false;
@@ -369,9 +356,10 @@ function initLongTaskObserver(): void {
   }
 }
 
-// Global exposure for DevTools console inspection.
-// `window.__composition_PERF__.snapshot("input.pointerdown")`
-// `window.__composition_PERF__.snapshotLongTasks()`
+// ============================================================
+// Global exposure (DevTools console inspection)
+// ============================================================
+
 if (typeof window !== "undefined") {
   const w = window as unknown as {
     __composition_PERF__?: {
@@ -379,7 +367,7 @@ if (typeof window !== "undefined") {
       snapshotAll: typeof getAllSnapshots;
       reset: typeof resetPerfMarks;
       observe: typeof observe;
-      snapshotLongTask: typeof getLongTaskSnapshot;
+      snapshotLongTask: typeof getSnapshot;
       snapshotLongTasks: typeof getAllLongTaskSnapshots;
       resetLongTasks: typeof resetLongTasks;
     };
@@ -389,7 +377,7 @@ if (typeof window !== "undefined") {
     snapshotAll: getAllSnapshots,
     reset: resetPerfMarks,
     observe,
-    snapshotLongTask: getLongTaskSnapshot,
+    snapshotLongTask: getSnapshot,
     snapshotLongTasks: getAllLongTaskSnapshots,
     resetLongTasks,
   };

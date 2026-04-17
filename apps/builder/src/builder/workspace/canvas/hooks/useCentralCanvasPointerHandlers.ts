@@ -16,8 +16,7 @@ import {
 } from "../interaction";
 import { hitTestPoint } from "../wasm-bindings/spatialIndex";
 import { useKeyboardShortcutsRegistry } from "../../../hooks/useKeyboardShortcutsRegistry";
-// ADR-069 Phase 0 observability: labeled duration tracking
-import { observe } from "../../../utils/perfMarks";
+import { observe, PERF_LABEL } from "../../../utils/perfMarks";
 
 interface ModifierState {
   ctrlKey: boolean;
@@ -337,12 +336,11 @@ export function useCentralCanvasPointerHandlers({
       }
     };
 
-    // ADR-069 Phase 0: 계측 wrapper — 실제 DOM 이벤트 리스너로 등록되는 함수.
     // handlePointerDownCore의 early return을 try/finally로 캡슐화하여 누락 없는
     // duration 측정 보장. window.__composition_PERF__.snapshot("input.pointerdown")
     // 으로 DevTools console에서 즉시 조회 가능.
     const handlePointerDown = (event: PointerEvent): void => {
-      observe("input.pointerdown", () => handlePointerDownCore(event));
+      observe(PERF_LABEL.INPUT_POINTERDOWN, () => handlePointerDownCore(event));
     };
 
     const handleWindowPointerMove = (event: PointerEvent) => {
