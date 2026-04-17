@@ -901,32 +901,8 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],
     },
   },
-  {
-    type: "SelectItem",
-    label: "Select Item",
-    category: "Items",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SelectItemEditor",
-      dataBindingType: null,
-      // React Aria: onHoverStart, onHoverEnd
-      supportedEvents: ["onMouseEnter", "onMouseLeave"],
-    },
-  },
-  {
-    type: "ComboBoxItem",
-    label: "ComboBox Item",
-    category: "Items",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "ComboBoxItemEditor",
-      dataBindingType: null,
-      // React Aria: onHoverStart, onHoverEnd
-      supportedEvents: ["onMouseEnter", "onMouseLeave"],
-    },
-  },
+  // ADR-073 P6: SelectItem/ComboBoxItem entry 제거 — Select/ComboBox.props.items SSOT로 이관.
+  // 개별 요소 inspector 불필요 (ItemsManager가 items[] 편집 담당).
   {
     type: "ListBoxItem",
     label: "ListBox Item",

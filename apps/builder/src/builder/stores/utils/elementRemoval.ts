@@ -167,6 +167,7 @@ async function executeRemoval(
   get: GetState,
   rootElements: Element[],
   allUniqueElements: Element[],
+  options: { skipHistory?: boolean } = {},
 ) {
   const elementIdsToRemove = allUniqueElements.map((el) => el.id);
 
@@ -181,7 +182,8 @@ async function executeRemoval(
   const currentState = get();
 
   // 히스토리: 첫 번째 루트를 대표 elementId로, 나머지 모두를 childElements로 기록
-  if (currentState.currentPageId) {
+  // ADR-073 P5: skipHistory=true 시 히스토리 기록 생략 (migration 경로에서 undo 스택 오염 방지)
+  if (currentState.currentPageId && !options.skipHistory) {
     historyManager.addEntry({
       type: "remove",
       elementId: rootElements[0].id,
@@ -291,7 +293,8 @@ async function executeRemoval(
  * RemoveElement 액션 생성 팩토리 (단일 요소 삭제)
  */
 export const createRemoveElementAction =
-  (set: SetState, get: GetState) => async (elementId: string) => {
+  (set: SetState, get: GetState) =>
+  async (elementId: string, options?: { skipHistory?: boolean }) => {
     const state = get();
     const result = collectElementsToRemove(
       elementId,
@@ -307,7 +310,13 @@ export const createRemoveElementAction =
       }
       return;
     }
-    await executeRemoval(set, get, [result.rootElement], result.allElements);
+    await executeRemoval(
+      set,
+      get,
+      [result.rootElement],
+      result.allElements,
+      options,
+    );
   };
 
 /**
@@ -315,13 +324,14 @@ export const createRemoveElementAction =
  * 모든 요소를 단일 set()으로 제거하여 화면에서 동시에 사라짐
  */
 export const createRemoveElementsAction =
-  (set: SetState, get: GetState) => async (elementIds: string[]) => {
+  (set: SetState, get: GetState) =>
+  async (elementIds: string[], options?: { skipHistory?: boolean }) => {
     if (elementIds.length === 0) return;
 
     // 단일 요소면 기존 경로 사용
     if (elementIds.length === 1) {
       const removeElement = createRemoveElementAction(set, get);
-      return removeElement(elementIds[0]);
+      return removeElement(elementIds[0], options);
     }
 
     const state = get();
@@ -347,5 +357,5 @@ export const createRemoveElementsAction =
     if (rootElements.length === 0) return;
 
     const allUniqueElements = Array.from(allElementsMap.values());
-    await executeRemoval(set, get, rootElements, allUniqueElements);
+    await executeRemoval(set, get, rootElements, allUniqueElements, options);
   };

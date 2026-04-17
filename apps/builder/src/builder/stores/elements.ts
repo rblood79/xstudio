@@ -157,8 +157,14 @@ export interface ElementsState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   goToHistoryIndex: (targetIndex: number) => Promise<void>;
-  removeElement: (elementId: string) => Promise<void>;
-  removeElements: (elementIds: string[]) => Promise<void>;
+  removeElement: (
+    elementId: string,
+    options?: { skipHistory?: boolean },
+  ) => Promise<void>;
+  removeElements: (
+    elementIds: string[],
+    options?: { skipHistory?: boolean },
+  ) => Promise<void>;
   addComplexElement: (
     parentElement: Element,
     childElements: Element[],
@@ -207,7 +213,25 @@ export interface ElementsState {
   // ADR-006: 외부 트리거(텍스트 측정기 교체, 폰트 로딩 등)에서 레이아웃 재계산 요청
   invalidateLayout: () => void;
 
-  // ADR-068: Menu items SSOT — StoredMenuItem 배열 조작 액션
+  // ADR-073: 일반화 items 조작 액션 (Menu/Select/ComboBox 공통, tag-agnostic)
+  addItem: (
+    elementId: string,
+    itemsKey: string,
+    item?: Record<string, unknown>,
+  ) => Promise<void>;
+  removeItem: (
+    elementId: string,
+    itemsKey: string,
+    itemId: string,
+  ) => Promise<void>;
+  updateItem: (
+    elementId: string,
+    itemsKey: string,
+    itemId: string,
+    patch: Record<string, unknown>,
+  ) => Promise<void>;
+
+  // ADR-068: Menu items SSOT — StoredMenuItem 배열 조작 액션 (addItem의 thin wrapper)
   addMenuItem: (
     menuId: string,
     item?: Partial<StoredMenuItem>,
@@ -1471,39 +1495,82 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
     },
 
-    // ADR-068: Menu items SSOT — StoredMenuItem 배열 조작 액션
-    // updateElementProps가 style 외 props 변경을 layoutVersion++ 처리하므로
-    // items 변경 시 layoutVersion bump + 파이프라인(Memory→History→DB) 자동 처리됨.
+    // ADR-073: 일반화 items 조작 액션 (tag-agnostic)
+    // updateElementProps가 props 변경을 layoutVersion++ 처리하므로
+    // items 변경 시 파이프라인(Memory→History→DB) 자동 처리됨.
 
-    addMenuItem: async (menuId, item) => {
-      const menu = get().elementsMap.get(menuId);
-      if (!menu || menu.tag !== "Menu") return;
-      const items = ((menu.props.items ?? []) as StoredMenuItem[]).slice();
-      const newItem: StoredMenuItem = {
-        label: "Menu Item",
-        ...item,
-        // id는 caller가 지정한 경우 사용, 없으면 신규 생성
-        id: item?.id ?? crypto.randomUUID(),
+    addItem: async (elementId, itemsKey, item) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const newItem: Record<string, unknown> = {
+        label: "Item",
+        ...(item ?? {}),
+        id:
+          item?.id !== undefined && item.id !== ""
+            ? String(item.id)
+            : crypto.randomUUID(),
       };
-      await get().updateElementProps(menuId, { items: [...items, newItem] });
+      await get().updateElementProps(elementId, {
+        [itemsKey]: [...currentItems, newItem],
+      });
+    },
+
+    removeItem: async (elementId, itemsKey, itemId) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const next = currentItems.filter((it) => it.id !== itemId);
+      await get().updateElementProps(elementId, { [itemsKey]: next });
+    },
+
+    updateItem: async (elementId, itemsKey, itemId, patch) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const next = currentItems.map((it) =>
+        it.id === itemId ? { ...it, ...patch } : it,
+      );
+      await get().updateElementProps(elementId, { [itemsKey]: next });
+    },
+
+    // ADR-068 → ADR-073: Menu items SSOT は 일반화 액션의 thin wrapper
+    addMenuItem: async (menuId, item) => {
+      return get().addItem(menuId, "items", item as Record<string, unknown>);
     },
 
     removeMenuItem: async (menuId, itemId) => {
-      const menu = get().elementsMap.get(menuId);
-      if (!menu || menu.tag !== "Menu") return;
-      const items = ((menu.props.items ?? []) as StoredMenuItem[]).filter(
-        (i) => i.id !== itemId,
-      );
-      await get().updateElementProps(menuId, { items });
+      return get().removeItem(menuId, "items", itemId);
     },
 
     updateMenuItem: async (menuId, itemId, patch) => {
-      const menu = get().elementsMap.get(menuId);
-      if (!menu || menu.tag !== "Menu") return;
-      const items = ((menu.props.items ?? []) as StoredMenuItem[]).map((i) =>
-        i.id === itemId ? { ...i, ...patch } : i,
+      return get().updateItem(
+        menuId,
+        "items",
+        itemId,
+        patch as Record<string, unknown>,
       );
-      await get().updateElementProps(menuId, { items });
     },
 
     reorderMenuItems: async (menuId, fromIndex, toIndex) => {

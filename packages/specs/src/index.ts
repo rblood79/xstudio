@@ -72,7 +72,17 @@ export type {
   // Items Manager Field (ADR-073)
   ItemsManagerField,
   ItemsManagerFieldItemSchema,
+  // Select Items Types (ADR-073)
+  StoredSelectItem,
+  RuntimeSelectItem,
+  // ComboBox Items Types (ADR-073)
+  StoredComboBoxItem,
+  RuntimeComboBoxItem,
 } from "./types";
+
+// ADR-073: Select/ComboBox items runtime converters
+export { toRuntimeSelectItem } from "./types/select-items";
+export { toRuntimeComboBoxItem } from "./types/combobox-items";
 
 export { isValidTokenRef } from "./types";
 

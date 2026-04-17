@@ -48,7 +48,8 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "test": "vitest"
   },
   "peerDependencies": {
     "react": "catalog:",
@@ -76,6 +77,7 @@
     "@composition/config": "workspace:*",
     "eslint": "^10.0.2",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "zod": "^4.3.6"
   }
 }
