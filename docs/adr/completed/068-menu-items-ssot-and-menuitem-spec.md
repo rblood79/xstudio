@@ -1,6 +1,6 @@
 # ADR-068: Menu items SSOT + MenuItem Spec 신설 (D2 + D3 동시 정합)
 
-> **SSOT domain**: D2 (Props/API) **정렬** + D3 (시각 스타일) **누락 보완**. ADR-066(Tabs items SSOT) 패턴 직접 적용 + MenuItem Spec 신설로 D3 SSOT 완전 정합. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md), 선례: [ADR-066](066-tabs-items-ssot-migration.md).
+> **SSOT domain**: D2 (Props/API) **정렬** + D3 (시각 스타일) **누락 보완**. ADR-066(Tabs items SSOT) 패턴 직접 적용 + MenuItem Spec 신설로 D3 SSOT 완전 정합. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](../063-ssot-chain-charter.md), 선례: [ADR-066](066-tabs-items-ssot-migration.md).
 
 ## Status
 

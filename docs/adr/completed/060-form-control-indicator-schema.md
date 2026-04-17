@@ -1,6 +1,6 @@
 # ADR-060: Form Control Indicator 스키마 확장 — 매직 테이블 해체
 
-> **SSOT domain**: D3 (시각 스타일). Checkbox/Radio/Switch/Slider의 indicator 수치를 `spec.sizes.*.indicator`로 SSOT 단일화. D3 내부 정리. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md).
+> **SSOT domain**: D3 (시각 스타일). Checkbox/Radio/Switch/Slider의 indicator 수치를 `spec.sizes.*.indicator`로 SSOT 단일화. D3 내부 정리. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](../063-ssot-chain-charter.md).
 
 ## Status
 

@@ -1,6 +1,6 @@
 # ADR-064: ComponentSpec shapes API — variant 파라미터 제거 + self-lookup 전환
 
-> **SSOT domain**: D3 내부 API 리팩토링 (Spec↔renderer 계약). variant 개념 자체가 아닌 **주입 주체**를 caller에서 callee로 이전. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md).
+> **SSOT domain**: D3 내부 API 리팩토링 (Spec↔renderer 계약). variant 개념 자체가 아닌 **주입 주체**를 caller에서 callee로 이전. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](../063-ssot-chain-charter.md).
 
 ## Status
 
