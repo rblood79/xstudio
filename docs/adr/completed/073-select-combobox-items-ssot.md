@@ -17,7 +17,7 @@ composition 은 RAC collection 패턴을 따르는 컴포넌트 3군(Menu/Tabs/S
 | **Menu** (ADR-068) | `items?: StoredMenuItem[]` (풀 인터페이스) + MenuItem Spec 신설   | Implemented 2026-04-17 |
 | **Select**         | `items?: string[]` (primitive) + SelectItem element tree          | **미정렬**             |
 | **ComboBox**       | `items?: string[]` (primitive) + ComboBoxItem element tree        | **미정렬**             |
-| **ListBox**        | `items?: string[]` + ListBoxItem element tree + skipCSSGeneration | 미정렬 (ADR-074 scope) |
+| **ListBox**        | `items?: string[]` + ListBoxItem element tree + skipCSSGeneration | 미정렬 (ADR-076 scope) |
 
 Select/ComboBox 는 items 필드가 **이미 존재하나** primitive 수준(`string[]`)에 머물러 있어 label/value/description/icon/isDisabled/onActionId 등 per-item 속성을 element tree 의 SelectItem/ComboBoxItem child 에 저장하는 이중 구조를 유지하고 있다. 이는 다음 문제를 야기한다:
 
@@ -40,7 +40,7 @@ Select/ComboBox 는 items 필드가 **이미 존재하나** primitive 수준(`st
 
 ### Soft Constraints
 
-- scope α: Select + ComboBox 한정. ListBox 는 `[data-orientation]`/`--lb-*` 표현 한계 실측 선행 후 ADR-074 에서 처리.
+- scope α: Select + ComboBox 한정. ListBox 는 `[data-orientation]`/`--lb-*` 표현 한계 실측 선행 후 ADR-076 에서 처리.
 - `renderMenu` wiring fix (ADR-070 Negative 기록) 포함 여부 Decision 에서 확정.
 - SelectItemEditor/ComboBoxItemEditor 제거는 마이그레이션 안정화 이후 선택적 후속 Phase.
 
@@ -142,7 +142,7 @@ ADR 승인 시 다음 잔존 위험을 **명시적으로 수용**. Phase 분할 
 | **`ItemsManager` Menu 전용 — Select/ComboBox 재사용 불가**     |   H    | `apps/builder/src/builder/panels/properties/generic/ItemsManager.tsx:168-184` 가 `addMenuItem`/`removeMenuItem`/`updateMenuItem` 하드코딩. `apps/builder/src/builder/stores/elements.ts:1463` 이 `menu.tag !== "Menu"` 면 early return. P4 에서 "items-manager type 붙이면 재사용 가능" 전제가 **틀림**. Select/ComboBox 항목 편집이 전부 no-op 가 됨                                                                                                                                                                                     | **Phase P4 재설계**: (a) store API 일반화 — `addItem/removeItem/updateItem(elementId, itemsKey, payload)` 신규 액션 도입, Menu 액션은 이를 thin wrapper 로. (b) `ItemsManager` 컴포넌트 tag-agnostic 변환 — 하드코딩된 menu 액션 호출을 `itemsKey` 기반 일반 액션 호출로 교체                                                                         |
 | **선택 상태 `react-aria-${index}` 역매핑 items[] 재설계 누락** |   H    | `packages/shared/src/renderers/SelectionRenderers.tsx:795-812` (Select) + `:1057-1075` (ComboBox) 가 `selectedKey.startsWith("react-aria-")` → index parse → `selectItemChildren[index]` 역매핑. items SSOT 전환 시 이 로직을 **items[index] 기반으로 재작성** 필수. 미이전 시 `react-aria-N` 내부 key 가 그대로 저장되거나 ComboBox 표시값 동기화 깨짐                                                                                                                                                                                   | **Phase P3 재설계**: items[] 로 전환 시 RAC `<Select items={runtime}>{(item) => <SelectItem id={item.id}/>}` 에서 `id` 를 `StoredSelectItem.id` 또는 `value` 로 설정 → RAC 가 반환하는 `selectedKey` 가 실제 `id`/`value` 가 됨 → 역매핑 로직 불필요. ComboBox `inputValue` 동기화는 items[index].label 로 해결                                       |
 | **dataBinding 우선순위 역방향**                                |   M    | `packages/shared/src/components/Select.tsx:145-162` + `packages/shared/src/components/ComboBox.tsx:145-163` 이 현재 `hasDataBinding` true 시 `boundData` (dataBinding 결과) 우선, items fallback. ADR 본문/breakdown 에서 "items 우선, dataBinding fallback" 으로 적힌 부분은 **현 구현과 역방향** — shared component 수정 or dataBinding 전달 규칙 재조정 필요                                                                                                                                                                           | **Phase P3 재설계**: 우선순위를 현 shared component 동작에 맞춰 "dataBinding 있으면 boundData 우선, 없으면 items 사용" 으로 정정. ADR 본문 Residual Risks #5 문구도 이에 맞춰 수정. 또는 shared component 내부 로직을 items 우선으로 수정하는 경로 중 선택 (G2 에서 둘 중 하나 확정)                                                                  |
-| **P6 element 소멸 범위 과소 — Factory/Hierarchy/canvas 연쇄**  |   M    | `apps/builder/src/builder/factories/definitions/SelectionComponents.ts:87, 215` 가 Select/ComboBox 생성 시 SelectItem/ComboBoxItem child 자동 생성 + `apps/builder/src/builder/utils/HierarchyManager.ts:402-409` 가 tag 분기로 child filter + `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts:1978-1983` 가 `SELECT_HIDDEN_CHILDREN` Set 에서 해당 tag 참조. P6 에서 metadata.ts + editor 만 지우면 위 3 파일이 여전히 SelectItem/ComboBoxItem 을 생성/필터/hide → legacy children 재생성 + 계층/레이아웃 계산 어긋남 | **Phase P6 확장**: (1) `SelectionComponents.ts` factory 에서 Select/ComboBox 자동 child 생성 제거 + 기본 `items[]` prop 에 default items 2~3 개 삽입 / (2) `HierarchyManager.ts` Select/ComboBox 분기 items[] 기반 재작성 or 분기 제거 / (3) `utils.ts` `SELECT_HIDDEN_CHILDREN` 에서 SelectItem/ComboBoxItem 제거 (ListBoxItem 만 남김 — ADR-074 전) |
+| **P6 element 소멸 범위 과소 — Factory/Hierarchy/canvas 연쇄**  |   M    | `apps/builder/src/builder/factories/definitions/SelectionComponents.ts:87, 215` 가 Select/ComboBox 생성 시 SelectItem/ComboBoxItem child 자동 생성 + `apps/builder/src/builder/utils/HierarchyManager.ts:402-409` 가 tag 분기로 child filter + `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts:1978-1983` 가 `SELECT_HIDDEN_CHILDREN` Set 에서 해당 tag 참조. P6 에서 metadata.ts + editor 만 지우면 위 3 파일이 여전히 SelectItem/ComboBoxItem 을 생성/필터/hide → legacy children 재생성 + 계층/레이아웃 계산 어긋남 | **Phase P6 확장**: (1) `SelectionComponents.ts` factory 에서 Select/ComboBox 자동 child 생성 제거 + 기본 `items[]` prop 에 default items 2~3 개 삽입 / (2) `HierarchyManager.ts` Select/ComboBox 분기 items[] 기반 재작성 or 분기 제거 / (3) `utils.ts` `SELECT_HIDDEN_CHILDREN` 에서 SelectItem/ComboBoxItem 제거 (ListBoxItem 만 남김 — ADR-076 전) |
 
 ### Codex Open Question 반영 (2026-04-18)
 
@@ -183,33 +183,35 @@ ADR 승인 시 다음 잔존 위험을 **명시적으로 수용**. Phase 분할 
 
 - **기존 사용자 데이터 마이그레이션 의존** — Phase 5 마이그레이션 실패 시 사용자 프로젝트 Select/ComboBox option 유실 가능. rollback 경로 설계 필수.
 - **SelectItemEditor/ComboBoxItemEditor 제거** — 기존 에디터 UI 익숙한 사용자에게 재학습 비용.
-- **ListBox 잔존** — 본 ADR scope α 준수로 ListBox(+ Popover variants.background 교정)는 ADR-074로 분리. 4 컴포넌트군 중 1 개 미완성 상태.
+- **ListBox 잔존** — 본 ADR scope α 준수로 ListBox(+ Popover variants.background 교정)는 ADR-076로 분리. 4 컴포넌트군 중 1 개 미완성 상태.
 - **metadata.ts / store / runtime 연쇄 변경** — Phase 6 실행 시 기존 코드 경로 대규모 정리 필요.
 
 ## 후속 ADR 로드맵
 
+> **주석 (2026-04-18 정정)**: 본 ADR 초안은 후속을 "ADR-074" 로 지칭했으나, 같은 날 다른 워크스트림(캔버스 입력 파이프라인)이 ADR-074 번호를 선점하고 ADR-075(Render longtask fan-out)까지 이어짐. 본 items SSOT 계열 후속은 **ADR-076** 으로 번호 이동.
+
 | ADR          | 내용                                                                                             | 본 ADR과의 관계                                            |
 | ------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| **ADR-074**  | ListBoxItem.spec 신설 + ListBox `skipCSSGeneration` 해체 + Popover.spec variants.background 교정 | ADR-071 containerStyles 인프라 + ADR-073 items 패턴 재사용 |
+| **ADR-076**  | ListBoxItem.spec 신설 + ListBox `skipCSSGeneration` 해체 + Popover.spec variants.background 교정 | ADR-071 containerStyles 인프라 + ADR-073 items 패턴 재사용 |
 | ADR-D (선택) | `spec.composition.containerStyles`(legacy, 19 Composite spec) 전수 마이그레이션                  | ADR-071 후속, 우선순위 낮음                                |
 
 ## Implementation (2026-04-18)
 
 Phase 1~7 완료 (11 commits on branch `feat/adr-073-select-combobox-items`). Types 신설 → Spec 전환 → Renderer wiring → Store API 일반화 → Migration → Factory/Hierarchy/Metadata 연쇄 → renderMenu Bonus.
 
-| Phase | 내용                                                                                                         | SHA        | 검증                                     |
-| ----- | ------------------------------------------------------------------------------------------------------------ | ---------- | ---------------------------------------- |
-| 1     | Stored/Runtime Select/ComboBox item types + `toRuntimeSelectItem` / `toRuntimeComboBoxItem`                  | `5956f362` | type-check 3/3                           |
-| 1+    | id/value pass-through 회귀 방지 테스트                                                                       | `3097ec9c` | specs test 14/14                         |
-| 2+3   | Spec `items: StoredSelectItem[]` 전환 + SelectionRenderers wiring + canonical contract + onInputChange reconcile | `bcd3cd2d` | shared test 7/7 canonical                |
-| 4     | Store `addItem/removeItem/updateItem` 일반화 + ItemsManager tag-agnostic + addMenuItem thin wrapper          | `5ef7ac04` | builder itemsActions test 5/5            |
-| 5     | Migration util (`migrateSelectComboBoxItems`) + `removeElements({ skipHistory })` 옵션                       | `89f3db93` | shared test 8 + elementRemoval 3/3       |
-| 7 (Bonus) | `renderMenu` selectionMode/selectedKeys/onSelectionChange wiring (ADR-070 Negative 해소)                 | `974a79b4` | type-check 3/3 (Menu.tsx generic 보완)   |
-| 6-a   | `metadata.ts` SelectItem/ComboBoxItem 엔트리 제거                                                            | `5575db14` | type-check 3/3                           |
-| 6-b   | SelectItemEditor/ComboBoxItemEditor 파일 삭제 + editors/index.ts 재-export 제거                             | `aea14bce` | type-check 3/3                           |
-| 6-c   | SelectionComponents factory 자동 SelectItem/ComboBoxItem child 제거 + 기본 `items[]` 주입                    | `d489d5b7` | type-check 3/3                           |
-| 6-d   | `HierarchyManager.getSpecialComponentChildren` Select/ComboBox 분기 items 기반 재작성 + `SELECT_HIDDEN_CHILDREN` 에서 SelectItem/ComboBoxItem 제거 | `b4613692` | type-check 3/3                           |
-| 6-e   | `applySelectComboBoxMigration` 오케스트레이터 + `usePageManager.initializeProject` 연결 + IDB orphan 정리   | `51497332` | shared test 19/19 (4 신규 orchestrator)  |
+| Phase     | 내용                                                                                                                                               | SHA        | 검증                                    |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------- |
+| 1         | Stored/Runtime Select/ComboBox item types + `toRuntimeSelectItem` / `toRuntimeComboBoxItem`                                                        | `5956f362` | type-check 3/3                          |
+| 1+        | id/value pass-through 회귀 방지 테스트                                                                                                             | `3097ec9c` | specs test 14/14                        |
+| 2+3       | Spec `items: StoredSelectItem[]` 전환 + SelectionRenderers wiring + canonical contract + onInputChange reconcile                                   | `bcd3cd2d` | shared test 7/7 canonical               |
+| 4         | Store `addItem/removeItem/updateItem` 일반화 + ItemsManager tag-agnostic + addMenuItem thin wrapper                                                | `5ef7ac04` | builder itemsActions test 5/5           |
+| 5         | Migration util (`migrateSelectComboBoxItems`) + `removeElements({ skipHistory })` 옵션                                                             | `89f3db93` | shared test 8 + elementRemoval 3/3      |
+| 7 (Bonus) | `renderMenu` selectionMode/selectedKeys/onSelectionChange wiring (ADR-070 Negative 해소)                                                           | `974a79b4` | type-check 3/3 (Menu.tsx generic 보완)  |
+| 6-a       | `metadata.ts` SelectItem/ComboBoxItem 엔트리 제거                                                                                                  | `5575db14` | type-check 3/3                          |
+| 6-b       | SelectItemEditor/ComboBoxItemEditor 파일 삭제 + editors/index.ts 재-export 제거                                                                    | `aea14bce` | type-check 3/3                          |
+| 6-c       | SelectionComponents factory 자동 SelectItem/ComboBoxItem child 제거 + 기본 `items[]` 주입                                                          | `d489d5b7` | type-check 3/3                          |
+| 6-d       | `HierarchyManager.getSpecialComponentChildren` Select/ComboBox 분기 items 기반 재작성 + `SELECT_HIDDEN_CHILDREN` 에서 SelectItem/ComboBoxItem 제거 | `b4613692` | type-check 3/3                          |
+| 6-e       | `applySelectComboBoxMigration` 오케스트레이터 + `usePageManager.initializeProject` 연결 + IDB orphan 정리                                          | `51497332` | shared test 19/19 (4 신규 orchestrator) |
 
 **누적 검증**:
 
