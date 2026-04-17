@@ -128,6 +128,16 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set([
   "CheckboxGroup",
   "RadioGroup",
   "ToggleButtonGroup",
+  // ADR-072 Phase 2-B: factory가 자식 Element로 시각 콘텐츠 렌더링 대체.
+  // Disclosure: DisclosureHeader/Content / Form: Heading/Description/FormField /
+  // Popover: Heading/Description (arrow는 RAC OverlayArrow DOM 전용) /
+  // Tooltip: Description / ColorPicker: ColorArea/ColorSlider/ColorField (각자 Spec).
+  // standalone 실렌더는 레거시 fallback이며 factory 자식이 모두 대체 커버함.
+  "Disclosure",
+  "Form",
+  "Popover",
+  "Tooltip",
+  "ColorPicker",
 ]);
 
 /**
@@ -139,14 +149,10 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set([
  */
 export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "Breadcrumbs",
-  "ColorPicker",
   "ComboBox",
-  "Disclosure",
-  "Form",
   "GridList",
   "ListBox",
   // ADR-068: Menu는 items SSOT 전환 — _hasChildren 분기 제거, 더 이상 EXCLUDE 대상 아님
-  "Popover",
   "Select",
   "TabPanel",
   "TabPanels",
@@ -154,7 +160,6 @@ export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "Tabs",
   "TagGroup",
   "Toolbar",
-  "Tooltip",
   "Tree",
 ]);
 
