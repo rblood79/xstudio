@@ -30,6 +30,8 @@ import {
   PopoverSpec,
   TooltipSpec,
   ColorPickerSpec,
+  TabPanelSpec,
+  TabPanelsSpec,
 } from "@composition/specs";
 import type { ComponentSpec } from "@composition/specs";
 import {
@@ -65,6 +67,13 @@ const phase2BCandidates: Array<{ tag: string; spec: AnySpec }> = [
   { tag: "Popover", spec: PopoverSpec as unknown as AnySpec },
   { tag: "Tooltip", spec: TooltipSpec as unknown as AnySpec },
   { tag: "ColorPicker", spec: ColorPickerSpec as unknown as AnySpec },
+];
+
+// Phase 3 (shapes=[] — _hasChildren 분기 부재, SYNTHETIC에서도 제외)
+// Shell-only 이동 안 함 (shapes 자체가 비어있어 의미 없음).
+const phase3Candidates: Array<{ tag: string; spec: AnySpec }> = [
+  { tag: "TabPanel", spec: TabPanelSpec as unknown as AnySpec },
+  { tag: "TabPanels", spec: TabPanelsSpec as unknown as AnySpec },
 ];
 
 const containerPlaceholderCandidates = [
@@ -127,6 +136,26 @@ describe("ADR-072 Phase 1 + 2-A + 2-B: SHELL_ONLY_CONTAINER_TAGS 재분류", () 
         const shellShapes = callShapes(spec, true);
         const standaloneShapes = callShapes(spec, false);
         expect(shellShapes.length).toBeLessThan(standaloneShapes.length);
+      });
+    }
+  });
+
+  describe("Phase 3: shapes=[] 태그 — 두 Set 모두 제외", () => {
+    // TabPanel/TabPanels는 `shapes: () => []`로 자식 props를 사용하지 않음.
+    // SYNTHETIC 멤버십의 두 효과(incrementalSync rebuild expansion + stale-ref
+    // 교체)가 무효이므로 제거. Shell-only 이동도 의미 없음.
+    for (const { tag, spec } of phase3Candidates) {
+      it(`${tag}: shapes 빈 배열`, () => {
+        expect(callShapes(spec, false)).toEqual([]);
+        expect(callShapes(spec, true)).toEqual([]);
+      });
+
+      it(`${tag}: SHELL_ONLY_CONTAINER_TAGS 미포함`, () => {
+        expect(SHELL_ONLY_CONTAINER_TAGS.has(tag)).toBe(false);
+      });
+
+      it(`${tag}: SYNTHETIC_CHILD_PROP_MERGE_TAGS 미포함`, () => {
+        expect(SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(tag)).toBe(false);
       });
     }
   });

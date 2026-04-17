@@ -153,9 +153,10 @@ export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "GridList",
   "ListBox",
   // ADR-068: Menu는 items SSOT 전환 — _hasChildren 분기 제거, 더 이상 EXCLUDE 대상 아님
+  // ADR-072 Phase 3: TabPanel/TabPanels는 shapes=[]로 자식 props를 사용하지 않아
+  //   SYNTHETIC 멤버십의 두 효과(incrementalSync rebuild expansion + stale-ref 교체)
+  //   모두 불필요. Shell-only도 의미 없음(shapes 자체가 빈 배열).
   "Select",
-  "TabPanel",
-  "TabPanels",
   "Table",
   "Tabs",
   "TagGroup",
