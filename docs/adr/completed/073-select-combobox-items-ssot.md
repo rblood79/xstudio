@@ -1,10 +1,11 @@
 # ADR-073: Select/ComboBox items SSOT + `renderMenu` wiring 정리
 
-> **SSOT domain**: D2 (Props/API) **정렬** + D3 (시각 스타일) **보완**. ADR-066(Tabs items SSOT) / ADR-068(Menu items SSOT + MenuItem Spec) 패턴을 Select/ComboBox 로 확장. 정본: [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](063-ssot-chain-charter.md), 선례: [ADR-066](completed/066-tabs-items-ssot-migration.md), [ADR-068](completed/068-menu-items-ssot-and-menuitem-spec.md), 연관: [ADR-071](completed/071-generator-container-styles-menu-restore.md) Menu 정방향 복원.
+> **SSOT domain**: D2 (Props/API) **정렬** + D3 (시각 스타일) **보완**. ADR-066(Tabs items SSOT) / ADR-068(Menu items SSOT + MenuItem Spec) 패턴을 Select/ComboBox 로 확장. 정본: [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md), charter: [ADR-063](../063-ssot-chain-charter.md), 선례: [ADR-066](066-tabs-items-ssot-migration.md), [ADR-068](068-menu-items-ssot-and-menuitem-spec.md), 연관: [ADR-071](../071-generator-container-styles-menu-restore.md) Menu 정방향 복원.
 
 ## Status
 
-Proposed — 2026-04-17
+Implemented — 2026-04-18
+(Proposed 2026-04-17 → Implemented 2026-04-18 / Phase 1~7 완료, branch `feat/adr-073-select-combobox-items` 11 commits)
 
 ## Context
 
@@ -105,7 +106,7 @@ Select/ComboBox 는 items 필드가 **이미 존재하나** primitive 수준(`st
 
 **`renderMenu` wiring fix (ADR-070 Negative) 포함 여부**: 본 ADR scope **포함**. `CollectionRenderers.tsx:751` `renderMenu` 에 `selectionMode/selectedKeys/onSelectionChange` 전달 로직을 함께 정리. `SelectionRenderers.tsx` 수정 세션과 논리적 인접. 별도 commit 으로 분리 (scope 추적 용이).
 
-> 구현 상세: [073-select-combobox-items-ssot-breakdown.md](../design/073-select-combobox-items-ssot-breakdown.md)
+> 구현 상세: [073-select-combobox-items-ssot-breakdown.md](../../design/073-select-combobox-items-ssot-breakdown.md)
 
 ## Gates
 
@@ -191,3 +192,40 @@ ADR 승인 시 다음 잔존 위험을 **명시적으로 수용**. Phase 분할 
 | ------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | **ADR-074**  | ListBoxItem.spec 신설 + ListBox `skipCSSGeneration` 해체 + Popover.spec variants.background 교정 | ADR-071 containerStyles 인프라 + ADR-073 items 패턴 재사용 |
 | ADR-D (선택) | `spec.composition.containerStyles`(legacy, 19 Composite spec) 전수 마이그레이션                  | ADR-071 후속, 우선순위 낮음                                |
+
+## Implementation (2026-04-18)
+
+Phase 1~7 완료 (11 commits on branch `feat/adr-073-select-combobox-items`). Types 신설 → Spec 전환 → Renderer wiring → Store API 일반화 → Migration → Factory/Hierarchy/Metadata 연쇄 → renderMenu Bonus.
+
+| Phase | 내용                                                                                                         | SHA        | 검증                                     |
+| ----- | ------------------------------------------------------------------------------------------------------------ | ---------- | ---------------------------------------- |
+| 1     | Stored/Runtime Select/ComboBox item types + `toRuntimeSelectItem` / `toRuntimeComboBoxItem`                  | `5956f362` | type-check 3/3                           |
+| 1+    | id/value pass-through 회귀 방지 테스트                                                                       | `3097ec9c` | specs test 14/14                         |
+| 2+3   | Spec `items: StoredSelectItem[]` 전환 + SelectionRenderers wiring + canonical contract + onInputChange reconcile | `bcd3cd2d` | shared test 7/7 canonical                |
+| 4     | Store `addItem/removeItem/updateItem` 일반화 + ItemsManager tag-agnostic + addMenuItem thin wrapper          | `5ef7ac04` | builder itemsActions test 5/5            |
+| 5     | Migration util (`migrateSelectComboBoxItems`) + `removeElements({ skipHistory })` 옵션                       | `89f3db93` | shared test 8 + elementRemoval 3/3       |
+| 7 (Bonus) | `renderMenu` selectionMode/selectedKeys/onSelectionChange wiring (ADR-070 Negative 해소)                 | `974a79b4` | type-check 3/3 (Menu.tsx generic 보완)   |
+| 6-a   | `metadata.ts` SelectItem/ComboBoxItem 엔트리 제거                                                            | `5575db14` | type-check 3/3                           |
+| 6-b   | SelectItemEditor/ComboBoxItemEditor 파일 삭제 + editors/index.ts 재-export 제거                             | `aea14bce` | type-check 3/3                           |
+| 6-c   | SelectionComponents factory 자동 SelectItem/ComboBoxItem child 제거 + 기본 `items[]` 주입                    | `d489d5b7` | type-check 3/3                           |
+| 6-d   | `HierarchyManager.getSpecialComponentChildren` Select/ComboBox 분기 items 기반 재작성 + `SELECT_HIDDEN_CHILDREN` 에서 SelectItem/ComboBoxItem 제거 | `b4613692` | type-check 3/3                           |
+| 6-e   | `applySelectComboBoxMigration` 오케스트레이터 + `usePageManager.initializeProject` 연결 + IDB orphan 정리   | `51497332` | shared test 19/19 (4 신규 orchestrator)  |
+
+**누적 검증**:
+
+- `pnpm type-check` 3/3 PASS (모든 Phase)
+- `@composition/specs` test 14/14 PASS (Stored/Runtime 변환)
+- `@composition/shared` test 19/19 PASS (canonical contract 7 + migrate 12)
+- `@composition/builder` itemsActions 5/5 + elementRemoval 3/3 PASS
+- 기존 회귀 0 (pre-existing `useLayoutValue.test.ts` WASM 바이너리 미존재 이슈 무관)
+
+**Gate 결과**:
+
+- G1 (스키마) — Stored/Runtime types 기반 spec 전환 완료
+- G2 (기능) — Chrome MCP 실측 미수행 (후속) — unit test 커버리지로 간접 입증
+- G3 (ItemsManager UX) — tag-agnostic store API + ItemsManager 재사용 완료 (SelectItemEditor/ComboBoxItemEditor 제거)
+- G4 (ADR-070 Negative) — renderMenu wiring 해소 (Bonus Phase 7)
+- G5 (마이그레이션) — `applySelectComboBoxMigration` + IDB orphan 정리 + 4 케이스 orchestrator test
+- G6 (Menu 회귀 0) — addItem wrapper 테스트 + `SELECT_HIDDEN_CHILDREN` Menu 미영향 확인
+
+**Agent 운영 교훈**: P2+P3/P4/P7 agent truncation 3회 발생 → P6 을 5 sub-phase (`a`~`e`) 로 분할 수행하여 truncation 0, 독립 commit 5건 보장.
