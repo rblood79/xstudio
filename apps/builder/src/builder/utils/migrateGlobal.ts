@@ -25,7 +25,7 @@ async function fixAllDuplicateOrderNums(): Promise<MigrateReport> {
   return report;
 }
 
-if (typeof window !== "undefined") {
+if (import.meta.env.DEV && typeof window !== "undefined") {
   const w = window as unknown as {
     __composition_MIGRATE__?: {
       fixAllDuplicateOrderNums: typeof fixAllDuplicateOrderNums;
