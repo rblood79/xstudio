@@ -893,8 +893,9 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Items",
     icon: "•",
     inspector: {
-      hasCustomEditor: true,
-      editorName: "MenuItemEditor",
+      // ADR-068 P6: MenuItem는 이제 Menu.spec.ts items-manager 필드로 관리됨
+      // MenuItemEditor 폐기 — 개별 요소 inspector 불필요
+      hasCustomEditor: false,
       dataBindingType: null,
       // React Aria: onAction, onHoverStart, onHoverEnd, onPress
       supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],

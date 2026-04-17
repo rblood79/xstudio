@@ -10,6 +10,7 @@ import {
 } from "../../../components";
 import { inferLabel } from "./inferLabel";
 import { ChildItemManager } from "./ChildItemManager";
+import { ItemsManager } from "./ItemsManager";
 
 interface SpecFieldProps {
   field: FieldDef;
@@ -250,6 +251,11 @@ export const SpecField = memo(function SpecField({
     case "children-manager":
       return elementId ? (
         <ChildItemManager elementId={elementId} field={field} />
+      ) : null;
+
+    case "items-manager":
+      return elementId ? (
+        <ItemsManager elementId={elementId} field={field} />
       ) : null;
 
     default:

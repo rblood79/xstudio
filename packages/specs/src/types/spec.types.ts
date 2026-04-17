@@ -266,6 +266,39 @@ export interface ChildrenManagerField extends BaseFieldDef {
   allowNested?: boolean;
 }
 
+/** items-manager 필드의 개별 항목 속성 스키마 */
+export interface ItemsManagerFieldItemSchema {
+  /** 항목 객체의 키 이름 (e.g. "label", "value") */
+  key: string;
+  /** 값 타입 */
+  type: "string" | "boolean" | "icon" | "event-id";
+  /** UI 라벨 */
+  label: string;
+}
+
+/**
+ * ItemsManagerField — element tree 없이 props.items 배열로 항목을 관리하는 필드
+ *
+ * ChildrenManagerField와 달리 자식 Element를 생성하지 않고,
+ * Menu.props.items: StoredMenuItem[] 같은 직렬화 가능한 배열을 편집한다.
+ * (ADR-068 P2 — Menu items SSOT 전환)
+ */
+export interface ItemsManagerField extends BaseFieldDef {
+  type: "items-manager";
+  /** props 내 items 배열 키 (e.g. "items") */
+  itemsKey: string;
+  /** 항목 타입 이름 — UI 라벨/디버깅용 (e.g. "MenuItem") */
+  itemTypeName: string;
+  /** 새 항목 추가 시 기본 값 */
+  defaultItem: Record<string, unknown>;
+  /** 항목 인라인 편집 스키마 */
+  itemSchema: ItemsManagerFieldItemSchema[];
+  /** 목록에서 라벨로 표시할 키 (e.g. "label") */
+  labelKey?: string;
+  /** 중첩 자식 허용 여부 (서브메뉴 등) — 현재 Phase에서는 false */
+  allowNested?: boolean;
+}
+
 export type DerivedUpdateFn = (
   value: unknown,
   currentProps: Record<string, unknown>,
@@ -281,7 +314,8 @@ export type FieldDef =
   | NumberField
   | IconField
   | CustomField
-  | ChildrenManagerField;
+  | ChildrenManagerField
+  | ItemsManagerField;
 
 // ─── ADR-036: Tier 2 Composite CSS 타입 ─────────────────────────────────────
 

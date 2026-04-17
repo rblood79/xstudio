@@ -42,6 +42,11 @@ export interface RenderContext {
   renderElement: (el: PreviewElement, key?: string) => React.ReactNode;
   // Layout/Slot System 필드
   editMode?: "page" | "layout"; // 현재 편집 모드
+  /**
+   * ACTION_ID → 실행 함수 변환 (Q11: shared 렌더러는 EVENT_REGISTRY에 직접 의존 금지)
+   * EVENT_REGISTRY.resolve를 주입. 없으면 undefined 반환.
+   */
+  resolveActionId?: (id: string) => (() => void) | undefined;
 }
 
 /**
