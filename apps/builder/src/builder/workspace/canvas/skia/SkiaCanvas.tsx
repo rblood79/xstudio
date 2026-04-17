@@ -11,7 +11,7 @@
  * PixiJS ticker/Container/EventBoundary에 대한 의존성을 완전히 제거한다.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SkiaRenderer } from "./SkiaRenderer";
 import { getRegistryVersion, notifyLayoutChange } from "./useSkiaNode";
 import { isCanvasKitInitialized, getCanvasKit } from "./initCanvasKit";
@@ -23,9 +23,11 @@ import {
   syncCustomFontsWithSkia,
 } from "../../../fonts/loadCustomFontsToSkia";
 import { registerImageLoadCallback } from "./imageCache";
-import type {
-  RendererInvalidationPacket,
-  SkiaRendererInput,
+import {
+  createOverlayInvalidationPacket,
+  type RendererInvalidationPacket,
+  type RendererSceneInvalidation,
+  type SkiaRendererInput,
 } from "../renderers";
 import type { DropIndicatorSnapshot } from "../selection/dropTargetResolver";
 import { recordInvalidation } from "./renderInvalidation";
@@ -65,6 +67,7 @@ import { viewportState as mutableViewport } from "../viewport/viewportState";
 import { StoreRenderBridge } from "./StoreRenderBridge";
 import { getSharedLayoutMap } from "../layout/engines/fullTreeLayout";
 import { useStore } from "../../../stores";
+import { useAIVisualFeedbackStore } from "../../../stores/aiVisualFeedback";
 import { observe, PERF_LABEL } from "../../../utils/perfMarks";
 import {
   useThemeConfigStore,
@@ -87,8 +90,12 @@ export interface SkiaCanvasProps {
   app?: unknown;
   /** Layout 무효화 콜백 */
   invalidateLayout: () => void;
-  /** 프레임별 무효화 패킷 */
-  invalidationPacket: RendererInvalidationPacket;
+  /**
+   * ADR-074 Phase 4: scene sub-packet 만 BuilderCanvas 에서 주입.
+   * overlay packet (ai + selection + dragActive) 은 SkiaCanvas 내부에서
+   * useStore 로 직접 구독하여 생성 — BuilderCanvas 루트 selection 구독 제거.
+   */
+  sceneInvalidationPacket: RendererSceneInvalidation;
   /** 렌더러 입력 (store 스냅샷) */
   rendererInput: SkiaRendererInput;
   /** 드롭 인디케이터 스냅샷 ref */
@@ -115,11 +122,60 @@ export function SkiaCanvas({
   backgroundColor = 0xf3f4f6,
   app,
   invalidateLayout,
-  invalidationPacket,
+  sceneInvalidationPacket,
   rendererInput,
   dropIndicatorSnapshotRef,
   camera: externalCamera,
 }: SkiaCanvasProps) {
+  // ADR-074 Phase 4: overlay sub-packet 을 SkiaCanvas 내부에서 자체 구독/생성.
+  // BuilderCanvas 루트의 selection/editing/ai 구독을 제거하여 루트 리렌더
+  // fan-out 을 차단. 합성 invalidationPacket 은 기존 ref/render 로직과 호환.
+  const currentPageId = useStore((state) => state.currentPageId);
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const selectedElementIds = useStore((state) => state.selectedElementIds);
+  const editingContextId = useStore((state) => state.editingContextId);
+  const aiFlashAnimations = useAIVisualFeedbackStore(
+    (state) => state.flashAnimations,
+  );
+  const aiGeneratingNodes = useAIVisualFeedbackStore(
+    (state) => state.generatingNodes,
+  );
+  const cleanupExpiredFlashes = useAIVisualFeedbackStore(
+    (state) => state.cleanupExpiredFlashes,
+  );
+
+  const overlayInvalidationPacket = useMemo(() => {
+    return createOverlayInvalidationPacket({
+      ai: {
+        cleanupExpiredFlashes,
+        flashAnimations: aiFlashAnimations,
+        generatingNodes: aiGeneratingNodes,
+      },
+      dragActive: false,
+      selection: {
+        currentPageId,
+        editingContextId,
+        selectedElementId,
+        selectedElementIds,
+      },
+    });
+  }, [
+    aiFlashAnimations,
+    aiGeneratingNodes,
+    cleanupExpiredFlashes,
+    currentPageId,
+    editingContextId,
+    selectedElementId,
+    selectedElementIds,
+  ]);
+
+  const invalidationPacket = useMemo<RendererInvalidationPacket>(() => {
+    return {
+      ...sceneInvalidationPacket,
+      ...overlayInvalidationPacket,
+    };
+  }, [sceneInvalidationPacket, overlayInvalidationPacket]);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);

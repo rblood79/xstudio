@@ -23,7 +23,6 @@ import {
 } from "react";
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
-import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
@@ -39,10 +38,9 @@ import {
 } from "./interaction";
 import {
   buildPixiPageRendererInput,
-  createOverlayInvalidationPacket,
   createSceneInvalidationPacket,
   createSkiaRendererInput,
-  type RendererInvalidationPacket,
+  type RendererSceneInvalidation,
   type SkiaRendererInput,
 } from "./renderers";
 import { getElementBoundsSimple } from "./elementRegistry";
@@ -54,7 +52,7 @@ import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
 import { useDragBridge } from "./hooks/useDragBridge";
 
-import { buildSceneSelectionState, buildSceneStructureSnapshot } from "./scene";
+import { buildSceneStructureSnapshot } from "./scene";
 import {
   computeWorkflowEdges,
   computeDataSourceEdges,
@@ -109,7 +107,7 @@ function SkiaCanvasLazy(props: {
   containerEl: HTMLDivElement;
   backgroundColor?: number;
   invalidateLayout: () => void;
-  invalidationPacket: RendererInvalidationPacket;
+  sceneInvalidationPacket: RendererSceneInvalidation;
   rendererInput: SkiaRendererInput;
   dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
 }) {
@@ -151,19 +149,17 @@ export function BuilderCanvas({
   // Store state
   const elements = useStore((state) => state.elements);
   const pages = useStore((state) => state.pages);
-  // 🚀 selectedElementIds는 ElementsLayer 내부에서 직접 구독 (부모 리렌더링 방지)
+  // ADR-074 Phase 4: selectedElementId/Ids/editingContextId/ai 3개 구독을
+  // SkiaCanvas 내부로 이전. 루트 리렌더 fan-out 차단.
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const setSelectedElements = useStore((state) => state.setSelectedElements);
   const clearSelection = useStore((state) => state.clearSelection);
   const currentPageId = useStore((state) => state.currentPageId);
-  const selectedElementId = useStore((state) => state.selectedElementId);
-  const selectedElementIds = useStore((state) => state.selectedElementIds);
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
   // ADR-069 Phase 1: 페이지 전환 + 선택 병합 action
   const selectElementWithPageTransition = useStore(
     (state) => state.selectElementWithPageTransition,
   );
-  const editingContextId = useStore((state) => state.editingContextId);
   const invalidateLayout = useStore((state) => state.invalidateLayout);
 
   // Settings state (SettingsPanel 연동)
@@ -189,15 +185,8 @@ export function BuilderCanvas({
   const childrenMap = useStore((state) => state.childrenMap);
   const dirtyElementIds = useStore((state) => state.dirtyElementIds);
   const layouts = useLayoutsStore((state) => state.layouts);
-  const aiGeneratingNodes = useAIVisualFeedbackStore(
-    (state) => state.generatingNodes,
-  );
-  const aiFlashAnimations = useAIVisualFeedbackStore(
-    (state) => state.flashAnimations,
-  );
-  const cleanupExpiredFlashes = useAIVisualFeedbackStore(
-    (state) => state.cleanupExpiredFlashes,
-  );
+  // ADR-074 Phase 4: aiGeneratingNodes/aiFlashAnimations/cleanupExpiredFlashes
+  // 구독은 SkiaCanvas 내부로 이전 — BuilderCanvas 루트 리렌더 fan-out 차단.
 
   const zoom = useViewportSyncStore((state) => state.zoom);
   const panOffset = useViewportSyncStore((state) => state.panOffset);
@@ -301,25 +290,13 @@ export function BuilderCanvas({
     zoom,
   ]);
 
-  const sceneSelectionState = useMemo(() => {
-    return buildSceneSelectionState({
-      currentPageId,
-      elementsMap,
-      selectedElementIds,
-    });
-  }, [currentPageId, elementsMap, selectedElementIds]);
+  // ADR-074 Phase 4: 합성 sceneSnapshot + sceneSelectionState 제거.
+  // sceneSnapshot.selection 소비자 0 (rendererInput 경로는 structure 필드만 사용)
+  // 이므로 selection state 생성 자체가 불필요. 하위 consumer 는 이제
+  // sceneStructureSnapshot 을 직접 소비.
+  const sceneSnapshot = sceneStructureSnapshot;
 
-  // 합성 sceneSnapshot — 두 snapshot 모두 identity 유지 시 합성 객체도 유지.
-  // 기존 consumer (skiaRendererInput / layoutPublisherInputs / packet) 는
-  // 이 합성 인터페이스를 기존대로 소비.
-  const sceneSnapshot = useMemo(() => {
-    return {
-      ...sceneStructureSnapshot,
-      ...sceneSelectionState,
-    };
-  }, [sceneStructureSnapshot, sceneSelectionState]);
-
-  const visiblePageIds = sceneSnapshot.document.visiblePageIds;
+  const visiblePageIds = sceneStructureSnapshot.document.visiblePageIds;
   const visiblePages = useMemo(() => {
     return pages.filter((page) => visiblePageIds.has(page.id));
   }, [pages, visiblePageIds]);
@@ -442,37 +419,9 @@ export function BuilderCanvas({
     workflowStraightEdges,
   ]);
 
-  const overlayInvalidationPacket = useMemo(() => {
-    return createOverlayInvalidationPacket({
-      ai: {
-        cleanupExpiredFlashes,
-        flashAnimations: aiFlashAnimations,
-        generatingNodes: aiGeneratingNodes,
-      },
-      dragActive: false,
-      selection: {
-        currentPageId,
-        editingContextId,
-        selectedElementId,
-        selectedElementIds,
-      },
-    });
-  }, [
-    aiFlashAnimations,
-    aiGeneratingNodes,
-    cleanupExpiredFlashes,
-    currentPageId,
-    editingContextId,
-    selectedElementId,
-    selectedElementIds,
-  ]);
-
-  const rendererInvalidationPacket = useMemo(() => {
-    return {
-      ...sceneInvalidationPacket,
-      ...overlayInvalidationPacket,
-    };
-  }, [sceneInvalidationPacket, overlayInvalidationPacket]);
+  // ADR-074 Phase 4: overlayInvalidationPacket + 합성 rendererInvalidationPacket
+  // useMemo 제거. overlay 는 SkiaCanvas 내부에서 자체 구독/생성.
+  // SkiaCanvasLazy 에 sceneInvalidationPacket 만 전달.
 
   // ============================================
   // Pencil-style 중앙 pointerdown 핸들러
@@ -686,7 +635,7 @@ export function BuilderCanvas({
           containerEl={containerEl}
           backgroundColor={backgroundColor}
           invalidateLayout={invalidateLayout}
-          invalidationPacket={rendererInvalidationPacket}
+          sceneInvalidationPacket={sceneInvalidationPacket}
           rendererInput={skiaRendererInput}
           dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
         />

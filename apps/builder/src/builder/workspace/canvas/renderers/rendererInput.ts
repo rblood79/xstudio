@@ -1,6 +1,6 @@
 import type { Element, Page } from "../../../../types/core/store.types";
 import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
-import type { ScenePageSnapshot, SceneSnapshot } from "../scene";
+import type { ScenePageSnapshot, SceneStructureSnapshot } from "../scene";
 
 export interface PixiPageRendererInput {
   bodyElement: Element | null;
@@ -27,7 +27,7 @@ interface BuildPixiPageRendererInputOptions {
   pagePositionVersion: number;
   pageWidth: number;
   panOffset: { x: number; y: number };
-  sceneSnapshot: SceneSnapshot;
+  sceneSnapshot: SceneStructureSnapshot;
   wasmLayoutReady: boolean;
   zoom: number;
 }
@@ -77,7 +77,7 @@ export interface SkiaRendererInput {
   pagePositions: Record<string, { x: number; y: number } | undefined>;
   pageSnapshots: Map<string, ScenePageSnapshot>;
   pages: Page[];
-  sceneSnapshot: SceneSnapshot;
+  sceneSnapshot: SceneStructureSnapshot;
 }
 
 interface CreateSkiaRendererInputOptions {
@@ -89,7 +89,7 @@ interface CreateSkiaRendererInputOptions {
   pagePositionsVersion: number;
   pagePositions: Record<string, { x: number; y: number } | undefined>;
   pages: Page[];
-  sceneSnapshot: SceneSnapshot;
+  sceneSnapshot: SceneStructureSnapshot;
 }
 
 export function createSkiaRendererInput(
