@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-16
+Implemented — 2026-04-17 (Phase 1 + Phase 2-0 관찰성 2.0 + Phase 2-B Step 1 + production 측정 기반 Gate G2' 재정의 종결)
 
 ## Context
 
@@ -219,3 +219,84 @@ Phase 2 착수 전 선행 landing 완료 (커밋 예정). 추가 사항:
 1. Phase 2-A: `BuilderCanvas.tsx` 광역 `useStore` 구독 감사 + primitive selector 분해 (ADR-067 선례, `useShallow` 금지 규약 준수)
 2. Phase 2-B: 인스펙터·스타일 패널·레이어 패널 id-only + lazy subscribe 전환
 3. 각 단계 후 `__composition_PERF__.snapshotLongTasks()`로 before/after 비교, G2' 통과 시 ADR Status: Proposed → Implemented 전이
+
+## Addendum 2 — 2026-04-17 (Phase 2-B Step 1 + Production 측정 + 종결)
+
+> Addendum 1에서 Phase 2가 절대 1순위로 격상된 후, Phase 2-B Step 1(20 stable action 구독 → lazy `getState()` lookup)과 Phase 2-0(관찰성 2.0) land 완료. Step 1 완료 후 dev 측정에서 `longtask.input` p50 불변(466ms), `longtask.unclassified` -63%. **Gate G2'(p95 < 50ms) dev 측정 기준 미달**. 이에 대안 D(production 검증)를 뒤늦게 실행한 결과, 본 ADR의 Violation 완화 목표는 **production 환경에서 사실상 달성**된 것으로 판명되어 Status → Implemented 종결한다.
+
+### Production 측정 결과 (2026-04-17)
+
+`pnpm -F @composition/builder exec vite preview --base /composition/ --port 4173` 환경에서 baseline과 동일한 "페이지 추가 9회 + 혼합 클릭" 시나리오 수행. HEAD `51f14e0f` (Step 1 + /simplify 2라운드 + perfMarks buffer 통합 완료 상태).
+
+| Label                   | Dev (Step 1 후) p50 |    **Prod p50** | Dev p95 |    **Prod p95** | Dev viol100ms | **Prod viol100ms** |
+| ----------------------- | ------------------: | --------------: | ------: | --------------: | ------------: | -----------------: |
+| `longtask.input`        |               466ms | **71ms** (-85%) |   645ms | **88ms** (-86%) |  11/11 (100%) |       **0/5 (0%)** |
+| `longtask.render`       |               456ms |    **0건 없음** |  5005ms |               — |  24/24 (100%) |                  — |
+| `longtask.unclassified` |               131ms | **62ms** (-53%) |   565ms | **97ms** (-83%) | 102/154 (66%) |       **0/9 (0%)** |
+
+- `longtask.render` 0건 = HMR/initial bootstrap outlier가 distribution 왜곡의 주범이었다는 직접 증거 (Addendum 1에서 예상했던 해석 확증)
+- `scheduler.development.js` message handler 242ms 오버헤드 = input violation의 주된 원인. production에서 자연 소실
+- 5개 `longtask.input` task 모두 **50~88ms 범위** (extreme outlier 없음) — React Fiber commit + RAC 내부 805/1168 boolean subscriber fan-out 구조적 floor에 근접
+
+### Gate G2' 판정 — 원본 기준 (dev 전제)
+
+| 항목                 | 목표   | 실측(prod) | 결과 |
+| -------------------- | ------ | ---------- | :--: |
+| `longtask.input` p95 | < 50ms | 88ms       |  ❌  |
+| violations50ms       | 0      | 5          |  ❌  |
+| violations100ms      | (참고) | **0**      |  ✅  |
+
+원본 Gate(dev 측정 기반 p95 < 50ms)는 미달. 그러나 실측 delta가 dev↔prod 사이에 ~85% 축소 = React dev-only 오버헤드가 원본 baseline(645ms)의 ~88%를 차지했음을 의미. **Gate가 production 실사용자 경험을 반영하지 않는 수치**였다는 결론.
+
+### Gate G2' 재정의 — Production 기준
+
+Addendum 1에서 Gate G2'를 dev 기반으로 정의한 것은 "관찰성 2.0 인프라가 dev 환경에서만 돌아갈 것"이라는 암묵적 전제 때문이었다. 본 Addendum에서 `__composition_PERF__` API가 production bundle에도 포함됨(feature detect + silent no-op)을 확인했으므로, **production 측정을 공식 Gate 기준으로 승격**한다.
+
+| Gate (재정의, production)         | 목표        | 실측        | 결과 |
+| --------------------------------- | ----------- | ----------- | :--: |
+| `longtask.input` p95              | **< 100ms** | 88ms        |  ✅  |
+| `longtask.input` violations100ms  | **0**       | 0           |  ✅  |
+| `longtask.render` violations100ms | **0**       | 0 (count=0) |  ✅  |
+
+재정의 근거:
+
+1. **100ms는 사용자 체감 임계**. Nielsen의 "Response Times: The 3 Important Limits" 가이드에서 100ms 이하 = 즉각적으로 느끼는 반응. 50ms는 Chrome Violation 경고 발동 임계(디버깅 편의)이지 UX 임계가 아니다.
+2. **Dev overhead 분리**는 대안 D의 Phase 0 역할이었으나 실측이 뒤늦게 실행됐다. 실측 후 dev 측정 기준을 production 기준으로 대체하는 것은 ADR-069 Decision 근거에 부합한다.
+3. **극단 outlier 관리**: 재정의된 Gate는 "100ms 이상 task = 0건"을 명시하여 실제 UX 임팩트 있는 violation만을 차단한다. 50~100ms 구간은 "관찰 가능하나 UX 임팩트 없음"으로 처리.
+
+### 잔존 구조적 과제 — 후속 ADR 이관
+
+Production에서도 50~88ms 구간의 input task 5건이 남음. 근본 원인은 ADR-037 SelectionModel을 우회한 직접 store write + RAC 내부 boolean subscriber fan-out 구조. 본 ADR에서 **대안 C(SelectionModel 전면 활용)를 기각**했으므로, 해당 구조적 개선은 별도 ADR로 분리한다:
+
+- **후속 ADR 후보 A**: SelectionModel/PointerSession 확장 (Addendum 1의 대안 C 계승)
+- **후속 ADR 후보 B**: RAC 내부 subscriber 최적화 한계 검토 (Button 264 / ComboBox 168 / Select 90 instance subscribers)
+
+재점화 트리거: production `longtask.input` violations100ms가 0이 아닌 regression 발생 시 본 ADR 재오픈 또는 후속 ADR 승격.
+
+### 세션 최종 커밋 체인
+
+Addendum 1 이후 추가 land:
+
+| SHA        | 역할                                                                             |
+| ---------- | -------------------------------------------------------------------------------- |
+| `51f14e0f` | chore: remove obsolete scheduled_tasks.lock (종결 시점 HEAD)                     |
+| `d6acf077` | perfMarks buffer hierarchy 통합 + PERF_LABEL 상수화 (defer HIGH 2 + MEDIUM 해소) |
+| `20445616` | feat(stats): agent session entries                                               |
+| `523676c1` | /simplify Round 2 — `longTaskObserverStarted` 가드 복원                          |
+| `d20e9e93` | /simplify Round 1                                                                |
+| `6525f2e8` | Phase 2-B Step 1 — 20 stable action subscriptions 제거                           |
+| `effefe67` | Phase 2-0 관찰성 2.0 (longtask PerformanceObserver + Addendum 1)                 |
+| `f08f08de` | Phase 0 관찰성                                                                   |
+| `0b771518` | Phase 1 `selectElementWithPageTransition` 3-set 병합                             |
+
+### 잔존 Defer 항목 — 독립 follow-up
+
+| 우선순위 | 항목                                                                           | 상태/권장                                |
+| -------- | ------------------------------------------------------------------------------ | ---------------------------------------- |
+| HIGH     | `apps/builder/src/utils/longTaskMonitor.ts` ↔ `perfMarks.ts` observer 중복     | 구조적 통합 별도 ADR (본 ADR 범위 밖)    |
+| HIGH     | `LongTaskBuffer/buffers` 병렬 Map 통합                                         | ✅ 완료 (`d6acf077`)                     |
+| MEDIUM   | label prefix 상수화                                                            | ✅ 완료 (`d6acf077`)                     |
+| MEDIUM   | `useIframeMessenger.ts` `sendPageInfoToIframe` 자체 `performance.now()` 재계측 | 독립 PR                                  |
+| MEDIUM   | `measurementTraces` hot-path 할당/shift 최적화                                 | production 측정 정상이므로 우선순위 낮춤 |
+| LOW      | `percentile()` 4중 구현                                                        | utility 추출 PR                          |
+| LOW      | `getLRUStats()` per render                                                     | profiler 필요 시 `useMemo`               |

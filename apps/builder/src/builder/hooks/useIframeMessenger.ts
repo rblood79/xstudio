@@ -22,6 +22,7 @@ import {
   startTransition,
 } from "react";
 import { debounce, DebouncedFunc } from "lodash";
+import { markBegin, markEnd } from "../utils/perfMarks";
 import { useStore } from "../stores";
 import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
@@ -222,10 +223,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   // ⭐ Layout/Slot System: Page 정보를 iframe에 전송
   const sendPageInfoToIframe = useCallback(
     (pageId: string | null, layoutId: string | null) => {
-      const startTime = performance.now();
+      const startTime = markBegin();
       const iframe = MessageService.getIframe();
-
-      // 🔧 FIX: Ref를 사용하여 최신 상태 확인
       const currentReadyState = iframeReadyStateRef.current;
 
       const message = {
@@ -234,13 +233,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         layoutId,
       };
 
-      // iframe이 준비되지 않았으면 큐에 넣기
       if (currentReadyState !== "ready" || !iframe?.contentWindow) {
         messageQueueRef.current.push({
           type: "UPDATE_PAGE_INFO",
           payload: message,
         });
-        const duration = performance.now() - startTime;
+        const duration = markEnd("iframe.send-page-info.queue", startTime);
         if (duration >= 8) {
           console.log("[perf] iframe.send-page-info.queue", {
             durationMs: Number(duration.toFixed(1)),
@@ -252,7 +250,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       }
 
       iframe.contentWindow.postMessage(message, window.location.origin);
-      const duration = performance.now() - startTime;
+      const duration = markEnd("iframe.send-page-info", startTime);
       if (duration >= 8) {
         console.log("[perf] iframe.send-page-info", {
           durationMs: Number(duration.toFixed(1)),
@@ -262,7 +260,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       }
     },
     [],
-  ); // ✅ 의존성 제거 (Ref 사용)
+  );
 
   // ⭐ Nested Routes & Slug System: Layouts를 iframe에 전송
   const sendLayoutsToIframe = useCallback(() => {
