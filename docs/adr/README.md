@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-17 (ADR-070 **Implemented** — MenuItem CSS 색상 SSOT (StateEffect hover/disabled 색상 emit 인프라). P1(StateEffect 색상 필드 + Generator emit) + P2(MenuItem hover.background). Addendum 1: Menu container 팔레트 ListBox 정합을 위해 수동 CSS 임시 전환(ADR-036/059/063 역행 debt 명시) — 후속 ADR-071(Generator `containerStyles` 인프라)에서 해체 예정 / ADR-068 **Implemented** — items SSOT + MenuItem Spec 신설로 Menu Skia 0-height 구조적 해결, Phase 1~7 6 commit / ADR-069 **Implemented** — Phase 1 + Phase 2-0 관찰성 2.0 + Phase 2-B Step 1 + production 측정 기반 Gate G2' 재정의 종결. `longtask.input` p95 dev 645ms → prod 88ms (-86%), violations100ms 100% → 0%)
+> **최종 업데이트**: 2026-04-17 (ADR-102 **Proposed v2** — Workspace Dot Background Layer. 리뷰 반영으로 축 1(DOM+CSS) + 축 2(Skia clearFrame 투명화, 페이지 body fill 보존) 분리, Gate G1/G2 분리, isolation:isolate/grid 공존 정책 추가 / ADR-070 **Implemented** — MenuItem CSS 색상 SSOT (StateEffect hover/disabled 색상 emit 인프라). P1(StateEffect 색상 필드 + Generator emit) + P2(MenuItem hover.background). Addendum 1: Menu container 팔레트 ListBox 정합을 위해 수동 CSS 임시 전환(ADR-036/059/063 역행 debt 명시) — 후속 ADR-071(Generator `containerStyles` 인프라)에서 해체 예정 / ADR-068 **Implemented** — items SSOT + MenuItem Spec 신설로 Menu Skia 0-height 구조적 해결, Phase 1~7 6 commit / ADR-069 **Implemented** — Phase 1 + Phase 2-0 관찰성 2.0 + Phase 2-B Step 1 + production 측정 기반 Gate G2' 재정의 종결. `longtask.input` p95 dev 645ms → prod 88ms (-86%), violations100ms 100% → 0%)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 43     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 18     |
-| **합계**                               | **69** |
+| 미구현 (Proposed/계획)                 | 19     |
+| **합계**                               | **70** |
 
 ---
 
@@ -102,6 +102,7 @@
 | [066](066-tabs-items-ssot-migration.md)            | Tabs items SSOT 전환 — RAC Collection Items 패턴 정합                               | Implemented | (2026-04-15) Tab element 소멸 + `Tabs.props.items` 단일 SSOT. TabPanel element는 자식 subtree 호스팅 유지. items[i].id ↔ TabPanel.props.itemId 페어링. TabsEditor Item Management + TabList 우측 +/- DOM 오버레이(`TabListActionOverlay`). implicitStyles/utils/HierarchyManager/treeUtils/elementReorder/elementRemoval/useLayerTreeData Tab element 로직 전면 제거. `tabsItemActions.ts` shared helper. Phase 1~7 모두 pnpm type-check 3/3 통과, CSS 107 유지. 구현 상세: [breakdown](design/066-tabs-items-ssot-migration-breakdown.md)                                 |  **P2**  |
 | [067](067-style-panel-skia-native-read-path.md)    | 스타일 패널 Skia-native Read Path 전환 (Jotai 제거)                                 | Accepted    | 6 Phase — Transform pilot(+보조 selector 4종) → Layout/Spacing → Typography → Appearance+propagation → Fill → ComponentState+shell+jotai dep 삭제. `computeSyntheticStyle`(CSS 흉내) 제거, D3 대칭 복원. ESLint `useShallow` 금지 제약으로 개별 primitive selector + `useMemo` 조립. 구현 상세: [breakdown](design/067-style-panel-skia-native-read-path-breakdown.md)                                                                                                                                                                                                     |  **P2**  |
 | [070](070-popover-item-css-ssot.md)                | MenuItem CSS 색상 SSOT — StateEffect hover/disabled 색상 emit 인프라                | Implemented | (2026-04-17) P1(StateEffect `background/text/border` optional TokenRef + Generator hover/disabled emit) + P2(`MenuItem.spec.states.hover.background = {color.layer-1}`) 모두 반영. G1 snapshot diff 0 + G2 Chrome MCP 구조 정합 PASS. **Addendum 1**: 사용자 지시로 Menu container 팔레트를 ListBox와 동일하게 맞추는 수동 CSS 전환이 본 ADR 범위 외에서 추가 수행 — ADR-036/059/063 역행 debt 명시 수용 + 후속 **ADR-071**(Generator `containerStyles` 인프라 + Menu 정방향 복원)에서 해체 예정. 구현 상세: [breakdown](../design/070-popover-item-css-ssot-breakdown.md) |  **P2**  |
+| [102](102-workspace-dot-background-layer.md)       | Workspace Dot Background Layer — Builder 전용 에디터 크롬                           | Proposed    | (리뷰 반영 v2 — 2026-04-17) 축 1: DOM+CSS `background-image` 레이어 / 축 2: Skia `clearFrame` 3 call site 투명화(페이지 body fill 보존). `.canvas-container { background: var(--bg); isolation: isolate }` + `DotBackground.tsx`(~70 LoC). Gate G1(런타임 무간섭) + G2(Skia 투명화 안전성). D1/D2/D3 도메인 외 Builder shell, Preview/Publish 비적용. 구현 상세: [breakdown](../design/102-workspace-dot-background-breakdown.md)                                                                                                                                          |    P4    |
 
 ## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
 

@@ -4,12 +4,15 @@
 
 ## Phase 구성
 
-| Phase  | 목표                                  | 결과물                                         |
-| ------ | ------------------------------------- | ---------------------------------------------- |
-| **P1** | DotBackground 컴포넌트 + CSS 스캐폴딩 | 컴포넌트 1개, CSS 블록 1개, BuilderCanvas 통합 |
-| **P2** | Viewport 동기화 (pan/zoom → CSS 변수) | `useViewportSyncStore` 구독, gap/offset 계산   |
-| **P3** | 커서 글로우 (pointermove → mask)      | rAF 스로틀 핸들러, opacity 페이드              |
-| **P4** | 다크모드/토큰 검증                    | 시맨틱 변수 매핑 확인, 시각 테스트             |
+| Phase  | 목표                                      | 결과물                                                                              |
+| ------ | ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| **P0** | **Skia canvas 투명화 (가시성 전제 확보)** | `SkiaRenderer` 3 call site 투명 clear + `.canvas-container { background: --bg }`    |
+| **P1** | DotBackground 컴포넌트 + CSS 스캐폴딩     | 컴포넌트 1개, CSS 블록 1개, BuilderCanvas 통합                                      |
+| **P2** | Viewport 동기화 (pan/zoom → CSS 변수)     | `useViewportSyncStore` 구독, gap/offset 계산                                        |
+| **P3** | 커서 글로우 (pointermove → mask)          | rAF 스로틀 핸들러, opacity 페이드                                                   |
+| **P4** | 다크모드/토큰/그리드 공존 검증            | 시맨틱 변수 매핑 확인, gridRenderer 동시 활성화 시 시각 확인, 테마 전환 시각 테스트 |
+
+Phase 순서 엄수: **P0 먼저**. P0 없이 P1~P3 구현하면 도트 레이어가 완전히 은폐되어 전혀 보이지 않는다 (ADR Context § "캔버스 불투명 이슈" 참조).
 
 ## 파일 변경 목록
 
@@ -21,19 +24,38 @@
 
 ### 수정
 
-| 경로                                                          | 변경                                                                                                                                             | LoC 추정 |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | `.canvas-container` 내부 `<SkiaCanvasLazy/>` 와 형제로 `<DotBackground/>` 삽입 (실제 `<canvas>` 는 `SkiaCanvas.tsx` 내부이므로 이 경계에서 삽입) | +2       |
-| `apps/builder/src/builder/workspace/Workspace.css`            | `.dot-background`, `.dot-background--base`, `.dot-background--glow` 블록 추가                                                                    | ~40      |
+| 경로                                                             | 변경                                                                                                                                                                                                    | LoC 추정      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` | **P0**. `clearFrame()` (L145), `present()` (L459), `renderLegacy()` (L670) 3 call site 의 `mainCanvas.clear(this.backgroundColor)` → `mainCanvas.clear(this.ck.Color4f(0, 0, 0, 0))` 로 교체. 주석 갱신 | 3 line + 주석 |
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`    | `.canvas-container` 내부 `<SkiaCanvasLazy/>` 와 형제로 `<DotBackground/>` 삽입                                                                                                                          | +2            |
+| `apps/builder/src/builder/workspace/Workspace.css`               | `.canvas-container` 에 `background: var(--bg)` 와 `isolation: isolate` 추가 + `.dot-background`, `.dot-background--base`, `.dot-background--glow` 블록 추가                                             | ~45           |
 
 ### 건드리지 않음 (명시)
 
 - `packages/specs/**` — D3 비적용
 - `apps/preview/**`, `apps/publish/**` — Builder 전용 UI
-- `apps/builder/src/builder/workspace/canvas/skia/**` — Skia 렌더 경로 불간섭
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` 의 `backgroundColor` 필드/`setBackgroundColor()`/`setupThemeWatcher` 색 동기화 경로 — 시각적 no-op 이 되나 API 보존 (후속 정리는 별도 ADR)
 - `ViewportController.ts`, `viewportActions.ts` — 기존 이벤트 경로 무변경
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaCanvas.tsx` — pointer-events/z-index 등 기존 설정 유지. 배경 resolveBg/setBackgroundColor 호출은 남겨두되 시각적으로 무의미해짐
 
 ## 핵심 구현
+
+### P0. SkiaRenderer clear 투명화
+
+```ts
+// SkiaRenderer.ts L144~147 (clearFrame)
+clearFrame(): void {
+  // ADR-102: void 영역 투명화 — DotBackground 가 뒤에서 보이도록.
+  // 페이지 body fill 은 element 트리 렌더 경로에서 유지됨.
+  this.mainCanvas.clear(this.ck.Color4f(0, 0, 0, 0));
+  this.mainSurface.flush();
+}
+
+// SkiaRenderer.ts L459 (present) / L670 (renderLegacy) 도 동일 치환
+// 주석 추가: "ADR-102 투명 clear"
+```
+
+`this.backgroundColor` 필드와 `setBackgroundColor()` / `setupThemeWatcher → onThemeChange` 경로는 API/상태만 보존되고 시각적 no-op 이 된다 (clear 는 투명, 페이지 fill 은 element 트리가 담당). 제거 또는 간소화는 후속 작업으로 미룬다.
 
 ### DotBackground.tsx
 
@@ -130,10 +152,20 @@ export function DotBackground() {
 /* ============================================
  * Dot Background (ADR-102) — Builder workspace 전용
  * Skia canvas 아래 레이어, pointer-events 무간섭
+ * P0에서 Skia clearFrame 투명화 전제
  * ============================================ */
 
-/* z-index 스택 격리: 후속 형제 삽입에도 stacking context 안정 */
+/*
+ * .canvas-container 에 두 가지 변경:
+ *   1) background: var(--bg) — Skia void 투명화 후 도트 반투명 사이 베이스 색.
+ *      테마 변경은 CSS 변수 경로로 자동 반영(ADR-021).
+ *   2) isolation: isolate — DotBackground/Skia/자손 absolute 자식이
+ *      자체 stacking context 내에서 안정적으로 z-index 적용되도록 격리.
+ *      기존 TextEditOverlay(absolute)/GPUDebugOverlay/wasmLayoutFailed 배너(z:9999) 는
+ *      .canvas-container 의 자손이므로 동일 컨텍스트에서 정상 렌더됨.
+ */
 .canvas-container {
+  background: var(--bg);
   isolation: isolate;
 }
 
@@ -188,7 +220,7 @@ export function DotBackground() {
 )}
 ```
 
-실제 `<canvas>` 엘리먼트는 `SkiaCanvas.tsx` 내부에 있으므로, `DotBackground` 는 `.canvas-container` 직계 자식 레벨에서 `SkiaCanvasLazy` 와 **형제**로 삽입한다. DOM 순서상 Skia보다 뒤에 오지만 z-index(`canvas: 2` / `base: 0` / `glow: 1`)로 시각 스택은 배경이 아래가 된다.
+실제 `<canvas>` 엘리먼트는 `SkiaCanvas.tsx` 내부에 있으므로, `DotBackground` 는 `.canvas-container` 직계 자식 레벨에서 `SkiaCanvasLazy` 와 **형제**로 삽입한다. DOM 순서상 Skia보다 뒤에 오지만 z-index(`canvas: 2` / `base: 0` / `glow: 1`)로 시각 스택은 배경이 아래가 된다. P0에서 Skia 가 void 영역을 투명화하므로 도트 레이어가 실제로 노출된다.
 
 ## pan/zoom 수학 설명
 
@@ -206,14 +238,23 @@ offset_y   = mod(panOffset.y, gap)
 
 ## 검증 체크리스트
 
+### P0 투명화 전용 검증 (ADR Gate G2 반영)
+
+- [ ] `SkiaRenderer` 3 call site 전환 후 페이지 내부 영역 before/after 스크린샷 pixel diff 0 (페이지 body fill 동등)
+- [ ] viewport void(페이지 바깥) 영역의 pixel alpha=0 확인 (`<canvas>` 픽셀 샘플 또는 DevTools)
+- [ ] `.canvas-container { background: var(--bg) }` 가 light/dark 전환 시 즉시 반영 (ADR-021 `setupThemeWatcher` 경로 독립 확인)
+- [ ] `SkiaRenderer.setBackgroundColor()` / `readCssBgColor()` / `setupThemeWatcher` 호출이 남아있어도 런타임 오류 없음 (API 보존)
+
 ### 시각
 
-- [ ] 베이스 도트가 canvas 영역 전체에 균일 노출
+- [ ] 베이스 도트가 canvas 영역 전체(페이지 바깥 void)에 균일 노출
+- [ ] 페이지 body 내부는 기존처럼 불투명 fill (body backgroundColor 설정된 경우) — 도트가 페이지 위로 올라타지 않음
 - [ ] pan(휠/드래그) 시 도트가 패닝 방향으로 자연스럽게 흐름
 - [ ] zoom(Ctrl+휠) 시 도트 간격이 줌 비율에 맞춰 변화
 - [ ] 마우스가 canvas 안에 있을 때 커서 주변 반경 ~140px 안에서 accent 색 도트 노출
 - [ ] 마우스가 canvas 밖으로 나가면 200ms 페이드아웃
-- [ ] 다크모드 전환 시 토큰값에 따라 색 자동 변경
+- [ ] 다크모드 전환 시 `--bg`/`--fg-muted`/`--accent` 토큰값에 따라 색 자동 변경
+- [ ] `showGrid=true` 설정 시 Skia gridRenderer(씬 좌표계 그리드)와 DotBackground(스크린 좌표계 도트)가 동시 노출되며 시각 간섭 없음 (그리드는 페이지 내부에서, 도트는 void 영역에서 지배)
 
 ### 성능
 
@@ -221,13 +262,19 @@ offset_y   = mod(panOffset.y, gap)
 - [ ] DotBackground의 pointermove 핸들러 frame budget **< 2ms**
 - [ ] 뷰포트 full 영역에서 60fps 유지 (배경 on 상태에서 기존 편집 캔버스와 동등)
 
-### 정합성
+### 정합성 (ADR Gate G1 반영)
 
-- [ ] pointer-events 기존 ViewportController/Pixi 이벤트 레이어와 충돌 없음 (드래그/선택/휠 zoom 동작 확인)
-- [ ] `pointermove` bubble이 `.canvas-container`에 도달 (canvas target에서 `stopPropagation()` 호출 여부 확인 — ViewportController 내 이벤트 처리 경로 점검)
-- [ ] `.canvas-container`에 `isolation: isolate` 적용 후 z-index 스택 안정 (패널/툴바 드래그 시 배경 레이어 삐져나옴 없음)
-- [ ] `.canvas-container` 외 영역(scrollbar, toggle bar) 침범 없음
+- [ ] pointer-events 기존 ViewportController/중앙 pointer 핸들러와 충돌 없음 (드래그/선택/휠 zoom 동작 확인)
+- [ ] `pointermove` bubble이 `.canvas-container`에 도달 (canvas target에서 `stopPropagation()` 호출 여부 확인 — ViewportController 내 이벤트 처리 경로 점검. wheel에만 stopPropagation 있음이 확인됨)
+- [ ] `.canvas-container`에 `isolation: isolate` 적용 후 z-index 스택 안정:
+  - [ ] `SkiaCanvas` (z-index:2, pointer-events:auto) 정상 렌더
+  - [ ] `TextEditOverlay` (absolute, BuilderCanvas.tsx:671) 위치/z-index 기존 동일
+  - [ ] `GPUDebugOverlay` (BuilderCanvas.tsx:668) 기존 동일
+  - [ ] `wasmLayoutFailed` 배너 (z:9999, BuilderCanvas.tsx:610-645) 기존과 동일하게 최상단 노출
+  - [ ] `ViewportControlBridge` (BuilderCanvas.tsx:657-666) 이벤트/포인터 동작 회귀 0
+- [ ] `.canvas-container` 외 영역(scrollbar z:10 형제, WorkflowCanvasToggles, WorkspaceStatusIndicator) 침범 없음
 - [ ] 비교 모드(compareMode): 좌측 CSS fallback 패널은 현상 유지(도트 배경 없음), 우측 Canvas 패널은 도트 배경 포함 정상 동작
+- [ ] compare 모드 split resizer(`.workspace-compare-resizer`) 드래그 정상 — `isolation: isolate` 로 인한 z-index 충돌 없음
 
 ### 브라우저
 
@@ -239,9 +286,10 @@ offset_y   = mod(panOffset.y, gap)
 
 1. `BuilderCanvas.tsx` 의 `<DotBackground />` 한 줄 제거
 2. `DotBackground.tsx` 파일 삭제
-3. `Workspace.css` 의 `.dot-background*` 블록 삭제
+3. `Workspace.css` 의 `.dot-background*` 블록 + `.canvas-container { background / isolation }` 2 줄 삭제
+4. `SkiaRenderer.ts` 의 3 call site 를 `this.mainCanvas.clear(this.backgroundColor)` 로 원복
 
-번들 -~1.5KB, 런타임 영향 0.
+번들 -~1.5KB, 런타임 영향 0, Skia 렌더 경로 완전 원복.
 
 ## Out of Scope (본 ADR 미포함)
 
@@ -249,3 +297,4 @@ offset_y   = mod(panOffset.y, gap)
 - 간격/반경/색상 사용자 설정 (필요 시 후속 ADR)
 - 다중 테마별 별도 커스터마이즈 (현재는 시맨틱 토큰 자동 전환으로 충분)
 - Preview/Publish 적용 (D3 아님, 의도적 제외)
+- `SkiaRenderer.backgroundColor` 필드/`setBackgroundColor()`/`setupThemeWatcher` 색 동기화 경로 제거 — P0 이후 시각적 no-op 이 되므로 정리 가능하나 별도 ADR 로 분리 (API 영향 범위 검토 필요)
