@@ -5,6 +5,7 @@
 > - **ADR-057~062** (Spec SSOT 체인) — Phase 1~4 전부 완료. skipCSSGeneration 55개 → Tier 3 예외(9개) 확정
 > - **ADR-063** — SSOT Charter (Proposed) — `.claude/rules/ssot-hierarchy.md` 정본 반영
 > - **ADR-064~070** — 전부 Implemented (shapes variant 제거, Panel 제거, Tabs/Menu items SSOT, Style Panel Skia-native, 입력 violation 완화, MenuItem CSS SSOT)
+> - **ADR-072** (Proposed) — `_hasChildren` 컨벤션 SSOT + Shell-only 태그 재분류. Calendar 중복 렌더 구조적 해소 후속
 > - **ADR-102** — Workspace Dot Background (Proposed v2) — DOM+CSS 레이어 + Skia 투명화 분리 설계
 
 ## 현황 요약
@@ -13,8 +14,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 52     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 12     |
-| **합계**                               | **72** |
+| 미구현 (Proposed/계획)                 | 13     |
+| **합계**                               | **73** |
 
 ---
 
@@ -97,6 +98,7 @@
 | ADR                                                   | 제목                                                      | 상태     | 규모                                                                                                                                                                                                                                                                                                                                                                                                                              | 우선순위 |
 | ----------------------------------------------------- | --------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: |
 | [071](071-generator-container-styles-menu-restore.md) | Generator `containerStyles` 인프라 + Menu 정방향 복원     | Proposed | P1 `{color.raised}` TokenRef 신설 + P2 `ComponentSpec.containerStyles` 타입/Generator S3 semantic + P3 Menu.spec 정방향 복원(수동 Menu.css 해체). ADR-070 Addendum 1 debt 청산. 구현 상세: [breakdown](../design/071-generator-container-styles-menu-restore-breakdown.md)                                                                                                                                                        |  **P1**  |
+| [072](072-hasChildren-convention-shell-only-tags.md)  | `_hasChildren` 컨벤션 SSOT + Shell-only 태그 재분류       | Proposed | 3 Phase — Empty-placeholder 확인(7) + 실렌더 감사 필요(6, Tooltip/ColorPicker factory 자식 확인) + `_hasChildren` 분기 부재 판정(2, TabPanel/TabPanels). 108 spec 파일 중 54개 분기 사용. Calendar 중복 렌더 버그(2026-04-17) 구조적 해소 후속. 구현 상세: [breakdown](design/072-hasChildren-convention-shell-only-tags-breakdown.md)                                                                                            |  **P2**  |
 | [063](063-ssot-chain-charter.md)                      | SSOT 체인 정본 정의 — 3-Domain 분할                       | Proposed | Charter ADR — 3-domain 분할(D1 DOM/접근성=RAC, D2 Props=RSP참조, D3 시각=Spec SSOT) 명문화. `.claude/rules/ssot-hierarchy.md` 정본 신설. 실질 코드 변경 0                                                                                                                                                                                                                                                                         |  **P1**  |
 | [013](013-quick-connect-data-binding.md)              | Quick Connect 데이터 바인딩                               | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                                                                                                                                                                                                                                                                                                                                                   |  **P3**  |
 | [020](020-design-kit-improvement.md)                  | Design Kit 패널 분석 및 개선                              | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수                                                                                                                                                                                                                                                                                                                                          |    P4    |
