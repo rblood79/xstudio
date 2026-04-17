@@ -48,6 +48,34 @@ export type ArchetypeId =
   | "text"; // Description, Heading — block-level text, fills parent width
 
 /**
+ * Container Styles Schema (ADR-071)
+ *
+ * non-composite Spec이 CSS 컨테이너 시각을 직접 소유하기 위한 스키마.
+ * `variants`(Skia trigger 전용) 와 독립 축으로 작동 (S3 semantic):
+ * - `containerStyles` 존재 시 `defaultVariant` 색상 주입 skip + variants 블록 skip
+ * - 색상은 TokenRef 필수 (D3 정본 — dark mode 자동 반전 보장)
+ * - 구조 속성은 TokenRef 우선, CSS 값 보조
+ */
+export interface ContainerStylesSchema {
+  // 색상 — TokenRef 필수
+  background?: TokenRef;
+  text?: TokenRef; // → CSS `color`
+  border?: TokenRef; // → CSS `border-color`
+  borderWidth?: number; // → CSS `border-width` (px)
+
+  // 구조 — TokenRef 우선, CSS 값 보조
+  borderRadius?: TokenRef | string;
+  padding?: TokenRef | string;
+  gap?: TokenRef | string;
+
+  // 컨테이너 제약 — CSS 값 (SSOT 대상 아님)
+  width?: string;
+  maxHeight?: string;
+  overflow?: "auto" | "scroll" | "visible" | "hidden";
+  outline?: string;
+}
+
+/**
  * 컴포넌트 스펙 - 단일 소스
  */
 export interface ComponentSpec<Props = Record<string, unknown>> {
@@ -130,6 +158,13 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
 
   /** ADR-036 Phase 3a: Tier 2 Composite CSS 생성용 메타데이터 */
   composition?: CompositionSpec;
+
+  /**
+   * 컨테이너 시각 스타일 (ADR-071 — non-composite spec용).
+   * 설정 시 `defaultVariant` 색상 주입과 `variants` CSS 블록 생성 skip.
+   * `spec.composition.containerStyles`(legacy, `Record<string,string>`) 와 별개 필드.
+   */
+  containerStyles?: ContainerStylesSchema;
 
   /** ADR-041: Property Editor 자동 생성용 schema */
   properties?: PropertySchema;

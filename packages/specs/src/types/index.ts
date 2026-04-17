@@ -9,6 +9,7 @@ export type {
   ArchetypeId,
   ComponentSpec,
   ComponentState,
+  ContainerStylesSchema,
   VariantSpec,
   SizeSpec,
   IndicatorSpec,

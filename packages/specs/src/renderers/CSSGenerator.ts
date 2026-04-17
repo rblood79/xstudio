@@ -14,6 +14,7 @@ import type {
   ArchetypeId,
   VariantSpec,
   SizeSpec,
+  ContainerStylesSchema,
 } from "../types";
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
@@ -535,6 +536,51 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
       }),
     );
   }
+
+  return lines;
+}
+
+// ─── ADR-071: containerStyles emit 헬퍼 ─────────────────────────────────────
+
+/**
+ * `ContainerStylesSchema` 를 CSS line 배열로 변환.
+ * TokenRef(`{...}`) 는 tokenToCSSVar 경유, CSS 값은 그대로 emit.
+ * border 는 borderWidth(기본 1) + color 조합.
+ */
+export function emitContainerStyles(c: ContainerStylesSchema): string[] {
+  const lines: string[] = [];
+
+  if (c.background) lines.push(`  background: ${tokenToCSSVar(c.background)};`);
+  if (c.text) lines.push(`  color: ${tokenToCSSVar(c.text)};`);
+  if (c.border) {
+    const bw = c.borderWidth ?? 1;
+    lines.push(`  border: ${bw}px solid ${tokenToCSSVar(c.border)};`);
+  }
+  if (c.borderRadius != null) {
+    const v =
+      typeof c.borderRadius === "string" && c.borderRadius.startsWith("{")
+        ? tokenToCSSVar(c.borderRadius as TokenRef)
+        : c.borderRadius;
+    lines.push(`  border-radius: ${v};`);
+  }
+  if (c.padding != null) {
+    const v =
+      typeof c.padding === "string" && c.padding.startsWith("{")
+        ? tokenToCSSVar(c.padding as TokenRef)
+        : c.padding;
+    lines.push(`  padding: ${v};`);
+  }
+  if (c.gap != null) {
+    const v =
+      typeof c.gap === "string" && c.gap.startsWith("{")
+        ? tokenToCSSVar(c.gap as TokenRef)
+        : c.gap;
+    lines.push(`  gap: ${v};`);
+  }
+  if (c.width) lines.push(`  width: ${c.width};`);
+  if (c.maxHeight) lines.push(`  max-height: ${c.maxHeight};`);
+  if (c.overflow) lines.push(`  overflow: ${c.overflow};`);
+  if (c.outline) lines.push(`  outline: ${c.outline};`);
 
   return lines;
 }
