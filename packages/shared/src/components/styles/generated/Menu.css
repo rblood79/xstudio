@@ -28,35 +28,30 @@
   height: auto;
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
-  border-width: 1px;
 }
 
 .react-aria-Menu[data-size="sm"] {
   height: auto;
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
-  border-width: 1px;
 }
 
 .react-aria-Menu[data-size="md"] {
   height: auto;
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
-  border-width: 1px;
 }
 
 .react-aria-Menu[data-size="lg"] {
   height: auto;
   font-size: var(--text-base);
   line-height: var(--text-base--line-height);
-  border-width: 1px;
 }
 
 .react-aria-Menu[data-size="xl"] {
   height: auto;
   font-size: var(--text-lg);
   line-height: var(--text-lg--line-height);
-  border-width: 1px;
 }
 
 .react-aria-Menu[data-hovered] {
