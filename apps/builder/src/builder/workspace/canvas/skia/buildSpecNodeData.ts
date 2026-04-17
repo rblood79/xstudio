@@ -117,7 +117,7 @@ export const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
   "Form",
   "GridList",
   "ListBox",
-  "Menu",
+  // ADR-068: Menu는 items SSOT 전환 — _hasChildren 분기 제거, 더 이상 EXCLUDE 대상 아님
   "Popover",
   "RadioGroup",
   "Section",
