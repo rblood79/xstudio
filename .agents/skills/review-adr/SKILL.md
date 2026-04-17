@@ -1,7 +1,7 @@
 ---
 name: review-adr
 description: ADR(Architecture Decision Record) 문서를 Risk-First 템플릿 대조 + 코드 검증 + 위험 스트레스 테스트로 검증합니다.
-TRIGGER when: "ADR 리뷰", "ADR 검토", "설계 문서 리뷰", "아키텍처 리뷰", "review ADR", "architecture review", "design review", "ADR 위험 평가"
+TRIGGER when: user mentions "ADR 리뷰", "ADR 검토", "설계 문서 리뷰", "아키텍처 리뷰", "review ADR", "architecture review", "design review", "ADR 위험 평가", or asks for ADR review, architecture review, or design review.
 user-invocable: true
 scope: docs/adr/ 디렉토리의 ADR 문서
 ---

@@ -12,7 +12,6 @@ globs:
 
 > **SSOT 체인 연계 (CRITICAL)**: CSS는 [ssot-hierarchy.md](ssot-hierarchy.md) **D3(시각 스타일)의 direct consumer** (CSSGenerator 경유). Skia consumer와 **대등(symmetric)**. 수동 CSS가 Spec에서 파생 아닌 경우 D3 위반 (ADR-059로 해체 진행). `@sync` 주석으로 CSS↔CSS 참조는 consumer-to-consumer 금지 패턴.
 
-
 ## 시맨틱 변수 네이밍 규칙 (CRITICAL)
 
 S2 + React Aria 혼합 패턴. 모든 컴포넌트 CSS에서 시맨틱 변수만 사용 필수.
@@ -32,10 +31,16 @@ S2 + React Aria 혼합 패턴. 모든 컴포넌트 CSS에서 시맨틱 변수만
 
 ```
 --bg          앱 전체 배경 (가장 낮은 레벨)
---bg-raised   패널 헤더, section-header (bg 위에 올라온 영역)
+              ※ Spec TokenRef: {color.base}
+--bg-raised   패널 헤더, section-header, popover/dropdown 컨테이너
+              ※ Spec TokenRef: {color.raised}   — ADR-071에서 도입
+              ※ popover-class (Menu/ListBox/Popover) 컨테이너 배경 표준
 --bg-overlay  section-content, 모달, 카드 (가장 밝은/높은 레벨)
+              ※ Spec TokenRef: {color.layer-1}
 --bg-muted    중립 강조 배경 (swatch, hover row, 구분선 배경)
+              ※ Spec TokenRef: {color.neutral-subtle}
 --bg-emphasis 컨트롤 fill (switch track, slider track, scrollbar thumb)
+              ※ Spec TokenRef: (미매핑)
 --bg-inset    입력필드, 검색바, 모든 field 컨테이너 (안으로 들어간 영역)
               ※ 모든 field 컴포넌트(TextField, NumberField, SearchField, DateField,
                  TimeField, ComboBox, Select) 입력/컨테이너 영역 통일 배경
@@ -112,40 +117,41 @@ Spec TokenRef: {color.primary}, {color.secondary}, {color.tertiary},
 
 ## S2 Spec TokenRef 체계 (ADR-022)
 
-| S2 TokenRef                  | CSS 변수 매핑                      | 용도                 |
-| ---------------------------- | ---------------------------------- | -------------------- |
-| `{color.accent}`             | `--accent`                         | 주요 강조 배경       |
-| `{color.accent-hover}`       | `color-mix(--accent 85%, black)`   | accent hover         |
-| `{color.accent-pressed}`     | `color-mix(--accent 75%, black)`   | accent pressed       |
-| `{color.on-accent}`          | `--fg-on-accent`                   | accent 위 텍스트     |
-| `{color.accent-subtle}`      | `--accent-subtle`                  | 연한 accent 배경     |
-| `{color.neutral}`            | `--fg`                             | 기본 텍스트          |
-| `{color.neutral-subdued}`    | `--fg-muted`                       | 보조 텍스트          |
-| `{color.neutral-subtle}`     | `--bg-muted`                       | 연한 중립 배경       |
-| `{color.neutral-hover}`      | `color-mix(--bg-muted 85%, black)` | neutral 배경 hover   |
-| `{color.neutral-pressed}`    | `color-mix(--bg-muted 75%, black)` | neutral 배경 pressed |
-| `{color.negative}`           | `--negative`                       | 에러/파괴적 행동     |
-| `{color.negative-hover}`     | `color-mix(--negative 85%, black)` | negative hover       |
-| `{color.negative-pressed}`   | `color-mix(--negative 75%, black)` | negative pressed     |
-| `{color.on-negative}`        | `--color-white`                    | negative 위 텍스트   |
-| `{color.negative-subtle}`    | `--color-error-100`                | 연한 에러 배경       |
-| `{color.informative}`        | `--color-info-600`                 | 정보 상태            |
-| `{color.informative-subtle}` | `--color-info-100`                 | 연한 정보 배경       |
-| `{color.positive}`           | `--color-green-600`                | 성공 상태            |
-| `{color.positive-subtle}`    | `--color-green-100`                | 연한 성공 배경       |
-| `{color.notice}`             | `--color-warning-600`              | 경고 상태            |
-| `{color.notice-subtle}`      | `--color-warning-100`              | 연한 경고 배경       |
-| `{color.base}`               | `--bg`                             | 앱 배경              |
-| `{color.layer-1}`            | `--bg-overlay`                     | 오버레이/모달        |
-| `{color.layer-2}`            | `--bg-inset`                       | 입력 필드/카드       |
-| `{color.elevated}`           | `--color-white`                    | 떠있는 요소          |
-| `{color.disabled}`           | `--color-neutral-200`              | 비활성 배경          |
-| `{color.border}`             | `--border`                         | 기본 테두리          |
-| `{color.border-hover}`       | `--border-hover`                   | 테두리 hover         |
-| `{color.border-disabled}`    | `--border-disabled`                | 비활성 테두리        |
-| `{color.transparent}`        | `transparent`                      | 투명                 |
-| `{color.white}`              | `--color-white`                    | 흰색                 |
-| `{color.black}`              | `--color-black`                    | 검정                 |
+| S2 TokenRef                  | CSS 변수 매핑                      | 용도                                |
+| ---------------------------- | ---------------------------------- | ----------------------------------- |
+| `{color.accent}`             | `--accent`                         | 주요 강조 배경                      |
+| `{color.accent-hover}`       | `color-mix(--accent 85%, black)`   | accent hover                        |
+| `{color.accent-pressed}`     | `color-mix(--accent 75%, black)`   | accent pressed                      |
+| `{color.on-accent}`          | `--fg-on-accent`                   | accent 위 텍스트                    |
+| `{color.accent-subtle}`      | `--accent-subtle`                  | 연한 accent 배경                    |
+| `{color.neutral}`            | `--fg`                             | 기본 텍스트                         |
+| `{color.neutral-subdued}`    | `--fg-muted`                       | 보조 텍스트                         |
+| `{color.neutral-subtle}`     | `--bg-muted`                       | 연한 중립 배경                      |
+| `{color.neutral-hover}`      | `color-mix(--bg-muted 85%, black)` | neutral 배경 hover                  |
+| `{color.neutral-pressed}`    | `color-mix(--bg-muted 75%, black)` | neutral 배경 pressed                |
+| `{color.negative}`           | `--negative`                       | 에러/파괴적 행동                    |
+| `{color.negative-hover}`     | `color-mix(--negative 85%, black)` | negative hover                      |
+| `{color.negative-pressed}`   | `color-mix(--negative 75%, black)` | negative pressed                    |
+| `{color.on-negative}`        | `--color-white`                    | negative 위 텍스트                  |
+| `{color.negative-subtle}`    | `--color-error-100`                | 연한 에러 배경                      |
+| `{color.informative}`        | `--color-info-600`                 | 정보 상태                           |
+| `{color.informative-subtle}` | `--color-info-100`                 | 연한 정보 배경                      |
+| `{color.positive}`           | `--color-green-600`                | 성공 상태                           |
+| `{color.positive-subtle}`    | `--color-green-100`                | 연한 성공 배경                      |
+| `{color.notice}`             | `--color-warning-600`              | 경고 상태                           |
+| `{color.notice-subtle}`      | `--color-warning-100`              | 연한 경고 배경                      |
+| `{color.base}`               | `--bg`                             | 앱 배경                             |
+| `{color.raised}`             | `--bg-raised`                      | popover/dropdown 컨테이너 (ADR-071) |
+| `{color.layer-1}`            | `--bg-overlay`                     | 오버레이/모달                       |
+| `{color.layer-2}`            | `--bg-inset`                       | 입력 필드/카드                      |
+| `{color.elevated}`           | `--color-white`                    | 떠있는 요소                         |
+| `{color.disabled}`           | `--color-neutral-200`              | 비활성 배경                         |
+| `{color.border}`             | `--border`                         | 기본 테두리                         |
+| `{color.border-hover}`       | `--border-hover`                   | 테두리 hover                        |
+| `{color.border-disabled}`    | `--border-disabled`                | 비활성 테두리                       |
+| `{color.transparent}`        | `transparent`                      | 투명                                |
+| `{color.white}`              | `--color-white`                    | 흰색                                |
+| `{color.black}`              | `--color-black`                    | 검정                                |
 
 ### Named Color (글로벌 시맨틱 없는 색상)
 

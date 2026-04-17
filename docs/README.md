@@ -8,15 +8,34 @@ composition 프로젝트의 기술 문서를 [Diátaxis 프레임워크](https:/
 
 ```
 docs/
-├── adr/             # Architecture Decision Records
-├── tutorials/       # 학습 중심 실습 가이드
-├── how-to/          # 문제 해결 단계별 가이드
-├── reference/       # API, 스키마, 상태 참조
-├── explanation/     # 아키텍처, 개념 설명
-├── legacy/          # 완료/폐기된 과거 문서
-├── pencil-extracted/# Pencil Desktop 역공학 분석
-├── CHANGELOG.md     # 변경 이력
-└── README.md        # 문서 인덱스
+├── adr/                    # Architecture Decision Records
+│   ├── completed/          # 완료된 ADR (57개)
+│   └── *.md               # 진행 중/미구현 ADR (21개)
+├── design/                 # ADR 상세 구현 breakdown
+│   ├── completed/          # 완료된 breakdown (10개)
+│   └── *-breakdown.md     # 진행 중 breakdown
+├── features/               # 기능별 상세 문서
+│   └── completed/          # 완료된 기능 문서 (18개)
+├── reference/              # 참조 문서
+│   ├── architecture/       # 아키텍처 문서 (MONOREPO, STRUCTURE_*)
+│   ├── api/                # API 문서
+│   ├── components/         # 컴포넌트 참조 (진행 중/계획)
+│   ├── schemas/            # DB 스키마
+│   └── status/             # 상태별 문서 (COMPLETED, PLANNED, UNIMPLEMENTED)
+├── explanation/            # 설명 및 분석 문서
+│   ├── architecture/       # 아키텍처 설명 (진행 중 설계)
+│   └── research/           # 리서치 문서
+├── how-to/                 # 실용 가이드
+│   ├── development/        # 개발 가이드
+│   ├── migration/          # 마이그레이션 가이드
+│   └── troubleshooting/    # 문제 해결
+├── tutorials/              # 학습 중심 실습 가이드
+├── legacy/                 # 완료/폐기된 과거 문서
+├── pencil-extracted/       # Pencil Desktop 역공학 분석
+├── CHANGELOG.md            # 변경 이력 (2026년~)
+├── CHANGELOG-2025-archived.md  # 2025년 이전 이력
+├── DOCUMENT_STRUCTURE.md   # 문서 구조 가이드
+└── README.md               # 문서 인덱스
 ```
 
 ---
@@ -36,6 +55,12 @@ docs/
 ### ADR (Architecture Decision Records)
 
 > 전체 현황 및 우선순위는 **[ADR 관리 대시보드](./adr/README.md)** 참조
+>
+> **구조**:
+>
+> - **완료된 ADR**: [`adr/completed/`](./adr/completed/) (57개)
+> - **진행 중/미구현**: [`adr/*.md`](./adr/) (21개)
+> - **Breakdown 문서**: [`design/`](./design/) (상세 구현 설계)
 
 | ADR                                                     | 제목                                    | 상태                |
 | ------------------------------------------------------- | --------------------------------------- | ------------------- |
@@ -107,52 +132,62 @@ docs/
 - [IndexedDB 스키마](./reference/schemas/INDEXDB.md)
 - [Supabase 스키마](./reference/schemas/SUPABASE.md)
 
-### Structure (구조)
+### Architecture (아키텍처)
 
-- [Hooks 구조](./reference/STRUCTURE_HOOKS.md) - Builder hooks 구조 및 사용 패턴
-- [Store 구조](./reference/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
-- [Monorepo 구조](./reference/MONOREPO.md) - 모노레포 패키지 구조
-- [Multi-Page 렌더링](./reference/MULTIPAGE.md) - 다중 페이지 캔버스 렌더링
+- [Monorepo 구조](./reference/architecture/MONOREPO.md) - 모노레포 패키지 구조
+- [Multi-Page 렌더링](./reference/architecture/MULTIPAGE.md) - 다중 페이지 캔버스 렌더링
+- [Hooks 구조](./reference/architecture/STRUCTURE_HOOKS.md) - Builder hooks 구조 및 사용 패턴
+- [Store 구조](./reference/architecture/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
 - [Workflow 설계](./legacy/WORKFLOW.md) (legacy)
 
 ### Components (컴포넌트)
 
+#### 완료된 기능 (18개)
+
+> 상세 내용은 [`features/completed/`](./features/completed/) 참조
+
+- [CSS Architecture](./features/completed/CSS_ARCHITECTURE.md) - ITCSS 기반 CSS 아키텍처
+- [Canvas Isolation](./features/completed/CANVAS_ISOLATION.md) - Preview Runtime 격리
+- [Data Panel](./features/completed/DATA_PANEL.md) - DataTable 패널 시스템
+- [Events Panel](./features/completed/EVENTS_PANEL.md) - 이벤트 시스템
+- [Inspector Refactoring](./features/completed/INSPECTOR_REFACTORING.md) - Inspector 리팩토링
+- [Inspector Style](./features/completed/INSPECTOR_STYLE.md) - 스타일 패널
+- [Keyboard Shortcuts](./features/completed/KEYBOARD_SHORTCUTS.md) - 키보드 단축키
+- [Layout Presets](./features/completed/LAYOUT_PRESETS.md) - 레이아웃 프리셋
+- [Layout Slots](./features/completed/LAYOUT_SLOTS.md) - 레이아웃 슬롯
+- [Monitor Panel](./features/completed/MONITOR_PANEL.md) - 성능 모니터링
+- [Multi Select](./features/completed/MULTI_SELECT.md) - 다중 선택
+- [Nested Routes](./features/completed/NESTED_ROUTES.md) - 중첩 라우팅
+- [Nodes Panel Design](./features/completed/NODES_PANEL_DESIGN.md) - Nodes 패널
+- [Page Navigation](./features/completed/PAGE_NAVIGATION.md) - 페이지 네비게이션
+- [Panel Modal](./features/completed/PANEL_MODAL.md) - 패널 모달
+- [Properties Panel](./features/completed/PROPERTIES_PANEL.md) - 속성 패널
+- [Collection Data Binding](./features/completed/COLLECTION_DATA_BINDING.md) - 컬렉션 바인딩
+- [ToggleButtonGroup](./features/completed/TOGGLEBUTTONGROUP.md) - 토글 버튼 그룹
+
+#### 진행 중/계획 기능 (9개)
+
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)
-- [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
 - [React Aria 라이브러리 통합](./reference/components/REACT_ARIA_LIBRARIES.md)
 - [Transformer 보안](./reference/components/TRANSFORMER_SECURITY.md)
 - [Custom ID 패턴](./reference/components/CUSTOM_ID_PATTERN.md)
-- [Data Panel](./reference/components/DATA_PANEL.md)
-- [Inspector 스타일](./reference/components/INSPECTOR_STYLE.md)
-- [Inspector 리팩토링](./reference/components/INSPECTOR_REFACTORING.md)
-- [Collection 데이터 바인딩](./reference/components/COLLECTION_DATA_BINDING.md)
-- [Layout Presets](./reference/components/LAYOUT_PRESETS.md)
-- [Layout Slots](./reference/components/LAYOUT_SLOTS.md)
 - [SaveService](./reference/components/SAVESERVICE.md)
 - [Canvas Interactions](./reference/components/CANVAS_INTERACTIONS.md)
-- [Canvas Isolation](./reference/components/CANVAS_ISOLATION.md)
 - [Canvas Scrollbar](./reference/components/CANVAS_SCROLLBAR.md)
-- [DataTable Presets](./reference/components/DATATABLE_PRESETS.md)
-- [중첩 라우팅](./reference/components/NESTED_ROUTES.md)
-- [ToggleButtonGroup](./reference/components/TOGGLEBUTTONGROUP.md)
 - [Workflow 동기화](./reference/components/WORKFLOW_SYNC.md)
 - [Border Radius Handles](./reference/components/BORDER_RADIUS_HANDLES.md)
 - [Drag & Drop Layer](./reference/components/DRAG_DROP_LAYER.md)
-- [페이지 네비게이션](./reference/components/PAGE_NAVIGATION.md)
-- [키보드 단축키](./reference/components/KEYBOARD_SHORTCUTS.md)
-- [Panel Modal](./reference/components/PANEL_MODAL.md)
-- [Events Panel](./reference/components/EVENTS_PANEL.md)
-- [Properties Panel](./reference/components/PROPERTIES_PANEL.md)
-- [Monitor Panel](./reference/components/MONITOR_PANEL.md)
-- [Multi Select](./reference/components/MULTI_SELECT.md)
 - [Project File Web](./reference/components/PROJECT_FILE_WEB.md)
+- [Spec CSS Boundary](./reference/components/SPEC_CSS_BOUNDARY.md)
 
 ### Status (상태)
 
-- [완료된 기능](./reference/status/COMPLETED.md)
-- [계획된 기능](./reference/status/PLANNED.md)
-- [미구현 기능](./reference/status/UNIMPLEMENTED.md)
+- [완료된 기능 요약](./reference/status/COMPLETED.md) - 전체 완료 기능 인덱스
+- [계획된 기능 상세](./reference/status/PLANNED.md) - Context Menu, DataTable 등
+- [미구현 기능 개요](./reference/status/UNIMPLEMENTED.md) - Transformer 보안, Server-side Action 등
 - [DB 호환성](./reference/status/DB_COMPATIBILITY.md)
+- [Style 시스템](./reference/status/STYLE_SYSTEM.md)
+- [React Aria 1.13](./reference/status/REACT_ARIA_1.13.md)
 
 ---
 
@@ -164,8 +199,6 @@ docs/
 
 - [페이지 타입 분리](./explanation/architecture/PAGE_TYPES.md)
 - [데이터 아키텍처](./explanation/architecture/DATA_ARCHITECTURE.md)
-- [History Panel 설계](./explanation/architecture/HISTORY_PANEL.md)
-- [Nodes Panel 설계](./explanation/architecture/NODES_PANEL_DESIGN.md)
 - [Drag & Drop 설계](./explanation/architecture/DRAG_DROP_DESIGN.md)
 
 ### Research (리서치)
@@ -194,6 +227,8 @@ docs/
 
 ## 문서 작성 가이드
 
+> 상세한 문서 구조 및 작성 원칙은 **[DOCUMENT_STRUCTURE.md](./DOCUMENT_STRUCTURE.md)** 참조
+
 새로운 문서를 추가할 때는 Diátaxis 프레임워크에 따라 적절한 폴더에 배치해주세요:
 
 | 문서 유형          | 폴더           | 예시                         |
@@ -202,6 +237,12 @@ docs/
 | 문제 해결 가이드   | `how-to/`      | 마이그레이션, 버그 수정      |
 | 기술 참조          | `reference/`   | API, 스키마, 상태            |
 | 개념 설명          | `explanation/` | 아키텍처, 설계 결정          |
+
+### 문서 라이프사이클
+
+1. **계획 단계**: `reference/status/PLANNED.md` (상세) / `UNIMPLEMENTED.md` (개요)
+2. **구현 중**: `adr/*.md`, `design/*-breakdown.md`, `reference/components/*.md`
+3. **완료 후**: 각각 `adr/completed/`, `design/completed/`, `features/completed/`로 이동
 
 ### 파일 명명 규칙
 

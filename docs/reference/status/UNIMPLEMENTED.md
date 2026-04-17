@@ -40,22 +40,22 @@ Transformer Levels:
 
 ### 구현 필요 항목
 
-| 항목 | 설명 | 우선순위 |
-|------|------|----------|
-| Web Worker/iframe 격리 | 메인 스레드와 분리된 샌드박스 환경 | P0 |
-| 실행 시간 제한 | 30초 타임아웃 후 강제 종료 | P0 |
-| 메모리 제한 | 100MB 상한 | P0 |
-| 의존성 화이트리스트 | lodash, dayjs, zod만 허용 | P0 |
-| 전역 객체 차단 | `eval`, `Function`, `globalThis` 접근 금지 | P0 |
-| 감사 로그 | Execution Log에 실행 기록 | P1 |
+| 항목                   | 설명                                       | 우선순위 |
+| ---------------------- | ------------------------------------------ | -------- |
+| Web Worker/iframe 격리 | 메인 스레드와 분리된 샌드박스 환경         | P0       |
+| 실행 시간 제한         | 30초 타임아웃 후 강제 종료                 | P0       |
+| 메모리 제한            | 100MB 상한                                 | P0       |
+| 의존성 화이트리스트    | lodash, dayjs, zod만 허용                  | P0       |
+| 전역 객체 차단         | `eval`, `Function`, `globalThis` 접근 금지 | P0       |
+| 감사 로그              | Execution Log에 실행 기록                  | P1       |
 
 ### 샌드박스 설계
 
 ```typescript
 // 샌드박스 실행 인터페이스 (구현 예정)
 interface SandboxConfig {
-  timeoutMs: number;        // 실행 시간 제한 (기본 30000)
-  memoryLimitMb: number;    // 메모리 제한 (기본 100)
+  timeoutMs: number; // 실행 시간 제한 (기본 30000)
+  memoryLimitMb: number; // 메모리 제한 (기본 100)
   allowedGlobals: string[]; // 허용된 전역 객체
   dependencyWhitelist: string[]; // 허용된 의존성
 }
@@ -98,13 +98,13 @@ DataTable Preset 시스템으로 대체 구현됨:
 
 **14개 프리셋 제공**:
 
-| 카테고리 | 프리셋 |
-|----------|--------|
-| Users & Auth | `users`, `roles`, `permissions`, `invitations` |
-| Organization | `organizations`, `departments`, `projects` |
-| E-commerce | `products`, `categories`, `orders` |
-| Manufacturing | `engines`, `components` |
-| System | `auditLogs`, `projectMemberships` |
+| 카테고리      | 프리셋                                         |
+| ------------- | ---------------------------------------------- |
+| Users & Auth  | `users`, `roles`, `permissions`, `invitations` |
+| Organization  | `organizations`, `departments`, `projects`     |
+| E-commerce    | `products`, `categories`, `orders`             |
+| Manufacturing | `engines`, `components`                        |
+| System        | `auditLogs`, `projectMemberships`              |
 
 ### 사용 방법
 
@@ -171,12 +171,12 @@ External API (Stripe, OpenAI, etc.)
 
 ### 구현 필요 항목
 
-| 항목 | 설명 | 우선순위 |
-|------|------|----------|
-| executionMode 필드 | ApiEndpoint에 `client` / `server` 선택 | P1 |
-| Edge Function 템플릿 | api-proxy Edge Function 코드 | P1 |
-| Vault 연동 | Supabase Vault에서 시크릿 조회 | P1 |
-| Server Configuration UI | Inspector에서 서버 설정 UI | P1 |
+| 항목                    | 설명                                   | 우선순위 |
+| ----------------------- | -------------------------------------- | -------- |
+| executionMode 필드      | ApiEndpoint에 `client` / `server` 선택 | P1       |
+| Edge Function 템플릿    | api-proxy Edge Function 코드           | P1       |
+| Vault 연동              | Supabase Vault에서 시크릿 조회         | P1       |
+| Server Configuration UI | Inspector에서 서버 설정 UI             | P1       |
 
 ### ApiEndpoint 타입 확장
 
@@ -191,12 +191,12 @@ interface ApiEndpoint {
   serverConfig?: {
     edgeFunctionName: string;
     secretMappings?: {
-      headerKey: string;   // "Authorization"
-      vaultKey: string;    // "stripe_api_key"
-      format?: string;     // "Bearer {{value}}"
+      headerKey: string; // "Authorization"
+      vaultKey: string; // "stripe_api_key"
+      format?: string; // "Bearer {{value}}"
     }[];
     responseFilter?: {
-      excludeFields: string[];  // 민감 정보 필드 제거
+      excludeFields: string[]; // 민감 정보 필드 제거
     };
   };
 }
@@ -220,18 +220,18 @@ Element/Area/Multi-select에 대한 컨텍스트 메뉴 시스템
 
 ### 구현 필요 Phase
 
-| Phase | 내용 | 상태 |
-|-------|------|------|
-| Phase 1 | Core Infrastructure (Component, Hook, Types) | ⏳ |
-| Phase 2 | Element-Specific Menus | ⏳ |
-| Phase 3 | Area-Specific Menus (Preview, Sidebar, Inspector) | ⏳ |
-| Phase 4 | Multi-Select Menu | ⏳ |
-| Phase 5 | System Integration (iframe, Overlay, Shortcuts) | ⏳ |
-| Phase 6 | Advanced Features (Smart Menus, Search) | ⏳ |
+| Phase   | 내용                                              | 상태 |
+| ------- | ------------------------------------------------- | ---- |
+| Phase 1 | Core Infrastructure (Component, Hook, Types)      | ⏳   |
+| Phase 2 | Element-Specific Menus                            | ⏳   |
+| Phase 3 | Area-Specific Menus (Preview, Sidebar, Inspector) | ⏳   |
+| Phase 4 | Multi-Select Menu                                 | ⏳   |
+| Phase 5 | System Integration (iframe, Overlay, Shortcuts)   | ⏳   |
+| Phase 6 | Advanced Features (Smart Menus, Search)           | ⏳   |
 
 ### 상세 설계
 
-`docs/PLANNED_FEATURES.md` 참조
+[`docs/reference/status/PLANNED.md`](PLANNED.md) 참조 (Context Menu System 섹션)
 
 ---
 
@@ -243,10 +243,10 @@ Element/Area/Multi-select에 대한 컨텍스트 메뉴 시스템
 
 ### 구현 필요 항목
 
-| 항목 | 설명 | 상태 |
-|------|------|------|
-| 프리셋 커스터마이징 | 사용자 정의 레이아웃을 프리셋으로 저장 | ⏳ |
-| Grid/Flex 시각적 편집 | 코드 없이 Grid/Flex 레이아웃 구조 편집 | ⏳ |
+| 항목                  | 설명                                   | 상태 |
+| --------------------- | -------------------------------------- | ---- |
+| 프리셋 커스터마이징   | 사용자 정의 레이아웃을 프리셋으로 저장 | ⏳   |
+| Grid/Flex 시각적 편집 | 코드 없이 Grid/Flex 레이아웃 구조 편집 | ⏳   |
 
 ### 프리셋 저장 Database Schema
 
@@ -266,19 +266,19 @@ CREATE TABLE custom_presets (
 
 ### 상세 설계
 
-`docs/PLANNED_FEATURES.md` 참조
+[`docs/reference/status/PLANNED.md`](PLANNED.md) 참조 (Layout Preset 개선 계획 섹션)
 
 ---
 
 ## 우선순위 요약
 
-| 순위 | 기능 | 상태 | 비고 |
-|------|------|------|------|
-| **P0** | Transformer 샌드박스 | ⛔ | Level 3 활성화 전제 조건 |
-| **P1** | Server-side Action | 📋 | API Key 보호 |
-| ~~**P2**~~ | ~~MOCK_DATA Migration~~ | ✅ | DataTable Preset으로 구현 완료 |
-| **Medium** | Context Menu System | 📋 | UX 개선 |
-| **Low** | Layout Preset 개선 | 📋 | 편의 기능 |
+| 순위       | 기능                    | 상태 | 비고                           |
+| ---------- | ----------------------- | ---- | ------------------------------ |
+| **P0**     | Transformer 샌드박스    | ⛔   | Level 3 활성화 전제 조건       |
+| **P1**     | Server-side Action      | 📋   | API Key 보호                   |
+| ~~**P2**~~ | ~~MOCK_DATA Migration~~ | ✅   | DataTable Preset으로 구현 완료 |
+| **Medium** | Context Menu System     | 📋   | UX 개선                        |
+| **Low**    | Layout Preset 개선      | 📋   | 편의 기능                      |
 
 ---
 

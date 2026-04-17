@@ -1,7 +1,7 @@
 ---
 name: create-adr
 description: 새 ADR(Architecture Decision Record) 생성. 번호 자동 할당 + Risk-First Design Loop 템플릿 적용 + README.md 동시 갱신.
-TRIGGER when: "ADR 생성", "ADR 작성", "새 ADR", "ADR 만들어", "create ADR", "new ADR", "아키텍처 결정 문서 작성", "설계 문서 생성", "ADR 추가"
+TRIGGER when: user mentions "ADR 생성", "ADR 작성", "새 ADR", "ADR 만들어", "create ADR", "new ADR", "아키텍처 결정 문서 작성", "설계 문서 생성", "ADR 추가", or asks to create a new ADR or architecture decision record.
 user-invocable: true
 scope: docs/adr/ 디렉토리에 새 ADR 문서 생성
 ---
