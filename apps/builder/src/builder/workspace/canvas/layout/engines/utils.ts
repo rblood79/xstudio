@@ -1975,12 +1975,9 @@ export function calculateContentHeight(
     lg: 42,
     xl: 54,
   };
-  // SelectItem 등 드롭다운 전용 자식은 collapsed 상태에서 비표시
-  const SELECT_HIDDEN_CHILDREN = new Set([
-    "SelectItem",
-    "ComboBoxItem",
-    "ListBoxItem",
-  ]);
+  // ADR-073: SelectItem/ComboBoxItem element 소멸 → props.items SSOT 로 이관되어 childElements 에 애초 등장하지 않음.
+  // ListBoxItem 만 드롭다운 전용 자식으로 남아 collapsed 상태에서 비표시.
+  const SELECT_HIDDEN_CHILDREN = new Set(["ListBoxItem"]);
   if (tag === "combobox" || tag === "select" || tag === "dropdown") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";

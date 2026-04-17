@@ -83,3 +83,11 @@ export type { StateStyles, StateEffect } from "./state.types";
 
 // Menu Items Types (ADR-068)
 export type { StoredMenuItem, RuntimeMenuItem } from "./menu-items";
+
+// Select Items Types (ADR-073)
+export type { StoredSelectItem, RuntimeSelectItem } from "./select-items";
+export { toRuntimeSelectItem } from "./select-items";
+
+// ComboBox Items Types (ADR-073)
+export type { StoredComboBoxItem, RuntimeComboBoxItem } from "./combobox-items";
+export { toRuntimeComboBoxItem } from "./combobox-items";

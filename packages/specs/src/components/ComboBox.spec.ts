@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { StoredComboBoxItem } from "../types/combobox-items";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -50,8 +51,8 @@ export interface ComboBoxProps {
   necessityIndicator?: "icon" | "label";
   /** 트리거 아이콘 이름 */
   iconName?: string;
-  /** 드롭다운 아이템 목록 */
-  items?: string[];
+  /** 드롭다운 아이템 목록 (ADR-073 P2: StoredComboBoxItem[] SSOT) */
+  items?: StoredComboBoxItem[];
   /** 선택된 아이템 인덱스 (하이라이트용) */
   selectedIndex?: number;
   children?: string;
@@ -228,15 +229,27 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         fields: [
           {
             key: "items",
-            type: "children-manager",
+            type: "items-manager",
             label: "Options",
-            childTag: "ComboBoxItem",
-            defaultChildProps: {
+            itemsKey: "items",
+            itemTypeName: "Option",
+            defaultItem: {
+              id: "",
               label: "Option",
               value: "",
-              textValue: "Option",
+              isDisabled: false,
             },
-            labelProp: "label",
+            itemSchema: [
+              { key: "label", type: "string", label: "Label" },
+              { key: "value", type: "string", label: "Value" },
+              { key: "textValue", type: "string", label: "Text Value" },
+              { key: "description", type: "string", label: "Description" },
+              { key: "icon", type: "icon", label: "Icon" },
+              { key: "isDisabled", type: "boolean", label: "Disabled" },
+              { key: "onActionId", type: "event-id", label: "On Action" },
+            ],
+            labelKey: "label",
+            allowNested: false,
           },
         ],
       },
@@ -847,10 +860,24 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       // 드롭다운 패널 (열린 상태) — hasChildren 여부와 무관하게 렌더링
       if (props.isOpen) {
         // inputValue로 아이템 필터링 (입력값이 있으면 포함된 항목만 표시)
-        const allItems = props.items ?? ["Option 1", "Option 2", "Option 3"];
+        const storedItems = props.items ?? [];
+        const allItems: ReadonlyArray<{
+          id: string;
+          label: string;
+          value?: string;
+        }> =
+          storedItems.length > 0
+            ? storedItems
+            : [
+                { id: "opt-1", label: "Option 1" },
+                { id: "opt-2", label: "Option 2" },
+                { id: "opt-3", label: "Option 3" },
+              ];
         const filterText = props.inputValue?.toLowerCase() ?? "";
         const dropdownItems = filterText
-          ? allItems.filter((item) => item.toLowerCase().includes(filterText))
+          ? allItems.filter((item) =>
+              item.label.toLowerCase().includes(filterText),
+            )
           : allItems;
 
         const itemH = 36;
@@ -907,13 +934,17 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           const selectedIdx =
             props.selectedIndex ??
             (props.selectedText != null
-              ? allItems.indexOf(props.selectedText)
+              ? allItems.findIndex(
+                  (it) =>
+                    it.label === props.selectedText ||
+                    it.value === props.selectedText,
+                )
               : -1);
 
           dropdownItems.forEach((item, i) => {
             const itemY = dropdownY + dropdownPaddingY + i * itemH;
             const isSelected =
-              selectedIdx >= 0 && allItems[selectedIdx] === item;
+              selectedIdx >= 0 && allItems[selectedIdx]?.id === item.id;
 
             // 선택된 아이템 하이라이트 배경
             if (isSelected) {
@@ -933,7 +964,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               type: "text" as const,
               x: paddingX,
               y: itemY + itemH / 2,
-              text: String(item),
+              text: item.label,
               fontSize,
               fontFamily: ff,
               fontWeight: isSelected ? 600 : 400,
@@ -953,13 +984,22 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           ? props.errorMessage
           : props.description;
       if (descText) {
-        const allItems = props.items ?? ["Option 1", "Option 2", "Option 3"];
+        const descStoredItems = props.items ?? [];
+        const descAllItems =
+          descStoredItems.length > 0
+            ? descStoredItems
+            : [
+                { id: "opt-1", label: "Option 1" },
+                { id: "opt-2", label: "Option 2" },
+                { id: "opt-3", label: "Option 3" },
+              ];
         const filterText = props.inputValue?.toLowerCase() ?? "";
         const visibleCount = props.isOpen
           ? filterText
-            ? allItems.filter((item) => item.toLowerCase().includes(filterText))
-                .length
-            : allItems.length
+            ? descAllItems.filter((item) =>
+                item.label.toLowerCase().includes(filterText),
+              ).length
+            : descAllItems.length
           : 0;
         const descY = props.isOpen
           ? inputY + inputHeight + 4 + Math.max(visibleCount, 1) * 36 + 8 + 4

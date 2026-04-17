@@ -1,7 +1,6 @@
-export { ComboBoxItemEditor } from "./ComboBoxItemEditor";
+// ADR-073 P6: SelectItemEditor/ComboBoxItemEditor 제거 — items[] SSOT + ItemsManager 로 이관.
 export { ListBoxItemEditor } from "./ListBoxItemEditor";
 export { GridListItemEditor } from "./GridListItemEditor";
-export { SelectItemEditor } from "./SelectItemEditor";
 export { TabsEditor } from "./TabsEditor";
 export { TableEditor } from "./TableEditor";
 export { TableHeaderEditor } from "./TableHeaderEditor";

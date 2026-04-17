@@ -400,13 +400,17 @@ export class HierarchyManager {
       }
 
       case "Select": {
-        // SelectItem들만 반환
-        return children.filter((child) => child.tag === "SelectItem");
+        // ADR-073: SelectItem element 소멸. Label + SelectTrigger 만 자식으로 반환.
+        return children.filter(
+          (child) => child.tag === "Label" || child.tag === "SelectTrigger",
+        );
       }
 
       case "ComboBox": {
-        // ComboBoxItem들만 반환
-        return children.filter((child) => child.tag === "ComboBoxItem");
+        // ADR-073: ComboBoxItem element 소멸. Label + ComboBoxWrapper 만 자식으로 반환.
+        return children.filter(
+          (child) => child.tag === "Label" || child.tag === "ComboBoxWrapper",
+        );
       }
 
       case "ListBox": {
