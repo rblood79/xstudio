@@ -158,8 +158,11 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("}");
   lines.push("");
 
-  // Variant 스타일 — Composite 컨테이너, containerStyles(ADR-071), variants 없는 Spec(ADR-062 Field 계열),
-  // 또는 skipVariantCss:true (Menu처럼 variants가 Skia trigger 전용)는 skip
+  // Variant 스타일 — 다음 경우 skip:
+  // - Composite 컨테이너 (자식이 색상 관리)
+  // - containerStyles 있는 Spec (ADR-071, CSS popover container 독립 축 — Menu)
+  // - variants 없는 Spec (ADR-062 Field 계열)
+  // - skipVariantCss:true (escape hatch, 현재 사용처 0)
   const variantMode = spec.cssEmitMode ?? "direct";
   if (
     !spec.composition &&
