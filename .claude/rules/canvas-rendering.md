@@ -29,6 +29,32 @@ globs:
 - Spec fontSize 우선순위: `props.size` 명시 시 `size.fontSize` 우선. **Why**: Propagation은 size prop만 변경, style.fontSize 미갱신
 - Spec Container Dimension Injection: `_containerWidth`/`_containerHeight` props 주입 (ElementSprite → specProps). `CONTAINER_DIMENSION_TAGS` Set 등록 필수. **Why**: Spec shapes가 Taffy 결과를 모르면 우측/중앙 배치 불가
 
+## 2.5. `_hasChildren` 컨벤션 (ADR-072)
+
+컨테이너 spec은 `buildSpecNodeData.ts`의 **3-branch 로직**에 따라 `_hasChildren` 주입을 받는다. 신규 컨테이너 추가 시 아래 판정 절차를 따른다.
+
+### 3분류 정의
+
+| 분류                | Set                               | `_hasChildren=true` 주입 | 예시                                                                                                                                       |
+| ------------------- | --------------------------------- | :----------------------: | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Shell-only**      | `SHELL_ONLY_CONTAINER_TAGS`       |  **자식 수 무관 항상**   | Calendar, Card, Dialog, Section, DisclosureGroup, Button/Checkbox/Radio/ToggleButtonGroup, Disclosure, Form, Popover, Tooltip, ColorPicker |
+| **Synthetic-merge** | `SYNTHETIC_CHILD_PROP_MERGE_TAGS` |         **차단**         | Breadcrumbs, ComboBox, GridList, ListBox, Select, Table, Tabs, TagGroup, Toolbar, Tree                                                     |
+| **Plain**           | (양쪽 다 미포함)                  |      자식 있을 때만      | TabPanel, TabPanels (shapes=[]) 및 대부분의 일반 컨테이너                                                                                  |
+
+### 판정 알고리즘 (신규 컨테이너 추가 시)
+
+1. `spec.render.shapes`가 자식 props를 참조하여 shapes 구성 → **Synthetic-merge**
+2. factory definition이 자식 Element를 자동 생성하고 spec standalone 분기가 `type:"container"` 빈 placeholder → **Shell-only**
+3. standalone 분기에 text/gradient/arrow 등 실렌더 shape 존재 → factory가 해당 시각 요소를 자식 Element로 대체 커버하는지 확인 후 **Shell-only** (대체 불가 시 Plain 유지)
+4. `spec.render.shapes`가 `() => []`로 shapes 자체가 빈 배열 → **Plain** (두 Set 모두 미포함)
+
+### 금지 패턴
+
+- ❌ Shell-only 이동 대상 태그가 factory 자식 자동 생성을 하지 않음 → 기본 상태 UI 소실
+- ❌ Synthetic-merge에 shell-only 태그 혼입 → `_hasChildren` 주입 차단으로 standalone 분기가 실행되며, 자식 Element가 동시에 독립 Skia 노드로 렌더 → **UI 중복** (Calendar 2026-04-17 버그 유형)
+- ❌ `_hasChildren` 주입 조건을 `childElements.length > 0`으로만 판단 → Shell-only 태그에서 자식 0개일 때 standalone 복귀 (ADR-072에서 3-branch로 해소)
+- ❌ standalone 분기 ≥ 50줄 태그를 "빈 placeholder" 가정으로 이동 → 내용 정독 + factory definition 교차 확인 필수
+
 ## 3. 텍스트 측정 동기화
 
 ParagraphStyle 변경 시 **3곳 동시 업데이트** 필수: canvaskitTextMeasurer.ts, nodeRenderers.ts, TextMeasureStyle 인터페이스

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-17
+Implemented — 2026-04-18 (Proposed 2026-04-17)
 
 ## Context
 
@@ -91,7 +91,7 @@ composition의 Skia 렌더 파이프라인은 spec `render.shapes(props, size, s
 - **대안 A 기각**: 15개 동시 이동 시 회귀 발생 시 어느 태그가 원인인지 좁히기 어렵고 rollback 시 정상 이동된 태그까지 되돌아감. ADR-059의 phase 접근이 이미 유효성 입증.
 - **대안 C 기각**: 2 Set의 이름·내용 불일치를 장기 유지하면 미래 디버깅 시 Calendar 버그 같은 분석 다시 반복됨. 교육 비용도 누적.
 
-> 구현 상세: [072-hasChildren-convention-shell-only-tags-breakdown.md](design/072-hasChildren-convention-shell-only-tags-breakdown.md)
+> 구현 상세: [072-hasChildren-convention-shell-only-tags-breakdown.md](../../design/072-hasChildren-convention-shell-only-tags-breakdown.md)
 
 ## Gates
 
@@ -117,3 +117,31 @@ composition의 Skia 렌더 파이프라인은 spec `render.shapes(props, size, s
 - **Phase 2 factory 자식 감사 추가 비용**: Tooltip/ColorPicker/Disclosure는 factory가 자식 Element를 자동 생성하는지 별도 확인 필요(생성하지 않으면 Shell-only 이동 금지 → Plain 분류). 오판 시 기본 상태 UI 소실.
 - **Vitest 케이스 증가**: 3 Phase 합산 약 40~50 신규 케이스(후보 15개 × 자식 0/1/2 케이스 평균). 테스트 런타임은 Set lookup + layout 계산만이라 영향 미미.
 - **과도기 중 Set 이름·멤버 불일치 지속**: Phase 진행 중 일시적으로 `SYNTHETIC_CHILD_PROP_MERGE_TAGS`에 shell-only 태그가 남아있음. Phase 3 종료 전까지 JSDoc에 명시적 과도기 주석 유지.
+
+## Implementation (2026-04-18)
+
+Phase 1~3 완료. 13개 태그 재분류 + 2개 태그 SYNTHETIC 제거.
+
+| Phase | 이동/변경                                                           | SHA        | Gate 통과                                       |
+| ----- | ------------------------------------------------------------------- | ---------- | ----------------------------------------------- |
+| 1     | Card/Dialog/Section/DisclosureGroup → SHELL_ONLY                    | `47fcec86` | type-check 3/3 + vitest 16 PASS + Calendar 대칭 |
+| 2-A   | ButtonGroup/CheckboxGroup/RadioGroup/ToggleButtonGroup → SHELL_ONLY | `14c35591` | type-check 3/3 + vitest 16 PASS 추가            |
+| 2-B   | Disclosure/Form/Popover/Tooltip/ColorPicker → SHELL_ONLY            | `67a2133c` | type-check 3/3 + vitest 15 PASS 추가            |
+| 3     | TabPanel/TabPanels SYNTHETIC 제거 (Shell-only 이동 안 함)           | `b9a43743` | type-check 3/3 + vitest 6 PASS 추가             |
+
+**Phase 2 재분할 경위**: 원 breakdown은 Phase 2를 6개 일괄로 설계했으나 난이도 차이 때문에 2-A(Group 류 4개, 저위험)와 2-B(실렌더 5개, factory 자식 감사 후 판정)로 분리 수행. Phase 1 연기분(Disclosure/Form/Popover)이 Phase 2-B로 합류하여 총 5개 이동.
+
+**Phase 3 판정**: TabPanel/TabPanels `shapes: () => []` 확증 — 자식 props 미사용으로 SYNTHETIC 멤버십의 두 효과(incrementalSync rebuild expansion + stale-ref 교체) 모두 무효. Shell-only 이동도 의미 없음. SYNTHETIC에서만 제거.
+
+**최종 Set 상태**:
+
+- `SHELL_ONLY_CONTAINER_TAGS` (15): Calendar, RangeCalendar, Card, Dialog, Section, DisclosureGroup, ButtonGroup, CheckboxGroup, RadioGroup, ToggleButtonGroup, Disclosure, Form, Popover, Tooltip, ColorPicker
+- `SYNTHETIC_CHILD_PROP_MERGE_TAGS` (11): Breadcrumbs, ComboBox, GridList, ListBox, Select, Table, Tabs, TagGroup, Toolbar, Tree — 진정한 synthetic-merge 컨테이너만 유지
+
+**검증 누적**:
+
+- `pnpm type-check` 3/3 PASS (모든 Phase)
+- `shell-only-tags.test.ts` 53 + `calendar-symmetry.test.ts` 3 = **56 PASS**
+- 기존 vitest 회귀 0
+
+**G4 완료**: `.claude/rules/canvas-rendering.md` `_hasChildren` 컨벤션 섹션 추가 + 메모리 파일 `child-composition-exclude-tags.md` → `hasChildren-container-convention.md` rename.
