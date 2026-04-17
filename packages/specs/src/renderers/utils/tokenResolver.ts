@@ -101,6 +101,7 @@ const COLOR_TOKEN_TO_CSS: Record<string, string> = {
 
   // --- Surface / Layer ---
   base: "var(--bg)",
+  raised: "var(--bg-raised)",
   "layer-1": "var(--bg-overlay)",
   "layer-2": "var(--bg-inset)",
   elevated: "var(--color-white)",
