@@ -119,6 +119,11 @@ export interface RenderContext {
   eventEngine?: unknown;
   /** 데이터 상태 설정 (DataTable용) */
   setDataState?: (elementId: string, state: DataState) => void;
+  /**
+   * ACTION_ID → 실행 함수 변환 (Q11: shared 렌더러는 EVENT_REGISTRY에 직접 의존 금지)
+   * Preview App이 EVENT_REGISTRY.resolve를 주입. builder preview는 noop 가능.
+   */
+  resolveActionId?: (id: string) => (() => void) | undefined;
 }
 
 // ============================================

@@ -16,31 +16,29 @@ import type {
   ColumnMapping,
   DataBindingValue,
 } from "../types";
+import type { RuntimeMenuItem } from "@composition/specs/types";
 
 import { useCollectionData } from "../hooks";
 import "./styles/generated/Menu.css";
 
 /**
- * 🚀 Phase 4: data-* 패턴 전환
+ * Phase 4: data-* 패턴 전환
  * - tailwind-variants 제거
  * - data-variant, data-size 속성 사용
+ *
+ * Phase 5 (ADR-068): items SSOT 경로 추가
+ * - MenuItem interface 제거 → RuntimeMenuItem (specs) 사용
+ * - MenuButtonProps.items: RuntimeMenuItem[] 추가
+ * - dataBinding 없음 → items prop 소비
  */
 
-export interface MenuItem {
-  id: string;
-  label: string;
-  isDisabled?: boolean;
-  icon?: string;
-  shortcut?: string;
-  description?: string;
-  children?: MenuItem[];
-}
-
 export interface MenuButtonProps<T>
-  extends MenuProps<T>, Omit<MenuTriggerProps, "children"> {
+  extends Omit<MenuProps<T>, "items">, Omit<MenuTriggerProps, "children"> {
   label?: string;
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
+  /** items SSOT 경로 (ADR-068 Phase 5): CollectionRenderers가 StoredMenuItem[] → RuntimeMenuItem[] 변환 후 전달 */
+  items?: RuntimeMenuItem[];
   // M3 props
   variant?: string;
   size?: ComponentSize;
@@ -51,6 +49,7 @@ export function MenuButton<T extends object>({
   children,
   dataBinding,
   columnMapping,
+  items,
   variant = "primary",
   size = "md",
   ...props
@@ -183,12 +182,12 @@ export function MenuButton<T extends object>({
       console.log("✅ Menu with columnMapping - items:", menuItems);
 
       // Recursive render function for menu items with submenus
-      const renderMenuItem = (item: MenuItem) => {
+      const renderMenuItem = (item: RuntimeMenuItem) => {
         const hasSubmenu = item.children && item.children.length > 0;
 
         if (hasSubmenu) {
           const submenuItems = item.children!.map(
-            (child: MenuItem, childIndex: number) => ({
+            (child: RuntimeMenuItem, childIndex: number) => ({
               ...child,
               id: String(child.id || `${item.id}-${childIndex}`),
               label: String(
@@ -232,7 +231,9 @@ export function MenuButton<T extends object>({
                   data-variant={variant}
                   data-size={size}
                 >
-                  {(subItem) => renderMenuItem(subItem as unknown as MenuItem)}
+                  {(subItem) =>
+                    renderMenuItem(subItem as unknown as RuntimeMenuItem)
+                  }
                 </Menu>
               </Popover>
             </SubmenuTrigger>
@@ -267,7 +268,7 @@ export function MenuButton<T extends object>({
               data-variant={variant}
               data-size={size}
             >
-              {(item) => renderMenuItem(item as unknown as MenuItem)}
+              {(item) => renderMenuItem(item as unknown as RuntimeMenuItem)}
             </Menu>
           </Popover>
         </MenuTrigger>
@@ -429,6 +430,83 @@ export function MenuButton<T extends object>({
             data-size={size}
           >
             {(item) => renderMenuItem(item)}
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+    );
+  }
+
+  // items SSOT 경로 (ADR-068 Phase 5): dataBinding 없고 items prop이 있을 때
+  if (!hasDataBinding && items && items.length > 0) {
+    const renderRuntimeMenuItem = (item: RuntimeMenuItem): React.ReactNode => {
+      const hasSubmenu = item.children && item.children.length > 0;
+
+      const content = (
+        <>
+          <span className="menu-item-content">
+            {item.icon && <span className="menu-item-icon">{item.icon}</span>}
+            <span className="menu-item-label">{item.label}</span>
+            {item.shortcut && (
+              <kbd className="menu-item-shortcut">{item.shortcut}</kbd>
+            )}
+          </span>
+          {item.description && (
+            <span className="menu-item-description">{item.description}</span>
+          )}
+        </>
+      );
+
+      if (hasSubmenu) {
+        return (
+          <SubmenuTrigger key={item.id}>
+            <AriaMenuItem
+              textValue={item.label}
+              isDisabled={item.isDisabled}
+              onAction={item.onAction}
+            >
+              {content}
+            </AriaMenuItem>
+            <Popover data-size={size}>
+              <Menu
+                items={item.children}
+                className={getMenuClassName()}
+                data-variant={variant}
+                data-size={size}
+              >
+                {(subItem) => renderRuntimeMenuItem(subItem as RuntimeMenuItem)}
+              </Menu>
+            </Popover>
+          </SubmenuTrigger>
+        );
+      }
+
+      return (
+        <AriaMenuItem
+          key={item.id}
+          id={item.id}
+          textValue={item.label}
+          isDisabled={item.isDisabled}
+          onAction={item.onAction}
+          href={item.href}
+        >
+          {content}
+        </AriaMenuItem>
+      );
+    };
+
+    return (
+      <MenuTrigger {...props}>
+        <Button data-variant={variant} data-size={size}>
+          {label}
+        </Button>
+        <Popover>
+          <Menu
+            items={items}
+            className={getMenuClassName()}
+            data-variant={variant}
+            data-size={size}
+          >
+            {(item) => renderRuntimeMenuItem(item as RuntimeMenuItem)}
           </Menu>
         </Popover>
       </MenuTrigger>
