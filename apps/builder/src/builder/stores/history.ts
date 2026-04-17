@@ -123,11 +123,17 @@ export class HistoryManager {
 
   /**
    * 현재 페이지 설정
+   *
+   * ADR-074 Phase 5: listener notify 를 microtask 로 deferral.
+   * 페이지 전환 critical path 에서 listener fan-out (HistoryPanel 업데이트,
+   * BuilderCore historyInfo setState 등) 을 제거. IndexedDB 복원은 이미
+   * 백그라운드이고, pageHistories.set 은 동기 유지하여 즉시 undo/redo
+   * 진입도 문제없다.
    */
   setCurrentPage(pageId: string): void {
     this.currentPageId = pageId;
 
-    // 페이지 히스토리가 없으면 생성
+    // 페이지 히스토리가 없으면 생성 (동기)
     if (!this.pageHistories.has(pageId)) {
       this.pageHistories.set(pageId, {
         entries: [],
@@ -141,7 +147,10 @@ export class HistoryManager {
       }
     }
 
-    this.notifyListeners();
+    // ADR-074 Phase 5: notify deferral — microtask 로 listener 호출을
+    // 현재 task 밖으로 이전. undo/redo 액션 자체는 pageHistories.get 기반
+    // 이라 listener 지연에 영향받지 않음.
+    queueMicrotask(() => this.notifyListeners());
   }
 
   /**

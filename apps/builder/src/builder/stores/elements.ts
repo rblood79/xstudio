@@ -43,6 +43,7 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 import { createInstance as createInstanceAction } from "./utils/instanceActions";
 import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
+import { observe, PERF_LABEL } from "../utils/perfMarks";
 import {
   scheduleCancelableBackgroundTask,
   scheduleNextFrame,
@@ -1088,18 +1089,23 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     },
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+    // ADR-074 Phase 5: input.page-transition 라벨로 계측. observe 는
+    // function body 만 측정하므로 historyManager.notify deferral 과 합쳐
+    // critical path 만 추적.
     setCurrentPageId: (pageId) => {
-      const startTime = performance.now();
-      historyManager.setCurrentPage(pageId);
-      // 페이지 전환 시 editingContext 리셋
-      set({ currentPageId: pageId, editingContextId: null });
-      const duration = performance.now() - startTime;
-      if (duration >= 8) {
-        console.log("[perf] store.set-current-page", {
-          durationMs: Number(duration.toFixed(1)),
-          pageId,
-        });
-      }
+      observe(PERF_LABEL.INPUT_PAGE_TRANSITION, () => {
+        const startTime = performance.now();
+        historyManager.setCurrentPage(pageId);
+        // 페이지 전환 시 editingContext 리셋
+        set({ currentPageId: pageId, editingContextId: null });
+        const duration = performance.now() - startTime;
+        if (duration >= 8) {
+          console.log("[perf] store.set-current-page", {
+            durationMs: Number(duration.toFixed(1)),
+            pageId,
+          });
+        }
+      });
     },
 
     // ADR-069 Phase 1: 페이지 전환 + 선택 동시 처리 — 단일 set() 보장
@@ -1109,52 +1115,63 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 한 번의 set()에 병합하고, props hydrate는 기존 Phase2 패턴(scheduleNextFrame)
     // 을 그대로 유지한다.
     selectElementWithPageTransition: (elementId, targetPageId) => {
-      const startTime = performance.now();
-      cancelHydrateSelectedProps();
-
       const currentState = get();
       const shouldChangePage =
         targetPageId != null && targetPageId !== currentState.currentPageId;
 
-      if (shouldChangePage) {
-        historyManager.setCurrentPage(targetPageId);
-      }
+      // ADR-074 Phase 5: 페이지 전환이 실제 발생하는 경우에만
+      // input.page-transition 라벨로 계측. selection-only 경로는 통계 왜곡
+      // 방지를 위해 unlabeled 유지.
+      const doWork = () => {
+        const startTime = performance.now();
+        cancelHydrateSelectedProps();
 
-      // Phase 1 (즉시): 캔버스 하이라이트용 상태 병합
-      set({
-        ...(shouldChangePage
-          ? { currentPageId: targetPageId, editingContextId: null }
-          : {}),
-        selectedElementId: elementId,
-        selectedElementIds: [elementId],
-        selectedElementIdsSet: new Set([elementId]),
-        multiSelectMode: false,
-      });
+        if (shouldChangePage) {
+          historyManager.setCurrentPage(targetPageId);
+        }
 
-      // Phase 2 (다음 프레임): 인스펙터용 props hydrate
-      scheduleNextFrame(() => {
-        const latestState = get();
-        if (latestState.selectedElementId !== elementId) return;
-
-        const element =
-          latestState.elementsMap.get(elementId) ??
-          findElementById(latestState.elements, elementId);
-        const initialProps = element ? createCompleteProps(element) : {};
-
-        set({ selectedElementProps: initialProps });
-      });
-
-      // computedStyle 백그라운드 hydration
-      scheduleHydrateSelectedProps(elementId);
-
-      const duration = performance.now() - startTime;
-      if (duration >= 8) {
-        console.log("[perf] store.select-with-page-transition", {
-          durationMs: Number(duration.toFixed(1)),
-          elementId,
-          targetPageId,
-          pageChanged: shouldChangePage,
+        // Phase 1 (즉시): 캔버스 하이라이트용 상태 병합
+        set({
+          ...(shouldChangePage
+            ? { currentPageId: targetPageId, editingContextId: null }
+            : {}),
+          selectedElementId: elementId,
+          selectedElementIds: [elementId],
+          selectedElementIdsSet: new Set([elementId]),
+          multiSelectMode: false,
         });
+
+        // Phase 2 (다음 프레임): 인스펙터용 props hydrate
+        scheduleNextFrame(() => {
+          const latestState = get();
+          if (latestState.selectedElementId !== elementId) return;
+
+          const element =
+            latestState.elementsMap.get(elementId) ??
+            findElementById(latestState.elements, elementId);
+          const initialProps = element ? createCompleteProps(element) : {};
+
+          set({ selectedElementProps: initialProps });
+        });
+
+        // computedStyle 백그라운드 hydration
+        scheduleHydrateSelectedProps(elementId);
+
+        const duration = performance.now() - startTime;
+        if (duration >= 8) {
+          console.log("[perf] store.select-with-page-transition", {
+            durationMs: Number(duration.toFixed(1)),
+            elementId,
+            targetPageId,
+            pageChanged: shouldChangePage,
+          });
+        }
+      };
+
+      if (shouldChangePage) {
+        observe(PERF_LABEL.INPUT_PAGE_TRANSITION, doWork);
+      } else {
+        doWork();
       }
     },
 

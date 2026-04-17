@@ -32,6 +32,12 @@
  */
 export const PERF_LABEL = {
   INPUT_POINTERDOWN: "input.pointerdown",
+  /**
+   * ADR-074 Phase 5: 페이지 전환 경로 전용 계측.
+   * setCurrentPageId / selectElementWithPageTransition 에서 페이지 전환
+   * 분기를 래핑. `input.*` prefix 로 longtask.input 카테고리에 자동 분류.
+   */
+  INPUT_PAGE_TRANSITION: "input.page-transition",
   RENDER_FRAME: "render.frame",
   RENDER_CONTENT_BUILD: "render.content.build",
   RENDER_PLAN_BUILD: "render.plan.build",
