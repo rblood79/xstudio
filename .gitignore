@@ -29,6 +29,8 @@ dist
 /coverage
 packages/*/coverage/
 __tests__/
+# specs 패키지 테스트는 추적 (ADR-073 P1 최초 도입)
+!packages/specs/src/__tests__/
 
 .cache
 .vercel
