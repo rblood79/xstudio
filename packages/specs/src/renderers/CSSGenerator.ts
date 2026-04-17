@@ -370,12 +370,14 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   const hasContainerStylesOuter = !!spec.containerStyles;
   // progress archetype: sizes.height는 bar track 높이이며 컨테이너 height가 아님
   const skipHeight = isComposite || spec.archetype === "progress";
-  // ADR-071: containerStyles 에 padding/borderRadius 정의 시 sizes 경로 skip (이중 emit 방지)
+  // ADR-071: containerStyles 에 padding/borderRadius/gap 정의 시 sizes 경로 skip (이중 emit 방지)
   const skipPaddingOuter =
     isComposite ||
     (hasContainerStylesOuter && spec.containerStyles?.padding != null);
   const skipBorderRadiusOuter =
     hasContainerStylesOuter && spec.containerStyles?.borderRadius != null;
+  const skipGapOuter =
+    hasContainerStylesOuter && spec.containerStyles?.gap != null;
   for (const [sizeName, sizeSpec] of Object.entries(spec.sizes)) {
     lines.push(`.react-aria-${spec.name}[data-size="${sizeName}"] {`);
     lines.push(
@@ -383,6 +385,7 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
         skipHeight,
         skipPadding: skipPaddingOuter,
         skipBorderRadius: skipBorderRadiusOuter,
+        skipGap: skipGapOuter,
       }),
     );
     lines.push("}");
@@ -550,12 +553,13 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
     const isComposite = !!spec.composition;
     const hasContainerStyles = !!spec.containerStyles;
     const skipDefaultHeight = isComposite || spec.archetype === "progress";
-    // ADR-071: containerStyles 에 padding/borderRadius 정의 시 sizes 경로 skip (이중 emit 방지)
+    // ADR-071: containerStyles 에 padding/borderRadius/gap 정의 시 sizes 경로 skip (이중 emit 방지)
     const skipPadding =
       isComposite ||
       (hasContainerStyles && spec.containerStyles?.padding != null);
     const skipBorderRadius =
       hasContainerStyles && spec.containerStyles?.borderRadius != null;
+    const skipGap = hasContainerStyles && spec.containerStyles?.gap != null;
     lines.push("");
     lines.push("  /* Default size */");
     lines.push(
@@ -563,6 +567,7 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
         skipHeight: skipDefaultHeight,
         skipPadding,
         skipBorderRadius,
+        skipGap,
       }),
     );
   }
@@ -650,6 +655,7 @@ function generateSizeStyles(
     skipHeight?: boolean;
     skipPadding?: boolean;
     skipBorderRadius?: boolean;
+    skipGap?: boolean;
   },
 ): string[] {
   const lines: string[] = [];
@@ -723,8 +729,8 @@ function generateSizeStyles(
     lines.push(`  min-height: ${size.minHeight}px;`);
   }
 
-  // gap
-  if (size.gap) {
+  // gap — ADR-071: containerStyles.gap 존재 시 skip (이중 emit 방지)
+  if (size.gap && !options?.skipGap) {
     lines.push(`  gap: ${size.gap}px;`);
   }
 

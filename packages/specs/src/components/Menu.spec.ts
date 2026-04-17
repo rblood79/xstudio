@@ -66,10 +66,22 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   description: "React Aria 기반 드롭다운 메뉴 컴포넌트",
   archetype: "collection",
   element: "div",
-  // popover container 색상을 ListBox와 동일하게 맞추기 위해 수동 CSS 사용.
-  // 실제 스타일은 packages/shared/src/components/styles/Menu.css.
-  // variants는 Skia trigger button 색상 전용 — popover 내 .react-aria-Menu에는 관여하지 않는다.
-  skipCSSGeneration: true,
+
+  // ADR-071: popover container 시각 SSOT
+  // `variants` 는 Skia trigger 전용 (render.shapes), CSS 경로는 이 블록만 사용
+  containerStyles: {
+    background: "{color.raised}" as TokenRef,
+    text: "{color.neutral}" as TokenRef,
+    border: "{color.border}" as TokenRef,
+    borderWidth: 1,
+    borderRadius: "{radius.md}" as TokenRef,
+    padding: "{spacing.xs}" as TokenRef,
+    gap: "{spacing.2xs}" as TokenRef,
+    width: "100%",
+    maxHeight: "300px",
+    overflow: "auto",
+    outline: "none",
+  },
 
   defaultVariant: "primary",
   defaultSize: "md",
