@@ -75,7 +75,7 @@ Menu Spec은 실제로 **2개 논리 요소**를 하나의 Spec에 담고 있다
 - **설명**: ComponentSpec 에 optional `containerStyles` 필드(타입화된 스키마 — `background/text/border/borderWidth/borderRadius/padding/gap/maxHeight/overflow/outline/width`) 신설. `generateBaseStyles`에서 `containerStyles` 존재 시 defaultVariant 색상 주입 skip + variants 블록 skip(implicit skipVariantCss) 즉 **S3 semantic** (variants=Skia axis / containerStyles=CSS axis 독립). TokenResolver에 `"raised": "var(--bg-raised)"` 추가. `SpacingTokens` 에 `"2xs": 2` 등록 (현 primitive 누락분). Menu.spec에 containerStyles 정의 + `skipCSSGeneration: true` 제거 + 수동 Menu.css 삭제.
 - **근거**: Menu의 "trigger/popover 이원성"을 Generator 인프라에 구조적으로 수용. 색상은 TokenRef 필수로 D3 SSOT 원칙 엄수. `{color.raised}`는 기존 Spec 토큰 체계(`base/layer-1/layer-2/elevated/disabled`) 와 정합. 후속 ADR(-B/-C)에 재사용.
 - **위험**:
-  - 기술: **LOW** — optional 필드 추가형. `emitContainerStyles` 헬퍼는 추가. 색상 미정의 spec에 대해 no-op 보장 (기존 107 CSS diff 0).
+  - 기술: **LOW** — optional 필드 추가형. `emitContainerStyles` 헬퍼는 추가. 색상 미정의 spec에 대해 no-op 보장 (기존 `generated/` 집합 91 파일 diff 0).
   - 성능: **LOW** — CSS 용량 근사 불변.
   - 유지보수: **LOW** — TokenRef 기반 → dark mode 자동 반전. 스키마는 타입 안전.
   - 마이그레이션: **LOW** — 3 commit 구조(P1/P2/P3) 로 git revert 용이.
@@ -117,9 +117,9 @@ Menu Spec은 실제로 **2개 논리 요소**를 하나의 Spec에 담고 있다
 
 선택 근거:
 
-1. **HIGH 위험 0건** — optional 필드 추가형 변경, 색상 미정의 spec에 no-op. 기존 107 CSS diff 0 보장.
+1. **HIGH 위험 0건** — optional 필드 추가형 변경, 색상 미정의 spec에 no-op. 기존 `generated/` 집합 (91 파일) diff 0 보장.
 2. **구조적 근본 수용** — Menu의 "variants=Skia trigger / containerStyles=CSS popover" 이원성을 Generator 인프라에 수용. ADR-070 Addendum 1 debt 의 원인이었던 "Spec과 Consumer 관계의 가정 충돌" 을 구조적으로 해소.
-3. **재사용 가능 인프라** — 동일 패턴 debt(Popover/ListBox.spec의 `variants.background = {color.base}` + 수동 CSS `--bg-raised` 공유)가 이미 존재. 본 ADR 인프라로 후속 ADR-B/C 에서 재사용.
+3. **재사용 가능 인프라** — 동일 패턴 debt(ListBox: `skipCSSGeneration:true` + 수동 `--bg-raised` / Popover: defaultVariant `surface` = `{color.layer-2}` generated `var(--bg-inset)` vs 수동 `var(--bg-raised)` cascade 충돌)가 이미 존재. 본 ADR 인프라로 후속 ADR-B/C 에서 재사용.
 4. **D3 정본 준수** — TokenRef 필수 스키마로 dark mode 자동 반전 보장. `{color.raised}` 는 기존 Spec 토큰 체계(`base/layer-1/layer-2/elevated/disabled`) 와 시맨틱 일관.
 5. **롤백 비용 LOW** — 3 commit(P1 TokenRef, P2 Generator, P3 Menu) git revert.
 
@@ -146,13 +146,13 @@ Menu Spec은 실제로 **2개 논리 요소**를 하나의 Spec에 담고 있다
 
 ADR 승인 시 다음 잔존 위험을 **명시적으로 수용**한다. 모두 LOW~MEDIUM 수준이며, 본 ADR scope α 준수를 위해 후속 처리로 분리.
 
-| 위험                                                    | 심각도 | 발생 경로                                                                                                                                                     | 처리 계획                                                                                                            |
-| ------------------------------------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **`[data-empty]` 상태 미구현**                          |  LOW   | 현 수동 Menu.css 에 `[data-empty]` 규칙(이탈릭/fg-muted)이 있으나 `ContainerStylesSchema` 에 state 셀렉터 경로 없음                                           | 목록형(Menu/ListBox/Select) 공통 CSS 규칙으로 이관 — 본 ADR 범위 외 별도 수단                                        |
-| **legacy `spec.composition.containerStyles` 이름 중복** | MEDIUM | 기존 Composite 17개 spec이 `Record<string,string>` 규약 사용 중 (Form, Select, ComboBox, ToggleButtonGroup 등). 신규 top-level `containerStyles` 와 이름 유사 | 문서/주석으로 의미 분리 명시. 전수 마이그레이션은 선택적 ADR-D 로드맵                                                |
-| **Popover/ListBox 유사 debt 잔존**                      | MEDIUM | ListBox: `skipCSSGeneration:true` + 수동 `--bg-raised`. Popover: generated `var(--bg-inset)` vs 수동 `var(--bg-raised)` cascade 값 불일치                     | 본 ADR 인프라 재활용으로 후속 ADR-C 에서 해체. ListBox.css 의 `[data-orientation]`/`--lb-*` 표현 한계 실측 선행 필요 |
-| **`SpacingTokens."2xs"` 등록이 다른 spec 동작에 영향**  |  LOW   | Spec primitive 에 1 슬롯 추가 → 기존 spec 중 `{spacing.2xs}` 참조처 0 (grep 확증). 영향 경로는 runtime resolveToken 가능성 확장뿐                             | G1 에서 기존 generated diff 0 확증으로 회귀 검증                                                                     |
-| **`ContainerStylesSchema.width` 필드 확장 리스크**      |  LOW   | optional 필드 추가. 기존 spec 미사용 → no-op. 향후 다른 non-composite spec 이 `width` 를 남용하면 archetype 의도 훼손 가능                                    | breakdown 금지 사항 (§금지 사항) 에 명시: Composite spec 에 `ComponentSpec.containerStyles` 사용 금지                |
+| 위험                                                    | 심각도 | 발생 경로                                                                                                                                                                                                                                                                                                                                                | 처리 계획                                                                                                            |
+| ------------------------------------------------------- | :----: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **`[data-empty]` 상태 미구현**                          |  LOW   | 현 수동 Menu.css 에 `[data-empty]` 규칙(이탈릭/fg-muted)이 있으나 `ContainerStylesSchema` 에 state 셀렉터 경로 없음                                                                                                                                                                                                                                      | 목록형(Menu/ListBox/Select) 공통 CSS 규칙으로 이관 — 본 ADR 범위 외 별도 수단                                        |
+| **legacy `spec.composition.containerStyles` 이름 중복** | MEDIUM | 기존 Composite 19개 spec이 `Record<string,string>` 규약 사용 중 (Form, Select, ComboBox, ToggleButtonGroup, Autocomplete, FileTrigger, DateRangePicker, DatePicker, DisclosureGroup, TextField, SearchField, ColorField, NumberField, Pagination, Toolbar, Meter, ProgressBar, RadioGroup, CheckboxGroup). 신규 top-level `containerStyles` 와 이름 유사 | 문서/주석으로 의미 분리 명시. 전수 마이그레이션은 선택적 ADR-D 로드맵                                                |
+| **Popover/ListBox 유사 debt 잔존**                      | MEDIUM | ListBox: `skipCSSGeneration:true` + 수동 `--bg-raised`. Popover: generated `var(--bg-inset)` vs 수동 `var(--bg-raised)` cascade 값 불일치                                                                                                                                                                                                                | 본 ADR 인프라 재활용으로 후속 ADR-C 에서 해체. ListBox.css 의 `[data-orientation]`/`--lb-*` 표현 한계 실측 선행 필요 |
+| **`SpacingTokens."2xs"` 등록이 다른 spec 동작에 영향**  |  LOW   | Spec primitive 에 1 슬롯 추가 → 기존 spec 중 `{spacing.2xs}` 참조처 0 (grep 확증). 영향 경로는 runtime resolveToken 가능성 확장뿐                                                                                                                                                                                                                        | G1 에서 기존 generated diff 0 확증으로 회귀 검증                                                                     |
+| **`ContainerStylesSchema.width` 필드 확장 리스크**      |  LOW   | optional 필드 추가. 기존 spec 미사용 → no-op. 향후 다른 non-composite spec 이 `width` 를 남용하면 archetype 의도 훼손 가능                                                                                                                                                                                                                               | breakdown 금지 사항 (§금지 사항) 에 명시: Composite spec 에 `ComponentSpec.containerStyles` 사용 금지                |
 
 ## Consequences
 
@@ -170,8 +170,8 @@ ADR 승인 시 다음 잔존 위험을 **명시적으로 수용**한다. 모두 
 
 - **ComponentSpec 표면 확장** — `containerStyles` 필드 추가. 기존 `spec.composition.containerStyles`(legacy) 와 이름 유사 → 문서로 의미 분리 필수.
 - **[data-empty] 미구현** — 목록형 공통 CSS 규칙으로 별도 처리 예정. 본 ADR 내 CSS diff 에 `[data-empty]` 규칙 부재.
-- **Popover/ListBox 유사 debt 잔존** — 동일 `variants.background = {color.base}` + 수동 CSS `--bg-raised` 패턴이 Popover.spec/ListBox.spec 에 존재. 본 ADR scope α 준수를 위해 후속 ADR 로 분리. 즉시 해체는 ADR-C 에서.
-- **`spec.composition.containerStyles`(legacy) 전수 마이그레이션 미진행** — 기존 Composite spec 17개가 여전히 `Record<string,string>` 규약 사용. 별도 ADR 필요 (저우선순위 — TokenRef 미경유이나 이미 `var(--*)` 사전 변환되어 cascade 정합은 유지).
+- **Popover/ListBox 유사 debt 잔존** — ListBox 는 `skipCSSGeneration:true` + 수동 `--bg-raised` / Popover 는 defaultVariant `surface` = `{color.layer-2}` 가 `generated/Popover.css:15` 에 `var(--bg-inset)` emit 되고 수동 `styles/Popover.css:26` 이 `var(--bg-raised)` 로 cascade override 하는 값 불일치 경로. 본 ADR scope α 준수를 위해 후속 ADR 로 분리. 즉시 해체는 ADR-C 에서.
+- **`spec.composition.containerStyles`(legacy) 전수 마이그레이션 미진행** — 기존 Composite spec 19개(Form/Select/ComboBox/ToggleButtonGroup/Autocomplete/FileTrigger/DateRangePicker/DatePicker/DisclosureGroup/TextField/SearchField/ColorField/NumberField/Pagination/Toolbar/Meter/ProgressBar/RadioGroup/CheckboxGroup)가 여전히 `Record<string,string>` 규약 사용. 별도 ADR 필요 (저우선순위 — TokenRef 미경유이나 이미 `var(--*)` 사전 변환되어 cascade 정합은 유지).
 
 ## 후속 ADR 로드맵
 
