@@ -17,26 +17,39 @@ ADR-074 Addendum 2 실측은 **dev 빌드** 기준이며, scheduler.development.
 - 브라우저 확장 **비활성화**
 - 확실한 reload 후 실행
 
-### 측정 시나리오
+### 측정 시나리오 (필수 확장 — Codex 3차 리뷰 지적 3 반영)
 
 ```
+# 1) 초기화
 window.__composition_PERF__.reset()
-# 50회 캔버스 요소 클릭 반복
+
+# 2) 시나리오 A — 50회 캔버스 요소 클릭 반복
+#    → longtask.input + input.pointerdown + render.* 시간 중첩 분류
 window.__composition_PERF__.snapshot("input.pointerdown")
-# 20회 페이지 전환 반복
+
+# 3) 시나리오 B — 20회 페이지 전환 반복
+#    → longtask.input (input.page-transition 중첩) + render.* stall
 window.__composition_PERF__.snapshot("input.page-transition")
-# 전체 longtask 분류
+
+# 4) longtask 전체 분류 (input / render / unclassified)
 JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
+
+# 5) 구간별 observe 분해 (★ 필수 — P1 진입 조건, 단계별 기여도 식별)
+["render.frame", "render.content.build", "render.plan.build", "render.skia.draw"]
+  .forEach(l => console.log(l, window.__composition_PERF__.snapshot(l)))
 ```
 
 ### 기록 위치
 
-`docs/design/075-prod-baseline.md` 신설. prod 수치 기준으로 Gate 목표 수치 확정 (dev 수치는 참고용).
+`docs/design/075-prod-baseline.md` (신설 완료). prod 수치 + **구간별 observe 분해** 확보 후 Gate 목표 수치 확정 (dev 수치는 참고용).
 
-### 판정 조건
+### 판정 조건 (Codex 지적 3 반영, 3-Way 분기)
 
-- prod longtask.render p99 가 이미 < 500ms 라면 → **본 ADR scope 축소** (dev overhead 가 전부였다는 뜻, P1/P2 불필요 가능)
-- prod 수치가 여전히 높다면 → **Phase 1~3 진입 확정**
+1. **prod longtask.render p99 < 500ms** → 본 ADR scope 축소 (dev overhead 가 전부였음, ADR-069 종결 패턴 재현, P1/P3 보류 가능)
+2. **prod p99 여전히 높고 구간별 분해에서 단일 구간 (예: `render.skia.draw`) 이 주 기여** → 해당 구간 타깃 Phase 1 rAF budget 진입, Gate 예측 가능
+3. **prod p99 여전히 높고 여러 구간 분산** → Phase 1 rAF budget 효과 제한적 → Phase 3 subscriber 감사 우선 + Phase 1 차순위
+
+**주의**: 구간별 분해 미확보 시 **Phase 1 진입 자체 금지**. 이유 = Phase 1 실패 시 예측 실패 원인 분리 불가 (함수 본체 / rAF budget 효과 / subscriber fan-out 중 어느 것이 원인인지 판정 불가).
 
 ---
 
@@ -46,7 +59,13 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 
 ### Phase 1 — SkiaCanvas rAF loop budget 도입
 
-**목적**: 1 프레임당 `render.content.build` / `render.plan.build` / `render.skia.draw` 합산 work 가 8ms (60fps budget) 넘으면 다음 프레임으로 yield. `longtask.render` p99 의 극단값 (현재 19742ms) 을 상한으로 자른다.
+**진입 조건 (Phase 0 Gate G1 + G1.5 충족 필수, Codex 3차 리뷰 지적 3 반영)**:
+
+- Phase 0 에서 `render.content.build` / `render.plan.build` / `render.skia.draw` / `render.frame` 각 구간의 p50/p95/p99 확보
+- 주 기여 구간 (>50% 비중) 식별 완료 — 구간별 baseline 없이 P1 진입 시 rAF budget 효과 예측 불가 (함수 본체 vs budget 효과 분리 불가)
+- Phase 0 3-Way 분기에서 경로 2 (단일 구간 주 기여) 또는 경로 3 (여러 구간 분산 + Phase 3 보조) 로 판정된 경우
+
+**목적**: 1 프레임당 주 기여 구간 (Phase 0 에서 식별) 포함 `render.content.build` / `render.plan.build` / `render.skia.draw` 합산 work 가 8ms (60fps budget) 넘으면 다음 프레임으로 yield. `longtask.render` p99 의 극단값 (현재 dev 19742ms, prod 미측정) 을 상한으로 자른다.
 
 **파일 변경**:
 
@@ -56,28 +75,42 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
   - deferral 큐: `nextFrameWorkRef: { content?, plan?, draw? }` ref 로 보류
 - 계측: `render.frame.deferred` 라벨 신설 (몇 프레임이 yield 발생했는지 count)
 
-**Gate**: Phase 1 land 후 `longtask.render` max < 500ms (극단값 제거).
+**Gate**:
 
-**Rollback**: budget 조건을 `Infinity` 로 설정 (즉시 무효화 가능).
+- Phase 1 land 후 `longtask.render` max < 500ms (극단값 제거)
+- **주 기여 구간 p99 단독 측정값 감소** — Phase 0 에서 식별된 구간이 Phase 1 효과의 타깃. 미감소 시 rAF budget 의 인과관계 예측 실패 → Phase 3 우선 재고
+- ADR-074 observe 본체 지표 비회귀 (`input.pointerdown` p95 < 2ms)
+
+**Rollback**: budget 조건을 `Infinity` 로 설정 (즉시 무효화 가능). deferral 큐 로직은 dead code 로 남기고 budget 만 off.
 
 ---
 
-### Phase 2 — StoreRenderBridge subscriber 세분화
+### Phase 2 — StoreRenderBridge subscribe 세분화 [선택적 검증 단계]
 
-**목적**: 현재 `StoreRenderBridge.connect()` 의 `useStore.subscribe(() => {...})` 는 **store 전체 변화** 에 반응. `elementsMap !== prev || childrenMap !== prev` 체크는 있으나 subscribe 콜백 자체는 모든 action 에서 실행. 이를 `subscribeWithSelector` 로 전환하여 관련 필드 변화에만 반응.
+> **분류 강등 (Codex 1~2차 리뷰 반영)**: 기존 서술은 P2 를 "핵심 fan-out 해체"로 간주했으나, 실제 `SkiaCanvas.tsx:277-287` 의 subscribe 콜백은 이미 `elementsMap`/`childrenMap`/`themeVersion` 참조 가드로 `cb()` 호출을 제한한다. `StoreRenderBridge.ts:159-189` `sync()` 역시 changedIds 증분이므로 **subscribeWithSelector 전환이 줄이는 것은 "모든 action 에서 돌던 얕은 비교 콜백 (μs 수준)" 뿐**. 주 fan-out 은 Phase 3 대상.
 
-**파일 변경**:
+**목적**: subscribe 콜백 자체의 얕은 비교 비용이 render longtask 의 유의미한 % (>5%) 를 차지하는지 **검증**. 기대치는 낮음. 주 비용은 이미 가드로 차단되어 있음.
 
-- `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts`
-  - `subscribe` 구현을 `useStore.subscribe` → `useStore.subscribe(selector, cb, { equalityFn })` 로 전환
+**진입 조건 (Phase 0 기반 Gate)**:
+
+- Phase 0 에서 subscribe 콜백 자체 비용 (overhead outside of `fullRebuild`/`incrementalSync`) 이 render longtask 의 >5% 로 측정되는 경우에만 진행
+- 5% 이하이면 **Phase 2 보류** + middleware 일반화는 별도 ADR 로 분리 (마이그레이션 HIGH 위험 회피, ADR 본문 Decision §Phase 2 보류 조건)
+
+**파일 변경** (Phase 2 채택 시):
+
+- `apps/builder/src/builder/stores/index.ts` — **루트 store middleware 전역 주입** (plain `create()` → `create()(subscribeWithSelector(…))`). 모든 기존 subscribers 영향.
+- `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts` — `subscribe` 구현을 `useStore.subscribe(selector, cb, { equalityFn })` 로 전환
   - selector: `(s) => [s.elementsMap, s.childrenMap, themeVersion]`
   - equalityFn: shallow tuple 비교
-- `apps/builder/src/builder/stores/index.ts` (또는 해당 store 선언부)
-  - subscribeWithSelector 미들웨어 이미 설치되어 있는지 확인, 없으면 추가
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaCanvas.tsx:274-300` — subscribe 가드 블록 제거 (selector 가 동일 기능 수행)
 
-**Gate**: Phase 2 land 후 selection 변화 시 `StoreRenderBridge.subscribe` 콜백 호출 횟수가 selection 변경당 0 이어야 함. React DevTools Profiler 또는 console 로그 계측.
+**Gate**:
 
-**Rollback**: subscribe selector 제거 + 원래 broad subscribe 복원.
+- (a) subscribe 콜백 호출 횟수 감소 — React DevTools Profiler 또는 console 계측으로 확인
+- (b) `longtask.render` p99 에 유의미한 변화 없음 (Phase 2 자체 효과는 μs 수준이라 longtask 감소 기대 안 함)
+- (c) 모든 기존 subscribers (workflow/AI/grid 등) 의 reactivity 비회귀 — Chrome MCP 회귀 필수
+
+**Rollback**: **독립 롤백 불가**. middleware 를 원복하면 다른 subscribers 에서 selector overload 를 이미 쓰는 경우 연쇄 영향. 롤백 시 `stores/index.ts` middleware 원복 + `StoreRenderBridge.ts` subscribe 재작성 + SkiaCanvas.tsx 가드 복원 3단계 동시 수행 필요.
 
 ---
 
@@ -103,19 +136,23 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 
 ---
 
-### Phase 4 — longtask attribution 개선
+### Phase 4 — longtask attribution payload 개선
 
-**목적**: 현재 `topAttributions` 가 `{name: "window"}` 만 반환 (PerformanceObserver attribution 기본값). observe trace 기반 시간 중첩 attribution 을 정확하게 수행하도록 `perfMarks.ts` classify 로직 개선. 이 개선 자체는 성능 영향 없으나 **Phase 3 의 감사 작업을 자동화** 가능.
+> **범위 재정의 (Codex 3차 리뷰 지적 3 반영)**: 이전 서술은 "`classifyLongTask` 에 observe trace best-match 추가"로 적혀 있었으나 `perfMarks.ts:298-315` 의 `classifyLongTask()` 는 **이미 observe trace overlap 기반 best-match 로 버킷 분류를 수행**한다 (`for (const trace of measurementTraces) { ... bestOverlap }`). 따라서 중복 구현을 유도하지 않도록 작업 범위를 **attribution payload 개선** 으로 재정의.
+
+**목적**: `recordLongTask()` (`perfMarks.ts:317-334`) 가 `attrKey` 로 브라우저 PerformanceObserver 의 `entry.attribution[0]` (containerSrc/containerName 등) 만 사용하고 있어 SPA 환경에서는 대부분 `"self"` / `"window"` 로만 기록됨. 실제로 어떤 observe label 이 해당 longtask 와 시간 중첩되었는지 **`topAttributions` payload 에 실어주어야** Phase 3 감사 자동화 가능.
 
 **파일 변경**:
 
 - `apps/builder/src/builder/utils/perfMarks.ts`
-  - `classifyLongTask` 로직에 observe trace 기반 best-match 추가
-  - `topAttributions` 에 observe label + overlap duration 포함
+  - `classifyLongTask()` 에서 `bestLabel` 을 반환하도록 return shape 확장 (현재는 bucket 만 반환) — 기존 classify 로직 재사용
+  - `recordLongTask()` 에서 `bestLabel` + `bestOverlap` (ms) 을 `attrKey` 후보에 포함. 예: `"render.skia.draw/12ms"` 형태
+  - `LabelBuffer.attributions` (Map<string, number>) 유지하되 key 를 enriched 문자열로 전환
+  - `topAttributions` 반환 shape 에 `overlapMs` 필드 선택적 추가 (consumer 가 UI 없이 JSON 로그로만 소비 중 — breaking change 없음)
 
-**Gate**: 측정 인프라 개선 — `snapshotLongTasks()` 결과의 `topAttributions` 가 유의미한 observe label 을 포함.
+**Gate**: 측정 인프라 개선 — `snapshotLongTasks()[*].topAttributions` 가 실제 observe label (`render.content.build` / `input.pointerdown` 등) 을 포함하여 Phase 3 감사 수동 추적 대신 자동 상위 5개 attribution 추출 가능.
 
-**Rollback**: classify 로직 원복 (기본 "window" attribution 복원).
+**Rollback**: attribution enrichment 제거 (기본 `entry.attribution[0]` 사용) — classify 로직은 건드리지 않으므로 단순 롤백.
 
 ---
 
@@ -138,13 +175,14 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 
 ## 2. 측정 인프라 요약
 
-| Gate | 라벨/도구                                    | 관찰 방법               | 목표 (prod)  |
-| ---- | -------------------------------------------- | ----------------------- | ------------ |
-| G1   | P0 baseline 측정 자체                        | prod 실측 + 문서 기록   | 완료         |
-| G2   | `snapshotLongTasks()[longtask.render]`       | 요소 클릭 50회 후 p99   | < 500ms      |
-| G3   | `snapshotLongTasks()[longtask.input]`        | 요소 클릭 50회 후 p95   | < 100ms      |
-| G4   | `snapshotLongTasks()[longtask.*]` viol100ms  | count / totalCount 비율 | < 10%        |
-| G5   | ADR-074 observe (`input.pointerdown` 등) p95 | 퇴행 감지용             | 유지 (< 2ms) |
+| Gate | 라벨/도구                                                                                                                       | 관찰 방법                   | 목표 (prod)  |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------ |
+| G1   | P0 baseline 측정 + `longtask.*` 3종 + **`render.content.build`/`render.plan.build`/`render.skia.draw`/`render.frame` 4종 구간** | prod 실측 + 문서 기록       | 완료         |
+| G1.5 | 주 기여 구간 식별 (구간별 p99 비중 >50% 또는 여러 구간 분산 판정)                                                               | Phase 0 구간별 observe 분해 | 식별 완료    |
+| G2   | `snapshotLongTasks()[longtask.render]`                                                                                          | 요소 클릭 50회 후 p99       | < 500ms      |
+| G3   | `snapshotLongTasks()[longtask.input]`                                                                                           | 요소 클릭 50회 후 p95       | < 100ms      |
+| G4   | `snapshotLongTasks()[longtask.*]` viol100ms                                                                                     | count / totalCount 비율     | < 10%        |
+| G5   | ADR-074 observe (`input.pointerdown` 등) p95                                                                                    | 퇴행 감지용                 | 유지 (< 2ms) |
 
 ---
 
@@ -160,17 +198,21 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 
 ---
 
-## 4. 의존성 / 선후 관계
+## 4. 의존성 / 선후 관계 (Codex 리뷰 반영 재구성)
 
 ```
-P0 ──→ P1 ──→ P2 ──→ P3 ──→ P4 ──→ P5
-        ↓      ↓      ↓
-        독립 land 가능 (Gate 측정도 각자)
+P0 ──→ P4 ──→ P1 ─┬─→ P3 ──→ P5
+(baseline   (attr   │
+ 필수 +    payload  │
+ 구간별)  Phase3     └──[선택]──→ P2 (독립 롤백 불가, 보류 가능)
+           자동화)
 ```
 
-- P0 prod baseline 결과에 따라 P1~P3 scope 조정 (dev overhead 가 전부였다면 축소).
-- P4 는 P3 보조 도구 — P3 전에 land 하면 감사 자동화 지원. 단 P4 없이도 수동 추적 가능.
-- P5 는 최종 단계. P1~P4 모두 land 후 실행.
+- **P0 prod baseline + 구간별 분해 확보 필수** — Gate G1+G1.5 모두 충족 전에는 P1 진입 금지 (Codex 지적 3)
+- **P4 는 P1/P3 전 선행 권장** — attribution payload 가 Phase 3 감사 자동화 전제. P4 없이 수동 추적 가능하나 biased.
+- **P2 는 선택적 검증 단계** — P0 결과에서 subscribe 콜백 비용 >5% 시에만 진입. 그 이하이면 middleware 일반화는 별도 ADR
+- **P1 / P3 주 처방**: P0 3-Way 분기 판정에 따라 우선순위 결정 (경로 2 → P1 우선, 경로 3 → P3 우선)
+- **P5 는 최종 Gate** — P1/P3/P4 (+ 조건부 P2) main 머지 후 prod 재측정
 
 ---
 
@@ -181,10 +223,15 @@ P0 ──→ P1 ──→ P2 ──→ P3 ──→ P4 ──→ P5
 - 완화: yield 발생 시 다음 프레임에서 deferred work 우선 처리. 시각적 stutter 최소화 위해 visible page 우선.
 - 검증: Chrome MCP 로 드래그 중 budget yield 발생 시에도 시각 정합성 유지.
 
-### R2. P2 subscribeWithSelector 전환 시 reactivity 누락
+### R2. P2 subscribeWithSelector 전환 시 reactivity 누락 + middleware 전역 영향
 
-- 완화: selector 가 커버하지 못한 field 변화 시 render 갱신 안 됨. shallow tuple 로 elementsMap/childrenMap/themeVersion 3개 커버하되, 새 필드 추가 시 selector 업데이트 강제 (codegen 또는 주석).
-- 검증: 다양한 store action (add/update/remove/theme change) 후 시각 갱신 확인.
+- 완화:
+  - selector 가 커버하지 못한 field 변화 시 render 갱신 안 됨. shallow tuple 로 elementsMap/childrenMap/themeVersion 3개 커버하되, 새 필드 추가 시 selector 업데이트 강제 (codegen 또는 주석).
+  - **middleware 전역 주입으로 기존 모든 subscribers 가 영향받음** (Codex 2차 리뷰) — plain subscribe 사용자는 API 호환되나 TypeScript overload 선택이 달라질 수 있음. 전면 감사 필요.
+- 검증:
+  - 다양한 store action (add/update/remove/theme change) 후 시각 갱신 확인
+  - 기존 subscribers 전체 type-check + Chrome MCP 회귀 — 특히 history/undo/redo 등 고빈도 경로
+- 상시 피해 금지: P0 결과에서 subscribe 콜백 비용 >5% 미만이면 P2 보류 (§Decision 조건)
 
 ### R3. P3 workflow/AI subscriber 감사 실수로 reactivity 제거
 
