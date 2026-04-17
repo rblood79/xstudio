@@ -60,6 +60,14 @@ interface UseCentralCanvasPointerHandlersOptions {
     y: number;
   };
   selectionBoundsRef: MutableRefObject<BoundingBox | null>;
+  /**
+   * ADR-074 Phase 1: 빈 영역 클릭에서 페이지 전환 + body 선택을
+   * 단일 set()으로 병합하기 위한 action. ADR-069 Phase 1 기반.
+   */
+  selectElementWithPageTransition: (
+    elementId: string,
+    targetPageId: string | null,
+  ) => void;
   setCurrentPageId: (pageId: string) => void;
   setCursor: (cursor: string) => void;
   setSelectedElement: (elementId: string) => void;
@@ -93,6 +101,7 @@ export function useCentralCanvasPointerHandlers({
   pageWidth,
   screenToCanvasPoint,
   selectionBoundsRef,
+  selectElementWithPageTransition,
   setCurrentPageId,
   setCursor,
   setSelectedElement,
@@ -319,13 +328,28 @@ export function useCentralCanvasPointerHandlers({
           });
 
           if (bodySelection.pageId) {
-            // 페이지 영역 내부 빈 공간 클릭 → 해당 페이지로 전환 + body 선택
-            if (bodySelection.pageId !== state.currentPageId) {
-              setCurrentPageId(bodySelection.pageId);
-            }
+            // ADR-074 Phase 1: 페이지 영역 내부 빈 공간 클릭
+            // - Case A (페이지 전환 + body 선택): selectElementWithPageTransition
+            //   단일 set()으로 병합하여 store notify 2회 → 1회로 축소.
+            // - Case B (페이지 동일 + body 선택): 기존 setSelectedElement 유지.
+            //   (이미 1-call, 중복 action 호출 불필요)
+            // - Case C/D (body 없음): 페이지 전환 여부와 무관하게 기존 2-call 유지.
+            //   bodyElementId가 없는 페이지는 희귀 edge라 별도 action 신설 보류.
+            const needsPageTransition =
+              bodySelection.pageId !== state.currentPageId;
             if (bodySelection.bodyElementId) {
-              setSelectedElement(bodySelection.bodyElementId);
+              if (needsPageTransition) {
+                selectElementWithPageTransition(
+                  bodySelection.bodyElementId,
+                  bodySelection.pageId,
+                );
+              } else {
+                setSelectedElement(bodySelection.bodyElementId);
+              }
             } else {
+              if (needsPageTransition) {
+                setCurrentPageId(bodySelection.pageId);
+              }
               setSelectedElements([]);
             }
           } else {

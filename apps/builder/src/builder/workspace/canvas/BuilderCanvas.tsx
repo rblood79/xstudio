@@ -539,6 +539,7 @@ export function BuilderCanvas({
     pageWidth,
     screenToCanvasPoint,
     selectionBoundsRef,
+    selectElementWithPageTransition,
     setCurrentPageId,
     setCursor,
     setSelectedElement,
