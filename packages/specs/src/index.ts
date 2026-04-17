@@ -69,6 +69,9 @@ export type {
   // Menu Items Types (ADR-068)
   StoredMenuItem,
   RuntimeMenuItem,
+  // Items Manager Field (ADR-073)
+  ItemsManagerField,
+  ItemsManagerFieldItemSchema,
 } from "./types";
 
 export { isValidTokenRef } from "./types";

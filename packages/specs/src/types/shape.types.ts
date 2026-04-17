@@ -364,6 +364,7 @@ export interface LineShape {
   stroke: ColorValue;
   strokeWidth: number;
   strokeDasharray?: number[];
+  strokeCap?: "butt" | "round" | "square";
 }
 
 /**

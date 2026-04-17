@@ -1,7 +1,7 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
-import type { StoredMenuItem } from "@composition/specs/types";
+import type { StoredMenuItem } from "@composition/specs";
 
 /**
  * Menu 컴포넌트 정의 (ADR-068 P4)

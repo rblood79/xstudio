@@ -53,7 +53,7 @@ function createResolver<T extends object>(
     const key = `${type}:${size ?? "md"}`;
     const cached = cache.get(key);
     if (cached) return cached;
-    const spec = TAG_SPEC_MAP[type] as SpecShape;
+    const spec = TAG_SPEC_MAP[type] as unknown as SpecShape;
     const sizeEntry = spec?.sizes?.[size ?? "md"];
     const preset = sizeEntry ? extractor(sizeEntry) : ({} as T);
     cache.set(key, preset);

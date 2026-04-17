@@ -3,7 +3,7 @@ import { create } from "zustand";
 // 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
 // import { produce } from "immer"; // REMOVED
 import { StateCreator } from "zustand";
-import type { StoredMenuItem } from "@composition/specs/types";
+import type { StoredMenuItem } from "@composition/specs";
 import {
   Element,
   ComponentElementProps,

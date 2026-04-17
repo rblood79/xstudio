@@ -214,6 +214,7 @@ const enUS: TranslationKeys = {
     progressCircle: "Progress Circle",
     image: "Image",
     illustratedMessage: "Illustrated Message",
+    panel: "Panel",
     card: "Card",
     group: "Group",
     tabs: "Tabs",

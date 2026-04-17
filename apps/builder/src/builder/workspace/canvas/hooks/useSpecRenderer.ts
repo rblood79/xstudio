@@ -7,14 +7,14 @@
  * @since 2026-02-12 Spec Migration Phase 0
  */
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import {
   getVariantColors as getSpecVariantColors,
   getSizePreset as getSpecSizePreset,
   resolveColor,
   hexStringToNumber,
-} from '@composition/specs';
-import type { ComponentSpec, TokenRef } from '@composition/specs';
+} from "@composition/specs";
+import type { ComponentSpec, TokenRef } from "@composition/specs";
 
 // ============================================
 // Types
@@ -54,10 +54,23 @@ export interface SpecSizePreset {
 export function useSpecVariantColors(
   spec: ComponentSpec<Record<string, unknown>>,
   variant: string,
-  theme: 'light' | 'dark' = 'light',
+  theme: "light" | "dark" = "light",
 ): SpecVariantColors {
   return useMemo(() => {
-    const variantSpec = spec.variants?.[variant] || spec.variants?.[spec.defaultVariant ?? ""];
+    const variantSpec =
+      spec.variants?.[variant] ?? spec.variants?.[spec.defaultVariant ?? ""];
+    if (!variantSpec) {
+      return getSpecVariantColors(
+        {
+          default: {
+            background: "transparent",
+            border: "transparent",
+            text: "transparent",
+          },
+        } as never,
+        theme,
+      );
+    }
     return getSpecVariantColors(variantSpec, theme);
   }, [spec, variant, theme]);
 }
@@ -72,7 +85,7 @@ export function useSpecVariantColors(
 export function useSpecSizePreset(
   spec: ComponentSpec<Record<string, unknown>>,
   variant: string,
-  theme: 'light' | 'dark' = 'light',
+  theme: "light" | "dark" = "light",
 ): SpecSizePreset {
   return useMemo(() => {
     const sizeSpec = spec.sizes[variant] || spec.sizes[spec.defaultSize];
@@ -92,12 +105,15 @@ export function useSpecSizePreset(
  */
 export function resolveColorRecord<T extends Record<string, TokenRef>>(
   record: T,
-  theme: 'light' | 'dark' = 'light',
+  theme: "light" | "dark" = "light",
 ): Record<keyof T, number> {
   const result = {} as Record<keyof T, number>;
   for (const key of Object.keys(record) as Array<keyof T>) {
     const resolved = resolveColor(record[key], theme);
-    result[key] = typeof resolved === 'string' ? hexStringToNumber(resolved) : resolved as number;
+    result[key] =
+      typeof resolved === "string"
+        ? hexStringToNumber(resolved)
+        : (resolved as number);
   }
   return result;
 }
@@ -107,10 +123,12 @@ export function resolveColorRecord<T extends Record<string, TokenRef>>(
  */
 export function resolveTokenColor(
   tokenRef: TokenRef,
-  theme: 'light' | 'dark' = 'light',
+  theme: "light" | "dark" = "light",
 ): number {
   const resolved = resolveColor(tokenRef, theme);
-  return typeof resolved === 'string' ? hexStringToNumber(resolved) : resolved as number;
+  return typeof resolved === "string"
+    ? hexStringToNumber(resolved)
+    : (resolved as number);
 }
 
 // ============================================
@@ -132,22 +150,54 @@ export interface DescriptionStylePreset {
 }
 
 const LABEL_STYLE_PRESETS: Record<string, LabelStylePreset> = {
-  sm: { fontSize: 12, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
-  md: { fontSize: 14, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
-  lg: { fontSize: 16, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
+  sm: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: 0x374151,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  md: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: 0x374151,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  lg: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: 0x374151,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
 };
 
 const DESCRIPTION_STYLE_PRESETS: Record<string, DescriptionStylePreset> = {
-  sm: { fontSize: 11, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
-  md: { fontSize: 12, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
-  lg: { fontSize: 14, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
+  sm: {
+    fontSize: 11,
+    color: 0x6b7280,
+    errorColor: 0xef4444,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  md: {
+    fontSize: 12,
+    color: 0x6b7280,
+    errorColor: 0xef4444,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  lg: {
+    fontSize: 14,
+    color: 0x6b7280,
+    errorColor: 0xef4444,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
 };
 
 export function getLabelStylePreset(size: string): LabelStylePreset {
   return LABEL_STYLE_PRESETS[size] ?? LABEL_STYLE_PRESETS.md;
 }
 
-export function getDescriptionStylePreset(size: string): DescriptionStylePreset {
+export function getDescriptionStylePreset(
+  size: string,
+): DescriptionStylePreset {
   return DESCRIPTION_STYLE_PRESETS[size] ?? DESCRIPTION_STYLE_PRESETS.md;
 }
 

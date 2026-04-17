@@ -2,7 +2,7 @@
 import React from "react";
 import { ElementEvent } from "../events/events.types";
 import { TokenValue, DesignToken } from "../theme";
-import type { StoredMenuItem } from "@composition/specs/types";
+import type { StoredMenuItem } from "@composition/specs";
 
 // === 기본 타입 정의 ===
 
