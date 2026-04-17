@@ -42,18 +42,40 @@ export interface SelectionSnapshot {
   selectionBounds: BoundingBox | null;
 }
 
-export interface SceneSnapshot {
+/**
+ * ADR-074 Phase 2: selection-invariant 필드만 포함하는 structure snapshot.
+ * selection-only 변화 시 재계산 skip 대상.
+ */
+export interface SceneStructureSnapshot {
   depthMap: Map<string, number>;
   document: SceneDocumentSnapshot;
   layoutVersion: number;
   pageSnapshots: Map<string, ScenePageSnapshot>;
-  selection: SelectionSnapshot;
-  selectionVersion: number;
   sceneVersion: number;
   viewportVersion: number;
 }
 
-export interface BuildSceneSnapshotInput {
+/**
+ * ADR-074 Phase 2: selection 관련 필드만 포함하는 selection state.
+ */
+export interface SceneSelectionState {
+  selection: SelectionSnapshot;
+  selectionVersion: number;
+}
+
+/**
+ * SceneSnapshot 은 structure + selection 의 합성 뷰.
+ * 기존 하위 consumer (skiaRendererInput, rendererInvalidationPacket, etc.) 와
+ * 인터페이스 호환을 유지하기 위해 두 타입의 교차로 정의.
+ */
+export interface SceneSnapshot
+  extends SceneStructureSnapshot, SceneSelectionState {}
+
+/**
+ * ADR-074 Phase 2: structure 계산에 필요한 입력만 포함.
+ * selection 입력(selectedElementIds) 제외.
+ */
+export interface BuildSceneStructureInput {
   containerSize?: { height: number; width: number };
   currentPageId: string | null;
   elements: Element[];
@@ -66,6 +88,12 @@ export interface BuildSceneSnapshotInput {
   pageWidth: number;
   pages: Page[];
   panOffset: { x: number; y: number };
-  selectedElementIds: string[];
   zoom: number;
+}
+
+/**
+ * 기존 buildSceneSnapshot 호환 — structure + selection 입력 통합.
+ */
+export interface BuildSceneSnapshotInput extends BuildSceneStructureInput {
+  selectedElementIds: string[];
 }

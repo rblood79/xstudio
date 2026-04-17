@@ -1,4 +1,8 @@
-export { buildSceneSnapshot } from "./buildSceneSnapshot";
+export {
+  buildSceneSnapshot,
+  buildSceneStructureSnapshot,
+  buildSceneSelectionState,
+} from "./buildSceneSnapshot";
 export {
   buildPageDataMap,
   buildDepthMap,
@@ -21,10 +25,13 @@ export {
 export { buildPageDirtyState } from "./subtreeInvalidation";
 export type {
   BuildSceneSnapshotInput,
+  BuildSceneStructureInput,
   SceneDocumentSnapshot,
   ScenePageData,
   ScenePageFrame,
   ScenePageSnapshot,
+  SceneSelectionState,
   SceneSnapshot,
+  SceneStructureSnapshot,
   SelectionSnapshot,
 } from "./sceneSnapshotTypes";

@@ -1,11 +1,25 @@
-import { buildPageDataMap, buildDepthMap, buildPageFrames } from "./buildSceneIndex";
+import type { Element } from "../../../../types/core/store.types";
+import {
+  buildPageDataMap,
+  buildDepthMap,
+  buildPageFrames,
+} from "./buildSceneIndex";
 import { buildSelectionSnapshot } from "./buildSelectionSnapshot";
 import { buildVisiblePageSet } from "./buildVisiblePageSet";
 import type {
   BuildSceneSnapshotInput,
+  BuildSceneStructureInput,
   ScenePageSnapshot,
+  SceneSelectionState,
   SceneSnapshot,
+  SceneStructureSnapshot,
 } from "./sceneSnapshotTypes";
+
+interface BuildSceneSelectionInput {
+  currentPageId: string | null;
+  elementsMap: Map<string, Element>;
+  selectedElementIds: string[];
+}
 
 function hashString(value: string): number {
   let hash = 0;
@@ -15,9 +29,16 @@ function hashString(value: string): number {
   return Math.abs(hash);
 }
 
-export function buildSceneSnapshot(
-  input: BuildSceneSnapshotInput,
-): SceneSnapshot {
+/**
+ * ADR-074 Phase 2: selection-invariant structure snapshot.
+ *
+ * depthMap / pageDataMap / pageFrames / visiblePages / pageSnapshots /
+ * document 전부 포함. selection 과 독립 계산되어 selection-only 변화 시
+ * useMemo identity 유지가 가능.
+ */
+export function buildSceneStructureSnapshot(
+  input: BuildSceneStructureInput,
+): SceneStructureSnapshot {
   const depthMap = buildDepthMap(input.elements, input.elementsMap);
   const pageDataMap = buildPageDataMap(
     input.pages,
@@ -52,11 +73,6 @@ export function buildSceneSnapshot(
       )
       .join("|"),
   );
-  const selection = buildSelectionSnapshot({
-    currentPageId: input.currentPageId,
-    elementsMap: input.elementsMap,
-    selectedElementIds: input.selectedElementIds,
-  });
   const pageSnapshots = new Map<string, ScenePageSnapshot>();
 
   for (const page of input.pages) {
@@ -97,7 +113,7 @@ export function buildSceneSnapshot(
   }
 
   const currentPageSnapshot = input.currentPageId
-    ? pageSnapshots.get(input.currentPageId) ?? null
+    ? (pageSnapshots.get(input.currentPageId) ?? null)
     : null;
   const visibleContentVersion = hashString(
     visiblePageFrames
@@ -131,8 +147,6 @@ export function buildSceneSnapshot(
     },
     layoutVersion: input.layoutVersion,
     pageSnapshots,
-    selection,
-    selectionVersion: hashString(selection.selectedIds.join("|")),
     sceneVersion: hashString(
       [
         input.layoutVersion,
@@ -152,5 +166,42 @@ export function buildSceneSnapshot(
         input.containerSize?.height ?? 0,
       ].join(":"),
     ),
+  };
+}
+
+/**
+ * ADR-074 Phase 2: selection-only state (selection + selectionVersion).
+ * selectedElementIds 변화 시에만 재계산 대상.
+ */
+export function buildSceneSelectionState(
+  input: BuildSceneSelectionInput,
+): SceneSelectionState {
+  const selection = buildSelectionSnapshot({
+    currentPageId: input.currentPageId,
+    elementsMap: input.elementsMap,
+    selectedElementIds: input.selectedElementIds,
+  });
+  return {
+    selection,
+    selectionVersion: hashString(selection.selectedIds.join("|")),
+  };
+}
+
+/**
+ * 기존 호출처 호환용 합성 entry point.
+ * structure + selection 을 각각 계산한 뒤 합쳐서 반환.
+ */
+export function buildSceneSnapshot(
+  input: BuildSceneSnapshotInput,
+): SceneSnapshot {
+  const structure = buildSceneStructureSnapshot(input);
+  const selectionState = buildSceneSelectionState({
+    currentPageId: input.currentPageId,
+    elementsMap: input.elementsMap,
+    selectedElementIds: input.selectedElementIds,
+  });
+  return {
+    ...structure,
+    ...selectionState,
   };
 }

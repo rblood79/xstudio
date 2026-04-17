@@ -53,7 +53,7 @@ import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
 import { useDragBridge } from "./hooks/useDragBridge";
 
-import { buildSceneSnapshot } from "./scene";
+import { buildSceneSelectionState, buildSceneStructureSnapshot } from "./scene";
 import {
   computeWorkflowEdges,
   computeDataSourceEdges,
@@ -265,8 +265,11 @@ export function BuilderCanvas({
     pages,
   ]);
 
-  const sceneSnapshot = useMemo(() => {
-    return buildSceneSnapshot({
+  // ADR-074 Phase 2: structure(selection-invariant) / selection 분리.
+  // selection-only 변화 시 structure useMemo identity 유지 → 하위 useMemo
+  // (skiaRendererInput / layoutPublisherInputs) 의 deps 변동 차단.
+  const sceneStructureSnapshot = useMemo(() => {
+    return buildSceneStructureSnapshot({
       containerSize,
       currentPageId,
       elements,
@@ -279,7 +282,6 @@ export function BuilderCanvas({
       pageWidth,
       pages,
       panOffset,
-      selectedElementIds,
       zoom,
     });
   }, [
@@ -295,9 +297,26 @@ export function BuilderCanvas({
     pageWidth,
     pages,
     panOffset,
-    selectedElementIds,
     zoom,
   ]);
+
+  const sceneSelectionState = useMemo(() => {
+    return buildSceneSelectionState({
+      currentPageId,
+      elementsMap,
+      selectedElementIds,
+    });
+  }, [currentPageId, elementsMap, selectedElementIds]);
+
+  // 합성 sceneSnapshot — 두 snapshot 모두 identity 유지 시 합성 객체도 유지.
+  // 기존 consumer (skiaRendererInput / layoutPublisherInputs / packet) 는
+  // 이 합성 인터페이스를 기존대로 소비.
+  const sceneSnapshot = useMemo(() => {
+    return {
+      ...sceneStructureSnapshot,
+      ...sceneSelectionState,
+    };
+  }, [sceneStructureSnapshot, sceneSelectionState]);
 
   const visiblePageIds = sceneSnapshot.document.visiblePageIds;
   const visiblePages = useMemo(() => {
