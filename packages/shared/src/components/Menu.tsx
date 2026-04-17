@@ -121,7 +121,7 @@ export function MenuButton<T extends object>({
     if (loading) {
       return (
         <MenuTrigger {...props}>
-          <Button data-variant={variant} data-size={size}>
+          <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
             {label}
           </Button>
           <Popover data-size={size}>
@@ -142,7 +142,7 @@ export function MenuButton<T extends object>({
     if (error) {
       return (
         <MenuTrigger {...props}>
-          <Button data-variant={variant} data-size={size}>
+          <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
             {label}
           </Button>
           <Popover data-size={size}>
@@ -255,7 +255,7 @@ export function MenuButton<T extends object>({
 
       return (
         <MenuTrigger {...props}>
-          <Button data-variant={variant} data-size={size}>
+          <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
             {label}
           </Button>
           <Popover data-size={size}>
@@ -274,7 +274,7 @@ export function MenuButton<T extends object>({
     // 데이터 없음
     return (
       <MenuTrigger {...props}>
-        <Button data-variant={variant} data-size={size}>
+        <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
           {label}
         </Button>
         <Popover data-size={size}>
@@ -407,7 +407,7 @@ export function MenuButton<T extends object>({
 
     return (
       <MenuTrigger {...props}>
-        <Button data-variant={variant} data-size={size}>
+        <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
           {label}
         </Button>
         <Popover>
@@ -488,7 +488,7 @@ export function MenuButton<T extends object>({
 
     return (
       <MenuTrigger {...props}>
-        <Button data-variant={variant} data-size={size}>
+        <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
           {label}
         </Button>
         <Popover>
@@ -507,7 +507,7 @@ export function MenuButton<T extends object>({
   // Static Children 또는 Loading/Error 상태
   return (
     <MenuTrigger {...props}>
-      <Button data-variant={variant} data-size={size}>
+      <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
         {label}
       </Button>
       <Popover>
