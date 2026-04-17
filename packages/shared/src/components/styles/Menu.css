@@ -1,0 +1,42 @@
+/* ============================================================
+ * Menu container styles — MANUAL CSS (ListBox 패턴 차용)
+ * Source of truth: Menu.spec.ts (skipCSSGeneration: true)
+ *
+ * 역할 분담:
+ * - 이 파일(.react-aria-Menu 컨테이너): popover dropdown container 색상/레이아웃.
+ * - MenuItem.css (auto-generated): .react-aria-MenuItem 항목 스타일.
+ *
+ * Skia trigger button(Menu.spec.render.shapes)은 CSS 무관 — 본 파일은 Preview/Publish 전용.
+ *
+ * ADR-070 후속 대응: Menu popover container 색상을 ListBox와 동일하게 맞춘다.
+ * variants(primary 등)는 Skia trigger button 색상 전용이므로 CSS에 주입하지 않음.
+ * ============================================================ */
+
+@layer components {
+  .react-aria-Menu {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: var(--spacing-xs);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    background: var(--bg-raised);
+    color: var(--fg);
+    outline: none;
+    max-height: 300px;
+    overflow: auto;
+    gap: var(--spacing-2xs);
+
+    &[data-focus-visible] {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    &[data-empty] {
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: var(--fg-muted);
+    }
+  }
+}

@@ -19,7 +19,7 @@ import type {
 import type { RuntimeMenuItem } from "@composition/specs";
 
 import { useCollectionData } from "../hooks";
-import "./styles/generated/Menu.css";
+import "./styles/Menu.css";
 
 /**
  * Phase 4: data-* 패턴 전환
@@ -121,14 +121,15 @@ export function MenuButton<T extends object>({
     if (loading) {
       return (
         <MenuTrigger {...props}>
-          <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+          <Button
+            className="react-aria-Button button-base"
+            data-variant={variant}
+            data-size={size}
+          >
             {label}
           </Button>
           <Popover data-size={size}>
-            <Menu
-              className={getMenuClassName()}
-              data-size={size}
-            >
+            <Menu className={getMenuClassName()} data-size={size}>
               <AriaMenuItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
               </AriaMenuItem>
@@ -142,14 +143,15 @@ export function MenuButton<T extends object>({
     if (error) {
       return (
         <MenuTrigger {...props}>
-          <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+          <Button
+            className="react-aria-Button button-base"
+            data-variant={variant}
+            data-size={size}
+          >
             {label}
           </Button>
           <Popover data-size={size}>
-            <Menu
-              className={getMenuClassName()}
-              data-size={size}
-            >
+            <Menu className={getMenuClassName()} data-size={size}>
               <AriaMenuItem key="error" textValue="Error">
                 ❌ 오류: {error}
               </AriaMenuItem>
@@ -255,7 +257,11 @@ export function MenuButton<T extends object>({
 
       return (
         <MenuTrigger {...props}>
-          <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+          <Button
+            className="react-aria-Button button-base"
+            data-variant={variant}
+            data-size={size}
+          >
             {label}
           </Button>
           <Popover data-size={size}>
@@ -274,14 +280,15 @@ export function MenuButton<T extends object>({
     // 데이터 없음
     return (
       <MenuTrigger {...props}>
-        <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+        <Button
+          className="react-aria-Button button-base"
+          data-variant={variant}
+          data-size={size}
+        >
           {label}
         </Button>
         <Popover data-size={size}>
-          <Menu
-            className={getMenuClassName()}
-            data-size={size}
-          >
+          <Menu className={getMenuClassName()} data-size={size}>
             {children}
           </Menu>
         </Popover>
@@ -407,7 +414,11 @@ export function MenuButton<T extends object>({
 
     return (
       <MenuTrigger {...props}>
-        <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+        <Button
+          className="react-aria-Button button-base"
+          data-variant={variant}
+          data-size={size}
+        >
           {label}
         </Button>
         <Popover>
@@ -488,15 +499,15 @@ export function MenuButton<T extends object>({
 
     return (
       <MenuTrigger {...props}>
-        <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+        <Button
+          className="react-aria-Button button-base"
+          data-variant={variant}
+          data-size={size}
+        >
           {label}
         </Button>
         <Popover>
-          <Menu
-            items={items}
-            className={getMenuClassName()}
-            data-size={size}
-          >
+          <Menu items={items} className={getMenuClassName()} data-size={size}>
             {(item) => renderRuntimeMenuItem(item as RuntimeMenuItem)}
           </Menu>
         </Popover>
@@ -507,15 +518,15 @@ export function MenuButton<T extends object>({
   // Static Children 또는 Loading/Error 상태
   return (
     <MenuTrigger {...props}>
-      <Button className="react-aria-Button button-base" data-variant={variant} data-size={size}>
+      <Button
+        className="react-aria-Button button-base"
+        data-variant={variant}
+        data-size={size}
+      >
         {label}
       </Button>
       <Popover>
-        <Menu
-          {...props}
-          className={getMenuClassName()}
-          data-size={size}
-        >
+        <Menu {...props} className={getMenuClassName()} data-size={size}>
           {loading && (
             <AriaMenuItem key="loading" textValue="Loading">
               ⏳ 데이터 로딩 중...

@@ -72,10 +72,15 @@ export const MenuItemSpec: ComponentSpec<MenuItemProps> = {
   },
 
   states: {
-    hover: {},
+    // ADR-070: hover 배경은 {color.layer-1} = var(--bg-overlay).
+    // ListBoxItem 토큰 패턴 차용 → popover 내 Menu/ListBox 시각 정합.
+    hover: {
+      background: "{color.layer-1}",
+    },
     focusVisible: {
       focusRing: "{focus.ring.default}",
     },
+    // disabled.text는 추가하지 않음 — opacity 0.38이 텍스트까지 dim 처리. ADR-070 설계 주석 참조.
     disabled: {
       opacity: 0.38,
       pointerEvents: "none",

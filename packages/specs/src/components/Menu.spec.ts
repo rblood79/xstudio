@@ -66,10 +66,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   description: "React Aria 기반 드롭다운 메뉴 컴포넌트",
   archetype: "collection",
   element: "div",
-  skipCSSGeneration: false,
-  // variants는 Skia trigger button 색상 전용 — popover 내 .react-aria-Menu에는 의미 없음
-  // (trigger Button variant 색상은 .react-aria-Button CSS에서 처리)
-  skipVariantCss: true,
+  // popover container 색상을 ListBox와 동일하게 맞추기 위해 수동 CSS 사용.
+  // 실제 스타일은 packages/shared/src/components/styles/Menu.css.
+  // variants는 Skia trigger button 색상 전용 — popover 내 .react-aria-Menu에는 관여하지 않는다.
+  skipCSSGeneration: true,
 
   defaultVariant: "primary",
   defaultSize: "md",

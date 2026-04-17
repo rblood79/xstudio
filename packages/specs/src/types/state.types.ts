@@ -35,7 +35,14 @@ export interface StateStyles {
 }
 
 /**
- * 상태 효과 (색상 제외 - 색상은 VariantSpec에서 정의)
+ * 상태 효과
+ *
+ * [색상 필드 정책 — ADR-070]
+ * - `background` / `text` / `border`는 **hover / disabled 상태에만** CSSGenerator가 emit.
+ *   pressed / focused / focusVisible의 색상 필드는 현재 silently ignored.
+ * - `selected` 색상은 StateEffect에 정의하지 **않는다** — VariantSpec.selectedBackground/
+ *   selectedText/selectedBorder 단일 소스를 사용 (SSOT 분산 회피).
+ * - 색상 미정의 spec은 emit 0 (no-op). 기존 107개 CSS 파일 snapshot diff = 0 보장.
  */
 export interface StateEffect {
   /** 변형 */
@@ -49,6 +56,27 @@ export interface StateEffect {
 
   /** 스케일 (1 = 100%) */
   scale?: number;
+
+  /**
+   * 배경 색상 TokenRef (ADR-070)
+   *
+   * hover / disabled에서만 emit. 그 외 상태는 VariantSpec 배경 토큰 사용.
+   */
+  background?: TokenRef;
+
+  /**
+   * 텍스트 색상 TokenRef (ADR-070)
+   *
+   * hover / disabled에서만 emit.
+   */
+  text?: TokenRef;
+
+  /**
+   * 테두리 색상 TokenRef (ADR-070)
+   *
+   * hover / disabled에서만 emit.
+   */
+  border?: TokenRef;
 
   /**
    * Focus ring TokenRef (ADR-061)

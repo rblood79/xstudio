@@ -58,6 +58,7 @@
 }
 
 .react-aria-MenuItem[data-hovered] {
+  background: var(--bg-overlay);
 }
 
 .react-aria-MenuItem[data-focus-visible] {

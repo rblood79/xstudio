@@ -775,6 +775,16 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
   // hover
   if (states?.hover) {
     lines.push(`.react-aria-${spec.name}[data-hovered] {`);
+    // ADR-070: hover 상태 색상 emit (optional)
+    if (states.hover.background) {
+      lines.push(`  background: ${tokenToCSSVar(states.hover.background)};`);
+    }
+    if (states.hover.text) {
+      lines.push(`  color: ${tokenToCSSVar(states.hover.text)};`);
+    }
+    if (states.hover.border) {
+      lines.push(`  border-color: ${tokenToCSSVar(states.hover.border)};`);
+    }
     if (states.hover.boxShadow) {
       lines.push(`  box-shadow: ${resolveBoxShadow(states.hover.boxShadow)};`);
     }
@@ -846,6 +856,16 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
     lines.push(`  opacity: ${states.disabled.opacity ?? 0.38};`);
     lines.push(`  cursor: ${states.disabled.cursor ?? "not-allowed"};`);
     lines.push(`  pointer-events: ${states.disabled.pointerEvents ?? "none"};`);
+    // ADR-070: disabled 상태 색상 emit (optional)
+    if (states.disabled.background) {
+      lines.push(`  background: ${tokenToCSSVar(states.disabled.background)};`);
+    }
+    if (states.disabled.text) {
+      lines.push(`  color: ${tokenToCSSVar(states.disabled.text)};`);
+    }
+    if (states.disabled.border) {
+      lines.push(`  border-color: ${tokenToCSSVar(states.disabled.border)};`);
+    }
   } else {
     lines.push("  opacity: 0.38;");
     lines.push("  cursor: not-allowed;");
