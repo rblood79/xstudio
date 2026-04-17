@@ -17,6 +17,7 @@ import type {
   ColumnMapping,
   DataBinding,
 } from "../types";
+import type { StoredSelectItem, StoredComboBoxItem } from "@composition/specs";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -626,6 +627,10 @@ export const renderSelect = (
     (child) => child.tag === "SelectItem",
   );
 
+  // ADR-073 P2: items[] SSOT
+  const storedItems = (element.props as { items?: StoredSelectItem[] }).items;
+  const hasItemsArray = Array.isArray(storedItems) && storedItems.length > 0;
+
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
     .columnMapping;
@@ -640,6 +645,7 @@ export const renderSelect = (
     !("type" in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 SelectItem 템플릿이 있으면 render function 사용
+  // dataBinding 우선: hasValidTemplate은 template 기반 경로 (items[] 우선 대상 아님)
   const hasValidTemplate =
     (columnMapping || isPropertyBinding) && selectItemChildren.length > 0;
 
@@ -679,75 +685,97 @@ export const renderSelect = (
       processedPlaceholder ||
       `Select ${element.id}`;
 
-  const renderChildren = hasValidTemplate
-    ? (item: Record<string, unknown>) => {
-        // SelectItem 템플릿을 각 데이터 항목에 대해 렌더링
-        const selectItemTemplate = selectItemChildren[0];
+  // ADR-073 P3: 3-path renderChildren
+  // 경로 1: dataBinding template (hasValidTemplate) — 기존 동작 유지
+  // 경로 2: items[] SSOT (hasItemsArray) — NEW
+  // 경로 3: legacy SelectItem element tree — P6 소멸 예정
+  let renderChildren:
+    | React.ReactNode
+    | ((item: Record<string, unknown>) => React.ReactNode);
 
-        // Field 자식들 찾기
-        const fieldChildren = (
-          context.childrenMap.get(selectItemTemplate.id) ?? []
-        ).filter((child) => child.tag === "Field");
+  if (hasValidTemplate) {
+    // 경로 1: dataBinding/columnMapping template 기반 렌더링 (현 동작 유지)
+    renderChildren = (item: Record<string, unknown>) => {
+      const selectItemTemplate = selectItemChildren[0];
+      const fieldChildren = (
+        context.childrenMap.get(selectItemTemplate.id) ?? []
+      ).filter((child) => child.tag === "Field");
 
-        return (
-          <SelectItem
-            key={String(item.id)}
-            data-element-id={selectItemTemplate.id}
-            value={item as object}
-            isDisabled={Boolean(selectItemTemplate.props.isDisabled)}
-            style={selectItemTemplate.props.style}
-            className={selectItemTemplate.props.className}
-          >
-            {fieldChildren.length > 0
-              ? fieldChildren.map((field) => {
-                  const fieldKey = (field.props as { key?: string }).key;
-                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+      return (
+        <SelectItem
+          key={String(item.id)}
+          data-element-id={selectItemTemplate.id}
+          value={item as object}
+          isDisabled={Boolean(selectItemTemplate.props.isDisabled)}
+          style={selectItemTemplate.props.style}
+          className={selectItemTemplate.props.className}
+        >
+          {fieldChildren.length > 0
+            ? fieldChildren.map((field) => {
+                const fieldKey = (field.props as { key?: string }).key;
+                const fieldValue = fieldKey ? item[fieldKey] : undefined;
 
-                  return (
-                    <DataField
-                      key={field.id}
-                      fieldKey={fieldKey || ""}
-                      label={(field.props as { label?: string }).label}
-                      type={
-                        (field.props as { type?: string }).type as
-                          | "string"
-                          | "number"
-                          | "boolean"
-                          | "date"
-                          | "image"
-                          | "url"
-                          | "email"
-                      }
-                      value={fieldValue}
-                      visible={
-                        (field.props as { visible?: boolean }).visible !== false
-                      }
-                      style={field.props.style}
-                      className={field.props.className}
-                    />
-                  );
-                })
-              : String(selectItemTemplate.props.label || "")}
-          </SelectItem>
-        );
-      }
-    : selectItemChildren.map((item, index) => {
-        const actualValue =
-          item.props.value || item.props.label || `option-${index + 1}`;
+                return (
+                  <DataField
+                    key={field.id}
+                    fieldKey={fieldKey || ""}
+                    label={(field.props as { label?: string }).label}
+                    type={
+                      (field.props as { type?: string }).type as
+                        | "string"
+                        | "number"
+                        | "boolean"
+                        | "date"
+                        | "image"
+                        | "url"
+                        | "email"
+                    }
+                    value={fieldValue}
+                    visible={
+                      (field.props as { visible?: boolean }).visible !== false
+                    }
+                    style={field.props.style}
+                    className={field.props.className}
+                  />
+                );
+              })
+            : String(selectItemTemplate.props.label || "")}
+        </SelectItem>
+      );
+    };
+  } else if (hasItemsArray) {
+    // 경로 2 (ADR-073 NEW): items[] SSOT — Canonical contract
+    renderChildren = storedItems!.map((item) => (
+      <SelectItem
+        key={item.id}
+        id={item.id}
+        data-element-id={element.id}
+        textValue={item.textValue ?? item.label}
+        isDisabled={Boolean(item.isDisabled)}
+      >
+        {item.label}
+      </SelectItem>
+    ));
+  } else {
+    // 경로 3 (legacy, P6 소멸): SelectItem element tree fallback
+    renderChildren = selectItemChildren.map((item, index) => {
+      const actualValue =
+        item.props.value || item.props.label || `option-${index + 1}`;
 
-        return (
-          <SelectItem
-            key={item.id}
-            data-element-id={item.id}
-            value={String(actualValue) as unknown as object}
-            isDisabled={Boolean(item.props.isDisabled)}
-            style={item.props.style}
-            className={item.props.className}
-          >
-            {String(item.props.label || item.id)}
-          </SelectItem>
-        );
-      });
+      return (
+        <SelectItem
+          key={item.id}
+          data-element-id={item.id}
+          value={String(actualValue) as unknown as object}
+          isDisabled={Boolean(item.props.isDisabled)}
+          style={item.props.style}
+          className={item.props.className}
+        >
+          {String(item.props.label || item.id)}
+        </SelectItem>
+      );
+    });
+  }
 
   return (
     <Select
@@ -793,13 +821,21 @@ export const renderSelect = (
       }
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
-        // React Aria의 내부 ID를 실제 값으로 변환
-        let actualValue = selectedKey;
-        if (
+        // ADR-073 P3: items[] 경로에서 Canonical contract — items[].id lookup
+        let actualValue: React.Key | undefined | null = selectedKey ?? undefined;
+
+        if (hasItemsArray && selectedKey != null) {
+          // 경로 2: items[].id で Canonical lookup
+          const matched = storedItems!.find(
+            (it) => it.id === String(selectedKey),
+          );
+          actualValue = matched?.value ?? selectedKey;
+        } else if (
           selectedKey &&
           typeof selectedKey === "string" &&
           selectedKey.startsWith("react-aria-")
         ) {
+          // 경로 3 (legacy): React Aria 내부 ID → 실제 값 역매핑
           const index = parseInt(selectedKey.replace("react-aria-", "")) - 1;
           const selectedItem = selectItemChildren[index];
           if (selectedItem) {
@@ -890,6 +926,11 @@ export const renderComboBox = (
     context.childrenMap.get(element.id) ?? []
   ).filter((child) => child.tag === "ComboBoxItem");
 
+  // ADR-073 P2: items[] SSOT
+  const cbStoredItems = (element.props as { items?: StoredComboBoxItem[] })
+    .items;
+  const cbHasItemsArray = Array.isArray(cbStoredItems) && cbStoredItems.length > 0;
+
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
     .columnMapping;
@@ -904,91 +945,113 @@ export const renderComboBox = (
     !("type" in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 ComboBoxItem 템플릿이 있으면 render function 사용
-  const hasValidTemplate =
+  // dataBinding 우선: hasValidTemplate은 template 기반 경로 (items[] 우선 대상 아님)
+  const cbHasValidTemplate =
     (columnMapping || isPropertyBinding) && comboBoxItemChildren.length > 0;
 
-  const renderChildren = hasValidTemplate
-    ? (item: Record<string, unknown>) => {
-        // ComboBoxItem 템플릿을 각 데이터 항목에 대해 렌더링
-        const comboBoxItemTemplate = comboBoxItemChildren[0];
+  // ADR-073 P3: 3-path renderChildren
+  // 경로 1: dataBinding template (cbHasValidTemplate) — 기존 동작 유지
+  // 경로 2: items[] SSOT (cbHasItemsArray) — NEW
+  // 경로 3: legacy ComboBoxItem element tree — P6 소멸 예정
+  let cbRenderChildren:
+    | React.ReactNode
+    | ((item: Record<string, unknown>) => React.ReactNode);
 
-        // Field 자식들 찾기
-        const fieldChildren = (
-          context.childrenMap.get(comboBoxItemTemplate.id) ?? []
-        ).filter((child) => child.tag === "Field");
+  if (cbHasValidTemplate) {
+    // 경로 1: dataBinding/columnMapping template 기반 렌더링 (현 동작 유지)
+    cbRenderChildren = (item: Record<string, unknown>) => {
+      const comboBoxItemTemplate = comboBoxItemChildren[0];
+      const fieldChildren = (
+        context.childrenMap.get(comboBoxItemTemplate.id) ?? []
+      ).filter((child) => child.tag === "Field");
 
-        // textValue 계산 - 보이는 Field 값들을 연결하여 검색 가능한 텍스트 생성
-        const textValue = fieldChildren
-          .filter(
-            (field) => (field.props as { visible?: boolean }).visible !== false,
-          )
-          .map((field) => {
-            const fieldKey = (field.props as { key?: string }).key;
-            const fieldValue = fieldKey ? item[fieldKey] : undefined;
-            return fieldValue != null ? String(fieldValue) : "";
-          })
-          .filter(Boolean)
-          .join(" ");
+      const textValue = fieldChildren
+        .filter(
+          (field) => (field.props as { visible?: boolean }).visible !== false,
+        )
+        .map((field) => {
+          const fieldKey = (field.props as { key?: string }).key;
+          const fieldValue = fieldKey ? item[fieldKey] : undefined;
+          return fieldValue != null ? String(fieldValue) : "";
+        })
+        .filter(Boolean)
+        .join(" ");
 
-        return (
-          <ComboBoxItem
-            key={String(item.id)}
-            data-element-id={comboBoxItemTemplate.id}
-            value={item as object}
-            textValue={textValue}
-            isDisabled={Boolean(comboBoxItemTemplate.props.isDisabled)}
-            style={comboBoxItemTemplate.props.style}
-            className={comboBoxItemTemplate.props.className}
-          >
-            {fieldChildren.length > 0
-              ? fieldChildren.map((field) => {
-                  const fieldKey = (field.props as { key?: string }).key;
-                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+      return (
+        <ComboBoxItem
+          key={String(item.id)}
+          data-element-id={comboBoxItemTemplate.id}
+          value={item as object}
+          textValue={textValue}
+          isDisabled={Boolean(comboBoxItemTemplate.props.isDisabled)}
+          style={comboBoxItemTemplate.props.style}
+          className={comboBoxItemTemplate.props.className}
+        >
+          {fieldChildren.length > 0
+            ? fieldChildren.map((field) => {
+                const fieldKey = (field.props as { key?: string }).key;
+                const fieldValue = fieldKey ? item[fieldKey] : undefined;
 
-                  return (
-                    <DataField
-                      key={field.id}
-                      fieldKey={fieldKey || ""}
-                      label={(field.props as { label?: string }).label}
-                      type={
-                        (field.props as { type?: string }).type as
-                          | "string"
-                          | "number"
-                          | "boolean"
-                          | "date"
-                          | "image"
-                          | "url"
-                          | "email"
-                      }
-                      value={fieldValue}
-                      visible={
-                        (field.props as { visible?: boolean }).visible !== false
-                      }
-                      style={field.props.style}
-                      className={field.props.className}
-                    />
-                  );
-                })
-              : String(comboBoxItemTemplate.props.label || "")}
-          </ComboBoxItem>
-        );
-      }
-    : comboBoxItemChildren.map((item, index) => {
-        const reactAriaId = `react-aria-${index + 1}`;
+                return (
+                  <DataField
+                    key={field.id}
+                    fieldKey={fieldKey || ""}
+                    label={(field.props as { label?: string }).label}
+                    type={
+                      (field.props as { type?: string }).type as
+                        | "string"
+                        | "number"
+                        | "boolean"
+                        | "date"
+                        | "image"
+                        | "url"
+                        | "email"
+                    }
+                    value={fieldValue}
+                    visible={
+                      (field.props as { visible?: boolean }).visible !== false
+                    }
+                    style={field.props.style}
+                    className={field.props.className}
+                  />
+                );
+              })
+            : String(comboBoxItemTemplate.props.label || "")}
+        </ComboBoxItem>
+      );
+    };
+  } else if (cbHasItemsArray) {
+    // 경로 2 (ADR-073 NEW): items[] SSOT — Canonical contract
+    cbRenderChildren = cbStoredItems!.map((item) => (
+      <ComboBoxItem
+        key={item.id}
+        id={item.id}
+        data-element-id={element.id}
+        textValue={item.textValue ?? item.label}
+        isDisabled={Boolean(item.isDisabled)}
+      >
+        {item.label}
+      </ComboBoxItem>
+    ));
+  } else {
+    // 경로 3 (legacy, P6 소멸): ComboBoxItem element tree fallback
+    cbRenderChildren = comboBoxItemChildren.map((item, index) => {
+      const reactAriaId = `react-aria-${index + 1}`;
 
-        return (
-          <ComboBoxItem
-            key={item.id}
-            data-element-id={item.id}
-            value={reactAriaId as unknown as object}
-            isDisabled={Boolean(item.props.isDisabled)}
-            style={item.props.style}
-            className={item.props.className}
-          >
-            {String(item.props.label || item.id)}
-          </ComboBoxItem>
-        );
-      });
+      return (
+        <ComboBoxItem
+          key={item.id}
+          data-element-id={item.id}
+          value={reactAriaId as unknown as object}
+          isDisabled={Boolean(item.props.isDisabled)}
+          style={item.props.style}
+          className={item.props.className}
+        >
+          {String(item.props.label || item.id)}
+        </ComboBoxItem>
+      );
+    });
+  }
 
   // Child element에서 props 읽기 (compositional 패턴)
   const allChildren = context.childrenMap.get(element.id) ?? [];
@@ -1067,15 +1130,25 @@ export const renderComboBox = (
           return;
         }
 
-        // React Aria의 내부 ID를 실제 값으로 변환
-        let actualValue = selectedKey;
+        // ADR-073 P3: items[] 경로에서 Canonical contract — items[].id lookup
+        let actualValue: React.Key = selectedKey;
         let displayValue = String(selectedKey);
 
-        if (
+        if (cbHasItemsArray) {
+          // 경로 2: items[].id Canonical lookup
+          const matched = cbStoredItems!.find(
+            (it) => it.id === String(selectedKey),
+          );
+          if (matched) {
+            actualValue = matched.value ?? selectedKey;
+            displayValue = matched.label;
+          }
+        } else if (
           selectedKey &&
           typeof selectedKey === "string" &&
           selectedKey.startsWith("react-aria-")
         ) {
+          // 경로 3 (legacy): React Aria 내부 ID → 실제 값 역매핑
           const index = parseInt(selectedKey.replace("react-aria-", "")) - 1;
           const selectedItem = comboBoxItemChildren[index];
           if (selectedItem) {
@@ -1173,15 +1246,30 @@ export const renderComboBox = (
           | undefined;
         customHandler?.(isOpen);
       }}
-      onInputChange={(inputValue) => {
-        const updatedProps = {
-          ...element.props,
-          inputValue,
-        };
-        updateElementProps(element.id, updatedProps);
+      onInputChange={(rawInputValue) => {
+        // ADR-073 P3: items[] 경로에서 onInputChange reconcile
+        // label 정확 일치 → selectedKey/selectedValue 동기화 (stale selection 방지)
+        if (cbHasItemsArray) {
+          const matchedItem = cbStoredItems!.find(
+            (it) => it.label === rawInputValue,
+          );
+          updateElementProps(element.id, {
+            ...element.props,
+            inputValue: rawInputValue,
+            selectedKey: matchedItem?.id,
+            selectedValue: matchedItem?.value,
+          });
+        } else {
+          // legacy 경로: inputValue만 업데이트
+          const updatedProps = {
+            ...element.props,
+            inputValue: rawInputValue,
+          };
+          updateElementProps(element.id, updatedProps);
+        }
       }}
     >
-      {renderChildren}
+      {cbRenderChildren}
     </ComboBox>
   );
 };

@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { StoredSelectItem } from "../types/select-items";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -60,8 +61,8 @@ export interface SelectProps {
   disallowEmptySelection?: boolean;
   validationBehavior?: "native" | "aria";
   form?: string;
-  /** 드롭다운 아이템 목록 */
-  items?: string[];
+  /** 드롭다운 아이템 목록 (ADR-073 P2: StoredSelectItem[] SSOT) */
+  items?: StoredSelectItem[];
   /** 선택된 아이템 인덱스 (하이라이트용) */
   selectedIndex?: number;
   menuWidth?: string;
@@ -261,14 +262,27 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         fields: [
           {
             key: "items",
-            type: "children-manager",
+            type: "items-manager",
             label: "Options",
-            childTag: "SelectItem",
-            defaultChildProps: {
+            itemsKey: "items",
+            itemTypeName: "Option",
+            defaultItem: {
+              id: "",
               label: "Option",
               value: "",
+              isDisabled: false,
             },
-            labelProp: "label",
+            itemSchema: [
+              { key: "label", type: "string", label: "Label" },
+              { key: "value", type: "string", label: "Value" },
+              { key: "textValue", type: "string", label: "Text Value" },
+              { key: "description", type: "string", label: "Description" },
+              { key: "icon", type: "icon", label: "Icon" },
+              { key: "isDisabled", type: "boolean", label: "Disabled" },
+              { key: "onActionId", type: "event-id", label: "On Action" },
+            ],
+            labelKey: "label",
+            allowNested: false,
           },
         ],
       },
@@ -831,15 +845,24 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       // 드롭다운 패널 (열린 상태) — hasChildren 여부와 무관하게 렌더링
       if (props.isOpen) {
-        const dropdownItems = props.items ?? [
-          "Option 1",
-          "Option 2",
-          "Option 3",
-        ];
+        const storedItems = props.items ?? [];
+        const displayItems: ReadonlyArray<{
+          id: string;
+          label: string;
+          value?: string;
+        }> =
+          storedItems.length > 0
+            ? storedItems
+            : [
+                { id: "opt-1", label: "Option 1" },
+                { id: "opt-2", label: "Option 2" },
+                { id: "opt-3", label: "Option 3" },
+              ];
+
         const itemH = 36;
         const dropdownPaddingY = 4;
         const dropdownHeight =
-          dropdownItems.length * itemH + dropdownPaddingY * 2;
+          displayItems.length * itemH + dropdownPaddingY * 2;
         const dropdownY = triggerY + triggerHeight + 4;
 
         shapes.push({
@@ -873,12 +896,18 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         const selectedIdx =
           props.selectedIndex ??
           (props.value != null
-            ? dropdownItems.indexOf(props.value)
+            ? displayItems.findIndex(
+                (it) => it.value === props.value || it.label === props.value,
+              )
             : props.selectedText != null
-              ? dropdownItems.indexOf(props.selectedText)
+              ? displayItems.findIndex(
+                  (it) =>
+                    it.label === props.selectedText ||
+                    it.value === props.selectedText,
+                )
               : -1);
 
-        dropdownItems.forEach((item, i) => {
+        displayItems.forEach((item, i) => {
           const itemY = dropdownY + dropdownPaddingY + i * itemH;
           const isSelected = selectedIdx === i;
 
@@ -900,7 +929,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             type: "text" as const,
             x: paddingX,
             y: itemY + itemH / 2,
-            text: String(item),
+            text: item.label,
             fontSize,
             fontFamily: ff,
             fontWeight: isSelected ? 600 : 400,
@@ -919,13 +948,10 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           ? props.errorMessage
           : props.description;
       if (descText) {
+        const descItemCount =
+          props.items && props.items.length > 0 ? props.items.length : 3;
         const descY = props.isOpen
-          ? triggerY +
-            triggerHeight +
-            4 +
-            (props.items ?? ["Option 1", "Option 2", "Option 3"]).length * 36 +
-            8 +
-            4
+          ? triggerY + triggerHeight + 4 + descItemCount * 36 + 8 + 4
           : triggerY + triggerHeight + 4;
         shapes.push({
           type: "text" as const,
