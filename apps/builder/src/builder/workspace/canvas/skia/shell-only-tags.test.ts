@@ -1,7 +1,7 @@
 /**
- * ADR-072 Phase 1: Shell-only container tags 검증
+ * ADR-072 Phase 1 + Phase 2-A: Shell-only container tags 검증
  *
- * `_hasChildren` 컨벤션 SSOT — Empty-placeholder 확인된 4개 태그가
+ * `_hasChildren` 컨벤션 SSOT — Empty-placeholder 확인된 태그들이
  * SHELL_ONLY_CONTAINER_TAGS로 이동되었음을 보장한다.
  *
  * 검증 범위:
@@ -19,6 +19,10 @@ import {
   DialogSpec,
   SectionSpec,
   DisclosureGroupSpec,
+  ButtonGroupSpec,
+  CheckboxGroupSpec,
+  RadioGroupSpec,
+  ToggleButtonGroupSpec,
 } from "@composition/specs";
 import type { ComponentSpec } from "@composition/specs";
 import {
@@ -28,12 +32,26 @@ import {
 
 type AnySpec = ComponentSpec<Record<string, unknown>>;
 
-const candidates: Array<{ tag: string; spec: AnySpec }> = [
+// Phase 1 (Empty-placeholder Case A)
+const phase1Candidates: Array<{ tag: string; spec: AnySpec }> = [
   { tag: "Card", spec: CardSpec as unknown as AnySpec },
   { tag: "Dialog", spec: DialogSpec as unknown as AnySpec },
   { tag: "Section", spec: SectionSpec as unknown as AnySpec },
   { tag: "DisclosureGroup", spec: DisclosureGroupSpec as unknown as AnySpec },
 ];
+
+// Phase 2-A (Group 컨테이너 — factory items 자동 생성)
+const phase2ACandidates: Array<{ tag: string; spec: AnySpec }> = [
+  { tag: "ButtonGroup", spec: ButtonGroupSpec as unknown as AnySpec },
+  { tag: "CheckboxGroup", spec: CheckboxGroupSpec as unknown as AnySpec },
+  { tag: "RadioGroup", spec: RadioGroupSpec as unknown as AnySpec },
+  {
+    tag: "ToggleButtonGroup",
+    spec: ToggleButtonGroupSpec as unknown as AnySpec,
+  },
+];
+
+const candidates = [...phase1Candidates, ...phase2ACandidates];
 
 function callShapes(spec: AnySpec, hasChildren: boolean) {
   const defaultSize = spec.defaultSize ?? "md";
@@ -42,7 +60,7 @@ function callShapes(spec: AnySpec, hasChildren: boolean) {
   return spec.render.shapes!(props, size, "default");
 }
 
-describe("ADR-072 Phase 1: SHELL_ONLY_CONTAINER_TAGS 재분류", () => {
+describe("ADR-072 Phase 1 + 2-A: SHELL_ONLY_CONTAINER_TAGS 재분류", () => {
   describe("Set membership", () => {
     for (const { tag } of candidates) {
       it(`${tag}: SHELL_ONLY_CONTAINER_TAGS 포함`, () => {

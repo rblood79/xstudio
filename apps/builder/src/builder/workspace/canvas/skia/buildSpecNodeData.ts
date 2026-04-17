@@ -121,6 +121,13 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set([
   "Dialog",
   "Section",
   "DisclosureGroup",
+  // ADR-072 Phase 2-A: Group 컨테이너. factory가 자식 items 자동 생성.
+  // ButtonGroup/ToggleButtonGroup: bg(+border) + 빈 container. CheckboxGroup/RadioGroup:
+  // description text(옵션) + 빈 container — description은 hasChildren 무관 항상 렌더.
+  "ButtonGroup",
+  "CheckboxGroup",
+  "RadioGroup",
+  "ToggleButtonGroup",
 ]);
 
 /**
@@ -132,8 +139,6 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set([
  */
 export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "Breadcrumbs",
-  "ButtonGroup",
-  "CheckboxGroup",
   "ColorPicker",
   "ComboBox",
   "Disclosure",
@@ -142,14 +147,12 @@ export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "ListBox",
   // ADR-068: Menu는 items SSOT 전환 — _hasChildren 분기 제거, 더 이상 EXCLUDE 대상 아님
   "Popover",
-  "RadioGroup",
   "Select",
   "TabPanel",
   "TabPanels",
   "Table",
   "Tabs",
   "TagGroup",
-  "ToggleButtonGroup",
   "Toolbar",
   "Tooltip",
   "Tree",
