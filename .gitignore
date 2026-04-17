@@ -33,6 +33,8 @@ __tests__/
 !packages/specs/src/__tests__/
 # shared 패키지 테스트는 추적 (ADR-073 P3 canonical contract)
 !packages/shared/src/**/__tests__/
+# builder 패키지 테스트는 추적 (ADR-073 P4 store items actions)
+!apps/builder/src/**/__tests__/
 
 .cache
 .vercel

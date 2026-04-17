@@ -166,21 +166,23 @@ export const ItemsManager = memo(function ItemsManager({
   });
 
   const handleAdd = useCallback(() => {
-    useStore.getState().addMenuItem(elementId, field.defaultItem);
-  }, [elementId, field.defaultItem]);
+    void useStore
+      .getState()
+      .addItem(elementId, itemsKey, field.defaultItem as Record<string, unknown>);
+  }, [elementId, itemsKey, field.defaultItem]);
 
   const handleRemove = useCallback(
     (itemId: string) => {
-      useStore.getState().removeMenuItem(elementId, itemId);
+      void useStore.getState().removeItem(elementId, itemsKey, itemId);
     },
-    [elementId],
+    [elementId, itemsKey],
   );
 
   const handleUpdate = useCallback(
     (itemId: string, patch: Record<string, unknown>) => {
-      useStore.getState().updateMenuItem(elementId, itemId, patch);
+      void useStore.getState().updateItem(elementId, itemsKey, itemId, patch);
     },
-    [elementId],
+    [elementId, itemsKey],
   );
 
   return (
