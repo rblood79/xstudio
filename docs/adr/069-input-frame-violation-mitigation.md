@@ -291,12 +291,79 @@ Addendum 1 이후 추가 land:
 
 ### 잔존 Defer 항목 — 독립 follow-up
 
-| 우선순위 | 항목                                                                           | 상태/권장                                |
-| -------- | ------------------------------------------------------------------------------ | ---------------------------------------- |
-| HIGH     | `apps/builder/src/utils/longTaskMonitor.ts` ↔ `perfMarks.ts` observer 중복     | 구조적 통합 별도 ADR (본 ADR 범위 밖)    |
-| HIGH     | `LongTaskBuffer/buffers` 병렬 Map 통합                                         | ✅ 완료 (`d6acf077`)                     |
-| MEDIUM   | label prefix 상수화                                                            | ✅ 완료 (`d6acf077`)                     |
-| MEDIUM   | `useIframeMessenger.ts` `sendPageInfoToIframe` 자체 `performance.now()` 재계측 | 독립 PR                                  |
-| MEDIUM   | `measurementTraces` hot-path 할당/shift 최적화                                 | production 측정 정상이므로 우선순위 낮춤 |
-| LOW      | `percentile()` 4중 구현                                                        | utility 추출 PR                          |
-| LOW      | `getLRUStats()` per render                                                     | profiler 필요 시 `useMemo`               |
+| 우선순위 | 항목                                                                           | 상태/권장                                                                                 |
+| -------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| HIGH     | `apps/builder/src/utils/longTaskMonitor.ts` ↔ `perfMarks.ts` observer 중복     | 구조적 통합 별도 ADR (본 ADR 범위 밖)                                                     |
+| HIGH     | `LongTaskBuffer/buffers` 병렬 Map 통합                                         | ✅ 완료 (`d6acf077`)                                                                      |
+| MEDIUM   | label prefix 상수화                                                            | ✅ 완료 (`d6acf077`)                                                                      |
+| MEDIUM   | `useIframeMessenger.ts` `sendPageInfoToIframe` 자체 `performance.now()` 재계측 | ✅ 완료 (`ab6e9588`)                                                                      |
+| MEDIUM   | `measurementTraces` hot-path 할당/shift 최적화                                 | production 측정 정상이므로 우선순위 낮춤                                                  |
+| LOW      | `percentile()` 4중 구현                                                        | 서명 3종 상이(fraction/percentage/pre-sorted) — unification 시 arithmetic 회귀 위험, skip |
+| LOW      | `getLRUStats()` per render                                                     | 올바른 useMemo deps 없음 (cache 통계 reactive 신호 부재), skip                            |
+
+## Addendum 3 — 2026-04-17 (Post-closure 검증 중 발견된 별도 이슈 — duplicate order_num 재감지 루프)
+
+> 종결 후 사용자 측 dev 콘솔 로그 검증에서 **본 ADR과 무관한 영속화 버그** 발견. 증상이 "반복 `'success' handler took 184ms` + `rAF 1091ms`"여서 초기엔 ADR-069 regression으로 오해했으나, 실측 데이터(prod p95 88ms / viol100 0)로 Gate 유지 확인. 별도 이슈로 분리 기록.
+
+### 증상
+
+```
+⚠️ Duplicate order_num detected: Button (152e23f5...) and Menu (ff547b7d...)
+   both have order_num=3 → Auto-fixing...
+react-dom:18985 [Violation] 'success' handler took 184ms
+useValidation.ts:87 🔧 Auto-fixing order_num for page: 406aefbe-...
+useValidation.ts:89 ✅ order_num auto-fix completed for page: 406aefbe-...
+SkiaCanvas.tsx:676 [Violation] 'requestAnimationFrame' handler took 1091ms
+```
+
+세션마다(currentPageId 변경 시마다) 같은 페이지에서 재발.
+
+### 근본 원인
+
+1. **신규 duplicate 생성은 차단되고 있음** — `elementCreation.ts:42-58` atomic conflict 검사 + `ComponentsPanel.tsx:53-55` `useStore.getState()` 패턴 작동 확인
+2. **Pre-existing DB 데이터 legacy 잔존**: 과거 atomic 체크 도입 이전에 생성된 duplicate가 IndexedDB에 남아있음
+3. **IDB 미동기화**: `reorderElements`(elementReorder.ts) 자가 치유 경로가 메모리(`batchUpdateElementOrders`) + Supabase write만 수행하고 **IndexedDB 미갱신**. 현 runtime에서 element 영속화는 사실상 IDB 전용(`elementLoader.ts:240-248` IDB-first load, Supabase는 초기 로그인/fallback만) — 다음 세션마다 IDB에서 같은 duplicate 재로드 → `validateOrderNumbers` 재감지 → auto-fix 재발동 → 184ms commit + rAF 파이프라인 반복
+
+### 초기 오진
+
+- ❌ 첫 가설: "`calculateNextOrderNum` 호출부 stale closure"
+  → 코드 확인 결과 `ComponentsPanel.tsx`는 이미 `useStore.getState().elements`로 최신 상태 조회. atomic 가드까지 갖춰진 상태에서 신규 duplicate 생성은 불가
+- ✅ 수정된 진단: 영속화 sink 불일치(IDB 미동기화)
+
+### 해결 (`2a3e41f1`)
+
+**A'** — `reorderElements`에 IDB sink 추가 (`elementReorder.ts:171-180`):
+
+```ts
+try {
+  const db = await getDB();
+  await db.elements.updateMany(
+    updates.map((u) => ({ id: u.id, data: { order_num: u.order_num } })),
+  );
+} catch (error) {
+  console.error("order_num 재정렬 IndexedDB 실패:", error);
+}
+```
+
+**A''** — `migrateDuplicateOrderNums` 일괄 정리 유틸리티 (`elementReorder.ts:217-247` + `migrateGlobal.ts`):
+
+- 모든 page_id 스캔 → duplicate/gap 있는 페이지만 `reorderElements` 호출
+- DevTools 노출: `window.__composition_MIGRATE__.fixAllDuplicateOrderNums()`
+- 반환: `{ pagesScanned, pagesFixed, updatesApplied }`
+
+**기존 Supabase write 보존**: 41곳의 Supabase write 코드는 현 runtime에서 사실상 noop(load path가 IDB-first)이나, 향후 cross-device 동기화 복귀 대비 보존. 전면 정리는 별도 ADR에서 결정.
+
+### ADR-069과의 관계
+
+본 이슈는 **ADR-069 scope 밖**:
+
+- ADR-069 = runtime 성능 (pointerdown/rAF violation 완화, state write fan-out 축소)
+- A'+A'' = 데이터 영속화 무결성 (IDB write gap 해소)
+
+유사성: 둘 다 "react commit handler violation" 증상을 보이지만 원인과 해결 경로가 독립. 본 ADR의 prod Gate G2'(p95 < 100ms + violations100ms = 0)는 유지.
+
+### 영향 파일
+
+- `apps/builder/src/builder/stores/utils/elementReorder.ts` — IDB sync 블록 + bulk migration 유틸 추가
+- `apps/builder/src/builder/utils/migrateGlobal.ts` (신규) — window 노출 래퍼
+- `apps/builder/src/main.tsx` — side-effect import 1줄 추가
