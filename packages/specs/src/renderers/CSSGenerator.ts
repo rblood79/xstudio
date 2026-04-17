@@ -367,12 +367,24 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
 
   // Size 스타일
   const isComposite = !!spec.composition;
+  const hasContainerStylesOuter = !!spec.containerStyles;
   // progress archetype: sizes.height는 bar track 높이이며 컨테이너 height가 아님
   const skipHeight = isComposite || spec.archetype === "progress";
-  const skipPadding = isComposite;
+  // ADR-071: containerStyles 에 padding/borderRadius 정의 시 sizes 경로 skip (이중 emit 방지)
+  const skipPaddingOuter =
+    isComposite ||
+    (hasContainerStylesOuter && spec.containerStyles?.padding != null);
+  const skipBorderRadiusOuter =
+    hasContainerStylesOuter && spec.containerStyles?.borderRadius != null;
   for (const [sizeName, sizeSpec] of Object.entries(spec.sizes)) {
     lines.push(`.react-aria-${spec.name}[data-size="${sizeName}"] {`);
-    lines.push(...generateSizeStyles(sizeSpec, { skipHeight, skipPadding }));
+    lines.push(
+      ...generateSizeStyles(sizeSpec, {
+        skipHeight,
+        skipPadding: skipPaddingOuter,
+        skipBorderRadius: skipBorderRadiusOuter,
+      }),
+    );
     lines.push("}");
     lines.push("");
   }
@@ -536,13 +548,21 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   // default size 속성 (있으면)
   if (defaultSize) {
     const isComposite = !!spec.composition;
+    const hasContainerStyles = !!spec.containerStyles;
     const skipDefaultHeight = isComposite || spec.archetype === "progress";
+    // ADR-071: containerStyles 에 padding/borderRadius 정의 시 sizes 경로 skip (이중 emit 방지)
+    const skipPadding =
+      isComposite ||
+      (hasContainerStyles && spec.containerStyles?.padding != null);
+    const skipBorderRadius =
+      hasContainerStyles && spec.containerStyles?.borderRadius != null;
     lines.push("");
     lines.push("  /* Default size */");
     lines.push(
       ...generateSizeStyles(defaultSize, {
         skipHeight: skipDefaultHeight,
-        skipPadding: isComposite,
+        skipPadding,
+        skipBorderRadius,
       }),
     );
   }
@@ -626,7 +646,11 @@ function generateVariantStyles(
 
 function generateSizeStyles(
   size: SizeSpec,
-  options?: { skipHeight?: boolean; skipPadding?: boolean },
+  options?: {
+    skipHeight?: boolean;
+    skipPadding?: boolean;
+    skipBorderRadius?: boolean;
+  },
 ): string[] {
   const lines: string[] = [];
 
@@ -659,9 +683,11 @@ function generateSizeStyles(
   // font-size
   lines.push(`  font-size: ${tokenToCSSVar(size.fontSize)};`);
 
-  // border-radius
-  const radiusValue = tokenToCSSVar(size.borderRadius);
-  lines.push(`  border-radius: ${radiusValue === "0" ? "0" : radiusValue};`);
+  // border-radius — ADR-071: containerStyles.borderRadius 존재 시 skip (이중 emit 방지)
+  if (!options?.skipBorderRadius) {
+    const radiusValue = tokenToCSSVar(size.borderRadius);
+    lines.push(`  border-radius: ${radiusValue === "0" ? "0" : radiusValue};`);
+  }
 
   // ─── Phase 2a Level 1 확장 필드 ───
 
