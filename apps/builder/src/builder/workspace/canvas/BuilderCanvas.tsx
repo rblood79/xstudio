@@ -39,7 +39,8 @@ import {
 } from "./interaction";
 import {
   buildPixiPageRendererInput,
-  createRendererInvalidationPacket,
+  createOverlayInvalidationPacket,
+  createSceneInvalidationPacket,
   createSkiaRendererInput,
   type RendererInvalidationPacket,
   type SkiaRendererInput,
@@ -401,23 +402,15 @@ export function BuilderCanvas({
     [panOffset, zoom],
   );
 
-  const rendererInvalidationPacket = useMemo(() => {
-    return createRendererInvalidationPacket({
-      ai: {
-        cleanupExpiredFlashes,
-        flashAnimations: aiFlashAnimations,
-        generatingNodes: aiGeneratingNodes,
-      },
-      dragActive: false,
+  // ADR-074 Phase 3: packet 을 scene(selection-invariant) / overlay(selection deps)
+  // 로 분리. selection-only 변화 시 scenePacket identity 유지 → 하위 useMemo 중
+  // scene 부분만 소비하는 곳(현재는 SkiaCanvas 내부 signature 비교) 은 재평가 없음.
+  // 합성 rendererInvalidationPacket 는 기존 SkiaCanvas prop 호환용 유지.
+  const sceneInvalidationPacket = useMemo(() => {
+    return createSceneInvalidationPacket({
       grid: {
         gridSize,
         showGrid,
-      },
-      selection: {
-        currentPageId,
-        editingContextId,
-        selectedElementId,
-        selectedElementIds,
       },
       workflow: {
         dataSourceEdges,
@@ -434,17 +427,10 @@ export function BuilderCanvas({
       },
     });
   }, [
-    aiFlashAnimations,
-    aiGeneratingNodes,
-    cleanupExpiredFlashes,
-    currentPageId,
     dataSourceEdges,
-    editingContextId,
     gridSize,
     layoutGroups,
     layouts,
-    selectedElementId,
-    selectedElementIds,
     showGrid,
     showWorkflowDataSources,
     showWorkflowEvents,
@@ -455,6 +441,38 @@ export function BuilderCanvas({
     workflowFocusedPageId,
     workflowStraightEdges,
   ]);
+
+  const overlayInvalidationPacket = useMemo(() => {
+    return createOverlayInvalidationPacket({
+      ai: {
+        cleanupExpiredFlashes,
+        flashAnimations: aiFlashAnimations,
+        generatingNodes: aiGeneratingNodes,
+      },
+      dragActive: false,
+      selection: {
+        currentPageId,
+        editingContextId,
+        selectedElementId,
+        selectedElementIds,
+      },
+    });
+  }, [
+    aiFlashAnimations,
+    aiGeneratingNodes,
+    cleanupExpiredFlashes,
+    currentPageId,
+    editingContextId,
+    selectedElementId,
+    selectedElementIds,
+  ]);
+
+  const rendererInvalidationPacket = useMemo(() => {
+    return {
+      ...sceneInvalidationPacket,
+      ...overlayInvalidationPacket,
+    };
+  }, [sceneInvalidationPacket, overlayInvalidationPacket]);
 
   // ============================================
   // Pencil-style 중앙 pointerdown 핸들러

@@ -1,8 +1,5 @@
 import type { Layout } from "../../../../types/builder/layout.types";
-import type {
-  FlashAnimationState,
-  GeneratingEffectState,
-} from "../skia/types";
+import type { FlashAnimationState, GeneratingEffectState } from "../skia/types";
 import type {
   DataSourceEdge,
   LayoutGroup,
@@ -16,8 +13,7 @@ export interface RendererSelectionInvalidationInput {
   selectedElementIds: string[];
 }
 
-export interface RendererSelectionInvalidation
-  extends RendererSelectionInvalidationInput {
+export interface RendererSelectionInvalidation extends RendererSelectionInvalidationInput {
   editingSignature: string;
   selectionSignature: string;
 }
@@ -45,8 +41,7 @@ export interface RendererWorkflowInvalidationInput {
   workflowEdges: WorkflowEdge[];
 }
 
-export interface RendererWorkflowInvalidation
-  extends RendererWorkflowInvalidationInput {
+export interface RendererWorkflowInvalidation extends RendererWorkflowInvalidationInput {
   graphSignature: string;
   overlaySignature: string;
   subToggleSignature: string;
@@ -58,21 +53,38 @@ export interface RendererAIInvalidation {
   generatingNodes: Map<string, GeneratingEffectState>;
 }
 
-export interface RendererInvalidationPacketInput {
-  ai: RendererAIInvalidation;
-  dragActive: boolean;
+/**
+ * ADR-074 Phase 3: scene/overlay 분리.
+ * - Scene: grid + workflow (scene structure 의존, selection-invariant)
+ * - Overlay: ai + dragActive + selection (selection/transient 의존)
+ */
+export interface RendererSceneInvalidationInput {
   grid: RendererGridInvalidationInput;
-  selection: RendererSelectionInvalidationInput;
   workflow: RendererWorkflowInvalidationInput;
 }
 
-export interface RendererInvalidationPacket {
-  ai: RendererAIInvalidation;
-  dragActive: boolean;
+export interface RendererSceneInvalidation {
   grid: RendererGridInvalidation;
-  selection: RendererSelectionInvalidation;
   workflow: RendererWorkflowInvalidation;
 }
+
+export interface RendererOverlayInvalidationInput {
+  ai: RendererAIInvalidation;
+  dragActive: boolean;
+  selection: RendererSelectionInvalidationInput;
+}
+
+export interface RendererOverlayInvalidation {
+  ai: RendererAIInvalidation;
+  dragActive: boolean;
+  selection: RendererSelectionInvalidation;
+}
+
+export interface RendererInvalidationPacketInput
+  extends RendererSceneInvalidationInput, RendererOverlayInvalidationInput {}
+
+export interface RendererInvalidationPacket
+  extends RendererSceneInvalidation, RendererOverlayInvalidation {}
 
 function hashSignature(input: string): string {
   let hash = 2166136261;
@@ -169,32 +181,69 @@ function buildWorkflowGraphSignature(
   );
 }
 
+/**
+ * ADR-074 Phase 3: scene sub-packet (grid + workflow).
+ * selection-invariant — selection 변화 시 identity 유지 목표.
+ */
+export function createSceneInvalidationPacket(
+  input: RendererSceneInvalidationInput,
+): RendererSceneInvalidation {
+  return {
+    grid: {
+      ...input.grid,
+      signature: buildGridSignature(input.grid),
+    },
+    workflow: {
+      ...input.workflow,
+      graphSignature: buildWorkflowGraphSignature(input.workflow),
+      overlaySignature: input.workflow.showOverlay ? "1" : "0",
+      subToggleSignature: [
+        input.workflow.showNavigation ? 1 : 0,
+        input.workflow.showEvents ? 1 : 0,
+        input.workflow.showDataSources ? 1 : 0,
+        input.workflow.showLayoutGroups ? 1 : 0,
+        input.workflow.straightEdges ? 1 : 0,
+      ].join(":"),
+    },
+  };
+}
+
+/**
+ * ADR-074 Phase 3: overlay sub-packet (ai + dragActive + selection).
+ * selection-dependent — selection 변화 시 재생성.
+ */
+export function createOverlayInvalidationPacket(
+  input: RendererOverlayInvalidationInput,
+): RendererOverlayInvalidation {
+  return {
+    ai: input.ai,
+    dragActive: input.dragActive,
+    selection: {
+      ...input.selection,
+      editingSignature: input.selection.editingContextId ?? "",
+      selectionSignature: buildSelectionSignature(input.selection),
+    },
+  };
+}
+
+/**
+ * 기존 호출처 호환용 합성 entry point.
+ * scene + overlay 각각 계산한 뒤 병합하여 기존 packet 형태로 반환.
+ */
 export function createRendererInvalidationPacket(
   packet: RendererInvalidationPacketInput,
 ): RendererInvalidationPacket {
-  return {
+  const scene = createSceneInvalidationPacket({
+    grid: packet.grid,
+    workflow: packet.workflow,
+  });
+  const overlay = createOverlayInvalidationPacket({
     ai: packet.ai,
     dragActive: packet.dragActive,
-    grid: {
-      ...packet.grid,
-      signature: buildGridSignature(packet.grid),
-    },
-    selection: {
-      ...packet.selection,
-      editingSignature: packet.selection.editingContextId ?? "",
-      selectionSignature: buildSelectionSignature(packet.selection),
-    },
-    workflow: {
-      ...packet.workflow,
-      graphSignature: buildWorkflowGraphSignature(packet.workflow),
-      overlaySignature: packet.workflow.showOverlay ? "1" : "0",
-      subToggleSignature: [
-        packet.workflow.showNavigation ? 1 : 0,
-        packet.workflow.showEvents ? 1 : 0,
-        packet.workflow.showDataSources ? 1 : 0,
-        packet.workflow.showLayoutGroups ? 1 : 0,
-        packet.workflow.straightEdges ? 1 : 0,
-      ].join(":"),
-    },
+    selection: packet.selection,
+  });
+  return {
+    ...scene,
+    ...overlay,
   };
 }
