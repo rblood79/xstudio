@@ -156,8 +156,14 @@ export interface ElementsState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   goToHistoryIndex: (targetIndex: number) => Promise<void>;
-  removeElement: (elementId: string) => Promise<void>;
-  removeElements: (elementIds: string[]) => Promise<void>;
+  removeElement: (
+    elementId: string,
+    options?: { skipHistory?: boolean },
+  ) => Promise<void>;
+  removeElements: (
+    elementIds: string[],
+    options?: { skipHistory?: boolean },
+  ) => Promise<void>;
   addComplexElement: (
     parentElement: Element,
     childElements: Element[],
