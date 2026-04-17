@@ -9,6 +9,7 @@
 
 import { loadFontRegistry, type FontFaceAsset } from "@composition/shared";
 import { skiaFontManager } from "../workspace/canvas/skia/fontManager";
+import { resolveFontUrl } from "../../fonts/builtinFonts";
 
 /** 빌트인 폰트 — unloadFont 대상에서 제외 */
 const PROTECTED_FAMILIES = new Set(["Pretendard", "Inter"]);
@@ -57,11 +58,11 @@ export async function loadBuiltinFontsToSkia(): Promise<void> {
     [
       {
         family: "Pretendard",
-        url: "/fonts/PretendardVariable.woff2",
+        url: resolveFontUrl("fonts/PretendardVariable.woff2"),
       },
       {
         family: "Inter",
-        url: "/fonts/InterVariable.woff2",
+        url: resolveFontUrl("fonts/InterVariable.woff2"),
       },
     ];
 

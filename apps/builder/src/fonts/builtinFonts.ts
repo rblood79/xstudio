@@ -1,6 +1,6 @@
 const BUILTIN_FONT_STYLE_ID = "composition-builtin-fonts";
 
-function resolveFontUrl(path: string): string {
+export function resolveFontUrl(path: string): string {
   const baseUrl = import.meta.env.BASE_URL || "/";
   const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   return `${normalizedBase}${path.replace(/^\/+/, "")}`;

@@ -1,10 +1,7 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
-import type {
-  StoredSelectItem,
-  StoredComboBoxItem,
-} from "@composition/specs/types";
+import type { StoredSelectItem, StoredComboBoxItem } from "@composition/specs";
 
 /**
  * Select 컴포넌트 정의 (ADR-073 P6)
