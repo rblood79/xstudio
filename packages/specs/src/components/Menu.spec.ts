@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { StoredMenuItem } from "../types/menu-items";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -31,6 +32,8 @@ export interface MenuProps {
   isQuiet?: boolean;
   isDisabled?: boolean;
   children?: string;
+  /** Q6=b 풀 인터페이스 — specs SSOT (ADR-068 P2) */
+  items?: StoredMenuItem[];
   style?: Record<string, string | number | undefined>;
 }
 
@@ -123,9 +126,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     },
   },
 
-  propagation: {
-    rules: [{ parentProp: "size", childPath: "MenuItem", override: true }],
-  },
+  // propagation 제거 (ADR-068 P2-3): MenuItem element가 element tree에 미존재
+  // size는 Menu.props.size → [data-size] CSS 셀렉터로 MenuItem에 자동 적용
 
   properties: {
     sections: [
@@ -201,11 +203,28 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
         fields: [
           {
             key: "items",
-            type: "children-manager",
+            type: "items-manager",
             label: "Menu Items",
-            childTag: "MenuItem",
-            defaultChildProps: { children: "Menu Item", textValue: "" },
-            labelProp: "children",
+            itemsKey: "items",
+            itemTypeName: "MenuItem",
+            defaultItem: {
+              id: "", // runtime에서 crypto.randomUUID() 주입
+              label: "New Item",
+              value: "",
+              isDisabled: false,
+            },
+            itemSchema: [
+              { key: "label", type: "string", label: "Label" },
+              { key: "value", type: "string", label: "Value" },
+              { key: "href", type: "string", label: "URL" },
+              { key: "isDisabled", type: "boolean", label: "Disabled" },
+              { key: "icon", type: "icon", label: "Icon" },
+              { key: "shortcut", type: "string", label: "Shortcut" },
+              { key: "description", type: "string", label: "Description" },
+              { key: "onActionId", type: "event-id", label: "On Action" },
+            ],
+            labelKey: "label",
+            allowNested: false,
           },
         ],
       },

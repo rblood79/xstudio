@@ -29,6 +29,8 @@ export type {
   IconField,
   CustomField,
   ChildrenManagerField,
+  ItemsManagerField,
+  ItemsManagerFieldItemSchema,
   DerivedUpdateFn,
   CustomFieldComponentProps,
   PropagationRule,
@@ -77,3 +79,6 @@ export { isValidTokenRef } from "./token.types";
 
 // State Types
 export type { StateStyles, StateEffect } from "./state.types";
+
+// Menu Items Types (ADR-068)
+export type { StoredMenuItem, RuntimeMenuItem } from "./menu-items";
