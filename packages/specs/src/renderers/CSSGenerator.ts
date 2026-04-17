@@ -158,10 +158,15 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("}");
   lines.push("");
 
-  // Variant 스타일 — Composite 컨테이너, variants 없는 Spec(ADR-062 Field 계열),
+  // Variant 스타일 — Composite 컨테이너, containerStyles(ADR-071), variants 없는 Spec(ADR-062 Field 계열),
   // 또는 skipVariantCss:true (Menu처럼 variants가 Skia trigger 전용)는 skip
   const variantMode = spec.cssEmitMode ?? "direct";
-  if (!spec.composition && spec.variants != null && !spec.skipVariantCss)
+  if (
+    !spec.composition &&
+    !spec.containerStyles && // ← ADR-071 추가
+    spec.variants != null &&
+    !spec.skipVariantCss
+  )
     for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
       lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
       lines.push(...generateVariantStyles(variantSpec, variantMode));
@@ -492,8 +497,13 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   const lines = [`  /* Base styles — archetype: ${archetype ?? "default"} */`];
   lines.push(...baseStyles);
 
-  // default variant 색상 — Composite 컨테이너는 자식이 관리하므로 skip
-  if (defaultVariant && !spec.composition) {
+  // ADR-071 S3: containerStyles 있으면 defaultVariant 색상 주입 skip
+  if (spec.containerStyles) {
+    lines.push("");
+    lines.push("  /* Container styles (ADR-071) */");
+    lines.push(...emitContainerStyles(spec.containerStyles));
+  } else if (defaultVariant && !spec.composition) {
+    // default variant 색상 — Composite 컨테이너는 자식이 관리하므로 skip
     const mode = spec.cssEmitMode ?? "direct";
     lines.push("");
     lines.push("  /* Default variant */");
