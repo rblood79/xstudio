@@ -3,6 +3,7 @@ import {
   ComponentElementProps,
 } from "../../../types/core/store.types";
 import { supabase } from "../../../env/supabase.client";
+import { getDB } from "../../../lib/db";
 
 /**
  * Helper function to safely get a string property from element props
@@ -169,7 +170,17 @@ export const reorderElements = async (
   // 1. 메모리 일괄 업데이트 (단일 set())
   batchUpdateElementOrders(updates);
 
-  // 2. 데이터베이스 일괄 업데이트 (백그라운드)
+  // 2. IndexedDB 일괄 업데이트 (다음 세션 시 duplicate 재발 방지)
+  try {
+    const db = await getDB();
+    await db.elements.updateMany(
+      updates.map((u) => ({ id: u.id, data: { order_num: u.order_num } })),
+    );
+  } catch (error) {
+    console.error("order_num 재정렬 IndexedDB 실패:", error);
+  }
+
+  // 3. Supabase 일괄 업데이트 (백그라운드)
   try {
     const updatePromises = updates.map((update) =>
       supabase
@@ -190,4 +201,48 @@ export const reorderElements = async (
   } catch (error) {
     console.error("order_num 재정렬 중 오류:", error);
   }
+};
+
+/**
+ * Legacy duplicate order_num 일괄 마이그레이션 (A'').
+ *
+ * 모든 page_id를 스캔하여 duplicate/gap이 있는 페이지를 한 번에 정리.
+ * reorderElements를 각 페이지별로 호출하므로 메모리/IDB/Supabase 3 sink 모두 동기화.
+ *
+ * 사용:
+ *   window.__composition_MIGRATE__.fixAllDuplicateOrderNums()
+ *
+ * @returns 스캔 통계
+ */
+export const migrateDuplicateOrderNums = async (
+  elements: Element[],
+  batchUpdateElementOrders: (
+    updates: Array<{ id: string; order_num: number }>,
+  ) => void,
+): Promise<{
+  pagesScanned: number;
+  pagesFixed: number;
+  updatesApplied: number;
+}> => {
+  const pageIds = new Set<string>();
+  for (const el of elements) {
+    if (el.page_id) pageIds.add(el.page_id);
+  }
+
+  let pagesFixed = 0;
+  let updatesApplied = 0;
+
+  for (const pageId of pageIds) {
+    const updates = computeReorderUpdates(elements, pageId);
+    if (updates.length === 0) continue;
+    pagesFixed += 1;
+    updatesApplied += updates.length;
+    await reorderElements(elements, pageId, batchUpdateElementOrders);
+  }
+
+  return {
+    pagesScanned: pageIds.size,
+    pagesFixed,
+    updatesApplied,
+  };
 };
