@@ -757,6 +757,8 @@ export const renderMenu = (
     toRuntimeMenuItem(it, context.resolveActionId),
   );
 
+  const { updateElementProps } = context;
+
   return (
     <MenuButton
       key={element.id}
@@ -773,6 +775,19 @@ export const renderMenu = (
           | DataBinding
           | undefined
       }
+      selectionMode={
+        (element.props as { selectionMode?: "none" | "single" | "multiple" })
+          .selectionMode ?? "none"
+      }
+      selectedKeys={
+        (element.props as { selectedKeys?: string[] }).selectedKeys
+      }
+      onSelectionChange={(keys: string[]) => {
+        updateElementProps(element.id, {
+          ...element.props,
+          selectedKeys: keys,
+        });
+      }}
     />
   );
 };

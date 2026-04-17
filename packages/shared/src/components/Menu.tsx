@@ -7,6 +7,7 @@ import {
   MenuTrigger,
   MenuTriggerProps,
   Popover,
+  Selection,
   SubmenuTrigger,
   composeRenderProps,
 } from "react-aria-components";
@@ -33,7 +34,11 @@ import "./styles/generated/Menu.css";
  */
 
 export interface MenuButtonProps<T>
-  extends Omit<MenuProps<T>, "items">, Omit<MenuTriggerProps, "children"> {
+  extends Omit<
+      MenuProps<T>,
+      "items" | "selectionMode" | "selectedKeys" | "onSelectionChange"
+    >,
+    Omit<MenuTriggerProps, "children"> {
   label?: string;
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
@@ -42,6 +47,12 @@ export interface MenuButtonProps<T>
   // M3 props
   variant?: string;
   size?: ComponentSize;
+  /** ADR-073 Task 7: selection wiring — RAC Menu selectionMode */
+  selectionMode?: "none" | "single" | "multiple";
+  /** ADR-073 Task 7: controlled selected keys (string[]) — passed as Set to RAC Menu */
+  selectedKeys?: string[];
+  /** ADR-073 Task 7: selection change callback */
+  onSelectionChange?: (keys: string[]) => void;
 }
 
 export function MenuButton<T extends object>({
@@ -52,8 +63,30 @@ export function MenuButton<T extends object>({
   items,
   variant = "primary",
   size = "md",
+  selectionMode,
+  selectedKeys,
+  onSelectionChange,
   ...props
 }: MenuButtonProps<T>) {
+  // ADR-073 Task 7: selection props → RAC Menu props 변환
+  // 주의: Partial<MenuProps<T>> 로 타입하면 items T 추론이 깨짐 → T-독립 타입으로 선언
+  const racSelectedKeys: Set<string> | undefined =
+    selectedKeys !== undefined ? new Set(selectedKeys) : undefined;
+  const selectionMenuProps: {
+    selectionMode?: "none" | "single" | "multiple";
+    selectedKeys?: Set<string>;
+    onSelectionChange?: (keys: Selection) => void;
+  } = {
+    ...(selectionMode !== undefined && { selectionMode }),
+    ...(racSelectedKeys !== undefined && { selectedKeys: racSelectedKeys }),
+    ...(onSelectionChange !== undefined && {
+      onSelectionChange: (keys: Selection) => {
+        if (keys !== "all") {
+          onSelectionChange(Array.from(keys) as string[]);
+        }
+      },
+    }),
+  };
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,
@@ -432,6 +465,7 @@ export function MenuButton<T extends object>({
             }}
             className={getMenuClassName()}
             data-size={size}
+            {...selectionMenuProps}
           >
             {(item) => renderMenuItem(item)}
           </Menu>
@@ -507,7 +541,12 @@ export function MenuButton<T extends object>({
           {label}
         </Button>
         <Popover>
-          <Menu items={items} className={getMenuClassName()} data-size={size}>
+          <Menu
+            items={items}
+            className={getMenuClassName()}
+            data-size={size}
+            {...selectionMenuProps}
+          >
             {(item) => renderRuntimeMenuItem(item as RuntimeMenuItem)}
           </Menu>
         </Popover>
@@ -526,7 +565,7 @@ export function MenuButton<T extends object>({
         {label}
       </Button>
       <Popover>
-        <Menu {...props} className={getMenuClassName()} data-size={size}>
+        <Menu {...props} className={getMenuClassName()} data-size={size} {...selectionMenuProps}>
           {loading && (
             <AriaMenuItem key="loading" textValue="Loading">
               ⏳ 데이터 로딩 중...
