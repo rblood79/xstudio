@@ -112,7 +112,16 @@ const CONTAINER_DIMENSION_TAGS = new Set([
  * 확장 후보는 `SYNTHETIC_CHILD_PROP_MERGE_TAGS`에 과도기적으로 남아있으며
  * 개별 spec standalone 분기 감사 후 후속 ADR에서 재분류 예정.
  */
-export const SHELL_ONLY_CONTAINER_TAGS = new Set(["Calendar", "RangeCalendar"]);
+export const SHELL_ONLY_CONTAINER_TAGS = new Set([
+  "Calendar",
+  "RangeCalendar",
+  // ADR-072 Phase 1: standalone 분기가 "bg+border + 빈 container placeholder" 형태임이
+  // 확인된 태그들. factory가 자식 Element를 자동 생성하며, 자식 수 무관 _hasChildren=true 주입.
+  "Card",
+  "Dialog",
+  "Section",
+  "DisclosureGroup",
+]);
 
 /**
  * Synthetic child prop merge 컨테이너: 자식 props를 부모 spec shapes에 통합
@@ -124,20 +133,16 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set(["Calendar", "RangeCalendar"]);
 export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "Breadcrumbs",
   "ButtonGroup",
-  "Card",
   "CheckboxGroup",
   "ColorPicker",
   "ComboBox",
-  "Dialog",
   "Disclosure",
-  "DisclosureGroup",
   "Form",
   "GridList",
   "ListBox",
   // ADR-068: Menu는 items SSOT 전환 — _hasChildren 분기 제거, 더 이상 EXCLUDE 대상 아님
   "Popover",
   "RadioGroup",
-  "Section",
   "Select",
   "TabPanel",
   "TabPanels",
