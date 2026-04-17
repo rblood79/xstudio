@@ -863,15 +863,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     }
   }, 300);
 
-  // useEffect 제거하고 Layer 트리에서 직접 호출
-  // Layer 트리에서 선택할 때:
-  // sendElementSelectedMessage(selectedElementId, element.props);
-
-  // 🚀 최적화: elements 동기화는 BuilderCore에서 store.subscribe로 처리
-  // 이 hook에서는 elements 구독을 제거하여 불필요한 리렌더링 방지
-  // 기존 filteredElements useEffect는 BuilderCore의 useElementsSync()로 이동됨
-
-  // ⭐ Layout/Slot System: Page 정보가 변경될 때 iframe에 전송
+  // Page 정보가 변경될 때 iframe에 전송
   const lastSentPageInfoRef = useRef<{
     pageId: string | null;
     layoutId: string | null;

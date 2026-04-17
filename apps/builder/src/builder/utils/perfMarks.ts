@@ -340,7 +340,12 @@ export function resetLongTasks(label?: LongTaskLabel): void {
   }
 }
 
+let longTaskObserverStarted = false;
+
 function initLongTaskObserver(): void {
+  // Guard against duplicate registration — protects observability integrity
+  // if a future HMR boundary causes this module to re-evaluate.
+  if (longTaskObserverStarted) return;
   if (typeof window === "undefined") return;
   if (typeof PerformanceObserver === "undefined") return;
   try {
@@ -358,6 +363,7 @@ function initLongTaskObserver(): void {
       }
     });
     observer.observe({ entryTypes: ["longtask"] });
+    longTaskObserverStarted = true;
   } catch {
     // Unsupported entryType — silently skip.
   }

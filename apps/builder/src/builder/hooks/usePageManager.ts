@@ -223,18 +223,15 @@ export const usePageManager = ({
           useStore.getState().mergeElements(allElements);
         }
 
-        // 페이지 선택 상태 업데이트 (setCurrentPageId는 호출자에서 처리)
         setSelectedPageId(pageId);
 
-        // 페이지 선택 시 order_num이 0인 요소(body) 찾기
         const bodyElement = loadedPageElements.find((el) => el.order_num === 0);
 
-        // 🎯 CRITICAL: mergeElements 전에 auto-select 예약 (race condition 방지)
+        // mergeElements 전에 auto-select 예약 — race condition 방지
         if (bodyElement && requestAutoSelectAfterUpdate) {
           requestAutoSelectAfterUpdate(bodyElement.id);
         }
 
-        // body 요소 자동 선택
         if (bodyElement) {
           useStore.getState().setSelectedElement(bodyElement.id);
         }
