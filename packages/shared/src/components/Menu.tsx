@@ -19,7 +19,7 @@ import type {
 import type { RuntimeMenuItem } from "@composition/specs";
 
 import { useCollectionData } from "../hooks";
-import "./styles/Menu.css";
+import "./styles/generated/Menu.css";
 
 /**
  * Phase 4: data-* 패턴 전환

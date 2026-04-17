@@ -135,7 +135,7 @@
 @import "./ColorSwatchPicker.css";
 
 /* Menu Components */
-@import "./Menu.css"; /* 수동 CSS — popover container 색상을 ListBox와 동일하게 (Menu.spec.skipCSSGeneration:true) */
+@import "./generated/Menu.css";
 @import "./generated/MenuItem.css";
 @import "./generated/Autocomplete.css";
 
