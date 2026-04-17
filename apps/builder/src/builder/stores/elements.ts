@@ -3,6 +3,7 @@ import { create } from "zustand";
 // 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
 // import { produce } from "immer"; // REMOVED
 import { StateCreator } from "zustand";
+import type { StoredMenuItem } from "@composition/specs/types";
 import {
   Element,
   ComponentElementProps,
@@ -204,6 +205,23 @@ export interface ElementsState {
 
   // ADR-006: 외부 트리거(텍스트 측정기 교체, 폰트 로딩 등)에서 레이아웃 재계산 요청
   invalidateLayout: () => void;
+
+  // ADR-068: Menu items SSOT — StoredMenuItem 배열 조작 액션
+  addMenuItem: (
+    menuId: string,
+    item?: Partial<StoredMenuItem>,
+  ) => Promise<void>;
+  removeMenuItem: (menuId: string, itemId: string) => Promise<void>;
+  updateMenuItem: (
+    menuId: string,
+    itemId: string,
+    patch: Partial<StoredMenuItem>,
+  ) => Promise<void>;
+  reorderMenuItems: (
+    menuId: string,
+    fromIndex: number,
+    toIndex: number,
+  ) => Promise<void>;
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
@@ -1434,6 +1452,59 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     invalidateLayout: () => {
       set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
+    },
+
+    // ADR-068: Menu items SSOT — StoredMenuItem 배열 조작 액션
+    // updateElementProps가 style 외 props 변경을 layoutVersion++ 처리하므로
+    // items 변경 시 layoutVersion bump + 파이프라인(Memory→History→DB) 자동 처리됨.
+
+    addMenuItem: async (menuId, item) => {
+      const menu = get().elementsMap.get(menuId);
+      if (!menu || menu.tag !== "Menu") return;
+      const items = ((menu.props.items ?? []) as StoredMenuItem[]).slice();
+      const newItem: StoredMenuItem = {
+        label: "Menu Item",
+        ...item,
+        // id는 caller가 지정한 경우 사용, 없으면 신규 생성
+        id: item?.id ?? crypto.randomUUID(),
+      };
+      await get().updateElementProps(menuId, { items: [...items, newItem] });
+    },
+
+    removeMenuItem: async (menuId, itemId) => {
+      const menu = get().elementsMap.get(menuId);
+      if (!menu || menu.tag !== "Menu") return;
+      const items = ((menu.props.items ?? []) as StoredMenuItem[]).filter(
+        (i) => i.id !== itemId,
+      );
+      await get().updateElementProps(menuId, { items });
+    },
+
+    updateMenuItem: async (menuId, itemId, patch) => {
+      const menu = get().elementsMap.get(menuId);
+      if (!menu || menu.tag !== "Menu") return;
+      const items = ((menu.props.items ?? []) as StoredMenuItem[]).map((i) =>
+        i.id === itemId ? { ...i, ...patch } : i,
+      );
+      await get().updateElementProps(menuId, { items });
+    },
+
+    reorderMenuItems: async (menuId, fromIndex, toIndex) => {
+      const menu = get().elementsMap.get(menuId);
+      if (!menu || menu.tag !== "Menu") return;
+      const items = ((menu.props.items ?? []) as StoredMenuItem[]).slice();
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= items.length ||
+        toIndex >= items.length ||
+        fromIndex === toIndex
+      ) {
+        return;
+      }
+      const [moved] = items.splice(fromIndex, 1);
+      items.splice(toIndex, 0, moved);
+      await get().updateElementProps(menuId, { items });
     },
   };
 };

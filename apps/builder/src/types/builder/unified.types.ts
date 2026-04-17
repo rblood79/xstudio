@@ -2,6 +2,7 @@
 import React from "react";
 import { ElementEvent } from "../events/events.types";
 import { TokenValue, DesignToken } from "../theme";
+import type { StoredMenuItem } from "@composition/specs/types";
 
 // === 기본 타입 정의 ===
 
@@ -1033,6 +1034,8 @@ export interface MenuElementProps extends BaseElementProps {
   selectionMode?: "none" | "single" | "multiple";
   disallowEmptySelection?: boolean;
   isDisabled?: boolean;
+  /** ADR-068: MenuItem 데이터 — Store 직렬화 가능한 items SSOT */
+  items?: StoredMenuItem[];
 }
 
 // === Group Element Props ===
