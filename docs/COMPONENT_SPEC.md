@@ -1,5 +1,26 @@
 # Component Spec Architecture - 상세 설계 문서
 
+> ⚠️ **DEPRECATED / STALE (2026-04-18)** — 본 문서는 **2026-03-03 시점 기준**이며 이후 다수의 ADR에 의해 **광범위하게 stale**합니다. 현행 상태와 일치하지 않는 심볼·파일명이 다수 포함되어 있으므로 **현재 작업의 레퍼런스로 사용 금지**.
+>
+> **stale 범위 (grep 94회 매칭)**:
+>
+> - `ElementSprite.tsx` — ADR-100 Phase 9 (2026-04-06)에서 PixiJS 단일 렌더러 제거로 경로 변경
+> - `CHILD_COMPOSITION_EXCLUDE_TAGS` 단일 Set — ADR-072 (2026-04-18)에서 `SHELL_ONLY_CONTAINER_TAGS` + `SYNTHETIC_CHILD_PROP_MERGE_TAGS` 2분할
+> - `SPEC_RENDERS_ALL_TAGS_SET` / `TRANSPARENT_CONTAINER_TAGS` — Compositional Architecture 전환 이후 재배치 또는 폐기
+> - PixiJS / `@pixi/layout` — ADR-100 Phase 9에서 완전 제거
+> - Phase 1~6 구현 상세 — ADR-036 Spec-First 재승격 체인(ADR-057~062)으로 대체됨
+>
+> **대체 참조 (우선순위)**:
+>
+> 1. **ADR 체인**: ADR-036 (Spec-First 정본) → ADR-057~062 (Text/Form/Focus/Variant 재승격) → ADR-100 (Unified Skia) → ADR-072 (`_hasChildren` 컨벤션) → ADR-063 (SSOT Charter 3-Domain)
+> 2. **규칙 파일**: [`.claude/rules/canvas-rendering.md`](../.claude/rules/canvas-rendering.md) / [`.claude/rules/layout-engine.md`](../.claude/rules/layout-engine.md) / [`.claude/rules/ssot-hierarchy.md`](../.claude/rules/ssot-hierarchy.md)
+> 3. **skill 문서**: [`.claude/skills/composition-patterns/`](../.claude/skills/composition-patterns/)
+> 4. **Spec SSOT**: `packages/specs/src/components/*.spec.ts` (실제 코드가 정본)
+>
+> **보존 이유**: 초기 아키텍처 의사결정 맥락(Why) + React Aria DOM 구조/ARIA 매핑 부록(아직 유효). 전면 재작성은 비용 대비 가치 낮음(ADR-036 이후 진짜 SSOT는 spec 파일).
+>
+> ---
+>
 > **작성일**: 2026-01-27 | **수정일**: 2026-03-03
 > **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | **Compositional Architecture 전환 완료** (2026-02-25) — SPEC_RENDERS_ALL_TAGS 폐기, 7개 Child Spec 추가
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
