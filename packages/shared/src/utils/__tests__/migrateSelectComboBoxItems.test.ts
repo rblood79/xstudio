@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   selectItemChildrenToItemsArray,
   comboBoxItemChildrenToItemsArray,
+  applySelectComboBoxMigration,
 } from "../migrateSelectComboBoxItems";
 
 // ADR-073 P5: migration util 단위 테스트
@@ -153,5 +154,97 @@ describe("comboBoxItemChildrenToItemsArray (ADR-073 P5)", () => {
       id: "y",
       label: "y",
     });
+  });
+});
+
+describe("applySelectComboBoxMigration (ADR-073 P6-e)", () => {
+  it("Select/ComboBox 자식 없음 → 원본 그대로, orphanIds 빈 배열", () => {
+    const elements: ElementLike[] = [
+      { id: "body", tag: "body", parent_id: null, order_num: 0, props: {} },
+      { id: "sel", tag: "Select", parent_id: "body", order_num: 1, props: {} },
+    ];
+    const result = applySelectComboBoxMigration(elements);
+    expect(result.orphanIds).toEqual([]);
+    expect(result.migratedElements).toEqual(elements);
+  });
+
+  it("Select + SelectItem 자식 2개 → items[] 주입 + orphan 2건 반환", () => {
+    const elements: ElementLike[] = [
+      { id: "sel", tag: "Select", parent_id: null, order_num: 0, props: {} },
+      {
+        id: "si-1",
+        tag: "SelectItem",
+        parent_id: "sel",
+        order_num: 0,
+        props: { label: "A" },
+      },
+      {
+        id: "si-2",
+        tag: "SelectItem",
+        parent_id: "sel",
+        order_num: 1,
+        props: { label: "B" },
+      },
+    ];
+    const result = applySelectComboBoxMigration(elements);
+    expect(result.orphanIds).toEqual(["si-1", "si-2"]);
+    expect(result.migratedElements).toHaveLength(1);
+    const sel = result.migratedElements[0];
+    expect(sel.id).toBe("sel");
+    expect((sel.props.items as Array<{ id: string }>).map((i) => i.id)).toEqual(
+      ["si-1", "si-2"],
+    );
+  });
+
+  it("ComboBox + ComboBoxItem 혼합 — 각 부모별 독립 items 주입", () => {
+    const elements: ElementLike[] = [
+      { id: "cb1", tag: "ComboBox", parent_id: null, order_num: 0, props: {} },
+      { id: "cb2", tag: "ComboBox", parent_id: null, order_num: 1, props: {} },
+      {
+        id: "ci-1",
+        tag: "ComboBoxItem",
+        parent_id: "cb1",
+        order_num: 0,
+        props: { label: "X" },
+      },
+      {
+        id: "ci-2",
+        tag: "ComboBoxItem",
+        parent_id: "cb2",
+        order_num: 0,
+        props: { label: "Y" },
+      },
+    ];
+    const result = applySelectComboBoxMigration(elements);
+    expect(result.orphanIds.sort()).toEqual(["ci-1", "ci-2"]);
+    expect(result.migratedElements).toHaveLength(2);
+    const cb1 = result.migratedElements.find((el) => el.id === "cb1")!;
+    const cb2 = result.migratedElements.find((el) => el.id === "cb2")!;
+    expect((cb1.props.items as Array<{ label: string }>)[0].label).toBe("X");
+    expect((cb2.props.items as Array<{ label: string }>)[0].label).toBe("Y");
+  });
+
+  it("기존 부모 props 보존 + items 주입", () => {
+    const elements: ElementLike[] = [
+      {
+        id: "sel",
+        tag: "Select",
+        parent_id: null,
+        order_num: 0,
+        props: { label: "Pick", placeholder: "..." },
+      },
+      {
+        id: "si",
+        tag: "SelectItem",
+        parent_id: "sel",
+        order_num: 0,
+        props: { label: "A" },
+      },
+    ];
+    const result = applySelectComboBoxMigration(elements);
+    const sel = result.migratedElements[0];
+    expect(sel.props.label).toBe("Pick");
+    expect(sel.props.placeholder).toBe("...");
+    expect((sel.props.items as unknown[]).length).toBe(1);
   });
 });

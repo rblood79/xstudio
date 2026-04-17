@@ -9,6 +9,7 @@ export * from "./core/dateUtils";
 export * from "./core/numberUtils";
 export * from "./export.utils";
 export * from "./migration.utils";
+export * from "./migrateSelectComboBoxItems";
 
 export * from "./font.utils";
 export * from "./fontRegistry";

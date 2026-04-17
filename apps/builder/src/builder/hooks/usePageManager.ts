@@ -8,6 +8,7 @@ import { useStore } from "../stores";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
+import { applySelectComboBoxMigration } from "@composition/shared";
 import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
 import { scheduleNextFrame } from "../utils/scheduleTask";
 
@@ -527,9 +528,23 @@ export const usePageManager = ({
         const mergedMap = new Map<string, Element>();
         pageElements.forEach((el) => mergedMap.set(el.id, el));
         layoutElements.forEach((el) => mergedMap.set(el.id, el));
-        const mergedElements = Array.from(mergedMap.values());
+        const rawMerged = Array.from(mergedMap.values());
+
+        // ADR-073 P6: Select/ComboBox legacy child → items[] 마이그레이션
+        const { migratedElements: mergedElements, orphanIds } =
+          applySelectComboBoxMigration(rawMerged);
 
         useStore.getState().hydrateProjectSnapshot(mergedElements);
+
+        // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem 행 제거 (undo 스택 미오염)
+        if (orphanIds.length > 0) {
+          void db.elements.deleteMany(orphanIds).catch((err) => {
+            console.warn(
+              "[ADR-073] Select/ComboBox orphan cleanup failed:",
+              err,
+            );
+          });
+        }
 
         // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
         if (apiPages.length > 0) {
