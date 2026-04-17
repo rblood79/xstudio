@@ -2,6 +2,30 @@
 
 > 본 문서는 [ADR-074](../adr/074-canvas-input-pipeline-decomposition.md) 의 Phase 구성, 파일 변경 범위, Gate 측정 방법, 롤백 전략을 상세화한다. ADR 본문은 "무엇을/왜" 에 한정하고 "어떻게" 는 이 문서에 둔다 (`.claude/rules/adr-writing.md` 스캐폴딩 규칙).
 
+## Addendum 1 — Phase 순서 재조정 (2026-04-18)
+
+Phase 1 land 후 실제 `BuilderCanvas.tsx` 코드 조사 결과 **원안 Phase 2 (루트 구독 제거) 가 단독 land 불가** 로 판명됨. 원인:
+
+- `rendererInvalidationPacket` useMemo (BuilderCanvas.tsx:385~430) 가 `selectedElementId / selectedElementIds` 를 packet.selection 객체로 전달. 루트 구독 제거 시 packet 생성 불가.
+- `sceneSnapshot` useMemo (BuilderCanvas.tsx:268~300) 가 `selectedElementIds / currentPageId` 를 deps 로 포함. 루트 구독 제거 시 snapshot 계산 불가.
+
+원안 Phase 3 (sceneSnapshot 분할) 와 Phase 4 (packet 분할) 는 루트 구독 변경 없이 **독립 land 가능**. 두 단계 완료 후 useMemo deps 가 selection-invariant 하위 필드로 축소되면 루트 구독 제거가 자연 달성.
+
+### 재조정된 Phase 순서
+
+| Phase | 원안 (초안)              | 재조정 (2026-04-18)              | 비고                                  |
+| ----- | ------------------------ | -------------------------------- | ------------------------------------- |
+| P1    | 입력 경로 일원화         | **동일** (land 완료: `f3bc6f0a`) | —                                     |
+| P2    | 루트 selection 구독 제거 | **sceneSnapshot 분할**           | 원안 P3 승격                          |
+| P3    | sceneSnapshot 분할       | **packet scene/overlay 분리**    | 원안 P4 승격                          |
+| P4    | packet 분할              | **루트 selection 구독 제거**     | 원안 P2 강등, P2+P3 선행 조건 만족 후 |
+| P5    | history notify deferral  | **동일**                         | —                                     |
+| P6    | dev validate dirty-scope | **동일**                         | —                                     |
+
+Gate 매핑도 일부 변동: **G1 (empty-click root renderCount = 1)** 은 재조정된 P4 land 후 확정. **G2 (sceneSnapshot/packet identity 유지)** 는 재조정된 P2~P3 land 후 확정.
+
+본 문서의 아래 "Phase 1 ~ Phase 6" 세부는 **재조정된 순서** 기준으로 유지된다 (원안 설명은 참고용).
+
 ---
 
 ## 0. Baseline 측정 (Phase 진입 전 필수)
@@ -56,58 +80,39 @@ window.__composition_PERF__.snapshot("input.page-transition")  # 신설 라벨, 
 
 ---
 
-### Phase 2 — `BuilderCanvas` 루트 selection 구독 제거
+### Phase 2 — `buildSceneSnapshot` 분할 (structure / selection)
 
-**목적**: 루트에서 `currentPageId / selectedElementId / selectedElementIds` 구독 제거. selection fan-out 을 하위 컴포넌트 (`ElementsLayer` / `SkiaCanvas` packet 생성부) 로 내림.
+> 원안 Phase 3 를 승격. Addendum 1 참조.
 
-**파일 변경**:
-
-- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
-  - line 157~159 `useStore((state) => state.currentPageId/selectedElementId/selectedElementIds)` 3개 구독 제거.
-  - line 153 주석 (`selectedElementIds는 ElementsLayer 내부에서 직접 구독`) 과 실제 구현 정합 복원.
-  - `rendererInvalidationPacket` useMemo 를 **제거**하고 Phase 4 에서 scene/overlay 분리 packet 으로 재생성.
-
-- `apps/builder/src/builder/workspace/canvas/skia/SkiaCanvas.tsx` (또는 `SkiaInputPacketProvider` 신설)
-  - packet 생성을 SkiaCanvas 내부로 이전. 기존 `packet.selection.selectionSignature` / `packet.selection.editingSignature` 는 유지.
-
-- `apps/builder/src/builder/workspace/canvas/ElementsLayer.tsx` (해당 파일 확인 후 경로 정정)
-  - selection 구독이 이미 내부에 있는지 확인. 없으면 추가.
-
-**Gate**: G1 PASS 확정 (empty-click 시 BuilderCanvas root renderCount = 1).
-
-**Rollback**: 루트 구독 복원 + packet 단일체 useMemo 복원.
-
----
-
-### Phase 3 — `buildSceneSnapshot` 분할
-
-**목적**: scene-structure 계산 (`depthMap / pageDataMap / pageFrames / visiblePages`) 과 selection snapshot 을 독립 함수로 분리. BuilderCanvas (또는 신규 provider) 에서 별도 `useMemo` 로 소비.
+**목적**: scene-structure 계산 (`depthMap / pageDataMap / pageFrames / visiblePages`) 과 selection snapshot 을 독립 함수로 분리. BuilderCanvas 에서 별도 `useMemo` 로 소비. selection-only 변화 시 structure 재계산 비용 제거.
 
 **파일 변경**:
 
 - `apps/builder/src/builder/workspace/canvas/scene/buildSceneSnapshot.ts`
-  - `buildSceneStructureSnapshot(input)` 신설 (depth/pageData/pageFrames/visiblePages 만).
-  - 기존 `buildSceneSnapshot` 은 `buildSceneStructureSnapshot + buildSelectionSnapshot` 합성으로 재정의 (기존 호출처 호환).
-  - `sceneSnapshotTypes.ts` 에 `SceneStructureSnapshot` / `SceneSelectionSnapshot` 타입 분리 export.
+  - `buildSceneStructureSnapshot(input)` 신설 (depth/pageData/pageFrames/visiblePages/pageFrameMap/allPageFrameVersion/document 레벨 모두).
+  - 기존 `buildSceneSnapshot` 은 `buildSceneStructureSnapshot + buildSelectionSnapshot` 합성으로 재정의 (하위 consumer 호환 유지).
+  - `sceneSnapshotTypes.ts` 에 `SceneStructureSnapshot` / `SceneSelectionSnapshot` 타입 분리 export. 기존 `SceneSnapshot` 타입은 두 타입의 union 으로 재정의.
 
 - `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
-  - `sceneStructureSnapshot` useMemo (deps: `elements / elementsMap / pages / pageIndex / pagePositions / containerSize / panOffset / zoom / pageWidth / pageHeight`) 추가.
-  - `sceneSelectionSnapshot` useMemo (deps: `selectedElementIds / elementsMap / currentPageId`) 추가. 단 이 useMemo 는 selection 구독 이전된 하위 컴포넌트로 이동 가능성 있음 — P4 와 함께 결정.
+  - 기존 `sceneSnapshot` useMemo 를 `sceneStructureSnapshot` useMemo (deps: selection 제외) + `sceneSelectionSnapshot` useMemo (deps: selection 만) 2 개로 분리.
+  - 하위 consumer (`skiaRendererInput`, `layoutPublisherInputs`, `rendererInvalidationPacket`) 는 기존 `sceneSnapshot` 인터페이스를 기대하므로, 합성 `sceneSnapshot` useMemo 를 유지 (deps: `sceneStructureSnapshot` + `sceneSelectionSnapshot` — 둘 다 identity 안정적이면 identity 유지).
 
-**Gate**: G2 일부 진입 — `sceneStructureSnapshot.pageFrameMap` identity 가 selection-only 변화 시 유지되는지 `Object.is` 로 확인.
+**Gate**: G2 일부 진입 — `sceneStructureSnapshot.document.pageFrameMap` identity 가 selection-only 변화 시 `Object.is` 로 유지되는지 수동 assertion.
 
-**Rollback**: `buildSceneStructureSnapshot` helper 제거 + BuilderCanvas useMemo 통합 원복.
+**Rollback**: `buildSceneStructureSnapshot` helper 제거 + BuilderCanvas useMemo 통합 원복 (기존 단일 useMemo 로 복귀).
 
 ---
 
-### Phase 4 — `rendererInvalidationPacket` scene/overlay 분리
+### Phase 3 — `rendererInvalidationPacket` scene/overlay 분리
+
+> 원안 Phase 4 를 승격. Addendum 1 참조.
 
 **목적**: 단일 packet 을 `sceneInvalidationPacket` + `overlayInvalidationPacket` 으로 분리. SkiaCanvas 의 `lastSelectionSignatureRef` 분기 효과 실현.
 
 **파일 변경**:
 
 - `apps/builder/src/builder/workspace/canvas/invalidation/rendererInvalidation.ts` (또는 현재 `createRendererInvalidationPacket` 정의 파일)
-  - `createSceneInvalidationPacket(input)` 신설: `ai.cleanupExpiredFlashes` (overlay) 제외, `grid / workflow / dataSource` 등 scene 구조 관련 필드만.
+  - `createSceneInvalidationPacket(input)` 신설: `grid / workflow / dataSource` 등 scene 구조 관련 필드만.
   - `createOverlayInvalidationPacket(input)` 신설: `ai / selection / editingContext / aiFlashAnimations` 등 overlay 한정.
   - 기존 `createRendererInvalidationPacket` 은 두 함수의 합성으로 유지 (backward-compat, deprecated 마킹).
 
@@ -115,9 +120,34 @@ window.__composition_PERF__.snapshot("input.page-transition")  # 신설 라벨, 
   - 두 packet 을 SkiaCanvas 에 별도 props 로 전달 (또는 context 분리).
   - SkiaCanvas 내부에서 scene packet 변화 시에만 content rebuild, overlay packet 변화 시에만 overlay invalidation.
 
-**Gate**: G2 PASS 확정 — selection-only 변화 시 `sceneInvalidationPacket` identity 유지, render.content.build 스킵.
+**Gate**: G2 PASS 확정 — selection-only 변화 시 `sceneInvalidationPacket` identity 유지, `render.content.build` 스킵 관찰.
 
 **Rollback**: 단일 packet useMemo 복원.
+
+---
+
+### Phase 4 — `BuilderCanvas` 루트 selection 구독 제거
+
+> 원안 Phase 2 를 강등. Addendum 1 참조. Phase 2~3 선행으로 useMemo deps 가 selection-invariant 하위 필드로 축소되어야 실행 가능.
+
+**목적**: 루트에서 `currentPageId / selectedElementId / selectedElementIds` 직접 구독 제거. selection fan-out 을 하위 컴포넌트 (`ElementsLayer` / `SkiaCanvas`) 로 내림.
+
+**파일 변경**:
+
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+  - line 157~159 `useStore((state) => state.currentPageId/selectedElementId/selectedElementIds)` 3 개 구독 제거.
+  - line 153 주석 (`selectedElementIds는 ElementsLayer 내부에서 직접 구독`) 과 실제 구현 정합 복원.
+  - `sceneSelectionSnapshot` / `overlayInvalidationPacket` 생성을 하위 컴포넌트 또는 selection 전용 provider 로 이전.
+
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaCanvas.tsx` (또는 `SkiaOverlayProvider` 신설)
+  - overlay packet 생성을 SkiaCanvas 내부로 이전. 기존 `packet.selection.selectionSignature` / `packet.selection.editingSignature` 분기는 유지.
+
+- `apps/builder/src/builder/workspace/canvas/ElementsLayer.tsx` (해당 파일 확인 후 경로 정정)
+  - selection 구독이 이미 내부에 있는지 확인. 없으면 `sceneSelectionSnapshot` 직접 구독 추가.
+
+**Gate**: G1 PASS 확정 (empty-click 시 BuilderCanvas root renderCount = 1, React DevTools Profiler 관찰).
+
+**Rollback**: 루트 구독 복원 + selection useMemo 루트 배치 복원.
 
 ---
 
@@ -185,18 +215,22 @@ window.__composition_PERF__.snapshot("input.page-transition")  # 신설 라벨, 
 - [ ] `pnpm type-check` 3 tasks PASS
 - [ ] Chrome MCP 회귀: 빈 영역 클릭 / 요소 선택 / 페이지 전환 / overlay invalidation 시각 불변
 - [ ] Gate 측정 결과 `docs/design/074-baseline-measurements.md` 에 기록
-- [ ] `.claude/rules/canvas-rendering.md` 에 신설 signature 계산 지점 규칙 추가 (P3 land 후)
-- [ ] `parallel-verify` skill 로 영향 컴포넌트 패밀리 (Tabs/Select/Menu — packet 분기 공유) 회귀 검증 (P4 land 후)
+- [ ] `.claude/rules/canvas-rendering.md` 에 신설 signature 계산 지점 규칙 추가 (재조정 P2 land 후)
+- [ ] `parallel-verify` skill 로 영향 컴포넌트 패밀리 (Tabs/Select/Menu — packet 분기 공유) 회귀 검증 (재조정 P3 land 후)
 
 ---
 
 ## 4. 의존성 / 선후 관계
 
+(Addendum 1 재조정 반영)
+
 ```
 P1 ──→ P2 ──→ P3 ──→ P4 ──→ (P5, P6 병렬 가능)
-                    ↑
-            scene/overlay 분리는
-            P3 sceneSnapshot 분할 선행 필수
+
+P2: sceneSnapshot 분할 (scene-invariant useMemo 분기 신설)
+P3: packet scene/overlay 분리 (P2 의 scene signature 를 overlay 와 격리)
+P4: BuilderCanvas 루트 selection 구독 제거
+    ↑ P2+P3 선행으로 루트 useMemo deps 가 selection-invariant 가 된 이후 자연 달성
 ```
 
 - P5 는 P1~P4 와 독립. 단 `input.page-transition` 라벨 도입은 선행 필요 (P5 내부에서 처리).
@@ -206,17 +240,20 @@ P1 ──→ P2 ──→ P3 ──→ P4 ──→ (P5, P6 병렬 가능)
 
 ## 5. 리스크 완화 노트
 
-### R1. P2 이후 하위 컴포넌트 props flood 우려
+### R1. P2 buildSceneStructureSnapshot 의 pageFrameMap identity 보존 실패
 
-- 완화: ElementsLayer / SkiaCanvas packet provider 가 이미 selection 을 소비한다면 신규 props 증가 없음. 사전 조사 후 P2 착수.
+- 완화: Map 인스턴스를 useMemo 로 감싸고 deps 에 `elements` / `pagePositions` 만 포함. `selectedElementIds` / `currentPageId` 제외.
+- 검증: Phase 2 land 직후 `Object.is(prev.document.pageFrameMap, next.document.pageFrameMap)` 수동 assertion (selection 클릭 100회 반복).
 
-### R2. P3 buildSceneStructureSnapshot 의 pageFrameMap identity 보존 실패
-
-- 완화: Map 인스턴스를 useMemo 로 감싸고 deps 에 `elements` / `pagePositions` 만 포함. selectedElementIds 제외.
-
-### R3. P4 packet 분리 후 SkiaCanvas 내부 refs 정합성
+### R2. P3 packet 분리 후 SkiaCanvas 내부 refs 정합성
 
 - 완화: `lastSelectionSignatureRef` / `lastEditingContextRef` / `lastAIActiveRef` 가 overlay packet 과만 연동되도록 정리. scene packet 은 `lastSceneSignatureRef` 신설.
+- 검증: Chrome MCP 로 selection 클릭 시 `render.content.build` 이 스킵되고 overlay 분기만 동작하는지 console 로그 관찰.
+
+### R3. P4 루트 구독 제거 후 하위 컴포넌트 props flood
+
+- 완화: ElementsLayer / SkiaCanvas overlay provider 가 이미 selection 을 소비한다면 신규 props 증가 없음. Phase 4 진입 전 사전 조사.
+- Fallback: selection 전용 React Context 도입 (provider 가 `subscribeWithSelector` 로 구독 + 하위는 `useContext`).
 
 ### R5. P5 notify deferral 로 undo/redo 즉시 반응성 저하
 
