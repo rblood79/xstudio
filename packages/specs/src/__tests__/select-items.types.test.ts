@@ -46,4 +46,27 @@ describe("toRuntimeSelectItem", () => {
     const runtime = toRuntimeSelectItem(stored, () => undefined);
     expect(runtime.onAction).toBeUndefined();
   });
+
+  it("id !== value — runtime 에 둘 다 pass-through", () => {
+    const stored: StoredSelectItem = {
+      id: "opt-a",
+      label: "Apple",
+      value: "APPLE_VAL",
+    };
+    const runtime = toRuntimeSelectItem(stored, () => undefined);
+    expect(runtime.id).toBe("opt-a");
+    expect(runtime.value).toBe("APPLE_VAL");
+    expect(runtime.label).toBe("Apple");
+  });
+
+  it("id === value 동일 케이스도 pass-through", () => {
+    const stored: StoredSelectItem = {
+      id: "same",
+      label: "Same",
+      value: "same",
+    };
+    const runtime = toRuntimeSelectItem(stored, () => undefined);
+    expect(runtime.id).toBe("same");
+    expect(runtime.value).toBe("same");
+  });
 });
