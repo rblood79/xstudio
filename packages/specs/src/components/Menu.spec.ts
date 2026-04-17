@@ -18,12 +18,20 @@ import {
   AlignStartVertical,
   ArrowDown,
   ToggleRight,
+  Parentheses,
 } from "lucide-react";
 
 /**
  * Menu Props (S2 기준)
  */
 export interface MenuProps {
+  variant?:
+    | "accent"
+    | "primary"
+    | "secondary"
+    | "negative"
+    | "premium"
+    | "genai";
   size?: "sm" | "md" | "lg" | "xl";
   align?: "start" | "end";
   direction?: "bottom" | "top" | "left" | "right";
@@ -59,7 +67,11 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   archetype: "collection",
   element: "div",
   skipCSSGeneration: false,
+  // variants는 Skia trigger button 색상 전용 — popover 내 .react-aria-Menu에는 의미 없음
+  // (trigger Button variant 색상은 .react-aria-Button CSS에서 처리)
+  skipVariantCss: true,
 
+  defaultVariant: "primary",
   defaultSize: "md",
 
   overlay: {
@@ -70,6 +82,56 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     closeOnEscape: true,
     trapFocus: true,
     pixiLayer: "overlay",
+  },
+
+  variants: {
+    accent: {
+      background: "{color.accent}" as TokenRef,
+      backgroundHover: "{color.accent-hover}" as TokenRef,
+      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      text: "{color.on-accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
+      borderHover: "{color.accent-hover}" as TokenRef,
+    },
+    primary: {
+      background: "{color.neutral}" as TokenRef,
+      backgroundHover: "{color.neutral-hover}" as TokenRef,
+      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      text: "{color.base}" as TokenRef,
+      border: "{color.neutral}" as TokenRef,
+      borderHover: "{color.neutral-hover}" as TokenRef,
+    },
+    secondary: {
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+    },
+    negative: {
+      background: "{color.negative}" as TokenRef,
+      backgroundHover: "{color.negative-hover}" as TokenRef,
+      backgroundPressed: "{color.negative-pressed}" as TokenRef,
+      text: "{color.on-negative}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
+    },
+    premium: {
+      background: "{color.purple}" as TokenRef,
+      backgroundHover: "{color.purple-hover}" as TokenRef,
+      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.purple}" as TokenRef,
+      borderHover: "{color.purple-hover}" as TokenRef,
+    },
+    genai: {
+      background: "{color.purple}" as TokenRef,
+      backgroundHover: "{color.purple-hover}" as TokenRef,
+      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.purple}" as TokenRef,
+      borderHover: "{color.purple-hover}" as TokenRef,
+    },
   },
 
   sizes: {
@@ -146,6 +208,11 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       {
         title: "Appearance",
         fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Parentheses,
+          },
           { type: "size" },
           {
             key: "align",
@@ -233,6 +300,11 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
+      const variant =
+        MenuSpec.variants![
+          (props as { variant?: keyof typeof MenuSpec.variants }).variant ??
+            MenuSpec.defaultVariant!
+        ];
       const width = "auto" as const;
 
       const styleBr = props.style?.borderRadius;
@@ -253,15 +325,18 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? ("{color.neutral-hover}" as TokenRef)
+          ? variant.backgroundHover
           : state === "pressed"
-            ? ("{color.neutral-pressed}" as TokenRef)
-            : ("{color.neutral}" as TokenRef));
+            ? variant.backgroundPressed
+            : variant.background);
 
-      const textColor = props.style?.color ?? ("{color.base}" as TokenRef);
+      const textColor = props.style?.color ?? variant.text;
 
       const borderColor =
-        props.style?.borderColor ?? ("{color.border}" as TokenRef);
+        props.style?.borderColor ??
+        (state === "hover" && variant.borderHover
+          ? variant.borderHover
+          : variant.border);
 
       const shapes: Shape[] = [
         {
@@ -274,14 +349,17 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
-        {
+      ];
+
+      if (borderColor) {
+        shapes.push({
           type: "border" as const,
           target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
-        },
-      ];
+        });
+      }
 
       // Menu는 트리거 버튼이므로 자식(MenuItem) 유무와 무관하게 항상 텍스트 렌더링
       const text = props.children || "Menu";

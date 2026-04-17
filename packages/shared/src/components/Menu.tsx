@@ -16,7 +16,7 @@ import type {
   ColumnMapping,
   DataBindingValue,
 } from "../types";
-import type { RuntimeMenuItem } from "@composition/specs/types";
+import type { RuntimeMenuItem } from "@composition/specs";
 
 import { useCollectionData } from "../hooks";
 import "./styles/generated/Menu.css";
@@ -127,7 +127,6 @@ export function MenuButton<T extends object>({
           <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
-              data-variant={variant}
               data-size={size}
             >
               <AriaMenuItem key="loading" textValue="Loading">
@@ -149,7 +148,6 @@ export function MenuButton<T extends object>({
           <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
-              data-variant={variant}
               data-size={size}
             >
               <AriaMenuItem key="error" textValue="Error">
@@ -228,7 +226,6 @@ export function MenuButton<T extends object>({
                 <Menu
                   items={submenuItems as Iterable<T>}
                   className={getMenuClassName()}
-                  data-variant={variant}
                   data-size={size}
                 >
                   {(subItem) =>
@@ -265,7 +262,6 @@ export function MenuButton<T extends object>({
             <Menu
               items={menuItems as Iterable<T>}
               className={getMenuClassName()}
-              data-variant={variant}
               data-size={size}
             >
               {(item) => renderMenuItem(item as unknown as RuntimeMenuItem)}
@@ -284,7 +280,6 @@ export function MenuButton<T extends object>({
         <Popover data-size={size}>
           <Menu
             className={getMenuClassName()}
-            data-variant={variant}
             data-size={size}
           >
             {children}
@@ -392,7 +387,6 @@ export function MenuButton<T extends object>({
                   console.log("Submenu item selected:", key);
                 }}
                 className={getMenuClassName()}
-                data-variant={variant}
                 data-size={size}
               >
                 {(subItem) => renderMenuItem(subItem)}
@@ -426,7 +420,6 @@ export function MenuButton<T extends object>({
               // 이벤트 핸들러 실행 가능
             }}
             className={getMenuClassName()}
-            data-variant={variant}
             data-size={size}
           >
             {(item) => renderMenuItem(item)}
@@ -470,7 +463,6 @@ export function MenuButton<T extends object>({
               <Menu
                 items={item.children}
                 className={getMenuClassName()}
-                data-variant={variant}
                 data-size={size}
               >
                 {(subItem) => renderRuntimeMenuItem(subItem as RuntimeMenuItem)}
@@ -503,7 +495,6 @@ export function MenuButton<T extends object>({
           <Menu
             items={items}
             className={getMenuClassName()}
-            data-variant={variant}
             data-size={size}
           >
             {(item) => renderRuntimeMenuItem(item as RuntimeMenuItem)}
@@ -523,7 +514,6 @@ export function MenuButton<T extends object>({
         <Menu
           {...props}
           className={getMenuClassName()}
-          data-variant={variant}
           data-size={size}
         >
           {loading && (

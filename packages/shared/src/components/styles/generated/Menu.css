@@ -12,6 +12,11 @@
     flex-direction: column;
     box-sizing: border-box;
 
+  /* Default variant */
+  background: var(--fg);
+  color: var(--bg);
+  border: 1px solid var(--fg);
+
   /* Default size */
   height: auto;
   padding: 4px 12px;

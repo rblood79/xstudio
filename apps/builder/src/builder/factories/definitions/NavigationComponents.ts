@@ -33,6 +33,7 @@ export function createMenuDefinition(
       tag: "Menu",
       props: {
         "aria-label": "Menu",
+        children: "Menu",
         variant: "primary",
         size: "md",
         selectionMode: "none",

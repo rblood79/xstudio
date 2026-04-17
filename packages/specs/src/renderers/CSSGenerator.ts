@@ -157,9 +157,10 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   lines.push("}");
   lines.push("");
 
-  // Variant 스타일 — Composite 컨테이너 또는 variants 없는 Spec(ADR-062 Field 계열)은 skip
+  // Variant 스타일 — Composite 컨테이너, variants 없는 Spec(ADR-062 Field 계열),
+  // 또는 skipVariantCss:true (Menu처럼 variants가 Skia trigger 전용)는 skip
   const variantMode = spec.cssEmitMode ?? "direct";
-  if (!spec.composition && spec.variants != null)
+  if (!spec.composition && spec.variants != null && !spec.skipVariantCss)
     for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
       lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
       lines.push(...generateVariantStyles(variantSpec, variantMode));

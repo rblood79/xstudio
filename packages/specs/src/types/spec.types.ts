@@ -149,6 +149,15 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
    */
   cssEmitMode?: "direct" | "button-base";
 
+  /**
+   * variants CSS 자동 emit skip (default: false).
+   *
+   * - true: Spec.variants는 Skia(trigger 등)에서만 사용, CSS 자동 출력 안 함
+   * - 용도: Menu처럼 "popover 내 Collection 컨테이너에는 variant 셀렉터가 무의미"한 경우
+   *   (trigger Button의 variant 색상은 별도 .react-aria-Button CSS에서 처리)
+   */
+  skipVariantCss?: boolean;
+
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
 }

@@ -17,7 +17,7 @@ import type {
   ColumnMapping,
   DataBinding,
 } from "../types";
-import type { StoredMenuItem, RuntimeMenuItem } from "@composition/specs/types";
+import type { StoredMenuItem, RuntimeMenuItem } from "@composition/specs";
 import { getSelectedChildIds } from "./selection";
 
 /**
@@ -763,6 +763,7 @@ export const renderMenu = (
       id={element.customId}
       data-element-id={element.id}
       label={String(element.props.label || element.props.children || "Menu")}
+      variant={(element.props.variant as string) || "primary"}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       items={runtime}
       style={element.props.style}
