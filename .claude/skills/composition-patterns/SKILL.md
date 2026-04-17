@@ -17,11 +17,11 @@ composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
 모든 코드 작업은 아래 분할을 준수. 정본: [`.claude/rules/ssot-hierarchy.md`](../../rules/ssot-hierarchy.md) / 공식 결정: [ADR-063](../../../docs/adr/063-ssot-chain-charter.md)
 
-| Domain | 권위 | Spec 관여 |
-| --- | --- | --- |
-| **D1 DOM/접근성** | Adobe RAC (절대) | ❌ |
-| **D2 Props/API** | RSP 참조 + custom | ✅ 타입만 |
-| **D3 시각 스타일** | Spec (SSOT) | ✅ 100% |
+| Domain             | 권위              | Spec 관여 |
+| ------------------ | ----------------- | --------- |
+| **D1 DOM/접근성**  | Adobe RAC (절대)  | ❌        |
+| **D2 Props/API**   | RSP 참조 + custom | ✅ 타입만 |
+| **D3 시각 스타일** | Spec (SSOT)       | ✅ 100%   |
 
 - Builder(Skia)와 Preview/Publish(DOM+CSS)는 **D3의 대등 symmetric consumer**
 - 대칭 = **시각 결과의 동일성** (구현 방법 자유)
@@ -92,8 +92,8 @@ composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
 ```
 1. _hasChildren 패턴 (삭제/이동/조건 변경 금지)
-2. CHILD_COMPOSITION_EXCLUDE_TAGS 관련 로직
-3. ElementSprite.tsx의 _hasChildren 주입 로직
+2. SHELL_ONLY_CONTAINER_TAGS / SYNTHETIC_CHILD_PROP_MERGE_TAGS 관련 로직 (ADR-072)
+3. buildSpecNodeData.ts의 _hasChildren 3-branch 주입 로직
 4. rearrangeShapesForColumn / SPEC_RENDERS_ALL_TAGS_SET 가드
 5. TAG_SPEC_MAP 등록 로직
 ```

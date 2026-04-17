@@ -4,7 +4,7 @@
 
 - 컴포넌트 등급 현황 (A/B+/B/D) — L3
 - Complex Component 목록 및 `COMPLEX_COMPONENT_TAGS` — L17
-- `CHILD_COMPOSITION_EXCLUDE_TAGS` — L103
+- `_hasChildren` 컨테이너 3분류 — `SHELL_ONLY_CONTAINER_TAGS` / `SYNTHETIC_CHILD_PROP_MERGE_TAGS` (ADR-072) — L113
 - `NON_CONTAINER_TAGS` — L124
 - rearrangeShapesForColumn 가드 (SPEC_RENDERS_ALL_TAGS_SET) — L161
 
@@ -86,8 +86,8 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   "CardView",
   "TableView",
   "SelectBoxGroup",
-  // CHILD_COMPOSITION_EXCLUDE_TAGS 소속 (synthetic prop 메커니즘 사용)
-  // ElementSprite에서 EXCLUDE 가드가 먼저 평가되므로 _hasChildren 주입 차단 — 안전
+  // SYNTHETIC_CHILD_PROP_MERGE_TAGS 소속 (자식 props를 spec shapes에 통합)
+  // buildSpecNodeData.ts에서 _hasChildren 주입 차단 — 안전 (ADR-072 참조)
   // useElementCreator의 Factory 경로 분기 목적으로만 등록
   "Tabs",
   "Tree",
@@ -110,26 +110,34 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
 - `Slider.css`는 class selector 대신 `[data-size="sm"]`, `[data-variant="primary"]` data-attribute selector 사용
 - SLIDER_DIMENSIONS 기준: `{ sm: { trackHeight: 4, thumbSize: 14 }, md: { trackHeight: 6, thumbSize: 18 }, lg: { trackHeight: 8, thumbSize: 22 } }`
 
-### `_hasChildren` 주입 제외 대상: `CHILD_COMPOSITION_EXCLUDE_TAGS`
+### `_hasChildren` 컨테이너 3분류 (ADR-072)
 
-자식 조합 패턴에서 `_hasChildren` 주입을 건너뛰는 예외 컴포넌트 목록입니다.
-`ElementSprite.tsx`의 `CHILD_COMPOSITION_EXCLUDE_TAGS` Set에 등록됩니다.
+`buildSpecNodeData.ts`는 컨테이너 spec에 대해 3-branch 로직으로 `_hasChildren`을 주입합니다. 컨테이너를 세 분류로 나눠 Set 멤버십으로 관리합니다.
 
-**기본 원칙**: 모든 컴포넌트에 자식이 있으면(또는 `COMPLEX_COMPONENT_TAGS`에 속하면) `_hasChildren: true`가 주입됩니다.
-아래 컴포넌트만 예외적으로 주입을 건너뜁니다.
+**1. `SHELL_ONLY_CONTAINER_TAGS`** (자식 수 무관 `_hasChildren=true` 항상 주입)
 
-| 컴포넌트      | 제외 이유                        | 대체 메커니즘                                     |
-| ------------- | -------------------------------- | ------------------------------------------------- |
-| `Tabs`        | `_tabLabels` synthetic prop 사용 | `effectiveElementWithTabs`로 탭 레이블 주입       |
-| `Breadcrumbs` | `_crumbs` synthetic prop 사용    | 자식 Breadcrumb 텍스트 수집 → `_crumbs` 배열 주입 |
-| `TagGroup`    | `_tagItems` synthetic prop 사용  | 자식 Tag 정보 수집 → `_tagItems` 배열 주입        |
-| `Table`       | 다단계 중첩 구조                 | 별도 구현 예정                                    |
-| `Tree`        | 다단계 중첩 구조                 | 별도 구현 예정                                    |
+factory가 자식 Element를 자동 생성하며, standalone 분기가 "bg+border + 빈 container placeholder"이거나 "실렌더를 자식 Element가 대체 커버"하는 태그. 자식을 모두 삭제해도 standalone으로 복귀 금지.
 
-**새 컴포넌트를 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가하는 경우**:
+현재 멤버 (15개): Calendar, RangeCalendar, Card, Dialog, Section, DisclosureGroup, ButtonGroup, CheckboxGroup, RadioGroup, ToggleButtonGroup, Disclosure, Form, Popover, Tooltip, ColorPicker
 
-- synthetic prop 메커니즘(`_crumbs`, `_tabLabels` 등)을 별도로 사용하는 경우
-- 자식 조합이 아닌 복잡한 다단계 중첩이 필요한 경우
+**2. `SYNTHETIC_CHILD_PROP_MERGE_TAGS`** (`_hasChildren` 주입 **차단**)
+
+자식 props를 부모 spec shapes에 통합 렌더링하는 태그. `_hasChildren=true` 주입 시 shell만 남고 내용이 사라지므로 차단. `incrementalSync` 자식→부모 rebuild expansion + stale-ref 교체 대상.
+
+현재 멤버 (11개): Breadcrumbs, ComboBox, GridList, ListBox, Select, Table, Tabs, TagGroup, Toolbar, Tree
+
+**3. Plain** (두 Set 모두 미포함 — 자식 있을 때만 `_hasChildren=true`)
+
+일반 컨테이너. TabPanel/TabPanels(shapes=[]) 및 대부분의 leaf-계열 컨테이너.
+
+**신규 컨테이너 판정 알고리즘**:
+
+1. spec shapes가 자식 props 참조 → `SYNTHETIC_CHILD_PROP_MERGE_TAGS`
+2. factory 자식 자동 생성 + standalone이 빈 placeholder/대체 커버 → `SHELL_ONLY_CONTAINER_TAGS`
+3. shapes 자체가 빈 배열 → Plain (두 Set 모두 미포함)
+4. 그 외 일반 컨테이너 → Plain
+
+**금지 패턴**: Shell-only 태그를 `SYNTHETIC_CHILD_PROP_MERGE_TAGS`에 혼입 → Calendar-유형 UI 중복 버그 (2026-04-17). 자세한 규칙은 `.claude/rules/canvas-rendering.md` §2.5 + ADR-072 참조.
 
 ### 자식 내부 렌더링 제외 대상: `NON_CONTAINER_TAGS`
 

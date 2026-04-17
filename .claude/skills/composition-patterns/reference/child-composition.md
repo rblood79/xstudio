@@ -63,42 +63,76 @@ Compositional 전환으로 7개의 독립 child spec이 생성되었습니다:
 
 **SPEC_RENDERS_ALL_TAGS 폐기**: 이전에 9개 compound 컴포넌트의 `childElements=[]`를 강제하던 `SPEC_RENDERS_ALL_TAGS` Set은 **완전 제거**되었습니다. 모든 자식 Element가 정상적으로 canvas에서 렌더링됩니다.
 
-#### `_hasChildren` 주입 방식: 2단계 판단 로직 (2026-02-25 Compositional 전환)
+#### `_hasChildren` 주입 방식: 3-branch 로직 (ADR-072, 2026-04-18)
 
-`ElementSprite.tsx`에서 `_hasChildren: true` flag를 spec props에 주입합니다.
-아래 2단계를 순서대로 평가하며, **1단계에서 제외되면 2단계는 실행되지 않습니다**.
+`buildSpecNodeData.ts`에서 `_hasChildren: true` flag를 spec props에 주입합니다. 컨테이너를 3분류로 나눠 Set 멤버십으로 관리합니다.
 
-**1단계 — Opt-out 가드 (CHILD_COMPOSITION_EXCLUDE_TAGS)**: 이 Set에 포함된 태그는 주입 자체를 건너뜁니다. synthetic prop 메커니즘(`_crumbs`, `_tabLabels` 등)을 별도로 사용하거나 다단계 중첩이 필요한 컴포넌트가 여기에 속합니다.
+**3-branch 로직**:
 
-**2단계 — 자식 존재 여부**: 1단계를 통과한 모든 컴포넌트는 자식 Element가 실제로 있을 때만 `_hasChildren: true`를 주입합니다. Compositional 전환으로 자식 Element가 독립 spec으로 렌더링하므로, `COMPLEX_COMPONENT_TAGS` 기반 강제 주입은 불필요해졌습니다.
+1. **Shell-only** (`SHELL_ONLY_CONTAINER_TAGS`) → 자식 수 무관 **항상 주입**
+2. **Synthetic-merge** (`SYNTHETIC_CHILD_PROP_MERGE_TAGS`) → 주입 **차단** (자식 props를 spec shapes에 통합)
+3. **Plain** (두 Set 모두 미포함) → 자식이 있을 때만 주입
 
 ```typescript
-// ElementSprite.tsx — 2단계 판단 로직 (2026-02-25 Compositional 전환)
+// apps/builder/src/builder/workspace/canvas/skia/buildSpecNodeData.ts
 
-const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
-  "Tabs", // _tabLabels synthetic prop 사용 (별도 메커니즘)
-  "Breadcrumbs", // _crumbs synthetic prop 사용 (별도 메커니즘)
-  "TagGroup", // _tagItems synthetic prop 사용 (별도 메커니즘)
-  "Table", // 다단계 중첩 구조 (별도 작업)
-  "Tree", // 다단계 중첩 구조 (별도 작업)
+export const SHELL_ONLY_CONTAINER_TAGS = new Set([
+  "Calendar",
+  "RangeCalendar",
+  "Card",
+  "Dialog",
+  "Section",
+  "DisclosureGroup",
+  "ButtonGroup",
+  "CheckboxGroup",
+  "RadioGroup",
+  "ToggleButtonGroup",
+  "Disclosure",
+  "Form",
+  "Popover",
+  "Tooltip",
+  "ColorPicker",
 ]);
 
-// 1단계: CHILD_COMPOSITION_EXCLUDE_TAGS → 포함되면 주입 스킵
-if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-  // 2단계: 실제 자식 존재 여부로만 판단
-  if (childElements && childElements.length > 0) {
-    specProps = { ...specProps, _hasChildren: true };
-  }
+export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
+  "Breadcrumbs",
+  "ComboBox",
+  "GridList",
+  "ListBox",
+  "Select",
+  "Table",
+  "Tabs",
+  "TagGroup",
+  "Toolbar",
+  "Tree",
+]);
+
+// 3-branch 주입
+if (SHELL_ONLY_CONTAINER_TAGS.has(tag)) {
+  specProps = { ...specProps, _hasChildren: true };
+} else if (
+  !SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(tag) &&
+  childElements &&
+  childElements.length > 0
+) {
+  specProps = { ...specProps, _hasChildren: true };
 }
 ```
 
-**Compositional 전환 이전(버그)**: `COMPLEX_COMPONENT_TAGS.has(tag)` → 항상 \_hasChildren=true → parent monolithic spec이 모든 것을 렌더링, 자식은 ghost element.
-**Compositional 전환 이후**: 자식 Element가 독립 spec(LabelSpec, FieldErrorSpec 등)으로 렌더링하므로, \_hasChildren는 실제 childElements.length > 0으로만 판단.
+**왜 3분류인가**: 이전 단일 Set `CHILD_COMPOSITION_EXCLUDE_TAGS`가 "shell-only 컨테이너"와 "자식 props 통합 컨테이너" 두 의도를 겸용하여 Calendar 중복 렌더 버그(2026-04-17) 유발. ADR-072가 Set을 2분할 + 3-branch 로직으로 해소.
 
-**`CHILD_COMPOSITION_EXCLUDE_TAGS`에 등록되는 이유**:
+**Shell-only 조건**:
 
-- **synthetic prop 사용 컴포넌트** (Tabs, Breadcrumbs, TagGroup): 자체 prop 주입 메커니즘이 별도로 있어 `_hasChildren` 방식이 필요 없음
-- **다단계 중첩 구조** (Table, Tree): 자식 렌더링이 복잡하여 별도 구현 필요
+- factory가 자식 Element를 자동 생성하고 standalone 분기가 "빈 container placeholder" 또는 "실렌더를 자식 Element가 대체 커버"
+- 자식 수와 무관하게 `_hasChildren=true` 주입 → 자식을 모두 삭제해도 standalone 복귀 금지
+
+**Synthetic-merge 조건**:
+
+- spec shapes가 자식 props를 통합 렌더 (`_crumbs`, items[] 등)
+- `_hasChildren=true` 주입 시 shell만 남고 내용이 사라지므로 차단
+- `StoreRenderBridge.incrementalSync` 자식→부모 rebuild expansion + stale-ref 교체 대상
+
+자세한 규칙 + 판정 알고리즘 + 금지 패턴: `.claude/rules/canvas-rendering.md` §2.5 / ADR-072
 
 #### Non-complex 컴포넌트: standalone 복귀는 의도된 동작
 
@@ -351,7 +385,7 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
 2. **`COMPLEX_COMPONENT_TAGS` 등록** (`apps/builder/src/builder/factories/constants.ts`):
    - factory가 자식 Element를 생성하는 복합 컴포넌트라면 Factory 경로 분기 목적으로 이 Set에 추가 (`useElementCreator.ts`가 참조)
    - **Compositional 전환 이후**: `_hasChildren` 주입은 실제 childElements.length > 0으로만 결정되므로, 이 Set 등록이 `_hasChildren`에 영향을 주지 않음
-   - `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그(Tabs, TagGroup 등)도 Factory 경로 분기용으로 등록
+   - `SYNTHETIC_CHILD_PROP_MERGE_TAGS` 소속 태그(Tabs, TagGroup 등)도 Factory 경로 분기용으로 등록 (ADR-072)
 
 3. **ElementSprite.tsx**:
    - Child Spec을 독립 렌더링하려면 `TAG_SPEC_MAP`에 해당 태그의 Spec 클래스 등록 (필수)
