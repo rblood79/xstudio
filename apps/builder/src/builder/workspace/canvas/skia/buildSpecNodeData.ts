@@ -101,12 +101,29 @@ const CONTAINER_DIMENSION_TAGS = new Set([
   "Switcher",
 ]);
 
-// spec.render.shapes()가 _hasChildren 분기를 갖는 컨테이너.
-// 자식 변경 시 부모 Skia 노드 재빌드 필요 (StoreRenderBridge.incrementalSync 참조).
-export const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+/**
+ * Shell-only 컨테이너: factory가 자식을 자동 생성하며, 자식 Element가 독립
+ * Skia 노드로 렌더링된다. 부모 spec shapes는 항상 shell(bg+border)만 반환해야 한다.
+ * → `_hasChildren` 주입을 **자식 수와 무관하게** 수행한다
+ *   (자식을 모두 삭제해도 standalone 렌더링으로 돌아가지 않음 —
+ *    `COMPLEX_COMPONENT_TAGS`의 "자식 유무 무관 `_hasChildren=true`" 원칙).
+ * → `incrementalSync` 부모 rebuild expansion 불필요 (부모 shape이 자식 props에 의존하지 않음).
+ *
+ * 확장 후보는 `SYNTHETIC_CHILD_PROP_MERGE_TAGS`에 과도기적으로 남아있으며
+ * 개별 spec standalone 분기 감사 후 후속 ADR에서 재분류 예정.
+ */
+export const SHELL_ONLY_CONTAINER_TAGS = new Set(["Calendar", "RangeCalendar"]);
+
+/**
+ * Synthetic child prop merge 컨테이너: 자식 props를 부모 spec shapes에 통합
+ * 렌더링한다(Breadcrumbs `_crumbs`, GridList/ListBox `items`, Menu 등).
+ * → `_hasChildren=true` 주입 **금지** (주입 시 shell만 남고 내용이 사라짐).
+ * → 자식 변경 시 부모 rebuild 필요 → `StoreRenderBridge.incrementalSync`
+ *    expansion 대상.
+ */
+export const SYNTHETIC_CHILD_PROP_MERGE_TAGS = new Set([
   "Breadcrumbs",
   "ButtonGroup",
-  "Calendar",
   "Card",
   "CheckboxGroup",
   "ColorPicker",
@@ -691,10 +708,21 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   }
 
   // _hasChildren injection
-  if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-    if (childElements && childElements.length > 0) {
-      specProps = { ...specProps, _hasChildren: true };
-    }
+  //
+  // Shell-only: factory가 자식을 자동 생성하는 complex 컴포넌트. 자식 수와
+  //   무관하게 항상 주입하여 사용자가 자식을 모두 삭제해도 standalone 렌더링
+  //   으로 돌아가지 않도록 한다.
+  // Synthetic-merge: 자식 props를 spec shapes에 통합하므로 주입 차단
+  //   (주입 시 shell만 남고 내용이 사라짐).
+  // 그 외 일반 컨테이너: 자식이 있을 때만 주입.
+  if (SHELL_ONLY_CONTAINER_TAGS.has(tag)) {
+    specProps = { ...specProps, _hasChildren: true };
+  } else if (
+    !SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(tag) &&
+    childElements &&
+    childElements.length > 0
+  ) {
+    specProps = { ...specProps, _hasChildren: true };
   }
 
   // Container dimension injection

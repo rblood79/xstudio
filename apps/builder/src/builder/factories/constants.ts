@@ -7,7 +7,8 @@
  *
  * 사용처:
  * - useElementCreator.ts: Factory 경로 분기
- * - ElementSprite.tsx: _hasChildren prop 주입
+ * - buildSpecNodeData.ts: SYNTHETIC_CHILD_PROP_MERGE_TAGS 포함 태그에는
+ *   `_hasChildren` 주입이 차단되며 자식 props가 부모 spec shapes에 통합된다.
  */
 export const COMPLEX_COMPONENT_TAGS = new Set([
   // Form Input
@@ -56,8 +57,8 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   "Calendar",
   "ColorPicker",
   "ColorSwatchPicker",
-  // CHILD_COMPOSITION_EXCLUDE_TAGS 태그 (synthetic prop 메커니즘 사용)
-  // ElementSprite에서 EXCLUDE 가드에 의해 _hasChildren 주입 차단되므로 안전.
+  // SYNTHETIC_CHILD_PROP_MERGE_TAGS 포함 태그 (synthetic prop 메커니즘 사용).
+  // buildSpecNodeData에서 `_hasChildren` 주입이 차단되므로 standalone 분기가 유지되어 안전.
   // useElementCreator의 Factory 경로 분기용.
   "Tabs",
   "Tree",

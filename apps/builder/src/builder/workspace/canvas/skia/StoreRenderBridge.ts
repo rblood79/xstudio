@@ -21,7 +21,7 @@ import { buildBoxNodeData } from "./buildBoxNodeData";
 import { buildImageNodeData } from "./buildImageNodeData";
 import {
   buildSpecNodeData,
-  CHILD_COMPOSITION_EXCLUDE_TAGS,
+  SYNTHETIC_CHILD_PROP_MERGE_TAGS,
 } from "./buildSpecNodeData";
 import { registerSkiaNode, unregisterSkiaNode } from "./useSkiaNode";
 import { getSkImage, loadSkImage, releaseSkImage } from "./imageCache";
@@ -251,12 +251,12 @@ export class StoreRenderBridge {
 
       if (element.parent_id) {
         const parent = elementsMap.get(element.parent_id);
-        if (parent && CHILD_COMPOSITION_EXCLUDE_TAGS.has(parent.tag)) {
+        if (parent && SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(parent.tag)) {
           expandedIds.add(element.parent_id);
         }
       }
 
-      if (CHILD_COMPOSITION_EXCLUDE_TAGS.has(element.tag) && childrenMap) {
+      if (SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(element.tag) && childrenMap) {
         const children = childrenMap.get(id);
         if (children) {
           for (const child of children) {
@@ -440,11 +440,11 @@ export class StoreRenderBridge {
 
     if (isSpecPath(effectiveElement)) {
       // childrenMap은 props 변경 시 rebuild되지 않는다 (구조 변경만 rebuild).
-      // CHILD_COMPOSITION_EXCLUDE_TAGS는 자식 props로 shapes를 만들므로(_crumbs 등)
+      // SYNTHETIC_CHILD_PROP_MERGE_TAGS는 자식 props로 shapes를 만들므로(_crumbs 등)
       // 각 자식을 elementsMap에서 새 참조로 교체하여 stale data를 방지한다.
       const rawChildElements = childrenMap?.get(id);
       const childElements = rawChildElements
-        ? CHILD_COMPOSITION_EXCLUDE_TAGS.has(effectiveElement.tag)
+        ? SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(effectiveElement.tag)
           ? rawChildElements.map((child) => elementsMap.get(child.id) ?? child)
           : rawChildElements
         : undefined;

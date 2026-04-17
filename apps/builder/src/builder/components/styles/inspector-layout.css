@@ -2,7 +2,7 @@
   [data-context="builder"] {
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
       .react-aria-ToggleButton {
-        --button-color: var(--indicator-bg);
+        --button-color: var(--bg-overlay);
         --btn-border-radius: var(--radius-sm);
       }
     }

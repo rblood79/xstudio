@@ -785,6 +785,14 @@ const BUTTON_LIKE_TAGS = new Set(["button", "input", "select", "a", "menu"]);
 /** BUTTON_SIZE_CONFIG 경로 (parseBoxModel용, select/a 제외) */
 const BUTTON_LIKE_BOX_TAGS = new Set(["button", "input", "menu"]);
 
+/**
+ * Calendar 계열 tag (lowercase). RangeCalendarSpec은 CalendarSpec을 spread하므로
+ * layout 계산(`calculateContentHeight` 3.5 분기, `parseBoxModel` border-box)에서
+ * 두 태그를 대칭 처리해야 자식 0개·유무에 관계없이 height가 일치한다.
+ * Pascal-case 버전은 `SHELL_ONLY_CONTAINER_TAGS`(buildSpecNodeData.ts).
+ */
+const CALENDAR_LIKE_TAGS = new Set(["calendar", "rangecalendar"]);
+
 /** 컴포넌트별 기본 size prop 값 */
 const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   // Badge 계열: 'md' 기본값 (CSS TagGroup 기본 size=md와 동기화)
@@ -1854,9 +1862,9 @@ export function calculateContentHeight(
     return Math.max(h, 36);
   }
 
-  // 3.5. Calendar Compositional Architecture: Card 패턴과 동일
+  // 3.5. Calendar/RangeCalendar Compositional Architecture: Card 패턴과 동일
   // Calendar → CalendarHeader + CalendarGrid 자식 높이 합산
-  if (tag === "calendar") {
+  if (CALENDAR_LIKE_TAGS.has(tag)) {
     if (childElements && childElements.length > 0) {
       const gap = parseNumericValue(style?.gap) ?? 6;
       const calPad = parsePadding(style, availableWidth);
@@ -2722,7 +2730,7 @@ export function parseBoxModel(
   // border-box로 해석해야 Web 모드와 동일하게 총 크기(패딩 포함)가 유지된다.
   const isSectionElement = tag === "section";
   const isCardLikeElement = tag === "card" || tag === "box";
-  const isCalendarElement = tag === "calendar";
+  const isCalendarElement = CALENDAR_LIKE_TAGS.has(tag);
   const isDatePickerElement = tag === "datepicker";
   const treatAsBorderBox =
     boxSizing === "border-box" ||
