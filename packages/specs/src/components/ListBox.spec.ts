@@ -207,14 +207,16 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     },
   },
 
-  // @sync CSS container padding (--spacing-xs=4) + item padding-left (--spacing-md=12)
-  // = 총 수평 여백 16. 수직은 container(4) + item padding-top(4) = 8.
+  // @sync CSS container padding = `--spacing-xs` = 4 (containerStyles.padding 과 일치)
+  // 프로젝트 관례 (Menu/MenuItem/Select): `sizes.*.paddingX/Y` = 해당 Spec 컴포넌트
+  // 자체의 내부 padding. ListBox 는 container 역할이므로 container padding 만 표현.
+  // item padding 은 render.shapes 내부 상수 (ITEM_PADDING_X/Y) 로 @sync CSS.
   // gap 은 CSS `--spacing-2xs` = 2.
   sizes: {
     md: {
       height: 0,
-      paddingX: 16,
-      paddingY: 8,
+      paddingX: 4,
+      paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 2,
@@ -318,11 +320,23 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
               { id: "item-3", label: "Item 3" },
             ];
 
-      const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
-      // @sync sizes.md — CSS 토큰 정합: paddingY=8, paddingX=16, gap=2
-      const paddingY = (size.paddingY as unknown as number) || 8;
+      // @sync CSS `--lb-item-padding: var(--spacing) var(--spacing-md)` = 4 12
+      // @sync CSS `--text-sm--line-height` = 20 (fontSize 14 기준)
+      // TODO(ADR-post-076): ListBoxItem.spec 신설 시 본 상수 블록 해체.
+      //   근본 해결은 ListBoxItem 을 독립 Spec 으로 분리하여 item metric
+      //   (padding/lineHeight/borderRadius/sizes)을 그 Spec 이 소유하는 것.
+      //   Menu ↔ MenuItem 분리 구조 (ADR-068/071) 를 ListBox ↔ ListBoxItem 에
+      //   재적용 + Generator 자식 selector emit 확장으로 CSS 수동 유지 80%
+      //   해체 (ADR-076 후속 대기 1번). 본 상수는 그때까지의 임시 workaround.
+      const ITEM_PADDING_X = 12;
+      const ITEM_PADDING_Y = 4;
+      const LINE_HEIGHT =
+        fontSize <= 12 ? 16 : fontSize <= 14 ? 20 : fontSize <= 16 ? 24 : 28;
+      const itemH = ITEM_PADDING_Y * 2 + LINE_HEIGHT;
+      // @sync sizes.md — container padding 만 표현 (관례 정합)
+      const paddingY = (size.paddingY as unknown as number) || 4;
       const gap = (size.gap as unknown as number) || 2;
-      const paddingX = (size.paddingX as unknown as number) || 16;
+      const paddingX = (size.paddingX as unknown as number) || 4;
       let itemY = paddingY;
 
       // 선택 상태 계산 — canonical(selectedKey/selectedKeys) 우선, legacy index fallback
@@ -349,13 +363,13 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         const isSelected = selectedIndexSet.has(i);
         const isItemDisabled = Boolean(item.isDisabled);
 
-        // 아이템 배경 (선택/hover 상태 표시)
+        // 아이템 배경 (선택/hover 상태 표시) — container padding 내부 전체 영역
         shapes.push({
           type: "roundRect" as const,
-          x: 4,
-          y: itemY + 2,
-          width: width - 8,
-          height: itemH - 4,
+          x: paddingX,
+          y: itemY,
+          width: width - paddingX * 2,
+          height: itemH,
           radius: borderRadius as unknown as number,
           fill: isSelected ? variant.backgroundHover : bgColor,
         });
@@ -365,7 +379,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           shapes.push({
             type: "icon_font" as const,
             iconName: isSelected ? "check-square" : "square",
-            x: paddingX + 6,
+            x: paddingX + ITEM_PADDING_X,
             y: itemY + itemH / 2,
             fontSize,
             fill: isSelected
@@ -376,10 +390,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         }
 
         // 아이템 텍스트 (isDisabled 반영 — 비활성 항목 muted)
+        // @sync CSS 아이템 텍스트 시작: container padding + item padding-left
         const textX =
           props.selectionMode === "multiple"
-            ? paddingX + fontSize + 10
-            : paddingX;
+            ? paddingX + ITEM_PADDING_X + fontSize + 6
+            : paddingX + ITEM_PADDING_X;
         const itemTextFill = isItemDisabled
           ? ("{color.neutral-subdued}" as TokenRef)
           : isSelected

@@ -1531,12 +1531,21 @@ export function calculateContentHeight(
     const itemCount =
       Array.isArray(items) && items.length > 0 ? items.length : 3;
     const fontSize = parseNumericValue(style?.fontSize) ?? 14; // text-sm
-    // @sync ListBoxSpec render.shapes itemH 분기
-    const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
-    // @sync ListBoxSpec.sizes.md — paddingY=8(CSS container 4 + item 4), gap=2(spacing-2xs)
+    // @sync ListBoxSpec render.shapes — itemH = ITEM_PADDING_Y*2 + LINE_HEIGHT
+    // CSS `--lb-item-padding: var(--spacing) var(--spacing-md)` → padding-top=4
+    // CSS `--text-sm--line-height` = 20 (fontSize 14 기준)
+    // → itemH = 4*2 + 20 = 28 (CSS item border-box 와 동일)
+    // TODO(ADR-post-076): ListBoxItem.spec 신설 후 그 Spec 의 sizes 를 직접
+    // 참조하도록 변경. 본 상수는 임시 workaround (ListBox 한 곳에 item metric
+    // 하드코딩 → ListBox 와 동기 유지 부담). 근본 해결은 ListBoxItem.spec 분리.
+    const ITEM_PADDING_Y = 4;
+    const LINE_HEIGHT =
+      fontSize <= 12 ? 16 : fontSize <= 14 ? 20 : fontSize <= 16 ? 24 : 28;
+    const itemH = ITEM_PADDING_Y * 2 + LINE_HEIGHT;
+    // @sync ListBoxSpec.sizes.md — paddingY=4(container padding only), gap=2
     // @sync containerStyles.borderWidth=1
     const paddingY =
-      parseNumericValue(style?.paddingTop ?? style?.padding) ?? 8;
+      parseNumericValue(style?.paddingTop ?? style?.padding) ?? 4;
     const gap = parseNumericValue(style?.gap) ?? 2;
     const borderWidth = 1;
     return (
