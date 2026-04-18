@@ -17,7 +17,11 @@ import type {
   ColumnMapping,
   DataBinding,
 } from "../types";
-import type { StoredSelectItem, StoredComboBoxItem } from "@composition/specs";
+import type {
+  StoredSelectItem,
+  StoredComboBoxItem,
+  StoredListBoxItem,
+} from "@composition/specs";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -69,17 +73,76 @@ export const renderListBox = (
     "name" in (dataBinding as object) &&
     !("type" in (dataBinding as object));
 
-  if (columnMapping) {
-    // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
-    // 이유: APICollectionEditor에서 사용자가 명시적으로 컬럼을 선택할 때 Field Elements를 생성하므로
-    // Preview에서 자동 생성하면 충돌이 발생할 수 있음
-  }
-
-  // columnMapping이 있거나 PropertyDataBinding이 있고 ListBoxItem 템플릿이 있으면 render function 사용
+  // ADR-076: Path 1 (템플릿, 영구 유지) — columnMapping 또는 PropertyDataBinding + ListBoxItem 자식 존재
   const hasValidTemplate =
     (columnMapping || isPropertyBinding) && listBoxChildren.length > 0;
 
-  // hasValidTemplate일 때는 render function을 사용
+  // ADR-076: Path 2 (items canonical) — props.items 배열 존재
+  const storedItems = (element.props as { items?: StoredListBoxItem[] }).items;
+  const hasItemsArray = Array.isArray(storedItems) && storedItems.length > 0;
+
+  // ADR-076 혼합 감지 — 부모 단위 원자성 위배. Path 1 우선 (BC 보수적)
+  if (hasValidTemplate && hasItemsArray) {
+    console.warn(
+      `[ADR-076] ListBox ${element.id}: columnMapping/dataBinding 템플릿과 props.items 가 동시 존재. ` +
+        `부모 단위 원자성 위배 — Path 1 템플릿 우선, items 무시. ` +
+        `applyCollectionItemsMigration 재실행 또는 수동 분리 필요.`,
+    );
+  }
+
+  // ADR-076: Path 3 감지 (legacy 정적 children fallback) — items 없고 ListBoxItem 자식만 존재
+  // Path 2/3 canonical contract — selectedKey/selectedKeys 우선, legacy selectedIndex/Indices 변환
+  const computeDefaultSelectedKeys = (
+    items?: ReadonlyArray<StoredListBoxItem>,
+  ): string[] => {
+    const p = element.props as {
+      selectedKeys?: unknown;
+      selectedKey?: unknown;
+      selectedIndices?: unknown;
+      selectedIndex?: unknown;
+    };
+    if (Array.isArray(p.selectedKeys) && p.selectedKeys.length > 0) {
+      return p.selectedKeys.map(String);
+    }
+    if (typeof p.selectedKey === "string" && p.selectedKey.length > 0) {
+      return [p.selectedKey];
+    }
+    // legacy index 변환 (items 필요)
+    if (items && items.length > 0) {
+      if (Array.isArray(p.selectedIndices) && p.selectedIndices.length > 0) {
+        return (p.selectedIndices as unknown[])
+          .map((idx) => (typeof idx === "number" ? items[idx]?.id : undefined))
+          .filter((key): key is string => typeof key === "string");
+      }
+      if (typeof p.selectedIndex === "number") {
+        const key = items[p.selectedIndex]?.id;
+        return key ? [key] : [];
+      }
+    }
+    return [];
+  };
+
+  // 공통 ListBox props (3-path 공유)
+  const onSelectionChange = (selectedKeys: Iterable<string | number>) => {
+    const keys = Array.from(selectedKeys).map(String);
+    const updatedProps = {
+      ...element.props,
+      selectedKeys: keys,
+      selectedKey: keys[0],
+    };
+    updateElementProps(element.id, updatedProps);
+
+    const eventHandlerMap = context.services?.createEventHandlerMap?.(
+      element,
+      context,
+    );
+    const customHandler = eventHandlerMap?.["onSelectionChange"] as
+      | ((value: unknown) => void)
+      | undefined;
+    customHandler?.(selectedKeys);
+  };
+
+  // Path 1: 템플릿 모드 — 영구 유지 (BC 보수)
   if (hasValidTemplate) {
     const listBoxItemTemplate = listBoxChildren[0];
 
@@ -166,44 +229,39 @@ export const renderListBox = (
             : undefined
         }
         filterFields={element.props.filterFields as string[] | undefined}
-        defaultSelectedKeys={
-          Array.isArray(element.props.selectedKeys)
-            ? (element.props.selectedKeys as unknown as string[])
-            : []
-        }
+        defaultSelectedKeys={computeDefaultSelectedKeys()}
         dataBinding={
           (element.dataBinding || element.props.dataBinding) as
             | DataBinding
             | undefined
         }
         columnMapping={columnMapping}
-        onSelectionChange={(selectedKeys) => {
-          const updatedProps = {
-            ...element.props,
-            selectedKeys: Array.from(selectedKeys),
-          };
-          updateElementProps(element.id, updatedProps);
-
-          // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
-          const eventHandlerMap = context.services?.createEventHandlerMap?.(
-            element,
-            context,
-          );
-          const customHandler = eventHandlerMap?.["onSelectionChange"] as
-            | ((value: unknown) => void)
-            | undefined;
-          customHandler?.(selectedKeys);
-        }}
+        onSelectionChange={onSelectionChange}
       >
         {renderItemFunction}
       </ListBox>
     );
   }
 
-  // Static children (no data binding)
-  const staticChildren = listBoxChildren.map((item) =>
-    context.renderElement(item),
-  );
+  // Path 2: items[] canonical (ADR-076 신설)
+  let renderChildren: React.ReactNode;
+  if (hasItemsArray) {
+    renderChildren = storedItems!.map((item) => (
+      <ListBoxItem
+        key={item.id}
+        id={item.id}
+        data-element-id={element.id}
+        textValue={item.textValue ?? item.label}
+        isDisabled={Boolean(item.isDisabled)}
+        href={item.href}
+      >
+        {item.label}
+      </ListBoxItem>
+    ));
+  } else {
+    // Path 3: legacy 정적 children fallback — migration 미적용 프로젝트 대비
+    renderChildren = listBoxChildren.map((item) => context.renderElement(item));
+  }
 
   return (
     <ListBox
@@ -237,36 +295,16 @@ export const renderListBox = (
         element.props.filterText ? String(element.props.filterText) : undefined
       }
       filterFields={element.props.filterFields as string[] | undefined}
-      defaultSelectedKeys={
-        Array.isArray(element.props.selectedKeys)
-          ? (element.props.selectedKeys as unknown as string[])
-          : []
-      }
+      defaultSelectedKeys={computeDefaultSelectedKeys(storedItems)}
       dataBinding={
         (element.dataBinding || element.props.dataBinding) as
           | DataBinding
           | undefined
       }
       columnMapping={columnMapping}
-      onSelectionChange={(selectedKeys) => {
-        const updatedProps = {
-          ...element.props,
-          selectedKeys: Array.from(selectedKeys),
-        };
-        updateElementProps(element.id, updatedProps);
-
-        // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
-        const eventHandlerMap = context.services?.createEventHandlerMap?.(
-          element,
-          context,
-        );
-        const customHandler = eventHandlerMap?.["onSelectionChange"] as
-          | ((value: unknown) => void)
-          | undefined;
-        customHandler?.(selectedKeys);
-      }}
+      onSelectionChange={onSelectionChange}
     >
-      {staticChildren}
+      {renderChildren}
     </ListBox>
   );
 };
@@ -822,7 +860,8 @@ export const renderSelect = (
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // ADR-073 P3: items[] 경로에서 Canonical contract — items[].id lookup
-        let actualValue: React.Key | undefined | null = selectedKey ?? undefined;
+        let actualValue: React.Key | undefined | null =
+          selectedKey ?? undefined;
 
         if (hasItemsArray && selectedKey != null) {
           // 경로 2: items[].id で Canonical lookup
@@ -929,7 +968,8 @@ export const renderComboBox = (
   // ADR-073 P2: items[] SSOT
   const cbStoredItems = (element.props as { items?: StoredComboBoxItem[] })
     .items;
-  const cbHasItemsArray = Array.isArray(cbStoredItems) && cbStoredItems.length > 0;
+  const cbHasItemsArray =
+    Array.isArray(cbStoredItems) && cbStoredItems.length > 0;
 
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })

@@ -84,3 +84,82 @@ describe("Store items actions (ADR-073 P4)", () => {
     ).resolves.toBeUndefined();
   });
 });
+
+// ADR-076 Phase 4: ListBox items actions (tag-agnostic 동일 API 재사용)
+describe("Store items actions — ListBox (ADR-076 P4)", () => {
+  const listBoxId = "test-listbox-1";
+
+  beforeEach(() => {
+    const state = useStore.getState();
+    const el = {
+      id: listBoxId,
+      tag: "ListBox",
+      parent_id: null,
+      page_id: "p1",
+      order_num: 0,
+      props: { items: [] },
+    };
+    useStore.setState({
+      ...state,
+      currentPageId: "p1",
+      elements: [el as never],
+      elementsMap: new Map([[listBoxId, el as never]]),
+      childrenMap: new Map(),
+    } as never);
+  });
+
+  it("addItem: ListBox items 에 StoredListBoxItem push + id 자동 생성", async () => {
+    await useStore.getState().addItem(listBoxId, "items", {
+      label: "Apple",
+      description: "빨간 과일",
+    });
+    const el = useStore.getState().elementsMap.get(listBoxId)!;
+    const items = el.props.items as Array<{
+      id: string;
+      label: string;
+      description?: string;
+    }>;
+    expect(items).toHaveLength(1);
+    expect(items[0].label).toBe("Apple");
+    expect(items[0].description).toBe("빨간 과일");
+    expect(items[0].id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("removeItem: ListBox 특정 id 항목 제거", async () => {
+    await useStore
+      .getState()
+      .addItem(listBoxId, "items", { id: "lb-a", label: "Apple" });
+    await useStore
+      .getState()
+      .addItem(listBoxId, "items", { id: "lb-b", label: "Banana" });
+    await useStore.getState().removeItem(listBoxId, "items", "lb-a");
+    const el = useStore.getState().elementsMap.get(listBoxId)!;
+    const items = el.props.items as Array<{ id: string; label: string }>;
+    expect(items).toHaveLength(1);
+    expect(items[0].id).toBe("lb-b");
+  });
+
+  it("updateItem: ListBox 특정 id label/isDisabled/description patch", async () => {
+    await useStore
+      .getState()
+      .addItem(listBoxId, "items", { id: "lb-x", label: "Old Label" });
+    await useStore.getState().updateItem(listBoxId, "items", "lb-x", {
+      label: "New Label",
+      description: "새 설명",
+      isDisabled: true,
+    });
+    const el = useStore.getState().elementsMap.get(listBoxId)!;
+    const items = el.props.items as Array<{
+      id: string;
+      label: string;
+      description?: string;
+      isDisabled?: boolean;
+    }>;
+    expect(items[0]).toMatchObject({
+      id: "lb-x",
+      label: "New Label",
+      description: "새 설명",
+      isDisabled: true,
+    });
+  });
+});
