@@ -240,6 +240,13 @@ export type { ComboBoxProps } from "./components/ComboBox.spec";
 export { ListBoxSpec } from "./components/ListBox.spec";
 export type { ListBoxProps } from "./components/ListBox.spec";
 
+// ListBoxItem (ADR-078 — CSS 자동 생성 전용, Builder Skia 미등록 Q5=i)
+export {
+  ListBoxItemSpec,
+  resolveListBoxItemMetric,
+} from "./components/ListBoxItem.spec";
+export type { ListBoxItemProps } from "./components/ListBoxItem.spec";
+
 export { SliderSpec, SLIDER_FILL_COLORS } from "./components/Slider.spec";
 export type { SliderProps } from "./components/Slider.spec";
 

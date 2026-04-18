@@ -12,6 +12,10 @@ import type { StoredListBoxItem } from "../types/listbox-items";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-078 Phase 2: 자식 Spec inline emit — `.react-aria-ListBoxItem` 블록이 본 Spec
+// 의 `generated/ListBox.css` 같은 @layer 에 삽입된다.
+// ADR-078 Phase 3: `resolveListBoxItemMetric` 로 Skia/layout 양쪽 item metric 단일 소스화.
+import { ListBoxItemSpec, resolveListBoxItemMetric } from "./ListBoxItem.spec";
 import {
   List,
   SquareX,
@@ -82,6 +86,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     overflow: "auto",
     outline: "none",
   },
+
+  // ADR-078 Phase 2: ListBoxItem.spec base/sizes/states 블록을 본 Spec 의 `generated/ListBox.css`
+  // 내부에 inline emit. 수동 ListBox.css 의 orientation/layout/Popover cascade 가 같은 @layer
+  // 에서 `.react-aria-ListBoxItem` selector 를 override 할 수 있도록 보장.
+  childSpecs: [ListBoxItemSpec],
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -210,7 +219,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   // @sync CSS container padding = `--spacing-xs` = 4 (containerStyles.padding 과 일치)
   // 프로젝트 관례 (Menu/MenuItem/Select): `sizes.*.paddingX/Y` = 해당 Spec 컴포넌트
   // 자체의 내부 padding. ListBox 는 container 역할이므로 container padding 만 표현.
-  // item padding 은 render.shapes 내부 상수 (ITEM_PADDING_X/Y) 로 @sync CSS.
+  // ADR-078 Phase 3: item padding/lineHeight 는 `ListBoxItemSpec.sizes.md` SSOT +
+  //   `resolveListBoxItemMetric(fontSize)` 공급 — Skia render.shapes 와 layout 공유.
   // gap 은 CSS `--spacing-2xs` = 2.
   sizes: {
     md: {
@@ -320,19 +330,12 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
               { id: "item-3", label: "Item 3" },
             ];
 
-      // @sync CSS `--lb-item-padding: var(--spacing) var(--spacing-md)` = 4 12
-      // @sync CSS `--text-sm--line-height` = 20 (fontSize 14 기준)
-      // TODO(ADR-post-076): ListBoxItem.spec 신설 시 본 상수 블록 해체.
-      //   근본 해결은 ListBoxItem 을 독립 Spec 으로 분리하여 item metric
-      //   (padding/lineHeight/borderRadius/sizes)을 그 Spec 이 소유하는 것.
-      //   Menu ↔ MenuItem 분리 구조 (ADR-068/071) 를 ListBox ↔ ListBoxItem 에
-      //   재적용 + Generator 자식 selector emit 확장으로 CSS 수동 유지 80%
-      //   해체 (ADR-076 후속 대기 1번). 본 상수는 그때까지의 임시 workaround.
-      const ITEM_PADDING_X = 12;
-      const ITEM_PADDING_Y = 4;
-      const LINE_HEIGHT =
-        fontSize <= 12 ? 16 : fontSize <= 14 ? 20 : fontSize <= 16 ? 24 : 28;
-      const itemH = ITEM_PADDING_Y * 2 + LINE_HEIGHT;
+      // ADR-078 Phase 3: item metric SSOT = ListBoxItemSpec.sizes.md.
+      //   paddingX/paddingY/lineHeight/itemHeight 를 `resolveListBoxItemMetric(fontSize)` 로
+      //   공급 받아 Skia/layout(calculateContentHeight) 양쪽이 동일 공식 사용.
+      const itemMetric = resolveListBoxItemMetric(fontSize);
+      const ITEM_PADDING_X = itemMetric.paddingX;
+      const itemH = itemMetric.itemHeight;
       // @sync sizes.md — container padding 만 표현 (관례 정합)
       const paddingY = (size.paddingY as unknown as number) || 4;
       const gap = (size.gap as unknown as number) || 2;

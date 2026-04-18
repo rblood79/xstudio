@@ -132,25 +132,41 @@ const DEFAULT_BASE_STYLES = [
 /**
  * ComponentSpec에서 CSS 파일 내용 생성
  */
-export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
-  // Container/Composite 컴포넌트: 수동 CSS가 구조 담당, Spec은 Skia용
-  if (spec.skipCSSGeneration) return null;
+export function generateCSS<Props>(
+  spec: ComponentSpec<Props>,
+  /**
+   * ADR-078 Phase 2: 자식 inline emit 시 true.
+   * - 파일 헤더, `@layer components {`/`}`, animation at-rules 를 생략 — 부모가 담당.
+   * - `skipCSSGeneration: true` 자식도 embed 는 허용 (독립 파일 emit 만 차단).
+   */
+  _embedMode = false,
+): string | null {
+  // Container/Composite 컴포넌트: 수동 CSS가 구조 담당, Spec은 Skia용.
+  // embedMode 에서는 skipCSSGeneration 우회 — 독립 파일 emit 이 아닌 부모 내부 inline emit 은 허용.
+  if (spec.skipCSSGeneration && !_embedMode) return null;
 
   const archetype = spec.archetype;
 
   const lines: string[] = [];
 
-  // 파일 헤더
-  lines.push(`/* ============================================================`);
-  lines.push(` * AUTO-GENERATED from ${spec.name}Spec — DO NOT EDIT MANUALLY`);
-  lines.push(` * Source: packages/specs/src/components/${spec.name}.spec.ts`);
-  lines.push(` * Archetype: ${archetype ?? "default"}`);
-  lines.push(
-    ` * ============================================================ */`,
-  );
-  lines.push("");
-  lines.push("@layer components {");
-  lines.push("");
+  // ADR-078 Phase 2: 파일 헤더 + @layer 오픈 — embed 모드에서는 부모가 이미 emit 했으므로 생략
+  if (!_embedMode) {
+    // 파일 헤더
+    lines.push(
+      `/* ============================================================`,
+    );
+    lines.push(
+      ` * AUTO-GENERATED from ${spec.name}Spec — DO NOT EDIT MANUALLY`,
+    );
+    lines.push(` * Source: packages/specs/src/components/${spec.name}.spec.ts`);
+    lines.push(` * Archetype: ${archetype ?? "default"}`);
+    lines.push(
+      ` * ============================================================ */`,
+    );
+    lines.push("");
+    lines.push("@layer components {");
+    lines.push("");
+  }
 
   // 기본 스타일
   lines.push(`.react-aria-${spec.name} {`);
@@ -444,11 +460,35 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
     lines.push(...rootSelectorRules);
   }
 
+  // ADR-078 Phase 2: 자식 embed 모드 — @layer close / atRules 는 부모가 처리
+  if (_embedMode) {
+    return lines.join("\n");
+  }
+
+  // ADR-078 Phase 2: 자식 Spec inline emit — 부모 @layer 블록 내부에 append.
+  //   ListBox/ListBoxItem 같은 "자식 selector 를 부모 CSS 파일에 흡수" 케이스.
+  if (spec.childSpecs && spec.childSpecs.length > 0) {
+    for (const child of spec.childSpecs) {
+      const childInner = generateCSS(child, /* _embedMode */ true);
+      if (!childInner) continue;
+      lines.push("");
+      lines.push(`/* ─── Child Spec: ${child.name} (ADR-078) ─── */`);
+      lines.push("");
+      lines.push(childInner);
+    }
+  }
+
   lines.push("");
   lines.push("} /* @layer components */");
 
   // ─── Phase 4-infra: Animation at-rules (@layer 바깥) ───
+  // ADR-078 Phase 2: 자식 Spec 의 animation at-rules 도 부모와 함께 @layer 바깥에 emit
   const atRules = generateAnimationAtRules(spec);
+  if (spec.childSpecs && spec.childSpecs.length > 0) {
+    for (const child of spec.childSpecs) {
+      atRules.push(...generateAnimationAtRules(child));
+    }
+  }
   if (atRules.length > 0) {
     lines.push("");
     lines.push(...atRules);

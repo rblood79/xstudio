@@ -1,14 +1,22 @@
 /*
- * ADR-076 §0-2 — 수동 유지 selector 집합 (Generator 커버 불가)
+ * ADR-076 §0-2 / ADR-078 Phase 4 — 수동 유지 selector 집합 (Generator 커버 불가)
  *
- * 컨테이너 base (이전 1-58) 는 `ListBoxSpec.containerStyles` 가 emit.
- * 아래 수동 CSS 는 Generator 현재 능력(단일 selector + state/variant) 범위 밖:
+ * 컨테이너 base 는 `ListBoxSpec.containerStyles` 가 emit.
+ * ListBoxItem base/size/state 중 Generator emit 가능한 부분은 `ListBoxItemSpec` 으로
+ * 이관되어 `generated/ListBox.css` 내 자식 selector 블록에 inline emit (ADR-078 Phase 2/3).
  *
- *   - ListBoxItem base: 자식 selector (ListBoxItem.spec 부재 → 대체 경로 없음)
+ * 아래 수동 CSS 는 Generator 현재 능력(단일 selector + state/variant) 범위 밖 (ADR-078 Phase 4):
+ *
+ *   - ListBoxItem 고유 layout/typography: `display: flex; flex-direction: column`,
+ *     `position: relative`, `cursor/outline/transition/forced-color-adjust` (Generator 미모델)
+ *   - data-selected / href / dragging state: `[data-selected]` 색상, `[href]` text-decoration,
+ *     `[data-dragging]` opacity (Generator state 모델 밖)
+ *   - slot 자식 selector: `[slot="label"]`, `[slot="description"]` (Generator 미지원)
  *   - [data-orientation][data-layout] 복합 attribute: 복합 selector 미지원
  *   - Popover context 부모 selector override: 미지원
  *   - variant 5종 (primary/secondary/tertiary/error/filled): Spec 2종과 불일치 — 별도 ADR
- *   - DnD / virtualized / forced-colors: state/media 미모델
+ *   - DnD / virtualized: state/media 미모델
+ *   - forced-colors: Generator 가 base @media emit 하므로 중복 제거 후 수동 rule 제거
  *
  * data-empty / Section / Header 는 `:empty` / 자식 selector 필요 → 수동 유지
  */
@@ -35,7 +43,14 @@
     }
   }
 
-  /* ========== ListBoxItem size cssVars (ADR-076 G0 §0-1 — containerStyles cssVars 미지원) ========== */
+  /* ========== ListBox cssVars (ADR-076 G0 §0-1 / ADR-078 Phase 4) ==========
+   * ADR-078 Phase 4 dead var 정리: `--lb-item-min-height/size/line-height` 삭제
+   *   (ListBoxItemSpec.sizes.md SSOT 로 이관 — Generator emit 이 직접 공급).
+   * 잔존 var 는 Generator 가 커버 못하는 cascade override 포인트 전용:
+   *   - `--lb-item-padding` : Popover context(Select/ComboBox) padding override
+   *   - `--lb-desc-*`       : `[slot="description"]` 자식 selector (slot 미지원)
+   *   - `--lb-accent*`      : variant 5종 cascade (primary/secondary/tertiary/error)
+   */
   .react-aria-ListBox {
     --lb-accent: var(--border);
     --lb-accent-container: var(--accent-subtle);
@@ -45,37 +60,30 @@
     --lb-header-size: var(--text-sm);
     --lb-header-padding: 0 var(--spacing-md);
     --lb-item-padding: var(--spacing) var(--spacing-md);
-    --lb-item-min-height: 20px;
-    --lb-item-size: var(--text-sm);
-    --lb-item-line-height: var(--text-sm--line-height);
     --lb-desc-size: var(--text-xs);
     --lb-desc-line-height: var(--text-xs--line-height);
   }
 
-  /* ========== ListBoxItem Styles ========== */
+  /* ========== ListBoxItem Styles (ADR-078 Phase 4 — Generator 미커버 잔존) ==========
+   * Generator emit 위임: padding / border-radius / min-height / font-size / line-height /
+   *   font-weight / gap / &[data-hovered] / &[data-disabled] opacity+cursor / @media forced-colors
+   * 아래는 Generator 가 emit 하지 않는 잔존 고유 속성만 수동 유지.
+   */
   .react-aria-ListBoxItem {
     position: relative;
+    /* display: flex; flex-direction: column — label+description 수직 배치 (Generator `inline-flex`
+     * override). @sync ListBoxItemSpec.sizes.md.height=0 → Generator `height: auto` */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: var(--spacing-2xs);
-    padding: var(--spacing) var(--spacing-md);
-    border-radius: var(--radius-xs);
-    min-height: 20px;
-    font-size: var(--lb-item-size, var(--text-sm));
-    font-weight: 600;
-    line-height: var(--lb-item-line-height, var(--text-sm--line-height));
     color: var(--fg);
     cursor: pointer;
     outline: none;
     transition: all 150ms ease;
     forced-color-adjust: none;
 
-    &[data-hovered] {
-      background: var(--bg-overlay);
-    }
-
     &[data-focus-visible] {
+      /* Generator 기본(`var(--focus-ring)`) override — variant cascade 와 통일된 accent 포커스 */
       outline: 2px solid var(--accent);
       outline-offset: -2px;
     }
@@ -91,9 +99,9 @@
     }
 
     &[data-disabled] {
+      /* @sync Generator `[data-disabled]` emit opacity:0.38 + cursor:not-allowed.
+       * 수동은 text color 38% 추가 — opacity 와 곱해져 약 14% 전송. 디자인 의도. */
       color: color-mix(in srgb, var(--fg) 38%, transparent);
-      cursor: not-allowed;
-      opacity: 0.38;
     }
 
     &[href] {
