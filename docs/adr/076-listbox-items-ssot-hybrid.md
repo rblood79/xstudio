@@ -13,7 +13,21 @@ Implemented — 2026-04-18 (P1~P7 종결, Codex 1~6차 리뷰 반영)
 - P6 `2fdc2205` — Factory items / LayerTree items 기반 / registry pre-hook + ListBoxPropertyEditor (G5 PASS)
 - P7 Skip 확정 — Popover.css:30 이미 정합 (G6 PASS)
 
-**종결 검증**: type-check 3/3 × 5회 + 101 tests (canonical 14 + itemsActions 8 + shell-only 53 + migrateCollection 14 + migrateSelectCombo 12) 회귀 0. Chrome MCP 시각 검증은 후속 Addendum 에서 수행.
+**종결 검증**: type-check 3/3 × 5회 + 101 tests (canonical 14 + itemsActions 8 + shell-only 53 + migrateCollection 14 + migrateSelectCombo 12) 회귀 0.
+
+## Addendum 1 — Chrome MCP 시각 검증 (2026-04-18 세션 말미)
+
+`localhost:5173/builder/bdc2f503-9dca-451c-b035-81ad03c01d04` (ADR-076 이전에 생성된 legacy 프로젝트) 에서 실측. **Builder=Skia 렌더이므로 iframe/DOM 0개** — Canvas 경로가 ADR-076 의 직접 소비자 역할.
+
+| 항목                                                                               |   결과    | 근거                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------- | :-------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1-1. 신규 ListBox 드롭 시 items[] default 주입 + 레이어 패널 items[i].label        |   PASS    | body > ListBox 단일 element + virtual children 3개 "Aardvark/Cat/Kangaroo" 표시. `useLayerTreeData.ts:213-218` `props.items` 경로 정상 작동                                                                                                                |
+| 1-2. 프로퍼티 에디터 ItemsManager 섹션 (정적 모드)                                 |   PASS    | ListBox 선택 시 우측 패널에 ListBoxPropertyEditor 로드 — Content/State/Performance/**Item Management**(Total 3 + Aardvark/Cat/Kangaroo + "+ Add ListBoxItem")/Filtering 전체 섹션 정상 표시. `registry.ts` `getCustomPreEditor` pre-generic hook 경로 정상 |
+| 1-3. 템플릿 ListBox Field 자식 + Item Management 섹션 filter                       | 간접 입증 | 단위 테스트 `listBoxCanonicalContract.test.ts` "부모 원자성 3 케이스" + `migrateCollectionItems.test.ts` 템플릿 모드 2 케이스 PASS. 실제 `columnMapping` 연동 ListBox 생성 플로우는 APICollectionEditor scope — ADR-076 과 별도 워크플로                   |
+| 1-4. legacy 프로젝트 migration → items[] 자동 복원 + orphan cleanup + reload no-op |   PASS    | 프로젝트 로드 후 body 아래 ListBox 단일 element(자식 ListBoxItem 0개). 이전 factory 는 ListBoxItem × 3 + 각각 Text/Description 자식 구조였음 → **5~7 element 가 orphan 제거되고 items[] 3개로 흡수** 확증. hard reload 후에도 동일 상태(idempotency PASS)  |
+| 1-5. base 시각 회귀 0 (Generator containerStyles vs 이전 수동 base)                |   PASS    | Canvas Skia 렌더 정상 — 흰 배경(raised) + 1px border + padding + gap + 3개 아이템 수직 배열. DOM 경로는 `generated/ListBox.css` 60 라인 emit + `index.css:124` import 체인으로 간접 입증 (수동 1-58 라인이 동일 property 로 치환)                          |
+
+**결론**: 5/5 항목 시각/구조 검증 완료 (3건 직접 PASS + 1건 간접 입증 + 1건 Skia-only 직접 + DOM 간접). Builder(Skia) 경로 완전 확증. Preview/Publish DOM 경로의 직접 시각 검증은 preview 빌드 서버 오류로 본 세션 scope 밖 — `generated/ListBox.css` 가 index.css 에서 import 되는 체인은 파일 존재로 확증.
 
 ## Context
 
