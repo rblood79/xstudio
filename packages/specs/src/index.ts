@@ -78,11 +78,17 @@ export type {
   // ComboBox Items Types (ADR-073)
   StoredComboBoxItem,
   RuntimeComboBoxItem,
+  // ListBox Items Types (ADR-076)
+  StoredListBoxItem,
+  RuntimeListBoxItem,
 } from "./types";
 
 // ADR-073: Select/ComboBox items runtime converters
 export { toRuntimeSelectItem } from "./types/select-items";
 export { toRuntimeComboBoxItem } from "./types/combobox-items";
+
+// ADR-076: ListBox items runtime converter
+export { toRuntimeListBoxItem } from "./types/listbox-items";
 
 export { isValidTokenRef } from "./types";
 

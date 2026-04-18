@@ -65,6 +65,18 @@ grep -rn "<ListBox" apps/builder/src packages/shared/src/renderers
 
 **Gate G0-(b)**: 감사 실행 + 결과 기록 (이 섹션에 결과 추가 후 Phase 1 착수).
 
+**감사 결과 (2026-04-18 세션, Phase 1 착수 시점)**:
+
+- `grep -rn 'layout="grid"\|orientation="horizontal"' apps/ packages/` → **ListBox 대상 0건**
+  - `dashboard/index.tsx:99`, `BottomPanelSlot.tsx:98` = 비-ListBox
+  - `export.utils.ts:470` = CSS 문자열 (`[data-layout="grid"] { display: grid; }`) — prop 전달 아님
+- `grep 'layout\|orientation' packages/specs/src/components/ListBox.spec.ts` → **0 matches** (Spec 미선언)
+- `createListBoxDefinition` (`SelectionComponents.ts:210+`) → layout/orientation prop default **없음**
+- `<ListBox>` 직접 사용처 27곳 (builder 내부 property/events UI) — 전부 `className` 만 전달, `layout/orientation` prop **없음**
+- 실제 사용자 프로젝트 IndexedDB/Supabase 데이터 감사는 Chrome/DB 필요 — 본 세션 미수행
+
+**판정**: Spec/Factory/사용처 전달 경로 **0건**으로 확증 → **dead CSS** 로 분류 가능한 근거 확보. 단 실사용자 프로젝트 IndexedDB 확인 미수행 — **보수 정책**: 본 ADR 에서는 Hard Constraint #7 유지 (CSS 127–227 라인 수동 보존). Phase 2 에서 Chrome MCP 로 사용자 프로젝트 dump 감사 후 별도 clean-up 커밋으로 삭제 판단.
+
 ### 0-6. ListBoxItem 듀얼 모드 감사 (G0-(c) 선행 조건)
 
 **Codex 1차 리뷰 확증** — ListBoxItem 은 두 가지 모드로 사용된다:
@@ -89,6 +101,15 @@ grep -rn "<ListBox" apps/builder/src packages/shared/src/renderers
 - 실사용 0: 템플릿 모드 마이그레이션 범위 확장 고려(선택)
 
 **결과 기록**: 감사 후 이 섹션에 실사용 카운트 기록 + Phase 5 마이그레이션 분기 로직 확증.
+
+**감사 결과 (2026-04-18 세션, Phase 1 착수 시점)**:
+
+- `SelectionRenderers.tsx:60-83` `renderListBox` 에서 `columnMapping` + `PropertyDataBinding` 분기 실존 확인 — `hasValidTemplate` 기준 `(columnMapping || isPropertyBinding) && listBoxChildren.length > 0`
+- `SelectionRenderers.tsx:179` + `250` — 템플릿 렌더 경로에 `columnMapping` prop 전달 확인 (GridList/Select/ComboBox 에도 동일 패턴 적용됨 — `hasValidTemplate` 변수 8회 검출: ListBox/GridList/Select/ComboBox 4종)
+- `ListBoxItemEditor.tsx` "Field Management" UI — 템플릿 모드 편집 도구 확증 (ADR 본문 `:51-170` 인용)
+- 실제 사용자 프로젝트에서 `tag='ListBox' AND columnMapping IS NOT NULL` 카운트는 Chrome/DB 감사 필요 — 본 세션 미수행
+
+**판정**: 코드 경로 차원에서 듀얼 모드 실존 확증. 본 ADR 설계(듀얼 분기 + 혼합 금지 3계층 가드) 근거 충분. 템플릿 모드 실사용 카운트 확인은 Phase 5 Chrome MCP 검증에서 병행.
 
 ---
 
