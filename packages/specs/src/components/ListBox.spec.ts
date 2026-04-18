@@ -207,14 +207,17 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     },
   },
 
+  // @sync CSS container padding (--spacing-xs=4) + item padding-left (--spacing-md=12)
+  // = 총 수평 여백 16. 수직은 container(4) + item padding-top(4) = 8.
+  // gap 은 CSS `--spacing-2xs` = 2.
   sizes: {
     md: {
       height: 0,
-      paddingX: 12,
+      paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
-      gap: 4,
+      gap: 2,
     },
   },
 
@@ -316,9 +319,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             ];
 
       const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
+      // @sync sizes.md — CSS 토큰 정합: paddingY=8, paddingX=16, gap=2
       const paddingY = (size.paddingY as unknown as number) || 8;
-      const gap = (size.gap as unknown as number) || 4;
-      const paddingX = (size.paddingX as unknown as number) || 12;
+      const gap = (size.gap as unknown as number) || 2;
+      const paddingX = (size.paddingX as unknown as number) || 16;
       let itemY = paddingY;
 
       // 선택 상태 계산 — canonical(selectedKey/selectedKeys) 우선, legacy index fallback

@@ -1533,10 +1533,11 @@ export function calculateContentHeight(
     const fontSize = parseNumericValue(style?.fontSize) ?? 14; // text-sm
     // @sync ListBoxSpec render.shapes itemH 분기
     const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
-    // @sync ListBoxSpec.sizes.md paddingY/gap + containerStyles.borderWidth
+    // @sync ListBoxSpec.sizes.md — paddingY=8(CSS container 4 + item 4), gap=2(spacing-2xs)
+    // @sync containerStyles.borderWidth=1
     const paddingY =
       parseNumericValue(style?.paddingTop ?? style?.padding) ?? 8;
-    const gap = parseNumericValue(style?.gap) ?? 4;
+    const gap = parseNumericValue(style?.gap) ?? 2;
     const borderWidth = 1;
     return (
       paddingY * 2 +
