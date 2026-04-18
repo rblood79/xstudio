@@ -8,7 +8,7 @@ import { useStore } from "../stores";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
-import { applySelectComboBoxMigration } from "@composition/shared";
+import { applyCollectionItemsMigration } from "@composition/shared";
 import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
 import { scheduleNextFrame } from "../utils/scheduleTask";
 
@@ -530,17 +530,19 @@ export const usePageManager = ({
         layoutElements.forEach((el) => mergedMap.set(el.id, el));
         const rawMerged = Array.from(mergedMap.values());
 
-        // ADR-073 P6: Select/ComboBox legacy child → items[] 마이그레이션
+        // ADR-076 P5: Select/ComboBox/ListBox legacy child → items[] 마이그레이션
+        // ListBox 는 부모 단위 원자 판정 (Field 자식 보유 부모는 템플릿 모드 유지).
         const { migratedElements: mergedElements, orphanIds } =
-          applySelectComboBoxMigration(rawMerged);
+          applyCollectionItemsMigration(rawMerged);
 
         useStore.getState().hydrateProjectSnapshot(mergedElements);
 
-        // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem 행 제거 (undo 스택 미오염)
+        // IDB 영속 정리: orphan 된 SelectItem/ComboBoxItem/ListBoxItem(+subtree) 행 제거
+        // (undo 스택 미오염)
         if (orphanIds.length > 0) {
           void db.elements.deleteMany(orphanIds).catch((err) => {
             console.warn(
-              "[ADR-073] Select/ComboBox orphan cleanup failed:",
+              "[ADR-076] Collection items orphan cleanup failed:",
               err,
             );
           });
