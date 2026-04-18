@@ -8,7 +8,7 @@ Proposed — 2026-04-18 (Codex 1~5차 리뷰 반영)
 
 ListBox 컴포넌트는 items SSOT 체인(ADR-066 Tabs → ADR-068 Menu → ADR-073 Select/ComboBox)의 마지막 컬렉션 계열 컴포넌트다. 그러나 선례 3종과 달리 **ListBoxItem 이 듀얼 모드** 로 사용된다 — Codex 1차 리뷰에서 확증됨:
 
-1. **정적 모드** — `props.label/value/description/isDisabled` 만 보유. ADR-073 Select/ComboBox 패턴과 동일
+1. **정적 모드** — `props.label/value/description/isDisabled` 보유 **또는** 자식으로 Text/Description element subtree 보유 (Field 자식은 없음). Factory default(`SelectionComponents.ts:236-263`) 는 Text/Description 자식 구조로 생성되므로 마이그레이션은 `props.*` 우선 + 자식 subtree fallback 로 직렬화 (Codex 2차 §1, 상세는 Phase 5). ADR-073 Select/ComboBox 패턴과 다르게 자식 subtree 수용
 2. **템플릿 모드** — ListBoxItem 자식으로 `Field` element 를 가지며 `columnMapping` 또는 `PropertyDataBinding` 과 연동해 **동적 컬럼 렌더링** 수행. `SelectionRenderers.tsx:78-133` `hasValidTemplate` 분기 + `ListBoxItemEditor.tsx:51-170` "Field Management" UI 로 운영 중
 
 본 ADR 은 **정적 모드만** items[] SSOT 로 전환하고, **템플릿 모드는 legacy element tree 구조를 영구 보존**한다.
