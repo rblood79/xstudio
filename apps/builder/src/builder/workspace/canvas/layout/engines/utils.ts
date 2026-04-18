@@ -1517,11 +1517,13 @@ export function calculateContentHeight(
     return estimateTextHeight(fontSize, undefined);
   }
 
-  // 1.55b. ListBox (ADR-076 P6+): items SSOT 기반 intrinsic content-height.
-  // Factory default 가 자식 ListBoxItem element 를 만들지 않으므로 childElements=0.
+  // 1.55b. ListBox (ADR-076 P6+): items SSOT 기반 intrinsic border-box height.
+  // Factory default 는 자식 ListBoxItem element 를 만들지 않으므로 childElements=0.
   // Spec sizes.md.height=0 이고 render.shapes 가 items.length 기반으로 그리므로
-  // layout 도 동일 공식(fontSize → itemH, padding, gap)으로 content 높이 산출.
-  // enrichWithIntrinsicSize 가 paddingY*2 + border*2 를 이 값에 추가 → border-box.
+  // layout 도 동일 공식(paddingY + itemCount*itemH + gap + paddingY + border) 으로
+  // **border-box** 높이 산출.
+  // enrichWithIntrinsicSize 는 SPEC_SHAPES_INPUT_TAGS 경로로 padding 추가를 skip 하므로
+  // 반환값에 padding + border 를 포함해야 background shape(bg roundRect) 와 일치.
   if (tag1 === "listbox") {
     const props = element.props as Record<string, unknown> | undefined;
     const items = props?.items;
@@ -1531,8 +1533,17 @@ export function calculateContentHeight(
     const fontSize = parseNumericValue(style?.fontSize) ?? 14; // text-sm
     // @sync ListBoxSpec render.shapes itemH 분기
     const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
+    // @sync ListBoxSpec.sizes.md paddingY/gap + containerStyles.borderWidth
+    const paddingY =
+      parseNumericValue(style?.paddingTop ?? style?.padding) ?? 8;
     const gap = parseNumericValue(style?.gap) ?? 4;
-    return itemCount * itemH + Math.max(0, itemCount - 1) * gap;
+    const borderWidth = 1;
+    return (
+      paddingY * 2 +
+      itemCount * itemH +
+      Math.max(0, itemCount - 1) * gap +
+      borderWidth * 2
+    );
   }
 
   // 1.6. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
