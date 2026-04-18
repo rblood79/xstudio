@@ -1,41 +1,20 @@
+/*
+ * ADR-076 §0-2 — 수동 유지 selector 집합 (Generator 커버 불가)
+ *
+ * 컨테이너 base (이전 1-58) 는 `ListBoxSpec.containerStyles` 가 emit.
+ * 아래 수동 CSS 는 Generator 현재 능력(단일 selector + state/variant) 범위 밖:
+ *
+ *   - ListBoxItem base: 자식 selector (ListBoxItem.spec 부재 → 대체 경로 없음)
+ *   - [data-orientation][data-layout] 복합 attribute: 복합 selector 미지원
+ *   - Popover context 부모 selector override: 미지원
+ *   - variant 5종 (primary/secondary/tertiary/error/filled): Spec 2종과 불일치 — 별도 ADR
+ *   - DnD / virtualized / forced-colors: state/media 미모델
+ *
+ * data-empty / Section / Header 는 `:empty` / 자식 selector 필요 → 수동 유지
+ */
 @layer components {
-  /* ========== Base ListBox Styles ========== */
+  /* ========== ListBox :empty + Section/Header (Generator 커버 불가 — 자식 selector) ========== */
   .react-aria-ListBox {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    padding: var(--spacing-xs);
-    border: 1px solid var(--border);
-    border-radius: var(--border-radius);
-    background: var(--bg-raised);
-    color: var(--fg);
-    outline: none;
-    max-height: 300px;
-    overflow: auto;
-    gap: var(--spacing-2xs);
-
-    /* 기본 variant 변수 — 시맨틱 토큰 사용 (테마 accent 반영) */
-    --lb-accent: var(--border);
-    --lb-accent-container: var(--accent-subtle);
-    --lb-on-accent-container: var(--fg);
-
-    /* 기본 size 변수 (md — Button size 시스템 기준) */
-    --lb-padding: var(--spacing-xs);
-    --lb-gap: var(--spacing-2xs);
-    --lb-header-size: var(--text-sm);
-    --lb-header-padding: 0 var(--spacing-md);
-    --lb-item-padding: var(--spacing) var(--spacing-md);
-    --lb-item-min-height: 20px;
-    --lb-item-size: var(--text-sm);
-    --lb-item-line-height: var(--text-sm--line-height);
-    --lb-desc-size: var(--text-xs);
-    --lb-desc-line-height: var(--text-xs--line-height);
-
-    &[data-focus-visible] {
-      outline: 2px solid var(--accent);
-      outline-offset: -1px;
-    }
-
     &[data-empty] {
       align-items: center;
       justify-content: center;
@@ -43,7 +22,6 @@
       color: var(--fg-muted);
     }
 
-    /* Section & Header */
     .react-aria-ListBoxSection:not(:first-child) {
       margin-top: var(--spacing-md);
     }
@@ -55,6 +33,23 @@
       padding: 0 var(--spacing-md);
       margin-bottom: var(--spacing-xs);
     }
+  }
+
+  /* ========== ListBoxItem size cssVars (ADR-076 G0 §0-1 — containerStyles cssVars 미지원) ========== */
+  .react-aria-ListBox {
+    --lb-accent: var(--border);
+    --lb-accent-container: var(--accent-subtle);
+    --lb-on-accent-container: var(--fg);
+    --lb-padding: var(--spacing-xs);
+    --lb-gap: var(--spacing-2xs);
+    --lb-header-size: var(--text-sm);
+    --lb-header-padding: 0 var(--spacing-md);
+    --lb-item-padding: var(--spacing) var(--spacing-md);
+    --lb-item-min-height: 20px;
+    --lb-item-size: var(--text-sm);
+    --lb-item-line-height: var(--text-sm--line-height);
+    --lb-desc-size: var(--text-xs);
+    --lb-desc-line-height: var(--text-xs--line-height);
   }
 
   /* ========== ListBoxItem Styles ========== */

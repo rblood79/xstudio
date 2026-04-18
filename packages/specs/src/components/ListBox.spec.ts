@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { StoredListBoxItem } from "../types/listbox-items";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -38,15 +39,21 @@ export interface ListBoxProps {
   overscan?: number;
   filterText?: string;
   filterFields?: string[];
-  /** 아이템 목록 (우선순위: items > children 개행 분리) */
-  items?: string[];
-  /** 선택된 아이템 인덱스 (단일 선택용 하이라이트) */
+  /** 아이템 목록 (ADR-076 P2: StoredListBoxItem[] SSOT) */
+  items?: StoredListBoxItem[];
+  /** 선택된 아이템 key — canonical (ADR-076) */
+  selectedKey?: string;
+  /** 선택된 아이템 key 목록 — canonical (ADR-076) */
+  selectedKeys?: string[];
+  /** @deprecated selectedKey 사용 (Phase 5 migration 에서 자동 변환) */
   selectedIndex?: number;
-  /** 선택된 아이템 인덱스 목록 (다중 선택용 하이라이트) */
+  /** @deprecated selectedKeys 사용 (Phase 5 migration 에서 자동 변환) */
   selectedIndices?: number[];
   children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
+  /** ElementSprite 주입: 자식 Element 존재 시 spec shapes 아이템 렌더링 스킵 */
+  _hasChildren?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -58,7 +65,24 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   description: "React Aria 기반 리스트박스 컴포넌트",
   archetype: "collection",
   element: "div",
-  skipCSSGeneration: true,
+
+  // ADR-076: 컨테이너 base 시각 SSOT (ADR-071 Menu 선례 재사용)
+  // `variants` 는 Skia 렌더(render.shapes) 전용, CSS 경로는 이 블록만 사용
+  // 수동 유지 CSS: ListBoxItem base(60-124) + orientation/layout(127-227) +
+  // Popover context(246-293) + variant 5종(296-355) + DnD/virtualized/forced-colors(230-400)
+  containerStyles: {
+    background: "{color.raised}" as TokenRef,
+    text: "{color.neutral}" as TokenRef,
+    border: "{color.border}" as TokenRef,
+    borderWidth: 1,
+    borderRadius: "{radius.lg}" as TokenRef,
+    padding: "{spacing.xs}" as TokenRef,
+    gap: "{spacing.2xs}" as TokenRef,
+    width: "100%",
+    maxHeight: "300px",
+    overflow: "auto",
+    outline: "none",
+  },
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -136,14 +160,26 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         fields: [
           {
             key: "items",
-            type: "children-manager",
+            type: "items-manager",
             label: "Items",
-            childTag: "ListBoxItem",
-            defaultChildProps: {
-              label: "Item",
+            itemsKey: "items",
+            itemTypeName: "ListBoxItem",
+            defaultItem: {
+              id: "", // runtime에서 crypto.randomUUID() 주입
+              label: "New Item",
               value: "",
+              isDisabled: false,
             },
-            labelProp: "label",
+            itemSchema: [
+              { key: "label", type: "string", label: "Label" },
+              { key: "value", type: "string", label: "Value" },
+              { key: "textValue", type: "string", label: "Text Value" },
+              { key: "description", type: "string", label: "Description" },
+              { key: "isDisabled", type: "boolean", label: "Disabled" },
+              { key: "href", type: "string", label: "URL" },
+            ],
+            labelKey: "label",
+            allowNested: false,
           },
         ],
       },
@@ -191,15 +227,16 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     },
   },
 
-  propagation: {
-    rules: [
-      { parentProp: "variant", childPath: "ListBoxItem", override: true },
-    ],
-  },
+  // ADR-076: propagation.rules 삭제 — 정적 모드 shapes 가 부모 variant 직접 참조,
+  // 템플릿 모드는 Field 자식이 렌더하므로 childPath 전파 불필요
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = ListBoxSpec.variants![(props as { variant?: keyof typeof ListBoxSpec.variants }).variant ?? ListBoxSpec.defaultVariant!];
+      const variant =
+        ListBoxSpec.variants![
+          (props as { variant?: keyof typeof ListBoxSpec.variants }).variant ??
+            ListBoxSpec.defaultVariant!
+        ];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -219,7 +256,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        14,
+      );
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
@@ -261,12 +301,16 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
-      // 리스트 아이템 생성
-      const items: string[] =
-        props.items ??
-        (props.children
-          ? props.children.split("\n").filter(Boolean)
-          : ["Item 1", "Item 2", "Item 3"]);
+      // 리스트 아이템 생성 (ADR-076: StoredListBoxItem[] SSOT)
+      // fallback placeholder — items 부재 시 3개 샘플 (Select 선례)
+      const items: StoredListBoxItem[] =
+        props.items && props.items.length > 0
+          ? props.items
+          : [
+              { id: "item-1", label: "Item 1" },
+              { id: "item-2", label: "Item 2" },
+              { id: "item-3", label: "Item 3" },
+            ];
 
       const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
       const paddingY = (size.paddingY as unknown as number) || 8;
@@ -274,14 +318,29 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const paddingX = (size.paddingX as unknown as number) || 12;
       let itemY = paddingY;
 
-      // 선택 상태 계산
-      const selectedSet = new Set<number>(
-        props.selectedIndices ??
-          (props.selectedIndex != null ? [props.selectedIndex] : [0]),
-      );
+      // 선택 상태 계산 — canonical(selectedKey/selectedKeys) 우선, legacy index fallback
+      // Phase 5 migration 전 legacy 프로젝트 로드 시 selectedIndex 경로 유지
+      const selectedIndexSet = new Set<number>();
+      if (props.selectedKeys && props.selectedKeys.length > 0) {
+        for (const key of props.selectedKeys) {
+          const idx = items.findIndex((it) => it.id === key);
+          if (idx >= 0) selectedIndexSet.add(idx);
+        }
+      } else if (props.selectedKey != null) {
+        const idx = items.findIndex((it) => it.id === props.selectedKey);
+        if (idx >= 0) selectedIndexSet.add(idx);
+      } else if (props.selectedIndices && props.selectedIndices.length > 0) {
+        for (const idx of props.selectedIndices) selectedIndexSet.add(idx);
+      } else if (props.selectedIndex != null) {
+        selectedIndexSet.add(props.selectedIndex);
+      } else {
+        selectedIndexSet.add(0);
+      }
 
       for (let i = 0; i < items.length; i++) {
-        const isSelected = selectedSet.has(i);
+        const item = items[i];
+        const isSelected = selectedIndexSet.has(i);
+        const isItemDisabled = Boolean(item.isDisabled);
 
         // 아이템 배경 (선택/hover 상태 표시)
         shapes.push({
@@ -309,20 +368,25 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           });
         }
 
-        // 아이템 텍스트
+        // 아이템 텍스트 (isDisabled 반영 — 비활성 항목 muted)
         const textX =
           props.selectionMode === "multiple"
             ? paddingX + fontSize + 10
             : paddingX;
+        const itemTextFill = isItemDisabled
+          ? ("{color.neutral-subdued}" as TokenRef)
+          : isSelected
+            ? ("{color.neutral}" as TokenRef)
+            : textColor;
         shapes.push({
           type: "text" as const,
           x: textX,
           y: itemY + itemH / 2,
-          text: items[i],
+          text: item.label,
           fontSize,
           fontFamily: ff,
           fontWeight: 600,
-          fill: isSelected ? ("{color.neutral}" as TokenRef) : textColor,
+          fill: itemTextFill,
           align: textAlign,
           baseline: "middle" as const,
         });

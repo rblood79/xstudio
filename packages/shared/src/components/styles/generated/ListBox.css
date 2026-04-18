@@ -1,0 +1,61 @@
+/* ============================================================
+ * AUTO-GENERATED from ListBoxSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ListBox.spec.ts
+ * Archetype: collection
+ * ============================================================ */
+
+@layer components {
+
+.react-aria-ListBox {
+  /* Base styles — archetype: collection */
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+
+  /* Container styles (ADR-071) */
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+  gap: var(--spacing-2xs);
+  width: 100%;
+  max-height: 300px;
+  overflow: auto;
+  outline: none;
+
+  /* Default size */
+  height: auto;
+  font-size: var(--text-sm);
+}
+
+.react-aria-ListBox[data-size="md"] {
+  height: auto;
+  font-size: var(--text-sm);
+}
+
+.react-aria-ListBox[data-hovered] {
+}
+
+.react-aria-ListBox[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.react-aria-ListBox[data-pressed] {
+}
+
+.react-aria-ListBox[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-ListBox {
+    forced-color-adjust: auto;
+  }
+}
+
+
+} /* @layer components */

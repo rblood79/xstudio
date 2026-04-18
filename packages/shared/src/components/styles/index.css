@@ -121,7 +121,8 @@
 @import "./generated/TimeField.css";
 
 /* Collection Components */
-@import "./ListBox.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
+@import "./generated/ListBox.css"; /* ADR-076: 컨테이너 base — containerStyles SSOT */
+@import "./ListBox.css"; /* ADR-076 §0-2: ListBoxItem base + complex selectors 수동 유지 */
 @import "./GridList.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
 
 /* Overlay Components */
