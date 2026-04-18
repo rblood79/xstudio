@@ -210,6 +210,9 @@ export const renderListBox = (
           (element.props.selectionMode as "none" | "single" | "multiple") ||
           "none"
         }
+        selectionBehavior={
+          (element.props.selectionBehavior as "toggle" | "replace") || "toggle"
+        }
         disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
         autoFocus={Boolean(element.props.autoFocus)}
         enableVirtualization={Boolean(element.props.enableVirtualization)}

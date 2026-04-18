@@ -49,7 +49,6 @@ export interface ListBoxProps {
   selectedIndex?: number;
   /** @deprecated selectedKeys 사용 (Phase 5 migration 에서 자동 변환) */
   selectedIndices?: number[];
-  children?: string;
   /** ElementSprite 주입: 엔진 계산 최종 폭 */
   _containerWidth?: number;
   /** ElementSprite 주입: 자식 Element 존재 시 spec shapes 아이템 렌더링 스킵 */
@@ -98,6 +97,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             label: "Selection Mode",
             icon: List,
             options: [
+              { value: "none", label: "None" },
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
@@ -187,16 +187,19 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     ],
   },
 
+  // @sync containerStyles.background = {color.raised}
+  // Generator CSS 와 Skia render.shapes 가 동일한 컨테이너 배경(raised)을 사용해야
+  // D3 symmetric consumer 대칭 유지 (이전 {color.base} 는 페이지 bg 와 혼동 위험)
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
+      background: "{color.raised}" as TokenRef,
       backgroundHover: "{color.layer-2}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
+      background: "{color.raised}" as TokenRef,
       backgroundHover: "{color.accent-subtle}" as TokenRef,
       backgroundPressed: "{color.accent-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
