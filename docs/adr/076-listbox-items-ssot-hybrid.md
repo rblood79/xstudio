@@ -2,7 +2,18 @@
 
 ## Status
 
-Proposed — 2026-04-18 (Codex 1~5차 리뷰 반영)
+Implemented — 2026-04-18 (P1~P7 종결, Codex 1~6차 리뷰 반영)
+
+**Phase 커밋 체인** (origin/main):
+
+- P1 `8fe38661` — types + G0 감사 (G1 PASS)
+- P2 `3c3bce19` — Spec containerStyles + CSS base 1-58 삭제 (G2 PASS)
+- P3+P4 `699edadd` — renderListBox 3-path + canonical contract 14 + itemsActions 3 (G3 PASS)
+- P5 `0a9d80b2` — migrateCollectionItems 오케스트레이터 + ListBox migration 14 (G4 PASS)
+- P6 `2fdc2205` — Factory items / LayerTree items 기반 / registry pre-hook + ListBoxPropertyEditor (G5 PASS)
+- P7 Skip 확정 — Popover.css:30 이미 정합 (G6 PASS)
+
+**종결 검증**: type-check 3/3 × 5회 + 101 tests (canonical 14 + itemsActions 8 + shell-only 53 + migrateCollection 14 + migrateSelectCombo 12) 회귀 0. Chrome MCP 시각 검증은 후속 Addendum 에서 수행.
 
 ## Context
 

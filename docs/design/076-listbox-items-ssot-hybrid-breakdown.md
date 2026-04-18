@@ -482,6 +482,34 @@ const { migratedElements, orphanIds } =
 
 **Gate G6**: Phase 7 skip 결정 기록 + ADR 본문 Gates G6 업데이트.
 
+**Phase 7 종결 기록 (2026-04-18 세션, G6 PASS)**:
+
+- `packages/shared/src/components/styles/Popover.css:30` — `background: var(--bg-raised);` **재확증**. ADR-070 Addendum 1 목표 정합 상태 변경 없음
+- Popover.tsx:13-86 variant prop 부재 재확인 (grep 0건)
+- Phase 7 = **Skip 확정**. 별도 ADR 3건 (variant 배선 / Skia 팔레트 / dead selector) 은 후속 대기
+- G6 실패 시 대안 "재조사" 는 불필요 — 실측으로 skip 근거 확보 완료
+
+### Phase 8 — 종결 검증 기록 (G7)
+
+**G7 검증 결과 (2026-04-18 세션)**:
+
+- **간접 입증 (코드/테스트 경로)**:
+  - `pnpm type-check` 3/3 × 5회 누적 PASS (P1~P6 각 phase 별)
+  - `pnpm build:specs` 108 CSS files emit PASS — ListBox.css generated 60 라인 컨테이너 base 확인
+  - 단위 테스트 101/101 PASS:
+    - `listBoxCanonicalContract.test.ts` 14/14 — selectedKey 역매핑 + legacy 변환 + 부모 원자성 경로 판정
+    - `migrateCollectionItems.test.ts` 14/14 — ListBox 정적/템플릿/혼합 + selectedIndex 변환 + Idempotency + 3종 공존
+    - `migrateSelectComboBoxItems.test.ts` 12/12 (BC 회귀 0)
+    - `itemsActions.test.ts` 8/8 (ListBox 3건 포함, tag-agnostic 재사용 확증)
+    - `shell-only-tags.test.ts` 53/53 — ListBox SYNTHETIC_CHILD_PROP_MERGE_TAGS 유지 불변 확증 (breakdown §0-4)
+- **직접 시각 검증은 Chrome MCP background 모드 제약으로 본 세션 미수행**. 후속 Addendum 또는 별도 세션에서 수행:
+  - [ ] 정적 ListBox 드롭 → items[] default 3개 + 레이어 패널 items[i].label 표시
+  - [ ] 프로퍼티 에디터 → ItemsManager 섹션 표시 (정적 모드)
+  - [ ] 템플릿 ListBox (columnMapping 연동) 드롭 → Field 자식 + Item Management 섹션 filter 확인
+  - [ ] legacy ListBoxItem 프로젝트 로드 → items[] 자동 복원 + orphan cleanup + reload no-op
+  - [ ] Chrome MCP base 시각 — Generator containerStyles 와 이전 수동 base 동일
+- **선례 비교**: ADR-066 (Tabs) / ADR-068 (Menu) / ADR-073 (Select+ComboBox) 모두 G2 시각 검증은 간접 입증(단위 테스트) 으로 종결. ADR-076 도 동일 표준 적용. parallel-verify skill 형식 종결은 사용자 지시 시 후속 세션
+
 ---
 
 ## 2. Gate 요약
