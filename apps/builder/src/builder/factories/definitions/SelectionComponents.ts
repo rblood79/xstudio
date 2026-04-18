@@ -1,7 +1,11 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
-import type { StoredSelectItem, StoredComboBoxItem } from "@composition/specs";
+import type {
+  StoredSelectItem,
+  StoredComboBoxItem,
+  StoredListBoxItem,
+} from "@composition/specs";
 
 /**
  * Select 컴포넌트 정의 (ADR-073 P6)
@@ -201,8 +205,12 @@ export function createComboBoxDefinition(
 }
 
 /**
- * ListBox 컴포넌트 정의
- * React Aria Composition 패턴: ListBoxItem 내부에 Text 자식 Element 조합
+ * ListBox 컴포넌트 정의 (ADR-076 P6)
+ *
+ * items prop 으로 ListBoxItem 데이터를 직렬화 가능한 StoredListBoxItem[] 형태로 관리.
+ * 정적 모드 ListBoxItem 자식 element 는 더 이상 생성하지 않는다 (부모 단위 원자성).
+ * 템플릿 모드(columnMapping/PropertyDataBinding + Field 자식) 는 별도 워크플로 —
+ * APICollectionEditor 등이 명시적으로 ListBoxItem + Field 자식을 생성.
  */
 export function createListBoxDefinition(
   context: ComponentCreationContext,
@@ -216,6 +224,27 @@ export function createListBoxDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
+  const items: StoredListBoxItem[] = [
+    {
+      id: crypto.randomUUID(),
+      label: "Aardvark",
+      value: "aardvark",
+      description: "A nocturnal burrowing mammal",
+    },
+    {
+      id: crypto.randomUUID(),
+      label: "Cat",
+      value: "cat",
+      description: "A small domesticated carnivore",
+    },
+    {
+      id: crypto.randomUUID(),
+      label: "Kangaroo",
+      value: "kangaroo",
+      description: "A large marsupial native to Australia",
+    },
+  ];
+
   return {
     tag: "ListBox",
     parent: {
@@ -223,6 +252,7 @@ export function createListBoxDefinition(
       props: {
         orientation: "vertical",
         selectionMode: "single",
+        items,
         style: {
           width: "100%",
         },
@@ -231,101 +261,7 @@ export function createListBoxDefinition(
       parent_id: parentId,
       order_num: orderNum,
     },
-    children: [
-      {
-        tag: "ListBoxItem",
-        props: {
-          textValue: "Aardvark",
-          value: "aardvark",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 1,
-        children: [
-          {
-            tag: "Text",
-            props: {
-              children: "Aardvark",
-              style: { fontSize: 14, fontWeight: 600 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
-          },
-          {
-            tag: "Description",
-            props: {
-              children: "A nocturnal burrowing mammal",
-              slot: "description",
-              style: { fontSize: 12 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-        ],
-      },
-      {
-        tag: "ListBoxItem",
-        props: {
-          textValue: "Cat",
-          value: "cat",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-        children: [
-          {
-            tag: "Text",
-            props: {
-              children: "Cat",
-              style: { fontSize: 14, fontWeight: 600 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
-          },
-          {
-            tag: "Description",
-            props: {
-              children: "A small domesticated carnivore",
-              slot: "description",
-              style: { fontSize: 12 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-        ],
-      },
-      {
-        tag: "ListBoxItem",
-        props: {
-          textValue: "Kangaroo",
-          value: "kangaroo",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
-        children: [
-          {
-            tag: "Text",
-            props: {
-              children: "Kangaroo",
-              style: { fontSize: 14, fontWeight: 600 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
-          },
-          {
-            tag: "Description",
-            props: {
-              children: "A large marsupial native to Australia",
-              slot: "description",
-              style: { fontSize: 12 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-        ],
-      },
-    ],
+    children: [],
   };
 }
 

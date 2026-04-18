@@ -23,6 +23,23 @@ function getHybridAfterSections(type: string) {
 }
 
 /**
+ * ADR-076 P6 — pre-generic custom editor hook.
+ *
+ * Spec 등록 컴포넌트라도 subtree 관찰이나 듀얼 모드 분기 같은 특수 로직이 필요하면
+ * 여기에 등록. GenericPropertyEditor 에 도달하기 전에 wrapping editor 가 선택된다.
+ * `metadata.editorName` 단독 연결은 `spec-first early return` 때문에 로드되지 않으므로
+ * 이 경로가 필수 진입점. `getHybridAfterSections` 선례와 대칭 확장.
+ */
+function getCustomPreEditor(type: string): string | undefined {
+  switch (type) {
+    case "ListBox":
+      return "ListBoxPropertyEditor";
+    default:
+      return undefined;
+  }
+}
+
+/**
  * Vite의 import.meta.glob을 사용하여 모든 에디터를 사전 로드
  * 이 방식은 빌드 타임에 모든 가능한 import를 정적으로 분석할 수 있게 함
  */
@@ -119,6 +136,20 @@ export async function getEditor(
   // 일반 에디터: 캐시 확인
   if (editorCache.has(type)) {
     return editorCache.get(type)!;
+  }
+
+  // ADR-076: pre-generic custom editor — spec-first 경로보다 먼저 평가
+  const preEditorName = getCustomPreEditor(type);
+  if (preEditorName) {
+    const preEditor = await importEditor(preEditorName);
+    if (preEditor) {
+      editorCache.set(type, preEditor);
+      return preEditor;
+    }
+    console.warn(
+      "[getEditor] pre-editor import failed, falling back to generic:",
+      preEditorName,
+    );
   }
 
   const propertySpec = getPropertyEditorSpec(type);

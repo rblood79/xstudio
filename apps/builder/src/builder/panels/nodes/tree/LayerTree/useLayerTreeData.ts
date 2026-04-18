@@ -12,6 +12,7 @@ import {
   type ListItem,
   type TreeItem as TreeItemType,
 } from "../helpers";
+import type { StoredListBoxItem } from "@composition/specs";
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
@@ -211,9 +212,14 @@ function getVirtualChildren(
   }
 
   if (item.tag === "ListBox") {
-    const children = childrenAs<ListItem>(props.children);
-    return children.map((child, index) =>
-      makeNode("listbox", index, child.label || `Item ${index + 1}`, child),
+    // ADR-076 P6: items SSOT 기반 virtual children.
+    // 정적 모드 부모는 props.items, 템플릿 모드 부모는 items 없음 →
+    // 실제 ListBoxItem element 자식이 기본 childrenMap 경로로 표시됨.
+    const items =
+      (props.items as StoredListBoxItem[] | undefined) ??
+      ([] as StoredListBoxItem[]);
+    return items.map((it, index) =>
+      makeNode("listbox", index, it.label || `Item ${index + 1}`, it),
     );
   }
 

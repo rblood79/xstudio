@@ -507,7 +507,11 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Collections",
     icon: "📋",
     inspector: {
+      // ADR-076 P6: 실제 로드 경로는 `registry.ts.getCustomPreEditor("ListBox")`
+      // pre-generic hook. 본 필드는 보조적 일관성 기록 — `hasCustomEditor: true` 는
+      // spec-first early return 우회를 의미하지 않으므로 그대로 false 유지.
       hasCustomEditor: false,
+      editorName: "ListBoxPropertyEditor",
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onAction, onFocus, onBlur, onFocusChange
       supportedEvents: ["onSelectionChange", "onAction", "onFocus", "onBlur"],

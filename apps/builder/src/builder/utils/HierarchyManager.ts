@@ -414,7 +414,11 @@ export class HierarchyManager {
       }
 
       case "ListBox": {
-        // ListBoxItem들만 반환
+        // ADR-076 P6: dead code 가능성 — 본 함수의 호출처 grep 0건(2026-04-18 확인).
+        // 실제 레이어 패널 virtual children 생성은 `useLayerTreeData.ts:213-218` 경로
+        // 에서 `props.items` 기반으로 수행. 본 case 는 최소 영향 정책(기존 로직 유지)
+        // 으로 보존. 템플릿 모드(Field 자식 보유) 부모는 여기서 ListBoxItem 자식을
+        // 반환해야 하나, items SSOT 하에서 정적 모드 부모는 ListBoxItem 자식이 0개.
         return children.filter((child) => child.tag === "ListBoxItem");
       }
 
