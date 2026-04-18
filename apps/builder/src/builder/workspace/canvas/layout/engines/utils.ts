@@ -1517,6 +1517,24 @@ export function calculateContentHeight(
     return estimateTextHeight(fontSize, undefined);
   }
 
+  // 1.55b. ListBox (ADR-076 P6+): items SSOT 기반 intrinsic content-height.
+  // Factory default 가 자식 ListBoxItem element 를 만들지 않으므로 childElements=0.
+  // Spec sizes.md.height=0 이고 render.shapes 가 items.length 기반으로 그리므로
+  // layout 도 동일 공식(fontSize → itemH, padding, gap)으로 content 높이 산출.
+  // enrichWithIntrinsicSize 가 paddingY*2 + border*2 를 이 값에 추가 → border-box.
+  if (tag1 === "listbox") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const items = props?.items;
+    // render.shapes fallback 과 동일: items 미지정 시 3개 placeholder
+    const itemCount =
+      Array.isArray(items) && items.length > 0 ? items.length : 3;
+    const fontSize = parseNumericValue(style?.fontSize) ?? 14; // text-sm
+    // @sync ListBoxSpec render.shapes itemH 분기
+    const itemH = fontSize > 16 ? 40 : fontSize > 12 ? 36 : 32;
+    const gap = parseNumericValue(style?.gap) ?? 4;
+    return itemCount * itemH + Math.max(0, itemCount - 1) * gap;
+  }
+
   // 1.6. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
   // ToggleButtonGroup 자체는 padding/border 없는 flex 컨테이너이므로
   // content-box height = 자식 ToggleButton의 border-box height
@@ -2853,6 +2871,9 @@ const SPEC_SHAPES_INPUT_TAGS = new Set([
   "progresscircle",
   "meter",
   "gauge",
+  // ADR-076 P6+: items SSOT 로 자식 Element 소멸 → calculateContentHeight 가
+  // items.length × itemH + gap 으로 intrinsic 산출. childElements=0 이어도 주입 필요.
+  "listbox",
 ]);
 
 /**
