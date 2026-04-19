@@ -13,15 +13,15 @@
 > - **ADR-076** — Implemented 2026-04-18 (P1~P7 종결, Codex 1~6차 리뷰 17건 반영). ListBox items SSOT + containerStyles 하이브리드 해체 **(듀얼 모드 + 혼합 금지)**. items SSOT 체인(ADR-066/068/073) 마지막 컬렉션 완결. **커밋 체인**: P1 `8fe38661` types+G0 / P2 `3c3bce19` Spec containerStyles+CSS base 삭제 / P3+P4 `699edadd` 3-path routing+canonical 14+itemsActions 3 / P5 `0a9d80b2` migrateCollectionItems 오케스트레이터+ListBox migration 14 / P6 `2fdc2205` Factory items+LayerTree items+registry pre-hook+ListBoxPropertyEditor / P7 Skip(Popover.css:30 이미 정합). **핵심 산출**: `registry.ts` `getCustomPreEditor` pre-generic hook 신설(spec-first early return 우회) + `ListBoxPropertyEditor.tsx` Field 자식 감지 → 섹션 filter / `useLayerTreeData.ts:213` props.items 기반 virtual children / `applyCollectionItemsMigration` 3종 공통 오케스트레이터 + 부모 단위 원자 판정 + Text/Description subtree 직렬화 + DFS orphan / 혼합 감지 console.warn. SSOT 복귀 실질 약 20% (컨테이너 base + size cssVars), 수동 유지 약 80% (`ListBoxItem.spec` 부재로 자식 selector emit 불가). **검증**: type-check 3/3 × 5회 + 101 tests 회귀 0 (canonical 14 + itemsActions 8 + shell-only 53 + migrateCollection 14 + migrateSelectCombo 12). Chrome MCP 시각 검증은 후속 Addendum.
 > - **ADR-102** — Workspace Dot Background (Proposed v2) — DOM+CSS 레이어 + Skia 투명화 분리 설계
 > - **ADR-078** — Proposed 2026-04-19. ListBoxItem.spec 신설 + Generator 자식 selector emit 확장. ADR-076 후속 대기 1번 해제. Menu/MenuItem 분리 구조(ADR-068/071) 를 ListBox↔ListBoxItem 에 재현하여 item metric(padding/lineHeight/borderRadius/sizes)을 D3 SSOT 로 복귀시키고, `02bf697f` 에서 도입된 임시 workaround(`ITEM_PADDING_X/Y`, `LINE_HEIGHT` render.shapes 내부 하드코딩) 해체. Generator 자식 selector emit 확장은 GridList/Select/ComboBox/Tabs 후속 ADR 에 재사용. 수동 `ListBox.css` 유지 비율 80%→~30%. 대안 A(ListBoxItem.spec + Generator 확장) 채택 — HIGH 0. 4 Phase: Spec 신설 / Generator 자식 selector / 통합(ListBox.render.shapes 참조) / CSS 해체.
-> - **ADR-079** — Proposed 2026-04-19. Spec defaults read-through + Layout primitive SSOT 완전화. ADR-078 post-fix 잔존 workaround 4종(수동 `align-items` / factory 중복 주입 / Style Panel Spec 무시 / `rearrangeShapesForColumn` 블랙리스트) 구조적 해체. D3 symmetric consumer 3경로(Preview CSS / Canvas Skia / **Style Panel**) 완전 대칭화. Migration 없이 hook read-through 로 기존 ListBox 자동 커버. 대안 A(4-phase 순차) 채택 — HIGH 0. 4 Phase: `ContainerStylesSchema.alignItems` / hook Spec read-through / factory 정리 / rearrange 화이트리스트.
+> - **ADR-079** — Implemented 2026-04-19. Spec defaults read-through + Layout primitive SSOT 완전화. ADR-078 post-fix 잔존 workaround 4종(수동 `align-items` / factory 중복 주입 / Style Panel Spec 무시 / `rearrangeShapesForColumn` 블랙리스트) 구조적 해체 종결. 커밋 체인 5건 (P1 `8a944f9b` / fix ListBox variant fallback `a0e89efa` / P2 `8bb7109b` / P3 `9b6c5230` / P4 `e639b8d8`). MCP 실측 G1/G2 PASS — 기존 ListBox instance (store.props.style 미저장) 선택 시 Style Panel Flex direction 토글 = column 정확 표시 (lucide-stretch-horizontal `data-selected="true"`). ContainerStylesSchema 에 `alignItems` + `justifyContent` 추가, ListBoxItemSpec.containerStyles 신설 (4속성 리프팅 — display/flexDirection/alignItems/justifyContent), `useContainerStyleDefault` hook fallback 체인, Factory 중복 주입 제거 + implicitStyles drift 감지 vitest 3/3, `COLUMN_REARRANGE_TAGS = {Checkbox,Radio,Switch}` 화이트리스트. type-check 3/3 + vitest 506/506 + build:specs 109 files + snapshot 1 updated. D3 symmetric consumer 3경로(Preview CSS / Canvas Skia / **Style Panel**) 완전 대칭화 + migration 불필요.
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 56     |
+| 완료 (Accepted/Implemented/Superseded) | 57     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 14     |
+| 미구현 (Proposed/계획)                 | 13     |
 | **합계**                               | **78** |
 
 ---

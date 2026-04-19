@@ -2,7 +2,25 @@
 
 ## Status
 
-Proposed — 2026-04-19
+Implemented — 2026-04-19
+
+**커밋 체인 (main +6)**:
+
+| Phase | Hash       | 내용                                                                     |
+| ----- | ---------- | ------------------------------------------------------------------------ |
+| P1    | `8a944f9b` | ContainerStylesSchema alignItems/justifyContent + ListBoxItem 리프팅     |
+| fix   | `a0e89efa` | ListBox variant fallback — pre-existing crash 방어 (migration 금지 준수) |
+| P2    | `8bb7109b` | Style Panel hook Spec defaults read-through                              |
+| P3    | `9b6c5230` | Factory 중복 주입 제거 + implicitStyles drift 감지 test                  |
+| P4    | `e639b8d8` | rearrangeShapesForColumn 블랙리스트 → 화이트리스트                       |
+
+**Gates 충족 증거**:
+
+- G1 — Preview DOM computed style 4속성 정합 확인 (`display:flex / flexDirection:column / alignItems:flex-start / justifyContent:center`)
+- G2 — 기존 ListBox (id `8c8e6e9c`, store.props.style 미저장) 선택 시 Style Panel Flex direction 토글 i=2 (lucide-stretch-horizontal = column) `data-selected="true"` MCP 실측
+- G3 — drift test 3/3 PASS, Factory store.props.style = `{ width: "100%" }` 단독 확인
+- G4 — snapshot 0 updated (예측 적중, Checkbox/Radio/Switch 기존 isColumn 분기 진입 조건 불변)
+- G5 — type-check 3/3 / vitest 506/506 / build:specs 109 files PASS
 
 ## Context
 
