@@ -140,6 +140,48 @@ ADR에 명시되지 않은 잠재 위험을 능동적으로 조사합니다:
 
 ---
 
+## Phase 4.5: Layer 0 영속화 (자동 저장)
+
+Phase 4 의 마크다운 결과를 출력한 후, 아래 JSON payload 를 stdin 으로 writer 에 전달하여 `docs/adr/reviews/NNN.md` 에 저장합니다. **Fail-soft** — writer 실패해도 Phase 4 사용자 출력은 영향 받지 않습니다.
+
+### 호출 방법
+
+```bash
+cat <<'EOF' | node .claude/scripts/adr-review/writer.mjs
+{
+  "adr": <ADR번호>,
+  "title": "<ADR 제목>",
+  "reviewer": "claude",
+  "source": "live",
+  "issues": [
+    {
+      "severity": "CRITICAL | HIGH | MEDIUM | LOW",
+      "category": "<.claude/scripts/adr-review/ 9-taxonomy>",
+      "summary": "<한 줄 요약>",
+      "evidence": "<파일:line>",
+      "root_cause": "<...>",
+      "outcome": "pending"
+    }
+  ],
+  "bodyMd": "<Phase 4 마크다운 본문>"
+}
+EOF
+```
+
+### 출력 처리
+
+- **성공**: `→ saved to docs/adr/reviews/NNN.md (round N)` 한 줄을 Phase 4 결과 끝에 추가. exit 0.
+- **Malformed 복구**: `→ saved (malformed recovery) to NNN.{ts}.md` 한 줄 추가. exit 1 무시 (data preserved).
+- **Fatal (required 필드 누락, IO 실패)**: `writer: <error>` warning 만 출력. Phase 1~4 정상 완료.
+
+### 스키마 / taxonomy
+
+- **Schema SSOT**: [docs/adr/reviews/README.md](../../../docs/adr/reviews/README.md)
+- **Design rationale**: [docs/superpowers/specs/2026-04-20-adr-review-layer0-schema-design.md](../../../docs/superpowers/specs/2026-04-20-adr-review-layer0-schema-design.md)
+- **Validator**: `node .claude/scripts/adr-review/validate.mjs`
+
+---
+
 ## 이슈 처리 원칙
 
 - HIGH/MEDIUM 이슈는 "범위 외"로 스킵하지 않는다
