@@ -49,7 +49,7 @@ if (containerTag === "listbox") {
 
 1. **시각 회귀 0** — 기존 element instance 렌더 결과 불변. store 에 `style.display / flexDirection` 이 저장된 element (사용자가 Style Panel 에서 편집한 경우) 와 미저장 element 양쪽 동일 결과 보장
 2. **TokenRef resolved 값 일치** — `{spacing.xs}` = 4, `{spacing.2xs}` = 2 (tokenResolver.test.ts 검증됨). resolver read-through 결과가 현재 하드코딩 값과 수치 동일해야 함
-3. **layoutVersion 계약 유지** — `LAYOUT_AFFECTING_PROPS` + `LAYOUT_PROP_KEYS` 양쪽 등록 (layout-engine.md CRITICAL 규칙)
+3. **layoutVersion 계약 유지** — 실제 앱 코드의 invalidation 체인 (`LAYOUT_PROP_KEYS` @ `apps/builder/src/builder/workspace/canvas/scene/layoutCache.ts:100` + `NON_LAYOUT_PROPS_UPDATE` @ `apps/builder/src/builder/stores/utils/elementUpdate.ts:19` + `INHERITED_LAYOUT_PROPS_UPDATE` @ `elementUpdate.ts:73`) 와 정합 유지. 본 ADR 이 주입하는 `display/flexDirection/gap/padding` 는 기존 style 경로의 fallback 으로 동작하므로 위 3종 Set 에 이미 포함된 keys (`style.*`) 와 동일 카테고리 — 추가 등록 불필요. (참고: `.claude/rules/layout-engine.md` 는 `LAYOUT_AFFECTING_PROPS` 라는 기호를 언급하나 현재 코드에 존재하지 않음 — rules 문서 stale, 별도 cleanup 대상)
 4. **type-check 3/3 PASS + vitest 회귀 0**
 5. **ADR-081 scope 비침범** — TokenRef resolved 값 drift 검증 infra 는 ADR-081 담당. 본 ADR 은 TokenRef 를 `resolveToken()` 으로 경유할 뿐이며, drift 검증 자동화는 포함하지 않는다
 
@@ -189,7 +189,7 @@ if (containerTag === "listbox") {
 
 ### Negative
 
-- `implicitStyles.ts` 에 `@composition/specs` 신규 의존성이 도입됨. 현재 파일은 specs 패키지를 직접 import 하지 않으므로 (builder 내부 TAG_SPEC_MAP 또는 타입 참조만) 첫 진입점이며, 향후 추가 분기 read-through 확장 시 Spec 집합 import 패턴이 형성된다. 순환 의존 위험은 P0 감사 시 TAG_SPEC_MAP 참조 경로로 해소 가능성 검토.
+- `implicitStyles.ts:22-28` 은 이미 `@composition/specs` 를 직접 import 중 (`InlineAlertSpec`, `BreadcrumbsSpec`, `fontFamily`, `breadcrumbSeparatorAfterPaddingXPx`, `normalizeBreadcrumbRspSizeKey`). **신규 의존성 도입 아님**. 본 ADR 이 추가하는 trade-off 는 "spec 패키지 의존" 이 아니라 **"추가 spec lookup / read-through 책임"** — `resolveContainerStylesFallback` 이 TAG_SPEC_MAP 접근 또는 직접 Spec import 로 containerStyles 를 조회하는 호출 경로 증가. 순환 의존 위험은 P0 감사 시 TAG_SPEC_MAP 참조 경로로 해소 가능성 검토.
 - `resolveToken()` 호출이 ListBox element 렌더 경로에 추가됨 (gap + padding = 2회). 성능 영향은 μs 수준으로 무시 가능하나, 향후 containerStyles 보유 Spec 전체로 read-through 범위가 확대되면 합산 비용 재평가 필요.
 - 해체 범위가 `"listbox"` 분기 1개에 한정 (P1). `"gridlistitem"` / `"listboxitem"` 의 4-way padding 하드코딩은 containerStyles 와 의미론이 다르므로 (sizes.md.paddingX/Y vs containerStyles.padding shorthand 이원화) 별도 ADR 대상으로 남는다.
 
