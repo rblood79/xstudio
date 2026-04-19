@@ -1,7 +1,8 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-18 (실제 코드 대조 검증 완료)
+> **최종 업데이트**: 2026-04-20 (ADR Review Layer 0 인프라 landed)
 >
+> - **2026-04-20 ADR Review Layer 0 (Infra, not ADR)** — 설계 품질 self-improvement 4-Layer Promotion Pipeline 중 L0 완료. `.claude/rules/adr-writing.md` 반복 패턴 선차단 체크리스트 seed 4줄 (introduced 2026-04-20, review 2026-10-20) + `.claude/scripts/adr-review/{writer,validate}.mjs` (writer 4/4 tests, validate 9/9 PASS) + `docs/adr/reviews/` backfill 9 (20 issues: 4C/16H across 9 fixed taxonomy) + `review-adr` skill Phase 4.5 자동 영속화 wire. L1(Hypothesis 패턴 추출) · L2(Shadow advisory) · L3(Enforced) 후속 ADR 대기. 커밋 12건 (`4c3590a6`→`160730bb`). Spec/Plan: `docs/superpowers/specs/2026-04-20-adr-review-layer0-schema-design.md`, `docs/superpowers/plans/2026-04-20-adr-review-layer0-implementation.md`.
 > - **ADR-057~062** (Spec SSOT 체인) — Phase 1~4 전부 완료. skipCSSGeneration 55개 → Tier 3 예외(9개) 확정
 > - **ADR-063** — SSOT Charter (Proposed) — `.claude/rules/ssot-hierarchy.md` 정본 반영
 > - **ADR-064~070** — 전부 Implemented (shapes variant 제거, Panel 제거, Tabs/Menu items SSOT, Style Panel Skia-native, 입력 violation 완화, MenuItem CSS SSOT)
