@@ -27,8 +27,9 @@ import {
   breadcrumbSeparatorAfterPaddingXPx,
   normalizeBreadcrumbRspSizeKey,
   resolveToken,
+  isValidTokenRef,
 } from "@composition/specs";
-import type { TokenRef } from "@composition/specs";
+import type { ComponentSpec, TokenRef } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { findAncestorByTag } from "../../skia/ancestorLookup";
 
@@ -89,46 +90,41 @@ export function formatProgressValue(
   }
 }
 
+// containerStyles SSOT 를 보유한 Spec — 확장 시 lookup 키 추가.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CONTAINER_STYLES_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+  listbox: ListBoxSpec,
+};
+
+// ADR-080 scope: layout fallback 4속성 (Context 감사 테이블 참조).
+const CONTAINER_STYLES_FALLBACK_KEYS = [
+  "display",
+  "flexDirection",
+  "gap",
+  "padding",
+] as const;
+
 /**
- * ADR-080: Spec.containerStyles direct read-through.
- *
- * `applyImplicitStyles` containerTag 분기에서 하드코딩하던 layout fallback 상수
- * (`display / flexDirection / gap / padding`) 를 Spec SSOT 로부터 읽어 resolved
- * 숫자로 반환한다. 동일 값을 layout engine 이 중복 소유하는 이원화를 해소 (D3 SSOT).
- *
- * 반환 규칙: `parentStyle[key] !== undefined` 이면 해당 key 는 반환값에서 제외
- * (사용자 Style Panel 편집 우선). 호출부 사용 패턴:
- *   `{ ...parentStyle, ...resolveContainerStylesFallback(tag, parentStyle) }`.
- *
- * ADR-081 C3: 본 함수는 **export 된 testable seam** 으로 유지되어야 하며
- * `tokenConsumerDrift.test.ts` 가 반환값을 primitives(spacing/radius/typography)
- * 와 cross-reference 한다. signature 변경 시 ADR-081 G2 계약 동시 갱신 필요.
+ * ADR-080: Spec.containerStyles → layout fallback read-through.
+ * ADR-081 G2 C3: testable seam — `tokenConsumerDrift.test.ts` 가 반환값을
+ * primitives 와 cross-reference. signature 변경 시 G2 계약 동시 갱신 필요.
  */
 export function resolveContainerStylesFallback(
   tag: string,
   parentStyle: Record<string, unknown>,
 ): Record<string, unknown> {
-  // Spec lookup 테이블 — containerStyles 보유 Spec 추가 시 확장.
-  const specFor: Record<string, { containerStyles?: unknown } | undefined> = {
-    listbox: ListBoxSpec,
-  };
-  const cs = specFor[tag]?.containerStyles as
-    | Record<string, unknown>
-    | undefined;
+  const cs = CONTAINER_STYLES_SPEC_MAP[tag]?.containerStyles;
   if (!cs) return {};
 
-  // ADR-080 scope: layout fallback 4속성 (Context 감사 테이블 참조).
-  const keys = ["display", "flexDirection", "gap", "padding"] as const;
   const out: Record<string, unknown> = {};
-  for (const key of keys) {
+  for (const key of CONTAINER_STYLES_FALLBACK_KEYS) {
     if (parentStyle[key] !== undefined) continue; // 사용자 편집 우선
     const value = cs[key];
     if (value === undefined) continue;
-    if (typeof value === "string" && /^\{.+\}$/.test(value)) {
-      out[key] = resolveToken(value as TokenRef);
-    } else {
-      out[key] = value;
-    }
+    out[key] =
+      typeof value === "string" && isValidTokenRef(value)
+        ? resolveToken(value as TokenRef)
+        : value;
   }
   return out;
 }
