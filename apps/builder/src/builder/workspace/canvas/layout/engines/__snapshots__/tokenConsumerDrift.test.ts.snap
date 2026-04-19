@@ -1,0 +1,108 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C1 — tokenToCSSVar 매핑 회귀 (CSS var 문자열) > radius tokens → var(--radius-*) 매핑 1`] = `
+{
+  "full": "var(--radius-full)",
+  "lg": "var(--radius-lg)",
+  "md": "var(--radius-md)",
+  "none": "var(--radius-none)",
+  "sm": "var(--radius-sm)",
+  "xl": "var(--radius-xl)",
+}
+`;
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C1 — tokenToCSSVar 매핑 회귀 (CSS var 문자열) > spacing tokens → var(--spacing-*) 매핑 1`] = `
+{
+  "2xl": "var(--spacing-2xl)",
+  "2xs": "var(--spacing-2xs)",
+  "lg": "var(--spacing-lg)",
+  "md": "var(--spacing-md)",
+  "sm": "var(--spacing-sm)",
+  "xl": "var(--spacing-xl)",
+  "xs": "var(--spacing-xs)",
+}
+`;
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C1 — tokenToCSSVar 매핑 회귀 (CSS var 문자열) > typography tokens → var(--text-*) 매핑 (text-md → text-base 예외 포함) 1`] = `
+{
+  "text-2xl": "var(--text-2xl)",
+  "text-2xl--line-height": "var(--text-2xl--line-height)",
+  "text-2xs": "var(--text-2xs)",
+  "text-2xs--line-height": "var(--text-2xs--line-height)",
+  "text-3xl": "var(--text-3xl)",
+  "text-3xl--line-height": "var(--text-3xl--line-height)",
+  "text-4xl": "var(--text-4xl)",
+  "text-4xl--line-height": "var(--text-4xl--line-height)",
+  "text-5xl": "var(--text-5xl)",
+  "text-5xl--line-height": "var(--text-5xl--line-height)",
+  "text-base": "var(--text-base)",
+  "text-base--line-height": "var(--text-base--line-height)",
+  "text-lg": "var(--text-lg)",
+  "text-lg--line-height": "var(--text-lg--line-height)",
+  "text-md": "var(--text-base)",
+  "text-sm": "var(--text-sm)",
+  "text-sm--line-height": "var(--text-sm--line-height)",
+  "text-xl": "var(--text-xl)",
+  "text-xl--line-height": "var(--text-xl--line-height)",
+  "text-xs": "var(--text-xs)",
+  "text-xs--line-height": "var(--text-xs--line-height)",
+}
+`;
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C2 — resolveToken 값 drift (Skia 렌더 경로 소비) > radius resolved values 1`] = `
+{
+  "full": 9999,
+  "lg": 8,
+  "md": 6,
+  "none": 0,
+  "sm": 4,
+  "xl": 12,
+}
+`;
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C2 — resolveToken 값 drift (Skia 렌더 경로 소비) > spacing resolved values 1`] = `
+{
+  "2xl": 48,
+  "2xs": 2,
+  "lg": 24,
+  "md": 16,
+  "sm": 8,
+  "xl": 32,
+  "xs": 4,
+}
+`;
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C2 — resolveToken 값 drift (Skia 렌더 경로 소비) > typography resolved values (fontSize + line-height) 1`] = `
+{
+  "text-2xl": 24,
+  "text-2xl--line-height": 32,
+  "text-2xs": 10,
+  "text-2xs--line-height": 16,
+  "text-3xl": 30,
+  "text-3xl--line-height": 36,
+  "text-4xl": 36,
+  "text-4xl--line-height": 40,
+  "text-5xl": 48,
+  "text-5xl--line-height": 48,
+  "text-base": 16,
+  "text-base--line-height": 24,
+  "text-lg": 18,
+  "text-lg--line-height": 28,
+  "text-md": 16,
+  "text-sm": 14,
+  "text-sm--line-height": 20,
+  "text-xl": 20,
+  "text-xl--line-height": 30,
+  "text-xs": 12,
+  "text-xs--line-height": 16,
+}
+`;
+
+exports[`ADR-081 G2 — token consumer drift cross-reference > C3 — resolveContainerStylesFallback 값 drift (Layout engine, ADR-080) > listbox empty parentStyle → resolved 4속성 snapshot 1`] = `
+{
+  "display": "flex",
+  "flexDirection": "column",
+  "gap": 2,
+  "padding": 4,
+}
+`;

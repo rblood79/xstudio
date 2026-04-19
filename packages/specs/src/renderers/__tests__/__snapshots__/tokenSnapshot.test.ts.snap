@@ -1,0 +1,50 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ADR-081 G1 — primitives resolved-value snapshot > radius tokens resolved values 1`] = `
+{
+  "full": 9999,
+  "lg": 8,
+  "md": 6,
+  "none": 0,
+  "sm": 4,
+  "xl": 12,
+}
+`;
+
+exports[`ADR-081 G1 — primitives resolved-value snapshot > spacing tokens resolved values 1`] = `
+{
+  "2xl": 48,
+  "2xs": 2,
+  "lg": 24,
+  "md": 16,
+  "sm": 8,
+  "xl": 32,
+  "xs": 4,
+}
+`;
+
+exports[`ADR-081 G1 — primitives resolved-value snapshot > typography tokens resolved values (fontSize + line-height) 1`] = `
+{
+  "text-2xl": 24,
+  "text-2xl--line-height": 32,
+  "text-2xs": 10,
+  "text-2xs--line-height": 16,
+  "text-3xl": 30,
+  "text-3xl--line-height": 36,
+  "text-4xl": 36,
+  "text-4xl--line-height": 40,
+  "text-5xl": 48,
+  "text-5xl--line-height": 48,
+  "text-base": 16,
+  "text-base--line-height": 24,
+  "text-lg": 18,
+  "text-lg--line-height": 28,
+  "text-md": 16,
+  "text-sm": 14,
+  "text-sm--line-height": 20,
+  "text-xl": 20,
+  "text-xl--line-height": 30,
+  "text-xs": 12,
+  "text-xs--line-height": 16,
+}
+`;
