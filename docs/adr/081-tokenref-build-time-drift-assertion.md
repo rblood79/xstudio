@@ -141,6 +141,20 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 
 > 구현 상세: [081-tokenref-build-time-drift-assertion-breakdown.md](../design/081-tokenref-build-time-drift-assertion-breakdown.md)
 
+## Risks
+
+대안 A 선정 후에도 남는 **운영 위험** (Decision 이후 잔존). Alternatives 단계의 4축 평가와 구분하여 "결정을 이행하는 동안 관리해야 할 잔존 리스크" 로 집약.
+
+| ID  | 위험                                      | 심각도 | 대응                                                                                                                                                                                   |
+| --- | ----------------------------------------- | :----: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | ADR-080 P1 선행 미완료 시 C3 무효화       |  MED   | G2 착수 전 ADR-080 P1 (`resolveContainerStylesFallback` export helper) 완료 확인 (G0). 미완료 시 G2 의 C3 assertion 이 상수 복붙 그림자가 되어 drift 감지 무효화 → G2 지연             |
+| R2  | snapshot 파일 수동 관리 부담              |  LOW   | primitives 변경 시 `vitest --update-snapshots` 호출 + PR 리뷰에서 snapshot diff 명시적 확인. CI 자동 업데이트 금지 규칙의 반대급부. `.snap` 파일 CODEOWNERS 지정 검토                  |
+| R3  | C1 역할 인지 오류 (매핑 회귀 vs 값 drift) |  LOW   | C1 은 **매핑 규칙 drift** 만 검출 (primitive 숫자값 변경 무감지). `tokenConsumerDrift.test.ts` 상단 docstring 에 역할 분리 명시 + G3 실증 케이스(`{spacing.xs}` 4→6 시 C1 PASS) 주석화 |
+| R4  | C4 확장 debt                              |  LOW   | 향후 `useContainerStyleDefault` 가 resolved 숫자를 반환하도록 확장되면 C4 drift test 추가 필요. 현재는 scope 제외 명시 (Context). 확장 시 본 ADR 의 Addendum 또는 후속 ADR             |
+| R5  | snapshot 초기 생성 시 대규모 PR diff      |  LOW   | token ~50개 × 소비자 3종 = 초기 150 assertion. 1회 대규모 diff 발생. PR 설명에 "initial snapshot" 명시 + 리뷰 부담 완화                                                                |
+
+**잔존 HIGH 위험 없음** — 모든 Risks 가 MED/LOW. R1 이 가장 우선 (ADR-080 순서 의존).
+
 ## Gates
 
 | Gate  | 시점         | 통과 조건                                                                                                                                                                                                                                                                                                                                                                                                                          | 실패 시 대안                     |

@@ -168,6 +168,19 @@ if (containerTag === "listbox") {
 
 > 구현 상세: [080-layout-engine-spec-direct-read-through-breakdown.md](../design/080-layout-engine-spec-direct-read-through-breakdown.md)
 
+## Risks
+
+대안 A 선정 후에도 남는 **운영 위험** (Decision 이후 잔존). Alternatives 단계의 4축 평가와 구분하여 "결정을 이행하는 동안 관리해야 할 잔존 리스크" 로 집약.
+
+| ID  | 위험                                   | 심각도 | 대응                                                                                                                                                          |
+| --- | -------------------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | ADR-081 inter-document 계약 유지 책임  |  MED   | P1 helper 가 **export 된 testable seam** 으로 유지되어야 ADR-081 G2 C3 assertion 성립. signature 변경 시 ADR-081 동시 갱신 필수. Consequence: inter-ADR drift |
+| R2  | 다른 containerTag 분기 미포함          |  LOW   | `"listbox"` 만 전환. `"gridlistitem"` / `"listboxitem"` 등 sizes.md.padding 기반 분기는 scope 외. 향후 확장 시 동일 패턴 적용 + SSOT 일관성 책임 (후속 ADR)   |
+| R3  | resolveToken() 호출 누적 성능          |  LOW   | 현재 μs 수준 무시 가능. containerStyles 보유 Spec 전체로 read-through 범위 확대 시 합산 cost 재평가 trigger (containerStyles 보유 Spec 10 개 이상 시점)       |
+| R4  | `.claude/rules/layout-engine.md` stale |  LOW   | rules 문서가 코드에 없는 `LAYOUT_AFFECTING_PROPS` 심볼 언급. Hard Constraint 3 주석에 명시했으나 rules 자체는 별도 cleanup 대상 (본 ADR scope 외)             |
+
+**잔존 HIGH 위험 없음** — 모든 Risks 가 MED/LOW. R1 이 가장 우선.
+
 ## Gates
 
 | Gate   | 시점       | 통과 조건                                                                                                                                                                                                                                                                                                                                                         | 실패 시 대안                    |
