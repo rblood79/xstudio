@@ -15,6 +15,8 @@
 > - **ADR-102** — Workspace Dot Background (Proposed v2) — DOM+CSS 레이어 + Skia 투명화 분리 설계
 > - **ADR-078** — Proposed 2026-04-19. ListBoxItem.spec 신설 + Generator 자식 selector emit 확장. ADR-076 후속 대기 1번 해제. Menu/MenuItem 분리 구조(ADR-068/071) 를 ListBox↔ListBoxItem 에 재현하여 item metric(padding/lineHeight/borderRadius/sizes)을 D3 SSOT 로 복귀시키고, `02bf697f` 에서 도입된 임시 workaround(`ITEM_PADDING_X/Y`, `LINE_HEIGHT` render.shapes 내부 하드코딩) 해체. Generator 자식 selector emit 확장은 GridList/Select/ComboBox/Tabs 후속 ADR 에 재사용. 수동 `ListBox.css` 유지 비율 80%→~30%. 대안 A(ListBoxItem.spec + Generator 확장) 채택 — HIGH 0. 4 Phase: Spec 신설 / Generator 자식 selector / 통합(ListBox.render.shapes 참조) / CSS 해체.
 > - **ADR-079** — Implemented 2026-04-19. Spec defaults read-through + Layout primitive SSOT 완전화. ADR-078 post-fix 잔존 workaround 4종(수동 `align-items` / factory 중복 주입 / Style Panel Spec 무시 / `rearrangeShapesForColumn` 블랙리스트) 구조적 해체 종결. 커밋 체인 5건 (P1 `8a944f9b` / fix ListBox variant fallback `a0e89efa` / P2 `8bb7109b` / P3 `9b6c5230` / P4 `e639b8d8`). MCP 실측 G1/G2 PASS — 기존 ListBox instance (store.props.style 미저장) 선택 시 Style Panel Flex direction 토글 = column 정확 표시 (lucide-stretch-horizontal `data-selected="true"`). ContainerStylesSchema 에 `alignItems` + `justifyContent` 추가, ListBoxItemSpec.containerStyles 신설 (4속성 리프팅 — display/flexDirection/alignItems/justifyContent), `useContainerStyleDefault` hook fallback 체인, Factory 중복 주입 제거 + implicitStyles drift 감지 vitest 3/3, `COLUMN_REARRANGE_TAGS = {Checkbox,Radio,Switch}` 화이트리스트. type-check 3/3 + vitest 506/506 + build:specs 109 files + snapshot 1 updated. D3 symmetric consumer 3경로(Preview CSS / Canvas Skia / **Style Panel**) 완전 대칭화 + migration 불필요.
+> - **ADR-080** — Proposed 2026-04-20. Layout engine containerStyles Spec direct read-through — implicitStyles 하드코딩 해체. ADR-079 P3.2 에서 scope 분리 유지 결정한 `implicitStyles.ts:668-676` listbox 분기의 display/flexDirection/gap/padding 4속성 하드코딩을 구조적 해체. 공통 `resolveContainerStylesFallback(tag, parentStyle)` resolver 추출 + Spec `containerStyles` 직접 read-through + TokenRef `resolveToken()` 경유 숫자 변환. ListBox/GridList/Menu/Select/ComboBox 등 containerStyles 보유 Spec 자동 포섭. drift test (`implicitStyles-listbox.test.ts`) 제거 또는 resolver unit test 로 교체. 대안 A 채택 — HIGH 0, 잔존 HIGH 위험 없음. 4 Phase: containerTag 분기 감사 / resolver 신설 + unit test / 분기 교체 + drift test 정리 / 종결 검증.
+> - **ADR-081** — Proposed 2026-04-20. TokenRef resolved-value build-time drift assertion — token 소비자 경로 전체 일관성 검증. ADR-079 P3.2 drift test 가 TokenRef 식별자 일치만 검증하고 resolved 숫자 값 변경을 감지 못하는 한계 해소. primitives (spacing/radius/typography/color) resolved 값 snapshot + 소비자 경로 4종 (Preview CSS / Skia 렌더 / Layout engine / Style Panel) cross-reference. 기존 CSSGenerator snapshot 패턴 재사용으로 build 시간 증가 <10% (3.166s→3.5s 이내). 대안 A (Build-time snapshot cross-reference) 채택 — HIGH 0. 4 Phase: primitives snapshot 고정 / consumer cross-reference / drift 감지 실증 (`{spacing.xs}` 4→6 임시 변경) / 원복 + 회귀 검증. ADR-080 의 resolveToken() 도입 후 자동 커버리지 확장.
 
 ## 현황 요약
 
@@ -22,8 +24,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 57     |
 | 부분 완료                              | 8      |
-| 미구현 (Proposed/계획)                 | 13     |
-| **합계**                               | **78** |
+| 미구현 (Proposed/계획)                 | 15     |
+| **합계**                               | **80** |
 
 ---
 
