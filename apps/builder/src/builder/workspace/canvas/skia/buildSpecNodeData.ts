@@ -570,14 +570,15 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   if (!sizeSpec) return null;
 
   // ---------- flexDirection → column detection ----------
-  // ADR-078 Phase 5 fix: `rearrangeShapesForColumn` 은 Checkbox/Radio/Switch 등 indicator↔label
-  //   수직 재배치 전용. ListBox/GridList 처럼 `render.shapes` 가 이미 column 배치를 직접 수행하는
-  //   컴포넌트에는 적용하면 items text 가 indicator 아래 + 가운데 + maxWidth 강제되어 파손됨.
-  //   exclude 목록 태그는 isColumn 판정에서 제외.
+  // ADR-079 Phase 4: 블랙리스트 → 화이트리스트 전환.
+  //   `rearrangeShapesForColumn` 은 Checkbox/Radio/Switch 의 indicator↔label 수직 재배치
+  //   전용 후처리. 다른 column-based 컴포넌트가 `render.shapes` 에서 자체 배치를 수행하면
+  //   rearrange 가 items text 를 indicator 아래로 강제 + 가운데 정렬 + maxWidth 부여하여
+  //   파손. 블랙리스트 방식은 신규 column collection 추가 시 재발 위험 → 사용처 태그만 명시.
   const flexDir = (style.flexDirection as string) || "";
-  const COLUMN_REARRANGE_EXCLUDE_TAGS = new Set(["ListBox", "GridList"]);
+  const COLUMN_REARRANGE_TAGS = new Set(["Checkbox", "Radio", "Switch"]);
   const isColumn =
-    !COLUMN_REARRANGE_EXCLUDE_TAGS.has(element.tag) &&
+    COLUMN_REARRANGE_TAGS.has(element.tag) &&
     (flexDir === "column" || flexDir === "column-reverse");
 
   // ---------- specProps 준비 ----------
