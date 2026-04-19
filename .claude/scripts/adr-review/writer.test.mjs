@@ -110,3 +110,42 @@ test('malformed existing frontmatter saves to separate file', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('integration: 2-round with different reviewers and multiple issues', () => {
+  const dir = tmpDir();
+  try {
+    save(
+      {
+        adr: 999,
+        title: 'Integration Test',
+        reviewer: 'claude',
+        issues: [{ severity: 'HIGH', category: 'evidence-missing', summary: 'r1 high' }],
+        bodyMd: '### [HIGH] r1 high\n',
+      },
+      dir,
+    );
+    const result = save(
+      {
+        adr: 999,
+        reviewer: 'codex',
+        issues: [
+          { severity: 'CRITICAL', category: 'ssot-violation', summary: 'r2 crit' },
+          { severity: 'MEDIUM', category: 'phase-split-late', summary: 'r2 med' },
+        ],
+        bodyMd: '### [CRITICAL] r2 crit\n\n### [MEDIUM] r2 med\n',
+      },
+      dir,
+    );
+
+    assert.strictEqual(result.round, 2);
+    const parsed = matter(readFileSync(result.path, 'utf8'));
+    assert.strictEqual(parsed.data.reviews.length, 2);
+    assert.strictEqual(parsed.data.reviews[0].reviewer, 'claude');
+    assert.strictEqual(parsed.data.reviews[1].reviewer, 'codex');
+    assert.strictEqual(parsed.data.reviews[0].issues.length, 1);
+    assert.strictEqual(parsed.data.reviews[1].issues.length, 2);
+    assert.strictEqual(parsed.data.reviews[1].issues[0].severity, 'CRITICAL');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

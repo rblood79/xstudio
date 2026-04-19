@@ -144,3 +144,27 @@ export function save(payload, dir = DEFAULT_REVIEWS_DIR) {
   writeFileSync(filePath, matter.stringify(newBody, frontmatter));
   return { path: filePath, round };
 }
+
+// CLI entry
+if (import.meta.url === `file://${process.argv[1]}`) {
+  let raw = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => {
+    raw += chunk;
+  });
+  process.stdin.on('end', () => {
+    try {
+      const payload = JSON.parse(raw);
+      const result = save(payload);
+      if (result.malformed) {
+        process.stdout.write(`→ saved (malformed recovery) to ${result.path}\n`);
+        process.exit(1);
+      }
+      process.stdout.write(`→ saved to ${result.path} (round ${result.round})\n`);
+      process.exit(0);
+    } catch (err) {
+      process.stderr.write(`writer: ${err.message}\n`);
+      process.exit(2);
+    }
+  });
+}
