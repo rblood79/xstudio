@@ -73,6 +73,17 @@ export interface ContainerStylesSchema {
   //   동일 소스 참조 (3경로 SSOT). archetype 만으로 간접 파생되던 구조의 대체.
   display?: "flex" | "inline-flex" | "grid" | "block" | "inline-block";
   flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+  // ADR-079: flex 교차축/주축 정렬 — archetype base 를 Spec 이 override.
+  //   수동 CSS override 해체용 (예: ListBoxItem archetype="simple" 이 emit 한
+  //   `align-items: center` 를 flex column 구조에서 `flex-start` 로 재정의).
+  alignItems?: "stretch" | "flex-start" | "flex-end" | "center" | "baseline";
+  justifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
 
   // 컨테이너 제약 — CSS 값 (SSOT 대상 아님)
   width?: string;

@@ -41,7 +41,7 @@ ADR-078 Phase 5 에서 ListBox 의 시각 정합성(padding/gap/textAlign/flex-d
 **Soft Constraints**
 
 - P1 `alignItems` 필드 추가는 `ContainerStylesSchema` 타입 확장 — 향후 다른 Spec 도 활용 가능
-- P2 hook read-through 는 tag-agnostic 이라 모든 `containerStyles` 보유 Spec 에 자동 파급
+- P2 hook read-through 는 tag-agnostic (hook 자체가 특정 tag 분기 없음) 이지만, 실제 fallback 효과 범위는 **최상위** `spec.containerStyles.display/flexDirection` 선언 Spec 에 한정. 현재 선언 대상은 `ListBoxSpec` 1건 (Menu 는 overlay 라 Style Panel scope 밖). 대다수 Spec (ToggleButtonGroup/CheckboxGroup/RadioGroup/Card/Dialog 등) 은 `spec.composition.containerStyles` 내부에 display 를 선언 → 현 P2 resolver 미접근 → 후속 ADR 에서 composition 경로 통합 필요
 - P3 factory 주입 제거는 신규 ListBox 경로 단일화 — 기존 element 는 P2 가 커버
 - P4 화이트리스트 전환은 Checkbox/Radio/Switch 소스 확증 필요
 

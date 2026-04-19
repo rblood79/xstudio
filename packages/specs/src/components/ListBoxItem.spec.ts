@@ -45,6 +45,17 @@ export const ListBoxItemSpec: ComponentSpec<ListBoxItemProps> = {
   //   등 자식 selector cascade 와 동일 @layer 에 속한다.
   skipCSSGeneration: true,
 
+  // ADR-079: ListBoxItem 내부 레이아웃 SSOT.
+  //   archetype="simple" base = `display: inline-flex; align-items: center;` 를 override 하여
+  //   label+description 수직 스택 + 좌측 정렬 선언. 기존 수동 ListBox.css 의 4속성
+  //   (display/flex-direction/align-items/justify-content) 를 Spec 으로 리프팅.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+
   defaultSize: "md",
 
   // ADR-078 G1: md 기준 item metric SSOT

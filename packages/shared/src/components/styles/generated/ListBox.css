@@ -68,6 +68,12 @@
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071) */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
   /* Default size */
   height: auto;
   padding: 4px 12px;

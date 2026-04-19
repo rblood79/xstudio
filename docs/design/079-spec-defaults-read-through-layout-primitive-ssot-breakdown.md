@@ -40,16 +40,21 @@ grep -l "isColumn\|rearrangeShapesForColumn" apps/builder/src/builder/workspace/
 
 ### 1.1 타입 확장
 
-`packages/specs/src/types/spec.types.ts:59-82`
+`packages/specs/src/types/spec.types.ts:59-82` — `ContainerStylesSchema` 에 `alignItems` + `justifyContent` 추가.
 
 ```ts
 export interface ContainerStylesSchema {
-  // ... 기존 필드
-  display?: "flex" | "inline-flex" | "grid" | "block" | "inline-block";
-  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+  // ... 기존 필드 (display/flexDirection 은 ADR-078)
   /** ADR-079: flex 교차축 정렬 — archetype base alignItems 를 Spec 이 override. */
   alignItems?: "stretch" | "flex-start" | "flex-end" | "center" | "baseline";
-  // ...
+  /** ADR-079: flex 주축 정렬. ListBoxItem label+description 수직 센터 배치 용. */
+  justifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
 }
 ```
 
@@ -59,25 +64,49 @@ export interface ContainerStylesSchema {
 
 ```ts
 if (c.alignItems) lines.push(`  align-items: ${c.alignItems};`);
+if (c.justifyContent) lines.push(`  justify-content: ${c.justifyContent};`);
 ```
 
-### 1.3 Spec 선언
+### 1.3 Spec 선언 — **ListBoxItem 리프팅** (경로 정정)
 
-`packages/specs/src/components/ListBox.spec.ts:containerStyles`:
+**초안 정정 이유**: ADR 본문이 대상으로 지목한 수동 CSS 는 `.react-aria-ListBoxItem` 블록 (ListBox.css:72-82) 이므로, ListBoxSpec 이 아닌 **ListBoxItemSpec 에 containerStyles 를 신설** 해야 Generator 가 올바른 selector 에 emit 한다. ListBoxItem 은 `skipCSSGeneration: true` 이지만 `ListBoxSpec.childSpecs: [ListBoxItemSpec]` 경로로 `generated/ListBox.css` 에 inline emit 된다 (ADR-078 Phase 2).
+
+**scope 확장**: ADR 목표 ("layout primitive SSOT 완전화") 에 부합하도록 4속성 전부 리프팅. alignItems 만이 아니라 `display/flexDirection/justifyContent` 도 포함.
+
+`packages/specs/src/components/ListBoxItem.spec.ts`:
 
 ```ts
-containerStyles: {
-  // ...
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start", // ADR-079: 수동 CSS override 해체
-  // ...
-},
+export const ListBoxItemSpec: ComponentSpec<ListBoxItemProps> = {
+  name: "ListBoxItem",
+  archetype: "simple",
+  element: "div",
+  skipCSSGeneration: true,
+
+  // ADR-079: ListBoxItem 내부 레이아웃 SSOT.
+  //   archetype="simple" base = `display: inline-flex; align-items: center;` 를 override.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  // ... sizes/states/render
+};
 ```
 
 ### 1.4 수동 CSS 해체
 
-`packages/shared/src/components/styles/ListBox.css` 의 `.react-aria-ListBoxItem` 수동 블록에서 `align-items: flex-start;` 줄 삭제. 관련 주석(`Generator archetype="simple" 이 emit 한 align-items: center 를 override`) 도 제거.
+`packages/shared/src/components/styles/ListBox.css` 의 `.react-aria-ListBoxItem` 수동 블록에서 4속성 전부 삭제:
+
+```css
+/* 삭제 대상 */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+justify-content: center;
+```
+
+주석 블록(`Generator emit 위임`)을 ADR-079 4속성 포함으로 갱신. 잔존 수동 속성은 `position/color/cursor/outline/transition/forced-color-adjust` + `&[data-focus-visible]` variant-aware outline + `&[data-selected]` 분기.
 
 ### 1.5 검증
 
@@ -91,8 +120,11 @@ containerStyles: {
 
 `apps/builder/src/builder/panels/styles/hooks/useLayoutAuxiliary.ts` 에 `resolveContainerStyleDefault` 헬퍼 추가.
 
+**Import 경로 주의**: `packages/specs/src/runtime/tagToElement.ts` 의 `TAG_SPEC_MAP` 은 module-scoped `const` (non-exported, Preview DOM resolution 전용). Panel hook 에서는 builder 내부의 **export 된** `TAG_SPEC_MAP` 을 사용한다 (`apps/builder/src/builder/workspace/canvas/sprites/tagSpecMap.ts:109`). 기존 `specPresetResolver.ts` 가 동일 맵을 소비하므로 단일 SSOT 유지.
+
 ```ts
-import { TAG_SPEC_MAP } from "@composition/specs/runtime/tagToElement";
+// useLayoutAuxiliary.ts 상단
+import { TAG_SPEC_MAP } from "../../../workspace/canvas/sprites/tagSpecMap";
 
 function resolveContainerStyleDefault(
   tag: string | undefined,
@@ -106,6 +138,8 @@ function resolveContainerStyleDefault(
   return "";
 }
 ```
+
+**적용 범위 명시**: 본 resolver 는 `spec.containerStyles` (최상위) 만 참조. `spec.composition.containerStyles` (자식 Element CSS 주입용) 는 **읽지 않음** — 두 경로는 의미론이 다름 (전자 = 컨테이너 자신의 style, 후자 = 자식에 전달되는 base style). 현재 top-level containerStyles.display 선언 Spec 은 `ListBox` 1건. 다른 컨테이너 Spec 의 composition 경로 통합은 후속 ADR scope.
 
 ### 2.2 훅 fallback 체인
 
@@ -168,7 +202,25 @@ props: {
 
 `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:662-678` 에서 display/flexDirection/gap/padding fallback 이 Spec containerStyles 와 중복. P2 가 Panel 경로, implicitStyles 는 layout engine 경로로 각각 fallback 이 필요하므로 **유지 (scope 분리)**.
 
-단 각 값이 `ListBoxSpec.containerStyles` 와 정합한지 확인하고 drift 시 경보.
+**Drift 감지 메커니즘 (Phase 3 필수)**: scope 분리로 유지하는 대신, 두 경로의 값 정합성을 vitest unit test 로 강제한다. 미구현 시 향후 Spec 수정이 layout engine 에 자동 전파되지 않는 이원화가 재발한다.
+
+```ts
+// apps/builder/src/builder/workspace/canvas/layout/engines/__tests__/implicitStyles.listbox.test.ts
+import { describe, it, expect } from "vitest";
+import { ListBoxSpec } from "@composition/specs";
+
+describe("implicitStyles ListBox vs ListBoxSpec.containerStyles drift", () => {
+  it("display/flexDirection/gap/padding 이 Spec containerStyles 와 정합", () => {
+    const c = ListBoxSpec.containerStyles!;
+    expect(c.display).toBe("flex");
+    expect(c.flexDirection).toBe("column");
+    // gap/padding 은 TokenRef 이므로 resolved 값으로 비교 (spacing.2xs=2, spacing.xs=4)
+    // → 실제 구현은 token resolver import 후 수치 비교
+  });
+});
+```
+
+값 상수가 한쪽만 변경되면 test 가 실패하여 drift 를 조기 감지한다. ADR-078 Phase 5 의 `@sync` 주석 패턴 보완.
 
 ### 3.3 검증
 
@@ -236,15 +288,16 @@ Collection family + column-rearrange family 일괄 snapshot + 시각 회귀 0.
 
 ## 회귀 리스크 매트릭스
 
-| 축            | P1                                            | P2                                        | P3                       | P4                                                       |
-| ------------- | --------------------------------------------- | ----------------------------------------- | ------------------------ | -------------------------------------------------------- |
-| Preview DOM   | 없음                                          | 없음                                      | 없음                     | 없음                                                     |
-| Canvas Skia   | 미미 (수동 CSS 해체로 Generator emit 만 남음) | 없음                                      | 없음                     | 높음 (Checkbox/Radio/Switch 회귀 감시)                   |
-| Style Panel   | 없음                                          | 높음 (hook 리팩토링 — 모든 컴포넌트 파급) | 중간 (신규 ListBox 경로) | 없음                                                     |
-| Snapshot test | 1 updated (ListBox)                           | 0                                         | 0                        | 최대 3 updated (Checkbox/Radio/Switch 분기 조건 변경 시) |
+| 축            | P1                                            | P2                                        | P3                       | P4                                                                                                |
+| ------------- | --------------------------------------------- | ----------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| Preview DOM   | 없음                                          | 없음                                      | 없음                     | 없음                                                                                              |
+| Canvas Skia   | 미미 (수동 CSS 해체로 Generator emit 만 남음) | 없음                                      | 없음                     | 높음 (Checkbox/Radio/Switch 회귀 감시)                                                            |
+| Style Panel   | 없음                                          | 높음 (hook 리팩토링 — 모든 컴포넌트 파급) | 중간 (신규 ListBox 경로) | 없음                                                                                              |
+| Snapshot test | 1 updated (ListBox)                           | 0                                         | 0                        | **0 예상** (Checkbox/Radio/Switch 는 기존에 이미 isColumn=true 진입, 결과 동일). 회귀 시에만 의심 |
 
 ## 후속 과제 (본 ADR scope 밖)
 
 - `useLayoutAuxiliary` 의 다른 훅(`useFlexAlignmentKeys`/`useJustifyContentSpacingKeys` 등) 도 필요 시 read-through 확장
 - Menu/Select/ComboBox 의 `containerStyles` 확장 (display/flexDirection/alignItems)
+- **`composition.containerStyles` 경로 통합** — 현재 `resolveContainerStyleDefault` 는 **최상위** `spec.containerStyles` 만 참조. ToggleButtonGroup/CheckboxGroup/RadioGroup/ButtonGroup/Card/Dialog/Form/Pagination/DisclosureGroup/Toolbar/Popover 등 **대다수 컨테이너 Spec** 은 `spec.composition.containerStyles` 내부에 `display/flexDirection` 을 선언 (`grep -n "display:" packages/specs/src/components/*.spec.ts` 결과 20+ 건). Panel read-through 가 이들에 파급되려면 (a) 후속 ADR 에서 composition 경로 병합 resolver 추가 또는 (b) 각 Spec 을 최상위 containerStyles 로 리프팅 (ADR-071/078 패턴) 중 하나 필요
 - `rearrangeShapesForColumn` 자체를 `render.shapes` 내부로 이관하여 별도 후처리 제거 (장기)
