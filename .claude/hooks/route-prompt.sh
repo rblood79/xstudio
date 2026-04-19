@@ -77,7 +77,7 @@ fi
 if echo "$prompt" | grep -qiE "레이아웃|layout|Taffy|flex|grid|align|정렬"; then
   hints="${hints}
 - 레이아웃 작업 → rules/layout-engine.md 자동 로드 (packages/layout-flow/**)
-- layoutVersion 계약: LAYOUT_AFFECTING_PROPS + LAYOUT_PROP_KEYS 동시 등록"
+- layoutVersion 3-심볼 체인: LAYOUT_PROP_KEYS (캐시) + NON_LAYOUT_PROPS_UPDATE (블랙리스트) + INHERITED_LAYOUT_PROPS_UPDATE (상속) 동시 점검"
 fi
 
 # 상태관리 / Zustand

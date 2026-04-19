@@ -19,7 +19,7 @@ globs:
 
 - `fullTreeLayoutMap` useMemo는 `layoutVersion` 카운터에 의존
 - 레이아웃 영향 **모든 코드 경로**에서 `layoutVersion + 1` 필수
-- 새 layout prop 추가 시 **2곳 동시 등록**: `LAYOUT_AFFECTING_PROPS` + `LAYOUT_PROP_KEYS`. **Why**: 후자 누락 → 캐시 히트로 변경 미반영
+- 새 layout prop 추가 시 **3-심볼 체인 점검**: (1) `LAYOUT_PROP_KEYS` (`layoutCache.ts:100`, 캐시 시그니처 — 추가 필수) / (2) `NON_LAYOUT_PROPS_UPDATE` (`elementUpdate.ts:19`, 블랙리스트 — layout 영향 있는 prop은 **여기 추가 금지**, `isLayoutAffectingUpdate()` 가 `!set.has(k)` 로 판정) / (3) `INHERITED_LAYOUT_PROPS_UPDATE` (`elementUpdate.ts:73`, 부모→자식 상속 — fontSize/lineHeight 류만). **Why**: `LAYOUT_PROP_KEYS` 누락 → 캐시 히트로 변경 미반영. `NON_LAYOUT_PROPS_UPDATE` 오등록 → layoutVersion 증가 skip. (참고: `LAYOUT_AFFECTING_PROPS` 는 과거 심볼 — 현재 코드에 없음)
 
 ## CONTAINER_TAGS
 
@@ -55,13 +55,15 @@ globs:
 - Step 4.5: 실제 width vs enrichment width 비교 → 차이 시 re-enrich + dirty + recompute
 - 2-pass에서 `buildFull()` 호출 금지 — `updateNodeStyle` + `markDirty` + `computeLayout`만 사용
 
-## Layout Prop 변경 → Canvas 반영 (5곳 체크리스트)
+## Layout Prop 변경 → Canvas 반영 (7곳 체크리스트)
 
-1. `LAYOUT_AFFECTING_PROPS` — layoutVersion 트리거
-2. `LAYOUT_PROP_KEYS` — 캐시 시그니처
-3. `pageLayoutSignature` deps — elementById 포함
-4. `patchBatchStyleFromImplicit` — 배열 타입 지원
-5. display/grid 전환 감지 — full rebuild 조건
+1. `LAYOUT_PROP_KEYS` (`layoutCache.ts:100`) — 캐시 시그니처 (layout-relevant prop이면 **추가 필수**)
+2. `NON_LAYOUT_PROPS_UPDATE` (`elementUpdate.ts:19`) — layoutVersion 트리거 판정 블랙리스트 (layout 영향 prop은 **여기 추가 금지** — `isLayoutAffectingUpdate` 가 블랙리스트 제외 방식으로 판정)
+3. `INHERITED_LAYOUT_PROPS_UPDATE` (`elementUpdate.ts:73`) — 부모→자식 상속 전파 (fontSize/lineHeight/textAlign 등 상속성 prop만)
+4. `pageLayoutSignature` deps — elementById 포함
+5. `patchBatchStyleFromImplicit` — 배열 타입 지원
+6. display/grid 전환 감지 — full rebuild 조건
+7. `LAYOUT_AFFECTING_PROPS` — **과거 심볼, 현재 코드 없음** (stale 참조 제거)
 
 ## Overflow Scroll + Flex Shrink 보정
 
