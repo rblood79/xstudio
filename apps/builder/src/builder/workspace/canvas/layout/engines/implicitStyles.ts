@@ -22,10 +22,13 @@ import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   InlineAlertSpec,
   BreadcrumbsSpec,
+  ListBoxSpec,
   fontFamily as specFontFamily,
   breadcrumbSeparatorAfterPaddingXPx,
   normalizeBreadcrumbRspSizeKey,
+  resolveToken,
 } from "@composition/specs";
+import type { TokenRef } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { findAncestorByTag } from "../../skia/ancestorLookup";
 
@@ -84,6 +87,50 @@ export function formatProgressValue(
   } catch {
     return String(Math.round(value));
   }
+}
+
+/**
+ * ADR-080: Spec.containerStyles direct read-through.
+ *
+ * `applyImplicitStyles` containerTag 분기에서 하드코딩하던 layout fallback 상수
+ * (`display / flexDirection / gap / padding`) 를 Spec SSOT 로부터 읽어 resolved
+ * 숫자로 반환한다. 동일 값을 layout engine 이 중복 소유하는 이원화를 해소 (D3 SSOT).
+ *
+ * 반환 규칙: `parentStyle[key] !== undefined` 이면 해당 key 는 반환값에서 제외
+ * (사용자 Style Panel 편집 우선). 호출부 사용 패턴:
+ *   `{ ...parentStyle, ...resolveContainerStylesFallback(tag, parentStyle) }`.
+ *
+ * ADR-081 C3: 본 함수는 **export 된 testable seam** 으로 유지되어야 하며
+ * `tokenConsumerDrift.test.ts` 가 반환값을 primitives(spacing/radius/typography)
+ * 와 cross-reference 한다. signature 변경 시 ADR-081 G2 계약 동시 갱신 필요.
+ */
+export function resolveContainerStylesFallback(
+  tag: string,
+  parentStyle: Record<string, unknown>,
+): Record<string, unknown> {
+  // Spec lookup 테이블 — containerStyles 보유 Spec 추가 시 확장.
+  const specFor: Record<string, { containerStyles?: unknown } | undefined> = {
+    listbox: ListBoxSpec,
+  };
+  const cs = specFor[tag]?.containerStyles as
+    | Record<string, unknown>
+    | undefined;
+  if (!cs) return {};
+
+  // ADR-080 scope: layout fallback 4속성 (Context 감사 테이블 참조).
+  const keys = ["display", "flexDirection", "gap", "padding"] as const;
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (parentStyle[key] !== undefined) continue; // 사용자 편집 우선
+    const value = cs[key];
+    if (value === undefined) continue;
+    if (typeof value === "string" && /^\{.+\}$/.test(value)) {
+      out[key] = resolveToken(value as TokenRef);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 
 // ─── 내부 상수 ──────────────────────────────────────────────────────
@@ -665,13 +712,12 @@ export function applyImplicitStyles(
   //   덮어씌우면 `calculateContentHeight` 가 `style.paddingTop ?? style.padding` 순서로 읽어
   //   항상 stale 값(4) 을 반환. height 가 padding 편집을 따라가지 못하는 버그 근본 원인.
   //   사용자가 4-way 로 직접 편집한 값은 spread 로 자동 유지.
+  // ADR-080: layout fallback 상수(display/flexDirection/gap/padding) 는
+  //   `ListBoxSpec.containerStyles` SSOT 로부터 read-through. TokenRef 는 resolveToken 경유.
   if (containerTag === "listbox") {
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
-      gap: parentStyle.gap ?? 2,
-      padding: parentStyle.padding ?? 4,
+      ...resolveContainerStylesFallback("listbox", parentStyle),
     });
   }
 
