@@ -91,17 +91,44 @@ export function save(payload, dir = DEFAULT_REVIEWS_DIR) {
   let frontmatter;
   let body;
   let round;
+  let malformed = false;
 
   if (existsSync(filePath)) {
     const raw = readFileSync(filePath, 'utf8');
-    const parsed = matter(raw);
-    if (!parsed.data || !Array.isArray(parsed.data.reviews)) {
-      throw new Error('malformed existing frontmatter');
+    let parsed;
+    try {
+      parsed = matter(raw);
+      if (!parsed.data || !Array.isArray(parsed.data.reviews)) {
+        throw new Error('reviews array missing');
+      }
+    } catch (err) {
+      malformed = true;
     }
-    frontmatter = parsed.data;
-    body = parsed.content;
-    round = frontmatter.reviews.length + 1;
-  } else {
+    if (!malformed) {
+      frontmatter = parsed.data;
+      body = parsed.content;
+      round = frontmatter.reviews.length + 1;
+    }
+  }
+
+  if (malformed) {
+    // Separate save — original preserved
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const sepPath = resolve(dir, `${nnn}.${ts}.md`);
+    const entry = buildReviewEntry(payload, 1);
+    const sepFm = {
+      adr: payload.adr,
+      title: payload.title || '(unknown)',
+      reviews: [entry],
+    };
+    const sepBody = `# ADR-${nnn} Review Log (recovered ${ts})\n`
+      + formatBodySection(entry, payload.bodyMd);
+    writeFileSync(sepPath, matter.stringify(sepBody, sepFm));
+    return { path: sepPath, round: 1, malformed: true };
+  }
+
+  if (!frontmatter) {
+    // New file
     frontmatter = {
       adr: payload.adr,
       title: payload.title || '(unknown)',

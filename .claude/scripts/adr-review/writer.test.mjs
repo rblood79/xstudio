@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync as writeFileSyncRaw,
+  existsSync,
+  readdirSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import matter from 'gray-matter';
@@ -70,6 +77,35 @@ test('appends round 2 to existing file', () => {
     assert.ok(parsed.content.includes('Round 2'));
     assert.ok(parsed.content.includes('first'));
     assert.ok(parsed.content.includes('second'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('malformed existing frontmatter saves to separate file', () => {
+  const dir = tmpDir();
+  try {
+    const corruptPath = resolve(dir, '999.md');
+    writeFileSyncRaw(corruptPath, '---\nbroken: [unclosed\n---\nbody\n');
+
+    const result = save(
+      {
+        adr: 999,
+        title: 'Test',
+        issues: [{ severity: 'LOW', category: 'other', summary: 'x' }],
+        bodyMd: '### [LOW] x\n',
+      },
+      dir,
+    );
+
+    assert.strictEqual(result.malformed, true);
+    assert.notStrictEqual(result.path, corruptPath);
+    // Original corrupt file preserved
+    assert.ok(existsSync(corruptPath));
+    // New separate file created with timestamp suffix
+    const files = readdirSync(dir);
+    const recovered = files.find((f) => f.startsWith('999.') && f !== '999.md');
+    assert.ok(recovered, 'expected 999.{timestamp}.md to exist');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
