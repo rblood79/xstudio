@@ -28,13 +28,6 @@ dist
 /playwright-report
 /coverage
 packages/*/coverage/
-__tests__/
-# specs 패키지 테스트는 추적 (ADR-073 P1 최초 도입, ADR-081 G1 renderers/ 확장)
-!packages/specs/src/**/__tests__/
-# shared 패키지 테스트는 추적 (ADR-073 P3 canonical contract)
-!packages/shared/src/**/__tests__/
-# builder 패키지 테스트는 추적 (ADR-073 P4 store items actions)
-!apps/builder/src/**/__tests__/
 
 .cache
 .vercel
