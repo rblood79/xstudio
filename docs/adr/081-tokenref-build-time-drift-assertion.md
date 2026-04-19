@@ -30,7 +30,7 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 - `implicitStyles.ts` 의 fallback 상수 `?? 4` 는 **여전히 4 를 반환** (drift 발생)
 - `var(--spacing-xs)` CSS 변수는 CSS 정의 파일에서 별도로 6 으로 갱신되지 않는 한 **3-way 비대칭** 발생
 
-**확인된 영향 소비자 경로 4종**
+**확인된 영향 소비자 경로 — 커버리지 3종 (C1~C3) + scope 제외 1종 (C4 참고용)**
 
 | 경로 ID                   | 경로 이름     | 핵심 파일                                                                                                 | token 소비 방식                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,11 +68,11 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 
 - 설명: vitest 에서 primitives token 값을 snapshot 고정 (`tokenSnapshot.test.ts`). 각 소비자 경로별 resolved 값을 snapshot 과 비교하는 integration test 추가. primitives 수정 시 snapshot 파일이 outdated → CI 실패 → `vitest --update-snapshots` 로 명시적 승인 후 커밋. CSSGenerator snapshot test (`CSSGenerator.snapshot.test.ts`) 기존 패턴 재사용.
 - 구체 파일:
-  - `packages/specs/src/__tests__/tokenSnapshot.test.ts` — primitives resolved 값 snapshot
-  - `packages/specs/src/__tests__/tokenConsumerDrift.test.ts` — C1(CSS var 문자열) / C2(Skia resolveToken) / C3(implicitStyles fallback 상수) / C4(Style Panel hook 반환) 각각의 값을 snapshot 과 cross-reference
+  - `packages/specs/src/renderers/__tests__/tokenSnapshot.test.ts` — primitives resolved 값 snapshot
+  - `apps/builder/src/builder/workspace/canvas/layout/engines/tokenConsumerDrift.test.ts` — C1(CSSGenerator `tokenToCSSVar` → CSS var 문자열 **매핑 회귀** 검출, primitive 값 변화 미감지) / C2(Skia `resolveToken()` 반환 **값 drift** 검출) / C3(ADR-080 `resolveContainerStylesFallback()` 반환 **값 drift** 검출) 각각을 snapshot 과 cross-reference. **C4 Style Panel 은 scope 제외** (`useContainerStyleDefault()` 가 resolved 숫자 미반환). C3 test 를 builder 패키지 쪽에 두는 이유는 ADR-080 helper 가 `apps/builder/.../implicitStyles.ts` 에 상주하기 때문.
 - 위험:
   - 기술: **LOW** — vitest snapshot API 는 프로젝트에서 이미 사용 중. 외부 의존성 없음
-  - 성능: **LOW** — vitest run 에 test 파일 2개 추가. token 수 ~50개 × 경로 4종 = 200 assertion. 추가 실행 시간 <200ms 예상
+  - 성능: **LOW** — vitest run 에 test 파일 2개 추가. token 수 ~50개 × **경로 3종** = 150 assertion. 추가 실행 시간 <200ms 예상
   - 유지보수: **LOW** — snapshot 파일이 변경 내역을 명시적으로 추적. 새 소비자 추가 시 test 파일에 경로 1줄 등록
   - 마이그레이션: **LOW** — 기존 코드 변경 없음. test 파일 신규 추가만
 
@@ -94,7 +94,7 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 - 위험:
   - 기술: **LOW**
   - 성능: **LOW**
-  - 유지보수: **HIGH** — 소비자 경로 4종 × token 50개 = 200 drift point 를 코드 리뷰로 추적. ADR-079 P3.2 가 이미 발견한 "식별자 일치 ≠ 값 일치" 문제를 반복적으로 놓칠 가능성 HIGH. C3 의 하드코딩 fallback `?? 4` 가 영구 잔존할 위험
+  - 유지보수: **HIGH** — covered 소비자 경로 3종 (C1~C3) × token 50개 = 150 drift point 를 코드 리뷰로 추적. ADR-079 P3.2 가 이미 발견한 "식별자 일치 ≠ 값 일치" 문제를 반복적으로 놓칠 가능성 HIGH. C3 의 하드코딩 fallback `?? 4` 가 영구 잔존할 위험
   - 마이그레이션: **LOW**
 - ADR-063 D3 SSOT 원칙과 역행: token 값 변경이 자동으로 전파되지 않음
 
@@ -131,25 +131,25 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 
 **대안 A: Build-time snapshot cross-reference** 를 선택한다.
 
-**위험 수용 근거**: 기존 CSSGenerator snapshot 패턴을 그대로 재사용하므로 기술적 미지수가 없다. test 파일 2개 추가만으로 소비자 경로 4종 × token ~50개를 커버한다. 빌드 시간 증가는 200ms 미만으로 hard constraint (<10%) 를 충족한다.
+**위험 수용 근거**: 기존 CSSGenerator snapshot 패턴을 그대로 재사용하므로 기술적 미지수가 없다. test 파일 2개 추가만으로 소비자 경로 3종 (C1~C3) × token ~50개 = 150 assertion 을 커버한다 (C4 는 scope 외). 빌드 시간 증가는 200ms 미만으로 hard constraint (<10%) 를 충족한다.
 
 **기각 사유**:
 
 - **대안 B (Runtime assertion)**: dev 모드 assertion 은 C3 (하드코딩 fallback `?? 4`) 를 원천적으로 감지하지 못한다. `resolveToken()` 을 호출하지 않는 경로는 assertion trigger 가 없다. 또한 60fps Canvas 렌더 경로에 assertion 캐시 lookup 이 추가되어 성능 위험이 있다.
-- **대안 C (코드 리뷰 의존)**: 소비자 경로 ~200 drift point 를 수동 추적하는 것은 현실적으로 불가능하다. ADR-079 P3.2 가 이미 이 문제를 발견했음에도 불구하고 해결하지 않으면 SSOT 원칙의 실효성이 없다.
+- **대안 C (코드 리뷰 의존)**: 소비자 경로 ~150 drift point 를 수동 추적하는 것은 현실적으로 불가능하다. ADR-079 P3.2 가 이미 이 문제를 발견했음에도 불구하고 해결하지 않으면 SSOT 원칙의 실효성이 없다.
 - **대안 D (Lint rule)**: resolved 값 drift 는 lint 로 감지 불가능하다. `"{spacing.xs}"` 식별자가 올바르더라도 primitives 의 숫자 값이 변경되면 소비자는 여전히 stale 값을 보유한다. 게다가 ~160 곳 리팩토링은 ADR scope 를 초과한다.
 
 > 구현 상세: [081-tokenref-build-time-drift-assertion-breakdown.md](../design/081-tokenref-build-time-drift-assertion-breakdown.md)
 
 ## Gates
 
-| Gate  | 시점         | 통과 조건                                                                                                                                                                                                                                                                                                                 | 실패 시 대안                     |
-| ----- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| G0    | 착수 전      | 소비자 경로 전체 enumeration 완료 — **C1/C2/C3 3종** 외 추가 경로 발견 시 포함 (C4 Style Panel 은 현재 resolved 숫자 미소비로 scope 제외). `resolveToken()` 호출처 grep + `implicitStyles.ts` hardcoded fallback 목록 확정. **ADR-080 P1 (`resolveContainerStylesFallback` helper 추출) 완료 확인** — 미완료 시 G2 미실행 | ADR-080 P1 선행 or 경로 재조정   |
-| G1    | Phase 1 완료 | `tokenSnapshot.test.ts` 가 spacing/radius/typography 모든 token 의 resolved 숫자 값을 snapshot 고정 + vitest PASS + `.snap` 파일 CI 커밋                                                                                                                                                                                  | snapshot 범위 축소 후 재시도     |
-| G2    | Phase 2 완료 | `tokenConsumerDrift.test.ts` 가 **C1(CSS var 문자열) · C2(Skia resolveToken 반환) · C3(ADR-080 helper `resolveContainerStylesFallback()` 반환값 cross-reference)** 3종의 resolved 값을 G1 snapshot 과 비교 + vitest PASS                                                                                                  | 경로별 skip + 이슈 등록          |
-| G3    | Phase 3 완료 | `spacing.xs` 값을 임시로 `4 → 6` 으로 변경 → G1/G2 test 가 **3종 소비자 경로** 에서 모두 실패 + 실패 메시지에 drift 위치 명시 (token 이름 · 소비자 ID · 기댓값 · 실제값)                                                                                                                                                  | drift 리포트 형식 개선 후 재실측 |
-| G종결 | 전체 종결    | `spacing.xs` 원복 후 vitest 전체 회귀 0 + type-check 3/3 PASS + 빌드 시간 증가 <10% (`pnpm vitest --run` 실행 시간 **동일 cache 상태 3회 평균** before/after 비교)                                                                                                                                                        | 성능 최적화 후 재측정            |
+| Gate  | 시점         | 통과 조건                                                                                                                                                                                                                                                                                                                                                                                                                          | 실패 시 대안                     |
+| ----- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| G0    | 착수 전      | 소비자 경로 전체 enumeration 완료 — **C1/C2/C3 3종** 외 추가 경로 발견 시 포함 (C4 Style Panel 은 현재 resolved 숫자 미소비로 scope 제외). `resolveToken()` 호출처 grep + `implicitStyles.ts` hardcoded fallback 목록 확정. **ADR-080 P1 (`resolveContainerStylesFallback` helper 추출) 완료 확인** — 미완료 시 G2 미실행                                                                                                          | ADR-080 P1 선행 or 경로 재조정   |
+| G1    | Phase 1 완료 | `tokenSnapshot.test.ts` 가 spacing/radius/typography 모든 token 의 resolved 숫자 값을 snapshot 고정 + vitest PASS + `.snap` 파일 CI 커밋                                                                                                                                                                                                                                                                                           | snapshot 범위 축소 후 재시도     |
+| G2    | Phase 2 완료 | `tokenConsumerDrift.test.ts` 가 다음 3종을 G1 snapshot 과 비교 + vitest PASS: **C1** — `tokenToCSSVar()` 반환 CSS var 문자열 형식 regression (primitive 숫자값 변화 미감지, CSS var 이름 규칙 drift 만 감지) / **C2** — Skia `resolveToken()` 반환 숫자값 drift / **C3** — ADR-080 `resolveContainerStylesFallback()` 반환 resolved 숫자 drift                                                                                     | 경로별 skip + 이슈 등록          |
+| G3    | Phase 3 완료 | **C2/C3 값 drift 실증**: `spacing.xs` 값을 임시로 `4 → 6` 으로 변경 → C2/C3 test 가 실패 + 실패 메시지에 drift 위치 명시 (token 이름 · 소비자 ID · 기댓값 4 · 실제값 6). **C1 은 실패하지 않음** — `tokenToCSSVar("{spacing.xs}")` = `"var(--spacing-xs)"` 문자열은 primitive 숫자값 변경과 독립. C1 은 별도로 "CSS var 이름 규칙 drift" 검증만 담당 (예: `tokenToCSSVar` 매핑 테이블의 name prefix 변경 시 감지). 역할 분리 명시. | drift 리포트 형식 개선 후 재실측 |
+| G종결 | 전체 종결    | `spacing.xs` 원복 후 vitest 전체 회귀 0 + type-check 3/3 PASS + 빌드 시간 증가 <10% (`pnpm vitest --run` 실행 시간 **동일 cache 상태 3회 평균** before/after 비교)                                                                                                                                                                                                                                                                 | 성능 최적화 후 재측정            |
 
 **잔존 HIGH 위험**: 없음.
 
@@ -158,7 +158,7 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 ### Positive
 
 - **ADR-079 P3.2 한계 구조적 해소** — TokenRef 식별자 일치에서 resolved 값 일치 검증으로 업그레이드. `implicitStyles.ts` 하드코딩 fallback `?? 4` 가 primitives 변경 시 자동 감지됨
-- **C1~C3 소비자 경로 커버리지 (C4 scope 제외)** — Preview CSS / Skia 렌더 / Layout engine 3종에서 token drift 자동 감지. Style Panel(C4)은 현재 hook 이 gap/padding resolved 숫자를 소비하지 않아 scope 외 (향후 확장 시 포함)
+- **C1~C3 소비자 경로 커버리지 (역할 분리)** — **값 drift 검출**: C2(Skia `resolveToken` 반환 숫자) + C3(ADR-080 helper 반환 숫자) / **매핑 회귀 검출**: C1(`tokenToCSSVar` 의 `var(--spacing-xs)` 문자열 규칙 — primitive 값 변경과 독립). primitive 숫자 변경 시 자동 감지는 C2/C3, CSS var 이름 규칙 변경 시 감지는 C1. Style Panel(C4)은 현재 hook 이 gap/padding resolved 숫자를 소비하지 않아 scope 외 (향후 확장 시 포함)
 - **ADR-080 선행 의존 + 연계 효과** — ADR-080 P1 이 `resolveContainerStylesFallback()` helper 로 추출해야 C3 test 가 외부 cross-reference 로 성립 (현재 `applyImplicitStyles()` 내부 인라인 리터럴은 접근 불가). helper 완성 후 C3 drift test 가 `resolveToken()` 반환값 비교로 전환됨
 - **primitives 수정 워크플로 명확화** — token 값 변경 시 `vitest --update-snapshots` 로 의도적 승인 + PR 리뷰에서 snapshot diff 가시화
 - **기존 인프라 재사용** — 새 test runner 도입 없음. vitest + `.snap` 패턴은 프로젝트 표준

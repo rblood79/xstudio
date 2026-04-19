@@ -162,7 +162,7 @@ if (containerTag === "listbox") {
 
 **구현 범위 (Phase 분리)**:
 
-- **P1**: `resolveContainerStylesFallback` 함수 추출 — `implicitStyles.ts` 내 private helper로 추가. `listbox` 분기 하드코딩 → resolver 경유로 전환.
+- **P1**: `resolveContainerStylesFallback` 함수 추출 — `implicitStyles.ts` 에 **export 된 helper** 로 추가 (testable seam). `listbox` 분기 하드코딩 → resolver 경유로 전환. 순수 함수이며 ADR-081 의 C3 drift test 가 외부에서 반환값을 cross-reference 하는 entry point 역할.
 - **P2**: drift test 교체 — `implicitStyles-listbox.test.ts` 를 resolver 단위 test 로 대체 (또는 삭제 후 resolver 자체의 인라인 test 통합).
 - **P3**: `/cross-check` + `/sweep` 컬렉션 family 시각 회귀 확인. Gate 종결.
 
