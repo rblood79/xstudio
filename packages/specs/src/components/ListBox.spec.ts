@@ -340,7 +340,13 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const paddingY = (size.paddingY as unknown as number) || 4;
       const gap = (size.gap as unknown as number) || 2;
       const paddingX = (size.paddingX as unknown as number) || 4;
-      let itemY = paddingY;
+      // ADR-078 Phase 5 fix: Skia 좌표는 bg roundRect(border 포함) 0,0 기준이므로 item
+      //   배치는 border 안쪽으로 밀어야 Preview DOM (border-box + padding 내부 item) 와 정합.
+      //   layout/engines/utils.ts:1545 공식(paddingY*2 + items*itemH + (items-1)*gap + border*2)
+      //   과 동일 시각 결과를 재현.
+      const innerPaddingX = paddingX + borderWidth;
+      const innerPaddingY = paddingY + borderWidth;
+      let itemY = innerPaddingY;
 
       // 선택 상태 계산 — canonical(selectedKey/selectedKeys) 우선, legacy index fallback
       // Phase 5 migration 전 legacy 프로젝트 로드 시 selectedIndex 경로 유지
@@ -366,12 +372,12 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         const isSelected = selectedIndexSet.has(i);
         const isItemDisabled = Boolean(item.isDisabled);
 
-        // 아이템 배경 (선택/hover 상태 표시) — container padding 내부 전체 영역
+        // 아이템 배경 (선택/hover 상태 표시) — container border+padding 내부 전체 영역
         shapes.push({
           type: "roundRect" as const,
-          x: paddingX,
+          x: innerPaddingX,
           y: itemY,
-          width: width - paddingX * 2,
+          width: width - innerPaddingX * 2,
           height: itemH,
           radius: borderRadius as unknown as number,
           fill: isSelected ? variant.backgroundHover : bgColor,
@@ -382,7 +388,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           shapes.push({
             type: "icon_font" as const,
             iconName: isSelected ? "check-square" : "square",
-            x: paddingX + ITEM_PADDING_X,
+            x: innerPaddingX + ITEM_PADDING_X,
             y: itemY + itemH / 2,
             fontSize,
             fill: isSelected
@@ -393,11 +399,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         }
 
         // 아이템 텍스트 (isDisabled 반영 — 비활성 항목 muted)
-        // @sync CSS 아이템 텍스트 시작: container padding + item padding-left
+        // @sync CSS 아이템 텍스트 시작: container border + padding + item padding-left
         const textX =
           props.selectionMode === "multiple"
-            ? paddingX + ITEM_PADDING_X + fontSize + 6
-            : paddingX + ITEM_PADDING_X;
+            ? innerPaddingX + ITEM_PADDING_X + fontSize + 6
+            : innerPaddingX + ITEM_PADDING_X;
         const itemTextFill = isItemDisabled
           ? ("{color.neutral-subdued}" as TokenRef)
           : isSelected

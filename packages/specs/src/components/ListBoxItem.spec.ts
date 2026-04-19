@@ -27,8 +27,12 @@ export interface ListBoxItemProps {
  * render.shapes: () => [] — Skia shapes 없음 (Q5=i, Builder Skia 미등록)
  *   item 시각은 부모 ListBox.render.shapes 가 본 Spec.sizes 를 참조하여 그린다 (Phase 3)
  *
- * @sync ListBox.css `--lb-item-*` 변수 + `.react-aria-ListBoxItem` 수동 블록 — Phase 4 해체 대상
- * @sync ListBox.spec.render.shapes 내부 상수(ITEM_PADDING_X/Y, LINE_HEIGHT) — Phase 3 해체 대상
+ * ADR-078 Phase 3 (종결): `ListBox.spec.render.shapes` / layout `calculateContentHeight`
+ *   가 `resolveListBoxItemMetric(fontSize)` 를 공유 소비 — 기존 하드코딩 상수 해체 완료.
+ * ADR-078 Phase 4 (종결): 수동 `ListBox.css` 중 Generator 커버 속성(padding/border-radius/
+ *   min-height/font-size/line-height/font-weight/gap + hover/disabled) 삭제 완료. dead vars
+ *   (`--lb-item-min-height/size/line-height`) 제거. 잔존 수동 CSS 는 Generator 미커버 영역만
+ *   (display column 레이아웃, slot selector, variant 5종 cascade, Popover context override).
  */
 export const ListBoxItemSpec: ComponentSpec<ListBoxItemProps> = {
   name: "ListBoxItem",

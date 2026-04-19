@@ -659,16 +659,19 @@ export function applyImplicitStyles(
 
   // ── ListBox ──────────────────────────────────────────────────────────
   // CSS: display:flex column, padding, gap, border
+  // ADR-078 Phase 5 fix: defaults 를 `ListBoxSpec.containerStyles.padding = {spacing.xs} = 4`
+  //   + `ListBoxSpec.sizes.md.gap = 2` 와 정합. 이전 legacy(padding:6/gap:4)는 Preview
+  //   generated CSS(4/2)와 불일치하여 Skia/Canvas layout 이 10px 큰 height 반환 → 시각 비대칭.
   if (containerTag === "listbox") {
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
       flexDirection: "column",
-      gap: parentStyle.gap ?? 4,
-      paddingTop: parentStyle.paddingTop ?? 6,
-      paddingBottom: parentStyle.paddingBottom ?? 6,
-      paddingLeft: parentStyle.paddingLeft ?? 6,
-      paddingRight: parentStyle.paddingRight ?? 6,
+      gap: parentStyle.gap ?? 2,
+      paddingTop: parentStyle.paddingTop ?? 4,
+      paddingBottom: parentStyle.paddingBottom ?? 4,
+      paddingLeft: parentStyle.paddingLeft ?? 4,
+      paddingRight: parentStyle.paddingRight ?? 4,
     });
   }
 
