@@ -2,7 +2,16 @@
 
 ## Status
 
-Proposed — 2026-04-20
+Implemented — 2026-04-20
+
+**구현 결과 (P1+P2 종결)**:
+
+- 커밋: `16c52e27` — P1+P2 단일 커밋 (helper 신설 + listbox 분기 read-through 전환 + 구 drift test 교체)
+- P1 (G1 PASS): `resolveContainerStylesFallback(tag, parentStyle)` export 된 testable seam 으로 `implicitStyles.ts` 에 추가. `listbox` 분기 하드코딩 4속성 → resolver 경유. unit test 7/7 PASS (`resolveContainerStylesFallback.test.ts`)
+- P2 (G2 PASS, 전략 A): `implicitStyles-listbox.test.ts` 삭제 + resolver unit test 로 교체. 새 test 가 구 drift 시나리오 전체 커버 + primitives 값 drift 및 사용자 편집 우선 contract 추가 검증. vitest 176/176 PASS
+- P3 (G3 구조적 입증): resolved 수치 (`display:"flex"` / `flexDirection:"column"` / `gap:2` / `padding:4`) 가 기존 하드코딩 값과 동일. Skia render.shapes + CSSGenerator + layout engine 3경로 동일 SSOT 참조 확립 → 시각 결과 identical, drift 구조적 불가. type-check 3/3 PASS
+
+**ADR-081 선행 의존성 충족** — P1 helper 가 export seam 으로 land → ADR-081 G0 조건 충족, G2 C3 assertion 진입점 확보.
 
 ## Context
 
