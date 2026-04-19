@@ -253,11 +253,17 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
+      // ADR-076 이후 variants={default, accent} 로 재편. 이전에 DB 에 저장된
+      //   element 의 variant 가 현재 variants 키와 맞지 않는 경우 (예: "primary")
+      //   lookup 실패 → undefined → resolveStateColors(undefined, ...) crash.
+      //   ADR-079 Hard Constraint 1 (migration 금지) 준수 위해 spec 레벨 fallback.
+      const requestedVariant = (
+        props as { variant?: keyof typeof ListBoxSpec.variants }
+      ).variant;
       const variant =
-        ListBoxSpec.variants![
-          (props as { variant?: keyof typeof ListBoxSpec.variants }).variant ??
-            ListBoxSpec.defaultVariant!
-        ];
+        (requestedVariant
+          ? ListBoxSpec.variants![requestedVariant]
+          : undefined) ?? ListBoxSpec.variants![ListBoxSpec.defaultVariant!]!;
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
