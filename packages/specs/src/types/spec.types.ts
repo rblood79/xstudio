@@ -68,6 +68,12 @@ export interface ContainerStylesSchema {
   padding?: TokenRef | string;
   gap?: TokenRef | string;
 
+  // ADR-078: layout primitive — archetype base 를 명시적으로 override.
+  //   Spec 이 display/flexDirection 을 "선언적으로" 소유 → style panel / Skia / CSS 모두
+  //   동일 소스 참조 (3경로 SSOT). archetype 만으로 간접 파생되던 구조의 대체.
+  display?: "flex" | "inline-flex" | "grid" | "block" | "inline-block";
+  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+
   // 컨테이너 제약 — CSS 값 (SSOT 대상 아님)
   width?: string;
   maxHeight?: string;

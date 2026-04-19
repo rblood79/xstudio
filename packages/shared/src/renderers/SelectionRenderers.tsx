@@ -202,6 +202,7 @@ export const renderListBox = (
         aria-label={String(element.props.label || "List")}
         data-element-id={element.id}
         className={element.props.className}
+        style={element.props.style as React.CSSProperties | undefined}
         variant={(element.props.variant as string) || undefined}
         orientation={
           (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -273,6 +274,7 @@ export const renderListBox = (
       aria-label={String(element.props.label || "List")}
       data-element-id={element.id}
       className={element.props.className}
+      style={element.props.style as React.CSSProperties | undefined}
       variant={(element.props.variant as string) || undefined}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"

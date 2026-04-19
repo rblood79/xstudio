@@ -253,8 +253,17 @@ export function createListBoxDefinition(
         orientation: "vertical",
         selectionMode: "single",
         items,
+        // ADR-078 Phase 5: Spec archetype="collection" = display:flex + flex-direction:column.
+        //   3경로(Preview CSS / Skia layout / Style Panel) 모두 동일 값 가시화 + 편집 가능.
+        //   @sync ListBoxSpec.archetype="collection"
+        //   @sync ListBoxSpec.containerStyles.padding={spacing.xs}=4
+        //   @sync ListBoxSpec.sizes.md.gap=2
         style: {
           width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          padding: 4,
         },
       } as ComponentElementProps,
       ...ownerFields,

@@ -72,9 +72,13 @@
   .react-aria-ListBoxItem {
     position: relative;
     /* display: flex; flex-direction: column — label+description 수직 배치 (Generator `inline-flex`
-     * override). @sync ListBoxItemSpec.sizes.md.height=0 → Generator `height: auto` */
+     * override). @sync ListBoxItemSpec.sizes.md.height=0 → Generator `height: auto`.
+     * align-items: flex-start 명시 — Generator archetype="simple" 이 emit 한 `align-items: center`
+     * 를 override 하지 않으면 flex column 에서 text 가 수평 중앙으로 밀려 Skia (x: paddingX+12
+     * 좌측) 와 불일치 (ADR-078 Phase 5 post-fix). */
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
     color: var(--fg);
     cursor: pointer;

@@ -666,6 +666,11 @@ export function emitContainerStyles(c: ContainerStylesSchema): string[] {
   if (c.overflow) lines.push(`  overflow: ${c.overflow};`);
   if (c.outline) lines.push(`  outline: ${c.outline};`);
 
+  // ADR-078: layout primitive override — archetype base 의 display/flex-direction 을 override.
+  //   containerStyles 이 우선이어야 Spec SSOT 관점에서 display/direction 선언이 명시적.
+  if (c.display) lines.push(`  display: ${c.display};`);
+  if (c.flexDirection) lines.push(`  flex-direction: ${c.flexDirection};`);
+
   return lines;
 }
 

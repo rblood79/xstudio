@@ -81,6 +81,9 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     borderRadius: "{radius.lg}" as TokenRef,
     padding: "{spacing.xs}" as TokenRef,
     gap: "{spacing.2xs}" as TokenRef,
+    // ADR-078 Phase 5: layout primitive Spec SSOT — CSS / Canvas / Style Panel 3경로 동일 소스.
+    display: "flex",
+    flexDirection: "column",
     width: "100%",
     maxHeight: "300px",
     overflow: "auto",
@@ -336,12 +339,29 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const itemMetric = resolveListBoxItemMetric(fontSize);
       const ITEM_PADDING_X = itemMetric.paddingX;
       const itemH = itemMetric.itemHeight;
-      // @sync sizes.md — container padding 만 표현 (관례 정합)
-      const paddingY = (size.paddingY as unknown as number) || 4;
-      const gap = (size.gap as unknown as number) || 2;
-      const paddingX = (size.paddingX as unknown as number) || 4;
-      // ADR-078 Phase 5 fix: Skia 좌표는 bg roundRect(border 포함) 0,0 기준이므로 item
-      //   배치는 border 안쪽으로 밀어야 Preview DOM (border-box + padding 내부 item) 와 정합.
+      // ADR-078 Phase 5 fix #2: container padding/gap 은 `props.style` 우선 읽기.
+      //   factory 가 style 에 명시 주입(display/flexDirection/gap/padding) 하므로
+      //   스타일 패널 편집값이 Canvas 렌더에 즉시 반영. style 미지정 시 Spec sizes fallback.
+      //   PropertyUnitInput 은 `"10px"` 같은 string 을 전달 — number/string 모두 파싱.
+      const toPx = (v: unknown, fallback: number): number => {
+        if (typeof v === "number") return v;
+        if (typeof v === "string") {
+          const n = parseFloat(v);
+          if (Number.isFinite(n)) return n;
+        }
+        return fallback;
+      };
+      const paddingY = toPx(
+        props.style?.paddingTop ?? props.style?.padding,
+        (size.paddingY as unknown as number) || 4,
+      );
+      const paddingX = toPx(
+        props.style?.paddingLeft ?? props.style?.padding,
+        (size.paddingX as unknown as number) || 4,
+      );
+      const gap = toPx(props.style?.gap, (size.gap as unknown as number) || 2);
+      // Skia 좌표는 bg roundRect(border 포함) 0,0 기준이므로 item 배치는 border 안쪽으로
+      //   밀어야 Preview DOM (border-box + padding 내부 item) 와 정합.
       //   layout/engines/utils.ts:1545 공식(paddingY*2 + items*itemH + (items-1)*gap + border*2)
       //   과 동일 시각 결과를 재현.
       const innerPaddingX = paddingX + borderWidth;
