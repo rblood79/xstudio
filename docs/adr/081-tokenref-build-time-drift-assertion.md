@@ -2,7 +2,17 @@
 
 ## Status
 
-Proposed — 2026-04-20
+Implemented — 2026-04-20
+
+**구현 결과 (G1+G2+G3+G종결)**:
+
+- 커밋: `491b39d4` (G1+G2+G3 인프라), `4dd617a4` (chore gitignore 정리)
+- **G1 PASS** (Phase 1): `packages/specs/src/renderers/__tests__/tokenSnapshot.test.ts` 신설 (3 tests). spacing(7) + radius(6) + typography(21) 전체 token resolved 값 `.snap` 고정.
+- **G2 PASS** (Phase 2): `apps/builder/src/builder/workspace/canvas/layout/engines/tokenConsumerDrift.test.ts` 신설 (9 tests, 7 snapshots). C1 `tokenToCSSVar()` 매핑 회귀 / C2 `resolveToken()` 값 drift / C3 `resolveContainerStylesFallback()` 값 drift 3종 cross-reference. C4 scope 제외 명시.
+- **G3 PASS** (Phase 3): `spacing.xs` 4→6 임시 변경 실증 → C2 spacing snapshot `"xs": 4 / 6` mismatch FAIL + C3 listbox snapshot `"padding": 4 / 6` mismatch FAIL + C1 `var(--spacing-xs)` 매핑 PASS 유지 + G1 spacing snapshot 도 동일 drift 감지 FAIL. 정확한 drift 위치 리포트 확인. 원복 후 전체 PASS.
+- **G종결 PASS**: spacing.xs = 4 원복 확인 / specs vitest 152/152 PASS (기존 149 + 신규 3) / builder vitest 185/185 PASS (기존 176 + 신규 9) / type-check 3/3 PASS / 회귀 0. 빌드 시간 증가 builder duration 2.09s → 2.29s (+9%), Hard Constraint 3 (<10%) 충족.
+
+**ADR-080 선행 의존성 충족 확인** — C3 test 가 ADR-080 `resolveContainerStylesFallback` export seam 을 외부 참조. helper private 이었다면 C3 assertion 무효 (그림자 상수화). export 유지는 ADR-080 Risks R1 계약 조건.
 
 ## Context
 
