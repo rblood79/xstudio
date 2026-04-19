@@ -253,17 +253,13 @@ export function createListBoxDefinition(
         orientation: "vertical",
         selectionMode: "single",
         items,
-        // ADR-078 Phase 5: Spec archetype="collection" = display:flex + flex-direction:column.
-        //   3경로(Preview CSS / Skia layout / Style Panel) 모두 동일 값 가시화 + 편집 가능.
-        //   @sync ListBoxSpec.archetype="collection"
-        //   @sync ListBoxSpec.containerStyles.padding={spacing.xs}=4
-        //   @sync ListBoxSpec.sizes.md.gap=2
+        // ADR-079 P3: 중복 주입 해체 — display/flex-direction/gap/padding 은 Spec SSOT.
+        //   Style Panel = useLayoutAuxiliary hook read-through (P2)
+        //   Preview CSS = generated/ListBox.css (Generator)
+        //   Canvas Skia = implicitStyles.listbox 분기 (layout engine 전용 경로)
+        //   factory 는 사용자 커스터마이징 기본값 (width) 만 보유.
         style: {
           width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          padding: 4,
         },
       } as ComponentElementProps,
       ...ownerFields,
