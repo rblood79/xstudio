@@ -88,13 +88,29 @@ export function save(payload, dir = DEFAULT_REVIEWS_DIR) {
   const filePath = resolve(dir, `${nnn}.md`);
   mkdirSync(dir, { recursive: true });
 
-  const frontmatter = {
-    adr: payload.adr,
-    title: payload.title || '(unknown)',
-    reviews: [],
-  };
-  const body = `# ADR-${nnn} Review Log\n`;
-  const round = 1;
+  let frontmatter;
+  let body;
+  let round;
+
+  if (existsSync(filePath)) {
+    const raw = readFileSync(filePath, 'utf8');
+    const parsed = matter(raw);
+    if (!parsed.data || !Array.isArray(parsed.data.reviews)) {
+      throw new Error('malformed existing frontmatter');
+    }
+    frontmatter = parsed.data;
+    body = parsed.content;
+    round = frontmatter.reviews.length + 1;
+  } else {
+    frontmatter = {
+      adr: payload.adr,
+      title: payload.title || '(unknown)',
+      reviews: [],
+    };
+    body = `# ADR-${nnn} Review Log\n`;
+    round = 1;
+  }
+
   const entry = buildReviewEntry(payload, round);
   frontmatter.reviews.push(entry);
   const newBody = body + formatBodySection(entry, payload.bodyMd);

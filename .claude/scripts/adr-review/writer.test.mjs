@@ -39,3 +39,38 @@ test('creates new file with round 1', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('appends round 2 to existing file', () => {
+  const dir = tmpDir();
+  try {
+    save(
+      {
+        adr: 999,
+        title: 'Test',
+        issues: [{ severity: 'HIGH', category: 'other', summary: 'first' }],
+        bodyMd: '### [HIGH] first\n',
+      },
+      dir,
+    );
+    const result = save(
+      {
+        adr: 999,
+        issues: [{ severity: 'MEDIUM', category: 'other', summary: 'second' }],
+        bodyMd: '### [MEDIUM] second\n',
+      },
+      dir,
+    );
+
+    assert.strictEqual(result.round, 2);
+    const parsed = matter(readFileSync(result.path, 'utf8'));
+    assert.strictEqual(parsed.data.reviews.length, 2);
+    assert.strictEqual(parsed.data.reviews[0].round, 1);
+    assert.strictEqual(parsed.data.reviews[1].round, 2);
+    assert.ok(parsed.content.includes('Round 1'));
+    assert.ok(parsed.content.includes('Round 2'));
+    assert.ok(parsed.content.includes('first'));
+    assert.ok(parsed.content.includes('second'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
