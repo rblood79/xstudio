@@ -177,3 +177,10 @@
 {"ts":"2026-04-19T17:01:25Z","agent_type":"general-purpose","agent_id":"a5782abba20ebbf11","session_id":"6abadc03-f952-4cb1-bec1-3135299afef0"}
 {"ts":"2026-04-19T17:02:47Z","agent_type":"general-purpose","agent_id":"a6caacb5ba13db387","session_id":"6abadc03-f952-4cb1-bec1-3135299afef0"}
 {"ts":"2026-04-19T17:04:53Z","agent_type":"superpowers:code-reviewer","agent_id":"a8e153c369102338b","session_id":"6abadc03-f952-4cb1-bec1-3135299afef0"}
+{"ts":"2026-04-19T17:18:26Z","agent_type":"architect","agent_id":"ae98a74a46a28bafa","session_id":"79084411-05ea-42f7-82ea-93e3a63afa25"}
+{"ts":"2026-04-19T17:19:20Z","agent_type":"architect","agent_id":"aeb0af2626a0ce396","session_id":"79084411-05ea-42f7-82ea-93e3a63afa25"}
+{"ts":"2026-04-19T17:23:59Z","agent_type":"reviewer","agent_id":"ac87681d63a3a9ed7","session_id":"79084411-05ea-42f7-82ea-93e3a63afa25"}
+{"ts":"2026-04-19T17:24:15Z","agent_type":"reviewer","agent_id":"aa5ebadc310e46800","session_id":"79084411-05ea-42f7-82ea-93e3a63afa25"}
+{"ts":"2026-04-19T17:24:41Z","agent_type":"general-purpose","agent_id":"a21361845c7c891b3","session_id":"9ba6d557-42cf-47c3-9b61-c7e3a29fe140"}
+{"ts":"2026-04-19T17:25:18Z","agent_type":"general-purpose","agent_id":"ab2c01415cd7516bb","session_id":"9ba6d557-42cf-47c3-9b61-c7e3a29fe140"}
+{"ts":"2026-04-19T17:25:24Z","agent_type":"general-purpose","agent_id":"a72d4d4899f5df7a6","session_id":"9ba6d557-42cf-47c3-9b61-c7e3a29fe140"}
