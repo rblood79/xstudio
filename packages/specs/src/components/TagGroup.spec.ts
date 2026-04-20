@@ -68,6 +68,15 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   element: "div",
   skipCSSGeneration: true,
 
+  // ADR-087 SP6: outer TagGroup container static layout-primitive 리프팅.
+  //   flexDirection 은 labelPosition + hasTagList runtime 결정, flexWrap 은 runtime 결정,
+  //   gap 은 Label↔TagList 수직 간격 (spec.sizes.gap 은 inner tag-tag 간격과 별개).
+  //   skipCSSGeneration:true → CSS emit 없음, 오직 Taffy resolveContainerStylesFallback 경유.
+  containerStyles: {
+    display: "flex",
+    gap: "{spacing.xs}",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -350,7 +359,11 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = TagGroupSpec.variants![(props as { variant?: keyof typeof TagGroupSpec.variants }).variant ?? TagGroupSpec.defaultVariant!];
+      const variant =
+        TagGroupSpec.variants![
+          (props as { variant?: keyof typeof TagGroupSpec.variants }).variant ??
+            TagGroupSpec.defaultVariant!
+        ];
       const shapes: Shape[] = [];
       const rawTagFontSize = size.fontSize;
       const resolvedTagFs =

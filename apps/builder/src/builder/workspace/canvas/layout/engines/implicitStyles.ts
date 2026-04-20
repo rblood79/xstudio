@@ -555,12 +555,12 @@ export function applyImplicitStyles(
       parentStyle.flexDirection as string | undefined,
       tgDefaultDir,
     );
+    // ADR-087 SP6: display/gap 는 TagGroup.spec containerStyles 로 리프팅됨.
+    //   flexDirection (labelPos + hasTagList) + flexWrap 은 runtime 결정 → 잔존.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
       flexDirection: tgFlexDir,
       flexWrap: hasTagList && tgLabelPos !== "side" ? undefined : "wrap",
-      gap: parentStyle.gap ?? 4,
     });
   }
 
