@@ -28,6 +28,15 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   description: "React Aria 기반 툴바 컴포넌트",
   element: "div",
 
+  // ADR-087 SP1: Toolbar static layout-primitive 리프팅.
+  //   flexDirection (orientation prop) + gap (sizeName) + child flexShrink/whiteSpace
+  //   은 runtime 결정 → implicitStyles 잔존.
+  containerStyles: {
+    display: "flex",
+    alignItems: "center",
+    width: "fit-content",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

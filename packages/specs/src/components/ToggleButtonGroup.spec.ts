@@ -44,6 +44,13 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP1: Group 컨테이너의 static layout-primitive 리프팅.
+  //   flexDirection 은 orientation prop 에 의존 → runtime 결정 (implicitStyles 잔존).
+  containerStyles: {
+    display: "flex",
+    alignItems: "center",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

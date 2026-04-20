@@ -61,6 +61,15 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP1: RadioGroup static layout-primitive 리프팅.
+  //   flexDirection 은 labelPosition prop 에 의존 → runtime 결정 (implicitStyles 잔존).
+  //   Label whiteSpace 주입 역시 child-level runtime.
+  //   gap 은 spec.sizes[size].gap (size-indexed 8/12/16) 이 이미 size-indexed emit 되므로
+  //   containerStyles.gap 으로 리프팅하면 size-indexed 블록 skip 되어 회귀 → 제외.
+  containerStyles: {
+    display: "flex",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

@@ -795,28 +795,32 @@ export function applyImplicitStyles(
   }
 
   // ── ToggleButtonGroup ─────────────────────────────────────────────
+  // ADR-087 SP1: display/alignItems 는 ToggleButtonGroup.spec containerStyles 로 리프팅됨.
+  //   flexDirection 은 orientation prop runtime 결정 → 잔존.
   if (containerTag === "togglebuttongroup") {
     const orientation = containerProps?.orientation as string | undefined;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: orientation === "vertical" ? "column" : "row",
-      alignItems: "center",
+      flexDirection:
+        parentStyle.flexDirection ??
+        (orientation === "vertical" ? "column" : "row"),
     });
   }
 
   // ── Toolbar ──────────────────────────────────────────────────────────
+  // ADR-087 SP1: display/alignItems/width:fit-content 는 Toolbar.spec containerStyles
+  //   로 리프팅됨. flexDirection (orientation) + gap (size-based) + child flexShrink/
+  //   whiteSpace 은 runtime 결정 → 잔존.
   if (containerTag === "toolbar") {
     const orientation = containerProps?.orientation as string | undefined;
     const sizeName = (containerProps?.size as string) ?? "md";
     const gap = sizeName === "sm" ? 4 : sizeName === "lg" ? 10 : 8;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: orientation === "vertical" ? "column" : "row",
-      alignItems: "center",
+      flexDirection:
+        parentStyle.flexDirection ??
+        (orientation === "vertical" ? "column" : "row"),
       gap: parentStyle.gap ?? gap,
-      width: parentStyle.width ?? "fit-content",
     });
     // 자식 Button/ToggleButton: 축소 방지 + 텍스트 줄바꿈 방지
     filteredChildren = filteredChildren.map((child) => {
@@ -867,9 +871,11 @@ export function applyImplicitStyles(
       labelPos,
       parentStyle.flexDirection as string | undefined,
     );
+    // ADR-087 SP1: display 는 CheckboxGroup/RadioGroup.spec containerStyles 로 리프팅됨.
+    //   flexDirection 은 labelPosition prop runtime 결정, gap 은 Label↔CheckboxItems
+    //   간격 (sizing 에서 분리된 fixed 4px) → 잔존.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
       flexDirection: flexDir,
       gap: parentStyle.gap ?? 4,
     });
