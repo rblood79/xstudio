@@ -34,6 +34,11 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   archetype: "slider",
   skipCSSGeneration: false,
 
+  // ADR-083 Phase 5: slider archetype base 의 layout primitive 1 필드 리프팅.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultSize: "md",
 
   sizes: {

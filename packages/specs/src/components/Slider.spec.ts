@@ -91,6 +91,12 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   skipCSSGeneration: false,
   element: "div",
 
+  // ADR-083 Phase 5: slider archetype base 의 layout primitive 1 필드 리프팅.
+  //   box-sizing 은 ContainerStylesSchema 미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultSize: "md",
 
   sizes: {

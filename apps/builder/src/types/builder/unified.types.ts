@@ -1369,10 +1369,10 @@ export function createDefaultSliderProps(): SliderElementProps {
     isDisabled: false,
     orientation: "horizontal",
     showValue: true,
-    // CSS base: display:grid; max-width:300px
-    // Spec md: label(14*1.2≈17) + gap(10) + thumbSize(18) = 45
+    // ADR-083 Phase 5 (R5): display:"grid" 는 SliderSpec.containerStyles SSOT 로 이관.
+    //   width/height/maxWidth 는 factory 특화 초기값 → 유지.
+    //   Spec md: label(14*1.2≈17) + gap(10) + thumbSize(18) = 45
     style: {
-      display: "grid",
       width: 200,
       height: 45,
       maxWidth: 300,
