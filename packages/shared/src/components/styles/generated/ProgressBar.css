@@ -10,8 +10,6 @@
   /* Base styles — archetype: progress */
     display: grid;
     box-sizing: border-box;
-    grid-template-areas: "label value" "bar bar";
-    grid-template-columns: 1fr auto;
     box-sizing: border-box;
     row-gap: var(--spacing-xs);
     column-gap: var(--spacing-md);
@@ -22,33 +20,43 @@
     --fill-color: var(--accent);
     --track-color: var(--accent-subtle);
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: grid;
+  grid-template-areas: "label value" "bar bar";
+  grid-template-columns: 1fr auto;
+
   /* Default size */
   font-size: var(--text-sm);
   border-radius: var(--radius-sm);
+  line-height: var(--text-sm--line-height);
   gap: 4px;
 }
 
 .react-aria-ProgressBar[data-size="sm"] {
   font-size: var(--text-xs);
   border-radius: var(--radius-sm);
+  line-height: var(--text-xs--line-height);
   gap: 4px;
 }
 
 .react-aria-ProgressBar[data-size="md"] {
   font-size: var(--text-sm);
   border-radius: var(--radius-sm);
+  line-height: var(--text-sm--line-height);
   gap: 4px;
 }
 
 .react-aria-ProgressBar[data-size="lg"] {
   font-size: var(--text-base);
   border-radius: var(--radius-md);
+  line-height: var(--text-base--line-height);
   gap: 4px;
 }
 
 .react-aria-ProgressBar[data-size="xl"] {
   font-size: var(--text-lg);
   border-radius: var(--radius-md);
+  line-height: var(--text-lg--line-height);
   gap: 4px;
 }
 

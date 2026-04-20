@@ -18,6 +18,9 @@
     --radio-items-gap: 12px;
     --rg-hint-size: var(--text-xs);
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+
   /* Default size */
   font-size: var(--text-base);
   border-radius: var(--radius-none);

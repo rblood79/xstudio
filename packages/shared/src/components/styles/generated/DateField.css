@@ -13,6 +13,9 @@
     align-items: flex-start;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+
   /* Default size */
   font-size: var(--text-base);
   border-radius: 0;
