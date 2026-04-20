@@ -60,7 +60,7 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
    - `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts:87-91` — `isSpecPath()` → `getSpecForTag()` 의존 (Skia 렌더 경로 게이트)
    - `apps/builder/src/builder/panels/styles/utils/specPresetResolver.ts:96` — Style Panel 스타일 preset 경로, 직접 `TAG_SPEC_MAP` 읽음
    - `apps/builder/src/builder/panels/styles/hooks/useLayoutAuxiliary.ts:25` — Inspector layout value 조회
-   - `packages/specs/src/runtime/tagToElement.ts:120` — preview/runtime tag 해석 자체 registry (별도 체계 — 가장 복잡)
+   - **`packages/specs/src/runtime/tagToElement.ts:120/225` + `apps/builder/src/preview/App.tsx:425/530`** — preview/runtime tag 해석. `hasSpec(el.tag)` false 시 data-size/variant 빠지고 `getElementForTag()` 가 `tag.toLowerCase()` fallback → **CardHeader 가 `<cardheader>` 커스텀 태그로 렌더**. Codex round 4 H1 발견 — child spec 미등록 시 preview DOM/CSS 경로 복구 실패. **본 ADR scope 내 승격** (Phase 5 신설)
 
 ### Soft Constraints
 
@@ -71,7 +71,7 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 
 ### 대안 A: `TAG_SPEC_MAP` + `LOWERCASE_TAG_SPEC_MAP` 생성 시 `childSpecs` 자동 전개 (선정)
 
-- 설명: `tagSpecMap.ts:109` `TAG_SPEC_MAP` 과 `implicitStyles.ts:95` `LOWERCASE_TAG_SPEC_MAP` 을 build-time 1회 확장. 각 spec 순회 시 `spec.childSpecs?.forEach(child => entries.push([child.name, child]))` 추가. PascalCase 키와 lowercase 키 모두 자동 등록. `getSpecForTag()` / `isSpecPath()` / `specPresetResolver` / `useLayoutAuxiliary` 등 모든 소비처가 동일 registry 소비 → 자동 혜택. `tagToElement.ts:120` 은 별도 체계 — 본 ADR scope 외 (Preview runtime tag 해석은 DOM element 매핑이라 별건)
+- 설명: `tagSpecMap.ts:109` `TAG_SPEC_MAP` 과 `implicitStyles.ts:95` `LOWERCASE_TAG_SPEC_MAP` 을 build-time 1회 확장. 각 spec 순회 시 `spec.childSpecs?.forEach(child => entries.push([child.name, child]))` 추가. PascalCase 키와 lowercase 키 모두 자동 등록. `getSpecForTag()` / `isSpecPath()` / `specPresetResolver` / `useLayoutAuxiliary` / **`hasSpec` (Preview)** 등 모든 소비처가 동일 registry 소비 → 자동 혜택. **`tagToElement.ts` 의 `TAG_TO_ELEMENT` 자체 registry 도 child spec entries 자동 추가** (Phase 5) → preview DOM 에서 `<div>` 로 정상 렌더
 - 근거: build-time 1회 변환 (성능 비용 0) + 기존 수동 등록 관행 유지. ADR-078/090/092/093 모두 즉시 자동 적용. **consumer 파일 변경 0** — 모든 consumer 가 동일 registry 소비
 - 위험:
   - 기술: LOW — Map 확장 단순 로직
@@ -124,7 +124,8 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
   - ListBoxItem drift 체크: auto-reg 후 alignItems:flex-start + justifyContent:center 가 신규 주입 → **ListBox 자식 정렬 변화 가능**. Chrome MCP `ListBox` 시각 비교 (before/after). 시각 변동 있으면: (a) spec containerStyles 값을 기존 분기 값에 정렬하거나 (b) 의도된 변화로 수용 + 테스트 스냅샷 갱신
   - GridListItem 동일 체크
 - **Phase 3 (retroactive 검증)**: ADR-078 ListBoxItem + ADR-090 GridListItem 실제 SSOT 복구 증거 확보. `specSizeField("listboxitem", "md", "paddingX")` 가 유효값 반환하는지 test 작성
-- **Phase 4 (tagToElement.ts 별도 체계 평가)**: `packages/specs/src/runtime/tagToElement.ts:120` 의 자체 registry 는 preview/runtime DOM 요소 매핑. Spec 경로와 별개 consumer 라 **본 ADR scope 외** — 만약 child spec 이 preview 렌더되어야 하면 후속 ADR 분리 (현재 childSpecs 모두 `element: "div"` 로 동일 설정이라 실제 영향 없을 것)
+- **Phase 4 (tagToElement.ts 확장 — Codex round 4 H1 scope 승격)**: `packages/specs/src/runtime/tagToElement.ts` 의 자체 registry 에 childSpecs entries 자동 추가. `hasSpec()` / `getElementForTag()` 가 child tag (CardHeader/CardContent/CardFooter/TagList/RadioItems/CheckboxItems) 인식 → preview DOM 에서 (a) `<div>` 로 정상 렌더 (현재 `<cardheader>` 커스텀 태그 문제 해소), (b) `data-size/variant` 속성 주입 복구. 이 단계 없이는 CSS 축 (`react-aria-CardHeader` selector) 미작동 → D3 대칭 복구 실패
+- **Phase 5 (preview 실측)**: Chrome MCP Preview 로 Card/TagGroup/RadioGroup/CheckboxGroup 렌더 → DOM inspector 에서 child element 가 `<div>` 로 나오고 data-size 속성 주입되는지 확인. `App.tsx:494` TagList 수동 예외 로직 **제거 가능** (tagToElement 통합되므로)
 - **검증**: type-check + specs + builder + Chrome MCP 실측 (ListBox/GridList 시각 변동 명시적 수용)
 
 ### Addendum 후속 ADR 의존
@@ -135,12 +136,12 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 
 ## Risks
 
-| ID  | 위험                                                                                                                           | 심각도 | 대응                                                                                                                                                                                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------ | :----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | ListBoxItem 자동 등록 후 실제 layout 변경 발생 — alignItems/justifyContent drift 확인                                          |  MED   | **실측 확정 (Codex round 3 H2)**: spec 은 `alignItems:flex-start + justifyContent:center` 포함, 분기는 미주입 → auto-reg 후 신규 주입. Phase 2 에서 Chrome MCP 실측 후 시각 변동 수용 or spec 값 조정 결정 |
-| R2  | `tagSpecMap.ts` PascalCase 확장 시 `StoreRenderBridge.isSpecPath()` 가 child spec 을 "Spec 경로" 로 판정 → Skia 렌더 경로 진입 |  MED   | Phase 1 에서 Skia 렌더링 child spec 동작 검증 필수. `element: "div"` + `render.shapes: () => []` 인 childSpec 들은 실제 Skia 그리기 없음 → 안전. 예외 spec 있으면 개별 처리                                |
-| R3  | `useLayoutAuxiliary` Inspector 가 child spec 을 읽기 시작하면 Style Panel UX 변화                                              |  LOW   | Inspector 는 ADR-082 scope. 본 ADR 은 registry 만 확장, UX 영향 검증                                                                                                                                       |
-| R4  | `tagToElement.ts:120` 자체 registry 가 child spec 미포함 → preview 렌더에서 child tag 가 HTML element 해석 누락                |  LOW   | 본 ADR scope 외 (Phase 4). 현재 모든 childSpec 이 `element: "div"` 이라 preview 렌더 영향 없음 예상. 후속 ADR 로 tagToElement 통합 가능                                                                    |
+| ID  | 위험                                                                                                                                                                                                       | 심각도 | 대응                                                                                                                                                                                                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | ListBoxItem 자동 등록 후 실제 layout 변경 발생 — alignItems/justifyContent drift 확인                                                                                                                      |  MED   | **실측 확정 (Codex round 3 H2)**: spec 은 `alignItems:flex-start + justifyContent:center` 포함, 분기는 미주입 → auto-reg 후 신규 주입. Phase 2 에서 Chrome MCP 실측 후 시각 변동 수용 or spec 값 조정 결정            |
+| R2  | `tagSpecMap.ts` PascalCase 확장 시 `StoreRenderBridge.isSpecPath()` 가 child spec 을 "Spec 경로" 로 판정 → Skia 렌더 경로 진입                                                                             |  MED   | Phase 1 에서 Skia 렌더링 child spec 동작 검증 필수. `element: "div"` + `render.shapes: () => []` 인 childSpec 들은 실제 Skia 그리기 없음 → 안전. 예외 spec 있으면 개별 처리                                           |
+| R3  | `useLayoutAuxiliary` Inspector 가 child spec 을 읽기 시작하면 Style Panel UX 변화                                                                                                                          |  LOW   | Inspector 는 ADR-082 scope. 본 ADR 은 registry 만 확장, UX 영향 검증                                                                                                                                                  |
+| R4  | `tagToElement.ts:120/225` 자체 registry 가 child spec 미포함 → preview 렌더에서 child tag `<cardheader>` 커스텀 태그로 렌더 + data-size/variant 속성 누락 → CSS selector (`.react-aria-CardHeader`) 미작동 |  MED   | Codex round 4 H1 반영 — **본 ADR scope 내 승격**. Phase 4 에서 tagToElement registry 에 childSpecs entries 자동 추가. Phase 5 preview 실측으로 `<div>` + data-size 주입 확인. App.tsx:494 TagList 수동 예외 제거 가능 |
 
 잔존 HIGH 위험 없음.
 

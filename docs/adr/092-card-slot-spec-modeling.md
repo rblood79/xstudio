@@ -38,7 +38,7 @@ composition SSOT 체인 (ADR-036/063) 에서 Card 복합 컴포넌트의 **heade
 4. **size propagation 추가**: `Card.spec.ts:119` propagation.rules 에 `{ parentProp: "size", childPath: "CardHeader", override: true }` / `CardContent` / `CardFooter` 3건 추가. 현재 title/description 만 전파, size 전파 없음 → CardHeader/CardContent/CardFooter 가 부모 size 기반 스타일 못 받음
 5. **`implicitStyles.ts` 자식 element runtime 주입 보존**: (a) Card 분기 CardHeader/CardContent 자식 width:100% 주입은 containerStyles.width="100%" 로 이관 가능 → **제거**. (b) CardHeader 분기 Heading flex:1 주입, (c) CardContent 분기 Description width:100% 주입은 **자식 Element 에 주입** 이라 spec 커버 불가 → **분기 유지** (별도 propagation 확장 ADR 대기)
 6. `pnpm type-check` 3/3 + specs 166/166 + builder 217/217 PASS
-7. `CompositionSpec.propagation.rules` 의 기존 `childPath: ["CardHeader", "Heading"]` / `["CardContent", "Description"]` 전파 rule 은 보존 (title/description)
+7. `CardSpec.propagation.rules` (ComponentSpec **최상위 필드** — `composition.propagation` 아님, `spec.types.ts:205`) 의 기존 `childPath: ["CardHeader", "Heading"]` / `["CardContent", "Description"]` 전파 rule 은 보존 (title/description)
 
 ### Soft Constraints
 
@@ -101,7 +101,7 @@ composition SSOT 체인 (ADR-036/063) 에서 Card 복합 컴포넌트의 **heade
   3. `CardFooter.spec.ts` 신설 — containerStyles (display:flex, alignItems:center, justifyContent:flex-end, width:100%), sizes.xs~xl, states. factory 자동 생성 호환 유지
   4. `packages/specs/src/components/index.ts` + `packages/specs/src/index.ts` export 3건 추가
   5. `CardSpec.childSpecs = [CardHeaderSpec, CardContentSpec, CardFooterSpec]` 배선
-  6. `CardSpec.composition.propagation.rules` 에 size 전파 3건 추가 (Hard Constraint 4)
+  6. `CardSpec.propagation.rules` (ComponentSpec 최상위 필드, `spec.types.ts:205`) 에 size 전파 3건 추가 (Hard Constraint 4). **`composition.propagation` 아님** — Codex round 4 M2 정정
 - **Phase 2 (0.5세션, factory inline 제거 — Codex H1)**:
   - `apps/builder/src/builder/factories/definitions/LayoutComponents.ts:155` Card 생성 inline default `display/gap/width/flex` **제거** (spec.containerStyles 가 대신 공급, ADR-094 인프라 경유)
   - 기존 프로젝트 migration: inline style 이 store 에 저장된 Card element 는 그대로 유지 (사용자 편집 간주), 신규 생성만 spec 기반
