@@ -116,8 +116,13 @@ import { ProgressBarValueSpec } from "../components/ProgressBarValue.spec";
 import { MeterTrackSpec } from "../components/MeterTrack.spec";
 import { MeterValueSpec } from "../components/MeterValue.spec";
 
+// ADR-094: `BASE_TAG_SPEC_MAP` 의 각 spec 의 `childSpecs` 를 PascalCase 키로 자동 추가.
+//   `TAG_SPEC_MAP` 자체는 하단에서 `expandChildSpecs(BASE_TAG_SPEC_MAP)` 로 생성.
+//   → `hasSpec(CardHeader/TagList/...)` true 반환 + `getElementForTag(CardHeader)` 가
+//      spec.element === "div" 반환 → Preview DOM 이 `<div>` 로 렌더 (기존 `<cardheader>`
+//      커스텀 태그 문제 해소) + `data-size/variant` 속성 주입 복구.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   Button: ButtonSpec,
   Text: TextSpec,
   Badge: BadgeSpec,
@@ -218,6 +223,37 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   StatusLight: StatusLightSpec,
   ProgressCircle: ProgressCircleSpec,
 };
+
+/**
+ * ADR-094: `BASE_TAG_SPEC_MAP` 각 spec 의 `childSpecs` 를 PascalCase 키로 자동 추가.
+ *
+ * - 수동 등록 entry 가 우선 (덮어쓰지 않음).
+ * - child spec 의 `element` 가 정적 문자열이면 `getElementForTag` 가 그대로 반환.
+ * - child spec 의 `element` 가 함수면 Heading 류 동적 분기 규칙 그대로 적용.
+ */
+function expandChildSpecs(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  base: Record<string, ComponentSpec<any>>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Record<string, ComponentSpec<any>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const out: Record<string, ComponentSpec<any>> = { ...base };
+  for (const spec of Object.values(base)) {
+    const children = spec.childSpecs;
+    if (!children || children.length === 0) continue;
+    for (const child of children) {
+      if (out[child.name] === undefined) {
+        out[child.name] = child;
+      }
+    }
+  }
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = expandChildSpecs(
+  BASE_TAG_SPEC_MAP,
+);
 
 /**
  * 컴포넌트 tag에 대응하는 HTML element 이름을 반환한다.
