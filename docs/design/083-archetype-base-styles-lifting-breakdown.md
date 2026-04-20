@@ -34,77 +34,142 @@
 
 ## Phase 0 — Skia consumer 일반화 (신설, 선행 필수)
 
-### 수정 대상
+### 수정 대상 (3 영역)
 
-`apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:95-105`
+1. `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:95-105` — lookup map + fallback keys 확장
+2. `implicitStyles.ts:491-492` — `getImplicitStyles` 진입부에 **공통 fallback 선주입 layer** 추가 (Codex Round 4 HIGH 반영)
+3. `implicitStyles.ts:716` — 기존 listbox 분기의 `resolveContainerStylesFallback("listbox", parentStyle)` 중복 호출 제거 (공통 layer 로 흡수)
 
 ### 현재 상태
 
 ```typescript
+// implicitStyles.ts:95-105
 const CONTAINER_STYLES_SPEC_MAP: Record<string, ComponentSpec<any>> = {
-  listbox: ListBoxSpec,
+  listbox: ListBoxSpec, // ← 소문자 키 (implicitStyles casing 정합용 수동 정의)
 };
 
 const CONTAINER_STYLES_FALLBACK_KEYS = [
   "display",
   "flexDirection",
   "gap",
-  "padding",
+  "padding", // ← 4 필드
 ] as const;
+
+// implicitStyles.ts:716 (호출 지점 1곳, listbox 분기 안)
+// if (containerTag === "listbox") {
+//   effectiveParent = withParentStyle(containerEl, {
+//     ...parentStyle,
+//     ...resolveContainerStylesFallback("listbox", parentStyle),
+//   });
+// }
 ```
 
-### Phase 0 변경
+### Phase 0 변경 (3 영역)
+
+#### 1. `CONTAINER_STYLES_SPEC_MAP` TAG_SPEC_MAP 기반 일반화 + casing 정규화
 
 ```typescript
-// TAG_SPEC_MAP 기반 일반화 — 모든 spec 의 containerStyles 를 소비
-// (spec 에 containerStyles 미선언이면 cs === undefined → 영향 없음)
 import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
+
+// TAG_SPEC_MAP 은 PascalCase 키 (InlineAlert, ListBox, ...) — implicitStyles 는
+// containerTag.toLowerCase() 를 사용하므로 lowercase Map 을 build-time 1 회 구축.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<string, ComponentSpec<any>> = new Map(
+  Object.entries(TAG_SPEC_MAP).map(([k, v]) => [
+    k.toLowerCase(),
+    v as ComponentSpec<any>,
+  ]),
+);
 
 const CONTAINER_STYLES_FALLBACK_KEYS = [
   "display",
   "flexDirection",
-  "alignItems",
-  "justifyContent",
-  "width",
-  "maxHeight",
-  "overflow",
-  "outline",
-  "gap",        // 기존 유지
-  "padding",    // 기존 유지
+  "alignItems", // 신규
+  "justifyContent", // 신규
+  "width", // 신규
+  "maxHeight", // 신규
+  "overflow", // 신규
+  "outline", // 신규
+  "gap", // 기존
+  "padding", // 기존
 ] as const;
 
 export function resolveContainerStylesFallback(
-  tag: string,
+  tag: string, // lowercase 전달 전제
   parentStyle: Record<string, unknown>,
 ): Record<string, unknown> {
-  const spec = TAG_SPEC_MAP[tag] as ComponentSpec<any> | undefined;
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
   const cs = spec?.containerStyles;
   if (!cs) return {};
-  // 이하 기존 로직 유지 (parentStyle 우선, TokenRef resolve)
-  ...
+  // 이하 기존 로직 유지 (parentStyle 우선, TokenRef resolve, 10 필드 순회)
+  // ...
+}
+```
+
+#### 2. `getImplicitStyles` 진입부에 공통 선주입 layer
+
+```typescript
+// implicitStyles.ts:491 부근 — containerTag 계산 직후
+export function getImplicitStyles(containerEl, ...): ImplicitStyleResult {
+  const containerTag = (containerEl.tag ?? "").toLowerCase();
+  const rawParentStyle = (containerEl.props?.style || {}) as Record<string, unknown>;
+
+  // Phase 0: 모든 태그에 Spec containerStyles fallback 선주입.
+  //   spec 미선언 태그 → resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
+  //   spec 선언 태그 (ListBox/ListBoxItem + Phase 1~11 로 리프팅된 spec) → 10 필드 중
+  //   parentStyle 에 없는 것만 추가. 기존 inline 값은 parentStyle 우선 가드로 보존.
+  const specFallback = resolveContainerStylesFallback(containerTag, rawParentStyle);
+  const parentStyle: Record<string, unknown> = { ...specFallback, ...rawParentStyle };
+
+  // 이하 기존 로직: containerTag === "..." 분기들이 이 parentStyle 을 spread 하여
+  // 소비. 하드코딩 분기의 `parentStyle.display ?? "flex"` 패턴은 spec fallback 이
+  // 이미 parentStyle 에 주입된 상태라 자연 override (parentStyle.display 가 spec 값
+  // 또는 사용자 값으로 defined → `??` 우측 미사용).
+  let effectiveParent = containerEl;
+  // ...
+}
+```
+
+#### 3. 기존 listbox 분기의 중복 호출 제거
+
+```typescript
+// implicitStyles.ts:716 기존
+// if (containerTag === "listbox") {
+//   effectiveParent = withParentStyle(containerEl, {
+//     ...parentStyle,
+//     ...resolveContainerStylesFallback("listbox", parentStyle),  // ← 제거
+//   });
+// }
+
+// 변경: 공통 layer 가 이미 parentStyle 에 선주입. 분기는 parentStyle 만 spread.
+if (containerTag === "listbox") {
+  effectiveParent = withParentStyle(containerEl, { ...parentStyle });
+  // 또는 listbox 고유 추가 로직만 남기고 fallback 호출은 제거
 }
 ```
 
 ### 하드코딩 분기 감사 (R0 대응)
 
-grep 대상: `containerTag === "` in `implicitStyles.ts`
+grep 대상: `containerTag === "` in `implicitStyles.ts`. 모든 분기를 전수 조사하여 **Phase 0 공통 선주입 이후 parentStyle 기반 동작**과 충돌 여부 확인.
 
-| 태그 예시 (grep 기반)      | 하드코딩 내용                                      | Phase 0 후 동작                                                                                                                                    |
-| -------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `inlinealert` (line ~2000) | `display: parentStyle.display ?? "flex"` 등 3 속성 | spec.containerStyles 미선언 → 하드코딩 그대로. Phase 1 리프팅 후엔 parentStyle 에 spec 값 선주입 → 하드코딩의 `??` 우측 사용 안 됨 (자연 override) |
-| `gridlistitem` (~line 749) | `display:"flex"; flexDirection:"column"` 등        | 동일 패턴. `??` 없으면 충돌 → spec 값을 parentStyle 에 선주입하는 순서 확인 필요                                                                   |
-| `listboxitem` (~line 768)  | `display:"flex"; flexDirection:"column"` 등        | 이미 ListBoxItem.spec 리프팅 완료 → Phase 0 이 첫 실측 대상                                                                                        |
-| `tabs` (~line 784)         | `display:"flex"`                                   | 동일                                                                                                                                               |
-| `toolbar` 등 기타          | `display:"flex"` 계열                              | grep 결과 전부 목록화 후 Phase 0 에서 일괄 검토                                                                                                    |
+| 태그 예시                  | 하드코딩 패턴                                                | Phase 0 후 동작 (공통 선주입 이후)                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `inlinealert` (~line 2000) | `display: parentStyle.display ?? "flex"` 등 3 속성 `??` 패턴 | spec 미선언 → `??` 우측 하드코딩 값 사용. Phase 1 리프팅 후 공통 layer 가 parentStyle 에 spec 값 선주입 → `??` 좌측 defined → 자연 override                                  |
+| `gridlistitem` (~line 749) | `display:"flex"; flexDirection:"column"` 직접 할당           | **`??` 없이 덮어쓰는 패턴** — spec 값이 parentStyle 에 있어도 하드코딩이 이김. 해결: spec 리프팅이 시점까지 whitelist 유지. spec 리프팅 후 하드코딩 제거 별도 ADR (R8)       |
+| `listboxitem` (~line 768)  | 동일 `??` 없음                                               | 동일. 현재 ListBoxItem.spec 리프팅 완료 상태지만 하드코딩이 우선 → Phase 0 효과 무시됨. **Phase 0 에서 listboxitem 분기 정리 필요** (spec 값 사용하도록 `??` 도입 또는 제거) |
+| `tabs` (~line 784)         | 확인 필요                                                    | grep 결과 전수 목록화                                                                                                                                                        |
+| `toolbar` 등 기타          | 확인 필요                                                    | grep 결과 전수 목록화                                                                                                                                                        |
 
-감사 방식: `containerTag ===` 분기가 `parentStyle.X ?? "값"` 패턴이면 spec fallback 이 parentStyle 에 선주입되는 시점만 보장하면 자연 override. `??` 없이 덮어쓰는 패턴은 whitelist 임시 제외.
+**감사 원칙**: `parentStyle.X ?? "값"` 패턴은 자연 호환. 직접 할당 패턴은 `?? parentStyle.X` 도입 또는 분기 제거. 분기 제거가 위험하면 whitelist 로 일시 제외하고 후속 ADR (R8).
 
 ### Gate G0 통과 조건
 
-(a) `CONTAINER_STYLES_SPEC_MAP` TAG_SPEC_MAP 기반 일반화 + 8 필드 확장 완료
-(b) 하드코딩 분기 전수 감사 → 충돌 목록 비어있음 확인 (충돌 발견 태그는 whitelist 제외)
-(c) Chrome MCP: **ListBox 외 최소 1 태그** 에서 spec 값이 Skia 에 반영 확증 (예: 임시로 Select.spec.containerStyles 에 `display:"flex"` 주입 → 실제 배치 변화 → 원복)
-(d) `pnpm type-check` 3/3 + `pnpm --filter @composition/builder test` 회귀 0
+(a) `LOWERCASE_TAG_SPEC_MAP` build-time 구축 + `CONTAINER_STYLES_FALLBACK_KEYS` 10 필드 (8 신규 + gap/padding 기존) 확장
+(b) `getImplicitStyles` 진입부 공통 선주입 layer 추가 + `implicitStyles.ts:716` 기존 listbox 호출 제거
+(c) 하드코딩 분기 전수 감사 목록화 + `??` 패턴/직접 할당 분류 + 직접 할당 분기 처리 방식 결정 (수정 or whitelist)
+(d) Chrome MCP: **ListBox 외 최소 1 태그** 에서 spec 값이 Skia 에 반영 확증 (예: 임시로 Select.spec.containerStyles 에 `display:"flex"` 주입 → 배치 변화 → 원복). 기존 리프팅된 ListBoxItem 도 Phase 0 이후 Skia 에 반영되는지 확인 (직접 할당 분기 정리 효과 실측)
+(e) `pnpm type-check` 3/3 + `pnpm --filter @composition/builder test` 회귀 0
+(f) `resolveContainerStylesFallback.test.ts` (ADR-080 기존) + `tokenConsumerDrift.test.ts` (ADR-081) snap 재실행 — 10 필드로 확장됐으므로 snap update 불가피, 의도된 변화만 update
 
 ## Phase 1 (Pilot: `alert` archetype)
 
