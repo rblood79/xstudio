@@ -201,3 +201,6 @@
 {"ts":"2026-04-20T05:56:12Z","agent_type":"","agent_id":"a6227fd03ab1b5456","session_id":"bea50e55-d310-4590-9e21-08614ae3d972"}
 {"ts":"2026-04-20T08:36:53Z","agent_type":"","agent_id":"a0e98536ae3608b51","session_id":"4bbd5775-b14d-42d5-9187-225e0483cb81"}
 {"ts":"2026-04-20T08:47:14Z","agent_type":"","agent_id":"a5e98ca26019528cf","session_id":"4bbd5775-b14d-42d5-9187-225e0483cb81"}
+{"ts":"2026-04-20T11:28:10Z","agent_type":"codex:codex-rescue","agent_id":"a5f921899881911b3","session_id":"9e83b11c-def4-4be7-8d05-f1c47105ec85"}
+{"ts":"2026-04-20T11:56:48Z","agent_type":"codex:codex-rescue","agent_id":"a4562ddf5c353c649","session_id":"9e83b11c-def4-4be7-8d05-f1c47105ec85"}
+{"ts":"2026-04-20T12:15:35Z","agent_type":"codex:codex-rescue","agent_id":"aa281f79dacf7b954","session_id":"9e83b11c-def4-4be7-8d05-f1c47105ec85"}
