@@ -4935,6 +4935,10 @@ exports[`CSSGenerator snapshot baseline > Input 1`] = `
     box-sizing: border-box;
     font-family: var(--font-sans);
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg-inset);
   color: var(--fg);
@@ -10581,6 +10585,10 @@ exports[`CSSGenerator snapshot baseline > TextArea 1`] = `
     align-items: center;
     box-sizing: border-box;
     font-family: var(--font-sans);
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+  align-items: center;
 
   /* Default size */
   font-size: var(--text-base);

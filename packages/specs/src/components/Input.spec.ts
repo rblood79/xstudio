@@ -37,6 +37,14 @@ export const InputSpec: ComponentSpec<InputProps> = {
   element: "input",
   archetype: "input-base",
 
+  // ADR-083 Phase 2: input-base archetype base 의 layout primitive 2 필드 리프팅.
+  //   CSS / Skia layout (implicitStyles Phase 0) / Style Panel 3경로 동일 소스.
+  //   box-sizing / font-family 는 ContainerStylesSchema 미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "flex",
+    alignItems: "center",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -129,7 +137,11 @@ export const InputSpec: ComponentSpec<InputProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = InputSpec.variants![(props as { variant?: keyof typeof InputSpec.variants }).variant ?? InputSpec.defaultVariant!];
+      const variant =
+        InputSpec.variants![
+          (props as { variant?: keyof typeof InputSpec.variants }).variant ??
+            InputSpec.defaultVariant!
+        ];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

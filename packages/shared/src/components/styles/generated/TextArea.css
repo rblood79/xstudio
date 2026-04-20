@@ -13,6 +13,10 @@
     box-sizing: border-box;
     font-family: var(--font-sans);
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+  align-items: center;
+
   /* Default size */
   font-size: var(--text-base);
   border-radius: var(--radius-md);
