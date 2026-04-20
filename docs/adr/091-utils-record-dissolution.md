@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
 
 ## Context
 
@@ -130,12 +130,30 @@ R2 `DEFAULT_ELEMENT_WIDTHS` + R6 `DEFAULT_ELEMENT_HEIGHTS` 는 tag→px mapping 
 
 잔존 HIGH 위험 없음 — Gate 테이블 생략. 검증 기준:
 
-- type-check 3/3 PASS
-- specs 166/166 PASS (snapshot 변동 허용)
-- builder 217/217 PASS
-- Phase 1 완료 후 `rg "Record<string, number>" cssResolver.ts utils.ts` = **11건** (R1 제거됨)
-- Phase 2 완료 후 **9건** (R4/R5 제거)
-- Phase 3 완료 후 **2건** (R2/R6 만 잔존 — Addendum 1 대상. R3/R7/R8/R9/R10/R11/R12 전부 Class A spec.sizes 로 이관)
+- type-check 3/3 PASS ✅ (2026-04-21 확인)
+- specs 166/166 PASS ✅
+- builder 227/227 PASS ✅ (ADR-094 영향 유지)
+- Phase 1 완료 후 `rg "Record<string, number>" cssResolver.ts utils.ts` = **11건** (R1 제거됨) ✅
+- Phase 2 완료 후 **9건** (R4/R5 제거) ✅
+- Phase 3 완료 후 **3건** ✅ — R2/R6 (Addendum 1) + **R11 (Addendum 2 신규 이관)** 잔존. R3/R7/R8/R9/R10/R12 = 6 건 Class A spec.sizes 로 이관 완료.
+
+## 구현 결과 (2026-04-21)
+
+- **Phase 1 (Class C)**: `packages/specs/src/primitives/font.ts` 신설 + `FONT_STRETCH_KEYWORD_MAP` export. `primitives/index.ts` + 패키지 `src/index.ts` re-export. `cssResolver.ts:181` local 선언 제거 + import 전환. Record 카운트: 12→11.
+- **Phase 2 (Class B)**: `utils.ts:1420-1425` `TABS_BAR_HEIGHT` / `TABS_PANEL_PADDING` export 2 건 삭제. `implicitStyles.ts` 3 소비처 (`resolveTabPanelPadding` 함수 내 3 call + `containerTag==="tabs"` 926/1029) → `specSizeField("tabs"|"tabpanels", ...)` 전환. `utils.ts:2379/2381` Tabs intrinsic height → `TabsSpec/TabPanelsSpec.sizes` 직접 참조. Record 카운트: 11→9.
+- **Phase 3 (Class A)**: 6 소비처 spec.sizes 이관.
+  - R3/R7 `ICON_SIZE_MAP` 2 곳 → `IconSpec.sizes.iconSize` (기존 필드 재사용).
+  - R8 `TRIGGER_CONTENT_HEIGHTS` → `SelectTriggerSpec.sizes.contentHeight` (**신규 필드**, SizeSpec 에 `contentHeight?: number` 추가). SelectTrigger ↔ ComboBoxWrapper 는 tagSpecMap 에서 동일 spec 공유.
+  - R9 `headerHeights` → `CalendarHeaderSpec.sizes.height`.
+  - R10 `inputHeights` → `DateInputSpec.sizes.height`.
+  - R12 `COMBOBOX_INPUT_HEIGHTS` 2 소비처 → `ComboBoxSpec.sizes.height` (local `comboBoxHeight` 헬퍼).
+  - **R11 (DateField `dfHeights`) Addendum 2 로 이관**: `{sm:32, md:40, lg:48}` 은 Label + gap + DateInput 합산 **파생값** 이며 `DateFieldSpec.sizes.height` (입력 부분 `{sm:22, md:30, lg:42, xl:54}`) 와 값 불일치. spec 에 파생값 저장 = DRY 위반 판단 → 별도 ADR (ADR-091-A2) 에서 Label/Input 분리 lookup + 런타임 합산 or 새 필드 명시적 추가 검토 필요.
+  - Record 카운트: 9→3 (R2/R6/R11).
+
+### Addendum 후속 ADR 후보
+
+- **ADR-091-A1**: `ComponentSpec.defaultWidth?/defaultHeight?` Schema 확장 + `DEFAULT_ELEMENT_WIDTHS/HEIGHTS` (R2/R6) 해체. 62 spec 감사 + BC 검증 필요 — 별도 세션 권장
+- **ADR-091-A2** _(신설)_: DateField intrinsic height (Label + DateInput 합산 파생값) SSOT 정립 — `dfHeights` Record 잔존 해체. 옵션 (a) `SizeSpec.intrinsicHeight?` 필드 + DateFieldSpec 에 32/40/48 선언 (b) Label/Input sizes 를 런타임 합산. 결정 세션 필요
 
 ## Consequences
 
