@@ -119,7 +119,7 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
   },
 
   render: {
-    shapes: (props, size, state = "default") => {
+    shapes: (props, size, state = "default", ctx) => {
       const ff = fontFamily.sans;
       const text = String(
         props.children ?? props.label ?? props.title ?? "",
@@ -135,24 +135,23 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
         String(props.size ?? "M"),
       );
       const height = size.height || 24;
-      const sepMeasuredWidth = measureSpecTextWidth(
-        separator,
-        resolvedFontSize,
-        ff,
-        400,
-      );
+      // ADR-086 P4: ctx.measureText 주입 시 layout 경로와 동일 측정기 사용.
+      //   미주입 (BC) 시 measureSpecTextWidth fallback.
+      const measure = ctx?.measureText ?? measureSpecTextWidth;
+      const sepMeasuredWidth = measure(separator, resolvedFontSize, ff, 400);
 
       const shapes: Shape[] = [];
       let x = 0;
 
       const labelFw = isLast ? 600 : 400;
       const disabled = state === "disabled";
-      const labelFill: TokenRef | string = !disabled && isLast
-        ? ("{color.accent}" as TokenRef)
-        : ("{color.neutral-subdued}" as TokenRef);
+      const labelFill: TokenRef | string =
+        !disabled && isLast
+          ? ("{color.accent}" as TokenRef)
+          : ("{color.neutral-subdued}" as TokenRef);
 
       if (text) {
-        const estW = measureSpecTextWidth(text, resolvedFontSize, ff, labelFw);
+        const estW = measure(text, resolvedFontSize, ff, labelFw);
         shapes.push({
           type: "text" as const,
           x,
