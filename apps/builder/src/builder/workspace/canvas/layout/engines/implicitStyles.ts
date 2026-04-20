@@ -130,8 +130,9 @@ function specSizeLineHeight(tag: string, sizeName: string): number | undefined {
 }
 
 // ADR-083 Phase 0: ContainerStylesSchema layout primitive 필드.
-//   ADR-080 기존 4 + ADR-083 Phase 0 신규 6 + ADR-084 flexWrap = 총 11종.
-//   display/flexDirection/flexWrap/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding.
+//   ADR-080 기존 4 + ADR-083 Phase 0 신규 6 + ADR-084 flexWrap + ADR-085 grid-template 3 = 총 14종.
+//   display/flexDirection/flexWrap/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding
+//   + gridTemplateAreas/gridTemplateColumns/gridTemplateRows.
 //   Spec 미선언 태그는 resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
 const CONTAINER_STYLES_FALLBACK_KEYS = [
   "display",
@@ -145,6 +146,10 @@ const CONTAINER_STYLES_FALLBACK_KEYS = [
   "outline",
   "gap",
   "padding",
+  // ADR-085: grid-template — Meter/ProgressBar 등 grid 컨테이너의 트랙/영역 선언.
+  "gridTemplateAreas",
+  "gridTemplateColumns",
+  "gridTemplateRows",
 ] as const;
 
 /**
@@ -1494,8 +1499,10 @@ export function applyImplicitStyles(
   }
 
   // ── ProgressBar / Meter ───────────────────────────────────────────────
-  // 완전 compositional: Label + ProgressBarValue + ProgressBarTrack이 child Element.
-  // flex row wrap: Label(flex:1) + Output(auto) → 1행, Track(width:100%) → 2행(강제 줄바꿈)
+  // ADR-085 P4: Taffy grid 네이티브 지원 (G0 PASS) + ProgressBar/Meter.spec
+  //   containerStyles (display:grid + gridTemplateAreas/Columns) resolveContainerStylesFallback
+  //   경유 주입 → 기존 flex row wrap emulation 제거, 자식에 gridArea 만 주입.
+  // grid-template-areas: '"label value" "bar bar"' (1fr auto / 2 rows)
   if (PROGRESSBAR_TAGS.has(containerTag)) {
     const hasLabel = !!containerProps?.label;
     const showValueLabel = containerProps?.showValueLabel !== false;
@@ -1514,7 +1521,7 @@ export function applyImplicitStyles(
     const formattedValue =
       (containerProps?.valueLabel as string | undefined) ?? autoFormattedValue;
 
-    // Label/Output 필터: hasLabel이 false면 Label 제외, showValueLabel false면 Output 제외
+    // Label/Output 필터
     filteredChildren = children.filter((c) => {
       if (c.tag === "Label") return hasLabel;
       if (c.tag === "ProgressBarValue" || c.tag === "MeterValue")
@@ -1522,10 +1529,7 @@ export function applyImplicitStyles(
       return true;
     });
 
-    // Label: width:0 + flexGrow:1 = CSS grid 1fr 에뮬레이션
-    // basis=0 → Label+Value가 항상 1행에 배치 (fit-content basis 시 flex wrap 발생)
-    // flexShrink:1 명시 → 후처리 flexShrink:0 일괄주입 방지
-    // Track: width:100%로 2행 강제
+    // 자식에 gridArea 주입 — 부모 grid-template-areas 의 명명 영역 매핑.
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (child.tag === "Label") {
@@ -1536,11 +1540,9 @@ export function applyImplicitStyles(
             ...child.props,
             style: {
               ...cs,
+              gridArea: cs.gridArea ?? "label",
               fontSize: labelFontSize,
-              width: 0,
-              flexGrow: cs.flexGrow ?? 1,
-              flexShrink: cs.flexShrink ?? 1,
-              minWidth: 0,
+              minWidth: cs.minWidth ?? 0,
               whiteSpace: cs.whiteSpace ?? "nowrap",
             },
           },
@@ -1556,6 +1558,7 @@ export function applyImplicitStyles(
             size: sizeName,
             style: {
               ...cs,
+              gridArea: cs.gridArea ?? "bar",
               width: cs.width ?? "100%",
               height: barHeight,
             },
@@ -1574,9 +1577,9 @@ export function applyImplicitStyles(
             size: sizeName,
             style: {
               ...cs,
+              gridArea: cs.gridArea ?? "value",
               fontSize: valueFontSize,
               lineHeight: `${valueLineHeight}px`,
-              flexShrink: cs.flexShrink ?? 0,
               whiteSpace: cs.whiteSpace ?? "nowrap",
             },
           },
@@ -1585,12 +1588,10 @@ export function applyImplicitStyles(
       return child;
     });
 
+    // 부모 container style: display/gridTemplate* 은 resolveContainerStylesFallback 이
+    //   spec.containerStyles 로부터 이미 parentStyle 에 선주입 → 여기서는 gap 만 처리.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "row",
-      flexWrap: parentStyle.flexWrap ?? "wrap",
-      justifyContent: parentStyle.justifyContent ?? "space-between",
       rowGap: parentStyle.rowGap ?? PROGRESSBAR_ROW_GAP,
       columnGap: parentStyle.columnGap ?? PROGRESSBAR_COL_GAP,
     });
