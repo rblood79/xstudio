@@ -2,6 +2,18 @@
 
 ## Status
 
+Implemented — 2026-04-20 (Revision 1)
+
+## Implementation (2026-04-20 세션 8)
+
+- **Phase 1-2** (`af23a046`): `ContainerStylesSchema` 에 `gridTemplateAreas/Columns/Rows` 3 필드 추가 + `CSSGenerator.emitContainerStyles` 대응 emit
+- **Phase 3** (`77f47ade`): Meter/ProgressBar.spec 의 legacy `composition.containerStyles` 내 grid-template-areas/columns 를 정식 `containerStyles` (ContainerStylesSchema) 로 이관
+- **Phase 4** (`8689df4e`): `implicitStyles.ts:1501~` PROGRESSBAR_TAGS 분기 Label/Output/Track flex row wrap emul 제거 + 자식에 gridArea 주입. parent `display:grid + gridTemplateAreas/Columns` 은 `resolveContainerStylesFallback` 경유 (`CONTAINER_STYLES_FALLBACK_KEYS` 에 3 필드 추가)
+- 검증: type-check 3/3 + specs 166/166 (2 snapshot 갱신) + builder 217/217 PASS
+- Chrome MCP 실측 (ProgressBar/Meter sm/md/lg/xl 8 샘플 G4) 은 runtime 배포 시 수행
+
+## History
+
 Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: PROGRESSBAR_FONT_SIZE Record scope 를 ADR-086 Phase 1 로 명시 이관. 본 ADR 은 grid-template Schema 확장 + parent containerStyles + Label/Output/Track flex emul 해체만 담당.)
 
 ## Context

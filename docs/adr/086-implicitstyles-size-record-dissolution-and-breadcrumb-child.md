@@ -2,6 +2,24 @@
 
 ## Status
 
+Implemented — 2026-04-20 (Revision 4, 1 Record 잔존으로 Addendum 1 필요)
+
+## Implementation (2026-04-20 세션 8)
+
+- **Phase 1** (`d112b520`): 6 spec.sizes 보강 — DateField/TimeField/SearchField.height (0→22/30/42/54) + ProgressBar/Meter/Slider.lineHeight 신설 (16/20/24/28, TokenRef). Slider.sizes.gap 은 4/4/4/4 (row-gap) 유지 — Rev 4 breakdown 의 "spec.sizes.gap = SLIDER_COL_GAP" 가정은 실제 audit 결과 semantic 충돌로 불가 (Slider.spec.render 의 offsetY = fontSize + gap 은 row-gap 소비).
+- **Phase 2** (`f2e81348`): 9 Record 해체 (10 중 1 잔존 — Addendum 1 참조). 신규 헬퍼 3종 (`specSizeField/specSizeFontSize/specSizeLineHeight`) 추가, `SliderSpec.sizes[size].indicator.thumbSize` 직접 lookup 으로 SLIDER_TRACK_LAYOUT_HEIGHT 대체. `rg "Record<string, number>"` 결과 SLIDER_COL_GAP 1건만 잔존.
+- **Phase 3** (P3 는 세션 1 `193ded87`): SpecRenderContext 타입 + `RenderSpec.shapes` optional `ctx?` param 확장
+- **Phase 4** (세션 1 `3d249b9d`): Breadcrumb.spec render `ctx?.measureText ?? measureSpecTextWidth` fallback 패턴
+- **Phase 5** (세션 1 `336c6973`): implicitStyles Breadcrumb child 9 필드 mutation 제거 + `utils.ts calculateContentWidth/Height` "breadcrumb" 분기 + INLINE_BLOCK_TAGS/SPEC_SHAPES_INPUT_TAGS 편입
+
+## Addendum 1 — SLIDER_COL_GAP 잔존 (후속 ADR 후보)
+
+`SLIDER_COL_GAP` (column-gap 16/16/20/20) 은 `Slider.sizes.gap` (row-gap 4/4/4/4 — Slider.spec.render offsetY 소비) 과 semantic 이 다름. Rev 4 breakdown 의 "기존 `spec.sizes.gap` 필드 활용" 가정은 실제 audit 결과 불가. `SizeSpec.columnGap?` 신규 필드 도입이 필요 → scope 외로 분리하여 후속 ADR 검토.
+
+현 상태: implicitStyles.ts:239 에 SLIDER_COL_GAP Record 주석과 함께 잔존. `rg "Record<string, number>" implicitStyles.ts` 결과 1건.
+
+## History
+
 Proposed — 2026-04-20 (**Revision 4** — Round 5 main 재검증 HIGH 086-R5-1 + MED 086-R5-2 반영: (a) 추가 파일-스코프 Record **4 개 편입**: `SPEC_ICON_SIZE` (`:166-171`, SelectTrigger/ComboBoxWrapper/SearchFieldWrapper icon 소비 — `:1313/:1394/:1548`), `PROGRESSBAR_BAR_HEIGHT` (`:204-209`, ProgressBar/Meter Track height 소비 — `:1622`), `SLIDER_COL_GAP` (`:243-247`, Slider 분기 — `:1678`), `SLIDER_TRACK_LAYOUT_HEIGHT` (`:251-256`, Slider Track layout height 소비 — `:1726`). (b) Rev 3 "6 Record" → **"10 Record"** 전수 폐쇄. (c) Slider.spec.ts 에 `lineHeight` 필드 부재 명시 — Phase 1 에 **spec 필드 추가 선행** 명시 (모호한 "누락 발견 시 추가" → 명시적 보강). (d) seed #3 영향 spec 재산정 (SelectIcon/ComboBoxTrigger 추가 가능성 검토). Revision 3 = Codex Round 4 R4-1/R4-2. Revision 2 = Codex Round 3 086-C1. Revision 1 = claude self-review. **Codex Round 5 agent hang → main 직접 재검증**.)
 
 ## Context
