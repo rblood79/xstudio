@@ -51,10 +51,16 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 ### Hard Constraints
 
 1. **기존 `TAG_SPEC_MAP` 호환 유지** — 수동 등록된 62 spec 영향 0
-2. **ListBoxItem 회귀 방지** — 자동 등록 후 ListBoxItem containerStyles 주입 시작 → `implicitStyles.ts:775-789` ListBoxItem 분기와 **값 일치** 필수 (display:flex, flexDirection:column, alignItems:flex-start, justifyContent:center). 검증 후 분기 해체 가능성 평가
+2. **ListBoxItem drift 대응** (Codex round 3 H2 정정): 실측 결과 `ListBoxItem.spec.ts:52-57` 는 `display:flex / flexDirection:column / alignItems:flex-start / justifyContent:center` 4 속성 포함. `implicitStyles.ts:778-787` ListBoxItem 분기는 `display/flexDirection/gap/padding` 만 주입 — **alignItems/justifyContent 2 속성 미주입** 상태. auto-registration 후 `resolveContainerStylesFallback` 이 이 2 속성 주입 시작 → **drift 발생 확정**. no-op 아님. Phase 1 에 Chrome MCP 실측 + 값 정합 단계 필수 (flex column + alignItems 변경으로 자식 cross-axis stretch→flex-start 차이 발생 가능)
 3. **Phase 1 검증**: `resolveContainerStylesFallback.test.ts:92-102` 선언적 debt 테스트를 **"ListBoxItem containerStyles 읽힘"** PASS 로 전환
 4. `pnpm type-check` 3/3 + specs 166/166 + builder 217/217 PASS
-5. **Skia 축 registry 소비처 3곳 일관 확장**: `TAG_SPEC_MAP` / `LOWERCASE_TAG_SPEC_MAP` / `useLayoutAuxiliary` — 일부만 확장 시 consumer 간 drift 발생
+5. **Skia 축 registry 소비처 5곳 일관 확장** (Codex round 3 H1 정정): 아래 소비처 전부 확인 필요. 일부만 확장 시 consumer 간 drift 발생:
+   - `apps/builder/src/builder/workspace/canvas/sprites/tagSpecMap.ts:109` — `TAG_SPEC_MAP` 자체 + `:28/91` `getSpecForTag()`
+   - `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:95` — `LOWERCASE_TAG_SPEC_MAP`
+   - `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts:87-91` — `isSpecPath()` → `getSpecForTag()` 의존 (Skia 렌더 경로 게이트)
+   - `apps/builder/src/builder/panels/styles/utils/specPresetResolver.ts:96` — Style Panel 스타일 preset 경로, 직접 `TAG_SPEC_MAP` 읽음
+   - `apps/builder/src/builder/panels/styles/hooks/useLayoutAuxiliary.ts:25` — Inspector layout value 조회
+   - `packages/specs/src/runtime/tagToElement.ts:120` — preview/runtime tag 해석 자체 registry (별도 체계 — 가장 복잡)
 
 ### Soft Constraints
 
@@ -63,15 +69,15 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 
 ## Alternatives Considered
 
-### 대안 A: `LOWERCASE_TAG_SPEC_MAP` 생성 시 `childSpecs` 자동 전개 (선정)
+### 대안 A: `TAG_SPEC_MAP` + `LOWERCASE_TAG_SPEC_MAP` 생성 시 `childSpecs` 자동 전개 (선정)
 
-- 설명: `implicitStyles.ts:95` `LOWERCASE_TAG_SPEC_MAP = new Map(Object.entries(TAG_SPEC_MAP).flatMap(...))` 로 확장. 각 spec 순회 시 `spec.childSpecs?.forEach(child => entries.push([child.name.toLowerCase(), child]))` 추가. `tagSpecMap.ts` 도 유사 확장 (선택). `TAG_SPEC_MAP` 본체는 불변
-- 근거: build-time 1회 변환 (성능 비용 0) + 기존 수동 등록 관행 유지. ADR-078/090/092/093 모두 즉시 자동 적용
+- 설명: `tagSpecMap.ts:109` `TAG_SPEC_MAP` 과 `implicitStyles.ts:95` `LOWERCASE_TAG_SPEC_MAP` 을 build-time 1회 확장. 각 spec 순회 시 `spec.childSpecs?.forEach(child => entries.push([child.name, child]))` 추가. PascalCase 키와 lowercase 키 모두 자동 등록. `getSpecForTag()` / `isSpecPath()` / `specPresetResolver` / `useLayoutAuxiliary` 등 모든 소비처가 동일 registry 소비 → 자동 혜택. `tagToElement.ts:120` 은 별도 체계 — 본 ADR scope 외 (Preview runtime tag 해석은 DOM element 매핑이라 별건)
+- 근거: build-time 1회 변환 (성능 비용 0) + 기존 수동 등록 관행 유지. ADR-078/090/092/093 모두 즉시 자동 적용. **consumer 파일 변경 0** — 모든 consumer 가 동일 registry 소비
 - 위험:
   - 기술: LOW — Map 확장 단순 로직
   - 성능: LOW
   - 유지보수: LOW — 중앙 집중, consumer 는 변경 없음
-  - 마이그레이션: MED — ListBoxItem.containerStyles (`display:flex, flexDirection:column, alignItems:flex-start, justifyContent:center`) 가 `resolveContainerStylesFallback` 으로 주입 시작 → **기존 `implicitStyles.ts:775-789` ListBoxItem 분기와 동일 값이라 no-op 예상**, 그러나 실측 검증 필수
+  - 마이그레이션: **MED** (Codex round 3 H2 반영) — ListBoxItem.containerStyles (`alignItems:flex-start + justifyContent:center`) 가 **기존 implicitStyles 분기에 미주입 상태** → auto-registration 후 주입 시작. 자식 cross-axis 동작 변경 가능성 (stretch → flex-start). Chrome MCP 실측 필수, 변경 감지 시 해당 ADR 재검토
 
 ### 대안 B: 각 child spec 을 `TAG_SPEC_MAP` 에 수동 등록
 
@@ -109,10 +115,17 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 
 ### Phase 구성
 
-- **Phase 1 (1세션)**: `implicitStyles.ts:95` `LOWERCASE_TAG_SPEC_MAP` 생성 로직 확장 — 각 spec 의 `childSpecs` 를 lowercase 키로 추가. `resolveContainerStylesFallback.test.ts` 에서 ListBoxItem 선언 테스트를 **PASS 로 전환** (fb 가 ListBoxItem.containerStyles 값 반환). 기존 ListBoxItem 분기 (`implicitStyles.ts:775-789`) 값 일치 확인 — no-op 또는 drift 감지
-- **Phase 2 (0.5세션)**: `tagSpecMap.ts:109` `TAG_SPEC_MAP` 의 PascalCase 키도 childSpecs 자동 전개 여부 결정 (Sprite/Skia consumer 가 직접 사용하는 경로). 미필요 시 skip — `LOWERCASE_TAG_SPEC_MAP` 만으로 implicitStyles 경로 커버. Inspector (`useLayoutAuxiliary.ts:25`) 가 어느 것 쓰는지 확인
-- **Phase 3 (retroactive 검증)**: ADR-078 ListBoxItem + ADR-090 GridListItem 실제 SSOT 복구 증거 확보. `specSizeField("listboxitem", "md", "paddingX")` 같은 호출이 이제 유효값 반환하는지 test 작성
-- **검증**: type-check + specs + builder + Chrome MCP ListBox/GridList 실측 (시각 변동 없음 확인)
+- **Phase 1 (1세션, 양 registry 동시 확장 — Codex round 3 H1 반영)**:
+  1. `tagSpecMap.ts:109` `TAG_SPEC_MAP` 생성 시 childSpecs 자동 전개 (PascalCase 키) → `getSpecForTag()` / `isSpecPath()` / `specPresetResolver` 자동 혜택
+  2. `implicitStyles.ts:95` `LOWERCASE_TAG_SPEC_MAP` 동일 확장 (lowercase 키) → `resolveContainerStylesFallback` / `specSizeField` 자동 혜택
+  3. `useLayoutAuxiliary.ts:25` 확인 — 위 registry 중 어느 것 쓰는지 점검, 그대로 작동해야 함
+  4. `resolveContainerStylesFallback.test.ts:92-102` ListBoxItem 테스트 **PASS 로 전환** + 반환값이 `{display:"flex", flexDirection:"column", alignItems:"flex-start", justifyContent:"center"}` 검증
+- **Phase 2 (0.5세션, drift 감지 + 실측)**:
+  - ListBoxItem drift 체크: auto-reg 후 alignItems:flex-start + justifyContent:center 가 신규 주입 → **ListBox 자식 정렬 변화 가능**. Chrome MCP `ListBox` 시각 비교 (before/after). 시각 변동 있으면: (a) spec containerStyles 값을 기존 분기 값에 정렬하거나 (b) 의도된 변화로 수용 + 테스트 스냅샷 갱신
+  - GridListItem 동일 체크
+- **Phase 3 (retroactive 검증)**: ADR-078 ListBoxItem + ADR-090 GridListItem 실제 SSOT 복구 증거 확보. `specSizeField("listboxitem", "md", "paddingX")` 가 유효값 반환하는지 test 작성
+- **Phase 4 (tagToElement.ts 별도 체계 평가)**: `packages/specs/src/runtime/tagToElement.ts:120` 의 자체 registry 는 preview/runtime DOM 요소 매핑. Spec 경로와 별개 consumer 라 **본 ADR scope 외** — 만약 child spec 이 preview 렌더되어야 하면 후속 ADR 분리 (현재 childSpecs 모두 `element: "div"` 로 동일 설정이라 실제 영향 없을 것)
+- **검증**: type-check + specs + builder + Chrome MCP 실측 (ListBox/GridList 시각 변동 명시적 수용)
 
 ### Addendum 후속 ADR 의존
 
@@ -122,11 +135,12 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 
 ## Risks
 
-| ID  | 위험                                                                              | 심각도 | 대응                                                                                                                                       |
-| --- | --------------------------------------------------------------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| R1  | ListBoxItem 자동 등록 후 실제 layout 변경 발생                                    |  MED   | Phase 1 에서 implicitStyles.ts:775-789 값과 ListBoxItemSpec.containerStyles 값 사전 대조. 일치 시 no-op. 불일치 시 해당 ADR 재검토 후 진행 |
-| R2  | `tagSpecMap.ts` PascalCase 확장 시 Sprite consumer 경로에 영향                    |  MED   | Phase 2 에서 별도 평가. 필요 없으면 skip                                                                                                   |
-| R3  | `useLayoutAuxiliary` Inspector 가 child spec 을 읽기 시작하면 Style Panel UX 변화 |  LOW   | Inspector 는 ADR-082 scope. 본 ADR 은 registry 만 확장, UX 영향 검증                                                                       |
+| ID  | 위험                                                                                                                           | 심각도 | 대응                                                                                                                                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ | :----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | ListBoxItem 자동 등록 후 실제 layout 변경 발생 — alignItems/justifyContent drift 확인                                          |  MED   | **실측 확정 (Codex round 3 H2)**: spec 은 `alignItems:flex-start + justifyContent:center` 포함, 분기는 미주입 → auto-reg 후 신규 주입. Phase 2 에서 Chrome MCP 실측 후 시각 변동 수용 or spec 값 조정 결정 |
+| R2  | `tagSpecMap.ts` PascalCase 확장 시 `StoreRenderBridge.isSpecPath()` 가 child spec 을 "Spec 경로" 로 판정 → Skia 렌더 경로 진입 |  MED   | Phase 1 에서 Skia 렌더링 child spec 동작 검증 필수. `element: "div"` + `render.shapes: () => []` 인 childSpec 들은 실제 Skia 그리기 없음 → 안전. 예외 spec 있으면 개별 처리                                |
+| R3  | `useLayoutAuxiliary` Inspector 가 child spec 을 읽기 시작하면 Style Panel UX 변화                                              |  LOW   | Inspector 는 ADR-082 scope. 본 ADR 은 registry 만 확장, UX 영향 검증                                                                                                                                       |
+| R4  | `tagToElement.ts:120` 자체 registry 가 child spec 미포함 → preview 렌더에서 child tag 가 HTML element 해석 누락                |  LOW   | 본 ADR scope 외 (Phase 4). 현재 모든 childSpec 이 `element: "div"` 이라 preview 렌더 영향 없음 예상. 후속 ADR 로 tagToElement 통합 가능                                                                    |
 
 잔존 HIGH 위험 없음.
 
@@ -138,7 +152,7 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 - specs 166/166 PASS
 - builder 217/217 PASS (특히 `resolveContainerStylesFallback.test.ts` ListBoxItem 케이스 PASS 전환)
 - `rg "childSpecs 전용 spec 은 lookup 미작동" apps/builder` = 0 (test 주석 제거)
-- Chrome MCP ListBox/GridList 시각 변동 없음 (no-op 확증)
+- Chrome MCP ListBox/GridList 시각 비교 (before/after) — **drift 감지 시 명시적 수용 + 스냅샷 갱신** (ListBoxItem alignItems/justifyContent 신규 주입으로 no-op 아님, Codex round 3 H2 반영)
 
 ## Consequences
 
