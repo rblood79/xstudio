@@ -5916,8 +5916,6 @@ exports[`CSSGenerator snapshot baseline > Meter 1`] = `
   /* Base styles — archetype: progress */
     display: grid;
     box-sizing: border-box;
-    grid-template-areas: "label value" "bar bar";
-    grid-template-columns: 1fr auto;
     box-sizing: border-box;
     row-gap: var(--spacing-xs);
     column-gap: var(--spacing-md);
@@ -5926,6 +5924,11 @@ exports[`CSSGenerator snapshot baseline > Meter 1`] = `
     font-size: var(--text-sm);
     --label-font-size: var(--text-sm);
     --fill-color: var(--color-info-600);
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: grid;
+  grid-template-areas: "label value" "bar bar";
+  grid-template-columns: 1fr auto;
 
   /* Default size */
   font-size: var(--text-sm);
@@ -7243,8 +7246,6 @@ exports[`CSSGenerator snapshot baseline > ProgressBar 1`] = `
   /* Base styles — archetype: progress */
     display: grid;
     box-sizing: border-box;
-    grid-template-areas: "label value" "bar bar";
-    grid-template-columns: 1fr auto;
     box-sizing: border-box;
     row-gap: var(--spacing-xs);
     column-gap: var(--spacing-md);
@@ -7254,6 +7255,11 @@ exports[`CSSGenerator snapshot baseline > ProgressBar 1`] = `
     --label-font-size: var(--text-sm);
     --fill-color: var(--accent);
     --track-color: var(--accent-subtle);
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: grid;
+  grid-template-areas: "label value" "bar bar";
+  grid-template-columns: 1fr auto;
 
   /* Default size */
   font-size: var(--text-sm);

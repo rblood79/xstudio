@@ -312,11 +312,17 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
     focusVisible: {},
   },
 
+  // ADR-085 P3: grid-template-areas/columns 를 legacy composition.containerStyles 에서
+  //   정식 containerStyles (ContainerStylesSchema) 로 이관. Spec/CSS/Taffy 3경로 SSOT.
+  containerStyles: {
+    display: "grid",
+    gridTemplateAreas: '"label value" "bar bar"',
+    gridTemplateColumns: "1fr auto",
+  },
+
   composition: {
     layout: "grid",
     containerStyles: {
-      "grid-template-areas": '"label value" "bar bar"',
-      "grid-template-columns": "1fr auto",
       "box-sizing": "border-box",
       "row-gap": "var(--spacing-xs)",
       "column-gap": "var(--spacing-md)",
