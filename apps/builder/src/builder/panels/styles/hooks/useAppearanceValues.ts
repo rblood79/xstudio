@@ -34,8 +34,16 @@ export function useAppearanceValues(
     if (!id) return null;
     const s = style ?? {};
     return {
-      backgroundColor: firstDefined(s.backgroundColor, undefined, "#FFFFFF"),
-      borderColor: firstDefined(s.borderColor, undefined, "#000000"),
+      backgroundColor: firstDefined(
+        s.backgroundColor,
+        specPreset.backgroundColor,
+        "#FFFFFF",
+      ),
+      borderColor: firstDefined(
+        s.borderColor,
+        specPreset.borderColor,
+        "#000000",
+      ),
       borderWidth: firstDefined(
         s.borderWidth,
         numToPx(specPreset.borderWidth),

@@ -70,3 +70,55 @@ describe("useLayoutValues", () => {
     expect(result.current?.padding).toBe("0px");
   });
 });
+
+describe("useLayoutValues — ADR-082 P3 spec fallback (display/flex keys)", () => {
+  beforeEach(() => {
+    useStore.setState({
+      elementsMap: new Map([
+        [
+          "el-spec-only",
+          {
+            id: "el-spec-only",
+            tag: "ListBox",
+            props: { size: "md", style: {} },
+          } as any,
+        ],
+        [
+          "el-inline-wins",
+          {
+            id: "el-inline-wins",
+            tag: "ListBox",
+            props: {
+              size: "md",
+              style: { display: "grid", alignItems: "center" },
+            },
+          } as any,
+        ],
+      ]),
+    });
+    vi.spyOn(preset, "resolveLayoutSpecPreset").mockReturnValue({
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-start",
+      justifyContent: "center",
+    });
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("spec preset supplies display/flexDirection/alignItems/justifyContent when inline absent", () => {
+    const { result } = renderHook(() => useLayoutValues("el-spec-only"));
+    expect(result.current?.display).toBe("flex");
+    expect(result.current?.flexDirection).toBe("column");
+    expect(result.current?.alignItems).toBe("flex-start");
+    expect(result.current?.justifyContent).toBe("center");
+  });
+
+  it("inline value wins over spec preset (회귀 0 보장)", () => {
+    const { result } = renderHook(() => useLayoutValues("el-inline-wins"));
+    expect(result.current?.display).toBe("grid"); // inline
+    expect(result.current?.alignItems).toBe("center"); // inline
+    expect(result.current?.flexDirection).toBe("column"); // spec fallback
+    expect(result.current?.justifyContent).toBe("center"); // spec fallback
+  });
+});

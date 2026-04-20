@@ -37,10 +37,18 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
     if (!id) return null;
     const s = style ?? {};
     return {
-      display: firstDefined(s.display, undefined, "block"),
-      flexDirection: firstDefined(s.flexDirection, undefined, "row"),
-      alignItems: firstDefined(s.alignItems, undefined, ""),
-      justifyContent: firstDefined(s.justifyContent, undefined, ""),
+      display: firstDefined(s.display, specPreset.display, "block"),
+      flexDirection: firstDefined(
+        s.flexDirection,
+        specPreset.flexDirection,
+        "row",
+      ),
+      alignItems: firstDefined(s.alignItems, specPreset.alignItems, ""),
+      justifyContent: firstDefined(
+        s.justifyContent,
+        specPreset.justifyContent,
+        "",
+      ),
       gap: firstDefined(s.gap, numToPx(specPreset.gap), "0px"),
       flexWrap: firstDefined(s.flexWrap, undefined, "nowrap"),
       padding: firstDefined(s.padding, undefined, "0px"),

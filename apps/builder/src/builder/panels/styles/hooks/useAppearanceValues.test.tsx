@@ -1,0 +1,72 @@
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook } from "@testing-library/react";
+import { useAppearanceValues } from "./useAppearanceValues";
+import { useStore } from "../../../stores";
+import * as preset from "../utils/specPresetResolver";
+
+describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/borderColor)", () => {
+  beforeEach(() => {
+    useStore.setState({
+      elementsMap: new Map([
+        [
+          "el-spec-only",
+          {
+            id: "el-spec-only",
+            tag: "ListBox",
+            props: { size: "md", style: {} },
+          } as any,
+        ],
+        [
+          "el-inline-wins",
+          {
+            id: "el-inline-wins",
+            tag: "ListBox",
+            props: {
+              size: "md",
+              style: { backgroundColor: "#ABCDEF", borderRadius: "12px" },
+            },
+          } as any,
+        ],
+      ]),
+    });
+    vi.spyOn(preset, "resolveAppearanceSpecPreset").mockReturnValue({
+      borderRadius: 8,
+      borderWidth: 1,
+      backgroundColor: "var(--bg-raised)",
+      borderColor: "var(--border)",
+    });
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("spec preset supplies backgroundColor/borderColor/borderRadius/borderWidth when inline absent", () => {
+    const { result } = renderHook(() => useAppearanceValues("el-spec-only"));
+    expect(result.current?.backgroundColor).toBe("var(--bg-raised)");
+    expect(result.current?.borderColor).toBe("var(--border)");
+    expect(result.current?.borderRadius).toBe("8px");
+    expect(result.current?.borderWidth).toBe("1px");
+  });
+
+  it("inline value wins over spec preset (회귀 0 보장)", () => {
+    const { result } = renderHook(() => useAppearanceValues("el-inline-wins"));
+    expect(result.current?.backgroundColor).toBe("#ABCDEF"); // inline
+    expect(result.current?.borderRadius).toBe("12px"); // inline
+    expect(result.current?.borderColor).toBe("var(--border)"); // spec fallback
+    expect(result.current?.borderWidth).toBe("1px"); // spec fallback
+  });
+
+  it("falls back to hardcoded defaults when neither inline nor spec present", () => {
+    vi.spyOn(preset, "resolveAppearanceSpecPreset").mockReturnValue({});
+    const { result } = renderHook(() => useAppearanceValues("el-spec-only"));
+    expect(result.current?.backgroundColor).toBe("#FFFFFF");
+    expect(result.current?.borderColor).toBe("#000000");
+    expect(result.current?.borderRadius).toBe("0px");
+    expect(result.current?.borderWidth).toBe("0px");
+  });
+
+  it("returns null when id is null", () => {
+    const { result } = renderHook(() => useAppearanceValues(null));
+    expect(result.current).toBeNull();
+  });
+});

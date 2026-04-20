@@ -35,6 +35,11 @@ export interface LayoutSpecPreset {
   marginRight?: number;
   marginBottom?: number;
   marginLeft?: number;
+  /** ADR-082 P3: containerStyles 에서 공급된 Flex/Grid 레이아웃 키 (문자열 그대로) */
+  display?: string;
+  flexDirection?: string;
+  alignItems?: string;
+  justifyContent?: string;
 }
 
 export interface TypographySpecPreset {
@@ -237,6 +242,13 @@ function layoutFromContainerStyles(
     out.paddingBottom = padding;
     out.paddingLeft = padding;
   }
+  // ADR-082 P3: Flex/Grid 레이아웃 키 — 문자열 그대로 Panel 기본값 공급
+  if (typeof cs.display === "string") out.display = cs.display;
+  if (typeof cs.flexDirection === "string")
+    out.flexDirection = cs.flexDirection;
+  if (typeof cs.alignItems === "string") out.alignItems = cs.alignItems;
+  if (typeof cs.justifyContent === "string")
+    out.justifyContent = cs.justifyContent;
   return out;
 }
 
@@ -256,6 +268,16 @@ function layoutFromComposition(comp: {
     out.paddingBottom = padding;
     out.paddingLeft = padding;
   }
+  // ADR-082 P3: composition.containerStyles 는 Record<string,string> (CSS 값 그대로)
+  //   kebab-case / camelCase 양쪽 허용하여 Panel 소비 일관성 유지
+  const display = cs.display;
+  if (typeof display === "string") out.display = display;
+  const flexDirection = cs["flex-direction"] ?? cs.flexDirection;
+  if (typeof flexDirection === "string") out.flexDirection = flexDirection;
+  const alignItems = cs["align-items"] ?? cs.alignItems;
+  if (typeof alignItems === "string") out.alignItems = alignItems;
+  const justifyContent = cs["justify-content"] ?? cs.justifyContent;
+  if (typeof justifyContent === "string") out.justifyContent = justifyContent;
   return out;
 }
 
