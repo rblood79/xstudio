@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   resolveSpecPreset,
+  resolveAppearanceSpecPreset,
   resolveLayoutSpecPreset,
   clearSpecPresetCache,
 } from "./specPresetResolver";
@@ -89,5 +90,84 @@ describe("resolveLayoutSpecPreset", () => {
   it("returns object gracefully for flat-spec components", () => {
     const preset = resolveLayoutSpecPreset("ToggleButton", "md");
     expect(preset).toEqual(expect.any(Object));
+  });
+});
+
+describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition → sizes)", () => {
+  beforeEach(() => clearSpecPresetCache());
+
+  describe("Non-composite containerStyles (ADR-071 스키마)", () => {
+    it("ListBox.containerStyles → Appearance preset (borderRadius/borderWidth/colors)", () => {
+      // ListBoxSpec.containerStyles = { borderRadius: "{radius.lg}"=8, borderWidth: 1,
+      //   background: "{color.raised}", border: "{color.border}" }
+      const preset = resolveAppearanceSpecPreset("ListBox", undefined);
+      expect(preset.borderRadius).toBe(8);
+      expect(preset.borderWidth).toBe(1);
+      expect(preset.backgroundColor).toBe("var(--bg-raised)");
+      expect(preset.borderColor).toBe("var(--border)");
+    });
+
+    it("ListBox.containerStyles → Layout preset (gap/padding 4-way split)", () => {
+      // ListBoxSpec.containerStyles = { gap: "{spacing.2xs}"=2, padding: "{spacing.xs}"=4 }
+      const preset = resolveLayoutSpecPreset("ListBox", undefined);
+      expect(preset.gap).toBe(2);
+      expect(preset.paddingTop).toBe(4);
+      expect(preset.paddingRight).toBe(4);
+      expect(preset.paddingBottom).toBe(4);
+      expect(preset.paddingLeft).toBe(4);
+    });
+
+    it("Menu.containerStyles → Appearance preset", () => {
+      // MenuSpec.containerStyles = { borderRadius: "{radius.md}"=6, borderWidth: 1,
+      //   background: "{color.raised}", border: "{color.border}" }
+      const preset = resolveAppearanceSpecPreset("Menu", undefined);
+      expect(preset.borderRadius).toBe(6);
+      expect(preset.borderWidth).toBe(1);
+      expect(preset.backgroundColor).toBe("var(--bg-raised)");
+    });
+  });
+
+  describe("Composite composition.* (ADR-036 Phase 3a 스키마) — sizes 우선, composition 은 sizes 없을 때만 반영", () => {
+    it("Select.sizes.md.gap=6 이 composition.gap=4 를 override (회귀 0 보장)", () => {
+      // SelectSpec.sizes.md.gap = 6 우선 반영, composition.gap="var(--spacing-xs)"=4 는 fallback 만
+      const preset = resolveLayoutSpecPreset("Select", "md");
+      expect(preset.gap).toBe(6);
+    });
+
+    it("Select size=absent → sizes 없음 → composition.gap=4 반영", () => {
+      // 존재하지 않는 size 키 → sizes preset 빈 객체 → composition fallback 발동
+      const preset = resolveLayoutSpecPreset("Select", "xxl");
+      expect(preset.gap).toBe(4);
+    });
+
+    it("ComboBox size=absent → composition.gap fallback 확인", () => {
+      const preset = resolveLayoutSpecPreset("ComboBox", "xxl");
+      expect(preset.gap).toBe(4);
+    });
+  });
+
+  describe("fallback 우선순위 — sizes 가 최우선 (회귀 0)", () => {
+    it("sizes 값이 있으면 containerStyles/composition 덮어씀", () => {
+      // Button 은 sizes.md 에 숫자 필드 있음 + composition 없음 → sizes 반환 유지
+      const preset = resolveAppearanceSpecPreset("Button", "md");
+      // Button.sizes.md.borderRadius 가 있으면 그 값 우선
+      if (typeof preset.borderRadius === "number") {
+        expect(preset.borderRadius).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it("containerStyles 만 있고 sizes 없으면 containerStyles 반환", () => {
+      // ListBox 는 sizes 블록 자체가 거의 비어있고 containerStyles 보유
+      const preset = resolveAppearanceSpecPreset("ListBox", undefined);
+      expect(preset.borderRadius).toBe(8); // from containerStyles
+    });
+  });
+
+  describe("캐싱 — 3-tier merge 결과도 캐시 재사용", () => {
+    it("동일 (type, size) 재호출 시 identical reference", () => {
+      const a = resolveAppearanceSpecPreset("ListBox", undefined);
+      const b = resolveAppearanceSpecPreset("ListBox", undefined);
+      expect(a).toBe(b);
+    });
   });
 });

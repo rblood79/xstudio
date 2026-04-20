@@ -205,6 +205,74 @@ export function tokenToCSSVar(ref: TokenRef): string {
 }
 
 /**
+ * ADR-082 P1: CSS var 문자열 → TokenRef 역변환.
+ *
+ * `tokenToCSSVar()` 의 역함수. Composite Spec 의 `composition.gap = "var(--spacing-xs)"`
+ * 같은 CSS string 값을 TokenRef 로 변환하여 `resolveToken()` 소비 가능하게 함.
+ * Style Panel consumer (specPresetResolver) 가 Composite Spec 의 composition.* 를
+ * fallback chain 으로 참조할 때 진입점.
+ *
+ * 규칙:
+ * - spacing/radius/shadow: `var(--{category}-{name})` → `{${category}.${name}}`
+ * - typography: `var(--text-base)` → `{typography.text-base}` (text-md 는 tokenToCSSVar 에서
+ *   text-base 로 매핑되므로 text-md 역변환 불필요, text-base 우선 반환)
+ * - color: `COLOR_TOKEN_TO_CSS` / `NAMED_COLOR_TO_CSS` 역방향 lookup. `color-mix(...)` 등
+ *   복합 표현은 역변환 대상 아님 (단순 `var(--xxx)` 만 지원)
+ * - 미등록 var: `null` 반환 (silent fail, dev warn 은 consumer 측 책임)
+ *
+ * @see tokenToCSSVar (생성 방향)
+ * @see cssVarToTokenRef.test.ts (왕복 검증)
+ */
+export function cssVarToTokenRef(cssVar: string): TokenRef | null {
+  if (typeof cssVar !== "string") return null;
+  const match = cssVar.match(/^var\(--([a-z][a-z0-9-]*)\)$/);
+  if (!match) return null;
+  const name = match[1];
+
+  // Non-color category: prefix 기반 단순 역변환
+  if (name.startsWith("spacing-"))
+    return `{spacing.${name.slice(8)}}` as TokenRef;
+  if (name.startsWith("radius-"))
+    return `{radius.${name.slice(7)}}` as TokenRef;
+  if (name.startsWith("shadow-"))
+    return `{shadow.${name.slice(7)}}` as TokenRef;
+  // typography: text-2xs / text-xs / text-sm / text-base / text-lg / ... / text-Nxl--line-height
+  if (name.startsWith("text-")) return `{typography.${name}}` as TokenRef;
+
+  // Color: 역방향 Map lookup (단순 `var(--xxx)` 형식만. color-mix 등 복합 표현 미지원)
+  const colorName = reverseLookupColorVar(cssVar);
+  if (colorName) return `{color.${colorName}}` as TokenRef;
+
+  return null;
+}
+
+/**
+ * Lazy-built reverse map for `COLOR_TOKEN_TO_CSS` + `NAMED_COLOR_TO_CSS`.
+ * color-mix(...) / oklch(...) 등 복합 표현은 역변환 불가 → 단순 var(--xxx) 값만 인덱싱.
+ */
+let _colorReverseMap: Map<string, string> | null = null;
+
+function reverseLookupColorVar(cssVar: string): string | null {
+  if (!_colorReverseMap) {
+    _colorReverseMap = new Map();
+    const ingest = (src: Record<string, string>) => {
+      for (const [name, val] of Object.entries(src)) {
+        // 단순 var(--xxx) 형식만 역인덱스 대상
+        if (
+          /^var\(--[a-z][a-z0-9-]*\)$/.test(val) &&
+          !_colorReverseMap!.has(val)
+        ) {
+          _colorReverseMap!.set(val, name);
+        }
+      }
+    };
+    ingest(COLOR_TOKEN_TO_CSS);
+    ingest(NAMED_COLOR_TO_CSS);
+  }
+  return _colorReverseMap.get(cssVar) ?? null;
+}
+
+/**
  * 그림자 토큰 참조를 실제 값으로 변환
  */
 export function resolveBoxShadow(

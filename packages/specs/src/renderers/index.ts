@@ -26,6 +26,7 @@ export {
   resolveToken,
   resolveColor,
   tokenToCSSVar,
+  cssVarToTokenRef,
   resolveBoxShadow,
   hexStringToNumber,
 } from "./utils/tokenResolver";

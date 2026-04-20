@@ -149,6 +149,7 @@ export {
   resolveToken,
   resolveColor,
   tokenToCSSVar,
+  cssVarToTokenRef,
   resolveBoxShadow,
   hexStringToNumber,
   // FontSize resolver
