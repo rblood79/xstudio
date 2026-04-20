@@ -206,4 +206,33 @@ describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition 
       expect(preset.justifyContent).toBeUndefined();
     });
   });
+
+  describe("ADR-082 P3 fix — sizes 경로 TokenRef 해석 (pickNumeric → resolveToNumber)", () => {
+    it("Badge.sizes.md.borderRadius = '{radius.full}' → 9999 로 resolve", () => {
+      // Badge 는 sizes 전체가 `"{radius.full}"` TokenRef 사용 → 기존 typeof number 필터로
+      //   전부 skip 되던 버그 수정. borderWidth:1(숫자) 는 원래 통과하던 값.
+      const preset = resolveAppearanceSpecPreset("Badge", "md");
+      expect(preset.borderRadius).toBe(9999);
+      expect(preset.borderWidth).toBe(1);
+    });
+
+    it("InlineAlert.sizes.md.borderRadius = '{radius.lg}' → 8 로 resolve", () => {
+      // InlineAlert 는 borderWidth 필드 자체 없음 → undefined 유지 (sizes 미정의 = 기본값 0)
+      const preset = resolveAppearanceSpecPreset("InlineAlert", "md");
+      expect(preset.borderRadius).toBe(8);
+      expect(preset.borderWidth).toBeUndefined();
+    });
+
+    it("Button.sizes.md.borderRadius = '{radius.md}' → 6 로 resolve", () => {
+      // 가장 사용 빈도 높은 spec — 기존 숫자 필터에서 skip 되던 회귀 복구
+      const preset = resolveAppearanceSpecPreset("Button", "md");
+      expect(preset.borderRadius).toBe(6);
+    });
+
+    it("숫자 그대로 저장된 sizes 필드는 회귀 없이 통과 (Kbd.sizes.md.height)", () => {
+      // Kbd.sizes.md.height = 26 (숫자) — resolveToNumber 가 숫자 통과
+      const preset = resolveSpecPreset("Kbd", "md");
+      expect(preset.height).toBe(26);
+    });
+  });
 });

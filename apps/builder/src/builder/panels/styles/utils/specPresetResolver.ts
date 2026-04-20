@@ -117,10 +117,14 @@ function pickNumeric<T extends object>(
   sizeEntry: Record<string, unknown>,
   keys: readonly string[],
 ): T {
+  // ADR-082 P3 fix: 대부분의 spec 이 `sizes.{size}.borderRadius = "{radius.md}"` 같은
+  //   TokenRef 문자열을 저장 (Badge/InlineAlert/Button/...). `typeof v === "number"` 로만
+  //   필터하면 전부 skip 되어 Panel 이 0 표시. `resolveToNumber` 로 TokenRef/CSS var 양쪽
+  //   해석 후 숫자 추출. 기존 숫자 케이스는 그대로 통과 (회귀 0).
   const out: Record<string, number> = {};
   for (const k of keys) {
-    const v = sizeEntry[k];
-    if (typeof v === "number") out[k] = v;
+    const resolved = resolveToNumber(sizeEntry[k]);
+    if (resolved !== undefined) out[k] = resolved;
   }
   return out as unknown as T;
 }
