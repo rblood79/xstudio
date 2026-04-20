@@ -196,16 +196,15 @@ const SPEC_PADDING: Record<string, { left: number; right: number; y: number }> =
   };
 
 /**
- * ADR-086 P2: size-indexed Record 8 종 폐쇄 (SPEC_ICON_SIZE/SPEC_INPUT_FONT_SIZE/
+ * ADR-086 P2: size-indexed Record 9 종 폐쇄 (SPEC_ICON_SIZE/SPEC_INPUT_FONT_SIZE/
  *   SPEC_TRIGGER_HEIGHT/PROGRESSBAR_BAR_HEIGHT/PROGRESSBAR_FONT_SIZE/SIZE_LINE_HEIGHT/
- *   SLIDER_TRACK_LAYOUT_HEIGHT/SLIDER_FONT_SIZE). `specSizeField` / `specSizeFontSize` /
+ *   SLIDER_TRACK_LAYOUT_HEIGHT/SLIDER_FONT_SIZE/calPadGap). `specSizeField` / `specSizeFontSize` /
  *   `specSizeLineHeight` 헬퍼 + `SliderSpec.sizes[s].indicator.thumbSize` 직접 lookup 으로 대체.
  *
- * 잔존 2 종 (semantic 불일치 로 후속 처리):
- * - `SLIDER_COL_GAP` (column-gap) — Slider.sizes.gap 은 row-gap (offsetY = fontSize + gap)
- *   으로 소비됨. `spec.sizes.columnGap?` 신설이 필요 → ADR-086 Addendum 후보.
- * - `calPadGap` — Calendar 분기 내 지역 const. Calendar.sizes.paddingX/gap 로 직접 대체 가능하므로
- *   P2 에서 제거.
+ * ADR-088: 잔존 1 종 `SLIDER_COL_GAP` 해체 완료.
+ *   `SizeSpec.columnGap?` 신규 필드 + `SliderSpec.sizes[s].columnGap` 선언 +
+ *   `specSizeField("slider", sizeName, "columnGap")` 직접 lookup 으로 대체.
+ *   Preview CSS 도 `CSSGenerator.generateSizeStyles` 의 column-gap emit 확장으로 대칭 복원.
  */
 
 /** Checkbox/Radio indicator 크기 (spec shapes 렌더링, Taffy 트리 밖) */
@@ -234,19 +233,12 @@ const SLIDER_TAGS = new Set(["slider"]);
 const POPOVER_CHILDREN_TAGS = new Set(["Calendar", "RangeCalendar"]);
 
 /**
- * Slider row-gap (CSS: var(--spacing-xs) = 4px). column-gap 은 semantic 충돌로 Record 잔존.
+ * Slider row-gap (CSS: var(--spacing-xs) = 4px).
  *
- * SLIDER_COL_GAP: ADR-086 P2 scope 외 (후속 ADR 에서 `spec.sizes.columnGap?` 신설 후 해체).
- * Slider.sizes.gap (= 4/4/4/4) 은 Slider.spec.render 내부 row-gap 으로 소비 → column-gap 용도로
- * overwrite 불가.
+ * ADR-088: column-gap 은 `SliderSpec.sizes[s].columnGap` SSOT 로 이관 완료. Record 제거.
+ *   소비처는 `specSizeField("slider", sizeName, "columnGap")` 로 직접 lookup.
  */
 const SLIDER_ROW_GAP = 4;
-const SLIDER_COL_GAP: Record<string, number> = {
-  sm: 16,
-  md: 16,
-  lg: 20,
-  xl: 20,
-};
 
 /** Synthetic Label을 생성하는 태그 */
 const SYNTHETIC_LABEL_TAGS = new Set([
@@ -1608,7 +1600,7 @@ export function applyImplicitStyles(
     const hasLabel = !!containerProps?.label;
     const showValue = containerProps?.showValue !== false;
     const sizeName = (containerProps?.size as string) ?? "md";
-    const sliderColGap = SLIDER_COL_GAP[sizeName] ?? SLIDER_COL_GAP.md;
+    const sliderColGap = specSizeField("slider", sizeName, "columnGap") ?? 16;
 
     // value → 포맷된 텍스트 계산 (ElementSprite 미러링)
     const sliderValue = containerProps?.value;

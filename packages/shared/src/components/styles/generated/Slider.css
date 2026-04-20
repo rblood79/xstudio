@@ -19,7 +19,9 @@
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-full);
+  line-height: var(--text-sm--line-height);
   gap: 4px;
+  column-gap: 16px;
 }
 
 .react-aria-Slider[data-size="sm"] {
@@ -27,7 +29,9 @@
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-full);
+  line-height: var(--text-xs--line-height);
   gap: 4px;
+  column-gap: 16px;
 }
 
 .react-aria-Slider[data-size="md"] {
@@ -35,7 +39,9 @@
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-full);
+  line-height: var(--text-sm--line-height);
   gap: 4px;
+  column-gap: 16px;
 }
 
 .react-aria-Slider[data-size="lg"] {
@@ -43,7 +49,9 @@
   padding: 0px 0px;
   font-size: var(--text-base);
   border-radius: var(--radius-full);
+  line-height: var(--text-base--line-height);
   gap: 4px;
+  column-gap: 20px;
 }
 
 .react-aria-Slider[data-size="xl"] {
@@ -51,7 +59,9 @@
   padding: 0px 0px;
   font-size: var(--text-lg);
   border-radius: var(--radius-full);
+  line-height: var(--text-lg--line-height);
   gap: 4px;
+  column-gap: 20px;
 }
 
 .react-aria-Slider[data-hovered] {

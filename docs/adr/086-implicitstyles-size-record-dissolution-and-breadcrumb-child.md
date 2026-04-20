@@ -12,11 +12,11 @@ Implemented — 2026-04-20 (Revision 4, 1 Record 잔존으로 Addendum 1 필요)
 - **Phase 4** (세션 1 `3d249b9d`): Breadcrumb.spec render `ctx?.measureText ?? measureSpecTextWidth` fallback 패턴
 - **Phase 5** (세션 1 `336c6973`): implicitStyles Breadcrumb child 9 필드 mutation 제거 + `utils.ts calculateContentWidth/Height` "breadcrumb" 분기 + INLINE_BLOCK_TAGS/SPEC_SHAPES_INPUT_TAGS 편입
 
-## Addendum 1 — SLIDER_COL_GAP 잔존 (후속 ADR 후보)
+## Addendum 1 — SLIDER_COL_GAP 잔존 (해소됨 — ADR-088)
 
 `SLIDER_COL_GAP` (column-gap 16/16/20/20) 은 `Slider.sizes.gap` (row-gap 4/4/4/4 — Slider.spec.render offsetY 소비) 과 semantic 이 다름. Rev 4 breakdown 의 "기존 `spec.sizes.gap` 필드 활용" 가정은 실제 audit 결과 불가. `SizeSpec.columnGap?` 신규 필드 도입이 필요 → scope 외로 분리하여 후속 ADR 검토.
 
-현 상태: implicitStyles.ts:239 에 SLIDER_COL_GAP Record 주석과 함께 잔존. `rg "Record<string, number>" implicitStyles.ts` 결과 1건.
+**해소**: [ADR-088](088-sizespec-columngap-slider-col-gap-dissolution.md) (Implemented 2026-04-20) 가 `SizeSpec.columnGap?` 신규 optional 필드 도입 + Slider.sizes columnGap 선언 + CSSGenerator column-gap emit 확장 + implicitStyles 소비처 전환으로 해체. 추가 발견: Canvas 는 16/16/20/20, Preview 는 `gap:4` shorthand 로 이미 **D3 symmetric 위반** 상태였음 → ADR-088 에서 대칭 복원. `rg "Record<string, number>" implicitStyles.ts` 최종 결과 **0건** (ADR-086 G4 완결).
 
 ## History
 

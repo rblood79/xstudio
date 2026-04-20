@@ -818,6 +818,12 @@ function generateSizeStyles(
     lines.push(`  gap: ${size.gap}px;`);
   }
 
+  // column-gap — ADR-088: `gap` shorthand 뒤에 emit 하여 column 축만 override.
+  //   row-gap 과 column-gap 이 다른 값을 가져야 하는 경우 (예: Slider — row 4 / column 16~20).
+  if (size.columnGap != null) {
+    lines.push(`  column-gap: ${size.columnGap}px;`);
+  }
+
   // icon-size (CSS 변수로 출력)
   if (size.iconSize !== undefined) {
     lines.push(`  --icon-size: ${size.iconSize}px;`);

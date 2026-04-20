@@ -102,9 +102,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   // ADR-086 P1 (Rev 4 명시): lineHeight 추가 (SIZE_LINE_HEIGHT Record 와 일치 — 16/20/24/28).
   //   SliderOutput 이 SIZE_LINE_HEIGHT 를 소비 → P2 에서 implicitStyles Record 제거 후
   //   `SliderSpec.sizes[size].lineHeight` 직접 소비.
-  //   `gap` 은 Slider.spec.render 내부 `offsetY = fontSize + gap` (row-gap) 에서 소비 —
-  //   implicitStyles 의 SLIDER_COL_GAP (column-gap) 와 별개 축. Rev 4 breakdown 가정과
-  //   달리 두 값이 semantic 이 다르므로 spec.sizes.gap 은 기존 4/4/4/4 (row) 유지.
+  //   `gap` 은 Slider.spec.render 내부 `offsetY = fontSize + gap` (row-gap) 에서 소비.
+  // ADR-088: `columnGap` 필드 신규 — Label↔SliderOutput 사이 column-gap. ADR-086 Addendum 1
+  //   의 `SLIDER_COL_GAP` Record 16/16/20/20 을 spec SSOT 로 이관. Preview CSS 는 CSSGenerator
+  //   가 `column-gap` emit 으로 `gap` shorthand 를 override.
   sizes: {
     sm: {
       height: 4,
@@ -114,6 +115,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       lineHeight: "{typography.text-xs--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      columnGap: 16,
       indicator: { trackHeight: 4, thumbSize: 14 },
     },
     md: {
@@ -124,6 +126,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       lineHeight: "{typography.text-sm--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      columnGap: 16,
       indicator: { trackHeight: 8, thumbSize: 18 },
     },
     lg: {
@@ -134,6 +137,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       lineHeight: "{typography.text-base--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      columnGap: 20,
       indicator: { trackHeight: 12, thumbSize: 22 },
     },
     xl: {
@@ -144,6 +148,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       lineHeight: "{typography.text-lg--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      columnGap: 20,
       indicator: { trackHeight: 16, thumbSize: 26 },
     },
   },

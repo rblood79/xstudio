@@ -766,6 +766,17 @@ export interface SizeSpec {
   /** 간격 (optional) */
   gap?: number;
 
+  /**
+   * column-gap (optional, px) — ADR-088.
+   *
+   * `gap` 이 shorthand (row-gap + column-gap 동시) 를 설정하므로, row-gap 과 column-gap 이
+   * 다른 값을 가져야 하는 경우 `columnGap` 으로 column 축을 override. CSSGenerator 가
+   * `gap` emit 뒤에 `column-gap: Xpx` 를 추가 emit 하여 cascade 로 column 축만 덮어쓴다.
+   *
+   * 소비처: Slider (row-gap 4 / column-gap 16~20 분리).
+   */
+  columnGap?: number;
+
   /** CSS line-height + Skia strutStyle (optional) — TokenRef 또는 resolved px number */
   lineHeight?: TokenRef | number;
 
