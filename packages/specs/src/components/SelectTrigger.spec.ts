@@ -25,12 +25,14 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
   element: "button",
   archetype: "button",
 
-  // ADR-083 Phase 8: button archetype base 의 layout primitive 4 필드 리프팅.
-  //   implicitStyles.ts:1256 selecttrigger 분기가 `display:"flex"` 직접 할당으로
-  //   parentStyle override → Skia 에서는 inline-flex 미반영 (기존 동작 유지,
-  //   후속 R8 분기 해체 ADR 에서 정리). CSS / Style Panel 에는 정상 반영.
+  // ADR-083 Phase 8 + ADR-084 Phase A3: button archetype base layout primitive SSOT.
+  //   "inline-flex" → "flex" 정정 (Taffy 는 inline-flex 미이해, fit-content + flex 로 시각
+  //   equivalent). flexDirection: "row" 명시 추가.
+  //   implicitStyles.ts:1256 SelectTrigger 분기의 display/flexDirection/alignItems 직접
+  //   할당이 ADR-084 로 해체됨 → Spec 이 3경로(Skia/CSS/Style Panel) 단일 소스.
   containerStyles: {
-    display: "inline-flex",
+    display: "flex",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     width: "fit-content",

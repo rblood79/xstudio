@@ -975,12 +975,13 @@ export function applyImplicitStyles(
       };
     });
 
+    // ADR-084 Phase A4: display/flexDirection/alignItems/flexWrap 은 Breadcrumbs.spec.ts
+    //   containerStyles 에서 resolveContainerStylesFallback 경유로 parentStyle 에 선주입.
+    //   본 분기는 size-indexed height/minHeight + gap:0 만 처리.
+    //   line 937-976 child 주입(itemWidth measureTextWidth + size-indexed height)은
+    //   scope 외 — text measure hook + spec.sizes 확장 후속 ADR 에서 이관.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      flexWrap: parentStyle.flexWrap ?? "nowrap",
       height: breadcrumbsHeight,
       minHeight: breadcrumbsHeight,
       gap: 0,
@@ -1255,6 +1256,9 @@ export function applyImplicitStyles(
   }
 
   // ── SelectTrigger ──────────────────────────────────────────────────
+  // ADR-084 Phase A3: display/flexDirection/alignItems 는 SelectTrigger.spec.ts
+  //   containerStyles 에서 resolveContainerStylesFallback 경유로 parentStyle 에 선주입.
+  //   본 분기는 size-indexed gap/borderWidth/height 만 처리.
   if (containerTag === "selecttrigger") {
     const sizeName = getDelegatedSize(containerEl, elementById);
     effectiveParent = withParentStyle(
@@ -1262,9 +1266,6 @@ export function applyImplicitStyles(
       withSpecPadding(
         {
           ...parentStyle,
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
           gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
           // CSS .react-aria-Button: border: 1px solid
           borderWidth: parentStyle.borderWidth ?? 1,

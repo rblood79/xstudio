@@ -738,7 +738,9 @@ exports[`CSSGenerator snapshot baseline > Breadcrumbs 1`] = `
     box-sizing: border-box;
 
   /* Container styles (ADR-071 + ADR-083 Phase 1) */
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
 
   /* Default variant */

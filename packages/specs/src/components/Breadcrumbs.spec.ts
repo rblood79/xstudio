@@ -44,9 +44,14 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   description: "React Spectrum S2 기반 브레드크럼 네비게이션 컴포넌트",
   archetype: "simple",
 
-  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  // ADR-083 Phase 11 + ADR-084 Phase A4: simple archetype base layout primitive SSOT.
+  //   "inline-flex" → "flex" 정정 (Taffy 미지원). flexDirection/flexWrap 명시 추가.
+  //   implicitStyles.ts:976 Breadcrumbs parent 분기의 display/flexDirection/alignItems/
+  //   flexWrap 직접 할당이 ADR-084 로 해체됨 (child 주입 line 955-971 은 scope 외).
   containerStyles: {
-    display: "inline-flex",
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
     alignItems: "center",
   },
   element: "nav",
