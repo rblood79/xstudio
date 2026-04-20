@@ -51,6 +51,22 @@ function useFlexDirection(id: string | null): string {
 }
 
 /**
+ * ADR-082 P4 (ADR-079 P2 완결): alignItems/justifyContent 도 Spec fallback 소비.
+ * 기존 `useFlexAlignmentKeys` 가 inline only 로 9-grid 하이라이트가 Spec 기본값 반영 불가.
+ */
+function useAlignItems(id: string | null): string {
+  const inline = useStyleProp(id, "alignItems");
+  const specDefault = useContainerStyleDefault(id, "alignItems");
+  return inline || specDefault || "";
+}
+
+function useJustifyContent(id: string | null): string {
+  const inline = useStyleProp(id, "justifyContent");
+  const specDefault = useContainerStyleDefault(id, "justifyContent");
+  return inline || specDefault || "";
+}
+
+/**
  * Flex Direction 토글 키 — display=flex 이면 column|row, 아니면 block
  */
 export function useFlexDirectionKeys(id: string | null): string[] {
@@ -84,8 +100,8 @@ const H_MAP: Record<string, string> = {
 export function useFlexAlignmentKeys(id: string | null): string[] {
   const display = useDisplay(id);
   const flexDirection = useFlexDirection(id);
-  const alignItems = useStyleProp(id, "alignItems");
-  const justifyContent = useStyleProp(id, "justifyContent");
+  const alignItems = useAlignItems(id);
+  const justifyContent = useJustifyContent(id);
   return useMemo(() => {
     if (display !== "flex") return [];
     let vertical: string;
@@ -112,7 +128,7 @@ const SPACING_VALUES = new Set([
  * Justify Content Spacing 토글 키
  */
 export function useJustifyContentSpacingKeys(id: string | null): string[] {
-  const justifyContent = useStyleProp(id, "justifyContent");
+  const justifyContent = useJustifyContent(id);
   return useMemo(() => {
     if (SPACING_VALUES.has(justifyContent)) return [justifyContent];
     return [];

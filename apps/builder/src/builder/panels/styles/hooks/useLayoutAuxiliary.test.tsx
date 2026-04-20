@@ -1,6 +1,23 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
+
+// ADR-082 P4: TAG_SPEC_MAP 을 mock 하여 Spec fallback 경로 검증.
+//   실제 TAG_SPEC_MAP 등록 spec 중 containerStyles 에 alignItems/justifyContent 를
+//   공급하는 케이스가 현재 없음 (ListBoxItem 은 미등록). test 전용 spec 으로 분기 검증.
+vi.mock("../../../workspace/canvas/sprites/tagSpecMap", () => ({
+  TAG_SPEC_MAP: {
+    TestAlignSpec: {
+      containerStyles: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "center",
+      },
+    },
+  },
+}));
+
 import {
   useFlexDirectionKeys,
   useFlexAlignmentKeys,
@@ -9,9 +26,9 @@ import {
 } from "./useLayoutAuxiliary";
 import { useStore } from "../../../stores";
 
-function setElement(id: string, style: Record<string, unknown>) {
+function setElement(id: string, style: Record<string, unknown>, tag = "Div") {
   useStore.setState({
-    elementsMap: new Map([[id, { id, tag: "Div", props: { style } } as any]]),
+    elementsMap: new Map([[id, { id, tag, props: { style } } as any]]),
   });
 }
 
@@ -92,5 +109,48 @@ describe("useFlexWrapKeys", () => {
     setElement("e", { flexWrap: "wrap" });
     const { result } = renderHook(() => useFlexWrapKeys("e"));
     expect(result.current).toEqual(["wrap"]);
+  });
+});
+
+describe("useFlexAlignmentKeys — ADR-082 P4 Spec fallback (ADR-079 P2 완결)", () => {
+  it("alignItems/justifyContent inline 없으면 Spec containerStyles fallback 공급", () => {
+    // TestAlignSpec.containerStyles = {
+    //   display: "flex", flexDirection: "row",
+    //   alignItems: "flex-start", justifyContent: "center"
+    // }
+    // → row 축: V=alignItems=flex-start=Top / H=justifyContent=center=center → "centerTop"
+    setElement("e", {}, "TestAlignSpec");
+    const { result } = renderHook(() => useFlexAlignmentKeys("e"));
+    expect(result.current).toEqual(["centerTop"]);
+  });
+
+  it("inline 값이 Spec fallback 보다 우선 (회귀 0)", () => {
+    // inline alignItems=center 가 Spec 의 flex-start 를 override
+    setElement(
+      "e",
+      { alignItems: "center", justifyContent: "flex-end" },
+      "TestAlignSpec",
+    );
+    const { result } = renderHook(() => useFlexAlignmentKeys("e"));
+    // row 축: V=center=Center / H=flex-end=right → "rightCenter"
+    expect(result.current).toEqual(["rightCenter"]);
+  });
+
+  it("부분 override — alignItems 만 inline, justifyContent 는 Spec fallback", () => {
+    setElement("e", { alignItems: "flex-end" }, "TestAlignSpec");
+    const { result } = renderHook(() => useFlexAlignmentKeys("e"));
+    // row 축: V=flex-end=Bottom / H=center(Spec)=center → "centerBottom"
+    expect(result.current).toEqual(["centerBottom"]);
+  });
+
+  it("Spec 미등록 tag 는 기존 동작 유지 (inline only, 회귀 0)", () => {
+    setElement(
+      "e",
+      { display: "flex", flexDirection: "row", alignItems: "center" },
+      "Div",
+    );
+    const { result } = renderHook(() => useFlexAlignmentKeys("e"));
+    // Div 는 mock 에 없음 → spec fallback "" → inline 만 사용
+    expect(result.current).toEqual(["Center"]);
   });
 });
