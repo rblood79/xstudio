@@ -322,6 +322,12 @@ export type { TagProps as TagSpecProps } from "./components/Tag.spec";
 export { GridListSpec } from "./components/GridList.spec";
 export type { GridListProps } from "./components/GridList.spec";
 
+export {
+  GridListItemSpec,
+  resolveGridListItemMetric,
+} from "./components/GridListItem.spec";
+export type { GridListItemProps } from "./components/GridListItem.spec";
+
 export { DisclosureSpec } from "./components/Disclosure.spec";
 export type { DisclosureProps } from "./components/Disclosure.spec";
 
