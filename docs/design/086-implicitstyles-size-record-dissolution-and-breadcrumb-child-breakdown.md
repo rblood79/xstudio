@@ -20,36 +20,42 @@
 
 ## 파일 변경표
 
-| 파일                                                                         | Phase | 변경                                                                                                                                                                            |
-| ---------------------------------------------------------------------------- | :---: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/specs/src/components/SelectTrigger.spec.ts`                        |  P1   | `sizes.xs/sm/md/lg/xl.height` 확인 및 누락 보강 (현재 SPEC_TRIGGER_HEIGHT 기준)                                                                                                 |
-| `packages/specs/src/components/Calendar.spec.ts`                             |  P1   | `sizes.sm/md/lg.paddingX/paddingY/gap` 확인 (현재 calPadGap 기준 4/8/12, 4/6/8)                                                                                                 |
-| `packages/specs/src/components/ProgressBar.spec.ts` / `Meter.spec.ts`        |  P1   | `sizes.sm/md.fontSize` resolved 값 감사 (PROGRESSBAR_FONT_SIZE 12/14) — Revision 1 재편입                                                                                       |
-| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` |  P2   | `SPEC_INPUT_FONT_SIZE` / `SPEC_TRIGGER_HEIGHT` / `PROGRESSBAR_FONT_SIZE` / `calPadGap` **4 상수** 제거 + 소비 분기 `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 사용 (Revision 1) |
-| `packages/specs/src/types/spec.types.ts`                                     |  P3   | `ComponentSpec.render.shapes` signature 에 optional `ctx?: SpecRenderContext` 추가. `SpecRenderContext = { measureText?: (...) => number }`                                     |
-| `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`          |  P3   | `measureTextWidth` 을 `SpecRenderContext.measureText` 로 wrap 가능한 구조 확인                                                                                                  |
-| `packages/specs/src/components/Breadcrumb.spec.ts`                           |  P4   | `render.shapes` 에서 `ctx.measureText` 호출로 itemWidth 계산. parent props 소비 (`label`, `size`, `isLast`)                                                                     |
-| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` |  P5   | `:955-971` Breadcrumb child 주입 삭제 (width/minWidth/height/minHeight/display/flexDirection/alignItems/flexShrink/flexGrow)                                                    |
+| 파일                                                                         | Phase | 변경                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------- | :---: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/specs/src/components/SelectTrigger.spec.ts`                        |  P1   | `sizes.xs/sm/md/lg/xl.height` 확인 및 누락 보강 (현재 SPEC_TRIGGER_HEIGHT 기준)                                                                                                                                                                                                                                      |
+| `packages/specs/src/components/Calendar.spec.ts`                             |  P1   | `sizes.sm/md/lg.paddingX/paddingY/gap` 확인 (현재 calPadGap 기준 4/8/12, 4/6/8)                                                                                                                                                                                                                                      |
+| `packages/specs/src/components/ProgressBar.spec.ts` / `Meter.spec.ts`        |  P1   | `sizes.sm/md/lg/xl.fontSize` + `lineHeight` resolved 값 감사 (PROGRESSBAR_FONT_SIZE 4 size 12/14/16/18 + SIZE_LINE_HEIGHT 16/20/24/28) — Revision 2 **4 size 정정**                                                                                                                                                  |
+| `packages/specs/src/components/DateField.spec.ts` / `TimeField.spec.ts`      |  P1   | `sizes.sm/md/lg.height` 감사 (Revision 2 신규 편입 — `SPEC_TRIGGER_HEIGHT` 소비처)                                                                                                                                                                                                                                   |
+| `packages/specs/src/components/SearchField.spec.ts`                          |  P1   | `sizes.sm/md/lg.height` + `fontSize` resolved 값 감사 (Revision 2 신규 편입 — `SPEC_TRIGGER_HEIGHT` + `SPEC_INPUT_FONT_SIZE` 동시 소비)                                                                                                                                                                              |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` |  P2   | `SPEC_INPUT_FONT_SIZE` / `SPEC_TRIGGER_HEIGHT` / `PROGRESSBAR_FONT_SIZE` / `SIZE_LINE_HEIGHT` / `calPadGap` **5 상수** 제거 + 7 소비처 분기 (Calendar/SelectTrigger/ComboBoxWrapper/ProgressBar-Meter/DateField/TimeField/SearchFieldWrapper) 모두 `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 사용 (Revision 2 확장) |
+| `packages/specs/src/types/spec.types.ts`                                     |  P3   | `ComponentSpec.render.shapes` signature 에 optional `ctx?: SpecRenderContext` 추가. `SpecRenderContext = { measureText?: (...) => number }`                                                                                                                                                                          |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`          |  P3   | `measureTextWidth` 을 `SpecRenderContext.measureText` 로 wrap 가능한 구조 확인                                                                                                                                                                                                                                       |
+| `packages/specs/src/components/Breadcrumb.spec.ts`                           |  P4   | `render.shapes` 에서 `ctx.measureText` 호출로 itemWidth 계산. parent props 소비 (`label`, `size`, `isLast`)                                                                                                                                                                                                          |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` |  P5   | `:955-971` Breadcrumb child 주입 삭제 (width/minWidth/height/minHeight/display/flexDirection/alignItems/flexShrink/flexGrow)                                                                                                                                                                                         |
 
 ## 체크리스트
 
-### Phase 1 — spec.sizes 감사 및 보강
+### Phase 1 — spec.sizes 감사 및 보강 (Revision 2 확장)
 
 - [ ] SelectTrigger.sizes.xs/sm/md/lg/xl.height = SPEC_TRIGGER_HEIGHT 와 동일 값 확인
 - [ ] Calendar.sizes.sm/md/lg.paddingX/paddingY/gap = calPadGap 와 동일 값 확인
 - [ ] ComboBoxWrapper/기타 SPEC_INPUT_FONT_SIZE 소비처 spec.sizes.fontSize TokenRef resolved 값 일치 확인
-- [ ] **ProgressBar.sizes.sm/md.fontSize resolved = PROGRESSBAR_FONT_SIZE (sm:12 / md:14) 일치 확인** (Revision 1)
+- [ ] **ProgressBar/Meter.sizes.sm/md/lg/xl.fontSize resolved = PROGRESSBAR_FONT_SIZE 4 size (12/14/16/18) 일치 확인** (Revision 2 정정 — 이전 2 size 주장 오류)
+- [ ] **ProgressBar/Meter.sizes.sm/md/lg/xl.lineHeight = SIZE_LINE_HEIGHT (16/20/24/28) 일치 확인** (Revision 2 신규)
+- [ ] **DateField/TimeField.sizes.sm/md/lg.height = SPEC_TRIGGER_HEIGHT 와 동일 값 확인** (Revision 2 신규 scope — `:1448` 직접 소비)
+- [ ] **SearchField.sizes.sm/md/lg.height + fontSize = SPEC_TRIGGER_HEIGHT + SPEC_INPUT_FONT_SIZE 일치 확인** (Revision 2 신규 scope — `:1512` + `:1538` 동시 소비)
 - [ ] 누락 발견 시 spec.sizes 에 추가 (type 변경 없음)
 
-### Phase 2 — Record 해체 (G2 spec.sizes pixel-perfect)
+### Phase 2 — Record 해체 (G2 spec.sizes pixel-perfect, Revision 2 확장)
 
-- [ ] `SPEC_INPUT_FONT_SIZE` 소비처 → `spec.sizes[size].fontSize` resolveSpecFontSize 경유 lookup
-- [ ] `SPEC_TRIGGER_HEIGHT` 소비처 (`:1273-1275` SelectTrigger height fallback) → `SelectTriggerSpec.sizes[sizeName]?.height`
+- [ ] `SPEC_INPUT_FONT_SIZE` 소비처 (ComboBoxWrapper `:1333-` + **SearchFieldWrapper `:1538`**) → `spec.sizes[size].fontSize` resolveSpecFontSize 경유 lookup
+- [ ] `SPEC_TRIGGER_HEIGHT` 소비처 (SelectTrigger `:1273-1275` + **DateField/TimeField `:1448`** + **SearchFieldWrapper `:1511`**) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.height`
 - [ ] `calPadGap` 소비처 (`:1859` Calendar) → `CalendarSpec.sizes[calSize]?.{ paddingX, paddingY, gap }`
-- [ ] **`PROGRESSBAR_FONT_SIZE` 소비처 (`:1602-1603` ProgressBar Label) → `ProgressBarSpec.sizes[sizeName]?.fontSize` resolve** (Revision 1 — ADR-085 scope 이관에서 본 ADR 재편입)
-- [ ] Record 상수 **4 개** 제거 (`:175-180`, `:184-189`, `:212-216`, `:1854-1858`)
+- [ ] **`PROGRESSBAR_FONT_SIZE` 소비처 (`:1569-1653` PROGRESSBAR_TAGS 분기 — ProgressBar / Meter / loadingbar / progress / gauge 5 태그) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.fontSize` resolve** (Revision 1 재편입 + Revision 2 4 size 정정)
+- [ ] **`SIZE_LINE_HEIGHT` 소비처 (PROGRESSBAR_TAGS + Slider 공통) → `spec.sizes[size].lineHeight`** (Revision 2 신규)
+- [ ] Record 상수 **5 개** 제거 (`:175-180` SPEC_INPUT_FONT_SIZE / `:184-189` SPEC_TRIGGER_HEIGHT / `:211-217` PROGRESSBAR_FONT_SIZE / `:220-225` SIZE_LINE_HEIGHT / `:1854-1858` calPadGap)
 - [ ] `pnpm -w type-check` + `builder` 217/217 + `specs` 166/166 PASS
-- [ ] **G2 Chrome MCP 실측 primary**: Calendar 3 size + SelectTrigger 5 size + ProgressBar 2 size pixel-perfect 확인 (snapshot 은 CSS output diff 보조)
+- [ ] **G2 Chrome MCP 실측 primary (7 소비처 전수)**: Calendar 3 size + SelectTrigger 5 size + ComboBoxWrapper 5 size + ProgressBar/Meter 4 size + DateField 3 size + TimeField 3 size + SearchFieldWrapper 3 size pixel-perfect 확인 (snapshot 은 CSS output diff 보조)
 
 ### Phase 3 — spec.render signature 확장
 

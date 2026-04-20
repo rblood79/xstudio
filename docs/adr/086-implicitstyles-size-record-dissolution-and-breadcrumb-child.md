@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) `PROGRESSBAR_FONT_SIZE` Record 를 ADR-085 scope 이관 표기 → **본 ADR Phase 1 scope 로 재편입** (size Record 해체 공통 주제). (2) Gate G2 양자택 기준 단일화 — "Chrome MCP 실측 primary, snapshot 보조". (3) `spec.types.ts` line 인용 `:712+` → `:739+` drift 정정.)
+Proposed — 2026-04-20 (**Revision 2** — Codex Round 3 HIGH 086-C1 반영: (a) `PROGRESSBAR_FONT_SIZE` 실제는 `sm/md/lg/xl` **4 size** (claude Rev 1 "2 size" 오류). (b) 소비처 inventory 확장 — `DateField/TimeField` (`:1445-1448`), `SearchFieldWrapper` (`:1497-1539`) 가 `SPEC_TRIGGER_HEIGHT` / `SPEC_INPUT_FONT_SIZE` 를 직접 소비. (c) G2/G4 검증 범위 확장 → ADR-086 ↔ ADR-087 경계 누수 차단. Revision 1 = claude self-review 반영: PROGRESSBAR_FONT_SIZE 재편입 + G2 단일화 + line drift 정정.)
 
 ## Context
 
@@ -16,13 +16,14 @@ Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) `PROG
 
 `implicitStyles.ts` 파일-스코프 + 분기 내 Record 상수가 `spec.sizes` SSOT 를 **우회**:
 
-| Record                                                                      | 위치         | 내용                       | SSOT 상응 필드                    |
-| --------------------------------------------------------------------------- | ------------ | -------------------------- | --------------------------------- |
-| `SPEC_INPUT_FONT_SIZE`                                                      | `:175-180`   | 5 size × fontSize          | `spec.sizes[size].fontSize`       |
-| `SPEC_TRIGGER_HEIGHT`                                                       | `:184-189`   | 5 size × height            | `spec.sizes[size].height`         |
-| `PROGRESSBAR_FONT_SIZE`                                                     | `:212-216`   | 2 size × fontSize          | `spec.sizes[size].fontSize`       |
-| `calPadGap`                                                                 | `:1854-1858` | 3 size × { pad, gap }      | `spec.sizes[size].paddingX/Y/gap` |
-| Breadcrumb `breadcrumbsHeight` via `BreadcrumbsSpec.sizes[rspSize]?.height` | `:920`       | spec 직접 lookup 중 (정상) | —                                 |
+| Record                                                                      | 위치         | 내용                                                | SSOT 상응 필드                    |
+| --------------------------------------------------------------------------- | ------------ | --------------------------------------------------- | --------------------------------- |
+| `SPEC_INPUT_FONT_SIZE`                                                      | `:175-180`   | 5 size × fontSize                                   | `spec.sizes[size].fontSize`       |
+| `SPEC_TRIGGER_HEIGHT`                                                       | `:184-189`   | 5 size × height                                     | `spec.sizes[size].height`         |
+| `PROGRESSBAR_FONT_SIZE`                                                     | `:211-217`   | **4 size** (sm/md/lg/xl) × fontSize                 | `spec.sizes[size].fontSize`       |
+| `SIZE_LINE_HEIGHT`                                                          | `:220-225`   | 4 size × lineHeight (ProgressBar/Meter/Slider 공통) | `spec.sizes[size].lineHeight`     |
+| `calPadGap`                                                                 | `:1854-1858` | 3 size × { pad, gap }                               | `spec.sizes[size].paddingX/Y/gap` |
+| Breadcrumb `breadcrumbsHeight` via `BreadcrumbsSpec.sizes[rspSize]?.height` | `:920`       | spec 직접 lookup 중 (정상)                          | —                                 |
 
 `spec.sizes` (`spec.types.ts:739+` `export interface SizeSpec`) 이 이미 `paddingX/paddingY/height/fontSize/borderRadius/iconSize/gap` 필드 보유 → **SSOT 존재하나 일부 분기가 소비 안 함** (Breadcrumbs 분기는 이미 소비).
 
@@ -38,8 +39,10 @@ Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) `PROG
 
 ### Hard Constraints
 
-1. `spec.sizes` 기존 필드 (paddingX/paddingY/gap/fontSize/height) 타입 변경 금지 — BC 유지
-2. Calendar 3 size / SelectTrigger 5 size / Breadcrumbs 3 size — 시각 pixel-perfect 동일 유지
+1. `spec.sizes` 기존 필드 (paddingX/paddingY/gap/fontSize/height/lineHeight) 타입 변경 금지 — BC 유지
+2. 시각 pixel-perfect 동일 유지 (Revision 2 확장):
+   - Calendar 3 size / SelectTrigger 5 size / Breadcrumbs 3 size
+   - **ProgressBar/Meter 4 size / DateField / TimeField / SearchFieldWrapper** (소비처 inventory 확장)
 3. Breadcrumb child width/height 계산은 label 길이 변이를 반영해야 함 (고정값 불가)
 4. spec.render signature 확장 시 optional param — 기존 62 spec render 함수 시그니처 변경 없음
 
@@ -48,16 +51,20 @@ Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) `PROG
 - Phase 1 (Record 해체) 와 Phase 2 (Breadcrumb child hook) 는 독립 세션으로 land 가능
 - measureText hook 재사용 여지: Tabs label 폭 / Select max option width 등 후속 consumer
 
-### 감사 결과
+### 감사 결과 (Revision 2 — Codex 086-C1 반영)
 
 `implicitStyles.ts` 분기 중 size-indexed 값을 직접 처리하는 부분:
 
 - Calendar (`:1859`) — `calPadGap` Record
 - SelectTrigger (`:1273-1275`) — `SPEC_TRIGGER_HEIGHT` fallback
 - ComboBoxWrapper (`:1333-`) — `SPEC_INPUT_FONT_SIZE` 소비
-- ProgressBar/Meter (`:1602-1603`) — `PROGRESSBAR_FONT_SIZE` 소비 — **본 ADR Phase 1 scope** (Revision 1). ADR-085 는 grid-template Schema 확장 + parent containerStyles 이관 + Skia flex emul 해체만 담당하며, size-indexed Record 해체는 본 ADR 의 공통 주제에 귀속.
+- ProgressBar/Meter (`:1569-1653`) — `PROGRESSBAR_FONT_SIZE` + `SIZE_LINE_HEIGHT` 소비 (`PROGRESSBAR_TAGS` Set: `progressbar`/`progress`/`loadingbar`/`meter`/`gauge`). **본 ADR Phase 1 scope** (Rev 1 재편입). ADR-085 는 grid-template Schema 확장 + parent containerStyles 이관 + Skia flex emul 해체만 담당하며, size-indexed Record 해체는 본 ADR 의 공통 주제에 귀속.
+- **DateField / TimeField** (`:1445-1448`) — `SPEC_TRIGGER_HEIGHT` 직접 소비 (DateInput height 주입). **Revision 2 신규 scope 편입**.
+- **SearchFieldWrapper** (`:1497-1539`) — `SPEC_TRIGGER_HEIGHT` (wrapper height) + `SPEC_INPUT_FONT_SIZE` (SearchInput fontSize) 동시 소비. **Revision 2 신규 scope 편입**.
 
-총 대상 = Calendar / SelectTrigger / ComboBoxWrapper / ProgressBar-Meter 분기 내 4 Record + Breadcrumb child 주입.
+총 대상 (Revision 2) = Calendar / SelectTrigger / ComboBoxWrapper / ProgressBar-Meter / DateField / TimeField / SearchFieldWrapper 분기 내 5 Record (SPEC_INPUT_FONT_SIZE / SPEC_TRIGGER_HEIGHT / PROGRESSBAR_FONT_SIZE / SIZE_LINE_HEIGHT / calPadGap) + Breadcrumb child 주입.
+
+**ADR-086 ↔ ADR-087 경계 정합**: Revision 2 inventory 가 ADR-087 SP3 (Field wrapper) 의 "input height 는 이미 ADR-086 에서 해체" 전제를 충족 — DateField/TimeField/SearchFieldWrapper 가 본 ADR 에서 처리되므로 SP3 는 layout-primitive (label positioning / flex-direction) 만 남김.
 
 ## Alternatives Considered
 
@@ -129,12 +136,12 @@ Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) `PROG
 
 ## Gates
 
-| Gate | 시점       | 통과 조건                                                                                                                                                                | 실패 시 대안                                             |
-| :--: | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-|  G1  | 매 Phase   | `pnpm -w type-check` 3/3                                                                                                                                                 | 직전 커밋 revert                                         |
-|  G2  | Phase 1 후 | Calendar 3 size / SelectTrigger 5 size / ProgressBar 2 size pixel-perfect 동일 — **Chrome MCP 실측 primary** (Skia runtime pixel 비교), snapshot 은 CSS output diff 보조 | spec.sizes 누락 필드 보강 후 재시도                      |
-|  G3  | Phase 2 후 | Breadcrumb label 길이 3 변이 (short/medium/long) × 3 size = 9 샘플 시각 정상                                                                                             | Phase 1 까지 land + Phase 2 는 별도 ADR (대안 B 로 분할) |
-|  G4  | 최종       | `builder` 217/217 + `specs` 166/166 회귀 0                                                                                                                               | 직전 Phase revert                                        |
+| Gate | 시점       | 통과 조건                                                                                                                                                                                                                                                                                                                   | 실패 시 대안                                             |
+| :--: | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+|  G1  | 매 Phase   | `pnpm -w type-check` 3/3                                                                                                                                                                                                                                                                                                    | 직전 커밋 revert                                         |
+|  G2  | Phase 1 후 | **7 소비처 pixel-perfect 동일** (Revision 2 확장) — Calendar 3 size / SelectTrigger 5 size / ComboBoxWrapper 5 size / ProgressBar/Meter **4 size (sm/md/lg/xl)** / DateField 3 size / TimeField 3 size / SearchFieldWrapper 3 size. **Chrome MCP 실측 primary** (Skia runtime pixel 비교), snapshot 은 CSS output diff 보조 | spec.sizes 누락 필드 보강 후 재시도                      |
+|  G3  | Phase 2 후 | Breadcrumb label 길이 3 변이 (short/medium/long) × 3 size = 9 샘플 시각 정상                                                                                                                                                                                                                                                | Phase 1 까지 land + Phase 2 는 별도 ADR (대안 B 로 분할) |
+|  G4  | 최종       | `builder` 217/217 + `specs` 166/166 회귀 0 + Revision 2 inventory (5 Record) 전수 제거 확인 (`SPEC_INPUT_FONT_SIZE` / `SPEC_TRIGGER_HEIGHT` / `PROGRESSBAR_FONT_SIZE` / `SIZE_LINE_HEIGHT` / `calPadGap` 모두 0 reference)                                                                                                  | 직전 Phase revert                                        |
 
 ## Consequences
 
