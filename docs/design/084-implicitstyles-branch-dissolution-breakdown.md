@@ -77,6 +77,8 @@ ADR-083 의 "spec SSOT" 원칙 유지 + archetype table 무변경. 각 spec.cont
 
 ### Phase A2 — ProgressBar / Meter (PROGRESSBAR_TAGS)
 
+> ⚠️ **Codex Revision 1 — HIGH 위험 발견**: `ProgressBar.css` 는 `grid-template-areas: "label value" "bar bar"` + `grid-template-columns: 1fr auto` + 자식 `grid-area: label/value/bar` 를 **적극 사용 중**. spec.containerStyles.display 를 `grid → flex` 로 변경 시 grid-template 무효 + 자식 grid-area 무효 → **Preview Label/Value/Bar 배치 구조적 깨짐**. ADR-084 ADR Gate G5: Phase A2 진입 전 Chrome MCP 실측으로 깨짐 여부 확증 필수. 깨지면 Phase A2 를 **ContainerStylesSchema `grid-template-areas/columns` 확장 후속 ADR 로 이관**하고 본 Phase A2 skip.
+
 **spec 변경** (`ProgressBar.spec.ts` + `Meter.spec.ts`):
 
 ```diff
@@ -199,6 +201,35 @@ export interface ContainerStylesSchema {
     });
   }
 ```
+
+**Breadcrumb child 주입 잔존 (Codex HIGH 반영, scope 외)**:
+
+`implicitStyles.ts:955-971` 에서 Breadcrumbs 분기는 child Breadcrumb 별로도 style 을 주입:
+
+```typescript
+// child Breadcrumb style 주입 (line 955-971, ADR-084 scope 외)
+style: {
+  ...cs,
+  display: cs.display ?? "flex",              // Phase 11 BreadcrumbSpec.display="inline-flex" 가 cs 에 주입되어 있으면 spec 값 승리
+  flexDirection: cs.flexDirection ?? "row",   // spec 미선언 → "row" 하드코딩 유지
+  alignItems: cs.alignItems ?? "center",      // Phase 11 BreadcrumbSpec.alignItems="center" 와 일치
+  flexShrink: cs.flexShrink ?? 0,             // spec 미선언 → 0 하드코딩
+  flexGrow: cs.flexGrow ?? 0,                 // spec 미선언 → 0 하드코딩
+  width: itemWidth,                           // 직접 할당 (measureTextWidth 계산)
+  minWidth: itemWidth,                        // 직접 할당
+  height: breadcrumbsHeight,                  // 직접 할당 (spec.size 테이블)
+  minHeight: breadcrumbsHeight,               // 직접 할당
+}
+```
+
+**해체 가능 vs 잔존 분류**:
+
+- **`display` / `alignItems`** — `??` 패턴 + Phase 11 BreadcrumbSpec 에 선언됨 → spec 값 승리 (ADR-083 Phase 0 공통 선주입 효과). **이미 부분 해체 상태**
+- **`flexDirection` / `flexShrink` / `flexGrow`** — `??` 패턴이지만 BreadcrumbSpec 에 미선언 → 하드코딩 값 사용. 부분 해체 가능 (BreadcrumbSpec 에 필드 추가 시) 하지만 ADR-084 scope 밖 (본 ADR 은 parent container 만)
+- **`width` / `minWidth`** — `measureTextWidth` 로 text label 기반 계산. spec 이관 = `spec.render.shapes` 에 text measurement hook 신설 필요 → 대안 C 경로 후속 ADR
+- **`height` / `minHeight`** — `breadcrumbsHeight` (BreadcrumbsSpec.sizes.\*.height). spec 이관 = size-indexed layout 필드 신설 필요 → 대안 C 경로 후속 ADR
+
+**결론**: ADR-084 실행 후 Breadcrumbs 는 "parent SSOT + child partial SSOT + child width/height branch-owned" 혼합 상태. 완전 SSOT 복귀는 대안 C 후속 ADR 필요.
 
 ## 검증 절차
 
