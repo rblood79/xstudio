@@ -14,6 +14,7 @@ export type {
   SizeSpec,
   IndicatorSpec,
   RenderSpec,
+  SpecRenderContext,
   CompositionSpec,
   DelegationSpec,
   PropertySchema,

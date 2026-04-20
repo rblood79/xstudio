@@ -867,6 +867,26 @@ export interface IndicatorSpec {
 }
 
 /**
+ * Spec Render Context (ADR-086)
+ *
+ * `ComponentSpec.render.shapes` 에 optional 로 주입되는 consumer-side capabilities.
+ *
+ * 목적: spec 이 layout 경로 의 유틸(measureTextWidth 등) 을 직접 import 하지 않고
+ * caller 가 주입하여, implicitStyles 에 흩어져 있던 size-indexed 계산을 spec 에 이관한다.
+ *
+ * - `measureText?`: Canvas 2D 기반 텍스트 폭 측정 (layout/Skia 공용). 미주입 시 spec 은
+ *   `measureSpecTextWidth` fallback 을 사용해야 BC 유지.
+ */
+export interface SpecRenderContext {
+  measureText?: (
+    text: string,
+    fontSize: number,
+    fontFamily: string,
+    fontWeight: number | string,
+  ) => number;
+}
+
+/**
  * 렌더링 스펙
  */
 export interface RenderSpec<Props> {
@@ -877,9 +897,16 @@ export interface RenderSpec<Props> {
    * @param props - 컴포넌트 props
    * @param size - 현재 size 스펙
    * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
+   * @param ctx - (ADR-086) optional consumer-side capabilities (measureText 등).
+   *   미주입 시 spec 이 fallback 을 사용해야 BC 유지.
    * @returns 렌더링할 도형 배열
    */
-  shapes: (props: Props, size: SizeSpec, state: ComponentState) => Shape[];
+  shapes: (
+    props: Props,
+    size: SizeSpec,
+    state: ComponentState,
+    ctx?: SpecRenderContext,
+  ) => Shape[];
 
   /**
    * React 특화 속성
