@@ -1268,10 +1268,12 @@ export function createDefaultCheckboxProps(): CheckboxElementProps {
     isSelected: false,
     isDisabled: false,
     isInvalid: false,
+    // ADR-083 Phase 3 (R5): alignItems:"center" 는 CheckboxSpec.containerStyles SSOT 로 이관.
+    //   display:"flex"/flexDirection:"row" 는 archetype base(`inline-flex`) 의 의도적 override
+    //   (Checkbox 내부 indicator+label 가로 배치) → factory 유지.
     style: {
       display: "flex",
       flexDirection: "row",
-      alignItems: "center",
     },
   };
 }
@@ -1283,10 +1285,10 @@ export function createDefaultRadioProps(): RadioElementProps {
     size: "md",
     isSelected: false,
     isDisabled: false,
+    // ADR-083 Phase 3 (R5): alignItems:"center" 는 RadioSpec.containerStyles SSOT 로 이관.
     style: {
       display: "flex",
       flexDirection: "row",
-      alignItems: "center",
     },
   };
 }
@@ -1495,10 +1497,10 @@ export function createDefaultSwitchProps(): SwitchElementProps {
     size: "md",
     isSelected: false,
     isDisabled: false,
+    // ADR-083 Phase 3 (R5): alignItems:"center" 는 SwitchSpec.containerStyles SSOT 로 이관.
     style: {
       display: "flex",
       flexDirection: "row",
-      alignItems: "center",
     },
   };
 }

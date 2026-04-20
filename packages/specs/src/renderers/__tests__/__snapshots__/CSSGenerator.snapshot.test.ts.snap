@@ -1396,6 +1396,10 @@ exports[`CSSGenerator snapshot baseline > Checkbox 1`] = `
     box-sizing: border-box;
     user-select: none;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
@@ -7670,6 +7674,10 @@ exports[`CSSGenerator snapshot baseline > Radio 1`] = `
     box-sizing: border-box;
     user-select: none;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
@@ -9906,6 +9914,10 @@ exports[`CSSGenerator snapshot baseline > Switch 1`] = `
     cursor: pointer;
     box-sizing: border-box;
     user-select: none;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: transparent;

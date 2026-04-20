@@ -48,6 +48,14 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   archetype: "toggle-indicator",
   element: "label",
 
+  // ADR-083 Phase 3: toggle-indicator archetype base 의 layout primitive 2 필드 리프팅.
+  //   CSS / Skia layout (implicitStyles Phase 0) / Style Panel 3경로 동일 소스.
+  //   cursor / user-select 는 ContainerStylesSchema 미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -178,7 +186,11 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = SwitchSpec.variants![(props as { variant?: keyof typeof SwitchSpec.variants }).variant ?? SwitchSpec.defaultVariant!];
+      const variant =
+        SwitchSpec.variants![
+          (props as { variant?: keyof typeof SwitchSpec.variants }).variant ??
+            SwitchSpec.defaultVariant!
+        ];
       const variantName = props.variant ?? "default";
       const switchSize = {
         trackWidth: size.indicator?.trackWidth ?? 36,
