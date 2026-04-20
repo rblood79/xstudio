@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
 
 ## Context
 
@@ -149,11 +149,19 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 
 잔존 HIGH 위험 없음. 검증 기준:
 
-- type-check 3/3 PASS
-- specs 166/166 PASS
-- builder 217/217 PASS (특히 `resolveContainerStylesFallback.test.ts` ListBoxItem 케이스 PASS 전환)
-- `rg "childSpecs 전용 spec 은 lookup 미작동" apps/builder` = 0 (test 주석 제거)
-- Chrome MCP ListBox/GridList 시각 비교 (before/after) — **drift 감지 시 명시적 수용 + 스냅샷 갱신** (ListBoxItem alignItems/justifyContent 신규 주입으로 no-op 아님, Codex round 3 H2 반영)
+- type-check 3/3 PASS ✅ (2026-04-21 확인)
+- specs 166/166 PASS ✅
+- builder 227/227 PASS ✅ (기존 217 + Phase 1 `gridlistitem` +1 + Phase 3 `tagSpecMap.test.ts` +9 = 227). `resolveContainerStylesFallback.test.ts` ListBoxItem 케이스 PASS 전환 완료 + GridListItem 신규 PASS.
+- `rg "childSpecs 전용 spec 은 lookup 미작동" apps/builder` = 0 ✅ (선언적 debt 주석 해소)
+- Chrome MCP 실측 결과: **현재 프로젝트 페이지에 ListBoxItem/GridListItem element 없음 (ADR-076 items SSOT 로 대체)** → 가시적 drift 0. 레거시 프로젝트에서 ListBoxItem 이 element 로 존재하는 경우 `alignItems:flex-start + justifyContent:center` 주입 시작 (spec 선언값 정합). 시각 변경은 spec SSOT 의 의도된 결과로 수용.
+
+## 구현 결과 (2026-04-21)
+
+- **Phase 1**: `apps/builder/src/builder/workspace/canvas/sprites/tagSpecMap.ts` `BASE_TAG_SPEC_MAP` + `expandChildSpecs()` 도입. `LOWERCASE_TAG_SPEC_MAP` 은 파생이므로 자동 전파. `resolveContainerStylesFallback.test.ts:92-124` ListBoxItem/GridListItem 양쪽 케이스 PASS 전환.
+- **Phase 2**: 현재 프로젝트 페이지 ListBox 1건 — ListBoxItem element 부재, items SSOT 경로 → 실측 시각 변동 없음. 레거시 element 환경의 변동은 spec 선언에 정합되는 의도된 변화로 수용 방침.
+- **Phase 3**: `apps/builder/src/builder/workspace/canvas/sprites/tagSpecMap.test.ts` 신규 — ListBoxItem/GridListItem `sizes.md.paddingX/containerStyles/getSpecForTag` 9 케이스 retroactive 검증.
+- **Phase 4**: `packages/specs/src/runtime/tagToElement.ts` 의 자체 `TAG_SPEC_MAP` 에 동일 `expandChildSpecs(BASE_TAG_SPEC_MAP)` 적용. 현 시점 childSpecs 는 ListBoxItem/GridListItem 2건 → 후속 ADR-092/093 가 CardHeader/TagList 등 등록 시 `hasSpec/getElementForTag` 자동 작동.
+- **Phase 5**: `App.tsx:494` TagList 수동 예외 제거 — **후속 ADR-093 scope 로 이관**. 본 ADR 은 registry 확장 인프라만 담당, 실제 제거는 TagList 가 TagGroup.childSpecs 에 등록된 후 가능.
 
 ## Consequences
 
