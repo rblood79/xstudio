@@ -893,6 +893,40 @@ export function calculateContentWidth(
     return cellSize * 7 + d.gap * 6;
   }
 
+  // 1.17. Breadcrumb (child) — ADR-086 P5: implicitStyles 의 style 주입 제거 후
+  //   각 Breadcrumb 의 intrinsic width 를 여기서 산출. 부모 Breadcrumbs 는 자식 isLast 맥락을
+  //   가지고 있으나 utils.ts 는 element 단위 호출 → isLast 미지. 보수적으로 "항상 separator
+  //   포함" 최대 폭 산출 (last item 은 표시되지 않으므로 trailing whitespace 가 약간 남음).
+  if (tag === "breadcrumb") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const parentSize = String(props?.size ?? "M");
+    const rspSize = normalizeBreadcrumbRspSizeKey(parentSize);
+    const label = String(props?.children ?? props?.label ?? props?.title ?? "");
+    if (!label) return 0;
+    const specStyle = extractSpecTextStyle("breadcrumb", {
+      size: rspSize,
+    });
+    const fontSize = specStyle?.fontSize ?? 16;
+    const fontWeight = specStyle?.fontWeight ?? 400;
+    const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
+    // isLast 맥락이 없으므로 non-last 로 가정 (보수적 최대 폭).
+    //   실제 last 인 경우 separator 만큼 trailing whitespace 발생 — 시각상 무해.
+    const separator = String(props?._separator ?? "›");
+    const separatorPadding = breadcrumbSeparatorAfterPaddingXPx(rspSize);
+    const isLast = Boolean(props?._isLast);
+    const textW = measureTextWidth(
+      label,
+      fontSize,
+      ffamily,
+      isLast ? 600 : fontWeight,
+    );
+    const sepExtra = isLast
+      ? 0
+      : separatorPadding * 2 +
+        measureTextWidth(separator, fontSize, ffamily, 400);
+    return Math.ceil(textW + sepExtra);
+  }
+
   // 1.2. Breadcrumbs: ToggleButtonGroup과 동일 패턴 — 자식 Breadcrumb 텍스트 실측 합산
   // fullTreeLayout.ts에서 rawChildren을 enrichChildren으로 전달하여 자식 기반 계산 가능
   if (tag === "breadcrumbs") {
@@ -2297,6 +2331,14 @@ export function calculateContentHeight(
     return BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
   }
 
+  // 4.2b. Breadcrumb (child) — ADR-086 P5: implicitStyles style 주입 제거 후
+  //   child height 를 부모 Breadcrumbs spec.sizes.height 로 산출 (동일 값).
+  if (tag === "breadcrumb") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const rspSize = normalizeBreadcrumbRspSizeKey(String(props?.size ?? "M"));
+    return BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
+  }
+
   // 4.5. 컨테이너 컴포넌트: childElements 기반 높이 계산 (lineHeight보다 먼저 처리)
   // CheckboxGroup, RadioGroup 등 자식 요소를 포함하는 컨테이너의 intrinsic height 산출
   // ⚠️ lineHeight 체크보다 먼저 와야 함: 컨테이너의 높이는 자식 기반으로 산출해야 함
@@ -2843,6 +2885,10 @@ export const INLINE_BLOCK_TAGS = new Set([
   "link",
   "linkbutton",
   "breadcrumbs",
+  // ADR-086 P5: Breadcrumb child — implicitStyles 의 width/height 주입이 제거되므로
+  //   enrichWithIntrinsicSize 가 calculateContentWidth/Height 의 breadcrumb 분기로
+  //   intrinsic 치수를 산출해야 Taffy 가 배치할 수 있다.
+  "breadcrumb",
   "icon",
   "menu",
   "tab",
@@ -2878,6 +2924,9 @@ const IMAGE_INTRINSIC_TAGS = new Set(["image", "avatar", "logo", "thumbnail"]);
 const SPEC_SHAPES_INPUT_TAGS = new Set([
   "dropdown",
   "breadcrumbs",
+  // ADR-086 P5: Breadcrumb child — spec.render shapes 로 label/separator 렌더,
+  //   childElements 없이도 height 주입 필요 (breadcrumbsHeight).
+  "breadcrumb",
   // ProgressBar/Meter/ProgressCircle: spec shapes가 렌더링, height 미설정 시 0이 됨
   "progressbar",
   "progress",

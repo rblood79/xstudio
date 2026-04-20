@@ -18,12 +18,9 @@ import {
   TABS_BAR_HEIGHT,
   TABS_PANEL_PADDING,
 } from "./utils";
-import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   InlineAlertSpec,
   BreadcrumbsSpec,
-  fontFamily as specFontFamily,
-  breadcrumbSeparatorAfterPaddingXPx,
   normalizeBreadcrumbRspSizeKey,
   resolveToken,
   isValidTokenRef,
@@ -911,75 +908,22 @@ export function applyImplicitStyles(
   }
 
   // ── Breadcrumbs ────────────────────────────────────────────────────
-  // Taffy: flex-row + 자식 Breadcrumb마다 실측 폭(텍스트 + 비-마지막 구분자 영역) 주입
-  // Skia 텍스트/구분자는 Breadcrumb.spec (부모 Breadcrumbs spec shapes는 비어 있음)
+  // ADR-086 P5: Breadcrumb child 의 style 주입 (width/minWidth/height/minHeight/
+  //   display/flexDirection/alignItems/flexShrink/flexGrow) 제거.
+  //   - display/alignItems: Breadcrumb.spec containerStyles 가 inline-flex/center 담당
+  //   - width/height: enrichWithIntrinsicSize → calculateContentWidth/Height 의 "breadcrumb"
+  //     분기에서 label 실측 기반 intrinsic 산출 (utils.ts)
+  //   본 분기는 parent `height/minHeight/gap:0` + 자식 order_num 순 정렬만 담당.
   if (containerTag === "breadcrumbs") {
     const rspSize = normalizeBreadcrumbRspSizeKey(
       String(containerProps?.size ?? "M"),
     );
     const breadcrumbsHeight = BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
-    const separator = String((containerProps?.separator as string) ?? "›");
-    const separatorPadding = breadcrumbSeparatorAfterPaddingXPx(rspSize);
 
-    const specStyle = extractSpecTextStyle("breadcrumbs", {
-      size: rspSize,
-    });
-    const fontSize = specStyle?.fontSize ?? 16;
-    const fontWeight = specStyle?.fontWeight ?? 400;
-    const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
-
-    const sorted = [...children].sort(
+    filteredChildren = [...children].sort(
       (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
     );
-    const crumbElements = sorted.filter((c) => c.tag === "Breadcrumb");
-    let crumbIndex = 0;
 
-    filteredChildren = sorted.map((child) => {
-      if (child.tag !== "Breadcrumb") {
-        return child;
-      }
-      const isLast = crumbIndex === crumbElements.length - 1;
-      crumbIndex += 1;
-      const childProps = child.props as Record<string, unknown> | undefined;
-      const label = String(
-        childProps?.children ?? childProps?.label ?? childProps?.title ?? "",
-      );
-      const crumbFontWeight = isLast ? 600 : fontWeight;
-      const textW = label
-        ? measureTextWidth(label, fontSize, ffamily, crumbFontWeight)
-        : 0;
-      const sepExtra = isLast
-        ? 0
-        : separatorPadding * 2 +
-          measureTextWidth(separator, fontSize, ffamily, 400);
-      const itemWidth = Math.ceil(textW + sepExtra);
-
-      const cs = (child.props?.style ?? {}) as Record<string, unknown>;
-      return {
-        ...child,
-        props: {
-          ...child.props,
-          style: {
-            ...cs,
-            display: cs.display ?? "flex",
-            flexDirection: cs.flexDirection ?? "row",
-            alignItems: cs.alignItems ?? "center",
-            flexShrink: cs.flexShrink ?? 0,
-            flexGrow: cs.flexGrow ?? 0,
-            width: itemWidth,
-            minWidth: itemWidth,
-            height: breadcrumbsHeight,
-            minHeight: breadcrumbsHeight,
-          },
-        },
-      };
-    });
-
-    // ADR-084 Phase A4: display/flexDirection/alignItems/flexWrap 은 Breadcrumbs.spec.ts
-    //   containerStyles 에서 resolveContainerStylesFallback 경유로 parentStyle 에 선주입.
-    //   본 분기는 size-indexed height/minHeight + gap:0 만 처리.
-    //   line 937-976 child 주입(itemWidth measureTextWidth + size-indexed height)은
-    //   scope 외 — text measure hook + spec.sizes 확장 후속 ADR 에서 이관.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       height: breadcrumbsHeight,
