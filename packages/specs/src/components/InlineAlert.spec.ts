@@ -31,6 +31,16 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
   archetype: "alert",
   element: "div",
 
+  // ADR-083 Phase 1: alert archetype base 의 layout primitive 4 필드를 Spec SSOT 로 리프팅.
+  //   CSS / Skia layout (implicitStyles Phase 0 공통 선주입) / Style Panel 3경로 동일 소스.
+  //   box-sizing / font-family 는 ContainerStylesSchema 미지원 → archetype table 에 잔존.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    width: "100%",
+  },
+
   defaultVariant: "info",
   defaultSize: "md",
 
@@ -147,7 +157,11 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = InlineAlertSpec.variants![(props as { variant?: keyof typeof InlineAlertSpec.variants }).variant ?? InlineAlertSpec.defaultVariant!];
+      const variant =
+        InlineAlertSpec.variants![
+          (props as { variant?: keyof typeof InlineAlertSpec.variants })
+            .variant ?? InlineAlertSpec.defaultVariant!
+        ];
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const styleBr = props.style?.borderRadius;

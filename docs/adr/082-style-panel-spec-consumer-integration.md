@@ -253,6 +253,28 @@ consumer 확장 대신 Spec → Style Panel 미도달을 runtime 에서 console.
 - **Composite Spec 의 `composition.containerVariants` / `staticSelectors` 는 미지원** — `containerVariants` (예: label-position="side") 에 따른 값 분기는 base 값만 공급 + variant 분기는 향후 확장
 - **외부 상수 Spec 이관은 별도 과제** — SWITCH_SELECTED_TRACK_COLORS / SLIDER_FILL_COLORS 등은 본 ADR scope 외
 
+## Addendum A3 — 2026-04-20: Hard Constraint "Spec 내용 불변" 해제 (ADR-083 착수)
+
+ADR-082 본문은 Hard Constraint 로 "Spec 내용 변경 없음 — 109 Spec 파일은 변경하지 않는다. consumer 만 확장" (§Hard Constraints#1, §Decision 위험 수용 근거, §Risks 마이그레이션) 을 명시했다. 본 Addendum 은 이 제약을 **ADR-083 (Layout Primitive 리프팅) 착수 시점부터 해제**한다.
+
+### 해제 사유
+
+- **ADR-083 scope**: archetype base (CSSGenerator 단독 소유 12 entry) 의 **layout primitive 8 필드** (display/flexDirection/alignItems/justifyContent/width/maxHeight/overflow/outline) 를 Spec.containerStyles SSOT 로 리프팅. 리프팅된 field 만 Style Panel 4 section + Skia consumer (implicitStyles.ts Phase 0 공통 선주입) 에 symmetric 전파
+- **ADR-082 consumer 인프라 필수 의존**: Phase 0~11 리프팅된 spec 값이 Style Panel 에 표시되려면 ADR-082 의 `specPresetResolver` 3-tier fallback 이 선결 완성되어야 함
+- **역방향 호환**: ADR-082 Phase 1~5 는 그대로 유효 — consumer 경로는 spec 값이 있든 없든 동작. ADR-083 Phase 1+ 의 리프팅 결과가 자연스럽게 4 section 에 반영됨
+
+### 해제 범위
+
+- **허용**: ADR-083 scope 내 layout primitive 8 필드 Spec containerStyles 추가 (109 spec 중 리프팅 대상 63 spec)
+- **금지 유지**:
+  - 비-layout 속성 (box-sizing / cursor / font-family / position / grid-template-\*) — archetype table 잔존, 후속 ADR
+  - color 필드 (background/text/border) 임의 추가 — ADR-071 variants 블록 스킵 트리거. ADR-083 Phase 1 Generator 개선으로 "color 필드 있을 때만 variants skip" 분리 적용됨
+  - 109 spec 의 variants / sizes / render.shapes / states 등 기타 필드 변경 — scope 외
+
+### Addendum land 시점
+
+- **2026-04-20**: ADR-083 Phase 1 Pilot (alert archetype — InlineAlert + IllustratedMessage) 완료와 동반 커밋. InlineAlert.spec + IllustratedMessage.spec 에 `containerStyles: { display, flexDirection, alignItems, width }` 추가 + CSSGenerator "color-only variants skip" 분리 리팩토링 + InlineAlert factory `width:"100%"` 중복 제거 (R5) 동반 land
+
 ## References
 
 - ADR-036 Phase 3a: Composite Spec `composition.*` 메타데이터 (본 ADR 의 소비 대상)

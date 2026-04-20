@@ -176,13 +176,20 @@ export function generateCSS<Props>(
 
   // Variant 스타일 — 다음 경우 skip:
   // - Composite 컨테이너 (자식이 색상 관리)
-  // - containerStyles 있는 Spec (ADR-071, CSS popover container 독립 축 — Menu)
+  // - containerStyles 에 color 필드(background/text/border) 선언 (ADR-071 Menu 패턴 — 단일 variant 색상 SSOT)
   // - variants 없는 Spec (ADR-062 Field 계열)
   // - skipVariantCss:true (escape hatch, 현재 사용처 0)
+  // ADR-083 Phase 1: Layout primitive only containerStyles(display/flex/width 등)는
+  //   variants 색상을 여전히 emit — InlineAlert 5-variant 케이스 지원.
   const variantMode = spec.cssEmitMode ?? "direct";
+  const containerHasColors = !!(
+    spec.containerStyles?.background ||
+    spec.containerStyles?.text ||
+    spec.containerStyles?.border
+  );
   if (
     !spec.composition &&
-    !spec.containerStyles && // ← ADR-071 추가
+    !containerHasColors &&
     spec.variants != null &&
     !spec.skipVariantCss
   )
@@ -558,12 +565,20 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   const lines = [`  /* Base styles — archetype: ${archetype ?? "default"} */`];
   lines.push(...baseStyles);
 
-  // ADR-071 S3: containerStyles 있으면 defaultVariant 색상 주입 skip
+  // ADR-071 S3 + ADR-083 Phase 1: containerStyles 에 color 필드(background/text/border)
+  //   선언 시 defaultVariant 색상 주입 skip (ADR-071 Menu 패턴). Layout primitive only
+  //   containerStyles (display/flex/width 등) 는 defaultVariant 색상 emit 보장.
+  const baseContainerHasColors = !!(
+    spec.containerStyles?.background ||
+    spec.containerStyles?.text ||
+    spec.containerStyles?.border
+  );
   if (spec.containerStyles) {
     lines.push("");
-    lines.push("  /* Container styles (ADR-071) */");
+    lines.push("  /* Container styles (ADR-071 + ADR-083 Phase 1) */");
     lines.push(...emitContainerStyles(spec.containerStyles));
-  } else if (defaultVariant && !spec.composition) {
+  }
+  if (!baseContainerHasColors && defaultVariant && !spec.composition) {
     // default variant 색상 — Composite 컨테이너는 자식이 관리하므로 skip
     const mode = spec.cssEmitMode ?? "direct";
     lines.push("");

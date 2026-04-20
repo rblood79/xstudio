@@ -43,6 +43,16 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
   element: "div",
   archetype: "alert",
 
+  // ADR-083 Phase 1: alert archetype base 의 layout primitive 4 필드를 Spec SSOT 로 리프팅.
+  //   CSS / Skia layout (implicitStyles Phase 0 공통 선주입) / Style Panel 3경로 동일 소스.
+  //   box-sizing / font-family 는 ContainerStylesSchema 미지원 → archetype table 에 잔존.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    width: "100%",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -89,13 +99,20 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = IllustratedMessageSpec.variants![(props as { variant?: keyof typeof IllustratedMessageSpec.variants }).variant ?? IllustratedMessageSpec.defaultVariant!];
+      const variant =
+        IllustratedMessageSpec.variants![
+          (props as { variant?: keyof typeof IllustratedMessageSpec.variants })
+            .variant ?? IllustratedMessageSpec.defaultVariant!
+        ];
       const textColor = props.style?.color ?? variant.text;
       const sizeName = props.size ?? "md";
       const dims =
         ILLUSTRATION_DIMENSIONS[sizeName] ?? ILLUSTRATION_DIMENSIONS.md;
 
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        14,
+      );
 
       const headingFsRaw = size.headingFontSize;
       const headingFsResolved =
@@ -203,7 +220,8 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
               { value: "vertical", label: "Vertical" },
               { value: "horizontal", label: "Horizontal" },
             ],
-           defaultValue: "horizontal" },
+            defaultValue: "horizontal",
+          },
         ],
       },
     ],

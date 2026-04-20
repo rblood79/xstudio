@@ -1819,11 +1819,10 @@ export function createDefaultDisclosureGroupProps(): DisclosureGroupElementProps
 }
 
 export function createDefaultInlineAlertProps(): BaseElementProps {
-  return {
-    style: {
-      width: "100%",
-    },
-  };
+  // ADR-083 Phase 1 (R5): width:"100%" 는 InlineAlertSpec.containerStyles SSOT 로 이관.
+  //   Phase 0 공통 선주입 layer(implicitStyles.ts applyImplicitStyles 진입부)가
+  //   parentStyle 에 자동 주입하므로 factory inline 중복은 불필요.
+  return {};
 }
 
 export function createDefaultDescriptionProps(): BaseElementProps {
