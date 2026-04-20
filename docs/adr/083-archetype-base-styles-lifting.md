@@ -2,6 +2,25 @@
 
 ## Status
 
+Implemented — 2026-04-20 (Phase 0-11 전부 land, 11 commit `20914c93`→`9675a3e6`)
+
+**실행 요약** (총 63 spec 중 56 리프팅, 7 spec R8 후속 이관):
+
+- Phase 0 (infra) — Skia consumer 일반화 (LOWERCASE_TAG_SPEC_MAP + 10 필드 + 공통 선주입 layer + listbox 중복 호출 제거)
+- Phase 1 — alert 2 spec (InlineAlert + IllustratedMessage) + CSSGenerator color-only skip 분리 + ADR-082 Addendum A3
+- Phase 2 — input-base 2 spec (Input + TextArea)
+- Phase 3 — toggle-indicator 3 spec (Checkbox + Radio + Switch)
+- Phase 4 — calendar 2 spec (CalendarGrid + CalendarHeader; Calendar 제외 — implicitStyles 분기 충돌 R8)
+- Phase 5 — slider 3 spec (Slider + SliderTrack + SliderThumb)
+- Phase 6 — collection 4 spec (Autocomplete + Menu + TabPanel + TabPanels)
+- Phase 7 — text 4 spec (Text + Heading + Paragraph + Description)
+- Phase 8 — button 5 spec (Button + ToggleButton + Link + SelectTrigger + FileTrigger; SelectTrigger Skia override 수용 R8)
+- Phase 9 — overlay 0 spec (schema 미지원으로 전부 no-op)
+- Phase 10 — progress 5 spec (ProgressCircle + \*Track/\*Value 4종; ProgressBar/Meter 제외 — 분기 충돌 R8)
+- Phase 11 — simple 26 spec 일괄 리프팅 (sed batch; Breadcrumbs Skia override 수용 R8)
+
+**R8 후속 ADR 대상** (implicitStyles 하드코딩 분기 해체): Calendar / ProgressBar / Meter / SelectTrigger / Breadcrumbs + 전반 분기 정리.
+
 Proposed — 2026-04-20 (**Revision 5**: Codex Round 5 MED+LOW 반영 — 실제 entry 함수명 `applyImplicitStyles` 로 교체 (`getImplicitStyles` 오기) + breakdown revision 표기 Rev 4 동기화 보정)
 
 ## Context
