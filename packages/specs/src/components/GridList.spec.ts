@@ -13,6 +13,10 @@ import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Grid, Binary, Rows, SquareX, PointerOff, Square } from "lucide-react";
 import { FILTERING_SECTION } from "../utils/sharedSections";
+import {
+  GridListItemSpec,
+  resolveGridListItemMetric,
+} from "./GridListItem.spec";
 
 /**
  * GridList Item
@@ -55,6 +59,11 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   description: "카드형 선택 그리드/리스트 컴포넌트",
   element: "div",
   skipCSSGeneration: true,
+
+  // ADR-090 Phase 2: GridListItemSpec 관계 선언.
+  //   Generator 는 GridList.skipCSSGeneration=true 이므로 emit 안 하지만, Spec 계층 관계를
+  //   SSOT 로 선언해 향후 skipCSSGeneration 해체 시 자식 selector emit 자동 연동.
+  childSpecs: [GridListItemSpec],
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -201,7 +210,11 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = GridListSpec.variants![(props as { variant?: keyof typeof GridListSpec.variants }).variant ?? GridListSpec.defaultVariant!];
+      const variant =
+        GridListSpec.variants![
+          (props as { variant?: keyof typeof GridListSpec.variants }).variant ??
+            GridListSpec.defaultVariant!
+        ];
       const DEFAULT_ITEMS: GridListItem[] = [
         { id: "i1", label: "Item 1", description: "Description" },
         { id: "i2", label: "Item 2", description: "Description" },
@@ -220,11 +233,10 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textColor = props.style?.color ?? variant.text;
 
-      // 카드 사이즈 (SelectBoxItem 디자인 기반)
-      const cardPaddingX = fontSize > 14 ? 20 : fontSize > 12 ? 16 : 12;
-      const cardPaddingY = fontSize > 14 ? 16 : fontSize > 12 ? 12 : 10;
-      const cardBorderRadius = fontSize > 14 ? 12 : 8;
-      const descGap = fontSize > 14 ? 6 : 4;
+      // 카드 사이즈 — ADR-090 Phase 3: GridListItemSpec.sizes.md SSOT 에서 resolver 경유 소비.
+      //   fontSize-based 분기(>14/>12/else) 는 resolveGridListItemMetric 내부 캡슐화.
+      const { cardPaddingX, cardPaddingY, cardBorderRadius, descGap } =
+        resolveGridListItemMetric(fontSize);
 
       // 컨테이너 전체 너비
       const totalWidth =

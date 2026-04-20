@@ -21,6 +21,7 @@ import {
 import {
   InlineAlertSpec,
   BreadcrumbsSpec,
+  GridListItemSpec,
   normalizeBreadcrumbRspSizeKey,
   resolveToken,
   isValidTokenRef,
@@ -752,21 +753,20 @@ export function applyImplicitStyles(
   }
 
   // ── GridListItem ────────────────────────────────────────────────
-  // Composition 패턴: 자식 Text/Description Element를 column 방향으로 배치
-  // CSS 동기화: .react-aria-GridListItem { padding: var(--spacing-md) var(--spacing-lg), gap: var(--spacing-2xs), border(1px) }
-  // --spacing-md = 12px, --spacing-lg = 16px, --spacing-2xs = 2px
+  // ADR-090 Phase 4: display/flexDirection 은 GridListItem.spec.containerStyles 로 리프팅됨
+  //   (resolveContainerStylesFallback 경유 parentStyle 주입).
+  //   padding/gap/borderWidth 는 GridListItemSpec.sizes.md 에서 SSOT 참조 (Taffy shorthand 미지원).
   if (containerTag === "gridlistitem") {
+    const sz = GridListItemSpec.sizes.md;
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: "column",
       // CSS grid 1fr 트랙 내에서 축소되도록 minWidth: 0 (CSS minmax(0, 1fr) 동기화)
       minWidth: parentStyle.minWidth ?? 0,
-      gap: parentStyle.gap ?? 2,
-      paddingTop: parentStyle.paddingTop ?? 12,
-      paddingBottom: parentStyle.paddingBottom ?? 12,
-      paddingLeft: parentStyle.paddingLeft ?? 16,
-      paddingRight: parentStyle.paddingRight ?? 16,
+      gap: parentStyle.gap ?? (sz.gap as number),
+      paddingTop: parentStyle.paddingTop ?? (sz.paddingY as number),
+      paddingBottom: parentStyle.paddingBottom ?? (sz.paddingY as number),
+      paddingLeft: parentStyle.paddingLeft ?? (sz.paddingX as number),
+      paddingRight: parentStyle.paddingRight ?? (sz.paddingX as number),
       borderWidth: parentStyle.borderWidth ?? 1,
     });
     filteredChildren = injectCollectionItemFontStyles(filteredChildren);

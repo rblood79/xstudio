@@ -267,6 +267,13 @@ export type { TagProps as TagSpecProps } from "./Tag.spec";
 export { GridListSpec } from "./GridList.spec";
 export type { GridListProps } from "./GridList.spec";
 
+// GridListItem (ADR-090 — Spec metadata 전용, skipCSSGeneration: true)
+export {
+  GridListItemSpec,
+  resolveGridListItemMetric,
+} from "./GridListItem.spec";
+export type { GridListItemProps } from "./GridListItem.spec";
+
 // Disclosure
 export { DisclosureSpec } from "./Disclosure.spec";
 export type { DisclosureProps } from "./Disclosure.spec";
