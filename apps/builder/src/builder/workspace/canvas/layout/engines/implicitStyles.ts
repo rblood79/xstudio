@@ -25,7 +25,7 @@ import {
   resolveToken,
   isValidTokenRef,
 } from "@composition/specs";
-import type { ComponentSpec, TokenRef } from "@composition/specs";
+import type { ComponentSpec, SizeSpec, TokenRef } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { findAncestorByTag } from "../../skia/ancestorLookup";
 import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
@@ -98,6 +98,37 @@ const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<string, ComponentSpec<any>> = new Map(
   ]),
 );
 
+// ADR-086 P2: spec.sizes 기반 필드 직접 소비 헬퍼 (Record 전수 폐쇄용).
+//   `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 을 정규화 + default size fallback.
+function specSizeField<K extends keyof SizeSpec>(
+  tag: string,
+  sizeName: string,
+  field: K,
+): SizeSpec[K] | undefined {
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  if (!spec) return undefined;
+  const size = spec.sizes[sizeName] ?? spec.sizes[spec.defaultSize];
+  return size?.[field];
+}
+
+/** `spec.sizes[size].fontSize` TokenRef → px number resolve. 실패 시 undefined. */
+function specSizeFontSize(tag: string, sizeName: string): number | undefined {
+  const fs = specSizeField(tag, sizeName, "fontSize");
+  if (fs == null) return undefined;
+  if (typeof fs === "number") return fs;
+  const resolved = resolveToken(fs);
+  return typeof resolved === "number" ? resolved : undefined;
+}
+
+/** `spec.sizes[size].lineHeight` TokenRef → px number resolve. 실패 시 undefined. */
+function specSizeLineHeight(tag: string, sizeName: string): number | undefined {
+  const lh = specSizeField(tag, sizeName, "lineHeight");
+  if (lh == null) return undefined;
+  if (typeof lh === "number") return lh;
+  const resolved = resolveToken(lh);
+  return typeof resolved === "number" ? resolved : undefined;
+}
+
 // ADR-083 Phase 0: ContainerStylesSchema layout primitive 필드.
 //   ADR-080 기존 4 + ADR-083 Phase 0 신규 6 + ADR-084 flexWrap = 총 11종.
 //   display/flexDirection/flexWrap/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding.
@@ -159,32 +190,18 @@ const SPEC_PADDING: Record<string, { left: number; right: number; y: number }> =
     xl: { left: 24, right: 12, y: 12 },
   };
 
-/** SelectIcon / ComboBoxTrigger icon 크기 — SelectIconSpec.sizes.iconSize 동기 */
-const SPEC_ICON_SIZE: Record<string, number> = {
-  xs: 10,
-  sm: 14,
-  md: 18,
-  lg: 22,
-  xl: 28,
-};
-
-/** ComboBoxInput / SelectValue font size — NumberField.css --nf-input-font-size 동기 */
-const SPEC_INPUT_FONT_SIZE: Record<string, number> = {
-  xs: 10, // text-2xs
-  sm: 12, // text-xs
-  md: 14, // text-sm
-  lg: 16, // text-base
-  xl: 18, // text-lg
-};
-
-/** SelectTrigger / ComboBoxWrapper 높이 — SelectTriggerSpec.sizes.height 동기 */
-const SPEC_TRIGGER_HEIGHT: Record<string, number> = {
-  xs: 20,
-  sm: 22,
-  md: 30,
-  lg: 42,
-  xl: 54,
-};
+/**
+ * ADR-086 P2: size-indexed Record 8 종 폐쇄 (SPEC_ICON_SIZE/SPEC_INPUT_FONT_SIZE/
+ *   SPEC_TRIGGER_HEIGHT/PROGRESSBAR_BAR_HEIGHT/PROGRESSBAR_FONT_SIZE/SIZE_LINE_HEIGHT/
+ *   SLIDER_TRACK_LAYOUT_HEIGHT/SLIDER_FONT_SIZE). `specSizeField` / `specSizeFontSize` /
+ *   `specSizeLineHeight` 헬퍼 + `SliderSpec.sizes[s].indicator.thumbSize` 직접 lookup 으로 대체.
+ *
+ * 잔존 2 종 (semantic 불일치 로 후속 처리):
+ * - `SLIDER_COL_GAP` (column-gap) — Slider.sizes.gap 은 row-gap (offsetY = fontSize + gap)
+ *   으로 소비됨. `spec.sizes.columnGap?` 신설이 필요 → ADR-086 Addendum 후보.
+ * - `calPadGap` — Calendar 분기 내 지역 const. Calendar.sizes.paddingX/gap 로 직접 대체 가능하므로
+ *   P2 에서 제거.
+ */
 
 /** Checkbox/Radio indicator 크기 (spec shapes 렌더링, Taffy 트리 밖) */
 const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
@@ -196,30 +213,6 @@ const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
 /** ProgressBar/Meter — CSS: row-gap: var(--spacing-xs)=4px, column-gap: var(--spacing-md)=12px */
 const PROGRESSBAR_ROW_GAP = 4;
 const PROGRESSBAR_COL_GAP = 12;
-
-/** ProgressBar/Meter 사이즈별 barHeight (PROGRESSBAR_DIMENSIONS 동기) */
-const PROGRESSBAR_BAR_HEIGHT: Record<string, number> = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-};
-
-/** ProgressBar/Meter 사이즈별 fontSize (ProgressBarSpec.sizes.fontSize resolved) */
-const PROGRESSBAR_FONT_SIZE: Record<string, number> = {
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
-};
-
-/** 사이즈별 lineHeight (CSS --text-*--line-height 동기, ProgressBar/Meter/Slider 공통) */
-const SIZE_LINE_HEIGHT: Record<string, number> = {
-  sm: 16,
-  md: 20,
-  lg: 24,
-  xl: 28,
-};
 
 /** ProgressBar/Meter 태그 집합 */
 const PROGRESSBAR_TAGS = new Set([
@@ -235,29 +228,19 @@ const SLIDER_TAGS = new Set(["slider"]);
 /** DatePicker/DateRangePicker 내 Popover로 표시되는 자식 — Taffy 레이아웃 제외 */
 const POPOVER_CHILDREN_TAGS = new Set(["Calendar", "RangeCalendar"]);
 
-/** Slider — CSS: row-gap: var(--spacing-xs)=4px, column-gap: S2 S/M=16px, L=20px */
+/**
+ * Slider row-gap (CSS: var(--spacing-xs) = 4px). column-gap 은 semantic 충돌로 Record 잔존.
+ *
+ * SLIDER_COL_GAP: ADR-086 P2 scope 외 (후속 ADR 에서 `spec.sizes.columnGap?` 신설 후 해체).
+ * Slider.sizes.gap (= 4/4/4/4) 은 Slider.spec.render 내부 row-gap 으로 소비 → column-gap 용도로
+ * overwrite 불가.
+ */
 const SLIDER_ROW_GAP = 4;
 const SLIDER_COL_GAP: Record<string, number> = {
   sm: 16,
   md: 16,
   lg: 20,
   xl: 20,
-};
-
-/** Slider 사이즈별 레이아웃 높이 = thumbSize (시각적 trackHeight 4/8/12가 아님, thumb 수용 목적) */
-const SLIDER_TRACK_LAYOUT_HEIGHT: Record<string, number> = {
-  sm: 14,
-  md: 18,
-  lg: 22,
-  xl: 26,
-};
-
-/** Slider 사이즈별 fontSize (SliderSpec.sizes.fontSize resolved) */
-const SLIDER_FONT_SIZE: Record<string, number> = {
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
 };
 
 /** Synthetic Label을 생성하는 태그 */
@@ -1216,8 +1199,8 @@ export function applyImplicitStyles(
           // Spec height로 CSS와 정확히 일치 (Taffy auto 계산 시 ceil로 1px 오차 방지)
           height:
             parentStyle.height ??
-            SPEC_TRIGGER_HEIGHT[sizeName] ??
-            SPEC_TRIGGER_HEIGHT.md,
+            specSizeField("selecttrigger", sizeName, "height") ??
+            30,
         },
         sizeName,
       ),
@@ -1236,8 +1219,8 @@ export function applyImplicitStyles(
               minWidth: cs.minWidth ?? 0,
               fontSize:
                 cs.fontSize ??
-                SPEC_INPUT_FONT_SIZE[sizeName] ??
-                SPEC_INPUT_FONT_SIZE.md,
+                specSizeFontSize("selecttrigger", sizeName) ??
+                14,
               whiteSpace: cs.whiteSpace ?? "nowrap",
               overflow: cs.overflow ?? "hidden",
               textOverflow: cs.textOverflow ?? "ellipsis",
@@ -1254,7 +1237,8 @@ export function applyImplicitStyles(
         const iconName =
           (child.props as Record<string, unknown> | undefined)?.iconName ??
           selectProps?.iconName;
-        const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
+        const iconSz =
+          specSizeField("selecttrigger", sizeName, "iconSize") ?? 18;
         return {
           ...child,
           props: {
@@ -1290,8 +1274,8 @@ export function applyImplicitStyles(
           // Spec height로 CSS와 정확히 일치
           height:
             parentStyle.height ??
-            SPEC_TRIGGER_HEIGHT[sizeName] ??
-            SPEC_TRIGGER_HEIGHT.md,
+            specSizeField("comboboxwrapper", sizeName, "height") ??
+            30,
         },
         sizeName,
       ),
@@ -1317,8 +1301,8 @@ export function applyImplicitStyles(
               minWidth: cs.minWidth ?? 0,
               fontSize:
                 cs.fontSize ??
-                SPEC_INPUT_FONT_SIZE[sizeName] ??
-                SPEC_INPUT_FONT_SIZE.md,
+                specSizeFontSize("comboboxwrapper", sizeName) ??
+                14,
               whiteSpace: cs.whiteSpace ?? "nowrap",
               overflow: cs.overflow ?? "hidden",
               textOverflow: cs.textOverflow ?? "ellipsis",
@@ -1335,7 +1319,8 @@ export function applyImplicitStyles(
         const iconName =
           (child.props as Record<string, unknown> | undefined)?.iconName ??
           comboBoxProps?.iconName;
-        const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
+        const iconSz =
+          specSizeField("comboboxwrapper", sizeName, "iconSize") ?? 18;
         return {
           ...child,
           props: {
@@ -1389,7 +1374,7 @@ export function applyImplicitStyles(
   if (containerTag === "datefield" || containerTag === "timefield") {
     const hasLabel = !!containerProps?.label;
     const sizeName = (containerProps?.size as string) ?? "md";
-    const inputHeight = SPEC_TRIGGER_HEIGHT[sizeName] ?? SPEC_TRIGGER_HEIGHT.md;
+    const inputHeight = specSizeField(containerTag, sizeName, "height") ?? 30;
 
     filteredChildren = children.filter(
       (c) =>
@@ -1452,8 +1437,8 @@ export function applyImplicitStyles(
           borderWidth: parentStyle.borderWidth ?? 1,
           height:
             parentStyle.height ??
-            SPEC_TRIGGER_HEIGHT[sizeName] ??
-            SPEC_TRIGGER_HEIGHT.md,
+            specSizeField("searchfieldwrapper", sizeName, "height") ??
+            30,
         },
         sizeName,
       ),
@@ -1479,8 +1464,8 @@ export function applyImplicitStyles(
               minWidth: cs.minWidth ?? 0,
               fontSize:
                 cs.fontSize ??
-                SPEC_INPUT_FONT_SIZE[sizeName] ??
-                SPEC_INPUT_FONT_SIZE.md,
+                specSizeFontSize("searchfieldwrapper", sizeName) ??
+                14,
               whiteSpace: cs.whiteSpace ?? "nowrap",
               overflow: cs.overflow ?? "hidden",
               textOverflow: cs.textOverflow ?? "ellipsis",
@@ -1489,7 +1474,8 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "SearchIcon" || child.tag === "SearchClearButton") {
-        const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
+        const iconSz =
+          specSizeField("searchfieldwrapper", sizeName, "iconSize") ?? 18;
         return {
           ...child,
           props: {
@@ -1543,8 +1529,7 @@ export function applyImplicitStyles(
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (child.tag === "Label") {
-        const labelFontSize =
-          PROGRESSBAR_FONT_SIZE[sizeName] ?? PROGRESSBAR_FONT_SIZE.md;
+        const labelFontSize = specSizeFontSize(containerTag, sizeName) ?? 14;
         return {
           ...child,
           props: {
@@ -1562,8 +1547,8 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "ProgressBarTrack" || child.tag === "MeterTrack") {
-        const barHeight =
-          PROGRESSBAR_BAR_HEIGHT[sizeName] ?? PROGRESSBAR_BAR_HEIGHT.md;
+        const trackTag = child.tag.toLowerCase();
+        const barHeight = specSizeField(trackTag, sizeName, "height") ?? 8;
         return {
           ...child,
           props: {
@@ -1578,10 +1563,9 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "ProgressBarValue" || child.tag === "MeterValue") {
-        const valueFontSize =
-          PROGRESSBAR_FONT_SIZE[sizeName] ?? PROGRESSBAR_FONT_SIZE.md;
+        const valueFontSize = specSizeFontSize(containerTag, sizeName) ?? 14;
         const valueLineHeight =
-          SIZE_LINE_HEIGHT[sizeName] ?? SIZE_LINE_HEIGHT.md;
+          specSizeLineHeight(containerTag, sizeName) ?? 20;
         return {
           ...child,
           props: {
@@ -1648,7 +1632,7 @@ export function applyImplicitStyles(
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (child.tag === "Label") {
-        const labelFontSize = SLIDER_FONT_SIZE[sizeName] ?? SLIDER_FONT_SIZE.md;
+        const labelFontSize = specSizeFontSize("slider", sizeName) ?? 14;
         return {
           ...child,
           props: {
@@ -1666,8 +1650,10 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "SliderTrack") {
+        // ADR-086 P2: layout height = thumbSize (thumb 수용용, visual trackHeight 와 다름).
+        //   SliderSpec.sizes[size].indicator.thumbSize 가 SSOT (14/18/22/26).
         const trackHeight =
-          SLIDER_TRACK_LAYOUT_HEIGHT[sizeName] ?? SLIDER_TRACK_LAYOUT_HEIGHT.md;
+          specSizeField("slider", sizeName, "indicator")?.thumbSize ?? 18;
         return {
           ...child,
           props: {
@@ -1686,9 +1672,8 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "SliderOutput") {
-        const valueFontSize = SLIDER_FONT_SIZE[sizeName] ?? SLIDER_FONT_SIZE.md;
-        const valueLineHeight =
-          SIZE_LINE_HEIGHT[sizeName] ?? SIZE_LINE_HEIGHT.md;
+        const valueFontSize = specSizeFontSize("slider", sizeName) ?? 14;
+        const valueLineHeight = specSizeLineHeight("slider", sizeName) ?? 20;
         return {
           ...child,
           props: {
@@ -1799,12 +1784,10 @@ export function applyImplicitStyles(
   //   여기서는 size-indexed padding/gap 만 처리 (spec.sizes 모델 확장 후속 ADR 까지 유지).
   if (containerTag === "calendar" || containerTag === "rangecalendar") {
     const calSize = (containerEl.props?.size as string) || "md";
-    const calPadGap: Record<string, { pad: number; gap: number }> = {
-      sm: { pad: 4, gap: 4 },
-      md: { pad: 8, gap: 6 },
-      lg: { pad: 12, gap: 8 },
-    };
-    const { pad, gap: calGap } = calPadGap[calSize] ?? calPadGap.md;
+    // ADR-086 P2: calPadGap Record → CalendarSpec.sizes[size] 직접 소비.
+    //   rangecalendar 은 Calendar spec 재사용 (TAG_SPEC_MAP: RangeCalendar: CalendarSpec).
+    const pad = specSizeField("calendar", calSize, "paddingX") ?? 8;
+    const calGap = specSizeField("calendar", calSize, "gap") ?? 6;
     const ps = parentStyle;
     effectiveParent = {
       ...effectiveParent,
