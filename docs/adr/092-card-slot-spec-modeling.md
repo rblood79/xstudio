@@ -32,11 +32,13 @@ composition SSOT 체인 (ADR-036/063) 에서 Card 복합 컴포넌트의 **heade
 
 ### Hard Constraints
 
-1. **CardHeader/CardContent element 호환 유지** — 기존 프로젝트 저장 데이터에 CardHeader/CardContent 요소 포함 시 그대로 동작
-2. **`implicitStyles.ts` 3 분기 runtime 로직 2 종 보존**: (a) Card 분기 CardHeader/CardContent 자식 width:100% 주입, (b) CardHeader 분기 Heading flex:1 주입. 이는 **자식 Element 에 주입** 이라 containerStyles 로 커버 불가 — 분기 유지 또는 spec propagation 확장
-3. **본 ADR scope = spec 신설 + containerStyles 리프팅** 에 한정. 자식 element injection 은 별도 ADR (propagation 확장 필요)
-4. `pnpm type-check` 3/3 + specs 166/166 + builder 217/217 PASS
-5. `CompositionSpec.propagation.rules` 에 이미 있는 `childPath: ["CardHeader", "Heading"]` 전파 rule 은 보존
+1. **CardHeader/CardContent/CardFooter element 호환 유지** — 기존 프로젝트 저장 데이터에 3 slot 요소 포함 시 그대로 동작
+2. **Skia ↔ CSS 2-consumer 대칭 복구** (D3 symmetric) — 본 ADR 은 **[ADR-094](094-childspecs-registry-auto-registration.md) 에 의존**. ADR-094 의 childSpecs 자동 registry 등록 없이는 `childSpecs` 가 CSS 축만 공급 → Skia 축 미복구 → 대칭 실패 (Codex round 2 H2 지적)
+3. **factory inline default 제거** (Codex round 2 H1): `apps/builder/src/builder/factories/definitions/LayoutComponents.ts:155` Card 생성 시 심는 `display/gap/width/flex` inline style 을 제거. 그 값들은 Card/CardHeader/CardContent/CardFooter spec.containerStyles 로 이관. inline 이 남으면 spec 기본값을 덮어써 SSOT 복구 미달성
+4. **size propagation 추가**: `Card.spec.ts:119` propagation.rules 에 `{ parentProp: "size", childPath: "CardHeader", override: true }` / `CardContent` / `CardFooter` 3건 추가. 현재 title/description 만 전파, size 전파 없음 → CardHeader/CardContent/CardFooter 가 부모 size 기반 스타일 못 받음
+5. **`implicitStyles.ts` 자식 element runtime 주입 보존**: (a) Card 분기 CardHeader/CardContent 자식 width:100% 주입은 containerStyles.width="100%" 로 이관 가능 → **제거**. (b) CardHeader 분기 Heading flex:1 주입, (c) CardContent 분기 Description width:100% 주입은 **자식 Element 에 주입** 이라 spec 커버 불가 → **분기 유지** (별도 propagation 확장 ADR 대기)
+6. `pnpm type-check` 3/3 + specs 166/166 + builder 217/217 PASS
+7. `CompositionSpec.propagation.rules` 의 기존 `childPath: ["CardHeader", "Heading"]` / `["CardContent", "Description"]` 전파 rule 은 보존 (title/description)
 
 ### Soft Constraints
 
@@ -91,24 +93,34 @@ composition SSOT 체인 (ADR-036/063) 에서 Card 복합 컴포넌트의 **heade
 
 ### Phase 구성
 
-- **Phase 1 (1세션)**:
-  1. `packages/specs/src/components/CardHeader.spec.ts` 신설 — archetype:"simple", skipCSSGeneration:false (or true, 수동 CSS 전환 결정 필요), containerStyles (display:flex, alignItems:center, width:100%), sizes.md (paddingX:16, paddingY:12, gap:8, fontSize/lineHeight TokenRef), states
-  2. `packages/specs/src/components/CardContent.spec.ts` 신설 — containerStyles (display:flex, flexDirection:column, width:100%), sizes.md (paddingX:16, paddingY:12, gap:4), states
-  3. `packages/specs/src/components/CardFooter.spec.ts` 신설 — containerStyles (display:flex, alignItems:center, justifyContent:flex-end, width:100%), sizes.md (paddingX:16, paddingY:12, gap:8), states. factory 자동 생성 호환 유지
-  4. `packages/specs/src/components/index.ts` export 3건 추가
+**선행 의존성**: [ADR-094](094-childspecs-registry-auto-registration.md) (childSpecs 자동 registry 등록) 먼저 land 필수. ADR-094 없이 본 ADR 진행 시 Skia 축 SSOT 미복구 (CSS 축만 작동).
+
+- **Phase 1 (1세션, 3 spec 신설)**:
+  1. `CardHeader.spec.ts` 신설 — archetype:"simple", skipCSSGeneration:false, containerStyles (display:flex, alignItems:center, width:100%), sizes.xs~xl (paddingX/Y 부모 Card.sizes 와 정합), states
+  2. `CardContent.spec.ts` 신설 — containerStyles (display:flex, flexDirection:column, width:100%), sizes.xs~xl, states
+  3. `CardFooter.spec.ts` 신설 — containerStyles (display:flex, alignItems:center, justifyContent:flex-end, width:100%), sizes.xs~xl, states. factory 자동 생성 호환 유지
+  4. `packages/specs/src/components/index.ts` + `packages/specs/src/index.ts` export 3건 추가
   5. `CardSpec.childSpecs = [CardHeaderSpec, CardContentSpec, CardFooterSpec]` 배선
-- **Phase 2 (0.5세션)**: `implicitStyles.ts:1824-1838` Card 분기 `width:"100%"` 주입 제거 (containerStyles.width="100%" 가 대신 주입). `:1840-1854` CardHeader Heading flex:1 주입 **유지** (자식 Element injection — scope 외). `:1856-1870` CardContent 동일 유지
-- **Phase 3 (검증)**: type-check + specs + builder + build:specs 재생성 확인. Card generated CSS 에 CardHeader/CardContent selector emit 확인 (skipCSSGeneration 결정에 따라 달라짐)
+  6. `CardSpec.composition.propagation.rules` 에 size 전파 3건 추가 (Hard Constraint 4)
+- **Phase 2 (0.5세션, factory inline 제거 — Codex H1)**:
+  - `apps/builder/src/builder/factories/definitions/LayoutComponents.ts:155` Card 생성 inline default `display/gap/width/flex` **제거** (spec.containerStyles 가 대신 공급, ADR-094 인프라 경유)
+  - 기존 프로젝트 migration: inline style 이 store 에 저장된 Card element 는 그대로 유지 (사용자 편집 간주), 신규 생성만 spec 기반
+- **Phase 3 (0.5세션, implicitStyles 분기 정리 — 내부 충돌 해소 M3)**:
+  - `implicitStyles.ts:1825-1838` Card 분기 CardHeader/CardContent width:"100%" 주입 **제거** (containerStyles.width="100%" 가 대신 주입, ADR-094 경유)
+  - `:1840-1854` CardHeader 자식 Heading flex:1 주입 **유지** (자식 Element injection — scope 외)
+  - `:1856-1870` CardContent 자식 Description width:100% 주입 **유지**
+- **Phase 4 (검증)**: type-check + specs + builder + build:specs 재생성 + Chrome MCP Card 실측 (시각 변동 없음 확인)
 
 ### 구현 파일 변경 목록
 
 1. `packages/specs/src/components/CardHeader.spec.ts` — 신규
 2. `packages/specs/src/components/CardContent.spec.ts` — 신규
 3. `packages/specs/src/components/CardFooter.spec.ts` — 신규
-4. `packages/specs/src/components/Card.spec.ts` — childSpecs 추가 (3 spec)
-5. `packages/specs/src/components/index.ts` — export 3건
-6. `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` — Card 분기 width:"100%" 주입 제거
-7. `packages/shared/src/components/styles/generated/Card.css` — build:specs 재생성
+4. `packages/specs/src/components/Card.spec.ts` — childSpecs 추가 + propagation.rules size 전파 3건
+5. `packages/specs/src/components/index.ts` + `packages/specs/src/index.ts` — export 3건
+6. `apps/builder/src/builder/factories/definitions/LayoutComponents.ts:155` — Card 생성 inline default 제거 (Codex H1)
+7. `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:1824-1838` — Card 분기 width:"100%" 주입 제거 (M3 내부 충돌 해소)
+8. `packages/shared/src/components/styles/generated/Card.css` — build:specs 재생성
 
 ## Risks
 

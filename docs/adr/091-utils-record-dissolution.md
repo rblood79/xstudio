@@ -14,26 +14,26 @@ composition SSOT 체인 (ADR-036/063) 은 시각 metric 을 Spec SSOT 로 복귀
 
 ### 실측 — 12건 소비 경로 감사
 
-| ID  | 위치                 | 내용                                 | 소비처                                          | SSOT source                                         |
-| --- | -------------------- | ------------------------------------ | ----------------------------------------------- | --------------------------------------------------- |
-| R1  | `cssResolver.ts:181` | FONT_STRETCH_KEYWORD_MAP (9 keyword) | `cssResolver.ts:208`                            | **CSS 표준 (Spec 외)**                              |
-| R2  | `utils.ts:450`       | DEFAULT_ELEMENT_WIDTHS (tag→px)      | `utils.ts:1405` default width fallback          | **Spec.sizes 외** (tag-level default)               |
-| R3  | `utils.ts:842`       | ICON_SIZE_MAP (size→px)              | 지역 scope 소비                                 | 공용 상수 후보                                      |
-| R4  | `utils.ts:1420`      | TABS_BAR_HEIGHT                      | `utils.ts:2379` + `implicitStyles.ts:926/1029`  | **이미 TabsSpec.sizes 파생** (`Object.fromEntries`) |
-| R5  | `utils.ts:1423`      | TABS_PANEL_PADDING                   | `utils.ts:2381` + `implicitStyles.ts:43/44`     | **이미 Spec 파생**                                  |
-| R6  | `utils.ts:1427`      | DEFAULT_ELEMENT_HEIGHTS              | `utils.ts:2653`                                 | **Spec.sizes 외** (tag-level default)               |
-| R7  | `utils.ts:1527`      | ICON_SIZE_MAP (중복 선언)            | 지역 scope 소비                                 | R3 과 DRY 위반                                      |
-| R8  | `utils.ts:1791`      | TRIGGER_CONTENT_HEIGHTS              | `utils.ts:1798` (parentSize lookup)             | 부모 Spec.sizes 이관 가능                           |
-| R9  | `utils.ts:1960`      | headerHeights (Calendar)             | 지역 scope                                      | CalendarHeader.spec.sizes 이관 가능                 |
-| R10 | `utils.ts:1968`      | inputHeights (DateInput intrinsic)   | `utils.ts:1965` `if (tag === "dateinput")` 분기 | DateInput.spec.sizes 이관 가능                      |
-| R11 | `utils.ts:2029`      | dfHeights (DateField)                | 지역 scope                                      | DateField.spec.sizes 이관 가능                      |
-| R12 | `utils.ts:2037`      | COMBOBOX_INPUT_HEIGHTS               | `utils.ts:2086/2209`                            | ComboBox.spec.sizes 이관 가능                       |
+| ID  | 위치                 | 내용                                 | 소비처                                          | SSOT source                                                          |
+| --- | -------------------- | ------------------------------------ | ----------------------------------------------- | -------------------------------------------------------------------- |
+| R1  | `cssResolver.ts:181` | FONT_STRETCH_KEYWORD_MAP (9 keyword) | `cssResolver.ts:208`                            | **CSS 표준 (Spec 외)**                                               |
+| R2  | `utils.ts:450`       | DEFAULT_ELEMENT_WIDTHS (tag→px)      | `utils.ts:1405` default width fallback          | **Spec.sizes 외** (tag-level default)                                |
+| R3  | `utils.ts:842`       | ICON_SIZE_MAP (size→px)              | 지역 scope 소비                                 | **IconSpec.sizes 이미 동일 metric 존재** (Icon.spec.ts:50) → Class A |
+| R4  | `utils.ts:1420`      | TABS_BAR_HEIGHT                      | `utils.ts:2379` + `implicitStyles.ts:926/1029`  | **이미 TabsSpec.sizes 파생** (`Object.fromEntries`)                  |
+| R5  | `utils.ts:1423`      | TABS_PANEL_PADDING                   | `utils.ts:2381` + `implicitStyles.ts:43/44`     | **이미 Spec 파생**                                                   |
+| R6  | `utils.ts:1427`      | DEFAULT_ELEMENT_HEIGHTS              | `utils.ts:2653`                                 | **Spec.sizes 외** (tag-level default)                                |
+| R7  | `utils.ts:1527`      | ICON_SIZE_MAP (중복 선언)            | 지역 scope 소비                                 | R3 과 DRY 위반 + IconSpec.sizes (Icon.spec.ts:50) → Class A          |
+| R8  | `utils.ts:1791`      | TRIGGER_CONTENT_HEIGHTS              | `utils.ts:1798` (parentSize lookup)             | 부모 Spec.sizes 이관 가능                                            |
+| R9  | `utils.ts:1960`      | headerHeights (Calendar)             | 지역 scope                                      | CalendarHeader.spec.sizes 이관 가능                                  |
+| R10 | `utils.ts:1968`      | inputHeights (DateInput intrinsic)   | `utils.ts:1965` `if (tag === "dateinput")` 분기 | DateInput.spec.sizes 이관 가능                                       |
+| R11 | `utils.ts:2029`      | dfHeights (DateField)                | 지역 scope                                      | DateField.spec.sizes 이관 가능                                       |
+| R12 | `utils.ts:2037`      | COMBOBOX_INPUT_HEIGHTS               | `utils.ts:2086/2209`                            | ComboBox.spec.sizes 이관 가능                                        |
 
 ### 3-Class 분류
 
-- **Class A (spec.sizes 이관, size-indexed)** — R8 / R9 / R10 / R11 / R12 — 이미 size 축 명확, 해당 Spec.sizes 에 필드 추가 후 `specSizeField` lookup 전환 (ADR-086 G4 패턴 재사용)
+- **Class A (spec.sizes 이관, size-indexed)** — R3 / R7 / R8 / R9 / R10 / R11 / R12 — 해당 Spec.sizes 에 필드 추가 후 `specSizeField` lookup 전환 (ADR-086 G4 패턴 재사용). **R3/R7 ICON_SIZE_MAP 은 IconSpec.sizes (Icon.spec.ts:50) 에 xs~xl metric 이 이미 존재** → Codex round 2 지적 반영 (Class C 재분류)
 - **Class B (이미 Spec 파생 — 중간 캐시 해체)** — R4 / R5 — `TABS_BAR_HEIGHT` 는 `Object.fromEntries(TabsSpec.sizes)` 이미 파생. 소비처가 직접 `TabsSpec.sizes[size].height` 참조하면 중간 export 제거 가능
-- **Class C (Spec SSOT 외 — primitives/ 분리)** — R1 / R3 / R7 — CSS 표준 상수 or 공용 상수. `primitives/font.ts` / `primitives/icons.ts` 로 이관. R3/R7 ICON_SIZE_MAP 중복은 DRY 복원
+- **Class C (Spec SSOT 외 — primitives/ 분리)** — R1 — CSS 표준 상수 (`FONT_STRETCH_KEYWORD_MAP` 9 keyword→percentage). `packages/specs/src/primitives/font.ts` 로 이관
 
 ### tag-level default 남은 debt
 
@@ -49,7 +49,7 @@ R2 `DEFAULT_ELEMENT_WIDTHS` + R6 `DEFAULT_ELEMENT_HEIGHTS` 는 tag→px mapping 
 
 ### Soft Constraints
 
-- R3/R7 ICON_SIZE_MAP 중복 해결 부산물: `primitives/icons.ts` 신설 시 spec 에서도 재사용 가능
+- R3/R7 ICON_SIZE_MAP 중복 해결 부산물: IconSpec.sizes direct consumption 으로 통합 (Codex 재분류)
 - Phase 분할: Class C → B → A 순서 (독립성 높은 것부터)
 
 ## Alternatives Considered
@@ -100,9 +100,16 @@ R2 `DEFAULT_ELEMENT_WIDTHS` + R6 `DEFAULT_ELEMENT_HEIGHTS` 는 tag→px mapping 
 
 ### Phase 구성
 
-- **Phase 1 (Class C, 30분)**: `FONT_STRETCH_KEYWORD_MAP` → `packages/specs/src/primitives/font.ts` 신설 + export. `ICON_SIZE_MAP` 2곳 중복 → `packages/specs/src/primitives/icons.ts` 단일 상수 + 2 소비처 import 전환. **`packages/specs/src/primitives/index.ts` 에 font/icons re-export 추가** (기존 colors/radius/shadows/spacing/typography 관행 동일)
+- **Phase 1 (Class C, 15분)**: `FONT_STRETCH_KEYWORD_MAP` → `packages/specs/src/primitives/font.ts` 신설 + export. `packages/specs/src/primitives/index.ts` 에 font re-export 추가 (기존 colors/radius/shadows/spacing/typography 관행 동일). **ICON_SIZE_MAP 은 Phase 3 로 이동** (Codex round 2 재분류)
 - **Phase 2 (Class B, 1시간)**: `TABS_BAR_HEIGHT` / `TABS_PANEL_PADDING` export 유지하되 내부를 `TabsSpec.sizes[size].height` 직접 참조로 전환 (소비처는 그대로). 또는 export 제거 후 4 소비처 `specSizeField` 전환. 순환 의존 없음 — `utils.ts:36` 이 이미 `import { TabsSpec, TabPanelsSpec } from "@composition/specs"` 중
-- **Phase 3 (Class A, 1-2시간)**: R8/R9/R10/R11/R12 각각 해당 Spec.sizes 에 필드 추가 후 `specSizeField("<tag>", size, "<field>")` lookup 전환. 지역 Record 선언 제거. **R10 이관 대상은 DateInput.spec** (DateField 아님 — utils.ts:1965 `if (tag === "dateinput")` 분기)
+- **Phase 3 (Class A, 1-2시간)**: R3/R7/R8/R9/R10/R11/R12 각각 해당 Spec.sizes lookup 전환:
+  - R3/R7 ICON_SIZE_MAP 2곳 → `specSizeField("icon", sizeName, "width")` 또는 `iconSize` 필드 (Icon.spec 검증 후 결정)
+  - R8 TRIGGER_CONTENT_HEIGHTS → 부모 Spec.sizes
+  - R9 headerHeights → CalendarHeader.spec.sizes
+  - **R10 inputHeights → DateInput.spec** (DateField 아님 — `utils.ts:1965` `if (tag === "dateinput")` 분기)
+  - R11 dfHeights → DateField.spec.sizes
+  - R12 COMBOBOX_INPUT_HEIGHTS → ComboBox.spec.sizes
+  - 모두 지역 Record 선언 제거
 - **검증**: 매 Phase 마다 type-check 3/3 + specs 166/166 + builder 217/217 PASS
 
 ### Addendum 1 후속 ADR 후보
@@ -126,9 +133,9 @@ R2 `DEFAULT_ELEMENT_WIDTHS` + R6 `DEFAULT_ELEMENT_HEIGHTS` 는 tag→px mapping 
 - type-check 3/3 PASS
 - specs 166/166 PASS (snapshot 변동 허용)
 - builder 217/217 PASS
-- Phase 1 완료 후 `rg "Record<string, number>" cssResolver.ts utils.ts` = **10건** (R1/R3/R7 제거됨)
-- Phase 2 완료 후 **8건** (R4/R5 제거, 또는 내부 Spec 직접 참조 전환)
-- Phase 3 완료 후 **2건** (R2/R6 만 잔존 — Addendum 1 대상)
+- Phase 1 완료 후 `rg "Record<string, number>" cssResolver.ts utils.ts` = **11건** (R1 제거됨)
+- Phase 2 완료 후 **9건** (R4/R5 제거)
+- Phase 3 완료 후 **2건** (R2/R6 만 잔존 — Addendum 1 대상. R3/R7/R8/R9/R10/R11/R12 전부 Class A spec.sizes 로 이관)
 
 ## Consequences
 
