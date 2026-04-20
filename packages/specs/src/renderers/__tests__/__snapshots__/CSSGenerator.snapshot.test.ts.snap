@@ -10409,6 +10409,10 @@ exports[`CSSGenerator snapshot baseline > TabList 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+  flex-direction: row;
+
   /* Default size */
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
@@ -10562,6 +10566,10 @@ exports[`CSSGenerator snapshot baseline > Tabs 1`] = `
     flex-direction: column;
     align-items: flex-start;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+  flex-direction: column;
 
   /* Default size */
   font-size: var(--text-sm);

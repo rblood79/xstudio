@@ -52,6 +52,13 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP2: Tabs static layout-primitive 리프팅.
+  //   TabList 와 TabPanels 의 size-indexed height/padding 은 runtime 결정 (implicitStyles 잔존).
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

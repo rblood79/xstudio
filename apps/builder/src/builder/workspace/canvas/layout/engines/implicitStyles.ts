@@ -945,6 +945,8 @@ export function applyImplicitStyles(
     if (tabListEl) {
       // 새 구조 (TabList 존재): TabList에 고정 height 주입 → Taffy 레이아웃 포함
       // → spatialIndex에 bounds 등록 → 캔버스에서 TabList/Tab 선택 가능
+      // ADR-087 SP2: display/flexDirection 은 TabList.spec containerStyles 로 리프팅됨.
+      //   height/width 는 size-based tabBarHeight 주입 (runtime 잔존).
       const injectedTabList: Element = {
         ...tabListEl,
         props: {
@@ -954,8 +956,6 @@ export function applyImplicitStyles(
             height: tabBarHeight,
             minHeight: tabBarHeight,
             width: "100%",
-            display: "flex",
-            flexDirection: "row",
           },
         },
       };
@@ -979,18 +979,13 @@ export function applyImplicitStyles(
         injectedTabList,
         ...(injectedPanelContainer ? [injectedPanelContainer] : []),
       ];
-      effectiveParent = withParentStyle(containerEl, {
-        ...parentStyle,
-        display: "flex",
-        flexDirection: "column",
-      });
+      // ADR-087 SP2: display/flexDirection 은 Tabs.spec containerStyles 로 리프팅됨.
+      effectiveParent = withParentStyle(containerEl, parentStyle);
     } else {
-      // 구식 flat 구조 (TabList 없음): 기존 동작 유지
+      // 구식 flat 구조 (TabList 없음): 기존 동작 유지 + paddingTop runtime 추가
       filteredChildren = directPanel ? [directPanel] : [];
       effectiveParent = withParentStyle(containerEl, {
         ...parentStyle,
-        display: "flex",
-        flexDirection: "column",
         paddingTop: tabBarHeight,
       });
     }
@@ -1022,10 +1017,10 @@ export function applyImplicitStyles(
       : panelItems[0];
 
     filteredChildren = activePanel ? [activePanel] : [];
+    // ADR-087 SP2: display/flexDirection 은 TabPanels.spec containerStyles (ADR-083 Phase 6)
+    //   로 이미 리프팅됨. padding 과 flexGrow 는 runtime 결정 → 잔존.
     effectiveParent = withParentStyle(containerEl, {
       ...(containerEl.props?.style as Record<string, unknown> | undefined),
-      display: "flex",
-      flexDirection: "column",
       padding: tabPanelPadding,
       flexGrow: 1,
     });
@@ -1060,10 +1055,10 @@ export function applyImplicitStyles(
       page_id: containerEl.page_id,
     })) as Element[];
 
+    // ADR-087 SP2: display/flexDirection 은 TabList.spec containerStyles 로 리프팅됨.
+    //   height/width 는 size-based tabBarHeight 주입 (runtime 잔존).
     effectiveParent = withParentStyle(containerEl, {
       ...(containerEl.props?.style as Record<string, unknown> | undefined),
-      display: "flex",
-      flexDirection: "row",
       height: tabBarHeight,
       width: "100%",
     });

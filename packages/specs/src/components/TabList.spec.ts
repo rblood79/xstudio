@@ -27,6 +27,13 @@ export const TabListSpec: ComponentSpec<TabListProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP2: TabList static layout-primitive 리프팅.
+  //   height/width 는 runtime 결정 (implicitStyles Tabs 분기에서 size-based tabBarHeight 주입).
+  containerStyles: {
+    display: "flex",
+    flexDirection: "row",
+  },
+
   composition: {
     layout: "flex-row",
     delegation: [],
