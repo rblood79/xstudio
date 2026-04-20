@@ -129,6 +129,8 @@ export {
   shadows,
   getShadowToken,
   parseShadow,
+  // Font (CSS 표준 상수 — ADR-091 Phase 1)
+  FONT_STRETCH_KEYWORD_MAP,
 } from "./primitives";
 
 export type { ParsedShadow } from "./primitives";

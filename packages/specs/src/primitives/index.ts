@@ -39,3 +39,6 @@ export { radius, getRadiusToken } from "./radius";
 export { shadows, getShadowToken, parseShadow } from "./shadows";
 
 export type { ParsedShadow } from "./shadows";
+
+// Font (CSS 표준 상수 — ADR-091 Phase 1)
+export { FONT_STRETCH_KEYWORD_MAP } from "./font";

@@ -18,6 +18,7 @@
  */
 
 import { parseFontShorthand } from "./cssValueParser";
+import { FONT_STRETCH_KEYWORD_MAP } from "@composition/specs";
 
 // ============================================
 // 상속 가능 속성 목록
@@ -177,18 +178,7 @@ export const DEFAULT_FONT_FEATURES: FontFeatureTag[] = [
 // ============================================
 // font-stretch → CanvasKit FontWidth 인덱스 매핑
 // ============================================
-
-const FONT_STRETCH_KEYWORD_MAP: Record<string, number> = {
-  "ultra-condensed": 1,
-  "extra-condensed": 2,
-  condensed: 3,
-  "semi-condensed": 4,
-  normal: 5,
-  "semi-expanded": 6,
-  expanded: 7,
-  "extra-expanded": 8,
-  "ultra-expanded": 9,
-};
+// ADR-091 Phase 1: FONT_STRETCH_KEYWORD_MAP 은 `@composition/specs` primitives/font 로 이관.
 
 const FONT_STRETCH_PERCENT_BREAKPOINTS: [number, number][] = [
   [50, 1],
