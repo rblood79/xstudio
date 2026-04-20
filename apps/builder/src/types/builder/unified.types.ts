@@ -1828,11 +1828,8 @@ export function createDefaultInlineAlertProps(): BaseElementProps {
 }
 
 export function createDefaultDescriptionProps(): BaseElementProps {
-  return {
-    style: {
-      width: "100%",
-    },
-  };
+  // ADR-083 Phase 7 (R5): width:"100%" 는 DescriptionSpec.containerStyles SSOT 로 이관.
+  return {};
 }
 
 export function createDefaultDialogProps(): DialogElementProps {

@@ -50,6 +50,12 @@ export const HeadingSpec: ComponentSpec<HeadingProps> = {
   element: resolveHeadingElement,
   archetype: "text",
 
+  // ADR-083 Phase 7: text archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "block",
+    width: "100%",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -182,7 +188,11 @@ export const HeadingSpec: ComponentSpec<HeadingProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = HeadingSpec.variants![(props as { variant?: keyof typeof HeadingSpec.variants }).variant ?? HeadingSpec.defaultVariant!];
+      const variant =
+        HeadingSpec.variants![
+          (props as { variant?: keyof typeof HeadingSpec.variants }).variant ??
+            HeadingSpec.defaultVariant!
+        ];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 

@@ -34,6 +34,12 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
   element: "span",
   archetype: "text",
 
+  // ADR-083 Phase 7: text archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "block",
+    width: "100%",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -82,7 +88,11 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = DescriptionSpec.variants![(props as { variant?: keyof typeof DescriptionSpec.variants }).variant ?? DescriptionSpec.defaultVariant!];
+      const variant =
+        DescriptionSpec.variants![
+          (props as { variant?: keyof typeof DescriptionSpec.variants })
+            .variant ?? DescriptionSpec.defaultVariant!
+        ];
       const text = props.children ?? "";
       if (!text) return [];
 

@@ -3551,6 +3551,10 @@ exports[`CSSGenerator snapshot baseline > Description 1`] = `
     width: 100%;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: 100%;
+  display: block;
+
   /* Default variant */
   background: transparent;
   color: var(--fg-muted);
@@ -4304,6 +4308,10 @@ exports[`CSSGenerator snapshot baseline > Heading 1`] = `
     display: block;
     width: 100%;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: 100%;
+  display: block;
 
   /* Default variant */
   background: transparent;
@@ -6897,6 +6905,10 @@ exports[`CSSGenerator snapshot baseline > Paragraph 1`] = `
     display: block;
     width: 100%;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: 100%;
+  display: block;
 
   /* Default variant */
   background: transparent;
@@ -10483,6 +10495,10 @@ exports[`CSSGenerator snapshot baseline > Text 1`] = `
     display: block;
     width: 100%;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: 100%;
+  display: block;
 
   /* Default variant */
   background: transparent;

@@ -26,6 +26,13 @@ export const TextSpec: ComponentSpec<TextProps> = {
   element: "p",
   archetype: "text",
 
+  // ADR-083 Phase 7: text archetype base 의 layout primitive 2 필드 리프팅.
+  //   box-sizing 은 ContainerStylesSchema 미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "block",
+    width: "100%",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -142,7 +149,11 @@ export const TextSpec: ComponentSpec<TextProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = TextSpec.variants![(props as { variant?: keyof typeof TextSpec.variants }).variant ?? TextSpec.defaultVariant!];
+      const variant =
+        TextSpec.variants![
+          (props as { variant?: keyof typeof TextSpec.variants }).variant ??
+            TextSpec.defaultVariant!
+        ];
       const text = String(props.children ?? props.text ?? "");
       if (!text) return [];
 
