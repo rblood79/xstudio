@@ -38,6 +38,12 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   name: "Separator",
   description: "React Aria 기반 구분선 컴포넌트",
   archetype: "simple",
+
+  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
   element: "hr",
 
   defaultVariant: "default",

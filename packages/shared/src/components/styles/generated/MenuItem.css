@@ -12,6 +12,10 @@
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default size */
   height: 32px;
   padding: 4px 12px;

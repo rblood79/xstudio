@@ -15,6 +15,10 @@ exports[`CSSGenerator snapshot baseline > Avatar 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg-muted);
   color: var(--fg);
@@ -212,6 +216,10 @@ exports[`CSSGenerator snapshot baseline > Badge 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--accent);
@@ -639,6 +647,10 @@ exports[`CSSGenerator snapshot baseline > Breadcrumb 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg);
   color: var(--fg-muted);
@@ -724,6 +736,10 @@ exports[`CSSGenerator snapshot baseline > Breadcrumbs 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--bg);
@@ -1625,6 +1641,10 @@ exports[`CSSGenerator snapshot baseline > Code 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg-muted);
   color: var(--fg);
@@ -1958,6 +1978,10 @@ exports[`CSSGenerator snapshot baseline > ColorSwatch 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--bg);
@@ -3888,6 +3912,10 @@ exports[`CSSGenerator snapshot baseline > DisclosureHeader 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: transparent;
   color: var(--fg);
@@ -3955,6 +3983,10 @@ exports[`CSSGenerator snapshot baseline > DropZone 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default size */
   height: 120px;
@@ -4030,6 +4062,10 @@ exports[`CSSGenerator snapshot baseline > FieldError 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: transparent;
@@ -4449,6 +4485,10 @@ exports[`CSSGenerator snapshot baseline > Icon 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: transparent;
   color: var(--fg);
@@ -4670,6 +4710,10 @@ exports[`CSSGenerator snapshot baseline > Image 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--bg-muted);
@@ -5102,6 +5146,10 @@ exports[`CSSGenerator snapshot baseline > Kbd 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--bg-inset);
@@ -5587,6 +5635,10 @@ exports[`CSSGenerator snapshot baseline > MaskedFrame 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
@@ -5769,6 +5821,10 @@ exports[`CSSGenerator snapshot baseline > MenuItem 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default size */
   height: 32px;
@@ -8982,6 +9038,10 @@ exports[`CSSGenerator snapshot baseline > Separator 1`] = `
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg);
   color: var(--border);
@@ -9155,6 +9215,10 @@ exports[`CSSGenerator snapshot baseline > Skeleton 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--bg-inset);
@@ -9334,6 +9398,10 @@ exports[`CSSGenerator snapshot baseline > SliderOutput 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default size */
   height: 20px;
@@ -9640,6 +9708,10 @@ exports[`CSSGenerator snapshot baseline > StatusLight 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--fg-muted);
@@ -11791,6 +11863,10 @@ exports[`CSSGenerator snapshot baseline > Tooltip 1`] = `
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
 
   /* Default variant */
   background: var(--bg-muted);

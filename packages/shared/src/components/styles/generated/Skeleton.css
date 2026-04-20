@@ -12,6 +12,10 @@
     align-items: center;
     box-sizing: border-box;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: inline-flex;
+  align-items: center;
+
   /* Default variant */
   background: var(--bg-inset);
   color: var(--fg-muted);

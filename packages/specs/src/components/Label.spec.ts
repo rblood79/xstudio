@@ -34,6 +34,12 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   description: "compound 컴포넌트의 라벨 텍스트 렌더링",
   element: "label",
   archetype: "simple",
+
+  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
   skipCSSGeneration: true,
 
   defaultSize: "md",

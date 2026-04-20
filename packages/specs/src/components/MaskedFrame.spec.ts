@@ -28,6 +28,12 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   element: "div",
   archetype: "simple",
 
+  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

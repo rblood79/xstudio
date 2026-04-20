@@ -17,6 +17,12 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
   name: "Field",
   description: "데이터 필드 매핑 컴포넌트",
   archetype: "simple",
+
+  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
   element: "div",
   skipCSSGeneration: true,
 

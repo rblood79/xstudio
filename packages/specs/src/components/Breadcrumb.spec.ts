@@ -32,6 +32,12 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
   name: "Breadcrumb",
   description: "Breadcrumbs 내 단일 경로 조각 (Skia는 자식 단위 렌더)",
   archetype: "simple",
+
+  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
   element: "li",
   skipCSSGeneration: false,
 

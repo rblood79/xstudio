@@ -70,18 +70,22 @@ describe("resolveLayoutSpecPreset", () => {
   });
 
   it("returns {} for absent size key", () => {
-    expect(resolveLayoutSpecPreset("Kbd", "xxl")).toEqual({});
+    // ADR-083 Phase 11 이후: Kbd 가 containerStyles 보유. containerStyles 미보유 spec
+    // 대체 샘플로 Dialog(overlay archetype — Phase 9 schema 미지원) 사용.
+    expect(resolveLayoutSpecPreset("Dialog", "xxl")).toEqual({});
   });
 
   it("caches by (type, size) — same input returns same reference", () => {
-    const a = resolveLayoutSpecPreset("Kbd", "md");
-    const b = resolveLayoutSpecPreset("Kbd", "md");
+    const a = resolveLayoutSpecPreset("Dialog", "md");
+    const b = resolveLayoutSpecPreset("Dialog", "md");
     expect(a).toBe(b);
   });
 
   it("only includes keys whose numeric values are defined in spec", () => {
     // gap/padding*/margin* 중 spec에 정의된 것만 number로 포함 — 미정의는 undefined
-    const preset = resolveLayoutSpecPreset("Kbd", "md");
+    // ADR-083 Phase 11: Kbd 이 containerStyles 보유로 display(string) 포함됨.
+    // 본 테스트는 sizes-only numeric 추출 검증이므로 Dialog 사용.
+    const preset = resolveLayoutSpecPreset("Dialog", "md");
     for (const k of Object.keys(preset) as (keyof typeof preset)[]) {
       expect(typeof preset[k]).toBe("number");
     }
@@ -188,7 +192,9 @@ describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition 
     });
 
     it("containerStyles 미보유 Spec → 레이아웃 키 undefined (기존 기본값 경로 유지)", () => {
-      const preset = resolveLayoutSpecPreset("Kbd", "md");
+      // ADR-083 Phase 11 이후: Kbd 가 containerStyles 보유. 미보유 대표 샘플로
+      // Dialog(overlay archetype — Phase 9 schema 미지원) 사용.
+      const preset = resolveLayoutSpecPreset("Dialog", "md");
       expect(preset.display).toBeUndefined();
       expect(preset.flexDirection).toBeUndefined();
       expect(preset.alignItems).toBeUndefined();
@@ -250,11 +256,13 @@ describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition 
     });
 
     it("containerStyles 미보유 Spec → string 필드 undefined (기존 기본값 경로 유지)", () => {
-      const preset = resolveSpecPreset("Kbd", "md");
+      // ADR-083 Phase 11 이후: Kbd 가 containerStyles 보유. 미보유 대표 샘플로
+      // Dialog(overlay archetype — Phase 9 schema 미지원) 사용.
+      const preset = resolveSpecPreset("Dialog", "md");
       expect(
         typeof preset.height === "number" || preset.height === undefined,
       ).toBe(true);
-      // width 는 Kbd.sizes.md 에 미정의 → undefined
+      // width 는 Dialog.sizes.md 에 미정의 → undefined
       expect(preset.width).toBeUndefined();
     });
   });

@@ -27,6 +27,12 @@ export const MenuItemSpec: ComponentSpec<MenuItemProps> = {
   name: "MenuItem",
   description: "Menu item — CSS 자동 생성 전용 (Builder Skia 미등록, Q5=i)",
   archetype: "simple",
+
+  // ADR-083 Phase 11: simple archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+  },
   element: "div",
   skipCSSGeneration: false,
 
