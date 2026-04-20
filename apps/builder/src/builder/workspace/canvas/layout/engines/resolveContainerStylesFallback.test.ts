@@ -13,15 +13,22 @@ import { describe, expect, it } from "vitest";
 import { resolveToken } from "@composition/specs";
 import { resolveContainerStylesFallback } from "./implicitStyles";
 
-describe("resolveContainerStylesFallback (ADR-080 Gate G1)", () => {
+describe("resolveContainerStylesFallback (ADR-080 G1 + ADR-083 Phase 0)", () => {
   describe("listbox — ListBoxSpec.containerStyles SSOT", () => {
-    it("empty parentStyle → 4 fallback 속성 반환 (display/flexDirection/gap/padding)", () => {
+    it("empty parentStyle → ListBoxSpec.containerStyles layout primitive 8 필드 반환", () => {
       const fb = resolveContainerStylesFallback("listbox", {});
+      // ADR-083 Phase 0: 10 필드 lookup (display/flexDirection/alignItems/
+      // justifyContent/width/maxHeight/overflow/outline/gap/padding) 중
+      // ListBoxSpec.containerStyles 에 선언된 8 필드 (alignItems/justifyContent 미선언).
       expect(fb).toEqual({
         display: "flex",
         flexDirection: "column",
         gap: 2, // {spacing.2xs}
         padding: 4, // {spacing.xs}
+        width: "100%",
+        maxHeight: "300px",
+        overflow: "auto",
+        outline: "none",
       });
     });
 
@@ -34,6 +41,10 @@ describe("resolveContainerStylesFallback (ADR-080 Gate G1)", () => {
         flexDirection: "column",
         gap: 2,
         padding: 4,
+        width: "100%",
+        maxHeight: "300px",
+        overflow: "auto",
+        outline: "none",
       });
     });
 
@@ -47,15 +58,23 @@ describe("resolveContainerStylesFallback (ADR-080 Gate G1)", () => {
       expect(fb).toEqual({
         display: "flex",
         flexDirection: "column",
+        width: "100%",
+        maxHeight: "300px",
+        overflow: "auto",
+        outline: "none",
       });
     });
 
-    it("parentStyle 4속성 모두 명시 → 빈 객체 반환", () => {
+    it("parentStyle 8속성 모두 명시 → 빈 객체 반환 (ListBoxSpec 선언 필드 전부 override)", () => {
       const fb = resolveContainerStylesFallback("listbox", {
         display: "block",
         flexDirection: "row",
         gap: 8,
         padding: 16,
+        width: "50%",
+        maxHeight: "100px",
+        overflow: "hidden",
+        outline: "1px solid red",
       });
       expect(fb).toEqual({});
     });
@@ -65,6 +84,36 @@ describe("resolveContainerStylesFallback (ADR-080 Gate G1)", () => {
     it("미지원 tag → 빈 객체", () => {
       expect(resolveContainerStylesFallback("unknown", {})).toEqual({});
       expect(resolveContainerStylesFallback("button", {})).toEqual({});
+    });
+  });
+
+  // ADR-083 Phase 0 주의: ListBoxItemSpec 은 TAG_SPEC_MAP 미등록 (ListBox.childSpecs
+  //   경로로 Skia 렌더) → Phase 0 LOWERCASE_TAG_SPEC_MAP 에도 미포함 → fallback 조회 불가.
+  //   ListBoxItem containerStyles 는 CSS emit / ADR-079 P1 cascade 에만 기여하며, Skia
+  //   layout 경로(implicitStyles) 로는 별도 ADR (ListBoxItemSpec 을 TAG_SPEC_MAP 에 등록
+  //   또는 childSpecs lookup 추가) 로 확장 필요. 본 test 는 그 상태를 선언적으로 문서화.
+  describe("listboxitem — TAG_SPEC_MAP 미등록 (Phase 0 범위 외)", () => {
+    it("empty parentStyle → {} (childSpecs 전용 spec 은 lookup 미작동)", () => {
+      const fb = resolveContainerStylesFallback("listboxitem", {});
+      expect(fb).toEqual({});
+    });
+  });
+
+  describe("menu — Menu.spec.containerStyles (Phase 0 일반화 — 6 필드)", () => {
+    it("empty parentStyle → padding/gap/width/maxHeight/overflow/outline 반환", () => {
+      const fb = resolveContainerStylesFallback("menu", {});
+      // Menu spec 은 display/flexDirection/alignItems/justifyContent 미선언 →
+      // 6 필드만 반환. Menu 분기는 filteredChildren=[] 로 early return 하므로
+      // effectiveParent 에 parentStyle 전파는 발생하지 않음. 본 test 는 단순히
+      // Phase 0 lookup 일반화(TAG_SPEC_MAP 다중 태그) 계약 확증.
+      expect(fb).toEqual({
+        padding: 4, // {spacing.xs}
+        gap: 2, // {spacing.2xs}
+        width: "100%",
+        maxHeight: "300px",
+        overflow: "auto",
+        outline: "none",
+      });
     });
   });
 

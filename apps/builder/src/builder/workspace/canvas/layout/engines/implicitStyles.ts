@@ -22,7 +22,6 @@ import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   InlineAlertSpec,
   BreadcrumbsSpec,
-  ListBoxSpec,
   fontFamily as specFontFamily,
   breadcrumbSeparatorAfterPaddingXPx,
   normalizeBreadcrumbRspSizeKey,
@@ -32,6 +31,7 @@ import {
 import type { ComponentSpec, TokenRef } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { findAncestorByTag } from "../../skia/ancestorLookup";
+import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────────
 
@@ -90,30 +90,45 @@ export function formatProgressValue(
   }
 }
 
-// containerStyles SSOT 를 보유한 Spec — 확장 시 lookup 키 추가.
+// ADR-083 Phase 0: TAG_SPEC_MAP(PascalCase 키) → lowercase Map 으로 build-time 1회 변환.
+//   implicitStyles 는 `containerTag.toLowerCase()` 를 사용하므로 casing 정규화 필수.
+//   기존 수동 `CONTAINER_STYLES_SPEC_MAP = { listbox: ListBoxSpec }` 를 일반화.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CONTAINER_STYLES_SPEC_MAP: Record<string, ComponentSpec<any>> = {
-  listbox: ListBoxSpec,
-};
+const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<string, ComponentSpec<any>> = new Map(
+  Object.entries(TAG_SPEC_MAP).map(([k, v]) => [
+    k.toLowerCase(),
+    v as ComponentSpec<unknown>,
+  ]),
+);
 
-// ADR-080 scope: layout fallback 4속성 (Context 감사 테이블 참조).
+// ADR-083 Phase 0: ContainerStylesSchema layout primitive 필드 10종 (ADR-080 기존 4 + 신규 8).
+//   display/flexDirection/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding.
+//   Spec 미선언 태그는 resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
 const CONTAINER_STYLES_FALLBACK_KEYS = [
   "display",
   "flexDirection",
+  "alignItems",
+  "justifyContent",
+  "width",
+  "maxHeight",
+  "overflow",
+  "outline",
   "gap",
   "padding",
 ] as const;
 
 /**
- * ADR-080: Spec.containerStyles → layout fallback read-through.
+ * ADR-080 + ADR-083 Phase 0: Spec.containerStyles → layout fallback read-through.
  * ADR-081 G2 C3: testable seam — `tokenConsumerDrift.test.ts` 가 반환값을
  * primitives 와 cross-reference. signature 변경 시 G2 계약 동시 갱신 필요.
+ * ADR-083 Phase 0: lookup = `LOWERCASE_TAG_SPEC_MAP.get(tag)` 로 TAG_SPEC_MAP 전체 소비.
  */
 export function resolveContainerStylesFallback(
   tag: string,
   parentStyle: Record<string, unknown>,
 ): Record<string, unknown> {
-  const cs = CONTAINER_STYLES_SPEC_MAP[tag]?.containerStyles;
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  const cs = spec?.containerStyles as Record<string, unknown> | undefined;
   if (!cs) return {};
 
   const out: Record<string, unknown> = {};
@@ -489,10 +504,23 @@ export function applyImplicitStyles(
   availableWidth?: number,
 ): ImplicitStyleResult {
   const containerTag = (containerEl.tag ?? "").toLowerCase();
-  const parentStyle = (containerEl.props?.style || {}) as Record<
+  // ADR-083 Phase 0: Spec.containerStyles fallback 공통 선주입 layer.
+  //   Spec 미선언 태그 → resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
+  //   Spec 선언 태그 (ADR-078 ListBox / ADR-079 ListBoxItem 외 Phase 1~11 로 리프팅될
+  //   spec) → 10 필드 중 parentStyle 에 없는 것만 선주입. 기존 inline 값은
+  //   rawParentStyle 가 specFallback 을 override → 사용자 편집 우선 보존.
+  const rawParentStyle = (containerEl.props?.style || {}) as Record<
     string,
     unknown
   >;
+  const specFallback = resolveContainerStylesFallback(
+    containerTag,
+    rawParentStyle,
+  );
+  const parentStyle: Record<string, unknown> = {
+    ...specFallback,
+    ...rawParentStyle,
+  };
   const containerProps = containerEl.props as
     | Record<string, unknown>
     | undefined;
@@ -710,11 +738,11 @@ export function applyImplicitStyles(
   //   사용자가 4-way 로 직접 편집한 값은 spread 로 자동 유지.
   // ADR-080: layout fallback 상수(display/flexDirection/gap/padding) 는
   //   `ListBoxSpec.containerStyles` SSOT 로부터 read-through. TokenRef 는 resolveToken 경유.
+  // ADR-083 Phase 0: resolveContainerStylesFallback 중복 호출 제거.
+  //   공통 선주입 layer(applyImplicitStyles 진입부)가 이미 parentStyle 에 ListBoxSpec
+  //   containerStyles fallback 을 주입. 본 분기는 effectiveParent 에 parentStyle 전달만 담당.
   if (containerTag === "listbox") {
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      ...resolveContainerStylesFallback("listbox", parentStyle),
-    });
+    effectiveParent = withParentStyle(containerEl, { ...parentStyle });
   }
 
   // ── GridList ─────────────────────────────────────────────────────────
