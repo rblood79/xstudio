@@ -80,6 +80,13 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP3: outer Field container static display 리프팅.
+  //   flexDirection 은 labelPosition prop runtime 결정, gap 은 Label↔Wrapper↔FieldError
+  //   수직 간격 (implicitStyles 잔존).
+  containerStyles: {
+    display: "flex",
+  },
+
   defaultSize: "md",
 
   properties: {

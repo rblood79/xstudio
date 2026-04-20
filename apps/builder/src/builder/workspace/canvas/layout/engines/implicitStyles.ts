@@ -1175,13 +1175,14 @@ export function applyImplicitStyles(
       nfLabelPos,
       parentStyle.flexDirection as string | undefined,
     );
+    // ADR-087 SP3: display 는 NumberField.spec containerStyles 로 리프팅됨.
+    //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존.
     effectiveParent = withParentStyle(
       containerEl,
       nfLabelPos === "side"
         ? getSideLabelParentStyle(parentStyle)
         : {
             ...parentStyle,
-            display: parentStyle.display ?? "flex",
             flexDirection: nfFlexDir,
             gap: parentStyle.gap ?? 4,
           },
@@ -1362,13 +1363,14 @@ export function applyImplicitStyles(
       tfLabelPos,
       parentStyle.flexDirection as string | undefined,
     );
+    // ADR-087 SP3: display 는 TextField/TextArea.spec containerStyles 로 리프팅됨.
+    //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존.
     effectiveParent = withParentStyle(
       containerEl,
       tfLabelPos === "side"
         ? getSideLabelParentStyle(parentStyle)
         : {
             ...parentStyle,
-            display: parentStyle.display ?? "flex",
             flexDirection: tfFlexDir,
             gap: parentStyle.gap ?? 4,
           },
@@ -1419,16 +1421,20 @@ export function applyImplicitStyles(
       dfLabelPos,
       parentStyle.flexDirection as string | undefined,
     );
+    // ADR-087 SP3: display 는 DateField/TimeField.spec containerStyles 로 리프팅됨.
+    //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
       flexDirection: dfFlexDir,
       gap: parentStyle.gap ?? 4,
     });
   }
 
   // ── SearchFieldWrapper ────────────────────────────────────────────────
-  // ComboBoxWrapper와 동일 패턴: border + height + padding + 자식 스타일 주입
+  // ComboBoxWrapper와 동일 패턴: border + height + padding + 자식 스타일 주입.
+  // ADR-087 SP3: display/flexDirection/alignItems 는 SelectTriggerSpec containerStyles
+  //   로 이미 리프팅됨 (SearchFieldWrapper → SelectTriggerSpec TAG_SPEC_MAP). 본 분기는
+  //   size-indexed gap/borderWidth/height + padding + child style 주입만 담당.
   if (containerTag === "searchfieldwrapper") {
     const sizeName = getDelegatedSize(containerEl, elementById);
     effectiveParent = withParentStyle(
@@ -1436,9 +1442,6 @@ export function applyImplicitStyles(
       withSpecPadding(
         {
           ...parentStyle,
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
           gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
           borderWidth: parentStyle.borderWidth ?? 1,
           height:

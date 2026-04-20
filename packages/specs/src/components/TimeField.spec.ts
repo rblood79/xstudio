@@ -47,6 +47,12 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP3: outer Field container static display 리프팅.
+  //   flexDirection 은 labelPosition prop runtime 결정 (implicitStyles 잔존).
+  containerStyles: {
+    display: "flex",
+  },
+
   defaultSize: "md",
 
   // ADR-086 P1: height 가 SPEC_TRIGGER_HEIGHT Record 값과 일치 (22/30/42/54).

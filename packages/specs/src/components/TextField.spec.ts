@@ -86,6 +86,12 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP3: outer Field container static display 리프팅.
+  //   flexDirection 은 labelPosition prop runtime 결정 (implicitStyles 잔존).
+  containerStyles: {
+    display: "flex",
+  },
+
   defaultSize: "md",
 
   properties: {
