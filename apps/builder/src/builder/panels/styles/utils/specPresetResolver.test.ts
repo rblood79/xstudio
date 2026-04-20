@@ -235,4 +235,27 @@ describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition 
       expect(preset.height).toBe(26);
     });
   });
+
+  describe("ADR-082 A2 — Transform extractor (containerStyles / composition string 값)", () => {
+    it("ListBox.containerStyles.width='100%' / maxHeight='300px' → string 통과", () => {
+      // ListBoxSpec.containerStyles 에 width: "100%", maxHeight: "300px" 선언
+      const preset = resolveSpecPreset("ListBox", undefined);
+      expect(preset.width).toBe("100%");
+      expect(preset.maxHeight).toBe("300px");
+    });
+
+    it("Toolbar.composition.containerStyles.width='fit-content' → string 통과 (kebab 경로)", () => {
+      const preset = resolveSpecPreset("Toolbar", undefined);
+      expect(preset.width).toBe("fit-content");
+    });
+
+    it("containerStyles 미보유 Spec → string 필드 undefined (기존 기본값 경로 유지)", () => {
+      const preset = resolveSpecPreset("Kbd", "md");
+      expect(
+        typeof preset.height === "number" || preset.height === undefined,
+      ).toBe(true);
+      // width 는 Kbd.sizes.md 에 미정의 → undefined
+      expect(preset.width).toBeUndefined();
+    });
+  });
 });

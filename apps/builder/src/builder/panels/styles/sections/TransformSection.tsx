@@ -148,20 +148,36 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   const bundle = useTransformValues(selectedId);
 
   // 기존 styleValues 인터페이스 어댑터 (문자열 값)
+  //   ADR-082 A2: inline 없으면 Spec specDefault (containerStyles/composition 의 "100%",
+  //   "fit-content", "300px" 등) 로 fallback — Appearance/Layout section 과 동일 패턴
   const styleValues = useMemo(() => {
     if (!bundle) return null;
-    const toStr = (v: string | number | undefined, fallback = ""): string =>
-      v === undefined || v === null ? fallback : String(v);
+    const toStr = (
+      inline: string | number | undefined,
+      specDefault: string | number | undefined,
+      fallback = "",
+    ): string => {
+      if (inline !== undefined && inline !== null && inline !== "")
+        return String(inline);
+      if (specDefault !== undefined && specDefault !== null)
+        return typeof specDefault === "number"
+          ? `${specDefault}px`
+          : String(specDefault);
+      return fallback;
+    };
     return {
-      width: toStr(bundle.width.inline, "auto"),
-      height: toStr(bundle.height.inline, "auto"),
-      top: toStr(bundle.top.inline, "auto"),
-      left: toStr(bundle.left.inline, "auto"),
-      minWidth: toStr(bundle.minWidth.inline),
-      maxWidth: toStr(bundle.maxWidth.inline),
-      minHeight: toStr(bundle.minHeight.inline),
-      maxHeight: toStr(bundle.maxHeight.inline),
-      aspectRatio: toStr(bundle.aspectRatio.inline),
+      width: toStr(bundle.width.inline, bundle.width.specDefault, "auto"),
+      height: toStr(bundle.height.inline, bundle.height.specDefault, "auto"),
+      top: toStr(bundle.top.inline, bundle.top.specDefault, "auto"),
+      left: toStr(bundle.left.inline, bundle.left.specDefault, "auto"),
+      minWidth: toStr(bundle.minWidth.inline, bundle.minWidth.specDefault),
+      maxWidth: toStr(bundle.maxWidth.inline, bundle.maxWidth.specDefault),
+      minHeight: toStr(bundle.minHeight.inline, bundle.minHeight.specDefault),
+      maxHeight: toStr(bundle.maxHeight.inline, bundle.maxHeight.specDefault),
+      aspectRatio: toStr(
+        bundle.aspectRatio.inline,
+        bundle.aspectRatio.specDefault,
+      ),
       isBody: bundle.isBody,
     };
   }, [bundle]);

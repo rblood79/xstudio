@@ -7,12 +7,13 @@ import {
 import { TAG_SPEC_MAP } from "../../../workspace/canvas/sprites/tagSpecMap";
 
 export interface TransformSpecPreset {
-  width?: number;
-  height?: number;
-  minWidth?: number;
-  minHeight?: number;
-  maxWidth?: number;
-  maxHeight?: number;
+  /** ADR-082 A2: containerStyles / composition 에서 공급된 값은 "100%", "300px", "fit-content" 같은 string 포함 */
+  width?: number | string;
+  height?: number | string;
+  minWidth?: number | string;
+  minHeight?: number | string;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
   aspectRatio?: number;
 }
 
@@ -196,6 +197,58 @@ const TYPOGRAPHY_NUMERIC_KEYS = [
   "letterSpacing",
 ] as const;
 
+// ─── Transform extractor (ADR-082 A2) ─────────────────────────────────
+//   sizes 경로는 기존 `pickNumeric` (숫자만) 유지. containerStyles / composition 경로는
+//   "100%" / "300px" / "fit-content" 같은 CSS string 값을 그대로 통과.
+
+const TRANSFORM_STRING_KEYS = [
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+] as const;
+
+function transformFromContainerStyles(
+  cs: Record<string, unknown>,
+): TransformSpecPreset {
+  const out: TransformSpecPreset = {};
+  for (const k of TRANSFORM_STRING_KEYS) {
+    const v = cs[k];
+    const resolved = resolveToNumber(v);
+    if (resolved !== undefined) out[k] = resolved;
+    else if (typeof v === "string") out[k] = v;
+  }
+  const ar = resolveToNumber(cs.aspectRatio);
+  if (ar !== undefined) out.aspectRatio = ar;
+  return out;
+}
+
+function transformFromComposition(comp: {
+  containerStyles?: Record<string, string>;
+}): TransformSpecPreset {
+  const cs = comp.containerStyles;
+  if (!cs) return {};
+  const out: TransformSpecPreset = {};
+  for (const k of TRANSFORM_STRING_KEYS) {
+    // composition.containerStyles 는 Record<string,string> — kebab/camel 양쪽 허용
+    const kebab = k.replace(/([A-Z])/g, "-$1").toLowerCase();
+    const v = cs[k] ?? cs[kebab];
+    if (typeof v === "string") {
+      const resolved = resolveToNumber(v);
+      if (resolved !== undefined) out[k] = resolved;
+      else out[k] = v;
+    }
+  }
+  const ar = cs.aspectRatio ?? cs["aspect-ratio"];
+  if (typeof ar === "string") {
+    const resolved = resolveToNumber(ar);
+    if (resolved !== undefined) out.aspectRatio = resolved;
+  }
+  return out;
+}
+
 // ─── Appearance extractor ──────────────────────────────────────────────
 
 function appearanceFromContainerStyles(
@@ -289,10 +342,9 @@ function layoutFromComposition(comp: {
 
 export const resolveSpecPreset = createResolver<TransformSpecPreset>(
   (sizeEntry) => pickNumeric(sizeEntry, TRANSFORM_KEYS),
-  // Transform (width/height): containerStyles 의 "100%", "300px" 같은 string 값은
-  // 숫자 preset 에 매핑 불가 — 현재 scope 제외. 향후 확장 대상.
-  undefined,
-  undefined,
+  // ADR-082 A2: containerStyles 의 "100%" / "300px" / "fit-content" 같은 string 값 통과
+  transformFromContainerStyles,
+  transformFromComposition,
 );
 
 export const resolveAppearanceSpecPreset = createResolver<AppearanceSpecPreset>(

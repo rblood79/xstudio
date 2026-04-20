@@ -10,7 +10,8 @@ import {
 export interface TransformTier {
   inline: string | number | undefined;
   effective: number | undefined;
-  specDefault: number | undefined;
+  /** ADR-082 A2: containerStyles/composition 에서 공급된 string 값 ("100%", "fit-content") 포함 */
+  specDefault: number | string | undefined;
 }
 
 export interface TransformValuesBundle {
@@ -52,7 +53,7 @@ export function useTransformValues(
       string,
       string | number | undefined
     >;
-    const presetRec = specPreset as Record<string, number | undefined>;
+    const presetRec = specPreset as Record<string, number | string | undefined>;
 
     const tier = (prop: string, effective?: number): TransformTier => ({
       inline: styleRec[prop],
