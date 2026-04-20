@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20 (**Revision 3** — Codex Round 4 LOW 3건 반영: scope 숫자 정합성 정리 (감사 결과 세부 분할 4+1, 점진적 실행 4 spec 표기, 잔존 분기 40-4=36 정정) + breakdown flexWrap 설명을 Phase A4 Breadcrumbs 단일로 축소. Rev 2 = Codex Round 3 Phase A2 scope 분리. Rev 1 = Codex Round 2 제목 축소 + R5 + R3-A.)
+Implemented — 2026-04-20 (**Revision 3** 기반 land: `1b2cf60c` P0 flexWrap schema / `3a8510f0` P1 Calendar / `049e830c` P3+P4 SelectTrigger + Breadcrumbs parent. 4 spec (Calendar/RangeCalendar/SelectTrigger/Breadcrumbs) parent container primitive 해체 완료. Phase A2 ProgressBar/Meter 는 후속 ADR. Rev 3 = Codex Round 4 LOW 3건 반영: scope 숫자 정합성 정리 + breakdown flexWrap 설명을 Phase A4 Breadcrumbs 단일로 축소. Rev 2 = Codex Round 3 Phase A2 scope 분리. Rev 1 = Codex Round 2 제목 축소 + R5 + R3-A.)
 
 ## Context
 
