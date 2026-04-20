@@ -2,7 +2,29 @@
 
 ## Status
 
-Proposed — 2026-04-19
+Implemented — 2026-04-19
+
+## Implementation
+
+**커밋 체인 (3건, 2026-04-19)**:
+
+| Commit     | 시각  | 내용                                                                                                                                                                                                                                           |
+| ---------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `04d659fc` | 02:49 | Phase 1-3 — `ListBoxItem.spec.ts` 신설 + `CSSGenerator` 자식 selector emit 확장 + `ListBox.render.shapes` / `calculateContentHeight` 가 `resolveListBoxItemMetric(fontSize)` 공유 소비 → `ITEM_PADDING_X/Y` / `LINE_HEIGHT` 하드코딩 상수 해체 |
+| `dfe54137` | 14:53 | Phase 4 — 수동 `ListBox.css` 내 Generator 커버 속성 (padding / border-radius / min-height / font-size / line-height / font-weight / gap + hover/disabled) 삭제. dead vars (`--lb-item-min-height/size/line-height`) 제거                       |
+| `d6345f49` | 22:40 | Phase 5 — `ListBox.props.style` override 경로 복구 + Skia ↔ CSS 시각 정합 최종 검증                                                                                                                                                            |
+
+**후속 workaround 해체**: 본 ADR 구현 중 도입된 post-fix workaround 4종(수동 `align-items: flex-start` / factory 중복 주입 / Style Panel Spec 무시 / `rearrangeShapesForColumn` 블랙리스트) 은 [ADR-079](079-spec-defaults-read-through-layout-primitive-ssot.md) 에서 구조적 해체 완료 (2026-04-19, main +6 commits).
+
+**Gates 충족 증거**:
+
+- G1 (Spec) — `ListBoxItem.spec.ts` 신설 + type-check 3/3 PASS
+- G2 (Generator) — `CSSGenerator` 자식 selector emit 확장. `generated/ListBox.css` 에 `.react-aria-ListBoxItem` 블록 emit 확인
+- G3 (통합) — `ListBox.render.shapes` 내부 상수 제거, `resolveListBoxItemMetric` 공통 헬퍼 소비
+- G4 (CSS 해체) — 수동 `ListBox.css` 에서 Generator 커버 속성 삭제. 잔존 수동 CSS 는 Generator 미커버 영역(display column, slot selector, variant 5종 cascade, Popover context override) 에 한정
+- G5 (종결) — Skia ↔ CSS 시각 정합 복구 (`d6345f49`). ADR-079 P2 에서 Style Panel 3번째 consumer 까지 대칭화
+
+**수동 `ListBox.css` 유지 비율**: 이전 ~80% → **~30%** (목표 달성). 추가 축소는 ADR-079 Negative 에서 언급한 "D2 variant 정렬" / "Popover context" 별도 ADR 대기.
 
 ## Context
 
