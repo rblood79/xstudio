@@ -50,9 +50,9 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 - 설명: Calendar/ProgressBar/Meter 의 archetype 을 실제 구조에 맞는 새 archetype 또는 기존 `collection` (flex column) 로 변경
 - 근거: archetype 의 정의 = "유사 구조 공유 컴포넌트의 CSS base" 이므로 실제 구조와 일치해야 의미있음
 - 위험:
-  - 기술: MED — archetype table 변경이 CSSGenerator 에 영향
+  - 기술: MED — archetype table 변경이 CSSGenerator 에 영향 (`packages/specs/src/renderers/CSSGenerator.ts:50-116 ARCHETYPE_BASE_STYLES` + `:534-549 generateBaseStyles` archetype lookup 2곳)
   - 성능: LOW — CSS 재생성만
-  - 유지보수: **HIGH** — archetype 의 의미가 약화 (실제 구조 ≠ archetype 이 허용되면 classification 체계 붕괴)
+  - 유지보수: **HIGH** — archetype 의 의미가 약화 (실제 구조 ≠ archetype 허용 시 classification 체계 붕괴). **구체 영향**: Calendar/ProgressBar/Meter 를 `collection` 으로 이동 시 `collection` 기존 소비자 6 spec(`ListBox.spec.ts:69 archetype:"collection"`, `Menu.spec.ts:~60`, `Autocomplete.spec.ts:21`, `TabPanel.spec.ts:26`, `TabPanels.spec.ts:20` — Phase 6 확인) 와 의미 혼재. `grid` archetype 의 실질 소비자는 `ProgressCircle.spec.ts:54`, `SliderTrack.spec.ts:38`, `SliderThumb.spec.ts:34` 3 spec 만 남음 → archetype 정의 불안정화
   - 마이그레이션: MED — 3 spec 의 CSS 변화 → Preview/Publish 전수 회귀 검증
 
 ### 대안 B: spec containerStyles 를 실제 구조 값으로 선언 (archetype 유지, 분기 해체)
@@ -70,7 +70,7 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 - 설명: Calendar 분기의 padding/gap (size-based), ProgressBar/Meter 의 rowGap/columnGap, Breadcrumbs 의 크기 계산 등 비즈니스 로직도 spec.sizes 나 spec.render 로 이관하여 분기 자체 삭제
 - 근거: 완전 SSOT 복귀 — implicitStyles 에 layout 값 전멸
 - 위험:
-  - 기술: **HIGH** — spec 모델 확장 필요 (size-indexed padding, children filter, selectedKey 필터 등 신규 필드)
+  - 기술: **HIGH** — spec 모델 확장 필요. **구체 이관 대상 3곳**: (1) `implicitStyles.ts:1566-1665` PROGRESSBAR_TAGS 분기의 `autoFormattedValue` 계산 + `ProgressBarTrack/Value/Label` children map, (2) `implicitStyles.ts:914-976` Breadcrumbs 분기의 `crumbFontWeight` / `measureTextWidth` / `itemWidth` 계산, (3) `implicitStyles.ts:1850-1897` Calendar 분기의 CalendarHeader/Grid `whiteSpace` 주입 + size-based padding 테이블. 이들을 spec 모델로 이관하려면 `packages/specs/src/types/spec.types.ts:98 ComponentSpec` 에 size-indexed layout 필드 / children filter hook / value format / text measure 등 신규 필드 추가 필수
   - 성능: LOW
   - 유지보수: MED — spec 모델 복잡화
   - 마이그레이션: **HIGH** — 각 분기의 비즈니스 로직을 spec 으로 이관 → 대규모 리팩토링, 후속 ADR 체인 필요
@@ -108,12 +108,12 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 
 ## Risks
 
-| ID  | 위험                                                                                                                                                                                      | 심각도 | 대응                                                                                                                                                  |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | Calendar/ProgressBar/Meter 의 size-based padding/gap 은 여전히 implicitStyles 에 잔존 → "부분" SSOT                                                                                       |  MED   | scope 명시: layout primitive(display/flex/align/justify/width) 만 리프팅. size-based 값은 후속 ADR (spec.sizes 모델 확장)                             |
-| R2  | Chrome MCP 실측 환경 제약 (background chrome 가용성)                                                                                                                                      |  MED   | cascade 검증(CSS diff "double-emit cascade 동일") + builder test 217/217 로 대체. 가용 시 샘플링                                                      |
-| R3  | SelectTrigger/Breadcrumbs 의 spec.containerStyles 를 `inline-flex` → `flex` 로 수정 → CSS 최종값 변화 (archetype=inline-flex override 하는 spec 값이 실제 `flex` 로 바뀌므로 CSS 도 flex) |  LOW   | ADR-083 Phase 8/11 에서 `inline-flex` 는 archetype 기준 리프팅이었음. 실제 Skia 동작은 `flex` → CSS 를 실제에 맞추는 것이 대칭 복구. 의도된 시각 변화 |
-| R4  | `flexWrap` Schema 확장이 다른 spec 에 영향 (신규 필드가 기존 spec 에 undefined)                                                                                                           |  LOW   | TypeScript optional field, 기존 spec 영향 없음. `CONTAINER_STYLES_FALLBACK_KEYS` 확장도 동일 안전                                                     |
+| ID  | 위험                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 심각도 | 대응                                                                                                                                                                                                                                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Calendar/ProgressBar/Meter 의 size-based padding/gap 은 여전히 implicitStyles 에 잔존 → "부분" SSOT                                                                                                                                                                                                                                                                                                                                                                                                                                                          |  MED   | scope 명시: layout primitive(display/flex/align/justify/width) 만 리프팅. size-based 값은 후속 ADR (spec.sizes 모델 확장)                                                                                                                                                                                                       |
+| R2  | Chrome MCP 실측 환경 제약 (background chrome 가용성)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |  MED   | cascade 검증(CSS diff "double-emit cascade 동일") + builder test 217/217 로 대체. 가용 시 샘플링                                                                                                                                                                                                                                |
+| R3  | SelectTrigger/Breadcrumbs 의 spec.containerStyles 를 `inline-flex` → `flex` 로 수정 → CSS 최종값 변화 (archetype=inline-flex override 하는 spec 값이 실제 `flex` 로 바뀌므로 CSS 도 flex). **사용처 수식** (grep): SelectTrigger = `packages/shared/src/renderers/SelectionRenderers.tsx` 1곳 소비 (Select wrapper 내부, block-level parent). Breadcrumbs = `packages/shared/src/renderers/LayoutRenderers.tsx` 5곳 + `packages/shared/src/components/Breadcrumbs.tsx` `<nav>` 감쌈 (nav = block). **Preview flow 영향 0 파일** (inline context 사용처 없음) |  LOW   | ADR-083 Phase 8/11 은 당시 archetype 기준 리프팅 원칙(archetype=inline-flex)을 준수했으며 실제 Skia 구현(flex)과 archetype 기준의 **의도적 불일치** 상태였음. ADR-084 는 spec 값을 실제 구현에 맞추는 대칭 복구. 두 컴포넌트 모두 block-level parent (Select/nav) 내에서만 렌더 → inline-flex/flex 전환이 parent flow 에 영향 0 |
+| R4  | `flexWrap` Schema 확장이 다른 spec 에 영향 (신규 필드가 기존 spec 에 undefined)                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |  LOW   | TypeScript optional field, 기존 spec 영향 없음. `CONTAINER_STYLES_FALLBACK_KEYS` 확장도 동일 안전                                                                                                                                                                                                                               |
 
 잔존 HIGH 위험 없음.
 
@@ -153,9 +153,9 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 - ADR-083: Layout Primitive 리프팅 (Phase 0 공통 선주입 + Phase 1-11 spec 리프팅) — 본 ADR 의 선행 ADR
 - ADR-083 breakdown §하드코딩 분기 감사 (R0) — 본 ADR 의 scope 결정 근거
 - `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts`:
-  - `:1850` Calendar / RangeCalendar 분기
-  - `:1657` PROGRESSBAR_TAGS (ProgressBar/Meter) 분기
-  - `:1256` SelectTrigger 분기
-  - `:914-976` Breadcrumbs 분기
+  - `:1850` Calendar / RangeCalendar 분기 진입
+  - `:1566` PROGRESSBAR_TAGS (ProgressBar/Meter) 분기 진입 / `:1657` 내부 effectiveParent 설정
+  - `:1256` SelectTrigger 분기 진입
+  - `:914` Breadcrumbs 분기 진입 / `:976` 내부 effectiveParent 설정
 - `packages/specs/src/types/spec.types.ts:59-93` ContainerStylesSchema
 - `packages/specs/src/renderers/CSSGenerator.ts:50-116` ARCHETYPE_BASE_STYLES (본 ADR 은 미변경)
