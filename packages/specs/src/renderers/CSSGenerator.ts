@@ -690,6 +690,15 @@ export function emitContainerStyles(c: ContainerStylesSchema): string[] {
   // ADR-079: align-items / justify-content override — archetype base 의 교차축/주축 정렬 override.
   if (c.alignItems) lines.push(`  align-items: ${c.alignItems};`);
   if (c.justifyContent) lines.push(`  justify-content: ${c.justifyContent};`);
+  // ADR-085: grid-template override — `display: grid` 동반 시 트랙/영역 정의.
+  //   Meter/ProgressBar 등이 legacy composition.containerStyles 에 수동 emit 하던 값을
+  //   정식 containerStyles 로 이관해 CSS/Skia/Taffy 3경로 SSOT 확보.
+  if (c.gridTemplateAreas)
+    lines.push(`  grid-template-areas: ${c.gridTemplateAreas};`);
+  if (c.gridTemplateColumns)
+    lines.push(`  grid-template-columns: ${c.gridTemplateColumns};`);
+  if (c.gridTemplateRows)
+    lines.push(`  grid-template-rows: ${c.gridTemplateRows};`);
 
   return lines;
 }

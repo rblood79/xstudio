@@ -87,6 +87,14 @@ export interface ContainerStylesSchema {
   // ADR-084: flex wrap 동작 — Breadcrumbs 등 수평 레이아웃의 줄바꿈 제어 override.
   flexWrap?: "nowrap" | "wrap" | "wrap-reverse";
 
+  // ADR-085: grid-template 3 필드 — grid 컨테이너 트랙/영역 정의.
+  //   `display: "grid"` 와 함께 사용. Meter/ProgressBar 처럼 legacy
+  //   `composition.containerStyles` 에 수동으로 적고 있던 grid-template-areas/columns/rows 을
+  //   정식 `containerStyles` 로 이관해 3경로(Spec/CSS/Taffy) SSOT 확보.
+  gridTemplateAreas?: string;
+  gridTemplateColumns?: string;
+  gridTemplateRows?: string;
+
   // 컨테이너 제약 — CSS 값 (SSOT 대상 아님)
   width?: string;
   maxHeight?: string;
