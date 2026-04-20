@@ -2,6 +2,43 @@
 
 ## Status
 
+Implemented — 2026-04-20 (Revision 3)
+
+## Implementation (2026-04-20 세션 10-12)
+
+6 SP 전체 land. 11 spec.containerStyles 리프팅 + 9 implicitStyles 분기 정리.
+
+- **SP1 Group** (`3b9f412d`): ToggleButtonGroup/Toolbar/CheckboxGroup/RadioGroup 4 spec 리프팅 (display/alignItems/width:fit-content)
+- **SP2 Collection** (`fdd49ece`): Tabs/TabList 2 spec 리프팅 (TabPanels 은 ADR-083 Phase 6 기존). GridList/GridListItem 은 runtime mode switch + spec 부재로 scope 외
+- **SP3 Field wrapper** (`1faa7e40`): NumberField/TextField/DateField/TimeField 4 spec display:flex 리프팅 + SearchFieldWrapper (SelectTriggerSpec 재사용)
+- **SP4 Overlay + SP5 Container** (`2ee6586d`): DatePicker/DateRangePicker 2 spec display:flex 리프팅 + InlineAlert 분기 3 필드 제거 (ADR-083 Phase 1 기존 containerStyles). Card/CardHeader/CardContent 는 spec 부재로 scope 외 (후속 ADR 후보)
+- **SP6 Synthetic-merge** (`cd7ba387`): TagGroup 1 spec 리프팅 (display+gap, skipCSSGeneration 이므로 Taffy-only). TagList/RadioItems/CheckboxItems/SliderTrack 은 spec 부재 또는 ContainerStylesSchema.position 미지원으로 scope 외
+
+### 공통 관찰 — gap 리프팅 제약
+
+`sizes.gap` size-indexed 값과 `containerStyles.gap` 충돌 — `generateSizeStyles.skipGap` 로직으로 size-indexed emit 제거됨. 회귀 방지로 다음 spec 에서 gap 은 리프팅 scope 외:
+
+- CheckboxGroup/RadioGroup (8/12/16)
+- NumberField/TextField/DateField/TimeField (size-indexed 2/4/6/8/10)
+
+TagGroup 은 `skipCSSGeneration:true` → CSS emit 없음 → gap 리프팅 안전 (Taffy only).
+
+### 후속 ADR 후보
+
+1. **CardHeader/CardContent spec 신설** — SP5 scope 외 child-level 주입 해체
+2. **ContainerStylesSchema.position 필드 추가** — SP6 SliderTrack position:relative 해체
+3. **SizeSpec.columnGap? 필드 신설** — ADR-086 Addendum 1 (SLIDER_COL_GAP) 해체
+4. **GridListItem spec 신설** — SP2 GridListItem 리프팅 (ADR-079 ListBoxItem 패턴)
+
+### 검증 최종
+
+- type-check 3/3 × 6회
+- specs 166/166 (12 snapshot 갱신) × 6회
+- builder 217/217 × 6회
+- Chrome MCP 실측은 runtime 배포 시 일괄
+
+## History
+
 Proposed — 2026-04-20 (**Revision 3** — Round 5 main 재검증 cross-cutting 87-R5-1 반영: SP6 SliderTrack 잔존 scope 경계 명시. ADR-086 Rev 4 가 SliderTrack 의 size-indexed Record (`SLIDER_COL_GAP` / `SLIDER_TRACK_LAYOUT_HEIGHT` / `SLIDER_FONT_SIZE` / `SIZE_LINE_HEIGHT`) 를 전부 해체하므로 SP6 SliderTrack 잔존 로직 = **layout-primitive only** (flexDirection / alignItems / justifyContent 등). Revision 2 = Codex Round 3 087-C1/C2 (synthetic-merge cross-cutting + G4 수치). Revision 1 = SP2 각주 + 단위 규약.)
 
 ## Context
