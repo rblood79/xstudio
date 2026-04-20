@@ -270,12 +270,15 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
     },
   },
 
+  // ADR-086 P1: lineHeight 추가 (SIZE_LINE_HEIGHT Record 와 일치 — 16/20/24/28).
+  //   P2 에서 implicitStyles 의 Record 가 제거되고 본 spec.sizes.lineHeight 를 직접 소비.
   sizes: {
     sm: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
+      lineHeight: "{typography.text-xs--line-height}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
@@ -284,6 +287,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
+      lineHeight: "{typography.text-sm--line-height}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
@@ -292,6 +296,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      lineHeight: "{typography.text-base--line-height}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 4,
     },
@@ -300,6 +305,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
+      lineHeight: "{typography.text-lg--line-height}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 4,
     },

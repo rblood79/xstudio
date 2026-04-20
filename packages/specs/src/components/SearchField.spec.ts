@@ -238,9 +238,11 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
     ],
   },
 
+  // ADR-086 P1: height 가 SPEC_TRIGGER_HEIGHT Record 값과 일치 (22/30/42/54).
+  //   P2 에서 implicitStyles 의 Record 가 제거되고 본 spec.sizes.height 를 직접 소비.
   sizes: {
     sm: {
-      height: 0,
+      height: 22,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -249,7 +251,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       gap: 6,
     },
     md: {
-      height: 0,
+      height: 30,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -258,7 +260,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       gap: 8,
     },
     lg: {
-      height: 0,
+      height: 42,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
@@ -267,7 +269,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       gap: 10,
     },
     xl: {
-      height: 0,
+      height: 54,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,

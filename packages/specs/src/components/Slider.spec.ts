@@ -99,12 +99,19 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
   defaultSize: "md",
 
+  // ADR-086 P1 (Rev 4 명시): lineHeight 추가 (SIZE_LINE_HEIGHT Record 와 일치 — 16/20/24/28).
+  //   SliderOutput 이 SIZE_LINE_HEIGHT 를 소비 → P2 에서 implicitStyles Record 제거 후
+  //   `SliderSpec.sizes[size].lineHeight` 직접 소비.
+  //   `gap` 은 Slider.spec.render 내부 `offsetY = fontSize + gap` (row-gap) 에서 소비 —
+  //   implicitStyles 의 SLIDER_COL_GAP (column-gap) 와 별개 축. Rev 4 breakdown 가정과
+  //   달리 두 값이 semantic 이 다르므로 spec.sizes.gap 은 기존 4/4/4/4 (row) 유지.
   sizes: {
     sm: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
+      lineHeight: "{typography.text-xs--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
       indicator: { trackHeight: 4, thumbSize: 14 },
@@ -114,6 +121,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
+      lineHeight: "{typography.text-sm--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
       indicator: { trackHeight: 8, thumbSize: 18 },
@@ -123,6 +131,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
+      lineHeight: "{typography.text-base--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
       indicator: { trackHeight: 12, thumbSize: 22 },
@@ -132,6 +141,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
+      lineHeight: "{typography.text-lg--line-height}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
       indicator: { trackHeight: 16, thumbSize: 26 },
