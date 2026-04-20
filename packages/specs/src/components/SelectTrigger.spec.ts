@@ -69,6 +69,9 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
   },
 
   // @sync BUTTON_SIZE_CONFIG (utils.ts) — SelectTrigger height = Button height
+  // ADR-091 Phase 3: `contentHeight` = height - 2*paddingY - 2*borderWidth(1)
+  //   content-box metric 을 layout 경로에서 계산 없이 직접 lookup. TRIGGER_CONTENT_HEIGHTS
+  //   Record 해체 대응.
   sizes: {
     xs: {
       height: 20,
@@ -78,6 +81,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
       borderRadius: "{radius.xs}" as TokenRef,
       iconSize: 10,
       gap: 2,
+      contentHeight: 16, // 20 - 1*2 - 1*2
     },
     sm: {
       height: 22,
@@ -87,6 +91,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 4,
+      contentHeight: 16, // 22 - 2*2 - 1*2
     },
     md: {
       height: 30,
@@ -96,6 +101,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 6,
+      contentHeight: 20, // 30 - 4*2 - 1*2
     },
     lg: {
       height: 42,
@@ -105,6 +111,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 8,
+      contentHeight: 24, // 42 - 8*2 - 1*2
     },
     xl: {
       height: 54,
@@ -114,6 +121,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
       borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 28,
       gap: 10,
+      contentHeight: 28, // 54 - 12*2 - 1*2
     },
   },
 

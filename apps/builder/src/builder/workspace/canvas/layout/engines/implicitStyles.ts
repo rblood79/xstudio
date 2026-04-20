@@ -15,8 +15,6 @@ import {
   parsePadding,
   PHANTOM_INDICATOR_CONFIGS,
   measureTextWidth,
-  TABS_BAR_HEIGHT,
-  TABS_PANEL_PADDING,
 } from "./utils";
 import {
   InlineAlertSpec,
@@ -39,10 +37,13 @@ function resolveTabPanelPadding(
   hasExplicitSize: boolean,
   density: string,
 ): number {
+  // ADR-091 Phase 2: TABS_PANEL_PADDING 중간 캐시 → specSizeField 직접 lookup.
+  //   `specSizeField` 내부 `sizes[sz] ?? sizes[defaultSize]` fallback 활용 → md 명시 불필요.
   if (hasExplicitSize)
-    return TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
-  if (density === "regular") return TABS_PANEL_PADDING.lg;
-  return TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
+    return specSizeField("tabpanels", sizeName, "paddingX") ?? 16;
+  if (density === "regular")
+    return specSizeField("tabpanels", "lg", "paddingX") ?? 16;
+  return specSizeField("tabpanels", sizeName, "paddingX") ?? 16;
 }
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
@@ -923,7 +924,7 @@ export function applyImplicitStyles(
   // ── Tabs ───────────────────────────────────────────────────────────
   if (containerTag === "tabs") {
     const sizeName = (containerProps?.size as string) ?? "md";
-    const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
+    const tabBarHeight = specSizeField("tabs", sizeName, "height") ?? 30;
     const density = (containerProps?.density as string) ?? "compact";
     const tabPanelPadding = resolveTabPanelPadding(
       sizeName,
@@ -1026,7 +1027,7 @@ export function applyImplicitStyles(
     const tabsParent = findAncestorByTag(containerEl, "Tabs", elementById, 3);
     const tabsProps = tabsParent?.props as Record<string, unknown> | undefined;
     const sizeName = (tabsProps?.size as string) ?? "md";
-    const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
+    const tabBarHeight = specSizeField("tabs", sizeName, "height") ?? 30;
     const items =
       (tabsProps?.items as Array<{ id: string; title: string }> | undefined) ??
       [];

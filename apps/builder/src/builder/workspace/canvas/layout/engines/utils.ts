@@ -33,7 +33,16 @@ import {
   resolveListBoxItemMetric,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
-import { TabsSpec, TabPanelsSpec } from "@composition/specs";
+import {
+  TabsSpec,
+  TabPanelsSpec,
+  // ADR-091 Phase 3: Class A spec.sizes 직접 참조 — Record 해체 대응.
+  IconSpec,
+  CalendarHeaderSpec,
+  DateInputSpec,
+  ComboBoxSpec,
+  SelectTriggerSpec,
+} from "@composition/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   measureWrappedTextHeight,
@@ -834,20 +843,14 @@ export function calculateContentWidth(
   if (explicitWidth !== undefined) return explicitWidth;
 
   // 1.05. Icon: iconSize 기반 intrinsic width (fit-content)
+  // ADR-091 Phase 3: ICON_SIZE_MAP Record → IconSpec.sizes.iconSize 직접 참조.
   if (tag === "icon") {
     const props = element.props as Record<string, unknown> | undefined;
     // fontSize 오버라이드 시 iconSize = fontSize
     const overrideFs = parseNumericValue(style?.fontSize);
     if (overrideFs != null) return overrideFs;
-    const ICON_SIZE_MAP: Record<string, number> = {
-      xs: 16,
-      sm: 18,
-      md: 24,
-      lg: 36,
-      xl: 48,
-    };
     const sizeName = String(props?.size ?? "md");
-    return ICON_SIZE_MAP[sizeName] ?? 18;
+    return IconSpec.sizes[sizeName]?.iconSize ?? 18;
   }
 
   // 1.1. StatusLight: dot + gap + text width
@@ -1416,13 +1419,9 @@ export function calculateContentWidth(
  * 브라우저 CSS와 유사한 기본 크기 적용
  */
 
-/** @sync TabsSpec.sizes — Spec이 SSOT */
-export const TABS_BAR_HEIGHT: Record<string, number> = Object.fromEntries(
-  Object.entries(TabsSpec.sizes).map(([k, v]) => [k, v.height]),
-);
-export const TABS_PANEL_PADDING: Record<string, number> = Object.fromEntries(
-  Object.entries(TabPanelsSpec.sizes).map(([k, v]) => [k, v.paddingX]),
-);
+// ADR-091 Phase 2: TABS_BAR_HEIGHT / TABS_PANEL_PADDING 중간 캐시 제거.
+//   소비처는 `TabsSpec.sizes[size].height` / `TabPanelsSpec.sizes[size].paddingX` 직접 참조
+//   또는 `specSizeField("tabs"/"tabpanels", sizeName, "height"/"paddingX")` (implicitStyles 경로) 사용.
 
 const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   // 버튼/인풋 계열
@@ -1522,17 +1521,11 @@ export function calculateContentHeight(
   if (tag1 === "icon") {
     const props = element.props as Record<string, unknown> | undefined;
     // fontSize 오버라이드 시 iconSize = fontSize
+    // ADR-091 Phase 3: ICON_SIZE_MAP Record (R7) → IconSpec.sizes.iconSize 직접 참조.
     const overrideFs = parseNumericValue(style?.fontSize);
     if (overrideFs != null) return overrideFs;
-    const ICON_SIZE_MAP: Record<string, number> = {
-      xs: 16,
-      sm: 18,
-      md: 24,
-      lg: 36,
-      xl: 48,
-    };
     const sizeName = String(props?.size ?? "md");
-    return ICON_SIZE_MAP[sizeName] ?? 18;
+    return IconSpec.sizes[sizeName]?.iconSize ?? 18;
   }
 
   // 1.5. StatusLight: spec sizes에 정의된 고정 높이
@@ -1788,14 +1781,9 @@ export function calculateContentHeight(
     // @sync Select.spec.ts / ComboBox.spec.ts sizes
     // content-box = border-box - paddingY*2 - borderWidth*2
     // borderWidth=1 (CSS .react-aria-Button / .combobox-container)
-    const TRIGGER_CONTENT_HEIGHTS: Record<string, number> = {
-      xs: 16, // 20 - 1*2 - 1*2
-      sm: 16, // 22 - 2*2 - 1*2
-      md: 20, // 30 - 4*2 - 1*2
-      lg: 24, // 42 - 8*2 - 1*2
-      xl: 28, // 54 - 12*2 - 1*2
-    };
-    return TRIGGER_CONTENT_HEIGHTS[parentSize] ?? 20;
+    // ADR-091 Phase 3: TRIGGER_CONTENT_HEIGHTS Record → SelectTriggerSpec.sizes.contentHeight.
+    //   SelectTrigger 와 ComboBoxWrapper 는 tagSpecMap 에서 동일 spec(SelectTriggerSpec) 참조.
+    return SelectTriggerSpec.sizes[parentSize]?.contentHeight ?? 20;
   }
 
   // 3b. CardHeader/CardContent: 투명 컨테이너 — 자식 높이 합산/max
@@ -1954,25 +1942,19 @@ export function calculateContentHeight(
   }
 
   // CalendarHeader: intrinsic height = 버튼 높이 (sm:24, md:30, lg:36)
+  // ADR-091 Phase 3: headerHeights Record → CalendarHeaderSpec.sizes.height 직접 참조.
   if (tag === "calendarheader") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
-    const headerHeights: Record<string, number> = { sm: 24, md: 30, lg: 36 };
-    return headerHeights[sizeName] ?? 30;
+    return CalendarHeaderSpec.sizes[sizeName]?.height ?? 30;
   }
 
   // DateInput: intrinsic height (@sync DateInput.spec.ts INPUT_HEIGHT)
+  // ADR-091 Phase 3: inputHeights Record → DateInputSpec.sizes.height 직접 참조.
   if (tag === "dateinput") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
-    const inputHeights: Record<string, number> = {
-      xs: 20,
-      sm: 22,
-      md: 30,
-      lg: 42,
-      xl: 54,
-    };
-    return inputHeights[sizeName] ?? 30;
+    return DateInputSpec.sizes[sizeName]?.height ?? 30;
   }
 
   // CalendarGrid: intrinsic height = weekdayRow + dateRows
@@ -2033,14 +2015,9 @@ export function calculateContentHeight(
   // 3.6c. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)
   // Select/ComboBox: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
   // Dropdown: 레거시 spec shapes 기반 계산
-  // @sync Select.spec.ts / ComboBox.spec.ts sizes.height
-  const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
-    xs: 20,
-    sm: 22,
-    md: 30,
-    lg: 42,
-    xl: 54,
-  };
+  // ADR-091 Phase 3: COMBOBOX_INPUT_HEIGHTS Record → ComboBoxSpec.sizes.height 직접 참조.
+  const comboBoxHeight = (sz: string): number =>
+    ComboBoxSpec.sizes[sz]?.height ?? 30;
   // ADR-073: SelectItem/ComboBoxItem element 소멸 → props.items SSOT 로 이관되어 childElements 에 애초 등장하지 않음.
   // ListBoxItem 만 드롭다운 전용 자식으로 남아 collapsed 상태에서 비표시.
   const SELECT_HIDDEN_CHILDREN = new Set(["ListBoxItem"]);
@@ -2083,7 +2060,7 @@ export function calculateContentHeight(
           // SelectTrigger/ComboBoxWrapper: spec size.height를 직접 사용
           // CSS에서 trigger/wrapper 높이 = lineHeight + paddingY*2 + borderWidth*2
           // 이 값은 spec sizes.height에 이미 반영되어 있음
-          childH = COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30;
+          childH = comboBoxHeight(sizeName);
         } else if (
           childTag === "label" ||
           childTag === "description" ||
@@ -2206,7 +2183,7 @@ export function calculateContentHeight(
     }
 
     // Dropdown: 레거시 spec shapes 기반 계산
-    const bodyHeight = COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30;
+    const bodyHeight = comboBoxHeight(sizeName);
     const hasLabel = !!props?.label;
     if (hasLabel) {
       const labelChild = childElements?.find((c) => c.tag === "Label");
@@ -2376,9 +2353,11 @@ export function calculateContentHeight(
     if (tag === "tabs") {
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
-      const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
+      const tabBarHeight =
+        TabsSpec.sizes[sizeName]?.height ?? TabsSpec.sizes.md.height;
       const tabPanelPadding =
-        TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
+        TabPanelsSpec.sizes[sizeName]?.paddingX ??
+        TabPanelsSpec.sizes.md.paddingX;
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
       let panelChildren = childElements.filter((c) => c.tag === "TabPanel");
