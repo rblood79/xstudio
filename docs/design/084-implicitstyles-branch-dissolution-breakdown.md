@@ -1,6 +1,6 @@
-# ADR-084 Breakdown — implicitStyles 하드코딩 분기 해체 (5 spec 완전 SSOT 복귀)
+# ADR-084 Breakdown — implicitStyles 하드코딩 분기 해체 (4 spec parent container primitive 해체, Phase A2 scope 외)
 
-> 본 문서는 ADR-084 (`docs/adr/084-implicitstyles-branch-dissolution.md`) 의 Decision 섹션에서 분리된 구현 상세. ADR-083 에서 R8 후속 ADR 로 이월된 5 spec (Calendar / ProgressBar / Meter / SelectTrigger / Breadcrumbs) 의 하드코딩 분기 해체 방법.
+> 본 문서는 ADR-084 (`docs/adr/084-implicitstyles-branch-dissolution.md`) 의 Decision 섹션에서 분리된 구현 상세. **Revision 2 (Codex Round 3 반영)** — Phase A2 (ProgressBar/Meter) 는 본 ADR scope 에서 완전 분리 (ContainerStylesSchema grid-template-\* 확장 후속 ADR 로 이관). 본 ADR scope = Phase A1/A3/A4 (Calendar/RangeCalendar/SelectTrigger/Breadcrumbs parent container).
 
 ## 배경 요약
 
@@ -293,26 +293,47 @@ const CONTAINER_STYLES_FALLBACK_KEYS = [
 
 ## 롤백 전략
 
-각 Phase 독립 커밋:
+각 Phase 독립 커밋. **Phase A2 는 본 ADR scope 외 — 커밋 계획에서 제외** (Codex Round 3 반영):
 
-| 커밋                                                     | 범위                                                     |
-| -------------------------------------------------------- | -------------------------------------------------------- |
-| `feat(adr-084): P0 flexWrap schema + fallback keys 확장` | Schema + Keys + Generator                                |
-| `feat(adr-084): P1 Calendar 분기 해체`                   | Calendar.spec + implicitStyles Calendar 분기             |
-| `feat(adr-084): P2 ProgressBar/Meter 분기 해체`          | ProgressBar/Meter.spec + implicitStyles PROGRESSBAR 분기 |
-| `feat(adr-084): P3 SelectTrigger 분기 해체`              | SelectTrigger.spec + implicitStyles SelectTrigger 분기   |
-| `feat(adr-084): P4 Breadcrumbs 분기 해체`                | Breadcrumbs.spec + implicitStyles Breadcrumbs 분기       |
-| `docs(adr-084): Status Proposed → Implemented`           | ADR + README                                             |
+| 커밋                                                     | 범위                                                                         |    Scope    |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------- | :---------: |
+| `feat(adr-084): P0 flexWrap schema + fallback keys 확장` | Schema + Keys + Generator                                                    |  ✅ 본 ADR  |
+| `feat(adr-084): P1 Calendar 분기 해체`                   | Calendar.spec + implicitStyles Calendar 분기                                 |  ✅ 본 ADR  |
+| ~~`feat(adr-084): P2 ProgressBar/Meter 분기 해체`~~      | ~~ProgressBar/Meter.spec + implicitStyles PROGRESSBAR 분기~~                 | ❌ 후속 ADR |
+| `feat(adr-084): P3 SelectTrigger 분기 해체`              | SelectTrigger.spec + implicitStyles SelectTrigger 분기                       |  ✅ 본 ADR  |
+| `feat(adr-084): P4 Breadcrumbs parent 분기 해체`         | Breadcrumbs.spec + implicitStyles Breadcrumbs parent (child 주입은 scope 외) |  ✅ 본 ADR  |
+| `docs(adr-084): Status Proposed → Implemented`           | ADR + README                                                                 |  ✅ 본 ADR  |
+
+### Phase A2 (ProgressBar/Meter) 별도 후속 ADR
+
+Phase A2 는 `ProgressBar.css` grid-template-areas/columns cascade 깨짐 위험(R3-A HIGH 수준)으로 본 ADR 에서 **완전 분리**. 별도 후속 ADR 필요:
+
+1. ContainerStylesSchema `grid-template-areas` / `grid-template-columns` 필드 추가
+2. `CONTAINER_STYLES_FALLBACK_KEYS` 확장
+3. CSSGenerator `emitContainerStyles` 에 grid-template-\* 처리
+4. ProgressBar.spec + Meter.spec 에 containerStyles grid-template-\* 선언 (archetype table 값과 동일)
+5. implicitStyles PROGRESSBAR_TAGS 분기의 display/flexDirection/flexWrap/justifyContent 직접 할당 제거
+6. Chrome MCP 실측으로 Preview Label/Value/Bar 배치 동일성 확증
 
 ## 세션 분할 권장
 
-| 세션 | 범위                                                               | 시간 |
-| :--: | ------------------------------------------------------------------ | :--: |
-|  A   | Phase 0 (Schema 확장) + Phase 1 (Calendar) + Chrome MCP 실측       |  2h  |
-|  B   | Phase 2 (ProgressBar/Meter) + 실측                                 |  2h  |
-|  C   | Phase 3 (SelectTrigger) + Phase 4 (Breadcrumbs) + 실측 + 최종 검증 |  2h  |
+본 ADR scope = **4 spec 3 Phase** (Phase A2 제외):
 
-**총 6h / 3 세션**.
+| 세션 | 범위                                                                                                         | 시간 |
+| :--: | ------------------------------------------------------------------------------------------------------------ | :--: |
+|  A   | Phase 0 (flexWrap Schema 확장) + Phase A1 (Calendar) + Chrome MCP 실측 (R3 Calendar grid→flex 확증)          |  2h  |
+|  B   | Phase A3 (SelectTrigger) + Phase A4 (Breadcrumbs parent 만) + Chrome MCP 실측 + 최종 검증 + docs Status 전이 |  2h  |
+
+**총 4h / 2 세션** (Phase A2 분리로 1 세션 절감).
+
+### Phase A2 실행 조건 (후속 ADR scope, 본 ADR 외)
+
+본 ADR 이 Implemented 된 이후 Phase A2 를 실행하려면:
+
+1. ContainerStylesSchema grid-template-\* 확장 ADR 이 Proposed → Implemented
+2. ProgressBar.spec + Meter.spec 에 `containerStyles.grid-template-areas/columns` 선언
+3. Chrome MCP 실측으로 Label/Value/Bar 배치 회귀 0 확증 (Gate 통과 조건)
+4. implicitStyles PROGRESSBAR_TAGS 분기 해체
 
 ## 참조
 

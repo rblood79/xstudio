@@ -1,8 +1,8 @@
-# ADR-084: implicitStyles 하드코딩 분기 해체 — 5 spec parent container primitive 해체
+# ADR-084: implicitStyles 하드코딩 분기 해체 — 4 spec (Calendar/RangeCalendar/SelectTrigger/Breadcrumbs) parent container primitive 해체
 
 ## Status
 
-Proposed — 2026-04-20 (**Revision 1** — Codex 리뷰 2건 반영: 제목을 "완전 SSOT 복귀" → "parent container primitive 해체" 로 축소 + ProgressBar/Meter grid-template cascade 위험 HIGH 승격 + Breadcrumb child 주입 잔존 명시)
+Proposed — 2026-04-20 (**Revision 2** — Codex Round 3 MEDIUM 2건 반영: Phase A2 (ProgressBar/Meter) 를 본 ADR scope 에서 완전 분리하여 "4 spec 기준 HIGH+ 0" 로 위험 임계치 재정렬 + breakdown 제목/세션/커밋 계획 동기화. Rev 1 은 Codex Round 2 반영 — 제목 축소 + R5 Breadcrumb child 잔존 + R3-A HIGH 승격.)
 
 ## Context
 
@@ -21,12 +21,19 @@ Proposed — 2026-04-20 (**Revision 1** — Codex 리뷰 2건 반영: 제목을 
 
 ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "grid"` 또는 `display: "inline-flex"` 를 archetype 기준으로 리프팅했으나, 분기의 직접 할당이 이를 무시 → Skia 에는 archetype/spec 값이 반영되지 않는 비대칭 지속.
 
-### Scope 축소 (Revision 1, Codex 리뷰 반영)
+### Scope (Revision 2 — Codex Round 3 반영으로 재정렬)
 
-본 ADR 은 각 분기의 **parent container (effectiveParent) primitive** 만 해체한다. 아래는 **scope 외 — 별도 후속 ADR** 대상:
+본 ADR 은 아래 **4 spec (5 분기 중 4 분기)** 의 parent container (effectiveParent) primitive 만 해체한다:
 
-- **Breadcrumb child 주입** (`implicitStyles.ts:955-971`) — `width/minWidth`=`itemWidth(measureTextWidth)`, `height/minHeight`=`breadcrumbsHeight(spec size)`, `flexShrink: 0`, `flexGrow: 0`. 비즈니스 로직(텍스트 측정 + size 기반) → 대안 C scope
-- **ProgressBar/Meter grid-template cascade** — `ProgressBar.css` 가 `grid-template-areas: "label value" "bar bar"` + `grid-template-columns: 1fr auto` + 자식 `grid-area` 로 배치 중. spec.containerStyles.display 를 `grid → flex` 변경 시 template 무효화 + 자식 grid-area 무효 → Preview 배치 **구조적 깨짐 HIGH**. 따라서 Phase A2 (ProgressBar/Meter) 는 **Schema 확장 (`grid-template-areas`/`grid-template-columns` 지원)** 선행 후 수행 권장 → 본 ADR 에서는 **Phase A2 를 후속 ADR 로 연기** 고려. 본 ADR 결정 경로에서는 실행 전 Chrome MCP 실측 필수
+- Phase A1 — Calendar / RangeCalendar 분기 (`implicitStyles.ts:1850`)
+- Phase A3 — SelectTrigger 분기 (`implicitStyles.ts:1256`)
+- Phase A4 — Breadcrumbs parent 분기 (`implicitStyles.ts:914-976` — parent effectiveParent 만)
+
+### Scope 외 — 별도 후속 ADR 분리
+
+- **Phase A2 — ProgressBar / Meter 분기** (`implicitStyles.ts:1566`): `ProgressBar.css` 가 `grid-template-areas: "label value" "bar bar"` + `grid-template-columns: 1fr auto` + 자식 `grid-area` 로 배치 중. spec.containerStyles.display 를 `grid → flex` 변경 시 template 무효화 + 자식 grid-area 무효 → Preview 배치 **구조적 깨짐 HIGH**. **`ContainerStylesSchema` 에 `grid-template-areas`/`grid-template-columns` 미지원**. 본 ADR 에서는 완전 제외, **별도 후속 ADR** (Schema 확장 + emitContainerStyles 확장 + Phase A2 실행) 대상. 본 ADR 의 Risk Threshold / Risks / Gates 는 Phase A2 를 포함하지 않음
+- **Breadcrumb child 주입** (`implicitStyles.ts:955-971`) — `width/minWidth`=`itemWidth(measureTextWidth)`, `height/minHeight`=`breadcrumbsHeight(spec size)`, `flexShrink: 0`, `flexGrow: 0`. 비즈니스 로직(텍스트 측정 + size 기반) → 대안 C 경로 후속 ADR (본 ADR 은 Breadcrumbs parent container 만)
+- **size-based padding/gap** (Calendar/ProgressBar/Meter/Breadcrumbs) — spec.sizes 모델 확장 필요 → 대안 C 경로 후속 ADR
 
 ### 감사 결과 (40 분기 중 5 분기)
 
@@ -84,15 +91,17 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 
 ### Risk Threshold Check
 
+> Scope 기준: **4 spec** (Calendar/RangeCalendar/SelectTrigger/Breadcrumbs parent container). Phase A2 (ProgressBar/Meter) 는 본 ADR scope 외 — 별도 후속 ADR.
+
 | 대안 |   기술   | 성능 | 유지보수 | 마이그레이션 | HIGH+ 개수 |
 | ---- | :------: | :--: | :------: | :----------: | :--------: |
 | A    |   MED    | LOW  | **HIGH** |     MED      |     1      |
 | B    |   LOW    | LOW  |   LOW    |     LOW      |   **0**    |
 | C    | **HIGH** | LOW  |   MED    |   **HIGH**   |     2      |
 
-**루프 판정**: 대안 B 는 HIGH+ 0개 → 루프 불필요, 대안 B 선정.
+**루프 판정**: 대안 B 는 HIGH+ 0개 (4 spec scope 기준) → 루프 불필요, 대안 B 선정.
 
-대안 A 는 "classification 체계 붕괴" 위험이 결정적. 대안 C 는 scope 확대로 후속 ADR 체인 강제.
+대안 A 는 "classification 체계 붕괴" 위험이 결정적. 대안 C 는 scope 확대로 후속 ADR 체인 강제. **Phase A2 가 본 ADR 에서 제외된 이유**: ProgressBar/Meter grid-template cascade 는 Schema 확장(`grid-template-areas`/`grid-template-columns`) 선행이 필요한 "기술 HIGH" 위험. 4 spec scope 유지를 위해 별도 ADR 로 분리.
 
 ## Decision
 
@@ -115,49 +124,46 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 
 ## Risks
 
-| ID                  | 위험                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |  심각도  | 대응                                                                                                                                                                                                                                                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1                  | Calendar/ProgressBar/Meter 의 size-based padding/gap 은 여전히 implicitStyles 에 잔존 → "부분" SSOT                                                                                                                                                                                                                                                                                                                                                                                                                                                          |   MED    | scope 명시: layout primitive(display/flex/align/justify/width) 만 리프팅. size-based 값은 후속 ADR (spec.sizes 모델 확장)                                                                                                                                                                                                       |
-| R2                  | Chrome MCP 실측 환경 제약 (background chrome 가용성)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |   MED    | cascade 검증(CSS diff "double-emit cascade 동일") + builder test 217/217 로 대체. 가용 시 샘플링                                                                                                                                                                                                                                |
-| R3                  | SelectTrigger/Breadcrumbs 의 spec.containerStyles 를 `inline-flex` → `flex` 로 수정 → CSS 최종값 변화 (archetype=inline-flex override 하는 spec 값이 실제 `flex` 로 바뀌므로 CSS 도 flex). **사용처 수식** (grep): SelectTrigger = `packages/shared/src/renderers/SelectionRenderers.tsx` 1곳 소비 (Select wrapper 내부, block-level parent). Breadcrumbs = `packages/shared/src/renderers/LayoutRenderers.tsx` 5곳 + `packages/shared/src/components/Breadcrumbs.tsx` `<nav>` 감쌈 (nav = block). **Preview flow 영향 0 파일** (inline context 사용처 없음) |   LOW    | ADR-083 Phase 8/11 은 당시 archetype 기준 리프팅 원칙(archetype=inline-flex)을 준수했으며 실제 Skia 구현(flex)과 archetype 기준의 **의도적 불일치** 상태였음. ADR-084 는 spec 값을 실제 구현에 맞추는 대칭 복구. 두 컴포넌트 모두 block-level parent (Select/nav) 내에서만 렌더 → inline-flex/flex 전환이 parent flow 에 영향 0 |
-| R4                  | `flexWrap` Schema 확장이 다른 spec 에 영향 (신규 필드가 기존 spec 에 undefined)                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |   LOW    | TypeScript optional field, 기존 spec 영향 없음. `CONTAINER_STYLES_FALLBACK_KEYS` 확장도 동일 안전                                                                                                                                                                                                                               |
-| R3-A (Codex 재검토) | **ProgressBar/Meter grid-template cascade** — `ProgressBar.css` 는 `grid-template-areas: "label value" "bar bar"` + `grid-template-columns: 1fr auto` + 자식 `grid-area` 배치 적극 사용. spec.containerStyles.display 를 `grid → flex` 로 변경 시 grid-template 무효화 + 자식 grid-area 무효 → Preview Label/Value/Bar 배치 **구조적 깨짐**                                                                                                                                                                                                                  | **HIGH** | **Phase A2 (ProgressBar/Meter) 를 ContainerStylesSchema grid-template-\* 확장 후속 ADR 로 연기 권장**. 또는 Phase A2 실행 전 Chrome MCP 실측으로 Preview 깨짐 실증 + 대안 C(비즈니스 로직 이관) 재검토                                                                                                                          |
-| R3-B (Codex 추가)   | **Calendar CSS 최종값 `grid → flex` 변화** — `Calendar.css` 는 `display:grid` 만 사용 (grid-template 없음) → flex 전환 시 CalendarHeader/Grid 자식 block 배치 유사                                                                                                                                                                                                                                                                                                                                                                                           |   LOW    | Chrome MCP Calendar 샘플링으로 실측. 영향 없을 가능성 높음 (template 미사용)                                                                                                                                                                                                                                                    |
-| R5 (Codex HIGH)     | **Breadcrumb child 주입 잔존** — `implicitStyles.ts:955-971` 에서 child Breadcrumb 에 `width/minWidth`=`itemWidth` (measureTextWidth), `height/minHeight`=`breadcrumbsHeight` (spec.size), `flexShrink:0` / `flexGrow:0` 직접 주입. ADR-084 는 parent container 만 해체 → Breadcrumbs 는 "parent SSOT + child branch-owned" 혼합 상태                                                                                                                                                                                                                        |   MED    | 제목/Decision 을 "parent container primitive 해체" 로 축소 (완료, Revision 1). child 주입 해체는 대안 C 경로 (text measure hook + size-indexed layout spec 모델 확장) 후속 ADR                                                                                                                                                  |
+| ID  | 위험                                                                                                                                                                                                                                                                                                                                                                                               | 심각도 | 대응                                                                                                                                                                                           |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Calendar 의 size-based padding/gap 은 여전히 implicitStyles 에 잔존 → "부분" SSOT                                                                                                                                                                                                                                                                                                                  |  MED   | scope 명시: layout primitive(display/flex/align/justify/width) 만 리프팅. size-based 값은 후속 ADR (spec.sizes 모델 확장)                                                                      |
+| R2  | Chrome MCP 실측 환경 제약 (background chrome 가용성)                                                                                                                                                                                                                                                                                                                                               |  MED   | cascade 검증(CSS diff "double-emit cascade 동일") + builder test 217/217 로 대체. 가용 시 샘플링                                                                                               |
+| R3  | **4 spec scope 의 CSS 최종값 변화** (Codex Round 2 반영): (a) SelectTrigger/Breadcrumbs `inline-flex → flex` — 사용처 수식: SelectTrigger `SelectionRenderers.tsx` 1곳 (Select block 내부), Breadcrumbs `LayoutRenderers.tsx` 5곳 + `<nav>` 감쌈 → Preview flow 영향 0 파일. (b) Calendar `grid → flex` — `Calendar.css` grid-template 미사용 → CalendarHeader/Grid 자식 block 배치 유사, 영향 LOW |  LOW   | ADR-083 Phase 8/11 archetype 기준 리프팅과 실제 구현(flex) 의 의도적 불일치를 spec 값 변경으로 대칭 복구. block-level parent 에서만 렌더 → flow 영향 0. Calendar 는 Chrome MCP 샘플링으로 실측 |
+| R4  | `flexWrap` Schema 확장이 다른 spec 에 영향 (신규 필드가 기존 spec 에 undefined)                                                                                                                                                                                                                                                                                                                    |  LOW   | TypeScript optional field, 기존 spec 영향 없음. `CONTAINER_STYLES_FALLBACK_KEYS` 확장도 동일 안전                                                                                              |
+| R5  | **Breadcrumb child 주입 잔존** (Codex Round 2 반영) — `implicitStyles.ts:955-971` 에서 child Breadcrumb 에 `width/minWidth`=`itemWidth`(measureTextWidth), `height/minHeight`=`breadcrumbsHeight`(spec.size), `flexShrink:0` / `flexGrow:0` 직접 주입. 본 ADR 은 parent container 만 해체 → Breadcrumbs 는 "parent SSOT + child branch-owned" 혼합 상태                                            |  MED   | 제목/Decision 을 "parent container primitive 해체" 로 축소 (Revision 1 완료). child 주입 해체는 대안 C 경로 (text measure hook + size-indexed layout spec 모델 확장) 후속 ADR                  |
 
-**잔존 HIGH 위험 1건**: R3-A (ProgressBar/Meter grid-template cascade). Phase A2 를 후속 ADR 분리 또는 Chrome MCP 실측 선행 완화 필요.
+**잔존 HIGH 위험 0건** (4 spec scope 기준, Codex Round 3 반영). Phase A2 (ProgressBar/Meter grid-template cascade) 는 본 ADR scope 외 — 별도 후속 ADR 에서 다룸.
 
 ## Gates
 
-| Gate                | 시점             | 통과 조건                                                                                                                                        | 실패 시 대안                                                                                                       |
-| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| G0                  | Phase 0 전후     | `ContainerStylesSchema.flexWrap` + `CONTAINER_STYLES_FALLBACK_KEYS` 확장 + CSSGenerator `emitContainerStyles` 에 flexWrap 처리 추가              | 기존 schema 10 필드로 Phase 2/4 에서 flexWrap 없이 진행 (ProgressBar/Breadcrumbs 분기에서 `??` 패턴 유지)          |
-| G1                  | 매 Phase 완료    | `pnpm -w type-check` 3/3 PASS + `pnpm --filter @composition/builder test` 217/217 PASS                                                           | 개별 Phase revert                                                                                                  |
-| G2                  | 매 Phase 완료    | `pnpm --filter @composition/specs test -u` 166/166 PASS (snapshot 의도된 update)                                                                 | 의도 외 snapshot 변화 시 scope 재검토                                                                              |
-| G3                  | 매 Phase 완료    | Generated CSS diff 수동 검토 — double-emit cascade 동일 확증                                                                                     | archetype 값과 spec 값이 다를 때 cascade 최종값이 의도한 대로인지 검증, 의도 외 시 revert                          |
-| G4                  | 전체 완료        | Chrome MCP 5 spec 각 1 샘플 실측 — Skia 렌더가 spec 값과 일치                                                                                    | 환경 제약 시 cascade 검증으로 대체 + 잔존 debt 명시                                                                |
-| G5 (R3-A HIGH 대응) | Phase A2 진입 전 | Chrome MCP 실측으로 **ProgressBar/Meter `grid → flex` 전환 시 Label/Value/Bar 배치 깨짐 여부 확증**. 깨짐 없음 = 진행, 깨짐 있음 = Phase A2 연기 | Phase A2 를 후속 ADR (ContainerStylesSchema `grid-template-areas/columns` 지원 + emitContainerStyles 확장) 로 이관 |
+| Gate | 시점          | 통과 조건                                                                                                                                                                          | 실패 시 대안                                                                                 |
+| ---- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| G0   | Phase 0 전후  | `ContainerStylesSchema.flexWrap` + `CONTAINER_STYLES_FALLBACK_KEYS` 확장 + CSSGenerator `emitContainerStyles` 에 flexWrap 처리 추가 (Phase A4 Breadcrumbs `flexWrap: "nowrap"` 용) | 기존 schema 10 필드로 Phase A4 에서 flexWrap 없이 진행 (Breadcrumbs 분기에서 `??` 패턴 유지) |
+| G1   | 매 Phase 완료 | `pnpm -w type-check` 3/3 PASS + `pnpm --filter @composition/builder test` 217/217 PASS                                                                                             | 개별 Phase revert                                                                            |
+| G2   | 매 Phase 완료 | `pnpm --filter @composition/specs test -u` 166/166 PASS (snapshot 의도된 update)                                                                                                   | 의도 외 snapshot 변화 시 scope 재검토                                                        |
+| G3   | 매 Phase 완료 | Generated CSS diff 수동 검토 — double-emit cascade 동일 확증                                                                                                                       | archetype 값과 spec 값이 다를 때 cascade 최종값이 의도한 대로인지 검증, 의도 외 시 revert    |
+| G4   | 전체 완료     | Chrome MCP 4 spec 각 1 샘플 실측 — Skia 렌더가 spec 값과 일치 (Calendar/RangeCalendar/SelectTrigger/Breadcrumbs parent). Calendar 는 R3 검증 포함                                  | 환경 제약 시 cascade 검증으로 대체 + 잔존 debt 명시                                          |
 
 ## Consequences
 
 ### Positive
 
-- **D3 symmetric consumer 대칭 복구**: 5 spec 의 CSS ↔ Skia 값 일치. ADR-063 SSOT Charter 준수도 개선
+- **D3 symmetric consumer 대칭 복구 (4 spec scope)**: Calendar/RangeCalendar/SelectTrigger/Breadcrumbs parent container 의 CSS ↔ Skia 값 일치. ADR-063 SSOT Charter 준수도 개선
 - **ADR-083 Phase 0 실효성 확증**: 공통 선주입 layer 가 의도대로 작동 (분기가 방해하지 않을 때)
-- **implicitStyles 가독성 향상**: 5 분기에서 layout primitive 중복 제거 (약 15-20 라인 감소)
+- **implicitStyles 가독성 향상**: 4 분기 parent container 에서 layout primitive 중복 제거 (약 12-16 라인 감소)
 - **Spec = 실제 선언** 원칙 강화: containerStyles 가 실제 구조를 선언하는 것이 기본값, archetype 은 "대다수 기본" 역할로 명확화
 - **Phase 6 Menu 선례 일반화**: containerStyles 에 layout primitive override 는 표준 패턴으로 승격
 
 ### Negative
 
-- **5 spec CSS 최종값 변화** (Codex MEDIUM 반영 — 기존 SelectTrigger/Breadcrumbs 만 언급 → 5 spec 전체로 확장):
-  - SelectTrigger/Breadcrumbs: `inline-flex → flex` (R3: Preview flow 영향 0)
-  - Calendar: `grid → flex` (R3-B: `Calendar.css` grid-template 미사용, Preview 영향 LOW)
-  - ProgressBar/Meter: `grid → flex` (R3-A HIGH: `ProgressBar.css` grid-template-areas/columns 적극 사용, Phase A2 실측/연기 필수)
-- **Breadcrumbs child 주입 잔존** (Codex HIGH 반영): `implicitStyles.ts:955-971` 의 Breadcrumb child `width/height/flexShrink/flexGrow` 주입 해체는 scope 외. Breadcrumbs 는 본 ADR 이후 "parent SSOT + child branch-owned" 혼합 상태. 완전 SSOT 복귀는 대안 C 경로 후속 ADR (text measure hook + size-indexed layout 모델 확장)
+- **4 spec scope CSS 최종값 변화** (Codex Round 2 + Round 3 반영):
+  - SelectTrigger/Breadcrumbs: `inline-flex → flex` (R3: Preview flow 영향 0 파일)
+  - Calendar: `grid → flex` (R3: `Calendar.css` grid-template 미사용, Preview 영향 LOW, Chrome MCP 실측 필요)
+- **Breadcrumbs child 주입 잔존** (Codex Round 2 HIGH 반영, R5): `implicitStyles.ts:955-971` 의 child `width/height/flexShrink/flexGrow` 주입 해체는 scope 외. Breadcrumbs 는 본 ADR 이후 "parent SSOT + child branch-owned" 혼합 상태. 완전 SSOT 복귀는 대안 C 경로 후속 ADR (text measure hook + size-indexed layout 모델 확장)
+- **Phase A2 (ProgressBar/Meter) scope 외** (Codex Round 3 반영): ProgressBar/Meter grid-template cascade 깨짐 위험으로 본 ADR 에서 완전 분리. 별도 후속 ADR (ContainerStylesSchema `grid-template-areas/columns` 지원 + emitContainerStyles 확장 + Phase A2 실행) 에서 해결. 본 ADR 실행 후에도 ProgressBar/Meter 의 implicitStyles 분기 직접 할당 override 잔존
 - **부분 SSOT**: size-based padding/gap, children 처리, 비즈니스 로직은 여전히 implicitStyles 에 잔존 → 완전 SSOT 는 후속 ADR 필요
 - **archetype 과 spec 값 불일치 허용**: Calendar archetype=grid vs spec.containerStyles.display=flex 가 공존. cascade 로는 최종 값이 결정되지만 "archetype 의 의미" 가 약해짐 — 향후 ContainerStylesSchema 확장 시 archetype 삭제 검토 가능
-- **35 분기 잔존**: 본 ADR 은 5 spec 만 해체. 비즈니스 로직 분기 (taggroup / tabs / tablist / numberfield / selecttrigger children 등) 는 별도 ADR 필요
+- **잔존 분기 40-1=39**: 본 ADR 은 4 분기만 해체. ProgressBar/Meter 분기 1 + 비즈니스 로직 분기 ~35 는 별도 ADR 필요
 
 ## References
 
