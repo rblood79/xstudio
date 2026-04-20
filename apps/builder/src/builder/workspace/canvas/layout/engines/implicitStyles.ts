@@ -1848,7 +1848,10 @@ export function applyImplicitStyles(
     filteredChildren = applySideLabelChildStyles(filteredChildren, dpLabelPos);
   }
 
-  // ── Calendar — padding/gap/display 주입 (Generated CSS 동기) ─────
+  // ── Calendar — size-based padding/gap 주입 (Generated CSS 동기) ─────
+  // ADR-084 Phase A1: width/display/flexDirection 은 Calendar.spec.ts containerStyles
+  //   에서 resolveContainerStylesFallback 경유로 parentStyle 에 선주입됨.
+  //   여기서는 size-indexed padding/gap 만 처리 (spec.sizes 모델 확장 후속 ADR 까지 유지).
   if (containerTag === "calendar" || containerTag === "rangecalendar") {
     const calSize = (containerEl.props?.size as string) || "md";
     const calPadGap: Record<string, { pad: number; gap: number }> = {
@@ -1864,9 +1867,6 @@ export function applyImplicitStyles(
         ...effectiveParent.props,
         style: {
           ...(effectiveParent.props?.style as Record<string, unknown>),
-          width: ps.width ?? "fit-content",
-          display: ps.display ?? "flex",
-          flexDirection: ps.flexDirection ?? "column",
           paddingTop: ps.paddingTop ?? pad,
           paddingRight: ps.paddingRight ?? pad,
           paddingBottom: ps.paddingBottom ?? pad,

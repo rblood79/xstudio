@@ -46,6 +46,15 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   name: "Calendar",
   description: "React Aria 기반 캘린더 (월 그리드 + 네비게이션)",
   archetype: "calendar",
+
+  // ADR-084 Phase A1: calendar archetype base 의 layout primitive 리프팅.
+  //   implicitStyles.ts:1850 Calendar/RangeCalendar 분기의 width/display/flexDirection
+  //   직접 할당을 해체하고 Spec SSOT 로 복귀. size-based padding/gap 은 scope 외.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+    width: "fit-content",
+  },
   element: "div",
 
   defaultVariant: "default",
