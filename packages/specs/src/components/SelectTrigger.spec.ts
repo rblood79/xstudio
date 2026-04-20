@@ -25,6 +25,17 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
   element: "button",
   archetype: "button",
 
+  // ADR-083 Phase 8: button archetype base 의 layout primitive 4 필드 리프팅.
+  //   implicitStyles.ts:1256 selecttrigger 분기가 `display:"flex"` 직접 할당으로
+  //   parentStyle override → Skia 에서는 inline-flex 미반영 (기존 동작 유지,
+  //   후속 R8 분기 해체 ADR 에서 정리). CSS / Style Panel 에는 정상 반영.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "fit-content",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -119,7 +130,11 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = SelectTriggerSpec.variants![(props as { variant?: keyof typeof SelectTriggerSpec.variants }).variant ?? SelectTriggerSpec.defaultVariant!];
+      const variant =
+        SelectTriggerSpec.variants![
+          (props as { variant?: keyof typeof SelectTriggerSpec.variants })
+            .variant ?? SelectTriggerSpec.defaultVariant!
+        ];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth

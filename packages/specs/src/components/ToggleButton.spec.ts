@@ -51,6 +51,14 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   cssEmitMode: "button-base",
   element: "button",
 
+  // ADR-083 Phase 8: button archetype base 의 layout primitive 4 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "fit-content",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

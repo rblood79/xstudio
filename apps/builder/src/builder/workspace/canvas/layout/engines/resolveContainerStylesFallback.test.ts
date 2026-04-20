@@ -83,7 +83,9 @@ describe("resolveContainerStylesFallback (ADR-080 G1 + ADR-083 Phase 0)", () => 
   describe("unknown tag — containerStyles 보유 Spec 아님", () => {
     it("미지원 tag → 빈 객체", () => {
       expect(resolveContainerStylesFallback("unknown", {})).toEqual({});
-      expect(resolveContainerStylesFallback("button", {})).toEqual({});
+      // ADR-083 Phase 8 이후: Button containerStyles 리프팅됨 → 빈 객체 아님.
+      // TAG_SPEC_MAP 미등록 태그 (예: "nonexistent") 만 빈 객체.
+      expect(resolveContainerStylesFallback("nonexistent-tag", {})).toEqual({});
     });
   });
 

@@ -63,6 +63,16 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   cssEmitMode: "button-base",
   element: "button",
 
+  // ADR-083 Phase 8: button archetype base 의 layout primitive 4 필드 리프팅.
+  //   box-sizing/cursor/user-select/transition/font-family 는 ContainerStylesSchema
+  //   미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "fit-content",
+  },
+
   defaultVariant: "primary",
   defaultSize: "md",
 

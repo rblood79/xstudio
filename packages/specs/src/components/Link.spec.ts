@@ -52,6 +52,14 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
   archetype: "button",
   element: "a",
 
+  // ADR-083 Phase 8: button archetype base 의 layout primitive 4 필드 리프팅.
+  containerStyles: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "fit-content",
+  },
+
   defaultVariant: "primary",
   defaultSize: "md",
 
@@ -244,7 +252,11 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = LinkSpec.variants![(props as { variant?: keyof typeof LinkSpec.variants }).variant ?? LinkSpec.defaultVariant!];
+      const variant =
+        LinkSpec.variants![
+          (props as { variant?: keyof typeof LinkSpec.variants }).variant ??
+            LinkSpec.defaultVariant!
+        ];
       const text = props.children || props.text || "";
 
       // 상태에 따른 텍스트색 선택 (사용자 스타일 우선)

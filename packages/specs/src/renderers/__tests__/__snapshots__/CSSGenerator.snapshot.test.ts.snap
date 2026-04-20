@@ -817,6 +817,12 @@ exports[`CSSGenerator snapshot baseline > Button 1`] = `
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   /* Default variant */
   --button-color: var(--fg);
   --button-text: var(--bg);
@@ -4120,6 +4126,12 @@ exports[`CSSGenerator snapshot baseline > FileTrigger 1`] = `
     font-family: var(--font-sans);
     display: inline-block;
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   /* Default size */
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
@@ -5202,6 +5214,12 @@ exports[`CSSGenerator snapshot baseline > Link 1`] = `
     user-select: none;
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   /* Default variant */
   background: var(--bg);
@@ -11389,6 +11407,12 @@ exports[`CSSGenerator snapshot baseline > ToggleButton 1`] = `
     user-select: none;
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   /* Default variant */
   --button-color: var(--bg-muted);

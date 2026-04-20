@@ -1231,6 +1231,7 @@ export function createDefaultButtonProps(): ButtonElementProps {
 }
 
 export function createDefaultLinkProps(): LinkElementProps {
+  // ADR-083 Phase 8 (R5): display/alignItems 는 LinkSpec.containerStyles SSOT 로 이관.
   return {
     children: "Link",
     href: "#",
@@ -1239,11 +1240,6 @@ export function createDefaultLinkProps(): LinkElementProps {
     isDisabled: false,
     isExternal: false,
     showExternalIcon: true,
-    // CSS base: display:inline-flex; align-items:center; gap:var(--spacing)
-    style: {
-      display: "inline-flex",
-      alignItems: "center",
-    },
   };
 }
 
@@ -1952,11 +1948,8 @@ export function createDefaultDropZoneProps(): DropZoneElementProps {
 }
 
 export function createDefaultFileTriggerProps(): FileTriggerElementProps {
-  return {
-    style: {
-      display: "inline-flex",
-    },
-  };
+  // ADR-083 Phase 8 (R5): display 는 FileTriggerSpec.containerStyles SSOT 로 이관.
+  return {};
 }
 
 export function createDefaultTooltipProps(): TooltipElementProps {
