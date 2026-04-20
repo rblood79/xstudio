@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20 (**Revision 2** — Codex Round 3 MEDIUM 2건 반영: Phase A2 (ProgressBar/Meter) 를 본 ADR scope 에서 완전 분리하여 "4 spec 기준 HIGH+ 0" 로 위험 임계치 재정렬 + breakdown 제목/세션/커밋 계획 동기화. Rev 1 은 Codex Round 2 반영 — 제목 축소 + R5 Breadcrumb child 잔존 + R3-A HIGH 승격.)
+Proposed — 2026-04-20 (**Revision 3** — Codex Round 4 LOW 3건 반영: scope 숫자 정합성 정리 (감사 결과 세부 분할 4+1, 점진적 실행 4 spec 표기, 잔존 분기 40-4=36 정정) + breakdown flexWrap 설명을 Phase A4 Breadcrumbs 단일로 축소. Rev 2 = Codex Round 3 Phase A2 scope 분리. Rev 1 = Codex Round 2 제목 축소 + R5 + R3-A.)
 
 ## Context
 
@@ -35,13 +35,15 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 - **Breadcrumb child 주입** (`implicitStyles.ts:955-971`) — `width/minWidth`=`itemWidth(measureTextWidth)`, `height/minHeight`=`breadcrumbsHeight(spec size)`, `flexShrink: 0`, `flexGrow: 0`. 비즈니스 로직(텍스트 측정 + size 기반) → 대안 C 경로 후속 ADR (본 ADR 은 Breadcrumbs parent container 만)
 - **size-based padding/gap** (Calendar/ProgressBar/Meter/Breadcrumbs) — spec.sizes 모델 확장 필요 → 대안 C 경로 후속 ADR
 
-### 감사 결과 (40 분기 중 5 분기)
+### 감사 결과 (40 분기 중 본 ADR 4 분기 + 후속 ADR 1 분기)
 
 `implicitStyles.ts` 의 `containerTag === "..."` 분기 총 40 매치 중:
 
 - **약 15 분기**: `parentStyle.X ?? "값"` 패턴 — Phase 0 선주입 후 자연 호환 (spec 값 우선)
 - **약 20 분기**: 비즈니스 로직 (orientation/size 조건부, children 처리, selectedKey 등) — 단순 해체 불가, scope 외
-- **5 분기** (본 ADR scope): 직접 할당 override — ADR-083 Phase 0 효력 무효화
+- **5 분기** 총 직접 할당 override 발견 — ADR-083 Phase 0 효력 무효화:
+  - **4 분기 (본 ADR scope)**: Calendar/RangeCalendar (`:1850`), SelectTrigger (`:1256`), Breadcrumbs parent (`:914-976`)
+  - **1 분기 (별도 후속 ADR)**: ProgressBar/Meter (`:1566`) — grid-template cascade 위험으로 scope 분리 (Revision 2)
 
 ### Hard Constraints
 
@@ -55,7 +57,7 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 
 - Chrome MCP 실측 환경 제약 (background chrome 가용성) → cascade 검증 + CSS diff 로 대체 가능
 - 후속 35 분기 (scope 외) 는 별도 ADR 로 이어갈 수 있음
-- `ContainerStylesSchema` 에 `flexWrap` 미지원 — Phase 0 선행 확장 필요 (ProgressBar/Meter 가 `flexWrap:"wrap"` 요구)
+- `ContainerStylesSchema` 에 `flexWrap` 미지원 — Phase 0 선행 확장 필요 (Phase A4 Breadcrumbs 가 `flexWrap:"nowrap"` 요구)
 
 ## Alternatives Considered
 
@@ -110,7 +112,7 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 ### 선택 근거
 
 1. **위험 수용**: 4축 모두 LOW — ADR-083 Phase 1-11 과 동일 패턴의 반복 적용 (Menu 선례 확장)
-2. **점진적 실행**: 5 spec 각 독립 커밋, 문제 발생 시 개별 revert 가능
+2. **점진적 실행**: 4 spec (Calendar/RangeCalendar/SelectTrigger/Breadcrumbs) 각 독립 커밋, 문제 발생 시 개별 revert 가능
 3. **archetype 의미 보존**: `CSSGenerator.ts ARCHETYPE_BASE_STYLES` 수정 없음 → 다른 컴포넌트 무영향. archetype 은 "기본 템플릿", spec containerStyles 는 "개별 override" 라는 명확한 역할 분담 유지
 4. **ADR-083 연속성**: Phase 0 공통 선주입 layer 의 의도된 작동 — spec 값이 parentStyle 에 선주입되고 분기가 이를 spread 로 보존
 5. **Chrome MCP 대안**: cascade 검증(CSS diff) + type-check 로 회귀 0 확증 가능, 실측은 보완
@@ -163,7 +165,7 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 - **Phase A2 (ProgressBar/Meter) scope 외** (Codex Round 3 반영): ProgressBar/Meter grid-template cascade 깨짐 위험으로 본 ADR 에서 완전 분리. 별도 후속 ADR (ContainerStylesSchema `grid-template-areas/columns` 지원 + emitContainerStyles 확장 + Phase A2 실행) 에서 해결. 본 ADR 실행 후에도 ProgressBar/Meter 의 implicitStyles 분기 직접 할당 override 잔존
 - **부분 SSOT**: size-based padding/gap, children 처리, 비즈니스 로직은 여전히 implicitStyles 에 잔존 → 완전 SSOT 는 후속 ADR 필요
 - **archetype 과 spec 값 불일치 허용**: Calendar archetype=grid vs spec.containerStyles.display=flex 가 공존. cascade 로는 최종 값이 결정되지만 "archetype 의 의미" 가 약해짐 — 향후 ContainerStylesSchema 확장 시 archetype 삭제 검토 가능
-- **잔존 분기 40-1=39**: 본 ADR 은 4 분기만 해체. ProgressBar/Meter 분기 1 + 비즈니스 로직 분기 ~35 는 별도 ADR 필요
+- **잔존 분기 40-4=36**: 본 ADR 은 4 분기만 해체. 잔존 36 분기 = Phase A2 (ProgressBar/Meter) 1 + 비즈니스 로직 분기 ~35. 전부 별도 후속 ADR 필요
 
 ## References
 

@@ -263,7 +263,7 @@ pnpm --filter @composition/specs test -u             # 166/166 PASS (snapshot �
 
 ### ADR-084 scope 내 확장 (선행 작업 — Phase 0)
 
-현재 Schema 에 `flexWrap` 없음. Phase A2/A4 에서 `flexWrap: "wrap"/"nowrap"` 필요.
+현재 Schema 에 `flexWrap` 없음. **Phase A4 Breadcrumbs 에서 `flexWrap: "nowrap"`** 필요 (Breadcrumbs parent container 의 자식 Breadcrumb 줄바꿈 방지). Phase A2 (ProgressBar/Meter) 의 `flexWrap: "wrap"` 은 본 ADR scope 외 — 별도 후속 ADR.
 
 ```typescript
 // packages/specs/src/types/spec.types.ts
