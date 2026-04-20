@@ -1759,8 +1759,10 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── Card ────────────────────────────────────────────────────────────
   // ── DatePicker / DateRangePicker — flex column + gap + Label 필터링 + labelPosition ─────
+  // ADR-087 SP4: display 는 DatePicker/DateRangePicker.spec containerStyles 로 리프팅됨.
+  //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존. POPOVER_CHILDREN_TAGS
+  //   필터링은 popover-hosted Calendar/RangeCalendar 레이아웃 제외 (특수 동작).
   if (containerTag === "datepicker" || containerTag === "daterangepicker") {
     const hasLabel = !!containerProps?.label;
     filteredChildren = children.filter((c) => {
@@ -1775,7 +1777,6 @@ export function applyImplicitStyles(
     );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
       flexDirection: dpFlexDir,
       gap: parentStyle.gap ?? 4,
     });
@@ -1977,16 +1978,15 @@ export function applyImplicitStyles(
       descFontSize: (specSize.descFontSize as number) ?? 14,
       descFontWeight: (specSize.descFontWeight as number) ?? 400,
     };
+    // ADR-087 SP5: display/flexDirection/width 는 InlineAlert.spec containerStyles
+    //   (ADR-083 Phase 1) 로 이미 리프팅됨. padding/gap 은 size-indexed runtime 잔존.
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
       paddingTop: parentStyle.paddingTop ?? s.py,
       paddingBottom: parentStyle.paddingBottom ?? s.py,
       paddingLeft: parentStyle.paddingLeft ?? s.px,
       paddingRight: parentStyle.paddingRight ?? s.px,
       gap: parentStyle.gap ?? s.gap,
-      width: parentStyle.width ?? "100%",
     });
 
     // 자식 Heading/Description에 spec 기반 font 스타일 주입

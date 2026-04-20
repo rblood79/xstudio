@@ -247,6 +247,12 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-087 SP4: outer container static display 리프팅.
+  //   flexDirection 은 labelPosition prop runtime 결정 (implicitStyles 잔존).
+  containerStyles: {
+    display: "flex",
+  },
+
   defaultSize: "md",
 
   sizes: DATE_PICKER_SIZES,

@@ -2787,6 +2787,9 @@ exports[`CSSGenerator snapshot baseline > DatePicker 1`] = `
     box-sizing: border-box;
     color: var(--fg);
 
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
+
   /* Default size */
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
@@ -3184,6 +3187,9 @@ exports[`CSSGenerator snapshot baseline > DateRangePicker 1`] = `
     align-items: flex-start;
     box-sizing: border-box;
     color: var(--fg);
+
+  /* Container styles (ADR-071 + ADR-083 Phase 1) */
+  display: flex;
 
   /* Default size */
   font-size: var(--text-sm);
