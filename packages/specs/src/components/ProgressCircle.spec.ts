@@ -54,6 +54,13 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
   archetype: "progress",
   element: "div",
 
+  // ADR-083 Phase 10: progress archetype base 의 layout primitive 1 필드 리프팅.
+  //   grid-template-areas / grid-template-columns / nested selector / box-sizing 은
+  //   ContainerStylesSchema 미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -111,7 +118,11 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ProgressCircleSpec.variants![(props as { variant?: keyof typeof ProgressCircleSpec.variants }).variant ?? ProgressCircleSpec.defaultVariant!];
+      const variant =
+        ProgressCircleSpec.variants![
+          (props as { variant?: keyof typeof ProgressCircleSpec.variants })
+            .variant ?? ProgressCircleSpec.defaultVariant!
+        ];
       const sizeName = props.size ?? "md";
       const dims =
         PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.md;
@@ -128,7 +139,10 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
 
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 12);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        12,
+      );
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       const value = Math.max(0, Math.min(100, props.value ?? 0));

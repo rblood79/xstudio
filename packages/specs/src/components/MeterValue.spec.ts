@@ -30,6 +30,11 @@ export const MeterValueSpec: ComponentSpec<MeterValueProps> = {
   element: "output",
   archetype: "progress",
 
+  // ADR-083 Phase 10: progress archetype base 의 layout primitive 1 필드 리프팅.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultVariant: "informative",
   defaultSize: "md",
 
@@ -108,7 +113,11 @@ export const MeterValueSpec: ComponentSpec<MeterValueProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = MeterValueSpec.variants![(props as { variant?: keyof typeof MeterValueSpec.variants }).variant ?? MeterValueSpec.defaultVariant!];
+      const variant =
+        MeterValueSpec.variants![
+          (props as { variant?: keyof typeof MeterValueSpec.variants })
+            .variant ?? MeterValueSpec.defaultVariant!
+        ];
       const text = props.children ?? "";
       if (!text) return [];
 

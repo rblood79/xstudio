@@ -31,6 +31,11 @@ export const ProgressBarValueSpec: ComponentSpec<ProgressBarValueProps> = {
   element: "output",
   archetype: "progress",
 
+  // ADR-083 Phase 10: progress archetype base 의 layout primitive 1 필드 리프팅.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -91,7 +96,11 @@ export const ProgressBarValueSpec: ComponentSpec<ProgressBarValueProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = ProgressBarValueSpec.variants![(props as { variant?: keyof typeof ProgressBarValueSpec.variants }).variant ?? ProgressBarValueSpec.defaultVariant!];
+      const variant =
+        ProgressBarValueSpec.variants![
+          (props as { variant?: keyof typeof ProgressBarValueSpec.variants })
+            .variant ?? ProgressBarValueSpec.defaultVariant!
+        ];
       const text = props.children ?? "";
       if (!text) return [];
 
