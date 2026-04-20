@@ -101,12 +101,14 @@ const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<string, ComponentSpec<any>> = new Map(
   ]),
 );
 
-// ADR-083 Phase 0: ContainerStylesSchema layout primitive 필드 10종 (ADR-080 기존 4 + 신규 8).
-//   display/flexDirection/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding.
+// ADR-083 Phase 0: ContainerStylesSchema layout primitive 필드.
+//   ADR-080 기존 4 + ADR-083 Phase 0 신규 6 + ADR-084 flexWrap = 총 11종.
+//   display/flexDirection/flexWrap/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding.
 //   Spec 미선언 태그는 resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
 const CONTAINER_STYLES_FALLBACK_KEYS = [
   "display",
   "flexDirection",
+  "flexWrap",
   "alignItems",
   "justifyContent",
   "width",

@@ -685,6 +685,8 @@ export function emitContainerStyles(c: ContainerStylesSchema): string[] {
   //   containerStyles 이 우선이어야 Spec SSOT 관점에서 display/direction 선언이 명시적.
   if (c.display) lines.push(`  display: ${c.display};`);
   if (c.flexDirection) lines.push(`  flex-direction: ${c.flexDirection};`);
+  // ADR-084: flex-wrap override — Breadcrumbs 등 수평 레이아웃의 줄바꿈 제어.
+  if (c.flexWrap) lines.push(`  flex-wrap: ${c.flexWrap};`);
   // ADR-079: align-items / justify-content override — archetype base 의 교차축/주축 정렬 override.
   if (c.alignItems) lines.push(`  align-items: ${c.alignItems};`);
   if (c.justifyContent) lines.push(`  justify-content: ${c.justifyContent};`);

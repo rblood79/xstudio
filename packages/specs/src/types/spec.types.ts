@@ -84,6 +84,8 @@ export interface ContainerStylesSchema {
     | "space-between"
     | "space-around"
     | "space-evenly";
+  // ADR-084: flex wrap 동작 — Breadcrumbs 등 수평 레이아웃의 줄바꿈 제어 override.
+  flexWrap?: "nowrap" | "wrap" | "wrap-reverse";
 
   // 컨테이너 제약 — CSS 값 (SSOT 대상 아님)
   width?: string;
