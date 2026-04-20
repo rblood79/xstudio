@@ -20,46 +20,67 @@
 
 ## 파일 변경표
 
-| 파일                                                                         | Phase | 변경                                                                                                                                                                                                                                                                                                                                                                   |
-| ---------------------------------------------------------------------------- | :---: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/specs/src/components/SelectTrigger.spec.ts`                        |  P1   | `sizes.xs/sm/md/lg/xl.height` 확인 및 누락 보강 (현재 SPEC_TRIGGER_HEIGHT 기준)                                                                                                                                                                                                                                                                                        |
-| `packages/specs/src/components/Calendar.spec.ts`                             |  P1   | `sizes.sm/md/lg.paddingX/paddingY/gap` 확인 (현재 calPadGap 기준 4/8/12, 4/6/8)                                                                                                                                                                                                                                                                                        |
-| `packages/specs/src/components/ProgressBar.spec.ts` / `Meter.spec.ts`        |  P1   | `sizes.sm/md/lg/xl.fontSize` + `lineHeight` resolved 값 감사 (PROGRESSBAR_FONT_SIZE 4 size 12/14/16/18 + SIZE_LINE_HEIGHT 16/20/24/28) — Revision 2 **4 size 정정**                                                                                                                                                                                                    |
-| `packages/specs/src/components/DateField.spec.ts` / `TimeField.spec.ts`      |  P1   | `sizes.sm/md/lg/xl.height` 4 size 감사 (Rev 2 편입 + **Rev 3 xl 포함 정정** — `SPEC_TRIGGER_HEIGHT` 소비처)                                                                                                                                                                                                                                                            |
-| `packages/specs/src/components/SearchField.spec.ts`                          |  P1   | `sizes.sm/md/lg/xl.height` + `fontSize` 4 size 감사 (Rev 2 편입 + **Rev 3 xl 포함 정정** — `SPEC_TRIGGER_HEIGHT` + `SPEC_INPUT_FONT_SIZE` 동시 소비)                                                                                                                                                                                                                   |
-| `packages/specs/src/components/Slider.spec.ts`                               |  P1   | `sizes.sm/md/lg/xl.fontSize` + `lineHeight` 4 size 감사 (**Revision 3 신규 편입** — `SLIDER_FONT_SIZE` + `SIZE_LINE_HEIGHT` 소비처, Label `:1707` + SliderOutput `:1744-1747`)                                                                                                                                                                                         |
-| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` |  P2   | `SPEC_INPUT_FONT_SIZE` / `SPEC_TRIGGER_HEIGHT` / `PROGRESSBAR_FONT_SIZE` / `SIZE_LINE_HEIGHT` / **`SLIDER_FONT_SIZE`** / `calPadGap` **6 상수** 제거 + 8 소비처 분기 (Calendar / SelectTrigger / ComboBoxWrapper / ProgressBar-Meter / DateField / TimeField / SearchFieldWrapper / **Slider**) 모두 `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 사용 (Revision 3 확장) |
-| `packages/specs/src/types/spec.types.ts`                                     |  P3   | `ComponentSpec.render.shapes` signature 에 optional `ctx?: SpecRenderContext` 추가. `SpecRenderContext = { measureText?: (...) => number }`                                                                                                                                                                                                                            |
-| `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`          |  P3   | `measureTextWidth` 을 `SpecRenderContext.measureText` 로 wrap 가능한 구조 확인                                                                                                                                                                                                                                                                                         |
-| `packages/specs/src/components/Breadcrumb.spec.ts`                           |  P4   | `render.shapes` 에서 `ctx.measureText` 호출로 itemWidth 계산. parent props 소비 (`label`, `size`, `isLast`)                                                                                                                                                                                                                                                            |
-| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts` |  P5   | `:955-971` Breadcrumb child 주입 삭제 (width/minWidth/height/minHeight/display/flexDirection/alignItems/flexShrink/flexGrow)                                                                                                                                                                                                                                           |
+| 파일                                                                               | Phase | 변경                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------------------- | :---: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/specs/src/components/SelectTrigger.spec.ts`                              |  P1   | `sizes.xs/sm/md/lg/xl.height` 확인 및 누락 보강 (현재 SPEC_TRIGGER_HEIGHT 기준)                                                                                                                                                                                                                                                          |
+| `packages/specs/src/components/Calendar.spec.ts`                                   |  P1   | `sizes.sm/md/lg.paddingX/paddingY/gap` 확인 (현재 calPadGap 기준 4/8/12, 4/6/8)                                                                                                                                                                                                                                                          |
+| `packages/specs/src/components/ProgressBar.spec.ts` / `Meter.spec.ts`              |  P1   | `sizes.sm/md/lg/xl.fontSize` + `lineHeight` resolved 값 감사 (PROGRESSBAR_FONT_SIZE 4 size 12/14/16/18 + SIZE_LINE_HEIGHT 16/20/24/28) — Revision 2 **4 size 정정**                                                                                                                                                                      |
+| `packages/specs/src/components/DateField.spec.ts` / `TimeField.spec.ts`            |  P1   | `sizes.sm/md/lg/xl.height` 4 size 감사 (Rev 2 편입 + **Rev 3 xl 포함 정정** — `SPEC_TRIGGER_HEIGHT` 소비처)                                                                                                                                                                                                                              |
+| `packages/specs/src/components/SearchField.spec.ts`                                |  P1   | `sizes.sm/md/lg/xl.height` + `fontSize` 4 size 감사 (Rev 2 편입 + **Rev 3 xl 포함 정정** — `SPEC_TRIGGER_HEIGHT` + `SPEC_INPUT_FONT_SIZE` 동시 소비)                                                                                                                                                                                     |
+| `packages/specs/src/components/Slider.spec.ts` / `SliderTrack.spec.ts`             |  P1   | `sizes.sm/md/lg/xl` 4 size 감사 — **`fontSize`** (SLIDER_FONT_SIZE 12/14/16/18) + **`gap`** (SLIDER_COL_GAP 16/... — Rev 4 신규) + **`height`** (SLIDER_TRACK_LAYOUT_HEIGHT 14/... — Rev 4 SliderTrack) + **`lineHeight` 필드 부재 → 신규 필드 추가** (Rev 4 명시 — SliderOutput 소비)                                                   |
+| `packages/specs/src/components/SelectIcon.spec.ts` 또는 `spec.sizes.iconSize` 체계 |  P1   | SelectTrigger/ComboBoxWrapper/SearchFieldWrapper 의 icon size 소비 (`:1313/:1394/:1548`) → `SPEC_ICON_SIZE` (Rev 4 신규) 대체 spec 필드 확인 또는 신규 보강                                                                                                                                                                              |
+| `packages/specs/src/components/ProgressBarTrack.spec.ts` / `MeterTrack.spec.ts`    |  P1   | `sizes.sm/md/lg/xl.height` (barHeight) 감사 — PROGRESSBAR_BAR_HEIGHT 소비처 (`:1622`, Rev 4 신규)                                                                                                                                                                                                                                        |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts`       |  P2   | **10 상수 제거** (Rev 4 완전 폐쇄): `SPEC_ICON_SIZE` / `SPEC_INPUT_FONT_SIZE` / `SPEC_TRIGGER_HEIGHT` / `PROGRESSBAR_BAR_HEIGHT` / `PROGRESSBAR_FONT_SIZE` / `SIZE_LINE_HEIGHT` / `SLIDER_COL_GAP` / `SLIDER_TRACK_LAYOUT_HEIGHT` / `SLIDER_FONT_SIZE` / `calPadGap`. 8 소비처 분기 모두 `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 사용 |
+| `packages/specs/src/types/spec.types.ts`                                           |  P3   | `ComponentSpec.render.shapes` signature 에 optional `ctx?: SpecRenderContext` 추가. `SpecRenderContext = { measureText?: (...) => number }`                                                                                                                                                                                              |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`                |  P3   | `measureTextWidth` 을 `SpecRenderContext.measureText` 로 wrap 가능한 구조 확인                                                                                                                                                                                                                                                           |
+| `packages/specs/src/components/Breadcrumb.spec.ts`                                 |  P4   | `render.shapes` 에서 `ctx.measureText` 호출로 itemWidth 계산. parent props 소비 (`label`, `size`, `isLast`)                                                                                                                                                                                                                              |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts`       |  P5   | `:955-971` Breadcrumb child 주입 삭제 (width/minWidth/height/minHeight/display/flexDirection/alignItems/flexShrink/flexGrow)                                                                                                                                                                                                             |
 
 ## 체크리스트
 
-### Phase 1 — spec.sizes 감사 및 보강 (Revision 3 확장)
+### Phase 1 — spec.sizes 감사 및 보강 (Revision 4 확장)
 
 - [ ] SelectTrigger.sizes.xs/sm/md/lg/xl.height = SPEC_TRIGGER_HEIGHT 와 동일 값 확인
+- [ ] SelectTrigger/ComboBoxWrapper/SearchFieldWrapper.sizes.\*.iconSize = SPEC_ICON_SIZE 와 동일 값 확인 (**Rev 4 신규** — spec.sizes.iconSize 필드 이미 존재 확인)
 - [ ] Calendar.sizes.sm/md/lg.paddingX/paddingY/gap = calPadGap 와 동일 값 확인
 - [ ] ComboBoxWrapper/기타 SPEC_INPUT_FONT_SIZE 소비처 spec.sizes.fontSize TokenRef resolved 값 일치 확인
 - [ ] **ProgressBar/Meter.sizes.sm/md/lg/xl.fontSize resolved = PROGRESSBAR_FONT_SIZE 4 size (12/14/16/18) 일치 확인**
 - [ ] **ProgressBar/Meter.sizes.sm/md/lg/xl.lineHeight = SIZE_LINE_HEIGHT (16/20/24/28) 일치 확인**
-- [ ] **DateField/TimeField.sizes.sm/md/lg/xl.height 4 size 감사** (Rev 2 편입 + **Rev 3 xl 포함** — spec 에 4 size 존재)
-- [ ] **SearchField.sizes.sm/md/lg/xl.height + fontSize 4 size 감사** (Rev 2 편입 + **Rev 3 xl 포함**)
-- [ ] **Slider.sizes.sm/md/lg/xl.fontSize resolved = SLIDER_FONT_SIZE (12/14/16/18) 일치 확인** (Revision 3 신규)
-- [ ] **Slider.sizes.sm/md/lg/xl.lineHeight = SIZE_LINE_HEIGHT 일치 확인** (Revision 3 신규 — SliderOutput 소비)
-- [ ] 누락 발견 시 spec.sizes 에 추가 (type 변경 없음)
+- [ ] **ProgressBarTrack/MeterTrack.sizes.sm/md/lg/xl.height = PROGRESSBAR_BAR_HEIGHT 일치 확인** (Rev 4 신규 — `:1622` 소비)
+- [ ] **DateField/TimeField.sizes.sm/md/lg/xl.height 4 size 감사** (Rev 2 편입 + Rev 3 xl 포함)
+- [ ] **SearchField.sizes.sm/md/lg/xl.height + fontSize 4 size 감사** (Rev 2 편입 + Rev 3 xl 포함)
+- [ ] **Slider.sizes.sm/md/lg/xl.fontSize resolved = SLIDER_FONT_SIZE (12/14/16/18) 일치 확인**
+- [ ] **Slider.sizes.sm/md/lg/xl.gap = SLIDER_COL_GAP 일치 확인** (Rev 4 신규 — `:1678` 소비, 기존 spec.sizes.gap 필드 활용)
+- [ ] **SliderTrack.sizes.sm/md/lg/xl.height = SLIDER_TRACK_LAYOUT_HEIGHT 일치 확인** (Rev 4 신규 — `:1726` 소비, SliderTrack 별도 spec)
+- [ ] **Slider.sizes.\*.lineHeight 필드 부재 → 신규 필드 추가 선행** (Rev 4 명시 — SliderOutput 이 SIZE_LINE_HEIGHT 소비. `spec.types.ts SizeSpec.lineHeight?: TokenRef | number` 확장 후 Slider spec 에 값 선언)
+- [ ] 누락 발견 시 spec.sizes 에 추가 (type 변경 시 BC 고려 — lineHeight 는 optional 신규 필드)
 
-### Phase 2 — Record 해체 (G2 spec.sizes pixel-perfect, Revision 3 확장)
+### Phase 2 — Record 해체 (G2 spec.sizes pixel-perfect, Revision 4 완전 폐쇄)
 
-- [ ] `SPEC_INPUT_FONT_SIZE` 소비처 (ComboBoxWrapper `:1333-` + **SearchFieldWrapper `:1538`**) → `spec.sizes[size].fontSize` resolveSpecFontSize 경유 lookup
-- [ ] `SPEC_TRIGGER_HEIGHT` 소비처 (SelectTrigger `:1273-1275` + **DateField/TimeField `:1448`** + **SearchFieldWrapper `:1511`**) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.height`
+- [ ] **`SPEC_ICON_SIZE` 소비처 3곳** (SelectTrigger `:1313` + ComboBoxWrapper `:1394` + SearchFieldWrapper `:1548`) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.iconSize` (Rev 4 신규)
+- [ ] `SPEC_INPUT_FONT_SIZE` 소비처 (ComboBoxWrapper `:1333-` + SearchFieldWrapper `:1538`) → `spec.sizes[size].fontSize`
+- [ ] `SPEC_TRIGGER_HEIGHT` 소비처 (SelectTrigger `:1273-1275` + DateField/TimeField `:1448` + SearchFieldWrapper `:1511`) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.height`
+- [ ] **`PROGRESSBAR_BAR_HEIGHT` 소비처 (`:1622` PROGRESSBAR_TAGS Track 주입) → `ProgressBarTrackSpec.sizes[sizeName]?.height`** (Rev 4 신규)
 - [ ] `calPadGap` 소비처 (`:1859` Calendar) → `CalendarSpec.sizes[calSize]?.{ paddingX, paddingY, gap }`
-- [ ] **`PROGRESSBAR_FONT_SIZE` 소비처 (`:1569-1653` PROGRESSBAR_TAGS 분기 — ProgressBar / Meter / loadingbar / progress / gauge 5 태그) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.fontSize` resolve**
-- [ ] **`SIZE_LINE_HEIGHT` 소비처 — PROGRESSBAR_TAGS + **Slider SliderOutput `:1747`** (Revision 3 Slider 명시)** → `spec.sizes[size].lineHeight`
-- [ ] **`SLIDER_FONT_SIZE` 소비처 (Slider Label `:1707` + SliderOutput `:1745`) → `SliderSpec.sizes[sizeName]?.fontSize` resolve** (Revision 3 신규 Record 편입)
-- [ ] Record 상수 **6 개** 제거 (`:175-180` SPEC_INPUT_FONT_SIZE / `:184-189` SPEC_TRIGGER_HEIGHT / `:211-217` PROGRESSBAR_FONT_SIZE / `:220-225` SIZE_LINE_HEIGHT / `:259-264` SLIDER_FONT_SIZE / `:1854-1858` calPadGap)
+- [ ] **`PROGRESSBAR_FONT_SIZE` 소비처 (`:1569-1653`) → `TAG_SPEC_MAP[tag].sizes[sizeName]?.fontSize` resolve**
+- [ ] **`SIZE_LINE_HEIGHT` 소비처** — PROGRESSBAR_TAGS + Slider SliderOutput `:1747` → `spec.sizes[size].lineHeight` (Rev 4 spec 필드 선행 필수)
+- [ ] **`SLIDER_COL_GAP` 소비처 (`:1678` Slider 분기) → `SliderSpec.sizes[sizeName]?.gap`** (Rev 4 신규)
+- [ ] **`SLIDER_TRACK_LAYOUT_HEIGHT` 소비처 (`:1726` Slider 분기) → `SliderTrackSpec.sizes[sizeName]?.height`** (Rev 4 신규)
+- [ ] **`SLIDER_FONT_SIZE` 소비처 (Slider Label `:1707` + SliderOutput `:1745`) → `SliderSpec.sizes[sizeName]?.fontSize` resolve**
+- [ ] **Record 상수 10 개 전수 제거** (Rev 4 완전 폐쇄):
+  - `:166-171` SPEC_ICON_SIZE (Rev 4)
+  - `:175-180` SPEC_INPUT_FONT_SIZE
+  - `:184-189` SPEC_TRIGGER_HEIGHT
+  - `:204-209` PROGRESSBAR_BAR_HEIGHT (Rev 4)
+  - `:211-217` PROGRESSBAR_FONT_SIZE
+  - `:220-225` SIZE_LINE_HEIGHT
+  - `:243-247` SLIDER_COL_GAP (Rev 4)
+  - `:251-256` SLIDER_TRACK_LAYOUT_HEIGHT (Rev 4)
+  - `:259-264` SLIDER_FONT_SIZE
+  - `:1854-1858` calPadGap
+- [ ] `rg "Record<string, number>" implicitStyles.ts` 결과 **빈 배열** 확인 (inventory 전수 폐쇄 증빙)
 - [ ] `pnpm -w type-check` + `builder` 217/217 + `specs` 166/166 PASS
-- [ ] **G2 Chrome MCP 실측 primary (8 소비처 전수, Revision 3)**: Calendar 3 size + SelectTrigger 5 size + ComboBoxWrapper 5 size + ProgressBar/Meter 4 size + DateField 4 size + TimeField 4 size + SearchField 4 size + **Slider 4 size** pixel-perfect 확인 (snapshot 은 CSS output diff 보조)
+- [ ] **G2 Chrome MCP 실측 primary (8 소비처 전수)**: Calendar 3 size + SelectTrigger 5 size + ComboBoxWrapper 5 size + ProgressBar/Meter 4 size + DateField 4 size + TimeField 4 size + SearchField 4 size + Slider 4 size pixel-perfect 확인
 
 ### Phase 3 — spec.render signature 확장
 

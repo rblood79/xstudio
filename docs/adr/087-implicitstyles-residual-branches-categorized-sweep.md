@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20 (**Revision 2** — Codex Round 3 MED 087-C1/C2 반영: (a) R4 synthetic-merge 위험을 SP6 한정 → **SP1(Toolbar) / SP2(GridList/Tabs) / SP6(TagGroup/Breadcrumbs) cross-cutting** 으로 확장. 실제 `SYNTHETIC_CHILD_PROP_MERGE_TAGS` (`buildSpecNodeData.ts:150+`) 는 Breadcrumbs/ComboBox/GridList/ListBox/Select/Tabs/TagGroup/Toolbar/Tree 포함. (b) G4 "40 → 0" → "**Revision 1 단위 규약 기준 22 분기 → 0**" 으로 수치 정합. Revision 1 = SP2 각주 + 분기/태그 단위 구분.)
+Proposed — 2026-04-20 (**Revision 3** — Round 5 main 재검증 cross-cutting 87-R5-1 반영: SP6 SliderTrack 잔존 scope 경계 명시. ADR-086 Rev 4 가 SliderTrack 의 size-indexed Record (`SLIDER_COL_GAP` / `SLIDER_TRACK_LAYOUT_HEIGHT` / `SLIDER_FONT_SIZE` / `SIZE_LINE_HEIGHT`) 를 전부 해체하므로 SP6 SliderTrack 잔존 로직 = **layout-primitive only** (flexDirection / alignItems / justifyContent 등). Revision 2 = Codex Round 3 087-C1/C2 (synthetic-merge cross-cutting + G4 수치). Revision 1 = SP2 각주 + 단위 규약.)
 
 ## Context
 
@@ -26,14 +26,14 @@ Proposed — 2026-04-20 (**Revision 2** — Codex Round 3 MED 087-C1/C2 반영: 
 
 아래 table 의 "대상" 열은 **해당 카테고리에 해당하는 모든 태그** 를 나열한다. `*` 표시된 것은 이미 Implemented → 본 ADR scope 외. "본 SP scope 분기 수" 열이 실제 작업 대상.
 
-| 카테고리           | 대상 (\* = Implemented scope 외)                                                                                            | 본 SP scope 분기 수 | 공통 로직                                            |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | :-----------------: | ---------------------------------------------------- |
-| **SP1 Group**      | CheckboxGroup / RadioGroup / ToggleButtonGroup / Toolbar                                                                    |          3          | label positioning / orientation / gap                |
-| **SP2 Collection** | ListBox\* (ADR-076/079) / ListBoxItem\* (ADR-079) / Menu\* (ADR-068) / GridList / GridListItem / Tabs / TabList / TabPanels |        **5**        | collection item padding/font / virtualization hints  |
-| **SP3 Field**      | NumberField / TextField (+TextArea) / DateField (+TimeField) / SearchFieldWrapper                                           |          4          | field wrapper layout / label position / input height |
-| **SP4 Overlay**    | DatePicker (+DateRangePicker)                                                                                               |          1          | popover + trigger orchestration                      |
-| **SP5 Container**  | Card / CardHeader / CardContent / InlineAlert                                                                               |          4          | composite slots / gap                                |
-| **SP6 Synthetic**  | TagGroup / TagList / Breadcrumb parent 잔존 / SliderTrack / RadioItems (+CheckboxItems)                                     |          5          | synthetic-merge SSOT 특수 로직                       |
+| 카테고리           | 대상 (\* = Implemented scope 외)                                                                                            | 본 SP scope 분기 수 | 공통 로직                                                                                                                                                                                                                    |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | :-----------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SP1 Group**      | CheckboxGroup / RadioGroup / ToggleButtonGroup / Toolbar                                                                    |          3          | label positioning / orientation / gap                                                                                                                                                                                        |
+| **SP2 Collection** | ListBox\* (ADR-076/079) / ListBoxItem\* (ADR-079) / Menu\* (ADR-068) / GridList / GridListItem / Tabs / TabList / TabPanels |        **5**        | collection item padding/font / virtualization hints                                                                                                                                                                          |
+| **SP3 Field**      | NumberField / TextField (+TextArea) / DateField (+TimeField) / SearchFieldWrapper                                           |          4          | field wrapper layout / label position / input height                                                                                                                                                                         |
+| **SP4 Overlay**    | DatePicker (+DateRangePicker)                                                                                               |          1          | popover + trigger orchestration                                                                                                                                                                                              |
+| **SP5 Container**  | Card / CardHeader / CardContent / InlineAlert                                                                               |          4          | composite slots / gap                                                                                                                                                                                                        |
+| **SP6 Synthetic**  | TagGroup / TagList / Breadcrumb parent 잔존 / SliderTrack\*\* / RadioItems (+CheckboxItems)                                 |          5          | synthetic-merge SSOT 특수 로직. **\*\* SliderTrack 은 ADR-086 Rev 4 가 size-indexed Record 4개 (SLIDER_COL_GAP/SLIDER_TRACK_LAYOUT_HEIGHT/SLIDER_FONT_SIZE/SIZE_LINE_HEIGHT) 해체 후 → 본 SP scope = layout-primitive only** |
 
 합계 = **22 분기 (약 28 태그)**. ADR-084/085/086 해체분을 제외한 실제 작업 대상.
 
