@@ -150,6 +150,8 @@ const CONTAINER_STYLES_FALLBACK_KEYS = [
   "gridTemplateAreas",
   "gridTemplateColumns",
   "gridTemplateRows",
+  // ADR-089: position — SliderTrack 이 자식 SliderThumb absolute 배치 기준 형성.
+  "position",
 ] as const;
 
 /**
@@ -1704,6 +1706,8 @@ export function applyImplicitStyles(
   // ── SliderTrack (Thumb 배치) ─────────────────────────────────────────
   // 시각적 thumb은 SliderTrack spec shapes가 렌더링.
   // SliderThumb element는 selection bounds + 이벤트 히트 영역용으로 올바른 크기/위치 주입.
+  // ADR-089: position:relative 는 SliderTrack.spec.containerStyles 로 리프팅됨.
+  //   resolveContainerStylesFallback 이 parentStyle 에 선주입하므로 여기서는 thumb 배치만 처리.
   if (containerTag === "slidertrack") {
     const sliderId = containerEl.parent_id;
     const sliderEl = sliderId ? elementById.get(sliderId) : null;
@@ -1718,12 +1722,6 @@ export function applyImplicitStyles(
     const sizeName = (sliderProps?.size as string) ?? "md";
     const dims = { sm: 14, md: 18, lg: 22 };
     const thumbSize = dims[sizeName as keyof typeof dims] ?? 18;
-
-    // SliderTrack에 position:relative 설정
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      position: "relative",
-    });
 
     let thumbIdx = 0;
     filteredChildren = filteredChildren.map((child) => {

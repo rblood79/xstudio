@@ -39,8 +39,12 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   skipCSSGeneration: false,
 
   // ADR-083 Phase 5: slider archetype base 의 layout primitive 1 필드 리프팅.
+  // ADR-089: position:relative 리프팅 — 자식 SliderThumb (position:absolute + left:${percent}%)
+  //   배치 기준(containing block) 형성. 이전에는 implicitStyles.ts slidertrack 분기에서
+  //   하드코딩 할당. D3 symmetric 복원 — Preview DOM 도 동일 position 적용.
   containerStyles: {
     display: "grid",
+    position: "relative",
   },
 
   defaultSize: "md",

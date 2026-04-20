@@ -699,6 +699,8 @@ export function emitContainerStyles(c: ContainerStylesSchema): string[] {
     lines.push(`  grid-template-columns: ${c.gridTemplateColumns};`);
   if (c.gridTemplateRows)
     lines.push(`  grid-template-rows: ${c.gridTemplateRows};`);
+  // ADR-089: position — 자식 absolute 배치 기준 형성. SliderTrack position:relative 리프팅.
+  if (c.position) lines.push(`  position: ${c.position};`);
 
   return lines;
 }

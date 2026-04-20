@@ -13,6 +13,7 @@
 
   /* Container styles (ADR-071 + ADR-083 Phase 1) */
   display: grid;
+  position: relative;
 
   /* Default size */
   height: 8px;
