@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20
+Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) `PROGRESSBAR_FONT_SIZE` Record 를 ADR-085 scope 이관 표기 → **본 ADR Phase 1 scope 로 재편입** (size Record 해체 공통 주제). (2) Gate G2 양자택 기준 단일화 — "Chrome MCP 실측 primary, snapshot 보조". (3) `spec.types.ts` line 인용 `:712+` → `:739+` drift 정정.)
 
 ## Context
 
@@ -24,7 +24,7 @@ Proposed — 2026-04-20
 | `calPadGap`                                                                 | `:1854-1858` | 3 size × { pad, gap }      | `spec.sizes[size].paddingX/Y/gap` |
 | Breadcrumb `breadcrumbsHeight` via `BreadcrumbsSpec.sizes[rspSize]?.height` | `:920`       | spec 직접 lookup 중 (정상) | —                                 |
 
-`spec.sizes` (spec.types.ts:712+) 이 이미 `paddingX/paddingY/height/fontSize/borderRadius/iconSize/gap` 필드 보유 → **SSOT 존재하나 일부 분기가 소비 안 함** (Breadcrumbs 분기는 이미 소비).
+`spec.sizes` (`spec.types.ts:739+` `export interface SizeSpec`) 이 이미 `paddingX/paddingY/height/fontSize/borderRadius/iconSize/gap` 필드 보유 → **SSOT 존재하나 일부 분기가 소비 안 함** (Breadcrumbs 분기는 이미 소비).
 
 **축 2 — Breadcrumb child 주입 (spec.render 파이프라인 외부)**:
 
@@ -55,9 +55,9 @@ Proposed — 2026-04-20
 - Calendar (`:1859`) — `calPadGap` Record
 - SelectTrigger (`:1273-1275`) — `SPEC_TRIGGER_HEIGHT` fallback
 - ComboBoxWrapper (`:1333-`) — `SPEC_INPUT_FONT_SIZE` 소비
-- ProgressBar (`:1602-1603`) — `PROGRESSBAR_FONT_SIZE` 소비 (ADR-085 scope 와 겹침 — 본 ADR 에서 제외)
+- ProgressBar/Meter (`:1602-1603`) — `PROGRESSBAR_FONT_SIZE` 소비 — **본 ADR Phase 1 scope** (Revision 1). ADR-085 는 grid-template Schema 확장 + parent containerStyles 이관 + Skia flex emul 해체만 담당하며, size-indexed Record 해체는 본 ADR 의 공통 주제에 귀속.
 
-총 대상 = Calendar / SelectTrigger / ComboBoxWrapper 분기 내 3 Record + Breadcrumb child 주입.
+총 대상 = Calendar / SelectTrigger / ComboBoxWrapper / ProgressBar-Meter 분기 내 4 Record + Breadcrumb child 주입.
 
 ## Alternatives Considered
 
@@ -129,12 +129,12 @@ Proposed — 2026-04-20
 
 ## Gates
 
-| Gate | 시점       | 통과 조건                                                                               | 실패 시 대안                                             |
-| :--: | ---------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-|  G1  | 매 Phase   | `pnpm -w type-check` 3/3                                                                | 직전 커밋 revert                                         |
-|  G2  | Phase 1 후 | Calendar 3 size / SelectTrigger 5 size pixel-perfect 동일 (Chrome MCP 실측 or snapshot) | spec.sizes 누락 필드 보강 후 재시도                      |
-|  G3  | Phase 2 후 | Breadcrumb label 길이 3 변이 (short/medium/long) × 3 size = 9 샘플 시각 정상            | Phase 1 까지 land + Phase 2 는 별도 ADR (대안 B 로 분할) |
-|  G4  | 최종       | `builder` 217/217 + `specs` 166/166 회귀 0                                              | 직전 Phase revert                                        |
+| Gate | 시점       | 통과 조건                                                                                                                                                                | 실패 시 대안                                             |
+| :--: | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+|  G1  | 매 Phase   | `pnpm -w type-check` 3/3                                                                                                                                                 | 직전 커밋 revert                                         |
+|  G2  | Phase 1 후 | Calendar 3 size / SelectTrigger 5 size / ProgressBar 2 size pixel-perfect 동일 — **Chrome MCP 실측 primary** (Skia runtime pixel 비교), snapshot 은 CSS output diff 보조 | spec.sizes 누락 필드 보강 후 재시도                      |
+|  G3  | Phase 2 후 | Breadcrumb label 길이 3 변이 (short/medium/long) × 3 size = 9 샘플 시각 정상                                                                                             | Phase 1 까지 land + Phase 2 는 별도 ADR (대안 B 로 분할) |
+|  G4  | 최종       | `builder` 217/217 + `specs` 166/166 회귀 0                                                                                                                               | 직전 Phase revert                                        |
 
 ## Consequences
 

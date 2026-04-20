@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20
+Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: PROGRESSBAR_FONT_SIZE Record scope 를 ADR-086 Phase 1 로 명시 이관. 본 ADR 은 grid-template Schema 확장 + parent containerStyles + Label/Output/Track flex emul 해체만 담당.)
 
 ## Context
 
@@ -40,6 +40,16 @@ Proposed — 2026-04-20
 - Label 자식 주입: `width: 0`, `flexGrow: 1`, `flexShrink: 1`, `minWidth: 0` — CSS grid `1fr` 에뮬레이션
 - ProgressBarValue 주입: `width: "auto"`, `flexShrink: 0` — CSS `grid-area: value` 에뮬레이션
 - ProgressBarTrack 주입: `width: "100%"`, `flexShrink: 0` — CSS `grid-area: bar` (2행 강제)
+
+### Scope 경계 명시 (Revision 1)
+
+| 축                                                                                  | 처리 ADR            | 비고                                                       |
+| ----------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------- |
+| `grid-template-*` Schema 확장                                                       | **본 ADR**          | ContainerStylesSchema 3 필드 + emit                        |
+| Meter/ProgressBar parent containerStyles 이관                                       | **본 ADR**          | legacy `composition.containerStyles` parent 키 → 정식 필드 |
+| Label/Output/Track Skia flex emul 해체                                              | **본 ADR** Phase 4  | G0 Taffy grid 지원 확인 후                                 |
+| `PROGRESSBAR_FONT_SIZE` Record (`:212`) → `ProgressBar.sizes[size].fontSize` lookup | **ADR-086 Phase 1** | size-indexed Record 해체 공통 주제 — 본 ADR scope 아님     |
+| 자식 selector map (`.react-aria-Label { grid-area }` 등)                            | 후속 ADR (대안 C)   | 다수 spec 영향 — 별도 Schema 확장                          |
 
 ## Alternatives Considered
 

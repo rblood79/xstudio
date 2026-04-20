@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-20
+Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: (1) SP2 Collection table 에 "3 Implemented scope 외" 각주 추가. (2) 분기 vs 태그 단위 구분 명시 — Context 감사 결과 단위 혼용 해소.)
 
 ## Context
 
@@ -12,20 +12,30 @@ Proposed — 2026-04-20
 
 ### 현재 구조
 
-`implicitStyles.ts` 에서 `if (containerTag === "...")` 분기 총 **28 if-line** (`||` 로 묶인 것 포함 시 40+ 태그). ADR-084/085/086 이 8 분기 해체 → 잔존 약 20 분기 (태그 기준 약 30).
+`implicitStyles.ts` 에서 `if (containerTag === "...")` 분기 총 **28 if-line** (태그 기준: `||` 로 묶인 `checkboxgroup/radiogroup`, `textfield/textarea`, `datefield/timefield`, `radioitems/checkboxitems`, `datepicker/daterangepicker`, `calendar/rangecalendar` 등 → `||` 1 분기가 2 태그). ADR-084 4 분기 + ADR-085 1 분기 + ADR-086 Phase 1 4 분기 + Phase 2 1 분기 해체 = 약 10 분기 해체 → 잔존 약 18 분기.
+
+### 단위 표기 규약 (Revision 1)
+
+본 ADR 에서 수치 표기는 다음 단위를 혼동 없이 사용한다:
+
+- **분기 (branch)**: `if (containerTag === "...")` 1 개 — `||` 묶음도 1 분기로 카운트
+- **태그 (tag)**: 1 분기에 포함되는 개별 태그 이름 — `||` 묶음은 n 개 태그
+- **Implemented scope 외**: ADR-068/076/079/084/085/086 에서 해체된 분기는 본 ADR scope 에서 제외
 
 ### 카테고리화
 
-| 카테고리           | 대상                                                                                                | 분기 수 | 공통 로직                                            |
-| ------------------ | --------------------------------------------------------------------------------------------------- | :-----: | ---------------------------------------------------- |
-| **SP1 Group**      | CheckboxGroup / RadioGroup / ToggleButtonGroup / Toolbar                                            |    4    | label positioning / orientation / gap                |
-| **SP2 Collection** | ListBox / GridList / ListBoxItem / GridListItem / Menu / Tabs / TabList / TabPanels                 |    8    | collection item padding/font / virtualization hints  |
-| **SP3 Field**      | NumberField / TextField / TextArea / DateField / TimeField / SearchFieldWrapper                     |    6    | field wrapper layout / label position / input height |
-| **SP4 Overlay**    | DatePicker / DateRangePicker                                                                        |    2    | popover + trigger orchestration                      |
-| **SP5 Container**  | Card / CardHeader / CardContent / InlineAlert                                                       |    4    | composite slots / gap                                |
-| **SP6 Synthetic**  | TagGroup / TagList / Breadcrumb parent 잔존 (child 제외) / SliderTrack / RadioItems / CheckboxItems |    5    | synthetic-merge SSOT 특수 로직                       |
+아래 table 의 "대상" 열은 **해당 카테고리에 해당하는 모든 태그** 를 나열한다. `*` 표시된 것은 이미 Implemented → 본 ADR scope 외. "본 SP scope 분기 수" 열이 실제 작업 대상.
 
-합계 약 29 태그 (분기 수 ~25, `||` 로 묶인 것은 1 분기).
+| 카테고리           | 대상 (\* = Implemented scope 외)                                                                                            | 본 SP scope 분기 수 | 공통 로직                                            |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | :-----------------: | ---------------------------------------------------- |
+| **SP1 Group**      | CheckboxGroup / RadioGroup / ToggleButtonGroup / Toolbar                                                                    |          3          | label positioning / orientation / gap                |
+| **SP2 Collection** | ListBox\* (ADR-076/079) / ListBoxItem\* (ADR-079) / Menu\* (ADR-068) / GridList / GridListItem / Tabs / TabList / TabPanels |        **5**        | collection item padding/font / virtualization hints  |
+| **SP3 Field**      | NumberField / TextField (+TextArea) / DateField (+TimeField) / SearchFieldWrapper                                           |          4          | field wrapper layout / label position / input height |
+| **SP4 Overlay**    | DatePicker (+DateRangePicker)                                                                                               |          1          | popover + trigger orchestration                      |
+| **SP5 Container**  | Card / CardHeader / CardContent / InlineAlert                                                                               |          4          | composite slots / gap                                |
+| **SP6 Synthetic**  | TagGroup / TagList / Breadcrumb parent 잔존 / SliderTrack / RadioItems (+CheckboxItems)                                     |          5          | synthetic-merge SSOT 특수 로직                       |
+
+합계 = **22 분기 (약 28 태그)**. ADR-084/085/086 해체분을 제외한 실제 작업 대상.
 
 ### Hard Constraints
 
