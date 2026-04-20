@@ -105,8 +105,13 @@ import {
   TableViewSpec,
 } from "@composition/specs";
 
+// ADR-094: 수동 등록 spec 기반 원본. `TAG_SPEC_MAP` 자체는 하단에서
+//   `expandChildSpecs(BASE_TAG_SPEC_MAP)` 로 생성되어 각 spec 의 `childSpecs` 가
+//   PascalCase 키로 자동 추가된다 (ListBoxItem / GridListItem 등). 수동 등록이
+//   우선이므로 기존 중복 entry(예: Label — 현재 Spec 에는 childSpecs 아니지만
+//   수동 등록) 는 덮어쓰지 않는다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   // Core components
   Button: ButtonSpec,
   Text: TextSpec,
@@ -217,6 +222,41 @@ export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   SearchClearButton: SelectIconSpec,
   DateInput: DateInputSpec,
 };
+
+/**
+ * ADR-094: `BASE_TAG_SPEC_MAP` 의 각 spec 의 `childSpecs` 를 PascalCase 키로 자동 추가.
+ *
+ * - 수동 등록 entry 는 그대로 우선 (덮어쓰지 않음).
+ * - child spec 이름이 이미 수동 entry 와 겹치면 수동 entry 유지.
+ * - child spec 의 `childSpecs` 는 현재 1 단계만 전개 (중첩 childSpecs 사례 없음).
+ * - 본 확장으로 ListBoxItem / GridListItem 등 기존 `TAG_SPEC_MAP` 미등록 child spec
+ *   이 `getSpecForTag` / `isSpecPath` / `LOWERCASE_TAG_SPEC_MAP` / `specPresetResolver` /
+ *   `useLayoutAuxiliary` 등 모든 소비처에서 자동 조회 가능.
+ */
+function expandChildSpecs(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  base: Record<string, ComponentSpec<any>>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Record<string, ComponentSpec<any>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const out: Record<string, ComponentSpec<any>> = { ...base };
+  for (const spec of Object.values(base)) {
+    const children = spec.childSpecs;
+    if (!children || children.length === 0) continue;
+    for (const child of children) {
+      if (out[child.name] === undefined) {
+        out[child.name] = child;
+      }
+    }
+  }
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const TAG_SPEC_MAP: Record<
+  string,
+  ComponentSpec<any>
+> = expandChildSpecs(BASE_TAG_SPEC_MAP);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getSpecForTag(tag: string): ComponentSpec<any> | null {

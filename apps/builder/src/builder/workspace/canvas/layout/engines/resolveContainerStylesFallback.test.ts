@@ -89,15 +89,29 @@ describe("resolveContainerStylesFallback (ADR-080 G1 + ADR-083 Phase 0)", () => 
     });
   });
 
-  // ADR-083 Phase 0 주의: ListBoxItemSpec 은 TAG_SPEC_MAP 미등록 (ListBox.childSpecs
-  //   경로로 Skia 렌더) → Phase 0 LOWERCASE_TAG_SPEC_MAP 에도 미포함 → fallback 조회 불가.
-  //   ListBoxItem containerStyles 는 CSS emit / ADR-079 P1 cascade 에만 기여하며, Skia
-  //   layout 경로(implicitStyles) 로는 별도 ADR (ListBoxItemSpec 을 TAG_SPEC_MAP 에 등록
-  //   또는 childSpecs lookup 추가) 로 확장 필요. 본 test 는 그 상태를 선언적으로 문서화.
-  describe("listboxitem — TAG_SPEC_MAP 미등록 (Phase 0 범위 외)", () => {
-    it("empty parentStyle → {} (childSpecs 전용 spec 은 lookup 미작동)", () => {
+  // ADR-094: childSpecs 자동 registry 등록 — ListBoxItemSpec 이 ListBoxSpec.childSpecs
+  //   경로로 `expandChildSpecs(BASE_TAG_SPEC_MAP)` 에서 자동 추가되어 `LOWERCASE_TAG_SPEC_MAP`
+  //   에도 포함. `resolveContainerStylesFallback` 이 containerStyles 4 속성 반환 시작.
+  //   (이전 ADR-083 Phase 0 범위 외 debt 해소 — Skia 축 SSOT 복구.)
+  describe("listboxitem — ADR-094 childSpecs 자동 등록 (Skia 축 SSOT 복구)", () => {
+    it("empty parentStyle → ListBoxItemSpec.containerStyles 4 속성 반환", () => {
       const fb = resolveContainerStylesFallback("listboxitem", {});
-      expect(fb).toEqual({});
+      expect(fb).toEqual({
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "center",
+      });
+    });
+  });
+
+  describe("gridlistitem — ADR-094 childSpecs 자동 등록", () => {
+    it("empty parentStyle → GridListItemSpec.containerStyles 2 속성 반환", () => {
+      const fb = resolveContainerStylesFallback("gridlistitem", {});
+      expect(fb).toEqual({
+        display: "flex",
+        flexDirection: "column",
+      });
     });
   });
 
