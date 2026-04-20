@@ -50,6 +50,13 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
   archetype: "calendar",
   skipCSSGeneration: true,
 
+  // ADR-083 Phase 4: calendar archetype base 의 layout primitive 1 필드 리프팅.
+  //   skipCSSGeneration:true 이므로 CSS 경로 영향 없음. Skia consumer(implicitStyles
+  //   Phase 0 공통 선주입) 및 Style Panel 에만 반영.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -107,7 +114,11 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = CalendarHeaderSpec.variants![(props as { variant?: keyof typeof CalendarHeaderSpec.variants }).variant ?? CalendarHeaderSpec.defaultVariant!];
+      const variant =
+        CalendarHeaderSpec.variants![
+          (props as { variant?: keyof typeof CalendarHeaderSpec.variants })
+            .variant ?? CalendarHeaderSpec.defaultVariant!
+        ];
       const sizeName = props.size ?? "md";
       const dims = CALENDAR_HEADER_DIMS[sizeName] ?? CALENDAR_HEADER_DIMS.md;
       const fontSize = resolveSpecFontSize(size.fontSize, dims.fontSize);

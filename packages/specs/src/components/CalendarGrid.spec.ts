@@ -56,6 +56,14 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
   archetype: "calendar",
   skipCSSGeneration: true,
 
+  // ADR-083 Phase 4: calendar archetype base 의 layout primitive 1 필드 리프팅.
+  //   skipCSSGeneration:true 이므로 CSS 경로 영향 없음. Skia consumer(implicitStyles
+  //   Phase 0 공통 선주입) 및 Style Panel 에만 반영. box-sizing 은 schema 미지원.
+  //   Calendar 리프팅은 implicitStyles Calendar 분기 충돌 리스크로 후속 R8 이관.
+  containerStyles: {
+    display: "grid",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 
@@ -115,7 +123,11 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = CalendarGridSpec.variants![(props as { variant?: keyof typeof CalendarGridSpec.variants }).variant ?? CalendarGridSpec.defaultVariant!];
+      const variant =
+        CalendarGridSpec.variants![
+          (props as { variant?: keyof typeof CalendarGridSpec.variants })
+            .variant ?? CalendarGridSpec.defaultVariant!
+        ];
       const sizeName = props.size ?? "md";
       const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.md;
       const fontSize = resolveSpecFontSize(size.fontSize, dims.fontSize);
