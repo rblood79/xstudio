@@ -55,12 +55,15 @@
 
 ```typescript
 // InlineAlert.spec.ts — variants 아래, sizes 위에 추가
+// Scope: ContainerStylesSchema 현재 지원 필드 (display/flexDirection/alignItems/
+// justifyContent/width/maxHeight/overflow/outline) 만 리프팅.
+// archetype `alert` 이 선언하던 box-sizing, font-family 는 schema 미지원 → archetype
+// table 에 잔존 (Revision 2: Codex HIGH 반영).
 containerStyles: {
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-start",
   width: "100%",
-  fontFamily: "var(--font-sans)", // 또는 primitive token
 },
 ```
 
@@ -87,17 +90,39 @@ Phase 1과 동일 절차. `containerStyles` 필드 추가 + Generator 재생성 
 
 **주의 archetype**:
 
-- `progress`: `grid-template-areas` 같은 nested slot 선언 포함 — `containerStyles`에 full string 수용 필요. `ContainerStylesSchema`에 grid 관련 필드 확장 필요할 수 있음
+- `progress`: archetype table 이 `grid-template-areas`/`grid-template-columns` + nested selector (`.react-aria-Label { ... }`) 선언. **본 ADR scope 외** — 이들은 schema 미지원 필드 → archetype table 에 잔존. `display: grid` 만 `containerStyles` 로 리프팅
+- `overlay`: archetype table 이 `position: fixed` 선언. **본 ADR scope 외** — schema 미지원. archetype table 에 잔존 (실제 overlay 4 spec 은 schema 내 layout 필드 미보유로 본 ADR 에서 실질 변경 없음)
 - `collection`: 5 spec 중 **ListBox 1개만** 기존 layout primitive 리프팅 완료 (`ListBox.spec.ts:84-91`). 잔여 **4개 (Autocomplete/Menu/TabPanel/TabPanels)** 처리 — Menu/Autocomplete 는 색상·간격 containerStyles 만 선언된 상태
-- `simple`: 27 spec 대량 처리 (`ListBoxItem.spec.ts` 은 이미 리프팅 완료, 잔여 26). batch script로 자동화 권장 — `archetype==="simple"` + 기존 `containerStyles` 에 layout primitive 미선언 spec 에 `display="inline-flex"; alignItems="center"` 일괄 주입. 기존 layout primitive 선언된 spec 은 skip
+- `simple`: 27 spec 중 `ListBoxItem.spec.ts` 은 이미 리프팅 완료 → 잔여 26. batch script 로 자동화 권장 — `archetype==="simple"` + 기존 `containerStyles` 에 layout primitive 미선언 spec 에 `display="inline-flex"; alignItems="center"` 일괄 주입. 기존 선언된 spec 은 skip
 
-## Generator 정리 (최종 Phase)
+## Generator 정리 (최종 Phase — Revision 2 축소)
 
-모든 archetype이 SSOT 리프팅 완료 후:
+**본 ADR scope**: `ARCHETYPE_BASE_STYLES` 테이블은 **유지**. layout primitive 가 spec containerStyles 에 선언된 후에도 테이블에 중복 상태로 남김 (cascade 동일, 기능 영향 0). 비-layout 속성 (`box-sizing` / `cursor` / `user-select` / `transition` / `font-family` / `position: fixed` / grid-template-\* / nested selector) 은 테이블 단독 소유 유지.
 
-- `ARCHETYPE_BASE_STYLES` 테이블을 CSSGenerator에서 **삭제** (또는 빈 테이블로 축소)
-- `DEFAULT_BASE_STYLES` 는 유지 (archetype 미지정 fallback)
-- `generateBaseStyles` 함수를 단순화 — `containerStyles` 기반 emit만 남김
+- `generateBaseStyles` 로직 **변경 없음** — 기존 archetype + containerStyles 2-block emit 유지
+- `DEFAULT_BASE_STYLES` 도 변경 없음
+- `archetypeCssParity.test.ts` 신설로 layout primitive 가 archetype table 과 spec containerStyles 양쪽에 동일 값으로 선언됐는지 cross-ref (drift 감지)
+
+**후속 ADR (본 ADR scope 외)**:
+
+- `ContainerStylesSchema` 확장 (box-sizing/cursor/user-select/transition/font-family/position/grid-template-\* + nested selector 지원)
+- `emitContainerStyles` 확장
+- archetype table 완전 삭제 — 위 schema/Generator 확장 후에만 가능
+
+## 본 ADR scope 에서 리프팅되는 layout primitive 필드
+
+| 필드             | `ContainerStylesSchema` 타입 (`spec.types.ts:59-93`)                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| `display`        | `"flex" \| "inline-flex" \| "grid" \| "block" \| "inline-block"`                                |
+| `flexDirection`  | `"row" \| "column" \| "row-reverse" \| "column-reverse"`                                        |
+| `alignItems`     | `"stretch" \| "flex-start" \| "flex-end" \| "center" \| "baseline"`                             |
+| `justifyContent` | `"flex-start" \| "flex-end" \| "center" \| "space-between" \| "space-around" \| "space-evenly"` |
+| `width`          | `string`                                                                                        |
+| `maxHeight`      | `string`                                                                                        |
+| `overflow`       | `"auto" \| "scroll" \| "visible" \| "hidden"`                                                   |
+| `outline`        | `string`                                                                                        |
+
+**미지원 필드 (본 ADR 범위 외)**: `box-sizing` / `cursor` / `user-select` / `transition` / `font-family` / `position` / `grid-template-areas` / `grid-template-columns` / nested selector
 
 ## 테스트 전략
 
