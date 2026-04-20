@@ -27,6 +27,12 @@ export const TabPanelSpec: ComponentSpec<TabPanelProps> = {
   element: "div",
   skipCSSGeneration: false,
 
+  // ADR-083 Phase 6: collection archetype base 의 layout primitive 2 필드 리프팅.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

@@ -5672,6 +5672,8 @@ exports[`CSSGenerator snapshot baseline > Menu 1`] = `
   max-height: 300px;
   overflow: auto;
   outline: none;
+  display: flex;
+  flex-direction: column;
 
   /* Default size */
   height: auto;

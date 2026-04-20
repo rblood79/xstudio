@@ -99,14 +99,15 @@ describe("resolveContainerStylesFallback (ADR-080 G1 + ADR-083 Phase 0)", () => 
     });
   });
 
-  describe("menu — Menu.spec.containerStyles (Phase 0 일반화 — 6 필드)", () => {
-    it("empty parentStyle → padding/gap/width/maxHeight/overflow/outline 반환", () => {
+  describe("menu — Menu.spec.containerStyles (Phase 0 일반화 + Phase 6 merge — 8 필드)", () => {
+    it("empty parentStyle → display/flexDirection/padding/gap/width/maxHeight/overflow/outline 반환", () => {
       const fb = resolveContainerStylesFallback("menu", {});
-      // Menu spec 은 display/flexDirection/alignItems/justifyContent 미선언 →
-      // 6 필드만 반환. Menu 분기는 filteredChildren=[] 로 early return 하므로
-      // effectiveParent 에 parentStyle 전파는 발생하지 않음. 본 test 는 단순히
-      // Phase 0 lookup 일반화(TAG_SPEC_MAP 다중 태그) 계약 확증.
+      // Phase 6: Menu containerStyles 에 display/flexDirection 2 필드 추가 → 8 필드 반환.
+      // Menu 분기는 filteredChildren=[] 로 early return 하므로 effectiveParent 에
+      // parentStyle 전파는 발생하지 않음. 본 test 는 단순히 lookup 계약 확증.
       expect(fb).toEqual({
+        display: "flex",
+        flexDirection: "column",
         padding: 4, // {spacing.xs}
         gap: 2, // {spacing.2xs}
         width: "100%",

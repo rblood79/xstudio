@@ -21,6 +21,13 @@ export const AutocompleteSpec: ComponentSpec<AutocompleteProps> = {
   archetype: "collection",
   element: "div",
 
+  // ADR-083 Phase 6: collection archetype base 의 layout primitive 2 필드 리프팅.
+  //   box-sizing 은 ContainerStylesSchema 미지원 → archetype table 잔존.
+  containerStyles: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
   defaultVariant: "default",
   defaultSize: "md",
 

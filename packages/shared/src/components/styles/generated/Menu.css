@@ -23,6 +23,8 @@
   max-height: 300px;
   overflow: auto;
   outline: none;
+  display: flex;
+  flex-direction: column;
 
   /* Default size */
   height: auto;

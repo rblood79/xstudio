@@ -77,6 +77,9 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     borderRadius: "{radius.md}" as TokenRef,
     padding: "{spacing.xs}" as TokenRef,
     gap: "{spacing.2xs}" as TokenRef,
+    // ADR-083 Phase 6: collection archetype base 의 layout primitive 2 필드 리프팅 (merge).
+    display: "flex",
+    flexDirection: "column",
     width: "100%",
     maxHeight: "300px",
     overflow: "auto",

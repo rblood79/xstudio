@@ -1857,13 +1857,9 @@ export function createDefaultFormProps(): FormElementProps {
 }
 
 export function createDefaultMenuProps(): MenuElementProps {
-  return {
-    // CSS base: display:flex; flex-direction:column; outline:none
-    style: {
-      display: "flex",
-      flexDirection: "column",
-    },
-  };
+  // ADR-083 Phase 6 (R5): display/flexDirection 은 MenuSpec.containerStyles SSOT 로 이관.
+  //   outline:none 은 containerStyles 에 이미 선언. factory 추가 주입 불필요.
+  return {};
 }
 
 export function createDefaultNumberFieldProps(): NumberFieldElementProps {
