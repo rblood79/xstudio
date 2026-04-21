@@ -152,16 +152,11 @@ export function createCardDefinition(
         ],
       },
       {
+        // ADR-092 Phase 4: CardHeader inline style(display/flexDirection/alignItems/gap/width)
+        //   → CardHeaderSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
+        //   기존 저장 프로젝트에 inline style 이 있는 경우 그대로 유지 (사용자 편집 간주).
         tag: "CardHeader",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: "8px",
-            width: "100%",
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
         children: [
@@ -186,15 +181,10 @@ export function createCardDefinition(
         ],
       },
       {
+        // ADR-092 Phase 4: CardContent inline style(display/flexDirection/gap/width)
+        //   → CardContentSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
         tag: "CardContent",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            width: "100%",
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
         children: [
@@ -217,14 +207,12 @@ export function createCardDefinition(
         ],
       },
       {
+        // ADR-092 Phase 4: CardFooter inline style(display/flexDirection/alignItems/gap/width)
+        //   → CardFooterSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
+        //   paddingTop/borderTopWidth 는 Taffy layout prop 아님 — 시각적 구분선으로 보존.
         tag: "CardFooter",
         props: {
           style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: "8px",
-            width: "100%",
             paddingTop: "8px",
             borderTopWidth: "1px",
           },

@@ -1822,22 +1822,11 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── Card ──────────────────────────────────────────────────────────
-  if (containerTag === "card") {
-    filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "CardHeader" || child.tag === "CardContent") {
-        const cs = (child.props?.style || {}) as Record<string, unknown>;
-        if (!cs.width) {
-          return {
-            ...child,
-            props: { ...child.props, style: { ...cs, width: "100%" } },
-          } as Element;
-        }
-      }
-      return child;
-    });
-  }
-
+  // ── Card ─────────────────────────────────────────────────────────────
+  // ADR-092 Phase 5: Card 분기(CardHeader/CardContent width:"100%" 주입) 제거.
+  //   CardHeaderSpec.containerStyles.width="100%" + CardContentSpec.containerStyles.width="100%"
+  //   가 `resolveContainerStylesFallback` 경유로 주입 (ADR-094 인프라).
+  //   CardFooter 분기는 본 ADR scope 외 (implicitStyles 분기 없었음).
   // ── CardHeader ──────────────────────────────────────────────────────
   if (containerTag === "cardheader") {
     filteredChildren = filteredChildren.map((child) => {
