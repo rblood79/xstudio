@@ -8,7 +8,11 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import type { StoredListBoxItem } from "../types/listbox-items";
+import type {
+  StoredListBoxItem,
+  StoredListBoxEntry,
+} from "../types/listbox-items";
+import { isListBoxSectionEntry } from "../types/listbox-items";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -43,8 +47,12 @@ export interface ListBoxProps {
   overscan?: number;
   filterText?: string;
   filterFields?: string[];
-  /** 아이템 목록 (ADR-076 P2: StoredListBoxItem[] SSOT) */
-  items?: StoredListBoxItem[];
+  /**
+   * 아이템 목록 (ADR-076 P2: StoredListBoxItem[] SSOT)
+   * ADR-099 Phase 2 (098-c 슬롯): Section 엔트리 지원 — `StoredListBoxEntry[]`
+   * (기존 items 는 discriminator 미보유 → default "item" 해석, BC 0%).
+   */
+  items?: StoredListBoxEntry[];
   /** 선택된 아이템 key — canonical (ADR-076) */
   selectedKey?: string;
   /** 선택된 아이템 key 목록 — canonical (ADR-076) */
@@ -328,9 +336,9 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
-      // 리스트 아이템 생성 (ADR-076: StoredListBoxItem[] SSOT)
+      // 리스트 아이템 생성 (ADR-076: StoredListBoxItem[] SSOT / ADR-099 Phase 2: Entry[] 확장)
       // fallback placeholder — items 부재 시 3개 샘플 (Select 선례)
-      const items: StoredListBoxItem[] =
+      const entries: StoredListBoxEntry[] =
         props.items && props.items.length > 0
           ? props.items
           : [
@@ -338,6 +346,17 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
               { id: "item-2", label: "Item 2" },
               { id: "item-3", label: "Item 3" },
             ];
+
+      // ADR-099 Phase 2: flatItems — section 내부 items 를 flat 전개 (selection index 검색용).
+      //   RAC 공식 ListBoxSection 은 단일 level (nested section 미지원) — flat 전개 안전.
+      const flatItems: StoredListBoxItem[] = [];
+      for (const entry of entries) {
+        if (isListBoxSectionEntry(entry)) {
+          flatItems.push(...entry.items);
+        } else {
+          flatItems.push(entry);
+        }
+      }
 
       // ADR-078 Phase 3: item metric SSOT = ListBoxItemSpec.sizes.md.
       //   paddingX/paddingY/lineHeight/itemHeight 를 `resolveListBoxItemMetric(fontSize)` 로
@@ -375,47 +394,52 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       let itemY = innerPaddingY;
 
       // 선택 상태 계산 — canonical(selectedKey/selectedKeys) 우선, legacy index fallback
-      // Phase 5 migration 전 legacy 프로젝트 로드 시 selectedIndex 경로 유지
-      const selectedIndexSet = new Set<number>();
+      // ADR-099 Phase 2: flatItems 기준 id Set — section 내부 items 포함하여 검색
+      const selectedIdSet = new Set<string>();
       if (props.selectedKeys && props.selectedKeys.length > 0) {
-        for (const key of props.selectedKeys) {
-          const idx = items.findIndex((it) => it.id === key);
-          if (idx >= 0) selectedIndexSet.add(idx);
-        }
+        for (const key of props.selectedKeys) selectedIdSet.add(key);
       } else if (props.selectedKey != null) {
-        const idx = items.findIndex((it) => it.id === props.selectedKey);
-        if (idx >= 0) selectedIndexSet.add(idx);
+        selectedIdSet.add(props.selectedKey);
       } else if (props.selectedIndices && props.selectedIndices.length > 0) {
-        for (const idx of props.selectedIndices) selectedIndexSet.add(idx);
+        for (const idx of props.selectedIndices) {
+          const flat = flatItems[idx];
+          if (flat) selectedIdSet.add(flat.id);
+        }
       } else if (props.selectedIndex != null) {
-        selectedIndexSet.add(props.selectedIndex);
-      } else {
-        selectedIndexSet.add(0);
+        const flat = flatItems[props.selectedIndex];
+        if (flat) selectedIdSet.add(flat.id);
+      } else if (flatItems[0]) {
+        selectedIdSet.add(flatItems[0].id);
       }
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const isSelected = selectedIndexSet.has(i);
+      // ADR-099 Phase 2: Section Header metric.
+      //   fontSize * 1.75 + inter-section padding — RAC 기본 sticky header 시각 근사.
+      //   Phase 6 Chrome MCP 실측에서 교정 가능.
+      const HEADER_HEIGHT = Math.round(fontSize * 1.75);
+      const HEADER_FONT_SIZE = Math.round(fontSize * 0.85);
+      const SECTION_TOP_PAD = Math.round(fontSize * 0.5);
+
+      // ADR-099 Phase 2: item 렌더 헬퍼 — 기존 인라인 로직을 entries 순회 내부에서 재사용.
+      const renderOneItem = (item: StoredListBoxItem, y: number) => {
+        const isSelected = selectedIdSet.has(item.id);
         const isItemDisabled = Boolean(item.isDisabled);
 
-        // 아이템 배경 (선택/hover 상태 표시) — container border+padding 내부 전체 영역
         shapes.push({
           type: "roundRect" as const,
           x: innerPaddingX,
-          y: itemY,
+          y,
           width: width - innerPaddingX * 2,
           height: itemH,
           radius: borderRadius as unknown as number,
           fill: isSelected ? variant.backgroundHover : bgColor,
         });
 
-        // 선택 표시 아이콘 (다중 선택 모드)
         if (props.selectionMode === "multiple") {
           shapes.push({
             type: "icon_font" as const,
             iconName: isSelected ? "check-square" : "square",
             x: innerPaddingX + ITEM_PADDING_X,
-            y: itemY + itemH / 2,
+            y: y + itemH / 2,
             fontSize,
             fill: isSelected
               ? ("{color.accent}" as TokenRef)
@@ -424,8 +448,6 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           });
         }
 
-        // 아이템 텍스트 (isDisabled 반영 — 비활성 항목 muted)
-        // @sync CSS 아이템 텍스트 시작: container border + padding + item padding-left
         const textX =
           props.selectionMode === "multiple"
             ? innerPaddingX + ITEM_PADDING_X + fontSize + 6
@@ -438,7 +460,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         shapes.push({
           type: "text" as const,
           x: textX,
-          y: itemY + itemH / 2,
+          y: y + itemH / 2,
           text: item.label,
           fontSize,
           fontFamily: ff,
@@ -447,8 +469,37 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           align: textAlign,
           baseline: "middle" as const,
         });
+      };
 
-        itemY += itemH + gap;
+      // ADR-099 Phase 2: entries 순회 — section 분기 + item 렌더.
+      //   Header 는 첫 section 외 앞에 SECTION_TOP_PAD 추가 (섹션 간 시각 구분).
+      let hasRenderedEntry = false;
+      for (const entry of entries) {
+        if (isListBoxSectionEntry(entry)) {
+          if (hasRenderedEntry) itemY += SECTION_TOP_PAD;
+          // Section Header — text shape (Phase 3 에서 HeaderSpec childSpecs + CSS emit 추가)
+          shapes.push({
+            type: "text" as const,
+            x: innerPaddingX + ITEM_PADDING_X,
+            y: itemY + HEADER_HEIGHT / 2,
+            text: entry.header,
+            fontSize: HEADER_FONT_SIZE,
+            fontFamily: ff,
+            fontWeight: 700,
+            fill: "{color.neutral-subdued}" as TokenRef,
+            align: "left" as const,
+            baseline: "middle" as const,
+          });
+          itemY += HEADER_HEIGHT + gap;
+          for (const item of entry.items) {
+            renderOneItem(item, itemY);
+            itemY += itemH + gap;
+          }
+        } else {
+          renderOneItem(entry, itemY);
+          itemY += itemH + gap;
+        }
+        hasRenderedEntry = true;
       }
 
       return shapes;

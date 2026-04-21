@@ -109,15 +109,37 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 - `packages/specs/src/types/__tests__/listbox-items.test.ts` (신규 테스트 파일, 10 tests)
 - `packages/specs/src/types/index.ts` (export 확장)
 
-### Phase 2 — ListBoxSpec.render.shapes section 렌더
+### Phase 2 — ListBoxSpec.render.shapes section 렌더 (Completed 2026-04-21 세션 8)
 
-- [ ] `ListBoxSpec.render.shapes` items 루프 (L396-452) 확장:
-  - entry 가 section 이면 `{ type: "text", ... }` Header 렌더 + 내부 items 순회 (flat 전개)
-  - Header 시각 스타일: fontSize=size.fontSize, fontWeight=700, padding-top=spacing.sm, text-transform=uppercase
-  - section 간 separator: `Separator.spec` 재사용 여부 결정 (P2 에서는 spacing.md gap 으로 대체, separator 는 후속 Addendum)
-- [ ] `resolveListBoxItemMetric` 확장: section header height 추가 (metric SSOT)
-- [ ] `calculateContentHeight` (layout/engines/utils.ts) 의 listbox 분기에 section header 높이 가산 공식 추가
-- [ ] Skia 렌더 + CSS emit 대칭 — `childSpecs` 에 `HeaderSpec` 추가 (Phase 3) 전까지는 Skia-only 우선 land
+- [x] `ListBoxProps.items` 타입 확장: `StoredListBoxItem[]` → `StoredListBoxEntry[]` (Phase 1 보류 항목 해소)
+- [x] `ListBoxSpec.render.shapes` items 루프 재구성:
+  - `entries` 변수 선언 (flatItems 와 분리)
+  - `flatItems` 계산 — section 내부 items flat 전개 (selectedIdSet 검색용)
+  - `selectedIdSet` 도입 — 기존 `selectedIndexSet` 대체, ID 기반 검색으로 section 내부 items 포함
+  - `renderOneItem(item, y)` 헬퍼 추출 — 기존 인라인 로직을 entries 순회 내부에서 재사용
+  - entries for 루프 — section entry 시 Header text shape + 내부 items 순회, non-section 시 renderOneItem 직접 호출
+  - `hasRenderedEntry` 플래그로 첫 section 외 `SECTION_TOP_PAD` 가산
+- [x] Header 시각 metric 인라인 상수:
+  - `HEADER_HEIGHT = round(fontSize * 1.75)` — RAC 기본 sticky header 근사
+  - `HEADER_FONT_SIZE = round(fontSize * 0.85)` — 작게
+  - `SECTION_TOP_PAD = round(fontSize * 0.5)` — 섹션 간 여백
+  - fontWeight 700, fill `{color.neutral-subdued}` — RAC 기본 muted header 스타일
+- [x] `calculateContentHeight` (`apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts:1512-1557`) listbox 분기 확장:
+  - `isListBoxSectionEntry` import 추가
+  - entries 순회로 `totalItems` + `sectionCount` + `nonFirstSectionCount` 집계
+  - 공식: `paddingY*2 + totalItems*itemH + sectionCount*HEADER_HEIGHT + (entryCount-1)*gap + nonFirstSectionCount*SECTION_TOP_PAD + border*2`
+  - `@sync ListBoxSpec.render.shapes` 주석 명시
+- [ ] `resolveListBoxItemMetric` header height 추가 — **Phase 3 에서 HeaderSpec 신설 시 이관** (metric SSOT 를 HeaderSpec.sizes.md 에서 소유)
+- [ ] Skia 렌더 + CSS emit 대칭 — `childSpecs` 에 `HeaderSpec` 추가는 **Phase 3** (Phase 2 는 Skia-only, 인라인 상수)
+
+**검증**: type-check 3/3 (3.2s) + specs **176/176** (snapshot 변동 0 → BC 0% 확증) + builder 227/227 + shared 52/52 PASS.
+
+**파일 변경 (2)**:
+
+- `packages/specs/src/components/ListBox.spec.ts` — imports + items 타입 + shapes 재구성 (~60 LOC)
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` — import + listbox 분기 entries 공식 (~30 LOC)
+
+**BC 보장 증거**: snapshot 변동 0 — 기존 items 배열 (section 미사용) 의 shapes 출력 이전과 동일. BC 0% 확증.
 
 ### Phase 3 — Header Spec 신설 + CSS emit
 

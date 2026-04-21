@@ -31,6 +31,7 @@ import {
   METER_DIMENSIONS,
   STATUSLIGHT_DIMENSIONS,
   resolveListBoxItemMetric,
+  isListBoxSectionEntry,
   TAG_CHIP_SIZES,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
@@ -1511,10 +1512,7 @@ export function calculateContentHeight(
   // 반환값에 padding + border 를 포함해야 background shape(bg roundRect) 와 일치.
   if (tag1 === "listbox") {
     const props = element.props as Record<string, unknown> | undefined;
-    const items = props?.items;
-    // render.shapes fallback 과 동일: items 미지정 시 3개 placeholder
-    const itemCount =
-      Array.isArray(items) && items.length > 0 ? items.length : 3;
+    const rawEntries = props?.items;
     const fontSize = parseNumericValue(style?.fontSize) ?? 14; // text-sm
     // ADR-078 Phase 3: item metric SSOT = ListBoxItemSpec.sizes.md
     //   → ListBoxSpec.render.shapes 와 동일 itemHeight 공식 공급 (CSS item border-box 와 일치)
@@ -1525,12 +1523,40 @@ export function calculateContentHeight(
       parseNumericValue(style?.paddingTop ?? style?.padding) ?? 4;
     const gap = parseNumericValue(style?.gap) ?? 2;
     const borderWidth = 1;
-    return (
-      paddingY * 2 +
-      itemCount * itemH +
-      Math.max(0, itemCount - 1) * gap +
-      borderWidth * 2
-    );
+
+    // ADR-099 Phase 2: entries 순회로 totalItems + sectionCount + nonFirstSection 집계.
+    // Section entry 는 Header height + 내부 items 높이 + section 간 topPad 가산.
+    // @sync ListBoxSpec.render.shapes entries 루프 — 공식 변경 시 양쪽 동시 갱신.
+    const entries =
+      Array.isArray(rawEntries) && rawEntries.length > 0
+        ? rawEntries
+        : [
+            { id: "item-1", label: "Item 1" },
+            { id: "item-2", label: "Item 2" },
+            { id: "item-3", label: "Item 3" },
+          ];
+    let totalItems = 0;
+    let sectionCount = 0;
+    let nonFirstSectionCount = 0;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (isListBoxSectionEntry(entry)) {
+        sectionCount++;
+        totalItems += entry.items.length;
+        if (i > 0) nonFirstSectionCount++;
+      } else {
+        totalItems += 1;
+      }
+    }
+    const HEADER_HEIGHT = Math.round(fontSize * 1.75);
+    const SECTION_TOP_PAD = Math.round(fontSize * 0.5);
+    const entryCount = totalItems + sectionCount;
+    const innerHeight =
+      totalItems * itemH +
+      sectionCount * HEADER_HEIGHT +
+      Math.max(0, entryCount - 1) * gap +
+      nonFirstSectionCount * SECTION_TOP_PAD;
+    return paddingY * 2 + innerHeight + borderWidth * 2;
   }
 
   // 1.55c. TagList (ADR-097 Phase 4B): items SSOT + row-wrap 기반 intrinsic height.
