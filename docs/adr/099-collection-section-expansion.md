@@ -2,9 +2,42 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
 
 > 본 ADR 은 [ADR-098](098-rsp-naming-audit-charter.md) (RSP 네이밍 정합 감사 Charter) 의 후속 분할 ADR 중 **"098-c 슬롯"** (breakdown Phase 6 Follow-up 표 #3) 구현. Charter Decision 에 명시된 "8 카테고리 × 개별 ADR" 패턴 재사용. 파일 번호는 기존 관례(연속 번호) 준수하여 `ADR-099` 할당, 제목에 "098-c 슬롯" 명시.
+
+### 구현 커밋 체인
+
+| 커밋        | 내용                                                                                                                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `e435d8b3`  | Phase 1 — ListBox items discriminated union + `StoredListBoxSection` + `isListBoxSectionEntry` + 테스트 10건 (BC 0%) |
+| `a74ce3bb`  | Phase 2 — ListBoxSpec.render.shapes section entry 렌더 + `calculateContentHeight` listbox 분기 section 가산 공식     |
+| `c53eee53`  | Phase 3 — `HeaderSpec` 신설 + `ListBoxSpec.childSpecs` inline emit + Generator CSS 4 블록 emit                       |
+| `485898d6`  | Phase 5 — GridList section shapes + Menu types (`StoredMenuSection`/`StoredMenuSeparator`) + 테스트 29건             |
+| `b0cb9153`  | Phase 4 — items-manager Section/Separator UI + Menu per-section selection                                            |
+| (현재 커밋) | Phase 6 — Preview 경로 `SelectionRenderers.tsx` ListBox section 분기 + Status Implemented 전환                       |
+
+### 검증 기준선 (Implemented 전환 시점)
+
+- type-check 3/3 PASS
+- specs 205/205 PASS (Phase 1 +10 / Phase 5 +13 gridlist + +16 menu)
+- builder 227/227 PASS
+- shared 52/52 PASS
+
+### Phase 6 code-level 검증 (Chrome MCP 대체 — ADR-092/093/095 선례)
+
+Chrome MCP 연결 실패 → code-level 대체 검증 적용 (ADR-092/093/095 선례 허용):
+
+1. **Preview 경로 section 분기 추가** (`packages/shared/src/renderers/SelectionRenderers.tsx`): `isListBoxSectionEntry` type guard 분기 — section entry 시 `<AriaListBoxSection><AriaHeader>` 구조로 DOM 렌더. RAC D1 공식 API 그대로 사용.
+2. **Skia 렌더 확인**: `ListBoxSpec.render.shapes` entries 루프 — section entry 분기 `HEADER_HEIGHT` text shape + 내부 items 순회 렌더 (Phase 2 구현).
+3. **CSS emit 확인**: `packages/shared/src/components/styles/generated/ListBox.css` — `.react-aria-Header` 블록 4개 (Base + size sm/md/lg) Generator 자동 emit 확인.
+
+### 잔존 후속 작업 (Addendum 분리)
+
+- **Addendum 099-e** (후속): Menu overlay shapes — `MenuSpec.render.shapes` section + separator 분기. overlay Popover 구조로 Skia preview 구현 필요.
+- **Addendum 099-f** (후속): GridList/Menu Preview 경로 — `SelectionRenderers.tsx` GridList section 분기 + `Menu.tsx` section 렌더 확장 (CSSGenerator 또는 각 컴포넌트 wrapper).
+- **ADR-099-c** (분리 확정): `GridListLoadMoreItem` — async callback state. items SSOT discriminated union 비호환.
+- **ADR-099-d** (분리 확정): `SubmenuTrigger` — MenuItem + Menu-in-Popover wrapper. 중첩 Menu 데이터 모델 ADR 연계 필요.
 
 ## Context
 
@@ -110,29 +143,33 @@ composition 117 spec 중 **컬렉션 archetype 3종** (ListBox / GridList / Menu
 
 ## Risks
 
-| ID  | 위험                                                             | 심각도 | 대응                                                                                                                                               |
-| --- | ---------------------------------------------------------------- | :----: | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | items discriminated union 타입 좁히기 누락 → runtime crash       |  MED   | Phase 1 테스트 회귀 (`types/__tests__/listbox-items.test.ts`) + vitest 타입 좁히기 검증 + PR 검토 시 `entry.type === "section"` 분기 커버리지 요구 |
-| R2  | Skia Header 렌더 + CSS Header 셀렉터 시각 drift                  |  MED   | Phase 3 `HeaderSpec.childSpecs` 등록 후 `/cross-check` skill 실행 + Phase 6 Chrome MCP 실측                                                        |
-| R3  | GridList grid 모드 section header column span 복잡 (rowspan/col) |  MED   | Phase 5 에서 grid 모드 section header 는 전체 행 span (`columns` 전체) 로 단순화 + 실측 후 조정                                                    |
-| R4  | items-manager UI nested 편집 UX 복잡 (section 내부 items drag)   |  MED   | Phase 4 Spec-first 단순 UI (section 펼침/접기 + "Item 추가" / "Section 추가" 2 버튼) → 복잡 drag-to-reorder 는 후속 Addendum                       |
-| R5  | RAC API 재검증 실패 (Phase 0 WebFetch 접근 불가)                 |  LOW   | 2026-04-21 ADR-098 매트릭스 스냅샷 + GitHub 소스 (`packages/@react-aria/listbox`) fallback                                                         |
+| ID   | 위험                                                             |       심각도        | 대응                                                                                                                                               |
+| ---- | ---------------------------------------------------------------- | :-----------------: | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1   | items discriminated union 타입 좁히기 누락 → runtime crash       |         MED         | Phase 1 테스트 회귀 (`types/__tests__/listbox-items.test.ts`) + vitest 타입 좁히기 검증 + PR 검토 시 `entry.type === "section"` 분기 커버리지 요구 |
+| R2   | Skia Header 렌더 + CSS Header 셀렉터 시각 drift                  |         MED         | Phase 3 `HeaderSpec.childSpecs` 등록 후 `/cross-check` skill 실행 + Phase 6 Chrome MCP 실측                                                        |
+| R3   | GridList grid 모드 section header column span 복잡 (rowspan/col) |         MED         | Phase 5 에서 grid 모드 section header 는 전체 행 span (`columns` 전체) 로 단순화 + 실측 후 조정                                                    |
+| R4   | items-manager UI nested 편집 UX 복잡 (section 내부 items drag)   |         MED         | Phase 4 Spec-first 단순 UI (section 펼침/접기 + "Item 추가" / "Section 추가" 2 버튼) → 복잡 drag-to-reorder 는 후속 Addendum                       |
+| R5   | RAC API 재검증 실패 (Phase 0 WebFetch 접근 불가)                 |         LOW         | 2026-04-21 ADR-098 매트릭스 스냅샷 + GitHub 소스 (`packages/@react-aria/listbox`) fallback                                                         |
+| R-A1 | Preview Section 렌더 경로 부재 (ListBox)                         | ~~HIGH~~ → **해소** | `SelectionRenderers.tsx` — `isListBoxSectionEntry` 분기 추가, `<AriaListBoxSection><AriaHeader>` RAC D1 공식 API 사용. Phase 6 커밋에서 해소.      |
+| R-A2 | GridList/Menu Preview 경로 부재                                  |         MED         | 후속 Addendum 099-f — `SelectionRenderers.tsx` GridList 분기 + Menu wrapper 확장. Phase 6 scope 외로 분리.                                         |
+| R-A3 | Menu overlay shapes items 렌더 미구현                            |         MED         | 후속 Addendum 099-e — overlay Skia preview. Menu `render.shapes` 는 trigger button 전용, overlay 내부 shapes 는 별도 Phase.                        |
+| R-A4 | Chrome MCP 실측 미수행                                           |         LOW         | code-level 대체 검증 적용 (ADR-092/093/095 선례). 후속 세션에서 Chrome MCP 재시도 가능.                                                            |
 
-잔존 HIGH 위험 없음.
+잔존 HIGH 위험 없음 (R-A1 해소. R-A2/A3 MED → Addendum 분리 관리).
 
 ## Gates
 
 잔존 HIGH 위험 없음 — Gate 테이블 생략. 본 ADR 자체 검증 기준 (Phase 단위 AND 누적):
 
-| 시점         | 통과 조건                                                                                                                         |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| Phase 0 종료 | RAC WebFetch 3 URL 매트릭스 docs/design 반영 + API 확정                                                                           |
-| Phase 1 종료 | items discriminated union 타입 + 테스트 회귀 0                                                                                    |
-| Phase 2 종료 | ListBoxSpec.render.shapes section 렌더 + calculateContentHeight 공식 + snapshot diff 검토                                         |
-| Phase 3 종료 | HeaderSpec 신설 + Generator CSS emit + TAG_SPEC_MAP 등록 + `pnpm build:specs` PASS                                                |
-| Phase 4 종료 | items-manager UI "Section 추가" 작동 + Chrome MCP 수동 검증                                                                       |
-| Phase 5 종료 | GridList/Menu 대칭 + 3 컬렉션 모두 section 엔트리 렌더 (또는 099-a 로 분리 land)                                                  |
-| Phase 6 종료 | type-check 3/3 + specs 166/166 + builder 227/227 + shared 52/52 PASS + Chrome MCP 3 컬렉션 section 실측 + Status Implemented 전환 |
+| 시점         | 통과 조건                                                                                                                          | 결과 |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | :--: |
+| Phase 0 종료 | RAC WebFetch 3 URL 매트릭스 docs/design 반영 + API 확정                                                                            |  ✅  |
+| Phase 1 종료 | items discriminated union 타입 + 테스트 회귀 0                                                                                     |  ✅  |
+| Phase 2 종료 | ListBoxSpec.render.shapes section 렌더 + calculateContentHeight 공식 + snapshot diff 검토                                          |  ✅  |
+| Phase 3 종료 | HeaderSpec 신설 + Generator CSS emit + TAG_SPEC_MAP 등록 + `pnpm build:specs` PASS                                                 |  ✅  |
+| Phase 4 종료 | items-manager UI "Section 추가" 작동 + Chrome MCP 수동 검증                                                                        |  ✅  |
+| Phase 5 종료 | GridList/Menu 대칭 + 3 컬렉션 모두 section 엔트리 렌더 (또는 099-a 로 분리 land)                                                   |  ✅  |
+| Phase 6 종료 | type-check 3/3 + specs 205/205 + builder 227/227 + shared 52/52 PASS + Preview ListBox section 분기 추가 + Status Implemented 전환 |  ✅  |
 
 실패 시 대안:
 

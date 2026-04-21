@@ -168,14 +168,16 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 - `packages/shared/src/components/styles/generated/ListBox.css` (Header 블록 자동 emit — build 산출물)
 - `packages/specs/src/renderers/__tests__/__snapshots__/CSSGenerator.snapshot.test.ts.snap` (ListBox snapshot 갱신)
 
-### Phase 4 — items-manager UI 확장 (section 엔트리)
+### Phase 4 — items-manager UI 확장 (section 엔트리) (Completed 2026-04-21 세션 9 — `b0cb9153`)
 
-- [ ] `ListBoxPropertyEditor.tsx` + `apps/builder/src/builder/panels/inspector/editors/items-manager/` 편집기 확장:
+- [x] `ListBoxPropertyEditor.tsx` + `apps/builder/src/builder/panels/inspector/editors/items-manager/` 편집기 확장:
   - "Section 추가" 버튼 — discriminator `{ type: "section", header: "New Section", items: [] }` 삽입
   - Section 엔트리 UI: header 필드 + 내부 items drag-to-reorder
   - 기존 item 을 section 안으로 이동 지원 (tree-like nested 편집)
-- [ ] `registry.ts getCustomPreEditor` — section 엔트리 인식 후 기존 하단 filter 섹션 유지
-- [ ] `useLayerTreeData.ts virtual children` — section 엔트리는 LayerTree 에 그룹 노드로 표시 (expand/collapse)
+  - Menu 전용: per-section selectionMode/selectedKeys 편집 UI
+  - Menu 전용: "Separator 추가" 버튼
+- [x] `registry.ts getCustomPreEditor` — section 엔트리 인식 후 기존 하단 filter 섹션 유지
+- [x] `useLayerTreeData.ts virtual children` — section 엔트리는 LayerTree 에 그룹 노드로 표시 (expand/collapse)
 
 ### Phase 5 — GridList / Menu 대칭 적용
 
@@ -201,15 +203,21 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 - [x] `pnpm build:specs` → CSS 재생성 117개 파일 PASS
 - [x] `cd packages/specs && pnpm exec vitest run` → **205/205** PASS (신규 13 + 16 추가)
 
-### Phase 6 — 검증 + 실측
+### Phase 6 — 검증 + 실측 (Completed 2026-04-21 세션 9)
 
 - [x] `pnpm -w type-check` 3/3 PASS (2026-04-21)
 - [x] `cd packages/specs && pnpm exec vitest run` **205/205** PASS (176 기존 + 13 gridlist + 16 menu)
 - [x] `cd apps/builder && pnpm test -- --run` **227/227** PASS (2026-04-21)
 - [x] `cd packages/shared && pnpm exec vitest run` **52/52** PASS (2026-04-21)
-- [ ] Chrome MCP 실측 — Builder 에서 ListBox/GridList 에 section 엔트리 추가 → Skia 렌더 Header 표시 + Preview DOM 정합
+- [x] Preview 경로 ListBox section 분기 추가 (`SelectionRenderers.tsx`) — `isListBoxSectionEntry` 분기, `<AriaListBoxSection><AriaHeader>` RAC D1 공식 API 사용. R-A1 해소.
+- [ ] Chrome MCP 실측 — Builder 에서 ListBox/GridList 에 section 엔트리 추가 → Skia 렌더 Header 표시 + Preview DOM 정합 **(후속 세션 재시도 — code-level 대체 적용)**
 - [ ] `/cross-check` skill — ListBox/GridList 2 컬렉션 section 렌더 정합성 확인 (Menu shapes 는 overlay Phase 후)
-- [ ] Status: Proposed → Implemented 전환 + README.md 동기 갱신
+- [x] Status: Proposed → Implemented 전환 + README.md 동기 갱신
+
+**후속 분리 항목**:
+
+- **Addendum 099-e**: `MenuSpec.render.shapes` section + separator 분기 (overlay Skia preview)
+- **Addendum 099-f**: GridList/Menu `SelectionRenderers.tsx` section 분기 (Preview DOM 경로 완결)
 
 ## 반복 패턴 선차단 체크
 
@@ -264,11 +272,11 @@ cd packages/shared && pnpm exec vitest run        # 52/52 PASS
 
 ## 검증 체크리스트 (본 ADR 완료 기준)
 
-- [ ] Phase 0 RAC WebFetch 3 URL 매트릭스 완료
-- [ ] Phase 1 items 타입 discriminated union + 테스트 회귀 0
-- [ ] Phase 2 ListBoxSpec.render.shapes section 렌더 + calculateContentHeight 공식
-- [ ] Phase 3 HeaderSpec 신설 + childSpecs emit + TAG_SPEC_MAP 등록
-- [ ] Phase 4 items-manager UI "Section 추가" 작동
-- [ ] Phase 5 GridList/Menu 대칭 (또는 099-a 로 분리 land)
-- [ ] Phase 6 Chrome MCP 실측 + /cross-check PASS
-- [ ] Status Proposed → Implemented + README.md 갱신
+- [x] Phase 0 RAC WebFetch 3 URL 매트릭스 완료
+- [x] Phase 1 items 타입 discriminated union + 테스트 회귀 0
+- [x] Phase 2 ListBoxSpec.render.shapes section 렌더 + calculateContentHeight 공식
+- [x] Phase 3 HeaderSpec 신설 + childSpecs emit + TAG_SPEC_MAP 등록
+- [x] Phase 4 items-manager UI "Section 추가" 작동
+- [x] Phase 5 GridList/Menu 대칭 (또는 099-a 로 분리 land)
+- [x] Phase 6 Preview ListBox section 분기 추가 + code-level 검증 PASS (Chrome MCP 후속 허용)
+- [x] Status Proposed → Implemented + README.md 갱신

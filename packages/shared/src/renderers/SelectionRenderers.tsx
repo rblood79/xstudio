@@ -10,6 +10,10 @@ import {
   ComboBoxItem,
   Slider,
 } from "../components/list";
+import {
+  ListBoxSection as AriaListBoxSection,
+  Header as AriaHeader,
+} from "react-aria-components";
 import { DataField } from "../components/Field";
 import type {
   PreviewElement,
@@ -21,7 +25,9 @@ import type {
   StoredSelectItem,
   StoredComboBoxItem,
   StoredListBoxItem,
+  StoredListBoxEntry,
 } from "@composition/specs";
+import { isListBoxSectionEntry } from "@composition/specs";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -248,20 +254,34 @@ export const renderListBox = (
   }
 
   // Path 2: items[] canonical (ADR-076 신설)
+  // ADR-099 Phase 3: StoredListBoxEntry discriminated union — section entry 분기
+  const renderListBoxLeaf = (item: StoredListBoxItem): React.ReactNode => (
+    <ListBoxItem
+      key={item.id}
+      id={item.id}
+      data-element-id={element.id}
+      textValue={item.textValue ?? item.label}
+      isDisabled={Boolean(item.isDisabled)}
+      href={item.href}
+    >
+      {item.label}
+    </ListBoxItem>
+  );
+
   let renderChildren: React.ReactNode;
   if (hasItemsArray) {
-    renderChildren = storedItems!.map((item) => (
-      <ListBoxItem
-        key={item.id}
-        id={item.id}
-        data-element-id={element.id}
-        textValue={item.textValue ?? item.label}
-        isDisabled={Boolean(item.isDisabled)}
-        href={item.href}
-      >
-        {item.label}
-      </ListBoxItem>
-    ));
+    const entries = storedItems as unknown as StoredListBoxEntry[];
+    renderChildren = entries.map((entry) => {
+      if (isListBoxSectionEntry(entry)) {
+        return (
+          <AriaListBoxSection key={entry.id} aria-label={entry.ariaLabel}>
+            <AriaHeader>{entry.header}</AriaHeader>
+            {entry.items.map(renderListBoxLeaf)}
+          </AriaListBoxSection>
+        );
+      }
+      return renderListBoxLeaf(entry);
+    });
   } else {
     // Path 3: legacy 정적 children fallback — migration 미적용 프로젝트 대비
     renderChildren = listBoxChildren.map((item) => context.renderElement(item));
