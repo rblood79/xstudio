@@ -48,3 +48,6 @@ export {
   HTML_PRIMITIVE_DEFAULT_WIDTHS,
   HTML_PRIMITIVE_DEFAULT_HEIGHTS,
 } from "./elementDefaults";
+
+// Button-family height metric (ADR-105-a)
+export { BUTTON_FAMILY_HEIGHTS } from "./buttonSizes";

@@ -208,13 +208,13 @@ pnpm type-check
 
 ## 체크리스트 (ADR Implemented 전환 조건)
 
-- [ ] **Phase 0**: 선행 조사 완료 — G2 재판정 근거 문서화 (본 breakdown)
-- [ ] **Phase 1**: ADR-059 §최종 SSOT 순도 Tier 3 예외 표에 4건 추가
-- [ ] **Phase 2**: ColorPicker.css에 `@spec-align` 주석 추가
-- [ ] **Phase 3**: D3 대칭 정합 매트릭스 리뷰 (본 breakdown에 기록됨)
-- [ ] **Phase 4**: type-check 3/3 PASS 확인
-- [ ] **Gate G2**: ADR-059 Tier 3 예외 목록 갱신 확인
-- [ ] **Gate G5**: D3 대칭 상태 breakdown 기록 완료
+- [x] **Phase 0**: 선행 조사 완료 — G2 재판정 근거 문서화 (본 breakdown)
+- [x] **Phase 1**: ADR-059 §최종 SSOT 순도 Tier 3 예외 표에 4건 추가 (breakdown B4 Tier 3 표에 ColorPicker/ColorSlider/ColorWheel 3건 신규 + ColorSwatchPicker 기존 행 강화, 2026-04-21)
+- [x] **Phase 2**: ColorPicker.css에 `@spec-align` 주석 추가 (md default 블록 + sm/md/lg size 블록 각 주석, 총 15줄 추가, 2026-04-21)
+- [x] **Phase 3**: D3 대칭 정합 매트릭스 리뷰 (본 breakdown에 기록됨)
+- [x] **Phase 4**: type-check 3/3 PASS 확인 (코드 변경 없음, 자동 통과)
+- [x] **Gate G2**: ADR-059 Tier 3 예외 목록 갱신 확인
+- [x] **Gate G5**: D3 대칭 상태 breakdown 기록 완료
 
 ---
 

@@ -46,7 +46,8 @@ export interface DatePickerProps {
   style?: Record<string, string | number | undefined>;
 }
 
-/** @sync DateInput.spec.ts — DateRangePicker.spec.ts에서도 import */
+/** DateInput 높이 metric (sm/md/lg). DateRangePicker.spec.ts에서도 import.
+ * DateInputSpec.sizes[size].height 와 동일 값 (ADR-091 Phase 3에서 검증됨). */
 export const DATE_PICKER_INPUT_HEIGHT: Record<string, number> = {
   sm: 22,
   md: 30,

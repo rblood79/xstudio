@@ -1812,10 +1812,9 @@ export function calculateContentHeight(
   if (tag === "selecttrigger" || tag === "comboboxwrapper") {
     const parentProps = element.props as Record<string, unknown> | undefined;
     const parentSize = (parentProps?.size as string) ?? "md";
-    // @sync Select.spec.ts / ComboBox.spec.ts sizes
     // content-box = border-box - paddingY*2 - borderWidth*2
     // borderWidth=1 (CSS .react-aria-Button / .combobox-container)
-    // ADR-091 Phase 3: TRIGGER_CONTENT_HEIGHTS Record → SelectTriggerSpec.sizes.contentHeight.
+    // ADR-091 Phase 3: SelectTriggerSpec.sizes.contentHeight 직접 참조.
     //   SelectTrigger 와 ComboBoxWrapper 는 tagSpecMap 에서 동일 spec(SelectTriggerSpec) 참조.
     return SelectTriggerSpec.sizes[parentSize]?.contentHeight ?? 20;
   }
@@ -1983,8 +1982,7 @@ export function calculateContentHeight(
     return CalendarHeaderSpec.sizes[sizeName]?.height ?? 30;
   }
 
-  // DateInput: intrinsic height (@sync DateInput.spec.ts INPUT_HEIGHT)
-  // ADR-091 Phase 3: inputHeights Record → DateInputSpec.sizes.height 직접 참조.
+  // DateInput: intrinsic height — DateInputSpec.sizes.height 직접 참조 (ADR-091 Phase 3).
   if (tag === "dateinput") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";

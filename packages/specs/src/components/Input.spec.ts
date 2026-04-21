@@ -79,8 +79,8 @@ export const InputSpec: ComponentSpec<InputProps> = {
     },
   },
 
-  // @sync BUTTON_SIZE_CONFIG (utils.ts) — Input height = Button height
-  // CSS height = lineHeight + paddingY×2 + borderWidth×2 (명시적 height 없음)
+  // BUTTON_FAMILY_HEIGHTS (primitives/buttonSizes.ts) 와 동일 metric.
+  // height = lineHeight + paddingY×2 + borderWidth×2
   // xs: 16 + 1×2 + 1×2 = 20, sm: 16 + 2×2 + 1×2 = 22, md: 20 + 4×2 + 1×2 = 30
   // lg: 24 + 8×2 + 1×2 = 42, xl: 28 + 12×2 + 1×2 = 54
   sizes: {

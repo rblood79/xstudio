@@ -91,7 +91,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
     },
   },
 
-  // @sync BUTTON_SIZE_CONFIG (utils.ts) — SelectTrigger height = Button height
+  // BUTTON_FAMILY_HEIGHTS (primitives/buttonSizes.ts) 와 동일 metric.
   // ADR-091 Phase 3: `contentHeight` = height - 2*paddingY - 2*borderWidth(1)
   //   content-box metric 을 layout 경로에서 계산 없이 직접 lookup. TRIGGER_CONTENT_HEIGHTS
   //   Record 해체 대응.

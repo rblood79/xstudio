@@ -293,8 +293,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     ],
   },
 
-  // @sync BUTTON_SIZE_CONFIG (utils.ts) — Select trigger height = Button height
-  // CSS height = lineHeight + paddingY×2 + borderWidth×2 (명시적 height 없음)
+  // BUTTON_FAMILY_HEIGHTS (primitives/buttonSizes.ts) 와 동일 metric.
+  // height = lineHeight + paddingY×2 + borderWidth×2
   sizes: {
     xs: {
       height: 20,

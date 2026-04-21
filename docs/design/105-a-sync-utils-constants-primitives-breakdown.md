@@ -176,9 +176,9 @@ pnpm build:specs          # specs PASS
 
 P0에서 아래 항목을 재검증하여 이미 해소된 경우 해당 Phase 스킵:
 
-- [ ] C5 (`utils.ts:1815`): `SelectTriggerSpec.sizes[parentSize]?.contentHeight` 코드 확인 → 주석만 삭제
-- [ ] C6 (`utils.ts:1986`): `DateInputSpec.sizes[sizeName]?.height` 코드 확인 → 주석만 삭제
-- [ ] C4 (`DatePicker.spec.ts:49`): `DATE_PICKER_INPUT_HEIGHT` 값이 `DateInputSpec.sizes.height`와 일치하면 P2-A/B 진행. 이미 primitives로 이관된 경우 주석 삭제만
+- [x] C5 (`utils.ts:1815`): `SelectTriggerSpec.sizes[parentSize]?.contentHeight` 코드 확인 → 주석만 삭제
+- [x] C6 (`utils.ts:1986`): `DateInputSpec.sizes[sizeName]?.height` 코드 확인 → 주석만 삭제
+- [x] C4 (`DatePicker.spec.ts:49`): 값 범위 불일치(xs/xl 없음) → P2-C 선택, 설명 주석 교체
 
 ---
 

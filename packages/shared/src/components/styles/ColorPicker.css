@@ -16,7 +16,13 @@
     /* Accent local */
     --field-accent: var(--accent);
 
-    /* Size locals (md default) */
+    /* Size locals (md default)
+     * spec.sizes.md: paddingX=14, paddingY=14, gap=10
+     * @spec-align: --cp-dialog-padding ≈ sizes.md.paddingX (현재 14px ✅)
+     * @spec-align: --cp-dialog-gap ≈ sizes.md.gap (현재 10px ✅)
+     * @spec-align: --cp-btn-width/height — spec 외부 독자 수치, 별도 sizes 필드 필요 ⚠️
+     * @spec-align: --cp-dialog-min-width: 192px — spec 외부 레이아웃 상수 ❌
+     */
     --cp-font-size: var(--text-sm);
     --cp-gap: 10px;
     --cp-btn-width: 32px;
@@ -35,6 +41,10 @@
 
     /* ===== Size ===== */
     &[data-size="sm"] {
+      /* spec.sizes.sm: paddingX=10, gap=8
+       * @spec-align: --cp-dialog-padding: 12px ⚠️ (spec paddingX=10 과 불일치 — 의도적 확장?)
+       * @spec-align: --cp-dialog-gap: 6px ⚠️ (spec gap=8 과 불일치)
+       */
       --cp-font-size: var(--text-xs);
       --cp-gap: 6px;
       --cp-btn-width: 24px;
@@ -44,6 +54,10 @@
       --cp-dialog-min-width: 160px;
     }
     &[data-size="md"] {
+      /* spec.sizes.md: paddingX=14, gap=10
+       * @spec-align: --cp-dialog-padding: 14px ✅
+       * @spec-align: --cp-dialog-gap: 10px ✅
+       */
       --cp-font-size: var(--text-sm);
       --cp-gap: 10px;
       --cp-btn-width: 32px;
@@ -53,6 +67,10 @@
       --cp-dialog-min-width: 192px;
     }
     &[data-size="lg"] {
+      /* spec.sizes.lg: paddingX=18, gap=10
+       * @spec-align: --cp-dialog-padding: 18px ✅
+       * @spec-align: --cp-dialog-gap: 10px ✅
+       */
       --cp-font-size: var(--text-lg);
       --cp-gap: 10px;
       --cp-btn-width: 40px;
