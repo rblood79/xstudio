@@ -202,9 +202,9 @@ ADR-066 (Tabs) / ADR-068 (Menu) / ADR-073 (Select/ComboBox) / ADR-076 (ListBox) 
 
 **BC 영향**: 0%. 기존 저장 프로젝트는 여전히 migration orchestrator 가 처리. 신규 생성만 직접 items SSOT 경로.
 
-**검증**: type-check 3/3 + specs 166/166 + shared 52/52 + builder 227/227 PASS. Chrome MCP 재실측 (신규 TagGroup 추가) 권장.
+**검증**: type-check 3/3 + specs 166/166 + shared 52/52 + builder 227/227 PASS. 기존 TagGroup (migration 경로) Chrome MCP 스크린샷 확인 — 신규 경로는 동일 `TagGroup.props.items[] + TagList(자식 0)` 구조 직접 생성이므로 Phase 6 실측 재활용.
 
-**커밋**: (Addendum 1 land 시점)
+**커밋**: `6859c13e` (feat(adr-097): Addendum 1 — Factory 전환 완결)
 
 ## 참조
 
