@@ -39,6 +39,16 @@ function getCustomPreEditor(type: string): string | undefined {
       //   ListBox 선례와 달리 템플릿 모드 분기 없음 (Tag Field 자식 불가).
       //   spec-first bypass 회피 + GenericPropertyEditor 전체 주입이 목적.
       return "TagGroupPropertyEditor";
+    case "Menu":
+      // ADR-099 Phase 4: MenuPropertyEditor — GenericPropertyEditor 전체 주입.
+      //   Section/Separator 추가 UI (allowSections/allowSeparators) 포함.
+      //   spec-first bypass 회피와 동일 패턴.
+      return "MenuPropertyEditor";
+    case "GridList":
+      // ADR-099 Phase 4: GridListPropertyEditor — GenericPropertyEditor 전체 주입.
+      //   Section 추가 UI 포함 (GridList는 children-manager이므로 별도 처리 필요 없음,
+      //   단순 spec-first bypass 회피 목적).
+      return "GridListPropertyEditor";
     default:
       return undefined;
   }

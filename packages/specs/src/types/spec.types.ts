@@ -414,6 +414,28 @@ export interface ItemsManagerField extends BaseFieldDef {
   labelKey?: string;
   /** 중첩 자식 허용 여부 (서브메뉴 등) — 현재 Phase에서는 false */
   allowNested?: boolean;
+  /**
+   * ADR-099 Phase 4: Section 그룹 추가 허용 여부.
+   *
+   * true 이면 "Add Section" 버튼이 나타나며, discriminated union 엔트리
+   * `{ id, type: "section", header, items: [] }` 를 배열에 삽입한다.
+   * ListBox / Menu 만 true — GridList 는 children-manager 방식 유지.
+   */
+  allowSections?: boolean;
+  /**
+   * ADR-099 Phase 4: Menu Separator 추가 허용 여부 (Menu 전용).
+   *
+   * true 이면 "Add Separator" 버튼이 나타나며,
+   * `{ id, type: "separator" }` 엔트리를 배열에 삽입한다.
+   */
+  allowSeparators?: boolean;
+  /**
+   * ADR-099 Phase 4: Menu section per-selection 편집 UI 노출 여부 (Menu 전용).
+   *
+   * Section 행 내 selectionMode / selectedKeys / defaultSelectedKeys 필드를
+   * 추가로 렌더링한다.
+   */
+  sectionHasSelection?: boolean;
 }
 
 export type DerivedUpdateFn = (

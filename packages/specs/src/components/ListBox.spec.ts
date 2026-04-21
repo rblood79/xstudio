@@ -206,6 +206,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             ],
             labelKey: "label",
             allowNested: false,
+            // ADR-099 Phase 4: Section 추가 UI 활성화
+            allowSections: true,
           },
         ],
       },

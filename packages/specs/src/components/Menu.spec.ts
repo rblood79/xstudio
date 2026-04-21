@@ -310,6 +310,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             ],
             labelKey: "label",
             allowNested: false,
+            // ADR-099 Phase 4: Section/Separator 추가 UI 활성화 (Menu 전용)
+            allowSections: true,
+            allowSeparators: true,
+            sectionHasSelection: true,
           },
         ],
       },

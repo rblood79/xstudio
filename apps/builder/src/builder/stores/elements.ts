@@ -231,6 +231,41 @@ export interface ElementsState {
     patch: Record<string, unknown>,
   ) => Promise<void>;
 
+  // ADR-099 Phase 4: Section/Separator 추가 액션
+  /** items 배열 끝에 section 엔트리 삽입 */
+  addSection: (
+    elementId: string,
+    itemsKey: string,
+    header?: string,
+  ) => Promise<void>;
+  /** items 배열 끝에 separator 엔트리 삽입 (Menu 전용) */
+  addSeparator: (elementId: string, itemsKey: string) => Promise<void>;
+  /**
+   * section 엔트리 내부 item 추가.
+   * section 은 items 배열의 최상위 엔트리이므로 updateItem 과는 별도 경로 필요.
+   */
+  addItemToSection: (
+    elementId: string,
+    itemsKey: string,
+    sectionId: string,
+    item: Record<string, unknown>,
+  ) => Promise<void>;
+  /** section 엔트리 내부 item 제거 */
+  removeItemFromSection: (
+    elementId: string,
+    itemsKey: string,
+    sectionId: string,
+    itemId: string,
+  ) => Promise<void>;
+  /** section 엔트리 내부 item 업데이트 */
+  updateItemInSection: (
+    elementId: string,
+    itemsKey: string,
+    sectionId: string,
+    itemId: string,
+    patch: Record<string, unknown>,
+  ) => Promise<void>;
+
   // ADR-068: Menu items SSOT — StoredMenuItem 배열 조작 액션 (addItem의 thin wrapper)
   addMenuItem: (
     menuId: string,
@@ -1552,6 +1587,140 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       const next = currentItems.map((it) =>
         it.id === itemId ? { ...it, ...patch } : it,
       );
+      await get().updateElementProps(elementId, { [itemsKey]: next });
+    },
+
+    // ADR-099 Phase 4: Section/Separator 액션
+    addSection: async (elementId, itemsKey, header = "New Section") => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const newSection: Record<string, unknown> = {
+        id: crypto.randomUUID(),
+        type: "section",
+        header,
+        items: [],
+      };
+      await get().updateElementProps(elementId, {
+        [itemsKey]: [...currentItems, newSection],
+      });
+    },
+
+    addSeparator: async (elementId, itemsKey) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const newSeparator: Record<string, unknown> = {
+        id: crypto.randomUUID(),
+        type: "separator",
+      };
+      await get().updateElementProps(elementId, {
+        [itemsKey]: [...currentItems, newSeparator],
+      });
+    },
+
+    addItemToSection: async (elementId, itemsKey, sectionId, item) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const newItem: Record<string, unknown> = {
+        label: "Item",
+        ...item,
+        id:
+          item.id !== undefined && item.id !== ""
+            ? String(item.id)
+            : crypto.randomUUID(),
+      };
+      const next = currentItems.map((entry) => {
+        if (entry.id === sectionId && entry.type === "section") {
+          const sectionItems = Array.isArray(entry.items)
+            ? (entry.items as Record<string, unknown>[])
+            : [];
+          return { ...entry, items: [...sectionItems, newItem] };
+        }
+        return entry;
+      });
+      await get().updateElementProps(elementId, { [itemsKey]: next });
+    },
+
+    removeItemFromSection: async (elementId, itemsKey, sectionId, itemId) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const next = currentItems.map((entry) => {
+        if (entry.id === sectionId && entry.type === "section") {
+          const sectionItems = Array.isArray(entry.items)
+            ? (entry.items as Record<string, unknown>[])
+            : [];
+          return {
+            ...entry,
+            items: sectionItems.filter((it) => it.id !== itemId),
+          };
+        }
+        return entry;
+      });
+      await get().updateElementProps(elementId, { [itemsKey]: next });
+    },
+
+    updateItemInSection: async (
+      elementId,
+      itemsKey,
+      sectionId,
+      itemId,
+      patch,
+    ) => {
+      const el = get().elementsMap.get(elementId);
+      if (!el) return;
+      const currentItems = Array.isArray(
+        (el.props as Record<string, unknown>)[itemsKey],
+      )
+        ? ((el.props as Record<string, unknown>)[itemsKey] as Record<
+            string,
+            unknown
+          >[])
+        : [];
+      const next = currentItems.map((entry) => {
+        if (entry.id === sectionId && entry.type === "section") {
+          const sectionItems = Array.isArray(entry.items)
+            ? (entry.items as Record<string, unknown>[])
+            : [];
+          return {
+            ...entry,
+            items: sectionItems.map((it) =>
+              it.id === itemId ? { ...it, ...patch } : it,
+            ),
+          };
+        }
+        return entry;
+      });
       await get().updateElementProps(elementId, { [itemsKey]: next });
     },
 
