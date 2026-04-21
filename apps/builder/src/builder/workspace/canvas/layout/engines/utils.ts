@@ -66,7 +66,11 @@ import {
   parseBorderShorthand,
 } from "./cssValueParser";
 import type { CSSValueContext, CSSVariableScope } from "./cssValueParser";
-import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
+import {
+  resolveStyle,
+  ROOT_COMPUTED_STYLE,
+  getRootComputedStyle,
+} from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
 import type { LayoutContext } from "./LayoutEngine";
 import { applyTextTransform } from "../../sprites/styleConverter";
@@ -3857,7 +3861,7 @@ export function resolveParentContext(
     | undefined;
   const parentComputed =
     context?.parentComputedStyle ??
-    resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
+    resolveStyle(parentRawStyle, getRootComputedStyle());
 
   const cssCtx: CSSValueContext = {
     viewportWidth:

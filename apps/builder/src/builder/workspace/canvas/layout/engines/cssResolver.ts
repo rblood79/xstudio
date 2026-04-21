@@ -19,6 +19,8 @@
 
 import { parseFontShorthand } from "./cssValueParser";
 import { FONT_STRETCH_KEYWORD_MAP } from "@composition/specs";
+import { useThemeConfigStore } from "../../../../../stores/themeConfigStore";
+import { DEFAULT_BASE_TYPOGRAPHY } from "../../../../fonts/customFonts";
 
 // ============================================
 // 상속 가능 속성 목록
@@ -253,10 +255,12 @@ export interface ComputedStyle {
 // ============================================
 
 /**
- * 루트 요소의 기본 computed style
+ * 루트 요소의 기본 computed style (정적 상수 — 하위 호환용)
  *
  * 최상위 요소(body/root)에서 사용되는 초기값.
  * CSS 명세의 initial value 기반.
+ *
+ * @deprecated getRootComputedStyle() 사용 권장 (ADR-056: themeConfigStore 동적 반영)
  */
 export const ROOT_COMPUTED_STYLE: ComputedStyle = {
   color: "#000000",
@@ -276,6 +280,28 @@ export const ROOT_COMPUTED_STYLE: ComputedStyle = {
   overflowWrap: "normal",
   whiteSpace: "normal",
 };
+
+/**
+ * 현재 프로젝트의 root computed style (themeConfigStore에서 동적 구성)
+ *
+ * ADR-056: Base Typography SSOT
+ * themeConfigStore.baseTypography를 읽어 fontFamily/fontSize/lineHeight를 동적으로 반영.
+ * themeConfigStore 미초기화 시 DEFAULT_BASE_TYPOGRAPHY fallback.
+ *
+ * 호출 빈도가 높은 레이아웃 루프 내에서도 안전하게 사용 가능.
+ * (getState()는 O(1), 내부 캐싱 없음 — 단순 객체 반환)
+ */
+export function getRootComputedStyle(): ComputedStyle {
+  const typo =
+    useThemeConfigStore.getState().baseTypography ?? DEFAULT_BASE_TYPOGRAPHY;
+
+  return {
+    ...ROOT_COMPUTED_STYLE,
+    fontFamily: typo.fontFamily,
+    fontSize: typo.fontSize,
+    lineHeight: typo.lineHeight,
+  };
+}
 
 // ============================================
 // currentColor 해석

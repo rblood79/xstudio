@@ -28,7 +28,11 @@ import {
   parseCSSPropWithContext,
   measureTextWidth,
 } from "./utils";
-import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
+import {
+  resolveStyle,
+  ROOT_COMPUTED_STYLE,
+  getRootComputedStyle,
+} from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
 import {
   toTaffyDisplay,
@@ -1703,7 +1707,7 @@ export function calculateFullTreeLayout(
     dfsCtx,
     availableWidth,
     availableHeight,
-    ROOT_COMPUTED_STYLE,
+    getRootComputedStyle(),
     "block",
     0,
   );
@@ -1900,7 +1904,10 @@ export function calculateFullTreeLayout(
                   props: { ...childEl.props, style: mergedStyle },
                 } as Element)
               : childEl;
-          const childComputed = resolveStyle(mergedStyle, ROOT_COMPUTED_STYLE);
+          const childComputed = resolveStyle(
+            mergedStyle,
+            getRootComputedStyle(),
+          );
           const reEnriched = enrichWithIntrinsicSize(
             mergedEl,
             actualWidth,

@@ -289,6 +289,28 @@ export type { FontFaceAsset, FontRegistryV2 };
 /** 기본 폰트 패밀리 — body 상속, 스타일 패널 폴백 등에서 참조 */
 export const DEFAULT_FONT_FAMILY = "Pretendard";
 
+/** Base Typography 타입 */
+export type BaseTypography = {
+  fontFamily: string;
+  fontSize: number;
+  lineHeight: number;
+};
+
+/**
+ * 프로젝트 기본 타이포그래피 단일 정본 (ADR-056)
+ *
+ * Canvas(ROOT_COMPUTED_STYLE) / Preview(postMessage) / Publish(index.css)
+ * 3경로의 font-family, font-size, line-height 기준값.
+ *
+ * 정본 위치: apps/builder/src/builder/fonts/customFonts.ts
+ */
+export const DEFAULT_BASE_TYPOGRAPHY: BaseTypography = {
+  fontFamily:
+    "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', sans-serif",
+  fontSize: 16,
+  lineHeight: 1.5,
+};
+
 /** CSS font-family 체인에서 첫 번째 패밀리 이름만 추출 */
 export function extractFirstFontFamily(raw: string): string {
   return (

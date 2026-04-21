@@ -24,6 +24,10 @@ import {
 } from "../utils/theme/neutralToSkiaColors";
 import { radiusScaleToSkia } from "../utils/theme/radiusScaleToSkia";
 import { notifyLayoutChange } from "../builder/workspace/canvas/skia/useSkiaNode";
+import {
+  DEFAULT_BASE_TYPOGRAPHY,
+  type BaseTypography,
+} from "../builder/fonts/customFonts";
 
 // ============================================================================
 // Types
@@ -39,6 +43,7 @@ interface PersistedThemeConfig {
   darkMode: DarkModePreference;
   neutral: NeutralPreset;
   radiusScale: RadiusScale;
+  baseTypography: BaseTypography;
 }
 
 interface ThemeConfigState extends PersistedThemeConfig {
@@ -59,6 +64,9 @@ interface ThemeConfigState extends PersistedThemeConfig {
 
   /** Border Radius 스케일 변경 */
   setRadiusScale: (scale: RadiusScale) => void;
+
+  /** Base Typography 변경 (font-family / font-size / line-height) */
+  setBaseTypography: (typography: Partial<BaseTypography>) => void;
 
   /** 프로젝트 초기화 시 localStorage에서 설정 복원 */
   initThemeConfig: (projectId: string) => void;
@@ -98,6 +106,7 @@ function persistConfig(projectId: string, state: PersistedThemeConfig): void {
         darkMode: state.darkMode,
         neutral: state.neutral,
         radiusScale: state.radiusScale,
+        baseTypography: state.baseTypography,
       }),
     );
   } catch {
@@ -108,9 +117,15 @@ function persistConfig(projectId: string, state: PersistedThemeConfig): void {
 /** 현재 프로젝트에 설정 영속화 (set 액션 내부에서 호출) */
 function persistCurrentConfig(): void {
   if (!currentProjectId) return;
-  const { tint, darkMode, neutral, radiusScale } =
+  const { tint, darkMode, neutral, radiusScale, baseTypography } =
     useThemeConfigStore.getState();
-  persistConfig(currentProjectId, { tint, darkMode, neutral, radiusScale });
+  persistConfig(currentProjectId, {
+    tint,
+    darkMode,
+    neutral,
+    radiusScale,
+    baseTypography,
+  });
 }
 
 // ============================================================================
@@ -124,6 +139,7 @@ export const useThemeConfigStore = create<ThemeConfigState>()(
       darkMode: "light",
       neutral: "neutral",
       radiusScale: "md",
+      baseTypography: DEFAULT_BASE_TYPOGRAPHY,
       themeVersion: 0,
 
       setTint: (tint: TintPreset) => {
@@ -206,6 +222,23 @@ export const useThemeConfigStore = create<ThemeConfigState>()(
         persistCurrentConfig();
       },
 
+      setBaseTypography: (typography: Partial<BaseTypography>) => {
+        set(
+          (state) => ({
+            baseTypography: { ...state.baseTypography, ...typography },
+            themeVersion: state.themeVersion + 1,
+          }),
+          undefined,
+          "setBaseTypography",
+        );
+
+        // lineHeight/fontSize 변경 시 레이아웃 재계산 트리거
+        notifyLayoutChange();
+
+        // localStorage 영속화
+        persistCurrentConfig();
+      },
+
       initThemeConfig: (projectId: string) => {
         currentProjectId = projectId;
 
@@ -226,6 +259,10 @@ export const useThemeConfigStore = create<ThemeConfigState>()(
             ...(persisted.radiusScale && {
               radiusScale: persisted.radiusScale,
             }),
+            // baseTypography: localStorage에 없으면 DEFAULT_BASE_TYPOGRAPHY fallback
+            baseTypography: persisted.baseTypography
+              ? { ...DEFAULT_BASE_TYPOGRAPHY, ...persisted.baseTypography }
+              : state.baseTypography,
             themeVersion: state.themeVersion + 1,
           }),
           undefined,
@@ -257,6 +294,9 @@ export const useThemeConfigNeutral = () =>
 
 export const useThemeConfigRadiusScale = () =>
   useThemeConfigStore((s) => s.radiusScale);
+
+export const useThemeConfigBaseTypography = () =>
+  useThemeConfigStore((s) => s.baseTypography);
 
 /**
  * DarkModePreference → 실제 "light" | "dark" 해석.
