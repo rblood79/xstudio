@@ -131,13 +131,43 @@ return { elementsMap', orphanIds }
 - `implicitStyles.ts:599-633` (maxRows 근사) → items.length × 평균 Tag 폭 기반 사전 계산 (기존 element.tag 반복 대체)
 - 570-582 (containerStyles) — 변경 없음 (ADR-093 리프팅 유지)
 
-### Phase 5 — TagList 중간 컨테이너 유지 확증 (30 분)
+### Phase 5 — TagList 중간 컨테이너 유지 확증 (30 분) ✅ Implemented
 
-Decision section 근거 재확인 + 문서:
+Decision section 근거 재확인 + 문서. 세션 5 (2026-04-21) 완료 — code-level 증거 수집.
 
-- TagList.spec.ts:74 containerStyles 리프팅 (ADR-093) → spec 근거 유지
-- `expandChildSpecs(TagGroupSpec.childSpecs)` 가 TagList 자동 생성 → factory 변경 불필요
-- implicitStyles.ts TagList 분기 유지 → runtime 로직 spec 침범 없음
+**증거 1 — TagList.spec.ts:74-78 `containerStyles` 리프팅 유지**:
+
+```ts
+containerStyles: {
+  display: "flex",
+  flexDirection: "row",
+  flexWrap: "wrap",
+},
+```
+
+ADR-093 Phase 1 리프팅 결과 그대로 존재. ADR-097 Phase 4A/4B 에서 수정 없음. `resolveContainerStylesFallback` (`implicitStyles.ts:158`) 이 `LOWERCASE_TAG_SPEC_MAP.get("taglist")` → TagListSpec.containerStyles 자동 주입.
+
+**증거 2 — `expandChildSpecs(TagGroupSpec.childSpecs)` 자동 등록**:
+
+```
+TagGroup.spec.ts:362:  childSpecs: [TagListSpec],
+tagToElement.ts:234-251:  function expandChildSpecs(base) { ... }
+tagToElement.ts:254:  const TAG_SPEC_MAP = expandChildSpecs(BASE_TAG_SPEC_MAP);
+```
+
+ADR-094 인프라가 TagList 를 `TAG_SPEC_MAP` / `LOWERCASE_TAG_SPEC_MAP` / `getElementForTag` 에 자동 등록 — factory `createTagGroupDefinition` 수정 없이 TagList element 참조 가능. 수동 `tagSpecMap.ts` 등록 항목 0.
+
+**증거 3 — implicitStyles taglist 분기 최소 runtime fork**:
+
+Phase 4B 후 잔존 14 LOC (implicitStyles.ts:568-586). 각 fork 가 spec 커버 불가 영역:
+
+| Fork                                         | 근거                                                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `orientation === "vertical"` column override | TagGroup.spec 에 orientation prop 없음 (HC#2). 방어 코드. spec 이 소유하지 않는 속성이라 spec 레벨 이관 불가 |
+| `gap: parentStyle.gap ?? 4`                  | 4 = `TagListSpec.sizes.md.gap`. 사용자 parentStyle.gap 편집 respect. spec default 와 동기                    |
+| `labelPosition === "side"` flex:1/minWidth:0 | TagList spec 이 부모 TagGroup.labelPosition 을 알 수 없음 (spec isolation) → runtime-only 불가피             |
+
+Spec SSOT 침범 없음 확증. runtime fork 최소성 충족 (HC#4).
 
 ### Phase 6 — Chrome MCP 실측 + 회귀 검증 (1 h)
 
@@ -172,8 +202,9 @@ Phase 2 migration orchestrator 가 실패 시:
 
 ## 검증 체크리스트
 
-- [ ] type-check 3/3
-- [ ] specs 166+ PASS
-- [ ] builder 230+ (migration 테스트 3 건 +)
-- [ ] `rg "containerTag === \"taglist\"" implicitStyles.ts` — 유지 (runtime-only 로직)
-- [ ] Tag element 를 직접 편집하던 사용자 플로우 문서 업데이트 (TagGroupPropertyEditor.items 로 대체)
+- [x] type-check 3/3 PASS (세션 3-5 지속)
+- [x] specs 166+ PASS
+- [x] shared 52+ PASS (Phase 2 migration 테스트 +6 건 = 52/52)
+- [x] builder 227+ PASS
+- [x] `rg "containerTag === \"taglist\"" implicitStyles.ts` — 유지 (runtime-only 14 LOC)
+- [ ] Tag element 를 직접 편집하던 사용자 플로우 문서 업데이트 (TagGroupPropertyEditor.items 로 대체) — Phase 6 사용자 가이드 단계

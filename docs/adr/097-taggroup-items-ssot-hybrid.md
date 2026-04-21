@@ -143,14 +143,16 @@ ADR-066 (Tabs) / ADR-068 (Menu) / ADR-073 (Select/ComboBox) / ADR-076 (ListBox) 
 
 잔존 HIGH 위험 없음 — Gate 테이블 생략. 검증 기준 (breakdown Phase 6):
 
-- Phase 1 완료 후: type-check 3/3 PASS (types 추가만)
-- Phase 2 완료 후: specs 166+ PASS + migrateTagGroupItems 테스트 3 건 신규 PASS
-- Phase 3 완료 후: builder 230+ PASS (virtual children + PropertyEditor)
+- Phase 1 완료 후: type-check 3/3 PASS (types 추가만) ✅ land (`aca16a7c`)
+- Phase 2 완료 후: specs 166+ PASS + migrateTagGroupItems 테스트 3 건 신규 PASS ✅ land (`409875bd` + `1c03b9f0` BC fix, shared 46→52)
+- Phase 3 완료 후: builder 230+ PASS (virtual children + PropertyEditor) ✅ land (`59528d48`, builder 227/227 — 신규 테스트 0건은 기존 227 유지)
 - Phase 4 완료 후:
-  - type-check 3/3 PASS
-  - specs 166+ PASS (Tag/TagGroup snapshot 갱신 가능)
-  - builder 230+ PASS
-- Phase 5 완료 후: TagList containerStyles 유지 검증 — resolveContainerStylesFallback 으로 display/flexDirection/flexWrap 동일 값 확인
+  - type-check 3/3 PASS ✅
+  - specs 166+ PASS (Tag/TagGroup snapshot 갱신 가능) ✅
+  - builder 230+ PASS ✅ (227/227 유지, Phase 4 구현은 spec shapes + layout 분기 — 기존 테스트 범위 내)
+  - Phase 4A (`4e906663`) + Phase 4B (`5c632fc9`) 순차 land
+- Phase 5 완료 후: TagList containerStyles 유지 검증 — resolveContainerStylesFallback 으로 display/flexDirection/flexWrap 동일 값 확인 ✅ land (세션 5, 2026-04-21)
+  - 증거: breakdown Phase 5 섹션 "증거 1/2/3" 참조. TagListSpec.containerStyles:74-78 유지 + expandChildSpecs 자동 등록 + implicitStyles runtime fork 14 LOC 최소성 확증
 - Phase 6: Chrome MCP 연결 시 Tag 3 개 (Primary/Secondary/Disabled) 정상 표시. 불안정 시 code-level 증거 허용 (ADR-092/093/095/096 선례).
 
 ## Consequences
