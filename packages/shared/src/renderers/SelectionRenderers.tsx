@@ -988,7 +988,8 @@ export const renderComboBox = (
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
-  // 실제 ComboBoxItem 자식 요소들을 찾기
+  // ADR-101 Phase 1 (098-b 슬롯): legacy "ComboBoxItem" Element — items SSOT 흡수 후
+  //   기존 프로젝트 호환 경로. RAC alias: ComboBoxItem (이름 동일). ADR-073 이관 완료.
   const comboBoxItemChildren = (
     context.childrenMap.get(element.id) ?? []
   ).filter((child) => child.tag === "ComboBoxItem");

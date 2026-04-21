@@ -73,6 +73,9 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     if (!el.parent_id) continue;
     // ADR-100 Phase 1 (098-a 슬롯): legacy "SelectItem" Element → items SSOT 흡수.
     //   RAC 공식: ListBoxItem. composition 고유 식별자 유지 (BC HIGH 회피).
+    // ADR-101 Phase 1 (098-b 슬롯): legacy "ComboBoxItem" Element → items SSOT 흡수.
+    //   RAC alias: ComboBoxItem (이름 동일). ADR-073 이관 완료 → 저장 데이터에 tag 없음 (BC 0%).
+    //   본 경로는 migration 전 기존 프로젝트 호환 경로.
     if (el.tag === "SelectItem") {
       pushInto(selectItemChildrenByParent, el.parent_id, el);
     } else if (el.tag === "ComboBoxItem") {
