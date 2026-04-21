@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
 
 ## Context
 
@@ -158,6 +158,24 @@ ADR-091 (Implemented) 은 `utils.ts` + `cssResolver.ts` 의 `Record<string, numb
   - builder 227/227 PASS
   - `rg "Record<string, number>" apps/builder/src/builder/workspace/canvas/layout/engines/{utils,cssResolver}.ts` = **0 건**
   - ADR-086 G4 완결 (implicitStyles + utils + cssResolver 3 파일 Record 0)
+
+## 구현 결과 (2026-04-21)
+
+4 Phase 순차 land. 커밋 체인 4건:
+
+- **Phase 1-2** (`a5489f5a`): `ComponentSpec.defaultWidth?/defaultHeight?` Schema 확장 (spec.types.ts +27 JSDoc) + `packages/specs/src/primitives/elementDefaults.ts` 신설 (`HTML_PRIMITIVE_DEFAULT_WIDTHS` 4 키 / `HTML_PRIMITIVE_DEFAULT_HEIGHTS` 26 키) + primitives/index + src/index re-export.
+- **Phase 3** (`824db5d9`): 5 spec 1:1 값 이관 — Button(h=36) / Input(w=180) / Select(w=150,h=36) / TextArea(w=200,h=80) / Image(w=280,h=200). Record 값 불변 = BC 영향 0 / 저장 데이터 재직렬화 0 / snapshot 변동 0.
+- **Phase 4** (`4a0b7f86`): `utils.ts:461/1428` `DEFAULT_ELEMENT_WIDTHS/HEIGHTS` Record 2 건 완전 삭제 + `LOWERCASE_TAG_SPEC_MAP` 을 `engines/tagSpecLookup.ts` 신규 공유 모듈로 hoist (implicitStyles → utils 순환 의존 회피). getIntrinsicWidth/Height lookup 체인: `spec.defaultW/H → HTML_PRIMITIVE_DEFAULT_W/H → DEFAULT_WIDTH(80) | estimateTextHeight()`.
+
+**실측**:
+
+- `rg "Record<string, number>" apps/builder/src/builder/workspace/canvas/layout/engines/{utils,cssResolver}.ts` = **0 건**
+- **ADR-086 G4 완결** — utils.ts + cssResolver.ts + implicitStyles.ts 3 파일 `Record<string, number>` 0 건 달성
+- type-check 3/3 PASS × 4 회
+- specs 166/166 PASS × 3 회 (snapshot 변동 0)
+- builder 227/227 PASS × 1 회 (Phase 4 종결)
+
+**Chrome MCP 검증**: code-level 검증으로 충분 (Record 값 1:1 이관, 렌더 결과 diff 0 수학적 확증). ADR-092/093/095 선례 동일 원칙.
 
 ## Consequences
 
