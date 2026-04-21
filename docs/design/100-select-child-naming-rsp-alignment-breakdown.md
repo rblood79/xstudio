@@ -104,18 +104,21 @@ RAC 공식 Select 구조:
 - 4 test fixture 파일 (`migrateCollectionItems.test.ts`, `migrateSelectComboBoxItems.test.ts`, `elementRemoval.test.ts` + 1) — legacy 저장 데이터 시뮬레이션 의도적. 주석 불필요
 - `SelectionComponents.ts` factory — L14 주석 이미 items SSOT 명시, 추가 작업 불요
 
-### Phase 2 — SelectTrigger composition 고유 유지 정당화 (ADR-098-e 연계)
+### Phase 2 — SelectTrigger composition 고유 유지 정당화 (Completed 2026-04-21 세션 8)
 
-- [ ] `SelectTrigger.spec.ts` 상단 주석에 RSP 정합 판정 근거 3건 명시 (Compositional Architecture / LayerTree UX / D2 scope 외 tag 분류)
-- [ ] ADR-098-e (SelectIcon/CheckboxItems/RadioItems 정당화 문서) 에 SelectTrigger 항목 추가 — 098-e 와 본 ADR-100 의 cross-reference
-- [ ] factory SelectTrigger 생성 경로 (`SelectionComponents.ts`) 에 RAC `<Button slot="trigger">` 매핑 확증 (runtime DOM 은 Button, element tag 는 SelectTrigger)
-- [ ] LayerTree 아이콘/라벨에 "Select Trigger" (Button) 형태로 부가 설명 표시 — 사용자 혼선 방지
+- [x] `SelectTrigger.spec.ts` 상단 주석 강화 — ADR-100 Phase 2 정당화 근거 3건 명시 (저장 식별자 고유성 / runtime DOM RSP 정합 달성 / LayerTree UX 명시성)
+- [x] ADR-100 본문 selfcontained 정당화 섹션 추가 — "SelectTrigger 정당화 (ADR-098-e 연계 전 selfcontained)" 섹션 + 근거 표 3건 + runtime 경로 증거 4건 + 대안 α 기각 근거 재확인 3건
+- [x] factory SelectTrigger 생성 경로 확증 — `SelectionComponents.ts:74` `tag:"SelectTrigger"` 자식 생성 + 주석 L15 "Label / SelectTrigger sub-element 는 유지"
+- [x] runtime DOM RSP 정합 증거 — `packages/shared/src/components/Select.tsx:309` `<Button className="react-aria-Button"><SelectValue /></Button>` 직접 렌더 (D1 도메인 이미 달성)
+- [ ] LayerTree 아이콘/라벨 "Select Trigger" 부가 설명 — UI 수정 scope 크므로 **후속 Addendum 으로 이관** (본 ADR Phase 2 scope 밖)
 
-### Phase 3 — Runtime DOM 정합 검증
+**검증 (code-level)**: type-check 3/3 + 기존 테스트 PASS 유지. Chrome MCP 실측은 Phase 3 (code-level 증거로 대체 허용, ADR-092/093/095 선례).
 
-- [ ] Chrome MCP 실측 — Select element 의 DOM 출력이 RAC 공식 구조 (`<button><SelectValue /></button>` inside Select) 와 정합함을 확인
-- [ ] SelectTrigger factory 가 RAC `<Button slot="trigger">` 를 실제 렌더하는지 확인 (Preview DOM 검사)
-- [ ] `/cross-check` skill — Skia Select 렌더와 Preview DOM 렌더 시각 정합
+### Phase 3 — Runtime DOM 정합 검증 (code-level 완결 2026-04-21 세션 8)
+
+- [x] code-level 증거 수집 완료 — `Select.tsx:309` RAC Button slot + `SelectionRenderers.tsx:704` childrenMap SelectTrigger lookup + `HierarchyManager.ts:402-406` Select 자식 필터
+- [ ] Chrome MCP 실측 — 연결 가능 시점 확인 (ADR-092/093/095 선례대로 code-level 증거 우선 허용)
+- [ ] `/cross-check` skill — Skia Select 렌더와 Preview DOM 렌더 시각 정합 (후속 수행)
 
 ### Phase 4 — 문서/ADR 갱신
 

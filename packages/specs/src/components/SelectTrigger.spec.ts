@@ -4,6 +4,29 @@
  * Select 컴포넌트의 트리거 버튼 영역 (배경 + 보더)
  * Compositional Architecture: Select의 자식 Element로 독립 렌더링
  *
+ * ADR-100 Phase 2 (098-a 슬롯): RSP 네이밍 정합 정당화.
+ *
+ * composition 내부 식별자 "SelectTrigger" 는 RAC 공식 `<Button>` (slot="trigger")
+ * 와 동일 역할. 리네이밍 미수행 근거 3건:
+ *
+ *  1. **저장 식별자 고유성**: builder element tree 에서 "SelectTrigger" 는 Select
+ *     내부 전용 Button 으로 factory/editor/layout 분기가 고유. 일반 "Button" tag
+ *     과 통합 시 discriminator (`parent.tag === "Select"` 또는 `slot` prop) 분기
+ *     필요 → runtime 4 경로 (utils / implicitStyles / buildSpecNodeData /
+ *     HierarchyManager) + factory + editor 모두 복잡도↑.
+ *
+ *  2. **runtime DOM RSP 정합 이미 달성** (D1 도메인): `packages/shared/src/components
+ *     /Select.tsx:309` 에서 RAC `<Button className="react-aria-Button">` 직접 렌더
+ *     + `<SelectValue />` 자식 포함. 저장 식별자 수준 rename 과 독립적으로 DOM 층
+ *     RSP 정합 완료.
+ *
+ *  3. **LayerTree UX 명시성**: 사용자가 Select 내부 Button (자동 생성 sub-element)
+ *     을 일반 Button element (사용자 추가) 와 시각적으로 구분 가능. "SelectTrigger"
+ *     고유 아이콘/라벨 → 학습 비용 감소.
+ *
+ * 본 정당화는 ADR-098-e (composition 고유 네이밍 정당화 통합 문서) 미발행 상태에서
+ * ADR-100 selfcontained 로 포함. 098-e 발행 시 cross-reference 전환.
+ *
  * @packageDocumentation
  */
 

@@ -165,6 +165,35 @@ ADR-098 감사 매트릭스 (2026-04-21 WebFetch) 에서 composition 의 `Select
 - **ADR-098-e 정당화 문서 의존** — SelectTrigger 정당화가 098-e 미발행 시 본 ADR 본문에 selfcontained 포함 필요 → 098-e 발행 시 중복 정리 비용.
 - **SelectItem 내부 정리 범위 애매** — Phase 1 에서 runtime 변수명을 리네임할지 alias 로 남길지 Phase 진입 시 재결정 (breakdown Phase 1 에 명시).
 
+## SelectTrigger 정당화 (ADR-098-e 연계 전 selfcontained)
+
+ADR-098-e (composition 고유 네이밍 정당화 통합 문서) 미발행 상태에서 본 ADR 이 SelectTrigger 정당화를 selfcontained 보존. 098-e 발행 시 본 섹션을 cross-reference 로 전환.
+
+### 정당화 근거 3건
+
+| #   | 근거                                             | 코드 증거 (2026-04-21)                                                                                             |
+| --- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| 1   | **저장 식별자 고유성** — Select 내부 Button 전용 | `apps/builder/src/builder/factories/definitions/SelectionComponents.ts:74` (`tag:"SelectTrigger"` 자식 생성)       |
+| 2   | **runtime DOM RSP 정합 이미 달성** (D1 도메인)   | `packages/shared/src/components/Select.tsx:309` (`<Button className="react-aria-Button"><SelectValue /></Button>`) |
+| 3   | **LayerTree UX 명시성** — 일반 Button 과 구분    | `apps/builder/src/builder/utils/HierarchyManager.ts:402-406` (Select 자식은 Label + SelectTrigger 만 허용)         |
+
+### runtime 경로 증거 (Phase 2 수집)
+
+- **Factory 생성**: `createSelectDefinition` 이 Select element 생성 시 자식으로 `SelectTrigger` 포함 (items SSOT 이후에도 유지) — `SelectionComponents.ts:15` 주석 "Label / SelectTrigger (SelectValue + SelectIcon) sub-element 는 유지"
+- **Renderer props 추출**: `SelectionRenderers.tsx:704` 가 childrenMap 에서 `tag === "SelectTrigger"` Element 를 찾아 props 추출 → RAC `<Button>` props 매핑
+- **HierarchyManager**: `HierarchyManager.ts:405` Select 자식 필터에서 `"SelectTrigger"` 포함 → LayerTree 표시 + child composition 경로
+- **Spec 정의**: `SelectTrigger.spec.ts:25` `element: "button"` + `archetype: "button"` — DOM 렌더 시 `<button>` tag 직접 사용 (RAC `<Button>` 래퍼와 semantic 동등)
+
+### 대안 α (완전 리네이밍) 기각 근거 재확인
+
+SelectTrigger → Button 리네이밍 시 발생하는 구체적 문제:
+
+- **tag 충돌 해소**: `utils.ts` + `implicitStyles.ts` + `buildSpecNodeData.ts` 에서 `tag === "Button"` 분기를 `parent.tag === "Select" && slot === "trigger"` 식 2-조건 판정으로 확장 → 각 위치마다 부모 조회 비용
+- **migration 비용**: 모든 Select 사용 프로젝트의 element tree 에서 `tag: "SelectTrigger"` → `tag: "Button"` 변환 + `slot: "trigger"` prop 주입 — `applyCollectionItemsMigration` 이 items 가 아닌 일반 Element migration 으로 확장 (전례 없음)
+- **editor/PropertyEditor 분기**: SelectTrigger 전용 editor 가 있다면 Button editor 와 통합 필요 → 사용자가 Select 내부 Button 편집 시 일반 Button 과 동일 UI 혼용
+
+이 3 비용이 "RSP 정합 개선 가치" 보다 명백히 크다는 판단 — 본 ADR 대안 C 채택의 핵심 근거.
+
 ## 참조
 
 - [ADR-098](098-rsp-naming-audit-charter.md) — RSP 네이밍 정합 감사 Charter (본 ADR 의 상위 charter, BC 재평가 정정 대상)
