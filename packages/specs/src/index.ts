@@ -66,8 +66,11 @@ export type {
   // State Types
   StateStyles,
   StateEffect,
-  // Menu Items Types (ADR-068)
+  // Menu Items Types (ADR-068 + ADR-099 Phase 5)
   StoredMenuItem,
+  StoredMenuSection,
+  StoredMenuSeparator,
+  StoredMenuEntry,
   RuntimeMenuItem,
   // Items Manager Field (ADR-073)
   ItemsManagerField,
@@ -78,23 +81,42 @@ export type {
   // ComboBox Items Types (ADR-073)
   StoredComboBoxItem,
   RuntimeComboBoxItem,
-  // ListBox Items Types (ADR-076)
+  // ListBox Items Types (ADR-076 + ADR-099 Phase 1)
   StoredListBoxItem,
+  StoredListBoxSection,
+  StoredListBoxEntry,
   RuntimeListBoxItem,
   // TagGroup Items Types (ADR-097)
   StoredTagItem,
   RuntimeTagItem,
+  // GridList Items Types (ADR-099 Phase 5)
+  StoredGridListItem,
+  StoredGridListSection,
+  StoredGridListEntry,
+  RuntimeGridListItem,
 } from "./types";
 
 // ADR-073: Select/ComboBox items runtime converters
 export { toRuntimeSelectItem } from "./types/select-items";
 export { toRuntimeComboBoxItem } from "./types/combobox-items";
 
-// ADR-076: ListBox items runtime converter
-export { toRuntimeListBoxItem } from "./types/listbox-items";
+// ADR-076 + ADR-099 Phase 1: ListBox items runtime converter + section guard
+export {
+  toRuntimeListBoxItem,
+  isListBoxSectionEntry,
+} from "./types/listbox-items";
 
 // ADR-097: TagGroup items runtime converter
 export { toRuntimeTagItem } from "./types/taggroup-items";
+
+// ADR-099 Phase 5: GridList items runtime converter + section guard
+export {
+  toRuntimeGridListItem,
+  isGridListSectionEntry,
+} from "./types/gridlist-items";
+
+// ADR-068 + ADR-099 Phase 5: Menu section/separator guards
+export { isMenuSectionEntry, isMenuSeparatorEntry } from "./types/menu-items";
 
 export { isValidTokenRef } from "./types";
 

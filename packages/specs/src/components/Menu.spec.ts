@@ -9,6 +9,9 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import type { StoredMenuItem } from "../types/menu-items";
+// ADR-099 Phase 5 stubs (StoredMenuEntry / isMenuSectionEntry /
+//   isMenuSeparatorEntry / HeaderSpec) — 실제 사용 Phase 5 구현 시 재추가.
+//   현재는 TS6196/6192/6133 unused error 방지 위해 제거 (build:specs 블로킹 해소).
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {

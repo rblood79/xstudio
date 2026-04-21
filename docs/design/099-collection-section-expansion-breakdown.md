@@ -179,19 +179,36 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 
 ### Phase 5 — GridList / Menu 대칭 적용
 
-- [ ] `packages/specs/src/types/gridlist-items.ts` 신설 (현재 inline `GridListItem` 을 별도 파일 이동 + `StoredGridListSection` 추가)
-- [ ] `GridListSpec.render.shapes` section 렌더 — grid 모드에서 section header 는 전체 행 span (`columns` 전체)
-- [ ] `packages/specs/src/types/menu-items.ts` 에 `StoredMenuSection` 추가 (기존 `StoredMenuItem` 과 동일 discriminator)
-- [ ] `MenuSpec.render.shapes` section 렌더 + 기존 Separator 재사용 검토
+> **Scope 조정 (2026-04-21)**: Menu 는 overlay popover 구조 — `render.shapes` 는 trigger button 전용이며 overlay 내부 DOM 렌더를 Skia shapes 로 표현하는 것은 별도 Phase 또는 Addendum 099-e (overlay Skia preview) 로 분리. Phase 5 의 Menu 작업 범위는 types / tests / childSpecs / index exports 준비 (shapes items 렌더 제외).
+
+#### GridList (완료)
+
+- [x] `packages/specs/src/types/gridlist-items.ts` 신설 (inline `GridListItem` 별도 파일 이동 + `StoredGridListSection` 추가)
+- [x] `GridListSpec.render.shapes` section 렌더 — grid 모드에서 section header 전체 행 span + `isGridListSectionEntry` 분기
+- [x] `GridListSpec.childSpecs` 에 `HeaderSpec` 추가 — Spec 계층 관계 SSOT 선언
+- [x] `packages/specs/src/types/__tests__/gridlist-items.test.ts` 신설 — 13 tests PASS
+- [x] `packages/specs/src/types/index.ts` + `packages/specs/src/index.ts` export 확장
+
+#### Menu (완료 — shapes items 렌더는 overlay Phase 분리)
+
+- [x] `packages/specs/src/types/menu-items.ts` 확장 — `StoredMenuSection` (per-section selection 3 필드) + `StoredMenuSeparator` + `StoredMenuEntry` union + `isMenuSeparatorEntry` type guard
+- [x] `packages/specs/src/types/__tests__/menu-items.test.ts` 신설 — 16 tests PASS
+- [x] `packages/specs/src/types/index.ts` + `packages/specs/src/index.ts` export 확장
+- [ ] **[overlay Phase 분리]** `MenuSpec.render.shapes` section + separator 분기 — overlay 내부 Skia shapes 는 별도 Phase 또는 Addendum 099-e 로 분리. `SYNTHETIC_CHILD_PROP_MERGE_TAGS` / `SHELL_ONLY_CONTAINER_TAGS` 어느 쪽도 해당 안 되는 overlay 특수 구조임을 확인.
+
+#### 공통
+
+- [x] `pnpm build:specs` → CSS 재생성 117개 파일 PASS
+- [x] `cd packages/specs && pnpm exec vitest run` → **205/205** PASS (신규 13 + 16 추가)
 
 ### Phase 6 — 검증 + 실측
 
-- [ ] `pnpm -w type-check` 3/3 PASS
-- [ ] `cd packages/specs && pnpm exec vitest run` 166/166 PASS + 신규 테스트 +N 건
-- [ ] `cd apps/builder && pnpm test -- --run` 227/227 PASS
-- [ ] `cd packages/shared && pnpm exec vitest run` 52/52 PASS
-- [ ] Chrome MCP 실측 — Builder 에서 ListBox 에 section 엔트리 추가 → Skia 렌더 Header 표시 + Preview DOM 정합
-- [ ] `/cross-check` skill — ListBox/GridList/Menu 3 컬렉션 section 렌더 정합성 확인
+- [x] `pnpm -w type-check` 3/3 PASS (2026-04-21)
+- [x] `cd packages/specs && pnpm exec vitest run` **205/205** PASS (176 기존 + 13 gridlist + 16 menu)
+- [x] `cd apps/builder && pnpm test -- --run` **227/227** PASS (2026-04-21)
+- [x] `cd packages/shared && pnpm exec vitest run` **52/52** PASS (2026-04-21)
+- [ ] Chrome MCP 실측 — Builder 에서 ListBox/GridList 에 section 엔트리 추가 → Skia 렌더 Header 표시 + Preview DOM 정합
+- [ ] `/cross-check` skill — ListBox/GridList 2 컬렉션 section 렌더 정합성 확인 (Menu shapes 는 overlay Phase 후)
 - [ ] Status: Proposed → Implemented 전환 + README.md 동기 갱신
 
 ## 반복 패턴 선차단 체크
