@@ -3871,7 +3871,8 @@ export function resolveParentContext(
       context?.viewportHeight ??
       (typeof window !== "undefined" ? window.innerHeight : 1080),
     parentSize: parentComputed.fontSize,
-    rootFontSize: 16,
+    // ADR-056: rootFontSize는 themeConfigStore.baseTypography.fontSize 기반
+    rootFontSize: getRootComputedStyle().fontSize,
   };
 
   return { parentComputed, cssCtx };

@@ -21,6 +21,7 @@ import {
   useThemeConfigDarkMode,
   useThemeConfigNeutral,
   useThemeConfigRadiusScale,
+  useThemeConfigBaseTypography,
 } from "../../../stores/themeConfigStore";
 import type { TintPreset } from "../../../utils/theme/tintToSkiaColors";
 import { TINT_PRESETS } from "../../../utils/theme/tintToSkiaColors";
@@ -30,6 +31,7 @@ import type { RadiusScale } from "../../../stores/themeConfigStore";
 import { oklchToHex } from "../../../utils/theme/oklchToHex";
 import { PanelHeader, PropertySection, PropertySelect } from "../../components";
 import { MiniThemePreview } from "./MiniThemePreview";
+import { useThemeMessenger } from "../../hooks/useThemeMessenger";
 import "./ThemesPanel.css";
 
 // ============================================================================
@@ -187,6 +189,42 @@ const RADIUS_OPTIONS = [
   { value: "xl", label: "Extra Large" },
 ];
 
+// ADR-056: Typography 프리셋
+const FONT_FAMILY_OPTIONS = [
+  {
+    value:
+      "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', sans-serif",
+    label: "Pretendard (Default)",
+  },
+  {
+    value:
+      "-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, sans-serif",
+    label: "System Sans",
+  },
+  {
+    value: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+    label: "Inter",
+  },
+  {
+    value:
+      "'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    label: "Monospace",
+  },
+];
+
+const BASE_FONT_SIZE_OPTIONS = [
+  { value: "14", label: "14px (Small)" },
+  { value: "16", label: "16px (Default)" },
+  { value: "18", label: "18px (Large)" },
+];
+
+const LINE_HEIGHT_OPTIONS = [
+  { value: "1.4", label: "1.4 (Compact)" },
+  { value: "1.5", label: "1.5 (Default)" },
+  { value: "1.6", label: "1.6 (Relaxed)" },
+  { value: "1.75", label: "1.75 (Spacious)" },
+];
+
 // ============================================================================
 // ThemesContent
 // ============================================================================
@@ -196,10 +234,13 @@ function ThemesContent() {
   const darkMode = useThemeConfigDarkMode();
   const neutral = useThemeConfigNeutral();
   const radiusScale = useThemeConfigRadiusScale();
+  const baseTypography = useThemeConfigBaseTypography();
   const setTint = useThemeConfigStore((s) => s.setTint);
   const setDarkMode = useThemeConfigStore((s) => s.setDarkMode);
   const setNeutral = useThemeConfigStore((s) => s.setNeutral);
   const setRadiusScale = useThemeConfigStore((s) => s.setRadiusScale);
+  const setBaseTypography = useThemeConfigStore((s) => s.setBaseTypography);
+  const { sendBaseTypography } = useThemeMessenger();
 
   const isDark = darkMode === "dark";
 
@@ -229,6 +270,33 @@ function ThemesContent() {
       setRadiusScale(value as RadiusScale);
     },
     [setRadiusScale],
+  );
+
+  // ADR-056 Phase 3+4: Typography 핸들러 — store 업데이트 + Preview postMessage 동시
+  const handleFontFamilyChange = useCallback(
+    (value: string) => {
+      setBaseTypography({ fontFamily: value });
+      sendBaseTypography({ ...baseTypography, fontFamily: value });
+    },
+    [setBaseTypography, sendBaseTypography, baseTypography],
+  );
+
+  const handleBaseFontSizeChange = useCallback(
+    (value: string) => {
+      const fontSize = Number(value);
+      setBaseTypography({ fontSize });
+      sendBaseTypography({ ...baseTypography, fontSize });
+    },
+    [setBaseTypography, sendBaseTypography, baseTypography],
+  );
+
+  const handleLineHeightChange = useCallback(
+    (value: string) => {
+      const lineHeight = Number(value);
+      setBaseTypography({ lineHeight });
+      sendBaseTypography({ ...baseTypography, lineHeight });
+    },
+    [setBaseTypography, sendBaseTypography, baseTypography],
   );
 
   return (
@@ -288,6 +356,27 @@ function ThemesContent() {
           value={radiusScale}
           onChange={handleRadiusChange}
           options={RADIUS_OPTIONS}
+        />
+      </PropertySection>
+
+      <PropertySection title="Typography" id="theme-typography">
+        <PropertySelect
+          label="Font"
+          value={baseTypography.fontFamily}
+          onChange={handleFontFamilyChange}
+          options={FONT_FAMILY_OPTIONS}
+        />
+        <PropertySelect
+          label="Size"
+          value={String(baseTypography.fontSize)}
+          onChange={handleBaseFontSizeChange}
+          options={BASE_FONT_SIZE_OPTIONS}
+        />
+        <PropertySelect
+          label="Line Height"
+          value={String(baseTypography.lineHeight)}
+          onChange={handleLineHeightChange}
+          options={LINE_HEIGHT_OPTIONS}
         />
       </PropertySection>
 

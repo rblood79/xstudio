@@ -76,6 +76,19 @@ export interface SetDarkModeMessage {
   isDark: boolean;
 }
 
+/**
+ * ADR-056 Phase 3: Base Typography 동기화
+ * themeConfigStore.baseTypography 변경 시 Preview body에 직접 적용.
+ */
+export interface ThemeBaseTypographyMessage {
+  type: "THEME_BASE_TYPOGRAPHY";
+  payload: {
+    fontFamily: string;
+    fontSize: number;
+    lineHeight: number;
+  };
+}
+
 export interface UpdatePageInfoMessage {
   type: "UPDATE_PAGE_INFO";
   pageId: string | null;
@@ -191,6 +204,7 @@ export type BuilderToPreviewMessage =
   | DeleteElementsMessage
   | ThemeVarsMessage
   | SetDarkModeMessage
+  | ThemeBaseTypographyMessage
   | UpdatePageInfoMessage
   | UpdatePagesMessage
   | UpdateLayoutsMessage
@@ -295,6 +309,10 @@ export class MessageHandler {
         this.handleSetDarkMode(data);
         break;
 
+      case "THEME_BASE_TYPOGRAPHY":
+        this.handleThemeBaseTypography(data);
+        break;
+
       case "UPDATE_PAGE_INFO":
         this.handleUpdatePageInfo(data);
         break;
@@ -397,6 +415,18 @@ export class MessageHandler {
 
   private handleSetDarkMode(data: SetDarkModeMessage): void {
     this.store.setDarkMode(data.isDark);
+  }
+
+  /**
+   * ADR-056 Phase 3: Base Typography를 document.body에 직접 적용.
+   * - fontFamily/fontSize/lineHeight가 Preview rem 기준 + 전역 body 기본값.
+   * - body element의 props.style 이 있으면 React가 별도 관리하므로 충돌 없음.
+   */
+  private handleThemeBaseTypography(data: ThemeBaseTypographyMessage): void {
+    const { fontFamily, fontSize, lineHeight } = data.payload;
+    document.body.style.fontFamily = fontFamily;
+    document.body.style.fontSize = `${fontSize}px`;
+    document.body.style.lineHeight = String(lineHeight);
   }
 
   private handleUpdatePageInfo(data: UpdatePageInfoMessage): void {

@@ -48,6 +48,8 @@ import {
   isValidPreviewMessage,
 } from "../../utils/messageValidation";
 import { scheduleNextFrame } from "../utils/scheduleTask";
+// ADR-056 Phase 3: Base Typography 초기 동기화
+import { useThemeConfigStore } from "../../stores/themeConfigStore";
 
 export type IframeReadyState =
   | "not_initialized"
@@ -531,6 +533,16 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // ⭐ Layout/Slot System: persist hydration 완료 후 요소 전송
         // (새로고침 시 editMode가 아직 hydration 안 됐을 수 있음)
         const sendInitialData = () => {
+          // ADR-056 Phase 3: Base Typography 초기 전송
+          // (새로고침 시 localStorage 복원된 baseTypography → Preview body 동기화)
+          const { baseTypography } = useThemeConfigStore.getState();
+          if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage(
+              { type: "THEME_BASE_TYPOGRAPHY", payload: baseTypography },
+              window.location.origin,
+            );
+          }
+
           // ⭐ Nested Routes & Slug System: 초기 layouts 전송
           sendLayoutsToIframe();
 

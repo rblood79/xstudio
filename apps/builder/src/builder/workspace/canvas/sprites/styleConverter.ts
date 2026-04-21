@@ -22,6 +22,8 @@ import type {
 } from "../skia/types";
 import { resolveCSSSizeValue } from "../layout/engines/cssValueParser";
 import type { CSSValueContext } from "../layout/engines/cssValueParser";
+// ADR-056: rem 단위 rootFontSize를 baseTypography로부터 가져오기
+import { getRootComputedStyle } from "../layout/engines/cssResolver";
 import {
   resolveCurrentColor,
   preprocessStyle,
@@ -600,6 +602,8 @@ export function parseCSSSize(
     containerSize: parentSize,
     viewportWidth: viewport?.width,
     viewportHeight: viewport?.height,
+    // ADR-056: rem 단위는 themeConfigStore.baseTypography.fontSize 기반
+    rootFontSize: getRootComputedStyle().fontSize,
   };
 
   return resolveCSSSizeValue(value, ctx, fallback) ?? fallback;

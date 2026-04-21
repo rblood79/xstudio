@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-07
+Implemented — 2026-04-22 (Proposed 2026-04-07)
 
 ## Context
 
@@ -178,3 +178,34 @@ ThemesPanel.setBaseTypography()
 - CSS 파일(`publish/styles/index.css`)은 TS import 불가 → Publish 빌드 파이프라인에서 themeConfig를 읽어 CSS 주입하는 로직 필요 (또는 주석 연결)
 - `lineHeight: 1.5` 추가로 기존 Canvas 렌더링 결과가 미세하게 변할 수 있음 (이전: `"normal"` ≈ 1.2 → 이후: 1.5). Spec 컴포넌트 대부분은 자체 lineHeight 지정이므로 영향 최소
 - ThemesPanel에 Typography 섹션 추가 → 패널 높이 증가 (스크롤 필요할 수 있음)
+
+## Implementation Summary (2026-04-22)
+
+Phase 1-2는 `e0739205` WIP 커밋에서 선행 완료되었고, 본 세션(15)에서 Phase 3-5 연결 및 검증을 마쳐 Implemented 로 전환한다.
+
+### 완료된 Phase
+
+| Phase | 변경                                                                                                                                                                                      | 커밋           |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1     | `DEFAULT_BASE_TYPOGRAPHY` (customFonts.ts) + `themeConfigStore.baseTypography` 필드·액션·localStorage 영속화                                                                              | `e0739205` WIP |
+| 2     | `getRootComputedStyle()` 신설 (lineHeight 포함) + `fullTreeLayout.ts` / `utils.ts` callsite 교체                                                                                          | `e0739205` WIP |
+| 3a    | `useThemeMessenger.sendBaseTypography` 추가 (hash 기반 중복 방지 + WebGL-only skip)                                                                                                       | 세션 15        |
+| 3b    | Preview `messageHandler.ts` `THEME_BASE_TYPOGRAPHY` 수신 → `document.body.style` 적용                                                                                                     | 세션 15        |
+| 3c    | `useIframeMessenger` PREVIEW_READY 핸들러에서 `themeConfigStore.getState().baseTypography` 초기 1회 전송                                                                                  | 세션 15        |
+| 4     | `ThemesPanel` Typography 섹션 (Font / Size / Line Height PropertySelect) + store 업데이트 + postMessage 동시 호출                                                                         | 세션 15        |
+| 5     | `publish/styles/index.css :root` Pretendard 체인 추가 + `utils.ts resolveParentContext` + `styleConverter.ts parseCSSSize` 의 `rootFontSize` 를 `getRootComputedStyle().fontSize` 로 교체 | 세션 15        |
+| 6     | 기준선 4건 재검증 — type-check 3/3 FULL TURBO + specs 205/205 + builder 227/227 + shared 52/52 PASS                                                                                       | 세션 15        |
+
+### Gate 통과 결과
+
+| Gate               | 결과 | 근거                                                                                     |
+| ------------------ | :--: | ---------------------------------------------------------------------------------------- |
+| Spec 컴포넌트 정합 | PASS | builder vitest 227/227 (shell-only-tags 53건 포함) 회귀 없음                             |
+| Publish Pretendard | PASS | `apps/publish/src/styles/index.css :root` 체인 선두에 Pretendard 삽입                    |
+| rem 연동           | PASS | `resolveParentContext` + `parseCSSSize` 가 `getRootComputedStyle().fontSize` 참조        |
+| 기존 테마 복원     | PASS | `initThemeConfig` 가 `persisted.baseTypography ?? DEFAULT_BASE_TYPOGRAPHY` fallback 보장 |
+
+### 후속 과제 (별도 세션)
+
+- Publish 런타임에서 projectId별 `baseTypography`를 CSS 주입 (현재 index.css 는 DEFAULT 정적 체인만 사용) — 배포 파이프라인 연계 필요 시 후속 ADR
+- Canvas lineHeight 1.5 전환으로 인한 Spec 별 시각 회귀는 `builder test` 227/227 PASS 로 일차 통과. `/cross-check` 로 추가 대칭 스윕 권장
