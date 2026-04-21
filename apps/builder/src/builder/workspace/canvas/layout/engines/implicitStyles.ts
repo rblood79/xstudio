@@ -563,6 +563,11 @@ export function applyImplicitStyles(
   // ── TagList ──────────────────────────────────────────────────────
   // TagGroup 내부 TagList: 부모 orientation에 따라 row/column 전환
   // width: 100% — 부모 TagGroup 전체 너비를 사용하여 Tag들이 가로 배치
+  // ADR-093 Phase 3: display/flexDirection:"row"/flexWrap:"wrap" base primitive 는
+  //   TagListSpec.containerStyles 로 리프팅됨 (ADR-094 expandChildSpecs 경유 자동 주입).
+  //   orientation="vertical" (TagGroup 미지원이지만 방어적) 시에만 override.
+  //   labelPosition="side" flex:1/minWidth:0 주입 + Tag 자식 whiteSpace injection +
+  //   maxRows 근사 계산은 runtime fork 유지 (Hard Constraint #4).
   if (containerTag === "taglist") {
     const parentEl = containerEl.parent_id
       ? elementById.get(containerEl.parent_id)
@@ -573,9 +578,10 @@ export function applyImplicitStyles(
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: orientation === "vertical" ? "column" : "row",
-      flexWrap: orientation === "vertical" ? undefined : "wrap",
+      // orientation="vertical" 시 spec default(row+wrap) 를 column 으로 override.
+      ...(orientation === "vertical"
+        ? { flexDirection: "column" as const, flexWrap: undefined }
+        : {}),
       gap: parentStyle.gap ?? 4,
       // labelPosition: "side" 시 flex:1로 남은 공간 차지 (Label 옆 배치)
       ...(parentLabelPos === "side" ? { flex: 1, minWidth: 0 } : {}),
@@ -878,6 +884,11 @@ export function applyImplicitStyles(
 
   // ── RadioItems / CheckboxItems ────────────────────────────────────
   // RadioGroup 내부 RadioItems: 부모 orientation에 따라 row/column 전환
+  // ADR-093 Phase 3: display:"flex" + flexDirection:"column" base primitive 는
+  //   Radio/CheckboxItemsSpec.containerStyles 로 리프팅됨 (ADR-094 expandChildSpecs
+  //   경유 자동 주입). orientation="horizontal" 시에만 row+alignItems:center override.
+  //   gap 은 size-indexed (sm:8/md:12/lg:16) runtime fork 유지 — Taffy 가 sizes 를 직접
+  //   모르므로 분기 주입 필요.
   if (containerTag === "radioitems" || containerTag === "checkboxitems") {
     const parentEl = containerEl.parent_id
       ? elementById.get(containerEl.parent_id)
@@ -889,9 +900,10 @@ export function applyImplicitStyles(
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: orientation === "horizontal" ? "row" : "column",
-      alignItems: orientation === "horizontal" ? "center" : undefined,
+      // orientation="horizontal" 시 spec default(column) 를 row+center 로 override.
+      ...(orientation === "horizontal"
+        ? { flexDirection: "row" as const, alignItems: "center" as const }
+        : {}),
       gap,
     });
   }
