@@ -163,6 +163,10 @@ ADR-092/093 리뷰 교차검증 중 Codex 가 동일 문제 재지적:
 - **Phase 4**: `packages/specs/src/runtime/tagToElement.ts` 의 자체 `TAG_SPEC_MAP` 에 동일 `expandChildSpecs(BASE_TAG_SPEC_MAP)` 적용. 현 시점 childSpecs 는 ListBoxItem/GridListItem 2건 → 후속 ADR-092/093 가 CardHeader/TagList 등 등록 시 `hasSpec/getElementForTag` 자동 작동.
 - **Phase 5**: `App.tsx:494` TagList 수동 예외 제거 — **후속 ADR-093 scope 로 이관**. 본 ADR 은 registry 확장 인프라만 담당, 실제 제거는 TagList 가 TagGroup.childSpecs 에 등록된 후 가능.
 
+### Addendum 1 — Phase 5 완결 (2026-04-21, ADR-093 이후)
+
+ADR-093 에서 `TagGroupSpec.childSpecs: [TagListSpec]` 배선 완료 → `expandChildSpecs(BASE_TAG_SPEC_MAP)` 이 `tagToElement` `TAG_SPEC_MAP` 에 TagList 자동 등록 → `getElementForTag("TagList")` 가 TagListSpec.element(="div") 반환 가능 상태. `apps/builder/src/preview/App.tsx:494` 의 `case "TagList": return "div"` switch 분기 **제거 완료**. Preview DOM 이 default case 의 spec registry 조회 경로로 TagList → "div" 반환 + data-size/variant 자동 주입. **Phase 5 종결**. 검증: type-check 3/3 PASS.
+
 ## Consequences
 
 ### Positive

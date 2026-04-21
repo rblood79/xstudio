@@ -491,8 +491,11 @@ function CanvasContent() {
             return "div";
           case "TabPanels":
             return "div";
-          case "TagList":
-            return "div";
+          // ADR-094 Addendum: TagList 수동 예외 제거.
+          //   ADR-093 에서 TagGroupSpec.childSpecs: [TagListSpec] 배선 완료 →
+          //   ADR-094 expandChildSpecs 가 tagToElement TAG_SPEC_MAP 에 자동 등록 →
+          //   default case 의 `getElementForTag("TagList")` 가 TagListSpec.element="div" 반환.
+          //   ADR-094 Phase 5 완결.
           case "SelectItem":
             return "div";
           case "ComboBoxItem":
