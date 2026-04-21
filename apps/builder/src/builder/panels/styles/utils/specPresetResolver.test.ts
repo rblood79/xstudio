@@ -4,6 +4,7 @@ import {
   resolveSpecPreset,
   resolveAppearanceSpecPreset,
   resolveLayoutSpecPreset,
+  resolveTypographySpecPreset,
   clearSpecPresetCache,
 } from "./specPresetResolver";
 
@@ -239,6 +240,120 @@ describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition 
       // Kbd.sizes.md.height = 26 (숫자) — resolveToNumber 가 숫자 통과
       const preset = resolveSpecPreset("Kbd", "md");
       expect(preset.height).toBe(26);
+    });
+  });
+
+  // ADR-082 P5 Gate G4 matrix — 10 Spec × 4 section 반환값 entry-point snapshot.
+  //   Chrome MCP 인프라가 구성되기 전 자동화 snapshot 으로 간접 입증. 각 assertion 은
+  //   design breakdown §P5 Gate G4 sample 대상과 1:1 대응. 신규 Spec (DatePicker /
+  //   ListBoxItem / ToggleButtonGroup / CheckboxGroup) 4 종을 명시적으로 커버하고,
+  //   기존 covered Spec 은 고수준 smoke assertion 으로 통합.
+  describe("ADR-082 P5 Gate G4 — 10 Spec × 4 section entry-point snapshot", () => {
+    beforeEach(() => clearSpecPresetCache());
+
+    it("ListBox (Non-composite containerStyles) — 4 section 집약", () => {
+      expect(resolveSpecPreset("ListBox", undefined)).toMatchObject({
+        width: "100%",
+        maxHeight: "300px",
+      });
+      expect(resolveAppearanceSpecPreset("ListBox", undefined)).toMatchObject({
+        borderRadius: 8,
+        borderWidth: 1,
+        backgroundColor: "var(--bg-raised)",
+        borderColor: "var(--border)",
+      });
+      expect(resolveLayoutSpecPreset("ListBox", undefined)).toMatchObject({
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        paddingTop: 4,
+      });
+      // Typography: ListBoxSpec.sizes.md.fontSize='{typography.text-sm}'=14
+      expect(resolveTypographySpecPreset("ListBox", "md")).toMatchObject({
+        fontSize: 14,
+      });
+    });
+
+    it("Menu (Non-composite containerStyles) — Appearance / Layout", () => {
+      expect(resolveAppearanceSpecPreset("Menu", undefined)).toMatchObject({
+        borderRadius: 6,
+        borderWidth: 1,
+        backgroundColor: "var(--bg-raised)",
+      });
+      expect(resolveLayoutSpecPreset("Menu", undefined)).toMatchObject({
+        display: "flex",
+        flexDirection: "column",
+      });
+    });
+
+    it("ListBoxItem (childSpecs 자동 등록 + 4 필드 alignment) — P4 연관 검증", () => {
+      // ListBoxItemSpec.containerStyles = { display, flexDirection, alignItems, justifyContent }
+      expect(resolveLayoutSpecPreset("ListBoxItem", undefined)).toMatchObject({
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        justifyContent: "center",
+      });
+    });
+
+    it("Select (Composite composition.gap) — sizes.md.gap=6 우선, undefined size 시 composition fallback", () => {
+      expect(resolveLayoutSpecPreset("Select", "md").gap).toBe(6);
+      expect(resolveLayoutSpecPreset("Select", "xxl").gap).toBe(4);
+    });
+
+    it("ComboBox (Composite composition.gap) — sizes.md.gap=6 우선", () => {
+      // ComboBox 도 Select 와 동일 sizes.*.gap 구조 + composition.gap="var(--spacing-xs)"
+      expect(resolveLayoutSpecPreset("ComboBox", "md").gap).toBe(6);
+      expect(resolveLayoutSpecPreset("ComboBox", "xxl").gap).toBe(4);
+    });
+
+    it("DatePicker (containerStyles.display + composition.gap) — Layout 2 필드 공급", () => {
+      const preset = resolveLayoutSpecPreset("DatePicker", "xxl");
+      // containerStyles.display="flex" 는 sizes 와 무관하게 항상 반영
+      expect(preset.display).toBe("flex");
+      // size=xxl 미정의 → composition.gap fallback (4)
+      expect(preset.gap).toBe(4);
+    });
+
+    it("TextField (containerStyles.display + composition 커스텀 CSS var) — scope 외 필드는 미반영", () => {
+      // TextFieldSpec.containerStyles.display="flex" — Layout 에 반영
+      const layout = resolveLayoutSpecPreset("TextField", "xxl");
+      expect(layout.display).toBe("flex");
+      // composition.containerStyles = { width:"fit-content" } → Transform 경로 kebab 허용
+      const transform = resolveSpecPreset("TextField", "xxl");
+      expect(transform.width).toBe("fit-content");
+      // composition.containerStyles 의 '--label-font-size' 등 커스텀 CSS var 은
+      //   resolver scope 외 → Typography preset 에 미반영 (현재 scope 외 명시)
+      const typo = resolveTypographySpecPreset("TextField", "xxl");
+      expect(typo.fontSize).toBeUndefined();
+    });
+
+    it("CheckboxGroup (containerStyles.display + composition.gap) — custom '--cb-items-gap' 은 scope 외", () => {
+      // CheckboxGroupSpec.containerStyles.display="flex" + composition.gap="var(--spacing-xs)"=4
+      const preset = resolveLayoutSpecPreset("CheckboxGroup", "xxl");
+      expect(preset.display).toBe("flex");
+      expect(preset.gap).toBe(4);
+      // composition.containerStyles 의 '--cb-items-gap: 12px' 은 커스텀 CSS var →
+      //   resolver 가 인지하지 않음 (현재 scope 외). 향후 확장 후보.
+    });
+
+    it("ToggleButtonGroup (containerStyles.display/alignItems + composition.containerStyles.width) — 2 경로 병합", () => {
+      // 최상위 containerStyles.display="flex", alignItems="center"
+      const layout = resolveLayoutSpecPreset("ToggleButtonGroup", undefined);
+      expect(layout.display).toBe("flex");
+      expect(layout.alignItems).toBe("center");
+      // composition.containerStyles.width="fit-content" → Transform width 반영
+      const transform = resolveSpecPreset("ToggleButtonGroup", undefined);
+      expect(transform.width).toBe("fit-content");
+    });
+
+    it("Button (sizes 전용 — 기존 회귀 경로 보존)", () => {
+      // ButtonSpec.containerStyles = { display:"inline-flex", alignItems, justifyContent, width }
+      // sizes.md.borderRadius='{radius.md}'=6 → Appearance.borderRadius
+      expect(resolveAppearanceSpecPreset("Button", "md").borderRadius).toBe(6);
+      const layout = resolveLayoutSpecPreset("Button", "md");
+      expect(layout.display).toBe("inline-flex");
+      expect(layout.alignItems).toBe("center");
     });
   });
 

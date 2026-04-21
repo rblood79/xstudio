@@ -4,6 +4,7 @@ import {
   inferSizeMode,
   type SizeMode,
 } from "../../../stores/utils/sizeModeResolver";
+import { TAG_SPEC_MAP } from "../../../workspace/canvas/sprites/tagSpecMap";
 
 function useParentId(id: string | null): string | null {
   return useStore((s) =>
@@ -11,24 +12,50 @@ function useParentId(id: string | null): string | null {
   );
 }
 
+/**
+ * ADR-082 A1: 부모 Spec containerStyles.{display|flexDirection} fallback.
+ *
+ * inline 값이 없으면 부모의 tag 기반 Spec containerStyles 에서 조회.
+ * SelfAlignment 9-grid 가 부모 Spec 기본값(예: ListBoxSpec.display="flex")에서도
+ * 활성화되도록 함. 소비 우선순위: `props.style` → `spec.containerStyles` → 기본값.
+ */
+function resolveParentContainerStyle(
+  parentId: string | null,
+  property: "display" | "flexDirection",
+  fallback: string,
+  state: {
+    elementsMap: Map<
+      string,
+      { tag?: string; props?: { style?: Record<string, unknown> } }
+    >;
+  },
+): string {
+  if (!parentId) return fallback;
+  const p = state.elementsMap.get(parentId);
+  const style = p?.props?.style as Record<string, unknown> | undefined;
+  const inline = style?.[property];
+  if (typeof inline === "string" && inline) return inline;
+  const tag = p?.tag;
+  if (tag) {
+    const spec = TAG_SPEC_MAP[tag];
+    const specValue = spec?.containerStyles?.[property];
+    if (typeof specValue === "string") return specValue;
+  }
+  return fallback;
+}
+
 export function useParentDisplay(id: string | null): string {
   const parentId = useParentId(id);
-  return useStore((s) => {
-    if (!parentId) return "block";
-    const p = s.elementsMap.get(parentId);
-    const style = p?.props?.style as Record<string, unknown> | undefined;
-    return (style?.display as string) ?? "block";
-  });
+  return useStore((s) =>
+    resolveParentContainerStyle(parentId, "display", "block", s),
+  );
 }
 
 export function useParentFlexDirection(id: string | null): string {
   const parentId = useParentId(id);
-  return useStore((s) => {
-    if (!parentId) return "row";
-    const p = s.elementsMap.get(parentId);
-    const style = p?.props?.style as Record<string, unknown> | undefined;
-    return (style?.flexDirection as string) ?? "row";
-  });
+  return useStore((s) =>
+    resolveParentContainerStyle(parentId, "flexDirection", "row", s),
+  );
 }
 
 function useSizeMode(id: string | null, axis: "width" | "height"): SizeMode {

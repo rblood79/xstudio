@@ -81,3 +81,93 @@ describe("useTransformAuxiliary", () => {
     expect(result.current).toEqual([]);
   });
 });
+
+// ADR-082 A1: 부모 Spec containerStyles fallback — inline display 미설정 시 Spec SSOT 조회.
+// ListBoxSpec.containerStyles.display="flex" / flexDirection="column" 을 자식 Panel 이
+// 소비해야 SelfAlignment 9-grid 가 활성화됨. 기존 코드는 inline only 로 Spec 기본값 무시.
+describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
+  beforeEach(() => {
+    useStore.setState({
+      elementsMap: new Map([
+        [
+          "item-1",
+          {
+            id: "item-1",
+            tag: "ListBoxItem",
+            parent_id: "lb-1",
+            props: { style: { alignSelf: "center", justifySelf: "center" } },
+          } as any,
+        ],
+        [
+          "lb-1",
+          {
+            id: "lb-1",
+            tag: "ListBox",
+            // inline style 없음 — ListBoxSpec.containerStyles.display="flex" 가 유일 source
+            props: {},
+          } as any,
+        ],
+      ]),
+    });
+  });
+
+  it("useParentDisplay reads ListBoxSpec.containerStyles.display='flex' when parent lacks inline", () => {
+    const { result } = renderHook(() => useParentDisplay("item-1"));
+    expect(result.current).toBe("flex");
+  });
+
+  it("useParentFlexDirection reads ListBoxSpec.containerStyles.flexDirection='column' when parent lacks inline", () => {
+    const { result } = renderHook(() => useParentFlexDirection("item-1"));
+    expect(result.current).toBe("column");
+  });
+
+  it("useSelfAlignmentKeys activates 9-grid via parent Spec fallback (isFlexOrGrid=true)", () => {
+    // ListBoxItem 의 alignSelf=center / justifySelf=center + parent display=flex(Spec) →
+    //   flex-direction 이 column 이므로 vertical=justifySelf, horizontal=alignSelf 매핑 후
+    //   useSelfAlignmentKeys 는 display 만 "flex" 로 판단. 9-grid 는 block 이 아니면 활성.
+    const { result } = renderHook(() => useSelfAlignmentKeys("item-1"));
+    expect(result.current).toEqual(["centerCenter"]);
+  });
+
+  it("inline style.display overrides Spec containerStyles fallback (inline 우선)", () => {
+    useStore.setState((s: any) => {
+      const map = new Map<string, any>(s.elementsMap);
+      const existing = map.get("lb-1") ?? {};
+      map.set("lb-1", {
+        ...existing,
+        props: { style: { display: "block" } },
+      });
+      return { elementsMap: map };
+    });
+    const { result } = renderHook(() => useParentDisplay("item-1"));
+    expect(result.current).toBe("block");
+  });
+
+  it("부모 tag 가 containerStyles 미보유 Spec 이면 기본값 'block'/'row' 반환", () => {
+    useStore.setState({
+      elementsMap: new Map([
+        [
+          "child-x",
+          {
+            id: "child-x",
+            tag: "Button",
+            parent_id: "dlg-1",
+            props: {},
+          } as any,
+        ],
+        [
+          "dlg-1",
+          {
+            id: "dlg-1",
+            tag: "Dialog", // Dialog 는 containerStyles 미보유 (overlay archetype)
+            props: {},
+          } as any,
+        ],
+      ]),
+    });
+    const { result: display } = renderHook(() => useParentDisplay("child-x"));
+    expect(display.current).toBe("block");
+    const { result: dir } = renderHook(() => useParentFlexDirection("child-x"));
+    expect(dir.current).toBe("row");
+  });
+});
