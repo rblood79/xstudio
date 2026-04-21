@@ -88,22 +88,26 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 | **GridListLoadMoreItem**                                        | **099-c (async 이벤트)** |
 | **SubmenuTrigger**                                              | **099-d (중첩 Menu)**    |
 
-### Phase 1 — items 타입 discriminated union (ListBox 파일럿)
+### Phase 1 — items 타입 discriminated union (ListBox 파일럿) (Completed 2026-04-21 세션 8)
 
-- [ ] `packages/specs/src/types/listbox-items.ts` 에 `StoredListBoxSection` 추가:
-  ```ts
-  export interface StoredListBoxSection {
-    id: string;
-    type: "section";
-    header: string; // 표시 텍스트 (RAC Header 대응)
-    items: StoredListBoxItem[]; // nested items (flat section 전용)
-  }
-  export type StoredListBoxEntry = StoredListBoxItem | StoredListBoxSection;
-  ```
-- [ ] `ListBoxProps.items` 타입: `StoredListBoxItem[]` → `StoredListBoxEntry[]` 확장
-- [ ] `toRuntimeListBoxItem` 확장: section 엔트리는 runtime 에서 `{ type, header, items: RuntimeListBoxItem[] }` 으로 펼침
-- [ ] `packages/specs/src/types/__tests__/` 테스트 추가 — discriminated union 타입 좁히기 회귀
-- [ ] BC: 기존 items 엔트리는 `type` 필드 없음 → default `"item"` 로 폴백 (discriminator 생략 허용)
+- [x] `packages/specs/src/types/listbox-items.ts` 확장:
+  - `StoredListBoxItem` 에 optional `type?: "item"` discriminator 추가 (BC 보존)
+  - `StoredListBoxSection { id, type:"section", header, items, ariaLabel? }` 신설 — RAC 단일 level (`items: StoredListBoxItem[]` 로 nested section 차단)
+  - `StoredListBoxEntry = StoredListBoxItem | StoredListBoxSection` union
+  - `isListBoxSectionEntry(entry): entry is StoredListBoxSection` type guard
+- [x] `packages/specs/src/types/index.ts` export 확장: `StoredListBoxSection` / `StoredListBoxEntry` / `isListBoxSectionEntry`
+- [x] `packages/specs/src/types/__tests__/listbox-items.test.ts` 신규 — 10 tests (union 타입 좁히기 4 + type guard 4 + runtime 변환 1 + mixed 2)
+- [ ] `ListBoxProps.items` 타입: `StoredListBoxItem[]` → `StoredListBoxEntry[]` 확장 — **Phase 2 에서 수행** (shapes 루프 확장과 함께 land 하여 타입 drift 최소화)
+- [ ] `toRuntimeListBoxItem` 확장: section 엔트리 flat 전개 헬퍼 — **Phase 2 에서 수행** (shapes 루프 내부 flatten 로직 공유)
+- [x] BC 0% 확증: 기존 items 엔트리는 `type` 필드 없음 → `isListBoxSectionEntry` false 반환 → default item 해석. 회귀 테스트로 검증
+
+**검증**: type-check 3/3 + specs **176/176** (166 → +10 신규) + shared 52/52 + builder 227/227 PASS.
+
+**파일 변경 (3)**:
+
+- `packages/specs/src/types/listbox-items.ts` (types 확장 + type guard)
+- `packages/specs/src/types/__tests__/listbox-items.test.ts` (신규 테스트 파일, 10 tests)
+- `packages/specs/src/types/index.ts` (export 확장)
 
 ### Phase 2 — ListBoxSpec.render.shapes section 렌더
 

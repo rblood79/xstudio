@@ -93,9 +93,14 @@ export { toRuntimeSelectItem } from "./select-items";
 export type { StoredComboBoxItem, RuntimeComboBoxItem } from "./combobox-items";
 export { toRuntimeComboBoxItem } from "./combobox-items";
 
-// ListBox Items Types (ADR-076)
-export type { StoredListBoxItem, RuntimeListBoxItem } from "./listbox-items";
-export { toRuntimeListBoxItem } from "./listbox-items";
+// ListBox Items Types (ADR-076 + ADR-099 Phase 1 Section union)
+export type {
+  StoredListBoxItem,
+  StoredListBoxSection,
+  StoredListBoxEntry,
+  RuntimeListBoxItem,
+} from "./listbox-items";
+export { toRuntimeListBoxItem, isListBoxSectionEntry } from "./listbox-items";
 
 // TagGroup Items Types (ADR-097)
 export type { StoredTagItem, RuntimeTagItem } from "./taggroup-items";
