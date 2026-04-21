@@ -2,7 +2,63 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
+
+> **Addendum 1 (2026-04-21)**: ADR-100 완결로 첫 후속 ADR Gate 통과 — Implemented 전환. Phase 4 Gate "첫 후속 ADR Proposed 발행 시 Implemented 전환" 은 ADR-099 Proposed 시점에 충족, ADR-100 Implemented 로 완전 완결.
+
+## Addendum 1 — BC 재평가 정정 (2026-04-21)
+
+### 배경
+
+본 ADR breakdown 의 후보 #1 (SelectItem/SelectTrigger) 이 **일괄 HIGH BC** 로 분류되었으나, ADR-100 진행 중 현장 재조사에서 BC **비대칭** 이 확증되었다. 본 Addendum 은 그 정정 결과를 기록한다.
+
+### 정정 내용
+
+| 식별자        | 098 breakdown 분류 | ADR-100 재조사 결과                                                                 | 정정 BC 등급  |
+| ------------- | :----------------: | ----------------------------------------------------------------------------------- | :-----------: |
+| SelectItem    |    HIGH (일괄)     | ADR-073 items SSOT 이관 완료 → 저장 데이터에 `tag` 없음 (items 배열 내부 객체 구조) |  **실질 0%**  |
+| SelectTrigger |    HIGH (일괄)     | Compositional Architecture 유지 → 저장 데이터에 `tag: "SelectTrigger"` 직렬화       | **HIGH 유지** |
+
+**SelectItem 근거** (현장 데이터, 2026-04-21):
+
+- `rg "\"SelectItem\"" --type ts` = 26 occurrences / 11 files
+- 11 files 내역: docs 2 + migration 테스트 4 + SelectionRenderers 1 + elementRemoval 1 + runtime 3
+- ADR-073 (`docs/adr/completed/073-select-combobox-items-ssot.md`) 에서 Select items 를 `StoredSelectItem[]` SSOT 로 이관 — 저장 데이터에 `element.tag === "SelectItem"` 더 이상 존재하지 않음
+- **저장 데이터 migration 불필요** — 모든 occurrence 는 runtime 변환 / 테스트 / 문서. 신규 프로젝트 영향 없음, 기존 프로젝트 load-time 자동 migration 경로 유지
+
+**SelectTrigger 근거** (현장 데이터, 2026-04-21):
+
+- `rg "\"SelectTrigger\"" --type ts` = 23 occurrences / 14 files
+- 14 files 내역: spec 2 + factory 1 + runtime 4 (utils/implicitStyles/buildSpecNodeData/HierarchyManager) + SelectionRenderers 1 + docs 3 + 기타
+- ADR-073 이후에도 Compositional Architecture 유지 — Select 자식 Element 로 저장 데이터에 `tag: "SelectTrigger"` 직렬화 지속
+- **저장 데이터 migration 필수** — 리네이밍 시 모든 Select 사용 프로젝트의 element tree 영향 (100% 영향)
+
+### 채택 대안 — 대안 C (비대칭)
+
+ADR-100 에서 **대안 C (비대칭 결정)** 채택:
+
+- **SelectItem**: 내부 식별자/문서 수준 RSP 정합 정리 (BC 0%) — 5 runtime 경로에 RAC `ListBoxItem` alias 주석 추가 (코드 rename 없음, legacy migration 경로 보존)
+- **SelectTrigger**: Compositional Architecture 정당화 유지 (HIGH BC 회피) — ADR-100 본문 selfcontained 정당화 섹션 수록 (098-e 연계)
+
+### 대안 A (완전 리네이밍) 기각 근거
+
+- 기술 HIGH: Button tag 충돌 → runtime `utils.ts` / `implicitStyles.ts` / `buildSpecNodeData.ts` 등 다중 위치에서 parent context 기반 discriminator 분기 추가 필요
+- 마이그레이션 HIGH: 모든 Select 사용 프로젝트의 element tree 재직렬화 + `applyCollectionItemsMigration` 이 items 가 아닌 일반 Element migration 으로 확장 (전례 없음)
+- 획득 가치 (네이밍 통일) 대비 비용 과다 판단
+
+### ADR-098 Charter 재평가 패턴 확립
+
+본 Addendum 에서 확립한 패턴: **items SSOT 이관 완료된 식별자는 저장 `tag` 없음 → BC 0% 가능**.
+
+- ADR-066 (Tabs) / ADR-068 (Menu) / ADR-073 (Select/ComboBox) / ADR-076 (ListBox) / ADR-097 (TagGroup) 이관 완료 식별자 해당
+- 후속 ADR (098-b ComboBoxItem 등) 착수 시 동일 재평가 패턴 먼저 적용 권장
+- 일괄 HIGH BC 분류는 items SSOT 이관 여부 확인 후 사후 보정 필수
+
+### 관련 커밋
+
+- `74045739` — `docs(adr-100): Phase 1 완료 — SelectItem RAC alias 주석 sweep (BC 0)`
+- `87f415cf` — `docs(adr-100): Phase 2 완료 — SelectTrigger 정당화 (selfcontained + code-level)`
+- ADR-100 breakdown 참조: [100-select-child-naming-rsp-alignment-breakdown.md](../design/100-select-child-naming-rsp-alignment-breakdown.md)
 
 ## Context
 

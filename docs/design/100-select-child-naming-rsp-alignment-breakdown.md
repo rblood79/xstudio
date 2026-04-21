@@ -120,17 +120,17 @@ RAC 공식 Select 구조:
 - [ ] Chrome MCP 실측 — 연결 가능 시점 확인 (ADR-092/093/095 선례대로 code-level 증거 우선 허용)
 - [ ] `/cross-check` skill — Skia Select 렌더와 Preview DOM 렌더 시각 정합 (후속 수행)
 
-### Phase 4 — 문서/ADR 갱신
+### Phase 4 — 문서/ADR 갱신 (Completed 2026-04-21)
 
-- [ ] ADR-098 본문에 BC 재평가 Addendum 추가 (breakdown #1 후보 정정 — SelectItem LOW / SelectTrigger HIGH 비대칭)
-- [ ] ADR-098-e (정당화 문서 ADR) 미발행 상태라면 본 ADR-100 Phase 2 가 selfcontained 되도록 정당화 섹션 ADR-100 본문에 포함
-- [ ] README.md ADR-100 Implemented 전환 + 최상위 요약
+- [x] ADR-098 본문에 BC 재평가 Addendum 추가 (breakdown #1 후보 정정 — SelectItem 실질 0% / SelectTrigger HIGH 비대칭)
+- [x] ADR-098-e (정당화 문서 ADR) 미발행 상태 → ADR-100 Phase 2 selfcontained 정당화 섹션 본문 수록 완료
+- [x] README.md ADR-100 Implemented 전환 + 최상위 요약 갱신
 
-### Phase 5 — Status 전환
+### Phase 5 — Status 전환 (Completed 2026-04-21)
 
-- [ ] type-check 3/3 + specs 166/166 + builder 227/227 + shared 52/52 PASS
-- [ ] ADR-100 Status: Proposed → Implemented
-- [ ] ADR-098 Charter Implemented 전환 검토 (본 ADR 이 첫 완결 분할 ADR)
+- [x] type-check 3/3 + specs 176/176 + builder 227/227 + shared 52/52 PASS
+- [x] ADR-100 Status: Proposed → Implemented 2026-04-21
+- [x] ADR-098 Charter Implemented 전환 완료 (본 ADR 이 첫 완결 분할 ADR — Phase 4 Gate 충족)
 
 ## 반복 패턴 선차단 체크
 
@@ -160,11 +160,11 @@ cd packages/shared && pnpm exec vitest run        # 52/52 PASS
 ## 검증 체크리스트 (본 ADR 완료 기준)
 
 - [x] Phase 0 BC 재평가 + 3 대안 평가 완료
-- [ ] Phase 1 SelectItem 내부 정리 + 문서 용어 일관성
-- [ ] Phase 2 SelectTrigger 정당화 문서 + factory Button slot 매핑 확증
-- [ ] Phase 3 Chrome MCP runtime DOM 검증
-- [ ] Phase 4 ADR-098 Addendum + README 갱신
-- [ ] Phase 5 Status Implemented
+- [x] Phase 1 SelectItem 5 runtime 경로 RAC alias 주석 + 문서 용어 일관성
+- [x] Phase 2 SelectTrigger 정당화 문서 + factory Button slot 매핑 확증 (code-level)
+- [x] Phase 3 runtime DOM 검증 — code-level 증거 3건 수집 완료 (Chrome MCP 실측 후속 허용)
+- [x] Phase 4 ADR-098 Addendum 1 + README 갱신
+- [x] Phase 5 Status Implemented 2026-04-21
 
 ## 잠재 후속 ADR
 

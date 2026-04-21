@@ -2,9 +2,20 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
 
 > 본 ADR 은 [ADR-098](098-rsp-naming-audit-charter.md) (RSP 네이밍 정합 감사 Charter) 의 "098-a 슬롯" (breakdown Follow-up 표 #1) 구현. ADR-098 에서 HIGH BC 일괄 분류된 SelectItem/SelectTrigger 에 대해 **현장 재조사 결과 BC 비대칭** 을 발견, 각 식별자 별 차등 결정을 내린다.
+
+**Phase 커밋 체인** (origin/main):
+
+- P0 완료 — BC 재평가 + 3 대안 평가 (ADR-100 본문 작성, 2026-04-21 세션 7)
+- P1 `74045739` — SelectItem 5 runtime 경로 RAC alias 주석 sweep (BC 0%, type-check PASS)
+- P2 `87f415cf` — SelectTrigger selfcontained 정당화 섹션 + factory Button slot 렌더 증거 수집 (code-level)
+- P3 완료 (code-level) — `Select.tsx:309` / `SelectionRenderers.tsx:704` / `HierarchyManager.ts:402-406` 3 경로 증거 수집 (Chrome MCP 실측은 후속 Addendum 허용, ADR-092/093/095 선례)
+- P4 완료 — ADR-098 Addendum 1 (BC 재평가 정정) + README.md ADR-100 Implemented 전환
+- P5 완료 — type-check 3/3 + specs 176/176 + builder 227/227 + shared 52/52 PASS. Status Implemented
+
+**종결 검증**: type-check 3/3 + specs 176/176 + builder 227/227 + shared 52/52 PASS. BC 영향 0% (SelectItem 0% 확증, SelectTrigger 유지 결정 → migration 0건).
 
 ## Context
 
