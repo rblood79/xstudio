@@ -623,8 +623,13 @@ export interface DelegationSpec {
 
 /** S2 Context 에뮬레이션: 선언적 부모→자식 props 전파 규칙 */
 export interface PropagationRule {
-  /** 부모 prop 키 (e.g., "size", "variant", "locale") */
-  parentProp: string;
+  /**
+   * 부모 prop 키 (e.g., "size", "variant", "locale")
+   *
+   * ADR-095: `styleValue` 를 사용하는 고정값 주입 rule 에서는 생략 가능 (optional).
+   * 생략 시 `styleValue` 필수. 기존 size/variant 전파 rule 은 필수 유지.
+   */
+  parentProp?: string;
 
   /** 대상 자식 태그 경로. 문자열 = 직접 자식, 배열 = 중첩 경로 */
   childPath: string | string[];
@@ -643,6 +648,24 @@ export interface PropagationRule {
 
   /** true: 자식 자체 값을 무시하고 항상 덮어쓰기 (기본 미설정 = 자식 값 우선) */
   override?: boolean;
+
+  /**
+   * 고정 주입 값 (ADR-095) — `parentProp` 없이 자식 style 에 고정값 주입.
+   *
+   * 사용 예: CardHeader → Heading `flex:1`, CardContent → Description `width:"100%"`.
+   * `asStyle: true` + `childProp: "flex"` + `styleValue: 1` 조합.
+   * `parentProp` 있고 `styleValue` 도 있으면 `parentProp` 우선 (기존 동작 보존).
+   */
+  styleValue?: string | number;
+
+  /**
+   * 주입 skip 조건 (ADR-095) — 자식 style 에 여기 나열된 필드 중 하나라도 이미 값이 있으면
+   * rule 전체를 skip. `override: true` 는 본 필드를 무시하고 항상 덮어쓰기.
+   *
+   * 사용 예: Heading 에 `flex/flexGrow/width` 중 하나라도 사용자 지정 값이 있으면 `flex:1`
+   * 주입을 skip (기존 implicitStyles CardHeader 분기 조건 1:1 이전).
+   */
+  skipIfSet?: string[];
 }
 
 /** 부모→자식 props 전파 규칙 집합 */

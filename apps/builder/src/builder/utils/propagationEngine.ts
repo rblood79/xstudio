@@ -85,6 +85,22 @@ function childHasValue(
   return childProps[propKey] != null;
 }
 
+/**
+ * ADR-095: `skipIfSet` 조건 검사. 자식 style 에 나열된 필드 중 하나라도 값이 있으면 true 반환.
+ */
+function shouldSkipByConflict(
+  childProps: Record<string, unknown>,
+  skipIfSet: string[] | undefined,
+): boolean {
+  if (!skipIfSet || skipIfSet.length === 0) return false;
+  const style = childProps.style as Record<string, unknown> | undefined;
+  if (!style) return false;
+  for (const key of skipIfSet) {
+    if (style[key] != null) return true;
+  }
+  return false;
+}
+
 // ─── Primary: Inspector 경로 ────────────────────────────────────────────────
 
 /**
@@ -106,7 +122,14 @@ export function buildPropagationUpdates(
   let mergedProps: Record<string, unknown> | null = null;
 
   for (const rule of rules) {
-    if (!(rule.parentProp in changedProps)) continue;
+    // ADR-095: styleValue 고정 주입 rule 은 parentProp 없이 작동.
+    const isFixedStyleRule =
+      rule.parentProp === undefined && rule.styleValue !== undefined;
+    if (!isFixedStyleRule && rule.parentProp !== undefined) {
+      if (!(rule.parentProp in changedProps)) continue;
+    } else if (!isFixedStyleRule) {
+      continue; // parentProp 도 없고 styleValue 도 없는 잘못된 rule 은 skip
+    }
 
     const targets = resolveChildPath(
       parentElement.id,
@@ -119,24 +142,39 @@ export function buildPropagationUpdates(
       const element = elementsMap.get(target.id);
       if (!element) continue;
 
+      // ADR-095: 고정 주입 rule 의 childProp 은 필수 (style 필드명). 기본값은 parentProp.
       const childProp = rule.childProp ?? rule.parentProp;
+      if (childProp === undefined) continue;
 
-      let value = changedProps[rule.parentProp];
-      if (rule.transform) {
-        try {
-          if (!mergedProps)
-            mergedProps = { ...parentElement.props, ...changedProps };
-          value = rule.transform(value, mergedProps);
-        } catch {
-          console.warn(
-            `[Propagation] transform failed: ${rule.parentProp} → ${String(rule.childPath)}`,
-          );
-          continue; // fail-safe: 해당 규칙만 스킵
-        }
-        // transform 결과가 undefined면 스킵 (변환 실패와 동일 취급)
-        if (value === undefined) continue;
+      // ADR-095: skipIfSet 검사 — override 미지정 시 자식 style 에 충돌 필드 있으면 skip.
+      if (
+        !rule.override &&
+        shouldSkipByConflict(element.props, rule.skipIfSet)
+      ) {
+        continue;
       }
-      // 원본 값이 undefined인 경우는 전파 (자식 prop 삭제 = 기존 sync 동작 유지)
+
+      let value: unknown;
+      if (isFixedStyleRule) {
+        value = rule.styleValue;
+      } else {
+        value = changedProps[rule.parentProp!];
+        if (rule.transform) {
+          try {
+            if (!mergedProps)
+              mergedProps = { ...parentElement.props, ...changedProps };
+            value = rule.transform(value, mergedProps);
+          } catch {
+            console.warn(
+              `[Propagation] transform failed: ${rule.parentProp} → ${String(rule.childPath)}`,
+            );
+            continue; // fail-safe: 해당 규칙만 스킵
+          }
+          // transform 결과가 undefined면 스킵 (변환 실패와 동일 취급)
+          if (value === undefined) continue;
+        }
+        // 원본 값이 undefined인 경우는 전파 (자식 prop 삭제 = 기존 sync 동작 유지)
+      }
 
       // 업데이트 축적 (동일 elementId에 대한 여러 규칙은 merge)
       let existing = updatesById.get(target.id);
@@ -186,30 +224,49 @@ export function resolvePropagatedProps(
     if (typeof rule.childPath !== "string") continue;
     if (rule.childPath.toLowerCase() !== childTagLower) continue;
 
-    const parentValue = parentProps[rule.parentProp];
-    if (parentValue === undefined) continue;
+    // ADR-095: styleValue 고정 주입 rule vs 기존 parentProp 전파 rule 분기.
+    const isFixedStyleRule =
+      rule.parentProp === undefined && rule.styleValue !== undefined;
+    if (!isFixedStyleRule && rule.parentProp === undefined) continue;
 
     const childProp = rule.childProp ?? rule.parentProp;
+    if (childProp === undefined) continue;
 
-    // 자식 명시값 우선 원칙
-    if (!rule.override && childHasValue(childProps, childProp, rule.asStyle)) {
+    // ADR-095: skipIfSet — 자식 style 에 충돌 필드 있으면 skip (override 미설정 시).
+    if (!rule.override && shouldSkipByConflict(childProps, rule.skipIfSet)) {
       continue;
     }
 
-    // 값 변환
-    let value: unknown = parentValue;
-    if (rule.transform) {
-      try {
-        value = rule.transform(value, parentProps);
-      } catch {
-        console.warn(
-          `[Propagation] transform failed: ${rule.parentProp} → ${rule.childPath}`,
-        );
+    let value: unknown;
+    if (isFixedStyleRule) {
+      value = rule.styleValue;
+    } else {
+      const parentValue = parentProps[rule.parentProp!];
+      if (parentValue === undefined) continue;
+
+      // 자식 명시값 우선 원칙 (기존 childProp 단일 키 검사)
+      if (
+        !rule.override &&
+        childHasValue(childProps, childProp, rule.asStyle)
+      ) {
         continue;
       }
-    }
 
-    if (value === undefined) continue;
+      // 값 변환
+      value = parentValue;
+      if (rule.transform) {
+        try {
+          value = rule.transform(value, parentProps);
+        } catch {
+          console.warn(
+            `[Propagation] transform failed: ${rule.parentProp} → ${rule.childPath}`,
+          );
+          continue;
+        }
+      }
+
+      if (value === undefined) continue;
+    }
 
     if (!patch) patch = {};
     if (rule.asStyle) {
