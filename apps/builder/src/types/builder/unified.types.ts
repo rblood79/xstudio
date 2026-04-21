@@ -2,7 +2,7 @@
 import React from "react";
 import { ElementEvent } from "../events/events.types";
 import { TokenValue, DesignToken } from "../theme";
-import type { StoredMenuItem } from "@composition/specs";
+import type { StoredMenuItem, StoredTagItem } from "@composition/specs";
 
 // === 기본 타입 정의 ===
 
@@ -670,11 +670,12 @@ export interface TagGroupElementProps extends BaseElementProps {
   label?: string;
   description?: string;
   errorMessage?: string;
-  items?: Array<{
-    id: string;
-    label: string;
-    isDisabled?: boolean;
-  }>;
+  /**
+   * ADR-097 Phase 1 — TagGroup items SSOT.
+   * `StoredTagItem[]` 저장 모델. Tag element children 경로는 migration
+   * orchestrator 가 이 배열로 흡수 (packages/shared/src/utils/migrateCollectionItems.ts).
+   */
+  items?: StoredTagItem[];
   selectedKeys?: string[];
   defaultSelectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;

@@ -12,7 +12,7 @@ import {
   type ListItem,
   type TreeItem as TreeItemType,
 } from "../helpers";
-import type { StoredListBoxItem } from "@composition/specs";
+import type { StoredListBoxItem, StoredTagItem } from "@composition/specs";
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
@@ -220,6 +220,18 @@ function getVirtualChildren(
       ([] as StoredListBoxItem[]);
     return items.map((it, index) =>
       makeNode("listbox", index, it.label || `Item ${index + 1}`, it),
+    );
+  }
+
+  if (item.tag === "TagGroup") {
+    // ADR-097 P3: TagGroup items SSOT virtual children.
+    // Tag Field 자식 불가 (Tag.children: string 만) → 항상 정적 모드.
+    // migration orchestrator 가 기존 TagGroup > TagList > Tag 3단을 items[] 로
+    // 흡수 (packages/shared/src/utils/migrateCollectionItems.ts).
+    const items =
+      (props.items as StoredTagItem[] | undefined) ?? ([] as StoredTagItem[]);
+    return items.map((it, index) =>
+      makeNode("taggroup", index, it.label || `Tag ${index + 1}`, it),
     );
   }
 

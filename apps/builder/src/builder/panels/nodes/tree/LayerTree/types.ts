@@ -9,7 +9,8 @@ export type VirtualChildType =
   | "gridlist"
   | "select"
   | "combobox"
-  | "tree";
+  | "tree"
+  | "taggroup";
 
 export interface LayerTreeNode {
   id: string;
@@ -38,6 +39,6 @@ export interface LayerTreeProps {
   onSelectTabElement?: (
     parentId: string,
     props: ElementProps,
-    index: number
+    index: number,
   ) => void;
 }
