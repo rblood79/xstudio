@@ -44,7 +44,10 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
     },
   },
 
-  // @sync Select.css font-size per size
+  // Select.spec.ts `composition.sizeSelectors` prefix="select-btn" 이 per-size `--select-btn-font-size` 를 emit.
+  // `composition.staticSelectors` childSelector=".react-aria-SelectValue" 에서
+  // `font-size: var(--select-btn-font-size)` 연결 → CSSGenerator 가 size별 SelectValue font-size 자동 emit 중.
+  // 수동 동기화 불필요 — ADR-078 childSpec emit 확인, ADR-105-c 자연 해소 확증.
   sizes: {
     xs: {
       height: 14,
@@ -99,7 +102,11 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = SelectValueSpec.variants![(props as { variant?: keyof typeof SelectValueSpec.variants }).variant ?? SelectValueSpec.defaultVariant!];
+      const variant =
+        SelectValueSpec.variants![
+          (props as { variant?: keyof typeof SelectValueSpec.variants })
+            .variant ?? SelectValueSpec.defaultVariant!
+        ];
       const text = props.children || props.placeholder || "";
       if (!text) return [];
 

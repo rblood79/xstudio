@@ -24,6 +24,9 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
     alignItems: "center",
   },
   element: "div",
+  // G2 정당 (ADR-106-d): FieldSpec.render.shapes = () => [] — 시각 shapes 없음.
+  // Field.css 는 .react-aria-FieldGroup/.react-aria-DataField 독립 구조 유틸리티 (다른 scope).
+  // 향후 shapes 추가 시 false 로 전환 필요 (ADR-106-d R3).
   skipCSSGeneration: true,
 
   defaultVariant: "default",
@@ -53,13 +56,20 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
       {
         title: "State",
         fields: [
-          { key: "visible", type: "boolean", label: "Visible", icon: Eye , defaultValue: true },
+          {
+            key: "visible",
+            type: "boolean",
+            label: "Visible",
+            icon: Eye,
+            defaultValue: true,
+          },
           {
             key: "showLabel",
             type: "boolean",
             label: "Show Label",
             icon: Tags,
-           defaultValue: true },
+            defaultValue: true,
+          },
         ],
       },
       {
@@ -79,7 +89,8 @@ export const FieldSpec: ComponentSpec<FieldProps> = {
               { value: "boolean", label: "Boolean" },
               { value: "image", label: "Image" },
             ],
-           defaultValue: "string" },
+            defaultValue: "string",
+          },
         ],
       },
     ],

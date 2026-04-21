@@ -35,7 +35,7 @@ export interface GridListItemProps {
  *     (fontSize=14 기준값. fontSize>14/>12 분기는 resolveGridListItemMetric 내부에서 처리).
  *   - gap: 2 — label↔description 수직 간격 (수동 CSS `var(--spacing-2xs)` 정합).
  *   - borderWidth: 1 — 수동 CSS `border: 1px solid var(--border)` 정합.
- *   - borderRadius {radius.sm} = 8px (fontSize=14 기준. fontSize>14 분기는 resolver 내부 12px).
+ *   - borderRadius {radius.lg} = 8px (fontSize=14 기준. fontSize>14 분기는 resolver 내부 12px).
  *   - descGap 4 — label↔description 사이 Skia shapes 수직 간격 (fontSize=14 기준).
  *
  * containerStyles: `implicitStyles.ts:758-773` gridlistitem 분기의 하드코딩을 리프팅.
@@ -69,7 +69,7 @@ export const GridListItemSpec: ComponentSpec<GridListItemProps> = {
       paddingX: 16,
       paddingY: 12,
       fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       lineHeight: "{typography.text-sm--line-height}" as TokenRef,
       gap: 2,
       fontWeight: 600,
@@ -104,7 +104,10 @@ export const GridListItemSpec: ComponentSpec<GridListItemProps> = {
  * fontSize-based 분기(fontSize>14: 20/16/12/6, >12: 16/12/8/4, else: 12/10/8/4) 를 내부 캡슐화.
  *
  * 기본값 (fontSize=14 기준): GridListItemSpec.sizes.md 에서 직접 참조.
- * @sync GridList.css `.react-aria-GridListItem` padding/gap/border-radius (fontSize=14 경로 동기화).
+ * fontSize=14 기준값: paddingX/Y = CSS `var(--spacing-md)/var(--spacing-lg)` (12/16) 정합.
+ * gap=2 = CSS `var(--spacing-2xs)` 정합. borderRadius={radius.lg}=8px = CSS `var(--radius-lg)` 정합.
+ * fontSize>14/>12 분기는 내부에서 처리 (cardBorderRadius 12/8/8).
+ * ADR-105-c: 삼자 정합 완결 (Spec {radius.lg} / resolver 8 / CSS var(--radius-lg)).
  */
 export function resolveGridListItemMetric(fontSize: number): {
   cardPaddingX: number;

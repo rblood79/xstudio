@@ -41,7 +41,9 @@
     justify-content: center;
     gap: var(--spacing-2xs);
     padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--radius-md);
+    border-radius: var(
+      --radius-lg
+    ); /* ADR-105-c: Spec {radius.lg}=8px / resolver 8 / CSS 삼자 정합 */
     border: 1px solid var(--border);
     background: var(--bg-overlay);
     color: var(--fg);

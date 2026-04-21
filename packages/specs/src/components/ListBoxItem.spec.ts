@@ -129,7 +129,11 @@ export function resolveListBoxItemMetric(fontSize: number): {
   itemHeight: number;
 } {
   const sz = ListBoxItemSpec.sizes.md;
-  // @sync sz.lineHeight = {typography.text-sm--line-height} — fontSize 기반 resolve
+  // fontSize 기반 lineHeight 분기: CSS `var(--text-{size}--line-height)` 기본값 매핑.
+  // xs(≤12)→16 / sm(≤14)→20 / base(≤16)→24 / lg(>16)→28.
+  // sz.lineHeight ({typography.text-sm--line-height}) 는 md 고정 참조 — Spec SSOT 확인용.
+  // fontSize 다중 분기가 필요하므로 resolver 내부 하드코딩 유지 (Spec에 fontSize별 lineHeight 미선언).
+  // ADR-105-c: @sync 제거 + 현황 문서화. 완전한 Spec 소비는 별도 ADR 대기.
   const lineHeight =
     fontSize <= 12 ? 16 : fontSize <= 14 ? 20 : fontSize <= 16 ? 24 : 28;
   return {

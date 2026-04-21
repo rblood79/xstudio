@@ -1,3 +1,13 @@
+/*
+ * Field.css — 독립 구조 유틸리티 CSS (ADR-106-d G2 정당화)
+ *
+ * 이 파일은 FieldSpec 의 CSS 파생물이 아닌 composition 고유 구조 컴포넌트 전용 CSS 이다.
+ * - FieldSpec (skipCSSGeneration: true) 이 emit 하는 selector 는 `.react-aria-Field`
+ * - 이 파일의 selector (.react-aria-FieldGroup / .react-aria-DataField) 는 다른 scope
+ * - CSS 변수 5건 spec token 파생 (--spacing-sm, --spacing-2, --text-sm, --text-base, --radius-sm)
+ * - residual debt: .value-image 40px×40px 고정 수치 — spec.sizes 미선언 (ADR-106-d R1)
+ * - 근거: ADR-106-d, ADR-059 Tier 3 예외 목록 등록
+ */
 @layer components {
   /* FieldGroup for grouping form elements */
   .react-aria-FieldGroup {

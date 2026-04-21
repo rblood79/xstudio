@@ -215,9 +215,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     ],
   },
 
-  // @sync containerStyles.background = {color.raised}
+  // containerStyles.background = {color.raised} (line 88) — ADR-076/079 완결로 Spec SSOT 선언됨.
   // Generator CSS 와 Skia render.shapes 가 동일한 컨테이너 배경(raised)을 사용해야
   // D3 symmetric consumer 대칭 유지 (이전 {color.base} 는 페이지 bg 와 혼동 위험)
+  // ADR-105-c 자연 해소 확증.
   variants: {
     default: {
       background: "{color.raised}" as TokenRef,
@@ -235,7 +236,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     },
   },
 
-  // @sync CSS container padding = `--spacing-xs` = 4 (containerStyles.padding 과 일치)
+  // containerStyles.padding = {spacing.xs} = 4 (line 93) — ADR-078 Phase 3 완결로 Spec SSOT 선언됨.
+  // ADR-105-c 자연 해소 확증.
   // 프로젝트 관례 (Menu/MenuItem/Select): `sizes.*.paddingX/Y` = 해당 Spec 컴포넌트
   // 자체의 내부 padding. ListBox 는 container 역할이므로 container padding 만 표현.
   // ADR-078 Phase 3: item padding/lineHeight 는 `ListBoxItemSpec.sizes.md` SSOT +
