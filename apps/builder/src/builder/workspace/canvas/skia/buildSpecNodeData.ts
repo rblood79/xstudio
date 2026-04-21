@@ -99,6 +99,11 @@ const CONTAINER_DIMENSION_TAGS = new Set([
   "DateSegment",
   "Skeleton",
   "Switcher",
+  // ADR-097 Phase 4A: TagList spec shapes 가 props.items 기반 chip 렌더 시 컨테이너
+  //   폭 필수 (ListBox 선례 대칭). items 는 TagGroup.propagation 으로 TagList 전파 →
+  //   TagList Skia node 좌표계에서 chip self-render. Label 은 TagGroup 의 형제 자식
+  //   element 로 독립 렌더되므로 간섭 없음.
+  "TagList",
 ]);
 
 /**

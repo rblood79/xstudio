@@ -8,10 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { fontFamily } from "../primitives/typography";
-import { resolveStateColors } from "../utils/stateEffect";
-import { resolveToken } from "../renderers/utils/tokenResolver";
-import { measureSpecTextWidth } from "../renderers/utils/measureText";
+import type { StoredTagItem } from "../types/taggroup-items";
 import { TagListSpec } from "./TagList.spec";
 import {
   Layout,
@@ -56,8 +53,13 @@ export interface TagGroupProps {
   isEmphasized?: boolean;
   contextualHelp?: string;
   style?: Record<string, string | number | undefined>;
-  /** ElementSprite에서 주입: 자식 Tag 텍스트 배열 (Skia 렌더링용) */
-  _tagItems?: { text: string }[];
+  /**
+   * ADR-097 — TagGroup items SSOT.
+   * Preview (RAC) 는 `<TagGroup items={...}>` 로 직접 consume.
+   * Builder (Skia) 는 TagGroup.propagation → TagList.items 전파 후 TagList spec
+   *   shapes 가 items 기반 chip self-render (ListBox 선례 대칭).
+   */
+  items?: StoredTagItem[];
 }
 
 /**
@@ -374,99 +376,28 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
         childProp: "children",
         override: true,
       },
+      // ADR-097 Phase 4A: items/variant → TagList 전파.
+      //   TagList spec shapes 가 items 기반 chip self-render 시 필요.
+      //   ListBox 는 self-contained 이지만 TagGroup 은 TagList 중간 컨테이너 유지 →
+      //   props 전파 경유로 TagList Skia node 좌표계에서 chip 렌더.
+      { parentProp: "items", childPath: "TagList", override: true },
+      { parentProp: "variant", childPath: "TagList", override: true },
     ],
   },
 
   render: {
-    shapes: (props, size, state = "default") => {
-      const variant =
-        TagGroupSpec.variants![
-          (props as { variant?: keyof typeof TagGroupSpec.variants }).variant ??
-            TagGroupSpec.defaultVariant!
-        ];
-      const shapes: Shape[] = [];
-      const rawTagFontSize = size.fontSize;
-      const resolvedTagFs =
-        typeof rawTagFontSize === "number"
-          ? rawTagFontSize
-          : typeof rawTagFontSize === "string" && rawTagFontSize.startsWith("{")
-            ? resolveToken(rawTagFontSize as TokenRef)
-            : rawTagFontSize;
-      const tagFontSize =
-        typeof resolvedTagFs === "number" ? resolvedTagFs : 14;
-      const tagGap = size.gap || 4;
-      const currentY = 0;
-
-      // ── CSS 구조: TagGroup (column) ──
-      // ├── Label       ← 자식 Label 요소가 렌더링 (spec shapes에서 제외)
-      // └── TagList (row flex-wrap)
-      //     ├── Tag
-      //     └── Tag
-      //
-      // Label은 자식 요소(child Label element)로 렌더링되므로
-      // spec shapes에서 중복 렌더링하지 않음 (두 줄 렌더링 방지)
-
-      // TagList 영역: Tag chips (CSS: .react-aria-TagList > .react-aria-Tag)
-      const tagItems = props._tagItems;
-      if (tagItems && tagItems.length > 0) {
-        const tagPaddingX = size.paddingX || 8;
-        const tagPaddingY = size.paddingY || 2;
-        const tagHeight = tagFontSize + tagPaddingY * 2;
-        const borderRadius = (size.borderRadius as unknown as number) || 4;
-        let tagX = 0;
-
-        for (const item of tagItems) {
-          // 태그 칩 너비 실측
-          const textWidth = measureSpecTextWidth(
-            item.text,
-            tagFontSize,
-            fontFamily.sans,
-          );
-          const chipWidth = textWidth + tagPaddingX * 2;
-
-          // Tag 배경 (roundRect)
-          shapes.push({
-            id: `tag-bg-${tagX}-${currentY}`,
-            type: "roundRect" as const,
-            x: tagX,
-            y: currentY,
-            width: chipWidth,
-            height: tagHeight,
-            radius: borderRadius,
-            fill: resolveStateColors(variant, state).background,
-          });
-
-          // Tag 테두리
-          shapes.push({
-            type: "border" as const,
-            target: `tag-bg-${tagX}-${currentY}`,
-            borderWidth: 1,
-            color: variant.border || variant.text,
-            radius: borderRadius,
-          });
-
-          // Tag 텍스트 — maxWidth 명시하여 specShapeConverter의
-          // containerWidth - shape.x 자동 축소 방지
-          shapes.push({
-            type: "text" as const,
-            x: tagX + tagPaddingX,
-            y: currentY + tagPaddingY,
-            text: item.text,
-            fontSize: tagFontSize,
-            fontFamily: fontFamily.sans,
-            fontWeight: 400,
-            fill: variant.text,
-            align: "left" as const,
-            baseline: "top" as const,
-            maxWidth: textWidth + tagFontSize,
-          });
-
-          tagX += chipWidth + tagGap;
-        }
-      }
-
-      return shapes;
-    },
+    /**
+     * ADR-097 Phase 4A — TagGroup 은 shell 역할로 시각 없음.
+     *
+     * CSS 구조: TagGroup (column) → Label (자식 element) + TagList (자식 element).
+     *   Label 은 자식 Label element 가 spec 기반 독립 렌더.
+     *   TagList 는 items propagation 수신 후 spec shapes 로 chip self-render
+     *   (TagList.spec.ts 참조, ListBox 선례 대칭).
+     *
+     * 이전 `_tagItems` legacy 분기는 ElementSprite 주입 경로 부재로 dead code
+     *   였으며 ADR-097 Phase 4A 에서 제거. Propagation 경유 TagList 렌더로 일원화.
+     */
+    shapes: (): Shape[] => [],
 
     react: (props) => ({
       role: "group",
