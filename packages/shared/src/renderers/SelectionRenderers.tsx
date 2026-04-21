@@ -13,6 +13,8 @@ import {
 import {
   ListBoxSection as AriaListBoxSection,
   Header as AriaHeader,
+  GridListSection as AriaGridListSection,
+  GridListHeader as AriaGridListHeader,
 } from "react-aria-components";
 import { DataField } from "../components/Field";
 import type {
@@ -26,8 +28,13 @@ import type {
   StoredComboBoxItem,
   StoredListBoxItem,
   StoredListBoxEntry,
+  StoredGridListItem,
+  StoredGridListEntry,
 } from "@composition/specs";
-import { isListBoxSectionEntry } from "@composition/specs";
+import {
+  isListBoxSectionEntry,
+  isGridListSectionEntry,
+} from "@composition/specs";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -495,6 +502,11 @@ export const renderGridList = (
   const hasValidTemplate =
     (columnMapping || isPropertyBinding) && gridListChildren.length > 0;
 
+  // ADR-099 Phase 5 (Addendum 099-f Part 1): Path 2 (items canonical) — props.items 배열 존재
+  const storedItems = (element.props as { items?: StoredGridListItem[] }).items;
+  const hasItemsArray = Array.isArray(storedItems) && storedItems.length > 0;
+
+  // Path 1: 템플릿 모드 (영구 유지, BC 보수)
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
         // GridListItem 템플릿을 각 데이터 항목에 대해 렌더링
@@ -557,7 +569,49 @@ export const renderGridList = (
           </GridListItem>
         );
       }
-    : gridListChildren.map((item) => context.renderElement(item));
+    : hasItemsArray
+      ? // Path 2: items[] canonical (ADR-099 Phase 5 / Addendum 099-f Part 1)
+        // StoredGridListEntry discriminated union — section entry 분기
+        (() => {
+          const renderGridListLeaf = (
+            item: StoredGridListItem,
+          ): React.ReactNode => (
+            <GridListItem
+              key={item.id}
+              id={item.id}
+              data-element-id={element.id}
+              textValue={item.textValue ?? item.label}
+              isDisabled={Boolean(item.isDisabled)}
+            >
+              <>
+                <span className="gridlist-item-label">{item.label}</span>
+                {item.description && (
+                  <span className="gridlist-item-description">
+                    {item.description}
+                  </span>
+                )}
+              </>
+            </GridListItem>
+          );
+
+          const entries = storedItems as unknown as StoredGridListEntry[];
+          return entries.map((entry) => {
+            if (isGridListSectionEntry(entry)) {
+              return (
+                <AriaGridListSection
+                  key={entry.id}
+                  aria-label={entry.ariaLabel}
+                >
+                  <AriaGridListHeader>{entry.header}</AriaGridListHeader>
+                  {entry.items.map(renderGridListLeaf)}
+                </AriaGridListSection>
+              );
+            }
+            return renderGridListLeaf(entry);
+          });
+        })()
+      : // Path 3: legacy 정적 children fallback — migration 미적용 프로젝트 대비
+        gridListChildren.map((item) => context.renderElement(item));
 
   return (
     <GridList

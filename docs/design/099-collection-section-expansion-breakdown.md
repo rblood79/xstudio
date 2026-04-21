@@ -217,7 +217,23 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 **후속 분리 항목**:
 
 - **Addendum 099-e**: `MenuSpec.render.shapes` section + separator 분기 (overlay Skia preview)
-- **Addendum 099-f**: GridList/Menu `SelectionRenderers.tsx` section 분기 (Preview DOM 경로 완결)
+- **Addendum 099-f Part 1** ✅ **(완결 2026-04-21)**: GridList `SelectionRenderers.tsx` section 분기 (Preview DOM 경로). `renderGridList` 3-Path 구조 — Path 2 items[] canonical + `isGridListSectionEntry` 분기 + `<AriaGridListSection><AriaGridListHeader>`. R-A2 GridList 한정 해소.
+- **Addendum 099-f Part 2**: Menu `SelectionRenderers.tsx` / `Menu.tsx` section 렌더 확장 (Step C 에서 처리).
+
+### Addendum 099-f Part 1 — GridList Preview 경로 section 분기 (2026-04-21)
+
+- [x] `packages/shared/src/renderers/SelectionRenderers.tsx` — `renderGridList` 함수 확장:
+  - RAC import 추가: `GridListSection as AriaGridListSection`, `GridListHeader as AriaGridListHeader`
+  - specs import 추가: `StoredGridListItem`, `StoredGridListEntry` 타입 + `isGridListSectionEntry` type guard
+  - `storedItems` / `hasItemsArray` 감지: `(element.props as { items?: StoredGridListItem[] }).items`
+  - **3-Path 구조**:
+    - Path 1 (기존 유지): 템플릿 모드 (`columnMapping` / `isPropertyBinding`)
+    - Path 2 (신규): `hasItemsArray` → `renderGridListLeaf` 헬퍼 + section 분기
+      - section entry → `<AriaGridListSection aria-label><AriaGridListHeader>{header}</AriaGridListHeader>{items.map(leaf)}</AriaGridListSection>`
+      - item entry → `<GridListItem>` (label + description + isDisabled)
+    - Path 3 (legacy fallback): 정적 `gridListChildren` (`context.renderElement`)
+
+**검증**: type-check 3/3 PASS + shared 52/52 + specs 205/205 + builder 227/227 PASS.
 
 ## 반복 패턴 선차단 체크
 
@@ -280,3 +296,4 @@ cd packages/shared && pnpm exec vitest run        # 52/52 PASS
 - [x] Phase 5 GridList/Menu 대칭 (또는 099-a 로 분리 land)
 - [x] Phase 6 Preview ListBox section 분기 추가 + code-level 검증 PASS (Chrome MCP 후속 허용)
 - [x] Status Proposed → Implemented + README.md 갱신
+- [x] **Addendum 099-f Part 1**: GridList Preview 경로 section 분기 추가 + R-A2 GridList 한정 해소 (2026-04-21)
