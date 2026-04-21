@@ -199,11 +199,13 @@ export class StoreRenderBridge {
   ): Set<string> | null {
     if (!this.prevElementsMap) return null;
     if (this.prevElementsMap === elementsMap) {
-      // store 참조는 동일해도 synthetic(virtual Tab)이 items 변경 등으로 갱신될 수
-      // 있으므로 항상 synthetic ids를 변경 집합에 포함한다.
-      const synthetic = new Set<string>();
-      for (const id of getSyntheticElementsMap().keys()) synthetic.add(id);
-      return synthetic;
+      // 동일 참조 = store 요소 변경 없음. layout publish 로 돌아온 resync 케이스.
+      // empty Set 반환 → sync()가 fullRebuild 분기 선택 (size === 0).
+      // addElement 의 2-step set(elements → _rebuildIndexes) + layoutMap 지연 도착
+      // 경합에서 첫 resync 가 layout=undefined 로 등록한 신규 element 들을
+      // fullRebuild 경로로 layoutMap 기준 재등록한다. synthetic(virtual Tab) 은
+      // fullRebuild 내부 layoutMap 순회에서 동일하게 처리되므로 별도 주입 불필요.
+      return new Set();
     }
 
     const changed = new Set<string>();
