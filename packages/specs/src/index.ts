@@ -131,6 +131,9 @@ export {
   parseShadow,
   // Font (CSS 표준 상수 — ADR-091 Phase 1)
   FONT_STRETCH_KEYWORD_MAP,
+  // HTML primitive defaults (ADR-096 Phase 2)
+  HTML_PRIMITIVE_DEFAULT_WIDTHS,
+  HTML_PRIMITIVE_DEFAULT_HEIGHTS,
 } from "./primitives";
 
 export type { ParsedShadow } from "./primitives";

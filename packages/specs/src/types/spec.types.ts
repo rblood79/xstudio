@@ -185,6 +185,33 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   /** 기본 size */
   defaultSize: string;
 
+  /**
+   * ADR-096: 인트린직 폭 기본값 (px).
+   *
+   * `width` prop 이 명시되지 않고 `fit-content` 도 확정 불가한 경우의 layout engine 폴백.
+   * `utils.ts:461` `DEFAULT_ELEMENT_WIDTHS` Record 해체 — spec 있는 태그는 본 필드로 이관.
+   *
+   * - undefined → `primitives/elementDefaults.ts HTML_PRIMITIVE_DEFAULT_WIDTHS` lookup
+   *   → 없으면 80 (`DEFAULT_WIDTH`) 적용
+   *
+   * CSS Generator emit 대상 외 (runtime layout fallback 전용).
+   */
+  defaultWidth?: number;
+
+  /**
+   * ADR-096: 인트린직 높이 기본값 (px).
+   *
+   * `height` prop 이 명시되지 않고 자식/콘텐츠 기반 auto 도 확정 불가한 경우의 layout engine 폴백.
+   * `utils.ts:1428` `DEFAULT_ELEMENT_HEIGHTS` Record 해체 — spec 있는 태그는 본 필드로 이관.
+   *
+   * - undefined → `primitives/elementDefaults.ts HTML_PRIMITIVE_DEFAULT_HEIGHTS` lookup
+   *   → 없으면 `estimateTextHeight(fontSize, fontSize * 1.5)` 적용
+   *
+   * size-indexed `SizeSpec.intrinsicHeight` (ADR-091-A2) 와 별개 — 본 필드는 size 축 무관.
+   * CSS Generator emit 대상 외 (runtime layout fallback 전용).
+   */
+  defaultHeight?: number;
+
   /** 상태별 스타일 (hover, pressed, disabled 등) */
   states: StateStyles;
 
