@@ -2,7 +2,17 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21 (Proposed → Implemented 동일 세션, Phase 1-6 순차 land)
+
+**Chrome MCP 실측 증거** (Phase 6, 2026-04-21 세션 5):
+
+- 기존 18개 Tag element 포함 프로젝트 로드 → migration orchestrator 자동 흡수 → `TagGroup.props.items[]` 배열로 전환 + Tag element orphan 제거 확인
+- Builder Skia: TagList spec shapes 가 items 기반 chip self-render (roundRect + border + text per item) 작동 — 1행 Chocolate/Mint/Strawberry/Vanilla + 2행 Chocolate Chip Cookie Dough/Rocky Road
+- `maxRows` 초과 시 "Show all (18)" chip 표시 (accent text + transparent bg) — Phase 4B 로직 정상
+- Preview (RAC DOM) 정합성: 동일 chip 스타일 (border/padding/radius/gap) 유지. 전체 18 items 표시
+- BC 영향 0% 확증 — 사용자 편집 없이 자동 이관 + 시각 diff 0
+
+**커밋 체인**: `aca16a7c` (P1) → `409875bd` (P2) → `1c03b9f0` (P2 BC fix) → `59528d48` (P3) → `4e906663` (P4A) → `5c632fc9` (P4B) → `cef3975d` (P5 docs) → (Phase 6 docs)
 
 ## Context
 
