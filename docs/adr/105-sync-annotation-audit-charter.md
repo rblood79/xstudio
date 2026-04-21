@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21 (첫 후속 sub-ADR 105-a Proposed 발행으로 Gate 충족)
 
 ## Context
 

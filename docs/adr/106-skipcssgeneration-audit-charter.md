@@ -2,7 +2,34 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21 (첫 후속 sub-ADR 106-a Proposed 발행으로 Gate 충족)
+
+## Addendum 1 — 2026-04-21: G3 → G2 재판정 (106-a 조사 결과)
+
+ADR-106-a (Color family skipCSSGeneration 해체) §Context 의 "CSSGenerator 자식 selector emit 지원 여부 판정" 결과, **G3 5건 중 Color family 4건이 G2 로 재분류**됨.
+
+**재판정 근거**:
+
+- CSSGenerator 는 RAC 내부 구조체 selector (`.react-aria-ColorThumb`, `.react-aria-ColorWheelTrack`, `.react-aria-ColorSwatchPickerItem`), pseudo-element (`::after`), orientation 분기 emit 을 **미지원** (ADR-078 인프라 범위 밖)
+- 4 CSS 파일 (`ColorPicker.css` / `ColorSlider.css` / `ColorWheel.css` / `ColorSwatchPicker.css`) 의 대부분 값이 `var(--bg-raised)` / `var(--shadow-sm)` / `var(--radius-lg)` / `var(--focus-ring)` 등 **spec token 파생** — ADR-059 §Tier 3 허용 패턴
+- 단 `ColorPicker.css` 의 `--cp-*` 로컬 CSS 변수는 일부 독자 수치 포함 → 정당화 범위 내 부분 debt 유지
+
+**변경된 분류 (2026-04-21 이후)**:
+
+| 분류 | 이전 | 이후 | 비고                                  |
+| ---- | :--: | :--: | ------------------------------------- |
+| G1   |  10  |  10  | 변경 없음                             |
+| G2   |  9   |  13  | Color family 4건 추가 (+ 기존 9)      |
+| G3   |  5   |  1   | Label 만 잔존 (Color family 4건 이동) |
+| G4   |  3   |  3   | 변경 없음                             |
+| 합계 |  27  |  27  | 재분류만                              |
+
+**후속 sub-ADR 로드맵 조정**:
+
+- 106-a 는 G3 → G2 정당화 전환 (CSS 해체 없음, Tier 3 예외 공식 등록)
+- 106-c (Label CSS SSOT 복귀) 는 **잔존 G3 유일한 sub-ADR** 로 우선순위 P1 로 상향
+- 106-b (TagGroup.css @sync, G2 정당화) 는 ADR-105 F4 연동 유지
+- 106-d (G4 조사) 는 ADR-105 체인 연동 후 착수 (P3 유지)
 
 ## Context
 
