@@ -1,0 +1,153 @@
+# ADR-099 구현 상세 — Collection Section/Header 확장 (ListBox/GridList/Menu)
+
+> ADR-099 본문: [099-collection-section-expansion.md](../adr/099-collection-section-expansion.md)
+>
+> 본 문서는 ADR-099 Decision (대안 A — items discriminated union + Hybrid section 엔트리) 의 Phase 단위 실행 상세. ADR-098 감사 Charter 의 "098-c 슬롯" 구현.
+
+## Scope 매트릭스
+
+| 컬렉션   | 현재 items 타입       | Section spec 신설 | Header 처리                                                                        | 신규 기능                   |
+| -------- | --------------------- | ----------------- | ---------------------------------------------------------------------------------- | --------------------------- |
+| ListBox  | `StoredListBoxItem[]` | ✅ (렌더 분기)    | `{ type: "section", header: string, items: [...] }` 엔트리 내부 `header` 필드      | section 그룹화              |
+| GridList | `GridListItem[]`      | ✅ (렌더 분기)    | 동일 discriminator 패턴 (+ grid columns 분기 section 행 span 처리)                 | section 그룹화 (stack/grid) |
+| Menu     | `StoredMenuItem[]`    | ✅ (렌더 분기)    | 동일 + separator 재사용 검토 (RAC `Separator` 는 section 경계 기본 시각 구분 지원) | section 그룹화              |
+
+> **참고**: RAC `ListBoxSection` / `GridListSection` / `MenuSection` 은 DOM tree 의 독립 element 이나, composition items SSOT 구조에서는 **items 배열의 discriminated union 엔트리**로 표현한다 (Hybrid 모델). 사용자에게는 LayerTree 에서 Section 을 별도 element 로 배치하는 대신 items-manager 편집기 내부에서 "Section 추가" 버튼으로 직렬화 — element graph 복잡도 증가 회피.
+
+## Phase 구조
+
+### Phase 0 — RAC 공식 재검증 + 설계 확정
+
+- [ ] `https://react-aria.adobe.com/ListBox` WebFetch — ListBoxSection / Header props 확인 (title / id / props 전달 방식)
+- [ ] `https://react-aria.adobe.com/GridList` WebFetch — GridListSection / GridListHeader / GridListLoadMoreItem props 확인
+- [ ] `https://react-aria.adobe.com/Menu` WebFetch — MenuSection / SubmenuTrigger props 확인
+- [ ] 각 Section 이 nested section 허용하는지 (중첩 금지 확인)
+- [ ] Header 의 텍스트 vs children composition 지원 여부
+- [ ] Phase 0 산출: `docs/design/099-collection-section-expansion-breakdown.md` 에 매트릭스 보강
+
+### Phase 1 — items 타입 discriminated union (ListBox 파일럿)
+
+- [ ] `packages/specs/src/types/listbox-items.ts` 에 `StoredListBoxSection` 추가:
+  ```ts
+  export interface StoredListBoxSection {
+    id: string;
+    type: "section";
+    header: string; // 표시 텍스트 (RAC Header 대응)
+    items: StoredListBoxItem[]; // nested items (flat section 전용)
+  }
+  export type StoredListBoxEntry = StoredListBoxItem | StoredListBoxSection;
+  ```
+- [ ] `ListBoxProps.items` 타입: `StoredListBoxItem[]` → `StoredListBoxEntry[]` 확장
+- [ ] `toRuntimeListBoxItem` 확장: section 엔트리는 runtime 에서 `{ type, header, items: RuntimeListBoxItem[] }` 으로 펼침
+- [ ] `packages/specs/src/types/__tests__/` 테스트 추가 — discriminated union 타입 좁히기 회귀
+- [ ] BC: 기존 items 엔트리는 `type` 필드 없음 → default `"item"` 로 폴백 (discriminator 생략 허용)
+
+### Phase 2 — ListBoxSpec.render.shapes section 렌더
+
+- [ ] `ListBoxSpec.render.shapes` items 루프 (L396-452) 확장:
+  - entry 가 section 이면 `{ type: "text", ... }` Header 렌더 + 내부 items 순회 (flat 전개)
+  - Header 시각 스타일: fontSize=size.fontSize, fontWeight=700, padding-top=spacing.sm, text-transform=uppercase
+  - section 간 separator: `Separator.spec` 재사용 여부 결정 (P2 에서는 spacing.md gap 으로 대체, separator 는 후속 Addendum)
+- [ ] `resolveListBoxItemMetric` 확장: section header height 추가 (metric SSOT)
+- [ ] `calculateContentHeight` (layout/engines/utils.ts) 의 listbox 분기에 section header 높이 가산 공식 추가
+- [ ] Skia 렌더 + CSS emit 대칭 — `childSpecs` 에 `HeaderSpec` 추가 (Phase 3) 전까지는 Skia-only 우선 land
+
+### Phase 3 — Header Spec 신설 + CSS emit
+
+- [ ] `packages/specs/src/components/Header.spec.ts` 신설:
+  - RAC `<Header>` (slot="section-header") 대응
+  - variants: default / emphasis / muted
+  - sizes: sm/md/lg — fontSize + paddingY + letterSpacing
+  - `element: "div"` (role="presentation" — RAC Header 공식)
+- [ ] `ListBoxSpec.childSpecs` 에 `HeaderSpec` 추가 → Generator 가 `.react-aria-ListBox .react-aria-Header` 블록 emit
+- [ ] `packages/specs/src/index.ts` export 추가
+- [ ] `TAG_SPEC_MAP` 등록 (`shared/constants/tags.ts` 해당)
+- [ ] `pnpm build:specs` 실행 → generated CSS 확인
+
+### Phase 4 — items-manager UI 확장 (section 엔트리)
+
+- [ ] `ListBoxPropertyEditor.tsx` + `apps/builder/src/builder/panels/inspector/editors/items-manager/` 편집기 확장:
+  - "Section 추가" 버튼 — discriminator `{ type: "section", header: "New Section", items: [] }` 삽입
+  - Section 엔트리 UI: header 필드 + 내부 items drag-to-reorder
+  - 기존 item 을 section 안으로 이동 지원 (tree-like nested 편집)
+- [ ] `registry.ts getCustomPreEditor` — section 엔트리 인식 후 기존 하단 filter 섹션 유지
+- [ ] `useLayerTreeData.ts virtual children` — section 엔트리는 LayerTree 에 그룹 노드로 표시 (expand/collapse)
+
+### Phase 5 — GridList / Menu 대칭 적용
+
+- [ ] `packages/specs/src/types/gridlist-items.ts` 신설 (현재 inline `GridListItem` 을 별도 파일 이동 + `StoredGridListSection` 추가)
+- [ ] `GridListSpec.render.shapes` section 렌더 — grid 모드에서 section header 는 전체 행 span (`columns` 전체)
+- [ ] `packages/specs/src/types/menu-items.ts` 에 `StoredMenuSection` 추가 (기존 `StoredMenuItem` 과 동일 discriminator)
+- [ ] `MenuSpec.render.shapes` section 렌더 + 기존 Separator 재사용 검토
+
+### Phase 6 — 검증 + 실측
+
+- [ ] `pnpm -w type-check` 3/3 PASS
+- [ ] `cd packages/specs && pnpm exec vitest run` 166/166 PASS + 신규 테스트 +N 건
+- [ ] `cd apps/builder && pnpm test -- --run` 227/227 PASS
+- [ ] `cd packages/shared && pnpm exec vitest run` 52/52 PASS
+- [ ] Chrome MCP 실측 — Builder 에서 ListBox 에 section 엔트리 추가 → Skia 렌더 Header 표시 + Preview DOM 정합
+- [ ] `/cross-check` skill — ListBox/GridList/Menu 3 컬렉션 section 렌더 정합성 확인
+- [ ] Status: Proposed → Implemented 전환 + README.md 동기 갱신
+
+## 반복 패턴 선차단 체크
+
+- ✅ **#1 코드 경로 인용**:
+  - `packages/specs/src/components/ListBox.spec.ts:396-452` — items 루프 (Phase 2 확장 대상)
+  - `packages/specs/src/types/listbox-items.ts:14-26` — StoredListBoxItem 정의 (Phase 1 확장)
+  - `packages/specs/src/components/GridList.spec.ts` + `Menu.spec.ts` — Phase 5 대칭
+  - `apps/builder/src/layout/engines/utils.ts` (`calculateContentHeight` listbox 분기) — Phase 2 높이 공식
+  - `packages/specs/src/renderers/CSSGenerator.ts` (`childSpecs` emit) — Phase 3 Header 셀렉터
+- ✅ **#2 Generator 확장 여부**: Phase 3 에서 `HeaderSpec` 신설 + `ListBoxSpec.childSpecs` 에 추가 → Generator `childSpecs` inline emit 확장 경로 재사용 (ADR-078 Phase 2 선례). **지원 가능 확증**.
+- ✅ **#3 BC 훼손 수식화**: **0% (BC 영향 없음)** — 기존 items 엔트리는 discriminator `type` 미지정 시 default "item" 으로 폴백. 기존 저장 프로젝트의 items 배열은 모두 호환. `applyCollectionItemsMigration` 오케스트레이터 확장 불필요.
+- ✅ **#4 Phase 분리 가능성**: 6 Phase. 필요 시 Phase 5 (GridList/Menu 대칭) 를 별도 후속 ADR (099-a) 로 분리 가능. Phase 0-4 (ListBox 파일럿 + Header Spec) 를 먼저 land 하고 Phase 5 를 후속 세션에 이관하는 경로 허용.
+
+## BC 호환성 계산
+
+| 시나리오                            | 영향   | 비고                                                    |
+| ----------------------------------- | ------ | ------------------------------------------------------- |
+| 기존 ListBox items (section 미사용) | **0%** | discriminator 미지정 → default "item" 폴백              |
+| 기존 GridList items                 | **0%** | Phase 5 도입 전까지 영향 없음                           |
+| 기존 Menu items                     | **0%** | Phase 5 도입 전까지 영향 없음                           |
+| 신규 section 사용 프로젝트          | 신규   | items-manager UI 에서 "Section 추가" 명시적 선택 시에만 |
+
+**예상 재직렬화**: 0 파일 (기존 프로젝트 BC 100%).
+
+## 관련 위험 (ADR 본문 Risks 재요약)
+
+| ID  | 위험 요약                                                  | 심각도 |
+| --- | ---------------------------------------------------------- | :----: |
+| R1  | items discriminated union 타입 좁히기 누락 → runtime crash |  MED   |
+| R2  | Skia Header 렌더 + CSS Header 셀렉터 시각 drift            |  MED   |
+| R3  | GridList grid 모드 section header column span 복잡         |  MED   |
+| R4  | items-manager UI nested 편집 UX 복잡                       |  MED   |
+| R5  | RAC API 재검증 실패 (Phase 0)                              |  LOW   |
+
+HIGH 위험 없음 — Phase 분할 + 각 Phase type-check/vitest gate 로 격리.
+
+## 잠재 후속 ADR (본 ADR scope 외)
+
+- **099-a (필요 시)**: Phase 5 분리 — GridList/Menu 만 별도 ADR (Phase 0-4 ListBox 먼저 완결 후 scope 분할)
+- **099-b (Addendum 후보)**: Separator spec 재사용 검토 — RAC Menu 의 Section 경계 Separator 자동 삽입 지원
+- **099-c (GridListLoadMoreItem)**: 무한 스크롤 loading indicator spec — section 확장과 별개 신규 기능 (ADR-098-c 원래 scope 에 포함되었으나 별도 Phase 로 분리 권장)
+- **099-d (SubmenuTrigger)**: Menu 중첩 하위 메뉴 — section 과는 별개 Trigger element. 본 ADR scope 외로 판정 (Menu overlay items 데이터 모델 ADR 와 연계 필요)
+
+## 2026-04-21 착수 기준선 (sanity)
+
+```bash
+pnpm -w type-check                                # 3/3 PASS (38ms FULL TURBO cached)
+cd packages/specs && pnpm exec vitest run         # 166/166 PASS
+cd apps/builder && pnpm test -- --run             # 227/227 PASS
+cd packages/shared && pnpm exec vitest run        # 52/52 PASS
+```
+
+## 검증 체크리스트 (본 ADR 완료 기준)
+
+- [ ] Phase 0 RAC WebFetch 3 URL 매트릭스 완료
+- [ ] Phase 1 items 타입 discriminated union + 테스트 회귀 0
+- [ ] Phase 2 ListBoxSpec.render.shapes section 렌더 + calculateContentHeight 공식
+- [ ] Phase 3 HeaderSpec 신설 + childSpecs emit + TAG_SPEC_MAP 등록
+- [ ] Phase 4 items-manager UI "Section 추가" 작동
+- [ ] Phase 5 GridList/Menu 대칭 (또는 099-a 로 분리 land)
+- [ ] Phase 6 Chrome MCP 실측 + /cross-check PASS
+- [ ] Status Proposed → Implemented + README.md 갱신
