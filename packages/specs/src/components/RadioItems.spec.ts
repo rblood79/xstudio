@@ -3,6 +3,11 @@
  *
  * ADR-093 Phase 1 — RadioItems 중간 컨테이너의 layout primitive (display/flexDirection/gap)
  * SSOT 신설.
+ * ADR-103 — RadioItems Compositional Architecture 정당화 확증 (ADR-098-e 슬롯).
+ *   RAC `<RadioGroup>` 은 `<Radio>` 를 직접 배치하는 구조이며 "RadioItems" 중간
+ *   컨테이너는 RAC 공식 API 에 없음. composition 고유 D3 layout 컨테이너로 정당화 유지.
+ *   정당화 근거: factory 직렬화 BC HIGH (GroupComponents.ts:330 `tag:"RadioItems"`) +
+ *   D3 시각 스타일 domain 100% 귀속 (containerStyles/sizes Spec SSOT 완비).
  *
  * - composition 자체 추상화: RAC 표준 API 에 없음. RadioGroup > RadioItems > Radio 3단 구조의
  *   중간 컨테이너. spec name 에 "composition 자체 추상" 명시 (ADR-093 R3).
