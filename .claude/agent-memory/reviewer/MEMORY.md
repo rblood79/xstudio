@@ -2,6 +2,9 @@
 
 ## 리뷰 빈출 이슈 패턴
 
+- **migration orphan loop filter 누락 — tagListIdToTagGroupId 가드 미적용**: `migrateCollectionItems.ts`의 orphan 수집 루프(TagGroup 2단 이전)에서 `tagChildrenByTagListId.values()`를 전부 순회, `tagListIdToTagGroupId.has(tagListId)` 가드 없음 → TagList 없이 TagGroup의 직접 자식인 Tag가 orphan 처리되어 사라지는 BC 훼손. 테스트도 `expect(orphanIds).toContain("tag-odd")`로 버그를 정상으로 검증 중(제목 "수집되지 않음"과 assertion 불일치). Fix: `for (const [tagListId, tagChildren] of ...) { if (!tagListIdToTagGroupId.has(tagListId)) continue; }` + 테스트 assertion 반전. ADR-097 Pattern.
+- **테스트 제목 ↔ assertion 의미론 역전 패턴**: 테스트 describe/it 제목이 "X 는 수집되지 않음" 등 부정 결과를 묘사하지만 실제 assertion이 `toContain`(긍정)으로 반대 결과를 검증하는 패턴 — migration/edge case 테스트에서 재발 가능성 있으므로 부정 케이스 테스트 작성 시 assertion 방향 이중 확인 필수
+
 - **`isTokenRef` 인라인 재선언 — `isValidTokenRef` 미사용**: `deriveAutoDelegationVariables.ts`에서 `function isTokenRef(v: unknown): v is TokenRef` 를 파일 내 선언. `token.types.ts`에 `isValidTokenRef`가 이미 export됨. 두 정규식이 미세하게 다름(`isTokenRef`는 관대한 `\{\w+\..+\}`, `isValidTokenRef`는 카테고리 열거 패턴). **재발(ADR-080)**: `implicitStyles.ts:127`의 `resolveContainerStylesFallback`에서도 `/^\{.+\}$/` 인라인 정규식 재발 — `isValidTokenRef` 미사용. 신규 TokenRef 판별 코드 추가 시 의도적 관대함인지 확인 후 기존 헬퍼 재사용 또는 `token.types.ts`에 `isAnyTokenRef` 추가로 공유 (세 번째 재발 시 코드 레벨 방지 고려)
 - **`ContainerStylesSchema` 대신 `unknown` 우회 — specFor lookup 테이블**: `implicitStyles.ts:112-117`의 `resolveContainerStylesFallback`에서 `{ containerStyles?: unknown }` + `as Record<string, unknown>` 이중 캐스팅. `ContainerStylesSchema`(`spec.types.ts:59`)와 `ComponentSpec`(`spec.types.ts:98`) 사용으로 대체 가능 — `specFor: Record<string, ComponentSpec | undefined>`, `cs: ContainerStylesSchema | undefined`
 - **hot-path 함수 내 객체 리터럴 생성 (specFor/keys 패턴)**: DFS post-order hot path 함수(`resolveContainerStylesFallback` 등) 내부에 `const specFor = { listbox: ListBoxSpec }` 같은 객체 리터럴을 선언하는 패턴 — 호출마다 새 객체 할당. 모듈 레벨 `const`로 호이스팅 필수. Spec 종류 확장 시 GC 압력 선형 증가. `keys` 배열도 동일하게 모듈 레벨로 추출 (ADR-080 `implicitStyles.ts:112-121` 사례)
