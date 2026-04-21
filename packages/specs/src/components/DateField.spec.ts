@@ -54,6 +54,9 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
 
   // ADR-086 P1: height 가 SPEC_TRIGGER_HEIGHT Record 값과 일치 (22/30/42/54).
   //   P2 에서 implicitStyles 의 Record 가 제거되고 본 spec.sizes.height 를 직접 소비.
+  // ADR-091 Addendum 2: intrinsicHeight (전체 = Label + gap + DateInput) 선언.
+  //   utils.ts:2011 dfHeights Record { sm:32, md:40, lg:48 } 해체 대응. xl 은 기존
+  //   Record 에 없어 54 + 2 * (default Label height 추정) 대신 62 선언 (스케일 보존).
   sizes: {
     sm: {
       height: 22,
@@ -62,6 +65,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 4,
+      intrinsicHeight: 32,
     },
     md: {
       height: 30,
@@ -70,6 +74,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 6,
+      intrinsicHeight: 40,
     },
     lg: {
       height: 42,
@@ -78,6 +83,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 8,
+      intrinsicHeight: 48,
     },
     xl: {
       height: 54,
@@ -86,6 +92,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       fontSize: "{typography.text-xl}" as TokenRef,
       borderRadius: 0 as unknown as TokenRef,
       gap: 10,
+      intrinsicHeight: 62,
     },
   },
 

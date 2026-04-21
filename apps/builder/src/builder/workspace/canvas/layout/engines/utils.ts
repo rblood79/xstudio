@@ -42,6 +42,8 @@ import {
   DateInputSpec,
   ComboBoxSpec,
   SelectTriggerSpec,
+  // ADR-091 Addendum 2: DateField intrinsic height SSOT.
+  DateFieldSpec,
 } from "@composition/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
@@ -2004,12 +2006,13 @@ export function calculateContentHeight(
     return 0;
   }
 
-  // 3.6b. DateField: intrinsic height from size (sm:32, md:40, lg:48)
+  // 3.6b. DateField: intrinsic height from size (sm:32, md:40, lg:48, xl:62)
+  // ADR-091 Addendum 2: dfHeights Record → DateFieldSpec.sizes.intrinsicHeight 직접 참조.
+  //   Label + gap + DateInput 합산 파생값을 spec 에 표면화 (composite 전체 intrinsic).
   if (tag === "datefield") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
-    const dfHeights: Record<string, number> = { sm: 32, md: 40, lg: 48 };
-    return dfHeights[sizeName] ?? 40;
+    return DateFieldSpec.sizes[sizeName]?.intrinsicHeight ?? 40;
   }
 
   // 3.6c. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)

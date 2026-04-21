@@ -153,7 +153,18 @@ R2 `DEFAULT_ELEMENT_WIDTHS` + R6 `DEFAULT_ELEMENT_HEIGHTS` 는 tag→px mapping 
 ### Addendum 후속 ADR 후보
 
 - **ADR-091-A1**: `ComponentSpec.defaultWidth?/defaultHeight?` Schema 확장 + `DEFAULT_ELEMENT_WIDTHS/HEIGHTS` (R2/R6) 해체. 62 spec 감사 + BC 검증 필요 — 별도 세션 권장
-- **ADR-091-A2** _(신설)_: DateField intrinsic height (Label + DateInput 합산 파생값) SSOT 정립 — `dfHeights` Record 잔존 해체. 옵션 (a) `SizeSpec.intrinsicHeight?` 필드 + DateFieldSpec 에 32/40/48 선언 (b) Label/Input sizes 를 런타임 합산. 결정 세션 필요
+
+### Addendum 2 — DateField dfHeights SSOT (2026-04-21 완결)
+
+옵션 (a) 채택: `SizeSpec.intrinsicHeight?: number` optional 필드 신규 + `DateFieldSpec.sizes` 에 `sm:32 / md:40 / lg:48 / xl:62` 선언. `utils.ts:2011` `dfHeights: Record<string, number> = { sm: 32, md: 40, lg: 48 }` 해체 → `DateFieldSpec.sizes[sizeName]?.intrinsicHeight ?? 40` 직접 참조.
+
+**결정 근거**: composite 컴포넌트 (Label + gap + DateInput) 의 전체 intrinsic 높이는 컴포넌트 시각 "치수" 이므로 spec 에 표면화하는 것이 자연스러움. `sizes.height` 가 DateInput 부분만 의미하고 `intrinsicHeight` 가 Label 포함 전체 — 의미론적 분리가 명확. 옵션 (b) 런타임 합산은 Label sizes 의존성 + gap 계산 복잡도가 추가 ROI 낮아 기각.
+
+**xl 값**: 기존 `dfHeights` 에 xl 없었음 → 스케일 유추로 `62` 선언 (54 + 8). 실제 xl 사용 시 검증 필요.
+
+Record 카운트: 3→2 건 (R2/R6 DEFAULT*ELEMENT*\* 만 잔존 = ADR-091-A1 scope).
+
+검증: type-check 3/3 + specs 166/166 + builder 227/227 PASS.
 
 ## Consequences
 

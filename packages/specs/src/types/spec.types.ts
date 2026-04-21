@@ -826,6 +826,18 @@ export interface SizeSpec {
    */
   contentHeight?: number;
 
+  /**
+   * 컴포넌트 전체 intrinsic 높이 (optional, px) — ADR-091 Addendum 2.
+   *
+   * composite 컴포넌트(예: DateField = Label + gap + DateInput)의 **layout 경로
+   * intrinsic 전체 높이**를 spec 에 명시 표면화. `sizes.height` 가 컴포넌트
+   * 내부 주 입력 영역 높이(DateInput 부분)만을 가리킬 때, 라벨/FieldError 포함
+   * 전체 높이를 별도 필드로 분리하여 SSOT 복귀.
+   *
+   * 소비처: `utils.ts:calculateContentHeight` DateField 분기 등.
+   */
+  intrinsicHeight?: number;
+
   /** 도트 크기 (optional, px) — StatusLight */
   dotSize?: number;
 
