@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-21
+Implemented — 2026-04-21
 
 ## Context
 
@@ -136,11 +136,26 @@ composition SSOT 체인 (ADR-036/063) 에서 Card 복합 컴포넌트의 **heade
 
 잔존 HIGH 위험 없음. 검증 기준:
 
-- type-check 3/3 PASS
-- specs 166/166 PASS (snapshot 변동 허용)
-- builder 217/217 PASS
-- `rg "style: { ...cs, width: \"100%\"" implicitStyles.ts` = 본 ADR 기준 Card 분기 1건 제거 (CardContent/cardheader 분기는 scope 외 유지)
-- `packages/shared/src/components/styles/generated/Card.css` diff 확인 — CardHeader/CardContent selector emit 반영
+- type-check 3/3 PASS ✅ (2026-04-21 확인)
+- specs 166/166 PASS ✅ (Card snapshot 1 updated — CardHeader/CardContent/CardFooter selector emit 반영)
+- builder 227/227 PASS ✅ (ADR-094 영향 유지)
+- Chrome MCP 실측: 현재 프로젝트 페이지에 Card element 없음 → code-level 검증으로 대체 (type-check + specs snapshot diff 로 CSS emit 구조 확증)
+- `packages/shared/src/components/styles/generated/Card.css` diff — `.react-aria-CardHeader` / `.react-aria-CardContent` / `.react-aria-CardFooter` 블록 신규 emit
+
+## 구현 결과 (2026-04-21)
+
+- **Phase 1 (3 spec 신설)**: `packages/specs/src/components/CardHeader.spec.ts` + `CardContent.spec.ts` + `CardFooter.spec.ts` 신설. 모두 `archetype: "simple"` / `element: "div"` / `skipCSSGeneration: true` (부모 CardSpec.childSpecs 경로로 `generated/Card.css` 에 inline emit). containerStyles 에 factory inline default 이관 (display/flexDirection/alignItems/width:"100%"). sizes xs~xl gap 스케일 + `borderRadius: "{radius.none}"` 명시 (Generator `undefined` 출력 방지).
+- **Phase 2 (childSpecs 배선)**: `Card.spec.ts` 에 `childSpecs: [CardHeaderSpec, CardContentSpec, CardFooterSpec]` 추가. ADR-094 `expandChildSpecs` 인프라가 `TAG_SPEC_MAP` / `LOWERCASE_TAG_SPEC_MAP` / `tagToElement TAG_SPEC_MAP` 자동 등록 → Skia/Taffy/`hasSpec`/`getElementForTag` 전 consumer 자동 조회.
+- **Phase 3 (propagation 확장)**: `Card.spec.ts:propagation.rules` 에 size 전파 3 rule 추가 (CardHeader/CardContent/CardFooter 각각 `override: true`). 기존 title/description 전파 rule 보존.
+- **Phase 4 (factory inline default 제거)**: `apps/builder/src/builder/factories/definitions/LayoutComponents.ts` Card 생성 시 자식 CardHeader/CardContent/CardFooter 에 inline 심던 `display/gap/width/flex` 제거. spec.containerStyles 로 이관 완료.
+- **Phase 5 (implicitStyles Card 분기 조정)**: `implicitStyles.ts:1824-1840` Card 분기의 `style.width: "100%"` 주입 제거 (CardHeader/CardContent.spec.containerStyles.width="100%" 로 이관). CardHeader 분기 (Heading flex:1 주입) + CardContent 분기 (Description width:100% 주입) 는 자식 Element mutation 이라 spec 커버 불가 — 분기 유지 (R2 명시).
+- **Phase 6 (`_hasChildren` 컨벤션)**: CardHeader/CardContent/CardFooter 는 `spec.render.shapes: () => []` 이므로 자식 수와 무관하게 시각 변화 없음 → **Plain 분류** 적합. SHELL_ONLY_CONTAINER_TAGS / SYNTHETIC_CHILD_PROP_MERGE_TAGS 변경 불필요.
+- **Phase 7 (Chrome MCP 실측)**: 현 프로젝트 페이지에 Card element 없음 → 시각 변동 0 (code-level 증거만). 향후 Card 가 포함된 페이지 생성 시 자동 작동.
+
+### 후속 ADR 후보
+
+- **ADR-092-A1**: CardHeader 분기 (Heading flex:1) + CardContent 분기 (Description width:100%) 의 자식 Element 주입 로직 SSOT 화. propagation rule 확장으로 spec 커버 검토. 본 ADR scope 외.
+- **RSP 네이밍 정합** (`CardBody` vs `CardContent`): WebFetch 로 RSP 공식 API 검증 후 리네이밍 결정 — 별도 ADR.
 
 ## Consequences
 
