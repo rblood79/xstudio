@@ -1,6 +1,12 @@
 /**
  * CardContent Component Spec
  *
+ * ADR-104 (098-f 슬롯): `CardContent` 이름은 S2/RSP 공식 미존재 (S2 는 범용 `Content` 슬롯을
+ * Card context 에서 재사용). composition 은 Card 전용 element tree 에서 Card-prefix 구체화
+ * 이름을 사용 — D3 Compositional Architecture 고유 레이아웃 슬롯 컨테이너 정당화.
+ * BC 재평가: `tag:"CardContent"` factory 직렬화 확인 (`LayoutComponents.ts:186`) — BC HIGH.
+ * 대안 A (정당화 유지) 채택.
+ *
  * ADR-092 Phase 1 — CardContent slot 의 layout primitive(display/flexDirection) 와
  * size-indexed gap SSOT.
  *

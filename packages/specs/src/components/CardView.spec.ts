@@ -4,6 +4,10 @@
  * Card 그리드/워터폴 컬렉션 레이아웃 컴포넌트 (Spectrum 2)
  * Single Source of Truth - React와 Skia 모두에서 동일한 시각적 결과
  *
+ * ADR-104 (098-f 슬롯): `CardView` 이름은 RSP classic (`@react-spectrum/card/src/index.ts`)
+ * + S2 (`CardView.tsx`) 공식 이름과 완전 일치. BC 재평가: `tag:"CardView"` factory 직렬화 확인
+ * (`DisplayComponents.ts:753`) — BC HIGH. 대안 A (정당화 유지, 이름 일치 확증) 채택.
+ *
  * @packageDocumentation
  */
 

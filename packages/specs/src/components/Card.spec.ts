@@ -4,6 +4,13 @@
  * React Aria 기반 카드 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
+ * ADR-104 (098-f 슬롯): `Card` 이름은 S2 공식 이름과 완전 일치
+ * (`@react-spectrum/s2/src/Card.tsx` `export const Card = forwardRef(...)`).
+ * BC 재평가: `tag:"Card"` factory 직렬화 확인 (`LayoutComponents.ts:101`) — BC HIGH.
+ * 대안 A (정당화 유지) 채택. 자식 슬롯 CardHeader/CardContent/CardFooter 는 ADR-092 Compositional
+ * Architecture 고유 Card-prefix 구체화 이름 — S2 범용 슬롯 `Header`/`Content`/`Footer` 와 전략
+ * 상이하나 D3 시각 domain 귀속 확증 + BC HIGH 으로 정당화 유지.
+ *
  * @packageDocumentation
  */
 
