@@ -20,6 +20,9 @@ import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 // 의 `generated/ListBox.css` 같은 @layer 에 삽입된다.
 // ADR-078 Phase 3: `resolveListBoxItemMetric` 로 Skia/layout 양쪽 item metric 단일 소스화.
 import { ListBoxItemSpec, resolveListBoxItemMetric } from "./ListBoxItem.spec";
+// ADR-099 Phase 3 (098-c 슬롯): HeaderSpec 도 childSpecs 경로로 inline emit —
+// `.react-aria-ListBox .react-aria-Header` 블록이 generated/ListBox.css 에 추가된다.
+import { HeaderSpec } from "./Header.spec";
 import {
   List,
   SquareX,
@@ -101,7 +104,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   // ADR-078 Phase 2: ListBoxItem.spec base/sizes/states 블록을 본 Spec 의 `generated/ListBox.css`
   // 내부에 inline emit. 수동 ListBox.css 의 orientation/layout/Popover cascade 가 같은 @layer
   // 에서 `.react-aria-ListBoxItem` selector 를 override 할 수 있도록 보장.
-  childSpecs: [ListBoxItemSpec],
+  // ADR-099 Phase 3 (098-c 슬롯): HeaderSpec 추가 — `.react-aria-ListBox .react-aria-Header`
+  // 블록이 동일 generated/ListBox.css 에 inline emit. Preview DOM 의 RAC `<Header>` 가
+  // section 엔트리 렌더 시 sticky 위치 + muted 스타일 적용.
+  childSpecs: [ListBoxItemSpec, HeaderSpec],
 
   defaultVariant: "default",
   defaultSize: "md",

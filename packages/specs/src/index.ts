@@ -274,6 +274,10 @@ export {
 } from "./components/ListBoxItem.spec";
 export type { ListBoxItemProps } from "./components/ListBoxItem.spec";
 
+// Header (ADR-099 Phase 3 — section 헤더, CSS 자동 생성 전용, Builder Skia 미등록)
+export { HeaderSpec } from "./components/Header.spec";
+export type { HeaderProps } from "./components/Header.spec";
+
 export { SliderSpec, SLIDER_FILL_COLORS } from "./components/Slider.spec";
 export type { SliderProps } from "./components/Slider.spec";
 

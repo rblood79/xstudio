@@ -141,17 +141,32 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 
 **BC 보장 증거**: snapshot 변동 0 — 기존 items 배열 (section 미사용) 의 shapes 출력 이전과 동일. BC 0% 확증.
 
-### Phase 3 — Header Spec 신설 + CSS emit
+### Phase 3 — Header Spec 신설 + CSS emit (Completed 2026-04-21 세션 8)
 
-- [ ] `packages/specs/src/components/Header.spec.ts` 신설:
+- [x] `packages/specs/src/components/Header.spec.ts` 신설:
   - RAC `<Header>` (slot="section-header") 대응
-  - variants: default / emphasis / muted
-  - sizes: sm/md/lg — fontSize + paddingY + letterSpacing
-  - `element: "div"` (role="presentation" — RAC Header 공식)
-- [ ] `ListBoxSpec.childSpecs` 에 `HeaderSpec` 추가 → Generator 가 `.react-aria-ListBox .react-aria-Header` 블록 emit
-- [ ] `packages/specs/src/index.ts` export 추가
-- [ ] `TAG_SPEC_MAP` 등록 (`shared/constants/tags.ts` 해당)
-- [ ] `pnpm build:specs` 실행 → generated CSS 확인
+  - archetype: "simple" / element: "div" / skipCSSGeneration: true (childSpecs 경로 inline emit)
+  - containerStyles: position:"sticky" + background:`{color.raised}` + text:`{color.neutral-subdued}`
+  - sizes: sm/md/lg — fontSize (text-xs/text-xs/text-sm) + paddingY (4/6/8) + fontWeight 700 + borderRadius `{radius.none}`
+  - states: {} (Header 정적 텍스트, hover/pressed/disabled 의미 없음 — 빈 객체로 선언)
+  - render.shapes: () => [] (Skia 미등록 — ListBox spec shapes 가 Header text 직접 렌더)
+  - react: `role: "presentation"` (RAC 공식)
+- [x] `packages/specs/src/index.ts` export 추가 — `HeaderSpec` / `HeaderProps`
+- [x] `ListBoxSpec.childSpecs` 에 `HeaderSpec` 추가 (`[ListBoxItemSpec, HeaderSpec]`):
+  - Generator 가 `.react-aria-ListBox .react-aria-Header` 블록을 generated/ListBox.css 에 inline emit
+  - 검증: `grep "react-aria-Header" packages/shared/src/components/styles/generated/ListBox.css` PASS — Base/size sm/size md/size lg 4 블록 emit
+- [x] `TAG_SPEC_MAP` 등록 — **자동** (ADR-094 `expandChildSpecs` 가 `ListBoxSpec.childSpecs` 의 HeaderSpec 을 PascalCase key `"Header"` 로 `TAG_SPEC_MAP` 에 추가). 수동 등록 불요
+- [x] `pnpm build:specs` 실행 — 117 CSS files 재생성 성공 + ListBox.css 에 Header 블록 추가 확인
+
+**검증**: type-check 3/3 (3.7s) + specs **176/176** (snapshot 1 updated: ListBox generated CSS 에 Header 블록 추가) + builder 227/227 PASS. BC 영향 0% (기존 ListBox 프로젝트 렌더 무변경 — Header 블록은 section 엔트리 사용 시에만 시각 영향).
+
+**파일 변경 (5)**:
+
+- `packages/specs/src/components/Header.spec.ts` (신규)
+- `packages/specs/src/index.ts` (HeaderSpec export 추가)
+- `packages/specs/src/components/ListBox.spec.ts` (import + childSpecs 배열 확장)
+- `packages/shared/src/components/styles/generated/ListBox.css` (Header 블록 자동 emit — build 산출물)
+- `packages/specs/src/renderers/__tests__/__snapshots__/CSSGenerator.snapshot.test.ts.snap` (ListBox snapshot 갱신)
 
 ### Phase 4 — items-manager UI 확장 (section 엔트리)
 
