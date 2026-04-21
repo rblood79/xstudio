@@ -76,6 +76,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   defaultVariant: "primary",
   defaultSize: "md",
 
+  // ADR-096: DEFAULT_ELEMENT_HEIGHTS["button"] = 36 이관. BC 영향 0.
+  defaultHeight: 36,
+
   properties: {
     sections: [
       {

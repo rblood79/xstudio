@@ -53,6 +53,10 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
   defaultVariant: "default",
   defaultSize: "md",
 
+  // ADR-096: DEFAULT_ELEMENT_WIDTHS/HEIGHTS["image"] = 280/200 이관. BC 영향 0.
+  defaultWidth: 280,
+  defaultHeight: 200,
+
   variants: {
     default: {
       background: "{color.neutral-subtle}" as TokenRef,
@@ -104,7 +108,11 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ImageSpec.variants![(props as { variant?: keyof typeof ImageSpec.variants }).variant ?? ImageSpec.defaultVariant!];
+      const variant =
+        ImageSpec.variants![
+          (props as { variant?: keyof typeof ImageSpec.variants }).variant ??
+            ImageSpec.defaultVariant!
+        ];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -213,7 +221,8 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
               { value: "fill", label: "Fill" },
               { value: "none", label: "None" },
             ],
-           defaultValue: "cover" },
+            defaultValue: "cover",
+          },
         ],
       },
       {

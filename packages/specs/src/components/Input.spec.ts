@@ -48,6 +48,10 @@ export const InputSpec: ComponentSpec<InputProps> = {
   defaultVariant: "default",
   defaultSize: "md",
 
+  // ADR-096: DEFAULT_ELEMENT_WIDTHS["input"] = 180 이관. BC 영향 0.
+  // defaultHeight 미설정 — InputSpec.sizes 기반 동적 계산 (utils.ts step 2.5).
+  defaultWidth: 180,
+
   variants: {
     default: {
       background: "{color.layer-2}" as TokenRef,

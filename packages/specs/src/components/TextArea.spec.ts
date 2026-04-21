@@ -89,6 +89,10 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
 
   defaultSize: "md",
 
+  // ADR-096: DEFAULT_ELEMENT_WIDTHS/HEIGHTS["textarea"] = 200/80 이관. BC 영향 0.
+  defaultWidth: 200,
+  defaultHeight: 80,
+
   sizes: {
     sm: {
       height: 64,

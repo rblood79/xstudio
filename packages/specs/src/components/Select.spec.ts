@@ -86,6 +86,10 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
   defaultSize: "md",
 
+  // ADR-096: DEFAULT_ELEMENT_WIDTHS/HEIGHTS["select"] = 150/36 이관. BC 영향 0.
+  defaultWidth: 150,
+  defaultHeight: 36,
+
   properties: {
     sections: [
       {
