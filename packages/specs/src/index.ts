@@ -228,11 +228,17 @@ export type { CheckboxProps } from "./components/Checkbox.spec";
 export { CheckboxGroupSpec } from "./components/CheckboxGroup.spec";
 export type { CheckboxGroupProps } from "./components/CheckboxGroup.spec";
 
+export { CheckboxItemsSpec } from "./components/CheckboxItems.spec";
+export type { CheckboxItemsProps } from "./components/CheckboxItems.spec";
+
 export { RadioSpec, RADIO_SELECTED_COLORS } from "./components/Radio.spec";
 export type { RadioProps } from "./components/Radio.spec";
 
 export { RadioGroupSpec } from "./components/RadioGroup.spec";
 export type { RadioGroupProps } from "./components/RadioGroup.spec";
+
+export { RadioItemsSpec } from "./components/RadioItems.spec";
+export type { RadioItemsProps } from "./components/RadioItems.spec";
 
 export {
   SwitchSpec,
@@ -326,6 +332,9 @@ export type { PaginationProps } from "./components/Pagination.spec";
 
 export { TagGroupSpec } from "./components/TagGroup.spec";
 export type { TagGroupProps } from "./components/TagGroup.spec";
+
+export { TagListSpec } from "./components/TagList.spec";
+export type { TagListProps } from "./components/TagList.spec";
 
 export { TagSpec } from "./components/Tag.spec";
 export type { TagProps as TagSpecProps } from "./components/Tag.spec";

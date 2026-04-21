@@ -12,6 +12,7 @@ import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import { measureSpecTextWidth } from "../renderers/utils/measureText";
+import { TagListSpec } from "./TagList.spec";
 import {
   Layout,
   Rows3,
@@ -340,6 +341,10 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       focusRing: "{focus.ring.default}",
     },
   },
+
+  // ADR-093 Phase 2: ADR-094 인프라 경유 → Skia/CSS/Taffy 자동 등록.
+  //   수동 tagSpecMap.ts 등록 불필요.
+  childSpecs: [TagListSpec],
 
   propagation: {
     rules: [

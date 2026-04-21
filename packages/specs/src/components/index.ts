@@ -90,6 +90,10 @@ export type { CheckboxProps } from "./Checkbox.spec";
 export { CheckboxGroupSpec } from "./CheckboxGroup.spec";
 export type { CheckboxGroupProps } from "./CheckboxGroup.spec";
 
+// CheckboxItems (ADR-093 Phase 1 — CheckboxGroup 중간 컨테이너 spec)
+export { CheckboxItemsSpec } from "./CheckboxItems.spec";
+export type { CheckboxItemsProps } from "./CheckboxItems.spec";
+
 // Radio
 export { RadioSpec, RADIO_SELECTED_COLORS } from "./Radio.spec";
 export type { RadioProps } from "./Radio.spec";
@@ -97,6 +101,10 @@ export type { RadioProps } from "./Radio.spec";
 // RadioGroup
 export { RadioGroupSpec } from "./RadioGroup.spec";
 export type { RadioGroupProps } from "./RadioGroup.spec";
+
+// RadioItems (ADR-093 Phase 1 — RadioGroup 중간 컨테이너 spec)
+export { RadioItemsSpec } from "./RadioItems.spec";
+export type { RadioItemsProps } from "./RadioItems.spec";
 
 // Switch
 export { SwitchSpec, SWITCH_SELECTED_TRACK_COLORS } from "./Switch.spec";
@@ -270,6 +278,10 @@ export type { PaginationProps } from "./Pagination.spec";
 // TagGroup
 export { TagGroupSpec } from "./TagGroup.spec";
 export type { TagGroupProps } from "./TagGroup.spec";
+
+// TagList (ADR-093 Phase 1 — TagGroup 중간 컨테이너 spec)
+export { TagListSpec } from "./TagList.spec";
+export type { TagListProps } from "./TagList.spec";
 
 // Tag
 export { TagSpec } from "./Tag.spec";

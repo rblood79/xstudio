@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+import { RadioItemsSpec } from "./RadioItems.spec";
 import {
   Layout,
   Tag,
@@ -224,6 +225,10 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       { parentProp: "size", childPath: "Label", override: true },
     ],
   },
+
+  // ADR-093: RadioItems 중간 컨테이너 spec 배선. ADR-094 expandChildSpecs 인프라가
+  //   TAG_SPEC_MAP / LOWERCASE_TAG_SPEC_MAP / tagToElement 자동 등록.
+  childSpecs: [RadioItemsSpec],
 
   properties: {
     sections: [
