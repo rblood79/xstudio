@@ -26,6 +26,15 @@
 - 모든 Phase 완료 + 실제 코드 구조와 일치하는 완료 이력 문서
 - 현재 코드베이스에 적용된 아키텍처 설명
 
+## ADR 번호 할당 현황 (2026-04-21 기준)
+
+- 마지막 사용 번호: ADR-102 (Proposed)
+- 다음 사용 가능 번호: ADR-103
+- 완료 76개 / 부분 완료 8개 / 미구현 13개 / 합계 97개
+- **중요**: README.md 미구현 섹션 정리 패턴 — Implemented 상태로 전환된 항목은 완료 섹션으로 이동 필수. 미구현 섹션에는 순수 Proposed만 유지.
+- ADR-079: 미구현 섹션 유지 (Proposed 2026-04-19 — ADR-078 post-fix workaround 4종 해체 대기)
+- ADR-099: 미구현 섹션 유지 (Proposed 2026-04-21 — Phase 0 완료, P1~P6 대기)
+
 ## 주요 파일 경로
 
 - legacy README: `/Users/admin/work/composition/docs/legacy/README.md`

@@ -43,3 +43,19 @@
 2. 핵심 파일 Read로 구현 상세 확인
 3. 설계 vs 실제 차이표 작성
 4. 문서 하단에 `## N. 코드 대조 검증 이력` 섹션 추가
+
+### PropertyEditor 추가 패턴 (ADR-099 Phase 4)
+
+`registry.ts.getCustomPreEditor(type)` 에 새 타입을 추가할 때:
+
+1. `apps/builder/src/builder/panels/properties/editors/{Type}PropertyEditor.tsx` 파일 생성
+2. TagGroupPropertyEditor 패턴 (pass-through) 또는 ListBoxPropertyEditor 패턴 (모드 분기) 선택
+3. `getPropertyEditorSpec(type)` 이 specRegistry에 등록된 스펙을 반환하면 단순 pass-through로 충분
+4. 파일이 없으면 warn 로그 + spec-first fallback → 정상 작동하지만 warn 노이즈 발생
+
+관련 파일:
+
+- `apps/builder/src/builder/inspector/editors/registry.ts` — getCustomPreEditor switch
+- `apps/builder/src/builder/panels/properties/specRegistry.ts` — ComponentSpec 등록
+- `apps/builder/src/builder/panels/properties/generic/SpecField.tsx` — items-manager/children-manager 처리
+- `apps/builder/src/builder/panels/properties/generic/ItemsManager.tsx` — Section/Separator UI (allowSections, allowSeparators, sectionHasSelection 플래그)

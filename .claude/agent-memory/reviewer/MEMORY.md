@@ -2,6 +2,9 @@
 
 ## 리뷰 빈출 이슈 패턴
 
+- **`@sync` 주석 — Spec 파일 간 D3 위반 오해 유발**: Spec 파일 간 주석에 `@sync XxxSpec.ts CONSTANT` 형식을 쓰면 ssot-hierarchy.md §6 금지 패턴("@sync 주석으로 CSS↔CSS 참조")에 오해됨. Spec 파일끼리 동일 공식을 독립 계산하는 경우 `// XxxSpec 와 동일 공식` 형태로 대체 (GridList.spec.ts:263 ADR-099 Phase 5 사례). `@sync` 키워드 자체를 Spec 파일에서 금지.
+- **items 타입 스텁 패턴 (Phase N → Phase N+1 갱신 의무)**: `Menu.spec.ts`의 `items?: StoredMenuItem[]`가 Phase 5 이후에도 `StoredMenuEntry[]`로 갱신되지 않은 의도적 스텁 패턴 — 다음 Phase 커밋 시 반드시 타입 갱신 필수. 스텁임을 `TODO(ADR-NNN Phase N): items?: StoredXxxEntry[]` 주석으로 추적 의무화.
+
 - **migration orphan loop filter 누락 — tagListIdToTagGroupId 가드 미적용**: `migrateCollectionItems.ts`의 orphan 수집 루프(TagGroup 2단 이전)에서 `tagChildrenByTagListId.values()`를 전부 순회, `tagListIdToTagGroupId.has(tagListId)` 가드 없음 → TagList 없이 TagGroup의 직접 자식인 Tag가 orphan 처리되어 사라지는 BC 훼손. 테스트도 `expect(orphanIds).toContain("tag-odd")`로 버그를 정상으로 검증 중(제목 "수집되지 않음"과 assertion 불일치). Fix: `for (const [tagListId, tagChildren] of ...) { if (!tagListIdToTagGroupId.has(tagListId)) continue; }` + 테스트 assertion 반전. ADR-097 Pattern.
 - **테스트 제목 ↔ assertion 의미론 역전 패턴**: 테스트 describe/it 제목이 "X 는 수집되지 않음" 등 부정 결과를 묘사하지만 실제 assertion이 `toContain`(긍정)으로 반대 결과를 검증하는 패턴 — migration/edge case 테스트에서 재발 가능성 있으므로 부정 케이스 테스트 작성 시 assertion 방향 이중 확인 필수
 
