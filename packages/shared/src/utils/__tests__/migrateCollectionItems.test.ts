@@ -349,9 +349,12 @@ describe("applyCollectionItemsMigration — TagGroup 2단 이전 (ADR-097 P2)", 
     expect(orphanIds).toEqual([]);
   });
 
-  it("TagList 부재 + Tag 가 직접 TagGroup 자식 → Tag 는 수집되지 않음 (edge case, BC 보호)", () => {
-    // 기존 프로젝트에 이 형태는 없으나 방어 테스트 — Tag parent_id 가 TagList 가 아닌 경우
-    //   tagListIdToTagGroupId 가 없으므로 Tag 는 orphan 되지 않고 그대로 유지.
+  it("TagList 부재 + Tag 가 직접 TagGroup 자식 → Tag 유지 + items 미주입 (BC 보호)", () => {
+    // 기존 프로젝트에 이 형태는 없으나 defensive programming 방어 테스트.
+    //   Tag parent_id 가 TagList ID 가 아닌 경우 (deformed data):
+    //   - tagListIdToTagGroupId 에 parent_id 없음 → orphan 수집 skip
+    //   - tagGroupItemsById 에 "tg-odd" 없음 → items 미주입
+    //   - Tag element 는 migratedElements 에 유지되어 데이터 손실 없음.
     const elements: E[] = [
       el("tg-odd", "TagGroup", null, 0, {}),
       el("tag-odd", "Tag", "tg-odd", 0, { children: "Orphan Tag" }),
@@ -360,11 +363,12 @@ describe("applyCollectionItemsMigration — TagGroup 2단 이전 (ADR-097 P2)", 
     const { migratedElements, orphanIds } =
       applyCollectionItemsMigration(elements);
 
-    // Tag parent_id 가 TagGroup (TagList 아님) — tagChildrenByTagListId 에 등록되지만
-    // tagListIdToTagGroupId 에 "tg-odd" 가 없음 → items 미주입 + orphan 수집 실행됨.
-    // 현재 구현: Tag parent_id 를 "TagList ID" 로 간주 → orphan 등록 (방어적). 하지만
-    // tagGroupItemsById 에 "tg-odd" 없으므로 TagGroup items 미주입.
-    expect(orphanIds).toContain("tag-odd");
+    // Tag 는 orphan 되지 않음 — BC 보호
+    expect(orphanIds).not.toContain("tag-odd");
+    // TagGroup / Tag 모두 migratedElements 에 유지
+    expect(migratedElements).toHaveLength(2);
+    expect(migratedElements.find((e) => e.id === "tag-odd")).toBeDefined();
+    // TagGroup items 미주입 (TagList 부재로 수집 대상 없음)
     const tgEl = migratedElements.find((e) => e.id === "tg-odd")!;
     expect(tgEl.props.items).toBeUndefined();
   });

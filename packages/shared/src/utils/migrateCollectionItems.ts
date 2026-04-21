@@ -134,11 +134,14 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     }
   }
   // ADR-097: Tag elements 를 orphan 처리 (TagList 자체는 유지, ADR-094 expandChildSpecs
-  //   가 spec 기반 자동 재생성 담당). Tag 자식 subtree 는 현재 children:string 만 → DFS 불필요.
-  for (const tagChildren of tagChildrenByTagListId.values()) {
+  //   가 spec 기반 자동 재생성 담당). Tag 자식 subtree 는 현재 children:string 만 → DFS 불필요하지만
+  //   향후 description slot 추가 시 subtree 생성 가능 — 선제 DFS.
+  // BC 보호: Tag parent_id 가 실제 TagList ID 가 아닌 경우 (edge case / deformed data)
+  //   orphan skip — items 주입 없이 Tag element 유지되어 안전.
+  for (const [tagListId, tagChildren] of tagChildrenByTagListId) {
+    if (!tagListIdToTagGroupId.has(tagListId)) continue;
     for (const tag of tagChildren) {
       orphanSet.add(tag.id);
-      // 방어: 향후 Tag description slot 추가 시 subtree 생성 가능 — 선제 DFS
       collectSubtreeIds(tag.id, childrenByParent, orphanSet);
     }
   }
