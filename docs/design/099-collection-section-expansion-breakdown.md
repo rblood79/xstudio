@@ -218,7 +218,7 @@ ListBox/GridList 는 Separator 미사용 → 추가 안 함.
 
 - **Addendum 099-e**: `MenuSpec.render.shapes` section + separator 분기 (overlay Skia preview)
 - **Addendum 099-f Part 1** ✅ **(완결 2026-04-21)**: GridList `SelectionRenderers.tsx` section 분기 (Preview DOM 경로). `renderGridList` 3-Path 구조 — Path 2 items[] canonical + `isGridListSectionEntry` 분기 + `<AriaGridListSection><AriaGridListHeader>`. R-A2 GridList 한정 해소.
-- **Addendum 099-f Part 2**: Menu `SelectionRenderers.tsx` / `Menu.tsx` section 렌더 확장 (Step C 에서 처리).
+- **Addendum 099-f Part 2** ✅ **(완결 2026-04-21)**: Menu `CollectionRenderers.tsx` `renderMenu` section/separator 분기 추가 — `hasStructuredEntries` 감지 → children 경로 (`AriaMenuSection` + `AriaMenuHeader` + `AriaMenuSeparator`) + items-only 기존 경로 BC 0% 유지. R-A2 Menu 한정 + R-A3 scope 축소 해소.
 
 ### Addendum 099-f Part 1 — GridList Preview 경로 section 분기 (2026-04-21)
 
@@ -297,3 +297,4 @@ cd packages/shared && pnpm exec vitest run        # 52/52 PASS
 - [x] Phase 6 Preview ListBox section 분기 추가 + code-level 검증 PASS (Chrome MCP 후속 허용)
 - [x] Status Proposed → Implemented + README.md 갱신
 - [x] **Addendum 099-f Part 1**: GridList Preview 경로 section 분기 추가 + R-A2 GridList 한정 해소 (2026-04-21)
+- [x] **Addendum 099-f Part 2**: Menu Preview 경로 — `CollectionRenderers.tsx` `renderMenu` section/separator 분기 추가. `isMenuSectionEntry` → `<AriaMenuSection><AriaMenuHeader>` + `isMenuSeparatorEntry` → `<AriaMenuSeparator>` + BC 0% items-only fallback 유지. R-A2 Menu 한정 + R-A3 scope 축소 해소 (2026-04-21)

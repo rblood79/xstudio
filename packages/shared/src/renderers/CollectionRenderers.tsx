@@ -10,6 +10,11 @@ import {
   MenuItem,
   Toolbar,
 } from "../components/list";
+import {
+  MenuSection as AriaMenuSection,
+  Header as AriaMenuHeader,
+  Separator as AriaMenuSeparator,
+} from "react-aria-components";
 import { DataField } from "../components/Field";
 import type {
   PreviewElement,
@@ -17,7 +22,12 @@ import type {
   ColumnMapping,
   DataBinding,
 } from "../types";
-import type { StoredMenuItem, RuntimeMenuItem } from "@composition/specs";
+import type {
+  StoredMenuItem,
+  StoredMenuEntry,
+  RuntimeMenuItem,
+} from "@composition/specs";
+import { isMenuSectionEntry, isMenuSeparatorEntry } from "@composition/specs";
 import { getSelectedChildIds } from "./selection";
 
 /**
@@ -752,44 +762,101 @@ export const renderMenu = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const stored = (element.props.items ?? []) as StoredMenuItem[];
-  const runtime = stored.map((it) =>
+  const { updateElementProps } = context;
+
+  const entries = (element.props.items ?? []) as StoredMenuEntry[];
+
+  // ADR-099 Addendum 099-f Part 2: section/separator 분기 감지
+  // section 또는 separator entry 가 하나라도 있으면 children 경로 사용
+  const hasStructuredEntries = entries.some(
+    (e) => isMenuSectionEntry(e) || isMenuSeparatorEntry(e),
+  );
+
+  const commonProps = {
+    key: element.id,
+    id: element.customId,
+    "data-element-id": element.id,
+    label: String(element.props.label || element.props.children || "Menu"),
+    variant: (element.props.variant as string) || "primary",
+    size: (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md",
+    style: element.props.style,
+    className: element.props.className,
+    dataBinding: (element.dataBinding || element.props.dataBinding) as
+      | DataBinding
+      | undefined,
+    selectionMode: (
+      element.props as { selectionMode?: "none" | "single" | "multiple" }
+    ).selectionMode,
+    selectedKeys: (element.props as { selectedKeys?: string[] }).selectedKeys,
+    onSelectionChange: (keys: string[]) => {
+      updateElementProps(element.id, {
+        ...element.props,
+        selectedKeys: keys,
+      });
+    },
+  } as const;
+
+  if (hasStructuredEntries) {
+    // section/separator 포함 — children 경로 (MenuButton static children fallback)
+    // RAC D1: MenuSection / Header / Separator 공식 API 사용
+    const renderMenuLeaf = (item: StoredMenuItem): React.ReactNode => (
+      <MenuItem
+        key={item.id}
+        id={item.id}
+        textValue={item.textValue ?? item.label}
+        isDisabled={Boolean(item.isDisabled)}
+        href={item.href}
+      >
+        <span className="menu-item-content">
+          {item.icon && <span className="menu-item-icon">{item.icon}</span>}
+          <span className="menu-item-label">{item.label}</span>
+          {item.shortcut && (
+            <kbd className="menu-item-shortcut">{item.shortcut}</kbd>
+          )}
+        </span>
+        {item.description && (
+          <span className="menu-item-description">{item.description}</span>
+        )}
+      </MenuItem>
+    );
+
+    const menuChildren = entries.map((entry) => {
+      if (isMenuSectionEntry(entry)) {
+        return (
+          <AriaMenuSection
+            key={entry.id}
+            aria-label={entry.ariaLabel ?? entry.header}
+            selectionMode={entry.selectionMode}
+            selectedKeys={
+              entry.selectedKeys ? new Set(entry.selectedKeys) : undefined
+            }
+            defaultSelectedKeys={
+              entry.defaultSelectedKeys
+                ? new Set(entry.defaultSelectedKeys)
+                : undefined
+            }
+          >
+            <AriaMenuHeader>{entry.header}</AriaMenuHeader>
+            {entry.items.map(renderMenuLeaf)}
+          </AriaMenuSection>
+        );
+      }
+      if (isMenuSeparatorEntry(entry)) {
+        return <AriaMenuSeparator key={entry.id} />;
+      }
+      // default: StoredMenuItem
+      return renderMenuLeaf(entry as StoredMenuItem);
+    });
+
+    return <MenuButton {...commonProps}>{menuChildren}</MenuButton>;
+  }
+
+  // items-only 경로 (기존 동작 유지 — BC 0%)
+  const runtime = (entries as StoredMenuItem[]).map((it) =>
     toRuntimeMenuItem(it, context.resolveActionId),
   );
 
-  const { updateElementProps } = context;
-
-  return (
-    <MenuButton
-      key={element.id}
-      id={element.customId}
-      data-element-id={element.id}
-      label={String(element.props.label || element.props.children || "Menu")}
-      variant={(element.props.variant as string) || "primary"}
-      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
-      items={runtime}
-      style={element.props.style}
-      className={element.props.className}
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
-      selectionMode={
-        (element.props as { selectionMode?: "none" | "single" | "multiple" })
-          .selectionMode ?? "none"
-      }
-      selectedKeys={
-        (element.props as { selectedKeys?: string[] }).selectedKeys
-      }
-      onSelectionChange={(keys: string[]) => {
-        updateElementProps(element.id, {
-          ...element.props,
-          selectedKeys: keys,
-        });
-      }}
-    />
-  );
+  return <MenuButton {...commonProps} items={runtime} />;
 };
 
 /**
