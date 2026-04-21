@@ -22,6 +22,18 @@ export type { BadgeProps } from "./Badge.spec";
 export { CardSpec } from "./Card.spec";
 export type { CardProps } from "./Card.spec";
 
+// CardHeader (ADR-092 Phase 1)
+export { CardHeaderSpec } from "./CardHeader.spec";
+export type { CardHeaderProps } from "./CardHeader.spec";
+
+// CardContent (ADR-092 Phase 1)
+export { CardContentSpec } from "./CardContent.spec";
+export type { CardContentProps } from "./CardContent.spec";
+
+// CardFooter (ADR-092 Phase 1)
+export { CardFooterSpec } from "./CardFooter.spec";
+export type { CardFooterProps } from "./CardFooter.spec";
+
 // Dialog
 export { DialogSpec } from "./Dialog.spec";
 export type { DialogProps } from "./Dialog.spec";

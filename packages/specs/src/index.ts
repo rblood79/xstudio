@@ -173,6 +173,15 @@ export type { BadgeProps } from "./components/Badge.spec";
 export { CardSpec } from "./components/Card.spec";
 export type { CardProps } from "./components/Card.spec";
 
+export { CardHeaderSpec } from "./components/CardHeader.spec";
+export type { CardHeaderProps } from "./components/CardHeader.spec";
+
+export { CardContentSpec } from "./components/CardContent.spec";
+export type { CardContentProps } from "./components/CardContent.spec";
+
+export { CardFooterSpec } from "./components/CardFooter.spec";
+export type { CardFooterProps } from "./components/CardFooter.spec";
+
 export { DialogSpec } from "./components/Dialog.spec";
 export type { DialogProps } from "./components/Dialog.spec";
 

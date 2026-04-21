@@ -19,6 +19,9 @@ import {
   Layout,
 } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { CardHeaderSpec } from "./CardHeader.spec";
+import { CardContentSpec } from "./CardContent.spec";
+import { CardFooterSpec } from "./CardFooter.spec";
 
 /**
  * Card Props
@@ -116,8 +119,13 @@ export const CardSpec: ComponentSpec<CardProps> = {
     },
   },
 
+  // ADR-092 Phase 2: ADR-094 인프라 경유 → Skia/CSS/Taffy 자동 등록.
+  //   수동 tagSpecMap.ts 등록 불필요.
+  childSpecs: [CardHeaderSpec, CardContentSpec, CardFooterSpec],
+
   propagation: {
     rules: [
+      // ADR-092 Hard Constraint #7: 기존 title/description 전파 보존
       {
         parentProp: "title",
         childPath: ["CardHeader", "Heading"],
@@ -128,6 +136,22 @@ export const CardSpec: ComponentSpec<CardProps> = {
         parentProp: "description",
         childPath: ["CardContent", "Description"],
         childProp: "children",
+        override: true,
+      },
+      // ADR-092 Hard Constraint #4: size 전파 3건 추가
+      {
+        parentProp: "size",
+        childPath: "CardHeader",
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: "CardContent",
+        override: true,
+      },
+      {
+        parentProp: "size",
+        childPath: "CardFooter",
         override: true,
       },
     ],
