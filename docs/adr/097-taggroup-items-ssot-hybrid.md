@@ -182,6 +182,30 @@ ADR-066 (Tabs) / ADR-068 (Menu) / ADR-073 (Select/ComboBox) / ADR-076 (ListBox) 
 - **items 필드의 이중 의미 혼동 가능성** — ListBox/Select/ComboBox/Menu/Tabs/**TagGroup** 모두 items 지만 각 StoredXItem 타입 상이. 신규 구현자 혼동 가능 (JSDoc 명시로 완화).
 - **TagList 중간 컨테이너 존재감 약화** — spec-only 로 유지되지만 사용자는 LayerTree 에서도 보이지 않게 될 가능성 (Phase 3 virtual children 설계에 따라 결정).
 
+## Addendum 1 — Factory 전환 완결 (2026-04-21 세션 5 후속)
+
+**배경**: Phase 3 시점에서 `createTagGroupDefinition` (`GroupComponents.ts:391`) 은 여전히 기존 패턴대로 18개 Tag element + Label + TagList element tree 를 생성 — migration orchestrator 가 프로젝트 로드 시 items[] 로 흡수하는 **점진 이관** 경로에 의존. Phase 3 breakdown 표에서 scope 외로 판정되어 후속 debt 로 남았음.
+
+**변경**: factory 가 생성 시점부터 items SSOT 생성. ListBox `createListBoxDefinition` 선례 (children:[] + items:[3] 기본값) 대칭 적용.
+
+- `TagGroup.props.items: StoredTagItem[4]` 기본값 주입 (Chocolate/Mint/Strawberry/Vanilla — ListBox 3 샘플 패턴 대칭)
+- `TagList.children: []` — Tag element 18개 배열 완전 삭제 (~170 LOC)
+- Label element 는 유지 (factory children, TagGroup 의 직속 자식)
+- TagList element 는 중간 컨테이너 유지 (ADR-097 Decision Option A 준수)
+
+**효과**:
+
+- 신규 TagGroup 생성 → 즉시 items SSOT (migration 흡수 불필요)
+- 저장 데이터 → 로드 후 items 기반 (factory 생성 경로와 일치)
+- Tag element 18개 생성/삭제 비용 제거 (factory 속도↑, store 초기 렌더 비용↓)
+- LayerTree virtual children (taggroup type, `useLayerTreeData.ts:229`) 가 신규 TagGroup 에서 즉시 4 items 표시
+
+**BC 영향**: 0%. 기존 저장 프로젝트는 여전히 migration orchestrator 가 처리. 신규 생성만 직접 items SSOT 경로.
+
+**검증**: type-check 3/3 + specs 166/166 + shared 52/52 + builder 227/227 PASS. Chrome MCP 재실측 (신규 TagGroup 추가) 권장.
+
+**커밋**: (Addendum 1 land 시점)
+
 ## 참조
 
 - [ADR-093](093-synthetic-merge-containers-spec.md) — 본 ADR 의 선행. TagList containerStyles 리프팅 + Addendum 1 명시 debt

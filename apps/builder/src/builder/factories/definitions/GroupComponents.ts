@@ -1,6 +1,7 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
+import type { StoredTagItem } from "@composition/specs";
 
 /**
  * Group 컴포넌트 정의 (Element Grouping Container)
@@ -386,7 +387,16 @@ export function createRadioGroupDefinition(
 }
 
 /**
- * TagGroup 컴포넌트 정의
+ * TagGroup 컴포넌트 정의 (ADR-097 Addendum 1)
+ *
+ * items SSOT 전환 완결 — 신규 TagGroup 생성 시 즉시 `props.items: StoredTagItem[]`
+ * 로 정적 데이터 주입 (ListBox `createListBoxDefinition` 선례 대칭).
+ *
+ * 이전 (Addendum 전): Tag element 18 개를 TagList 자식으로 생성 → migration
+ *   orchestrator 가 프로젝트 로드 시 items[] 로 흡수하는 **점진 이관** 경로 의존.
+ * 현재 (Addendum 후): factory 시점부터 items SSOT. TagList 는 element tree 중간
+ *   컨테이너로 유지 (ADR-093/097 Decision Option A 준수, TagListSpec
+ *   containerStyles + spec shapes items self-render).
  */
 export function createTagGroupDefinition(
   context: ComponentCreationContext,
@@ -400,7 +410,17 @@ export function createTagGroupDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
-  // 웹 CSS 구조: TagGroup (column) → Label + TagList (row wrap) → Tags
+  // ADR-097 Addendum 1: 신규 TagGroup 의 기본 Tag items (ListBox 3 샘플 패턴 대칭).
+  //   기존 factory 18 개 Tag element 배열 → 4 개 items 로 축소.
+  const items: StoredTagItem[] = [
+    { id: crypto.randomUUID(), label: "Chocolate" },
+    { id: crypto.randomUUID(), label: "Mint" },
+    { id: crypto.randomUUID(), label: "Strawberry" },
+    { id: crypto.randomUUID(), label: "Vanilla" },
+  ];
+
+  // 웹 CSS 구조: TagGroup (column) → Label + TagList (row wrap) — Tag elements 없음.
+  //   Tag 시각은 TagListSpec shapes 가 items 기반 chip self-render (ADR-097 Phase 4A/4B).
   return {
     tag: "TagGroup",
     parent: {
@@ -412,6 +432,7 @@ export function createTagGroupDefinition(
         maxRows: 2,
         allowsRemoving: false,
         selectionMode: "multiple",
+        items,
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -434,170 +455,10 @@ export function createTagGroupDefinition(
         props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
-        children: [
-          {
-            tag: "Tag",
-            props: {
-              children: "Chocolate",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Mint",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 2,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Strawberry",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 3,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Vanilla",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 4,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Chocolate Chip Cookie Dough",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 5,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Rocky Road",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 6,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Butter Pecan",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 7,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Neapolitan",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 8,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Salted Caramel",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 9,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Mint Chocolate Chip",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 10,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Tonight Dough",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 11,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Lemon Cookie",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 12,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Cookies and Cream",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 13,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Phish Food",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 14,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Peanut Butter Cup",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 15,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Coffee",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 16,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Pistachio",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 17,
-          },
-          {
-            tag: "Tag",
-            props: {
-              children: "Cherry",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 18,
-          },
-        ],
+        // ADR-097 Addendum 1: Tag element 자식 생성 중단.
+        //   TagList 는 중간 컨테이너로 유지되지만 Tag 시각은 TagListSpec shapes 가
+        //   부모 TagGroup.items propagation 경유 chip self-render.
+        children: [],
       },
     ],
   };
