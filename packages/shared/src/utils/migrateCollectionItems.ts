@@ -19,6 +19,7 @@ import type {
   StoredSelectItem,
   StoredComboBoxItem,
   StoredListBoxItem,
+  StoredTagItem,
 } from "@composition/specs";
 
 interface ElementLike {
@@ -64,6 +65,10 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
   const selectItemChildrenByParent = new Map<string, T[]>();
   const comboBoxItemChildrenByParent = new Map<string, T[]>();
   const listBoxItemChildrenByParent = new Map<string, T[]>();
+  // ADR-097: TagGroup 2단 이전 — Tag 는 TagList (중간 컨테이너) 의 자식이므로
+  //   parent_id 가 TagList ID. TagList 자체는 TagGroup 의 자식으로 유지.
+  const tagChildrenByTagListId = new Map<string, T[]>();
+  const tagListIdToTagGroupId = new Map<string, string>();
   for (const el of elements) {
     if (!el.parent_id) continue;
     if (el.tag === "SelectItem") {
@@ -72,13 +77,18 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
       pushInto(comboBoxItemChildrenByParent, el.parent_id, el);
     } else if (el.tag === "ListBoxItem") {
       pushInto(listBoxItemChildrenByParent, el.parent_id, el);
+    } else if (el.tag === "Tag") {
+      pushInto(tagChildrenByTagListId, el.parent_id, el);
+    } else if (el.tag === "TagList") {
+      tagListIdToTagGroupId.set(el.id, el.parent_id);
     }
   }
 
   const hasAnyWork =
     selectItemChildrenByParent.size > 0 ||
     comboBoxItemChildrenByParent.size > 0 ||
-    listBoxItemChildrenByParent.size > 0;
+    listBoxItemChildrenByParent.size > 0 ||
+    tagChildrenByTagListId.size > 0;
   if (!hasAnyWork) {
     return { migratedElements: elements, orphanIds: [] };
   }
@@ -97,7 +107,18 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     if (!anyTemplate) listBoxAbsorbParents.add(parentId);
   }
 
+  // ADR-097 Phase 2: TagGroup 2단 이전 — TagList 별 items 계산 + TagGroup 매핑
+  //   Tag Field 자식 불가 (Tag.children: string 만) → 항상 정적 흡수 (ListBox 원자 판정 불필요).
+  //   TagList 는 유지 (ADR-093 containerStyles 리프팅 + ADR-094 expandChildSpecs 자동 재생성).
+  const tagGroupItemsById = new Map<string, StoredTagItem[]>();
+  for (const [tagListId, tagChildren] of tagChildrenByTagListId) {
+    const tagGroupId = tagListIdToTagGroupId.get(tagListId);
+    if (!tagGroupId) continue; // TagList 가 있는데 TagGroup 부모 없는 경우 — edge case, skip
+    tagGroupItemsById.set(tagGroupId, tagChildrenToItemsArray(tagChildren));
+  }
+
   // orphan 수집: Select/ComboBox 자식 전부 + ListBox 정적 모드 부모의 ListBoxItem + 자식 subtree DFS
+  //             + ADR-097 TagGroup 의 Tag elements 전부 (TagList 는 유지)
   const orphanSet = new Set<string>();
   for (const children of selectItemChildrenByParent.values()) {
     for (const child of children) orphanSet.add(child.id);
@@ -110,6 +131,15 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     for (const lbi of lbiChildren) {
       orphanSet.add(lbi.id);
       collectSubtreeIds(lbi.id, childrenByParent, orphanSet);
+    }
+  }
+  // ADR-097: Tag elements 를 orphan 처리 (TagList 자체는 유지, ADR-094 expandChildSpecs
+  //   가 spec 기반 자동 재생성 담당). Tag 자식 subtree 는 현재 children:string 만 → DFS 불필요.
+  for (const tagChildren of tagChildrenByTagListId.values()) {
+    for (const tag of tagChildren) {
+      orphanSet.add(tag.id);
+      // 방어: 향후 Tag description slot 추가 시 subtree 생성 가능 — 선제 DFS
+      collectSubtreeIds(tag.id, childrenByParent, orphanSet);
     }
   }
 
@@ -142,6 +172,21 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
           props: {
             ...(el.props ?? {}),
             items: comboBoxItemChildrenToItemsArray(children),
+          },
+        });
+        continue;
+      }
+    }
+
+    // ADR-097: TagGroup 부모 — items[] 주입 (2단 이전, TagList 유지)
+    if (el.tag === "TagGroup") {
+      const items = tagGroupItemsById.get(el.id);
+      if (items && items.length > 0) {
+        migratedElements.push({
+          ...el,
+          props: {
+            ...(el.props ?? {}),
+            items,
           },
         });
         continue;
@@ -332,4 +377,34 @@ function extractStringChildren(
   return typeof children === "string" && children.length > 0
     ? children
     : undefined;
+}
+
+/**
+ * ADR-097 Phase 2: TagGroup 2단 이전 migration helper.
+ *
+ * TagList 의 자식 Tag elements → `StoredTagItem[]` 변환.
+ * Tag.children 이 label 역할 (Tag.children: string). 현재 description slot 없음 —
+ * 향후 ADR-097 Addendum 1 에서 확장 시 본 함수 시그니처 확장.
+ *
+ * order_num 기준 정렬. props.children 이 label source (Tag.spec.ts:25 참조).
+ */
+export function tagChildrenToItemsArray(
+  tagChildren: ElementLike[],
+): StoredTagItem[] {
+  return [...tagChildren]
+    .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0))
+    .map((tag) => {
+      const p = tag.props ?? {};
+      const labelFromChildren =
+        typeof p.children === "string" && p.children.length > 0
+          ? p.children
+          : undefined;
+      return {
+        id: tag.id,
+        label: labelFromChildren ?? tag.id,
+        isDisabled: p.isDisabled === true || undefined,
+        allowsRemoving:
+          typeof p.allowsRemoving === "boolean" ? p.allowsRemoving : undefined,
+      };
+    });
 }

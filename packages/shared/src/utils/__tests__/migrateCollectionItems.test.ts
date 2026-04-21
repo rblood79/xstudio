@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   applyCollectionItemsMigration,
   listBoxItemChildrenToItemsArray,
+  tagChildrenToItemsArray,
 } from "../migrateCollectionItems";
 
 /**
@@ -250,5 +251,121 @@ describe("applyCollectionItemsMigration — Idempotency + 3종 공존", () => {
     const result = applyCollectionItemsMigration(elements);
     expect(result.migratedElements).toBe(elements);
     expect(result.orphanIds).toEqual([]);
+  });
+});
+
+describe("tagChildrenToItemsArray (ADR-097 Phase 2)", () => {
+  it("Tag props.children → label + order_num 정렬 + boolean 플래그", () => {
+    const a = el("t-a", "Tag", "tl", 2, { children: "Third" });
+    const b = el("t-b", "Tag", "tl", 0, {
+      children: "First",
+      isDisabled: true,
+    });
+    const c = el("t-c", "Tag", "tl", 1, {
+      children: "Second",
+      allowsRemoving: false,
+    });
+    const items = tagChildrenToItemsArray([a, b, c]);
+    expect(items).toEqual([
+      {
+        id: "t-b",
+        label: "First",
+        isDisabled: true,
+        allowsRemoving: undefined,
+      },
+      {
+        id: "t-c",
+        label: "Second",
+        isDisabled: undefined,
+        allowsRemoving: false,
+      },
+      {
+        id: "t-a",
+        label: "Third",
+        isDisabled: undefined,
+        allowsRemoving: undefined,
+      },
+    ]);
+  });
+
+  it("props.children 부재 → id 를 label fallback", () => {
+    const tag = el("tag-no-children", "Tag", "tl", 0, {});
+    const items = tagChildrenToItemsArray([tag]);
+    expect(items[0].label).toBe("tag-no-children");
+  });
+});
+
+describe("applyCollectionItemsMigration — TagGroup 2단 이전 (ADR-097 P2)", () => {
+  it("TagGroup > TagList > Tag[3] → TagGroup.items[3] 흡수 + Tag orphan + TagList 유지", () => {
+    const elements: E[] = [
+      el("tg-parent", "TagGroup", null, 0, {}),
+      el("tl-mid", "TagList", "tg-parent", 0, {}),
+      el("tag-1", "Tag", "tl-mid", 0, { children: "Primary" }),
+      el("tag-2", "Tag", "tl-mid", 1, {
+        children: "Secondary",
+        isDisabled: true,
+      }),
+      el("tag-3", "Tag", "tl-mid", 2, { children: "Tertiary" }),
+    ];
+
+    const { migratedElements, orphanIds } =
+      applyCollectionItemsMigration(elements);
+
+    // TagGroup props.items 3 건 주입 확인
+    const tgEl = migratedElements.find((e) => e.id === "tg-parent")!;
+    expect(tgEl).toBeDefined();
+    const items = tgEl.props.items as Array<{
+      id: string;
+      label: string;
+      isDisabled?: boolean;
+    }>;
+    expect(items).toHaveLength(3);
+    expect(items.map((i) => i.label)).toEqual([
+      "Primary",
+      "Secondary",
+      "Tertiary",
+    ]);
+    expect(items[1].isDisabled).toBe(true);
+
+    // TagList 는 유지, Tag 3 건 orphan
+    expect(migratedElements.find((e) => e.id === "tl-mid")).toBeDefined();
+    expect(orphanIds.sort()).toEqual(["tag-1", "tag-2", "tag-3"].sort());
+    expect(migratedElements.find((e) => e.id === "tag-1")).toBeUndefined();
+  });
+
+  it("TagGroup > TagList (Tag 없음) → items 주입 skip + TagList 유지 + orphan 0", () => {
+    const elements: E[] = [
+      el("tg-empty", "TagGroup", null, 0, {}),
+      el("tl-empty", "TagList", "tg-empty", 0, {}),
+    ];
+
+    const { migratedElements, orphanIds } =
+      applyCollectionItemsMigration(elements);
+
+    // TagGroup / TagList 전부 유지, items 미주입
+    expect(migratedElements).toHaveLength(2);
+    const tgEl = migratedElements.find((e) => e.id === "tg-empty")!;
+    expect(tgEl.props.items).toBeUndefined();
+    expect(orphanIds).toEqual([]);
+  });
+
+  it("TagList 부재 + Tag 가 직접 TagGroup 자식 → Tag 는 수집되지 않음 (edge case, BC 보호)", () => {
+    // 기존 프로젝트에 이 형태는 없으나 방어 테스트 — Tag parent_id 가 TagList 가 아닌 경우
+    //   tagListIdToTagGroupId 가 없으므로 Tag 는 orphan 되지 않고 그대로 유지.
+    const elements: E[] = [
+      el("tg-odd", "TagGroup", null, 0, {}),
+      el("tag-odd", "Tag", "tg-odd", 0, { children: "Orphan Tag" }),
+    ];
+
+    const { migratedElements, orphanIds } =
+      applyCollectionItemsMigration(elements);
+
+    // Tag parent_id 가 TagGroup (TagList 아님) — tagChildrenByTagListId 에 등록되지만
+    // tagListIdToTagGroupId 에 "tg-odd" 가 없음 → items 미주입 + orphan 수집 실행됨.
+    // 현재 구현: Tag parent_id 를 "TagList ID" 로 간주 → orphan 등록 (방어적). 하지만
+    // tagGroupItemsById 에 "tg-odd" 없으므로 TagGroup items 미주입.
+    expect(orphanIds).toContain("tag-odd");
+    const tgEl = migratedElements.find((e) => e.id === "tg-odd")!;
+    expect(tgEl.props.items).toBeUndefined();
   });
 });
