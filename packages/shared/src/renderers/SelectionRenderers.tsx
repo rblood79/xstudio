@@ -666,6 +666,9 @@ export const renderSelect = (
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
+  // ADR-100 Phase 1 (098-a 슬롯): "SelectItem" = RAC 공식 `ListBoxItem` alias.
+  //   신규 Select 는 items SSOT (factory 가 SelectItem Element 생성 안 함) —
+  //   본 필터는 migration 전 기존 프로젝트 저장 데이터 호환 경로.
   const selectItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
     (child) => child.tag === "SelectItem",
   );

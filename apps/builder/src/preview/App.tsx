@@ -496,6 +496,9 @@ function CanvasContent() {
           //   ADR-094 expandChildSpecs 가 tagToElement TAG_SPEC_MAP 에 자동 등록 →
           //   default case 의 `getElementForTag("TagList")` 가 TagListSpec.element="div" 반환.
           //   ADR-094 Phase 5 완결.
+          // ADR-100 Phase 1 (098-a 슬롯): legacy "SelectItem"/"ComboBoxItem" tag fallback.
+          //   RAC 공식: ListBoxItem. 신규 프로젝트는 items SSOT 로 element 생성 안 함 —
+          //   본 case 는 migration 전 기존 프로젝트 호환 경로.
           case "SelectItem":
             return "div";
           case "ComboBoxItem":

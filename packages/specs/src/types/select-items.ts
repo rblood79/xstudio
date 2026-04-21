@@ -4,6 +4,12 @@
  * specs 패키지가 단일 소스. shared/builder/preview 모두 여기서 import.
  * 패키지 의존 방향: shared → specs (단방향)
  *
+ * ADR-100 Phase 1 (098-a 슬롯): composition 내부 식별자 "SelectItem" 은
+ * RAC 공식 `ListBoxItem` 의 alias 로 간주한다. runtime DOM 은 이미
+ * `<ListBoxItem>` 으로 렌더 (Select factory 내부 RAC composition). 저장
+ * 식별자 rename 은 BC HIGH (모든 Select 프로젝트 migration) 회피 위해 미수행 —
+ * composition 고유 tag 유지 + RSP 공식 alias 명시로 문서 정합 보강.
+ *
  * @packageDocumentation
  */
 
@@ -21,7 +27,10 @@ export interface StoredSelectItem {
 }
 
 /** Runtime 모델 — RAC `<Select items>{...}` 호출 직전 SelectionRenderers에서 변환 */
-export interface RuntimeSelectItem extends Omit<StoredSelectItem, "onActionId"> {
+export interface RuntimeSelectItem extends Omit<
+  StoredSelectItem,
+  "onActionId"
+> {
   /** SelectionRenderers에서 onActionId → 함수 변환 */
   onAction?: () => void;
 }

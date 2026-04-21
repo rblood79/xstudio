@@ -23,6 +23,9 @@ import { unregisterSkiaNode } from "../../workspace/canvas/skia/useSkiaNode";
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
 
+// ADR-100 Phase 1 (098-a 슬롯): "SelectItem"/"ComboBoxItem" = RAC 공식
+//   `ListBoxItem` alias. composition 내부 식별자 유지 (items SSOT 이관 후에도
+//   기존 프로젝트 migration 경로에 존재). 삭제 연쇄 대상 포함 필수.
 const COLLECTION_ITEM_TAGS = new Set([
   "Tab",
   "Panel",

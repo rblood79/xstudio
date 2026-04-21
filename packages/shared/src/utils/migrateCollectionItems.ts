@@ -71,6 +71,8 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
   const tagListIdToTagGroupId = new Map<string, string>();
   for (const el of elements) {
     if (!el.parent_id) continue;
+    // ADR-100 Phase 1 (098-a 슬롯): legacy "SelectItem" Element → items SSOT 흡수.
+    //   RAC 공식: ListBoxItem. composition 고유 식별자 유지 (BC HIGH 회피).
     if (el.tag === "SelectItem") {
       pushInto(selectItemChildrenByParent, el.parent_id, el);
     } else if (el.tag === "ComboBoxItem") {

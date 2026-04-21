@@ -83,12 +83,26 @@ RAC 공식 Select 구조:
 - [x] RAC 공식 Button slot="trigger" 패턴 vs composition Compositional Architecture 비교
 - [x] 3 옵션 × 2 식별자 = 6 조합 평가 → Decision 대안 3건 압축
 
-### Phase 1 — SelectItem 내부 식별자 정리 (BC 0%)
+### Phase 1 — SelectItem 내부 식별자 정리 (BC 0%) (Completed 2026-04-21 세션 8)
 
-- [ ] `packages/specs/src/types/select-items.ts` 문서 주석 갱신 — RAC `ListBoxItem` 정합 명시 + composition "SelectItem" 용어 일관성
-- [ ] `packages/shared/src/renderers/SelectionRenderers.tsx` 내부 변수명 `SelectItem` → `SelectListBoxItem` 또는 유지 결정 (runtime behavior 무변경)
-- [ ] `SelectionComponents.ts` factory 에서 runtime render 시 RAC `<ListBoxItem>` 컴포넌트 사용 (이미 사용 중일 가능성 — 확인 필요)
-- [ ] 문서/주석 용어 일관성 sweep: "SelectItem" 언급 11 files 중 docs/주석 스캔 후 "ListBoxItem (alias SelectItem)" 형식 통일
+**재결정 (Phase 1 진입 시)**: runtime 식별자 rename 은 **미수행**. 근거:
+
+1. **Factory 확증** (`SelectionComponents.ts:14`): "SelectItem 자식 element 는 더 이상 생성하지 않는다" — 신규 Select 는 items SSOT (`StoredSelectItem[]` factory 기본값). 저장 데이터에 `tag: "SelectItem"` 없음
+2. **기존 프로젝트 migration 경로** (`migrateCollectionItems.ts:74`): load-time 자동 흡수 — 5 runtime 경로가 legacy 호환용으로 여전히 `"SelectItem"` 문자열 참조 유지 필요
+3. **rename 시 BC 회귀**: 5 경로 + 4 test fixture 일괄 변경 시 기존 저장 프로젝트 migration 경로 차단 위험. "SelectItem" legacy 식별자 유지가 composition 고유 tag 보존 원칙 (ADR-100 대안 C) 과 정합
+
+**실행 작업 (5 runtime 경로 RAC alias 주석 추가)**:
+
+- [x] `packages/specs/src/types/select-items.ts` L1-9 header 주석 — ADR-100 Phase 1 명시 + RAC `ListBoxItem` alias 근거 3건
+- [x] `packages/shared/src/renderers/SelectionRenderers.tsx:669` — `"SelectItem"` filter 위 ADR-100 Phase 1 주석 (migration 전 호환 명시)
+- [x] `packages/shared/src/utils/migrateCollectionItems.ts:74` — `tag === "SelectItem"` 분기 위 legacy Element 흡수 주석 (RAC 공식명 + BC HIGH 회피 근거)
+- [x] `apps/builder/src/preview/App.tsx:499` — `case "SelectItem"/"ComboBoxItem"` fallback 위 주석 (신규 items SSOT vs 기존 호환 구분)
+- [x] `apps/builder/src/builder/stores/utils/elementRemoval.ts:26` — `COLLECTION_ITEM_TAGS` Set 위 주석 (삭제 연쇄 대상 유지 근거)
+
+**영향 0 경로 (변경 없음)**:
+
+- 4 test fixture 파일 (`migrateCollectionItems.test.ts`, `migrateSelectComboBoxItems.test.ts`, `elementRemoval.test.ts` + 1) — legacy 저장 데이터 시뮬레이션 의도적. 주석 불필요
+- `SelectionComponents.ts` factory — L14 주석 이미 items SSOT 명시, 추가 작업 불요
 
 ### Phase 2 — SelectTrigger composition 고유 유지 정당화 (ADR-098-e 연계)
 
