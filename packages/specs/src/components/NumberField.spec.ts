@@ -4,7 +4,8 @@
  * React Aria 기반 숫자 입력 컴포넌트 (stepper 버튼 포함)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
- * @sync ComboBox.spec.ts — 동일한 컨테이너/버튼 패턴
+ * ComboBox 와 유사한 컨테이너/버튼 패턴이나 독립 선언 유지.
+ * sizes metric: FIELD_FAMILY_SIZES (primitives/fieldSizes.ts) 참조.
  * @packageDocumentation
  */
 
@@ -386,7 +387,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
     ],
   },
 
-  // @sync ComboBox.spec.ts sizes — 동일한 height/padding/iconSize
+  // FIELD_FAMILY_SIZES (primitives/fieldSizes.ts) 와 동일 metric. (ADR-105-b)
   sizes: {
     xs: {
       height: 20,
@@ -436,7 +437,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   },
 
   // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
-  // @sync ComboBox.spec.ts composition — 동일한 컨테이너/버튼 패턴
+  // ComboBox composition 과 기본 구조 유사 (flex-column, gap). 독립 선언 유지.
+  // disabled 처리: ComboBox(.react-aria-Button)와 달리 NumberField(.react-aria-Group) 기준.
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
@@ -925,7 +927,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         maxWidth: textMaxWidth,
       });
 
-      // 감소 아이콘 (-) — @sync ComboBox chevron: 배경 없이 아이콘만
+      // 감소 아이콘 (-) — ComboBox chevron 과 동일한 배경 없이 아이콘만 패턴
       const btn1X = width - paddingX - btnSize * 2 - btnGap + btnSize / 2;
       const btnCenterY = inputY + inputHeight / 2;
       shapes.push({
@@ -938,7 +940,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         strokeWidth: 2,
       });
 
-      // 증가 아이콘 (+) — @sync ComboBox chevron: 배경 없이 아이콘만
+      // 증가 아이콘 (+) — ComboBox chevron 과 동일한 배경 없이 아이콘만 패턴
       const btn2X = width - paddingX - btnSize + btnSize / 2;
       shapes.push({
         type: "icon_font" as const,

@@ -51,3 +51,9 @@ export {
 
 // Button-family height metric (ADR-105-a)
 export { BUTTON_FAMILY_HEIGHTS } from "./buttonSizes";
+
+// Field-family size metric (ADR-105-b)
+export { FIELD_FAMILY_SIZES } from "./fieldSizes";
+
+// Tab-family size metric (ADR-105-b)
+export { TABS_SIZE_CONFIG } from "./tabSizes";

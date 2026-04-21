@@ -253,7 +253,8 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     ],
   },
 
-  // @sync Button.spec.ts sizes — Input height = Button height
+  // sm~xl: BUTTON_FAMILY_HEIGHTS (primitives/buttonSizes.ts) 와 동일 metric.
+  // xs: height=18 — Button xs(20)와 독립 진화. 수정 금지 (BC 위험).
   sizes: {
     xs: {
       height: 18,

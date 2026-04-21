@@ -60,7 +60,8 @@ export const TabSpec: ComponentSpec<TabProps> = {
     },
   },
 
-  // TabsSpec.sizes와 동기화 (@sync Tabs.spec.ts)
+  // TABS_SIZE_CONFIG (primitives/tabSizes.ts) 와 동일 metric. (ADR-105-b)
+  // height = paddingY×2 + lineHeight + borderWidth×1 (단면 하단 border)
   sizes: {
     sm: {
       height: 21,

@@ -41,7 +41,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
     },
   },
 
-  // @sync Select.spec.ts sizes.iconSize — Select/ComboBox 동일 아이콘 크기
+  // FIELD_FAMILY_SIZES.iconSize (primitives/fieldSizes.ts) 와 동일 metric. (ADR-105-b)
   sizes: {
     xs: {
       height: 10,
@@ -101,7 +101,11 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = SelectIconSpec.variants![(props as { variant?: keyof typeof SelectIconSpec.variants }).variant ?? SelectIconSpec.defaultVariant!];
+      const variant =
+        SelectIconSpec.variants![
+          (props as { variant?: keyof typeof SelectIconSpec.variants })
+            .variant ?? SelectIconSpec.defaultVariant!
+        ];
       const iconSize = size.iconSize ?? 18;
 
       const effectiveSize =

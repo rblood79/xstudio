@@ -256,7 +256,8 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
     ],
   },
 
-  // @sync Select.spec.ts sizes — CSS height = lineHeight + paddingY×2 + borderWidth×2
+  // FIELD_FAMILY_SIZES (primitives/fieldSizes.ts) 와 동일 metric. (ADR-105-b)
+  // height = lineHeight + paddingY×2 + borderWidth×2
   sizes: {
     xs: {
       height: 20,

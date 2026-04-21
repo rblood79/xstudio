@@ -137,8 +137,10 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
     },
   },
 
-  // @sync Button.spec.ts padding/fontSize 패턴 + Tabs.css
+  // TABS_SIZE_CONFIG (primitives/tabSizes.ts) 와 동일 metric. (ADR-105-b)
+  // height = paddingY×2 + lineHeight + borderWidth×1 (단면 하단 border — Button과 공식 다름)
   // sm: 2*2 + 16(lh) + 1 = 21, md: 4*2 + 20(lh) + 1 = 29, lg: 8*2 + 24(lh) + 1 = 41
+  // Tabs.css 참조 부분 → 105-c (F2 spec-to-CSS) 에 위임
   sizes: {
     sm: {
       height: 21,

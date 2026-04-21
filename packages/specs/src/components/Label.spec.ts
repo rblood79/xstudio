@@ -40,6 +40,9 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
     display: "inline-flex",
     alignItems: "center",
   },
+  // ADR-106-c: base.css --label-font-size CSS 변수 상속 메커니즘 보존을 위해 유지
+  // generated CSS의 font-size 직접 선언이 base.css var(--label-font-size) 상속을 CSS specificity로 파괴
+  // G3 residual debt: variant 4종(accent/neutral/purple/negative) spec 미연결 + necessity-indicator CSS
   skipCSSGeneration: true,
 
   defaultSize: "md",

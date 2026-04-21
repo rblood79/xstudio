@@ -2,7 +2,24 @@
  * Label Component Styles
  *
  * Label은 텍스트 콘텐츠에 맞게 크기 결정 (fit-content)
- * skipCSSGeneration: true — base.css의 --label-font-size 변수 상속을 위해 수동 관리
+ *
+ * skipCSSGeneration: true — ADR-106-c 정당화 (G3 → G2 재판정)
+ *
+ * 이유: base.css의 --label-font-size CSS 변수 상속 메커니즘 보존
+ *   base.css에서 `.react-aria-Label { font-size: var(--label-font-size, var(--text-sm)); }` 를 선언.
+ *   부모 컴포넌트(TextField/Checkbox/RadioGroup 등 22개+)가 --label-font-size CSS 변수를 주입.
+ *   만약 generated CSS가 `.react-aria-Label[data-size="md"] { font-size: var(--text-sm); }` 를 emit하면,
+ *   CSS specificity로 base.css의 var(--label-font-size) 상속 패턴을 파괴
+ *   → 부모 주입 font-size 무시됨 (CSSGenerator 구조적 미지원).
+ *
+ * G3 residual debt (spec 미연결, 추후 별도 ADR 대상):
+ *   - variant 4종 색상 (accent/neutral/purple/negative): LabelSpec.variants 없음
+ *   - font-weight: 600, white-space: nowrap, background/border 초기화
+ *   - .necessity-indicator CSS: DOM slot 구조 전용
+ *
+ * D3 대칭:
+ *   - Skia 경로: LabelSpec.render.shapes → resolveSpecFontSize(spec.sizes.fontSize) 소비 (SSOT 준수)
+ *   - CSS 경로: base.css --label-font-size 변수 → 부모 generated/수동 CSS 주입 (간접 SSOT 소비)
  */
 
 @layer components {
@@ -19,7 +36,7 @@
     padding: 0;
   }
 
-  /* ===== Variant (from LabelSpec.variants) ===== */
+  /* ===== Variant — G3 residual debt: LabelSpec.variants 없음, spec 미연결 독립 정의 ===== */
 
   .react-aria-Label[data-variant="accent"] {
     color: var(--fg);
