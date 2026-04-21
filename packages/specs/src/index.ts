@@ -342,7 +342,7 @@ export type { PaginationProps } from "./components/Pagination.spec";
 export { TagGroupSpec } from "./components/TagGroup.spec";
 export type { TagGroupProps } from "./components/TagGroup.spec";
 
-export { TagListSpec } from "./components/TagList.spec";
+export { TagListSpec, TAG_CHIP_SIZES } from "./components/TagList.spec";
 export type { TagListProps } from "./components/TagList.spec";
 
 export { TagSpec } from "./components/Tag.spec";

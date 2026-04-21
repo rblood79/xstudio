@@ -114,7 +114,7 @@ const TAG_LIST_VARIANTS = {
  * shapes 함수의 `size` 매개변수는 TagList 본인 sizes (md only) 가 되므로, 부모
  * TagGroup size 를 별도로 해석하기 위해 본 상수 사용. props.size 참조.
  */
-const TAG_CHIP_SIZES = {
+export const TAG_CHIP_SIZES = {
   sm: {
     paddingX: 8,
     paddingY: 2,
@@ -188,15 +188,17 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
 
   render: {
     /**
-     * ADR-097 Phase 4A — items 기반 chip self-render (ListBox 선례 대칭).
+     * ADR-097 Phase 4A/4B — items 기반 chip self-render (ListBox 선례 대칭).
      *
      * Taffy 자식 0개 상태 (migration 후 Tag element orphan 처리됨) 에서도 TagGroup.
      * items → TagList.items propagation 경로로 chip 시각이 보존된다.
      *
-     * Phase 4A 범위:
-     *   - Single-row chip 배치 (wrap 없음, maxRows 없음 — Phase 4B)
-     *   - allowsRemoving X 아이콘 없음 (Phase 4B)
-     *   - per-item isDisabled opacity 적용
+     * Phase 4B 기능 (이식됨):
+     *   - Row-wrap 시뮬레이션 (_containerWidth 기반 각 chip 폭 누적 → row 판정)
+     *   - maxRows > 0 시 초과 chip skip + "Show all" chip (투명 배경, accent 텍스트)
+     *   - allowsRemoving 시 각 chip 오른쪽에 X icon_font shape
+     *   - per-item isDisabled 시각: variant.background/text → neutral-subtle/neutral-subdued
+     *     (ShapeBase opacity 미지원 → 색상 fallback 방식)
      */
     shapes: (props, _size, state = "default") => {
       const shapes: Shape[] = [];
@@ -226,60 +228,169 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
       const tagHeight = fontSize + tagPaddingY * 2;
       const borderRadius = chipSize.borderRadius;
       const gap = chipSize.gap;
+      const rowGap = gap;
 
-      let tagX = 0;
-      const currentY = 0;
+      // CONTAINER_DIMENSION 주입. 컨테이너 폭 미지정 시 350 fallback
+      // (implicitStyles 기존 로직 availableWidth fallback 과 동일).
+      const containerWidth =
+        typeof props._containerWidth === "number" && props._containerWidth > 0
+          ? props._containerWidth
+          : 350;
+
+      const allowsRemoving = Boolean(props.allowsRemoving);
+      // X 아이콘 예약 폭: icon fontSize + chip 내부 좌여백
+      const removeIconPad = allowsRemoving ? fontSize + 4 : 0;
+
+      const maxRowsRaw = (props as Record<string, unknown>).maxRows;
+      const maxRows = typeof maxRowsRaw === "number" ? maxRowsRaw : 0;
+
       const stateColors = resolveStateColors(variant, state);
 
-      // Phase 4A: 기본 chip 렌더 (single-row, wrap 없음).
-      //   per-item isDisabled 시각 상태는 Phase 4B 에서 alpha-blended 색상
-      //   fallback (bg-muted 계열) 으로 처리 — ShapeBase 가 opacity 필드 미지원.
+      // Phase 1: wrap/maxRows 시뮬레이션 — 각 chip 폭 계산 + 행 배치 결정
+      interface ChipLayout {
+        label: string;
+        textWidth: number;
+        chipWidth: number;
+        x: number;
+        y: number;
+        isDisabled: boolean;
+      }
+      const placed: ChipLayout[] = [];
+      let currentRowWidth = 0;
+      let rowIndex = 0;
+      let shouldShowAll = false;
+
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const label = item.label || `Tag ${i + 1}`;
-
         const textWidth = measureSpecTextWidth(
           label,
           fontSize,
           fontFamily.sans,
         );
-        const chipWidth = textWidth + tagPaddingX * 2;
+        const chipWidth = textWidth + tagPaddingX * 2 + removeIconPad;
+        const gapBefore = i > 0 && currentRowWidth > 0 ? gap : 0;
+
+        // 행 넘침 판정 (i > 0 만 wrap — 첫 chip 은 무조건 row 0)
+        if (i > 0 && currentRowWidth + gapBefore + chipWidth > containerWidth) {
+          rowIndex++;
+          currentRowWidth = 0;
+        }
+
+        // maxRows 초과 — Show all chip 표시 후 순회 종료
+        if (maxRows > 0 && rowIndex >= maxRows) {
+          shouldShowAll = true;
+          break;
+        }
+
+        const x = currentRowWidth === 0 ? 0 : currentRowWidth + gap;
+        placed.push({
+          label,
+          textWidth,
+          chipWidth,
+          x,
+          y: rowIndex * (tagHeight + rowGap),
+          isDisabled: Boolean(item.isDisabled),
+        });
+        currentRowWidth = x + chipWidth;
+      }
+
+      // Phase 2: placed chip shapes emit
+      const DISABLED_BG = "{color.neutral-subtle}" as TokenRef;
+      const DISABLED_TEXT = "{color.neutral-subdued}" as TokenRef;
+      const DISABLED_BORDER = "{color.neutral-subtle}" as TokenRef;
+
+      for (let i = 0; i < placed.length; i++) {
+        const chip = placed[i];
         const bgId = `tag-bg-${i}`;
+        const chipBg = chip.isDisabled ? DISABLED_BG : stateColors.background;
+        const chipBorder = chip.isDisabled
+          ? DISABLED_BORDER
+          : variant.border || variant.text;
+        const chipTextColor = chip.isDisabled ? DISABLED_TEXT : variant.text;
 
         shapes.push({
           id: bgId,
           type: "roundRect" as const,
-          x: tagX,
-          y: currentY,
-          width: chipWidth,
+          x: chip.x,
+          y: chip.y,
+          width: chip.chipWidth,
           height: tagHeight,
           radius: borderRadius,
-          fill: stateColors.background,
+          fill: chipBg,
         });
 
         shapes.push({
           type: "border" as const,
           target: bgId,
           borderWidth: 1,
-          color: variant.border || variant.text,
+          color: chipBorder,
           radius: borderRadius,
         });
 
         shapes.push({
           type: "text" as const,
-          x: tagX + tagPaddingX,
-          y: currentY + tagPaddingY,
-          text: label,
+          x: chip.x + tagPaddingX,
+          y: chip.y + tagPaddingY,
+          text: chip.label,
           fontSize,
           fontFamily: fontFamily.sans,
           fontWeight: 400,
-          fill: variant.text,
+          fill: chipTextColor,
           align: "left" as const,
           baseline: "top" as const,
-          maxWidth: textWidth + fontSize,
+          maxWidth: chip.textWidth + fontSize,
         });
 
-        tagX += chipWidth + gap;
+        if (allowsRemoving) {
+          // X 아이콘 — chip 오른쪽 끝 (chipWidth - paddingX - iconSize)
+          shapes.push({
+            type: "icon_font" as const,
+            iconName: "x",
+            x: chip.x + chip.chipWidth - tagPaddingX - fontSize,
+            y: chip.y + tagHeight / 2,
+            fontSize,
+            fill: chipTextColor,
+            strokeWidth: 2,
+          });
+        }
+      }
+
+      // Phase 3: Show all chip (maxRows 초과 시)
+      if (shouldShowAll && placed.length > 0) {
+        const lastChip = placed[placed.length - 1];
+        const showAllLabel = "Show all";
+        const showAllWidth =
+          measureSpecTextWidth(showAllLabel, fontSize, fontFamily.sans) +
+          tagPaddingX * 2;
+        const showAllX = lastChip.x + lastChip.chipWidth + gap;
+        // Show all 도 같은 행에 두어 visual layout 유지
+        // (원본 implicitStyles 도 lastChip 이후 push 하고 filteredChildren 재정렬 없음)
+
+        shapes.push({
+          id: "tag-show-all-bg",
+          type: "roundRect" as const,
+          x: showAllX,
+          y: lastChip.y,
+          width: showAllWidth,
+          height: tagHeight,
+          radius: borderRadius,
+          fill: "{color.transparent}" as TokenRef,
+        });
+
+        shapes.push({
+          type: "text" as const,
+          x: showAllX + tagPaddingX,
+          y: lastChip.y + tagPaddingY,
+          text: showAllLabel,
+          fontSize,
+          fontFamily: fontFamily.sans,
+          fontWeight: 400,
+          fill: "{color.accent}" as TokenRef,
+          align: "left" as const,
+          baseline: "top" as const,
+          maxWidth: showAllWidth,
+        });
       }
 
       return shapes;

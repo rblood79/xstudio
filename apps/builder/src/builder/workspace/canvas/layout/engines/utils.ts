@@ -31,6 +31,7 @@ import {
   METER_DIMENSIONS,
   STATUSLIGHT_DIMENSIONS,
   resolveListBoxItemMetric,
+  TAG_CHIP_SIZES,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
 import {
@@ -1530,6 +1531,57 @@ export function calculateContentHeight(
       Math.max(0, itemCount - 1) * gap +
       borderWidth * 2
     );
+  }
+
+  // 1.55c. TagList (ADR-097 Phase 4B): items SSOT + row-wrap 기반 intrinsic height.
+  // Migration 후 Tag element 가 orphan 처리된 상태 (childElements=0) 에서 TagList
+  // 자신은 자식 없는 컨테이너로 취급되지만, TagGroup.propagation 으로 items 를 수신한
+  // TagList spec shapes 가 wrap 시뮬레이션으로 chips 를 self-render 한다.
+  // layout 도 동일 공식 (availableWidth 기반 행 시뮬레이션) 으로 rows × chipHeight +
+  // (rows-1) × rowGap 반환.
+  // @sync TagList.spec.ts shapes() 의 wrap 시뮬레이션 — 변경 시 양쪽 동시 갱신.
+  if (tag1 === "taglist") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const items = props?.items as Array<{ label?: string }> | undefined;
+    if (!items || items.length === 0) return 0;
+
+    const sizeName = (props?.size as keyof typeof TAG_CHIP_SIZES) ?? "md";
+    const chipSize = TAG_CHIP_SIZES[sizeName] ?? TAG_CHIP_SIZES.md;
+    const fontSize = parseNumericValue(style?.fontSize) ?? chipSize.fontSize;
+    const tagHeight = fontSize + chipSize.paddingY * 2;
+    const gap = chipSize.gap;
+    const rowGap = gap;
+
+    const allowsRemoving = Boolean(props?.allowsRemoving);
+    const removeIconPad = allowsRemoving ? fontSize + 4 : 0;
+
+    const maxRowsRaw = props?.maxRows;
+    const maxRows = typeof maxRowsRaw === "number" ? maxRowsRaw : 0;
+
+    const containerWidth =
+      availableWidth && availableWidth > 0 ? availableWidth : 350;
+
+    let currentRowWidth = 0;
+    let rowIndex = 0;
+    for (let i = 0; i < items.length; i++) {
+      const label = items[i].label || `Tag ${i + 1}`;
+      const textWidth = measureTextWidth(label, fontSize, "Pretendard", 400);
+      const chipWidth = textWidth + chipSize.paddingX * 2 + removeIconPad;
+      const gapBefore = i > 0 && currentRowWidth > 0 ? gap : 0;
+
+      if (i > 0 && currentRowWidth + gapBefore + chipWidth > containerWidth) {
+        rowIndex++;
+        currentRowWidth = 0;
+      }
+
+      if (maxRows > 0 && rowIndex >= maxRows) break;
+
+      const x = currentRowWidth === 0 ? 0 : currentRowWidth + gap;
+      currentRowWidth = x + chipWidth;
+    }
+
+    const rows = rowIndex + 1;
+    return rows * tagHeight + Math.max(0, rows - 1) * rowGap;
   }
 
   // 1.6. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산

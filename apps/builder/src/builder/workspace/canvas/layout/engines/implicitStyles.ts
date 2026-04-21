@@ -554,13 +554,17 @@ export function applyImplicitStyles(
   }
 
   // ── TagList ──────────────────────────────────────────────────────
-  // TagGroup 내부 TagList: 부모 orientation에 따라 row/column 전환
-  // width: 100% — 부모 TagGroup 전체 너비를 사용하여 Tag들이 가로 배치
-  // ADR-093 Phase 3: display/flexDirection:"row"/flexWrap:"wrap" base primitive 는
-  //   TagListSpec.containerStyles 로 리프팅됨 (ADR-094 expandChildSpecs 경유 자동 주입).
-  //   orientation="vertical" (TagGroup 미지원이지만 방어적) 시에만 override.
-  //   labelPosition="side" flex:1/minWidth:0 주입 + Tag 자식 whiteSpace injection +
-  //   maxRows 근사 계산은 runtime fork 유지 (Hard Constraint #4).
+  // ADR-097 Phase 4B: items SSOT 전환 — TagList.spec.ts shapes 가 props.items 를
+  //   직접 consume 하여 chip self-render (ListBox 선례 대칭).
+  //   Tag 자식 element 기반 whiteSpace injection / maxRows 근사 계산 / "Show all"
+  //   synthetic Tag 생성 로직은 spec shapes 로 이관되어 본 분기에서 완전 삭제.
+  //   layout intrinsic height 는 utils.ts calculateContentHeight taglist 분기에서
+  //   items 기반 wrap 시뮬레이션으로 계산.
+  //
+  // 본 분기에 잔존: containerStyles 에서 커버하지 못하는 runtime fork 만 유지.
+  //   - TagGroup.orientation (현재 TagGroup 에 없음, HC#2) 방어적 분기
+  //   - TagGroup.labelPosition="side" 시 flex:1/minWidth:0 주입
+  //   - gap fallback (4 = TagListSpec.sizes.md.gap 일치)
   if (containerTag === "taglist") {
     const parentEl = containerEl.parent_id
       ? elementById.get(containerEl.parent_id)
@@ -579,135 +583,6 @@ export function applyImplicitStyles(
       // labelPosition: "side" 시 flex:1로 남은 공간 차지 (Label 옆 배치)
       ...(parentLabelPos === "side" ? { flex: 1, minWidth: 0 } : {}),
     });
-
-    // Tag 자식: white-space: nowrap (CSS .react-aria-Tag 동기화)
-    filteredChildren = filteredChildren.map((child) => {
-      if (child.tag !== "Tag") return child;
-      const childStyle = (child.props?.style ?? {}) as Record<string, unknown>;
-      if (childStyle.whiteSpace) return child;
-      return {
-        ...child,
-        props: {
-          ...child.props,
-          style: { ...childStyle, whiteSpace: "nowrap" },
-        },
-      };
-    });
-
-    // maxRows: 초과 Tag를 filteredChildren에서 제거 (S2 패턴)
-    // Canvas에서는 행 위치를 사전에 알 수 없으므로, 부모 폭과 Tag 예상 폭으로 근사 계산
-    const maxRows =
-      typeof parentProps?.maxRows === "number" ? parentProps.maxRows : 0;
-    const gap = 4;
-    if (maxRows > 0) {
-      const tagChildren = filteredChildren.filter((c) => c.tag === "Tag");
-      if (tagChildren.length > 0) {
-        // 부모 폭: DFS에서 전달된 availableWidth 사용
-        // labelPosition: "side" 시 Label 폭을 빼서 TagList 실제 사용 가능 폭 계산
-        let parentWidth = availableWidth || 350;
-        if (parentLabelPos === "side") {
-          const labelChild = filteredChildren.find((c) => c.tag === "Label");
-          if (labelChild) {
-            const labelText = String(
-              (labelChild.props as Record<string, unknown>)?.children || "",
-            );
-            const labelFontSize =
-              parseFloat(
-                String(
-                  (
-                    (labelChild.props as Record<string, unknown>)
-                      ?.style as Record<string, unknown>
-                  )?.fontSize ?? 14,
-                ),
-              ) || 14;
-            const labelWidth =
-              measureTextWidth(labelText, labelFontSize, "Pretendard", 500) +
-              gap;
-            parentWidth = Math.max(parentWidth - labelWidth, 50);
-          }
-        }
-        const sizeName = (parentProps?.size as string) || "md";
-        const tagPaddingX =
-          sizeName === "xs"
-            ? 4
-            : sizeName === "sm"
-              ? 8
-              : sizeName === "lg"
-                ? 16
-                : sizeName === "xl"
-                  ? 24
-                  : 12;
-        const tagFontSize =
-          sizeName === "xs"
-            ? 10
-            : sizeName === "sm"
-              ? 12
-              : sizeName === "lg"
-                ? 16
-                : sizeName === "xl"
-                  ? 18
-                  : 14;
-        const borderWidth = 1;
-
-        // 각 Tag의 실측 폭으로 행 배치 시뮬레이션
-        let currentRowWidth = 0;
-        let rowCount = 1;
-        let visibleCount = tagChildren.length;
-        for (let i = 0; i < tagChildren.length; i++) {
-          const text = String(
-            (tagChildren[i].props as Record<string, unknown>)?.children || "",
-          );
-          const textWidth = measureTextWidth(
-            text,
-            tagFontSize,
-            "Pretendard",
-            400,
-          );
-          const tagWidth = tagPaddingX * 2 + borderWidth * 2 + textWidth;
-          if (
-            currentRowWidth + tagWidth + (i > 0 ? gap : 0) > parentWidth &&
-            i > 0
-          ) {
-            rowCount++;
-            currentRowWidth = tagWidth;
-          } else {
-            currentRowWidth += tagWidth + (i > 0 ? gap : 0);
-          }
-          if (rowCount > maxRows) {
-            visibleCount = i;
-            break;
-          }
-        }
-        if (visibleCount < tagChildren.length) {
-          const visibleIds = new Set(
-            tagChildren.slice(0, visibleCount).map((c) => c.id),
-          );
-          filteredChildren = filteredChildren.filter(
-            (c) => c.tag !== "Tag" || visibleIds.has(c.id),
-          );
-
-          // Synthetic "Show all" Tag: maxRows 초과 시 표시하는 가상 Tag
-          // fullTreeLayout의 synthetic handler가 Taffy 트리에 자동 추가
-          const showAllTag: Element = {
-            id: `${containerEl.id}__showAll`,
-            tag: "Tag",
-            props: {
-              children: "Show all",
-              style: {
-                whiteSpace: "nowrap",
-                backgroundColor: "transparent",
-                borderColor: "transparent",
-                color: "{color.accent}",
-              },
-            },
-            parent_id: containerEl.id,
-            page_id: containerEl.page_id,
-            order_num: visibleCount + 1,
-          } as Element;
-          filteredChildren.push(showAllTag);
-        }
-      }
-    }
   }
 
   // ── ListBox ──────────────────────────────────────────────────────────
