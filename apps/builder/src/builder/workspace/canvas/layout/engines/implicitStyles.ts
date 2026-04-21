@@ -28,6 +28,7 @@ import type { ComponentSpec, SizeSpec, TokenRef } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { findAncestorByTag } from "../../skia/ancestorLookup";
 import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
+import { LOWERCASE_TAG_SPEC_MAP } from "./tagSpecLookup";
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────────
 
@@ -89,16 +90,8 @@ export function formatProgressValue(
   }
 }
 
-// ADR-083 Phase 0: TAG_SPEC_MAP(PascalCase 키) → lowercase Map 으로 build-time 1회 변환.
-//   implicitStyles 는 `containerTag.toLowerCase()` 를 사용하므로 casing 정규화 필수.
-//   기존 수동 `CONTAINER_STYLES_SPEC_MAP = { listbox: ListBoxSpec }` 를 일반화.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<string, ComponentSpec<any>> = new Map(
-  Object.entries(TAG_SPEC_MAP).map(([k, v]) => [
-    k.toLowerCase(),
-    v as ComponentSpec<unknown>,
-  ]),
-);
+// ADR-096 Phase 4: LOWERCASE_TAG_SPEC_MAP 을 `engines/tagSpecLookup.ts` 공유
+//   모듈로 hoist. utils.ts 에서도 defaultWidth/defaultHeight lookup 에 재사용.
 
 // ADR-086 P2: spec.sizes 기반 필드 직접 소비 헬퍼 (Record 전수 폐쇄용).
 //   `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 을 정규화 + default size fallback.

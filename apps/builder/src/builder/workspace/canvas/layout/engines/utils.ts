@@ -44,7 +44,11 @@ import {
   SelectTriggerSpec,
   // ADR-091 Addendum 2: DateField intrinsic height SSOT.
   DateFieldSpec,
+  // ADR-096 Phase 4: HTML primitive defaults 직접 참조 — DEFAULT_ELEMENT_WIDTHS/HEIGHTS 해체.
+  HTML_PRIMITIVE_DEFAULT_WIDTHS,
+  HTML_PRIMITIVE_DEFAULT_HEIGHTS,
 } from "@composition/specs";
+import { LOWERCASE_TAG_SPEC_MAP } from "./tagSpecLookup";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   measureWrappedTextHeight,
@@ -453,23 +457,10 @@ export function parseBorder(
   };
 }
 
-/**
- * 요소 태그별 기본 너비 (텍스트 없을 때)
- *
- * width가 명시되지 않고 텍스트 콘텐츠도 없는 요소에 대한 폴백 너비
- */
-const DEFAULT_ELEMENT_WIDTHS: Record<string, number> = {
-  // 폼 요소 (기본 크기)
-  input: 180,
-  select: 150,
-  textarea: 200,
-  // 미디어 계열
-  img: 150,
-  image: 280,
-  video: 300,
-  canvas: 200,
-  iframe: 300,
-};
+// ADR-096 Phase 4: DEFAULT_ELEMENT_WIDTHS Record 해체.
+//   - Spec 있는 태그 (input/select/textarea/image) → `ComponentSpec.defaultWidth`
+//   - HTML primitive (img/video/canvas/iframe) → `HTML_PRIMITIVE_DEFAULT_WIDTHS`
+//   lookup 체인: spec.defaultWidth → HTML_PRIMITIVE_DEFAULT_WIDTHS → DEFAULT_WIDTH
 
 /** 기본 너비 (알 수 없는 태그, 텍스트 없을 때) */
 const DEFAULT_WIDTH = 80;
@@ -1406,66 +1397,29 @@ export function calculateContentWidth(
     }
   }
 
-  // 5. 태그별 기본 너비 사용
-  const defaultWidth = DEFAULT_ELEMENT_WIDTHS[tag];
-  if (defaultWidth !== undefined) return defaultWidth;
+  // 5. 태그별 기본 너비 사용 (ADR-096 Phase 4)
+  //    5a. ComponentSpec.defaultWidth (Spec 있는 태그: input/select/textarea/image)
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  if (spec?.defaultWidth !== undefined) return spec.defaultWidth;
+
+  //    5b. HTML primitive default (img/video/canvas/iframe)
+  const primitiveWidth = HTML_PRIMITIVE_DEFAULT_WIDTHS[tag];
+  if (primitiveWidth !== undefined) return primitiveWidth;
 
   // 6. 알 수 없는 태그는 기본값 사용
   return DEFAULT_WIDTH;
 }
 
-/**
- * 요소 태그별 기본 높이
- *
- * height가 명시되지 않은 요소에 대한 추정 높이
- * 브라우저 CSS와 유사한 기본 크기 적용
- */
-
 // ADR-091 Phase 2: TABS_BAR_HEIGHT / TABS_PANEL_PADDING 중간 캐시 제거.
 //   소비처는 `TabsSpec.sizes[size].height` / `TabPanelsSpec.sizes[size].paddingX` 직접 참조
 //   또는 `specSizeField("tabs"/"tabpanels", sizeName, "height"/"paddingX")` (implicitStyles 경로) 사용.
 
-const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
-  // 버튼/인풋 계열
-  button: 36,
-  // input: InputSpec.sizes 기반 동적 계산 (step 2.5)
-  select: 36,
-  textarea: 80,
-  // 텍스트 계열
-  // label: Tailwind CSS v4 line-height:1.5 적용 → step 7에서 동적 계산 (fontSize*1.5)
-  // DEFAULT_ELEMENT_HEIGHTS에 두면 20으로 고정되어 실제 CSS 높이(21@14px)와 불일치
-  p: 24,
-  span: 20,
-  h1: 40,
-  h2: 36,
-  h3: 32,
-  h4: 28,
-  h5: 24,
-  h6: 20,
-  // 컨테이너 계열 (auto, 자식 기반)
-  div: 0,
-  section: 0,
-  article: 0,
-  header: 0,
-  footer: 0,
-  nav: 0,
-  aside: 0,
-  main: 0,
-  // 미디어 계열
-  img: 150,
-  image: 200,
-  video: 200,
-  canvas: 150,
-  // 리스트 계열
-  ul: 0,
-  ol: 0,
-  li: 24,
-  // 테이블 계열
-  table: 0,
-  tr: 36,
-  td: 36,
-  th: 36,
-};
+// ADR-096 Phase 4: DEFAULT_ELEMENT_HEIGHTS Record 해체.
+//   - Spec 있는 태그 (button/select/textarea/image) → `ComponentSpec.defaultHeight`
+//   - HTML primitive (p/span/h1~h6/div/section/... 26 tag) → `HTML_PRIMITIVE_DEFAULT_HEIGHTS`
+//   lookup 체인: spec.defaultHeight → HTML_PRIMITIVE_DEFAULT_HEIGHTS → estimateTextHeight() fallback
+//   - input: InputSpec.sizes 기반 동적 계산 (step 2.5) — defaultHeight 미설정
+//   - label: Tailwind CSS v4 line-height:1.5 적용 → step 7에서 동적 계산 (fontSize*1.5)
 
 /**
  * 텍스트 높이 추정
@@ -2631,11 +2585,16 @@ export function calculateContentHeight(
     }
   }
 
-  // 7. 태그별 기본 높이 사용
-  const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
-  if (defaultHeight !== undefined) return defaultHeight;
+  // 7. 태그별 기본 높이 사용 (ADR-096 Phase 4)
+  //    7a. ComponentSpec.defaultHeight (Spec 있는 태그: button/select/textarea/image)
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  if (spec?.defaultHeight !== undefined) return spec.defaultHeight;
 
-  // 7. Text/Heading 등 composition 커스텀 태그: CSS line-height: 1.5 상속
+  //    7b. HTML primitive default (p/span/h1~h6/div/section/... 26 tag)
+  const primitiveHeight = HTML_PRIMITIVE_DEFAULT_HEIGHTS[tag];
+  if (primitiveHeight !== undefined) return primitiveHeight;
+
+  // 8. Text/Heading 등 composition 커스텀 태그: CSS line-height: 1.5 상속
   // Preview iframe의 :root { line-height: 1.5 } (Tailwind CSS v4 기본)이
   // Text 컴포넌트에 상속되므로 fontSize * 1.5를 명시적으로 전달
   // (Button 등 UI 컴포넌트는 line-height: normal → step 2에서 fontBoundingBox 기반 처리)
