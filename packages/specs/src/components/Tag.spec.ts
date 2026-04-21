@@ -54,7 +54,8 @@ export const TagSpec: ComponentSpec<TagProps> = {
 
   variants: {
     default: {
-      // @sync TagGroup.css .react-aria-Tag 기본 색상
+      // Colors match TagGroup.css .react-aria-Tag --tag-color/--tag-text/--tag-border defaults.
+      // TagGroup.css is spec-token-derived (ADR-106-b G2) — this is intentional alignment.
       background: "{color.layer-1}" as TokenRef, // --overlay-background
       backgroundHover: "{color.layer-1}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
@@ -62,7 +63,8 @@ export const TagSpec: ComponentSpec<TagProps> = {
       border: "{color.border}" as TokenRef, // --border-color
     },
     selected: {
-      // @sync TagGroup.css .react-aria-Tag[data-selected]
+      // Colors match TagGroup.css .react-aria-Tag[data-selected] --tag-color/--tag-text/--tag-border.
+      // TagGroup.css is spec-token-derived (ADR-106-b G2) — this is intentional alignment.
       background: "{color.accent}" as TokenRef, // --highlight-background
       backgroundHover: "{color.accent}" as TokenRef,
       backgroundPressed: "{color.accent}" as TokenRef,
@@ -71,8 +73,8 @@ export const TagSpec: ComponentSpec<TagProps> = {
     },
   },
 
-  // @sync Button.css/BUTTON_SIZE_CONFIG — padding/fontSize 동일
-  // @sync TagGroup.css line-height: var(--text-*--line-height)
+  // Tag sizes mirror ButtonSpec.sizes (padding/fontSize) — intentional chip=button sizing.
+  // TagGroup.css line-height mirrors these lineHeight values — spec-token-derived (ADR-106-b G2).
   // lineHeight = fontSize * multiplier (CSS line-height 정합성)
   // height = lineHeight + paddingY*2 + borderWidth(1)*2
   sizes: {
@@ -131,7 +133,11 @@ export const TagSpec: ComponentSpec<TagProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = TagSpec.variants![(props as { variant?: keyof typeof TagSpec.variants }).variant ?? TagSpec.defaultVariant!];
+      const variant =
+        TagSpec.variants![
+          (props as { variant?: keyof typeof TagSpec.variants }).variant ??
+            TagSpec.defaultVariant!
+        ];
       const parseNumericStyleValue = (
         value: string | number | undefined,
         fallback: number,
@@ -193,7 +199,10 @@ export const TagSpec: ComponentSpec<TagProps> = {
 
       const text = props.children;
       if (text) {
-        const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
+        const fontSize = resolveSpecFontSize(
+          props.style?.fontSize ?? size.fontSize,
+          14,
+        );
 
         const paddingX =
           props.style?.paddingLeft != null

@@ -145,9 +145,9 @@
   }
 
   /* ===== Parent-delegated Size Variants ===== */
-  /* @sync Button.css size variants — padding/fontSize/lineHeight 동일 */
-
-  /* @sync ButtonSpec.sizes — padding 동일 */
+  /* Tag size variants use the same padding/fontSize/lineHeight scale as Button.
+   * Intentional: chips share button sizing. If Button.css [data-size] changes,
+   * update here too. (ADR-106-b — formerly @sync F4 annotation) */
 
   /* Label font-size delegation (LabelSpec sizes: sm=text-xs, md=text-sm, lg=text-md) */
   .react-aria-TagGroup[data-tag-size="xs"] {
