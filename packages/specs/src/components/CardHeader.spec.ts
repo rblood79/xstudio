@@ -116,6 +116,21 @@ export const CardHeaderSpec: ComponentSpec<CardHeaderProps> = {
     },
   },
 
+  // ADR-095: 자식 Heading 에 `style.flex: 1` 고정 주입. 기존 `implicitStyles.ts:1843-1856`
+  //   cardheader 분기 해체 대응. Heading 에 사용자가 flex/flexGrow/width 중 하나라도
+  //   설정돼 있으면 skip (skipIfSet — 기존 조건 1:1 이관).
+  propagation: {
+    rules: [
+      {
+        childPath: "Heading",
+        childProp: "flex",
+        asStyle: true,
+        styleValue: 1,
+        skipIfSet: ["flex", "flexGrow", "width"],
+      },
+    ],
+  },
+
   render: {
     // Skia 미사용 — container shell.
     //   카드 헤더 시각(배경/padding)은 부모 Card.render.shapes 가 담당.

@@ -1834,42 +1834,11 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── Card ─────────────────────────────────────────────────────────────
-  // ADR-092 Phase 5: Card 분기(CardHeader/CardContent width:"100%" 주입) 제거.
-  //   CardHeaderSpec.containerStyles.width="100%" + CardContentSpec.containerStyles.width="100%"
-  //   가 `resolveContainerStylesFallback` 경유로 주입 (ADR-094 인프라).
-  //   CardFooter 분기는 본 ADR scope 외 (implicitStyles 분기 없었음).
-  // ── CardHeader ──────────────────────────────────────────────────────
-  if (containerTag === "cardheader") {
-    filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "Heading") {
-        const cs = (child.props?.style || {}) as Record<string, unknown>;
-        if (cs.flex === undefined && cs.flexGrow === undefined && !cs.width) {
-          return {
-            ...child,
-            props: { ...child.props, style: { ...cs, flex: 1 } },
-          } as Element;
-        }
-      }
-      return child;
-    });
-  }
-
-  // ── CardContent ─────────────────────────────────────────────────────
-  if (containerTag === "cardcontent") {
-    filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "Description") {
-        const cs = (child.props?.style || {}) as Record<string, unknown>;
-        if (!cs.width && cs.flex === undefined) {
-          return {
-            ...child,
-            props: { ...child.props, style: { ...cs, width: "100%" } },
-          } as Element;
-        }
-      }
-      return child;
-    });
-  }
+  // ── Card / CardHeader / CardContent 분기 해체 (ADR-092 Phase 5 + ADR-095) ──────
+  // Card 분기(CardHeader/CardContent width:"100%"): ADR-092 에서 containerStyles 이관 완료.
+  // CardHeader → Heading flex:1 / CardContent → Description width:100% 자식 style 주입:
+  //   ADR-095 에서 propagation rule (styleValue + skipIfSet) 로 이관 완료. 구현은
+  //   CardHeaderSpec.propagation + CardContentSpec.propagation + propagationRegistry 등록.
 
   // ── Checkbox / Radio / Switch — indicator 공간 확보 ────────────────
   // Indicator는 spec shapes로 렌더링 (Taffy 트리 밖).

@@ -106,6 +106,21 @@ export const CardContentSpec: ComponentSpec<CardContentProps> = {
     },
   },
 
+  // ADR-095: 자식 Description 에 `style.width: "100%"` 고정 주입. 기존 `implicitStyles.ts:1859-1872`
+  //   cardcontent 분기 해체 대응. Description 에 사용자가 width/flex 중 하나라도 설정돼 있으면
+  //   skip (skipIfSet — 기존 조건 1:1 이관).
+  propagation: {
+    rules: [
+      {
+        childPath: "Description",
+        childProp: "width",
+        asStyle: true,
+        styleValue: "100%",
+        skipIfSet: ["width", "flex"],
+      },
+    ],
+  },
+
   render: {
     // Skia 미사용 — container shell.
     //   카드 콘텐츠 시각은 부모 Card.render.shapes 가 담당.

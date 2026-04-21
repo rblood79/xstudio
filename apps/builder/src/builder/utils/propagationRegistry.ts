@@ -32,6 +32,9 @@ import {
   CalendarSpec,
   RangeCalendarSpec,
   CardSpec,
+  // ADR-095: CardHeader/CardContent 자식 style 주입 rule 등록 대응.
+  CardHeaderSpec,
+  CardContentSpec,
   GridListSpec,
   ListBoxSpec,
   ToggleButtonGroupSpec,
@@ -182,6 +185,9 @@ registerPropagationSpec("Meter", MeterSpec);
 registerPropagationSpec("Calendar", CalendarSpec);
 registerPropagationSpec("RangeCalendar", RangeCalendarSpec);
 registerPropagationSpec("Card", CardSpec);
+// ADR-095: CardHeader → Heading flex:1 / CardContent → Description width:100% 주입 rule.
+registerPropagationSpec("CardHeader", CardHeaderSpec);
+registerPropagationSpec("CardContent", CardContentSpec);
 registerPropagationSpec("GridList", GridListSpec);
 registerPropagationSpec("ListBox", ListBoxSpec);
 registerPropagationSpec("ToggleButtonGroup", ToggleButtonGroupSpec);
