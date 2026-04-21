@@ -413,7 +413,7 @@ export function createToastDefinition(
 /**
  * NumberField 복합 컴포넌트 정의
  *
- * CSS DOM 구조 (@sync ComboBox):
+ * DOM 구조 (ComboBox 와 동일한 패턴):
  * NumberField (parent, tag="NumberField", display flex column)
  *   ├─ Label (tag="Label", children="Number")
  *   ├─ ComboBoxWrapper (tag="ComboBoxWrapper", display flex row, bg+border)

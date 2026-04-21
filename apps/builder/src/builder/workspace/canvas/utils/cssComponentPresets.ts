@@ -705,8 +705,10 @@ const TOGGLE_BUTTON_SIZE_MAPPING: Record<
 };
 
 const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
-  // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
-  // Button.css와 동일한 padding/borderRadius 사용
+  // (ADR-105-d — formerly @sync F5-3 annotation)
+  // ToggleButtonSpec.sizes 에서 동일 값 정의됨 (Button.css padding/borderRadius 동일 패턴).
+  // Canvas fallback 용 하드코딩 유지 — specs 패키지 import 비용 대비 현재 복제가 정당.
+  // ToggleButton.css 또는 ToggleButtonSpec.sizes 변경 시 이 테이블도 동시 갱신 필요.
   S: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 4 }, // --radius-sm
   M: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 6 }, // --radius-md
   L: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 8 }, // --radius-lg

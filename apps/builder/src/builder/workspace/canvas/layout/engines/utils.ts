@@ -1517,16 +1517,23 @@ export function calculateContentHeight(
     // ADR-078 Phase 3: item metric SSOT = ListBoxItemSpec.sizes.md
     //   → ListBoxSpec.render.shapes 와 동일 itemHeight 공식 공급 (CSS item border-box 와 일치)
     const { itemHeight: itemH } = resolveListBoxItemMetric(fontSize);
-    // @sync ListBoxSpec.sizes.md — paddingY=4(container padding only), gap=2
-    // @sync containerStyles.borderWidth=1
+    // ADR-078 Phase 3: style prop 에서 Spec 파생 paddingY/gap 을 런타임 소비.
+    // fallback(4, 2)은 style 미설정 시 기본값 — ListBoxSpec.sizes.md 와 동일값.
+    // (ADR-105-d — F5-5 자연 해소 확증: style prop 소비로 Spec 의존 drift 없음)
     const paddingY =
       parseNumericValue(style?.paddingTop ?? style?.padding) ?? 4;
     const gap = parseNumericValue(style?.gap) ?? 2;
+    // (ADR-105-d — formerly @sync F5-6 annotation)
+    // ListBoxSpec.containerStyles.borderWidth = 1 과 동일값.
+    // Canvas 레이아웃 계산용 로컬 상수 유지 — read-through 전환은 Layout Canvas Spec Consumer ADR 에서 처리.
     const borderWidth = 1;
 
     // ADR-099 Phase 2: entries 순회로 totalItems + sectionCount + nonFirstSection 집계.
     // Section entry 는 Header height + 내부 items 높이 + section 간 topPad 가산.
-    // @sync ListBoxSpec.render.shapes entries 루프 — 공식 변경 시 양쪽 동시 갱신.
+    // (ADR-105-d — formerly @sync F5-7 annotation)
+    // ADR-099 Phase 2: entries 순회로 totalItems + sectionCount + nonFirstSection 집계.
+    // 이 공식은 ListBoxSpec.render.shapes() 의 entries 루프 구조를 미러링함.
+    // ListBoxSpec.render.shapes() 알고리즘 변경 시 이 레이아웃 계산도 동시 갱신 필요.
     const entries =
       Array.isArray(rawEntries) && rawEntries.length > 0
         ? rawEntries
@@ -1565,7 +1572,10 @@ export function calculateContentHeight(
   // TagList spec shapes 가 wrap 시뮬레이션으로 chips 를 self-render 한다.
   // layout 도 동일 공식 (availableWidth 기반 행 시뮬레이션) 으로 rows × chipHeight +
   // (rows-1) × rowGap 반환.
-  // @sync TagList.spec.ts shapes() 의 wrap 시뮬레이션 — 변경 시 양쪽 동시 갱신.
+  // (ADR-105-d — formerly @sync F5-8 annotation)
+  // TagList.spec.ts shapes() 의 wrap 시뮬레이션(availableWidth 기반 행 계산) 을 미러링.
+  // TAG_CHIP_SIZES 상수는 ADR-105-a 에서 primitives 로 이관 완료.
+  // TagList.spec.ts shapes() wrap 알고리즘 변경 시 이 레이아웃 계산도 동시 갱신 필요.
   if (tag1 === "taglist") {
     const props = element.props as Record<string, unknown> | undefined;
     const items = props?.items as Array<{ label?: string }> | undefined;

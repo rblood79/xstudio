@@ -96,8 +96,10 @@
     }
 
     &[data-disabled] {
-      /* @sync Generator `[data-disabled]` emit opacity:0.38 + cursor:not-allowed.
-       * 수동은 text color 38% 추가 — opacity 와 곱해져 약 14% 전송. 디자인 의도. */
+      /* (ADR-105-d — formerly @sync F4-2 annotation)
+       * Generator 가 [data-disabled] state selector emit 을 미지원하여 수동 CSS 유지.
+       * opacity:0.38 (Generator emit 예정) 와 text color 38% (수동) 가 곱해져 ~14% 투명도.
+       * Generator 에 state selector 지원 추가 시 이 수동 CSS 를 제거하고 Spec 로 이관. */
       color: color-mix(in srgb, var(--fg) 38%, transparent);
     }
 

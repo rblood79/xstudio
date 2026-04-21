@@ -120,7 +120,7 @@ export function createDatePickerDefinition(
 }
 
 /**
- * DateRangePicker 복합 컴포넌트 정의 (@sync DatePicker 동일 구조)
+ * DateRangePicker 복합 컴포넌트 정의 (DatePicker 와 동일한 DOM 구조 패턴)
  *
  *   DateRangePicker (parent, flex column, gap:8px, width:284px)
  *     ├─ Label         (tag="Label")

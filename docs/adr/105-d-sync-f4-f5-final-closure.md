@@ -2,7 +2,30 @@
 
 ## Status
 
-Proposed — 2026-04-22
+Implemented — 2026-04-22
+
+## Implementation Summary (2026-04-22)
+
+Phase 0~4 전부 완결. **@sync 잔존 9→0 완전 청산 → ADR-105 Charter 전체 종결 (37→0)**.
+
+- **Phase 0 재grep**: 9건 라인번호 breakdown 일치 확증
+- **Phase 1 F4 2건**:
+  - `Badge.css:407` → BadgeSpec.sizes 파생 근거 + 수동 갱신 의무 주석
+  - `ListBox.css:99` → Generator state selector 미지원 구조적 이유 + 이관 조건 주석
+- **Phase 2 F5 factory 2건 (D2 경계 정당화)**:
+  - `DateColorComponents.ts:123` → DatePicker 동일 DOM 구조 서술 보존, `@sync` 키워드만 제거
+  - `FormComponents.ts:416` → ComboBox 동일 패턴 서술 보존, `@sync` 키워드만 제거
+- **Phase 3 F5 builder 5건**:
+  - `cssComponentPresets.ts:708` → ToggleButtonSpec.sizes SSOT 명시 + fallback 복제 정당화
+  - `implicitStyles.ts:183` → SelectSpec/ComboBoxSpec.sizes SSOT 명시 + 레이어 분리 원칙
+  - `utils.ts:1520` → F5-5 자연 해소 확증 (style prop 런타임 소비 중)
+  - `utils.ts:1521/1529/1568` → F5-6/7/8 각각 Spec SSOT + 미러링 알고리즘 동기화 의무 주석
+- **Phase 4 검증**:
+  - `rg "@sync"` 실경고 마커 **0건** (formerly @sync 역사 서술만 잔존)
+  - `pnpm -w type-check` → **3/3 PASS** (FULL TURBO cached)
+  - specs **205/205 PASS** / builder **227/227 PASS** / shared **52/52 PASS**
+
+BC 영향 0%, 런타임 코드 변경 0, 시각 변경 0. 편집한 파일 7개, +34 / -12 diff.
 
 ## Context
 

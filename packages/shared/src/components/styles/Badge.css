@@ -404,7 +404,10 @@
   }
 
   /* ========== Size Variants ========== */
-  /* @sync BadgeSpec.sizes — Button과 동일한 height/padding/fontSize, border-radius: radius-full */
+  /* (ADR-105-d — formerly @sync F4-1 annotation)
+   * BadgeSpec.sizes 에서 height/padding/fontSize/border-radius 를 정의하며,
+   * 아래 CSS 값은 Spec 에서 자동 생성된 것이 아닌 수동 선언이다.
+   * Spec 변경 시 이 블록도 동시 갱신 필요. */
 
   /* ===== XS Size ===== */
   .react-aria-Badge[data-size="xs"] {

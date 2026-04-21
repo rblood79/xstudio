@@ -180,7 +180,10 @@ export function resolveContainerStylesFallback(
 
 /**
  * ComboBox/Select/SelectTrigger/ComboBoxWrapper 공통 spec padding
- * @sync Select.css / ComboBox.css size variants
+ * (ADR-105-d — formerly @sync F5-4 annotation)
+ * Select.css / ComboBox.css size variants 와 동일 값. SelectSpec.sizes / ComboBoxSpec.sizes 에서
+ * SSOT 정의됨. Canvas implicit styles 계산용 로컬 복제 — specs 패키지 import 비용 대비 유지 정당.
+ * Spec.sizes padding 변경 시 이 테이블도 동시 갱신 필요.
  * CSS padding: top right bottom left — right = top (paddingY), left = paddingLeft
  */
 const SPEC_PADDING: Record<string, { left: number; right: number; y: number }> =
