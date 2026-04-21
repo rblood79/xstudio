@@ -96,3 +96,7 @@ export { toRuntimeComboBoxItem } from "./combobox-items";
 // ListBox Items Types (ADR-076)
 export type { StoredListBoxItem, RuntimeListBoxItem } from "./listbox-items";
 export { toRuntimeListBoxItem } from "./listbox-items";
+
+// TagGroup Items Types (ADR-097)
+export type { StoredTagItem, RuntimeTagItem } from "./taggroup-items";
+export { toRuntimeTagItem } from "./taggroup-items";

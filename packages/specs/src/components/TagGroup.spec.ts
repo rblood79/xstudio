@@ -257,16 +257,31 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       {
         title: "Tag Management",
         fields: [
+          // ADR-097 Phase 1: children-manager → items-manager 전환.
+          //   ADR-076 ListBox 선례 동일 패턴. Tag element tree → TagGroup.props.items[]
+          //   로 이관 (Phase 2 migrateCollectionItems orchestrator).
           {
             key: "items",
-            type: "children-manager",
+            type: "items-manager",
             label: "Tags",
-            childTag: "Tag",
-            defaultChildProps: {
-              children: "Tag",
+            itemsKey: "items",
+            itemTypeName: "Tag",
+            defaultItem: {
+              id: "", // runtime에서 crypto.randomUUID() 주입
+              label: "New Tag",
               isDisabled: false,
             },
-            labelProp: "children",
+            itemSchema: [
+              { key: "label", type: "string", label: "Label" },
+              { key: "isDisabled", type: "boolean", label: "Disabled" },
+              {
+                key: "allowsRemoving",
+                type: "boolean",
+                label: "Allows Removing",
+              },
+            ],
+            labelKey: "label",
+            allowNested: false,
           },
         ],
       },

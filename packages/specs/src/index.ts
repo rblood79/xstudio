@@ -81,6 +81,9 @@ export type {
   // ListBox Items Types (ADR-076)
   StoredListBoxItem,
   RuntimeListBoxItem,
+  // TagGroup Items Types (ADR-097)
+  StoredTagItem,
+  RuntimeTagItem,
 } from "./types";
 
 // ADR-073: Select/ComboBox items runtime converters
@@ -89,6 +92,9 @@ export { toRuntimeComboBoxItem } from "./types/combobox-items";
 
 // ADR-076: ListBox items runtime converter
 export { toRuntimeListBoxItem } from "./types/listbox-items";
+
+// ADR-097: TagGroup items runtime converter
+export { toRuntimeTagItem } from "./types/taggroup-items";
 
 export { isValidTokenRef } from "./types";
 
