@@ -1110,6 +1110,8 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
+      // ADR-102: SelectIcon — RAC 공식 미존재 composition 고유 D3 시각 element (chevron 아이콘).
+      //   BC HIGH (factory 직렬화 tag) → 정당화 유지. grandparent(Select) iconName 전파.
       if (child.tag === "SelectIcon") {
         // Select → SelectTrigger → SelectIcon: 조부모(Select)의 iconName 전파
         const selectEl = elementById.get(containerEl.parent_id ?? "");

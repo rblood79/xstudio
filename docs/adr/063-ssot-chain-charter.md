@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed — 2026-04-13
+Accepted — 2026-04-21 (Proposed 2026-04-13 → Accepted 2026-04-21)
+
+**승격 근거**: Charter ADR. 본 문서는 `.claude/rules/ssot-hierarchy.md` 정본 규칙의 공식 ADR. 실질 코드 변경 0 — 규칙 자체는 도입 시점(2026-04-13)부터 작동 중이었고, 이후 후속 ADR 체인(ADR-057~062 / 078/079/083~097 / 098/099/100)이 모두 본 Charter 의 3-domain 분할(D1 DOM/접근성=RAC / D2 Props=RSP 참조 / D3 시각=Spec SSOT) 에 정합하게 land. Gate 조건 없음 — 합의 완료 상태로 Accepted 전환 (`adr-writing.md` Status 전이 규칙: "Proposed → Accepted : Gate 없이 합의 완료").
 
 ## Context
 
@@ -119,12 +121,12 @@ ADR-059 v2 Phase 1 Step 1(TextField 시험대)과 ADR-062(Field RSP Conformance)
 
 ## Gates
 
-| Gate | 시점 | 통과 조건 | 실패 시 대안 |
-| --- | --- | --- | --- |
-| G1: 정본 규칙 파일 | 본 ADR 커밋 전 | `.claude/rules/ssot-hierarchy.md` 존재 + 3-domain/용어/경계/집행 4섹션 완비 | 규칙 파일 보강 |
-| G2: 문서 체계 갱신 | Phase 1 완료 | CLAUDE.md/README + 4개 기존 rule + 3개 skill + 4개 agent에서 정본 파일 포인터 참조 | 누락 항목 보강 |
-| G3: 소급 주석 | Phase 3 완료 | ADR-036/057/058/059/062 각 상단에 domain 헤더 1줄 | 누락 ADR 보강 |
-| G4: 기존 ADR 정합 | Phase 3 완료 | 재해석 매트릭스(breakdown §소급 적용)에 모순 없음 | 충돌 ADR 수정 (ADR-062 amend 등) |
+| Gate               | 시점           | 통과 조건                                                                          | 실패 시 대안                     |
+| ------------------ | -------------- | ---------------------------------------------------------------------------------- | -------------------------------- |
+| G1: 정본 규칙 파일 | 본 ADR 커밋 전 | `.claude/rules/ssot-hierarchy.md` 존재 + 3-domain/용어/경계/집행 4섹션 완비        | 규칙 파일 보강                   |
+| G2: 문서 체계 갱신 | Phase 1 완료   | CLAUDE.md/README + 4개 기존 rule + 3개 skill + 4개 agent에서 정본 파일 포인터 참조 | 누락 항목 보강                   |
+| G3: 소급 주석      | Phase 3 완료   | ADR-036/057/058/059/062 각 상단에 domain 헤더 1줄                                  | 누락 ADR 보강                    |
+| G4: 기존 ADR 정합  | Phase 3 완료   | 재해석 매트릭스(breakdown §소급 적용)에 모순 없음                                  | 충돌 ADR 수정 (ADR-062 amend 등) |
 
 잔존 HIGH 위험 없음.
 

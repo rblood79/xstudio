@@ -455,7 +455,13 @@ function resolveSliderProps(
   };
 }
 
-/** SelectIcon/ComboBoxTrigger → parent/grandparent iconName */
+/**
+ * SelectIcon/ComboBoxTrigger → parent/grandparent iconName
+ *
+ * ADR-102: SelectIcon — RAC 공식 미존재 composition 고유 D3 시각 element.
+ *   BC HIGH (factory 직렬화 tag) → 정당화 유지. grandparent(Select) iconName 위임.
+ * ADR-101: ComboBoxTrigger — Compositional Architecture 고유 element.
+ */
 function resolveIconDelegation(
   element: Element,
   elementsMap: Map<string, Element>,

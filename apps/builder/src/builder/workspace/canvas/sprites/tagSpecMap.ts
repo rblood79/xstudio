@@ -212,12 +212,16 @@ const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   TimeSegment: DateSegmentSpec,
   SelectTrigger: SelectTriggerSpec,
   SelectValue: SelectValueSpec,
+  // ADR-102: SelectIcon — RAC 공식 미존재 composition 고유 D3 시각 element (chevron 아이콘).
+  //   BC HIGH (tag 저장 직렬화) → 정당화 유지. SelectIconSpec 을 4 tag 공유 (아래 3 포함).
   SelectIcon: SelectIconSpec,
   ComboBoxWrapper: SelectTriggerSpec,
   ComboBoxInput: SelectValueSpec,
+  // ADR-101: ComboBoxTrigger — Compositional Architecture 고유 element (selfcontained 정당화).
   ComboBoxTrigger: SelectIconSpec,
   SearchFieldWrapper: SelectTriggerSpec,
   SearchInput: SelectValueSpec,
+  // ADR-102: SearchIcon/SearchClearButton — SelectIconSpec 공유 (시각 일관성).
   SearchIcon: SelectIconSpec,
   SearchClearButton: SelectIconSpec,
   DateInput: DateInputSpec,
