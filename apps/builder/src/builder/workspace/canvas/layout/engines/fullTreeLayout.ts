@@ -283,6 +283,38 @@ export function getSharedFilteredChildrenMap(): Map<string, string[]> | null {
 
 // ─── 내부 유틸리티 ───────────────────────────────────────────────────
 
+/** Taffy WASM binary protocol 은 grid track 을 array 로 기대. CSS 표준 string ("1fr auto")
+ *  입력을 정규화. 이미 array 면 그대로 통과. `taffyStyleToRecord` /
+ *  `buildNodeStyle` grid branch / `patchBatchStyleFromImplicit` 3 진입점 공유. */
+function coerceGridTrack(val: unknown): unknown {
+  if (val === undefined) return undefined;
+  if (Array.isArray(val)) return val;
+  return parseGridTemplate(val as string);
+}
+
+/** Grid container 의 layout-영향 속성 — 증분 갱신에서 변경 시 full rebuild 필요.
+ *  Taffy `updateStyleRaw` 가 track/placement 캐시 invalidation 실패. */
+const GRID_REBUILD_TRIGGER_KEYS = [
+  "gridTemplateColumns",
+  "gridTemplateRows",
+  "gridTemplateAreas",
+  "gridAutoColumns",
+  "gridAutoRows",
+  "gridAutoFlow",
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "gap",
+  "rowGap",
+  "columnGap",
+] as const;
+
+function isGridDisplay(display: unknown): boolean {
+  return display === "grid" || display === "inline-grid";
+}
+
 // ─── Implicit Style 패치 ──────────────────────────────────────────────
 
 /** CSS dimension 속성 (number → "${v}px" 변환) */
@@ -371,9 +403,7 @@ function patchBatchStyleFromImplicit(
       key === "gridAutoColumns" ||
       key === "gridAutoRows"
     ) {
-      batchStyle[key] = Array.isArray(val)
-        ? val
-        : parseGridTemplate(val as string);
+      batchStyle[key] = coerceGridTrack(val);
       continue;
     }
 
@@ -436,26 +466,17 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
   if (style.justifySelf !== undefined) result.justifySelf = style.justifySelf;
   if (style.order !== undefined) result.order = style.order;
 
-  // Grid container — spec 이 CSS 표준 string ("1fr auto") 형식으로 저장할 수 있어
-  //   WASM binary protocol 이 기대하는 track array 로 정규화. 이미 array 면 그대로.
+  // Grid container — CSS 표준 string ("1fr auto") → WASM 이 기대하는 track array 정규화
   if (style.gridTemplateColumns !== undefined)
-    result.gridTemplateColumns = Array.isArray(style.gridTemplateColumns)
-      ? style.gridTemplateColumns
-      : parseGridTemplate(style.gridTemplateColumns as string);
+    result.gridTemplateColumns = coerceGridTrack(style.gridTemplateColumns);
   if (style.gridTemplateRows !== undefined)
-    result.gridTemplateRows = Array.isArray(style.gridTemplateRows)
-      ? style.gridTemplateRows
-      : parseGridTemplate(style.gridTemplateRows as string);
+    result.gridTemplateRows = coerceGridTrack(style.gridTemplateRows);
   if (style.gridAutoFlow !== undefined)
     result.gridAutoFlow = style.gridAutoFlow;
   if (style.gridAutoColumns !== undefined)
-    result.gridAutoColumns = Array.isArray(style.gridAutoColumns)
-      ? style.gridAutoColumns
-      : parseGridTemplate(style.gridAutoColumns as string);
+    result.gridAutoColumns = coerceGridTrack(style.gridAutoColumns);
   if (style.gridAutoRows !== undefined)
-    result.gridAutoRows = Array.isArray(style.gridAutoRows)
-      ? style.gridAutoRows
-      : parseGridTemplate(style.gridAutoRows as string);
+    result.gridAutoRows = coerceGridTrack(style.gridAutoRows);
 
   // Grid item
   if (style.gridColumnStart !== undefined)
@@ -545,11 +566,11 @@ function buildNodeStyle(
   const rawStyle = (element.props?.style ?? {}) as Record<string, unknown>;
   const tag = (element.tag ?? "").toLowerCase();
   const specFallback = resolveContainerStylesFallback(tag, rawStyle);
-  const mergedStyle = { ...specFallback, ...rawStyle };
-  const enriched: Element =
-    specFallback && Object.keys(specFallback).length > 0
-      ? { ...element, props: { ...element.props, style: mergedStyle } }
-      : element;
+  const hasFallback = Object.keys(specFallback).length > 0;
+  const mergedStyle = hasFallback ? { ...specFallback, ...rawStyle } : rawStyle;
+  const enriched: Element = hasFallback
+    ? { ...element, props: { ...element.props, style: mergedStyle } }
+    : element;
 
   const display = getElementDisplay(enriched);
   const normalized = display.trim().toLowerCase();
@@ -571,22 +592,14 @@ function buildNodeStyle(
     // Grid container 핵심 속성 전달. spec/props.style 이 CSS string ("1fr auto")
     // 형식으로 저장할 수 있어 WASM 이 기대하는 track array 로 정규화.
     if (style.gridTemplateColumns)
-      partial.gridTemplateColumns = Array.isArray(style.gridTemplateColumns)
-        ? style.gridTemplateColumns
-        : parseGridTemplate(style.gridTemplateColumns as string);
+      partial.gridTemplateColumns = coerceGridTrack(style.gridTemplateColumns);
     if (style.gridTemplateRows)
-      partial.gridTemplateRows = Array.isArray(style.gridTemplateRows)
-        ? style.gridTemplateRows
-        : parseGridTemplate(style.gridTemplateRows as string);
+      partial.gridTemplateRows = coerceGridTrack(style.gridTemplateRows);
     if (style.gridAutoFlow) partial.gridAutoFlow = style.gridAutoFlow;
     if (style.gridAutoColumns)
-      partial.gridAutoColumns = Array.isArray(style.gridAutoColumns)
-        ? style.gridAutoColumns
-        : parseGridTemplate(style.gridAutoColumns as string);
+      partial.gridAutoColumns = coerceGridTrack(style.gridAutoColumns);
     if (style.gridAutoRows)
-      partial.gridAutoRows = Array.isArray(style.gridAutoRows)
-        ? style.gridAutoRows
-        : parseGridTemplate(style.gridAutoRows as string);
+      partial.gridAutoRows = coerceGridTrack(style.gridAutoRows);
     if (style.justifyContent) partial.justifyContent = style.justifyContent;
     if (style.alignItems) partial.alignItems = style.alignItems;
     if (style.alignContent) partial.alignContent = style.alignContent;
@@ -1811,46 +1824,29 @@ export function calculateFullTreeLayout(
       // display/grid 전환 감지: Taffy 증분 갱신으로 처리 불가 → full rebuild
       for (const node of batch) {
         const prevJson = persistentTree.getLastJson(node.elementId);
-        const curDisplay = node.style.display as string | undefined;
+        const curDisplay = node.style.display;
         // 신규 노드 (prevJson 없음) 가 grid container 면 full rebuild 필요 —
         // Taffy WASM `addNode` 증분 추가로는 grid track (gridTemplateColumns/Areas)
         // 이 auto-placement 로 degrade 됨. `buildFull` 로만 정상 배치.
         if (!prevJson) {
-          if (curDisplay === "grid" || curDisplay === "inline-grid") {
+          if (isGridDisplay(curDisplay)) {
             needsFullRebuild = true;
             break;
           }
           continue;
         }
         const prevParsed = JSON.parse(prevJson);
-        const prevDisplay = prevParsed.display as string | undefined;
-        if (prevDisplay !== curDisplay) {
+        if (prevParsed.display !== curDisplay) {
           needsFullRebuild = true;
           break;
         }
-        // Grid container 의 layout-영향 속성 변경: Taffy 증분 갱신으로 track/
-        //   placement 캐시가 올바르게 invalidation 되지 않아 1줄 degrade 또는
-        //   gap 미반영 발생. gridTemplateColumns/Rows/padding*/gap 류 변경 시
-        //   full rebuild 강제 (Taffy `addNode`/`updateStyleRaw` 한계 우회).
-        if (curDisplay === "grid" || curDisplay === "inline-grid") {
-          const gridKeys = [
-            "gridTemplateColumns",
-            "gridTemplateRows",
-            "gridTemplateAreas",
-            "gridAutoColumns",
-            "gridAutoRows",
-            "gridAutoFlow",
-            "padding",
-            "paddingTop",
-            "paddingRight",
-            "paddingBottom",
-            "paddingLeft",
-            "gap",
-            "rowGap",
-            "columnGap",
-          ] as const;
+        // Grid container 의 layout-영향 속성 변경: Taffy `updateStyleRaw` 가
+        // track/placement 캐시 invalidation 실패 (padding 변경→1줄 degrade,
+        // gap 변경→미반영). GRID_REBUILD_TRIGGER_KEYS 중 하나라도 변경 시
+        // full rebuild 강제.
+        if (isGridDisplay(curDisplay)) {
           let gridChanged = false;
-          for (const k of gridKeys) {
+          for (const k of GRID_REBUILD_TRIGGER_KEYS) {
             if (
               JSON.stringify(prevParsed[k]) !== JSON.stringify(node.style[k])
             ) {

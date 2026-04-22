@@ -33,6 +33,30 @@ import {
   LAYOUT_AFFECTING_PROP_KEYS,
 } from "./utils/layoutInvalidation";
 
+// CSS shorthand → longhand 분배 매핑 (inspectorActions 공용).
+// React inline style shorthand+longhand 공존 시 rerender 경고 + Taffy
+// applyCommonTaffyStyle 순서 (gap → rowGap/columnGap) 로 longhand override
+// 발생 → Panel 편집 무시. store 는 longhand only 정책.
+const SHORTHAND_TO_LONGHAND: Record<string, readonly string[]> = {
+  gap: ["rowGap", "columnGap"],
+  padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+  margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
+};
+
+function distributeShorthand(
+  style: Record<string, unknown>,
+  property: string,
+): void {
+  const longhands = SHORTHAND_TO_LONGHAND[property];
+  if (!longhands) return;
+  const value = style[property];
+  delete style[property];
+  for (const lh of longhands) {
+    if (value === undefined) delete style[lh];
+    else style[lh] = value;
+  }
+}
+
 // ============================================
 // Types
 // ============================================
@@ -329,32 +353,7 @@ export const createInspectorActionsSlice: StateCreator<
         }
       }
 
-      // CSS shorthand ↔ longhand collision 해소.
-      //   - React inline style 에 shorthand+longhand 공존 시 rerender 경고
-      //     ("Removing a style property during rerender when a conflicting
-      //     property is set") + 의도와 다른 cascade 결과 유발.
-      //   - 정책: shorthand `gap`/`padding`/`margin` 편집 시 longhand 에 값
-      //     분배, shorthand 자체는 store 에 저장하지 않음. 결과 store 는
-      //     항상 longhand 만 보유 → React inline style 단일 종류만 직렬화.
-      const normalizedValue = (currentStyle as Record<string, unknown>)[
-        property
-      ];
-      const SHORTHAND_MAP: Record<string, string[]> = {
-        gap: ["rowGap", "columnGap"],
-        padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
-        margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
-      };
-      const longhands = SHORTHAND_MAP[property];
-      if (longhands) {
-        delete (currentStyle as Record<string, unknown>)[property];
-        for (const lh of longhands) {
-          if (normalizedValue === undefined) {
-            delete (currentStyle as Record<string, unknown>)[lh];
-          } else {
-            (currentStyle as Record<string, unknown>)[lh] = normalizedValue;
-          }
-        }
-      }
+      distributeShorthand(currentStyle as Record<string, unknown>, property);
 
       updateAndSave(
         element.id,
@@ -412,28 +411,7 @@ export const createInspectorActionsSlice: StateCreator<
         }
       }
 
-      // CSS shorthand → longhand 분배 (updateSelectedStyle 동일 로직 — preview 경로).
-      //   shorthand 자체는 store 에 저장하지 않음 → React inline style collision 회피.
-      const normalizedPreviewValue = (currentStyle as Record<string, unknown>)[
-        property
-      ];
-      const SHORTHAND_MAP_PREVIEW: Record<string, string[]> = {
-        gap: ["rowGap", "columnGap"],
-        padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
-        margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
-      };
-      const longhandsPreview = SHORTHAND_MAP_PREVIEW[property];
-      if (longhandsPreview) {
-        delete (currentStyle as Record<string, unknown>)[property];
-        for (const lh of longhandsPreview) {
-          if (normalizedPreviewValue === undefined) {
-            delete (currentStyle as Record<string, unknown>)[lh];
-          } else {
-            (currentStyle as Record<string, unknown>)[lh] =
-              normalizedPreviewValue;
-          }
-        }
-      }
+      distributeShorthand(currentStyle as Record<string, unknown>, property);
 
       const newProps = { ...element.props, style: currentStyle };
       const updatedElement: Element = { ...element, props: newProps };
