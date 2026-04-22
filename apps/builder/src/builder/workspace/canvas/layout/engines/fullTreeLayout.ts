@@ -552,14 +552,25 @@ function buildNodeStyle(
     const partial: Record<string, unknown> = { display: "grid" };
     applyCommonTaffyStyle(partial, style, {});
 
-    // Grid container 핵심 속성 직접 전달
+    // Grid container 핵심 속성 전달. spec/props.style 이 CSS string ("1fr auto")
+    // 형식으로 저장할 수 있어 WASM 이 기대하는 track array 로 정규화.
     if (style.gridTemplateColumns)
-      partial.gridTemplateColumns = style.gridTemplateColumns;
+      partial.gridTemplateColumns = Array.isArray(style.gridTemplateColumns)
+        ? style.gridTemplateColumns
+        : parseGridTemplate(style.gridTemplateColumns as string);
     if (style.gridTemplateRows)
-      partial.gridTemplateRows = style.gridTemplateRows;
+      partial.gridTemplateRows = Array.isArray(style.gridTemplateRows)
+        ? style.gridTemplateRows
+        : parseGridTemplate(style.gridTemplateRows as string);
     if (style.gridAutoFlow) partial.gridAutoFlow = style.gridAutoFlow;
-    if (style.gridAutoColumns) partial.gridAutoColumns = style.gridAutoColumns;
-    if (style.gridAutoRows) partial.gridAutoRows = style.gridAutoRows;
+    if (style.gridAutoColumns)
+      partial.gridAutoColumns = Array.isArray(style.gridAutoColumns)
+        ? style.gridAutoColumns
+        : parseGridTemplate(style.gridAutoColumns as string);
+    if (style.gridAutoRows)
+      partial.gridAutoRows = Array.isArray(style.gridAutoRows)
+        ? style.gridAutoRows
+        : parseGridTemplate(style.gridAutoRows as string);
     if (style.justifyContent) partial.justifyContent = style.justifyContent;
     if (style.alignItems) partial.alignItems = style.alignItems;
     if (style.alignContent) partial.alignContent = style.alignContent;
