@@ -416,7 +416,19 @@ export function createProgressBarDefinition(
         value: 50,
         showValue: true,
         size: "md",
-        style: { width: "100%" },
+        // Grid 속성을 Factory 가 store 에 직접 주입 — enrichWithIntrinsicSize 가
+        // element.props.style 을 직접 읽으므로 buildNodeStyle 시점의
+        // resolveContainerStylesFallback merge 로는 타이밍 늦음 (등록 직후
+        // Path B 증분 갱신에서 auto-placement 로 배치 오류). Spec
+        // containerStyles 와 1:1 미러 — Skia Taffy Grid 경로 즉시 반영.
+        style: {
+          width: "100%",
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gridTemplateAreas: '"label value" "bar bar"',
+          rowGap: 4,
+          columnGap: 12,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -497,7 +509,15 @@ export function createMeterDefinition(
         showValue: true,
         variant: "informative",
         size: "md",
-        style: { width: "100%" },
+        // Grid 속성 store 직접 주입 (ProgressBar 와 동일 이유).
+        style: {
+          width: "100%",
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gridTemplateAreas: '"label value" "bar bar"',
+          rowGap: 4,
+          columnGap: 12,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
