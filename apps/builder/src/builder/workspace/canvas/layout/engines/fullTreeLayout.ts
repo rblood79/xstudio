@@ -1828,12 +1828,37 @@ export function calculateFullTreeLayout(
           needsFullRebuild = true;
           break;
         }
-        // gridTemplateColumns 변경: Taffy 증분 갱신으로 grid track 변경이
-        // 올바르게 반영되지 않으므로 full rebuild 필요
-        if (curDisplay === "grid") {
-          const prevCols = JSON.stringify(prevParsed.gridTemplateColumns);
-          const curCols = JSON.stringify(node.style.gridTemplateColumns);
-          if (prevCols !== curCols) {
+        // Grid container 의 layout-영향 속성 변경: Taffy 증분 갱신으로 track/
+        //   placement 캐시가 올바르게 invalidation 되지 않아 1줄 degrade 또는
+        //   gap 미반영 발생. gridTemplateColumns/Rows/padding*/gap 류 변경 시
+        //   full rebuild 강제 (Taffy `addNode`/`updateStyleRaw` 한계 우회).
+        if (curDisplay === "grid" || curDisplay === "inline-grid") {
+          const gridKeys = [
+            "gridTemplateColumns",
+            "gridTemplateRows",
+            "gridTemplateAreas",
+            "gridAutoColumns",
+            "gridAutoRows",
+            "gridAutoFlow",
+            "padding",
+            "paddingTop",
+            "paddingRight",
+            "paddingBottom",
+            "paddingLeft",
+            "gap",
+            "rowGap",
+            "columnGap",
+          ] as const;
+          let gridChanged = false;
+          for (const k of gridKeys) {
+            if (
+              JSON.stringify(prevParsed[k]) !== JSON.stringify(node.style[k])
+            ) {
+              gridChanged = true;
+              break;
+            }
+          }
+          if (gridChanged) {
             needsFullRebuild = true;
             break;
           }
