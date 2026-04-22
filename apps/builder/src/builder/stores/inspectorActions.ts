@@ -328,6 +328,24 @@ export const createInspectorActionsSlice: StateCreator<
         }
       }
 
+      // CSS shorthand ↔ longhand collision: shorthand 편집 시 기존 longhand
+      //   를 제거해야 cascade 순서에 관계없이 shorthand 값이 override. factory 가
+      //   초기값으로 longhand (rowGap/columnGap, paddingTop/Right/... 등) 를
+      //   저장한 경우 Panel 에서 shorthand 편집이 Skia Taffy 에 반영 안 되는
+      //   문제 방지 (Taffy applyCommonTaffyStyle 이 shorthand → longhand 순서
+      //   로 적용하여 longhand 가 최종값 override).
+      const SHORTHAND_LONGHAND: Record<string, string[]> = {
+        gap: ["rowGap", "columnGap"],
+        padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+        margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
+      };
+      const longhands = SHORTHAND_LONGHAND[property];
+      if (longhands) {
+        for (const lh of longhands) {
+          delete (currentStyle as Record<string, unknown>)[lh];
+        }
+      }
+
       updateAndSave(
         element.id,
         { style: currentStyle },
@@ -384,6 +402,19 @@ export const createInspectorActionsSlice: StateCreator<
         }
       }
 
+      // CSS shorthand ↔ longhand collision (updateSelectedStyle 동일 로직 — preview 경로)
+      const SHORTHAND_LONGHAND_PREVIEW: Record<string, string[]> = {
+        gap: ["rowGap", "columnGap"],
+        padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+        margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
+      };
+      const longhandsPreview = SHORTHAND_LONGHAND_PREVIEW[property];
+      if (longhandsPreview) {
+        for (const lh of longhandsPreview) {
+          delete (currentStyle as Record<string, unknown>)[lh];
+        }
+      }
+
       const newProps = { ...element.props, style: currentStyle };
       const updatedElement: Element = { ...element, props: newProps };
 
@@ -406,23 +437,21 @@ export const createInspectorActionsSlice: StateCreator<
       }
 
       // ADR-006 P3-1: style 프리뷰도 layoutVersion 증가 → 캔버스 레이아웃 즉시 반영
-      set(
-        (prevState) => {
-          const dirtyIds = new Set(prevState.dirtyElementIds);
-          collectDirtyElementSubtree(
-            selectedElementId,
-            prevState.childrenMap,
-            dirtyIds,
-          );
+      set((prevState) => {
+        const dirtyIds = new Set(prevState.dirtyElementIds);
+        collectDirtyElementSubtree(
+          selectedElementId,
+          prevState.childrenMap,
+          dirtyIds,
+        );
 
-          return {
-            elements: newElements,
-            elementsMap: newElementsMap,
-            layoutVersion: prevState.layoutVersion + 1,
-            dirtyElementIds: dirtyIds,
-          } as Partial<CombinedState>;
-        },
-      );
+        return {
+          elements: newElements,
+          elementsMap: newElementsMap,
+          layoutVersion: prevState.layoutVersion + 1,
+          dirtyElementIds: dirtyIds,
+        } as Partial<CombinedState>;
+      });
     },
 
     updateSelectedStyles: (styles) => {
