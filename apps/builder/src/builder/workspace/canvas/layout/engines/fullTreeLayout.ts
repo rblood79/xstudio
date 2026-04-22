@@ -1811,10 +1811,19 @@ export function calculateFullTreeLayout(
       // display/grid 전환 감지: Taffy 증분 갱신으로 처리 불가 → full rebuild
       for (const node of batch) {
         const prevJson = persistentTree.getLastJson(node.elementId);
-        if (!prevJson) continue;
+        const curDisplay = node.style.display as string | undefined;
+        // 신규 노드 (prevJson 없음) 가 grid container 면 full rebuild 필요 —
+        // Taffy WASM `addNode` 증분 추가로는 grid track (gridTemplateColumns/Areas)
+        // 이 auto-placement 로 degrade 됨. `buildFull` 로만 정상 배치.
+        if (!prevJson) {
+          if (curDisplay === "grid" || curDisplay === "inline-grid") {
+            needsFullRebuild = true;
+            break;
+          }
+          continue;
+        }
         const prevParsed = JSON.parse(prevJson);
         const prevDisplay = prevParsed.display as string | undefined;
-        const curDisplay = node.style.display as string | undefined;
         if (prevDisplay !== curDisplay) {
           needsFullRebuild = true;
           break;
