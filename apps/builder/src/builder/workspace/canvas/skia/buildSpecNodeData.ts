@@ -508,6 +508,55 @@ function resolveTagGroupAllowsRemoving(
   return Boolean(getProps(ancestor).allowsRemoving);
 }
 
+/**
+ * ADR-097 Phase 4A: TagList → 부모 TagGroup 의 items/variant/size/allowsRemoving 전파.
+ *
+ * TagList spec.shapes 는 `props.items` 기반 chip self-render. Skia 렌더 경로에서
+ * TagList.props.items 가 비어 있으면 chip 이 렌더되지 않는다.
+ * Inspector edit 경로는 `buildPropagationUpdates` 로 Store 갱신되지만, migration
+ * short-circuit (이미 마이그레이션된 프로젝트 — Tag child 없음) / 순수 로드
+ * 시점에는 Store 값이 없어 Canvas 가 빈 TagList 를 그린다.
+ * 본 resolver 는 `resolveTagGroupAllowsRemoving` 과 대칭으로 TagGroup propagation
+ * rule 을 Skia 시점에서 방어적으로 해석 — React/CSS 경로와 Canvas 경로의 SSOT 정합성 보장.
+ */
+function resolveTagListItemsFromParent(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): Record<string, unknown> | null {
+  if (element.tag !== "TagList" || !element.parent_id) return null;
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent || parent.tag !== "TagGroup") return null;
+
+  const parentProps = getProps(parent);
+  const patch: Record<string, unknown> = {};
+  let hasPatch = false;
+
+  const parentItems = parentProps.items;
+  if (Array.isArray(parentItems) && parentItems.length > 0) {
+    patch.items = parentItems;
+    hasPatch = true;
+  }
+
+  const parentVariant = parentProps.variant;
+  if (typeof parentVariant === "string" && !getProps(element).variant) {
+    patch.variant = parentVariant;
+    hasPatch = true;
+  }
+
+  const parentSize = parentProps.size;
+  if (typeof parentSize === "string" && !getProps(element).size) {
+    patch.size = parentSize;
+    hasPatch = true;
+  }
+
+  if (parentProps.allowsRemoving === true) {
+    patch.allowsRemoving = true;
+    hasPatch = true;
+  }
+
+  return hasPatch ? patch : null;
+}
+
 /** Label in nowrap parent detection */
 function isLabelInNowrapParent(
   element: Element,
@@ -705,6 +754,16 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // TagGroup allowsRemoving
   if (resolveTagGroupAllowsRemoving(element, elementsMap)) {
     specProps = { ...specProps, allowsRemoving: true };
+  }
+
+  // ADR-097 Phase 4A: TagList ← TagGroup items/variant/size/allowsRemoving propagation.
+  //   자식 명시값 있으면 skip (items 는 override:true — 부모 우선). React/CSS 경로 대칭.
+  const tagListParentPatch = resolveTagListItemsFromParent(
+    element,
+    elementsMap,
+  );
+  if (tagListParentPatch) {
+    specProps = { ...specProps, ...tagListParentPatch };
   }
 
   // Tab/TabList: 조상 Tabs 1회 조회 → _isSelected, _showIndicator, orientation 주입

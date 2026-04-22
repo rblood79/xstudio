@@ -328,9 +328,20 @@ describe("applyCollectionItemsMigration — TagGroup 2단 이전 (ADR-097 P2)", 
     expect(items[1].isDisabled).toBe(true);
 
     // TagList 는 유지, Tag 3 건 orphan
-    expect(migratedElements.find((e) => e.id === "tl-mid")).toBeDefined();
+    const tlEl = migratedElements.find((e) => e.id === "tl-mid")!;
+    expect(tlEl).toBeDefined();
     expect(orphanIds.sort()).toEqual(["tag-1", "tag-2", "tag-3"].sort());
     expect(migratedElements.find((e) => e.id === "tag-1")).toBeUndefined();
+
+    // ADR-097 Phase 4A: TagList 에도 items propagation 주입 확인 (Skia 경로 필수)
+    const tlItems = tlEl.props.items as Array<{ id: string; label: string }>;
+    expect(tlItems).toBeDefined();
+    expect(tlItems).toHaveLength(3);
+    expect(tlItems.map((i) => i.label)).toEqual([
+      "Primary",
+      "Secondary",
+      "Tertiary",
+    ]);
   });
 
   it("TagGroup > TagList (Tag 없음) → items 주입 skip + TagList 유지 + orphan 0", () => {
@@ -371,5 +382,50 @@ describe("applyCollectionItemsMigration — TagGroup 2단 이전 (ADR-097 P2)", 
     // TagGroup items 미주입 (TagList 부재로 수집 대상 없음)
     const tgEl = migratedElements.find((e) => e.id === "tg-odd")!;
     expect(tgEl.props.items).toBeUndefined();
+  });
+
+  // ADR-097 Phase 4A: 이미 마이그레이션된 프로젝트 재로드 — TagGroup.items 는 존재하지만
+  // TagList.items 가 비어있는 상태. 이전 버전 migration 은 TagList 에 items propagation
+  // 을 수행하지 않았으므로, 재로드 시 이 상태로 들어옴. 새 로직은 short-circuit 직전
+  // 2차 pass 로 TagList 에 items propagation 을 주입해야 함 (Skia chip 렌더 필수).
+  it("이미 마이그레이션 완료 (Tag 없음 + TagGroup.items 존재) → TagList 에 items propagation 주입", () => {
+    const preMigratedItems = [
+      { id: "t1", label: "Already" },
+      { id: "t2", label: "Migrated" },
+    ];
+    const elements: E[] = [
+      el("tg-done", "TagGroup", null, 0, { items: preMigratedItems }),
+      el("tl-done", "TagList", "tg-done", 0, {}),
+    ];
+
+    const { migratedElements, orphanIds } =
+      applyCollectionItemsMigration(elements);
+
+    expect(orphanIds).toEqual([]);
+    expect(migratedElements).toHaveLength(2);
+
+    const tgEl = migratedElements.find((e) => e.id === "tg-done")!;
+    expect(tgEl.props.items).toEqual(preMigratedItems);
+
+    const tlEl = migratedElements.find((e) => e.id === "tl-done")!;
+    const tlItems = tlEl.props.items as Array<{ id: string; label: string }>;
+    expect(tlItems).toBeDefined();
+    expect(tlItems).toHaveLength(2);
+    expect(tlItems.map((i) => i.label)).toEqual(["Already", "Migrated"]);
+  });
+
+  // 이미 TagList 에 items 가 있는 상태 (신버전에서 저장된 프로젝트) 는 그대로 유지.
+  it("TagList.items 이미 존재 → 중복 주입 없이 원본 유지", () => {
+    const existingTlItems = [{ id: "t1", label: "Existing TL" }];
+    const tgItems = [{ id: "t1", label: "Different TG" }];
+    const elements: E[] = [
+      el("tg-x", "TagGroup", null, 0, { items: tgItems }),
+      el("tl-x", "TagList", "tg-x", 0, { items: existingTlItems }),
+    ];
+
+    const { migratedElements } = applyCollectionItemsMigration(elements);
+    const tlEl = migratedElements.find((e) => e.id === "tl-x")!;
+    // 기존 items 유지 (deformed/intentional override 보호).
+    expect(tlEl.props.items).toEqual(existingTlItems);
   });
 });

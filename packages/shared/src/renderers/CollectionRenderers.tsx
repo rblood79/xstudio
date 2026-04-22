@@ -26,6 +26,7 @@ import type {
   StoredMenuItem,
   StoredMenuEntry,
   RuntimeMenuItem,
+  StoredTagItem,
 } from "@composition/specs";
 import { isMenuSectionEntry, isMenuSeparatorEntry } from "@composition/specs";
 import { getSelectedChildIds } from "./selection";
@@ -259,6 +260,22 @@ export const renderTagGroup = (
     (columnMapping || (isPropertyBinding && hasFieldChildren)) &&
     tagChildren.length > 0;
 
+  // ADR-097 P2: items[] SSOT canonical path
+  //   Select/ComboBox/ListBox(ADR-073/076) 와 동일 패턴. migration 이후 Tag element tree 는
+  //   제거되고 element.props.items 로 이전됨 — Path 2 가 기본 경로.
+  const storedTagItems = (element.props as { items?: StoredTagItem[] }).items;
+  const hasItemsArray =
+    Array.isArray(storedTagItems) && storedTagItems.length > 0;
+
+  // ADR-097 혼합 감지 — 부모 단위 원자성 위배 (ADR-076 선례 동일). Path 1 우선.
+  if (hasValidTemplate && hasItemsArray) {
+    console.warn(
+      `[ADR-097] TagGroup ${element.id}: columnMapping/dataBinding 템플릿과 props.items 가 동시 존재. ` +
+        `부모 단위 원자성 위배 — Path 1 템플릿 우선, items 무시. ` +
+        `applyCollectionItemsMigration 재실행 또는 수동 분리 필요.`,
+    );
+  }
+
   // 제거된 항목 ID 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
   const removedItemIds = Array.isArray(element.props.removedItemIds)
     ? (element.props.removedItemIds as unknown as string[])
@@ -316,17 +333,30 @@ export const renderTagGroup = (
           </Tag>
         );
       }
-    : tagChildren.map((tag) => (
-        <Tag
-          key={tag.id}
-          data-element-id={tag.id}
-          isDisabled={Boolean(tag.props.isDisabled)}
-          style={tag.props.style}
-          className={tag.props.className}
-        >
-          {String(tag.props.children || "")}
-        </Tag>
-      ));
+    : hasItemsArray
+      ? // ADR-097 P2 (NEW): items[] SSOT canonical. Select/ComboBox/ListBox Path 2 와 대칭.
+        storedTagItems!.map((item) => (
+          <Tag
+            key={item.id}
+            id={item.id}
+            data-element-id={element.id}
+            isDisabled={Boolean(item.isDisabled)}
+          >
+            {item.label}
+          </Tag>
+        ))
+      : // Path 3 (legacy, P6 소멸 예정): Tag element tree fallback
+        tagChildren.map((tag) => (
+          <Tag
+            key={tag.id}
+            data-element-id={tag.id}
+            isDisabled={Boolean(tag.props.isDisabled)}
+            style={tag.props.style}
+            className={tag.props.className}
+          >
+            {String(tag.props.children || "")}
+          </Tag>
+        ));
 
   return (
     <TagGroup
@@ -482,7 +512,68 @@ export const renderTagGroup = (
           return;
         }
 
-        // Static 모드: Element 삭제
+        // ADR-097 P2: items[] SSOT 모드 — props.items 에서 해당 id 제거
+        if (hasItemsArray) {
+          const updatedItems = (storedTagItems ?? []).filter(
+            (item) => !keysToRemove.includes(String(item.id)),
+          );
+
+          const currentSelectedKeys = Array.isArray(element.props.selectedKeys)
+            ? (element.props.selectedKeys as unknown as string[])
+            : [];
+          const updatedSelectedKeys = currentSelectedKeys.filter(
+            (key) => !keysToRemove.includes(String(key)),
+          );
+
+          const updatedProps = {
+            ...element.props,
+            items: updatedItems,
+            selectedKeys: updatedSelectedKeys,
+          };
+
+          updateElementProps(element.id, updatedProps);
+
+          try {
+            const db = (await context.services?.getDB?.()) as
+              | {
+                  elements: {
+                    update: (
+                      id: string,
+                      data: Record<string, unknown>,
+                    ) => Promise<void>;
+                  };
+                }
+              | undefined;
+            if (db) {
+              await db.elements.update(element.id, { props: updatedProps });
+              console.log(
+                "✅ [IndexedDB] TagGroup items[] updated after removal",
+              );
+            }
+          } catch (err) {
+            console.error(
+              "❌ [IndexedDB] Error updating TagGroup items[]:",
+              err,
+            );
+          }
+
+          window.parent.postMessage(
+            {
+              type: "UPDATE_ELEMENT_PROPS",
+              elementId: element.id,
+              props: {
+                items: updatedItems,
+                selectedKeys: updatedSelectedKeys,
+              },
+              merge: true,
+            },
+            getTargetOrigin(),
+          );
+
+          return;
+        }
+
+        // Path 3 (legacy, P6 소멸): Element 삭제
         const deletedTagIds: string[] = [];
 
         for (const key of keysToRemove) {
@@ -772,8 +863,8 @@ export const renderMenu = (
     (e) => isMenuSectionEntry(e) || isMenuSeparatorEntry(e),
   );
 
+  // React 19: `key` 는 props spread 로 전달 불가 — JSX 에서 직접 명시.
   const commonProps = {
-    key: element.id,
     id: element.customId,
     "data-element-id": element.id,
     label: String(element.props.label || element.props.children || "Menu"),
@@ -848,7 +939,11 @@ export const renderMenu = (
       return renderMenuLeaf(entry as StoredMenuItem);
     });
 
-    return <MenuButton {...commonProps}>{menuChildren}</MenuButton>;
+    return (
+      <MenuButton key={element.id} {...commonProps}>
+        {menuChildren}
+      </MenuButton>
+    );
   }
 
   // items-only 경로 (기존 동작 유지 — BC 0%)
@@ -856,7 +951,7 @@ export const renderMenu = (
     toRuntimeMenuItem(it, context.resolveActionId),
   );
 
-  return <MenuButton {...commonProps} items={runtime} />;
+  return <MenuButton key={element.id} {...commonProps} items={runtime} />;
 };
 
 /**

@@ -94,8 +94,58 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     comboBoxItemChildrenByParent.size > 0 ||
     listBoxItemChildrenByParent.size > 0 ||
     tagChildrenByTagListId.size > 0;
+
+  // ADR-097 Phase 4A: 이미 마이그레이션된 프로젝트 보정.
+  //   Tag children 이 이미 제거되어 hasAnyWork=false 이더라도, TagGroup.props.items 가
+  //   이미 있고 TagList.props.items 가 비어있는 경우가 존재 (이전 버전 migration 결과).
+  //   이 케이스에서도 TagList 에 items 를 propagation 해야 Skia chip 이 렌더됨.
+  const tagListNeedsItemsPropagation: Array<{
+    tagListId: string;
+    tagGroupItems: StoredTagItem[];
+  }> = [];
   if (!hasAnyWork) {
-    return { migratedElements: elements, orphanIds: [] };
+    const tagGroupById = new Map<string, T>();
+    const tagListsByTagGroupId = new Map<string, T[]>();
+    for (const el of elements) {
+      if (el.tag === "TagGroup") tagGroupById.set(el.id, el);
+    }
+    for (const el of elements) {
+      if (el.tag === "TagList" && el.parent_id) {
+        pushInto(tagListsByTagGroupId, el.parent_id, el);
+      }
+    }
+    for (const [tagGroupId, tg] of tagGroupById) {
+      const tgItems = (tg.props ?? {}).items as StoredTagItem[] | undefined;
+      if (!Array.isArray(tgItems) || tgItems.length === 0) continue;
+      const tls = tagListsByTagGroupId.get(tagGroupId) ?? [];
+      for (const tl of tls) {
+        const tlItems = (tl.props ?? {}).items as StoredTagItem[] | undefined;
+        if (Array.isArray(tlItems) && tlItems.length > 0) continue;
+        tagListNeedsItemsPropagation.push({
+          tagListId: tl.id,
+          tagGroupItems: tgItems,
+        });
+      }
+    }
+
+    if (tagListNeedsItemsPropagation.length === 0) {
+      return { migratedElements: elements, orphanIds: [] };
+    }
+
+    // 이미 마이그레이션된 프로젝트 — TagList items propagation 만 수행.
+    const pendingMap = new Map<string, StoredTagItem[]>();
+    for (const { tagListId, tagGroupItems } of tagListNeedsItemsPropagation) {
+      pendingMap.set(tagListId, tagGroupItems);
+    }
+    const patched = elements.map((el) => {
+      const items = pendingMap.get(el.id);
+      if (!items) return el;
+      return {
+        ...el,
+        props: { ...(el.props ?? {}), items },
+      };
+    });
+    return { migratedElements: patched, orphanIds: [] };
   }
 
   // ListBox 부모 단위 원자 판정 — 자식 ListBoxItem 중 하나라도 Field 보유 → 전체 skip
@@ -195,6 +245,25 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
           props: {
             ...(el.props ?? {}),
             items,
+          },
+        });
+        continue;
+      }
+    }
+
+    // ADR-097 Phase 4A: TagList — 부모 TagGroup 의 items 를 propagation 으로 전파.
+    //   TagList spec.shapes 가 props.items 기반 chip self-render (Skia). Inspector edit
+    //   경로는 buildPropagationUpdates 로 자동 전파되지만, migration 경로는 별도 주입 필요.
+    //   TagGroup.propagation rule `{ parentProp: "items", childPath: "TagList", override: true }`
+    //   와 동일 시맨틱.
+    if (el.tag === "TagList" && el.parent_id) {
+      const parentItems = tagGroupItemsById.get(el.parent_id);
+      if (parentItems && parentItems.length > 0) {
+        migratedElements.push({
+          ...el,
+          props: {
+            ...(el.props ?? {}),
+            items: parentItems,
           },
         });
         continue;

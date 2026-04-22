@@ -109,32 +109,43 @@ const TAG_LIST_VARIANTS = {
 } as const;
 
 /**
- * ADR-097 Phase 4A — size 별 chip 치수 (TagGroupSpec.sizes 1:1 복제).
- * TagList 는 size prop 직접 미수신이지만 TagGroup.propagation 으로 size 전파 후
- * shapes 함수의 `size` 매개변수는 TagList 본인 sizes (md only) 가 되므로, 부모
- * TagGroup size 를 별도로 해석하기 위해 본 상수 사용. props.size 참조.
+ * ADR-097 Phase 4A — size 별 chip 치수 (TagSpec.sizes sm/md/lg 와 1:1 정합).
+ *
+ * TagList 는 size prop 을 직접 수신하지 않지만 TagGroup.propagation 으로 size 를
+ * 전파받는다. shapes 함수의 `size` 매개변수는 TagList 본인 sizes (md only) 이므로
+ * 부모 TagGroup size 를 별도로 해석하기 위해 본 상수 사용.
+ *
+ * 치수 공식 (TagSpec 참조):
+ *   `height = lineHeight + paddingY * 2`
+ *   텍스트 렌더 시 `y = chip.y + paddingY`, 세로 공간 = lineHeight
+ *   → top-baseline + lineHeight 수직 중앙 정렬 보장.
+ *
+ * TagSpec sm/md/lg 값과 완전 동일 (chip=button sizing 의도).
  */
 export const TAG_CHIP_SIZES = {
   sm: {
     paddingX: 8,
     paddingY: 2,
     fontSize: 12,
+    lineHeight: 16,
     borderRadius: 4,
-    gap: 6,
+    gap: 4,
   },
   md: {
     paddingX: 12,
     paddingY: 4,
     fontSize: 14,
+    lineHeight: 20,
     borderRadius: 6,
-    gap: 8,
+    gap: 4,
   },
   lg: {
     paddingX: 16,
-    paddingY: 6,
+    paddingY: 8,
     fontSize: 16,
-    borderRadius: 6,
-    gap: 10,
+    lineHeight: 24,
+    borderRadius: 8,
+    gap: 6,
   },
 } as const;
 
@@ -225,7 +236,11 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
 
       const tagPaddingX = chipSize.paddingX;
       const tagPaddingY = chipSize.paddingY;
-      const tagHeight = fontSize + tagPaddingY * 2;
+      // Tag spec 정식 치수 공식: height = lineHeight + paddingY*2.
+      // fontSize 가 style 로 override 되어도 lineHeight 는 size 토큰 기준을 유지
+      // (CSS line-height 와 Canvas chip 높이 정합성 보장).
+      const lineHeight = chipSize.lineHeight;
+      const tagHeight = lineHeight + tagPaddingY * 2;
       const borderRadius = chipSize.borderRadius;
       const gap = chipSize.gap;
       const rowGap = gap;
@@ -331,14 +346,14 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
         shapes.push({
           type: "text" as const,
           x: chip.x + tagPaddingX,
-          y: chip.y + tagPaddingY,
+          y: chip.y + tagHeight / 2,
           text: chip.label,
           fontSize,
           fontFamily: fontFamily.sans,
           fontWeight: 400,
           fill: chipTextColor,
           align: "left" as const,
-          baseline: "top" as const,
+          baseline: "middle" as const,
           maxWidth: chip.textWidth + fontSize,
         });
 
@@ -381,14 +396,14 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
         shapes.push({
           type: "text" as const,
           x: showAllX + tagPaddingX,
-          y: lastChip.y + tagPaddingY,
+          y: lastChip.y + tagHeight / 2,
           text: showAllLabel,
           fontSize,
           fontFamily: fontFamily.sans,
           fontWeight: 400,
           fill: "{color.accent}" as TokenRef,
           align: "left" as const,
-          baseline: "top" as const,
+          baseline: "middle" as const,
           maxWidth: showAllWidth,
         });
       }

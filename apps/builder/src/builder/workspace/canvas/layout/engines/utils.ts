@@ -1588,7 +1588,9 @@ export function calculateContentHeight(
     const sizeName = (props?.size as keyof typeof TAG_CHIP_SIZES) ?? "md";
     const chipSize = TAG_CHIP_SIZES[sizeName] ?? TAG_CHIP_SIZES.md;
     const fontSize = parseNumericValue(style?.fontSize) ?? chipSize.fontSize;
-    const tagHeight = fontSize + chipSize.paddingY * 2;
+    // Tag spec 정식 치수 공식: height = lineHeight + paddingY*2 (fontSize 아님).
+    // TagList.spec.ts shapes() 와 반드시 동일해야 Skia/layout 정합성 유지.
+    const tagHeight = chipSize.lineHeight + chipSize.paddingY * 2;
     const gap = chipSize.gap;
     const rowGap = gap;
 
