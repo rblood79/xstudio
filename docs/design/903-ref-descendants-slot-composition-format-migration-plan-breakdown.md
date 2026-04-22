@@ -4,13 +4,13 @@
 
 ## 목표
 
-기존 `Element/Page/Layout` 하이브리드 구조를 즉시 폐기하지 않고, **canonical composition format**과 **단일 resolved-tree resolver**를 먼저 도입한 뒤 점진적으로 저장 포맷과 편집 semantics를 전환한다.
+기존 `Element/Page/Layout` 하이브리드 구조를 즉시 폐기하지 않고, **문서-네이티브 composition/component 포맷**과 **단일 resolved-tree resolver**를 먼저 도입한 뒤 점진적으로 저장 포맷과 편집 semantics를 전환한다.
 
 핵심 원칙:
 
-1. **canonical source format**: `element | ref | slot`
-2. **stable identity**: runtime UUID가 아닌 `localId` / `localId path`
-3. **single resolver**: `ref resolve -> descendants apply -> slot fill -> resolved tree`
+1. **canonical source format**: 일반 object tree + `reusable: true` + `type:"ref"` + path-based `descendants` + 컨테이너 `slot`
+2. **stable identity**: runtime UUID가 아닌 문서-정본 `id` / `id path`
+3. **single resolver**: `ref resolve -> descendants apply -> slot contract validate -> resolved tree`
 4. **legacy adapter**: 기존 flat `elements` / `pages` / `layouts`는 전환 기간 동안 read-through adapter로 유지
 5. **ADR-063 비침범**: resolved tree 아래의 렌더 체인(RAC/RSP/Spec)은 그대로 유지
 
@@ -18,31 +18,102 @@
 
 | Phase | 목표 | 결과물 |
 | ---- | ---- | ---- |
-| P0 | canonical format / resolver 계약 고정 | JSON schema 초안, TypeScript 타입, resolver 순서 문서화 |
+| P0 | canonical format / resolver 계약 고정 | JSON schema 초안, TypeScript 타입, reusable/ref/descendants/slot 문법 정의 |
 | P1 | legacy → canonical adapter 도입 | flat `Element/Page/Layout`를 canonical doc tree로 투영하는 adapter |
 | P2 | Preview / Skia 공통 resolved tree 입력화 | 두 renderer가 동일 resolver 결과를 소비 |
 | P3 | frameset/layout/template를 새 포맷으로 흡수 | layout shell / template / slot assignment를 canonical format으로 통일 |
-| P4 | 편집 semantics 전환 | copy/paste, duplicate, delete, detach, undo/redo, slot assign |
+| P4 | 편집 semantics 전환 | copy/paste, duplicate, delete, detach, undo/redo, component/slot authoring |
 | P5 | persistence / import-export 전환 | DB 저장/로드, serializer, import/export, migration |
 
 ## Canonical 포맷 초안
 
+### 1. 재사용 가능한 컴포넌트 정의
+
 ```json
 {
-  "type": "element | ref | slot",
-  "localId": "stable-local-id",
-  "tag": "Button",
-  "ref": "component:HeaderShell",
-  "props": {},
-  "children": [],
-  "slots": {
-    "main": []
-  },
+  "id": "round-button",
+  "type": "frame",
+  "reusable": true,
+  "fill": "#333333",
+  "children": [
+    {
+      "id": "label",
+      "type": "text",
+      "content": "Submit",
+      "fill": "#FFFFFF"
+    }
+  ]
+}
+```
+
+### 2. ref 인스턴스 + descendants 오버라이드
+
+```json
+{
+  "id": "danger-button",
+  "type": "ref",
+  "ref": "round-button",
+  "fill": "#D92D20",
   "descendants": {
-    "header.title": {
-      "props": {
-        "children": "Dashboard"
-      }
+    "label": {
+      "content": "Delete",
+      "fill": "#FFFFFF"
+    }
+  }
+}
+```
+
+### 3. slot 선언이 있는 레이아웃/컨테이너
+
+```json
+{
+  "id": "app-shell",
+  "type": "frame",
+  "reusable": true,
+  "children": [
+    {
+      "id": "header",
+      "type": "ref",
+      "ref": "header-shell"
+    },
+    {
+      "id": "left",
+      "type": "ref",
+      "ref": "left-nav"
+    },
+    {
+      "id": "main",
+      "type": "frame",
+      "slot": ["dashboard-hero", "table-card", "icon-button"]
+    }
+  ]
+}
+```
+
+### 4. page/layout 인스턴스에서 slot 영역 채우기
+
+```json
+{
+  "id": "dashboard-page",
+  "type": "ref",
+  "ref": "app-shell",
+  "descendants": {
+    "header/title": {
+      "content": "Dashboard"
+    },
+    "main": {
+      "children": [
+        {
+          "id": "hero",
+          "type": "ref",
+          "ref": "dashboard-hero"
+        },
+        {
+          "id": "table",
+          "type": "ref",
+          "ref": "table-card"
+        }
+      ]
     }
   }
 }
@@ -50,24 +121,30 @@
 
 ### canonical 규칙
 
-- `type="element"`: 실제 leaf/container node
-- `type="ref"`: 재사용 subtree 참조
-- `type="slot"`: 주입 지점
-- `localId`: 문서 내부 stable identifier
-- `descendants` key: runtime UUID가 아니라 `localId path`
-- `slots`: component/layout/page 어디서나 동일 문법
+- 일반 노드는 `frame`, `text`, `rectangle`, `Button` 등 실제 object tree 타입을 그대로 가진다.
+- `reusable: true`는 해당 노드를 재사용 가능한 컴포넌트/레이아웃 원본으로 승격한다.
+- `type:"ref"`는 reusable node 인스턴스다. 인스턴스 자신의 루트 속성은 원본 위에 override된다.
+- `descendants` key는 runtime UUID가 아니라 stable `id path`다. 예: `label`, `ok-button/label`, `header/title`
+- `descendants[path]` 값은 세 가지를 지원한다.
+  - 속성 patch
+  - `type`가 존재하는 경우 node replacement
+  - `children` 배열만 제공하는 경우 container children replacement
+- `slot`은 별도 특수 노드가 아니라 일반 컨테이너의 schema 속성이다.
+- `slot` 값은 선택적으로 추천 가능한 reusable component ID 목록을 담는다.
+- slot 채우기는 canonical format에서 `descendants[slotPath].children` 교체로 표현한다.
+- legacy `slot_name` 기반 데이터는 adapter 단계에서 canonical descendants children replacement로 정규화한다.
 
 ## 현재 필드 → canonical 매핑
 
 | 현재 | canonical | 비고 |
 | ---- | --------- | ---- |
-| `componentRole: "master"` | `documents.components[*]` 정의 | master registry 대신 component document |
-| `componentRole: "instance" + masterId` | `type: "ref"` | instance 상태 모델을 문법으로 승격 |
-| `overrides` | `ref.props override` 또는 `descendants[root]` | root-level override는 ref props로 단순화 가능 |
-| `descendants` | `descendants[localIdPath]` | key를 runtime id → stable path로 전환 |
-| `tag="Slot"` + `slot_name` | `type: "slot"` + `slots.<name>[]` | slot을 1급 composition primitive로 승격 |
-| `Page.layout_id` | `page.layoutRef` | layout 적용을 직접 표현 |
-| `layout_id` 소속 element | `documents.layouts[*].root` | 소속 필드가 아닌 문서 root 구조 |
+| `componentRole: "master"` | 일반 노드 + `reusable: true` | master registry 대신 문서 내부 reusable root |
+| `componentRole: "instance" + masterId` | `type: "ref"`, `ref: <master-id>` | instance 상태 모델을 문법으로 승격 |
+| `overrides` | ref root-level 속성 override | root patch는 인스턴스 자신의 속성으로 단순화 가능 |
+| `descendants` | `descendants[idPath]` | key를 runtime id → stable path로 전환 |
+| `tag="Slot"` + `slot_name` | slot 선언 컨테이너 + `descendants[slotPath].children` | slot을 1급 schema 속성으로 승격 |
+| `Page.layout_id` | page root `type:"ref"` to reusable layout shell | layout 적용을 문서적으로 직접 표현 |
+| `layout_id` 소속 element | reusable layout component subtree | 소속 필드가 아닌 구조적 트리 |
 | `parent_id/order_num` | canonical tree order | runtime flat index는 파생 캐시로 유지 가능 |
 
 ## 세부 작업
@@ -78,7 +155,7 @@
 
 | 경로 | 역할 |
 | ---- | ---- |
-| `packages/shared/src/types/composition-document.types.ts` | canonical document / node / ref / slot 타입 |
+| `packages/shared/src/types/composition-document.types.ts` | canonical document / reusable / ref / descendants / slot 타입 |
 | `docs/design/903-...-breakdown.md` | phase / mapping / test strategy 문서 |
 
 #### 수정
@@ -86,16 +163,18 @@
 | 경로 | 변경 |
 | ---- | ---- |
 | `packages/shared/src/types/element.types.ts` | legacy 필드에 canonical 대응 주석 추가, deprecation 계획 명시 |
-| `apps/builder/src/types/builder/layout.types.ts` | canonical slot/layout 용어와 legacy adapter 경계 주석 추가 |
+| `apps/builder/src/types/builder/layout.types.ts` | legacy `Slot`/`layout_id` 의미를 adapter 문맥으로 축소 |
 
 #### 산출물
 
-- canonical JSON 예제 3종
+- canonical JSON 예제 4종
   - reusable component
-  - layout shell
-  - page with slot fill
+  - ref instance with descendants override
+  - slot-declared layout shell
+  - page instance with slot content fill
 - resolver 순서 확정
-- `localId` 생성/보존 규칙 확정
+- source `id` 생성/보존 규칙 확정
+- descendants path 규칙 확정
 
 ### P1. Legacy adapter
 
@@ -115,8 +194,9 @@
 #### adapter 책임
 
 - `elements[]`, `pages[]`, `layouts[]` → canonical document tree
-- `componentRole/masterId` → `ref`
-- `tag="Slot"` + `slot_name` → `slot`
+- `componentRole/masterId` → `reusable` / `ref`
+- `tag="Slot"` + `slot_name` → slot-declared container + `descendants[slotPath].children`
+- `Page.layout_id` → page root `ref`
 - `parent_id/order_num` → tree order
 - 기존 UUID 기반 descendants는 임시 path map으로 투영
 
@@ -139,24 +219,27 @@ Preview와 Skia가 **같은 resolved tree**를 consume하게 만든다.
 - Preview 전용 resolver 신규 개발 금지
 - Skia 전용 instance resolver 신규 개발 금지
 - canonical resolver 결과만 renderer 입력으로 허용
+- slot 관련 validation은 resolver 내부에서 수행하되, slot content materialization은 descendants children replacement 결과를 기준으로 한다
 
 ### P3. frameset/layout/template 흡수
 
 #### 목표
 
-기존 frameset/layout/template 시스템을 canonical composition format의 사례로 변환한다.
+기존 frameset/layout/template 시스템을 canonical composition/component format의 사례로 변환한다.
 
 #### 대상 파일
 
 | 경로 | 변경 |
 | ---- | ---- |
-| `apps/builder/src/builder/templates/layoutTemplates.ts` | layout shell 정의를 canonical doc tree로 전환 |
+| `apps/builder/src/builder/templates/layoutTemplates.ts` | layout shell 정의를 reusable + slot-declared doc tree로 전환 |
 | `apps/builder/src/types/builder/layout.types.ts` | legacy `Slot` 설명을 adapter 문맥으로 축소 |
-| `apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/**` | slot 생성/매핑 UI를 canonical slots 편집 UI로 전환 |
+| `apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/**` | slot 생성/매핑 UI를 slot authoring UI로 전환 |
 
 #### 완료 기준
 
-- header/left/main 형태의 layout shell이 `ref + slot`로 표현됨
+- header/left/main 형태의 layout shell이 `reusable + ref + slot`으로 표현됨
+- page는 layout shell의 `ref` 인스턴스로 표현됨
+- main slot 채우기는 `descendants["main"].children` 패턴으로 정착함
 - frameset 전용 엔진/특수 규칙 삭제 가능 상태
 - template export/import가 canonical format을 기준으로 동작
 
@@ -171,16 +254,18 @@ Preview와 Skia가 **같은 resolved tree**를 consume하게 만든다.
 | 경로 | 변경 |
 | ---- | ---- |
 | `apps/builder/src/builder/stores/utils/instanceActions.ts` | create/detach semantics를 `ref` 기준으로 재정의 |
-| `apps/builder/src/builder/utils/multiElementCopy.ts` | localId remap / descendants path remap |
+| `apps/builder/src/builder/utils/multiElementCopy.ts` | id remap / descendants path remap |
 | `apps/builder/src/builder/stores/history/**` | undo/redo payload를 canonical 연산 기준으로 정리 |
-| `apps/builder/src/builder/panels/designKit/**` | master/instance UI를 component/ref UI로 재해석 |
+| `apps/builder/src/builder/panels/designKit/**` | master/instance UI를 reusable/ref UI로 재해석 |
 
 #### 핵심 규칙
 
-- duplicate: 새로운 runtime id + 새로운 localId scope remap
-- delete: slot/instance-aware validation
+- duplicate: 새로운 runtime id + 새로운 source `id` scope remap
+- delete: slot/ref-aware validation
 - detach: `ref` 해제 후 subtree materialize
-- copy/paste: descendants key, slot binding, localId collision 처리
+- copy/paste: descendants key, slot binding, source `id` collision 처리
+- component authoring: 일반 노드를 `reusable:true`로 승격하는 명시적 연산
+- slot authoring: 컨테이너에 `slot` 메타데이터와 추천 reusable IDs를 편집하는 UI 제공
 
 ### P5. persistence / import-export 전환
 
@@ -195,7 +280,7 @@ canonical format을 저장 정본으로 승격한다.
 | `apps/builder/src/lib/db/indexedDB/adapter.ts` | canonical 문서 저장 스키마 또는 serializer 도입 |
 | `apps/builder/src/services/save/**` | save/load를 canonical 기준으로 전환 |
 | `apps/builder/src/utils/designKit/kitExporter.ts` | component export를 canonical 구조로 정리 |
-| `apps/builder/src/utils/designKit/kitLoader.ts` | import 시 localId/ref/slot-aware 로드 |
+| `apps/builder/src/utils/designKit/kitLoader.ts` | import 시 id/ref/slot-aware 로드 |
 
 #### 전환 원칙
 
@@ -210,9 +295,11 @@ canonical format을 저장 정본으로 승격한다.
 - canonical resolver
   - ref nesting
   - descendants override precedence
-  - slot fill precedence
-  - empty required slot validation
-- localId/path remap
+  - descendants path override (`ok-button/label`)
+  - descendant node replacement (`descendants[path].type`)
+  - descendants children replacement on slot container
+  - slot suggestion/contract validation
+- id/path remap
   - duplicate
   - copy/paste
   - detach
@@ -222,15 +309,17 @@ canonical format을 저장 정본으로 승격한다.
 - Preview와 Skia가 같은 resolved tree snapshot을 받는지 비교
 - layout template 적용 후 동일 slot fill 결과 비교
 - legacy project load → canonical adapter → save roundtrip
+- reusable component authoring → ref instance 생성 → descendants override roundtrip
 
 ### 회귀 체크리스트
 
 - [ ] 기존 layout preset 페이지가 그대로 열린다
 - [ ] 기존 component instance가 시각적으로 동일하다
-- [ ] copy/paste 후 descendants override가 유지된다
+- [ ] `ok-button/label` 같은 nested descendants override가 유지된다
+- [ ] slot 영역의 `children` 교체가 Preview와 Skia에서 동일하게 materialize 된다
 - [ ] detach 후 일반 subtree로 정상 materialize 된다
 - [ ] undo/redo가 ref/slot 변경을 안정적으로 복원한다
-- [ ] import/export 결과가 localId 충돌 없이 재로드된다
+- [ ] import/export 결과가 source `id` 충돌 없이 재로드된다
 
 ## 비목표
 
