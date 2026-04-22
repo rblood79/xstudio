@@ -431,6 +431,7 @@ export function createProgressBarDefinition(
             backgroundColor: "transparent",
             width: "fit-content",
             height: "fit-content",
+            gridArea: "label",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -442,6 +443,8 @@ export function createProgressBarDefinition(
           children: "50%",
           style: {
             width: "fit-content",
+            gridArea: "value",
+            justifySelf: "end",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -452,6 +455,7 @@ export function createProgressBarDefinition(
         props: {
           style: {
             width: "100%",
+            gridArea: "bar",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -508,6 +512,7 @@ export function createMeterDefinition(
             backgroundColor: "transparent",
             width: "fit-content",
             height: "fit-content",
+            gridArea: "label",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -519,6 +524,8 @@ export function createMeterDefinition(
           children: "75%",
           style: {
             width: "fit-content",
+            gridArea: "value",
+            justifySelf: "end",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -529,6 +536,7 @@ export function createMeterDefinition(
         props: {
           style: {
             width: "100%",
+            gridArea: "bar",
           },
         } as ComponentElementProps,
         ...ownerFields,

@@ -43,7 +43,10 @@ import {
 import { elementToTaffyBlockStyle } from "./TaffyBlockEngine";
 import { elementToTaffyStyle } from "./TaffyFlexEngine";
 import { parseGridTemplate } from "./TaffyGridEngine";
-import { applyImplicitStyles } from "./implicitStyles";
+import {
+  applyImplicitStyles,
+  resolveContainerStylesFallback,
+} from "./implicitStyles";
 import { resolvePropagatedProps } from "../../../../utils/propagationEngine";
 import {
   getPropagationRules,
@@ -535,11 +538,24 @@ function buildNodeStyle(
   parentDisplay: string,
   childElements?: Element[],
 ): Record<string, unknown> {
-  const display = getElementDisplay(element);
+  // ADR-079 P2 read-through 확장: Spec containerStyles 를 props.style 에 merge 한
+  // enriched element 를 display/grid branch 양쪽에서 일관 참조. ProgressBar/Meter 등이
+  // `display: "grid"` + `gridTemplateColumns` 를 spec containerStyles 에만 선언하고
+  // factory 가 props.style 에 중복 주입하지 않는 케이스에서 Skia Grid 레이아웃 누락 방지.
+  const rawStyle = (element.props?.style ?? {}) as Record<string, unknown>;
+  const tag = (element.tag ?? "").toLowerCase();
+  const specFallback = resolveContainerStylesFallback(tag, rawStyle);
+  const mergedStyle = { ...specFallback, ...rawStyle };
+  const enriched: Element =
+    specFallback && Object.keys(specFallback).length > 0
+      ? { ...element, props: { ...element.props, style: mergedStyle } }
+      : element;
+
+  const display = getElementDisplay(enriched);
   const normalized = display.trim().toLowerCase();
 
   if (normalized === "flex" || normalized === "inline-flex") {
-    const taffyStyle: TaffyStyle = elementToTaffyStyle(element, computedStyle);
+    const taffyStyle: TaffyStyle = elementToTaffyStyle(enriched, computedStyle);
     return taffyStyleToRecord(taffyStyle);
   }
 
@@ -548,7 +564,7 @@ function buildNodeStyle(
     // 전체 grid 속성 변환은 TaffyGridEngine에 있으나
     // fullTreeLayout 배치에서는 size/padding/border/gap 처리가 핵심이므로
     // applyCommonTaffyStyle로 공통 부분을 처리하고 grid display를 주입한다.
-    const style = (element.props?.style ?? {}) as Record<string, unknown>;
+    const style = mergedStyle;
     const partial: Record<string, unknown> = { display: "grid" };
     applyCommonTaffyStyle(partial, style, {});
 
@@ -625,7 +641,10 @@ function buildNodeStyle(
   // taffyDisplayAdapter가 모든 block layout 시뮬레이션 규칙을 TaffyDisplayConfig에 포함하고,
   // elementToTaffyBlockStyle이 모든 필드를 패스스루하므로 수동 주입 불필요.
   const taffyConfig = toTaffyDisplay(display, childDisplays, childElements);
-  const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
+  const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(
+    enriched,
+    taffyConfig,
+  );
   const record = taffyStyleToRecord(taffyStyle);
 
   // CSS: block 요소가 flex/grid 부모의 자식이면 flex item 속성 적용
