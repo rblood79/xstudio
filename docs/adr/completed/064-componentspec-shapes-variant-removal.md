@@ -121,3 +121,34 @@ Implemented — 2026-04-15 (Proposed 2026-04-13)
 - 대규모 diff — 코드 리뷰 부담 (초기 실측 83파일 → 확정 95 files, commit `40fa47cb`)
 - self-reference 패턴(`TextFieldSpec.variants` 내부 참조)이 전환 대상 Spec 61개(107 중)에 반복 (초기 실측 78 중 변경 수렴값) — 반복 패턴 수용
 - variant 미사용 Spec(`shapes: () => []` 등)은 시그니처만 변경 — 무해하나 diff 잡음
+
+## Addendum — 2026-04-22 (세션 16): Chrome MCP 실 UI 재확증
+
+ADR-082 Gate G4 공식 통과 (Addendum A5) 로 구성된 Chrome MCP MVP 인프라를 재활용하여 G2 의 5 샘플 컴포넌트 (Button/Badge/TextField/Card/Switch) 를 실 Builder + Preview 환경에서 직접 재측정.
+
+### 실측 매트릭스
+
+| Spec      | Style Panel 실측 (ADR-082 reader)             |                   Preview iframe 렌더                   |      Skia Canvas 렌더      | 판정 |
+| --------- | --------------------------------------------- | :-----------------------------------------------------: | :------------------------: | :--: |
+| Button    | BR=6 / BW=1 / Width=fit / FS=14 / LH=20       | `.react-aria-Button.button-base` (+other button inst 3) |    ✅ canvas 배치 확인     |  ✅  |
+| Badge     | BR=9999 (full) / BW=1 / Gap=4 / FS=14 / LH=20 |                 `.react-aria-Badge` 1건                 |             ✅             |  ✅  |
+| TextField | BR=6 / Gap=6 / Width=100 / FS=14              |               `.react-aria-TextField` 1건               | ✅ (Text Field input 가시) |  ✅  |
+| Card      | BR=8 / Gap=12 / FS=16                         |                 `.react-aria-Card` 1건                  |     ✅ (Card box 렌더)     |  ✅  |
+| Switch    | BR=9999 / Gap=10 / FS=14                      |                `.react-aria-Switch` 1건                 |      ✅ (toggle 가시)      |  ✅  |
+
+### 검증 환경
+
+- Chrome MCP 탭 그룹 `351330741`
+- Builder 탭 `tabId=2123360908` — Skia Canvas + Style Panel reader (`.panel-contents` → Transform section 포함)
+- Preview iframe — `http://localhost:5173/preview.html` same-origin 접근, `contentDocument.querySelector('.react-aria-*')` 로 DOM 존재 확증
+- 스크린샷: Left(CSS Preview) ↔ Right(Skia Canvas) 대칭 배치 visual 재확인 (세션 16 screenshot `ss_9079068h5`)
+
+### 본 Addendum 의 의미
+
+- ADR-064 G2 는 2026-04-16 시점에 `parallel-verify` 5-레이어 × 5 샘플 = 25/25 PASS **논리적 확증** 완료
+- 본 Addendum 은 Chrome MCP 기반 **실 런타임 visual 확증** 으로 G2 판정을 보강. Status 변경 없음 (Implemented 유지)
+- 잔존 HIGH 위험 없음 (기존 Gate 섹션 확증 재확인)
+
+### 후속 제안
+
+- **parallel-verify skill 에 Chrome MCP 단계 통합** — skill SKILL.md 에 "실 UI dual-render 대칭" 단계 추가 (`skia-canvas-unified` + preview iframe `.react-aria-*` 대조). 이후 신규 컴포넌트 추가 시 자동 수행 가능. (P2-c 작업과 연계)

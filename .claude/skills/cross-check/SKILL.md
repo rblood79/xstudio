@@ -115,39 +115,101 @@ while (이슈 테이블에 미해결 CRITICAL/HIGH 존재):
 
 3회 초과 루프 시 근본 원인 의심 → systematic-debugging 스킬 전환.
 
-## Phase 5: 시각 파리티 검증 (선택 — dev 서버 실행 시)
+## Phase 5: 시각 파리티 검증 — Chrome MCP (dev 서버 실행 시)
 
-개발 서버(`localhost:5173`)와 Storybook(`localhost:6006`) 중 실행 중인 것이 있으면 Chrome MCP로 Preview(CSS)와 Canvas(Skia) 렌더링을 시각적으로 비교합니다.
+개발 서버(`localhost:5173`)가 실행 중이면 Chrome MCP로 **Skia Canvas ↔ Preview iframe ↔ Style Panel** 세 축 대칭을 프로그래매틱 + visual 이중 확증합니다. 세션 16 (2026-04-22) ADR-082 G4 / ADR-056 / ADR-064 재확증에서 확립된 패턴.
 
-### 5.1 Preview(CSS) 스크린샷 캡처
+### 5.1 탭 세팅 (재사용 원칙)
 
 ```
-mcp__claude-in-chrome__tabs_create_mcp()
-mcp__claude-in-chrome__navigate(url: "http://localhost:5173", tabId: {tabId})
-# 변경된 컴포넌트가 보이는 페이지로 이동 후
-mcp__claude-in-chrome__computer(action: "screenshot", tabId: {tabId})
+# 기존 MCP 탭 그룹 조회 — 세션당 1 그룹 유지 원칙
+mcp__claude-in-chrome__tabs_context_mcp({ createIfEmpty: true })
+# Builder 미탑재 시 네비게이션
+mcp__claude-in-chrome__navigate({ url: "http://localhost:5173", tabId })
 ```
 
-### 5.2 Canvas(Skia) 스크린샷 캡처
+Chrome extension 미페어링 시 `No Chrome extension connected` 에러 — 사용자에게 extension 설치/페어링 요청 후 재시도.
 
-동일 탭에서 Canvas 영역을 스크린샷으로 캡처합니다. Canvas와 Preview를 나란히 비교할 수 있는 뷰가 있으면 한 번에 캡처합니다.
+### 5.2 Store programmatic 조작 (요소 추가/선택)
 
-### 5.3 시각 비교
+Builder 에 `window.__composition_STORE__` 가 전역 노출되어 있어 UI 클릭 없이 요소 추가 가능:
 
-두 스크린샷을 비교하여 아래 항목을 확인합니다:
+```javascript
+const store = window.__composition_STORE__;
+const st = store.getState();
+const bodyId = [...st.elementsMap.values()].find((e) => e.tag === "body")?.id;
+const pageId = st.currentPageId;
+const id = crypto.randomUUID();
+await st.addElement({
+  id,
+  tag: "Button",
+  parent_id: bodyId,
+  page_id: pageId,
+  order_num: 0,
+  props: {},
+});
+store.getState().setSelectedElement(id);
+await new Promise((r) => setTimeout(r, 400)); // React 리렌더 대기
+```
+
+### 5.3 3축 대칭 확증
+
+| 축                          | 확인 방법                                                                                                           | 기대                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Skia Canvas**             | `document.querySelector('canvas[data-testid=skia-canvas-unified]')` 존재 + 스크린샷 visual                          | 컴포넌트 shape 가 canvas 에 렌더됨                                   |
+| **Preview iframe DOM**      | Preview 토글 버튼 클릭 → `document.querySelector('iframe').contentDocument.querySelectorAll('.react-aria-{Tag}')`   | 해당 tag 의 RAC 인스턴스 렌더                                        |
+| **Style Panel Spec preset** | `.panel-contents` 중 Transform 섹션 포함한 root 에서 섹션별 `input[aria-label]` + `.react-aria-SelectValue` 값 추출 | Spec 기본값(예: ButtonSpec.sizes.md.borderRadius=6) 이 Panel 에 표시 |
+
+Style Panel reader 예시:
+
+```javascript
+const stylePanel = [...document.querySelectorAll(".panel-contents")].find((r) =>
+  [...r.querySelectorAll(".section-title")].some(
+    (e) => e.innerText.trim() === "Transform",
+  ),
+);
+const readSection = (root, name) => {
+  const hdr = [...root.querySelectorAll(".section-header")].find(
+    (h) => h.querySelector(".section-title")?.innerText.trim() === name,
+  );
+  const body = hdr?.nextElementSibling;
+  const out = {};
+  body?.querySelectorAll("input[aria-label]").forEach((i) => {
+    out[i.getAttribute("aria-label")] = i.value;
+  });
+  body?.querySelectorAll(".react-aria-SelectValue").forEach((e) => {
+    const aria = e.closest("[aria-label]")?.getAttribute("aria-label");
+    if (aria) out[aria] = e.innerText.trim();
+  });
+  return out;
+};
+```
+
+### 5.4 스크린샷 visual 대조 (보조)
+
+`mcp__claude-in-chrome__computer({ action: "screenshot", tabId })` 로 Builder 전체 캡처 → Left(CSS Preview) ↔ Right(Skia Canvas) 영역 대칭 육안 확인. 주요 비교 항목:
 
 - 크기·여백 불일치 (padding, height, gap 차이)
 - 색상·폰트 불일치 (토큰 매핑 오류, dark mode 차이)
 - 정렬 차이 (flex/grid 배치 불일치)
 - 상태 렌더링 차이 (hover, disabled, focus 시각 차이)
 
-불일치 발견 시 Phase 4 결과 테이블에 추가하고 즉시 수정합니다.
+### 5.5 결과 기록
+
+대칭 확증 결과를 매트릭스 형태로 Phase 4 결과 테이블 또는 ADR Addendum 에 기록:
+
+| 컴포넌트 | Skia Canvas |     Preview iframe     | Style Panel Spec preset     | 판정 |
+| -------- | :---------: | :--------------------: | --------------------------- | :--: |
+| Button   |     ✅      | `.react-aria-Button` ✓ | BR=6 / BW=1 / FS=14 / LH=20 |  ✅  |
+
+불일치 발견 시 Phase 4 결과 테이블에 CRITICAL/HIGH 로 추가하고 즉시 수정.
 
 ### 생략 조건
 
 아래에 해당하면 Phase 5를 건너뜁니다:
 
 - 개발 서버 또는 Storybook이 실행 중이지 않음
+- Chrome extension 미페어링 (사용자에게 설치 요청 후 skip)
 - 시각적 변화가 없는 수정 (로직·타입·스토어 변경만 포함)
 - CI 환경 (브라우저 없음)
 - 사용자가 명시적으로 생략을 요청한 경우
