@@ -41,13 +41,11 @@ const injectBaseStyles = () => {
     h1, h2, h3, h4, h5, h6 { margin: 0; padding: 0; }
     button, input, select, textarea { font-family: inherit; font-feature-settings: inherit; }
 
-    /* ── :root (ADR-107 — font-family/line-height 는 shared-tokens 상속, font-size 만 명시) ── */
     :root {
       font-size: 16px;
     }
 
-    /* ── Body (ADR-107 — font-family/line-height 제거 → :root 상속,
-     *   font-feature-settings cv02~cv11 은 Pretendard 한글 타이포 품질 위해 보존) ── */
+    /* font-feature-settings: Pretendard cv 변형 — body 잔존 유지 필수 (한글 타이포 품질) */
     body {
       font-feature-settings: "cv02", "cv03", "cv04", "cv11";
       color: var(--fg, #1a1a1a);

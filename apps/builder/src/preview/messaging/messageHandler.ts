@@ -418,23 +418,18 @@ export class MessageHandler {
   }
 
   /**
-   * ADR-056 Phase 3 + ADR-107: Base Typography 를 :root + body 동시 적용.
-   * - :root level 은 D3 symmetric consumer 대칭 (ADR-107).
-   * - body level 은 ADR-056 Phase 3 경로 보존 (런타임 동적 변경).
-   * - body element 의 props.style 이 있으면 React 가 별도 관리하므로 충돌 없음.
+   * :root + body 양쪽 주입: :root 는 D3 symmetric consumer 대칭 (ADR-107),
+   * body 는 ADR-056 Phase 3 하위 호환 경로 보존.
    */
   private handleThemeBaseTypography(data: ThemeBaseTypographyMessage): void {
     const { fontFamily, fontSize, lineHeight } = data.payload;
-
-    // :root (ADR-107)
-    document.documentElement.style.fontFamily = fontFamily;
-    document.documentElement.style.fontSize = `${fontSize}px`;
-    document.documentElement.style.lineHeight = String(lineHeight);
-
-    // body (ADR-056)
-    document.body.style.fontFamily = fontFamily;
-    document.body.style.fontSize = `${fontSize}px`;
-    document.body.style.lineHeight = String(lineHeight);
+    const apply = (el: HTMLElement) => {
+      el.style.fontFamily = fontFamily;
+      el.style.fontSize = `${fontSize}px`;
+      el.style.lineHeight = String(lineHeight);
+    };
+    apply(document.documentElement);
+    apply(document.body);
   }
 
   private handleUpdatePageInfo(data: UpdatePageInfoMessage): void {

@@ -5,10 +5,8 @@
 
 @layer shared-tokens {
   :root {
-    /* Base Typography — ADR-107 D3 symmetric consumer 대칭 복구
-     * `DEFAULT_BASE_TYPOGRAPHY` (apps/builder/src/builder/fonts/customFonts.ts:307) 와 동일 체인.
-     * 값 변경 시 TS 상수도 함께 수정 필수 (ADR-107 R4 drift 방지).
-     * font-size 는 의도적으로 제외 — Builder App.css:441 "browser default 유지" 원칙 준수. */
+    /* DEFAULT_BASE_TYPOGRAPHY (customFonts.ts) 와 동일 체인 유지 필수 — drift 시 D3 symmetric 파괴.
+     * font-size 제외: Builder `html, :root` 는 browser default(16px) 상속. */
     font-family:
       Pretendard,
       -apple-system,

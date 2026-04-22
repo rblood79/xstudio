@@ -32,6 +32,7 @@ import { oklchToHex } from "../../../utils/theme/oklchToHex";
 import { PanelHeader, PropertySection, PropertySelect } from "../../components";
 import { MiniThemePreview } from "./MiniThemePreview";
 import { useThemeMessenger } from "../../hooks/useThemeMessenger";
+import { DEFAULT_BASE_TYPOGRAPHY } from "../../fonts/customFonts";
 import "./ThemesPanel.css";
 
 // ============================================================================
@@ -189,11 +190,10 @@ const RADIUS_OPTIONS = [
   { value: "xl", label: "Extra Large" },
 ];
 
-// ADR-056: Typography 프리셋
+// ADR-056: Typography 프리셋 (ADR-107 R4 drift 방지 — DEFAULT 체인은 상수 참조)
 const FONT_FAMILY_OPTIONS = [
   {
-    value:
-      "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', sans-serif",
+    value: DEFAULT_BASE_TYPOGRAPHY.fontFamily,
     label: "Pretendard (Default)",
   },
   {
