@@ -402,6 +402,53 @@ Chrome MCP 인프라 MVP 구성과 함께 본문 §Gates G4 의 **공식 통과 
 - Chrome MCP 환경: `localhost:5173` Builder dev server / MCP 탭 그룹 `351330741` / tabId `2123360908`
 - 검증 세션: 2026-04-22 세션 16 (ADR-056 세션 15 + A1/A2/B 세션 16 연속)
 
+## Addendum A6 — 2026-04-22 (세션 17): ADR-082 debt 3건 전원 종결
+
+Addendum A5 의 §잔존 debt 3건을 세션 17 에서 재평가 및 청산. P1-1/P1-2 는 실구현, P1-3 는 재평가 결과 scope 외 확증.
+
+### P1-1 Toggle reader 정밀화 — Implemented (커밋 `abfa2729`)
+
+Style Panel `.react-aria-ToggleButtonGroup` 의 `data-selected="true"` pressed state 추출 + 9-grid (`.alignment-dot`) 는 `${H_ALIGN[col]}${V_ALIGN[row]}` 문자열 매핑 (예: `"leftCenter"` = idx 3) + 일반 toggle 은 lucide icon class suffix 반환. `previousElementSibling.innerText` 로 Panel UI label 페어링.
+
+`.claude/skills/cross-check/SKILL.md` Phase 5 (readToggleGroups) + `feedback-chrome-mcp-patterns.md` §4 에 영속화. Chrome MCP 실측: ListBoxItem `Direction=stretch-horizontal` / `Container Align=leftCenter` / `Wrap=arrow-right-to-line` — `alignItems`/`justifyContent`/`flexDirection` Spec 값 전원 Panel 도달 확증.
+
+### P1-2 Padding shorthand UX 개선 — Implemented (커밋 `6d01f564`)
+
+Style Panel collapsed 모드에서 Padding/Margin 단일 입력이 Spec 공급 4-way uniform 값을 무시하고 `"0px"` 기본값만 표시하던 UX 이슈 해소. `uniform4Way<T>(a,b,c,d)` 헬퍼 신설 후 `useLayoutValues` 의 padding/margin shorthand 에 `firstDefined(s.padding, uniform4Way(numToPx(...)), "0px")` 주입.
+
+vitest 5 케이스 추가 (uniform fallback / non-uniform 기본값 / inline 우선 / margin 동일 적용 / partial undefined). Chrome MCP 실측: ListBox Padding shorthand `"0"` → `"4"` (ListBoxSpec.containerStyles.padding=`{spacing.xs}`=4 도달). builder 242→247/247 (+5 신규).
+
+### P1-3 커스텀 CSS var resolver 확장 — WONTFIX (scope 재평가)
+
+원래 debt 제기: TextField `--label-font-size` / CheckboxGroup `--cb-items-gap` 같은 `composition.containerStyles` 커스텀 CSS var 을 resolver 가 인지하여 Typography/Layout 에 공급.
+
+**세션 16 Chrome MCP 실측 재평가 결과**:
+
+| Spec          | 실측 Panel 값                                 | 공급 경로                                                                                       | UX 충족? |
+| ------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------- | :------: |
+| TextField     | Typography.Font Size=14 / Transform.Width=fit | `sizes.md.fontSize={typography.text-sm}=14` + `composition.containerStyles.width="fit-content"` |    ✅    |
+| CheckboxGroup | Layout.Gap=12                                 | `sizes.md.gap=12`                                                                               |    ✅    |
+
+두 Spec 모두 **`sizes.md` 공급 경로가 실질 UX 를 이미 충족**. 커스텀 CSS var (`--label-font-size` / `--cb-items-gap`) 은 CSS cascade 에서 Preview/Publish 렌더링 용도로 활용되지만, Style Panel 표시 관점에서는 `sizes.md` 가 선행 반영되므로 resolver 확장이 **실질 가시적 개선을 낳지 않음**.
+
+선제 resolver 확장은 YAGNI 위반 — 추상 인프라로 묶일 뿐 실 사용자 UX 변화 0. **후속 Spec 이 `sizes` 없이 `composition.containerStyles` 커스텀 CSS var 만으로 Spec 값을 공급하는 패턴 등장 시 재평가** — 그 때까지 보류.
+
+### ADR-082 debt 현황
+
+| Debt                         | A5 기록   |        세션 17 결과         |
+| ---------------------------- | --------- | :-------------------------: |
+| P1-1 Toggle reader 정밀화    | 후속 예정 | ✅ Implemented (`abfa2729`) |
+| P1-2 Padding shorthand UX    | 후속 예정 | ✅ Implemented (`6d01f564`) |
+| P1-3 커스텀 CSS var resolver | 후속 예정 |  ✅ WONTFIX (scope 재평가)  |
+
+**ADR-082 debt 0 도달**. Chrome MCP Gate G4 공식 통과 (A5) + 후속 debt 3/3 청산으로 ADR-082 가 실 운영 완결 상태.
+
+### 관련 커밋 (세션 17)
+
+- `abfa2729` — P1-1 docs(cross-check) Phase 5 readToggleGroups 통합
+- `6d01f564` — P1-2 feat(adr-082) padding/margin shorthand 4-way uniform fallback
+- 본 A6 Addendum 후속 커밋
+
 ## References
 
 - ADR-036 Phase 3a: Composite Spec `composition.*` 메타데이터 (본 ADR 의 소비 대상)
