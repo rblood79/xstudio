@@ -160,7 +160,7 @@ await new Promise((r) => setTimeout(r, 400)); // React 리렌더 대기
 | **Preview iframe DOM**      | Preview 토글 버튼 클릭 → `document.querySelector('iframe').contentDocument.querySelectorAll('.react-aria-{Tag}')`   | 해당 tag 의 RAC 인스턴스 렌더                                        |
 | **Style Panel Spec preset** | `.panel-contents` 중 Transform 섹션 포함한 root 에서 섹션별 `input[aria-label]` + `.react-aria-SelectValue` 값 추출 | Spec 기본값(예: ButtonSpec.sizes.md.borderRadius=6) 이 Panel 에 표시 |
 
-Style Panel reader 예시:
+Style Panel reader (input / Select / ToggleButtonGroup 통합 — 세션 17 정밀화):
 
 ```javascript
 const stylePanel = [...document.querySelectorAll(".panel-contents")].find((r) =>
@@ -168,22 +168,72 @@ const stylePanel = [...document.querySelectorAll(".panel-contents")].find((r) =>
     (e) => e.innerText.trim() === "Transform",
   ),
 );
+
+const H_ALIGN = ["left", "center", "right"];
+const V_ALIGN = ["Top", "Center", "Bottom"];
+
+const readToggleGroups = (body) => {
+  const out = {};
+  body.querySelectorAll(".react-aria-ToggleButtonGroup").forEach((g) => {
+    const labelKey =
+      g.previousElementSibling?.innerText?.trim() ||
+      g.getAttribute("aria-label");
+    if (!labelKey) return;
+    const buttons = [...g.querySelectorAll("button")];
+    const selectedIdx = buttons.findIndex(
+      (b) => b.getAttribute("data-selected") === "true",
+    );
+    let value = null;
+    if (selectedIdx >= 0) {
+      const b = buttons[selectedIdx];
+      const isAlignDot =
+        buttons.length === 9 && b.querySelector(".alignment-dot");
+      if (isAlignDot) {
+        // 9-grid row-major: idx → col/row 좌표
+        value = `${H_ALIGN[selectedIdx % 3]}${V_ALIGN[Math.floor(selectedIdx / 3)]}`;
+      } else {
+        const iconName = b
+          .querySelector("svg")
+          ?.getAttribute("class")
+          ?.match(/lucide-([a-z-]+)/)?.[1];
+        value = iconName || `#${selectedIdx}`;
+      }
+    }
+    out[labelKey] = value;
+  });
+  return out;
+};
+
 const readSection = (root, name) => {
   const hdr = [...root.querySelectorAll(".section-header")].find(
     (h) => h.querySelector(".section-title")?.innerText.trim() === name,
   );
   const body = hdr?.nextElementSibling;
+  if (!body) return null;
   const out = {};
-  body?.querySelectorAll("input[aria-label]").forEach((i) => {
+  // NumberField / TextField 입력값
+  body.querySelectorAll("input[aria-label]").forEach((i) => {
     out[i.getAttribute("aria-label")] = i.value;
   });
-  body?.querySelectorAll(".react-aria-SelectValue").forEach((e) => {
+  // Select trigger 현재 값
+  body.querySelectorAll(".react-aria-SelectValue").forEach((e) => {
     const aria = e.closest("[aria-label]")?.getAttribute("aria-label");
     if (aria) out[aria] = e.innerText.trim();
   });
+  // ToggleButtonGroup (Direction / Container Align / Justify / Wrap / W Sizing / H Sizing / Self Align)
+  Object.assign(out, readToggleGroups(body));
   return out;
 };
 ```
+
+ToggleButtonGroup 반환값 예시 (ListBoxItem Layout section):
+
+- `Direction`: `"stretch-horizontal"` (lucide icon suffix — flexDirection=column 대응)
+- `Container Align`: `"leftCenter"` (9-grid idx=3 — alignItems=flex-start + justifyContent=center + flexDirection=column 조합)
+- `Justify`: `null` (SPACING_VALUES 가 아니면 9-grid 외에서는 미선택)
+- `Wrap`: `"arrow-right-to-line"` (nowrap default)
+
+icon class suffix → semantic 값 (row/column/block 등) 추가 변환은 optional. 세션 17 시점 기준 index + icon name 만으로 Spec 값 Panel 도달 충분 확증 가능.
 
 ### 5.4 스크린샷 visual 대조 (보조)
 
