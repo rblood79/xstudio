@@ -43,6 +43,32 @@ globs:
 
 - display 변경 및 gridTemplateColumns 변경 → **full rebuild 필수**. **Why**: Taffy 증분 갱신이 처리 불가
 - `affectedNodeIds` 필터 시 `undefined` 조건 누락 금지. **Why**: 캐시 미스 시 undefined 전달 가능
+- **신규 grid container (`prevJson` 없음) → full rebuild 필수**. **Why**: Taffy WASM `addNode` 증분 추가로는 gridTemplateColumns/Areas 가 auto-placement 로 degrade — 등록 직후 한 줄 배치, 새로고침(buildFull) 후에만 정상 2행. `!prevJson && (curDisplay === "grid" || "inline-grid")` 에서 needsFullRebuild=true 강제
+- **기존 grid container 의 layout-영향 14-key 변경 → full rebuild 필수**: gridTemplateColumns/Rows/Areas/AutoColumns/AutoRows/AutoFlow + padding/padding{Top,Right,Bottom,Left} + gap/rowGap/columnGap. **Why**: `updateStyleRaw` 는 grid track/placement 캐시 invalidation 실패 → padding 변경 시 1줄 degrade / gap 변경 미반영. 비-grid 는 증분 유지 (Flex/Block `updateStyleRaw` 정상 동작)
+
+## Taffy gridTemplate 직렬화 경로 (CRITICAL)
+
+- Taffy WASM binary_protocol 은 `gridTemplateColumns`/`Rows`/`AutoColumns`/`AutoRows` 를 **track array** (`["1fr", "auto"]`) 로 기대. CSS 표준 string (`"1fr auto"`) 통과 시 `invalid type: string, expected a sequence` parse error → persistent tree 리셋 + 재빌드 루프. **3 직렬화 경로 모두 정규화 필수**:
+  - `fullTreeLayout.taffyStyleToRecord` (flex via elementToTaffyStyle)
+  - `fullTreeLayout.buildNodeStyle` grid branch (direct partial)
+  - `fullTreeLayout.patchBatchStyleFromImplicit` (applyImplicitStyles post-patch)
+- 정규화 헬퍼: `parseGridTemplate(template: string)` (`TaffyGridEngine.ts` export). 괄호 depth 기반 토큰화 → `repeat(auto-fill, minmax(...))` 복합 표현 정확 분해
+- 이미 array 면 그대로 통과: `Array.isArray(val) ? val : parseGridTemplate(val)`
+
+## Grid area 이름 해석 (CRITICAL)
+
+- `buildNodeStyle` grid branch 는 **gridArea 이름 해석 미지원** (`parseGridAreaShorthand` + templateAreas 매칭 은 `TaffyGridEngine.elementToTaffyGridStyle` 에만 존재)
+- 자식에 `gridArea: "label"` 같은 이름만 주입하면 Taffy 가 string 그대로 받아 auto-placement 로 degrade → 자식이 container 밖으로 흘러나감
+- **Factory 패턴**: gridArea 이름과 **gridColumnStart/End + gridRowStart/End 숫자 line 병기**. CSS 경로는 spec `composition.staticSelectors` 의 `grid-area` 이름, Skia 경로는 숫자 line — 시각 대칭 유지 + 배치 정확성
+
+## CSS shorthand ↔ longhand store 정책 (CRITICAL)
+
+- `gap`/`padding`/`margin` shorthand 와 `rowGap`/`columnGap`/`paddingTop`/... longhand 가 element.props.style 에 **공존 시**:
+  - React `setValueForStyles` rerender 경고 "Removing a style property during rerender"
+  - `applyCommonTaffyStyle` 적용 순서 (`gap → rowGap/columnGap`) 로 longhand 가 shorthand override → Panel 편집 무시
+- **정책**: store 는 항상 **longhand 만**. `inspectorActions.updateSelectedStyle` / `updateSelectedStylePreview` 가 shorthand 편집 입력을 longhand 로 분배 (gap → rowGap+columnGap, padding → padding{Top,Right,Bottom,Left}, margin → margin{Top,Right,Bottom,Left}). shorthand 자체는 `delete currentStyle[property]`
+- Factory 초기값은 longhand 로 저장 (예: ProgressBar `rowGap: 4, columnGap: 12`). React inline style 은 항상 longhand 만 직렬화 → collision 완전 제거
+- `useLayoutValues.gap` 표시는 `firstDefined(s.rowGap ?? s.columnGap ?? s.gap, numToPx(specPreset.gap), "0px")` — longhand 우선, legacy shorthand fallback
 
 ## 2-Pass re-enrichment (CRITICAL)
 
@@ -96,4 +122,10 @@ globs:
 - 2-pass에서 `buildFull(batch)` 호출 금지 → updateNodeStyle + markDirty + computeLayout
 - Step 4.5에서 processedElementsMap 대신 elementsMap 직접 사용 금지
 - CONTAINER_TAGS에 고정 height 사용 금지
+- 신규 grid container 를 incrementalUpdate 의 `addNode` 로만 추가 금지 → 등록 직후 배치 degrade. `!prevJson && curDisplay==="grid"` 분기에서 needsFullRebuild=true 강제
+- 기존 grid container 의 padding/gap/gridTemplate 변경을 `updateStyleRaw` 만으로 반영 시도 금지 → 14-key 변경 감지 후 full rebuild
+- `gridTemplateColumns: "1fr auto"` string 을 WASM 에 그대로 전달 금지 → `parseGridTemplate` 로 track array 정규화 (3 직렬화 경로 전부)
+- `buildNodeStyle` grid branch 에서 자식 gridArea 이름만 주입 금지 → gridColumnStart/End + gridRowStart/End 숫자 line 병기 필수
+- element.props.style 에 shorthand (`gap`/`padding`/`margin`) + longhand 동시 저장 금지 → `inspectorActions` 에서 shorthand → longhand 분배, store 는 longhand only
+- `firstDefined(inline, specPx, fallback)` 에 4+ 인자 전달 금지 → 3-arg 고정 시그니처. 우선순위 체인은 nullish coalescing (`??`) 으로 inline 자리에 압축
 - Select/ComboBox 높이에 `Math.ceil(fontSize * 1.5)` 금지 → parseLineHeight 우선
