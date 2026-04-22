@@ -1,6 +1,10 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-04-22 세션 16 — **ADR-082 Implemented**. Style Panel Spec Consumer 통합 완결. Chrome MCP MVP 인프라 구성 + 10 Spec × 4 section 실 UI 검증으로 Gate G4 공식 통과. ListBox/Menu/ListBoxItem/Select/ComboBox/DatePicker/TextField/CheckboxGroup/ToggleButtonGroup/Button 전원 Spec 기본값이 Style Panel Transform/Appearance/Layout/Typography 에 도달 확인 (Button BR=6/BW=1 / ListBox Width=100/Padding 4-way=4 / Select Gap=6 sizes 우선 / DatePicker Gap=4 composition fallback / TextField/ToggleButtonGroup Width=fit / ListBoxItem FW=Semi Bold 등). Addendum A4 (A1 useTransformAuxiliary 부모 Spec fallback + A2 useFillValues scope + B vitest P5 G4 matrix) 기반 위에 A5 (Chrome MCP 실측) 로 Status Proposed → Implemented 전환. 잔존 debt: Padding shorthand UI collapsed 표시 개선(UX) / 커스텀 CSS var (--label-font-size/--cb-items-gap) resolver 확장 / Toggle-button group DOM reader 정밀화. 검증: type-check 3/3 + specs 205/205 + builder 242/242 + Chrome MCP 실 UI 10/10 PASS. README 완료 90→91 / 미구현 10→9 / 합계 108 유지.
+> **최종 업데이트**: 2026-04-22 세션 18 — **ADR-107 Implemented + Spec SSOT 100% 완결 선언 + ADR-036 Fully Implemented 달성**. Codex 4 라운드 리뷰 7건 반영 후 ADR-107 (Preview/Publish `:root` + body 대칭 복구 via shared-tokens) Phase 1-5 + Gate G1-G6 전원 통과. Chrome MCP 3 탭 (Builder `2123360908` / Preview `2123360930` / Publish `2123360933`) 실측 — 3축 `:root` computed fontFamily 동일 DEFAULT 체인 / firstFamily = Pretendard / fontSize = 16px / lineHeight = 24px 확증. Preview body fontFeatureSettings `cv02~cv11` 보존 + Publish BC 0. Builder cascade override (`@layer base < @layer shared-tokens`) 발생하나 1st family 동일성 유지. **ADR-079 README status stale 복구 (Proposed → Implemented, 본문 정합)**. Spec SSOT 해체 ADR 체인 섹션 갱신 — ADR-036 "Fully Implemented" 재승격 근거 충족 기록 (5축 + primitive 14 + RSP 정합 6 + audit Charter 2 + base typography 2 = 전원 Implemented, debt 0). 코드 3 파일 변경 (shared-tokens.css / preview/index.tsx / messageHandler.ts) + ADR-107 문서 2건 + README. 커밋 `a82bd9f3` push 완료. 검증: type-check 3/3 FULL TURBO + specs 205/205 + builder 247/247 + shared 52/52 PASS. README 완료 92→93 / 미구현 10→9 / 합계 110 유지.
+>
+> **세션 17 이전**: **ADR-082 Addendum A6 — debt 3건 전원 종결**. P1-1 cross-check Phase 5 readToggleGroups 통합 (`abfa2729`) + P1-2 padding/margin shorthand 4-way uniform fallback (`6d01f564` builder 242→247) + P1-3 WONTFIX (TextField/CheckboxGroup sizes.md 공급이 UX 이미 충족). ADR-082 debt 0 도달.
+>
+> **세션 16 이전**: **ADR-082 Implemented**. Style Panel Spec Consumer 통합 완결. Chrome MCP MVP 인프라 구성 + 10 Spec × 4 section 실 UI 검증으로 Gate G4 공식 통과. Addendum A4 (A1 useTransformAuxiliary 부모 Spec fallback + A2 useFillValues scope + B vitest P5 G4 matrix) 기반 위에 A5 (Chrome MCP 실측) 로 Status Proposed → Implemented 전환. 검증: type-check 3/3 + specs 205/205 + builder 242/242 + Chrome MCP 실 UI 10/10 PASS.
 >
 > **세션 15 이전**: **ADR-056 Implemented**. Phase 1-2 (`e0739205`) 에 이어 Phase 3-5 완결. `useThemeMessenger.sendBaseTypography` + Preview `messageHandler` `THEME_BASE_TYPOGRAPHY` 수신 + `useIframeMessenger` PREVIEW_READY 초기 전송 + `ThemesPanel` Typography 섹션(Font / Size / LineHeight PropertySelect) + `publish/styles/index.css :root` Pretendard 체인 + `utils.ts` / `styleConverter.ts` 의 `rootFontSize` 를 `getRootComputedStyle().fontSize` 로 교체 (ADR-021 tint/neutral/radiusScale 패턴 확장). Gate 4/4 PASS (Spec 정합 / Publish Pretendard / rem 연동 / 기존 테마 복원). 검증: type-check 3/3 + specs 205/205 + builder 227/227 + shared 52/52 PASS.
 >
@@ -53,9 +57,9 @@
 
 | 구분                                   | 개수    |
 | -------------------------------------- | ------- |
-| 완료 (Accepted/Implemented/Superseded) | 92      |
+| 완료 (Accepted/Implemented/Superseded) | 93      |
 | 부분 완료                              | 8       |
-| 미구현 (Proposed/계획)                 | 10      |
+| 미구현 (Proposed/계획)                 | 9       |
 | **합계**                               | **110** |
 
 ---
@@ -187,22 +191,47 @@
 | [038](038-figma-import.md)                                           | Figma 디자인 임포트 시스템                                 | Proposed               | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |  **P3**  |
 | [054](054-local-llm-architecture.md)                                 | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)                | Proposed               | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |  **P2**  |
 | [056](056-base-typography-ssot.md)                                   | Base Typography 단일 정본 (SSOT)                           | Implemented 2026-04-22 | themeConfigStore.baseTypography (ADR-021 패턴 확장) + getRootComputedStyle() 동적화 + Preview THEME_BASE_TYPOGRAPHY postMessage + ThemesPanel Typography 섹션 + Publish :root Pretendard + cssValueParser rootFontSize 주입. Gate 4/4 PASS.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |  **P2**  |
-| [079](079-spec-defaults-read-through-layout-primitive-ssot.md)       | Spec defaults read-through + Layout primitive SSOT 완전화  | Proposed 2026-04-19    | ADR-078 post-fix 잔존 workaround 4종 구조적 해체. P1~P4: ContainerStylesSchema.alignItems 추가 / useLayoutAuxiliary read-through / factory 중복 주입 제거 / rearrangeShapesForColumn 화이트리스트. HIGH 0, 대안 A(4-phase 순차) 채택.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |  **P2**  |
+| [079](079-spec-defaults-read-through-layout-primitive-ssot.md)       | Spec defaults read-through + Layout primitive SSOT 완전화  | Implemented 2026-04-19 | ADR-078 post-fix 잔존 workaround 4종 구조적 해체 완결. P1 `8a944f9b` (ContainerStylesSchema alignItems + ListBoxItem 리프팅) / P2 `8bb7109b` (Style Panel hook Spec defaults read-through) / P3 `9b6c5230` (Factory 중복 주입 제거 + implicitStyles drift test) / P4 `e639b8d8` (rearrangeShapesForColumn 블랙리스트 → 화이트리스트). Gate G1-G5 전원 PASS (MCP 실측 + type-check 3/3 + vitest 506/506 + build:specs 109 files). ADR-078 debt 100% 소진 + D3 3경로(Preview CSS / Canvas Skia / Style Panel) 대칭 복구. Codex 리뷰 세션 18 에서 README status 정합 복구.                                                                                                                                                                                                                                                                                |    —     |
 | [102](102-workspace-dot-background-layer.md)                         | Workspace Dot Background Layer — Builder 전용 에디터 크롬  | Proposed               | 축 1: DOM+CSS `background-image` 레이어 / 축 2: Skia `clearFrame` 3 call site 투명화. Gate G1(런타임 무간섭) + G2(Skia 투명화 안전성). 구현 상세: [breakdown](../design/102-workspace-dot-background-breakdown.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |    P4    |
 | [107](107-preview-publish-root-symmetry.md)                          | Preview/Publish `:root` + body 대칭 복구 via shared-tokens | Implemented 2026-04-22 | ADR-056 잔존 debt (Preview `:root` Apple SD Gothic Neo + body 하드코딩 체인 DEFAULT 불일치) 해소. 대안 C — `shared-tokens.css :root` 에 `DEFAULT_BASE_TYPOGRAPHY` 체인 font-family + line-height 추가 (font-size 제외) + Preview body `font-family`/`line-height` 제거 → `:root` 상속 (`font-feature-settings` cv02~cv11 보존) + `injectBaseStyles()` `:root { font-size: 16px }` + `handleThemeBaseTypography` documentElement.style 확장. **Gate G1-G6 전원 PASS**: Builder + Preview + Publish 3축 `:root` computed fontFamily 동일 DEFAULT 체인 / firstFamily = `Pretendard` / fontSize = 16px / lineHeight = 24px / Preview body fontFeatureSettings `cv02~cv11` 보존 / Publish BC 0 확증. Chrome MCP 실측 (탭 2123360908/930/933). Codex 1/3/4차 리뷰 7건 반영. 구현 상세: [breakdown](../design/107-preview-publish-root-symmetry-breakdown.md) |    —     |
-| [903](903-ref-descendants-slot-composition-format-migration-plan.md) | ref/descendants + slot 기본 composition 포맷 전환 계획     | Proposed 2026-04-22    | page/layout/document composition 포맷을 일반 object tree + `reusable: true` + `type:"ref"` + path-based `descendants` + 컨테이너 `slot` 메타데이터를 갖는 문서-네이티브 canonical format으로 승격. 대안 A(resolver-first 점진 전환) 채택 — legacy `layout_id/slot_name/componentRole/masterId`는 adapter로 존치하고, 공통 resolver(`ref resolve -> descendants apply -> slot contract validate -> resolved tree`)를 먼저 도입한 뒤 Preview/Skia 입력을 통합. frameset은 별도 기능이 아니라 reusable layout shell의 한 사례로 흡수. 구현 상세: [breakdown](../design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md) |  **P1**  |
+| [903](903-ref-descendants-slot-composition-format-migration-plan.md) | ref/descendants + slot 기본 composition 포맷 전환 계획     | Proposed 2026-04-22    | page/layout/document composition 포맷을 일반 object tree + `reusable: true` + `type:"ref"` + path-based `descendants` + 컨테이너 `slot` 메타데이터를 갖는 문서-네이티브 canonical format으로 승격. 대안 A(resolver-first 점진 전환) 채택 — legacy `layout_id/slot_name/componentRole/masterId`는 adapter로 존치하고, 공통 resolver(`ref resolve -> descendants apply -> slot contract validate -> resolved tree`)를 먼저 도입한 뒤 Preview/Skia 입력을 통합. frameset은 별도 기능이 아니라 reusable layout shell의 한 사례로 흡수. 구현 상세: [breakdown](../design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md)                                                                                                                                                                                                           |  **P1**  |
 
-## Spec SSOT 해체 ADR 체인 (ADR-036 재승격 준비)
+## Spec SSOT 해체 ADR 체인 — **ADR-036 Fully Implemented 달성 (2026-04-22 세션 18)**
 
-ADR-036 "Spec-First Single Source"가 Implemented로 체크되었지만 실제로는 잔존 예외 경로가 5축 존재했다. 다음 ADR 체인이 각 축을 해체한다:
+ADR-036 "Spec-First Single Source" 잔존 예외 경로 5축 및 후속 debt 전원 해체 완결. Charter-level 100% + 실 debt 0 (@sync / skipCSSGeneration G3-G4 / ADR-082 / ADR-078 잔존 workaround 전부 청산). 실 코드 Leaf CSS 자동 생성률 79.5% (93/117 spec) = symmetric consumer 구조적 상한 도달.
 
-- [ADR-057](completed/057-text-spec-first-migration.md) — Text shape feature parity 이식 (Implemented)
+### 5축 해체 (Text / Composite / Form Control / Focus Ring / Layout primitive)
+
+- [ADR-057](completed/057-text-spec-first-migration.md) — Text shape feature parity 이식 (Implemented 2026-04-13)
 - [ADR-058](completed/058-text-tags-legacy-dismantle.md) — Text/Heading/Paragraph/Kbd/Code 예외 경로 해체 (Implemented)
-- [ADR-059](completed/059-composite-field-skip-css-dismantle.md) — 59개 Composite `skipCSSGeneration: true` 해체 (Implemented — B1~B4 + B5 ToggleButton indicator SSOT 완결 2026-04-15 + 후속 cssEmitMode/propagation 보완 2026-04-16)
-- [ADR-060](completed/060-form-control-indicator-schema.md) — Checkbox/Radio/Switch/Slider 매직 테이블 해체 (Implemented 2026-04-13, 6개 테이블)
+- [ADR-059](completed/059-composite-field-skip-css-dismantle.md) — 59개 Composite `skipCSSGeneration: true` 해체 (Implemented 2026-04-15 B5 완결 + 2026-04-16 cssEmitMode/propagation 보완)
+- [ADR-060](completed/060-form-control-indicator-schema.md) — Checkbox/Radio/Switch/Slider 매직 테이블 6개 해체 (Implemented 2026-04-13)
 - [ADR-061](completed/061-focus-ring-tokenization.md) — Focus Ring 50개 리터럴 토큰화 (Implemented 2026-04-13)
+- [ADR-079](079-spec-defaults-read-through-layout-primitive-ssot.md) — Layout primitive SSOT 완전화 (ADR-078 post-fix workaround 4종 해체, Implemented 2026-04-19)
 
-체인 완료 시 ADR-036을 "Fully Implemented"로 재승격.
+### Primitive 리프팅 체인 (ADR-083 ~ 096, 14 건)
+
+ADR-083 archetype base-styles / ADR-084 implicitStyles 분기 해체 / ADR-085 containerStyles grid-template / ADR-086 implicitStyles size Record / ADR-087 implicitStyles 잔존 분기 sweep / ADR-088 sizeSpec columnGap / ADR-089 containerStyles position / ADR-090 GridListItem Skia metric SSOT / ADR-091 utils Record / ADR-092 Card slot / ADR-093 synthetic-merge container / ADR-094 childSpecs registry 자동 등록 / ADR-095 Propagation 주입 / ADR-096 default element dimensions — **전원 Implemented 2026-04-19~21**.
+
+### 자식 네이밍 RSP 정합 (ADR-098 Charter + 6 슬롯, ADR-099 ~ 104)
+
+ADR-098 Charter + ADR-099 (098-c Collection Section/Header) / ADR-100 (098-a Select) / ADR-101 (098-b ComboBox) / ADR-102 (098-d SelectIcon) / ADR-103 (098-e CheckboxItems/RadioItems) / ADR-104 (098-f Card 시리즈) — **전원 Implemented 2026-04-21**.
+
+### SSOT audit Charter (ADR-105 + ADR-106)
+
+- [ADR-105](105-sync-annotation-audit-charter.md) + sub ADR-105-a/b/c/d — `@sync` 37건 전원 해소 (Implemented 2026-04-21)
+- [ADR-106](106-skipcssgeneration-audit-charter.md) + sub ADR-106-a/b/c/d — `skipCSSGeneration: true` 27건 분류 완결, G3-G4 debt 0 (Implemented 2026-04-21)
+
+### 3-Domain Charter (ADR-063)
+
+- [ADR-063](063-ssot-chain-charter.md) — D1(DOM/접근성=RAC) / D2(Props=RSP 참조) / D3(시각=Spec SSOT) 분할 명문화 (Accepted 2026-04-21)
+
+### Base Typography / :root 대칭 (ADR-056 + ADR-107)
+
+- [ADR-056](056-base-typography-ssot.md) — `themeConfigStore.baseTypography` + Canvas/Preview/Publish 3경로 Base Typography SSOT (Implemented 2026-04-22 세션 15)
+- [ADR-107](107-preview-publish-root-symmetry.md) — `shared-tokens.css :root` font-family + line-height + Preview body 하드코딩 제거 + `handleThemeBaseTypography` documentElement.style 확장, Gate G1-G6 전원 PASS (Implemented 2026-04-22 세션 18)
+
+**체인 완결 시점**: 2026-04-22 세션 18 (HEAD `a82bd9f3`). ADR-036 → "Fully Implemented" 재승격 근거 충족.
 
 ## Events Panel 설계 문서군
 
