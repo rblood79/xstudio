@@ -3,7 +3,7 @@ import {
   resolveLayoutSpecPreset,
   type LayoutSpecPreset,
 } from "../utils/specPresetResolver";
-import { numToPx, firstDefined } from "../utils/styleValueHelpers";
+import { numToPx, firstDefined, uniform4Way } from "../utils/styleValueHelpers";
 import { useElementStyleContext } from "./useElementStyleContext";
 
 export interface LayoutStyleValues {
@@ -51,7 +51,17 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
       ),
       gap: firstDefined(s.gap, numToPx(specPreset.gap), "0px"),
       flexWrap: firstDefined(s.flexWrap, undefined, "nowrap"),
-      padding: firstDefined(s.padding, undefined, "0px"),
+      // ADR-082 P1-2: Spec 4-way uniform 이면 shorthand 에 반영 (collapsed 모드 UX)
+      padding: firstDefined(
+        s.padding,
+        uniform4Way(
+          numToPx(specPreset.paddingTop),
+          numToPx(specPreset.paddingRight),
+          numToPx(specPreset.paddingBottom),
+          numToPx(specPreset.paddingLeft),
+        ),
+        "0px",
+      ),
       paddingTop: firstDefined(
         s.paddingTop,
         numToPx(specPreset.paddingTop),
@@ -72,7 +82,17 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
         numToPx(specPreset.paddingLeft),
         "0px",
       ),
-      margin: firstDefined(s.margin, undefined, "0px"),
+      // ADR-082 P1-2: margin 도 4-way uniform fallback 동일 적용
+      margin: firstDefined(
+        s.margin,
+        uniform4Way(
+          numToPx(specPreset.marginTop),
+          numToPx(specPreset.marginRight),
+          numToPx(specPreset.marginBottom),
+          numToPx(specPreset.marginLeft),
+        ),
+        "0px",
+      ),
       marginTop: firstDefined(
         s.marginTop,
         numToPx(specPreset.marginTop),
