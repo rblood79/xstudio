@@ -15,7 +15,10 @@ import "@composition/shared/components/styles/index.css";
 import "pretendard/dist/web/static/pretendard.css";
 
 // 폰트 유틸리티
-import { loadFontRegistry, buildRegistryFontFaceCss } from "@composition/shared";
+import {
+  loadFontRegistry,
+  buildRegistryFontFaceCss,
+} from "@composition/shared";
 import { injectBuiltinFontStyle } from "../fonts/builtinFonts";
 
 // ============================================
@@ -38,11 +41,15 @@ const injectBaseStyles = () => {
     h1, h2, h3, h4, h5, h6 { margin: 0; padding: 0; }
     button, input, select, textarea { font-family: inherit; font-feature-settings: inherit; }
 
-    /* ── Body 기본 스타일 (React 루트이자 body element) ── */
+    /* ── :root (ADR-107 — font-family/line-height 는 shared-tokens 상속, font-size 만 명시) ── */
+    :root {
+      font-size: 16px;
+    }
+
+    /* ── Body (ADR-107 — font-family/line-height 제거 → :root 상속,
+     *   font-feature-settings cv02~cv11 은 Pretendard 한글 타이포 품질 위해 보존) ── */
     body {
-      font-family: "Pretendard", "Inter Variable", monospace, system-ui, sans-serif;
       font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-      line-height: 1.5;
       color: var(--fg, #1a1a1a);
       background: var(--bg, #ffffff);
     }

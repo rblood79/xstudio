@@ -5,6 +5,21 @@
 
 @layer shared-tokens {
   :root {
+    /* Base Typography — ADR-107 D3 symmetric consumer 대칭 복구
+     * `DEFAULT_BASE_TYPOGRAPHY` (apps/builder/src/builder/fonts/customFonts.ts:307) 와 동일 체인.
+     * 값 변경 시 TS 상수도 함께 수정 필수 (ADR-107 R4 drift 방지).
+     * font-size 는 의도적으로 제외 — Builder App.css:441 "browser default 유지" 원칙 준수. */
+    font-family:
+      Pretendard,
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      Roboto,
+      "Helvetica Neue",
+      "Segoe UI",
+      sans-serif;
+    line-height: 1.5;
+
     /* Typography Scale - Tailwind v4 표준 (고정값, AI 생성 불필요) */
     --icon-size: calc(var(--spacing-xl) * 1.125);
     /* Font Sizes */

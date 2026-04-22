@@ -418,12 +418,20 @@ export class MessageHandler {
   }
 
   /**
-   * ADR-056 Phase 3: Base Typography를 document.body에 직접 적용.
-   * - fontFamily/fontSize/lineHeight가 Preview rem 기준 + 전역 body 기본값.
-   * - body element의 props.style 이 있으면 React가 별도 관리하므로 충돌 없음.
+   * ADR-056 Phase 3 + ADR-107: Base Typography 를 :root + body 동시 적용.
+   * - :root level 은 D3 symmetric consumer 대칭 (ADR-107).
+   * - body level 은 ADR-056 Phase 3 경로 보존 (런타임 동적 변경).
+   * - body element 의 props.style 이 있으면 React 가 별도 관리하므로 충돌 없음.
    */
   private handleThemeBaseTypography(data: ThemeBaseTypographyMessage): void {
     const { fontFamily, fontSize, lineHeight } = data.payload;
+
+    // :root (ADR-107)
+    document.documentElement.style.fontFamily = fontFamily;
+    document.documentElement.style.fontSize = `${fontSize}px`;
+    document.documentElement.style.lineHeight = String(lineHeight);
+
+    // body (ADR-056)
     document.body.style.fontFamily = fontFamily;
     document.body.style.fontSize = `${fontSize}px`;
     document.body.style.lineHeight = String(lineHeight);
