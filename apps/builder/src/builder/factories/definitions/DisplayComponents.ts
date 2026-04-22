@@ -421,10 +421,12 @@ export function createProgressBarDefinition(
         // resolveContainerStylesFallback merge 로는 타이밍 늦음 (등록 직후
         // Path B 증분 갱신에서 auto-placement 로 배치 오류). Spec
         // containerStyles 와 1:1 미러 — Skia Taffy Grid 경로 즉시 반영.
+        // gridTemplateRows 는 spec 미선언 → 명시 (auto auto).
         style: {
           width: "100%",
           display: "grid",
           gridTemplateColumns: "1fr auto",
+          gridTemplateRows: "auto auto",
           gridTemplateAreas: '"label value" "bar bar"',
           rowGap: 4,
           columnGap: 12,
@@ -443,6 +445,12 @@ export function createProgressBarDefinition(
             backgroundColor: "transparent",
             width: "fit-content",
             height: "fit-content",
+            // Skia Taffy grid 경로는 gridArea 이름 해석 미지원 → 숫자 line 명시.
+            // CSS 는 spec.composition.staticSelectors 의 grid-area 이름 적용 (대칭 유지).
+            gridColumnStart: "1",
+            gridColumnEnd: "2",
+            gridRowStart: "1",
+            gridRowEnd: "2",
             gridArea: "label",
           },
         } as ComponentElementProps,
@@ -455,6 +463,10 @@ export function createProgressBarDefinition(
           children: "50%",
           style: {
             width: "fit-content",
+            gridColumnStart: "2",
+            gridColumnEnd: "3",
+            gridRowStart: "1",
+            gridRowEnd: "2",
             gridArea: "value",
             justifySelf: "end",
           },
@@ -467,6 +479,10 @@ export function createProgressBarDefinition(
         props: {
           style: {
             width: "100%",
+            gridColumnStart: "1",
+            gridColumnEnd: "3",
+            gridRowStart: "2",
+            gridRowEnd: "3",
             gridArea: "bar",
           },
         } as ComponentElementProps,
@@ -514,6 +530,7 @@ export function createMeterDefinition(
           width: "100%",
           display: "grid",
           gridTemplateColumns: "1fr auto",
+          gridTemplateRows: "auto auto",
           gridTemplateAreas: '"label value" "bar bar"',
           rowGap: 4,
           columnGap: 12,
@@ -532,6 +549,10 @@ export function createMeterDefinition(
             backgroundColor: "transparent",
             width: "fit-content",
             height: "fit-content",
+            gridColumnStart: "1",
+            gridColumnEnd: "2",
+            gridRowStart: "1",
+            gridRowEnd: "2",
             gridArea: "label",
           },
         } as ComponentElementProps,
@@ -544,6 +565,10 @@ export function createMeterDefinition(
           children: "75%",
           style: {
             width: "fit-content",
+            gridColumnStart: "2",
+            gridColumnEnd: "3",
+            gridRowStart: "1",
+            gridRowEnd: "2",
             gridArea: "value",
             justifySelf: "end",
           },
@@ -556,6 +581,10 @@ export function createMeterDefinition(
         props: {
           style: {
             width: "100%",
+            gridColumnStart: "1",
+            gridColumnEnd: "3",
+            gridRowStart: "2",
+            gridRowEnd: "3",
             gridArea: "bar",
           },
         } as ComponentElementProps,
