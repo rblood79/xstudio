@@ -42,6 +42,7 @@ import {
 } from "./taffyDisplayAdapter";
 import { elementToTaffyBlockStyle } from "./TaffyBlockEngine";
 import { elementToTaffyStyle } from "./TaffyFlexEngine";
+import { parseGridTemplate } from "./TaffyGridEngine";
 import { applyImplicitStyles } from "./implicitStyles";
 import { resolvePropagatedProps } from "../../../../utils/propagationEngine";
 import {
@@ -360,13 +361,26 @@ function patchBatchStyleFromImplicit(
       continue;
     }
 
+    // Grid track 속성: CSS string ("1fr auto") → WASM 이 기대하는 array 로 정규화
+    if (
+      key === "gridTemplateColumns" ||
+      key === "gridTemplateRows" ||
+      key === "gridAutoColumns" ||
+      key === "gridAutoRows"
+    ) {
+      batchStyle[key] = Array.isArray(val)
+        ? val
+        : parseGridTemplate(val as string);
+      continue;
+    }
+
     // string 속성 (display, flexDirection, alignItems 등)
     if (typeof val === "string") {
       batchStyle[key] = val;
       continue;
     }
 
-    // 배열 속성 (gridTemplateColumns, gridTemplateRows 등)
+    // 배열 속성 (gridTemplateAreas 등)
     if (Array.isArray(val)) {
       batchStyle[key] = val;
       continue;
@@ -419,17 +433,26 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
   if (style.justifySelf !== undefined) result.justifySelf = style.justifySelf;
   if (style.order !== undefined) result.order = style.order;
 
-  // Grid container
+  // Grid container — spec 이 CSS 표준 string ("1fr auto") 형식으로 저장할 수 있어
+  //   WASM binary protocol 이 기대하는 track array 로 정규화. 이미 array 면 그대로.
   if (style.gridTemplateColumns !== undefined)
-    result.gridTemplateColumns = style.gridTemplateColumns;
+    result.gridTemplateColumns = Array.isArray(style.gridTemplateColumns)
+      ? style.gridTemplateColumns
+      : parseGridTemplate(style.gridTemplateColumns as string);
   if (style.gridTemplateRows !== undefined)
-    result.gridTemplateRows = style.gridTemplateRows;
+    result.gridTemplateRows = Array.isArray(style.gridTemplateRows)
+      ? style.gridTemplateRows
+      : parseGridTemplate(style.gridTemplateRows as string);
   if (style.gridAutoFlow !== undefined)
     result.gridAutoFlow = style.gridAutoFlow;
   if (style.gridAutoColumns !== undefined)
-    result.gridAutoColumns = style.gridAutoColumns;
+    result.gridAutoColumns = Array.isArray(style.gridAutoColumns)
+      ? style.gridAutoColumns
+      : parseGridTemplate(style.gridAutoColumns as string);
   if (style.gridAutoRows !== undefined)
-    result.gridAutoRows = style.gridAutoRows;
+    result.gridAutoRows = Array.isArray(style.gridAutoRows)
+      ? style.gridAutoRows
+      : parseGridTemplate(style.gridAutoRows as string);
 
   // Grid item
   if (style.gridColumnStart !== undefined)
