@@ -122,6 +122,26 @@ describe("ADR-082 G2 — 3-tier fallback chain (containerStyles → composition 
       expect(preset.paddingLeft).toBe(4);
     });
 
+    // paddingX/paddingY 축 → 4-way normalization (20+ spec 이 sizes 경로에서 이 형식 사용).
+    // normalization 없으면 Panel Layout 이 0 으로 표시됨.
+    it("Button.sizes.md (paddingX/Y) → 4-way padding 축 정규화", () => {
+      // ButtonSpec.sizes.md = { paddingX: 12, paddingY: 4 }
+      const preset = resolveLayoutSpecPreset("Button", "md");
+      expect(preset.paddingLeft).toBe(12);
+      expect(preset.paddingRight).toBe(12);
+      expect(preset.paddingTop).toBe(4);
+      expect(preset.paddingBottom).toBe(4);
+    });
+
+    it("Badge.sizes.md (paddingX/Y) → 4-way padding 축 정규화", () => {
+      // BadgeSpec.sizes.md 가 paddingX/Y 사용
+      const preset = resolveLayoutSpecPreset("Badge", "md");
+      expect(preset.paddingLeft).toBeGreaterThan(0);
+      expect(preset.paddingRight).toBe(preset.paddingLeft);
+      expect(preset.paddingTop).toBeGreaterThanOrEqual(0);
+      expect(preset.paddingBottom).toBe(preset.paddingTop);
+    });
+
     it("Menu.containerStyles → Appearance preset", () => {
       // MenuSpec.containerStyles = { borderRadius: "{radius.md}"=6, borderWidth: 1,
       //   background: "{color.raised}", border: "{color.border}" }

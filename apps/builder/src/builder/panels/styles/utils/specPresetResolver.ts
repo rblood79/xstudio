@@ -353,8 +353,25 @@ export const resolveAppearanceSpecPreset = createResolver<AppearanceSpecPreset>(
   appearanceFromComposition,
 );
 
+// sizes 경로 전용: paddingX/Y (20+ spec 에서 사용) 를 paddingLeft/Right/Top/Bottom 4-way 로 정규화.
+// Panel 은 4-way 필드로 모델링되는데 spec sizes 는 축 형식으로 저장하므로 변환이 없으면 모두 0 표시됨.
+function layoutFromSizes(sizeEntry: Record<string, unknown>): LayoutSpecPreset {
+  const out = pickNumeric<LayoutSpecPreset>(sizeEntry, LAYOUT_KEYS);
+  const paddingX = resolveToNumber(sizeEntry.paddingX);
+  if (paddingX !== undefined) {
+    if (out.paddingLeft === undefined) out.paddingLeft = paddingX;
+    if (out.paddingRight === undefined) out.paddingRight = paddingX;
+  }
+  const paddingY = resolveToNumber(sizeEntry.paddingY);
+  if (paddingY !== undefined) {
+    if (out.paddingTop === undefined) out.paddingTop = paddingY;
+    if (out.paddingBottom === undefined) out.paddingBottom = paddingY;
+  }
+  return out;
+}
+
 export const resolveLayoutSpecPreset = createResolver<LayoutSpecPreset>(
-  (sizeEntry) => pickNumeric(sizeEntry, LAYOUT_KEYS),
+  layoutFromSizes,
   layoutFromContainerStyles,
   layoutFromComposition,
 );
