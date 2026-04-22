@@ -51,11 +51,9 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
       ),
       // store 는 longhand (rowGap/columnGap) 만 유지 — shorthand gap 은
       // inspectorActions 에서 longhand 로 분배. Panel Gap 필드는 rowGap
-      // 우선 표시 (단일 입력 UI) → specPreset.gap → "0px".
+      // 우선, 없으면 columnGap, 없으면 shorthand `s.gap` (legacy) 표시.
       gap: firstDefined(
-        s.rowGap,
-        s.columnGap,
-        s.gap,
+        s.rowGap ?? s.columnGap ?? s.gap,
         numToPx(specPreset.gap),
         "0px",
       ),
