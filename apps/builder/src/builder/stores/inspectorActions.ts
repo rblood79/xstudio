@@ -296,28 +296,29 @@ export const createInspectorActionsSlice: StateCreator<
         ...((baseElement.props?.style as Record<string, string>) || {}),
       };
 
+      const NUMERIC_STYLE_PROPS = new Set([
+        "fontSize",
+        "fontWeight",
+        "lineHeight",
+        "letterSpacing",
+        "opacity",
+        "padding",
+        "paddingTop",
+        "paddingRight",
+        "paddingBottom",
+        "paddingLeft",
+        "gap",
+        "rowGap",
+        "columnGap",
+        "borderWidth",
+        "borderRadius",
+      ]);
+
       if (value === "" || value === null || value === undefined) {
         delete currentStyle[property];
       } else {
         // Canvas spec shapes는 fontSize/fontWeight 등을 숫자로 기대
         // '10px' → 10, '14' → 14 등 순수 숫자 CSS 속성은 숫자로 변환
-        const NUMERIC_STYLE_PROPS = new Set([
-          "fontSize",
-          "fontWeight",
-          "lineHeight",
-          "letterSpacing",
-          "opacity",
-          "padding",
-          "paddingTop",
-          "paddingRight",
-          "paddingBottom",
-          "paddingLeft",
-          "gap",
-          "rowGap",
-          "columnGap",
-          "borderWidth",
-          "borderRadius",
-        ]);
         if (NUMERIC_STYLE_PROPS.has(property)) {
           const num = parseFloat(value);
           (currentStyle as Record<string, unknown>)[property] = !isNaN(num)
@@ -328,21 +329,30 @@ export const createInspectorActionsSlice: StateCreator<
         }
       }
 
-      // CSS shorthand ↔ longhand collision: shorthand 편집 시 기존 longhand
-      //   를 제거해야 cascade 순서에 관계없이 shorthand 값이 override. factory 가
-      //   초기값으로 longhand (rowGap/columnGap, paddingTop/Right/... 등) 를
-      //   저장한 경우 Panel 에서 shorthand 편집이 Skia Taffy 에 반영 안 되는
-      //   문제 방지 (Taffy applyCommonTaffyStyle 이 shorthand → longhand 순서
-      //   로 적용하여 longhand 가 최종값 override).
-      const SHORTHAND_LONGHAND: Record<string, string[]> = {
+      // CSS shorthand ↔ longhand collision 해소.
+      //   - React inline style 에 shorthand+longhand 공존 시 rerender 경고
+      //     ("Removing a style property during rerender when a conflicting
+      //     property is set") + 의도와 다른 cascade 결과 유발.
+      //   - 정책: shorthand `gap`/`padding`/`margin` 편집 시 longhand 에 값
+      //     분배, shorthand 자체는 store 에 저장하지 않음. 결과 store 는
+      //     항상 longhand 만 보유 → React inline style 단일 종류만 직렬화.
+      const normalizedValue = (currentStyle as Record<string, unknown>)[
+        property
+      ];
+      const SHORTHAND_MAP: Record<string, string[]> = {
         gap: ["rowGap", "columnGap"],
         padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
         margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
       };
-      const longhands = SHORTHAND_LONGHAND[property];
+      const longhands = SHORTHAND_MAP[property];
       if (longhands) {
+        delete (currentStyle as Record<string, unknown>)[property];
         for (const lh of longhands) {
-          delete (currentStyle as Record<string, unknown>)[lh];
+          if (normalizedValue === undefined) {
+            delete (currentStyle as Record<string, unknown>)[lh];
+          } else {
+            (currentStyle as Record<string, unknown>)[lh] = normalizedValue;
+          }
         }
       }
 
@@ -402,16 +412,26 @@ export const createInspectorActionsSlice: StateCreator<
         }
       }
 
-      // CSS shorthand ↔ longhand collision (updateSelectedStyle 동일 로직 — preview 경로)
-      const SHORTHAND_LONGHAND_PREVIEW: Record<string, string[]> = {
+      // CSS shorthand → longhand 분배 (updateSelectedStyle 동일 로직 — preview 경로).
+      //   shorthand 자체는 store 에 저장하지 않음 → React inline style collision 회피.
+      const normalizedPreviewValue = (currentStyle as Record<string, unknown>)[
+        property
+      ];
+      const SHORTHAND_MAP_PREVIEW: Record<string, string[]> = {
         gap: ["rowGap", "columnGap"],
         padding: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
         margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
       };
-      const longhandsPreview = SHORTHAND_LONGHAND_PREVIEW[property];
+      const longhandsPreview = SHORTHAND_MAP_PREVIEW[property];
       if (longhandsPreview) {
+        delete (currentStyle as Record<string, unknown>)[property];
         for (const lh of longhandsPreview) {
-          delete (currentStyle as Record<string, unknown>)[lh];
+          if (normalizedPreviewValue === undefined) {
+            delete (currentStyle as Record<string, unknown>)[lh];
+          } else {
+            (currentStyle as Record<string, unknown>)[lh] =
+              normalizedPreviewValue;
+          }
         }
       }
 

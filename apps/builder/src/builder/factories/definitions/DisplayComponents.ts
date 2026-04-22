@@ -416,12 +416,11 @@ export function createProgressBarDefinition(
         value: 50,
         showValue: true,
         size: "md",
-        // Grid 속성을 Factory 가 store 에 직접 주입 — enrichWithIntrinsicSize 가
-        // element.props.style 을 직접 읽으므로 buildNodeStyle 시점의
-        // resolveContainerStylesFallback merge 로는 타이밍 늦음 (등록 직후
-        // Path B 증분 갱신에서 auto-placement 로 배치 오류). Spec
-        // containerStyles 와 1:1 미러 — Skia Taffy Grid 경로 즉시 반영.
-        // gridTemplateRows 는 spec 미선언 → 명시 (auto auto).
+        // Grid 속성 store 직접 주입 (Skia/Taffy 즉시 반영).
+        // store 에는 longhand (rowGap/columnGap) 만 — shorthand `gap` 은 미저장
+        // 하여 React inline style 의 shorthand/longhand collision 경고 회피.
+        // Panel 의 Gap 필드는 inspectorActions 에서 gap → rowGap + columnGap
+        // 동시 쓰기로 처리.
         style: {
           width: "100%",
           display: "grid",

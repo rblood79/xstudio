@@ -49,7 +49,16 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
         specPreset.justifyContent,
         "",
       ),
-      gap: firstDefined(s.gap, numToPx(specPreset.gap), "0px"),
+      // store 는 longhand (rowGap/columnGap) 만 유지 — shorthand gap 은
+      // inspectorActions 에서 longhand 로 분배. Panel Gap 필드는 rowGap
+      // 우선 표시 (단일 입력 UI) → specPreset.gap → "0px".
+      gap: firstDefined(
+        s.rowGap,
+        s.columnGap,
+        s.gap,
+        numToPx(specPreset.gap),
+        "0px",
+      ),
       flexWrap: firstDefined(s.flexWrap, undefined, "nowrap"),
       // ADR-082 P1-2: Spec 4-way uniform 이면 shorthand 에 반영 (collapsed 모드 UX)
       padding: firstDefined(
