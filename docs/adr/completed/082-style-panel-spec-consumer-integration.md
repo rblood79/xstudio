@@ -207,7 +207,7 @@ consumer 확장 대신 Spec → Style Panel 미도달을 runtime 에서 console.
 - **P4**: `useLayoutAuxiliary.ts` alignItems/justifyContent 미연결 버그 수정 (연관 Layout section 4필드 완결)
 - **P5**: 109 Spec × 4 section 실 검증 (Chrome MCP 대표 Spec 10개 sampling + vitest snapshot 확장)
 
-> 구현 상세: [082-style-panel-spec-consumer-integration-breakdown.md](../design/082-style-panel-spec-consumer-integration-breakdown.md)
+> 구현 상세: [082-style-panel-spec-consumer-integration-breakdown.md](../../design/082-style-panel-spec-consumer-integration-breakdown.md)
 
 ## Risks
 

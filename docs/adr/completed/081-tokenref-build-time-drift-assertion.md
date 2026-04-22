@@ -149,7 +149,7 @@ expect(c.gap).toBe("{spacing.2xs}"); // ← resolved 숫자 값 미검증
 - **대안 C (코드 리뷰 의존)**: 소비자 경로 ~150 drift point 를 수동 추적하는 것은 현실적으로 불가능하다. ADR-079 P3.2 가 이미 이 문제를 발견했음에도 불구하고 해결하지 않으면 SSOT 원칙의 실효성이 없다.
 - **대안 D (Lint rule)**: resolved 값 drift 는 lint 로 감지 불가능하다. `"{spacing.xs}"` 식별자가 올바르더라도 primitives 의 숫자 값이 변경되면 소비자는 여전히 stale 값을 보유한다. 게다가 ~160 곳 리팩토링은 ADR scope 를 초과한다.
 
-> 구현 상세: [081-tokenref-build-time-drift-assertion-breakdown.md](../design/081-tokenref-build-time-drift-assertion-breakdown.md)
+> 구현 상세: [081-tokenref-build-time-drift-assertion-breakdown.md](../../design/081-tokenref-build-time-drift-assertion-breakdown.md)
 
 ## Risks
 

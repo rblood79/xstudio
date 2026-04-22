@@ -171,7 +171,7 @@ Proposed — 2026-04-20 (**Revision 4** — Round 5 main 재검증 HIGH 086-R5-1
 - **대안 B 기각**: Phase 분리 시 추가 ADR 비용 (번호 할당, 리뷰 roundtrip) 이 통합 기술 MED 대비 높음. HIGH 없음 → 통합 가능
 - **대안 C 기각**: label 변이 캡처 불가 → 시각 깨짐 HIGH. 수용 불가
 
-> 구현 상세: [086-implicitstyles-size-record-dissolution-and-breadcrumb-child-breakdown.md](../design/086-implicitstyles-size-record-dissolution-and-breadcrumb-child-breakdown.md)
+> 구현 상세: [086-implicitstyles-size-record-dissolution-and-breadcrumb-child-breakdown.md](../../design/086-implicitstyles-size-record-dissolution-and-breadcrumb-child-breakdown.md)
 
 ## Risks
 

@@ -159,7 +159,7 @@ ADR-106 (skipCSSGeneration 감사 Charter, Proposed 2026-04-21) §G3 "수동 CSS
 - **대안 B 기각**: HIGH 2개 초과. Generator 확장에 필요한 전역 공유 selector(`ColorThumb`) 일반화 및 pseudo-element 지원이 Color family 전용 케이스로 일반화 불가. ADR-078 이상의 복잡도를 정당화할 D3 개선이 없음 (G2 재판정으로 이미 D3 준수 상태)
 - **대안 C 기각**: HIGH 2개. 부분 자동화가 전역 `ColorThumb` selector 이중 emit과 pseudo-element 공백으로 2-source 상태를 오히려 더 불투명하게 만듦
 
-> 구현 상세: [106-a-color-family-skipcss-dismantle-breakdown.md](../design/106-a-color-family-skipcss-dismantle-breakdown.md)
+> 구현 상세: [106-a-color-family-skipcss-dismantle-breakdown.md](../../design/106-a-color-family-skipcss-dismantle-breakdown.md)
 
 ## Risks
 

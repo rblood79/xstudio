@@ -58,7 +58,7 @@ ADR-100 에서 **대안 C (비대칭 결정)** 채택:
 
 - `74045739` — `docs(adr-100): Phase 1 완료 — SelectItem RAC alias 주석 sweep (BC 0)`
 - `87f415cf` — `docs(adr-100): Phase 2 완료 — SelectTrigger 정당화 (selfcontained + code-level)`
-- ADR-100 breakdown 참조: [100-select-child-naming-rsp-alignment-breakdown.md](../design/100-select-child-naming-rsp-alignment-breakdown.md)
+- ADR-100 breakdown 참조: [100-select-child-naming-rsp-alignment-breakdown.md](../../design/100-select-child-naming-rsp-alignment-breakdown.md)
 
 ## Context
 
@@ -169,7 +169,7 @@ react-aria.adobe.com 공식 docs 기준 수집. composition 117 spec 과 대조.
 - **대안 B 기각**: HIGH 3 초과. 단일 거대 PR → 롤백 불가 + migration 지옥. ADR-076 선례 (ListBox 단일 ADR) 도 실제로는 6 Phase 순차 land 였음 — 본 ADR 은 5-8 컴포넌트 병렬 rename 이라 선례 범위 초과.
 - **대안 C 기각**: 감사 없이 개별 처리 시 ADR-092 debt 가 8 개 산발 ADR 로 분산 → debt 연속성 추적 불가. 우선순위 부재로 중요도 낮은 Card 조사가 고위험 Select renaming 보다 먼저 착수될 위험.
 
-> 구현 상세: [098-rsp-naming-audit-charter-breakdown.md](../design/098-rsp-naming-audit-charter-breakdown.md)
+> 구현 상세: [098-rsp-naming-audit-charter-breakdown.md](../../design/098-rsp-naming-audit-charter-breakdown.md)
 
 ## Risks
 

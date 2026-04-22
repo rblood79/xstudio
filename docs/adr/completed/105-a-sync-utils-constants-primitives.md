@@ -138,7 +138,7 @@ export const DATE_PICKER_INPUT_HEIGHT: Record<string, number> = {
 - **대안 B 기각**: `Input.spec.ts`가 `ButtonSpec.sizes`를 직접 import하면, Button sizes 구조(lineHeight Token, paddingY 등) 변경이 Input spec에 의도치 않게 전파될 수 있음. primitives 추상화가 더 적절한 경계.
 - **대안 C 기각**: drift 방지 메커니즘 없이 경고 주석만 제거하면 ADR-063 §4.2 금지 패턴이 소음 없이 코드베이스에 잔존. 실질적 SSOT 복구 없음.
 
-> 구현 상세: [105-a-sync-utils-constants-primitives-breakdown.md](../design/105-a-sync-utils-constants-primitives-breakdown.md)
+> 구현 상세: [105-a-sync-utils-constants-primitives-breakdown.md](../../design/105-a-sync-utils-constants-primitives-breakdown.md)
 
 ## Risks
 

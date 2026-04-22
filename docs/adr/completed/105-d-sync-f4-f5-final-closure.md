@@ -143,7 +143,7 @@ rg "@sync" apps/builder/src/builder/factories/definitions/DateColorComponents.ts
 - 대안 A (단순 삭제): 정당화 없는 삭제는 미래 개발자에게 값의 출처·의도를 전달하지 못함. D3 대칭 검증의 근거가 코드에서 소실됨
 - 대안 B (read-through 전환): F5-6 borderWidth=1 처럼 단일 상수 1건을 위해 specs 패키지 import 추가는 번들·의존성 비용 대비 효익이 낮음. 더 넓은 Spec read-through 전환은 별도 ADR(Layout Canvas Spec Consumer 통합) 범위가 적합
 
-> 구현 상세: [105-d-sync-f4-f5-final-closure-breakdown.md](../design/105-d-sync-f4-f5-final-closure-breakdown.md)
+> 구현 상세: [105-d-sync-f4-f5-final-closure-breakdown.md](../../design/105-d-sync-f4-f5-final-closure-breakdown.md)
 
 ## Risks
 

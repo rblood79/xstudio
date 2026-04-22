@@ -181,7 +181,7 @@ if (containerTag === "...") 분기 전체 (implicitStyles.ts):
 - **대안 B 기각**: ADR 25+ 추적 비용 HIGH, 번호 팽창 — 수용 불가
 - **대안 C 기각**: 위험 평가 + 롤백 단위 둘 다 HIGH — 수용 불가
 
-> 구현 상세: [087-implicitstyles-residual-branches-categorized-sweep-breakdown.md](../design/087-implicitstyles-residual-branches-categorized-sweep-breakdown.md)
+> 구현 상세: [087-implicitstyles-residual-branches-categorized-sweep-breakdown.md](../../design/087-implicitstyles-residual-branches-categorized-sweep-breakdown.md)
 
 ## Risks
 

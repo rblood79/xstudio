@@ -133,7 +133,7 @@ ADR-091 (Implemented) 은 `utils.ts` + `cssResolver.ts` 의 `Record<string, numb
 - **대안 C 기각**: Spec 있는 5 컴포넌트의 기본값이 Spec 외부에 산재 → D3 SSOT 위반 + discoverability 훼손.
 - **대안 D 기각**: debt 영구화, ADR-091 후속 Addendum 명시 목표 방치.
 
-> 구현 상세: [096-default-element-dimensions-ssot-breakdown.md](../design/096-default-element-dimensions-ssot-breakdown.md)
+> 구현 상세: [096-default-element-dimensions-ssot-breakdown.md](../../design/096-default-element-dimensions-ssot-breakdown.md)
 
 ## Risks
 

@@ -160,7 +160,7 @@ ListBox 컴포넌트는 items SSOT 체인(ADR-066 Tabs → ADR-068 Menu → ADR-
 - **대안 C 기각**: ADR-036/059/063 역행 debt 방치. items SSOT 체인 마지막에서 debt 이관 기회 상실
 - **대안 D 기각**: D2 variant 확장은 BC + Skia shapes self-lookup 확장 비용이 items SSOT 가치를 초과. variant 정리는 별도 ADR
 
-> 구현 상세: [076-listbox-items-ssot-hybrid-breakdown.md](../design/076-listbox-items-ssot-hybrid-breakdown.md)
+> 구현 상세: [076-listbox-items-ssot-hybrid-breakdown.md](../../design/076-listbox-items-ssot-hybrid-breakdown.md)
 
 ## Gates
 

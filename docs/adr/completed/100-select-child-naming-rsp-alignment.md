@@ -128,7 +128,7 @@ ADR-098 감사 매트릭스 (2026-04-21 WebFetch) 에서 composition 의 `Select
 - **대안 B 기각**: 유지보수 MED — 문서 alias 만으로는 RSP 정합 debt 가 실질 해소되지 않음. SelectItem 은 실제 runtime 동작이 ListBoxItem 과 동일하므로 내부 정리가 자연스러운 경로.
 - **대안 D 기각**: SelectItem 을 "정당화" 하는 것은 BC 0% 상황에서 근거 부재 (편의). 향후 Section 확장 (ADR-099) 과의 상호운용 검토를 차단하는 부작용.
 
-> 구현 상세: [100-select-child-naming-rsp-alignment-breakdown.md](../design/100-select-child-naming-rsp-alignment-breakdown.md)
+> 구현 상세: [100-select-child-naming-rsp-alignment-breakdown.md](../../design/100-select-child-naming-rsp-alignment-breakdown.md)
 
 ## Risks
 

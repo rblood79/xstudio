@@ -257,7 +257,7 @@ Label CSS의 핵심 font-size 전달 메커니즘은 Label 자신이 emit하는 
 
 - **대안 C 기각**: HIGH 2개. variants를 spec에 추가해도 skipCSSGeneration: true 상태에서 CSS 경로에 반영되지 않음 — 의미 없는 spec 복잡도 증가. skipCSSGeneration: false 전환 없이는 효과 없고, 전환하면 대안 A의 문제로 돌아감.
 
-> 구현 상세: [106-c-label-skipcss-justification-breakdown.md](../design/106-c-label-skipcss-justification-breakdown.md)
+> 구현 상세: [106-c-label-skipcss-justification-breakdown.md](../../design/106-c-label-skipcss-justification-breakdown.md)
 
 ## Risks
 

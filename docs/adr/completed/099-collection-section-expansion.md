@@ -157,7 +157,7 @@ composition 117 spec 중 **컬렉션 archetype 3종** (ListBox / GridList / Menu
 - **대안 C 기각**: 유지보수 MED — 2 필드 (items + sections) 동기 관리 장기 버그 원천. 단일 필드 원칙 상충.
 - **대안 D 기각**: 대칭 debt — 3 컬렉션 중 1 만 Section 지원 시 사용자 혼란 + RSP 네이밍 감사 Charter 완결 지연. 단 Phase 5 분리 land 허용 (breakdown 옵션).
 
-> 구현 상세: [099-collection-section-expansion-breakdown.md](../design/099-collection-section-expansion-breakdown.md)
+> 구현 상세: [099-collection-section-expansion-breakdown.md](../../design/099-collection-section-expansion-breakdown.md)
 
 ## Risks
 

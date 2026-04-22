@@ -122,7 +122,7 @@ ADR-083 Phase 4/8/10/11 실행 시 각 spec 의 containerStyles 에 `display: "g
 - **대안 A (archetype 재분류)**: archetype=grid 를 flex column 으로 변경하면 "grid archetype" 의 실질 소비자가 ProgressCircle/SliderTrack/SliderThumb 만 남음 → archetype 의미 약화. Calendar/ProgressBar/Meter 를 `collection` 으로 이동 시 `collection` 의 의미도 오염 (listbox-style 과 progress-style 이 공존). Classification 체계 유지 비용이 spec containerStyles 2-3 라인 추가보다 큼.
 - **대안 C (완전 해체)**: ProgressBar 분기의 `autoFormattedValue` 계산, Breadcrumbs 의 Breadcrumb child width 측정, Calendar 의 CalendarHeader/Grid 자식 whiteSpace 주입 등은 "layout primitive" 범위를 넘어선 비즈니스 로직. spec.render / spec.sizes 모델 확장은 별도 설계 필요 (본 ADR scope 외).
 
-> 구현 상세: [084-implicitstyles-branch-dissolution-breakdown.md](../design/084-implicitstyles-branch-dissolution-breakdown.md)
+> 구현 상세: [084-implicitstyles-branch-dissolution-breakdown.md](../../design/084-implicitstyles-branch-dissolution-breakdown.md)
 
 ## Risks
 
