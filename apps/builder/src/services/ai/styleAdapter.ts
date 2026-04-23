@@ -8,6 +8,7 @@
  * 이 레이어가 존재함으로써 AI 전환과 렌더링 전환이 독립적으로 진행 가능.
  */
 
+import { adaptStyleWithFills } from '@composition/shared';
 import { resolveCSSSizeValue } from '../../builder/workspace/canvas/layout/engines/cssValueParser';
 import type { CSSValueContext } from '../../builder/workspace/canvas/layout/engines/cssValueParser';
 
@@ -51,6 +52,28 @@ export function adaptStyles(
   return { style: normalized };
 }
 
+function sanitizeDerivedBackgroundStyle(style: Record<string, unknown>): Record<string, unknown> {
+  const nextStyle = { ...style };
+  delete nextStyle.backgroundColor;
+  delete nextStyle.backgroundImage;
+  delete nextStyle.backgroundSize;
+  return nextStyle;
+}
+
+function applyFillsToStyle(
+  style: Record<string, unknown>,
+  fills: unknown[] | undefined,
+): Record<string, unknown> {
+  if (!fills || fills.length === 0) {
+    return style;
+  }
+
+  return (adaptStyleWithFills(
+    sanitizeDerivedBackgroundStyle(style),
+    fills,
+  ) ?? {}) as Record<string, unknown>;
+}
+
 /**
  * 요소 생성/수정 시 props와 styles를 병합
  */
@@ -58,13 +81,42 @@ export function adaptPropsForElement(
   _tag: string,
   props: Record<string, unknown>,
   styles: Record<string, unknown>,
+  fills?: unknown[],
 ): Record<string, unknown> {
-  if (Object.keys(styles).length === 0) {
+  const normalizedStyle = adaptStyles(styles).style;
+  const existingStyle = (props.style ?? {}) as Record<string, unknown>;
+
+  if (
+    Object.keys(normalizedStyle).length === 0 &&
+    (!fills || fills.length === 0)
+  ) {
     return props;
   }
 
   return {
     ...props,
-    ...adaptStyles(styles),
+    ...(fills && fills.length > 0 ? { fills } : {}),
+    style: applyFillsToStyle(
+      {
+        ...existingStyle,
+        ...normalizedStyle,
+      },
+      fills,
+    ),
+  };
+}
+
+export function adaptStylePatchWithFills(
+  existingStyle: Record<string, unknown>,
+  cssStyles: Record<string, unknown>,
+  fills?: unknown[],
+): { style: Record<string, unknown> } {
+  const mergedStyle = {
+    ...existingStyle,
+    ...adaptStyles(cssStyles).style,
+  };
+
+  return {
+    style: applyFillsToStyle(mergedStyle, fills),
   };
 }

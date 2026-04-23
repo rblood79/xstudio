@@ -1,6 +1,6 @@
 /**
  * useFillValues - Fill 섹션 전용 Zustand 훅
- * - fills: element.props.fills 직접 구독
+ * - fills: element top-level `fills` 직접 구독
  * - activeFillIndex / colorInputMode: 스타일 패널 UI 전용 zustand store
  *
  * ADR-082 A2 (scope 결정): Fill 섹션은 user-authored `fills` 배열(gradient stops/solid
@@ -18,7 +18,7 @@ import type {
   FillItem,
   ColorInputMode,
 } from "../../../../types/builder/fill.types";
-import { ensureFills } from "../utils/fillMigration";
+import { resolveElementFills } from "../utils/fillMigration";
 
 interface FillUIState {
   activeFillIndex: number;
@@ -47,17 +47,9 @@ export function useFillValues(): FillValues {
   const selectedId = useStore((s) => s.selectedElementId);
   const rawFills = useStore((s) => {
     if (!selectedId) return undefined;
-    const el = s.elementsMap.get(selectedId) as
-      | { fills?: FillItem[]; props?: { style?: Record<string, unknown> } }
+    return s.elementsMap.get(selectedId) as
+      | { fills?: FillItem[]; props?: { style?: { backgroundColor?: string } } }
       | undefined;
-    return el?.fills;
-  });
-  const backgroundColor = useStore((s) => {
-    if (!selectedId) return undefined;
-    const el = s.elementsMap.get(selectedId) as
-      | { props?: { style?: { backgroundColor?: string } } }
-      | undefined;
-    return el?.props?.style?.backgroundColor;
   });
   const activeFillIndex = useFillUIStore((s) => s.activeFillIndex);
   const colorInputMode = useFillUIStore((s) => s.colorInputMode);
@@ -65,8 +57,8 @@ export function useFillValues(): FillValues {
   const setColorInputMode = useFillUIStore((s) => s.setColorInputMode);
 
   const fillsList = useMemo(
-    () => ensureFills(rawFills, backgroundColor),
-    [rawFills, backgroundColor],
+    () => resolveElementFills(rawFills),
+    [rawFills],
   );
   const activeFill = fillsList[activeFillIndex] ?? null;
 

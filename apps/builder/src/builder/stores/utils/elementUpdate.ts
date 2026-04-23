@@ -5,6 +5,8 @@ import {
   ComponentElementProps,
   Element,
 } from "../../../types/core/store.types";
+import { isFillV2Enabled } from "../../../utils/featureFlags";
+import { sanitizeFillDerivedStylePatch } from "../../panels/styles/utils/fillDerivedStyleProps";
 import { historyManager } from "../history";
 import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
@@ -164,6 +166,37 @@ function hasShallowPatchChanges(
   return false;
 }
 
+function sanitizePropsPatch<T extends Record<string, unknown>>(props: T): T {
+  if (!isFillV2Enabled()) {
+    return props;
+  }
+
+  const nextProps = { ...props };
+  const rawStyle = nextProps.style;
+  if (rawStyle && typeof rawStyle === "object" && !Array.isArray(rawStyle)) {
+    nextProps.style = sanitizeFillDerivedStylePatch(
+      rawStyle as Record<string, unknown>,
+      true,
+    );
+  }
+  return nextProps as T;
+}
+
+function sanitizeElementUpdate(
+  updates: Partial<Element>,
+): Partial<Element> {
+  if (!updates.props) {
+    return updates;
+  }
+
+  return {
+    ...updates,
+    props: sanitizePropsPatch(
+      updates.props as Record<string, unknown>,
+    ) as ComponentElementProps,
+  };
+}
+
 /**
  * UpdateElementProps 액션 생성 팩토리
  *
@@ -182,12 +215,15 @@ function hasShallowPatchChanges(
 export const createUpdateElementPropsAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, props: ComponentElementProps) => {
+    const sanitizedProps = sanitizePropsPatch(
+      (props ?? {}) as Record<string, unknown>,
+    ) as ComponentElementProps;
     const currentState = get();
     // produce 외부에서는 elementsMap 사용 가능
     const element = getElementById(currentState.elementsMap, elementId);
     if (!element) return;
 
-    const patch = (props ?? {}) as Record<string, unknown>;
+    const patch = sanitizedProps as Record<string, unknown>;
     if (Object.keys(patch).length === 0) return;
     if (
       !hasShallowPatchChanges(element.props as Record<string, unknown>, patch)
@@ -198,7 +234,9 @@ export const createUpdateElementPropsAction =
     const prevPropsClone = shouldRecordHistory
       ? cloneForHistory(element.props)
       : null;
-    const newPropsClone = shouldRecordHistory ? cloneForHistory(props) : null;
+    const newPropsClone = shouldRecordHistory
+      ? cloneForHistory(sanitizedProps)
+      : null;
     const prevElementClone = shouldRecordHistory
       ? cloneForHistory(element)
       : null;
@@ -225,7 +263,7 @@ export const createUpdateElementPropsAction =
     // ADR-040 Phase 3: indexOf + with() 증분 패치 (elements.map/find O(N) 제거)
     const updatedElement = {
       ...element,
-      props: { ...element.props, ...props },
+      props: { ...element.props, ...sanitizedProps },
     };
     const idx = currentState.elements.indexOf(element);
     const updatedElements =
@@ -236,12 +274,12 @@ export const createUpdateElementPropsAction =
     // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
     const selectedElementProps =
       currentState.selectedElementId === elementId
-        ? createCompleteProps(updatedElement, props)
+        ? createCompleteProps(updatedElement, sanitizedProps)
         : currentState.selectedElementProps;
 
     // ADR-006 P3-1: props.style 변경 시 dirty tracking
     // props 중 style 객체만 추출하여 레이아웃 영향 여부 판단
-    const changedStyle = (props.style ?? {}) as Record<string, unknown>;
+    const changedStyle = (sanitizedProps.style ?? {}) as Record<string, unknown>;
     const hasStyleChange = Object.keys(changedStyle).length > 0;
     const isLayoutChange = hasStyleChange
       ? isLayoutAffectingUpdate(changedStyle)
@@ -332,7 +370,8 @@ export const createUpdateElementAction =
     elementId: string,
     updates: Partial<import("../../../types/core/store.types").Element>,
   ) => {
-    if (Object.keys(updates).length === 0) return;
+    const sanitizedUpdates = sanitizeElementUpdate(updates as Partial<Element>);
+    if (Object.keys(sanitizedUpdates).length === 0) return;
 
     const currentState = get();
     // produce 외부에서는 elementsMap 사용 가능
@@ -340,12 +379,12 @@ export const createUpdateElementAction =
     if (!element) return;
 
     const shouldRecordHistory =
-      Boolean(currentState.currentPageId) && Boolean(updates.props);
+      Boolean(currentState.currentPageId) && Boolean(sanitizedUpdates.props);
     const prevPropsClone = shouldRecordHistory
       ? cloneForHistory(element.props)
       : null;
     const newPropsClone = shouldRecordHistory
-      ? cloneForHistory(updates.props)
+      ? cloneForHistory(sanitizedUpdates.props)
       : null;
     const prevElementClone = shouldRecordHistory
       ? cloneForHistory(element)
@@ -355,7 +394,7 @@ export const createUpdateElementAction =
     // 1. 히스토리 추가 (상태 변경 전에 기록)
     if (
       currentState.currentPageId &&
-      updates.props &&
+      sanitizedUpdates.props &&
       prevPropsClone &&
       newPropsClone &&
       prevElementClone
@@ -373,27 +412,27 @@ export const createUpdateElementAction =
 
     // ADR-040 Phase 3: indexOf + with() 증분 패치 (elements.map O(N) 제거)
     const idx = currentState.elements.indexOf(element);
-    const updatedElement = { ...element, ...updates };
+    const updatedElement = { ...element, ...sanitizedUpdates };
     const updatedElements =
       idx !== -1
         ? currentState.elements.with(idx, updatedElement)
         : currentState.elements;
     const selectedElementProps =
       currentState.selectedElementId === elementId &&
-      updates.props &&
+      sanitizedUpdates.props &&
       updatedElement
-        ? createCompleteProps(updatedElement, updates.props)
+        ? createCompleteProps(updatedElement, sanitizedUpdates.props)
         : currentState.selectedElementProps;
 
     // ADR-006 P3-1: props.style 변경 시 dirty tracking
-    const changedStyle = (updates.props?.style ?? {}) as Record<
+    const changedStyle = (sanitizedUpdates.props?.style ?? {}) as Record<
       string,
       unknown
     >;
     const hasStyleChange = Object.keys(changedStyle).length > 0;
     const isLayoutChange = hasStyleChange
       ? isLayoutAffectingUpdate(changedStyle)
-      : Boolean(updates.props); // props 변경이 있으면 레이아웃 영향으로 간주
+      : Boolean(sanitizedUpdates.props); // props 변경이 있으면 레이아웃 영향으로 간주
 
     if (isLayoutChange) {
       const dirtyIds = new Set(currentState.dirtyElementIds);
@@ -424,7 +463,7 @@ export const createUpdateElementAction =
     void (async () => {
       try {
         const db = await getDB();
-        await db.elements.update(elementId, updates);
+        await db.elements.update(elementId, sanitizedUpdates);
       } catch (error) {
         console.warn(
           "⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):",
@@ -467,7 +506,13 @@ export const createBatchUpdateElementPropsAction =
     if (updates.length === 0) return;
 
     const state = get();
-    const validUpdates = updates.filter(
+    const normalizedUpdates = updates.map((update) => ({
+      ...update,
+      props: sanitizePropsPatch(
+        update.props as Record<string, unknown>,
+      ) as ComponentElementProps,
+    }));
+    const validUpdates = normalizedUpdates.filter(
       (u) => getElementById(state.elementsMap, u.elementId) !== undefined,
     );
 
@@ -622,7 +667,11 @@ export const createBatchUpdateElementsAction =
     if (updates.length === 0) return;
 
     const state = get();
-    const validUpdates = updates.filter(
+    const normalizedUpdates = updates.map((update) => ({
+      ...update,
+      updates: sanitizeElementUpdate(update.updates),
+    }));
+    const validUpdates = normalizedUpdates.filter(
       (u) => getElementById(state.elementsMap, u.elementId) !== undefined,
     );
 

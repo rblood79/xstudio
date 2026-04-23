@@ -6,6 +6,7 @@
  */
 
 import type { Element } from "../../types/core/store.types";
+import { normalizeExternalFillIngress } from "../panels/styles/utils/fillExternalIngress";
 import { ElementUtils } from "../../utils/element/elementUtils";
 
 /**
@@ -161,7 +162,7 @@ export function pasteMultipleElements(
       };
     }
 
-    return {
+    return normalizeExternalFillIngress({
       ...element,
       id: newId,
       parent_id: newParentId,
@@ -170,7 +171,7 @@ export function pasteMultipleElements(
       // Reset timestamps
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    };
+    });
   });
 
   return newElements;

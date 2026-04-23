@@ -17,6 +17,7 @@ import { CanvasRouter, setGlobalNavigate } from "./router";
 import { MessageHandler, messageSender } from "./messaging";
 import { useNavigate } from "react-router-dom";
 import { rendererMap } from "@composition/shared/renderers";
+import { adaptElementFillStyle } from "@composition/shared";
 import {
   getElementForTag,
   hasSpec,
@@ -146,13 +147,15 @@ function CanvasContent() {
     }
 
     if (bodyElement) {
+      const adaptedBodyElement = adaptElementFillStyle(bodyElement);
+
       // 실제 <body> 태그에 data-element-id 설정
-      document.body.setAttribute("data-element-id", bodyElement.id);
+      document.body.setAttribute("data-element-id", adaptedBodyElement.id);
       document.body.setAttribute("data-original-tag", "body");
 
       // body element의 style 적용 및 추적
-      if (bodyElement.props?.style) {
-        const style = bodyElement.props.style as Record<
+      if (adaptedBodyElement.props?.style) {
+        const style = adaptedBodyElement.props.style as Record<
           string,
           string | number
         >;
@@ -171,8 +174,8 @@ function CanvasContent() {
       }
 
       // body element의 className 적용 및 추적
-      if (bodyElement.props?.className) {
-        const newClassName = bodyElement.props.className as string;
+      if (adaptedBodyElement.props?.className) {
+        const newClassName = adaptedBodyElement.props.className as string;
         document.body.className =
           `${document.body.className} ${newClassName}`.trim();
         appliedClassNameRef.current = newClassName;
@@ -401,20 +404,25 @@ function CanvasContent() {
   // Element 렌더링 함수 (내부)
   const renderElementInternal = useCallback(
     (el: PreviewElement, key?: string): React.ReactNode => {
+      const adaptedElement = adaptElementFillStyle(el);
+
       // ⭐ body 태그는 실제 <body>에서 처리되므로 여기에 도달하면 일반 요소임
       // (body는 renderElementsTree에서 자식만 렌더링하도록 처리됨)
 
       // rendererMap에서 해당 태그의 렌더러 찾기
-      const renderer = rendererMap[el.tag];
+      const renderer = rendererMap[adaptedElement.tag];
       if (renderer) {
-        return renderer(el, renderContext as unknown as SharedRenderContext);
+        return renderer(
+          adaptedElement,
+          renderContext as unknown as SharedRenderContext,
+        );
       }
 
       // 렌더러가 없으면 기본 HTML 렌더링
 
       // 자식 요소 찾기
       const children = elements
-        .filter((child) => child.parent_id === el.id)
+        .filter((child) => child.parent_id === adaptedElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // Props 정리
@@ -422,23 +430,25 @@ function CanvasContent() {
       // data-size/variant를 자동 주입 — 이전에 rendererMap 함수가 수동 주입하던 것을
       // fallback 경로에서도 동일하게 보장. Auto-generated CSS selector
       // (.react-aria-Text[data-size="md"] 등)가 매칭되어야 하므로 필수.
-      const specBacked = hasSpec(el.tag);
-      const tagProps = el.props as
+      const specBacked = hasSpec(adaptedElement.tag);
+      const tagProps = adaptedElement.props as
         | { size?: string; variant?: string; className?: string }
         | undefined;
-      const specClassName = specBacked ? `react-aria-${el.tag}` : undefined;
+      const specClassName = specBacked
+        ? `react-aria-${adaptedElement.tag}`
+        : undefined;
       const mergedClassName =
         [specClassName, tagProps?.className].filter(Boolean).join(" ") ||
         undefined;
       const cleanProps: Record<string, unknown> = {
-        key: key || el.id,
-        "data-element-id": el.id,
-        style: el.props?.style,
+        key: key || adaptedElement.id,
+        "data-element-id": adaptedElement.id,
+        style: adaptedElement.props?.style,
         className: mergedClassName,
       };
       if (specBacked) {
         const sizeValue =
-          tagProps?.size ?? getDefaultSizeForTag(el.tag) ?? "md";
+          tagProps?.size ?? getDefaultSizeForTag(adaptedElement.tag) ?? "md";
         cleanProps["data-size"] = sizeValue;
         if (tagProps?.variant) cleanProps["data-variant"] = tagProps.variant;
       }
@@ -449,7 +459,7 @@ function CanvasContent() {
           ? children.map((child) =>
               renderElementInternalRef.current(child, child.id),
             )
-          : el.props?.children;
+          : adaptedElement.props?.children;
 
       // 커스텀 태그 → HTML 요소 매핑 (복합 컴포넌트 자식 태그용)
       const resolveHtmlTag = (
@@ -539,7 +549,7 @@ function CanvasContent() {
 
       // HTML 요소로 렌더링
       return React.createElement(
-        resolveHtmlTag(el.tag, el.props),
+        resolveHtmlTag(adaptedElement.tag, adaptedElement.props),
         cleanProps,
         content,
       );
@@ -566,9 +576,12 @@ function CanvasContent() {
       layoutElements: PreviewElement[],
       pageElements: PreviewElement[],
     ): React.ReactNode => {
+      const adaptedElement = adaptElementFillStyle(el);
+
       // Slot인 경우: Page elements로 교체
-      if (el.tag === "Slot") {
-        const slotName = (el.props as { name?: string })?.name || "content";
+      if (adaptedElement.tag === "Slot") {
+        const slotName =
+          (adaptedElement.props as { name?: string })?.name || "content";
 
         // ⭐ Page의 body 찾기 (body는 렌더링하지 않고 자식만 사용)
         const pageBody = pageElements.find(
@@ -605,10 +618,10 @@ function CanvasContent() {
         // Slot 자체를 div로 렌더링하고 내부에 Page elements 배치
         return (
           <div
-            key={el.id}
-            data-element-id={el.id}
+            key={adaptedElement.id}
+            data-element-id={adaptedElement.id}
             data-slot-name={slotName}
-            style={el.props?.style as React.CSSProperties}
+            style={adaptedElement.props?.style as React.CSSProperties}
             className="preview-slot"
           >
             {slotContent.length > 0
@@ -625,22 +638,25 @@ function CanvasContent() {
 
       // 일반 Layout element: 자식 재귀 렌더링
       const children = layoutElements
-        .filter((child) => child.parent_id === el.id)
+        .filter((child) => child.parent_id === adaptedElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // rendererMap에서 렌더러가 있으면 사용
-      const renderer = rendererMap[el.tag];
+      const renderer = rendererMap[adaptedElement.tag];
       if (renderer) {
-        return renderer(el, renderContext as unknown as SharedRenderContext);
+        return renderer(
+          adaptedElement,
+          renderContext as unknown as SharedRenderContext,
+        );
       }
 
       return React.createElement(
-        el.tag.toLowerCase(),
+        adaptedElement.tag.toLowerCase(),
         {
-          key: el.id,
-          "data-element-id": el.id,
-          style: el.props?.style as React.CSSProperties,
-          className: el.props?.className,
+          key: adaptedElement.id,
+          "data-element-id": adaptedElement.id,
+          style: adaptedElement.props?.style as React.CSSProperties,
+          className: adaptedElement.props?.className,
         },
         children.length > 0
           ? children.map((child) =>
@@ -650,7 +666,7 @@ function CanvasContent() {
                 pageElements,
               ),
             )
-          : el.props?.children,
+          : adaptedElement.props?.children,
       );
     },
     [renderContext],
@@ -663,29 +679,33 @@ function CanvasContent() {
       el: PreviewElement,
       allPageElements: PreviewElement[],
     ): React.ReactNode => {
+      const adaptedElement = adaptElementFillStyle(el);
       const children = allPageElements
-        .filter((child) => child.parent_id === el.id)
+        .filter((child) => child.parent_id === adaptedElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // rendererMap에서 렌더러가 있으면 사용
-      const renderer = rendererMap[el.tag];
+      const renderer = rendererMap[adaptedElement.tag];
       if (renderer) {
-        return renderer(el, renderContext as unknown as SharedRenderContext);
+        return renderer(
+          adaptedElement,
+          renderContext as unknown as SharedRenderContext,
+        );
       }
 
       return React.createElement(
-        el.tag.toLowerCase(),
+        adaptedElement.tag.toLowerCase(),
         {
-          key: el.id,
-          "data-element-id": el.id,
-          style: el.props?.style as React.CSSProperties,
-          className: el.props?.className,
+          key: adaptedElement.id,
+          "data-element-id": adaptedElement.id,
+          style: adaptedElement.props?.style as React.CSSProperties,
+          className: adaptedElement.props?.className,
         },
         children.length > 0
           ? children.map((child) =>
               renderPageElementWithChildrenRef.current(child, allPageElements),
             )
-          : el.props?.children,
+          : adaptedElement.props?.children,
       );
     },
     [renderContext],

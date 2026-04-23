@@ -6,7 +6,7 @@
 
 import type { ToolExecutor, ToolExecutionResult } from '../../../types/integrations/ai.types';
 import { getStoreState } from '../../../builder/stores';
-import { adaptStyles } from '../styleAdapter';
+import { adaptStylePatchWithFills } from '../styleAdapter';
 import { useAIVisualFeedbackStore } from '../../../builder/stores/aiVisualFeedback';
 
 export const updateElementTool: ToolExecutor = {
@@ -20,9 +20,14 @@ export const updateElementTool: ToolExecutor = {
 
     const newProps = (args.props || {}) as Record<string, unknown>;
     const newStyles = (args.styles || {}) as Record<string, unknown>;
+    const newFills = Array.isArray(args.fills) ? args.fills : undefined;
 
-    if (Object.keys(newProps).length === 0 && Object.keys(newStyles).length === 0) {
-      return { success: false, error: '변경할 props 또는 styles를 지정하세요.' };
+    if (
+      Object.keys(newProps).length === 0 &&
+      Object.keys(newStyles).length === 0 &&
+      (!newFills || newFills.length === 0)
+    ) {
+      return { success: false, error: '변경할 props, styles 또는 fills를 지정하세요.' };
     }
 
     try {
@@ -45,9 +50,13 @@ export const updateElementTool: ToolExecutor = {
       const updates: Record<string, unknown> = { ...newProps };
 
       // 스타일 병합 (기존 스타일 유지 + 새 스타일 덮어쓰기)
-      if (Object.keys(newStyles).length > 0) {
+      if (Object.keys(newStyles).length > 0 || newFills) {
         const existingStyle = (element.props?.style || {}) as Record<string, unknown>;
-        updates.style = { ...existingStyle, ...adaptStyles(newStyles).style };
+        updates.style = adaptStylePatchWithFills(existingStyle, newStyles, newFills).style;
+      }
+
+      if (newFills) {
+        updates.fills = newFills;
       }
 
       await updateElementProps(targetId, updates);

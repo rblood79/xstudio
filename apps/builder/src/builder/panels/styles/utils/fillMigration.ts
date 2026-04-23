@@ -19,6 +19,17 @@ import type {
 import { FillType, createDefaultColorFill } from '../../../../types/builder/fill.types';
 import { normalizeToHex8, gradientStopsToCss } from './colorUtils';
 
+export const LEGACY_BACKGROUND_FILL_ID = "__legacy_background_fill__";
+
+export interface FillReadSource {
+  fills?: FillItem[] | null;
+  props?: {
+    style?: {
+      backgroundColor?: string | null;
+    } | null;
+  } | null;
+}
+
 /**
  * Element의 backgroundColor CSS string → FillItem[] 변환
  *
@@ -37,7 +48,12 @@ export function migrateBackgroundColor(backgroundColor: string | undefined | nul
 
   const hex8 = normalizeToHex8(backgroundColor);
 
-  return [createDefaultColorFill(hex8)];
+  return [
+    {
+      ...createDefaultColorFill(hex8),
+      id: LEGACY_BACKGROUND_FILL_ID,
+    },
+  ];
 }
 
 /**
@@ -57,6 +73,10 @@ export function ensureFills(
     return fills;
   }
   return migrateBackgroundColor(backgroundColor);
+}
+
+export function resolveElementFills(element: FillReadSource | undefined | null): FillItem[] {
+  return ensureFills(element?.fills, element?.props?.style?.backgroundColor);
 }
 
 /**
@@ -170,4 +190,3 @@ export function fillsToCssBackground(fills: FillItem[]): {
 
   return {};
 }
-

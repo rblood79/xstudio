@@ -77,6 +77,7 @@ export interface Element {
   customId?: string;
   tag: string;
   props: Record<string, unknown>;
+  fills?: unknown[];
   parent_id?: string | null;
   order_num?: number;
   page_id?: string | null;

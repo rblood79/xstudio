@@ -20,6 +20,11 @@
 
 import { useCallback, useTransition, useRef, useEffect } from 'react';
 import { useStore } from '../../../stores';
+import { isFillV2Enabled } from "../../../../utils/featureFlags";
+import {
+  isFillDerivedStyleProp,
+  sanitizeFillDerivedStylePatch,
+} from "../utils/fillDerivedStyleProps";
 
 // ============================================
 // Types
@@ -131,6 +136,9 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    */
   const updateStyleImmediate = useCallback(
     (property: string, value: string) => {
+      if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+        return;
+      }
       cancelPendingUpdates();
       useStore.getState().updateSelectedStyle(property, value);
     },
@@ -143,6 +151,9 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    * - 연속 입력 시 마지막 값만 적용
    */
   const updateStyleRAF = useCallback((property: string, value: string) => {
+    if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+      return;
+    }
     pendingUpdateRef.current = { property, value };
 
     if (rafIdRef.current === null) {
@@ -164,6 +175,9 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    * - 최종 커밋은 blur/Enter 시 updateStyleImmediate로 수행
    */
   const updateStylePreview = useCallback((property: string, value: string) => {
+    if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+      return;
+    }
     pendingPreviewRef.current = { property, value };
 
     if (previewRafIdRef.current === null) {
@@ -184,6 +198,9 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    * - 연속 입력 시 마지막 값만 적용
    */
   const updateStyleIdle = useCallback((property: string, value: string) => {
+    if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+      return;
+    }
     pendingUpdateRef.current = { property, value };
 
     // 기존 예약 취소
@@ -210,7 +227,11 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
   const updateStylesImmediate = useCallback(
     (styles: Record<string, string>) => {
       cancelPendingUpdates();
-      useStore.getState().updateSelectedStyles(styles);
+      useStore
+        .getState()
+        .updateSelectedStyles(
+          sanitizeFillDerivedStylePatch(styles, isFillV2Enabled()),
+        );
     },
     [cancelPendingUpdates]
   );
@@ -222,8 +243,12 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    */
   const updateStylesTransition = useCallback(
     (styles: Record<string, string>) => {
+      const sanitized = sanitizeFillDerivedStylePatch(
+        styles,
+        isFillV2Enabled(),
+      );
       startTransition(() => {
-        useStore.getState().updateSelectedStyles(styles);
+        useStore.getState().updateSelectedStyles(sanitized);
       });
     },
     [startTransition]

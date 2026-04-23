@@ -11,6 +11,7 @@ import type { CSSProperties } from "react";
 export interface RuntimeElement {
   id: string;
   tag: string;
+  fills?: unknown[];
   props: Record<string, unknown> & {
     style?: CSSProperties;
     className?: string;

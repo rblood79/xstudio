@@ -69,7 +69,15 @@ export const toolDefinitions: ChatCompletionTool[] = [
           styles: {
             type: "object",
             description:
-              "CSS 인라인 스타일 (backgroundColor, padding, fontSize, width, height 등). camelCase 사용.",
+              "CSS 인라인 스타일 (padding, fontSize, width, height 등). camelCase 사용. Fill V2 배경은 fills를 우선 사용.",
+          },
+          fills: {
+            type: "array",
+            description:
+              "배경 Fill 레이어 배열. color/linear-gradient/radial-gradient/angular-gradient/image/mesh-gradient를 지원.",
+            items: {
+              type: "object",
+            },
           },
           dataBinding: {
             type: "object",
@@ -105,7 +113,15 @@ export const toolDefinitions: ChatCompletionTool[] = [
           },
           styles: {
             type: "object",
-            description: "변경할 CSS 인라인 스타일. camelCase 사용.",
+            description:
+              "변경할 CSS 인라인 스타일. camelCase 사용. Fill V2 배경은 fills를 우선 사용.",
+          },
+          fills: {
+            type: "array",
+            description: "교체할 배경 Fill 레이어 배열.",
+            items: {
+              type: "object",
+            },
           },
         },
         required: ["elementId"],
@@ -186,7 +202,7 @@ export const toolDefinitions: ChatCompletionTool[] = [
           styleProp: {
             type: "string",
             description:
-              "해당 CSS 속성이 설정된 요소를 검색 (예: backgroundColor)",
+              "해당 CSS 속성이 설정된 요소를 검색 (예: padding, fontSize). Fill 기반 배경 검색은 별도 fills 데이터를 확인하세요.",
           },
           limit: {
             type: "number",

@@ -49,6 +49,7 @@ import {
   scheduleNextFrame,
 } from "../utils/scheduleTask";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
+import { normalizeExternalFillIngress } from "../panels/styles/utils/fillExternalIngress";
 import {
   type PageElementIndex,
   type ComponentIndex,
@@ -611,11 +612,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       }
 
       const { elements: normalizedElements } = normalizeElementTags(elements);
+      const canonicalElements = normalizedElements.map((element) =>
+        normalizeExternalFillIngress(element),
+      );
       set((state) => {
         const mergedMap = new Map(state.elementsMap);
         let changed = false;
 
-        normalizedElements.forEach((element) => {
+        canonicalElements.forEach((element) => {
           const previous = mergedMap.get(element.id);
           if (previous !== element) {
             changed = true;

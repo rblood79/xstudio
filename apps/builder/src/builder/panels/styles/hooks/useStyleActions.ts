@@ -12,6 +12,11 @@
 import { useCallback } from 'react';
 import { useStore } from '../../../stores';
 import { useCopyPaste } from '@/builder/hooks';
+import { isFillV2Enabled } from "../../../../utils/featureFlags";
+import {
+  isFillDerivedStyleProp,
+  sanitizeFillDerivedStylePatch,
+} from "../utils/fillDerivedStyleProps";
 
 export function useStyleActions() {
   // 🔥 최적화: useCopyPaste hook 사용
@@ -24,7 +29,11 @@ export function useStyleActions() {
           stylesObj[key] = String(value);
         }
       });
-      useStore.getState().updateSelectedStyles(stylesObj);
+      useStore
+        .getState()
+        .updateSelectedStyles(
+          sanitizeFillDerivedStylePatch(stylesObj, isFillV2Enabled()),
+        );
     },
     name: 'styles',
   });
@@ -34,6 +43,9 @@ export function useStyleActions() {
    */
   const updateStyle = useCallback(
     (property: string, value: string) => {
+      if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+        return;
+      }
       useStore.getState().updateSelectedStyle(property, value);
     },
     []
@@ -44,7 +56,11 @@ export function useStyleActions() {
    */
   const updateStyles = useCallback(
     (styles: Record<string, string>) => {
-      useStore.getState().updateSelectedStyles(styles);
+      useStore
+        .getState()
+        .updateSelectedStyles(
+          sanitizeFillDerivedStylePatch(styles, isFillV2Enabled()),
+        );
     },
     []
   );
@@ -197,7 +213,11 @@ export function useStyleActions() {
     (properties: string[]) => {
       const resetObj: Record<string, string> = {};
       properties.forEach((prop) => (resetObj[prop] = ''));
-      useStore.getState().updateSelectedStyles(resetObj);
+      useStore
+        .getState()
+        .updateSelectedStyles(
+          sanitizeFillDerivedStylePatch(resetObj, isFillV2Enabled()),
+        );
     },
     []
   );

@@ -18,17 +18,15 @@ import {
 import { ColorSwatch } from "@composition/shared/components/ColorSwatch";
 import { Popover } from "@composition/shared/components/Popover";
 import { Trash2 } from "lucide-react";
-import type {
-  FillItem,
-  ColorFillItem,
-  ImageFillItem,
-  GradientStop,
-} from "../../../../types/builder/fill.types";
+import type { FillItem, ColorFillItem } from "../../../../types/builder/fill.types";
 import { FillType } from "../../../../types/builder/fill.types";
-import { hex8ToHex6, normalizeToHex8 } from "../utils/colorUtils";
 import { FillDetailPopover } from "./FillDetailPopover";
 import { ScrubInput } from "./ScrubInput";
 import { iconSmall } from "../../../../utils/ui/uiConstants";
+import {
+  buildFillSwatchStyle,
+  getFillDisplayLabel,
+} from "../utils/fillPresentation";
 
 import "./FillLayerRow.css";
 
@@ -39,21 +37,6 @@ interface FillLayerRowProps {
   onUpdatePreview: (fillId: string, updates: Partial<FillItem>) => void;
   onRemove: (fillId: string) => void;
   onTypeChange: (fillId: string, newType: FillType) => void;
-}
-
-const GRADIENT_TYPE_LABELS: Record<string, string> = {
-  [FillType.LinearGradient]: "Linear",
-  [FillType.RadialGradient]: "Radial",
-  [FillType.AngularGradient]: "Angular",
-  [FillType.MeshGradient]: "Mesh",
-};
-
-function buildSwatchGradient(stops: GradientStop[]): string {
-  const sorted = [...stops].sort((a, b) => a.position - b.position);
-  const parts = sorted.map(
-    (s) => `${s.color.slice(0, 7)} ${(s.position * 100).toFixed(1)}%`,
-  );
-  return `linear-gradient(90deg, ${parts.join(", ")})`;
 }
 
 export const FillLayerRow = memo(function FillLayerRow({
@@ -70,24 +53,11 @@ export const FillLayerRow = memo(function FillLayerRow({
     fill.type === FillType.RadialGradient ||
     fill.type === FillType.AngularGradient;
   const isMeshGradient = fill.type === FillType.MeshGradient;
-  const isImage = fill.type === FillType.Image;
 
   const colorValue = isColor ? (fill as ColorFillItem).color : "#000000FF";
-  const displayHex = isColor ? hex8ToHex6(normalizeToHex8(colorValue)) : "";
-  const gradientLabel =
-    isGradient || isMeshGradient ? (GRADIENT_TYPE_LABELS[fill.type] ?? "") : "";
-  const imageUrl = isImage ? (fill as ImageFillItem).url : "";
-  const displayLabel = isImage ? "Image" : gradientLabel;
+  const displayLabel = getFillDisplayLabel(fill);
   const opacityPercent = Math.round(fill.opacity * 100);
-
-  const gradientStops = useMemo(
-    () => (isGradient ? (fill as { stops: GradientStop[] }).stops : []),
-    [isGradient, fill],
-  );
-  const swatchGradientCss = useMemo(
-    () => (isGradient ? buildSwatchGradient(gradientStops) : ""),
-    [isGradient, gradientStops],
-  );
+  const swatchStyle = useMemo(() => buildFillSwatchStyle(fill), [fill]);
 
   const handleToggle = useCallback(() => {
     onToggle(fill.id);
@@ -163,17 +133,17 @@ export const FillLayerRow = memo(function FillLayerRow({
           {isGradient && (
             <div
               className="fill-layer-row__gradient-swatch"
-              style={{ background: swatchGradientCss }}
+              style={swatchStyle}
             />
           )}
-          {isMeshGradient && <div className="fill-layer-row__mesh-swatch" />}
-          {isImage && (
+          {isMeshGradient && (
             <div
-              className="fill-layer-row__image-swatch"
-              style={
-                imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined
-              }
+              className="fill-layer-row__mesh-swatch"
+              style={swatchStyle}
             />
+          )}
+          {fill.type === FillType.Image && (
+            <div className="fill-layer-row__image-swatch" style={swatchStyle} />
           )}
         </AriaButton>
         <Popover
@@ -193,7 +163,7 @@ export const FillLayerRow = memo(function FillLayerRow({
       </DialogTrigger>
 
       <span className="fill-layer-row__hex">
-        {isColor ? displayHex : displayLabel}
+        {displayLabel}
       </span>
 
       <ScrubInput

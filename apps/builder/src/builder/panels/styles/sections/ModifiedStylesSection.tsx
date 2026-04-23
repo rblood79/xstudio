@@ -25,6 +25,8 @@ import {
   JUSTIFY_CONTENT_OPTIONS,
   FLEX_WRAP_OPTIONS,
 } from "../constants/styleOptions";
+import { isFillV2Enabled } from "../../../../utils/featureFlags";
+import { isFillDerivedStyleProp } from "../utils/fillDerivedStyleProps";
 
 interface ModifiedStylesSectionProps {
   selectedElement: SelectedElement;
@@ -107,8 +109,12 @@ export function ModifiedStylesSection({
       selectedElement.style?.[property as keyof React.CSSProperties];
     if (!value) return null;
 
-    // Background image (gradient) — read-only display
-    if (property === "backgroundImage" || property === "backgroundSize") {
+    // Fill V2 에서는 background* 가 파생 필드이므로 read-only display
+    if (
+      property === "backgroundImage" ||
+      property === "backgroundSize" ||
+      (isFillV2Enabled() && isFillDerivedStyleProp(property))
+    ) {
       const displayValue = String(value);
       const truncated =
         displayValue.length > 30

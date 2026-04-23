@@ -18,3 +18,4 @@ export {
 
 export * from "./font.utils";
 export * from "./fontRegistry";
+export * from "./fillAdapter";

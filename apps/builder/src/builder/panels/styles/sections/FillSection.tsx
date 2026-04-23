@@ -8,7 +8,7 @@
  * - memo 최적화
  */
 
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -35,12 +35,15 @@ import { useFillActions } from "../hooks/useFillActions";
 import type {
   FillItem,
   ColorFillItem,
-  GradientStop,
 } from "../../../../types/builder/fill.types";
 import { FillType } from "../../../../types/builder/fill.types";
 import { FillLayerRow } from "../components/FillLayerRow";
 import { FillDetailPopover } from "../components/FillDetailPopover";
-import { gradientStopsToCss, normalizeToHex8 } from "../utils/colorUtils";
+import {
+  buildFillSwatchStyle,
+  createVirtualColorFill,
+  resolveFillSeedColor,
+} from "../utils/fillPresentation";
 import { useAppearanceValues } from "../hooks/useAppearanceValues";
 import { useStore as useComposedStore } from "../../../stores";
 
@@ -219,24 +222,9 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
 
   // fills가 없을 때 표시할 기본 색상: 현재 요소의 backgroundColor 또는 #FFFFFF
   // computedStyle이 color(srgb ...) 형식을 반환할 수 있으므로 정규화 필요
-  const placeholderColor = normalizeToHex8(
-    styleValues?.backgroundColor || "#FFFFFF",
-  );
-  // hex6 → hex8 변환 (addFill에 전달용)
-  const placeholderColorHex8 =
-    placeholderColor.length === 7 ? `${placeholderColor}FF` : placeholderColor;
-
-  // fills가 없을 때 popover에 전달할 가상 fill 객체 (store에 저장되지 않음, 표시 전용)
-  const virtualFill = useMemo<ColorFillItem>(
-    () => ({
-      id: "__virtual__",
-      type: FillType.Color,
-      color: placeholderColorHex8,
-      enabled: true,
-      opacity: 1,
-      blendMode: "normal",
-    }),
-    [placeholderColorHex8],
+  const placeholderColorHex8 = resolveFillSeedColor(styleValues?.backgroundColor);
+  const virtualFill: ColorFillItem = createVirtualColorFill(
+    styleValues?.backgroundColor,
   );
 
   // popover에 전달할 fill: 실제 fill이 있으면 그것, 없으면 가상 fill
@@ -324,35 +312,12 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
   );
 
   // swatch에 표시할 색상
-  const swatchColor = useMemo(() => {
-    if (!firstFill) return placeholderColor;
-    if (firstFill.type === FillType.Color)
-      return (firstFill as ColorFillItem).color;
-    return undefined;
-  }, [firstFill, placeholderColor]);
-
-  // swatch 배경 CSS (gradient인 경우)
-  const swatchStyle = useMemo(() => {
-    if (!firstFill) return undefined;
-    if (firstFill.type === FillType.Color) return undefined;
-    if (
-      firstFill.type === FillType.LinearGradient ||
-      firstFill.type === FillType.RadialGradient ||
-      firstFill.type === FillType.AngularGradient
-    ) {
-      const stops = (firstFill as { stops: GradientStop[] }).stops;
-      return {
-        background: `linear-gradient(90deg, ${gradientStopsToCss(stops)})`,
-      };
-    }
-    if (firstFill.type === FillType.MeshGradient) {
-      return {
-        background:
-          "conic-gradient(#FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000)",
-      };
-    }
-    return undefined;
-  }, [firstFill]);
+  const swatchColor = !firstFill
+    ? placeholderColorHex8
+    : firstFill.type === FillType.Color
+      ? (firstFill as ColorFillItem).color
+      : undefined;
+  const swatchStyle = buildFillSwatchStyle(firstFill);
 
   const isColor = firstFill?.type === FillType.Color || !firstFill;
   const isGradient =

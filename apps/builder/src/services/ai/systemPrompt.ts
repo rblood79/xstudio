@@ -48,7 +48,7 @@ ${
 ## 규칙
 1. 요소를 생성/수정하기 전에 get_editor_state나 get_selection으로 현재 상태를 파악하세요.
 2. "현재 선택된 요소"를 수정할 때는 elementId에 "selected"를 사용하세요.
-3. 스타일은 CSS 속성명을 camelCase로 사용하세요 (backgroundColor, fontSize 등).
+3. 스타일은 CSS 속성명을 camelCase로 사용하세요. 단, 배경은 backgroundColor 대신 fills를 우선 사용하세요.
 4. 항상 한국어로 응답하세요.
 5. 작업 완료 후 사용자에게 무엇을 했는지 간략히 설명하세요.`;
 }

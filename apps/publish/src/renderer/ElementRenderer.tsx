@@ -9,7 +9,7 @@
  */
 
 import { memo, useMemo } from "react";
-import type { Element } from "@composition/shared";
+import { adaptElementFillStyle, type Element } from "@composition/shared";
 import { getComponent } from "../registry/ComponentRegistry";
 import { ActionExecutor } from "@composition/shared";
 import type { EventRuntimeContext } from "@composition/shared";
@@ -56,16 +56,21 @@ export const ElementRenderer = memo(function ElementRenderer({
   elements,
   depth = 0,
 }: ElementRendererProps) {
+  const adaptedElement = useMemo(
+    () => adaptElementFillStyle(element),
+    [element],
+  );
+
   // 자식 요소들 찾기
   const children = useMemo(() => {
     return elements
-      .filter((el) => el.parent_id === element.id && !el.deleted)
+      .filter((el) => el.parent_id === adaptedElement.id && !el.deleted)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [elements, element.id]);
+  }, [elements, adaptedElement.id]);
 
   // 이벤트 핸들러 생성
   const eventHandlers = useMemo(() => {
-    const events = (element as Element & { events?: ElementEvent[] }).events;
+    const events = (adaptedElement as Element & { events?: ElementEvent[] }).events;
     if (!events || events.length === 0) return {};
 
     const handlers: Record<string, (e: React.SyntheticEvent) => void> = {};
@@ -74,7 +79,7 @@ export const ElementRenderer = memo(function ElementRenderer({
       const handlerName = event.trigger; // 'onClick', 'onMouseEnter', etc.
       handlers[handlerName] = async (e: React.SyntheticEvent) => {
         e.stopPropagation();
-        console.log(`[Event] ${element.id} - ${handlerName} triggered`);
+        console.log(`[Event] ${adaptedElement.id} - ${handlerName} triggered`);
 
         // 모든 액션 순차 실행
         for (const action of event.actions) {
@@ -91,14 +96,14 @@ export const ElementRenderer = memo(function ElementRenderer({
     }
 
     return handlers;
-  }, [element]);
+  }, [adaptedElement]);
 
   // 컴포넌트 가져오기
-  const componentEntry = getComponent(element.tag);
+  const componentEntry = getComponent(adaptedElement.tag);
 
   // 등록되지 않은 컴포넌트는 div로 fallback
   if (!componentEntry) {
-    console.warn(`[ElementRenderer] Unknown component: ${element.tag}`);
+    console.warn(`[ElementRenderer] Unknown component: ${adaptedElement.tag}`);
     // 자식 Element가 있으면 재귀 렌더링, 없으면 props.children(텍스트 등) 사용
     const fallbackContent =
       children.length > 0
@@ -110,13 +115,13 @@ export const ElementRenderer = memo(function ElementRenderer({
               depth={depth + 1}
             />
           ))
-        : ((element.props as Record<string, unknown>)
+        : ((adaptedElement.props as Record<string, unknown>)
             ?.children as React.ReactNode);
     return (
       <div
-        data-element-id={element.id}
-        data-element-tag={element.tag}
-        style={element.props?.style as React.CSSProperties}
+        data-element-id={adaptedElement.id}
+        data-element-tag={adaptedElement.tag}
+        style={adaptedElement.props?.style as React.CSSProperties}
         {...eventHandlers}
       >
         {fallbackContent}
@@ -132,7 +137,7 @@ export const ElementRenderer = memo(function ElementRenderer({
     children: propsChildren,
     accentColor,
     ...restProps
-  } = element.props as Record<string, unknown>;
+  } = adaptedElement.props as Record<string, unknown>;
 
   // Card: structural children 감지 (Preview renderCard와 동일 로직)
   const STRUCTURAL_CARD_TAGS = new Set([
@@ -142,7 +147,7 @@ export const ElementRenderer = memo(function ElementRenderer({
     "CardFooter",
   ]);
   if (
-    element.tag === "Card" &&
+    adaptedElement.tag === "Card" &&
     children.some((c) => STRUCTURAL_CARD_TAGS.has(c.tag))
   ) {
     (restProps as Record<string, unknown>).structuralChildren = true;
@@ -165,7 +170,7 @@ export const ElementRenderer = memo(function ElementRenderer({
     <Component
       {...restProps}
       {...eventHandlers}
-      data-element-id={element.id}
+      data-element-id={adaptedElement.id}
       data-accent={accentColor ? String(accentColor) : undefined}
       style={style as React.CSSProperties}
     >

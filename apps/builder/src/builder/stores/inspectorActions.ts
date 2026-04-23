@@ -24,7 +24,9 @@ import type {
 import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
 import { fillsToCssBackground } from "../panels/styles/utils/fillMigration";
+import { sanitizeFillDerivedStylePatch } from "../panels/styles/utils/fillDerivedStyleProps";
 import { saveService } from "../../services/save";
+import { isFillV2Enabled } from "../../utils/featureFlags";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import type { BatchPropsUpdate } from "./utils/elementUpdate";
@@ -55,6 +57,24 @@ function distributeShorthand(
     if (value === undefined) delete style[lh];
     else style[lh] = value;
   }
+}
+
+function sanitizeInspectorProps(
+  props: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!isFillV2Enabled()) {
+    return props;
+  }
+
+  const nextProps = { ...props };
+  const rawStyle = nextProps.style;
+  if (rawStyle && typeof rawStyle === "object" && !Array.isArray(rawStyle)) {
+    nextProps.style = sanitizeFillDerivedStylePatch(
+      rawStyle as Record<string, unknown>,
+      true,
+    );
+  }
+  return nextProps;
 }
 
 // ============================================
@@ -125,6 +145,30 @@ export const createInspectorActionsSlice: StateCreator<
   [],
   InspectorActionsState
 > = (set, get) => {
+  const syncFillCssBackground = (
+    baseStyle: Record<string, string>,
+    fills: FillItem[],
+  ): Record<string, string> => {
+    const cssBg = fillsToCssBackground(fills);
+    const nextStyle = { ...baseStyle };
+
+    delete nextStyle.backgroundColor;
+    delete nextStyle.backgroundImage;
+    delete nextStyle.backgroundSize;
+
+    if (cssBg.backgroundColor) {
+      nextStyle.backgroundColor = cssBg.backgroundColor;
+    }
+    if (cssBg.backgroundImage) {
+      nextStyle.backgroundImage = cssBg.backgroundImage;
+    }
+    if (cssBg.backgroundSize) {
+      nextStyle.backgroundSize = cssBg.backgroundSize;
+    }
+
+    return nextStyle;
+  };
+
   /**
    * 프리뷰 전 원본 요소 스냅샷
    * - 타이핑 중 프리뷰가 elementsMap을 수정하므로,
@@ -518,14 +562,17 @@ export const createInspectorActionsSlice: StateCreator<
       const element = getSelectedElement();
       if (!element) return;
 
-      updateAndSave(element.id, { [key]: value });
+      updateAndSave(
+        element.id,
+        sanitizeInspectorProps({ [key]: value }),
+      );
     },
 
     updateSelectedProperties: (properties) => {
       const element = getSelectedElement();
       if (!element) return;
 
-      updateAndSave(element.id, properties);
+      updateAndSave(element.id, sanitizeInspectorProps(properties));
     },
 
     updateSelectedPropertiesWithChildren: (properties, childUpdates) => {
@@ -537,8 +584,16 @@ export const createInspectorActionsSlice: StateCreator<
 
       // 부모 + 자식을 단일 batch로 구성
       const batch: BatchPropsUpdate[] = [
-        { elementId: element.id, props: properties as ComponentElementProps },
-        ...childUpdates,
+        {
+          elementId: element.id,
+          props: sanitizeInspectorProps(properties) as ComponentElementProps,
+        },
+        ...childUpdates.map((update) => ({
+          ...update,
+          props: sanitizeInspectorProps(
+            update.props as Record<string, unknown>,
+          ) as ComponentElementProps,
+        })),
       ];
 
       // batchUpdateElementProps → 단일 set() + batch 히스토리 + IndexedDB 저장
@@ -633,26 +688,10 @@ export const createInspectorActionsSlice: StateCreator<
           ? savedPrePreview
           : element;
 
-      // fills → CSS background 동기화 (Color → backgroundColor, Gradient → backgroundImage)
-      const cssBg = fillsToCssBackground(fills);
-      const currentStyle = {
-        ...((baseElement.props?.style as Record<string, string>) || {}),
-      };
-
-      // 이전 background 관련 속성 정리
-      delete currentStyle.backgroundColor;
-      delete currentStyle.backgroundImage;
-      delete currentStyle.backgroundSize;
-
-      if (cssBg.backgroundColor) {
-        currentStyle.backgroundColor = cssBg.backgroundColor;
-      }
-      if (cssBg.backgroundImage) {
-        currentStyle.backgroundImage = cssBg.backgroundImage;
-      }
-      if (cssBg.backgroundSize) {
-        currentStyle.backgroundSize = cssBg.backgroundSize;
-      }
+      const currentStyle = syncFillCssBackground(
+        ((baseElement.props?.style as Record<string, string>) || {}),
+        fills,
+      );
 
       updateAndSave(
         element.id,
@@ -676,26 +715,10 @@ export const createInspectorActionsSlice: StateCreator<
         prePreviewElement = structuredClone(element);
       }
 
-      // fills → CSS background 동기화 (Color → backgroundColor, Gradient → backgroundImage)
-      const cssBg = fillsToCssBackground(fills);
-      const currentStyle = {
-        ...((element.props?.style as Record<string, string>) || {}),
-      };
-
-      // 이전 background 관련 속성 정리
-      delete currentStyle.backgroundColor;
-      delete currentStyle.backgroundImage;
-      delete currentStyle.backgroundSize;
-
-      if (cssBg.backgroundColor) {
-        currentStyle.backgroundColor = cssBg.backgroundColor;
-      }
-      if (cssBg.backgroundImage) {
-        currentStyle.backgroundImage = cssBg.backgroundImage;
-      }
-      if (cssBg.backgroundSize) {
-        currentStyle.backgroundSize = cssBg.backgroundSize;
-      }
+      const currentStyle = syncFillCssBackground(
+        ((element.props?.style as Record<string, string>) || {}),
+        fills,
+      );
 
       const newProps = { ...element.props, style: currentStyle };
       const updatedElement: Element = { ...element, props: newProps, fills };

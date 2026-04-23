@@ -50,6 +50,7 @@ import {
 import { scheduleNextFrame } from "../utils/scheduleTask";
 // ADR-056 Phase 3: Base Typography 초기 동기화
 import { useThemeConfigStore } from "../../stores/themeConfigStore";
+import { normalizeExternalFillIngressBatch } from "../panels/styles/utils/fillExternalIngress";
 
 export type IframeReadyState =
   | "not_initialized"
@@ -138,8 +139,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const flushPreviewGeneratedElements = useCallback(() => {
     previewGeneratedElementsFlushIdRef.current = null;
 
-    const queuedElements = Array.from(
-      previewGeneratedElementsRef.current.values(),
+    const queuedElements = normalizeExternalFillIngressBatch(
+      Array.from(
+        previewGeneratedElementsRef.current.values(),
+      ) as Element[],
     );
     previewGeneratedElementsRef.current.clear();
 

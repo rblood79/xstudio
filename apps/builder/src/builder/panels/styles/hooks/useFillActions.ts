@@ -14,6 +14,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import { useStore } from '../../../stores';
 import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/builder/fill.types';
 import { FillType, createDefaultColorFill, createDefaultFill } from '../../../../types/builder/fill.types';
+import { resolveElementFills } from '../utils/fillMigration';
 
 export interface FillActions {
   addFill: (type?: FillType, initialColor?: string) => void;
@@ -35,8 +36,7 @@ function getCurrentFills(): FillItem[] {
   const state = useStore.getState();
   const { selectedElementId, elementsMap } = state;
   if (!selectedElementId) return [];
-  const element = elementsMap.get(selectedElementId);
-  return element?.fills ?? [];
+  return resolveElementFills(elementsMap.get(selectedElementId));
 }
 
 export function useFillActions(): FillActions {

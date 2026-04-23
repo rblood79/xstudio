@@ -23,6 +23,7 @@ import type {
 import { DEFAULT_KIT_APPLY_OPTIONS } from '../../types/builder/designKit.types';
 import type { DesignVariable, DesignVariableValue, DesignToken, DesignTheme } from '../../types/theme';
 import type { Element } from '../../types/builder/unified.types';
+import { normalizeExternalFillIngress } from '../../builder/panels/styles/utils/fillExternalIngress';
 
 // ============================================
 // Types
@@ -264,7 +265,7 @@ async function registerMasters(
     }
 
     // Master element 생성
-    const masterElement: Element = {
+    const masterElement: Element = normalizeExternalFillIngress({
       id: idMap.get(kitComp.master.localId)!,
       tag: kitComp.master.tag,
       props: kitComp.master.props,
@@ -274,13 +275,13 @@ async function registerMasters(
       componentRole: 'master',
       componentName: kitComp.master.componentName,
       variableBindings: kitComp.master.variableBindings,
-    };
+    });
 
     await elementAccess.addElement(masterElement);
 
     // Descendant elements 생성
     for (const desc of kitComp.descendants) {
-      const descElement: Element = {
+      const descElement: Element = normalizeExternalFillIngress({
         id: idMap.get(desc.localId)!,
         tag: desc.tag,
         props: desc.props,
@@ -290,7 +291,7 @@ async function registerMasters(
         componentRole: desc.componentRole,
         componentName: desc.componentName,
         variableBindings: desc.variableBindings,
-      };
+      });
 
       await elementAccess.addElement(descElement);
     }

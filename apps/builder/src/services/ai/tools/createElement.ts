@@ -23,6 +23,7 @@ export const createElementTool: ToolExecutor = {
 
     const aiProps = (args.props || {}) as Record<string, unknown>;
     const aiStyles = (args.styles || {}) as Record<string, unknown>;
+    const aiFills = Array.isArray(args.fills) ? args.fills : undefined;
     const parentIdArg = args.parentId as string | undefined;
     const dataBindingArg = args.dataBinding as { endpoint?: string } | undefined;
 
@@ -35,7 +36,7 @@ export const createElementTool: ToolExecutor = {
       const mergedProps = { ...defaultProps, ...aiProps };
 
       // 스타일 적용
-      const finalProps = adaptPropsForElement(tag, mergedProps, aiStyles);
+      const finalProps = adaptPropsForElement(tag, mergedProps, aiStyles, aiFills);
 
       // 부모 결정
       let parentId: string | null = parentIdArg || null;

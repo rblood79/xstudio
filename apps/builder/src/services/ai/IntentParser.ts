@@ -6,6 +6,7 @@
  */
 
 import type { ComponentIntent, BuilderContext } from '../../types/integrations/chat.types';
+import { createDefaultColorFill } from '../../types/builder/fill.types';
 
 export class IntentParser {
   /**
@@ -52,6 +53,7 @@ export class IntentParser {
           children: this.extractText(original, ['버튼', 'button']) || '버튼',
         },
         styles: this.extractStyles(lowercased),
+        fills: this.extractFills(lowercased),
         description: '버튼 컴포넌트를 생성합니다.',
       };
     }
@@ -108,9 +110,11 @@ export class IntentParser {
    */
   private parseSelectCreation(lowercased: string): ComponentIntent | null {
     const selectPatterns = ['선택', 'select', '드롭다운', 'dropdown'];
+    const createPatterns = ['만들', '추가', '넣어', 'create', 'add'];
     const hasSelect = selectPatterns.some((p) => lowercased.includes(p));
+    const hasCreate = createPatterns.some((p) => lowercased.includes(p));
 
-    if (hasSelect) {
+    if (hasSelect && hasCreate) {
       const endpoint = this.guessDataEndpoint(lowercased);
 
       return {
@@ -144,6 +148,7 @@ export class IntentParser {
         action: 'style',
         targetElementId: context.selectedElementId,
         styles: this.extractStyles(lowercased),
+        fills: this.extractFills(lowercased),
         description: '선택된 요소의 스타일을 변경합니다.',
       };
     }
@@ -195,10 +200,8 @@ export class IntentParser {
       return {
         action: 'style',
         targetElementId: context.selectedElementId,
-        styles: {
-          backgroundColor: color,
-        },
-        description: `배경색을 ${color}로 변경합니다.`,
+        fills: [createDefaultColorFill(color)],
+        description: `배경 fill을 ${color}로 변경합니다.`,
       };
     }
 
@@ -249,26 +252,26 @@ export class IntentParser {
    */
   private extractColor(message: string): string | null {
     const colorMap: Record<string, string> = {
-      빨강: 'red',
-      빨간: 'red',
-      파랑: 'blue',
-      파란: 'blue',
-      녹색: 'green',
-      초록: 'green',
-      노랑: 'yellow',
-      노란: 'yellow',
-      검정: 'black',
-      검은: 'black',
-      흰색: 'white',
-      하얀: 'white',
-      회색: 'gray',
-      red: 'red',
-      blue: 'blue',
-      green: 'green',
-      yellow: 'yellow',
-      black: 'black',
-      white: 'white',
-      gray: 'gray',
+      빨강: '#FF0000FF',
+      빨간: '#FF0000FF',
+      파랑: '#0000FFFF',
+      파란: '#0000FFFF',
+      녹색: '#008000FF',
+      초록: '#008000FF',
+      노랑: '#FFFF00FF',
+      노란: '#FFFF00FF',
+      검정: '#000000FF',
+      검은: '#000000FF',
+      흰색: '#FFFFFFFF',
+      하얀: '#FFFFFFFF',
+      회색: '#808080FF',
+      red: '#FF0000FF',
+      blue: '#0000FFFF',
+      green: '#008000FF',
+      yellow: '#FFFF00FF',
+      black: '#000000FF',
+      white: '#FFFFFFFF',
+      gray: '#808080FF',
     };
 
     for (const [kr, en] of Object.entries(colorMap)) {
@@ -284,12 +287,15 @@ export class IntentParser {
   private extractStyles(message: string): Record<string, string> {
     const styles: Record<string, string> = {};
 
-    const color = this.extractColor(message);
-    if (color) {
-      styles.backgroundColor = color;
-    }
-
     return styles;
+  }
+
+  /**
+   * Extract fills from message
+   */
+  private extractFills(message: string): unknown[] | undefined {
+    const color = this.extractColor(message);
+    return color ? [createDefaultColorFill(color)] : undefined;
   }
 
   /**

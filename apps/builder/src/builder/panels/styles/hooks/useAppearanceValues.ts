@@ -2,7 +2,8 @@
  * useAppearanceValues - Appearance 섹션 전용 Zustand 스타일 값 훅
  */
 
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
+import { adaptStyleWithFills } from "@composition/shared";
 import {
   resolveAppearanceSpecPreset,
   type AppearanceSpecPreset,
@@ -23,16 +24,25 @@ export interface AppearanceStyleValues {
 export function useAppearanceValues(
   id: string | null,
 ): AppearanceStyleValues | null {
-  const { style, type, size } = useElementStyleContext(id);
+  const { style, type, size, fills } = useElementStyleContext(id);
 
   const specPreset = useMemo<AppearanceSpecPreset>(
     () => resolveAppearanceSpecPreset(type, size),
     [type, size],
   );
 
+  const effectiveStyle = useMemo(
+    () =>
+      adaptStyleWithFills(
+        (style as CSSProperties | undefined) ?? undefined,
+        fills,
+      ) as Record<string, unknown> | undefined,
+    [style, fills],
+  );
+
   return useMemo(() => {
     if (!id) return null;
-    const s = style ?? {};
+    const s = effectiveStyle ?? {};
     return {
       backgroundColor: firstDefined(
         s.backgroundColor,
@@ -58,5 +68,5 @@ export function useAppearanceValues(
       boxShadow: firstDefined(s.boxShadow, undefined, "none"),
       overflow: firstDefined(s.overflow, undefined, "visible"),
     };
-  }, [id, style, specPreset]);
+  }, [id, effectiveStyle, specPreset]);
 }

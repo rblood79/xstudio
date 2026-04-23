@@ -2,6 +2,7 @@
 // import { produce } from "immer"; // REMOVED
 import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
+import { normalizeExternalFillIngress } from "../../panels/styles/utils/fillExternalIngress";
 import { historyManager } from "../history";
 import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "./elementSanitizer";
@@ -34,7 +35,9 @@ export const createAddElementAction =
 
     // 🔧 order_num 중복 방지: set() 내부에서 atomic하게 할당
     // 외부 get() 기반 계산은 race condition으로 중복 가능 → prevState 기반 계산으로 전환
-    const normalizedElement = normalizeElementTagInElement(element);
+    const normalizedElement = normalizeExternalFillIngress(
+      normalizeElementTagInElement(element),
+    );
 
     // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
     // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
@@ -136,12 +139,16 @@ export const createAddComplexElementAction =
   (set: SetState, get: GetState) =>
   async (parentElement: Element, childElements: Element[]) => {
     const state = get();
-    const normalizedParent = normalizeElementTagInElement(parentElement);
+    const normalizedParent = normalizeExternalFillIngress(
+      normalizeElementTagInElement(parentElement),
+    );
     // ADR-048: 부모 props를 자식에 미리 전파 (Store 추가 전)
     const normalizedChildren = applyFactoryPropagation(
       normalizedParent,
-      childElements.map(normalizeElementTagInElement),
-    );
+      childElements.map((child) =>
+        normalizeExternalFillIngress(normalizeElementTagInElement(child)),
+      ),
+    ).map((child) => normalizeExternalFillIngress(child));
 
     // 🔧 부모 요소의 order_num 중복 방지: set() 내부에서 atomic하게 할당
     let parentToAdd = normalizedParent;

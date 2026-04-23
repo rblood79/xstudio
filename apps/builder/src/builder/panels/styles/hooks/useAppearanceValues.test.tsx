@@ -28,6 +28,21 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
             },
           } as any,
         ],
+        [
+          "el-fills-color",
+          {
+            id: "el-fills-color",
+            tag: "ListBox",
+            fills: [
+              {
+                type: "color",
+                enabled: true,
+                color: "#123456FF",
+              },
+            ],
+            props: { size: "md", style: {} },
+          } as any,
+        ],
       ]),
     });
     vi.spyOn(preset, "resolveAppearanceSpecPreset").mockReturnValue({
@@ -54,6 +69,12 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
     expect(result.current?.borderRadius).toBe("12px"); // inline
     expect(result.current?.borderColor).toBe("var(--border)"); // spec fallback
     expect(result.current?.borderWidth).toBe("1px"); // spec fallback
+  });
+
+  it("fills color 가 있으면 inline backgroundColor 없이도 appearance 값이 fill 파생값을 본다", () => {
+    const { result } = renderHook(() => useAppearanceValues("el-fills-color"));
+    expect(result.current?.backgroundColor).toBe("#123456");
+    expect(result.current?.borderColor).toBe("var(--border)");
   });
 
   it("falls back to hardcoded defaults when neither inline nor spec present", () => {
