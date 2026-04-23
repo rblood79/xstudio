@@ -253,8 +253,13 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
           : 350;
 
       const allowsRemoving = Boolean(props.allowsRemoving);
-      // X 아이콘 예약 폭: icon fontSize + chip 내부 좌여백
-      const removeIconPad = allowsRemoving ? fontSize + 4 : 0;
+      // Tag.spec.ts 관례: allowsRemoving 시 우측 padding 을 paddingY 로 축소
+      //   → text 와 X 아이콘 모두 수용하면서 chip 폭을 과도하게 키우지 않음.
+      const tagPaddingRight = allowsRemoving ? tagPaddingY : tagPaddingX;
+      // X 아이콘 예약 폭: text ↔ icon gap(4) + icon 폭(fontSize)
+      //   chip layout: [paddingX][text][gap=4][icon=fontSize][paddingRight]
+      const iconGap = 4;
+      const removeExtraWidth = allowsRemoving ? iconGap + fontSize : 0;
 
       const maxRowsRaw = (props as Record<string, unknown>).maxRows;
       const maxRows = typeof maxRowsRaw === "number" ? maxRowsRaw : 0;
@@ -283,7 +288,8 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
           fontSize,
           fontFamily.sans,
         );
-        const chipWidth = textWidth + tagPaddingX * 2 + removeIconPad;
+        const chipWidth =
+          textWidth + tagPaddingX + tagPaddingRight + removeExtraWidth;
         const gapBefore = i > 0 && currentRowWidth > 0 ? gap : 0;
 
         // 행 넘침 판정 (i > 0 만 wrap — 첫 chip 은 무조건 row 0)
@@ -349,6 +355,10 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
           y: chip.y + tagHeight / 2,
           text: chip.label,
           fontSize,
+          // lineHeight 명시: specShapeConverter 의 paddingTop 계산 (lineHeightPx 기준)
+          // 과 CanvasKit Paragraph 내부 line-height 를 동일 값(chipSize.lineHeight)
+          // 으로 맞춰 수직 중앙 정렬의 위·아래 여백 대칭 보장.
+          lineHeight,
           fontFamily: fontFamily.sans,
           fontWeight: 400,
           fill: chipTextColor,
@@ -358,11 +368,15 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
         });
 
         if (allowsRemoving) {
-          // X 아이콘 — chip 오른쪽 끝 (chipWidth - paddingX - iconSize)
+          // X 아이콘 — chip 오른쪽 안쪽에 중앙 배치.
+          // specShapeConverter.ts:446-452 에서 icon_font 의 shape.x 는 icon 중심
+          // 좌표(cx)로 해석되므로, 우측 padding(tagPaddingRight) 안쪽에서
+          // iconSize/2 만큼 당긴 위치를 center 로 지정.
+          //   layout: [paddingX][text][gap=4][icon=fontSize][paddingRight=paddingY]
           shapes.push({
             type: "icon_font" as const,
             iconName: "x",
-            x: chip.x + chip.chipWidth - tagPaddingX - fontSize,
+            x: chip.x + chip.chipWidth - tagPaddingRight - fontSize / 2,
             y: chip.y + tagHeight / 2,
             fontSize,
             fill: chipTextColor,
@@ -399,6 +413,7 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
           y: lastChip.y + tagHeight / 2,
           text: showAllLabel,
           fontSize,
+          lineHeight,
           fontFamily: fontFamily.sans,
           fontWeight: 400,
           fill: "{color.accent}" as TokenRef,

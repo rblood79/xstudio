@@ -382,6 +382,11 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       //   props 전파 경유로 TagList Skia node 좌표계에서 chip 렌더.
       { parentProp: "items", childPath: "TagList", override: true },
       { parentProp: "variant", childPath: "TagList", override: true },
+      // ADR-097 Phase 4A: maxRows → TagList 전파.
+      //   TagList spec shapes / calculateContentHeight 모두 props.maxRows 를 소비하여
+      //   wrap 시뮬레이션 시 "Show all" chip + 행 수 제한을 적용. 전파 누락 시
+      //   TagGroup 에서 maxRows 를 편집해도 Skia/layout 모두 무반응.
+      { parentProp: "maxRows", childPath: "TagList", override: true },
     ],
   },
 

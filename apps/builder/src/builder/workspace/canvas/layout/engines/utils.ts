@@ -1595,7 +1595,15 @@ export function calculateContentHeight(
     const rowGap = gap;
 
     const allowsRemoving = Boolean(props?.allowsRemoving);
-    const removeIconPad = allowsRemoving ? fontSize + 4 : 0;
+    // Tag.spec.ts / TagList.spec.ts 관례: allowsRemoving 시 paddingRight=paddingY
+    //   (text-X 레이아웃 과밀 방지). chipWidth 공식도 이에 맞춰 paddingLeft+paddingRight
+    //   형태로 분리.
+    const chipPaddingRight = allowsRemoving
+      ? chipSize.paddingY
+      : chipSize.paddingX;
+    // X 아이콘 예약 폭: gap(4) + iconSize(fontSize)
+    const iconGap = 4;
+    const removeExtraWidth = allowsRemoving ? iconGap + fontSize : 0;
 
     const maxRowsRaw = props?.maxRows;
     const maxRows = typeof maxRowsRaw === "number" ? maxRowsRaw : 0;
@@ -1608,7 +1616,8 @@ export function calculateContentHeight(
     for (let i = 0; i < items.length; i++) {
       const label = items[i].label || `Tag ${i + 1}`;
       const textWidth = measureTextWidth(label, fontSize, "Pretendard", 400);
-      const chipWidth = textWidth + chipSize.paddingX * 2 + removeIconPad;
+      const chipWidth =
+        textWidth + chipSize.paddingX + chipPaddingRight + removeExtraWidth;
       const gapBefore = i > 0 && currentRowWidth > 0 ? gap : 0;
 
       if (i > 0 && currentRowWidth + gapBefore + chipWidth > containerWidth) {
@@ -2397,6 +2406,65 @@ export function calculateContentHeight(
       return totalHeight;
     }
 
+    // TagGroup: Label + TagList 세로 합산 (ADR-097 Phase 4A/4B).
+    //   CheckboxGroup/RadioGroup 선례 대칭 — 일반 flex-column 분기가 style.display/
+    //   flexDirection 누락 시 block 합산으로 흘러들어 TagList 의 maxRows/row-wrap 기반
+    //   동적 높이가 반영되지 않는 문제를 전용 분기로 확정 처리.
+    //   TagList 재귀 호출은 이미 tag1==="taglist" 분기에서 items + maxRows + availableWidth
+    //   기반 row-wrap height 를 돌려주므로 여기서는 단순 세로 합산 + gap 만 담당.
+    if (tag === "taggroup") {
+      const props = element.props as Record<string, unknown> | undefined;
+      // containerStyles.gap = "{spacing.xs}" → 4. style.gap 편집 우선, 없으면 token fallback.
+      const gap = parseNumericValue(style?.gap) ?? 4;
+      // labelPosition="side" 시 row 배치 → 세로 합산이 아닌 max 여야 하지만, 동일 flex-column
+      //   기본 케이스 우선 처리. side 케이스는 하위 flex 분기에서 이미 처리됨.
+      const labelPos = (props?.labelPosition as string | undefined) ?? "top";
+      const isSideLayout = labelPos === "side";
+
+      let totalHeight = 0;
+      const childHeights: number[] = [];
+      for (let i = 0; i < childElements.length; i++) {
+        const child = childElements[i];
+        const grandChildren = getChildElements?.(child.id);
+        // 자식 element 의 enriched style.height 가 있으면 calculateContentHeight 가
+        //   explicitHeight 분기로 즉시 반환. 없으면 각 태그 전용 분기 (e.g. taglist)
+        //   가 row-wrap 기반 intrinsic height 를 계산.
+        const contentH = calculateContentHeight(
+          child,
+          availableWidth,
+          grandChildren,
+          getChildElements,
+          computedStyle,
+        );
+        const childBox = parseBoxModel(child, 0, -1);
+        const childStyle = child.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        const childExplicitH = parseNumericValue(childStyle?.height);
+        // content-box + padding + border (border-box) 환산. explicit border-box 가 있으면 그대로 사용.
+        const childBorderBox =
+          childExplicitH !== undefined && childStyle?.boxSizing === "border-box"
+            ? childExplicitH
+            : contentH +
+              childBox.padding.top +
+              childBox.padding.bottom +
+              childBox.border.top +
+              childBox.border.bottom;
+        childHeights.push(childBorderBox);
+      }
+
+      if (isSideLayout) {
+        // row: 가장 큰 자식의 높이 (Label 은 보통 TagList 보다 짧음)
+        return Math.max(...childHeights, 0);
+      }
+      // column (default): 세로 합산 + gap
+      for (let i = 0; i < childHeights.length; i++) {
+        totalHeight += childHeights[i];
+        if (i < childHeights.length - 1) totalHeight += gap;
+      }
+      return totalHeight;
+    }
+
     // Tabs: 탭 바 높이 + TabPanel 패딩 + 활성 Panel 높이
     // CSS Preview 기준: Tabs(flex col) → TabList(30px) + TabPanel(pad=16px → Panel)
     if (tag === "tabs") {
@@ -2970,6 +3038,10 @@ const SPEC_SHAPES_INPUT_TAGS = new Set([
   // ADR-076 P6+: items SSOT 로 자식 Element 소멸 → calculateContentHeight 가
   // items.length × itemH + gap 으로 intrinsic 산출. childElements=0 이어도 주입 필요.
   "listbox",
+  // ADR-097 Phase 4A/4B: TagList 도 items SSOT (chip self-render) — row-wrap 기반
+  //   intrinsic 높이를 calculateContentHeight(taglist 분기) 가 산출. childElements=0
+  //   이어도 wrap 행 수에 따른 height 주입이 필수 (2+ row 에서 chip clip 방지).
+  "taglist",
 ]);
 
 /**
