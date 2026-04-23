@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-24
+Implemented — 2026-04-24
 
 ## Context
 
@@ -113,7 +113,15 @@ ADR-904는 Fill을 D3 시각 스타일 SSOT로 승격하고 Preview/Publish는 `
 | ----------------------- | ------- | ------------------------------------------------------------------------- | --------------------------------------------- |
 | G1: Allowlist Freeze    | Phase 1 | 지원 ingress 타입 목록과 residual policy가 문서/테스트에 고정된다         | parser 범위 재분류 후 ADR 수정                |
 | G2: Exception Split     | Phase 2 | component-specific `backgroundColor` prop이 generic fill 정책에서 분리된다 | 예외 목록을 ADR 본문과 breakdown에 추가 고정 |
-| G3: Producer Contract   | Phase 3 | 신규 producer는 canonical `fills` 또는 allowlist payload만 emit 하도록 가이드된다 | ingress 경계에서 warning/guard 추가 검토      |
+| G3: Producer Contract   | Phase 3 | 신규 producer는 canonical `fills` 또는 allowlist payload만 emit 하도록 가이드되고, allowlist 밖 payload는 현 단계에서 무표식 pass-through residual policy로 유지된다 | ingress 경계에서 warning/guard 추가 검토      |
+
+## Implementation Notes — 2026-04-24
+
+- **Phase 0 완료**: allowlist 6종 parser coverage + residual pass-through + `addElement/addComplexElement/mergeElements/hydrateProjectSnapshot/preview-generated batch` seam baseline 고정.
+- **Phase 1 완료**: Preview batch / clipboard paste / Design Kit import / generic store update ingress producer contract 문서화.
+- **Phase 2 완료**: `RowEditor` / `CellEditor`의 `backgroundColor`를 table domain prop 예외로 분리.
+- **Phase 3 완료**: 현재 코드에는 noncanonical payload 전용 warning/telemetry/guard가 없으며, 본 ADR은 이를 즉시 추가하지 않는다. allowlist 밖 payload는 generic fill canonicalization 정본으로 승격되지 않는 **무표식 pass-through residual policy**로 확정한다.
+- warning/telemetry/guard는 필요 시 후속 ADR 또는 addendum에서 다룬다.
 
 ## Consequences
 
@@ -122,11 +130,13 @@ ADR-904는 Fill을 D3 시각 스타일 SSOT로 승격하고 Preview/Publish는 `
 - ADR-904 완료 상태를 유지한 채 남은 policy debt를 별도 의사결정으로 분리할 수 있다.
 - parser 과확장을 막아 Fill SSOT의 의미 경계를 보존할 수 있다.
 - 외부 ingress 하위 호환 범위를 문서와 테스트로 명확히 관리할 수 있다.
+- runtime warning/telemetry를 섣불리 넣지 않아 기존 paste/import/producer 경로의 노이즈 증가를 피할 수 있다.
 
 ### Negative
 
 - allowlist 밖 payload는 계속 residual policy 영역으로 남는다.
 - 새 producer 유형이 추가될 때마다 명시적 ADR/addendum 또는 정책 갱신이 필요하다.
+- unsupported payload의 사용 현황을 자동으로 수집하지 않으므로, guard 필요성 판단은 별도 조사에 의존한다.
 
 ## References
 

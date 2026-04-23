@@ -233,4 +233,76 @@ describe("inspectorActions fill write-through", () => {
         ?.backgroundImage,
     ).toBeUndefined();
   });
+
+  it("addComplexElement 경로도 parent/child legacy background 를 canonicalize 한다", async () => {
+    await useStore.getState().addComplexElement(
+      {
+        id: "complex-parent",
+        tag: "Box",
+        props: {
+          style: {
+            backgroundColor: "#112233",
+          },
+        },
+        parent_id: null,
+        page_id: null,
+        order_num: 1,
+      },
+      [
+        {
+          id: "complex-child",
+          tag: "Box",
+          props: {
+            style: {
+              backgroundImage: "url(https://example.com/detail.png)",
+              backgroundSize: "contain",
+            },
+          },
+          parent_id: "complex-parent",
+          page_id: null,
+          order_num: 0,
+        },
+      ],
+    );
+
+    const parent = useStore.getState().elementsMap.get("complex-parent");
+    const child = useStore.getState().elementsMap.get("complex-child");
+
+    expect(parent?.fills?.[0]?.type).toBe(FillType.Color);
+    expect(
+      (parent?.props?.style as { backgroundColor?: string } | undefined)
+        ?.backgroundColor,
+    ).toBeUndefined();
+    expect(child?.fills?.[0]?.type).toBe(FillType.Image);
+    expect(
+      (child?.props?.style as { backgroundImage?: string } | undefined)
+        ?.backgroundImage,
+    ).toBeUndefined();
+  });
+
+  it("hydrateProjectSnapshot 경로도 legacy background payload 를 canonicalize 한다", () => {
+    useStore.getState().hydrateProjectSnapshot([
+      {
+        id: "snapshot-fill-target",
+        tag: "Box",
+        props: {
+          style: {
+            backgroundImage:
+              "radial-gradient(circle at 25% 75%, #FF0000 0%, #0000FF 100%)",
+            backgroundSize: "cover",
+          },
+        },
+        parent_id: null,
+        page_id: null,
+        order_num: 0,
+      },
+    ]);
+
+    const element = useStore.getState().elementsMap.get("snapshot-fill-target");
+    expect(element?.fills?.[0]?.type).toBe(FillType.RadialGradient);
+    expect(
+      (element?.props?.style as { backgroundImage?: string } | undefined)
+        ?.backgroundImage,
+    ).toBeUndefined();
+  });
 });

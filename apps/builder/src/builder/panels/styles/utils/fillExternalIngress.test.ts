@@ -165,6 +165,29 @@ describe("normalizeExternalFillIngress", () => {
     expect(normalized.props.style?.backgroundSize).toBeUndefined();
   });
 
+  it("allowlist 밖 payload 는 임의 canonicalize 하지 않고 pass-through 한다", () => {
+    const normalized = normalizeExternalFillIngress({
+      id: "el-5b",
+      tag: "Box",
+      props: {
+        style: {
+          backgroundImage:
+            "repeating-linear-gradient(90deg, #111111 0%, #222222 10%)",
+          backgroundSize: "cover",
+          paddingBottom: "16px",
+        },
+      },
+    });
+
+    expect(normalized.fills).toBeUndefined();
+    expect(normalized.props.style).toMatchObject({
+      backgroundImage:
+        "repeating-linear-gradient(90deg, #111111 0%, #222222 10%)",
+      backgroundSize: "cover",
+      paddingBottom: "16px",
+    });
+  });
+
   it("batch normalizer 는 preview-generated payload 도 canonical fills 로 정규화한다", () => {
     const normalized = normalizeExternalFillIngressBatch([
       {

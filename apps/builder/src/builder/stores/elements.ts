@@ -358,9 +358,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
   const applyFullSnapshot = (elements: Element[]) => {
     const { elements: normalizedElements } = normalizeElementTags(elements);
-    const nextIndexes = buildIndexes(normalizedElements);
+    const canonicalElements = normalizedElements.map((element) =>
+      normalizeExternalFillIngress(element),
+    );
+    const nextIndexes = buildIndexes(canonicalElements);
     set((state) => ({
-      elements: normalizedElements,
+      elements: canonicalElements,
       ...nextIndexes,
       layoutVersion: state.layoutVersion + 1,
     }));
