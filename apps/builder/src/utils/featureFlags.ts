@@ -28,8 +28,6 @@ export interface FeatureFlags {
   wasmLayoutEngine: boolean;
   /** 렌더 모드 (skia 고정) */
   renderMode: RenderMode;
-  /** Fill V2는 retirement 이후 항상 활성 */
-  fillV2: boolean;
   /** React Query Devtools 활성화 */
   enableReactQueryDevtools: boolean;
 }
@@ -136,17 +134,6 @@ export function isCanvasKitEnabled(): boolean {
   return true;
 }
 
-// ============================================
-// Fill V2 Retirement
-// ============================================
-
-/**
- * Fill V2는 rollout 종료 후 항상 활성 상태다.
- */
-export function isFillV2Enabled(): boolean {
-  return true;
-}
-
 /**
  * React Query Devtools 활성화 여부
  *
@@ -182,7 +169,6 @@ export function getFeatureFlags(): FeatureFlags {
     wasmSpatialIndex: true,
     wasmLayoutEngine: true,
     renderMode: "skia" as RenderMode,
-    fillV2: true,
     enableReactQueryDevtools: parseBoolean(
       import.meta.env.VITE_ENABLE_REACT_QUERY_DEVTOOLS,
       false,

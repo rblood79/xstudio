@@ -42,7 +42,7 @@
 - [x] `fillToSkia.ts` — FillItem → Skia FillStyle 변환 (Color)
 - [x] `fillMigration.ts` — backgroundColor ↔ fills 양방향 마이그레이션
 - [x] `colorUtils.ts` — hex8 ↔ rgba ↔ float32 변환 유틸리티
-- [x] Fill V2 always-on 전환 완료 (`isFillV2Enabled()`는 호환성용 항상 `true`)
+- [x] Fill V2 always-on 전환 완료
 - [x] BoxSprite 연동: fills → fillColor (Float32Array)
 - [x] inspectorActions DB 동기화: fills → style.backgroundColor
 - [x] Color fill 1개 제한 (CSS background-color는 단수)
@@ -941,7 +941,7 @@ Phase 4 (이미지/메쉬/변수)            ⬜ 미착수
 | ~~R2: 마이그레이션 데이터 무결성~~ | `fillMigration.ts`의 `normalizeToHex8()` + `fillsToCssBackground()` 양방향 변환 안정적 동작 |
 | ~~R4: EyeDropper 브라우저 호환~~ | `'EyeDropper' in window` 가드로 미지원 브라우저에서 버튼 자체 숨김 구현 완료 |
 | ~~R5: Gradient Shader GPU 리소스~~ | `applyFill()` + `nodeRenderers.ts`에서 Shader delete() 정상 처리 확인 |
-| ~~R6: 전환 단계 제어~~ | 초기에는 `VITE_FEATURE_FILL_V2` + `isFillV2Enabled()`로 rollout 했고, 이후 always-on 전환과 retirement를 완료했다 |
+| ~~R6: 전환 단계 제어~~ | 초기에는 `VITE_FEATURE_FILL_V2`로 rollout 했고, 이후 always-on 전환과 retirement를 완료했다 |
 | ~~R7: @dnd-kit 의존성~~ | 드래그 순서 변경 미구현 → 의존성 추가 불필요 |
 | Skia 변환 레이어 | `fillToSkia.ts`에서 Color + 3종 Gradient 변환 완성. `applyFill()`과 정상 연동 |
 | 드래그 패턴 | onChange/onChangeEnd 패턴이 ColorArea, Hue, Alpha, GradientBar 스톱에서 모두 안정 동작 |
