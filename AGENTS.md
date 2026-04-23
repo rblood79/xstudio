@@ -25,6 +25,22 @@ composition 협업을 위한 간단한 가이드입니다. 변경은 작게, 관
 - `npm run test`, `npm run test:coverage`: Vitest 및 커버리지. Playwright는 `npm run playwright:install` 후 `npx playwright test`.
 - `npm run storybook`, `npm run build-storybook`: 컴포넌트 문서 dev/prod.
 
+## Codex Workflow Mapping
+
+- Codex의 1차 컨텍스트는 `AGENTS.md`, `.agents/README.md`, `.agents/skills/composition-patterns/SKILL.md`입니다.
+- `.claude/`는 legacy 자산으로 유지하되, Codex 엔트리포인트는 `.agents/` 경로를 우선 사용합니다.
+- Claude slash command 대응:
+  - `/cross-check` → `.agents/skills/cross-check/SKILL.md`
+  - `/new-adr` → `.agents/skills/create-adr/SKILL.md`
+  - `/impl` 성격 작업 → `component-design`, `composition-patterns`
+  - `/sweep` → `.agents/skills/parallel-verify/SKILL.md`
+- Claude hook 대응:
+  - 보호 파일 차단 → `npm run codex:guard`
+  - 변경 파일 포맷 → `npm run codex:format`
+  - TS 변경 type-check → `npm run codex:typecheck`
+  - 완료 전 일괄 게이트 → `npm run codex:preflight`
+- 자동 SessionStart/UserPromptSubmit/SubagentStop/PreCompact/statusline 같은 Claude 전용 훅은 Codex에서 자동 실행되지 않습니다. 대신 `.agents/progress.md`, `.agents/agent-memory/*`, `.agents/skills/INDEX.md`를 수동 엔트리포인트로 사용합니다.
+
 ## Coding Style & Naming Conventions
 
 - TypeScript + React 19 함수 컴포넌트, 2칸 들여쓰기, 네임드 익스포트 선호. 훅은 `use*`, 컴포넌트는 PascalCase `.tsx`.
@@ -48,7 +64,9 @@ composition 협업을 위한 간단한 가이드입니다. 변경은 작게, 관
 
 - 비밀 값은 `.env.local`에만 저장·커밋 금지. `README.md` 예시(Supabase URL/anon key, API URL)와 일치 확인.
 - Supabase 스키마: `docs/supabase-schema.md`, `supabase/`. API 기대치를 바꾸기 전 마이그레이션 협의.
-- 큰 변경 전 `CLAUDE.md`를 참고해 아키텍처 제약과 선호 패턴을 확인.
+- 큰 변경 전 `.agents/README.md`와 `.agents/skills/composition-patterns/SKILL.md`를 먼저 확인하고, 추가 배경이 필요할 때만 `CLAUDE.md`를 legacy 참고 문서로 사용합니다.
+
+> 아래의 `CLAUDE.md`, `CURSOR.md` 유입 블록은 legacy 참고 자료입니다. Codex는 이 파일 상단의 규칙과 `.agents/*` 경로를 우선 적용합니다.
 
 # CLAUDE.md
 

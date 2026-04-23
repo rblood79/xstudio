@@ -91,16 +91,12 @@ user_invocable: true
 
 ## Phase 5: 시각 파리티 검증 (선택 — dev 서버 실행 시)
 
-개발 서버(`localhost:5173`)와 Storybook(`localhost:6006`) 중 실행 중인 것이 있으면 Chrome MCP로 Preview(CSS)와 Canvas(Skia) 렌더링을 시각적으로 비교합니다.
+개발 서버(`localhost:5173`)와 Storybook(`localhost:6006`) 중 실행 중인 것이 있으면, 사용 가능한 브라우저/컴퓨터 사용 도구로 Preview(CSS)와 Canvas(Skia) 렌더링을 시각적으로 비교합니다.
 
 ### 5.1 Preview(CSS) 스크린샷 캡처
 
-```
-mcp__claude-in-chrome__tabs_create_mcp()
-mcp__claude-in-chrome__navigate(url: "http://localhost:5173", tabId: {tabId})
-# 변경된 컴포넌트가 보이는 페이지로 이동 후
-mcp__claude-in-chrome__computer(action: "screenshot", tabId: {tabId})
-```
+- 브라우저/컴퓨터 사용 도구 또는 Playwright MCP가 있으면 새 탭을 열고 `http://localhost:5173` 또는 `http://localhost:6006` 로 이동
+- 변경된 컴포넌트가 보이는 화면까지 진입 후 스크린샷을 캡처
 
 ### 5.2 Canvas(Skia) 스크린샷 캡처
 

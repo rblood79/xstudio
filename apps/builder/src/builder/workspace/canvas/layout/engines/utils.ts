@@ -1611,8 +1611,17 @@ export function calculateContentHeight(
     const containerWidth =
       availableWidth && availableWidth > 0 ? availableWidth : 350;
 
+    // wrap 시뮬레이션 중 실제 chip 이 "배치된" 마지막 행/우측 끝을 추적.
+    //   rowIndex 는 다음 chip 이 들어갈 후보 행이므로, maxRows break 시점에는
+    //   이미 +1 된 would-be 행을 가리킨다(chip 미배치). 따라서 `rowIndex + 1` 로
+    //   높이를 계산하면 항상 한 행이 과다 예약되는 기존 버그가 발생한다.
     let currentRowWidth = 0;
     let rowIndex = 0;
+    let shouldShowAll = false;
+    let hasAnyPlaced = false;
+    let lastPlacedRowIndex = 0;
+    let lastPlacedRowEnd = 0;
+
     for (let i = 0; i < items.length; i++) {
       const label = items[i].label || `Tag ${i + 1}`;
       const textWidth = measureTextWidth(label, fontSize, "Pretendard", 400);
@@ -1625,13 +1634,39 @@ export function calculateContentHeight(
         currentRowWidth = 0;
       }
 
-      if (maxRows > 0 && rowIndex >= maxRows) break;
+      if (maxRows > 0 && rowIndex >= maxRows) {
+        shouldShowAll = true;
+        break;
+      }
 
       const x = currentRowWidth === 0 ? 0 : currentRowWidth + gap;
       currentRowWidth = x + chipWidth;
+      hasAnyPlaced = true;
+      lastPlacedRowIndex = rowIndex;
+      lastPlacedRowEnd = currentRowWidth;
     }
 
-    const rows = rowIndex + 1;
+    if (!hasAnyPlaced) return 0;
+
+    // Show all chip 배치 규칙 — TagList.spec.ts shapes() Phase 3 과 반드시 동일:
+    //   lastPlacedRowEnd + gap + showAllWidth <= containerWidth  → 같은 행(+0)
+    //   초과  → 다음 행 wrap (+1)
+    // 두 경로가 어긋나면 Show all 이 컨테이너 경계 밖으로 돌출하거나 하단 여백 과다.
+    let extraRow = 0;
+    if (shouldShowAll) {
+      const showAllTextWidth = measureTextWidth(
+        "Show all",
+        fontSize,
+        "Pretendard",
+        400,
+      );
+      const showAllWidth = showAllTextWidth + chipSize.paddingX * 2;
+      const fitsOnSameRow =
+        lastPlacedRowEnd + gap + showAllWidth <= containerWidth;
+      extraRow = fitsOnSameRow ? 0 : 1;
+    }
+
+    const rows = lastPlacedRowIndex + 1 + extraRow;
     return rows * tagHeight + Math.max(0, rows - 1) * rowGap;
   }
 

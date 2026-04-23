@@ -1,6 +1,6 @@
 # Layout Engine — 구현 상세
 
-> 규칙 요약은 [layout-engine.md](.claude/rules/layout-engine.md) 참조
+> 규칙 요약은 [../../rules/layout-engine.md](../../rules/layout-engine.md) 참조
 
 ## Label size delegation 상세
 

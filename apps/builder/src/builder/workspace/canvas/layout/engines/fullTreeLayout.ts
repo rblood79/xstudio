@@ -855,6 +855,62 @@ function traversePostOrder(
     }
   }
 
+  // TagList → TagGroup 부모 propagation rawElement 주입 (DFS 진입 시점)
+  //
+  // 배경: TagGroup.spec.ts propagation rules `{ parentProp: <items|variant|size|
+  //   allowsRemoving|maxRows>, childPath: "TagList", override: true }` 는 Inspector
+  //   `buildPropagationUpdates` 와 factory `applyFactoryPropagation` 에서 store 직접
+  //   갱신을 담당하지만, legacy migration / 부분 propagation 결손 시 TagList.props
+  //   에 일부 필드가 누락된 상태로 store 가 로드될 수 있다.
+  //
+  // 영향: `calculateContentHeight` taglist 분기(utils.ts) 는 `element.props.items` /
+  //   `element.props.maxRows` 를 직접 소비. items 누락 시 row-wrap 결과 0 반환 →
+  //   TagGroup 컨테이너 높이 = Label 단독으로 고정. maxRows 누락 시 행 제한 미적용.
+  //   Skia 렌더는 `resolveTagListItemsFromParent` (buildSpecNodeData.ts) 에서 동일
+  //   방어 패치를 수행하므로 chip 시각은 정상 — Skia ↔ Layout 비대칭 발생 원인.
+  //
+  // 처리: Tag/Checkbox/Radio 의 부모 size delegation 과 동일하게 DFS 진입 시 rawElement
+  //   props 를 부모값으로 보강. 자식 명시값(override:true 가 아닌 필드는 자식 우선)은 유지.
+  if (rawElement.tag === "TagList" && rawElement.parent_id) {
+    const parent = elementsMap.get(rawElement.parent_id);
+    if (parent?.tag === "TagGroup") {
+      const childProps = (rawElement.props ?? {}) as Record<string, unknown>;
+      const parentProps = (parent.props ?? {}) as Record<string, unknown>;
+      const delegated: Record<string, unknown> = {};
+
+      // items / maxRows: spec rule override:true — 부모 우선
+      const parentItems = parentProps.items;
+      if (Array.isArray(parentItems) && parentItems.length > 0) {
+        delegated.items = parentItems;
+      }
+      const parentMaxRows = parentProps.maxRows;
+      if (typeof parentMaxRows === "number" && parentMaxRows > 0) {
+        delegated.maxRows = parentMaxRows;
+      }
+
+      // size / variant / allowsRemoving: 자식 명시값 없을 때만 주입
+      if (childProps.size === undefined && parentProps.size !== undefined) {
+        delegated.size = parentProps.size;
+      }
+      if (
+        childProps.variant === undefined &&
+        parentProps.variant !== undefined
+      ) {
+        delegated.variant = parentProps.variant;
+      }
+      if (parentProps.allowsRemoving === true) {
+        delegated.allowsRemoving = true;
+      }
+
+      if (Object.keys(delegated).length > 0) {
+        rawElement = {
+          ...rawElement,
+          props: { ...rawElement.props, ...delegated },
+        };
+      }
+    }
+  }
+
   // Tag → TagGroup 부모 size 상속 (CSS data-tag-size parent delegation 에뮬레이션)
   // DFS 진입 시 element에 size를 주입하면 이후 calculateContentHeight/parseBoxModel 등에서 자연스럽게 사용
   if (rawElement.tag === "Tag") {

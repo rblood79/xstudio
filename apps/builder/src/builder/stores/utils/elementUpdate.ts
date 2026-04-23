@@ -284,10 +284,17 @@ export const createUpdateElementPropsAction =
     // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
     // 3. IndexedDB에 저장 (로컬 우선 저장) — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
+    // ⚠️ `props` 인자는 delta(변경분)만 포함. IndexedDB adapter.update 는
+    //   `{ ...existing, ...data }` 로 top-level 필드를 **교체**하므로,
+    //   `{ props: <patch> }` 를 그대로 넘기면 저장본의 props 가 patch 로 축소되어
+    //   label/size/variant 등 다른 키가 소실된다 (batch 경로 574-583 과 동일한 주의).
+    //   → 메모리에서 merge 한 `updatedElement.props` 를 전달하여 누락 방지.
+    //   증상: TagGroup items 편집 후 재하이드레이션 시 Preview label 소실,
+    //        Skia 자식 Label element 는 별도 batch 저장 → 구값 유지 → 두 경로 괴리.
     void (async () => {
       try {
         const db = await getDB();
-        await db.elements.update(elementId, { props });
+        await db.elements.update(elementId, { props: updatedElement.props });
       } catch (error) {
         console.warn(
           "⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):",

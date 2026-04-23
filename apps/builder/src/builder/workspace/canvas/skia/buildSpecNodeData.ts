@@ -554,6 +554,16 @@ function resolveTagListItemsFromParent(
     hasPatch = true;
   }
 
+  // ADR-097 Phase 4A propagation rule `{ parentProp: "maxRows", childPath: "TagList" }`
+  // 와 정합. Store 에 TagList.props.maxRows 가 누락된 경로 (legacy migration 직후 등)
+  // 에서도 Skia chip 행 제한 + "Show all" 동작이 부모 TagGroup.maxRows 와 동일하게 적용되도록
+  // 방어적 fallback. Inspector edit 경로는 buildPropagationUpdates 가 store 직접 갱신.
+  const parentMaxRows = parentProps.maxRows;
+  if (typeof parentMaxRows === "number" && parentMaxRows > 0) {
+    patch.maxRows = parentMaxRows;
+    hasPatch = true;
+  }
+
   return hasPatch ? patch : null;
 }
 

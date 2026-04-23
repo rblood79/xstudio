@@ -44,7 +44,7 @@ ls docs/adr/ docs/adr/completed/ | grep -oE '^[0-9]+' | sort -n | tail -1
 
 ## Phase 2: 스캐폴딩 + design 파일 생성 (CRITICAL: 내용 전에 구조 먼저)
 
-> **규칙 단일 소스**: `.Codex/rules/adr-writing.md` — 필수 순서, 작성 순서, 4축 위험 평가, Threshold Check, 검증 체크리스트, 금지 패턴이 정의되어 있다. 이 규칙을 **전부** 따른다.
+> **규칙 단일 소스**: `.agents/rules/adr-writing.md` — 필수 순서, 작성 순서, 4축 위험 평가, Threshold Check, 검증 체크리스트, 금지 패턴의 Codex 엔트리포인트다. 필요 시 링크된 legacy rule까지 함께 확인한다.
 
 ### 2-1. 구현 상세가 필요한 ADR인지 판단
 
@@ -189,7 +189,7 @@ README 상단의 `미구현 (Proposed/계획)` 카운트를 +1 갱신하고, 합
 
 ## Phase 4: 자기 검증
 
-생성된 ADR에 대해 `.Codex/rules/adr-writing.md`의 검증 체크리스트를 실행:
+생성된 ADR에 대해 `.agents/rules/adr-writing.md`의 검증 체크리스트를 실행:
 
 - [ ] Context에 측정 가능한 hard constraint가 1개 이상 있는가?
 - [ ] 대안이 2개 이상이고, 각각 4축 위험 평가가 있는가?
@@ -204,12 +204,12 @@ README 상단의 `미구현 (Proposed/계획)` 카운트를 +1 갱신하고, 합
 
 ---
 
-## Architect 에이전트 연동
+## 보조 분석 연동
 
-ADR 주제가 복잡하거나 외부 리서치가 필요한 경우, `architect` 에이전트를 호출하여 대안 생성 + 위험 평가를 위임할 수 있다.
+ADR 주제가 복잡하거나 외부 리서치가 필요한 경우, Codex에서 보조 에이전트 사용이 허용된 세션이면 아키텍처 분석 역할로 대안 생성 + 위험 평가를 위임할 수 있다.
 
 ```
-Agent(architect): "{주제}에 대한 ADR 대안 분석 요청.
+"{주제}에 대한 ADR 대안 분석 요청.
 최소 3개 대안 + 4축 위험 평가 + Risk Threshold Check 수행.
 외부 리서치(경쟁사, 오픈소스) 포함."
 ```

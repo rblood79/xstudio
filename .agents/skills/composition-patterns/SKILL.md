@@ -10,8 +10,8 @@ scope: composition Builder codebase (apps/builder, packages/specs, packages/shar
 
 composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
-> **상세 규칙은 `.Codex/rules/`에 glob-scoped로 자동 로드됩니다.**
-> 이 파일은 규칙 인덱스 + 에이전트 프로토콜을 제공합니다.
+> **Codex 매크로 규칙 엔트리포인트는 `.agents/rules/`입니다.**
+> 컴포넌트/도메인별 상세 규칙은 이 디렉터리의 `rules/`와 `reference/`를 사용합니다.
 
 ## 규칙 카테고리
 
@@ -43,7 +43,7 @@ composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
 - **[spec-build-sync](rules/spec-build-sync.md)** / **[spec-value-sync](rules/spec-value-sync.md)**
 
-> **layoutVersion, order_num, WASM 초기화, display 전환, Field Component, Spec↔CSS 경계** 등의 상세 CRITICAL 규칙은 `.Codex/rules/` (canvas-rendering.md, layout-engine.md, state-management.md)에 자동 로드됩니다.
+> **layoutVersion, order_num, WASM 초기화, display 전환, Field Component, Spec↔CSS 경계** 등의 매크로 규칙은 `.agents/rules/` (canvas-rendering.md, layout-engine.md, state-management.md)와 이 디렉터리의 상세 규칙을 함께 참조합니다.
 
 ### HIGH (강력 권장)
 
@@ -107,9 +107,10 @@ composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
 ### 세션 시작
 
-1. `Read .Codex/progress.md` — 현재 상태/알려진 이슈
-2. `Read .Codex/agent-memory/{자신}/MEMORY.md` — 이전 세션 맥락
-3. 중복 작업 방지, 막힌 지점 이어가기
+1. `Read .agents/progress.md` — Codex 엔트리포인트
+2. `Read .agents/agent-memory/{자신}/MEMORY.md` — 역할별 요약 메모
+3. 필요 시 링크된 legacy `.claude/...` 파일까지 열어 세부 이력을 확인
+4. 중복 작업 방지, 막힌 지점 이어가기
 
 ### 세션 종료
 
@@ -140,7 +141,7 @@ composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 
 ### 측정 템플릿
 
-리뷰어 에이전트가 `.Codex/agent-memory/reviewer/MEMORY.md`에 기록:
+리뷰 세션은 `.agents/agent-memory/reviewer/MEMORY.md`에 기록:
 
 | 규칙     | 위반 수 | False Positive | 실효성          | 비고 |
 | -------- | ------- | -------------- | --------------- | ---- |

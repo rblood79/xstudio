@@ -386,21 +386,33 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
       }
 
       // Phase 3: Show all chip (maxRows 초과 시)
+      //
+      // 배치 규칙 (flex-wrap semantics):
+      //   1) 마지막 chip 우측 여유 공간에 들어가면 같은 행(lastChip.y) 유지
+      //   2) 들어가지 않으면 다음 행(lastChip.y + tagHeight + rowGap, x=0) 으로 wrap
+      //
+      // 동일 판정이 layout 측 `calculateContentHeight` taglist 분기에도 들어가
+      // chip 행 합계 + (wrap 시 +1) 로 컨테이너 높이가 일관되게 계산됨.
+      // 두 경로가 어긋나면 Show all 이 컨테이너 밖으로 돌출하거나 하단 여백 과다.
       if (shouldShowAll && placed.length > 0) {
         const lastChip = placed[placed.length - 1];
         const showAllLabel = "Show all";
         const showAllWidth =
           measureSpecTextWidth(showAllLabel, fontSize, fontFamily.sans) +
           tagPaddingX * 2;
-        const showAllX = lastChip.x + lastChip.chipWidth + gap;
-        // Show all 도 같은 행에 두어 visual layout 유지
-        // (원본 implicitStyles 도 lastChip 이후 push 하고 filteredChildren 재정렬 없음)
+
+        const lastRowEnd = lastChip.x + lastChip.chipWidth;
+        const fitsOnSameRow = lastRowEnd + gap + showAllWidth <= containerWidth;
+        const showAllX = fitsOnSameRow ? lastRowEnd + gap : 0;
+        const showAllY = fitsOnSameRow
+          ? lastChip.y
+          : lastChip.y + tagHeight + rowGap;
 
         shapes.push({
           id: "tag-show-all-bg",
           type: "roundRect" as const,
           x: showAllX,
-          y: lastChip.y,
+          y: showAllY,
           width: showAllWidth,
           height: tagHeight,
           radius: borderRadius,
@@ -410,7 +422,7 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
         shapes.push({
           type: "text" as const,
           x: showAllX + tagPaddingX,
-          y: lastChip.y + tagHeight / 2,
+          y: showAllY + tagHeight / 2,
           text: showAllLabel,
           fontSize,
           lineHeight,
