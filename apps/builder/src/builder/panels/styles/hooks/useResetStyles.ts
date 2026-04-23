@@ -12,6 +12,189 @@
 import { useCallback } from "react";
 import { useStore } from "../../../stores";
 import { getDefaultProps } from "../../../../types/builder/unified.types";
+import {
+  resolveAppearanceSpecPreset,
+  resolveLayoutSpecPreset,
+  resolveSpecPreset,
+  resolveTypographySpecPreset,
+} from "../utils/specPresetResolver";
+import { numToPx, uniform4Way } from "../utils/styleValueHelpers";
+
+const PX_LIKE_STYLE_PROPS = new Set([
+  "width",
+  "height",
+  "top",
+  "left",
+  "minWidth",
+  "maxWidth",
+  "minHeight",
+  "maxHeight",
+  "borderWidth",
+  "borderRadius",
+  "gap",
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "fontSize",
+  "lineHeight",
+  "letterSpacing",
+]);
+
+function normalizeStyleValue(
+  prop: string,
+  value: unknown,
+): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "number" && PX_LIKE_STYLE_PROPS.has(prop)) {
+    return `${value}px`;
+  }
+  return String(value);
+}
+
+function resolveSpecStyleDefaults(
+  tag: string,
+  props: Readonly<Record<string, unknown>> | undefined,
+): Record<string, string | undefined> {
+  const size = typeof props?.size === "string" ? props.size : undefined;
+  const transformPreset = resolveSpecPreset(tag, size);
+  const layoutPreset = resolveLayoutSpecPreset(tag, size, props);
+  const appearancePreset = resolveAppearanceSpecPreset(tag, size);
+  const typographyPreset = resolveTypographySpecPreset(tag, size);
+
+  return {
+    width: normalizeStyleValue("width", transformPreset.width),
+    height: normalizeStyleValue("height", transformPreset.height),
+    top: normalizeStyleValue("top", transformPreset.top),
+    left: normalizeStyleValue("left", transformPreset.left),
+    minWidth: normalizeStyleValue("minWidth", transformPreset.minWidth),
+    maxWidth: normalizeStyleValue("maxWidth", transformPreset.maxWidth),
+    minHeight: normalizeStyleValue("minHeight", transformPreset.minHeight),
+    maxHeight: normalizeStyleValue("maxHeight", transformPreset.maxHeight),
+    aspectRatio: normalizeStyleValue("aspectRatio", transformPreset.aspectRatio),
+    display: normalizeStyleValue("display", layoutPreset.display),
+    flexDirection: normalizeStyleValue(
+      "flexDirection",
+      layoutPreset.flexDirection,
+    ),
+    alignItems: normalizeStyleValue("alignItems", layoutPreset.alignItems),
+    justifyContent: normalizeStyleValue(
+      "justifyContent",
+      layoutPreset.justifyContent,
+    ),
+    flexWrap: normalizeStyleValue("flexWrap", layoutPreset.flexWrap),
+    gap: normalizeStyleValue(
+      "gap",
+      layoutPreset.rowGap ?? layoutPreset.columnGap ?? layoutPreset.gap,
+    ),
+    padding: normalizeStyleValue(
+      "padding",
+      numToPx(layoutPreset.padding) ??
+        uniform4Way(
+          numToPx(layoutPreset.paddingTop),
+          numToPx(layoutPreset.paddingRight),
+          numToPx(layoutPreset.paddingBottom),
+          numToPx(layoutPreset.paddingLeft),
+        ),
+    ),
+    paddingTop: normalizeStyleValue(
+      "paddingTop",
+      numToPx(layoutPreset.paddingTop),
+    ),
+    paddingRight: normalizeStyleValue(
+      "paddingRight",
+      numToPx(layoutPreset.paddingRight),
+    ),
+    paddingBottom: normalizeStyleValue(
+      "paddingBottom",
+      numToPx(layoutPreset.paddingBottom),
+    ),
+    paddingLeft: normalizeStyleValue(
+      "paddingLeft",
+      numToPx(layoutPreset.paddingLeft),
+    ),
+    margin: normalizeStyleValue(
+      "margin",
+      numToPx(layoutPreset.margin) ??
+        uniform4Way(
+          numToPx(layoutPreset.marginTop),
+          numToPx(layoutPreset.marginRight),
+          numToPx(layoutPreset.marginBottom),
+          numToPx(layoutPreset.marginLeft),
+        ),
+    ),
+    marginTop: normalizeStyleValue("marginTop", numToPx(layoutPreset.marginTop)),
+    marginRight: normalizeStyleValue(
+      "marginRight",
+      numToPx(layoutPreset.marginRight),
+    ),
+    marginBottom: normalizeStyleValue(
+      "marginBottom",
+      numToPx(layoutPreset.marginBottom),
+    ),
+    marginLeft: normalizeStyleValue(
+      "marginLeft",
+      numToPx(layoutPreset.marginLeft),
+    ),
+    backgroundColor: normalizeStyleValue(
+      "backgroundColor",
+      appearancePreset.backgroundColor,
+    ),
+    borderColor: normalizeStyleValue("borderColor", appearancePreset.borderColor),
+    borderWidth: normalizeStyleValue(
+      "borderWidth",
+      numToPx(appearancePreset.borderWidth),
+    ),
+    borderRadius: normalizeStyleValue(
+      "borderRadius",
+      numToPx(appearancePreset.borderRadius),
+    ),
+    fontFamily: normalizeStyleValue("fontFamily", typographyPreset.fontFamily),
+    fontSize: normalizeStyleValue("fontSize", numToPx(typographyPreset.fontSize)),
+    fontWeight: normalizeStyleValue(
+      "fontWeight",
+      typographyPreset.fontWeight,
+    ),
+    lineHeight: normalizeStyleValue(
+      "lineHeight",
+      numToPx(typographyPreset.lineHeight),
+    ),
+    letterSpacing: normalizeStyleValue(
+      "letterSpacing",
+      numToPx(typographyPreset.letterSpacing),
+    ),
+  };
+}
+
+function resolveResetBaseline(
+  element: {
+    tag: string;
+    props?: Readonly<Record<string, unknown>>;
+  },
+): {
+  legacyStyle: Record<string, unknown>;
+  specStyle: Record<string, string | undefined>;
+} {
+  const defaultProps = getDefaultProps(element.tag);
+  return {
+    legacyStyle: (defaultProps?.style || {}) as Record<string, unknown>,
+    specStyle: resolveSpecStyleDefaults(element.tag, element.props),
+  };
+}
+
+function resolveTargetValue(
+  prop: string,
+  specStyle: Record<string, string | undefined>,
+  legacyStyle: Record<string, unknown>,
+): string {
+  return specStyle[prop] ?? normalizeStyleValue(prop, legacyStyle[prop]) ?? "";
+}
 
 /**
  * 선택된 요소의 특정 속성들이 기본값과 다른지 확인하는 훅
@@ -25,13 +208,13 @@ export function useHasDirtyStyles(properties: string[]): boolean {
     const element = state.elementsMap.get(selectedId);
     if (!element) return false;
 
-    const defaultProps = getDefaultProps(element.tag);
-    const defaultStyle = (defaultProps?.style || {}) as Record<string, string>;
-    const currentStyle = (element.props?.style as Record<string, string>) || {};
+    const currentStyle = (element.props?.style as Record<string, unknown>) || {};
+    const { legacyStyle, specStyle } = resolveResetBaseline(element);
 
     for (const prop of properties) {
-      const resetValue = defaultStyle[prop] ?? "";
-      const currentValue = currentStyle[prop] ?? "";
+      const currentValue = normalizeStyleValue(prop, currentStyle[prop]);
+      if (currentValue === undefined) continue;
+      const resetValue = resolveTargetValue(prop, specStyle, legacyStyle);
       if (currentValue !== resetValue) return true;
     }
     return false;
@@ -53,18 +236,20 @@ export function useResetStyles() {
     const element = state.elementsMap.get(selectedId);
     if (!element) return;
 
-    // 컴포넌트 기본값 가져오기
-    const tag = element.tag;
-    const defaultProps = getDefaultProps(tag);
-    const defaultStyle = (defaultProps?.style || {}) as Record<string, string>;
-    const currentStyle = (element.props?.style as Record<string, string>) || {};
+    const currentStyle = (element.props?.style as Record<string, unknown>) || {};
+    const { legacyStyle, specStyle } = resolveResetBaseline(element);
 
     // 실제로 변경이 필요한 속성만 포함 (dirty check)
     const resetObj: Record<string, string> = {};
     properties.forEach((prop) => {
-      const resetValue = defaultStyle[prop] ?? "";
-      const currentValue = currentStyle[prop] ?? "";
-      if (currentValue !== resetValue) {
+      const currentValue = normalizeStyleValue(prop, currentStyle[prop]);
+      if (currentValue === undefined) return;
+      const targetValue = resolveTargetValue(prop, specStyle, legacyStyle);
+      const resetValue =
+        specStyle[prop] !== undefined
+          ? ""
+          : (normalizeStyleValue(prop, legacyStyle[prop]) ?? "");
+      if (currentValue !== targetValue) {
         resetObj[prop] = resetValue;
       }
     });

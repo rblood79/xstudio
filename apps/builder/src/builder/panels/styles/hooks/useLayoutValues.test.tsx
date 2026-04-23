@@ -142,6 +142,30 @@ describe("useLayoutValues — ADR-082 P1-2 padding/margin shorthand 4-way unifor
             style: { padding: "16px" },
           }),
         ],
+        [
+          "el-inline-uniform-pad",
+          makeElement("el-inline-uniform-pad", "ListBox", {
+            size: "md",
+            style: {
+              paddingTop: 12,
+              paddingRight: 12,
+              paddingBottom: 12,
+              paddingLeft: 12,
+            },
+          }),
+        ],
+        [
+          "el-inline-uniform-margin",
+          makeElement("el-inline-uniform-margin", "ListBox", {
+            size: "md",
+            style: {
+              marginTop: 10,
+              marginRight: 10,
+              marginBottom: 10,
+              marginLeft: 10,
+            },
+          }),
+        ],
       ]),
     });
   });
@@ -189,6 +213,22 @@ describe("useLayoutValues — ADR-082 P1-2 padding/margin shorthand 4-way unifor
     });
     const { result } = renderHook(() => useLayoutValues("el-uniform"));
     expect(result.current?.margin).toBe("8px");
+  });
+
+  it("inline padding longhand 4-way uniform 도 shorthand 에 복원된다", () => {
+    vi.spyOn(preset, "resolveLayoutSpecPreset").mockReturnValue({});
+    const { result } = renderHook(() => useLayoutValues("el-inline-uniform-pad"));
+    expect(result.current?.padding).toBe("12px");
+    expect(result.current?.paddingTop).toBe("12");
+  });
+
+  it("inline margin longhand 4-way uniform 도 shorthand 에 복원된다", () => {
+    vi.spyOn(preset, "resolveLayoutSpecPreset").mockReturnValue({});
+    const { result } = renderHook(() =>
+      useLayoutValues("el-inline-uniform-margin"),
+    );
+    expect(result.current?.margin).toBe("10px");
+    expect(result.current?.marginLeft).toBe("10");
   });
 
   it("4-way 중 일부만 정의되고 나머지 undefined → shorthand 는 기본값", () => {

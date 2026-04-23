@@ -36,6 +36,18 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
   return useMemo(() => {
     if (!id) return null;
     const s = style ?? {};
+    const inlineUniformPadding = uniform4Way(
+      numToPx(s.paddingTop as number | string | undefined),
+      numToPx(s.paddingRight as number | string | undefined),
+      numToPx(s.paddingBottom as number | string | undefined),
+      numToPx(s.paddingLeft as number | string | undefined),
+    );
+    const inlineUniformMargin = uniform4Way(
+      numToPx(s.marginTop as number | string | undefined),
+      numToPx(s.marginRight as number | string | undefined),
+      numToPx(s.marginBottom as number | string | undefined),
+      numToPx(s.marginLeft as number | string | undefined),
+    );
     return {
       display: firstDefined(s.display, specPreset.display, "block"),
       flexDirection: firstDefined(
@@ -64,7 +76,7 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
       ),
       // ADR-082 P1-2: Spec 4-way uniform 이면 shorthand 에 반영 (collapsed 모드 UX)
       padding: firstDefined(
-        s.padding,
+        numToPx(s.padding as number | string | undefined) ?? inlineUniformPadding,
         numToPx(specPreset.padding) ??
         uniform4Way(
           numToPx(specPreset.paddingTop),
@@ -96,7 +108,7 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
       ),
       // ADR-082 P1-2: margin 도 4-way uniform fallback 동일 적용
       margin: firstDefined(
-        s.margin,
+        numToPx(s.margin as number | string | undefined) ?? inlineUniformMargin,
         numToPx(specPreset.margin) ??
         uniform4Way(
           numToPx(specPreset.marginTop),

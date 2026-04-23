@@ -1269,7 +1269,7 @@ export function createDefaultCheckboxProps(): CheckboxElementProps {
     //   display:"flex"/flexDirection:"row" 는 archetype base(`inline-flex`) 의 의도적 override
     //   (Checkbox 내부 indicator+label 가로 배치) → factory 유지.
     style: {
-      display: "flex",
+      display: "inline-flex",
       flexDirection: "row",
     },
   };
@@ -1284,7 +1284,7 @@ export function createDefaultRadioProps(): RadioElementProps {
     isDisabled: false,
     // ADR-083 Phase 3 (R5): alignItems:"center" 는 RadioSpec.containerStyles SSOT 로 이관.
     style: {
-      display: "flex",
+      display: "inline-flex",
       flexDirection: "row",
     },
   };
@@ -1367,11 +1367,11 @@ export function createDefaultSliderProps(): SliderElementProps {
     orientation: "horizontal",
     showValue: true,
     // ADR-083 Phase 5 (R5): display:"grid" 는 SliderSpec.containerStyles SSOT 로 이관.
-    //   width/height/maxWidth 는 factory 특화 초기값 → 유지.
-    //   Spec md: label(14*1.2≈17) + gap(10) + thumbSize(18) = 45
+    //   width/maxWidth 는 factory 특화 초기값 유지.
+    //   height 는 spec preset SSOT 와 정합시킨다.
     style: {
       width: 200,
-      height: 45,
+      height: 8,
       maxWidth: 300,
     },
   };
@@ -1496,7 +1496,7 @@ export function createDefaultSwitchProps(): SwitchElementProps {
     isDisabled: false,
     // ADR-083 Phase 3 (R5): alignItems:"center" 는 SwitchSpec.containerStyles SSOT 로 이관.
     style: {
-      display: "flex",
+      display: "inline-flex",
       flexDirection: "row",
     },
   };
@@ -1595,7 +1595,7 @@ export function createDefaultCardProps(): CardElementProps {
       flexDirection: "column",
       padding: "16px", // var(--spacing-lg) = 16px
       borderWidth: "1px",
-      gap: "8px",
+      gap: "12px",
     },
   };
 }
@@ -1617,7 +1617,6 @@ export function createDefaultLabelProps(): BaseElementProps {
       fontSize: 14,
       fontWeight: 500,
       width: "fit-content",
-      height: "fit-content",
     },
   };
 }
@@ -1639,19 +1638,11 @@ export function createDefaultTagGroupProps(): TagGroupElementProps {
     allowsRemoving: false,
     allowsCustomValue: false,
     labelPosition: "top",
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 2,
-      width: "fit-content",
-    },
   };
 }
 
 export function createDefaultTagListProps(): BaseElementProps {
-  return {
-    style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 4 },
-  };
+  return {};
 }
 
 export function createDefaultTagProps(): TagElementProps {
@@ -1845,7 +1836,7 @@ export function createDefaultFormProps(): FormElementProps {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 12,
+      gap: 16,
     },
   };
 }
@@ -1858,9 +1849,9 @@ export function createDefaultMenuProps(): MenuElementProps {
 
 export function createDefaultNumberFieldProps(): NumberFieldElementProps {
   return {
-    // CSS base: display:grid; Group 내부에 border:1px solid var(--outline-variant)
+    // spec preset SSOT 가 display 를 담당한다.
     style: {
-      display: "grid",
+      display: "flex",
     },
   };
 }
@@ -1920,7 +1911,7 @@ export function createDefaultColorPickerProps(): ColorPickerElementProps {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 8,
+      gap: 10,
     },
   };
 }
@@ -1929,7 +1920,7 @@ export function createDefaultColorSwatchProps(): ColorSwatchElementProps {
   return {
     // CSS base: display:inline-block; border:1px solid var(--outline-variant); border-radius:var(--radius-sm)
     style: {
-      display: "inline-block",
+      display: "inline-flex",
       borderWidth: "1px",
     },
   };
@@ -1939,7 +1930,7 @@ export function createDefaultDropZoneProps(): DropZoneElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; border:2px dashed var(--outline-variant)
     style: {
-      display: "flex",
+      display: "inline-flex",
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
@@ -2028,7 +2019,7 @@ export function createDefaultMaskedFrameProps(): BaseElementProps {
     // CSS base: overflow:hidden, 클리핑 마스크 컨테이너
     style: {
       width: "200px",
-      height: "200px",
+      height: "120px",
       overflow: "hidden",
       borderRadius: "8px",
     },
@@ -2054,7 +2045,7 @@ export function createDefaultSkeletonProps(): BaseElementProps {
     style: {
       width: "100%",
       height: "20px",
-      borderRadius: "4px",
+      borderRadius: "6px",
     },
   };
 }
