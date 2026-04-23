@@ -4,7 +4,7 @@
 
 ## Status
 
-Implemented — 2026-04-23 (round 5.5 — P0-P5 완료: `containerVariants` helper + registry 통합 + Panel 소비 + TagGroup/TextArea P5 + legacy side-label helper 제거. P6 orientation 은 follow-up ADR scope)
+Implemented — 2026-04-23 (round 5.5 — ADR-108 scope 완료: `containerVariants` helper + registry 통합 + Panel 소비 + TagGroup/TextArea P5 + legacy side-label helper 제거. P6 orientation 은 follow-up ADR scope, TagGroup `skipCSSGeneration:true` 는 ADR-106-b / ADR-059 Tier 3 예외로 유지)
 
 ## Context
 
@@ -145,7 +145,7 @@ composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-dom
 7. **Preview (CSS/React) 경로 무변경** — CSSGenerator 가 이미 동일 데이터 소비 중. 자동 정합. **단 TagGroup 예외 — 결정 #10 참조**.
 8. **Style Panel (`useLayoutValues`)**: `resolveContainerVariants` 호출 후 `.styles` 에서 layout-relevant 키 추출 → `LayoutSpecPreset` 채움.
 9. **P5 컨테이너 — TagGroup + TextArea (Codex r3 정정)**: TextArea 도 착수 시점에는 containerVariants 미보유 — TagGroup 과 동일 카테고리. 둘 다 P5 에서 신규 containerVariants 추가 완료.
-10. **TagGroup Preview 수동 CSS 동기화 정책 (예외 명시)**: TagGroup 은 `skipCSSGeneration: true` (`TagGroup.spec.ts:72`) — Preview 가 수동 CSS (`packages/shared/src/components/styles/TagGroup.css:1`) 사용. P5 에서 spec 에 containerVariants 를 추가해도 **Preview 는 그 데이터를 직접 읽지 않음** — "3 consumer 동일 source" 주장의 **명시적 예외**. TagGroup 의 Canvas/Panel 은 helper 소비 (2 consumer 정합), Preview 수동 CSS 와 spec containerVariants 는 **수동 mirror 동기화** (CSS 파일 수정 시 spec 도 동시 갱신). skipCSSGeneration 해체는 ADR-059 별도 트랙 (본 ADR scope 외). TextArea 는 `skipCSSGeneration: false` 기본 — generated CSS 자동 정합 (예외 아님).
+10. **TagGroup Preview 수동 CSS 동기화 정책 (예외 명시)**: TagGroup 은 `skipCSSGeneration: true` (`TagGroup.spec.ts:72`) — Preview 가 수동 CSS (`packages/shared/src/components/styles/TagGroup.css:1`) 사용. P5 에서 spec 에 containerVariants 를 추가해도 **Preview 는 그 데이터를 직접 읽지 않음** — "3 consumer 동일 source" 주장의 **명시적 예외**. TagGroup 의 Canvas/Panel 은 helper 소비 (2 consumer 정합), Preview 수동 CSS 와 spec containerVariants 는 **수동 mirror 동기화** (CSS 파일 수정 시 spec 도 동시 갱신). 이 예외는 "곧 해체할 후속 트랙"이 아니라 **ADR-106-b 에서 정당화된 `skipCSSGeneration` 유지 판정**이며, ADR-059 completed breakdown 에서도 **Tier 3 예외**로 확정됐다. TextArea 는 `skipCSSGeneration: false` 기본 — generated CSS 자동 정합 (예외 아님).
 11. **P6 follow-up scope 정정 (Codex r3)**: orientation runtime 분기는 **ToggleButtonGroup** (`packages/specs/src/components/ToggleButtonGroup.spec.ts:25`) 와 Toolbar. ToggleButton 은 `_groupPosition.orientation` (parent injection) 만 읽음 — scope 외.
 
 선택 근거:
@@ -176,7 +176,7 @@ composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-dom
 | R6  | TagGroup / TextArea 의 `containerVariants` 신규 추가 (P5) — TagGroup `skipCSSGeneration: true`, TextArea `false`. 신규 variant 데이터 추가 시 helper 가 정확히 소비                                                        |  LOW   | helper 는 CSS emit 여부와 무관 (data-only consumption). P5 단위 테스트로 확증. TextArea 는 generated CSS 자동 정합, TagGroup 은 R9 별도 처리.                                                                                                                                             |
 | R7  | 16 spec 의 기존 `containerVariants` 가 정확한지 audit 필요 — CSSGenerator 만 검증해온 데이터가 Canvas 에서도 동일 시각 결과 산출하는지 확신 부재                                                                           |  MED   | P1-P2 진입 전 16 spec audit: 각 variant 의 styles + nested 가 ADR-108 r4 의 머지 모델로 시각 정합 가능한지 확인. 불일치 발견 시 spec 수정 (CSS↔Canvas 양쪽 정합되도록).                                                                                                                   |
 | R8  | orientation runtime variant (**ToggleButtonGroup** / Toolbar) 는 P6 follow-up ADR 분리 — 본 ADR 의 helper 가 orientation 도 소비 가능한 일반화 설계여야 follow-up scope 자연 흡수                                          |  LOW   | helper 는 `containerVariants` 전체를 일반 처리 (특정 dataAttr 키 하드코드 안 함). orientation/quiet 등 모든 키 동일 메커니즘. ToggleButton 은 `_groupPosition.orientation` parent injection 만 사용 — scope 외.                                                                           |
-| R9  | **TagGroup Preview 수동 CSS 동기화 부담** (Codex r3) — TagGroup `skipCSSGeneration:true` → Preview 가 spec containerVariants 데이터 미사용. P5 추가된 spec data 와 기존 수동 `TagGroup.css` 가 drift 가능                  |  MED   | P5 진입 시 `TagGroup.spec.ts containerVariants` 와 `packages/shared/src/components/styles/TagGroup.css:9-12` 양쪽 mirror 동기화 정책 문서화 (CSS 파일 수정 시 spec 동시 갱신 + review 체크리스트). skipCSSGeneration 해체는 ADR-059 별도 트랙. P5 단위 테스트로 두 정의 의도적 정합 검증. |
+| R9  | **TagGroup Preview 수동 CSS 동기화 부담** (Codex r3) — TagGroup `skipCSSGeneration:true` → Preview 가 spec containerVariants 데이터 미사용. P5 추가된 spec data 와 기존 수동 `TagGroup.css` 가 drift 가능                  |  MED   | P5 진입 시 `TagGroup.spec.ts containerVariants` 와 `packages/shared/src/components/styles/TagGroup.css:9-12` 양쪽 mirror 동기화 정책 문서화 (CSS 파일 수정 시 spec 동시 갱신 + review 체크리스트). 이는 예정된 해체 트랙이 아니라 ADR-106-b / ADR-059 Tier 3 예외 유지 비용이다. P5 단위 테스트로 두 정의 의도적 정합 검증. |
 
 ## Gates
 
@@ -194,7 +194,7 @@ composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-dom
 
 ### Positive
 
-- **D3 Spec SSOT 진정 달성 (TagGroup 1 예외 명시)** — 기존 `containerVariants` 데이터를 3 consumer (CSS/Canvas/Panel) 동일 helper 로 소비. 함수 중복 0, 데이터 중복 0. **단 TagGroup 은 `skipCSSGeneration:true` 로 인해 Preview 가 수동 CSS 사용 — 2 consumer 정합 + 수동 mirror 동기화** (Decision #10, R9). skipCSSGeneration 해체는 ADR-059 별도 트랙에서 완결 후 본 ADR 의 100% 달성.
+- **D3 Spec SSOT 진정 달성 (TagGroup 1 예외 명시)** — 기존 `containerVariants` 데이터를 3 consumer (CSS/Canvas/Panel) 동일 helper 로 소비. 함수 중복 0, 데이터 중복 0. **단 TagGroup 은 `skipCSSGeneration:true` 로 인해 Preview 가 수동 CSS 사용 — 2 consumer 정합 + 수동 mirror 동기화** (Decision #10, R9). 이는 ADR-108 미완료가 아니라 ADR-106-b / ADR-059 Tier 3 에서 허용된 예외를 포함한 완료 상태다.
 - **Spec "pure data" 원칙 유지** — 신규 함수 필드 도입 0. ADR-094/036 기조 유지.
 - **CSS↔Canvas↔Panel 시각 정합 자동 보장 (TagGroup 외 15)** — 동일 source → 결과 drift 불가능.
 - **자식 styling 자연 해결** — `nested[]` selector → Canvas element tree 매칭. r2 의 `derivedContainerStyles` scope gap (Codex r1 Issue 1) 해결.
@@ -208,7 +208,7 @@ composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-dom
 - **Selector mini-matcher 신설 부담** — `> .react-aria-X` 같은 단순 selector 만 지원하더라도 RAC class naming convention 의존성 + 16 spec audit 필요. R1 위험.
 - **Builder 13 차이 항목 분류 정책 결정 부담** — Phase 0 에서 8 진짜 alias / 3 누락 spec 등록 / 2 stale 후보 audit 결정 (Codex r4 정정). ComboBoxWrapper 등 builder UI 전용 element 와 정본 spec 의 매핑 정책 문서화 필요.
 - **16 spec 의 기존 `containerVariants` audit** — CSSGenerator 만 검증해온 데이터가 Canvas 에서도 정합한지 P1-P2 사이 확증 필요. 불일치 발견 시 spec 수정.
-- **TagGroup Preview 수동 CSS 동기화 영구 부담 (R9)** — `skipCSSGeneration:true` 유지 동안 spec containerVariants ↔ `TagGroup.css` mirror 수동 관리. ADR-059 skipCSSGeneration 해체 후 자동 정합 회복.
+- **TagGroup Preview 수동 CSS 동기화 영구 부담 (R9)** — `skipCSSGeneration:true` 유지 동안 spec containerVariants ↔ `TagGroup.css` mirror 수동 관리. 현재 문서 체계상 이는 예정된 근시일 해체 작업이 아니라 ADR-106-b / ADR-059 Tier 3 예외 유지 비용이다.
 - **2 BASE_TAG_SPEC_MAP 통합 시 회귀 위험** — 99 vs 108 entries 차이 (8 alias + 3 누락 spec + 2 stale 후보 = 13) 처리 시 import 경로 혼선 가능. G0 로 차단.
 - **G4/G5 시퀀싱 분리 (Codex r4)** — 기존 G4 의 "함수 정의 grep == 0" 조건이 P5 이전에 만족 불가하여 G4 를 12 컨테이너 분기 제거로 완화 + G5b 에 함수 정의 완전 제거 흡수. P5 완료 후 legacy helper grep 0 으로 종결.
 - **P5 scope 확장** — TextArea 가 P3 sweep 대상에서 P5 신규 variant 추가 대상으로 이동 (Codex r3 정정). P5 에서 TextArea spec 에 `containerVariants["label-position"].side` 신규 정의 완료.

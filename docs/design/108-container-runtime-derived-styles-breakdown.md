@@ -524,13 +524,20 @@ composition: {
 
 **문제**: TagGroup 은 `skipCSSGeneration: true` (`TagGroup.spec.ts:72`) — CSSGenerator emit 안 함. Preview 는 수동 `packages/shared/src/components/styles/TagGroup.css:9-12` 사용. P5 추가된 spec containerVariants 와 수동 CSS 가 **drift 가능**.
 
+**상태 정리**:
+
+- 이 mirror 는 "ADR-059 별도 해체 트랙이 곧 이어진다"는 의미가 아님
+- TagGroup `skipCSSGeneration:true` 는 [ADR-106-b](../adr/completed/106-b-taggroup-css-skipcss-justification.md) 에서 **G2 정당화** 완료
+- [ADR-059 completed breakdown](completed/059-composite-field-skip-css-dismantle-breakdown.md) 에서도 **Tier 3 예외**로 확정
+- 따라서 ADR-108 완료 조건은 "TagGroup mirror 예외를 명시한 채 consumer 정합을 닫는 것"이며, `skipCSSGeneration` 해체 자체는 ADR-108 성공 조건이 아님
+
 **정책**:
 
 - spec containerVariants 와 수동 CSS 양쪽에 동일 규칙 mirror 정의
 - 수정 시 양쪽 동시 갱신 (review 체크리스트)
 - spec 측에 docstring 명시: `// MIRROR: TagGroup.css:9-12 — skipCSSGeneration:true 동안 수동 동기화`
-- CSS 측에 docstring 명시: `/* MIRROR: TagGroup.spec.ts containerVariants — ADR-059 skipCSSGeneration 해체 후 자동 정합 */`
-- ADR-059 별도 트랙 진행 시 본 mirror 제거 (skipCSSGeneration:false 전환)
+- CSS 측에 docstring 명시: `/* MIRROR: TagGroup.spec.ts containerVariants — skipCSSGeneration:true 동안 수동 동기화 */`
+- 향후 재검토는 새 ADR 로만 수행한다. 현재 문서 집합에서는 예외 유지가 정본 상태다.
 - Canvas/Panel 은 helper 소비 → 정합 보장 (수동 CSS 무관)
 
 ### P5-4. TextArea generated CSS 자동 정합
