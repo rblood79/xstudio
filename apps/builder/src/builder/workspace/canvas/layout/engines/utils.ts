@@ -32,6 +32,8 @@ import {
   STATUSLIGHT_DIMENSIONS,
   resolveListBoxItemMetric,
   isListBoxSectionEntry,
+  resolveGridListItemMetric,
+  isGridListSectionEntry,
   TAG_CHIP_SIZES,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
@@ -68,7 +70,6 @@ import {
 import type { CSSValueContext, CSSVariableScope } from "./cssValueParser";
 import {
   resolveStyle,
-  ROOT_COMPUTED_STYLE,
   getRootComputedStyle,
 } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
@@ -1570,7 +1571,102 @@ export function calculateContentHeight(
     return paddingY * 2 + innerHeight + borderWidth * 2;
   }
 
-  // 1.55c. TagList (ADR-097 Phase 4B): items SSOT + row-wrap 기반 intrinsic height.
+  // 1.55c. GridList (ADR-099 Phase 5): items SSOT 기반 intrinsic border-box height.
+  // 신규 GridList 는 자식 GridListItem element 없이 props.items 로 카드 목록을 렌더한다.
+  // 따라서 layout 도 spec.render.shapes 와 동일하게 entries/items + section/header +
+  // layout(stack|grid) 를 기준으로 높이를 계산해야 item 수 변화가 즉시 반영된다.
+  if (tag1 === "gridlist") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const rawEntries = props?.items;
+    const entries = Array.isArray(rawEntries) && rawEntries.length > 0
+      ? rawEntries
+      : [
+          { id: "i1", label: "Item 1", description: "Description" },
+          { id: "i2", label: "Item 2", description: "Description" },
+          { id: "i3", label: "Item 3", description: "Description" },
+          { id: "i4", label: "Item 4", description: "Description" },
+        ];
+
+    const layout = String(props?.layout ?? "stack");
+    const numCols =
+      layout === "grid"
+        ? Math.max(1, Number(props?.columns ?? 2) || 2)
+        : 1;
+    const gap = parseNumericValue(style?.gap) ?? 12;
+    const borderWidth =
+      parseNumericValue(style?.borderWidth ?? style?.border) ?? 0;
+    const paddingY =
+      parseNumericValue(style?.paddingTop ?? style?.padding) ?? 0;
+    const fontSize = parseNumericValue(style?.fontSize) ?? 14;
+    const descFontSize = fontSize - 2;
+    const HEADER_HEIGHT = Math.round(fontSize * 1.75);
+    const SECTION_TOP_PAD = Math.round(fontSize * 0.5);
+    const { cardPaddingY, descGap } = resolveGridListItemMetric(fontSize);
+
+    const cardHeight = (item: { description?: string }) =>
+      cardPaddingY * 2 +
+      fontSize +
+      (item.description ? descFontSize + descGap : 0);
+
+    const measureGridRows = (
+      items: Array<{ description?: string }>,
+    ): number => {
+      if (items.length === 0) return 0;
+      let total = 0;
+      for (let i = 0; i < items.length; i += numCols) {
+        const rowItems = items.slice(i, i + numCols);
+        const rowHeight = rowItems.reduce(
+          (max, item) => Math.max(max, cardHeight(item)),
+          0,
+        );
+        total += rowHeight;
+        if (i + numCols < items.length) total += gap;
+      }
+      return total;
+    };
+
+    let innerHeight = 0;
+    let hasRenderedBlock = false;
+    let pendingTopLevelItems: Array<{ description?: string }> = [];
+
+    const flushPendingTopLevelItems = (): void => {
+      if (pendingTopLevelItems.length === 0) return;
+      if (hasRenderedBlock) innerHeight += gap;
+      innerHeight +=
+        layout === "grid"
+          ? measureGridRows(pendingTopLevelItems)
+          : pendingTopLevelItems.reduce((sum, item, index) => {
+              const next = sum + cardHeight(item);
+              return index < pendingTopLevelItems.length - 1 ? next + gap : next;
+            }, 0);
+      pendingTopLevelItems = [];
+      hasRenderedBlock = true;
+    };
+
+    for (const entry of entries) {
+      if (isGridListSectionEntry(entry)) {
+        flushPendingTopLevelItems();
+        if (hasRenderedBlock) innerHeight += SECTION_TOP_PAD;
+        innerHeight += HEADER_HEIGHT;
+        if (entry.items.length > 0) innerHeight += gap;
+        innerHeight +=
+          layout === "grid"
+            ? measureGridRows(entry.items)
+            : entry.items.reduce((sum, item, index) => {
+                const next = sum + cardHeight(item);
+                return index < entry.items.length - 1 ? next + gap : next;
+              }, 0);
+        hasRenderedBlock = true;
+      } else {
+        pendingTopLevelItems.push(entry);
+      }
+    }
+    flushPendingTopLevelItems();
+
+    return paddingY * 2 + innerHeight + borderWidth * 2;
+  }
+
+  // 1.55d. TagList (ADR-097 Phase 4B): items SSOT + row-wrap 기반 intrinsic height.
   // Migration 후 Tag element 가 orphan 처리된 상태 (childElements=0) 에서 TagList
   // 자신은 자식 없는 컨테이너로 취급되지만, TagGroup.propagation 으로 items 를 수신한
   // TagList spec shapes 가 wrap 시뮬레이션으로 chips 를 self-render 한다.

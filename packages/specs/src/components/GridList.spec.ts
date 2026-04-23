@@ -162,15 +162,25 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
         fields: [
           {
             key: "items",
-            type: "children-manager",
+            type: "items-manager",
             label: "Items",
-            childTag: "GridListItem",
-            defaultChildProps: {
+            itemsKey: "items",
+            itemTypeName: "GridListItem",
+            defaultItem: {
+              id: "",
               label: "Item",
-              value: "",
               textValue: "Item",
+              isDisabled: false,
             },
-            labelProp: "label",
+            itemSchema: [
+              { key: "label", type: "string", label: "Label" },
+              { key: "textValue", type: "string", label: "Text Value" },
+              { key: "description", type: "string", label: "Description" },
+              { key: "isDisabled", type: "boolean", label: "Disabled" },
+            ],
+            labelKey: "label",
+            allowNested: false,
+            allowSections: true,
           },
         ],
       },

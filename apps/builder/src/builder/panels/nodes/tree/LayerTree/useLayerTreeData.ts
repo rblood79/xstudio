@@ -9,10 +9,8 @@ import {
   type ButtonItem,
   type CheckboxItem,
   type RadioItem,
-  type ListItem,
   type TreeItem as TreeItemType,
 } from "../helpers";
-import type { StoredListBoxItem, StoredTagItem } from "@composition/specs";
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
@@ -208,51 +206,6 @@ function getVirtualChildren(
     const children = childrenAs<RadioItem>(props.children);
     return children.map((child, index) =>
       makeNode("radio", index, child.label || `Radio ${index + 1}`, child),
-    );
-  }
-
-  if (item.tag === "ListBox") {
-    // ADR-076 P6: items SSOT 기반 virtual children.
-    // 정적 모드 부모는 props.items, 템플릿 모드 부모는 items 없음 →
-    // 실제 ListBoxItem element 자식이 기본 childrenMap 경로로 표시됨.
-    const items =
-      (props.items as StoredListBoxItem[] | undefined) ??
-      ([] as StoredListBoxItem[]);
-    return items.map((it, index) =>
-      makeNode("listbox", index, it.label || `Item ${index + 1}`, it),
-    );
-  }
-
-  if (item.tag === "TagGroup") {
-    // ADR-097 P3: TagGroup items SSOT virtual children.
-    // Tag Field 자식 불가 (Tag.children: string 만) → 항상 정적 모드.
-    // migration orchestrator 가 기존 TagGroup > TagList > Tag 3단을 items[] 로
-    // 흡수 (packages/shared/src/utils/migrateCollectionItems.ts).
-    const items =
-      (props.items as StoredTagItem[] | undefined) ?? ([] as StoredTagItem[]);
-    return items.map((it, index) =>
-      makeNode("taggroup", index, it.label || `Tag ${index + 1}`, it),
-    );
-  }
-
-  if (item.tag === "GridList") {
-    const children = childrenAs<ListItem>(props.children);
-    return children.map((child, index) =>
-      makeNode("gridlist", index, child.label || `Item ${index + 1}`, child),
-    );
-  }
-
-  if (item.tag === "Select") {
-    const children = childrenAs<ListItem>(props.children);
-    return children.map((child, index) =>
-      makeNode("select", index, child.label || `Option ${index + 1}`, child),
-    );
-  }
-
-  if (item.tag === "ComboBox") {
-    const children = childrenAs<ListItem>(props.children);
-    return children.map((child, index) =>
-      makeNode("combobox", index, child.label || `Option ${index + 1}`, child),
     );
   }
 

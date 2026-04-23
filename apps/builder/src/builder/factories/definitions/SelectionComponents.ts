@@ -5,6 +5,7 @@ import type {
   StoredSelectItem,
   StoredComboBoxItem,
   StoredListBoxItem,
+  StoredGridListItem,
 } from "@composition/specs";
 
 /**
@@ -272,7 +273,9 @@ export function createListBoxDefinition(
 
 /**
  * GridList 컴포넌트 정의
- * React Aria Composition 패턴: GridListItem 내부에 Text + Description 자식 Element 조합
+ *
+ * ADR-099 Phase 5: 신규 GridList 는 `props.items` canonical 경로를 기본 사용한다.
+ * legacy GridListItem child template 경로는 기존 프로젝트 호환용으로만 유지된다.
  */
 export function createGridListDefinition(
   context: ComponentCreationContext,
@@ -286,6 +289,27 @@ export function createGridListDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
+  const items: StoredGridListItem[] = [
+    {
+      id: crypto.randomUUID(),
+      label: "Desert Sunset",
+      textValue: "Desert Sunset",
+      description: "PNG • 2/3/2024",
+    },
+    {
+      id: crypto.randomUUID(),
+      label: "Hiking Trail",
+      textValue: "Hiking Trail",
+      description: "JPEG • 1/10/2022",
+    },
+    {
+      id: crypto.randomUUID(),
+      label: "Mountain Sunrise",
+      textValue: "Mountain Sunrise",
+      description: "PNG • 3/15/2015",
+    },
+  ];
+
   return {
     tag: "GridList",
     parent: {
@@ -294,6 +318,7 @@ export function createGridListDefinition(
         layout: "stack",
         columns: 2,
         selectionMode: "none",
+        items,
         style: {
           width: "100%",
         },
@@ -302,101 +327,7 @@ export function createGridListDefinition(
       parent_id: parentId,
       order_num: orderNum,
     },
-    children: [
-      {
-        tag: "GridListItem",
-        props: {
-          textValue: "Desert Sunset",
-          value: "desert-sunset",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 1,
-        children: [
-          {
-            tag: "Text",
-            props: {
-              children: "Desert Sunset",
-              style: { fontSize: 14, fontWeight: 600 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
-          },
-          {
-            tag: "Description",
-            props: {
-              children: "PNG • 2/3/2024",
-              slot: "description",
-              style: { fontSize: 12 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-        ],
-      },
-      {
-        tag: "GridListItem",
-        props: {
-          textValue: "Hiking Trail",
-          value: "hiking-trail",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-        children: [
-          {
-            tag: "Text",
-            props: {
-              children: "Hiking Trail",
-              style: { fontSize: 14, fontWeight: 600 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
-          },
-          {
-            tag: "Description",
-            props: {
-              children: "JPEG • 1/10/2022",
-              slot: "description",
-              style: { fontSize: 12 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-        ],
-      },
-      {
-        tag: "GridListItem",
-        props: {
-          textValue: "Mountain Sunrise",
-          value: "mountain-sunrise",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
-        children: [
-          {
-            tag: "Text",
-            props: {
-              children: "Mountain Sunrise",
-              style: { fontSize: 14, fontWeight: 600 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
-          },
-          {
-            tag: "Description",
-            props: {
-              children: "PNG • 3/15/2015",
-              slot: "description",
-              style: { fontSize: 12 },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-        ],
-      },
-    ],
+    children: [],
   };
 }
 

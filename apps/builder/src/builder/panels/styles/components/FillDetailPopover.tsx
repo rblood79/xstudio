@@ -14,7 +14,7 @@
  * @updated 2026-02-10 Phase 2 - 3탭 구조 재설계
  */
 
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { FillItem, ColorFillItem, ImageFillItem, MeshGradientFillItem, BlendMode } from '../../../../types/builder/fill.types';
 import { FillType } from '../../../../types/builder/fill.types';
 import { normalizeToHex8 } from '../utils/colorUtils';
@@ -84,6 +84,11 @@ export const FillDetailPopover = memo(function FillDetailPopover({
   const rawColorValue = isColor ? (fill as ColorFillItem).color : '#000000FF';
   const isVariableBound = rawColorValue.startsWith('$--');
   const colorValue = isVariableBound ? '#000000FF' : normalizeToHex8(rawColorValue);
+  const [committedColorValue, setCommittedColorValue] = useState(colorValue);
+
+  useEffect(() => {
+    setCommittedColorValue(colorValue);
+  }, [fill.id, fill.type]);
 
   // 대분류 탭 변경 (Color ↔ Gradient ↔ Image)
   const handleCategoryChange = useCallback(
@@ -106,6 +111,14 @@ export const FillDetailPopover = memo(function FillDetailPopover({
     [onTypeChange],
   );
 
+  const handleColorChangeEndCommitted = useCallback(
+    (color: string) => {
+      setCommittedColorValue(color);
+      onColorChangeEnd(color);
+    },
+    [onColorChangeEnd],
+  );
+
   // BlendMode 변경
   const handleBlendModeChange = useCallback(
     (mode: BlendMode) => {
@@ -121,12 +134,12 @@ export const FillDetailPopover = memo(function FillDetailPopover({
         <>
           <VariableBindingButton
             value={rawColorValue}
-            onChange={onColorChangeEnd}
+            onChange={handleColorChangeEndCommitted}
           />
           <ColorPickerPanel
-            value={colorValue}
+            value={committedColorValue}
             onChange={onColorChange}
-            onChangeEnd={onColorChangeEnd}
+            onChangeEnd={handleColorChangeEndCommitted}
           />
         </>
       )}

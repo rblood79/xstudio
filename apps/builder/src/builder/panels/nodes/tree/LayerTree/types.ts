@@ -5,12 +5,7 @@ export type VirtualChildType =
   | "toggle"
   | "checkbox"
   | "radio"
-  | "listbox"
-  | "gridlist"
-  | "select"
-  | "combobox"
-  | "tree"
-  | "taggroup";
+  | "tree";
 
 export interface LayerTreeNode {
   id: string;
