@@ -19,7 +19,8 @@
   - 비-패널 외부 입력 경로 audit + canonicalization 완료
 - 2026-04-24 기준:
   - P1~P5 구현 범위 완료
-  - 본 ADR 잔여 open item 은 "임의 비정형 background payload 정책"과 component-specific `backgroundColor` 예외 구분뿐이며, 이는 후속 정책/ADR 범위로 분리
+  - 후속 정리 완료: Fill commit/preview 경로의 derived background persistence 제거
+  - "임의 비정형 background payload 정책"과 component-specific `backgroundColor` 예외 구분은 ADR-905에서 완료
 
 ## Phase Plan
 
@@ -141,31 +142,27 @@
   - clipboard/import ingress 정리 3차 완료: element paste / Design Kit import 는 `fills` 존재 시 파생 `background*`를 제거하고, legacy `backgroundColor`, `linear-gradient`, `radial-gradient`, `conic-gradient`, `url(...) + backgroundSize`, mesh adapter SVG data URL 을 가능한 범위에서 `fills`로 승격
   - add-element canonicalization 공통화 완료: `addElement`, `addComplexElement`, `mergeElements` 경로가 같은 external ingress normalizer를 사용
   - preview-generated batch canonicalization 완료: `useIframeMessenger.flushPreviewGeneratedElements()`도 같은 external ingress normalizer를 거쳐 local merge와 DB persistence를 동일 canonical payload로 정렬
-  - 본 ADR 범위 완료. 잔여는 임의 비정형 data URL/background payload 정책 확정
+  - Fill commit/preview 경로 derived background persistence 제거 완료: `inspectorActions.updateSelectedFills/updateSelectedFillsPreview`가 `fills`만 저장하고 `style.background*`는 strip 상태로 유지
+  - 본 ADR 범위 완료. 비정형 payload 정책과 Row/Cell 예외는 ADR-905에서 완료
 
 #### Legacy Reduction Baseline
 
 - 유지
   - `backgroundColor` read-through: legacy 문서 로드 seed
-  - `backgroundColor/backgroundImage/backgroundSize` write-through: Preview/Publish/legacy consumer용 파생 필드
 - 축소 완료
   - Fill V2 on 상태의 Style Panel direct edit
   - Fill V2 on 상태의 Modified Styles editable surface
+  - Fill commit/preview 경로 derived `backgroundColor/backgroundImage/backgroundSize` persistence
   - 후속 정책 대상
   - adapter가 생성하지 않은 임의 비정형 `backgroundImage`/data URL payload 의 허용/차단 정책 확정
   - `RowEditor` / `CellEditor` 같은 component-specific `backgroundColor` props 를 generic fill 축과 분리할지 여부 결정
-  - 저장 시 파생 필드 persistence 완전 제거 여부는 후속 ADR
 
 #### Remaining Leak Inventory
 
 - generic fill 축에 남은 누수
-  - residual non-canonical payload policy
-    - 현재 ingress는 `backgroundColor`, `linear-gradient`, `radial-gradient`, `conic-gradient`, `url(...) + backgroundSize`, mesh adapter SVG data URL 까지는 `fills`로 canonicalize
-    - 그 외 상위 producer가 임의 비정형 `backgroundImage`/data URL payload 를 만들면 parser 범위 밖에서는 그대로 남을 수 있음
+  - 없음. generic non-canonical payload policy는 ADR-905에서 residual pass-through로 고정
 - 별도 도메인으로 분리할 후보
-  - `apps/builder/src/builder/panels/properties/editors/RowEditor.tsx`
-  - `apps/builder/src/builder/panels/properties/editors/CellEditor.tsx`
-    - table row/cell 전용 prop `backgroundColor` 편집기. generic `style.backgroundColor`와 동일 취급 금지
+  - 없음. `RowEditor` / `CellEditor` table-domain `backgroundColor`는 ADR-905에서 예외 분리 완료
 - direct authoring 아님
   - factory default `transparent` 값
   - Preview/Publish adapter output

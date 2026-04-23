@@ -23,7 +23,6 @@ import type {
 } from "../inspector/types";
 import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
-import { fillsToCssBackground } from "../panels/styles/utils/fillMigration";
 import { sanitizeFillDerivedStylePatch } from "../panels/styles/utils/fillDerivedStyleProps";
 import { saveService } from "../../services/save";
 import { isFillV2Enabled } from "../../utils/featureFlags";
@@ -145,30 +144,6 @@ export const createInspectorActionsSlice: StateCreator<
   [],
   InspectorActionsState
 > = (set, get) => {
-  const syncFillCssBackground = (
-    baseStyle: Record<string, string>,
-    fills: FillItem[],
-  ): Record<string, string> => {
-    const cssBg = fillsToCssBackground(fills);
-    const nextStyle = { ...baseStyle };
-
-    delete nextStyle.backgroundColor;
-    delete nextStyle.backgroundImage;
-    delete nextStyle.backgroundSize;
-
-    if (cssBg.backgroundColor) {
-      nextStyle.backgroundColor = cssBg.backgroundColor;
-    }
-    if (cssBg.backgroundImage) {
-      nextStyle.backgroundImage = cssBg.backgroundImage;
-    }
-    if (cssBg.backgroundSize) {
-      nextStyle.backgroundSize = cssBg.backgroundSize;
-    }
-
-    return nextStyle;
-  };
-
   /**
    * 프리뷰 전 원본 요소 스냅샷
    * - 타이핑 중 프리뷰가 elementsMap을 수정하므로,
@@ -688,9 +663,9 @@ export const createInspectorActionsSlice: StateCreator<
           ? savedPrePreview
           : element;
 
-      const currentStyle = syncFillCssBackground(
+      const currentStyle = sanitizeFillDerivedStylePatch(
         ((baseElement.props?.style as Record<string, string>) || {}),
-        fills,
+        true,
       );
 
       updateAndSave(
@@ -715,9 +690,9 @@ export const createInspectorActionsSlice: StateCreator<
         prePreviewElement = structuredClone(element);
       }
 
-      const currentStyle = syncFillCssBackground(
+      const currentStyle = sanitizeFillDerivedStylePatch(
         ((element.props?.style as Record<string, string>) || {}),
-        fills,
+        true,
       );
 
       const newProps = { ...element.props, style: currentStyle };

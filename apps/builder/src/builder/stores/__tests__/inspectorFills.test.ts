@@ -16,6 +16,7 @@ vi.mock("../../../utils/featureFlags", () => ({
 }));
 
 import { FillType } from "../../../types/builder/fill.types";
+import { saveService } from "../../../services/save";
 import { useStore } from "../index";
 
 describe("inspectorActions fill write-through", () => {
@@ -53,7 +54,7 @@ describe("inspectorActions fill write-through", () => {
     });
   });
 
-  it("commit 경로는 fills 와 CSS background 파생 필드를 함께 동기화한다", () => {
+  it("commit 경로는 fills 만 저장하고 derived background style 은 제거한다", async () => {
     useStore.getState().updateSelectedFills([
       {
         id: "lg-1",
@@ -76,9 +77,17 @@ describe("inspectorActions fill write-through", () => {
 
     expect(element?.fills).toHaveLength(1);
     expect(style?.backgroundColor).toBeUndefined();
-    expect(style?.backgroundImage).toBe(
-      "linear-gradient(90deg, #FF0000 0%, #00FF00 100%)",
-    );
+    expect(style?.backgroundImage).toBeUndefined();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const mockedSave = vi.mocked(saveService.savePropertyChange);
+    expect(mockedSave).toHaveBeenCalled();
+    const lastCall = mockedSave.mock.calls.at(-1);
+    expect(lastCall?.[0]?.data).toMatchObject({
+      fills: expect.any(Array),
+      props: { style: {} },
+    });
   });
 
   it("lightweight preview 경로는 CSS background 는 건드리지 않고 fills 만 바꾼다", () => {
@@ -98,6 +107,32 @@ describe("inspectorActions fill write-through", () => {
 
     expect(element?.fills).toHaveLength(1);
     expect(style?.backgroundColor).toBe("#ffffff");
+  });
+
+  it("preview 경로도 derived background style 을 다시 쓰지 않고 fills 만 반영한다", () => {
+    useStore.getState().updateSelectedFillsPreview([
+      {
+        id: "preview-fill-1",
+        type: FillType.LinearGradient,
+        enabled: true,
+        opacity: 1,
+        blendMode: "normal",
+        rotation: 90,
+        stops: [
+          { color: "#FF0000FF", position: 0 },
+          { color: "#00FF00FF", position: 1 },
+        ],
+      },
+    ]);
+
+    const element = useStore.getState().elementsMap.get("fill-target");
+    const style = element?.props?.style as
+      | { backgroundColor?: string; backgroundImage?: string }
+      | undefined;
+
+    expect(element?.fills).toHaveLength(1);
+    expect(style?.backgroundColor).toBeUndefined();
+    expect(style?.backgroundImage).toBeUndefined();
   });
 
   it("generic property update 경로는 Fill V2 에서 derived background style patch 를 제거한다", () => {
