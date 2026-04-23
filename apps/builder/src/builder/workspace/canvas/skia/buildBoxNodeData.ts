@@ -21,7 +21,6 @@ import {
   parseZIndex,
   createsStackingContext,
 } from "../layout/engines/cssStackingContext";
-import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import {
   fillsToSkiaFillColor,
   fillsToSkiaFillStyle,
@@ -96,14 +95,14 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
   let fillColor: Float32Array;
 
   const fillV2Color =
-    isFillV2Enabled() && fills && fills.length > 0
+    fills && fills.length > 0
       ? fillsToSkiaFillColor(
           fills as Parameters<typeof fillsToSkiaFillColor>[0],
         )
       : null;
 
   const fillV2Style =
-    isFillV2Enabled() && fills && fills.length > 0
+    fills && fills.length > 0
       ? fillsToSkiaFillStyle(
           fills as Parameters<typeof fillsToSkiaFillStyle>[0],
           w,

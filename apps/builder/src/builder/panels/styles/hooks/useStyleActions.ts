@@ -12,7 +12,6 @@
 import { useCallback } from 'react';
 import { useStore } from '../../../stores';
 import { useCopyPaste } from '@/builder/hooks';
-import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import {
   isFillDerivedStyleProp,
   sanitizeFillDerivedStylePatch,
@@ -32,7 +31,7 @@ export function useStyleActions() {
       useStore
         .getState()
         .updateSelectedStyles(
-          sanitizeFillDerivedStylePatch(stylesObj, isFillV2Enabled()),
+          sanitizeFillDerivedStylePatch(stylesObj, true),
         );
     },
     name: 'styles',
@@ -43,7 +42,7 @@ export function useStyleActions() {
    */
   const updateStyle = useCallback(
     (property: string, value: string) => {
-      if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+      if (isFillDerivedStyleProp(property)) {
         return;
       }
       useStore.getState().updateSelectedStyle(property, value);
@@ -59,7 +58,7 @@ export function useStyleActions() {
       useStore
         .getState()
         .updateSelectedStyles(
-          sanitizeFillDerivedStylePatch(styles, isFillV2Enabled()),
+          sanitizeFillDerivedStylePatch(styles, true),
         );
     },
     []
@@ -216,7 +215,7 @@ export function useStyleActions() {
       useStore
         .getState()
         .updateSelectedStyles(
-          sanitizeFillDerivedStylePatch(resetObj, isFillV2Enabled()),
+          sanitizeFillDerivedStylePatch(resetObj, true),
         );
     },
     []

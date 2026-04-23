@@ -25,7 +25,6 @@ import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
 import { sanitizeFillDerivedStylePatch } from "../panels/styles/utils/fillDerivedStyleProps";
 import { saveService } from "../../services/save";
-import { isFillV2Enabled } from "../../utils/featureFlags";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import type { BatchPropsUpdate } from "./utils/elementUpdate";
@@ -61,10 +60,6 @@ function distributeShorthand(
 function sanitizeInspectorProps(
   props: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (!isFillV2Enabled()) {
-    return props;
-  }
-
   const nextProps = { ...props };
   const rawStyle = nextProps.style;
   if (rawStyle && typeof rawStyle === "object" && !Array.isArray(rawStyle)) {

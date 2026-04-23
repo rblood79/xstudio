@@ -70,7 +70,7 @@
   - consumer contract 문서
   - Fill vs Border 리뷰 룰
 - 현재 상태
-  - Builder Skia는 `isFillV2Enabled() && fills.length > 0`일 때만 `fillsToSkiaFillColor()` / `fillsToSkiaFillStyle()`을 직접 사용하고, 아니면 기존 `backgroundColor/backgroundImage` fallback 유지
+  - Builder Skia는 `fills.length > 0`일 때 `fillsToSkiaFillColor()` / `fillsToSkiaFillStyle()`을 직접 사용하고, 아니면 기존 `backgroundColor/backgroundImage` fallback 유지
   - Preview/Publish는 공용 `adaptElementFillStyle()`로 `fills -> CSS background*` 파생만 소비하고 `fills` shape 자체는 직접 해석하지 않음
   - Inspector Appearance / Fill swatch도 같은 adapter/presentation helper를 사용하도록 정렬 완료
   - Fill vs Border 경계 규칙은 문서화 완료, 정적 검사/리뷰 룰 자동화는 미완료
@@ -79,7 +79,6 @@
 
 - Builder Skia
   - direct source: top-level `fills`
-  - gate: `VITE_FEATURE_FILL_V2=true`
   - fallback: `style.backgroundColor`, `style.backgroundImage`
 - Preview DOM
   - direct source: `props.style`
@@ -97,33 +96,31 @@
 ### Phase 4 — Feature Flag 롤아웃
 
 - 범위
-  - `VITE_FEATURE_FILL_V2` 기반 환경별 점진 배포
+  - Fill V2 전환 완료 후 legacy 분기 정리와 retirement 검증
   - 오류율/회귀율 모니터링 대시보드 연결
 - 산출
   - 배포 가이드
   - 롤백 플레이북
 - 현재 상태
-  - 실코드 기준 `VITE_FEATURE_FILL_V2` 직접 consumer는 Builder AppearanceSection UI 분기와 Skia fill direct-read 뿐임
-  - Preview/Publish adapter는 플래그 비의존 경로로 동작하므로 rollout 중에도 CSS 파생 style parity를 유지
-  - 환경별/프로젝트별 rollout 인프라는 아직 없음. 현재는 build-time env flag only
+  - rollout 단계는 종료됐다.
+  - Builder AppearanceSection 과 Skia fill direct-read 는 현재 플래그 없이 Fill 경로를 사용한다.
+  - Preview/Publish adapter는 계속 비플래그 경로로 동작한다.
 
 #### Rollout Guide
 
-1. `VITE_FEATURE_FILL_V2=false`
-   - Appearance 패널은 legacy `PropertyColor(backgroundColor)` UI 사용
-   - Skia는 `fills`를 직접 읽지 않고 기존 `backgroundColor/backgroundImage` fallback 사용
-   - Preview/Publish는 여전히 adapter로 파생된 CSS style을 소비하므로 문서 render parity는 유지
-2. `VITE_FEATURE_FILL_V2=true`
-   - Appearance 패널은 `FillBackgroundInline` 사용
-   - Skia는 `fills` direct-read 우선, CSS fallback은 보조 경로
-   - Preview/Publish는 동일하게 adapter 기반 CSS style 소비
+1. rollout 단계
+   - Appearance 패널은 `FillBackgroundInline` 단일 경로를 사용한다.
+   - Skia는 `fills` direct-read 우선, CSS fallback은 보조 경로로 유지한다.
+   - Preview/Publish는 adapter 기반 CSS style 소비를 유지한다.
+2. retirement 단계
+   - 환경 플래그 분기를 제거하고 항상-on Fill 계약으로 고정한다.
+   - Builder/Preview/Publish 모두 단일 Fill 계약 유지
 
 #### Rollback Playbook
 
-- UI 회귀: `VITE_FEATURE_FILL_V2=false`로 내려 Builder 편집 surface만 legacy 경로로 즉시 복귀
-- Canvas Skia 회귀: 같은 flag down으로 direct fill rendering 비활성화, CSS fallback으로 복귀
-- Preview/Publish 회귀: 현재는 flag가 아니라 adapter 코드가 정본이므로 문제 시 adapter 변경 commit만 개별 rollback
-- 저장 포맷 rollback: 기존 문서는 `backgroundColor` read-through 가 유지되므로 lazy migration 특성상 DB backfill rollback 불필요
+- UI/Skia 회귀: 현재는 flag rollback 이 아니라 개별 commit rollback 대상
+- Preview/Publish 회귀: adapter 코드 rollback 대상
+- 저장 포맷 rollback: 기존 문서는 `backgroundColor` read-through 가 유지되므로 DB backfill rollback 불필요
 
 ### Phase 5 — Legacy 축소
 

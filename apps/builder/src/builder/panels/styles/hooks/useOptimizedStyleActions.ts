@@ -20,7 +20,6 @@
 
 import { useCallback, useTransition, useRef, useEffect } from 'react';
 import { useStore } from '../../../stores';
-import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import {
   isFillDerivedStyleProp,
   sanitizeFillDerivedStylePatch,
@@ -136,7 +135,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    */
   const updateStyleImmediate = useCallback(
     (property: string, value: string) => {
-      if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+      if (isFillDerivedStyleProp(property)) {
         return;
       }
       cancelPendingUpdates();
@@ -151,7 +150,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    * - 연속 입력 시 마지막 값만 적용
    */
   const updateStyleRAF = useCallback((property: string, value: string) => {
-    if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+    if (isFillDerivedStyleProp(property)) {
       return;
     }
     pendingUpdateRef.current = { property, value };
@@ -175,7 +174,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    * - 최종 커밋은 blur/Enter 시 updateStyleImmediate로 수행
    */
   const updateStylePreview = useCallback((property: string, value: string) => {
-    if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+    if (isFillDerivedStyleProp(property)) {
       return;
     }
     pendingPreviewRef.current = { property, value };
@@ -198,7 +197,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
    * - 연속 입력 시 마지막 값만 적용
    */
   const updateStyleIdle = useCallback((property: string, value: string) => {
-    if (isFillV2Enabled() && isFillDerivedStyleProp(property)) {
+    if (isFillDerivedStyleProp(property)) {
       return;
     }
     pendingUpdateRef.current = { property, value };
@@ -230,7 +229,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
       useStore
         .getState()
         .updateSelectedStyles(
-          sanitizeFillDerivedStylePatch(styles, isFillV2Enabled()),
+          sanitizeFillDerivedStylePatch(styles, true),
         );
     },
     [cancelPendingUpdates]
@@ -245,7 +244,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
     (styles: Record<string, string>) => {
       const sanitized = sanitizeFillDerivedStylePatch(
         styles,
-        isFillV2Enabled(),
+        true,
       );
       startTransition(() => {
         useStore.getState().updateSelectedStyles(sanitized);

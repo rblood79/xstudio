@@ -42,7 +42,7 @@
 - [x] `fillToSkia.ts` — FillItem → Skia FillStyle 변환 (Color)
 - [x] `fillMigration.ts` — backgroundColor ↔ fills 양방향 마이그레이션
 - [x] `colorUtils.ts` — hex8 ↔ rgba ↔ float32 변환 유틸리티
-- [x] Feature Flag: `VITE_FEATURE_FILL_V2` + `isFillV2Enabled()`
+- [x] Fill V2 always-on 전환 완료 (`isFillV2Enabled()`는 호환성용 항상 `true`)
 - [x] BoxSprite 연동: fills → fillColor (Float32Array)
 - [x] inspectorActions DB 동기화: fills → style.backgroundColor
 - [x] Color fill 1개 제한 (CSS background-color는 단수)
@@ -812,8 +812,8 @@ Step 10: ⬜ 이미지/메쉬/변수 바인딩 (Phase 4, 미착수)
 | `apps/builder/src/builder/panels/styles/utils/fillMigration.ts` | backgroundColor ↔ fills + CSS gradient | 1~2 |
 | `apps/builder/src/builder/panels/styles/utils/colorUtils.ts` | hex8/rgba/float32/css 변환 | 1~2 |
 | `apps/builder/src/builder/workspace/canvas/sprites/BoxSprite.tsx` | fills → Skia 렌더링 + blendMode 연동 | 1~3 |
-| `apps/builder/src/builder/stores/inspectorActions.ts` | fills → backgroundColor/backgroundImage 동기화 | 1~2 |
-| `apps/builder/src/utils/featureFlags.ts` | `VITE_FEATURE_FILL_V2` 플래그 추가 | 1 |
+| `apps/builder/src/builder/stores/inspectorActions.ts` | fills commit/preview 정본 저장 + derived background persistence 제거 | 1~5 |
+| `apps/builder/src/utils/featureFlags.ts` | Fill V2 retirement 이후 호환성용 always-on helper 유지 | 1~5 |
 
 ---
 
@@ -906,20 +906,20 @@ function getOrCreateGradientShader(fill: GradientFillItem): CanvasKit.Shader {
 | R3 | **드래그 순서 변경 + History** — reorder 시마다 fills 배열 전체 스냅샷 저장으로 History 메모리 증가 | 낮음 | 중간 | History entry에 diff 대신 전체 스냅샷 사용 (기존 패턴), 메모리 상한 도달 시 오래된 entry 제거 |
 | R4 | **EyeDropper 브라우저 호환 (Phase 3)** — Firefox/Safari 미지원, 일부 보안 정책에서 차단 가능 | 낮음 | 확실 | `'EyeDropper' in window` 가드로 버튼 자체를 숨김, 미지원 시 대체 UX 불필요 (기능 자체 생략) |
 | R5 | **Gradient Shader GPU 리소스 누수** — 스톱 드래그 중 매 프레임 Shader 재생성 시 이전 Shader `delete()` 누락 가능 | 높음 | 중간 | 9.3의 shaderCache 패턴 적용 + 캐시 교체 시 이전 Shader `delete()` 명시적 호출, `SkiaDisposable` 패턴 준수 |
-| R6 | **전용 Feature Flag 미연결** — 기존 `apps/builder/src/utils/featureFlags.ts` 인프라는 있으나 `color-picker-v2` 플래그 연결/노출 정책 미정 | 중간 | 중간 | 아래 10.2 참조 |
+| R6 | **전환 단계 제어 필요** — 초기 rollout 시 Builder/Skia legacy 분기와 Fill 경로를 병행 관리해야 함 | 중간 | 중간 | 아래 10.2 참조 |
 | R7 | **`@dnd-kit/sortable` 신규 의존성** — 새 의존성 추가에 따른 번들 크기 증가 및 호환성 리스크 | 낮음 | 낮음 | `@dnd-kit/core` ~13KB gzip, Phase 1 착수 시 번들 분석 후 tree-shaking 확인 |
 
-### 10.2 Feature Flag 구현 방안
+### 10.2 Rollout / Retirement 구현 방안
 
-현재 프로젝트에는 `apps/builder/src/utils/featureFlags.ts` 기반 플래그 인프라가 있으므로, 아래 방식 중 선택:
+초기 rollout 시점에는 `apps/builder/src/utils/featureFlags.ts` 기반 플래그 인프라를 활용했고, 현재는 retirement까지 완료된 상태다. 당시 검토했던 선택지는 아래와 같다:
 
 | 방안 | 장점 | 단점 |
 |------|------|------|
-| **A. 기존 인프라 확장 (권장)** (`VITE_FEATURE_FILL_V2=true`) | 현재 패턴(`VITE_USE_WEBGL_CANVAS`)과 동일, 구현/검증 비용 최소 | 런타임 사용자별 제어 불가 |
+| **A. 기존 인프라 확장 (채택, 이후 retirement 완료)** (`VITE_FEATURE_FILL_V2=true`) | 현재 패턴(`VITE_USE_WEBGL_CANVAS`)과 동일, 구현/검증 비용 최소 | 런타임 사용자별 제어 불가 |
 | **B. Zustand 슬라이스** (`useFeatureFlags()`) | 런타임 전환 가능, DevTools 연동 | DB/원격 제어 없음 |
 | **C. Supabase Remote Config** | 사용자별/환경별 제어 | 구현 비용 높음, Phase 1에 과도함 |
 
-> **권장**: Phase 1은 **방안 A (기존 인프라 확장)**로 시작, 추후 필요 시 B로 승격.
+> 실제 경과: Phase 1은 **방안 A**로 시작했고, ADR-904 후속에서 Builder/Skia legacy 분기를 제거하며 retirement까지 완료했다.
 
 ### 10.3 Phase 간 의존성 (실제 진행)
 
@@ -941,11 +941,11 @@ Phase 4 (이미지/메쉬/변수)            ⬜ 미착수
 | ~~R2: 마이그레이션 데이터 무결성~~ | `fillMigration.ts`의 `normalizeToHex8()` + `fillsToCssBackground()` 양방향 변환 안정적 동작 |
 | ~~R4: EyeDropper 브라우저 호환~~ | `'EyeDropper' in window` 가드로 미지원 브라우저에서 버튼 자체 숨김 구현 완료 |
 | ~~R5: Gradient Shader GPU 리소스~~ | `applyFill()` + `nodeRenderers.ts`에서 Shader delete() 정상 처리 확인 |
-| ~~R6: Feature Flag~~ | `VITE_FEATURE_FILL_V2` 환경변수 + `isFillV2Enabled()` 구현 완료 |
+| ~~R6: 전환 단계 제어~~ | 초기에는 `VITE_FEATURE_FILL_V2` + `isFillV2Enabled()`로 rollout 했고, 이후 always-on 전환과 retirement를 완료했다 |
 | ~~R7: @dnd-kit 의존성~~ | 드래그 순서 변경 미구현 → 의존성 추가 불필요 |
 | Skia 변환 레이어 | `fillToSkia.ts`에서 Color + 3종 Gradient 변환 완성. `applyFill()`과 정상 연동 |
 | 드래그 패턴 | onChange/onChangeEnd 패턴이 ColorArea, Hue, Alpha, GradientBar 스톱에서 모두 안정 동작 |
-| fills 폴백 경로 | `fills ?? backgroundColor` 폴백 + Feature Flag로 안전한 점진 전환 |
+| fills 폴백 경로 | `fills ?? backgroundColor` read-through를 유지한 채 always-on Fill 경로로 정착 |
 
 ---
 
@@ -1002,13 +1002,13 @@ Phase 4 (이미지/메쉬/변수)            ⬜ 미착수
 - [x] Fill 레이어 드래그 순서 변경 (`FillSection.tsx` — `@dnd-kit/sortable`)
 - [x] ScrubInput으로 숫자 값 드래그 조정 (GradientControls, FillLayerRow, GradientStopList)
 
-### 12.2 Feature Flag / 롤백 전략 (구현 완료)
+### 12.2 Rollout / Retirement 전략 (구현 완료)
 
-- **방안 A (기존 인프라 확장)** 채택: `VITE_FEATURE_FILL_V2=true` 환경변수
-- `isFillV2Enabled()` → `true`면 FillSection("Background") 표시, `false`면 기존 AppearanceSection
-- 플래그 OFF 시 기존 `AppearanceSection` 단색 편집 경로 유지하여 즉시 롤백 가능
-- DB: `fills ?? backgroundColor` 폴백 경로 유지
-- BoxSprite: `isFillV2Enabled() && fills?.length > 0`일 때만 fills 경로 사용, 아니면 기존 backgroundColor 폴백
+- 초기 rollout 은 **방안 A (기존 인프라 확장)** 로 시작했다.
+- 현재는 Fill V2 always-on 전환이 완료되어 `AppearanceSection`은 `FillSection("Background")` 단일 경로만 사용한다.
+- 즉시 롤백은 환경 플래그가 아니라 관련 commit rollback 대상으로 정리됐다.
+- DB: `fills ?? backgroundColor` read-through 폴백은 유지한다.
+- Skia/Preview/Publish는 현재 모두 `fills` 우선 경로를 사용하고, derived `background*`는 런타임 파생값으로만 취급한다.
 
 ---
 

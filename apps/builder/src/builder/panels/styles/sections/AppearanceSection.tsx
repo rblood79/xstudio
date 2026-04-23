@@ -3,7 +3,7 @@
  *
  * Background + Border 편집 (단일 섹션)
  * 접힌 섹션의 훅 실행을 방지하기 위해 내용 컴포넌트 분리.
- * isFillV2Enabled() 플래그에 따라 Fill V2 컨텐츠 분기.
+ * Background 편집은 FillBackgroundInline 단일 경로를 사용한다.
  */
 
 import { memo, lazy, Suspense } from "react";
@@ -30,7 +30,6 @@ import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useAppearanceValues } from "../hooks/useAppearanceValues";
 import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
-import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import { useStore } from "../../../stores";
 
 const LazyFillBackgroundInline = lazy(() =>
@@ -69,32 +68,9 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
 
   return (
     <>
-      {/* Background: FillV2 활성화 시 FillBackgroundInline, 아니면 기존 PropertyColor */}
-      {isFillV2Enabled() ? (
-        <Suspense fallback={null}>
-          <LazyFillBackgroundInline />
-        </Suspense>
-      ) : (
-        <div className="style-background">
-          <PropertyColor
-            icon={Square}
-            label="Background Color"
-            className="background-color"
-            value={styleValues.backgroundColor}
-            onChange={(value) => updateStyle("backgroundColor", value)}
-            placeholder="#FFFFFF"
-          />
-          <div className="fieldset-actions actions-icon">
-            <SwatchIconButton aria-label="More background options">
-              <EllipsisVertical
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </SwatchIconButton>
-          </div>
-        </div>
-      )}
+      <Suspense fallback={null}>
+        <LazyFillBackgroundInline />
+      </Suspense>
 
       {/* Border */}
       <div className="style-border">
@@ -211,10 +187,7 @@ export const AppearanceSection = memo(function AppearanceSection() {
 
   const handleReset = () => {
     resetStyles(APPEARANCE_PROPS);
-    // V2: fills 배열도 초기화
-    if (isFillV2Enabled()) {
-      useStore.getState().updateSelectedFills([]);
-    }
+    useStore.getState().updateSelectedFills([]);
   };
 
   return (

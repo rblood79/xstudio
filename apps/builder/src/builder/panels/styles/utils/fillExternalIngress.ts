@@ -1,4 +1,3 @@
-import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import type { FillItem } from "../../../../types/builder/fill.types";
 import type { Element } from "../../../../types/core/store.types";
 import { migrateBackgroundColor } from "./fillMigration";
@@ -21,10 +20,6 @@ function stripDerivedBackground(
 }
 
 export function normalizeExternalFillIngress<T extends Element>(element: T): T {
-  if (!isFillV2Enabled()) {
-    return element;
-  }
-
   const currentStyle = (element.props?.style ?? {}) as Record<string, unknown>;
   const currentFills = Array.isArray(element.fills)
     ? (element.fills as FillItem[])
@@ -70,7 +65,7 @@ export function normalizeExternalFillIngress<T extends Element>(element: T): T {
 export function normalizeExternalFillIngressBatch<T extends Element>(
   elements: T[],
 ): T[] {
-  if (!isFillV2Enabled() || elements.length === 0) {
+  if (elements.length === 0) {
     return elements;
   }
 

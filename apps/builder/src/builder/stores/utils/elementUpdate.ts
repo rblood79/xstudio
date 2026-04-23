@@ -5,7 +5,6 @@ import {
   ComponentElementProps,
   Element,
 } from "../../../types/core/store.types";
-import { isFillV2Enabled } from "../../../utils/featureFlags";
 import { sanitizeFillDerivedStylePatch } from "../../panels/styles/utils/fillDerivedStyleProps";
 import { historyManager } from "../history";
 import { getElementById, createCompleteProps } from "./elementHelpers";
@@ -167,10 +166,6 @@ function hasShallowPatchChanges(
 }
 
 function sanitizePropsPatch<T extends Record<string, unknown>>(props: T): T {
-  if (!isFillV2Enabled()) {
-    return props;
-  }
-
   const nextProps = { ...props };
   const rawStyle = nextProps.style;
   if (rawStyle && typeof rawStyle === "object" && !Array.isArray(rawStyle)) {

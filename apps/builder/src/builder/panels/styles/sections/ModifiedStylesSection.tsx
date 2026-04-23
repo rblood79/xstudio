@@ -25,7 +25,6 @@ import {
   JUSTIFY_CONTENT_OPTIONS,
   FLEX_WRAP_OPTIONS,
 } from "../constants/styleOptions";
-import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import { isFillDerivedStyleProp } from "../utils/fillDerivedStyleProps";
 
 interface ModifiedStylesSectionProps {
@@ -113,7 +112,7 @@ export function ModifiedStylesSection({
     if (
       property === "backgroundImage" ||
       property === "backgroundSize" ||
-      (isFillV2Enabled() && isFillDerivedStyleProp(property))
+      isFillDerivedStyleProp(property)
     ) {
       const displayValue = String(value);
       const truncated =
