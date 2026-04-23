@@ -77,6 +77,44 @@ describe("normalizeExternalFillIngress", () => {
     expect(normalized.props.style?.backgroundImage).toBeUndefined();
   });
 
+  it("legacy radial-gradient backgroundImage 는 radial fill 로 승격한다", () => {
+    const normalized = normalizeExternalFillIngress({
+      id: "el-3b",
+      tag: "Box",
+      props: {
+        style: {
+          backgroundImage:
+            "radial-gradient(circle at 25% 75%, #FF0000 0%, #0000FF 100%)",
+          paddingRight: "12px",
+        },
+      },
+    });
+
+    expect(normalized.fills).toHaveLength(1);
+    expect(normalized.fills?.[0]?.type).toBe(FillType.RadialGradient);
+    expect(normalized.props.style).toMatchObject({ paddingRight: "12px" });
+    expect(normalized.props.style?.backgroundImage).toBeUndefined();
+  });
+
+  it("legacy conic-gradient backgroundImage 는 angular fill 로 승격한다", () => {
+    const normalized = normalizeExternalFillIngress({
+      id: "el-3c",
+      tag: "Box",
+      props: {
+        style: {
+          backgroundImage:
+            "conic-gradient(from 45deg at 50% 50%, #FF0000 0%, #00FF00 50%, #0000FF 100%)",
+          marginBottom: "14px",
+        },
+      },
+    });
+
+    expect(normalized.fills).toHaveLength(1);
+    expect(normalized.fills?.[0]?.type).toBe(FillType.AngularGradient);
+    expect(normalized.props.style).toMatchObject({ marginBottom: "14px" });
+    expect(normalized.props.style?.backgroundImage).toBeUndefined();
+  });
+
   it("legacy image backgroundImage 는 image fill 로 승격한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-4",
