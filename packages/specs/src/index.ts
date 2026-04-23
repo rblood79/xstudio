@@ -178,6 +178,10 @@ export {
   // CSS Generator
   generateCSS,
   generateAllCSS,
+  // ADR-108 P1: containerVariants 런타임 helper
+  resolveContainerVariants,
+  matchNestedSelector,
+  isSupportedNestedSelector,
   // Token Resolver
   resolveToken,
   resolveColor,
@@ -190,6 +194,10 @@ export {
 } from "./renderers";
 
 export type { ReactRenderResult } from "./renderers";
+export type {
+  ResolvedContainerVariants,
+  NestedSelectorChild,
+} from "./renderers";
 
 // ─── Components ──────────────────────────────────────────────────────────────
 export { ButtonSpec } from "./components/Button.spec";
@@ -594,8 +602,14 @@ export { ModalSpec } from "./components/Modal.spec";
 export { TailSwatchSpec } from "./components/TailSwatch.spec";
 
 // ─── Runtime (ADR-058 Pre-Phase 0 + Phase 1) ───────────────────────────────
+// ─── Registry SSOT (ADR-108 P0) ──────────────────────────────────────────────
 export {
   getElementForTag,
   hasSpec,
   getDefaultSizeForTag,
+  BASE_TAG_SPEC_MAP,
+  TAG_SPEC_MAP,
+  LOWERCASE_TAG_SPEC_MAP,
+  expandChildSpecs,
 } from "./runtime/tagToElement";
+export { resolveContainerStylesFallback } from "./runtime/containerStylesFallback";

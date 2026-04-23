@@ -2,8 +2,9 @@
  * 스타일 값 변환 헬퍼 — use*Values 훅 공용
  */
 
-export function numToPx(n: number | undefined): string | undefined {
+export function numToPx(n: number | string | undefined): string | undefined {
   if (n === undefined) return undefined;
+  if (typeof n === "string") return n;
   return `${n}px`;
 }
 

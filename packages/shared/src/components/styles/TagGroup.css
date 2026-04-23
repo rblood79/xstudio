@@ -6,6 +6,7 @@
     font-size: var(--text-sm);
     color: var(--fg);
 
+    /* MIRROR: packages/specs/src/components/TagGroup.spec.ts composition.containerVariants['label-position'].side - skipCSSGeneration:true 동안 수동 동기화 */
     &[data-label-position="side"] {
       flex-direction: row;
       align-items: flex-start;

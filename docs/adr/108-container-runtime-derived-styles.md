@@ -1,201 +1,214 @@
-# ADR-108: Spec `derivedContainerStyles` for props-derived container layout
+# ADR-108: `containerVariants` consumer 확장 — Spec runtime variant 의 Canvas/Panel 소비 일원화
 
-> 부제: 컨테이너 Runtime-Derived 스타일 Spec SSOT — `labelPosition` 등 runtime prop 기반 containerStyles 의 Spec 단일 정본화 + Spec registry/fallback resolver 의 `@composition/specs` 귀속
+> 부제: `CompositionSpec.containerVariants` (기존 ADR-036 Phase 3a 자산) 를 CSSGenerator 단독 소비 → Canvas/Panel 까지 확장 + Spec registry `@composition/specs` 통합. 이전 round 1-2 의 "신규 `derivedContainerStyles` 함수 도입" 안은 Codex 리뷰 r1 으로 기각, r3 (scope/alias/예외) + r4 (G4/P5 시퀀싱 + registry 카운트) 6 이슈 반영.
 
 ## Status
 
-Proposed — 2026-04-23 (round 2 — review-adr 1차 반영)
+Implemented — 2026-04-23 (round 5.5 — P0-P5 완료: `containerVariants` helper + registry 통합 + Panel 소비 + TagGroup/TextArea P5 + legacy side-label helper 제거. P6 orientation 은 follow-up ADR scope)
 
 ## Context
 
-composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-domain 분할 중 **D3(시각 스타일)** 에서 Spec 을 SSOT 로 삼는다. 그러나 **runtime prop 에 따라 결정되는 containerStyles** (예: `labelPosition="side"` 일 때 flexDirection 이 row, 그 외 column) 는 현재 Spec 이 표현할 수 없어 **3 consumer 가 각자 해석**하는 SSOT 공백이 존재한다.
+composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-domain 분할 중 **D3(시각 스타일)** 에서 Spec 을 SSOT 로 삼는다. 그러나 **`labelPosition` 등 runtime prop 에 따라 결정되는 containerStyles** 는 현재 3 consumer 가 각자 해석하는 SSOT 공백이 존재한다.
 
-진단 대상: **TagGroup**
+진단 대상: **TextField** (대표 예 — ADR 착수 시점의 12 spec 동일 패턴)
 
-| Consumer                          | 현재 구현                                                                         | 근거 라인                                                                                     |
-| --------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Preview CSS                       | `.react-aria-TagGroup[data-label-position="side"]` data-attr selector             | `packages/shared/src/components/styles/TagGroup.css:9-12`                                     |
-| Skia / Layout (implicitStyles.ts) | `resolveLabelFlexDir(labelPos, fallback, default)` runtime 함수                   | `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:281-288, 541-556` |
-| Style Panel (useLayoutValues)     | `spec.containerStyles.flexDirection` (부재) → `firstDefined(..., "row")` 하드코드 | `apps/builder/src/builder/panels/styles/hooks/useLayoutValues.ts:41-45`                       |
+| Consumer                          | 착수 시점 구현                                                                                                      | 근거 라인                                                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Preview CSS / Publish             | Spec `composition.containerVariants` 데이터 → `CSSGenerator` 가 generated CSS 산출                                   | `packages/specs/src/components/TextField.spec.ts:308`, `packages/specs/src/renderers/CSSGenerator.ts:1147` |
+| Skia / Layout (implicitStyles.ts) | `resolveLabelFlexDir` + `applySideLabelChildStyles` 함수로 동일 규칙 **중복 구현** (containerVariants 데이터 미참조) | `apps/builder/src/builder/workspace/canvas/layout/engines/implicitStyles.ts:281, 368, 1240`                |
+| Style Panel (useLayoutValues)     | `spec.containerStyles.flexDirection` (부재) → `firstDefined(..., "row")` 하드코드 (containerVariants 데이터 미참조)  | `apps/builder/src/builder/panels/styles/hooks/useLayoutValues.ts:41-45`                                    |
 
-**Panel 버그 노출**: TagGroup.spec.ts `containerStyles` 에 `flexDirection` 키가 없어(ADR-087 SP6 의도적 누락) `specPreset.flexDirection === undefined` → fallback `"row"` 하드코드 적용. `labelPosition="top"` (기본값) 시 실제 Canvas/Preview 는 column 인데 Panel Direction 필드는 "row" 표시 → **사용자 오인지**.
+**Panel 버그 노출**: TextField 의 `containerVariants["label-position"].side` 는 `display: "grid"` 등을 표현하나 Panel `useLayoutValues` 는 이를 읽지 못해 `labelPosition` 변경에도 Direction 필드가 무관하게 표시.
 
-**동일 패턴 영향 범위 — 12 컨테이너 확증**: `labelPosition` prop 을 보유한 컨테이너 = **TagGroup / CheckboxGroup / RadioGroup / NumberField / TextField / TextArea / DateField / TimeField / DatePicker / DateRangePicker / ColorField / ComboBox** (총 12).
+### Codex 리뷰 (2026-04-23) 발견 — 핵심 가정 두 가지 깨짐
 
-| skipCSSGeneration | 개수 | 컨테이너                                                                                                                            |
-| ----------------- | :--: | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `true` (명시)     |  1   | TagGroup                                                                                                                            |
-| `false` (명시)    |  10  | CheckboxGroup / RadioGroup / NumberField / TextField / DateField / TimeField / DatePicker / DateRangePicker / ColorField / ComboBox |
-| 미설정 (기본)     |  1   | TextArea                                                                                                                            |
+1. **`containerVariants` 가 이미 존재** — `CompositionSpec.containerVariants` (`packages/specs/src/types/spec.types.ts:498`, ADR-036 Phase 3a / ADR-059 v2 Pre-Phase 0-D.3 도입) 가 이미 runtime variant 데이터 + nested selector 표현. 16 spec 사용 중 (CheckboxGroup / ColorField / ComboBox / DateField / DatePicker / DateRangePicker / Form / Meter / NumberField / ProgressBar / RadioGroup / SearchField / **Select** / TextField / TimeField / Toolbar). **신규 함수 (`derivedContainerStyles`) 도입은 기존 메커니즘과 중복**.
+2. **Spec registry 도 packages/specs 에 이미 존재** — `packages/specs/src/runtime/tagToElement.ts:125` 의 `BASE_TAG_SPEC_MAP` (**99 entries** — Codex r4 정정) + `apps/builder/src/builder/workspace/canvas/sprites/tagSpecMap.ts:115` 의 `BASE_TAG_SPEC_MAP` (108 entries). **두 registry 가 이미 공존 = SSOT 위반 상태**. 실제 차이 항목 = builder-only **11** + specs-only **2** (총 13). Phase 0 는 mechanical 이관이 아닌 **중복 통합 + alias 분류 정책 결정**.
 
-TagGroup 외 11 컨테이너는 CSS auto-gen 대상 → 본 ADR 에서 CSS emit 경로는 scope 외 (Phase 5 follow-up ADR 분리).
+### 영향 범위 — 16 컨테이너 (Codex r3 정정: TextArea / Select / TagGroup 분류 수정 + ToggleButton → ToggleButtonGroup)
 
-**추가 SSOT 공백 — Spec Registry + Fallback Resolver 위치 불일치**: Spec 데이터 자체는 `packages/specs/src/components/*.spec.ts` 에 정의되나, **tag→spec registry 는 `apps/builder/.../sprites/tagSpecMap.ts`** (TAG_SPEC_MAP, expandChildSpecs), **LOWERCASE alias 는 `apps/builder/.../layout/engines/tagSpecLookup.ts`**, **fallback resolver 는 `apps/builder/.../layout/engines/implicitStyles.ts:158`** 에 산재. `packages/specs` 내부에는 canonical registry 부재. 이 상태에서는 `derivedContainerStyles` resolver 를 `@composition/specs` 에 신설해도 의존성 방향이 역전 (packages/specs → apps/builder) — **Phase 0 에서 registry + fallback resolver 를 먼저 `@composition/specs` 로 이관**해야 Phase 1 resolver 가 clean 빌드.
+| 카테고리                                              | 컨테이너                                                                                                                                                       | 비고                                                                                                                                                                                 |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| labelPosition + containerVariants **둘 다 보유** (12) | TextField / NumberField / SearchField / DateField / TimeField / DatePicker / DateRangePicker / ColorField / ComboBox / **Select** / CheckboxGroup / RadioGroup | 본 ADR P2-P3 핵심 scope. Select 의 `containerVariants["label-position"].side` (`Select.spec.ts:353`) + generated CSS (`Select.css:279`) 확증.                                        |
+| labelPosition 보유 + containerVariants **미보유** (2) | **TagGroup** (`skipCSSGeneration: true`, 수동 CSS 사용) / **TextArea** (`skipCSSGeneration: false` 기본)                                                       | P5 에서 containerVariants 신규 추가. TagGroup 은 Preview 수동 CSS 동기화 정책 별도 (R9 / Decision #10).                                                                              |
+| orientation runtime variant (4)                       | CheckboxGroup / RadioGroup / **ToggleButtonGroup** / Toolbar                                                                                                   | CheckboxGroup/RadioGroup 위와 중복. 신규 2 (**ToggleButtonGroup**, Toolbar) 는 P6 follow-up ADR. ToggleButton 은 `_groupPosition.orientation` (parent injection) 만 읽음 — scope 외. |
+| **합계 unique**                                       | **16**                                                                                                                                                         |                                                                                                                                                                                      |
+
+`implicitStyles.ts` 착수 시점 영향:
+
+- `resolveLabelFlexDir` (`L281-288`) — 12 컨테이너 호출
+- `applySideLabelChildStyles` (`L368`) — 4 호출 site (`L993, L1051, L1241, L1660`) — Label/FieldError/Description/wrapper 자식 props 직접 조작
+- ComboBox/Select/SearchField 통합 분기 (`L945`) — 3 컨테이너 공유
+- TagGroup 분기 (`L541-556`) — 1 컨테이너
+
+### 두 Registry 차이 (Audit 결과 — Codex r4 카운트 재정정)
+
+| 위치                                                                  | entries | 비고                                                                                                                       |
+| --------------------------------------------------------------------- | ------: | -------------------------------------------------------------------------------------------------------------------------- |
+| `packages/specs/src/runtime/tagToElement.ts:125`                      |  **99** | spec 정본 (SelectTrigger / SelectValue / SelectIcon / DateInput **이미 등록 — r3 의 alias 분류에서 잘못 포함되었던 항목**) |
+| `apps/builder/src/builder/workspace/canvas/sprites/tagSpecMap.ts:115` |     108 | spec + builder-only **11** 추가                                                                                            |
+
+**실제 13 차이 항목 분류 (11 builder-only + 2 specs-only — Codex r4 정정):**
+
+- **A. 진짜 builder UI 전용 alias (8)** — packages/specs 부재, builder 만 보유. 정본 spec 의 별칭 또는 composition 고유 wrapper element:
+  - ComboBoxWrapper (→ SelectTriggerSpec) / ComboBoxInput (→ SelectValueSpec) / ComboBoxTrigger (→ SelectIconSpec)
+  - SearchFieldWrapper (→ SelectTriggerSpec) / SearchInput (→ SelectValueSpec) / SearchIcon (→ SelectIconSpec) / SearchClearButton (→ SelectIconSpec)
+  - TabBar
+  - → `apps/builder/.../sprites/builderAliasMap.ts` 분리 대상.
+- **B. packages/specs export 인데 runtime registry 등록 누락 (3)** — `packages/specs/src/index.ts` export 는 있으나 `tagToElement.ts:125` BASE_TAG_SPEC_MAP 등록만 빠짐:
+  - **IllustratedMessage** (`packages/specs/src/index.ts:575`)
+  - **CardView** (`packages/specs/src/index.ts:580`)
+  - **TableView** (`packages/specs/src/index.ts:584`)
+  - → P0 에서 정본 registry 등록 (99 → 102).
+- **C. packages/specs 만 보유 (2)** — DisclosureHeader / Section. builder 측 stale 가능성 또는 의도적 제외. → P0 에서 사유 audit 후 builderAliasMap 추가 또는 정본 유지 결정.
+
+**최종 목표 상태**: packages/specs 정본 = 99 + 3 (B 등록) = **102 entries**. builder alias layer = **8** (A only). C 는 audit 결과에 따라 별도 처리 (builderAliasMap +0 or +2).
 
 **Hard Constraints**:
 
-1. **Canvas FPS 60fps 유지** — derived 계산은 element tree traversal 당 1회 (`implicitStyles.ts`) + Panel per-selection 1회로 한정. per-frame 호출 금지.
-2. **Skia ↔ Preview 시각 대칭 보존** — `/cross-check` 통과 필수. `labelPosition="top"/"side"` 양측에서 Canvas 와 Preview DOM 의 flex 방향 일치.
-3. **ADR-059 수동 CSS 해체 방향 역행 금지** — 11 컨테이너의 `skipCSSGeneration: false` / 미설정은 유지 (flip to true 불가).
-4. **Panel flexDirection 정합 복구** — `labelPosition` 선택 값에 따라 Direction 필드가 실제 렌더와 일치.
-5. **D3 Spec SSOT 권위 packages/specs 단일 귀속** — Phase 0 완료 시 Spec 정의 + registry + derivation logic + fallback resolver 모두 `@composition/specs` 소유. Consumer (Canvas/Panel) 는 단방향 import.
+1. **Canvas FPS 60fps 유지** — `resolveContainerVariants` 호출은 element tree traversal 당 1회. per-frame 호출 금지.
+2. **Skia ↔ Preview 시각 대칭 보존** — `/cross-check` 통과 필수. 동일 `containerVariants` 데이터 → 동일 시각 결과.
+3. **ADR-059 수동 CSS 해체 방향 역행 금지** — generated CSS 경로 보존.
+4. **Panel flexDirection 정합 복구** — `labelPosition` 변경 시 Direction 필드가 실제 렌더와 일치.
+5. **Spec "pure data" 원칙 유지** — 신규 함수 필드 도입 0. `containerVariants` 데이터 + consumer-side 해석 헬퍼만 추가.
+6. **D3 Spec SSOT 100% packages/specs 귀속** — registry 통합 + consumer 헬퍼 모두 `@composition/specs` 소유.
 
 **Soft Constraints**:
 
-- ComponentSpec 은 "pure data" 가 아닌 **"pure module with pure-function derivations"** 원칙. `render.shapes(props, ctx)` / `render.react(props)` / `render.pixi()` / `properties.sections[].fields[].derivedUpdateFn(value)` 등 이미 함수 필드 전례 존재. 본 ADR 에서 이 원칙을 명문화.
-- DSL (`@when` rule 등) 은 현재 직렬화/introspection/비개발자 편집 요구 부재 → YAGNI. 향후 요구 발생 시 함수 → DSL 이행 경로 열림.
-- Panel `useElementStyleContext` 는 현재 `{style, type, size}` 만 노출 — `props`/`childTags` 확장 필요. 소비자 4 section hook (`useTransformValues` / `useAppearanceValues` / `useTypographyValues` / `useLayoutValues` — Fill 은 consumer 아님) 동시 영향.
+- CSS selector → Canvas element tag 매칭은 mini-matcher 필요 (`> .react-aria-Label` → `child.tag === "Label"` 등). composition 의 RAC class naming convention 의존.
+- Builder alias **8개** (ComboBoxWrapper 등 — Codex r4 정정) 는 `apps/builder` UI 전용 element — packages/specs 에 들이지 않음 (UI 레이어 책임).
+- ADR-094 `expandChildSpecs` 는 packages/specs 의 BASE_TAG_SPEC_MAP 와 builder alias layer 모두에 적용되어야 함.
 
 ## Alternatives Considered
 
-### 대안 A: 함수형 `derivedContainerStyles` + CSS 현행 유지 + Registry 이관
+### 대안 A: `containerVariants` consumer 확장 (재설계 채택)
 
 - **설명**:
-  - `ComponentSpec<P>.derivedContainerStyles?: (ctx: { props, childTags }) => Partial<Record<string, unknown>>` 스키마 확장
-  - **Phase 0**: Spec registry (`TAG_SPEC_MAP` / `LOWERCASE_TAG_SPEC_MAP` / `expandChildSpecs`) + `resolveContainerStylesFallback` 를 `@composition/specs` 로 이관. `IMAGE_TAGS` 등 Canvas 전용 상수만 apps/builder 잔존.
-  - 공용 resolver `resolveContainerStyles(spec, ctx)` 를 `@composition/specs` 에 신설 — Skia (implicitStyles) + Panel (useLayoutValues) 양쪽이 동일 함수 호출.
-  - CSSGenerator 는 `containerStyles` static 만 소비, `derivedContainerStyles` skip (11 컨테이너 data-attr CSS 는 수동 유지 — 의도적 잔존 debt, Phase 5 follow-up).
-  - Preview CSS / React 경로는 건드리지 않음 — data-attribute selector 기존대로 유지 (ctx 공급 불필요).
-- **근거**: `render.shapes`/`react`/`pixi` + `derivedUpdateFn` 함수 필드 전례. Canvas runtime 에서 spec 을 import 하여 실행하는 모델과 정합. 함수 시그니처 최소 (2 필드 ctx). Registry 이관 scope 는 mechanical — 8 consumer import 경로 + 2 파일 split, HIGH 위험 없음.
+  - **스키마 확장 0** — 기존 `CompositionSpec.containerVariants` 사용. 신규 함수 필드 (`derivedContainerStyles`) 도입 안 함.
+  - 공용 helper `resolveContainerVariants(spec, props): { styles, nested[] }` 를 `@composition/specs` 에 신설. CSSGenerator (`renderers/CSSGenerator.ts:1147`) 의 기존 소비 로직을 reusable 함수로 추출.
+  - Canvas (`implicitStyles.ts`): helper 호출 → `.styles` 를 parentStyle 머지 + `.nested[]` selector 매칭으로 자식 element props 주입 → `applySideLabelChildStyles` / `resolveLabelFlexDir` 대체.
+  - Panel (`useLayoutValues` / `specPresetResolver`): helper 호출 → `.styles.flexDirection` 등 `LayoutSpecPreset` 채움.
+  - Phase 0: 두 `BASE_TAG_SPEC_MAP` 통합 — packages/specs 정본 **99 entries** 를 source of truth 로, builder 의 **8 진짜 alias** 는 `@composition/specs` re-export + alias layer (`apps/builder/.../sprites/builderAliasMap.ts`) 로 분리. 추가로 정본 spec 등록 누락 3 (IllustratedMessage / CardView / TableView) 을 packages/specs 에 등록 (99 → 102).
+- **근거**: Spec 데이터는 이미 SSOT 위치에 존재 (16 spec 사용중). 부족한 것은 **소비 경로** — Canvas/Panel 이 미소비. CSSGenerator 가 이미 소비 중이므로 helper 추출 + 2 추가 consumer = 최소 변경 + 최대 SSOT 효과.
 - **위험**:
-  - 기술: M — ctx 계약 확장 (`useElementStyleContext` 에 props + childTags 추가) + `useShallow` 로 Set 참조 안정성. Phase 0 registry 이관 시 `expandChildSpecs` import cycle 재확인.
-  - 성능: L — Panel 함수 호출 per-selection 1회 < 1ms. Canvas 는 기존 분기 제거분과 상쇄 (net 0). childTags Set 재생성은 shallow 비교로 차단.
-  - 유지보수: L — ADR-087 SP6 (containerStyles static 리프팅) 기조와 정합. `resolveLabelFlexDir` 12 분기 제거 + apps→packages 단방향 의존성 회복으로 implicitStyles.ts 단순화.
-  - 마이그레이션: M — Phase 0 (8 consumer import 경로 갱신) + 12 컨테이너 점진 전환 (TagGroup PoC → 11 컨테이너 sweep). props 스키마 불변, data-file migration 0.
+  - 기술: M — selector mini-matcher 설계 (`> .react-aria-X` → `child.tag === "X"` 매핑). Builder alias 정책 결정.
+  - 성능: L — helper 호출 1회/element. CSSGenerator 의 기존 Object.entries 순회 패턴 재사용.
+  - 유지보수: L — Spec 단일 데이터, consumer 3개 (CSS/Canvas/Panel) 가 동일 source. 함수 중복 0.
+  - 마이그레이션: M — 13 컨테이너 implicitStyles 분기 + 12 spec 의 containerVariants audit + TagGroup 신규 추가. props 스키마 불변.
 
-### 대안 A-lite: 함수형 helper + Registry 유지 (DI pattern)
+### 대안 B: 신규 함수 `derivedContainerStyles` 도입 (이전 round 1-2 안 — 기각)
 
-- **설명**: A 에서 Phase 0 생략. `resolveContainerStyles(spec, ctx)` 만 신설하되 `spec` 은 호출자가 공급 (DI). `resolveContainerStylesFallback` 은 apps/builder 잔존.
-- **근거**: 이관 cost 최소. 회귀 위험 LOW.
-- **위험**:
-  - 기술: L
-  - 성능: L
-  - 유지보수: **M** — Spec SSOT 층이 apps/builder 에 산재 유지 → 향후 Publish/tester 재사용 시 중복/cross-app import 불가피. **A 방향으로의 이행 debt** 가 고정됨.
-  - 마이그레이션: L
-- **기각 근거**: "b'→a 이행 필수" 전제에서 A-lite 는 known debt accumulation — 근본 해결 원칙과 배치. 사용자 피드백 (debt 회피, SSOT 중복 제거) 과 정면 배치.
-
-### 대안 B: 함수형 `derivedContainerStyles` + CSSGenerator data-attr emit (정석)
-
-- **설명**: 대안 A 의 상위집합. CSSGenerator 가 `derivedContainerStyles` 함수를 AST/runtime probe 로 분석하여 `[data-prop="X"]` CSS selector 자동 emit. D3 symmetric consumer 완전 복구 (수동 CSS duplication debt 0).
-- **근거**: D3 대칭 원칙 엄격 준수. ADR-059 (skipCSSGeneration 해체) 와 정합 최대.
-- **위험**:
-  - 기술: **H** — 함수 body 정적 분석은 Babel AST parser 신설 또는 DSL 전환 필요. 조건 표현식 cover (`===`, `??`, ternary, 논리 연산) 전부 지원해야 함.
-  - 성능: L — CSS 빌드 타임만 영향. 런타임 비용 없음.
-  - 유지보수: **H** — CSSGenerator 신규 복잡도. 함수 시그니처/ctx 계약 변경 시 파서 재작성 필수. DSL 전환 시 학습 비용.
-  - 마이그레이션: **H** — A 의 scope 포함 + CSSGenerator 전면 개편 + 11 컨테이너 CSS regeneration. 회귀 위험 최대.
+- **설명**: `ComponentSpec<P>.derivedContainerStyles?: (ctx) => Partial<ContainerStyles>` 함수 필드 신설.
+- **근거 (당시)**: Spec 이 runtime prop styles 표현 못한다는 가정.
+- **기각 사유 (Codex 리뷰 verified)**:
+  - `containerVariants` 가 이미 동일 메커니즘 — 함수 신설은 **SSOT 중복 정의**, 본 ADR 자체가 SSOT 위반.
+  - 함수형은 자식 styling (`Label.width`, `FieldError.marginLeft` 등) 표현 어려움 — `containerVariants.nested` 는 selector 로 자연 표현.
+  - Spec "pure data" 원칙 재정의 필요 — 데이터 접근법은 원칙 유지.
 
 ### 대안 C: DSL `@when` rule
 
-- **설명**:
-  ```ts
-  containerStyles: {
-    display: "flex",
-    "@when": [
-      { if: { prop: { labelPosition: "side" } }, then: { flexDirection: "row" } },
-      { if: { prop: { labelPosition: { not: "side" } } }, then: { flexDirection: "column" } },
-    ],
-  }
-  ```
-  pure data 원칙 유지, 직렬화 가능.
-- **근거**: 원격 저장/DevTools introspection/비개발자 편집 요구가 있을 경우 가치.
-- **위험**:
-  - 기술: M — rule parser + validator 신설. 조건 표현력 한계 (nested/computed 규칙).
-  - 성능: M — rule engine 평가 매 호출.
-  - 유지보수: **H** — 새 DSL 학습 비용. 함수 대비 표현력 제약 (computed 값, 조건 결합 등).
-  - 마이그레이션: M — 12 컨테이너 rule 변환.
-- **기각 근거**: 현재 요구(직렬화/introspection/비개발자 편집) 전부 부재 → YAGNI.
+- **설명**: 기존 ADR-108 r1-r2 와 동일.
+- **기각 사유**: 현재 직렬화/introspection/비개발자 편집 요구 부재 → YAGNI. 또한 `containerVariants` 가 이미 데이터 + selector 양쪽을 표현 → DSL 도입 불필요.
 
 ### 대안 D: Panel-only 픽스
 
-- **설명**: `useLayoutValues` 에서 `labelPosition` prop 직접 해석 후 `flexDirection` 하드코드 override. Spec 스키마 불변, Skia 경로 불변.
-- **근거**: 최소 변경. Panel 버그만 핀포인트 해소.
-- **위험**:
-  - 기술: L
-  - 성능: L
-  - 유지보수: **H** — D3 SSOT 4 consumer 고착화 (Spec 공백 유지 + Panel 신규 해석 로직 추가). `resolveLabelFlexDir` 호출 12 분기 + Panel 중복 로직 동시 유지 → ADR-063 방향 역행.
-  - 마이그레이션: L
-- **기각 근거**: 근본 해결 아님. debt 확대.
+- **설명**: `useLayoutValues` 에서 `labelPosition` prop 직접 해석.
+- **기각 사유**: D3 SSOT 4 consumer 고착화. Canvas 의 `resolveLabelFlexDir` 중복 유지 → 근본 해결 아님.
 
 ### Risk Threshold Check
 
-| 대안   | 기술 | 성능 | 유지보수 | 마이그레이션 | HIGH+ 개수 |
-| ------ | :--: | :--: | :------: | :----------: | :--------: |
-| A      |  M   |  L   |    L     |      M       |     0      |
-| A-lite |  L   |  L   |    M     |      L       |     0      |
-| B      |  H   |  L   |    H     |      H       |     3      |
-| C      |  M   |  M   |    H     |      M       |     1      |
-| D      |  L   |  L   |    H     |      L       |     1      |
+| 대안 | 기술 | 성능 | 유지보수 | 마이그레이션 |                   HIGH+ 개수                    |
+| ---- | :--: | :--: | :------: | :----------: | :---------------------------------------------: |
+| A    |  M   |  L   |    L     |      M       |                        0                        |
+| B    |  M   |  L   |    M     |      M       | 0 (단, **SSOT 중복 정의 자체가 ADR 무효 사유**) |
+| C    |  M   |  M   |    H     |      M       |                        1                        |
+| D    |  L   |  L   |    H     |      L       |                        1                        |
 
-**루프 판정**: A 와 A-lite 모두 HIGH 0. A-lite 는 known debt accumulation 으로 기각, A 채택. B/C/D HIGH 존재하나 A 수용 가능. 1회 루프 종료.
+**루프 판정**: A 채택. B 는 위험 수치는 낮으나 **본 ADR 의 목적 (SSOT 복구) 을 ADR 자체가 위반** → 무효. C/D HIGH 존재.
 
 ## Decision
 
-**대안 A: 함수형 `derivedContainerStyles` + CSS 현행 유지 + Registry 이관**을 선택한다.
+**대안 A: `containerVariants` consumer 확장 + Registry 통합**을 선택한다.
 
 핵심 결정 사항:
 
-1. `ComponentSpec<P>` 에 `derivedContainerStyles?: (ctx: DerivedContainerCtx<P>) => Partial<ContainerStyles>` 추가.
-2. `ctx = { props, childTags }` — 최소 계약. `layoutVersion`/parent/grandchildren 등은 의도적 제외.
-3. **머지 순서**: `containerStyles` (static) < `derivedContainerStyles(ctx)` < `element.props.style` (user — 최우선).
-4. 함수는 **순수(pure) 함수**. side-effect/외부 참조/DOM·store 접근 금지. 본 ADR 에 제약 명문화, 향후 ESLint custom rule 승격 검토.
-5. **Phase 0 에서 Spec registry 를 `@composition/specs` 로 이관**: `TAG_SPEC_MAP` / `BASE_TAG_SPEC_MAP` / `expandChildSpecs` / `getSpecForTag` (현재 `apps/builder/.../sprites/tagSpecMap.ts`) + `LOWERCASE_TAG_SPEC_MAP` (현재 `apps/builder/.../layout/engines/tagSpecLookup.ts`) + `resolveContainerStylesFallback` (현재 `apps/builder/.../layout/engines/implicitStyles.ts:158`). `IMAGE_TAGS` 등 Canvas sprite 전용 상수만 apps/builder 잔존.
-6. 공용 resolver `resolveContainerStyles(spec, ctx)` + 리프팅된 `resolveContainerStylesFallback(tag, parentStyle)` 모두 `@composition/specs` 에 export.
-7. `implicitStyles.ts` 의 `labelPosition`/`orientation`/`hasChild` 분기는 각 spec 으로 이관 후 공용 resolver 호출로 대체.
-8. Preview (CSS/React) 경로는 건드리지 않음 — `data-label-position` selector 기존대로 유지.
-9. Style Panel (`useLayoutValues`) 은 spec static 만 보던 기존 코드를 `resolveContainerStyles(spec, ctx)` 호출로 교체.
+1. **스키마 확장 0** — 기존 `CompositionSpec.containerVariants` 활용. 신규 함수 필드 도입 안 함.
+2. **공용 helper `resolveContainerVariants(spec, props): { styles, nested[] }`** 를 `@composition/specs/renderers/` 에 신설. CSSGenerator 의 기존 소비 로직을 reusable 함수로 추출하여 3 consumer 공유.
+3. **Selector mini-matcher** 신설 — `> .react-aria-Label`, `> :not(.react-aria-Label)`, `.react-aria-Input` 등 RAC class naming → element tag 매칭. composition 의 컨벤션 의존.
+4. **Phase 0 Registry 통합** (Codex r4 카운트 재정정): `packages/specs/.../tagToElement.ts:125` 의 `BASE_TAG_SPEC_MAP` (**99 entries — 실제 카운트**) 를 정본으로, 13 차이 항목 (builder-only 11 + specs-only 2) 을 **3 분류**로 처리:
+   - **(B) 정본 spec 등록 누락 3** (IllustratedMessage / CardView / TableView) — packages/specs runtime registry 에 등록 추가 → **99 → 102**
+   - **(A) 진짜 builder UI alias 8** (ComboBoxWrapper / ComboBoxInput / ComboBoxTrigger / SearchFieldWrapper / SearchInput / SearchIcon / SearchClearButton / TabBar) — `apps/builder/.../sprites/builderAliasMap.ts` 분리
+   - **(C) packages/specs 만 보유 2** (DisclosureHeader / Section) — sweep audit 후 builderAliasMap 추가 또는 정본 유지 결정
+   - ADR-094 `expandChildSpecs` 양 layer 적용
+5. **머지 순서**: `containerStyles` (static) < `resolveContainerVariants(spec, props).styles` (variant) < `element.props.style` (user — 최우선).
+6. **자식 element props 주입**: `nested[].selector` 매칭된 자식의 props.style 에 `nested[].styles` 머지. user 명시 props 우선.
+7. **Preview (CSS/React) 경로 무변경** — CSSGenerator 가 이미 동일 데이터 소비 중. 자동 정합. **단 TagGroup 예외 — 결정 #10 참조**.
+8. **Style Panel (`useLayoutValues`)**: `resolveContainerVariants` 호출 후 `.styles` 에서 layout-relevant 키 추출 → `LayoutSpecPreset` 채움.
+9. **P5 컨테이너 — TagGroup + TextArea (Codex r3 정정)**: TextArea 도 착수 시점에는 containerVariants 미보유 — TagGroup 과 동일 카테고리. 둘 다 P5 에서 신규 containerVariants 추가 완료.
+10. **TagGroup Preview 수동 CSS 동기화 정책 (예외 명시)**: TagGroup 은 `skipCSSGeneration: true` (`TagGroup.spec.ts:72`) — Preview 가 수동 CSS (`packages/shared/src/components/styles/TagGroup.css:1`) 사용. P5 에서 spec 에 containerVariants 를 추가해도 **Preview 는 그 데이터를 직접 읽지 않음** — "3 consumer 동일 source" 주장의 **명시적 예외**. TagGroup 의 Canvas/Panel 은 helper 소비 (2 consumer 정합), Preview 수동 CSS 와 spec containerVariants 는 **수동 mirror 동기화** (CSS 파일 수정 시 spec 도 동시 갱신). skipCSSGeneration 해체는 ADR-059 별도 트랙 (본 ADR scope 외). TextArea 는 `skipCSSGeneration: false` 기본 — generated CSS 자동 정합 (예외 아님).
+11. **P6 follow-up scope 정정 (Codex r3)**: orientation runtime 분기는 **ToggleButtonGroup** (`packages/specs/src/components/ToggleButtonGroup.spec.ts:25`) 와 Toolbar. ToggleButton 은 `_groupPosition.orientation` (parent injection) 만 읽음 — scope 외.
 
 선택 근거:
 
-1. **HIGH+ 위험 0 개** — 4 대안 중 유일 (A-lite 동급 이나 known debt 로 기각).
-2. **ComponentSpec 함수 필드 전례와 정합** — `render.shapes/react/pixi` + `derivedUpdateFn` 이 이미 함수. "pure module with pure-function derivations" 원칙 재정의로 현실과 일치.
-3. **D3 SSOT 100% packages/specs 귀속** — Phase 0 이관 완료 시 Spec 정의 + registry + derivation logic + fallback resolver 모두 `@composition/specs` 소유. 의존성 방향 단방향 회복.
-4. **Phase 분리로 회귀 관리 가능** — P0(Registry 이관) → P1(TagGroup PoC) → P2(Panel 통합) → P3(11 컨테이너 sweep) → P4(util 재배치) → P5(CSSGenerator follow-up) 단계별 Gate. 롤백 단위가 Phase × 컨테이너로 세분.
-5. **CSS duplication debt 는 Phase 5 follow-up ADR 로 명시 분리** — 본 ADR scope 에서 11 컨테이너 수동 data-attr CSS 는 현행 유지. 향후 B 경로(CSSGenerator AST) 로 이행할 escape hatch 열어둠.
+1. **HIGH+ 위험 0 + ADR 자체가 SSOT 위반 아님** — 4 대안 중 A 만 본 ADR 의 목적과 일치.
+2. **CSS↔Canvas↔Panel 시각 정합 자동 보장** — 동일 데이터 소스 → 결과 drift 불가능. `/cross-check` 통과 자연스러움.
+3. **Spec "pure data" 원칙 유지** — ADR 본문 원칙 재정의 부담 0.
+4. **자식 styling 자연 표현** — `nested[]` selector → Canvas element tree 매칭. ADR-108 r2 의 `derivedContainerStyles` scope 외 gap 자동 해결.
+5. **Phase 5 follow-up ADR (CSSGenerator AST emit) 자체 소멸** — CSS 가 이미 데이터 소비 중이므로 추가 ADR 불필요. Debt 조기 청산.
 
 기각 사유:
 
-- **대안 A-lite 기각**: Phase 0 생략 시 "b'→a 이행" debt 가 고정됨. 근본 해결/SSOT 중복 제거 원칙과 배치.
-- **대안 B 기각**: CSSGenerator 확장 scope 폭발 (기술/유지보수/마이그레이션 3 축 HIGH). AST 분석 또는 DSL 전환은 독립 설계 트랙 → **Phase 5 follow-up ADR 로 분리**.
-- **대안 C 기각**: 현재 직렬화/introspection/비개발자 편집 요구 부재 → YAGNI. 향후 요구 발생 시 재평가 (본 ADR 의 함수 구현을 DSL 로 이행하는 경로는 열림).
-- **대안 D 기각**: D3 SSOT 4 consumer 고착화, ADR-063 3-domain 분할 역행. 유지보수 HIGH.
+- **대안 B 기각**: SSOT 중복 정의 (containerVariants 와 derivedContainerStyles 가 동일 책임). ADR 자체가 본문 원칙 위반.
+- **대안 C 기각**: 기존 `containerVariants` 가 이미 데이터 + selector 표현. DSL 추가 불필요.
+- **대안 D 기각**: D3 SSOT 4 consumer 고착화, ADR-063 3-domain 분할 역행.
 
 > 구현 상세: [108-container-runtime-derived-styles-breakdown.md](../design/108-container-runtime-derived-styles-breakdown.md)
 
 ## Risks
 
-| ID  | 위험                                                                                                                                                                                                                                                                             | 심각도 | 대응                                                                                                                                                                                                                               |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | `childTags` Set cache key thrashing → Panel re-render 급증                                                                                                                                                                                                                       |  MED   | `useShallow` (from `zustand/react/shallow`, Zustand v5+) 로 Set 참조 안정성 확보. Panel `useMemo` deps 에 childTags 포함. P2 시작 전 Zustand 실버전 확증 필수.                                                                     |
-| R2  | Panel ctx 공급 누락 (`labelPosition` prop 미전달) 으로 기존 Panel 기능 회귀                                                                                                                                                                                                      |  MED   | P2 종료 시 Panel 4 section hook (`useTransformValues`/`useAppearanceValues`/`useTypographyValues`/`useLayoutValues` — Fill 은 consumer 아님) 전수 type-check + Chrome MCP 12 컨테이너 실 UI sweep.                                 |
-| R3  | CSS duplication debt 장기화 (11 컨테이너 data-attr CSS 수동 유지) — `ssot-hierarchy.md` D3 symmetric 위반 잔존                                                                                                                                                                   |  MED   | Phase 5 follow-up ADR (CSSGenerator data-attr emit) Proposed 상태 기록 + annual review. `/cross-check` 는 Canvas/Panel 대칭으로 우선 복구.                                                                                         |
-| R4  | 12 컨테이너 마이그레이션 중 runtime 분기 오탈 — `labelPosition` 외에 `resolveLabelFlexDir` (`implicitStyles.ts:281-288`) / `applySideLabelChildStyles` (`implicitStyles.ts:368`, 호출 L993/L1051/L1241/L1660) / orientation 분기 (CheckboxGroup/RadioGroup) 3계열                |  HIGH  | P3 진입 전 `grep -rn "resolveLabelFlexDir\|applySideLabelChildStyles\|orientation" implicitStyles.ts` 전수 조사. R4 대응 scope 에 위 3 함수 + 5 호출 site 명시. 각 컨테이너 `parallel-verify` 5×5 필수.                            |
-| R5  | 순수성 제약 (DOM/file/store 접근 금지) 이 코드 리뷰 의존 → 향후 위반 유입 가능                                                                                                                                                                                                   |  LOW   | ADR 본문에 제약 명문화 + review 체크리스트 포함. 위반 패턴 발견 시 ESLint custom rule 승격 검토.                                                                                                                                   |
-| R6  | **Phase 0 blast radius** — 8 consumer (`StoreRenderBridge` / `buildSpecNodeData` / `tagSpecLookup` / `implicitStyles` / `fullTreeLayout` / `specPresetResolver` / `useLayoutAuxiliary` / `useTransformAuxiliary`) import 경로 일괄 갱신 + `expandChildSpecs` import cycle 가능성 |  MED   | P0 착수 전 `expandChildSpecs` 의 childSpecs 재귀 참조 경로 사전 점검 (circular import test). 8 consumer 경로 갱신은 mechanical IDE refactor + `pnpm type-check` 전 영역 PASS 로 catch. `tagSpecMap.test.ts` 의 registry 계약 보존. |
+| ID  | 위험                                                                                                                                                                                                                       | 심각도 | 대응                                                                                                                                                                                                                                                                                      |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Selector mini-matcher 표현력 한계 — `containerVariants.nested[].selector` 가 단순 RAC class naming (`> .react-aria-X`) 외 복잡한 selector (pseudo-class, attr selector 등) 사용                                            |  HIGH  | P1 진입 전 16 spec 의 `containerVariants.nested[].selector` 전수 audit. 지원 selector 문법 명문화 (whitelist). 미지원 selector 사용 spec 은 P3 sweep 시 명시적 deferred 분류. CSSGenerator 와의 호환 표 작성.                                                                             |
+| R2  | Builder alias (**8개 진짜 alias** — ComboBoxWrapper 등) 의 `containerVariants` 정책 결정 — alias 가 정본 spec 의 variant 를 그대로 소비할지, alias 자체에 별도 variant 정의할지                                            |  MED   | Phase 0 alias 정책 결정 단계에 포함. 현재 builder alias 들이 variant 보유 여부 grep audit (`grep "containerVariants" apps/builder`) — 아마 0 (CSS 미생성). 결정: alias 는 정본 spec 의 variant 를 share (다중 lookup 로직).                                                               |
+| R3  | Registry 통합 시 13 차이 항목 분류 정확성 — Codex r4 정정: **8 진짜 alias** + 3 정본 spec 등록 누락 (IllustratedMessage/CardView/TableView) + 2 stale 후보 (DisclosureHeader/Section). 목표: 99 → 102 정본 + 8 alias layer |  MED   | Phase 0 사전 audit: (a) 3 누락 spec 을 packages/specs `BASE_TAG_SPEC_MAP` 에 등록 추가 (99→102) (b) 8 alias → 정본 spec 매핑 (ComboBoxWrapper → SelectTriggerSpec 등) 문서화 (c) DisclosureHeader/Section 사유 확인.                                                                      |
+| R4  | Canvas 자식 element props 주입 시 user-edit override 보존 — `nested[].styles` 가 user 명시 props 를 덮어쓰면 안 됨                                                                                                         |  MED   | helper 머지 순서 명문화: `child.props.style = { ...nestedMatch.styles, ...userStyle }`. user 명시 키는 항상 최우선. P2 체크리스트에 user-override 회귀 테스트 포함.                                                                                                                       |
+| R5  | Panel 4 section hook (Transform/Appearance/Typography/Layout) 의 `useElementStyleContext` 확장 영향 — `props` 추가 노출 시 다른 hook 회귀 가능                                                                             |  MED   | P3 종료 시 4 hook 전수 type-check + Chrome MCP 회귀 sweep. `useShallow` (zustand v5+) 로 props 참조 안정성 확보. Zustand 실 버전 확증 P3 착수 전 required.                                                                                                                                |
+| R6  | TagGroup / TextArea 의 `containerVariants` 신규 추가 (P5) — TagGroup `skipCSSGeneration: true`, TextArea `false`. 신규 variant 데이터 추가 시 helper 가 정확히 소비                                                        |  LOW   | helper 는 CSS emit 여부와 무관 (data-only consumption). P5 단위 테스트로 확증. TextArea 는 generated CSS 자동 정합, TagGroup 은 R9 별도 처리.                                                                                                                                             |
+| R7  | 16 spec 의 기존 `containerVariants` 가 정확한지 audit 필요 — CSSGenerator 만 검증해온 데이터가 Canvas 에서도 동일 시각 결과 산출하는지 확신 부재                                                                           |  MED   | P1-P2 진입 전 16 spec audit: 각 variant 의 styles + nested 가 ADR-108 r4 의 머지 모델로 시각 정합 가능한지 확인. 불일치 발견 시 spec 수정 (CSS↔Canvas 양쪽 정합되도록).                                                                                                                   |
+| R8  | orientation runtime variant (**ToggleButtonGroup** / Toolbar) 는 P6 follow-up ADR 분리 — 본 ADR 의 helper 가 orientation 도 소비 가능한 일반화 설계여야 follow-up scope 자연 흡수                                          |  LOW   | helper 는 `containerVariants` 전체를 일반 처리 (특정 dataAttr 키 하드코드 안 함). orientation/quiet 등 모든 키 동일 메커니즘. ToggleButton 은 `_groupPosition.orientation` parent injection 만 사용 — scope 외.                                                                           |
+| R9  | **TagGroup Preview 수동 CSS 동기화 부담** (Codex r3) — TagGroup `skipCSSGeneration:true` → Preview 가 spec containerVariants 데이터 미사용. P5 추가된 spec data 와 기존 수동 `TagGroup.css` 가 drift 가능                  |  MED   | P5 진입 시 `TagGroup.spec.ts containerVariants` 와 `packages/shared/src/components/styles/TagGroup.css:9-12` 양쪽 mirror 동기화 정책 문서화 (CSS 파일 수정 시 spec 동시 갱신 + review 체크리스트). skipCSSGeneration 해체는 ADR-059 별도 트랙. P5 단위 테스트로 두 정의 의도적 정합 검증. |
 
 ## Gates
 
-| Gate | 시점    | 통과 조건                                                                                                                                                                                                                       | 실패 시 대안                                                              |
-| ---- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| G0   | P0 종료 | `pnpm type-check` 전 영역 PASS + 8 consumer import 경로 `@composition/specs` 로 갱신 완료 + `tagSpecMap.test.ts` / `resolveContainerStylesFallback.test.ts` / `tokenConsumerDrift.test.ts` PASS + Canvas 렌더 spot-check 회귀 0 | Registry split 경계 재검토 — `IMAGE_TAGS` / `BASE_TAG_SPEC_MAP` 배치 조정 |
-| G1   | P1 종료 | TagGroup Skia/Preview/Panel 3축 대칭 확증 (Chrome MCP `labelPosition="top"/"side"` 양측)                                                                                                                                        | TagGroup derivedContainerStyles 재설계 — 공용 resolver 계약 조정          |
-| G2   | P2 종료 | `pnpm type-check` 전 모듈 PASS + Panel Direction 필드가 TagGroup `labelPosition` 에 정합 표시 + 4 section hook (Transform/Appearance/Typography/Layout) 전수 회귀 0                                                             | `useElementStyleContext` 확장 필드 설계 재검토 — 4 section 호환성         |
-| G3   | P3 종료 | 12 컨테이너 전수 `/cross-check` PASS + 각 spec 에 `derivedContainerStyles` 이관 완료                                                                                                                                            | 잔존 runtime 분기 (orientation 등) 추가 발굴 → P3 scope 확장              |
-| G4   | P4 종료 | `grep -rn "resolveLabelFlexDir\|applySideLabelChildStyles" apps/builder/src/builder/workspace` → **결과 0**                                                                                                                     | util 재배치 설계 조정 — spec-side 헬퍼 경계 재확인                        |
+| Gate | 시점                                    | 통과 조건                                                                                                                                                                                                                                                                                                 | 실패 시 대안                                                                              |
+| ---- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| G0   | P0 종료                                 | `pnpm type-check` 전 영역 PASS + 두 BASE_TAG_SPEC_MAP 통합 (정본 **99 + 3 누락 spec 등록 = 102**) + **8 진짜 builder alias** layer 분리 + DisclosureHeader/Section 사유 audit 완료 + ADR-094 expandChildSpecs 양 layer 적용                                                                               | Registry 13 차이 항목 분류 재검토 — 누락 spec 등록 vs alias 유지 결정                     |
+| G1   | P1 종료 ✅                              | `resolveContainerVariants` helper 구현 (2026-04-23) + selector mini-matcher whitelist 명문화 + 16 spec 의 selector 전수 audit 통과 (whitelist 8 + deferred 24, Canvas layout 주입 대상 100% 커버) + CSSGenerator 의 기존 소비 로직과 동등성 확증 (15 unit tests PASS)                                     | Helper 시그니처 또는 mini-matcher 표현력 재설계                                           |
+| G2   | P2 종료 ✅                              | TextField/TextArea 분기가 helper 소비로 전환 (2026-04-23). unit test 5 건 PASS (`textFieldImplicitStyles.test.ts` — top/side/user-override/unset/hasLabel 회귀). Chrome MCP 대칭 spot-check 는 P4 sweep 시 일괄 검증. Canvas 자식 element (Label/Input/FieldError) 주입은 `matchNestedSelector` 매칭 기반 | TextField 단독 helper 호출 패턴 재설계 — 자식 매칭 알고리즘 조정                          |
+| G3   | P3 종료 ✅                              | Panel 4 section hook (Transform/Appearance/Typography/Layout) 호환 + 12 컨테이너 (Select 포함) Panel Direction 필드 정합 표시. user-override 회귀 0. `useLayoutValues` / `useLayoutAuxiliary` / `specPresetResolver` targeted tests PASS (2026-04-23)                                                      | `useElementStyleContext` 확장 필드 설계 재검토                                            |
+| G4   | P4 종료 ✅                              | **(Codex r4 완화)** 12 기존 variant 보유 컨테이너 (TextField PoC 외 11 + Select) implicitStyles 분기 전수 제거. P5 완료 후 legacy helper 완전 제거로 흡수 (2026-04-23)                                                                                                                                     | 잔존 분기 재발굴 (orientation 등) → P4 scope 확장 또는 P6 분리                            |
+| G5a  | P5 — TagGroup + TextArea spec 추가 종료 ✅ | **TagGroup + TextArea** containerVariants 추가 + Skia 렌더 회귀 0 + TagGroup `TagGroup.css` ↔ spec containerVariants mirror 동기화 문서화 (R9 대응) + TextArea generated CSS 자동 정합 확증                                                                                                               | P5 spec 정의 재설계 — TagGroup 의 manual CSS scope 보존 결정 / TextArea variant 형식 조정 |
+| G5b  | P5 — TagGroup + TextArea 분기 제거 종료 ✅ | `grep -rn "resolveLabelFlexDir\|applySideLabelChildStyles" apps/builder/src/builder/workspace` → **결과 0** (TagGroup L541 + TextField/TextArea 통합 분기 L1231 제거 후 함수 정의도 삭제) — 기존 r4 G4 조건 흡수                                                                                          | TagGroup/TextArea helper 소비 패턴 재설계 — 잔존 호출 site 추가 발굴                      |
 
 ## Consequences
 
 ### Positive
 
-- **D3 Spec SSOT 100% packages/specs 귀속** (ADR-108 scope 기준): Spec 정의 + registry + derivation logic + fallback resolver 모두 `@composition/specs` 소유. Canvas/Panel 은 단방향 import consumer. 향후 Publish/tester 재사용 경로 자동 열림.
-- **implicitStyles.ts 단순화**: 12 컨테이너 `resolveLabelFlexDir` / `applySideLabelChildStyles` 분기 + 5 호출 site 제거 → runtime fork 감소, engine 코드 대폭 축소.
-- **Panel 버그 해소**: `labelPosition="top"` 에서 Direction 필드가 실제 "column" 표시 (사용자 오인지 제거) + labelPosition 변경 시 Panel 표시값 회귀 0 보장.
-- **향후 확장 경로**: `orientation`, `size`, `hasChild` 등 다른 runtime-derived 스타일도 동일 메커니즘 채택 가능. ADR-108 이 패턴 레퍼런스.
-- **util 재배치로 spec-runtime 경계 정리**: `resolveLabelFlexDir` 이 `@composition/specs` (spec 계약) 에 위치 → Canvas/Panel 이 같은 helper 소비, 책임 경계 명확.
+- **D3 Spec SSOT 진정 달성 (TagGroup 1 예외 명시)** — 기존 `containerVariants` 데이터를 3 consumer (CSS/Canvas/Panel) 동일 helper 로 소비. 함수 중복 0, 데이터 중복 0. **단 TagGroup 은 `skipCSSGeneration:true` 로 인해 Preview 가 수동 CSS 사용 — 2 consumer 정합 + 수동 mirror 동기화** (Decision #10, R9). skipCSSGeneration 해체는 ADR-059 별도 트랙에서 완결 후 본 ADR 의 100% 달성.
+- **Spec "pure data" 원칙 유지** — 신규 함수 필드 도입 0. ADR-094/036 기조 유지.
+- **CSS↔Canvas↔Panel 시각 정합 자동 보장 (TagGroup 외 15)** — 동일 source → 결과 drift 불가능.
+- **자식 styling 자연 해결** — `nested[]` selector → Canvas element tree 매칭. r2 의 `derivedContainerStyles` scope gap (Codex r1 Issue 1) 해결.
+- **Registry SSOT 복구** — packages/specs 정본 (**102 entries: 99 + 3 누락 spec 추가**) + builder alias layer (**8**) 분리. 의존성 방향 단방향.
+- **Phase 5 follow-up ADR (CSSGenerator AST emit) 소멸** — CSSGenerator 가 이미 데이터 소비 중이므로 r2 의 P5 불필요. Debt 조기 청산.
+- **implicitStyles.ts 단순화** — 12 컨테이너 분기 + `resolveLabelFlexDir` + `applySideLabelChildStyles` 함수 제거 (~50+ 줄).
+- **Panel 버그 해소** — `labelPosition` 변경 시 Direction 필드 정합 표시.
 
 ### Negative
 
-- **Spec "pure data" 원칙 재정의 필요**: `derivedContainerStyles` 가 layout-primitive 계층 첫 함수 필드. ADR 본문에 "pure module with pure-function derivations" 원칙 명문화 필수. SSOT 체인 문서 (`ssot-hierarchy.md`) 업데이트 scope.
-- **Phase 0 blast radius**: 8 consumer import 경로 + `tagSpecMap.ts` split + `tagSpecLookup.ts` 이관. Mechanical 이나 갱신 누락 시 type error. G0 로 차단.
-- **CSS duplication debt 잔존**: 11 컨테이너의 `data-label-position` CSS 규칙은 수동 유지 (Phase 5 follow-up ADR 로 이연). `/cross-check` 는 Canvas/Panel 대칭 우선 복구하나, Preview CSS 는 독립 수정 대상으로 남음.
-- **Panel ctx 계약 확장 비용**: `useElementStyleContext` 가 4 section hook (Transform/Appearance/Typography/Layout) 의 공유 dependency — 변경 시 전 hook 회귀 검증 필요.
-- **childTags Set 재생성 per-render**: `useShallow` 로 차단하나, Zustand store `childrenMap` 변경 시 새 Set 인스턴스 생성 → GC 부담 미약 증가.
+- **Selector mini-matcher 신설 부담** — `> .react-aria-X` 같은 단순 selector 만 지원하더라도 RAC class naming convention 의존성 + 16 spec audit 필요. R1 위험.
+- **Builder 13 차이 항목 분류 정책 결정 부담** — Phase 0 에서 8 진짜 alias / 3 누락 spec 등록 / 2 stale 후보 audit 결정 (Codex r4 정정). ComboBoxWrapper 등 builder UI 전용 element 와 정본 spec 의 매핑 정책 문서화 필요.
+- **16 spec 의 기존 `containerVariants` audit** — CSSGenerator 만 검증해온 데이터가 Canvas 에서도 정합한지 P1-P2 사이 확증 필요. 불일치 발견 시 spec 수정.
+- **TagGroup Preview 수동 CSS 동기화 영구 부담 (R9)** — `skipCSSGeneration:true` 유지 동안 spec containerVariants ↔ `TagGroup.css` mirror 수동 관리. ADR-059 skipCSSGeneration 해체 후 자동 정합 회복.
+- **2 BASE_TAG_SPEC_MAP 통합 시 회귀 위험** — 99 vs 108 entries 차이 (8 alias + 3 누락 spec + 2 stale 후보 = 13) 처리 시 import 경로 혼선 가능. G0 로 차단.
+- **G4/G5 시퀀싱 분리 (Codex r4)** — 기존 G4 의 "함수 정의 grep == 0" 조건이 P5 이전에 만족 불가하여 G4 를 12 컨테이너 분기 제거로 완화 + G5b 에 함수 정의 완전 제거 흡수. P5 완료 후 legacy helper grep 0 으로 종결.
+- **P5 scope 확장** — TextArea 가 P3 sweep 대상에서 P5 신규 variant 추가 대상으로 이동 (Codex r3 정정). P5 에서 TextArea spec 에 `containerVariants["label-position"].side` 신규 정의 완료.

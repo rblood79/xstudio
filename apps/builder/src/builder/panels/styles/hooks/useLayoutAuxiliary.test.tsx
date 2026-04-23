@@ -15,6 +15,42 @@ vi.mock("../../../workspace/canvas/sprites/tagSpecMap", () => ({
         justifyContent: "center",
       },
     },
+    VariantGridSpec: {
+      containerStyles: {
+        display: "flex",
+        flexDirection: "column",
+      },
+      composition: {
+        containerVariants: {
+          "label-position": {
+            side: {
+              styles: {
+                display: "grid",
+              },
+            },
+          },
+        },
+      },
+    },
+    VariantFlexSpec: {
+      containerStyles: {
+        display: "flex",
+        flexDirection: "column",
+      },
+      composition: {
+        containerVariants: {
+          "label-position": {
+            side: {
+              styles: {
+                "flex-direction": "row",
+                "align-items": "flex-start",
+                "justify-content": "flex-end",
+              },
+            },
+          },
+        },
+      },
+    },
   },
 }));
 
@@ -25,10 +61,24 @@ import {
   useFlexWrapKeys,
 } from "./useLayoutAuxiliary";
 import { useStore } from "../../../stores";
+import type { Element } from "../../../../types/core/store.types";
 
-function setElement(id: string, style: Record<string, unknown>, tag = "Div") {
+function makeElement(
+  id: string,
+  tag: string,
+  props: Record<string, unknown>,
+): Element {
+  return { id, tag, props };
+}
+
+function setElement(
+  id: string,
+  style: Record<string, unknown>,
+  tag = "Div",
+  extraProps: Record<string, unknown> = {},
+) {
   useStore.setState({
-    elementsMap: new Map([[id, { id, tag, props: { style } } as any]]),
+    elementsMap: new Map([[id, makeElement(id, tag, { ...extraProps, style })]]),
   });
 }
 
@@ -152,5 +202,30 @@ describe("useFlexAlignmentKeys — ADR-082 P4 Spec fallback (ADR-079 P2 완결)"
     const { result } = renderHook(() => useFlexAlignmentKeys("e"));
     // Div 는 mock 에 없음 → spec fallback "" → inline 만 사용
     expect(result.current).toEqual(["Center"]);
+  });
+});
+
+describe("useLayoutAuxiliary — ADR-108 P3 variant-aware fallback", () => {
+  it("variant display=grid 이면 Direction 토글은 block 상태", () => {
+    setElement("e", {}, "VariantGridSpec", { labelPosition: "side" });
+    const { result } = renderHook(() => useFlexDirectionKeys("e"));
+    expect(result.current).toEqual(["block"]);
+  });
+
+  it("variant flex-direction/align/justify 를 Alignment 토글에 반영", () => {
+    setElement("e", {}, "VariantFlexSpec", { labelPosition: "side" });
+    const { result } = renderHook(() => useFlexAlignmentKeys("e"));
+    expect(result.current).toEqual(["rightTop"]);
+  });
+
+  it("inline 값은 variant fallback 보다 우선", () => {
+    setElement(
+      "e",
+      { alignItems: "center" },
+      "VariantFlexSpec",
+      { labelPosition: "side" },
+    );
+    const { result } = renderHook(() => useFlexAlignmentKeys("e"));
+    expect(result.current).toEqual(["rightCenter"]);
   });
 });

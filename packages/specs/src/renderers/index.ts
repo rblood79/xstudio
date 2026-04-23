@@ -21,6 +21,15 @@ export { getVariantColors, getSizePreset } from "./utils/variantColors";
 // CSS Generator
 export { generateCSS, generateAllCSS } from "./CSSGenerator";
 
+// ADR-108 P1: containerVariants 런타임 소비 helper
+export { resolveContainerVariants } from "./resolveContainerVariants";
+export type { ResolvedContainerVariants } from "./resolveContainerVariants";
+export {
+  matchNestedSelector,
+  isSupportedNestedSelector,
+} from "./matchNestedSelector";
+export type { NestedSelectorChild } from "./matchNestedSelector";
+
 // Token Resolver Utils
 export {
   resolveToken,

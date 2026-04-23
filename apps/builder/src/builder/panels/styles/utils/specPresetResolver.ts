@@ -1,5 +1,6 @@
 import {
   cssVarToTokenRef,
+  resolveContainerVariants,
   resolveToken,
   tokenToCSSVar,
   type TokenRef,
@@ -27,20 +28,25 @@ export interface AppearanceSpecPreset {
 }
 
 export interface LayoutSpecPreset {
-  gap?: number;
-  paddingTop?: number;
-  paddingRight?: number;
-  paddingBottom?: number;
-  paddingLeft?: number;
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
+  gap?: number | string;
+  rowGap?: number | string;
+  columnGap?: number | string;
+  padding?: number | string;
+  paddingTop?: number | string;
+  paddingRight?: number | string;
+  paddingBottom?: number | string;
+  paddingLeft?: number | string;
+  margin?: number | string;
+  marginTop?: number | string;
+  marginRight?: number | string;
+  marginBottom?: number | string;
+  marginLeft?: number | string;
   /** ADR-082 P3: containerStyles 에서 공급된 Flex/Grid 레이아웃 키 (문자열 그대로) */
   display?: string;
   flexDirection?: string;
   alignItems?: string;
   justifyContent?: string;
+  flexWrap?: string;
 }
 
 export interface TypographySpecPreset {
@@ -190,6 +196,41 @@ const LAYOUT_KEYS = [
   "marginBottom",
   "marginLeft",
 ] as const;
+
+const VARIANT_LAYOUT_KEY_MAP = {
+  display: "display",
+  "flex-direction": "flexDirection",
+  flexDirection: "flexDirection",
+  "align-items": "alignItems",
+  alignItems: "alignItems",
+  "justify-content": "justifyContent",
+  justifyContent: "justifyContent",
+  "flex-wrap": "flexWrap",
+  flexWrap: "flexWrap",
+  gap: "gap",
+  "row-gap": "rowGap",
+  rowGap: "rowGap",
+  "column-gap": "columnGap",
+  columnGap: "columnGap",
+  padding: "padding",
+  "padding-top": "paddingTop",
+  paddingTop: "paddingTop",
+  "padding-right": "paddingRight",
+  paddingRight: "paddingRight",
+  "padding-bottom": "paddingBottom",
+  paddingBottom: "paddingBottom",
+  "padding-left": "paddingLeft",
+  paddingLeft: "paddingLeft",
+  margin: "margin",
+  "margin-top": "marginTop",
+  marginTop: "marginTop",
+  "margin-right": "marginRight",
+  marginRight: "marginRight",
+  "margin-bottom": "marginBottom",
+  marginBottom: "marginBottom",
+  "margin-left": "marginLeft",
+  marginLeft: "marginLeft",
+} as const satisfies Record<string, keyof LayoutSpecPreset>;
 
 const TYPOGRAPHY_NUMERIC_KEYS = [
   "fontSize",
@@ -370,11 +411,42 @@ function layoutFromSizes(sizeEntry: Record<string, unknown>): LayoutSpecPreset {
   return out;
 }
 
-export const resolveLayoutSpecPreset = createResolver<LayoutSpecPreset>(
+const resolveStaticLayoutSpecPreset = createResolver<LayoutSpecPreset>(
   layoutFromSizes,
   layoutFromContainerStyles,
   layoutFromComposition,
 );
+
+function pickLayoutVariantStyles(
+  styles: Record<string, string>,
+): LayoutSpecPreset {
+  const out: LayoutSpecPreset = {};
+
+  for (const [key, value] of Object.entries(styles)) {
+    const mapped = VARIANT_LAYOUT_KEY_MAP[key];
+    if (!mapped || typeof value !== "string") continue;
+    out[mapped] = value;
+  }
+
+  return out;
+}
+
+export function resolveLayoutSpecPreset(
+  type: string | undefined,
+  size: string | undefined,
+  props?: Readonly<Record<string, unknown>>,
+): LayoutSpecPreset {
+  const base = resolveStaticLayoutSpecPreset(type, size);
+  if (!type || !props) return base;
+
+  const spec = TAG_SPEC_MAP[type];
+  if (!spec) return base;
+
+  const { styles } = resolveContainerVariants(spec, props);
+  if (Object.keys(styles).length === 0) return base;
+
+  return { ...base, ...pickLayoutVariantStyles(styles) };
+}
 
 export const resolveTypographySpecPreset = createResolver<TypographySpecPreset>(
   (sizeEntry) => {

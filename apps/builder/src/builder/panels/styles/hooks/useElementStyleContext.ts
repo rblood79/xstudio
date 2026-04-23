@@ -4,6 +4,7 @@ export interface ElementStyleContext {
   style: Record<string, unknown> | undefined;
   type: string | undefined;
   size: string | undefined;
+  props: Readonly<Record<string, unknown>> | undefined;
 }
 
 /**
@@ -12,16 +13,14 @@ export interface ElementStyleContext {
  * copy-pasting three useStore calls per hook.
  */
 export function useElementStyleContext(id: string | null): ElementStyleContext {
-  const style = useStore((s) => {
+  const props = useStore((s) => {
     if (!id) return undefined;
-    return s.elementsMap.get(id)?.props?.style as
-      | Record<string, unknown>
+    return s.elementsMap.get(id)?.props as
+      | Readonly<Record<string, unknown>>
       | undefined;
   });
   const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
-  const size = useStore((s) => {
-    if (!id) return undefined;
-    return s.elementsMap.get(id)?.props?.size as string | undefined;
-  });
-  return { style, type, size };
+  const style = props?.style as Record<string, unknown> | undefined;
+  const size = props?.size as string | undefined;
+  return { style, type, size, props };
 }

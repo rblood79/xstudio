@@ -129,6 +129,40 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   },
 
   composition: {
+    // ADR-108 P5a: React Aria TextArea는 `.react-aria-TextArea` 루트와
+    // `.react-aria-Label` 자식을 사용하므로, side label 배치는 이 조합만 재배치한다.
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            display: "grid",
+            "grid-template-columns":
+              "var(--form-label-width, max-content) minmax(0, 1fr)",
+            "column-gap": "var(--form-field-gap, var(--spacing-md))",
+            "row-gap": "var(--spacing-xs)",
+            "align-items": "start",
+            width: "100%",
+          },
+          nested: [
+            {
+              selector: "> .react-aria-Label",
+              styles: {
+                "grid-column": "1",
+                "justify-self": "stretch",
+                "text-align": "var(--form-label-align, start)",
+              },
+            },
+            {
+              selector: "> :not(.react-aria-Label)",
+              styles: {
+                "grid-column": "2",
+                "min-width": "0",
+              },
+            },
+          ],
+        },
+      },
+    },
     delegation: [
       {
         childSelector: ".react-aria-Label",

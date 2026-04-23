@@ -72,12 +72,28 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   skipCSSGeneration: true,
 
   // ADR-087 SP6: outer TagGroup container static layout-primitive 리프팅.
-  //   flexDirection 은 labelPosition + hasTagList runtime 결정, flexWrap 은 runtime 결정,
+  //   labelPosition side 는 ADR-108 containerVariants 로 선언하고, flexWrap 은 runtime 결정,
   //   gap 은 Label↔TagList 수직 간격 (spec.sizes.gap 은 inner tag-tag 간격과 별개).
   //   skipCSSGeneration:true → CSS emit 없음, 오직 Taffy resolveContainerStylesFallback 경유.
   containerStyles: {
     display: "flex",
+    flexDirection: "column",
     gap: "{spacing.xs}",
+  },
+
+  // MIRROR: packages/shared/src/components/styles/TagGroup.css .react-aria-TagGroup[data-label-position="side"] - skipCSSGeneration:true 동안 수동 동기화
+  composition: {
+    delegation: [],
+    containerVariants: {
+      "label-position": {
+        side: {
+          styles: {
+            "flex-direction": "row",
+            "align-items": "flex-start",
+          },
+        },
+      },
+    },
   },
 
   defaultVariant: "default",

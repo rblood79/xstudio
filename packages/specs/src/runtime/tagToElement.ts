@@ -109,6 +109,9 @@ import { TooltipSpec } from "../components/Tooltip.spec";
 import { StatusLightSpec } from "../components/StatusLight.spec";
 import { ProgressCircleSpec } from "../components/ProgressCircle.spec";
 import { SectionSpec } from "../components/Section.spec";
+import { IllustratedMessageSpec } from "../components/IllustratedMessage.spec";
+import { CardViewSpec } from "../components/CardView.spec";
+import { TableViewSpec } from "../components/TableView.spec";
 import { SliderTrackSpec } from "../components/SliderTrack.spec";
 import { SliderThumbSpec } from "../components/SliderThumb.spec";
 import { ProgressBarTrackSpec } from "../components/ProgressBarTrack.spec";
@@ -121,8 +124,7 @@ import { MeterValueSpec } from "../components/MeterValue.spec";
 //   → `hasSpec(CardHeader/TagList/...)` true 반환 + `getElementForTag(CardHeader)` 가
 //      spec.element === "div" 반환 → Preview DOM 이 `<div>` 로 렌더 (기존 `<cardheader>`
 //      커스텀 태그 문제 해소) + `data-size/variant` 속성 주입 복구.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+export const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec> = {
   Button: ButtonSpec,
   Text: TextSpec,
   Badge: BadgeSpec,
@@ -222,6 +224,9 @@ const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   ButtonGroup: ButtonGroupSpec,
   StatusLight: StatusLightSpec,
   ProgressCircle: ProgressCircleSpec,
+  IllustratedMessage: IllustratedMessageSpec,
+  CardView: CardViewSpec,
+  TableView: TableViewSpec,
 };
 
 /**
@@ -231,13 +236,10 @@ const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
  * - child spec 의 `element` 가 정적 문자열이면 `getElementForTag` 가 그대로 반환.
  * - child spec 의 `element` 가 함수면 Heading 류 동적 분기 규칙 그대로 적용.
  */
-function expandChildSpecs(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  base: Record<string, ComponentSpec<any>>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Record<string, ComponentSpec<any>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const out: Record<string, ComponentSpec<any>> = { ...base };
+export function expandChildSpecs(
+  base: Record<string, ComponentSpec>,
+): Record<string, ComponentSpec> {
+  const out: Record<string, ComponentSpec> = { ...base };
   for (const spec of Object.values(base)) {
     const children = spec.childSpecs;
     if (!children || children.length === 0) continue;
@@ -250,9 +252,26 @@ function expandChildSpecs(
   return out;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = expandChildSpecs(
-  BASE_TAG_SPEC_MAP,
+export const TAG_SPEC_MAP: Record<string, ComponentSpec> =
+  expandChildSpecs(BASE_TAG_SPEC_MAP);
+
+/**
+ * ADR-108 P0: lowercase tag → ComponentSpec lookup map.
+ *
+ * `TAG_SPEC_MAP` (PascalCase 키) 을 build-time 1회 lowercase Map 으로 변환.
+ * Canvas layout engine 의 `resolveContainerStylesFallback` + `specSizeField` 등
+ * tag 정규화 경로의 SSOT. apps/builder 는 BUILDER_ALIAS_MAP 과 병합하여
+ * 자체 LOWERCASE map 을 파생한다 (sprites/builderAliasMap.ts 참조).
+ */
+export const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<
+  string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ComponentSpec<any>
+> = new Map(
+  Object.entries(TAG_SPEC_MAP).map(([k, v]) => [
+    k.toLowerCase(),
+    v as ComponentSpec<unknown>,
+  ]),
 );
 
 /**

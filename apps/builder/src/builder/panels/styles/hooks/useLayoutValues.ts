@@ -26,11 +26,11 @@ export interface LayoutStyleValues {
 }
 
 export function useLayoutValues(id: string | null): LayoutStyleValues | null {
-  const { style, type, size } = useElementStyleContext(id);
+  const { style, type, size, props } = useElementStyleContext(id);
 
   const specPreset = useMemo<LayoutSpecPreset>(
-    () => resolveLayoutSpecPreset(type, size),
-    [type, size],
+    () => resolveLayoutSpecPreset(type, size, props),
+    [type, size, props],
   );
 
   return useMemo(() => {
@@ -54,13 +54,18 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
       // 우선, 없으면 columnGap, 없으면 shorthand `s.gap` (legacy) 표시.
       gap: firstDefined(
         s.rowGap ?? s.columnGap ?? s.gap,
-        numToPx(specPreset.gap),
+        numToPx(specPreset.rowGap ?? specPreset.columnGap ?? specPreset.gap),
         "0px",
       ),
-      flexWrap: firstDefined(s.flexWrap, undefined, "nowrap"),
+      flexWrap: firstDefined(
+        s.flexWrap,
+        typeof specPreset.flexWrap === "string" ? specPreset.flexWrap : undefined,
+        "nowrap",
+      ),
       // ADR-082 P1-2: Spec 4-way uniform 이면 shorthand 에 반영 (collapsed 모드 UX)
       padding: firstDefined(
         s.padding,
+        numToPx(specPreset.padding) ??
         uniform4Way(
           numToPx(specPreset.paddingTop),
           numToPx(specPreset.paddingRight),
@@ -92,6 +97,7 @@ export function useLayoutValues(id: string | null): LayoutStyleValues | null {
       // ADR-082 P1-2: margin 도 4-way uniform fallback 동일 적용
       margin: firstDefined(
         s.margin,
+        numToPx(specPreset.margin) ??
         uniform4Way(
           numToPx(specPreset.marginTop),
           numToPx(specPreset.marginRight),

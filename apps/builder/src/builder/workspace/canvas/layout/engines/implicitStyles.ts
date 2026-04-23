@@ -11,23 +11,20 @@
  */
 
 import type { Element } from "../../../../../types/core/store.types";
-import {
-  parsePadding,
-  PHANTOM_INDICATOR_CONFIGS,
-  measureTextWidth,
-} from "./utils";
+import { parsePadding, PHANTOM_INDICATOR_CONFIGS } from "./utils";
 import {
   InlineAlertSpec,
   BreadcrumbsSpec,
   GridListItemSpec,
   normalizeBreadcrumbRspSizeKey,
   resolveToken,
-  isValidTokenRef,
+  resolveContainerStylesFallback as _resolveContainerStylesFallback,
+  resolveContainerVariants,
+  matchNestedSelector,
 } from "@composition/specs";
-import type { ComponentSpec, SizeSpec, TokenRef } from "@composition/specs";
+import type { SizeSpec } from "@composition/specs";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { findAncestorByTag } from "../../skia/ancestorLookup";
-import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
 import { LOWERCASE_TAG_SPEC_MAP } from "./tagSpecLookup";
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────────
@@ -124,56 +121,23 @@ function specSizeLineHeight(tag: string, sizeName: string): number | undefined {
   return typeof resolved === "number" ? resolved : undefined;
 }
 
-// ADR-083 Phase 0: ContainerStylesSchema layout primitive 필드.
-//   ADR-080 기존 4 + ADR-083 Phase 0 신규 6 + ADR-084 flexWrap + ADR-085 grid-template 3 = 총 14종.
-//   display/flexDirection/flexWrap/alignItems/justifyContent/width/maxHeight/overflow/outline/gap/padding
-//   + gridTemplateAreas/gridTemplateColumns/gridTemplateRows.
-//   Spec 미선언 태그는 resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
-const CONTAINER_STYLES_FALLBACK_KEYS = [
-  "display",
-  "flexDirection",
-  "flexWrap",
-  "alignItems",
-  "justifyContent",
-  "width",
-  "maxHeight",
-  "overflow",
-  "outline",
-  "gap",
-  "padding",
-  // ADR-085: grid-template — Meter/ProgressBar 등 grid 컨테이너의 트랙/영역 선언.
-  "gridTemplateAreas",
-  "gridTemplateColumns",
-  "gridTemplateRows",
-  // ADR-089: position — SliderTrack 이 자식 SliderThumb absolute 배치 기준 형성.
-  "position",
-] as const;
-
 /**
- * ADR-080 + ADR-083 Phase 0: Spec.containerStyles → layout fallback read-through.
- * ADR-081 G2 C3: testable seam — `tokenConsumerDrift.test.ts` 가 반환값을
- * primitives 와 cross-reference. signature 변경 시 G2 계약 동시 갱신 필요.
- * ADR-083 Phase 0: lookup = `LOWERCASE_TAG_SPEC_MAP.get(tag)` 로 TAG_SPEC_MAP 전체 소비.
+ * ADR-108 P0: packages/specs `resolveContainerStylesFallback` wrapper.
+ *
+ * builder 측 `LOWERCASE_TAG_SPEC_MAP` (packages/specs 102 정본 + 8 alias 병합) 을
+ * 주입하여 ComboBoxWrapper 등 alias tag 도 정본 spec 의 containerStyles 로 fallback.
+ * 테스트 (`resolveContainerStylesFallback.test.ts` / `tokenConsumerDrift.test.ts`) 는
+ * 본 파일에서 export 된 wrapper 를 import — ADR-080 G1 계약 유지.
  */
 export function resolveContainerStylesFallback(
   tag: string,
   parentStyle: Record<string, unknown>,
 ): Record<string, unknown> {
-  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
-  const cs = spec?.containerStyles as Record<string, unknown> | undefined;
-  if (!cs) return {};
-
-  const out: Record<string, unknown> = {};
-  for (const key of CONTAINER_STYLES_FALLBACK_KEYS) {
-    if (parentStyle[key] !== undefined) continue; // 사용자 편집 우선
-    const value = cs[key];
-    if (value === undefined) continue;
-    out[key] =
-      typeof value === "string" && isValidTokenRef(value)
-        ? resolveToken(value as TokenRef)
-        : value;
-  }
-  return out;
+  return _resolveContainerStylesFallback(
+    tag,
+    parentStyle,
+    LOWERCASE_TAG_SPEC_MAP,
+  );
 }
 
 // ─── 내부 상수 ──────────────────────────────────────────────────────
@@ -275,19 +239,6 @@ const FORM_SIDE_LABEL_GAP = 16;
 // ─── 내부 헬퍼 ──────────────────────────────────────────────────────
 
 /**
- * labelPosition prop → flexDirection 변환.
- * labelPosition이 명시되면 강제 적용, 없으면 fallback(기존 flexDirection) 사용.
- */
-function resolveLabelFlexDir(
-  labelPos: string | undefined,
-  fallback: string | undefined,
-  defaultDir = "column",
-): string {
-  if (labelPos) return labelPos === "side" ? "row" : "column";
-  return fallback ?? defaultDir;
-}
-
-/**
  * 사용자 padding이 설정되어 있는지 확인.
  * shorthand(padding) 또는 개별(paddingTop 등) 중 하나라도 있으면 true.
  */
@@ -365,12 +316,48 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
   });
 }
 
-function applySideLabelChildStyles(
+function injectSideLabelLabelAndWrapperStyles(
   children: Element[],
-  labelPos: string | undefined,
+  wrapperTags: ReadonlySet<string>,
 ): Element[] {
-  if (labelPos !== "side") return children;
+  return children.map((child) => {
+    const cs = (child.props?.style || {}) as Record<string, unknown>;
 
+    if (child.tag === "Label") {
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            width: cs.width ?? FORM_SIDE_LABEL_WIDTH,
+            flexShrink: cs.flexShrink ?? 0,
+            alignSelf: cs.alignSelf ?? "flex-start",
+          },
+        },
+      };
+    }
+
+    if (!wrapperTags.has(child.tag)) return child;
+
+    return {
+      ...child,
+      props: {
+        ...child.props,
+        style: {
+          ...cs,
+          flex: cs.flex ?? 1,
+          minWidth: cs.minWidth ?? 0,
+        },
+      },
+    };
+  });
+}
+
+function injectSideLabelLabelAndContentStyles(
+  children: Element[],
+  contentTags: ReadonlySet<string>,
+): Element[] {
   return children.map((child) => {
     const cs = (child.props?.style || {}) as Record<string, unknown>;
 
@@ -404,6 +391,8 @@ function applySideLabelChildStyles(
       };
     }
 
+    if (!contentTags.has(child.tag)) return child;
+
     return {
       ...child,
       props: {
@@ -419,16 +408,53 @@ function applySideLabelChildStyles(
 }
 
 function getSideLabelParentStyle(
-  parentStyle: Record<string, unknown>,
+  specFallback: Record<string, unknown>,
+  rawParentStyle: Record<string, unknown>,
 ): Record<string, unknown> {
   return {
-    ...parentStyle,
-    display: parentStyle.display ?? "flex",
+    ...specFallback,
+    display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-start",
-    gap: parentStyle.gap ?? 4,
+    gap: specFallback.gap ?? 4,
+    ...rawParentStyle,
   };
+}
+
+function resolveActiveContainerVariants(
+  containerTag: string,
+  containerProps: Record<string, unknown> | undefined,
+) {
+  return resolveContainerVariants(
+    LOWERCASE_TAG_SPEC_MAP.get(containerTag),
+    containerProps ?? undefined,
+  );
+}
+
+function hasResolvedSideLabelVariant(
+  styles: Record<string, string>,
+): boolean {
+  return styles.display === "grid" || styles["flex-direction"] === "row";
+}
+
+function injectMatchedSideLabelContentStyles(
+  children: Element[],
+  nested: Array<{ selector: string }>,
+  contentTags: ReadonlySet<string>,
+): Element[] {
+  return children.map((child) => {
+    const childTag = child.tag ?? "";
+    const matches = nested.some((n) =>
+      matchNestedSelector(n.selector, { tag: childTag }, true),
+    );
+    if (!matches) return child;
+    const [adapted] = injectSideLabelLabelAndContentStyles(
+      [child],
+      contentTags,
+    );
+    return adapted ?? child;
+  });
 }
 
 function getDelegatedSize(
@@ -480,7 +506,7 @@ export function applyImplicitStyles(
   getChildElements: (id: string) => Element[],
   elementById: Map<string, Element>,
   /** 현재 노드에 사용 가능한 너비 (px) — maxRows 행 시뮬레이션용 */
-  availableWidth?: number,
+  _availableWidth?: number,
 ): ImplicitStyleResult {
   const containerTag = (containerEl.tag ?? "").toLowerCase();
   // ADR-083 Phase 0: Spec.containerStyles fallback 공통 선주입 layer.
@@ -519,6 +545,11 @@ export function applyImplicitStyles(
   // TagList가 있으면 column 통과, 없으면(레거시) row wrap으로 보정
   if (containerTag === "taggroup") {
     const hasTagList = children.some((c) => c.tag === "TagList");
+    const tagGroupVariant = resolveActiveContainerVariants(
+      containerTag,
+      containerProps,
+    );
+    const sideMode = hasResolvedSideLabelVariant(tagGroupVariant.styles);
 
     // Compositional Label: whiteSpace nowrap 주입 (줄바꿈 방지)
     filteredChildren = children.map((child) => {
@@ -538,21 +569,22 @@ export function applyImplicitStyles(
       return child;
     });
 
-    const tgLabelPos = containerProps?.labelPosition as unknown as
-      | string
-      | undefined;
     const tgDefaultDir = hasTagList ? "column" : "row";
-    const tgFlexDir = resolveLabelFlexDir(
-      tgLabelPos,
-      parentStyle.flexDirection as string | undefined,
-      tgDefaultDir,
-    );
     // ADR-087 SP6: display/gap 는 TagGroup.spec containerStyles 로 리프팅됨.
-    //   flexDirection (labelPos + hasTagList) + flexWrap 은 runtime 결정 → 잔존.
+    //   labelPosition side 는 ADR-108 containerVariants 데이터로 판정한다.
     effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      flexDirection: tgFlexDir,
-      flexWrap: hasTagList && tgLabelPos !== "side" ? undefined : "wrap",
+      ...specFallback,
+      ...(sideMode
+        ? {
+            flexDirection: tagGroupVariant.styles["flex-direction"] ?? "row",
+            alignItems:
+              tagGroupVariant.styles["align-items"] ?? "flex-start",
+          }
+        : {
+            flexDirection: specFallback.flexDirection ?? tgDefaultDir,
+          }),
+      flexWrap: hasTagList && !sideMode ? undefined : "wrap",
+      ...rawParentStyle,
     });
   }
 
@@ -574,7 +606,12 @@ export function applyImplicitStyles(
       : undefined;
     const parentProps = parentEl?.props as Record<string, unknown> | undefined;
     const orientation = parentProps?.orientation as string | undefined;
-    const parentLabelPos = parentProps?.labelPosition as string | undefined;
+    const parentTag = (parentEl?.tag ?? "").toLowerCase();
+    const parentVariant =
+      parentTag === "taggroup"
+        ? resolveActiveContainerVariants(parentTag, parentProps)
+        : { styles: {} };
+    const parentSideMode = hasResolvedSideLabelVariant(parentVariant.styles);
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
@@ -584,7 +621,7 @@ export function applyImplicitStyles(
         : {}),
       gap: parentStyle.gap ?? 4,
       // labelPosition: "side" 시 flex:1로 남은 공간 차지 (Label 옆 배치)
-      ...(parentLabelPos === "side" ? { flex: 1, minWidth: 0 } : {}),
+      ...(parentSideMode ? { flex: 1, minWidth: 0 } : {}),
     });
   }
 
@@ -716,6 +753,11 @@ export function applyImplicitStyles(
   // RadioItems가 있으면 column 통과, 없으면(레거시) column 보정
   if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
     const hasLabel = !!containerProps?.label;
+    const groupVariant = resolveActiveContainerVariants(
+      containerTag,
+      containerProps,
+    );
+    const sideMode = hasResolvedSideLabelVariant(groupVariant.styles);
     // Label 필터링 + whiteSpace nowrap 주입
     filteredChildren = children
       .filter((child) => (child.tag === "Label" ? hasLabel : true))
@@ -736,20 +778,19 @@ export function applyImplicitStyles(
         return child;
       });
 
-    const labelPos = containerProps?.labelPosition as unknown as
-      | string
-      | undefined;
-    const flexDir = resolveLabelFlexDir(
-      labelPos,
-      parentStyle.flexDirection as string | undefined,
-    );
-    // ADR-087 SP1: display 는 CheckboxGroup/RadioGroup.spec containerStyles 로 리프팅됨.
-    //   flexDirection 은 labelPosition prop runtime 결정, gap 은 Label↔CheckboxItems
-    //   간격 (sizing 에서 분리된 fixed 4px) → 잔존.
     effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      flexDirection: flexDir,
-      gap: parentStyle.gap ?? 4,
+      ...specFallback,
+      gap: specFallback.gap ?? 4,
+      ...(sideMode
+        ? {
+            flexDirection: groupVariant.styles["flex-direction"] ?? "row",
+            alignItems: groupVariant.styles["align-items"] ?? "flex-start",
+          }
+        : {
+            display: specFallback.display ?? "flex",
+            flexDirection: specFallback.flexDirection ?? "column",
+          }),
+      ...rawParentStyle,
     });
   }
 
@@ -948,6 +989,11 @@ export function applyImplicitStyles(
     containerTag === "select" ||
     containerTag === "searchfield"
   ) {
+    const fieldVariant = resolveActiveContainerVariants(
+      containerTag,
+      containerProps,
+    );
+    const sideMode = hasResolvedSideLabelVariant(fieldVariant.styles);
     const hasLabel = !!containerProps?.label;
     const WRAPPER_TAGS = new Set([
       "SelectTrigger",
@@ -965,7 +1011,6 @@ export function applyImplicitStyles(
         : containerTag === "searchfield"
           ? "SearchFieldWrapper"
           : "ComboBoxWrapper";
-    const labelPos = containerProps?.labelPosition as string | undefined;
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -978,9 +1023,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width: labelPos === "side" ? cs.width : (cs.width ?? "100%"),
-              flex: labelPos === "side" ? (cs.flex ?? 1) : cs.flex,
-              minWidth: labelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
+              width: sideMode ? cs.width : (cs.width ?? "100%"),
               gap: cs.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
               ...withSpecPadding(cs, sizeName),
             },
@@ -990,20 +1033,22 @@ export function applyImplicitStyles(
       return child;
     });
 
-    filteredChildren = applySideLabelChildStyles(filteredChildren, labelPos);
-    const flexDir = resolveLabelFlexDir(
-      labelPos,
-      parentStyle.flexDirection as string | undefined,
-    );
+    if (sideMode) {
+      filteredChildren = injectSideLabelLabelAndWrapperStyles(
+        filteredChildren,
+        new Set([wrapperChildTag]),
+      );
+    }
     effectiveParent = withParentStyle(
       containerEl,
-      labelPos === "side"
-        ? getSideLabelParentStyle(parentStyle)
+      sideMode
+        ? getSideLabelParentStyle(specFallback, rawParentStyle)
         : {
-            ...parentStyle,
-            display: parentStyle.display ?? "flex",
-            flexDirection: flexDir,
-            gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
+            ...specFallback,
+            display: specFallback.display ?? "flex",
+            flexDirection: specFallback.flexDirection ?? "column",
+            gap: specFallback.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
+            ...rawParentStyle,
           },
     );
   }
@@ -1012,6 +1057,11 @@ export function applyImplicitStyles(
   // ComboBox와 동일한 자식 태그(ComboBoxWrapper/Input/Trigger) 재사용
   // → 기존 ComboBox implicitStyles 처리가 자동 적용됨
   if (containerTag === "numberfield") {
+    const fieldVariant = resolveActiveContainerVariants(
+      containerTag,
+      containerProps,
+    );
+    const sideMode = hasResolvedSideLabelVariant(fieldVariant.styles);
     const hasLabel = !!containerProps?.label;
     const WRAPPER_TAGS = new Set(["ComboBoxWrapper"]);
     filteredChildren = children.filter(
@@ -1020,7 +1070,6 @@ export function applyImplicitStyles(
         WRAPPER_TAGS.has(c.tag) ||
         c.tag === "FieldError",
     );
-    const nfLabelPos = containerProps?.labelPosition as string | undefined;
 
     // Wrapper에 padding + gap 주입 (ComboBox 분기와 동일)
     filteredChildren = filteredChildren.map((child) => {
@@ -1035,10 +1084,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width: nfLabelPos === "side" ? cs.width : (cs.width ?? "100%"),
-              flex: nfLabelPos === "side" ? (cs.flex ?? 1) : cs.flex,
-              minWidth:
-                nfLabelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
+              width: sideMode ? cs.width : (cs.width ?? "100%"),
               gap: cs.gap ?? 4,
               ...withSpecPadding(cs, sizeName),
             },
@@ -1048,21 +1094,22 @@ export function applyImplicitStyles(
       return child;
     });
 
-    filteredChildren = applySideLabelChildStyles(filteredChildren, nfLabelPos);
-    const nfFlexDir = resolveLabelFlexDir(
-      nfLabelPos,
-      parentStyle.flexDirection as string | undefined,
-    );
-    // ADR-087 SP3: display 는 NumberField.spec containerStyles 로 리프팅됨.
-    //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존.
+    if (sideMode) {
+      filteredChildren = injectSideLabelLabelAndContentStyles(
+        filteredChildren,
+        new Set(["ComboBoxWrapper"]),
+      );
+    }
     effectiveParent = withParentStyle(
       containerEl,
-      nfLabelPos === "side"
-        ? getSideLabelParentStyle(parentStyle)
+      sideMode
+        ? getSideLabelParentStyle(specFallback, rawParentStyle)
         : {
-            ...parentStyle,
-            flexDirection: nfFlexDir,
-            gap: parentStyle.gap ?? 4,
+            ...specFallback,
+            display: specFallback.display ?? "flex",
+            flexDirection: specFallback.flexDirection ?? "column",
+            gap: specFallback.gap ?? 4,
+            ...rawParentStyle,
           },
     );
   }
@@ -1228,6 +1275,17 @@ export function applyImplicitStyles(
 
   // ── TextField / TextArea ──────────────────────────────────────────────
   // Label + Input + FieldError 구조. column 레이아웃 보장.
+  //
+  // ADR-108 P2/P5: `resolveContainerVariants` helper 소비로 labelPosition
+  //   변이를 spec.containerVariants (`TextField.spec.ts:308`) 데이터로 결정한다.
+  //   helper 가 variant 매칭에 성공 (styles 또는 nested 존재) 시 spec 이 선언한
+  //   "side" 모드 — Canvas 는 현 시점 grid 미지원이므로 기존 flex 시뮬레이션
+  //   (`getSideLabelParentStyle` + child style 보정) 으로 동일 시각
+  //   결과를 산출한다. 자식 주입 여부는 `matchNestedSelector` 로 확증 — helper
+  //   가 Label/FieldError/Description 등을 선언하지 않은 spec 변형에도 안전.
+  //
+  //   `labelPosition` prop 을 직접 읽지 않음 → SSOT 복원 (CSS/Canvas/Panel 모두
+  //   동일 spec 데이터 소비). TextArea 는 P5 에서 같은 helper 경로를 공유한다.
   if (containerTag === "textfield" || containerTag === "textarea") {
     const hasLabel = !!containerProps?.label;
     filteredChildren = children.filter(
@@ -1237,29 +1295,49 @@ export function applyImplicitStyles(
         c.tag === "FieldError",
     );
 
-    const tfLabelPos = containerProps?.labelPosition as string | undefined;
-    filteredChildren = applySideLabelChildStyles(filteredChildren, tfLabelPos);
-    const tfFlexDir = resolveLabelFlexDir(
-      tfLabelPos,
-      parentStyle.flexDirection as string | undefined,
+    const tfSpec = LOWERCASE_TAG_SPEC_MAP.get(containerTag);
+    const tfVariant = resolveContainerVariants(
+      tfSpec,
+      containerProps ?? undefined,
     );
-    // ADR-087 SP3: display 는 TextField/TextArea.spec containerStyles 로 리프팅됨.
-    //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존.
-    effectiveParent = withParentStyle(
-      containerEl,
-      tfLabelPos === "side"
-        ? getSideLabelParentStyle(parentStyle)
-        : {
-            ...parentStyle,
-            flexDirection: tfFlexDir,
-            gap: parentStyle.gap ?? 4,
-          },
-    );
+    const tfSideMode =
+      Object.keys(tfVariant.styles).length > 0 || tfVariant.nested.length > 0;
+
+    if (tfSideMode) {
+      // spec nested[] 에 매칭된 자식만 Canvas side-label flex 시뮬레이션 적용.
+      //   TextField.spec.ts:320/329 는 Label + `:not(Label)` 양쪽을 덮어 Input/FieldError
+      //   포함. 미매칭 자식 (예: spec 변형 후 새 태그) 은 원본 유지.
+      filteredChildren = injectMatchedSideLabelContentStyles(
+        filteredChildren,
+        tfVariant.nested,
+        new Set(["Input"]),
+      );
+      effectiveParent = withParentStyle(
+        containerEl,
+        getSideLabelParentStyle(specFallback, rawParentStyle),
+      );
+    } else {
+      effectiveParent = withParentStyle(
+        containerEl,
+        {
+          ...specFallback,
+          display: specFallback.display ?? "flex",
+          flexDirection: specFallback.flexDirection ?? "column",
+          gap: specFallback.gap ?? 4,
+          ...rawParentStyle,
+        },
+      );
+    }
   }
 
   // ── DateField / TimeField ────────────────────────────────────────────
   // Label + DateInput(입력 영역) + FieldError. DateInput에 부모 props 주입.
   if (containerTag === "datefield" || containerTag === "timefield") {
+    const fieldVariant = resolveActiveContainerVariants(
+      containerTag,
+      containerProps,
+    );
+    const sideMode = hasResolvedSideLabelVariant(fieldVariant.styles);
     const hasLabel = !!containerProps?.label;
     const sizeName = (containerProps?.size as string) ?? "md";
     const inputHeight = specSizeField(containerTag, sizeName, "height") ?? 30;
@@ -1296,18 +1374,24 @@ export function applyImplicitStyles(
       return child;
     });
 
-    const dfLabelPos = containerProps?.labelPosition as string | undefined;
-    const dfFlexDir = resolveLabelFlexDir(
-      dfLabelPos,
-      parentStyle.flexDirection as string | undefined,
+    if (sideMode) {
+      filteredChildren = injectSideLabelLabelAndContentStyles(
+        filteredChildren,
+        new Set(["DateInput"]),
+      );
+    }
+    effectiveParent = withParentStyle(
+      containerEl,
+      sideMode
+        ? getSideLabelParentStyle(specFallback, rawParentStyle)
+        : {
+            ...specFallback,
+            display: specFallback.display ?? "flex",
+            flexDirection: specFallback.flexDirection ?? "column",
+            gap: specFallback.gap ?? 4,
+            ...rawParentStyle,
+          },
     );
-    // ADR-087 SP3: display 는 DateField/TimeField.spec containerStyles 로 리프팅됨.
-    //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존.
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      flexDirection: dfFlexDir,
-      gap: parentStyle.gap ?? 4,
-    });
   }
 
   // ── SearchFieldWrapper ────────────────────────────────────────────────
@@ -1635,29 +1719,41 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── DatePicker / DateRangePicker — flex column + gap + Label 필터링 + labelPosition ─────
-  // ADR-087 SP4: display 는 DatePicker/DateRangePicker.spec containerStyles 로 리프팅됨.
-  //   flexDirection (labelPos) + gap (4) 은 runtime 결정 → 잔존. POPOVER_CHILDREN_TAGS
-  //   필터링은 popover-hosted Calendar/RangeCalendar 레이아웃 제외 (특수 동작).
+  // ── DatePicker / DateRangePicker ─────────────────────────────────────
+  // containerVariants("label-position") 로 side 모드 여부를 결정하고, Canvas side-label
+  //   시맨틱(Label 고정폭 + Group flex + FieldError 오프셋)은 helper 로 유지한다.
+  //   POPOVER_CHILDREN_TAGS 필터링은 popover-hosted Calendar/RangeCalendar 레이아웃
+  //   제외용 특수 동작으로 잔존.
   if (containerTag === "datepicker" || containerTag === "daterangepicker") {
+    const fieldVariant = resolveActiveContainerVariants(
+      containerTag,
+      containerProps,
+    );
+    const sideMode = hasResolvedSideLabelVariant(fieldVariant.styles);
     const hasLabel = !!containerProps?.label;
     filteredChildren = children.filter((c) => {
       if (c.tag === "Label") return hasLabel;
       return !POPOVER_CHILDREN_TAGS.has(c.tag);
     });
 
-    const dpLabelPos = containerProps?.labelPosition as string | undefined;
-    const dpFlexDir = resolveLabelFlexDir(
-      dpLabelPos,
-      parentStyle.flexDirection as string | undefined,
+    if (sideMode) {
+      filteredChildren = injectSideLabelLabelAndContentStyles(
+        filteredChildren,
+        new Set(["Group"]),
+      );
+    }
+    effectiveParent = withParentStyle(
+      containerEl,
+      sideMode
+        ? getSideLabelParentStyle(specFallback, rawParentStyle)
+        : {
+            ...specFallback,
+            display: specFallback.display ?? "flex",
+            flexDirection: specFallback.flexDirection ?? "column",
+            gap: specFallback.gap ?? 4,
+            ...rawParentStyle,
+          },
     );
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      flexDirection: dpFlexDir,
-      gap: parentStyle.gap ?? 4,
-    });
-
-    filteredChildren = applySideLabelChildStyles(filteredChildren, dpLabelPos);
   }
 
   // ── Calendar — size-based padding/gap 주입 (Generated CSS 동기) ─────
