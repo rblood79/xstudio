@@ -155,3 +155,88 @@
 1. spec fill preset이 color-only에서 멈출지, gradient token schema까지 포함할지
 2. CSS generator가 fill preset을 직접 emit할 때 state selector mapping을 어디까지 공통화할지
 3. component spec 내부 override가 `props.style?.backgroundColor` 대신 어떤 fill override seam을 가질지
+
+## Phase 0 실측 로그 (2026-04-24 착수)
+
+### Baseline grep count — VariantSpec background 계열 10+ 필드
+
+| 필드 (regex `\b…\b`)         | count | 비고                                                                   |
+| ---------------------------- | ----: | ---------------------------------------------------------------------- |
+| background                   |  1965 | CSS property / TokenRef / string literal 혼재. migration target ≠ 전체 |
+| backgroundHover              |   243 | hover 상태 전수                                                        |
+| backgroundPressed            |   240 | pressed 상태 전수                                                      |
+| backgroundAlpha              |    20 | opacity variant                                                        |
+| selectedBackground           |    10 | selected 상태 기본                                                     |
+| selectedBackgroundHover      |     3 | selected + hover                                                       |
+| selectedBackgroundPressed    |     3 | selected + pressed                                                     |
+| emphasizedSelectedBackground |     5 | emphasized + selected 조합                                             |
+| outlineBackground            |     3 | fillStyle=outline variant                                              |
+| subtleBackground             |     3 | fillStyle=subtle variant                                               |
+
+측정 범위: `packages/specs/src` + `apps/builder/src`. `\b` word boundary 적용으로 `background` 는 프리픽스/서픽스 누락 없이 CSS property 포함 광범위 count (targeting 정확도 낮음). 나머지 필드는 TokenRef 소비 실질 대상.
+
+### 3-way G4 Gate baseline (legacy removal 종료 조건)
+
+| Pattern                               | count | 주요 파일                                              |
+| ------------------------------------- | ----: | ------------------------------------------------------ |
+| `variantSpec\.(bg 계열 10 필드)`      |    21 | CSSGenerator(14) + ReactRenderer(3) + variantColors(4) |
+| `\bvariant\.(bg 계열 7 필드)`         |     9 | CSSGenerator(2) + stateEffect(4) + validate-specs(3)   |
+| `im\.(background\|backgroundPressed)` |     2 | CSSGenerator(2)                                        |
+
+총 32 건 소비. Phase 4 G4 통과 조건: 3 pattern 합계 0 (`rg --count = 0` × 3-way).
+
+### Direct consumer per-file 실측
+
+| 파일                                                                  | variantSpec.\* | variant.\* | im.\* |
+| --------------------------------------------------------------------- | -------------: | ---------: | ----: |
+| `packages/specs/src/renderers/CSSGenerator.ts`                        |             14 |          2 |     2 |
+| `packages/specs/src/renderers/ReactRenderer.ts`                       |              3 |          0 |     0 |
+| `packages/specs/src/renderers/utils/variantColors.ts`                 |              4 |          0 |     0 |
+| `packages/specs/src/utils/stateEffect.ts`                             |              0 |          4 |     0 |
+| `packages/specs/scripts/validate-specs.ts`                            |              0 |          3 |     0 |
+| `apps/builder/src/builder/panels/styles/utils/specPresetResolver.ts`  |              0 |          0 |     0 |
+| `apps/builder/src/builder/panels/styles/hooks/useAppearanceValues.ts` |              0 |          0 |     0 |
+
+**Phase 0 발견 (direct consumer 분류 재정렬 필요)**:
+
+`specPresetResolver.ts` 와 `useAppearanceValues.ts` 는 VariantSpec `variant*.background*` **참조 0 건**. breakdown 본문의 line 295-325 / 47-49 인용은 실제로 `style.background` → `style.backgroundColor` 같은 **CSS property 수준 변환** (specPreset object 의 serialized string) 경로이고, spec 타입 필드 `VariantSpec.background` 를 직접 읽지 않음. Phase 3 migration 시 두 범주 분리:
+
+| 범주                 | 소비 방식                      | 파일                                                                        |
+| -------------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| **Spec 타입 direct** | `variantSpec.background*` 소비 | CSSGenerator / ReactRenderer / variantColors / stateEffect / validate-specs |
+| **Preset string**    | `style.background{Color}` 변환 | specPresetResolver / useAppearanceValues                                    |
+
+Phase 3 에서는 Spec 타입 direct 5 파일이 FillTokenSpec schema 직접 참조로 전환되고, Preset string 2 파일은 CSSGenerator emit 결과 (`.css` / `style` string) 를 소비하므로 Phase 2 seam 도입 후 자동 정합 (별도 migration 없음, Phase 3 scope 밖).
+
+### Type 정의 line drift 정정
+
+| 필드                                | ADR/breakdown 인용 | 실측 | drift |
+| ----------------------------------- | -----------------: | ---: | ----: |
+| VariantSpec.backgroundAlpha         |                760 |  761 |    +1 |
+| VariantSpec.background              |                740 |  740 |     0 |
+| VariantSpec.backgroundHover         |                743 |  743 |     0 |
+| VariantSpec.backgroundPressed       |                746 |  746 |     0 |
+| IndicatorModeSpec.background        |                807 |  807 |     0 |
+| IndicatorModeSpec.backgroundPressed |                811 |  811 |     0 |
+
+drift 1줄 (backgroundAlpha) 은 ADR 본문 frozen 상태 유지 (정정은 Phase 3 migration 시점의 자연 re-anchor 에 위임).
+
+### Color-only scope 고정 ✅
+
+본 ADR 의 fill preset schema 는 **color / token ref / state variant** 로 제한. 이미 breakdown "제외" 섹션에 명시:
+
+- image / mesh fill 의 spec 저작 UX
+- Row/Cell component-specific `backgroundColor` 예외 도메인
+- VariantSpec 의 비-background 색상 필드 (text/border/outline{Text,Border}/subtle{Text}/selected{Text,Border}/emphasizedSelected{Text,Border})
+
+gradient / pattern / texture 류 복합 fill 은 후속 ADR 판정.
+
+### Phase 1 Entry 조건 체크
+
+- [x] VariantSpec background 계열 10+ 필드 baseline grep count 기록
+- [x] 3-way G4 Gate baseline (variantSpec._ / variant._ / im.\*) 확보
+- [x] Direct consumer 7 파일 per-file 실측 (+ 분류 재정렬 발견)
+- [x] Color-only scope 고정 명시
+- [x] Type 정의 line drift 식별 (backgroundAlpha +1줄, 다른 필드 0)
+
+Phase 1 (`FillTokenSpec` 또는 동등 schema 도입) 착수 가능.
