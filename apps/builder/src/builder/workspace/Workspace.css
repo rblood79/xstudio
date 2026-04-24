@@ -28,10 +28,15 @@
  * Dot Background (ADR-902) — Builder workspace 전용
  * Skia canvas(z-index:2) 아래 레이어. pointer-events 무간섭.
  * P0 Skia clearFrame 투명화를 전제로 void 영역에서 노출된다.
+ *
+ * ADR-902 Perf 후속 (2026-04-25): 팬 동기화 background-position → transform:
+ * translate3d 로 이전 — pan 시 paint 단계 제거 (compositor-only). inset:-80px
+ * 오버사이즈로 translate negative offset 범위에서도 viewport 전체 커버.
+ * will-change: transform 은 상시 금지 (ADR-047 MDN 남용 경고) — pan 중에만 JS 토글.
  * ============================================ */
 .dot-background {
   position: absolute;
-  inset: 0;
+  inset: -80px;
   pointer-events: none;
   background-image: radial-gradient(
     circle,
@@ -39,7 +44,7 @@
     transparent calc(var(--dot-size, 1px) + 0.5px)
   );
   background-size: var(--dot-gap, 20px) var(--dot-gap, 20px);
-  background-position: var(--dot-offset-x, 0) var(--dot-offset-y, 0);
+  transform: translate3d(var(--dot-tx, 0), var(--dot-ty, 0), 0);
 }
 
 .dot-background--base {

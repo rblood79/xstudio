@@ -1,5 +1,9 @@
 # Reviewer Agent Memory
 
+## 재사용성 패턴 — 중기 추출 후보
+
+- **`useRef<ReturnType<typeof setTimeout> | null>` fade timer 4중 복제**: `CanvasScrollbar.tsx:44`(`fadeTimerRef`) / `SkiaCanvas.tsx:238`(`minimapFadeTimerRef`) / `ParticleContext.tsx:31`(`leaveTimeoutRef`) / `DotBackground.tsx`(`idleTimerRef`) 모두 동일한 clear-then-schedule + `ref=null` 패턴 인라인 반복. `apps/builder/src/hooks/useFadeTimer.ts`로 추출 시 unmount cleanup도 자동화 가능. 현재 4곳이므로 다음 추가 시점에 통합 마이그레이션 권장. `useFrameCallback.ts`와 같은 hooks/ 디렉토리에 배치.
+
 ## 리뷰 빈출 이슈 패턴
 
 - **`props.style as Record<string,unknown>` 3중 반복 캐스팅**: `ContainerSpacingInput.style`이 `Record<string,unknown>`인데 Spec Props의 style 타입(`Record<string,string|number|undefined>`)이 subtype이라 캐스팅 불필요. GridList/Menu/Toolbar 3개 call-site 동시 발생 — `ContainerSpacingInput.style` 타입을 narrowing하거나 Props style 타입을 맞추면 제거 가능 (ADR-907 Phase 4 패턴).

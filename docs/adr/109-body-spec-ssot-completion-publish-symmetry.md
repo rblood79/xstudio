@@ -6,7 +6,7 @@ Proposed — 2026-04-25
 
 ## Context
 
-[ADR-902](902-workspace-dot-background-layer.md) (Workspace Dot Background Layer + 투명 clear) 가 land 되며 body 배경 theme 처리의 SSOT 위반이 드러났고, 후속 refactor (`f367fd89` / `25ddda93` / `76a34f1d`) 로 `BodySpec` 신규 + Builder Skia / Preview DOM 2 경로 정합을 복구했다. 그러나 ADR-063 3-domain charter 의 **D3 (시각 스타일) symmetric consumer** 3 경로 기준으로 볼 때 잔여 debt 가 남아있다.
+[ADR-902](completed/902-workspace-dot-background-layer.md) (Workspace Dot Background Layer + 투명 clear) 가 land 되며 body 배경 theme 처리의 SSOT 위반이 드러났고, 후속 refactor (`f367fd89` / `25ddda93` / `76a34f1d`) 로 `BodySpec` 신규 + Builder Skia / Preview DOM 2 경로 정합을 복구했다. 그러나 ADR-063 3-domain charter 의 **D3 (시각 스타일) symmetric consumer** 3 경로 기준으로 볼 때 잔여 debt 가 남아있다.
 
 ### Domain (SSOT 체인 — [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))
 
@@ -131,7 +131,7 @@ Proposed — 2026-04-25
 
 ## References
 
-- [ADR-902: Workspace Dot Background Layer](902-workspace-dot-background-layer.md) — body SSOT 회귀 원인
+- [ADR-902: Workspace Dot Background Layer](completed/902-workspace-dot-background-layer.md) — body SSOT 회귀 원인
 - [ADR-063: SSOT Chain Charter](completed/063-ssot-chain-charter.md) — D3 symmetric 원칙
 - [ADR-107: Preview/Publish :root Symmetry](completed/107-preview-publish-root-symmetry.md) — 유사한 3-consumer 대칭 작업 선례
 - [ADR-021: Theme System Redesign](completed/021-theme-system-redesign.md) — theme 토큰 / CSS 변수 체계
