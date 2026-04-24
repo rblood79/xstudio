@@ -230,7 +230,7 @@ ADR-906 Decision B (per-component resolver) 는 GridList 1건 + audit 2건 (TagG
 - [docs/adr/completed/079-container-styles-read-through.md](079-container-styles-read-through.md) — Style Panel Spec 3경로 대칭화
 - [docs/adr/completed/080-layout-engine-spec-direct-read-through.md](080-layout-engine-spec-direct-read-through.md) — Layout engine containerStyles Spec direct read-through
 - [docs/adr/completed/082-style-panel-spec-consumer.md](082-style-panel-spec-consumer.md) — Style Panel Spec Consumer 통합
-- [.claude/rules/ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) — SSOT 체인 정본
+- [.claude/rules/ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md) — SSOT 체인 정본
 - [packages/specs/src/primitives/](../../../packages/specs/src/primitives/) — Layer A/B 배치 위치
 - [packages/shared/src/renderers/](../../../packages/shared/src/renderers/) — Renderer contract 적용 대상
-- [apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts](../../apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts) — `calculateContentHeight` 통합 대상
+- [apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts](../../../apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts) — `calculateContentHeight` 통합 대상

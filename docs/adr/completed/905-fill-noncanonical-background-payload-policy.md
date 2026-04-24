@@ -101,19 +101,19 @@ ADR-904는 Fill을 D3 시각 스타일 SSOT로 승격하고 Preview/Publish는 `
 
 ## Risks
 
-| ID  | 위험                                                                 | 심각도 | 대응                                                                                     |
-| --- | -------------------------------------------------------------------- | :----: | ---------------------------------------------------------------------------------------- |
-| R1  | 새 producer가 allowlist 밖 payload를 emit할 때 generic fill canonicalization에서 누락 |  MED   | G1 — ingress inventory + producer contract 문서화                                          |
-| R2  | component-specific `backgroundColor` prop이 generic fill 정책에 잘못 흡수 |  MED   | G2 — Row/Cell 류 예외 도메인 분리 명시                                     |
-| R3  | Preview/Publish adapter output을 다시 ingress parser가 해석하려는 순환 기대 발생 |  LOW   | G3 — adapter output은 direct authoring 아님을 문서화                                         |
+| ID  | 위험                                                                                  | 심각도 | 대응                                                 |
+| --- | ------------------------------------------------------------------------------------- | :----: | ---------------------------------------------------- |
+| R1  | 새 producer가 allowlist 밖 payload를 emit할 때 generic fill canonicalization에서 누락 |  MED   | G1 — ingress inventory + producer contract 문서화    |
+| R2  | component-specific `backgroundColor` prop이 generic fill 정책에 잘못 흡수             |  MED   | G2 — Row/Cell 류 예외 도메인 분리 명시               |
+| R3  | Preview/Publish adapter output을 다시 ingress parser가 해석하려는 순환 기대 발생      |  LOW   | G3 — adapter output은 direct authoring 아님을 문서화 |
 
 ## Gates
 
-| Gate                    | 시점    | 통과 조건                                                                 | 실패 시 대안                                  |
-| ----------------------- | ------- | ------------------------------------------------------------------------- | --------------------------------------------- |
-| G1: Allowlist Freeze    | Phase 1 | 지원 ingress 타입 목록과 residual policy가 문서/테스트에 고정된다         | parser 범위 재분류 후 ADR 수정                |
-| G2: Exception Split     | Phase 2 | component-specific `backgroundColor` prop이 generic fill 정책에서 분리된다 | 예외 목록을 ADR 본문과 breakdown에 추가 고정 |
-| G3: Producer Contract   | Phase 3 | 신규 producer는 canonical `fills` 또는 allowlist payload만 emit 하도록 가이드되고, allowlist 밖 payload는 현 단계에서 무표식 pass-through residual policy로 유지된다 | ingress 경계에서 warning/guard 추가 검토      |
+| Gate                  | 시점    | 통과 조건                                                                                                                                                            | 실패 시 대안                                 |
+| --------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| G1: Allowlist Freeze  | Phase 1 | 지원 ingress 타입 목록과 residual policy가 문서/테스트에 고정된다                                                                                                    | parser 범위 재분류 후 ADR 수정               |
+| G2: Exception Split   | Phase 2 | component-specific `backgroundColor` prop이 generic fill 정책에서 분리된다                                                                                           | 예외 목록을 ADR 본문과 breakdown에 추가 고정 |
+| G3: Producer Contract | Phase 3 | 신규 producer는 canonical `fills` 또는 allowlist payload만 emit 하도록 가이드되고, allowlist 밖 payload는 현 단계에서 무표식 pass-through residual policy로 유지된다 | ingress 경계에서 warning/guard 추가 검토     |
 
 ## Implementation Notes — 2026-04-24
 
@@ -142,6 +142,6 @@ ADR-904는 Fill을 D3 시각 스타일 SSOT로 승격하고 Preview/Publish는 `
 
 - [docs/adr/904-fill-ssot-preview-publish-adapter.md](904-fill-ssot-preview-publish-adapter.md)
 - [docs/adr/design/904-fill-ssot-preview-publish-adapter-breakdown.md](../design/904-fill-ssot-preview-publish-adapter-breakdown.md)
-- [apps/builder/src/builder/panels/styles/utils/fillCssIngressParser.ts](../../apps/builder/src/builder/panels/styles/utils/fillCssIngressParser.ts)
-- [apps/builder/src/builder/panels/styles/utils/fillExternalIngress.ts](../../apps/builder/src/builder/panels/styles/utils/fillExternalIngress.ts)
+- [apps/builder/src/builder/panels/styles/utils/fillCssIngressParser.ts](../../../apps/builder/src/builder/panels/styles/utils/fillCssIngressParser.ts)
+- [apps/builder/src/builder/panels/styles/utils/fillExternalIngress.ts](../../../apps/builder/src/builder/panels/styles/utils/fillExternalIngress.ts)
 - [docs/adr/063-ssot-chain-charter.md](063-ssot-chain-charter.md)

@@ -150,6 +150,6 @@ useEffect(() => {
 
 ## 관련 ADR
 
-- [ADR-063](../../docs/adr/063-ssot-chain-charter.md) — 3-domain 분할 charter
+- [ADR-063](../../docs/adr/completed/063-ssot-chain-charter.md) — 3-domain 분할 charter
 - [ADR-907](../../docs/adr/completed/907-collection-container-style-pipeline.md) — Collection container style pipeline (Layer B/C/D 도입)
 - [ADR-909](../../docs/adr/completed/909-style-ssot-contract.md) — 본 규칙의 공식 결정
