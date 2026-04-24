@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -622,26 +623,17 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       const height = size.height;
       const iconSize = size.iconSize ?? 18;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       const bgColor =
         props.style?.backgroundColor ?? ("{color.transparent}" as TokenRef);
 
       const borderColor = props.style?.borderColor;
 
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const fontSize = resolveSpecFontSize(
         props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
@@ -667,16 +659,12 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           ? ("{color.neutral}" as TokenRef)
           : ("{color.neutral-subdued}" as TokenRef));
 
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
 
       const shapes: Shape[] = [];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;

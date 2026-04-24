@@ -11,6 +11,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { METER_FILL_COLORS, METER_DIMENSIONS } from "./Meter.spec";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 
@@ -137,18 +138,13 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
           : (props.style?.width as number) || 240;
       const barHeight = size.height;
 
-      const styleBr = props.style?.borderRadius;
       const trackRadiusRef =
         TRACK_BORDER_RADIUS[sizeName] ?? TRACK_BORDER_RADIUS.md;
       const resolvedRadius = resolveToken(trackRadiusRef);
-      const barRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : typeof resolvedRadius === "number"
-            ? resolvedRadius
-            : 4;
+      const barRadius = parsePxValue(
+        props.style?.borderRadius,
+        typeof resolvedRadius === "number" ? resolvedRadius : 4,
+      );
 
       const bgColor = props.style?.backgroundColor ?? TRACK_BG_COLOR;
 

@@ -31,6 +31,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 
 export interface SelectTriggerProps {
   variant?: "default" | "accent" | "negative";
@@ -176,13 +177,10 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
       const height =
         (props.style?.height as number) || (size.height as number) || 40;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       // backgroundColor: 'transparent'는 factory 기본값 → spec variant 사용
       // 사용자가 명시적으로 색상을 설정한 경우에만 inline style 우선
@@ -202,14 +200,8 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
           ? variant.borderHover
           : variant.border);
 
-      const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, defaultBw);
 
       const shapes: Shape[] = [
         {

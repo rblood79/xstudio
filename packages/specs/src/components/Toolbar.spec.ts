@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { ArrowLeftRight } from "lucide-react";
 
 /**
@@ -104,13 +105,10 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       const isVertical = props.orientation === "vertical";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
 

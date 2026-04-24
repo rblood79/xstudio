@@ -13,6 +13,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -204,12 +205,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
           14,
         );
 
-        const paddingX =
-          props.style?.paddingLeft != null
-            ? typeof props.style.paddingLeft === "number"
-              ? props.style.paddingLeft
-              : parseFloat(String(props.style.paddingLeft)) || 0
-            : size.paddingX;
+        const paddingX = parsePxValue(props.style?.paddingLeft, size.paddingX);
         const paddingRight =
           props.style?.paddingRight != null
             ? parseNumericStyleValue(props.style.paddingRight, size.paddingX)

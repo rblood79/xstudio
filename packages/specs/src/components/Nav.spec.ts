@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { Tag } from "lucide-react";
 
 /**
@@ -88,18 +89,19 @@ export const NavSpec: ComponentSpec<NavProps> = {
 
   render: {
     shapes: (props, size) => {
-      const variant = NavSpec.variants![(props as { variant?: keyof typeof NavSpec.variants }).variant ?? NavSpec.defaultVariant!];
+      const variant =
+        NavSpec.variants![
+          (props as { variant?: keyof typeof NavSpec.variants }).variant ??
+            NavSpec.defaultVariant!
+        ];
       const shapes: Shape[] = [];
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       // 배경
       shapes.push({

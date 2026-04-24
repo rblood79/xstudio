@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { Circle, Palette, Sliders } from "lucide-react";
 
 /**
@@ -140,31 +141,26 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ColorSwatchSpec.variants![(props as { variant?: keyof typeof ColorSwatchSpec.variants }).variant ?? ColorSwatchSpec.defaultVariant!];
+      const variant =
+        ColorSwatchSpec.variants![
+          (props as { variant?: keyof typeof ColorSwatchSpec.variants })
+            .variant ?? ColorSwatchSpec.defaultVariant!
+        ];
       const swatchSize = size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const borderColor =
         props.style?.borderColor ??
         (props.isSelected
           ? ("{color.accent}" as TokenRef)
           : (variant.border ?? ("{color.border}" as TokenRef)));
-      const styleBw = props.style?.borderWidth;
       const defaultBw = props.isSelected ? 2 : 1;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, defaultBw);
 
       const shapes: Shape[] = [
         // 체크 패턴 배경 (투명도 표시용)

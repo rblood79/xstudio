@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parseBorderWidth } from "../primitives";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -219,13 +220,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       const outerRadius = outer / 2;
 
       // 사용자 스타일 우선
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 2;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 2);
 
       const ringBorder =
         RADIO_RING_BORDER[variantName] ?? RADIO_RING_BORDER.default;

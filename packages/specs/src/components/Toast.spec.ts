@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -194,7 +195,11 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = ToastSpec.variants![(props as { variant?: keyof typeof ToastSpec.variants }).variant ?? ToastSpec.defaultVariant!];
+      const variant =
+        ToastSpec.variants![
+          (props as { variant?: keyof typeof ToastSpec.variants }).variant ??
+            ToastSpec.defaultVariant!
+        ];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       const message =
@@ -205,21 +210,11 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         "Notification";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
-
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const bgColor =
         props.style?.backgroundColor ??
@@ -229,19 +224,18 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         (variant.border || ("{color.border}" as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

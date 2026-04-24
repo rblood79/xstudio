@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -524,13 +525,10 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           : (props.style?.width as number) || 240;
       const height = size.height;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       const bgColor =
         props.style?.backgroundColor ??
@@ -544,14 +542,8 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           ? ("{color.accent}" as TokenRef)
           : ("{color.border}" as TokenRef));
 
-      const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, defaultBw);
 
       // fontSize: Propagation은 size prop만 변경하므로 props.size 있으면 size.fontSize 우선
       const fontSize = resolveSpecFontSize(
@@ -574,16 +566,12 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
       const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
 
       const shapes: Shape[] = [];
       // CONTAINER_TAGS에 등록된 경우 자식 Element가 시각 렌더링 담당

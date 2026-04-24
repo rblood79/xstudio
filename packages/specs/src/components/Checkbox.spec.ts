@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -209,21 +210,11 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
         CHECKBOX_CHECKED_COLORS[variantName] ?? CHECKBOX_CHECKED_COLORS.default;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.indicator?.boxRadius ?? 4);
-
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 2;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.indicator?.boxRadius ?? 4,
+      );
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 2);
 
       const bgColor =
         props.style?.backgroundColor ??

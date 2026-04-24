@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { Circle, LayoutGrid, Hash, Sliders, PointerOff } from "lucide-react";
 
 /**
@@ -178,25 +179,20 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ColorSwatchPickerSpec.variants![(props as { variant?: keyof typeof ColorSwatchPickerSpec.variants }).variant ?? ColorSwatchPickerSpec.defaultVariant!];
+      const variant =
+        ColorSwatchPickerSpec.variants![
+          (props as { variant?: keyof typeof ColorSwatchPickerSpec.variants })
+            .variant ?? ColorSwatchPickerSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
-      const stylePad = props.style?.padding;
-      const padding =
-        stylePad != null
-          ? typeof stylePad === "number"
-            ? stylePad
-            : parseFloat(String(stylePad)) || 0
-          : size.paddingY;
+      const padding = parsePxValue(props.style?.padding, size.paddingY);
 
       const swatchSize = size.iconSize ?? 28;
       const columns = props.columns ?? 6;
