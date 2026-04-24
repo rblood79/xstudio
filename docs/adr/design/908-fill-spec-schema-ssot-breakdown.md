@@ -240,3 +240,147 @@ gradient / pattern / texture 류 복합 fill 은 후속 ADR 판정.
 - [x] Type 정의 line drift 식별 (backgroundAlpha +1줄, 다른 필드 0)
 
 Phase 1 (`FillTokenSpec` 또는 동등 schema 도입) 착수 가능.
+
+---
+
+## Phase 1-4 완결 로그 (2026-04-24 세션 22 — 동일 세션 전수 완결)
+
+### Phase 1 — FillTokenSpec 타입 도입 (commit `feebb1b8`)
+
+- `FillStateTokens` (base required + hover/pressed/selected/selectedHover/selectedPressed/emphasizedSelected 6 optional) + `FillTokenSpec` (default required + outline/subtle Partial + alpha optional) 선언.
+- `packages/specs/src/types/spec.types.ts` + `types/index.ts` + `src/index.ts` 양쪽 barrel re-export.
+- `FillTokenSpec.parity.test.ts` 12 테스트 신설 — VariantSpec 10 필드 → FillTokenSpec 매핑 증명 (Phase 4 에서 FillTokenSpec 구조 6 테스트로 축소).
+- 검증: specs 323/323 + type-check 3/3 PASS.
+
+### Phase 2 — Dual-read seam (commit `ccf7ae86`)
+
+- `packages/specs/src/utils/fillTokens.ts` 신설:
+  - `variantSpecToFillTokens(variant)` — legacy 10 필드 → FillTokenSpec 변환 bridge
+  - `resolveFillTokens(variant)` — `variant.fill` 우선 / legacy fallback seam
+- VariantSpec 에 `fill?: FillTokenSpec` optional 추가 (Phase 3 migration target).
+- `fillTokens.seam.test.ts` 11 테스트 신설 — dual-read 규약 (fill 우선 / legacy fallback / 공존 시 fill 우선 / exactOptionalPropertyTypes 준수).
+- 검증: specs 334/334 PASS.
+
+### Phase 3-A-1 — Renderer/util consumer 전환 (commit `14a0b59d`, 5 파일)
+
+- `CSSGenerator.ts` 14 site + `generateVariantStyles` 2 site (variants loop + default state)
+- `ReactRenderer.ts` 3 site (`generateCSSVariables` CSS var emit)
+- `variantColors.ts` 4 site (Skia/Canvas 공용 hex color 세트)
+- `stateEffect.ts` 4 site (hover/pressed/disabled/default 분기)
+- `validate-specs.ts` 3 site (validator 호출)
+- 패턴: 각 consumer 진입부 `const fill = resolveFillTokens(variant);` + `variantSpec.background*` → `fill.default.*`
+- backgroundHover / backgroundPressed 에 if 가드 추가 (Phase 3-B 에서 spec 이 생략 가능하도록)
+- G4: `variantSpec.*` 21 → **0** ✅
+- 검증: CSSGenerator snapshot 82 bit-identical + type-check 3/3.
+
+### Phase 3-A-2 — Component spec shapes 전환 (commit `fac5c9e7`, 31 파일)
+
+- `render.shapes()` 함수 내부의 `variant.background*` 49 site 를 `resolveFillTokens(variant)` 경유로 전환.
+- 구성:
+  - pilot (Section 5)
+  - top-5 (ToggleButton 4 / Button 4 / SelectTrigger 3 / Menu 3 / FileTrigger 3)
+  - batch 1-3 (Avatar/Skeleton/ColorPicker/DateInput/MaskedFrame/ProgressCircle/Toolbar/Pagination/Image/Form/InlineAlert/TableView/ColorSwatchPicker/Nav/Switcher)
+  - batch 4 복잡 (Input/StatusLight/SelectIcon/Checkbox/ToggleButtonGroup/DateSegment/Table)
+  - last (ListBox, ListBoxItem 주석, TagList 주석)
+- G4: components/ `variant.bg*` 49 → **0** ✅
+- 검증: specs 334/334 PASS (snapshot bit-identical).
+
+### Phase 3-B — IndicatorModeSpec seam (commit `b25893d9`)
+
+- `IndicatorModeSpec` 에 `fill?: FillStateTokens` optional 추가.
+- `resolveIndicatorFill(im)` helper 신설 (im.fill 우선 / legacy background+Pressed fallback).
+- CSSGenerator `generateIndicatorModeCSS` 의 `im.backgroundPressed` 2 site 전환.
+- 발견: `im.background` 는 실제 emit 되지 않는 dead field (컨테이너 `background: transparent` 하드코딩, line 1244). 실 소비는 `im.backgroundPressed` 만.
+- G4: `im.*` 2 → **0** ✅
+
+### Phase 4-a pilot — Button + 타입 relaxation (commit `52b84784`)
+
+- VariantSpec 의 `background / backgroundHover / backgroundPressed` required → **optional** 전환 (spec 이 fill 선언 시 생략 가능).
+- `variantSpecToFillTokens()` 에 `variant.background!` non-null assertion (legacy path 계약).
+- Button.spec.ts 6 variants (accent/primary/secondary/negative/premium/genai) legacy 완전 삭제 + `fill: { default: { base, hover, pressed } }` 선언.
+- 추가 발견: `defaultVariant` alias (CSSGenerator line 592) Phase 3-A baseline 에서 누락된 4th alias. seam 경유로 전환.
+- SelectIcon 의 기존 `fill` 변수 (icon color) 와 이름 충돌 → `iconFill` rename.
+- FillTokenSpec.parity.test 에 optional 전환 반영.
+- **Button snapshot bit-identical** 증명 — seam dual-read 유효성 실증.
+
+### Phase 4-a bulk — 82 variants spec 일괄 migration (commit `c455113b`)
+
+- Python 스크립트 (`/tmp/adr908-migrate.py`) 로 3-line / 2-line pattern 일괄 치환.
+- 82 파일 변환 + `backgroundAlpha: 0` 가진 4 파일 (AvatarGroup/Link/Section/Separator) 은 `fill.alpha: 0` 으로 이동 (수동).
+- 변환 규모: +1460줄 / -632줄.
+- G4: components/ `variant.bg*` 0 ✅ (실 spec 코드 0 건).
+
+### Phase 4-b + 4-c — 타입 legacy 삭제 + seam 축소 (commit `050729ab`)
+
+**Phase 4-b (타입 정리)**:
+
+- VariantSpec 에서 legacy 10 필드 삭제 (`background / backgroundHover / backgroundPressed / backgroundAlpha / selectedBackground(Hover/Pressed) / emphasizedSelectedBackground / outlineBackground / subtleBackground`).
+- `fill: FillTokenSpec` required 로 승격.
+- IndicatorModeSpec 에서 `background / backgroundPressed` 삭제. `fill: FillStateTokens` required.
+- non-background 색상 필드 (text/border/selectedText/outlineText/subtleText/selectedBorder 등) 유지.
+
+**Phase 4-c (seam 축소)**:
+
+- `variantSpecToFillTokens()` 삭제.
+- `resolveFillTokens()` 를 `variant.fill` 단순 반환으로 축소 (pass-through accessor).
+- `resolveIndicatorFill()` 동일 축소.
+- index barrel export 정리.
+
+**잔존 spec migration (Phase 4-a 미커버)**:
+
+- Tag.spec.ts 2 variants — 주석 suffix 로 script 미매치, 수동 fill 이전.
+- ToggleButton.spec.ts 1 variant — bg + selected + emphasizedSelected 5 필드.
+- TagList.spec.ts TAG_LIST_VARIANTS local const 4 variants.
+- Dialog.spec.ts DIALOG_DEFAULTS local const.
+- Disclosure.spec.ts defaultVariantColors local const.
+- ToggleButtonGroup.spec.ts indicatorMode.background → fill.base.
+
+**테스트 업데이트**:
+
+- fillTokens.seam.test.ts: Phase 2 seam 11 테스트 → Phase 4 accessor 4 테스트.
+- CSSGenerator.containerStyles.test.ts: fixture 를 fill 구조로.
+
+### Status 승격 + README (commit `5cfa7f09`)
+
+- ADR-908 본문 Status: Accepted → **Implemented — 2026-04-24 (동일 세션 Phase 0 → Phase 4 완결, 9 commits)**.
+- docs/adr/README.md:
+  - 완료 96 → 97 / 미구현 11 → 10 / 합계 115 유지.
+  - ADR-908 행 Implemented + 상세 migration 요약.
+  - 헤더 "최종 업데이트" 를 2026-04-24 세션 22 ADR-908 완결 로그로 교체.
+
+### Audit cleanup (commit `d35b4631`)
+
+**실제 legacy 였던 것 (수정)**:
+
+- `validate-tokens.ts` (tsconfig rootDir 밖이라 type-check skip) — `variant.background/Hover/Pressed` 3 site 를 `resolveFillTokens()` 경유로.
+- `state.types.ts` 주석 stale 참조 ("VariantSpec 배경 토큰 사용") 갱신.
+- `ListBoxItem.spec.ts` 주석 내 legacy 경로.
+- `FillTokenSpec.parity.test.ts` Phase 1 artifact → Phase 4 구조 테스트로 재작성 (6 테스트).
+
+**Phase 4 scope 외 (의도적 잔존)**:
+
+- `ContainerStylesSchema.background?: TokenRef` — 컨테이너 레벨, VariantSpec 과 별개 타입.
+- DropZone.DROPZONE_DEFAULTS / Card.CARD_DEFAULTS local const — VariantSpec 미사용, 속성명 우연 일치.
+- apps/builder `ToggleButtonColorPreset` — builder-specific numeric hex preset, 구조 상이.
+
+### 최종 G4 Gate
+
+| Pattern                                                 | Baseline | 최종     |
+| ------------------------------------------------------- | -------: | -------- |
+| `variantSpec.*` (full object access)                    |       21 | **0** ✅ |
+| `\bvariant.*` (short alias in consumer)                 |        9 | **0** ✅ |
+| `im.*` (IndicatorModeSpec alias)                        |        2 | **0** ✅ |
+| types/ 실 declaration (VariantSpec + IndicatorModeSpec) |       12 | **0** ✅ |
+| components/ 실 spec declaration                         |     ~200 | **0** ✅ |
+
+### 검증
+
+- specs 321/321 PASS (CSSGenerator snapshot 82 bit-identical)
+- type-check 3 패키지 전원 PASS
+- build:specs + 117 CSS 재생성 output 동일 (legacy 삭제에도 CSS emit 불변)
+
+### Phase 4 완료 후 잔존 작업 (선택적, Phase 5+ 또는 후속 ADR)
+
+1. DropZone/Card local const 의 property 이름 rename (`backgroundHover` → `hoverColor` 등)
+2. apps/builder `ToggleButtonColorPreset` 속성명 `selectedBackground` 등을 FillStateTokens 규약과 일관되게 rename
+3. 비-background 색상 필드 (`text/border/selectedText/outlineText/subtleText` 등) 도 fill preset 언어로 확장 (open issue #1 gradient token 과 함께 후속 ADR)

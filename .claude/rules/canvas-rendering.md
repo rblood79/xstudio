@@ -29,6 +29,50 @@ globs:
 - Spec fontSize 우선순위: `props.size` 명시 시 `size.fontSize` 우선. **Why**: Propagation은 size prop만 변경, style.fontSize 미갱신
 - Spec Container Dimension Injection: `_containerWidth`/`_containerHeight` props 주입 (ElementSprite → specProps). `CONTAINER_DIMENSION_TAGS` Set 등록 필수. **Why**: Spec shapes가 Taffy 결과를 모르면 우측/중앙 배치 불가
 
+## 2.5.5. Fill Spec Schema SSOT (ADR-908 Implemented 2026-04-24)
+
+VariantSpec 의 배경 계열 10+ 필드 + IndicatorModeSpec 의 background\* 는 `FillTokenSpec` (fillStyle × state 2축) + `FillStateTokens` 로 **단일 소스 통합**. legacy `background / backgroundHover / backgroundPressed / backgroundAlpha / selectedBackground* / emphasizedSelectedBackground / outlineBackground / subtleBackground` 필드는 전수 삭제됨.
+
+### Fill token 구조
+
+```ts
+interface FillStateTokens {
+  base: TokenRef; // required — 해당 fillStyle 의 default state
+  hover?: TokenRef;
+  pressed?: TokenRef;
+  selected?: TokenRef;
+  selectedHover?: TokenRef;
+  selectedPressed?: TokenRef;
+  emphasizedSelected?: TokenRef; // data-emphasized + data-selected
+}
+
+interface FillTokenSpec {
+  default: FillStateTokens; // required
+  outline?: Partial<FillStateTokens>; // [data-fill-style="outline"]
+  subtle?: Partial<FillStateTokens>; // [data-fill-style="subtle"]
+  alpha?: number; // 0-1
+}
+```
+
+### Spec 작성 규약
+
+- 모든 `variants[name]` 은 `fill: { default: { base, hover?, pressed?, ... } }` 선언 필수 — `fill` 은 VariantSpec 에서 required.
+- IndicatorModeSpec 은 `fill: { base, pressed? }` (selection indicator 는 `pressed` 만 emit 됨, `base` 는 컨테이너 `background: transparent` 하드코딩 탓 dead).
+- 비-background 색상 (`text / border / textHover / borderHover / selectedText / outlineText / subtleText / selectedBorder / emphasizedSelectedText / emphasizedSelectedBorder`) 는 VariantSpec 직접 필드 유지.
+
+### Consumer 규약
+
+- spec 내부 `render.shapes()` 및 외부 5 consumer (`CSSGenerator / ReactRenderer / variantColors / stateEffect / validate-specs`) 는 항상 `resolveFillTokens(variant)` / `resolveIndicatorFill(im)` 경유로 fill 접근. **Why**: 단일 진입점 유지 + 향후 merge/override 확장 포인트 보존
+- `variant.background` / `variant.backgroundHover` 등 직접 property access **금지** (타입상 존재 안 함, compile error).
+- hover / pressed 는 optional 이므로 consumer 에서 fallback 필요: `fill.default.hover ?? fill.default.base` 패턴.
+
+### 금지 패턴 (ADR-908 Phase 4)
+
+- ❌ VariantSpec / IndicatorModeSpec 에 `background` / `backgroundHover` / `backgroundPressed` / `selectedBackground*` / `outlineBackground` / `subtleBackground` / `backgroundAlpha` 개별 필드 신규 도입
+- ❌ `variantSpec.background*` / `variant.background*` / `im.background*` property access — 타입 삭제됨, 단일 진입점만 사용
+- ❌ `variantSpecToFillTokens()` 호출 — Phase 4-c 에서 삭제됨, `resolveFillTokens()` 만 사용
+- ❌ local const 의 property 이름에 legacy naming 유지 (DropZone/Card 예시는 historical, 신규 금지)
+
 ## 2.6. Container style pipeline (ADR-907 Implemented)
 
 collection/self-render 컨테이너 (`Breadcrumbs, ComboBox, GridList, ListBox, Menu, Select, Tabs, TagGroup, Table, Toolbar, Tree` 11 주대상) 의 `element.props.style` 은 **3경로** (Preview DOM / Skia `render.shapes()` / Layout `calculateContentHeight()`) 에 **동일 resolver** 로 반영되어야 한다. 4 layer 아키텍처:

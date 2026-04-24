@@ -13,11 +13,11 @@
 
 composition 아키텍처는 **3개의 독립 domain**으로 구성된다. 각 domain은 고유 권위를 가지며 경계 교차 금지.
 
-| Domain | 권위 | 내용 | Spec 개입 |
-| --- | --- | --- | --- |
-| **D1. DOM/접근성** | **Adobe RAC (절대)** | HTML 구조, ARIA 속성, 키보드 동작, 포커스 관리, 접근성 | **금지 — 관찰·소비만** |
-| **D2. Props/API** | **RSP 참조 + custom 확장** | 사용자 편의 props (isQuiet, contextualHelp 등) | 타입 선언만, 구현은 RAC + custom |
-| **D3. 시각 스타일** | **Spec (SSOT)** | 화면에 보여지는 style 전부 — 색상/크기/폰트/레이아웃/형태 | **100% 정본** |
+| Domain              | 권위                       | 내용                                                      | Spec 개입                        |
+| ------------------- | -------------------------- | --------------------------------------------------------- | -------------------------------- |
+| **D1. DOM/접근성**  | **Adobe RAC (절대)**       | HTML 구조, ARIA 속성, 키보드 동작, 포커스 관리, 접근성    | **금지 — 관찰·소비만**           |
+| **D2. Props/API**   | **RSP 참조 + custom 확장** | 사용자 편의 props (isQuiet, contextualHelp 등)            | 타입 선언만, 구현은 RAC + custom |
+| **D3. 시각 스타일** | **Spec (SSOT)**            | 화면에 보여지는 style 전부 — 색상/크기/폰트/레이아웃/형태 | **100% 정본**                    |
 
 ### D1 (DOM/접근성)
 
@@ -53,36 +53,44 @@ composition 아키텍처는 **3개의 독립 domain**으로 구성된다. 각 do
   - 수동 CSS가 Spec 파생이 아니라 독립 정의 (skipCSSGeneration + 수동 CSS의 장기 유지)
   - `@sync` 주석으로 CSS 파일 간 참조 (Spec 거치지 않은 consumer-to-consumer)
   - Skia 전용 시각 표현 (DOM/CSS로 재현 불가능한 효과를 Spec에 도입)
+  - VariantSpec 또는 IndicatorModeSpec 에 `background` / `backgroundHover` / `backgroundPressed` / `selectedBackground*` / `outlineBackground` / `subtleBackground` / `backgroundAlpha` 등 **legacy 개별 background 필드 신규 도입** (ADR-908 Phase 4 로 fill preset SSOT 통합, `FillTokenSpec` / `FillStateTokens` 단일 소스)
+
+**D3 Fill 계열 SSOT (ADR-908 Implemented 2026-04-24)**:
+
+- VariantSpec 의 배경 계열 10+ 필드 + IndicatorModeSpec 의 background\* 는 모두 `FillTokenSpec` (fillStyle × state 2축) + `FillStateTokens` 로 통합됨.
+- 신규 spec 작성 시 `variants[name].fill = { default: { base, hover?, pressed?, selected?, ... }, outline?, subtle?, alpha? }` 구조 사용.
+- consumer 는 항상 `resolveFillTokens(variant)` / `resolveIndicatorFill(im)` 경유로 fill 접근 (direct property access 금지).
+- 비-background 색상 (`text / border / textHover / borderHover / selectedText / outlineText / subtleText / selectedBorder / emphasizedSelectedText / emphasizedSelectedBorder`) 는 VariantSpec 직접 필드로 유지 — fill preset 언어로의 확장은 후속 ADR 판정.
 
 ## 2. 용어 사전
 
-| 용어 | 정의 | 적용 대상 |
-| --- | --- | --- |
-| **SSOT (Source of Truth)** | 단일 source. 해당 domain 내에서 유일 정의 권한 | D3에서 Spec에만 적용 |
-| **권위 (authority)** | domain 전체를 지배하는 외부 기준 | D1에서 RAC에만 적용 |
-| **reference** | 설계 시 참조하는 외부 원천 (결정권 없음) | D2에서 RSP에 적용 |
-| **consumer** | SSOT에서 파생되어 결과를 소비 | D3의 Builder(Skia) / Preview(DOM+CSS) |
-| **symmetric** | 두 consumer가 대등 — 한쪽이 다른 쪽 기준 아님 | D3의 Skia ↔ CSS |
-| **직접 consumer (direct)** | Spec에서 직접 파생 | Skia, CSSGenerator |
-| **간접 consumer (indirect)** | 중간 변환 경유 | Preview(CSSGenerator→CSS→DOM), Publish |
+| 용어                         | 정의                                           | 적용 대상                              |
+| ---------------------------- | ---------------------------------------------- | -------------------------------------- |
+| **SSOT (Source of Truth)**   | 단일 source. 해당 domain 내에서 유일 정의 권한 | D3에서 Spec에만 적용                   |
+| **권위 (authority)**         | domain 전체를 지배하는 외부 기준               | D1에서 RAC에만 적용                    |
+| **reference**                | 설계 시 참조하는 외부 원천 (결정권 없음)       | D2에서 RSP에 적용                      |
+| **consumer**                 | SSOT에서 파생되어 결과를 소비                  | D3의 Builder(Skia) / Preview(DOM+CSS)  |
+| **symmetric**                | 두 consumer가 대등 — 한쪽이 다른 쪽 기준 아님  | D3의 Skia ↔ CSS                        |
+| **직접 consumer (direct)**   | Spec에서 직접 파생                             | Skia, CSSGenerator                     |
+| **간접 consumer (indirect)** | 중간 변환 경유                                 | Preview(CSSGenerator→CSS→DOM), Publish |
 
 ## 3. 경계 판정 기준
 
 Spec이 어디까지 관여하는지의 판정:
 
-| 요소 | 어느 domain? | Spec 관여 |
-| --- | --- | --- |
-| `<div role="...">` 같은 DOM 태그/속성 | D1 | ❌ |
-| `aria-invalid`, `aria-label` 등 ARIA | D1 | ❌ |
-| 키보드 네비게이션 동작 | D1 | ❌ |
-| `isQuiet: boolean` props 선언 | D2 | ✅ (타입만) |
-| `variant: string` props 선언 (RSP에 없는 경우) | D2 위반 | ❌ (ADR-062로 제거) |
-| 색상 (background/border/text) | D3 | ✅ (Spec SSOT) |
-| 크기 (height/padding/gap) | D3 | ✅ (Spec SSOT) |
-| 폰트 (size/weight/family) | D3 | ✅ (Spec SSOT via primitives) |
-| 형태 (border-radius/shadow) | D3 | ✅ (Spec SSOT) |
-| 애니메이션/transition | D3 | ✅ (Spec SSOT) |
-| layout flow (flex-direction 등) | D3 | ✅ (Spec SSOT) |
+| 요소                                           | 어느 domain? | Spec 관여                     |
+| ---------------------------------------------- | ------------ | ----------------------------- |
+| `<div role="...">` 같은 DOM 태그/속성          | D1           | ❌                            |
+| `aria-invalid`, `aria-label` 등 ARIA           | D1           | ❌                            |
+| 키보드 네비게이션 동작                         | D1           | ❌                            |
+| `isQuiet: boolean` props 선언                  | D2           | ✅ (타입만)                   |
+| `variant: string` props 선언 (RSP에 없는 경우) | D2 위반      | ❌ (ADR-062로 제거)           |
+| 색상 (background/border/text)                  | D3           | ✅ (Spec SSOT)                |
+| 크기 (height/padding/gap)                      | D3           | ✅ (Spec SSOT)                |
+| 폰트 (size/weight/family)                      | D3           | ✅ (Spec SSOT via primitives) |
+| 형태 (border-radius/shadow)                    | D3           | ✅ (Spec SSOT)                |
+| 애니메이션/transition                          | D3           | ✅ (Spec SSOT)                |
+| layout flow (flex-direction 등)                | D3           | ✅ (Spec SSOT)                |
 
 **회색지대 판정 원칙**: 의심스러우면 **"Builder와 Preview가 시각적으로 달라질 수 있는 요소인가?"** 질문. 그렇다면 D3 → Spec SSOT.
 
@@ -96,13 +104,13 @@ Spec이 어디까지 관여하는지의 판정:
 
 ### 4-2. 위반 감지 및 대응
 
-| 위반 유형 | 감지 | 대응 |
-| --- | --- | --- |
-| 수동 CSS가 Spec에서 파생 아님 | `skipCSSGeneration: true` + 수동 CSS 존재 | ADR 발의 → 해체 계획 |
-| consumer-to-consumer 참조 | `@sync` 주석 | Spec 경유로 재작성 |
-| Spec이 D1/D2 침범 | 코드 리뷰 | 위반 코드 즉시 거부 |
-| 시각 비대칭 (CSS≠Skia) | `/cross-check` 실패 | 어느 쪽이 Spec 맞는지 조사 후 양쪽 정렬 |
-| RSP 미규정 prop 임의 도입 | 코드 리뷰 | 거부, RSP 참조 요구 |
+| 위반 유형                     | 감지                                      | 대응                                    |
+| ----------------------------- | ----------------------------------------- | --------------------------------------- |
+| 수동 CSS가 Spec에서 파생 아님 | `skipCSSGeneration: true` + 수동 CSS 존재 | ADR 발의 → 해체 계획                    |
+| consumer-to-consumer 참조     | `@sync` 주석                              | Spec 경유로 재작성                      |
+| Spec이 D1/D2 침범             | 코드 리뷰                                 | 위반 코드 즉시 거부                     |
+| 시각 비대칭 (CSS≠Skia)        | `/cross-check` 실패                       | 어느 쪽이 Spec 맞는지 조사 후 양쪽 정렬 |
+| RSP 미규정 prop 임의 도입     | 코드 리뷰                                 | 거부, RSP 참조 요구                     |
 
 ### 4-3. 문서 교차 참조 의무
 
