@@ -22,21 +22,23 @@
 
 ## 현재 문제 인벤토리 (3경로 × 11 주대상 매트릭스)
 
-각 컴포넌트의 (a) Preview root style 전달 여부, (b) Skia `render.shapes()` 의 `props.style` 소비, (c) `calculateContentHeight()` 의 `style.padding/gap` 소비, (d) `N_edited` (style.padding/gap 편집 인스턴스 수) 를 Phase 0 에서 측정 후 본 표를 완성한다. 총 cell 수 = 11 × 3 + 11 × N_edited = **44 cell** (N_edited 는 3 실측 + 8 가정 기록).
+각 컴포넌트의 (a) Preview root style 전달 여부, (b) Skia `render.shapes()` 의 `props.style` 소비, (c) `calculateContentHeight()` 의 `style.padding/gap` 소비를 Phase 0 에서 측정 후 본 표를 완성한다. 총 cell 수 = 11 × 3 = **33 cell**.
 
-| 컴포넌트    | (a) Preview style 전달 | (b) Skia shapes metric | (c) Layout height metric | (d) N_edited       | 판정                                        |
-| ----------- | :--------------------: | :--------------------: | :----------------------: | ------------------ | ------------------------------------------- |
-| ListBox     |           O            |    O (ListBoxSpec)     |            O             | [가정 0] Phase 0   | 기준 선례                                   |
-| GridList    |         **X**          | **X** (size.gap 고정)  |            O             | **[실측]** Phase 0 | ADR-906 증상 — Phase 3 pilot                |
-| Menu        |     [TODO Phase 0]     |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| ComboBox    |         [TODO]         |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| Select      |         [TODO]         |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| Tree        |         [TODO]         |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| Tabs        |         [TODO]         |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| Toolbar     |         [TODO]         |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| Breadcrumbs |         [TODO]         |         [TODO]         |          [TODO]          | [가정 0] Phase 0   | Phase 4 follow-up                           |
-| TagGroup    |         [TODO]         |         [TODO]         |          [TODO]          | **[실측]** Phase 0 | Phase 4 follow-up (TagList sub-target 포함) |
-| Table       |         [TODO]         |         [TODO]         |          [TODO]          | **[실측]** Phase 0 | Phase 5 별도 audit                          |
+> **N_edited (padding/gap 편집 인스턴스 수) 축이 빠진 이유**: composition 은 element 영속을 per-user 로컬 IndexedDB (`apps/builder/src/lib/db/index.ts`) 에 위임하며 Supabase 는 auth 전용이다. 중앙 `elements` 테이블이 없으므로 production population 에서 `N_edited` 를 산출할 쿼리 경로가 존재하지 않는다. ADR-906 breakdown 의 Supabase SQL 접근은 본 ADR 에서 폐기. BC 커버리지는 Phase 3/4/5 의 **hand-crafted edited fixture** (k≤5 흔한 편집 패턴 수동 샘플링) 로 확보한다. 본 ADR `R2 상세` 참조.
+
+| 컴포넌트    | (a) Preview style 전달 | (b) Skia shapes metric | (c) Layout height metric | 판정                                        |
+| ----------- | :--------------------: | :--------------------: | :----------------------: | ------------------------------------------- |
+| ListBox     |           O            |    O (ListBoxSpec)     |            O             | 기준 선례                                   |
+| GridList    |         **X**          | **X** (size.gap 고정)  |            O             | ADR-906 증상 — Phase 3 pilot                |
+| Menu        |     [TODO Phase 0]     |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| ComboBox    |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| Select      |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| Tree        |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| Tabs        |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| Toolbar     |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| Breadcrumbs |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
+| TagGroup    |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up (TagList sub-target 포함) |
+| Table       |         [TODO]         |         [TODO]         |          [TODO]          | Phase 5 별도 audit                          |
 
 **TagList 주석**: TagList 는 TagGroup 의 중간 compositional 컨테이너 (ADR-097) 로 별도 주대상 행이 아닌 TagGroup 종속 sub-target. TagGroup Phase 4 follow-up ADR 에서 `<TagList>` 의 root style 소비 및 chip gap 소유권 분리가 함께 판정된다 (ADR-906 breakdown Phase 2 의 TagGroup/TagList audit 유산).
 
@@ -157,19 +159,18 @@ const metric = resolveGridListSpacingMetric({ style: element.props.style, ... })
 
 ### Phase 0 — Audit (3경로 × 11 주대상 매트릭스 + test discovery 확인)
 
-- 위 "현재 문제 인벤토리" 표의 11 주대상 컴포넌트에 대해 (a)/(b)/(c)/(d) 측정 결과 기록.
+- 위 "현재 문제 인벤토리" 표의 11 주대상 컴포넌트에 대해 (a)/(b)/(c) 측정 결과 기록.
 - 측정 방법:
   - (a) Preview: `packages/shared/src/renderers/**` grep 후 각 `render{Component}()` 의 root JSX 에 `style={` 존재 여부.
   - (b) Skia: `packages/specs/src/components/{Component}.spec.ts` 의 `render.shapes()` 가 `props.style` 에서 padding/gap 을 읽는지.
   - (c) Layout: `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` 의 해당 컴포넌트 분기가 `style.padding/gap` 을 소비하는지.
-  - (d) **N_edited 측정 3 컴포넌트 (GridList/Table/TagGroup)**: Supabase 쿼리로 `props.style.padding/gap` 보유 인스턴스 수 실측 (ADR-906 breakdown line 53-84 의 SQL 재사용).
-  - (d) **N_edited 가정 기록 8 컴포넌트 (ListBox/Menu/ComboBox/Select/Tree/Tabs/Toolbar/Breadcrumbs)**: items SSOT 확립 (ADR-066/068/073/076/078) 또는 root `style` 편집 UI 접근 제한으로 `N_edited = 0` 가정. breakdown 매트릭스에 "[가정 0] Phase 0" 로 명시 기록. Phase 4 follow-up ADR 에서 개별 실측 승격.
+  - N_edited 축 제거 사유는 위 "현재 문제 인벤토리" 주석 참조 (Supabase 중앙 테이블 부재 → production 산출 불가 → hand-crafted fixture 로 대체).
 - **Test discovery 확인** (Phase 1-2 신규 test 파일 수집 여부 사전 확증):
   - `packages/specs/vitest.config.ts` 의 include 패턴이 `src/**/__tests__/**/*.test.ts` 를 수용 — Phase 1 `packages/specs/src/primitives/__tests__/cssValueParser.test.ts` 및 Phase 2 `containerSpacing.test.ts` 수집 확증.
   - `packages/shared/vitest.config.ts` 의 include 패턴이 `src/**/__tests__/**/*.test.ts` 를 수용 — Phase 2 `packages/shared/src/renderers/__tests__/rendererStyleContract.test.ts` 수집 확증.
   - 확증 실패 시 include 패턴 조정 후 Phase 1 착수.
 
-통과 조건: 매트릭스 총 **44 cell** (11 × 3 축 (a/b/c) + 11 × N_edited, 단 N_edited 는 3 실측 + 8 가정 기록) 이 breakdown 에 기록되고, Phase 3/4/5 의 적용 우선순위가 결정된다. Test discovery 확증 3항 PASS.
+통과 조건: 매트릭스 총 **33 cell** (11 × 3 축 (a/b/c)) 이 breakdown 에 기록되고, Phase 3/4/5 의 적용 우선순위가 결정된다. Test discovery 확증 3항 PASS.
 
 ### Phase 1 — CSS value parser SSOT 통합
 
@@ -206,7 +207,7 @@ const metric = resolveGridListSpacingMetric({ style: element.props.style, ... })
 - `GridList.spec.ts` 에 `resolveGridListSpacingMetric()` 신설 (Layer B 활용) + `packages/specs/src/index.ts` barrel re-export.
 - `utils.ts` GridList 분기 → `resolveGridListSpacingMetric()` 호출로 치환.
 - `render.shapes()` 도 `resolveGridListSpacingMetric()` 호출.
-- Fixture: unedited (`main` byte-equal) + edited (N_edited > 0 인 경우 샘플 k≤5).
+- Fixture: unedited (`main` byte-equal) + edited (hand-crafted 샘플 k≤5: `padding: 16, gap: 8` / `paddingLeft: 24, columnGap: 4` / `border: 1, rowGap: 12` 등 흔한 편집 패턴 수동 작성).
 - **RAC `data-layout` auto-emit selector 매칭 test** (ADR-906 G2 흡수): `react-aria-components@1.15.1` `dist/GridList.mjs:198` 의 `data-layout={layout}` 자동 방출이 `GridList.css` 의 `[data-layout="grid"]`/`[data-layout="stack"]` selector 와 매칭됨을 Preview DOM 렌더 test 로 확인. composition 쪽 수동 추가 금지 (renderGridList 에서 `data-layout=` 명시 금지).
 
 통과 조건 (G3 = 906 의 G2/G3 흡수):
@@ -222,13 +223,12 @@ const metric = resolveGridListSpacingMetric({ style: element.props.style, ... })
 
 ```
 ## Phase 구성 (follow-up ADR 공통)
-1. N_edited 실측 승격 (ADR-907 Phase 0 의 "[가정 0]" → 실제 수치 측정).
-2. renderer 에 `style={element.props.style}` 추가 → Layer C allowlist 제거.
-3. `{Component}.spec.ts` 에 `resolve{Component}SpacingMetric()` 추가 (containerSpacing primitive 호출 + 컴포넌트-specific 확장).
-4. `utils.ts` 해당 분기 치환 (render.shapes 와 calculateContentHeight 가 동일 resolver 호출 확인).
-5. fixture test 추가 (unedited baseline + N_edited > 0 일 경우 edited baseline).
-6. Generator 영향 여부 확인 — skipCSSGeneration 또는 childSpec emit 한계 존재 시 한 줄 명시 (예: GridList.spec.ts:71 `skipCSSGeneration: true`).
-7. ADR-907 Phase 0 matrix 해당 행 업데이트 + 본 follow-up ADR 의 Implemented 전환 시점에 ADR-907 README 교차 인용.
+1. renderer 에 `style={element.props.style}` 추가 → Layer C allowlist 제거.
+2. `{Component}.spec.ts` 에 `resolve{Component}SpacingMetric()` 추가 (containerSpacing primitive 호출 + 컴포넌트-specific 확장).
+3. `utils.ts` 해당 분기 치환 (render.shapes 와 calculateContentHeight 가 동일 resolver 호출 확인).
+4. fixture test 추가 (unedited baseline + hand-crafted edited baseline k≤5; root style 편집 UI 접근 가능한 컴포넌트는 k=5, 아닌 컴포넌트는 k=2).
+5. Generator 영향 여부 확인 — skipCSSGeneration 또는 childSpec emit 한계 존재 시 한 줄 명시 (예: GridList.spec.ts:71 `skipCSSGeneration: true`).
+6. ADR-907 Phase 0 matrix 해당 행 업데이트 + 본 follow-up ADR 의 Implemented 전환 시점에 ADR-907 README 교차 인용.
 ```
 
 follow-up ADR 1건 scope = 1~2일. 8 건 × 1~2일 = **8~16일 누적**.
@@ -244,7 +244,7 @@ follow-up ADR 1건 scope = 1~2일. 8 건 × 1~2일 = **8~16일 누적**.
   1. Preview root style hook point
   2. Skia metric resolver 공유 가능성
   3. Cell padding 분리 안전성
-  4. BC (`N_edited_table`)
+  4. BC (hand-crafted edited fixture k≤5 — Table 은 root `style` 편집 UI 가 열려있는 경우 k=5, 아닌 경우 k=2)
 - 4/4 O → 본 ADR framework 로 Phase 3 와 동일 적용.
 - 2-3/4 O → 부분 이식 + follow-up ADR 잔여 이관.
 - 0-1/4 O → Table 단독 follow-up ADR 로 전체 이관.
@@ -254,7 +254,7 @@ follow-up ADR 1건 scope = 1~2일. 8 건 × 1~2일 = **8~16일 누적**.
 ### Phase 6 — Fixture regression + Migration validation
 
 - ListBox + GridList + Phase 4/5 에서 land 된 컴포넌트에 대해 fixture baseline 회귀 test.
-- `N_edited > 0` 인 기존 프로젝트에서 편집값이 Phase 1 이전 렌더와 이후 렌더의 **시각 equivalence** 검증 (의도된 변화 = Hard Constraint 1 충족).
+- hand-crafted edited fixture (k≤5 흔한 편집 패턴) 가 Phase 1 이전 렌더와 이후 렌더의 **시각 equivalence** 검증 (의도된 변화 = Hard Constraint 1 충족).
 - Chrome MCP 또는 storybook smoke test 선택.
 
 통과 조건: 모든 회귀 test PASS + migration 체크리스트 완료.
@@ -299,7 +299,7 @@ follow-up ADR 1건 scope = 1~2일. 8 건 × 1~2일 = **8~16일 누적**.
 
 ## 검증 체크리스트
 
-- [ ] Phase 0: 11 주대상 × 4 축 (a/b/c/N_edited) 매트릭스 **44 cell** 기록 (N_edited 는 3 실측 + 8 가정).
+- [ ] Phase 0: 11 주대상 × 3 축 (a/b/c) 매트릭스 **33 cell** 기록. N_edited 축 제거 사유 (Supabase 중앙 테이블 부재 → hand-crafted fixture 로 대체) 가 본 breakdown 의 "현재 문제 인벤토리" 주석 및 ADR R2 상세에 기록.
 - [ ] Phase 0: `packages/specs/vitest.config.ts` + `packages/shared/vitest.config.ts` include 패턴이 신규 test 경로 수집 확증.
 - [ ] Phase 1: `cssValueParser` 가 `packages/specs/src/primitives/` 하에 export 되고 기존 parseFloat 호출 0건 (allowlist 외).
 - [ ] Phase 1: parser test 10+ PASS.
