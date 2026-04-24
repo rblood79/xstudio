@@ -23,6 +23,29 @@ export interface PageTitleRenderItem {
   title: string;
   x: number;
   y: number;
+  pageId: string;
+}
+
+/**
+ * 페이지 타이틀의 scene 좌표 히트 영역.
+ *
+ * page title 은 `canvas.translate(frame.x, frame.y)` 후 `canvas.scale(invZoom, invZoom)`
+ * 안에서 screen-px 기준으로 그려지므로, scene 좌표 bounds 는 아래와 같이 변환한다:
+ *
+ *   sceneX = frame.x
+ *   sceneY = frame.y + (textY - PAGE_TITLE_FONT_SIZE * 0.85) * invZoom
+ *   sceneWidth = (titleWidth + badgeGap + badgeWidth) * invZoom
+ *   sceneHeight = PAGE_TITLE_FONT_SIZE * invZoom + small padding
+ *
+ * drag 히트 테스트는 scene 좌표에서 수행하므로 (screenToViewportPoint 결과와 직접 비교)
+ * renderer 가 매 프레임 이 맵을 clear + populate 한다.
+ */
+export interface PageTitleBounds {
+  pageId: string;
+  sceneX: number;
+  sceneY: number;
+  sceneWidth: number;
+  sceneHeight: number;
 }
 
 export function buildHoverHighlightTargets(
@@ -129,6 +152,7 @@ export function buildPageTitleRenderItems(
       Boolean(frame.title),
     )
     .map((frame) => ({
+      pageId: frame.id,
       title: frame.title,
       x: frame.x,
       y: frame.y,

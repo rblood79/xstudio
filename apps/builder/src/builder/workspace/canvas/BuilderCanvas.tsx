@@ -52,6 +52,8 @@ import { useCanvasRuntimeBootstrap } from "./hooks/useCanvasRuntimeBootstrap";
 import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
 import { useDragBridge } from "./hooks/useDragBridge";
+import { usePageDrag } from "./hooks/usePageDrag";
+import type { PageTitleBounds } from "./skia/skiaOverlayHelpers";
 
 import { buildSceneStructureSnapshot } from "./scene";
 import {
@@ -111,6 +113,7 @@ function SkiaCanvasLazy(props: {
   sceneInvalidationPacket: RendererSceneInvalidation;
   rendererInput: SkiaRendererInput;
   dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
+  pageTitleBoundsMapRef?: React.MutableRefObject<Map<string, PageTitleBounds>>;
 }) {
   return (
     <Suspense fallback={null}>
@@ -191,6 +194,13 @@ export function BuilderCanvas({
 
   const zoom = useViewportSyncStore((state) => state.zoom);
   const panOffset = useViewportSyncStore((state) => state.panOffset);
+
+  // ADR-100 Phase 9 회귀 복구: <PageContainer> 제거로 끊겼던 page-title drag
+  // 경로를 Skia overlay 경유로 재배선. SkiaCanvas renderSkia 가 매 프레임
+  // pageTitleBoundsMapRef.current 에 scene 좌표 bounds 를 populate 하고,
+  // BuilderCanvas pointerdown(capture) 가 이 Map 을 조회해 usePageDrag 를 트리거.
+  const pageTitleBoundsMapRef = useRef<Map<string, PageTitleBounds>>(new Map());
+  const { startDrag: startPageDrag } = usePageDrag(zoom);
 
   // Canvas sync actions
   const setCanvasReady = useCanvasLifecycleStore(
@@ -508,6 +518,44 @@ export function BuilderCanvas({
   const completeEditRef = useRef<(elementId: string) => void>(() => {});
   const editingElementIdRef = useRef<string | null>(null);
 
+  // Page title drag hit-test (capture phase).
+  // Capture 단계에서 먼저 발화하므로 useCentralCanvasPointerHandlers 보다 우선.
+  // hit 이면 event.__handled = true 로 중앙 핸들러가 early-return 하도록 막는다.
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const onPointerDownCapture = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      const target = event.target as HTMLElement;
+      if (target.closest('input, textarea, [contenteditable="true"]')) return;
+
+      const rect = element.getBoundingClientRect();
+      const scenePoint = screenToCanvasPoint({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+
+      for (const bounds of pageTitleBoundsMapRef.current.values()) {
+        if (
+          scenePoint.x >= bounds.sceneX &&
+          scenePoint.x <= bounds.sceneX + bounds.sceneWidth &&
+          scenePoint.y >= bounds.sceneY &&
+          scenePoint.y <= bounds.sceneY + bounds.sceneHeight
+        ) {
+          (event as PointerEvent & { __handled?: boolean }).__handled = true;
+          startPageDrag(bounds.pageId, event.clientX, event.clientY);
+          return;
+        }
+      }
+    };
+
+    element.addEventListener("pointerdown", onPointerDownCapture, true);
+    return () => {
+      element.removeEventListener("pointerdown", onPointerDownCapture, true);
+    };
+  }, [screenToCanvasPoint, startPageDrag]);
+
   useCentralCanvasPointerHandlers({
     completeEditRef,
     computeSelectionBoundsForHitTest,
@@ -639,6 +687,7 @@ export function BuilderCanvas({
           sceneInvalidationPacket={sceneInvalidationPacket}
           rendererInput={skiaRendererInput}
           dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
+          pageTitleBoundsMapRef={pageTitleBoundsMapRef}
         />
       )}
 

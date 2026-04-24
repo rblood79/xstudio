@@ -31,6 +31,7 @@ import {
   buildFrameCaches,
   buildOverlayNode,
 } from "./skiaOverlayBuilder";
+import type { PageTitleBounds } from "./skiaOverlayHelpers";
 
 export interface CreateFrameInputOptions {
   registryVersion: number;
@@ -82,6 +83,11 @@ export interface BuildFrameRenderPlanInput {
     height: number;
     elementCount: number;
   }>;
+  /**
+   * 페이지 타이틀 drag hit-test 용 scene 좌표 bounds 누적 맵.
+   * BuilderCanvas 가 ref 로 주입하며 render pass 가 매 프레임 갱신한다.
+   */
+  pageTitleBoundsMap?: Map<string, PageTitleBounds>;
   workflowHoverState: WorkflowHoverState;
   elementHoverState: ElementHoverState;
   dropIndicatorState: DropIndicatorState | null;
@@ -109,6 +115,7 @@ export function buildFrameRenderPlan(
     invalidationPacket,
     allPageFrames,
     visiblePageFrames,
+    pageTitleBoundsMap,
     workflowHoverState,
     elementHoverState,
     dropIndicatorState,
@@ -160,6 +167,7 @@ export function buildFrameRenderPlan(
     overflowInfoMap: sharedScene.overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
+    pageTitleBoundsMap,
     minimapVisible,
     minimapConfig,
     skiaCanvasWidth,

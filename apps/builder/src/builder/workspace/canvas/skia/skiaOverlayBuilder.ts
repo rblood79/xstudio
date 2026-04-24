@@ -57,6 +57,7 @@ import {
   buildMinimapViewportBounds,
   buildPageTitleRenderItems,
   shouldRenderWorkflowMinimap,
+  type PageTitleBounds,
 } from "./skiaOverlayHelpers";
 import {
   buildWorkflowHighlightState,
@@ -170,6 +171,12 @@ export interface OverlayBuildInput {
     height: number;
     elementCount: number;
   }>;
+  /**
+   * 페이지 타이틀 drag hit-test 를 위한 scene 좌표 bounds 저장소.
+   * renderSkia 호출마다 clear 후 실제 렌더된 title 의 bounds 를 populate 한다.
+   * BuilderCanvas pointerdown 핸들러가 pageId 를 조회하여 usePageDrag 를 트리거.
+   */
+  pageTitleBoundsMap?: Map<string, PageTitleBounds>;
   // Minimap
   minimapVisible: boolean;
   minimapConfig: MinimapConfig;
@@ -202,6 +209,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
+    pageTitleBoundsMap,
     minimapVisible,
     skiaCanvasWidth,
     skiaCanvasHeight,
@@ -229,6 +237,8 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
       }
 
       // ── Page Titles ──
+      // bounds Map 은 매 프레임 갱신 — stale pageId (예: 페이지 삭제 후) 가 남지 않도록 clear.
+      if (pageTitleBoundsMap) pageTitleBoundsMap.clear();
       const frames = visiblePageFrames ?? [];
       if (frames.length > 0) {
         const pageTitleItems = buildPageTitleRenderItems(
@@ -236,19 +246,41 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           selection.currentPageId,
           selection.selectedElementIds.length > 0,
         );
+        const invZoom = cameraZoom === 0 ? 1 : 1 / cameraZoom;
+        // PAGE_TITLE_OFFSET_Y / FONT_SIZE 는 selectionRenderer.ts 상수와 동일하게 유지.
+        // drag hit-test 박스는 실제 그려지는 text glyph 보다 약간 넉넉하게 잡아
+        // 사용자가 베이스라인 위/아래 포인터-다운도 타이틀로 인식하도록 한다.
+        const TITLE_OFFSET_Y = 20;
+        const TITLE_FONT_SIZE = 12;
+        const HIT_PAD_X = 6;
+        const HIT_PAD_Y = 4;
         for (const item of pageTitleItems) {
           canvas.save();
           canvas.translate(item.x, item.y);
-          renderPageTitle(
+          const measured = renderPageTitle(
             ck,
             canvas,
             item.title,
             cameraZoom,
             fontMgr,
             item.highlighted,
-            item.elementCount,
           );
           canvas.restore();
+
+          if (pageTitleBoundsMap && measured) {
+            const sceneTextTop =
+              item.y - TITLE_OFFSET_Y * invZoom - HIT_PAD_Y * invZoom;
+            const sceneTextHeight = (TITLE_FONT_SIZE + HIT_PAD_Y * 2) * invZoom;
+            const sceneTextWidth =
+              (measured.titleWidth + HIT_PAD_X * 2) * invZoom;
+            pageTitleBoundsMap.set(item.pageId, {
+              pageId: item.pageId,
+              sceneX: item.x - HIT_PAD_X * invZoom,
+              sceneY: sceneTextTop,
+              sceneWidth: sceneTextWidth,
+              sceneHeight: sceneTextHeight,
+            });
+          }
         }
       }
 

@@ -100,6 +100,14 @@ export interface SkiaCanvasProps {
   rendererInput: SkiaRendererInput;
   /** 드롭 인디케이터 스냅샷 ref */
   dropIndicatorSnapshotRef?: React.MutableRefObject<DropIndicatorSnapshot | null>;
+  /**
+   * 페이지 타이틀 drag hit-test scene bounds 누적 맵.
+   * BuilderCanvas pointerdown 핸들러가 이 ref 로 scene 좌표 → pageId 조회.
+   * 매 프레임 renderSkia 에서 clear + populate 된다.
+   */
+  pageTitleBoundsMapRef?: React.MutableRefObject<
+    Map<string, import("./skiaOverlayHelpers").PageTitleBounds>
+  >;
   /** 외부 Camera 인스턴스 (미지정 시 내부 생성) */
   camera?: Camera;
 }
@@ -125,6 +133,7 @@ export function SkiaCanvas({
   sceneInvalidationPacket,
   rendererInput,
   dropIndicatorSnapshotRef,
+  pageTitleBoundsMapRef,
   camera: externalCamera,
 }: SkiaCanvasProps) {
   // ADR-074 Phase 4: overlay sub-packet 을 SkiaCanvas 내부에서 자체 구독/생성.
@@ -692,6 +701,7 @@ export function SkiaCanvas({
           contentNode,
           allPageFrames: allPageFramesRef.current,
           visiblePageFrames: visiblePageFramesRef.current,
+          pageTitleBoundsMap: pageTitleBoundsMapRef?.current,
           workflowHoverState: workflowHoverStateRef.current,
           elementHoverState: elementHoverStateRef.current,
           dropIndicatorState: dropIndicator,
