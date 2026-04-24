@@ -15,6 +15,8 @@
 import type { ComponentSpec, ArcShape, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Hash, Palette, Loader } from "lucide-react";
 
 /**
@@ -136,7 +138,8 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
         PROGRESSCIRCLE_FILL_COLORS[variantName] ??
         PROGRESSCIRCLE_FILL_COLORS.default;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
       const textColor = props.style?.color ?? variant.text;
 
       const fontSize = resolveSpecFontSize(

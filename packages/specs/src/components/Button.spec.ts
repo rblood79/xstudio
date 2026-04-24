@@ -11,6 +11,8 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Type, Parentheses, PointerOff } from "lucide-react";
 import { STATIC_COLOR_FIELD } from "../utils/sharedSections";
 
@@ -327,6 +329,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           (props as { variant?: keyof typeof ButtonSpec.variants }).variant ??
             ButtonSpec.defaultVariant!
         ];
+      // ADR-908 Phase 3-A-2: fill token dual-read seam
+      const fill = resolveFillTokens(variant);
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       // props.style.width를 직접 사용하면 bgBox 추출이 실패하고 렌더링이 깨짐
       const width = "auto" as const;
@@ -355,10 +359,10 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         ? (props.style?.backgroundColor ?? ("{color.transparent}" as TokenRef))
         : (props.style?.backgroundColor ??
           (state === "hover"
-            ? variant.backgroundHover
+            ? (fill.default.hover ?? fill.default.base)
             : state === "pressed"
-              ? variant.backgroundPressed
-              : variant.background));
+              ? (fill.default.pressed ?? fill.default.base)
+              : fill.default.base));
 
       // 상태에 따른 텍스트색 선택 (사용자 스타일 우선)
       const textColor = isOutline
@@ -389,7 +393,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           height: "auto" as unknown as number,
           radius: borderRadius as unknown as number, // TokenRef를 나중에 resolve
           fill: bgColor,
-          fillAlpha: variant.backgroundAlpha ?? 1,
+          fillAlpha: fill.alpha ?? 1,
         },
       ];
 

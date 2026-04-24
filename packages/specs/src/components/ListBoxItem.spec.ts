@@ -88,7 +88,7 @@ export const ListBoxItemSpec: ComponentSpec<ListBoxItemProps> = {
     // ADR-070 패턴 차용: hover 배경은 {color.layer-1} = var(--bg-overlay).
     //   ListBox variant.default.backgroundHover 가 {color.layer-2} 이나,
     //   item 단위 hover 는 Menu/MenuItem 선례대로 popover context(layer-1) 사용.
-    //   Phase 3 render.shapes 연동 시 variant.backgroundHover 우선순위 재검토.
+    //   Phase 3 render.shapes 연동 시 fill.default.hover 우선순위 재검토.
     hover: {
       background: "{color.layer-1}",
     },

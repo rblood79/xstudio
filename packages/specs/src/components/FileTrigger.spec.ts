@@ -11,6 +11,8 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { FileCheck, ToggleLeft, Folder, Camera } from "lucide-react";
 
 /**
@@ -139,6 +141,8 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
           (props as { variant?: keyof typeof FileTriggerSpec.variants })
             .variant ?? FileTriggerSpec.defaultVariant!
         ];
+      // ADR-908 Phase 3-A-2: fill token dual-read seam
+      const fill = resolveFillTokens(variant);
       // 사용자 스타일 우선, 없으면 spec 기본값
       const borderRadius = parsePxValue(
         props.style?.borderRadius,
@@ -150,10 +154,10 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? variant.backgroundHover
+          ? (fill.default.hover ?? fill.default.base)
           : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+            ? (fill.default.pressed ?? fill.default.base)
+            : fill.default.base);
 
       // 상태에 따른 테두리색 선택 (사용자 스타일 우선)
       const borderColor =

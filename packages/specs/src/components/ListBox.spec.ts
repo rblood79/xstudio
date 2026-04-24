@@ -13,6 +13,8 @@ import type {
   StoredListBoxEntry,
 } from "../types/listbox-items";
 import { isListBoxSectionEntry } from "../types/listbox-items";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { parsePxValue } from "../primitives";
 import { resolveContainerSpacing } from "../primitives/containerSpacing";
 import { fontFamily } from "../primitives/typography";
@@ -284,6 +286,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         (requestedVariant
           ? ListBoxSpec.variants![requestedVariant]
           : undefined) ?? ListBoxSpec.variants![ListBoxSpec.defaultVariant!]!;
+      // ADR-908 Phase 3-A-2: fill token dual-read seam
+      const fill = resolveFillTokens(variant);
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -413,7 +417,9 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           width: width - innerPaddingX * 2,
           height: itemH,
           radius: borderRadius as unknown as number,
-          fill: isSelected ? variant.backgroundHover : bgColor,
+          fill: isSelected
+            ? (fill.default.hover ?? fill.default.base)
+            : bgColor,
         });
 
         if (props.selectionMode === "multiple") {

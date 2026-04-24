@@ -13,6 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 /**
  * 세그먼트 타입 - 날짜 또는 시간 단위
@@ -182,14 +184,15 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
           : (props.style?.width as number) || 32;
       const height = size.height;
 
-      // 포커스 시 primary 배경, 기본은 반투명 표면 색상
+      // 포커스 시 primary 배경, 기본은 반투명 표면 색상 (ADR-908 Phase 3-A-2: fill seam)
+      const fill = resolveFillTokens(variant);
       const bgColor =
         props.style?.backgroundColor ??
         (props.isFocused
           ? ("{color.accent-subtle}" as TokenRef)
           : state === "hover"
-            ? variant.backgroundHover
-            : variant.background);
+            ? (fill.default.hover ?? fill.default.base)
+            : fill.default.base);
 
       const bgAlpha = props.isFocused ? 1.0 : 0.7;
 

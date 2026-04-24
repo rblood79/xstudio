@@ -9,6 +9,8 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue } from "../primitives";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Circle, LayoutGrid, Hash, Sliders, PointerOff } from "lucide-react";
 
 /**
@@ -185,7 +187,8 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
             .variant ?? ColorSwatchPickerSpec.defaultVariant!
         ];
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
 
       const borderRadius = parsePxValue(
         props.style?.borderRadius,

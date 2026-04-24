@@ -9,6 +9,8 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 /**
  * Section Props
@@ -124,14 +126,15 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
           (props as { variant?: keyof typeof SectionSpec.variants }).variant ??
             SectionSpec.defaultVariant!
         ];
-      // 사용자 스타일 우선, 없으면 spec 기본값
+      // 사용자 스타일 우선, 없으면 spec 기본값 (ADR-908 Phase 3-A-2: fill seam 경유)
+      const fill = resolveFillTokens(variant);
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? variant.backgroundHover
+          ? (fill.default.hover ?? fill.default.base)
           : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+            ? (fill.default.pressed ?? fill.default.base)
+            : fill.default.base);
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =
@@ -149,8 +152,8 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
         height: "auto",
         radius: borderRadius as unknown as number,
         fill: bgColor,
-        ...(variant.backgroundAlpha !== undefined && {
-          fillAlpha: variant.backgroundAlpha,
+        ...(fill.alpha !== undefined && {
+          fillAlpha: fill.alpha,
         }),
       });
 

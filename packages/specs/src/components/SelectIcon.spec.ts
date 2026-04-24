@@ -9,6 +9,8 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 export interface SelectIconProps {
   variant?: "default";
@@ -114,11 +116,10 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
           : iconSize;
 
       // 배경색: 사용자 설정 우선, 'transparent'는 미설정으로 처리
+      const fill = resolveFillTokens(variant);
       const userBg = props.style?.backgroundColor;
       const bgColor =
-        userBg != null && userBg !== "transparent"
-          ? userBg
-          : variant.background;
+        userBg != null && userBg !== "transparent" ? userBg : fill.default.base;
 
       const fill = props.style?.color ?? variant.text;
 

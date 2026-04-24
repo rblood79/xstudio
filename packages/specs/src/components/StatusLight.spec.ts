@@ -10,6 +10,8 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Type, Parentheses } from "lucide-react";
 
 /**
@@ -282,14 +284,19 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = StatusLightSpec.variants![(props as { variant?: keyof typeof StatusLightSpec.variants }).variant ?? StatusLightSpec.defaultVariant!];
+      const variant =
+        StatusLightSpec.variants![
+          (props as { variant?: keyof typeof StatusLightSpec.variants })
+            .variant ?? StatusLightSpec.defaultVariant!
+        ];
       const dotSize = size.dotSize ?? 10;
       const dotRadius = dotSize / 2;
       const gap = size.gap ?? 8;
       const h = size.height ?? 24;
       const centerY = h / 2;
 
-      const dotColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const dotColor = props.style?.backgroundColor ?? fill.default.base;
       const textColor = props.style?.color ?? variant.text;
 
       const shapes: Shape[] = [
@@ -311,7 +318,10 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       // 라벨 텍스트
       const text = props.children;
       if (text) {
-        const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 14);
+        const fontSize = resolveSpecFontSize(
+          props.style?.fontSize ?? size.fontSize,
+          14,
+        );
         const fwRaw = props.style?.fontWeight;
         const fw =
           fwRaw != null

@@ -11,6 +11,8 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Type, Eye, ToggleLeft, PointerOff } from "lucide-react";
 
 /**
@@ -184,6 +186,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
           (props as { variant?: keyof typeof ToggleButtonSpec.variants })
             .variant ?? ToggleButtonSpec.defaultVariant!
         ];
+      // ADR-908 Phase 3-A-2: fill token dual-read seam
+      const fill = resolveFillTokens(variant);
       // 사용자 스타일 우선, 없으면 spec 기본값
       const baseBorderRadius = parsePxValue(
         props.style?.borderRadius,
@@ -235,9 +239,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         const isEmp = props.isEmphasized;
         bgColor =
           props.style?.backgroundColor ??
-          (isEmp
-            ? variant.emphasizedSelectedBackground
-            : variant.selectedBackground);
+          (isEmp ? fill.default.emphasizedSelected : fill.default.selected);
         textColor =
           props.style?.color ??
           (isEmp ? variant.emphasizedSelectedText : variant.selectedText);
@@ -248,10 +250,10 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         bgColor =
           props.style?.backgroundColor ??
           (state === "hover"
-            ? variant.backgroundHover
+            ? (fill.default.hover ?? fill.default.base)
             : state === "pressed"
-              ? variant.backgroundPressed
-              : variant.background);
+              ? (fill.default.pressed ?? fill.default.base)
+              : fill.default.base);
         textColor =
           props.style?.color ??
           (state === "hover" && variant.textHover

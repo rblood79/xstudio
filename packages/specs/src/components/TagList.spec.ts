@@ -208,7 +208,7 @@ export const TagListSpec: ComponentSpec<TagListProps> = {
      *   - Row-wrap 시뮬레이션 (_containerWidth 기반 각 chip 폭 누적 → row 판정)
      *   - maxRows > 0 시 초과 chip skip + "Show all" chip (투명 배경, accent 텍스트)
      *   - allowsRemoving 시 각 chip 오른쪽에 X icon_font shape
-     *   - per-item isDisabled 시각: variant.background/text → neutral-subtle/neutral-subdued
+     *   - per-item isDisabled 시각: fill.default.base/variant.text → neutral-subtle/neutral-subdued
      *     (ShapeBase opacity 미지원 → 색상 fallback 방식)
      */
     shapes: (props, _size, state = "default") => {

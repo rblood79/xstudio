@@ -11,6 +11,8 @@ import { Link, Type, PointerOff } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 /**
  * Avatar Props
@@ -134,11 +136,16 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = AvatarSpec.variants![(props as { variant?: keyof typeof AvatarSpec.variants }).variant ?? AvatarSpec.defaultVariant!];
+      const variant =
+        AvatarSpec.variants![
+          (props as { variant?: keyof typeof AvatarSpec.variants }).variant ??
+            AvatarSpec.defaultVariant!
+        ];
       const diameter = (size as unknown as { height: number }).height ?? 32;
       const radius = diameter / 2;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
 
       const shapes: Shape[] = [
         {
@@ -172,7 +179,10 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
       // 이니셜 텍스트
       const text =
         props.initials || props.alt?.slice(0, 2).toUpperCase() || "?";
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 12);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        12,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null

@@ -10,6 +10,8 @@
 import type { ComponentSpec, Shape, TokenRef, ImageShape } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Image, FileText, Maximize, PointerOff } from "lucide-react";
 
 /**
@@ -118,7 +120,8 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
           ? props._containerWidth
           : (props.style?.width as number) || size.width || 280;
       const height = (props.style?.height as number) || size.height || 200;
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
       const textColor = props.style?.color ?? variant.text;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const fontSize = resolveSpecFontSize(size.fontSize, 14);

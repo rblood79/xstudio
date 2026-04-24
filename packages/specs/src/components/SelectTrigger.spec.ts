@@ -32,6 +32,8 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 export interface SelectTriggerProps {
   variant?: "default" | "accent" | "negative";
@@ -169,6 +171,8 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
           (props as { variant?: keyof typeof SelectTriggerSpec.variants })
             .variant ?? SelectTriggerSpec.defaultVariant!
         ];
+      // ADR-908 Phase 3-A-2: fill token dual-read seam
+      const fill = resolveFillTokens(variant);
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -189,10 +193,10 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
         userBg != null && userBg !== "transparent"
           ? userBg
           : state === "hover"
-            ? variant.backgroundHover
+            ? (fill.default.hover ?? fill.default.base)
             : state === "pressed"
-              ? variant.backgroundPressed
-              : variant.background;
+              ? (fill.default.pressed ?? fill.default.base)
+              : fill.default.base;
 
       const borderColor =
         props.style?.borderColor ??

@@ -10,6 +10,8 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 import { parsePxValue } from "../primitives";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import { Heading, Type, Parentheses } from "lucide-react";
 
 /**
@@ -163,7 +165,8 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
           (props as { variant?: keyof typeof InlineAlertSpec.variants })
             .variant ?? InlineAlertSpec.defaultVariant!
         ];
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =

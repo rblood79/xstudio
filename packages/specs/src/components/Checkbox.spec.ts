@@ -11,6 +11,8 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import {
   Type,
   Eye,
@@ -216,9 +218,10 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       );
       const borderWidth = parseBorderWidth(props.style?.borderWidth, 2);
 
+      const fill = resolveFillTokens(variant);
       const bgColor =
         props.style?.backgroundColor ??
-        (isChecked ? checkedColors.bg : variant.background);
+        (isChecked ? checkedColors.bg : fill.default.base);
 
       const boxBorder =
         CHECKBOX_BOX_BORDER[variantName] ?? CHECKBOX_BOX_BORDER.default;

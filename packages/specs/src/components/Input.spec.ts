@@ -11,6 +11,8 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 /**
  * Input Props
@@ -158,7 +160,8 @@ export const InputSpec: ComponentSpec<InputProps> = {
         size.borderRadius as unknown as number,
       );
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
 
       const borderColor =
         props.style?.borderColor ??

@@ -9,6 +9,8 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import {
   Layout,
   ToggleLeft,
@@ -144,8 +146,13 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = TableViewSpec.variants![(props as { variant?: keyof typeof TableViewSpec.variants }).variant ?? TableViewSpec.defaultVariant!];
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const variant =
+        TableViewSpec.variants![
+          (props as { variant?: keyof typeof TableViewSpec.variants })
+            .variant ?? TableViewSpec.defaultVariant!
+        ];
+      const fill = resolveFillTokens(variant);
+      const bgColor = props.style?.backgroundColor ?? fill.default.base;
       const borderColor = variant.border ?? ("{color.border}" as TokenRef);
 
       const rawBr = props.style?.borderRadius ?? size.borderRadius;

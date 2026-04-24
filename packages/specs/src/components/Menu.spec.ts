@@ -19,6 +19,8 @@ import {
 } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import {
   Tag,
   PointerOff,
@@ -332,6 +334,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           (props as { variant?: keyof typeof MenuSpec.variants }).variant ??
             MenuSpec.defaultVariant!
         ];
+      // ADR-908 Phase 3-A-2: fill token dual-read seam
+      const fill = resolveFillTokens(variant);
       const width = "auto" as const;
 
       const borderRadius = parsePxValue(
@@ -343,10 +347,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       const bgColor =
         props.style?.backgroundColor ??
         (state === "hover"
-          ? variant.backgroundHover
+          ? (fill.default.hover ?? fill.default.base)
           : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+            ? (fill.default.pressed ?? fill.default.base)
+            : fill.default.base);
 
       const textColor = props.style?.color ?? variant.text;
 

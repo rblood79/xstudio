@@ -9,6 +9,8 @@
 
 import type { ComponentSpec, Shape, TokenRef, ShadowTokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
+// ADR-908 Phase 3-A-2: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 import {
   Eye,
   ArrowLeftRight,
@@ -233,13 +235,14 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
           (props as { variant?: keyof typeof ToggleButtonGroupSpec.variants })
             .variant ?? ToggleButtonGroupSpec.defaultVariant!
         ];
-      // 사용자 스타일 우선, 없으면 spec 기본값
+      // 사용자 스타일 우선, 없으면 spec 기본값 (ADR-908 Phase 3-A-2: fill seam 경유)
+      const fill = resolveFillTokens(variant);
       // indicator 모드: CSS의 .button-base + --button-color: var(--bg-muted) 와 일치하도록 bg-muted 사용
       const bgColor =
         props.style?.backgroundColor ??
         (props.indicator
           ? ("{color.neutral-subtle}" as TokenRef)
-          : variant.background);
+          : fill.default.base);
 
       const borderRadius = parsePxValue(
         props.style?.borderRadius,
