@@ -33,11 +33,17 @@ import type {
  * optional 필드는 variant 에 존재할 때만 FillTokenSpec 에 추가 (exactOptionalPropertyTypes 준수).
  */
 export function variantSpecToFillTokens(variant: VariantSpec): FillTokenSpec {
+  // Phase 4 전환 중: legacy 필드는 모두 optional. 본 함수는 `variant.fill` 미선언
+  // spec 에 대해서만 호출되며 (resolveFillTokens 에서 short-circuit), 그 경우 spec
+  // author 계약상 legacy `background` 는 실제 설정되어 있다. 타입 안전을 위해
+  // non-null assertion 사용 — 미설정 spec 은 spec author 계약 위반.
   const def: FillStateTokens = {
-    base: variant.background,
-    hover: variant.backgroundHover,
-    pressed: variant.backgroundPressed,
+    base: variant.background!,
   };
+  if (variant.backgroundHover !== undefined)
+    def.hover = variant.backgroundHover;
+  if (variant.backgroundPressed !== undefined)
+    def.pressed = variant.backgroundPressed;
 
   if (variant.selectedBackground !== undefined) {
     def.selected = variant.selectedBackground;

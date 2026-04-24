@@ -584,12 +584,14 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   if (!baseContainerHasColors && defaultVariant && !spec.composition) {
     // default variant 색상 — Composite 컨테이너는 자식이 관리하므로 skip
     const mode = spec.cssEmitMode ?? "direct";
+    // ADR-908 Phase 4-a: defaultVariant alias 도 fill token seam 경유
+    const defaultFill = resolveFillTokens(defaultVariant);
     lines.push("");
     lines.push("  /* Default variant */");
     lines.push(
       emitColorLine(
         "background",
-        tokenToCSSVar(defaultVariant.background),
+        tokenToCSSVar(defaultFill.default.base),
         mode,
       ),
     );

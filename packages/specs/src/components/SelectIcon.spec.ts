@@ -121,7 +121,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       const bgColor =
         userBg != null && userBg !== "transparent" ? userBg : fill.default.base;
 
-      const fill = props.style?.color ?? variant.text;
+      const iconFill = props.style?.color ?? variant.text;
 
       const borderRadius = size.borderRadius as unknown as number;
 
@@ -142,7 +142,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
           x: effectiveSize / 2,
           y: effectiveSize / 2,
           fontSize: effectiveSize,
-          fill,
+          fill: iconFill,
           strokeWidth: 2,
         },
       ];

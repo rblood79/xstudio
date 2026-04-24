@@ -18,21 +18,31 @@ import type {
 } from "../types/spec.types";
 
 describe("ADR-908 FillTokenSpec ↔ VariantSpec.background* 타입 parity", () => {
-  it("default.base ↔ background (required TokenRef)", () => {
+  it("default.base ↔ background (FillStateTokens.base required / ADR-908 Phase 4: VariantSpec.background optional)", () => {
+    // FillStateTokens 가 single source 이므로 base 는 required
     expectTypeOf<FillStateTokens["base"]>().toEqualTypeOf<TokenRef>();
-    expectTypeOf<VariantSpec["background"]>().toEqualTypeOf<TokenRef>();
+    // legacy VariantSpec.background 는 Phase 4 에서 optional 전환 (fill 선언 시 생략 가능)
+    expectTypeOf<VariantSpec["background"]>().toEqualTypeOf<
+      TokenRef | undefined
+    >();
   });
 
-  it("default.hover ↔ backgroundHover (VariantSpec 의 required 값을 optional FillStateTokens 에 할당 가능)", () => {
-    type HoverSlot = FillStateTokens["hover"];
-    expectTypeOf<VariantSpec["backgroundHover"]>().toMatchTypeOf<HoverSlot>();
+  it("default.hover ↔ backgroundHover (양쪽 optional)", () => {
+    expectTypeOf<VariantSpec["backgroundHover"]>().toEqualTypeOf<
+      TokenRef | undefined
+    >();
+    expectTypeOf<FillStateTokens["hover"]>().toEqualTypeOf<
+      TokenRef | undefined
+    >();
   });
 
-  it("default.pressed ↔ backgroundPressed", () => {
-    type PressedSlot = FillStateTokens["pressed"];
-    expectTypeOf<
-      VariantSpec["backgroundPressed"]
-    >().toMatchTypeOf<PressedSlot>();
+  it("default.pressed ↔ backgroundPressed (양쪽 optional)", () => {
+    expectTypeOf<VariantSpec["backgroundPressed"]>().toEqualTypeOf<
+      TokenRef | undefined
+    >();
+    expectTypeOf<FillStateTokens["pressed"]>().toEqualTypeOf<
+      TokenRef | undefined
+    >();
   });
 
   it("default.selected / selectedHover / selectedPressed ↔ selectedBackground*", () => {

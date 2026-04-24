@@ -736,14 +736,20 @@ export interface PropagationSpec {
  * - pressed 시: VariantSpec.backgroundPressed + states.pressed 효과
  */
 export interface VariantSpec {
-  /** 배경색 (토큰 참조) - default 상태 */
-  background: TokenRef;
+  /**
+   * 배경색 (토큰 참조) - default 상태
+   *
+   * ADR-908 Phase 4: optional 전환 — `fill.default.base` 로 대체 가능. spec 이 `fill` 을
+   * 선언하면 legacy `background` / `backgroundHover` / `backgroundPressed` 는 생략 가능.
+   * consumer 는 항상 `resolveFillTokens()` 경유로 접근.
+   */
+  background?: TokenRef;
 
-  /** 배경색 hover - hover 상태의 색상 (states.hover와 합성됨) */
-  backgroundHover: TokenRef;
+  /** 배경색 hover — ADR-908 Phase 4 optional (fill.default.hover 로 대체) */
+  backgroundHover?: TokenRef;
 
-  /** 배경색 pressed - pressed 상태의 색상 (states.pressed와 합성됨) */
-  backgroundPressed: TokenRef;
+  /** 배경색 pressed — ADR-908 Phase 4 optional (fill.default.pressed 로 대체) */
+  backgroundPressed?: TokenRef;
 
   /** 텍스트 색상 */
   text: TokenRef;

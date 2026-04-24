@@ -192,50 +192,75 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     ],
   },
 
+  // ADR-908 Phase 4-a (pilot): legacy background/Hover/Pressed → fill.default.*
   variants: {
     accent: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent-hover}" as TokenRef,
-      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.accent}" as TokenRef,
+          hover: "{color.accent-hover}" as TokenRef,
+          pressed: "{color.accent-pressed}" as TokenRef,
+        },
+      },
       text: "{color.on-accent}" as TokenRef,
       border: "{color.accent}" as TokenRef,
       borderHover: "{color.accent-hover}" as TokenRef,
     },
     primary: {
-      background: "{color.neutral}" as TokenRef,
-      backgroundHover: "{color.neutral-hover}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral}" as TokenRef,
+          hover: "{color.neutral-hover}" as TokenRef,
+          pressed: "{color.neutral-pressed}" as TokenRef,
+        },
+      },
       text: "{color.base}" as TokenRef,
       border: "{color.neutral}" as TokenRef,
       borderHover: "{color.neutral-hover}" as TokenRef,
     },
     secondary: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-1}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     negative: {
-      background: "{color.negative}" as TokenRef,
-      backgroundHover: "{color.negative-hover}" as TokenRef,
-      backgroundPressed: "{color.negative-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.negative}" as TokenRef,
+          hover: "{color.negative-hover}" as TokenRef,
+          pressed: "{color.negative-pressed}" as TokenRef,
+        },
+      },
       text: "{color.on-negative}" as TokenRef,
       border: "{color.negative}" as TokenRef,
       borderHover: "{color.negative-hover}" as TokenRef,
     },
     premium: {
-      background: "{color.purple}" as TokenRef,
-      backgroundHover: "{color.purple-hover}" as TokenRef,
-      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.purple}" as TokenRef,
+          hover: "{color.purple-hover}" as TokenRef,
+          pressed: "{color.purple-pressed}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
       border: "{color.purple}" as TokenRef,
       borderHover: "{color.purple-hover}" as TokenRef,
     },
     genai: {
-      background: "{color.purple}" as TokenRef,
-      backgroundHover: "{color.purple-hover}" as TokenRef,
-      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.purple}" as TokenRef,
+          hover: "{color.purple-hover}" as TokenRef,
+          pressed: "{color.purple-pressed}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
       border: "{color.purple}" as TokenRef,
       borderHover: "{color.purple-hover}" as TokenRef,
