@@ -9,15 +9,11 @@ import {
 const BASE_GAP = 16;
 const DOT_SIZE = 1;
 const GLOW_RADIUS = 96;
-// ADR-902 Perf 후속: inset:-80px (Workspace.css) 와 동기화 — glow mask 좌표 보정값.
-// .dot-background--glow 박스는 .canvas-container 대비 (-80,-80) 에 시작하므로
-// host 기준 커서 좌표 → glow 박스 기준으로 변환 시 +BG_INSET.
-const BG_INSET = 80;
-// ADR-902: Google Stitch 패턴 — 마우스 정지 N ms 후 glow fade-out.
-// CSS transition (200ms ease) 이 opacity 보간을 담당.
+// GLOW_RADIUS 와 동기화 — glow mask 가 viewport 경계에서 clip 되지 않도록 box 오버사이즈.
+// CSS `--dot-inset` 로 주입, glow 커서 좌표도 +BG_INSET 보정 (박스 오프셋 상쇄).
+const BG_INSET = 96;
 const IDLE_FADE_MS = 1000;
-// ADR-902 Perf 후속: pan apply 후 N ms 내 추가 업데이트 없으면 will-change 해제.
-// ADR-047 상시 will-change 남용 경고 준수 — pan 중에만 합성 레이어 힌트.
+// ADR-047: 상시 will-change 금지 — pan 중에만 합성 레이어 힌트, idle 시 해제.
 const WILL_CHANGE_IDLE_MS = 200;
 
 export function DotBackground() {
@@ -26,31 +22,39 @@ export function DotBackground() {
   const rafRef = useRef(0);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const willChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isWillChangeActiveRef = useRef(false);
 
   useEffect(() => {
+    const targets = [baseRef.current, glowRef.current].filter(
+      (el): el is HTMLDivElement => el !== null,
+    );
+    for (const el of targets) {
+      el.style.setProperty("--dot-inset", `${BG_INSET}px`);
+    }
+
     const apply = (s: {
       panOffset: { x: number; y: number };
       zoom: number;
     }) => {
       const gap = BASE_GAP * s.zoom;
-      // translate 값은 (-gap, 0] 범위 — inset:-80px 오버사이즈로 viewport 전체 커버.
       const tx = -(((s.panOffset.x % gap) + gap) % gap);
       const ty = -(((s.panOffset.y % gap) + gap) % gap);
-      for (const el of [baseRef.current, glowRef.current]) {
-        if (!el) continue;
+      for (const el of targets) {
         el.style.setProperty("--dot-gap", `${gap}px`);
         el.style.setProperty("--dot-tx", `${tx}px`);
         el.style.setProperty("--dot-ty", `${ty}px`);
         el.style.setProperty("--dot-size", `${DOT_SIZE * s.zoom}px`);
-        el.style.willChange = "transform";
+      }
+      if (!isWillChangeActiveRef.current) {
+        for (const el of targets) el.style.willChange = "transform";
+        isWillChangeActiveRef.current = true;
       }
       if (willChangeTimerRef.current !== null) {
         clearTimeout(willChangeTimerRef.current);
       }
       willChangeTimerRef.current = setTimeout(() => {
-        for (const el of [baseRef.current, glowRef.current]) {
-          if (el) el.style.willChange = "";
-        }
+        for (const el of targets) el.style.willChange = "";
+        isWillChangeActiveRef.current = false;
         willChangeTimerRef.current = null;
       }, WILL_CHANGE_IDLE_MS);
     };
@@ -66,6 +70,7 @@ export function DotBackground() {
         clearTimeout(willChangeTimerRef.current);
         willChangeTimerRef.current = null;
       }
+      isWillChangeActiveRef.current = false;
     };
   }, []);
 
@@ -92,8 +97,6 @@ export function DotBackground() {
       if (rafRef.current) return;
       rafRef.current = requestAnimationFrame(() => {
         const r = host.getBoundingClientRect();
-        // glow 박스는 host(.canvas-container) 대비 inset:-80px 오버사이즈 →
-        // mask-image 중심 좌표는 glow 박스 기준이므로 +BG_INSET 오프셋 보정.
         glow.style.setProperty("--cx", `${e.clientX - r.left + BG_INSET}px`);
         glow.style.setProperty("--cy", `${e.clientY - r.top + BG_INSET}px`);
         glow.style.opacity = "1";

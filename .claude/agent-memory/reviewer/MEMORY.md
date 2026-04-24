@@ -2,7 +2,9 @@
 
 ## 재사용성 패턴 — 중기 추출 후보
 
-- **`useRef<ReturnType<typeof setTimeout> | null>` fade timer 4중 복제**: `CanvasScrollbar.tsx:44`(`fadeTimerRef`) / `SkiaCanvas.tsx:238`(`minimapFadeTimerRef`) / `ParticleContext.tsx:31`(`leaveTimeoutRef`) / `DotBackground.tsx`(`idleTimerRef`) 모두 동일한 clear-then-schedule + `ref=null` 패턴 인라인 반복. `apps/builder/src/hooks/useFadeTimer.ts`로 추출 시 unmount cleanup도 자동화 가능. 현재 4곳이므로 다음 추가 시점에 통합 마이그레이션 권장. `useFrameCallback.ts`와 같은 hooks/ 디렉토리에 배치.
+- **`useRef<ReturnType<typeof setTimeout> | null>` fade timer 5중 복제**: `CanvasScrollbar.tsx:44`(`fadeTimerRef`) / `SkiaCanvas.tsx:238`(`minimapFadeTimerRef`) / `ParticleContext.tsx:31`(`leaveTimeoutRef`) / `DotBackground.tsx:27`(`idleTimerRef`) / `DotBackground.tsx:28`(`willChangeTimerRef`) 모두 동일한 clear-then-schedule + `ref=null` 패턴 인라인 반복. DotBackground에서만 타이머 2개 사용. `apps/builder/src/hooks/useFadeTimer.ts`로 추출 시 unmount cleanup도 자동화 가능. 5곳으로 늘었으므로 통합 마이그레이션 우선도 상향. `useFrameCallback.ts`와 같은 hooks/ 디렉토리에 배치.
+- **CSS-JS 이중 상수 drift 패턴 (BG_INSET)**: `DotBackground.tsx:15` `BG_INSET = 80` 과 `Workspace.css:39` `inset: -80px` 가 각각 독립 정의. 주석으로 "동기화" 명시했으나 진짜 SSOT 아님 — CSS Custom Property (`--bg-inset-px`) 또는 마운트 시 `getComputedStyle` 읽기로 단일화 필요. 수동 CSS 값이 JS 로직에 영향을 줄 때마다 발생하는 패턴.
+- **`--glow-r` as string 캐스팅 — setProperty 일관성 미적용**: `DotBackground.tsx:130`에서 `--glow-r` 만 `{ ["--glow-r" as string]: ... } as React.CSSProperties` 인라인으로 처리. 나머지 CSS 변수는 모두 `el.style.setProperty()`를 통해 처리하므로 일관성 위반. 초기값은 useEffect 내 `glowRef.current.style.setProperty("--glow-r", ...)` 단일 패턴으로 통일 필요.
 
 ## 리뷰 빈출 이슈 패턴
 
