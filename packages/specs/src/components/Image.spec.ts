@@ -61,9 +61,13 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
 
   variants: {
     default: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral-subdued}" as TokenRef,
     },
   },

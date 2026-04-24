@@ -46,9 +46,13 @@ export const BreadcrumbSpec: ComponentSpec<BreadcrumbItemProps> = {
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+      },
       text: "{color.neutral-subdued}" as TokenRef,
       textHover: "{color.neutral}" as TokenRef,
     },

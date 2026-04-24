@@ -36,10 +36,14 @@ export const AvatarGroupSpec: ComponentSpec<AvatarGroupProps> = {
 
   variants: {
     default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.neutral}" as TokenRef,
     },
   },

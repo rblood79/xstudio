@@ -68,9 +68,13 @@ export const KbdSpec: ComponentSpec<KbdProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.neutral-pressed}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },

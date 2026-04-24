@@ -308,30 +308,46 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-1}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: "{color.accent-subtle}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.accent-subtle}" as TokenRef,
+          hover: "{color.accent-subtle}" as TokenRef,
+          pressed: "{color.accent-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.accent}" as TokenRef,
     },
     neutral: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.neutral-subtle}" as TokenRef,
     },
     negative: {
-      background: "{color.negative-subtle}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.negative-subtle}" as TokenRef,
+          hover: "{color.negative-subtle}" as TokenRef,
+          pressed: "{color.negative-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.negative}" as TokenRef,
     },

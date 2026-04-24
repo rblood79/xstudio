@@ -44,40 +44,64 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.neutral}" as TokenRef,
-      backgroundAlpha: 0,
     },
     accent: {
-      background: "{color.accent-subtle}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.accent-subtle}" as TokenRef,
+          hover: "{color.accent-subtle}" as TokenRef,
+          pressed: "{color.accent-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     neutral: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     purple: {
-      background: "{color.purple-subtle}" as TokenRef,
-      backgroundHover: "{color.purple-subtle}" as TokenRef,
-      backgroundPressed: "{color.purple-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.purple-subtle}" as TokenRef,
+          hover: "{color.purple-subtle}" as TokenRef,
+          pressed: "{color.purple-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     surface: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-2}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     outlined: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },

@@ -142,23 +142,35 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
 
   variants: {
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.accent}" as TokenRef,
     },
     neutral: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.neutral-subtle}" as TokenRef,
     },
     surface: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-2}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },

@@ -128,9 +128,13 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
     // S2에서 Tabs는 단일 스타일 (accent 기반 indicator)
     // 선택된 탭 텍스트: --fg ({color.neutral}), CSS [data-selected]과 동일
     default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+      },
       text: "{color.neutral-subdued}" as TokenRef,
       textHover: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,

@@ -84,27 +84,43 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-1}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-1}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     neutral: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-1}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     negative: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.negative-subtle}" as TokenRef,
+          pressed: "{color.negative-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
   },

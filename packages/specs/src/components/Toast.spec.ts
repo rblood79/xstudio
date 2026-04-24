@@ -132,30 +132,46 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
 
   variants: {
     info: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     positive: {
-      background: "{color.positive-subtle}" as TokenRef,
-      backgroundHover: "{color.positive-subtle}" as TokenRef,
-      backgroundPressed: "{color.positive-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.positive-subtle}" as TokenRef,
+          hover: "{color.positive-subtle}" as TokenRef,
+          pressed: "{color.positive-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.positive}" as TokenRef,
     },
     neutral: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     negative: {
-      background: "{color.purple-subtle}" as TokenRef,
-      backgroundHover: "{color.purple-subtle}" as TokenRef,
-      backgroundPressed: "{color.purple-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.purple-subtle}" as TokenRef,
+          hover: "{color.purple-subtle}" as TokenRef,
+          pressed: "{color.purple-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.purple}" as TokenRef,
     },

@@ -141,154 +141,254 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
 
   variants: {
     accent: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent}" as TokenRef,
-      backgroundPressed: "{color.accent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.accent}" as TokenRef,
+          hover: "{color.accent}" as TokenRef,
+          pressed: "{color.accent}" as TokenRef,
+        },
+      },
       text: "{color.on-accent}" as TokenRef,
     },
     informative: {
-      background: "{color.informative}" as TokenRef,
-      backgroundHover: "{color.informative}" as TokenRef,
-      backgroundPressed: "{color.informative}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.informative}" as TokenRef,
+          hover: "{color.informative}" as TokenRef,
+          pressed: "{color.informative}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     neutral: {
-      background: "{color.neutral}" as TokenRef,
-      backgroundHover: "{color.neutral}" as TokenRef,
-      backgroundPressed: "{color.neutral}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral}" as TokenRef,
+          hover: "{color.neutral}" as TokenRef,
+          pressed: "{color.neutral}" as TokenRef,
+        },
+      },
       text: "{color.base}" as TokenRef,
     },
     positive: {
-      background: "{color.positive}" as TokenRef,
-      backgroundHover: "{color.positive}" as TokenRef,
-      backgroundPressed: "{color.positive}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.positive}" as TokenRef,
+          hover: "{color.positive}" as TokenRef,
+          pressed: "{color.positive}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     notice: {
-      background: "{color.notice}" as TokenRef,
-      backgroundHover: "{color.notice}" as TokenRef,
-      backgroundPressed: "{color.notice}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.notice}" as TokenRef,
+          hover: "{color.notice}" as TokenRef,
+          pressed: "{color.notice}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     negative: {
-      background: "{color.negative}" as TokenRef,
-      backgroundHover: "{color.negative}" as TokenRef,
-      backgroundPressed: "{color.negative}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.negative}" as TokenRef,
+          hover: "{color.negative}" as TokenRef,
+          pressed: "{color.negative}" as TokenRef,
+        },
+      },
       text: "{color.on-negative}" as TokenRef,
     },
     // Named color variants (S2)
     gray: {
-      background: "{color.gray}" as TokenRef,
-      backgroundHover: "{color.gray}" as TokenRef,
-      backgroundPressed: "{color.gray}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.gray}" as TokenRef,
+          hover: "{color.gray}" as TokenRef,
+          pressed: "{color.gray}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     red: {
-      background: "{color.red}" as TokenRef,
-      backgroundHover: "{color.red}" as TokenRef,
-      backgroundPressed: "{color.red}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.red}" as TokenRef,
+          hover: "{color.red}" as TokenRef,
+          pressed: "{color.red}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     orange: {
-      background: "{color.orange}" as TokenRef,
-      backgroundHover: "{color.orange}" as TokenRef,
-      backgroundPressed: "{color.orange}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.orange}" as TokenRef,
+          hover: "{color.orange}" as TokenRef,
+          pressed: "{color.orange}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     yellow: {
-      background: "{color.yellow}" as TokenRef,
-      backgroundHover: "{color.yellow}" as TokenRef,
-      backgroundPressed: "{color.yellow}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.yellow}" as TokenRef,
+          hover: "{color.yellow}" as TokenRef,
+          pressed: "{color.yellow}" as TokenRef,
+        },
+      },
       text: "{color.black}" as TokenRef,
     },
     green: {
-      background: "{color.green-named}" as TokenRef,
-      backgroundHover: "{color.green-named}" as TokenRef,
-      backgroundPressed: "{color.green-named}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.green-named}" as TokenRef,
+          hover: "{color.green-named}" as TokenRef,
+          pressed: "{color.green-named}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     blue: {
-      background: "{color.blue}" as TokenRef,
-      backgroundHover: "{color.blue}" as TokenRef,
-      backgroundPressed: "{color.blue}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.blue}" as TokenRef,
+          hover: "{color.blue}" as TokenRef,
+          pressed: "{color.blue}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     purple: {
-      background: "{color.purple}" as TokenRef,
-      backgroundHover: "{color.purple}" as TokenRef,
-      backgroundPressed: "{color.purple}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.purple}" as TokenRef,
+          hover: "{color.purple}" as TokenRef,
+          pressed: "{color.purple}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     indigo: {
-      background: "{color.indigo}" as TokenRef,
-      backgroundHover: "{color.indigo}" as TokenRef,
-      backgroundPressed: "{color.indigo}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.indigo}" as TokenRef,
+          hover: "{color.indigo}" as TokenRef,
+          pressed: "{color.indigo}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     cyan: {
-      background: "{color.cyan}" as TokenRef,
-      backgroundHover: "{color.cyan}" as TokenRef,
-      backgroundPressed: "{color.cyan}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.cyan}" as TokenRef,
+          hover: "{color.cyan}" as TokenRef,
+          pressed: "{color.cyan}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     pink: {
-      background: "{color.pink}" as TokenRef,
-      backgroundHover: "{color.pink}" as TokenRef,
-      backgroundPressed: "{color.pink}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.pink}" as TokenRef,
+          hover: "{color.pink}" as TokenRef,
+          pressed: "{color.pink}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     turquoise: {
-      background: "{color.turquoise}" as TokenRef,
-      backgroundHover: "{color.turquoise}" as TokenRef,
-      backgroundPressed: "{color.turquoise}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.turquoise}" as TokenRef,
+          hover: "{color.turquoise}" as TokenRef,
+          pressed: "{color.turquoise}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     fuchsia: {
-      background: "{color.fuchsia}" as TokenRef,
-      backgroundHover: "{color.fuchsia}" as TokenRef,
-      backgroundPressed: "{color.fuchsia}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.fuchsia}" as TokenRef,
+          hover: "{color.fuchsia}" as TokenRef,
+          pressed: "{color.fuchsia}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     magenta: {
-      background: "{color.magenta}" as TokenRef,
-      backgroundHover: "{color.magenta}" as TokenRef,
-      backgroundPressed: "{color.magenta}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.magenta}" as TokenRef,
+          hover: "{color.magenta}" as TokenRef,
+          pressed: "{color.magenta}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     chartreuse: {
-      background: "{color.chartreuse}" as TokenRef,
-      backgroundHover: "{color.chartreuse-hover}" as TokenRef,
-      backgroundPressed: "{color.chartreuse-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.chartreuse}" as TokenRef,
+          hover: "{color.chartreuse-hover}" as TokenRef,
+          pressed: "{color.chartreuse-pressed}" as TokenRef,
+        },
+      },
       text: "{color.black}" as TokenRef,
     },
     celery: {
-      background: "{color.celery}" as TokenRef,
-      backgroundHover: "{color.celery-hover}" as TokenRef,
-      backgroundPressed: "{color.celery-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.celery}" as TokenRef,
+          hover: "{color.celery-hover}" as TokenRef,
+          pressed: "{color.celery-pressed}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     seafoam: {
-      background: "{color.seafoam}" as TokenRef,
-      backgroundHover: "{color.seafoam-hover}" as TokenRef,
-      backgroundPressed: "{color.seafoam-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.seafoam}" as TokenRef,
+          hover: "{color.seafoam-hover}" as TokenRef,
+          pressed: "{color.seafoam-pressed}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     brown: {
-      background: "{color.brown}" as TokenRef,
-      backgroundHover: "{color.brown-hover}" as TokenRef,
-      backgroundPressed: "{color.brown-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.brown}" as TokenRef,
+          hover: "{color.brown-hover}" as TokenRef,
+          pressed: "{color.brown-pressed}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     cinnamon: {
-      background: "{color.cinnamon}" as TokenRef,
-      backgroundHover: "{color.cinnamon-hover}" as TokenRef,
-      backgroundPressed: "{color.cinnamon-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.cinnamon}" as TokenRef,
+          hover: "{color.cinnamon-hover}" as TokenRef,
+          pressed: "{color.cinnamon-pressed}" as TokenRef,
+        },
+      },
       text: "{color.white}" as TokenRef,
     },
     silver: {
-      background: "{color.silver}" as TokenRef,
-      backgroundHover: "{color.silver-hover}" as TokenRef,
-      backgroundPressed: "{color.silver-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.silver}" as TokenRef,
+          hover: "{color.silver-hover}" as TokenRef,
+          pressed: "{color.silver-pressed}" as TokenRef,
+        },
+      },
       text: "{color.black}" as TokenRef,
     },
   },

@@ -225,16 +225,24 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   // ADR-105-c 자연 해소 확증.
   variants: {
     default: {
-      background: "{color.raised}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.raised}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-1}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: "{color.raised}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.raised}" as TokenRef,
+          hover: "{color.accent-subtle}" as TokenRef,
+          pressed: "{color.accent-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },

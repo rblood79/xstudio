@@ -68,9 +68,13 @@ export const CodeSpec: ComponentSpec<CodeProps> = {
 
   variants: {
     default: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-pressed}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
   },

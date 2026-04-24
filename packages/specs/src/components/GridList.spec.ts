@@ -191,15 +191,23 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
 
   variants: {
     default: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.accent-subtle}" as TokenRef,
+          pressed: "{color.accent-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
   },

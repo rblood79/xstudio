@@ -154,9 +154,13 @@ export const TagSpec: ComponentSpec<TagProps> = {
       // 선택 상태면 selected variant 사용
       const effectiveVariant = props.isSelected
         ? {
-            background: "{color.accent}" as TokenRef,
-            backgroundHover: "{color.accent}" as TokenRef,
-            backgroundPressed: "{color.accent}" as TokenRef,
+            fill: {
+              default: {
+                base: "{color.accent}" as TokenRef,
+                hover: "{color.accent}" as TokenRef,
+                pressed: "{color.accent}" as TokenRef,
+              },
+            },
             text: "{color.on-accent}" as TokenRef,
             border: "{color.accent}" as TokenRef,
           }

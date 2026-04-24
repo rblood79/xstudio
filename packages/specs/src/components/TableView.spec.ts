@@ -51,16 +51,24 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-1}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-pressed}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     quiet: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-pressed}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.transparent}" as TokenRef,
     },

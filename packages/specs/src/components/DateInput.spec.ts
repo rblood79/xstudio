@@ -125,25 +125,37 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-2}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
       borderHover: "{color.border-hover}" as TokenRef,
     },
     accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-2}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.accent}" as TokenRef,
       borderHover: "{color.accent-hover}" as TokenRef,
     },
     negative: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-2}" as TokenRef,
+          pressed: "{color.layer-2}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.negative}" as TokenRef,
       borderHover: "{color.negative-hover}" as TokenRef,

@@ -54,16 +54,24 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-1}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent-hover}" as TokenRef,
-      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.accent}" as TokenRef,
+          hover: "{color.accent-hover}" as TokenRef,
+          pressed: "{color.accent-pressed}" as TokenRef,
+        },
+      },
       text: "{color.on-accent}" as TokenRef,
       border: "{color.accent}" as TokenRef,
     },

@@ -58,27 +58,43 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
 
   variants: {
     informative: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     positive: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     warning: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     critical: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.transparent}" as TokenRef,
+          hover: "{color.transparent}" as TokenRef,
+          pressed: "{color.transparent}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
   },

@@ -35,15 +35,23 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+      },
       text: "{color.accent}" as TokenRef,
     },
   },

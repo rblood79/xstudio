@@ -85,58 +85,86 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.border}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     solid: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.border}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     dashed: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.border}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     dotted: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.border}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.accent}" as TokenRef,
       border: "{color.accent}" as TokenRef,
     },
     neutral: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.neutral-subtle}" as TokenRef,
       border: "{color.neutral-subtle}" as TokenRef,
     },
     surface: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
-      backgroundAlpha: 0,
+      fill: {
+        default: {
+          base: "{color.base}" as TokenRef,
+          hover: "{color.base}" as TokenRef,
+          pressed: "{color.base}" as TokenRef,
+        },
+        alpha: 0,
+      },
       text: "{color.border-hover}" as TokenRef,
       border: "{color.border-hover}" as TokenRef,
     },

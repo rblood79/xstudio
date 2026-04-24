@@ -49,37 +49,57 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
 
   variants: {
     neutral: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-subtle}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.neutral-subdued}" as TokenRef,
     },
     info: {
-      background: "{color.informative-subtle}" as TokenRef,
-      backgroundHover: "{color.informative-subtle}" as TokenRef,
-      backgroundPressed: "{color.informative-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.informative-subtle}" as TokenRef,
+          hover: "{color.informative-subtle}" as TokenRef,
+          pressed: "{color.informative-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.informative}" as TokenRef,
     },
     positive: {
-      background: "{color.positive-subtle}" as TokenRef,
-      backgroundHover: "{color.positive-subtle}" as TokenRef,
-      backgroundPressed: "{color.positive-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.positive-subtle}" as TokenRef,
+          hover: "{color.positive-subtle}" as TokenRef,
+          pressed: "{color.positive-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.positive}" as TokenRef,
     },
     notice: {
-      background: "{color.notice-subtle}" as TokenRef,
-      backgroundHover: "{color.notice-subtle}" as TokenRef,
-      backgroundPressed: "{color.notice-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.notice-subtle}" as TokenRef,
+          hover: "{color.notice-subtle}" as TokenRef,
+          pressed: "{color.notice-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.notice}" as TokenRef,
     },
     negative: {
-      background: "{color.negative-subtle}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.negative-subtle}" as TokenRef,
+          hover: "{color.negative-subtle}" as TokenRef,
+          pressed: "{color.negative-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.negative}" as TokenRef,
     },

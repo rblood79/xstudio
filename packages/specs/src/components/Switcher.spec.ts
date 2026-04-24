@@ -41,16 +41,24 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-1}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral-subdued}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.layer-2}" as TokenRef,
+          hover: "{color.layer-1}" as TokenRef,
+          pressed: "{color.neutral-subtle}" as TokenRef,
+        },
+      },
       text: "{color.neutral-subdued}" as TokenRef,
       border: "{color.accent}" as TokenRef,
     },
