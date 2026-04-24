@@ -57,3 +57,11 @@ export { FIELD_FAMILY_SIZES } from "./fieldSizes";
 
 // Tab-family size metric (ADR-105-b)
 export { TABS_SIZE_CONFIG } from "./tabSizes";
+
+// CSS value parser SSOT (ADR-907 Phase 1 Layer A)
+export {
+  parsePxValue,
+  parsePadding4Way,
+  parseBorderWidth,
+  parseGapValue,
+} from "./cssValueParser";
