@@ -1,0 +1,45 @@
+/**
+ * @fileoverview Legacy → Canonical Adapter Input/Output Types — ADR-903 P1
+ *
+ * adapter는 read-through 변환만 수행. 저장 포맷 미변경 (Phase 5에서 전환).
+ */
+
+import type { Element, Page } from "@/types/builder/unified.types";
+import type { Layout } from "@/types/builder/layout.types";
+import type { RefNode } from "@composition/shared";
+
+export interface LegacyAdapterInput {
+  elements: Element[];
+  pages: Page[];
+  layouts: Layout[];
+}
+
+/**
+ * Sibling 스트림이 producing할 transformation 함수의 시그니처.
+ * 본 파일에는 type만 export, 실제 구현은 sibling 모듈이 담당.
+ */
+export type ConvertComponentRoleFn = (
+  element: Element,
+  options: { idPathMap: Map<string, string> },
+) => {
+  reusable?: boolean;
+  /** "ref" 인스턴스인 경우 RefNode의 ref 필드값 (master의 stable id) */
+  ref?: string;
+  /** descendants UUID key를 stable id path로 remap한 결과 */
+  descendantsRemapped?: Record<string, unknown>;
+  /** instance overrides → CanonicalNode 루트 속성 patch */
+  rootOverrides?: Record<string, unknown>;
+};
+
+export type ConvertSlotElementFn = (slotElement: Element) => {
+  /** pencil 공식 slot 타입: false 또는 추천 reusable component ID 배열 */
+  slotMeta: false | string[];
+  /** slot_name (canonical descendants[slotPath]의 path 키) */
+  slotName: string;
+};
+
+export type ConvertPageLayoutFn = (
+  page: Page,
+  layouts: Layout[],
+  pageElements: Element[],
+) => RefNode | null;
