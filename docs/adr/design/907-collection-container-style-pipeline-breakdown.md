@@ -198,6 +198,29 @@ const metric = resolveGridListSpacingMetric({ style: element.props.style, ... })
 
 결론: G1 Gate 의 test discovery 조건 충족. Phase 1 착수 시 include 수정 불필요.
 
+### Codex Round 4 판정 (Phase 0 실측 반영 검증)
+
+Phase 0 실측이 ADR 전제를 정정할 수 있는 정보 3건을 제공함에 따라 Codex Round 4 외부 cross-check 를 수행 (2026-04-24). 판정 결과:
+
+| 질문                              | Codex 판정    | 반영 위치                                                                                                |
+| --------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------- |
+| Q1 Layer D 우선 수요자 5건 축소   | **부분 동의** | ADR-907 Scope 정규화 테이블 (`Phase 4 Layer D 적용 4` + `Layer D 무적용 4` 분리). G6 템플릿 Profile X/Y. |
+| Q2 Layer B 즉시 수요자 7건 축소   | **부분 동의** | Layer C renderer contract 는 11 전수 + allowlist 유지 (ADR 47줄). Layer B 수요자만 7 로 축소.            |
+| Q3 TagGroup Phase 3 co-pilot 승격 | **반대**      | ADR-097 TagList compositional 충돌. TagGroup.spec shapes 빈 배열. Phase 4 최우선 (ADR-908 등) 유지.      |
+| Q4 Table Layer C (a) 선반영       | **부분 동의** | Phase 5 G7 audit 유지. Phase 2 rendererStyleContract 에서 Table (a) 선반영 가능.                         |
+
+종합 판정: **B — 부분 수정 후 Phase 1**. Round 3 승인은 유지. 4-Layer 는 "조건부 적용" 보정으로 본질 유지.
+
+반영 완료 항목:
+
+- ADR-907 Scope 정규화 테이블: 기존 "Phase 4 follow-up 8" → "Layer D 적용 4 + 무적용 4" 분리 + Layer 적용 profile 열 추가
+- ADR-907 Decision §1 누적 비용 수식: "follow-up 8~16일" → "Profile X 4 × 1.5 + Profile Y 4 × 0.5~1 = **8~10일**" (상한 -37.5%)
+- ADR-907 Consequences Positive: "25~41일 / 50~55% 절감" → "25~35일 / 55~61% 절감"
+- ADR-907 Scope 주석: TagGroup Phase 3 co-pilot 승격 기각 사유 (ADR-097 + shapes 빈 배열) 명시
+- ADR-907 Scope 주석: Layer C 전수 유지 + Layer B/D 조건부 명시
+- breakdown Phase 4 템플릿: Profile X/Y 분기 + step 2/3 조건부
+- breakdown Phase 5 Table: Layer C (a) Phase 2 선반영 가능성 + G7 scope (b/c + B/D) 로 축소
+
 ### Phase 1 — CSS value parser SSOT 통합
 
 - `packages/specs/src/primitives/cssValueParser.ts` 신설 + `packages/specs/src/primitives/index.ts` 에 export.
@@ -245,19 +268,27 @@ const metric = resolveGridListSpacingMetric({ style: element.props.style, ... })
 
 ### Phase 4 — 순차 적용 (follow-up ADR 템플릿)
 
-본 ADR 은 **프레임워크 확정 + pilot(GridList)** 만 land. 11 주대상 중 Phase 3 pilot(GridList) + Phase 5 별도(Table) + ListBox 기준 선례(재검증만)를 제외한 **8 컴포넌트** (`Breadcrumbs, ComboBox, Menu, Select, Tabs, TagGroup, Toolbar, Tree`) 적용은 **follow-up ADR (ADR-908..ADR-915)** 로 분기하되, 각 follow-up ADR 은 아래 공통 템플릿을 따른다:
+본 ADR 은 **프레임워크 확정 + pilot(GridList)** 만 land. 11 주대상 중 Phase 3 pilot(GridList) + Phase 5 별도(Table) + ListBox 기준 선례(재검증만)를 제외한 **8 컴포넌트** (`Breadcrumbs, ComboBox, Menu, Select, Tabs, TagGroup, Toolbar, Tree`) 적용은 **follow-up ADR (ADR-908..ADR-915)** 로 분기하며 Phase 0 실측 기반 **2 프로파일** 로 나뉜다:
+
+- **Profile X — Layer D 적용 4건**: `Menu, ComboBox, Select, Toolbar` — spec `render.shapes()` 가 `size.paddingX/Y` / `size.gap` 하드코딩 중 → `resolve{Component}SpacingMetric()` 신설 필요. 건당 약 1.5일.
+- **Profile Y — Layer D 무적용 4건**: `Tree, Tabs, Breadcrumbs, TagGroup` — spec shapes N/A (빈 배열 또는 텍스트 측정 전용) → Layer D resolver 신설 무의미. Layer A/B/C 만 적용. 건당 약 0.5~1일.
+
+각 follow-up ADR 은 아래 공통 템플릿을 따르되, Profile X/Y 에 따라 step 2/3 조건부:
 
 ```
 ## Phase 구성 (follow-up ADR 공통)
 1. renderer 에 `style={element.props.style}` 추가 → Layer C allowlist 제거.
-2. `{Component}.spec.ts` 에 `resolve{Component}SpacingMetric()` 추가 (containerSpacing primitive 호출 + 컴포넌트-specific 확장).
-3. `utils.ts` 해당 분기 치환 (render.shapes 와 calculateContentHeight 가 동일 resolver 호출 확인).
+2. [Profile X 만] `{Component}.spec.ts` 에 `resolve{Component}SpacingMetric()` 추가 (containerSpacing primitive 호출 + 컴포넌트-specific 확장).
+   [Profile Y 는 생략] spec shapes N/A 이므로 Layer D 무관 — Layer B resolveContainerSpacing 결과를 Preview/Layout 에서만 소비.
+3. `utils.ts` 해당 분기 치환.
+   [Profile X] render.shapes 와 calculateContentHeight 가 동일 resolver 호출 확인.
+   [Profile Y] utils.ts 분기가 존재하지 않으면 step 자체 생략 (일반 flow 경로).
 4. fixture test 추가 (unedited baseline + hand-crafted edited baseline k≤5; root style 편집 UI 접근 가능한 컴포넌트는 k=5, 아닌 컴포넌트는 k=2).
 5. Generator 영향 여부 확인 — skipCSSGeneration 또는 childSpec emit 한계 존재 시 한 줄 명시 (예: GridList.spec.ts:71 `skipCSSGeneration: true`).
-6. ADR-907 Phase 0 matrix 해당 행 업데이트 + 본 follow-up ADR 의 Implemented 전환 시점에 ADR-907 README 교차 인용.
+6. ADR-907 Phase 0 matrix 해당 행 업데이트 + Scope 정규화 테이블 Layer 적용 profile 교차 인용 + 본 follow-up ADR 의 Implemented 전환 시점에 ADR-907 README 교차 인용.
 ```
 
-follow-up ADR 1건 scope = 1~2일. 8 건 × 1~2일 = **8~16일 누적**.
+follow-up ADR 누적 = Profile X 4건 × 1.5일 + Profile Y 4건 × 0.5~1일 = **8~10일**. 원 추정 "8 × 1~2일 = 8~16일" 의 상한이 -37.5% 축소됨 (R4 대응 수식화).
 
 통과 조건:
 
@@ -275,7 +306,9 @@ follow-up ADR 1건 scope = 1~2일. 8 건 × 1~2일 = **8~16일 누적**.
 - 2-3/4 O → 부분 이식 + follow-up ADR 잔여 이관.
 - 0-1/4 O → Table 단독 follow-up ADR 로 전체 이관.
 
-통과 조건: Table 판정 결과가 본 breakdown 에 기록되고, 분기 선택이 명시된다.
+**Layer C (a) 선반영** (Phase 2 에서 가능): Phase 0 실측상 Table (a) X 는 `TableRenderer.tsx:343-349` 의 `<Table>` root 에 `style` prop 부재로 renderer-level 즉시 해결 가능 (SelectionRenderers 의 GridList 패치와 동일 형태). Phase 2 `rendererStyleContract.test.ts` 신설 시 Table renderer 의 (a) 수정을 선행할 수 있으며, Phase 5 G7 audit 은 (b)/(c) + Layer B/D 의 framework 전면 적용 가능성만 판정한다. (a) 선반영 시 Phase 5 기각 결과에서도 Preview DOM 편집 반영 은 이미 확보됨.
+
+통과 조건: Table 판정 결과가 본 breakdown 에 기록되고, 분기 선택이 명시된다. Layer C (a) 선반영 여부 (Phase 2 에서 수행) 도 함께 기록.
 
 ### Phase 6 — Fixture regression + Migration validation
 

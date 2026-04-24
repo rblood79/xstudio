@@ -33,16 +33,18 @@ ADR-906 Decision B (per-component resolver) 는 GridList 1건 + audit 2건 (TagG
 
 본 ADR 의 scope 를 Phase/Gate/matrix 산식과 정합시키기 위해 대상 집합을 다음 분류로 고정한다:
 
-| 분류                           |   수   | 컴포넌트                                                             | Phase                  |
-| ------------------------------ | :----: | -------------------------------------------------------------------- | ---------------------- |
-| **기준 선례 (이미 정합)**      |   1    | `ListBox`                                                            | Phase 0 audit 재검증만 |
-| **Phase 3 pilot**              |   1    | `GridList`                                                           | Phase 3                |
-| **Phase 5 별도 판정**          |   1    | `Table`                                                              | Phase 5                |
-| **Phase 4 follow-up ADR 대상** |   8    | `Breadcrumbs, ComboBox, Menu, Select, Tabs, TagGroup, Toolbar, Tree` | Phase 4                |
-| **합계**                       | **11** |                                                                      |                        |
+| 분류                       |   수   | 컴포넌트                            | Phase                  | Layer 적용 profile (Phase 0 실측 기반)  |
+| -------------------------- | :----: | ----------------------------------- | ---------------------- | --------------------------------------- |
+| **기준 선례 (이미 정합)**  |   1    | `ListBox`                           | Phase 0 audit 재검증만 | A/B/C/D 모두 정합                       |
+| **Phase 3 pilot**          |   1    | `GridList`                          | Phase 3                | A + B + C + D                           |
+| **Phase 5 별도 판정**      |   1    | `Table`                             | Phase 5                | C (a) 선반영 가능, B/D 는 audit 후 판정 |
+| **Phase 4 Layer D 적용**   |   4    | `Menu, ComboBox, Select, Toolbar`   | Phase 4                | A + B + C + D (shapes 하드코딩)         |
+| **Phase 4 Layer D 무적용** |   4    | `Tree, Tabs, Breadcrumbs, TagGroup` | Phase 4                | A + B + C (shapes N/A — Layer D 생략)   |
+| **합계**                   | **11** |                                     |                        |                                         |
 
-- TagList 는 `TagGroup` 의 중간 compositional 컨테이너 (ADR-097) 로 별도 주대상이 아니며, TagGroup Phase 4 follow-up ADR 에서 sub-target 으로 흡수된다. breakdown matrix 에도 독립 행이 아니라 TagGroup 종속 note 로 기록한다.
+- TagList 는 `TagGroup` 의 중간 compositional 컨테이너 (ADR-097) 로 별도 주대상이 아니며, TagGroup Phase 4 follow-up ADR 에서 sub-target 으로 흡수된다. breakdown matrix 에도 독립 행이 아니라 TagGroup 종속 note 로 기록한다. **TagGroup 자체 spec 은 shapes 빈 배열 (TagGroup.spec.ts:395-421)** 로 Layer D (resolve{Component}SpacingMetric) 무관. Phase 3 co-pilot 승격은 ADR-097 compositional 구조 (실렌더가 TagList) 와 충돌하므로 Phase 4 최우선 (ADR-908 등) 으로 유지.
 - Menu 는 `SYNTHETIC_CHILD_PROP_MERGE_TAGS` Set (`apps/builder/src/builder/workspace/canvas/skia/buildSpecNodeData.ts:155-170`, 10개) 에는 포함되지 않으나 ADR-068 의 items SSOT 컴포넌트로서 `render.shapes` 가 `props.items` 기반 self-render 이므로 동일 drift 위험을 가진다. 따라서 본 ADR scope 에 포함.
+- **Layer C renderer contract 는 11 전수 + allowlist 유지** (Layer B/D 의 조건부 적용과 독립). 즉 Phase 2 `rendererStyleContract.test.ts` 는 11 renderer 전부 확인하되, Tree/Tabs/Breadcrumbs/TagGroup 은 renderer 수준 style 전달만 검증 (Layer D resolver 호출 미검증).
 
 ### Hard Constraints
 
@@ -139,7 +141,7 @@ ADR-906 Decision B (per-component resolver) 는 GridList 1건 + audit 2건 (TagG
 
 선택 근거:
 
-1. **누적 비용 우위**: 11 주대상 컴포넌트에 ADR-906 스타일 per-component resolver 를 반복하면 누적 54~90일. 본 ADR 의 Layer A/B/C/D 통합은 17~25일 (Phase 0-3 + Phase 6). Phase 4 follow-up 은 건당 1~2일 × 8 = 8~16일이지만 각 follow-up 이 본 ADR framework 재사용으로 **설계 결정 반복이 제거**된다.
+1. **누적 비용 우위**: 11 주대상 컴포넌트에 ADR-906 스타일 per-component resolver 를 반복하면 누적 54~90일. 본 ADR 의 Layer A/B/C/D 통합은 17~25일 (Phase 0-3 + Phase 6). Phase 4 follow-up 은 Phase 0 실측 반영 — Layer D (Spec metric SSOT) 적용 필요 4건 (Menu/ComboBox/Select/Toolbar, shapes 하드코딩) × 1.5일 + Layer D 무적용 4건 (Tree/Tabs/Breadcrumbs/TagGroup, shapes N/A) × 0.5~1일 = **8~10일** (원 추정 8~16일에서 하한 유지 + 상한 -37.5%). 각 follow-up 이 본 ADR framework 재사용으로 **설계 결정 반복이 제거**된다.
 2. **SSOT 원칙 정합**: ADR-063 D3 시각 스타일의 3경로 대칭을 pipeline 으로 선언화. Preview DOM / Skia / Layout engine 이 동일 `ContainerSpacing` 타입을 소비하므로 구조적 drift 불가능.
 3. **Renderer contract 재발 차단**: Layer C 의 test/lint 가 신규 renderer 추가 시 style 전달 누락을 자동 차단. 미래 컴포넌트 추가 시 누락 가능성 0.
 4. **GridList 증상 흡수**: Phase 3 pilot 으로 ADR-906 의 Hard Constraint 1/2 를 그대로 충족. 906 의 리뷰 7라운드 맥락은 Supersede 링크로 보존.
@@ -207,7 +209,7 @@ ADR-906 Decision B (per-component resolver) 는 GridList 1건 + audit 2건 (TagG
 
 - **구조적 drift 차단**: 11 주대상 컴포넌트의 `element.props.style` → 3경로 반영이 pipeline 으로 선언화. 미래 컴포넌트 추가 시 framework 자동 적용.
 - **SSOT 1곳 수렴**: CSS value parser + container spacing resolver 가 각각 1 primitive 로 통합. 현행 ad-hoc 파싱 중복 제거.
-- **반복 ADR 비용 축소**: 추정 누적 54~90일 → **25~41일** (framework 17~25일 + follow-up 8~16일) = 약 50~55% 절감.
+- **반복 ADR 비용 축소**: 추정 누적 54~90일 → **25~35일** (framework 17~25일 + follow-up 8~10일, Phase 0 실측 기반) = 약 55~61% 절감.
 - **Renderer contract 재발 차단**: test/lint 로 신규 renderer 의 style 전달 누락 자동 차단.
 - **ADR-906 맥락 보존**: Supersede 링크로 906 의 리뷰 7라운드 맥락 추적 가능.
 
