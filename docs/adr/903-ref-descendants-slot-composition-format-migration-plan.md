@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed — 2026-04-22
+Accepted — 2026-04-25 (Phase 0 G1 통과: canonical 타입 + adapter/resolver 계약 land. Phase 1 adapter 착수 예정)
 
 ## Context
 

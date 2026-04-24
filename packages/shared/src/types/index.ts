@@ -11,3 +11,9 @@ export * from "./collection.types";
 export * from "./export.types";
 export * from "./event.types";
 export * from "./font.types";
+// ADR-903 P0 — Canonical Document Format
+export * from "./composition-document.types";
+export * from "./composition-vocabulary";
+// ADR-903 P0 Stream 2 — Pencil Adapter + Canonical Resolver Cache
+export * from "./pencil-adapter.types";
+export * from "./canonical-resolver.types";

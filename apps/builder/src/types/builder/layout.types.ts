@@ -4,6 +4,25 @@
  * Layout = 자유로운 Element 트리 + Slot 마커
  * Slot = Layout 내 "Page 내용 삽입 위치" 표시
  * Page = 각 Slot에 맞는 Element들 제공
+ *
+ * **ADR-903 Migration (Phase 0)**
+ *
+ * 본 파일의 타입들은 CSS/DOM 기반 빌더 시대에 만든 layout-vs-page 이원화 시스템의
+ * 산물이다. Skia canonical 전환(ADR-903) 이후에는 다음과 같이 흡수된다:
+ *
+ * - `Layout` → canonical `FrameNode` + `reusable: true` 로 흡수 (ADR-903 Phase 3)
+ * - `SlotProps` / `tag="Slot"` + `slot_name` → 컨테이너의 `slot?: false | string[]`
+ *   schema 속성으로 전환 (ADR-903 Phase 3)
+ * - `ElementLayoutFields.layout_id` → page root `type:"ref"` to reusable layout shell
+ * - `PageLayoutFields.layout_id` → page root ref 참조로 대체
+ * - `useLayoutsStore` (`layouts[]` 별도 저장) → canonical document tree 내부
+ *   `reusable: true` 노드 조회 selector로 해체 (ADR-903 Phase 3/Phase 5 G5)
+ *
+ * Phase 1~3 기간에는 adapter 입력 타입으로만 사용된다.
+ * 신규 기능은 canonical format(`composition-document.types.ts`)에만 추가할 것.
+ *
+ * @see docs/adr/903-ref-descendants-slot-composition-format-migration-plan.md
+ * @see packages/shared/src/types/composition-document.types.ts
  */
 
 import type { Element } from "./unified.types";
@@ -14,6 +33,10 @@ import type { Element } from "./unified.types";
 
 /**
  * Layout 타입 (layouts 테이블)
+ *
+ * @deprecated ADR-903 P3: canonical 'FrameNode' + 'reusable: true'로 흡수 예정.
+ * layouts[] 별도 테이블은 Phase 5 G5 완료 시점에 canonical document tree 내부
+ * reusable 노드로 통합. Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface Layout {
   id: string;
@@ -35,6 +58,10 @@ export interface Layout {
 
 /**
  * Layout 생성 시 필요한 필드
+ *
+ * @deprecated ADR-903 P3: `createLayout` → `createReusableFrame` 전환 예정.
+ * canonical `{ type: "frame", reusable: true, children, slot }` 노드 생성 API로 대체.
+ * Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
   description?: string;
@@ -44,9 +71,20 @@ export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
 
 /**
  * Layout 업데이트 시 필요한 필드
+ *
+ * @deprecated ADR-903 P3: canonical reusable frame 노드의 속성 직접 업데이트로 대체.
+ * Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export type LayoutUpdate = Partial<
-  Pick<Layout, "name" | "description" | "slug" | "order_num" | "notFoundPageId" | "inheritNotFound">
+  Pick<
+    Layout,
+    | "name"
+    | "description"
+    | "slug"
+    | "order_num"
+    | "notFoundPageId"
+    | "inheritNotFound"
+  >
 >;
 
 // ============================================
@@ -56,6 +94,10 @@ export type LayoutUpdate = Partial<
 /**
  * Slot props 타입 (Element.props에 저장)
  * Slot은 tag="Slot"인 Element
+ *
+ * @deprecated ADR-903 P3: canonical 컨테이너 schema 속성 `slot?: false | string[]`으로
+ * 전환. 별도 Slot 특수 노드(`tag="Slot"`) 제거 예정. `name` 필드는 descendants path의
+ * key 역할로 흡수. Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface SlotProps extends Record<string, unknown> {
   /** Slot 식별자 (예: "content", "sidebar", "navigation") */
@@ -78,6 +120,11 @@ export interface SlotProps extends Record<string, unknown> {
  * 제약조건:
  * - page_id와 layout_id 중 하나만 설정 가능
  * - slot_name은 Page element에만 설정 가능
+ *
+ * @deprecated ADR-903 P3: 두 필드 모두 canonical format으로 흡수 예정.
+ * - `layout_id` → page root `type:"ref"` to reusable layout shell
+ * - `slot_name` → canonical `descendants[slotPath].children` (mode C)
+ * Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface ElementLayoutFields {
   /** Layout에 속한 요소면 Layout ID (page_id와 상호 배타적) */
@@ -93,6 +140,11 @@ export interface ElementLayoutFields {
 
 /**
  * Page 타입 확장 (기존 Page에 추가되는 필드)
+ *
+ * @deprecated ADR-903 P3: `layout_id` 외래키 방식 폐기 예정. canonical format에서
+ * page는 reusable layout shell의 `type:"ref"` 인스턴스로 표현됨. 외부 `layout_id`
+ * 참조 대신 page root 노드 자체에 `ref: "<layoutId>"` 선언. Phase 1~3 기간
+ * adapter 입력 타입으로만 사용.
  */
 export interface PageLayoutFields {
   /** 적용할 Layout ID (optional - 없으면 Layout 없이 렌더링) */
@@ -229,7 +281,7 @@ export interface LayoutsStoreActions {
   getLayoutById: (id: string) => Layout | undefined;
   getLayoutSlots: (layoutId: string) => SlotInfo[];
   validateLayoutDelete: (
-    id: string
+    id: string,
   ) => Promise<{ canDelete: boolean; usedByPages: string[] }>;
 }
 
