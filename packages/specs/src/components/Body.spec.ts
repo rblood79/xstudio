@@ -78,8 +78,21 @@ export const BodySpec: ComponentSpec<BodyProps> = {
             BodySpec.defaultVariant!
         ];
       const fill = resolveFillTokens(variant);
+
+      // ADR-902: props.style.backgroundColor 은 Preview DOM 용 CSS var 리터럴
+      // ("var(--bg)") 을 담고 있으므로 Skia 경로에서는 skip. 사용자가 명시적 hex 를
+      // 입력한 경우만 honor (TokenRef / "var(" / "$--" 은 Skia 해석 불가 → Spec 토큰
+      // 으로 fallback).
+      const rawBg = props.style?.backgroundColor;
+      const userBg =
+        typeof rawBg === "string" &&
+        !rawBg.startsWith("var(") &&
+        !rawBg.startsWith("$--") &&
+        !rawBg.startsWith("{")
+          ? rawBg
+          : undefined;
       const bgColor =
-        props.style?.backgroundColor ??
+        userBg ??
         (state === "hover"
           ? (fill.default.hover ?? fill.default.base)
           : state === "pressed"
