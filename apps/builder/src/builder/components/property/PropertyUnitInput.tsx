@@ -116,19 +116,20 @@ export const PropertyUnitInput = memo(
     const lastSavedValueRef = useRef<string>(value);
     // ⭐ focus 시점의 selectedElementId 캡처 — blur 시 요소 전환 감지용
     const focusedElementIdRef = useRef<string | null>(null);
+    // ⭐ 실제 input DOM — useEffect 에서 편집 진행 여부 (activeElement) 판정에 사용
+    const inputElementRef = useRef<HTMLInputElement>(null);
 
     // 외부 value 또는 선택 요소 변경 시 편집 세션 리셋.
-    // 단 focus 중 (같은 요소) 에 value 가 preview 경로로 바뀐 경우는 무시 —
-    // updateSelectedStylePreview 가 elementsMap 을 mutate → useLayoutValues 를 통해
-    // value prop 이 편집값으로 변하면, commit 경로가 "변경 없음" 으로 오판해 onChange
-    // 가 skip 되고 DB 저장이 누락된다. selectedElementId 가 바뀌면 다른 요소 선택이므로
-    // focus 무관하게 리셋.
+    // 단 실제로 이 input 이 focus 상태일 때는 skip — preview (updateSelectedStylePreview)
+    // 가 elementsMap 을 mutate 하면서 value prop 이 편집값으로 변해도 사용자 편집 세션을
+    // 보존. Reset 버튼 클릭 / 다른 input focus 이동 등으로 activeElement 가 바뀌면 갱신.
     useEffect(() => {
-      const currentSelectedId = selectedElementId ?? null;
-      const isFocusedOnSameElement =
-        focusedElementIdRef.current !== null &&
-        focusedElementIdRef.current === currentSelectedId;
-      if (isFocusedOnSameElement) return;
+      if (
+        inputElementRef.current !== null &&
+        document.activeElement === inputElementRef.current
+      ) {
+        return;
+      }
 
       justSavedViaEnterRef.current = false;
       lastSavedValueRef.current = value;
@@ -440,6 +441,7 @@ export const PropertyUnitInput = memo(
           >
             <div className="combobox-container" ref={comboBoxContainerRef}>
               <Input
+                ref={inputElementRef}
                 className="react-aria-Input"
                 type="text"
                 value={inputValue}
