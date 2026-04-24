@@ -27,7 +27,7 @@ import type {
   LegacyAdapterInput,
 } from "./types";
 import { isLegacySlotTag, tagToType } from "./tagRename";
-import { buildIdPathContext } from "./idPath";
+import { buildIdPathContext, segId } from "./idPath";
 import {
   convertLayoutToReusableFrame,
   buildSlotPathMap,
@@ -72,7 +72,7 @@ export function legacyToCanonical(
       const slotName =
         (element.props.name as string | undefined) ?? element.slot_name ?? null;
       return {
-        id: idPathCtx.idSegmentMap.get(element.id) ?? element.id,
+        id: segId(element.id, idPathCtx.idSegmentMap),
         type: "frame",
         name: element.componentName,
         metadata: {
@@ -85,7 +85,7 @@ export function legacyToCanonical(
     }
 
     const node: CanonicalNode = {
-      id: idPathCtx.idSegmentMap.get(element.id) ?? element.id,
+      id: segId(element.id, idPathCtx.idSegmentMap),
       type: roleResult.ref ? "ref" : baseType,
       name: element.componentName,
       ...(roleResult.reusable ? { reusable: true } : {}),

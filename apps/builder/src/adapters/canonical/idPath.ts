@@ -84,3 +84,17 @@ function sanitizeIdSegment(raw: string | undefined): string {
   if (!raw) return "node";
   return raw.replace(/\//g, "_") || "node";
 }
+
+/**
+ * UUID → segment-only stable id 조회 (없으면 UUID 자체로 fallback).
+ *
+ * canonical node id 빌더 (`buildNode` / `convertElementToCanonical` /
+ * `convertElementWithSlotHoisting`) 가 공통 사용하는 1라인 패턴을
+ * 명시적 함수로 추출. 6 사용처 boilerplate 제거.
+ */
+export function segId(
+  elementId: string,
+  idSegmentMap: Map<string, string>,
+): string {
+  return idSegmentMap.get(elementId) ?? elementId;
+}

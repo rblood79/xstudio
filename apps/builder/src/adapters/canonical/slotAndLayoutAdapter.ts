@@ -30,7 +30,7 @@ import type { Layout } from "@/types/builder/layout.types";
 import type { CanonicalNode, RefNode } from "@composition/shared";
 import type { ConvertSlotElementFn, ConvertPageLayoutFn } from "./types";
 import { tagToType, isLegacySlotTag } from "./tagRename";
-import { buildIdPathContext } from "./idPath";
+import { buildIdPathContext, segId } from "./idPath";
 
 // ─────────────────────────────────────────────
 // ConvertSlotElementFn
@@ -232,7 +232,7 @@ function convertElementToCanonical(
   if (isLegacySlotTag(element.tag)) {
     // page subtree 안의 Slot은 비정상. metadata만 기록하고 frame으로 변환
     return {
-      id: idSegmentMap.get(element.id) ?? element.id,
+      id: segId(element.id, idSegmentMap),
       type: "frame",
       name: element.componentName,
       metadata: {
@@ -284,7 +284,7 @@ function convertElementWithSlotHoisting(
     const slotName = props.name ?? element.slot_name ?? undefined ?? "content";
     return {
       // slot frame id 는 segment-only (resolver path traverse 와 정합).
-      id: idSegmentMap.get(element.id) ?? element.id,
+      id: segId(element.id, idSegmentMap),
       type: "frame",
       placeholder: true,
       slot: [], // 추천 reusable IDs 미지정 (P3 UI에서 입력 예정)
