@@ -114,15 +114,11 @@ export const PropertyUnitInput = memo(
     const justSavedViaEnterRef = useRef(false);
     // ⭐ 마지막으로 저장한 값 추적 - 중복 호출 방지
     const lastSavedValueRef = useRef<string>(value);
-    // ⭐ focus 시점의 selectedElementId 캡처 — blur 시 요소 전환 감지용
     const focusedElementIdRef = useRef<string | null>(null);
-    // ⭐ 실제 input DOM — useEffect 에서 편집 진행 여부 (activeElement) 판정에 사용
     const inputElementRef = useRef<HTMLInputElement>(null);
 
-    // 외부 value 또는 선택 요소 변경 시 편집 세션 리셋.
-    // 단 실제로 이 input 이 focus 상태일 때는 skip — preview (updateSelectedStylePreview)
-    // 가 elementsMap 을 mutate 하면서 value prop 이 편집값으로 변해도 사용자 편집 세션을
-    // 보존. Reset 버튼 클릭 / 다른 input focus 이동 등으로 activeElement 가 바뀌면 갱신.
+    // preview 경로가 elementsMap 을 mutate 하면서 value prop 이 편집값으로 바뀌어도
+    // focus 중인 input 은 편집 세션을 유지해야 한다 (DOM activeElement 기준).
     useEffect(() => {
       if (
         inputElementRef.current !== null &&
@@ -287,10 +283,8 @@ export const PropertyUnitInput = memo(
       // ⭐ 키워드 단위(auto, fit-content 등)에서 숫자로 전환 시 px로 기본 설정
       const effectiveUnit = KEYWORDS.includes(unit) ? "px" : unit;
 
-      // preview 경로 (onDrag → updateSelectedStylePreview) 는 elementsMap 을 mutate
-      // 하므로 value prop 이 이미 편집값을 반영했을 수 있다. 이 때
-      // `parseUnitValue(value)` 기준 비교는 "변경 없음" 으로 오판한다.
-      // → commit 판정은 lastSavedValueRef (이전 commit 결과) 기준으로 일원화.
+      // commit 판정은 lastSavedValueRef 기준 — preview 가 value prop 을 편집값으로
+      // 먼저 반영할 수 있어 `parseUnitValue(value)` 비교는 "변경 없음" 오판 가능.
       const newValue = `${num}${effectiveUnit}`;
       if (newValue !== lastSavedValueRef.current) {
         lastSavedValueRef.current = newValue;

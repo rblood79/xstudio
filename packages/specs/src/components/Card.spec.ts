@@ -371,8 +371,6 @@ export const CardSpec: ComponentSpec<CardProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
-      // 콘텐츠 컨테이너. store 정책상 padding shorthand 는 longhand 로 분배 저장되므로
-      // paddingTop 우선 + legacy shorthand fallback.
       const padding = parsePxValue(
         props.style?.paddingTop ?? props.style?.padding,
         size.paddingY,

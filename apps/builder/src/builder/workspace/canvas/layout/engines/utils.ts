@@ -194,14 +194,8 @@ function parseNumericValue(value: unknown): number | undefined {
   return undefined;
 }
 
-/**
- * Store longhand 정책 준수 gap reader.
- * `inspectorActions.distributeShorthand` 가 gap shorthand 를 rowGap/columnGap
- * longhand 로 분배 저장하므로, layout 분기 는 longhand 우선 + legacy shorthand
- * fallback 순서로 읽어야 편집이 반영된다.
- * 직접 `readGapValue(style)` 만 읽으면 longhand 저장 케이스에서
- * undefined → fallback 사용으로 편집 무시.
- */
+// store 는 gap shorthand 를 rowGap/columnGap longhand 로 분배 저장 —
+// longhand 우선으로 읽지 않으면 편집이 무시된다.
 function readGapValue(
   style: Record<string, unknown> | undefined,
 ): number | undefined {

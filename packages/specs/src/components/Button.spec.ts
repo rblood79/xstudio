@@ -412,8 +412,6 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       const iconName = props.iconName;
       const iconPos = props.iconPosition ?? "start";
       const iconSize = (size as unknown as { iconSize: number }).iconSize ?? 16;
-      // store 정책상 gap shorthand 는 rowGap/columnGap longhand 로 분배 저장되므로
-      // longhand 우선, legacy shorthand fallback.
       const gap = parsePxValue(
         props.style?.rowGap ?? props.style?.columnGap ?? props.style?.gap,
         size.gap ?? 8,
