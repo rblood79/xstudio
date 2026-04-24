@@ -28,7 +28,10 @@ import type {
 } from "./types";
 import { isLegacySlotTag, tagToType } from "./tagRename";
 import { buildIdPathContext } from "./idPath";
-import { convertLayoutToReusableFrame } from "./slotAndLayoutAdapter";
+import {
+  convertLayoutToReusableFrame,
+  buildSlotPathMap,
+} from "./slotAndLayoutAdapter";
 
 export interface LegacyAdapterDeps {
   convertComponentRole: ConvertComponentRoleFn;
@@ -69,7 +72,7 @@ export function legacyToCanonical(
       const slotName =
         (element.props.name as string | undefined) ?? element.slot_name ?? null;
       return {
-        id: idPathCtx.idPathMap.get(element.id) ?? element.id,
+        id: idPathCtx.idSegmentMap.get(element.id) ?? element.id,
         type: "frame",
         name: element.componentName,
         metadata: {
@@ -82,7 +85,7 @@ export function legacyToCanonical(
     }
 
     const node: CanonicalNode = {
-      id: idPathCtx.idPathMap.get(element.id) ?? element.id,
+      id: idPathCtx.idSegmentMap.get(element.id) ?? element.id,
       type: roleResult.ref ? "ref" : baseType,
       name: element.componentName,
       ...(roleResult.reusable ? { reusable: true } : {}),
@@ -103,11 +106,26 @@ export function legacyToCanonical(
     return node;
   }
 
-  // 3. Page 단위 ref 인스턴스 변환 (Stream 3)
+  // 3. Page 단위 ref 인스턴스 변환 (Stream 3).
+  // layout 별 slotPathMap (slot name → stable id path) 사전 계산.
+  // resolver mode C 매칭은 stable id path 기준 (P2 contract).
+  const layoutSlotPathMaps = new Map<string, Map<string, string>>();
+  for (const layout of layouts) {
+    const layoutElements = elements.filter((e) => e.layout_id === layout.id);
+    const layoutIdPathMap = buildIdPathContext(layoutElements).idPathMap;
+    layoutSlotPathMaps.set(
+      layout.id,
+      buildSlotPathMap(layoutElements, layoutIdPathMap),
+    );
+  }
+
   const pageNodes: CanonicalNode[] = [];
   for (const page of pages) {
     const pageElements = elements.filter((e) => e.page_id === page.id);
-    const pageRef = convertPageLayout(page, layouts, pageElements);
+    const slotPathMap = page.layout_id
+      ? (layoutSlotPathMaps.get(page.layout_id) ?? new Map())
+      : new Map();
+    const pageRef = convertPageLayout(page, layouts, pageElements, slotPathMap);
     if (pageRef) {
       pageNodes.push(pageRef);
     } else {

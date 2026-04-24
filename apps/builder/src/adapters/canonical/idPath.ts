@@ -14,9 +14,22 @@
 import type { Element } from "@/types/builder/unified.types";
 
 export interface IdPathContext {
-  /** UUID → stable path 매핑 (e.g., "uuid-abc" → "header/title") */
+  /**
+   * UUID → stable full path 매핑 (e.g., "uuid-abc" → "header/title").
+   *
+   * **descendants key 용도** (root ref 기준 full path).
+   * canonical node id 로는 사용 금지 — resolver path traverse 가 parent/child id
+   * 누적이라 full path 를 노드 id 로 쓰면 중복 (`Box/Box/Slot`) 발생.
+   */
   idPathMap: Map<string, string>;
-  /** 역방향 매핑 (path → UUID) */
+  /**
+   * UUID → segment-only stable id 매핑 (e.g., "uuid-abc" → "title").
+   *
+   * **canonical node id 용도**. resolver applyDescendantsToTree 가
+   * `parentPath/segId` 로 누적하므로 segment-only 가 정합.
+   */
+  idSegmentMap: Map<string, string>;
+  /** 역방향 매핑 (full path → UUID) */
   pathIdMap: Map<string, string>;
 }
 
@@ -30,6 +43,7 @@ export interface IdPathContext {
  */
 export function buildIdPathContext(elements: Element[]): IdPathContext {
   const idPathMap = new Map<string, string>();
+  const idSegmentMap = new Map<string, string>();
   const pathIdMap = new Map<string, string>();
 
   // children index (parent_id → Element[])
@@ -53,13 +67,14 @@ export function buildIdPathContext(elements: Element[]): IdPathContext {
       const segName = seq === 1 ? baseName : `${baseName}-${seq}`;
       const fullPath = parentPath ? `${parentPath}/${segName}` : segName;
       idPathMap.set(child.id, fullPath);
+      idSegmentMap.set(child.id, segName);
       pathIdMap.set(fullPath, child.id);
       visit(fullPath, child.id);
     }
   }
 
   visit("", null);
-  return { idPathMap, pathIdMap };
+  return { idPathMap, idSegmentMap, pathIdMap };
 }
 
 /**

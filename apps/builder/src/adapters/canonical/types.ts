@@ -42,4 +42,11 @@ export type ConvertPageLayoutFn = (
   page: Page,
   layouts: Layout[],
   pageElements: Element[],
+  /**
+   * layout shell 내 slot name → stable id path 매핑.
+   * resolver mode C 매칭은 stable id path 기준이므로 caller 가
+   * `buildSlotPathMap(layoutElements, layoutIdPathMap)` 로 사전 계산하여 전달.
+   * 빈 Map 전달 시 slot name 그대로 fallback 사용 (단순 페이지에서 layout 없음 등).
+   */
+  slotPathMap: Map<string, string>,
 ) => RefNode | null;

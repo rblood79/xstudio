@@ -72,6 +72,7 @@ export const convertPageLayout: ConvertPageLayoutFn = (
   page,
   layouts,
   pageElements,
+  slotPathMap,
 ) => {
   if (!page.layout_id) return null;
 
@@ -93,18 +94,22 @@ export const convertPageLayout: ConvertPageLayoutFn = (
     bySlotName.set(slot, arr);
   }
 
-  // page elements 전체에 대해 idPath context 구축 (descendants 키 변환용)
+  // page elements 전체에 대해 idPath context 구축 (canonical node id segment용)
   const pageIdPathCtx = buildIdPathContext(pageElements);
 
-  // 각 slot 그룹을 canonical CanonicalNode[]로 변환 → mode C children replacement
+  // 각 slot 그룹을 canonical CanonicalNode[]로 변환 → mode C children replacement.
+  // descendants 키는 stable id path (resolver mode C 매칭 기준).
+  // slotPathMap 미스 시 slot name 그대로 fallback (layout shell 에 매칭되는 slot
+  // 이 없는 경우 — known broken case, P3 frameset UI 에서 보장 예정).
   const descendants: Record<string, { children: CanonicalNode[] }> = {};
   for (const [slotName, els] of bySlotName) {
     const sorted = [...els].sort(
       (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
     );
-    descendants[slotName] = {
+    const slotPath = slotPathMap.get(slotName) ?? slotName;
+    descendants[slotPath] = {
       children: sorted.map((el) =>
-        convertElementToCanonical(el, pageElements, pageIdPathCtx.idPathMap),
+        convertElementToCanonical(el, pageElements, pageIdPathCtx.idSegmentMap),
       ),
     };
   }
@@ -125,6 +130,39 @@ export const convertPageLayout: ConvertPageLayoutFn = (
 
   return refNode;
 };
+
+// ─────────────────────────────────────────────
+// Slot path computation (layout shell 내 slot name → stable id path)
+// ─────────────────────────────────────────────
+
+/**
+ * Layout shell 의 모든 Slot tag 의 stable id path 를 계산한다.
+ *
+ * `layoutIdPathMap` (`buildIdPathContext(layoutElements).idPathMap`) 이 이미
+ * 각 element 의 full path 를 보유하므로 단순 lookup. resolver mode C 매칭의
+ * path 키로 사용.
+ *
+ * 출력 형식: `{ slotName → "Box/Slot" }` (예: layout root="Box", slot tag="Slot")
+ *
+ * 같은 slotName 이 여러 slot 에 등장하면 마지막이 이긴다.
+ *
+ * @param layoutElements - 한 layout 의 elements (호출자가 layout_id 로 필터링)
+ * @param layoutIdPathMap - `buildIdPathContext(layoutElements).idPathMap`
+ */
+export function buildSlotPathMap(
+  layoutElements: Element[],
+  layoutIdPathMap: Map<string, string>,
+): Map<string, string> {
+  const slotPathMap = new Map<string, string>();
+  for (const el of layoutElements) {
+    if (!isLegacySlotTag(el.tag)) continue;
+    const fullPath = layoutIdPathMap.get(el.id) ?? el.id;
+    const props = el.props as Partial<{ name: string }>;
+    const slotName = props.name ?? el.slot_name ?? "content";
+    slotPathMap.set(slotName, fullPath);
+  }
+  return slotPathMap;
+}
 
 // ─────────────────────────────────────────────
 // Layout shell hoisting helper
@@ -161,7 +199,11 @@ export function convertLayoutToReusableFrame(
       slug: layout.slug ?? null,
     },
     children: rootElements.map((el) =>
-      convertElementWithSlotHoisting(el, layoutElements, idPathCtx.idPathMap),
+      convertElementWithSlotHoisting(
+        el,
+        layoutElements,
+        idPathCtx.idSegmentMap,
+      ),
     ),
   };
 }
@@ -181,7 +223,7 @@ export function convertLayoutToReusableFrame(
 function convertElementToCanonical(
   element: Element,
   allElements: Element[],
-  idPathMap: Map<string, string>,
+  idSegmentMap: Map<string, string>,
 ): CanonicalNode {
   const childElements = allElements
     .filter((e) => e.parent_id === element.id)
@@ -190,7 +232,7 @@ function convertElementToCanonical(
   if (isLegacySlotTag(element.tag)) {
     // page subtree 안의 Slot은 비정상. metadata만 기록하고 frame으로 변환
     return {
-      id: idPathMap.get(element.id) ?? element.id,
+      id: idSegmentMap.get(element.id) ?? element.id,
       type: "frame",
       name: element.componentName,
       metadata: {
@@ -198,17 +240,17 @@ function convertElementToCanonical(
         slot_name: element.slot_name ?? null,
       },
       children: childElements.map((c) =>
-        convertElementToCanonical(c, allElements, idPathMap),
+        convertElementToCanonical(c, allElements, idSegmentMap),
       ),
     };
   }
 
   return {
-    id: idPathMap.get(element.id) ?? element.id,
+    id: idSegmentMap.get(element.id) ?? element.id,
     type: tagToType(element.tag),
     name: element.componentName,
     children: childElements.map((c) =>
-      convertElementToCanonical(c, allElements, idPathMap),
+      convertElementToCanonical(c, allElements, idSegmentMap),
     ),
     metadata: { type: "legacy-element-props", legacyProps: element.props },
   };
@@ -235,13 +277,14 @@ function convertElementToCanonical(
 function convertElementWithSlotHoisting(
   element: Element,
   allElements: Element[],
-  idPathMap: Map<string, string>,
+  idSegmentMap: Map<string, string>,
 ): CanonicalNode {
   if (isLegacySlotTag(element.tag)) {
     const props = element.props as Partial<{ name: string }>;
     const slotName = props.name ?? element.slot_name ?? undefined ?? "content";
     return {
-      id: idPathMap.get(element.id) ?? slotName,
+      // slot frame id 는 segment-only (resolver path traverse 와 정합).
+      id: idSegmentMap.get(element.id) ?? element.id,
       type: "frame",
       placeholder: true,
       slot: [], // 추천 reusable IDs 미지정 (P3 UI에서 입력 예정)
@@ -259,11 +302,11 @@ function convertElementWithSlotHoisting(
     .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
 
   return {
-    id: idPathMap.get(element.id) ?? element.id,
+    id: idSegmentMap.get(element.id) ?? element.id,
     type: tagToType(element.tag),
     name: element.componentName,
     children: childElements.map((c) =>
-      convertElementWithSlotHoisting(c, allElements, idPathMap),
+      convertElementWithSlotHoisting(c, allElements, idSegmentMap),
     ),
     metadata: { type: "legacy-element-props", legacyProps: element.props },
   };

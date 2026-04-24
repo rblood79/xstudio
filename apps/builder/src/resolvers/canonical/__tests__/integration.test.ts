@@ -150,26 +150,16 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     ) as ResolvedNode | undefined;
     expect(resolvedPage).toBeDefined();
 
-    // ⚠️ P1 ↔ P2 CONTRACT GAP (known issue, P2 후속 작업):
-    // P1 convertPageLayout 는 descendants 키를 slot_name ("main") 으로 만들지만
-    // resolver 의 mode C 매칭은 stable id path ("shell-root/main-slot") 기준.
-    // 따라서 slot fill 이 mode C 적용 안 됨 → Card 가 resolved tree 에 미주입.
-    //
-    // 해결 방향 (P2 후속): convertPageLayout 가 layoutElements 를 받아
-    // layout shell 의 buildIdPathContext 로 slot stable path 계산 → key 변환.
-    //
-    // 본 P2 S1 commit 의 scope 는 resolver + cache contract — adapter cleanup 은 분리.
-    // resolver 본체의 mode C 분기 자체는 정상 (resolver.test.ts TC6 + TC9 PASS).
+    // P1 ↔ P2 CONTRACT ALIGNMENT (P2 cleanup 적용):
+    // convertPageLayout 가 layoutSlotPathMaps 로 slot name → stable id path 변환.
+    // resolver mode C 매칭이 stable id path 기준으로 정합됨.
     function findCardInTree(node: ResolvedNode): boolean {
       if (node.type === "Card") return true;
       return (node.children ?? []).some((c) =>
         findCardInTree(c as ResolvedNode),
       );
     }
-    // 현재는 false (P1 contract gap), P1 후속 cleanup 후 true 가 되어야 한다.
-    // alignment 도달 시 본 assertion 을 toBe(true) 로 회복.
-    const cardFound = findCardInTree(resolvedPage!);
-    expect(cardFound).toBe(false); // ← P1 cleanup 후 true 로 변경
+    expect(findCardInTree(resolvedPage!)).toBe(true);
   });
 
   // ────────────────────────────────────────────

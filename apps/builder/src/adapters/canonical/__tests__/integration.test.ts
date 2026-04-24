@@ -143,9 +143,13 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
     );
     expect(pageNode).toBeDefined();
     expect(pageNode?.descendants).toBeDefined();
-    expect(pageNode?.descendants?.["main"]).toBeDefined();
+    // P2 cleanup: descendants 키 = stable id path (resolver mode C 매칭 기준).
+    // 본 fixture 의 shell-root / main-slot 은 customId/componentName 모두 없음 →
+    // tag fallback 으로 segment "Box" / "Slot". 따라서 full path = "Box/Slot".
+    const slotPath = "Box/Slot";
+    expect(pageNode?.descendants?.[slotPath]).toBeDefined();
 
-    const slotFill = pageNode?.descendants?.["main"] as {
+    const slotFill = pageNode?.descendants?.[slotPath] as {
       children: CanonicalNode[];
     };
     expect(slotFill.children).toHaveLength(1);
