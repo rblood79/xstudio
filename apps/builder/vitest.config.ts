@@ -1,6 +1,44 @@
+import { resolve } from "path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    alias: [
+      { find: "@", replacement: `${resolve(import.meta.dirname, "src")}` },
+      {
+        find: /^@composition\/shared\/components\/styles\/(.*)$/,
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/components/styles/$1")}`,
+      },
+      {
+        find: /^@composition\/shared\/components\/(.*)$/,
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/components/$1")}`,
+      },
+      {
+        find: "@composition/shared/components",
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/components/index.tsx")}`,
+      },
+      {
+        find: "@composition/shared/utils",
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/utils/index.ts")}`,
+      },
+      {
+        find: "@composition/shared/types",
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/types/index.ts")}`,
+      },
+      {
+        find: "@composition/shared/renderers",
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/renderers/index.ts")}`,
+      },
+      {
+        find: "@composition/shared/hooks",
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/hooks/index.ts")}`,
+      },
+      {
+        find: "@composition/shared",
+        replacement: `${resolve(import.meta.dirname, "../../packages/shared/src/index.ts")}`,
+      },
+    ],
+  },
   test: {
     environment: "jsdom",
     include: [

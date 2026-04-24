@@ -13,6 +13,13 @@ import type {
   SlotValidationError,
   LayoutResolutionResult,
 } from "../../types/builder/layout.types";
+import type { CompositionDocument } from "@composition/shared";
+import {
+  legacyToCanonical,
+  type LegacyAdapterInput,
+} from "../../adapters/canonical";
+import { convertComponentRole } from "../../adapters/canonical/componentRoleAdapter";
+import { convertPageLayout } from "../../adapters/canonical/slotAndLayoutAdapter";
 
 // ============================================
 // Main Resolver
@@ -29,7 +36,7 @@ import type {
 export function resolveLayoutForPage(
   page: Page | null,
   layout: Layout | null,
-  allElements: Element[]
+  allElements: Element[],
 ): LayoutResolutionResult {
   // Layout 없으면 기존 방식 (Page elements만 렌더링)
   if (!layout || !page?.layout_id) {
@@ -47,7 +54,7 @@ export function resolveLayoutForPage(
 
   // Page elements 필터링 (Layout에 속하지 않은 것)
   const pageElements = allElements.filter(
-    (el) => el.page_id === page.id && !el.layout_id
+    (el) => el.page_id === page.id && !el.layout_id,
   );
 
   // Slot 정보 추출
@@ -63,7 +70,7 @@ export function resolveLayoutForPage(
   const resolvedTree = buildResolvedTree(
     layoutElements,
     slotContents,
-    pageElements
+    pageElements,
   );
 
   return {
@@ -83,7 +90,7 @@ export function resolveLayoutForPage(
  */
 function groupElementsBySlot(
   pageElements: Element[],
-  slots: Element[]
+  slots: Element[],
 ): Map<string, ResolvedSlotContent> {
   const slotContents = new Map<string, ResolvedSlotContent>();
 
@@ -108,7 +115,10 @@ function groupElementsBySlot(
   // Page elements를 해당 Slot에 할당
   rootPageElements.forEach((element) => {
     // ⭐ FIX: slot_name은 props 내부에 저장됨 (Inspector에서 설정)
-    const slotName = (element.props as { slot_name?: string })?.slot_name || element.slot_name || "content";
+    const slotName =
+      (element.props as { slot_name?: string })?.slot_name ||
+      element.slot_name ||
+      "content";
 
     const content = slotContents.get(slotName);
     if (content) {
@@ -116,7 +126,8 @@ function groupElementsBySlot(
       content.isEmpty = false;
     } else {
       // 유효하지 않은 slot_name → "content" 또는 첫 번째 Slot에 추가
-      const defaultContent = slotContents.get("content") ||
+      const defaultContent =
+        slotContents.get("content") ||
         (slotContents.size > 0 ? slotContents.values().next().value : null);
       if (defaultContent) {
         defaultContent.pageElements.push(element);
@@ -128,7 +139,7 @@ function groupElementsBySlot(
   // 각 Slot의 elements를 order_num으로 정렬
   slotContents.forEach((content) => {
     content.pageElements.sort(
-      (a, b) => (a.order_num || 0) - (b.order_num || 0)
+      (a, b) => (a.order_num || 0) - (b.order_num || 0),
     );
   });
 
@@ -144,7 +155,7 @@ function groupElementsBySlot(
  */
 function validateSlots(
   slots: Element[],
-  slotContents: Map<string, ResolvedSlotContent>
+  slotContents: Map<string, ResolvedSlotContent>,
 ): SlotValidationError[] {
   const errors: SlotValidationError[] = [];
 
@@ -177,7 +188,7 @@ function validateSlots(
 function buildResolvedTree(
   layoutElements: Element[],
   slotContents: Map<string, ResolvedSlotContent>,
-  allPageElements: Element[]
+  allPageElements: Element[],
 ): ResolvedElement[] {
   // Root elements (parent_id가 null)
   const roots = layoutElements.filter((el) => !el.parent_id);
@@ -185,7 +196,7 @@ function buildResolvedTree(
   return roots
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
     .map((el) =>
-      buildResolvedElement(el, layoutElements, slotContents, allPageElements)
+      buildResolvedElement(el, layoutElements, slotContents, allPageElements),
     );
 }
 
@@ -196,7 +207,7 @@ function buildResolvedElement(
   element: Element,
   allLayoutElements: Element[],
   slotContents: Map<string, ResolvedSlotContent>,
-  allPageElements: Element[]
+  allPageElements: Element[],
 ): ResolvedElement {
   // Slot인 경우: Page elements로 교체
   if (element.tag === "Slot") {
@@ -208,7 +219,7 @@ function buildResolvedElement(
       // Root Page elements의 자식들도 포함
       const pageElementTree = buildPageElementTree(
         content.pageElements,
-        allPageElements
+        allPageElements,
       );
 
       return {
@@ -235,8 +246,8 @@ function buildResolvedElement(
         child,
         allLayoutElements,
         slotContents,
-        allPageElements
-      )
+        allPageElements,
+      ),
     );
 
   return {
@@ -252,7 +263,7 @@ function buildResolvedElement(
  */
 function buildPageElementTree(
   rootElements: Element[],
-  allPageElements: Element[]
+  allPageElements: Element[],
 ): ResolvedElement[] {
   return rootElements.map((el) => buildPageElement(el, allPageElements));
 }
@@ -262,7 +273,7 @@ function buildPageElementTree(
  */
 function buildPageElement(
   element: Element,
-  allPageElements: Element[]
+  allPageElements: Element[],
 ): ResolvedElement {
   const children = allPageElements
     .filter((el) => el.parent_id === element.id)
@@ -281,7 +292,7 @@ function buildPageElement(
  */
 function buildElementTree(
   elements: Element[],
-  parentId: string | null
+  parentId: string | null,
 ): ResolvedElement[] {
   return elements
     .filter((el) => el.parent_id === parentId)
@@ -326,7 +337,7 @@ export function isSlotElement(element: Element): boolean {
 export function filterElementsByEditMode(
   elements: Element[],
   mode: "page" | "layout",
-  targetId: string | null
+  targetId: string | null,
 ): Element[] {
   if (!targetId) return [];
 
@@ -335,4 +346,61 @@ export function filterElementsByEditMode(
   } else {
     return elements.filter((el) => el.layout_id === targetId);
   }
+}
+
+// ============================================
+// ADR-903 P1 Stage 2 — Canonical Adapter Entrypoints
+// ============================================
+
+/**
+ * @experimental ADR-903 P1 Stage 2 — canonical adapter 경유 layout resolution.
+ *
+ * 기존 resolveLayoutForPage()는 그대로 유지 (legacy 경로). 본 함수는 같은 입력을
+ * canonical adapter (legacyToCanonical)로 변환하여 CompositionDocument 산출 후,
+ * 호환성을 위해 LayoutResolutionResult 형태로 다시 packing (shadow execution).
+ *
+ * adapter가 production data(page + layout + elements 조합)를 받아도 throw하지 않는지,
+ * caller import 경로가 정상 wire 되는지 검증하는 것이 P1 Stage 2의 목적.
+ * adapter 결과 미사용은 의도적 — 동작 변경 없이 wiring만 검증.
+ *
+ * P2에서 Preview/Skia가 본 함수의 CompositionDocument를 직접 소비하도록 전환
+ * 예정 — 현재는 legacy LayoutResolutionResult로 wrap하여 caller 무변경.
+ */
+export function resolveLayoutForPageCanonical(
+  page: Page | null,
+  layout: Layout | null,
+  allElements: Element[],
+  allLayouts: Layout[],
+): LayoutResolutionResult {
+  const input: LegacyAdapterInput = {
+    elements: allElements,
+    pages: page ? [page] : [],
+    layouts: allLayouts,
+  };
+
+  // adapter 호출 — P1 Stage 2: shadow execution (결과 미소비, wiring 검증 목적)
+  // P2에서 직접 소비 전환 시 본 wrap 제거
+  legacyToCanonical(input, {
+    convertComponentRole,
+    convertPageLayout,
+  });
+
+  return resolveLayoutForPage(page, layout, allElements);
+}
+
+/**
+ * @experimental ADR-903 P1 Stage 2 — canonical adapter 경유 문서 산출.
+ *
+ * 추후 Phase 2 resolver가 본 결과를 직접 소비.
+ * 디버깅 도구 또는 P2 resolver가 standalone으로 호출 가능.
+ */
+export function buildCanonicalDocument(
+  pages: Page[],
+  layouts: Layout[],
+  allElements: Element[],
+): CompositionDocument {
+  return legacyToCanonical(
+    { elements: allElements, pages, layouts },
+    { convertComponentRole, convertPageLayout },
+  );
 }
