@@ -412,8 +412,12 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       const iconName = props.iconName;
       const iconPos = props.iconPosition ?? "start";
       const iconSize = (size as unknown as { iconSize: number }).iconSize ?? 16;
-      // 사용자 스타일 gap 우선, 없으면 spec 기본값
-      const gap = parsePxValue(props.style?.gap, size.gap ?? 8);
+      // store 정책상 gap shorthand 는 rowGap/columnGap longhand 로 분배 저장되므로
+      // longhand 우선, legacy shorthand fallback.
+      const gap = parsePxValue(
+        props.style?.rowGap ?? props.style?.columnGap ?? props.style?.gap,
+        size.gap ?? 8,
+      );
       const text = props.children || props.text || props.label;
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값

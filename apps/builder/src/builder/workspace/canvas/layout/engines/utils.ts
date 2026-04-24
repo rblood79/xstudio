@@ -195,6 +195,20 @@ function parseNumericValue(value: unknown): number | undefined {
 }
 
 /**
+ * Store longhand 정책 준수 gap reader.
+ * `inspectorActions.distributeShorthand` 가 gap shorthand 를 rowGap/columnGap
+ * longhand 로 분배 저장하므로, layout 분기 는 longhand 우선 + legacy shorthand
+ * fallback 순서로 읽어야 편집이 반영된다.
+ * 직접 `readGapValue(style)` 만 읽으면 longhand 저장 케이스에서
+ * undefined → fallback 사용으로 편집 무시.
+ */
+function readGapValue(
+  style: Record<string, unknown> | undefined,
+): number | undefined {
+  return parseNumericValue(style?.rowGap ?? style?.columnGap ?? style?.gap);
+}
+
+/**
  * 크기 값 파싱 (width/height용: px, %, vh, vw, em, rem, calc, number, auto 허용)
  *
  * 내부적으로 resolveCSSSizeValue()에 위임하여 일관된 단위 해석을 제공한다.
@@ -1003,7 +1017,7 @@ export function calculateContentWidth(
     const paddingX = sizeConfig.paddingLeft; // paddingLeft === paddingRight
     const orientation = String(props?.orientation || "horizontal");
     const isHorizontal = orientation === "horizontal";
-    const gap = parseNumericValue(style?.gap) ?? 0; // CSS gap (0 = default -1px overlap)
+    const gap = readGapValue(style) ?? 0; // CSS gap (0 = default -1px overlap)
 
     // Spec에서 ToggleButton의 실제 text style 추출 (fontWeight/fontFamily 정합성)
     // children prop을 전달해야 Spec이 text shape를 생성하여 fontWeight 등을 반환함
@@ -1086,7 +1100,7 @@ export function calculateContentWidth(
     const display = style?.display;
     if (display === "flex" || display === "inline-flex") {
       const flexDir = (style?.flexDirection as string) || "row";
-      const gap = parseNumericValue(style?.gap) ?? 0;
+      const gap = readGapValue(style) ?? 0;
       const isRow = flexDir === "row" || flexDir === "row-reverse";
 
       const childWidths = childElements.map((child) => {
@@ -1172,9 +1186,11 @@ export function calculateContentWidth(
     const specIndicatorGap = indicatorConfig.gaps[s] ?? indicatorConfig.gaps.md;
     // CSS gap이 설정되면 specGap 대신 CSS gap 사용
     const hasCSSGapSec3 =
-      style?.gap !== undefined || style?.columnGap !== undefined;
+      style?.gap !== undefined ||
+      style?.rowGap !== undefined ||
+      style?.columnGap !== undefined;
     const indicatorGap = hasCSSGapSec3
-      ? (parseNumericValue(style?.gap ?? style?.columnGap) ?? specIndicatorGap)
+      ? (readGapValue(style) ?? specIndicatorGap)
       : specIndicatorGap;
     // Spec에서 실제 text style 추출 (fontWeight/fontFamily 정합성)
     const indicatorSpecStyle = extractSpecTextStyle(
@@ -1267,8 +1283,7 @@ export function calculateContentWidth(
           if (overrideFs != null) {
             iconSize = overrideFs;
           }
-          const iconGap =
-            parseNumericValue(style?.gap) ?? btnConfig.iconGap ?? 8;
+          const iconGap = readGapValue(style) ?? btnConfig.iconGap ?? 8;
           if (text) {
             // icon + gap + text
             iconExtra = iconSize + iconGap;
@@ -1974,7 +1989,7 @@ export function calculateContentHeight(
   // flexDirection에 따라: column → 합산+gap, row → max (일반 flex 컨테이너와 동일)
   if (tag === "cardheader" || tag === "cardcontent") {
     if (childElements && childElements.length > 0) {
-      const gapValue = parseNumericValue(style?.gap) ?? 8;
+      const gapValue = readGapValue(style) ?? 8;
       const flexDir = (style?.flexDirection as string) || "column";
       const isColumn = flexDir === "column" || flexDir === "column-reverse";
 
@@ -2038,7 +2053,7 @@ export function calculateContentHeight(
     // childElements가 있으면 자식 기반 높이 계산 (display:flex column)
     // Card factory가 Heading + Description 자식을 생성하므로 이 경로가 우선
     if (childElements && childElements.length > 0) {
-      const gap = parseNumericValue(style?.gap) ?? 8;
+      const gap = readGapValue(style) ?? 8;
       // Card padding을 빼서 자식의 실제 텍스트 줄바꿈 너비 계산
       const cardPad = parsePadding(style, availableWidth);
       const childAvailableWidth =
@@ -2102,7 +2117,7 @@ export function calculateContentHeight(
   // Calendar → CalendarHeader + CalendarGrid 자식 높이 합산
   if (CALENDAR_LIKE_TAGS.has(tag)) {
     if (childElements && childElements.length > 0) {
-      const gap = parseNumericValue(style?.gap) ?? 6;
+      const gap = readGapValue(style) ?? 6;
       const calPad = parsePadding(style, availableWidth);
       const childAvailableWidth =
         availableWidth != null
@@ -2164,7 +2179,7 @@ export function calculateContentHeight(
   // 3.6a. DatePicker: 자식 기반 동적 높이 계산 (Card/Calendar 패턴)
   if (tag === "datepicker") {
     if (childElements && childElements.length > 0) {
-      const gap = parseNumericValue(style?.gap) ?? 8;
+      const gap = readGapValue(style) ?? 8;
       const dpPad = parsePadding(style, availableWidth);
       const childAvailableWidth =
         availableWidth != null
@@ -2414,10 +2429,11 @@ export function calculateContentHeight(
       heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
     const specGap =
       heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
-    const hasCSSGapH = style?.gap !== undefined || style?.rowGap !== undefined;
-    const gap = hasCSSGapH
-      ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap)
-      : specGap;
+    const hasCSSGapH =
+      style?.gap !== undefined ||
+      style?.rowGap !== undefined ||
+      style?.columnGap !== undefined;
+    const gap = hasCSSGapH ? (readGapValue(style) ?? specGap) : specGap;
 
     // Label 자식의 fontSize로 높이 추정 (size delegation 반영)
     let labelFs = 14;
@@ -2537,7 +2553,7 @@ export function calculateContentHeight(
     if (tag === "taggroup") {
       const props = element.props as Record<string, unknown> | undefined;
       // containerStyles.gap = "{spacing.xs}" → 4. style.gap 편집 우선, 없으면 token fallback.
-      const gap = parseNumericValue(style?.gap) ?? 4;
+      const gap = readGapValue(style) ?? 4;
       // labelPosition="side" 시 row 배치 → 세로 합산이 아닌 max 여야 하지만, 동일 flex-column
       //   기본 케이스 우선 처리. side 케이스는 하위 flex 분기에서 이미 처리됨.
       const labelPos = (props?.labelPosition as string | undefined) ?? "top";
@@ -2643,7 +2659,7 @@ export function calculateContentHeight(
     const display = style?.display;
     if (display === "flex" || display === "inline-flex") {
       const flexDir = (style?.flexDirection as string) || "row";
-      const gap = parseNumericValue(style?.gap) ?? 0;
+      const gap = readGapValue(style) ?? 0;
       const isColumn = flexDir === "column" || flexDir === "column-reverse";
 
       // display: none 자식은 레이아웃에서 제외 (높이 0, gap 미적용)

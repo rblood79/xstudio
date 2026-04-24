@@ -514,6 +514,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
 /**
  * LayoutSection - 외부 래퍼 (PropertySection 관리)
  */
+// distributeShorthand (inspectorActions) 가 gap/padding/margin shorthand 를
+// longhand 로 분배하여 저장하므로 dirty 판정도 longhand 경로를 포함해야 한다.
+// shorthand 만 체크하면 편집 후 reset 버튼 비활성 상태로 남는다.
 const LAYOUT_PROPS = [
   "display",
   "flexDirection",
@@ -521,6 +524,8 @@ const LAYOUT_PROPS = [
   "alignItems",
   "justifyContent",
   "gap",
+  "rowGap",
+  "columnGap",
   "padding",
   "paddingTop",
   "paddingRight",

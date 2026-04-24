@@ -132,7 +132,11 @@ export const ListSpec: ComponentSpec<ListProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const padding = parsePxValue(props.style?.padding, size.paddingY);
+      // store 정책상 padding shorthand 는 longhand 로 분배 저장. paddingTop 우선.
+      const padding = parsePxValue(
+        props.style?.paddingTop ?? props.style?.padding,
+        size.paddingY,
+      );
 
       const shapes: Shape[] = [
         // 배경

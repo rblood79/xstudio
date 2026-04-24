@@ -117,8 +117,19 @@ export const PropertyUnitInput = memo(
     // ⭐ focus 시점의 selectedElementId 캡처 — blur 시 요소 전환 감지용
     const focusedElementIdRef = useRef<string | null>(null);
 
-    // 외부 value 또는 선택 요소 변경 시 편집 세션 리셋
+    // 외부 value 또는 선택 요소 변경 시 편집 세션 리셋.
+    // 단 focus 중 (같은 요소) 에 value 가 preview 경로로 바뀐 경우는 무시 —
+    // updateSelectedStylePreview 가 elementsMap 을 mutate → useLayoutValues 를 통해
+    // value prop 이 편집값으로 변하면, commit 경로가 "변경 없음" 으로 오판해 onChange
+    // 가 skip 되고 DB 저장이 누락된다. selectedElementId 가 바뀌면 다른 요소 선택이므로
+    // focus 무관하게 리셋.
     useEffect(() => {
+      const currentSelectedId = selectedElementId ?? null;
+      const isFocusedOnSameElement =
+        focusedElementIdRef.current !== null &&
+        focusedElementIdRef.current === currentSelectedId;
+      if (isFocusedOnSameElement) return;
+
       justSavedViaEnterRef.current = false;
       lastSavedValueRef.current = value;
       focusedElementIdRef.current = null;
@@ -275,19 +286,16 @@ export const PropertyUnitInput = memo(
       // ⭐ 키워드 단위(auto, fit-content 등)에서 숫자로 전환 시 px로 기본 설정
       const effectiveUnit = KEYWORDS.includes(unit) ? "px" : unit;
 
-      // ⭐ Shorthand 값 비교: "8px 12px" → 첫 번째 값 "8px"와 비교
-      // 원본 값을 파싱하여 실제 숫자값/단위가 변경되었는지 확인
-      const originalParsed = parseUnitValue(value);
-      const valueActuallyChanged =
-        originalParsed.numericValue !== num ||
-        originalParsed.unit !== effectiveUnit;
-
+      // preview 경로 (onDrag → updateSelectedStylePreview) 는 elementsMap 을 mutate
+      // 하므로 value prop 이 이미 편집값을 반영했을 수 있다. 이 때
+      // `parseUnitValue(value)` 기준 비교는 "변경 없음" 으로 오판한다.
+      // → commit 판정은 lastSavedValueRef (이전 commit 결과) 기준으로 일원화.
       const newValue = `${num}${effectiveUnit}`;
-      // 실제로 값이 변경된 경우에만 onChange 호출
-      if (valueActuallyChanged && newValue !== lastSavedValueRef.current) {
+      if (newValue !== lastSavedValueRef.current) {
         lastSavedValueRef.current = newValue;
         onChange(newValue);
       }
+      focusedElementIdRef.current = null;
     };
 
     const handleUnitChange = (selectedUnit: string) => {
@@ -357,14 +365,11 @@ export const PropertyUnitInput = memo(
             // ⭐ 키워드 단위(auto, fit-content 등)에서 숫자로 전환 시 px로 기본 설정
             const effectiveUnit = KEYWORDS.includes(unit) ? "px" : unit;
 
-            // ⭐ Shorthand 값 비교: 실제 숫자값/단위가 변경되었는지 확인
-            const originalParsed = parseUnitValue(value);
-            const valueActuallyChanged =
-              originalParsed.numericValue !== num ||
-              originalParsed.unit !== effectiveUnit;
-
-            if (valueActuallyChanged) {
-              const newVal = `${num}${effectiveUnit}`;
+            // preview 경로가 value prop 을 먼저 편집값으로 반영할 수 있으므로
+            // commit 판정은 lastSavedValueRef (이전 commit 결과) 기준.
+            const newVal = `${num}${effectiveUnit}`;
+            if (newVal !== lastSavedValueRef.current) {
+              lastSavedValueRef.current = newVal;
               onChange(newVal);
               shouldSave = true;
             }

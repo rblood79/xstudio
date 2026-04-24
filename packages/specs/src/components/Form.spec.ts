@@ -358,8 +358,13 @@ export const FormSpec: ComponentSpec<FormProps> = {
         });
       }
 
-      // 폼 필드 컨테이너
-      const padding = parsePxValue(props.style?.padding, size.paddingY);
+      // 폼 필드 컨테이너. store 정책상 padding shorthand 는 4-way longhand 로 분배
+      // 저장되므로 paddingTop 우선 + shorthand fallback (uniform 케이스만 대응 — 4-way
+      // 비대칭은 별도 Layer D resolver 필요, 현재는 uniform padding 가정).
+      const padding = parsePxValue(
+        props.style?.paddingTop ?? props.style?.padding,
+        size.paddingY,
+      );
       shapes.push({
         type: "container" as const,
         x: 0,

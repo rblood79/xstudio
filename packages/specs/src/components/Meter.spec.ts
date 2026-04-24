@@ -475,7 +475,11 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
           ? props._containerWidth
           : (props.style?.width as number) || 240;
       const barHeight = meterDims.barHeight;
-      const gap = parsePxValue(props.style?.gap, size.gap ?? 8);
+      // store longhand 정책 준수 — rowGap/columnGap 우선, legacy shorthand fallback.
+      const gap = parsePxValue(
+        props.style?.rowGap ?? props.style?.columnGap ?? props.style?.gap,
+        size.gap ?? 8,
+      );
 
       // 사용자 스타일 우선
       const barRadius = parsePxValue(
