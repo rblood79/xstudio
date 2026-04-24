@@ -26,19 +26,19 @@
 
 > **N_edited (padding/gap 편집 인스턴스 수) 축이 빠진 이유**: composition 은 element 영속을 per-user 로컬 IndexedDB (`apps/builder/src/lib/db/index.ts`) 에 위임하며 Supabase 는 auth 전용이다. 중앙 `elements` 테이블이 없으므로 production population 에서 `N_edited` 를 산출할 쿼리 경로가 존재하지 않는다. ADR-906 breakdown 의 Supabase SQL 접근은 본 ADR 에서 폐기. BC 커버리지는 Phase 3/4/5 의 **hand-crafted edited fixture** (k≤5 흔한 편집 패턴 수동 샘플링) 로 확보한다. 본 ADR `R2 상세` 참조.
 
-| 컴포넌트    | (a) Preview style 전달 | (b) Skia shapes metric | (c) Layout height metric | 판정                                        |
-| ----------- | :--------------------: | :--------------------: | :----------------------: | ------------------------------------------- |
-| ListBox     |           O            |    O (ListBoxSpec)     |            O             | 기준 선례                                   |
-| GridList    |         **X**          | **X** (size.gap 고정)  |            O             | ADR-906 증상 — Phase 3 pilot                |
-| Menu        |     [TODO Phase 0]     |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| ComboBox    |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| Select      |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| Tree        |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| Tabs        |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| Toolbar     |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| Breadcrumbs |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up                           |
-| TagGroup    |         [TODO]         |         [TODO]         |          [TODO]          | Phase 4 follow-up (TagList sub-target 포함) |
-| Table       |         [TODO]         |         [TODO]         |          [TODO]          | Phase 5 별도 audit                          |
+| 컴포넌트    |          (a) Preview style 전달           |                     (b) Skia shapes metric                     |        (c) Layout height metric        | 판정                                        |
+| ----------- | :---------------------------------------: | :------------------------------------------------------------: | :------------------------------------: | ------------------------------------------- |
+| ListBox     |                     O                     |                        O (ListBoxSpec)                         |                   O                    | 기준 선례                                   |
+| GridList    |                   **X**                   |                     **X** (size.gap 고정)                      |                   O                    | ADR-906 증상 — Phase 3 pilot                |
+| Menu        |                     O                     |                **X** (size.paddingX/Y 하드코딩)                |          N/A (전용 분기 없음)          | Phase 4 follow-up                           |
+| ComboBox    |                     O                     |                **X** (size.paddingX/Y 하드코딩)                |   O (style.gap 소비, 자식 합산 경로)   | Phase 4 follow-up                           |
+| Select      |                     O                     |                **X** (size.paddingX/Y 하드코딩)                |   O (style.gap 소비, 자식 합산 경로)   | Phase 4 follow-up                           |
+| Tree        |                     O                     |                 N/A (shapes 빈 배열 or 미소비)                 |          N/A (전용 분기 없음)          | Phase 4 follow-up                           |
+| Tabs        |                     O                     |                      N/A (shapes 빈 배열)                      |    **X** (TabsSpec.sizes 하드코딩)     | Phase 4 follow-up                           |
+| Toolbar     |                     O                     |    **X** (size.gap/background 하드코딩, style?.gap 미소비)     |          N/A (전용 분기 없음)          | Phase 4 follow-up                           |
+| Breadcrumbs |                     O                     |                 N/A (shapes 없음, 텍스트 측정)                 | **X** (BreadcrumbsSpec.sizes 하드코딩) | Phase 4 follow-up                           |
+| TagGroup    |                   **X**                   |                N/A (TagList sub-target에 위임)                 |          O (style?.gap 소비)           | Phase 4 follow-up (TagList sub-target 포함) |
+| Table       | **X** (`<Table>` root 에 style prop 부재) | **X** (style?.backgroundColor 등만 소비, padding/gap 하드코딩) |          N/A (전용 분기 없음)          | Phase 5 별도 audit                          |
 
 **TagList 주석**: TagList 는 TagGroup 의 중간 compositional 컨테이너 (ADR-097) 로 별도 주대상 행이 아닌 TagGroup 종속 sub-target. TagGroup Phase 4 follow-up ADR 에서 `<TagList>` 의 root style 소비 및 chip gap 소유권 분리가 함께 판정된다 (ADR-906 breakdown Phase 2 의 TagGroup/TagList audit 유산).
 
@@ -171,6 +171,32 @@ const metric = resolveGridListSpacingMetric({ style: element.props.style, ... })
   - 확증 실패 시 include 패턴 조정 후 Phase 1 착수.
 
 통과 조건: 매트릭스 총 **33 cell** (11 × 3 축 (a/b/c)) 이 breakdown 에 기록되고, Phase 3/4/5 의 적용 우선순위가 결정된다. Test discovery 확증 3항 PASS.
+
+### Phase 0 측정 결과 요약 (2026-04-24 세션)
+
+**매트릭스 33 cell 실측 요약** (위 표):
+
+- **(a) Preview style 전달**: O 8 / X 3 (GridList, TagGroup, Table)
+- **(b) Skia shapes metric**: O 1 (ListBox) / X 6 (GridList, Menu, ComboBox, Select, Toolbar, Table) / N/A 4 (Tree, Tabs, Breadcrumbs, TagGroup)
+- **(c) Layout height metric**: O 5 (ListBox, GridList, ComboBox, Select, TagGroup) / X 2 (Tabs, Breadcrumbs) / N/A 4 (Menu, Tree, Toolbar, Table)
+
+**주요 발견**:
+
+- GridList 는 (a) X + (b) X + (c) O — ADR-906 증상 그대로 (Phase 3 pilot 대상).
+- TagGroup 은 (a) X 인데 (c) O — Preview 에서는 style 미전달이지만 Layout 은 style?.gap 소비. SYNTHETIC 소비 drift 근본 증상.
+- Table 은 (a) X + (b) X + (c) N/A — renderer root 자체가 style 미전달. Phase 5 판정에서 4-item O/X 매트릭스 필요.
+- (b) 축: ListBox 단 1개만 O. 나머지 10 컴포넌트 중 5개는 spec shapes 에 하드코딩값 (`size.paddingX/Y` / `size.gap`), 4개는 shapes 빈 배열 (text-only 또는 미사용). → Layer D (Spec metric SSOT) 의 우선 적용 대상 = 5 컴포넌트 (GridList/Menu/ComboBox/Select/Toolbar).
+- (c) 축: 전용 분기 있는 컴포넌트는 4개 (ListBox/GridList/ComboBox/Select/TagGroup 중 일부) + Tabs/Breadcrumbs 는 별도 분기 존재하나 style 무시. → Layer B `resolveContainerSpacing` 의 즉시 수요자 = 5 + 2 = 7 컴포넌트.
+
+### Test discovery 확증 결과
+
+| 항목                               | include 패턴                                                                                                                                                              |        결과         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----------------: |
+| `packages/specs/vitest.config.ts`  | `["__tests__/**/*.test.ts", "src/**/__tests__/**/*.test.ts"]`                                                                                                             | **PASS** (2번째 항) |
+| `packages/shared/vitest.config.ts` | `["__tests__/**/*.test.ts", "src/**/__tests__/**/*.test.ts"]`                                                                                                             | **PASS** (2번째 항) |
+| Phase 1/2 신규 test 경로 수집 보장 | `src/primitives/__tests__/cssValueParser.test.ts` / `containerSpacing.test.ts` / `src/renderers/__tests__/rendererStyleContract.test.ts` 가 두 config include 패턴과 매칭 |      **PASS**       |
+
+결론: G1 Gate 의 test discovery 조건 충족. Phase 1 착수 시 include 수정 불필요.
 
 ### Phase 1 — CSS value parser SSOT 통합
 
