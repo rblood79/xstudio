@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import type { ContainerStylesSchema, ComponentSpec } from "../../types/spec.types";
+import type {
+  ContainerStylesSchema,
+  ComponentSpec,
+} from "../../types/spec.types";
+import type { TokenRef } from "../../types/token.types";
 import { emitContainerStyles, generateCSS } from "../CSSGenerator";
 
 describe("emitContainerStyles — ADR-071", () => {
@@ -69,7 +73,15 @@ describe("generateCSS — containerStyles S3 semantic (ADR-071)", () => {
       },
     },
     sizes: {
-      md: { height: 0, paddingX: 12, paddingY: 4, fontSize: 14, borderRadius: 6, borderWidth: 1, gap: 4 },
+      md: {
+        height: 0,
+        paddingX: 12,
+        paddingY: 4,
+        fontSize: 14 as unknown as TokenRef,
+        borderRadius: 6 as unknown as TokenRef,
+        borderWidth: 1,
+        gap: 4,
+      },
     },
     states: {},
     render: {
@@ -101,13 +113,13 @@ describe("generateCSS — containerStyles S3 semantic (ADR-071)", () => {
       containerStyles: { background: "{color.raised}" },
     };
     const css = generateCSS(spec);
-    expect(css).not.toContain("[data-variant=\"primary\"]");
+    expect(css).not.toContain('[data-variant="primary"]');
   });
 
   it("keeps defaultVariant injection + variants block when containerStyles absent (baseline)", () => {
     const css = generateCSS(baseSpec);
     expect(css).toContain("background: var(--fg);");
-    expect(css).toContain("[data-variant=\"primary\"]");
+    expect(css).toContain('[data-variant="primary"]');
   });
 
   it("containerStyles.padding takes precedence over sizes.paddingX/Y (no double-emit)", () => {

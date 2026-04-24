@@ -331,7 +331,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       // props.style.width를 직접 사용하면 bgBox 추출이 실패하고 렌더링이 깨짐
       const width = "auto" as const;
 
-      // 사용자 스타일 우선, 없으면 spec 기본값
+      // 사용자 스타일 우선, 없으면 spec 기본값 (TokenRef passthrough → 다운스트림 resolveToken)
       const borderRadius = parsePxValue(
         props.style?.borderRadius,
         size.borderRadius,

@@ -49,7 +49,8 @@ export function deriveAutoDelegationVariables<Props>(
     );
   }
 
-  const sizes = (spec as { sizes?: Record<string, SizeBucket> }).sizes;
+  const sizes = (spec as unknown as { sizes?: Record<string, SizeBucket> })
+    .sizes;
   if (!sizes) return {};
 
   const out: Record<string, Record<string, string>> = {};

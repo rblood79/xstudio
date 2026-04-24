@@ -288,6 +288,8 @@ export interface SectionDef {
   title: string;
   fields: FieldDef[];
   visibleWhen?: VisibilityCondition;
+  /** Inspector 섹션 헤더 아이콘 (선택) — UI hint, 기본 non-rendering */
+  icon?: LucideIcon;
 }
 
 export interface BaseFieldDef {

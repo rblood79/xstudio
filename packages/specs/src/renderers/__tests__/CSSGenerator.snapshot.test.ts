@@ -8,7 +8,7 @@ import * as specs from "../../components";
  * 인프라 변경 후 snapshot diff 0 이어야 회귀 없음.
  */
 describe("CSSGenerator snapshot baseline", () => {
-  const allSpecs = Object.values(specs).filter(
+  const allSpecs = (Object.values(specs) as unknown[]).filter(
     (v): v is { name: string; skipCSSGeneration?: boolean } =>
       typeof v === "object" &&
       v !== null &&

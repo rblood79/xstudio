@@ -19,8 +19,17 @@ function isFiniteNumber(value: unknown): value is number {
 /**
  * 단일 값 파싱. 숫자/숫자 문자열/px 단위 문자열 수용.
  * undefined/null/빈 문자열/파싱 실패 시 fallback 반환.
+ *
+ * Fallback 은 **generic** — number 외에 TokenRef (`"{radius.sm}"` 등) 도 그대로
+ * 통과시킬 수 있다. Spec shapes 의 `borderRadius`/`radius` 필드는 TokenRef 를
+ * 다운스트림 Skia pipeline 이 `resolveToken` 으로 해석하므로, parser 레벨에서는
+ * fallback 을 형식 무관하게 passthrough 한다. 결과 타입은 `number | F` — 호출자
+ * 는 숫자만 필요하면 F=number 로 호출해 좁힐 수 있다.
  */
-export function parsePxValue(value: unknown, fallback: number): number {
+export function parsePxValue<F = number>(
+  value: unknown,
+  fallback: F,
+): number | F {
   if (isFiniteNumber(value)) return value;
   if (typeof value !== "string") return fallback;
 

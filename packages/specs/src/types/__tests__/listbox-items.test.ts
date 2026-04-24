@@ -13,7 +13,6 @@ import {
   toRuntimeListBoxItem,
   type StoredListBoxEntry,
   type StoredListBoxItem,
-  type StoredListBoxSection,
 } from "../listbox-items";
 
 describe("ADR-099 Phase 1 — ListBox items discriminated union", () => {
