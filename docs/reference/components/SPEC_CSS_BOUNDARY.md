@@ -43,7 +43,7 @@ Store의 상태(width, height, padding 등)를 CSS와 Taffy가 **독립적으로
 
 ### 예외 — Collection/self-render 컨테이너 (ADR-907)
 
-collection 계열 (`Breadcrumbs, ComboBox, GridList, ListBox, Menu, Select, Tabs, TagGroup, Table, Toolbar, Tree`) 은 `element.props.style` 의 **padding/gap/borderWidth/fontSize** 를 Preview DOM / Skia `render.shapes()` / Layout `calculateContentHeight()` **3경로 모두** 에 동일하게 반영해야 한다 (structure 가 아니라 spacing SSOT). 이는 parity 가 아니라 **동일 값 소비**의 문제이므로 4-layer SSOT (Layer A parser / Layer B `resolveContainerSpacing` / Layer C renderer root style 계약 / Layer D spec metric SSOT) 로 통합 관리한다. 상세: [ADR-907](../../adr/907-collection-container-style-pipeline.md) + `.claude/rules/canvas-rendering.md` §2.6.
+collection 계열 (`Breadcrumbs, ComboBox, GridList, ListBox, Menu, Select, Tabs, TagGroup, Table, Toolbar, Tree`) 은 `element.props.style` 의 **padding/gap/borderWidth/fontSize** 를 Preview DOM / Skia `render.shapes()` / Layout `calculateContentHeight()` **3경로 모두** 에 동일하게 반영해야 한다 (structure 가 아니라 spacing SSOT). 이는 parity 가 아니라 **동일 값 소비**의 문제이므로 4-layer SSOT (Layer A parser / Layer B `resolveContainerSpacing` / Layer C renderer root style 계약 / Layer D spec metric SSOT) 로 통합 관리한다. 상세: [ADR-907](../../adr/completed/907-collection-container-style-pipeline.md) + `.claude/rules/canvas-rendering.md` §2.6.
 
 ---
 

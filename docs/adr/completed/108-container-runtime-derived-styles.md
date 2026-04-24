@@ -162,7 +162,7 @@ composition 은 [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md) 3-dom
 - **대안 C 기각**: 기존 `containerVariants` 가 이미 데이터 + selector 표현. DSL 추가 불필요.
 - **대안 D 기각**: D3 SSOT 4 consumer 고착화, ADR-063 3-domain 분할 역행.
 
-> 구현 상세: [108-container-runtime-derived-styles-breakdown.md](design/108-container-runtime-derived-styles-breakdown.md)
+> 구현 상세: [108-container-runtime-derived-styles-breakdown.md](../design/108-container-runtime-derived-styles-breakdown.md)
 
 ## Risks
 

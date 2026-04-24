@@ -2,7 +2,7 @@
 
 > **SSOT 체인 연계**: 본 규칙은 [ssot-hierarchy.md](ssot-hierarchy.md) **D3 (시각 스타일) 내부 경계 규칙**. Store ↔ Consumer 간 contract 를 정의.
 >
-> **공식 결정**: [ADR-909](../../docs/adr/909-style-ssot-contract.md)
+> **공식 결정**: [ADR-909](../../docs/adr/completed/909-style-ssot-contract.md)
 
 ## 정책 (CRITICAL)
 
@@ -151,5 +151,5 @@ useEffect(() => {
 ## 관련 ADR
 
 - [ADR-063](../../docs/adr/063-ssot-chain-charter.md) — 3-domain 분할 charter
-- [ADR-907](../../docs/adr/907-collection-container-style-pipeline.md) — Collection container style pipeline (Layer B/C/D 도입)
-- [ADR-909](../../docs/adr/909-style-ssot-contract.md) — 본 규칙의 공식 결정
+- [ADR-907](../../docs/adr/completed/907-collection-container-style-pipeline.md) — Collection container style pipeline (Layer B/C/D 도입)
+- [ADR-909](../../docs/adr/completed/909-style-ssot-contract.md) — 본 규칙의 공식 결정

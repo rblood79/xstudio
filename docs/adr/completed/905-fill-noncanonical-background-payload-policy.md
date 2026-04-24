@@ -97,7 +97,7 @@ ADR-904는 Fill을 D3 시각 스타일 SSOT로 승격하고 Preview/Publish는 `
 - **대안 B 기각**: CSS `background*` 전체를 Fill 모델로 역변환하는 것은 표현력 차이 때문에 구조적으로 과도하다.
 - **대안 C 기각**: 모델은 깨끗하지만 현재 paste/import/외부 연동의 BC를 과도하게 훼손한다.
 
-> 구현 상세: [905-fill-noncanonical-background-payload-policy-breakdown.md](design/905-fill-noncanonical-background-payload-policy-breakdown.md)
+> 구현 상세: [905-fill-noncanonical-background-payload-policy-breakdown.md](../design/905-fill-noncanonical-background-payload-policy-breakdown.md)
 
 ## Risks
 
@@ -141,7 +141,7 @@ ADR-904는 Fill을 D3 시각 스타일 SSOT로 승격하고 Preview/Publish는 `
 ## References
 
 - [docs/adr/904-fill-ssot-preview-publish-adapter.md](904-fill-ssot-preview-publish-adapter.md)
-- [docs/adr/design/904-fill-ssot-preview-publish-adapter-breakdown.md](design/904-fill-ssot-preview-publish-adapter-breakdown.md)
+- [docs/adr/design/904-fill-ssot-preview-publish-adapter-breakdown.md](../design/904-fill-ssot-preview-publish-adapter-breakdown.md)
 - [apps/builder/src/builder/panels/styles/utils/fillCssIngressParser.ts](../../apps/builder/src/builder/panels/styles/utils/fillCssIngressParser.ts)
 - [apps/builder/src/builder/panels/styles/utils/fillExternalIngress.ts](../../apps/builder/src/builder/panels/styles/utils/fillExternalIngress.ts)
 - [docs/adr/063-ssot-chain-charter.md](063-ssot-chain-charter.md)

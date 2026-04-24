@@ -91,7 +91,7 @@ composition 의 `element.props.style` 은 Zustand store 에 저장되는 CSS-lik
 - **C 기각**: branded type 은 근본적이지만 현재 codebase 의 `any`/unknown 사용 빈도상 전면 type migration 리스크 과도. B 완료 후 debt audit → 별도 ADR (예: ADR-910+) 로 검토.
 - **D 기각**: 정책 반전 시 React rerender + Taffy conflict 원래 문제 재발. 해결책이 아닌 롤백.
 
-> 구현 상세: [909-style-ssot-contract-breakdown.md](design/909-style-ssot-contract-breakdown.md)
+> 구현 상세: [909-style-ssot-contract-breakdown.md](../design/909-style-ssot-contract-breakdown.md)
 
 ## Risks
 

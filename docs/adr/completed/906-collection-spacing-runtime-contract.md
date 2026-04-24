@@ -23,7 +23,7 @@ GridList에서 Style Panel로 `padding`/`gap`을 편집해도 Preview CSS와 Bui
 
 ### SSOT 체인 위치 (ADR-063)
 
-본 ADR은 [ADR-063](completed/063-ssot-chain-charter.md)의 **D3 (시각 스타일)** 및 ADR-079/080/082의 layout primitive read-through 후속이다. D3 시각 스타일은 `props.style`/Spec metric/Preview CSS/Skia paint가 동일 의미를 가져야 한다.
+본 ADR은 [ADR-063](063-ssot-chain-charter.md)의 **D3 (시각 스타일)** 및 ADR-079/080/082의 layout primitive read-through 후속이다. D3 시각 스타일은 `props.style`/Spec metric/Preview CSS/Skia paint가 동일 의미를 가져야 한다.
 
 ### Hard Constraints
 
@@ -105,7 +105,7 @@ GridList에서 Style Panel로 `padding`/`gap`을 편집해도 Preview CSS와 Bui
 - **대안 A 기각**: GridList만 고쳐도 사용자는 당장 개선을 보지만, helper 공유 없이 `render.shapes()`와 `calculateContentHeight()`가 계속 분리되면 다음 collection에서 같은 문제가 반복된다.
 - **대안 C 기각**: 편집 UI를 막는 방식은 D3 스타일 편집 기능을 축소하며, ListBox에서 이미 가능한 동작과도 일관되지 않는다.
 
-> 구현 상세: [906-collection-spacing-runtime-contract-breakdown.md](design/906-collection-spacing-runtime-contract-breakdown.md)
+> 구현 상세: [906-collection-spacing-runtime-contract-breakdown.md](../design/906-collection-spacing-runtime-contract-breakdown.md)
 
 ## Risks
 
@@ -164,12 +164,12 @@ GridList에서 Style Panel로 `padding`/`gap`을 편집해도 Preview CSS와 Bui
 
 ## References
 
-- [docs/adr/completed/063-ssot-chain-charter.md](completed/063-ssot-chain-charter.md)
-- [docs/adr/completed/076-listbox-items-ssot-hybrid.md](completed/076-listbox-items-ssot-hybrid.md)
-- [docs/adr/completed/080-layout-engine-spec-direct-read-through.md](completed/080-layout-engine-spec-direct-read-through.md)
-- [docs/adr/completed/090-gridlistitem-spec-and-skia-metric-ssot.md](completed/090-gridlistitem-spec-and-skia-metric-ssot.md)
-- [packages/shared/src/renderers/SelectionRenderers.tsx](../../packages/shared/src/renderers/SelectionRenderers.tsx)
-- [packages/shared/src/components/GridList.tsx](../../packages/shared/src/components/GridList.tsx)
-- [packages/shared/src/components/styles/GridList.css](../../packages/shared/src/components/styles/GridList.css)
-- [packages/specs/src/components/GridList.spec.ts](../../packages/specs/src/components/GridList.spec.ts)
+- [docs/adr/completed/063-ssot-chain-charter.md](063-ssot-chain-charter.md)
+- [docs/adr/completed/076-listbox-items-ssot-hybrid.md](076-listbox-items-ssot-hybrid.md)
+- [docs/adr/completed/080-layout-engine-spec-direct-read-through.md](080-layout-engine-spec-direct-read-through.md)
+- [docs/adr/completed/090-gridlistitem-spec-and-skia-metric-ssot.md](090-gridlistitem-spec-and-skia-metric-ssot.md)
+- [packages/shared/src/renderers/SelectionRenderers.tsx](../../../packages/shared/src/renderers/SelectionRenderers.tsx)
+- [packages/shared/src/components/GridList.tsx](../../../packages/shared/src/components/GridList.tsx)
+- [packages/shared/src/components/styles/GridList.css](../../../packages/shared/src/components/styles/GridList.css)
+- [packages/specs/src/components/GridList.spec.ts](../../../packages/specs/src/components/GridList.spec.ts)
 - [apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts](../../apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts)
