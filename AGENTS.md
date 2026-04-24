@@ -60,6 +60,26 @@ composition 협업을 위한 간단한 가이드입니다. 변경은 작게, 관
 - PR: 요약, 연결된 이슈, UI 변경 스크린샷/영상, 실행한 테스트(`lint`, `test`, `coverage`, Playwright 여부) 명시.
 - 깨지는 변경이나 설정(.env, Supabase) 요구 시 PR 본문에 명확히 표시.
 
+### Changelog Management (CRITICAL)
+
+`docs/CHANGELOG.md` 는 사용자-가시 변경의 SSOT. 아래 트리거 중 하나라도 해당하면 **같은 커밋 또는 바로 다음 커밋**에 반영 의무:
+
+1. ADR Status `Accepted → Implemented` 승격
+2. 사용자-가시 버그 수정 (UI / 렌더 / 입력 / 저장)
+3. 신규 컴포넌트 / prop / public API / spec schema 변경
+4. 3+ 파일 아키텍처 변경, Breaking Change, 성능 회귀 수정
+5. Phase 다단계 작업 완결 (최종 Phase 커밋에 반영)
+
+**Drift 감시**: 세션 중 첫 커밋 작업 전 최신 엔트리 날짜 점검. **14일 또는 100 커밋 초과** 시 새 엔트리 추가 전에 **catch-up 블록**(주제별 bundle, 개별 커밋 나열 금지) 먼저 제안.
+
+**면제**: typo / 주석 / 내부 리팩터 / 테스트만 / stats 파일 / hook 설정 튜닝 — 면제 시 커밋 메시지에 `(internal, no user-visible change)` 한 줄 명시.
+
+**포맷**: Keep a Changelog 1.0.0 + composition 확장. 헤더 `## [한글 제목 — 기술 요약] - YYYY-MM-DD` / 서브섹션 순서 고정 (Breaking → Bug Fixes → Features → Architecture → Performance → Documentation → Infrastructure) / 버전 번호(`v1.2.3`) 사용 금지.
+
+**아카이빙**: `docs/CHANGELOG.md` 가 500KB 초과 또는 연도 바뀜 직후 첫 주에 `docs/CHANGELOG-YYYY-archived.md` 로 이관 (append-only, 재편집 금지).
+
+전체 규칙 · Catch-up 절차 · 금지 패턴 · 체크리스트: `.claude/rules/changelog.md`
+
 ## Security & Configuration Notes
 
 - 비밀 값은 `.env.local`에만 저장·커밋 금지. `README.md` 예시(Supabase URL/anon key, API URL)와 일치 확인.
