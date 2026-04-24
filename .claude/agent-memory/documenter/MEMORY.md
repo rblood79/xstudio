@@ -26,6 +26,13 @@
 - 모든 Phase 완료 + 실제 코드 구조와 일치하는 완료 이력 문서
 - 현재 코드베이스에 적용된 아키텍처 설명
 
+## ADR-903 P0 Stream 3 작업 기록 (2026-04-25)
+
+- `packages/shared/src/types/element.types.ts` — 파일 상단 ADR-903 Migration Notice 블록 추가 + `tag`/`layout_id`/`slot_name`/`componentRole`/`masterId`/`overrides`/`descendants`/`componentName`/`variableBindings` 9개 필드에 `@deprecated ADR-903 Px:` JSDoc 주석 추가. 필드 선언 불변.
+- `apps/builder/src/types/builder/layout.types.ts` — 파일 헤더에 ADR-903 Migration 섹션 추가 + `Layout`/`LayoutCreate`/`LayoutUpdate`/`SlotProps`/`ElementLayoutFields`/`PageLayoutFields` 6개 인터페이스/타입에 `@deprecated ADR-903 P3:` JSDoc 주석 추가.
+- `docs/adr/design/903-canonical-examples.md` — 신규 생성. §1 재사용 컴포넌트 / §2 ref+descendants mode A / §3 slot 선언 레이아웃 / §4 page slot 채우기 mode C+A / §5 document root / §Descendants 3-Mode 판정 요약 / §금지 패턴. breakdown JSON 정확 재인용.
+- type-check 3/3 PASS (주석만 추가, 타입 변경 없음).
+
 ## ADR 번호 할당 현황 (2026-04-21 기준)
 
 - 마지막 사용 번호: ADR-102 (Proposed)
