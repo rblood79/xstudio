@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed — 2026-04-24
+Superseded — 2026-04-24 by [ADR-907](907-collection-container-style-pipeline.md)
+
+본 ADR 의 Decision B (per-component resolver) 는 GridList 1건 해결용. 9+ 동일 패턴 컴포넌트의 누적 비용 재계산 결과 ADR-907 (Container style pipeline 전수화) 로 대체됨. GridList 증상은 ADR-907 Phase 3 pilot 에 흡수되어 Implemented.
 
 ## Context
 

@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed — 2026-04-24
+Implemented — 2026-04-24
+
+Phase 전원 land (Phase 1/2/3/5/4 순서). Gate G1-G8 충족 — 구현 상세 및 재audit 결과는 [breakdown 의 Phase 4 Execution Log](design/907-collection-container-style-pipeline-breakdown.md#phase-4-execution-log-실행-결과) 참조.
 
 **Supersedes**: [ADR-906 Collection spacing 런타임 계약](906-collection-spacing-runtime-contract.md) — 906 은 GridList 1건 + per-component resolver 방식이었으나, 9+ 동일 패턴 컴포넌트의 누적 scope 재계산 결과 본 ADR 로 승격한다. GridList 증상은 본 ADR Phase 3 pilot 으로 흡수.
 

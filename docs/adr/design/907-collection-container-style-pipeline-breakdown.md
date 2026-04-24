@@ -373,8 +373,53 @@ follow-up ADR 누적 = Profile X 4건 × 1.5일 + Profile Y 4건 × 0.5~1일 = *
 
 ## 오픈 이슈
 
-1. Renderer contract 강제를 ESLint custom rule 로 할지, vitest 기반 runtime 검증으로 할지 (lint rule 은 false positive 가능 vs vitest 는 수동 enumeration 필요).
-2. `resolveContainerSpacing()` 의 token ref resolution (`{spacing.xs}` 같은) 를 primitive 가 직접 수행할지, caller 에게 위임할지 (`resolveToken()` 호출 위치).
-3. Phase 4 follow-up ADR 을 개별로 분리할지, "ADR-908 Phase 4 follow-up 통합" 단일 ADR 로 묶을지.
-4. Table (Phase 5) 은 ADR-906 의 Phase 3 breakdown 을 상속받는가, 아니면 본 ADR 의 framework 판정을 우선하는가.
-5. RSP/RAC composite (ComboBox=TextField+Button+Popover) 에서 root 가 여러 DOM 계층으로 분리될 때 "실제 시각 root" 정의 방법.
+1. ~~Renderer contract 강제를 ESLint custom rule 로 할지, vitest 기반 runtime 검증으로 할지~~ **해결 (Phase 2)**: vitest runtime 검증 (`rendererStyleContract.test.ts`) 채택. Phase 5 allowlist 빈 Set 도달로 11/11 전원 통과.
+2. `resolveContainerSpacing()` 의 token ref resolution (`{spacing.xs}` 같은) 를 primitive 가 직접 수행할지, caller 에게 위임할지 — **caller 위임** (Phase 2 Layer B 구현 시 확정). primitive 는 숫자/string 만 처리, TokenRef 해석은 downstream.
+3. ~~Phase 4 follow-up ADR 을 개별로 분리할지, "ADR-908 Phase 4 follow-up 통합" 단일 ADR 로 묶을지~~ **해결 (Phase 4 실행)**: **sweep 경로 채택** — 신규 ADR 0건, 본 breakdown 의 Phase 4 템플릿을 PR 체크리스트로 직접 사용. 아래 "Phase 4 Execution Log" 섹션에 결과 기록. 원인: Phase 1-5 land 후 재audit 결과 실제 남은 작업이 2건 (Menu/Toolbar) 으로 축소되어 ADR 분리 오버헤드 대비 가치 낮음.
+4. Table (Phase 5) 은 ADR-906 의 Phase 3 breakdown 을 상속받는가, 아니면 본 ADR 의 framework 판정을 우선하는가 — **본 ADR framework 판정 우선** (Phase 5 land 시 (a) 선반영, (b) 는 Hard Constraint 4 로 cell-level 분리 유지하여 framework 적용 안함).
+5. RSP/RAC composite (ComboBox=TextField+Button+Popover) 에서 root 가 여러 DOM 계층으로 분리될 때 "실제 시각 root" 정의 방법 — ComboBox/Select 의 root 는 최상위 `<ComboBox>/<Select>` 로 정의 (renderComboBox/renderSelect 반환 JSX). 중간 Popover 컨테이너는 본 ADR scope 외.
+
+## Phase 4 Execution Log (실행 결과)
+
+### 실제 잔여 작업 재audit (Phase 1-5 land 후)
+
+원 matrix (L29-41) 는 Phase 1-5 **이전** 에 capture 된 것으로, Phase 1 Layer A (cssValueParser 전수 교체 42 spec) + Phase 2 Layer B/C (containerSpacing primitive + rendererStyleContract) + Phase 3 (GridList pilot) + Phase 5 (Table/TagGroup root style) 완료 후 재audit 결과:
+
+| 컴포넌트    | 원 matrix                    | Phase 1-5 후 재audit                                                                           | Phase 4 실제 작업                                      |
+| ----------- | ---------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Menu        | (b) X paddingX hardcoding    | 동일                                                                                           | **적용** — `size.paddingX` → `resolveContainerSpacing` |
+| ComboBox    | (b) X paddingX/Y hardcoding  | 이미 style-aware (`parsePxValue(style.paddingLeft ?? paddingRight ?? padding, size.paddingX)`) | **작업 불필요** (matrix outdated)                      |
+| Select      | (b) X paddingX/Y hardcoding  | 이미 style-aware (ComboBox 와 동일 패턴)                                                       | **작업 불필요** (matrix outdated)                      |
+| Toolbar     | (b) X gap/padding hardcoding | 동일 (`size.gap`, `size.paddingX/Y`)                                                           | **적용** — `resolveContainerSpacing` 도입              |
+| Tree        | N/A                          | 실질 완료 (shapes 빈 배열, Layer A/B/C 자동 커버)                                              | 작업 불필요                                            |
+| Tabs        | (c) X TabsSpec.sizes         | 실질 완료 (shapes N/A, 일반 parseBoxModel 경로로 style.padding 처리)                           | 작업 불필요                                            |
+| Breadcrumbs | (c) X BreadcrumbsSpec.sizes  | 실질 완료 (shapes N/A, 일반 경로)                                                              | 작업 불필요                                            |
+| TagGroup    | Phase 4 대상                 | Phase 5 에서 (a) O 달성 + shapes N/A (TagList 위임)                                            | 작업 불필요                                            |
+| Table       | Phase 5 별도                 | Phase 5 (a) O 달성 + (b) cell-level padding 은 Hard Constraint 4 로 hardcoding 정당            | 작업 불필요 (HC4)                                      |
+
+**결론**: Phase 4 실제 land 범위 = **Menu + Toolbar 2 컴포넌트**. 원 추정 "Profile X 4 × 1.5 + Profile Y 4 × 0.5~1 = 8~10일" 이 실측상 **1~2일** 로 축소.
+
+### Land 결과
+
+- `packages/specs/src/components/Menu.spec.ts:393`: `size.paddingX` → `resolveContainerSpacing` 호출 → `paddingLeft` 소비. `style.paddingLeft/paddingRight/padding` 우선, `size.paddingX` fallback.
+- `packages/specs/src/components/Toolbar.spec.ts:131-158`: container layout `gap: size.gap`, `padding: [size.paddingY, ...]` → `resolveContainerSpacing` 결과로 교체. orientation=vertical 에서 `rowGap`, horizontal 에서 `columnGap` 사용.
+- `packages/specs/src/__tests__/Menu.spacing.test.ts` — 4 tests (defaults / paddingLeft override / padding shorthand / px string).
+- `packages/specs/src/__tests__/Toolbar.spacing.test.ts` — 5 tests (defaults / gap horizontal / gap vertical / padding shorthand / paddingTop longhand override).
+
+### Gate 결과
+
+- Gate G6 (Follow-up Template): **충족** — Phase 4 템플릿 (L278-289) 을 sweep 실행 체크리스트로 직접 사용. ADR-908 등 신규 ADR 작성 없이 이행.
+- Gate G8 (Regression): **충족** — Menu/Toolbar spacing test 9/9 PASS, ListBox behavior 불변, GridList 기존 fixture test 유지, specs 전체 292/292 (기존 283 + 신규 9).
+
+## ADR-907 Status 승격 근거
+
+Phase 1/2/3/5/4 (Phase 4 가 Phase 5 뒤에 land) 완료 + Phase 6 fixture regression 요건을 Phase 4 작업 내 spacing test 로 충족. G1-G8 전원 통과 조건 완비:
+
+- G1 Audit Matrix: 33 cell 기록 (본 breakdown matrix) + Phase 4 execution log 의 재audit 결과
+- G2 CSS Parser SSOT: Phase 1 완료 (parseFloat 0건 allowlist 외, specs 내 전수 교체)
+- G3 GridList Pilot: Phase 3 Wave A/B/C 완료 (resolveGridListSpacingMetric + 2경로 단일 소비 + data-layout RAC delegation)
+- G4 Renderer Contract: Phase 2 완료 (`rendererStyleContract.test.ts` 11/11 + allowlist 빈 Set)
+- G5 Boundary: 4 rg 명령 매 Phase 통과
+- G6 Follow-up Template: 본 섹션으로 해결 (sweep 경로)
+- G7 Table Audit: Phase 5 (a) 적용 + (b) HC4 로 cell-level 분리 유지 판정 명시
+- G8 Regression: 전체 vitest PASS (specs 292/292, shared 72/72, builder 333/334 pre-existing 무관)

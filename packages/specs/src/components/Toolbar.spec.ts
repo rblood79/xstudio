@@ -8,7 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { parsePxValue } from "../primitives";
+import { parsePxValue, resolveContainerSpacing } from "../primitives";
 import { ArrowLeftRight } from "lucide-react";
 
 /**
@@ -128,6 +128,19 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       ];
       if (hasChildren) return shapes;
 
+      // ADR-907 Phase 4 Layer D: style.gap/padding 우선, size.gap/paddingY/X fallback
+      const spacing = resolveContainerSpacing({
+        style: props.style as Record<string, unknown> | undefined,
+        defaults: {
+          paddingTop: size.paddingY,
+          paddingRight: size.paddingX,
+          paddingBottom: size.paddingY,
+          paddingLeft: size.paddingX,
+          rowGap: size.gap,
+          columnGap: size.gap,
+        },
+      });
+
       // 도구 아이템 컨테이너 (standalone 전용)
       shapes.push({
         type: "container" as const,
@@ -140,8 +153,13 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
           display: "flex",
           flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
-          gap: size.gap,
-          padding: [size.paddingY, size.paddingX, size.paddingY, size.paddingX],
+          gap: isVertical ? spacing.rowGap : spacing.columnGap,
+          padding: [
+            spacing.paddingTop,
+            spacing.paddingRight,
+            spacing.paddingBottom,
+            spacing.paddingLeft,
+          ],
         },
       });
 

@@ -12,7 +12,11 @@ import type { StoredMenuItem } from "../types/menu-items";
 // ADR-099 Phase 5 stubs (StoredMenuEntry / isMenuSectionEntry /
 //   isMenuSeparatorEntry / HeaderSpec) — 실제 사용 Phase 5 구현 시 재추가.
 //   현재는 TS6196/6192/6133 unused error 방지 위해 제거 (build:specs 블로킹 해소).
-import { parsePxValue, parseBorderWidth } from "../primitives";
+import {
+  parsePxValue,
+  parseBorderWidth,
+  resolveContainerSpacing,
+} from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -390,7 +394,15 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             : parseInt(String(fwRaw), 10) || 500
           : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const paddingX = size.paddingX;
+      // ADR-907 Phase 4 Layer D: style.paddingLeft/paddingRight/padding 우선, size.paddingX fallback
+      const { paddingLeft } = resolveContainerSpacing({
+        style: props.style as Record<string, unknown> | undefined,
+        defaults: {
+          paddingLeft: size.paddingX,
+          paddingRight: size.paddingX,
+        },
+      });
+      const paddingX = paddingLeft;
 
       shapes.push({
         type: "text" as const,
