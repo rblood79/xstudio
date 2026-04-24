@@ -18,7 +18,7 @@
  */
 
 export const rendererStyleContractAllowlist: ReadonlySet<string> = new Set([
-  "GridList", // ADR-907 Phase 3 pilot 에서 제거 예정
+  // (a) X 2 건만 남음 — Phase 3 에서 GridList 제거 완료
   "TagGroup", // ADR-907 Phase 4 Profile Y follow-up ADR 에서 제거 예정
   "Table", //    ADR-907 Phase 5 audit (Layer C (a) 선반영 가능) 에서 제거 예정
 ]);

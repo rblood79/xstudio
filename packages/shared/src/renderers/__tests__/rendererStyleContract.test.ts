@@ -129,7 +129,6 @@ describe("ADR-907 Phase 2 Layer C — renderer style contract", () => {
     // allowlist 는 GridList / TagGroup / Table (3건 — (a) X)
     // Phase 3/4/5 에서 점진 제거
     expect(Array.from(rendererStyleContractAllowlist).sort()).toEqual([
-      "GridList",
       "Table",
       "TagGroup",
     ]);

@@ -620,6 +620,7 @@ export const renderGridList = (
       aria-label={String(element.props.label || "Grid List")}
       data-element-id={element.id}
       className={element.props.className}
+      style={element.props.style as React.CSSProperties | undefined}
       variant={(element.props.variant as "default" | "accent") || "default"}
       layout={(element.props.layout as "stack" | "grid") || "stack"}
       columns={(element.props.columns as number) || 2}
