@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-24
+Implemented — 2026-04-24 (동일 세션 Phase 0 → Phase 4 완결, 9 commits)
 
 ## Context
 
