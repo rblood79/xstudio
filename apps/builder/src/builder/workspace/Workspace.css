@@ -43,7 +43,7 @@
 }
 
 .dot-background--base {
-  --dot-color: var(--fg-muted);
+  --dot-color: var(--fg-disabled);
   opacity: 0.4;
   z-index: 0;
 }
