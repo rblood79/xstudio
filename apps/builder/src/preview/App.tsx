@@ -148,6 +148,9 @@ function CanvasContent() {
 
     if (bodyElement) {
       const adaptedBodyElement = adaptElementFillStyle(bodyElement);
+      const bodyHasFills =
+        Array.isArray(adaptedBodyElement.fills) &&
+        adaptedBodyElement.fills.length > 0;
 
       // 실제 <body> 태그에 data-element-id 설정
       document.body.setAttribute("data-element-id", adaptedBodyElement.id);
@@ -163,7 +166,7 @@ function CanvasContent() {
           const cssKey = camelToKebab(key);
           // body color/bg는 CSS 변수로 대체 — DB 하드코딩 값 대신 테마 반영
           const cssValue =
-            key in BODY_THEME_MAP
+            key in BODY_THEME_MAP && !(bodyHasFills && key === "backgroundColor")
               ? BODY_THEME_MAP[key]
               : typeof value === "number" && !CSS_UNITLESS.has(key)
                 ? `${value}px`

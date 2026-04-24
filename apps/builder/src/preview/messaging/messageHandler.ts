@@ -158,6 +158,8 @@ export interface DeltaElementUpdatedMessage {
   elementId: string;
   /** 변경된 props만 (기존 props와 merge) */
   propsChanges: Record<string, unknown>;
+  /** top-level fills 변경 (선택적) */
+  fills?: unknown[];
   /** parent_id 변경 (선택적) */
   parentId?: string | null;
   /** order_num 변경 (선택적) */
@@ -183,6 +185,7 @@ export interface DeltaBatchUpdateMessage {
   updates: Array<{
     elementId: string;
     propsChanges?: Record<string, unknown>;
+    fills?: unknown[];
     parentId?: string | null;
     orderNum?: number;
   }>;
@@ -527,7 +530,7 @@ export class MessageHandler {
    * - props 변경만 적용 (전체 교체 아님)
    */
   private handleDeltaElementUpdated(data: DeltaElementUpdatedMessage): void {
-    const { elementId, propsChanges, parentId, orderNum } = data;
+    const { elementId, propsChanges, fills, parentId, orderNum } = data;
 
     if (this.store.updateElement) {
       // 🚀 최적화된 경로: 부분 업데이트
@@ -541,6 +544,9 @@ export class MessageHandler {
       }
       if (orderNum !== undefined) {
         updates.order_num = orderNum;
+      }
+      if (fills !== undefined) {
+        updates.fills = fills;
       }
 
       this.store.updateElement(elementId, updates);
@@ -609,6 +615,9 @@ export class MessageHandler {
         }
         if (update.orderNum !== undefined) {
           elementUpdates.order_num = update.orderNum;
+        }
+        if (update.fills !== undefined) {
+          elementUpdates.fills = update.fills;
         }
 
         this.store.updateElement(update.elementId, elementUpdates);

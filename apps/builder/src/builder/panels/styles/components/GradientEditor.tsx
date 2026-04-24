@@ -318,6 +318,7 @@ export const GradientEditor = memo(function GradientEditor({
       {activeStop && (
         <ColorPickerPanel
           value={committedStopColor}
+          resetKey={`${fill.id}:${activeStopIndex}:${fill.type}`}
           onChange={handleColorChange}
           onChangeEnd={handleColorChangeEnd}
         />

@@ -57,6 +57,8 @@ export interface UseDeltaMessengerReturn {
    */
   sendDeltaElementUpdated: (
     elementId: string,
+    prevElement: Element,
+    nextElement: Element,
     prevProps: Record<string, unknown>,
     nextProps: Record<string, unknown>,
     options?: { parentId?: string | null; orderNum?: number },
@@ -76,6 +78,8 @@ export interface UseDeltaMessengerReturn {
   sendDeltaBatchUpdate: (
     updates: Array<{
       elementId: string;
+      prevElement?: Element;
+      nextElement?: Element;
       prevProps?: Record<string, unknown>;
       nextProps?: Record<string, unknown>;
       parentId?: string | null;
@@ -196,6 +200,8 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
   const sendDeltaElementUpdated = useCallback(
     (
       elementId: string,
+      prevElement: Element,
+      nextElement: Element,
       prevProps: Record<string, unknown>,
       nextProps: Record<string, unknown>,
       options?: { parentId?: string | null; orderNum?: number },
@@ -207,10 +213,14 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
 
       // Props 변경사항만 추출
       const propsChanges = extractPropsChanges(prevProps, nextProps);
+      const fillsChanged =
+        JSON.stringify(prevElement.fills ?? null) !==
+        JSON.stringify(nextElement.fills ?? null);
 
       // 변경사항이 없으면 스킵
       if (
         Object.keys(propsChanges).length === 0 &&
+        !fillsChanged &&
         !options?.parentId &&
         !options?.orderNum
       ) {
@@ -220,7 +230,10 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
       const success = canvasDeltaMessenger.sendElementUpdated(
         elementId,
         propsChanges,
-        options,
+        {
+          ...options,
+          ...(fillsChanged ? { fills: nextElement.fills } : {}),
+        },
       );
 
       if (success) {
@@ -266,6 +279,8 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
     (
       updates: Array<{
         elementId: string;
+        prevElement?: Element;
+        nextElement?: Element;
         prevProps?: Record<string, unknown>;
         nextProps?: Record<string, unknown>;
         parentId?: string | null;
@@ -283,10 +298,16 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
           u.prevProps && u.nextProps
             ? extractPropsChanges(u.prevProps, u.nextProps)
             : undefined;
+        const fillsChanged =
+          u.prevElement &&
+          u.nextElement &&
+          JSON.stringify(u.prevElement.fills ?? null) !==
+            JSON.stringify(u.nextElement.fills ?? null);
 
         return {
           elementId: u.elementId,
           propsChanges,
+          fills: fillsChanged ? u.nextElement?.fills : undefined,
           parentId: u.parentId,
           orderNum: u.orderNum,
         };
@@ -335,6 +356,8 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
             // 업데이트된 요소
             sendDeltaElementUpdated(
               id,
+              prevEl,
+              nextEl,
               prevEl.props as Record<string, unknown>,
               nextEl.props as Record<string, unknown>,
               {

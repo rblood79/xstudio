@@ -10,6 +10,7 @@ export interface PreviewElement {
   id: string;
   customId?: string; // custom_id from database (e.g., button_1, table_1)
   tag: string;
+  fills?: unknown[];
   props: ElementProps;
   text?: string;
   parent_id?: string | null;

@@ -208,6 +208,7 @@ export const MeshGradientEditor = memo(function MeshGradientEditor({
           <div className="mesh-gradient-editor__divider" />
           <ColorPickerPanel
             value={activePoint.color ?? effectivePoints[activePointIndex]?.color ?? '#000000FF'}
+            resetKey={`${fill.id}:${activePointIndex}:${rows}x${columns}`}
             onChange={handlePointColorChange}
             onChangeEnd={handlePointColorChangeEnd}
           />

@@ -138,6 +138,7 @@ export const FillDetailPopover = memo(function FillDetailPopover({
           />
           <ColorPickerPanel
             value={committedColorValue}
+            resetKey={`${fill.id}:${fill.type}`}
             onChange={onColorChange}
             onChangeEnd={handleColorChangeEndCommitted}
           />

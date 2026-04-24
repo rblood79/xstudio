@@ -149,3 +149,4 @@
 - **`buildNodeForElement` 라우팅 ↔ `ElementSprite.tsx` `isUIComponent` 분기 중복**: `useSpecPath()`/`isTextElement()`/`isImageElement()` + `SPEC_PREFERRED_TEXT_TAGS` 상수가 StoreRenderBridge 내부에만 존재 — `tagSpecMap.ts`에 `resolveSkiaNodeBuilder()` 추출로 공유 필요
 - **`buildNodeForElement` 이미지 추적 dead condition**: L334 `this.loadedImageSrcs.set(id, src)` 후 L335 `!this.loadedImageSrcs.has(id)` 체크 → 항상 false → `loadImageAsync` 미호출. incrementalSync 경로에서만 이미지 비동기 로드 누락 버그. set 전에 has 체크 필수
 - **Zustand 구독 패턴 혼재**: `SkiaCanvas.tsx`의 selector 기반 선택적 구독과 `useWorkflowInteraction.ts:280`의 전체 구독 패턴이 혼재 — selector 기반으로 통일 필요
+- **`useEffect` deps에 `initialValue` 포함 + 방어 ref 이중화 패턴**: `useEffect([initialValue, resetKey])`처럼 deps에 "identity가 아닌 값"을 포함하면 오발동 방지를 위해 `lastXxxRef` 같은 방어 ref가 추가된다. deps를 `[resetKey]`만으로 좁히면 ref도 제거 가능 — `ColorPickerPanel.tsx`의 `lastResetKeyRef` 사례. 방어 ref 발견 시 deps 설계를 먼저 검토.

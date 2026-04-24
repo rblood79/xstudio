@@ -30,6 +30,7 @@ export interface DeltaElementUpdatedMessage {
   type: "DELTA_ELEMENT_UPDATED";
   elementId: string;
   propsChanges: Record<string, unknown>;
+  fills?: unknown[];
   parentId?: string | null;
   orderNum?: number;
 }
@@ -45,6 +46,7 @@ export interface DeltaBatchUpdateMessage {
   updates: Array<{
     elementId: string;
     propsChanges?: Record<string, unknown>;
+    fills?: unknown[];
     parentId?: string | null;
     orderNum?: number;
   }>;
@@ -137,7 +139,11 @@ export class CanvasDeltaMessenger {
   sendElementUpdated(
     elementId: string,
     propsChanges: Record<string, unknown>,
-    options?: { parentId?: string | null; orderNum?: number }
+    options?: {
+      fills?: unknown[];
+      parentId?: string | null;
+      orderNum?: number;
+    }
   ): boolean {
     if (!this.isReady()) return false;
 
@@ -145,6 +151,7 @@ export class CanvasDeltaMessenger {
       type: "DELTA_ELEMENT_UPDATED",
       elementId,
       propsChanges: this.sanitizeProps(propsChanges),
+      ...(options?.fills !== undefined && { fills: options.fills }),
       ...(options?.parentId !== undefined && { parentId: options.parentId }),
       ...(options?.orderNum !== undefined && { orderNum: options.orderNum }),
     };
@@ -174,6 +181,7 @@ export class CanvasDeltaMessenger {
     updates: Array<{
       elementId: string;
       propsChanges?: Record<string, unknown>;
+      fills?: unknown[];
       parentId?: string | null;
       orderNum?: number;
     }>
@@ -184,6 +192,7 @@ export class CanvasDeltaMessenger {
       type: "DELTA_BATCH_UPDATE",
       updates: updates.map((u) => ({
         ...u,
+        fills: u.fills,
         propsChanges: u.propsChanges
           ? this.sanitizeProps(u.propsChanges)
           : undefined,
@@ -248,6 +257,7 @@ export class CanvasDeltaMessenger {
         events: element.events,
         dataBinding: element.dataBinding,
         layout_id: element.layout_id,
+        fills: element.fills,
       };
     }
   }

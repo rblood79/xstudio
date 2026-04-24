@@ -733,13 +733,26 @@ export const createInspectorActionsSlice: StateCreator<
       // CSS 변환 없이 fills만 업데이트 (드래그 성능 최적화)
       const updatedElement: Element = { ...element, fills };
 
-      // 🚀 elementsMap만 업데이트 (Skia 렌더러가 직접 읽는 소스)
-      // elements 배열 복사 + findIndex O(n) 제거 — 드래그 중에는 불필요
-      // (elements 배열은 onChangeEnd 시 updateSelectedFills에서 동기화됨)
+      // 🚀 CSS Preview도 drag 중 fills를 반영해야 하므로 elements 배열도 동기화한다.
+      // selectedElementProps는 계속 건드리지 않아 패널 입력 리렌더는 막는다.
       const newElementsMap = new Map(elementsMap);
       newElementsMap.set(selectedElementId, updatedElement);
 
+      const currentElements = (get() as CombinedState).elements;
+      const existingElement = elementsMap.get(selectedElementId);
+      const elementIndex = existingElement
+        ? currentElements.indexOf(existingElement)
+        : -1;
+      let newElements: Element[];
+      if (elementIndex !== -1) {
+        newElements = currentElements.slice();
+        newElements[elementIndex] = updatedElement;
+      } else {
+        newElements = currentElements;
+      }
+
       set({
+        elements: newElements,
         elementsMap: newElementsMap,
       } as Partial<CombinedState>);
     },
