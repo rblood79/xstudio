@@ -245,21 +245,34 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       ];
 
       const layout = props.layout ?? "stack";
-      const numCols = layout === "grid" ? (props.columns ?? 2) : 1;
       // ADR-099 Phase 5: StoredGridListEntry[] SSOT — section + item 혼합 지원
       const entries: StoredGridListEntry[] =
         props.items && props.items.length > 0 ? props.items : DEFAULT_ENTRIES;
-      const gap = (size.gap as unknown as number) ?? 12;
-      const fontSize = resolveSpecFontSize(size.fontSize, 14);
+
+      // ADR-907 Phase 3 Wave B: Layer D resolver 단일 경로.
+      //   style.gap / style.fontSize / style.padding* / style.borderWidth 우선 소비.
+      //   size.gap / size.fontSize (spec defaults) 는 defaultGap/defaultFontSize 로 전달.
+      //   Phase 0 (b) X (style.gap 미소비) 구조적 해소.
+      const metric = resolveGridListSpacingMetric({
+        style: props.style as Record<string, unknown> | undefined,
+        layout,
+        columns: props.columns ?? 2,
+        defaultGap: (size.gap as unknown as number) ?? 12,
+        defaultFontSize: resolveSpecFontSize(size.fontSize, 14),
+      });
+      const {
+        rowGap: gap,
+        numCols,
+        fontSize,
+        cardPaddingX,
+        cardPaddingY,
+        cardBorderRadius,
+        descGap,
+      } = metric;
       // description font size: CSS 정합성 — sm:text-2xs(10), md:text-xs(12), lg:text-sm(14)
       const descFontSize = fontSize - 2;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textColor = props.style?.color ?? variant.text;
-
-      // 카드 사이즈 — ADR-090 Phase 3: GridListItemSpec.sizes.md SSOT 에서 resolver 경유 소비.
-      //   fontSize-based 분기(>14/>12/else) 는 resolveGridListItemMetric 내부 캡슐화.
-      const { cardPaddingX, cardPaddingY, cardBorderRadius, descGap } =
-        resolveGridListItemMetric(fontSize);
 
       // 컨테이너 전체 너비
       const totalWidth =

@@ -32,7 +32,7 @@ import {
   STATUSLIGHT_DIMENSIONS,
   resolveListBoxItemMetric,
   isListBoxSectionEntry,
-  resolveGridListItemMetric,
+  resolveGridListSpacingMetric,
   isGridListSectionEntry,
   TAG_CHIP_SIZES,
   parsePxValue,
@@ -1587,18 +1587,27 @@ export function calculateContentHeight(
           ];
 
     const layout = String(props?.layout ?? "stack");
-    const numCols =
-      layout === "grid" ? Math.max(1, Number(props?.columns ?? 2) || 2) : 1;
-    const gap = parseNumericValue(style?.gap) ?? 12;
-    const borderWidth =
-      parseNumericValue(style?.borderWidth ?? style?.border) ?? 0;
-    const paddingY =
-      parseNumericValue(style?.paddingTop ?? style?.padding) ?? 0;
-    const fontSize = parseNumericValue(style?.fontSize) ?? 14;
+    // ADR-907 Phase 3 Wave B: Layer D resolver 단일 경로.
+    //   style.gap/padding/borderWidth/fontSize 소비 + resolveGridListItemMetric 분기 캡슐화.
+    //   4-way padding 지원 (paddingTop+paddingBottom) — 기존 paddingY*2 대칭 가정 해소.
+    const metric = resolveGridListSpacingMetric({
+      style: style as Record<string, unknown> | undefined,
+      layout: layout === "grid" ? "grid" : "stack",
+      columns: Number(props?.columns ?? 2) || 2,
+    });
+    const {
+      rowGap: gap,
+      paddingTop,
+      paddingBottom,
+      borderWidth,
+      fontSize,
+      numCols,
+      cardPaddingY,
+      descGap,
+    } = metric;
     const descFontSize = fontSize - 2;
     const HEADER_HEIGHT = Math.round(fontSize * 1.75);
     const SECTION_TOP_PAD = Math.round(fontSize * 0.5);
-    const { cardPaddingY, descGap } = resolveGridListItemMetric(fontSize);
 
     const cardHeight = (item: { description?: string }) =>
       cardPaddingY * 2 +
@@ -1662,7 +1671,7 @@ export function calculateContentHeight(
     }
     flushPendingTopLevelItems();
 
-    return paddingY * 2 + innerHeight + borderWidth * 2;
+    return paddingTop + paddingBottom + innerHeight + borderWidth * 2;
   }
 
   // 1.55d. TagList (ADR-097 Phase 4B): items SSOT + row-wrap 기반 intrinsic height.
