@@ -795,6 +795,70 @@ export interface VariantSpec {
   emphasizedSelectedBorder?: TokenRef;
 }
 
+// ─── ADR-908 Phase 1: Fill Spec Schema SSOT (fill preset 타입만 도입) ───
+// 본 Phase 는 타입 선언만 수행. VariantSpec migration / CSSGenerator bridge 는 Phase 2+.
+// Hard Constraint 5 (VariantSpec background 계열 10+ 필드 전수) 를 fillStyle × state 2축으로 표현.
+
+/**
+ * Fill state tokens — 하나의 fillStyle 내 state 별 배경 토큰
+ *
+ * VariantSpec 의 state 분기 (default / hover / pressed / selected / selectedHover /
+ * selectedPressed / emphasizedSelected) 를 단일 구조에 수용. base 는 필수, 나머지는
+ * optional (미지정 시 상위 state 에서 fallback).
+ */
+export interface FillStateTokens {
+  /** 기본 배경 (해당 fillStyle 의 default state) */
+  base: TokenRef;
+  /** hover 상태 배경 */
+  hover?: TokenRef;
+  /** pressed 상태 배경 */
+  pressed?: TokenRef;
+  /** selected 상태 배경 */
+  selected?: TokenRef;
+  /** selected + hover 조합 배경 */
+  selectedHover?: TokenRef;
+  /** selected + pressed 조합 배경 */
+  selectedPressed?: TokenRef;
+  /** data-emphasized + data-selected 조합 배경 (accent 강조) */
+  emphasizedSelected?: TokenRef;
+}
+
+/**
+ * Fill token spec — spec schema 의 fill 표현 SSOT (ADR-908)
+ *
+ * 설계 원칙:
+ * 1. runtime FillItem raw shape 재사용 금지 — id / opacity / blendMode / string color 같은
+ *    runtime 전용 필드는 포함하지 않음. spec 은 token ref 중심.
+ * 2. TokenRef 를 1급 값으로 유지 — dark mode 자동 반전 보장 (D3 정본).
+ * 3. fillStyle × state 2축 합성 — selectedBackgroundHover / emphasizedSelectedBackground
+ *    같은 조합 상태를 단일 구조에 수용. fillStyle 단위로 state subset 을 독립 정의.
+ *
+ * VariantSpec.background 계열 10 필드 → FillTokenSpec 매핑:
+ * - background                        → default.base
+ * - backgroundHover                   → default.hover
+ * - backgroundPressed                 → default.pressed
+ * - selectedBackground                → default.selected
+ * - selectedBackgroundHover           → default.selectedHover
+ * - selectedBackgroundPressed         → default.selectedPressed
+ * - emphasizedSelectedBackground      → default.emphasizedSelected
+ * - outlineBackground                 → outline.base
+ * - subtleBackground                  → subtle.base
+ * - backgroundAlpha                   → alpha
+ *
+ * Phase 2+ 에서 VariantSpec 에 `fill?: FillTokenSpec` 을 추가하고 CSSGenerator/ReactRenderer
+ * /variantColors/stateEffect/validate-specs 5 direct consumer 가 direct-read 로 전환.
+ */
+export interface FillTokenSpec {
+  /** default fillStyle — 기본 변형 (필수) */
+  default: FillStateTokens;
+  /** outline fillStyle — VariantSpec.outlineBackground 대응 */
+  outline?: Partial<FillStateTokens>;
+  /** subtle fillStyle — VariantSpec.subtleBackground 대응 */
+  subtle?: Partial<FillStateTokens>;
+  /** 배경 투명도 0-1 — VariantSpec.backgroundAlpha 대응 */
+  alpha?: number;
+}
+
 /**
  * Indicator Mode 스펙 (ADR-059 B5)
  *

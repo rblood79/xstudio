@@ -13,6 +13,9 @@ export type {
   ComponentSpec,
   ComponentState,
   VariantSpec,
+  // ADR-908 Phase 1: Fill Spec Schema SSOT (타입만 도입)
+  FillStateTokens,
+  FillTokenSpec,
   SizeSpec,
   RenderSpec,
   PropertySchema,
