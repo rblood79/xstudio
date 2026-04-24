@@ -13,13 +13,6 @@ import type {
   SlotValidationError,
   LayoutResolutionResult,
 } from "../../types/builder/layout.types";
-import type { CompositionDocument } from "@composition/shared";
-import {
-  legacyToCanonical,
-  type LegacyAdapterInput,
-} from "../../adapters/canonical";
-import { convertComponentRole } from "../../adapters/canonical/componentRoleAdapter";
-import { convertPageLayout } from "../../adapters/canonical/slotAndLayoutAdapter";
 
 // ============================================
 // Main Resolver
@@ -346,61 +339,4 @@ export function filterElementsByEditMode(
   } else {
     return elements.filter((el) => el.layout_id === targetId);
   }
-}
-
-// ============================================
-// ADR-903 P1 Stage 2 — Canonical Adapter Entrypoints
-// ============================================
-
-/**
- * @experimental ADR-903 P1 Stage 2 — canonical adapter 경유 layout resolution.
- *
- * 기존 resolveLayoutForPage()는 그대로 유지 (legacy 경로). 본 함수는 같은 입력을
- * canonical adapter (legacyToCanonical)로 변환하여 CompositionDocument 산출 후,
- * 호환성을 위해 LayoutResolutionResult 형태로 다시 packing (shadow execution).
- *
- * adapter가 production data(page + layout + elements 조합)를 받아도 throw하지 않는지,
- * caller import 경로가 정상 wire 되는지 검증하는 것이 P1 Stage 2의 목적.
- * adapter 결과 미사용은 의도적 — 동작 변경 없이 wiring만 검증.
- *
- * P2에서 Preview/Skia가 본 함수의 CompositionDocument를 직접 소비하도록 전환
- * 예정 — 현재는 legacy LayoutResolutionResult로 wrap하여 caller 무변경.
- */
-export function resolveLayoutForPageCanonical(
-  page: Page | null,
-  layout: Layout | null,
-  allElements: Element[],
-  allLayouts: Layout[],
-): LayoutResolutionResult {
-  const input: LegacyAdapterInput = {
-    elements: allElements,
-    pages: page ? [page] : [],
-    layouts: allLayouts,
-  };
-
-  // adapter 호출 — P1 Stage 2: shadow execution (결과 미소비, wiring 검증 목적)
-  // P2에서 직접 소비 전환 시 본 wrap 제거
-  legacyToCanonical(input, {
-    convertComponentRole,
-    convertPageLayout,
-  });
-
-  return resolveLayoutForPage(page, layout, allElements);
-}
-
-/**
- * @experimental ADR-903 P1 Stage 2 — canonical adapter 경유 문서 산출.
- *
- * 추후 Phase 2 resolver가 본 결과를 직접 소비.
- * 디버깅 도구 또는 P2 resolver가 standalone으로 호출 가능.
- */
-export function buildCanonicalDocument(
-  pages: Page[],
-  layouts: Layout[],
-  allElements: Element[],
-): CompositionDocument {
-  return legacyToCanonical(
-    { elements: allElements, pages, layouts },
-    { convertComponentRole, convertPageLayout },
-  );
 }
