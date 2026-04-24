@@ -162,9 +162,21 @@ export {
   // HTML primitive defaults (ADR-096 Phase 2)
   HTML_PRIMITIVE_DEFAULT_WIDTHS,
   HTML_PRIMITIVE_DEFAULT_HEIGHTS,
+  // CSS value parser SSOT (ADR-907 Layer A)
+  parsePxValue,
+  parsePadding4Way,
+  parseBorderWidth,
+  parseGapValue,
+  // Container spacing primitive (ADR-907 Layer B)
+  resolveContainerSpacing,
 } from "./primitives";
 
 export type { ParsedShadow } from "./primitives";
+export type {
+  ContainerSpacing,
+  ContainerSpacingDefaults,
+  ContainerSpacingInput,
+} from "./primitives";
 
 // ─── Renderers ───────────────────────────────────────────────────────────────
 export {
