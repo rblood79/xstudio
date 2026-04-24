@@ -8,7 +8,7 @@ import {
 
 const BASE_GAP = 16;
 const DOT_SIZE = 1;
-const GLOW_RADIUS = 128;
+const GLOW_RADIUS = 96;
 // ADR-902 Perf 후속: inset:-80px (Workspace.css) 와 동기화 — glow mask 좌표 보정값.
 // .dot-background--glow 박스는 .canvas-container 대비 (-80,-80) 에 시작하므로
 // host 기준 커서 좌표 → glow 박스 기준으로 변환 시 +BG_INSET.

@@ -59,12 +59,12 @@
   z-index: 1;
   transition: opacity 200ms ease;
   -webkit-mask-image: radial-gradient(
-    circle var(--glow-r, 140px) at var(--cx, -9999px) var(--cy, -9999px),
+    circle var(--glow-r, 96px) at var(--cx, -9999px) var(--cy, -9999px),
     #000 0%,
     transparent 100%
   );
   mask-image: radial-gradient(
-    circle var(--glow-r, 140px) at var(--cx, -9999px) var(--cy, -9999px),
+    circle var(--glow-r, 96px) at var(--cx, -9999px) var(--cy, -9999px),
     #000 0%,
     transparent 100%
   );
