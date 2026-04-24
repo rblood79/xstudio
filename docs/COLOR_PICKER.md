@@ -915,7 +915,7 @@ function getOrCreateGradientShader(fill: GradientFillItem): CanvasKit.Shader {
 
 | 방안 | 장점 | 단점 |
 |------|------|------|
-| **A. 기존 인프라 확장 (채택, 이후 retirement 완료)** (`VITE_FEATURE_FILL_V2=true`) | 현재 패턴(`VITE_USE_WEBGL_CANVAS`)과 동일, 구현/검증 비용 최소 | 런타임 사용자별 제어 불가 |
+| **A. 기존 인프라 확장 (채택, 이후 retirement 완료)** | 현재 패턴(`VITE_USE_WEBGL_CANVAS`)과 동일, 구현/검증 비용 최소 | 런타임 사용자별 제어 불가 |
 | **B. Zustand 슬라이스** (`useFeatureFlags()`) | 런타임 전환 가능, DevTools 연동 | DB/원격 제어 없음 |
 | **C. Supabase Remote Config** | 사용자별/환경별 제어 | 구현 비용 높음, Phase 1에 과도함 |
 
@@ -941,7 +941,7 @@ Phase 4 (이미지/메쉬/변수)            ⬜ 미착수
 | ~~R2: 마이그레이션 데이터 무결성~~ | `fillMigration.ts`의 `normalizeToHex8()` + `fillsToCssBackground()` 양방향 변환 안정적 동작 |
 | ~~R4: EyeDropper 브라우저 호환~~ | `'EyeDropper' in window` 가드로 미지원 브라우저에서 버튼 자체 숨김 구현 완료 |
 | ~~R5: Gradient Shader GPU 리소스~~ | `applyFill()` + `nodeRenderers.ts`에서 Shader delete() 정상 처리 확인 |
-| ~~R6: 전환 단계 제어~~ | 초기에는 `VITE_FEATURE_FILL_V2`로 rollout 했고, 이후 always-on 전환과 retirement를 완료했다 |
+| ~~R6: 전환 단계 제어~~ | 초기 rollout 이후 always-on 전환과 retirement를 완료했다 |
 | ~~R7: @dnd-kit 의존성~~ | 드래그 순서 변경 미구현 → 의존성 추가 불필요 |
 | Skia 변환 레이어 | `fillToSkia.ts`에서 Color + 3종 Gradient 변환 완성. `applyFill()`과 정상 연동 |
 | 드래그 패턴 | onChange/onChangeEnd 패턴이 ColorArea, Hue, Alpha, GradientBar 스톱에서 모두 안정 동작 |
