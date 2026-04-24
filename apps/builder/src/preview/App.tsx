@@ -39,11 +39,10 @@ const CSS_UNITLESS = new Set([
   "flexShrink",
   "order",
 ]);
-// body color/backgroundColor는 항상 CSS 변수로 매핑 (dark mode 전환 지원)
-const BODY_THEME_MAP: Record<string, string> = {
-  color: "var(--fg)",
-  backgroundColor: "var(--bg)",
-};
+// ADR-902 후속: BODY_THEME_MAP 하드코딩 제거. createDefaultBodyProps 가 CSS var 리터럴
+// ("var(--bg)" / "var(--fg)") 을 직접 style 에 저장하므로 기본 iteration 경로가 theme-aware
+// 결과를 자연 적용한다. 사용자가 fills 를 커스터마이즈 하면 adaptElementFillStyle 이
+// fills → style.backgroundColor 재주입 → user 색상 반영 (이전 conditional override 불필요).
 
 // ============================================
 // Module-level EventEngine Singleton
@@ -148,9 +147,6 @@ function CanvasContent() {
 
     if (bodyElement) {
       const adaptedBodyElement = adaptElementFillStyle(bodyElement);
-      const bodyHasFills =
-        Array.isArray(adaptedBodyElement.fills) &&
-        adaptedBodyElement.fills.length > 0;
 
       // 실제 <body> 태그에 data-element-id 설정
       document.body.setAttribute("data-element-id", adaptedBodyElement.id);
@@ -164,13 +160,13 @@ function CanvasContent() {
         >;
         Object.entries(style).forEach(([key, value]) => {
           const cssKey = camelToKebab(key);
-          // body color/bg는 CSS 변수로 대체 — DB 하드코딩 값 대신 테마 반영
+          // ADR-902 후속: createDefaultBodyProps 의 CSS var 리터럴 (var(--bg)/var(--fg))
+          // 이 style 에 직접 저장되므로 그대로 전달. 사용자 커스텀 fills 는
+          // adaptElementFillStyle 이 style.backgroundColor 를 재주입해서 여기로 들어옴.
           const cssValue =
-            key in BODY_THEME_MAP && !(bodyHasFills && key === "backgroundColor")
-              ? BODY_THEME_MAP[key]
-              : typeof value === "number" && !CSS_UNITLESS.has(key)
-                ? `${value}px`
-                : String(value);
+            typeof value === "number" && !CSS_UNITLESS.has(key)
+              ? `${value}px`
+              : String(value);
           document.body.style.setProperty(cssKey, cssValue);
           appliedStyleKeysRef.current.add(cssKey);
         });

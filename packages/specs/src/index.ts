@@ -250,6 +250,10 @@ export type { PopoverProps } from "./components/Popover.spec";
 export { SectionSpec } from "./components/Section.spec";
 export type { SectionProps } from "./components/Section.spec";
 
+// ADR-902 후속: Body 는 페이지 루트 theme-aware 배경을 Spec SSOT 로 선언.
+export { BodySpec } from "./components/Body.spec";
+export type { BodyProps } from "./components/Body.spec";
+
 export { SeparatorSpec } from "./components/Separator.spec";
 export type { SeparatorProps } from "./components/Separator.spec";
 

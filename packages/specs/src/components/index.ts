@@ -62,6 +62,10 @@ export type { ToggleButtonGroupProps } from "./ToggleButtonGroup.spec";
 export { SectionSpec } from "./Section.spec";
 export type { SectionProps } from "./Section.spec";
 
+// Body (ADR-902 후속 — 페이지 루트 theme-aware 배경)
+export { BodySpec } from "./Body.spec";
+export type { BodyProps } from "./Body.spec";
+
 // Tooltip
 export { TooltipSpec, TOOLTIP_MAX_WIDTH } from "./Tooltip.spec";
 export type { TooltipProps } from "./Tooltip.spec";

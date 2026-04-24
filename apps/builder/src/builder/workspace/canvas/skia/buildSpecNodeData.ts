@@ -143,6 +143,10 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set([
   "Popover",
   "Tooltip",
   "ColorPicker",
+  // ADR-902 후속: Body 는 페이지 루트. factory 가 자식 Element 를 자동 생성하지
+  // 않지만 빈 페이지에서도 배경이 렌더되어야 하므로 shell-only 규칙 필요.
+  // Key 는 lowercase — element.tag 가 "body" 이고 Set.has 는 정확 매칭.
+  "body",
 ]);
 
 /**

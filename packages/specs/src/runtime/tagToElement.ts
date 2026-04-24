@@ -109,6 +109,7 @@ import { TooltipSpec } from "../components/Tooltip.spec";
 import { StatusLightSpec } from "../components/StatusLight.spec";
 import { ProgressCircleSpec } from "../components/ProgressCircle.spec";
 import { SectionSpec } from "../components/Section.spec";
+import { BodySpec } from "../components/Body.spec";
 import { IllustratedMessageSpec } from "../components/IllustratedMessage.spec";
 import { CardViewSpec } from "../components/CardView.spec";
 import { TableViewSpec } from "../components/TableView.spec";
@@ -133,6 +134,7 @@ export const BASE_TAG_SPEC_MAP: Record<string, ComponentSpec> = {
   Link: LinkSpec,
   Popover: PopoverSpec,
   Section: SectionSpec,
+  Body: BodySpec,
   Separator: SeparatorSpec,
   ToggleButton: ToggleButtonSpec,
   ToggleButtonGroup: ToggleButtonGroupSpec,

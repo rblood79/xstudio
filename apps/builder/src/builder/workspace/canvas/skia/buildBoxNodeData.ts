@@ -26,7 +26,6 @@ import {
   fillsToSkiaFillStyle,
   cssBgImageToSkia,
 } from "../../../panels/styles/utils/fillToSkia";
-import { lightColors, darkColors } from "@composition/specs";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,17 +53,12 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
   const { element, layout, scrollState, isCollectionItem, isCardItem, theme } =
     input;
 
-  // body 요소의 color/backgroundColor를 theme에 따라 동적 override
-  const isBody = element.tag === "body";
-  const rawStyle =
+  // ADR-902 후속: body 는 BodySpec (TAG_SPEC_MAP 등록) 이 담당 → isSpecPath=true
+  // → buildSpecNodeData 경로로 진입하여 이 함수에 body 가 도달하지 않는다.
+  // 과거 isBody theme override 블록 및 commit 3256c8a7 의 !isBody 가드는 모두
+  // dead code 이므로 제거. Spec 경로가 theme resolve 단일 진입점.
+  const style =
     (element.props?.style as Record<string, unknown> | undefined) ?? {};
-  const style = isBody
-    ? {
-        ...rawStyle,
-        backgroundColor: theme === "dark" ? darkColors.base : lightColors.base,
-        color: theme === "dark" ? darkColors.neutral : lightColors.neutral,
-      }
-    : rawStyle;
 
   const converted = convertStyle(
     style as Parameters<typeof convertStyle>[0],
@@ -132,14 +126,7 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
         );
       })();
 
-  // ADR-902 후속: body 는 theme-owned 이므로 fills V2 경로 우회.
-  // createDefaultBodyProps 의 literal #ffffff 가 normalizeExternalFillIngress 에서
-  // fills: [{color:"#ffffff"}] 로 auto-migrate 되면서 style.backgroundColor 가 strip 된다.
-  // isBody=true 일 때 fillV2Color 가 wins 하면 theme-aware isBody override(위 L62-67)가
-  // 완전히 무시되어, darkMode 토글 시에도 body 가 fills 의 고정 light 색으로 렌더된다.
-  // isBody 에서만 V2 경로를 skip 하여 convertStyle 결과(theme-overridden backgroundColor)
-  // 가 fillColor 를 지배하도록 한다.
-  if (fillV2Color && !isBody) {
+  if (fillV2Color) {
     fillColor = fillV2Color;
   } else if (isCollectionItem && fill.alpha === 0) {
     fillColor = Float32Array.of(0.98, 0.98, 0.98, 1);
