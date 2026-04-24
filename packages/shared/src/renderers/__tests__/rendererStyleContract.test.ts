@@ -125,12 +125,9 @@ describe("ADR-907 Phase 2 Layer C — renderer style contract", () => {
     );
   });
 
-  it("allowlist 내용이 ADR-907 Phase 0 실측과 일치", () => {
-    // allowlist 는 GridList / TagGroup / Table (3건 — (a) X)
-    // Phase 3/4/5 에서 점진 제거
-    expect(Array.from(rendererStyleContractAllowlist).sort()).toEqual([
-      "Table",
-      "TagGroup",
-    ]);
+  it("allowlist 는 빈 Set — ADR-907 Phase 5 완료 후 11/11 전원 (a) O", () => {
+    // Phase 3: GridList 제거 / Phase 5: TagGroup + Table 제거
+    // 11 주대상 collection renderer 전원 root style 전달 contract 충족
+    expect(Array.from(rendererStyleContractAllowlist)).toEqual([]);
   });
 });

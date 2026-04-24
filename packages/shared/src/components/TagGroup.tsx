@@ -75,6 +75,7 @@ export function TagGroup<T extends object>({
   label,
   description,
   errorMessage,
+  style,
   items,
   children,
   renderEmptyState,
@@ -480,7 +481,7 @@ export function TagGroup<T extends object>({
   const showAllButton = showCollapsed && visibleTagCount < totalChildCount;
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", ...style }}>
       {/* S2 패턴: 숨겨진 미러 DOM — 항상 전체 태그를 span으로 렌더 (측정 전용) */}
       {hasMaxRows && (
         <div

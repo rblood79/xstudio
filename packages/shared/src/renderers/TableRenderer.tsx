@@ -347,6 +347,7 @@ export const renderTable = (
       data-element-id={element.id}
       tableHeaderElementId={tableHeaderElement?.id}
       className={element.props.className}
+      style={element.props.style as React.CSSProperties | undefined}
       columns={finalColumns as ColumnDefinition<{ id: string | number }>[]}
       columnGroups={columnGroups}
       // PropertyDataBinding 지원

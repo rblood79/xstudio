@@ -1,24 +1,21 @@
 /**
  * Renderer style contract allowlist — ADR-907 Phase 2 Layer C
  *
- * 11 주대상 collection/self-render renderer 중 현재 root 에
- * `style={element.props.style}` 를 전달하지 **않는** 컴포넌트를 일시 허용한다.
+ * 11 주대상 collection/self-render renderer 의 root `style={element.props.style}`
+ * 전달 여부 추적용 allowlist. allowlist 에 등록된 컴포넌트는 contract test 에서
+ * skip 된다.
  *
- * Phase 0 실측 (ADR-907 breakdown 의 (a) Preview style 전달 행) 기준:
- *   - (a) O 8 컴포넌트: ListBox, Menu, ComboBox, Select, Tree, Tabs, Toolbar, Breadcrumbs
- *   - (a) X 3 컴포넌트: GridList, TagGroup, Table  ← 본 allowlist
+ * **현재 상태: 빈 Set — 11/11 컴포넌트 전원 (a) O 달성** (ADR-907 Phase 5 완료).
  *
- * Phase 3 (GridList pilot) / Phase 4 (follow-up ADR-908~915) / Phase 5 (Table audit)
- * 에서 해당 컴포넌트 renderer 에 `style={element.props.style}` 를 추가한 뒤
- * 본 allowlist 에서 제거한다. allowlist 가 빈 Set 이 되면 ADR-907 G3~G6 의
- * renderer contract Gate 가 완전히 충족된 상태.
+ * 진행 이력:
+ *   - Phase 0 실측: (a) O 8 (ListBox/Menu/ComboBox/Select/Tree/Tabs/Toolbar/Breadcrumbs) / (a) X 3 (GridList/TagGroup/Table)
+ *   - Phase 3 MVP: GridList 제거 (renderGridList root style 전달)
+ *   - Phase 5: TagGroup/Table 제거 — renderTagGroup/renderTable root style 전달 + 각 컴포넌트 wrapper root div 에 style 병합
  *
- * allowlist 에 있는 컴포넌트는 renderer contract test 에서 skip 되므로
- * 다른 회귀를 차단하지 않는다.
+ * allowlist 가 빈 Set 인 상태는 ADR-907 G3~G6 의 renderer contract Gate 가 완전히
+ * 충족됐음을 의미한다. 신규 collection renderer 추가 시 contract test 에 RENDERERS
+ * 배열 추가만으로 동일 Gate 가 자동 적용된다 (별도 추가 없이).
  */
 
-export const rendererStyleContractAllowlist: ReadonlySet<string> = new Set([
-  // (a) X 2 건만 남음 — Phase 3 에서 GridList 제거 완료
-  "TagGroup", // ADR-907 Phase 4 Profile Y follow-up ADR 에서 제거 예정
-  "Table", //    ADR-907 Phase 5 audit (Layer C (a) 선반영 가능) 에서 제거 예정
-]);
+export const rendererStyleContractAllowlist: ReadonlySet<string> =
+  new Set<string>();

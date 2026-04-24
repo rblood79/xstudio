@@ -85,6 +85,8 @@ export interface DataMapping {
 
 export interface TableProps<T extends { id: string | number }> {
   className?: string;
+  /** Root div inline style — ADR-907 Phase 5 Layer C (a) O 전환 */
+  style?: React.CSSProperties;
   "data-element-id"?: string;
   tableHeaderElementId?: string; // TableHeader Element ID for selection
 
@@ -155,6 +157,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
 ) {
   const {
     className,
+    style,
     tableHeaderElementId,
 
     variant = "primary",
@@ -1200,6 +1203,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     return (
       <div
         className={getTableClassName(variant, size, className)}
+        style={style}
         data-variant={variant}
         data-size={size}
         role="grid"
@@ -1266,6 +1270,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       <div
         data-element-id={props["data-element-id"]}
         className={getTableClassName(variant, size, className)}
+        style={style}
         data-variant={variant}
         data-size={size}
         role="grid"

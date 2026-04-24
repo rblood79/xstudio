@@ -364,6 +364,7 @@ export const renderTagGroup = (
       id={element.customId}
       data-element-id={element.id}
       className={element.props.className}
+      style={element.props.style as React.CSSProperties | undefined}
       variant={String(element.props.variant || "default")}
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
