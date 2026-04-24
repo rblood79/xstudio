@@ -382,8 +382,15 @@ export type { TagListProps } from "./components/TagList.spec";
 export { TagSpec } from "./components/Tag.spec";
 export type { TagProps as TagSpecProps } from "./components/Tag.spec";
 
-export { GridListSpec } from "./components/GridList.spec";
-export type { GridListProps } from "./components/GridList.spec";
+export {
+  GridListSpec,
+  resolveGridListSpacingMetric,
+} from "./components/GridList.spec";
+export type {
+  GridListProps,
+  GridListSpacingMetric,
+  GridListSpacingInput,
+} from "./components/GridList.spec";
 
 export {
   GridListItemSpec,

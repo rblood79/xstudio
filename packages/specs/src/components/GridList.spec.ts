@@ -15,6 +15,7 @@ import type {
 } from "../types/gridlist-items";
 import { isGridListSectionEntry } from "../types/gridlist-items";
 import { fontFamily } from "../primitives/typography";
+import { resolveContainerSpacing } from "../primitives/containerSpacing";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Grid, Binary, Rows, SquareX, PointerOff, Square } from "lucide-react";
 import { FILTERING_SECTION } from "../utils/sharedSections";
@@ -439,3 +440,66 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
     }),
   },
 };
+
+/**
+ * GridList 컨테이너 spacing + 카드/그리드 metric.
+ *
+ * Phase 3 Layer D — `resolveContainerSpacing` (Layer B) 위에
+ * GridList-specific 확장 (numCols / cardPadding* / cardBorderRadius / descGap) 을 합성한다.
+ *
+ * 호출자:
+ *  - Skia: `GridList.spec.ts` `render.shapes` (Wave B-2 에서 치환)
+ *  - Layout: `apps/builder/.../engines/utils.ts` `calculateContentHeight` GridList 분기 (Wave B-1)
+ *  - Preview: 별도 진입 없음 (DOM/CSS 가 직접 style 소비, root style 전달은 Phase 3 MVP 완료)
+ */
+export interface GridListSpacingMetric {
+  paddingTop: number;
+  paddingRight: number;
+  paddingBottom: number;
+  paddingLeft: number;
+  rowGap: number;
+  columnGap: number;
+  borderWidth: number;
+  fontSize: number;
+  numCols: number;
+  cardPaddingX: number;
+  cardPaddingY: number;
+  cardBorderRadius: number;
+  descGap: number;
+}
+
+export interface GridListSpacingInput {
+  /** element.props.style — padding/gap/borderWidth/fontSize 우선 소스 */
+  style?: Record<string, unknown>;
+  /** "stack" | "grid". stack 은 numCols=1 강제, grid 는 columns 사용 */
+  layout?: "stack" | "grid";
+  /** grid 모드에서만 사용. 1 미만은 1 로 clamp */
+  columns?: number;
+  /** style.gap 미지정 시 기본 row/columnGap. 기본 12 */
+  defaultGap?: number;
+  /** style.fontSize 미지정 시 기본 fontSize. 기본 14 */
+  defaultFontSize?: number;
+}
+
+export function resolveGridListSpacingMetric(
+  input: GridListSpacingInput,
+): GridListSpacingMetric {
+  const base = resolveContainerSpacing({
+    style: input.style,
+    defaults: {
+      rowGap: input.defaultGap ?? 12,
+      columnGap: input.defaultGap ?? 12,
+      fontSize: input.defaultFontSize ?? 14,
+    },
+  });
+  const numCols = input.layout === "grid" ? Math.max(1, input.columns ?? 2) : 1;
+  const itemMetric = resolveGridListItemMetric(base.fontSize);
+  return {
+    ...base,
+    numCols,
+    cardPaddingX: itemMetric.cardPaddingX,
+    cardPaddingY: itemMetric.cardPaddingY,
+    cardBorderRadius: itemMetric.cardBorderRadius,
+    descGap: itemMetric.descGap,
+  };
+}
