@@ -19,6 +19,8 @@ import type {
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
 import { deriveAutoDelegationVariables } from "../runtime/deriveAutoDelegationVariables";
+// ADR-908 Phase 3-A: Fill token dual-read seam — VariantSpec background* 대신 fill 경로 소비
+import { resolveFillTokens } from "../utils/fillTokens";
 
 // ─── ADR-059 B5: cssEmitMode helper ─────────────────────────────────────────
 
@@ -194,6 +196,8 @@ export function generateCSS<Props>(
     !spec.skipVariantCss
   )
     for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
+      // ADR-908 Phase 3-A: legacy background 필드 대신 fill token dual-read seam 소비
+      const fill = resolveFillTokens(variantSpec);
       lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
       lines.push(...generateVariantStyles(variantSpec, variantMode));
       lines.push("");
@@ -202,9 +206,9 @@ export function generateCSS<Props>(
       if (variantMode !== "button-base") {
         // hover 상태
         lines.push("  &[data-hovered] {");
-        lines.push(
-          `    background: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
-        );
+        if (fill.default.hover) {
+          lines.push(`    background: ${tokenToCSSVar(fill.default.hover)};`);
+        }
         if (variantSpec.textHover) {
           lines.push(`    color: ${tokenToCSSVar(variantSpec.textHover)};`);
         }
@@ -218,20 +222,20 @@ export function generateCSS<Props>(
 
         // pressed 상태
         lines.push("  &[data-pressed] {");
-        lines.push(
-          `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
-        );
+        if (fill.default.pressed) {
+          lines.push(`    background: ${tokenToCSSVar(fill.default.pressed)};`);
+        }
         lines.push("  }");
       }
 
       // ─── ADR-059 B5: selected 상태 ───
-      if (variantSpec.selectedBackground) {
+      if (fill.default.selected) {
         lines.push("");
         lines.push("  &[data-selected] {");
         lines.push(
           emitColorLine(
             "background",
-            tokenToCSSVar(variantSpec.selectedBackground),
+            tokenToCSSVar(fill.default.selected),
             variantMode,
             "    ",
           ),
@@ -258,19 +262,19 @@ export function generateCSS<Props>(
         }
         // selected × hover/pressed — button-base에서는 스킵
         if (variantMode !== "button-base") {
-          if (variantSpec.selectedBackgroundHover) {
+          if (fill.default.selectedHover) {
             lines.push("");
             lines.push("    &[data-hovered] {");
             lines.push(
-              `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundHover)};`,
+              `      background: ${tokenToCSSVar(fill.default.selectedHover)};`,
             );
             lines.push("    }");
           }
-          if (variantSpec.selectedBackgroundPressed) {
+          if (fill.default.selectedPressed) {
             lines.push("");
             lines.push("    &[data-pressed] {");
             lines.push(
-              `      background: ${tokenToCSSVar(variantSpec.selectedBackgroundPressed)};`,
+              `      background: ${tokenToCSSVar(fill.default.selectedPressed)};`,
             );
             lines.push("    }");
           }
@@ -279,13 +283,13 @@ export function generateCSS<Props>(
       }
 
       // ─── ADR-059 B5: emphasized × selected 조합 ───
-      if (variantSpec.emphasizedSelectedBackground) {
+      if (fill.default.emphasizedSelected) {
         lines.push("");
         lines.push("  &[data-emphasized][data-selected] {");
         lines.push(
           emitColorLine(
             "background",
-            tokenToCSSVar(variantSpec.emphasizedSelectedBackground),
+            tokenToCSSVar(fill.default.emphasizedSelected),
             variantMode,
             "    ",
           ),
@@ -317,7 +321,7 @@ export function generateCSS<Props>(
       lines.push("");
 
       // ─── Phase 2b: fillStyle outline 변형 ───
-      if (variantSpec.outlineBackground || variantSpec.outlineBorder) {
+      if (fill.outline?.base || variantSpec.outlineBorder) {
         lines.push(
           `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="outline"] {`,
         );
@@ -325,8 +329,7 @@ export function generateCSS<Props>(
           emitColorLine(
             "background",
             tokenToCSSVar(
-              variantSpec.outlineBackground ??
-                ("{color.transparent}" as TokenRef),
+              fill.outline?.base ?? ("{color.transparent}" as TokenRef),
             ),
             variantMode,
           ),
@@ -354,14 +357,14 @@ export function generateCSS<Props>(
       }
 
       // ─── Phase 2b: fillStyle subtle 변형 ───
-      if (variantSpec.subtleBackground) {
+      if (fill.subtle?.base) {
         lines.push(
           `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="subtle"] {`,
         );
         lines.push(
           emitColorLine(
             "background",
-            tokenToCSSVar(variantSpec.subtleBackground),
+            tokenToCSSVar(fill.subtle.base),
             variantMode,
           ),
         );
@@ -711,8 +714,10 @@ function generateVariantStyles(
   variant: VariantSpec,
   mode: "direct" | "button-base" = "direct",
 ): string[] {
+  // ADR-908 Phase 3-A: fill token dual-read seam — default.base / alpha 소비
+  const fill = resolveFillTokens(variant);
   const lines = [
-    emitColorLine("background", tokenToCSSVar(variant.background), mode),
+    emitColorLine("background", tokenToCSSVar(fill.default.base), mode),
     emitColorLine("text", tokenToCSSVar(variant.text), mode),
   ];
 
@@ -720,7 +725,7 @@ function generateVariantStyles(
     lines.push(emitColorLine("border", tokenToCSSVar(variant.border), mode));
   }
 
-  if (variant.backgroundAlpha !== undefined && variant.backgroundAlpha < 1) {
+  if (fill.alpha !== undefined && fill.alpha < 1) {
     // backgroundAlpha < 1 → 투명 처리 (button-base도 동일하게 transparent)
     lines.push(
       mode === "button-base"

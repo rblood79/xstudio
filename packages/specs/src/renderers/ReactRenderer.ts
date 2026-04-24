@@ -6,8 +6,10 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, VariantSpec, SizeSpec } from '../types';
-import { tokenToCSSVar } from './utils/tokenResolver';
+import type { ComponentSpec, VariantSpec, SizeSpec } from "../types";
+import { tokenToCSSVar } from "./utils/tokenResolver";
+// ADR-908 Phase 3-A: Fill token dual-read seam
+import { resolveFillTokens } from "../utils/fillTokens";
 
 /**
  * CSS 스타일 속성 타입 (React.CSSProperties와 호환)
@@ -28,7 +30,7 @@ export interface ReactRenderResult {
  */
 export function renderToReact<Props extends Record<string, unknown>>(
   spec: ComponentSpec<Props>,
-  props: Props
+  props: Props,
 ): ReactRenderResult {
   const variant = (props.variant as string) || spec.defaultVariant;
   const size = (props.size as string) || spec.defaultSize;
@@ -41,18 +43,18 @@ export function renderToReact<Props extends Record<string, unknown>>(
 
   // 기본 data 속성
   const dataAttributes: Record<string, string> = {
-    'data-size': size,
+    "data-size": size,
   };
   // variants가 있는 Spec만 data-variant 출력 (ADR-062: Field 계열 제외)
   if (spec.variants != null && variant != null) {
-    dataAttributes['data-variant'] = variant;
+    dataAttributes["data-variant"] = variant;
   }
 
   // 컴포넌트별 추가 속성
   if (spec.render.react) {
     const customAttrs = spec.render.react(props);
     Object.entries(customAttrs).forEach(([key, value]) => {
-      if (key.startsWith('data-') && value !== undefined) {
+      if (key.startsWith("data-") && value !== undefined) {
         dataAttributes[key] = String(value);
       }
     });
@@ -72,9 +74,7 @@ export function renderToReact<Props extends Record<string, unknown>>(
  * Shapes에서 동적 스타일 계산
  * inline style prop으로 오버라이드된 경우에만 사용
  */
-function calculateDynamicStyle<Props>(
-  props: Props
-): CSSProperties | undefined {
+function calculateDynamicStyle<Props>(props: Props): CSSProperties | undefined {
   const inlineStyle = (props as { style?: CSSProperties }).style;
   if (!inlineStyle) return undefined;
 
@@ -84,28 +84,42 @@ function calculateDynamicStyle<Props>(
 
 /**
  * ComponentSpec에서 CSS 변수 스타일 생성
+ *
+ * ADR-908 Phase 3-A: fill token dual-read seam — legacy VariantSpec.background* 대신
+ * `resolveFillTokens()` 경유. legacy path 에서는 hover/pressed 항상 채워져 bit-identical.
  */
-export function generateCSSVariables(variantSpec: VariantSpec): Record<string, string> {
+export function generateCSSVariables(
+  variantSpec: VariantSpec,
+): Record<string, string> {
+  const fill = resolveFillTokens(variantSpec);
   return {
-    '--spec-bg': tokenToCSSVar(variantSpec.background),
-    '--spec-bg-hover': tokenToCSSVar(variantSpec.backgroundHover),
-    '--spec-bg-pressed': tokenToCSSVar(variantSpec.backgroundPressed),
-    '--spec-text': tokenToCSSVar(variantSpec.text),
-    ...(variantSpec.border && { '--spec-border': tokenToCSSVar(variantSpec.border) }),
+    "--spec-bg": tokenToCSSVar(fill.default.base),
+    ...(fill.default.hover && {
+      "--spec-bg-hover": tokenToCSSVar(fill.default.hover),
+    }),
+    ...(fill.default.pressed && {
+      "--spec-bg-pressed": tokenToCSSVar(fill.default.pressed),
+    }),
+    "--spec-text": tokenToCSSVar(variantSpec.text),
+    ...(variantSpec.border && {
+      "--spec-border": tokenToCSSVar(variantSpec.border),
+    }),
   };
 }
 
 /**
  * SizeSpec을 CSS 변수로 변환
  */
-export function generateSizeVariables(sizeSpec: SizeSpec): Record<string, string> {
+export function generateSizeVariables(
+  sizeSpec: SizeSpec,
+): Record<string, string> {
   return {
-    '--spec-height': `${sizeSpec.height}px`,
-    '--spec-padding-x': `${sizeSpec.paddingX}px`,
-    '--spec-padding-y': `${sizeSpec.paddingY}px`,
-    '--spec-font-size': tokenToCSSVar(sizeSpec.fontSize),
-    '--spec-border-radius': tokenToCSSVar(sizeSpec.borderRadius),
-    ...(sizeSpec.iconSize && { '--spec-icon-size': `${sizeSpec.iconSize}px` }),
-    ...(sizeSpec.gap && { '--spec-gap': `${sizeSpec.gap}px` }),
+    "--spec-height": `${sizeSpec.height}px`,
+    "--spec-padding-x": `${sizeSpec.paddingX}px`,
+    "--spec-padding-y": `${sizeSpec.paddingY}px`,
+    "--spec-font-size": tokenToCSSVar(sizeSpec.fontSize),
+    "--spec-border-radius": tokenToCSSVar(sizeSpec.borderRadius),
+    ...(sizeSpec.iconSize && { "--spec-icon-size": `${sizeSpec.iconSize}px` }),
+    ...(sizeSpec.gap && { "--spec-gap": `${sizeSpec.gap}px` }),
   };
 }

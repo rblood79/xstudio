@@ -7,8 +7,10 @@
  * @packageDocumentation
  */
 
-import type { ComponentState, VariantSpec } from '../types';
-import type { TokenRef } from '../types';
+import type { ComponentState, VariantSpec } from "../types";
+import type { TokenRef } from "../types";
+// ADR-908 Phase 3-A: Fill token dual-read seam
+import { resolveFillTokens } from "./fillTokens";
 
 /**
  * 상태에 따른 배경/텍스트/테두리 색상 해결
@@ -20,6 +22,8 @@ import type { TokenRef } from '../types';
  * // colors.text — 상태 반영된 텍스트색
  * // colors.border — 상태 반영된 테두리색 (optional)
  * ```
+ *
+ * ADR-908 Phase 3-A: 배경 계열은 fill token dual-read seam 경유.
  */
 export function resolveStateColors(
   variant: VariantSpec,
@@ -29,29 +33,30 @@ export function resolveStateColors(
   text: TokenRef;
   border: TokenRef | undefined;
 } {
+  const fill = resolveFillTokens(variant);
   switch (state) {
-    case 'hover':
+    case "hover":
       return {
-        background: variant.backgroundHover ?? variant.background,
+        background: fill.default.hover ?? fill.default.base,
         text: variant.textHover ?? variant.text,
         border: variant.borderHover ?? variant.border,
       };
-    case 'pressed':
+    case "pressed":
       return {
-        background: variant.backgroundPressed ?? variant.background,
+        background: fill.default.pressed ?? fill.default.base,
         text: variant.text,
         border: variant.border,
       };
-    case 'disabled':
+    case "disabled":
       // disabled 시 색상 자체는 유지하고, opacity는 states.disabled에서 처리
       return {
-        background: variant.background,
+        background: fill.default.base,
         text: variant.text,
         border: variant.border,
       };
     default:
       return {
-        background: variant.background,
+        background: fill.default.base,
         text: variant.text,
         border: variant.border,
       };

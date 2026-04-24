@@ -6,9 +6,15 @@
 
 import type { VariantSpec, SizeSpec } from "../../types";
 import { resolveColor, resolveToken, hexStringToNumber } from "./tokenResolver";
+// ADR-908 Phase 3-A: Fill token dual-read seam
+import { resolveFillTokens } from "../../utils/fillTokens";
 
 /**
  * Variant 색상 세트 (numeric hex — Skia/Canvas 공용)
+ *
+ * ADR-908 Phase 3-A: fill token dual-read seam — legacy VariantSpec.background* 대신
+ * `resolveFillTokens()` 경유. legacy path 에서는 bg/Hover/Pressed/alpha 항상 채워져
+ * bit-identical. Phase 3-B spec fill migration 시 hover/pressed 선언 생략 가능.
  */
 export function getVariantColors(
   variantSpec: VariantSpec,
@@ -22,9 +28,13 @@ export function getVariantColors(
   borderHover?: number;
   bgAlpha: number;
 } {
-  const bg = resolveColor(variantSpec.background, theme);
-  const bgHover = resolveColor(variantSpec.backgroundHover, theme);
-  const bgPressed = resolveColor(variantSpec.backgroundPressed, theme);
+  const fill = resolveFillTokens(variantSpec);
+  const bg = resolveColor(fill.default.base, theme);
+  const bgHover = resolveColor(fill.default.hover ?? fill.default.base, theme);
+  const bgPressed = resolveColor(
+    fill.default.pressed ?? fill.default.base,
+    theme,
+  );
   const text = resolveColor(variantSpec.text, theme);
   const border = variantSpec.border
     ? resolveColor(variantSpec.border, theme)
@@ -43,7 +53,7 @@ export function getVariantColors(
     text: toNum(text),
     border: border !== undefined ? toNum(border) : undefined,
     borderHover: borderHover !== undefined ? toNum(borderHover) : undefined,
-    bgAlpha: variantSpec.backgroundAlpha ?? 1,
+    bgAlpha: fill.alpha ?? 1,
   };
 }
 
