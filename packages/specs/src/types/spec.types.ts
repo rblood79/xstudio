@@ -890,6 +890,15 @@ export interface IndicatorModeSpec {
   boxShadow?: string | ShadowTokenRef;
   /** transition 지속 ms (default: 200) */
   transitionMs?: number;
+
+  // ─── ADR-908 Phase 3-B: Fill Spec Schema SSOT (dual-read seam) ───
+  /**
+   * Fill state tokens — 선언 시 legacy `background` / `backgroundPressed` 대신
+   * 이 구조를 우선 소비. `base` 는 FillStateTokens 규약상 필수이나 IndicatorModeSpec
+   * legacy path 에서는 사용되지 않음 (CSSGenerator 가 `background: transparent` 하드코딩).
+   * Phase 4 legacy 제거 시 본 필드가 단일 소스로 승격되고 `background`/`backgroundPressed` 삭제.
+   */
+  fill?: FillStateTokens;
 }
 
 /**

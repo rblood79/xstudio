@@ -14,6 +14,7 @@
 import type {
   FillStateTokens,
   FillTokenSpec,
+  IndicatorModeSpec,
   VariantSpec,
 } from "../types/spec.types";
 
@@ -83,4 +84,24 @@ export function variantSpecToFillTokens(variant: VariantSpec): FillTokenSpec {
  */
 export function resolveFillTokens(variant: VariantSpec): FillTokenSpec {
   return variant.fill ?? variantSpecToFillTokens(variant);
+}
+
+/**
+ * ADR-908 Phase 3-B — IndicatorModeSpec fill dual-read seam
+ *
+ * IndicatorModeSpec 의 `fill` 선언 시 우선, 미선언 시 legacy `background` / `backgroundPressed`
+ * 필드에서 FillStateTokens 재구성. `base` 는 IndicatorModeSpec legacy 에서 `im.background` 에
+ * 매핑되나 CSSGenerator 가 컨테이너 배경을 `transparent` 로 하드코딩하여 실제 emit 되지 않는다.
+ * 오직 `pressed` 만 실 소비 (ToggleButton[data-pressed]:not([data-selected]) 선택자).
+ *
+ * Phase 4 에서 legacy `background` / `backgroundPressed` 필드 + 본 helper 의 fallback 분기 삭제,
+ * `im.fill!` 단순 반환으로 축소.
+ */
+export function resolveIndicatorFill(im: IndicatorModeSpec): FillStateTokens {
+  if (im.fill) return im.fill;
+  const state: FillStateTokens = { base: im.background };
+  if (im.backgroundPressed !== undefined) {
+    state.pressed = im.backgroundPressed;
+  }
+  return state;
 }

@@ -19,8 +19,8 @@ import type {
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar, resolveFocusRingToken } from "./utils/tokenResolver";
 import { deriveAutoDelegationVariables } from "../runtime/deriveAutoDelegationVariables";
-// ADR-908 Phase 3-A: Fill token dual-read seam — VariantSpec background* 대신 fill 경로 소비
-import { resolveFillTokens } from "../utils/fillTokens";
+// ADR-908 Phase 3-A + 3-B: Fill token dual-read seam — VariantSpec + IndicatorModeSpec
+import { resolveFillTokens, resolveIndicatorFill } from "../utils/fillTokens";
 
 // ─── ADR-059 B5: cssEmitMode helper ─────────────────────────────────────────
 
@@ -1248,11 +1248,13 @@ function generateIndicatorModeCSS<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push("}");
   lines.push("");
 
-  if (im.backgroundPressed) {
+  // ADR-908 Phase 3-B: IndicatorModeSpec fill dual-read seam
+  const imFill = resolveIndicatorFill(im);
+  if (imFill.pressed) {
     lines.push(
       `${base} .react-aria-ToggleButton[data-pressed]:not([data-selected]) {`,
     );
-    lines.push(`  background: ${tokenToCSSVar(im.backgroundPressed)};`);
+    lines.push(`  background: ${tokenToCSSVar(imFill.pressed)};`);
     lines.push("}");
     lines.push("");
   }
