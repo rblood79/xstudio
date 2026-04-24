@@ -793,6 +793,17 @@ export interface VariantSpec {
   emphasizedSelectedBackground?: TokenRef;
   emphasizedSelectedText?: TokenRef;
   emphasizedSelectedBorder?: TokenRef;
+
+  // ─── ADR-908 Phase 2: Fill Spec Schema SSOT (dual-read seam) ───
+  /**
+   * Fill token spec — 선언 시 background 계열 10 필드 대신 이 구조를 우선 소비.
+   *
+   * Phase 3 migration 에서 component spec 이 점진 설정. 미선언 시 legacy background
+   * 필드가 `variantSpecToFillTokens()` 를 통해 자동 변환되어 동일 진입점으로 노출 —
+   * consumer 는 항상 `resolveFillTokens(variant)` 로 접근하면 legacy / 신규 양 쪽
+   * 모두 동일한 FillTokenSpec 을 얻는다 (Phase 2 dual-read seam).
+   */
+  fill?: FillTokenSpec;
 }
 
 // ─── ADR-908 Phase 1: Fill Spec Schema SSOT (fill preset 타입만 도입) ───
