@@ -29,6 +29,7 @@ import {
   SelectValueSpec,
   SelectIconSpec,
   SwitcherSpec,
+  BodySpec,
 } from "@composition/specs";
 
 /**
@@ -58,4 +59,8 @@ export const BUILDER_ALIAS_MAP: Record<string, ComponentSpec<any>> = {
   SearchIcon: SelectIconSpec,
   SearchClearButton: SelectIconSpec,
   TabBar: SwitcherSpec,
+  // ADR-902 후속: 페이지 루트 element.tag 가 lowercase "body" 로 저장되지만
+  // BASE_TAG_SPEC_MAP 은 PascalCase 규약이므로 Builder 측에 lowercase alias 로 노출.
+  // getSpecForTag("body") → BodySpec 해석되어 Skia spec 경로 진입.
+  body: BodySpec,
 };
