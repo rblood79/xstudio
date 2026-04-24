@@ -1,11 +1,6 @@
 /**
- * ADR-907 Phase 4 — Toolbar Layer D spacing contract
- *
- * 검증 대상: `ToolbarSpec.render.shapes()` 의 container layout gap/padding 이
- * resolveContainerSpacing 경유로 style.gap/padding 을 소비하는지 확증.
- *
- * Phase 4 이전: `size.gap`, `size.paddingX/Y` 하드코딩 (matrix (b) X)
- * Phase 4 이후: style 우선, size fallback
+ * ToolbarSpec Layer D contract: render.shapes() 의 container layout
+ * gap/padding 이 resolveContainerSpacing 경유로 style.gap/padding 을 소비하는지 확증.
  */
 
 import { describe, expect, it } from "vitest";

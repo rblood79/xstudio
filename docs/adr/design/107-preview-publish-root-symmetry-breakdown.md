@@ -263,7 +263,7 @@ const firstFamily = rootCS.fontFamily.split(",")[0].trim().replace(/["']/g, "");
 | `apps/builder/src/preview/index.tsx`                            | `injectBaseStyles()` `:root { font-size: 16px }` 추가 + body `font-family`/`line-height` 제거 | +4 / -2 |
 | `apps/builder/src/preview/messaging/messageHandler.ts`          | `handleThemeBaseTypography` documentElement.style 주입 추가                                   | +4      |
 | `docs/adr/107-preview-publish-root-symmetry.md`                 | 신규 ADR (개정판)                                                                             | ~180    |
-| `docs/design/107-preview-publish-root-symmetry-breakdown.md`    | 신규 breakdown (개정판)                                                                       | ~230    |
+| `docs/adr/design/107-preview-publish-root-symmetry-breakdown.md`    | 신규 breakdown (개정판)                                                                       | ~230    |
 | `docs/adr/README.md`                                            | Proposed 항목 추가, 미구현 9→10, 합계 108→109 (이미 적용됨)                                   | +1, ±2  |
 
 ## 체크리스트

@@ -178,7 +178,7 @@ borderRadius: xl 만 1개 차이 (Button: `radius-xl`, Tag: `radius-lg`) — 의
 
 **목표**: ADR-059 B4 실행 결과 Tier 3 예외 표의 `TagGroup` 행에 `근거 ADR: ADR-106-b` 추가.
 
-**대상 파일**: `docs/design/completed/059-composite-field-skip-css-dismantle-breakdown.md`
+**대상 파일**: `docs/adr/design/completed/059-composite-field-skip-css-dismantle-breakdown.md`
 
 ### 현재 Tier 3 표 TagGroup 행
 

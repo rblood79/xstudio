@@ -16,7 +16,7 @@
 **ADR/breakdown:**
 
 - [ADR-073](../../adr/073-select-combobox-items-ssot.md)
-- [Breakdown](../../design/073-select-combobox-items-ssot-breakdown.md)
+- [Breakdown](../../adr/design/073-select-combobox-items-ssot-breakdown.md)
 
 ---
 
@@ -1768,7 +1768,7 @@ gh pr create --title "feat(adr-073): Select/ComboBox items SSOT + renderMenu wir
 
 ## Related
 - ADR-073 (Proposed 2026-04-17)
-- Breakdown: [073-select-combobox-items-ssot-breakdown.md](../../docs/design/073-select-combobox-items-ssot-breakdown.md)
+- Breakdown: [073-select-combobox-items-ssot-breakdown.md](../../adr/design/073-select-combobox-items-ssot-breakdown.md)
 - 선례: ADR-066 (Tabs items SSOT) / ADR-068 (Menu items SSOT)
 
 ## Test plan

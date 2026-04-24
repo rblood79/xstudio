@@ -106,7 +106,7 @@ Select/ComboBox 는 items 필드가 **이미 존재하나** primitive 수준(`st
 
 **`renderMenu` wiring fix (ADR-070 Negative) 포함 여부**: 본 ADR scope **포함**. `CollectionRenderers.tsx:751` `renderMenu` 에 `selectionMode/selectedKeys/onSelectionChange` 전달 로직을 함께 정리. `SelectionRenderers.tsx` 수정 세션과 논리적 인접. 별도 commit 으로 분리 (scope 추적 용이).
 
-> 구현 상세: [073-select-combobox-items-ssot-breakdown.md](../../design/073-select-combobox-items-ssot-breakdown.md)
+> 구현 상세: [073-select-combobox-items-ssot-breakdown.md](../../adr/design/073-select-combobox-items-ssot-breakdown.md)
 
 ## Gates
 

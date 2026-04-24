@@ -30,7 +30,7 @@ import {
   PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
   STATUSLIGHT_DIMENSIONS,
-  resolveListBoxItemMetric,
+  resolveListBoxSpacingMetric,
   isListBoxSectionEntry,
   resolveGridListSpacingMetric,
   isGridListSectionEntry,
@@ -1506,37 +1506,19 @@ export function calculateContentHeight(
     return estimateTextHeight(fontSize, undefined);
   }
 
-  // 1.55b. ListBox (ADR-076 P6+): items SSOT 기반 intrinsic border-box height.
-  // Factory default 는 자식 ListBoxItem element 를 만들지 않으므로 childElements=0.
-  // Spec sizes.md.height=0 이고 render.shapes 가 items.length 기반으로 그리므로
-  // layout 도 동일 공식(paddingY + itemCount*itemH + gap + paddingY + border) 으로
-  // **border-box** 높이 산출.
-  // enrichWithIntrinsicSize 는 SPEC_SHAPES_INPUT_TAGS 경로로 padding 추가를 skip 하므로
-  // 반환값에 padding + border 를 포함해야 background shape(bg roundRect) 와 일치.
+  // 1.55b. ListBox: items SSOT 기반 intrinsic border-box height.
+  // ADR-907 Layer D: `render.shapes` 와 동일한 `resolveListBoxSpacingMetric` 심볼을
+  // 호출해 padding/gap/borderWidth/item/header metric 을 공유 — style.rowGap/columnGap/gap
+  // longhand+shorthand 전개는 Layer B (resolveContainerSpacing) 가 처리.
   if (tag1 === "listbox") {
     const props = element.props as Record<string, unknown> | undefined;
     const rawEntries = props?.items;
-    const fontSize = parseNumericValue(style?.fontSize) ?? 14; // text-sm
-    // ADR-078 Phase 3: item metric SSOT = ListBoxItemSpec.sizes.md
-    //   → ListBoxSpec.render.shapes 와 동일 itemHeight 공식 공급 (CSS item border-box 와 일치)
-    const { itemHeight: itemH } = resolveListBoxItemMetric(fontSize);
-    // ADR-078 Phase 3: style prop 에서 Spec 파생 paddingY/gap 을 런타임 소비.
-    // fallback(4, 2)은 style 미설정 시 기본값 — ListBoxSpec.sizes.md 와 동일값.
-    // (ADR-105-d — F5-5 자연 해소 확증: style prop 소비로 Spec 의존 drift 없음)
-    const paddingY =
-      parseNumericValue(style?.paddingTop ?? style?.padding) ?? 4;
-    const gap = parseNumericValue(style?.gap) ?? 2;
-    // (ADR-105-d — formerly @sync F5-6 annotation)
-    // ListBoxSpec.containerStyles.borderWidth = 1 과 동일값.
-    // Canvas 레이아웃 계산용 로컬 상수 유지 — read-through 전환은 Layout Canvas Spec Consumer ADR 에서 처리.
-    const borderWidth = 1;
+    const fontSize = parseNumericValue(style?.fontSize) ?? 14;
+    const metric = resolveListBoxSpacingMetric({
+      style: style as Record<string, unknown> | undefined,
+      defaultFontSize: fontSize,
+    });
 
-    // ADR-099 Phase 2: entries 순회로 totalItems + sectionCount + nonFirstSection 집계.
-    // Section entry 는 Header height + 내부 items 높이 + section 간 topPad 가산.
-    // (ADR-105-d — formerly @sync F5-7 annotation)
-    // ADR-099 Phase 2: entries 순회로 totalItems + sectionCount + nonFirstSection 집계.
-    // 이 공식은 ListBoxSpec.render.shapes() 의 entries 루프 구조를 미러링함.
-    // ListBoxSpec.render.shapes() 알고리즘 변경 시 이 레이아웃 계산도 동시 갱신 필요.
     const entries =
       Array.isArray(rawEntries) && rawEntries.length > 0
         ? rawEntries
@@ -1558,15 +1540,18 @@ export function calculateContentHeight(
         totalItems += 1;
       }
     }
-    const HEADER_HEIGHT = Math.round(fontSize * 1.75);
-    const SECTION_TOP_PAD = Math.round(fontSize * 0.5);
     const entryCount = totalItems + sectionCount;
     const innerHeight =
-      totalItems * itemH +
-      sectionCount * HEADER_HEIGHT +
-      Math.max(0, entryCount - 1) * gap +
-      nonFirstSectionCount * SECTION_TOP_PAD;
-    return paddingY * 2 + innerHeight + borderWidth * 2;
+      totalItems * metric.itemHeight +
+      sectionCount * metric.headerHeight +
+      Math.max(0, entryCount - 1) * metric.rowGap +
+      nonFirstSectionCount * metric.sectionTopPad;
+    return (
+      metric.paddingTop +
+      metric.paddingBottom +
+      innerHeight +
+      metric.borderWidth * 2
+    );
   }
 
   // 1.55c. GridList (ADR-099 Phase 5): items SSOT 기반 intrinsic border-box height.

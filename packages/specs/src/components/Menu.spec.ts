@@ -394,15 +394,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             : parseInt(String(fwRaw), 10) || 500
           : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      // ADR-907 Phase 4 Layer D: style.paddingLeft/paddingRight/padding 우선, size.paddingX fallback
-      const { paddingLeft } = resolveContainerSpacing({
+      const { paddingLeft: paddingX } = resolveContainerSpacing({
         style: props.style as Record<string, unknown> | undefined,
-        defaults: {
-          paddingLeft: size.paddingX,
-          paddingRight: size.paddingX,
-        },
+        defaults: { paddingLeft: size.paddingX },
       });
-      const paddingX = paddingLeft;
 
       shapes.push({
         type: "text" as const,

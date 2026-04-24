@@ -28,7 +28,7 @@
 
 | 컴포넌트    |          (a) Preview style 전달           |                     (b) Skia shapes metric                     |        (c) Layout height metric        | 판정                                        |
 | ----------- | :---------------------------------------: | :------------------------------------------------------------: | :------------------------------------: | ------------------------------------------- |
-| ListBox     |                     O                     |                        O (ListBoxSpec)                         |                   O                    | 기준 선례                                   |
+| ListBox     |                     O                     |                      O (ListBoxSpec)[^1]                       |                 O[^1]                  | 기준 선례 + 2026-04-24 재정합               |
 | GridList    |                   **X**                   |                     **X** (size.gap 고정)                      |                   O                    | ADR-906 증상 — Phase 3 pilot                |
 | Menu        |                     O                     |                **X** (size.paddingX/Y 하드코딩)                |          N/A (전용 분기 없음)          | Phase 4 follow-up                           |
 | ComboBox    |                     O                     |                **X** (size.paddingX/Y 하드코딩)                |   O (style.gap 소비, 자식 합산 경로)   | Phase 4 follow-up                           |
@@ -41,6 +41,8 @@
 | Table       | **X** (`<Table>` root 에 style prop 부재) | **X** (style?.backgroundColor 등만 소비, padding/gap 하드코딩) |          N/A (전용 분기 없음)          | Phase 5 별도 audit                          |
 
 **TagList 주석**: TagList 는 TagGroup 의 중간 compositional 컨테이너 (ADR-097) 로 별도 주대상 행이 아닌 TagGroup 종속 sub-target. TagGroup Phase 4 follow-up ADR 에서 `<TagList>` 의 root style 소비 및 chip gap 소유권 분리가 함께 판정된다 (ADR-906 breakdown Phase 2 의 TagGroup/TagList audit 유산).
+
+[^1]: ListBox (b)/(c) 2026-04-24 재정합 — ADR-907 Implemented 직후 발견된 Open Issue. Phase 0 Matrix 작성 시점의 O 평가는 store shorthand→longhand 정책 이전의 `style.gap` 직접 읽기 기준이었으며, longhand 정책 전파 후 `style.gap`은 항상 undefined → `size.gap` fallback 으로 고정되어 Style 패널 gap 편집이 Skia/Layout 양쪽에서 무시됨. 후속 sweep (ADR 불필요, Open Issue #3 패턴) 로 `resolveListBoxSpacingMetric` Layer D resolver 신설 → `ListBoxSpec.render.shapes` + utils.ts `calculateContentHeight` ListBox 분기가 동일 심볼 공유. 테스트: `packages/specs/src/__tests__/ListBox.spacing.test.ts` (19 tests).
 
 ## 아키텍처
 

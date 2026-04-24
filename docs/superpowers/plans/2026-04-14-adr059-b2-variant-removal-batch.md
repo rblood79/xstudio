@@ -9,7 +9,7 @@
 **Tech Stack:** TypeScript 5, pnpm monorepo, React Aria Components, CSSGenerator.
 
 **Source ADR:** [059-composite-field-skip-css-dismantle.md](../../adr/059-composite-field-skip-css-dismantle.md) § "Phase 4 재설계 (v2.1 amendment)"
-**Source breakdown:** [059-composite-field-skip-css-dismantle-breakdown.md](../../design/059-composite-field-skip-css-dismantle-breakdown.md) § "B1 실행 결과" + Per-Component 표
+**Source breakdown:** [059-composite-field-skip-css-dismantle-breakdown.md](../../adr/design/059-composite-field-skip-css-dismantle-breakdown.md) § "B1 실행 결과" + Per-Component 표
 **선례 ADR:** [062-field-spec-rsp-conformance.md](../../adr/062-field-spec-rsp-conformance.md) — 11 Field variant 제거 + isQuiet 보강 방법론
 **B0.2 결과 (commit b1badff3)**: 5 컴포넌트 분기 판정 완료
 
@@ -465,12 +465,12 @@ grep -n "variant" packages/shared/src/renderers/CollectionRenderers.tsx | grep -
 
 - [ ] **Step 6: breakdown 문서 갱신**
 
-Edit `docs/design/059-composite-field-skip-css-dismantle-breakdown.md` — 5개 row에 "Implemented (B2)" 표기 + "B2 실행 결과" 섹션 신설 (B1 섹션 구조 복제).
+Edit `docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md` — 5개 row에 "Implemented (B2)" 표기 + "B2 실행 결과" 섹션 신설 (B1 섹션 구조 복제).
 
 - [ ] **Step 7: Commit docs**
 
 ```bash
-git add docs/design/059-composite-field-skip-css-dismantle-breakdown.md
+git add docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md
 git commit -m "docs(adr-059): B2 실행 결과 표기"
 ```
 

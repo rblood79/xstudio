@@ -10,10 +10,10 @@ composition 프로젝트의 기술 문서를 [Diátaxis 프레임워크](https:/
 docs/
 ├── adr/                    # Architecture Decision Records
 │   ├── completed/          # 완료된 ADR (57개)
-│   └── *.md               # 진행 중/미구현 ADR (21개)
-├── design/                 # ADR 상세 구현 breakdown
-│   ├── completed/          # 완료된 breakdown (10개)
-│   └── *-breakdown.md     # 진행 중 breakdown
+│   ├── design/              # ADR 상세 구현 breakdown (SSOT)
+│   │   ├── completed/      # 완료된 breakdown
+│   │   └── *-breakdown.md   # 진행 중 breakdown
+│   └── *.md                 # 진행 중/미구현 ADR (21개)
 ├── features/               # 기능별 상세 문서
 │   └── completed/          # 완료된 기능 문서 (18개)
 ├── reference/              # 참조 문서
@@ -60,7 +60,7 @@ docs/
 >
 > - **완료된 ADR**: [`adr/completed/`](./adr/completed/) (57개)
 > - **진행 중/미구현**: [`adr/*.md`](./adr/) (21개)
-> - **Breakdown 문서**: [`design/`](./design/) (상세 구현 설계)
+> - **Breakdown 문서**: [`adr/design/`](./adr/design/) (상세 구현 설계)
 
 | ADR                                                     | 제목                                    | 상태                |
 | ------------------------------------------------------- | --------------------------------------- | ------------------- |
@@ -241,8 +241,8 @@ docs/
 ### 문서 라이프사이클
 
 1. **계획 단계**: `reference/status/PLANNED.md` (상세) / `UNIMPLEMENTED.md` (개요)
-2. **구현 중**: `adr/*.md`, `design/*-breakdown.md`, `reference/components/*.md`
-3. **완료 후**: 각각 `adr/completed/`, `design/completed/`, `features/completed/`로 이동
+2. **구현 중**: `adr/*.md`, `adr/design/*-breakdown.md`, `reference/components/*.md`
+3. **완료 후**: 각각 `adr/completed/`, `adr/design/completed/`, `features/completed/`로 이동
 
 ### 파일 명명 규칙
 

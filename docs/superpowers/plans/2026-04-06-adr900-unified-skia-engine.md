@@ -11,7 +11,7 @@
 **Design Docs:**
 
 - ADR: `docs/adr/100-unified-skia-rendering-engine.md`
-- Breakdown: `docs/design/100-unified-skia-engine-breakdown.md`
+- Breakdown: `docs/adr/design/100-unified-skia-engine-breakdown.md`
 
 ---
 
@@ -274,7 +274,7 @@ git commit -m "feat(adr-100): add benchmark framework with scenarios and scaling
 **Files:**
 
 - Create: `apps/builder/src/builder/workspace/canvas/benchmarks/runBaseline.ts`
-- Modify: `docs/design/100-unified-skia-engine-breakdown.md` (추정치 → 실측치)
+- Modify: `docs/adr/design/100-unified-skia-engine-breakdown.md` (추정치 → 실측치)
 
 - [ ] **Step 1: baseline 실행 스크립트**
 
@@ -332,12 +332,12 @@ import('/src/builder/workspace/canvas/benchmarks/runBaseline').then(m => m.runFu
 
 - [ ] **Step 3: 실측값으로 design breakdown 성능 예산 표 교체**
 
-`docs/design/100-unified-skia-engine-breakdown.md` 섹션 12의 "현재" 열을 실측값으로 교체.
+`docs/adr/design/100-unified-skia-engine-breakdown.md` 섹션 12의 "현재" 열을 실측값으로 교체.
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add apps/builder/src/builder/workspace/canvas/benchmarks/runBaseline.ts docs/design/100-unified-skia-engine-breakdown.md
+git add apps/builder/src/builder/workspace/canvas/benchmarks/runBaseline.ts docs/adr/design/100-unified-skia-engine-breakdown.md
 git commit -m "feat(adr-100): baseline benchmark runner + replace estimates with measurements"
 ```
 

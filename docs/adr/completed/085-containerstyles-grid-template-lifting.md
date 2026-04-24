@@ -125,7 +125,7 @@ Proposed — 2026-04-20 (**Revision 1** — claude self-review 반영: PROGRESSB
 - **대안 B 기각**: SSOT 이중화가 ADR-036/059/063 재승격 체인에 역행. 유지보수 HIGH — 수용 불가
 - **대안 C 기각**: 자식 selector map Schema 설계는 단독 ADR 규모. 본 ADR 과 분리 시 각 ADR scope 명확, 후속 ADR 에서 다수 spec (Meter/ProgressBar/SearchField/ColorField/NumberField) 일괄 처리 가능
 
-> 구현 상세: [085-containerstyles-grid-template-lifting-breakdown.md](../../design/085-containerstyles-grid-template-lifting-breakdown.md)
+> 구현 상세: [085-containerstyles-grid-template-lifting-breakdown.md](../../adr/design/085-containerstyles-grid-template-lifting-breakdown.md)
 
 ## Risks
 

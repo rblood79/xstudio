@@ -255,7 +255,7 @@ TagGroup.css 는 307줄로 아래 구조를 포함한다:
 - **대안 B 기각**: HIGH 2개. CSS scoped 변수(`--btn-padding`)를 TagGroup 이 직접 참조하려면 CSS 설계 대규모 변경 필요. Button 과 TagGroup 의 강한 결합은 독립 진화를 막음 — Tag 가 독자적 크기 체계로 진화할 때 Button 종속성이 장애물이 됨
 - **대안 C 기각**: HIGH 1개. TypeScript primitives 추출이 CSS 파일에 자동 적용되지 않으므로 TagGroup.css `@sync` 2건이 여전히 잔존. borderRadius 1개 불일치 예외 처리 추가 복잡성. ADR-105-a (F3 primitives 이관) 완료 후 재평가가 더 적절
 
-> 구현 상세: [106-b-taggroup-css-skipcss-justification-breakdown.md](../../design/106-b-taggroup-css-skipcss-justification-breakdown.md)
+> 구현 상세: [106-b-taggroup-css-skipcss-justification-breakdown.md](../../adr/design/106-b-taggroup-css-skipcss-justification-breakdown.md)
 
 ## Risks
 

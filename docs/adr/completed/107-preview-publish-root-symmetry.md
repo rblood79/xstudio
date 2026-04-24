@@ -144,7 +144,7 @@ Builder UI (`App.css :root`) 는 cascade layer 관점에서 본 ADR 의 **간접
 - **대안 D 기각**: Vite plugin 기술 HIGH 리스크, ADR-056 에서 동일 사유로 기각된 패턴. 현 scope 과잉
 - **대안 E 기각**: inline style specificity 최상위 → 후속 CSS cascade override 불가능. CSS rule (대안 C) 이 더 유연
 
-> 구현 상세: [107-preview-publish-root-symmetry-breakdown.md](../../design/107-preview-publish-root-symmetry-breakdown.md)
+> 구현 상세: [107-preview-publish-root-symmetry-breakdown.md](../../adr/design/107-preview-publish-root-symmetry-breakdown.md)
 
 ## Risks
 

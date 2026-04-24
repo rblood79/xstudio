@@ -12,11 +12,10 @@
 docs/
 ├── adr/                    # Architecture Decision Records
 │   ├── completed/          # 완료된 ADR (57개)
-│   └── *.md               # 진행 중/미구현 ADR (21개)
-│
-├── design/                 # ADR 상세 구현 breakdown 문서
-│   ├── completed/          # 완료된 ADR의 breakdown (10개)
-│   └── *-breakdown.md     # 진행 중 ADR의 breakdown
+│   ├── design/              # ADR 상세 구현 breakdown (SSOT: docs/adr/design/)
+│   │   ├── completed/      # 완료된 ADR의 breakdown
+│   │   └── *-breakdown.md   # 진행 중 ADR의 breakdown
+│   └── *.md                # 진행 중/미구현 ADR (21개)
 │
 ├── features/               # 기능별 상세 문서
 │   └── completed/          # 완료된 기능 문서 (12개)
@@ -78,10 +77,10 @@ docs/
 
 ### Breakdown 문서
 
-**위치**: `docs/design/`
+**위치**: `docs/adr/design/`
 
-- **`design/completed/`**: 완료된 ADR의 상세 구현 breakdown
-- **`design/*-breakdown.md`**: 진행 중 ADR의 breakdown
+- **`adr/design/completed/`**: 완료된 ADR의 상세 구현 breakdown
+- **`adr/design/*-breakdown.md`**: 진행 중 ADR의 breakdown
 
 ### 참조 문서
 
@@ -122,7 +121,7 @@ reference/status/UNIMPLEMENTED.md (개요)
 
 ```
 adr/*.md (ADR 작성)
-design/*-breakdown.md (구현 상세)
+adr/design/*-breakdown.md (구현 상세)
 reference/components/*.md (참조 문서)
 ```
 
@@ -130,7 +129,7 @@ reference/components/*.md (참조 문서)
 
 ```
 adr/*.md → adr/completed/ (이동)
-design/*-breakdown.md → design/completed/ (이동)
+adr/design/*-breakdown.md → adr/design/completed/ (이동)
 reference/components/*.md → features/completed/ (이동)
 reference/status/COMPLETED.md (요약 업데이트)
 ```
@@ -170,7 +169,7 @@ reference/status/COMPLETED.md (요약 업데이트)
 
 ### 구현 상세 찾기
 
-1. **ADR 관련**: `design/*-breakdown.md` 또는 `design/completed/`
+1. **ADR 관련**: `adr/design/*-breakdown.md` 또는 `adr/design/completed/`
 2. **컴포넌트 관련**: `reference/components/*.md`
 
 ---
@@ -181,8 +180,8 @@ reference/status/COMPLETED.md (요약 업데이트)
 | -------------------- | ----- | ----------------------- |
 | ADR (완료)           | 57개  | `adr/completed/`        |
 | ADR (진행 중/미구현) | 21개  | `adr/*.md`              |
-| Breakdown (완료)     | 10개  | `design/completed/`     |
-| Breakdown (진행 중)  | 20+개 | `design/*.md`           |
+| Breakdown (완료)     | 10개  | `adr/design/completed/` |
+| Breakdown (진행 중)  | 20+개 | `adr/design/*.md`       |
 | 완료 기능 문서       | 12개  | `features/completed/`   |
 | 참조 문서            | 15+개 | `reference/components/` |
 | 리서치 문서          | 10개  | `explanation/research/` |

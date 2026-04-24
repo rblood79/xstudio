@@ -54,7 +54,7 @@ ls docs/adr/ docs/adr/completed/ | grep -oE '^[0-9]+' | sort -n | tail -1
 ### 2-2. design 파일 먼저 생성 (필요시)
 
 ```
-docs/design/{NNN}-{kebab-title}-breakdown.md
+docs/adr/design/{NNN}-{kebab-title}-breakdown.md
 ```
 
 구현 상세(Phase 목록, 파일 변경표, 체크리스트, 코드 예시)는 **이 파일에만** 작성.
@@ -139,7 +139,7 @@ Proposed — {YYYY-MM-DD}
 - **대안 Y 기각**: [이유]
 - **대안 Z 기각**: [이유]
 
-> 구현 상세: [{NNN}-{title}-breakdown.md](../design/{NNN}-{title}-breakdown.md)
+> 구현 상세: [{NNN}-{title}-breakdown.md](design/{NNN}-{title}-breakdown.md)
 
 ## Gates
 

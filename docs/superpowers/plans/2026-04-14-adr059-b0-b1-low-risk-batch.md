@@ -9,7 +9,7 @@
 **Tech Stack:** TypeScript 5, pnpm monorepo, Vite, CSSGenerator auto-emit (`packages/specs/src/renderers/CSSGenerator.ts`), React Aria Components, Skia WASM.
 
 **Source ADR:** [docs/adr/059-composite-field-skip-css-dismantle.md](../../adr/059-composite-field-skip-css-dismantle.md) § "Phase 4 재설계 (v2.1 amendment)"
-**Source breakdown:** [docs/design/059-composite-field-skip-css-dismantle-breakdown.md](../../design/059-composite-field-skip-css-dismantle-breakdown.md) § "Per-Component Target 표"
+**Source breakdown:** [docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md](../../adr/design/059-composite-field-skip-css-dismantle-breakdown.md) § "Per-Component Target 표"
 
 ---
 
@@ -107,12 +107,12 @@ Slot은 SlotProps.variant: "default" 타입 선언 + renderSlot 미전달 상태
 
 - [ ] **Step 5: Verify 결과 breakdown 갱신**
 
-Edit `docs/design/059-composite-field-skip-css-dismantle-breakdown.md` Per-Component 표에서 Modal/TabPanels/ToggleButtonGroup cell 칸의 "verify" 표기를 실제 판정 결과로 치환.
+Edit `docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md` Per-Component 표에서 Modal/TabPanels/ToggleButtonGroup cell 칸의 "verify" 표기를 실제 판정 결과로 치환.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add docs/design/059-composite-field-skip-css-dismantle-breakdown.md
+git add docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md
 git commit -m "docs(adr-059): B0 verify — Modal/TabPanels/ToggleButtonGroup cell 확정
 
 - Modal: (iv) 확정 (wrapper prop 없음)
@@ -139,7 +139,7 @@ Fetch: `https://react-spectrum.adobe.com/s2/Card.html` (또는 검색 기반)
 - [ ] **Step 11: Commit — B0.2 완료**
 
 ```bash
-git add docs/design/059-composite-field-skip-css-dismantle-breakdown.md
+git add docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md
 git commit -m "docs(adr-059): B0 — (i) cell 10 컴포넌트 RSP props 대조 완료"
 ```
 
@@ -535,7 +535,7 @@ Run: `/sweep Breadcrumb Accordion DisclosureHeader TailSwatch Tab TabList Tabs S
 
 - [ ] **Step 8: ADR/breakdown 상태 갱신**
 
-Edit `docs/design/059-composite-field-skip-css-dismantle-breakdown.md` — Per-Component 표에서 B1 대상 11개 row에 "Implemented" 표시.
+Edit `docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md` — Per-Component 표에서 B1 대상 11개 row에 "Implemented" 표시.
 
 Edit `docs/adr/059-composite-field-skip-css-dismantle.md` Status → `Proposed (v2.1 amendment, B0+B1 Implemented)` 추가 노트.
 
@@ -576,7 +576,7 @@ ADR-059 v2.1 amendment Phase 4 재설계의 B0(verify + RSP 대조) + B1(dead/de
 ## Refs
 
 - ADR: docs/adr/059-composite-field-skip-css-dismantle.md §"Phase 4 재설계 (v2.1 amendment)"
-- Breakdown: docs/design/059-composite-field-skip-css-dismantle-breakdown.md
+- Breakdown: docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF

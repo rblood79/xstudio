@@ -41,7 +41,7 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 
 ### 기록 위치
 
-`docs/design/075-prod-baseline.md` (신설 완료). prod 수치 + **구간별 observe 분해** 확보 후 Gate 목표 수치 확정 (dev 수치는 참고용).
+`docs/adr/design/075-prod-baseline.md` (신설 완료). prod 수치 + **구간별 observe 분해** 확보 후 Gate 목표 수치 확정 (dev 수치는 참고용).
 
 ### 판정 조건 (Codex 지적 3 반영, 3-Way 분기)
 
@@ -169,7 +169,7 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 - viol100ms < 10% (input/render 각각)
 - ADR-074 observe 본체 지표 퇴행 없음 (`input.pointerdown` p95 < 2ms, `input.page-transition` p95 < 2ms)
 
-**결과 기록**: `docs/design/075-prod-gate.md` 신설. ADR Status → Implemented + Addendum 추가.
+**결과 기록**: `docs/adr/design/075-prod-gate.md` 신설. ADR Status → Implemented + Addendum 추가.
 
 ---
 
@@ -192,7 +192,7 @@ JSON.stringify(window.__composition_PERF__.snapshotLongTasks(), null, 2)
 
 - [ ] `pnpm type-check` 3 tasks PASS
 - [ ] Chrome MCP 회귀: 렌더링 정합성 불변 (빈 영역 클릭 / 요소 선택 / 페이지 전환 / drag / workflow overlay)
-- [ ] `snapshotLongTasks()` diff 기록 (`docs/design/075-prod-baseline.md` 업데이트)
+- [ ] `snapshotLongTasks()` diff 기록 (`docs/adr/design/075-prod-baseline.md` 업데이트)
 - [ ] ADR-074 observe 본체 지표 비회귀 확인 (각 Phase 경계)
 - [ ] `parallel-verify` skill 로 렌더링 관련 컴포넌트 패밀리 회귀 (Phase 3 이후)
 
@@ -249,5 +249,5 @@ P0 ──→ P4 ──→ P1 ─┬─→ P3 ──→ P5
 
 - G1~G5 모두 PASS (또는 Addendum 으로 현실적 목표로 재정의)
 - P1~P5 전부 main 머지 + Chrome MCP 회귀 PASS
-- `docs/design/075-prod-gate.md` 에 before/after 수치 기록
+- `docs/adr/design/075-prod-gate.md` 에 before/after 수치 기록
 - `docs/adr/README.md` 에서 Proposed → Implemented 상태 전이 + 완료 ADR 섹션 이동

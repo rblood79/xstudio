@@ -13,7 +13,7 @@
 **Design Docs:**
 
 - ADR: `docs/adr/100-unified-skia-rendering-engine.md`
-- Breakdown: `docs/design/100-unified-skia-engine-breakdown.md` (섹션 4 + 4.5)
+- Breakdown: `docs/adr/design/100-unified-skia-engine-breakdown.md` (섹션 4 + 4.5)
 
 **Prerequisite:** Phase 0 완료 (`packages/composition-layout/` crate 초기화됨, Taffy 0.10.0 의존성 확인)
 

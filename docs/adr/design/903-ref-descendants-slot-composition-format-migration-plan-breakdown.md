@@ -241,7 +241,7 @@ pencil 은 primitive-centric (`rectangle`/`ellipse`/`text`/`path` 등 저수준 
 | 경로                                                      | 역할                                                          |
 | --------------------------------------------------------- | ------------------------------------------------------------- |
 | `packages/shared/src/types/composition-document.types.ts` | canonical document / reusable / ref / descendants / slot 타입 |
-| `docs/design/903-...-breakdown.md`                        | phase / mapping / test strategy 문서                          |
+| `docs/adr/design/903-...-breakdown.md`                        | phase / mapping / test strategy 문서                          |
 
 #### 수정
 

@@ -91,7 +91,7 @@ composition의 Skia 렌더 파이프라인은 spec `render.shapes(props, size, s
 - **대안 A 기각**: 15개 동시 이동 시 회귀 발생 시 어느 태그가 원인인지 좁히기 어렵고 rollback 시 정상 이동된 태그까지 되돌아감. ADR-059의 phase 접근이 이미 유효성 입증.
 - **대안 C 기각**: 2 Set의 이름·내용 불일치를 장기 유지하면 미래 디버깅 시 Calendar 버그 같은 분석 다시 반복됨. 교육 비용도 누적.
 
-> 구현 상세: [072-hasChildren-convention-shell-only-tags-breakdown.md](../../design/072-hasChildren-convention-shell-only-tags-breakdown.md)
+> 구현 상세: [072-hasChildren-convention-shell-only-tags-breakdown.md](../../adr/design/072-hasChildren-convention-shell-only-tags-breakdown.md)
 
 ## Gates
 

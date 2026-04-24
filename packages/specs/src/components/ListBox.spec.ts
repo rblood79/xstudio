@@ -13,7 +13,8 @@ import type {
   StoredListBoxEntry,
 } from "../types/listbox-items";
 import { isListBoxSectionEntry } from "../types/listbox-items";
-import { parsePxValue, parseBorderWidth } from "../primitives";
+import { parsePxValue } from "../primitives";
+import { resolveContainerSpacing } from "../primitives/containerSpacing";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -321,9 +322,19 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         fill: bgColor,
       });
 
+      // ADR-907 Layer D: style padding/gap/borderWidth/fontSize + item/header metric
+      // 을 `resolveListBoxSpacingMetric` 단일 심볼로 소비 — utils.ts ListBox 분기와 공유.
+      const metric = resolveListBoxSpacingMetric({
+        style: props.style as Record<string, unknown> | undefined,
+        defaultGap: (size.gap as unknown as number) ?? 2,
+        defaultFontSize: fontSize,
+        defaultPaddingX: (size.paddingX as unknown as number) ?? 4,
+        defaultPaddingY: (size.paddingY as unknown as number) ?? 4,
+      });
+      const borderWidth = metric.borderWidth;
+
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
-      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
       if (borderColor) {
         shapes.push({
           type: "border" as const,
@@ -360,39 +371,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         }
       }
 
-      // ADR-078 Phase 3: item metric SSOT = ListBoxItemSpec.sizes.md.
-      //   paddingX/paddingY/lineHeight/itemHeight 를 `resolveListBoxItemMetric(fontSize)` 로
-      //   공급 받아 Skia/layout(calculateContentHeight) 양쪽이 동일 공식 사용.
-      const itemMetric = resolveListBoxItemMetric(fontSize);
-      const ITEM_PADDING_X = itemMetric.paddingX;
-      const itemH = itemMetric.itemHeight;
-      // ADR-078 Phase 5 fix #2: container padding/gap 은 `props.style` 우선 읽기.
-      //   factory 가 style 에 명시 주입(display/flexDirection/gap/padding) 하므로
-      //   스타일 패널 편집값이 Canvas 렌더에 즉시 반영. style 미지정 시 Spec sizes fallback.
-      //   PropertyUnitInput 은 `"10px"` 같은 string 을 전달 — number/string 모두 파싱.
-      const toPx = (v: unknown, fallback: number): number => {
-        if (typeof v === "number") return v;
-        if (typeof v === "string") {
-          const n = parseFloat(v);
-          if (Number.isFinite(n)) return n;
-        }
-        return fallback;
-      };
-      const paddingY = toPx(
-        props.style?.paddingTop ?? props.style?.padding,
-        (size.paddingY as unknown as number) || 4,
-      );
-      const paddingX = toPx(
-        props.style?.paddingLeft ?? props.style?.padding,
-        (size.paddingX as unknown as number) || 4,
-      );
-      const gap = toPx(props.style?.gap, (size.gap as unknown as number) || 2);
-      // Skia 좌표는 bg roundRect(border 포함) 0,0 기준이므로 item 배치는 border 안쪽으로
-      //   밀어야 Preview DOM (border-box + padding 내부 item) 와 정합.
-      //   layout/engines/utils.ts:1545 공식(paddingY*2 + items*itemH + (items-1)*gap + border*2)
-      //   과 동일 시각 결과를 재현.
-      const innerPaddingX = paddingX + borderWidth;
-      const innerPaddingY = paddingY + borderWidth;
+      const ITEM_PADDING_X = metric.itemPaddingX;
+      const itemH = metric.itemHeight;
+      const gap = metric.rowGap;
+      const innerPaddingX = metric.paddingLeft + borderWidth;
+      const innerPaddingY = metric.paddingTop + borderWidth;
       let itemY = innerPaddingY;
 
       // 선택 상태 계산 — canonical(selectedKey/selectedKeys) 우선, legacy index fallback
@@ -414,12 +397,9 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         selectedIdSet.add(flatItems[0].id);
       }
 
-      // ADR-099 Phase 2: Section Header metric.
-      //   fontSize * 1.75 + inter-section padding — RAC 기본 sticky header 시각 근사.
-      //   Phase 6 Chrome MCP 실측에서 교정 가능.
-      const HEADER_HEIGHT = Math.round(fontSize * 1.75);
-      const HEADER_FONT_SIZE = Math.round(fontSize * 0.85);
-      const SECTION_TOP_PAD = Math.round(fontSize * 0.5);
+      const HEADER_HEIGHT = metric.headerHeight;
+      const HEADER_FONT_SIZE = metric.headerFontSize;
+      const SECTION_TOP_PAD = metric.sectionTopPad;
 
       // ADR-099 Phase 2: item 렌더 헬퍼 — 기존 인라인 로직을 entries 순회 내부에서 재사용.
       const renderOneItem = (item: StoredListBoxItem, y: number) => {
@@ -519,3 +499,71 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
     }),
   },
 };
+
+/**
+ * ListBox 컨테이너 spacing + item/header metric.
+ *
+ * ADR-907 Phase 4 sweep — `resolveContainerSpacing` (Layer B) 위에
+ * ListBox-specific 확장 (itemPaddingX / itemHeight / headerHeight / sectionTopPad) 합성.
+ *
+ * 호출자:
+ *  - Skia: `ListBoxSpec.render.shapes`
+ *  - Layout: `apps/builder/.../engines/utils.ts` `calculateContentHeight` ListBox 분기
+ */
+export interface ListBoxSpacingMetric {
+  paddingTop: number;
+  paddingRight: number;
+  paddingBottom: number;
+  paddingLeft: number;
+  rowGap: number;
+  columnGap: number;
+  borderWidth: number;
+  fontSize: number;
+  itemPaddingX: number;
+  itemHeight: number;
+  headerHeight: number;
+  headerFontSize: number;
+  sectionTopPad: number;
+}
+
+export interface ListBoxSpacingInput {
+  /** element.props.style — padding/gap/borderWidth/fontSize 우선 소스 */
+  style?: Record<string, unknown>;
+  /** style.gap/rowGap 미지정 시 기본 rowGap (= item 수직 간격). 기본 2 */
+  defaultGap?: number;
+  /** style.fontSize 미지정 시 기본 fontSize (TokenRef 는 caller 가 resolveSpecFontSize 로 해소). 기본 14 */
+  defaultFontSize?: number;
+  /** style.padding* 미지정 시 기본 좌우 padding. 기본 4 */
+  defaultPaddingX?: number;
+  /** style.padding* 미지정 시 기본 상하 padding. 기본 4 */
+  defaultPaddingY?: number;
+}
+
+export function resolveListBoxSpacingMetric(
+  input: ListBoxSpacingInput,
+): ListBoxSpacingMetric {
+  const defaultPaddingX = input.defaultPaddingX ?? 4;
+  const defaultPaddingY = input.defaultPaddingY ?? 4;
+  const base = resolveContainerSpacing({
+    style: input.style,
+    defaults: {
+      paddingTop: defaultPaddingY,
+      paddingRight: defaultPaddingX,
+      paddingBottom: defaultPaddingY,
+      paddingLeft: defaultPaddingX,
+      rowGap: input.defaultGap ?? 2,
+      columnGap: input.defaultGap ?? 2,
+      borderWidth: 1,
+      fontSize: input.defaultFontSize ?? 14,
+    },
+  });
+  const itemMetric = resolveListBoxItemMetric(base.fontSize);
+  return {
+    ...base,
+    itemPaddingX: itemMetric.paddingX,
+    itemHeight: itemMetric.itemHeight,
+    headerHeight: Math.round(base.fontSize * 1.75),
+    headerFontSize: Math.round(base.fontSize * 0.85),
+    sectionTopPad: Math.round(base.fontSize * 0.5),
+  };
+}

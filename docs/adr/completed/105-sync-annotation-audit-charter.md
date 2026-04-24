@@ -120,7 +120,7 @@ apps/builder/src/                :  9건 (factory + implicitStyles + utils + css
 - **대안 B 기각**: HIGH 2 초과. Step F/G 진행 중 spec 파일 동시 편집 충돌 위험. F1 카테고리는 Spec 상속 메커니즘 설계가 없어 이관 경로 미확정.
 - **대안 C 기각**: ADR-063 §4.2 금지 패턴을 37건 방치하면 D3 SSOT 원칙이 코드베이스에서 형해화됨. 각 수정 시 수동 동기화 비용과 drift 위험이 지속적으로 발생.
 
-> 구현 상세: [105-sync-annotation-audit-charter-breakdown.md](../../design/105-sync-annotation-audit-charter-breakdown.md)
+> 구현 상세: [105-sync-annotation-audit-charter-breakdown.md](../../adr/design/105-sync-annotation-audit-charter-breakdown.md)
 
 ## 감사 매트릭스
 

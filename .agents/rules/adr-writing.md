@@ -9,5 +9,5 @@ Codex용 ADR 규칙 엔트리포인트입니다.
 핵심:
 
 - Risk-First 순서 유지: Context → Alternatives → Threshold Check → Decision → Risks → Gates
-- 구현 상세는 ADR 본문 대신 `docs/design/*-breakdown.md`로 분리
+- 구현 상세는 ADR 본문 대신 `docs/adr/design/*-breakdown.md`로 분리
 - `docs/adr/README.md` 동시 갱신

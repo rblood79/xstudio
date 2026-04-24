@@ -274,7 +274,7 @@ pnpm build:specs
 
 ## 5. Charter 매트릭스 업데이트 필요 항목
 
-ADR-105 구현 완료 후 `docs/design/105-sync-annotation-audit-charter-breakdown.md` §4 자연 해소 후보 표에 아래 추가:
+ADR-105 구현 완료 후 `docs/adr/design/105-sync-annotation-audit-charter-breakdown.md` §4 자연 해소 후보 표에 아래 추가:
 
 | #   | 파일:라인                  | 완결 ADR  | 완결 날짜  | 상태                        |
 | --- | -------------------------- | --------- | ---------- | --------------------------- |

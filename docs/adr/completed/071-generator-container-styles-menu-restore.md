@@ -130,7 +130,7 @@ Menu Spec은 실제로 **2개 논리 요소**를 하나의 Spec에 담고 있다
 - **대안 C 기각**: `spec.composition` 의 기존 의미("Composite 컨테이너 + 자식이 색상 관리 + layout/containerVariants 포함 블록") 를 Menu 같은 non-composite spec이 부분 차용하면 판정 로직이 불분명해짐. API 단일화 이득보다 의미 희석 비용이 큼.
 - **대안 D 기각**: 근본이나 element tree 전면 개편 규모. 현 debt(Menu container 수동 CSS 1건) 해체에 과잉. 대안 B 인프라 정착 이후 선택적 재검토.
 
-> 구현 상세: [071-generator-container-styles-menu-restore-breakdown.md](../../design/071-generator-container-styles-menu-restore-breakdown.md)
+> 구현 상세: [071-generator-container-styles-menu-restore-breakdown.md](../../adr/design/071-generator-container-styles-menu-restore-breakdown.md)
 
 ## Gates
 

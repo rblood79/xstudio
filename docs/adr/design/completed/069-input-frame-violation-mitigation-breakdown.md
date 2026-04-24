@@ -35,7 +35,7 @@
   - store action(`setSelectedElement`/`setCurrentPageId`/`clearSelection`) self-time
   - React commit 시간 + commit 횟수
 - [ ] 직후 rAF 1~3 프레임의 `buildSkiaFrameContent` / `buildFrameRenderPlan` / `renderer.render` self-time 분리
-- [ ] 측정 결과를 `docs/design/069-input-frame-violation-mitigation-baseline.md`(별도 파일)에 표로 기록
+- [ ] 측정 결과를 `docs/adr/design/069-input-frame-violation-mitigation-baseline.md`(별도 파일)에 표로 기록
 
 ### Gate G0 통과 조건
 

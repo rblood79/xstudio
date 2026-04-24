@@ -30,7 +30,7 @@ ADR의 목적은 **미래의 개발자가 "왜 이렇게 결정했는가"를 이
         5. 체크리스트 최종 검증
 ```
 
-대화 맥락에 분석 데이터가 이미 있어도 ADR 본문에 직접 삽입 금지. 구현 상세(Phase, 파일 목록, 체크리스트, 코드 예시)는 반드시 `docs/design/*-breakdown.md`에 분리.
+대화 맥락에 분석 데이터가 이미 있어도 ADR 본문에 직접 삽입 금지. 구현 상세(Phase, 파일 목록, 체크리스트, 코드 예시)는 반드시 `docs/adr/design/*-breakdown.md`에 분리.
 
 ## 섹션별 요구사항
 
@@ -51,7 +51,7 @@ ADR의 목적은 **미래의 개발자가 "왜 이렇게 결정했는가"를 이
 
 - 선택된 대안 + **위험 수용 근거** ("왜 이 대안의 잔존 위험이 수용 가능한가")
 - **기각된 대안별 기각 사유** 명시 — 미래의 개발자가 "대안 A를 왜 안 했지?"를 물어보지 않게
-- 구현 상세(phase, 파일 경계, 작업 순서)는 `docs/design/*-breakdown.md`로 분리. ADR에는 `> 구현 상세: [링크]` 포인터만
+- 구현 상세(phase, 파일 경계, 작업 순서)는 `docs/adr/design/*-breakdown.md`로 분리. ADR에는 `> 구현 상세: [링크]` 포인터만
 
 ### Risks (Decision 이후 잔존 운영 위험)
 
@@ -141,7 +141,7 @@ Proposed — YYYY-MM-DD
 
 [선택된 대안 + 위험 수용 근거 + 기각된 대안별 기각 사유]
 
-> 구현 상세: [NNN-title-breakdown.md](../design/NNN-title-breakdown.md)
+> 구현 상세: [NNN-title-breakdown.md](design/NNN-title-breakdown.md)
 
 ## Risks
 

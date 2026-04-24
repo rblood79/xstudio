@@ -9,7 +9,7 @@
 **Tech Stack:** TypeScript 5, Vitest (snapshot), pnpm workspace, ComponentSpec DSL, CSSGenerator (`@composition/specs`).
 
 **ADR:** [docs/adr/071-generator-container-styles-menu-restore.md](../../adr/071-generator-container-styles-menu-restore.md)
-**Breakdown:** [docs/design/071-generator-container-styles-menu-restore-breakdown.md](../../design/071-generator-container-styles-menu-restore-breakdown.md)
+**Breakdown:** [docs/adr/design/071-generator-container-styles-menu-restore-breakdown.md](../../adr/design/071-generator-container-styles-menu-restore-breakdown.md)
 
 ---
 

@@ -1,11 +1,7 @@
 /**
- * ADR-907 Phase 3 Wave A — GridList spacing metric resolver
- *
- * 검증 대상: `resolveGridListSpacingMetric()`
- *  - Layer B (`resolveContainerSpacing`) 위에 GridList-specific 확장
- *    (numCols / cardPadding* / cardBorderRadius / descGap) 합성
- *  - style 우선 + defaults fallback + grid/stack 분기
- *  - resolveGridListItemMetric(fontSize) 의 분기(>14/>12/else) 정합성
+ * resolveGridListSpacingMetric 검증: Layer B 위에 GridList-specific 확장
+ * (numCols / cardPadding* / cardBorderRadius / descGap) 합성 + style 우선 +
+ * grid/stack 분기 + item metric fontSize 분기 (>14/>12/else) 정합성.
  */
 
 import { describe, it, expect } from "vitest";

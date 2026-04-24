@@ -123,8 +123,12 @@ export { ComboBoxSpec } from "./ComboBox.spec";
 export type { ComboBoxProps } from "./ComboBox.spec";
 
 // ListBox
-export { ListBoxSpec } from "./ListBox.spec";
-export type { ListBoxProps } from "./ListBox.spec";
+export { ListBoxSpec, resolveListBoxSpacingMetric } from "./ListBox.spec";
+export type {
+  ListBoxProps,
+  ListBoxSpacingInput,
+  ListBoxSpacingMetric,
+} from "./ListBox.spec";
 
 // Slider
 export { SliderSpec, SLIDER_FILL_COLORS } from "./Slider.spec";

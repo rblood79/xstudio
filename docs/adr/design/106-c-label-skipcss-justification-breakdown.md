@@ -170,7 +170,7 @@ skipCSSGeneration: true,
 
 **목표**: ADR-059 breakdown Tier 3 표에 Label 추가.
 
-**변경 대상**: `docs/design/059-composite-field-skip-css-dismantle-breakdown.md` (또는 ADR-059 Tier 3 표)
+**변경 대상**: `docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md` (또는 ADR-059 Tier 3 표)
 
 추가 항목:
 

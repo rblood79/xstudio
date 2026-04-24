@@ -175,7 +175,7 @@ if (containerTag === "listbox") {
 - **P2**: drift test 교체 — `implicitStyles-listbox.test.ts` 를 resolver 단위 test 로 대체 (또는 삭제 후 resolver 자체의 인라인 test 통합).
 - **P3**: `/cross-check` + `/sweep` 컬렉션 family 시각 회귀 확인. Gate 종결.
 
-> 구현 상세: [080-layout-engine-spec-direct-read-through-breakdown.md](../../design/080-layout-engine-spec-direct-read-through-breakdown.md)
+> 구현 상세: [080-layout-engine-spec-direct-read-through-breakdown.md](../../adr/design/080-layout-engine-spec-direct-read-through-breakdown.md)
 
 ## Risks
 

@@ -15,7 +15,7 @@
  *
  * @since 2026-04-05
  * @see docs/adr/051-pretext-text-measurement-integration.md
- * @see docs/design/051-canvas2d-text-measurement-breakdown.md
+ * @see docs/adr/design/051-canvas2d-text-measurement-breakdown.md
  */
 
 import type { TextMeasureStyle } from "./textMeasure";

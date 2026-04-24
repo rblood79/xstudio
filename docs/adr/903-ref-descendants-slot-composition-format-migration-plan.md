@@ -189,7 +189,7 @@ pencil 은 **primitive-centric** (`rectangle`/`ellipse`/`text`/`path` 등 저수
 - **대안 B 기각**: 최종 상태는 깨끗하지만 코드 경로 동시 교체 범위가 너무 넓다. `packages/shared/src/types/element.types.ts`, `apps/builder/src/preview/utils/layoutResolver.ts`, `apps/builder/src/builder/workspace/canvas/sprites/useResolvedElement.ts`, `apps/builder/src/builder/stores/elements.ts`, persistence/export 경로를 한 번에 바꾸는 것은 마이그레이션 CRITICAL이다.
 - **대안 C 기각**: frameset만 신포맷으로 감싸면 기본 문서 포맷과 컴포넌트 재사용 모델은 계속 `componentRole/masterId` 중심 메타체계로 남는다. 이 경우 "새 composition 포맷"이 기본 문법이 아니라 또 다른 예외 기능이 된다.
 
-> 구현 상세: [903-ref-descendants-slot-composition-format-migration-plan-breakdown.md](../design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md)
+> 구현 상세: [903-ref-descendants-slot-composition-format-migration-plan-breakdown.md](design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md)
 
 ## Risks
 

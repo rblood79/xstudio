@@ -1,11 +1,6 @@
 /**
- * ADR-907 Phase 4 — Menu Layer D spacing contract
- *
- * 검증 대상: `MenuSpec.render.shapes()` 가 style.paddingLeft/Right/padding 을
- * resolveContainerSpacing 경유로 소비하여 text 좌표에 반영하는지 확증.
- *
- * Phase 4 이전: `size.paddingX` 하드코딩 (matrix (b) X)
- * Phase 4 이후: style 우선, size fallback
+ * MenuSpec Layer D contract: render.shapes() 가 style.padding* 을
+ * resolveContainerSpacing 경유로 소비하여 text x 좌표에 반영하는지 확증.
  */
 
 import { describe, expect, it } from "vitest";

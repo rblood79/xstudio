@@ -2,6 +2,10 @@
 
 ## 리뷰 빈출 이슈 패턴
 
+- **`props.style as Record<string,unknown>` 3중 반복 캐스팅**: `ContainerSpacingInput.style`이 `Record<string,unknown>`인데 Spec Props의 style 타입(`Record<string,string|number|undefined>`)이 subtype이라 캐스팅 불필요. GridList/Menu/Toolbar 3개 call-site 동시 발생 — `ContainerSpacingInput.style` 타입을 narrowing하거나 Props style 타입을 맞추면 제거 가능 (ADR-907 Phase 4 패턴).
+- **단일 구조분해 후 즉시 재할당 (`paddingLeft` → `paddingX`)**: `Menu.spec.ts:405` `const paddingX = paddingLeft` — 구조분해와 사용처 사이에서 이름만 바뀌는 중간 변수. `resolveContainerSpacing(...).paddingLeft`를 직접 사용하거나 구조분해명을 소비처 이름(`paddingX`)으로 지정 (`const { paddingLeft: paddingX } = ...`) 하면 제거 가능.
+- **테스트 파일 Phase/Wave 이력 주석 (WHAT 주석)**: ADR-907 패턴에서 4개 테스트 파일 모두 "Phase N 이전/이후" 이력을 파일 상단 JSDoc에 포함. git history + ADR breakdown 중복 — 테스트 목적(WHY) 1줄만 남기고 제거 권장.
+
 - **`@sync` 주석 — Spec 파일 간 D3 위반 오해 유발**: Spec 파일 간 주석에 `@sync XxxSpec.ts CONSTANT` 형식을 쓰면 ssot-hierarchy.md §6 금지 패턴("@sync 주석으로 CSS↔CSS 참조")에 오해됨. Spec 파일끼리 동일 공식을 독립 계산하는 경우 `// XxxSpec 와 동일 공식` 형태로 대체 (GridList.spec.ts:263 ADR-099 Phase 5 사례). `@sync` 키워드 자체를 Spec 파일에서 금지.
 - **items 타입 스텁 패턴 (Phase N → Phase N+1 갱신 의무)**: `Menu.spec.ts`의 `items?: StoredMenuItem[]`가 Phase 5 이후에도 `StoredMenuEntry[]`로 갱신되지 않은 의도적 스텁 패턴 — 다음 Phase 커밋 시 반드시 타입 갱신 필수. 스텁임을 `TODO(ADR-NNN Phase N): items?: StoredXxxEntry[]` 주석으로 추적 의무화.
 

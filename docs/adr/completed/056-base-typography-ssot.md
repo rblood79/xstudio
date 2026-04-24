@@ -149,7 +149,7 @@ ThemesPanel.setBaseTypography()
 - **대안 B 기각**: 정적 상수는 정합성 수정만 가능하고 사용자 변경 불가. C의 구현 비용이 거의 동일한데 확장성이 훨씬 높음
 - **대안 D 기각**: Vite plugin 빌드 파이프라인은 현재 composition 스택에 없는 새 의존성. 불필요한 인프라
 
-> 구현 상세: [056-base-typography-ssot-breakdown.md](../../design/056-base-typography-ssot-breakdown.md)
+> 구현 상세: [056-base-typography-ssot-breakdown.md](../../adr/design/056-base-typography-ssot-breakdown.md)
 
 ## Gates
 

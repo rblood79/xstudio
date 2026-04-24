@@ -52,7 +52,7 @@ window.__composition_PERF__.snapshot("input.page-transition")  # 신설 라벨, 
 
 ### 기록 위치
 
-`docs/design/074-baseline-measurements.md` 신설. 측정 후 Gate 목표 수치 갱신.
+`docs/adr/design/074-baseline-measurements.md` 신설. 측정 후 Gate 목표 수치 갱신.
 
 ---
 
@@ -214,7 +214,7 @@ window.__composition_PERF__.snapshot("input.page-transition")  # 신설 라벨, 
 
 - [ ] `pnpm type-check` 3 tasks PASS
 - [ ] Chrome MCP 회귀: 빈 영역 클릭 / 요소 선택 / 페이지 전환 / overlay invalidation 시각 불변
-- [ ] Gate 측정 결과 `docs/design/074-baseline-measurements.md` 에 기록
+- [ ] Gate 측정 결과 `docs/adr/design/074-baseline-measurements.md` 에 기록
 - [ ] `.claude/rules/canvas-rendering.md` 에 신설 signature 계산 지점 규칙 추가 (재조정 P2 land 후)
 - [ ] `parallel-verify` skill 로 영향 컴포넌트 패밀리 (Tabs/Select/Menu — packet 분기 공유) 회귀 검증 (재조정 P3 land 후)
 
@@ -265,5 +265,5 @@ P4: BuilderCanvas 루트 selection 구독 제거
 
 - G1 / G2 / G3 / G4 / G5 모두 PASS
 - 6 Phase 전부 main 머지 + Chrome MCP 회귀 PASS
-- `docs/design/074-baseline-measurements.md` 에 before/after 수치 기록
+- `docs/adr/design/074-baseline-measurements.md` 에 before/after 수치 기록
 - `docs/adr/README.md` 에서 Proposed → Implemented 상태 전이 + 완료 ADR 섹션 이동

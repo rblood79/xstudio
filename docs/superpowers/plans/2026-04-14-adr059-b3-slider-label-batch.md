@@ -9,7 +9,7 @@
 **Tech Stack:** TypeScript 5, pnpm monorepo, CSSGenerator.
 
 **Source ADR:** [059 §Phase 4 재설계](../../adr/059-composite-field-skip-css-dismantle.md)
-**Source breakdown:** [059 breakdown](../../design/059-composite-field-skip-css-dismantle-breakdown.md) Per-Component 표
+**Source breakdown:** [059 breakdown](../../adr/design/059-composite-field-skip-css-dismantle-breakdown.md) Per-Component 표
 **선행 선례:** B1 PR #208 (11 컴포넌트), B2 PR #207 (5 컴포넌트, Card isQuiet)
 
 ---
@@ -294,7 +294,7 @@ pnpm type-check 2>&1 | tail -3
 
 ### Step 2: breakdown docs 갱신
 
-`docs/design/059-composite-field-skip-css-dismantle-breakdown.md`에 "B3 실행 결과" 섹션 추가(B1/B2 섹션 사이 또는 B2 뒤).
+`docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md`에 "B3 실행 결과" 섹션 추가(B1/B2 섹션 사이 또는 B2 뒤).
 
 내용:
 
@@ -305,7 +305,7 @@ pnpm type-check 2>&1 | tail -3
 ### Step 3: Commit docs + push
 
 ```bash
-git add docs/design/059-composite-field-skip-css-dismantle-breakdown.md
+git add docs/adr/design/059-composite-field-skip-css-dismantle-breakdown.md
 git commit -m "docs(adr-059): B3 실행 결과 표기"
 git push -u origin feature/adr-059-b3-slider-label
 ```

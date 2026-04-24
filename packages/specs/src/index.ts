@@ -306,8 +306,15 @@ export type { SelectProps } from "./components/Select.spec";
 export { ComboBoxSpec } from "./components/ComboBox.spec";
 export type { ComboBoxProps } from "./components/ComboBox.spec";
 
-export { ListBoxSpec } from "./components/ListBox.spec";
-export type { ListBoxProps } from "./components/ListBox.spec";
+export {
+  ListBoxSpec,
+  resolveListBoxSpacingMetric,
+} from "./components/ListBox.spec";
+export type {
+  ListBoxProps,
+  ListBoxSpacingInput,
+  ListBoxSpacingMetric,
+} from "./components/ListBox.spec";
 
 // ListBoxItem (ADR-078 — CSS 자동 생성 전용, Builder Skia 미등록 Q5=i)
 export {

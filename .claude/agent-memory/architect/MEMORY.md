@@ -44,7 +44,7 @@
 - **실질 작업 (P2-a)**: GridListItem.spec.ts:107 — 삼자 불일치: Spec={radius.sm}=4px / resolver=8px(하드코딩) / CSS=--radius-md=6px. 결정: resolver 사용값 8px={radius.lg}로 통일. Spec+CSS 수정 필요.
 - **실질 작업 (P2-b)**: ListBoxItem.spec.ts:132 — sizes.md.lineHeight={typography.text-sm--line-height} TokenRef 선언됨(line 77) but resolver가 fontSize 하드코딩 분기 사용. @sync 제거 + 설명 주석 교체로 현황 문서화 (완전 Spec 소비는 sizes 다중 lineHeight 선언이 필요 → 105-d 이관).
 - radius 토큰 값: radius.sm=4px / radius.md=6px / radius.lg=8px / radius.xl=12px (primitives/radius.ts)
-- ADR 파일: docs/adr/105-c-sync-spec-to-css-resolution.md / breakdown: docs/design/105-c-sync-spec-to-css-resolution-breakdown.md
+- ADR 파일: docs/adr/105-c-sync-spec-to-css-resolution.md / breakdown: docs/adr/design/105-c-sync-spec-to-css-resolution-breakdown.md
 
 ## G4 잔존 3건 최종 분류 확정 (ADR-106-d, 2026-04-21)
 

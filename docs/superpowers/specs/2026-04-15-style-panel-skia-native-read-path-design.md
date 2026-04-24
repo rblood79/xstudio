@@ -2,7 +2,7 @@
 
 > Design spec — 2026-04-15
 > 대상 ADR: ADR-067 (단일 ADR로 원칙 + 실행 통합)
-> 구현 breakdown: `docs/design/067-style-panel-skia-native-read-path-breakdown.md`
+> 구현 breakdown: `docs/adr/design/067-style-panel-skia-native-read-path-breakdown.md`
 
 ## 1. Context
 

@@ -143,7 +143,7 @@ ADR-078 Phase 5 에서 ListBox 의 시각 정합성(padding/gap/textAlign/flex-d
 - **대안 C**: SSOT 이원화 (Spec + Panel defaults 테이블) 는 ADR-063 역행. drift 재발
 - **대안 D**: 현상 유지는 SSOT 원칙 공식 포기 = CRITICAL 유지보수 debt
 
-> 구현 상세: [079-spec-defaults-read-through-layout-primitive-ssot-breakdown.md](../../design/079-spec-defaults-read-through-layout-primitive-ssot-breakdown.md)
+> 구현 상세: [079-spec-defaults-read-through-layout-primitive-ssot-breakdown.md](../../adr/design/079-spec-defaults-read-through-layout-primitive-ssot-breakdown.md)
 
 ## Gates
 

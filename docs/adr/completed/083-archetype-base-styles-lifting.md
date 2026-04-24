@@ -141,7 +141,7 @@ Menu.spec / Autocomplete.spec 은 색상·간격 containerStyles 만 보유, lay
 - **대안 C 기각**: hidden-default 영구 고착. Spec 작성자가 `archetype="alert"` 만 보고 layout 특성 추론 불가 → ADR-063 정신과 상충. 선례(ListBox/ListBoxItem) 의 Spec 소유 방향과도 충돌
 - **대안 D 기각**: 하드코딩 파편화 영구화
 
-> 구현 상세: [083-archetype-base-styles-lifting-breakdown.md](../../design/083-archetype-base-styles-lifting-breakdown.md)
+> 구현 상세: [083-archetype-base-styles-lifting-breakdown.md](../../adr/design/083-archetype-base-styles-lifting-breakdown.md)
 
 ## Risks
 

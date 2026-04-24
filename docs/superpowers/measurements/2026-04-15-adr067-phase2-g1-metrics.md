@@ -84,5 +84,5 @@
 ## 참조
 
 - ADR-067: `docs/adr/067-style-panel-skia-native-read-path.md` §Gates G1
-- breakdown Phase 2: `docs/design/067-style-panel-skia-native-read-path-breakdown.md`
+- breakdown Phase 2: `docs/adr/design/067-style-panel-skia-native-read-path-breakdown.md`
 - Phase 1 measurements: `2026-04-15-adr067-phase1-csy-calls.md`, `2026-04-15-adr067-phase1-paint-latency.md`

@@ -135,7 +135,7 @@ ADR-066 (Tabs) / ADR-068 (Menu) / ADR-073 (Select/ComboBox) / ADR-076 (ListBox) 
 - **대안 B 기각**: HIGH 3 개 — ADR-093 리프팅 무효화 + implicitStyles 40 줄 상향 + 2 단 이전 DFS 복잡도. "element tree 최소화" 이득이 D3 일관성 / 유지보수 비용 초과.
 - **대안 C 기각**: items SSOT 체인 마지막 컬렉션 debt 영구화. ADR-087 SP6 후속 후보 중 유일 미완결. Tag 개별 편집 사용자 플로우 생산성 저하 유지.
 
-> 구현 상세: [097-taggroup-items-ssot-hybrid-breakdown.md](../../design/097-taggroup-items-ssot-hybrid-breakdown.md)
+> 구현 상세: [097-taggroup-items-ssot-hybrid-breakdown.md](../../adr/design/097-taggroup-items-ssot-hybrid-breakdown.md)
 
 ## Risks
 

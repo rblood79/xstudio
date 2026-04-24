@@ -92,6 +92,6 @@
 ## 참조
 
 - ADR-067: `docs/adr/067-style-panel-skia-native-read-path.md` §Gates G1
-- Phase 1 breakdown: `docs/design/067-style-panel-skia-native-read-path-breakdown.md` Task 8
+- Phase 1 breakdown: `docs/adr/design/067-style-panel-skia-native-read-path-breakdown.md` Task 8
 - baseline (G3): `2026-04-15-adr067-g3-baseline.md` (median 119.1ms / p95 125ms)
 - csy 호출 (G1 a): `2026-04-15-adr067-phase1-csy-calls.md`
