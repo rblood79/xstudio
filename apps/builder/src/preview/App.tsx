@@ -29,6 +29,15 @@ import type { RuntimeElement } from "./store/types";
 import { EventEngine } from "../utils/events/eventEngine";
 import { camelToKebab } from "./utils/computedStyleExtractor";
 
+// ADR-903 P2 dev-only 비교 로깅 (옵션 B). production 빌드에서는 import.meta.env.DEV
+// 가 false 로 substitute → tree-shake. tree-shake 안 되더라도 bundle 영향 minimal.
+import { legacyToCanonical } from "../adapters/canonical";
+import { convertComponentRole } from "../adapters/canonical/componentRoleAdapter";
+import { convertPageLayout } from "../adapters/canonical/slotAndLayoutAdapter";
+import { resolveCanonicalDocument } from "../resolvers/canonical";
+import type { Element, Page } from "../types/builder/unified.types";
+import type { Layout } from "../types/builder/layout.types";
+
 // body style 적용 상수 — useEffect 내 재생성 방지
 const CSS_UNITLESS = new Set([
   "opacity",
@@ -71,6 +80,9 @@ function CanvasContent() {
   const setElements = useRuntimeStore((s) => s.setElements);
   const currentLayoutId = useRuntimeStore((s) => s.currentLayoutId);
   const currentPageId = useRuntimeStore((s) => s.currentPageId);
+  // ADR-903 P2 비교 로깅용 (dev-only)
+  const pages = useRuntimeStore((s) => s.pages);
+  const layouts = useRuntimeStore((s) => s.layouts);
   const navigate = useNavigate();
 
   // ⭐ 모듈 레벨 싱글톤 EventEngine 사용
@@ -95,6 +107,57 @@ function CanvasContent() {
   useEffect(() => {
     setGlobalNavigate(navigate);
   }, [navigate]);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // ADR-903 P2 dev-only 비교 로깅 (옵션 B)
+  //
+  // production render path 는 변경하지 않는다 — 사용자가 dev console 에서
+  // "[ADR-903 P2]" 로 검색하여 canonical resolver 가 production 데이터에서
+  // throw 없이 동작하는지 + 결과 트리 size 가 합리적인지 확인.
+  //
+  // 본 로깅이 안정적이라고 판단되면 다음 phase (C: feature flag + 새 renderer)
+  // 진입. import.meta.env.DEV 가드로 production bundle 영향 0.
+  // ────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (elements.length === 0) return;
+
+    try {
+      const doc = legacyToCanonical(
+        {
+          elements: elements as unknown as Element[],
+          pages: pages as unknown as Page[],
+          layouts: layouts as unknown as Layout[],
+        },
+        { convertComponentRole, convertPageLayout },
+      );
+      const resolved = resolveCanonicalDocument(doc);
+
+      const refCount = doc.children.filter((c) => c.type === "ref").length;
+      const reusableCount = doc.children.filter((c) => c.reusable).length;
+
+      console.log("[ADR-903 P2] canonical resolve", {
+        input: {
+          elements: elements.length,
+          pages: pages.length,
+          layouts: layouts.length,
+          currentPageId,
+          currentLayoutId,
+        },
+        document: {
+          version: doc.version,
+          children: doc.children.length,
+          reusables: reusableCount,
+          refs: refCount,
+        },
+        resolved: {
+          rootCount: resolved.length,
+        },
+      });
+    } catch (err) {
+      console.warn("[ADR-903 P2] canonical resolve failed", err);
+    }
+  }, [elements, pages, layouts, currentPageId, currentLayoutId]);
 
   // ⭐ 이전에 적용된 body 스타일 키들을 추적
   const appliedStyleKeysRef = useRef<Set<string>>(new Set());
