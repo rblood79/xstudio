@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Type, Eye, ToggleLeft, PointerOff } from "lucide-react";
@@ -184,13 +185,10 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
             .variant ?? ToggleButtonSpec.defaultVariant!
         ];
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const baseBorderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const baseBorderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       // 🚀 CSS 규칙: ToggleButtonGroup 내 위치에 따른 모서리별 border-radius
       // horizontal: first → [r,0,0,r], last → [0,r,r,0], middle → [0,0,0,0]
@@ -211,13 +209,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         }
       }
 
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       // isSelected 시 색상 반전 (S2: isEmphasized 여부로 분기)
       let bgColor: TokenRef | string | number | undefined;
@@ -305,16 +297,12 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       const text = props.children || props.text || props.label;
       if (text) {
         // 사용자 스타일 padding 우선, 없으면 spec 기본값
-        const stylePx =
+        const paddingX = parsePxValue(
           props.style?.paddingLeft ??
-          props.style?.paddingRight ??
-          props.style?.padding;
-        const paddingX =
-          stylePx != null
-            ? typeof stylePx === "number"
-              ? stylePx
-              : parseFloat(String(stylePx)) || 0
-            : size.paddingX;
+            props.style?.paddingRight ??
+            props.style?.padding,
+          size.paddingX,
+        );
 
         // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
         const fontSize = resolveSpecFontSize(

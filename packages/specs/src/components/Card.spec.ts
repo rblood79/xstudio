@@ -26,6 +26,7 @@ import {
   Layout,
 } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { CardHeaderSpec } from "./CardHeader.spec";
 import { CardContentSpec } from "./CardContent.spec";
 import { CardFooterSpec } from "./CardFooter.spec";
@@ -323,13 +324,10 @@ export const CardSpec: ComponentSpec<CardProps> = {
             ? CARD_DEFAULTS.backgroundPressed
             : CARD_DEFAULTS.background);
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const shapes: Shape[] = [];
 
@@ -347,13 +345,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
 
       // 테두리 (user override only)
       const borderColor = props.style?.borderColor;
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
       if (borderColor) {
         shapes.push({
           type: "border" as const,
@@ -380,13 +372,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       if (hasChildren) return shapes;
 
       // 콘텐츠 컨테이너
-      const stylePad = props.style?.padding;
-      const padding =
-        stylePad != null
-          ? typeof stylePad === "number"
-            ? stylePad
-            : parseFloat(String(stylePad)) || 0
-          : size.paddingY;
+      const padding = parsePxValue(props.style?.padding, size.paddingY);
       shapes.push({
         type: "container" as const,
         x: 0,

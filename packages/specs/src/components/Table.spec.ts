@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
@@ -118,7 +119,11 @@ export const TableSpec: ComponentSpec<TableProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = TableSpec.variants![(props as { variant?: keyof typeof TableSpec.variants }).variant ?? TableSpec.defaultVariant!];
+      const variant =
+        TableSpec.variants![
+          (props as { variant?: keyof typeof TableSpec.variants }).variant ??
+            TableSpec.defaultVariant!
+        ];
       // 샘플 데이터 fallback — props가 없을 때 캔버스에 기본 테이블을 표시
       const DEFAULT_COLUMNS: TableColumn[] = [
         { id: "name", label: "Name", width: 120 },
@@ -156,16 +161,16 @@ export const TableSpec: ComponentSpec<TableProps> = {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const headerFw =
         fwRaw != null
@@ -199,14 +204,8 @@ export const TableSpec: ComponentSpec<TableProps> = {
 
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
-      const styleBw = props.style?.borderWidth;
       const defaultBw = props.variant === "bordered" ? 2 : 1;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, defaultBw);
       if (borderColor) {
         shapes.push({
           type: "border" as const,

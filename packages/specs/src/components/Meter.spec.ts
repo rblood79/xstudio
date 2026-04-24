@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -474,22 +475,13 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
           ? props._containerWidth
           : (props.style?.width as number) || 240;
       const barHeight = meterDims.barHeight;
-      const styleGap = props.style?.gap;
-      const gap =
-        styleGap != null
-          ? typeof styleGap === "number"
-            ? styleGap
-            : parseFloat(String(styleGap)) || 0
-          : (size.gap ?? 8);
+      const gap = parsePxValue(props.style?.gap, size.gap ?? 8);
 
       // 사용자 스타일 우선
-      const styleBr = props.style?.borderRadius;
-      const barRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const barRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const bgColor =
         props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);

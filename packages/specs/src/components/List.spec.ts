@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -97,7 +98,11 @@ export const ListSpec: ComponentSpec<ListProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = ListSpec.variants![(props as { variant?: keyof typeof ListSpec.variants }).variant ?? ListSpec.defaultVariant!];
+      const variant =
+        ListSpec.variants![
+          (props as { variant?: keyof typeof ListSpec.variants }).variant ??
+            ListSpec.defaultVariant!
+        ];
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       const width = "auto" as const;
 
@@ -106,16 +111,16 @@ export const ListSpec: ComponentSpec<ListProps> = {
         props.style?.backgroundColor ??
         resolveStateColors(variant, state).background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null
@@ -127,13 +132,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const stylePad = props.style?.padding;
-      const padding =
-        stylePad != null
-          ? typeof stylePad === "number"
-            ? stylePad
-            : parseFloat(String(stylePad)) || 0
-          : size.paddingY;
+      const padding = parsePxValue(props.style?.padding, size.paddingY);
 
       const shapes: Shape[] = [
         // 배경

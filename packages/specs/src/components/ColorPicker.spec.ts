@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Tag, Hash, PointerOff } from "lucide-react";
@@ -142,29 +143,24 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = ColorPickerSpec.variants![(props as { variant?: keyof typeof ColorPickerSpec.variants }).variant ?? ColorPickerSpec.defaultVariant!];
+      const variant =
+        ColorPickerSpec.variants![
+          (props as { variant?: keyof typeof ColorPickerSpec.variants })
+            .variant ?? ColorPickerSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const borderColor =
         props.style?.borderColor ??
         variant.border ??
         ("{color.border}" as TokenRef);
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const textColor = props.style?.color ?? variant.text;
       const fontSize = resolveSpecFontSize(

@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -94,21 +95,11 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       const title = props.title || "Disclosure";
 
       // 사용자 스타일 우선
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
-
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const bgColor =
         props.style?.backgroundColor ??
@@ -118,7 +109,10 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
         (defaultVariantColors.border || ("{color.border}" as TokenRef));
 
       const textColor = props.style?.color ?? defaultVariantColors.text;
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const fwRaw = props.style?.fontWeight;
       const fw =
         fwRaw != null
@@ -130,27 +124,18 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
-
-      const stylePy =
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
+      const paddingY = parsePxValue(
         props.style?.paddingTop ??
-        props.style?.paddingBottom ??
-        props.style?.padding;
-      const paddingY =
-        stylePy != null
-          ? typeof stylePy === "number"
-            ? stylePy
-            : parseFloat(String(stylePy)) || 0
-          : size.paddingY;
+          props.style?.paddingBottom ??
+          props.style?.padding,
+        size.paddingY,
+      );
 
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [

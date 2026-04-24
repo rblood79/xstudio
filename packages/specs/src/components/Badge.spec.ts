@@ -360,13 +360,10 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
             BadgeSpec.defaultVariant!
         ];
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const bgColor =
         props.style?.backgroundColor ??
@@ -404,16 +401,12 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
         const text = props.children || props.text;
         if (text) {
           // 사용자 스타일 padding 우선, 없으면 spec 기본값
-          const stylePx =
+          const paddingX = parsePxValue(
             props.style?.paddingLeft ??
-            props.style?.paddingRight ??
-            props.style?.padding;
-          const paddingX =
-            stylePx != null
-              ? typeof stylePx === "number"
-                ? stylePx
-                : parseFloat(String(stylePx)) || 0
-              : size.paddingX;
+              props.style?.paddingRight ??
+              props.style?.padding,
+            size.paddingX,
+          );
 
           // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
           const fontSize = resolveSpecFontSize(

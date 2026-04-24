@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 
 /**
  * Skeleton Props
@@ -84,7 +85,11 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = SkeletonSpec.variants![(props as { variant?: keyof typeof SkeletonSpec.variants }).variant ?? SkeletonSpec.defaultVariant!];
+      const variant =
+        SkeletonSpec.variants![
+          (props as { variant?: keyof typeof SkeletonSpec.variants }).variant ??
+            SkeletonSpec.defaultVariant!
+        ];
       const skeletonType = props.skeletonVariant || "text";
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
@@ -93,13 +98,10 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
       const height = props.height || size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
 

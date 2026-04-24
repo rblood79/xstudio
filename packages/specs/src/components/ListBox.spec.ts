@@ -13,6 +13,7 @@ import type {
   StoredListBoxEntry,
 } from "../types/listbox-items";
 import { isListBoxSectionEntry } from "../types/listbox-items";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
@@ -292,13 +293,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         props.style?.backgroundColor ??
         resolveStateColors(variant, state).background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const textColor = props.style?.color ?? variant.text;
       const fontSize = resolveSpecFontSize(
@@ -325,13 +323,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
 
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
       if (borderColor) {
         shapes.push({
           type: "border" as const,
