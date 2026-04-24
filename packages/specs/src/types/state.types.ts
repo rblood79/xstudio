@@ -60,7 +60,8 @@ export interface StateEffect {
   /**
    * 배경 색상 TokenRef (ADR-070)
    *
-   * hover / disabled에서만 emit. 그 외 상태는 VariantSpec 배경 토큰 사용.
+   * hover / disabled에서만 emit. 그 외 상태는 VariantSpec.fill.default.* 토큰 사용
+   * (ADR-908 Phase 4: legacy background* → FillTokenSpec SSOT 통합).
    */
   background?: TokenRef;
 
