@@ -71,9 +71,9 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
     },
   },
 
-  // ADR-059 B5
+  // ADR-059 B5 + ADR-908 Phase 4: fill SSOT
   indicatorMode: {
-    background: "{color.layer-1}" as TokenRef,
+    fill: { base: "{color.layer-1}" as TokenRef },
     selectedText: "{color.on-accent}" as TokenRef,
     borderRadius: "{radius.sm}" as TokenRef,
     boxShadow: "{shadow.sm}" as ShadowTokenRef,

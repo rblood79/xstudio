@@ -68,17 +68,21 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   variants: {
     /** S2 기본 스타일: neutral-200 배경, 투명 테두리 */
     default: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-hover}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      fill: {
+        default: {
+          base: "{color.neutral-subtle}" as TokenRef,
+          hover: "{color.neutral-hover}" as TokenRef,
+          pressed: "{color.neutral-pressed}" as TokenRef,
+          selected: "{color.neutral}" as TokenRef,
+          emphasizedSelected: "{color.accent}" as TokenRef,
+        },
+      },
       text: "{color.neutral}" as TokenRef,
       border: "{color.transparent}" as TokenRef,
 
-      selectedBackground: "{color.neutral}" as TokenRef,
       selectedText: "{color.base}" as TokenRef,
       selectedBorder: "{color.neutral}" as TokenRef,
 
-      emphasizedSelectedBackground: "{color.accent}" as TokenRef,
       emphasizedSelectedText: "{color.on-accent}" as TokenRef,
       emphasizedSelectedBorder: "{color.accent}" as TokenRef,
     },

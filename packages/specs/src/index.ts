@@ -133,12 +133,8 @@ export type { LucideIconData } from "./icons/lucideIcons";
 
 // ─── Utils ──────────────────────────────────────────────────────────────────
 export { resolveStateColors } from "./utils/stateEffect";
-// ADR-908 Phase 2 + 3-B: Fill token dual-read seam
-export {
-  variantSpecToFillTokens,
-  resolveFillTokens,
-  resolveIndicatorFill,
-} from "./utils/fillTokens";
+// ADR-908 Phase 4: Fill token SSOT accessor (legacy seam 제거)
+export { resolveFillTokens, resolveIndicatorFill } from "./utils/fillTokens";
 
 // ─── Primitives ──────────────────────────────────────────────────────────────
 export {

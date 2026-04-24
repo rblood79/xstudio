@@ -134,9 +134,13 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   render: {
     shapes: (props, size, state = "default") => {
       const DIALOG_DEFAULTS = {
-        background: "{color.layer-1}" as TokenRef,
-        backgroundHover: "{color.layer-1}" as TokenRef,
-        backgroundPressed: "{color.layer-1}" as TokenRef,
+        fill: {
+          default: {
+            base: "{color.layer-1}" as TokenRef,
+            hover: "{color.layer-1}" as TokenRef,
+            pressed: "{color.layer-1}" as TokenRef,
+          },
+        },
         text: "{color.neutral}" as TokenRef,
       };
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;

@@ -65,11 +65,15 @@ describe("generateCSS — containerStyles S3 semantic (ADR-071)", () => {
     defaultSize: "md",
     variants: {
       primary: {
-        background: "{color.neutral}",
-        backgroundHover: "{color.neutral-hover}",
-        backgroundPressed: "{color.neutral-pressed}",
-        text: "{color.base}",
-        border: "{color.neutral}",
+        fill: {
+          default: {
+            base: "{color.neutral}" as TokenRef,
+            hover: "{color.neutral-hover}" as TokenRef,
+            pressed: "{color.neutral-pressed}" as TokenRef,
+          },
+        },
+        text: "{color.base}" as TokenRef,
+        border: "{color.neutral}" as TokenRef,
       },
     },
     sizes: {

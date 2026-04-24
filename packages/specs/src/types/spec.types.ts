@@ -737,19 +737,13 @@ export interface PropagationSpec {
  */
 export interface VariantSpec {
   /**
-   * 배경색 (토큰 참조) - default 상태
+   * Fill token spec — D3 시각 SSOT 단일 소스 (ADR-908 Phase 4 완료).
    *
-   * ADR-908 Phase 4: optional 전환 — `fill.default.base` 로 대체 가능. spec 이 `fill` 을
-   * 선언하면 legacy `background` / `backgroundHover` / `backgroundPressed` 는 생략 가능.
-   * consumer 는 항상 `resolveFillTokens()` 경유로 접근.
+   * fillStyle × state 2축 구조로 `background / backgroundHover / backgroundPressed /
+   * selectedBackground* / emphasizedSelectedBackground / outlineBackground / subtleBackground /
+   * backgroundAlpha` 10+ 필드를 통합. Phase 4-b 에서 legacy 필드 완전 삭제.
    */
-  background?: TokenRef;
-
-  /** 배경색 hover — ADR-908 Phase 4 optional (fill.default.hover 로 대체) */
-  backgroundHover?: TokenRef;
-
-  /** 배경색 pressed — ADR-908 Phase 4 optional (fill.default.pressed 로 대체) */
-  backgroundPressed?: TokenRef;
+  fill: FillTokenSpec;
 
   /** 텍스트 색상 */
   text: TokenRef;
@@ -763,13 +757,7 @@ export interface VariantSpec {
   /** 테두리 색상 hover (optional) */
   borderHover?: TokenRef;
 
-  /** 배경 투명도 (optional, 0-1) */
-  backgroundAlpha?: number;
-
-  // ─── ADR-036 Phase 2b: fillStyle 확장 ───
-
-  /** outline fillStyle — 배경색 (optional, 기본: transparent) */
-  outlineBackground?: TokenRef;
+  // ─── ADR-036 Phase 2b: fillStyle 확장 (non-background 색상) ───
 
   /** outline fillStyle — 텍스트 색상 (optional) */
   outlineText?: TokenRef;
@@ -777,39 +765,18 @@ export interface VariantSpec {
   /** outline fillStyle — 테두리 색상 (optional) */
   outlineBorder?: TokenRef;
 
-  /** subtle fillStyle — 배경색 (optional) */
-  subtleBackground?: TokenRef;
-
   /** subtle fillStyle — 텍스트 색상 (optional) */
   subtleText?: TokenRef;
 
-  // ─── ADR-059 B5: Selected 상태 색상 ───
-  /** 선택 상태 배경색 (optional) */
-  selectedBackground?: TokenRef;
-  /** 선택 + hover 배경색 (optional) */
-  selectedBackgroundHover?: TokenRef;
-  /** 선택 + pressed 배경색 (optional) */
-  selectedBackgroundPressed?: TokenRef;
+  // ─── ADR-059 B5: Selected 상태 색상 (non-background) ───
   /** 선택 상태 텍스트 색상 (optional) */
   selectedText?: TokenRef;
   /** 선택 상태 테두리 색상 (optional) */
   selectedBorder?: TokenRef;
 
-  /** data-emphasized 조합 — 선택 시 accent 강조 (optional) */
-  emphasizedSelectedBackground?: TokenRef;
+  /** data-emphasized 조합 — 선택 시 텍스트/테두리 강조 (optional) */
   emphasizedSelectedText?: TokenRef;
   emphasizedSelectedBorder?: TokenRef;
-
-  // ─── ADR-908 Phase 2: Fill Spec Schema SSOT (dual-read seam) ───
-  /**
-   * Fill token spec — 선언 시 background 계열 10 필드 대신 이 구조를 우선 소비.
-   *
-   * Phase 3 migration 에서 component spec 이 점진 설정. 미선언 시 legacy background
-   * 필드가 `variantSpecToFillTokens()` 를 통해 자동 변환되어 동일 진입점으로 노출 —
-   * consumer 는 항상 `resolveFillTokens(variant)` 로 접근하면 legacy / 신규 양 쪽
-   * 모두 동일한 FillTokenSpec 을 얻는다 (Phase 2 dual-read seam).
-   */
-  fill?: FillTokenSpec;
 }
 
 // ─── ADR-908 Phase 1: Fill Spec Schema SSOT (fill preset 타입만 도입) ───
@@ -884,27 +851,21 @@ export interface FillTokenSpec {
  * 내부 `.react-aria-SelectionIndicator` 룰을 자동 생성한다.
  */
 export interface IndicatorModeSpec {
-  /** indicator 배경 토큰 */
-  background: TokenRef;
+  /**
+   * Fill state tokens — indicator pill 의 배경 (ADR-908 Phase 4 완료).
+   *
+   * `base` 는 CSSGenerator 컨테이너가 `background: transparent` 로 처리하므로 실질
+   * emit 되지 않고 pressed 만 `[data-pressed]:not([data-selected])` 선택자에 emit.
+   */
+  fill: FillStateTokens;
   /** indicator 위 선택 버튼 텍스트 색상 */
   selectedText: TokenRef;
-  /** indicator pressed 배경 (optional) */
-  backgroundPressed?: TokenRef;
   /** border-radius 토큰 (default: {radius.sm}) */
   borderRadius?: TokenRef;
   /** box-shadow 토큰 (default: {shadow.sm}) */
   boxShadow?: string | ShadowTokenRef;
   /** transition 지속 ms (default: 200) */
   transitionMs?: number;
-
-  // ─── ADR-908 Phase 3-B: Fill Spec Schema SSOT (dual-read seam) ───
-  /**
-   * Fill state tokens — 선언 시 legacy `background` / `backgroundPressed` 대신
-   * 이 구조를 우선 소비. `base` 는 FillStateTokens 규약상 필수이나 IndicatorModeSpec
-   * legacy path 에서는 사용되지 않음 (CSSGenerator 가 `background: transparent` 하드코딩).
-   * Phase 4 legacy 제거 시 본 필드가 단일 소스로 승격되고 `background`/`backgroundPressed` 삭제.
-   */
-  fill?: FillStateTokens;
 }
 
 /**

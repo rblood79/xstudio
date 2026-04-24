@@ -86,9 +86,13 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
     shapes: (props, size, state = "default") => {
       // variant 제거 (ADR-059 B2.2): default 색상 토큰 상수 사용
       const defaultVariantColors = {
-        background: "{color.base}" as TokenRef,
-        backgroundHover: "{color.layer-2}" as TokenRef,
-        backgroundPressed: "{color.layer-1}" as TokenRef,
+        fill: {
+          default: {
+            base: "{color.base}" as TokenRef,
+            hover: "{color.layer-2}" as TokenRef,
+            pressed: "{color.layer-1}" as TokenRef,
+          },
+        },
         text: "{color.neutral}" as TokenRef,
         border: "{color.border}" as TokenRef,
       };

@@ -57,20 +57,28 @@ export const TagSpec: ComponentSpec<TagProps> = {
     default: {
       // Colors match TagGroup.css .react-aria-Tag --tag-color/--tag-text/--tag-border defaults.
       // TagGroup.css is spec-token-derived (ADR-106-b G2) — this is intentional alignment.
-      background: "{color.layer-1}" as TokenRef, // --overlay-background
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef, // --text-color
-      border: "{color.border}" as TokenRef, // --border-color
+      fill: {
+        default: {
+          base: "{color.layer-1}" as TokenRef,
+          hover: "{color.layer-1}" as TokenRef,
+          pressed: "{color.layer-1}" as TokenRef,
+        },
+      },
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     selected: {
       // Colors match TagGroup.css .react-aria-Tag[data-selected] --tag-color/--tag-text/--tag-border.
       // TagGroup.css is spec-token-derived (ADR-106-b G2) — this is intentional alignment.
-      background: "{color.accent}" as TokenRef, // --highlight-background
-      backgroundHover: "{color.accent}" as TokenRef,
-      backgroundPressed: "{color.accent}" as TokenRef,
-      text: "{color.on-accent}" as TokenRef, // --highlight-foreground
-      border: "{color.accent}" as TokenRef, // --highlight-background
+      fill: {
+        default: {
+          base: "{color.accent}" as TokenRef,
+          hover: "{color.accent}" as TokenRef,
+          pressed: "{color.accent}" as TokenRef,
+        },
+      },
+      text: "{color.on-accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
