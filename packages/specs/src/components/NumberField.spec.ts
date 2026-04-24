@@ -10,6 +10,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -796,13 +797,10 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
           : (props.style?.width as number) || 200;
       const btnSize = size.iconSize ?? 18;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       const userBg = props.style?.backgroundColor;
       const bgColor =
@@ -816,14 +814,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
       const borderColor = props.style?.borderColor;
 
-      const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, defaultBw);
 
       const fontSize = resolveSpecFontSize(
         props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
@@ -847,16 +839,12 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
       const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
 
       // 버튼 간 간격
       const btnGap = 4;

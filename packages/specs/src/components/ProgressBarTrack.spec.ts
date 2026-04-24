@@ -12,6 +12,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import {
   PROGRESSBAR_FILL_COLORS,
   PROGRESSBAR_DIMENSIONS,
@@ -130,18 +131,13 @@ export const ProgressBarTrackSpec: ComponentSpec<ProgressBarTrackProps> = {
       const barHeight = size.height;
 
       // borderRadius: 사용자 스타일 우선 → spec 상수 fallback
-      const styleBr = props.style?.borderRadius;
       const trackRadiusRef =
         TRACK_BORDER_RADIUS[sizeName] ?? TRACK_BORDER_RADIUS.md;
       const resolvedRadius = resolveToken(trackRadiusRef);
-      const barRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : typeof resolvedRadius === "number"
-            ? resolvedRadius
-            : 4;
+      const barRadius = parsePxValue(
+        props.style?.borderRadius,
+        typeof resolvedRadius === "number" ? resolvedRadius : 4,
+      );
 
       // 배경색: 사용자 스타일 우선 → 트랙 기본색
       const bgColor = props.style?.backgroundColor ?? TRACK_BG_COLOR;

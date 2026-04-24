@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 
 /**
  * MaskedFrame Props
@@ -87,17 +88,18 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = MaskedFrameSpec.variants![(props as { variant?: keyof typeof MaskedFrameSpec.variants }).variant ?? MaskedFrameSpec.defaultVariant!];
+      const variant =
+        MaskedFrameSpec.variants![
+          (props as { variant?: keyof typeof MaskedFrameSpec.variants })
+            .variant ?? MaskedFrameSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const maskShape = props.maskShape || "roundRect";
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
@@ -144,13 +146,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
 
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
       if (borderColor) {
         shapes.push({
           type: "border" as const,

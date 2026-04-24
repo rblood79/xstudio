@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -273,13 +274,10 @@ export const FormSpec: ComponentSpec<FormProps> = {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const textColor = props.style?.color ?? variant.text;
       const fontSize = resolveSpecFontSize(
@@ -313,13 +311,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
 
       // 테두리 (outlined variant)
       const borderColor = props.style?.borderColor ?? variant.border;
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
       if (borderColor) {
         shapes.push({
           type: "border" as const,
@@ -367,13 +359,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
       }
 
       // 폼 필드 컨테이너
-      const stylePad = props.style?.padding;
-      const padding =
-        stylePad != null
-          ? typeof stylePad === "number"
-            ? stylePad
-            : parseFloat(String(stylePad)) || 0
-          : size.paddingY;
+      const padding = parsePxValue(props.style?.padding, size.paddingY);
       shapes.push({
         type: "container" as const,
         x: 0,

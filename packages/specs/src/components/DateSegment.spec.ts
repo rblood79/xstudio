@@ -10,6 +10,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
@@ -138,13 +139,20 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = DateSegmentSpec.variants![(props as { variant?: keyof typeof DateSegmentSpec.variants }).variant ?? DateSegmentSpec.defaultVariant!];
+      const variant =
+        DateSegmentSpec.variants![
+          (props as { variant?: keyof typeof DateSegmentSpec.variants })
+            .variant ?? DateSegmentSpec.defaultVariant!
+        ];
       // literal 세그먼트(/, : 등)는 배경 없이 텍스트만 렌더링
       if (props.isLiteral) {
         const literalText = String(props.value ?? props.placeholder ?? "");
         if (!literalText) return [];
 
-        const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 14);
+        const fontSize = resolveSpecFontSize(
+          props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+          14,
+        );
         const ff = (props.style?.fontFamily as string) || fontFamily.mono;
 
         return [
@@ -163,13 +171,10 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
         ];
       }
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
@@ -188,7 +193,10 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
 
       const bgAlpha = props.isFocused ? 1.0 : 0.7;
 
-      const fontSize = resolveSpecFontSize(props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize), 14);
+      const fontSize = resolveSpecFontSize(
+        props.size ? size.fontSize : (props.style?.fontSize ?? size.fontSize),
+        14,
+      );
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =
@@ -214,16 +222,12 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
             ? variant.text
             : ("{color.neutral-subdued}" as TokenRef));
 
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
 
       const shapes: Shape[] = [
         // 세그먼트 배경 (반투명)

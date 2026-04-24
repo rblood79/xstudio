@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import type { StoredSelectItem } from "../types/select-items";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily, getLabelLineHeight } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -701,13 +702,10 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           : (props.style?.width as number) || 200;
       const chevronSize = size.iconSize ?? 18;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius as unknown as number,
+      );
 
       const bgColor =
         props.style?.backgroundColor ??
@@ -719,14 +717,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       const borderColor = props.style?.borderColor;
 
-      const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : defaultBw;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, defaultBw);
 
       // size.fontSize는 TokenRef 문자열('{typography.text-sm}')일 수 있으므로
       // resolveSpecFontSize로 숫자 변환 후 산술 연산에 사용
@@ -757,16 +749,12 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       const textColor = props.style?.color ?? ("{color.neutral}" as TokenRef);
 
-      const stylePx =
+      const paddingX = parsePxValue(
         props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
+          props.style?.paddingRight ??
+          props.style?.padding,
+        size.paddingX,
+      );
 
       const shapes: Shape[] = [];
       // Compositional Architecture: 자식 Element가 있으면

@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 
@@ -94,7 +95,11 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const variant = SwitcherSpec.variants![(props as { variant?: keyof typeof SwitcherSpec.variants }).variant ?? SwitcherSpec.defaultVariant!];
+      const variant =
+        SwitcherSpec.variants![
+          (props as { variant?: keyof typeof SwitcherSpec.variants }).variant ??
+            SwitcherSpec.defaultVariant!
+        ];
       const width =
         typeof props._containerWidth === "number" && props._containerWidth > 0
           ? props._containerWidth
@@ -102,21 +107,11 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       const height = size.height;
 
       // 사용자 스타일 우선
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
-
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const borderColor =
@@ -169,7 +164,10 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       });
 
       // 탭 텍스트 스타일
-      const fontSize = resolveSpecFontSize(props.style?.fontSize ?? size.fontSize, 16);
+      const fontSize = resolveSpecFontSize(
+        props.style?.fontSize ?? size.fontSize,
+        16,
+      );
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "center";

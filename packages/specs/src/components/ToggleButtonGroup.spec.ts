@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef, ShadowTokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import {
   Eye,
   ArrowLeftRight,
@@ -240,23 +241,14 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
           ? ("{color.neutral-subtle}" as TokenRef)
           : variant.background);
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
 
       const borderColor =
         props.style?.borderColor ?? variant.border ?? variant.text;
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const shapes: Shape[] = [
         // 그룹 배경

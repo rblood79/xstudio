@@ -12,6 +12,7 @@ import type { StoredMenuItem } from "../types/menu-items";
 // ADR-099 Phase 5 stubs (StoredMenuEntry / isMenuSectionEntry /
 //   isMenuSeparatorEntry / HeaderSpec) — 실제 사용 Phase 5 구현 시 재추가.
 //   현재는 TS6196/6192/6133 unused error 방지 위해 제거 (build:specs 블로킹 해소).
+import { parsePxValue, parseBorderWidth } from "../primitives";
 import { fontFamily } from "../primitives/typography";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import {
@@ -329,20 +330,11 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
         ];
       const width = "auto" as const;
 
-      const styleBr = props.style?.borderRadius;
-      const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderRadius = parsePxValue(
+        props.style?.borderRadius,
+        size.borderRadius,
+      );
+      const borderWidth = parseBorderWidth(props.style?.borderWidth, 1);
 
       const bgColor =
         props.style?.backgroundColor ??
