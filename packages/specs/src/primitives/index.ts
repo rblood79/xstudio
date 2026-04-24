@@ -65,3 +65,12 @@ export {
   parseBorderWidth,
   parseGapValue,
 } from "./cssValueParser";
+
+// Container spacing primitive (ADR-907 Phase 2 Layer B)
+export { resolveContainerSpacing } from "./containerSpacing";
+
+export type {
+  ContainerSpacing,
+  ContainerSpacingDefaults,
+  ContainerSpacingInput,
+} from "./containerSpacing";
