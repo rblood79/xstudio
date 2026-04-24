@@ -103,6 +103,14 @@ globs:
 - 사용자 명시적 `minWidth` 설정 시 보존 (덮어쓰기 금지)
 - `isFlexChild` 파라미터가 true일 때만 적용. **Why**: block 자식은 min-width:auto가 0이므로 주입 불필요
 
+## Container style pipeline 연계 (ADR-907 Implemented)
+
+collection/self-render 컨테이너의 `calculateContentHeight()` 분기는 **Layer D Spec metric SSOT** 원칙에 따라 `render.shapes()` 와 **동일 resolver 심볼**을 호출해야 한다. 상세 계약은 [canvas-rendering.md §2.6](canvas-rendering.md) 참조.
+
+- **GridList**: `resolveGridListSpacingMetric()` (packages/specs/src/components/GridList.spec.ts) 를 utils.ts GridList 분기에서 import 하여 `render.shapes` 와 공유. 기존 `parseNumericValue(style.gap) ?? 12` ad-hoc 파싱 금지
+- **paddingY \* 2 패턴 금지**: 4-way padding 수용 → `paddingTop + paddingBottom` (ADR-907 Wave B)
+- **신규 자체 분기 추가 시**: (1) spec 에 `resolve{Component}SpacingMetric` 또는 `resolveContainerSpacing` 직접 호출 / (2) utils.ts 분기가 같은 resolver import / (3) `{Component}.spacing.test.ts` 에 Layer D contract 검증 추가
+
 ## 기타 규칙
 
 - calculateContentHeight: content-box만 반환 (padding 제외)

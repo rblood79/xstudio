@@ -29,6 +29,32 @@ globs:
 - Spec fontSize 우선순위: `props.size` 명시 시 `size.fontSize` 우선. **Why**: Propagation은 size prop만 변경, style.fontSize 미갱신
 - Spec Container Dimension Injection: `_containerWidth`/`_containerHeight` props 주입 (ElementSprite → specProps). `CONTAINER_DIMENSION_TAGS` Set 등록 필수. **Why**: Spec shapes가 Taffy 결과를 모르면 우측/중앙 배치 불가
 
+## 2.6. Container style pipeline (ADR-907 Implemented)
+
+collection/self-render 컨테이너 (`Breadcrumbs, ComboBox, GridList, ListBox, Menu, Select, Tabs, TagGroup, Table, Toolbar, Tree` 11 주대상) 의 `element.props.style` 은 **3경로** (Preview DOM / Skia `render.shapes()` / Layout `calculateContentHeight()`) 에 **동일 resolver** 로 반영되어야 한다. 4 layer 아키텍처:
+
+- **Layer A — CSS value parser SSOT**: `packages/specs/src/primitives/cssValueParser.ts` 의 `parsePxValue / parsePadding4Way / parseGapValue / parseBorderWidth` 만 사용. **금지**: `parseFloat(String(x))` ad-hoc 파싱. **Why**: edge case (undefined/null/"" /"20px"/숫자/percentage) 일관 처리 + generic fallback (`parsePxValue<F>(value, fallback: F): number | F` — TokenRef passthrough 허용)
+- **Layer B — Container spacing primitive**: `packages/specs/src/primitives/containerSpacing.ts` 의 `resolveContainerSpacing({ style, defaults })` 가 padding(4way)/gap(row+column)/borderWidth/fontSize 를 통합 resolve. 각 caller 는 `defaults` 에 spec 기본값 전달. **Why**: 7 공통 필드의 컴포넌트별 중복 파싱 제거
+- **Layer C — Renderer root style 계약**: `packages/shared/src/renderers/__tests__/rendererStyleContract.test.ts` 가 11 renderer 의 root JSX props 에 `style={element.props.style as React.CSSProperties | undefined}` 전달을 runtime 검증. **allowlist 는 빈 Set** (2026-04-24 Phase 5 도달). 신규 collection renderer 추가 시 `RENDERERS` 배열 추가만으로 동일 Gate 자동 적용
+- **Layer D — Spec metric SSOT**: `render.shapes()` 와 `calculateContentHeight()` 가 **동일 resolver 심볼** 호출. 예: `resolveGridListSpacingMetric()` (GridList), `resolveContainerSpacing()` 직접 호출 (Menu/Toolbar). **Hard Constraint**: root container spacing 과 item 내부 spacing 은 같은 속성명으로 섞지 않음 (예: Table `size.paddingX` 는 cell-level, 유지)
+
+### 신규 collection 컴포넌트 추가 시 체크리스트
+
+1. `render{Component}` 가 `<RootComponent>` root 에 `style={element.props.style}` 전달 (Layer C)
+2. `{Component}.spec.ts` 의 `render.shapes()` 가 `resolveContainerSpacing({ style: props.style, defaults: { ...size } })` 경유 (Layer B + D)
+3. 컴포넌트-specific 확장 (numCols / cardPadding 등) 필요 시 `resolve{Component}SpacingMetric()` wrapper 작성 (GridList 패턴)
+4. `utils.ts` 의 `calculateContentHeight()` 분기 존재 시 동일 resolver 호출 (Layer D grep 검증)
+5. `packages/specs/src/__tests__/{Component}.spacing.test.ts` 로 Layer D contract 확증
+6. `rendererStyleContract.test.ts` 의 `RENDERERS` 배열에 추가
+
+### 금지 패턴 (ADR-907)
+
+- ❌ renderer root 에 `style={element.props.style}` 누락 (allowlist 가 빈 Set 이므로 자동 test FAIL)
+- ❌ `render.shapes()` 에서 `size.paddingX` / `size.gap` 직접 하드코딩 (style.padding/gap 미소비 → Preview/Layout drift)
+- ❌ `parseFloat(String(style.x))` ad-hoc 파싱 (`parsePxValue` 사용 필수)
+- ❌ `calculateContentHeight()` GridList 분기에서 `paddingY * 2` (4-way padding 지원: `paddingTop + paddingBottom`)
+- ❌ Layer D resolver wrapper 를 `apps/builder/**` 에 배치 (package boundary: specs ← shared ← builder)
+
 ## 2.5. `_hasChildren` 컨벤션 (ADR-072)
 
 컨테이너 spec은 `buildSpecNodeData.ts`의 **3-branch 로직**에 따라 `_hasChildren` 주입을 받는다. 신규 컨테이너 추가 시 아래 판정 절차를 따른다.
