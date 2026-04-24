@@ -35,6 +35,7 @@ import {
   resolveGridListItemMetric,
   isGridListSectionEntry,
   TAG_CHIP_SIZES,
+  parsePxValue,
 } from "@composition/specs";
 import type { SizeSpec } from "@composition/specs";
 import {
@@ -68,10 +69,7 @@ import {
   parseBorderShorthand,
 } from "./cssValueParser";
 import type { CSSValueContext, CSSVariableScope } from "./cssValueParser";
-import {
-  resolveStyle,
-  getRootComputedStyle,
-} from "./cssResolver";
+import { resolveStyle, getRootComputedStyle } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
 import type { LayoutContext } from "./LayoutEngine";
 import { applyTextTransform } from "../../sprites/styleConverter";
@@ -1578,20 +1576,19 @@ export function calculateContentHeight(
   if (tag1 === "gridlist") {
     const props = element.props as Record<string, unknown> | undefined;
     const rawEntries = props?.items;
-    const entries = Array.isArray(rawEntries) && rawEntries.length > 0
-      ? rawEntries
-      : [
-          { id: "i1", label: "Item 1", description: "Description" },
-          { id: "i2", label: "Item 2", description: "Description" },
-          { id: "i3", label: "Item 3", description: "Description" },
-          { id: "i4", label: "Item 4", description: "Description" },
-        ];
+    const entries =
+      Array.isArray(rawEntries) && rawEntries.length > 0
+        ? rawEntries
+        : [
+            { id: "i1", label: "Item 1", description: "Description" },
+            { id: "i2", label: "Item 2", description: "Description" },
+            { id: "i3", label: "Item 3", description: "Description" },
+            { id: "i4", label: "Item 4", description: "Description" },
+          ];
 
     const layout = String(props?.layout ?? "stack");
     const numCols =
-      layout === "grid"
-        ? Math.max(1, Number(props?.columns ?? 2) || 2)
-        : 1;
+      layout === "grid" ? Math.max(1, Number(props?.columns ?? 2) || 2) : 1;
     const gap = parseNumericValue(style?.gap) ?? 12;
     const borderWidth =
       parseNumericValue(style?.borderWidth ?? style?.border) ?? 0;
@@ -1637,7 +1634,9 @@ export function calculateContentHeight(
           ? measureGridRows(pendingTopLevelItems)
           : pendingTopLevelItems.reduce((sum, item, index) => {
               const next = sum + cardHeight(item);
-              return index < pendingTopLevelItems.length - 1 ? next + gap : next;
+              return index < pendingTopLevelItems.length - 1
+                ? next + gap
+                : next;
             }, 0);
       pendingTopLevelItems = [];
       hasRenderedBlock = true;
@@ -2219,9 +2218,7 @@ export function calculateContentHeight(
     const displayVal = style?.display;
     const isFlex = displayVal === "flex" || displayVal === "inline-flex";
     const gapRaw = style?.gap;
-    const gapParsed =
-      typeof gapRaw === "number" ? gapRaw : parseFloat(String(gapRaw ?? ""));
-    const gap = isFlex ? (isNaN(gapParsed) ? 8 : gapParsed) : 0;
+    const gap = isFlex ? parsePxValue(gapRaw, 8) : 0;
 
     // Select/ComboBox: 실제 visible 자식 요소 순회 (Card와 동일 패턴)
     // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)

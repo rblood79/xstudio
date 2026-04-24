@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
+import { parsePxValue } from "../primitives";
 import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { Type, Parentheses, Circle, Activity } from "lucide-react";
 
@@ -353,7 +354,11 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = BadgeSpec.variants![(props as { variant?: keyof typeof BadgeSpec.variants }).variant ?? BadgeSpec.defaultVariant!];
+      const variant =
+        BadgeSpec.variants![
+          (props as { variant?: keyof typeof BadgeSpec.variants }).variant ??
+            BadgeSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
       const borderRadius =

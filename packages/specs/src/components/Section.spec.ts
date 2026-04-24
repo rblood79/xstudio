@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { parsePxValue, parseBorderWidth } from "../primitives";
 
 /**
  * Section Props
@@ -118,7 +119,11 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
 
   render: {
     shapes: (props, size, state = "default") => {
-      const variant = SectionSpec.variants![(props as { variant?: keyof typeof SectionSpec.variants }).variant ?? SectionSpec.defaultVariant!];
+      const variant =
+        SectionSpec.variants![
+          (props as { variant?: keyof typeof SectionSpec.variants }).variant ??
+            SectionSpec.defaultVariant!
+        ];
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor =
         props.style?.backgroundColor ??
@@ -130,11 +135,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+        styleBr != null ? parsePxValue(styleBr, 0) : size.borderRadius;
 
       const shapes: Shape[] = [];
 
@@ -156,12 +157,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       // 테두리 (outlined variant)
       const borderColor = props.style?.borderColor ?? variant.border;
       const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
+      const borderWidth = styleBw != null ? parseBorderWidth(styleBw, 0) : 1;
       if (borderColor) {
         shapes.push({
           type: "border" as const,

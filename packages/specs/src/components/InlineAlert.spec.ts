@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { parsePxValue } from "../primitives";
 import { Heading, Type, Parentheses } from "lucide-react";
 
 /**
@@ -166,11 +167,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+        styleBr != null ? parsePxValue(styleBr, 0) : size.borderRadius;
       const br =
         typeof borderRadius === "number"
           ? borderRadius

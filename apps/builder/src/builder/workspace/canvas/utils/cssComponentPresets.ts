@@ -11,6 +11,7 @@ import {
   parseCSSValue,
   mixWithWhite,
 } from "./cssVariableCore";
+import { parsePxValue } from "@composition/specs";
 
 type PresetSizeName = "xs" | "sm" | "md" | "lg" | "xl";
 type PresetSizeKey = "XS" | "S" | "M" | "L" | "XL";
@@ -5313,11 +5314,13 @@ export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
       parseFloat(labelStyle.fontSize) || fallback.labelFontSize;
     const descriptionFontSize =
       parseFloat(descStyle.fontSize) || fallback.descriptionFontSize;
-    const paddingTop = parseFloat(inputStyle.paddingTop) || fallback.padding;
-    const paddingLeft = parseFloat(inputStyle.paddingLeft) || fallback.paddingX;
-    const borderRadius =
-      parseFloat(inputStyle.borderRadius) || fallback.borderRadius;
-    const gap = parseFloat(textFieldStyle.gap) || fallback.gap;
+    const paddingTop = parsePxValue(inputStyle.paddingTop, fallback.padding);
+    const paddingLeft = parsePxValue(inputStyle.paddingLeft, fallback.paddingX);
+    const borderRadius = parsePxValue(
+      inputStyle.borderRadius,
+      fallback.borderRadius,
+    );
+    const gap = parsePxValue(textFieldStyle.gap, fallback.gap);
 
     // Input 높이 계산 (padding + lineHeight)
     const lineHeight = parseFloat(inputStyle.lineHeight) || fontSize * 1.5;
