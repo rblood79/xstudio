@@ -132,7 +132,14 @@ export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
         );
       })();
 
-  if (fillV2Color) {
+  // ADR-902 후속: body 는 theme-owned 이므로 fills V2 경로 우회.
+  // createDefaultBodyProps 의 literal #ffffff 가 normalizeExternalFillIngress 에서
+  // fills: [{color:"#ffffff"}] 로 auto-migrate 되면서 style.backgroundColor 가 strip 된다.
+  // isBody=true 일 때 fillV2Color 가 wins 하면 theme-aware isBody override(위 L62-67)가
+  // 완전히 무시되어, darkMode 토글 시에도 body 가 fills 의 고정 light 색으로 렌더된다.
+  // isBody 에서만 V2 경로를 skip 하여 convertStyle 결과(theme-overridden backgroundColor)
+  // 가 fillColor 를 지배하도록 한다.
+  if (fillV2Color && !isBody) {
     fillColor = fillV2Color;
   } else if (isCollectionItem && fill.alpha === 0) {
     fillColor = Float32Array.of(0.98, 0.98, 0.98, 1);

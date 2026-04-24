@@ -142,7 +142,9 @@ export class SkiaRenderer {
 
   /** 메인 캔버스를 클리어한다 (페이지 전환/초기화용). */
   clearFrame(): void {
-    this.mainCanvas.clear(this.backgroundColor);
+    // ADR-902: void 영역 투명화 — DotBackground 가 캔버스 뒤에서 노출되도록.
+    // 페이지 body fill 은 element 트리 렌더 경로에서 유지된다.
+    this.mainCanvas.clear(this.ck.Color4f(0, 0, 0, 0));
     this.mainSurface.flush();
   }
 
@@ -453,10 +455,10 @@ export class SkiaRenderer {
   }
 
   private present(cullingBounds: DOMRect, camera: CameraState): void {
-    // 렌더링 순서: 배경 → 그리드 → 콘텐츠 → 오버레이
-    // 그리드가 콘텐츠 아래에 위치하도록 content surface는 투명 배경을 사용하고,
-    // main canvas에서 배경색 → 그리드(씬 좌표계) → 콘텐츠 블릿 순서로 합성한다.
-    this.mainCanvas.clear(this.backgroundColor);
+    // 렌더링 순서: (투명 clear) → 그리드 → 콘텐츠 → 오버레이
+    // ADR-902: void 영역 투명화로 전환. 페이지 배경은 element 트리의 body fill 로 유지,
+    // canvas 뒤 DOM DotBackground 레이어가 void 영역에서 노출된다.
+    this.mainCanvas.clear(this.ck.Color4f(0, 0, 0, 0));
     this.renderScreenOverlay(cullingBounds, camera);
 
     const cameraMatchesSnapshot =
@@ -667,7 +669,8 @@ export class SkiaRenderer {
 
     const start = performance.now();
 
-    this.mainCanvas.clear(this.backgroundColor);
+    // ADR-902: void 영역 투명화. 페이지 body fill 은 element 트리에서 유지.
+    this.mainCanvas.clear(this.ck.Color4f(0, 0, 0, 0));
     this.renderScreenOverlay(cullingBounds, camera);
     this.mainCanvas.save();
     this.mainCanvas.scale(this.dpr, this.dpr);

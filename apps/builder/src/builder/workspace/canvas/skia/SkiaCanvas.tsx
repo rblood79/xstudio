@@ -292,6 +292,10 @@ export function SkiaCanvas({
           if (themeVersion !== prevThemeVersion) {
             prevThemeVersion = themeVersion;
             cb();
+            // ADR-902 후속: clearFrame 투명화 후 page body fill 이 element-tree 로만 노출된다.
+            // contentSnapshot/blit 캐시 경로에 이전 프레임 색이 남아있을 가능성을 차단하기 위해
+            // 다음 frame 을 "full" classifyFrame 으로 강제해 content surface 를 재페인트한다.
+            rendererRef.current?.invalidateContent();
           }
         });
         return () => {

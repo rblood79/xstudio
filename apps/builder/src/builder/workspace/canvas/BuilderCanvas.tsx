@@ -32,6 +32,7 @@ import type { DropIndicatorSnapshot } from "./selection/dropTargetResolver";
 import { ViewportControlBridge } from "./viewport";
 import { screenToViewportPoint } from "./viewport/viewportTransforms";
 import { TextEditOverlay, useTextEdit } from "../overlay";
+import { DotBackground } from "../components/DotBackground";
 import {
   computeSelectionBounds,
   resolveSelectedElementsForPage,
@@ -640,6 +641,9 @@ export function BuilderCanvas({
           dropIndicatorSnapshotRef={dropIndicatorSnapshotRef}
         />
       )}
+
+      {/* ADR-902: Skia canvas 뒤 도트 배경 레이어 (P0에서 투명 clear 전제) */}
+      <DotBackground />
 
       {containerEl && (
         <ViewportControlBridge
