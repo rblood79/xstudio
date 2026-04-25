@@ -392,3 +392,8 @@
 {"ts":"2026-04-25T10:34:59Z","agent_type":"","agent_id":"a8b52658dfc5b53de","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
 {"ts":"2026-04-25T11:30:42Z","agent_type":"","agent_id":"ab8874f0cc81cc2b6","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
 {"ts":"2026-04-25T11:38:26Z","agent_type":"","agent_id":"a89ebe62e94013606","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
+{"ts":"2026-04-25T11:44:04Z","agent_type":"evaluator","agent_id":"ab69d61e53192f262","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
+{"ts":"2026-04-25T11:44:29Z","agent_type":"codex:codex-rescue","agent_id":"a6f7c7266ad0e96e3","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
+{"ts":"2026-04-25T11:45:06Z","agent_type":"documenter","agent_id":"a1f49f548da0addd4","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
+{"ts":"2026-04-25T11:47:27Z","agent_type":"architect","agent_id":"a03f4b53ca14f7fe7","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}
+{"ts":"2026-04-25T12:27:49Z","agent_type":"","agent_id":"ad504852b4fa57de1","session_id":"9e80b678-1c15-4845-8bed-c7bf546c85ca"}

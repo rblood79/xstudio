@@ -26,6 +26,13 @@
 - 모든 Phase 완료 + 실제 코드 구조와 일치하는 완료 이력 문서
 - 현재 코드베이스에 적용된 아키텍처 설명
 
+## CHANGELOG 최근 entry 현황 (2026-04-25 기준)
+
+- **최신 entry 1**: `## [ADR-903 P3 progress — P3-A foundation + P2 옵션 C + P3-B Stores 부분 land] - 2026-04-25` (세션 26 후반 15 commits 기록, L67~L116)
+- **최신 entry 2**: `## [Catch-up 2026-04-07 ~ 2026-04-25 — ADR-063/082/098 charter / ADR-056/107 / ADR-907/908/909 / ADR-903 P0~P2] - 2026-04-25` (L8~L64, 825 commits catch-up)
+- 다음 entry 작성 시 trigger-based 정상 갱신으로 복귀 (catch-up 불필요)
+- ADR-903 세션 26 coverage: P3 sub-breakdowns + P3-A foundation + P2 옵션 C + P3-B Stores (4/5)
+
 ## ADR-903 P0 Stream 3 작업 기록 (2026-04-25)
 
 - `packages/shared/src/types/element.types.ts` — 파일 상단 ADR-903 Migration Notice 블록 추가 + `tag`/`layout_id`/`slot_name`/`componentRole`/`masterId`/`overrides`/`descendants`/`componentName`/`variableBindings` 9개 필드에 `@deprecated ADR-903 Px:` JSDoc 주석 추가. 필드 선언 불변.
