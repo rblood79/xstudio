@@ -19,7 +19,8 @@ import type {
 } from "../../../types/builder/layout.types";
 import type { Element, Page } from "../../../types/builder/unified.types";
 import { getDefaultProps } from "../../../types/builder/unified.types";
-import { useStore } from "../elements";
+import { useStore, selectCanonicalDocument } from "../elements";
+import type { FrameNode } from "@composition/shared";
 
 // Type aliases for set/get
 type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
@@ -210,44 +211,62 @@ export const createDeleteLayoutAction =
     try {
       const db = await getDB();
 
-      // 1. ⭐ Layout을 사용하는 Page들의 layout_id를 null로 설정
-      const allPages = await db.pages.getAll();
-      const pagesUsingLayout = allPages.filter(
-        (p) => (p as Page & { layout_id?: string }).layout_id === id,
+      // ADR-903 P3-D-3: canonical document 가드.
+      // canonical tree 에 해당 reusable frame 이 존재할 때만 cascade 실행.
+      // (frame 미존재 = stale layout 또는 이미 detach 된 노드 → cascade skip)
+      const elementsStateForGuard = useStore.getState();
+      const layoutsForGuard = get().layouts;
+      const canonicalDoc = selectCanonicalDocument(
+        elementsStateForGuard,
+        elementsStateForGuard.pages,
+        layoutsForGuard,
+      );
+      const frameExists = canonicalDoc.children.some(
+        (n): n is FrameNode =>
+          n.type === "frame" && n.reusable === true && n.id === id,
       );
 
-      if (pagesUsingLayout.length > 0) {
-        await Promise.all(
-          pagesUsingLayout.map((page) =>
-            db.pages.update(page.id, { layout_id: null }),
-          ),
+      if (frameExists) {
+        // 1. ⭐ Layout을 사용하는 Page들의 layout_id를 null로 설정
+        const allPages = await db.pages.getAll();
+        const pagesUsingLayout = allPages.filter(
+          (p) => (p as Page & { layout_id?: string }).layout_id === id,
         );
 
-        // 메모리 상태의 pages도 업데이트
-        const { pages, setPages } = useStore.getState();
-        const updatedPages = pages.map((p) =>
-          pagesUsingLayout.some((up) => up.id === p.id)
-            ? { ...p, layout_id: null }
-            : p,
-        );
-        setPages(updatedPages);
+        if (pagesUsingLayout.length > 0) {
+          await Promise.all(
+            pagesUsingLayout.map((page) =>
+              db.pages.update(page.id, { layout_id: null }),
+            ),
+          );
+
+          // 메모리 상태의 pages도 업데이트
+          const { pages, setPages } = useStore.getState();
+          const updatedPages = pages.map((p) =>
+            pagesUsingLayout.some((up) => up.id === p.id)
+              ? { ...p, layout_id: null }
+              : p,
+          );
+          setPages(updatedPages);
+        }
+
+        // 2. ⭐ Layout의 모든 elements 삭제
+        // P3-D 과도기: layout_id 기반 DB 로딩 cascade 유지 (P3-E 에서 canonical descendants 기반으로 전환)
+        const allElements = await db.elements.getAll();
+        const layoutElements = allElements.filter((el) => el.layout_id === id);
+
+        if (layoutElements.length > 0) {
+          await Promise.all(
+            layoutElements.map((el) => db.elements.delete(el.id)),
+          );
+
+          // 메모리 상태의 elements도 업데이트
+          const { removeElements } = useStore.getState();
+          await removeElements(layoutElements.map((el) => el.id));
+        }
       }
 
-      // 2. ⭐ Layout의 모든 elements 삭제
-      const allElements = await db.elements.getAll();
-      const layoutElements = allElements.filter((el) => el.layout_id === id);
-
-      if (layoutElements.length > 0) {
-        await Promise.all(
-          layoutElements.map((el) => db.elements.delete(el.id)),
-        );
-
-        // 메모리 상태의 elements도 업데이트
-        const { removeElements } = useStore.getState();
-        await removeElements(layoutElements.map((el) => el.id));
-      }
-
-      // 3. Layout 삭제
+      // 3. Layout 삭제 (frame 존재 여부와 무관하게 항상 진행 — stale layout row 정리)
       await (
         db as unknown as { layouts: { delete: (id: string) => Promise<void> } }
       ).layouts.delete(id);
@@ -385,40 +404,36 @@ export const createGetLayoutByIdAction =
 
 /**
  * Layout의 모든 Slot 정보 조회
- * (실시간 조회 - elements store에서 가져옴)
+ *
+ * ADR-903 P3-D-3: canonical document 의 FrameNode.slot 직접 조회.
+ * `getElements` 파라미터는 호환성 유지를 위해 시그니처에 남기되 사용하지 않는다.
+ * (P3-E 에서 시그니처 정리 예정)
  */
 export const createGetLayoutSlotsAction =
-  (get: GetState, getElements: () => Element[]) =>
+  (get: GetState, _getElements: () => Element[]) =>
   (layoutId: string): SlotInfo[] => {
-    // ADR-903 P3-B 안전망 #4: layout_id 기반 O(N) 스캔 사이트 마킹
-    // P3-D에서 canonical tree의 FrameNode.slot 기반으로 교체 예정.
-    // 전환 후 이 경로가 잔존하면 Slot 조회가 0건 반환되는 회귀 발생.
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(
-        "[ADR-903 P3-B migration] getLayoutSlots: layout_id 기반 elements 스캔 사용 중. " +
-          "P3-D에서 canonical FrameNode.slot 기반으로 교체 예정.",
-        { layoutId },
-      );
-    }
+    const elementsState = useStore.getState();
+    const { pages } = elementsState;
+    const { layouts } = get();
+    const doc = selectCanonicalDocument(elementsState, pages, layouts);
 
-    const elements = getElements();
-
-    // Layout에 속한 Slot 요소들 필터링
-    const slotElements = elements.filter(
-      (el) => el.layout_id === layoutId && el.tag === "Slot",
+    const frame = doc.children.find(
+      (n): n is FrameNode =>
+        n.type === "frame" && n.reusable === true && n.id === layoutId,
     );
 
-    return slotElements.map((el) => {
-      const slotName = (el.props as { name?: string }).name;
-      return {
-        // 이름 없는 Slot은 elementId를 접미사로 사용하여 고유성 보장
-        name: slotName || `slot_${el.id.slice(0, 8)}`,
-        displayName: slotName || "unnamed",
-        required: (el.props as { required?: boolean }).required || false,
-        description: (el.props as { description?: string }).description,
-        elementId: el.id,
-      };
-    });
+    if (!frame || !Array.isArray(frame.slot)) {
+      return [];
+    }
+
+    return frame.slot.map((slotName) => ({
+      name: slotName,
+      displayName: slotName,
+      required: false,
+      description: undefined,
+      // canonical 경로는 elementId 미사용 — slot 채우기는 descendants 로 표현 (composition-document.types.ts:215)
+      elementId: "",
+    }));
   };
 
 /**
