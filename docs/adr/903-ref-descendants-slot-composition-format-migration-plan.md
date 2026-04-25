@@ -4,6 +4,10 @@
 
 Accepted — 2026-04-25 (Phase 0 G1 통과: canonical 타입 + adapter/resolver 계약 land. Phase 1 adapter 착수 예정)
 
+### 진행 로그
+
+- 2026-04-26: **옵션 C default 활성화** — Preview canonical render path 가 production 에서 default 동작 (PR #227 `feat/adr-903-canonical-default` 머지, commit `db462688`). P2 옵션 C completion = P3-D 진입 hard precondition 충족 (sub-breakdown §결정 4 / phase3d-runtime-breakdown.md §P3-D 의존성). P2 dev 비교 로그 정리 (PR #226 `chore/adr-903-revert-debug-logs`, commit `377e5980`) → console drift 0.
+
 ## Context
 
 composition은 현재 Builder(Skia)와 Preview/Publish(DOM + CSS, React Aria Components 기반)라는 두 렌더 경로를 가진다. [ADR-063](063-ssot-chain-charter.md)은 이 둘의 **컴포넌트 렌더링 SSOT 체인**을 D1(RAC DOM/접근성) / D2(RSP Props/API) / D3(Spec 시각)으로 정립했지만, **page/layout/document composition 포맷**과 **컴포넌트 재사용 문법**은 아직 단일 정본으로 정리되지 않았다.
