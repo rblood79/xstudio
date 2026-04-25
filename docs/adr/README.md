@@ -62,8 +62,8 @@
 | -------------------------------------- | ------- |
 | 완료 (Accepted/Implemented/Superseded) | 99      |
 | 부분 완료                              | 8       |
-| 미구현 (Proposed/계획)                 | 9       |
-| **합계**                               | **116** |
+| 미구현 (Proposed/계획)                 | 10      |
+| **합계**                               | **117** |
 
 ---
 
@@ -206,6 +206,7 @@
 | [054](054-local-llm-architecture.md)                                 | 로컬 LLM 아키텍처 (Ollama → node-llama-cpp)            | Proposed            | 4 Phase — Provider 추상화 + Ollama 연동 + node-llama-cpp Electron 내장 + Qwen3 7B. ADR-011 Supersede                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |  **P2**  |
 | [903](903-ref-descendants-slot-composition-format-migration-plan.md) | ref/descendants + slot 기본 composition 포맷 전환 계획 | Accepted 2026-04-25 | page/layout/document composition 포맷을 일반 object tree + `reusable: true` + `type:"ref"` + path-based `descendants` + 컨테이너 `slot` 메타데이터를 갖는 문서-네이티브 canonical format으로 승격. 대안 A(resolver-first 점진 전환) 채택 — legacy `layout_id/slot_name/componentRole/masterId`는 adapter로 존치하고, 공통 resolver(`ref resolve -> descendants apply -> slot contract validate -> resolved tree`)를 먼저 도입한 뒤 Preview/Skia 입력을 통합. frameset은 별도 기능이 아니라 reusable layout shell의 한 사례로 흡수. 구현 상세: [breakdown](design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md) |  **P1**  |
 | [109](109-body-spec-ssot-completion-publish-symmetry.md)             | Body Spec SSOT 완결 + Publish consumer 대칭 복구       | Proposed 2026-04-25 | ADR-902 후속 debt 4건 (D1 Publish spec className 주입 / D2 createDefaultBodyProps literal 제거 / D3 body.fills runtime-ignore / D4 SkiaRenderer.backgroundColor cleanup) 을 4-Phase 로드맵으로 통합. 대안 B(통합 ADR) 채택 — A(개별 ADR 4건)/C(Defer) 대비 유지보수 LOW. Gate G1(publish 회귀 0) + G2(body 3경로 theme 대칭) + G3(fills ignore 안정성) + G4(D4 cleanup 안전성). ADR-063 D3 symmetric 미달 마지막 축                                                                                                                                                                                                                       |  **P3**  |
+| [910](910-canonical-themes-variables-land-plan.md)                   | Canonical `themes`/`variables` 필드 Land Plan          | Proposed 2026-04-25 | ADR-903 §3.10 phase 미명시 gap 해소. `themes`(ADR-021 Tint/dark mode) + `variables`(ADR-022 TokenRef) 를 P0 stub → read-only snapshot adapter(Phase 1) → write-through 활성화(Phase 2) 경로로 land. 대안 B(read-only adapter) 채택 — 기존 ADR-021/022 무수정, P5-A schema 계약 hard constraint 충족. Gate G-A(snapshot serializer + 타입 계약 고정) + G-B(write-through + resolver 통합). ADR-903 P5-A 진입 전 Phase 1 완료 필수.                                                                                                                                                                                                         |  **P2**  |
 
 ## Spec SSOT 해체 ADR 체인 — **ADR-036 Fully Implemented 달성 (2026-04-22 세션 18)**
 
