@@ -2,6 +2,11 @@ import { Element } from "../../../types/core/store.types";
 
 /**
  * Supabase 저장용 Element 타입 (snake_case 컬럼명)
+ *
+ * **ADR-903 P3-A Hidden bug D2**: `page_id` 는 layout element 에서 `null` 이 될 수 있다.
+ * layout element 는 `layout_id` 를 가지며 `page_id` 가 `null` 이지만, 기존 `string`
+ * (required) 타입 정의로 인해 런타임에 빈 문자열(`""`)로 강제되는 버그가 있었다.
+ * `string | null` 로 완화하여 layout element 저장/로드 round-trip 정확성 보장.
  */
 export interface SupabaseElement {
   id: string;
@@ -9,7 +14,8 @@ export interface SupabaseElement {
   tag: string;
   props: Record<string, unknown>;
   parent_id: string | null;
-  page_id: string;
+  /** layout element 의 경우 null. page element 의 경우 page UUID. */
+  page_id: string | null;
   layout_id?: string | null;
   order_num: number;
   data_binding?: unknown;
@@ -82,11 +88,14 @@ export const sanitizeElement = (element: Element): Element => {
  * @param element - 직렬화할 Element 객체
  * @returns Supabase 저장용 Element 객체 (snake_case)
  */
-export const sanitizeElementForSupabase = (element: Element): SupabaseElement => {
+export const sanitizeElementForSupabase = (
+  element: Element,
+): SupabaseElement => {
   try {
-    const props = typeof structuredClone !== "undefined"
-      ? structuredClone(element.props || {})
-      : JSON.parse(JSON.stringify(element.props || {}));
+    const props =
+      typeof structuredClone !== "undefined"
+        ? structuredClone(element.props || {})
+        : JSON.parse(JSON.stringify(element.props || {}));
 
     return {
       id: element.id,
@@ -94,7 +103,7 @@ export const sanitizeElementForSupabase = (element: Element): SupabaseElement =>
       tag: element.tag,
       props,
       parent_id: element.parent_id ?? null,
-      page_id: element.page_id ?? "",
+      page_id: element.page_id ?? null,
       layout_id: element.layout_id ?? null,
       order_num: element.order_num ?? 0,
       data_binding: element.dataBinding,
@@ -107,7 +116,7 @@ export const sanitizeElementForSupabase = (element: Element): SupabaseElement =>
       tag: element.tag || "",
       props: {},
       parent_id: element.parent_id ?? null,
-      page_id: element.page_id ?? "",
+      page_id: element.page_id ?? null,
       layout_id: element.layout_id ?? null,
       order_num: element.order_num ?? 0,
       data_binding: element.dataBinding,
