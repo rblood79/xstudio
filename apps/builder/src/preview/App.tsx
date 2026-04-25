@@ -170,7 +170,9 @@ function CanvasContent() {
         metaPageId: (n.metadata as Record<string, unknown> | undefined)?.pageId,
       }));
 
-      console.log("[ADR-903 P2] canonical resolve", {
+      // [DEBUG v2] Chrome MCP console reader 가 Object detail 미캡처 →
+      // JSON.stringify 으로 string serialize 출력
+      const debugPayload = {
         input: {
           elements: elements.length,
           pages: pages.length,
@@ -183,15 +185,22 @@ function CanvasContent() {
           children: doc.children.length,
           reusables: reusableCount,
           refs: refCount,
-          childrenSummary, // [DEBUG] doc.children 처음 5개 구조
+          childrenSummary,
         },
         resolved: {
           rootCount: resolved.length,
-          summary: resolvedSummary, // [DEBUG] resolved 처음 5개 구조
+          summary: resolvedSummary,
         },
-      });
+      };
+      console.log("[ADR-903 P2] canonical resolve", debugPayload);
+      console.log("[ADR-903 P2 STRING]", JSON.stringify(debugPayload, null, 2));
     } catch (err) {
       console.warn("[ADR-903 P2] canonical resolve failed", err);
+      console.warn(
+        "[ADR-903 P2 STRING] error:",
+        String(err),
+        err instanceof Error ? err.stack : "",
+      );
     }
   }, [elements, pages, layouts, currentPageId, currentLayoutId]);
 

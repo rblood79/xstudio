@@ -72,6 +72,7 @@ export interface UseIframeMessengerReturn {
   requestElementSelection: (elementId: string) => void;
   requestAutoSelectAfterUpdate: (elementId: string) => void;
   sendLayoutsToIframe: () => void;
+  sendPagesToIframe: () => void;
   sendDataTablesToIframe: () => void;
   sendApiEndpointsToIframe: () => void;
   sendVariablesToIframe: () => void;
@@ -302,6 +303,43 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     iframe.contentWindow.postMessage(message, window.location.origin);
   }, []); // ✅ 의존성 제거 (Ref 사용)
+
+  // ⭐ ADR-903 P2 옵션 C: Pages 를 iframe 에 전송 (canonical resolver hydration)
+  // legacy 경로는 element.page_id 만으로 렌더 가능했으나 canonical resolve 가
+  // page 노드 (RefNode metadata.type="legacy-page") 생성을 위해 pages 메타데이터
+  // 필요. UPDATE_PAGES message handler 는 P0 시점에 land 됐으나 sender 가 누락.
+  const sendPagesToIframe = useCallback(() => {
+    const iframe = MessageService.getIframe();
+    const currentReadyState = iframeReadyStateRef.current;
+
+    // 현재 pages 가져오기 (useStore 통합 store)
+    const currentPages = useStore.getState().pages;
+
+    // PreviewPage (RuntimePage) 형태로 변환
+    const previewPages = currentPages.map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      order_num: p.order_num ?? 0,
+      layout_id: p.layout_id ?? null,
+      parent_id: p.parent_id ?? null,
+    }));
+
+    const message = {
+      type: "UPDATE_PAGES" as const,
+      pages: previewPages,
+    };
+
+    if (currentReadyState !== "ready" || !iframe?.contentWindow) {
+      messageQueueRef.current.push({
+        type: "UPDATE_PAGES",
+        payload: message,
+      });
+      return;
+    }
+
+    iframe.contentWindow.postMessage(message, window.location.origin);
+  }, []);
 
   // ⭐ DataTables를 iframe에 전송 (PropertyDataBinding용)
   const sendDataTablesToIframe = useCallback(() => {
@@ -552,6 +590,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
           // ⭐ Nested Routes & Slug System: 초기 layouts 전송
           sendLayoutsToIframe();
+
+          // ⭐ ADR-903 P2 옵션 C: 초기 pages 전송 (canonical resolver hydration)
+          sendPagesToIframe();
 
           // ⭐ DataTables 전송 (PropertyDataBinding용)
           sendDataTablesToIframe();
@@ -838,6 +879,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       processMessageQueue,
       sendElementsToIframe,
       sendLayoutsToIframe,
+      sendPagesToIframe,
       sendDataTablesToIframe,
       sendApiEndpointsToIframe,
       sendVariablesToIframe,
@@ -964,6 +1006,33 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     sendLayoutsToIframe();
   }, [layouts, sendLayoutsToIframe]);
 
+  // ⭐ ADR-903 P2 옵션 C: Pages 가 변경될 때마다 iframe 에 전송
+  const lastSentPagesRef = useRef<string>("");
+
+  useEffect(() => {
+    if (iframeReadyStateRef.current !== "ready") {
+      return;
+    }
+
+    const pagesJson = JSON.stringify(
+      pages.map((p) => ({
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        order_num: p.order_num ?? 0,
+        layout_id: p.layout_id ?? null,
+        parent_id: p.parent_id ?? null,
+      })),
+    );
+
+    if (lastSentPagesRef.current === pagesJson) {
+      return;
+    }
+
+    lastSentPagesRef.current = pagesJson;
+    sendPagesToIframe();
+  }, [pages, sendPagesToIframe]);
+
   // ⭐ DataTables가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
   const lastSentDataTablesRef = useRef<string>("");
 
@@ -1086,6 +1155,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       requestElementSelection: () => {},
       requestAutoSelectAfterUpdate: () => {},
       sendLayoutsToIframe: () => {},
+      sendPagesToIframe: () => {},
       sendDataTablesToIframe: () => {},
       sendApiEndpointsToIframe: () => {},
       sendVariablesToIframe: () => {},
@@ -1104,6 +1174,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     requestElementSelection,
     requestAutoSelectAfterUpdate,
     sendLayoutsToIframe,
+    sendPagesToIframe,
     sendDataTablesToIframe,
     sendApiEndpointsToIframe,
     sendVariablesToIframe,
