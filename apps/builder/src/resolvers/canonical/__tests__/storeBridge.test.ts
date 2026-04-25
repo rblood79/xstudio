@@ -346,3 +346,252 @@ describe("resolveInstanceWithSharedCache", () => {
     expect(afterSecond.hits).toBeGreaterThan(afterFirst.hits);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D-C 안전망 — advanced 회귀 케이스 (legacy fallback 제거 전제 검증)
+//
+// `useResolvedElement` (D-B) 와 `StoreRenderBridge.buildNodeForElement` (D-C)
+// 모두 canonical 우선 + legacy fallback 전략을 사용한다. 다음 세션에 fallback
+// 제거를 안전하게 하기 위해 다양한 master/instance/overrides 조합을 fuzz 한다.
+//
+// 모든 케이스는 `resolveInstanceWithSharedCache` 결과가 legacy
+// `resolveInstanceElement` 와 deep-equal 임을 검증.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
+  beforeEach(() => {
+    resetSharedResolverCache();
+  });
+
+  it("TC14: 빈 overrides — instance 가 master props 그대로 상속", () => {
+    const master: Element = el({
+      id: "m1",
+      tag: "Button",
+      componentRole: "master",
+      props: {
+        label: "MasterOnly",
+        style: { color: "red", fontSize: 14, padding: 8 },
+      },
+    });
+    const instance: Element = el({
+      id: "i1",
+      tag: "Button",
+      componentRole: "instance",
+      masterId: "m1",
+      overrides: {},
+    });
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    const legacy = resolveInstanceElement(instance, master);
+    expect(canonical?.props).toEqual(legacy.props);
+    expect(canonical?.props.label).toBe("MasterOnly");
+  });
+
+  it("TC15: overrides 가 undefined — instance 가 master props 그대로 상속", () => {
+    const master: Element = el({
+      id: "m2",
+      tag: "Box",
+      componentRole: "master",
+      props: { width: 100, height: 50 },
+    });
+    const instance: Element = el({
+      id: "i2",
+      tag: "Box",
+      componentRole: "instance",
+      masterId: "m2",
+      // overrides 필드 자체 미설정
+    });
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    const legacy = resolveInstanceElement(instance, master);
+    expect(canonical?.props).toEqual(legacy.props);
+  });
+
+  it("TC16: nested style merge — color 만 override, fontSize/padding 은 master 보존", () => {
+    const master: Element = el({
+      id: "m3",
+      tag: "Text",
+      componentRole: "master",
+      props: {
+        children: "Hello",
+        style: {
+          color: "black",
+          fontSize: 16,
+          padding: 8,
+          fontWeight: 400,
+        },
+      },
+    });
+    const instance: Element = el({
+      id: "i3",
+      tag: "Text",
+      componentRole: "instance",
+      masterId: "m3",
+      overrides: {
+        style: { color: "red" },
+      },
+    });
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    const legacy = resolveInstanceElement(instance, master);
+    expect(canonical?.props).toEqual(legacy.props);
+
+    const style = canonical?.props.style as Record<string, unknown>;
+    expect(style.color).toBe("red");
+    expect(style.fontSize).toBe(16);
+    expect(style.padding).toBe(8);
+    expect(style.fontWeight).toBe(400);
+  });
+
+  it("TC17: scalar override 가 master scalar 를 완전 교체 (style 외 필드)", () => {
+    const master: Element = el({
+      id: "m4",
+      tag: "Button",
+      componentRole: "master",
+      props: { label: "Original", isDisabled: false },
+    });
+    const instance: Element = el({
+      id: "i4",
+      tag: "Button",
+      componentRole: "instance",
+      masterId: "m4",
+      overrides: { label: "Overridden", isDisabled: true },
+    });
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    const legacy = resolveInstanceElement(instance, master);
+    expect(canonical?.props).toEqual(legacy.props);
+    expect(canonical?.props.label).toBe("Overridden");
+    expect(canonical?.props.isDisabled).toBe(true);
+  });
+
+  it("TC18: 다중 instance 가 같은 master 참조 — 각각 다른 props 산출", () => {
+    const master: Element = el({
+      id: "m5",
+      tag: "Button",
+      componentRole: "master",
+      props: { label: "Default", variant: "primary" },
+    });
+    const instances: Element[] = [
+      el({
+        id: "i5a",
+        tag: "Button",
+        componentRole: "instance",
+        masterId: "m5",
+        overrides: { label: "A" },
+      }),
+      el({
+        id: "i5b",
+        tag: "Button",
+        componentRole: "instance",
+        masterId: "m5",
+        overrides: { label: "B", variant: "secondary" },
+      }),
+      el({
+        id: "i5c",
+        tag: "Button",
+        componentRole: "instance",
+        masterId: "m5",
+        overrides: {},
+      }),
+    ];
+
+    const cache = createResolverCache();
+    const results = instances.map((inst) =>
+      resolveInstanceWithSharedCache(inst, master, cache),
+    );
+    const legacyResults = instances.map((inst) =>
+      resolveInstanceElement(inst, master),
+    );
+
+    // 각 instance 가 자신의 overrides 와 머지된 props 산출
+    expect(results[0]?.props.label).toBe("A");
+    expect(results[0]?.props.variant).toBe("primary"); // master 보존
+    expect(results[1]?.props.label).toBe("B");
+    expect(results[1]?.props.variant).toBe("secondary"); // override
+    expect(results[2]?.props.label).toBe("Default"); // master 그대로
+    expect(results[2]?.props.variant).toBe("primary");
+
+    // 모두 legacy 와 deep-equal
+    for (let i = 0; i < instances.length; i++) {
+      expect(results[i]?.props).toEqual(legacyResults[i].props);
+    }
+  });
+
+  it("TC19: master.tag !== instance.tag (createInstance 후 master 가 변경된 케이스) — canonical 결과 tag = master.tag", () => {
+    // createInstance 시 instance.tag = master.tag 로 시작하지만, 후속에 master 가
+    // 다른 tag 로 변경된다면 instance 도 master.tag 를 따라가야 함 (legacy 동작).
+    const master: Element = el({
+      id: "m6",
+      tag: "Box", // master 가 Button → Box 로 바뀜
+      componentRole: "master",
+      props: { width: 100 },
+    });
+    const instance: Element = el({
+      id: "i6",
+      tag: "Button", // 옛 tag 잔존
+      componentRole: "instance",
+      masterId: "m6",
+    });
+
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    const legacy = resolveInstanceElement(instance, master);
+
+    expect(canonical?.tag).toBe("Box");
+    expect(legacy.tag).toBe("Box");
+    expect(canonical?.props).toEqual(legacy.props);
+  });
+
+  it("TC20: instance.id 보존 — master.id 로 덮어쓰지 않음", () => {
+    const master: Element = el({
+      id: "m7",
+      tag: "Button",
+      componentRole: "master",
+      props: { label: "M" },
+    });
+    const instance: Element = el({
+      id: "i7-unique",
+      tag: "Button",
+      componentRole: "instance",
+      masterId: "m7",
+      overrides: { label: "I" },
+    });
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    expect(canonical?.id).toBe("i7-unique");
+    // 다른 instance 메타필드도 보존
+    expect(canonical?.componentRole).toBe("instance");
+    expect(canonical?.masterId).toBe("m7");
+  });
+
+  it("TC21: deeply-nested style 객체 — color + 추가 필드 (border) 머지", () => {
+    const master: Element = el({
+      id: "m8",
+      tag: "Box",
+      componentRole: "master",
+      props: {
+        style: {
+          color: "black",
+          backgroundColor: "white",
+          padding: 8,
+        },
+      },
+    });
+    const instance: Element = el({
+      id: "i8",
+      tag: "Box",
+      componentRole: "instance",
+      masterId: "m8",
+      overrides: {
+        style: {
+          color: "red",
+          border: "1px solid blue", // master 에 없는 새 필드
+        },
+      },
+    });
+    const canonical = resolveInstanceWithSharedCache(instance, master);
+    const legacy = resolveInstanceElement(instance, master);
+
+    expect(canonical?.props).toEqual(legacy.props);
+    const style = canonical?.props.style as Record<string, unknown>;
+    expect(style.color).toBe("red"); // override
+    expect(style.backgroundColor).toBe("white"); // master 보존
+    expect(style.padding).toBe(8); // master 보존
+    expect(style.border).toBe("1px solid blue"); // override 신규
+  });
+});
