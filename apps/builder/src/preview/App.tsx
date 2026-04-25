@@ -154,6 +154,22 @@ function CanvasContent() {
       const refCount = doc.children.filter((c) => c.type === "ref").length;
       const reusableCount = doc.children.filter((c) => c.reusable).length;
 
+      // [DEBUG] resolver 가 빈 배열 반환하는 root cause 진단용 추가 출력.
+      // ADR-903 옵션 C 검증 후 제거.
+      const childrenSummary = doc.children.slice(0, 5).map((c) => ({
+        id: c.id,
+        type: c.type,
+        reusable: c.reusable ?? false,
+        metaType: (c.metadata as Record<string, unknown> | undefined)?.type,
+        metaPageId: (c.metadata as Record<string, unknown> | undefined)?.pageId,
+      }));
+      const resolvedSummary = resolved.slice(0, 5).map((n) => ({
+        id: n.id,
+        type: n.type,
+        metaType: (n.metadata as Record<string, unknown> | undefined)?.type,
+        metaPageId: (n.metadata as Record<string, unknown> | undefined)?.pageId,
+      }));
+
       console.log("[ADR-903 P2] canonical resolve", {
         input: {
           elements: elements.length,
@@ -167,9 +183,11 @@ function CanvasContent() {
           children: doc.children.length,
           reusables: reusableCount,
           refs: refCount,
+          childrenSummary, // [DEBUG] doc.children 처음 5개 구조
         },
         resolved: {
           rootCount: resolved.length,
+          summary: resolvedSummary, // [DEBUG] resolved 처음 5개 구조
         },
       });
     } catch (err) {
