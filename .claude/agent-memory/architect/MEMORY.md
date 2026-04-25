@@ -46,6 +46,17 @@
 - radius 토큰 값: radius.sm=4px / radius.md=6px / radius.lg=8px / radius.xl=12px (primitives/radius.ts)
 - ADR 파일: docs/adr/105-c-sync-spec-to-css-resolution.md / breakdown: docs/adr/design/105-c-sync-spec-to-css-resolution-breakdown.md
 
+## ADR-903 P5 sub-breakdown 확정 (2026-04-25)
+
+- 파일: `docs/adr/design/903-phase5-persistence-imports-breakdown.md`
+- 6 sub-phase: P5-A(schema 3h) → P5-B(migration 10h) → P5-C(shim 해체 4h) → P5-D(imports resolver 12h) → P5-E(cache 통합 5h) → P5-F(DesignKit 8h) = **총 42h**
+- 최고 위험: P5-B (사용자 데이터 migration HIGH — 50+ fixture ≥99% + pre-migration backup 필수)
+- IndexedDB: DB_VERSION 9 (P3-E=8에서 layouts store 제거 + elements 행 canonical 전환)
+- adapter shim 해체: P5-C. 진입 전제 = P4 G4 통과 (결정 5)
+- imports DesignKit 통합: 옵션 C 권고 (wrap adapter) — kitLoader.loadAsCanonicalDocument() 추가 + importResolver.register("designkit") 연결
+- P5 진입 전 결정 4건: P5-1(componentRole 변환, metadata 보존 권고) / P5-2(ImportCache IndexedDB 영속, 선택) / P5-3(DesignKit 옵션 C, 권고) / P5-4(import origin 화이트리스트)
+- Gates: G5-A~G5-F 6단계 (G5-D = legacyOwnership grep 0건)
+
 ## G4 잔존 3건 최종 분류 확정 (ADR-106-d, 2026-04-21)
 
 - **Tag**: ADR-106-b에서 @sync 2건 해소 완료 확증 (grep 0건) → G2 확정. G4 제외.
