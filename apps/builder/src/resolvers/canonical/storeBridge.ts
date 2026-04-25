@@ -101,6 +101,64 @@ function visit(node: ResolvedNode, index: Map<string, ResolvedNode>): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 2.5) ResolvedNode 트리 → child id → parent id Map 빌드 (P3-B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * resolved tree 를 DFS 순회하여 child id → parent id Map 을 빌드한다.
+ *
+ * ADR-903 P3-D-2 (`elementCreation.ts` 히스토리 조건) / P3-D-5 (`BuilderCore`
+ * 필터링 경로) 가 `el.layout_id === id` 패턴을 canonical parent context 기반으로
+ * 교체할 때 사용한다.
+ *
+ * - root 노드는 부모가 없으므로 Map 에 등록되지 않는다 (`index.has(rootId) === false`)
+ * - DFS pre-order 로 traverse — 동일 id 가 트리 내 여러 곳에 등장하면 마지막
+ *   occurrence 의 부모가 우선
+ * - 단방향 (child → parent). parent → children 은 ResolvedNode.children 으로 직접 접근
+ *
+ * 설계 문서: `docs/adr/design/903-phase3d-runtime-breakdown.md` §4.5
+ */
+export function buildParentIndex(tree: ResolvedNode[]): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const node of tree) {
+    visitParent(node, undefined, index);
+  }
+  return index;
+}
+
+function visitParent(
+  node: ResolvedNode,
+  parentId: string | undefined,
+  index: Map<string, string>,
+): void {
+  if (parentId !== undefined) {
+    index.set(node.id, parentId);
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      visitParent(child, node.id, index);
+    }
+  }
+}
+
+/**
+ * `buildParentIndex` 결과에서 element id 의 canonical parent id 를 조회한다.
+ *
+ * - root 노드 → `null` (Map 에 등록 안 됨)
+ * - 존재하지 않는 id → `null`
+ * - 그 외 → 직속 부모 id (조상 아님)
+ *
+ * 사용 사이트는 정렬된 `Map` 을 받아 O(1) 조회를 보장. 매 호출마다 tree 를
+ * 재순회하지 않도록 caller 에서 index 를 한 번만 빌드해 재사용해야 한다.
+ */
+export function getCanonicalParentId(
+  index: Map<string, string>,
+  elementId: string,
+): string | null {
+  return index.get(elementId) ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 3) ResolvedNode → legacy props 추출 (두 metadata 패턴 대응)
 // ─────────────────────────────────────────────────────────────────────────────
 
