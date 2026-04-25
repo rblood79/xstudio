@@ -13,14 +13,24 @@
  *  - parent_id/order_num → tree order: 본 파일 buildTree() 함수
  *
  * 저장 포맷 미변경 (Phase 5에서 전환). Phase 2 resolver는 본 adapter 결과만 소비.
+ *
+ * **P3-A 신규 surface** (foundation phase):
+ *  - `selectCanonicalReusableFrames` — reusable frame 목록 추출
+ *  - `createReusableFrameNode` — reusable FrameNode 생성 factory
+ *  - `CanonicalPageRef` — page 노드 canonical 표현 타입
+ *  - `extractSlotMetaFromNode` — FrameNode slot schema → SlotMeta[]
+ *  - `hoistLayoutAsReusableFrame` — legacy Layout → FrameNode (alias)
+ *  - `SlotMeta` — slot 메타 타입 (shared 미수록 → 본 파일 정의)
  */
 
 import type {
   CanonicalNode,
   CompositionDocument,
+  FrameNode,
   RefNode,
 } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
+import type { Layout } from "@/types/builder/layout.types";
 import type {
   ConvertComponentRoleFn,
   ConvertPageLayoutFn,
@@ -31,7 +41,47 @@ import { buildIdPathContext, segId } from "./idPath";
 import {
   convertLayoutToReusableFrame,
   buildSlotPathMap,
+  legacyLayoutToCanonicalFrame,
 } from "./slotAndLayoutAdapter";
+
+// ─────────────────────────────────────────────
+// P3-A 신규 타입 surface
+// ─────────────────────────────────────────────
+
+/**
+ * Slot 메타 정보 — FrameNode.slot 속성에서 추출.
+ *
+ * `@composition/shared` 에 미수록 → P3-A 단계에서 본 파일에 정의.
+ * 추후 shared 패키지로 이동 예정 (ADR-903 P3-C NodesPanel UI 연동 시).
+ */
+export interface SlotMeta {
+  name: string;
+  required: boolean;
+  description?: string;
+}
+
+/**
+ * Page 노드의 canonical 표현 (결정 P3-1 옵션 C).
+ *
+ * - layout 있는 page → `RefNode` + `descendants` (slot children 포함)
+ * - 독립 page (layout 없음) → `FrameNode` + `metadata.type: "page"`
+ *
+ * 본 타입은 layout 있는 page의 RefNode에 page 메타 필드를 명시적으로 확장한다.
+ * `metadata.type: "page"` 는 독립 page FrameNode 를 판별하는 discriminator.
+ */
+export type CanonicalPageRef = RefNode & {
+  descendants?: Record<
+    string,
+    { children?: CanonicalNode[]; [key: string]: unknown }
+  >;
+  metadata?: {
+    type: "page" | "legacy-page";
+    slug?: string;
+    pageId?: string;
+    layoutId?: string;
+    [key: string]: unknown;
+  };
+};
 
 export interface LegacyAdapterDeps {
   convertComponentRole: ConvertComponentRoleFn;
@@ -180,4 +230,81 @@ function indexChildrenByParent(
     map.set(parent, arr);
   }
   return map;
+}
+
+// ─────────────────────────────────────────────
+// P3-A 신규 surface functions
+// ─────────────────────────────────────────────
+
+/**
+ * Canonical document tree 의 reusable frame 노드 추출.
+ * P3-B Stores 해체 시 `layouts[]` 별도 store 대체 selector.
+ *
+ * @param doc - canonical CompositionDocument
+ */
+export function selectCanonicalReusableFrames(
+  doc: CompositionDocument,
+): FrameNode[] {
+  return doc.children.filter(
+    (n): n is FrameNode => n.type === "frame" && n.reusable === true,
+  );
+}
+
+/**
+ * Canonical FrameNode 신규 생성 (reusable: true).
+ * 결정 P3-1 권고에 따라 layout shell 은 `frame + reusable: true`.
+ *
+ * @param name - 프레임 이름
+ * @param children - 자식 노드 배열 (기본값: [])
+ * @param slot - slot 선언 (`false` = slot 비활성화, `string[]` = 추천 reusable ID 목록)
+ */
+export function createReusableFrameNode(
+  name: string,
+  children: CanonicalNode[] = [],
+  slot?: false | string[],
+): FrameNode {
+  return {
+    id: crypto.randomUUID(),
+    type: "frame",
+    reusable: true,
+    name,
+    children,
+    ...(slot !== undefined && { slot }),
+  };
+}
+
+/**
+ * FrameNode 의 slot schema 속성 추출 + 메타 정규화.
+ * P3-C UI 재설계 시 NodesPanel slot 표시에 사용.
+ *
+ * - `frame.slot === false` 또는 미정의 → 빈 배열 반환
+ * - `frame.slot: string[]` → 각 슬롯 이름을 `SlotMeta` 로 변환
+ *
+ * `required` 필드는 P3-C NodesPanel UI 에서 ADR-903 §3.8 추천 component ID 목록
+ * 흡수 시점에 확장 예정. 현재는 모두 `false` (non-required).
+ *
+ * @param frame - canonical FrameNode
+ */
+export function extractSlotMetaFromNode(frame: FrameNode): SlotMeta[] {
+  if (frame.slot === false || frame.slot === undefined) return [];
+  return frame.slot.map((slotName) => ({
+    name: slotName,
+    required: false,
+  }));
+}
+
+/**
+ * Legacy Layout 을 canonical reusable FrameNode 로 hoist.
+ * P3-B Stores 해체 시 `layouts[]` → canonical document children 변환에 사용.
+ *
+ * `legacyLayoutToCanonicalFrame` 의 export alias — 호출자 의미 명확화.
+ *
+ * @param legacyLayout - Legacy Layout 레코드
+ * @param elements - 해당 layout_id로 필터링된 Element 배열 (호출자 책임)
+ */
+export function hoistLayoutAsReusableFrame(
+  legacyLayout: Layout,
+  elements: Element[],
+): FrameNode {
+  return legacyLayoutToCanonicalFrame(legacyLayout, elements);
 }

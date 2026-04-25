@@ -27,7 +27,7 @@
 
 import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
-import type { CanonicalNode, RefNode } from "@composition/shared";
+import type { CanonicalNode, FrameNode, RefNode } from "@composition/shared";
 import type { ConvertSlotElementFn, ConvertPageLayoutFn } from "./types";
 import { tagToType, isLegacySlotTag } from "./tagRename";
 import { buildIdPathContext, segId } from "./idPath";
@@ -310,4 +310,65 @@ function convertElementWithSlotHoisting(
     ),
     metadata: { type: "legacy-element-props", legacyProps: element.props },
   };
+}
+
+// ─────────────────────────────────────────────
+// Public bidirectional adapters (P3-A foundation)
+// ─────────────────────────────────────────────
+
+/**
+ * Legacy Layout 객체 → Canonical FrameNode (reusable: true) 변환.
+ * P3-A foundation 단계 read-through adapter.
+ *
+ * `convertLayoutToReusableFrame` 의 public wrapper — 기존 로직 재활용.
+ * index.ts의 `hoistLayoutAsReusableFrame` export alias 에서 사용.
+ *
+ * @param layout - Legacy Layout 레코드
+ * @param layoutElements - 해당 layout_id로 필터링된 Element 배열 (호출자 책임)
+ */
+export function legacyLayoutToCanonicalFrame(
+  layout: Layout,
+  layoutElements: Element[],
+): FrameNode {
+  return convertLayoutToReusableFrame(layout, layoutElements) as FrameNode;
+}
+
+/**
+ * Canonical FrameNode (reusable: true) → Legacy Layout 객체 역변환.
+ * P3-B/C/D 단계에서 store/UI 가 canonical → legacy 호환 surface 로 사용.
+ * 데이터 손실 없는 round-trip 보장.
+ *
+ * 변환 정책:
+ * - `node.id` → layout.id (`"layout-"` prefix 제거)
+ * - `node.metadata.layoutId` 우선 사용 (legacy id 보존)
+ * - `node.metadata.slug` → layout.slug
+ * - `node.metadata.componentName` → (무시 — layout.name 우선)
+ * - descendants 없음 → elements: [] (P3-D descendants 역변환은 별도 phase)
+ *
+ * @param node - canonical reusable FrameNode
+ */
+export function canonicalFrameToLegacyLayout(node: FrameNode): {
+  layout: Layout;
+  elements: Element[];
+} {
+  const meta = node.metadata as
+    | { type: string; layoutId?: string; slug?: string; [k: string]: unknown }
+    | undefined;
+
+  // legacy layout.id: metadata.layoutId 우선, 없으면 node.id의 "layout-" prefix 제거
+  const rawId = meta?.layoutId ?? node.id;
+  const layoutId = rawId.startsWith("layout-") ? rawId.slice(7) : rawId;
+
+  const layout: Layout = {
+    id: layoutId,
+    name: node.name ?? layoutId,
+    project_id: (meta?.project_id as string | undefined) ?? "",
+    description: (meta?.description as string | undefined) ?? undefined,
+    slug: meta?.slug ?? undefined,
+    order_num: (meta?.order_num as number | undefined) ?? undefined,
+  };
+
+  // P3-D 이전 단계에서는 descendants 역변환 미지원 — empty array 반환.
+  // P3-D legacyOwnershipToCanonicalParent() 구현 시 역변환 추가 예정.
+  return { layout, elements: [] };
 }
