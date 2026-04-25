@@ -390,6 +390,17 @@ export const createGetLayoutByIdAction =
 export const createGetLayoutSlotsAction =
   (get: GetState, getElements: () => Element[]) =>
   (layoutId: string): SlotInfo[] => {
+    // ADR-903 P3-B 안전망 #4: layout_id 기반 O(N) 스캔 사이트 마킹
+    // P3-D에서 canonical tree의 FrameNode.slot 기반으로 교체 예정.
+    // 전환 후 이 경로가 잔존하면 Slot 조회가 0건 반환되는 회귀 발생.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "[ADR-903 P3-B migration] getLayoutSlots: layout_id 기반 elements 스캔 사용 중. " +
+          "P3-D에서 canonical FrameNode.slot 기반으로 교체 예정.",
+        { layoutId },
+      );
+    }
+
     const elements = getElements();
 
     // Layout에 속한 Slot 요소들 필터링

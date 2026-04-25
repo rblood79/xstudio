@@ -512,6 +512,10 @@ export const usePageManager = ({
         );
 
         // Layout 요소도 함께 로드 (중복 제거)
+        // TODO(P3-D): canonical document load 로 전환 예정.
+        // P3-D에서 이 경로는 CompositionDocument의 reusable FrameNode 기반으로 교체.
+        // getByLayout() 호출 제거 및 selectCanonicalReusableFrames() 사용 예정.
+        // 미전환 상태로 P3-D 진입 시 layout-linked pages의 elements 로드 누락 → 렌더 파괴.
         const layoutIds = Array.from(
           new Set(
             projectPages
@@ -521,6 +525,7 @@ export const usePageManager = ({
         );
         const layoutElements: Element[] = [];
         for (const layoutId of layoutIds) {
+          // TODO(P3-D): getByLayout() → canonical reusable frame resolver 교체
           const els = await db.elements.getByLayout(layoutId);
           layoutElements.push(...els);
         }
