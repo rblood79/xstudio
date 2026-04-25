@@ -104,9 +104,29 @@ P3-E (Persistence) → P3-F (Test cleanup) → G3 통과
    - `useCanonicalReusableFrames()` hook (read-through, store 의 `layouts[]` → canonical view)
    - `selectCurrentReusableFrameId(state)` selector
 
-**Sub-Gate G3-A**: 타입 emit 0 error + adapter integration test 8/8 PASS. ref 감소 0 (foundation 단계 — surface 정의만).
+**Surface mapping 결과** ([Team 2 분석](#3-에이전트-팀-병렬-분석-산출물-2026-04-25)): 5 파일 합계 **36 exports** (단순 39 ref 보다 큰 surface). 분류: deprecate 16 / migrate 4 / keep 16. 외부 호출자 18 파일 (P3-B/C/D 변환 대상). 신규 surface 5건 권고:
 
-**Risk**: LOW. 신규 타입 + adapter 표면 추가만, 기존 호출 사이트 미변경.
+1. `selectCanonicalReusableFrames(doc): FrameNode[]`
+2. `createReusableFrameNode(name, children, slot?): FrameNode`
+3. `CanonicalPageRef = RefNode & { descendants }` 타입
+4. `extractSlotMetaFromNode(frame): SlotMeta[]`
+5. `hoistLayoutAsReusableFrame(legacyLayout, elements): FrameNode`
+
+의외 발견: `convertPageLayout` 가 `builder/stores/elements.ts` 에서 index.ts 경유 아닌 직접 import → P3-B 분리 단계 명확화 필요.
+
+**Sub-Gate G3-A**: 타입 emit 0 error + adapter integration test 8/8 PASS + **`legacyOwnershipToCanonicalParent()` 구현 완성** (Team 3 권고 #6 — P3-D 진입 시 데이터 손실 방지의 hard precondition). ref 감소 0 (foundation 단계 — surface 정의만).
+
+**P3-B 진입 전 필수 안전망 7건** ([Team 3 분석](#3-에이전트-팀-병렬-분석-산출물-2026-04-25)):
+
+1. `elementCreation.ts` — layout 편집 히스토리 조건에 `// TODO(P3-B)` 마킹 + canonical context 대체 계획 확정
+2. `elementSanitizer.ts` — `SupabaseElement.page_id: string | null` 타입 수정 선행 (현재 `string` required vs 런타임 `null` — Hidden bug D2 와 동일 위치)
+3. `useIframeMessenger.ts` — `UPDATE_ELEMENTS` postMessage 에 `version: "legacy-1.0"` 스텁 추가 (P3-D Preview 동시 배포 기반)
+4. `layoutActions.ts` — `currentLayoutId` 직접 접근 사이트 dev-only migration 경고 logging
+5. `usePageManager.ts` — `initializeProject` layout loading 경로에 `// TODO(P3-D)` 마킹
+6. G3-A 통과 조건에 `legacyOwnershipToCanonicalParent()` 구현 완성 추가 (위 Sub-Gate G3-A 에 반영됨)
+7. localStorage `"composition-layouts"` persist key migration 계획 확정 (새로고침 후 selectedReusableFrameId 초기화 방지)
+
+**Risk**: LOW (P3-A 자체) / **HIGH (P3-D 진입 시 미충족 위험)**. P3-A 단독 작업은 신규 타입 + adapter 표면 추가만으로 기존 호출 사이트 미변경. 단, 위 안전망 #6 미충족 상태에서 P3-D 진입 시 기존 IndexedDB 의 `layout_id` 기반 elements 가 `getByLayout()` API 소멸 이후 읽기 불가 → **사용자 데이터 손실** (Team 3 평가).
 
 ### 2.2 P3-B: Stores 해체 (~56 ref / 6 files)
 
@@ -311,12 +331,31 @@ grep -rnE "createLayout|useLayoutsStore|currentLayoutId|fetchLayouts|layout_id" 
 - **P5 (persistence 완결)**: P3-E adapter shim 의 완전 해체 — IndexedDB schema canonical-only 보장 + legacy migration script 제거 (사용자 100% canonical 전환 후)
 - **G4/G5 측정**: P3-F 후 시점에 G4 (UI marker 정합) / G5 (persistence 완결) 측정 진입 가능
 
-## 7. 미해결 / 결정 필요 사항
+## 7. 결정 사항 (architect 권고 결과)
 
-1. **`page` 노드 자체의 canonical 표현**: page 가 reusable frame 의 ref 인스턴스인가, 별도 page-type 노드인가? → P3-A 진입 전 확정 필요. ADR 본문 §95-101 의 frame 전용 필드 (`clip`/`placeholder`/`slot`) 가 page 에도 적용되는지 명확화.
-2. **Layout slug (URL path) 매핑**: 기존 `/path/to/layout` URL 이 canonical reusable frame id 로 어떻게 매핑되는지. `metadata.slug` vs `frame.id = slug` 양자택일.
-3. **IndexedDB schema migration version field 위치**: document level vs collection level. P3-E 진입 전 schema 결정 필요.
-4. **P2 옵션 C 미완 상태에서 P3-D 진입 차단 강제 메커니즘**: CI gate 또는 사전 checklist.
-5. **Adapter shim 의 lifecycle**: P3 완료 후 adapter shim 잔존 기간 — 1 minor release vs 다음 major release 까지.
+> 상세 권고 + 위험 평가 + 선택지 비교: [903-phase3-decisions.md](903-phase3-decisions.md) (529L). 본 섹션은 권고 결과 요약만.
 
-위 5건은 P3-A 착수 직전 별도 design session 또는 ADR 보강으로 확정.
+| ID    | 결정                          | 권고                                                                               | 사용자 결정 | 차단 대상    |
+| ----- | ----------------------------- | ---------------------------------------------------------------------------------- | :---------: | ------------ |
+| **1** | page 노드 canonical 표현      | layout 있는 page = `type:"ref"`, 독립 page = `type:"frame" + metadata.type:"page"` |    필수     | P3-A 첫 커밋 |
+| **2** | Layout slug 매핑              | `metadata.slug` (`frame.id = slug` 즉시 기각 — descendants path 구분자 충돌)       |  기본 채택  | —            |
+| **3** | IndexedDB schema version 위치 | `_meta` 별도 object store + `backupKey` 필드 (기존 store 무침범)                   |  기본 채택  | P3-E 착수    |
+| **4** | P3-D 진입 차단 메커니즘       | CI Gate (option A) + Checklist (option B) 병행                                     |    권장     | P3-D 착수    |
+| **5** | Adapter shim lifecycle        | P4 완료 시점 (G4 통과 후) 해체 — P5 무기한 잔존 기각                               |  기본 채택  | —            |
+
+**결정 1** 만 P3-A 첫 커밋 전에 사용자 confirm 필요. 결정 2/3/5 는 architect 권고로 즉시 적용 가능 (이견 없을 시). 결정 4 는 P3-D 진입 시점에 CI 환경 결정.
+
+## 8. 3-에이전트 팀 병렬 분석 산출물 (2026-04-25)
+
+P3-A 진입 전 본 sub-breakdown 의 §2.1 (P3-A 작업) + §7 (결정 사항) 의 정밀화를 위해 3-agent 팀 병렬 dispatch:
+
+| Team | Agent     | 산출물                                                                  | 주요 발견                                                                                                              |
+| ---- | --------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1    | architect | [903-phase3-decisions.md](903-phase3-decisions.md) (529L)               | 결정 5건 권고 (위 §7 흡수). 사용자 결정 필수 항목 = 결정 1                                                             |
+| 2    | Explore   | task output 경유 (Explore 도구 미보유로 file write 불가)                | 5 파일 합계 36 exports / 외부 호출자 18 파일 / 신규 surface 5건 권고 (§2.1 흡수). `convertPageLayout` 직접 import 발견 |
+| 3    | debugger  | [903-phase3a-regression-risk.md](903-phase3a-regression-risk.md) (487L) | HIGH+ 회귀 5개 / 사용자 데이터 손실 시나리오 1건 / 안전망 7건 (§2.1 G3-A 흡수) / 잠재 hidden bug 4건 (D1-D4)           |
+
+**잠재 hidden bug (P3 무관)**:
+
+- **D2 (MED)**: `elementSanitizer.ts:97` — `SupabaseElement.page_id: string` (required) vs layout element 의 `page_id: null` 런타임 → DB 에 `page_id=""` 저장. P3-A 안전망 #2 와 동일 위치, 즉시 수정 가치 있음.
+- **D1/D3/D4 (LOW)**: stale closure / parent_id 재매핑 / merge 순서 — 별도 이슈 처리.
