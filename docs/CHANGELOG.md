@@ -64,6 +64,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [ADR-903 P3 progress — P3-A foundation + P2 옵션 C + P3-B Stores 부분 land] - 2026-04-25
+
+> 직전 catch-up (`00a5899f`, 2026-04-25) 이후 세션 26 후반 15 commits — ADR-903 단일 주제.
+
+### Architecture
+
+- **ADR-903 P3 sub-breakdowns 3건 작성** (세션 26, commits `56819009`/`151d2e27`/`9ca09a30`):
+  - P3 frameset breakdown (322L, 6 sub-phase): `frames`, `pageFrames`, `reusableFrames` 세 개 컨테이너 중심 6단계 분할
+  - P3-A foundation 진입 정밀화 (decisions 529L + regression-risk 487L + §2.1/§7 보강 1,064L): page 노드 표현 / slug 매핑 / IDB schema / P3-D 차단 조건 / adapter shim lifecycle 5개 결정 권고
+  - P4 editing semantics breakdown (637L) + P5 persistence/imports breakdown (732L) + P0 land 검증 (107L — 실제 70% 확인, clip/placeholder/themes/variables 4개 영역 phase 미명시)
+  - 위치: `docs/adr/design/903-*-breakdown.md` 시리즈
+
+- **ADR-903 P3-A foundation 100% land** (세션 26, commits `f1f411b8`/`b520cf61`/`1d00b0b1`/`bf82fe9a`):
+  - `apps/builder/src/types/builder/layout.types.ts` 13 export `@deprecated ADR-903 P3:` 마크 (선언 불변, 타입 체크 통과)
+  - adapter bidirectional 변환 2종: `legacyLayoutToCanonicalFrame()` / `canonicalFrameToLegacyLayout()` — P4 shim 해체 시 진입점
+  - 신규 surface 5건: `selectCanonicalReusableFrames` / `createReusableFrameNode` / `CanonicalPageRef` / `extractSlotMetaFromNode` / `hoistLayoutAsReusableFrame`
+  - **G3-A hard precondition**: `legacyOwnershipToCanonicalParent()` 함수 추가 — P3-D 데이터 손실 방지 CI gate
+  - 안전망 vitest: canonical 85 → 93 PASS (+8 케이스, 통합 테스트 name field 포함)
+  - 위치: `apps/builder/src/resolvers/canonical/` + `apps/builder/src/types/builder/layout.types.ts`
+
+- **ADR-903 P2 옵션 C 인프라 land** (세션 26, commit `cdeb8ed9`):
+  - `?canonical=1` URL feature flag — default false (legacy 경로 회귀 0 보장)
+  - `RenderCanonicalNode` 컴포넌트 (244L): canonical tree → React 렌더 매핑
+  - DOM dual marker: `data-canonical-id` + `data-legacy-uuid` — Gate G2 (b) 진입 전제
+  - 위치: `apps/preview/src/components/RenderCanonicalNode.tsx` + `apps/preview/src/App.tsx`
+
+- **ADR-903 P3-B Stores 부분 land** (세션 26, commit `54fcde9e`, PR #217):
+  - 4/5 항목 완료: `layouts.ts` + `layoutActions.ts` + `elementCreation.ts` + `layout.types.ts`
+  - 신규 surface: `selectedReusableFrameId` + `currentLayoutId` backward-compat alias
+  - 안전망 #6: canonical UUID와 legacy `layout_id` 양쪽 동시 persist
+  - **Sub-Gate G3-B 측정**: `stores/` 내 legacy ref 56 → 39 (-17)
+  - 미완료 1/5: `layoutStore.ts` selectedLayoutId 전환 — P3-C 이후 진행
+
+### Bug Fixes
+
+- **elementSanitizer `page_id` 타입 정확화** (commit `4916326e`):
+  - **Why**: `SupabaseElement.page_id: string` (required) 와 layout element 의 `page_id: null` 런타임 값 불일치 → DB 저장 시 빈 문자열 잠재 버그
+  - 수정: 타입을 `string | null` 로 정확화
+  - 위치: `apps/builder/src/services/supabase/elementSanitizer.ts`
+
+- **P2 옵션 C `RenderCanonicalNode` page filter ternary 정정** (commit `990e8793`):
+  - **Why**: `a || b ? c : d` 우선순위 오류 → `(a || b) ? c : d` 해석 → `?canonical=1` 모드에서 master/layoutFrames 가 page 와 함께 잘못 렌더되는 버그
+  - 수정: `isPage` 판정 분리 + `currentPageId` 매칭 독립 조건으로 재작성 (P3-1 결정 정합: page = `{type:"ref"}` 또는 `{type:"frame", metadata.type:"page"}`)
+  - 위치: `apps/preview/src/App.tsx`
+
+### Documentation
+
+- **ADR-903 P0 land 상태 70% 정정**: P0 완료로 기록된 항목 중 clip / placeholder / themes / variables 4개 영역이 phase 미명시 미구현 확인 — 별도 planning 권고
+- **ADR-903 P3 결정 5건 권고** (`docs/adr/design/903-p3a-foundation-decisions.md`): page 노드 표현 옵션 C / slug 매핑 (`metadata.slug`) / IDB schema (`_meta` + `backupKey`) / P3-D 차단 CI checklist / adapter shim lifecycle (P4 G4 통과 시 해체)
+
+---
+
 ## [ProgressBar/Meter/Slider 정합성 강화 + TEXT_BEARING_SPECS SSOT] - 2026-04-06
 
 ### Bug Fixes
