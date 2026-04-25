@@ -43,6 +43,10 @@ import {
   buildSlotPathMap,
   legacyLayoutToCanonicalFrame,
 } from "./slotAndLayoutAdapter";
+import {
+  snapshotThemesFromConfig,
+  type ThemeConfigInput,
+} from "./themesAdapter";
 
 // ─────────────────────────────────────────────
 // P3-A 신규 타입 surface
@@ -86,6 +90,13 @@ export type CanonicalPageRef = RefNode & {
 export interface LegacyAdapterDeps {
   convertComponentRole: ConvertComponentRoleFn;
   convertPageLayout: ConvertPageLayoutFn;
+  /**
+   * ADR-910 Phase 1 — themes read-only snapshot 주입 (선택).
+   *
+   * 전달 시: `doc.themes = snapshotThemesFromConfig(getThemeConfig())` 주입.
+   * 미전달 시: `doc.themes = undefined` (BC — 기존 동작 유지).
+   */
+  getThemeConfig?: () => ThemeConfigInput;
 }
 
 export function legacyToCanonical(
@@ -93,7 +104,7 @@ export function legacyToCanonical(
   deps: LegacyAdapterDeps,
 ): CompositionDocument {
   const { elements, pages, layouts } = input;
-  const { convertComponentRole, convertPageLayout } = deps;
+  const { convertComponentRole, convertPageLayout, getThemeConfig } = deps;
 
   // 1. id path 컨텍스트 구축 (UUID → stable path remap)
   const idPathCtx = buildIdPathContext(elements);
@@ -213,8 +224,18 @@ export function legacyToCanonical(
     return convertLayoutToReusableFrame(layout, layoutElements);
   });
 
+  // ADR-910 Phase 1: themes read-only snapshot 주입 (opt-in)
+  // call-time 직렬화 — subscribe 기반 아님 (R4 대응: stale snapshot 방지)
+  const themesSnapshot = getThemeConfig
+    ? (snapshotThemesFromConfig(getThemeConfig()) as unknown as Record<
+        string,
+        string[]
+      >)
+    : undefined;
+
   return {
     version: "composition-1.0",
+    ...(themesSnapshot !== undefined ? { themes: themesSnapshot } : {}),
     children: [...layoutFrames, ...reusableMasters, ...pageNodes],
   };
 }
