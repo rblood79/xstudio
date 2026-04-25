@@ -31,14 +31,11 @@ function buildCalendarInitData() {
 export function createDatePickerDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
@@ -58,7 +55,6 @@ export function createDatePickerDefinition(
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -73,7 +69,6 @@ export function createDatePickerDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -81,7 +76,6 @@ export function createDatePickerDefinition(
         props: {
           _parentTag: "DatePicker",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -91,7 +85,6 @@ export function createDatePickerDefinition(
           isDisabled: false,
           isReadOnly: false,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
         children: [
           {
@@ -99,7 +92,6 @@ export function createDatePickerDefinition(
             props: {
               children: monthText,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -110,7 +102,6 @@ export function createDatePickerDefinition(
               totalDays: calTotalDays,
               todayDate: now.getDate(),
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -132,14 +123,11 @@ export function createDatePickerDefinition(
 export function createDateRangePickerDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
@@ -159,7 +147,6 @@ export function createDateRangePickerDefinition(
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -174,7 +161,6 @@ export function createDateRangePickerDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -182,7 +168,6 @@ export function createDateRangePickerDefinition(
         props: {
           _parentTag: "DateRangePicker",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -192,7 +177,6 @@ export function createDateRangePickerDefinition(
           isDisabled: false,
           isReadOnly: false,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
         children: [
           {
@@ -200,7 +184,6 @@ export function createDateRangePickerDefinition(
             props: {
               children: monthText,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -211,7 +194,6 @@ export function createDateRangePickerDefinition(
               totalDays: calTotalDays,
               todayDate: now.getDate(),
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -234,14 +216,11 @@ export function createDateRangePickerDefinition(
 export function createCalendarDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   // Calendar intrinsic width: cellSize*7 + gap*6 + paddingX*2 (md: 32*7+6*6+12*2 = 284)
   const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
@@ -258,7 +237,6 @@ export function createCalendarDefinition(
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -268,7 +246,6 @@ export function createCalendarDefinition(
         props: {
           children: monthText,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -279,7 +256,6 @@ export function createCalendarDefinition(
           totalDays: calTotalDays,
           todayDate: now.getDate(),
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -299,13 +275,10 @@ export function createCalendarDefinition(
 export function createDateFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   return {
     tag: "DateField",
@@ -324,7 +297,6 @@ export function createDateFieldDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -339,7 +311,6 @@ export function createDateFieldDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -347,7 +318,6 @@ export function createDateFieldDefinition(
         props: {
           style: { width: "100%" },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -356,7 +326,6 @@ export function createDateFieldDefinition(
           children: "",
           style: { fontSize: 12, display: "none" },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -376,13 +345,10 @@ export function createDateFieldDefinition(
 export function createTimeFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   return {
     tag: "TimeField",
@@ -402,7 +368,6 @@ export function createTimeFieldDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -417,7 +382,6 @@ export function createTimeFieldDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -425,7 +389,6 @@ export function createTimeFieldDefinition(
         props: {
           style: { width: "100%" },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -434,7 +397,6 @@ export function createTimeFieldDefinition(
           children: "",
           style: { fontSize: 12, display: "none" },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -453,13 +415,10 @@ export function createTimeFieldDefinition(
 export function createColorFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   return {
     tag: "ColorField",
@@ -476,7 +435,6 @@ export function createColorFieldDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -491,7 +449,6 @@ export function createColorFieldDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -504,7 +461,6 @@ export function createColorFieldDefinition(
             width: "80px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -517,7 +473,6 @@ export function createColorFieldDefinition(
             borderRadius: "4px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -536,14 +491,11 @@ export function createColorFieldDefinition(
 export function createColorPickerDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   return {
     tag: "ColorPicker",
@@ -556,7 +508,6 @@ export function createColorPickerDefinition(
           gap: "8px",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -569,7 +520,6 @@ export function createColorPickerDefinition(
             height: "200px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -581,7 +531,6 @@ export function createColorPickerDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -592,7 +541,6 @@ export function createColorPickerDefinition(
             display: "block",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -614,13 +562,10 @@ export function createColorPickerDefinition(
 export function createColorSwatchPickerDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null as null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null as null };
 
   const defaultColors = [
     "#FF0000",
@@ -644,7 +589,6 @@ export function createColorSwatchPickerDefinition(
           gap: 4,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -657,7 +601,6 @@ export function createColorSwatchPickerDefinition(
           height: 28,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       order_num: index + 1,
     })),
   };

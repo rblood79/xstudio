@@ -18,7 +18,7 @@ import { generateCustomId } from "../../utils/idGeneration";
 export async function createTable(
   context: ComponentCreationContext
 ): Promise<ComponentCreationResult> {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   let parentId = parentElement?.id || null;
 
   // parent_id가 없으면 body 요소를 parent로 설정
@@ -31,9 +31,6 @@ export async function createTable(
   const defaultProps = createDefaultTableProps();
 
   // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   // 부모 요소 생성
   const parent: Element = {
@@ -41,7 +38,6 @@ export async function createTable(
     customId: generateCustomId("Table", elements),
     tag: "Table",
     props: defaultProps as ComponentElementProps,
-    ...ownerFields,
     parent_id: parentId,
     order_num: orderNum,
     created_at: new Date().toISOString(),
@@ -55,7 +51,6 @@ export async function createTable(
     tag: "TableHeader",
     props: createDefaultTableHeaderProps() as ComponentElementProps,
     parent_id: parent.id,
-    ...ownerFields,
     order_num: 1,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -68,7 +63,6 @@ export async function createTable(
     tag: "TableBody",
     props: createDefaultTableBodyProps() as ComponentElementProps,
     parent_id: parent.id,
-    ...ownerFields,
     order_num: 2,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -95,7 +89,7 @@ export async function createTable(
 export async function createColumnGroup(
   context: ComponentCreationContext
 ): Promise<ComponentCreationResult> {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
 
   // 기존 Column Group들의 order_num 중 최대값 찾기
   const existingColumnGroups = elements.filter(
@@ -107,9 +101,6 @@ export async function createColumnGroup(
       : -1;
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const parent: Element = {
     id: ElementUtils.generateId(),
@@ -117,7 +108,6 @@ export async function createColumnGroup(
     tag: "ColumnGroup",
     props: createDefaultColumnGroupProps(),
     parent_id: parentElement?.id || null,
-    ...ownerFields,
     order_num: maxOrderNum + 1,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

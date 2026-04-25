@@ -18,14 +18,11 @@ import type {
 export function createSelectDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const items: StoredSelectItem[] = [
     { id: crypto.randomUUID(), label: "Aardvark", value: "aardvark" },
@@ -53,7 +50,6 @@ export function createSelectDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -68,7 +64,6 @@ export function createSelectDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -78,7 +73,6 @@ export function createSelectDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -87,7 +81,6 @@ export function createSelectDefinition(
               placeholder: "Choose an option...",
               style: { flex: 1 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 0,
           },
           {
@@ -96,7 +89,6 @@ export function createSelectDefinition(
               children: "",
               style: { width: 18, height: 18, flexShrink: 0 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
         ],
@@ -115,14 +107,11 @@ export function createSelectDefinition(
 export function createComboBoxDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const items: StoredComboBoxItem[] = [
     { id: crypto.randomUUID(), label: "Aardvark", value: "aardvark" },
@@ -152,7 +141,6 @@ export function createComboBoxDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -167,7 +155,6 @@ export function createComboBoxDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -177,7 +164,6 @@ export function createComboBoxDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -187,7 +173,6 @@ export function createComboBoxDefinition(
               placeholder: "Type or select...",
               style: { flex: 1 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 0,
           },
           {
@@ -196,7 +181,6 @@ export function createComboBoxDefinition(
               children: "",
               style: { width: 18, height: 18, flexShrink: 0 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
         ],
@@ -216,14 +200,11 @@ export function createComboBoxDefinition(
 export function createListBoxDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const items: StoredListBoxItem[] = [
     {
@@ -263,7 +244,6 @@ export function createListBoxDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -280,14 +260,11 @@ export function createListBoxDefinition(
 export function createGridListDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const items: StoredGridListItem[] = [
     {
@@ -323,7 +300,6 @@ export function createGridListDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -337,13 +313,10 @@ export function createGridListDefinition(
 export function createListDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "List",
@@ -356,7 +329,6 @@ export function createListDefinition(
           gap: 4,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -366,7 +338,6 @@ export function createListDefinition(
         props: {
           children: "Item 1",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -374,7 +345,6 @@ export function createListDefinition(
         props: {
           children: "Item 2",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -382,7 +352,6 @@ export function createListDefinition(
         props: {
           children: "Item 3",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],

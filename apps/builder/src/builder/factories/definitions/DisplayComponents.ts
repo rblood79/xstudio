@@ -11,13 +11,10 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createAvatarDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Avatar",
@@ -34,7 +31,6 @@ export function createAvatarDefinition(
           height: 32,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -54,13 +50,10 @@ export function createAvatarDefinition(
 export function createAvatarGroupDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "AvatarGroup",
@@ -75,7 +68,6 @@ export function createAvatarGroupDefinition(
           alignItems: "center",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -91,7 +83,6 @@ export function createAvatarGroupDefinition(
             marginLeft: -8,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -105,7 +96,6 @@ export function createAvatarGroupDefinition(
             marginLeft: -8,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -119,7 +109,6 @@ export function createAvatarGroupDefinition(
             marginLeft: -8,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -135,13 +124,10 @@ export function createAvatarGroupDefinition(
 export function createStatusLightDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "StatusLight",
@@ -158,7 +144,6 @@ export function createStatusLightDefinition(
           gap: 8,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -177,13 +162,10 @@ export function createStatusLightDefinition(
 export function createInlineAlertDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "InlineAlert",
@@ -192,7 +174,6 @@ export function createInlineAlertDefinition(
       props: {
         variant: "info",
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -204,7 +185,6 @@ export function createInlineAlertDefinition(
           level: 3,
           className: "alert-heading",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -214,7 +194,6 @@ export function createInlineAlertDefinition(
             "There was an error processing your request. Please try again.",
           className: "react-aria-Description",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -232,13 +211,10 @@ export function createInlineAlertDefinition(
 export function createButtonGroupDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "ButtonGroup",
@@ -255,7 +231,6 @@ export function createButtonGroupDefinition(
           width: "fit-content",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -268,7 +243,6 @@ export function createButtonGroupDefinition(
           fillStyle: "outline",
           size: "md",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -279,7 +253,6 @@ export function createButtonGroupDefinition(
           fillStyle: "fill",
           size: "md",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -297,13 +270,10 @@ export function createButtonGroupDefinition(
 export function createAccordionDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Accordion",
@@ -317,7 +287,6 @@ export function createAccordionDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -331,7 +300,6 @@ export function createAccordionDefinition(
             display: "block",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -339,7 +307,6 @@ export function createAccordionDefinition(
             props: {
               children: "Section 1",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -347,7 +314,6 @@ export function createAccordionDefinition(
             props: {
               children: "Section 1 content goes here.",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -361,7 +327,6 @@ export function createAccordionDefinition(
             display: "block",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
         children: [
           {
@@ -369,7 +334,6 @@ export function createAccordionDefinition(
             props: {
               children: "Section 2",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -377,7 +341,6 @@ export function createAccordionDefinition(
             props: {
               children: "Section 2 content goes here.",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -399,13 +362,10 @@ export function createAccordionDefinition(
 export function createProgressBarDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "ProgressBar",
@@ -431,7 +391,6 @@ export function createProgressBarDefinition(
           columnGap: 12,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -453,7 +412,6 @@ export function createProgressBarDefinition(
             gridArea: "label",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -470,7 +428,6 @@ export function createProgressBarDefinition(
             justifySelf: "end",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -485,7 +442,6 @@ export function createProgressBarDefinition(
             gridArea: "bar",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -504,13 +460,10 @@ export function createProgressBarDefinition(
 export function createMeterDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Meter",
@@ -535,7 +488,6 @@ export function createMeterDefinition(
           columnGap: 12,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -555,7 +507,6 @@ export function createMeterDefinition(
             gridArea: "label",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -572,7 +523,6 @@ export function createMeterDefinition(
             justifySelf: "end",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -587,7 +537,6 @@ export function createMeterDefinition(
             gridArea: "bar",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -603,13 +552,10 @@ export function createMeterDefinition(
 export function createProgressCircleDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "ProgressCircle",
@@ -625,7 +571,6 @@ export function createProgressCircleDefinition(
           height: 32,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -642,13 +587,10 @@ export function createProgressCircleDefinition(
 export function createImageDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Image",
@@ -664,7 +606,6 @@ export function createImageDefinition(
           borderRadius: 8,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -683,13 +624,10 @@ export function createImageDefinition(
 export function createRangeCalendarDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const now = new Date();
   const calYear = now.getFullYear();
@@ -708,7 +646,6 @@ export function createRangeCalendarDefinition(
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -721,7 +658,6 @@ export function createRangeCalendarDefinition(
             month: "long",
           }).format(now),
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -732,7 +668,6 @@ export function createRangeCalendarDefinition(
           totalDays: calTotalDays,
           todayDate: now.getDate(),
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -750,13 +685,10 @@ export function createRangeCalendarDefinition(
 export function createIllustratedMessageDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "IllustratedMessage",
@@ -777,7 +709,6 @@ export function createIllustratedMessageDefinition(
           height: 280,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -797,13 +728,10 @@ export function createIllustratedMessageDefinition(
 export function createCardViewDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "CardView",
@@ -822,7 +750,6 @@ export function createCardViewDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -838,7 +765,6 @@ export function createCardViewDefinition(
             padding: 16,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -852,7 +778,6 @@ export function createCardViewDefinition(
             padding: 16,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -866,7 +791,6 @@ export function createCardViewDefinition(
             padding: 16,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -883,13 +807,10 @@ export function createCardViewDefinition(
 export function createTableViewDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "TableView",
@@ -906,7 +827,6 @@ export function createTableViewDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -919,7 +839,6 @@ export function createTableViewDefinition(
             flexDirection: "row",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
         children: [
           {
@@ -928,7 +847,6 @@ export function createTableViewDefinition(
               children: "Name",
               style: { flex: 1, padding: 8, fontWeight: 600 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 0,
           },
           {
@@ -937,7 +855,6 @@ export function createTableViewDefinition(
               children: "Type",
               style: { flex: 1, padding: 8, fontWeight: 600 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -946,7 +863,6 @@ export function createTableViewDefinition(
               children: "Status",
               style: { flex: 1, padding: 8, fontWeight: 600 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -959,7 +875,6 @@ export function createTableViewDefinition(
             flexDirection: "column",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -967,7 +882,6 @@ export function createTableViewDefinition(
             props: {
               style: { display: "flex", flexDirection: "row" },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 0,
             children: [
               {
@@ -976,7 +890,6 @@ export function createTableViewDefinition(
                   children: "Item 1",
                   style: { flex: 1, padding: 8 },
                 } as ComponentElementProps,
-                ...ownerFields,
                 order_num: 0,
               },
               {
@@ -985,7 +898,6 @@ export function createTableViewDefinition(
                   children: "File",
                   style: { flex: 1, padding: 8 },
                 } as ComponentElementProps,
-                ...ownerFields,
                 order_num: 1,
               },
               {
@@ -994,7 +906,6 @@ export function createTableViewDefinition(
                   children: "Active",
                   style: { flex: 1, padding: 8 },
                 } as ComponentElementProps,
-                ...ownerFields,
                 order_num: 2,
               },
             ],

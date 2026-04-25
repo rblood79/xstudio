@@ -12,14 +12,11 @@ import type { StoredMenuItem } from "@composition/specs";
 export function createMenuDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const items: StoredMenuItem[] = [
     { id: crypto.randomUUID(), label: "Menu Item 1" },
@@ -43,7 +40,6 @@ export function createMenuDefinition(
           display: "block",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -63,13 +59,10 @@ export function createMenuDefinition(
 export function createNavDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Nav",
@@ -81,7 +74,6 @@ export function createNavDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -93,7 +85,6 @@ export function createNavDefinition(
           href: "/",
           variant: "primary",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -103,7 +94,6 @@ export function createNavDefinition(
           href: "/about",
           variant: "primary",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -113,7 +103,6 @@ export function createNavDefinition(
           href: "/contact",
           variant: "primary",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -134,13 +123,10 @@ export function createNavDefinition(
 export function createPaginationDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Pagination",
@@ -156,7 +142,6 @@ export function createPaginationDefinition(
           gap: 6,
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -169,7 +154,6 @@ export function createPaginationDefinition(
           fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -179,7 +163,6 @@ export function createPaginationDefinition(
           variant: "accent",
           size: "sm",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -190,7 +173,6 @@ export function createPaginationDefinition(
           fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
       {
@@ -201,7 +183,6 @@ export function createPaginationDefinition(
           fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 4,
       },
       {
@@ -212,7 +193,6 @@ export function createPaginationDefinition(
           fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 5,
       },
     ],
@@ -230,14 +210,11 @@ export function createPaginationDefinition(
 export function createDisclosureDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Disclosure",
@@ -248,7 +225,6 @@ export function createDisclosureDefinition(
           display: "block",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -259,7 +235,6 @@ export function createDisclosureDefinition(
           children: "Section Title",
           headingLevel: 3,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -267,7 +242,6 @@ export function createDisclosureDefinition(
         props: {
           children: "Section content goes here.",
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -291,14 +265,11 @@ export function createDisclosureDefinition(
 export function createDisclosureGroupDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "DisclosureGroup",
@@ -309,7 +280,6 @@ export function createDisclosureGroupDefinition(
           display: "block",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -321,7 +291,6 @@ export function createDisclosureGroupDefinition(
             display: "block",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -330,7 +299,6 @@ export function createDisclosureGroupDefinition(
               children: "Section 1",
               headingLevel: 3,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -338,7 +306,6 @@ export function createDisclosureGroupDefinition(
             props: {
               children: "Content 1",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -350,7 +317,6 @@ export function createDisclosureGroupDefinition(
             display: "block",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
         children: [
           {
@@ -359,7 +325,6 @@ export function createDisclosureGroupDefinition(
               children: "Section 2",
               headingLevel: 3,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -367,7 +332,6 @@ export function createDisclosureGroupDefinition(
             props: {
               children: "Content 2",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
