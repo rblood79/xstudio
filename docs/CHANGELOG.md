@@ -5,6 +5,41 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 옵션 C default + P3-B canonical helper + P3-D-3 GREEN — 세션 28~29] - 2026-04-26
+
+> 세션 27 마지막 entry (`703018a9` 옵션 C root cause) 이후 — 세션 28 의 옵션 C production default 활성화, P3-B 추가 helper land, P3-D 진입 준비 + 세션 29 의 P3-D-3 GREEN 마감.
+
+### Architecture
+
+- **ADR-903 옵션 C `?canonical=1` Preview default 활성화** (PR #227 `feat/adr-903-canonical-default`, commit `db462688`):
+  - canonical render path 를 production default 로 승격 — 기존에는 `?canonical=1` query string 으로 opt-in 필요했던 경로를 default 로 전환
+  - **Why**: 세션 27/28 의 옵션 C root cause fix (`UPDATE_PAGES` sender 누락) 후 Chrome MCP 검증으로 canonical resolve 정상 동작 확증. ADR-903 P3-D 진입 hard precondition (G2=0) 충족
+  - 후속 정리: `chore/adr-903-revert-debug-logs` (PR #226) — 세션 27 P2 dev 로그 보강분 revert
+  - README 갱신: ADR-903 status 에 "옵션 C default 2026-04-26" 명시
+
+- **ADR-903 P3-B `getCanonicalParentId` + `buildParentIndex` helper** (PR #231 `feat/adr-903-p3b-canonical-parent-helper`, commit `c80439e7`):
+  - canonical document 의 노드별 부모 lookup helper 2종 추가 — `getCanonicalParentId(node, doc)` + `buildParentIndex(doc)` (O(1) Map)
+  - **Why**: P3-D 의 elementCreation/BuilderCore 필터링 경로에서 `el.layout_id === id` → `getCanonicalParentId(el) === id` 변환의 단일 진입점 제공. P3-B 잔여 보강
+  - 위치: `apps/builder/src/adapters/canonical/` (helper) + 단위 테스트
+
+- **ADR-903 P3-D-3 GREEN — `layoutActions` canonical 전환 마감** (commit `109af146`, branch `feat/adr-903-p3d3-layout-actions`):
+  - `createGetLayoutSlotsAction`: `elements.filter(layout_id)` 패턴 제거 → `selectCanonicalDocument(state, pages, layouts).children` 에서 reusable `FrameNode` 직접 lookup 후 `frame.slot` 배열에서 `SlotInfo` 매핑. canonical 경로는 `elementId === ""` (slot 채우기는 descendants 로 표현, `composition-document.types.ts:215`)
+  - `createDeleteLayoutAction`: cascade 진입 전 canonical guard 추가 — `doc.children` 에 reusable `FrameNode` 가 존재할 때만 page `layout_id` null 처리 + elements cascade. frame 미존재 (stale layout) 시 cascade skip + layout row 만 삭제
+  - **Why**: ADR-903 P3-D 6 sub-phase 중 3번째. P3-D-1 (factory ownership) / P3-D-2 (elementCreation) 와 독립 진행 가능 — `layoutActions.ts` 만 변경
+  - 검증: vitest layoutActions 6/6 PASS / pnpm type-check 3/3 / `createGetLayoutSlotsAction` 내 `layout_id` ref = 0 회귀 측정
+
+- **ADR-903 P3-D-1+P3-D-2 RED phase 준비** (commit `5cdc4694`, PR #229 `prep/adr-903-p3d-tdd-red`):
+  - P3-D-1 factory ownership 53 todo test 작성 + P3-D 인벤토리 (6 sub-phase / 26 영향 파일 / ~207 ref)
+  - **Why**: P3-D 진입 전 RED 테스트 미리 land — 후속 GREEN agent dispatch 의 진입점 명확화
+
+### Infrastructure
+
+- **agent worktree gitlinked 정리** (commit `9290e0d3`):
+  - `.claude/worktrees/agent-*` gitlinked 디렉토리 일괄 cleanup — agent 종료 후 잔재 제거
+  - **Why**: 세션 27 6-agent 병렬 dispatch 후 worktree 잔재 누적
+
+---
+
 ## [ADR-903 P3-C cleanup + 옵션 C 인프라 검증 — 세션 27] - 2026-04-25
 
 > 세션 26 마지막 commit (`8eee9f01` agents.jsonl) 이후 세션 27 작업 — PR #219 머지 완료 기준.
@@ -96,7 +131,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Team 1 (debugger) / Team 2 (Explore P3-D) / Team 3 (Explore cleanup) / Team 4 (implementer ADR-910) / Team 5 (documenter) 동시 진행
   - 결과: 4 PR push (cleanup #219 머지 + fix/feat/docs 3 PR 대기) + 1 critical fix (별도 PR)
   - **Why**: 독립 작업 병렬화로 turn 활용도 극대화. Explore agent 의 write 권한 부재는 documenter 가 출력 본문 직접 작성으로 대응
-    > > > > > > > 0b404697 (docs(changelog): 세션 27/28 catch-up — ADR-903 옵션 C root cause + 첫 정상 작동)
+
+---
 
 ## [Catch-up 2026-04-07 ~ 2026-04-25 — ADR-063/082/098 charter / ADR-056/107 / ADR-907/908/909 / ADR-903 P0~P2] - 2026-04-25
 
