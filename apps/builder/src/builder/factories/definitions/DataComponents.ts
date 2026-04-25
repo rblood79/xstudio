@@ -21,14 +21,11 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createDataTableDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   // 고유 DataTable ID 생성 (사용자가 나중에 변경 가능)
   const dataTableId = `datatable-${Date.now()}`;
@@ -56,7 +53,6 @@ export function createDataTableDefinition(
           },
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -74,7 +70,7 @@ export function createDataTableDefinition(
 export function createSlotDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
@@ -84,9 +80,6 @@ export function createSlotDefinition(
   }
 
   // ⭐ Layout/Slot System - Slot은 항상 layout_id 사용
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Slot",
@@ -97,7 +90,6 @@ export function createSlotDefinition(
         required: false,
         description: "Main content area",
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },

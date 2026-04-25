@@ -9,7 +9,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createTabsDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
@@ -22,9 +22,6 @@ export function createTabsDefinition(
   ];
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Tabs",
@@ -39,7 +36,6 @@ export function createTabsDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -47,13 +43,11 @@ export function createTabsDefinition(
       {
         tag: "TabList",
         props: {} as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
         tag: "TabPanels",
         props: {} as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
         children: [
           {
@@ -61,7 +55,6 @@ export function createTabsDefinition(
             props: {
               itemId: item1Id,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -69,7 +62,6 @@ export function createTabsDefinition(
             props: {
               itemId: item2Id,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -88,14 +80,11 @@ export function createTabsDefinition(
 export function createCardDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Card",
@@ -116,7 +105,6 @@ export function createCardDefinition(
           gap: "8px",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -132,7 +120,6 @@ export function createCardDefinition(
             borderRadius: "8px 8px 0 0",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -146,7 +133,6 @@ export function createCardDefinition(
                 objectFit: "cover",
               },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
         ],
@@ -157,7 +143,6 @@ export function createCardDefinition(
         //   기존 저장 프로젝트에 inline style 이 있는 경우 그대로 유지 (사용자 편집 간주).
         tag: "CardHeader",
         props: {} as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
         children: [
           {
@@ -175,7 +160,6 @@ export function createCardDefinition(
                 flex: 1,
               },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
         ],
@@ -185,7 +169,6 @@ export function createCardDefinition(
         //   → CardContentSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
         tag: "CardContent",
         props: {} as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
         children: [
           {
@@ -201,7 +184,6 @@ export function createCardDefinition(
                 color: "#49454f",
               },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
         ],
@@ -217,7 +199,6 @@ export function createCardDefinition(
             borderTopWidth: "1px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 4,
       },
     ],
@@ -230,14 +211,11 @@ export function createCardDefinition(
 export function createTreeDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Tree",
@@ -248,7 +226,6 @@ export function createTreeDefinition(
         selectionMode: "single",
         selectionBehavior: "replace",
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -259,7 +236,6 @@ export function createTreeDefinition(
           title: "Node 1",
           hasChildren: true,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -268,7 +244,6 @@ export function createTreeDefinition(
           title: "Node 2",
           hasChildren: false,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],

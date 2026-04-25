@@ -14,14 +14,11 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createDialogDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Dialog",
@@ -39,7 +36,6 @@ export function createDialogDefinition(
           gap: "16px",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -55,7 +51,6 @@ export function createDialogDefinition(
             fontWeight: "600",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -68,7 +63,6 @@ export function createDialogDefinition(
             lineHeight: "1.5",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -80,7 +74,6 @@ export function createDialogDefinition(
             gap: "8px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -98,14 +91,11 @@ export function createDialogDefinition(
 export function createPopoverDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Popover",
@@ -122,7 +112,6 @@ export function createPopoverDefinition(
           gap: "8px",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -138,7 +127,6 @@ export function createPopoverDefinition(
             fontWeight: "600",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -151,7 +139,6 @@ export function createPopoverDefinition(
             lineHeight: "1.5",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -168,14 +155,11 @@ export function createPopoverDefinition(
 export function createTooltipDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Tooltip",
@@ -190,7 +174,6 @@ export function createTooltipDefinition(
           gap: "4px",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -205,7 +188,6 @@ export function createTooltipDefinition(
             lineHeight: "1.4",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
     ],

@@ -14,14 +14,11 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createTextFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "TextField",
@@ -45,7 +42,6 @@ export function createTextFieldDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -60,7 +56,6 @@ export function createTextFieldDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -72,7 +67,6 @@ export function createTextFieldDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -84,7 +78,6 @@ export function createTextFieldDefinition(
             display: "none",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -103,14 +96,11 @@ export function createTextFieldDefinition(
 export function createTextAreaDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "TextArea",
@@ -133,7 +123,6 @@ export function createTextAreaDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -148,7 +137,6 @@ export function createTextAreaDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -161,7 +149,6 @@ export function createTextAreaDefinition(
             height: 80,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -173,7 +160,6 @@ export function createTextAreaDefinition(
             display: "none",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -200,14 +186,11 @@ export function createTextAreaDefinition(
 export function createFormDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Form",
@@ -222,7 +205,6 @@ export function createFormDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -238,7 +220,6 @@ export function createFormDefinition(
             fontWeight: "600",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -250,7 +231,6 @@ export function createFormDefinition(
             fontSize: "14px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0.5,
       },
       {
@@ -263,7 +243,6 @@ export function createFormDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -271,7 +250,6 @@ export function createFormDefinition(
             props: {
               children: "Field Label",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -285,7 +263,6 @@ export function createFormDefinition(
               isDisabled: false,
               isReadOnly: false,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -300,7 +277,6 @@ export function createFormDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
         children: [
           {
@@ -308,7 +284,6 @@ export function createFormDefinition(
             props: {
               children: "Another Field",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -322,7 +297,6 @@ export function createFormDefinition(
               isDisabled: false,
               isReadOnly: false,
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -342,14 +316,11 @@ export function createFormDefinition(
 export function createToastDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Toast",
@@ -365,7 +336,6 @@ export function createToastDefinition(
           width: "fit-content",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -381,7 +351,6 @@ export function createToastDefinition(
             fontWeight: "600",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -393,7 +362,6 @@ export function createToastDefinition(
             fontSize: "14px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -425,13 +393,10 @@ export function createToastDefinition(
 export function createNumberFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "NumberField",
@@ -454,7 +419,6 @@ export function createNumberFieldDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -469,7 +433,6 @@ export function createNumberFieldDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -479,7 +442,6 @@ export function createNumberFieldDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
         children: [
           {
@@ -490,7 +452,6 @@ export function createNumberFieldDefinition(
                 display: "block",
               },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -499,7 +460,6 @@ export function createNumberFieldDefinition(
               iconName: "minus",
               slot: "decrement",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
           {
@@ -508,7 +468,6 @@ export function createNumberFieldDefinition(
               iconName: "plus",
               slot: "increment",
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 3,
           },
         ],
@@ -522,7 +481,6 @@ export function createNumberFieldDefinition(
             display: "none",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
     ],
@@ -552,13 +510,10 @@ export function createNumberFieldDefinition(
 export function createSearchFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "SearchField",
@@ -577,7 +532,6 @@ export function createSearchFieldDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -592,7 +546,6 @@ export function createSearchFieldDefinition(
             fontWeight: 600,
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 0,
       },
       {
@@ -602,7 +555,6 @@ export function createSearchFieldDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
         children: [
           {
@@ -612,7 +564,6 @@ export function createSearchFieldDefinition(
               children: "",
               style: { width: 18, height: 18, flexShrink: 0 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 0,
           },
           {
@@ -622,7 +573,6 @@ export function createSearchFieldDefinition(
               placeholder: "Search...",
               style: { flex: 1 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 1,
           },
           {
@@ -632,7 +582,6 @@ export function createSearchFieldDefinition(
               children: "",
               style: { width: 18, height: 18, flexShrink: 0 },
             } as ComponentElementProps,
-            ...ownerFields,
             order_num: 2,
           },
         ],
@@ -657,14 +606,11 @@ export function createSliderDefinition(
   context: ComponentCreationContext,
   options?: { isRange?: boolean },
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
   const isRange = options?.isRange ?? false;
 
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   const thumbChildren = isRange
     ? [
@@ -673,7 +619,6 @@ export function createSliderDefinition(
           props: {
             style: { width: 18, height: 18, borderRadius: "50%" },
           } as ComponentElementProps,
-          ...ownerFields,
           order_num: 0,
         },
         {
@@ -681,7 +626,6 @@ export function createSliderDefinition(
           props: {
             style: { width: 18, height: 18, borderRadius: "50%" },
           } as ComponentElementProps,
-          ...ownerFields,
           order_num: 1,
         },
       ]
@@ -691,7 +635,6 @@ export function createSliderDefinition(
           props: {
             style: { width: 18, height: 18, borderRadius: "50%" },
           } as ComponentElementProps,
-          ...ownerFields,
           order_num: 0,
         },
       ];
@@ -718,7 +661,6 @@ export function createSliderDefinition(
           width: "100%",
         },
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -731,7 +673,6 @@ export function createSliderDefinition(
             backgroundColor: "transparent",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -742,7 +683,6 @@ export function createSliderDefinition(
             width: "fit-content",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -752,7 +692,6 @@ export function createSliderDefinition(
             width: "100%",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
         children: thumbChildren,
       },
@@ -763,14 +702,11 @@ export function createSliderDefinition(
 export function createToolbarDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
-  const { parentElement, pageId, elements, layoutId } = context;
+  const { parentElement, elements } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // ⭐ Layout/Slot System
-  const ownerFields = layoutId
-    ? { page_id: null, layout_id: layoutId }
-    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Toolbar",
@@ -779,7 +715,6 @@ export function createToolbarDefinition(
       props: {
         "aria-label": "Toolbar",
       } as ComponentElementProps,
-      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -792,7 +727,6 @@ export function createToolbarDefinition(
           size: "sm",
           isDisabled: false,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
@@ -803,7 +737,6 @@ export function createToolbarDefinition(
           size: "sm",
           isDisabled: false,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 2,
       },
       {
@@ -815,7 +748,6 @@ export function createToolbarDefinition(
             height: "20px",
           },
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 3,
       },
       {
@@ -826,7 +758,6 @@ export function createToolbarDefinition(
           size: "sm",
           isDisabled: false,
         } as ComponentElementProps,
-        ...ownerFields,
         order_num: 4,
       },
     ],
