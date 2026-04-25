@@ -28,10 +28,11 @@
 
 ## CHANGELOG 최근 entry 현황 (2026-04-25 기준)
 
-- **최신 entry 1**: `## [ADR-903 P3 progress — P3-A foundation + P2 옵션 C + P3-B Stores 부분 land] - 2026-04-25` (세션 26 후반 15 commits 기록, L67~L116)
-- **최신 entry 2**: `## [Catch-up 2026-04-07 ~ 2026-04-25 — ADR-063/082/098 charter / ADR-056/107 / ADR-907/908/909 / ADR-903 P0~P2] - 2026-04-25` (L8~L64, 825 commits catch-up)
+- **최신 entry 1**: `## [ADR-903 P3-C cleanup + 옵션 C 인프라 검증 — 세션 27] - 2026-04-25` (세션 27, PR #219 기준, L8~L52)
+- **최신 entry 2**: `## [ADR-903 P3 progress — P3-A foundation + P2 옵션 C + P3-B Stores 부분 land] - 2026-04-25` (세션 26 후반 15 commits)
+- **최신 entry 3**: `## [Catch-up 2026-04-07 ~ 2026-04-25 — ...]` (825 commits catch-up)
 - 다음 entry 작성 시 trigger-based 정상 갱신으로 복귀 (catch-up 불필요)
-- ADR-903 세션 26 coverage: P3 sub-breakdowns + P3-A foundation + P2 옵션 C + P3-B Stores (4/5)
+- ADR-903 세션 27 coverage: P3-C cleanup (-619L) + 옵션 C 인프라 + resolve 0 버그 발견
 
 ## ADR-903 P0 Stream 3 작업 기록 (2026-04-25)
 
