@@ -66,7 +66,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
       >
         <iframe
           id="previewFrame"
-          src="/preview.html"
+          src={`/preview.html${typeof window !== "undefined" ? window.location.search : ""}`}
           style={{ width: "100%", height: "100%", border: "none" }}
           title="composition Preview"
           onLoad={onIframeLoad}
