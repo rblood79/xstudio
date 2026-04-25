@@ -5,6 +5,41 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 P3-C cleanup + 옵션 C 인프라 검증 — 세션 27] - 2026-04-25
+
+> 세션 26 마지막 commit (`8eee9f01` agents.jsonl) 이후 세션 27 작업 — PR #219 머지 완료 기준.
+
+### Bug Fixes
+
+- **옵션 C feature flag 활성 시 `resolveCanonicalDocument()` 빈 배열 반환** (ADR-903 P2):
+  - `?canonical=1` query string 전파 후 옵션 C 활성화 경로 진입 시 canonical resolve 결과가 빈 배열 반환 — legacy fallback 안전망이 정상 동작하여 렌더 파괴 없이 탐지됨
+  - **Why**: `resolveCanonicalDocument()` 내부 로직이 P2 S1 단계 기준으로 ref/descendants 트리 순회를 완성했으나, 실제 프로젝트 데이터 스키마와의 매핑 불일치로 입력 노드 0개 인식 — root cause 별도 진단 dispatch (Team 1)
+  - 상태: legacy fallback 안전망 정상 → 사용자 가시 파괴 없음. 옵션 C default 전환은 Team 1 fix 완료 후로 조건부 보류
+  - 관련: `apps/builder/src/resolvers/canonical/resolveCanonicalDocument.ts`
+
+### Architecture
+
+- **LayoutsTab orphan 디렉토리 제거** (ADR-903 P3-C, commit `2eedb138`, -619L):
+  - P3-B에서 LayoutsTab 기능이 FramesTab으로 이관된 후 남은 orphan 디렉토리 (`apps/builder/src/builder/panels/LayoutsTab/`) 전체 삭제
+  - **Why**: P3-C UI 리팩토링 전 dead code 제거로 다음 작업자(Team 3)의 작업 범위를 명확히 분리. import 참조 0건 확인 후 삭제
+  - 위치: `apps/builder/src/builder/panels/LayoutsTab/` (삭제 완료)
+  - PR: `chore/adr-903-cleanup-layoutstab` → PR #219 머지 완료
+
+- **Preview iframe query string 전파** (ADR-903 P2 옵션 C 인프라, commit `6a9342cd`):
+  - Builder가 iframe에 `?canonical=1` query string을 전파하는 인프라 구축 — 옵션 C `canonical` feature flag 활성화의 hard precondition
+  - **Why**: Preview iframe은 독립 origin으로 로드되므로 `window.location.search` 직접 전달 불가 — postMessage 채널 외 URL 전파가 유일한 경로. 이 인프라 없이는 옵션 C를 Preview에서 조건부 활성화할 수 없음
+  - 위치: `apps/builder/src/preview/` (iframe URL 생성 경로) + `apps/builder/src/builder/workspace/` (query string 주입)
+  - PR: 동일 PR #219 포함
+
+### Infrastructure
+
+- **Chrome MCP 옵션 C 검증 인프라 확립** (세션 27):
+  - `?canonical=1` query string 이 Preview iframe URL 에 정상 전파됨을 Chrome MCP 로 검증 완료
+  - **Why**: iframe 내부 `window.location.search` 접근은 DOM inspector 없이 확인 불가 — Chrome MCP의 iframe DOM 검사 패턴 (auto-memory `feedback-chrome-mcp-patterns.md`) 이 유일한 검증 경로
+  - **Team 1-4 dispatch 진행 중** (세션 27 종료 시점): Team 1 = 옵션 C resolve 0 root cause / Team 2 = P3-D Runtime sub-breakdown / Team 3 = P3-C 잔여 cleanup plan / Team 4 = ADR-910 Phase 1 구현
+
+---
+
 ## [Catch-up 2026-04-07 ~ 2026-04-25 — ADR-063/082/098 charter / ADR-056/107 / ADR-907/908/909 / ADR-903 P0~P2] - 2026-04-25
 
 > **Drift 사유**: 2026-04-06 마지막 entry 이후 19일 / 825 commits 미갱신 (CHANGELOG rules §2 Drift 감시 위반). 본 catch-up 블록으로 주제별 bundle 압축 — 개별 commit 나열 금지 (CHANGELOG rules §6).
