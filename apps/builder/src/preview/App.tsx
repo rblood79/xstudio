@@ -38,6 +38,24 @@ import { resolveCanonicalDocument } from "../resolvers/canonical";
 import type { Element, Page } from "../types/builder/unified.types";
 import type { Layout } from "../types/builder/layout.types";
 
+// ADR-903 P2 옵션 C: canonical renderer feature flag
+// ?canonical=1 URL param 으로 opt-in. 기본 false → legacy 경로 보존 (회귀 0 보장).
+import { CanonicalNodeRenderer } from "./components/CanonicalNodeRenderer";
+
+/**
+ * URL param `?canonical=1` 시 canonical renderer 경로를 활성화한다.
+ *
+ * 모듈-레벨 상수로 평가 — 컴포넌트 재렌더링마다 재계산되지 않음.
+ * production 에서도 동일하게 동작 (legacy-path 기본).
+ */
+const USE_CANONICAL_RENDER: boolean = (() => {
+  try {
+    return new URLSearchParams(window.location.search).get("canonical") === "1";
+  } catch {
+    return false;
+  }
+})();
+
 // body style 적용 상수 — useEffect 내 재생성 방지
 const CSS_UNITLESS = new Set([
   "opacity",
@@ -782,6 +800,70 @@ function CanvasContent() {
   // Elements 트리 렌더링
   // ⭐ 실제 <body> 태그를 사용하므로 body element를 div로 렌더링하지 않고 자식만 렌더링
   const renderElementsTree = useCallback(() => {
+    // ──────────────────────────────────────────────────────────────────────────
+    // ADR-903 P2 옵션 C: canonical renderer 경로 (?canonical=1)
+    //
+    // USE_CANONICAL_RENDER === true 시:
+    //  1. elements + pages + layouts → legacyToCanonical → CompositionDocument
+    //  2. resolveCanonicalDocument → ResolvedNode[]
+    //  3. 현재 page 에 해당하는 노드만 필터링
+    //  4. CanonicalNodeRenderer 로 렌더링 (DOM 마커 dual: canonical-id + legacy-uuid)
+    //
+    // 기본값 false → legacy hybrid 12 분기 유지 (회귀 0 보장).
+    // ──────────────────────────────────────────────────────────────────────────
+    if (USE_CANONICAL_RENDER) {
+      try {
+        const doc = legacyToCanonical(
+          {
+            elements: elements as unknown as Element[],
+            pages: pages as unknown as Page[],
+            layouts: layouts as unknown as Layout[],
+          },
+          { convertComponentRole, convertPageLayout },
+        );
+        const resolved = resolveCanonicalDocument(doc);
+
+        // 현재 page 에 해당하는 top-level 노드 필터링.
+        // legacyToCanonical 는 page 노드를 metadata.pageId 로 구분한다.
+        // currentPageId 가 없으면 전체 렌더 (layout-edit 모드 호환).
+        const pageNodes = currentPageId
+          ? resolved.filter((node) => {
+              const meta = node.metadata as Record<string, unknown> | undefined;
+              return meta?.pageId === currentPageId ||
+                meta?.type === "legacy-page"
+                ? meta?.pageId === currentPageId
+                : true;
+            })
+          : resolved;
+
+        if (pageNodes.length === 0) {
+          // canonical 결과 없음 → legacy fallback (안전망)
+          console.warn(
+            "[ADR-903 옵션C] canonical 노드 없음 — legacy fallback",
+            { currentPageId, resolvedCount: resolved.length },
+          );
+        } else {
+          return (
+            <>
+              {pageNodes.map((node) => (
+                <CanonicalNodeRenderer
+                  key={node.id}
+                  node={node}
+                  renderContext={renderContext}
+                />
+              ))}
+            </>
+          );
+        }
+      } catch (err) {
+        // canonical 경로 실패 → legacy fallback (안전망)
+        console.warn(
+          "[ADR-903 옵션C] canonical render 실패 — legacy fallback",
+          err,
+        );
+      }
+    }
+
     // ⭐ Page 모드에서 Layout이 적용된 경우: Layout 기반 렌더링
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
     if (currentLayoutId && currentPageId) {
