@@ -163,6 +163,51 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
   });
 
   // ────────────────────────────────────────────
+  // TC2-b: page filter 시나리오 (옵션 C resolve 0 회귀 방지)
+  // App.tsx 의 page filter 가 metadata.type === "legacy-page" + pageId 로
+  // page node 식별. resolver 가 master.metadata.type 으로 덮어쓰면 filter miss.
+  // ────────────────────────────────────────────
+
+  it("TC2-b: layout + page resolve 후 instance metadata (type/pageId) 보존 — page filter 시나리오", () => {
+    const layouts: Layout[] = [layout({ id: "L1", name: "App Shell" })];
+    const elements: Element[] = [
+      el({ id: "shell-root", tag: "Box", layout_id: "L1", parent_id: null }),
+      el({
+        id: "main-slot",
+        tag: "Slot",
+        layout_id: "L1",
+        parent_id: "shell-root",
+        props: { name: "main" },
+      }),
+      el({
+        id: "page-card",
+        tag: "Card",
+        page_id: "P1",
+        slot_name: "main",
+        parent_id: null,
+      }),
+    ];
+    const pages: Page[] = [
+      page({ id: "P1", title: "Home", slug: "/", layout_id: "L1" }),
+    ];
+
+    const doc = legacyToCanonical({ elements, pages, layouts }, deps);
+    const resolved = resolveCanonicalDocument(doc);
+
+    // App.tsx page filter 와 동일 조건
+    const pageNode = resolved.find((n) => {
+      const meta = n.metadata as Record<string, unknown> | undefined;
+      return meta?.type === "legacy-page" && meta?.pageId === "P1";
+    });
+
+    expect(pageNode).toBeDefined();
+    expect((pageNode?.metadata as Record<string, unknown>)?.pageId).toBe("P1");
+    expect((pageNode?.metadata as Record<string, unknown>)?.type).toBe(
+      "legacy-page",
+    );
+  });
+
+  // ────────────────────────────────────────────
   // TC3: nested descendants override E2E
   // ────────────────────────────────────────────
 
