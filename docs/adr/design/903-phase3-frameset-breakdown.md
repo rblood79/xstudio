@@ -327,9 +327,33 @@ grep -rnE "createLayout|useLayoutsStore|currentLayoutId|fetchLayouts|layout_id" 
 
 ## 6. 후속 Phase 와의 관계
 
-- **P4 (편집 semantics)**: P3-D 의 factory 제거 + P3-E persistence 단일화 후, duplicate / detach / undo 가 canonical document tree mutation 단일 패스로 정리됨
-- **P5 (persistence 완결)**: P3-E adapter shim 의 완전 해체 — IndexedDB schema canonical-only 보장 + legacy migration script 제거 (사용자 100% canonical 전환 후)
-- **G4/G5 측정**: P3-F 후 시점에 G4 (UI marker 정합) / G5 (persistence 완결) 측정 진입 가능
+> 상세 sub-breakdown:
+>
+> - **P4**: [903-phase4-editing-semantics-breakdown.md](903-phase4-editing-semantics-breakdown.md) (637L, 6 sub-phase / ~46h, HIGH 위험 2건 = P4-A subtree materialize / P4-B path-based descendants)
+> - **P5**: [903-phase5-persistence-imports-breakdown.md](903-phase5-persistence-imports-breakdown.md) (~620L, 6 sub-phase / ~42h, HIGH 위험 1건 = P5-B migration script)
+> - **신규 필드 P0 land 검증**: [903-additional-fields-land-status.md](903-additional-fields-land-status.md) — P0 실제 70% land (메모리 100% 표시 정정 권고)
+
+### P3 → P4 의존
+
+- **P4-A (detach subtree materialize)** 가 P3-D 의 canonical tree mutation API 에 의존. P3-D 완료 후 진입 권장
+- **P4-B (path-based descendants)** 가 P3-A 의 `legacyOwnershipToCanonicalParent()` adapter 와 정합. P3-A G3-A Sub-Gate 완성 후 진입 권장
+- P4-D (시각 마커) 가 P3-A 신규 surface 5건 (특히 `extractSlotMetaFromNode`) 활용
+
+### P3 → P5 의존
+
+- **P5-B (legacy → canonical migration script)** 가 P3-E persistence sub-phase 의 후속. P3-E 가 `_meta` 별도 store + backupKey land 후 진입
+- **P5-C (adapter shim 완전 해체)** 가 P4 G4 통과 후 (decisions.md 결정 5 옵션 채택). P3-A 의 adapter shim 이 P5-C 에서 제거됨
+- P5-D/E (imports resolver) 는 P3 와 독립 — P0 스텁 + ResolverCache 활용
+
+### P4 → P5 의존
+
+- **P4-B 완료 후 P5 진입 권장** (P4-B 의 path-key 가 P5-B migration script 의 변환 대상)
+- adapter shim lifecycle: P4 G4 통과 → shim 제거 착수 → P5 IndexedDB canonical schema 전환 → G5 최종 (P3 decisions.md 결정 5 연계)
+
+### G4/G5 측정
+
+- **G4** (UI marker 정합 + override semantics): P4-F 후 시점에 측정 진입 가능
+- **G5** (persistence 완결): P5-B migration 99%+ 성공률 + P5-C shim grep = 0 + P5-D imports e2e PASS
 
 ## 7. 결정 사항 (architect 권고 결과)
 
