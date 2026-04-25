@@ -8,11 +8,40 @@ import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "./elementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
+import { selectCanonicalDocument } from "../elements";
+import { useLayoutsStore } from "../layouts";
 import { normalizeElementTagInElement } from "./elementTagNormalizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
+import type { CompositionDocument, FrameNode } from "@composition/shared";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
+
+// ─── ADR-903 P3-D-2: canonical parent context helpers ──────────────────────
+
+/**
+ * canonical doc 의 직속 frame 자식 중 element.parent_id 와 일치하는 노드 반환.
+ * (현재 canonical 구조는 page/reusable frame 이 doc.children 의 1-depth 에 위치)
+ */
+function findCanonicalParentFrame(
+  doc: CompositionDocument,
+  parentId: string | null | undefined,
+): FrameNode | undefined {
+  if (!parentId) return undefined;
+  return doc.children.find(
+    (n): n is FrameNode => n.type === "frame" && n.id === parentId,
+  );
+}
+
+/** parent frame 이 page context (metadata.type === "page") 인지 */
+function isPageContextFrame(frame: FrameNode | undefined): boolean {
+  return frame?.metadata?.type === "page";
+}
+
+/** parent frame 이 reusable frame (reusable === true) 인지 */
+function isReusableContextFrame(frame: FrameNode | undefined): boolean {
+  return frame?.reusable === true;
+}
 
 /**
  * AddElement 액션 생성 팩토리
@@ -31,8 +60,6 @@ type GetState = Parameters<StateCreator<ElementsState>>[1];
  */
 export const createAddElementAction =
   (set: SetState, get: GetState) => async (element: Element) => {
-    const state = get();
-
     // 🔧 order_num 중복 방지: set() 내부에서 atomic하게 할당
     // 외부 get() 기반 계산은 race condition으로 중복 가능 → prevState 기반 계산으로 전환
     const normalizedElement = normalizeExternalFillIngress(
@@ -66,12 +93,24 @@ export const createAddElementAction =
       };
     });
 
+    // ADR-903 P3-D-2: canonical parent context 기반 분기
+    // - 히스토리 조건: parent 가 page context 또는 reusable frame context 면 기록
+    // - reorder 분기: page context → currentPageId 기반 / reusable → frame.id 기반
+    const elementsStateForCanonical = get();
+    const { pages } = elementsStateForCanonical;
+    const { layouts } = useLayoutsStore.getState();
+    const doc = selectCanonicalDocument(
+      elementsStateForCanonical,
+      pages,
+      layouts,
+    );
+    const parentFrame = findCanonicalParentFrame(doc, elementToAdd.parent_id);
+    const isPageContext = isPageContextFrame(parentFrame);
+    const isReusableContext = isReusableContextFrame(parentFrame);
+
     // 🚀 Phase 1: Immer → 함수형 업데이트
-    // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
-    // TODO(P3-D): layout_id 조건은 P3-D canonical context 기반으로 대체 예정.
-    // canonical context = 부모 노드가 reusable frame 안에 있는지 여부.
-    // 현재는 legacy layout_id 기반 히스토리 기록 유지.
-    if (state.currentPageId || elementToAdd.layout_id) {
+    // 1. 히스토리 추가 (canonical parent 가 page 또는 reusable frame 안일 때)
+    if (isPageContext || isReusableContext) {
       historyManager.addEntry({
         type: "add",
         elementId: elementToAdd.id,
@@ -97,31 +136,19 @@ export const createAddElementAction =
     // 🔧 order_num 중복 방지로 인해 재정렬 필요성 감소
     // 하지만 기존 데이터 호환성을 위해 재정렬 로직 유지 (단, 지연 시간 단축)
     const currentPageId = get().currentPageId;
-    // Page 요소인 경우
+    // Page 요소: currentPageId 기반 reorder (legacy 경로 보존)
     if (currentPageId && elementToAdd.page_id === currentPageId) {
       queueMicrotask(() => {
         const { elements, batchUpdateElementOrders } = get();
         reorderElements(elements, currentPageId, batchUpdateElementOrders);
       });
     }
-    // Layout 요소인 경우 - layout_id로 재정렬
-    else if (elementToAdd.layout_id) {
+    // Reusable frame 자식: frame.id 기반 reorder (canonical context)
+    else if (isReusableContext && parentFrame) {
+      const reusableFrameId = parentFrame.id;
       queueMicrotask(() => {
-        const { elements, elementsMap, batchUpdateElementOrders } = get();
-        // ADR-040 Phase 3: elementsMap.forEach로 layout_id 필터 (전용 인덱스 없음)
-        let hasLayoutElements = false;
-        elementsMap.forEach((el) => {
-          if (el.layout_id === elementToAdd.layout_id) {
-            hasLayoutElements = true;
-          }
-        });
-        if (hasLayoutElements) {
-          reorderElements(
-            elements,
-            elementToAdd.layout_id!,
-            batchUpdateElementOrders,
-          );
-        }
+        const { elements, batchUpdateElementOrders } = get();
+        reorderElements(elements, reusableFrameId, batchUpdateElementOrders);
       });
     }
   };
@@ -141,7 +168,6 @@ export const createAddElementAction =
 export const createAddComplexElementAction =
   (set: SetState, get: GetState) =>
   async (parentElement: Element, childElements: Element[]) => {
-    const state = get();
     const normalizedParent = normalizeExternalFillIngress(
       normalizeElementTagInElement(parentElement),
     );
@@ -184,11 +210,22 @@ export const createAddComplexElementAction =
 
     const allElements = [parentToAdd, ...normalizedChildren];
 
+    // ADR-903 P3-D-2: canonical parent context 기반 히스토리 조건
+    const elementsStateForCanonical = get();
+    const { pages } = elementsStateForCanonical;
+    const { layouts } = useLayoutsStore.getState();
+    const doc = selectCanonicalDocument(
+      elementsStateForCanonical,
+      pages,
+      layouts,
+    );
+    const parentFrame = findCanonicalParentFrame(doc, parentToAdd.parent_id);
+    const isPageContext = isPageContextFrame(parentFrame);
+    const isReusableContext = isReusableContextFrame(parentFrame);
+
     // 🚀 Phase 1: Immer → 함수형 업데이트
-    // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
-    // TODO(P3-D): layout_id 조건은 P3-D canonical context 기반으로 대체 예정.
-    // canonical context = 부모 노드가 reusable frame 안에 있는지 여부.
-    if (state.currentPageId || parentToAdd.layout_id) {
+    // 1. 히스토리 추가 (canonical parent 가 page 또는 reusable frame 안일 때)
+    if (isPageContext || isReusableContext) {
       historyManager.addEntry({
         type: "add",
         elementId: parentToAdd.id,
