@@ -94,9 +94,10 @@ vi.mock("../../elements", async (importOriginal) => {
   };
 });
 
-// getDB mock
-vi.mock("../../../../lib/db", () => ({
-  getDB: vi.fn(async () => ({
+// getDB mock — mockDb 단일 인스턴스를 모든 호출이 공유해야 test 가 설정한
+// mockResolvedValue 가 함수 내부의 await getDB() 호출에 그대로 반영된다.
+vi.mock("../../../../lib/db", () => {
+  const mockDb = {
     pages: {
       getAll: vi.fn(async () => [] as Page[]),
       update: vi.fn(async () => ({})),
@@ -113,8 +114,9 @@ vi.mock("../../../../lib/db", () => ({
       update: vi.fn(async () => ({})),
       delete: vi.fn(async () => {}),
     },
-  })),
-}));
+  };
+  return { getDB: vi.fn(async () => mockDb) };
+});
 
 // ─── test suite ─────────────────────────────────────────────────────────────
 
