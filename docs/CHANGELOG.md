@@ -5,6 +5,65 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Catch-up 2026-04-07 ~ 2026-04-25 — ADR-063/082/098 charter / ADR-056/107 / ADR-907/908/909 / ADR-903 P0~P2] - 2026-04-25
+
+> **Drift 사유**: 2026-04-06 마지막 entry 이후 19일 / 825 commits 미갱신 (CHANGELOG rules §2 Drift 감시 위반). 본 catch-up 블록으로 주제별 bundle 압축 — 개별 commit 나열 금지 (CHANGELOG rules §6).
+
+### Architecture
+
+- **ADR-063 SSOT chain charter (Accepted, 세션 9-11)**: 3-domain 분할 정본화 — D1 DOM/접근성 (Adobe RAC 절대) / D2 Props/API (RSP 참조 + custom) / D3 시각 스타일 (Spec SSOT). Builder(Skia) ↔ Preview/Publish(DOM+CSS) symmetric consumer 원칙. `.claude/rules/ssot-hierarchy.md` 정본 + 모든 후속 ADR Context 의 domain 명시 의무화. (참고: `docs/adr/063-ssot-chain-charter.md`)
+
+- **ADR-098 Charter — 6/8 슬롯 완결 (세션 9-11)**: ADR-099 ~ ADR-104 6 슬롯 Implemented. SSOT 통합 / debt 회수 / BC 재평가 vs 정당화 유지 2축 패턴 확립. (`docs/adr/098-*.md` + 6 sub-ADR)
+
+- **ADR-105/106 Charter (세션 12+)**: Skia addElement 회귀 fix + 후속 sub-ADR 체인. (`docs/adr/105-*.md`, `docs/adr/106-*.md`)
+
+- **ADR-907 Container style pipeline 전수화 (Implemented 세션 19-21)**: 4-layer SSOT (cssValueParser / containerSpacing / rendererStyleContract / Spec metric resolver). 11 collection/self-render 컨테이너 (Breadcrumbs / ComboBox / GridList / ListBox / Menu / Select / Tabs / TagGroup / Table / Toolbar / Tree) 의 `element.props.style` 이 Preview DOM / Skia `render.shapes()` / Layout `calculateContentHeight()` 3 경로에 동일 resolver 로 반영. Phase 4 sweep 으로 Open Issue #3 해결, ADR-906 Superseded.
+
+- **ADR-908 Fill Spec Schema SSOT (Implemented 세션 22, 11 commits)**: D3 Fill 계열 VariantSpec 의 background 계열 10+ 필드 + IndicatorModeSpec 의 background\* 를 `FillTokenSpec` (fillStyle × state 2축) + `FillStateTokens` 단일 소스로 통합. consumer 5건 (CSSGenerator / ReactRenderer / variantColors / stateEffect / validate-specs) 모두 `resolveFillTokens(variant)` / `resolveIndicatorFill(im)` 경유. G4 3-way grep (variantSpec / variant / im) 전수 0. specs 321/321 PASS / CSSGenerator snapshot 82 bit-identical.
+
+- **ADR-909 Style SSOT contract (Implemented)**: store longhand policy ↔ consumer normalization 계약. shorthand (`gap` / `padding` / `margin`) 편집 입력은 `distributeShorthand` 가 longhand 로 분배 저장 → 모든 consumer 가 longhand 우선 + shorthand fallback. PropertyUnitInput commit 조건 `lastSavedValueRef` 단독 + focus 중 useEffect skip. (`.claude/rules/style-ssot.md` 정본)
+
+- **ADR-082 Style Panel Spec Consumer (Implemented 세션 16, debt 종결 세션 17)**: A5 Chrome MCP G4 공식 통과 + Chrome MCP MVP 인프라 구축 + P1-1/P1-2/P1-3 debt 3/3 종결.
+
+- **ADR-056 Base Typography SSOT (Implemented 세션 15)**: `themeConfigStore.baseTypography` (ADR-021 패턴 확장) + 3경로 (Canvas / Preview / Publish) 정합. `getRootComputedStyle()` 동적화 + `THEME_BASE_TYPOGRAPHY` postMessage + ThemesPanel Typography 섹션 + publish :root Pretendard + cssValueParser rootFontSize 주입.
+
+- **ADR-107 Preview/Publish :root 대칭 (Implemented 세션 18)**: Gate G1-G6 전원 PASS / Spec SSOT 100% 완결 / Taffy WASM grid 경로 전수 정합화. ProgressBar Skia grid 10 commits.
+
+- **ADR-100 Unified Skia Engine (Phase 9-10+, 다수 세션)**: PixiJS 제거 완료 — DirectContainer + Skia 단일 렌더 경로. 미해결 (deferred): font-feature-settings HIGH / GridListItem text overflow MED.
+
+- **ADR-036 Spec-First (Fully Implemented 재승격 세션 18)**: deriveSizeConfig / ArchetypeId / CompositionSpec 전수 정합 + 신규 컴포넌트 100% Spec 진입 보장.
+
+- **ADR-903 ref/descendants/slot canonical format migration (Accepted 세션 24-25, P0~P2 진행 중)**: composition 의 hybrid 포맷 (`componentRole/masterId/overrides/descendants` + `layout_id/slot_name`) 을 pencil-aligned canonical `{type:"ref", ref, descendants}` + `{type:"frame", reusable, slot}` 단일 문법으로 흡수. **P0** 타입 / 계약 박제 (canonical-resolver.types.ts ResolverCacheKey / ResolvedNode / ResolverCache 인터페이스 + RESOLVER_PERFORMANCE_CONTRACT 수치). **P1** read-through legacy adapter (`legacyToCanonical` / `convertComponentRole` / `convertPageLayout` / `idPath buildIdPathContext`). **P2 S1** resolver 본체 (`resolveCanonicalDocument` 처리 순서 ref → descendants 3-mode → slot validate → tree) + LRU `ResolverCache` (Map insertion order + refIndex 역매핑) + 회귀 35 케이스. **P2 D-A** preview/App.tsx + useResolvedElement 에 dev-only canonical 비교 로깅 (`[ADR-903 P2]` / `[ADR-903 P2-Skia]`). **P2 D-B** storeBridge.ts 4 helper (selectResolvedTree / buildResolvedNodeIndex / extractLegacyPropsFromResolved / resolveInstanceWithSharedCache). **P2 D-C** StoreRenderBridge.buildNodeForElement 진입부 instance resolution wiring — prod render path 첫 진입.
+
+### Bug Fixes
+
+- **createInstance 빈 element 잠재 버그 (ADR-903 P2 D-C 세션 26)**:
+  - `createInstance()` (designKit/DesignKitPanel.tsx → instanceActions.ts) 가 `instance.props = {}` 로 생성하지만 prod render path (`StoreRenderBridge.buildNodeForElement`) 에서 master props 와 머지가 없었음 → master/instance 시스템 활성화 시 빈 element 가 그려지던 잠재 버그
+  - **Why**: instance resolution 은 `useResolvedElement` hook 정의만 존재하고 sprite consumer wiring 미진입 dead code 였음 (ADR-100 ElementSprite 제거 후 통합 미완)
+  - 수정: `buildNodeForElement` 진입부에 `isInstanceElement(element)` 분기 + `resolveInstanceWithSharedCache(instance, master)` 통과 → effectiveElement 갱신 → 후속 InlineAlert delegation / spec / image / box fallback 모두 effectiveElement 기반 spread 정렬
+  - 위치: `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts`
+
+- **다수 ADR Implemented 동반 bug 수정**: ADR-907 (container style 3 경로 drift) / ADR-908 (Fill 계열 schema 분기 drift) / ADR-909 (style panel longhand 편집 미감지 + PropertyUnitInput preview-induced commit skip) / ADR-082 P1-1 (cross-check readToggleGroups) / P1-2 (padding/margin uniform 4-way 통합) / P1-3 (WONTFIX 정리) / Skia detectChangedIds 회귀 fix (`625f1eed`)
+
+### Features
+
+- **ADR-903 storeBridge.ts 4 helper (P2 D-B 세션 26)**: per-instance / full tree 양방향 진입점 + DFS flatten + metadata 두 패턴 추출. Preview / Skia 양쪽이 동일 shared `ResolverCache` singleton 통과 (Gate G2 (a) 전제 충족). 위치: `apps/builder/src/resolvers/canonical/storeBridge.ts` + 13 단위 케이스 (TC9 = legacy `resolveInstanceElement` 와 props deep-equal 검증).
+
+### Infrastructure
+
+- **CHANGELOG drift 19일 → catch-up 블록 (rules §5 절차)**: 825 commits 압축 bundle. 다음 entry 부터 정상 trigger-based 갱신 복귀.
+- **Chrome MCP MVP 인프라 (세션 16-18 축적)**: composition Builder 의 store access / Style Panel reader / iframe DOM / 3축 대칭 검증 재사용 패턴 확립 (auto-memory `feedback-chrome-mcp-patterns.md` 참조).
+
+### Documentation
+
+- **ADR-079 README stale 해소 (세션 18)** + **ADR-036 Fully Implemented 재승격** + **ADR-907 / 908 / 909 Implemented 승격** + **ADR-098 Charter 분할 6/8 완결 기록** — `docs/adr/README.md` 대시보드 동기화.
+
+### 미push (확인 필요)
+
+- `be01aaaf` (ADR-903 P2 D-C wire instance resolution into Skia render path) — 사용자 confirm 후 push.
+
+---
+
 ## [ProgressBar/Meter/Slider 정합성 강화 + TEXT_BEARING_SPECS SSOT] - 2026-04-06
 
 ### Bug Fixes
@@ -4581,7 +4640,6 @@ None in this release.
 No migration needed for this release. All changes are backward compatible.
 
 ---
-
 
 ---
 
