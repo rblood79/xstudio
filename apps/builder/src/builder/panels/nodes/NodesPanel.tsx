@@ -19,7 +19,7 @@ import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { usePageManager, useIframeMessenger } from "@/builder/hooks";
 import { NodesPanelTabs, type NodesPanelTabType } from "./NodesPanelTabs";
-import { LayoutsTab } from "./LayoutsTab/LayoutsTab";
+import { FramesTab } from "./FramesTab/FramesTab";
 // 🚀 Performance: 분리된 섹션 컴포넌트
 import { PagesSection } from "./PagesSection";
 import { LayersSection } from "./LayersSection";
@@ -79,7 +79,7 @@ export function NodesPanel({ isActive }: PanelProps) {
         {activeTab === "pages" ? (
           <PagesTabContent projectId={projectId} />
         ) : (
-          <LayoutsTabContent
+          <FramesTabContent
             projectId={projectId}
             requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
           />
@@ -168,7 +168,7 @@ const PagesTabContent = memo(function PagesTabContent({
   );
 });
 
-const LayoutsTabContent = memo(function LayoutsTabContent({
+const FramesTabContent = memo(function FramesTabContent({
   projectId,
   requestAutoSelectAfterUpdate,
 }: {
@@ -180,7 +180,7 @@ const LayoutsTabContent = memo(function LayoutsTabContent({
   const { sendElementSelectedMessage } = useIframeMessenger();
 
   return (
-    <LayoutsTab
+    <FramesTab
       selectedElementId={selectedElementId}
       setSelectedElement={setSelectedElement}
       sendElementSelectedMessage={sendElementSelectedMessage}

@@ -140,9 +140,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     previewGeneratedElementsFlushIdRef.current = null;
 
     const queuedElements = normalizeExternalFillIngressBatch(
-      Array.from(
-        previewGeneratedElementsRef.current.values(),
-      ) as Element[],
+      Array.from(previewGeneratedElementsRef.current.values()) as Element[],
     );
     previewGeneratedElementsRef.current.clear();
 
@@ -217,8 +215,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       return;
     }
 
+    // ADR-903 P3-B 안전망 #3: version 스텁 추가
+    // P3-D에서 canonical resolver 전환 시 "composition-1.0" 으로 bump.
+    // Preview가 version 필드로 payload 형식 분기 가능.
     const message = {
       type: "UPDATE_ELEMENTS",
+      version: "legacy-1.0" as const,
       elements: scopedElements,
       pageInfo,
     };
@@ -459,9 +461,11 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           elements: Element[];
           pageInfo: { pageId: string | null; layoutId: string | null };
         };
+        // ADR-903 P3-B 안전망 #3: version 스텁 (큐 경로)
         iframe.contentWindow!.postMessage(
           {
             type: "UPDATE_ELEMENTS",
+            version: "legacy-1.0" as const,
             elements: payload.elements,
             pageInfo: payload.pageInfo,
           },

@@ -29,10 +29,23 @@ export interface SupabaseElement {
  * - props의 깊은 복사 수행
  * - 순환 참조 제거
  *
+ * **ADR-903 P3-B 안전망 #2**: page_id/layout_id 미설정 element 감지용 dev-only 경고
+ * P3-D에서 canonical parent 기반으로 전환 후 이 경고가 빈번하면 adapter 누락을 의미.
+ *
  * @param element - 직렬화할 Element 객체
  * @returns 직렬화된 Element 객체
  */
 export const sanitizeElement = (element: Element): Element => {
+  // ADR-903 P3-B 안전망 #2: page_id/layout_id 미설정 element dev-only 경고
+  // P3-D canonical parent 전환 후 이 경고 발생 시 adapter 누락 점검 필요
+  if (import.meta.env.DEV && !element.page_id && !element.layout_id) {
+    console.warn(
+      "[ADR-903] sanitizeElement: page_id/layout_id 없음 — canonical parent 의존 element?",
+      element.id,
+      element.tag,
+    );
+  }
+
   try {
     // structuredClone 우선 사용 (최신 브라우저)
     if (typeof structuredClone !== "undefined") {
