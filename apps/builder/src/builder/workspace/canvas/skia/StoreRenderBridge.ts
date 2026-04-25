@@ -15,6 +15,7 @@
  */
 
 import type { Element } from "../../../../types/core/store.types";
+import { isInstanceElement } from "../../../../types/builder/unified.types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import { buildSkiaNodeData, type BuildContext } from "./buildSkiaNodeData";
 import { buildBoxNodeData } from "./buildBoxNodeData";
@@ -31,6 +32,7 @@ import { getSyntheticElementsMap } from "../layout/engines/fullTreeLayout";
 import type { TransitionManager } from "./transitionManager";
 import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
 import { InlineAlertSpec } from "@composition/specs";
+import { resolveInstanceWithSharedCache } from "@/resolvers/canonical/storeBridge";
 
 function isImageElement(element: Element): boolean {
   return IMAGE_TAGS.has(element.tag);
@@ -401,16 +403,36 @@ export class StoreRenderBridge {
     elementsMap: Map<string, Element>,
     childrenMap: Map<string, Element[]> | null,
   ): import("./nodeRendererTypes").SkiaNodeData | null {
+    // ADR-903 P2 D-C: instance → resolved (master props 머지)
+    // master/instance 시스템에서 instance.props 는 createInstance 시 빈 객체로
+    // 시작하므로, 본 진입부에서 master props 와 instance.overrides 를 머지하지
+    // 않으면 빈 element 가 그려진다.
+    //
+    // shared `ResolverCache` (Preview / Skia 공통) 를 통과하는 canonical 경로
+    // 사용 — `resolveInstanceWithSharedCache` 가 mini CompositionDocument 를
+    // 만들어 P2 resolver 통과 후 Element 재구성 (legacy resolveInstanceElement
+    // 와 시각 등가, ADR-903 storeBridge.test.ts TC9 검증).
+    //
+    // master 가 없는 broken instance 는 null 반환 → 원본 element 유지.
+    let effectiveElement = element;
+    if (isInstanceElement(element) && element.masterId) {
+      const master = elementsMap.get(element.masterId);
+      const resolved = resolveInstanceWithSharedCache(element, master);
+      if (resolved) effectiveElement = resolved;
+    }
+
     // InlineAlert → Heading/Description font delegation (Skia 렌더링 경로)
     // fullTreeLayout + implicitStyles의 주입은 레이아웃 계산용이라 store에 반영 안됨.
     // ADR-058 Phase 2: Heading이 spec 경로로 이동했으므로 lift-up 필수 — spec/text
     // 양쪽 경로가 동일한 effectiveElement를 바라보게 한다.
-    let effectiveElement = element;
+    //
+    // ADR-903 P2 D-C: instance resolution 결과(effectiveElement) 기반으로 spread.
     if (
-      (element.tag === "Heading" || element.tag === "Description") &&
-      element.parent_id
+      (effectiveElement.tag === "Heading" ||
+        effectiveElement.tag === "Description") &&
+      effectiveElement.parent_id
     ) {
-      const parent = elementsMap.get(element.parent_id);
+      const parent = elementsMap.get(effectiveElement.parent_id);
       if (parent?.tag === "InlineAlert") {
         const parentSize =
           ((parent.props as Record<string, unknown>)?.size as string) ?? "md";
@@ -418,8 +440,11 @@ export class StoreRenderBridge {
           InlineAlertSpec.sizes[
             InlineAlertSpec.defaultSize
           ]) as unknown as Record<string, unknown>;
-        const cs = (element.props?.style ?? {}) as Record<string, unknown>;
-        const isHeading = element.tag === "Heading";
+        const cs = (effectiveElement.props?.style ?? {}) as Record<
+          string,
+          unknown
+        >;
+        const isHeading = effectiveElement.tag === "Heading";
         const fontSize = isHeading
           ? (specSize.headingFontSize as number)
           : (specSize.descFontSize as number);
@@ -427,9 +452,9 @@ export class StoreRenderBridge {
           ? (specSize.headingFontWeight as number)
           : (specSize.descFontWeight as number);
         effectiveElement = {
-          ...element,
+          ...effectiveElement,
           props: {
-            ...element.props,
+            ...effectiveElement.props,
             style: {
               ...cs,
               fontSize: cs.fontSize ?? fontSize,
@@ -465,8 +490,9 @@ export class StoreRenderBridge {
       );
     }
 
-    if (isImageElement(element)) {
-      const src = getImageSrc(element);
+    // ADR-903 P2 D-C: image / box fallback 도 instance resolved 결과 사용.
+    if (isImageElement(effectiveElement)) {
+      const src = getImageSrc(effectiveElement);
       const skImage = src ? getSkImage(src) : null;
 
       if (src) {
@@ -477,18 +503,18 @@ export class StoreRenderBridge {
         }
       }
 
-      return buildImageNodeData({ element, layout, skImage });
+      return buildImageNodeData({ element: effectiveElement, layout, skImage });
     }
 
     // Box / fallback
-    const isCollectionItem = COLLECTION_ITEM_TAGS.has(element.tag);
+    const isCollectionItem = COLLECTION_ITEM_TAGS.has(effectiveElement.tag);
     return (
       buildBoxNodeData({
-        element,
+        element: effectiveElement,
         layout,
         isCollectionItem,
         theme: ctx.theme,
-      }) ?? buildSkiaNodeData(element, ctx)
+      }) ?? buildSkiaNodeData(effectiveElement, ctx)
     );
   }
 
