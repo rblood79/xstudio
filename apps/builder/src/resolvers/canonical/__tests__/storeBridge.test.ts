@@ -1,5 +1,5 @@
 /**
- * @fileoverview storeBridge helper 단위 테스트 — ADR-903 P2 D-B
+ * @fileoverview storeBridge helper 단위 테스트 — ADR-903 P2 D-B + P3-B
  *
  * 검증 대상:
  * - `selectResolvedTree(state, pages, layouts, cache?)` — store snapshot 진입점
@@ -7,6 +7,8 @@
  * - `extractLegacyPropsFromResolved(resolved)` — 두 metadata 패턴 대응
  * - `resolveInstanceWithSharedCache(instance, master, cache?)` — mini-doc + cache 통과한
  *   Element 재구성 — legacy `resolveInstanceElement` 와 시각 등가성 보장
+ * - `buildParentIndex(tree)` — DFS child → parent id Map (P3-B)
+ * - `getCanonicalParentId(index, elementId)` — canonical parent id 조회 (P3-B)
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import type { Element, Page } from "@/types/builder/unified.types";
@@ -17,7 +19,9 @@ import type { CanonicalNode, RefNode, ResolvedNode } from "@composition/shared";
 import { resolveInstanceElement } from "@/utils/component/instanceResolver";
 import {
   buildResolvedNodeIndex,
+  buildParentIndex,
   extractLegacyPropsFromResolved,
+  getCanonicalParentId,
   resolveInstanceWithSharedCache,
   selectResolvedTree,
 } from "../storeBridge";
@@ -559,6 +563,8 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     expect(canonical?.masterId).toBe("m7");
   });
 
+  // P3-B tests are appended after TC21
+
   it("TC21: deeply-nested style 객체 — color + 추가 필드 (border) 머지", () => {
     const master: Element = el({
       id: "m8",
@@ -593,5 +599,162 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     expect(style.backgroundColor).toBe("white"); // master 보존
     expect(style.padding).toBe(8); // master 보존
     expect(style.border).toBe("1px solid blue"); // override 신규
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P3-B: buildParentIndex + getCanonicalParentId
+//
+// ADR-903 P3-D-5 사용 패턴: `getCanonicalParentId(index, el.id) === id`
+// 설계 문서: docs/adr/design/903-phase3d-runtime-breakdown.md §4.5
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("buildParentIndex", () => {
+  it("TC-P1: root 노드의 parentId → 없음 (Map에 등록 안 됨)", () => {
+    const tree: ResolvedNode[] = [{ id: "root", type: "frame" }];
+    const index = buildParentIndex(tree);
+    // root 는 부모가 없으므로 등록 안 됨
+    expect(index.has("root")).toBe(false);
+  });
+
+  it("TC-P2: 1단 child → 부모 id 가 Map에 등록됨", () => {
+    const tree: ResolvedNode[] = [
+      {
+        id: "root",
+        type: "frame",
+        children: [
+          { id: "child-A", type: "Button" },
+          { id: "child-B", type: "Text" },
+        ],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    expect(index.get("child-A")).toBe("root");
+    expect(index.get("child-B")).toBe("root");
+  });
+
+  it("TC-P3: 3단 중첩 — 각 노드가 직속 부모 id 를 가짐", () => {
+    const tree: ResolvedNode[] = [
+      {
+        id: "page",
+        type: "frame",
+        children: [
+          {
+            id: "section",
+            type: "Section",
+            children: [
+              {
+                id: "card",
+                type: "Card",
+                children: [{ id: "label", type: "Label" }],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    expect(index.get("section")).toBe("page");
+    expect(index.get("card")).toBe("section");
+    expect(index.get("label")).toBe("card");
+    // root 는 부모 없음
+    expect(index.has("page")).toBe(false);
+  });
+
+  it("TC-P4: 복수 root 노드 — 각 root 의 자식 모두 등록", () => {
+    const tree: ResolvedNode[] = [
+      {
+        id: "frame-1",
+        type: "frame",
+        children: [{ id: "btn-1", type: "Button" }],
+      },
+      {
+        id: "frame-2",
+        type: "frame",
+        children: [{ id: "btn-2", type: "Button" }],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    expect(index.get("btn-1")).toBe("frame-1");
+    expect(index.get("btn-2")).toBe("frame-2");
+    expect(index.has("frame-1")).toBe(false);
+    expect(index.has("frame-2")).toBe(false);
+  });
+});
+
+describe("getCanonicalParentId", () => {
+  it("TC-P5: root element → null (부모 없음)", () => {
+    const tree: ResolvedNode[] = [
+      {
+        id: "root",
+        type: "frame",
+        children: [{ id: "child", type: "Button" }],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    expect(getCanonicalParentId(index, "root")).toBeNull();
+  });
+
+  it("TC-P6: 1단 child → root id 반환", () => {
+    const tree: ResolvedNode[] = [
+      {
+        id: "root",
+        type: "frame",
+        children: [{ id: "child", type: "Button" }],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    expect(getCanonicalParentId(index, "child")).toBe("root");
+  });
+
+  it("TC-P7: 3단 중첩 child → 직속 부모 id 반환 (조상 아님)", () => {
+    const tree: ResolvedNode[] = [
+      {
+        id: "page",
+        type: "frame",
+        children: [
+          {
+            id: "section",
+            type: "Section",
+            children: [{ id: "deep", type: "Button" }],
+          },
+        ],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    // deep 의 직속 부모는 section (page 아님)
+    expect(getCanonicalParentId(index, "deep")).toBe("section");
+    expect(getCanonicalParentId(index, "deep")).not.toBe("page");
+  });
+
+  it("TC-P8: 존재하지 않는 elementId → null", () => {
+    const tree: ResolvedNode[] = [{ id: "root", type: "frame" }];
+    const index = buildParentIndex(tree);
+    expect(getCanonicalParentId(index, "nonexistent-id")).toBeNull();
+  });
+
+  it("TC-P9: ref instance (reusable master child) → instance root id 반환", () => {
+    // ResolvedNode 트리에서 ref instance 는 _resolvedFrom 을 가짐.
+    // buildParentIndex 는 resolved tree 의 실제 구조 기준으로 parent 를 기록하므로
+    // instance 의 부모 = instance 를 children 으로 포함한 노드의 id.
+    const tree: ResolvedNode[] = [
+      {
+        id: "page-node",
+        type: "frame",
+        children: [
+          {
+            id: "instance-btn",
+            type: "Button",
+            _resolvedFrom: "master-btn",
+            children: [{ id: "instance-label", type: "Label" }],
+          },
+        ],
+      },
+    ];
+    const index = buildParentIndex(tree);
+    // instance 자체의 부모 = page-node
+    expect(getCanonicalParentId(index, "instance-btn")).toBe("page-node");
+    // instance 의 resolved 자식 부모 = instance-btn
+    expect(getCanonicalParentId(index, "instance-label")).toBe("instance-btn");
   });
 });
