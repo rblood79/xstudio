@@ -241,7 +241,7 @@ pencil 은 primitive-centric (`rectangle`/`ellipse`/`text`/`path` 등 저수준 
 | 경로                                                      | 역할                                                          |
 | --------------------------------------------------------- | ------------------------------------------------------------- |
 | `packages/shared/src/types/composition-document.types.ts` | canonical document / reusable / ref / descendants / slot 타입 |
-| `docs/adr/design/903-...-breakdown.md`                        | phase / mapping / test strategy 문서                          |
+| `docs/adr/design/903-...-breakdown.md`                    | phase / mapping / test strategy 문서                          |
 
 #### 수정
 
@@ -328,6 +328,8 @@ Preview와 Skia가 **같은 resolved tree**를 consume하게 만든다.
 - **preview/App.tsx hybrid 분기 0 보장** — P2 완료 시 `grep -c "layout_id\|slot_name" apps/builder/src/preview/App.tsx` = 0 또는 adapter-only 참조만 잔존 (Gate G2 (c) 측정 근거)
 
 ### P3. frameset/layout/template 흡수
+
+> **Sub-breakdown**: 정량 분포 (403 ref / 59 files) 기반 6 sub-phase 분할 + 의존 그래프 + 회귀 검증 매트릭스는 [903-phase3-frameset-breakdown.md](903-phase3-frameset-breakdown.md) 참조. 본 섹션은 high-level overview 만 유지.
 
 #### 목표
 
