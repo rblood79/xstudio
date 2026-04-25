@@ -43,16 +43,25 @@ import type { Layout } from "../types/builder/layout.types";
 import { CanonicalNodeRenderer } from "./components/CanonicalNodeRenderer";
 
 /**
- * URL param `?canonical=1` 시 canonical renderer 경로를 활성화한다.
+ * Canonical renderer 경로 활성화 결정.
  *
- * 모듈-레벨 상수로 평가 — 컴포넌트 재렌더링마다 재계산되지 않음.
- * production 에서도 동일하게 동작 (legacy-path 기본).
+ * - 기본 동작: 활성화 (canonical render path)
+ * - URL param `?canonical=0` 으로 명시적 opt-out 가능 (legacy fallback)
+ * - 모듈-레벨 상수로 평가 — 컴포넌트 재렌더링마다 재계산되지 않음
+ * - production 에서도 동일하게 동작
+ *
+ * Why default true:
+ * - ADR-903 P2 옵션 C 검증 PASS (Chrome MCP, 2026-04-25 세션 28)
+ * - canonical resolve 정상 작동 + DOM dual marker (data-canonical-id +
+ *   data-legacy-uuid) 부착 확인
+ * - canonical render 실패 시 안전망 (legacy fallback) 정상 작동
+ * - pages hydration sender (UPDATE_PAGES) land 후 production 데이터 검증 완료
  */
 const USE_CANONICAL_RENDER: boolean = (() => {
   try {
-    return new URLSearchParams(window.location.search).get("canonical") === "1";
+    return new URLSearchParams(window.location.search).get("canonical") !== "0";
   } catch {
-    return false;
+    return true;
   }
 })();
 
