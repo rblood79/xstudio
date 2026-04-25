@@ -40,6 +40,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [ADR-903 옵션 C 첫 정상 작동 — 세션 27/28 root cause + fix] - 2026-04-25
+
+### Bug Fixes
+
+- **옵션 C (`?canonical=1`) canonical resolve 0 결과 — UPDATE_PAGES sender 누락** (ADR-903 P2):
+  - **Root cause**: `UPDATE_PAGES` postMessage type/handler 는 P0 시점 land 됐으나 builder 측 sender **0건**. preview store `pages` 가 영원히 빈 배열 → `legacyToCanonical` input pages=0 → `doc.children: 0` → `resolveCanonicalDocument` 결과 0 → page filter 도달 전 단계 실패 → legacy fallback 으로 graceful degradation
+  - **Why**: legacy 경로는 `element.page_id` 만으로 렌더 가능했으나 canonical resolve 는 page 노드 (RefNode `metadata.type="legacy-page"` + `pageId`) 생성을 위해 pages 메타데이터 필요. P0~P2 진행 중 sender 누락 미발견 — 안전망 (legacy fallback) 정상 작동으로 회귀 0
+  - **Fix**: `useIframeMessenger.ts` 에 `sendPagesToIframe()` 추가 (sendLayoutsToIframe 패턴). `sendInitialData` + pages 변경 useEffect 양쪽 호출
+  - **Chrome MCP 검증** (HMR 즉시 반영): `pages: 0 → 1`, `document.children: 0 → 1` (frame metaType="legacy-page"), `resolved.rootCount: 0 → 1`, DOM `data-canonical-id`: 0 → 3, DOM `data-legacy-uuid`: 0 → 3 — **옵션 C 첫 정상 작동**
+  - 위치: `apps/builder/src/builder/hooks/useIframeMessenger.ts` (PR `fix/adr-903-canonical-pages-hydration`)
+
+### Architecture
+
+- **LayoutsTab orphan 디렉토리 제거** (ADR-903 P3-C, PR #219):
+  - **Why**: NodesPanel.tsx 가 FramesTab 으로 전환 완료 후 외부 import 0건 (자기 자신 index.ts 만 참조). orphan 디렉토리 통째로 -619L
+  - 위치: `apps/builder/src/builder/panels/nodes/LayoutsTab/` 삭제
+
+- **Preview iframe query string 전파** (ADR-903 P2 옵션 C 인프라):
+  - `BuilderCanvas.tsx:69` 의 iframe src 가 `/preview.html` 하드코딩 → query string 전파 (`/preview.html${window.location.search}`)
+  - **Why**: USE_CANONICAL_RENDER feature flag 가 preview iframe 까지 도달해야 옵션 C 활성화 (PR #219)
+
+- **canonical resolver instance metadata 보존** (ADR-903 회귀 방지):
+  - `_resolveRefNodeUncached` 가 master.metadata.type 으로 refNode 의 instance-level 식별자 (type/pageId/slug/layoutId) 덮어쓰는 잠재 위험 차단
+  - **Why**: Team 1 가설 (page filter miss) 은 root cause 가 아니었으나 metadata 덮어쓰기는 향후 회귀 위험 → 보존 + TC2-b 신규 회귀 테스트
+  - 위치: `apps/builder/src/resolvers/canonical/index.ts:128-160` + `__tests__/integration.test.ts` TC2-b (PR `fix/adr-903-resolver-metadata-preserve`)
+
+- **ADR-910 Phase 1 themes adapter (read-only snapshot)** (ADR-910 Phase 1):
+  - canonical document.themes 의 ADR-021 themeConfigStore 통합. Alternative B (read-only snapshot). `snapshotThemesFromConfig()` + `readCanonicalThemes()` + 12 신규 테스트
+  - **Why**: ADR-903 P0 stub 상태였던 themes 필드를 실 동작 가능하게. variables 는 Phase 2 (별도)
+  - 위치: `apps/builder/src/adapters/canonical/themesAdapter.ts` + `__tests__/themes.test.ts` (PR `feat/adr-910-phase1-themes-adapter`)
+
+- **ADR-903 P3-D Runtime sub-breakdown 작성**:
+  - 6 sub-phase 분해 (~20h, CRITICAL 위험), 26 영향 파일, ~207 ref. Sub-Gate G3-D 정의 + 5 HIGH 회귀 포인트 + 6+ 안전망
+  - **Why**: P3-D 는 ADR-903 에서 가장 위험한 phase (runtime write/update/delete path 모두 canonical 동기화). 사전 설계 필수
+  - 위치: `docs/adr/design/903-phase3d-runtime-breakdown.md` (~630L) (PR `docs/adr-903-session27-team-outputs`)
+
+- **ADR-903 P3 잔여 cleanup plan**:
+  - 7 deprecatable 진입점 + 22 type exports / 51 영향 파일. 카테고리 (a) 즉시 0 / (b) P3-D 후 8 (~1,712L) / (c) P3-E 후 4 (~170L) / (d) BC 영구 10
+  - **Why**: LayoutsTab cleanup 외 잔여 deprecate 가능 항목의 제거 시점 명확화
+  - 위치: `docs/adr/design/903-phase3-residual-cleanup-plan.md`
+
+- **ADR-910 신규 발의 — themes/variables canonical land plan**:
+  - **Why**: ADR-903 본문에 land phase 미명시 항목 (themes/variables) 의 별도 plan
+  - 위치: `docs/adr/910-canonical-themes-variables-land-plan.md`
+
+### Infrastructure
+
+- **Chrome MCP 옵션 C 검증 인프라 확립**:
+  - **Why**: console MCP reader 가 console.log Object 인자 detail 미캡처 → JSON.stringify 추가 출력 패턴 확립. iframe contentWindow 직접 접근 + page filter 검증 절차 reusable
+  - dev server HMR 으로 fix 즉시 반영 + Chrome MCP 으로 root cause 정확히 식별 (Team 1 가설 vs 실제 root cause 차별화)
+  - 위치: `apps/builder/src/preview/App.tsx:157` P2 dev 로그 보강 (debug branch 머지 후 별도 revert PR 필요)
+
+- **6-agent 병렬 dispatch 패턴 검증**:
+  - Team 1 (debugger) / Team 2 (Explore P3-D) / Team 3 (Explore cleanup) / Team 4 (implementer ADR-910) / Team 5 (documenter) 동시 진행
+  - 결과: 4 PR push (cleanup #219 머지 + fix/feat/docs 3 PR 대기) + 1 critical fix (별도 PR)
+  - **Why**: 독립 작업 병렬화로 turn 활용도 극대화. Explore agent 의 write 권한 부재는 documenter 가 출력 본문 직접 작성으로 대응
+    > > > > > > > 0b404697 (docs(changelog): 세션 27/28 catch-up — ADR-903 옵션 C root cause + 첫 정상 작동)
+
 ## [Catch-up 2026-04-07 ~ 2026-04-25 — ADR-063/082/098 charter / ADR-056/107 / ADR-907/908/909 / ADR-903 P0~P2] - 2026-04-25
 
 > **Drift 사유**: 2026-04-06 마지막 entry 이후 19일 / 825 commits 미갱신 (CHANGELOG rules §2 Drift 감시 위반). 본 catch-up 블록으로 주제별 bundle 압축 — 개별 commit 나열 금지 (CHANGELOG rules §6).
