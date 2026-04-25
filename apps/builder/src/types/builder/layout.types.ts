@@ -157,6 +157,10 @@ export interface PageLayoutFields {
 
 /**
  * Layout에서 추출한 Slot 정보
+ *
+ * @deprecated ADR-903 P3: `extractSlotMetaFromNode(FrameNode)` 으로 대체.
+ * canonical `FrameNode.slot: string[]` 에서 슬롯 메타 추출.
+ * Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface SlotInfo {
   name: string; // 고유 식별자 (이름 없으면 slot_${elementId.slice(0,8)})
@@ -217,6 +221,10 @@ export interface ResolvedElement {
 
 /**
  * Slot 유효성 검사 에러
+ *
+ * @deprecated ADR-903 P3: canonical slot 검증은 resolver 단계에서 처리.
+ * `DescendantOverride` 3-mode union 기반 slot resolution 으로 대체.
+ * Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface SlotValidationError {
   slotName: string;
@@ -248,6 +256,11 @@ export interface EditContext {
 
 /**
  * Layout Store State
+ *
+ * @deprecated ADR-903 P3: `selectCanonicalReusableFrames(CompositionDocument)` 으로 대체.
+ * `layouts[]` 별도 store 는 canonical document tree 내부 `reusable: true` 노드 조회
+ * selector 로 해체 예정 (ADR-903 Phase 3/Phase 5 G5). Phase 1~3 기간
+ * adapter 입력 타입으로만 사용.
  */
 export interface LayoutsStoreState {
   /** 현재 프로젝트의 모든 Layout */
@@ -265,6 +278,10 @@ export interface LayoutsStoreState {
 
 /**
  * Layout Store Actions
+ *
+ * @deprecated ADR-903 P3: `selectCanonicalReusableFrames(CompositionDocument)` 으로 대체.
+ * CRUD actions 는 canonical document tree 내부 reusable frame 노드 직접 조작으로
+ * 해체 예정 (ADR-903 Phase 3/Phase 5 G5). Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface LayoutsStoreActions {
   // CRUD
@@ -287,6 +304,10 @@ export interface LayoutsStoreActions {
 
 /**
  * 완전한 Layout Store 타입
+ *
+ * @deprecated ADR-903 P3: `selectCanonicalReusableFrames()` 기반 selector 로 대체.
+ * `useLayoutsStore` 사용처는 Phase 3-B Stores 해체 시 canonical document API 로 전환.
+ * Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
 
