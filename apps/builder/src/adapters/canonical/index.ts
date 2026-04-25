@@ -308,3 +308,63 @@ export function hoistLayoutAsReusableFrame(
 ): FrameNode {
   return legacyLayoutToCanonicalFrame(legacyLayout, elements);
 }
+
+/**
+ * Legacy element ownership marker (`{ page_id, layout_id }`) → canonical 부모 노드 id 변환.
+ *
+ * P3-D 진입 시 factory ownership 제거 → 기존 IndexedDB 의 `layout_id` 기반 elements
+ * 가 `getByLayout()` 소멸 후 읽기 불가 = 사용자 데이터 손실 위험. 본 함수가 변환
+ * 어댑터로 동작하여 데이터 손실 방지.
+ *
+ * 변환 규칙:
+ * - `{ page_id: <X>, layout_id: null }` → page node id `<X>` 반환
+ * - `{ page_id: null, layout_id: <Y> }` → reusable frame node id `<Y>` 반환
+ * - `{ page_id: null, layout_id: null }` → null (무소속 — orphan)
+ * - 둘 다 non-null = invalid → null + dev warn
+ *
+ * Sub-Gate G3-A 의 `legacyOwnershipToCanonicalParent()` 구현 hard precondition.
+ * P3-D 진입 전 이 함수가 존재하고 테스트 통과 상태임을 Gate 통과 조건으로 검증한다.
+ *
+ * @param ownership - Legacy element ownership marker
+ * @param doc - Canonical document tree (parent lookup 용)
+ * @returns Canonical parent node id 또는 null (orphan)
+ */
+export function legacyOwnershipToCanonicalParent(
+  ownership: { page_id?: string | null; layout_id?: string | null },
+  doc: CompositionDocument,
+): string | null {
+  const { page_id, layout_id } = ownership;
+
+  // invalid: 둘 다 non-null
+  if (page_id != null && layout_id != null) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "[ADR-903 legacyOwnershipToCanonicalParent] invalid ownership — both page_id and layout_id non-null",
+        ownership,
+      );
+    }
+    return null;
+  }
+
+  // page 인스턴스 (ref or frame + metadata.type:"page" or "legacy-page")
+  if (page_id != null) {
+    const pageNode = doc.children.find((n) => n.id === page_id);
+    return pageNode?.id ?? null;
+  }
+
+  // layout shell (frame + reusable: true)
+  if (layout_id != null) {
+    // layout shell id convention: "layout-<layout_id>"
+    const conventionalId = `layout-${layout_id}`;
+    const frameNode = doc.children.find(
+      (n) =>
+        n.type === "frame" &&
+        n.reusable === true &&
+        (n.id === conventionalId || n.id === layout_id),
+    );
+    return frameNode?.id ?? null;
+  }
+
+  // orphan
+  return null;
+}
