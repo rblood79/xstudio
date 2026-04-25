@@ -61,6 +61,8 @@ export const createLayoutsSlice: StateCreator<LayoutsStore> = (set, get) => {
     // State
     // ============================================
     layouts: [],
+    // P3-B: selectedReusableFrameId (canonical semantics) + currentLayoutId (backward-compat alias)
+    selectedReusableFrameId: null,
     currentLayoutId: null,
     isLoading: false,
     error: null,
@@ -88,15 +90,20 @@ export const createLayoutsSlice: StateCreator<LayoutsStore> = (set, get) => {
 
 // ============================================
 // Store Instance
-// ⭐ Layout/Slot System: persist middleware로 currentLayoutId 상태 유지
+// P3-B: persist — selectedReusableFrameId (canonical) + currentLayoutId (backward-compat)
+// 새로고침 후 양쪽 모두 복원하여 selectedReusableFrameId 초기화 방지 (안전망 #6)
 // ============================================
 
 export const useLayoutsStore = create<LayoutsStore>()(
   persist(createLayoutsSlice, {
     name: "composition-layouts",
-    // currentLayoutId만 저장 (layouts 배열은 IndexedDB에서 로드)
-    partialize: (state) => ({ currentLayoutId: state.currentLayoutId }),
-  })
+    // P3-B: selectedReusableFrameId 저장. currentLayoutId는 backward-compat 유지.
+    partialize: (state) => ({
+      selectedReusableFrameId: state.selectedReusableFrameId,
+      // @deprecated — P3-D 완료 후 제거
+      currentLayoutId: state.currentLayoutId,
+    }),
+  }),
 );
 
 // ============================================
@@ -104,12 +111,26 @@ export const useLayoutsStore = create<LayoutsStore>()(
 // ============================================
 
 /**
+ * 현재 선택된 reusable frame id (canonical semantics).
+ * P3-B: `currentLayoutId` → `selectedReusableFrameId` rename.
+ */
+export const useSelectedReusableFrameId = (): string | null => {
+  return useLayoutsStore((state) => state.selectedReusableFrameId);
+};
+
+/**
  * 현재 선택된 Layout 가져오기
+ *
+ * @deprecated P3-B: `useSelectedReusableFrameId()` 사용 권장.
+ * backward-compat — P3-D 완료 후 제거 예정.
  */
 export const useCurrentLayout = (): Layout | undefined => {
-  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
+  // P3-B: selectedReusableFrameId 우선, legacy currentLayoutId fallback
+  const frameId = useLayoutsStore(
+    (state) => state.selectedReusableFrameId ?? state.currentLayoutId,
+  );
   const layouts = useLayoutsStore((state) => state.layouts);
-  return layouts.find((l) => l.id === currentLayoutId);
+  return layouts.find((l) => l.id === frameId);
 };
 
 /**

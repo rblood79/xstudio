@@ -266,7 +266,19 @@ export interface LayoutsStoreState {
   /** 현재 프로젝트의 모든 Layout */
   layouts: Layout[];
 
-  /** 현재 편집 중인 Layout ID */
+  /**
+   * 현재 선택된 reusable frame id (canonical semantics).
+   * P3-B: `currentLayoutId` 에서 rename.
+   * P3-D 이전까지는 두 필드를 동기화하여 backward-compat 유지.
+   */
+  selectedReusableFrameId: string | null;
+
+  /**
+   * 현재 편집 중인 Layout ID
+   *
+   * @deprecated ADR-903 P3-B: `selectedReusableFrameId` 로 rename됨.
+   * backwards-compat alias — 1 release 잔존. P3-D 완료 후 제거 예정.
+   */
   currentLayoutId: string | null;
 
   /** 로딩 상태 */
