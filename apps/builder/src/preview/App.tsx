@@ -824,17 +824,16 @@ function CanvasContent() {
         const resolved = resolveCanonicalDocument(doc);
 
         // 현재 page 에 해당하는 top-level 노드 필터링.
-        // legacyToCanonical 는 page 노드를 metadata.pageId 로 구분한다.
-        // currentPageId 가 없으면 전체 렌더 (layout-edit 모드 호환).
-        const pageNodes = currentPageId
-          ? resolved.filter((node) => {
-              const meta = node.metadata as Record<string, unknown> | undefined;
-              return meta?.pageId === currentPageId ||
-                meta?.type === "legacy-page"
-                ? meta?.pageId === currentPageId
-                : true;
-            })
-          : resolved;
+        // page 식별: metadata.type === "page" (P3-1 결정) 또는 "legacy-page" (P1 adapter 결과).
+        // master / layout shell (reusable: true) / 일반 컨테이너는 metadata.type 다름 → skip.
+        // currentPageId 없으면 (layout-edit 모드) 모든 page 노드 통과.
+        const pageNodes = resolved.filter((node) => {
+          const meta = node.metadata as Record<string, unknown> | undefined;
+          const isPage = meta?.type === "page" || meta?.type === "legacy-page";
+          if (!isPage) return false;
+          if (!currentPageId) return true;
+          return meta?.pageId === currentPageId;
+        });
 
         if (pageNodes.length === 0) {
           // canonical 결과 없음 → legacy fallback (안전망)
