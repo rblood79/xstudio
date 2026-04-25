@@ -68,6 +68,9 @@ export const createAddElementAction =
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
+    // TODO(P3-D): layout_id 조건은 P3-D canonical context 기반으로 대체 예정.
+    // canonical context = 부모 노드가 reusable frame 안에 있는지 여부.
+    // 현재는 legacy layout_id 기반 히스토리 기록 유지.
     if (state.currentPageId || elementToAdd.layout_id) {
       historyManager.addEntry({
         type: "add",
@@ -183,6 +186,8 @@ export const createAddComplexElementAction =
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
+    // TODO(P3-D): layout_id 조건은 P3-D canonical context 기반으로 대체 예정.
+    // canonical context = 부모 노드가 reusable frame 안에 있는지 여부.
     if (state.currentPageId || parentToAdd.layout_id) {
       historyManager.addEntry({
         type: "add",
