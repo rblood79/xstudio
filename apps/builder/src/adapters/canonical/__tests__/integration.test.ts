@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CanonicalNode, RefNode } from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
-import { legacyToCanonical } from "../index";
+import { legacyToCanonical, legacyOwnershipToCanonicalParent } from "../index";
 import { convertComponentRole } from "../componentRoleAdapter";
 import { convertPageLayout } from "../slotAndLayoutAdapter";
 
@@ -295,5 +295,146 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
 
     expect(doc.children[2].type).toBe("ref");
     expect((doc.children[2] as RefNode).ref).toBe("layout-L1");
+  });
+});
+
+// ============================================================
+// name field — entity 공통 (ADR-903 §3.10)
+// ============================================================
+describe("name field — entity 공통 (ADR-903 §3.10)", () => {
+  // NOTE: buildNode 는 element.id 를 segId(element.id, idSegmentMap) 로 변환한다.
+  // componentName="MyCustomBox" → segId = "MyCustomBox" (componentName 우선).
+  // componentName 없음 → segId = "Box" (tag fallback).
+  // 따라서 find 조건은 변환 후 canonical id 를 사용해야 한다.
+
+  it("legacyToCanonical 변환 시 element componentName → CanonicalNode.name 보존", () => {
+    const elements: Element[] = [
+      el({
+        id: "elem-with-name",
+        tag: "Box",
+        componentName: "MyCustomBox",
+        page_id: "page-1",
+      }),
+    ];
+    const pages: Page[] = [page({ id: "page-1", title: "Test Page" })];
+
+    const doc = legacyToCanonical({ elements, pages, layouts: [] }, deps);
+
+    const flatten = (nodes: CanonicalNode[]): CanonicalNode[] =>
+      nodes.flatMap((n) => [
+        n,
+        ...flatten((n as { children?: CanonicalNode[] }).children ?? []),
+      ]);
+    const allNodes = flatten(doc.children);
+
+    // segId 변환: componentName="MyCustomBox" → canonical id = "MyCustomBox"
+    const target = allNodes.find((n) => n.id === "MyCustomBox");
+
+    expect(target).toBeDefined();
+    expect(target?.name).toBe("MyCustomBox");
+  });
+
+  it("legacyToCanonical — componentName 없는 element 는 name undefined", () => {
+    const elements: Element[] = [
+      el({
+        id: "elem-no-name",
+        tag: "Box",
+        page_id: "page-1",
+      }),
+    ];
+    const pages: Page[] = [page({ id: "page-1", title: "Test Page" })];
+
+    const doc = legacyToCanonical({ elements, pages, layouts: [] }, deps);
+
+    const flatten = (nodes: CanonicalNode[]): CanonicalNode[] =>
+      nodes.flatMap((n) => [
+        n,
+        ...flatten((n as { children?: CanonicalNode[] }).children ?? []),
+      ]);
+    const allNodes = flatten(doc.children);
+
+    // segId 변환: componentName 없음 → tag fallback "Box"
+    const target = allNodes.find((n) => n.id === "Box");
+
+    expect(target).toBeDefined();
+    expect(target?.name).toBeUndefined();
+  });
+});
+
+// ============================================================
+// legacyOwnershipToCanonicalParent — Sub-Gate G3-A precondition
+// ============================================================
+describe("legacyOwnershipToCanonicalParent (ADR-903 P3-A G3-A precondition)", () => {
+  function makeDoc(
+    children: CanonicalNode[],
+  ): import("@composition/shared").CompositionDocument {
+    return { version: "composition-1.0", children };
+  }
+
+  it("page_id only → returns matching page node id", () => {
+    const doc = makeDoc([{ id: "page-1", type: "frame" } as CanonicalNode]);
+    expect(
+      legacyOwnershipToCanonicalParent(
+        { page_id: "page-1", layout_id: null },
+        doc,
+      ),
+    ).toBe("page-1");
+  });
+
+  it("layout_id only → returns matching reusable frame id (layout-<id> convention)", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+      } as CanonicalNode,
+    ]);
+    expect(
+      legacyOwnershipToCanonicalParent({ page_id: null, layout_id: "L1" }, doc),
+    ).toBe("layout-L1");
+  });
+
+  it("both null → returns null (orphan)", () => {
+    const doc = makeDoc([]);
+    expect(
+      legacyOwnershipToCanonicalParent({ page_id: null, layout_id: null }, doc),
+    ).toBeNull();
+  });
+
+  it("both non-null → returns null + logs warn", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const doc = makeDoc([{ id: "page-1", type: "frame" } as CanonicalNode]);
+
+    const result = legacyOwnershipToCanonicalParent(
+      { page_id: "page-1", layout_id: "L1" },
+      doc,
+    );
+
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("invalid ownership"),
+      expect.anything(),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("page_id present but not found in doc → returns null", () => {
+    const doc = makeDoc([]);
+    expect(
+      legacyOwnershipToCanonicalParent(
+        { page_id: "nonexistent", layout_id: null },
+        doc,
+      ),
+    ).toBeNull();
+  });
+
+  it("layout_id present but no matching reusable frame → returns null", () => {
+    const doc = makeDoc([
+      // non-reusable frame — should not match
+      { id: "layout-L2", type: "frame" } as CanonicalNode,
+    ]);
+    expect(
+      legacyOwnershipToCanonicalParent({ page_id: null, layout_id: "L2" }, doc),
+    ).toBeNull();
   });
 });
