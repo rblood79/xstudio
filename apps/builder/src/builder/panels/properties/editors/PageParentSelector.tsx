@@ -1,16 +1,22 @@
 /**
  * Page Parent Selector
  *
- * Page Inspector에서 Parent Page를 선택하는 컴포넌트.
- * Nested Routes를 위한 계층 구조 설정.
+ * ADR-903 P3-C: useLayoutsStore 직접 구독 → useLayouts() hook으로 전환.
  *
- * ⭐ Nested Routes & Slug System: Page에 Parent를 할당하여 중첩 URL 생성
- * 예: /products (부모) → /products/shoes (자식)
+ * P3-C 변경:
+ * - `useLayoutsStore((state) => state.layouts)` → `useLayouts()` hook
+ * - `page.layout_id` field 참조는 URL 생성 유틸 전달용 — P3-D에서 canonical ref로 전환 예정
+ *
+ * @deprecated-path `useLayoutsStore` direct access → `useLayouts`
  */
 
 import { memo, useMemo, useCallback, useState } from "react";
 import { FolderTree, AlertCircle } from "lucide-react";
-import { PropertySelect, PropertySection, PropertyInput } from "../../../components";
+import {
+  PropertySelect,
+  PropertySection,
+  PropertyInput,
+} from "../../../components";
 import { useStore } from "../../../stores";
 import { getDB } from "../../../../lib/db";
 import {
@@ -22,40 +28,38 @@ import {
   validateSlug,
   generateSlugFromTitle,
 } from "../../../../utils/slugValidator";
-import { useLayoutsStore } from "../../../stores/layouts";
+import { useLayouts } from "../../../stores/layouts";
 import { iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface PageParentSelectorProps {
   pageId: string;
 }
 
-const MAX_NESTING_DEPTH = 5; // 최대 중첩 깊이
+const MAX_NESTING_DEPTH = 5;
 
 export const PageParentSelector = memo(function PageParentSelector({
   pageId,
 }: PageParentSelectorProps) {
-  // Get current page and all pages
   const page = useStore((state) => state.pages.find((p) => p.id === pageId));
   const pages = useStore((state) => state.pages);
-  const layouts = useLayoutsStore((state) => state.layouts);
 
-  // Slug validation state
+  // P3-C: useLayouts() hook (P3-B canonical surface)
+  const layouts = useLayouts();
+
   const [slugError, setSlugError] = useState<string | null>(null);
 
-  // Current parent
   const currentParentId = page?.parent_id || "";
   const currentParent = useMemo(
     () => pages.find((p) => p.id === currentParentId),
-    [pages, currentParentId]
+    [pages, currentParentId],
   );
 
-  // Current slug
   const currentSlug = page?.slug || "";
 
-  // Generate preview URL
   const previewUrl = useMemo(() => {
     if (!page) return "/";
 
+    // P3-C: page.layout_id는 URL 생성 유틸 전달용 — legacy field 유지
     const layout = page.layout_id
       ? layouts.find((l) => l.id === page.layout_id)
       : null;
@@ -71,7 +75,12 @@ export const PageParentSelector = memo(function PageParentSelector({
         order_num: page.order_num,
       },
       layout: layout
-        ? { id: layout.id, name: layout.name, project_id: layout.project_id, slug: layout.slug || undefined }
+        ? {
+            id: layout.id,
+            name: layout.name,
+            project_id: layout.project_id,
+            slug: layout.slug || undefined,
+          }
         : null,
       allPages: pages.map((p) => ({
         id: p.id,
@@ -85,11 +94,9 @@ export const PageParentSelector = memo(function PageParentSelector({
     });
   }, [page, pages, layouts]);
 
-  // Parent options (exclude self and descendants to prevent circular reference)
   const parentOptions = useMemo(() => {
     const options = [{ value: "", label: "No Parent (Root)" }];
 
-    // Get all descendants of current page (to exclude from options)
     const getDescendants = (parentId: string): string[] => {
       const children = pages.filter((p) => p.parent_id === parentId);
       const descendants: string[] = children.map((c) => c.id);
@@ -102,50 +109,47 @@ export const PageParentSelector = memo(function PageParentSelector({
     const descendants = getDescendants(pageId);
 
     pages.forEach((p) => {
-      // Skip self
       if (p.id === pageId) return;
-
-      // Skip descendants (would create circular reference)
       if (descendants.includes(p.id)) return;
 
-      // Check nesting depth (prevent too deep nesting)
-      const depthIfSelected = getNestingDepth(p.id, pages.map((pg) => ({
-        id: pg.id,
-        title: pg.title,
-        slug: pg.slug,
-        project_id: pg.project_id,
-        parent_id: pg.parent_id,
-        layout_id: pg.layout_id,
-        order_num: pg.order_num,
-      }))) + 1;
+      const depthIfSelected =
+        getNestingDepth(
+          p.id,
+          pages.map((pg) => ({
+            id: pg.id,
+            title: pg.title,
+            slug: pg.slug,
+            project_id: pg.project_id,
+            parent_id: pg.parent_id,
+            layout_id: pg.layout_id,
+            order_num: pg.order_num,
+          })),
+        ) + 1;
 
       if (depthIfSelected >= MAX_NESTING_DEPTH) return;
 
-      // Add indentation based on depth
-      const depth = getNestingDepth(p.id, pages.map((pg) => ({
-        id: pg.id,
-        title: pg.title,
-        slug: pg.slug,
-        project_id: pg.project_id,
-        parent_id: pg.parent_id,
-        layout_id: pg.layout_id,
-        order_num: pg.order_num,
-      })));
+      const depth = getNestingDepth(
+        p.id,
+        pages.map((pg) => ({
+          id: pg.id,
+          title: pg.title,
+          slug: pg.slug,
+          project_id: pg.project_id,
+          parent_id: pg.parent_id,
+          layout_id: pg.layout_id,
+          order_num: pg.order_num,
+        })),
+      );
       const indent = "  ".repeat(depth);
 
-      options.push({
-        value: p.id,
-        label: `${indent}${p.title}`,
-      });
+      options.push({ value: p.id, label: `${indent}${p.title}` });
     });
 
     return options;
   }, [pages, pageId]);
 
-  // Handle parent change
   const handleParentChange = useCallback(
     async (newParentId: string) => {
-      // Check for circular reference
       if (
         newParentId &&
         hasCircularReference(
@@ -159,44 +163,35 @@ export const PageParentSelector = memo(function PageParentSelector({
             parent_id: p.parent_id,
             layout_id: p.layout_id,
             order_num: p.order_num,
-          }))
+          })),
         )
       ) {
-        console.error("❌ Circular reference detected");
+        console.error("[PageParentSelector] Circular reference detected");
         return;
       }
-
-      console.log("🔗 Page Parent changed:", {
-        pageId,
-        oldParentId: currentParentId,
-        newParentId: newParentId || null,
-      });
 
       try {
         const { pages: currentPages, setPages } = useStore.getState();
         const db = await getDB();
 
-        // Update pages in memory
         const updatedPages = currentPages.map((p) =>
-          p.id === pageId ? { ...p, parent_id: newParentId || null } : p
+          p.id === pageId ? { ...p, parent_id: newParentId || null } : p,
         );
         setPages(updatedPages);
 
-        // Save to IndexedDB
         await db.pages.update(pageId, { parent_id: newParentId || null });
-
-        console.log("✅ Page parent updated successfully");
       } catch (error) {
-        console.error("❌ Failed to update page parent:", error);
+        console.error(
+          "[PageParentSelector] Failed to update page parent:",
+          error,
+        );
       }
     },
-    [pageId, currentParentId, pages]
+    [pageId, pages],
   );
 
-  // Handle slug change
   const handleSlugChange = useCallback(
     async (newSlug: string) => {
-      // Validate slug
       const validation = validateSlug(newSlug);
       if (!validation.valid) {
         setSlugError(validation.error || "Invalid slug");
@@ -204,34 +199,26 @@ export const PageParentSelector = memo(function PageParentSelector({
       }
       setSlugError(null);
 
-      console.log("📝 Page Slug changed:", {
-        pageId,
-        oldSlug: currentSlug,
-        newSlug: newSlug || null,
-      });
-
       try {
         const { pages: currentPages, setPages } = useStore.getState();
         const db = await getDB();
 
-        // Update pages in memory
         const updatedPages = currentPages.map((p) =>
-          p.id === pageId ? { ...p, slug: newSlug || '' } : p
+          p.id === pageId ? { ...p, slug: newSlug || "" } : p,
         );
         setPages(updatedPages);
 
-        // Save to IndexedDB
-        await db.pages.update(pageId, { slug: newSlug || '' });
-
-        console.log("✅ Page slug updated successfully");
+        await db.pages.update(pageId, { slug: newSlug || "" });
       } catch (error) {
-        console.error("❌ Failed to update page slug:", error);
+        console.error(
+          "[PageParentSelector] Failed to update page slug:",
+          error,
+        );
       }
     },
-    [pageId, currentSlug]
+    [pageId],
   );
 
-  // Generate slug from title
   const handleGenerateSlug = useCallback(() => {
     if (!page) return;
     const generatedSlug = generateSlugFromTitle(page.title);
@@ -242,7 +229,6 @@ export const PageParentSelector = memo(function PageParentSelector({
 
   return (
     <PropertySection title="Nested Routes" icon={FolderTree}>
-      {/* Parent Page Selection */}
       <PropertySelect
         label="Parent Page"
         value={currentParentId}
@@ -256,7 +242,6 @@ export const PageParentSelector = memo(function PageParentSelector({
         }
       />
 
-      {/* Slug Input */}
       <div className="page-slug-input">
         <PropertyInput
           label="Slug"
@@ -281,7 +266,6 @@ export const PageParentSelector = memo(function PageParentSelector({
         </button>
       </div>
 
-      {/* URL Preview */}
       <div className="page-url-preview">
         <span className="page-url-label">Preview URL:</span>
         <code className="page-url-value">{previewUrl}</code>
