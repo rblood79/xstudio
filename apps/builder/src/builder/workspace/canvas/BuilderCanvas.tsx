@@ -23,6 +23,7 @@ import {
 } from "react";
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
+import { selectCanonicalDocument } from "../../stores/elements";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
@@ -357,7 +358,11 @@ export function BuilderCanvas({
     );
   }, [elements]);
   const layoutGroups = useMemo(() => {
-    return computeLayoutGroups(pages, layouts);
+    // ADR-903 P3-D-5 step 5b: doc 생성 + computeLayoutGroups 에 전달.
+    // computeLayoutGroups 가 elements 무관 (page-layout 매핑만) 이므로
+    // useStore.getState() snapshot 사용 안전 (reactive 불필요).
+    const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
+    return computeLayoutGroups(pages, layouts, doc);
   }, [pages, layouts]);
   const skiaRendererInput = useMemo(() => {
     return createSkiaRendererInput({

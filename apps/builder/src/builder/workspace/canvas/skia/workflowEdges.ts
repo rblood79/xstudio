@@ -9,6 +9,7 @@
  */
 
 import { getLegacyPageLayoutId } from "@/adapters/canonical";
+import type { CompositionDocument } from "@composition/shared";
 
 // ============================================
 // Types
@@ -350,10 +351,15 @@ export function computeDataSourceEdges(
  *
  * pages에서 layout_id를 읽고 layouts 배열과 매칭하여
  * 1개 이상의 페이지가 속한 LayoutGroup 목록을 반환.
+ *
+ * ADR-903 P3-D-5 step 5b: doc parameter 추가 (canonical-aware indirection).
+ * 현재는 getLegacyPageLayoutId 내부가 noop 이라 doc 무관, step 5c 에서
+ * helper 내부 canonical lookup 활성화 시 caller chain 자동 적용.
  */
 export function computeLayoutGroups(
   pages: WorkflowPageInput[],
   layouts: Array<{ id: string; name: string }>,
+  doc?: CompositionDocument | null,
 ): LayoutGroup[] {
   const layoutNameMap = new Map<string, string>();
   for (const layout of layouts) {
@@ -363,7 +369,7 @@ export function computeLayoutGroups(
   const groupMap = new Map<string, string[]>();
 
   for (const page of pages) {
-    const layoutId = getLegacyPageLayoutId(page);
+    const layoutId = getLegacyPageLayoutId(page, doc);
     if (!layoutId) continue;
 
     const existing = groupMap.get(layoutId);
