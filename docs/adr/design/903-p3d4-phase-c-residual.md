@@ -1,7 +1,7 @@
 # ADR-903 P3-D-4 Phase C 정합화 plan
 
 > 부모 문서: [903-phase3d-runtime-breakdown.md](903-phase3d-runtime-breakdown.md)
-> ADR 본문: [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md)
+> ADR 본문: [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md)
 > 검증 시나리오: [903-p3d4-phase-d-verification.md](903-p3d4-phase-d-verification.md)
 
 ---

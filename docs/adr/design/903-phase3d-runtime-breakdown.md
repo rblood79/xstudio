@@ -1,7 +1,7 @@
 # ADR-903 Phase 3-D — Runtime canonical document synchronization
 
 > ADR-903 Phase 3 P3-D sub-breakdown 설계문서.
-> 부모 문서: [ADR-903 기본](../903-ref-descendants-slot-composition-format-migration-plan.md),
+> 부모 문서: [ADR-903 기본](../completed/903-ref-descendants-slot-composition-format-migration-plan.md),
 > P3 통합: [903-phase3-frameset-breakdown.md](903-phase3-frameset-breakdown.md)
 > 사전결정: [903-phase3-decisions.md](903-phase3-decisions.md)
 

@@ -1,6 +1,6 @@
 # ADR-903 Phase 5 — Persistence 완결 + imports 참조형 hook sub-breakdown
 
-> 본 문서는 [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md) Phase 5 (G5 Gate)
+> 본 문서는 [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md) Phase 5 (G5 Gate)
 > 의 **sub-phase 분할** 과 정량 측정 기반 마이그레이션 plan 이다.
 > ADR 본문 §G5 + §R4/R7 의 high-level overview 를 실행 계획으로 분해.
 >

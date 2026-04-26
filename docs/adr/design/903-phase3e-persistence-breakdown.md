@@ -12,7 +12,7 @@ Proposed — 2026-04-26
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
 | 부모 sub-breakdown  | [903-phase3-frameset-breakdown.md](903-phase3-frameset-breakdown.md)                                                                 | §2.5 P3-E + §3 의존성 + §6 P3→P5         |
 | 결정 문서           | [903-phase3-decisions.md](903-phase3-decisions.md)                                                                                   | 결정 3: `_meta` object store + backupKey |
-| ADR-903 본문        | [../903-ref-descendants-slot-composition-format-migration-plan.md](../903-ref-descendants-slot-composition-format-migration-plan.md) | R4 위험 + G5 조건                        |
+| ADR-903 본문        | [../completed/903-ref-descendants-slot-composition-format-migration-plan.md](../completed/903-ref-descendants-slot-composition-format-migration-plan.md) | R4 위험 + G5 조건                        |
 | P5 persistence 연계 | [903-phase5-persistence-imports-breakdown.md](903-phase5-persistence-imports-breakdown.md)                                           | P5-B migration script + P5-C shim 해체   |
 | 회귀 위험 패턴      | [903-phase3a-regression-risk.md](903-phase3a-regression-risk.md)                                                                     | 안전망 패턴 reference                    |
 | 검증 계획 sibling   | [903-p3d4-phase-d-verification.md](903-p3d4-phase-d-verification.md)                                                                 | 구조 참조 (Phase C 정합화 시나리오)      |

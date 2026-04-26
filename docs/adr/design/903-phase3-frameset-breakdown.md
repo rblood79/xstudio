@@ -1,8 +1,8 @@
 # ADR-903 Phase 3 — frameset 흡수 sub-breakdown
 
-> 본 문서는 [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md) Phase 3 (G3 Gate) 의 **sub-phase 분할** 과 정량 측정 기반 마이그레이션 plan 이다. ADR 본문 §Decision §G3 + 기존 [breakdown §P3](903-ref-descendants-slot-composition-format-migration-plan-breakdown.md#p3-framesetlayouttemplate-흡수) 의 high-level overview 를 sub-phase 단위 실행 계획으로 분해.
+> 본 문서는 [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md) Phase 3 (G3 Gate) 의 **sub-phase 분할** 과 정량 측정 기반 마이그레이션 plan 이다. ADR 본문 §Decision §G3 + 기존 [breakdown §P3](903-ref-descendants-slot-composition-format-migration-plan-breakdown.md#p3-framesetlayouttemplate-흡수) 의 high-level overview 를 sub-phase 단위 실행 계획으로 분해.
 >
-> **상위 ADR**: ADR-903 (Status: Accepted — 2026-04-25)
+> **상위 ADR**: ADR-903 (Status: Implemented — 2026-04-26, completed/ 이관)
 > **Phase 진입 시점**: P0/P1/P2 D-A~D-C 완결 후 (HEAD `1803830c` 기준 canonical 144/144 + type-check 3/3 PASS, Gate G2 = 12 / G3 = 403)
 
 ## 1. 측정 baseline (2026-04-25)

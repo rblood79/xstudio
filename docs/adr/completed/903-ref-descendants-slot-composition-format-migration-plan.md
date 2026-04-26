@@ -27,7 +27,7 @@ Implemented — 2026-04-26 (Phase 0/1/2 완결 + Phase 3 G3 (a)/(e) + IndexedDB 
 
 ## Context
 
-composition은 현재 Builder(Skia)와 Preview/Publish(DOM + CSS, React Aria Components 기반)라는 두 렌더 경로를 가진다. [ADR-063](063-ssot-chain-charter.md)은 이 둘의 **컴포넌트 렌더링 SSOT 체인**을 D1(RAC DOM/접근성) / D2(RSP Props/API) / D3(Spec 시각)으로 정립했지만, **page/layout/document composition 포맷**과 **컴포넌트 재사용 문법**은 아직 단일 정본으로 정리되지 않았다.
+composition은 현재 Builder(Skia)와 Preview/Publish(DOM + CSS, React Aria Components 기반)라는 두 렌더 경로를 가진다. [ADR-063](./063-ssot-chain-charter.md)은 이 둘의 **컴포넌트 렌더링 SSOT 체인**을 D1(RAC DOM/접근성) / D2(RSP Props/API) / D3(Spec 시각)으로 정립했지만, **page/layout/document composition 포맷**과 **컴포넌트 재사용 문법**은 아직 단일 정본으로 정리되지 않았다.
 
 ### Domain (SSOT 체인 - [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))
 
@@ -115,8 +115,8 @@ pencil 은 **primitive-centric** (`rectangle`/`ellipse`/`text`/`path` 등 저수
 9. **NodesPanel Layout(Frame) UI 재구현** - CSS 시대 산물인 `LayoutsTab.createLayout` / `LayoutBodyEditor` / `LayoutSlugEditor` / `LayoutPresetSelector` / `ElementSlotSelector` 등 layout-vs-page 이원화 UI 를 **canonical `reusable frame authoring UI`** 로 재설계한다. `useLayoutsStore` 의 `layouts[]` 별도 저장도 canonical document tree 내부 `reusable: true` 노드로 흡수한다. 기능 상실 없음 — 공통 shell 재사용 / slot 지정 / page 별 content 채우기 모두 `reusable + ref + slot + descendants[slotPath].children` 조합으로 1:1 대응.
 10. **문서-level 메타 필드 (`version`/`themes`/`imports`/`variables`) + Frame 전용 컨테이너 필드 (`clip`/`placeholder`/`slot`) 채택** - 단순한 element tree 가 아닌 pencil-정합 문서 schema:
     - **`version: string`** (문서 root 필수). **`composition-*` 네임스페이스로 고정**. 초기값 `"composition-1.0"`. pencil `"2.10"` 네임스페이스는 **금지** — composition canonical 은 pencil 과 1:1 호환이 아닌 adapter 기반 변환 포맷이므로 pencil 버전 문자열을 공유하면 외부 도구가 pencil 파일로 오인하여 잘못된 파서로 열 위험이 있음. breaking change 시 `"composition-2.0"` 처럼 major 증가, additive 변경 시 `"composition-1.1"` 처럼 minor 증가. read-through adapter 는 `version` 접두사 (`composition-`) 검사 후 migration 경로 선택
-    - **`themes?: {[key: string]: string[]}`** (문서 root). composition 기존 ADR-021 Theme 시스템(Tint / dark mode) 을 canonical `themes` 축 선언으로 투영. 엔티티 level `theme?` override 지원은 Phase 별 단계 land. **구현 phase 및 read-only adapter → write-through 전환 계획: [ADR-910](910-canonical-themes-variables-land-plan.md)**
-    - **`variables?: {[key: string]: VariableDefinition}`** (문서 root). composition 기존 Spec TokenRef + `variableBindings?: string[]` (element.types.ts:105) 을 canonical `variables` 와 `NumberOrVariable`/`StringOrVariable`/`ColorOrVariable` 참조 문법으로 투영. 기존 CSS 변수 체계(ADR-022)는 `variables` output 으로 자동 emit. **구현 phase 및 resolver 통합 계획: [ADR-910](910-canonical-themes-variables-land-plan.md)**
+    - **`themes?: {[key: string]: string[]}`** (문서 root). composition 기존 ADR-021 Theme 시스템(Tint / dark mode) 을 canonical `themes` 축 선언으로 투영. 엔티티 level `theme?` override 지원은 Phase 별 단계 land. **구현 phase 및 read-only adapter → write-through 전환 계획: [ADR-910](../910-canonical-themes-variables-land-plan.md)**
+    - **`variables?: {[key: string]: VariableDefinition}`** (문서 root). composition 기존 Spec TokenRef + `variableBindings?: string[]` (element.types.ts:105) 을 canonical `variables` 와 `NumberOrVariable`/`StringOrVariable`/`ColorOrVariable` 참조 문법으로 투영. 기존 CSS 변수 체계(ADR-022)는 `variables` output 으로 자동 emit. **구현 phase 및 resolver 통합 계획: [ADR-910](../910-canonical-themes-variables-land-plan.md)**
     - **`imports?: {[key: string]: string}`** (문서 root). **참조형 import hook** — 외부 `.pen` 또는 canonical 문서 파일을 URL/path 로 참조하고 해당 문서의 reusable 노드를 `ref: "<importKey>:<nodeId>"` 로 인스턴스화. **실제 구현은 Phase 5 이후 연기** (스텁 타입만 P0 에 land). composition 기존 DesignKit `kitLoader.ts`/`kitExporter.ts` 는 **참조형 import 가 아니라 복사-적용 파이프라인** (`kitLoader.ts:259` `localId → new UUID` 재발급 + 프로젝트 삽입 / `kitExporter.ts:33` snapshot JSON export) 이므로 canonical `imports` 와 의미가 다르다. DesignKit 은 **별도 migration track** 으로 분리 — 본 ADR 의 canonical 전환과 독립적으로 유지되며, 향후 참조형 import 모델과 통합할지 여부는 별도 ADR 에서 결정
     - **Frame 전용 `clip?: BooleanOrVariable`** — children clipping (현재 composition 의 `overflow: hidden` 과 매핑)
     - **Frame 전용 `placeholder?: boolean`** — empty frame UI hint (P0 에서 composition 의 기존 빈 컨테이너 스타일과 매핑)
@@ -210,7 +210,7 @@ pencil 은 **primitive-centric** (`rectangle`/`ellipse`/`text`/`path` 등 저수
 - **대안 B 기각**: 최종 상태는 깨끗하지만 코드 경로 동시 교체 범위가 너무 넓다. `packages/shared/src/types/element.types.ts`, `apps/builder/src/preview/utils/layoutResolver.ts`, `apps/builder/src/builder/workspace/canvas/sprites/useResolvedElement.ts`, `apps/builder/src/builder/stores/elements.ts`, persistence/export 경로를 한 번에 바꾸는 것은 마이그레이션 CRITICAL이다.
 - **대안 C 기각**: frameset만 신포맷으로 감싸면 기본 문서 포맷과 컴포넌트 재사용 모델은 계속 `componentRole/masterId` 중심 메타체계로 남는다. 이 경우 "새 composition 포맷"이 기본 문법이 아니라 또 다른 예외 기능이 된다.
 
-> 구현 상세: [903-ref-descendants-slot-composition-format-migration-plan-breakdown.md](design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md)
+> 구현 상세: [903-ref-descendants-slot-composition-format-migration-plan-breakdown.md](../design/903-ref-descendants-slot-composition-format-migration-plan-breakdown.md)
 
 ## Risks
 
@@ -257,7 +257,7 @@ pencil 은 **primitive-centric** (`rectangle`/`ellipse`/`text`/`path` 등 저수
 
 ## References
 
-- [ADR-063: SSOT 체인 정본 정의 — 3-Domain 분할](063-ssot-chain-charter.md)
+- [ADR-063: SSOT 체인 정본 정의 — 3-Domain 분할](./063-ssot-chain-charter.md)
 - [The .pen Format](https://docs.pencil.dev/for-developers/the-pen-format)
 - [.pen Files](https://docs.pencil.dev/core-concepts/pen-files)
 - [packages/shared/src/types/element.types.ts](../../packages/shared/src/types/element.types.ts)

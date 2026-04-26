@@ -1,6 +1,6 @@
 # ADR-903 Phase 4 — editing semantics sub-breakdown
 
-> 본 문서는 [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md) Phase 4 (G4 Gate) 의 **sub-phase 분할** 과 구현 계획이다. ADR 본문 §3.11 의 신규 UI/UX/semantics 요구사항 7건을 실행 단위로 분해.
+> 본 문서는 [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md) Phase 4 (G4 Gate) 의 **sub-phase 분할** 과 구현 계획이다. ADR 본문 §3.11 의 신규 UI/UX/semantics 요구사항 7건을 실행 단위로 분해.
 >
 > **상위 ADR**: ADR-903 (Status: Accepted — 2026-04-25)
 > **진입 전 선결 조건**: P3 G3 통과 (G3 = 0, factory ownership 제거 + canonical resolver 단일화 완결)
