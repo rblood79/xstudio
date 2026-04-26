@@ -7,6 +7,8 @@ import {
   viewportToScreenSize,
 } from "../viewport/viewportTransforms";
 import { useStore } from "../../../stores";
+import { selectCanonicalDocument } from "../../../stores/elements";
+import { useLayoutsStore } from "../../../stores/layouts";
 import { sameLegacyOwnership } from "@/adapters/canonical";
 
 interface UseCanvasDragDropHelpersParams {
@@ -147,6 +149,12 @@ export function useCanvasDragDropHelpers({
       const excludedIds = getDescendantIds(draggedId);
       excludedIds.add(draggedId);
 
+      // ADR-903 P3-D-5 step 5e-3: doc 전달 → sameLegacyOwnership canonical 활용.
+      // callback 1회 생성 + loop 안에서 재사용 (cost = O(N) doc build, drag mouse-move 빈번).
+      const state = useStore.getState();
+      const layouts = useLayoutsStore.getState().layouts;
+      const doc = selectCanonicalDocument(state, state.pages, layouts);
+
       const candidates: Array<{
         bounds: BoundingBox;
         depth: number;
@@ -155,7 +163,7 @@ export function useCanvasDragDropHelpers({
 
       for (const element of elements) {
         if (element.deleted) continue;
-        if (!sameLegacyOwnership(element, draggedElement)) continue;
+        if (!sameLegacyOwnership(element, draggedElement, doc)) continue;
         if (excludedIds.has(element.id)) continue;
 
         const bounds = getElementBounds(element);
@@ -253,7 +261,12 @@ export function useCanvasDragDropHelpers({
         return [];
       }
 
-      if (!sameLegacyOwnership(movedElement, targetElement)) {
+      // ADR-903 P3-D-5 step 5e-3: doc 1회 생성 (drop 시 1회 호출) → sameLegacyOwnership 두 호출에서 공유.
+      const state = useStore.getState();
+      const layouts = useLayoutsStore.getState().layouts;
+      const doc = selectCanonicalDocument(state, state.pages, layouts);
+
+      if (!sameLegacyOwnership(movedElement, targetElement, doc)) {
         return [];
       }
 
@@ -275,7 +288,7 @@ export function useCanvasDragDropHelpers({
         elements
           .filter((element) => {
             if (element.deleted) return false;
-            if (!sameLegacyOwnership(element, movedElement)) return false;
+            if (!sameLegacyOwnership(element, movedElement, doc)) return false;
             if ((element.parent_id ?? null) !== parentId) return false;
             if (!includeMoved && element.id === movedId) return false;
             return true;
