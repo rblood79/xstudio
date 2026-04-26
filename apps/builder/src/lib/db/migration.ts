@@ -100,6 +100,12 @@ export async function runLegacyToCanonicalMigration(
   const transformations: MigrationTransformation[] = [];
   const errors: string[] = [];
 
+  // 2026-04-27 graceful degrade — dangling layout_id (layouts store 에 매칭 row 없음)
+  // 또는 page_id 가 canonical doc 에 없는 element 는 **error 가 아닌 cleanup 대상**.
+  // legacy cascade bug (layout 삭제 시 element layout_id null 처리 누락) 또는 dev 환경
+  // 잔여 데이터에서 발생. parent_id=null 로 강등 + warn 로그.
+  const orphanCleanups: string[] = [];
+
   for (const el of elements) {
     const ownership = {
       page_id: el.page_id ?? null,
@@ -119,13 +125,23 @@ export async function runLegacyToCanonicalMigration(
 
     if (canonicalParentId === null) {
       if (ownership.page_id == null && ownership.layout_id == null) {
+        // 진짜 orphan (어디에도 속하지 않음) — error 유지
         errors.push(`orphan element ${el.id} (page_id=null, layout_id=null)`);
       } else {
-        errors.push(
-          `canonical parent missing for element ${el.id} (page_id=${ownership.page_id}, layout_id=${ownership.layout_id})`,
+        // dangling reference — canonical doc 에 매칭 parent 없음
+        // (legacy cascade bug 등). graceful cleanup 으로 강등, error 아님.
+        orphanCleanups.push(
+          `dangling element ${el.id} cleaned up (page_id=${ownership.page_id}, layout_id=${ownership.layout_id} → parent_id=null)`,
         );
       }
     }
+  }
+
+  if (orphanCleanups.length > 0) {
+    console.warn(
+      `[ADR-903 P3-E E-6] dangling reference cleanup for project ${projectId}: ${orphanCleanups.length} elements`,
+      orphanCleanups,
+    );
   }
 
   const status: MigrationResult["status"] =

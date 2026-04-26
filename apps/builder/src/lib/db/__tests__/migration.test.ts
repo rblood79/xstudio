@@ -266,16 +266,27 @@ describe("P3-E E-3: runLegacyToCanonicalMigration (read-through dry-run)", () =>
       expect(result.errors[0]).toMatch(/orphan/i);
     });
 
-    it("canonical parent 미존재 element (layout_id=invalid) 는 errors 에 추가된다", async () => {
+    it("dangling reference (layout_id=invalid) 는 graceful cleanup — errors 가 아닌 console.warn 으로 처리 (2026-04-27 보강)", async () => {
       const { runLegacyToCanonicalMigration } = await import("../migration");
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const elements = [buildElement("e1", { layout_id: "frame-MISSING" })];
       const adapter = buildMockAdapter(elements, []);
       const doc = buildDoc({ reusableFrameIds: ["layout-frame-A"] });
       const result = await runLegacyToCanonicalMigration(adapter, "proj-4", {
         canonicalDoc: doc,
       });
+      // transformations 는 그대로 (canonicalParentId=null 기록)
       expect(result.transformations[0]?.canonicalParentId).toBeNull();
-      expect(result.errors.length).toBeGreaterThan(0);
+      // dangling 은 errors 에 안 추가 — graceful cleanup
+      expect(result.errors).toEqual([]);
+      // status=success (dangling 만 있을 때)
+      expect(result.status).toBe("success");
+      // console.warn 으로 보고
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("dangling reference cleanup"),
+        expect.arrayContaining([expect.stringMatching(/dangling element e1/)]),
+      );
+      warnSpy.mockRestore();
     });
 
     it("status 는 errors 가 비었을 때 success, errors 가 있을 때 failure", async () => {
@@ -318,6 +329,12 @@ describe("P3-E E-3: runLegacyToCanonicalMigration (read-through dry-run)", () =>
       docFrames: string[];
       expectedCanonicalParentId: string | null;
       expectError: boolean;
+      /**
+       * dangling reference (canonical doc 에 매칭 parent 없음 + 실제 ownership
+       * 은 비어있지 않음). 2026-04-27 보강: errors 가 아닌 graceful cleanup —
+       * console.warn 으로 보고. expectError=false + expectDanglingCleanup=true.
+       */
+      expectDanglingCleanup?: boolean;
     };
 
     function makePageFixtures(): Fixture[] {
@@ -369,12 +386,13 @@ describe("P3-E E-3: runLegacyToCanonicalMigration (read-through dry-run)", () =>
       const out: Fixture[] = [];
       for (let i = 1; i <= 10; i++) {
         out.push({
-          name: `missing frame fixture #${i} — layout_id=ghost-${i}`,
+          name: `missing frame fixture #${i} — layout_id=ghost-${i} (dangling cleanup)`,
           ownership: { layout_id: `ghost-${i}` },
           docPages: [],
           docFrames: ["layout-frame-A"],
           expectedCanonicalParentId: null,
-          expectError: true,
+          expectError: false, // 2026-04-27: dangling 은 graceful cleanup
+          expectDanglingCleanup: true,
         });
       }
       return out;
@@ -393,6 +411,7 @@ describe("P3-E E-3: runLegacyToCanonicalMigration (read-through dry-run)", () =>
 
     it.each(FIXTURES)("$name", async (fixture) => {
       const { runLegacyToCanonicalMigration } = await import("../migration");
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const elements = [buildElement("el-x", fixture.ownership)];
       const adapter = buildMockAdapter(elements, []);
       const doc = buildDoc({
@@ -410,7 +429,15 @@ describe("P3-E E-3: runLegacyToCanonicalMigration (read-through dry-run)", () =>
       );
       if (fixture.expectError) {
         expect(result.errors.length).toBeGreaterThan(0);
+      } else if (fixture.expectDanglingCleanup) {
+        // dangling cleanup: errors 0 + console.warn 으로 보고
+        expect(result.errors).toEqual([]);
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("dangling reference cleanup"),
+          expect.any(Array),
+        );
       }
+      warnSpy.mockRestore();
     });
   });
 });
