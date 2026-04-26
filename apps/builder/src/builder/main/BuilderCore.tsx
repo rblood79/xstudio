@@ -6,6 +6,17 @@ import { useStore } from "../stores";
 import { historyManager } from "../stores/history";
 import type { Element } from "../../types/core/store.types";
 
+// ADR-903 P3-D-5 step 2: layout membership indirection layer.
+// Why: el.layout_id === currentLayoutId 비교를 단일 진입점으로 추출.
+// 다음 단계 (canonical 전환) 에서 본 helper 내부만 reusable FrameNode descendants 기반으로 변경.
+function belongsToLayout(
+  el: Pick<Element, "layout_id">,
+  layoutId: string | null,
+): boolean {
+  if (!layoutId) return false;
+  return el.layout_id === layoutId;
+}
+
 // 패널 등록 (side effect import - registerAllPanels() 자동 실행)
 import "../panels";
 
@@ -280,7 +291,7 @@ export const BuilderCore: React.FC = () => {
           // 기존 요소들과 병합
           const { elements, setElements } = useStore.getState();
           const otherElements = elements.filter(
-            (el) => el.layout_id !== currentLayoutId,
+            (el) => !belongsToLayout(el, currentLayoutId),
           );
           const mergedElements = [...otherElements, ...layoutElements];
           setElements(mergedElements);
@@ -453,8 +464,8 @@ export const BuilderCore: React.FC = () => {
       // editMode에 따라 필터링
       let filteredElements = state.elements;
       if (editMode === "layout" && currentLayoutId) {
-        filteredElements = state.elements.filter(
-          (el) => el.layout_id === currentLayoutId,
+        filteredElements = state.elements.filter((el) =>
+          belongsToLayout(el, currentLayoutId),
         );
       }
 
@@ -861,7 +872,10 @@ export const BuilderCore: React.FC = () => {
     };
 
     // sessionStorage에 저장 (같은 origin의 새 탭에서 접근 가능)
-    sessionStorage.setItem("composition-preview-data", JSON.stringify(previewData));
+    sessionStorage.setItem(
+      "composition-preview-data",
+      JSON.stringify(previewData),
+    );
 
     // 새 탭에서 publish 앱 열기
     window.open("/publish/", "_blank");
