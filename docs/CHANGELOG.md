@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1 GREEN 종결**. ADR-903 진행도 ~96% → ~99.5%.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + P3-E E-2 (createMigrationBackup) RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1/E-2 GREEN 종결**. ADR-903 진행도 ~96% → ~99.6%.
 
 ### Architecture
 
@@ -125,7 +125,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 검증: `metaStore.test.ts` 5/5 GREEN + `usePageManager.canonical.test.ts` 6/6 GREEN (전 session GREEN 유지) + `pnpm type-check` PASS + apps/builder vitest 546 PASS / 4 pre-existing FAIL (회귀 0)
   - 위치: `apps/builder/src/lib/db/types.ts` (MetaRecord +12 LOC, meta 그룹 +6 LOC, getByLayout JSDoc +6 LOC) / `apps/builder/src/lib/db/indexedDB/adapter.ts` (DB_VERSION 1 LOC + \_meta store +5 LOC + meta 그룹 +24 LOC + getByLayout JSDoc +6 LOC)
 
-- **ADR-903 P3-E persistence sub-breakdown plan land** (commit `84da7f32`, 직접 main commit):
+- **ADR-903 P3-E E-2 RED + GREEN — createMigrationBackup (read-only localStorage backup)**:
+  - `apps/builder/src/lib/db/migrationBackup.ts` 신규 (88 LOC) — `createMigrationBackup(adapter, projectId): Promise<string>` 함수
+    - `MigrationBackup` interface: `{ projectId, timestamp, elements, layouts, backupVersion: "legacy" }`
+    - `BackupCapableAdapter` minimal interface (elements/layouts.getAll() 만 의존)
+    - backup key 패턴: `composition-migration-backup:<projectId>:<Date.now()>`
+    - 동일 projectId 의 prior backup 전수 정리 (1 project = 1 backup, localStorage 용량 보호)
+  - `apps/builder/src/lib/db/__tests__/migrationBackup.test.ts` 신규 (147 LOC) — 5 RED → GREEN it block:
+    1. createMigrationBackup 함수 export 검증
+    2. backup key regex (`^composition-migration-backup:proj-123:\d+$`) 매칭
+    3. localStorage backup JSON 구조 (projectId / timestamp / elements / layouts / backupVersion: "legacy")
+    4. 동일 projectId 이전 backup 정리 (1차 backup 제거 + 2차 backup 잔존)
+    5. **read-only 보장**: adapter 의 write 메서드 (insert/update/updateMany/delete/deleteMany) 호출 0건
+    - vitest jsdom 환경 명시 (`// @vitest-environment jsdom`) — localStorage 사용
+  - **Why**: P3-E breakdown 의 E-2 sub-phase. E-3 migration script (legacy → composition-1.0 변환) 의 사전 안전망. graceful degradation 보장 — backup 후 변환 실패 시 backup JSON 으로 복원 가능. localStorage 기반이라 IndexedDB 트랜잭션 실패와 독립
+  - 검증: `migrationBackup.test.ts` 5/5 GREEN (RED → GREEN 전환) + `pnpm type-check` PASS + apps/builder vitest 551 PASS / 4 pre-existing FAIL (회귀 0, baseline 546 → 551)
+  - 위치: `apps/builder/src/lib/db/migrationBackup.ts` (신규) + `apps/builder/src/lib/db/__tests__/migrationBackup.test.ts` (신규)
+
+- **ADR-903 P3-E E-1 RED + GREEN — IndexedDB `_meta` object store 도입** (PR `adr-903-p3e-e1-red-test` merge `a055055b` + 후속 GREEN commit):
   - IndexedDB schema 마이그레이션 6-step 분해 plan 작성
     - E-1: `_meta` object store stub land (1h, 위험 0)
     - E-2: backup 함수 추가 read-only (1h, 위험 0)
