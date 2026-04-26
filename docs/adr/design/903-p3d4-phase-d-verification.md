@@ -12,7 +12,7 @@
 
 ## 사전 상태 확인 (세션 시작 시 필수)
 
-아래 5가지를 모두 확인한 후 시나리오 실행에 진입한다.
+아래 7가지를 모두 확인한 후 시나리오 실행에 진입한다.
 
 ```bash
 # 1. PR #1 (Phase A RED), #2 (Phase B postMessage), #3 (Phase C canonical) 머지 여부
@@ -33,18 +33,40 @@ pnpm dev 2>&1 | head -5
 grep -r '"composition-1.0"' apps/builder/src --include='*.ts' -l
 ```
 
+**6. Compare Mode 또는 Preview toggle 활성화 (CRITICAL)**:
+
+- Builder UI 우측 상단 "Compare Mode (Preview + Skia)" 또는 "Preview" 버튼 **사용자 직접 클릭** 필수
+- React Aria ToggleButton 은 javascript native `click()` 또는 `dispatchEvent(new MouseEvent("click"))` 에 미반응 — `aria-pressed` 변경 안 됨
+- 이 toggle 없이는 iframe 미존재 → postMessage intercept 불가 → 시나리오 A/B/C/D 전체 실행 불가
+- 검증 중 iframe 가 unmount 되면 toggle 다시 활성화 필요 (re-render 가 iframe 재mount 유발 가능)
+
+**7. page 2개 이상 사전 생성 (B-1 필수)**:
+
+- B-1 (page 전환 element 누락 0) 시나리오는 page 2개 이상 환경에서만 검증 가능
+- 빈 프로젝트로 진입 시 NodesPanel "Add Page" 버튼으로 사전 추가
+- B-2 (layout-linked page) 는 layout 1개 이상 + 그 layout 을 사용하는 page 1개 이상
+
 **PR 미머지 상태에서 실행 시**: P3-D-1 (factory ownership) 미머지면 B-2 시나리오가 FAIL 예상 — 알려진 미정합이므로 기록 후 계속 진행.
 
 ---
 
 ## 검증 환경
 
-| 항목               | 값                                                  |
-| ------------------ | --------------------------------------------------- |
-| Builder dev server | `pnpm dev` (apps/builder, 포트 5173 기본)           |
-| Preview iframe     | postMessage `composition-1.0` schema (Phase B 이후) |
-| 검증 도구          | Chrome MCP (`mcp__claude-in-chrome__*`)             |
-| 사전 메모리        | `feedback-chrome-mcp-patterns.md` 패턴 재사용       |
+| 항목               | 값                                                |
+| ------------------ | ------------------------------------------------- |
+| Builder dev server | `pnpm dev` (apps/builder, 포트 5173 기본)         |
+| Preview iframe     | Compare Mode/Preview toggle ON 시에만 mount       |
+| postMessage schema | `composition-1.0` (UPDATE_ELEMENTS 한정, Phase B) |
+| 검증 도구          | Chrome MCP (`mcp__claude-in-chrome__*`)           |
+| 사전 메모리        | `feedback-chrome-mcp-patterns.md` 패턴 재사용     |
+
+### Phase B version scope (UPDATE_ELEMENTS 한정 — 의도된 결정)
+
+`useIframeMessenger.ts` 의 send 함수 중 **`UPDATE_ELEMENTS` 만** `version: "composition-1.0"` 적용. 다른 9 message types (`UPDATE_LAYOUTS`, `UPDATE_PAGES`, `UPDATE_PAGE_INFO`, `UPDATE_DATA_TABLES`, `UPDATE_API_ENDPOINTS`, `UPDATE_VARIABLES`, `THEME_BASE_TYPOGRAPHY`, `THEME_VARS`, `SET_DARK_MODE`) 는 version 필드 미사용.
+
+**이유**: ADR-903 design (`903-phase3d-runtime-breakdown.md` L36/L388) 의 version scheme 정의가 **canonical document 식별 용** — canonical document 의 핵심은 elements 이므로 version 도 element message 한정. 다른 message types 는 canonical 외부 구성 요소.
+
+**검증 시 주의**: 다른 message types 의 `version: null` 은 정상. UPDATE_ELEMENTS 만 `composition-1.0` 검증 대상.
 
 ### Chrome MCP 도구 최소 목록 (세션 시작 시 사전 로드)
 
