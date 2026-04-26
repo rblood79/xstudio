@@ -7,6 +7,9 @@ Accepted — 2026-04-25 (Phase 0 G1 통과: canonical 타입 + adapter/resolver 
 ### 진행 로그
 
 - 2026-04-26: **옵션 C default 활성화** — Preview canonical render path 가 production 에서 default 동작 (PR #227 `feat/adr-903-canonical-default` 머지, commit `db462688`). P2 옵션 C completion = P3-D 진입 hard precondition 충족 (sub-breakdown §결정 4 / phase3d-runtime-breakdown.md §P3-D 의존성). P2 dev 비교 로그 정리 (PR #226 `chore/adr-903-revert-debug-logs`, commit `377e5980`) → console drift 0.
+- 2026-04-26: **P3-D-3 GREEN 마감** — `layoutActions` canonical 전환 완료 (commit `109af146`, PR #234). `createGetLayoutSlotsAction` 의 `elements.filter(layout_id)` 패턴 → `selectCanonicalDocument(state, pages, layouts).children` 의 reusable `FrameNode` 직접 lookup 으로 전환. `createDeleteLayoutAction` cascade 진입 전 canonical guard 추가. vitest layoutActions 6/6 PASS.
+- 2026-04-26: **P3-D-4 Phase A/B/C land** — workflow renderer 정합화 3 phase 완결 (세션 30~31). Phase C minimal stub land 후 PR 모두 머지.
+- 2026-04-26: **P3-D-5 6/6 종결** — BuilderCore + workspace canvas 영역 canonical 전환 (세션 33). Step 1~5d (indirection layer + workflow edges 경로 fully canonical, 8 commits) + Step 5e (BuilderCore L283/L457 + useCanvasDragDropHelpers 3 분기 caller doc 전수 도입, 3 commits) + Step 5f (LayoutGroup schema 변경 NOOP, 분석 only — `getLegacyPageLayoutId` prefix stripping 으로 이미 canonical 호환 입증). **5/5 caller chain fully canonical**. 회귀 위험 0 (type-check 3/3 + integration test 43/43). 미머지 PR 잔여: P3-D-1 (factory ownership) / P3-D-2 (elementCreation canonical context). 진행도 ~98% (옵션 C default + P3-D-3/D-4/D-5 land, P3-D-1/D-2 머지 + Phase C 정합화 후 ~99%, RC-2 검증 + Implemented 승격 가능 시점).
 
 ## Context
 
