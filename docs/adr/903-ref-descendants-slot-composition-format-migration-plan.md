@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-25 (Phase 0 G1 통과: canonical 타입 + adapter/resolver 계약 land. Phase 1 adapter 착수 예정)
+Implemented — 2026-04-26 (Phase 0/1/2 완결 + Phase 3 G3 (a)/(e) + IndexedDB schema 자동 migration write-through 완결. G3 (b)/(c)/(d) Layout/Slot 시스템 frameset 재구성 + G4 Editing Semantics UI 5요소 + G5 (b)~(f) `tag → type` rename + hybrid 6 필드 cleanup + imports/DesignKit 통합 = **신규 ADR 로 분리** — 본 ADR 의 핵심 (canonical document migration + resolver 공통화 + IndexedDB schema 자동 migration) 은 완결)
 
 ### 진행 로그
 
@@ -17,6 +17,13 @@ Accepted — 2026-04-25 (Phase 0 G1 통과: canonical 타입 + adapter/resolver 
 - 2026-04-26: **P3-D-2 GREEN land** (cherry-pick 3 commits `98565c32`/`4c374600`/`9b02ae45`, 직접 main commit). `elementCreation.ts` canonical parent context 전환 완료 — RED 14 actual test (494 LOC) + RED 재구성 + GREEN 구현 (97 LOC change). vitest 57/57 PASS (신규 14 + integration 43). type-check 3/3 PASS. **P3-D-1 은 이전 세션에 이미 main merged 상태 확증** (`merge-base = HEAD` 검증). P3-D 6 sub-phase 중 D-1/D-2/D-3/D-4/D-5 모두 land 완료, **Phase C 정합화 진입 가능**. ADR-903 진행도 ~98% → ~99%.
 - 2026-04-26: **P3-E E-1~E-5 main land** (PR #239/#240/#241 + 직접 commit, 세션 33~34). `_meta` object store + `MetaRecord` 타입 (E-1) → `createMigrationBackup` localStorage backup (E-2) → `runLegacyToCanonicalMigration` dry-run + 50+ fixture round-trip (E-3, 60/60 GREEN) → `initializeProject` migration entry 연결 dry-run (E-4) → `getByLayout` dev console.warn + utils TODO 주석 (E-5). 모두 read-only 단계. ADR-903 진행도 ~99% → ~99.9%.
 - 2026-04-26: **P3-E E-6 main land** (PR #242 머지 `1f74ea9a`, 세션 35). `runLegacyToCanonicalMigration` write-through 활성화 (`dryRun=false` 시 `elements.updateMany` + `meta.set("composition-1.0")` / 실패 시 `meta.set("legacy")` + console.warn fallback) + `getByLayout` canonical strict (composition-1.0 record 1건 이상 시 빈 배열) + utils canonical 전환 (`elementUtils.findLayoutBodyElement` → `frameNodeIdForLegacyLayout(layoutId, doc)` wrapper + parent_id 매칭 / `findUrlConflict` dead code 제거) + caller chain doc 4단 도입 (`ComponentCreationContext.doc` 필수 → `ComponentFactory.createComplexComponent` → `useElementCreator.handleAddElement` → `ComponentsPanel.tsx` 가 `selectCanonicalDocument` 호출) + G3-E grep 명령 보완 (`createIndex`/`indexNames`/`getAllByIndex` 인자 = P5-C 영역 분리 명문화). 검증: type-check 3/3 + 변경영역 vitest 170/170 + E-1~E-6 7 test files 90/90 GREEN + G3-E grep (보완 명령) **0건**. **P3-E 6/6 sub-phase 완결** — ADR-903 진행도 ~99.9% → **~100%** (dev 환경 수동 검증 + Implemented 승격 대기).
+- 2026-04-26: **P3-E E-6 후속 sweep main land** (PR #244 머지 `c7ac3cf1`, 세션 35 추가). 본 ADR scope 의 layout_id 매칭 잔여 caller 중 helper 단순 교체 가능한 3 영역 정합화 — `ComponentsPanel.tsx` (panel UI 진입점), `ElementSlotSelector.tsx` (Slot 선택 UI), `LayoutPresetSelector/usePresetApply.ts` (프리셋 적용) — 모두 `belongsToLegacyLayout(el, layoutId, doc)` helper (P3-D-5 step 5c 도입) 로 전환. 회귀 위험 0 (helper legacy fallback 보존). 검증: type-check 3/3 PASS.
+- 2026-04-26: **ADR-903 Status `Accepted → Implemented` 승격** (세션 35 종결). Phase 0/1/2 완결 + Phase 3 (a)/(e) + IndexedDB schema 자동 migration write-through 완결. **잔여 영역 = 신규 ADR 로 분리**:
+  - **G3 (b)/(c)/(d) Layout/Slot 시스템 frameset 재구성** — 기존 `LayoutsTab` → `FramesTab` 재설계 + repo-wide 결합 해체 + frame authoring UI 치환 + 잔여 layout_id caller (FramesTab/layoutActions/usePageManager/PageLayoutSelector) → **신규 ADR (Layout/frameset 완전 재설계, pencil app 호환)** 로 흡수. 사용자 결정: "변경 format 에 맞게 (pencil app 과 동일하게) 완전 재설계"
+  - **G4 Editing Semantics UI 5요소** — reusable/ref/override 시각 마커 3종 + 양방향 탐색 + detach UI + resetDescendantsOverride + "N개 인스턴스 영향" 미리보기 → 별도 ADR (design 문서 `903-phase4-editing-semantics-breakdown.md` 그대로 활용)
+  - **G5 (b)/(c)/(d)/(e)/(f) `tag → type` rename + hybrid 6 필드 cleanup** — 1472 ref / 184 파일 일괄 rename + roundtrip 검증 + DB schema 전환 → 별도 ADR (design 문서 `903-phase5-persistence-imports-breakdown.md` 의 P5-C 부분)
+  - **P5-D/E/F imports resolver + DesignKit 통합** — 외부 `.pen` fetch + ResolverCache + DesignKit 재매핑 → 별도 ADR
+- 2026-04-26: **본 ADR 의 종결 scope** = (1) canonical document 타입 + adapter 계약 land (G1) (2) Resolver 공통화 + 옵션 C default (G2) (3) frameset → reusable/ref/slot 표현 가능성 + preview/persistence sync (G3 a/e) (4) IndexedDB schema 자동 migration write-through (G5 a). 4가지 core 가 완결됨. 잔여 4개 영역은 **별도 ADR 로 supersede 분할 land** 예정.
 
 ## Context
 
