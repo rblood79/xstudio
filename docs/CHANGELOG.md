@@ -5,9 +5,9 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [ADR-903 P3-D-5 indirection layer + workflow edges + caller doc 도입 — 세션 33] - 2026-04-26
+## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 (BuilderCore + workspace canvas) 의 6 step 분해 중 step 1~5e 완료. 회귀 위험 0 indirection layer + workflow edges 경로 fully canonical + BuilderCore/useCanvasDragDropHelpers caller doc 전수 도입.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + P3-E IndexedDB persistence plan land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료**. ADR-903 진행도 ~96% → ~99%.
 
 ### Architecture
 
@@ -79,6 +79,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Why**: P3-D-5 의 schema canonical 화는 BuilderCore + workspace canvas 영역의 caller doc 전수 도입 (Step 5e) 으로 이미 완결. LayoutGroup 자체는 canonical 활성화 영향 없음 — `getLegacyPageLayoutId` 의 prefix stripping 로직이 schema layer 의 변경 불필요성을 자동 보장.
 
   → **P3-D-5 6/6 step 종결** (5f 는 분석 only). ADR-903 진행도 ~98% 유지
+
+- **ADR-903 P3-D-2 GREEN — elementCreation canonical parent context 전환** (cherry-pick 3 commits `98565c32` / `4c374600` / `9b02ae45`, 직접 main commit):
+  - `apps/builder/src/builder/stores/utils/elementCreation.ts` 의 element 생성 시 parent context 결정을 `selectCanonicalDocument` 기반으로 전환 (97 LOC change)
+  - RED test 14 actual 적용 (494 LOC, `elementCreationCanonical.test.ts` 신규) + RED 재구성 (test 분리)
+  - **Why**: P3-D 6 sub-phase 의 D-2 — element 생성 경로의 canonical 전환. 옵션 C default 활성화 후 BuilderCore L283/L457 (P3-D-5) + useCanvasDragDropHelpers (P3-D-5) + layoutActions (P3-D-3) + workflow renderer (P3-D-4) + elementCreation (P3-D-2) 5축 모두 canonical → P3-D 모든 sub-phase land
+  - 검증: pnpm vitest 57/57 PASS (P3-D-2 14 신규 + canonical integration 43) / pnpm type-check 3/3 PASS / cherry-pick conflict 0
+  - 위치: `apps/builder/src/builder/stores/utils/elementCreation.ts` + `__tests__/elementCreationCanonical.test.ts`
+
+- **ADR-903 P3-D-1 fully merged 확증** (commit `0fcfcb60` 이전 세션 land):
+  - `git merge-base origin/main origin/feat/adr-903-p3d1-factory-ownership` = `0fcfcb60` (HEAD 자체) → 모든 변경이 이미 main 에 머지됨
+  - factory ownership 287 ref 제거 + `TableComponents.createTable pageId destructure 복원` 회귀 fix
+  - branch 정리: origin + local 삭제 완료
+  - **결합 정리**: P3-D-1 (factory) + P3-D-2 (elementCreation) + P3-D-3 (layoutActions) + P3-D-4 (workflow renderer Phase A/B/C) + P3-D-5 (BuilderCore + workspace canvas) = **P3-D 5/5 sub-phase land 완료**
+
+- **ADR-903 P3-D-4 Phase C 정합화 plan land** (PR #238 머지, commit `e5cbc148`):
+  - `usePageManager.ts` 의 minimal stub (L516-527) 정합화 4-step 분해 plan 작성
+    - Step C-1: helper 함수 추출 (위험 0, 1h)
+    - Step C-2: DB 조회 로직 통합 (낮음, ~1h)
+    - Step C-3: 중복 제거 정합화 (낮음, ~1h)
+    - Step C-4: console.log 정리 + TODO 주석 제거 (없음, ~0.5h)
+  - **Why**: Phase C minimal stub 의 layoutElements 누락 회귀 수정 — `selectCanonicalDocument` 의 reusable FrameNode 기반 elements 추출 정합화. 선행 의존: P3-D-1 머지 (이미 완료), 진입 즉시 가능
+  - 위치: `docs/adr/design/903-p3d4-phase-c-residual.md` (336 LOC)
+
+- **ADR-903 P3-E persistence sub-breakdown plan land** (commit `84da7f32`, 직접 main commit):
+  - IndexedDB schema 마이그레이션 6-step 분해 plan 작성
+    - E-1: `_meta` object store stub land (1h, 위험 0)
+    - E-2: backup 함수 추가 read-only (1h, 위험 0)
+    - E-3: migration script dry-run + 50+ fixture test (2h, MED → 50+ test 로 방어)
+    - E-4: `initializeProject` migration 진입 조건 연결 (1h, LOW)
+    - E-5: `getByLayout` dev warning + TODO 주석 (0.5h, 위험 0)
+    - E-6: write-through 전환 — G3-E 통과 시점 (1.5h, HIGH → 3중 안전망)
+  - **결정 3 채택** (`_meta` object store + `backupKey` 필드, `DB_VERSION` 7→8): 기존 `projects` / `elements` / `layouts` store 무변경
+  - **안전망 3중**: IndexedDB ACID + localStorage backup + `_meta.schemaVersion = "legacy"` fallback. E-1~E-5 dry-run / read-only, E-6 만 실 DB write
+  - **G5 매핑**: P3-E 는 G5 (b)(c) land. G5 (d)(e)(f) = P5-B/C 후속 (`useLayoutsStore` 본체 / `layout_id` index / `getByLayout` 삭제)
+  - 위치: `docs/adr/design/903-phase3e-persistence-breakdown.md` (620 LOC)
+
+- **ADR-903 잔여 grep audit 2026-04-26 land** (commit `c0afc071`, 직접 main commit):
+  - 9 grep pattern 측정 결과 보고
+    - layout_id/page_id 직접 비교 73 건 = **모두 adapter/bridge 내부 격리** (회귀 위험 0)
+    - canonical helper 3 종 정의 완료, caller 구현 진행 중
+    - G3 (c) 60% 완료 (15 파일 → canonical bridge)
+    - G5 (b) baseline = 832 ref non-adapter (정상 진행)
+  - **Residual 4 카테고리**: A Carry-over 정상 / B 즉시 전환 가능 6~8개 파일 / C 재설계 필요 = **0개** ✅ / D Phase 5 G5 대규모 batch
+  - **회귀 위험 LOW** (옵션 C default 이후)
+  - **진입 가능 평가**: ✅ P3-E 진입 = YES / ⚠️ Phase 4 진입 = CONDITIONAL (P3 G3 통과 후)
+  - 위치: `docs/adr/design/903-residual-grep-audit-2026-04-26.md` (536 LOC)
+
+- **ADR-903 Phase 4 G4 sub-breakdown 검증** (agent dispatch 결과 cover 확증):
+  - 기존 `docs/adr/design/903-phase4-editing-semantics-breakdown.md` (637 LOC, 2026-04-25) 가 이미 7 요구사항 baseline + P4-A~F 6 sub-phase 분할 + Sub-Gate G4-A~G4-F 모두 cover
+  - 신규 plan 작성 불필요 (중복 회피, agent 의 ROI 판단 정확)
+  - Phase 4 진입 가능 시점: P3 G3 통과 후
 
 ### Documentation
 
