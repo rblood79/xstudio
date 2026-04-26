@@ -6,7 +6,9 @@
  * - Kept essential utility functions (generateId, findBodyElement, etc.)
  */
 
+import type { CompositionDocument } from "@composition/shared";
 import { Element } from "../../types/core/store.types";
+import { frameNodeIdForLegacyLayout } from "../../adapters/canonical";
 
 // 통합 요소 관리 유틸리티
 export class ElementUtils {
@@ -36,18 +38,21 @@ export class ElementUtils {
   }
 
   /**
-   * Find the body element for a given layout
-   * Used for automatically setting body as parent when parent_id is null in Layout mode
+   * Find the body element for a given layout (canonical reusable frame).
+   *
+   * ADR-903 P3-E E-6: write-through 전환 후 element.layout_id 는 null. canonical
+   * frame node id (`legacyOwnershipToCanonicalParent({ layout_id }, doc)`) 를
+   * `el.parent_id` 와 매칭한다.
    */
   static findLayoutBodyElement(
     elements: Element[],
     layoutId: string,
+    doc: CompositionDocument,
   ): string | null {
-    // TODO(P3-E): canonical parent 기반으로 교체 — el.layout_id legacy
-    // ownership marker 사용. write-through 전환 (E-6) 후 reusable frame
-    // 의 children 검색으로 변경 예정.
+    const frameNodeId = frameNodeIdForLegacyLayout(layoutId, doc);
+    if (!frameNodeId) return null;
     const bodyElement = elements.find(
-      (el) => el.layout_id === layoutId && el.tag === "body",
+      (el) => el.parent_id === frameNodeId && el.tag === "body",
     );
     return bodyElement?.id || null;
   }
@@ -55,19 +60,25 @@ export class ElementUtils {
   /**
    * Find body element by context (page or layout)
    * Automatically chooses the right method based on provided IDs
+   *
+   * ADR-903 P3-E E-6: layout 모드 분기는 canonical document (`doc`) 필수.
+   * Page 모드는 `el.page_id` 사용 (P3 outside scope, retained legacy column).
+   *
    * @param elements - All elements
    * @param pageId - Page ID (for page mode)
    * @param layoutId - Layout ID (for layout mode)
+   * @param doc - Canonical CompositionDocument (layout 모드에서 frame parent 변환 용)
    * @returns Body element ID or null
    */
   static findBodyByContext(
     elements: Element[],
     pageId: string | null,
     layoutId: string | null,
+    doc: CompositionDocument,
   ): string | null {
     // Layout mode takes priority
     if (layoutId) {
-      return this.findLayoutBodyElement(elements, layoutId);
+      return this.findLayoutBodyElement(elements, layoutId, doc);
     }
     // Fall back to page mode
     if (pageId) {

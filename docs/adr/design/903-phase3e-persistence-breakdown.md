@@ -509,31 +509,46 @@ ADR-903 본문 R4 = "DB 저장 포맷 전환을 너무 이르게 시작하면 un
 ## G3-E Sub-Gate 측정 명령
 
 ```bash
-# P3-E 완료 확인 명령 (0 이어야 통과, migration script 파일 제외)
+# P3-E 완료 확인 명령 (0 이어야 통과)
+# migration script + test + JSDoc/TODO 코멘트 + IndexedDB schema 정의 (P5-C 영역) 제외
 grep -rnE "layout_id" \
   apps/builder/src/lib/ \
   apps/builder/src/utils/ \
   --include='*.ts' --include='*.tsx' \
   | grep -v "migration" \
   | grep -v "__tests__" \
+  | grep -vE "^[^:]+:[0-9]+:\s*\*" \
+  | grep -vE "^[^:]+:[0-9]+:\s*//" \
+  | grep -v "createIndex" \
+  | grep -v "indexNames" \
+  | grep -v "getAllByIndex" \
   | wc -l
 ```
 
-**통과 조건**: 0건 (migration script + test fixture 제외)
+**통과 조건**: 0건.
 
-**현재 baseline** (P3-E 착수 전):
+> **제외 범위 명문화 (E-6 추가)**:
+>
+> - `createIndex` / `indexNames` / `getAllByIndex` 인자의 `"layout_id"` 문자열 — IndexedDB
+>   object store schema 정의 + legacy fallback 경로. 본 영역 제거는 **P5-C** (DB schema
+>   downgrade, 별도 ADR/`DB_VERSION` 9 진입) 의 책임. P3-E 통과 조건과 분리.
+> - `legacyOwnershipToCanonicalParent({ layout_id: ... }, doc)` 호출 — `lib/` + `utils/`
+>   영역에서는 wrapper (`frameNodeIdForLegacyLayout(layoutId, doc)`) 경유로 0건 달성.
+>   `adapters/canonical/index.ts` (grep 범위 밖) 안의 변환 input 자체는 의도된 ownership
+>   shape — false positive 처리.
 
-```bash
-# 현재 측정 (2026-04-26):
-# lib/: 6건 (adapter.ts)
-# utils/: 3건 (urlGenerator.ts 2건 + elementUtils.ts 1건)
-# 합계: 9건
+**baseline** (E-1 착수 전 2026-04-26 기준, 보완 grep 적용 시):
+
+```
+lib/: 1건 (adapter.ts:getByLayout 의 getAllByIndex 인자, schema 영역으로 보완 grep 제외 시 0)
+utils/: 3건 (urlGenerator.ts 2 + elementUtils.ts 1)
+합계: 8건 (보완 grep 적용 전), 4건 (보완 grep 적용 시)
 ```
 
-**단계별 감소 목표**:
+**단계별 감소 목표** (보완 grep 적용 명령 기준):
 
-- E-1~E-5 후: 9건 유지 (migration script 한정으로 이동)
-- E-6 후: 0건 (migration script / test 제외)
+- E-1~E-5 후: 4건 유지 (urlGenerator/elementUtils 의 legacy 매칭 잔존 + TODO 주석 추가)
+- E-6 후: **0건** (utils/ canonical 전환 + adapter.ts schema 영역 제외)
 
 ---
 

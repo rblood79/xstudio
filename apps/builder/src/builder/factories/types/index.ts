@@ -1,3 +1,4 @@
+import type { CompositionDocument } from "@composition/shared";
 import { Element } from "../../../types/core/store.types";
 
 /**
@@ -18,12 +19,20 @@ export interface ComponentCreationContext {
   elements: Element[];
   // ⭐ Layout/Slot System: Layout 모드에서 요소 생성 시 사용
   layoutId?: string | null;
+  /**
+   * ADR-903 P3-E E-6: layout 모드에서 body element 변환에 필요한 canonical
+   * document. `findBodyByContext` 가 frame node id 매칭에 사용.
+   */
+  doc: CompositionDocument;
 }
 
 /**
  * 자식 요소 정의 (재귀적 중첩 지원)
  */
-export type ChildDefinition = Omit<Element, "id" | "created_at" | "updated_at" | "parent_id"> & {
+export type ChildDefinition = Omit<
+  Element,
+  "id" | "created_at" | "updated_at" | "parent_id"
+> & {
   children?: ChildDefinition[];
 };
 
@@ -40,5 +49,5 @@ export interface ComponentDefinition {
  * 컴포넌트 생성자 함수 타입
  */
 export type ComponentCreator = (
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ) => Promise<ComponentCreationResult>;

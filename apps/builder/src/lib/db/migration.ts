@@ -1,9 +1,8 @@
 /**
- * ADR-903 P3-E E-3 — runLegacyToCanonicalMigration (read-through dry-run)
+ * ADR-903 P3-E E-3 + E-6 — runLegacyToCanonicalMigration
  *
  * legacy ownership marker (`element.page_id` / `element.layout_id`) 를
- * canonical parent ID 로 변환 계산하는 dry-run 함수. DB 무변경 — 변환 결과만
- * 반환. 실제 elements.updateMany / meta.set 은 E-6 (write-through) 단계에서.
+ * canonical parent ID 로 변환. `dryRun` 옵션으로 read-only/write-through 분기.
  *
  * 흐름:
  * 1. `_meta.get(projectId)` 조회 — 이미 `composition-1.0` 이면 status=skipped
@@ -11,10 +10,10 @@
  * 3. `elements.getAll()` 전수 로드
  * 4. 각 element 의 ownership → `legacyOwnershipToCanonicalParent()` 적용
  * 5. canonical parent 미존재 시 errors 에 추가 (orphan vs missing-frame 구분)
- * 6. errors 비었으면 status=success, 아니면 status=failure (DB 미변경 유지)
- *
- * 회귀 위험: dry-run 이라 DB write 0. E-6 진입 전 50+ fixture round-trip 으로
- * 변환 정합성 검증.
+ * 6. errors 비었으면 status=success, 아니면 status=failure
+ * 7. `dryRun=false` (E-6) — status=success 시 elements.updateMany +
+ *    meta.set composition-1.0. status=failure 시 meta.set legacy + console.warn.
+ *    `dryRun=true` (E-3 호환) — DB 미변경 유지.
  */
 
 import type { CompositionDocument } from "@composition/shared";
@@ -41,20 +40,27 @@ export interface MigrationResult {
 
 /**
  * runLegacyToCanonicalMigration 가 의존하는 adapter 의 minimal surface.
- * IndexedDBAdapter 의 elements/layouts/meta 그룹에서 read 메서드만 사용.
+ * E-3 단계: read-only (`elements.getAll` / `meta.get`).
+ * E-6 단계: write-through 진입 — `elements.updateMany` + `meta.set` 추가 활성화.
  */
 interface MigrationCapableAdapter {
-  elements: { getAll(): Promise<Element[]> };
+  elements: {
+    getAll(): Promise<Element[]>;
+    updateMany(
+      updates: Array<{ id: string; data: Partial<Element> }>,
+    ): Promise<Element[]>;
+  };
   layouts: { getAll(): Promise<Layout[]> };
   meta: {
     get(projectId: string): Promise<MetaRecord | null>;
+    set(record: MetaRecord): Promise<MetaRecord>;
   };
 }
 
 export interface MigrationOptions {
   canonicalDoc: CompositionDocument;
   /**
-   * E-3 단계는 항상 dry-run (default true). E-6 에서 false 옵션 활성화.
+   * E-3 호환: `true` (default) — read-only dry-run. E-6: `false` — write-through.
    */
   dryRun?: boolean;
 }
@@ -68,7 +74,7 @@ export async function runLegacyToCanonicalMigration(
   projectId: string,
   options: MigrationOptions,
 ): Promise<MigrationResult> {
-  const { canonicalDoc } = options;
+  const { canonicalDoc, dryRun = true } = options;
 
   // 1. Skip if already migrated
   const existing = await adapter.meta.get(projectId);
@@ -122,8 +128,44 @@ export async function runLegacyToCanonicalMigration(
     }
   }
 
+  const status: MigrationResult["status"] =
+    errors.length === 0 ? "success" : "failure";
+
+  // E-6: write-through (dryRun=false 시 실제 DB 반영)
+  if (!dryRun) {
+    if (status === "success") {
+      // elements 의 parent_id 를 canonical 로 갱신 + legacy layout_id 정리
+      await adapter.elements.updateMany(
+        transformations.map((t) => ({
+          id: t.elementId,
+          data: {
+            parent_id: t.canonicalParentId,
+            layout_id: null,
+          } as Partial<Element>,
+        })),
+      );
+      await adapter.meta.set({
+        projectId,
+        schemaVersion: "composition-1.0",
+        migratedAt: new Date().toISOString(),
+        backupKey,
+      });
+    } else {
+      // 실패 시: schemaVersion=legacy 로 fallback 유지 + dev console.warn
+      await adapter.meta.set({
+        projectId,
+        schemaVersion: "legacy",
+        backupKey,
+      });
+      console.warn(
+        `[ADR-903 P3-E E-6] migration failed for project ${projectId}: ${errors.length} errors`,
+        errors,
+      );
+    }
+  }
+
   return {
-    status: errors.length === 0 ? "success" : "failure",
+    status,
     backupKey,
     transformations,
     errors,

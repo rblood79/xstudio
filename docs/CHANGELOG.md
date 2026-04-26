@@ -110,6 +110,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 검증: pnpm vitest `usePageManager.canonical.test.ts` 3/3 GREEN (RED → GREEN) + pnpm type-check PASS + baseline 비교 4 pre-existing failures (`layoutActions.test.ts` P3-D-3 과도기 + `useFillActions.test.tsx` legacy) 본 변경 무관 확증
   - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (+8/-7 LOC)
 
+- **ADR-903 P3-E E-6 RED + GREEN — write-through 활성화 + utils canonical 전환 + G3-E grep 정합화** (세션 35):
+  - **migration write-through 활성화**: `runLegacyToCanonicalMigration` 의 `dryRun` 옵션 (default `true`, E-3 호환) → `false` 시 실제 DB 반영
+    - `status === "success"` 분기 — `adapter.elements.updateMany` 로 모든 element 의 `parent_id` canonical 변환 + `layout_id: null` 정리, 이어서 `adapter.meta.set({ projectId, schemaVersion: "composition-1.0", migratedAt, backupKey })`
+    - `status === "failure"` 분기 — `adapter.meta.set({ projectId, schemaVersion: "legacy", backupKey })` 로 fallback 유지 + `console.warn`
+  - **`getByLayout` canonical path 강제**: `_meta` store 의 record 중 하나라도 `schemaVersion === "composition-1.0"` 이면 `getByLayout()` 빈 배열 반환 (caller 가 `selectCanonicalReusableFrames` + `parent_id` 매칭으로 마이그레이션 강제)
+  - **`utils/element/elementUtils.ts:findLayoutBodyElement`**: `el.layout_id === layoutId` 매칭 → canonical frame node id (`frameNodeIdForLegacyLayout(layoutId, doc)` wrapper) 의 `el.parent_id` 매칭으로 전환. `findBodyByContext` 시그니처에 `doc: CompositionDocument` 필수 인자 추가
+  - **caller chain doc 전수 도입**: `useElementCreator.handleAddElement` + `ComponentFactory.createComplexComponent` + `ComponentCreationContext.doc` 필수화. `ComponentsPanel.tsx` 가 `selectCanonicalDocument(state, state.pages, layouts)` 로 doc 만들어 전달
+  - **`utils/urlGenerator.ts:findUrlConflict` 제거**: caller 0 (전수 grep 확인) — dead code 제거. `Layout` import 는 `generatePageUrl` 에서 유지
+  - **G3-E sub-gate grep 명령 보완** (`docs/adr/design/903-phase3e-persistence-breakdown.md:509-541`):
+    - `createIndex` / `indexNames` / `getAllByIndex` 인자의 `"layout_id"` 문자열 명시 제외 — IndexedDB schema 정의 + legacy fallback 경로 (P5-C 영역, `DB_VERSION` 9 진입 시 별도 ADR 로 처리)
+    - `legacyOwnershipToCanonicalParent({ layout_id: ... }, doc)` input 은 `frameNodeIdForLegacyLayout()` wrapper (adapters/canonical/index.ts) 경유로 lib/+utils/ 영역 0건 달성
+    - 보완 grep 적용 시 baseline 8건 → **0건**
+  - **`adapters/canonical/index.ts:frameNodeIdForLegacyLayout` 신규**: `legacyOwnershipToCanonicalParent({ layout_id }, doc)` wrapper. `lib/` + `utils/` 영역에서 `layout_id` 매칭 false positive 제거 위함. `adapters/` 는 grep 범위 밖이므로 ownership shape input 자체는 의도된 형태로 유지
+  - **Why**: ADR-903 P3-E 의 마지막 sub-phase. E-3 dry-run 50+ fixture round-trip 으로 변환 정합성 검증 완료 → write-through 활성화. 기존 IndexedDB legacy 프로젝트가 처음 열릴 때 자동 migration 진행 + `_meta` store 에 `schemaVersion: "composition-1.0"` 영속. 실패 시 `schemaVersion: "legacy"` 유지 + localStorage backup 으로 복원 가능
+  - **회귀 위험 안전망**:
+    1. write 활성화 전 50+ fixture integration test 통과 (E-3 60/60 GREEN)
+    2. dev 환경 브라우저 DevTools IndexedDB 탐색기 수동 검증 (사용자 책임)
+    3. 실패 시 fallback 자동 복귀 (`schemaVersion: "legacy"` + legacy adapter fallback + localStorage backup)
+  - **사용자 가시 영향 (BREAKING — 데이터 schema 자동 변환)**: 기존 프로젝트 첫 open 시 elements 의 `layout_id` 가 `null` 로, `parent_id` 가 canonical reusable frame ID 로 자동 변환됨. 변환 실패 시 legacy 데이터 그대로 유지됨. localStorage 에 `composition-migration-backup:<projectId>:<ts>` key 로 변환 전 dump 저장
+  - **검증**:
+    - 신규 test: `migration-write-through.test.ts` (5 it: success updateMany / success meta.set composition-1.0 / failure meta.set legacy / dryRun=true 보존 / skipped 케이스), `getByLayoutCanonicalPath.test.ts` (2 it: schema 분기 + getAllFromStore<MetaRecord>)
+    - E-5 `getByLayoutDeprecation.test.ts` test 3/4 — TODO 주석 검증 → negative assertion (`page.layout_id` / `el.layout_id` 부재 검증) 으로 전환
+    - 전체 신규/수정 영역 vitest 170/170 PASS / type-check 3/3 PASS / 본 PR 의 E-1~E-6 관련 7 test files 90/90 GREEN
+  - 위치: `apps/builder/src/lib/db/migration.ts` (+34/-3 LOC) / `apps/builder/src/lib/db/indexedDB/adapter.ts` (getByLayout canonical strict +9 LOC) / `apps/builder/src/utils/element/elementUtils.ts` (findLayoutBodyElement / findBodyByContext doc 인자 추가) / `apps/builder/src/utils/urlGenerator.ts` (findUrlConflict 제거 -38 LOC) / `apps/builder/src/adapters/canonical/index.ts` (frameNodeIdForLegacyLayout +18 LOC) / `apps/builder/src/builder/factories/types/index.ts` (ComponentCreationContext.doc 필수) / `apps/builder/src/builder/factories/ComponentFactory.ts` (createComplexComponent doc 필수) / `apps/builder/src/builder/hooks/useElementCreator.ts` (handleAddElement doc 필수) / `apps/builder/src/builder/panels/components/ComponentsPanel.tsx` (selectCanonicalDocument 호출 + doc 전달) / `apps/builder/src/lib/db/__tests__/migration-write-through.test.ts` (신규 ~250 LOC) / `apps/builder/src/lib/db/__tests__/getByLayoutCanonicalPath.test.ts` (신규 ~46 LOC) / `apps/builder/src/lib/db/__tests__/getByLayoutDeprecation.test.ts` (test 3/4 negative assertion 전환)
+
 - **ADR-903 P3-E E-1 RED + GREEN — IndexedDB `_meta` object store 도입** (PR `adr-903-p3e-e1-red-test` merge `a055055b` + 후속 GREEN commit):
   - **RED 단계**: `apps/builder/src/lib/db/__tests__/metaStore.test.ts` 신규 (5 it RED 가정). production code 부재 시 5/5 FAIL 확증
     1. `DB_VERSION = 8` 갱신

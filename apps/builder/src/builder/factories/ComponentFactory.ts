@@ -1,3 +1,4 @@
+import type { CompositionDocument } from "@composition/shared";
 import { Element } from "../../types/core/store.types";
 import {
   ComponentCreationResult,
@@ -175,13 +176,15 @@ export class ComponentFactory {
   /**
    * 복합 컴포넌트 생성 (메인 메서드)
    * @param layoutId - Layout 모드에서 요소 생성 시 사용 (page_id 대신 layout_id 설정)
+   * @param doc - Canonical CompositionDocument (ADR-903 P3-E E-6: layout body 변환 용)
    */
   static async createComplexComponent(
     tag: string,
     parentElement: Element | null,
     pageId: string,
     elements: Element[],
-    layoutId?: string | null,
+    layoutId: string | null | undefined,
+    doc: CompositionDocument,
   ): Promise<ComponentCreationResult> {
     const creator = this.creators[tag];
     if (!creator) {
@@ -193,6 +196,7 @@ export class ComponentFactory {
       pageId,
       elements,
       layoutId, // ⭐ Layout/Slot System
+      doc,
     };
 
     return await creator.call(this, context);
@@ -208,7 +212,7 @@ export class ComponentFactory {
     ) => ComponentDefinition,
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
-    const { parentElement, pageId, elements, layoutId } = context;
+    const { parentElement, pageId, elements, layoutId, doc } = context;
     let parentId = parentElement?.id || null;
 
     // parent_id가 없으면 body 요소를 parent로 설정
@@ -218,6 +222,7 @@ export class ComponentFactory {
         elements,
         pageId || null,
         layoutId || null,
+        doc,
       );
       // body element를 찾아서 context 업데이트
       const bodyElement = elements.find((el) => el.id === parentId);
