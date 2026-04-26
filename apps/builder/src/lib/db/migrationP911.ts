@@ -249,3 +249,47 @@ export async function dryRunMigrationP911(
     errors,
   };
 }
+
+/**
+ * P1-b3 — `dryRunMigrationP911` 결과를 canonical document 에 apply (pure).
+ *
+ * **순수 함수**: 원본 doc 미변경, 새 `CompositionDocument` 반환.
+ * persistence (DB write / postMessage) 는 호출자 책임 — 본 함수는 in-memory
+ * patch 만 담당.
+ *
+ * 알고리즘:
+ *
+ * 1. `result.errors.length > 0` 이면 throw (failure 상태 apply 거부)
+ * 2. 기존 `doc.children` 의 id 수집 (Set, 중복 방어)
+ * 3. `result.hoisted` 중 기존 id 와 충돌하지 않는 것만 append
+ * 4. 새 doc 반환 — `themes` / `variables` / `imports` 등 다른 필드는 그대로 spread
+ *
+ * @example
+ * ```ts
+ * const dryResult = await dryRunMigrationP911(adapter, projectId, currentDoc);
+ * if (dryResult.errors.length === 0) {
+ *   const newDoc = applyMigrationP911(currentDoc, dryResult);
+ *   await persistDoc(newDoc); // 호출자가 persistence 처리
+ * }
+ * ```
+ *
+ * @throws Error — `result.status === "failure"` 또는 `errors.length > 0` 일 때
+ */
+export function applyMigrationP911(
+  doc: CompositionDocument,
+  result: MigrationP911Result,
+): CompositionDocument {
+  if (result.errors.length > 0) {
+    throw new Error(
+      `applyMigrationP911: errors must be empty before apply. errors=${result.errors.join("; ")}`,
+    );
+  }
+
+  const existingIds = new Set(doc.children.map((n) => n.id));
+  const newChildren = result.hoisted.filter((n) => !existingIds.has(n.id));
+
+  return {
+    ...doc,
+    children: [...doc.children, ...newChildren],
+  };
+}

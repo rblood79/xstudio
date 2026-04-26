@@ -18,6 +18,7 @@ import {
   buildDescendantsFromSlots,
   hoistLayoutAsReusableFrame,
   dryRunMigrationP911,
+  applyMigrationP911,
 } from "../migrationP911";
 import type { CompositionDocument, FrameNode } from "@composition/shared";
 import {
@@ -425,6 +426,132 @@ describe("ADR-911 P1-b2: dryRunMigrationP911", () => {
       };
       await dryRunMigrationP911(adapter, PROJECT_ID, buildCanonicalDoc([]));
       expect(writeSpy).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("ADR-911 P1-b3: applyMigrationP911", () => {
+  const buildBaseDoc = (childIds: string[] = []): CompositionDocument => ({
+    version: "composition-1.0",
+    children: childIds.map(
+      (id): FrameNode => ({
+        id,
+        type: "frame",
+        reusable: true,
+        name: `existing-${id}`,
+      }),
+    ),
+  });
+
+  const buildHoistedFrame = (
+    id: string,
+    name = `hoisted-${id}`,
+  ): FrameNode => ({
+    id,
+    type: "frame",
+    name,
+    reusable: true,
+    slot: false,
+    children: [],
+    metadata: { type: "legacy-layout-hoist" },
+  });
+
+  describe("hoist append (순수 함수)", () => {
+    it("empty doc + 1 hoisted → doc.children 에 1건 추가된 새 doc 반환", () => {
+      const doc = buildBaseDoc([]);
+      const result = {
+        status: "success" as const,
+        hoisted: [buildHoistedFrame("layout-1")],
+        skipped: [],
+        errors: [],
+      };
+      const patched = applyMigrationP911(doc, result);
+      expect(patched.children).toHaveLength(1);
+      expect(patched.children[0].id).toBe("layout-1");
+      expect(patched.version).toBe("composition-1.0");
+    });
+
+    it("기존 children 보존 + hoisted append (순서 유지)", () => {
+      const doc = buildBaseDoc(["existing-1", "existing-2"]);
+      const result = {
+        status: "success" as const,
+        hoisted: [buildHoistedFrame("layout-3")],
+        skipped: [],
+        errors: [],
+      };
+      const patched = applyMigrationP911(doc, result);
+      expect(patched.children.map((n) => n.id)).toEqual([
+        "existing-1",
+        "existing-2",
+        "layout-3",
+      ]);
+    });
+
+    it("immutability — 원본 doc.children 미변경", () => {
+      const doc = buildBaseDoc(["existing-1"]);
+      const originalLength = doc.children.length;
+      const result = {
+        status: "success" as const,
+        hoisted: [buildHoistedFrame("layout-1")],
+        skipped: [],
+        errors: [],
+      };
+      applyMigrationP911(doc, result);
+      expect(doc.children).toHaveLength(originalLength); // 원본 보존
+    });
+  });
+
+  describe("status='failure' 거부", () => {
+    it("errors 가 있으면 throw (apply 거부)", () => {
+      const doc = buildBaseDoc([]);
+      const result = {
+        status: "failure" as const,
+        hoisted: [buildHoistedFrame("layout-1")],
+        skipped: [],
+        errors: ["layout 'x': bad metadata"],
+      };
+      expect(() => applyMigrationP911(doc, result)).toThrow(
+        /errors must be empty/i,
+      );
+    });
+  });
+
+  describe("idempotency — 중복 id 방어", () => {
+    it("hoisted id 가 doc.children 에 이미 존재하면 skip (중복 추가 안함)", () => {
+      const doc = buildBaseDoc(["layout-1"]);
+      const result = {
+        status: "success" as const,
+        hoisted: [buildHoistedFrame("layout-1")],
+        skipped: [],
+        errors: [],
+      };
+      const patched = applyMigrationP911(doc, result);
+      expect(patched.children).toHaveLength(1); // 추가 안됨
+      expect(patched.children[0].name).toBe("existing-layout-1"); // 기존 유지
+    });
+  });
+
+  describe("metadata / themes / variables / imports 보존", () => {
+    it("doc 의 다른 필드는 그대로 유지", () => {
+      const doc: CompositionDocument = {
+        version: "composition-1.0",
+        themes: { mode: ["light", "dark"] },
+        variables: { primary: { type: "color", value: "#fff" } },
+        imports: { "kit-1": "./kit.pen" },
+        children: [],
+      };
+      const result = {
+        status: "success" as const,
+        hoisted: [buildHoistedFrame("layout-1")],
+        skipped: [],
+        errors: [],
+      };
+      const patched = applyMigrationP911(doc, result);
+      expect(patched.themes).toEqual({ mode: ["light", "dark"] });
+      expect(patched.variables).toEqual({
+        primary: { type: "color", value: "#fff" },
+      });
+      expect(patched.imports).toEqual({ "kit-1": "./kit.pen" });
     });
   });
 });
