@@ -110,6 +110,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 검증: pnpm vitest `usePageManager.canonical.test.ts` 3/3 GREEN (RED → GREEN) + pnpm type-check PASS + baseline 비교 4 pre-existing failures (`layoutActions.test.ts` P3-D-3 과도기 + `useFillActions.test.tsx` legacy) 본 변경 무관 확증
   - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (+8/-7 LOC)
 
+- **ADR-903 P3-E E-6 후속 — ComponentsPanel layout filter canonical 정합화** (세션 35 추가):
+  - `apps/builder/src/builder/panels/components/ComponentsPanel.tsx:72` — `elements.filter(el => el.layout_id === currentLayoutId)` → `elements.filter(el => belongsToLegacyLayout(el, currentLayoutId, doc))` 로 전환. helper (P3-D-5 step 5c 도입, `adapters/canonical/index.ts:469`) 는 doc 전달 시 canonical reusable frame descendants 매칭, doc 없으면 legacy fallback. import 1줄 추가
+  - **Why**: E-6 write-through 활성화 후 element.layout_id 가 null 이 되어 layout 모드에서 `layoutElements` 빈 배열 → 새 element 추가 시 body 매칭 실패 → UI 회귀. helper 는 P3-D-5 단계에서 이미 도입됐으나 본 caller 는 legacy 매칭 그대로였음. write-through 와 짝을 맞춰 정합화
+  - 회귀 위험 0 — helper 시그니처 그대로 + legacy fallback 보존
+  - 검증: pnpm type-check 3/3 PASS
+  - 위치: `apps/builder/src/builder/panels/components/ComponentsPanel.tsx` (+5/-2 LOC)
+  - **Note**: 동일 패턴의 layout_id filter 가 `FramesTab.tsx` (2 분기) / `ElementSlotSelector.tsx` / `LayoutPresetSelector/usePresetApply.ts` / `layoutActions.ts` (2 분기) / `usePageManager.ts:528` 에 잔존 — Layout/Slot 시스템 P3-D 정합화 후속 별도 follow-up 필요
+
 - **ADR-903 P3-E E-6 RED + GREEN — write-through 활성화 + utils canonical 전환 + G3-E grep 정합화** (세션 35):
   - **migration write-through 활성화**: `runLegacyToCanonicalMigration` 의 `dryRun` 옵션 (default `true`, E-3 호환) → `false` 시 실제 DB 반영
     - `status === "success"` 분기 — `adapter.elements.updateMany` 로 모든 element 의 `parent_id` canonical 변환 + `layout_id: null` 정리, 이어서 `adapter.meta.set({ projectId, schemaVersion: "composition-1.0", migratedAt, backupKey })`

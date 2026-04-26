@@ -19,6 +19,7 @@ import { selectCanonicalDocument } from "../../stores/elements";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useElementCreator } from "@/builder/hooks";
+import { belongsToLegacyLayout } from "../../../adapters/canonical";
 
 /**
  * ComponentsPanel - Gateway 컴포넌트
@@ -68,8 +69,10 @@ function ComponentsPanelContent() {
       // Layout 모드인 경우
       if (editMode === "layout" && currentLayoutId) {
         // 현재 Layout의 요소만 필터링
-        const layoutElements = elements.filter(
-          (el) => el.layout_id === currentLayoutId,
+        // ADR-903 P3-E E-6 후속: write-through 활성화 후 element.layout_id 가 null
+        // 이라 canonical reusable frame descendants 매칭 필수. legacy fallback 보존.
+        const layoutElements = elements.filter((el) =>
+          belongsToLegacyLayout(el, currentLayoutId, doc),
         );
 
         // ⭐ Layout/Slot System: selectedElementId가 Layout 요소인지 검증
