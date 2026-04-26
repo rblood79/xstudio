@@ -75,9 +75,11 @@ export interface UpdateElementsMessage extends PreviewMessage {
   type: "UPDATE_ELEMENTS";
   elements: PreviewElement[];
   // ⭐ Layout/Slot System: Page 정보 포함 (초기 로드 시 Layout 렌더링용)
+  // ADR-903 P3-D-4 Phase B: reusableFrameId alias 추가 (BC 유지)
   pageInfo?: {
     pageId: string | null;
     layoutId: string | null;
+    reusableFrameId?: string | null;
   };
 }
 

@@ -202,10 +202,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // Layout 편집 모드: pageId=null, layoutId=currentLayoutId
     // Page 모드: pageId=currentPageId, layoutId=page.layout_id (Page에 적용된 Layout)
-    const pageInfo =
+    // ADR-903 P3-D-4 Phase B: reusableFrameId 신규 field — canonical model 의
+    // reusable frame 식별자. 현 시점 layoutId 와 동일 의미 (alias). Preview 가
+    // version 으로 분기해 신규 field 우선 사용 가능. legacy layoutId 는 BC 위해 유지.
+    const layoutId =
       currentEditMode === "layout"
-        ? { pageId: null, layoutId: layoutStoreLayoutId }
-        : { pageId: currentPageId, layoutId: currentPage?.layout_id || null };
+        ? layoutStoreLayoutId
+        : currentPage?.layout_id || null;
+    const pageInfo = {
+      pageId: currentEditMode === "layout" ? null : currentPageId,
+      layoutId,
+      reusableFrameId: layoutId,
+    };
 
     // iframe이 준비되지 않았으면 큐에 넣기
     if (currentReadyState !== "ready" || !iframe?.contentWindow) {
@@ -216,12 +224,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       return;
     }
 
-    // ADR-903 P3-B 안전망 #3: version 스텁 추가
-    // P3-D에서 canonical resolver 전환 시 "composition-1.0" 으로 bump.
-    // Preview가 version 필드로 payload 형식 분기 가능.
+    // ADR-903 P3-D-4 Phase B: version bump
+    // - legacy-1.0 → composition-1.0 (canonical resolver 전환 완료 신호)
+    // - Preview 가 version 으로 reusableFrameId vs layoutId 우선순위 분기
     const message = {
       type: "UPDATE_ELEMENTS",
-      version: "legacy-1.0" as const,
+      version: "composition-1.0" as const,
       elements: scopedElements,
       pageInfo,
     };
@@ -495,15 +503,20 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     queue.forEach((item) => {
       if (item.type === "UPDATE_ELEMENTS") {
         // ⭐ Layout/Slot System: 새 payload 형식 (elements + pageInfo)
+        // ADR-903 P3-D-4 Phase B: reusableFrameId 추가 (layoutId alias)
         const payload = item.payload as {
           elements: Element[];
-          pageInfo: { pageId: string | null; layoutId: string | null };
+          pageInfo: {
+            pageId: string | null;
+            layoutId: string | null;
+            reusableFrameId?: string | null;
+          };
         };
-        // ADR-903 P3-B 안전망 #3: version 스텁 (큐 경로)
+        // ADR-903 P3-D-4 Phase B: version composition-1.0 (큐 경로 동기화)
         iframe.contentWindow!.postMessage(
           {
             type: "UPDATE_ELEMENTS",
-            version: "legacy-1.0" as const,
+            version: "composition-1.0" as const,
             elements: payload.elements,
             pageInfo: payload.pageInfo,
           },
