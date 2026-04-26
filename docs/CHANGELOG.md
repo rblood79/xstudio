@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + P3-E E-2 (createMigrationBackup) RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1/E-2 GREEN 종결**. ADR-903 진행도 ~96% → ~99.6%.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + P3-E E-2 (createMigrationBackup) RED + GREEN land + P3-E E-5 (getByLayout dev warning + utils TODO) RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1/E-2/E-5 GREEN 종결** (E-3/E-4 별도 PR). ADR-903 진행도 ~96% → ~99.7%.
 
 ### Architecture
 
@@ -124,6 +124,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Why**: ADR-903 P3-E breakdown 의 E-1 sub-phase. read-only stub land (write-through 미포함) — E-2 backup / E-3 migration / E-4 entry 연결 / E-5 dev warning / E-6 write-through 후속. legacy ownership marker (`element.layout_id`) 의존을 단계적으로 제거하기 위한 첫 인프라.
   - 검증: `metaStore.test.ts` 5/5 GREEN + `usePageManager.canonical.test.ts` 6/6 GREEN (전 session GREEN 유지) + `pnpm type-check` PASS + apps/builder vitest 546 PASS / 4 pre-existing FAIL (회귀 0)
   - 위치: `apps/builder/src/lib/db/types.ts` (MetaRecord +12 LOC, meta 그룹 +6 LOC, getByLayout JSDoc +6 LOC) / `apps/builder/src/lib/db/indexedDB/adapter.ts` (DB_VERSION 1 LOC + \_meta store +5 LOC + meta 그룹 +24 LOC + getByLayout JSDoc +6 LOC)
+
+- **ADR-903 P3-E E-5 RED + GREEN — getByLayout dev warning + utils TODO 주석** (회귀 위험 0):
+  - `apps/builder/src/lib/db/indexedDB/adapter.ts` — `getByLayout` 메서드 본문에 `process.env.NODE_ENV !== "production"` 분기 + `console.warn` 호출 추가 (deprecated 사용 추적, dev mode 한정)
+  - `apps/builder/src/utils/urlGenerator.ts:219` — `page.layout_id` 참조 직전 `// TODO(P3-E): canonical parent 기반으로 교체 ...` 주석 (write-through 전환 E-6 후 canonical document 의 reusable frame ID 매핑으로 변경 예정)
+  - `apps/builder/src/utils/element/elementUtils.ts:44` — `el.layout_id === layoutId` 참조 직전 동일 TODO 주석
+  - `apps/builder/src/lib/db/__tests__/getByLayoutDeprecation.test.ts` 신규 — 4 it RED → GREEN: getByLayout console.warn 존재 / dev 환경 분기 / urlGenerator TODO / elementUtils TODO (source-pattern 검증)
+  - **Why**: P3-E breakdown 의 E-5 sub-phase. legacy column read-only 선언 + write 차단 준비. dev-only warning 으로 caller 가 점진적으로 canonical parent 조회로 마이그레이션할 수 있도록 추적 가능. utils/ TODO 는 E-6 전환 시점의 작업 인덱스
+  - 검증: `getByLayoutDeprecation.test.ts` 4/4 GREEN (RED → GREEN 전환) + `pnpm type-check` PASS + apps/builder vitest 615 PASS / 4 pre-existing FAIL (회귀 0)
+  - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts` (getByLayout +9 LOC) / `apps/builder/src/utils/urlGenerator.ts` (TODO +3 LOC) / `apps/builder/src/utils/element/elementUtils.ts` (TODO +3 LOC) / `apps/builder/src/lib/db/__tests__/getByLayoutDeprecation.test.ts` (신규 ~75 LOC)
 
 - **ADR-903 P3-E E-2 RED + GREEN — createMigrationBackup (read-only localStorage backup)**:
   - `apps/builder/src/lib/db/migrationBackup.ts` 신규 (88 LOC) — `createMigrationBackup(adapter, projectId): Promise<string>` 함수

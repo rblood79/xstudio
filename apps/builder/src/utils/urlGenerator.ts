@@ -10,8 +10,8 @@
  * 4. 그 외 → "/" + Page.slug
  */
 
-import type { Page } from '../types/builder/unified.types';
-import type { Layout } from '../types/builder/layout.types';
+import type { Page } from "../types/builder/unified.types";
+import type { Layout } from "../types/builder/layout.types";
 
 // ============================================
 // Types
@@ -58,9 +58,13 @@ interface GeneratePageUrlParams {
  * })
  * // → '/products/shoes/nike'
  */
-export function generatePageUrl({ page, layout, allPages }: GeneratePageUrlParams): string {
+export function generatePageUrl({
+  page,
+  layout,
+  allPages,
+}: GeneratePageUrlParams): string {
   // 1. 절대 경로인 경우 그대로 반환
-  if (page.slug.startsWith('/')) {
+  if (page.slug.startsWith("/")) {
     return page.slug;
   }
 
@@ -91,10 +95,10 @@ export function generatePageUrl({ page, layout, allPages }: GeneratePageUrlParam
  */
 function buildParentPath(parentId: string, allPages: Page[]): string {
   const parent = allPages.find((p) => p.id === parentId);
-  if (!parent) return '';
+  if (!parent) return "";
 
   // 부모가 절대 경로면 그대로 반환
-  if (parent.slug.startsWith('/')) {
+  if (parent.slug.startsWith("/")) {
     return parent.slug;
   }
 
@@ -112,7 +116,7 @@ function buildParentPath(parentId: string, allPages: Page[]): string {
  * @param url - 정규화할 URL
  */
 function normalizeUrl(url: string): string {
-  return url.replace(/\/+/g, '/');
+  return url.replace(/\/+/g, "/");
 }
 
 // ============================================
@@ -140,7 +144,7 @@ function normalizeUrl(url: string): string {
 export function hasCircularReference(
   pageId: string,
   newParentId: string | null,
-  allPages: Page[]
+  allPages: Page[],
 ): boolean {
   if (!newParentId) return false;
 
@@ -211,12 +215,17 @@ export function findUrlConflict(
   newUrl: string,
   allPages: Page[],
   layouts: Layout[] = [],
-  excludePageId?: string
+  excludePageId?: string,
 ): Page | null {
   for (const page of allPages) {
     if (excludePageId && page.id === excludePageId) continue;
 
-    const layout = page.layout_id ? layouts.find((l) => l.id === page.layout_id) : null;
+    // TODO(P3-E): canonical parent 기반으로 교체 — page.layout_id legacy
+    // ownership marker 사용. write-through 전환 (E-6) 후 canonical document
+    // 의 reusable frame ID 매핑으로 변경 예정.
+    const layout = page.layout_id
+      ? layouts.find((l) => l.id === page.layout_id)
+      : null;
     const existingUrl = generatePageUrl({ page, layout, allPages });
 
     if (existingUrl === newUrl) {
@@ -291,7 +300,7 @@ export function convertToRouterPath(slug: string): string {
  */
 export function fillDynamicParams(
   slug: string,
-  params: Record<string, string>
+  params: Record<string, string>,
 ): string {
   let result = slug;
 
@@ -331,14 +340,17 @@ export function hasDynamicParams(slug: string): boolean {
  */
 export function matchDynamicUrl(
   pattern: string,
-  url: string
+  url: string,
 ): Record<string, string> | null {
   // 패턴을 정규식으로 변환
   const paramNames: string[] = [];
-  const regexPattern = pattern.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, name) => {
-    paramNames.push(name);
-    return '([^/]+)';
-  });
+  const regexPattern = pattern.replace(
+    /:([a-zA-Z_][a-zA-Z0-9_]*)/g,
+    (_, name) => {
+      paramNames.push(name);
+      return "([^/]+)";
+    },
+  );
 
   const regex = new RegExp(`^${regexPattern}$`);
   const match = url.match(regex);
