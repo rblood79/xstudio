@@ -61,8 +61,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   | BuilderCore L457 (subscribe)                                | ✅ Step 5e-2 | ✅ Step 5c       |
   | useCanvasDragDropHelpers 3 분기                             | ✅ Step 5e-3 | ✅ Step 5c       |
 
-  → P3-D-5 5/6 step 완료 (남은 Step 5f = invalidationPacket + LayoutGroup schema canonical, 선택)
+  → P3-D-5 5/6 step 완료 (남은 Step 5f = invalidationPacket + LayoutGroup schema canonical 분석)
   - 위치: `apps/builder/src/builder/main/BuilderCore.tsx` (L8 import + L283 + L457) / `apps/builder/src/builder/workspace/canvas/hooks/useCanvasDragDropHelpers.ts` (L9-12 imports + L150 findDropTarget + L260 buildReorderUpdates)
+
+- **ADR-903 P3-D-5 step 5f — LayoutGroup schema 변경 NOOP 결정 (분석 only)**:
+
+  Step 5f 의 가이드 가설 ("LayoutGroup interface canonical 전환 + cache key 갱신") 을 코드 정밀 분석으로 검토한 결과, **schema 변경 불필요** 결론. 별도 commit 0건.
+
+  **분석 발견**:
+  1. **`getLegacyPageLayoutId` 의 canonical return 결과**: doc 활성 시에도 `node.id.startsWith("layout-") ? node.id.slice("layout-".length) : node.id` → reusable frame ID 가 "layout-" prefix 가지면 stripping → **legacy layoutId 와 동일 string**. 즉 LayoutGroup.layoutId 의 값이 legacy/canonical 무관 같은 문자열.
+  2. **`buildLayoutGroupSignature` cache key**: `[layoutId, layoutName, pageIds.join(",")]` — layoutId 가 같으면 signature 동일. legacy → canonical 전환 시 invalidation 0회 (정상), 다르면 자동 invalidation (정상). **현재 schema 가 이미 canonical 호환**.
+  3. **`renderLayoutGroups` consumer**: layoutId 자체를 안 씀 (group.pageIds 좌표 계산 + group.layoutName 라벨 표시만). schema 변경 시각 영향 0.
+
+  **거부된 옵션**:
+  - 옵션 B (`canonicalFrameId?: string` optional 필드 추가): 의미 명확화만, 기능 변화 0 → over-engineering 의심. ROI 낮음
+
+  **Why**: P3-D-5 의 schema canonical 화는 BuilderCore + workspace canvas 영역의 caller doc 전수 도입 (Step 5e) 으로 이미 완결. LayoutGroup 자체는 canonical 활성화 영향 없음 — `getLegacyPageLayoutId` 의 prefix stripping 로직이 schema layer 의 변경 불필요성을 자동 보장.
+
+  → **P3-D-5 6/6 step 종결** (5f 는 분석 only). ADR-903 진행도 ~98% 유지
 
 ### Documentation
 
