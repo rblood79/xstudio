@@ -389,3 +389,51 @@ export function legacyOwnershipToCanonicalParent(
   // orphan
   return null;
 }
+
+/**
+ * ADR-903 P3-D-5 step 3 — Legacy ownership 비교 helper (canonical-aware indirection).
+ *
+ * **Why**: drag drop / element filter 등 다수 caller 가 `el.layout_id === otherLayoutId`
+ * 또는 `a.layout_id === b.layout_id && a.page_id === b.page_id` 패턴 사용.
+ * P3-D-5 의 단계적 canonical 전환을 위해 단일 진입점으로 추출.
+ *
+ * **현재 단계 (step 3)**: doc parameter 추가했으나 logic 은 legacy fallback 우선.
+ * 다음 단계 (step 4) 에서 doc 활용 canonical lookup 을 본 함수 내부에 추가하면
+ * 모든 caller 자동 적용.
+ *
+ * @param a - element 1 (page_id + layout_id 있음)
+ * @param b - element 2 (page_id + layout_id 있음)
+ * @param doc - Canonical document (optional, step 4 에서 활용)
+ * @returns 같은 ownership 이면 true
+ */
+export function sameLegacyOwnership(
+  a: { page_id?: string | null; layout_id?: string | null },
+  b: { page_id?: string | null; layout_id?: string | null },
+  doc?: CompositionDocument | null,
+): boolean {
+  // TODO(P3-D-5 step 4): doc 활용 시 legacyOwnershipToCanonicalParent(a, doc) === legacyOwnershipToCanonicalParent(b, doc)
+  void doc;
+  return a.page_id === b.page_id && a.layout_id === b.layout_id;
+}
+
+/**
+ * ADR-903 P3-D-5 step 3 — Layout membership helper (canonical-aware indirection).
+ *
+ * **Why**: BuilderCore 등에서 `el.layout_id === currentLayoutId` 패턴 사용.
+ * 단일 진입점 추출 — 다음 단계에서 doc 활용 canonical lookup 으로 전환.
+ *
+ * @param el - element (layout_id 있음)
+ * @param layoutId - 비교 대상 layout id
+ * @param doc - Canonical document (optional, step 4 에서 활용)
+ * @returns el 이 해당 layout 에 속하면 true
+ */
+export function belongsToLegacyLayout(
+  el: { layout_id?: string | null },
+  layoutId: string | null | undefined,
+  doc?: CompositionDocument | null,
+): boolean {
+  if (!layoutId) return false;
+  // TODO(P3-D-5 step 4): doc 활용 시 layout frame descendants 확인
+  void doc;
+  return el.layout_id === layoutId;
+}

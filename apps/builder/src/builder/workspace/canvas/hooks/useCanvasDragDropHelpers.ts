@@ -7,16 +7,7 @@ import {
   viewportToScreenSize,
 } from "../viewport/viewportTransforms";
 import { useStore } from "../../../stores";
-
-// ADR-903 P3-D-5 step 1: ownership 비교 indirection layer.
-// Why: drag drop 의 element 간 ownership (page_id+layout_id) 비교를 단일 진입점으로 추출.
-// 다음 단계 (canonical 전환) 에서 본 helper 내부만 legacyOwnershipToCanonicalParent 경유로 변경.
-function sameOwnership(
-  a: Pick<Element, "page_id" | "layout_id">,
-  b: Pick<Element, "page_id" | "layout_id">,
-): boolean {
-  return a.page_id === b.page_id && a.layout_id === b.layout_id;
-}
+import { sameLegacyOwnership } from "@/adapters/canonical";
 
 interface UseCanvasDragDropHelpersParams {
   depthMap: Map<string, number>;
@@ -164,7 +155,7 @@ export function useCanvasDragDropHelpers({
 
       for (const element of elements) {
         if (element.deleted) continue;
-        if (!sameOwnership(element, draggedElement)) continue;
+        if (!sameLegacyOwnership(element, draggedElement)) continue;
         if (excludedIds.has(element.id)) continue;
 
         const bounds = getElementBounds(element);
@@ -262,7 +253,7 @@ export function useCanvasDragDropHelpers({
         return [];
       }
 
-      if (!sameOwnership(movedElement, targetElement)) {
+      if (!sameLegacyOwnership(movedElement, targetElement)) {
         return [];
       }
 
@@ -284,7 +275,7 @@ export function useCanvasDragDropHelpers({
         elements
           .filter((element) => {
             if (element.deleted) return false;
-            if (!sameOwnership(element, movedElement)) return false;
+            if (!sameLegacyOwnership(element, movedElement)) return false;
             if ((element.parent_id ?? null) !== parentId) return false;
             if (!includeMoved && element.id === movedId) return false;
             return true;

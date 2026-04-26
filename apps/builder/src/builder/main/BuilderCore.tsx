@@ -5,17 +5,7 @@ import { Key } from "react-aria-components";
 import { useStore } from "../stores";
 import { historyManager } from "../stores/history";
 import type { Element } from "../../types/core/store.types";
-
-// ADR-903 P3-D-5 step 2: layout membership indirection layer.
-// Why: el.layout_id === currentLayoutId 비교를 단일 진입점으로 추출.
-// 다음 단계 (canonical 전환) 에서 본 helper 내부만 reusable FrameNode descendants 기반으로 변경.
-function belongsToLayout(
-  el: Pick<Element, "layout_id">,
-  layoutId: string | null,
-): boolean {
-  if (!layoutId) return false;
-  return el.layout_id === layoutId;
-}
+import { belongsToLegacyLayout } from "@/adapters/canonical";
 
 // 패널 등록 (side effect import - registerAllPanels() 자동 실행)
 import "../panels";
@@ -291,7 +281,7 @@ export const BuilderCore: React.FC = () => {
           // 기존 요소들과 병합
           const { elements, setElements } = useStore.getState();
           const otherElements = elements.filter(
-            (el) => !belongsToLayout(el, currentLayoutId),
+            (el) => !belongsToLegacyLayout(el, currentLayoutId),
           );
           const mergedElements = [...otherElements, ...layoutElements];
           setElements(mergedElements);
@@ -465,7 +455,7 @@ export const BuilderCore: React.FC = () => {
       let filteredElements = state.elements;
       if (editMode === "layout" && currentLayoutId) {
         filteredElements = state.elements.filter((el) =>
-          belongsToLayout(el, currentLayoutId),
+          belongsToLegacyLayout(el, currentLayoutId),
         );
       }
 
