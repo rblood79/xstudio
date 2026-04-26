@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료**. ADR-903 진행도 ~96% → ~99%.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1 GREEN 종결**. ADR-903 진행도 ~96% → ~99.5%.
 
 ### Architecture
 
@@ -109,6 +109,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Plan 수정점**: Plan Step C-2 의 `db.elements.getByLayout` 호출 패턴은 `usePageManager.canonical.test.ts` RED test 1 (`getByLayout(layoutId) 호출이 제거된다`) 와 충돌 — 추가 DB 호출 없이 이미 로드된 `allElements` 를 layoutIdSet 매칭으로 필터링하여 RED test 3개 모두 GREEN
   - 검증: pnpm vitest `usePageManager.canonical.test.ts` 3/3 GREEN (RED → GREEN) + pnpm type-check PASS + baseline 비교 4 pre-existing failures (`layoutActions.test.ts` P3-D-3 과도기 + `useFillActions.test.tsx` legacy) 본 변경 무관 확증
   - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (+8/-7 LOC)
+
+- **ADR-903 P3-E E-1 RED + GREEN — IndexedDB `_meta` object store 도입** (PR `adr-903-p3e-e1-red-test` merge `a055055b` + 후속 GREEN commit):
+  - **RED 단계**: `apps/builder/src/lib/db/__tests__/metaStore.test.ts` 신규 (5 it RED 가정). production code 부재 시 5/5 FAIL 확증
+    1. `DB_VERSION = 8` 갱신
+    2. `_meta` object store 생성 (`onupgradeneeded`)
+    3. `MetaRecord` interface 정의 (schemaVersion / migratedAt / backupKey)
+    4. `meta` 메서드 그룹 (get / set / update)
+    5. `getByLayout` `@deprecated` JSDoc
+  - **GREEN 단계**:
+    - `apps/builder/src/lib/db/types.ts` — `MetaRecord` interface 추가 + `DatabaseAdapter.meta` 메서드 그룹 정의 + `getByLayout` `@deprecated` JSDoc
+    - `apps/builder/src/lib/db/indexedDB/adapter.ts` — `DB_VERSION 7→8` + `onupgradeneeded` 안에 `_meta` store 생성 (`{ keyPath: "projectId" }`) + `IndexedDBAdapter.meta` 클래스 field (get / set / update, `getFromStore` / `putToStore` 재사용) + `getByLayout` `@deprecated` JSDoc
+    - test regex 보완: `meta\s*[:=]` (interface ":" 와 class field "=" 둘 다 매칭) / `@deprecated[\s\S]{0,500}` (JSDoc 본문 길이 여유)
+  - **Why**: ADR-903 P3-E breakdown 의 E-1 sub-phase. read-only stub land (write-through 미포함) — E-2 backup / E-3 migration / E-4 entry 연결 / E-5 dev warning / E-6 write-through 후속. legacy ownership marker (`element.layout_id`) 의존을 단계적으로 제거하기 위한 첫 인프라.
+  - 검증: `metaStore.test.ts` 5/5 GREEN + `usePageManager.canonical.test.ts` 6/6 GREEN (전 session GREEN 유지) + `pnpm type-check` PASS + apps/builder vitest 546 PASS / 4 pre-existing FAIL (회귀 0)
+  - 위치: `apps/builder/src/lib/db/types.ts` (MetaRecord +12 LOC, meta 그룹 +6 LOC, getByLayout JSDoc +6 LOC) / `apps/builder/src/lib/db/indexedDB/adapter.ts` (DB_VERSION 1 LOC + \_meta store +5 LOC + meta 그룹 +24 LOC + getByLayout JSDoc +6 LOC)
 
 - **ADR-903 P3-E persistence sub-breakdown plan land** (commit `84da7f32`, 직접 main commit):
   - IndexedDB schema 마이그레이션 6-step 분해 plan 작성

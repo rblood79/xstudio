@@ -5,15 +5,19 @@
  * 동일한 인터페이스로 사용하기 위한 추상화 레이어
  */
 
-import type { Element, Page } from '../../types/core/store.types';
-import type { DesignToken, DesignTheme, DesignVariable } from '../../types/theme';
-import type { Layout } from '../../types/builder/layout.types';
+import type { Element, Page } from "../../types/core/store.types";
+import type {
+  DesignToken,
+  DesignTheme,
+  DesignVariable,
+} from "../../types/theme";
+import type { Layout } from "../../types/builder/layout.types";
 import type {
   DataTable,
   ApiEndpoint,
   Variable,
   Transformer,
-} from '../../types/builder/data.types';
+} from "../../types/builder/data.types";
 
 // === Project Types ===
 
@@ -31,8 +35,17 @@ export interface Project {
 export interface HistoryEntry {
   id: string;
   page_id: string;
-  type: 'add' | 'update' | 'remove' | 'move' | 'batch' | 'group' | 'ungroup'
-    | 'instance-create' | 'instance-detach' | 'master-propagate';
+  type:
+    | "add"
+    | "update"
+    | "remove"
+    | "move"
+    | "batch"
+    | "group"
+    | "ungroup"
+    | "instance-create"
+    | "instance-detach"
+    | "master-propagate";
   element_id: string;
   element_ids?: string[];
   data: {
@@ -61,7 +74,20 @@ export interface SyncMetadata {
   last_sync_at: string | null;
   local_updated_at: string;
   cloud_updated_at: string | null;
-  sync_status: 'local-only' | 'synced' | 'conflict' | 'pending';
+  sync_status: "local-only" | "synced" | "conflict" | "pending";
+}
+
+// === Schema Migration Metadata (ADR-903 P3-E) ===
+
+/**
+ * Per-project IndexedDB schema migration record.
+ * `_meta` object store (DB_VERSION 8 도입) 의 record 1건 = 프로젝트 1개.
+ */
+export interface MetaRecord {
+  projectId: string;
+  schemaVersion: "legacy" | "composition-1.0";
+  migratedAt?: string;
+  backupKey?: string;
 }
 
 // === Database Adapter Interface ===
@@ -85,7 +111,10 @@ export interface DatabaseAdapter {
   // Pages
   pages: {
     insert(page: Page): Promise<Page>;
-    insertWithBody?(page: Page, bodyElement: Element): Promise<{
+    insertWithBody?(
+      page: Page,
+      bodyElement: Element,
+    ): Promise<{
       bodyElement: Element;
       page: Page;
     }>;
@@ -104,11 +133,19 @@ export interface DatabaseAdapter {
     insertMany(elements: Element[]): Promise<Element[]>;
     put(element: Element): Promise<Element>;
     update(id: string, data: Partial<Element>): Promise<Element>;
-    updateMany(updates: Array<{ id: string; data: Partial<Element> }>): Promise<Element[]>;
+    updateMany(
+      updates: Array<{ id: string; data: Partial<Element> }>,
+    ): Promise<Element[]>;
     delete(id: string): Promise<void>;
     deleteMany(ids: string[]): Promise<void>;
     getById(id: string): Promise<Element | null>;
     getByPage(pageId: string): Promise<Element[]>;
+    /**
+     * @deprecated ADR-903 P3-E: migration script 완료 후 제거 예정.
+     * canonical document 기반 layout elements 조회 (`selectCanonicalReusableFrames`
+     * + `allElements.filter(layout_id 매칭)`) 로 대체. legacy ownership marker
+     * (`element.layout_id`) 의존을 제거하기 위함.
+     */
     getByLayout(layoutId: string): Promise<Element[]>;
     getChildren(parentId: string): Promise<Element[]>;
     getAll(): Promise<Element[]>;
@@ -246,6 +283,13 @@ export interface DatabaseAdapter {
 
     // Clear all data
     clear(): Promise<void>;
+  };
+
+  // Schema migration metadata (ADR-903 P3-E _meta object store)
+  meta: {
+    get(projectId: string): Promise<MetaRecord | null>;
+    set(record: MetaRecord): Promise<void>;
+    update(projectId: string, updates: Partial<MetaRecord>): Promise<void>;
   };
 }
 

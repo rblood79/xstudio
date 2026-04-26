@@ -42,10 +42,10 @@ describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
     const path = await import("node:path");
     const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
     const source = await fs.readFile(filePath, "utf-8");
-    // meta: { get: ..., set: ..., update: ... } 패턴
-    expect(source).toMatch(/meta\s*:\s*\{[\s\S]*?get\s*:/);
-    expect(source).toMatch(/meta\s*:\s*\{[\s\S]*?set\s*:/);
-    expect(source).toMatch(/meta\s*:\s*\{[\s\S]*?update\s*:/);
+    // meta = { ... } (class field) 또는 meta: { ... } (interface) 둘 다 매칭
+    expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?get\s*:/);
+    expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?set\s*:/);
+    expect(source).toMatch(/meta\s*[:=]\s*\{[\s\S]*?update\s*:/);
   });
 
   // Test 5: getByLayout @deprecated JSDoc 검증
@@ -54,7 +54,7 @@ describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
     const path = await import("node:path");
     const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
     const source = await fs.readFile(filePath, "utf-8");
-    // @deprecated 주석 직후 (몇 줄 안에) getByLayout 등장
-    expect(source).toMatch(/@deprecated[\s\S]{0,200}getByLayout/);
+    // @deprecated 주석 직후 (몇 줄 안에) getByLayout 등장 — 본문 길이 여유 있게
+    expect(source).toMatch(/@deprecated[\s\S]{0,500}getByLayout/);
   });
 });

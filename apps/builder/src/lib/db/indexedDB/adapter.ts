@@ -12,6 +12,7 @@ import type {
   Project,
   HistoryEntry,
   SyncMetadata,
+  MetaRecord,
 } from "../types";
 import type { Element, Page } from "../../../types/core/store.types";
 import type {
@@ -29,7 +30,7 @@ import type {
 import { LRUCache } from "./LRUCache";
 
 const DB_NAME = "composition";
-const DB_VERSION = 7; // ✅ 버전 7: Data Panel 테이블 추가 (data_tables, api_endpoints, variables, transformers)
+const DB_VERSION = 8; // ✅ 버전 8: ADR-903 P3-E _meta object store 추가 (schema migration metadata)
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -247,6 +248,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
             unique: false,
           });
           console.log("[IndexedDB] Created store: transformers");
+        }
+
+        // ADR-903 P3-E _meta store: schema migration metadata (per-project)
+        if (!db.objectStoreNames.contains("_meta")) {
+          db.createObjectStore("_meta", { keyPath: "projectId" });
+          console.log("[IndexedDB] Created store: _meta");
         }
 
         console.log("[IndexedDB] Schema upgrade completed");
@@ -751,7 +758,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       return this.getAllByIndex<Element>("elements", "page_id", pageId);
     },
 
-    // ✅ Layout/Slot System: 레이아웃별 요소 조회
+    /**
+     * @deprecated ADR-903 P3-E: migration script 완료 후 제거 예정.
+     * canonical document 기반 layout elements 조회 (`selectCanonicalReusableFrames`
+     * + `allElements.filter(layout_id 매칭)`) 로 대체. legacy ownership marker
+     * (`element.layout_id`) 의존을 제거하기 위함.
+     */
     getByLayout: async (layoutId: string): Promise<Element[]> => {
       console.log(`📥 [IndexedDB] getByLayout 호출: layoutId=${layoutId}`);
       const elements = await this.getAllByIndex<Element>(
@@ -1437,6 +1449,32 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       }
       const updated = { ...existing, ...data };
       await this.putToStore("metadata", updated);
+    },
+  };
+
+  // === Schema Migration Meta (ADR-903 P3-E _meta object store) ===
+
+  meta = {
+    get: async (projectId: string): Promise<MetaRecord | null> => {
+      return this.getFromStore<MetaRecord>("_meta", projectId);
+    },
+
+    set: async (record: MetaRecord): Promise<void> => {
+      await this.putToStore("_meta", record);
+    },
+
+    update: async (
+      projectId: string,
+      updates: Partial<MetaRecord>,
+    ): Promise<void> => {
+      const existing = await this.meta.get(projectId);
+      if (!existing) {
+        throw new Error(
+          `MetaRecord not found for projectId=${projectId}. Call set() first.`,
+        );
+      }
+      const next: MetaRecord = { ...existing, ...updates, projectId };
+      await this.putToStore("_meta", next);
     },
   };
 
