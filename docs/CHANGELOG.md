@@ -5,6 +5,50 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 P3-D-5 indirection layer + workflow edges canonical activation — 세션 33] - 2026-04-26
+
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 (BuilderCore + workspace canvas) 의 6 step 분해 중 step 1~5d 완료. 회귀 위험 0 indirection layer + workflow edges 경로 fully canonical activation.
+
+### Architecture
+
+- **ADR-903 P3-D-5 step 1~5d — canonical adapter helper 통합 + workflow edges 경로 canonical activation** (commits `74996fd2` ~ `4594afd6`, 8 commits):
+
+  P3-D-5 (BuilderCore + workspace canvas) 의 큰 작업 (~3-4h, HIGH 위험) 을 6 step 분해하여 step 1~5d 완료. 각 step 회귀 위험 0 보장 (doc 안 받는 caller 는 legacy fallback).
+  - **Step 1 (`74996fd2`)**: useCanvasDragDropHelpers 의 ownership 비교 3 분기 (L158/258/282) 를 local `sameOwnership` helper 추출
+  - **Step 2 (`47ed4952`)**: BuilderCore.tsx 의 layout membership 비교 2 분기 (L283/457) 를 local `belongsToLayout` helper 추출
+  - **Step 3 (`31035bb6`)**: local helper 를 `adapters/canonical/index.ts` 로 통합 — `sameLegacyOwnership` + `belongsToLegacyLayout` export, `doc?: CompositionDocument | null` 시그니처 추가
+  - **Step 4 (`2d9fbbfd`)**: 13 unit test (sameLegacyOwnership 7 + belongsToLegacyLayout 6) — Step 3 helper noop case 검증
+  - **Step 5a (`7efaa31b`)**: workflowEdges 의 `computeLayoutGroups` 의 page.layout_id 직접 참조를 `getLegacyPageLayoutId(page, doc?)` helper 호출로 변경
+  - **Step 5b (`372c7cba`)**: BuilderCanvas → `computeLayoutGroups` chain 의 doc 도입 — `selectCanonicalDocument(useStore.getState(), pages, layouts)` 호출
+  - **Step 5c (`6e2d25d5`)**: helper 내부 canonical lookup 활성화 — `isCanonicalDescendantOf` (DFS) 추가 + `sameLegacyOwnership` (legacyOwnershipToCanonicalParent 비교) + `belongsToLegacyLayout` (layout frame descendants 확인)
+  - **Step 5d (`4594afd6`)**: `getLegacyPageLayoutId` 내부 canonical 활성화 — doc.children 의 reusable frame descendants 에서 page.id 검색, "layout-<id>" prefix 자동 제거
+
+  **Why**: P3-D-5 는 Team C 사전 분석 (세션 32) 에서 12-14h 재추정 + HIGH 위험. 단일 commit 진행 시 회귀 발생 가능성 높음. 단계적 분해 (indirection layer 먼저 → caller doc 도입 → helper canonical 활성화) 로 각 단계 회귀 0 보장.
+
+  **검증**: 9 commits 모두 pnpm type-check 3/3 PASS + pnpm vitest integration 43/43 PASS (P3-D-5 신규 29 case 추가)
+
+  **활성화 상태** (caller chain 별):
+
+  | Caller chain                                                | doc 도입       | helper canonical           |
+  | ----------------------------------------------------------- | -------------- | -------------------------- |
+  | BuilderCanvas → computeLayoutGroups → getLegacyPageLayoutId | ✅ Step 5b     | ✅ Step 5d                 |
+  | BuilderCore L283/457 → belongsToLegacyLayout                | ❌ doc 안 전달 | ✅ Step 5c (caller 미주입) |
+  | useCanvasDragDropHelpers 3 분기 → sameLegacyOwnership       | ❌ doc 안 전달 | ✅ Step 5c (caller 미주입) |
+
+  workflow edges 경로만 fully canonical 활성화. 나머지는 helper ready, caller doc 미주입 (legacy fallback) — Step 5e 에서 도입 예정.
+  - 위치: `apps/builder/src/adapters/canonical/index.ts` (helper + DFS) / `apps/builder/src/builder/main/BuilderCore.tsx` / `apps/builder/src/builder/workspace/canvas/hooks/useCanvasDragDropHelpers.ts` / `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` / `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+  - test: `apps/builder/src/adapters/canonical/__tests__/integration.test.ts` (P3-D-5 29 case)
+
+### Documentation
+
+- **ADR-903 Phase D Chrome MCP 검증 시나리오 환경 가정 갱신** (commit `b7aa5846`):
+  - 사전 조건 5 → 7 확장: (6) Compare Mode toggle 활성화 (React Aria native click 미반응, 사용자 직접) + (7) page 2개 이상 사전 생성 (B-1/B-2 검증 환경 조건)
+  - Phase B version scope (UPDATE_ELEMENTS 한정) 명시 — design L36/L388 정합 (canonical document 식별 = elements 한정)
+  - **Why**: 세션 32 Phase D 검증 진입 시 발견된 환경 한계 (iframe 가 toggle 식 mount, native click 미반응) 명문화 → 다음 세션 즉시 시나리오 진입 가능
+  - 위치: `docs/adr/design/903-p3d4-phase-d-verification.md` (29 LOC 추가)
+
+---
+
 ## [ADR-903 P3-D-1 tests-actual + P3-D-4 Phase A/B/C land — 세션 30~31] - 2026-04-26
 
 > 세션 29 마지막 entry (`a3591f10` PR #234 P3-D-3 layout-actions 머지) 이후 — 세션 30 의 P3-D-2 GREEN + P3-D-4 Phase A/B push, 세션 31 의 Phase C minimal stub land + Phase A/B/C PR 모두 머지.
