@@ -5,6 +5,26 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 Implemented 승격 — canonical document core 4가지 완결, 잔여 신규 ADR 분리 — 세션 35] - 2026-04-26
+
+> ADR-903 Status `Accepted → Implemented` 전환. 본 ADR 의 종결 scope = (1) canonical document 타입 + adapter 계약 land (G1) (2) Resolver 공통화 + 옵션 C default (G2) (3) frameset → reusable/ref/slot 표현 가능성 + preview/persistence sync (G3 a/e) (4) IndexedDB schema 자동 migration write-through (G5 a). 4 가지 core 완결.
+>
+> **잔여 영역 = 신규 ADR 로 분리** (사용자 결정):
+>
+> - **Layout/Slot frameset 완전 재설계 (pencil app 호환)** — G3 (b)/(c)/(d) — `LayoutsTab` → `FramesTab` 재설계 + repo-wide 결합 해체 + frame authoring UI 치환 + 잔여 layout_id caller (FramesTab/layoutActions/usePageManager/PageLayoutSelector) 일괄 흡수
+> - **Editing Semantics UI 5요소** — G4 — reusable/ref/override 시각 마커 3종 + 양방향 탐색 + detach UI + resetDescendantsOverride + "N개 인스턴스 영향" 미리보기. design 문서 `903-phase4-editing-semantics-breakdown.md` (637 LOC) 그대로 활용
+> - **`tag → type` rename + hybrid 6 필드 cleanup** — G5 (b)/(c)/(d)/(e)/(f) — 1472 ref / 184 파일 일괄 rename + roundtrip 검증 + DB schema 전환. design 문서 `903-phase5-persistence-imports-breakdown.md` 의 P5-C 부분
+> - **`imports` resolver + DesignKit 통합** — P5-D/E/F — 외부 `.pen` fetch + ResolverCache + DesignKit 재매핑
+
+### Architecture
+
+- **ADR-903 Status `Accepted → Implemented` 승격**:
+  - 본문 Status 줄 `Accepted — 2026-04-25 (Phase 0 G1 통과...)` → `Implemented — 2026-04-26 (Phase 0/1/2 완결 + Phase 3 G3 (a)/(e) + IndexedDB schema 자동 migration write-through 완결. G3 (b)/(c)/(d) ... 신규 ADR 로 분리)`
+  - 진행 로그 마지막 entry 추가 — Status 승격 + 잔여 영역의 신규 ADR 분리 결정 + 본 ADR 의 종결 scope 4가지 명문화
+  - `docs/adr/README.md` ADR-903 행을 "미구현" → **"완료"** 섹션으로 이동 (Implemented 2026-04-26)
+  - **Why**: ADR-903 의 핵심 (canonical document migration + resolver 공통화 + IndexedDB schema 자동 migration) 은 완결. 사용자 결정 — "기존 Layout/frameset 은 변경된 format 에 맞게 (pencil app 과 동일) 완전 재설계" 로 별도 ADR 분리 결정. G4 UI 5요소 + G5 `tag→type` rename + imports/DesignKit 도 별도 ADR 로 분리 권장 (각 design 문서 보존, 후속 세션에 ADR 작성)
+  - 위치: `docs/adr/903-ref-descendants-slot-composition-format-migration-plan.md` (Status 1줄 + 진행 로그 +5줄) / `docs/adr/README.md` (ADR-903 행 이동)
+
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
 > 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + P3-E E-2 (createMigrationBackup) RED + GREEN land + P3-E E-3 (runLegacyToCanonicalMigration dry-run + 50+ fixture) RED + GREEN land + P3-E E-4 (initializeProject migration entry 연결) RED + GREEN land + P3-E E-5 (getByLayout dev warning + utils TODO) RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1/E-2/E-3/E-4/E-5 GREEN 종결**. ADR-903 진행도 ~96% → ~99.9%.
