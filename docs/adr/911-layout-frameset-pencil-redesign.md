@@ -33,6 +33,7 @@ Proposed — 2026-04-26
 2. **기존 프로젝트 데이터 보존** — ADR-903 의 IndexedDB 자동 migration (P3-E E-6) 후 elements `parent_id` 가 canonical frame node id 로 변환된 상태. 본 ADR 의 재설계가 이 데이터를 그대로 읽어 frame authoring UI 에 표시
 3. **시각 결과 동일성** — 기존 사용자가 만든 layout-bound page 의 Builder/Preview/Publish 3축 출력은 재설계 후에도 시각적으로 동일 (구현 방법은 자유)
 4. **F4 진입 가능 조건** — 본 ADR 완료 후 ADR-903 의 G4 (Editing Semantics UI 5요소) 를 별도 ADR 로 진행 가능해야 함 (즉 본 ADR 가 G4 의 UI 토대를 제공)
+5. **pencil 공식 명칭 단일 표준** — composition 코드베이스의 명칭 (`Layout` / `Frame` / `Preset`) 중 pencil 공식 명칭 (`frame` / `ref` / `reusable` / `slot` / `descendants` / `clip` / `placeholder`) 과 의미상 충돌하는 영역만 변경. pencil 무관 영역 (Taffy layout engine / CSS layout files / Builder UI panel arrangement) 은 명칭 유지. 강제 alias 또는 신조어 도입 금지
 
 ### Soft Constraints
 
@@ -89,6 +90,57 @@ Proposed — 2026-04-26
 - **대안 A 기각**: 유지보수 HIGH (legacy adapter 영구 잔존) + ADR-903 R1 영구화 + 사용자 결정 ("완전 재설계") 과 충돌
 - **대안 C 기각**: 유지보수 CRITICAL (두 시스템 영구 공존) + 사용자 학습 비용 2배 + 신 기능 양쪽 구현 의무
 
+### Terminology — pencil 공식 명칭 정합 (CRITICAL)
+
+본 ADR 은 [pencil.dev 공식 schema](https://docs.pencil.dev/for-developers/the-pen-format) 명칭을 **단일 표준** 으로 채택. composition 기존 명칭 (`Layout` / `Frame` / `Preset`) 은 pencil 명칭과 의미상 충돌하는 영역만 변경하고, 그 외는 유지. 사용자 결정 (2026-04-27): "pencil 의 기능 명칭 그대로 사용해도 된다 — 강제로 맞추거나 alias 만들 필요 없다."
+
+#### Pencil 공식 점유 단어 (canonical document layer)
+
+| 명칭          | 의미                                                  | 코드 위치                                                            |
+| ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| `frame`       | `type: "frame"` 노드 (컨테이너 + 재사용 단위)         | `packages/shared/src/types/composition-document.types.ts::FrameNode` |
+| `ref`         | `type: "ref"` 인스턴스 노드                           | 동일::RefNode                                                        |
+| `reusable`    | boolean 플래그 — `true` 면 재사용 원본                | 동일::CanonicalNode                                                  |
+| `slot`        | `false \| string[]` — 추천 reusable component ID 배열 | 동일::FrameNode.slot                                                 |
+| `descendants` | override 맵 (3-mode: patch / replacement / children)  | 동일::RefNode.descendants                                            |
+| `clip`        | overflow:hidden 매핑                                  | 동일::FrameNode.clip                                                 |
+| `placeholder` | 빈 frame UI hint                                      | 동일::FrameNode.placeholder                                          |
+| `imports`     | 외부 `.pen` 참조 hook                                 | 동일::CompositionDocument.imports                                    |
+
+**금지**: 위 단어를 pencil 의 공식 의미가 아닌 다른 용도로 신규 도입.
+
+#### Composition vs Pencil 매핑 (기능 흡수)
+
+| composition 기존                         | pencil 공식 매핑                         | 처리 방향                                              |
+| ---------------------------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| `Element.tag`                            | `node.type`                              | **rename** (ADR-913 scope)                             |
+| `Layout` (entity) + `useLayoutsStore`    | `frame` + `reusable: true` + `slot`      | **폐기 → canonical FrameNode 흡수** (Phase 4)          |
+| `tag="Slot"` element                     | `frame.slot` field (`false \| string[]`) | **흡수** (Phase 1 마이그레이션 도구)                   |
+| `slot_name` prop                         | `descendants[slotPath]` key path         | **변환** (slash 구분자)                                |
+| `componentRole: "instance"` + `masterId` | `type: "ref"` + `ref` field              | **변환**                                               |
+| `componentName` (reusable 전용 prop)     | `name` (모든 노드 공통)                  | **흡수**                                               |
+| `LayoutPreset` (slot 구조 preset)        | pencil 무대응 → reusable frame template  | **폐기 또는 frame template 라이브러리** (Phase 1 결정) |
+
+→ pencil 의 `frame` + `reusable` + `slot` + `ref` + `descendants` 조합이 composition 의 layout/preset 기능을 모두 커버. 별도 명칭 (`SlotPresetSelector`, `FrameTemplate` 등) 신설 불필요.
+
+#### 충돌 해소 — pencil `frame` 단어와 의미 충돌하는 영역 (rename 대상)
+
+| 현재                                                                                             | 변경 후                                                      | 근거                                                                         |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `apps/builder/src/builder/workspace/canvas/skia/skiaFrameHelpers.ts`                             | `skiaCanvasBoundsHelpers.ts` (또는 `skiaViewportHelpers.ts`) | Skia rendering 의 frame=canvas boundary 의미가 pencil `frame` (노드) 와 충돌 |
+| `workflowFrame*` (`workflowRenderer` / `workflowMinimap` / `workflowHitTest` 의 frame 변수/함수) | `workflowNode*`                                              | workflow 의 frame=노드 박스 의미가 pencil `frame` 과 충돌                    |
+| `useLayoutsStore` / `Layout` entity                                                              | 폐기 (canonical FrameNode 흡수)                              | Phase 4 G4                                                                   |
+| `LayoutsTab` (UI)                                                                                | `FramesTab`                                                  | pencil 표준 정합 — 이미 ADR-911 결정                                         |
+
+#### 충돌 없음 — pencil 무관 영역 (명칭 유지)
+
+| 위치                                                 | 의미                                            | 처리                                                |
+| ---------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------- |
+| `apps/builder/src/builder/workspace/canvas/layout/`  | Taffy WASM layout engine                        | **유지** — CSS/layout engine 표준 용어, pencil 무관 |
+| `apps/builder/src/builder/styles/layout/`            | CSS layout files                                | **유지** — CSS 표준 용어                            |
+| `apps/builder/src/builder/layout/`                   | Builder UI panel arrangement (좌/우/하단 panel) | **유지** — pencil 무관, panel arrangement 의미 명확 |
+| `LAYOUT_PROP_KEYS` / `INHERITED_LAYOUT_PROPS_UPDATE` | layoutVersion 캐시 시그니처                     | **유지** — Taffy layout engine 영역                 |
+
 > 구현 상세: [911-layout-frameset-pencil-redesign-breakdown.md](design/911-layout-frameset-pencil-redesign-breakdown.md) — 후속 세션에 작성 (Phase 분해 + 파일 변경 목록 + 마이그레이션 도구 + 검증 시나리오)
 
 ## Risks
@@ -105,13 +157,13 @@ Proposed — 2026-04-26
 
 ## Gates
 
-| Gate                               | 시점         | 통과 조건                                                                                                                                                                                                           | 실패 시 대안                                   |
-| ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **G1**: Layout migration 도구 land | Phase 1 완료 | (a) layoutTemplates.ts 28 Slot 전수 자동 변환 정상 / (b) 사용자 IndexedDB 의 layout-bound elements 가 신 frame node 안의 descendants 로 변환 / (c) dry-run + roundtrip 시각 비교 (Skia/CSS) screenshot diff 0건     | 변환 도구 보강 또는 변환 대상 좁히기           |
-| **G2**: 시각 회귀 0 (R1 매핑)      | Phase 2 완료 | (a) `mockLargeDataV2` + 샘플 프로젝트 100% 시각 회귀 0 (Skia/CSS 양축) / (b) 사용자 cutover 전 1주 dual-mode (legacy + canonical) 운영 후 issue report 0건                                                          | dual-mode 기간 연장 또는 specific 시나리오 fix |
-| **G3**: cascade 회귀 0 (R3 매핑)   | Phase 3 완료 | (a) deleteLayout / cloneLayout / addPageToLayout / removePageFromLayout 50+ fixture roundtrip read-write-read 정합 0 drift / (b) undo/redo 정상                                                                     | layoutActions 재작성 보강                      |
-| **G4**: legacy adapter 0건         | Phase 4 완료 | (a) `apps/builder/src/builder/stores/layouts.ts` 본체 0줄 또는 adapter shim 한정 / (b) repo-wide grep `LayoutsTab` / `legacy layout_id` 결과 0 / (c) `useLayoutsStore` 호출 site 0건 (또는 adapter shim 안에서만)   | adapter shim 디렉토리 한정 + dead code 제거    |
-| **G5**: pencil 호환 검증           | Phase 5 완료 | (a) 샘플 pencil `.pen` 파일 5종 import → composition canonical document 변환 → roundtrip export → 원본과 schema-equivalent (binary diff 가능 영역만) / (b) ADR-903 §3.10 `imports` resolver 와 통합 가능 인터페이스 | composition 확장 필드 namespace 격리 보강      |
+| Gate                                        | 시점         | 통과 조건                                                                                                                                                                                                                                                                                                                                                                                         | 실패 시 대안                                   |
+| ------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **G1**: Layout migration 도구 land          | Phase 1 완료 | (a) layoutTemplates.ts 28 Slot 전수 자동 변환 정상 / (b) 사용자 IndexedDB 의 layout-bound elements 가 신 frame node 안의 descendants 로 변환 / (c) dry-run + roundtrip 시각 비교 (Skia/CSS) screenshot diff 0건                                                                                                                                                                                   | 변환 도구 보강 또는 변환 대상 좁히기           |
+| **G2**: 시각 회귀 0 (R1 매핑)               | Phase 2 완료 | (a) `mockLargeDataV2` + 샘플 프로젝트 100% 시각 회귀 0 (Skia/CSS 양축) / (b) 사용자 cutover 전 1주 dual-mode (legacy + canonical) 운영 후 issue report 0건                                                                                                                                                                                                                                        | dual-mode 기간 연장 또는 specific 시나리오 fix |
+| **G3**: cascade 회귀 0 (R3 매핑)            | Phase 3 완료 | (a) deleteLayout / cloneLayout / addPageToLayout / removePageFromLayout 50+ fixture roundtrip read-write-read 정합 0 drift / (b) undo/redo 정상                                                                                                                                                                                                                                                   | layoutActions 재작성 보강                      |
+| **G4**: legacy adapter 0건 + 명칭 충돌 해소 | Phase 4 완료 | (a) `apps/builder/src/builder/stores/layouts.ts` 본체 0줄 또는 adapter shim 한정 / (b) repo-wide grep `LayoutsTab` / `legacy layout_id` 결과 0 / (c) `useLayoutsStore` 호출 site 0건 (또는 adapter shim 안에서만) / (d) **명칭 충돌 해소** — `skiaFrameHelpers` / `workflowFrame*` rename land. repo-wide grep 으로 pencil 무관 영역에서 `Frame` 단어 의미 충돌 0 (Terminology 섹션 매핑 표 기준) | adapter shim 디렉토리 한정 + dead code 제거    |
+| **G5**: pencil 호환 검증                    | Phase 5 완료 | (a) 샘플 pencil `.pen` 파일 5종 import → composition canonical document 변환 → roundtrip export → 원본과 schema-equivalent (binary diff 가능 영역만) / (b) ADR-903 §3.10 `imports` resolver 와 통합 가능 인터페이스                                                                                                                                                                               | composition 확장 필드 namespace 격리 보강      |
 
 ## Consequences
 
@@ -122,12 +174,14 @@ Proposed — 2026-04-26
 - 단일 frame authoring 인터페이스 → 사용자 학습 비용 감소 + UI 일관성
 - ADR-903 G4 (Editing Semantics UI 5요소) 의 토대 제공
 - ADR-903 P5-D/E/F (`imports` resolver + DesignKit 통합) 와 자연스럽게 통합
+- **pencil 공식 명칭 단일 표준 채택** — composition 코드베이스의 `Frame` 단어가 4가지 의미로 분산된 현상을 해소. canonical document layer 의 `Frame` 만 pencil 표준 의미 유지, Skia rendering / workflow 영역은 의미 명확화 rename
 
 ### Negative
 
 - UI 전면 재설계 + DB cascade 재작성 + layoutTemplates 재정의 — 일회성 작업량 큼 (~수 주)
 - 사용자 cutover 부담 — 기존 LayoutsTab 사용자가 신 FramesTab 학습 필요 (Phase 2 dual-mode 기간으로 완화)
 - layoutTemplates 28 Slot 의 변환 결과 일부 시각 drift 발생 가능 (R5) — 사용자 confirm 단계 필요
+- Skia rendering (`skiaFrameHelpers`) + workflow (`workflowFrame*`) rename 범위 ~30 파일 — Phase 4 G4 통과 조건에 흡수, 외부 API 영향 없음 (내부 모듈 import 경로만 변경)
 
 ## References
 
