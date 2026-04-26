@@ -10,7 +10,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CanonicalNode, RefNode } from "@composition/shared";
 import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
-import { legacyToCanonical, legacyOwnershipToCanonicalParent } from "../index";
+import {
+  legacyToCanonical,
+  legacyOwnershipToCanonicalParent,
+  sameLegacyOwnership,
+  belongsToLegacyLayout,
+} from "../index";
 import { convertComponentRole } from "../componentRoleAdapter";
 import { convertPageLayout } from "../slotAndLayoutAdapter";
 
@@ -436,5 +441,125 @@ describe("legacyOwnershipToCanonicalParent (ADR-903 P3-A G3-A precondition)", ()
     expect(
       legacyOwnershipToCanonicalParent({ page_id: null, layout_id: "L2" }, doc),
     ).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// sameLegacyOwnership — ADR-903 P3-D-5 step 3 helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("sameLegacyOwnership (ADR-903 P3-D-5 step 3)", () => {
+  it("같은 page_id + 같은 layout_id → true", () => {
+    expect(
+      sameLegacyOwnership(
+        { page_id: "P1", layout_id: null },
+        { page_id: "P1", layout_id: null },
+      ),
+    ).toBe(true);
+  });
+
+  it("같은 layout_id + 같은 page_id null → true", () => {
+    expect(
+      sameLegacyOwnership(
+        { page_id: null, layout_id: "L1" },
+        { page_id: null, layout_id: "L1" },
+      ),
+    ).toBe(true);
+  });
+
+  it("다른 page_id → false", () => {
+    expect(
+      sameLegacyOwnership(
+        { page_id: "P1", layout_id: null },
+        { page_id: "P2", layout_id: null },
+      ),
+    ).toBe(false);
+  });
+
+  it("다른 layout_id → false", () => {
+    expect(
+      sameLegacyOwnership(
+        { page_id: null, layout_id: "L1" },
+        { page_id: null, layout_id: "L2" },
+      ),
+    ).toBe(false);
+  });
+
+  it("page_id + layout_id 한쪽 null 차이 → false", () => {
+    expect(
+      sameLegacyOwnership(
+        { page_id: "P1", layout_id: null },
+        { page_id: null, layout_id: "L1" },
+      ),
+    ).toBe(false);
+  });
+
+  it("둘 다 page_id null + layout_id null → true (orphan 동치)", () => {
+    expect(
+      sameLegacyOwnership(
+        { page_id: null, layout_id: null },
+        { page_id: null, layout_id: null },
+      ),
+    ).toBe(true);
+  });
+
+  it("doc parameter 전달 시에도 legacy 결과와 동일 (Step 4 noop)", () => {
+    const doc = legacyToCanonical(
+      { elements: [], pages: [], layouts: [] },
+      deps,
+    );
+    expect(
+      sameLegacyOwnership(
+        { page_id: "P1", layout_id: null },
+        { page_id: "P1", layout_id: null },
+        doc,
+      ),
+    ).toBe(true);
+    expect(
+      sameLegacyOwnership(
+        { page_id: "P1", layout_id: null },
+        { page_id: "P2", layout_id: null },
+        doc,
+      ),
+    ).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// belongsToLegacyLayout — ADR-903 P3-D-5 step 3 helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("belongsToLegacyLayout (ADR-903 P3-D-5 step 3)", () => {
+  it("el.layout_id === layoutId → true", () => {
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, "L1")).toBe(true);
+  });
+
+  it("el.layout_id !== layoutId → false", () => {
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, "L2")).toBe(false);
+  });
+
+  it("layoutId null → false", () => {
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, null)).toBe(false);
+  });
+
+  it("layoutId undefined → false", () => {
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, undefined)).toBe(false);
+  });
+
+  it("el.layout_id null + layoutId 'L1' → false", () => {
+    expect(belongsToLegacyLayout({ layout_id: null }, "L1")).toBe(false);
+  });
+
+  it("el.layout_id null + layoutId null → false (orphan)", () => {
+    expect(belongsToLegacyLayout({ layout_id: null }, null)).toBe(false);
+  });
+
+  it("doc parameter 전달 시에도 legacy 결과와 동일 (Step 4 noop)", () => {
+    const doc = legacyToCanonical(
+      { elements: [], pages: [], layouts: [] },
+      deps,
+    );
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, "L1", doc)).toBe(true);
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, "L2", doc)).toBe(false);
   });
 });
