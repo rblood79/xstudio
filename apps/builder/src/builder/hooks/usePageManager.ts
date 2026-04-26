@@ -5,6 +5,8 @@ import { type Page as ApiPage } from "../../services/api/PagesApiService";
 import { type Page, getDefaultProps } from "../../types/builder/unified.types";
 import { getDB } from "../../lib/db";
 import { useStore } from "../stores";
+import { selectCanonicalDocument } from "../stores/elements";
+import { useLayoutsStore } from "../stores/layouts";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
@@ -511,24 +513,18 @@ export const usePageManager = ({
           (el) => el.page_id && pageIdSet.has(el.page_id),
         );
 
-        // Layout 요소도 함께 로드 (중복 제거)
-        // TODO(P3-D): canonical document load 로 전환 예정.
-        // P3-D에서 이 경로는 CompositionDocument의 reusable FrameNode 기반으로 교체.
-        // getByLayout() 호출 제거 및 selectCanonicalReusableFrames() 사용 예정.
-        // 미전환 상태로 P3-D 진입 시 layout-linked pages의 elements 로드 누락 → 렌더 파괴.
-        const layoutIds = Array.from(
-          new Set(
-            projectPages
-              .map((p) => (p as { layout_id?: string | null }).layout_id)
-              .filter((id): id is string => Boolean(id)),
-          ),
+        // MINIMAL STUB: canonical resolver 호출
+        // P3-D-1 머지 후 정합화 TODO:
+        //   canonicalDoc.children(reusable FrameNode) 별 elements 추출로 교체 필요.
+        //   현재 minimal stub: layout-linked pages elements 누락 회귀 가능성 있음
+        //   (P3-D-1 머지 후 정합화 — element.layout_id 필드 정합화 선행 필요).
+        const canonicalDoc = selectCanonicalDocument(
+          useStore.getState(),
+          storePages,
+          useLayoutsStore.getState().layouts,
         );
+        void canonicalDoc; // P3-D-1 후: reusable FrameNode 기반 elements 추출에 사용
         const layoutElements: Element[] = [];
-        for (const layoutId of layoutIds) {
-          // TODO(P3-D): getByLayout() → canonical reusable frame resolver 교체
-          const els = await db.elements.getByLayout(layoutId);
-          layoutElements.push(...els);
-        }
 
         const mergedMap = new Map<string, Element>();
         pageElements.forEach((el) => mergedMap.set(el.id, el));
