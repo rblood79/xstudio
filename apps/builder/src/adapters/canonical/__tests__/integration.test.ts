@@ -15,6 +15,7 @@ import {
   legacyOwnershipToCanonicalParent,
   sameLegacyOwnership,
   belongsToLegacyLayout,
+  getLegacyPageLayoutId,
 } from "../index";
 import { convertComponentRole } from "../componentRoleAdapter";
 import { convertPageLayout } from "../slotAndLayoutAdapter";
@@ -685,5 +686,89 @@ describe("belongsToLegacyLayout canonical activation (ADR-903 P3-D-5 step 5c)", 
     expect(
       belongsToLegacyLayout({ id: "child-1", layout_id: "L1" }, "L1", doc),
     ).toBe(false);
+  });
+});
+
+describe("getLegacyPageLayoutId (ADR-903 P3-D-5 step 5d)", () => {
+  function makeDoc(
+    children: CanonicalNode[],
+  ): import("@composition/shared").CompositionDocument {
+    return { version: "composition-1.0", children };
+  }
+
+  it("doc 없으면 page.layout_id 반환", () => {
+    expect(getLegacyPageLayoutId({ layout_id: "L1" })).toBe("L1");
+  });
+
+  it("doc 없고 layout_id 없으면 null", () => {
+    expect(getLegacyPageLayoutId({})).toBe(null);
+  });
+
+  it("doc 있고 layout frame 의 직계 자손 page → layout id (layout-<id> prefix 제거)", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+        children: [{ id: "page-1", type: "frame" } as CanonicalNode],
+      } as CanonicalNode,
+    ]);
+    expect(getLegacyPageLayoutId({ id: "page-1" }, doc)).toBe("L1");
+  });
+
+  it("doc 있고 deep descendant page → layout id", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L2",
+        type: "frame",
+        reusable: true,
+        children: [
+          {
+            id: "wrapper",
+            type: "frame",
+            children: [{ id: "page-2", type: "frame" } as CanonicalNode],
+          } as CanonicalNode,
+        ],
+      } as CanonicalNode,
+    ]);
+    expect(getLegacyPageLayoutId({ id: "page-2" }, doc)).toBe("L2");
+  });
+
+  it("doc 있어도 reusable frame 외부 page → legacy fallback", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+        children: [{ id: "other-page", type: "frame" } as CanonicalNode],
+      } as CanonicalNode,
+      { id: "page-1", type: "frame" } as CanonicalNode, // top-level (no layout)
+    ]);
+    expect(
+      getLegacyPageLayoutId({ id: "page-1", layout_id: "fallback-L" }, doc),
+    ).toBe("fallback-L");
+  });
+
+  it("doc 있고 page.id 없으면 legacy fallback", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+      } as CanonicalNode,
+    ]);
+    expect(getLegacyPageLayoutId({ layout_id: "L1" }, doc)).toBe("L1");
+  });
+
+  it("frame id 가 'layout-' prefix 없으면 그대로 반환", () => {
+    const doc = makeDoc([
+      {
+        id: "L3",
+        type: "frame",
+        reusable: true,
+        children: [{ id: "page-3", type: "frame" } as CanonicalNode],
+      } as CanonicalNode,
+    ]);
+    expect(getLegacyPageLayoutId({ id: "page-3" }, doc)).toBe("L3");
   });
 });

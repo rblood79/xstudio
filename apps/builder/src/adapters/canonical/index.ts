@@ -470,22 +470,31 @@ export function belongsToLegacyLayout(
 }
 
 /**
- * ADR-903 P3-D-5 step 5 — Page 의 layout 식별 helper (canonical-aware indirection).
+ * ADR-903 P3-D-5 step 5 — Page 의 layout 식별 helper (canonical-aware).
  *
  * **Why**: workflowEdges.computeLayoutGroups 등에서 `page.layout_id` 직접 참조.
- * 단일 진입점 추출 — 다음 단계에서 doc 활용 canonical page-frame parent lookup
- * 으로 전환.
+ * doc 전달 시 canonical reusable frame 의 후손인 page 식별 → layout id 반환.
  *
- * @param page - page 객체 (layout_id 있음)
- * @param doc - Canonical document (optional, step 5b 에서 활용)
+ * @param page - page 객체 (id + layout_id)
+ * @param doc - Canonical document (optional, step 5d 에서 활성화)
  * @returns layout id 또는 null
  */
 export function getLegacyPageLayoutId(
-  page: { layout_id?: string | null },
+  page: { id?: string; layout_id?: string | null },
   doc?: CompositionDocument | null,
 ): string | null {
-  // TODO(P3-D-5 step 5b): doc 활용 시 canonical page-frame parent ID lookup
-  // 즉 page node 의 부모 reusable frame ID 반환
-  void doc;
+  // ADR-903 P3-D-5 step 5d: doc 활용 시 canonical reusable frame descendants 검색
+  if (doc && page.id) {
+    for (const node of doc.children) {
+      if (node.type !== "frame" || !node.reusable) continue;
+      if (isCanonicalDescendantOf(page.id, node)) {
+        // layout id 추출 — frame.id convention "layout-<layoutId>" 또는 그대로
+        return node.id.startsWith("layout-")
+          ? node.id.slice("layout-".length)
+          : node.id;
+      }
+    }
+    // canonical 에서 layout binding 못 찾음 → legacy fallback
+  }
   return page.layout_id ?? null;
 }
