@@ -8,13 +8,15 @@
  * 캔버스 렌더링용 독립 모듈로 추출한 것.
  */
 
+import { getLegacyPageLayoutId } from "@/adapters/canonical";
+
 // ============================================
 // Types
 // ============================================
 
 export interface WorkflowEdge {
   id: string;
-  type: 'navigation' | 'event-navigation';
+  type: "navigation" | "event-navigation";
   sourcePageId: string;
   targetPageId: string;
   sourceElementId?: string;
@@ -80,11 +82,8 @@ interface WorkflowEventInput {
  * - 선행/후행 슬래시, 쿼리 파라미터, 해시 제거
  */
 export function normalizeSlug(slug?: string | null): string {
-  if (!slug) return '';
-  return slug
-    .split(/[?#]/)[0]
-    .replace(/^\/+/, '')
-    .replace(/\/+$/, '');
+  if (!slug) return "";
+  return slug.split(/[?#]/)[0].replace(/^\/+/, "").replace(/\/+$/, "");
 }
 
 // ============================================
@@ -94,11 +93,13 @@ export function normalizeSlug(slug?: string | null): string {
 /** navigable 태그인지 확인 (Link, a, Button - 대소문자 무시) */
 function isNavigableTag(tag: string): boolean {
   const lower = tag.toLowerCase();
-  return lower === 'link' || lower === 'a' || lower === 'button';
+  return lower === "link" || lower === "a" || lower === "button";
 }
 
 /** props에서 href/to/path/url 등 내부 이동 경로 추출 */
-function extractHrefFromProps(props: Record<string, unknown>): string | undefined {
+function extractHrefFromProps(
+  props: Record<string, unknown>,
+): string | undefined {
   return (
     (props.href as string | undefined) ||
     (props.to as string | undefined) ||
@@ -109,7 +110,9 @@ function extractHrefFromProps(props: Record<string, unknown>): string | undefine
 }
 
 /** 액션에서 경로 추출 (config → value 순으로 탐색) */
-function extractPathFromAction(action: WorkflowActionInput): string | undefined {
+function extractPathFromAction(
+  action: WorkflowActionInput,
+): string | undefined {
   return (
     action.config?.path ||
     action.config?.href ||
@@ -124,13 +127,13 @@ function extractPathFromAction(action: WorkflowActionInput): string | undefined 
 
 /** 외부 링크 또는 앵커인지 확인 */
 function isExternalOrAnchor(href: string): boolean {
-  return href.startsWith('http') || href.startsWith('#');
+  return href.startsWith("http") || href.startsWith("#");
 }
 
 /** navigate 계열 액션 타입인지 확인 */
 function isNavigateAction(actionType: string): boolean {
   const lower = actionType.toLowerCase();
-  return lower === 'navigate' || lower === 'link' || lower.includes('navigate');
+  return lower === "navigate" || lower === "link" || lower.includes("navigate");
 }
 
 // ============================================
@@ -184,11 +187,11 @@ export function computeWorkflowEdges(
         if (targetPageId && targetPageId !== sourcePageId) {
           addEdge({
             id: `${element.id}-${targetPageId}-navigation`,
-            type: 'navigation',
+            type: "navigation",
             sourcePageId,
             targetPageId,
             sourceElementId: element.id,
-            label: 'Link',
+            label: "Link",
           });
         }
       }
@@ -196,21 +199,23 @@ export function computeWorkflowEdges(
 
     // 2) 이벤트 기반 navigation 엣지
     // props.events가 UI의 canonical 소스, element.events는 폴백
-    const events = (Array.isArray((element.props as Record<string, unknown>).events)
-      ? (element.props as Record<string, unknown>).events
-      : element.events) as WorkflowEventInput[] | undefined;
+    const events = (
+      Array.isArray((element.props as Record<string, unknown>).events)
+        ? (element.props as Record<string, unknown>).events
+        : element.events
+    ) as WorkflowEventInput[] | undefined;
     if (!Array.isArray(events)) continue;
 
     for (const event of events) {
       if (!event || event.enabled === false) continue;
 
       const actions = Array.isArray(event.actions) ? event.actions : [];
-      const eventType = event.event_type || event.event || '';
+      const eventType = event.event_type || event.event || "";
 
       for (const action of actions) {
         if (!action || action.enabled === false) continue;
 
-        const actionType = action.type || '';
+        const actionType = action.type || "";
         if (!isNavigateAction(actionType)) continue;
 
         const actionPath = extractPathFromAction(action);
@@ -222,11 +227,11 @@ export function computeWorkflowEdges(
 
         addEdge({
           id: `${element.id}-${targetPageId}-event-navigation`,
-          type: 'event-navigation',
+          type: "event-navigation",
           sourcePageId,
           targetPageId,
           sourceElementId: element.id,
-          label: eventType ? `${eventType}` : 'event',
+          label: eventType ? `${eventType}` : "event",
         });
       }
     }
@@ -241,9 +246,13 @@ export function computeWorkflowEdges(
 
 export interface DataSourceEdge {
   id: string;
-  sourceType: 'dataTable' | 'api' | 'supabase' | 'mock';
+  sourceType: "dataTable" | "api" | "supabase" | "mock";
   name: string;
-  boundElements: Array<{ elementId: string; elementTag: string; pageId: string }>;
+  boundElements: Array<{
+    elementId: string;
+    elementTag: string;
+    pageId: string;
+  }>;
 }
 
 export interface LayoutGroup {
@@ -269,40 +278,40 @@ export function computeDataSourceEdges(
   for (const el of elements) {
     // props.dataBinding 에서 바인딩 정보를 추출
     const binding = el.props.dataBinding as Record<string, unknown> | undefined;
-    if (!binding || typeof binding !== 'object') continue;
+    if (!binding || typeof binding !== "object") continue;
 
-    let sourceType: DataSourceEdge['sourceType'] | null = null;
-    let name = '';
-    let id = '';
+    let sourceType: DataSourceEdge["sourceType"] | null = null;
+    let name = "";
+    let id = "";
 
     // A) PropertyDataBinding 형식: { source, name }
-    if ('source' in binding && 'name' in binding && binding.name) {
+    if ("source" in binding && "name" in binding && binding.name) {
       const src = binding.source as string;
-      if (src === 'dataTable') {
-        sourceType = 'dataTable';
+      if (src === "dataTable") {
+        sourceType = "dataTable";
         name = binding.name as string;
         id = `dataTable-${name}`;
-      } else if (src === 'api') {
-        sourceType = 'api';
+      } else if (src === "api") {
+        sourceType = "api";
         name = binding.name as string;
         id = `api-${name}`;
       }
     }
 
     // B) Full DataBinding 형식: { type, config }
-    if (!sourceType && 'type' in binding && binding.config) {
+    if (!sourceType && "type" in binding && binding.config) {
       const config = binding.config as Record<string, unknown>;
 
-      if (config.baseUrl === 'MOCK_DATA') {
-        sourceType = 'mock';
-        name = (config.endpoint as string) || 'Mock Data';
+      if (config.baseUrl === "MOCK_DATA") {
+        sourceType = "mock";
+        name = (config.endpoint as string) || "Mock Data";
         id = `mock-${name}`;
-      } else if (binding.source === 'supabase' && config.tableName) {
-        sourceType = 'supabase';
+      } else if (binding.source === "supabase" && config.tableName) {
+        sourceType = "supabase";
         name = config.tableName as string;
         id = `supabase-${name}`;
-      } else if (binding.source === 'api' && config.endpoint) {
-        sourceType = 'api';
+      } else if (binding.source === "api" && config.endpoint) {
+        sourceType = "api";
         name = config.endpoint as string;
         id = `api-${name}`;
       }
@@ -313,7 +322,7 @@ export function computeDataSourceEdges(
     const boundEntry = {
       elementId: el.id,
       elementTag: el.tag,
-      pageId: el.page_id || '',
+      pageId: el.page_id || "",
     };
 
     const existing = dataSourceMap.get(id);
@@ -354,7 +363,7 @@ export function computeLayoutGroups(
   const groupMap = new Map<string, string[]>();
 
   for (const page of pages) {
-    const layoutId = page.layout_id;
+    const layoutId = getLegacyPageLayoutId(page);
     if (!layoutId) continue;
 
     const existing = groupMap.get(layoutId);

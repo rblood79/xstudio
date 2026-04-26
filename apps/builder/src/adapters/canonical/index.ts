@@ -437,3 +437,24 @@ export function belongsToLegacyLayout(
   void doc;
   return el.layout_id === layoutId;
 }
+
+/**
+ * ADR-903 P3-D-5 step 5 — Page 의 layout 식별 helper (canonical-aware indirection).
+ *
+ * **Why**: workflowEdges.computeLayoutGroups 등에서 `page.layout_id` 직접 참조.
+ * 단일 진입점 추출 — 다음 단계에서 doc 활용 canonical page-frame parent lookup
+ * 으로 전환.
+ *
+ * @param page - page 객체 (layout_id 있음)
+ * @param doc - Canonical document (optional, step 5b 에서 활용)
+ * @returns layout id 또는 null
+ */
+export function getLegacyPageLayoutId(
+  page: { layout_id?: string | null },
+  doc?: CompositionDocument | null,
+): string | null {
+  // TODO(P3-D-5 step 5b): doc 활용 시 canonical page-frame parent ID lookup
+  // 즉 page node 의 부모 reusable frame ID 반환
+  void doc;
+  return page.layout_id ?? null;
+}
