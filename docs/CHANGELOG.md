@@ -5,6 +5,54 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 P3-D-1 tests-actual + P3-D-4 Phase A/B/C land — 세션 30~31] - 2026-04-26
+
+> 세션 29 마지막 entry (`a3591f10` PR #234 P3-D-3 layout-actions 머지) 이후 — 세션 30 의 P3-D-2 GREEN + P3-D-4 Phase A/B push, 세션 31 의 Phase C minimal stub land + Phase A/B/C PR 모두 머지.
+
+### Architecture
+
+- **ADR-903 P3-D-1 factoryOwnership 39 todo → actual 변환** (PR #232 `feat/adr-903-p3d1-tests-actual`, commit `023322c7`):
+  - factoryOwnership.test.ts 의 39 todo 테스트를 실제 검증 가능한 actual 테스트로 전환
+  - **Why**: P3-D-1 GREEN 변환의 진정한 검증 진입점 — todo 상태로는 회귀 감지 불가
+  - 위치: `apps/builder/src/builder/factories/__tests__/factoryOwnership.test.ts`
+
+- **ADR-903 P3-D-4 Phase A RED — usePageManager + useIframeMessenger canonical 전환 검증** (PR #235 `prep/adr-903-p3d4-tdd-red`, commit `17d47980`):
+  - 5 RED test 작성 (3 usePageManager + 2 useIframeMessenger), 모두 expected FAIL
+  - usePageManager.canonical.test.ts 3건: getByLayout 호출 제거 / layoutIds 수집 패턴 제거 / canonical resolver 호출 검증
+  - useIframeMessenger.canonical.test.ts 2건: message.version `legacy-1.0` → `composition-1.0` bump / pageInfo 에 reusableFrameId 필드 등장
+  - **Why**: P3-D-4 (CRITICAL ~5h) 의 GREEN 변환 (Phase B/C) 진입점. RED phase 명확화로 회귀 위험 탐지 가능
+  - 위치: `apps/builder/src/builder/hooks/__tests__/{usePageManager,useIframeMessenger}.canonical.test.ts`
+
+- **ADR-903 P3-D-4 Phase B GREEN — UPDATE_ELEMENTS schema canonical bump** (PR #236 `feat/adr-903-p3d4-phase-b-postmessage`, commit `886cb4d7`):
+  - postMessage schema version `legacy-1.0` → `composition-1.0` bump + pageInfo 에 `reusableFrameId` 필드 추가 (alias 병기, BC 유지)
+  - sender (`useIframeMessenger.ts`) + receiver (`messageHandler.ts` + `types/index.ts`) 양 경로 동기화
+  - **Why**: P3-D-4 의 cross-iframe canonical message contract 확립. Builder ↔ Preview 간 canonical document 식별자 전달 schema 정합화
+  - 위치: `apps/builder/src/builder/hooks/useIframeMessenger.ts` + `apps/builder/src/preview/messaging/messageHandler.ts` + `apps/builder/src/preview/types/index.ts`
+
+- **ADR-903 P3-D-4 Phase C minimal stub GREEN — usePageManager canonical lookup** (PR #237 `feat/adr-903-p3d4-phase-c-usepagemanager`, commit `5db2c695`):
+  - `usePageManager.initializeProject` 의 layout-elements 로딩 (`db.elements.getByLayout` + layoutIds 수집) 제거 → `selectCanonicalDocument` 호출로 대체 (minimal stub)
+  - **Why**: RED test 3건 GREEN 전환 — canonical resolver 호출 패턴 확립. layout-linked pages elements 정합화는 P3-D-1 (factory ownership 287 ref 제거) PR 머지 후 reusable FrameNode 기반 elements 추출로 정합화 (TODO 명시)
+  - 검증: type-check 3/3 PASS (cached) + test 6/6 PASS (canonical.test.ts 2 files)
+  - ⚠️ MINIMAL STUB 한계: P3-D-1 미머지 상태에서는 layout-linked pages elements 누락 회귀 가능성 — 후속 정합화 필수
+  - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (+12/-16)
+
+### Documentation
+
+- **ADR-903 P3-D-4 Phase D Chrome MCP 검증 시나리오 작성**:
+  - 12 검증 case (Group A postMessage 3 + B page 전환 3 + C CRUD 4 + D 재로드 2) + 회귀 체크 포인트 5종 + 사전 상태 확인 5단계
+  - **Why**: P3-D-4 Phase D Chrome MCP 통합 검증 (~1h) 의 다음 세션 즉시 실행 가능 시나리오 명문화. B-2 (layout-linked page) 는 P3-D-1 머지 전 알려진 미정합으로 명시
+  - Chrome MCP 패턴 (`feedback-chrome-mcp-patterns.md` 세션 16 확립) 의 store access / Preview iframe DOM / 자동 루프 패턴 시나리오별 코드 스니펫 내재화
+  - 위치: `docs/adr/design/903-p3d4-phase-d-verification.md` (497 LOC)
+
+### Infrastructure
+
+- **Agent isolation 5회차 비정상 패턴 (commit/push 마감 누락)**:
+  - `isolation: "worktree"` implementer agent 가 commit 까지 OK 했지만 본문 결과 보고는 worktree path 정보만 반환 + main worktree 의 base branch (`feat/adr-903-p3d4-phase-b-postmessage`) 위에도 동일 변경 직접 commit (의도와 다름)
+  - 직접 정리 절차: 두 commit patch 동일성 확인 → main worktree 에서 type-check + test 검증 → fast-forward push (886cb4d7→5db2c695) → main worktree reset --hard origin/main → agent worktree force-remove (`-f -f` lock 해제)
+  - **Why**: 세션 28/29 의 4회차 패턴에 이어 5회차 발생. **HIGH 위험 작업은 직접 진행** 또는 **안전장치 5중** (push exit code + ls-remote SHA 일치 + commit count + type-check + test) prompt 의무
+
+---
+
 ## [ADR-903 옵션 C default + P3-B canonical helper + P3-D-3 GREEN — 세션 28~29] - 2026-04-26
 
 > 세션 27 마지막 entry (`703018a9` 옵션 C root cause) 이후 — 세션 28 의 옵션 C production default 활성화, P3-B 추가 helper land, P3-D 진입 준비 + 세션 29 의 P3-D-3 GREEN 마감.
