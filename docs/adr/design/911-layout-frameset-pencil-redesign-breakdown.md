@@ -1,116 +1,843 @@
 # ADR-911 Layout/Slot Frameset 완전 재설계 — 구현 상세
 
-> **상태**: Placeholder — 본 design 문서는 ADR-911 가 Accepted 상태로 진입한 후 후속 세션에서 phase 분해 + 파일 변경 목록 + 마이그레이션 도구 설계 + 검증 시나리오를 채운다. 본 placeholder 는 scaffolding 만 보장.
+> **상위 ADR**: [ADR-911](../911-layout-frameset-pencil-redesign.md) (Status: Proposed — 2026-04-26)
+> **의존 ADR**: ADR-903 (Implemented 2026-04-26) — P3-E E-6 IndexedDB migration 완료 후 진입
+> **총 예상 규모**: ~42h / 5 Phase (P1 8h → P2 12h → P3 8h → P4 8h → P5 6h)
 
-## 0. Phase 분해 (예정)
+---
 
-| Phase  | 작업                                                                        | 의존                                        | 예상 규모 |
-| ------ | --------------------------------------------------------------------------- | ------------------------------------------- | --------- |
-| **P1** | layout migration 도구 + layoutTemplates 28 Slot 자동 변환                   | ADR-903 P3-E E-6 데이터 자동 migration 완료 | TBD       |
-| **P2** | 신 FramesTab UI 작성 + dual-mode (legacy + canonical) 병행                  | P1                                          | TBD       |
-| **P3** | layoutActions cascade 재작성 (deleteLayout / cloneLayout / addPageToLayout) | P2                                          | TBD       |
-| **P4** | legacy LayoutsTab 폐기 + `useLayoutsStore` adapter shim 한정                | P3 + dual-mode 1주 운영                     | TBD       |
-| **P5** | pencil import/export adapter + ADR-903 §3.10 `imports` resolver 통합        | P4                                          | TBD       |
+## 0. Phase 의존 그래프
 
-## 1. 변경 대상 파일 (Inventory)
+```
+P1 (G1): Layout migration 도구 + layoutTemplates 28 Slot 변환
+   ↓
+P2 (G2): FramesTab UI 재설계 + dual-mode 운영
+   ↓
+P3 (G3): layoutActions cascade 재작성 (canonical-native)
+   ↓
+P4 (G4): legacy 0 + PanelSlot→PanelArea rename + 명칭 충돌 해소
+   ↓
+P5 (G5): pencil .pen import/export adapter + ADR-914 통합
+```
 
-### UI 영역
+| Phase  | 의존                          | 병렬 가능 | 예상 시간 | 위험 |
+| ------ | ----------------------------- | --------- | --------- | ---- |
+| **P1** | ADR-903 E-6 IndexedDB 완료    | —         | ~8h       | HIGH |
+| **P2** | P1 G1 통과                    | —         | ~12h      | MED  |
+| **P3** | P2 G2 통과 (dual-mode 1주 후) | —         | ~8h       | HIGH |
+| **P4** | P3 G3 통과                    | —         | ~8h       | LOW  |
+| **P5** | P4 G4 통과                    | —         | ~6h       | MED  |
 
-- `apps/builder/src/builder/panels/nodes/LayoutsTab/` — 폐기
-- `apps/builder/src/builder/panels/nodes/FramesTab/` — 재작성 (frame authoring UI)
-- `apps/builder/src/builder/panels/nodes/FramesTab/FramesTab.tsx` — `db.elements.getByLayout()` caller + `loadFrameElements` + `frameElements` memo 전부 canonical 으로 재작성
-- `apps/builder/src/builder/panels/properties/editors/PageLayoutSelector.tsx` — frame ref 선택 UI 로 재설계
-- `apps/builder/src/builder/panels/properties/editors/LayoutBodyEditor.tsx` — frame body 편집 UI
-- `apps/builder/src/builder/panels/properties/editors/LayoutSlugEditor.tsx` — frame slug 편집 UI
-- `apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/` — preset 자체를 reusable frame 으로 변환
+---
 
-### Store / Action 영역
+## Phase 1 (G1): Layout migration 도구 — 8h
 
-- `apps/builder/src/builder/stores/layouts.ts` — adapter shim 한정 (P4)
-- `apps/builder/src/builder/stores/utils/layoutActions.ts` — cascade 재작성 (canonical descendants 기반)
-- `apps/builder/src/builder/hooks/usePageManager.ts:528` — mergedMap 합성 정합화
+### 목적
 
-### DB / Persistence 영역
+`layoutTemplates.ts` 28 Slot 정의와 사용자 IndexedDB 의 legacy layout-bound elements 를 canonical `FrameNode` (pencil schema) 로 일회성 변환. 시각 회귀 없이 cutover.
 
-- `apps/builder/src/lib/db/indexedDB/adapter.ts` — `getByLayout` 메서드 폐기 (P5-C 와 연계, ADR-903 G5 별도 ADR)
-- `apps/builder/src/lib/db/migration.ts` — Layout migration 단계 추가 (Phase 1)
+### P1-a: SlotElement → FrameNode.slot 변환 알고리즘
 
-### Template / Asset 영역
+**대상**: `apps/builder/src/builder/templates/layoutTemplates.ts`
 
-- `apps/builder/src/builder/utils/layoutTemplates.ts` — 28 Slot 정의를 canonical reusable frame + slot 메타 로 재정의
+기존 `LayoutTemplate.slots` 배열과 `LayoutTemplateElement.tag === "Slot"` 노드를 canonical `FrameNode.slot` field (`false | string[]`) 로 변환.
 
-### pencil 호환 영역
+**변환 규칙**:
 
-- `apps/builder/src/adapters/pencil/` (신규) — pencil `.pen` import/export adapter
-- `packages/shared/src/types/pencil-adapter.types.ts` — 기존 type 확장
+| 기존 (legacy)                            | 변환 후 (canonical)                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `tag: "Slot", props: { name: "header" }` | `slot: ["header"]` (부모 reusable FrameNode 의 field)                                       |
+| `SlotProps.required === true`            | `placeholder: { label: slotName, required: true }` (FrameNode.placeholder field)            |
+| `slot_name: "sidebar"` prop              | `descendants["sidebar"]` key path (slash 구분자 없으면 최상위 slot key)                     |
+| `LayoutPreset` (slot 구조 preset)        | `reusable: true` FrameNode + template library entry (presetDefinitions.ts → canonical 변환) |
 
-## 2. 마이그레이션 도구 (Phase 1)
+**구현 위치**: `apps/builder/src/lib/db/migrationP911.ts` (신규)
 
-### 입력
+```ts
+// apps/builder/src/lib/db/migrationP911.ts
 
-- 기존 IndexedDB 의 elements (`layout_id` 가 ADR-903 P3-E E-6 후 null, `parent_id` 가 canonical frame node id 인 상태)
-- 기존 `layouts` store (legacy Layout records)
-- `layoutTemplates.ts` 28 Slot 정의
+import type { FrameNode, RefNode } from "@composition/shared";
+import type { LayoutTemplate } from "../../builder/templates/layoutTemplates";
 
-### 출력
+/**
+ * legacy LayoutTemplate → canonical reusable FrameNode 변환
+ *
+ * slot 메타:
+ *   LayoutTemplate.slots[] → FrameNode.slot = slots.map(s => s.name)
+ *   각 SlotElement (tag="Slot") → FrameNode 자식에서 제거 + descendants key 등록
+ */
+export function convertTemplateToCanonicalFrame(
+  template: LayoutTemplate,
+): FrameNode {
+  const slotNames = template.slots.map((s) => s.name);
 
-- canonical document 의 `children` 안에 reusable frame nodes (slot 메타 + descendants override 포함)
-- `_meta` 에 `schemaVersion: "composition-1.1"` (Layout 재설계 완료 시 minor 증가)
-- localStorage backup `composition-layout-redesign-backup:<projectId>:<ts>`
+  return {
+    id: template.id,
+    type: "frame",
+    name: template.name,
+    reusable: true,
+    slot: slotNames.length > 0 ? slotNames : false,
+    placeholder: template.slots.some((s) => s.required)
+      ? {
+          label: template.slots.find((s) => s.required)?.name ?? "content",
+          required: true,
+        }
+      : undefined,
+    children: flattenTemplateElements(template.elements), // Slot 노드 제거 후 구조 유지
+    descendants: buildDescendantsFromSlots(template.slots),
+  };
+}
 
-### 검증
+/**
+ * template elements 에서 tag="Slot" 제거 + 나머지 구조 보존
+ * Slot 위치는 descendants key 로 대체됨
+ */
+function flattenTemplateElements(
+  elements: LayoutTemplate["elements"],
+): FrameNode["children"] {
+  return elements
+    .filter((el) => el.tag !== "Slot")
+    .map((el) => ({
+      id: crypto.randomUUID(),
+      type: "frame" as const,
+      name: el.tag,
+      props: el.props,
+    }));
+}
 
-- dry-run + roundtrip 시각 비교 (Skia/CSS 양축 screenshot diff)
-- 사용자 confirm 후 cutover
+/**
+ * SlotProps[] → descendants override 맵 초기화
+ * 각 slot name → children: [] (빈 placeholder — 사용자가 채움)
+ */
+function buildDescendantsFromSlots(
+  slots: LayoutTemplate["slots"],
+): Record<string, { children: [] }> {
+  return Object.fromEntries(slots.map((s) => [s.name, { children: [] }]));
+}
+```
 
-## 3. 검증 시나리오 (Gates)
+**검증**: `convertTemplateToCanonicalFrame(singleColumnTemplate)` 결과의 `slot === ["header","content","footer"]` 확인.
 
-### G1 — layout migration 도구 land
+### P1-b: 사용자 IndexedDB layout-bound elements 변환
 
-- (a) layoutTemplates.ts 28 Slot 전수 자동 변환 정상
-- (b) 사용자 IndexedDB 의 layout-bound elements 가 신 frame node 안의 descendants 로 변환
-- (c) dry-run + roundtrip 시각 비교 screenshot diff 0건
+**대상**: `apps/builder/src/lib/db/migrationP911.ts` (이어서)
 
-### G2 — 시각 회귀 0 (R1 매핑)
+ADR-903 P3-E E-6 이후 IndexedDB elements 의 `parent_id` 는 이미 canonical frame node id 로 변환됨. 그러나 legacy `Layout` rows 가 IndexedDB `layouts` store 에 잔존하고, `layouts` store 의 rows 가 canonical document tree 와 동기화되지 않은 경우 자동 변환.
 
-- (a) `mockLargeDataV2` + 샘플 프로젝트 100% 시각 회귀 0 (Skia/CSS 양축)
-- (b) dual-mode 1주 운영 후 issue report 0건
+**변환 절차**:
 
-### G3 — cascade 회귀 0 (R3 매핑)
+```
+(a) db.layouts.getByProject(projectId) → legacy Layout[] 조회
+(b) selectCanonicalDocument() 로 canonical tree 에 이미 FrameNode 존재하는지 확인
+    - 존재하면: skip (ADR-903 P3 에서 이미 변환됨)
+    - 미존재하면: hoistLayoutAsReusableFrame(layout, elements) 실행
+(c) 변환된 FrameNode → document.children 에 삽입 + persistence
+(d) legacy Layout row 는 P4 완료 시점까지 보존 (read-through shim)
+```
 
-- (a) deleteLayout / cloneLayout / addPageToLayout / removePageFromLayout 50+ fixture roundtrip read-write-read 정합 0 drift
-- (b) undo/redo 정상
+**backup 전략**:
 
-### G4 — legacy adapter 0건
+```ts
+// 변환 전 자동 backup
+const backupKey = `composition-layout-redesign-backup:${projectId}:${Date.now()}`;
+localStorage.setItem(backupKey, JSON.stringify({ layouts, elements }));
+// backup 보존 기간: 30일 (이후 자동 삭제)
+```
 
-- (a) `stores/layouts.ts` 본체 0줄 또는 adapter shim 한정
-- (b) repo-wide grep `LayoutsTab` / `legacy layout_id` 결과 0
-- (c) `useLayoutsStore` 호출 site 0건
+**dry-run 모드**: `migrationP911.dryRun(projectId)` 호출 시 실제 write 없이 변환 결과만 반환. 개발 환경에서 콘솔 출력으로 검토 후 production migration.
 
-### G5 — pencil 호환 검증
+### P1-c: roundtrip 시각 비교 절차 (G1-c)
 
-- (a) 샘플 pencil `.pen` 파일 5종 import → composition canonical 변환 → roundtrip export → 원본 schema-equivalent
-- (b) ADR-903 §3.10 `imports` resolver 와 통합 가능 인터페이스
+**목적**: 변환 전후 Skia/CSS 양축 시각 동일성 검증.
 
-## 4. 후속 ADR 과의 관계
+**절차**:
 
-| ADR                                                | 관계                                                                                          |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| ADR-903 (Implemented 2026-04-26)                   | 본 ADR 가 G3 (b)/(c)/(d) 잔여 흡수                                                            |
-| ADR-903 G4 (별도 ADR 예정)                         | 본 ADR 의 신 FramesTab UI 위에 reusable/ref/override 시각 마커 + detach + reset override 추가 |
-| ADR-903 G5 `tag → type` rename (별도 ADR 예정)     | 본 ADR 와 독립 진행 가능 (tag/type 영역은 별개 SSOT)                                          |
-| ADR-903 P5-D/E/F imports/DesignKit (별도 ADR 예정) | 본 ADR 의 pencil 호환 adapter 가 P5-D 의 외부 `.pen` fetch 와 통합                            |
+```
+(1) 변환 전 Builder 스크린샷 캡처 (Chrome MCP parallel-verify skill)
+(2) migrationP911.dryRun() 로 변환 결과 메모리에 적용 (DB write 없음)
+(3) 변환 후 Builder 스크린샷 캡처 (동일 페이지 / 동일 줌 레벨)
+(4) screenshot diff: pixelmatch 사용, threshold 0.01 (1% 허용)
+(5) diff > 0 → 변환 알고리즘 수정, diff = 0 → G1-c 통과
+(6) CSS (Preview) 양축도 동일 절차
+```
 
-## 5. 결정 사항 (TBD — 후속 세션에서 채움)
+**자동화 스크립트**: `apps/builder/src/lib/db/__tests__/migration911.visual.test.ts` (신규)
 
-- pencil schema 의 어느 버전을 호환 기준으로 잡을지 (현재 `2.10` vs composition `composition-1.0`)
-- composition 확장 필드 (theme override 등) 의 namespace 정책
-- dual-mode 운영 기간 (1주 / 2주 / 사용자 비율 기반)
-- adapter shim 의 final shape — full removal vs minimal compat layer
+```ts
+// 시각 비교 테스트 (parallel-verify skill 경유)
+it("layoutTemplate singleColumn: visual diff 0 after canonical conversion", async () => {
+  const before = await captureBuilderScreenshot({
+    templateId: "single-column",
+  });
+  await migrationP911.dryRun("test-project");
+  const after = await captureBuilderScreenshot({ templateId: "single-column" });
+  const diff = pixelmatch(before, after, null, WIDTH, HEIGHT, {
+    threshold: 0.01,
+  });
+  expect(diff).toBe(0);
+});
+```
 
-## 6. 참조
+**G1 통과 조건 요약**:
+
+| 조건                                      | 측정 방법                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| (a) 28 Slot 전수 변환                     | `allTemplates.every(t => convertTemplateToCanonicalFrame(t).slot !== false)` |
+| (b) IndexedDB elements → descendants 변환 | `db.elements.getByProject().every(el => el.layout_id == null)` (P4 이후)     |
+| (c) screenshot diff 0건                   | pixelmatch diff = 0 (위 visual test)                                         |
+
+### P1 변경 파일 목록
+
+| 파일                                                            | 변경 유형 | 내용                                                                           |
+| --------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------ |
+| `apps/builder/src/lib/db/migrationP911.ts`                      | **신규**  | 변환 도구 (dryRun + apply)                                                     |
+| `apps/builder/src/lib/db/__tests__/migration911.visual.test.ts` | **신규**  | roundtrip 시각 비교 테스트                                                     |
+| `apps/builder/src/builder/templates/layoutTemplates.ts`         | **수정**  | `LayoutTemplate` 에 `canonicalFrame?: FrameNode` 병기 (P4 완료 후 legacy 제거) |
+| `apps/builder/src/lib/db/indexedDB/adapter.ts`                  | **수정**  | `migrationP911` 진입 호출 추가 (schemaVersion 체크)                            |
+
+---
+
+## Phase 2 (G2): UI 재설계 + dual-mode 운영 — 12h
+
+### 목적
+
+`LayoutsTab` → `FramesTab` 전면 재설계. canonical reusable frame authoring UI 구현. 1주 dual-mode 운영 후 legacy cutover.
+
+### P2-a: FramesTab 재설계 (canonical-native authoring)
+
+**대상**: `apps/builder/src/builder/panels/nodes/FramesTab/FramesTab.tsx`
+
+현재 `FramesTab.tsx` 는 ADR-903 P3-C 에서 `LayoutsTab` 에서 rename 되었지만, 내부 로직은 여전히 `useLayoutsStore.layouts[]` + `getByLayout()` legacy 경로. 본 Phase 에서 canonical-native 로 전환.
+
+**핵심 변경**:
+
+```tsx
+// Before (legacy bridge)
+const { layouts } = useLayoutsStore();
+const frameElements = useMemo(
+  () => elements.filter((el) => el.layout_id === currentLayoutId),
+  [elements, currentLayoutId],
+);
+
+// After (canonical-native)
+const canonicalDoc = useStore(selectCanonicalDocument);
+const reusableFrames = useMemo(
+  () =>
+    canonicalDoc.children.filter(
+      (n): n is FrameNode => n.type === "frame" && n.reusable === true,
+    ),
+  [canonicalDoc],
+);
+const selectedFrame = reusableFrames.find(
+  (f) => f.id === selectedReusableFrameId,
+);
+const frameChildren = selectedFrame?.children ?? [];
+```
+
+**UI 구조** (pencil 표준 authoring 패턴):
+
+```
+FramesTab
+├── FrameList            -- reusable frames 목록 (reusable: true 노드)
+│   ├── FrameListItem    -- 각 frame: name + slot badge + ref count
+│   └── AddFrameButton   -- createReusableFrame(name) 호출
+├── FrameDetails         -- 선택된 frame 상세 편집
+│   ├── FrameNameEditor  -- frame.name 인라인 편집
+│   ├── SlotList         -- frame.slot 메타 편집
+│   │   └── SlotItem     -- slot name + required + placeholder 편집
+│   └── DescendantsList  -- frame.descendants override 목록 (P4 이후 full UI)
+└── FrameActions
+    ├── DeleteFrame      -- canonical document mutation
+    └── DuplicateFrame   -- deep clone (descendants 포함)
+```
+
+**`createReusableFrame` 액션** (canonical document mutation):
+
+```ts
+// apps/builder/src/builder/stores/utils/frameActions.ts (신규)
+export function createReusableFrameAction(name: string): FrameNode {
+  const frameNode: FrameNode = {
+    id: crypto.randomUUID(),
+    type: "frame",
+    name,
+    reusable: true,
+    slot: false, // 초기에는 slot 없음 (사용자가 SlotList 에서 추가)
+    children: [],
+  };
+  // canonical document 에 추가
+  useStore.getState().addNodeToDocument(frameNode);
+  return frameNode;
+}
+```
+
+### P2-b: legacy editor 처리 방향
+
+| 컴포넌트                  | 현재 상태                    | P2 처리                                                                 |
+| ------------------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| `PageLayoutSelector.tsx`  | legacy `page.layout_id` 기반 | **재설계**: page RefNode 의 `ref` field 선택 UI (reusable FrameNode id) |
+| `LayoutBodyEditor.tsx`    | layout body element 편집     | **통합**: FrameDetails.DescendantsList 로 흡수 (P3 이후 폐기)           |
+| `LayoutSlugEditor.tsx`    | layout slug 편집             | **흡수**: FrameNameEditor + `metadata.slug` 필드 병기                   |
+| `LayoutPresetSelector/`   | legacy preset 선택           | **변환**: canonical reusable frame library 로 전환 (아래 P2-c)          |
+| `ElementSlotSelector.tsx` | slot 연결 UI                 | **유지**: `frame.slot` field 표시로 내부만 변경                         |
+
+**PageLayoutSelector 재설계 핵심**:
+
+```tsx
+// Before: page.layout_id → Layout[] 에서 선택
+<Select
+  items={layouts}
+  value={page.layout_id}
+  onChange={(id) => updatePage({ layout_id: id })}
+/>
+
+// After: page RefNode.ref → reusable FrameNode[] 에서 선택
+<Select
+  items={reusableFrames}
+  value={pageRefNode?.ref ?? null}
+  onChange={(frameId) => updatePageRef({ ref: frameId })}
+/>
+```
+
+### P2-c: LayoutPresetSelector → reusable frame template 라이브러리
+
+`apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/presetDefinitions.ts` 의 preset 정의를 P1 에서 변환한 canonical FrameNode 로 교체.
+
+**처리 방향**:
+
+- `LayoutPresetSelector/index.tsx` — reusable frame template 선택 UI 로 재설계
+- `presetDefinitions.ts` → `frameTemplateDefinitions.ts` rename + 내용은 P1 변환 결과 import
+- `ExistingSlotDialog.tsx` → frame.slot 편집 UI 로 재활용 (pencil slot 의미 그대로)
+- `usePresetApply.ts` → `useFrameTemplateApply.ts` rename + canonical document mutation 으로 재작성
+
+### P2-d: dual-mode 운영 절차 + cutover 신호
+
+**1주 dual-mode 병행 운영**:
+
+```
+Day 0: P2 land → FramesTab (canonical) 가 default, LayoutsTab (legacy) 가 feature flag 뒤 유지
+Day 1-7: 사용자 접근 시 FramesTab 자동 전환 + 상단 banner "프레임 UI가 업데이트됐습니다"
+Day 7: issue report 0건 확인 → legacy LayoutsTab 숨김 (완전 제거는 P4)
+```
+
+**feature flag**: `featureFlags.ts` 에 `FRAMES_TAB_CANONICAL = true` 추가.
+
+**cutover 신호** (G2 판정 기준):
+
+```bash
+# 1주 후 이 두 조건 모두 만족 시 P3 진입 허가
+grep -rn "LayoutsTab" apps/builder/src/builder/panels/ | wc -l  # -> feature flag 뒤 1건만 허용
+# + GitHub issue tracker: "frame" 또는 "layout" 관련 UI regression 0건
+```
+
+**G2 통과 조건 요약**:
+
+| 조건                        | 측정 방법                                                    |
+| --------------------------- | ------------------------------------------------------------ |
+| (a) 시각 회귀 0             | `mockLargeDataV2` + 샘플 프로젝트 parallel-verify 25/25 PASS |
+| (b) dual-mode 1주 issue 0건 | GitHub issue 수동 확인 (frame/layout 키워드)                 |
+
+### P2 변경 파일 목록
+
+| 파일                                                                  | 변경 유형     | 내용                                    |
+| --------------------------------------------------------------------- | ------------- | --------------------------------------- |
+| `panels/nodes/FramesTab/FramesTab.tsx`                                | **재작성**    | canonical-native selector 전환          |
+| `panels/nodes/FramesTab/FrameList.tsx`                                | **신규**      | reusable frame 목록 컴포넌트            |
+| `panels/nodes/FramesTab/FrameDetails.tsx`                             | **신규**      | frame 상세 편집 (name/slot/descendants) |
+| `panels/nodes/FramesTab/SlotList.tsx`                                 | **신규**      | frame.slot 메타 편집 UI                 |
+| `stores/utils/frameActions.ts`                                        | **신규**      | canonical frame CRUD actions            |
+| `panels/properties/editors/PageLayoutSelector.tsx`                    | **재작성**    | RefNode.ref 선택 UI                     |
+| `panels/properties/editors/LayoutBodyEditor.tsx`                      | **통합 대기** | FrameDetails 로 흡수 (P3 이후 폐기)     |
+| `panels/properties/editors/LayoutSlugEditor.tsx`                      | **통합 대기** | FrameNameEditor 흡수 (P3 이후 폐기)     |
+| `panels/properties/editors/LayoutPresetSelector/presetDefinitions.ts` | **수정**      | P1 canonical FrameNode import           |
+| `panels/properties/editors/LayoutPresetSelector/usePresetApply.ts`    | **재작성**    | canonical document mutation             |
+| `utils/featureFlags.ts`                                               | **수정**      | `FRAMES_TAB_CANONICAL` flag 추가        |
+
+---
+
+## Phase 3 (G3): cascade 재작성 — 8h
+
+### 목적
+
+`layoutActions.ts` 의 4 core cascade action (`deleteLayout` / `cloneLayout` / `addPageToLayout` / `removePageFromLayout`) 을 canonical FrameNode mutation 으로 완전 재작성. legacy `layout_id` 기반 cascade 완전 제거. 50+ fixture roundtrip 테스트.
+
+### P3-a: deleteLayout → deleteReusableFrame (canonical)
+
+**현재 `createDeleteLayoutAction`의 legacy 패턴**:
+
+```ts
+// 현재 (legacy): layout_id 기반 cascade
+const layoutElements = allElements.filter((el) => el.layout_id === id);
+await Promise.all(layoutElements.map((el) => db.elements.delete(el.id)));
+```
+
+**재작성 (canonical)**:
+
+```ts
+// After: canonical document tree mutation
+export function deleteReusableFrame(frameId: string): void {
+  const doc = selectCanonicalDocument(useStore.getState(), ...);
+
+  // 1. 이 frame 을 ref 하는 RefNode 목록 수집 (page 연결 해제)
+  const refNodes = collectRefNodesForFrame(doc, frameId);
+
+  // 2. 각 RefNode.ref = null 로 초기화 (page 는 orphan frame 없이 독립 존재)
+  refNodes.forEach(ref => updateNodeInDocument({ id: ref.id, ref: null }));
+
+  // 3. canonical document.children 에서 해당 FrameNode 제거
+  removeNodeFromDocument(frameId);
+
+  // 4. IndexedDB persistence (canonical document 전체 persist)
+  persistCanonicalDocument();
+
+  // 5. history record
+  recordHistory({ action: "deleteReusableFrame", frameId });
+}
+```
+
+**undo/redo 지원**: history entry 에 `{ type: "deleteReusableFrame", snapshot: FrameNode }` 저장. undo 시 `restoreFrameNode(snapshot)` 호출.
+
+### P3-b: cloneLayout → duplicateReusableFrame (canonical)
+
+deep clone — `descendants` override 맵 포함, id 전수 신규 생성.
+
+```ts
+export function duplicateReusableFrame(frameId: string): FrameNode {
+  const source = findNodeInDocument(frameId) as FrameNode;
+  const clone = deepCloneWithNewIds(source); // descendants 내부 id 도 재생성
+  clone.name = `${source.name} Copy`;
+  addNodeToDocument(clone);
+  persistCanonicalDocument();
+  return clone;
+}
+```
+
+### P3-c: addPageToLayout / removePageFromLayout → setPageFrameRef
+
+기존 `page.layout_id` 설정 대신 `pageRefNode.ref = frameId` 설정.
+
+```ts
+// addPageToLayout → setPageFrameRef
+export function setPageFrameRef(pageId: string, frameId: string | null): void {
+  const pageNode = findPageNode(pageId); // type:"frame" + metadata.type:"page"
+  updateNodeInDocument({ id: pageNode.id, ref: frameId });
+  persistCanonicalDocument();
+}
+```
+
+### P3-d: 50+ fixture roundtrip 테스트
+
+**위치**: `apps/builder/src/builder/stores/utils/__tests__/frameActions.test.ts` (신규)
+
+**테스트 시나리오** (50 fixtures):
+
+| 카테고리                  | 개수 | 시나리오                                                                                    |
+| ------------------------- | ---- | ------------------------------------------------------------------------------------------- |
+| deleteReusableFrame       | 15   | 단순 삭제 / ref 보유 frame 삭제 / descendants 있는 frame 삭제 / 중첩 frame 삭제 / undo 복원 |
+| duplicateReusableFrame    | 10   | 빈 frame / slot 있는 frame / descendants 있는 frame / 중첩 frame / name 충돌                |
+| setPageFrameRef           | 10   | 연결 / 해제 / 재연결 / null 처리 / 존재하지 않는 frame 처리                                 |
+| roundtrip read-write-read | 15   | canonical serialize → deserialize 정합 / IndexedDB persist-load 정합 / undo-redo 정합       |
+
+**roundtrip 검증 패턴**:
+
+```ts
+it("deleteReusableFrame: roundtrip read-write-read 정합", async () => {
+  const before = selectCanonicalDocument(store.getState(), ...);
+  deleteReusableFrame("frame-1");
+  const after = selectCanonicalDocument(store.getState(), ...);
+
+  // 1. frame 제거 확인
+  expect(after.children.find(n => n.id === "frame-1")).toBeUndefined();
+
+  // 2. ref 연결 해제 확인
+  const refNodes = collectAllRefNodes(after);
+  expect(refNodes.every(r => r.ref !== "frame-1")).toBe(true);
+
+  // 3. undo → 원상 복원
+  undo();
+  const restored = selectCanonicalDocument(store.getState(), ...);
+  expect(restored).toEqual(before);
+});
+```
+
+### P3-e: LayoutBodyEditor / LayoutSlugEditor 폐기
+
+P2 에서 FrameDetails 로 흡수 완료 확인 후 파일 삭제. G3 측정 명령 (아래) 에서 이 파일의 `layout_id` ref 0 확인.
+
+**G3 통과 조건 측정**:
+
+```bash
+# G3 측정: layoutActions 영역 legacy 0 확인
+grep -rnE "layout_id|currentLayoutId|useLayoutsStore|createLayout|deleteLayout" \
+  apps/builder/src/builder/stores/ \
+  --include='*.ts' --include='*.tsx' \
+  | grep -v "frameActions\|frameTemplateDefinitions\|legacy-layout-adapter" \
+  | wc -l
+# → 0
+```
+
+| 조건                                   | 측정 방법                          |
+| -------------------------------------- | ---------------------------------- |
+| (a) 50+ fixture roundtrip 정합 0 drift | `pnpm test frameActions` 전수 PASS |
+| (b) undo/redo 정상                     | undo/redo fixture 15건 PASS        |
+
+### P3 변경 파일 목록
+
+| 파일                                             | 변경 유형     | 내용                                                  |
+| ------------------------------------------------ | ------------- | ----------------------------------------------------- |
+| `stores/utils/frameActions.ts`                   | **확장**      | P2 에서 시작, P3 에서 4 cascade action 완성           |
+| `stores/utils/layoutActions.ts`                  | **대폭 수정** | legacy cascade 제거, canonical 위임                   |
+| `stores/utils/__tests__/frameActions.test.ts`    | **신규**      | 50+ fixture roundtrip 테스트                          |
+| `panels/properties/editors/LayoutBodyEditor.tsx` | **삭제**      | FrameDetails 흡수 완료 확인 후                        |
+| `panels/properties/editors/LayoutSlugEditor.tsx` | **삭제**      | FrameNameEditor 흡수 완료 확인 후                     |
+| `hooks/usePageManager.ts`                        | **수정**      | `mergedMap` 합성에서 `el.layout_id != null` 매칭 제거 |
+
+---
+
+## Phase 4 (G4): legacy 0 + 명칭 충돌 해소 — 8h
+
+### 목적
+
+`useLayoutsStore` / `Layout` entity 폐기 (canonical FrameNode 흡수 완료). Builder UI panel 명칭 충돌 해소 (`PanelSlot` → `PanelArea`). Skia rendering / workflow 영역 명칭 충돌 해소.
+
+### P4-a: useLayoutsStore 폐기
+
+ADR-903 P3-B 에서 `selectedReusableFrameId` 로 canonical selector 가 추가됨. P3 에서 cascade action 이 canonical-native 로 전환 완료. 잔존 `useLayoutsStore` call site 목록:
+
+```bash
+grep -rn "useLayoutsStore" apps/builder/src/ --include='*.ts' --include='*.tsx'
+```
+
+각 call site 를 `useStore(selectCanonicalReusableFrames)` 또는 `frameActions.*` 로 교체. 교체 완료 후 `stores/layouts.ts` 본체를 adapter shim 최소화 (ADR-903 P5-C 완전 해체 전까지는 compat re-export 1-2개만 유지).
+
+**adapter shim 최종 형태** (P4 완료 시점):
+
+```ts
+// apps/builder/src/builder/stores/layouts.ts
+// @deprecated — ADR-911 Phase 4 adapter shim. P5-C 에서 완전 제거 예정.
+// 잔존 이유: 외부 call site 제로 확인 전 compat re-export 유지.
+
+export { useSelectedReusableFrameId } from "./layoutState";
+// 나머지 export 0
+```
+
+**`Layout` entity 폐기**: `types/builder/layout.types.ts` — `Layout` interface `@deprecated` 마크 + `LegacyLayout` alias 추가. P5-C 에서 완전 제거.
+
+### P4-b: PanelSlot → PanelArea / BottomPanelSlot → BottomPanelArea (rename)
+
+**근거**: `apps/builder/src/builder/layout/PanelSlot.tsx` 의 "slot" 은 Builder UI 패널 배치 영역 의미. pencil 공식 slot (`frame.slot` field) 과 의미 충돌. 격리를 위해 rename.
+
+**rename 대상**:
+
+| Before                               | After                                | 내용                       |
+| ------------------------------------ | ------------------------------------ | -------------------------- |
+| `builder/layout/PanelSlot.tsx`       | `builder/layout/PanelArea.tsx`       | panel arrangement 컴포넌트 |
+| `builder/layout/BottomPanelSlot.tsx` | `builder/layout/BottomPanelArea.tsx` | 하단 panel 컴포넌트        |
+| `PanelSlotProps` interface           | `PanelAreaProps`                     | props 타입                 |
+| `panel-slot` CSS class               | `panel-area`                         | CSS selector               |
+
+**import 교체**: `builder/layout/index.ts` + 모든 consumer (BuilderCore 등) — `PanelSlot` → `PanelArea` import 교체.
+
+```bash
+# rename 영향 범위 확인
+grep -rn "PanelSlot\|BottomPanelSlot" apps/builder/src/ --include='*.ts' --include='*.tsx'
+# 예상: ~10-15 call sites
+```
+
+**Why**: pencil slot 의미를 composition 코드베이스에서 단일화. `PanelArea` 는 UI 패널 배치 영역 의미가 명확하고 pencil schema 의 `slot` 과 충돌 없음.
+
+### P4-c: Skia rendering / workflow `Frame` — 유지 (의미 일치)
+
+**보정 (2026-04-27 inventory 결과)**: 이전 ADR-911 본문에 포함되었던 `skiaFrameHelpers` / `workflowFrame*` rename 항목은 **철회**. 코드베이스 실측 결과 Skia/workflow 의 `Frame` 단어는 canonical FrameNode 의 시각 표현 또는 page-level FrameNode reference 로 pencil `frame` 의미와 정합.
+
+**유지 대상 (rename 불필요)**:
+
+| 위치                                                                                      | 의미                                               | 근거                             |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------- |
+| `workspace/canvas/skia/skiaFrameHelpers.ts::buildPageFrameMap`                            | page-level FrameNode → canvas viewport bounds 매핑 | canonical FrameNode 의 시각 표현 |
+| `workspace/canvas/skia/skiaFramePlan.ts` (`FrameRenderPlan`, `BuildFrameRenderPlanInput`) | canonical FrameNode → render plan 변환             | 의미 일치                        |
+| `workspace/canvas/skia/skiaFramePipeline.ts` (`buildSkiaFrameContent`)                    | render frame content build                         | 의미 일치                        |
+| `workspace/canvas/skia/types.ts` (`FrameType`, `FrameInputSnapshot`, `FrameRenderPlan`)   | render plan 타입                                   | 의미 일치                        |
+| `workspace/canvas/skia/workflowRenderer.ts::PageFrame`, `renderPageFrameHighlight`        | page-level FrameNode 시각 표현                     | 의미 일치                        |
+| `workspace/canvas/skia/workflowHitTest.ts` / `workflowMinimap.ts` 의 frame 지역 변수      | pageFrame instance reference                       | 의미 일치                        |
+| `workspace/canvas/skia/skiaWorkflowSelection.ts::PageFrameLike`                           | 동일                                               | 의미 일치                        |
+| `workspace/canvas/skia/skiaOverlayBuilder.ts::FrameCacheState`                            | render frame cache                                 | 의미 일치                        |
+| `workspace/canvas/utils/gpuProfilerCore.ts::FrameStats`                                   | RAF profiling                                      | pencil 무관                      |
+
+**참고**: ADR-911 Terminology 섹션의 "충돌 없음 — pencil 무관 또는 의미 일치" 표 참조. Decision §Terminology 명문화 (commit f4047af1).
+
+### P4-d: repo-wide grep 0 검증
+
+**G4 통과 조건**:
+
+```bash
+# (a) stores/layouts.ts 본체 — shim 외 legacy 코드 0
+grep -n "createLayout\|deleteLayout\|cloneLayout\|fetchLayouts" \
+  apps/builder/src/builder/stores/layouts.ts
+# → 0 (shim re-export 만 허용)
+
+# (b) panels 영역 legacy 0
+grep -rn "LayoutsTab\|legacy layout_id" \
+  apps/builder/src/builder/ --include='*.ts' --include='*.tsx' \
+  | grep -v "legacy-layout-adapter" | wc -l
+# → 0
+
+# (c) useLayoutsStore call site 0
+grep -rn "useLayoutsStore" apps/builder/src/ \
+  --include='*.ts' --include='*.tsx' \
+  | grep -v "stores/layouts.ts" | wc -l
+# → 0
+
+# (d) 명칭 충돌 해소 — Builder UI panel slot 만 (Skia/workflow Frame 은 의미 일치 유지)
+grep -rn "PanelSlot\|BottomPanelSlot" apps/builder/src/ \
+  --include='*.ts' --include='*.tsx' | wc -l
+# → 0 (PanelArea / BottomPanelArea 로 전환 완료)
+
+# 참고: skiaFrameHelpers / skiaFramePlan / workflowFrame* 는 canonical FrameNode
+# 의 시각 표현으로 의미 일치 — rename 대상 아님 (ADR-911 Terminology 보정)
+```
+
+### P4 변경 파일 목록
+
+| 파일                                  | 변경 유형     | 내용                                                |
+| ------------------------------------- | ------------- | --------------------------------------------------- |
+| `stores/layouts.ts`                   | **대폭 축소** | adapter shim 최소화 (export 1-2개 compat)           |
+| `types/builder/layout.types.ts`       | **수정**      | `Layout` → `LegacyLayout` @deprecated               |
+| `builder/layout/PanelSlot.tsx`        | **rename**    | → `PanelArea.tsx` (PanelSlotProps → PanelAreaProps) |
+| `builder/layout/BottomPanelSlot.tsx`  | **rename**    | → `BottomPanelArea.tsx`                             |
+| `builder/layout/index.ts`             | **수정**      | export path 업데이트                                |
+| 전체 PanelSlot consumer (~10-15 파일) | **수정**      | import `PanelArea` / `BottomPanelArea`              |
+
+**Skia/workflow `Frame` 영역은 변경 없음** — `skiaFrameHelpers` / `skiaFramePlan` / `skiaFramePipeline` / `workflowRenderer.PageFrame` / `workflowHitTest` / `workflowMinimap` 등은 canonical FrameNode 의 시각 표현으로 의미 일치 → 유지 (ADR-911 Terminology 보정 commit `f4047af1`).
+
+---
+
+## Phase 5 (G5): pencil 호환 검증 — 6h
+
+### 목적
+
+샘플 `.pen` 파일 5종 import → composition canonical document 변환 → roundtrip export → schema-equivalent 검증. ADR-914 imports resolver 와 통합 인터페이스 명세.
+
+### P5-a: pencil .pen import adapter
+
+**위치**: `apps/builder/src/adapters/pencil/` (신규 디렉토리)
+
+```
+apps/builder/src/adapters/pencil/
+├── pencilImport.ts      -- .pen → CompositionDocument 변환
+├── pencilExport.ts      -- CompositionDocument → .pen 변환
+├── pencilSchemaMap.ts   -- schema 1:1 매핑 테이블
+├── types.ts             -- PencilDocument / PencilNode 타입 (펜슬 schema)
+└── __tests__/
+    ├── pencilImport.test.ts
+    └── pencilRoundtrip.test.ts
+```
+
+**pencilSchemaMap.ts** — pencil 공식 schema ↔ composition canonical 매핑:
+
+| pencil field                                            | composition canonical                                      | 변환 규칙                  |
+| ------------------------------------------------------- | ---------------------------------------------------------- | -------------------------- |
+| `node.type: "frame"`                                    | `FrameNode.type: "frame"`                                  | 직접 매핑                  |
+| `node.type: "ref"`                                      | `RefNode.type: "ref"`                                      | 직접 매핑                  |
+| `node.reusable: boolean`                                | `FrameNode.reusable: boolean`                              | 직접 매핑                  |
+| `node.slot: false \| string[]`                          | `FrameNode.slot: false \| string[]`                        | 직접 매핑                  |
+| `node.descendants: Record<string, DescendantsOverride>` | `RefNode.descendants: Record<string, DescendantsOverride>` | 직접 매핑                  |
+| `node.clip: boolean`                                    | `FrameNode.clip: boolean`                                  | 직접 매핑                  |
+| `node.placeholder`                                      | `FrameNode.placeholder`                                    | 직접 매핑                  |
+| `document.imports`                                      | `CompositionDocument.imports`                              | 직접 매핑                  |
+| pencil 무대응 필드                                      | `metadata.composition*` namespace 격리                     | composition 확장 필드 격리 |
+
+**pencilImport.ts 핵심 변환**:
+
+```ts
+// apps/builder/src/adapters/pencil/pencilImport.ts
+
+import type { CompositionDocument } from "@composition/shared";
+import type { PencilDocument } from "./types";
+
+/**
+ * .pen 파일 (PencilDocument) → composition canonical CompositionDocument 변환
+ *
+ * 변환 원칙:
+ * 1. pencil 공식 필드는 1:1 직접 매핑 (schema 동일)
+ * 2. composition 확장 필드는 metadata.composition* namespace
+ * 3. pencil 미지원 필드 (theme override 등)는 metadata 안에 격리
+ */
+export function importPencilDocument(
+  penDoc: PencilDocument,
+): CompositionDocument {
+  return {
+    version: "composition-1.1",
+    id: penDoc.id ?? crypto.randomUUID(),
+    children: penDoc.children.map(convertPencilNode),
+    imports: penDoc.imports ?? [],
+    metadata: {
+      compositionProjectId: undefined, // import 시 신규 생성
+      compositionTheme: undefined, // composition-only 확장
+      pencilSchemaVersion: penDoc.schema, // 원본 schema version 보존
+    },
+  };
+}
+
+function convertPencilNode(node: PencilNode): CanonicalNode {
+  // pencil type 1:1 매핑
+  if (node.type === "frame") {
+    return { ...node } as FrameNode; // schema 동일 — 직접 spread
+  }
+  if (node.type === "ref") {
+    return { ...node } as RefNode; // schema 동일 — 직접 spread
+  }
+  // 기타 node type (text, image 등) — metadata 격리
+  return {
+    type: "frame",
+    id: node.id,
+    children: [],
+    metadata: { pencilOriginalType: node.type, ...node },
+  };
+}
+```
+
+### P5-b: 샘플 .pen 파일 5종 roundtrip 테스트
+
+**테스트 대상 5종** (complexity 순):
+
+| #   | 파일명                   | 특성                            |
+| --- | ------------------------ | ------------------------------- |
+| 1   | `sample-minimal.pen`     | frame 1개, slot 없음            |
+| 2   | `sample-slots.pen`       | reusable frame + 3 slot         |
+| 3   | `sample-ref.pen`         | reusable frame + 2 ref instance |
+| 4   | `sample-descendants.pen` | ref + descendants override      |
+| 5   | `sample-imports.pen`     | imports field + 외부 .pen 참조  |
+
+**roundtrip 검증**:
+
+```ts
+// apps/builder/src/adapters/pencil/__tests__/pencilRoundtrip.test.ts
+
+it.each(SAMPLE_FILES)("roundtrip: %s", async (filename) => {
+  const penDoc = await loadFixture(filename);
+
+  // import
+  const canonicalDoc = importPencilDocument(penDoc);
+
+  // export 역방향
+  const reExported = exportCanonicalToPencil(canonicalDoc);
+
+  // schema-equivalent 검증 (binary diff 가능 영역만)
+  expect(reExported.children).toEqual(
+    penDoc.children.map(stripCompositionMetadata),
+  );
+  expect(reExported.imports).toEqual(penDoc.imports);
+  // Note: id / metadata 는 composition 추가 필드이므로 strict equal 미적용
+});
+```
+
+### P5-c: ADR-914 imports resolver 통합 인터페이스 명세
+
+ADR-914 (imports + DesignKit) 는 `.pen` 파일의 `imports` field 를 resolve 하여 외부 reusable frame 을 로컬 canonical document 에 합성. 본 P5 에서 ADR-914 가 의존할 인터페이스를 정의.
+
+**통합 인터페이스 명세**:
+
+```ts
+// packages/shared/src/types/pencil-adapter.types.ts (수정)
+
+/**
+ * ADR-914 imports resolver 가 사용하는 adapter contract
+ *
+ * importResolver.register("pencil", pencilImportAdapter)
+ * 호출 후 외부 .pen 파일 fetch → canonical 변환 → 로컬 document 합성
+ */
+export interface PencilImportAdapter {
+  /**
+   * .pen 파일 경로 또는 URL → canonical CompositionDocument 변환
+   * ADR-914 importResolver.resolve(importEntry) 에서 호출
+   */
+  loadAsCanonicalDocument(source: string): Promise<CompositionDocument>;
+
+  /**
+   * 로컬 canonical document 에 외부 frame 합성
+   * imports[].resolved 가 있으면 이 함수 경유
+   */
+  mergeImportedFrames(
+    localDoc: CompositionDocument,
+    importedFrames: FrameNode[],
+    importEntry: ImportEntry,
+  ): CompositionDocument;
+}
+
+// pencilImportAdapter 구현 등록 (ADR-914 연계)
+export const pencilImportAdapter: PencilImportAdapter = {
+  async loadAsCanonicalDocument(source) {
+    const raw = await fetchPencilFile(source);
+    return importPencilDocument(raw);
+  },
+  mergeImportedFrames(localDoc, importedFrames, importEntry) {
+    // imports[].namespace 아래에 imported frames 배치
+    return {
+      ...localDoc,
+      children: [
+        ...localDoc.children,
+        ...importedFrames.map((f) => ({
+          ...f,
+          metadata: { importedFrom: importEntry.source },
+        })),
+      ],
+    };
+  },
+};
+```
+
+**ADR-914 연계 단계**: `importResolver.register("pencil", pencilImportAdapter)` 호출 (ADR-914 scope, 본 ADR 는 인터페이스 명세까지).
+
+**G5 통과 조건**:
+
+| 조건                                     | 측정 방법                            |
+| ---------------------------------------- | ------------------------------------ |
+| (a) 샘플 5종 roundtrip schema-equivalent | `pnpm test pencilRoundtrip` 5/5 PASS |
+| (b) ADR-914 통합 인터페이스 타입 정합    | `pnpm type-check` 0 error            |
+
+### P5 변경 파일 목록
+
+| 파일                                                | 변경 유형 | 내용                                             |
+| --------------------------------------------------- | --------- | ------------------------------------------------ |
+| `adapters/pencil/pencilImport.ts`                   | **신규**  | .pen → canonical 변환                            |
+| `adapters/pencil/pencilExport.ts`                   | **신규**  | canonical → .pen 역변환                          |
+| `adapters/pencil/pencilSchemaMap.ts`                | **신규**  | 1:1 매핑 테이블                                  |
+| `adapters/pencil/types.ts`                          | **신규**  | PencilDocument / PencilNode 타입                 |
+| `adapters/pencil/__tests__/pencilImport.test.ts`    | **신규**  | import unit test                                 |
+| `adapters/pencil/__tests__/pencilRoundtrip.test.ts` | **신규**  | 5종 roundtrip 검증                               |
+| `packages/shared/src/types/pencil-adapter.types.ts` | **수정**  | PencilImportAdapter interface + ADR-914 contract |
+| `adapters/pencil/fixtures/`                         | **신규**  | 샘플 .pen 파일 5종 (mocked schema)               |
+
+---
+
+## 6. 결정 사항
+
+| ID     | 결정                            | 선택                                          | 근거                                             |
+| ------ | ------------------------------- | --------------------------------------------- | ------------------------------------------------ |
+| **D1** | pencil schema 호환 버전         | 현재 pencil 최신 schema (2.x) 기준            | 사용자 결정: "pencil 공식 명칭 그대로 사용"      |
+| **D2** | composition 확장 필드 namespace | `metadata.composition*` prefix                | ADR-903 §3.10 패턴 준용, pencil 미지원 필드 격리 |
+| **D3** | dual-mode 운영 기간             | 최소 1주, 이슈 0건 확인 후 cutover            | R2 (UI 학습 부담) 완화                           |
+| **D4** | adapter shim 최종 제거 시점     | P4 완료 + G4 통과 후 (ADR-903 P5-C 와 동시)   | ADR-903 decisions.md 결정 5 준수                 |
+| **D5** | PanelArea CSS class 전환        | `panel-slot` → `panel-area` (CSS도 동시 변경) | 의미 충돌 완전 격리                              |
+
+---
+
+## 7. 후속 ADR 연계
+
+| ADR                                   | 관계                                                       | 선행 조건  |
+| ------------------------------------- | ---------------------------------------------------------- | ---------- |
+| ADR-912 (Editing Semantics UI)        | 본 ADR FramesTab 위에 reusable/ref/override 시각 마커 추가 | P2 G2 통과 |
+| ADR-913 (tag→type rename)             | 독립 진행 가능 (tag/type 영역 별개 SSOT)                   | —          |
+| ADR-914 (imports + DesignKit)         | P5 에서 정의한 `PencilImportAdapter` 구현                  | P5 G5 통과 |
+| ADR-910 (themes/variables)            | 독립 진행 가능                                             | —          |
+| ADR-903 P5-C (adapter shim 완전 해체) | 본 ADR P4 G4 통과 + adapter shim 최소화 완료               | P4 G4 통과 |
+
+---
+
+## 8. 참조
 
 - [ADR-911 본문](../911-layout-frameset-pencil-redesign.md)
-- [ADR-903 phase 3 frameset breakdown](903-phase3-frameset-breakdown.md)
+- [ADR-903 Phase 3 frameset breakdown](903-phase3-frameset-breakdown.md)
 - [ADR-903 residual grep audit](903-residual-grep-audit-2026-04-26.md)
-- [pencil app schema](https://pencil.dev/)
+- [ADR-903 phase 5 persistence imports breakdown](903-phase5-persistence-imports-breakdown.md)
+- [pencil app schema docs](https://pencil.dev/)
