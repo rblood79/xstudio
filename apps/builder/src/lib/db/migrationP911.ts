@@ -25,7 +25,7 @@ import type {
   LayoutTemplate,
   LayoutTemplateElement,
 } from "../../builder/templates/layoutTemplates";
-import type { SlotProps } from "../../types/builder/layout.types";
+import type { Layout, SlotProps } from "../../types/builder/layout.types";
 
 /**
  * legacy `LayoutTemplate` → canonical reusable `FrameNode`
@@ -104,4 +104,55 @@ export function buildDescendantsFromSlots(
   return Object.fromEntries(
     slots.map((s) => [s.name, { children: [] } as DescendantChildrenMode]),
   );
+}
+
+/**
+ * legacy `Layout` entity → canonical reusable `FrameNode` (frame shell only).
+ *
+ * **scope (P1-b1)**: pure transformation. legacy fields → metadata 보존.
+ * children / slot 정보는 후속 P1-b2 에서 layout-bound elements 처리 시 채움.
+ *
+ * **legacy 메타데이터 보존**: 출처 추적 + read-through shim 디버깅 용도로
+ * `metadata.type = "legacy-layout-hoist"` 마커 + 원본 fields (`projectId` /
+ * `description` / `slug` / `orderNum` / `notFoundPageId` / `inheritNotFound`) 를
+ * `metadata` 안에 보존. P4 G4 cleanup 시점에 dead 판정 후 제거.
+ *
+ * @example
+ * ```ts
+ * const frame = hoistLayoutAsReusableFrame({
+ *   id: "layout-1",
+ *   name: "Main",
+ *   project_id: "proj-1",
+ *   slug: "/main",
+ * });
+ * // frame.type === "frame"
+ * // frame.reusable === true
+ * // frame.metadata.type === "legacy-layout-hoist"
+ * // frame.metadata.slug === "/main"
+ * ```
+ */
+export function hoistLayoutAsReusableFrame(layout: Layout): FrameNode {
+  const metadata: { type: string; [k: string]: unknown } = {
+    type: "legacy-layout-hoist",
+    projectId: layout.project_id,
+  };
+
+  if (layout.description !== undefined)
+    metadata.description = layout.description;
+  if (layout.slug !== undefined) metadata.slug = layout.slug;
+  if (layout.order_num !== undefined) metadata.orderNum = layout.order_num;
+  if (layout.notFoundPageId !== undefined)
+    metadata.notFoundPageId = layout.notFoundPageId;
+  if (layout.inheritNotFound !== undefined)
+    metadata.inheritNotFound = layout.inheritNotFound;
+
+  return {
+    id: layout.id,
+    type: "frame",
+    name: layout.name,
+    reusable: true,
+    slot: false,
+    children: [],
+    metadata,
+  };
 }

@@ -16,6 +16,7 @@ import {
   convertTemplateToCanonicalFrame,
   flattenTemplateElements,
   buildDescendantsFromSlots,
+  hoistLayoutAsReusableFrame,
 } from "../migrationP911";
 import {
   singleColumnTemplate,
@@ -27,6 +28,7 @@ import {
   documentationTemplate,
   layoutTemplates,
 } from "../../../builder/templates/layoutTemplates";
+import type { Layout } from "../../../types/builder/layout.types";
 
 describe("ADR-911 P1-a: convertTemplateToCanonicalFrame", () => {
   describe("singleColumnTemplate", () => {
@@ -172,5 +174,94 @@ describe("ADR-911 P1-a: buildDescendantsFromSlots", () => {
   it("returns empty object for empty slots", () => {
     const result = buildDescendantsFromSlots([]);
     expect(result).toEqual({});
+  });
+});
+
+describe("ADR-911 P1-b1: hoistLayoutAsReusableFrame", () => {
+  const baseLayout: Layout = {
+    id: "layout-uuid-1",
+    name: "Main Layout",
+    project_id: "project-uuid-1",
+  };
+
+  describe("기본 변환", () => {
+    it("returns FrameNode with type='frame'", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.type).toBe("frame");
+    });
+
+    it("preserves layout id and name", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.id).toBe("layout-uuid-1");
+      expect(result.name).toBe("Main Layout");
+    });
+
+    it("sets reusable=true", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.reusable).toBe(true);
+    });
+
+    it("defaults slot=false (children/slot 정보 별도 처리)", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.slot).toBe(false);
+    });
+
+    it("defaults children=[] (elements 별도 P1-b2 처리)", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.children).toEqual([]);
+    });
+  });
+
+  describe("legacy 메타데이터 보존 (출처 추적)", () => {
+    it("metadata.type='legacy-layout-hoist' 마커 추가", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.metadata?.type).toBe("legacy-layout-hoist");
+    });
+
+    it("metadata 에 project_id 보존", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result.metadata?.projectId).toBe("project-uuid-1");
+    });
+
+    it("metadata 에 optional fields (description / slug / order_num) 보존", () => {
+      const layout: Layout = {
+        ...baseLayout,
+        description: "Main app layout shell",
+        slug: "/main",
+        order_num: 1,
+      };
+      const result = hoistLayoutAsReusableFrame(layout);
+      expect(result.metadata?.description).toBe("Main app layout shell");
+      expect(result.metadata?.slug).toBe("/main");
+      expect(result.metadata?.orderNum).toBe(1);
+    });
+
+    it("metadata 에 notFoundPageId / inheritNotFound 보존", () => {
+      const layout: Layout = {
+        ...baseLayout,
+        notFoundPageId: "not-found-uuid",
+        inheritNotFound: false,
+      };
+      const result = hoistLayoutAsReusableFrame(layout);
+      expect(result.metadata?.notFoundPageId).toBe("not-found-uuid");
+      expect(result.metadata?.inheritNotFound).toBe(false);
+    });
+
+    it("optional fields 가 undefined 면 metadata 에 포함 안함", () => {
+      const result = hoistLayoutAsReusableFrame(baseLayout);
+      expect("description" in (result.metadata ?? {})).toBe(false);
+      expect("slug" in (result.metadata ?? {})).toBe(false);
+      expect("orderNum" in (result.metadata ?? {})).toBe(false);
+    });
+  });
+
+  describe("idempotency — 같은 input 으로 같은 결과", () => {
+    it("두 번 호출 시 동일한 결과 반환 (id/name/metadata 일치)", () => {
+      const result1 = hoistLayoutAsReusableFrame(baseLayout);
+      const result2 = hoistLayoutAsReusableFrame(baseLayout);
+      expect(result1.id).toBe(result2.id);
+      expect(result1.name).toBe(result2.name);
+      expect(result1.metadata).toEqual(result2.metadata);
+    });
   });
 });
