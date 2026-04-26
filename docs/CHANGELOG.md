@@ -5,9 +5,9 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [ADR-903 P3-D-5 indirection layer + workflow edges canonical activation — 세션 33] - 2026-04-26
+## [ADR-903 P3-D-5 indirection layer + workflow edges + caller doc 도입 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 (BuilderCore + workspace canvas) 의 6 step 분해 중 step 1~5d 완료. 회귀 위험 0 indirection layer + workflow edges 경로 fully canonical activation.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 (BuilderCore + workspace canvas) 의 6 step 분해 중 step 1~5e 완료. 회귀 위험 0 indirection layer + workflow edges 경로 fully canonical + BuilderCore/useCanvasDragDropHelpers caller doc 전수 도입.
 
 ### Architecture
 
@@ -38,6 +38,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   workflow edges 경로만 fully canonical 활성화. 나머지는 helper ready, caller doc 미주입 (legacy fallback) — Step 5e 에서 도입 예정.
   - 위치: `apps/builder/src/adapters/canonical/index.ts` (helper + DFS) / `apps/builder/src/builder/main/BuilderCore.tsx` / `apps/builder/src/builder/workspace/canvas/hooks/useCanvasDragDropHelpers.ts` / `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` / `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
   - test: `apps/builder/src/adapters/canonical/__tests__/integration.test.ts` (P3-D-5 29 case)
+
+- **ADR-903 P3-D-5 step 5e — BuilderCore + useCanvasDragDropHelpers caller doc 전수 도입** (commits `32bd0d41` ~ `3302dc4c`, 3 commits):
+
+  Step 5c 의 helper 내부 canonical activation 후 caller 가 doc 미주입 상태 (legacy fallback) 였던 5 호출 지점 모두 `selectCanonicalDocument` 호출 + doc 전달.
+  - **Step 5e-1 (`32bd0d41`)**: BuilderCore L283 (initialize useEffect, 1회) — `useStore.getState()` 의 elements/pages + `useLayoutsStore.getState()` 의 layouts → doc → `belongsToLegacyLayout(el, currentLayoutId, doc)` 전달
+  - **Step 5e-2 (`04d03a09`)**: BuilderCore L457 (subscribe callback, 빈번) — editMode === "layout" 분기 안에서만 callback per-invocation 1회 doc 생성 (filter 모든 호출에서 재사용, page mode 시 cost 0)
+  - **Step 5e-3 (`3302dc4c`)**: useCanvasDragDropHelpers 3 분기 (L158/256/278) — findDropTarget callback 안 1회 + buildReorderUpdates callback 안 1회 doc 생성 → loop 내 sameLegacyOwnership 호출에서 재사용
+
+  **memoization 전략**: callback 진입 시 1회 생성 (loop 밖) → cost = O(N) per drag mouse-move (60fps 마진 안전). hook param / store selector 옵션 거부 — 결국 elements 변경 시 doc 재생성 필요해서 효과 미미 + caller API 침습.
+
+  **Why**: P3-D-5 의 indirection layer 는 단계적 회귀 0 보장이 목적이었음. Step 5e 에서 모든 caller doc 전달로 ADR-903 canonical document 진입점 5/5 fully canonical → BuilderCore + workspace canvas 영역 옵션 C default 전환 준비 완료.
+
+  **검증**: 3 commits 모두 pnpm type-check 3/3 PASS + pnpm vitest integration 43/43 PASS
+
+  **활성화 상태 갱신** (Step 5e 후):
+
+  | Caller chain                                                | doc 도입     | helper canonical |
+  | ----------------------------------------------------------- | ------------ | ---------------- |
+  | BuilderCanvas → computeLayoutGroups → getLegacyPageLayoutId | ✅ Step 5b   | ✅ Step 5d       |
+  | BuilderCore L283 (loadElements)                             | ✅ Step 5e-1 | ✅ Step 5c       |
+  | BuilderCore L457 (subscribe)                                | ✅ Step 5e-2 | ✅ Step 5c       |
+  | useCanvasDragDropHelpers 3 분기                             | ✅ Step 5e-3 | ✅ Step 5c       |
+
+  → P3-D-5 5/6 step 완료 (남은 Step 5f = invalidationPacket + LayoutGroup schema canonical, 선택)
+  - 위치: `apps/builder/src/builder/main/BuilderCore.tsx` (L8 import + L283 + L457) / `apps/builder/src/builder/workspace/canvas/hooks/useCanvasDragDropHelpers.ts` (L9-12 imports + L150 findDropTarget + L260 buildReorderUpdates)
 
 ### Documentation
 
