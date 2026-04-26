@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + P3-E E-2 (createMigrationBackup) RED + GREEN land + P3-E E-5 (getByLayout dev warning + utils TODO) RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1/E-2/E-5 GREEN 종결** (E-3/E-4 별도 PR). ADR-903 진행도 ~96% → ~99.7%.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + P3-E E-1 RED + GREEN land + P3-E E-2 (createMigrationBackup) RED + GREEN land + P3-E E-3 (runLegacyToCanonicalMigration dry-run + 50+ fixture) RED + GREEN land + P3-E E-4 (initializeProject migration entry 연결) RED + GREEN land + P3-E E-5 (getByLayout dev warning + utils TODO) RED + GREEN land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료** + **P3-E E-1/E-2/E-3/E-4/E-5 GREEN 종결**. ADR-903 진행도 ~96% → ~99.9%.
 
 ### Architecture
 
@@ -133,6 +133,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Why**: P3-E breakdown 의 E-5 sub-phase. legacy column read-only 선언 + write 차단 준비. dev-only warning 으로 caller 가 점진적으로 canonical parent 조회로 마이그레이션할 수 있도록 추적 가능. utils/ TODO 는 E-6 전환 시점의 작업 인덱스
   - 검증: `getByLayoutDeprecation.test.ts` 4/4 GREEN (RED → GREEN 전환) + `pnpm type-check` PASS + apps/builder vitest 615 PASS / 4 pre-existing FAIL (회귀 0)
   - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts` (getByLayout +9 LOC) / `apps/builder/src/utils/urlGenerator.ts` (TODO +3 LOC) / `apps/builder/src/utils/element/elementUtils.ts` (TODO +3 LOC) / `apps/builder/src/lib/db/__tests__/getByLayoutDeprecation.test.ts` (신규 ~75 LOC)
+
+- **ADR-903 P3-E E-4 RED + GREEN — initializeProject migration entry 연결 (dry-run, DB 무변경)**:
+  - `apps/builder/src/builder/hooks/usePageManager.ts` import 추가: `runLegacyToCanonicalMigration` from `../../lib/db/migration`
+  - `initializeProject` 의 `hydrateProjectSnapshot` 직후에 migration entry 블록 삽입 (~22 LOC):
+    ```ts
+    const metaRecord = await db.meta.get(projectId);
+    if (!metaRecord || metaRecord.schemaVersion === "legacy") {
+      const migrationCanonicalDoc = selectCanonicalDocument(...);
+      const migrationResult = await runLegacyToCanonicalMigration(db, projectId, { canonicalDoc: migrationCanonicalDoc });
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[ADR-903 P3-E E-4] migration dry-run: status=..., transformations=..., errors=...`);
+      }
+    }
+    ```
+  - `usePageManager.canonical.test.ts` 확장 — 3 신규 it (RED → GREEN): import / runLegacyToCanonicalMigration 호출 / db.meta.get + schemaVersion 검사 (source-pattern)
+  - **Why**: P3-E breakdown 의 E-4 sub-phase. E-3 의 `runLegacyToCanonicalMigration` 을 실 caller (`initializeProject`) 에서 dry-run 호출. `db.meta.get(projectId)` 으로 schemaVersion 검사 후 `legacy` 또는 record 부재 시만 실행. dev mode console.log 로 변환 결과 추적 — 실제 DB write 는 E-6 (write-through) 단계에서
+  - 검증: `usePageManager.canonical.test.ts` 9/9 GREEN (6 Phase C contract + 3 E-4 신규) + `pnpm type-check` PASS + apps/builder vitest 614 PASS / 4 pre-existing FAIL (회귀 0, baseline 611 → 614)
+  - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (import +1 LOC + migration entry +22 LOC) / `apps/builder/src/builder/hooks/__tests__/usePageManager.canonical.test.ts` (E-4 contract +52 LOC)
+
+- **ADR-903 P3-E E-3 RED + GREEN — runLegacyToCanonicalMigration (dry-run + 50+ fixture)**:
+  - `apps/builder/src/lib/db/migration.ts` 신규 (~120 LOC) — `runLegacyToCanonicalMigration(adapter, projectId, { canonicalDoc, dryRun? }): Promise<MigrationResult>` 함수
+    - `MigrationResult` interface: `{ status: "skipped" | "success" | "failure", reason?, backupKey?, transformations[], errors[] }`
+    - `MigrationTransformation` interface: `{ elementId, page_id_was, layout_id_was, canonicalParentId }`
+    - 흐름: `_meta.get` → 이미 `composition-1.0` 이면 status=skipped / `createMigrationBackup` 호출 → backupKey / `elements.getAll()` 전수 로드 / 각 element 의 ownership → `legacyOwnershipToCanonicalParent(canonicalDoc)` 적용 / canonical parent 미존재 시 errors push (orphan vs missing-frame 구분)
+    - **dry-run only** — DB write 0건. 실제 elements.updateMany / meta.set 은 E-6 단계
+  - `apps/builder/src/lib/db/__tests__/migration.test.ts` 신규 (~310 LOC) — 60 it (RED → GREEN):
+    - **9 core contract**: export / skipped (composition-1.0) / dry-run write 0 / backup key 반환 / layout_id transformation / page_id transformation / orphan errors / missing frame errors / status success vs failure
+    - **1 fixture count assertion**: ≥50 fixture 보장
+    - **50 fixture round-trip** (`it.each`): 15 page + 15 layout + 10 orphan + 10 missing-frame
+    - vitest jsdom 환경 명시 + `vi.mock("../migrationBackup")` (createMigrationBackup spy)
+  - **Why**: P3-E breakdown 의 E-3 sub-phase. legacy → composition-1.0 변환 정합성을 50+ fixture 로 dry-run 검증한 후 E-6 (write-through) 진입 가능. dry-run 이라 회귀 위험 0
+  - 검증: `migration.test.ts` 60/60 GREEN (RED → GREEN 전환) + `pnpm type-check` PASS + apps/builder vitest 611 PASS / 4 pre-existing FAIL (회귀 0, baseline 551 → 611)
+  - 위치: `apps/builder/src/lib/db/migration.ts` (신규) + `apps/builder/src/lib/db/__tests__/migration.test.ts` (신규)
 
 - **ADR-903 P3-E E-2 RED + GREEN — createMigrationBackup (read-only localStorage backup)**:
   - `apps/builder/src/lib/db/migrationBackup.ts` 신규 (88 LOC) — `createMigrationBackup(adapter, projectId): Promise<string>` 함수
