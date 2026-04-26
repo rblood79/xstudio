@@ -5,6 +5,40 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 라인 종료 ADR 라인업 완성 — ADR-912/913/914 Proposed — 세션 35 추가] - 2026-04-26
+
+> ADR-903 라인의 잔여 3 영역에 대한 신규 ADR 일괄 등록. 이로써 ADR-903 라인의 모든 잔여 작업이 ADR 단위로 추적 가능 — 사용자가 우선순위 결정 후 점진 진행 가능. ADR-911 (Layout/frameset, 세션 35 본 entry) 와 합쳐 4 ADR 라인업 완성.
+
+### Architecture
+
+- **ADR-912 — Editing Semantics UI 5요소 (Proposed)**:
+  - ADR-903 G4 잔여 흡수. ① reusable/ref/override 시각 마커 3종 (LayerTree/Canvas/DesignKit) + ② 양방향 탐색 액션 + ③ `detachInstance` UI + 경고 다이얼로그 + ④ `resetDescendantsOverride` + 필드별 "원본으로 복원" 버튼 + ⑤ "N개 인스턴스 영향" 미리보기
+  - 대안 A (5 요소 일괄 land) 채택 — B (5 ADR 분리, 유지보수 HIGH) / C (부분 land, 위험 절반 잔존) 기각
+  - Gate G4-A~G4-F. ADR-911 의 신 FramesTab 위에 통합 (선행 ADR 후 진입)
+  - 위치: `docs/adr/912-editing-semantics-ui-5elements.md` (Risk-First 본문 ~190 LOC). design 문서 `903-phase4-editing-semantics-breakdown.md` (637 LOC) 그대로 활용 (신규 design 작성 불필요)
+
+- **ADR-913 — `Element.tag → Element.type` rename + hybrid 6 필드 cleanup (Proposed)**:
+  - ADR-903 G5 (b)~(f) 잔여 흡수. `tag → type` 1031 ref / 154 파일 일괄 rename + hybrid 6 필드 (layout_id 258 / masterId 55 / componentRole 41 / descendants 39 / slot_name 25 / overrides 23, 합 1472 ref / 184 파일) cleanup + DB schema 전환 (DB_VERSION 8→9)
+  - 대안 A (단일 ADR + 단일 Phase 일괄) 채택 — B (2 ADR 분리, 중간 상태 복잡) / C (점진 rename, 유지보수 HIGH) 기각
+  - 안전망 3중: ast-grep 자동 도구 + tsc --noEmit gate + roundtrip 검증
+  - Gate G5-B~G5-F. ADR-911 와 독립 진행 가능 (영역 분리)
+  - 위치: `docs/adr/913-tag-type-rename-hybrid-cleanup.md` (Risk-First 본문 ~210 LOC). design 문서 `903-phase5-persistence-imports-breakdown.md` §P5-C 그대로 활용
+
+- **ADR-914 — `imports` resolver + DesignKit 통합 (Proposed)**:
+  - ADR-903 P5-D/E/F 잔여 흡수. P5-D imports fetch + parse / P5-E ResolverCache 동기 캐시 히트 + async prefetch / P5-F DesignKit 통합 결정 (Option α 무수정 + 별도 vs Option β 통합)
+  - 대안 A (단일 ADR + 3 Phase) 채택 — B (3 ADR 분리, 의존 그래프 부담) / C (imports 만 우선, 성능 MED + 사용자 혼동) 기각
+  - DesignKit 복사-적용 파이프라인 무수정 — ADR-903 R7 (DesignKit 별도 track) 명시적 수용
+  - Gate P5-D/E/F + G-Integration (ADR-911 와 통합)
+  - 위치: `docs/adr/914-imports-resolver-designkit-integration.md` (Risk-First 본문 ~180 LOC). design 문서 §P5-D/E/F 그대로 활용
+
+- **ADR-903 라인 라인업 완성**:
+  - ADR-911: Layout/frameset 완전 재설계 (pencil 호환) — G3 (b)/(c)/(d) 흡수
+  - ADR-912: Editing Semantics UI 5요소 — G4 흡수
+  - ADR-913: `tag → type` rename + hybrid cleanup — G5 (b)~(f) 흡수
+  - ADR-914: `imports` resolver + DesignKit 통합 — P5-D/E/F 흡수
+  - 4 ADR 모두 Proposed. 의존 그래프: ADR-911 (선행, P1) → ADR-912 (P2, ADR-911 후 진입) / ADR-913 (P2, ADR-911 와 독립) / ADR-914 (P3, ADR-911 후 진입)
+  - 사용자 결정에 따라 ADR-911 부터 점진 진행 → 4 ADR 모두 land 시 ADR-903 라인 완전 종료
+
 ## [ADR-903 Implemented 승격 — canonical document core 4가지 완결, 잔여 신규 ADR 분리 — 세션 35] - 2026-04-26
 
 > ADR-903 Status `Accepted → Implemented` 전환. 본 ADR 의 종결 scope = (1) canonical document 타입 + adapter 계약 land (G1) (2) Resolver 공통화 + 옵션 C default (G2) (3) frameset → reusable/ref/slot 표현 가능성 + preview/persistence sync (G3 a/e) (4) IndexedDB schema 자동 migration write-through (G5 a). 4 가지 core 완결.
