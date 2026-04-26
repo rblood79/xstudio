@@ -11,13 +11,15 @@
  * - descendants: 각 slot name → { children: [] } (빈 placeholder)
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   convertTemplateToCanonicalFrame,
   flattenTemplateElements,
   buildDescendantsFromSlots,
   hoistLayoutAsReusableFrame,
+  dryRunMigrationP911,
 } from "../migrationP911";
+import type { CompositionDocument, FrameNode } from "@composition/shared";
 import {
   singleColumnTemplate,
   twoColumnTemplate,
@@ -262,6 +264,167 @@ describe("ADR-911 P1-b1: hoistLayoutAsReusableFrame", () => {
       expect(result1.id).toBe(result2.id);
       expect(result1.name).toBe(result2.name);
       expect(result1.metadata).toEqual(result2.metadata);
+    });
+  });
+});
+
+describe("ADR-911 P1-b2: dryRunMigrationP911", () => {
+  const PROJECT_ID = "project-uuid-1";
+
+  const buildAdapter = (layouts: Layout[]) => ({
+    layouts: {
+      getByProject: async (_projectId: string) => layouts,
+    },
+  });
+
+  const buildCanonicalDoc = (
+    reusableFrameIds: string[],
+  ): CompositionDocument => ({
+    version: "composition-1.0",
+    children: reusableFrameIds.map(
+      (id): FrameNode => ({
+        id,
+        type: "frame",
+        reusable: true,
+        name: `frame-${id}`,
+      }),
+    ),
+  });
+
+  describe("status='success' (정상 dryRun)", () => {
+    it("empty layouts → status='success', hoisted=[], skipped=[]", async () => {
+      const result = await dryRunMigrationP911(
+        buildAdapter([]),
+        PROJECT_ID,
+        buildCanonicalDoc([]),
+      );
+      expect(result.status).toBe("success");
+      expect(result.hoisted).toEqual([]);
+      expect(result.skipped).toEqual([]);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("layouts 1건 + canonical 비어있음 → hoisted 1건", async () => {
+      const layout: Layout = {
+        id: "layout-1",
+        name: "Main",
+        project_id: PROJECT_ID,
+      };
+      const result = await dryRunMigrationP911(
+        buildAdapter([layout]),
+        PROJECT_ID,
+        buildCanonicalDoc([]),
+      );
+      expect(result.status).toBe("success");
+      expect(result.hoisted).toHaveLength(1);
+      expect(result.hoisted[0].id).toBe("layout-1");
+      expect(result.hoisted[0].type).toBe("frame");
+      expect(result.hoisted[0].reusable).toBe(true);
+      expect(result.skipped).toEqual([]);
+    });
+
+    it("layouts 1건 + canonical 동일 id 존재 → skipped 1건 (idempotent)", async () => {
+      const layout: Layout = {
+        id: "layout-1",
+        name: "Main",
+        project_id: PROJECT_ID,
+      };
+      const result = await dryRunMigrationP911(
+        buildAdapter([layout]),
+        PROJECT_ID,
+        buildCanonicalDoc(["layout-1"]),
+      );
+      expect(result.status).toBe("success");
+      expect(result.hoisted).toEqual([]);
+      expect(result.skipped).toEqual(["layout-1"]);
+    });
+
+    it("layouts 2건 (1 매칭 / 1 신규) → hoisted 1, skipped 1", async () => {
+      const layouts: Layout[] = [
+        { id: "layout-1", name: "Main", project_id: PROJECT_ID },
+        { id: "layout-2", name: "Auth", project_id: PROJECT_ID },
+      ];
+      const result = await dryRunMigrationP911(
+        buildAdapter(layouts),
+        PROJECT_ID,
+        buildCanonicalDoc(["layout-1"]),
+      );
+      expect(result.status).toBe("success");
+      expect(result.hoisted).toHaveLength(1);
+      expect(result.hoisted[0].id).toBe("layout-2");
+      expect(result.skipped).toEqual(["layout-1"]);
+    });
+  });
+
+  describe("canonical doc 의 frame 매칭 정확성", () => {
+    it("non-reusable frame 은 매칭 대상이 아님", async () => {
+      const layout: Layout = {
+        id: "layout-1",
+        name: "Main",
+        project_id: PROJECT_ID,
+      };
+      const docWithNonReusable: CompositionDocument = {
+        version: "composition-1.0",
+        children: [
+          {
+            id: "layout-1",
+            type: "frame",
+            // reusable: undefined → false (non-reusable)
+            name: "frame-1",
+          },
+        ],
+      };
+      const result = await dryRunMigrationP911(
+        buildAdapter([layout]),
+        PROJECT_ID,
+        docWithNonReusable,
+      );
+      // non-reusable frame 은 hoist 대상으로 카운트 (매칭 안됨)
+      expect(result.hoisted).toHaveLength(1);
+      expect(result.skipped).toEqual([]);
+    });
+
+    it("type='ref' 노드는 매칭 대상이 아님 (reusable frame 만 검사)", async () => {
+      const layout: Layout = {
+        id: "layout-1",
+        name: "Main",
+        project_id: PROJECT_ID,
+      };
+      const docWithRef: CompositionDocument = {
+        version: "composition-1.0",
+        children: [
+          {
+            id: "layout-1",
+            type: "ref",
+            name: "ref-1",
+          },
+        ],
+      };
+      const result = await dryRunMigrationP911(
+        buildAdapter([layout]),
+        PROJECT_ID,
+        docWithRef,
+      );
+      expect(result.hoisted).toHaveLength(1);
+      expect(result.skipped).toEqual([]);
+    });
+  });
+
+  describe("dryRun 보장 — adapter write 호출 없음", () => {
+    it("adapter 에 layouts.create 등 write 메서드가 호출되지 않음", async () => {
+      const writeSpy = vi.fn();
+      const adapter = {
+        layouts: {
+          getByProject: async () => [
+            { id: "layout-1", name: "Main", project_id: PROJECT_ID },
+          ],
+          create: writeSpy,
+          update: writeSpy,
+          delete: writeSpy,
+        },
+      };
+      await dryRunMigrationP911(adapter, PROJECT_ID, buildCanonicalDoc([]));
+      expect(writeSpy).not.toHaveBeenCalled();
     });
   });
 });

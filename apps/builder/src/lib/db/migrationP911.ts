@@ -18,6 +18,7 @@
 
 import type {
   CanonicalNode,
+  CompositionDocument,
   FrameNode,
   DescendantChildrenMode,
 } from "@composition/shared";
@@ -154,5 +155,97 @@ export function hoistLayoutAsReusableFrame(layout: Layout): FrameNode {
     slot: false,
     children: [],
     metadata,
+  };
+}
+
+/**
+ * P1-b2 dryRun 결과.
+ *
+ * - `hoisted`: canonical doc 에 미존재하는 layouts → `hoistLayoutAsReusableFrame` 변환 결과.
+ *   apply 단계에서 `doc.children` 에 삽입 예정.
+ * - `skipped`: canonical doc 에 이미 매칭 reusable FrameNode (동일 id) 존재 — idempotent skip.
+ * - `errors`: 변환 실패 메시지 (예: layout.id 충돌, 잘못된 metadata 등).
+ */
+export interface MigrationP911Result {
+  status: "success" | "skipped" | "failure";
+  hoisted: FrameNode[];
+  skipped: string[];
+  errors: string[];
+  reason?: string;
+}
+
+/**
+ * P1-b2 가 의존하는 IndexedDB adapter 의 minimal surface.
+ * dryRun 단계는 read-only — `layouts.getByProject` 만 사용.
+ */
+export interface MigrationP911Adapter {
+  layouts: {
+    getByProject(projectId: string): Promise<Layout[]>;
+  };
+}
+
+/**
+ * legacy `layouts` store rows 와 canonical document tree 를 비교하여
+ * **read-only dry-run** 으로 hoist 후보를 계산.
+ *
+ * 알고리즘:
+ *
+ * 1. `adapter.layouts.getByProject(projectId)` 로 legacy Layout[] 조회
+ * 2. canonical doc 의 `reusable: true` FrameNode id 수집 (Set)
+ * 3. 각 layout 에 대해:
+ *    - 매칭 reusable id 존재 → `skipped` (이미 ADR-903 P3 등에서 변환됨)
+ *    - 미존재 → `hoistLayoutAsReusableFrame(layout)` → `hoisted`
+ * 4. 결과 반환 (DB write 없음)
+ *
+ * apply 단계는 본 결과의 `hoisted[]` 를 `doc.children` 에 삽입 + persistence
+ * (P1-b3 후속 작업).
+ *
+ * @example
+ * ```ts
+ * const result = await dryRunMigrationP911(adapter, projectId, canonicalDoc);
+ * console.log(`hoist 대상: ${result.hoisted.length}, skip: ${result.skipped.length}`);
+ * if (result.errors.length === 0) {
+ *   await applyMigrationP911(adapter, result); // 후속 (P1-b3)
+ * }
+ * ```
+ */
+export async function dryRunMigrationP911(
+  adapter: MigrationP911Adapter,
+  projectId: string,
+  canonicalDoc: CompositionDocument,
+): Promise<MigrationP911Result> {
+  const layouts = await adapter.layouts.getByProject(projectId);
+
+  const reusableFrameIds = new Set<string>();
+  for (const node of canonicalDoc.children) {
+    if (node.type === "frame" && (node as FrameNode).reusable === true) {
+      reusableFrameIds.add(node.id);
+    }
+  }
+
+  const hoisted: FrameNode[] = [];
+  const skipped: string[] = [];
+  const errors: string[] = [];
+
+  for (const layout of layouts) {
+    if (reusableFrameIds.has(layout.id)) {
+      skipped.push(layout.id);
+      continue;
+    }
+
+    try {
+      hoisted.push(hoistLayoutAsReusableFrame(layout));
+    } catch (err) {
+      errors.push(
+        `layout '${layout.id}': ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  return {
+    status: errors.length > 0 ? "failure" : "success",
+    hoisted,
+    skipped,
+    errors,
   };
 }
