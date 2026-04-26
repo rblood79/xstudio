@@ -73,14 +73,50 @@ export interface Element {
   // Inspector 이벤트 핸들러 (선택적)
   events?: unknown[]; // EventHandler[] 타입 (순환 참조 방지를 위해 unknown 사용)
   // Layout/Slot System 필드
-  layout_id?: string | null; // Layout에 속한 요소면 Layout ID (page_id와 상호 배타적)
-  slot_name?: string | null; // Page 요소가 어떤 Slot에 들어갈지 (Page element에만 설정)
+  /**
+   * @deprecated ADR-911 G3 + ADR-913 Phase 5 cleanup target.
+   * canonical `parent_id` (frame node id) + `selectCanonicalDocument` 의 reusable
+   * FrameNode 매칭으로 대체. ADR-903 P3-E E-6 write-through 후 신규 데이터에서는
+   * null. Phase 4 G4 시점에 schema 자동 migration + 필드 삭제 예정.
+   */
+  layout_id?: string | null;
+  /**
+   * @deprecated ADR-911 G3 + ADR-913 Phase 5 cleanup target.
+   * canonical `descendants[slotPath].children` (RefNode override 맵) 으로 대체.
+   * Phase 5 cleanup 시 DB schema migration 으로 descendants key path 변환 후 제거.
+   */
+  slot_name?: string | null;
 
   // --- G.1: Component-Instance System ---
+  /**
+   * @deprecated ADR-913 Phase 5 cleanup target.
+   * canonical `type: "ref"` (RefNode) + `ref` field 로 대체. instance 판별은 더
+   * 이상 별도 role 필드 아님 — `node.type === "ref"` 만으로 충분.
+   */
   componentRole?: ComponentRole;
+  /**
+   * @deprecated ADR-913 Phase 5 cleanup target.
+   * canonical `RefNode.ref` (master 의 stable id) 로 대체.
+   */
   masterId?: string;
+  /**
+   * @deprecated ADR-913 Phase 5 cleanup target.
+   * canonical `RefNode.descendants[slotPath]` (DescendantOverride 3-mode) 로 대체.
+   * 기존 `Record<string, unknown>` flat shape 은 path-based 으로 변환.
+   */
   overrides?: Record<string, unknown>;
+  /**
+   * @deprecated ADR-913 Phase 5 cleanup target.
+   * canonical `RefNode.descendants` (Record<string, DescendantOverride>) 로
+   * 통합. 기존 `DescendantOverrides` (Record<string, Record<string, unknown>>)
+   * 는 `(A) DescendantPatchMode` 모드와 호환되나 (B)/(C) 모드 미지원 → migration 필요.
+   */
   descendants?: DescendantOverrides;
+  /**
+   * @deprecated ADR-913 Phase 5 cleanup target.
+   * canonical `CanonicalNode.name` (모든 노드 공통) 으로 흡수. reusable 전용 prop
+   * 이 아니라 모든 노드에 사용 가능한 sentence-case 이름.
+   */
   componentName?: string;
 
   // --- G.2: Design Variable Reference ---
