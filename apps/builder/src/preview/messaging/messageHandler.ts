@@ -44,9 +44,13 @@ export interface UpdateElementsMessage {
   type: "UPDATE_ELEMENTS";
   elements: PreviewElement[];
   // ⭐ Layout/Slot System: pageInfo도 함께 전송 (초기 로드 시 Layout 렌더링용)
+  // ADR-903 P3-D-4 Phase B: reusableFrameId 신규 field — canonical model 의
+  // reusable frame 식별자 (현 시점 layoutId 와 동일 의미). legacy layoutId 는
+  // BC 유지, Phase C/D 에서 reusableFrameId 우선 처리 추가 예정.
   pageInfo?: {
     pageId: string | null;
     layoutId: string | null;
+    reusableFrameId?: string | null;
   };
 }
 
