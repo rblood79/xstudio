@@ -110,6 +110,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 검증: pnpm vitest `usePageManager.canonical.test.ts` 3/3 GREEN (RED → GREEN) + pnpm type-check PASS + baseline 비교 4 pre-existing failures (`layoutActions.test.ts` P3-D-3 과도기 + `useFillActions.test.tsx` legacy) 본 변경 무관 확증
   - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (+8/-7 LOC)
 
+- **ADR-903 P3-E E-6 후속 sweep — ComponentsPanel + ElementSlotSelector + usePresetApply layout filter canonical 정합화** (세션 35 추가, 단순 helper 교체 가능 3 caller):
+  - `apps/builder/src/builder/panels/components/ComponentsPanel.tsx:72` — `elements.filter(el => el.layout_id === currentLayoutId)` → `belongsToLegacyLayout(el, currentLayoutId, doc)` (이미 useCallback 안 doc 도입됨)
+  - `apps/builder/src/builder/panels/properties/editors/ElementSlotSelector.tsx:40` — `el.layout_id === page.layout_id && el.tag === "Slot"` → `el.tag === "Slot" && belongsToLegacyLayout(el, page.layout_id, canonicalDoc)`. `useStore` selector 로 canonicalDoc 도입 + useMemo deps 추가
+  - `apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.ts:62` — `el.layout_id === layoutId && el.tag === "Slot"` 동일 패턴 전환. `useStore` selector 로 canonicalDoc 도입 + useMemo deps 추가
+  - helper (P3-D-5 step 5c 도입, `adapters/canonical/index.ts:469`) 는 doc 전달 시 canonical reusable frame descendants 매칭, doc 없으면 legacy fallback
+  - **Why**: E-6 write-through 활성화 후 element.layout_id 가 null 이 되어 layout 모드 / Slot 검색 결과 빈 배열 → UI 회귀 (새 element 추가 / Slot 선택 / 프리셋 적용 모두 영향). helper 는 P3-D-5 단계에서 도입됐으나 위 3 caller 는 legacy 매칭 그대로 잔존. write-through 와 짝 맞춰 정합화
+  - 회귀 위험 0 — helper legacy fallback 보존 + tag 필터 별도 유지 (도메인 의미 보존)
+  - 검증: pnpm type-check 3/3 PASS
+  - 위치: 3 파일 (+~25/-8 LOC)
+  - **잔존 follow-up (HIGH 회귀 위험, 별도 작업)**: `FramesTab.tsx` L115 (`db.elements.getByLayout` caller — composition-1.0 후 빈 배열) + L124/L142 (loadFrameElements / frameElements memo) — getByLayout 자체 canonical 변환 필요. `layoutActions.ts:256/L332` (deleteLayout / cloneLayout cascade — DB write 영향). `usePageManager.ts:528` (mergedMap 합성 — `selectCanonicalReusableFrames` + layout_id 매칭 혼용) — 비즈니스 로직 정합화 별도 ADR 또는 분석 필요
+
 - **ADR-903 P3-E E-6 RED + GREEN — write-through 활성화 + utils canonical 전환 + G3-E grep 정합화** (세션 35):
   - **migration write-through 활성화**: `runLegacyToCanonicalMigration` 의 `dryRun` 옵션 (default `true`, E-3 호환) → `false` 시 실제 DB 반영
     - `status === "success"` 분기 — `adapter.elements.updateMany` 로 모든 element 의 `parent_id` canonical 변환 + `layout_id: null` 정리, 이어서 `adapter.meta.set({ projectId, schemaVersion: "composition-1.0", migratedAt, backupKey })`
