@@ -1,6 +1,6 @@
 # ADR-903 Canonical Format Examples
 
-> 본 문서는 [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md)의 P0 산출물이다.
+> 본 문서는 [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md)의 P0 산출물이다.
 > canonical document format의 전형적인 4가지 구성 패턴을 JSON 예제로 보여준다.
 > 예제 JSON은 [breakdown 문서](903-ref-descendants-slot-composition-format-migration-plan-breakdown.md)의
 > §Canonical 포맷 초안을 정확히 재인용한 것이다.

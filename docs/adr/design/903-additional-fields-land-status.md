@@ -98,7 +98,7 @@ ADR 본문에 phase 명시가 없는 항목:
 
 ## 관련 문서
 
-- ADR-903: `docs/adr/903-ref-descendants-slot-composition-format-migration-plan.md`
+- ADR-903: `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md`
 - canonical 예제: `docs/adr/design/903-canonical-examples.md`
 - P3 sub-breakdown: `docs/adr/design/903-phase3-frameset-breakdown.md`
 - P4 sub-breakdown: `docs/adr/design/903-phase4-editing-semantics-breakdown.md`

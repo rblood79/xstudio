@@ -3,7 +3,7 @@
 > Sub-breakdown §7 의 5건 결정 필요 사항에 대한 architect 권고.
 > 사용자 confirm 후 P3-A 착수 가능.
 >
-> 참조: [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md) /
+> 참조: [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md) /
 > [sub-breakdown](903-phase3-frameset-breakdown.md) /
 > [canonical examples](903-canonical-examples.md)
 >

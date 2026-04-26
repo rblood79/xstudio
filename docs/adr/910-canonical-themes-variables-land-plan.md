@@ -142,7 +142,7 @@ ADR-903 P0 에서 canonical document root 에 4개 메타 필드 타입이 정�
 
 ## References
 
-- [ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) — ref/descendants + slot 기본 composition 포맷 전환 계획 (§3.10 themes/variables stub 발원지)
+- [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — ref/descendants + slot 기본 composition 포맷 전환 계획 (§3.10 themes/variables stub 발원지)
 - [ADR-021](completed/021-theme-system-redesign.md) — Tint + dark mode Theme 시스템
 - [ADR-022](completed/022-s2-color-token-migration.md) — S2 색상 TokenRef 체계
 - [ADR-063](063-ssot-chain-charter.md) — SSOT 체인 3-Domain 분할 charter

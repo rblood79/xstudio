@@ -6,7 +6,7 @@
 > **다음 세션 (Phase D 진입) 에서 본 시나리오를 순서대로 실행한다.**
 >
 > 부모 문서: [903-phase3d-runtime-breakdown.md](903-phase3d-runtime-breakdown.md)
-> ADR 본문: [ADR-903](../903-ref-descendants-slot-composition-format-migration-plan.md)
+> ADR 본문: [ADR-903](../completed/903-ref-descendants-slot-composition-format-migration-plan.md)
 
 ---
 

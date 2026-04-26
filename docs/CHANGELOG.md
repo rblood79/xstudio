@@ -5,6 +5,24 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 본문 archive — completed/ 이관 + 종료 처리 마감 — 세션 35 마감] - 2026-04-26
+
+> ADR-903 의 정식 종료 처리. Implemented 승격 (PR #245) 후 본문 위치는 `docs/adr/903-...md` (root) 에 남아있어 다른 Implemented ADR 와 불일치. 다른 9xx Implemented ADR (902/904~909) 는 모두 `docs/adr/completed/` 폴더에 위치 — 본 작업으로 정합. ADR-903 라인 종료 처리 마감.
+
+### Documentation
+
+- **ADR-903 본문 archive to completed/**:
+  - `docs/adr/903-ref-descendants-slot-composition-format-migration-plan.md` → `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md` (`git mv`)
+  - 본문 내부 link 5건 path 갱신 — `[ADR-063](063-...)` → `[ADR-063](./063-...)`, `[ADR-910](910-...)` → `[ADR-910](../910-...)`, `[breakdown](design/903-...)` → `[breakdown](../design/903-...)`
+  - `docs/adr/910-canonical-themes-variables-land-plan.md:145` ADR-903 reference path 갱신
+  - `docs/adr/design/` 폴더 8 파일 (`903-canonical-examples.md` / `903-phase4-editing-semantics-breakdown.md` / `903-phase3-decisions.md` / `903-phase3d-runtime-breakdown.md` / `903-p3d4-phase-c-residual.md` / `903-phase5-persistence-imports-breakdown.md` / `903-phase3e-persistence-breakdown.md` / `903-p3d4-phase-d-verification.md`) 의 ADR-903 reference path 일괄 갱신 (sed)
+  - `docs/adr/design/903-phase3-frameset-breakdown.md` 본문 — Status 표기 `Accepted → 2026-04-25` → `Implemented → 2026-04-26, completed/ 이관`
+  - `docs/adr/design/903-phase3-residual-cleanup-plan.md` / `903-additional-fields-land-status.md` code path 표기 갱신
+  - `docs/adr/README.md` ADR-903 행 link `(903-...)` → `(completed/903-...)`
+  - `docs/adr/reviews/903.md` 는 historical record 보존 (변경 없음)
+  - **Why**: ADR-903 라인의 마지막 정합 작업. 다른 9xx Implemented ADR 와 폴더 위치 일관성 + ADR-903 라인 종료 처리 명시적 마감 (Status Implemented + 본문 completed/ 위치 + 진행 로그 마지막 entry).
+  - 영향: 코드 변경 0 (docs only). reference path 정합화로 link 깨짐 0건
+
 ## [ADR-903 라인 종료 ADR 라인업 완성 — ADR-912/913/914 Proposed — 세션 35 추가] - 2026-04-26
 
 > ADR-903 라인의 잔여 3 영역에 대한 신규 ADR 일괄 등록. 이로써 ADR-903 라인의 모든 잔여 작업이 ADR 단위로 추적 가능 — 사용자가 우선순위 결정 후 점진 진행 가능. ADR-911 (Layout/frameset, 세션 35 본 entry) 와 합쳐 4 ADR 라인업 완성.
@@ -57,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 진행 로그 마지막 entry 추가 — Status 승격 + 잔여 영역의 신규 ADR 분리 결정 + 본 ADR 의 종결 scope 4가지 명문화
   - `docs/adr/README.md` ADR-903 행을 "미구현" → **"완료"** 섹션으로 이동 (Implemented 2026-04-26)
   - **Why**: ADR-903 의 핵심 (canonical document migration + resolver 공통화 + IndexedDB schema 자동 migration) 은 완결. 사용자 결정 — "기존 Layout/frameset 은 변경된 format 에 맞게 (pencil app 과 동일) 완전 재설계" 로 별도 ADR 분리 결정. G4 UI 5요소 + G5 `tag→type` rename + imports/DesignKit 도 별도 ADR 로 분리 권장 (각 design 문서 보존, 후속 세션에 ADR 작성)
-  - 위치: `docs/adr/903-ref-descendants-slot-composition-format-migration-plan.md` (Status 1줄 + 진행 로그 +5줄) / `docs/adr/README.md` (ADR-903 행 이동)
+  - 위치: `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md` (Status 1줄 + 진행 로그 +5줄, 본 archive 작업으로 completed/ 이관) / `docs/adr/README.md` (ADR-903 행 이동)
 
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
