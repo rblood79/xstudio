@@ -461,10 +461,14 @@ export const BuilderCore: React.FC = () => {
       const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
 
       // editMode에 따라 필터링
+      // ADR-903 P3-D-5 step 5e-2: doc 전달 → belongsToLegacyLayout canonical 활용.
+      // editMode === "layout" 분기에서 callback 당 1회 생성 (filter 콜에서 재사용).
       let filteredElements = state.elements;
       if (editMode === "layout" && currentLayoutId) {
+        const layouts = useLayoutsStore.getState().layouts;
+        const doc = selectCanonicalDocument(state, state.pages, layouts);
         filteredElements = state.elements.filter((el) =>
-          belongsToLegacyLayout(el, currentLayoutId),
+          belongsToLegacyLayout(el, currentLayoutId, doc),
         );
       }
 
