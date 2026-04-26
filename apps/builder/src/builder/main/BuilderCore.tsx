@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Key } from "react-aria-components";
 
 import { useStore } from "../stores";
+import { selectCanonicalDocument } from "../stores/elements";
 import { historyManager } from "../stores/history";
 import type { Element } from "../../types/core/store.types";
 import { belongsToLegacyLayout } from "@/adapters/canonical";
@@ -279,9 +280,17 @@ export const BuilderCore: React.FC = () => {
           const layoutElements = await db.elements.getByLayout(currentLayoutId);
 
           // 기존 요소들과 병합
-          const { elements, setElements } = useStore.getState();
+          // ADR-903 P3-D-5 step 5e: doc 전달 → belongsToLegacyLayout canonical 활용.
+          // initialize 진입 시 1회 실행 (memoization 불필요).
+          const { elements, pages, setElements } = useStore.getState();
+          const layouts = useLayoutsStore.getState().layouts;
+          const doc = selectCanonicalDocument(
+            useStore.getState(),
+            pages,
+            layouts,
+          );
           const otherElements = elements.filter(
-            (el) => !belongsToLegacyLayout(el, currentLayoutId),
+            (el) => !belongsToLegacyLayout(el, currentLayoutId, doc),
           );
           const mergedElements = [...otherElements, ...layoutElements];
           setElements(mergedElements);
