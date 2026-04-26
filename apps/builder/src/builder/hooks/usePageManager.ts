@@ -6,6 +6,7 @@ import { type Page, getDefaultProps } from "../../types/builder/unified.types";
 import { getDB } from "../../lib/db";
 import { useStore } from "../stores";
 import { selectCanonicalDocument } from "../stores/elements";
+import { selectCanonicalReusableFrames } from "../../adapters/canonical";
 import { useLayoutsStore } from "../stores/layouts";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
@@ -513,18 +514,18 @@ export const usePageManager = ({
           (el) => el.page_id && pageIdSet.has(el.page_id),
         );
 
-        // MINIMAL STUB: canonical resolver 호출
-        // P3-D-1 머지 후 정합화 TODO:
-        //   canonicalDoc.children(reusable FrameNode) 별 elements 추출로 교체 필요.
-        //   현재 minimal stub: layout-linked pages elements 누락 회귀 가능성 있음
-        //   (P3-D-1 머지 후 정합화 — element.layout_id 필드 정합화 선행 필요).
+        // ADR-903 P3-D-4 Phase C: canonical reusable FrameNode 기반 layout elements 추출.
+        // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout_id 매칭으로 필터링.
         const canonicalDoc = selectCanonicalDocument(
           useStore.getState(),
           storePages,
           useLayoutsStore.getState().layouts,
         );
-        void canonicalDoc; // P3-D-1 후: reusable FrameNode 기반 elements 추출에 사용
-        const layoutElements: Element[] = [];
+        const reusableFrames = selectCanonicalReusableFrames(canonicalDoc);
+        const layoutIdSet = new Set(reusableFrames.map((f) => f.id));
+        const layoutElements = allElements.filter(
+          (el) => el.layout_id != null && layoutIdSet.has(el.layout_id),
+        );
 
         const mergedMap = new Map<string, Element>();
         pageElements.forEach((el) => mergedMap.set(el.id, el));
