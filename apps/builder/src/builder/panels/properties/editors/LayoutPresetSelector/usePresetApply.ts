@@ -12,6 +12,9 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useStore } from "../../../../stores";
+import { selectCanonicalDocument } from "../../../../stores/elements";
+import { useLayoutsStore } from "../../../../stores/layouts";
+import { belongsToLegacyLayout } from "../../../../../adapters/canonical";
 import { LAYOUT_PRESETS } from "./presetDefinitions";
 import type {
   PresetApplyMode,
@@ -54,12 +57,24 @@ export function usePresetApply({
   const addComplexElement = useStore((state) => state.addComplexElement);
   const removeElement = useStore((state) => state.removeElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
+  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
+  // (write-through 후 element.layout_id null → frame descendants 매칭)
+  const canonicalDoc = useStore((state) =>
+    selectCanonicalDocument(
+      state,
+      state.pages,
+      useLayoutsStore.getState().layouts,
+    ),
+  );
 
-  // 현재 Layout의 기존 Slot 목록 (layout_id 인덱스 없으므로 elementsMap 순회)
+  // 현재 Layout의 기존 Slot 목록 (canonical reusable frame descendants + tag === "Slot")
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
-      if (el.layout_id === layoutId && el.tag === "Slot") {
+      if (
+        el.tag === "Slot" &&
+        belongsToLegacyLayout(el, layoutId, canonicalDoc)
+      ) {
         const slotChildren = childrenMap.get(el.id) ?? [];
         const slotName =
           ((el.props as { name?: string })?.name as string) || "unnamed";
@@ -81,7 +96,7 @@ export function usePresetApply({
       }
     });
     return slots;
-  }, [elementsMap, childrenMap, layoutId]);
+  }, [elementsMap, childrenMap, layoutId, canonicalDoc]);
 
   // ⭐ 현재 적용된 프리셋 감지 (body element의 appliedPreset prop에서 읽기)
   const currentPresetKey = useMemo((): string | null => {
