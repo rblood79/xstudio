@@ -411,8 +411,13 @@ export function sameLegacyOwnership(
   b: { page_id?: string | null; layout_id?: string | null },
   doc?: CompositionDocument | null,
 ): boolean {
-  // TODO(P3-D-5 step 4): doc 활용 시 legacyOwnershipToCanonicalParent(a, doc) === legacyOwnershipToCanonicalParent(b, doc)
-  void doc;
+  // ADR-903 P3-D-5 step 5c: doc 활용 시 canonical parent ID 비교
+  if (doc) {
+    const parentA = legacyOwnershipToCanonicalParent(a, doc);
+    const parentB = legacyOwnershipToCanonicalParent(b, doc);
+    return parentA === parentB;
+  }
+  // legacy fallback (doc 없거나 caller 미주입)
   return a.page_id === b.page_id && a.layout_id === b.layout_id;
 }
 
@@ -427,14 +432,40 @@ export function sameLegacyOwnership(
  * @param doc - Canonical document (optional, step 4 에서 활용)
  * @returns el 이 해당 layout 에 속하면 true
  */
+/**
+ * ADR-903 P3-D-5 step 5c — canonical document tree 의 descendants 순회 (DFS).
+ * targetId 가 root 자신 또는 root 의 자손이면 true.
+ */
+function isCanonicalDescendantOf(
+  targetId: string,
+  root: CanonicalNode,
+): boolean {
+  if (root.id === targetId) return true;
+  if (!root.children) return false;
+  for (const child of root.children) {
+    if (isCanonicalDescendantOf(targetId, child)) return true;
+  }
+  return false;
+}
+
 export function belongsToLegacyLayout(
-  el: { layout_id?: string | null },
+  el: { id?: string; layout_id?: string | null },
   layoutId: string | null | undefined,
   doc?: CompositionDocument | null,
 ): boolean {
   if (!layoutId) return false;
-  // TODO(P3-D-5 step 4): doc 활용 시 layout frame descendants 확인
-  void doc;
+  // ADR-903 P3-D-5 step 5c: doc 활용 시 layout frame descendants 확인
+  if (doc && el.id) {
+    const layoutFrameId = legacyOwnershipToCanonicalParent(
+      { page_id: null, layout_id: layoutId },
+      doc,
+    );
+    if (!layoutFrameId) return false;
+    const layoutFrame = doc.children.find((n) => n.id === layoutFrameId);
+    if (!layoutFrame) return false;
+    return isCanonicalDescendantOf(el.id, layoutFrame);
+  }
+  // legacy fallback (doc 없거나 el.id 없음)
   return el.layout_id === layoutId;
 }
 

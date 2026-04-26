@@ -503,26 +503,8 @@ describe("sameLegacyOwnership (ADR-903 P3-D-5 step 3)", () => {
     ).toBe(true);
   });
 
-  it("doc parameter 전달 시에도 legacy 결과와 동일 (Step 4 noop)", () => {
-    const doc = legacyToCanonical(
-      { elements: [], pages: [], layouts: [] },
-      deps,
-    );
-    expect(
-      sameLegacyOwnership(
-        { page_id: "P1", layout_id: null },
-        { page_id: "P1", layout_id: null },
-        doc,
-      ),
-    ).toBe(true);
-    expect(
-      sameLegacyOwnership(
-        { page_id: "P1", layout_id: null },
-        { page_id: "P2", layout_id: null },
-        doc,
-      ),
-    ).toBe(false);
-  });
+  // Step 5c canonical activation 후 doc 전달 시 의미 변경됨 — 별도 describe block
+  // ("sameLegacyOwnership canonical activation") 에서 검증.
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -561,5 +543,147 @@ describe("belongsToLegacyLayout (ADR-903 P3-D-5 step 3)", () => {
     );
     expect(belongsToLegacyLayout({ layout_id: "L1" }, "L1", doc)).toBe(true);
     expect(belongsToLegacyLayout({ layout_id: "L1" }, "L2", doc)).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// canonical lookup activation — ADR-903 P3-D-5 step 5c
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("sameLegacyOwnership canonical activation (ADR-903 P3-D-5 step 5c)", () => {
+  function makeDoc(
+    children: CanonicalNode[],
+  ): import("@composition/shared").CompositionDocument {
+    return { version: "composition-1.0", children };
+  }
+
+  it("doc 활용 시 같은 page 의 element 둘은 same ownership", () => {
+    const doc = makeDoc([{ id: "page-1", type: "frame" } as CanonicalNode]);
+    expect(
+      sameLegacyOwnership(
+        { page_id: "page-1", layout_id: null },
+        { page_id: "page-1", layout_id: null },
+        doc,
+      ),
+    ).toBe(true);
+  });
+
+  it("doc 활용 시 다른 page 의 element 둘은 different ownership", () => {
+    const doc = makeDoc([
+      { id: "page-1", type: "frame" } as CanonicalNode,
+      { id: "page-2", type: "frame" } as CanonicalNode,
+    ]);
+    expect(
+      sameLegacyOwnership(
+        { page_id: "page-1", layout_id: null },
+        { page_id: "page-2", layout_id: null },
+        doc,
+      ),
+    ).toBe(false);
+  });
+
+  it("doc 활용 시 같은 layout 의 element 둘은 same ownership", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+      } as CanonicalNode,
+    ]);
+    expect(
+      sameLegacyOwnership(
+        { page_id: null, layout_id: "L1" },
+        { page_id: null, layout_id: "L1" },
+        doc,
+      ),
+    ).toBe(true);
+  });
+
+  it("doc 활용 시 page 미존재 element 둘은 둘 다 null parent → same (canonical 동치)", () => {
+    const doc = makeDoc([]);
+    expect(
+      sameLegacyOwnership(
+        { page_id: "nonexistent-1", layout_id: null },
+        { page_id: "nonexistent-2", layout_id: null },
+        doc,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("belongsToLegacyLayout canonical activation (ADR-903 P3-D-5 step 5c)", () => {
+  function makeDoc(
+    children: CanonicalNode[],
+  ): import("@composition/shared").CompositionDocument {
+    return { version: "composition-1.0", children };
+  }
+
+  it("doc 활용 시 layout frame 직계 자손이면 true", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+        children: [{ id: "child-1", type: "Button" } as CanonicalNode],
+      } as CanonicalNode,
+    ]);
+    expect(
+      belongsToLegacyLayout({ id: "child-1", layout_id: "L1" }, "L1", doc),
+    ).toBe(true);
+  });
+
+  it("doc 활용 시 deep descendant 도 true", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+        children: [
+          {
+            id: "child-1",
+            type: "frame",
+            children: [{ id: "grandchild-1", type: "Button" } as CanonicalNode],
+          } as CanonicalNode,
+        ],
+      } as CanonicalNode,
+    ]);
+    expect(
+      belongsToLegacyLayout({ id: "grandchild-1", layout_id: "L1" }, "L1", doc),
+    ).toBe(true);
+  });
+
+  it("doc 활용 시 layout 외부 element 는 false", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+        children: [{ id: "child-1", type: "Button" } as CanonicalNode],
+      } as CanonicalNode,
+      { id: "page-1", type: "frame" } as CanonicalNode,
+    ]);
+    expect(
+      belongsToLegacyLayout({ id: "page-1", layout_id: null }, "L1", doc),
+    ).toBe(false);
+  });
+
+  it("doc 있어도 el.id 없으면 legacy fallback", () => {
+    const doc = makeDoc([
+      {
+        id: "layout-L1",
+        type: "frame",
+        reusable: true,
+      } as CanonicalNode,
+    ]);
+    // el.id 없음 → legacy fallback (layout_id 비교)
+    expect(belongsToLegacyLayout({ layout_id: "L1" }, "L1", doc)).toBe(true);
+    expect(belongsToLegacyLayout({ layout_id: "L2" }, "L1", doc)).toBe(false);
+  });
+
+  it("doc 활용 시 layout frame 미존재 → false", () => {
+    const doc = makeDoc([]);
+    expect(
+      belongsToLegacyLayout({ id: "child-1", layout_id: "L1" }, "L1", doc),
+    ).toBe(false);
   });
 });
