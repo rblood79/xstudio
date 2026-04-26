@@ -5,6 +5,46 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 1 함수 layer 진입 + Terminology 보정 + ADR-913 inventory — 세션 36 마감] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 1 (G1) Layout migration tool 함수 layer 완결** (4 commits, 4 신규 함수):
+  - `convertTemplateToCanonicalFrame(template)` — legacy `LayoutTemplate` (`tag="Slot"` 기반) → canonical reusable `FrameNode` (pencil schema). `slot: ["header","content","footer"]`, `reusable: true`, `placeholder` (slot.required 시 true). 28 layoutTemplates 전수 변환 검증
+  - `flattenTemplateElements(elements)` — `tag="Slot"` 자식 제거 + 나머지 구조 보존 (headless layout 만)
+  - `buildDescendantsFromSlots(slots)` — RefNode `descendants` 초기화 헬퍼 (각 slot name → `{ children: [] }`)
+  - `hoistLayoutAsReusableFrame(layout)` — legacy `Layout` entity → canonical reusable FrameNode. 출처 추적 위해 `metadata.type="legacy-layout-hoist"` + `projectId/description/slug/orderNum/notFoundPageId/inheritNotFound` 보존
+  - `dryRunMigrationP911(adapter, projectId, doc)` — read-only adapter 조회 + canonical doc 매칭 + hoist 후보 계산 (idempotent skip)
+  - `applyMigrationP911(doc, result)` — pure function, errors 거부 + 중복 id 방어 + immutable doc patch (persistence 분리)
+  - vitest 45/45 PASS, pnpm type-check 3/3 PASS
+  - 위치: `apps/builder/src/lib/db/migrationP911.ts` (185줄) + `__tests__/migrationP911.test.ts` (516줄)
+  - **Why**: ADR-911 Gate G1 (a) 28 Slot 전수 자동 변환 검증 토대. 후속 P1-c (roundtrip 시각 비교, Chrome MCP) + P2 (FramesTab 재설계) 의 토대 함수 제공
+
+### Documentation
+
+- **ADR-911 Terminology 섹션 추가 + 보정** (PR #249 + commit f4047af1):
+  - **PR #249**: pencil 공식 명칭 단일 표준 정책 명문화. Hard Constraint #5 추가 + Decision §Terminology 신규 섹션 (pencil 공식 점유 8 단어 + composition vs pencil 매핑 7건 + 충돌 해소 4건 + 유지 4건)
+  - **commit f4047af1 보정**: 직전 추정 "rename ~30 파일" 은 inventory 결과 과대 평가로 판정. 실측 결과:
+    - **rename 2 파일** — `PanelSlot.tsx → PanelArea.tsx` / `BottomPanelSlot.tsx → BottomPanelArea.tsx` (Builder UI panel slot 의미 격리)
+    - **유지 (의미 일치)** — `skiaFrameHelpers` / `skiaFramePlan` / `skiaFramePipeline` / `workflowRenderer.PageFrame` / `workflowHitTest` / `workflowMinimap` / `skiaWorkflowSelection.PageFrameLike` 모두 canonical FrameNode 의 시각 표현으로 pencil `frame` 의미와 정합
+    - **유지 (pencil 무관)** — `MaskedFrame` / `useFrameCallback` (RAF) / `iframe` (HTML) / Taffy WASM `canvas/layout/` / CSS `styles/layout/` / Builder UI `builder/layout/` / Inspector `useLayout*` / DataTablePreset / cssComponentPresets
+  - Gate G4 (d) 통과 조건 보정: `skiaFrameHelpers/workflowFrame*` rename → `PanelSlot/BottomPanelSlot` rename 으로 변경
+  - **Why**: 사용자 결정 (2026-04-27): "pencil 의 기능 명칭 그대로 사용해도 된다 — 강제로 맞추거나 alias 만들 필요 없다." composition `Frame` 단어가 4가지 의미로 분산된 우려 → inventory 후 실 충돌 영역 = Builder UI panel slot 만 (2 파일)
+- **ADR-911 design breakdown 작성** (843줄, Team B architect agent):
+  - `docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md` 신규
+  - 5 Phase 분해: P1 (G1 migration tool 8h) / P2 (G2 FramesTab 재설계 12h) / P3 (G3 cascade 재작성 8h) / P4 (G4 legacy 0 + PanelSlot rename 8h) / P5 (G5 pencil 호환 6h, adapters/pencil/ 신규)
+  - 각 Phase 별 파일 변경 목록 + 마이그레이션 도구 + 검증 시나리오 + 코드 예시
+  - Skia rename 철회 보정 반영 (P4-c 섹션 — 의미 일치 유지로 변경)
+- **ADR-913 inventory 분석 보고서** (627줄, Team C Explore agent):
+  - `docs/adr/design/913-tag-type-rename-inventory.md` 신규
+  - **실 count 46% 낮음**: 556 source refs (apps/builder/src + packages/) vs ADR-913 baseline 1031
+  - **77% 자동 rename 가능**: 306 discriminator (if/switch) + 380 simple property access. AST-Grep ~90% 성공률
+  - **23% (146 refs) 수동 검토**: generic constraint 7 cases / mapped type 0 / DataBinding.type / FieldDefinition.type 와의 scope 분리 검증
+  - 6 카테고리 분류: types 11 / canvas 25 / panels 44 / stores 17 / utilities 28 / 기타 18
+  - DB schema 영역 분석 (DB_VERSION 8→9 read-through/write-through/backup 3-phase)
+  - hybrid 6 필드 cleanup 매핑: layout_id (ADR-911 분담) / masterId+componentRole (canonical type:"ref") / slot_name+overrides (descendants 흡수)
+  - 5 Phase 분해 제안 + 작업 시간 (총 6 days) + risk grade (Phase 4 HIGH = DB migration)
+
 ## [ADR-903 P3-E E-6 후속 sweep 회귀 fix — ElementSlotSelector + usePresetApply infinite loop — 세션 36] - 2026-04-27
 
 ### Bug Fixes
