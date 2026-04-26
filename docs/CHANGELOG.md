@@ -5,7 +5,23 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [ADR-911 Phase 1 함수 layer 진입 + Terminology 보정 + ADR-913 inventory — 세션 36 마감] - 2026-04-27
+## [ADR-911 Phase 1 함수 layer 진입 + Terminology 보정 + ADR-913 inventory + P1-c dangling cleanup fix — 세션 36 마감] - 2026-04-27
+
+### Bug Fixes
+
+- **ADR-903 P3-E migration dangling reference graceful cleanup** (P1-c roundtrip 검증으로 발견):
+  - 증상: dev 환경 console `[ADR-903 P3-E E-4] migration dry-run: status=failure, transformations=2, errors=1` 무한 반복 — composition-1.0 승격 영구 차단
+  - **Why**: dev DB 의 element 가 dangling `layout_id` (layouts store 에 매칭 row 없음) 보유. legacy cascade bug (layout 삭제 시 element layout_id null 처리 누락) 잔여. ADR-911 G3 cascade 재작성 (Phase 3) 의 R3 risk 가 정확히 이 시나리오 — ADR-911 land 까지는 graceful degrade 가 안전
+  - **Root cause**: `runLegacyToCanonicalMigration` 의 `canonicalParentId === null` 분기가 dangling/orphan 둘 다 errors push → status=failure → write-through skip → 매 reload 무한 재시도
+  - 수정: dangling reference (page_id 또는 layout_id 있지만 canonical 매칭 실패) 는 errors 가 아닌 `orphanCleanups` 배열로 분리 + `console.warn` 으로 보고. 진짜 orphan (page_id=null + layout_id=null) 만 errors 유지. status=success 진입 시 write-through 가 dangling element 의 parent_id=null + layout_id=null 강등 (transformation 매핑 그대로 통과)
+  - 새 console.warn: `[ADR-903 P3-E E-6] dangling reference cleanup for project <id>: N elements`
+  - 위치: `apps/builder/src/lib/db/migration.ts` (+34/-6 LOC) + `__tests__/migration.test.ts` (Fixture interface 에 `expectDanglingCleanup` 마커 추가, 10 missing-frame fixture 가 graceful cleanup 으로 통과)
+  - 검증: vitest 60/60 PASS (migration.test.ts) + 126/126 PASS (전체 db tests, 7 files) + pnpm type-check 3/3 PASS + Chrome MCP P1-c 실 검증 (status=failure → status=success 전환 확인)
+- **ADR-913 Phase 0-α — `unified.types.ts` Element legacy fields `@deprecated` 마킹**:
+  - 7 fields: layout_id / slot_name / componentRole / masterId / overrides / descendants / componentName
+  - 각 필드에 cleanup target ADR (ADR-911 G3 또는 ADR-913 Phase 5) + 대체 canonical schema (FrameNode / RefNode / DescendantOverride 3-mode) + migration 계획 명시
+  - 위치: `apps/builder/src/types/builder/unified.types.ts` (+38/-2 LOC). runtime 영향 0 (JSDoc 만)
+  - 후속 (Phase 0-β skip): `packages/shared/src/types/element.types.ts` 는 이미 ADR-903 reference deprecated 보유 — ADR-913 reference 보강은 cleanup 시점에 자연 처리
 
 ### Architecture
 
