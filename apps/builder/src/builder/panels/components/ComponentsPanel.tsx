@@ -15,6 +15,7 @@ import { useCallback } from "react";
 import type { PanelProps } from "../core/types";
 import ComponentList from "./ComponentList";
 import { useStore } from "../../stores";
+import { selectCanonicalDocument } from "../../stores/elements";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useElementCreator } from "@/builder/hooks";
@@ -50,56 +51,85 @@ function ComponentsPanelContent() {
 
   // handleAddElement wrapper - 필요한 모든 데이터 자동 전달
   // ⭐ Layout/Slot System: Page 모드와 Layout 모드 분기 처리
-  const handleAddElement = useCallback(async (tag: string, parentId?: string) => {
-    // 🆕 콜백 실행 시점에 최신 값을 가져옴 (구독 대신 getState 사용)
-    const elements = useStore.getState().elements;
-    const getPageElements = useStore.getState().getPageElements;
+  const handleAddElement = useCallback(
+    async (tag: string, parentId?: string) => {
+      // 🆕 콜백 실행 시점에 최신 값을 가져옴 (구독 대신 getState 사용)
+      const state = useStore.getState();
+      const elements = state.elements;
+      const getPageElements = state.getPageElements;
+      // ADR-903 P3-E E-6: layout 모드에서 body element 변환에 doc 필수.
+      const layoutsState = useLayoutsStore.getState();
+      const doc = selectCanonicalDocument(
+        state,
+        state.pages,
+        layoutsState.layouts,
+      );
 
-    // Layout 모드인 경우
-    if (editMode === "layout" && currentLayoutId) {
-      // 현재 Layout의 요소만 필터링
-      const layoutElements = elements.filter((el) => el.layout_id === currentLayoutId);
+      // Layout 모드인 경우
+      if (editMode === "layout" && currentLayoutId) {
+        // 현재 Layout의 요소만 필터링
+        const layoutElements = elements.filter(
+          (el) => el.layout_id === currentLayoutId,
+        );
 
-      // ⭐ Layout/Slot System: selectedElementId가 Layout 요소인지 검증
-      // Page body나 다른 Layout 요소가 선택되어 있으면 무시하고 null 전달
-      let validSelectedElementId: string | null = null;
-      if (selectedElementId) {
-        const isLayoutElement = layoutElements.some((el) => el.id === selectedElementId);
-        if (isLayoutElement) {
-          validSelectedElementId = selectedElementId;
-        } else {
-          console.log(`⚠️ [ComponentsPanel] selectedElementId(${selectedElementId?.slice(0, 8)})가 현재 Layout 요소가 아님 - 무시`);
+        // ⭐ Layout/Slot System: selectedElementId가 Layout 요소인지 검증
+        // Page body나 다른 Layout 요소가 선택되어 있으면 무시하고 null 전달
+        let validSelectedElementId: string | null = null;
+        if (selectedElementId) {
+          const isLayoutElement = layoutElements.some(
+            (el) => el.id === selectedElementId,
+          );
+          if (isLayoutElement) {
+            validSelectedElementId = selectedElementId;
+          } else {
+            console.log(
+              `⚠️ [ComponentsPanel] selectedElementId(${selectedElementId?.slice(0, 8)})가 현재 Layout 요소가 아님 - 무시`,
+            );
+          }
         }
+
+        console.log(
+          `🏗️ [ComponentsPanel] Layout 모드: ${tag}를 Layout ${currentLayoutId?.slice(0, 8)}에 추가 (parent: ${(parentId || validSelectedElementId)?.slice(0, 8) || "auto"})`,
+        );
+        await rawHandleAddElement(
+          tag,
+          "", // currentPageId - layout 모드에서는 사용 안함
+          parentId || validSelectedElementId,
+          layoutElements,
+          addElement,
+          currentLayoutId, // layoutId 전달
+          doc,
+        );
+        return;
       }
 
-      console.log(`🏗️ [ComponentsPanel] Layout 모드: ${tag}를 Layout ${currentLayoutId?.slice(0, 8)}에 추가 (parent: ${(parentId || validSelectedElementId)?.slice(0, 8) || 'auto'})`);
+      // Page 모드인 경우
+      if (!currentPageId) {
+        console.error("현재 페이지가 없습니다");
+        return;
+      }
+
+      // 🆕 O(1) 인덱스 기반 조회
+      const pageElements = getPageElements(currentPageId);
       await rawHandleAddElement(
         tag,
-        "", // currentPageId - layout 모드에서는 사용 안함
-        parentId || validSelectedElementId,
-        layoutElements,
+        currentPageId,
+        parentId || selectedElementId,
+        pageElements,
         addElement,
-        currentLayoutId // layoutId 전달
+        null,
+        doc,
       );
-      return;
-    }
-
-    // Page 모드인 경우
-    if (!currentPageId) {
-      console.error("현재 페이지가 없습니다");
-      return;
-    }
-
-    // 🆕 O(1) 인덱스 기반 조회
-    const pageElements = getPageElements(currentPageId);
-    await rawHandleAddElement(
-      tag,
+    },
+    [
       currentPageId,
-      parentId || selectedElementId,
-      pageElements,
+      currentLayoutId,
+      editMode,
+      selectedElementId,
       addElement,
-    );
-  }, [currentPageId, currentLayoutId, editMode, selectedElementId, addElement, rawHandleAddElement]);
+      rawHandleAddElement,
+    ],
+  );
 
   return (
     <ComponentList

@@ -1,13 +1,10 @@
 /**
- * ADR-903 P3-E E-5 — getByLayout dev warning + utils/ TODO 주석
+ * ADR-903 P3-E E-5/E-6 — getByLayout dev warning + utils/ canonical 전환
  *
- * legacy column (`element.layout_id`) read-only 선언 단계. write 차단은 E-6
- * 에서. 본 단계는:
- * - `adapter.ts:getByLayout` 에 dev mode console.warn 추가 (deprecated 사용 추적)
- * - `utils/urlGenerator.ts:219` 및 `utils/element/elementUtils.ts:44` 의
- *   `layout_id` 참조에 `TODO(P3-E)` 주석 추가
+ * E-5: `adapter.ts:getByLayout` 에 dev console.warn 추가 + utils/ TODO 주석.
+ * E-6: utils/ 의 `layout_id` 참조 자체가 제거됨 → TODO 주석 검증 → 부재 검증으로 전환.
  *
- * 회귀 위험 0 — 모두 source-pattern 검증 (실제 동작 변경 없음).
+ * 회귀 위험 0 — 모두 source-pattern 검증.
  */
 
 import { describe, it, expect } from "vitest";
@@ -43,18 +40,17 @@ describe("P3-E E-5: getByLayout dev warning + utils TODO", () => {
     );
   });
 
-  // Test 3: urlGenerator.ts L219 근처의 layout_id 참조에 TODO(P3-E) 주석
-  it("urlGenerator.ts 의 layout_id 참조 직전 또는 인접 라인에 TODO(P3-E) 주석이 있다", async () => {
+  // Test 3: urlGenerator.ts 에 page.layout_id 직접 참조가 더 이상 없다 (E-6 negative assertion)
+  it("urlGenerator.ts 에 page.layout_id 직접 참조가 더 이상 존재하지 않는다 (E-6 후)", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const filePath = path.resolve(__dirname, "../../../utils/urlGenerator.ts");
     const source = await fs.readFile(filePath, "utf-8");
-    // TODO(P3-E)... canonical 키워드 + 그 다음 200자 안에 page.layout_id 등장
-    expect(source).toMatch(/TODO\(P3-E\)[\s\S]{0,200}page\.layout_id/);
+    expect(source).not.toMatch(/page\.layout_id/);
   });
 
-  // Test 4: elementUtils.ts L44 근처의 layout_id 참조에 TODO(P3-E) 주석
-  it("elementUtils.ts 의 layout_id 참조 직전 또는 인접 라인에 TODO(P3-E) 주석이 있다", async () => {
+  // Test 4: elementUtils.ts 에 el.layout_id 직접 참조가 더 이상 없다 (E-6 negative assertion)
+  it("elementUtils.ts 에 el.layout_id 직접 참조가 더 이상 존재하지 않는다 (E-6 후)", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const filePath = path.resolve(
@@ -62,7 +58,6 @@ describe("P3-E E-5: getByLayout dev warning + utils TODO", () => {
       "../../../utils/element/elementUtils.ts",
     );
     const source = await fs.readFile(filePath, "utf-8");
-    // TODO(P3-E)... + 그 다음 200자 안에 el.layout_id 등장
-    expect(source).toMatch(/TODO\(P3-E\)[\s\S]{0,200}el\.layout_id/);
+    expect(source).not.toMatch(/el\.layout_id/);
   });
 });

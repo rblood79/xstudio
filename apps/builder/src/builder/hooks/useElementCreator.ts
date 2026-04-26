@@ -1,4 +1,5 @@
 import { useCallback, useRef, useEffect } from "react";
+import type { CompositionDocument } from "@composition/shared";
 import {
   Element,
   ComponentElementProps,
@@ -20,7 +21,8 @@ export interface UseElementCreatorReturn {
     selectedElementId: string | null,
     elements: Element[],
     addElement: (element: Element) => void,
-    layoutId?: string | null, // Layout 모드용 - page_id 대신 layout_id 사용
+    layoutId: string | null | undefined,
+    doc: CompositionDocument,
   ) => Promise<void>;
   getPerformanceStats: () => {
     cacheSize: number;
@@ -86,7 +88,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
       selectedElementId: string | null,
       elements: Element[],
       addElement: (element: Element) => void,
-      layoutId?: string | null, // Layout 모드용
+      layoutId: string | null | undefined,
+      doc: CompositionDocument,
     ) => {
       if (isProcessingRef.current) return;
       isProcessingRef.current = true;
@@ -131,6 +134,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 currentPageId,
                 elements,
                 layoutId, // ⭐ Layout/Slot System: layoutId 전달
+                doc,
               );
               // 증분 업데이트로 캐시 최적화
               const updatedElements = [...elements, ...result.allElements];
@@ -148,6 +152,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                   elements,
                   currentPageId || null,
                   layoutId || null,
+                  doc,
                 );
               }
 

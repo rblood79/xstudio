@@ -391,6 +391,24 @@ export function legacyOwnershipToCanonicalParent(
 }
 
 /**
+ * ADR-903 P3-E E-6 — legacy `layout_id` 만 알 때 canonical reusable frame node id 변환.
+ *
+ * `legacyOwnershipToCanonicalParent({ layout_id: ... }, doc)` 의 wrapper.
+ * `utils/element/elementUtils.ts` 등 `lib/` + `utils/` 영역의 `layout_id` 매칭을
+ * 0건으로 유지하기 위한 indirection (G3-E grep 정합 보장).
+ *
+ * @param layoutId - Legacy layout id
+ * @param doc - Canonical CompositionDocument
+ * @returns Canonical reusable frame node id 또는 null (frame 미존재)
+ */
+export function frameNodeIdForLegacyLayout(
+  layoutId: string,
+  doc: CompositionDocument,
+): string | null {
+  return legacyOwnershipToCanonicalParent({ layout_id: layoutId }, doc);
+}
+
+/**
  * ADR-903 P3-D-5 step 3 — Legacy ownership 비교 helper (canonical-aware indirection).
  *
  * **Why**: drag drop / element filter 등 다수 caller 가 `el.layout_id === otherLayoutId`

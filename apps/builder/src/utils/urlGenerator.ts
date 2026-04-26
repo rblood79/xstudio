@@ -197,46 +197,6 @@ export function getNestingDepth(pageId: string, allPages: Page[]): number {
 }
 
 // ============================================
-// URL Validation & Conflict Detection
-// ============================================
-
-/**
- * URL 중복 검사
- *
- * 새로운 페이지 URL이 기존 페이지들과 충돌하는지 확인합니다.
- *
- * @param newUrl - 검사할 새 URL
- * @param allPages - 전체 페이지 목록
- * @param layouts - 전체 레이아웃 목록 (Layout slug 적용 시 필요)
- * @param excludePageId - 제외할 페이지 ID (수정 시 자기 자신 제외)
- * @returns 충돌하는 페이지 또는 null
- */
-export function findUrlConflict(
-  newUrl: string,
-  allPages: Page[],
-  layouts: Layout[] = [],
-  excludePageId?: string,
-): Page | null {
-  for (const page of allPages) {
-    if (excludePageId && page.id === excludePageId) continue;
-
-    // TODO(P3-E): canonical parent 기반으로 교체 — page.layout_id legacy
-    // ownership marker 사용. write-through 전환 (E-6) 후 canonical document
-    // 의 reusable frame ID 매핑으로 변경 예정.
-    const layout = page.layout_id
-      ? layouts.find((l) => l.id === page.layout_id)
-      : null;
-    const existingUrl = generatePageUrl({ page, layout, allPages });
-
-    if (existingUrl === newUrl) {
-      return page;
-    }
-  }
-
-  return null;
-}
-
-// ============================================
 // Dynamic Route Parameter Support
 // ============================================
 

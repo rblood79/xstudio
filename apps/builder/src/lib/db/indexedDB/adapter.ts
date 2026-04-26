@@ -761,19 +761,24 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     /**
      * @deprecated ADR-903 P3-E: migration script 완료 후 제거 예정.
      * canonical document 기반 layout elements 조회 (`selectCanonicalReusableFrames`
-     * + `allElements.filter(layout_id 매칭)`) 로 대체. legacy ownership marker
+     * + `allElements.filter(parent_id 매칭)`) 로 대체. legacy ownership marker
      * (`element.layout_id`) 의존을 제거하기 위함.
      */
     getByLayout: async (layoutId: string): Promise<Element[]> => {
       // ADR-903 P3-E E-5: deprecated 사용 추적 — dev mode 에서 console.warn 발생.
-      // E-6 (write-through 전환) 후 caller 들이 canonical parent 기반 조회로 마이그레이션
-      // 완료되면 본 메서드 자체를 제거.
       if (process.env.NODE_ENV !== "production") {
         console.warn(
           `[IndexedDB] getByLayout(${layoutId}) — @deprecated ADR-903 P3-E. canonical parent 기반 조회 (selectCanonicalReusableFrames + allElements.filter) 사용 권장. migration script 호출 경로는 예외.`,
         );
       }
-      console.log(`📥 [IndexedDB] getByLayout 호출: layoutId=${layoutId}`);
+      // ADR-903 P3-E E-6: composition-1.0 migration 완료된 프로젝트가 1개라도 있으면
+      // legacy `layout_id` index 는 빈 배열이 정답 (parent_id 가 canonical frame.id).
+      // canonical path 강제 — caller 들이 parent_id 기반 조회로 마이그레이션해야 한다.
+      const allMeta = await this.getAllFromStore<MetaRecord>("_meta");
+      if (allMeta.some((m) => m.schemaVersion === "composition-1.0")) {
+        return [];
+      }
+      // legacy fallback (composition-1.0 진입 전 프로젝트만 해당)
       const elements = await this.getAllByIndex<Element>(
         "elements",
         "layout_id",
