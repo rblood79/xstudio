@@ -29,22 +29,22 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
   const element = useStore((state) => state.elementsMap.get(elementId));
   const elementsMap = useStore((state) => state.elementsMap);
   const pages = useStore((state) => state.pages);
-  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
-  // (write-through 후 element.layout_id null → frame descendants 매칭으로 변경)
-  const canonicalDoc = useStore((state) =>
-    selectCanonicalDocument(
-      state,
-      state.pages,
-      useLayoutsStore.getState().layouts,
-    ),
-  );
 
   // Element의 Page → Layout → Slots 찾기
+  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
+  // (write-through 후 element.layout_id null → frame descendants 매칭).
+  // doc 을 useStore selector 로 구독하지 않고 useMemo 안에서 lazy 생성 —
+  // selectCanonicalDocument 가 매 호출마다 새 객체를 반환하면 useSyncExternalStore
+  // cache miss 로 무한 루프 (Maximum update depth) 발생.
   const slots = useMemo((): SlotInfo[] => {
     if (!element?.page_id) return [];
 
     const page = pages.find((p) => p.id === element.page_id);
     if (!page?.layout_id) return [];
+
+    const state = useStore.getState();
+    const layouts = useLayoutsStore.getState().layouts;
+    const canonicalDoc = selectCanonicalDocument(state, pages, layouts);
 
     // Layout의 Slot elements 찾기 (canonical reusable frame descendants + tag === "Slot")
     const slotElements: (typeof element)[] = [];
@@ -68,7 +68,7 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
         elementId: el.id,
       };
     });
-  }, [element, elementsMap, pages, canonicalDoc]);
+  }, [element, elementsMap, pages]);
 
   // ⭐ React Hook 규칙: useMemo는 조기 리턴 전에 호출해야 함
   // Root element만 Slot 선택 가능

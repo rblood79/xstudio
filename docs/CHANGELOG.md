@@ -5,6 +5,21 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 P3-E E-6 후속 sweep 회귀 fix — ElementSlotSelector + usePresetApply infinite loop — 세션 36] - 2026-04-27
+
+### Bug Fixes
+
+- **ElementSlotSelector + usePresetApply infinite loop 회귀 fix** (HIGH 위험 회귀):
+  - 증상: 사용자가 ElementSlotSelector 또는 LayoutPresetSelector 마운트 시 console error `The result of getSnapshot should be cached to avoid an infinite loop` + `Maximum update depth exceeded`
+  - **Why**: 세션 35 의 P3-E E-6 후속 sweep (PR #244) 에서 두 컴포넌트에 `const canonicalDoc = useStore((state) => selectCanonicalDocument(state, state.pages, useLayoutsStore.getState().layouts))` 를 추가했음. 그러나 `selectCanonicalDocument` 가 호출마다 새 객체를 반환 → Zustand v5 + React useSyncExternalStore 가 reference equality 로 cache 판정 → 매번 cache miss → forceStoreRerender 무한 반복 → Maximum update depth 에러
+  - **Root cause**: useStore selector 안에서 새 객체 반환 함수 호출 금지 — useStore selector 는 매 렌더 시 호출되므로 referential 안정성 필요
+  - 수정: doc 을 useStore selector 로 구독하지 않고 **useMemo 안에서 lazy 생성** 으로 전환. ComponentsPanel.tsx 패턴 (callback 안에서 `useStore.getState()` + `useLayoutsStore.getState()`) 동일 적용
+    - `apps/builder/src/builder/panels/properties/editors/ElementSlotSelector.tsx` — 별도 `canonicalDoc` 선언 제거 + `slots` useMemo 안에서 `useStore.getState()` + `useLayoutsStore.getState().layouts` + `selectCanonicalDocument(...)` 호출 + deps 에서 `canonicalDoc` 제거 (`[element, elementsMap, pages]` 만 유지)
+    - `apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.ts` — 동일 패턴 (`existingSlots` useMemo 안에서 lazy 생성, deps `[elementsMap, childrenMap, layoutId]`)
+  - 회귀 위험 0 — useMemo 안에서 호출도 매번 새 doc 객체 생성하지만, useMemo 가 deps 기반으로 캐시. selector 안에서 매번 호출되는 패턴과 다름
+  - 검증: pnpm type-check 3/3 PASS
+  - 위치: 2 파일 (+~6/-13 LOC)
+
 ## [ADR-903 본문 archive — completed/ 이관 + 종료 처리 마감 — 세션 35 마감] - 2026-04-26
 
 > ADR-903 의 정식 종료 처리. Implemented 승격 (PR #245) 후 본문 위치는 `docs/adr/903-...md` (root) 에 남아있어 다른 Implemented ADR 와 불일치. 다른 9xx Implemented ADR (902/904~909) 는 모두 `docs/adr/completed/` 폴더에 위치 — 본 작업으로 정합. ADR-903 라인 종료 처리 마감.

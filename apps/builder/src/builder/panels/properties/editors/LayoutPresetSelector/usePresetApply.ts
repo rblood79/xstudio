@@ -57,18 +57,18 @@ export function usePresetApply({
   const addComplexElement = useStore((state) => state.addComplexElement);
   const removeElement = useStore((state) => state.removeElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
-  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
-  // (write-through 후 element.layout_id null → frame descendants 매칭)
-  const canonicalDoc = useStore((state) =>
-    selectCanonicalDocument(
-      state,
-      state.pages,
-      useLayoutsStore.getState().layouts,
-    ),
-  );
 
   // 현재 Layout의 기존 Slot 목록 (canonical reusable frame descendants + tag === "Slot")
+  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
+  // (write-through 후 element.layout_id null → frame descendants 매칭).
+  // doc 을 useStore selector 로 구독하지 않고 useMemo 안에서 lazy 생성 —
+  // selectCanonicalDocument 가 매 호출마다 새 객체를 반환하면 useSyncExternalStore
+  // cache miss 로 무한 루프 (Maximum update depth) 발생.
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
+    const state = useStore.getState();
+    const layouts = useLayoutsStore.getState().layouts;
+    const canonicalDoc = selectCanonicalDocument(state, state.pages, layouts);
+
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
       if (
@@ -96,7 +96,7 @@ export function usePresetApply({
       }
     });
     return slots;
-  }, [elementsMap, childrenMap, layoutId, canonicalDoc]);
+  }, [elementsMap, childrenMap, layoutId]);
 
   // ⭐ 현재 적용된 프리셋 감지 (body element의 appliedPreset prop에서 읽기)
   const currentPresetKey = useMemo((): string | null => {
