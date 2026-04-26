@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [ADR-903 P3-D 모든 sub-phase land + Phase 3/4/5 plan 완비 — 세션 33] - 2026-04-26
 
-> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + P3-E IndexedDB persistence plan land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료**. ADR-903 진행도 ~96% → ~99%.
+> 세션 32 마지막 entry (Phase D 시나리오 갱신, commit `b7aa5846`) 이후 — P3-D-5 6/6 step 종결 + P3-D-2 GREEN cherry-pick + Phase C 정합화 plan land + Phase C GREEN 구현 land + P3-E IndexedDB persistence plan land + 잔여 grep audit land + Phase 4 G4 cover 확증. **P3-D 모든 sub-phase (D-1~D-5) land 완료**. ADR-903 진행도 ~96% → ~99%.
 
 ### Architecture
 
@@ -101,6 +101,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Step C-4: console.log 정리 + TODO 주석 제거 (없음, ~0.5h)
   - **Why**: Phase C minimal stub 의 layoutElements 누락 회귀 수정 — `selectCanonicalDocument` 의 reusable FrameNode 기반 elements 추출 정합화. 선행 의존: P3-D-1 머지 (이미 완료), 진입 즉시 가능
   - 위치: `docs/adr/design/903-p3d4-phase-c-residual.md` (336 LOC)
+
+- **ADR-903 P3-D-4 Phase C GREEN 구현 — usePageManager canonical layoutElements 추출**:
+  - `apps/builder/src/builder/hooks/usePageManager.ts` 의 `initializeProject` minimal stub (12 LOC) → canonical reusable FrameNode 기반 layout elements 추출 (15 LOC) 전환
+  - `selectCanonicalReusableFrames(canonicalDoc)` 호출 → `layoutIdSet` 구성 → `allElements.filter(el => el.layout_id != null && layoutIdSet.has(el.layout_id))` 단일 패스. `db.elements.getByLayout` 추가 호출 0
+  - **Why**: minimal stub 으로 land 된 Phase C (PR #237 commit `5db2c695`) 에서 layout-linked elements 가 빈 배열 → 초기화 시 layout body element 누락 회귀. 4-step plan (`903-p3d4-phase-c-residual.md`) 실행으로 정합화
+  - **Plan 수정점**: Plan Step C-2 의 `db.elements.getByLayout` 호출 패턴은 `usePageManager.canonical.test.ts` RED test 1 (`getByLayout(layoutId) 호출이 제거된다`) 와 충돌 — 추가 DB 호출 없이 이미 로드된 `allElements` 를 layoutIdSet 매칭으로 필터링하여 RED test 3개 모두 GREEN
+  - 검증: pnpm vitest `usePageManager.canonical.test.ts` 3/3 GREEN (RED → GREEN) + pnpm type-check PASS + baseline 비교 4 pre-existing failures (`layoutActions.test.ts` P3-D-3 과도기 + `useFillActions.test.tsx` legacy) 본 변경 무관 확증
+  - 위치: `apps/builder/src/builder/hooks/usePageManager.ts` (+8/-7 LOC)
 
 - **ADR-903 P3-E persistence sub-breakdown plan land** (commit `84da7f32`, 직접 main commit):
   - IndexedDB schema 마이그레이션 6-step 분해 plan 작성

@@ -85,4 +85,66 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
     });
   });
+
+  // ─────────────────────────────────────────────
+  // Phase C GREEN 정합화 검증 (P3-D-4 Phase C 4-step plan)
+  // ─────────────────────────────────────────────
+  describe("initializeProject — Phase C GREEN 정합화 contract", () => {
+    // selectCanonicalReusableFrames 호출이 등장하여 reusable FrameNode 가 추출됨을 확증.
+    // Spec A-2: minimal stub 의 'void canonicalDoc' 패턴이 다시 부활하는 회귀 차단.
+    it("selectCanonicalReusableFrames 가 호출되어 reusable FrameNode 가 추출된다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../usePageManager.ts");
+      const rawSource = await fs.readFile(filePath, "utf-8");
+      const source = rawSource.replace(/\/\/.*$/gm, "");
+      const initFnMatch = source.match(
+        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+      );
+      expect(initFnMatch).not.toBeNull();
+      const initFnSource = initFnMatch![0];
+      expect(initFnSource).toMatch(/selectCanonicalReusableFrames\(/);
+    });
+
+    // layoutIdSet 이 reusableFrames.map((f) => f.id) 로 구성됨을 확증.
+    // Spec A-4: layout 매칭 키가 canonical FrameNode.id 임을 보장.
+    it("layoutIdSet 이 reusableFrames.map((f) => f.id) 로 구성된다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../usePageManager.ts");
+      const rawSource = await fs.readFile(filePath, "utf-8");
+      const source = rawSource.replace(/\/\/.*$/gm, "");
+      const initFnMatch = source.match(
+        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+      );
+      expect(initFnMatch).not.toBeNull();
+      const initFnSource = initFnMatch![0];
+      // new Set(reusableFrames.map((f) => f.id))
+      expect(initFnSource).toMatch(/new Set\([\s\S]{0,80}reusableFrames\.map/);
+    });
+
+    // layoutElements 가 allElements.filter 로 layout_id 매칭 추출됨을 확증.
+    // Spec A-3: minimal stub 의 'const layoutElements: Element[] = []' 패턴 부활 차단.
+    // 동시에 db.elements.getByLayout 추가 호출 0 (이미 로드된 allElements 재사용) 보장.
+    it("layoutElements 가 allElements.filter(layout_id 매칭) 으로 채워진다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../usePageManager.ts");
+      const rawSource = await fs.readFile(filePath, "utf-8");
+      const source = rawSource.replace(/\/\/.*$/gm, "");
+      const initFnMatch = source.match(
+        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+      );
+      expect(initFnMatch).not.toBeNull();
+      const initFnSource = initFnMatch![0];
+      // allElements.filter( ... layout_id ... layoutIdSet.has ... )
+      expect(initFnSource).toMatch(
+        /allElements\.filter\([\s\S]{0,200}layout_id[\s\S]{0,100}layoutIdSet\.has/,
+      );
+      // minimal stub 패턴 부활 차단 — const layoutElements: Element[] = []
+      expect(initFnSource).not.toMatch(
+        /const\s+layoutElements\s*:\s*Element\[\]\s*=\s*\[\s*\]/,
+      );
+    });
+  });
 });
