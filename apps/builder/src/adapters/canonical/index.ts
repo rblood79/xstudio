@@ -48,6 +48,10 @@ import {
   snapshotThemesFromConfig,
   type ThemeConfigInput,
 } from "./themesAdapter";
+
+// ADR-910 Phase 2 ts-3.1: applyCanonicalThemes re-export (BuilderCore entry 용)
+export { applyCanonicalThemes } from "./themesAdapter";
+export type { ThemeConfigSetters } from "./themesAdapter";
 import {
   snapshotVariablesFromTokens,
   type ResolvedTokenMap,

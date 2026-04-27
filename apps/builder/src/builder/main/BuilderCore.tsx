@@ -6,7 +6,10 @@ import { useStore } from "../stores";
 import { selectCanonicalDocument } from "../stores/elements";
 import { historyManager } from "../stores/history";
 import type { Element } from "../../types/core/store.types";
-import { belongsToLegacyLayout } from "@/adapters/canonical";
+import {
+  applyCanonicalThemes,
+  belongsToLegacyLayout,
+} from "@/adapters/canonical";
 
 // 패널 등록 (side effect import - registerAllPanels() 자동 실행)
 import "../panels";
@@ -314,6 +317,33 @@ export const BuilderCore: React.FC = () => {
 
       // ADR-021 Phase C: localStorage에서 ThemeConfig 복원
       useThemeConfigStore.getState().initThemeConfig(projectId);
+
+      // ADR-910 Phase 2 ts-3.1: canonical themes write-through (env flag opt-in)
+      // env flag 미설정 시 호출 안 함 — Phase 1 (read-only snapshot) 동작 유지.
+      // 현재 selectCanonicalDocument 는 themes 미주입 → 무동작 (BC).
+      // Phase 4 Step 4-2 이후 DB 직접 로드 시 doc.themes 채워지면 활성화.
+      if (import.meta.env.VITE_ADR910_P2_THEMES_WRITE_THROUGH === "true") {
+        try {
+          const layouts = useLayoutsStore.getState().layouts;
+          const storeState = useStore.getState();
+          const doc = selectCanonicalDocument(
+            storeState,
+            storeState.pages,
+            layouts,
+          );
+          const applied = applyCanonicalThemes(
+            doc,
+            useThemeConfigStore.getState(),
+          );
+          if (applied && import.meta.env.DEV) {
+            console.log(
+              "[ADR-910 P2 ts-3.1] applied canonical themes from document",
+            );
+          }
+        } catch (err) {
+          console.warn("[ADR-910 P2 ts-3.1] applyCanonicalThemes failed:", err);
+        }
+      }
 
       // Preview iframe에 초기 테마 토큰 전송
       // iframe이 준비되면 자동으로 전송되도록 별도 useEffect 사용

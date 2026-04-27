@@ -9,11 +9,13 @@
  * - 빈 ThemeConfig / dark mode / tint override 등
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   snapshotThemesFromConfig,
   readCanonicalThemes,
+  applyCanonicalThemes,
   type ThemeConfigInput,
+  type ThemeConfigSetters,
   type ThemeSnapshot,
 } from "../themesAdapter";
 import { legacyToCanonical } from "../index";
@@ -232,5 +234,197 @@ describe("legacyToCanonical + getThemeConfig (ADR-910 Phase 1)", () => {
       },
     );
     expect(doc.version).toBe("composition-1.0");
+  });
+});
+
+// ─────────────────────────────────────────────
+// Phase 2 ts-3.1 — applyCanonicalThemes (write-through)
+// ─────────────────────────────────────────────
+describe("applyCanonicalThemes (ADR-910 Phase 2 ts-3.1)", () => {
+  function createMockSetters(): ThemeConfigSetters & {
+    calls: Record<keyof ThemeConfigSetters, string[]>;
+  } {
+    const calls: Record<keyof ThemeConfigSetters, string[]> = {
+      setTint: [],
+      setDarkMode: [],
+      setNeutral: [],
+      setRadiusScale: [],
+    };
+    return {
+      calls,
+      setTint: vi.fn((tint: string) => calls.setTint.push(tint)),
+      setDarkMode: vi.fn((mode: string) => calls.setDarkMode.push(mode)),
+      setNeutral: vi.fn((neutral: string) => calls.setNeutral.push(neutral)),
+      setRadiusScale: vi.fn((scale: string) =>
+        calls.setRadiusScale.push(scale),
+      ),
+    };
+  }
+
+  it("TC-A1: doc.themes 존재 시 4 setter 모두 호출하고 true 반환", () => {
+    const setters = createMockSetters();
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      themes: {
+        tint: "indigo",
+        darkMode: "dark",
+        neutral: "zinc",
+        radiusScale: "xl",
+      },
+      children: [],
+    };
+
+    const applied = applyCanonicalThemes(doc, setters);
+
+    expect(applied).toBe(true);
+    expect(setters.calls.setTint).toEqual(["indigo"]);
+    expect(setters.calls.setDarkMode).toEqual(["dark"]);
+    expect(setters.calls.setNeutral).toEqual(["zinc"]);
+    expect(setters.calls.setRadiusScale).toEqual(["xl"]);
+  });
+
+  it("TC-A2: doc.themes 미존재 시 setter 미호출 + false 반환 (BC)", () => {
+    const setters = createMockSetters();
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      children: [],
+    };
+
+    const applied = applyCanonicalThemes(doc, setters);
+
+    expect(applied).toBe(false);
+    expect(setters.calls.setTint).toEqual([]);
+    expect(setters.calls.setDarkMode).toEqual([]);
+    expect(setters.calls.setNeutral).toEqual([]);
+    expect(setters.calls.setRadiusScale).toEqual([]);
+  });
+
+  it("TC-A3: doc.themes 가 ThemeSnapshot 구조 미준수 시 setter 미호출 + false (R4)", () => {
+    const setters = createMockSetters();
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      // 잘못된 구조: tint 만 있고 나머지 필드 누락
+      themes: { tint: "red" } as unknown as ThemeSnapshot,
+      children: [],
+    };
+
+    const applied = applyCanonicalThemes(doc, setters);
+
+    expect(applied).toBe(false);
+    expect(setters.calls.setTint).toEqual([]);
+  });
+
+  it("TC-A4: round-trip 보장 — snapshot → doc → apply → re-snapshot 동일", () => {
+    // 초기 themeConfig (실제 store 대체 mock 상태)
+    let storedConfig: ThemeConfigInput = {
+      tint: "purple",
+      darkMode: "system",
+      neutral: "slate",
+      radiusScale: "sm",
+    };
+
+    // 1. snapshot 생성 (snapshotThemesFromConfig)
+    const snapshot1 = snapshotThemesFromConfig(storedConfig);
+
+    // 2. canonical document 빌드 (themes 주입)
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      themes: snapshot1,
+      children: [],
+    };
+
+    // 3. mock setters — applyCanonicalThemes 가 storedConfig 갱신
+    const setters: ThemeConfigSetters = {
+      setTint: (t) => {
+        storedConfig = { ...storedConfig, tint: t };
+      },
+      setDarkMode: (m) => {
+        storedConfig = { ...storedConfig, darkMode: m };
+      },
+      setNeutral: (n) => {
+        storedConfig = { ...storedConfig, neutral: n };
+      },
+      setRadiusScale: (s) => {
+        storedConfig = { ...storedConfig, radiusScale: s };
+      },
+    };
+
+    // 4. apply
+    const applied = applyCanonicalThemes(doc, setters);
+    expect(applied).toBe(true);
+
+    // 5. re-snapshot — apply 후 storedConfig 가 원래 snapshot 과 동일해야 함
+    const snapshot2 = snapshotThemesFromConfig(storedConfig);
+    expect(snapshot2).toEqual(snapshot1);
+    expect(snapshot2.tint).toBe("purple");
+    expect(snapshot2.darkMode).toBe("system");
+    expect(snapshot2.neutral).toBe("slate");
+    expect(snapshot2.radiusScale).toBe("sm");
+  });
+
+  it("TC-A5: idempotent — 같은 doc 으로 2회 호출 시 setter 4회씩 호출되지만 결과 동일", () => {
+    const setters = createMockSetters();
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      themes: {
+        tint: "cyan",
+        darkMode: "light",
+        neutral: "neutral",
+        radiusScale: "md",
+      },
+      children: [],
+    };
+
+    applyCanonicalThemes(doc, setters);
+    applyCanonicalThemes(doc, setters);
+
+    // 2회 호출 후 각 setter 가 2회씩 호출되었지만 마지막 값은 doc.themes 값과 동일
+    expect(setters.calls.setTint).toEqual(["cyan", "cyan"]);
+    expect(setters.calls.setDarkMode).toEqual(["light", "light"]);
+    expect(setters.calls.setNeutral).toEqual(["neutral", "neutral"]);
+    expect(setters.calls.setRadiusScale).toEqual(["md", "md"]);
+  });
+
+  it("TC-A6: legacyToCanonical 결과 doc 으로 round-trip — getThemeConfig + apply", () => {
+    const initialConfig: ThemeConfigInput = {
+      tint: "orange",
+      darkMode: "dark",
+      neutral: "zinc",
+      radiusScale: "lg",
+    };
+
+    // 1. legacyToCanonical 로 doc 생성 (themes 자동 주입)
+    const doc = legacyToCanonical(
+      { elements: [], pages: [], layouts: [] },
+      { ...deps, getThemeConfig: () => initialConfig },
+    );
+
+    // 2. mock setters
+    const captured: ThemeConfigInput = {
+      tint: "",
+      darkMode: "",
+      neutral: "",
+      radiusScale: "",
+    };
+    const setters: ThemeConfigSetters = {
+      setTint: (t) => {
+        captured.tint = t;
+      },
+      setDarkMode: (m) => {
+        captured.darkMode = m;
+      },
+      setNeutral: (n) => {
+        captured.neutral = n;
+      },
+      setRadiusScale: (s) => {
+        captured.radiusScale = s;
+      },
+    };
+
+    // 3. apply
+    expect(applyCanonicalThemes(doc, setters)).toBe(true);
+
+    // 4. captured 값 = initialConfig
+    expect(captured).toEqual(initialConfig);
   });
 });
