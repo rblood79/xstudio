@@ -102,7 +102,15 @@ export function usePresetApply({
   const currentPresetKey = useMemo((): string | null => {
     // ADR-040: elementsMap O(1) 조회
     const body = elementsMap.get(bodyElementId);
-    if (!body) return null;
+    if (!body) {
+      if (import.meta.env.DEV) {
+        console.log(
+          "[ADR-911 diag][usePresetApply] body 없음 — bodyElementId:",
+          bodyElementId,
+        );
+      }
+      return null;
+    }
 
     const appliedPreset = (body.props as { appliedPreset?: string })
       ?.appliedPreset;
@@ -118,12 +126,39 @@ export function usePresetApply({
         existingSlotNames.size === presetSlotNames.size &&
         [...existingSlotNames].every((name) => presetSlotNames.has(name))
       ) {
+        if (import.meta.env.DEV) {
+          console.log("[ADR-911 diag][usePresetApply] currentPresetKey =", {
+            bodyElementId,
+            layoutId,
+            appliedPreset,
+            existingSlotNames: [...existingSlotNames],
+            presetSlotNames: [...presetSlotNames],
+            match: true,
+          });
+        }
         return appliedPreset;
       }
+
+      if (import.meta.env.DEV) {
+        console.log("[ADR-911 diag][usePresetApply] slot mismatch:", {
+          bodyElementId,
+          layoutId,
+          appliedPreset,
+          existingSlotNames: [...existingSlotNames],
+          presetSlotNames: [...presetSlotNames],
+        });
+      }
+    } else if (import.meta.env.DEV) {
+      console.log(
+        "[ADR-911 diag][usePresetApply] appliedPreset 없음/unknown — bodyElementId:",
+        bodyElementId,
+        "appliedPreset:",
+        appliedPreset,
+      );
     }
 
     return null;
-  }, [elementsMap, bodyElementId, existingSlots]);
+  }, [elementsMap, bodyElementId, existingSlots, layoutId]);
 
   // 프리셋 적용 함수
   const applyPreset = useCallback(

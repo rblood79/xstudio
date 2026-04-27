@@ -32,6 +32,15 @@ export const LayoutBodyEditor = memo(
     // ⭐ 최적화: customId와 layoutId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const { customId, layoutId } = useMemo(() => {
       const element = useStore.getState().elementsMap.get(elementId);
+      // [ADR-911 diag] preset stale 진단 — frame 교차 시 useMemo 재계산 + layoutId 갱신 추적
+      if (import.meta.env.DEV) {
+        console.log("[ADR-911 diag][LayoutBodyEditor]", {
+          elementId,
+          layoutId: element?.layout_id,
+          appliedPreset: (element?.props as { appliedPreset?: string })
+            ?.appliedPreset,
+        });
+      }
       return {
         customId: element?.customId || "",
         layoutId: element?.layout_id || null,
