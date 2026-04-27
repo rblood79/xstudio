@@ -275,7 +275,7 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
             }
 
             // 필수 필드 검사
-            if (!element.tag) {
+            if (!element.type) {
                 errors.push(`요소 ${element.id}: 태그가 없습니다.`);
             }
             // ⭐ Layout/Slot System: page_id 또는 layout_id 중 하나는 있어야 함

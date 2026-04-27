@@ -13,7 +13,7 @@ import type { Element } from "./unified.types";
 export interface MasterComponentSummary {
   id: string;
   name: string;
-  tag: string;
+  type: string;
   childCount: number;
   instanceCount: number;
 }

@@ -182,7 +182,7 @@ export function FramesTab({
     ) {
       const bodyElement =
         frameElements.find((el) => el.order_num === 0) ||
-        frameElements.find((el) => el.tag === "body");
+        frameElements.find((el) => el.type === "body");
       if (bodyElement) {
         expandKey(bodyElement.id);
         setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
@@ -222,7 +222,7 @@ export function FramesTab({
 
               const element: Element = {
                 id: item.id,
-                tag: item.tag,
+                type: item.type,
                 parent_id: item.parent_id || null,
                 order_num: item.order_num,
                 props: item.props as ElementProps,
@@ -286,15 +286,15 @@ export function FramesTab({
                       )}
                     </div>
                     <div className="elementItemLabel">
-                      {item.tag === "Slot" && item.props
+                      {item.type === "Slot" && item.props
                         ? `Slot: ${
                             (item.props as Record<string, unknown>).name ||
                             "unnamed"
                           }`
-                        : item.tag}
+                        : item.type}
                     </div>
                     <div className="elementItemActions">
-                      {item.tag === "body" && (
+                      {item.type === "body" && (
                         <button className="iconButton" aria-label="Settings">
                           <Settings2
                             color={iconProps.color}
@@ -303,10 +303,10 @@ export function FramesTab({
                           />
                         </button>
                       )}
-                      {item.tag !== "body" && (
+                      {item.type !== "body" && (
                         <button
                           className="iconButton"
-                          aria-label={`Delete ${item.tag}`}
+                          aria-label={`Delete ${item.type}`}
                           onClick={async (e) => {
                             e.stopPropagation();
                             await onDelete(element);

@@ -142,7 +142,7 @@ function buildElement(
     page_id: ownership.page_id ?? null,
     layout_id: ownership.layout_id ?? null,
     parent_id: null,
-    tag: "Container",
+    type: "Container",
     props: {},
     order_num: 0,
     ...extras,

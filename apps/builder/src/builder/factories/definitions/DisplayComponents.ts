@@ -6,7 +6,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  * Avatar 컴포넌트 정의
  *
  * CSS DOM 구조:
- * Avatar (parent, tag="Avatar", circle shape)
+ * Avatar (parent, type="Avatar", circle shape)
  */
 export function createAvatarDefinition(
   context: ComponentCreationContext,
@@ -17,9 +17,9 @@ export function createAvatarDefinition(
 
 
   return {
-    tag: "Avatar",
+    type: "Avatar",
     parent: {
-      tag: "Avatar",
+      type: "Avatar",
       props: {
         src: "",
         alt: "Avatar",
@@ -42,7 +42,7 @@ export function createAvatarDefinition(
  * AvatarGroup 컴포넌트 정의
  *
  * CSS DOM 구조:
- * AvatarGroup (parent, tag="AvatarGroup", flex row)
+ * AvatarGroup (parent, type="AvatarGroup", flex row)
  *   ├─ Avatar (initials="A")
  *   ├─ Avatar (initials="B")
  *   └─ Avatar (initials="C")
@@ -56,9 +56,9 @@ export function createAvatarGroupDefinition(
 
 
   return {
-    tag: "AvatarGroup",
+    type: "AvatarGroup",
     parent: {
-      tag: "AvatarGroup",
+      type: "AvatarGroup",
       props: {
         size: "md",
         label: "Team",
@@ -73,7 +73,7 @@ export function createAvatarGroupDefinition(
     },
     children: [
       {
-        tag: "Avatar",
+        type: "Avatar",
         props: {
           initials: "A",
           size: "md",
@@ -86,7 +86,7 @@ export function createAvatarGroupDefinition(
         order_num: 1,
       },
       {
-        tag: "Avatar",
+        type: "Avatar",
         props: {
           initials: "B",
           size: "md",
@@ -99,7 +99,7 @@ export function createAvatarGroupDefinition(
         order_num: 2,
       },
       {
-        tag: "Avatar",
+        type: "Avatar",
         props: {
           initials: "C",
           size: "md",
@@ -119,7 +119,7 @@ export function createAvatarGroupDefinition(
  * StatusLight 컴포넌트 정의
  *
  * CSS DOM 구조:
- * StatusLight (parent, tag="StatusLight", flex row with dot + label)
+ * StatusLight (parent, type="StatusLight", flex row with dot + label)
  */
 export function createStatusLightDefinition(
   context: ComponentCreationContext,
@@ -130,9 +130,9 @@ export function createStatusLightDefinition(
 
 
   return {
-    tag: "StatusLight",
+    type: "StatusLight",
     parent: {
-      tag: "StatusLight",
+      type: "StatusLight",
       props: {
         variant: "positive",
         children: "Available",
@@ -155,9 +155,9 @@ export function createStatusLightDefinition(
  * InlineAlert 컴포넌트 정의
  *
  * CSS DOM 구조:
- * InlineAlert (parent, tag="InlineAlert", flex column)
- *   ├─ Heading (tag="Heading", children="Alert Title")
- *   └─ Description (tag="Description", children="Alert description text.")
+ * InlineAlert (parent, type="InlineAlert", flex column)
+ *   ├─ Heading (type="Heading", children="Alert Title")
+ *   └─ Description (type="Description", children="Alert description text.")
  */
 export function createInlineAlertDefinition(
   context: ComponentCreationContext,
@@ -168,9 +168,9 @@ export function createInlineAlertDefinition(
 
 
   return {
-    tag: "InlineAlert",
+    type: "InlineAlert",
     parent: {
-      tag: "InlineAlert",
+      type: "InlineAlert",
       props: {
         variant: "info",
       } as ComponentElementProps,
@@ -179,7 +179,7 @@ export function createInlineAlertDefinition(
     },
     children: [
       {
-        tag: "Heading",
+        type: "Heading",
         props: {
           children: "Alert Heading",
           level: 3,
@@ -188,7 +188,7 @@ export function createInlineAlertDefinition(
         order_num: 1,
       },
       {
-        tag: "Description",
+        type: "Description",
         props: {
           children:
             "There was an error processing your request. Please try again.",
@@ -204,7 +204,7 @@ export function createInlineAlertDefinition(
  * ButtonGroup 컴포넌트 정의
  *
  * CSS DOM 구조:
- * ButtonGroup (parent, tag="ButtonGroup", flex row)
+ * ButtonGroup (parent, type="ButtonGroup", flex row)
  *   ├─ Button ("Cancel", outline)
  *   └─ Button ("Save", accent fill)
  */
@@ -217,9 +217,9 @@ export function createButtonGroupDefinition(
 
 
   return {
-    tag: "ButtonGroup",
+    type: "ButtonGroup",
     parent: {
-      tag: "ButtonGroup",
+      type: "ButtonGroup",
       props: {
         size: "md",
         orientation: "horizontal",
@@ -236,7 +236,7 @@ export function createButtonGroupDefinition(
     },
     children: [
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "Cancel",
           variant: "secondary",
@@ -246,7 +246,7 @@ export function createButtonGroupDefinition(
         order_num: 1,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "Save",
           variant: "accent",
@@ -263,9 +263,9 @@ export function createButtonGroupDefinition(
  * Accordion 컴포넌트 정의 (DisclosureGroup 확장)
  *
  * CSS DOM 구조:
- * Accordion (parent, tag="Accordion", flex column)
- *   ├─ Disclosure (tag="Disclosure", isExpanded=false)
- *   └─ Disclosure (tag="Disclosure", isExpanded=false)
+ * Accordion (parent, type="Accordion", flex column)
+ *   ├─ Disclosure (type="Disclosure", isExpanded=false)
+ *   └─ Disclosure (type="Disclosure", isExpanded=false)
  */
 export function createAccordionDefinition(
   context: ComponentCreationContext,
@@ -276,9 +276,9 @@ export function createAccordionDefinition(
 
 
   return {
-    tag: "Accordion",
+    type: "Accordion",
     parent: {
-      tag: "Accordion",
+      type: "Accordion",
       props: {
         allowsMultipleExpanded: false,
         style: {
@@ -292,7 +292,7 @@ export function createAccordionDefinition(
     },
     children: [
       {
-        tag: "Disclosure",
+        type: "Disclosure",
         props: {
           children: "Section 1",
           isExpanded: false,
@@ -303,14 +303,14 @@ export function createAccordionDefinition(
         order_num: 1,
         children: [
           {
-            tag: "DisclosureHeader",
+            type: "DisclosureHeader",
             props: {
               children: "Section 1",
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "DisclosureContent",
+            type: "DisclosureContent",
             props: {
               children: "Section 1 content goes here.",
             } as ComponentElementProps,
@@ -319,7 +319,7 @@ export function createAccordionDefinition(
         ],
       },
       {
-        tag: "Disclosure",
+        type: "Disclosure",
         props: {
           children: "Section 2",
           isExpanded: false,
@@ -330,14 +330,14 @@ export function createAccordionDefinition(
         order_num: 2,
         children: [
           {
-            tag: "DisclosureHeader",
+            type: "DisclosureHeader",
             props: {
               children: "Section 2",
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "DisclosureContent",
+            type: "DisclosureContent",
             props: {
               children: "Section 2 content goes here.",
             } as ComponentElementProps,
@@ -368,9 +368,9 @@ export function createProgressBarDefinition(
 
 
   return {
-    tag: "ProgressBar",
+    type: "ProgressBar",
     parent: {
-      tag: "ProgressBar",
+      type: "ProgressBar",
       props: {
         label: "Progress",
         value: 50,
@@ -396,7 +396,7 @@ export function createProgressBarDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Progress",
           style: {
@@ -415,7 +415,7 @@ export function createProgressBarDefinition(
         order_num: 1,
       },
       {
-        tag: "ProgressBarValue",
+        type: "ProgressBarValue",
         props: {
           children: "50%",
           style: {
@@ -431,7 +431,7 @@ export function createProgressBarDefinition(
         order_num: 2,
       },
       {
-        tag: "ProgressBarTrack",
+        type: "ProgressBarTrack",
         props: {
           style: {
             width: "100%",
@@ -466,9 +466,9 @@ export function createMeterDefinition(
 
 
   return {
-    tag: "Meter",
+    type: "Meter",
     parent: {
-      tag: "Meter",
+      type: "Meter",
       props: {
         label: "Storage",
         value: 75,
@@ -493,7 +493,7 @@ export function createMeterDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Storage",
           style: {
@@ -510,7 +510,7 @@ export function createMeterDefinition(
         order_num: 1,
       },
       {
-        tag: "MeterValue",
+        type: "MeterValue",
         props: {
           children: "75%",
           style: {
@@ -526,7 +526,7 @@ export function createMeterDefinition(
         order_num: 2,
       },
       {
-        tag: "MeterTrack",
+        type: "MeterTrack",
         props: {
           style: {
             width: "100%",
@@ -547,7 +547,7 @@ export function createMeterDefinition(
  * ProgressCircle 컴포넌트 정의
  *
  * CSS DOM 구조:
- * ProgressCircle (parent, tag="ProgressCircle", circular progress indicator)
+ * ProgressCircle (parent, type="ProgressCircle", circular progress indicator)
  */
 export function createProgressCircleDefinition(
   context: ComponentCreationContext,
@@ -558,9 +558,9 @@ export function createProgressCircleDefinition(
 
 
   return {
-    tag: "ProgressCircle",
+    type: "ProgressCircle",
     parent: {
-      tag: "ProgressCircle",
+      type: "ProgressCircle",
       props: {
         value: 75,
         size: "md",
@@ -582,7 +582,7 @@ export function createProgressCircleDefinition(
  * Image 컴포넌트 정의
  *
  * CSS DOM 구조:
- * Image (parent, tag="Image", responsive image)
+ * Image (parent, type="Image", responsive image)
  */
 export function createImageDefinition(
   context: ComponentCreationContext,
@@ -593,9 +593,9 @@ export function createImageDefinition(
 
 
   return {
-    tag: "Image",
+    type: "Image",
     parent: {
-      tag: "Image",
+      type: "Image",
       props: {
         src: "",
         alt: "Image",
@@ -617,9 +617,9 @@ export function createImageDefinition(
  * RangeCalendar 컴포넌트 정의 (CalendarSpec 재사용)
  *
  * CSS DOM 구조:
- * RangeCalendar (parent, tag="RangeCalendar", flex column)
- *   ├─ CalendarHeader (tag="CalendarHeader")
- *   └─ CalendarGrid (tag="CalendarGrid")
+ * RangeCalendar (parent, type="RangeCalendar", flex column)
+ *   ├─ CalendarHeader (type="CalendarHeader")
+ *   └─ CalendarGrid (type="CalendarGrid")
  */
 export function createRangeCalendarDefinition(
   context: ComponentCreationContext,
@@ -636,9 +636,9 @@ export function createRangeCalendarDefinition(
   const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
 
   return {
-    tag: "RangeCalendar",
+    type: "RangeCalendar",
     parent: {
-      tag: "RangeCalendar",
+      type: "RangeCalendar",
       props: {
         variant: "default",
         size: "md",
@@ -651,7 +651,7 @@ export function createRangeCalendarDefinition(
     },
     children: [
       {
-        tag: "CalendarHeader",
+        type: "CalendarHeader",
         props: {
           children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
             year: "numeric",
@@ -661,7 +661,7 @@ export function createRangeCalendarDefinition(
         order_num: 1,
       },
       {
-        tag: "CalendarGrid",
+        type: "CalendarGrid",
         props: {
           defaultToday: true,
           dayOffset: firstDay,
@@ -680,7 +680,7 @@ export function createRangeCalendarDefinition(
  * IllustratedMessage 컴포넌트 정의
  *
  * CSS DOM 구조:
- * IllustratedMessage (parent, tag="IllustratedMessage", flex column centered)
+ * IllustratedMessage (parent, type="IllustratedMessage", flex column centered)
  */
 export function createIllustratedMessageDefinition(
   context: ComponentCreationContext,
@@ -691,9 +691,9 @@ export function createIllustratedMessageDefinition(
 
 
   return {
-    tag: "IllustratedMessage",
+    type: "IllustratedMessage",
     parent: {
-      tag: "IllustratedMessage",
+      type: "IllustratedMessage",
       props: {
         size: "md",
         heading: "No results",
@@ -720,7 +720,7 @@ export function createIllustratedMessageDefinition(
  * CardView 컴포넌트 정의
  *
  * CSS DOM 구조:
- * CardView (parent, tag="CardView", grid container)
+ * CardView (parent, type="CardView", grid container)
  *   ├─ Card (variant="primary")
  *   ├─ Card (variant="primary")
  *   └─ Card (variant="primary")
@@ -734,9 +734,9 @@ export function createCardViewDefinition(
 
 
   return {
-    tag: "CardView",
+    type: "CardView",
     parent: {
-      tag: "CardView",
+      type: "CardView",
       props: {
         layout: "grid",
         size: "md",
@@ -755,7 +755,7 @@ export function createCardViewDefinition(
     },
     children: [
       {
-        tag: "Card",
+        type: "Card",
         props: {
           variant: "primary",
           children: "Card 1",
@@ -768,7 +768,7 @@ export function createCardViewDefinition(
         order_num: 0,
       },
       {
-        tag: "Card",
+        type: "Card",
         props: {
           variant: "primary",
           children: "Card 2",
@@ -781,7 +781,7 @@ export function createCardViewDefinition(
         order_num: 1,
       },
       {
-        tag: "Card",
+        type: "Card",
         props: {
           variant: "primary",
           children: "Card 3",
@@ -801,7 +801,7 @@ export function createCardViewDefinition(
  * TableView 컴포넌트 정의
  *
  * CSS DOM 구조:
- * TableView (parent, tag="TableView", flex column)
+ * TableView (parent, type="TableView", flex column)
  *   └─ Table 자식 구조 재사용
  */
 export function createTableViewDefinition(
@@ -813,9 +813,9 @@ export function createTableViewDefinition(
 
 
   return {
-    tag: "TableView",
+    type: "TableView",
     parent: {
-      tag: "TableView",
+      type: "TableView",
       props: {
         density: "regular",
         isStriped: false,
@@ -832,7 +832,7 @@ export function createTableViewDefinition(
     },
     children: [
       {
-        tag: "TableHeader",
+        type: "TableHeader",
         props: {
           style: {
             display: "flex",
@@ -842,7 +842,7 @@ export function createTableViewDefinition(
         order_num: 0,
         children: [
           {
-            tag: "Column",
+            type: "Column",
             props: {
               children: "Name",
               style: { flex: 1, padding: 8, fontWeight: 600 },
@@ -850,7 +850,7 @@ export function createTableViewDefinition(
             order_num: 0,
           },
           {
-            tag: "Column",
+            type: "Column",
             props: {
               children: "Type",
               style: { flex: 1, padding: 8, fontWeight: 600 },
@@ -858,7 +858,7 @@ export function createTableViewDefinition(
             order_num: 1,
           },
           {
-            tag: "Column",
+            type: "Column",
             props: {
               children: "Status",
               style: { flex: 1, padding: 8, fontWeight: 600 },
@@ -868,7 +868,7 @@ export function createTableViewDefinition(
         ],
       },
       {
-        tag: "TableBody",
+        type: "TableBody",
         props: {
           style: {
             display: "flex",
@@ -878,14 +878,14 @@ export function createTableViewDefinition(
         order_num: 1,
         children: [
           {
-            tag: "Row",
+            type: "Row",
             props: {
               style: { display: "flex", flexDirection: "row" },
             } as ComponentElementProps,
             order_num: 0,
             children: [
               {
-                tag: "Cell",
+                type: "Cell",
                 props: {
                   children: "Item 1",
                   style: { flex: 1, padding: 8 },
@@ -893,7 +893,7 @@ export function createTableViewDefinition(
                 order_num: 0,
               },
               {
-                tag: "Cell",
+                type: "Cell",
                 props: {
                   children: "File",
                   style: { flex: 1, padding: 8 },
@@ -901,7 +901,7 @@ export function createTableViewDefinition(
                 order_num: 1,
               },
               {
-                tag: "Cell",
+                type: "Cell",
                 props: {
                   children: "Active",
                   style: { flex: 1, padding: 8 },

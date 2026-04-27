@@ -98,29 +98,29 @@ const ENUM_BIT_MAX = 12;
 const F32_BIT_MIN = 13;
 const F32_BIT_MAX = 15;
 
-/** Dimension 필드: 비트 16~22 (5바이트: u8 tag + f32 LE) */
+/** Dimension 필드: 비트 16~22 (5바이트: u8 type + f32 LE) */
 const DIM_BIT_MIN = 16;
 const DIM_BIT_MAX = 22;
 
-/** LPA(LengthPercentageAuto) 필드: 비트 23~30 (5바이트: u8 tag + f32 LE) */
+/** LPA(LengthPercentageAuto) 필드: 비트 23~30 (5바이트: u8 type + f32 LE) */
 const LPA_BIT_MIN = 23;
 const LPA_BIT_MAX = 30;
 
-/** LP(LengthPercentage) 필드: 비트 31~40 (5바이트: u8 tag + f32 LE) */
+/** LP(LengthPercentage) 필드: 비트 31~40 (5바이트: u8 type + f32 LE) */
 const LP_BIT_MIN = 31;
 const LP_BIT_MAX = 40;
 
-/** Grid placement 필드: 비트 41~44 (3바이트: u8 tag + i16 LE) */
+/** Grid placement 필드: 비트 41~44 (3바이트: u8 type + i16 LE) */
 const GRID_PLACE_BIT_MIN = 41;
 const GRID_PLACE_BIT_MAX = 44;
 
-// ─── Dimension/LP/LPA tag 상수 ────────────────────────────────────────
+// ─── Dimension/LP/LPA type 상수 ────────────────────────────────────────
 
 const TAG_AUTO = 0;
 const TAG_LENGTH = 1;
 const TAG_PERCENT = 2;
 
-// ─── Grid placement tag 상수 ─────────────────────────────────────────
+// ─── Grid placement type 상수 ─────────────────────────────────────────
 
 const GP_AUTO = 0;
 const GP_LINE = 1;
@@ -133,10 +133,10 @@ const GP_SPAN = 2;
  *
  * - Enum  (0~12):  1바이트
  * - f32   (13~15): 4바이트
- * - Dim   (16~22): 5바이트 (tag u8 + value f32)
- * - LPA   (23~30): 5바이트 (tag u8 + value f32)
- * - LP    (31~40): 5바이트 (tag u8 + value f32)
- * - Grid  (41~44): 3바이트 (tag u8 + value i16)
+ * - Dim   (16~22): 5바이트 (type u8 + value f32)
+ * - LPA   (23~30): 5바이트 (type u8 + value f32)
+ * - LP    (31~40): 5바이트 (type u8 + value f32)
+ * - Grid  (41~44): 3바이트 (type u8 + value i16)
  */
 function fieldSizeForBit(bit: number): number {
   if (bit >= ENUM_BIT_MIN && bit <= ENUM_BIT_MAX) return 1;
@@ -281,36 +281,36 @@ function getEnumMap(bit: number): Record<string, number> | null {
  * Dimension 값 파싱.
  *
  * taffyStyleToRecord() 출력 포맷:
- * - "100px" → tag=1 (length),  value=100.0
- * - "50%"   → tag=2 (percent), value=0.5   (100으로 나눔)
- * - "auto"  → tag=0 (auto),    value=0.0
- * - 100 (숫자) → tag=1 (length), value=100.0  (수동 호출 경우 대비)
+ * - "100px" → type=1 (length),  value=100.0
+ * - "50%"   → type=2 (percent), value=0.5   (100으로 나눔)
+ * - "auto"  → type=0 (auto),    value=0.0
+ * - 100 (숫자) → type=1 (length), value=100.0  (수동 호출 경우 대비)
  *
  * CRITICAL: percent는 반드시 /100 처리 (Rust 측 Dimension::percent(0.5) 와 매칭)
  */
-function parseDimensionValue(value: unknown): { tag: number; value: number } {
+function parseDimensionValue(value: unknown): { type: number; value: number } {
   if (typeof value === 'number') {
-    return { tag: TAG_LENGTH, value };
+    return { type: TAG_LENGTH, value };
   }
   if (typeof value !== 'string') {
-    return { tag: TAG_AUTO, value: 0.0 };
+    return { type: TAG_AUTO, value: 0.0 };
   }
   const s = value.trim();
   if (s === 'auto') {
-    return { tag: TAG_AUTO, value: 0.0 };
+    return { type: TAG_AUTO, value: 0.0 };
   }
   if (s.endsWith('px')) {
     const num = parseFloat(s.slice(0, -2));
-    return { tag: TAG_LENGTH, value: isNaN(num) ? 0.0 : num };
+    return { type: TAG_LENGTH, value: isNaN(num) ? 0.0 : num };
   }
   if (s.endsWith('%')) {
     const num = parseFloat(s.slice(0, -1));
     // CRITICAL: percent는 /100 처리
-    return { tag: TAG_PERCENT, value: isNaN(num) ? 0.0 : num / 100.0 };
+    return { type: TAG_PERCENT, value: isNaN(num) ? 0.0 : num / 100.0 };
   }
   // 순수 숫자 문자열 (예: "100")
   const num = parseFloat(s);
-  return { tag: TAG_LENGTH, value: isNaN(num) ? 0.0 : num };
+  return { type: TAG_LENGTH, value: isNaN(num) ? 0.0 : num };
 }
 
 // ─── Grid placement 파싱 ─────────────────────────────────────────────
@@ -319,24 +319,24 @@ function parseDimensionValue(value: unknown): { tag: number; value: number } {
  * Grid placement 값 파싱.
  *
  * 입력은 항상 문자열 (taffyStyleToRecord에서 String() 변환됨).
- * - "auto"   → tag=0, value=0
- * - "span N" → tag=2, value=N
- * - "N"      → tag=1, value=N  (line number)
+ * - "auto"   → type=0, value=0
+ * - "span N" → type=2, value=N
+ * - "N"      → type=1, value=N  (line number)
  */
-function parseGridPlacement(value: unknown): { tag: number; value: number } {
+function parseGridPlacement(value: unknown): { type: number; value: number } {
   const s = typeof value === 'string' ? value.trim() : String(value).trim();
   if (s === 'auto') {
-    return { tag: GP_AUTO, value: 0 };
+    return { type: GP_AUTO, value: 0 };
   }
   if (s.startsWith('span ')) {
     const num = parseInt(s.slice(5).trim(), 10);
-    return { tag: GP_SPAN, value: isNaN(num) ? 1 : num };
+    return { type: GP_SPAN, value: isNaN(num) ? 1 : num };
   }
   const num = parseInt(s, 10);
   if (!isNaN(num)) {
-    return { tag: GP_LINE, value: num };
+    return { type: GP_LINE, value: num };
   }
-  return { tag: GP_AUTO, value: 0 };
+  return { type: GP_AUTO, value: 0 };
 }
 
 // ─── Grid JSON 사이드밴드 ─────────────────────────────────────────────
@@ -469,28 +469,28 @@ function writeF32Field(view: DataView, offset: number, value: unknown): void {
 }
 
 /**
- * Dimension/LPA 필드를 DataView에 5바이트(tag u8 + value f32 LE)로 쓴다.
+ * Dimension/LPA 필드를 DataView에 5바이트(type u8 + value f32 LE)로 쓴다.
  */
 function writeDimField(view: DataView, offset: number, value: unknown): void {
   const parsed = parseDimensionValue(value);
-  view.setUint8(offset, parsed.tag);
+  view.setUint8(offset, parsed.type);
   view.setFloat32(offset + 1, parsed.value, true);
 }
 
 /**
- * LP 필드를 DataView에 5바이트(tag u8 + value f32 LE)로 쓴다.
- * LP는 auto 없음 — "auto" 입력은 tag=1(length), value=0으로 처리.
+ * LP 필드를 DataView에 5바이트(type u8 + value f32 LE)로 쓴다.
+ * LP는 auto 없음 — "auto" 입력은 type=1(length), value=0으로 처리.
  */
 function writeLpField(view: DataView, offset: number, value: unknown): void {
   const parsed = parseDimensionValue(value);
   // LP는 TAG_AUTO가 없으므로 auto를 length(0)으로 변환
-  const tag = parsed.tag === TAG_AUTO ? TAG_LENGTH : parsed.tag;
-  view.setUint8(offset, tag);
+  const type = parsed.type === TAG_AUTO ? TAG_LENGTH : parsed.type;
+  view.setUint8(offset, type);
   view.setFloat32(offset + 1, parsed.value, true);
 }
 
 /**
- * Grid placement 필드를 DataView에 3바이트(tag u8 + value i16 LE)로 쓴다.
+ * Grid placement 필드를 DataView에 3바이트(type u8 + value i16 LE)로 쓴다.
  */
 function writeGridPlacementField(
   view: DataView,
@@ -498,7 +498,7 @@ function writeGridPlacementField(
   value: unknown,
 ): void {
   const parsed = parseGridPlacement(value);
-  view.setUint8(offset, parsed.tag);
+  view.setUint8(offset, parsed.type);
   // i16 범위 클램프: -32768 ~ 32767
   const clamped = Math.max(-32768, Math.min(32767, parsed.value));
   view.setInt16(offset + 1, clamped, true);

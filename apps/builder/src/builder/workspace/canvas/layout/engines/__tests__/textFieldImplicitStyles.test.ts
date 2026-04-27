@@ -24,7 +24,7 @@ function makeTextField(
 ): Element {
   return {
     id: "tf-1",
-    tag: "TextField",
+    type: "TextField",
     props: {
       label: "Name",
       ...props,
@@ -35,12 +35,12 @@ function makeTextField(
 
 function makeChild(
   id: string,
-  tag: string,
+  type: string,
   style?: Record<string, unknown>,
 ): Element {
   return {
     id,
-    tag,
+    type,
     props: { style: style ?? {} },
     childrenIds: [],
   } as Element;
@@ -78,7 +78,7 @@ describe("TextField applyImplicitStyles — ADR-108 P2 helper 소비", () => {
     expect(ps.gap).toBe(4);
     // Label 에 side-label 전용 width (FORM_SIDE_LABEL_WIDTH) / alignSelf 주입 없음.
     //   flexShrink 는 다른 Canvas 공통 규칙이 주입할 수 있어 본 테스트 scope 외.
-    const lblStyle = (filteredChildren.find((c) => c.tag === "Label")?.props
+    const lblStyle = (filteredChildren.find((c) => c.type === "Label")?.props
       ?.style ?? {}) as Record<string, unknown>;
     expect(lblStyle.width).toBeUndefined();
     expect(lblStyle.alignSelf).toBeUndefined();
@@ -95,14 +95,14 @@ describe("TextField applyImplicitStyles — ADR-108 P2 helper 소비", () => {
     expect(ps.flexWrap).toBe("wrap");
     expect(ps.alignItems).toBe("flex-start");
 
-    const lblStyle = (filteredChildren.find((c) => c.tag === "Label")?.props
+    const lblStyle = (filteredChildren.find((c) => c.type === "Label")?.props
       ?.style ?? {}) as Record<string, unknown>;
     expect(typeof lblStyle.width).toBe("number");
     expect(lblStyle.flexShrink).toBe(0);
     expect(lblStyle.alignSelf).toBe("flex-start");
 
     // FieldError 는 `:not(.react-aria-Label)` 매칭 → marginLeft + width 주입
-    const errStyle = (filteredChildren.find((c) => c.tag === "FieldError")
+    const errStyle = (filteredChildren.find((c) => c.type === "FieldError")
       ?.props?.style ?? {}) as Record<string, unknown>;
     expect(errStyle.width).toBe("100%");
     expect(typeof errStyle.marginLeft).toBe("number");
@@ -115,7 +115,7 @@ describe("TextField applyImplicitStyles — ADR-108 P2 helper 소비", () => {
       input,
       fieldError,
     ]);
-    const lblStyle = (filteredChildren.find((c) => c.tag === "Label")?.props
+    const lblStyle = (filteredChildren.find((c) => c.type === "Label")?.props
       ?.style ?? {}) as Record<string, unknown>;
     // user 가 명시한 width=200 은 side-label default 값보다 우선
     expect(lblStyle.width).toBe(200);
@@ -130,7 +130,7 @@ describe("TextField applyImplicitStyles — ADR-108 P2 helper 소비", () => {
   it("hasLabel=false (label prop 미설정) → Label child filter 제외", () => {
     const container: Element = {
       id: "tf-nolabel",
-      tag: "TextField",
+      type: "TextField",
       props: { labelPosition: "side" }, // label prop 부재
       childrenIds: [label.id, input.id],
     } as Element;
@@ -145,7 +145,7 @@ describe("TextField applyImplicitStyles — ADR-108 P2 helper 소비", () => {
       (id) => byId.get(id)?.childrenIds.map((cid) => byId.get(cid)!) ?? [],
       byId,
     );
-    expect(filteredChildren.find((c) => c.tag === "Label")).toBeUndefined();
-    expect(filteredChildren.find((c) => c.tag === "Input")).toBeDefined();
+    expect(filteredChildren.find((c) => c.type === "Label")).toBeUndefined();
+    expect(filteredChildren.find((c) => c.type === "Input")).toBeDefined();
   });
 });

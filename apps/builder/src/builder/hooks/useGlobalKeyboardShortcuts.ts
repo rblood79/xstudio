@@ -226,7 +226,7 @@ export function useGlobalKeyboardShortcuts() {
     // Body 요소는 키보드로 삭제 불가 (페이지 삭제 시에만 함께 삭제)
     const deletableIds = selectedElementIds.filter((id) => {
       const el = elementsMap.get(id);
-      return el && el.tag.toLowerCase() !== "body";
+      return el && el.type.toLowerCase() !== "body";
     });
 
     if (deletableIds.length === 0) {

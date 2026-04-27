@@ -157,7 +157,7 @@ export interface TranslationKeys {
     radio: string;
     timePicker: string;
     fileUpload: string;
-    tag: string;
+    type: string;
   };
   validation: {
     required: string;

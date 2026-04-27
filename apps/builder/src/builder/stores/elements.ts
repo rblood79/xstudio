@@ -224,7 +224,7 @@ export interface ElementsState {
   // ADR-006: 외부 트리거(텍스트 측정기 교체, 폰트 로딩 등)에서 레이아웃 재계산 요청
   invalidateLayout: () => void;
 
-  // ADR-073: 일반화 items 조작 액션 (Menu/Select/ComboBox 공통, tag-agnostic)
+  // ADR-073: 일반화 items 조작 액션 (Menu/Select/ComboBox 공통, type-agnostic)
   addItem: (
     elementId: string,
     itemsKey: string,
@@ -1547,7 +1547,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
     },
 
-    // ADR-073: 일반화 items 조작 액션 (tag-agnostic)
+    // ADR-073: 일반화 items 조작 액션 (type-agnostic)
     // updateElementProps가 props 변경을 layoutVersion++ 처리하므로
     // items 변경 시 파이프라인(Memory→History→DB) 자동 처리됨.
 
@@ -1761,7 +1761,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     reorderMenuItems: async (menuId, fromIndex, toIndex) => {
       const menu = get().elementsMap.get(menuId);
-      if (!menu || menu.tag !== "Menu") return;
+      if (!menu || menu.type !== "Menu") return;
       const items = ((menu.props.items ?? []) as StoredMenuItem[]).slice();
       if (
         fromIndex < 0 ||

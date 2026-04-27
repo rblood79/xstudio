@@ -17,9 +17,9 @@ export function createGroupDefinition(
   // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
 
   return {
-    tag: "Group",
+    type: "Group",
     parent: {
-      tag: "Group",
+      type: "Group",
       props: {
         label: "Element Group",
         style: {
@@ -47,11 +47,11 @@ export function createToggleButtonGroupDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "ToggleButtonGroup",
+    type: "ToggleButtonGroup",
     parent: {
-      tag: "ToggleButtonGroup",
+      type: "ToggleButtonGroup",
       props: {
-        tag: "ToggleButtonGroup",
+        type: "ToggleButtonGroup",
         size: "md",
         orientation: "horizontal",
         selectionMode: "single",
@@ -62,7 +62,7 @@ export function createToggleButtonGroupDefinition(
     },
     children: [
       {
-        tag: "ToggleButton",
+        type: "ToggleButton",
         props: {
           children: "Toggle 1",
           isSelected: false,
@@ -71,7 +71,7 @@ export function createToggleButtonGroupDefinition(
         order_num: 1,
       },
       {
-        tag: "ToggleButton",
+        type: "ToggleButton",
         props: {
           children: "Toggle 2",
           isSelected: false,
@@ -87,9 +87,9 @@ export function createToggleButtonGroupDefinition(
  * Switcher 컴포넌트 정의 (탭형 전환)
  *
  * CSS DOM 구조:
- * Switcher (parent, tag="Switcher", flex row)
- *   ├─ ToggleButton (tag="ToggleButton", children="Tab 1", transparent bg)
- *   └─ ToggleButton (tag="ToggleButton", children="Tab 2", transparent bg)
+ * Switcher (parent, type="Switcher", flex row)
+ *   ├─ ToggleButton (type="ToggleButton", children="Tab 1", transparent bg)
+ *   └─ ToggleButton (type="ToggleButton", children="Tab 2", transparent bg)
  */
 export function createSwitcherDefinition(
   context: ComponentCreationContext,
@@ -101,9 +101,9 @@ export function createSwitcherDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Switcher",
+    type: "Switcher",
     parent: {
-      tag: "Switcher",
+      type: "Switcher",
       props: {
         items: ["Tab 1", "Tab 2"],
         activeIndex: 0,
@@ -121,7 +121,7 @@ export function createSwitcherDefinition(
     },
     children: [
       {
-        tag: "ToggleButton",
+        type: "ToggleButton",
         props: {
           children: "Tab 1",
           isSelected: true,
@@ -135,7 +135,7 @@ export function createSwitcherDefinition(
         order_num: 1,
       },
       {
-        tag: "ToggleButton",
+        type: "ToggleButton",
         props: {
           children: "Tab 2",
           isSelected: false,
@@ -165,11 +165,11 @@ export function createCheckboxGroupDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "CheckboxGroup",
+    type: "CheckboxGroup",
     parent: {
-      tag: "CheckboxGroup",
+      type: "CheckboxGroup",
       props: {
-        tag: "CheckboxGroup",
+        type: "CheckboxGroup",
         label: "Checkbox Group",
         name: "",
         labelPosition: "top",
@@ -185,7 +185,7 @@ export function createCheckboxGroupDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Checkbox Group",
           style: {
@@ -197,12 +197,12 @@ export function createCheckboxGroupDefinition(
         order_num: 0,
       },
       {
-        tag: "CheckboxItems",
+        type: "CheckboxItems",
         props: {} as ComponentElementProps,
         order_num: 1,
         children: [
           {
-            tag: "Checkbox",
+            type: "Checkbox",
             props: {
               children: "Option 1",
               isSelected: false,
@@ -211,7 +211,7 @@ export function createCheckboxGroupDefinition(
             order_num: 1,
             children: [
               {
-                tag: "Label",
+                type: "Label",
                 props: {
                   children: "Option 1",
                   style: {
@@ -225,7 +225,7 @@ export function createCheckboxGroupDefinition(
             ],
           },
           {
-            tag: "Checkbox",
+            type: "Checkbox",
             props: {
               children: "Option 2",
               isSelected: false,
@@ -234,7 +234,7 @@ export function createCheckboxGroupDefinition(
             order_num: 2,
             children: [
               {
-                tag: "Label",
+                type: "Label",
                 props: {
                   children: "Option 2",
                   style: {
@@ -266,9 +266,9 @@ export function createRadioGroupDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "RadioGroup",
+    type: "RadioGroup",
     parent: {
-      tag: "RadioGroup",
+      type: "RadioGroup",
       props: {
         label: "Radio Group",
         name: "",
@@ -284,7 +284,7 @@ export function createRadioGroupDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Radio Group",
           style: {
@@ -296,12 +296,12 @@ export function createRadioGroupDefinition(
         order_num: 0,
       },
       {
-        tag: "RadioItems",
+        type: "RadioItems",
         props: {} as ComponentElementProps,
         order_num: 1,
         children: [
           {
-            tag: "Radio",
+            type: "Radio",
             props: {
               children: "Option 1",
               value: "option1",
@@ -310,7 +310,7 @@ export function createRadioGroupDefinition(
             order_num: 1,
             children: [
               {
-                tag: "Label",
+                type: "Label",
                 props: {
                   children: "Option 1",
                   style: {
@@ -323,7 +323,7 @@ export function createRadioGroupDefinition(
             ],
           },
           {
-            tag: "Radio",
+            type: "Radio",
             props: {
               children: "Option 2",
               value: "option2",
@@ -332,7 +332,7 @@ export function createRadioGroupDefinition(
             order_num: 2,
             children: [
               {
-                tag: "Label",
+                type: "Label",
                 props: {
                   children: "Option 2",
                   style: {
@@ -383,9 +383,9 @@ export function createTagGroupDefinition(
   // 웹 CSS 구조: TagGroup (column) → Label + TagList (row wrap) — Tag elements 없음.
   //   Tag 시각은 TagListSpec shapes 가 items 기반 chip self-render (ADR-097 Phase 4A/4B).
   return {
-    tag: "TagGroup",
+    type: "TagGroup",
     parent: {
-      tag: "TagGroup",
+      type: "TagGroup",
       props: {
         label: "Tag Group",
         size: "md",
@@ -400,7 +400,7 @@ export function createTagGroupDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Tag Group",
           style: {
@@ -410,7 +410,7 @@ export function createTagGroupDefinition(
         order_num: 1,
       },
       {
-        tag: "TagList",
+        type: "TagList",
         props: {} as ComponentElementProps,
         order_num: 2,
         // ADR-097 Addendum 1: Tag element 자식 생성 중단.
@@ -435,9 +435,9 @@ export function createBreadcrumbsDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Breadcrumbs",
+    type: "Breadcrumbs",
     parent: {
-      tag: "Breadcrumbs",
+      type: "Breadcrumbs",
       props: {
         "aria-label": "Breadcrumbs",
         size: "M",
@@ -448,7 +448,7 @@ export function createBreadcrumbsDefinition(
     },
     children: [
       {
-        tag: "Breadcrumb",
+        type: "Breadcrumb",
         props: {
           children: "Home",
           href: "/",
@@ -456,7 +456,7 @@ export function createBreadcrumbsDefinition(
         order_num: 1,
       },
       {
-        tag: "Breadcrumb",
+        type: "Breadcrumb",
         props: {
           children: "Category",
           href: "/category",
@@ -464,7 +464,7 @@ export function createBreadcrumbsDefinition(
         order_num: 2,
       },
       {
-        tag: "Breadcrumb",
+        type: "Breadcrumb",
         props: {
           children: "Page",
           href: "/category/page",
@@ -479,8 +479,8 @@ export function createBreadcrumbsDefinition(
  * Checkbox 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * Checkbox (parent, tag="Checkbox", flex row, alignItems center)
- *   └─ Label (tag="Label", children="Checkbox")
+ * Checkbox (parent, type="Checkbox", flex row, alignItems center)
+ *   └─ Label (type="Label", children="Checkbox")
  */
 export function createCheckboxDefinition(
   context: ComponentCreationContext,
@@ -491,9 +491,9 @@ export function createCheckboxDefinition(
 
 
   return {
-    tag: "Checkbox",
+    type: "Checkbox",
     parent: {
-      tag: "Checkbox",
+      type: "Checkbox",
       props: {
         children: "Checkbox",
         name: "",
@@ -511,7 +511,7 @@ export function createCheckboxDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Checkbox",
         } as ComponentElementProps,
@@ -525,8 +525,8 @@ export function createCheckboxDefinition(
  * Radio 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * Radio (parent, tag="Radio", flex row, alignItems center)
- *   └─ Label (tag="Label", children="Radio")
+ * Radio (parent, type="Radio", flex row, alignItems center)
+ *   └─ Label (type="Label", children="Radio")
  */
 export function createRadioDefinition(
   context: ComponentCreationContext,
@@ -537,9 +537,9 @@ export function createRadioDefinition(
 
 
   return {
-    tag: "Radio",
+    type: "Radio",
     parent: {
-      tag: "Radio",
+      type: "Radio",
       props: {
         children: "Radio",
         value: "radio",
@@ -552,7 +552,7 @@ export function createRadioDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Radio",
         } as ComponentElementProps,
@@ -566,8 +566,8 @@ export function createRadioDefinition(
  * Switch 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * Switch (parent, tag="Switch", flex row, alignItems center)
- *   └─ Label (tag="Label", children="Switch")
+ * Switch (parent, type="Switch", flex row, alignItems center)
+ *   └─ Label (type="Label", children="Switch")
  */
 export function createSwitchDefinition(
   context: ComponentCreationContext,
@@ -578,9 +578,9 @@ export function createSwitchDefinition(
 
 
   return {
-    tag: "Switch",
+    type: "Switch",
     parent: {
-      tag: "Switch",
+      type: "Switch",
       props: {
         children: "Switch",
         name: "",
@@ -594,7 +594,7 @@ export function createSwitchDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Switch",
         } as ComponentElementProps,

@@ -24,9 +24,9 @@ export function createTabsDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Tabs",
+    type: "Tabs",
     parent: {
-      tag: "Tabs",
+      type: "Tabs",
       props: {
         items,
         defaultSelectedKey: item1Id,
@@ -41,24 +41,24 @@ export function createTabsDefinition(
     },
     children: [
       {
-        tag: "TabList",
+        type: "TabList",
         props: {} as ComponentElementProps,
         order_num: 1,
       },
       {
-        tag: "TabPanels",
+        type: "TabPanels",
         props: {} as ComponentElementProps,
         order_num: 2,
         children: [
           {
-            tag: "TabPanel",
+            type: "TabPanel",
             props: {
               itemId: item1Id,
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "TabPanel",
+            type: "TabPanel",
             props: {
               itemId: item2Id,
             } as ComponentElementProps,
@@ -87,9 +87,9 @@ export function createCardDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Card",
+    type: "Card",
     parent: {
-      tag: "Card",
+      type: "Card",
       props: {
         variant: "primary",
         size: "md",
@@ -110,7 +110,7 @@ export function createCardDefinition(
     },
     children: [
       {
-        tag: "CardPreview",
+        type: "CardPreview",
         props: {
           style: {
             display: "flex",
@@ -123,7 +123,7 @@ export function createCardDefinition(
         order_num: 1,
         children: [
           {
-            tag: "Image",
+            type: "Image",
             props: {
               src: "",
               alt: "Card preview",
@@ -141,12 +141,12 @@ export function createCardDefinition(
         // ADR-092 Phase 4: CardHeader inline style(display/flexDirection/alignItems/gap/width)
         //   → CardHeaderSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
         //   기존 저장 프로젝트에 inline style 이 있는 경우 그대로 유지 (사용자 편집 간주).
-        tag: "CardHeader",
+        type: "CardHeader",
         props: {} as ComponentElementProps,
         order_num: 2,
         children: [
           {
-            tag: "Heading",
+            type: "Heading",
             props: {
               children: "Card Title",
               level: 3,
@@ -167,12 +167,12 @@ export function createCardDefinition(
       {
         // ADR-092 Phase 4: CardContent inline style(display/flexDirection/gap/width)
         //   → CardContentSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
-        tag: "CardContent",
+        type: "CardContent",
         props: {} as ComponentElementProps,
         order_num: 3,
         children: [
           {
-            tag: "Description",
+            type: "Description",
             props: {
               children: "Card description text goes here.",
               style: {
@@ -192,7 +192,7 @@ export function createCardDefinition(
         // ADR-092 Phase 4: CardFooter inline style(display/flexDirection/alignItems/gap/width)
         //   → CardFooterSpec.containerStyles + sizes.md.gap 으로 이관. factory inline 제거.
         //   paddingTop/borderTopWidth 는 Taffy layout prop 아님 — 시각적 구분선으로 보존.
-        tag: "CardFooter",
+        type: "CardFooter",
         props: {
           style: {
             paddingTop: "8px",
@@ -218,9 +218,9 @@ export function createTreeDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Tree",
+    type: "Tree",
     parent: {
-      tag: "Tree",
+      type: "Tree",
       props: {
         "aria-label": "Tree",
         selectionMode: "single",
@@ -231,7 +231,7 @@ export function createTreeDefinition(
     },
     children: [
       {
-        tag: "TreeItem",
+        type: "TreeItem",
         props: {
           title: "Node 1",
           hasChildren: true,
@@ -239,7 +239,7 @@ export function createTreeDefinition(
         order_num: 1,
       },
       {
-        tag: "TreeItem",
+        type: "TreeItem",
         props: {
           title: "Node 2",
           hasChildren: false,

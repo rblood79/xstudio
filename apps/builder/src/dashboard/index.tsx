@@ -290,7 +290,7 @@ function Dashboard() {
 
       const bodyElement = {
         id: ElementUtils.generateId(),
-        tag: "body",
+        type: "body",
         props: getDefaultProps("body") as ElementProps,
         parent_id: null,
         page_id: homePageId,

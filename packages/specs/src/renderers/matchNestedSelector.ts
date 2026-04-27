@@ -8,9 +8,9 @@
  * ## 지원 selector 문법 (whitelist — 16 spec P1 audit 기반)
  *
  * **직접 매칭**:
- * - `> .react-aria-X`                       — 직접 자식 중 `tag === "X"`
- * - `> :not(.react-aria-X)`                 — 직접 자식 중 `tag !== "X"`
- * - `.react-aria-X`                         — 깊이 무관 `tag === "X"`
+ * - `> .react-aria-X`                       — 직접 자식 중 `type === "X"`
+ * - `> :not(.react-aria-X)`                 — 직접 자식 중 `type !== "X"`
+ * - `.react-aria-X`                         — 깊이 무관 `type === "X"`
  *
  * **미지원 (CSS emit 은 유지, Canvas matcher 는 skip)**:
  * - `:where(...)`, `:has(...)`, `:not(...)` pseudo — state/attr 기반은 Canvas 에서 CSS 렌더 잔존
@@ -25,8 +25,8 @@
  */
 
 export interface NestedSelectorChild {
-  /** Spec tag (예: `Label`, `Input`, `Group`). PascalCase. */
-  tag: string;
+  /** Spec type (예: `Label`, `Input`, `Group`). PascalCase. */
+  type: string;
 }
 
 /**
@@ -44,17 +44,17 @@ export function matchNestedSelector(
 
   const directPositive = DIRECT_CHILD_POSITIVE.exec(trimmed);
   if (directPositive) {
-    return isDirectChild && child.tag === directPositive[1];
+    return isDirectChild && child.type === directPositive[1];
   }
 
   const directNegative = DIRECT_CHILD_NEGATIVE.exec(trimmed);
   if (directNegative) {
-    return isDirectChild && child.tag !== directNegative[1];
+    return isDirectChild && child.type !== directNegative[1];
   }
 
   const anyDescendant = ANY_DESCENDANT.exec(trimmed);
   if (anyDescendant) {
-    return child.tag === anyDescendant[1];
+    return child.type === anyDescendant[1];
   }
 
   return false;
@@ -74,12 +74,12 @@ export function isSupportedNestedSelector(selector: string): boolean {
 
 // ─── Whitelist patterns ─────────────────────────────────────────────────────
 
-/** `> .react-aria-X` — 직접 자식, 특정 tag */
+/** `> .react-aria-X` — 직접 자식, 특정 type */
 const DIRECT_CHILD_POSITIVE = /^>\s*\.react-aria-([A-Z][A-Za-z0-9]+)$/;
 
-/** `> :not(.react-aria-X)` — 직접 자식, 특정 tag 제외 */
+/** `> :not(.react-aria-X)` — 직접 자식, 특정 type 제외 */
 const DIRECT_CHILD_NEGATIVE =
   /^>\s*:not\(\s*\.react-aria-([A-Z][A-Za-z0-9]+)\s*\)$/;
 
-/** `.react-aria-X` — 깊이 무관 tag 매칭 */
+/** `.react-aria-X` — 깊이 무관 type 매칭 */
 const ANY_DESCENDANT = /^\.react-aria-([A-Z][A-Za-z0-9]+)$/;

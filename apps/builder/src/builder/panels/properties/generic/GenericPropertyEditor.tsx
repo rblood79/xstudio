@@ -32,7 +32,7 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
     const element = state.elementsMap.get(elementId);
     if (!element?.parent_id) return undefined;
     const parent = state.elementsMap.get(element.parent_id);
-    return parent?.tag;
+    return parent?.type;
   }, [elementId]);
 
   const updateCustomId = (newCustomId: string) => {

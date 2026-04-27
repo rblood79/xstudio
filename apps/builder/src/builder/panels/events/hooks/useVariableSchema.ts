@@ -214,7 +214,7 @@ const DEFAULT_RESPONSE_SCHEMA: Record<string, SchemaNode> = {
  */
 const DEFAULT_ELEMENT_SCHEMA: Record<string, SchemaNode> = {
   id: { type: 'string', description: '요소 ID' },
-  tag: { type: 'string', description: '태그 이름' },
+  type: { type: 'string', description: '태그 이름' },
   props: { type: 'object', description: '요소 속성' },
   style: { type: 'object', description: '인라인 스타일' },
   computedStyle: { type: 'object', description: '계산된 스타일' },

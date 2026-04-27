@@ -58,9 +58,9 @@ export const SliderHybridAfterSections = memo(
         const maxVal = Number(currentProps.maxValue) || 100;
 
         const sliderChildren = childrenMap.get(elementId) ?? [];
-        const sliderTrack = sliderChildren.find((c) => c.tag === "SliderTrack");
+        const sliderTrack = sliderChildren.find((c) => c.type === "SliderTrack");
         const sliderOutputRef = sliderChildren.find(
-          (c) => c.tag === "SliderOutput",
+          (c) => c.type === "SliderOutput",
         );
 
         if (checked) {
@@ -88,13 +88,13 @@ export const SliderHybridAfterSections = memo(
           if (sliderTrack) {
             const trackChildren = childrenMap.get(sliderTrack.id) ?? [];
             const thumbCount = trackChildren.filter(
-              (c) => c.tag === "SliderThumb",
+              (c) => c.type === "SliderThumb",
             ).length;
             if (thumbCount < 2) {
               const parentEl = elementsMap.get(elementId);
               await store.addElement({
                 id: crypto.randomUUID(),
-                tag: "SliderThumb",
+                type: "SliderThumb",
                 props: {
                   style: { width: 18, height: 18, borderRadius: "50%" },
                 },
@@ -125,7 +125,7 @@ export const SliderHybridAfterSections = memo(
 
           if (sliderTrack) {
             const trackChildren = childrenMap.get(sliderTrack.id) ?? [];
-            const thumbs = trackChildren.filter((c) => c.tag === "SliderThumb");
+            const thumbs = trackChildren.filter((c) => c.type === "SliderThumb");
             if (thumbs.length > 1) {
               const toRemove = thumbs.slice(1).map((t) => t.id);
               await store.removeElements(toRemove);

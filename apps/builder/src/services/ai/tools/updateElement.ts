@@ -70,7 +70,7 @@ export const updateElementTool: ToolExecutor = {
         success: true,
         data: {
           elementId: targetId,
-          tag: element.tag,
+          type: element.type,
           updatedProps: Object.keys(newProps),
           updatedStyles: Object.keys(newStyles),
         },

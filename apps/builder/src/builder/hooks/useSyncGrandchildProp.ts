@@ -21,11 +21,11 @@ export function useSyncGrandchildProp(elementId: string) {
 
     const updates: BatchPropsUpdate[] = [];
     for (const sync of syncs) {
-      const parent = directChildren.find(c => c.tag === sync.parentTag);
+      const parent = directChildren.find(c => c.type === sync.parentTag);
       if (!parent) continue;
       const grandchildren = childrenMap.get(parent.id);
       if (!grandchildren) continue;
-      const grandchild = grandchildren.find(c => c.tag === sync.childTag);
+      const grandchild = grandchildren.find(c => c.type === sync.childTag);
       if (grandchild) {
         updates.push({
           elementId: grandchild.id,

@@ -90,7 +90,7 @@ export function useCanvasDragDropHelpers({
 
   const getElementBounds = useCallback(
     (element: Element): BoundingBox | null => {
-      if (element.tag.toLowerCase() === "body") {
+      if (element.type.toLowerCase() === "body") {
         return { x: 0, y: 0, width: pageWidth, height: pageHeight };
       }
 
@@ -210,7 +210,7 @@ export function useCanvasDragDropHelpers({
       const childrenMap = useStore.getState().childrenMap;
       const targetChildren = childrenMap.get(target.element.id);
       const isContainer =
-        target.element.tag.toLowerCase() === "body" ||
+        target.element.type.toLowerCase() === "body" ||
         (targetChildren && targetChildren.length > 0);
 
       let dropPosition: "before" | "after" | "on" = isContainer

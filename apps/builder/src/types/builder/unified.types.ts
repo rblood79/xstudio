@@ -60,7 +60,7 @@ export interface ColumnMapping {
 export interface Element {
   id: string;
   customId?: string; // 사용자 정의 ID (예: button_1, input_2) - 이벤트 핸들링, CSS 선택자용
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   parent_id?: string | null;
   order_num?: number;
@@ -2095,7 +2095,7 @@ export function createDefaultSkeletonProps(): BaseElementProps {
 }
 
 // === 통합된 기본 props 생성 함수 ===
-export function getDefaultProps(tag: string): ComponentElementProps {
+export function getDefaultProps(type: string): ComponentElementProps {
   const defaultPropsMap: Record<string, () => ComponentElementProps> = {
     Button: createDefaultButtonProps,
     TextField: createDefaultTextFieldProps,
@@ -2179,6 +2179,6 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Skeleton: createDefaultSkeletonProps,
   };
 
-  const createProps = defaultPropsMap[tag];
+  const createProps = defaultPropsMap[type];
   return createProps ? createProps() : {};
 }

@@ -283,7 +283,7 @@ export const usePageManager = ({
         // 새 페이지에 기본 body 요소 생성
         const bodyElement: Element = {
           id: ElementUtils.generateId(),
-          tag: "body",
+          type: "body",
           props: getDefaultProps("body") as ElementProps,
           parent_id: null,
           page_id: newPageData.id,
@@ -362,7 +362,7 @@ export const usePageManager = ({
         // 새 페이지에 기본 body 요소 생성
         const bodyElement: Element = {
           id: ElementUtils.generateId(),
-          tag: "body",
+          type: "body",
           props: getDefaultProps("body") as ElementProps,
           parent_id: null,
           page_id: newPageData.id,

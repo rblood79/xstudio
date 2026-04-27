@@ -145,7 +145,7 @@ export const SHELL_ONLY_CONTAINER_TAGS = new Set([
   "ColorPicker",
   // ADR-902 후속: Body 는 페이지 루트. factory 가 자식 Element 를 자동 생성하지
   // 않지만 빈 페이지에서도 배경이 렌더되어야 하므로 shell-only 규칙 필요.
-  // Key 는 lowercase — element.tag 가 "body" 이고 Set.has 는 정확 매칭.
+  // Key 는 lowercase — element.type 가 "body" 이고 Set.has 는 정확 매칭.
   "body",
 ]);
 
@@ -213,21 +213,21 @@ function resolveParentDelegatedSize(
   element: Element,
   elementsMap: Map<string, Element>,
 ): string | null {
-  if (element.tag === "Breadcrumb" && element.parent_id) {
+  if (element.type === "Breadcrumb" && element.parent_id) {
     const parent = elementsMap.get(element.parent_id);
-    if (parent?.tag === "Breadcrumbs") {
+    if (parent?.type === "Breadcrumbs") {
       return (getProps(parent).size as string) ?? "M";
     }
   }
 
-  const delegationParents = getParentTagsForChild(element.tag);
+  const delegationParents = getParentTagsForChild(element.type);
   if (!delegationParents || !element.parent_id) return null;
 
   let currentId: string | null | undefined = element.parent_id;
   for (let depth = 0; depth < 3 && currentId; depth++) {
     const ancestor = elementsMap.get(currentId);
     if (!ancestor) break;
-    if (delegationParents.has(ancestor.tag.toLowerCase())) {
+    if (delegationParents.has(ancestor.type.toLowerCase())) {
       return (getProps(ancestor).size as string) ?? null;
     }
     currentId = ancestor.parent_id;
@@ -245,19 +245,19 @@ function resolveBreadcrumbItemContext(
   _separator: string;
   _parentIsDisabled: boolean;
 } | null {
-  if (element.tag !== "Breadcrumb" || !element.parent_id) return null;
+  if (element.type !== "Breadcrumb" || !element.parent_id) return null;
   const parent = elementsMap.get(element.parent_id);
-  if (!parent || parent.tag !== "Breadcrumbs") return null;
+  if (!parent || parent.type !== "Breadcrumbs") return null;
 
   const pp = getProps(parent);
   // childrenMap이 있으면 O(siblings)로 조회, 없으면 fallback O(n)
   const rawSiblings = childrenMap?.get(parent.id);
   const siblings = rawSiblings
-    ? rawSiblings.filter((el) => el.tag === "Breadcrumb")
+    ? rawSiblings.filter((el) => el.type === "Breadcrumb")
     : (() => {
         const result: Element[] = [];
         for (const el of elementsMap.values()) {
-          if (el.parent_id === parent.id && el.tag === "Breadcrumb") {
+          if (el.parent_id === parent.id && el.type === "Breadcrumb") {
             result.push(el);
           }
         }
@@ -288,12 +288,12 @@ function resolveToggleGroupContext(
   } | null;
   indicatorMode: boolean;
 } {
-  if (element.tag !== "ToggleButton" || !element.parent_id) {
+  if (element.type !== "ToggleButton" || !element.parent_id) {
     return { position: null, indicatorMode: false };
   }
 
   const parent = elementsMap.get(element.parent_id);
-  if (!parent || parent.tag !== "ToggleButtonGroup") {
+  if (!parent || parent.type !== "ToggleButtonGroup") {
     return { position: null, indicatorMode: false };
   }
 
@@ -323,18 +323,18 @@ function resolveToggleGroupContext(
   };
 }
 
-/** DateInput parent tag/granularity/hourCycle/locale */
+/** DateInput parent type/granularity/hourCycle/locale */
 function resolveDateInputParent(
   element: Element,
   elementsMap: Map<string, Element>,
 ): Record<string, unknown> | null {
-  if (element.tag !== "DateInput" || !element.parent_id) return null;
+  if (element.type !== "DateInput" || !element.parent_id) return null;
 
   const parent = elementsMap.get(element.parent_id);
-  if (!parent || !DATE_INPUT_PARENT_TAGS.has(parent.tag)) return null;
+  if (!parent || !DATE_INPUT_PARENT_TAGS.has(parent.type)) return null;
 
   const pp = getProps(parent);
-  const result: Record<string, unknown> = { _parentTag: parent.tag };
+  const result: Record<string, unknown> = { _parentTag: parent.type };
   if (pp.granularity != null) result._granularity = pp.granularity;
   if (pp.hourCycle != null) result._hourCycle = pp.hourCycle;
   if (pp.locale != null) result._locale = pp.locale;
@@ -346,7 +346,7 @@ function resolveLabelNecessity(
   element: Element,
   elementsMap: Map<string, Element>,
 ): { indicator: string; isRequired: boolean } | null {
-  if (element.tag !== "Label" || !element.parent_id) return null;
+  if (element.type !== "Label" || !element.parent_id) return null;
 
   const parent = elementsMap.get(element.parent_id);
   if (!parent) return null;
@@ -363,7 +363,7 @@ function resolveLabelAlignment(
   element: Element,
   elementsMap: Map<string, Element>,
 ): string | null {
-  if (element.tag !== "Label" || !element.parent_id) return null;
+  if (element.type !== "Label" || !element.parent_id) return null;
 
   // Walk from parent → ancestors looking for Form
   let currentId: string | null | undefined = element.parent_id;
@@ -371,7 +371,7 @@ function resolveLabelAlignment(
     const ancestor = elementsMap.get(currentId);
     if (!ancestor) break;
 
-    if (ancestor.tag === "Form" || FORM_INHERITANCE_TAGS.has(ancestor.tag)) {
+    if (ancestor.type === "Form" || FORM_INHERITANCE_TAGS.has(ancestor.type)) {
       const pp = getProps(ancestor);
       if (pp.labelPosition === "side" && pp.labelAlign) {
         return pp.labelAlign as string;
@@ -389,9 +389,9 @@ function resolveProgressProps(
   elementsMap: Map<string, Element>,
 ): Record<string, unknown> | null {
   const isTrack =
-    element.tag === "ProgressBarTrack" || element.tag === "MeterTrack";
+    element.type === "ProgressBarTrack" || element.type === "MeterTrack";
   const isValue =
-    element.tag === "ProgressBarValue" || element.tag === "MeterValue";
+    element.type === "ProgressBarValue" || element.type === "MeterValue";
   if (!isTrack && !isValue) return null;
   if (!element.parent_id) return null;
 
@@ -445,7 +445,7 @@ function resolveSliderProps(
   element: Element,
   elementsMap: Map<string, Element>,
 ): Record<string, unknown> | null {
-  if (element.tag !== "SliderTrack" || !element.parent_id) return null;
+  if (element.type !== "SliderTrack" || !element.parent_id) return null;
 
   const parent = elementsMap.get(element.parent_id);
   if (!parent) return null;
@@ -463,14 +463,14 @@ function resolveSliderProps(
  * SelectIcon/ComboBoxTrigger → parent/grandparent iconName
  *
  * ADR-102: SelectIcon — RAC 공식 미존재 composition 고유 D3 시각 element.
- *   BC HIGH (factory 직렬화 tag) → 정당화 유지. grandparent(Select) iconName 위임.
+ *   BC HIGH (factory 직렬화 type) → 정당화 유지. grandparent(Select) iconName 위임.
  * ADR-101: ComboBoxTrigger — Compositional Architecture 고유 element.
  */
 function resolveIconDelegation(
   element: Element,
   elementsMap: Map<string, Element>,
 ): string | null {
-  if (element.tag !== "SelectIcon" && element.tag !== "ComboBoxTrigger")
+  if (element.type !== "SelectIcon" && element.type !== "ComboBoxTrigger")
     return null;
   if (!element.parent_id) return null;
 
@@ -496,18 +496,18 @@ function resolveTagGroupAllowsRemoving(
   element: Element,
   elementsMap: Map<string, Element>,
 ): boolean {
-  if (element.tag !== "Tag" || !element.parent_id) return false;
+  if (element.type !== "Tag" || !element.parent_id) return false;
 
   const tagList = elementsMap.get(element.parent_id);
   if (!tagList?.parent_id) return false;
 
   const ancestor =
-    tagList.tag === "TagList"
+    tagList.type === "TagList"
       ? elementsMap.get(tagList.parent_id)
-      : tagList.tag === "TagGroup"
+      : tagList.type === "TagGroup"
         ? tagList
         : null;
-  if (!ancestor || ancestor.tag !== "TagGroup") return false;
+  if (!ancestor || ancestor.type !== "TagGroup") return false;
 
   return Boolean(getProps(ancestor).allowsRemoving);
 }
@@ -527,9 +527,9 @@ function resolveTagListItemsFromParent(
   element: Element,
   elementsMap: Map<string, Element>,
 ): Record<string, unknown> | null {
-  if (element.tag !== "TagList" || !element.parent_id) return null;
+  if (element.type !== "TagList" || !element.parent_id) return null;
   const parent = elementsMap.get(element.parent_id);
-  if (!parent || parent.tag !== "TagGroup") return null;
+  if (!parent || parent.type !== "TagGroup") return null;
 
   const parentProps = getProps(parent);
   const patch: Record<string, unknown> = {};
@@ -576,10 +576,10 @@ function isLabelInNowrapParent(
   element: Element,
   elementsMap: Map<string, Element>,
 ): boolean {
-  if (element.tag !== "Label" || !element.parent_id) return false;
+  if (element.type !== "Label" || !element.parent_id) return false;
   const parent = elementsMap.get(element.parent_id);
   if (!parent) return false;
-  return NOWRAP_PARENTS.has(parent.tag);
+  return NOWRAP_PARENTS.has(parent.type);
 }
 
 /** Accent color from element or ancestor chain */
@@ -618,9 +618,9 @@ function resolveAccentColor(
  */
 export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   const { element, layout, theme, childElements, elementsMap } = input;
-  const tag = element.tag;
+  const type = element.type;
 
-  const spec = getSpecForTag(tag);
+  const spec = getSpecForTag(type);
   if (!spec) return null;
 
   const w = layout?.width ?? 0;
@@ -637,7 +637,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   const delegatedSize = resolveParentDelegatedSize(element, elementsMap);
   const rawSize = (props.size as string) ?? delegatedSize ?? spec.defaultSize;
   const size =
-    element.tag === "Breadcrumb"
+    element.type === "Breadcrumb"
       ? normalizeBreadcrumbRspSizeKey(rawSize)
       : rawSize;
   const sizeSpec = spec.sizes[size] ?? spec.sizes[spec.defaultSize];
@@ -652,14 +652,14 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   const flexDir = (style.flexDirection as string) || "";
   const COLUMN_REARRANGE_TAGS = new Set(["Checkbox", "Radio", "Switch"]);
   const isColumn =
-    COLUMN_REARRANGE_TAGS.has(element.tag) &&
+    COLUMN_REARRANGE_TAGS.has(element.type) &&
     (flexDir === "column" || flexDir === "column-reverse");
 
   // ---------- specProps 준비 ----------
   let specProps: Record<string, unknown> = { ...props };
 
   // Size injection — Breadcrumb은 항상 RSP 키 S|M|L (Skia shapes·패딩·typography 토큰 정합)
-  if (element.tag === "Breadcrumb") {
+  if (element.type === "Breadcrumb") {
     specProps = { ...specProps, size };
   } else if (delegatedSize && !props.size) {
     specProps = { ...specProps, size: delegatedSize };
@@ -781,12 +781,12 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   }
 
   // Tab/TabList: 조상 Tabs 1회 조회 → _isSelected, _showIndicator, orientation 주입
-  if (element.tag === "Tab" || element.tag === "TabList") {
+  if (element.type === "Tab" || element.type === "TabList") {
     const tabsAncestor = element.parent_id
       ? findAncestorByTag(element, "Tabs", elementsMap, 3)
       : undefined;
 
-    if (tabsAncestor && element.tag === "Tab") {
+    if (tabsAncestor && element.type === "Tab") {
       const ap = getProps(tabsAncestor);
       // _isSelected
       const tabId = getProps(element).tabId as string | undefined;
@@ -821,10 +821,10 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // Synthetic-merge: 자식 props를 spec shapes에 통합하므로 주입 차단
   //   (주입 시 shell만 남고 내용이 사라짐).
   // 그 외 일반 컨테이너: 자식이 있을 때만 주입.
-  if (SHELL_ONLY_CONTAINER_TAGS.has(tag)) {
+  if (SHELL_ONLY_CONTAINER_TAGS.has(type)) {
     specProps = { ...specProps, _hasChildren: true };
   } else if (
-    !SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(tag) &&
+    !SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(type) &&
     childElements &&
     childElements.length > 0
   ) {
@@ -832,7 +832,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   }
 
   // Container dimension injection
-  if (CONTAINER_DIMENSION_TAGS.has(tag)) {
+  if (CONTAINER_DIMENSION_TAGS.has(type)) {
     specProps = {
       ...specProps,
       _containerWidth: w,
@@ -906,7 +906,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   applyInlineBorderOverlay(specNode, style);
 
   // ---------- Phantom indicator offset ----------
-  applyPhantomIndicatorOffset(specNode, tag, size, style, specHeight);
+  applyPhantomIndicatorOffset(specNode, type, size, style, specHeight);
 
   // ---------- Disabled opacity ----------
   if (componentState === "disabled") {
@@ -929,7 +929,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   // Tag/Badge 기본 nowrap + Label-in-nowrap-parent 특수 케이스 유지.
   if (specNode.children) {
     const labelNowrap = isLabelInNowrapParent(element, elementsMap);
-    const isNowrapTag = tag === "Tag" || tag === "Badge";
+    const isNowrapTag = type === "Tag" || type === "Badge";
     const hasOverflowClip =
       style.overflow === "hidden" || style.overflow === "clip";
 
@@ -1057,12 +1057,12 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
 
 function applyPhantomIndicatorOffset(
   specNode: SkiaNodeData,
-  tag: string,
+  type: string,
   size: string,
   style: Record<string, unknown>,
   specHeight: number,
 ): void {
-  const tagLower = tag.toLowerCase();
+  const tagLower = type.toLowerCase();
   const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[tagLower];
   if (!indicatorConfig) return;
 

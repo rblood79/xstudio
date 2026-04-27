@@ -72,7 +72,7 @@ export function computeReorderUpdates(
     const parentElement = elements.find(
       (el) => el.id === (parentKey === "root" ? null : parentKey),
     );
-    const parentTag = parentElement?.tag;
+    const parentTag = parentElement?.type;
 
     // 특별 정렬이 필요한 컴포넌트들 확인
     const isTabsChildren = parentTag === "Tabs";

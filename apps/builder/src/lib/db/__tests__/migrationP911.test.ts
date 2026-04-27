@@ -137,9 +137,9 @@ describe("ADR-911 P1-a: convertTemplateToCanonicalFrame", () => {
 describe("ADR-911 P1-a: flattenTemplateElements", () => {
   it("removes tag='Slot' children from element tree", () => {
     const elements = [
-      { tag: "div", props: { className: "wrapper" } },
-      { tag: "Slot", props: { name: "content" } },
-      { tag: "footer", props: {} },
+      { type: "div", props: { className: "wrapper" } },
+      { type: "Slot", props: { name: "content" } },
+      { type: "footer", props: {} },
     ];
     const result = flattenTemplateElements(elements);
     expect(result).toHaveLength(2);
@@ -147,14 +147,14 @@ describe("ADR-911 P1-a: flattenTemplateElements", () => {
   });
 
   it("preserves non-Slot elements with type='frame'", () => {
-    const elements = [{ tag: "div", props: { className: "box" } }];
+    const elements = [{ type: "div", props: { className: "box" } }];
     const result = flattenTemplateElements(elements);
     expect(result[0].type).toBe("frame");
     expect(result[0].name).toBe("div");
   });
 
   it("returns empty array for elements containing only Slot", () => {
-    const elements = [{ tag: "Slot", props: { name: "only" } }];
+    const elements = [{ type: "Slot", props: { name: "only" } }];
     const result = flattenTemplateElements(elements);
     expect(result).toEqual([]);
   });

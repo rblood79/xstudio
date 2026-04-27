@@ -80,7 +80,7 @@ export function useCollectionItemManager(
    */
   const children = useMemo(() => {
     return rawChildren
-      .filter((child) => child.tag === childTag)
+      .filter((child) => child.type === childTag)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [rawChildren, childTag]);
 
@@ -117,7 +117,7 @@ export function useCollectionItemManager(
       const newItem = {
         id: ElementUtils.generateId(),
         page_id: currentPageId || "1",
-        tag: childTag,
+        type: childTag,
         props: {
           ...defaultProps,
           isDisabled: false,

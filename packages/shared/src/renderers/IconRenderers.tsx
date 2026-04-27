@@ -46,7 +46,7 @@ export const renderIcon = (
       key={element.id}
       className="react-aria-Icon"
       data-element-id={element.id}
-      data-original-tag="Icon"
+      data-original-type="Icon"
       style={props.style as React.CSSProperties | undefined}
     >
       <svg

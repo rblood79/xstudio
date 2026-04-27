@@ -37,7 +37,7 @@ export function SelectionFilter({
   onFilteredElements,
   className = "",
 }: SelectionFilterProps) {
-  const [filterType, setFilterType] = useState<"all" | "type" | "tag" | "property">("all");
+  const [filterType, setFilterType] = useState<"all" | "type" | "type" | "property">("all");
   const [selectedTag, setSelectedTag] = useState<string>("");
   const [propertyKey, setPropertyKey] = useState<string>("");
   const [propertyValue, setPropertyValue] = useState<string>("");
@@ -48,7 +48,7 @@ export function SelectionFilter({
     const tags = new Set<string>();
 
     allElements.forEach((el) => {
-      tags.add(el.tag);
+      tags.add(el.type);
     });
 
     return Array.from(tags).sort();
@@ -64,9 +64,9 @@ export function SelectionFilter({
         break;
 
       case "type":
-      case "tag":
+      case "type":
         if (selectedTag) {
-          filtered = allElements.filter((el) => el.tag === selectedTag);
+          filtered = allElements.filter((el) => el.type === selectedTag);
         }
         break;
 
@@ -150,19 +150,19 @@ export function SelectionFilter({
           options={[
             { value: "all", label: "전체" },
             { value: "type", label: "타입으로" },
-            { value: "tag", label: "태그로" },
+            { value: "type", label: "태그로" },
             { value: "property", label: "속성으로" },
           ]}
         />
 
-        {(filterType === "type" || filterType === "tag") && (
+        {(filterType === "type" || filterType === "type") && (
           <PropertySelect
             label="태그"
             value={selectedTag}
             onChange={setSelectedTag}
             options={[
               { value: "", label: "선택하세요" },
-              ...uniqueTags.map((tag) => ({ value: tag, label: tag })),
+              ...uniqueTags.map((type) => ({ value: type, label: type })),
             ]}
           />
         )}
@@ -190,7 +190,7 @@ export function SelectionFilter({
             size="sm"
             onPress={handleApplyFilter}
             isDisabled={
-              (filterType === "type" || filterType === "tag") && !selectedTag ||
+              (filterType === "type" || filterType === "type") && !selectedTag ||
               filterType === "property" && !propertyKey
             }
           >

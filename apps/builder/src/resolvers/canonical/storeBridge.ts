@@ -212,7 +212,7 @@ export function extractLegacyPropsFromResolved(
  * @param instance - componentRole === "instance" Element
  * @param master   - instance.masterId 로 조회한 master Element
  * @param cache    - shared ResolverCache (default: singleton)
- * @returns        canonical 경로로 resolve 된 Element (tag = master.tag, props = merged)
+ * @returns        canonical 경로로 resolve 된 Element (type = master.type, props = merged)
  */
 export function resolveInstanceWithSharedCache(
   instance: Element,
@@ -224,7 +224,7 @@ export function resolveInstanceWithSharedCache(
 
   const masterNode: CanonicalNode = {
     id: master.id,
-    type: master.tag as ComponentTag,
+    type: master.type as ComponentTag,
     reusable: true,
     metadata: {
       type: "legacy-element-props",
@@ -254,7 +254,7 @@ export function resolveInstanceWithSharedCache(
 
   return {
     ...instance,
-    tag: master.tag,
+    type: master.type,
     props,
   };
 }

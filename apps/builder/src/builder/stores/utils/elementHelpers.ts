@@ -64,11 +64,11 @@ export const getChildElements = (
 /**
  * 요소의 완전한 props 객체를 생성하는 헬퍼 함수
  *
- * 요소의 기존 props에 새로운 props를 병합하고 tag 정보를 추가합니다.
+ * 요소의 기존 props에 새로운 props를 병합하고 type 정보를 추가합니다.
  *
  * @param element - 대상 Element 객체
  * @param props - 병합할 추가 props (선택적)
- * @returns 병합된 props 객체 (tag 포함)
+ * @returns 병합된 props 객체 (type 포함)
  */
 export const createCompleteProps = (
   element: Element,
@@ -76,7 +76,7 @@ export const createCompleteProps = (
 ) => ({
   ...element.props,
   ...props,
-  tag: element.tag,
+  type: element.type,
 });
 
 /**
@@ -95,7 +95,7 @@ export const computeCanvasElementStyle = (
   const computedStyle: Record<string, string> = {};
   const props = element.props as Record<string, unknown> | undefined;
   const style = props?.style as Record<string, unknown> | undefined;
-  const tag = element.tag.toLowerCase();
+  const type = element.type.toLowerCase();
 
   // 1. Inline style에서 borderRadius 추출 (최우선)
   if (style?.borderRadius !== undefined) {
@@ -107,7 +107,7 @@ export const computeCanvasElementStyle = (
   // 2. 컴포넌트별 spec에서 borderRadius 계산
   const size = String(props?.size || 'sm');
 
-  switch (tag) {
+  switch (type) {
     case 'button': {
       // Button: ButtonSpec에서 size별 borderRadius 가져오기
       const sizeSpec = ButtonSpec.sizes[size as keyof typeof ButtonSpec.sizes] || ButtonSpec.sizes[ButtonSpec.defaultSize];

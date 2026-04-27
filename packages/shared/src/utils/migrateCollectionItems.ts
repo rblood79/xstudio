@@ -24,7 +24,7 @@ import type {
 
 interface ElementLike {
   id: string;
-  tag: string;
+  type: string;
   parent_id?: string | null;
   order_num?: number;
   props: Record<string, unknown>;
@@ -74,17 +74,17 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     // ADR-100 Phase 1 (098-a 슬롯): legacy "SelectItem" Element → items SSOT 흡수.
     //   RAC 공식: ListBoxItem. composition 고유 식별자 유지 (BC HIGH 회피).
     // ADR-101 Phase 1 (098-b 슬롯): legacy "ComboBoxItem" Element → items SSOT 흡수.
-    //   RAC alias: ComboBoxItem (이름 동일). ADR-073 이관 완료 → 저장 데이터에 tag 없음 (BC 0%).
+    //   RAC alias: ComboBoxItem (이름 동일). ADR-073 이관 완료 → 저장 데이터에 type 없음 (BC 0%).
     //   본 경로는 migration 전 기존 프로젝트 호환 경로.
-    if (el.tag === "SelectItem") {
+    if (el.type === "SelectItem") {
       pushInto(selectItemChildrenByParent, el.parent_id, el);
-    } else if (el.tag === "ComboBoxItem") {
+    } else if (el.type === "ComboBoxItem") {
       pushInto(comboBoxItemChildrenByParent, el.parent_id, el);
-    } else if (el.tag === "ListBoxItem") {
+    } else if (el.type === "ListBoxItem") {
       pushInto(listBoxItemChildrenByParent, el.parent_id, el);
-    } else if (el.tag === "Tag") {
+    } else if (el.type === "Tag") {
       pushInto(tagChildrenByTagListId, el.parent_id, el);
-    } else if (el.tag === "TagList") {
+    } else if (el.type === "TagList") {
       tagListIdToTagGroupId.set(el.id, el.parent_id);
     }
   }
@@ -107,10 +107,10 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     const tagGroupById = new Map<string, T>();
     const tagListsByTagGroupId = new Map<string, T[]>();
     for (const el of elements) {
-      if (el.tag === "TagGroup") tagGroupById.set(el.id, el);
+      if (el.type === "TagGroup") tagGroupById.set(el.id, el);
     }
     for (const el of elements) {
-      if (el.tag === "TagList" && el.parent_id) {
+      if (el.type === "TagList" && el.parent_id) {
         pushInto(tagListsByTagGroupId, el.parent_id, el);
       }
     }
@@ -154,7 +154,7 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     let anyTemplate = false;
     for (const lbi of lbiChildren) {
       const subs = childrenByParent.get(lbi.id) ?? [];
-      if (subs.some((s) => s.tag === "Field")) {
+      if (subs.some((s) => s.type === "Field")) {
         anyTemplate = true;
         break;
       }
@@ -195,9 +195,9 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
   //   orphan skip — items 주입 없이 Tag element 유지되어 안전.
   for (const [tagListId, tagChildren] of tagChildrenByTagListId) {
     if (!tagListIdToTagGroupId.has(tagListId)) continue;
-    for (const tag of tagChildren) {
-      orphanSet.add(tag.id);
-      collectSubtreeIds(tag.id, childrenByParent, orphanSet);
+    for (const type of tagChildren) {
+      orphanSet.add(type.id);
+      collectSubtreeIds(type.id, childrenByParent, orphanSet);
     }
   }
 
@@ -207,7 +207,7 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     if (orphanSet.has(el.id)) continue;
 
     // Select 부모 — items[] 주입
-    if (el.tag === "Select") {
+    if (el.type === "Select") {
       const children = selectItemChildrenByParent.get(el.id);
       if (children) {
         migratedElements.push({
@@ -222,7 +222,7 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     }
 
     // ComboBox 부모 — items[] 주입
-    if (el.tag === "ComboBox") {
+    if (el.type === "ComboBox") {
       const children = comboBoxItemChildrenByParent.get(el.id);
       if (children) {
         migratedElements.push({
@@ -237,7 +237,7 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     }
 
     // ADR-097: TagGroup 부모 — items[] 주입 (2단 이전, TagList 유지)
-    if (el.tag === "TagGroup") {
+    if (el.type === "TagGroup") {
       const items = tagGroupItemsById.get(el.id);
       if (items && items.length > 0) {
         migratedElements.push({
@@ -256,7 +256,7 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     //   경로는 buildPropagationUpdates 로 자동 전파되지만, migration 경로는 별도 주입 필요.
     //   TagGroup.propagation rule `{ parentProp: "items", childPath: "TagList", override: true }`
     //   와 동일 시맨틱.
-    if (el.tag === "TagList" && el.parent_id) {
+    if (el.type === "TagList" && el.parent_id) {
       const parentItems = tagGroupItemsById.get(el.parent_id);
       if (parentItems && parentItems.length > 0) {
         migratedElements.push({
@@ -271,7 +271,7 @@ export function applyCollectionItemsMigration<T extends ElementLike>(
     }
 
     // ListBox 정적 모드 부모 — items[] + selectedIndex→selectedKey 변환
-    if (el.tag === "ListBox" && listBoxAbsorbParents.has(el.id)) {
+    if (el.type === "ListBox" && listBoxAbsorbParents.has(el.id)) {
       const lbiChildren = listBoxItemChildrenByParent.get(el.id) ?? [];
       const items = listBoxItemChildrenToItemsArray(
         lbiChildren,
@@ -412,13 +412,13 @@ export function listBoxItemChildrenToItemsArray(
       const subs = childrenByParent.get(lbi.id) ?? [];
 
       const titleChild = subs.find((s) => {
-        if (s.tag !== "Text") return false;
+        if (s.type !== "Text") return false;
         const slot = (s.props as { slot?: string })?.slot;
         return !slot || slot === "title" || slot === "label";
       });
       const descChild = subs.find((s) => {
-        if (s.tag === "Description") return true;
-        if (s.tag === "Text") {
+        if (s.type === "Description") return true;
+        if (s.type === "Text") {
           const slot = (s.props as { slot?: string })?.slot;
           return slot === "description";
         }
@@ -470,15 +470,15 @@ export function tagChildrenToItemsArray(
 ): StoredTagItem[] {
   return [...tagChildren]
     .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0))
-    .map((tag) => {
-      const p = tag.props ?? {};
+    .map((type) => {
+      const p = type.props ?? {};
       const labelFromChildren =
         typeof p.children === "string" && p.children.length > 0
           ? p.children
           : undefined;
       return {
-        id: tag.id,
-        label: labelFromChildren ?? tag.id,
+        id: type.id,
+        label: labelFromChildren ?? type.id,
         isDisabled: p.isDisabled === true || undefined,
         allowsRemoving:
           typeof p.allowsRemoving === "boolean" ? p.allowsRemoving : undefined,

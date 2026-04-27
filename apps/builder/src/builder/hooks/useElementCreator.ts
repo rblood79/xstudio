@@ -14,9 +14,9 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 //import { useStore } from '../stores';
 
 export interface UseElementCreatorReturn {
-  getDefaultProps: (tag: string) => ComponentElementProps;
+  getDefaultProps: (type: string) => ComponentElementProps;
   handleAddElement: (
-    tag: string,
+    type: string,
     currentPageId: string,
     selectedElementId: string | null,
     elements: Element[],
@@ -77,13 +77,13 @@ export const useElementCreator = (): UseElementCreatorReturn => {
     }
   }, []); // 빈 의존성 배열로 한 번만 실행
 
-  const getDefaultProps = useCallback((tag: string): ComponentElementProps => {
-    return getCentralDefaultProps(tag);
+  const getDefaultProps = useCallback((type: string): ComponentElementProps => {
+    return getCentralDefaultProps(type);
   }, []);
 
   const handleAddElement = useCallback(
     async (
-      tag: string,
+      type: string,
       currentPageId: string,
       selectedElementId: string | null,
       elements: Element[],
@@ -126,10 +126,10 @@ export const useElementCreator = (): UseElementCreatorReturn => {
           // 복합 컴포넌트인지 확인 (공유 상수 사용)
 
           const operation = async () => {
-            if (COMPLEX_COMPONENT_TAGS.has(tag)) {
+            if (COMPLEX_COMPONENT_TAGS.has(type)) {
               // ComponentFactory를 사용하여 복합 컴포넌트 생성
               const result = await ComponentFactory.createComplexComponent(
-                tag,
+                type,
                 selectedElement ?? null,
                 currentPageId,
                 elements,
@@ -160,7 +160,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
               const parentEl = parentId
                 ? elements.find((el) => el.id === parentId)
                 : null;
-              if (parentEl?.tag === "Card") {
+              if (parentEl?.type === "Card") {
                 const ACTION_TAGS = new Set([
                   "Button",
                   "ToggleButton",
@@ -168,17 +168,17 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                   "ActionButtonGroup",
                   "ButtonGroup",
                 ]);
-                if (ACTION_TAGS.has(tag)) {
+                if (ACTION_TAGS.has(type)) {
                   const cardFooter = elements.find(
                     (el) =>
                       el.parent_id === parentId &&
-                      el.tag === "CardFooter" &&
+                      el.type === "CardFooter" &&
                       !el.deleted,
                   );
                   if (cardFooter) {
                     parentId = cardFooter.id;
                     console.log(
-                      `📎 Card action routing: ${tag} → CardFooter (${cardFooter.id})`,
+                      `📎 Card action routing: ${type} → CardFooter (${cardFooter.id})`,
                     );
                   }
                 }
@@ -191,9 +191,9 @@ export const useElementCreator = (): UseElementCreatorReturn => {
 
               const newElement: Element = {
                 id: crypto.randomUUID(), // UUID 생성
-                tag,
-                customId: generateCustomId(tag, elements),
-                props: getDefaultProps(tag),
+                type,
+                customId: generateCustomId(type, elements),
+                props: getDefaultProps(type),
                 // Layout 모드면 layout_id 사용, 아니면 page_id 사용
                 page_id: layoutId ? null : currentPageId,
                 layout_id: layoutId || null,
@@ -222,7 +222,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
           await retryOperation(operation, 3);
         }
       } catch (error) {
-        handleError(error, `요소 생성 실패: ${tag}`, {
+        handleError(error, `요소 생성 실패: ${type}`, {
           type: "creation",
           severity: "high",
           elementId: selectedElementId || undefined,

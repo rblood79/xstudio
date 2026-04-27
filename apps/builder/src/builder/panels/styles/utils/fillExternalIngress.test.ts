@@ -14,7 +14,7 @@ describe("normalizeExternalFillIngress", () => {
   it("fills 가 이미 있으면 derived background style 을 제거하고 fills 는 유지한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-1",
-      tag: "Box",
+      type: "Box",
       fills: [
         {
           id: "fill-1",
@@ -45,7 +45,7 @@ describe("normalizeExternalFillIngress", () => {
   it("legacy solid backgroundColor 는 fills 로 승격한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-2",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundColor: "#ABCDEF",
@@ -62,7 +62,7 @@ describe("normalizeExternalFillIngress", () => {
   it("legacy linear-gradient backgroundImage 는 gradient fill 로 승격한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-3",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage: "linear-gradient(90deg, #FF0000 0%, #00FF00 100%)",
@@ -80,7 +80,7 @@ describe("normalizeExternalFillIngress", () => {
   it("legacy radial-gradient backgroundImage 는 radial fill 로 승격한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-3b",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage:
@@ -99,7 +99,7 @@ describe("normalizeExternalFillIngress", () => {
   it("legacy conic-gradient backgroundImage 는 angular fill 로 승격한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-3c",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage:
@@ -118,7 +118,7 @@ describe("normalizeExternalFillIngress", () => {
   it("legacy image backgroundImage 는 image fill 로 승격한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-4",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage: "url(https://example.com/hero.png)",
@@ -150,7 +150,7 @@ describe("normalizeExternalFillIngress", () => {
 
     const normalized = normalizeExternalFillIngress({
       id: "el-5",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
@@ -168,7 +168,7 @@ describe("normalizeExternalFillIngress", () => {
   it("allowlist 밖 payload 는 임의 canonicalize 하지 않고 pass-through 한다", () => {
     const normalized = normalizeExternalFillIngress({
       id: "el-5b",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage:
@@ -192,7 +192,7 @@ describe("normalizeExternalFillIngress", () => {
     const normalized = normalizeExternalFillIngressBatch([
       {
         id: "el-6",
-        tag: "Box",
+        type: "Box",
         props: {
           style: {
             backgroundImage:

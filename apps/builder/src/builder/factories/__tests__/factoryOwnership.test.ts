@@ -48,7 +48,7 @@ function makeMockParent(id = "parent-id-123"): Element {
   return {
     id,
     customId: "mock-parent",
-    tag: "Section",
+    type: "Section",
     props: {},
     parent_id: null,
     order_num: 0,
@@ -319,7 +319,7 @@ describe("P3-D-1: factory ownership 제거", () => {
         def.parent as unknown as Record<string, unknown>,
         "parent",
       );
-      expect(def.parent.tag).toBe("TextField");
+      expect(def.parent.type).toBe("TextField");
       expect(def.parent.props).toMatchObject({ label: "Text Field" });
     });
   });
@@ -438,7 +438,7 @@ describe("P3-D-1: factory ownership 제거", () => {
       });
     });
 
-    it("ownership 제거 후 ComponentDefinition 구조(parent/children/tag) 는 유지된다", () => {
+    it("ownership 제거 후 ComponentDefinition 구조(parent/children/type) 는 유지된다", () => {
       // Arrange
       const ctx = makeContext(makeMockParent());
 
@@ -446,7 +446,7 @@ describe("P3-D-1: factory ownership 제거", () => {
       const def = createRadioGroupDefinition(ctx);
 
       // Assert
-      expect(def).toHaveProperty("tag");
+      expect(def).toHaveProperty("type");
       expect(def).toHaveProperty("parent");
       expect(def).toHaveProperty("children");
       expect(Array.isArray(def.children)).toBe(true);
@@ -564,7 +564,7 @@ describe("P3-D-1: factory ownership 제거", () => {
         def.parent as unknown as Record<string, unknown>,
         "parent",
       );
-      expect(def.parent.tag).toBe("ComboBox");
+      expect(def.parent.type).toBe("ComboBox");
       expect(def.parent.props).toMatchObject({ label: "Combo Box" });
     });
   });

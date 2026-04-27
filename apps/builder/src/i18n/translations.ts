@@ -123,7 +123,7 @@ const koKR: TranslationKeys = {
     radio: "라디오",
     timePicker: "시간 선택",
     fileUpload: "파일 업로드",
-    tag: "태그",
+    type: "태그",
   },
   validation: {
     required: "필수 항목입니다",
@@ -271,7 +271,7 @@ const enUS: TranslationKeys = {
     radio: "Radio",
     timePicker: "Time Picker",
     fileUpload: "File Upload",
-    tag: "Tag",
+    type: "Tag",
   },
   validation: {
     required: "This field is required",
@@ -419,7 +419,7 @@ const jaJP: TranslationKeys = {
     radio: "ラジオ",
     timePicker: "時間選択",
     fileUpload: "ファイルアップロード",
-    tag: "タグ",
+    type: "タグ",
   },
   validation: {
     required: "この項目は必須です",
@@ -567,7 +567,7 @@ const zhCN: TranslationKeys = {
     radio: "单选框",
     timePicker: "时间选择器",
     fileUpload: "文件上传",
-    tag: "标签",
+    type: "标签",
   },
   validation: {
     required: "此项为必填项",

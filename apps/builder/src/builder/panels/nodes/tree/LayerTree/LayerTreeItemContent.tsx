@@ -81,7 +81,7 @@ function NormalItemContent({
   state,
   onDelete,
 }: NormalItemContentProps) {
-  const { depth, hasChildren, tag, element, name } = node;
+  const { depth, hasChildren, type, element, name } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
 
   return (
@@ -122,12 +122,12 @@ function NormalItemContent({
         <Button
           slot="drag"
           className={`iconButton layer-drag-handle${
-            tag === "body" ? " layer-drag-handle--hidden" : ""
+            type === "body" ? " layer-drag-handle--hidden" : ""
           }`}
           aria-label={`Drag ${name}`}
-          aria-hidden={tag === "body"}
-          style={{ pointerEvents: tag === "body" ? "none" : "auto" }}
-          isDisabled={tag === "body"}
+          aria-hidden={type === "body"}
+          style={{ pointerEvents: type === "body" ? "none" : "auto" }}
+          isDisabled={type === "body"}
         >
           <GripVertical
             color={ICON_EDIT_PROPS.color}
@@ -135,7 +135,7 @@ function NormalItemContent({
             size={ICON_EDIT_PROPS.size}
           />
         </Button>
-        {tag === "body" && (
+        {type === "body" && (
           <Button className="iconButton" aria-label="Settings">
             <Settings2
               color={ICON_EDIT_PROPS.color}
@@ -144,10 +144,10 @@ function NormalItemContent({
             />
           </Button>
         )}
-        {tag !== "body" && (
+        {type !== "body" && (
           <Button
             className="iconButton"
-            aria-label={`Delete ${tag}`}
+            aria-label={`Delete ${type}`}
             onPress={() => onDelete(element)}
           >
             <Trash

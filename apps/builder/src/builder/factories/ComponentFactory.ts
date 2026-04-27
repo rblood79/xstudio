@@ -179,16 +179,16 @@ export class ComponentFactory {
    * @param doc - Canonical CompositionDocument (ADR-903 P3-E E-6: layout body 변환 용)
    */
   static async createComplexComponent(
-    tag: string,
+    type: string,
     parentElement: Element | null,
     pageId: string,
     elements: Element[],
     layoutId: string | null | undefined,
     doc: CompositionDocument,
   ): Promise<ComponentCreationResult> {
-    const creator = this.creators[tag];
+    const creator = this.creators[type];
     if (!creator) {
-      throw new Error(`No creator found for component type: ${tag}`);
+      throw new Error(`No creator found for component type: ${type}`);
     }
 
     const context: ComponentCreationContext = {

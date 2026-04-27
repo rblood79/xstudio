@@ -5,8 +5,8 @@
  * 모든 Phase에서 사용되는 React Stately 관련 타입
  */
 
-import type { Key, Selection } from 'react-stately';
-import type { FieldType } from './unified.types';
+import type { Key, Selection } from "react-stately";
+import type { FieldType } from "./unified.types";
 
 /**
  * 리스트 데이터 아이템 기본 인터페이스
@@ -51,7 +51,7 @@ export interface TreeDataItem extends ListDataItem {
  */
 export interface ElementTreeItem extends TreeDataItem {
   /** React Aria 컴포넌트 태그 */
-  tag: string;
+  type: string;
   /** 부모 요소 ID (flat 구조와의 호환성) */
   parent_id?: string | null;
   /** 표시 순서 */
@@ -98,7 +98,7 @@ export interface ListStateOptions<T> {
   /** 초기 아이템 목록 */
   items: T[];
   /** 선택 모드 */
-  selectionMode?: 'none' | 'single' | 'multiple';
+  selectionMode?: "none" | "single" | "multiple";
   /** 빈 선택 허용 여부 */
   disallowEmptySelection?: boolean;
   /** 초기 선택된 키 */
@@ -115,7 +115,7 @@ export interface TreeStateOptions<T> {
   /** 트리 컬렉션 */
   collection: T[];
   /** 선택 모드 */
-  selectionMode?: 'none' | 'single' | 'multiple';
+  selectionMode?: "none" | "single" | "multiple";
   /** 빈 선택 허용 여부 */
   disallowEmptySelection?: boolean;
   /** 초기 펼쳐진 키 */
@@ -149,14 +149,17 @@ export interface TableStateOptions<T> {
   /** 테이블 데이터 */
   items: T[];
   /** 선택 모드 */
-  selectionMode?: 'none' | 'single' | 'multiple';
+  selectionMode?: "none" | "single" | "multiple";
   /** 정렬 설정 */
   sortDescriptor?: {
     column: Key;
-    direction: 'ascending' | 'descending';
+    direction: "ascending" | "descending";
   };
   /** 정렬 변경 이벤트 */
-  onSortChange?: (descriptor: { column: Key; direction: 'ascending' | 'descending' }) => void;
+  onSortChange?: (descriptor: {
+    column: Key;
+    direction: "ascending" | "descending";
+  }) => void;
   /** 선택 변경 이벤트 */
   onSelectionChange?: (keys: Selection) => void;
 }
@@ -190,7 +193,7 @@ export interface UseListDataResult<T> {
   /** 선택된 키 */
   selectedKeys: Set<Key>;
   /** 선택된 키 설정 */
-  setSelectedKeys: (keys: Set<Key> | 'all') => void;
+  setSelectedKeys: (keys: Set<Key> | "all") => void;
 }
 
 /**
@@ -208,7 +211,10 @@ export interface UseAsyncListResult<T> {
   /** 더 로드 (페이지네이션) */
   loadMore?: () => void;
   /** 정렬 */
-  sort?: (descriptor: { column: Key; direction: 'ascending' | 'descending' }) => void;
+  sort?: (descriptor: {
+    column: Key;
+    direction: "ascending" | "descending";
+  }) => void;
   /** 필터 텍스트 */
   filterText?: string;
   /** 필터 텍스트 설정 */
@@ -298,7 +304,7 @@ export type GetChildren<T> = (item: T) => T[] | undefined;
  * 비동기 로드 함수 타입
  */
 export type AsyncLoadFunction<T> = (
-  options: AsyncListLoadOptions
+  options: AsyncListLoadOptions,
 ) => Promise<AsyncListLoadResult<T>>;
 
 /**
@@ -318,10 +324,10 @@ export class StatelyError extends Error {
   constructor(
     message: string,
     public code: string,
-    public details?: unknown
+    public details?: unknown,
   ) {
     super(message);
-    this.name = 'StatelyError';
+    this.name = "StatelyError";
   }
 }
 
@@ -329,9 +335,9 @@ export class StatelyError extends Error {
  * React Stately 에러 코드
  */
 export enum StatelyErrorCode {
-  INVALID_KEY = 'INVALID_KEY',
-  ITEM_NOT_FOUND = 'ITEM_NOT_FOUND',
-  LOAD_FAILED = 'LOAD_FAILED',
-  INVALID_INDEX = 'INVALID_INDEX',
-  DUPLICATE_KEY = 'DUPLICATE_KEY',
+  INVALID_KEY = "INVALID_KEY",
+  ITEM_NOT_FOUND = "ITEM_NOT_FOUND",
+  LOAD_FAILED = "LOAD_FAILED",
+  INVALID_INDEX = "INVALID_INDEX",
+  DUPLICATE_KEY = "DUPLICATE_KEY",
 }

@@ -216,7 +216,7 @@ function CanvasContent() {
       // Layout 모드: Layout의 body 사용
       bodyElement = elements.find(
         (el) =>
-          el.tag === "body" &&
+          el.type === "body" &&
           el.layout_id === currentLayoutId &&
           !el.parent_id,
       );
@@ -224,14 +224,14 @@ function CanvasContent() {
       // Layout 편집 모드: Layout의 body 사용
       bodyElement = elements.find(
         (el) =>
-          el.tag === "body" &&
+          el.type === "body" &&
           el.layout_id === currentLayoutId &&
           !el.parent_id,
       );
     } else {
       // Page 모드: Page의 body 사용 (Layout 없음)
       bodyElement = elements.find(
-        (el) => el.tag === "body" && !el.parent_id && !el.layout_id,
+        (el) => el.type === "body" && !el.parent_id && !el.layout_id,
       );
     }
 
@@ -240,7 +240,7 @@ function CanvasContent() {
 
       // 실제 <body> 태그에 data-element-id 설정
       document.body.setAttribute("data-element-id", adaptedBodyElement.id);
-      document.body.setAttribute("data-original-tag", "body");
+      document.body.setAttribute("data-original-type", "body");
 
       // body element의 style 적용 및 추적
       if (adaptedBodyElement.props?.style) {
@@ -272,7 +272,7 @@ function CanvasContent() {
     } else {
       // body element가 없으면 data-element-id 제거
       document.body.removeAttribute("data-element-id");
-      document.body.removeAttribute("data-original-tag");
+      document.body.removeAttribute("data-original-type");
     }
 
     // ⭐ Cleanup용 로컬 변수 (ref가 변경되기 전 값 캡처)
@@ -282,7 +282,7 @@ function CanvasContent() {
     // Cleanup: 컴포넌트 언마운트 시 정리
     return () => {
       document.body.removeAttribute("data-element-id");
-      document.body.removeAttribute("data-original-tag");
+      document.body.removeAttribute("data-original-type");
       // ⭐ 스타일과 className도 정리
       styleKeysToClean.forEach((key) => {
         document.body.style.removeProperty(key);
@@ -499,7 +499,7 @@ function CanvasContent() {
       // (body는 renderElementsTree에서 자식만 렌더링하도록 처리됨)
 
       // rendererMap에서 해당 태그의 렌더러 찾기
-      const renderer = rendererMap[adaptedElement.tag];
+      const renderer = rendererMap[adaptedElement.type];
       if (renderer) {
         return renderer(
           adaptedElement,
@@ -519,12 +519,12 @@ function CanvasContent() {
       // data-size/variant를 자동 주입 — 이전에 rendererMap 함수가 수동 주입하던 것을
       // fallback 경로에서도 동일하게 보장. Auto-generated CSS selector
       // (.react-aria-Text[data-size="md"] 등)가 매칭되어야 하므로 필수.
-      const specBacked = hasSpec(adaptedElement.tag);
+      const specBacked = hasSpec(adaptedElement.type);
       const tagProps = adaptedElement.props as
         | { size?: string; variant?: string; className?: string }
         | undefined;
       const specClassName = specBacked
-        ? `react-aria-${adaptedElement.tag}`
+        ? `react-aria-${adaptedElement.type}`
         : undefined;
       const mergedClassName =
         [specClassName, tagProps?.className].filter(Boolean).join(" ") ||
@@ -537,7 +537,7 @@ function CanvasContent() {
       };
       if (specBacked) {
         const sizeValue =
-          tagProps?.size ?? getDefaultSizeForTag(adaptedElement.tag) ?? "md";
+          tagProps?.size ?? getDefaultSizeForTag(adaptedElement.type) ?? "md";
         cleanProps["data-size"] = sizeValue;
         if (tagProps?.variant) cleanProps["data-variant"] = tagProps.variant;
       }
@@ -552,10 +552,10 @@ function CanvasContent() {
 
       // 커스텀 태그 → HTML 요소 매핑 (복합 컴포넌트 자식 태그용)
       const resolveHtmlTag = (
-        tag: string,
+        type: string,
         props?: Record<string, unknown>,
       ): string => {
-        switch (tag) {
+        switch (type) {
           case "Description":
             return "p";
           // Overlay 복합 컴포넌트
@@ -595,7 +595,7 @@ function CanvasContent() {
           //   ADR-094 expandChildSpecs 가 tagToElement TAG_SPEC_MAP 에 자동 등록 →
           //   default case 의 `getElementForTag("TagList")` 가 TagListSpec.element="div" 반환.
           //   ADR-094 Phase 5 완결.
-          // ADR-100 Phase 1 (098-a 슬롯): legacy "SelectItem"/"ComboBoxItem" tag fallback.
+          // ADR-100 Phase 1 (098-a 슬롯): legacy "SelectItem"/"ComboBoxItem" type fallback.
           //   RAC 공식: ListBoxItem. 신규 프로젝트는 items SSOT 로 element 생성 안 함 —
           //   본 case 는 migration 전 기존 프로젝트 호환 경로.
           case "SelectItem":
@@ -631,14 +631,14 @@ function CanvasContent() {
             // - Text → "p" (정적)
             // - Heading → props.level 기반 `h1~h6` (함수형, Phase 2)
             // - 나머지 spec 등록 태그의 정적 `spec.element` 값 반환
-            // - 미등록 태그는 `tag.toLowerCase()` fallback
-            return getElementForTag(tag, props);
+            // - 미등록 태그는 `type.toLowerCase()` fallback
+            return getElementForTag(type, props);
         }
       };
 
       // HTML 요소로 렌더링
       return React.createElement(
-        resolveHtmlTag(adaptedElement.tag, adaptedElement.props),
+        resolveHtmlTag(adaptedElement.type, adaptedElement.props),
         cleanProps,
         content,
       );
@@ -668,13 +668,13 @@ function CanvasContent() {
       const adaptedElement = adaptElementFillStyle(el);
 
       // Slot인 경우: Page elements로 교체
-      if (adaptedElement.tag === "Slot") {
+      if (adaptedElement.type === "Slot") {
         const slotName =
           (adaptedElement.props as { name?: string })?.name || "content";
 
         // ⭐ Page의 body 찾기 (body는 렌더링하지 않고 자식만 사용)
         const pageBody = pageElements.find(
-          (pe) => pe.tag === "body" && !pe.parent_id,
+          (pe) => pe.type === "body" && !pe.parent_id,
         );
 
         // ⭐ Slot에 들어갈 실제 콘텐츠: slot_name이 일치하는 요소들만
@@ -696,7 +696,7 @@ function CanvasContent() {
           // body가 없으면 기존 로직 (slot_name으로 찾기, body 제외)
           slotContent = pageElements
             .filter((pe) => {
-              if (pe.tag === "body") return false; // body는 제외
+              if (pe.type === "body") return false; // body는 제외
               const peSlotName =
                 (pe.props as { slot_name?: string })?.slot_name || "content";
               return peSlotName === slotName && !pe.parent_id;
@@ -731,7 +731,7 @@ function CanvasContent() {
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // rendererMap에서 렌더러가 있으면 사용
-      const renderer = rendererMap[adaptedElement.tag];
+      const renderer = rendererMap[adaptedElement.type];
       if (renderer) {
         return renderer(
           adaptedElement,
@@ -740,7 +740,7 @@ function CanvasContent() {
       }
 
       return React.createElement(
-        adaptedElement.tag.toLowerCase(),
+        adaptedElement.type.toLowerCase(),
         {
           key: adaptedElement.id,
           "data-element-id": adaptedElement.id,
@@ -774,7 +774,7 @@ function CanvasContent() {
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // rendererMap에서 렌더러가 있으면 사용
-      const renderer = rendererMap[adaptedElement.tag];
+      const renderer = rendererMap[adaptedElement.type];
       if (renderer) {
         return renderer(
           adaptedElement,
@@ -783,7 +783,7 @@ function CanvasContent() {
       }
 
       return React.createElement(
-        adaptedElement.tag.toLowerCase(),
+        adaptedElement.type.toLowerCase(),
         {
           key: adaptedElement.id,
           "data-element-id": adaptedElement.id,
@@ -884,7 +884,7 @@ function CanvasContent() {
 
       // Layout의 root element (body) 찾기
       const layoutBody = layoutElements.find(
-        (el) => el.tag === "body" && !el.parent_id,
+        (el) => el.type === "body" && !el.parent_id,
       );
 
       if (layoutBody) {
@@ -910,7 +910,7 @@ function CanvasContent() {
         (el) => el.layout_id === currentLayoutId,
       );
       const layoutBody = layoutElements.find(
-        (el) => el.tag === "body" && !el.parent_id,
+        (el) => el.type === "body" && !el.parent_id,
       );
 
       if (layoutBody) {
@@ -924,7 +924,7 @@ function CanvasContent() {
 
     // ⭐ Layout이 없는 경우 (Page만 있음)
     const bodyElement = elements.find(
-      (el) => el.tag === "body" && !el.parent_id,
+      (el) => el.type === "body" && !el.parent_id,
     );
 
     if (bodyElement) {

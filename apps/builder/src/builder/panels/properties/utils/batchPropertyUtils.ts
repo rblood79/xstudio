@@ -49,7 +49,7 @@ export function findCommonProperties(elements: Element[]): CommonProperties {
   }
 
   // Get unique element types
-  const elementTypes = Array.from(new Set(elements.map((el) => el.tag)));
+  const elementTypes = Array.from(new Set(elements.map((el) => el.type)));
 
   // Get all property keys from first element
   const firstElement = elements[0];

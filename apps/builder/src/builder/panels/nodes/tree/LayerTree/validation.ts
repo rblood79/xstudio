@@ -30,7 +30,7 @@ export function isValidDrop(
     return { valid: false, reason: "virtual-child" };
   }
 
-  if (draggedNode.tag === "body") {
+  if (draggedNode.type === "body") {
     return { valid: false, reason: "body-immutable" };
   }
 

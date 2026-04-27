@@ -96,7 +96,7 @@ export function isRenderableElement(element: Element): boolean {
 
   // 특정 태그 제외 (필요 시 확장)
   const nonRenderableTags = ['Body', 'Head', 'Script'];
-  if (nonRenderableTags.includes(element.tag)) return false;
+  if (nonRenderableTags.includes(element.type)) return false;
 
   return true;
 }

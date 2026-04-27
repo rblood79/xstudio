@@ -44,7 +44,7 @@ function findNearestAncestorForm(
   while (currentParentId) {
     const parent = elementsMap.get(currentParentId);
     if (!parent) return null;
-    if (parent.tag === "Form") return parent;
+    if (parent.type === "Form") return parent;
     currentParentId = parent.parent_id;
   }
 
@@ -275,12 +275,12 @@ export const renderSearchField = (
   // Child element에서 props 읽기 (compositional 패턴)
   const childElements = context.childrenMap.get(element.id) ?? [];
 
-  const labelEl = childElements.find((c) => c.tag === "Label");
-  const wrapperEl = childElements.find((c) => c.tag === "SearchFieldWrapper");
+  const labelEl = childElements.find((c) => c.type === "Label");
+  const wrapperEl = childElements.find((c) => c.type === "SearchFieldWrapper");
   const wrapperChildren = wrapperEl
     ? (context.childrenMap.get(wrapperEl.id) ?? [])
     : [];
-  const inputEl = wrapperChildren.find((c) => c.tag === "SearchInput");
+  const inputEl = wrapperChildren.find((c) => c.type === "SearchInput");
 
   // child element props 우선 → parent props fallback
   const label = labelEl
@@ -412,7 +412,7 @@ export const renderLabel = (
 
   // 부모가 <label> 요소면 <span>으로 렌더 (label 중첩 방지)
   const parentTag = element.parent_id
-    ? elementsMap.get(element.parent_id)?.tag
+    ? elementsMap.get(element.parent_id)?.type
     : null;
 
   if (parentTag && LABEL_AS_SPAN_PARENTS.has(parentTag)) {
@@ -537,7 +537,7 @@ export const renderCheckbox = (
     >
       {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
       {typeof element.props.children === "string" &&
-      !children.some((c) => c.tag === "Label")
+      !children.some((c) => c.type === "Label")
         ? element.props.children
         : null}
       {children.map((child) => renderElement(child, child.id))}
@@ -562,9 +562,9 @@ export const renderCheckboxGroup = (
   // Compositional: Label + CheckboxItems(중간 컨테이너) + Checkbox(레거시) 자식 분리
   const allChildren = context.childrenMap.get(element.id) ?? [];
 
-  const labelChild = allChildren.find((child) => child.tag === "Label");
+  const labelChild = allChildren.find((child) => child.type === "Label");
   const checkboxItemsChild = allChildren.find(
-    (child) => child.tag === "CheckboxItems",
+    (child) => child.type === "CheckboxItems",
   );
 
   // CheckboxItems가 있으면 그 하위에서 Checkbox 검색, 없으면(레거시) 직접 자식에서 검색
@@ -574,7 +574,7 @@ export const renderCheckboxGroup = (
   const checkboxChildren = elements
     .filter(
       (child) =>
-        child.parent_id === checkboxParentId && child.tag === "Checkbox",
+        child.parent_id === checkboxParentId && child.type === "Checkbox",
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -636,7 +636,7 @@ export const renderCheckboxGroup = (
           // Checkbox의 자식 Label 요소 검색
           const checkboxLabelChildren = (
             context.childrenMap.get(checkbox.id) ?? []
-          ).filter((child) => child.tag === "Label");
+          ).filter((child) => child.type === "Label");
 
           return (
             <Checkbox
@@ -689,9 +689,9 @@ export const renderRadio = (
     ? elementsMap.get(parentElement.parent_id)
     : null;
   const isInsideRadioGroup =
-    parentElement?.tag === "RadioGroup" ||
-    parentElement?.tag === "RadioItems" ||
-    grandparentElement?.tag === "RadioGroup";
+    parentElement?.type === "RadioGroup" ||
+    parentElement?.type === "RadioItems" ||
+    grandparentElement?.type === "RadioGroup";
 
   if (isInsideRadioGroup) {
     return (
@@ -704,7 +704,7 @@ export const renderRadio = (
       >
         {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
         {typeof element.props.children === "string" &&
-        !children.some((c) => c.tag === "Label")
+        !children.some((c) => c.type === "Label")
           ? element.props.children
           : null}
         {children.map((child) => renderElement(child, child.id))}
@@ -727,7 +727,7 @@ export const renderRadio = (
         >
           {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
           {typeof element.props.children === "string" &&
-          !children.some((c) => c.tag === "Label")
+          !children.some((c) => c.type === "Label")
             ? element.props.children
             : null}
           {children.map((child) => renderElement(child, child.id))}
@@ -749,16 +749,16 @@ export const renderRadioGroup = (
   // Compositional: Label + RadioItems(중간 컨테이너) + Radio(레거시) 자식 분리
   const allChildren = context.childrenMap.get(element.id) ?? [];
 
-  const labelChild = allChildren.find((child) => child.tag === "Label");
+  const labelChild = allChildren.find((child) => child.type === "Label");
   const radioItemsChild = allChildren.find(
-    (child) => child.tag === "RadioItems",
+    (child) => child.type === "RadioItems",
   );
 
   // RadioItems가 있으면 그 하위에서 Radio 검색, 없으면(레거시) 직접 자식에서 검색
   const radioParentId = radioItemsChild ? radioItemsChild.id : element.id;
   const radioChildren = elements
     .filter(
-      (child) => child.parent_id === radioParentId && child.tag === "Radio",
+      (child) => child.parent_id === radioParentId && child.type === "Radio",
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 

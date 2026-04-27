@@ -32,6 +32,25 @@ import { LRUCache } from "./LRUCache";
 const DB_NAME = "composition";
 const DB_VERSION = 8; // ✅ 버전 8: ADR-903 P3-E _meta object store 추가 (schema migration metadata)
 
+/**
+ * ADR-913 P1+P2 read-through compat — legacy `tag` field → canonical `type`.
+ *
+ * IDB 에 저장된 element row 가 v0.9 legacy schema 인 경우 (`tag` field 만 보유)
+ * canonical `type` field 로 정규화. 코드는 모두 `el.type` 만 사용하므로
+ * undefined.toLowerCase() 류 runtime error 방지. write-through (P4 = DB_VERSION 9)
+ * 이후 legacy row 가 영구 변환되면 본 helper 도 제거 가능.
+ */
+function normalizeLegacyElement(el: Element): Element {
+  if (
+    el.type === undefined &&
+    (el as unknown as { tag?: string }).tag !== undefined
+  ) {
+    const legacy = el as unknown as { tag: string };
+    return { ...el, type: legacy.tag };
+  }
+  return el;
+}
+
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
 
@@ -755,7 +774,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
 
     getByPage: async (pageId: string): Promise<Element[]> => {
-      return this.getAllByIndex<Element>("elements", "page_id", pageId);
+      const rows = await this.getAllByIndex<Element>(
+        "elements",
+        "page_id",
+        pageId,
+      );
+      return rows.map(normalizeLegacyElement);
     },
 
     /**
@@ -785,15 +809,21 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         layoutId,
       );
       console.log(`📥 [IndexedDB] getByLayout 결과: ${elements.length}개 요소`);
-      return elements;
+      return elements.map(normalizeLegacyElement);
     },
 
     getChildren: async (parentId: string): Promise<Element[]> => {
-      return this.getAllByIndex<Element>("elements", "parent_id", parentId);
+      const rows = await this.getAllByIndex<Element>(
+        "elements",
+        "parent_id",
+        parentId,
+      );
+      return rows.map(normalizeLegacyElement);
     },
 
     getAll: async (): Promise<Element[]> => {
-      return this.getAllFromStore<Element>("elements");
+      const rows = await this.getAllFromStore<Element>("elements");
+      return rows.map(normalizeLegacyElement);
     },
   };
 

@@ -50,16 +50,16 @@ export function ComponentSelector({
 
   // 타입 필터 적용
   const filteredComponents = filterByType
-    ? components.filter((c) => filterByType.includes(c.tag))
+    ? components.filter((c) => filterByType.includes(c.type))
     : components;
 
   // 타입별로 그룹화
   const componentsByType = filteredComponents.reduce(
     (acc, component) => {
-      if (!acc[component.tag]) {
-        acc[component.tag] = [];
+      if (!acc[component.type]) {
+        acc[component.type] = [];
       }
-      acc[component.tag].push(component);
+      acc[component.type].push(component);
       return acc;
     },
     {} as Record<string, typeof filteredComponents>
@@ -86,7 +86,7 @@ export function ComponentSelector({
                 <div key={type} className="component-group">
                   <div className="group-header">{type}</div>
                   {components.map((component) => {
-                    const label = component.customId || `${component.tag} (${component.id.slice(0, 8)})`;
+                    const label = component.customId || `${component.type} (${component.id.slice(0, 8)})`;
                     return (
                       <ListBoxItem
                         key={component.customId || component.id}

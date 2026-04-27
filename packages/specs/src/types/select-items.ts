@@ -8,7 +8,7 @@
  * RAC 공식 `ListBoxItem` 의 alias 로 간주한다. runtime DOM 은 이미
  * `<ListBoxItem>` 으로 렌더 (Select factory 내부 RAC composition). 저장
  * 식별자 rename 은 BC HIGH (모든 Select 프로젝트 migration) 회피 위해 미수행 —
- * composition 고유 tag 유지 + RSP 공식 alias 명시로 문서 정합 보강.
+ * composition 고유 type 유지 + RSP 공식 alias 명시로 문서 정합 보강.
  *
  * @packageDocumentation
  */

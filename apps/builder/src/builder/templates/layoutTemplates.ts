@@ -12,7 +12,7 @@ import type { SlotProps } from "../../types/builder/layout.types";
  */
 export interface LayoutTemplateElement {
   /** 요소 태그 (예: "div", "Slot", "nav") */
-  tag: string;
+  type: string;
   /** 요소 props */
   props: Record<string, unknown>;
   /** 자식 요소들 */
@@ -55,7 +55,7 @@ export const singleColumnTemplate: LayoutTemplate = {
   category: "basic",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-container" },
       style: {
         display: "flex",
@@ -64,12 +64,12 @@ export const singleColumnTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: { name: "header", description: "Page header area" } as SlotProps,
           style: { width: "100%" },
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "content",
             required: true,
@@ -78,7 +78,7 @@ export const singleColumnTemplate: LayoutTemplate = {
           style: { flex: 1, width: "100%" },
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: { name: "footer", description: "Page footer area" } as SlotProps,
           style: { width: "100%" },
         },
@@ -102,7 +102,7 @@ export const twoColumnTemplate: LayoutTemplate = {
   category: "basic",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-container" },
       style: {
         display: "flex",
@@ -111,12 +111,12 @@ export const twoColumnTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: { name: "header", description: "Page header area" } as SlotProps,
           style: { width: "100%" },
         },
         {
-          tag: "div",
+          type: "div",
           props: { className: "layout-body" },
           style: {
             display: "flex",
@@ -125,7 +125,7 @@ export const twoColumnTemplate: LayoutTemplate = {
           },
           children: [
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "sidebar",
                 description: "Left sidebar for navigation",
@@ -133,7 +133,7 @@ export const twoColumnTemplate: LayoutTemplate = {
               style: { width: "250px", flexShrink: 0 },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "content",
                 required: true,
@@ -144,7 +144,7 @@ export const twoColumnTemplate: LayoutTemplate = {
           ],
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: { name: "footer", description: "Page footer area" } as SlotProps,
           style: { width: "100%" },
         },
@@ -169,7 +169,7 @@ export const threeColumnTemplate: LayoutTemplate = {
   category: "basic",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-container" },
       style: {
         display: "flex",
@@ -178,12 +178,12 @@ export const threeColumnTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: { name: "header", description: "Page header area" } as SlotProps,
           style: { width: "100%" },
         },
         {
-          tag: "div",
+          type: "div",
           props: { className: "layout-body" },
           style: {
             display: "flex",
@@ -192,7 +192,7 @@ export const threeColumnTemplate: LayoutTemplate = {
           },
           children: [
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "sidebar",
                 description: "Left sidebar for navigation",
@@ -200,7 +200,7 @@ export const threeColumnTemplate: LayoutTemplate = {
               style: { width: "220px", flexShrink: 0 },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "content",
                 required: true,
@@ -209,7 +209,7 @@ export const threeColumnTemplate: LayoutTemplate = {
               style: { flex: 1 },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "aside",
                 description: "Right panel for additional info",
@@ -219,7 +219,7 @@ export const threeColumnTemplate: LayoutTemplate = {
           ],
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: { name: "footer", description: "Page footer area" } as SlotProps,
           style: { width: "100%" },
         },
@@ -249,7 +249,7 @@ export const dashboardTemplate: LayoutTemplate = {
   category: "dashboard",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-dashboard" },
       style: {
         display: "flex",
@@ -259,7 +259,7 @@ export const dashboardTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "topbar",
             description: "Fixed top navigation bar",
@@ -267,7 +267,7 @@ export const dashboardTemplate: LayoutTemplate = {
           style: { height: "56px", flexShrink: 0, width: "100%" },
         },
         {
-          tag: "div",
+          type: "div",
           props: { className: "layout-dashboard-body" },
           style: {
             display: "flex",
@@ -277,7 +277,7 @@ export const dashboardTemplate: LayoutTemplate = {
           },
           children: [
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "navigation",
                 description: "Side navigation menu",
@@ -289,7 +289,7 @@ export const dashboardTemplate: LayoutTemplate = {
               },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "content",
                 required: true,
@@ -319,7 +319,7 @@ export const dashboardWithPanelTemplate: LayoutTemplate = {
   category: "dashboard",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-dashboard" },
       style: {
         display: "flex",
@@ -329,7 +329,7 @@ export const dashboardWithPanelTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "topbar",
             description: "Fixed top navigation bar",
@@ -337,7 +337,7 @@ export const dashboardWithPanelTemplate: LayoutTemplate = {
           style: { height: "56px", flexShrink: 0, width: "100%" },
         },
         {
-          tag: "div",
+          type: "div",
           props: { className: "layout-dashboard-body" },
           style: {
             display: "flex",
@@ -347,7 +347,7 @@ export const dashboardWithPanelTemplate: LayoutTemplate = {
           },
           children: [
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "navigation",
                 description: "Side navigation menu",
@@ -359,7 +359,7 @@ export const dashboardWithPanelTemplate: LayoutTemplate = {
               },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "content",
                 required: true,
@@ -368,7 +368,7 @@ export const dashboardWithPanelTemplate: LayoutTemplate = {
               style: { flex: 1, overflowY: "auto", padding: "24px" },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "details",
                 description: "Right panel for item details",
@@ -406,7 +406,7 @@ export const landingPageTemplate: LayoutTemplate = {
   category: "marketing",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-landing" },
       style: {
         display: "flex",
@@ -415,7 +415,7 @@ export const landingPageTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "header",
             description: "Site header with navigation",
@@ -423,7 +423,7 @@ export const landingPageTemplate: LayoutTemplate = {
           style: { width: "100%" },
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "hero",
             description: "Hero section with main CTA",
@@ -431,7 +431,7 @@ export const landingPageTemplate: LayoutTemplate = {
           style: { width: "100%" },
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "content",
             required: true,
@@ -440,7 +440,7 @@ export const landingPageTemplate: LayoutTemplate = {
           style: { flex: 1, width: "100%" },
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "cta",
             description: "Call-to-action section",
@@ -448,7 +448,7 @@ export const landingPageTemplate: LayoutTemplate = {
           style: { width: "100%" },
         },
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "footer",
             description: "Site footer",
@@ -481,7 +481,7 @@ export const documentationTemplate: LayoutTemplate = {
   category: "documentation",
   elements: [
     {
-      tag: "div",
+      type: "div",
       props: { className: "layout-docs" },
       style: {
         display: "flex",
@@ -490,7 +490,7 @@ export const documentationTemplate: LayoutTemplate = {
       },
       children: [
         {
-          tag: "Slot",
+          type: "Slot",
           props: {
             name: "header",
             description: "Docs header with search",
@@ -498,7 +498,7 @@ export const documentationTemplate: LayoutTemplate = {
           style: { width: "100%" },
         },
         {
-          tag: "div",
+          type: "div",
           props: { className: "layout-docs-body" },
           style: {
             display: "flex",
@@ -507,7 +507,7 @@ export const documentationTemplate: LayoutTemplate = {
           },
           children: [
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "sidebar",
                 description: "Documentation navigation",
@@ -515,7 +515,7 @@ export const documentationTemplate: LayoutTemplate = {
               style: { width: "280px", flexShrink: 0 },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "content",
                 required: true,
@@ -524,7 +524,7 @@ export const documentationTemplate: LayoutTemplate = {
               style: { flex: 1, maxWidth: "800px" },
             },
             {
-              tag: "Slot",
+              type: "Slot",
               props: {
                 name: "toc",
                 description: "Table of contents",
@@ -591,7 +591,7 @@ export function createElementsFromTemplate(
   generateId: () => string
 ): Array<{
   id: string;
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   style?: React.CSSProperties;
   parent_id: string | null;
@@ -600,7 +600,7 @@ export function createElementsFromTemplate(
 }> {
   const elements: Array<{
     id: string;
-    tag: string;
+    type: string;
     props: Record<string, unknown>;
     style?: React.CSSProperties;
     parent_id: string | null;
@@ -616,7 +616,7 @@ export function createElementsFromTemplate(
     const id = generateId();
     elements.push({
       id,
-      tag: templateEl.tag,
+      type: templateEl.type,
       props: templateEl.props,
       style: templateEl.style,
       parent_id: parentId,

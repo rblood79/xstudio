@@ -21,7 +21,7 @@ import {
 
 interface E {
   id: string;
-  tag: string;
+  type: string;
   parent_id?: string | null;
   order_num?: number;
   props: Record<string, unknown>;
@@ -29,12 +29,12 @@ interface E {
 
 function el(
   id: string,
-  tag: string,
+  type: string,
   parent_id: string | null,
   order_num: number,
   props: Record<string, unknown> = {},
 ): E {
-  return { id, tag, parent_id, order_num, props };
+  return { id, type, parent_id, order_num, props };
 }
 
 describe("listBoxItemChildrenToItemsArray (ADR-076 P5)", () => {

@@ -1,7 +1,7 @@
 /**
  * tagToElement — ADR-058 Pre-Phase 0
  *
- * 컴포넌트 tag → HTML 요소 이름 매핑 헬퍼.
+ * 컴포넌트 type → HTML 요소 이름 매핑 헬퍼.
  * Preview App의 `resolveHtmlTag` fallback 경로가 이 함수를 호출하여
  * spec registry 기반으로 element를 결정한다.
  *
@@ -9,7 +9,7 @@
  * - 정적: 기존 대다수 spec — 고정 HTML 태그
  * - 함수형: Heading 등 props에 따라 동적으로 태그 결정 (예: level → `h1~h6`)
  *
- * 등록되지 않은 태그는 `tag.toLowerCase()` fallback (기존 `resolveHtmlTag` default 동작과 동일).
+ * 등록되지 않은 태그는 `type.toLowerCase()` fallback (기존 `resolveHtmlTag` default 동작과 동일).
  */
 
 import type { ComponentSpec } from "../types/spec.types";
@@ -258,11 +258,11 @@ export const TAG_SPEC_MAP: Record<string, ComponentSpec> =
   expandChildSpecs(BASE_TAG_SPEC_MAP);
 
 /**
- * ADR-108 P0: lowercase tag → ComponentSpec lookup map.
+ * ADR-108 P0: lowercase type → ComponentSpec lookup map.
  *
  * `TAG_SPEC_MAP` (PascalCase 키) 을 build-time 1회 lowercase Map 으로 변환.
  * Canvas layout engine 의 `resolveContainerStylesFallback` + `specSizeField` 등
- * tag 정규화 경로의 SSOT. apps/builder 는 BUILDER_ALIAS_MAP 과 병합하여
+ * type 정규화 경로의 SSOT. apps/builder 는 BUILDER_ALIAS_MAP 과 병합하여
  * 자체 LOWERCASE map 을 파생한다 (sprites/builderAliasMap.ts 참조).
  */
 export const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<
@@ -277,21 +277,21 @@ export const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<
 );
 
 /**
- * 컴포넌트 tag에 대응하는 HTML element 이름을 반환한다.
+ * 컴포넌트 type에 대응하는 HTML element 이름을 반환한다.
  *
- * - spec 미등록: `tag.toLowerCase()` fallback
+ * - spec 미등록: `type.toLowerCase()` fallback
  * - `spec.element`가 정적 문자열: 그대로 반환
  * - `spec.element`가 함수: `spec.element(props ?? {})` 호출 결과 반환
  *   (예: Heading은 `level` prop에 따라 `h1~h6` 동적 반환)
  *
- * 함수형 결과가 비어있거나 유효하지 않으면 `tag.toLowerCase()` fallback.
+ * 함수형 결과가 비어있거나 유효하지 않으면 `type.toLowerCase()` fallback.
  */
 export function getElementForTag(
-  tag: string,
+  type: string,
   props?: Record<string, unknown>,
 ): string {
-  const spec = TAG_SPEC_MAP[tag];
-  if (!spec) return tag.toLowerCase();
+  const spec = TAG_SPEC_MAP[type];
+  if (!spec) return type.toLowerCase();
 
   const el = spec.element;
   if (typeof el === "string") return el;
@@ -299,24 +299,24 @@ export function getElementForTag(
     const resolved = el(props ?? {});
     return typeof resolved === "string" && resolved.length > 0
       ? resolved
-      : tag.toLowerCase();
+      : type.toLowerCase();
   }
-  return tag.toLowerCase();
+  return type.toLowerCase();
 }
 
 /**
- * 해당 tag가 spec registry에 등록되어 있는지 반환한다.
+ * 해당 type가 spec registry에 등록되어 있는지 반환한다.
  * ADR-058 Phase 1: Preview fallback 렌더링이 `react-aria-*` className과
  * `data-size` 등 spec 기반 attribute를 자동 주입할지 판정하는 데 사용.
  */
-export function hasSpec(tag: string): boolean {
-  return tag in TAG_SPEC_MAP;
+export function hasSpec(type: string): boolean {
+  return type in TAG_SPEC_MAP;
 }
 
 /**
- * spec registry에서 해당 tag의 defaultSize를 반환한다. 미등록 태그는 undefined.
+ * spec registry에서 해당 type의 defaultSize를 반환한다. 미등록 태그는 undefined.
  */
-export function getDefaultSizeForTag(tag: string): string | undefined {
-  const spec = TAG_SPEC_MAP[tag];
+export function getDefaultSizeForTag(type: string): string | undefined {
+  const spec = TAG_SPEC_MAP[type];
   return spec?.defaultSize as string | undefined;
 }

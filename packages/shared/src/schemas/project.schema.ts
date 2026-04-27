@@ -6,8 +6,8 @@
  * @since 2026-01-02 Phase 1
  */
 
-import { z } from 'zod';
-import { EXPORT_LIMITS } from '../types/export.types';
+import { z } from "zod";
+import { EXPORT_LIMITS } from "../types/export.types";
 
 // ============================================
 // Base Schemas
@@ -43,8 +43,8 @@ const ElementPropsSchema = z.record(z.string(), z.unknown()).default({});
  */
 const DataBindingSchema = z
   .object({
-    type: z.enum(['collection', 'value', 'field']),
-    source: z.enum(['supabase', 'api', 'state', 'static', 'parent']),
+    type: z.enum(["collection", "value", "field"]),
+    source: z.enum(["supabase", "api", "state", "static", "parent"]),
     config: z.record(z.string(), z.unknown()),
   })
   .optional();
@@ -53,9 +53,9 @@ const DataBindingSchema = z
  * Element 스키마
  */
 export const ElementSchema = z.object({
-  id: z.string().min(1, { message: 'Element ID is required' }),
+  id: z.string().min(1, { message: "Element ID is required" }),
   customId: z.string().optional(),
-  tag: z.string().min(1, { message: 'Element tag is required' }),
+  type: z.string().min(1, { message: "Element type is required" }),
   props: ElementPropsSchema,
   parent_id: z.string().nullable().optional(),
   order_num: z.number().int().min(0).optional().default(0),
@@ -79,12 +79,13 @@ export type ElementSchemaType = z.infer<typeof ElementSchema>;
  * Page 스키마
  */
 export const PageSchema = z.object({
-  id: z.string().min(1, { message: 'Page ID is required' }),
-  title: z.string().min(1, { message: 'Page title is required' }),
+  id: z.string().min(1, { message: "Page ID is required" }),
+  title: z.string().min(1, { message: "Page title is required" }),
   slug: z.string().regex(slugPattern, {
-    message: 'Slug must be "/" or contain only lowercase letters, numbers, hyphens, underscores, and slashes',
+    message:
+      'Slug must be "/" or contain only lowercase letters, numbers, hyphens, underscores, and slashes',
   }),
-  project_id: z.string().min(1, { message: 'Project ID is required' }),
+  project_id: z.string().min(1, { message: "Project ID is required" }),
   parent_id: z.string().nullable().optional(),
   order_num: z.number().int().min(0).optional().default(0),
   layout_id: z.string().nullable().optional(),
@@ -103,12 +104,15 @@ export type PageSchemaType = z.infer<typeof PageSchema>;
  */
 export const ProjectInfoSchema = z.object({
   id: z.string().regex(uuidPattern, {
-    message: 'Project ID must be a valid UUID',
+    message: "Project ID must be a valid UUID",
   }),
   name: z
     .string()
-    .min(1, 'Project name is required')
-    .max(EXPORT_LIMITS.MAX_PROJECT_NAME_LENGTH, `Project name must be at most ${EXPORT_LIMITS.MAX_PROJECT_NAME_LENGTH} characters`),
+    .min(1, "Project name is required")
+    .max(
+      EXPORT_LIMITS.MAX_PROJECT_NAME_LENGTH,
+      `Project name must be at most ${EXPORT_LIMITS.MAX_PROJECT_NAME_LENGTH} characters`,
+    ),
 });
 
 /**
@@ -117,10 +121,13 @@ export const ProjectInfoSchema = z.object({
 export const MetadataSchema = z
   .object({
     builderVersion: z.string().regex(semverPattern, {
-      message: 'Builder version must follow semver format',
+      message: "Builder version must follow semver format",
     }),
     exportedBy: z.string().max(120).optional(),
-    description: z.string().max(EXPORT_LIMITS.MAX_DESCRIPTION_LENGTH).optional(),
+    description: z
+      .string()
+      .max(EXPORT_LIMITS.MAX_DESCRIPTION_LENGTH)
+      .optional(),
     thumbnail: z.string().optional(),
   })
   .optional();
@@ -131,19 +138,25 @@ export const MetadataSchema = z
 export const ExportedProjectSchema = z
   .object({
     version: z.string().regex(semverPattern, {
-      message: 'Version must follow semver format (e.g., 1.0.0)',
+      message: "Version must follow semver format (e.g., 1.0.0)",
     }),
     exportedAt: z.string().datetime({
-      message: 'exportedAt must be a valid ISO 8601 datetime',
+      message: "exportedAt must be a valid ISO 8601 datetime",
     }),
     project: ProjectInfoSchema,
     pages: z
       .array(PageSchema)
-      .min(1, 'At least one page is required')
-      .max(EXPORT_LIMITS.MAX_PAGES, `Maximum ${EXPORT_LIMITS.MAX_PAGES} pages allowed`),
+      .min(1, "At least one page is required")
+      .max(
+        EXPORT_LIMITS.MAX_PAGES,
+        `Maximum ${EXPORT_LIMITS.MAX_PAGES} pages allowed`,
+      ),
     elements: z
       .array(ElementSchema)
-      .max(EXPORT_LIMITS.MAX_ELEMENTS, `Maximum ${EXPORT_LIMITS.MAX_ELEMENTS} elements allowed`),
+      .max(
+        EXPORT_LIMITS.MAX_ELEMENTS,
+        `Maximum ${EXPORT_LIMITS.MAX_ELEMENTS} elements allowed`,
+      ),
     currentPageId: z.string().nullable().optional(),
     metadata: MetadataSchema,
   })
@@ -156,9 +169,9 @@ export const ExportedProjectSchema = z
       return true;
     },
     {
-      message: 'currentPageId must reference an existing page',
-      path: ['currentPageId'],
-    }
+      message: "currentPageId must reference an existing page",
+      path: ["currentPageId"],
+    },
   );
 
 export type ExportedProjectSchemaType = z.infer<typeof ExportedProjectSchema>;

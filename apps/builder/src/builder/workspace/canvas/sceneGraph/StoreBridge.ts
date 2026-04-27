@@ -9,7 +9,7 @@ import { SceneGraph } from "./SceneGraph";
 
 interface StoreElement {
   id: string;
-  tag: string;
+  type: string;
   parent_id: string | null;
   properties: Record<string, unknown>;
 }
@@ -67,7 +67,7 @@ export class StoreBridge {
     for (const [id, element] of state.elementsMap) {
       const style =
         (element.properties?.style as Record<string, unknown>) ?? {};
-      this.graph.createNode(id, element.tag, element.parent_id, style);
+      this.graph.createNode(id, element.type, element.parent_id, style);
       this.prevElementIds.add(id);
     }
   }
@@ -86,7 +86,7 @@ export class StoreBridge {
           type: "create",
           id,
           data: {
-            tag: el.tag,
+            type: el.type,
             parentId: el.parent_id,
             style: (el.properties?.style as Record<string, unknown>) ?? {},
           },
@@ -133,12 +133,12 @@ export class StoreBridge {
     for (const change of this.changeQueue) {
       switch (change.type) {
         case "create": {
-          const { tag, parentId, style } = change.data as {
-            tag: string;
+          const { type, parentId, style } = change.data as {
+            type: string;
             parentId: string | null;
             style: Record<string, unknown>;
           };
-          this.graph.createNode(change.id, tag, parentId, style);
+          this.graph.createNode(change.id, type, parentId, style);
           break;
         }
         case "update":

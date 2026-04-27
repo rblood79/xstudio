@@ -24,7 +24,7 @@ export function useSyncChildProp(elementId: string) {
 
       const updates: BatchPropsUpdate[] = [];
       for (const sync of syncs) {
-        const child = children.find((c) => c.tag === sync.childTag);
+        const child = children.find((c) => c.type === sync.childTag);
         if (child) {
           // childrenMap의 child.props는 stale할 수 있으므로 elementsMap에서 최신 props 조회
           const freshChild = elementsMap.get(child.id);

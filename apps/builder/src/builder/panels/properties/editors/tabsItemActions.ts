@@ -30,7 +30,7 @@ export async function addTabItem(params: {
 
   const { elements } = useStore.getState();
   const tabPanelsEl = elements.find(
-    (el) => el.parent_id === tabsElementId && el.tag === "TabPanels",
+    (el) => el.parent_id === tabsElementId && el.type === "TabPanels",
   );
   if (!tabPanelsEl) {
     throw new Error(`TabPanels element not found under Tabs ${tabsElementId}`);
@@ -47,7 +47,7 @@ export async function addTabItem(params: {
   const newPanelElement: Element = {
     id: ElementUtils.generateId(),
     page_id: pageId,
-    tag: "TabPanel",
+    type: "TabPanel",
     props: { itemId: newItemId },
     parent_id: tabPanelsEl.id,
     order_num: maxPanelOrder + 1,
@@ -99,14 +99,14 @@ export async function removeTabItem(params: {
 
   const { elements } = useStore.getState();
   const tabPanelsEl = elements.find(
-    (el) => el.parent_id === tabsElementId && el.tag === "TabPanels",
+    (el) => el.parent_id === tabsElementId && el.type === "TabPanels",
   );
   if (!tabPanelsEl) return;
 
   const panelEl = elements.find(
     (el) =>
       el.parent_id === tabPanelsEl.id &&
-      el.tag === "TabPanel" &&
+      el.type === "TabPanel" &&
       (el.props as { itemId?: string }).itemId === itemId,
   );
 

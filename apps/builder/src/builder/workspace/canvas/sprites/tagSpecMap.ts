@@ -23,7 +23,7 @@ import { BUILDER_ALIAS_MAP } from "./builderAliasMap";
 /**
  * Builder 측 최종 TAG_SPEC_MAP — packages/specs 정본 + 8 alias.
  *
- * 수동 alias 가 정본 entry 와 tag 이름 겹칠 가능성은 없도록 builderAliasMap 이
+ * 수동 alias 가 정본 entry 와 type 이름 겹칠 가능성은 없도록 builderAliasMap 이
  * 유지 (Spec 등록 누락이 아닌 진짜 alias 만). 충돌 시 packages/specs 정본 우선
  * (alias spread 뒤에 정본 spread → 정본이 덮어쓰기 방지 위해 alias 먼저).
  */
@@ -34,8 +34,8 @@ export const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getSpecForTag(tag: string): ComponentSpec<any> | null {
-  return TAG_SPEC_MAP[tag] ?? null;
+export function getSpecForTag(type: string): ComponentSpec<any> | null {
+  return TAG_SPEC_MAP[type] ?? null;
 }
 
 /** 이미지 렌더링 대상 태그 (ImageSprite / buildImageNodeData 경로) */

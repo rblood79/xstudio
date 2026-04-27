@@ -126,7 +126,7 @@ export function buildSelectionRenderData(
         continue;
       }
 
-      if (element.tag.toLowerCase() === "body" && pageFrames) {
+      if (element.type.toLowerCase() === "body" && pageFrames) {
         const pageFrame = pageFrames.find(
           (frame) => frame.id === element.page_id,
         );

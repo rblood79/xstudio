@@ -6,8 +6,11 @@
  * @since 2026-01-02 Phase 4
  */
 
-import type { ExportedProjectData, ProjectMetadata } from '../types/export.types';
-import { ExportErrorCode, type ExportError } from '../types/export.types';
+import type {
+  ExportedProjectData,
+  ProjectMetadata,
+} from "../types/export.types";
+import { ExportErrorCode, type ExportError } from "../types/export.types";
 
 // ============================================
 // Types
@@ -34,13 +37,13 @@ export interface MigrationResult {
 // ============================================
 
 /** 현재 지원 버전 */
-export const CURRENT_VERSION = '1.0.0';
+export const CURRENT_VERSION = "1.0.0";
 
 /** 지원되는 최소 버전 */
-export const MIN_SUPPORTED_VERSION = '0.9.0';
+export const MIN_SUPPORTED_VERSION = "0.9.0";
 
 /** 지원되는 버전 목록 */
-export const SUPPORTED_VERSIONS = ['0.9.0', '1.0.0'] as const;
+export const SUPPORTED_VERSIONS = ["0.9.0", "1.0.0"] as const;
 
 // ============================================
 // Version Utilities
@@ -51,8 +54,8 @@ export const SUPPORTED_VERSIONS = ['0.9.0', '1.0.0'] as const;
  * @returns -1 if a < b, 0 if a == b, 1 if a > b
  */
 export function compareVersions(a: string, b: string): -1 | 0 | 1 {
-  const partsA = a.split('.').map(Number);
-  const partsB = b.split('.').map(Number);
+  const partsA = a.split(".").map(Number);
+  const partsB = b.split(".").map(Number);
 
   for (let i = 0; i < 3; i++) {
     const numA = partsA[i] || 0;
@@ -76,7 +79,9 @@ export function isVersionSupported(version: string): boolean {
 /**
  * 버전 파싱
  */
-export function parseVersion(version: string): { major: number; minor: number; patch: number } | null {
+export function parseVersion(
+  version: string,
+): { major: number; minor: number; patch: number } | null {
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)$/);
   if (!match) return null;
 
@@ -113,6 +118,7 @@ interface LegacyProjectDataV09 {
   }>;
   elements: Array<{
     id: string;
+    /** v0.9.0 legacy field — migration 함수에서 canonical `type` 으로 변환 */
     tag: string;
     props: Record<string, unknown>;
     parent_id: string | null;
@@ -129,12 +135,12 @@ interface LegacyProjectDataV09 {
  */
 const migrations: Record<string, MigrationFn> = {
   // v0.9.0 → v1.0.0 마이그레이션
-  '0.9.0': (data) => {
+  "0.9.0": (data) => {
     const legacy = data as LegacyProjectDataV09;
-    console.log('[Migration] Migrating from v0.9.0 to v1.0.0');
+    console.log("[Migration] Migrating from v0.9.0 to v1.0.0");
 
     return {
-      version: '0.9.0', // 현재 버전 유지 (체인에서 업데이트됨)
+      version: "0.9.0", // 현재 버전 유지 (체인에서 업데이트됨)
       exportedAt: legacy.exportedAt || new Date().toISOString(),
       project: legacy.project,
       pages: legacy.pages.map((page, index) => ({
@@ -143,8 +149,9 @@ const migrations: Record<string, MigrationFn> = {
         order_num: page.order_num ?? index,
         layout_id: page.layout_id ?? null,
       })),
-      elements: legacy.elements.map((element, index) => ({
+      elements: legacy.elements.map(({ tag, ...element }, index) => ({
         ...element,
+        type: tag, // ADR-913 P1: legacy `tag` → canonical `type`
         order_num: element.order_num ?? index,
         events: element.events ?? [],
       })),
@@ -153,8 +160,8 @@ const migrations: Record<string, MigrationFn> = {
   },
 
   // v1.0.0은 현재 버전
-  '1.0.0': (data) => {
-    console.log('[Migration] Data is at v1.0.0 (current)');
+  "1.0.0": (data) => {
+    console.log("[Migration] Data is at v1.0.0 (current)");
     return data as ExportedProjectData;
   },
 
@@ -205,7 +212,7 @@ function getMigrationChain(fromVersion: string, toVersion: string): string[] {
 export function migrateProject(data: unknown): MigrationResult {
   // 버전 추출
   const rawData = data as { version?: string };
-  const version = rawData.version || '1.0.0';
+  const version = rawData.version || "1.0.0";
 
   // 버전 지원 확인
   if (!isVersionSupported(version)) {
@@ -215,7 +222,7 @@ export function migrateProject(data: unknown): MigrationResult {
         code: ExportErrorCode.UNKNOWN_VERSION,
         message: `Version ${version} is not supported`,
         detail: `Minimum supported version: ${MIN_SUPPORTED_VERSION}`,
-        severity: 'error',
+        severity: "error",
       },
     };
   }
@@ -237,7 +244,7 @@ export function migrateProject(data: unknown): MigrationResult {
       error: {
         code: ExportErrorCode.MIGRATION_FAILED,
         message: `No migration path from ${version} to ${CURRENT_VERSION}`,
-        severity: 'error',
+        severity: "error",
       },
     };
   }
@@ -257,7 +264,7 @@ export function migrateProject(data: unknown): MigrationResult {
           code: ExportErrorCode.MIGRATION_FAILED,
           message: `Migration to ${targetVersion} not found`,
           detail: `Failed at: ${currentVersion} → ${targetVersion}`,
-          severity: 'error',
+          severity: "error",
         },
       };
     }
@@ -270,9 +277,9 @@ export function migrateProject(data: unknown): MigrationResult {
         success: false,
         error: {
           code: ExportErrorCode.MIGRATION_FAILED,
-          message: error instanceof Error ? error.message : 'Migration failed',
+          message: error instanceof Error ? error.message : "Migration failed",
           detail: `Failed at: ${currentVersion} → ${targetVersion}`,
-          severity: 'error',
+          severity: "error",
         },
       };
     }
@@ -289,7 +296,9 @@ export function migrateProject(data: unknown): MigrationResult {
 /**
  * 메타데이터 정규화
  */
-export function normalizeMetadata(metadata?: Partial<ProjectMetadata>): ProjectMetadata {
+export function normalizeMetadata(
+  metadata?: Partial<ProjectMetadata>,
+): ProjectMetadata {
   return {
     builderVersion: metadata?.builderVersion || CURRENT_VERSION,
     exportedBy: metadata?.exportedBy,
@@ -303,13 +312,13 @@ export function normalizeMetadata(metadata?: Partial<ProjectMetadata>): ProjectM
  */
 export function checkVersionCompatibility(
   projectVersion: string,
-  builderVersion?: string
+  builderVersion?: string,
 ): { compatible: boolean; warning?: string } {
   const projectParsed = parseVersion(projectVersion);
   const builderParsed = builderVersion ? parseVersion(builderVersion) : null;
 
   if (!projectParsed) {
-    return { compatible: false, warning: 'Invalid project version format' };
+    return { compatible: false, warning: "Invalid project version format" };
   }
 
   // 프로젝트 버전이 지원 범위 내인지 확인

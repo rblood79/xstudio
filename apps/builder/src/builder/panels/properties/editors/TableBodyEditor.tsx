@@ -52,13 +52,13 @@ export const TableBodyEditor = memo(function TableBodyEditor({
 
   // 현재 테이블 바디의 행들 찾기
   const rows = rawChildren
-    .filter((el) => el.tag === "Row")
+    .filter((el) => el.type === "Row")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // 총 셀 개수 계산
   const totalCells = rows.reduce((total, row) => {
     const rowCells = (childrenMap.get(row.id) ?? []).filter(
-      (el) => el.tag === "Cell",
+      (el) => el.type === "Cell",
     );
     return total + rowCells.length;
   }, 0);
@@ -125,7 +125,7 @@ export const TableBodyEditor = memo(function TableBodyEditor({
           <div className="tabs-list">
             {rows.map((row, index) => {
               const rowCells = (childrenMap.get(row.id) ?? []).filter(
-                (el) => el.tag === "Cell",
+                (el) => el.type === "Cell",
               );
 
               return (

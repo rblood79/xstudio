@@ -15,7 +15,7 @@
  */
 
 /**
- * HTML primitive tag 별 기본 폭 (px).
+ * HTML primitive type 별 기본 폭 (px).
  *
  * Spec 없는 media/embed 태그 한정. 그 외 알 수 없는 태그는 layout engine 의
  * `DEFAULT_WIDTH = 80` 폴백이 담당.
@@ -28,7 +28,7 @@ export const HTML_PRIMITIVE_DEFAULT_WIDTHS: Readonly<Record<string, number>> = {
 };
 
 /**
- * HTML primitive tag 별 기본 높이 (px).
+ * HTML primitive type 별 기본 높이 (px).
  *
  * - 텍스트 primitive (`p/span/h1~h6`): CSS 기본 라인 기반 추정
  * - 컨테이너 primitive (`div/section/ul` 등): 0 = auto (자식 기반 높이)

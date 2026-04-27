@@ -120,7 +120,7 @@ export function computeSelectionBounds({
   const boxes: BoundingBox[] = [];
 
   for (const element of selectedElements) {
-    if (element.tag.toLowerCase() === "body") {
+    if (element.type.toLowerCase() === "body") {
       const position = element.page_id
         ? pagePositions?.[element.page_id]
         : undefined;

@@ -78,31 +78,31 @@ export const TableEditor = memo(
 
     // Table 구조 분석 — childrenMap은 Element[]를 반환하므로 직접 사용
     const elementChildren = childrenMap.get(element.id) ?? [];
-    const tableBody = elementChildren.find((el) => el.tag === "TableBody");
+    const tableBody = elementChildren.find((el) => el.type === "TableBody");
 
     // TableHeader 찾기
     const tableHeaderElement = elementChildren.find(
-      (el) => el.tag === "TableHeader",
+      (el) => el.type === "TableHeader",
     );
 
     // 실제 Column Element들 가져오기
     const actualColumns = tableHeaderElement
       ? (childrenMap.get(tableHeaderElement.id) ?? [])
-          .filter((el) => el.tag === "Column")
+          .filter((el) => el.type === "Column")
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
       : [];
 
     // Column Group Element들 가져오기
     const actualColumnGroups = tableHeaderElement
       ? (childrenMap.get(tableHeaderElement.id) ?? [])
-          .filter((el) => el.tag === "ColumnGroup")
+          .filter((el) => el.type === "ColumnGroup")
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
       : [];
 
     // 현재 테이블의 행들 찾기 (TableBody > Row)
     const rows = tableBody
       ? (childrenMap.get(tableBody.id) ?? [])
-          .filter((el) => el.tag === "Row")
+          .filter((el) => el.type === "Row")
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
       : [];
 
@@ -115,7 +115,7 @@ export const TableEditor = memo(
         const newRowElement: Element = {
           id: rowId,
           customId: generateCustomId("Row", allElements),
-          tag: "Row",
+          type: "Row",
           props: {},
           parent_id: tableBody.id,
           page_id: element.page_id!,
@@ -156,7 +156,7 @@ export const TableEditor = memo(
           const newCellElement: Element = {
             id: cellId,
             customId: generateCustomId("Cell", allElementsSoFar),
-            tag: "Cell",
+            type: "Cell",
             props: {
               children: "",
             },
@@ -229,7 +229,7 @@ export const TableEditor = memo(
             "ColumnGroup",
             Array.from(elementsMap.values()),
           ),
-          tag: "ColumnGroup",
+          type: "ColumnGroup",
           props: {
             children: "New Group",
             label: "New Group",
@@ -756,7 +756,7 @@ export const TableEditor = memo(
             <div className="tabs-list">
               {rows.map((row, index) => {
                 const rowCells = (childrenMap.get(row.id) ?? [])
-                  .filter((el) => el.tag === "Cell")
+                  .filter((el) => el.type === "Cell")
                   .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
                 return (

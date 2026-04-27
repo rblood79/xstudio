@@ -31,9 +31,9 @@ export function ToolResultMessage({ message }: ToolResultMessageProps) {
   return (
     <div className="tool-result-message" data-success={success}>
       <span className="tool-result-label">{label}</span>
-      {success && data?.tag ? (
+      {success && data?.type ? (
         <span className="tool-result-detail">
-          {String(data.tag)}
+          {String(data.type)}
           {data.elementId ? ` (${String(data.elementId).slice(0, 8)}...)` : ''}
         </span>
       ) : null}

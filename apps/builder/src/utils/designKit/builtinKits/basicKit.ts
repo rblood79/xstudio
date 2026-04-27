@@ -122,7 +122,7 @@ export const BASIC_KIT: DesignKit = {
     {
       master: {
         localId: "card-master",
-        tag: "Box",
+        type: "Box",
         props: {
           style: {
             width: 320,
@@ -147,7 +147,7 @@ export const BASIC_KIT: DesignKit = {
       descendants: [
         {
           localId: "card-title",
-          tag: "Text",
+          type: "Text",
           props: {
             children: "Card Title",
             style: {
@@ -162,7 +162,7 @@ export const BASIC_KIT: DesignKit = {
         },
         {
           localId: "card-body",
-          tag: "Text",
+          type: "Text",
           props: {
             children: "Card description text goes here.",
             style: {
@@ -180,7 +180,7 @@ export const BASIC_KIT: DesignKit = {
     {
       master: {
         localId: "badge-master",
-        tag: "Box",
+        type: "Box",
         props: {
           style: {
             height: 24,
@@ -203,7 +203,7 @@ export const BASIC_KIT: DesignKit = {
       descendants: [
         {
           localId: "badge-label",
-          tag: "Text",
+          type: "Text",
           props: {
             children: "Badge",
             style: {

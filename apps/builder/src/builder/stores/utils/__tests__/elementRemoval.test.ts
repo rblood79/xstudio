@@ -11,7 +11,7 @@ describe("removeElements skipHistory option (ADR-073 P5)", () => {
     addEntrySpy.mockClear();
     const parent = {
       id: "sel-1",
-      tag: "Select",
+      type: "Select",
       parent_id: null,
       page_id: "p1",
       order_num: 0,
@@ -19,7 +19,7 @@ describe("removeElements skipHistory option (ADR-073 P5)", () => {
     };
     const child = {
       id: "si-1",
-      tag: "SelectItem",
+      type: "SelectItem",
       parent_id: "sel-1",
       page_id: "p1",
       order_num: 0,

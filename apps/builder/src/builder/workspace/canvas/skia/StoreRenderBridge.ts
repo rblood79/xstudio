@@ -35,7 +35,7 @@ import { InlineAlertSpec } from "@composition/specs";
 import { resolveInstanceWithSharedCache } from "@/resolvers/canonical/storeBridge";
 
 function isImageElement(element: Element): boolean {
-  return IMAGE_TAGS.has(element.tag);
+  return IMAGE_TAGS.has(element.type);
 }
 
 /** Collection item 태그 — 기본 border/background 스타일 적용 대상 */
@@ -91,7 +91,7 @@ function getNumericStyleValue(
  * 모든 text 컴포넌트가 spec 경로(`buildSpecNodeData`)로 통일됨.
  */
 function isSpecPath(element: Element): boolean {
-  return !!getSpecForTag(element.tag);
+  return !!getSpecForTag(element.type);
 }
 
 // ---------------------------------------------------------------------------
@@ -255,12 +255,12 @@ export class StoreRenderBridge {
 
       if (element.parent_id) {
         const parent = elementsMap.get(element.parent_id);
-        if (parent && SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(parent.tag)) {
+        if (parent && SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(parent.type)) {
           expandedIds.add(element.parent_id);
         }
       }
 
-      if (SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(element.tag) && childrenMap) {
+      if (SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(element.type) && childrenMap) {
         const children = childrenMap.get(id);
         if (children) {
           for (const child of children) {
@@ -428,12 +428,12 @@ export class StoreRenderBridge {
     //
     // ADR-903 P2 D-C: instance resolution 결과(effectiveElement) 기반으로 spread.
     if (
-      (effectiveElement.tag === "Heading" ||
-        effectiveElement.tag === "Description") &&
+      (effectiveElement.type === "Heading" ||
+        effectiveElement.type === "Description") &&
       effectiveElement.parent_id
     ) {
       const parent = elementsMap.get(effectiveElement.parent_id);
-      if (parent?.tag === "InlineAlert") {
+      if (parent?.type === "InlineAlert") {
         const parentSize =
           ((parent.props as Record<string, unknown>)?.size as string) ?? "md";
         const specSize = (InlineAlertSpec.sizes[parentSize] ??
@@ -444,7 +444,7 @@ export class StoreRenderBridge {
           string,
           unknown
         >;
-        const isHeading = effectiveElement.tag === "Heading";
+        const isHeading = effectiveElement.type === "Heading";
         const fontSize = isHeading
           ? (specSize.headingFontSize as number)
           : (specSize.descFontSize as number);
@@ -471,7 +471,7 @@ export class StoreRenderBridge {
       // 각 자식을 elementsMap에서 새 참조로 교체하여 stale data를 방지한다.
       const rawChildElements = childrenMap?.get(id);
       const childElements = rawChildElements
-        ? SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(effectiveElement.tag)
+        ? SYNTHETIC_CHILD_PROP_MERGE_TAGS.has(effectiveElement.type)
           ? rawChildElements.map((child) => elementsMap.get(child.id) ?? child)
           : rawChildElements
         : undefined;
@@ -507,7 +507,7 @@ export class StoreRenderBridge {
     }
 
     // Box / fallback
-    const isCollectionItem = COLLECTION_ITEM_TAGS.has(effectiveElement.tag);
+    const isCollectionItem = COLLECTION_ITEM_TAGS.has(effectiveElement.type);
     return (
       buildBoxNodeData({
         element: effectiveElement,

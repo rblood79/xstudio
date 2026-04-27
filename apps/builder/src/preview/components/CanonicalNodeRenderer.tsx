@@ -6,7 +6,7 @@
  *
  * 역할:
  * - ResolvedNode → legacyProps 추출 (extractLegacyPropsFromResolved)
- * - legacyProps 에서 tag + props 복원 → 기존 rendererMap 위임
+ * - legacyProps 에서 type + props 복원 → 기존 rendererMap 위임
  * - 재귀 children 렌더링
  * - DOM 마커: data-canonical-id (stable path) + data-legacy-uuid (원본 UUID)
  *
@@ -47,7 +47,7 @@ interface CanonicalNodeRendererProps {
  *
  * 렌더링 순서:
  * 1. `extractLegacyPropsFromResolved` 로 legacy props 추출
- * 2. props 에서 `tag` 복원 (metadata.type → node.type fallback)
+ * 2. props 에서 `type` 복원 (metadata.type → node.type fallback)
  * 3. rendererMap 위임 (기존 shared renderer 재사용)
  * 4. rendererMap 미등록 시 generic div 렌더링 + children 재귀
  * 5. DOM 마커: `data-canonical-id` + `data-legacy-uuid`
@@ -62,12 +62,12 @@ export function CanonicalNodeRenderer({
   // ── legacyProps 추출 ──────────────────────────────────────────────────────
   const legacyProps = extractLegacyPropsFromResolved(node);
 
-  // ── tag 복원 ─────────────────────────────────────────────────────────────
+  // ── type 복원 ─────────────────────────────────────────────────────────────
   // node.type 이 ComponentTag (예: "button", "text", "frame") 이므로
-  // legacy tag 는 legacyProps._tag → metadata.originalTag → node.type 순으로 fallback
-  const tag =
+  // legacy type 는 legacyProps._tag → metadata.originalTag → node.type 순으로 fallback
+  const type =
     (legacyProps._tag as string | undefined) ??
-    (legacyProps.tag as string | undefined) ??
+    (legacyProps.type as string | undefined) ??
     ((node.metadata as Record<string, unknown> | undefined)?.originalTag as
       | string
       | undefined) ??
@@ -80,7 +80,7 @@ export function CanonicalNodeRenderer({
 
   const previewEl: PreviewElement = {
     id: legacyUuid,
-    tag,
+    type,
     props: legacyProps as PreviewElement["props"],
     parent_id: (legacyProps.parent_id as string | undefined) ?? null,
     page_id: (legacyProps.page_id as string | undefined) ?? null,
@@ -99,7 +99,7 @@ export function CanonicalNodeRenderer({
   };
 
   // ── rendererMap 위임 ──────────────────────────────────────────────────────
-  const renderer = rendererMap[adaptedEl.tag];
+  const renderer = rendererMap[adaptedEl.type];
   if (renderer) {
     // shared renderer 는 RenderContext.renderElement 를 통해 자식을 렌더링하므로
     // 여기서는 rendererMap 에 그대로 위임. DOM 마커는 wrapper div 로 감쌈.
@@ -114,7 +114,7 @@ export function CanonicalNodeRenderer({
   const children = node.children ?? [];
 
   return React.createElement(
-    resolveGenericHtmlTag(adaptedEl.tag),
+    resolveGenericHtmlTag(adaptedEl.type),
     {
       key: node.id,
       ...markerProps,
@@ -143,7 +143,7 @@ export function CanonicalNodeRenderer({
  * 커스텀 태그를 표준 HTML 태그로 변환한다.
  * rendererMap 미등록 태그에 대한 최소 fallback 경로.
  */
-function resolveGenericHtmlTag(tag: string): string {
+function resolveGenericHtmlTag(type: string): string {
   const KNOWN_HTML: Record<string, string> = {
     body: "div",
     Slot: "div",
@@ -158,5 +158,5 @@ function resolveGenericHtmlTag(tag: string): string {
     frame: "div",
     ref: "div",
   };
-  return KNOWN_HTML[tag] ?? tag.toLowerCase();
+  return KNOWN_HTML[type] ?? type.toLowerCase();
 }

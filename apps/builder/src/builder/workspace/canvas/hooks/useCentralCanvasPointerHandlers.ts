@@ -217,7 +217,7 @@ export function useCentralCanvasPointerHandlers({
       // 내부 요소 클릭 시 inSelectionBounds=true가 되어 클릭이 무시되는 버그 방지.
       const selectedElement =
         selectedIds.length === 1 ? state.elementsMap.get(selectedIds[0]) : null;
-      const isBodySelected = selectedElement?.tag.toLowerCase() === "body";
+      const isBodySelected = selectedElement?.type.toLowerCase() === "body";
 
       const { inSelectionBounds } = isBodySelected
         ? { inSelectionBounds: false }
@@ -256,7 +256,7 @@ export function useCentralCanvasPointerHandlers({
         // ADR-043: 선택 즉시 pendingDrag 설정 — 첫 클릭에서 바로 드래그 가능
         // handleElementClick이 동기적으로 store를 갱신한 후 bounds 재계산
         const hitElement = state.elementsMap.get(hitElementId);
-        if (hitElement && hitElement.tag.toLowerCase() !== "body") {
+        if (hitElement && hitElement.type.toLowerCase() !== "body") {
           const freshBounds = computeSelectionBoundsForHitTest();
           if (freshBounds) {
             pendingDragRef.current = {
@@ -298,7 +298,7 @@ export function useCentralCanvasPointerHandlers({
           lastClickTimeRef.current = session.lastClickTime;
 
           // Body 요소는 drag 대상에서 제외
-          if (targetId && selectedElement?.tag.toLowerCase() !== "body") {
+          if (targetId && selectedElement?.type.toLowerCase() !== "body") {
             pendingDragRef.current = {
               elementId: targetId,
               bounds: selectionBounds,

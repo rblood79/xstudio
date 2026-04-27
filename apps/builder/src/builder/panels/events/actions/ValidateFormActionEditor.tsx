@@ -21,7 +21,7 @@ export function ValidateFormActionEditor({
         value={config.formId || ""}
         onChange={updateFormId}
         placeholder="Select form..."
-        filter={(el) => el.tag === "Form"}
+        filter={(el) => el.type === "Form"}
       />
 
       <div className="helper-text">

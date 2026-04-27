@@ -16,9 +16,9 @@ export const createElementTool: ToolExecutor = {
   name: 'create_element',
 
   async execute(args: Record<string, unknown>): Promise<ToolExecutionResult> {
-    const tag = args.tag as string;
-    if (!tag) {
-      return { success: false, error: 'tag는 필수입니다.' };
+    const type = args.type as string;
+    if (!type) {
+      return { success: false, error: 'type는 필수입니다.' };
     }
 
     const aiProps = (args.props || {}) as Record<string, unknown>;
@@ -32,11 +32,11 @@ export const createElementTool: ToolExecutor = {
       const { elements, selectedElementId, currentPageId, addElement } = state;
 
       // 기본 props 생성 + AI props 병합
-      const defaultProps = getDefaultProps(tag);
+      const defaultProps = getDefaultProps(type);
       const mergedProps = { ...defaultProps, ...aiProps };
 
       // 스타일 적용
-      const finalProps = adaptPropsForElement(tag, mergedProps, aiStyles, aiFills);
+      const finalProps = adaptPropsForElement(type, mergedProps, aiStyles, aiFills);
 
       // 부모 결정
       let parentId: string | null = parentIdArg || null;
@@ -44,7 +44,7 @@ export const createElementTool: ToolExecutor = {
         if (selectedElementId) {
           parentId = selectedElementId;
         } else {
-          const bodyElement = elements.find((el) => el.tag === 'body');
+          const bodyElement = elements.find((el) => el.type === 'body');
           if (bodyElement) {
             parentId = bodyElement.id;
           }
@@ -54,7 +54,7 @@ export const createElementTool: ToolExecutor = {
       // Element 생성
       const newElement: Element = {
         id: crypto.randomUUID(),
-        tag,
+        type,
         props: finalProps,
         parent_id: parentId,
         page_id: currentPageId || 'default',
@@ -90,7 +90,7 @@ export const createElementTool: ToolExecutor = {
         success: true,
         data: {
           elementId: newElement.id,
-          tag,
+          type,
           parentId,
         },
         affectedElementIds: [newElement.id],

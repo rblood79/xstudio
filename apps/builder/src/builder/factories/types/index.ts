@@ -40,7 +40,7 @@ export type ChildDefinition = Omit<
  * 컴포넌트 정의 타입
  */
 export interface ComponentDefinition {
-  tag: string;
+  type: string;
   parent: Omit<Element, "id" | "created_at" | "updated_at">;
   children: ChildDefinition[];
 }

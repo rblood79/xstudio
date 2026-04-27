@@ -2,7 +2,7 @@
  * @fileoverview Slot + Layout Legacy Adapter — ADR-903 P1 Stream 3.
  *
  * 변환 책임:
- *  - tag="Slot" element → 부모 컨테이너의 slot 메타 (별도 Slot 특수 노드 제거)
+ *  - type="Slot" element → 부모 컨테이너의 slot 메타 (별도 Slot 특수 노드 제거)
  *  - Page.layout_id → page를 layout shell의 ref 인스턴스로 표현
  *  - page의 elements (slot_name으로 그룹핑) → descendants[slotPath].children
  *    (canonical mode C children replacement)
@@ -136,13 +136,13 @@ export const convertPageLayout: ConvertPageLayoutFn = (
 // ─────────────────────────────────────────────
 
 /**
- * Layout shell 의 모든 Slot tag 의 stable id path 를 계산한다.
+ * Layout shell 의 모든 Slot type 의 stable id path 를 계산한다.
  *
  * `layoutIdPathMap` (`buildIdPathContext(layoutElements).idPathMap`) 이 이미
  * 각 element 의 full path 를 보유하므로 단순 lookup. resolver mode C 매칭의
  * path 키로 사용.
  *
- * 출력 형식: `{ slotName → "Box/Slot" }` (예: layout root="Box", slot tag="Slot")
+ * 출력 형식: `{ slotName → "Box/Slot" }` (예: layout root="Box", slot type="Slot")
  *
  * 같은 slotName 이 여러 slot 에 등장하면 마지막이 이긴다.
  *
@@ -155,7 +155,7 @@ export function buildSlotPathMap(
 ): Map<string, string> {
   const slotPathMap = new Map<string, string>();
   for (const el of layoutElements) {
-    if (!isLegacySlotTag(el.tag)) continue;
+    if (!isLegacySlotTag(el.type)) continue;
     const fullPath = layoutIdPathMap.get(el.id) ?? el.id;
     const props = el.props as Partial<{ name: string }>;
     const slotName = props.name ?? el.slot_name ?? "content";
@@ -215,7 +215,7 @@ export function convertLayoutToReusableFrame(
 /**
  * Element subtree → CanonicalNode 재귀 변환 (slot 흡수 없음, page subtree 전용).
  *
- * page의 slot children 변환에서 사용. Slot tag가 page subtree 안에 존재하는
+ * page의 slot children 변환에서 사용. Slot type가 page subtree 안에 존재하는
  * 경우(비정상)는 legacy-slot metadata로만 기록하고 구조 변환은 생략.
  *
  * DRY 인지: Stream 1 buildNode와 logic 중복. Phase 2 resolver 통합 시 단일화 예정.
@@ -229,7 +229,7 @@ function convertElementToCanonical(
     .filter((e) => e.parent_id === element.id)
     .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
 
-  if (isLegacySlotTag(element.tag)) {
+  if (isLegacySlotTag(element.type)) {
     // page subtree 안의 Slot은 비정상. metadata만 기록하고 frame으로 변환
     return {
       id: segId(element.id, idSegmentMap),
@@ -247,7 +247,7 @@ function convertElementToCanonical(
 
   return {
     id: idSegmentMap.get(element.id) ?? element.id,
-    type: tagToType(element.tag),
+    type: tagToType(element.type),
     name: element.componentName,
     children: childElements.map((c) =>
       convertElementToCanonical(c, allElements, idSegmentMap),
@@ -259,12 +259,12 @@ function convertElementToCanonical(
 /**
  * Slot 흡수 변환 — layout shell subtree 전용.
  *
- * Slot tag element를 별도 노드로 만들지 않고
+ * Slot type element를 별도 노드로 만들지 않고
  * placeholder FrameNode(slot 메타 포함)로 변환.
  *
  * legacy 구조:
  *   container (Box)
- *     └── Slot (tag="Slot", slot_name="main")
+ *     └── Slot (type="Slot", slot_name="main")
  *
  * canonical 구조:
  *   { type: "frame", placeholder: true, slot: [], metadata: {slotName: "main"} }
@@ -279,7 +279,7 @@ function convertElementWithSlotHoisting(
   allElements: Element[],
   idSegmentMap: Map<string, string>,
 ): CanonicalNode {
-  if (isLegacySlotTag(element.tag)) {
+  if (isLegacySlotTag(element.type)) {
     const props = element.props as Partial<{ name: string }>;
     const slotName = props.name ?? element.slot_name ?? undefined ?? "content";
     return {
@@ -303,7 +303,7 @@ function convertElementWithSlotHoisting(
 
   return {
     id: idSegmentMap.get(element.id) ?? element.id,
-    type: tagToType(element.tag),
+    type: tagToType(element.type),
     name: element.componentName,
     children: childElements.map((c) =>
       convertElementWithSlotHoisting(c, allElements, idSegmentMap),

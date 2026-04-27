@@ -267,7 +267,7 @@ async function registerMasters(
     // Master element 생성
     const masterElement: Element = normalizeExternalFillIngress({
       id: idMap.get(kitComp.master.localId)!,
-      tag: kitComp.master.tag,
+      type: kitComp.master.type,
       props: kitComp.master.props,
       parent_id: null, // Master는 최상위
       page_id: null,   // 전역 컴포넌트
@@ -283,7 +283,7 @@ async function registerMasters(
     for (const desc of kitComp.descendants) {
       const descElement: Element = normalizeExternalFillIngress({
         id: idMap.get(desc.localId)!,
-        tag: desc.tag,
+        type: desc.type,
         props: desc.props,
         parent_id: desc.parentLocalId ? idMap.get(desc.parentLocalId) ?? null : null,
         page_id: null,

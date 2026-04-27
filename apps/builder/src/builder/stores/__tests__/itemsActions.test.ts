@@ -10,7 +10,7 @@ describe("Store items actions (ADR-073 P4)", () => {
     const state = useStore.getState();
     const el = {
       id: selectId,
-      tag: "Select",
+      type: "Select",
       parent_id: null,
       page_id: "p1",
       order_num: 0,
@@ -62,7 +62,7 @@ describe("Store items actions (ADR-073 P4)", () => {
   it("addMenuItem: Menu 회귀 0 — addItem wrapper 로 동작", async () => {
     const menuEl = {
       id: "menu-1",
-      tag: "Menu",
+      type: "Menu",
       parent_id: null,
       page_id: "p1",
       order_num: 0,
@@ -93,7 +93,7 @@ describe("Store items actions — ListBox (ADR-076 P4)", () => {
     const state = useStore.getState();
     const el = {
       id: listBoxId,
-      tag: "ListBox",
+      type: "ListBox",
       parent_id: null,
       page_id: "p1",
       order_num: 0,

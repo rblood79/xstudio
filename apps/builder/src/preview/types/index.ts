@@ -9,7 +9,7 @@ import { EventEngine } from "../../utils/events/eventEngine";
 export interface PreviewElement {
   id: string;
   customId?: string; // custom_id from database (e.g., button_1, table_1)
-  tag: string;
+  type: string;
   fills?: unknown[];
   props: ElementProps;
   text?: string;
@@ -54,7 +54,7 @@ export interface RenderContext {
  * 컴포넌트 렌더러 인터페이스
  */
 export interface ComponentRenderer {
-  canRender(tag: string): boolean;
+  canRender(type: string): boolean;
   render(element: PreviewElement, context: RenderContext): React.ReactNode;
 }
 
@@ -117,7 +117,7 @@ export interface AddColumnElementsMessage extends PreviewMessage {
     tableHeaderId: string;
     columns: Array<{
       id: string;
-      tag: string;
+      type: string;
       page_id: string;
       parent_id: string;
       order_num: number;
@@ -179,7 +179,7 @@ export interface ElementSelectedMessage extends PreviewMessage {
       height: number;
     };
     props: Record<string, unknown>;
-    tag: string;
+    type: string;
     style?: React.CSSProperties;
     computedStyle?: Partial<React.CSSProperties>;
   };

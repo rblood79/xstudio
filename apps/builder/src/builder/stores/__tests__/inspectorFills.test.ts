@@ -30,7 +30,7 @@ describe("inspectorActions fill write-through", () => {
       elements: [
         {
           id: "fill-target",
-          tag: "Box",
+          type: "Box",
           props: {
             style: { backgroundColor: "#ffffff" },
           },
@@ -41,7 +41,7 @@ describe("inspectorActions fill write-through", () => {
           "fill-target",
           {
             id: "fill-target",
-            tag: "Box",
+            type: "Box",
             props: {
               style: { backgroundColor: "#ffffff" },
             },
@@ -221,7 +221,7 @@ describe("inspectorActions fill write-through", () => {
   it("addElement 경로는 legacy backgroundImage 를 fills 로 canonicalize 한다", async () => {
     await useStore.getState().addElement({
       id: "added-fill-target",
-      tag: "Box",
+      type: "Box",
       props: {
         style: {
           backgroundImage:
@@ -247,7 +247,7 @@ describe("inspectorActions fill write-through", () => {
     useStore.getState().mergeElements([
       {
         id: "merged-fill-target",
-        tag: "Box",
+        type: "Box",
         props: {
           style: {
             backgroundImage: "url(https://example.com/hero.png)",
@@ -273,7 +273,7 @@ describe("inspectorActions fill write-through", () => {
     await useStore.getState().addComplexElement(
       {
         id: "complex-parent",
-        tag: "Box",
+        type: "Box",
         props: {
           style: {
             backgroundColor: "#112233",
@@ -286,7 +286,7 @@ describe("inspectorActions fill write-through", () => {
       [
         {
           id: "complex-child",
-          tag: "Box",
+          type: "Box",
           props: {
             style: {
               backgroundImage: "url(https://example.com/detail.png)",
@@ -319,7 +319,7 @@ describe("inspectorActions fill write-through", () => {
     useStore.getState().hydrateProjectSnapshot([
       {
         id: "snapshot-fill-target",
-        tag: "Box",
+        type: "Box",
         props: {
           style: {
             backgroundImage:

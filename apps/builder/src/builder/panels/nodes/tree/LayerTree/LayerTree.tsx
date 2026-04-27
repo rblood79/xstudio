@@ -110,7 +110,7 @@ export function LayerTree({
 
   // 드래그 가능 여부
   const canDrag = useCallback((node: LayerTreeNode) => {
-    return !node.virtualChildType && node.tag !== "body";
+    return !node.virtualChildType && node.type !== "body";
   }, []);
 
   // 렌더링

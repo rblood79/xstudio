@@ -119,7 +119,7 @@ function handleUnresolvedTarget(
     targetPageId: string | null,
   ) => void,
 ): void {
-  if (clickedElement?.tag.toLowerCase() !== "body") {
+  if (clickedElement?.type.toLowerCase() !== "body") {
     return;
   }
 
@@ -233,7 +233,7 @@ export function useCanvasElementSelectionHandlers({
         return;
       }
 
-      if (TEXT_EDITABLE_TAGS.has(resolvedElement.tag)) {
+      if (TEXT_EDITABLE_TAGS.has(resolvedElement.type)) {
         const layoutPosition = getElementBoundsSimple(resolvedTarget);
         startEdit(resolvedTarget, layoutPosition ?? undefined);
         return;

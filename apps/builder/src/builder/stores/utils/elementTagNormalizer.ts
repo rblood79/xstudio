@@ -8,8 +8,8 @@ const LEGACY_TAG_MAP: Record<string, string> = {
  * 레거시 태그를 현재 canonical 태그로 정규화합니다.
  * 현재는 section -> Section만 지원합니다.
  */
-export function normalizeElementTag(tag: string): string {
-  return LEGACY_TAG_MAP[tag] ?? tag;
+export function normalizeElementTag(type: string): string {
+  return LEGACY_TAG_MAP[type] ?? type;
 }
 
 function shouldApplySectionDefaultDisplay(
@@ -31,11 +31,11 @@ function shouldApplySectionDefaultDisplay(
 }
 
 /**
- * 단일 Element의 tag를 정규화합니다.
+ * 단일 Element의 type를 정규화합니다.
  */
 export function normalizeElementTagInElement(element: Element): Element {
-  const normalizedTag = normalizeElementTag(element.tag);
-  let changed = normalizedTag !== element.tag;
+  const normalizedTag = normalizeElementTag(element.type);
+  let changed = normalizedTag !== element.type;
   let normalizedProps = element.props;
 
   // Section은 기본 display:block 보장
@@ -58,13 +58,13 @@ export function normalizeElementTagInElement(element: Element): Element {
   if (!changed) return element;
   return {
     ...element,
-    tag: normalizedTag,
+    type: normalizedTag,
     props: normalizedProps,
   };
 }
 
 /**
- * Element 배열의 tag를 일괄 정규화합니다.
+ * Element 배열의 type를 일괄 정규화합니다.
  * 변경된 요소 목록도 함께 반환합니다.
  */
 export function normalizeElementTags(elements: Element[]): {

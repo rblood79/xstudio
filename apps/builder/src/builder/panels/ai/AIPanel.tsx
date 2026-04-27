@@ -234,7 +234,7 @@ function AIPanelContent() {
       selectedElementId: selectedElementId || undefined,
       elements: pageElements.map((el) => ({
         id: el.id,
-        tag: el.tag,
+        type: el.type,
         props: el.props as Record<string, unknown>,
         parent_id: el.parent_id ?? null,
       })),

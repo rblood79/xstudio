@@ -48,7 +48,7 @@ export function createInstance(
 
   const instanceElement: Element = {
     id: uuidv4(),
-    tag: master.tag,
+    type: master.type,
     props: {},
     parent_id: parentId,
     page_id: pageId,

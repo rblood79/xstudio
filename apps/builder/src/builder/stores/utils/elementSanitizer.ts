@@ -11,7 +11,7 @@ import { Element } from "../../../types/core/store.types";
 export interface SupabaseElement {
   id: string;
   custom_id?: string;
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   parent_id: string | null;
   /** layout element 의 경우 null. page element 의 경우 page UUID. */
@@ -42,7 +42,7 @@ export const sanitizeElement = (element: Element): Element => {
     console.warn(
       "[ADR-903] sanitizeElement: page_id/layout_id 없음 — canonical parent 의존 element?",
       element.id,
-      element.tag,
+      element.type,
     );
   }
 
@@ -52,7 +52,7 @@ export const sanitizeElement = (element: Element): Element => {
       return {
         id: element.id,
         customId: element.customId,
-        tag: element.tag,
+        type: element.type,
         props: structuredClone(element.props || {}),
         parent_id: element.parent_id,
         page_id: element.page_id,
@@ -66,7 +66,7 @@ export const sanitizeElement = (element: Element): Element => {
     return {
       id: element.id,
       customId: element.customId,
-      tag: element.tag,
+      type: element.type,
       props: JSON.parse(JSON.stringify(element.props || {})),
       parent_id: element.parent_id,
       page_id: element.page_id,
@@ -80,7 +80,7 @@ export const sanitizeElement = (element: Element): Element => {
     return {
       id: element.id || "",
       customId: element.customId,
-      tag: element.tag || "",
+      type: element.type || "",
       props: {},
       parent_id: element.parent_id,
       page_id: element.page_id || "",
@@ -113,7 +113,7 @@ export const sanitizeElementForSupabase = (
     return {
       id: element.id,
       custom_id: element.customId,
-      tag: element.tag,
+      type: element.type,
       props,
       parent_id: element.parent_id ?? null,
       page_id: element.page_id ?? null,
@@ -126,7 +126,7 @@ export const sanitizeElementForSupabase = (
     return {
       id: element.id || "",
       custom_id: element.customId,
-      tag: element.tag || "",
+      type: element.type || "",
       props: {},
       parent_id: element.parent_id ?? null,
       page_id: element.page_id ?? null,

@@ -24,7 +24,7 @@ export function useElementStyleContext(id: string | null): ElementStyleContext {
       | Readonly<Record<string, unknown>>
       | undefined;
   });
-  const type = useStore((s) => (id ? s.elementsMap.get(id)?.tag : undefined));
+  const type = useStore((s) => (id ? s.elementsMap.get(id)?.type : undefined));
   const style = props?.style as Record<string, unknown> | undefined;
   const size = props?.size as string | undefined;
   const fills = element?.fills as unknown[] | undefined;

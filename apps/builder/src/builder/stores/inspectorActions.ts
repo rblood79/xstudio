@@ -812,7 +812,7 @@ export function mapElementToSelectedElement(element: Element): SelectedElement {
   return {
     id: element.id,
     customId: element.customId,
-    type: element.tag,
+    type: element.type,
     properties: otherProps,
     style: (style as React.CSSProperties) || {},
     computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,

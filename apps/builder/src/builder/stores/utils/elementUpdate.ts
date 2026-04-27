@@ -280,7 +280,7 @@ export const createUpdateElementPropsAction =
       ? isLayoutAffectingUpdate(changedStyle)
       : Object.keys(patch).some((k) => k !== "style"); // style 외 props 변경은 레이아웃 영향으로 간주
 
-    // updateElementProps는 element 구조(parent_id/page_id/tag/variableBindings 등)를 바꾸지 않으므로,
+    // updateElementProps는 element 구조(parent_id/page_id/type/variableBindings 등)를 바꾸지 않으므로,
     // 전체 인덱스 재구축(O(n)) 대신 변경된 요소만 O(1)로 갱신한다.
     if (updatedElement) {
       const elementsMap = new Map(currentState.elementsMap);

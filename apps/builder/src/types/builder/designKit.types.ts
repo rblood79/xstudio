@@ -11,7 +11,7 @@
  * @see docs/WASM_DOC_IMPACT_ANALYSIS.md §G.4
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 // ============================================
 // Kit Metadata
@@ -49,12 +49,12 @@ export interface DesignKitMeta {
 export interface KitElement {
   /** Kit-local ID (적용 시 새 UUID로 교체) */
   localId: string;
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   /** 부모 Kit-local ID (루트이면 null) */
   parentLocalId: string | null;
   orderNum: number;
-  componentRole?: 'master' | 'instance';
+  componentRole?: "master" | "instance";
   componentName?: string;
   /** $-- 변수 참조 목록 */
   variableBindings?: string[];
@@ -85,9 +85,19 @@ export interface KitComponent {
  */
 export interface KitToken {
   name: string;
-  type: 'color' | 'typography' | 'spacing' | 'shadow' | 'border' | 'radius' | 'font' | 'size' | 'motion' | 'other';
+  type:
+    | "color"
+    | "typography"
+    | "spacing"
+    | "shadow"
+    | "border"
+    | "radius"
+    | "font"
+    | "size"
+    | "motion"
+    | "other";
   value: unknown;
-  scope: 'raw' | 'semantic';
+  scope: "raw" | "semantic";
   aliasOf?: string | null;
   cssVariable?: string;
 }
@@ -100,7 +110,7 @@ export interface KitThemeSnapshot {
   /** 테마 이름 */
   name: string;
   /** 테마 상태 */
-  status: 'active' | 'draft';
+  status: "active" | "draft";
   /** 다크모드 지원 여부 */
   supportsDarkMode?: boolean;
   /** 이 테마에 속하는 토큰들 */
@@ -117,7 +127,7 @@ export interface KitThemeSnapshot {
  */
 export interface KitVariable {
   name: string;
-  type: 'color' | 'string' | 'number';
+  type: "color" | "string" | "number";
   /** 기본값 (themeId: null에 해당) */
   defaultValue: string | number;
   /** 테마별 오버라이드 (테마 이름 -> 값) */
@@ -133,7 +143,7 @@ export interface KitVariable {
 
 export interface DesignKit {
   /** JSON format version */
-  formatVersion: '1.0';
+  formatVersion: "1.0";
   /** 킷 메타데이터 */
   meta: DesignKitMeta;
   /** 디자인 변수 */
@@ -158,9 +168,9 @@ export interface KitLoadResult {
 }
 
 export interface KitConflict {
-  type: 'variable' | 'token' | 'component';
+  type: "variable" | "token" | "component";
   name: string;
-  resolution: 'overwrite' | 'skip' | 'rename';
+  resolution: "overwrite" | "skip" | "rename";
 }
 
 // ============================================
@@ -169,7 +179,7 @@ export interface KitConflict {
 
 export interface KitApplyOptions {
   /** 충돌 시 기본 처리 */
-  conflictResolution: 'overwrite' | 'skip';
+  conflictResolution: "overwrite" | "skip";
   /** 변수 적용 여부 */
   applyVariables: boolean;
   /** 테마/토큰 적용 여부 */
@@ -179,7 +189,7 @@ export interface KitApplyOptions {
 }
 
 export const DEFAULT_KIT_APPLY_OPTIONS: KitApplyOptions = {
-  conflictResolution: 'overwrite',
+  conflictResolution: "overwrite",
   applyVariables: true,
   applyThemes: true,
   registerComponents: true,
@@ -189,7 +199,7 @@ export const DEFAULT_KIT_APPLY_OPTIONS: KitApplyOptions = {
 // Kit Store State
 // ============================================
 
-export type KitStatus = 'idle' | 'loading' | 'applying' | 'error';
+export type KitStatus = "idle" | "loading" | "applying" | "error";
 
 export interface DesignKitState {
   /** 사용 가능한 Kit 목록 (내장 + 사용자) */
@@ -212,9 +222,11 @@ export interface DesignKitState {
 
 export const KitVariableSchema = z.object({
   name: z.string().min(1),
-  type: z.enum(['color', 'string', 'number']),
+  type: z.enum(["color", "string", "number"]),
   defaultValue: z.union([z.string(), z.number()]),
-  themeOverrides: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+  themeOverrides: z
+    .record(z.string(), z.union([z.string(), z.number()]))
+    .optional(),
   description: z.string().optional(),
   group: z.string().optional(),
   tokenRef: z.string().optional(),
@@ -222,20 +234,31 @@ export const KitVariableSchema = z.object({
 
 export const KitTokenSchema = z.object({
   name: z.string().min(1),
-  type: z.enum(['color', 'typography', 'spacing', 'shadow', 'border', 'radius', 'font', 'size', 'motion', 'other']),
+  type: z.enum([
+    "color",
+    "typography",
+    "spacing",
+    "shadow",
+    "border",
+    "radius",
+    "font",
+    "size",
+    "motion",
+    "other",
+  ]),
   value: z.unknown(),
-  scope: z.enum(['raw', 'semantic']),
+  scope: z.enum(["raw", "semantic"]),
   aliasOf: z.string().nullable().optional(),
   cssVariable: z.string().optional(),
 });
 
 export const KitElementSchema = z.object({
   localId: z.string().min(1),
-  tag: z.string().min(1),
+  type: z.string().min(1),
   props: z.record(z.string(), z.unknown()),
   parentLocalId: z.string().nullable(),
   orderNum: z.number(),
-  componentRole: z.enum(['master', 'instance']).optional(),
+  componentRole: z.enum(["master", "instance"]).optional(),
   componentName: z.string().optional(),
   variableBindings: z.array(z.string()).optional(),
 });
@@ -249,7 +272,7 @@ export const KitComponentSchema = z.object({
 
 export const KitThemeSnapshotSchema = z.object({
   name: z.string().min(1),
-  status: z.enum(['active', 'draft']),
+  status: z.enum(["active", "draft"]),
   supportsDarkMode: z.boolean().optional(),
   tokens: z.array(KitTokenSchema),
 });
@@ -267,7 +290,7 @@ export const KitMetaSchema = z.object({
 });
 
 export const DesignKitSchema = z.object({
-  formatVersion: z.literal('1.0'),
+  formatVersion: z.literal("1.0"),
   meta: KitMetaSchema,
   variables: z.array(KitVariableSchema),
   themes: z.array(KitThemeSnapshotSchema),

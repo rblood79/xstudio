@@ -21,7 +21,7 @@ export function HideModalActionEditor({
         value={config.modalId || ""}
         onChange={updateModalId}
         placeholder="Select modal..."
-        filter={(el) => el.tag === "Modal"}
+        filter={(el) => el.type === "Modal"}
       />
 
       <p className="field-hint">

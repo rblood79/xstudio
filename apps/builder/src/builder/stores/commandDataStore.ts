@@ -37,7 +37,7 @@ export interface CommandData {
 
 export interface CompressedElement {
     id: string;
-    tag: string;
+    type: string;
     // props를 압축된 형태로 저장
     props: string; // JSON.stringify된 압축 문자열
     parent_id: string | null;
@@ -133,7 +133,7 @@ export class CommandDataStore {
 
         const compressed: CompressedElement = {
             id: element.id,
-            tag: element.tag,
+            type: element.type,
             props: this.compressionEnabled
                 ? this.compressProps(element.props as Record<string, unknown>)
                 : JSON.stringify(element.props),
@@ -154,7 +154,7 @@ export class CommandDataStore {
 
         return {
             id: compressed.id,
-            tag: compressed.tag,
+            type: compressed.type,
             props: this.compressionEnabled
                 ? this.decompressProps(compressed.props)
                 : JSON.parse(compressed.props),

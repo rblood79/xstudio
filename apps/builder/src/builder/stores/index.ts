@@ -121,7 +121,7 @@ export const useSelectedElementData = (): SelectedElement | null => {
   const selectedElementProps = useStore((state) => state.selectedElementProps);
 
   // 🚀 추가 정보를 위해 elementsMap에서 한 번만 읽기 (구독 아님)
-  // tag, customId, dataBinding은 자주 변경되지 않음
+  // type, customId, dataBinding은 자주 변경되지 않음
   return useMemo(() => {
     if (!selectedElementId) return null;
 
@@ -143,7 +143,7 @@ export const useSelectedElementData = (): SelectedElement | null => {
     return {
       id: element.id,
       customId: element.customId,
-      type: element.tag,
+      type: element.type,
       properties: otherProps,
       style: (style as React.CSSProperties) || {},
       computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,

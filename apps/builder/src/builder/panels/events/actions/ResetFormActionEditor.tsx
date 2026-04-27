@@ -24,7 +24,7 @@ export function ResetFormActionEditor({
         value={config.formId || ""}
         onChange={updateFormId}
         placeholder="Select form..."
-        filter={(el) => el.tag === "Form"}
+        filter={(el) => el.type === "Form"}
       />
 
       <p className="field-hint">

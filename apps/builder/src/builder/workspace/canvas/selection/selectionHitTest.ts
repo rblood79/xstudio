@@ -28,7 +28,7 @@ export function pickTopmostHitElementId(
 
   for (const candidateId of hitCandidates) {
     const candidate = elementsMap.get(candidateId);
-    if (!candidate || candidate.tag.toLowerCase() === "body") {
+    if (!candidate || candidate.type.toLowerCase() === "body") {
       continue;
     }
 
@@ -92,7 +92,7 @@ export function findBodySelectionAtCanvasPoint({
 
   for (const elementId of pageElementIds) {
     const element = elementsMap.get(elementId);
-    if (element?.tag === "body") {
+    if (element?.type === "body") {
       return {
         bodyElementId: element.id,
         pageId,

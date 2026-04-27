@@ -122,7 +122,7 @@ function convertToLayerTreeNodes(
     const baseNode: LayerTreeNode = {
       id: item.id,
       name: getDisplayName(item),
-      tag: item.tag,
+      type: item.type,
       parentId: item.parent_id ?? null,
       orderNum: item.order_num ?? 0,
       depth,
@@ -139,20 +139,20 @@ function convertToLayerTreeNodes(
 function getDisplayName(item: ElementTreeItem): string {
   const props = item.props as ElementProps | undefined;
 
-  if (item.tag === "TabList") return "Tab List";
-  if (item.tag === "TabPanels") return "Tab Panels";
-  if (item.tag === "TabPanel") return "TabPanel";
-  if (item.tag === "TableHeader") return "thead";
-  if (item.tag === "TableBody") return "tbody";
-  if (item.tag === "Column") {
+  if (item.type === "TabList") return "Tab List";
+  if (item.type === "TabPanels") return "Tab Panels";
+  if (item.type === "TabPanel") return "TabPanel";
+  if (item.type === "TableHeader") return "thead";
+  if (item.type === "TableBody") return "tbody";
+  if (item.type === "Column") {
     return `th: ${props?.children || "Column"}`;
   }
-  if (item.tag === "Row") return "tr";
-  if (item.tag === "Cell") {
+  if (item.type === "Row") return "tr";
+  if (item.type === "Cell") {
     return `td: ${props?.children || "Cell"}`;
   }
 
-  return item.tag;
+  return item.type;
 }
 
 function getVirtualChildren(
@@ -171,7 +171,7 @@ function getVirtualChildren(
   ): LayerTreeNode => ({
     id: `${item.id}::${type}:${index}`,
     name: label,
-    tag: item.tag,
+    type: item.type,
     parentId: item.id,
     orderNum: index,
     depth,
@@ -183,14 +183,14 @@ function getVirtualChildren(
     virtualChildData: data,
   });
 
-  if (item.tag === "ToggleButtonGroup") {
+  if (item.type === "ToggleButtonGroup") {
     const children = childrenAs<ButtonItem>(props.children);
     return children.map((child, index) =>
       makeNode("toggle", index, child.title || `Button ${index + 1}`, child),
     );
   }
 
-  if (item.tag === "CheckboxGroup") {
+  if (item.type === "CheckboxGroup") {
     const children = childrenAs<CheckboxItem>(props.children);
     return children.map((child, index) =>
       makeNode(
@@ -202,14 +202,14 @@ function getVirtualChildren(
     );
   }
 
-  if (item.tag === "RadioGroup") {
+  if (item.type === "RadioGroup") {
     const children = childrenAs<RadioItem>(props.children);
     return children.map((child, index) =>
       makeNode("radio", index, child.label || `Radio ${index + 1}`, child),
     );
   }
 
-  if (item.tag === "Tree") {
+  if (item.type === "Tree") {
     const children = childrenAs<TreeItemType>(props.children);
     return children.map((child, index) =>
       makeNode("tree", index, child.title || `Item ${index + 1}`, child),

@@ -13,7 +13,7 @@ import type { Element } from "../../../../types/core/store.types";
 export interface ComponentMemoryInfo {
   elementId: string;
   customId?: string;
-  tag: string;
+  type: string;
   depth: number;
   memoryBytes: number;
   childCount: number;
@@ -100,7 +100,7 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
       const baseSize = 100; // 기본 객체 오버헤드
       const idSize = (el.id?.length ?? 0) * 2;
       const customIdSize = (el.customId?.length ?? 0) * 2;
-      const tagSize = (el.tag?.length ?? 0) * 2;
+      const tagSize = (el.type?.length ?? 0) * 2;
 
       const memoryBytes =
         baseSize + idSize + customIdSize + tagSize + propsSize;
@@ -110,7 +110,7 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
       memoryInfos.push({
         elementId: el.id,
         customId: el.customId,
-        tag: el.tag,
+        type: el.type,
         depth,
         memoryBytes,
         childCount,

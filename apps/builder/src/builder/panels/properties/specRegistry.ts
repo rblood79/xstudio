@@ -181,7 +181,7 @@ export const PROPERTY_EDITOR_SPEC_MAP: Record<
 };
 
 export function getPropertyEditorSpec(
-  tag: string,
+  type: string,
 ): ComponentSpec<Record<string, unknown>> | null {
-  return PROPERTY_EDITOR_SPEC_MAP[tag] ?? null;
+  return PROPERTY_EDITOR_SPEC_MAP[type] ?? null;
 }

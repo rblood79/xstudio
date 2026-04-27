@@ -10,7 +10,7 @@ export function mapElementToSelected(element: Element): SelectedElement {
   return {
     id: element.id,
     customId: element.customId,
-    type: element.tag,
+    type: element.type,
     properties: otherProps,
     // style이 없으면 빈 객체로 초기화 (undefined 방지)
     style: (style as React.CSSProperties) || {},
@@ -45,7 +45,7 @@ export function mapSelectedToElementUpdate(
   return {
     id: selected.id,
     customId: selected.customId,
-    tag: selected.type,
+    type: selected.type,
     props: props as Element["props"],
     dataBinding: selected.dataBinding as Element["dataBinding"],
   };

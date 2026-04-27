@@ -38,18 +38,18 @@ import { rendererStyleContractAllowlist } from "./rendererStyleContract.allowlis
 
 type RenderFn = (element: PreviewElement, context: RenderContext) => unknown;
 
-const RENDERERS: Array<{ tag: string; render: RenderFn }> = [
-  { tag: "ListBox", render: renderListBox as RenderFn },
-  { tag: "GridList", render: renderGridList as RenderFn },
-  { tag: "Select", render: renderSelect as RenderFn },
-  { tag: "ComboBox", render: renderComboBox as RenderFn },
-  { tag: "Tree", render: renderTree as RenderFn },
-  { tag: "TagGroup", render: renderTagGroup as RenderFn },
-  { tag: "Menu", render: renderMenu as RenderFn },
-  { tag: "Toolbar", render: renderToolbar as RenderFn },
-  { tag: "Tabs", render: renderTabs as RenderFn },
-  { tag: "Breadcrumbs", render: renderBreadcrumbs as RenderFn },
-  { tag: "Table", render: renderTable as RenderFn },
+const RENDERERS: Array<{ type: string; render: RenderFn }> = [
+  { type: "ListBox", render: renderListBox as RenderFn },
+  { type: "GridList", render: renderGridList as RenderFn },
+  { type: "Select", render: renderSelect as RenderFn },
+  { type: "ComboBox", render: renderComboBox as RenderFn },
+  { type: "Tree", render: renderTree as RenderFn },
+  { type: "TagGroup", render: renderTagGroup as RenderFn },
+  { type: "Menu", render: renderMenu as RenderFn },
+  { type: "Toolbar", render: renderToolbar as RenderFn },
+  { type: "Tabs", render: renderTabs as RenderFn },
+  { type: "Breadcrumbs", render: renderBreadcrumbs as RenderFn },
+  { type: "Table", render: renderTable as RenderFn },
 ];
 
 function makeContext(el: PreviewElement): RenderContext {
@@ -64,10 +64,10 @@ function makeContext(el: PreviewElement): RenderContext {
   };
 }
 
-function makeElement(tag: string): PreviewElement {
+function makeElement(type: string): PreviewElement {
   return {
-    id: `test-${tag}`,
-    tag,
+    id: `test-${type}`,
+    type,
     props: {
       style: { padding: 99 },
       items: [],
@@ -88,15 +88,15 @@ function extractRootStylePadding(node: unknown): unknown {
 }
 
 describe("ADR-907 Phase 2 Layer C — renderer style contract", () => {
-  describe.each(RENDERERS)("$tag renderer", ({ tag, render }) => {
-    const inAllowlist = rendererStyleContractAllowlist.has(tag);
+  describe.each(RENDERERS)("$type renderer", ({ type, render }) => {
+    const inAllowlist = rendererStyleContractAllowlist.has(type);
 
     it(
       inAllowlist
         ? "allowlist 등록: style 미전달 일시 허용 (Phase 3+ 에서 contract 충족 후 제거)"
         : "root JSX 에 element.props.style 전달 (style.padding === 99)",
       () => {
-        const element = makeElement(tag);
+        const element = makeElement(type);
         const context = makeContext(element);
         let result: unknown;
         let threw: unknown;
@@ -116,7 +116,7 @@ describe("ADR-907 Phase 2 Layer C — renderer style contract", () => {
         // root 에 style.padding === 99 전달해야 한다
         if (threw) {
           throw new Error(
-            `${tag} renderer threw under fake element (allowlist 에 없음): ${String(threw)}`,
+            `${type} renderer threw under fake element (allowlist 에 없음): ${String(threw)}`,
           );
         }
         const padding = extractRootStylePadding(result);

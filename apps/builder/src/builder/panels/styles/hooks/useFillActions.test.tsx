@@ -32,7 +32,7 @@ describe("useFillActions", () => {
       elements: [
         {
           id: "legacy-1",
-          tag: "Box",
+          type: "Box",
           props: {
             style: { backgroundColor: "#112233" },
           },
@@ -43,7 +43,7 @@ describe("useFillActions", () => {
           "legacy-1",
           {
             id: "legacy-1",
-            tag: "Box",
+            type: "Box",
             props: {
               style: { backgroundColor: "#112233" },
             },

@@ -18,7 +18,7 @@ export function buildDepthMap(
     }
 
     const element = elementsMap.get(id);
-    if (!element || element.tag.toLowerCase() === "body") {
+    if (!element || element.type.toLowerCase() === "body") {
       cache.set(id, 0);
       return 0;
     }
@@ -55,7 +55,7 @@ export function buildPageDataMap(
     const nonBodyElements: Element[] = [];
 
     for (const element of pageElements) {
-      if (element.tag.toLowerCase() === "body") {
+      if (element.type.toLowerCase() === "body") {
         bodyElement = element;
       } else {
         nonBodyElements.push(element);

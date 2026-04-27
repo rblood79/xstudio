@@ -42,15 +42,15 @@ export const renderTable = (
   const children = context.childrenMap.get(element.id) ?? [];
 
   const tableHeaderElement = children.find(
-    (child) => child.tag === "TableHeader",
+    (child) => child.type === "TableHeader",
   );
 
   // Column Elements 찾기
   const columnElements = tableHeaderElement
     ? (context.childrenMap.get(tableHeaderElement.id) ?? []).filter(
-        (el) => el.tag === "Column" && !el.deleted,
+        (el) => el.type === "Column" && !el.deleted,
       )
-    : children.filter((child) => child.tag === "Column" && !child.deleted);
+    : children.filter((child) => child.type === "Column" && !child.deleted);
 
   // Column 정의 생성
   const columns = columnElements.map((col, index) => {
@@ -276,7 +276,7 @@ export const renderTable = (
     if (!columnCreationRequestedRef.current?.has(requestKey)) {
       const columnElementsToCreate = mappedColumns.map((colDef, index) => ({
         id: colDef.elementId || `col_${Date.now()}_${index}`,
-        tag: "Column",
+        type: "Column",
         page_id: element.page_id,
         parent_id: tableHeaderElement.id,
         order_num: index,
@@ -310,7 +310,7 @@ export const renderTable = (
   // Column Group Element에서 추출한 그룹 데이터 생성
   const columnGroups = tableHeaderElement
     ? (context.childrenMap.get(tableHeaderElement.id) ?? [])
-        .filter((el) => el.tag === "ColumnGroup")
+        .filter((el) => el.type === "ColumnGroup")
         .map((groupEl) => {
           const props = groupEl.props as ElementProps;
 
@@ -433,7 +433,7 @@ export const renderTable = (
 
         const columnElementsToCreate = detectedColumns.map((colDef, index) => ({
           id: colDef.elementId || `col_${Date.now()}_${index}`,
-          tag: "Column",
+          type: "Column",
           page_id: element.page_id,
           parent_id: tableHeaderElement.id,
           order_num: index,

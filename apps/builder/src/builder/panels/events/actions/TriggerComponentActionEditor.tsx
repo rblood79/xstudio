@@ -57,7 +57,7 @@ export function TriggerComponentActionEditor({
     getComponent(config.targetId) || getComponentByCustomId(config.targetId);
 
   const availableActions = targetComponent
-    ? getComponentMethods(targetComponent.tag)
+    ? getComponentMethods(targetComponent.type)
     : [];
 
   return (
@@ -131,7 +131,7 @@ export function TriggerComponentActionEditor({
       {targetComponent && (
         <div className="field-hint">
           <p>
-            Target: <strong>{targetComponent.customId || targetComponent.id}</strong> ({targetComponent.tag})
+            Target: <strong>{targetComponent.customId || targetComponent.id}</strong> ({targetComponent.type})
           </p>
           <p>Available actions: {availableActions.join(", ") || "None"}</p>
         </div>

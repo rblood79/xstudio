@@ -23,7 +23,7 @@ afterEach(() => {
 /** 최소 필드를 가진 테스트용 Element 생성 헬퍼 */
 function makeEl(overrides: Partial<Element> & { id: string }): Element {
   return {
-    tag: "Button",
+    type: "Button",
     props: {},
     parent_id: null,
     order_num: 0,

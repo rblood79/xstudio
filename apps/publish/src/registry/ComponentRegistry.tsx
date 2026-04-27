@@ -3,7 +3,7 @@
  *
  * 🚀 Phase 10 B2.3: Publish App 컴포넌트 레지스트리
  *
- * Element tag를 실제 React 컴포넌트로 매핑합니다.
+ * Element type를 실제 React 컴포넌트로 매핑합니다.
  * @composition/shared의 컴포넌트를 사용하여 Builder Preview와 동일한 렌더링을 보장합니다.
  *
  * @since 2025-12-11 Phase 10 B2.3
@@ -87,24 +87,24 @@ const registry: ComponentRegistry = new Map();
  * 컴포넌트 등록
  */
 export function registerComponent(
-  tag: string,
+  type: string,
   entry: ComponentRegistryEntry,
 ): void {
-  registry.set(tag, entry);
+  registry.set(type, entry);
 }
 
 /**
  * 컴포넌트 가져오기
  */
-export function getComponent(tag: string): ComponentRegistryEntry | undefined {
-  return registry.get(tag);
+export function getComponent(type: string): ComponentRegistryEntry | undefined {
+  return registry.get(type);
 }
 
 /**
  * 컴포넌트 존재 확인
  */
-export function hasComponent(tag: string): boolean {
-  return registry.has(tag);
+export function hasComponent(type: string): boolean {
+  return registry.has(type);
 }
 
 /**
@@ -122,9 +122,9 @@ export function getComponentsByCategory(
 ): Map<string, ComponentRegistryEntry> {
   const filtered = new Map<string, ComponentRegistryEntry>();
 
-  registry.forEach((entry, tag) => {
+  registry.forEach((entry, type) => {
     if (entry.category === category) {
-      filtered.set(tag, entry);
+      filtered.set(type, entry);
     }
   });
 
@@ -151,10 +151,10 @@ export function registerDefaultComponents(): void {
     "nav",
     "body",
   ];
-  layoutTags.forEach((tag) => {
-    registerComponent(tag, {
-      component: createHtmlElement(tag === "body" ? "div" : tag), // body는 div로 렌더링
-      displayName: tag.charAt(0).toUpperCase() + tag.slice(1),
+  layoutTags.forEach((type) => {
+    registerComponent(type, {
+      component: createHtmlElement(type === "body" ? "div" : type), // body는 div로 렌더링
+      displayName: type.charAt(0).toUpperCase() + type.slice(1),
       category: "layout",
     });
   });
@@ -172,20 +172,20 @@ export function registerDefaultComponents(): void {
     "img",
     "a",
   ];
-  displayTags.forEach((tag) => {
-    registerComponent(tag, {
-      component: createHtmlElement(tag),
-      displayName: tag.charAt(0).toUpperCase() + tag.slice(1),
+  displayTags.forEach((type) => {
+    registerComponent(type, {
+      component: createHtmlElement(type),
+      displayName: type.charAt(0).toUpperCase() + type.slice(1),
       category: "display",
     });
   });
 
   // Input Components
   const inputTags = ["input", "textarea", "button", "select", "form"];
-  inputTags.forEach((tag) => {
-    registerComponent(tag, {
-      component: createHtmlElement(tag),
-      displayName: tag.charAt(0).toUpperCase() + tag.slice(1),
+  inputTags.forEach((type) => {
+    registerComponent(type, {
+      component: createHtmlElement(type),
+      displayName: type.charAt(0).toUpperCase() + type.slice(1),
       category: "input",
     });
   });
@@ -202,15 +202,15 @@ export function registerDefaultComponents(): void {
  * HTML 요소 컴포넌트 팩토리
  */
 function createHtmlElement(
-  tag: string,
+  type: string,
 ): ComponentType<Record<string, unknown>> {
   const HtmlElement = (props: Record<string, unknown>) => {
     const { children, ...rest } = props;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Tag = tag as any;
+    const Tag = type as any;
     return <Tag {...rest}>{children}</Tag>;
   };
-  HtmlElement.displayName = `Html${tag.charAt(0).toUpperCase() + tag.slice(1)}`;
+  HtmlElement.displayName = `Html${type.charAt(0).toUpperCase() + type.slice(1)}`;
   return HtmlElement;
 }
 
@@ -219,21 +219,21 @@ function createHtmlElement(
  * Card 구조 자식(CardHeader, CardContent 등)에 CSS 클래스를 주입
  */
 function createHtmlElementWithClass(
-  tag: string,
+  type: string,
   className: string,
 ): ComponentType<Record<string, unknown>> {
   const HtmlElement = (props: Record<string, unknown>) => {
     const { children, className: propClass, ...rest } = props;
     const merged = propClass ? `${className} ${propClass}` : className;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Tag = tag as any;
+    const Tag = type as any;
     return (
       <Tag className={merged} {...rest}>
         {children}
       </Tag>
     );
   };
-  HtmlElement.displayName = `Html${tag.charAt(0).toUpperCase() + tag.slice(1)}WithClass`;
+  HtmlElement.displayName = `Html${type.charAt(0).toUpperCase() + type.slice(1)}WithClass`;
   return HtmlElement;
 }
 
@@ -243,9 +243,9 @@ function createHtmlElementWithClass(
 function createHeadingElement(): ComponentType<Record<string, unknown>> {
   const HeadingElement = (props: Record<string, unknown>) => {
     const { children, level, ...rest } = props;
-    const tag = `h${Math.min(Math.max(Number(level) || 3, 1), 6)}`;
+    const type = `h${Math.min(Math.max(Number(level) || 3, 1), 6)}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Tag = tag as any;
+    const Tag = type as any;
     return <Tag {...rest}>{children}</Tag>;
   };
   HeadingElement.displayName = "Heading";

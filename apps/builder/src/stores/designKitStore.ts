@@ -118,7 +118,7 @@ export const useDesignKitStore = create<DesignKitStore>((set, get) => ({
 
     // G.3: 킷 적용 시각 피드백 — body 요소에 generating 이펙트 표시
     const bodyElement = elementsStore.elements.find(
-      (el) => el.tag === 'Body' && el.page_id === projectId,
+      (el) => el.type === 'Body' && el.page_id === projectId,
     );
     const feedbackTargetIds = bodyElement ? [bodyElement.id] : [];
     if (feedbackTargetIds.length > 0) {

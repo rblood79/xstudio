@@ -371,45 +371,45 @@ export class HierarchyManager {
 
     const children = this.getOrderedChildren(parentId, elements);
 
-    switch (parent.tag) {
+    switch (parent.type) {
       case "Tabs": {
         // ADR-066: Tab element 소멸. TabList + TabPanels만 자식으로 반환.
         return children.filter(
-          (child) => child.tag === "TabList" || child.tag === "TabPanels",
+          (child) => child.type === "TabList" || child.type === "TabPanels",
         );
       }
 
       case "Tree": {
         // TreeItem들만 반환
-        return children.filter((child) => child.tag === "TreeItem");
+        return children.filter((child) => child.type === "TreeItem");
       }
 
       case "ToggleButtonGroup": {
         // ToggleButton들만 반환
-        return children.filter((child) => child.tag === "ToggleButton");
+        return children.filter((child) => child.type === "ToggleButton");
       }
 
       case "CheckboxGroup": {
         // Checkbox들만 반환
-        return children.filter((child) => child.tag === "Checkbox");
+        return children.filter((child) => child.type === "Checkbox");
       }
 
       case "RadioGroup": {
         // Radio들만 반환
-        return children.filter((child) => child.tag === "Radio");
+        return children.filter((child) => child.type === "Radio");
       }
 
       case "Select": {
         // ADR-073: SelectItem element 소멸. Label + SelectTrigger 만 자식으로 반환.
         return children.filter(
-          (child) => child.tag === "Label" || child.tag === "SelectTrigger",
+          (child) => child.type === "Label" || child.type === "SelectTrigger",
         );
       }
 
       case "ComboBox": {
         // ADR-073: ComboBoxItem element 소멸. Label + ComboBoxWrapper 만 자식으로 반환.
         return children.filter(
-          (child) => child.tag === "Label" || child.tag === "ComboBoxWrapper",
+          (child) => child.type === "Label" || child.type === "ComboBoxWrapper",
         );
       }
 
@@ -419,17 +419,17 @@ export class HierarchyManager {
         // 에서 `props.items` 기반으로 수행. 본 case 는 최소 영향 정책(기존 로직 유지)
         // 으로 보존. 템플릿 모드(Field 자식 보유) 부모는 여기서 ListBoxItem 자식을
         // 반환해야 하나, items SSOT 하에서 정적 모드 부모는 ListBoxItem 자식이 0개.
-        return children.filter((child) => child.tag === "ListBoxItem");
+        return children.filter((child) => child.type === "ListBoxItem");
       }
 
       case "GridList": {
         // GridListItem들만 반환
-        return children.filter((child) => child.tag === "GridListItem");
+        return children.filter((child) => child.type === "GridListItem");
       }
 
       case "TagGroup": {
         // Tag들만 반환
-        return children.filter((child) => child.tag === "Tag");
+        return children.filter((child) => child.type === "Tag");
       }
 
       default:

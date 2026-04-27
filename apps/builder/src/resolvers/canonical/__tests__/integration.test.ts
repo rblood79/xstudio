@@ -73,14 +73,14 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     const elements: Element[] = [
       el({
         id: "master-btn",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         componentName: "Submit Button",
         customId: "submit-btn",
       }),
       el({
         id: "instance-btn",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "master-btn",
         page_id: "P1",
@@ -120,17 +120,17 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     // Arrange
     const layouts: Layout[] = [layout({ id: "L1", name: "App Shell" })];
     const elements: Element[] = [
-      el({ id: "shell-root", tag: "Box", layout_id: "L1", parent_id: null }),
+      el({ id: "shell-root", type: "Box", layout_id: "L1", parent_id: null }),
       el({
         id: "main-slot",
-        tag: "Slot",
+        type: "Slot",
         layout_id: "L1",
         parent_id: "shell-root",
         props: { name: "main" },
       }),
       el({
         id: "page-card",
-        tag: "Card",
+        type: "Card",
         page_id: "P1",
         slot_name: "main",
         parent_id: null,
@@ -171,17 +171,17 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
   it("TC2-b: layout + page resolve 후 instance metadata (type/pageId) 보존 — page filter 시나리오", () => {
     const layouts: Layout[] = [layout({ id: "L1", name: "App Shell" })];
     const elements: Element[] = [
-      el({ id: "shell-root", tag: "Box", layout_id: "L1", parent_id: null }),
+      el({ id: "shell-root", type: "Box", layout_id: "L1", parent_id: null }),
       el({
         id: "main-slot",
-        tag: "Slot",
+        type: "Slot",
         layout_id: "L1",
         parent_id: "shell-root",
         props: { name: "main" },
       }),
       el({
         id: "page-card",
-        tag: "Card",
+        type: "Card",
         page_id: "P1",
         slot_name: "main",
         parent_id: null,
@@ -216,21 +216,21 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     const elements: Element[] = [
       el({
         id: "m1",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         customId: "ok-button",
         props: {},
       }),
       el({
         id: "label-child",
-        tag: "Label",
+        type: "Label",
         parent_id: "m1",
         customId: "label",
         props: { text: "OK" },
       }),
       el({
         id: "i1-on-page",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "m1",
         descendants: { "label-child": { text: "Cancel" } } as Record<
@@ -315,7 +315,7 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     const layouts: Layout[] = [layout({ id: "L1", name: "Shell" })];
     const masterEl = el({
       id: "master-btn",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       customId: "shared-btn",
     });
@@ -323,7 +323,7 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
       page({ id: "P1", title: "Home", slug: "/", layout_id: "L1" }),
     ];
     const elements: Element[] = [
-      el({ id: "shell-root", tag: "Box", layout_id: "L1" }),
+      el({ id: "shell-root", type: "Box", layout_id: "L1" }),
       masterEl,
     ];
 

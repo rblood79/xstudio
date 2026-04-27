@@ -23,7 +23,7 @@ export function createElementsFromDefinition(definition: ComponentDefinition): {
   const parent: Element = {
     ...definition.parent,
     id: ElementUtils.generateId(),
-    customId: generateCustomId(definition.parent.tag, currentElements),
+    customId: generateCustomId(definition.parent.type, currentElements),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -41,7 +41,7 @@ export function createElementsFromDefinition(definition: ComponentDefinition): {
       const child: Element = {
         ...elementDef,
         id: ElementUtils.generateId(),
-        customId: generateCustomId(elementDef.tag, allElementsSoFar),
+        customId: generateCustomId(elementDef.type, allElementsSoFar),
         parent_id: parentId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

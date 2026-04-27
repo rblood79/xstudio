@@ -60,7 +60,7 @@ export const TreeItemEditor = memo(function TreeItemEditor({
   // TreeItem의 자식 TreeItem들을 찾기
   const childTreeItems = useMemo(() => {
     return rawChildren
-      .filter((child) => child.tag === "TreeItem")
+      .filter((child) => child.type === "TreeItem")
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [rawChildren]);
 
@@ -77,7 +77,7 @@ export const TreeItemEditor = memo(function TreeItemEditor({
         id: ElementUtils.generateId(),
         customId: generateCustomId("TreeItem", useStore.getState().elements),
         page_id: localPageId,
-        tag: "TreeItem",
+        type: "TreeItem",
         props: {
           title: `Child Item ${newTreeItemIndex + 1}`,
           value: `Child Item ${newTreeItemIndex + 1}`,

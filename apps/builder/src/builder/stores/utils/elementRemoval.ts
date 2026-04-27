@@ -53,7 +53,7 @@ function collectElementsToRemove(
 ): { rootElement: Element; allElements: Element[] } | null {
   const element = getElementById(elementsMap, elementId);
   if (!element) return null;
-  if (element.tag.toLowerCase() === "body") return null;
+  if (element.type.toLowerCase() === "body") return null;
 
   // 자식 요소들 찾기 (재귀적으로) — O(1) childrenMap 사용
   const findChildren = (parentId: string): Element[] => {
@@ -69,29 +69,29 @@ function collectElementsToRemove(
   let childElements = findChildren(elementId);
 
   // Table Column 삭제 시 특별 처리: 연관된 Cell들도 함께 삭제
-  if (element.tag === "Column") {
+  if (element.type === "Column") {
     const tableElement = elements.find((el) => {
       const tableHeader = elements.find(
         (header) => header.id === element.parent_id,
       );
       return (
-        tableHeader && el.id === tableHeader.parent_id && el.tag === "Table"
+        tableHeader && el.id === tableHeader.parent_id && el.type === "Table"
       );
     });
 
     if (tableElement) {
       const tableBody = elements.find(
-        (el) => el.parent_id === tableElement.id && el.tag === "TableBody",
+        (el) => el.parent_id === tableElement.id && el.type === "TableBody",
       );
       if (tableBody) {
         const rows = elements.filter(
-          (el) => el.parent_id === tableBody.id && el.tag === "Row",
+          (el) => el.parent_id === tableBody.id && el.type === "Row",
         );
         const cellsToRemove = rows.flatMap((row) =>
           elements.filter(
             (cell) =>
               cell.parent_id === row.id &&
-              cell.tag === "Cell" &&
+              cell.type === "Cell" &&
               cell.order_num === element.order_num,
           ),
         );
@@ -101,35 +101,35 @@ function collectElementsToRemove(
   }
 
   // Table Cell 삭제 시 특별 처리: 대응하는 Column도 함께 삭제
-  if (element.tag === "Cell") {
+  if (element.type === "Cell") {
     const row = elements.find((el) => el.id === element.parent_id);
-    if (row && row.tag === "Row") {
+    if (row && row.type === "Row") {
       const tableBody = elements.find((el) => el.id === row.parent_id);
-      if (tableBody && tableBody.tag === "TableBody") {
+      if (tableBody && tableBody.type === "TableBody") {
         const tableElement = elements.find(
-          (el) => el.id === tableBody.parent_id && el.tag === "Table",
+          (el) => el.id === tableBody.parent_id && el.type === "Table",
         );
         if (tableElement) {
           const tableHeader = elements.find(
             (el) =>
-              el.parent_id === tableElement.id && el.tag === "TableHeader",
+              el.parent_id === tableElement.id && el.type === "TableHeader",
           );
           if (tableHeader) {
             const columnToRemove = elements.find(
               (col) =>
                 col.parent_id === tableHeader.id &&
-                col.tag === "Column" &&
+                col.type === "Column" &&
                 col.order_num === element.order_num,
             );
             if (columnToRemove) {
               const allRows = elements.filter(
-                (el) => el.parent_id === tableBody.id && el.tag === "Row",
+                (el) => el.parent_id === tableBody.id && el.type === "Row",
               );
               const otherCellsToRemove = allRows.flatMap((r) =>
                 elements.filter(
                   (cell) =>
                     cell.parent_id === r.id &&
-                    cell.tag === "Cell" &&
+                    cell.type === "Cell" &&
                     cell.order_num === element.order_num &&
                     cell.id !== element.id,
                 ),
@@ -281,7 +281,7 @@ async function executeRemoval(
   const currentPageId = get().currentPageId;
   if (currentPageId) {
     const hasCollectionItem = rootElements.some((el) =>
-      COLLECTION_ITEM_TAGS.has(el.tag),
+      COLLECTION_ITEM_TAGS.has(el.type),
     );
     if (!hasCollectionItem) {
       setTimeout(() => {

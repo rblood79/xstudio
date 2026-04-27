@@ -46,11 +46,11 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
     const layouts = useLayoutsStore.getState().layouts;
     const canonicalDoc = selectCanonicalDocument(state, pages, layouts);
 
-    // Layout의 Slot elements 찾기 (canonical reusable frame descendants + tag === "Slot")
+    // Layout의 Slot elements 찾기 (canonical reusable frame descendants + type === "Slot")
     const slotElements: (typeof element)[] = [];
     elementsMap.forEach((el) => {
       if (
-        el.tag === "Slot" &&
+        el.type === "Slot" &&
         belongsToLegacyLayout(el, page.layout_id, canonicalDoc)
       ) {
         slotElements.push(el);

@@ -58,7 +58,7 @@ export function usePresetApply({
   const removeElement = useStore((state) => state.removeElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
 
-  // 현재 Layout의 기존 Slot 목록 (canonical reusable frame descendants + tag === "Slot")
+  // 현재 Layout의 기존 Slot 목록 (canonical reusable frame descendants + type === "Slot")
   // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
   // (write-through 후 element.layout_id null → frame descendants 매칭).
   // doc 을 useStore selector 로 구독하지 않고 useMemo 안에서 lazy 생성 —
@@ -72,7 +72,7 @@ export function usePresetApply({
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
       if (
-        el.tag === "Slot" &&
+        el.type === "Slot" &&
         belongsToLegacyLayout(el, layoutId, canonicalDoc)
       ) {
         const slotChildren = childrenMap.get(el.id) ?? [];
@@ -185,7 +185,7 @@ export function usePresetApply({
         const slotElements: Element[] = slotsToCreate.map(
           (slotDef): Element => ({
             id: crypto.randomUUID(),
-            tag: "Slot",
+            type: "Slot",
             props: {
               name: slotDef.name,
               required: slotDef.required,
