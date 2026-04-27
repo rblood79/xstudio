@@ -5,6 +5,27 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 fix — usePresetApply.existingSlots slot 직접 매칭 (preset stale 해소) — 세션 38] - 2026-04-27
+
+### Bug Fixes
+
+- **Frame 교차 시 우측 LayoutPresetSelector "적용됨" 표시 stale 회귀 수정** (사용자 dev 검증 + 진단 console.log 로 root cause 확정):
+  - 증상: Frame A 에 preset X 적용 → 우측 selector 에 "X 적용됨" 표시 정상. Frame B 로 교차 → 좌측 Layers 는 정상 갱신되지만 우측 selector 의 "적용됨" 표시는 **항상 null** 로 갱신됨 (Frame B 에 적용된 preset 표시 안 됨)
+  - **Root cause** (Phase 1 진단 로그):
+    ```
+    [usePresetApply] slot mismatch: {
+      bodyElementId: B_body, layoutId: B,
+      appliedPreset: 'sidebar-left',  // body 에 정상 저장
+      existingSlotNames: Array(0),    // ← 0개! Slot 매칭 실패
+      presetSlotNames: Array(2)       // preset 정의는 2 slots
+    }
+    ```
+  - 분석: `existingSlots` 가 `belongsToLegacyLayout(el, layoutId, canonicalDoc)` 로 매칭. 이 helper 는 `isCanonicalDescendantOf(slot.id, frame)` 로 canonical document 의 frame 자식 트리 검색. 그러나 `convertLayoutToReusableFrame` (slotAndLayoutAdapter.ts) 가 slot element 를 `convertElementWithSlotHoisting` 으로 frame.slot 메타로 hoist → canonical frame.children 에 slot 사라짐 → `isCanonicalDescendantOf` 항상 false → existingSlots = []
+  - 좌측 Layers 가 정상인 이유: `FramesTab.frameElements` 는 `el.layout_id === currentFrame.id` 직접 매칭, canonical 미사용
+  - 수정: `usePresetApply.existingSlots` 가 `belongsToLegacyLayout` 호출 제거 + slot 을 `el.layout_id === layoutId` 직접 매칭. slot 은 P4 까지 legacy element 로 elementsMap 에 존재 (layout_id field 보유) → safe. import 정리: `selectCanonicalDocument` / `useLayoutsStore` / `belongsToLegacyLayout` 제거
+  - 위치: `apps/builder/src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.ts`
+  - 검증: type-check 0 / FramesTab+frameActions 41/41 회귀 0. dev 환경에서 Frame 교차 시 우측 "적용됨" 표시가 frame 의 실제 preset 으로 정상 갱신 (사용자 검증 권장)
+
 ## [ADR-911 Phase 2 fix — handleAddFrame 중복 Frame N 번호 회피 — 세션 38] - 2026-04-27
 
 ### Bug Fixes

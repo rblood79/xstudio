@@ -12,9 +12,6 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useStore } from "../../../../stores";
-import { selectCanonicalDocument } from "../../../../stores/elements";
-import { useLayoutsStore } from "../../../../stores/layouts";
-import { belongsToLegacyLayout } from "../../../../../adapters/canonical";
 import { LAYOUT_PRESETS } from "./presetDefinitions";
 import type {
   PresetApplyMode,
@@ -58,23 +55,22 @@ export function usePresetApply({
   const removeElement = useStore((state) => state.removeElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
 
-  // 현재 Layout의 기존 Slot 목록 (canonical reusable frame descendants + type === "Slot")
-  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
-  // (write-through 후 element.layout_id null → frame descendants 매칭).
-  // doc 을 useStore selector 로 구독하지 않고 useMemo 안에서 lazy 생성 —
-  // selectCanonicalDocument 가 매 호출마다 새 객체를 반환하면 useSyncExternalStore
-  // cache miss 로 무한 루프 (Maximum update depth) 발생.
+  // 현재 Layout의 기존 Slot 목록.
+  //
+  // ADR-911 P2 fix: 이전 구현은 `belongsToLegacyLayout(el, layoutId, canonicalDoc)`
+  // 로 canonical document 기반 매칭. 그러나 `convertLayoutToReusableFrame` 가
+  // slot element 를 `convertElementWithSlotHoisting` 으로 hoist 하여 canonical
+  // frame.children 에 slot 이 사라짐 → `isCanonicalDescendantOf(slot, frame)`
+  // 항상 false → existingSlots 0개 → currentPresetKey null → 우측 LayoutPresetSelector
+  // 의 "적용됨" 표시 stale.
+  //
+  // 직접 매칭 (`el.layout_id === layoutId`) 은 hoist 영향 받지 않음. slot 은
+  // P4 까지 legacy element 로 elementsMap 에 존재 (layout_id field 보유). 좌측
+  // FramesTab.frameElements 도 같은 직접 매칭 패턴 사용 — 정상 작동 확인됨.
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
-    const state = useStore.getState();
-    const layouts = useLayoutsStore.getState().layouts;
-    const canonicalDoc = selectCanonicalDocument(state, state.pages, layouts);
-
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
-      if (
-        el.type === "Slot" &&
-        belongsToLegacyLayout(el, layoutId, canonicalDoc)
-      ) {
+      if (el.type === "Slot" && el.layout_id === layoutId) {
         const slotChildren = childrenMap.get(el.id) ?? [];
         const slotName =
           ((el.props as { name?: string })?.name as string) || "unnamed";
