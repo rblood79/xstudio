@@ -240,6 +240,7 @@ export function BuilderCanvas({
   const framePositionsVersion = useStore(
     (state) => state.framePositionsVersion,
   );
+  const updateFramePosition = useStore((state) => state.updateFramePosition);
   const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
   const previousLayoutKeyRef = useRef(
     `${pageWidth}:${pageHeight}:${pageLayoutDirection}`,
@@ -375,6 +376,26 @@ export function BuilderCanvas({
     return computeFrameAreas(doc, framePositions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pages, layouts, elementsMap, framePositions, framePositionsVersion]);
+
+  // ADR-911 P3-β 보강 (P3-δ fix #2 — Chrome MCP evidence 2026-04-28):
+  // framePositions 미초기화 frame 의 자동 init. page 영역 우측 (pageWidth + GAP)
+  // 부터 수직 stack 배치. 이미 init 된 frame 은 skip (idempotent — 사용자 drag
+  // 좌표 보존). framePositions deps 미포함 (effect 안 getState 로 snapshot read,
+  // 무한 루프 회피).
+  useEffect(() => {
+    if (frameAreas.length === 0) return;
+    const current = useStore.getState().framePositions;
+    for (let i = 0; i < frameAreas.length; i++) {
+      const area = frameAreas[i];
+      if (current[area.frameId]) continue;
+      updateFramePosition(area.frameId, {
+        x: pageWidth + PAGE_STACK_GAP,
+        y: i * (pageHeight + PAGE_STACK_GAP),
+        width: pageWidth,
+        height: pageHeight,
+      });
+    }
+  }, [frameAreas, pageWidth, pageHeight, updateFramePosition]);
 
   const skiaRendererInput = useMemo(() => {
     return createSkiaRendererInput({

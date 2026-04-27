@@ -37,18 +37,15 @@ export function collectVisibleFrameRoots(
   }
 
   // 각 frame area 의 frameId (legacy layoutId) 로 frame body element 탐색.
-  // elementsMap 전수 iteration 회피 위해 elements 배열 1회 순회 후 layout_id 별 grouping
-  // (frame area 1-2개 가정 시 단순 forEach 가 더 빠르지만, 다수 frame 시나리오 대비).
+  // ADR-911 P3-δ fix #1 (Chrome MCP evidence 2026-04-28):
+  // type === "body" 만 frame body 후보로 등록. 동일 layout_id 의 자식 (Slot 등) 도
+  // layout_id 를 보유 (composition-pre-1.0 legacy layout_id propagation) — element 순서
+  // 의존 시 Slot 이 첫 매칭이 되어 잘못 등록될 위험. type 체크가 가장 단순하고 안전.
   const bodyByLayoutId = new Map<string, string>();
   for (const el of rendererInput.elements) {
+    if (el.type !== "body") continue;
     const layoutId = el.layout_id;
     if (!layoutId) continue;
-    // body 직계 자식만 frame body 후보 (parent_id 가 다른 element 인 slot 등 제외)
-    if (el.parent_id !== null && el.parent_id !== undefined) {
-      const parent = rendererInput.elementsMap.get(el.parent_id);
-      if (parent && parent.type !== "body") continue;
-    }
-    // 같은 layout_id 의 첫 매칭만 등록 (중복 방어)
     if (!bodyByLayoutId.has(layoutId)) {
       bodyByLayoutId.set(layoutId, el.id);
     }

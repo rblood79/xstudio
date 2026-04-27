@@ -131,6 +131,13 @@ In Progress — 2026-04-26 → 2026-04-27
   - 검증: `visibleFrameRoots.test.ts` 6/6 PASS (frameAreas 비어있음 / layout_id 매칭 / framePositions miss fallback / element 부재 silent skip / 다중 frame / body 가 아닌 parent 제외) + canvas/ 광역 vitest 14 파일 180/180 PASS (회귀 0) + type-check 3/3 PASS
   - **Gate G3-δ (a) 충족 path 확보** — frame body 가 root list 진입 → DFS 그려짐. 시각 검증은 Chrome MCP 사용자 시나리오 (P3-ζ) 에서 수행
   - 잔여: P3-ε hit-test/drag/selection (1.5d MED) + P3-ζ Chrome MCP 회귀 검증 (0.5d LOW)
+- **2026-04-28 (세션 47 후속)**: **P3-δ fix #1 + #2 land — Chrome MCP evidence 기반 회귀 fix (Gate G3-δ (a) 시각 evidence 확보)**
+  - **fix #1**: `collectVisibleFrameRoots` 의 `type === "body"` 체크 추가. 실 회귀 시나리오 (Chrome MCP evidence): elements 배열 순서가 `[Slot, Slot, body]` 일 때 composition-pre-1.0 legacy `layout_id` propagation 으로 자식 Slot 도 동일 layout_id 보유 → 첫 매칭이 Slot 이 되어 frame body 로 잘못 등록. `type==="body"` 체크가 가장 단순하고 안전한 가드 — parent_id chain 탐색 로직 제거
+  - **fix #2 (P3-β 보강)**: BuilderCanvas 의 `framePositions` 자동 init useEffect 추가. frameAreas 의 미초기화 frame 마다 page 영역 우측 (`pageWidth + PAGE_STACK_GAP`) 부터 수직 stack 배치. 이미 init 된 frame 은 skip (idempotent — 사용자 drag 좌표 보존). framePositions deps 미포함 (effect 안 `getState` snapshot, 무한 루프 회피)
+  - **시각 evidence (Chrome MCP 2026-04-28)**: `framePositions: { 5c9f91cd: {x:470, y:0, width:390, height:844} }` — Frame 1 이 page (390px) 우측 80px GAP 후 (470,0) 자동 배치. screenshot 에 frame body 큰 사각형 (390×844) 시각화 확정 — 직전 screenshot 과 비교 시 Frame body 가 캔버스에 그려짐
+  - 검증: `visibleFrameRoots.test.ts` 7/7 PASS (신규 케이스 2: type !=='body' 인 Slot 첫 매칭 시 silent skip / 같은 layout_id 의 다중 body element 첫 매칭만 등록) + canvas/ 광역 14 파일 181/181 PASS (회귀 0) + type-check 3/3 PASS
+  - **Gate G3-δ (a) 충족** — frame body 가 root 진입 + 좌표 적용 + 시각화 evidence 확보. (b) DFS 자식 (slot) 시각화 + (c) Chrome MCP 사용자 시나리오 GREEN 은 P3-ε / P3-ζ 에서 후속 검증
+  - 잔여 P3 trail A: P3-ε hit-test/drag/selection (1.5d MED) + P3-ζ slot 자식 시각화 + Chrome MCP 회귀 검증 (0.5d LOW)
 
 ## Context
 
