@@ -37,8 +37,9 @@ export function DotBackground() {
       zoom: number;
     }) => {
       const gap = BASE_GAP * s.zoom;
-      const tx = -(((s.panOffset.x % gap) + gap) % gap);
-      const ty = -(((s.panOffset.y % gap) + gap) % gap);
+      // Skia translate(pan)+scale(zoom) 과 동일 부호 — 음수 래핑 시 팬 방향과 도트가 엇갈림.
+      const tx = ((s.panOffset.x % gap) + gap) % gap;
+      const ty = ((s.panOffset.y % gap) + gap) % gap;
       for (const el of targets) {
         el.style.setProperty("--dot-gap", `${gap}px`);
         el.style.setProperty("--dot-tx", `${tx}px`);
