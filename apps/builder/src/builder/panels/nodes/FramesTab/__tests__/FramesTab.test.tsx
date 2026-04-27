@@ -62,6 +62,17 @@ vi.mock("@/builder/stores/utils/frameActions", () => ({
   createReusableFrame: vi.fn(),
   deleteReusableFrame: vi.fn(),
   selectReusableFrame: vi.fn(),
+  // 실제 로직 흉내 — Frame N 패턴 추출 + 미사용 번호 사용
+  getNextFrameName: (frames: ReadonlyArray<{ name: string }>) => {
+    const used = new Set<number>();
+    for (const f of frames) {
+      const m = /^Frame (\d+)$/.exec(f.name);
+      if (m) used.add(Number(m[1]));
+    }
+    let n = 1;
+    while (used.has(n)) n++;
+    return `Frame ${n}`;
+  },
 }));
 
 vi.mock("@/builder/stores/editMode", () => ({
@@ -203,9 +214,9 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
       await Promise.resolve();
 
       expect(createReusableFrameMock).toHaveBeenCalledTimes(1);
-      // 기존 1개 frame 있으므로 새 frame 이름은 "Frame 2" (layouts.length + 1)
+      // 기존 frame "Existing" 은 Frame N 패턴 아님 → getNextFrameName 이 "Frame 1" 반환
       expect(createReusableFrameMock).toHaveBeenCalledWith({
-        name: "Frame 2",
+        name: "Frame 1",
         projectId: "test-project",
       });
     });

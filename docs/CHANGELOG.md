@@ -5,6 +5,21 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 fix — handleAddFrame 중복 Frame N 번호 회피 — 세션 38] - 2026-04-27
+
+### Bug Fixes
+
+- **Frame 추가 시 중복 `Frame N` 번호 생성 회귀 수정** (사용자 dev 검증으로 발견):
+  - 증상: 여러 Frame 추가 후 일부 삭제 + 재추가 시 같은 번호 (`Frame 2` 등) 가 중복 생성됨
+  - **Why**: 이전 패턴 `Frame ${reusableFrames.length + 1}` 은 stable unique 보장 안 함. `[Frame 1, Frame 2, Frame 3]` → Frame 1 삭제 → `[Frame 2, Frame 3]` (length=2) → 추가 → `Frame 3` 생성 → 충돌
+  - 수정: `getNextFrameName(existingFrames)` helper 도입. `Frame N` 패턴의 기존 이름들을 분석하여 미사용 번호 중 가장 작은 값 사용 (gap 채움 + 시작 gap 채움 + 비-`Frame N` 이름 무시)
+  - 위치: `apps/builder/src/builder/stores/utils/frameActions.ts` (`getNextFrameName` export) + `FramesTab.tsx::handleAddFrame` 적용
+  - vitest 8 신규 시나리오: 빈 / max+1 / mid gap / 시작 gap / 비-Frame 이름 무시 / mixed / delete-after-add 회귀 / 100개 stable
+
+### Documentation
+
+- **frameActions.test.ts 회귀 안전망 강화**: 기존 7 → 15 시나리오. PR-A wrapper 동작 + `getNextFrameName` 알고리즘 양쪽 잠금
+
 ## [ADR-911 Phase 2 followup — NodesPanelTabs UI 라벨 "Layout" → "Frames" — 세션 38] - 2026-04-27
 
 ### Documentation

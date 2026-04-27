@@ -25,6 +25,7 @@ import {
   createReusableFrame,
   deleteReusableFrame,
   selectReusableFrame,
+  getNextFrameName,
 } from "../../../stores/utils/frameActions";
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
@@ -271,7 +272,10 @@ export function FramesTab({
     [reusableFrames, handleSelectFrame, setEditModeLayoutId],
   );
 
-  // 새 Frame 생성 핸들러 — frameActions.createReusableFrame 위임
+  // 새 Frame 생성 핸들러 — frameActions.createReusableFrame 위임.
+  // unique 한 default 이름은 getNextFrameName 으로 안정 생성 — 이전 패턴
+  // (`Frame ${reusableFrames.length + 1}`) 의 중복 위험 제거 (delete 후 add 또는
+  // IDB 잔존 데이터 + 메모리 length mismatch 시 충돌 방지).
   const handleAddFrame = useCallback(async () => {
     if (!projectId) {
       console.error("[FramesTab] 프로젝트 ID가 없습니다");
@@ -279,14 +283,14 @@ export function FramesTab({
     }
     try {
       const ref = await createReusableFrame({
-        name: `Frame ${reusableFrames.length + 1}`,
+        name: getNextFrameName(reusableFrames),
         projectId,
       });
       handleSelectFrame(ref.id);
     } catch (error) {
       console.error("[FramesTab] Frame 생성 에러:", error);
     }
-  }, [projectId, reusableFrames.length, handleSelectFrame]);
+  }, [projectId, reusableFrames, handleSelectFrame]);
 
   // Element 삭제 핸들러
   const handleDeleteElement = useCallback(

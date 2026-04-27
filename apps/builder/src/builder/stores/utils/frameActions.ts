@@ -107,3 +107,39 @@ export async function updateReusableFrameName(
 export function selectReusableFrame(frameId: string | null): void {
   useLayoutsStore.getState().setCurrentLayout(frameId);
 }
+
+/**
+ * 새 reusable frame 의 unique 한 default 이름 생성.
+ *
+ * `Frame N` 패턴의 기존 이름들을 분석하여 미사용 번호 중 가장 작은 값 사용.
+ * 이전 패턴 (`Frame ${frames.length + 1}`) 의 중복 위험 제거 — frame 삭제 후
+ * 추가하거나 IDB 잔존 데이터 + 메모리 length mismatch 시 발생하는 충돌 방지.
+ *
+ * 동작:
+ * - 빈 목록: `Frame 1`
+ * - `["Frame 1", "Frame 2"]`: `Frame 3`
+ * - `["Frame 1", "Frame 3"]`: `Frame 2` (gap 채움)
+ * - `["Frame 2"]`: `Frame 1` (시작 gap 채움)
+ * - `["My Custom"]`: `Frame 1` (`Frame N` 패턴 아닌 이름은 무시)
+ * - `["Frame 1", "My Custom", "Frame 3"]`: `Frame 2`
+ *
+ * @param existingFrames - 현재 frame 목록 (id 와 name 만 사용)
+ * @returns 새 frame 의 default 이름 (예: `Frame 4`)
+ */
+export function getNextFrameName(
+  existingFrames: ReadonlyArray<{ name: string }>,
+): string {
+  const usedNumbers = new Set<number>();
+  const pattern = /^Frame (\d+)$/;
+  for (const frame of existingFrames) {
+    const match = pattern.exec(frame.name);
+    if (match) {
+      usedNumbers.add(Number(match[1]));
+    }
+  }
+  let n = 1;
+  while (usedNumbers.has(n)) {
+    n++;
+  }
+  return `Frame ${n}`;
+}
