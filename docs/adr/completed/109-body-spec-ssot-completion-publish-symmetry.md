@@ -31,9 +31,9 @@ Implemented — 2026-04-25 → 2026-04-27
 
 ## Context
 
-[ADR-902](completed/902-workspace-dot-background-layer.md) (Workspace Dot Background Layer + 투명 clear) 가 land 되며 body 배경 theme 처리의 SSOT 위반이 드러났고, 후속 refactor (`f367fd89` / `25ddda93` / `76a34f1d`) 로 `BodySpec` 신규 + Builder Skia / Preview DOM 2 경로 정합을 복구했다. 그러나 ADR-063 3-domain charter 의 **D3 (시각 스타일) symmetric consumer** 3 경로 기준으로 볼 때 잔여 debt 가 남아있다.
+[ADR-902](902-workspace-dot-background-layer.md) (Workspace Dot Background Layer + 투명 clear) 가 land 되며 body 배경 theme 처리의 SSOT 위반이 드러났고, 후속 refactor (`f367fd89` / `25ddda93` / `76a34f1d`) 로 `BodySpec` 신규 + Builder Skia / Preview DOM 2 경로 정합을 복구했다. 그러나 ADR-063 3-domain charter 의 **D3 (시각 스타일) symmetric consumer** 3 경로 기준으로 볼 때 잔여 debt 가 남아있다.
 
-### Domain (SSOT 체인 — [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))
+### Domain (SSOT 체인 — [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md))
 
 - **해당 domain**: **D3 (시각 스타일)** — Skia / Preview / Publish 3 consumer 의 body 배경 대칭 복구 마지막 축.
 - ADR-902 이후 Skia (`buildSpecNodeData` 경로 진입) + Preview (document.body style 직접 주입) 2 경로는 정상. Publish 는 **대칭 미달**.
@@ -118,7 +118,7 @@ Implemented — 2026-04-25 → 2026-04-27
 - **A (개별 ADR)**: 유지보수 HIGH — 4 ADR 의존 추적 + 리뷰 분산. 특히 D2 는 D1 의존이 자명하여 단독 ADR 은 premature.
 - **C (Defer)**: 유지보수 HIGH — D1 이 body 한정이 아닌 publish 전반 문제이므로 방치 시 장기 drift. ADR-063 위반 누적.
 
-> 구현 상세: [design/109-body-spec-ssot-completion-breakdown.md](design/109-body-spec-ssot-completion-breakdown.md) (작성 예정)
+> 구현 상세: [design/109-body-spec-ssot-completion-breakdown.md](../design/109-body-spec-ssot-completion-breakdown.md) (작성 예정 — D3/G3 follow-up 진입 시 land)
 
 ## Risks
 
@@ -156,8 +156,8 @@ Implemented — 2026-04-25 → 2026-04-27
 
 ## References
 
-- [ADR-902: Workspace Dot Background Layer](completed/902-workspace-dot-background-layer.md) — body SSOT 회귀 원인
-- [ADR-063: SSOT Chain Charter](completed/063-ssot-chain-charter.md) — D3 symmetric 원칙
-- [ADR-107: Preview/Publish :root Symmetry](completed/107-preview-publish-root-symmetry.md) — 유사한 3-consumer 대칭 작업 선례
-- [ADR-021: Theme System Redesign](completed/021-theme-system-redesign.md) — theme 토큰 / CSS 변수 체계
+- [ADR-902: Workspace Dot Background Layer](902-workspace-dot-background-layer.md) — body SSOT 회귀 원인
+- [ADR-063: SSOT Chain Charter](063-ssot-chain-charter.md) — D3 symmetric 원칙
+- [ADR-107: Preview/Publish :root Symmetry](107-preview-publish-root-symmetry.md) — 유사한 3-consumer 대칭 작업 선례
+- [ADR-021: Theme System Redesign](021-theme-system-redesign.md) — theme 토큰 / CSS 변수 체계
 - 관련 commit: `3256c8a7` (ADR-902 초기) / `f367fd89` (Body Spec 편입) / `25ddda93` (var 리터럴 skip) / `76a34f1d` (body lowercase alias)
