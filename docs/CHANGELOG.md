@@ -5,6 +5,21 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-Followup-A — FramesTab 컴포넌트 vitest baseline 잠금 — 세션 37 후반] - 2026-04-27
+
+### Infrastructure
+
+- **ADR-911 Phase 2 PR-Followup-A — FramesTab 컴포넌트 회귀 테스트 신규**:
+  - `apps/builder/src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx` 신규 (5 시나리오):
+    1. 빈 frames 상태 → "No frames available" + Layers "Select a frame to view elements"
+    2. frames 2개 렌더 → 각 frame name 표시
+    3. Add Frame 버튼 클릭 → `createReusableFrame({ name: "Frame N", projectId })` 위임
+    4. Frame 항목 클릭 → `selectReusableFrame(frameId)` 위임 (id 기반 시그니처 검증)
+    5. Delete 버튼 클릭 → `deleteReusableFrame(frameId)` 위임 + `stopPropagation` 효과 (부모 onClick 미호출)
+  - **Why**: PR-A/PR-B 머지 후 FramesTab 자체 vitest 부재 상태에서 PR-C (read path canonical 전환) 진입 시 회귀 감지 불가. baseline 잠금으로 후속 PR 회귀 즉시 감지
+  - mock 격리: `react-router-dom` / `useLayoutsStore` / `useStore` / `useEditModeStore` / `useTreeExpandState` / `getDB` / `MessageService` / `featureFlags` / `frameActions` 9 모듈 vi.mock — Zustand selector 패턴 (`useLayoutsStore((state) => state.layouts)`) 도 selector 호출 분기로 구현
+  - 검증: 5/5 PASS / 84ms / type-check 0 / frameActions vitest 7/7 회귀 0
+
 ## [ADR-911 Phase 2 PR-B — FramesTab consumer → frameActions 위임 — 세션 37 후반] - 2026-04-27
 
 ### Architecture
