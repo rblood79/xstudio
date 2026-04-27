@@ -103,6 +103,13 @@ In Progress — 2026-04-26 → 2026-04-27
   - 초기 좌표 자동 init 은 P3-β (computeLayoutGroups 확장) 로 위임. P3-α 는 명시 호출 시에만 갱신
   - vitest `framePositions.test.ts` 5/5 PASS (insert / 위치 patch / size patch / remove / no-op no-bump) + type-check 3/3 PASS
   - **caller 0건** — Skia render path 통합은 P3-δ. 본 land 는 데이터 layer 만
+- **2026-04-28 (세션 47 후속)**: **P3-β land — `computeFrameAreas` + `FrameAreaGroup` 도입 (Gate G3-β PASS)**
+  - `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` 에 신규 export 2건 추가
+    - `interface FrameAreaGroup { frameId, frameName, x, y, width, height }`
+    - `computeFrameAreas(doc, framePositions): FrameAreaGroup[]` — `doc.children.filter(reusable: true)` + `metadata.layoutId` 우선 (legacy CRUD 정합) + framePositions miss 시 `{0,0,0,0}` fallback
+  - **설계 결정: 별도 함수 (NOT modify computeLayoutGroups)** — 기존 `LayoutGroup` 의 page-sharing semantic 과 frame canvas area semantic 분리. workflowRenderer / skiaOverlayBuilder / invalidationPacket / BuilderCanvas 4 caller 영향 0건. "확장" 은 모듈 (workflowEdges.ts) 단위 유지
+  - **caller 0건 유지** — BuilderCanvas / Skia render 통합은 P3-δ. 본 land 는 compute layer 만
+  - 검증: `frameAreas.test.ts` 6/6 PASS (null doc / non-reusable filter / metadata.layoutId 우선 / framePositions miss fallback / name 부재 fallback / 다중 frame 순서 보존) + type-check 3/3 + canvas/ 광역 vitest 174/174 PASS (회귀 0)
 
 ## Context
 

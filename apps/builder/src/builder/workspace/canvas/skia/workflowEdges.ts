@@ -9,7 +9,7 @@
  */
 
 import { getLegacyPageLayoutId } from "@/adapters/canonical";
-import type { CompositionDocument } from "@composition/shared";
+import type { CompositionDocument, FrameNode } from "@composition/shared";
 
 // ============================================
 // Types
@@ -263,6 +263,25 @@ export interface LayoutGroup {
 }
 
 /**
+ * ADR-911 P3-β: reusable frame 캔버스 영역 그룹.
+ *
+ * `LayoutGroup` (page sharing metadata) 와 의미적으로 분리.
+ * frame body 가 캔버스에 그려질 viewport 영역 정보 (P3-δ Skia render 통합 입력).
+ */
+export interface FrameAreaGroup {
+  /** legacy layoutId (FrameNode.metadata.layoutId 우선, fallback FrameNode.id) — legacy CRUD 와 정합 */
+  frameId: string;
+  /** 사용자 가시 이름 (FrameNode.name ?? frameId) */
+  frameName: string;
+  /** 캔버스 viewport 좌표 (framePositions[frameId].x, miss 시 0) */
+  x: number;
+  y: number;
+  /** 캔버스 viewport 크기 (framePositions[frameId].width/height, miss 시 0) */
+  width: number;
+  height: number;
+}
+
+/**
  * 요소의 데이터 바인딩을 분석하여 데이터 소스 엣지 목록을 계산.
  *
  * 두 가지 바인딩 형식을 지원:
@@ -387,4 +406,51 @@ export function computeLayoutGroups(
   }
 
   return groups;
+}
+
+// ============================================
+// Frame Area Computation (ADR-911 P3-β)
+// ============================================
+
+/**
+ * Canonical document 의 reusable FrameNode 들을 캔버스 영역 그룹으로 변환.
+ *
+ * - input doc 이 null/undefined → 빈 배열
+ * - `doc.children` 에서 `type === "frame" && reusable === true` 만 필터
+ * - id 정규화: `metadata.layoutId` (legacyToCanonical adapter 가 보존) 우선,
+ *   부재 시 FrameNode.id 사용. legacy `useLayoutsStore.layouts[]` CRUD 와 정합.
+ * - 좌표/크기: `framePositions[frameId]` lookup, miss 시 `{0,0,0,0}` (P3-α 의 기본 동작과 동일)
+ *
+ * 본 함수는 P3-β scope: compute layer 만. BuilderCanvas / Skia render 통합은 P3-δ.
+ */
+export function computeFrameAreas(
+  doc: CompositionDocument | null | undefined,
+  framePositions: Record<
+    string,
+    { x: number; y: number; width: number; height: number }
+  >,
+): FrameAreaGroup[] {
+  if (!doc) return [];
+
+  const result: FrameAreaGroup[] = [];
+  for (const child of doc.children) {
+    if (child.type !== "frame") continue;
+    const frame = child as FrameNode;
+    if (frame.reusable !== true) continue;
+
+    const layoutId = (frame.metadata as { layoutId?: string } | undefined)
+      ?.layoutId;
+    const frameId = layoutId ?? frame.id;
+    const pos = framePositions[frameId] ?? { x: 0, y: 0, width: 0, height: 0 };
+
+    result.push({
+      frameId,
+      frameName: frame.name ?? frameId,
+      x: pos.x,
+      y: pos.y,
+      width: pos.width,
+      height: pos.height,
+    });
+  }
+  return result;
 }
