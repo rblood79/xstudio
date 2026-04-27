@@ -20,6 +20,17 @@ claude --worktree feature-branch
 claude --worktree review-branch
 ```
 
+**worktree 통합 시 PR 불필요** (2026-04-27 정책): 격리 worktree 에서 commit → main 으로 직접 merge + push.
+
+```bash
+cd /Users/admin/work/composition       # main worktree
+git merge <worktree-branch>
+git push origin main
+git worktree remove <worktree-path>
+```
+
+상세: `.claude/rules/git-workflow.md`
+
 ### 일상 워크플로
 
 | 상황        | 접근                                  | 스킬                               |

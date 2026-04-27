@@ -51,14 +51,18 @@ composition 협업을 위한 간단한 가이드입니다. 변경은 작게, 관
 ## Testing Guidelines
 
 - 모듈 옆에 Vitest 스펙을 추가/수정; 빌더 패널·캔버스 동기화 변경 시 스토어 동작과 UI 계약을 검증.
-- PR 전 `npm run test`와 `npm run lint` 실행, 위험한 리팩터는 `npm run test:coverage`.
-- 플로우 변경 시 Playwright E2E를 추가/업데이트; 생략 시 재현 단계를 PR에 남김.
+- push 전 `pnpm test`와 `pnpm lint` 실행, 위험한 리팩터는 `pnpm test:coverage`.
+- 플로우 변경 시 Playwright E2E를 추가/업데이트; 생략 시 재현 단계를 커밋 메시지에 남김.
 
-## Commit & Pull Request Guidelines
+## Commit & Push Guidelines
+
+> **2026-04-27 정책 강화**: 로컬 작업 환경에서 **web PR 자체 금지**. main 직접 push 가 default. 자세한 정책: `.claude/rules/git-workflow.md`.
 
 - 커밋 메시지: `type: summary` (예: `feat: add layout spacing presets`, `fix: guard canvas postMessage origin`). 범위를 작게 유지.
-- PR: 요약, 연결된 이슈, UI 변경 스크린샷/영상, 실행한 테스트(`lint`, `test`, `coverage`, Playwright 여부) 명시.
-- 깨지는 변경이나 설정(.env, Supabase) 요구 시 PR 본문에 명확히 표시.
+- **default 흐름**: `git commit` → `git push origin main`. branch 분기 / web PR / `gh pr create` 모두 금지 (사용자 명시 요청 시에만).
+- worktree 작업 통합도 main 직접 merge: `git merge <worktree-branch>` → `git push origin main`. PR 경유 금지.
+- 깨지는 변경이나 설정(.env, Supabase) 요구 시 커밋 메시지 + CHANGELOG 에 명확히 표시.
+- main push 차단 시 자동 branch 우회 절대 금지 — 사용자에게 직접 실행 요청.
 
 ### Changelog Management (CRITICAL)
 
