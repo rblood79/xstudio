@@ -60,17 +60,6 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
       bodyElementId,
     });
 
-  // [ADR-911 diag] preset stale 진단 — render 시 props + currentPresetKey 추적
-  if (import.meta.env.DEV) {
-    console.log("[ADR-911 diag][LayoutPresetSelector] render", {
-      layoutId,
-      bodyElementId,
-      currentPresetKey,
-      selectedPresetKey,
-      existingSlotsCount: existingSlots.length,
-    });
-  }
-
   // 카테고리별 프리셋 그룹화
   const presetsByCategory = useMemo(() => {
     const groups: Record<string, string[]> = {
