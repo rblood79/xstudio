@@ -155,7 +155,6 @@ export interface CanonicalNode {
    *
    * 사용 예:
    * - `metadata.compositionType`: export adapter 가 원본 composition component 이름 저장 (roundtrip 지원)
-   * - `metadata.importedFrom`: DesignKit 복사 삽입 시 `"designkit:<kit-id>"` 출처 추적
    * - `metadata.importedFrom`: import adapter 경유 시 `"<importKey>:<nodeId>"` 저장
    */
   metadata?: {
@@ -297,9 +296,7 @@ export interface CompositionDocument {
    * import 된 reusable 노드 id 는 `"<importKey>:<nodeId>"` 형식으로 `ref` 참조 가능.
    * 예: `{ "basic-kit": "./kits/basic.pen" }` → `ref: "basic-kit:round-button"`
    *
-   * **P0 타입 스텁만**: 실제 resolver/fetch 구현은 Phase 5 이후.
-   * composition 기존 `kitLoader.ts` / `kitExporter.ts` (복사-적용 파이프라인)는
-   * `imports` 와 의미가 다름 — **별도 migration track** (ADR-903 R7 참조).
+   * **P0 타입 스텁만**: 실제 resolver/fetch 구현은 Phase 5 이후 (ADR-914).
    */
   imports?: Record<string, string>;
 

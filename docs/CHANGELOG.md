@@ -5,6 +5,37 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [DesignKit 시스템 제거 — Theme/Variable 시스템 중복 해소 — ADR-915] - 2026-04-27
+
+### Breaking Changes
+
+- **DesignKit 패널 / `.kit.json` import-export 기능 제거** (ADR-915 Implemented):
+  - `Ctrl+Shift+K` 단축키 비활성화 + 좌측 사이드바 "디자인 킷" 항목 제거
+  - DesignKit 5-Layer 아키텍처 (panel UI / Zustand store / 6-step kitLoader 파이프라인 / Zod 검증 / built-in basic kit) 전체 제거
+  - 사용자가 외부에서 받은 `.kit.json` 파일은 더 이상 composition 으로 import 불가 (사용자 로컬 디스크 보존, 데이터 손실 0)
+  - **Why**: theme 시스템 (ADR-021) + variable 시스템 (ADR-022) + Compositional Architecture (46+ 컴포넌트) 와 의미 중복. ADR-020 §2.1 자가 분석에서 "킷 콘텐츠 빈약 — 내장 킷 1개, Card 는 Box+2 Text 로 실제 Card 컴포넌트와 무관" CRITICAL + §2.2 "composition 컴포넌트 시스템 미활용" HIGH 로 흡수 가치 부재 명시
+  - 영향: 외부 직접 의존 0건 (panelConfigs.ts + panels/core/types.ts 만), DB 영향 0건, localStorage / IndexedDB 영향 0건
+  - 제거 LOC: -1,989 (코드 5 경로) + panelConfigs / types.ts panel id 정리
+    - 위치: `apps/builder/src/builder/panels/designKit/` (전체) / `apps/builder/src/stores/designKitStore.ts` / `apps/builder/src/types/builder/designKit.types.ts` / `apps/builder/src/utils/designKit/` (전체)
+
+### Architecture
+
+- **ADR-020 Superseded by ADR-915** — Design Kit 패널 분석 및 개선 계획 (Proposed) → 제거 결정. 본문은 `docs/adr/completed/020-design-kit-improvement.md` 로 archive
+- **ADR-915 신규 발의 (Proposed → Implemented 동일 PR 내 land)** — DesignKit 시스템 제거. 대안 A (즉시 전수 제거) 채택 — B (Deprecate-then-remove, 유지보수 MED) / C (UI hide, 유지보수 HIGH dead code) / D (theme 흡수, 유지보수 + 마이그레이션 HIGH) 대비 위험 모든 축 LOW. ADR-020 §2.1 자가 분석을 흡수 가치 부재 근거로 직접 인용
+- **진행 중 ADR reference 일괄 정리**:
+  - ADR-911 line 249 — "ADR-903 P5-D/E (`imports` resolver) 와 자연스럽게 통합 — DesignKit 통합은 ADR-915 로 제거됨 (P5-F section 무효화)"
+  - ADR-912 G4-A — 시각 마커 3종 (LayerTree + Canvas + DesignKit) → **2종 (LayerTree + Canvas)** 로 축소
+  - ADR-016 line 43 — 다이어그램에서 `DesignKitPanel` 박스 제거
+  - ADR-011 line 1079 — `appliedKitIds` 표 항목 strikethrough + ADR-915 footnote (이미 ADR-054 Superseded)
+  - ADR-914 — **보류** (Proposed 단계 + imports 본체 미진입). 본 ADR-915 land 후 ADR-914 진입 시점에 P5-F section 후속 갱신 (DesignKit 통합 결정 항목 제거)
+- **CompositionDocument types 정리** — `metadata.importedFrom: "designkit:<kit-id>"` 주석 제거 (`packages/shared/src/types/composition-document.types.ts`). `imports` resolver 후속 ADR-914 reference 만 유지
+
+### Gates 검증
+
+- **G1 정적 검증**: `pnpm type-check` 3/3 PASS / `pnpm build` specs 의 사전 존재 이슈 (`lucideIconData.generated.ts` TS1117) 는 main HEAD 동일 — 본 ADR-915 작업 무관
+- **G2 잔존 reference 0**: `apps/` + `packages/` grep `designKit\|DesignKit\|KitElement\|KitToken\|KitVariable\|kitLoader\|kitExporter\|kitValidator` 0건. `docs/` 잔존은 의도된 ADR-915 cross-reference + CHANGELOG historical entries 만
+- **G3 dev verify**: PR 머지 후 사용자 dev 검증 권장 (사이드바 + Ctrl+Shift+K + 다른 패널 정상 마운트 + 콘솔 error 0)
+
 ## [ADR-911 fix — usePresetApply.existingSlots slot 직접 매칭 (preset stale 해소) — 세션 38] - 2026-04-27
 
 ### Bug Fixes
