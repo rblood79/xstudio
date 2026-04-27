@@ -98,11 +98,11 @@ describe("readCanonicalThemes (ADR-910 Phase 1)", () => {
     };
     const snapshot = snapshotThemesFromConfig(config);
 
-    // CompositionDocument.themes 타입이 Record<string, string[]> stub 이므로
-    // cast 하여 주입 (실제 legacyToCanonical 내부와 동일 패턴)
+    // ADR-910 Phase 1: CompositionDocument.themes 타입이 ThemeSnapshot 으로 전환됨
+    // 직접 할당 가능 (cast 불필요)
     const doc: CompositionDocument = {
       version: "composition-1.0",
-      themes: snapshot as unknown as Record<string, string[]>,
+      themes: snapshot,
       children: [],
     };
 

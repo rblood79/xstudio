@@ -48,6 +48,10 @@ import {
   snapshotThemesFromConfig,
   type ThemeConfigInput,
 } from "./themesAdapter";
+import {
+  snapshotVariablesFromTokens,
+  type ResolvedTokenMap,
+} from "./variablesAdapter";
 
 // ─────────────────────────────────────────────
 // P3-A 신규 타입 surface
@@ -98,6 +102,13 @@ export interface LegacyAdapterDeps {
    * 미전달 시: `doc.themes = undefined` (BC — 기존 동작 유지).
    */
   getThemeConfig?: () => ThemeConfigInput;
+  /**
+   * ADR-910 Phase 1 — variables read-only snapshot 주입 (선택).
+   *
+   * 전달 시: `doc.variables = snapshotVariablesFromTokens(getVariables())` 주입.
+   * 미전달 시: `doc.variables = undefined` (BC — 기존 동작 유지).
+   */
+  getVariables?: () => ResolvedTokenMap;
 }
 
 export function legacyToCanonical(
@@ -105,7 +116,12 @@ export function legacyToCanonical(
   deps: LegacyAdapterDeps,
 ): CompositionDocument {
   const { elements, pages, layouts } = input;
-  const { convertComponentRole, convertPageLayout, getThemeConfig } = deps;
+  const {
+    convertComponentRole,
+    convertPageLayout,
+    getThemeConfig,
+    getVariables,
+  } = deps;
 
   // 1. id path 컨텍스트 구축 (UUID → stable path remap)
   const idPathCtx = buildIdPathContext(elements);
@@ -229,15 +245,21 @@ export function legacyToCanonical(
   // ADR-910 Phase 1: themes read-only snapshot 주입 (opt-in)
   // call-time 직렬화 — subscribe 기반 아님 (R4 대응: stale snapshot 방지)
   const themesSnapshot = getThemeConfig
-    ? (snapshotThemesFromConfig(getThemeConfig()) as unknown as Record<
-        string,
-        string[]
-      >)
+    ? snapshotThemesFromConfig(getThemeConfig())
+    : undefined;
+
+  // ADR-910 Phase 1: variables read-only snapshot 주입 (opt-in)
+  // call-time 직렬화 — subscribe 기반 아님 (R4 대응: stale snapshot 방지)
+  const variablesSnapshot = getVariables
+    ? snapshotVariablesFromTokens(getVariables())
     : undefined;
 
   return {
     version: "composition-1.0",
     ...(themesSnapshot !== undefined ? { themes: themesSnapshot } : {}),
+    ...(variablesSnapshot !== undefined
+      ? { variables: variablesSnapshot }
+      : {}),
     children: [...layoutFrames, ...reusableMasters, ...pageNodes],
   };
 }

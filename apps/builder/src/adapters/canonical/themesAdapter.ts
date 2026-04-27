@@ -11,38 +11,14 @@
  *   (ADR-910 R4 대응: stale snapshot 방지)
  *
  * **ThemeSnapshot 설계 (ADR-910 R2)**:
- * - `tint`, `darkMode`, `customTokens` 슬롯 예약으로 확장 가능
+ * - `@composition/shared` 의 `ThemeSnapshot` 타입을 단일 소스로 사용
  * - per-element theme override 는 후속 ADR 에서 결정
  */
 
-import type { CompositionDocument } from "@composition/shared";
+import type { CompositionDocument, ThemeSnapshot } from "@composition/shared";
 
-// ─────────────────────────────────────────────
-// ThemeSnapshot — 확장 가능한 테마 스냅샷 타입
-// ─────────────────────────────────────────────
-
-/**
- * canonical document `themes` 필드의 구체화된 snapshot 타입.
- *
- * ADR-910 R2 대응: `Record<string, string[]>` stub 대신 확장 가능한 구조체.
- * - `tint`: 현재 Tint 프리셋 이름 (ADR-021 TintPreset)
- * - `darkMode`: 현재 Dark mode 설정 ("light" | "dark" | "system")
- * - `neutral`: 현재 Neutral 프리셋 이름 (ADR-021 NeutralPreset)
- * - `radiusScale`: 현재 Border radius 스케일 ("none" | "sm" | "md" | "lg" | "xl")
- * - `customTokens`: 향후 per-element override 확장용 슬롯 (현재 미사용)
- */
-export interface ThemeSnapshot {
-  /** ADR-021 Tint 프리셋 ("blue" | "indigo" | "purple" | ...) */
-  tint: string;
-  /** ADR-021 Dark mode 설정 ("light" | "dark" | "system") */
-  darkMode: string;
-  /** ADR-021 Neutral 프리셋 */
-  neutral: string;
-  /** Border radius 스케일 */
-  radiusScale: string;
-  /** 향후 확장: per-element theme override, custom token map 등 */
-  customTokens?: Record<string, string>;
-}
+// ThemeSnapshot 은 packages/shared 에서 정의됨 — re-export 로 기존 import 경로 유지
+export type { ThemeSnapshot } from "@composition/shared";
 
 // ─────────────────────────────────────────────
 // ThemeConfig 최소 타입 (adapter DI 계약)
@@ -99,28 +75,16 @@ export function readCanonicalThemes(
 ): ThemeSnapshot | undefined {
   if (!doc.themes) return undefined;
 
-  // CompositionDocument.themes 현재 타입: Record<string, string[]> (stub)
-  // ThemeSnapshot 필드 존재 여부 확인 후 캐스팅
-  const raw = doc.themes as Record<string, unknown>;
+  // ADR-910 Phase 1: CompositionDocument.themes 타입이 ThemeSnapshot 으로 전환됨
+  // 필드 존재 여부만 확인 (타입 캐스팅 불필요)
+  const t = doc.themes;
   if (
-    typeof raw["tint"] === "string" &&
-    typeof raw["darkMode"] === "string" &&
-    typeof raw["neutral"] === "string" &&
-    typeof raw["radiusScale"] === "string"
+    typeof t.tint === "string" &&
+    typeof t.darkMode === "string" &&
+    typeof t.neutral === "string" &&
+    typeof t.radiusScale === "string"
   ) {
-    return {
-      tint: raw["tint"],
-      darkMode: raw["darkMode"],
-      neutral: raw["neutral"],
-      radiusScale: raw["radiusScale"],
-      ...(raw["customTokens"] &&
-      typeof raw["customTokens"] === "object" &&
-      raw["customTokens"] !== null
-        ? {
-            customTokens: raw["customTokens"] as Record<string, string>,
-          }
-        : {}),
-    };
+    return t;
   }
 
   return undefined;

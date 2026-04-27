@@ -5,6 +5,22 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-910 Phase 1 G-A — Canonical `themes`/`variables` Read-only Snapshot Adapter] - 2026-04-27
+
+### Architecture
+
+- **ADR-910 Phase 1 G-A 완전 PASS** — canonical document `themes` + `variables` 필드를 ADR-021 / ADR-022 시스템의 read-only snapshot adapter 로 land (대안 B 채택):
+  - `packages/shared/src/types/composition-document.types.ts` — `ThemeSnapshot` (R2 `customTokens` 확장 슬롯) + `VariablesSnapshot` + `VariablesSnapshotEntry` (R3 `source: "spec-token" | "user-defined"` 구분자) 타입 SSOT 정착. `CompositionDocument.themes?: ThemeSnapshot` + `variables?: VariablesSnapshot` 으로 stub `Record<string, string[]>` 전환
+  - `apps/builder/src/adapters/canonical/variablesAdapter.ts` 신규 — `snapshotVariablesFromTokens(resolvedTokens)` + `readCanonicalVariables(doc)` + `ResolvedTokenMap` DI 계약
+  - `apps/builder/src/adapters/canonical/themesAdapter.ts` — `ThemeSnapshot` re-export + raw cast 제거
+  - `apps/builder/src/adapters/canonical/index.ts` — `legacyToCanonical()` 호출 시 `themesSnapshot` + `variablesSnapshot` 자동 주입 통합
+  - `apps/builder/src/adapters/canonical/__tests__/variables.test.ts` 신규 (14 tests)
+  - `docs/adr/design/910-canonical-themes-variables-land-plan-breakdown.md` 신규 (구현 상세 분리)
+  - **Why**: canonical document 가 ADR-021 themeConfigStore + ADR-022 tokenResolver 현재 상태를 read-only 로 투영. Phase 2 write-through 진입 prerequisite 충족. ADR-021/022 런타임 무수정 (R3/R4 비파괴)
+  - 검증: type-check 3/3 PASS + canonical adapter vitest 92/92 PASS (themes 12 + variables 14 + integration 43 + 기타 23)
+
+- **ADR-910 Status `Proposed → Accepted` 승격** — Phase 2 (write-through, ADR-903 G2 이후) 진입 대기. Phase 2 land 시 G-B Gate 검증 (themes write-through round-trip + variables resolver 통합 + Preview/Skia 시각 회귀 0) 후 ADR-910 전체 Implemented
+
 ## [ADR-911 P2 회귀 수정 #2 — canonical legacyProps id 누락으로 자식 있는 컴포넌트 미렌더] - 2026-04-27
 
 ### Bug Fixes

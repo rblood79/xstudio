@@ -19,6 +19,65 @@
 import type { ComponentTag } from "./composition-vocabulary";
 
 // ─────────────────────────────────────────────
+// ThemeSnapshot — ADR-910 Phase 1
+// ─────────────────────────────────────────────
+
+/**
+ * canonical document `themes` 필드의 구체화된 snapshot 타입.
+ *
+ * ADR-910 대안 B: ADR-021 themeConfigStore 현재 상태의 read-only snapshot.
+ * ADR-910 R2 대응: `Record<string, string[]>` stub 대신 확장 가능한 구조체.
+ * - `tint`: 현재 Tint 프리셋 이름 (ADR-021 TintPreset)
+ * - `darkMode`: 현재 Dark mode 설정 ("light" | "dark" | "system")
+ * - `neutral`: 현재 Neutral 프리셋 이름 (ADR-021 NeutralPreset)
+ * - `radiusScale`: 현재 Border radius 스케일 ("none" | "sm" | "md" | "lg" | "xl")
+ * - `customTokens`: 향후 per-element override 확장용 슬롯 (현재 미사용)
+ *
+ * Phase 2 (write-through) 이후 `themes` 필드가 런타임에 적용됨.
+ */
+export interface ThemeSnapshot {
+  /** ADR-021 Tint 프리셋 ("blue" | "indigo" | "purple" | ...) */
+  tint: string;
+  /** ADR-021 Dark mode 설정 ("light" | "dark" | "system") */
+  darkMode: string;
+  /** ADR-021 Neutral 프리셋 */
+  neutral: string;
+  /** Border radius 스케일 */
+  radiusScale: string;
+  /** 향후 확장: per-element theme override, custom token map 등 */
+  customTokens?: Record<string, string>;
+}
+
+// ─────────────────────────────────────────────
+// VariablesSnapshot — ADR-910 Phase 1
+// ─────────────────────────────────────────────
+
+/**
+ * `VariablesSnapshot` 내 개별 변수 항목.
+ *
+ * ADR-910 R3 대응: `source` 구분자로 Spec TokenRef vs 사용자 정의 변수를 구분.
+ * - `spec-token`: `packages/specs/src/primitives/tokenResolver.ts` 에서 resolve 된 값
+ * - `user-defined`: 사용자가 직접 정의한 변수 (향후 UI에서 편집 가능)
+ */
+export interface VariablesSnapshotEntry {
+  type: "color" | "number" | "string" | "boolean";
+  value: string | number | boolean;
+  /** ADR-910 R3: 변수 출처 구분자 */
+  source: "spec-token" | "user-defined";
+}
+
+/**
+ * canonical document `variables` 필드의 snapshot 타입.
+ *
+ * ADR-910 대안 B: ADR-022 TokenRef/CSS 변수 체계의 read-only snapshot.
+ * `legacyToCanonical()` 호출 시 `getVariables()` 콜백으로 주입됨.
+ *
+ * Phase 2 이후 `variables`가 Spec TokenRef resolver와 통합되어
+ * `resolveCanonicalVariable(ref, document)` 진입점이 생성될 예정.
+ */
+export type VariablesSnapshot = Record<string, VariablesSnapshotEntry>;
+
+// ─────────────────────────────────────────────
 // Variable Reference Primitives
 // ─────────────────────────────────────────────
 
@@ -277,18 +336,25 @@ export interface CompositionDocument {
   version: string;
 
   /**
-   * theme 축 선언 — ADR-021 Tint/Dark mode 시스템 투영.
-   * 예: `{ mode: ["light", "dark"], tint: ["blue", "purple", "green"] }`
-   * 각 엔티티는 `theme?` 필드로 축별 override 가능.
+   * theme 선언 — ADR-021 Tint/Dark mode 시스템 투영.
+   *
+   * ADR-910 Phase 1: `ThemeSnapshot` (read-only snapshot adapter 결과).
+   * ADR-021 themeConfigStore 현재 상태의 직렬화. call-time 생성 (stale 방지).
+   * Phase 2 write-through 이후: document 로드 시 → `themeConfigStore` 주입.
+   *
+   * 각 엔티티는 `theme?` 필드로 노드별 override 가능.
    */
-  themes?: Record<string, string[]>;
+  themes?: ThemeSnapshot;
 
   /**
-   * 문서 variable 정의 — ADR-022 Spec TokenRef 통합.
+   * 문서 variable 선언 — ADR-022 Spec TokenRef + 사용자 정의 변수 통합.
+   *
+   * ADR-910 Phase 1: `VariablesSnapshot` (read-only snapshot).
+   * 기존 `VariableDefinition` 타입은 D2 props 참조용으로 유지 (하위 호환).
    * 필드에서 `{ $var: "primary" }` 형태로 참조.
-   * 기존 CSS 변수(`--accent` 등)는 resolver 가 이 정의에서 자동 emit.
+   * Phase 2 이후: `resolveCanonicalVariable(ref, document)` → `tokenResolver.ts` 통합.
    */
-  variables?: Record<string, VariableDefinition>;
+  variables?: VariablesSnapshot;
 
   /**
    * 참조형 import hook — 외부 `.pen` 또는 canonical 문서 파일을 URL/path 로 참조.
