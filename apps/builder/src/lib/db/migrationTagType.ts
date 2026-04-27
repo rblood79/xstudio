@@ -163,15 +163,20 @@ export async function runTagTypeMigration(
     };
   }
 
-  // 2. Create backup (read-only — localStorage dump). dry-run 에도 backup 생성하여
-  //    Step 4-4 write-through 진입 시 fallback 안전망 보장.
+  // 2. Read elements + layouts once — backup 과 transform 에서 공유.
+  //    `createMigrationBackup` 내부 read 와 dedupe (IDB scan 2회 → 1회).
+  const [elements, layouts] = await Promise.all([
+    adapter.elements.getAll(),
+    adapter.layouts.getAll(),
+  ]);
+
+  // 3. Create backup with pre-read data (read-only — localStorage dump).
+  //    dry-run 에도 backup 생성하여 Step 4-4 write-through 진입 시 fallback 안전망 보장.
   const backupKey = await createMigrationBackup(
     adapter as unknown as Parameters<typeof createMigrationBackup>[0],
     projectId,
+    { elements, layouts },
   );
-
-  // 3. Read all elements (no DB write)
-  const elements = await adapter.elements.getAll();
 
   // 4. Compute transformations
   const transformations: TagTypeTransformation[] = [];

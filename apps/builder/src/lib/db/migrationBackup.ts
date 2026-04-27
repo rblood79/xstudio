@@ -53,17 +53,23 @@ function clearProjectBackups(projectId: string): void {
 
 /**
  * legacy schema 의 elements + layouts 를 localStorage backup 으로 dump.
+ *
+ * @param adapter - read-only fetch 용 adapter
+ * @param projectId - 백업 대상 프로젝트 ID
+ * @param preReadData - 호출자가 이미 IDB 에서 읽은 데이터를 재사용할 때 주입.
+ *   미주입 시 adapter 에서 한 번 더 read (기존 동작). caller 가 transform 등
+ *   다른 용도로 같은 데이터를 사용할 때 IDB read 중복 1회 제거.
  * @returns backup key — `_meta.backupKey` 에 보관 권장
  */
 export async function createMigrationBackup(
   adapter: BackupCapableAdapter,
   projectId: string,
+  preReadData?: { elements: Element[]; layouts: Layout[] },
 ): Promise<string> {
-  // 1. read-only fetch (no DB write)
-  const [elements, layouts] = await Promise.all([
-    adapter.elements.getAll(),
-    adapter.layouts.getAll(),
-  ]);
+  // 1. read-only fetch (no DB write) — preReadData 주입 시 재사용
+  const [elements, layouts] = preReadData
+    ? [preReadData.elements, preReadData.layouts]
+    : await Promise.all([adapter.elements.getAll(), adapter.layouts.getAll()]);
 
   // 2. clear any prior backup for this project (1 project = 1 backup 정책)
   clearProjectBackups(projectId);
