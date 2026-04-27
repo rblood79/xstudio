@@ -52,16 +52,16 @@ In Progress — 2026-04-26 → 2026-04-27
 
 [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) Implemented (2026-04-26) 후 canonical document 의 schema 는 `type` 필드 (pencil 공식) 기준으로 정의되었으나, **runtime/persistence 경로의 hybrid 잔존**:
 
-- **`Element.tag` → `Element.type` rename** — 1031 ref / 154 파일 (2026-04-22 실측)
-- **hybrid 6 필드** — 합 1472 ref / 184 파일:
-  - `layout_id` 258 ref (ADR-911 가 G3 영역 흡수, 본 ADR 가 persistence 영역 cleanup)
-  - `masterId` 55 ref
-  - `componentRole` 41 ref
-  - `descendants` 39 ref (canonical 으로 정의됐으나 legacy `Override` 타입과 혼재)
-  - `slot_name` 25 ref
-  - `overrides` 23 ref
-- **`layoutTemplates.ts` 28 Slot 선언** — canonical format serialize 미적용
-- **DB 저장 schema** — `tag` 컬럼이 elements store 의 indexed field
+- **`Element.tag` → `Element.type` rename** — baseline 2026-04-22 실측 1031 ref / 154 파일 → **Phase 1+2 mechanical rename 후 0 ref 도달** (2026-04-27 세션 36~37, PR #250). IDB adapter `normalizeLegacyElement` read-through compat helper 만 잔존 (Phase 4 Step 4-5 에서 제거 예정)
+- **hybrid 6 필드** — baseline 2026-04-22 실측 1472 ref / 184 파일. **2026-04-27 세션 45 재측정 합계 486 ref / Phase 5 scope 279 ref / 73 file** (layout_id 207 ADR-911 흡수 영역 제외):
+  - `layout_id` 207 ref (ADR-911 가 G3 영역 흡수, 본 ADR scope 외)
+  - `descendants` 100 ref / 23 file (canonical 으로 정의됐으나 legacy `Override` 타입과 혼재)
+  - `masterId` 61 ref / 13 file
+  - `componentRole` 43 ref / 12 file
+  - `slot_name` 38 ref / 12 file
+  - `overrides` 37 ref / 13 file
+- **`layoutTemplates.ts` 28 Slot 선언** — canonical format serialize 미적용 (ADR-911 Phase 1 함수 layer 가 변환 처리)
+- **DB 저장 schema** — `tag` 컬럼이 elements store 의 indexed field → **Phase 4 Step 4-1 (DB_VERSION 8→9, 2026-04-27 세션 45) 완료 + Step 4-2 dry-run + Step 4-3 entry 연결 land. Step 4-4 write-through 진입 대기 (ADR-911 monitoring 종결 후)**
 
 이 상태에서 신 컴포넌트 추가 / migration / pencil import-export 모두 hybrid 경로를 거쳐야 함 → SSOT 혼동 + dead code 영구화.
 
