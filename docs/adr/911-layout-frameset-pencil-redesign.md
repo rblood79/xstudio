@@ -79,6 +79,10 @@ In Progress — 2026-04-26 → 2026-04-27
   - 검증: type-check 3/3 PASS + 사용자 dev 환경 검증 OK (ToggleButtonGroup / InlineAlert / ListBox 모두 정상 렌더)
   - **monitoring 카운터 2차 reset** — fix #2 land 시점부터 새 1주 시작 (~2026-05-04+ 추가 연장). Phase 2 Implemented 승격 = monitoring 통과 + 추가 회귀 0 확증 시점
   - **체크리스트 추가 권장** (Phase 3+ 진입 시): canonical adapter 의 metadata 보존 시 element top-level fields 6종 (id/parent_id/page_id/layout_id/order_num/fills) 명시 spread 의무. 신규 adapter 작성 시 동일 패턴 강제 (별도 ADR 또는 rule 명문화 후보)
+- **2026-04-27 (세션 45)**: **Phase 2 closure 5단계 사전 체크리스트 land** — `docs/adr/design/911-closure-checklist.md`
+  - monitoring 종결 (~2026-05-04+) 후 즉시 Implemented 승격 가능하도록 사전 작성
+  - Step 1 (Status + 진행 로그 entry) / Step 2 (CHANGELOG entry) / Step 3 (README 갱신, partial Implemented 패턴) / Step 4 (본문 archive 보류, Phase 3+4+5 진행 중) / Step 5 (reference link 정합 보류)
+  - ADR-109 partial Implemented 사례 답습 — Phase 전체 land 가 아닌 핵심 Gate (G2) 충족 시 partial Implemented 승격 가능
 
 ## Context
 
