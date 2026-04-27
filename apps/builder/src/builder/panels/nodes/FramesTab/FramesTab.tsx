@@ -40,6 +40,11 @@ import {
   isCanvasCompareMode,
   isFramesTabCanonical,
 } from "../../../../utils/featureFlags";
+import {
+  dryRunMigrationP911,
+  applyMigrationP911,
+  type MigrationP911Adapter,
+} from "../../../../lib/db/migrationP911";
 import type { FrameNode } from "@composition/shared";
 
 interface FramesTabProps {
@@ -297,6 +302,66 @@ export function FramesTab({
     [removeElement, selectedElementId, setSelectedElement, isWebGLOnly],
   );
 
+  // ADR-911 P2 PR-E3 / P1-c — dev-only canonical migration trigger.
+  // legacy `layouts[]` rows 중 canonical document 에 reusable FrameNode 로 hoist
+  // 되지 않은 것을 dryRun → apply (in-memory). persistence (DB write / store
+  // commit) 는 본 단계에서 미구현 — Chrome MCP roundtrip 결과 콘솔 검증 용도만.
+  // production code path 영향 0 (`process.env.NODE_ENV !== "development"` 단락).
+  const handleDevMigrate = useCallback(async () => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (!projectId) {
+      console.warn("[ADR-911 P1-c] projectId 없음 — migration trigger 무시");
+      return;
+    }
+
+    try {
+      const db = await getDB();
+      const adapter: MigrationP911Adapter = {
+        layouts: { getByProject: (id) => db.layouts.getByProject(id) },
+      };
+      const state = useStore.getState();
+      const layoutsState = useLayoutsStore.getState().layouts;
+      const canonicalDoc = selectCanonicalDocument(
+        state,
+        state.pages,
+        layoutsState,
+      );
+
+      console.group("[ADR-911 P1-c] migration dry-run");
+      const result = await dryRunMigrationP911(
+        adapter,
+        projectId,
+        canonicalDoc,
+      );
+      console.info("status:", result.status);
+      console.info(
+        "hoisted:",
+        result.hoisted.length,
+        result.hoisted.map((f) => f.id),
+      );
+      console.info("skipped:", result.skipped.length, result.skipped);
+      console.info("errors:", result.errors);
+
+      if (result.errors.length === 0 && result.hoisted.length > 0) {
+        const newDoc = applyMigrationP911(canonicalDoc, result);
+        const reusableCount = newDoc.children.filter(
+          (n) => n.type === "frame" && (n as FrameNode).reusable === true,
+        ).length;
+        console.info("applied — new doc.children:", newDoc.children.length);
+        console.info("reusable frames after hoist:", reusableCount);
+        console.info(
+          "[note] persistence 미구현 — canonical store write API 도입 (P3-D) 후 commit 가능",
+        );
+      } else {
+        console.info("no apply (errors > 0 or hoist 후보 0)");
+      }
+      console.groupEnd();
+    } catch (error) {
+      console.error("[ADR-911 P1-c] dev migration error:", error);
+      console.groupEnd();
+    }
+  }, [projectId]);
+
   return (
     <div
       className="layouts-tab"
@@ -304,6 +369,32 @@ export function FramesTab({
       id="tabpanel-frames"
       aria-label="Frames"
     >
+      {/* ADR-911 P2 PR-E3 — dev-only canonical migration trigger.
+          production build 에서는 단락 (process.env.NODE_ENV === "development" 단락). */}
+      {process.env.NODE_ENV === "development" && (
+        <div
+          className="dev-tools"
+          style={{
+            padding: "4px 8px",
+            fontSize: "11px",
+            borderBottom: "1px solid var(--border-color, #ddd)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleDevMigrate}
+            title="ADR-911 P1-c: dryRun + apply (in-memory, no persistence). 결과 콘솔 확인."
+            style={{
+              fontSize: "11px",
+              padding: "2px 6px",
+              cursor: "pointer",
+            }}
+          >
+            Dev: Migrate to Canonical
+          </button>
+        </div>
+      )}
+
       {/* Frames List — ADR-911 P2 PR-D 추출 */}
       <FrameList
         frames={reusableFrames}

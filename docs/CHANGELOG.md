@@ -5,6 +5,24 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-E3 — dev-only canonical migration trigger — 세션 37 후반] - 2026-04-27
+
+### Features
+
+- **ADR-911 P1-c — dev-only canonical migration trigger UI 추가**:
+  - `FramesTab.tsx` 에 "Dev: Migrate to Canonical" 버튼 + `handleDevMigrate` handler
+  - 동작: `dryRunMigrationP911(adapter, projectId, canonicalDoc)` 결과 콘솔 group 으로 출력 (status / hoisted ids / skipped / errors). errors 0 + hoisted > 0 시 `applyMigrationP911(canonicalDoc, result)` 로 in-memory apply 실행 + 결과 reusable frame 개수 로그
+  - production 단락: `process.env.NODE_ENV === "development"` 체크. production build 영향 0 (tree-shake 가능)
+  - **persistence 미구현**: canonical document store write API 가 없음 (P3-D 종속) — 본 trigger 는 Chrome MCP P1-c roundtrip dev 검증 용도만. 콘솔에 `"persistence 미구현 — canonical store write API 도입 (P3-D) 후 commit 가능"` 안내 출력
+  - **Why**: ADR-911 Phase 1 의 migration helper (`hoistLayoutAsReusableFrame` / `dryRun` / `apply`) 가 실 dev 데이터에 대해 정상 동작하는지 검증할 진입점 부재. P2-e (Chrome MCP P1-c roundtrip) 의 진입점 옵션 A (FramesTab dev menu) 채택. P3 진입 시 옵션 B (initializeProject 자동 trigger) 으로 교체 예정
+
+### Documentation
+
+- **ADR-911 PR-E2 skip 결정 + sub-PR 재배치**:
+  - `usePresetApply.ts` read 는 이미 `selectCanonicalDocument` 사용 (dual-mode 친화적). write (`type="Slot"` element + `addComplexElement`) 는 P3-D 의 canonical document write API 도입 후 별도 ADR 로 처리
+  - **Why**: Phase 2 cutover (read path dual-mode) 에 PR-E2 write 전환은 필수 아님. 사용자 시각 차이는 read level 에서만 dual-mode 분기로 충족. 무리한 write 전환은 P3-D 의존성으로 인해 incomplete 상태 land 위험
+  - sub-PR 표 갱신: E2 status `🔄 P3-D 종속 — 별도 ADR 로 처리`
+
 ## [ADR-911 Phase 2 PR-E1 — PageLayoutSelector dual-mode read 전환 — 세션 37 후반] - 2026-04-27
 
 ### Architecture
