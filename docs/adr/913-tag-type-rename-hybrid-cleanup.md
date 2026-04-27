@@ -33,10 +33,14 @@ In Progress — 2026-04-26 → 2026-04-27
   - **Step 4-3** (commit `19864dfe`) — `usePageManager.initializeProject` 의 P3-E migration 호출 직후에 `runTagTypeMigration(db, projectId, { dryRun: true })` 추가. 진입 조건: `metaRecord` 미존재 또는 `schemaVersion ∈ {legacy, composition-1.0}`. dev console 로그 출력 (`[ADR-913 P4 dry-run] status / transformedCount / errors`). try/catch graceful degrade
   - **검증**: type-check 3/3 PASS / db 영역 vitest 142/142 PASS (기존 126 + 신규 16) / usePageManager.canonical 회귀 0
   - **비파괴**: 3 단계 모두 dryRun=true 고정 → DB 무변경. 실제 transform 은 Step 4-4 (write-through, ADR-911 monitoring 종결 ~2026-05-04 후 진입)
+- **2026-04-27 (세션 45)**: **Phase 5 design breakdown 사전 land** — `docs/adr/design/913-phase5-hybrid-6-cleanup-breakdown.md`
+  - Inventory 갱신 (Phase 1+2 mechanical rename 후): componentRole 43 / masterId 61 / slot_name 38 / overrides 37 / descendants 100 = **279 ref / 73 file** (layout_id 207 ref ADR-911 흡수 영역 제외)
+  - sub-Phase 5-A~5-E 분할 (필드별 5 단계) — 진입 순서 ref 수 적은 순 (LOW first): 5-A slot_name (38) → 5-B overrides (37) → 5-C componentRole (43) → 5-D masterId (61) → 5-E descendants (100, 내부 분할 권장)
+  - 진입 prerequisite: Phase 4 전체 (Step 4-4/4-5/4-6) 완결 + ADR-911 Phase 2 Implemented
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - Phase 4 (DB schema migration DB_VERSION 8→9) — Step 4-1/4-2/4-3 land. **잔여 = Step 4-4 (write-through, ADR-911 monitoring 종결 후), Step 4-5 (`normalizeLegacyElement` helper 제거), Step 4-6 (Validation+cleanup)**
-  - Phase 5 (Hybrid 6 cleanup) — 2d, **HIGH risk**. componentRole 41 / masterId 63 / slot_name 45 / overrides 40 / descendants 124 = 313+ ref 영역, sub-Phase 분할 권장
+  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — 2d, **HIGH risk**. componentRole 43 / masterId 61 / slot_name 38 / overrides 37 / descendants 100 = 279 ref. sub-Phase 5-A~5-E 분할. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
 
 ## Context
 
