@@ -5,6 +5,19 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-913 Phase 3 manual review 종결 — `tag → type` rename 회귀 0 확증] - 2026-04-27
+
+### Architecture
+
+- **ADR-913 Phase 3 종결** — Phase 1+2 mechanical rename 도구 효율 검증, 회귀 위험 0:
+  - `.tag` 잔존 13건 = 의도된 변수명/CSS class/Tag spec preset 12건 + IDB adapter `tag?: string` 검사 1건 (Phase 4 영역, 의도된 legacy)
+  - `tag: literal` 잔존 7건 = 전부 JSDoc BC 메모 (Card 5종 + Radio/CheckboxItems), 실 코드 0건
+  - `.type ===` discriminator 459건 narrowing 정상
+  - `isCanonicalNode` runtime guard hot path 적용 부족 (LOW, Phase 4 진입 시 점진 적용 권장)
+  - **Why**: agent 추정 146 manual ref → 실제 의심 잔존 0. mechanical rename 도구 (`apps/builder/src/adapters/canonical/tagRename.ts`) 가 매우 효과적
+  - 위치: `packages/specs/src/components/Body.spec.ts:9` JSDoc `element.tag` → `element.type` 정정 (1줄)
+- **ADR-913 Status `In Progress` 유지** — Phase 4 (DB schema DB_VERSION 8→9, HIGH 1.5d) + Phase 5 (Hybrid 6 cleanup, HIGH 2d, 313+ ref) 잔여
+
 ## [ADR-910 Phase 1 G-A — Canonical `themes`/`variables` Read-only Snapshot Adapter] - 2026-04-27
 
 ### Architecture

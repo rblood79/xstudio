@@ -6,7 +6,7 @@
  * 한다. 이전에는 3곳 (buildBoxNodeData isBody 분기 / preview BODY_THEME_MAP /
  * publish body→div) 에 분산 하드코딩되어 ADR-063 SSOT D3 를 위반했다.
  *
- * element.tag 는 "body" (lowercase) 이므로 `BASE_TAG_SPEC_MAP` 에는 PascalCase
+ * element.type 은 "body" (lowercase) 이므로 `BASE_TAG_SPEC_MAP` 에는 PascalCase
  * (`Body`) 로 등록되고, `LOWERCASE_TAG_SPEC_MAP` 이 자동으로 lowercase 키를 생성한다.
  *
  * Single Source of Truth — React DOM 과 CanvasKit/Skia 모두에서 동일한 시각 결과.

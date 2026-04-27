@@ -14,10 +14,18 @@ In Progress — 2026-04-26 → 2026-04-27
   - 변경 규모: 243 files / +2302 / -2034
   - 검증: type-check 0 / specs 322/322 / shared 72/72 / builder 4 failed (baseline 동일 — ADR-913 회귀 0)
   - dev runtime 정상 작동 확인 (사용자 검증)
+- **2026-04-27 (세션 44)**: **Phase 3 manual review 종결** (회귀 0 확증)
+  - sweep 결과 (전수 grep, packages/ + apps/, test/dist 제외):
+    - `.tag` 잔존 13건 → 의도된 변수명/CSS class/Tag spec preset 12건 + IDB adapter `(el as { tag?: string }).tag` 1건 (Phase 4 DB schema migration 영역의 의도된 legacy 검사)
+    - `tag: literal` 잔존 7건 → 전부 JSDoc BC 재평가 메모 (Card 5종 + Radio/CheckboxItems), 실 코드 0건
+    - `.type ===` discriminator 459건 → 모두 Phase 1+2 mechanical rename 결과, narrowing 정상
+    - `isCanonicalNode` runtime guard 호출 4건 → hot path 적용 부족 (LOW, 선택적 enhancement Phase 4 진입 시 점진 적용)
+  - **회귀 위험: 0** (Phase 1+2 mechanical rename 도구 효율 — agent 추정 146 manual ref → 실제 의심 잔존 0)
+  - Body.spec.ts JSDoc `element.tag` → `element.type` 정정 (1줄, comment-only)
 - **잔여 Phase**:
-  - Phase 3 (Manual review) — 1d, MEDIUM risk. 146 manual ref + discriminator 306 if/switch validation
+  - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - Phase 4 (DB schema migration DB_VERSION 8→9) — 1.5d, **HIGH risk**. legacy `tag` row 영구 변환 + `normalizeLegacyElement` helper 제거
-  - Phase 5 (Hybrid 6 cleanup) — 2d, **HIGH risk**. masterId / componentRole / overrides / descendants / slot_name / layout_id 캐노니컬 흡수
+  - Phase 5 (Hybrid 6 cleanup) — 2d, **HIGH risk**. componentRole 41 / masterId 63 / slot_name 45 / overrides 40 / descendants 124 = 313+ ref 영역, sub-Phase 분할 권장
 
 ## Context
 
