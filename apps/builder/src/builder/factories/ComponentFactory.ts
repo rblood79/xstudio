@@ -235,7 +235,13 @@ export class ComponentFactory {
     const definition = definitionCreator(context);
 
     // 2. Element 데이터 생성
-    const { parent, children } = createElementsFromDefinition(definition);
+    // ADR-911 P2 fix (2026-04-27 세션 42): pageId/layoutId 명시 전달.
+    // canonical mode default true 후 page_id 미주입 element 가 page-indexed
+    // 분기에서 누락되어 화면 렌더 실패하던 회귀 해소.
+    const { parent, children } = createElementsFromDefinition(definition, {
+      pageId: pageId || null,
+      layoutId,
+    });
 
     // 3. 스토어에 추가 (즉시 UI 업데이트)
     addElementsToStore(parent, children);
