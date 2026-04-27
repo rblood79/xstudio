@@ -105,8 +105,8 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         const db = await getDB();
 
         if (layoutId) {
-          // ADR-903 P3-D 진입 전: getByLayout bridge 유지
-          const layoutElements = await db.elements.getByLayout(layoutId);
+          // ADR-903 P3-E follow-up: canonical parent 기반 조회
+          const layoutElements = await db.elements.getDescendants(layoutId);
           mergeElements(layoutElements);
         }
 

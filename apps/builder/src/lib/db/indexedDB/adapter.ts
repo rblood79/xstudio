@@ -833,6 +833,27 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       return rows.map(normalizeLegacyElement);
     },
 
+    getDescendants: async (parentId: string): Promise<Element[]> => {
+      const result: Element[] = [];
+      const queue: string[] = [parentId];
+      const seen = new Set<string>([parentId]);
+      while (queue.length > 0) {
+        const pid = queue.shift() as string;
+        const children = await this.getAllByIndex<Element>(
+          "elements",
+          "parent_id",
+          pid,
+        );
+        for (const child of children) {
+          if (seen.has(child.id)) continue;
+          seen.add(child.id);
+          result.push(normalizeLegacyElement(child));
+          queue.push(child.id);
+        }
+      }
+      return result;
+    },
+
     getAll: async (): Promise<Element[]> => {
       const rows = await this.getAllFromStore<Element>("elements");
       return rows.map(normalizeLegacyElement);

@@ -378,7 +378,7 @@ function Dashboard() {
 
         const layouts = await db.layouts.getByProject(id);
         for (const layout of layouts) {
-          const layoutElements = await db.elements.getByLayout(layout.id);
+          const layoutElements = await db.elements.getDescendants(layout.id);
           for (const element of layoutElements) {
             await db.elements.delete(element.id);
           }

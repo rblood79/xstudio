@@ -204,7 +204,7 @@ export const usePageManager = ({
           const allElements = [...elementsData];
 
           if (currentPage?.layout_id) {
-            const layoutElements = await db.elements.getByLayout(
+            const layoutElements = await db.elements.getDescendants(
               currentPage.layout_id,
             );
             console.log(

@@ -280,7 +280,8 @@ export const BuilderCore: React.FC = () => {
       if (editMode === "layout" && currentLayoutId) {
         try {
           const db = await getDB();
-          const layoutElements = await db.elements.getByLayout(currentLayoutId);
+          const layoutElements =
+            await db.elements.getDescendants(currentLayoutId);
 
           // 기존 요소들과 병합
           // ADR-903 P3-D-5 step 5e: doc 전달 → belongsToLegacyLayout canonical 활용.

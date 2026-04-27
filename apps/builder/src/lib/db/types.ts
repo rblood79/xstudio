@@ -152,6 +152,21 @@ export interface DatabaseAdapter {
      */
     getByLayout(layoutId: string): Promise<Element[]>;
     getChildren(parentId: string): Promise<Element[]>;
+    /**
+     * `parentId` 의 모든 descendant element BFS 수집 (canonical `parent_id` index 기반).
+     *
+     * `getByLayout()` 의 canonical 후속 — `getByLayout` 이 composition-1.0 schemaVersion
+     * 1개라도 있으면 강제 빈 배열 반환하면서 caller 마이그레이션을 압박했으나, 7 caller
+     * (Frame/Layout 자식 element 로드 또는 일괄 삭제) 가 마이그레이션되지 않아 시각 회귀
+     * (Skia 미렌더) + delete 누락 (orphan element) 노출. 본 API 가 caller migration target.
+     *
+     * 동작:
+     * - `parent_id` index 로 직접 자식 조회
+     * - 자식의 자식을 BFS 로 재귀 수집
+     * - 순환 참조 방지 (seen Set)
+     * - composition-pre-1.0 (legacy) / composition-1.0 / composition-1.1 모두 동일 결과
+     */
+    getDescendants(parentId: string): Promise<Element[]>;
     getAll(): Promise<Element[]>;
   };
 

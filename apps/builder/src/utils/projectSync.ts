@@ -4,10 +4,10 @@
  * 로컬(IndexedDB)과 클라우드(Supabase) 간 프로젝트 동기화
  */
 
-import { getDB } from '../lib/db';
-import { projectsApi } from '../services/api/ProjectsApiService';
-import { pagesApi } from '../services/api/PagesApiService';
-import { elementsApi } from '../services/api/ElementsApiService';
+import { getDB } from "../lib/db";
+import { projectsApi } from "../services/api/ProjectsApiService";
+import { pagesApi } from "../services/api/PagesApiService";
+import { elementsApi } from "../services/api/ElementsApiService";
 
 /**
  * 로컬 프로젝트를 클라우드에 동기화
@@ -21,7 +21,7 @@ import { elementsApi } from '../services/api/ElementsApiService';
  * ```
  */
 export async function syncProjectToCloud(projectId: string): Promise<void> {
-  console.log('[ProjectSync] 동기화 시작:', projectId);
+  console.log("[ProjectSync] 동기화 시작:", projectId);
 
   try {
     const db = await getDB();
@@ -32,7 +32,7 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
       throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}`);
     }
 
-    console.log('[ProjectSync] 로컬 프로젝트 로드:', localProject.name);
+    console.log("[ProjectSync] 로컬 프로젝트 로드:", localProject.name);
 
     // 2. 프로젝트 메타데이터를 Supabase에 업데이트 (이미 존재한다고 가정)
     try {
@@ -40,21 +40,21 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
         name: localProject.name,
         updated_at: new Date().toISOString(),
       });
-      console.log('[ProjectSync] 프로젝트 메타데이터 동기화 완료');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.log("[ProjectSync] 프로젝트 메타데이터 동기화 완료");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_updateError) {
       // 프로젝트가 없으면 생성 (IndexedDB ID 보존)
-      console.log('[ProjectSync] 프로젝트가 클라우드에 없음, 새로 생성');
+      console.log("[ProjectSync] 프로젝트가 클라우드에 없음, 새로 생성");
       await projectsApi.createProject({
         id: localProject.id, // ✅ IndexedDB ID 보존하여 FK 제약조건 충족
         name: localProject.name,
-        created_by: localProject.created_by || '', // undefined 방지
+        created_by: localProject.created_by || "", // undefined 방지
       });
     }
 
     // 3. 페이지 읽기
     const localPages = await db.pages.getByProject(projectId);
-    console.log('[ProjectSync] 로컬 페이지:', localPages.length);
+    console.log("[ProjectSync] 로컬 페이지:", localPages.length);
 
     // 4. 페이지를 Supabase에 업로드
     for (const page of localPages) {
@@ -72,7 +72,7 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
 
       try {
         await pagesApi.updatePage(page.id, apiPage);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_updateError) {
         // 페이지가 없으면 생성
         await pagesApi.createPage(apiPage);
@@ -80,14 +80,19 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
 
       // 5. 페이지의 요소들 읽기
       const localElements = await db.elements.getByPage(page.id);
-      console.log(`[ProjectSync] 페이지 "${page.title}" 요소:`, localElements.length);
+      console.log(
+        `[ProjectSync] 페이지 "${page.title}" 요소:`,
+        localElements.length,
+      );
 
       // 6. 요소들을 Supabase에 업로드 (배치)
       if (localElements.length > 0) {
         // 기존 요소 삭제 후 재생성 (간단한 방법)
         const cloudElements = await elementsApi.getElementsByPageId(page.id);
         if (cloudElements.length > 0) {
-          await elementsApi.deleteMultipleElements(cloudElements.map((el) => el.id));
+          await elementsApi.deleteMultipleElements(
+            cloudElements.map((el) => el.id),
+          );
         }
 
         // 새로 생성
@@ -95,7 +100,7 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
           localElements.map((el) => ({
             ...el,
             updated_at: new Date().toISOString(),
-          }))
+          })),
         );
       }
     }
@@ -105,9 +110,9 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
       updated_at: new Date().toISOString(),
     });
 
-    console.log('✅ [ProjectSync] 동기화 완료:', projectId);
+    console.log("✅ [ProjectSync] 동기화 완료:", projectId);
   } catch (error) {
-    console.error('❌ [ProjectSync] 동기화 실패:', error);
+    console.error("❌ [ProjectSync] 동기화 실패:", error);
     throw error;
   }
 }
@@ -123,8 +128,10 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
  * await downloadProjectFromCloud('project-123');
  * ```
  */
-export async function downloadProjectFromCloud(projectId: string): Promise<void> {
-  console.log('[ProjectSync] 다운로드 시작:', projectId);
+export async function downloadProjectFromCloud(
+  projectId: string,
+): Promise<void> {
+  console.log("[ProjectSync] 다운로드 시작:", projectId);
 
   try {
     const db = await getDB();
@@ -135,15 +142,15 @@ export async function downloadProjectFromCloud(projectId: string): Promise<void>
       throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}`);
     }
 
-    console.log('[ProjectSync] 클라우드 프로젝트 로드:', cloudProject.name);
+    console.log("[ProjectSync] 클라우드 프로젝트 로드:", cloudProject.name);
 
     // 2. IndexedDB에 프로젝트 저장
     await db.projects.insert(cloudProject);
-    console.log('[ProjectSync] 프로젝트 메타데이터 다운로드 완료');
+    console.log("[ProjectSync] 프로젝트 메타데이터 다운로드 완료");
 
     // 3. 페이지 읽기
     const cloudPages = await pagesApi.getPagesByProjectId(projectId);
-    console.log('[ProjectSync] 클라우드 페이지:', cloudPages.length);
+    console.log("[ProjectSync] 클라우드 페이지:", cloudPages.length);
 
     // 4. 페이지를 IndexedDB에 저장
     for (const page of cloudPages) {
@@ -162,7 +169,10 @@ export async function downloadProjectFromCloud(projectId: string): Promise<void>
 
       // 5. 페이지의 요소들 읽기
       const cloudElements = await elementsApi.getElementsByPageId(page.id);
-      console.log(`[ProjectSync] 페이지 "${page.title}" 요소:`, cloudElements.length);
+      console.log(
+        `[ProjectSync] 페이지 "${page.title}" 요소:`,
+        cloudElements.length,
+      );
 
       // 6. 요소들을 IndexedDB에 저장
       if (cloudElements.length > 0) {
@@ -170,9 +180,9 @@ export async function downloadProjectFromCloud(projectId: string): Promise<void>
       }
     }
 
-    console.log('✅ [ProjectSync] 다운로드 완료:', projectId);
+    console.log("✅ [ProjectSync] 다운로드 완료:", projectId);
   } catch (error) {
-    console.error('❌ [ProjectSync] 다운로드 실패:', error);
+    console.error("❌ [ProjectSync] 다운로드 실패:", error);
     throw error;
   }
 }
@@ -191,12 +201,12 @@ export async function downloadProjectFromCloud(projectId: string): Promise<void>
  */
 export async function deleteProject(
   projectId: string,
-  location: 'local' | 'cloud' | 'both'
+  location: "local" | "cloud" | "both",
 ): Promise<void> {
-  console.log('[ProjectSync] 프로젝트 삭제:', { projectId, location });
+  console.log("[ProjectSync] 프로젝트 삭제:", { projectId, location });
 
   try {
-    if (location === 'local' || location === 'both') {
+    if (location === "local" || location === "both") {
       const db = await getDB();
 
       // 1. 프로젝트의 모든 페이지 삭제
@@ -216,7 +226,7 @@ export async function deleteProject(
       const layouts = await db.layouts.getByProject(projectId);
       for (const layout of layouts) {
         // 레이아웃의 모든 요소 삭제
-        const layoutElements = await db.elements.getByLayout(layout.id);
+        const layoutElements = await db.elements.getDescendants(layout.id);
         if (layoutElements.length > 0) {
           await db.elements.deleteMany(layoutElements.map((el) => el.id));
         }
@@ -250,7 +260,9 @@ export async function deleteProject(
       for (const endpoint of apiEndpoints) {
         await db.api_endpoints.delete(endpoint.id);
       }
-      console.log(`[ProjectSync] API Endpoints ${apiEndpoints.length}개 삭제 완료`);
+      console.log(
+        `[ProjectSync] API Endpoints ${apiEndpoints.length}개 삭제 완료`,
+      );
 
       const variables = await db.variables.getByProject(projectId);
       for (const variable of variables) {
@@ -262,19 +274,21 @@ export async function deleteProject(
       for (const transformer of transformers) {
         await db.transformers.delete(transformer.id);
       }
-      console.log(`[ProjectSync] Transformers ${transformers.length}개 삭제 완료`);
+      console.log(
+        `[ProjectSync] Transformers ${transformers.length}개 삭제 완료`,
+      );
 
       // 6. 프로젝트 삭제
       await db.projects.delete(projectId);
-      console.log('✅ [ProjectSync] 로컬 프로젝트 삭제 완료');
+      console.log("✅ [ProjectSync] 로컬 프로젝트 삭제 완료");
     }
 
-    if (location === 'cloud' || location === 'both') {
+    if (location === "cloud" || location === "both") {
       await projectsApi.deleteProject(projectId);
-      console.log('✅ [ProjectSync] 클라우드 프로젝트 삭제 완료');
+      console.log("✅ [ProjectSync] 클라우드 프로젝트 삭제 완료");
     }
   } catch (error) {
-    console.error('❌ [ProjectSync] 프로젝트 삭제 실패:', error);
+    console.error("❌ [ProjectSync] 프로젝트 삭제 실패:", error);
     throw error;
   }
 }

@@ -5,6 +5,18 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-903 P3-E follow-up — `getByLayout` 7 caller canonical 마이그레이션 (slot 미렌더 회귀 fix)] - 2026-04-28
+
+### Bug Fixes
+
+- **Layout/Frame 자식 element 가 Skia 캔버스에 미렌더되던 시각 회귀 fix** (ADR-903 P3-E follow-up):
+  - 사용자 dev 환경에서 layout preset 선택 시 영역 구분 slot 들이 Skia 화면에 보이지 않음
+  - **Why**: ADR-903 P3-E E-6 의 `getByLayout` canonical strict 가 composition-1.0 schemaVersion 1건이라도 있으면 빈 배열 반환하여 caller migration 압박했으나, 7 live caller (`BuilderCore.tsx:283` / `FramesTab.tsx:146,240` / `dashboard/index.tsx:381` / `utils/projectSync.ts:219` / `usePageManager.ts:207` / `PageLayoutSelector.tsx:109`) 가 마이그레이션되지 않은 채 ADR-903 Implemented 종결 → Frame 선택 / Layout preset 적용 / 페이지 로드 path 에서 element 미로드 → bounds map 부재 → Skia 무시
+  - **Fix**: `adapter.ts` 신규 API `getDescendants(parentId)` 추가 (BFS `parent_id` index 재귀 + 순환 참조 방지 seen Set) + `types.ts` 인터페이스 시그니처 추가 + 7 caller 일괄 `getByLayout(layoutId)` → `getDescendants(layoutId)` 교체. canonical-pre-1.0 / 1.0 / 1.1 schema 모두 동일 결과 보장
+  - 검증: type-check 3/3 PASS (FULL TURBO) + Builder dev runtime store evidence (Slot 3 등록 확증, Skia 시각화 사용자 dev 검증 권장)
+  - **ADR framing 정정**: 본 회귀가 ADR-911 monitoring 차단으로 인식됐으나 실제는 ADR-903 P3-E caller migration 잔존 작업 — ADR-911 frame.children 정규화와 schema 직교. ADR-913 Step 4-4 의 "ADR-911 monitoring 후" marker 도 schema 직교성 재검토 가능
+  - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts` + `apps/builder/src/lib/db/types.ts` + 5 caller 파일
+
 ## [ADR-910 Implemented — Canonical `themes`/`variables` 필드 Land Plan 전체 종결] - 2026-04-27
 
 ### Architecture

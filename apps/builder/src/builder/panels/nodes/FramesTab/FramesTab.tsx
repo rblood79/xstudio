@@ -142,8 +142,8 @@ export function FramesTab({
     const loadFrameElements = async () => {
       try {
         const db = await getDB();
-        // ADR-903 P3-D 진입 전: getByLayout bridge 유지
-        const frameElements = await db.elements.getByLayout(
+        // ADR-903 P3-E follow-up: canonical parent 기반 조회
+        const frameElements = await db.elements.getDescendants(
           selectedReusableFrameId,
         );
 
@@ -236,8 +236,8 @@ export function FramesTab({
     async (frameId: string) => {
       try {
         const db = await getDB();
-        // ADR-903 P3-D 진입 전: getByLayout bridge 유지
-        const frameElements = await db.elements.getByLayout(frameId);
+        // ADR-903 P3-E follow-up: canonical parent 기반 조회
+        const frameElements = await db.elements.getDescendants(frameId);
 
         mergeElements(frameElements);
         loadedFrameIdsRef.current.add(frameId);
