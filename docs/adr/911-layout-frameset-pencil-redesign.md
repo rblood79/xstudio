@@ -123,6 +123,14 @@ In Progress — 2026-04-26 → 2026-04-27
   - **결정 분기 3건 권고**: D1=A (`el.layout_id === frameId` 매칭, ADR-903 P3-E E-6 검증 패턴), D2=B (신규 `collectVisibleFrameRoots`, P3-α/β 의 domain 분리 패턴 일관), D3=A (`bodyPagePositions` 단일 맵 통합, renderCommands 시그니처 미변경)
   - 권고 채택 시 P3-δ 본격 land 비용 재산정 = **~1d (HIGH 2d 의 lower bound)** — inventory 가 진입 위험 50% 감소
   - design breakdown §4.6 사전 land — 다음 세션에서 D1/D2/D3 사용자 승인 후 즉시 진입 가능
+- **2026-04-28 (세션 47 후속)**: **P3-δ land — Skia render 통합 (D1=A / D2=B / D3=A 채택, Gate G3-δ 진입)**
+  - 변경 5 파일 + test 신규: `rendererInput.ts` (framePositions/Version/frameAreas 필드 추가) / `visibleFrameRoots.ts` 신규 / `skiaFramePipeline.ts` (rootElementIds + bodyPagePositions 단일 맵 병합) / `renderCommands.ts` (cache key 4중 → 5중, framePositionsVersion 추가) / `BuilderCanvas.tsx` (framePositions/Version selector + computeFrameAreas useMemo + createSkiaRendererInput 인자 통합)
+  - **D1=A 채택**: `el.layout_id === frameId` + `parent_id` 가 body type 인 element 만 frame body 후보 (slot 등 내부 자식 false negative). ADR-903 P3-E E-6 검증 패턴 + 단순 fallback
+  - **D2=B 채택**: 신규 `collectVisibleFrameRoots(rendererInput): {rootElementIds, bodyPagePositions}` — `collectVisiblePageRoots` 와 동일 shape, caller 가 spread 병합
+  - **D3=A 채택**: `bodyPagePositions` 단일 맵 통합 — `buildRenderCommandStream` 시그니처 미변경
+  - 검증: `visibleFrameRoots.test.ts` 6/6 PASS (frameAreas 비어있음 / layout_id 매칭 / framePositions miss fallback / element 부재 silent skip / 다중 frame / body 가 아닌 parent 제외) + canvas/ 광역 vitest 14 파일 180/180 PASS (회귀 0) + type-check 3/3 PASS
+  - **Gate G3-δ (a) 충족 path 확보** — frame body 가 root list 진입 → DFS 그려짐. 시각 검증은 Chrome MCP 사용자 시나리오 (P3-ζ) 에서 수행
+  - 잔여: P3-ε hit-test/drag/selection (1.5d MED) + P3-ζ Chrome MCP 회귀 검증 (0.5d LOW)
 
 ## Context
 

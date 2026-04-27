@@ -48,6 +48,7 @@ import {
 } from "./skiaFrameHelpers";
 import { recordWasmMetric } from "../utils/gpuProfilerCore";
 import { collectVisiblePageRoots } from "./visiblePageRoots";
+import { collectVisibleFrameRoots } from "./visibleFrameRoots";
 
 // ============================================
 // Content Build — 입력/출력 타입
@@ -226,8 +227,18 @@ function buildViaCommandStream(
     process.env.NODE_ENV === "development" ? performance.now() : 0;
 
   const layoutVersion = getSharedLayoutVersion();
-  const { rootElementIds, bodyPagePositions } =
-    collectVisiblePageRoots(rendererInput);
+  // ADR-911 P3-δ (D2=B): page + frame root 병합. 두 collection 결과를 단일 맵으로
+  // 통합 (D3=A) 하여 buildRenderCommandStream 시그니처 미변경.
+  const pageResult = collectVisiblePageRoots(rendererInput);
+  const frameResult = collectVisibleFrameRoots(rendererInput);
+  const rootElementIds = [
+    ...pageResult.rootElementIds,
+    ...frameResult.rootElementIds,
+  ];
+  const bodyPagePositions = {
+    ...pageResult.bodyPagePositions,
+    ...frameResult.bodyPagePositions,
+  };
 
   // Fix 1: filteredChildrenMap 사용 (layoutMap과 동일 트리 소스)
   const filteredChildIds = getSharedFilteredChildrenMap();
@@ -254,6 +265,7 @@ function buildViaCommandStream(
     bodyPagePositions,
     registryVersion,
     pagePosVersion,
+    rendererInput.framePositionsVersion,
     layoutVersion,
   );
 

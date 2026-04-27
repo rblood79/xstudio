@@ -61,6 +61,7 @@ import {
   computeWorkflowEdges,
   computeDataSourceEdges,
   computeLayoutGroups,
+  computeFrameAreas,
   type WorkflowElementInput,
 } from "./skia/workflowEdges";
 
@@ -233,6 +234,12 @@ export function BuilderCanvas({
   const initializePagePositions = useStore(
     (state) => state.initializePagePositions,
   );
+
+  // ADR-911 P3-δ: reusable frame canvas authoring 시각 path
+  const framePositions = useStore((state) => state.framePositions);
+  const framePositionsVersion = useStore(
+    (state) => state.framePositionsVersion,
+  );
   const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
   const previousLayoutKeyRef = useRef(
     `${pageWidth}:${pageHeight}:${pageLayoutDirection}`,
@@ -359,6 +366,16 @@ export function BuilderCanvas({
     const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
     return computeLayoutGroups(pages, layouts, doc);
   }, [pages, layouts]);
+
+  // ADR-911 P3-δ (B): canonical reusable frame 별 캔버스 영역 그룹.
+  // selector cache 함정 회피 — useMemo 안에서 useStore.getState() 호출.
+  // deps 에 elementsMap 포함 (selectCanonicalDocument 가 elements 소비).
+  const frameAreas = useMemo(() => {
+    const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
+    return computeFrameAreas(doc, framePositions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, layouts, elementsMap, framePositions, framePositionsVersion]);
+
   const skiaRendererInput = useMemo(() => {
     return createSkiaRendererInput({
       childrenMap,
@@ -370,6 +387,9 @@ export function BuilderCanvas({
       pagePositionsVersion,
       pages,
       sceneSnapshot,
+      framePositions,
+      framePositionsVersion,
+      frameAreas,
     });
   }, [
     childrenMap,
@@ -381,6 +401,9 @@ export function BuilderCanvas({
     pagePositionsVersion,
     pages,
     sceneSnapshot,
+    framePositions,
+    framePositionsVersion,
+    frameAreas,
   ]);
 
   const screenToCanvasPoint = useCallback(
