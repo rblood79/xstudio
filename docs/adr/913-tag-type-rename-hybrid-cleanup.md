@@ -2,7 +2,22 @@
 
 ## Status
 
-Proposed — 2026-04-26
+In Progress — 2026-04-26 → 2026-04-27
+
+### 진행 로그
+
+- **2026-04-26**: Proposed (세션 35 마감)
+- **2026-04-27 (세션 36)**: Phase 0-α 진입 — `unified.types.ts` 7 legacy fields `@deprecated` 마킹 (commit `d716da4e`)
+- **2026-04-27 (세션 37)**: **Phase 1 + Phase 2 main land** (PR #250, commit `cad82b02`)
+  - Phase 1 (Type 정의 8 file) + Phase 2 (mechanical rename ~140 file) 통합 진행
+  - IDB adapter `normalizeLegacyElement` read-through compat helper 추가 (P4 까지 backward compat)
+  - 변경 규모: 243 files / +2302 / -2034
+  - 검증: type-check 0 / specs 322/322 / shared 72/72 / builder 4 failed (baseline 동일 — ADR-913 회귀 0)
+  - dev runtime 정상 작동 확인 (사용자 검증)
+- **잔여 Phase**:
+  - Phase 3 (Manual review) — 1d, MEDIUM risk. 146 manual ref + discriminator 306 if/switch validation
+  - Phase 4 (DB schema migration DB_VERSION 8→9) — 1.5d, **HIGH risk**. legacy `tag` row 영구 변환 + `normalizeLegacyElement` helper 제거
+  - Phase 5 (Hybrid 6 cleanup) — 2d, **HIGH risk**. masterId / componentRole / overrides / descendants / slot_name / layout_id 캐노니컬 흡수
 
 ## Context
 

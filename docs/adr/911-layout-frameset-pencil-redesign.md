@@ -2,7 +2,18 @@
 
 ## Status
 
-Proposed — 2026-04-26
+In Progress — 2026-04-26 → 2026-04-27
+
+### 진행 로그
+
+- **2026-04-26 (세션 35)**: Proposed. Phase 0 ~ 4 sub-budget 작성, design breakdown 발행 (843줄)
+- **2026-04-27 (세션 36)**: Phase 1 함수 layer 완결 — `convertTemplateToCanonicalFrame` / `flattenTemplateElements` / `buildDescendantsFromSlots` / `hoistLayoutAsReusableFrame` / `dryRunMigrationP911` / `applyMigrationP911` (vitest 45/45 PASS, commits batch in PR #249 + `f4047af1`)
+- **2026-04-27 (세션 37)**: Phase 2 진입 — **PR-A: frameActions canonical wrapper + FRAMES_TAB_CANONICAL feature flag**
+  - `apps/builder/src/builder/stores/utils/frameActions.ts` 신규 — `createReusableFrame` / `deleteReusableFrame` / `updateReusableFrameName` / `selectReusableFrame` (legacy `useLayoutsStore` wrapping, P3 이후 직접 canonical mutation 으로 전환)
+  - `apps/builder/src/utils/featureFlags.ts` — `isFramesTabCanonical()` + `framesTabCanonical` 필드 추가 (default `false`, dual-mode 운영용)
+  - vitest 7/7 PASS / type-check 0
+  - **scope 보호**: FramesTab.tsx 미수정 — 기존 동작 0 변화. PR-A 는 baseline 확장만
+- **잔여 Phase 2 sub-PR**: PR-B (FramesTab wrapper consumer 전환) / PR-C (read path canonical 전환 + selector cache 함정 회피) / PR-D (FrameList/FrameDetails/SlotList 분리) / PR-E (PageLayoutSelector + dev migration trigger + dual-mode flag 활성화)
 
 ## Context
 

@@ -30,6 +30,8 @@ export interface FeatureFlags {
   renderMode: RenderMode;
   /** React Query Devtools 활성화 */
   enableReactQueryDevtools: boolean;
+  /** FramesTab canonical-native 모드 (ADR-911 P2) */
+  framesTabCanonical: boolean;
 }
 
 // ============================================
@@ -151,6 +153,22 @@ export function isReactQueryDevtoolsEnabled(): boolean {
 }
 
 /**
+ * FramesTab canonical-native 모드 활성화 여부 (ADR-911 P2).
+ *
+ * `true` 일 때 FramesTab 의 frame 목록 read 가 `selectCanonicalDocument` 기반
+ * canonical projection 으로 동작. `false` 일 때 legacy `useLayoutsStore.layouts[]`
+ * direct read 유지 (PR-A baseline 보호).
+ *
+ * 기본값 `false` — PR-B (FramesTab read path 전환) 진입 시 dual-mode 운영 후
+ * 1주 issue 0 확인 시 true 로 전환 (P2-d).
+ *
+ * @returns true if FramesTab canonical-native read 활성화
+ */
+export function isFramesTabCanonical(): boolean {
+  return parseBoolean(import.meta.env.VITE_FRAMES_TAB_CANONICAL, false);
+}
+
+/**
  * 모든 Feature Flags 조회
  *
  * @returns 현재 Feature Flags 상태
@@ -171,6 +189,10 @@ export function getFeatureFlags(): FeatureFlags {
     renderMode: "skia" as RenderMode,
     enableReactQueryDevtools: parseBoolean(
       import.meta.env.VITE_ENABLE_REACT_QUERY_DEVTOOLS,
+      false,
+    ),
+    framesTabCanonical: parseBoolean(
+      import.meta.env.VITE_FRAMES_TAB_CANONICAL,
       false,
     ),
   };

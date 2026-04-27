@@ -5,6 +5,69 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-A — frameActions canonical wrapper + FRAMES_TAB_CANONICAL flag — 세션 37 후반] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 2 진입 — PR-A: canonical-shaped frame CRUD wrapper layer**:
+  - `apps/builder/src/builder/stores/utils/frameActions.ts` 신규 — `createReusableFrame` / `deleteReusableFrame` / `updateReusableFrameName` / `selectReusableFrame` 4 함수
+  - 내부 구현: legacy `useLayoutsStore.getState()` 호출 wrapping. `selectCanonicalDocument` adapter 가 자동으로 reusable FrameNode 로 reverse-projection (P3 이후 직접 canonical document mutation 으로 전환)
+  - **Why**: Phase 2 design breakdown 12h 추정 작업의 selectCanonicalDocument 매 render 호출 비용 + zustand selector cache 함정 (memory: `feedback-zustand-selector-cache.md`) 회피용 5-PR 보수 분할 첫 단계. PR-A 는 baseline-safe (FramesTab 미수정) → 후속 PR-B 부터 점진 transition
+  - vitest 7/7 PASS / type-check 0
+  - 위치: `apps/builder/src/builder/stores/utils/frameActions.ts` (신규) + `apps/builder/src/builder/stores/utils/__tests__/frameActions.test.ts` (신규)
+
+### Features
+
+- **FramesTab canonical-native 모드 feature flag 도입** (`isFramesTabCanonical()`):
+  - `VITE_FRAMES_TAB_CANONICAL` 환경변수 기반, default `false`
+  - `FeatureFlags` interface 에 `framesTabCanonical: boolean` 필드 추가
+  - **Why**: ADR-911 P2 dual-mode 운영 토대. 후속 PR-C/D 진입 시 read path 분기 제어. 1주 dual-mode 운영 후 issue 0 확인 시 `true` 로 전환
+  - 위치: `apps/builder/src/utils/featureFlags.ts:57-59` (interface) / `:154-167` (`isFramesTabCanonical` 함수) / `:191-194` (getFeatureFlags 통합)
+
+### Documentation
+
+- **ADR-911 진행 로그 + design breakdown sub-PR 분할 명시**:
+  - `docs/adr/911-layout-frameset-pencil-redesign.md` Status: `Proposed` → `In Progress`. 진행 로그 3 entry 추가 (세션 35 Proposed / 세션 36 Phase 1 함수 / 세션 37 Phase 2 PR-A)
+  - `docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md` P2 Step 분해 표를 5-PR 분할 (A: 본 PR / B: FramesTab consumer / C: read path / D: UI 분리 / E: PageLayoutSelector + dev migration / G: cutover) 로 보강
+
+## [ADR-913 P1+P2 mechanical rename — Element.tag → Element.type — 세션 37 마감] - 2026-04-27
+
+### Architecture
+
+- **ADR-913 Phase 1+2 main land** (PR #250, commit `cad82b02`):
+  - Element.tag → Element.type — pencil format 정합 단계
+  - **Phase 1 (Type 정의)**: 8 file 직접 rename — Element / PreviewElement / KitElement / MasterComponentSummary / ElementTreeItem / RuntimeElement / BuilderContext.elements[] / NestedSelectorChild
+  - **Phase 2 (Mechanical rename)**: ~140 file
+    - ast-grep `.tag` access 559+ → `.type`
+    - ast-grep `tag: $X` interface/object property
+    - node.js batch (`\btag\b` → `type`) source 106 file + test 22 file
+    - destructure / shorthand object property 광범위 정리
+  - **Read-through compat**: IDB adapter 4 read method 에 `normalizeLegacyElement(el)` helper 추가 — legacy `tag` field 보유 row 자동 정규화. P4 (DB_VERSION 9) 까지 backward compat
+  - **Why**: ADR-913 design `Phase 1 (0.5d) + Phase 2 (1d) = 1.5d` 추정 작업을 단일 세션 내 완결. mechanical rename 의 ROI ≫ 점진적 진행 (consumer 558 ref 모두 동시 변환 필요)
+  - 변경 규모: 243 files / +2302 / -2034
+  - 위치: `apps/builder/src/types/builder/unified.types.ts` + `packages/shared/src/types/element.types.ts` + `apps/builder/src/lib/db/indexedDB/adapter.ts` (read-through helper)
+
+### Bug Fixes
+
+- **ADR-913 P1+P2 적용 후 dev runtime error fix** (사용자 dev 검증으로 발견):
+  - 증상: `buildSceneIndex.ts:21 Uncaught TypeError: Cannot read properties of undefined (reading 'toLowerCase')`
+  - **Why**: IDB 의 element row 가 v0.9 legacy schema (`tag` field 만 보유). code 는 모두 `el.type` 만 사용 → `undefined.toLowerCase()` 발생
+  - 수정: IDB adapter 의 `getByPage` / `getByLayout` / `getChildren` / `getAll` 4 read method 에 `normalizeLegacyElement(el)` 적용. `el.type ?? el.tag` 자동 fallback
+  - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts:36-46` (helper 정의), `:757-797` (4 read method 적용)
+
+### Documentation
+
+- **ADR-913 P1+P2 design 정합화 + main land 진행 로그**:
+  - PR #250 검증 결과: type-check 0 errors / specs 322/322 PASS / shared 72/72 PASS / builder 4 failed (baseline 동일 — ADR-913 회귀 0건 확정 via worktree 격리 비교)
+  - 잔여 `tag` 보존 4 file: `LegacyProjectDataV09.elements.tag` (v0.9 export schema) / `supabase.types.ts elements.Row.tag` (DB column, P4 까지) / `i18n/types.ts` (i18n key 무관) / `AddElementAction.config.tag` (event action discriminator nested path)
+
+### Infrastructure
+
+- **stale local branch 13 정리** (사용자 명시 승인):
+  - 머지된 11개: `adr-903-p3d-componentspanel-layout-filter` / `adr-911-terminology-pencil-standard` / `claude/refactor-directory-structure-...` / `feat/adr-910-phase1-themes-adapter` / `feat/adr100-css3-extensions` / `feature/adr-059-phase-4-1` / `fix-canonical-doc-infinite-loop` / `refactor/react-stately-integration` / `worktree-agent-*` 7개
+  - 미머지 2개 (강제): `claude/reverent-lewin` (xstudio 옛이름 docs) / `history` (옛 history feature) / `worktree-agent-a1fe9e930098c061e` (ADR-903 P3-E plan, 변경사항 main 흡수 완료)
+  - 결과: local branch 14 → 1 (`main` only)
+
 ## [ADR-911 Phase 1 함수 layer 진입 + Terminology 보정 + ADR-913 inventory + P1-c dangling cleanup fix — 세션 36 마감] - 2026-04-27
 
 ### Bug Fixes
