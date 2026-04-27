@@ -1764,20 +1764,20 @@ export function createDefaultDivProps(): DivElementProps {
 }
 
 export function createDefaultBodyProps(): DivElementProps {
-  // ADR-902 후속: 리터럴 hex 대신 CSS var 를 직접 저장. 3 consumer 동작:
-  // - Skia: BodySpec (TAG_SPEC_MAP 등록) 가 buildSpecNodeData 경로로 담당 →
-  //   style.backgroundColor 미사용, Spec TokenRef ({color.base}) 가 theme resolve.
-  // - Preview DOM: document.body.style.backgroundColor = "var(--bg)" → CSS cascade 로
-  //   theme-aware (BODY_THEME_MAP 하드코딩 불필요).
-  // - Publish DOM: 동일 — 브라우저가 CSS var 해석 → theme-aware (publish CSS 변수 scope 의존).
-  // normalizeExternalFillIngress.migrateBackgroundColor 는 "var(" prefix 를 skip 하므로
-  // fills auto-migrate 안 일어남 → 리터럴 유지 + Spec 경로와 무충돌.
+  // ADR-109 D2: backgroundColor / color CSS var 리터럴 제거. className "react-aria-Body"
+  // 자동 주입으로 BodySpec generated CSS (.react-aria-Body { background: var(--bg); color: var(--fg); })
+  // 가 theme 적용을 담당. 3 consumer 동작:
+  // - Skia: BodySpec (TAG_SPEC_MAP 등록) 가 buildSpecNodeData 경로로 담당 → Spec TokenRef
+  //   ({color.base} / {color.neutral}) 가 theme resolve.
+  // - Preview DOM: App.tsx 가 props.className "react-aria-Body" 를 document.body 에 주입 →
+  //   generated CSS rule 로 theme-aware (CSS cascade).
+  // - Publish DOM: useBodyElement(elements) hook 이 react-aria-Body className + props.style 을
+  //   document.body 에 주입 → 동일 generated CSS rule 적용.
   return {
+    className: "react-aria-Body",
     style: {
       display: "block",
       fontFamily: `"Pretendard", "Inter Variable", monospace, system-ui, sans-serif`,
-      color: "var(--fg)",
-      backgroundColor: "var(--bg)",
       overflow: "auto",
     },
   };

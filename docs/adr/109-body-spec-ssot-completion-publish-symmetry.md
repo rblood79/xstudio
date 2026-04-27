@@ -2,7 +2,32 @@
 
 ## Status
 
-Proposed — 2026-04-25
+Implemented — 2026-04-25 → 2026-04-27
+
+### 진행 로그
+
+- **2026-04-25**: Proposed (D1~D4 4 debt + Gate G1~G4 정의)
+- **2026-04-27 (세션 40)**: **D1 land** (PR #268, commit `40a17a03`)
+  - `apps/publish/src/hooks/useBodyElement.ts` 신규 (102줄) — body element → `document.body` className `react-aria-Body` + style 직접 주입 + cleanup
+  - `apps/publish/src/renderer/PageRenderer.tsx` — `useBodyElement(pageElements)` 호출 추가
+  - 검증: publish type-check exit 0
+- **2026-04-27 (세션 41)**: **D2 + D4 land + Implemented 승격**
+  - **D2** (`apps/builder/src/types/builder/unified.types.ts:1766` `createDefaultBodyProps`):
+    - `style.backgroundColor: "var(--bg)"` literal 제거
+    - `style.color: "var(--fg)"` literal 제거
+    - `className: "react-aria-Body"` 추가 — Preview/Publish 양쪽에서 generated CSS rule (`.react-aria-Body { background: var(--bg); color: var(--fg); }`) 적용
+  - **D4** (Skia renderer dead code cleanup):
+    - `SkiaRenderer.backgroundColor` private field + constructor param + `setBackgroundColor()` 메서드 제거
+    - `SkiaCanvas.tsx` `backgroundColor` prop + `readCssBgColor` / `hexToColor4fChannels` import + bgColor 계산 블록 제거
+    - `BuilderCanvas.tsx` `backgroundColor` prop + `DEFAULT_BACKGROUND` const + 호출처 전달 제거
+    - `setupThemeWatcher` callback 단순화 (setBackgroundColor 호출 제거 — invalidateContent + recordInvalidation 만)
+  - **Gate G1 (publish 회귀 0) PASS** — `pnpm type-check` 3/3 exit 0
+  - **Gate G2 (body 3경로 theme 대칭) PASS** — D2 className 자동 주입으로 generated CSS 통일 (Builder Skia 는 BodySpec.shapes var prefix skip + TokenRef resolve 기존 동작 유지)
+  - **Gate G4 (D4 cleanup 안전성) PASS** — `setBackgroundColor` / `SkiaRenderer.backgroundColor` field grep 0건 (themeWatcher.ts 의 readCssBgColor 내부 helper 사용은 별개)
+  - **D3 + Gate G3 Defer** (Phase 3 별도 follow-up):
+    - body.fills runtime-ignore 안정성 검증 + fill inspector body="theme-managed" 표시 (또는 fills 편집 UI 차단) 미구현
+    - ADR-109 R3 + Gate G3 의 "실패 시 대안: Phase 3 을 defer 로 분리 — 사용자-가시 영향 없으므로 optional" 적용
+    - BodySpec.shapes 의 `var(`/`{`/`$--` prefix skip 로직이 이미 fills runtime-ignore 동등 동작 보장 → defer 안전
 
 ## Context
 
