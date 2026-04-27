@@ -15,11 +15,13 @@ import {
   snapshotVariablesFromTokens,
   snapshotUserDefinedVariables,
   readCanonicalVariables,
+  resolveCanonicalVariable,
   type ResolvedTokenMap,
 } from "../variablesAdapter";
 import { legacyToCanonical } from "../index";
 import { convertComponentRole } from "../componentRoleAdapter";
 import { convertPageLayout } from "../slotAndLayoutAdapter";
+import { resolveToken } from "@composition/specs";
 import type { CompositionDocument } from "@composition/shared";
 
 const deps = { convertComponentRole, convertPageLayout };
@@ -255,5 +257,142 @@ describe("legacyToCanonical + getVariables (ADR-910 Phase 1)", () => {
       },
     );
     expect(doc.version).toBe("composition-1.0");
+  });
+});
+
+// ─────────────────────────────────────────────
+// Phase 2 ts-3.2 — resolveCanonicalVariable (resolver)
+// ─────────────────────────────────────────────
+describe("resolveCanonicalVariable (ADR-910 Phase 2 ts-3.2)", () => {
+  function buildDocWithVariables(
+    tokens: ResolvedTokenMap,
+  ): CompositionDocument {
+    return {
+      version: "composition-1.0",
+      variables: snapshotVariablesFromTokens(tokens),
+      children: [],
+    };
+  }
+
+  it("TC-R1: TokenRef 형식 일치 시 doc.variables 의 value 를 반환한다", () => {
+    const doc = buildDocWithVariables({
+      "color.accent": "#0070f3",
+      "color.base": "#ffffff",
+    });
+
+    expect(resolveCanonicalVariable("{color.accent}", doc)).toBe("#0070f3");
+    expect(resolveCanonicalVariable("{color.base}", doc)).toBe("#ffffff");
+  });
+
+  it("TC-R2: number / boolean 값도 정확히 lookup 한다 (snapshot type 보존)", () => {
+    const doc = buildDocWithVariables({
+      "size.borderRadius": 4,
+      "feature.darkModeEnabled": true,
+    });
+
+    expect(resolveCanonicalVariable("{size.borderRadius}", doc)).toBe(4);
+    expect(resolveCanonicalVariable("{feature.darkModeEnabled}", doc)).toBe(
+      true,
+    );
+  });
+
+  it("TC-R3: doc.variables 미존재 시 undefined 반환 (BC)", () => {
+    const doc: CompositionDocument = {
+      version: "composition-1.0",
+      children: [],
+    };
+    expect(resolveCanonicalVariable("{color.accent}", doc)).toBeUndefined();
+  });
+
+  it("TC-R4: 매칭되는 key 없으면 undefined 반환", () => {
+    const doc = buildDocWithVariables({ "color.accent": "#0070f3" });
+    expect(resolveCanonicalVariable("{color.unknown}", doc)).toBeUndefined();
+  });
+
+  it("TC-R5: invalid TokenRef 형식 (괄호 없음 / category 누락) → undefined", () => {
+    const doc = buildDocWithVariables({ "color.accent": "#0070f3" });
+
+    expect(resolveCanonicalVariable("invalid", doc)).toBeUndefined();
+    expect(resolveCanonicalVariable("{color}", doc)).toBeUndefined();
+    expect(resolveCanonicalVariable("color.accent", doc)).toBeUndefined();
+    expect(resolveCanonicalVariable("", doc)).toBeUndefined();
+  });
+
+  it("TC-R6: name 에 hyphen 포함된 TokenRef 도 정확히 lookup (예: color.accent-hover)", () => {
+    const doc = buildDocWithVariables({
+      "color.accent-hover": "#0050b3",
+      "color.layer-1": "#fafafa",
+    });
+
+    expect(resolveCanonicalVariable("{color.accent-hover}", doc)).toBe(
+      "#0050b3",
+    );
+    expect(resolveCanonicalVariable("{color.layer-1}", doc)).toBe("#fafafa");
+  });
+
+  // ─────────────────────────────────────────────
+  // Gate G-B contract: tokenResolver 와 동일 값 반환
+  // ─────────────────────────────────────────────
+  it("TC-R7: Gate G-B — light theme 에서 resolveToken 결과로 빌드된 doc 은 동일 값 반환", () => {
+    // tokenResolver.resolveToken(ref, "light") 결과를 그대로 ResolvedTokenMap 으로 직렬화
+    const refs = [
+      "{color.accent}",
+      "{color.base}",
+      "{color.layer-1}",
+      "{color.transparent}",
+    ] as const;
+
+    const tokens: ResolvedTokenMap = {};
+    for (const ref of refs) {
+      const match = ref.match(/^\{(\w+)\.(.+)\}$/);
+      if (!match) continue;
+      const [, category, name] = match;
+      const value = resolveToken(ref, "light");
+      tokens[`${category}.${name}`] = value;
+    }
+
+    const doc = buildDocWithVariables(tokens);
+
+    // 모든 ref 에 대해 resolveCanonicalVariable === resolveToken(ref, "light")
+    for (const ref of refs) {
+      const fromDoc = resolveCanonicalVariable(ref, doc);
+      const fromResolver = resolveToken(ref, "light");
+      expect(fromDoc).toBe(fromResolver);
+    }
+  });
+
+  it("TC-R8: Gate G-B — dark theme 으로 빌드된 doc 도 동일 contract 충족", () => {
+    const refs = ["{color.accent}", "{color.base}", "{color.layer-1}"] as const;
+
+    const tokens: ResolvedTokenMap = {};
+    for (const ref of refs) {
+      const match = ref.match(/^\{(\w+)\.(.+)\}$/);
+      if (!match) continue;
+      const [, category, name] = match;
+      tokens[`${category}.${name}`] = resolveToken(ref, "dark");
+    }
+
+    const doc = buildDocWithVariables(tokens);
+
+    for (const ref of refs) {
+      const fromDoc = resolveCanonicalVariable(ref, doc);
+      const fromResolver = resolveToken(ref, "dark");
+      expect(fromDoc).toBe(fromResolver);
+    }
+  });
+
+  it("TC-R9: legacyToCanonical 결과 doc 으로 resolver 통합 — getVariables + resolve round-trip", () => {
+    const tokens: ResolvedTokenMap = {
+      "color.accent": "#0070f3",
+      "size.borderRadius": 4,
+    };
+
+    const doc = legacyToCanonical(
+      { elements: [], pages: [], layouts: [] },
+      { ...deps, getVariables: () => tokens },
+    );
+
+    expect(resolveCanonicalVariable("{color.accent}", doc)).toBe("#0070f3");
+    expect(resolveCanonicalVariable("{size.borderRadius}", doc)).toBe(4);
   });
 });

@@ -52,6 +52,9 @@ import {
 // ADR-910 Phase 2 ts-3.1: applyCanonicalThemes re-export (BuilderCore entry 용)
 export { applyCanonicalThemes } from "./themesAdapter";
 export type { ThemeConfigSetters } from "./themesAdapter";
+
+// ADR-910 Phase 2 ts-3.2: resolveCanonicalVariable re-export (consumer 용)
+export { resolveCanonicalVariable } from "./variablesAdapter";
 import {
   snapshotVariablesFromTokens,
   type ResolvedTokenMap,
