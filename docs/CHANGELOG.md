@@ -5,6 +5,21 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 P2 회귀 수정 #2 — canonical legacyProps id 누락으로 자식 있는 컴포넌트 미렌더] - 2026-04-27
+
+### Bug Fixes
+
+- **자식 element 가 있는 컴포넌트 (ToggleButtonGroup, InlineAlert 등) Preview 미렌더 회귀**:
+  - 사용자 보고: ToggleButtonGroup 전체 미렌더 / InlineAlert container 만 렌더 / ListBox 정상 (자식 0). 새 빈 프로젝트에서도 동일 재현
+  - **Why**: `legacyToCanonical` 의 metadata 가 `legacyProps: element.props` 만 보존하고 **element top-level fields** (`id` / `parent_id` / `page_id` / `layout_id` / `order_num` / `fills`) **미주입**. `CanonicalNodeRenderer` 의 `legacyUuid = legacyProps.id ?? node.id` fallback 이 canonical path-id (segId) 사용 → shared renderer 의 `childrenMap.get(element.id)` lookup 시 자식 element 의 `parent_id` (원본 UUID) 와 mismatch → 자식 0 lookup → `renderInlineAlert` 가 빈 children 으로 div 렌더 / `renderToggleButtonGroup` 의 RAC `ToggleButtonGroup` 이 invariant 로 throw → 전체 null. 자식 0 인 ListBox 는 mismatch 영향 0
+  - **Root cause 확정 evidence** (Builder dev console): ToggleButtonGroup `id='e77bbf03'` + 자식 ToggleButton x3 `parent_id='e77bbf03'` 정확 매칭 (Builder store 정상). 미렌더 원인 = Preview canonical 변환 단계의 element top-level fields 손실
+  - 수정: 3 위치 metadata.legacyProps 에 element top-level fields 명시 spread:
+    - `apps/builder/src/adapters/canonical/index.ts:164` (`convertElementToCanonical` 본체)
+    - `apps/builder/src/adapters/canonical/slotAndLayoutAdapter.ts:257` (`convertElementToCanonical` slot adapter)
+    - `apps/builder/src/adapters/canonical/slotAndLayoutAdapter.ts:313` (`convertElementWithSlotHoisting`)
+  - 검증: `pnpm type-check` 3/3 exit 0
+  - **ADR-911 monitoring 카운터 reset 권장 (2번째)** — 본 fix land 시점부터 새 1주 (~2026-05-04+ 추가 연장). PR #271 fix 후 1차 reset, 본 fix 후 2차 reset
+
 ## [ADR-911 P2 회귀 수정 — 복합 컴포넌트 등록 시 page_id 미주입으로 화면 누락] - 2026-04-27
 
 ### Bug Fixes
