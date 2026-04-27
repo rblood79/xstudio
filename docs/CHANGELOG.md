@@ -5,17 +5,34 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 3 frame canvas authoring fundamental 결함 발견 + design breakdown land] - 2026-04-28
+
+### Documentation
+
+- **ADR-911 Phase 3 신규 sub-phase 발견** — frame canvas authoring 시각 path 미구현 결함 본문 진행 로그 + design breakdown land:
+  - **사용자 회귀 보고**: FramesTab → 새 Frame 추가 → Layout preset 적용 시 Skia 캔버스에 영역 구분 slot 들이 시각화되지 않음
+  - **Chrome MCP 측정 evidence**: `pagePositions: {234dc7c9: {x:0, y:0}}` (page 1개만, frame 좌표 0건) + `editingContextId: null` + `childrenMap.root` 에 frame body 들이 root 자식이지만 viewport 외부
+  - **Cutover 의 의미**: ADR-911 cutover commit `7b6f4eb9` = `featureFlags` default true flip 만 (4 file / 38/-8 라인, 실 logic 0건). frame canvas authoring 시각 path 는 dual-mode 시절부터 미구현 — **ADR-911 fundamental 미완성** 노출
+  - **Gate G2 (시각 회귀 0) 위반 확정** — Phase 2 closure 5단계 체크리스트 보류. monitoring 6일 대기 framing 무의미 (사용자 결정: monitoring 종결 의미 없음)
+  - **본 세션 land**: design breakdown 신규 sub-phase 만 — `docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md`. P3-α (`framePositions` map) → P3-β (`computeLayoutGroups` 확장) → P3-γ (`editingContextId` 갱신) → P3-δ (Skia render path 통합) → P3-ε (hit-test/drag/selection) → P3-ζ (Chrome MCP 회귀 검증). 본격 fix 는 별도 세션 (1주+ HIGH)
+  - **ADR-912 prerequisite 관계 명시**: 본 P3 가 base render → ADR-912 시각 마커는 위에 land
+  - 위치: `docs/adr/911-layout-frameset-pencil-redesign.md` (진행 로그 entry) + `docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md` (신규)
+
+### Known Issues
+
+- **Frame body 시각화 미구현** — FramesTab 에서 Frame 추가 + Layout preset 적용 시 Skia 캔버스에 영역 구분 slot 들이 표시되지 않음. LayerTree + Inspector 는 정상 표시 (본 세션 ADR-903 P3-E follow-up fix 로 정상화). Skia 캔버스 시각화는 ADR-911 Phase 3 (frame canvas authoring) 본격 land 후 해소 예정 (~1주+ HIGH)
+
 ## [ADR-903 P3-E follow-up — `getByLayout` 7 caller canonical 마이그레이션 (slot 미렌더 회귀 fix)] - 2026-04-28
 
 ### Bug Fixes
 
-- **Layout/Frame 자식 element 가 Skia 캔버스에 미렌더되던 시각 회귀 fix** (ADR-903 P3-E follow-up):
-  - 사용자 dev 환경에서 layout preset 선택 시 영역 구분 slot 들이 Skia 화면에 보이지 않음
-  - **Why**: ADR-903 P3-E E-6 의 `getByLayout` canonical strict 가 composition-1.0 schemaVersion 1건이라도 있으면 빈 배열 반환하여 caller migration 압박했으나, 7 live caller (`BuilderCore.tsx:283` / `FramesTab.tsx:146,240` / `dashboard/index.tsx:381` / `utils/projectSync.ts:219` / `usePageManager.ts:207` / `PageLayoutSelector.tsx:109`) 가 마이그레이션되지 않은 채 ADR-903 Implemented 종결 → Frame 선택 / Layout preset 적용 / 페이지 로드 path 에서 element 미로드 → bounds map 부재 → Skia 무시
-  - **Fix**: `adapter.ts` 신규 API `getDescendants(parentId)` 추가 (BFS `parent_id` index 재귀 + 순환 참조 방지 seen Set) + `types.ts` 인터페이스 시그니처 추가 + 7 caller 일괄 `getByLayout(layoutId)` → `getDescendants(layoutId)` 교체. canonical-pre-1.0 / 1.0 / 1.1 schema 모두 동일 결과 보장
-  - 검증: type-check 3/3 PASS (FULL TURBO) + Builder dev runtime store evidence (Slot 3 등록 확증, Skia 시각화 사용자 dev 검증 권장)
+- **Layout/Frame 자식 element store 로드 path 회귀 fix** (ADR-903 P3-E follow-up):
+  - 사용자 dev 환경에서 layout preset 선택 시 영역 구분 slot 들이 Skia 화면에 보이지 않음 (Layer 1 결함 — store/LayerTree 부분만 본 fix 로 해소. Skia 캔버스 base render 는 ADR-911 P3 별도 영역 — `[ADR-911 P3]` entry 참조)
+  - **Why**: ADR-903 P3-E E-6 의 `getByLayout` canonical strict 가 composition-1.0 schemaVersion 1건이라도 있으면 빈 배열 반환하여 caller migration 압박했으나, 7 live caller (`BuilderCore.tsx:283` / `FramesTab.tsx:146,240` / `dashboard/index.tsx:381` / `utils/projectSync.ts:219` / `usePageManager.ts:207` / `PageLayoutSelector.tsx:109`) 가 마이그레이션되지 않은 채 ADR-903 Implemented 종결 → Frame 선택 / Layout preset 적용 / 페이지 로드 path 에서 element 미로드 → LayerTree 미표시 + Inspector LayoutPresetSelector 미표시
+  - **Fix**: `adapter.ts` 신규 API `getDescendants(parentId)` 추가 (BFS `parent_id` index 재귀 + 순환 참조 방지 seen Set + composition-pre-1.0 legacy `layout_id` index fallback) + `types.ts` 인터페이스 시그니처 추가 + 7 caller 일괄 `getByLayout(layoutId)` → `getDescendants(layoutId)` 교체. composition-pre-1.0 / 1.0 / 1.1 schema 모두 동일 결과 보장
+  - 검증: type-check 3/3 PASS (FULL TURBO) + Builder dev runtime store evidence (elements_total 1 → 4 로 Frame body+2 Slots 정상 로드 + LayerTree 표시 + Inspector LayoutPresetSelector "수직 2단/3단 적용됨" 표시 확증)
   - **ADR framing 정정**: 본 회귀가 ADR-911 monitoring 차단으로 인식됐으나 실제는 ADR-903 P3-E caller migration 잔존 작업 — ADR-911 frame.children 정규화와 schema 직교. ADR-913 Step 4-4 의 "ADR-911 monitoring 후" marker 도 schema 직교성 재검토 가능
-  - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts` + `apps/builder/src/lib/db/types.ts` + 5 caller 파일
+  - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts` + `apps/builder/src/lib/db/types.ts` + 5 caller 파일 (commits `1f732be3` + `f299d373`)
 
 ## [ADR-910 Implemented — Canonical `themes`/`variables` 필드 Land Plan 전체 종결] - 2026-04-27
 

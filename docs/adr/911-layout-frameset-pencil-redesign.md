@@ -83,6 +83,19 @@ In Progress — 2026-04-26 → 2026-04-27
   - monitoring 종결 (~2026-05-04+) 후 즉시 Implemented 승격 가능하도록 사전 작성
   - Step 1 (Status + 진행 로그 entry) / Step 2 (CHANGELOG entry) / Step 3 (README 갱신, partial Implemented 패턴) / Step 4 (본문 archive 보류, Phase 3+4+5 진행 중) / Step 5 (reference link 정합 보류)
   - ADR-109 partial Implemented 사례 답습 — Phase 전체 land 가 아닌 핵심 Gate (G2) 충족 시 partial Implemented 승격 가능
+- **2026-04-28 (세션 46)**: **Phase 3 fundamental 결함 발견 — frame canvas authoring 시각 path 미구현 + monitoring 종결 framing 정정**
+  - **사용자 회귀 보고**: FramesTab → 새 Frame 추가 → Layout preset 적용 시 Skia 캔버스에 영역 구분 slot 들이 시각화되지 않음
+  - Chrome MCP evidence (Builder dev runtime, 세션 46):
+    - `pagePositions: { 234dc7c9: { x: 0, y: 0 } }` — page 1개만 등록 / **frame body 좌표 0건**
+    - `editingContextId: null` — frame editing context 진입 path 자체 없음
+    - elementsMap 에 frame body (id=91c01890, layout=f49ac75d) + 2 Slots 정상 등록되지만 캔버스 viewport 외부
+    - `childrenMap.root = [page body, Frame 1 body, Frame 2 body]` — frame body 가 root 자식이지만 page 캔버스 viewport 밖
+    - opt D 검증: page.layout_id orphan reference 정정 (`17344067 → f49ac75d`) 후에도 pagePositions 미갱신 — page-frame 연결만으로 시각화 미발생 확정
+  - **결함 위치**: ADR-911 cutover commit `7b6f4eb9` 가 단순 `featureFlags` default flip (4 file / 38/-8 라인, 실 logic 0건) — frame canvas authoring 시각 path 는 dual-mode 시절부터 미구현. cutover 의 회귀가 아니라 **ADR-911 자체의 fundamental 미완성**
+  - **Gate G2 (시각 회귀 0) 위반 확정** — Phase 2 closure 5단계 체크리스트는 보류. monitoring 6일 대기 framing 무의미 (사용자 결정: monitoring 종결 의미 없음, fix 가 본질)
+  - **본 세션 진행**: design breakdown 신규 sub-phase land 만 (`docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md`). 본격 fix (1주+ HIGH) 는 별도 세션
+  - **scope 분리**: 본 결함 = frame body **base render** (영역 자체 캔버스 표시) — ADR-911 의 P3 신규 sub-phase. ADR-912 의 시각 마커 (reusable/ref/override 표식) 는 본 base render 위에 land 가능 — prerequisite 관계
+  - **본 세션 보너스 fix**: ADR-903 P3-E follow-up — `getByLayout` 7 caller canonical 마이그레이션 (`1f732be3`) + composition-pre-1.0 legacy fallback (`f299d373`). LayerTree + Inspector 정상화 ✅ / Skia 캔버스 시각화는 본 P3 작업 후
 
 ## Context
 
