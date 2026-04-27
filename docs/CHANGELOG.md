@@ -5,6 +5,25 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-E4 — cutover (canonical mode default true) — 세션 37 후반] - 2026-04-27
+
+### Breaking Changes
+
+- **FramesTab + PageLayoutSelector 의 frame 목록 read path 가 canonical projection 으로 default 전환** (ADR-911 Phase 2 cutover):
+  - `apps/builder/src/utils/featureFlags.ts::isFramesTabCanonical()` default `false → true`
+  - 영향: 빌더 `Frames` 탭 / `PageLayoutSelector` 가 `selectCanonicalDocument` projection 의 reusable FrameNode 를 read source 로 사용. 기존 `useLayoutsStore.layouts[]` direct read 는 환경변수 override 시에만 활성화
+  - **rollback 경로**: `VITE_FRAMES_TAB_CANONICAL=false` 환경변수 설정 → emergency 시 legacy path 복구
+  - **사용자 가시 차이**: frame 목록 표시 source 가 canonical document 의 `reusable: true` FrameNode 로 통일 (id 정규화 `metadata.layoutId` 경유). write 경로는 legacy `createLayout`/`deleteLayout`/`pages.update(layout_id)` 그대로 — 데이터 손실 위험 없음
+  - **Why**: PR-A~E3 (8 PRs main land + 156 vitest 회귀 안전망 + dev migration trigger) 토대 위에서 cutover 진행. P3-D (canonical document write API) 진입 전 read 정합화 완료로 향후 cascade 재작성 시 read path 변경 0
+
+### Architecture
+
+- **ADR-911 Phase 2 PR-E4 — cutover 단일 변경**:
+  - `featureFlags.ts` 의 `isFramesTabCanonical()` 1줄 변경 (default `false → true`) + `getFeatureFlags()` 동시 갱신
+  - vitest 영향 0 — `FramesTab.test.tsx` / `PageLayoutSelector` 등 모두 `mockIsFramesTabCanonical` 명시 mock 으로 분기 검증
+  - 검증: type-check 0 / 156/156 vitest PASS (FramesTab 33 + frameActions 7 + migrationP911 45 + canonical adapters 71)
+  - **monitoring 단계**: 1주 사용자 issue report 0건 확인 후 ADR-911 Phase 2 Status: `In Progress` → `Phase 2 Implemented` 승격. 잔여 Phase 3-5 (P3 cascade 재작성 / P4 DB schema migration / P5 hybrid 6 cleanup) 는 본 ADR 의 후속 phase 로 분리 진행
+
 ## [ADR-911 Phase 2 PR-E3 — dev-only canonical migration trigger — 세션 37 후반] - 2026-04-27
 
 ### Features
