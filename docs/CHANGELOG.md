@@ -5,6 +5,48 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-910 Implemented — Canonical `themes`/`variables` 필드 Land Plan 전체 종결] - 2026-04-27
+
+### Architecture
+
+- **ADR-910 Phase 2 Write-through Activation 전원 통과 + Status `Accepted → Implemented`** — Phase 1 G-A (read-only snapshot adapter) 위에 write-through + resolver + round-trip + 시각 회귀 0 검증 통합:
+  - **ts-3.1** themes write-through adapter — `applyCanonicalThemes(doc, setters): boolean` 신설 + `ThemeConfigSetters` DI interface (test 친화 + R4 stale 방지) + BuilderCore initialize 종료 entry (env flag `VITE_ADR910_P2_THEMES_WRITE_THROUGH` 게이트, rollback 경로). 6 신규 tests (TC-A1~A6, round-trip + 멱등 + BC + R4 잘못된 구조 무동작)
+  - 위치: `apps/builder/src/adapters/canonical/themesAdapter.ts` + `BuilderCore.tsx` + `themes.test.ts`
+  - **ts-3.2** variables resolver — `resolveCanonicalVariable(ref, doc): string | number | boolean | undefined` 신설. TokenRef pattern `{category.name}` parsing (tokenResolver.ts 와 동일 정규식, hyphen name 허용). 9 신규 tests (TC-R1~R9 — 기본 lookup / number+boolean / BC / invalid / hyphen name / **Gate G-B (b) light+dark contract** — `resolveToken(ref, theme)` ↔ `resolveCanonicalVariable(ref, doc)` 동일 값)
+  - 위치: `apps/builder/src/adapters/canonical/variablesAdapter.ts` + `variables.test.ts`
+  - **ts-3.3** round-trip 통합 — themes + variables 동시 round-trip 검증 (legacyToCanonical → apply + resolve → re-snapshot 1차==2차 동일). 4 신규 tests (TC-RT1~RT4 — 동시 / 멱등 / 한쪽만 주입 BC / Gate G-B 통합 pipeline)
+  - 위치: `apps/builder/src/adapters/canonical/__tests__/integration.test.ts`
+  - **ts-3.4** Chrome MCP dev runtime 시각 회귀 검증 — Builder Skia canvas 2562×1768 (HiDPI 2x, WebGL2) + DOM 정상 (Header/workspace/panel) + CSS 토큰 정상 (`--bg`, `--fg`, `--accent`, `--tint`, `--border`) + error overlay 0 + 페이지 reload 후 동일. **env flag 미설정 → Phase 1 read-only 동작 유지 BC** + flag 활성화 시 `selectCanonicalDocument` 가 themes 미주입 → `applyCanonicalThemes` false 반환 → 무동작 → **시각 회귀 0**. Gate G-B (c) 충족
+  - **ts-3.5** feature flag rollback 경로 — `VITE_ADR910_P2_THEMES_WRITE_THROUGH` (ts-3.1 land 시 동시 적용)
+  - **Why**: ADR-903 §3.10 phase 미명시 gap 해소. `themes`(ADR-021 Tint/dark mode) + `variables`(ADR-022 TokenRef) 가 canonical document 정합 SSOT 구조로 land — D3 시각 domain 의 read/write/resolve 3축 양방향 변환 보장
+  - **Closure 5단계** 모두 완료: Status Implemented + 본 ADR 본문 진행 로그 + README 완료 102→103/미구현 8→7 + 본문 `docs/adr/910-* → docs/adr/completed/910-*` archive + reference link path 정합화 (903 본문 line 118/119 `../910-` → `910-`, design breakdown ts-3.4 ✅ + G-B (c) ✅)
+- 검증: type-check 3/3 PASS (FULL TURBO) + canonical adapter vitest 111/111 (themes 18 + variables 23 + integration 47 + 기타 23) + db 142/142 PASS
+
+### Infrastructure
+
+- 본 ADR-910 동일 세션 land 흐름이 ADR-913 Phase 4 Step 4-1~4-3 (DB_VERSION 9 + tag→type dry-run + entry 연결) 와 영향 영역 비교집합 0 으로 병행 가능함을 입증 — ADR-910 design breakdown 의 회피 사항 ("ts-3.2 와 Step 4-2 동시 진행 금지") 는 실 영향 영역 충돌 시점에만 적용으로 정정
+
+## [ADR-913 Phase 4 Step 4-1+4-2+4-3 — DB_VERSION 8→9 schema bump + runTagTypeMigration dry-run + usePageManager entry] - 2026-04-27
+
+### Architecture
+
+- **ADR-913 Phase 4 READ-ONLY 3 단계 main land** — DB schema 변환 prep. dryRun=true 고정으로 DB 무변경:
+  - **Step 4-1** IndexedDB DB_VERSION 8 → 9 schema bump (no schema change — `tag` index 미존재). `MetaRecord.schemaVersion` enum 에 `"composition-1.1"` 추가 (composition-1.0 = tag 기반 / composition-1.1 = type 기반). `metaStore.test.ts` test 1 갱신. **비파괴**: 기존 프로젝트 (composition-1.0) read-through 유지 — schemaVersion 단계 추적 (legacy → composition-1.0 ADR-903 P3-E → composition-1.1 ADR-913 P4)
+  - 위치: `apps/builder/src/lib/db/indexedDB/adapter.ts` + `types.ts` + `__tests__/metaStore.test.ts`
+  - **Step 4-2** 신규 파일 `apps/builder/src/lib/db/migrationTagType.ts` 분리 (ADR-903 P3-E `runLegacyToCanonicalMigration` 과 독립 schema 차원 — 책임 분리). `transformElementTagToType(el)` pure transformer (tag-only → rename / type-only → no-op / 둘 다 → type 우선 + tag 제거 / 둘 다 missing → orphan error) + `runTagTypeMigration(adapter, projectId, { dryRun=true })` (composition-1.1 already-migrated → skipped, `createMigrationBackup` 호출 fallback 안전망, `elements.getAll()` read-only → transformations 결과 반환, `dryRun=false` → throw 안내). 16 신규 tests (TC-T1~T5 transformer + TC-M1~M11 integration, **50 fixture round-trip 포함**)
+  - 위치: `apps/builder/src/lib/db/migrationTagType.ts` + `__tests__/migrationTagType.test.ts`
+  - **Step 4-3** `usePageManager.initializeProject` 의 P3-E migration 호출 직후에 `runTagTypeMigration(db, projectId, { dryRun: true })` 추가. 진입 조건: `metaRecord` 미존재 또는 `schemaVersion ∈ {legacy, composition-1.0}`. dev console 로그 — skipped/일반/transformedCount > 0 시 `${N} elements need tag→type migration`. try/catch graceful degrade (BC)
+  - 위치: `apps/builder/src/builder/hooks/usePageManager.ts`
+  - **Why**: Step 4-4 (write-through, env flag `VITE_ADR913_P4_WRITE_THROUGH`) 진입 전 측정 인프라 사전 land — ADR-911 monitoring 종결 (~2026-05-04) 후 즉시 활성화 가능
+- 검증: type-check 3/3 PASS + db 영역 vitest 142/142 PASS (기존 126 + 신규 16) + usePageManager.canonical 회귀 0
+- **잔여 Phase 4 단계**: Step 4-4 (write-through, ADR-911 monitoring 종결 후) / Step 4-5 (`normalizeLegacyElement` helper 제거, write-through 1주+ 안정 + composition-1.1 비율 ≥ 95% 후) / Step 4-6 (Phase 4 종결)
+
+### Documentation
+
+- ADR-913 Status `Proposed → In Progress` 갱신 (README + 본 ADR 본문 진행 로그)
+- ADR-910 design breakdown — Phase 2 sub-step 표 5단계 (ts-3.1~3.5) ✅/미진입 + commit 해시 + 검증 결과
+- ADR-913 design breakdown — §"Sub-step 진행 상태" 표 신설 (4-1~4-6) + 본문 4-1/4-2/4-3 ✅ marker + Land 시 design 변경점 명시 (실 entry 위치 = `usePageManager.ts`, 실 산출 파일 = `migrationTagType.ts`)
+
 ## [ADR-913 Phase 3 manual review 종결 — `tag → type` rename 회귀 0 확증] - 2026-04-27
 
 ### Architecture
