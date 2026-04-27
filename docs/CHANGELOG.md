@@ -5,6 +5,27 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-E1 — PageLayoutSelector dual-mode read 전환 — 세션 37 후반] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 2 PR-E1 — PageLayoutSelector dual-mode read 전환** (functional 동등):
+  - `apps/builder/src/builder/panels/properties/editors/PageLayoutSelector.tsx`
+    - `isFramesTabCanonical()` flag 기반 dual-mode read path 도입 (PR-C FramesTab 패턴 동일)
+      - **legacy path** (default false): `useLayouts()` 결과 그대로 사용
+      - **canonical path** (true): `selectCanonicalDocument(state, pages, layouts).children.filter(reusable: true).map(...)` — `metadata.layoutId` 로 id 정규화하여 legacy `page.layout_id` 와 정합
+    - `reusableFrames` useMemo 도입 — selector cache 함정 회피 (`useStore.getState()` 호출, deps `[layouts, pages, elementsMap]`)
+    - `currentLayout` / `layoutOptions` / `layouts.length === 0` 가드 모두 `reusableFrames` 단일 source 기반으로 통일
+    - write (`handleLayoutChange`) 는 legacy 그대로 — `pages.update(layout_id)` 직접 호출. P3-D 이후 canonical document mutation (RefNode.ref 변경) 으로 전환
+  - **Why**: PR-C 에서 FramesTab read 를 canonical 로 전환했지만, PageLayoutSelector 는 여전히 legacy `useLayouts()` 직접 소비 → flag 활성화 시 두 컴포넌트의 frame 표시 mismatch 가능. PR-E1 이 그 정합성 복구. PR-E4 cutover (`VITE_FRAMES_TAB_CANONICAL=true` default) 시 두 컴포넌트가 동일 source 사용 보장
+  - 검증: type-check 0 / FramesTab 33/33 회귀 0 / canonical adapters 78/78 회귀 0
+
+### Bug Fixes
+
+- **canonical mode 에서 PageLayoutSelector description 회귀 방지** (PR-E1 동반):
+  - `apps/builder/src/adapters/canonical/slotAndLayoutAdapter.ts::convertLayoutToReusableFrame` 의 `metadata` 에 `description: layout.description ?? null` 보존 추가
+  - **Why**: legacy `Layout.description` 은 PageLayoutSelector 의 "Using <name> frame" + description 표시에 사용. canonical projection 시 description 미보존 → flag 활성화 시 description UI 사라짐 회귀. metadata 에 보존하여 양 mode 시각 동일 유지
+
 ## [ADR-911 Phase 2 PR-D2 — FrameElementTree 컴포넌트 분리 — 세션 37 후반] - 2026-04-27
 
 ### Architecture

@@ -34,13 +34,21 @@ In Progress — 2026-04-26 → 2026-04-27
   - `__tests__/FrameList.test.tsx` 신규 (6 시나리오: 빈 / 2개 렌더 / active 클래스 / Add / Select / Delete + stopPropagation)
   - 검증: vitest 14/14 PASS (FrameList 6 + FramesTab 8) / frameActions 7/7 (회귀 0) / type-check 0
   - **Why**: 프레젠테이션 분리 — 데이터 source (legacy/canonical) 결정과 frame CRUD 로직은 부모 책임, FrameList 는 props 기반 결정적 UI 만 담당. PR-E 진입 시 동일 컴포넌트 재사용 가능
-- **2026-04-27 (세션 37 후속)**: **PR-D2: FrameElementTree 컴포넌트 분리** (functional 동등, PR pending)
+- **2026-04-27 (세션 37 후속)**: **PR-D2: FrameElementTree 컴포넌트 분리** (functional 동등, PR #255 / `604b11f3`)
   - `FrameElementTree.tsx` 신규 — Layers 헤더 + Collapse All 버튼 + tree 렌더 + placeholder. `renderFrameTree` 함수 흡수. props: `tree` / `frameId` / `selectedElementId` / `expandedKeys` / `toggleKey` / `onCollapseAll` / `onElementClick` / `onElementDelete`
   - `FramesTab.tsx` 의 `renderFrameTree` (135 lines) + `sidebar_elements` JSX (35 lines) → `<FrameElementTree>` 호출 (15 lines). lucide icons (`Minimize`/`ChevronRight`/`Box`/`Trash`/`Settings2`) + `iconProps` + `ElementTreeItem` import 제거
   - `__tests__/FrameElementTree.test.tsx` 신규 (12 시나리오): placeholder 2 (frameId null / tree 빈) / tree 렌더 5 (1-level / Slot 명명 / nested expanded / nested collapsed / active) / interactions 5 (element click + frameId 매핑 / Delete + stopPropagation / body Settings / ChevronRight toggle / Collapse All)
   - 검증: vitest 33/33 PASS (FrameList 6 + FrameElementTree 12 + FramesTab 8 + frameActions 7) / type-check 0
   - **Why**: FramesTab 이 orchestrator 역할만 남도록 UI 책임 완전 분리. `renderFrameTree` 가 더 이상 `useCallback` 으로 부모 hook deps 에 묶이지 않아 메모이제이션 부담 감소. PR-E 진입 시 `<FrameElementTree>` 가 page-bound element tree 같은 다른 consumer 에 재사용 가능
-- **잔여 Phase 2 sub-PR**: PR-E (PageLayoutSelector + dev migration trigger + dual-mode flag 활성화) — Phase 2 cutover 마지막 단계
+- **2026-04-27 (세션 37 후속)**: **PR-E1: PageLayoutSelector dual-mode read 전환** (functional 동등, PR pending)
+  - `PageLayoutSelector.tsx` 의 read path 를 PR-C FramesTab 패턴 동일하게 dual-mode 전환 — `isFramesTabCanonical()` flag 분기
+    - **legacy path** (default false): `useLayouts()` hook 결과 그대로 사용
+    - **canonical path** (true): `selectCanonicalDocument(state, pages, layouts).children.filter(reusable: true)` — `metadata.layoutId` 로 id 정규화하여 legacy `page.layout_id` 와 정합 유지
+  - **selector cache 함정 회피**: useMemo 안에서 `useStore.getState()` 호출. deps: `[layouts, pages, elementsMap]`
+  - `slotAndLayoutAdapter.convertLayoutToReusableFrame` 의 `metadata` 에 `description` 보존 추가 — canonical mode 에서 PageLayoutSelector 의 description 표시 회귀 방지
+  - write (`handleLayoutChange`) 는 그대로 — `pages.update(layout_id)` legacy 직접 호출. P3-D 이후 canonical document mutation (RefNode.ref 변경) 으로 전환
+  - 검증: type-check 0 / FramesTab 33/33 회귀 0 / canonical adapters 78/78 회귀 0
+- **잔여 Phase 2 sub-PR**: PR-E2 (`usePresetApply.ts` canonical mutation) / PR-E3 (dev migration trigger + Chrome MCP P1-c roundtrip) / PR-E4 (1주 dual-mode + cutover, default flag true 전환)
 
 ## Context
 
