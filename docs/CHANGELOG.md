@@ -5,6 +5,27 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-B — FramesTab consumer → frameActions 위임 — 세션 37 후반] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 2 PR-B — FramesTab.tsx 가 frameActions wrapper 위임으로 전환** (functional 동등):
+  - `handleAddFrame` → `createReusableFrame({ name, projectId })` 호출
+  - `handleDeleteFrame` → `deleteReusableFrame(frameId)` 호출
+  - `handleSelectFrame` → `selectReusableFrame(frameId)` 호출 (legacy `setCurrentLayout` 직접 destructure 제거)
+  - 핸들러 시그니처 단순화: `(frame: Layout)` → `(frameId: string)` — 내부 정합화 (`frame.id` 만 사용하던 패턴 명시)
+  - 제거: `Layout` 타입 import / `useLayoutsStore` 의 `setCurrentLayout` / `createLayout` / `deleteLayout` 직접 destructure
+  - 유지: `useLayoutsStore.layouts[]` read (PR-C 에서 canonical 전환 예정) / `fetchLayouts` mount effect / `useSelectedReusableFrameId`
+  - **Why**: PR-A 에서 도입한 frameActions wrapper 의 첫 consumer 실증. legacy bridge 호출은 wrapper 내부로 격리 → P3 cascade 재작성 시 단일 진입점만 변경하면 됨
+  - 검증: type-check 0 / FramesTab 자체 vitest 부재 → PR-A frameActions 7/7 vitest 가 wrapper 행위 보장 (functional 동등)
+  - 위치: `apps/builder/src/builder/panels/nodes/FramesTab/FramesTab.tsx`
+
+### Documentation
+
+- **ADR-911 진행 로그 + sub-PR 분할 표 갱신**:
+  - `docs/adr/911-layout-frameset-pencil-redesign.md` 진행 로그에 PR-B entry 추가 (handler 시그니처 변경 명시)
+  - `docs/adr/design/911-layout-frameset-pencil-redesign-breakdown.md` PR-B 상태 `후속 세션` → `✅ 2026-04-27 (PR pending)`
+
 ## [ADR-911 Phase 2 PR-A — frameActions canonical wrapper + FRAMES_TAB_CANONICAL flag — 세션 37 후반] - 2026-04-27
 
 ### Architecture

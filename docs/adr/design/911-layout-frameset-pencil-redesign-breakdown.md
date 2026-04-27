@@ -440,14 +440,14 @@ const handleDevMigrate = useCallback(async () => {
 
 총 12h 배분. **2026-04-27 세션 37 진입 시 5-PR 보수 분할 채택** — selectCanonicalDocument 매 render 호출 비용 + zustand selector cache 함정 (memory: `feedback-zustand-selector-cache.md`) 회피용:
 
-| Sub-PR | 내용                                                                                             | Step 매핑        | 상태                      |
-| ------ | ------------------------------------------------------------------------------------------------ | ---------------- | ------------------------- |
-| **A**  | `frameActions.ts` skeleton (legacy wrapper) + `isFramesTabCanonical()` flag 추가 (default false) | P2-a 부분 + P2-d | ✅ 2026-04-27 (커밋 예정) |
-| **B**  | `FramesTab.handleAddFrame/handleDeleteFrame` → `frameActions` 위임 (functional 동등)             | P2-a 잔여        | 후속 세션                 |
-| **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                 | P2-a 잔여        | 후속 세션                 |
-| **D**  | `FrameList` / `FrameDetails` / `SlotList` 컴포넌트 분리                                          | P2-b             | 후속 세션                 |
-| **E**  | `PageLayoutSelector` 재작성 + `usePresetApply` canonical mutation + dev migration trigger        | P2-c + P2-e      | 후속 세션                 |
-| **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                  | P2-f + P2-g      | 후속 세션                 |
+| Sub-PR | 내용                                                                                                   | Step 매핑        | 상태                                 |
+| ------ | ------------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------ |
+| **A**  | `frameActions.ts` skeleton (legacy wrapper) + `isFramesTabCanonical()` flag 추가 (default false)       | P2-a 부분 + P2-d | ✅ 2026-04-27 main land (`e9e388ca`) |
+| **B**  | `FramesTab.handleAddFrame/handleDeleteFrame/handleSelectFrame` → `frameActions` 위임 (functional 동등) | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
+| **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                       | P2-a 잔여        | 후속 세션                            |
+| **D**  | `FrameList` / `FrameDetails` / `SlotList` 컴포넌트 분리                                                | P2-b             | 후속 세션                            |
+| **E**  | `PageLayoutSelector` 재작성 + `usePresetApply` canonical mutation + dev migration trigger              | P2-c + P2-e      | 후속 세션                            |
+| **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                        | P2-f + P2-g      | 후속 세션                            |
 
 | Step       | 내용                                                                                                                      | 시간 | RED/GREEN 사이클                                                                                     |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------- | :--: | ---------------------------------------------------------------------------------------------------- |
