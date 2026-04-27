@@ -5,6 +5,26 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-D — FrameList 컴포넌트 분리 — 세션 37 후반] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 2 PR-D — FrameList 프레젠테이션 컴포넌트 추출** (functional 동등):
+  - `apps/builder/src/builder/panels/nodes/FramesTab/FrameList.tsx` 신규 (108 lines)
+    - props: `frames` / `selectedFrameId` / `onSelect` / `onDelete` / `onAdd`
+    - 책임: frame 목록 + Add 버튼 + Delete 버튼 (Box icon + name + active 표시) + stopPropagation
+  - `FramesTab.tsx` 의 `sidebar_layouts` JSX 영역 (62 lines) → `<FrameList>` 컴포넌트 호출 (8 lines) 로 교체
+  - 미사용 `CirclePlus` lucide import 제거
+  - **Why**: 데이터 source (legacy/canonical) 결정과 frame CRUD 로직은 부모 (FramesTab) 책임, FrameList 는 props 기반 결정적 UI 만 담당. PR-E (PageLayoutSelector — RefNode.ref 선택 UI) 가 동일 FrameList 컴포넌트 재사용 가능. PR-D2 (FrameElementTree 분리) 진입 시 FramesTab 의 책임이 orchestrator 만 남음
+  - 검증: vitest 14/14 PASS (FrameList 6 + FramesTab 8) / frameActions 7/7 (회귀 0) / type-check 0
+
+### Infrastructure
+
+- **FrameList vitest 신규** (6 시나리오):
+  - `__tests__/FrameList.test.tsx` — 프레젠테이션 단위 테스트 (mock 0 — props 순수 함수)
+  - 시나리오: 빈 frames → "No frames available" / 2개 렌더 → 이름 표시 / `selectedFrameId` 매칭 → active 클래스 / Add 클릭 → onAdd / Frame 클릭 → onSelect(id) / Delete 클릭 → onDelete(id) + onSelect 미호출 (stopPropagation)
+  - **Why**: 컴포넌트 분리 시점에 결정적 UI 계약을 잠금. PR-E 에서 다른 consumer (PageLayoutSelector 등) 가 같은 props 인터페이스로 재사용 시 회귀 즉시 감지
+
 ## [ADR-911 Phase 2 PR-C — FramesTab read path canonical 전환 (TDD RED→GREEN) — 세션 37 후반] - 2026-04-27
 
 ### Architecture

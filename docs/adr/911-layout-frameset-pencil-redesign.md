@@ -21,14 +21,20 @@ In Progress — 2026-04-26 → 2026-04-27
   - type-check 0 / FramesTab 자체 vitest 부재 → PR-A frameActions 7/7 vitest 로 wrapper 행위 검증 (functional 동등 보장)
 - **2026-04-27 (세션 37 후속)**: **PR-Followup-A: FramesTab 컴포넌트 vitest baseline 잠금** (PR #252 / `7ccb86a0`)
   - 5 시나리오: 빈 frames / 2개 렌더 / Add / Select(id) / Delete + stopPropagation. mock 9 모듈
-- **2026-04-27 (세션 37 후속)**: **PR-C: FramesTab read path canonical 전환** (TDD RED → GREEN, PR pending)
+- **2026-04-27 (세션 37 후속)**: **PR-C: FramesTab read path canonical 전환** (TDD RED → GREEN, PR #253 / `e9be92e4`)
   - `FramesTab.tsx` 에 `reusableFrames` useMemo 도입 — `isFramesTabCanonical()` flag 분기로 dual-mode read
     - **legacy path** (default false): `layouts.map(l => ({ id: l.id, name: l.name }))`
     - **canonical path** (true): `selectCanonicalDocument(state, pages, layouts).children.filter(reusable: true).map(...)` — `metadata.layoutId` (legacyToCanonical 보존) 으로 id 정규화 → legacy CRUD 와 정합
   - **selector cache 함정 회피** (memory: `feedback-zustand-selector-cache.md`): useMemo 안에서 `useStore.getState()` 호출. selector 등록 안 함. deps: `[layouts, pages, elementsMap]`
   - `currentFrame` / `handleAddFrame.layouts.length+1` / `handleDeleteFrame.remaining` / JSX `layouts.map → reusableFrames.map` 모두 `reusableFrames` 기반으로 통일
   - vitest 8/8 PASS (5 legacy baseline + 3 canonical mode: 목록 표시 / non-frame 필터 / id 정규화) + type-check 0 + frameActions 회귀 0
-- **잔여 Phase 2 sub-PR**: PR-D (FrameList/FrameDetails/SlotList 분리) / PR-E (PageLayoutSelector + dev migration trigger + dual-mode flag 활성화)
+- **2026-04-27 (세션 37 후속)**: **PR-D: FrameList 컴포넌트 분리** (functional 동등, PR pending)
+  - `FrameList.tsx` 신규 — frame 목록 + Add/Delete 버튼 (props: `frames` / `selectedFrameId` / `onSelect` / `onDelete` / `onAdd`)
+  - `FramesTab.tsx` 의 `sidebar_layouts` JSX 영역 (62 lines) 을 `<FrameList>` 컴포넌트로 교체. `CirclePlus` import 제거
+  - `__tests__/FrameList.test.tsx` 신규 (6 시나리오: 빈 / 2개 렌더 / active 클래스 / Add / Select / Delete + stopPropagation)
+  - 검증: vitest 14/14 PASS (FrameList 6 + FramesTab 8) / frameActions 7/7 (회귀 0) / type-check 0
+  - **Why**: 프레젠테이션 분리 — 데이터 source (legacy/canonical) 결정과 frame CRUD 로직은 부모 책임, FrameList 는 props 기반 결정적 UI 만 담당. PR-E 진입 시 동일 컴포넌트 재사용 가능
+- **잔여 Phase 2 sub-PR**: PR-D2 (FrameElementTree 분리, optional) / PR-E (PageLayoutSelector + dev migration trigger + dual-mode flag 활성화)
 
 ## Context
 

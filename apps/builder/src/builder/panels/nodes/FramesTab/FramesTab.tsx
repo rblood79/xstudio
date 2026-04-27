@@ -15,15 +15,9 @@
 
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import {
-  CirclePlus,
-  Minimize,
-  ChevronRight,
-  Box,
-  Trash,
-  Settings2,
-} from "lucide-react";
+import { Minimize, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
 import { iconProps } from "../../../../utils/ui/uiConstants";
+import { FrameList } from "./FrameList";
 import {
   useLayoutsStore,
   useSelectedReusableFrameId,
@@ -449,75 +443,14 @@ export function FramesTab({
       id="tabpanel-frames"
       aria-label="Frames"
     >
-      {/* Frames List */}
-      <div className="sidebar_layouts">
-        <div className="panel-header">
-          <h3 className="panel-title">Frames</h3>
-          <div className="header-actions">
-            <button
-              className="iconButton"
-              aria-label="Add Frame"
-              onClick={handleAddFrame}
-            >
-              <CirclePlus
-                color={iconProps.color}
-                strokeWidth={iconProps.strokeWidth}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-
-        <div className="elements">
-          {reusableFrames.length === 0 ? (
-            <p className="no_element">No frames available</p>
-          ) : (
-            reusableFrames.map((frame) => (
-              <div
-                key={frame.id}
-                className="element"
-                onClick={() => handleSelectFrame(frame.id)}
-              >
-                <div
-                  className={`elementItem ${
-                    currentFrame?.id === frame.id ? "active" : ""
-                  }`}
-                >
-                  <div
-                    className="elementItemIndent"
-                    style={{ width: "0px" }}
-                  ></div>
-                  <div className="elementItemIcon">
-                    <Box
-                      color={iconProps.color}
-                      strokeWidth={iconProps.strokeWidth}
-                      size={iconProps.size}
-                      style={{ padding: "2px" }}
-                    />
-                  </div>
-                  <div className="elementItemLabel">{frame.name}</div>
-                  <div className="elementItemActions">
-                    <button
-                      className="iconButton"
-                      aria-label={`Delete ${frame.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteFrame(frame.id);
-                      }}
-                    >
-                      <Trash
-                        color={iconProps.color}
-                        strokeWidth={iconProps.strokeWidth}
-                        size={iconProps.size}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      {/* Frames List — ADR-911 P2 PR-D 추출 */}
+      <FrameList
+        frames={reusableFrames}
+        selectedFrameId={currentFrame?.id ?? null}
+        onSelect={handleSelectFrame}
+        onDelete={handleDeleteFrame}
+        onAdd={handleAddFrame}
+      />
 
       {/* Frame Element Tree */}
       <div className="sidebar_elements">
