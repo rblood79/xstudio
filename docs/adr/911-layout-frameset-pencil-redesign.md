@@ -62,6 +62,23 @@ In Progress — 2026-04-26 → 2026-04-27
   - 검증: type-check 0 / 156/156 vitest PASS (FramesTab 33 + frameActions 7 + migrationP911 45 + canonical adapters 71) — vitest 는 mockState 격리로 default 변경 영향 0
   - **1주 모니터링** (사용자 issue report 0건 확인) 후 본 ADR Status: `In Progress` → `Phase 2 Implemented` 승격
 - **Phase 2 cutover 완료** — read path canonical 전환 + 컴포넌트 분리 + dev migration trigger + 모니터링 진입. 잔여 영역 (P3 cascade 재작성, P4 DB schema migration, P5 hybrid 6 cleanup) 은 본 ADR 의 Phase 3-5 로 분리 진행
+- **2026-04-27 (세션 42)**: **회귀 fix #1 — 복합 컴포넌트 page_id/layout_id 미주입** (PR #271 / `fde05cd8`)
+  - 사용자 dev 검증 시 ListBox 등록 후 화면 미렌더 + `[ADR-903] sanitizeElement: page_id/layout_id 없음` 경고
+  - **Root cause**: `createElementsFromDefinition` (factories/utils/elementCreation.ts) 가 parent + children Element 생성 시 page_id / layout_id 명시 주입 안 함. 단순 컴포넌트 경로 (`useElementCreator.ts:198`) 와 비대칭. canonical mode default true 후 `pageElementsSnapshot` / `selectCanonicalDocument` page-indexed 분기에서 누락
+  - **Fix**: `ElementCreationContext` 인터페이스 신설 + `createElementsFromDefinition(definition, context)` 시그니처 확장 + parent/children 모두에 `page_id: layoutId ? null : pageId` / `layout_id: layoutId` 명시 주입 + ComponentFactory.createComponent 호출 시 context 전달
+  - 검증: type-check 3/3 PASS / 3 files +50/-2
+  - **monitoring 카운터 1차 reset** — fix land 시점부터 새 1주 시작
+- **2026-04-27 (세션 43)**: **회귀 fix #2 — canonical legacyProps element top-level fields 미보존** (PR #272 / `ccc06b30`)
+  - fix #1 후 dev 검증 시 자식 있는 복합 컴포넌트 (ToggleButtonGroup / InlineAlert) Preview 미렌더 (ListBox 정상). 패턴: 자식 0 정상 / 자식 다수 미렌더
+  - **사용자 dev console evidence**: ToggleButtonGroup id='e77bbf03' + 자식 ToggleButton x3 parent_id='e77bbf03' 정확 매칭 (Builder store 정상). 미렌더 원인 = Preview canonical 변환 단계
+  - **Root cause**: `legacyToCanonical` 의 metadata 가 `legacyProps: element.props` 만 보존하고 element top-level fields (`id` / `parent_id` / `page_id` / `layout_id` / `order_num` / `fills`) 미주입 → `CanonicalNodeRenderer` 의 `legacyUuid = legacyProps.id ?? node.id` fallback 으로 canonical path-id (segId) 사용 → shared renderer (`renderInlineAlert` / `renderToggleButtonGroup`) 의 `childrenMap.get(element.id)` 가 segId 로 lookup → 자식의 parent_id (원본 UUID) 와 mismatch → 자식 0 lookup → InlineAlert 빈 div / ToggleButtonGroup RAC invariant throw
+  - **Fix**: 3 위치 metadata.legacyProps 에 element top-level fields 명시 spread (`{ ...element.props, id, parent_id, page_id, layout_id, order_num, fills }`)
+    - `apps/builder/src/adapters/canonical/index.ts:164` (`convertElementToCanonical` 본체)
+    - `apps/builder/src/adapters/canonical/slotAndLayoutAdapter.ts:257` (slot adapter)
+    - `apps/builder/src/adapters/canonical/slotAndLayoutAdapter.ts:313` (`convertElementWithSlotHoisting`)
+  - 검증: type-check 3/3 PASS + 사용자 dev 환경 검증 OK (ToggleButtonGroup / InlineAlert / ListBox 모두 정상 렌더)
+  - **monitoring 카운터 2차 reset** — fix #2 land 시점부터 새 1주 시작 (~2026-05-04+ 추가 연장). Phase 2 Implemented 승격 = monitoring 통과 + 추가 회귀 0 확증 시점
+  - **체크리스트 추가 권장** (Phase 3+ 진입 시): canonical adapter 의 metadata 보존 시 element top-level fields 6종 (id/parent_id/page_id/layout_id/order_num/fills) 명시 spread 의무. 신규 adapter 작성 시 동일 패턴 강제 (별도 ADR 또는 rule 명문화 후보)
 
 ## Context
 
