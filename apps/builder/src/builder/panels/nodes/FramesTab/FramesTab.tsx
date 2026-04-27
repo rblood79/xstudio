@@ -28,12 +28,16 @@ import {
   useLayoutsStore,
   useSelectedReusableFrameId,
 } from "../../../stores/layouts";
+import {
+  createReusableFrame,
+  deleteReusableFrame,
+  selectReusableFrame,
+} from "../../../stores/utils/frameActions";
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../../types/builder/stately.types";
-import type { Layout } from "../../../../types/builder/layout.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
 import { MessageService } from "../../../../utils/messaging";
 import { getDB } from "../../../../lib/db";
@@ -64,13 +68,10 @@ export function FramesTab({
   // P3-B canonical selector: selectedReusableFrameId (currentLayoutId alias 제거됨)
   const selectedReusableFrameId = useSelectedReusableFrameId();
 
-  // Legacy bridge — P3-D에서 canonical document mutation으로 교체 예정
+  // Legacy read bridge — frame 목록은 useLayoutsStore.layouts[] 직접 소비.
+  // PR-C 에서 selectCanonicalDocument 기반 read path 로 전환 예정.
+  // CRUD 는 ADR-911 P2-a frameActions wrapper (PR-A) 로 위임.
   const layouts = useLayoutsStore((state) => state.layouts);
-  const setCurrentLayoutInStore = useLayoutsStore(
-    (state) => state.setCurrentLayout,
-  );
-  const createLayout = useLayoutsStore((state) => state.createLayout);
-  const deleteLayout = useLayoutsStore((state) => state.deleteLayout);
   const fetchLayouts = useLayoutsStore((state) => state.fetchLayouts);
 
   // selectedReusableFrameId 기반 현재 프레임 조회 (legacy bridge)
@@ -337,74 +338,63 @@ export function FramesTab({
     [expandedKeys, toggleKey, selectedElementId, currentFrame?.id],
   );
 
-  // Frame 선택 핸들러
+  // Frame 선택 핸들러 — id 기반 (ADR-911 P2-a PR-B)
   const handleSelectFrame = useCallback(
-    async (frame: Layout) => {
+    async (frameId: string) => {
       try {
         const db = await getDB();
         // ADR-903 P3-D 진입 전: getByLayout bridge 유지
-        const frameElements = await db.elements.getByLayout(frame.id);
+        const frameElements = await db.elements.getByLayout(frameId);
 
         mergeElements(frameElements);
-        loadedFrameIdsRef.current.add(frame.id);
+        loadedFrameIdsRef.current.add(frameId);
 
-        // P3-B: setCurrentLayout → selectedReusableFrameId 업데이트
-        setCurrentLayoutInStore(frame.id);
-        setEditModeLayoutId(frame.id);
+        selectReusableFrame(frameId);
+        setEditModeLayoutId(frameId);
       } catch (error) {
         console.error("[FramesTab] Frame 선택 에러:", error);
-        setCurrentLayoutInStore(frame.id);
-        setEditModeLayoutId(frame.id);
+        selectReusableFrame(frameId);
+        setEditModeLayoutId(frameId);
       }
     },
-    [setCurrentLayoutInStore, setEditModeLayoutId, mergeElements],
+    [setEditModeLayoutId, mergeElements],
   );
 
-  // Frame 삭제 핸들러
+  // Frame 삭제 핸들러 — frameActions.deleteReusableFrame 위임
   const handleDeleteFrame = useCallback(
-    async (frame: Layout) => {
+    async (frameId: string) => {
       try {
-        await deleteLayout(frame.id);
-        const remaining = layouts.filter((l) => l.id !== frame.id);
+        await deleteReusableFrame(frameId);
+        const remaining = layouts.filter((l) => l.id !== frameId);
         if (remaining.length > 0) {
-          handleSelectFrame(remaining[0]);
+          handleSelectFrame(remaining[0].id);
         } else {
-          setCurrentLayoutInStore(null);
+          selectReusableFrame(null);
           setEditModeLayoutId(null);
         }
       } catch (error) {
         console.error("[FramesTab] Frame 삭제 에러:", error);
       }
     },
-    [
-      deleteLayout,
-      layouts,
-      handleSelectFrame,
-      setCurrentLayoutInStore,
-      setEditModeLayoutId,
-    ],
+    [layouts, handleSelectFrame, setEditModeLayoutId],
   );
 
-  // 새 Frame 생성 핸들러
+  // 새 Frame 생성 핸들러 — frameActions.createReusableFrame 위임
   const handleAddFrame = useCallback(async () => {
     if (!projectId) {
       console.error("[FramesTab] 프로젝트 ID가 없습니다");
       return;
     }
     try {
-      // ADR-903 P3-D 진입 전: createLayout bridge 유지
-      const newFrame = await createLayout({
+      const ref = await createReusableFrame({
         name: `Frame ${layouts.length + 1}`,
-        description: "",
-        project_id: projectId,
+        projectId,
       });
-      if (newFrame) {
-        handleSelectFrame(newFrame);
-      }
+      handleSelectFrame(ref.id);
     } catch (error) {
       console.error("[FramesTab] Frame 생성 에러:", error);
     }
-  }, [projectId, createLayout, layouts.length, handleSelectFrame]);
+  }, [projectId, layouts.length, handleSelectFrame]);
 
   // Element 삭제 핸들러
   const handleDeleteElement = useCallback(
@@ -454,7 +444,7 @@ export function FramesTab({
               <div
                 key={frame.id}
                 className="element"
-                onClick={() => handleSelectFrame(frame)}
+                onClick={() => handleSelectFrame(frame.id)}
               >
                 <div
                   className={`elementItem ${
@@ -480,7 +470,7 @@ export function FramesTab({
                       aria-label={`Delete ${frame.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteFrame(frame);
+                        handleDeleteFrame(frame.id);
                       }}
                     >
                       <Trash
