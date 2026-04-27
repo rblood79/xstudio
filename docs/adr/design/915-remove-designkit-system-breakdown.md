@@ -1,6 +1,6 @@
 # ADR-915 구현 상세 — DesignKit 시스템 제거
 
-> 본 문서는 [ADR-915](../915-remove-designkit-system.md) 의 구현 상세. 본문에는 결정/위험/Gates 만, 본 문서에는 Phase / 파일 변경표 / 체크리스트 / 검증 절차.
+> 본 문서는 [ADR-915](../completed/915-remove-designkit-system.md) 의 구현 상세. 본문에는 결정/위험/Gates 만, 본 문서에는 Phase / 파일 변경표 / 체크리스트 / 검증 절차.
 
 ## 영향 범위 inventory (제거 직전 측정)
 
