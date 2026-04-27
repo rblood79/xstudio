@@ -40,8 +40,8 @@
 │ NodesPanel     │  workspace/canvas/      │ PropertiesPanel       │
 │ ComponentsPanel│  BuilderCanvas.tsx      │ StylesPanel           │
 │ DataTablePanel │  + SkiaRenderer         │ EventsPanel           │
-│ DesignKitPanel │  + SelectionLayer       │ AIPanel               │
-│ ThemePanel     │  + TextEditOverlay      │ HistoryPanel          │
+│ ThemePanel     │  + SelectionLayer       │ AIPanel               │
+│                │  + TextEditOverlay      │ HistoryPanel          │
 │                │  + ContextualActionBar  │                       │
 │                │  + ContextMenu          │                       │
 ├────────────────┴─────────────────────────┴───────────────────────┤
