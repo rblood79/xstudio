@@ -48,7 +48,14 @@ In Progress — 2026-04-26 → 2026-04-27
   - `slotAndLayoutAdapter.convertLayoutToReusableFrame` 의 `metadata` 에 `description` 보존 추가 — canonical mode 에서 PageLayoutSelector 의 description 표시 회귀 방지
   - write (`handleLayoutChange`) 는 그대로 — `pages.update(layout_id)` legacy 직접 호출. P3-D 이후 canonical document mutation (RefNode.ref 변경) 으로 전환
   - 검증: type-check 0 / FramesTab 33/33 회귀 0 / canonical adapters 78/78 회귀 0
-- **잔여 Phase 2 sub-PR**: PR-E2 (`usePresetApply.ts` canonical mutation) / PR-E3 (dev migration trigger + Chrome MCP P1-c roundtrip) / PR-E4 (1주 dual-mode + cutover, default flag true 전환)
+- **2026-04-27 (세션 37 후속)**: **PR-E2 skip 결정** — `usePresetApply.ts` read 는 이미 `selectCanonicalDocument` 사용 (dual-mode 친화적). write (`type="Slot"` element + `addComplexElement`) 는 P3-D 의 canonical document write API 도입 후 별도 ADR 로 처리. Phase 2 cutover 에 필수 아님 (사용자 시각 차이 없음 — read level 에서만 dual-mode 분기).
+- **2026-04-27 (세션 37 후속)**: **PR-E3: dev-only canonical migration trigger** (PR pending)
+  - `FramesTab.tsx` 에 dev-only "Migrate to Canonical" 버튼 + `handleDevMigrate` handler 추가
+  - `dryRunMigrationP911(adapter, projectId, canonicalDoc)` + `applyMigrationP911(canonicalDoc, result)` (in-memory) 호출. 결과 콘솔 group 로그
+  - production 단락: `process.env.NODE_ENV === "development"` 체크. production build 영향 0
+  - **persistence 미구현**: canonical document store write API 가 없음 (P3-D 종속). Chrome MCP P1-c roundtrip dev 검증 용도만
+  - 검증: type-check 0 / FramesTab 33/33 회귀 0 / migrationP911 45/45 회귀 0 / db 전체 126/126 회귀 0
+- **잔여 Phase 2 sub-PR**: PR-E4 (1주 dual-mode + cutover, `VITE_FRAMES_TAB_CANONICAL=true` default 전환)
 
 ## Context
 
