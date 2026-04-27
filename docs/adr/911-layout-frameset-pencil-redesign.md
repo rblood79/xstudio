@@ -96,6 +96,13 @@ In Progress — 2026-04-26 → 2026-04-27
   - **본 세션 진행**: design breakdown 신규 sub-phase land 만 (`docs/adr/design/911-phase3-frame-canvas-authoring-breakdown.md`). 본격 fix (1주+ HIGH) 는 별도 세션
   - **scope 분리**: 본 결함 = frame body **base render** (영역 자체 캔버스 표시) — ADR-911 의 P3 신규 sub-phase. ADR-912 의 시각 마커 (reusable/ref/override 표식) 는 본 base render 위에 land 가능 — prerequisite 관계
   - **본 세션 보너스 fix**: ADR-903 P3-E follow-up — `getByLayout` 7 caller canonical 마이그레이션 (`1f732be3`) + composition-pre-1.0 legacy fallback (`f299d373`). LayerTree + Inspector 정상화 ✅ / Skia 캔버스 시각화는 본 P3 작업 후
+- **2026-04-28 (세션 47)**: **P3-α land — `framePositions` store 도입 (Gate G3-α PASS)**
+  - `apps/builder/src/builder/stores/elements.ts` — `framePositions: Record<string, {x, y, width, height}>` + `framePositionsVersion: number` 추가 (pagePositions 와 분리: page 는 global pageWidth/Height 공유, frame 은 width/height 개별)
+  - 신규 setter 2건: `updateFramePosition(frameId, patch)` (partial merge — drag/resize 통합) + `removeFramePosition(frameId)` (frame 삭제 cleanup, 미존재 frame 은 no-op + version 미증분)
+  - 데이터 모델 결정 = 대안 A (별도 framePositions 맵). pagePositions consumer 8곳 영향 0건, domain 분리 우선
+  - 초기 좌표 자동 init 은 P3-β (computeLayoutGroups 확장) 로 위임. P3-α 는 명시 호출 시에만 갱신
+  - vitest `framePositions.test.ts` 5/5 PASS (insert / 위치 patch / size patch / remove / no-op no-bump) + type-check 3/3 PASS
+  - **caller 0건** — Skia render path 통합은 P3-δ. 본 land 는 데이터 layer 만
 
 ## Context
 

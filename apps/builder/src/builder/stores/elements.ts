@@ -104,6 +104,14 @@ export interface ElementsState {
   pagePositions: Record<string, { x: number; y: number }>;
   pagePositionsVersion: number;
 
+  // ADR-911 P3-α: reusable frame 별 캔버스 영역 (frame canvas authoring 시각 path)
+  // pagePositions 와 분리: page 는 global pageWidth/Height 공유, frame 은 width/height 개별
+  framePositions: Record<
+    string,
+    { x: number; y: number; width: number; height: number }
+  >;
+  framePositionsVersion: number;
+
   // ADR-006 P3-1: Dirty Tracking — 레이아웃 변경 감지
   /** 레이아웃에 영향 있는 변경이 발생할 때마다 증가. useMemo 의존성에 사용. */
   layoutVersion: number;
@@ -207,6 +215,15 @@ export interface ElementsState {
     direction?: PageLayoutDirection,
   ) => void;
   updatePagePosition: (pageId: string, x: number, y: number) => void;
+
+  // ADR-911 P3-α: reusable frame 캔버스 영역 setter
+  /** frame id 의 좌표/크기 partial 갱신. 기존 entry 보존 후 patch merge. 신규 frame 은 미주입 필드를 0 으로 초기화. */
+  updateFramePosition: (
+    frameId: string,
+    patch: Partial<{ x: number; y: number; width: number; height: number }>,
+  ) => void;
+  /** frame 삭제 시 좌표 entry 정리. 미존재 frame 은 no-op. */
+  removeFramePosition: (frameId: string) => void;
 
   // 🚀 WebGL computed layout 동기화
   updateSelectedElementLayout: (
@@ -594,6 +611,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🆕 Multi-page: 페이지별 캔버스 위치
     pagePositions: {},
     pagePositionsVersion: 0,
+
+    // ADR-911 P3-α: reusable frame 캔버스 영역 초기값
+    framePositions: {},
+    framePositionsVersion: 0,
 
     // ADR-006 P3-1: Dirty Tracking 초기값
     layoutVersion: 0,
@@ -1536,6 +1557,41 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         pagePositions: { ...state.pagePositions, [pageId]: { x, y } },
         pagePositionsVersion: state.pagePositionsVersion + 1,
       }));
+    },
+
+    // ADR-911 P3-α: reusable frame 좌표/크기 갱신 (drag/resize 통합)
+    updateFramePosition: (frameId, patch) => {
+      set((state) => {
+        const prev = state.framePositions[frameId] ?? {
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+        };
+        const next = {
+          x: patch.x ?? prev.x,
+          y: patch.y ?? prev.y,
+          width: patch.width ?? prev.width,
+          height: patch.height ?? prev.height,
+        };
+        return {
+          framePositions: { ...state.framePositions, [frameId]: next },
+          framePositionsVersion: state.framePositionsVersion + 1,
+        };
+      });
+    },
+
+    // ADR-911 P3-α: reusable frame 삭제 시 좌표 entry 정리
+    removeFramePosition: (frameId) => {
+      set((state) => {
+        if (!(frameId in state.framePositions)) return state;
+        const nextPositions = { ...state.framePositions };
+        delete nextPositions[frameId];
+        return {
+          framePositions: nextPositions,
+          framePositionsVersion: state.framePositionsVersion + 1,
+        };
+      });
     },
 
     // G.1: Instance 생성 액션
