@@ -88,5 +88,6 @@ target-install/
 apps/builder/src/**/*.js
 !apps/builder/src/**/*.config.js
 
-# Git worktrees (superpowers skill)
+# Git worktrees (superpowers skill + agent isolation)
 .worktrees/
+.claude/worktrees/
