@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-27 (Phase 1 G-A 완전 PASS — `themes`/`variables` read-only snapshot adapter land. Phase 2 write-through 진입 대기로 ADR 전체 Implemented 는 보류)
+Accepted — 2026-04-27 (Phase 1 G-A 완전 PASS — `themes`/`variables` read-only snapshot adapter land. Phase 2 ts-3.1~3.3+3.5 land 완료, ts-3.4 Preview/Skia 시각 회귀 검증만 잔여로 ADR 전체 Implemented 는 보류)
 
 ## Context
 
@@ -174,6 +174,36 @@ Phase 2 land 시 Gate G-B (a)/(b)/(c) 검증:
 - (a) `themes` write-through: document 로드 시 `themes.tint`/`themes.darkMode` → `themeConfigStore` 주입 + round-trip
 - (b) `variables` resolver 통합: `resolveCanonicalVariable(ref, document)` ↔ `tokenResolver.ts` 동일 값
 - (c) Preview/Skia 양쪽 시각 회귀 0 (cross-check skill 또는 Chrome MCP 실측)
+
+### Phase 2 — Write-through Activation (In Progress 2026-04-27)
+
+**완료 영역** (ts-3.1 / ts-3.2 / ts-3.3 / ts-3.5):
+
+- ✅ **ts-3.1 — themes write-through adapter** (commit `53906e26`)
+  - `themesAdapter.ts::applyCanonicalThemes(doc, setters): boolean` 신설 + `ThemeConfigSetters` DI interface
+  - `canonical/index.ts` re-export
+  - `themes.test.ts` 신규 6 tests (TC-A1~A6) — 적용 / BC / 잘못된 구조 무동작 (R4) / round-trip / 멱등 / `legacyToCanonical` 통합
+  - `BuilderCore.tsx` initialize 종료 시점 entry — `VITE_ADR910_P2_THEMES_WRITE_THROUGH=true` 게이트
+- ✅ **ts-3.2 — variables resolver + Gate G-B (b)** (commit `0e63a807`)
+  - `variablesAdapter.ts::resolveCanonicalVariable(ref, doc): string | number | boolean | undefined`
+  - TokenRef pattern `{category.name}` parsing (`tokenResolver.ts` 와 동일 정규식, hyphen name 허용)
+  - `canonical/index.ts` re-export
+  - `variables.test.ts` 신규 9 tests (TC-R1~R9) — 기본 lookup / number+boolean / BC / invalid / hyphen name / **Gate G-B contract** (light+dark theme 양쪽에서 `resolveToken` ↔ `resolveCanonicalVariable` 동일 값) / `legacyToCanonical` 통합
+- ✅ **ts-3.3 — round-trip 통합 테스트** (commit `e99f1054`)
+  - `integration.test.ts` 신규 4 tests (TC-RT1~RT4)
+    - TC-RT1: themes + variables 동시 round-trip — `legacyToCanonical(input, { getThemeConfig, getVariables })` → `apply` + `resolve` → re-snapshot 결과 1차 snapshot 동일
+    - TC-RT2: 멱등 — 같은 doc 으로 2회 apply/resolve 결과 안정
+    - TC-RT3: 한쪽만 주입 (themes / variables / 둘 다 미주입) BC 보장
+    - TC-RT4: Gate G-B 통합 — `resolveToken` ↔ `resolveCanonicalVariable` round-trip pipeline 전체
+- ✅ **ts-3.5 — feature flag (rollback 경로)** (ts-3.1 land 시 동시 적용)
+  - `BuilderCore.tsx` 의 entry 가 `VITE_ADR910_P2_THEMES_WRITE_THROUGH` 환경 변수로 게이트
+  - flag 미설정 시 무동작 (Phase 1 read-only 동작 유지, BC)
+  - 현재 `selectCanonicalDocument` 가 themes 미주입 (caller 가 `getThemeConfig` 미전달) → entry 활성화 시에도 무동작. ADR-913 Phase 4 Step 4-2 이후 DB 직접 로드 시 doc.themes 채워지면 의미 가짐
+
+### Phase 2 진행 로그
+
+- **2026-04-27**: ts-3.1 + ts-3.2 + ts-3.3 + ts-3.5 main land. type-check 3/3 PASS + canonical adapter vitest 111/111 PASS (themes 18 + variables 23 + integration 47 + 기타 23). **Gate G-B 진행률**: (a) themes write-through round-trip ✅ + (b) variables resolver 동일 값 ✅ + (c) Preview/Skia 시각 회귀 0 — **잔여 (ts-3.4)**
+- **잔여 ts-3.4** — Preview/Skia cross-check (Chrome MCP 또는 cross-check skill) — 시각 회귀 0 검증. ADR 전체 Implemented 승격 prerequisite.
 
 ## References
 

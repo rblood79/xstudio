@@ -33,7 +33,18 @@ ADR-913 line 135 G5-E:
 
 ADR-903 P3-E 의 E-1~E-6 모델을 그대로 답습. 각 step 은 독립 commit/PR 가능 단위.
 
-### Step 4-1 — DB_VERSION bump + onupgradeneeded 분기 (READ-ONLY land)
+### Sub-step 진행 상태 (2026-04-27 기준)
+
+| Step | 산출물                                                                         |        상태        | 검증                                                                                |
+| ---- | ------------------------------------------------------------------------------ | :----------------: | ----------------------------------------------------------------------------------- |
+| 4-1  | DB_VERSION 8→9 bump + `composition-1.1` enum                                   | ✅ Land 2026-04-27 | metaStore.test.ts 5 PASS / commit `0e9b5101`                                        |
+| 4-2  | `runTagTypeMigration` dry-run (READ-ONLY)                                      | ✅ Land 2026-04-27 | `migrationTagType.test.ts` 16 PASS (50 fixture round-trip 포함) / commit `79aaf808` |
+| 4-3  | `usePageManager.initializeProject` dry-run entry 연결 (READ-ONLY)              | ✅ Land 2026-04-27 | type-check 3/3 + db 142/142 + usePageManager.canonical 회귀 0 / commit `19864dfe`   |
+| 4-4  | write-through 활성화 (`dryRun=false`, env flag `VITE_ADR913_P4_WRITE_THROUGH`) |   미진입 (HIGH)    | ADR-911 monitoring 종결 (~2026-05-04) 후 진입                                       |
+| 4-5  | `normalizeLegacyElement` helper 제거 (cutover)                                 |       미진입       | Step 4-4 land 1주+ 안정 + composition-1.1 비율 ≥ 95% 후 진입                        |
+| 4-6  | Validation + cleanup (Phase 4 종결)                                            |       미진입       | Step 4-5 land 후 진입                                                               |
+
+### Step 4-1 — DB_VERSION bump + onupgradeneeded 분기 (READ-ONLY land) — ✅ Land 2026-04-27 `0e9b5101`
 
 **산출물**:
 
@@ -50,9 +61,15 @@ ADR-903 P3-E 의 E-1~E-6 모델을 그대로 답습. 각 step 은 독립 commit/
 - `pnpm vitest run apps/builder/src/lib/db/__tests__/metaStore.test.ts` PASS
 - DB_VERSION 8 IndexedDB 가 있는 dev 환경에서 새로고침 → 9 로 자동 upgrade + status=skipped (기존 데이터 영향 0)
 
-### Step 4-2 — `runTagTypeMigration` dry-run (READ-ONLY)
+### Step 4-2 — `runTagTypeMigration` dry-run (READ-ONLY) — ✅ Land 2026-04-27 `79aaf808`
 
-**산출물** (`apps/builder/src/lib/db/migration.ts` 내 추가):
+**Land 시 변경**: design 의 `apps/builder/src/lib/db/migration.ts` 내 추가 가이드 → 실제로는 **신규 파일 `apps/builder/src/lib/db/migrationTagType.ts` 분리** (ADR-903 P3-E `runLegacyToCanonicalMigration` 과 독립 schema 차원, 책임 분리). 산출물:
+
+- `transformElementTagToType(el)` pure transformer 추출 (테스트 친화)
+- `runTagTypeMigration(adapter, projectId, { dryRun=true })` — composition-1.1 already-migrated → `skipped` / `dryRun=false` → throw (Step 4-4 미구현 안내)
+- `__tests__/migrationTagType.test.ts` 16 tests (TC-T1~T5 transformer + TC-M1~M11 integration, 50 fixture round-trip 포함)
+
+**원본 design 산출물** (`apps/builder/src/lib/db/migration.ts` 내 추가):
 
 ```ts
 export async function runTagTypeMigration(
@@ -101,18 +118,27 @@ export async function runTagTypeMigration(
 - migration round-trip: legacy → tag-to-type → 결과 = canonical schema (`type` 필드만)
 - edge case: `tag` 와 `type` 동시 존재 → `type` 우선 보존
 
-### Step 4-3 — `initializeProject` migration entry 연결 (READ-ONLY dry-run)
+### Step 4-3 — `initializeProject` migration entry 연결 (READ-ONLY dry-run) — ✅ Land 2026-04-27 `19864dfe`
+
+**Land 시 변경**: 실 entry 위치는 `apps/builder/src/services/project/initialization.ts` 가 아닌 **`apps/builder/src/builder/hooks/usePageManager.ts::initializeProject`** (ADR-903 P3-E `runLegacyToCanonicalMigration` 호출 site 와 동일). P3-E migration 호출 직후에 P4 dry-run 추가.
 
 **산출물**:
 
-- `apps/builder/src/services/project/initialization.ts` (또는 동일 entry) 에 `runTagTypeMigration(projectId, { dryRun: true })` 추가
-- dev console.warn 으로 결과 로깅 (`[ADR-913 P4 dry-run] N elements need tag→type migration`)
+- `apps/builder/src/builder/hooks/usePageManager.ts` import + 진입 조건 분기:
+  - `metaRecord` 미존재 또는 `schemaVersion ∈ {legacy, composition-1.0}` → `runTagTypeMigration(db, projectId, { dryRun: true })`
+  - composition-1.1 이미 진입 시 함수 내부에서 skipped 반환 (entry 호출은 발생하지만 단순 skip)
+- dev console.log 으로 결과 로깅:
+  - skipped: `[ADR-913 P4 dry-run] skipped: ${reason}`
+  - 일반: `[ADR-913 P4 dry-run] status=${status}, transformedCount=N/M, errors=K`
+  - transformedCount > 0 시: `${N} elements need tag→type migration`
+- try/catch — measurement 실패는 `console.warn` 로 graceful degrade (BC 보장)
 - write-through 미진입 — Step 4-4 까지 read-only
 
 **검증**:
 
 - dev 환경 새로고침 → console 에 dry-run 결과 표시
 - `_meta.schemaVersion` 그대로 유지 (composition-1.0 또는 unset)
+- type-check 3/3 PASS / db 영역 vitest 142/142 PASS
 
 ### Step 4-4 — write-through 활성화 (`dryRun=false`)
 

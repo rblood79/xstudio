@@ -23,9 +23,19 @@ In Progress — 2026-04-26 → 2026-04-27
     - `isCanonicalNode` runtime guard 호출 4건 → hot path 적용 부족 (LOW, 선택적 enhancement Phase 4 진입 시 점진 적용)
   - **회귀 위험: 0** (Phase 1+2 mechanical rename 도구 효율 — agent 추정 146 manual ref → 실제 의심 잔존 0)
   - Body.spec.ts JSDoc `element.tag` → `element.type` 정정 (1줄, comment-only)
+- **2026-04-27 (세션 45)**: **Phase 4 Step 4-1 + 4-2 + 4-3 main land** (READ-ONLY 3단계)
+  - **Step 4-1** (commit `0e9b5101`) — IndexedDB DB_VERSION 8 → 9 schema bump (no schema change — `tag` index 미존재). `MetaRecord.schemaVersion` enum 에 `"composition-1.1"` 추가 (composition-1.0 = tag 기반 / composition-1.1 = type 기반). `metaStore.test.ts` test 1 갱신. 비파괴: 기존 프로젝트 (composition-1.0) read-through 유지
+  - **Step 4-2** (commit `79aaf808`) — 신규 `apps/builder/src/lib/db/migrationTagType.ts` 신설
+    - `transformElementTagToType(el)` pure transformer: tag-only → type rename / type-only → no-op / 둘 다 → type 우선 + tag 제거 / 둘 다 missing → null (orphan error)
+    - `runTagTypeMigration(adapter, projectId, { dryRun=true })` — composition-1.1 already-migrated → skipped, `createMigrationBackup` 호출 (Step 4-4 fallback 안전망), `elements.getAll()` read-only → transformations 결과 반환
+    - `dryRun=false` 호출 → throw (Step 4-4 미구현 안내)
+    - `__tests__/migrationTagType.test.ts` 신규 16 tests (TC-T1~T5 transformer + TC-M1~M11 integration, 50 fixture round-trip 포함)
+  - **Step 4-3** (commit `19864dfe`) — `usePageManager.initializeProject` 의 P3-E migration 호출 직후에 `runTagTypeMigration(db, projectId, { dryRun: true })` 추가. 진입 조건: `metaRecord` 미존재 또는 `schemaVersion ∈ {legacy, composition-1.0}`. dev console 로그 출력 (`[ADR-913 P4 dry-run] status / transformedCount / errors`). try/catch graceful degrade
+  - **검증**: type-check 3/3 PASS / db 영역 vitest 142/142 PASS (기존 126 + 신규 16) / usePageManager.canonical 회귀 0
+  - **비파괴**: 3 단계 모두 dryRun=true 고정 → DB 무변경. 실제 transform 은 Step 4-4 (write-through, ADR-911 monitoring 종결 ~2026-05-04 후 진입)
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
-  - Phase 4 (DB schema migration DB_VERSION 8→9) — 1.5d, **HIGH risk**. legacy `tag` row 영구 변환 + `normalizeLegacyElement` helper 제거
+  - Phase 4 (DB schema migration DB_VERSION 8→9) — Step 4-1/4-2/4-3 land. **잔여 = Step 4-4 (write-through, ADR-911 monitoring 종결 후), Step 4-5 (`normalizeLegacyElement` helper 제거), Step 4-6 (Validation+cleanup)**
   - Phase 5 (Hybrid 6 cleanup) — 2d, **HIGH risk**. componentRole 41 / masterId 63 / slot_name 45 / overrides 40 / descendants 124 = 313+ ref 영역, sub-Phase 분할 권장
 
 ## Context

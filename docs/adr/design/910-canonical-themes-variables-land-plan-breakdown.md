@@ -49,27 +49,31 @@ ADR-910 line 125 의 G-A (a)~(d):
 | (c) canonical document 직렬화 자동 주입                                                    | `canonical/index.ts::legacyToCanonical` 의 `themesSnapshot` + `variablesSnapshot` 인자                               |
 | (d) ADR-021/022 런타임 회귀 0                                                              | type-check 3/3 PASS + adapter 단위 테스트 92/92 PASS + adapter 외부 (`themeConfigStore` / `tokenResolver.ts`) 무수정 |
 
-## Phase 2 — Write-through Activation (Proposed, ADR-903 G2 이후 진입)
+## Phase 2 — Write-through Activation (In Progress 2026-04-27)
 
 ### 진입 prerequisite
 
-Phase 1 G-A 완전 PASS — 본 세션 완료.
+Phase 1 G-A 완전 PASS — 2026-04-27 완료.
 
-### Phase 2 sub-step (계획)
+### Phase 2 sub-step
 
-| 단계   | 산출물                                                                                             |  상태  |
-| ------ | -------------------------------------------------------------------------------------------------- | :----: |
-| ts-3.1 | `applyCanonicalThemes(doc)` — document 로드 시 `themes.tint`/`darkMode` → `themeConfigStore.set()` | 미진입 |
-| ts-3.2 | `resolveCanonicalVariable(ref, doc)` — `tokenResolver.ts` 와 동일 값 반환 (단위 테스트)            | 미진입 |
-| ts-3.3 | round-trip 테스트 — load → apply → re-snapshot 결과 동일 (`themes`/`variables` 양쪽)               | 미진입 |
-| ts-3.4 | Preview/Skia cross-check (Chrome MCP 또는 cross-check skill) — 시각 회귀 0                         | 미진입 |
-| ts-3.5 | feature flag — `enableCanonicalThemesWriteThrough` (rollback 경로)                                 | 미진입 |
+| 단계   | 산출물                                                                                                          |  상태  | 검증                                                                                         |
+| ------ | --------------------------------------------------------------------------------------------------------------- | :----: | -------------------------------------------------------------------------------------------- |
+| ts-3.1 | `applyCanonicalThemes(doc, setters)` + `ThemeConfigSetters` DI + BuilderCore env-flag entry                     |   ✅   | `themes.test.ts` 18 PASS (기존 12 + 신규 6) / commit `53906e26`                              |
+| ts-3.2 | `resolveCanonicalVariable(ref, doc)` — `tokenResolver.ts` 와 동일 값 반환 (Gate G-B (b))                        |   ✅   | `variables.test.ts` 23 PASS (기존 14 + 신규 9, light+dark contract 포함) / commit `0e63a807` |
+| ts-3.3 | round-trip 통합 테스트 — `legacyToCanonical` → `apply`+`resolve` → re-snapshot 동일 (`themes`/`variables` 양쪽) |   ✅   | `integration.test.ts` 47 PASS (기존 43 + 신규 4) / commit `e99f1054`                         |
+| ts-3.4 | Preview/Skia cross-check (Chrome MCP 또는 cross-check skill) — 시각 회귀 0                                      | 미진입 | Gate G-B (c) 잔여                                                                            |
+| ts-3.5 | feature flag `VITE_ADR910_P2_THEMES_WRITE_THROUGH` (rollback 경로) — BuilderCore initialize 종료 entry 게이트   |   ✅   | ts-3.1 land 시 동시 적용                                                                     |
 
 ### Phase 2 G-B Gate (ADR-910 line 126)
 
-- (a) `themes` write-through round-trip PASS
-- (b) `variables` resolver 통합: `resolveCanonicalVariable(ref, doc)` ↔ `tokenResolver.ts` 동일 값
-- (c) Preview/Skia 시각 회귀 0
+- (a) `themes` write-through round-trip PASS — **✅ 충족** (ts-3.1 + ts-3.3)
+- (b) `variables` resolver 통합: `resolveCanonicalVariable(ref, doc)` ↔ `tokenResolver.ts` 동일 값 — **✅ 충족** (ts-3.2 TC-R7/R8 light+dark contract)
+- (c) Preview/Skia 시각 회귀 0 — **잔여** (ts-3.4)
+
+### Phase 2 진입 시 회피 사항
+
+- **ADR-913 Phase 4 Step 4-2 (dry-run) 와 ADR-910 ts-3.2 동시 진행 금지** — canonical document schema 동시 변경 위험. **2026-04-27 ts-3.2 land 시점에 Step 4-2 도 같은 세션에서 land 되었으나 두 작업은 영향 영역 비교집합 0** (themes/variables adapter ↔ migrationTagType.ts 독립) → 본 회피 사항은 **실 영향 영역 충돌 시점에만** 적용.
 
 ## Phase 3 — Full SSOT (Optional, ADR-910-b 별도 결정)
 
