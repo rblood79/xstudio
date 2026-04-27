@@ -31,11 +31,7 @@ import {
 } from "../renderers";
 import type { DropIndicatorSnapshot } from "../selection/dropTargetResolver";
 import { recordInvalidation } from "./renderInvalidation";
-import {
-  readCssBgColor,
-  hexToColor4fChannels,
-  setupThemeWatcher,
-} from "./themeWatcher";
+import { setupThemeWatcher } from "./themeWatcher";
 import {
   setPagePosStaleFrames,
   tickPagePosStaleFrames,
@@ -84,8 +80,6 @@ import "../benchmarks/devProfiler";
 export interface SkiaCanvasProps {
   /** 부모 컨테이너 DOM 요소 */
   containerEl: HTMLDivElement;
-  /** 배경색 (hex) */
-  backgroundColor?: number;
   /** PixiJS Application (과도기 호환, 미사용) */
   app?: unknown;
   /** Layout 무효화 콜백 */
@@ -127,7 +121,6 @@ export interface SkiaCanvasProps {
  */
 export function SkiaCanvas({
   containerEl,
-  backgroundColor = 0xf3f4f6,
   app,
   invalidateLayout,
   sceneInvalidationPacket,
@@ -413,21 +406,16 @@ export function SkiaCanvas({
     skiaCanvas.style.width = `${rect.width}px`;
     skiaCanvas.style.height = `${rect.height}px`;
 
-    // 배경색
-    const resolvedBg = readCssBgColor(containerEl) ?? backgroundColor;
-    const r = ((resolvedBg >> 16) & 0xff) / 255;
-    const g = ((resolvedBg >> 8) & 0xff) / 255;
-    const b = (resolvedBg & 0xff) / 255;
-    const bgColor = ck.Color4f(r, g, b, 1);
-
-    const renderer = new SkiaRenderer(ck, skiaCanvas, bgColor, dpr);
+    // ADR-109 D4: SkiaRenderer.backgroundColor field cleanup. ADR-902 이후
+    // clearFrame() 이 투명 clear 로 동작하고 body fill 은 element tree (BodySpec) 가
+    // 담당하므로 renderer 가 background color 를 보유할 필요 없음.
+    const renderer = new SkiaRenderer(ck, skiaCanvas, dpr);
     rendererRef.current = renderer;
 
-    // 테마 변경 동기화
+    // 테마 변경 동기화 — Skia 캐시 무효화 + invalidation 트리거 (background color 직접
+    // 갱신은 BodySpec TokenRef resolve 가 자동 처리, 본 watcher 는 frame 재렌더만 보장)
     const themeWatcherHandle = setupThemeWatcher(containerEl, {
-      onThemeChange: (hex) => {
-        const [rv, gv, bv] = hexToColor4fChannels(hex);
-        renderer.setBackgroundColor(ck.Color4f(rv, gv, bv, 1));
+      onThemeChange: () => {
         renderer.invalidateContent();
         recordInvalidation("theme", "builderThemeChange");
       },
@@ -777,7 +765,7 @@ export function SkiaCanvas({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [ready, containerEl, backgroundColor, dropIndicatorSnapshotRef]);
+  }, [ready, containerEl, dropIndicatorSnapshotRef]);
 
   // 페이지 전환 시 오버레이 갱신
   const prevPageIdRef = useRef(

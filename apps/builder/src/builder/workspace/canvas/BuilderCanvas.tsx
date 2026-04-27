@@ -75,8 +75,6 @@ export interface BuilderCanvasProps {
   pageWidth?: number;
   /** 페이지 영역 높이 (breakpoint 크기) */
   pageHeight?: number;
-  /** 배경색 */
-  backgroundColor?: number;
   /** 초기 Pan Offset X (비교 모드 등에서 사용) */
   initialPanOffsetX?: number;
 }
@@ -87,7 +85,6 @@ export interface BuilderCanvasProps {
 
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
-const DEFAULT_BACKGROUND = 0xf3f4f6; // gray-100 (PixiJS용, Skia는 opaque + MutationObserver로 --bg 동기화)
 const PAGE_STACK_GAP = 80;
 
 // ============================================
@@ -109,7 +106,6 @@ const SkiaCanvasComponent = lazy(skiaCanvasImport);
 
 function SkiaCanvasLazy(props: {
   containerEl: HTMLDivElement;
-  backgroundColor?: number;
   invalidateLayout: () => void;
   sceneInvalidationPacket: RendererSceneInvalidation;
   rendererInput: SkiaRendererInput;
@@ -130,7 +126,6 @@ function SkiaCanvasLazy(props: {
 export function BuilderCanvas({
   pageWidth = DEFAULT_WIDTH,
   pageHeight = DEFAULT_HEIGHT,
-  backgroundColor = DEFAULT_BACKGROUND,
   initialPanOffsetX,
 }: BuilderCanvasProps) {
   // Dev-only: rAF 기반 FPS/프레임타임 측정(렌더 idle 여부와는 별개)
@@ -687,7 +682,6 @@ export function BuilderCanvas({
       {containerEl && (
         <SkiaCanvasLazy
           containerEl={containerEl}
-          backgroundColor={backgroundColor}
           invalidateLayout={invalidateLayout}
           sceneInvalidationPacket={sceneInvalidationPacket}
           rendererInput={skiaRendererInput}

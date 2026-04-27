@@ -32,7 +32,6 @@ export class SkiaRenderer {
   private contentNode: SkiaRenderable | null = null;
   private overlayNode: SkiaRenderable | null = null;
   private screenOverlayNode: SkiaRenderable | null = null;
-  private backgroundColor: Float32Array;
   private disposed = false;
   private dpr: number;
 
@@ -94,12 +93,7 @@ export class SkiaRenderer {
   public transitionManager: TransitionManager | null = null;
   public animationEngine: AnimationEngine | null = null;
 
-  constructor(
-    ck: CanvasKit,
-    htmlCanvas: HTMLCanvasElement,
-    backgroundColor?: Float32Array,
-    dpr?: number,
-  ) {
+  constructor(ck: CanvasKit, htmlCanvas: HTMLCanvasElement, dpr?: number) {
     this.ck = ck;
     this.dpr = dpr ?? (window.devicePixelRatio || 1);
     this.contentPaddingDevicePx = Math.round(
@@ -107,7 +101,6 @@ export class SkiaRenderer {
     );
     this.mainSurface = createGPUSurface(ck, htmlCanvas);
     this.mainCanvas = this.mainSurface.getCanvas();
-    this.backgroundColor = backgroundColor ?? ck.Color4f(1, 1, 1, 1);
 
     if (process.env.NODE_ENV === "development") {
       this.devContentRenderWindowStartMs = performance.now();
@@ -128,11 +121,6 @@ export class SkiaRenderer {
   /** 씬 좌표계 오버레이(그리드 등) 렌더러를 설정한다. 카메라 변환이 적용된다. */
   setScreenOverlayNode(node: SkiaRenderable | null): void {
     this.screenOverlayNode = node;
-  }
-
-  /** 배경색을 변경한다. */
-  setBackgroundColor(color: Float32Array): void {
-    this.backgroundColor = color;
   }
 
   /** 컨텐츠 캐시를 무효화하여 다음 프레임에서 전체 재렌더링하도록 한다. */

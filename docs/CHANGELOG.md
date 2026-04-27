@@ -5,6 +5,22 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Body Spec SSOT 완결 — ADR-109 Publish symmetry + D1/D2/D4] - 2026-04-27
+
+### Architecture
+
+- **ADR-109 Implemented — Body Spec SSOT 완결 + Publish consumer 대칭 복구**:
+  - **D1** (PR #268, commit `40a17a03`): Publish `useBodyElement(elements)` hook 신설 (102줄) — body element → `document.body` className `react-aria-Body` + style 직접 주입 + cleanup 로직. `apps/publish/src/hooks/useBodyElement.ts` + `apps/publish/src/renderer/PageRenderer.tsx` 통합
+  - **D2**: `createDefaultBodyProps` 의 `backgroundColor: "var(--bg)"` / `color: "var(--fg)"` literal 제거 + `className: "react-aria-Body"` 추가
+    - **Why**: D2 의 inline CSS var literal 은 Preview/Publish 양쪽에서 className `react-aria-Body` 자동 주입 + generated CSS rule (`.react-aria-Body { background: var(--bg); color: var(--fg); }`) 로 대체 가능. literal 제거로 ADR-063 D3 symmetric 회복 (한쪽이 기준이 아닌 spec 파생)
+    - 위치: `apps/builder/src/types/builder/unified.types.ts:1766`
+  - **D4**: SkiaRenderer.backgroundColor field + setBackgroundColor 메서드 + SkiaCanvas/BuilderCanvas backgroundColor prop dead code cleanup
+    - **Why**: ADR-902 이후 `clearFrame()` 투명 clear + element tree body fill 처리로 backgroundColor 가 read 되지 않음 (assignment 만 잔존, dead chain). 호출자 SkiaCanvas.tsx 1곳 → 완전 제거 안전
+    - 위치: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` / `SkiaCanvas.tsx` / `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+  - **D3 + Gate G3 Defer** (Phase 3 별도 follow-up): body.fills runtime-ignore 안정성 검증 + fill inspector body="theme-managed" UI 미구현. ADR-109 Gate G3 의 "실패 시 대안: Phase 3 을 defer 로 분리 — 사용자-가시 영향 없으므로 optional" 적용. BodySpec.shapes 의 var/{/$-- prefix skip 로직이 이미 fills runtime-ignore 동등 동작 보장
+  - **검증**: Gate G1 (publish 회귀 0) — `pnpm type-check` 3/3 exit 0 / Gate G2 (3경로 theme 대칭) — className 자동 주입 + BodySpec TokenRef resolve / Gate G4 (D4 cleanup 안전성) — `setBackgroundColor` / `SkiaRenderer.backgroundColor` field grep 0건
+  - ADR-902 후속 body SSOT 스토리라인 완결 (Skia/Preview/Publish 3경로 1 Spec 파생)
+
 ## [DesignKit 시스템 제거 — Theme/Variable 시스템 중복 해소 — ADR-915] - 2026-04-27
 
 ### Breaking Changes
