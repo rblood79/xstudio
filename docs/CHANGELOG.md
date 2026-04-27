@@ -5,6 +5,29 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-C — FramesTab read path canonical 전환 (TDD RED→GREEN) — 세션 37 후반] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 2 PR-C — FramesTab dual-mode read path** (TDD RED → GREEN):
+  - `FramesTab.tsx` 에 `reusableFrames` useMemo 도입 — `isFramesTabCanonical()` flag 분기로 read path dual-mode
+    - **legacy path** (flag false, default): `layouts.map(l => ({ id, name }))`
+    - **canonical path** (flag true): `selectCanonicalDocument(state, pages, layouts).children.filter(reusable: true).map(...)` — `metadata.layoutId` (legacyToCanonical 보존) 으로 id 정규화하여 legacy CRUD (createLayout/deleteLayout) 와 id 정합 유지
+  - **selector cache 함정 회피** (memory: `feedback-zustand-selector-cache.md`): useMemo 안에서 `useStore.getState()` 호출. selector 등록 안 함. deps: `[layouts, pages, elementsMap]` — selectCanonicalDocument 가 elements 소비하므로 elementsMap 도 추적
+  - `currentFrame` / `handleAddFrame` (`layouts.length + 1` → `reusableFrames.length + 1`) / `handleDeleteFrame.remaining` / JSX `layouts.map` → `reusableFrames.map` 모두 단일 source 기반으로 통일
+  - **Why**: PR-A wrapper + PR-B consumer 정합화의 read path 완성. PR-D (UI 분리) / PR-E (PageLayoutSelector + cutover) 에서 reusableFrames 단일 source 재사용 가능. 향후 P3 cascade 재작성 시 read path 변경 0
+  - 검증: vitest 8/8 PASS (5 legacy baseline + 3 canonical mode: 목록 표시 / non-frame 필터 / id 정규화) / type-check 0 / frameActions 회귀 0
+
+### Infrastructure
+
+- **FramesTab vitest 확장 (3 canonical 시나리오 추가)**:
+  - `__tests__/FramesTab.test.tsx` — 신규 mock: `isFramesTabCanonical` (feature flag toggle) + `selectCanonicalDocument` (canonical doc 반환)
+  - canonical 시나리오 3:
+    1. flag true + legacy layouts != canonical doc → canonical doc 의 reusable FrameNode 만 표시 (legacy 우회)
+    2. children 에 non-frame / non-reusable / ref 노드 혼재 → reusable FrameNode 만 필터
+    3. canonical FrameNode 클릭 → `metadata.layoutId` (legacy id) 로 `selectReusableFrame` 위임 — write 정합성 보장
+  - **Why**: PR-Followup-A 의 5 baseline 위에 canonical mode 동작을 RED-first 로 추가하여 GREEN 구현이 정확히 의도대로 동작함을 잠금
+
 ## [ADR-911 Phase 2 PR-Followup-A — FramesTab 컴포넌트 vitest baseline 잠금 — 세션 37 후반] - 2026-04-27
 
 ### Infrastructure

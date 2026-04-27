@@ -444,7 +444,7 @@ const handleDevMigrate = useCallback(async () => {
 | ------ | ------------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------ |
 | **A**  | `frameActions.ts` skeleton (legacy wrapper) + `isFramesTabCanonical()` flag 추가 (default false)       | P2-a 부분 + P2-d | ✅ 2026-04-27 main land (`e9e388ca`) |
 | **B**  | `FramesTab.handleAddFrame/handleDeleteFrame/handleSelectFrame` → `frameActions` 위임 (functional 동등) | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
-| **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                       | P2-a 잔여        | 후속 세션                            |
+| **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                       | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
 | **D**  | `FrameList` / `FrameDetails` / `SlotList` 컴포넌트 분리                                                | P2-b             | 후속 세션                            |
 | **E**  | `PageLayoutSelector` 재작성 + `usePresetApply` canonical mutation + dev migration trigger              | P2-c + P2-e      | 후속 세션                            |
 | **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                        | P2-f + P2-g      | 후속 세션                            |

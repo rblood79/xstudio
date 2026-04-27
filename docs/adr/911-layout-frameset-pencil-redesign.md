@@ -13,13 +13,22 @@ In Progress — 2026-04-26 → 2026-04-27
   - `apps/builder/src/utils/featureFlags.ts` — `isFramesTabCanonical()` + `framesTabCanonical` 필드 추가 (default `false`, dual-mode 운영용)
   - vitest 7/7 PASS / type-check 0
   - **scope 보호**: FramesTab.tsx 미수정 — 기존 동작 0 변화. PR-A 는 baseline 확장만
-- **2026-04-27 (세션 37 후속)**: **PR-B: FramesTab consumer → frameActions 위임** (functional 동등)
+- **2026-04-27 (세션 37 후속)**: **PR-B: FramesTab consumer → frameActions 위임** (functional 동등) (PR #251 / `007c40f3`)
   - `FramesTab.tsx` `handleAddFrame` / `handleDeleteFrame` / `handleSelectFrame` → `createReusableFrame` / `deleteReusableFrame` / `selectReusableFrame` 호출로 전환
   - 핸들러 시그니처 단순화: `(frame: Layout)` → `(frameId: string)` — `frame.id` 만 사용하던 내부 정합화
   - 제거: `Layout` 타입 import / `setCurrentLayoutInStore` / `createLayout` / `deleteLayout` 직접 destructure (frameActions wrapper 경유)
   - 유지: `useLayoutsStore.layouts[]` read (PR-C 에서 canonical 전환 예정) / `fetchLayouts` mount effect
   - type-check 0 / FramesTab 자체 vitest 부재 → PR-A frameActions 7/7 vitest 로 wrapper 행위 검증 (functional 동등 보장)
-- **잔여 Phase 2 sub-PR**: PR-C (read path canonical 전환 + selector cache 함정 회피) / PR-D (FrameList/FrameDetails/SlotList 분리) / PR-E (PageLayoutSelector + dev migration trigger + dual-mode flag 활성화)
+- **2026-04-27 (세션 37 후속)**: **PR-Followup-A: FramesTab 컴포넌트 vitest baseline 잠금** (PR #252 / `7ccb86a0`)
+  - 5 시나리오: 빈 frames / 2개 렌더 / Add / Select(id) / Delete + stopPropagation. mock 9 모듈
+- **2026-04-27 (세션 37 후속)**: **PR-C: FramesTab read path canonical 전환** (TDD RED → GREEN, PR pending)
+  - `FramesTab.tsx` 에 `reusableFrames` useMemo 도입 — `isFramesTabCanonical()` flag 분기로 dual-mode read
+    - **legacy path** (default false): `layouts.map(l => ({ id: l.id, name: l.name }))`
+    - **canonical path** (true): `selectCanonicalDocument(state, pages, layouts).children.filter(reusable: true).map(...)` — `metadata.layoutId` (legacyToCanonical 보존) 으로 id 정규화 → legacy CRUD 와 정합
+  - **selector cache 함정 회피** (memory: `feedback-zustand-selector-cache.md`): useMemo 안에서 `useStore.getState()` 호출. selector 등록 안 함. deps: `[layouts, pages, elementsMap]`
+  - `currentFrame` / `handleAddFrame.layouts.length+1` / `handleDeleteFrame.remaining` / JSX `layouts.map → reusableFrames.map` 모두 `reusableFrames` 기반으로 통일
+  - vitest 8/8 PASS (5 legacy baseline + 3 canonical mode: 목록 표시 / non-frame 필터 / id 정규화) + type-check 0 + frameActions 회귀 0
+- **잔여 Phase 2 sub-PR**: PR-D (FrameList/FrameDetails/SlotList 분리) / PR-E (PageLayoutSelector + dev migration trigger + dual-mode flag 활성화)
 
 ## Context
 

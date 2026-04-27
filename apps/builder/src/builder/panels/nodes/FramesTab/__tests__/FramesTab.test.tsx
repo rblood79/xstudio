@@ -32,9 +32,14 @@ const mockLayoutsState = {
 
 const mockStoreState = {
   elementsMap: new Map(),
+  pages: [] as Array<{ id: string }>,
   removeElement: vi.fn(),
   mergeElements: vi.fn(),
 };
+
+// PR-C: feature flag + canonical projection mocks
+let mockIsFramesTabCanonical = false;
+const mockSelectCanonicalDocument = vi.fn();
 
 const mockEditModeState = {
   setCurrentLayoutId: vi.fn(),
@@ -90,6 +95,13 @@ vi.mock("@/utils/messaging", () => ({
 vi.mock("@/utils/featureFlags", () => ({
   isWebGLCanvas: () => true,
   isCanvasCompareMode: () => false,
+  isFramesTabCanonical: () => mockIsFramesTabCanonical,
+}));
+
+vi.mock("@/builder/stores/elements", () => ({
+  selectCanonicalDocument: (
+    ...args: Parameters<typeof mockSelectCanonicalDocument>
+  ) => mockSelectCanonicalDocument(...args),
 }));
 
 vi.mock("@/builder/hooks", () => ({
@@ -132,8 +144,11 @@ function resetMockState() {
   mockLayoutsState.layouts = [];
   mockLayoutsState.selectedReusableFrameId = null;
   mockStoreState.elementsMap = new Map();
+  mockStoreState.pages = [];
+  mockIsFramesTabCanonical = false;
   vi.clearAllMocks();
   mockGetByLayout.mockResolvedValue([] as never[]);
+  mockSelectCanonicalDocument.mockReturnValue({ children: [] });
   // wrapper Promise resolve 기본값 — 정상 동작
   createReusableFrameMock.mockResolvedValue({
     id: "new-frame",
@@ -237,6 +252,96 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
       // → 호출은 1회 (null 인자) — 부모 click 으로 인한 추가 호출 없음
       expect(selectReusableFrameMock).toHaveBeenCalledTimes(1);
       expect(selectReusableFrameMock).toHaveBeenCalledWith(null);
+    });
+  });
+
+  // ─── PR-C: canonical-native read path ──────────────────────────────────────
+  describe("canonical-native read path (isFramesTabCanonical=true)", () => {
+    it("frame 목록을 selectCanonicalDocument 의 reusable FrameNode 로 표시", () => {
+      mockIsFramesTabCanonical = true;
+      // legacy layouts[] 에는 데이터 있지만, canonical doc 가 다르면 canonical 표시
+      mockLayoutsState.layouts = [
+        { id: "legacy-id", name: "Legacy Should Not Show", project_id: "p" },
+      ];
+      mockSelectCanonicalDocument.mockReturnValue({
+        children: [
+          {
+            id: "layout-canonical-id",
+            type: "frame",
+            reusable: true,
+            name: "Canonical Frame",
+            metadata: { type: "legacy-layout", layoutId: "canonical-id" },
+            children: [],
+          },
+        ],
+      });
+
+      render(<FramesTab {...makeProps()} />);
+
+      expect(screen.getByText("Canonical Frame")).toBeTruthy();
+      expect(screen.queryByText("Legacy Should Not Show")).toBeNull();
+    });
+
+    it("non-frame / non-reusable 노드는 필터링됨", () => {
+      mockIsFramesTabCanonical = true;
+      mockSelectCanonicalDocument.mockReturnValue({
+        children: [
+          {
+            id: "layout-frame-1",
+            type: "frame",
+            reusable: true,
+            name: "Reusable Frame",
+            metadata: { type: "legacy-layout", layoutId: "frame-1" },
+            children: [],
+          },
+          // reusable: false (page-bound frame) — 필터아웃
+          {
+            id: "page-frame",
+            type: "frame",
+            reusable: false,
+            name: "Page Frame",
+            children: [],
+          },
+          // ref 노드 — 필터아웃
+          {
+            id: "ref-1",
+            type: "ref",
+            ref: "layout-frame-1",
+            name: "Some Ref",
+          },
+        ],
+      });
+
+      render(<FramesTab {...makeProps()} />);
+
+      expect(screen.getByText("Reusable Frame")).toBeTruthy();
+      expect(screen.queryByText("Page Frame")).toBeNull();
+      expect(screen.queryByText("Some Ref")).toBeNull();
+    });
+
+    it("canonical frame 클릭 시 metadata.layoutId (legacy id) 로 selectReusableFrame 위임 — write 정합성", async () => {
+      mockIsFramesTabCanonical = true;
+      mockSelectCanonicalDocument.mockReturnValue({
+        children: [
+          {
+            id: "layout-frame-zzz", // canonical id (prefix 포함)
+            type: "frame",
+            reusable: true,
+            name: "Header",
+            metadata: { type: "legacy-layout", layoutId: "frame-zzz" }, // legacy id
+            children: [],
+          },
+        ],
+      });
+
+      render(<FramesTab {...makeProps()} />);
+      fireEvent.click(screen.getByText("Header"));
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // legacy id ("frame-zzz") 로 select 호출 — canonical id ("layout-frame-zzz") 아님
+      expect(selectReusableFrameMock).toHaveBeenCalledWith("frame-zzz");
     });
   });
 });
