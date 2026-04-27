@@ -246,7 +246,7 @@ In Progress — 2026-04-26 → 2026-04-27
 - pencil app 과 schema 호환 → 외부 디자인 자산 import/export 자연스럽게 지원
 - 단일 frame authoring 인터페이스 → 사용자 학습 비용 감소 + UI 일관성
 - ADR-903 G4 (Editing Semantics UI 5요소) 의 토대 제공
-- ADR-903 P5-D/E (`imports` resolver) 와 자연스럽게 통합 — DesignKit 통합은 [ADR-915](915-remove-designkit-system.md) 로 제거됨 (P5-F section 무효화)
+- ADR-903 P5-D/E (`imports` resolver) 와 자연스럽게 통합 — DesignKit 통합은 [ADR-915](completed/915-remove-designkit-system.md) 로 제거됨 (P5-F section 무효화)
 - **pencil 공식 명칭 단일 표준 채택** — 2026-04-27 inventory 결과 실제 충돌 영역은 Builder UI panel slot 2건 (`PanelSlot` / `BottomPanelSlot`) 으로 한정. Skia rendering 의 `Frame` 단어는 canonical FrameNode 의 시각 표현으로 의미 일치 → 유지
 
 ### Negative
