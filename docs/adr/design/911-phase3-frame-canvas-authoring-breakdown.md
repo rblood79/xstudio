@@ -108,6 +108,78 @@ childrenMap.root = [
 
 **대등 분리**: P3-α 의 `framePositions` 별도 map 결정과 동일한 domain 분리 패턴 — `editingContextId` (element 클릭 scope) 와 `selectedReusableFrameId` (frame 편집 indicator) 의 semantic 충돌 회피.
 
+## 4.6. P3-δ 진입 inventory (세션 47, P3-δ-1)
+
+### Render 경로 chain (Skia frame pipeline)
+
+```
+BuilderCanvas.tsx (line 230-381)
+   ↓ subscribe pagePositions / pagePositionsVersion / sceneSnapshot
+createSkiaRendererInput (rendererInput.ts:76-106)
+   ↓ rendererInput { pages, pageSnapshots, pagePositions, pagePositionsVersion, ... }
+skiaFramePipeline.ts:229
+   ↓ collectVisiblePageRoots(rendererInput)
+visiblePageRoots.ts:15
+   ↓ for (const page of rendererInput.pages) → bodyElement → rootElementIds
+   ↓ bodyPagePositions[bodyElement.id] = pagePositions[page.id]
+getCachedCommandStream(rootElementIds, ..., bodyPagePositions, ...)
+   ↓ cache key: registryVersion + pagePositionsVersion + sharedLayoutVersion + rootSignature
+buildRenderCommandStream → DFS → RenderCommand[] + boundsMap
+```
+
+### Root cause 위치 확정
+
+`visiblePageRoots.ts:15` 의 `for (const page of rendererInput.pages)` 만 iterate — frame body element 는 `elementsMap`/`childrenMap.root` 에 존재하지만 **page 가 아니므로 root list 진입 path 0**. 따라서 Skia 가 frame body 를 그리지 않음. 세션 46 evidence (`pagePositions: { page-id: {x:0,y:0} }`, frame 좌표 0건) 와 정확히 일치.
+
+### 변경 surface (5 파일, ~80 line + test)
+
+| 파일                                         | 변경                                                                                                             | 영향 |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---- |
+| `skia/visibleFrameRoots.ts`                  | **신규** — `collectVisibleFrameRoots(rendererInput, framePositions, frameAreas, ...)` (~50 line)                 | NEW  |
+| `skia/skiaFramePipeline.ts:229`              | rootElementIds 병합 (page + frame), bodyPagePositions 단일 맵 통합                                               | ~10  |
+| `skia/renderCommands.ts:209-243`             | `getCachedCommandStream` cache key 에 `framePositionsVersion` 추가 (4 → 5 키)                                    | ~5   |
+| `renderers/rendererInput.ts:76-106`          | input 에 `framePositions`/`framePositionsVersion`/`frameAreas` 통합                                              | ~10  |
+| `workspace/canvas/BuilderCanvas.tsx:230-380` | framePositions/Version selector 추가 + `useLayoutsStore` selectedReusableFrameId subscribe (P3-γ B 안 read path) | ~5   |
+
+### 결정 분기 3건
+
+#### D1. frame body element 식별 방법
+
+| 옵션                                                                | 장점                                                                        | 단점                                          | 권고 |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------- | ---- |
+| **A. `el.layout_id === frameId` 매칭** (composition-pre-1.0 legacy) | 이미 ADR-903 P3-E E-6 에서 검증된 패턴. canonical adapter 가 layout_id 보존 | legacy 의존 — Phase 4 legacy 0 시 재작업 가능 | ✓    |
+| B. canonical doc 의 reusable FrameNode → metadata.layoutId 매칭     | Phase 4 legacy 0 후에도 유지                                                | 실 elementsMap iteration 필요, 분기 추가      |      |
+
+**A 권고** — P3-δ 단계에서는 이미 검증된 패턴 재사용. Phase 4 legacy 0 진입 시 B 로 마이그레이션 (별도 작업).
+
+#### D2. viewport root collection 함수 — 통합 vs 분리
+
+| 옵션                                           | 장점                                                                                                       | 단점                                                                        | 권고 |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---- |
+| A. `collectVisiblePageRoots` 확장 (page+frame) | 단일 함수, caller 1개                                                                                      | 두 domain (page/frame) 단일 함수 안에 mix — P3-α/β 의 domain 분리 패턴 위반 |      |
+| **B. 신규 `collectVisibleFrameRoots` 추가**    | P3-α framePositions / P3-β computeFrameAreas / P3-γ selectedReusableFrameId 도입과 일관된 domain 분리 패턴 | caller 가 두 함수 호출 후 결과 병합 (~5 line)                               | ✓    |
+
+**B 권고** — domain 분리 + 본 세션의 일관 패턴 유지.
+
+#### D3. frame body 좌표 lookup 자료구조
+
+| 옵션                                                                         | 장점                                                | 단점                                                          | 권고 |
+| ---------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------- | ---- |
+| **A. `bodyPagePositions` 단일 맵 통합** (frame body element id → {x,y} 추가) | renderCommands.ts 시그니처 미변경, caller 영향 최소 | 이름이 "PagePositions" 라 frame entry 혼재 시 의미 misleading | ✓    |
+| B. `bodyFramePositions` 별도 맵 + `buildRenderCommandStream` 시그니처 확장   | 이름 정합                                           | 시그니처 + caller chain 확장, 복잡도 증가                     |      |
+
+**A 권고** — 단일 맵 + 변수명 `bodyRootPositions` 로 rename 검토 (Phase 4 cleanup 시).
+
+### G3-δ 통과 조건 (재확인)
+
+- (a) Skia 캔버스에 frame body 영역 그려짐 — frame border + 빈 background
+- (b) frame body 자식 (slot) 도 영역 안에 그려짐 — childrenMap DFS 정상 동작
+- (c) Chrome MCP screenshot 사용자 시나리오 GREEN — Frame 추가 → Layout preset 적용 → slot 영역 시각화
+
+### P3-δ 진입 시 작업 비용 재산정
+
+D1=A, D2=B, D3=A 채택 시 **~1d (HIGH 2d 의 lower bound)**. 다음 세션에서 본격 land. 본 세션 P3-δ-1 inventory 는 진입 위험 50% 감소 (변경 surface + 결정 분기 사전 lock-in).
+
 ## 5. 비고
 
 - 본 sub-phase 진입 시 **1주+ HIGH 작업**. design 단계가 prerequisite — 단순 fix 불가

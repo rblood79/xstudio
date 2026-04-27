@@ -117,6 +117,12 @@ In Progress — 2026-04-26 → 2026-04-27
   - 신규 integration test: `selectReusableFrameContext.test.ts` 4/4 PASS (frameId 갱신 / null 해제 / 연속 호출 / currentLayoutId backward-compat alias 동시 갱신)
   - design breakdown 정정: §2 P3-γ 행 / §4 G3-γ 행 / §4.5 결정 근거 추가
   - 캔버스 read path 통합은 P3-δ Skia render PR 에 동시 land (dead read 회피)
+- **2026-04-28 (세션 47 후속)**: **P3-δ-1 inventory land — render 경로 chain + 결정 분기 3건 사전 lock-in**
+  - **Render 경로 chain 확정**: `BuilderCanvas → createSkiaRendererInput → skiaFramePipeline → collectVisiblePageRoots → getCachedCommandStream → buildRenderCommandStream`. **Root cause 위치**: `visiblePageRoots.ts:15` 가 `rendererInput.pages` (page 만) iterate — frame body 가 elementsMap 에 있지만 page 아니므로 root list 진입 path 0
+  - **변경 surface 5 파일 ~80 line + test**: 신규 `visibleFrameRoots.ts` / `skiaFramePipeline.ts:229` rootElementIds 병합 / `renderCommands.ts:209-243` cache key + framePositionsVersion / `rendererInput.ts:76-106` framePositions 통합 / `BuilderCanvas.tsx:230-380` selector 추가
+  - **결정 분기 3건 권고**: D1=A (`el.layout_id === frameId` 매칭, ADR-903 P3-E E-6 검증 패턴), D2=B (신규 `collectVisibleFrameRoots`, P3-α/β 의 domain 분리 패턴 일관), D3=A (`bodyPagePositions` 단일 맵 통합, renderCommands 시그니처 미변경)
+  - 권고 채택 시 P3-δ 본격 land 비용 재산정 = **~1d (HIGH 2d 의 lower bound)** — inventory 가 진입 위험 50% 감소
+  - design breakdown §4.6 사전 land — 다음 세션에서 D1/D2/D3 사용자 승인 후 즉시 진입 가능
 
 ## Context
 
