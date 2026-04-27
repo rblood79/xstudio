@@ -15,9 +15,8 @@
 
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { Minimize, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
-import { iconProps } from "../../../../utils/ui/uiConstants";
 import { FrameList } from "./FrameList";
+import { FrameElementTree } from "./FrameElementTree";
 import {
   useLayoutsStore,
   useSelectedReusableFrameId,
@@ -32,7 +31,6 @@ import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
-import type { ElementTreeItem } from "../../../../types/builder/stately.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
 import { MessageService } from "../../../../utils/messaging";
 import { getDB } from "../../../../lib/db";
@@ -227,143 +225,6 @@ export function FramesTab({
     requestAutoSelectAfterUpdate,
   ]);
 
-  // Frame 전용 Element Tree 렌더링
-  const renderFrameTree = useCallback(
-    (
-      tree: ElementTreeItem[],
-      onClick: (item: Element) => void,
-      onDelete: (item: Element) => Promise<void>,
-      depth: number = 0,
-    ): React.ReactNode => {
-      const renderTree = (
-        items: ElementTreeItem[],
-        currentDepth: number,
-      ): React.ReactNode => {
-        if (items.length === 0) return null;
-
-        return (
-          <>
-            {items.map((item) => {
-              const hasChildNodes = item.children && item.children.length > 0;
-              const isExpanded = expandedKeys.has(item.id);
-
-              const element: Element = {
-                id: item.id,
-                type: item.type,
-                parent_id: item.parent_id || null,
-                order_num: item.order_num,
-                props: item.props as ElementProps,
-                deleted: item.deleted,
-                layout_id: currentFrame?.id || null,
-                page_id: null,
-                created_at: "",
-                updated_at: "",
-              };
-
-              return (
-                <div
-                  key={item.id}
-                  data-depth={currentDepth}
-                  data-has-children={hasChildNodes}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClick(element);
-                  }}
-                  className="element"
-                >
-                  <div
-                    className={`elementItem ${
-                      selectedElementId === item.id ? "active" : ""
-                    }`}
-                  >
-                    <div
-                      className="elementItemIndent"
-                      style={{
-                        width:
-                          currentDepth > 0 ? `${currentDepth * 8}px` : "0px",
-                      }}
-                    ></div>
-                    <div
-                      className="elementItemIcon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (hasChildNodes) {
-                          toggleKey(item.id);
-                        }
-                      }}
-                    >
-                      {hasChildNodes ? (
-                        <ChevronRight
-                          color={iconProps.color}
-                          strokeWidth={iconProps.strokeWidth}
-                          size={iconProps.size}
-                          style={{
-                            transform: isExpanded
-                              ? "rotate(90deg)"
-                              : "rotate(0deg)",
-                          }}
-                        />
-                      ) : (
-                        <Box
-                          color={iconProps.color}
-                          strokeWidth={iconProps.strokeWidth}
-                          size={iconProps.size}
-                          style={{ padding: "2px" }}
-                        />
-                      )}
-                    </div>
-                    <div className="elementItemLabel">
-                      {item.type === "Slot" && item.props
-                        ? `Slot: ${
-                            (item.props as Record<string, unknown>).name ||
-                            "unnamed"
-                          }`
-                        : item.type}
-                    </div>
-                    <div className="elementItemActions">
-                      {item.type === "body" && (
-                        <button className="iconButton" aria-label="Settings">
-                          <Settings2
-                            color={iconProps.color}
-                            strokeWidth={iconProps.strokeWidth}
-                            size={iconProps.size}
-                          />
-                        </button>
-                      )}
-                      {item.type !== "body" && (
-                        <button
-                          className="iconButton"
-                          aria-label={`Delete ${item.type}`}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await onDelete(element);
-                          }}
-                        >
-                          <Trash
-                            color={iconProps.color}
-                            strokeWidth={iconProps.strokeWidth}
-                            size={iconProps.size}
-                          />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {isExpanded &&
-                    hasChildNodes &&
-                    item.children &&
-                    renderTree(item.children, currentDepth + 1)}
-                </div>
-              );
-            })}
-          </>
-        );
-      };
-
-      return renderTree(tree, depth);
-    },
-    [expandedKeys, toggleKey, selectedElementId, currentFrame?.id],
-  );
-
   // Frame 선택 핸들러 — id 기반 (ADR-911 P2-a PR-B)
   const handleSelectFrame = useCallback(
     async (frameId: string) => {
@@ -452,43 +313,22 @@ export function FramesTab({
         onAdd={handleAddFrame}
       />
 
-      {/* Frame Element Tree */}
-      <div className="sidebar_elements">
-        <div className="panel-header">
-          <h3 className="panel-title">Layers</h3>
-          <div className="header-actions">
-            <button
-              className="iconButton"
-              aria-label="Collapse All"
-              onClick={() => collapseFrameTree()}
-            >
-              <Minimize
-                color={iconProps.color}
-                strokeWidth={iconProps.strokeWidth}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="elements">
-          {!currentFrame ? (
-            <p className="no_element">Select a frame to view elements</p>
-          ) : frameElements.length === 0 ? (
-            <p className="no_element">No elements in this frame</p>
-          ) : (
-            renderFrameTree(
-              frameElementTree,
-              (el) => {
-                setSelectedElement(el.id, el.props as ElementProps);
-                requestAnimationFrame(() =>
-                  sendElementSelectedMessage(el.id, el.props as ElementProps),
-                );
-              },
-              handleDeleteElement,
-            )
-          )}
-        </div>
-      </div>
+      {/* Frame Element Tree — ADR-911 P2 PR-D2 추출 */}
+      <FrameElementTree
+        tree={frameElementTree}
+        frameId={currentFrame?.id ?? null}
+        selectedElementId={selectedElementId}
+        expandedKeys={expandedKeys}
+        toggleKey={toggleKey}
+        onCollapseAll={collapseFrameTree}
+        onElementClick={(el) => {
+          setSelectedElement(el.id, el.props as ElementProps);
+          requestAnimationFrame(() =>
+            sendElementSelectedMessage(el.id, el.props as ElementProps),
+          );
+        }}
+        onElementDelete={handleDeleteElement}
+      />
     </div>
   );
 }
