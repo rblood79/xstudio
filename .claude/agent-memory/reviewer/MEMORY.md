@@ -9,6 +9,17 @@
 - **`"legacy-element-props"` literal 3중 복제 (ADR-911 Fix #2)**: `adapters/canonical/index.ts:170` / `slotAndLayoutAdapter.ts:260` / `slotAndLayoutAdapter.ts:328` 에 동일 문자열 리터럴 + `legacyProps` spread 6-field 블록(id/parent_id/page_id/layout_id/order_num/fills) 3회 완전 복제. `LEGACY_ELEMENT_PROPS_METADATA_TYPE = "legacy-element-props"` 상수 + `buildLegacyPropsMetadata(element: Element)` 헬퍼 추출로 정리 가능. 파일 상단 인식 주석(`DRY 인지`)은 P1 의도적 격리로 기록되어 있으나, 3개 이상 사이트로 확장된 시점부터 헬퍼 추출 비용 대비 유지보수 위험이 역전됨.
 - **legacyProps spread props.id 충돌 위험**: `index.ts:171-180` / `slotAndLayoutAdapter.ts:261-270` / `slotAndLayoutAdapter.ts:329-338` 세 블록 모두 `{ ...element.props, id: element.id, ... }` 순서로 spread — element.props 안에 `id` key 존재 시 element.id 로 덮임(올바른 방향). 반대로 `parent_id`/`page_id` 등 6 필드가 element.props 에 동일 이름으로 있으면 element top-level 값이 props 에 있던 값을 덮어씀(의도적이나 문서화 미흡). `buildLegacyPropsMetadata` 헬퍼 도입 시 명시적 overwrite 순서를 docstring으로 고정 권장.
 
+## False Positive 기록
+
+- **ADR-913 P4 Step 4-3 dry-run backup 생성**: `migrationTagType.ts`에서 `dryRun=true`인데도 `createMigrationBackup`을 호출하는 패턴 — 의도된 안전망. 주석에 "Step 4-4 write-through 진입 시 fallback 안전망 보장" 명시. dry-run이라도 backup을 만들어두는 것이 설계 의도이므로 효율성 이슈로 지적하면 false positive.
+- **applyCanonicalThemes 4 setter 순차 호출 — themeVersion 4회 증가**: 설계 문서에 "batch 적용은 Phase 2 ts-3.5 monitoring 단계에서 검토"로 명시 의도. 현재는 의도된 단순 구현. 단, 실제 themeConfigStore setter에 값 동일 시 early return 미존재 — 같은 값으로 setTint 호출해도 themeVersion++ + notifyLayoutChange() 항상 실행되는 점은 진짜 문제로 분류 가능.
+- **BuilderCore entry `selectCanonicalDocument` + `applyCanonicalThemes` 호출**: env flag `VITE_ADR910_P2_THEMES_WRITE_THROUGH === "true"` 게이트로 완전 차단됨. flag 기본값 미설정 시 실행 안 됨 — false positive.
+
+## 빈출 migration 패턴 (ADR-903/913)
+
+- **dry-run entry 중복 IDB read (elements.getAll x2)**: `usePageManager.ts`의 ADR-903 dry-run (runLegacyToCanonicalMigration)과 ADR-913 dry-run (runTagTypeMigration)이 sequential하게 각각 `elements.getAll()` 호출 — 동일 데이터를 2회 IDB read. 두 migration이 같은 조건 분기(`metaRecord === legacy`)에 있으므로 `elements` 공유 가능하나 현재 두 함수가 독립 인터페이스를 가짐. Step 4-4 write-through 전에 통합 검토 권장.
+- **createMigrationBackup 내부에서도 elements.getAll + layouts.getAll**: `migrationTagType.ts:168-170`에서 `createMigrationBackup` 호출 시 내부에서 `Promise.all([elements.getAll(), layouts.getAll()])` — runTagTypeMigration의 step 3 `elements.getAll()`(L174)과 elements를 이중 read. write-through 단계에서 backup 후 elements 재사용 패턴으로 리팩토링 필요.
+
 ## 리뷰 빈출 이슈 패턴
 
 - **`props.style as Record<string,unknown>` 3중 반복 캐스팅**: `ContainerSpacingInput.style`이 `Record<string,unknown>`인데 Spec Props의 style 타입(`Record<string,string|number|undefined>`)이 subtype이라 캐스팅 불필요. GridList/Menu/Toolbar 3개 call-site 동시 발생 — `ContainerSpacingInput.style` 타입을 narrowing하거나 Props style 타입을 맞추면 제거 가능 (ADR-907 Phase 4 패턴).
