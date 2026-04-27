@@ -20,7 +20,11 @@ export function NodesPanelTabs({
   activeTab,
   onTabChange,
 }: NodesPanelTabsProps) {
-  const tabs: { id: NodesPanelTabType; label: string; icon: React.ReactNode }[] = [
+  const tabs: {
+    id: NodesPanelTabType;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
     {
       id: "pages",
       label: "Page",
@@ -33,8 +37,10 @@ export function NodesPanelTabs({
       ),
     },
     {
+      // ADR-911 P2 followup: UI 라벨만 "Frames" — 탭 id "layouts" / EditMode "layout"
+      // 은 데이터 호환성 유지를 위해 그대로. 후속 PR 에서 정합화 가능.
       id: "layouts",
-      label: "Layout",
+      label: "Frames",
       icon: (
         <Layout
           color={iconProps.color}
@@ -46,7 +52,11 @@ export function NodesPanelTabs({
   ];
 
   return (
-    <div className="nodes-panel-tabs" role="tablist" aria-label="Nodes Panel Tabs">
+    <div
+      className="nodes-panel-tabs"
+      role="tablist"
+      aria-label="Nodes Panel Tabs"
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}

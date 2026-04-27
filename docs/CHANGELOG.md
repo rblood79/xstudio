@@ -5,6 +5,15 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 followup — NodesPanelTabs UI 라벨 "Layout" → "Frames" — 세션 38] - 2026-04-27
+
+### Documentation
+
+- **NodesPanel 탭 UI 라벨 정합**:
+  - `NodesPanelTabs.tsx` — `id: "layouts"` 의 `label: "Layout"` → `"Frames"` (1줄)
+  - **Why**: 컴포넌트명 `FramesTab` 과 UI 라벨 "Layout" 의 불일치로 사용자 dev 검증 시 혼란 — ADR-911 Phase 2 cutover 와 함께 라벨 정합. 탭 id `"layouts"` / `EditMode "layout"` / `aria-controls "tabpanel-layouts"` 등 데이터 호환성 식별자는 그대로 유지 (후속 PR 에서 점진 정리 가능)
+  - 검증: type-check 0 / FramesTab 33/33 회귀 0 (라벨은 vitest 검증 대상 아님 — UI 가시 변경만)
+
 ## [ADR-911 Phase 2 PR-E4 — cutover (canonical mode default true) — 세션 37 후반] - 2026-04-27
 
 ### Breaking Changes
