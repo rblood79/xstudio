@@ -8,10 +8,11 @@
  * @since 2025-12-11 Phase 10 B2.3
  */
 
-import { memo, useMemo } from 'react';
-import type { Element, Page } from '@composition/shared';
-import { buildElementTree } from '@composition/shared';
-import { ElementRenderer } from './ElementRenderer';
+import { memo, useMemo } from "react";
+import type { Element, Page } from "@composition/shared";
+import { buildElementTree } from "@composition/shared";
+import { ElementRenderer } from "./ElementRenderer";
+import { useBodyElement } from "../hooks/useBodyElement";
 
 // ============================================
 // Types
@@ -43,6 +44,9 @@ export const PageRenderer = memo(function PageRenderer({
   const rootElements = useMemo(() => {
     return buildElementTree(pageElements, null);
   }, [pageElements]);
+
+  // ADR-109 D1: body element → document.body className/style 동기화
+  useBodyElement(pageElements);
 
   return (
     <div
