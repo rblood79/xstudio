@@ -834,6 +834,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
 
     getDescendants: async (parentId: string): Promise<Element[]> => {
+      // canonical (composition-1.0+): parent_id BFS
       const result: Element[] = [];
       const queue: string[] = [parentId];
       const seen = new Set<string>([parentId]);
@@ -851,7 +852,24 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           queue.push(child.id);
         }
       }
-      return result;
+      if (result.length > 0) return result;
+
+      // composition-pre-1.0 (legacy) fallback: layout_id index 직접 매칭
+      // _meta 에 composition-1.0+ record 가 없으면 legacy ownership marker 가 정본.
+      // composition-1.0+ 프로젝트인데 단순히 자식 0개 (빈 frame) 인 경우도 빈 배열 반환 — 동등 결과.
+      const allMeta = await this.getAllFromStore<MetaRecord>("_meta");
+      const isCanonical = allMeta.some(
+        (m) =>
+          m.schemaVersion === "composition-1.0" ||
+          m.schemaVersion === "composition-1.1",
+      );
+      if (isCanonical) return result;
+      const legacy = await this.getAllByIndex<Element>(
+        "elements",
+        "layout_id",
+        parentId,
+      );
+      return legacy.map(normalizeLegacyElement);
     },
 
     getAll: async (): Promise<Element[]> => {
