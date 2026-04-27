@@ -6,18 +6,13 @@ import { generateCustomId } from "../../utils/idGeneration";
 import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../stores/utils/elementSanitizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
+import { resolveOwnerPageId } from "../../../adapters/canonical/legacyMetadata";
 
 /**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성 시 필요한 컨텍스트.
  *
- * **ADR-911 P2 cutover 후 회귀 fix (2026-04-27 세션 42)**:
- * canonical mode default true 환경에서 page_id/layout_id 미주입 element 는
- * `pageElementsSnapshot` / `selectCanonicalDocument` 의 page-indexed 분기에서
- * 누락되어 화면 렌더 실패. createElementsFromDefinition 가 caller (ComponentFactory)
- * 의 pageId/layoutId 를 받아 parent + children 모두에 명시 주입한다.
- *
- * Layout/Slot System: layoutId 가 있으면 page_id=null, 없으면 page_id=pageId.
- * useElementCreator 의 단순 컴포넌트 경로 (line 198) 와 동일 규칙.
+ * page_id/layout_id 미주입 element 는 canonical mode 의 page-indexed 분기에서
+ * 누락되어 화면 렌더 실패 (ADR-911). caller 가 ownership 정보를 명시 전달.
  */
 export interface ElementCreationContext {
   pageId: string | null;
@@ -39,11 +34,9 @@ export function createElementsFromDefinition(
   const store = useStore.getState();
   const currentElements = store.elements;
 
-  // ADR-911 P2 fix: page_id/layout_id 명시 주입 (canonical mode 에서 page-indexed 누락 방지)
-  // useElementCreator.ts:198 의 단순 컴포넌트 경로와 동일 규칙
   const pageId = context?.pageId ?? null;
   const layoutId = context?.layoutId ?? null;
-  const resolvedPageId = layoutId ? null : pageId;
+  const resolvedPageId = resolveOwnerPageId(pageId, layoutId);
 
   // 부모 요소 생성
   const parent: Element = {

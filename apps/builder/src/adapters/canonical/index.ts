@@ -38,6 +38,7 @@ import type {
 } from "./types";
 import { isLegacySlotTag, tagToType } from "./tagRename";
 import { buildIdPathContext, segId } from "./idPath";
+import { buildLegacyElementMetadata } from "./legacyMetadata";
 import {
   convertLayoutToReusableFrame,
   buildSlotPathMap,
@@ -160,24 +161,9 @@ export function legacyToCanonical(
         : {}),
       children: canonicalChildren,
       ...(roleResult.rootOverrides ?? {}),
-      // legacy Element.props는 metadata로 보존 (Phase 2+ resolver가 활용)
-      // 2026-04-27: element top-level fields (id/parent_id/page_id/layout_id/order_num/fills)
-      // 도 보존 — CanonicalNodeRenderer 가 legacyUuid 식별 시 legacyProps.id 사용 (자식
-      // childrenMap lookup 매칭). 미보존 시 fallback 으로 canonical path-id (segId) 사용 →
-      // 자식 element 의 parent_id (원본 UUID) 와 mismatch → ToggleButtonGroup/InlineAlert
-      // 등 자식 있는 컴포넌트 미렌더 회귀.
-      metadata: {
-        type: "legacy-element-props",
-        legacyProps: {
-          ...element.props,
-          id: element.id,
-          parent_id: element.parent_id,
-          page_id: element.page_id,
-          layout_id: element.layout_id,
-          order_num: element.order_num,
-          fills: element.fills,
-        },
-      },
+      // legacy Element.props + top-level fields 를 metadata 로 보존 (ADR-911).
+      // CanonicalNodeRenderer 의 legacyUuid resolution 이 의존하는 contract.
+      metadata: buildLegacyElementMetadata(element),
     };
 
     return node;

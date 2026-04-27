@@ -6,6 +6,9 @@
 - **CSS-JS 이중 상수 drift 패턴 (BG_INSET)**: `DotBackground.tsx:15` `BG_INSET = 80` 과 `Workspace.css:39` `inset: -80px` 가 각각 독립 정의. 주석으로 "동기화" 명시했으나 진짜 SSOT 아님 — CSS Custom Property (`--bg-inset-px`) 또는 마운트 시 `getComputedStyle` 읽기로 단일화 필요. 수동 CSS 값이 JS 로직에 영향을 줄 때마다 발생하는 패턴.
 - **`--glow-r` as string 캐스팅 — setProperty 일관성 미적용**: `DotBackground.tsx:130`에서 `--glow-r` 만 `{ ["--glow-r" as string]: ... } as React.CSSProperties` 인라인으로 처리. 나머지 CSS 변수는 모두 `el.style.setProperty()`를 통해 처리하므로 일관성 위반. 초기값은 useEffect 내 `glowRef.current.style.setProperty("--glow-r", ...)` 단일 패턴으로 통일 필요.
 
+- **`"legacy-element-props"` literal 3중 복제 (ADR-911 Fix #2)**: `adapters/canonical/index.ts:170` / `slotAndLayoutAdapter.ts:260` / `slotAndLayoutAdapter.ts:328` 에 동일 문자열 리터럴 + `legacyProps` spread 6-field 블록(id/parent_id/page_id/layout_id/order_num/fills) 3회 완전 복제. `LEGACY_ELEMENT_PROPS_METADATA_TYPE = "legacy-element-props"` 상수 + `buildLegacyPropsMetadata(element: Element)` 헬퍼 추출로 정리 가능. 파일 상단 인식 주석(`DRY 인지`)은 P1 의도적 격리로 기록되어 있으나, 3개 이상 사이트로 확장된 시점부터 헬퍼 추출 비용 대비 유지보수 위험이 역전됨.
+- **legacyProps spread props.id 충돌 위험**: `index.ts:171-180` / `slotAndLayoutAdapter.ts:261-270` / `slotAndLayoutAdapter.ts:329-338` 세 블록 모두 `{ ...element.props, id: element.id, ... }` 순서로 spread — element.props 안에 `id` key 존재 시 element.id 로 덮임(올바른 방향). 반대로 `parent_id`/`page_id` 등 6 필드가 element.props 에 동일 이름으로 있으면 element top-level 값이 props 에 있던 값을 덮어씀(의도적이나 문서화 미흡). `buildLegacyPropsMetadata` 헬퍼 도입 시 명시적 overwrite 순서를 docstring으로 고정 권장.
+
 ## 리뷰 빈출 이슈 패턴
 
 - **`props.style as Record<string,unknown>` 3중 반복 캐스팅**: `ContainerSpacingInput.style`이 `Record<string,unknown>`인데 Spec Props의 style 타입(`Record<string,string|number|undefined>`)이 subtype이라 캐스팅 불필요. GridList/Menu/Toolbar 3개 call-site 동시 발생 — `ContainerSpacingInput.style` 타입을 narrowing하거나 Props style 타입을 맞추면 제거 가능 (ADR-907 Phase 4 패턴).
