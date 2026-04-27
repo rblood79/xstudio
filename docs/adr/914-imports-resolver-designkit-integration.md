@@ -4,6 +4,8 @@
 
 Proposed — 2026-04-26
 
+> **부분 무효화 안내 (2026-04-27)**: 본 ADR 의 **P5-F (DesignKit 통합 결정 + 실행)** 영역은 [ADR-915](915-designkit-system-removal.md) (Implemented 2026-04-27) 로 **무효화** 되었다. DesignKit 시스템 자체가 ADR-915 §2.1 자가 CRITICAL "기능 가치 부재" 근거로 즉시 전수 제거되었으며, 본 ADR 의 P5-F 관련 항목 (Hard Constraint #1, Soft Constraint #2, Risk R3, Gate P5-F, Negative Consequence 1) 은 strikethrough 처리. **잔여 scope 는 P5-D (`imports` fetch + parse) + P5-E (ResolverCache 통합) + G-Integration (ADR-911 통합)** 로 한정.
+
 ## Context
 
 ### Domain (SSOT 체인 - [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))
@@ -29,7 +31,7 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 
 ### Hard Constraints
 
-1. **DesignKit 복사-적용 파이프라인 무수정** — 기존 사용자 워크플로 보존. canonical 문서 tree 에 DesignKit 복사본 삽입 시 `metadata.importedFrom: "designkit:<kit-id>"` 출처 추적
+1. ~~**DesignKit 복사-적용 파이프라인 무수정** — 기존 사용자 워크플로 보존. canonical 문서 tree 에 DesignKit 복사본 삽입 시 `metadata.importedFrom: "designkit:<kit-id>"` 출처 추적~~ — **ADR-915 로 무효화**: DesignKit 시스템 자체가 전수 제거됨
 2. **`imports` 는 참조형 hook** — pencil 공식 의미 (외부 `.pen` URL/path 참조) 그대로. composition 확장 금지
 3. **ResolverCache 통합 시 동기 캐시 히트 + async prefetch** — 사용자 인터랙션 차단 0
 4. **ADR-911 (pencil 호환 frame 재설계) 의 import/export adapter 와 통합** — 동일 pencil schema 기반
@@ -37,7 +39,7 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 ### Soft Constraints
 
 1. import 된 reusable 노드의 lifecycle (캐시 만료 / 재 fetch / 버전 업데이트) 정책 명문화
-2. DesignKit 통합 결정 — 사용자가 DesignKit 자산을 `imports` 로도 참조 가능한지 (또는 복사-적용 전용 유지) 의사결정 필요
+2. ~~DesignKit 통합 결정 — 사용자가 DesignKit 자산을 `imports` 로도 참조 가능한지 (또는 복사-적용 전용 유지) 의사결정 필요~~ — **ADR-915 로 무효화**: DesignKit 시스템 제거로 의사결정 불필요
 
 ## Alternatives Considered
 
@@ -91,25 +93,25 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 
 ## Risks
 
-| ID  | 위험                                                                                                           | 심각도 | 대응                                                                                                                                                                           |
-| --- | -------------------------------------------------------------------------------------------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| R1  | 외부 `.pen` fetch 실패 / 네트워크 오류 시 import 된 ref 가 unresolvable                                        |  MED   | (a) fetch 실패 시 fallback 빈 노드 + dev console.warn (b) 사용자 알림 toast (c) IndexedDB 캐시 fallback (P5-E)                                                                 |
-| R2  | 동기 캐시 히트 + async prefetch 설계 시 race condition (캐시 비어있을 때 fetch 진행 중인 동안 사용자 인터랙션) |  MED   | (a) async prefetch 완료까지 placeholder 표시 (b) prefetch 실패 시 fallback (c) Phase 2 (ResolverCache) 의 핵심 검증 시나리오                                                   |
-| R3  | DesignKit 통합 결정이 사용자 워크플로 breaking change                                                          |  MED   | (a) 결정 옵션 사전 명시 — Option α (DesignKit 무수정 + imports 별도) / Option β (DesignKit 을 imports 로 통합) (b) 사용자 의견 수집 후 결정 (c) 결정에 따라 Phase 3 scope 조정 |
-| R4  | ResolverCache 메모리 누수 — 대규모 프로젝트 (수백 imports) 시 캐시 무한 증가                                   |  LOW   | LRU 캐시 + 만료 정책 (Phase 2 Gate)                                                                                                                                            |
-| R5  | pencil schema 의 `imports` 형식 변경 시 호환성 깨짐                                                            |  LOW   | composition `version: composition-1.0` 고정 + pencil version detection adapter                                                                                                 |
-| R6  | ADR-911 의 import/export adapter 와의 인터페이스 불일치                                                        |  MED   | ADR-911 land 후 본 ADR 진입 (의존). 인터페이스 spec 사전 합의                                                                                                                  |
+| ID  | 위험                                                                                                           | 심각도 | 대응                                                                                                                         |
+| --- | -------------------------------------------------------------------------------------------------------------- | :----: | ---------------------------------------------------------------------------------------------------------------------------- |
+| R1  | 외부 `.pen` fetch 실패 / 네트워크 오류 시 import 된 ref 가 unresolvable                                        |  MED   | (a) fetch 실패 시 fallback 빈 노드 + dev console.warn (b) 사용자 알림 toast (c) IndexedDB 캐시 fallback (P5-E)               |
+| R2  | 동기 캐시 히트 + async prefetch 설계 시 race condition (캐시 비어있을 때 fetch 진행 중인 동안 사용자 인터랙션) |  MED   | (a) async prefetch 완료까지 placeholder 표시 (b) prefetch 실패 시 fallback (c) Phase 2 (ResolverCache) 의 핵심 검증 시나리오 |
+| R3  | ~~DesignKit 통합 결정이 사용자 워크플로 breaking change~~ — **ADR-915 로 무효화**                              |  N/A   | DesignKit 시스템 제거 (ADR-915 Implemented 2026-04-27) → 본 위험 소멸                                                        |
+| R4  | ResolverCache 메모리 누수 — 대규모 프로젝트 (수백 imports) 시 캐시 무한 증가                                   |  LOW   | LRU 캐시 + 만료 정책 (Phase 2 Gate)                                                                                          |
+| R5  | pencil schema 의 `imports` 형식 변경 시 호환성 깨짐                                                            |  LOW   | composition `version: composition-1.0` 고정 + pencil version detection adapter                                               |
+| R6  | ADR-911 의 import/export adapter 와의 인터페이스 불일치                                                        |  MED   | ADR-911 land 후 본 ADR 진입 (의존). 인터페이스 spec 사전 합의                                                                |
 
 잔존 HIGH 위험 없음.
 
 ## Gates
 
-| Gate                                 | 시점    | 통과 조건                                                                                                                                             | 실패 시 대안                      |
-| ------------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **P5-D**: imports fetch + parse      | Phase 1 | (a) 외부 `.pen` URL/path → CompositionDocument parse / (b) `<importKey>:<nodeId>` ref 참조 정상 / (c) fetch 실패 fallback / (d) 샘플 5 종 import 성공 | fetch 도구 보강                   |
-| **P5-E**: ResolverCache 통합         | Phase 2 | (a) 동기 캐시 히트 / (b) async prefetch 완료 후 캐시 히트 전환 / (c) IndexedDB 캐시 fallback / (d) LRU 메모리 정책 / (e) race condition 0             | placeholder UI + 재 fetch         |
-| **P5-F**: DesignKit 통합 결정 + 실행 | Phase 3 | (a) Option α / β 결정 land (사용자 의견 반영) / (b) 결정에 따라 DesignKit 통합 또는 무수정 유지 / (c) 사용자 워크플로 회귀 0                          | 결정 보류 + DesignKit 무수정 유지 |
-| **G-Integration**: ADR-911 와 통합   | Phase 4 | (a) ADR-911 의 import/export adapter 가 본 ADR 의 fetch + ResolverCache 사용 / (b) pencil 샘플 5 종 import → roundtrip export 정합 / (c) 시각 회귀 0  | adapter 인터페이스 재설계         |
+| Gate                                     | 시점        | 통과 조건                                                                                                                                                | 실패 시 대안                                                                 |
+| ---------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **P5-D**: imports fetch + parse          | Phase 1     | (a) 외부 `.pen` URL/path → CompositionDocument parse / (b) `<importKey>:<nodeId>` ref 참조 정상 / (c) fetch 실패 fallback / (d) 샘플 5 종 import 성공    | fetch 도구 보강                                                              |
+| **P5-E**: ResolverCache 통합             | Phase 2     | (a) 동기 캐시 히트 / (b) async prefetch 완료 후 캐시 히트 전환 / (c) IndexedDB 캐시 fallback / (d) LRU 메모리 정책 / (e) race condition 0                | placeholder UI + 재 fetch                                                    |
+| ~~**P5-F**: DesignKit 통합 결정 + 실행~~ | ~~Phase 3~~ | ~~(a) Option α / β 결정 land (사용자 의견 반영) / (b) 결정에 따라 DesignKit 통합 또는 무수정 유지 / (c) 사용자 워크플로 회귀 0~~ — **ADR-915 로 무효화** | DesignKit 시스템 제거 (ADR-915 Implemented 2026-04-27) → P5-F gate 자동 소멸 |
+| **G-Integration**: ADR-911 와 통합       | Phase 4     | (a) ADR-911 의 import/export adapter 가 본 ADR 의 fetch + ResolverCache 사용 / (b) pencil 샘플 5 종 import → roundtrip export 정합 / (c) 시각 회귀 0     | adapter 인터페이스 재설계                                                    |
 
 ## Consequences
 
@@ -117,20 +119,21 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 
 - ADR-903 §3.10 `imports` field 의 실제 동작 land — pencil 공식 schema 정합 완료
 - ADR-911 의 pencil 호환 frame 재설계와 통합 — 외부 디자인 자산 import/export 자연스럽게 지원
-- DesignKit 통합 결정 추적성 확보 — 사용자 의사결정 명시적 기록
+- ~~DesignKit 통합 결정 추적성 확보 — 사용자 의사결정 명시적 기록~~ — **ADR-915 로 무효화** (DesignKit 시스템 제거)
 - ResolverCache 통합 — 대규모 import 시 60fps 마진 안전
-- ADR-903 P5-D/E/F 잔여 영역 종결
+- ADR-903 P5-D/E ~~/F~~ 잔여 영역 종결 (P5-F 는 ADR-915 로 흡수 종료)
 
 ### Negative
 
 - 외부 `.pen` fetch — 네트워크 의존성 + 보안 검토 필요 (CORS / CSP)
 - 캐시 정책 + LRU 메모리 관리 — 일회성 설계 부담
-- DesignKit 통합 결정에 따라 사용자 워크플로 변경 가능
+- ~~DesignKit 통합 결정에 따라 사용자 워크플로 변경 가능~~ — **ADR-915 로 무효화**: DesignKit 시스템 제거로 사용자 워크플로 변경 없음 (ADR-915 §3.B 비교에 따라 외부 직접 의존 0 / DB 영향 0 확인)
 
 ## References
 
-- [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 P5-D/E/F 잔여 흡수)
-- [ADR-903 Phase 5 design](design/903-phase5-persistence-imports-breakdown.md) — P5-D/E/F 영역 본 ADR 의 구현 상세 그대로 활용
+- [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 P5-D/E ~~/F~~ 잔여 흡수, P5-F 는 ADR-915 로 분리)
+- [ADR-903 Phase 5 design](design/903-phase5-persistence-imports-breakdown.md) — P5-D/E/F 영역 본 ADR 의 구현 상세 그대로 활용 (P5-F 는 ADR-915 로 무효화)
 - [ADR-911](911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (본 ADR 의 통합 대상)
 - [ADR-913](913-tag-type-rename-hybrid-cleanup.md) — `tag → type` rename + hybrid cleanup (본 ADR 와 독립 진행 가능)
+- [ADR-915](completed/915-designkit-system-removal.md) — DesignKit 시스템 즉시 전수 제거 (Implemented 2026-04-27, 본 ADR 의 P5-F 무효화 근거)
 - pencil app `imports` schema — 본 ADR 의 호환 기준
