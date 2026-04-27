@@ -5,6 +5,18 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 P2 회귀 수정 — 복합 컴포넌트 등록 시 page_id 미주입으로 화면 누락] - 2026-04-27
+
+### Bug Fixes
+
+- **복합 컴포넌트 (ListBox / TagGroup / RadioGroup / CheckboxGroup 등 COMPLEX_COMPONENT_TAGS) 등록 시 화면 미렌더 회귀**:
+  - 사용자 보고 (세션 42): ListBox 컴포넌트 등록 후 화면에 element 가 나타나지 않음 + dev console `[ADR-903] sanitizeElement: page_id/layout_id 없음 — canonical parent 의존 element?` 경고
+  - **Why**: `createElementsFromDefinition` (`apps/builder/src/builder/factories/utils/elementCreation.ts`) 가 parent + children Element 객체 생성 시 `page_id` / `layout_id` 명시 주입 안 함. ADR-911 P2 cutover (canonical mode default true) 후 `pageElementsSnapshot` / `selectCanonicalDocument` 의 page-indexed 분기에서 page_id 없는 element 가 frame.children 에 attach 안 되어 화면 누락. 단순 컴포넌트 경로 (`useElementCreator.ts:198`) 는 정상 (page_id 명시 주입) — 두 경로 비대칭이 ADR-911 cutover 로 노출됨
+  - 수정: `createElementsFromDefinition` 시그니처에 `ElementCreationContext` (pageId / layoutId) 추가 + parent + children 모두에 `page_id: layoutId ? null : pageId` / `layout_id: layoutId` 명시 주입. `ComponentFactory.createComponent` 가 호출 시 이미 보유 중인 pageId/layoutId 전달
+  - 위치: `apps/builder/src/builder/factories/utils/elementCreation.ts` (createElementsFromDefinition + ElementCreationContext 인터페이스 신설) / `apps/builder/src/builder/factories/ComponentFactory.ts:238-245` (호출 시 context 전달)
+  - 검증: `pnpm type-check` 3/3 exit 0
+  - **ADR-911 monitoring 1주 (~2026-05-04) 진행 중 발견된 사용자-가시 회귀** — 본 fix land 후 monitoring 카운터 reset 권장 (회귀 fix 시점부터 1주 재측정 + 추가 회귀 watch)
+
 ## [ADR-913 mechanical rename false-positive sweep — Tag literal 복원 + lucide generated 자동화] - 2026-04-27
 
 ### Bug Fixes

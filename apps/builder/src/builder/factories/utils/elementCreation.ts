@@ -8,10 +8,30 @@ import { sanitizeElement } from "../../stores/utils/elementSanitizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
 
 /**
+ * 컴포넌트 정의로부터 실제 Element 데이터 생성 시 필요한 컨텍스트.
+ *
+ * **ADR-911 P2 cutover 후 회귀 fix (2026-04-27 세션 42)**:
+ * canonical mode default true 환경에서 page_id/layout_id 미주입 element 는
+ * `pageElementsSnapshot` / `selectCanonicalDocument` 의 page-indexed 분기에서
+ * 누락되어 화면 렌더 실패. createElementsFromDefinition 가 caller (ComponentFactory)
+ * 의 pageId/layoutId 를 받아 parent + children 모두에 명시 주입한다.
+ *
+ * Layout/Slot System: layoutId 가 있으면 page_id=null, 없으면 page_id=pageId.
+ * useElementCreator 의 단순 컴포넌트 경로 (line 198) 와 동일 규칙.
+ */
+export interface ElementCreationContext {
+  pageId: string | null;
+  layoutId: string | null | undefined;
+}
+
+/**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성
  * 재귀적 중첩 children 지원 (TagGroup → TagList → Tag 등 3레벨 이상)
  */
-export function createElementsFromDefinition(definition: ComponentDefinition): {
+export function createElementsFromDefinition(
+  definition: ComponentDefinition,
+  context?: ElementCreationContext,
+): {
   parent: Element;
   children: Element[];
 } {
@@ -19,11 +39,19 @@ export function createElementsFromDefinition(definition: ComponentDefinition): {
   const store = useStore.getState();
   const currentElements = store.elements;
 
+  // ADR-911 P2 fix: page_id/layout_id 명시 주입 (canonical mode 에서 page-indexed 누락 방지)
+  // useElementCreator.ts:198 의 단순 컴포넌트 경로와 동일 규칙
+  const pageId = context?.pageId ?? null;
+  const layoutId = context?.layoutId ?? null;
+  const resolvedPageId = layoutId ? null : pageId;
+
   // 부모 요소 생성
   const parent: Element = {
     ...definition.parent,
     id: ElementUtils.generateId(),
     customId: generateCustomId(definition.parent.type, currentElements),
+    page_id: resolvedPageId,
+    layout_id: layoutId,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -43,6 +71,8 @@ export function createElementsFromDefinition(definition: ComponentDefinition): {
         id: ElementUtils.generateId(),
         customId: generateCustomId(elementDef.type, allElementsSoFar),
         parent_id: parentId,
+        page_id: resolvedPageId,
+        layout_id: layoutId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
