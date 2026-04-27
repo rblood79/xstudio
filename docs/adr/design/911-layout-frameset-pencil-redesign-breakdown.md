@@ -450,7 +450,7 @@ const handleDevMigrate = useCallback(async () => {
 | **E1** | `PageLayoutSelector` dual-mode read 전환 + `slotAndLayoutAdapter` description 보존                     | P2-c 부분        | ✅ 2026-04-27 (PR pending)           |
 | **E2** | `usePresetApply.ts` canonical mutation 전환 (write 경로 P3-D 종속 — defer)                             | P2-c 잔여        | 🔄 P3-D 종속 — 별도 ADR 로 처리      |
 | **E3** | dev migration trigger (handleDevMigrate) + Chrome MCP P1-c roundtrip                                   | P2-e             | ✅ 2026-04-27 (PR pending)           |
-| **E4** | 1주 dual-mode + cutover (`VITE_FRAMES_TAB_CANONICAL=true` default 전환)                                | P2-f + P2-g      | 후속 세션                            |
+| **E4** | cutover (`VITE_FRAMES_TAB_CANONICAL=true` default 전환) — 1주 모니터링 진입                            | P2-f + P2-g      | ✅ 2026-04-27 (PR pending)           |
 | **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                        | P2-f + P2-g      | 후속 세션                            |
 
 | Step       | 내용                                                                                                                      | 시간 | RED/GREEN 사이클                                                                                     |

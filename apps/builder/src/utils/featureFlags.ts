@@ -157,15 +157,20 @@ export function isReactQueryDevtoolsEnabled(): boolean {
  *
  * `true` 일 때 FramesTab 의 frame 목록 read 가 `selectCanonicalDocument` 기반
  * canonical projection 으로 동작. `false` 일 때 legacy `useLayoutsStore.layouts[]`
- * direct read 유지 (PR-A baseline 보호).
+ * direct read 유지.
  *
- * 기본값 `false` — PR-B (FramesTab read path 전환) 진입 시 dual-mode 운영 후
- * 1주 issue 0 확인 시 true 로 전환 (P2-d).
+ * **PR-E4 (2026-04-27) cutover**: 기본값 `false` → `true` 전환.
+ * - PR-A~E3 (8 PRs main land) + 33/33 vitest 회귀 안전망 + dev migration trigger
+ *   (P1-c roundtrip 검증 가능) 토대 위에서 cutover 진행
+ * - 사용자 환경변수 override 가능 (`VITE_FRAMES_TAB_CANONICAL=false`) — emergency
+ *   rollback 경로 보장
+ * - 1주 모니터링 (사용자 issue report 0건 확인) 후 ADR-911 Phase 2 Status:
+ *   `In Progress` → `Phase 2 Implemented` 승격
  *
- * @returns true if FramesTab canonical-native read 활성화
+ * @returns true if FramesTab canonical-native read 활성화 (default true)
  */
 export function isFramesTabCanonical(): boolean {
-  return parseBoolean(import.meta.env.VITE_FRAMES_TAB_CANONICAL, false);
+  return parseBoolean(import.meta.env.VITE_FRAMES_TAB_CANONICAL, true);
 }
 
 /**
@@ -193,7 +198,7 @@ export function getFeatureFlags(): FeatureFlags {
     ),
     framesTabCanonical: parseBoolean(
       import.meta.env.VITE_FRAMES_TAB_CANONICAL,
-      false,
+      true,
     ),
   };
 }

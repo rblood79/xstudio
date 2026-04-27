@@ -55,7 +55,13 @@ In Progress — 2026-04-26 → 2026-04-27
   - production 단락: `process.env.NODE_ENV === "development"` 체크. production build 영향 0
   - **persistence 미구현**: canonical document store write API 가 없음 (P3-D 종속). Chrome MCP P1-c roundtrip dev 검증 용도만
   - 검증: type-check 0 / FramesTab 33/33 회귀 0 / migrationP911 45/45 회귀 0 / db 전체 126/126 회귀 0
-- **잔여 Phase 2 sub-PR**: PR-E4 (1주 dual-mode + cutover, `VITE_FRAMES_TAB_CANONICAL=true` default 전환)
+- **2026-04-27 (세션 37 후속)**: **PR-E4: Phase 2 cutover — flag default true 전환** (PR pending)
+  - `featureFlags.ts` `isFramesTabCanonical()` default `false → true`. `getFeatureFlags()` 내부 default 도 동시 갱신
+  - 사용자 환경변수 override 가능 (`VITE_FRAMES_TAB_CANONICAL=false`) — emergency rollback 경로 보장
+  - **canonical mode** 가 production default 가 됨 — FramesTab + PageLayoutSelector 모두 `selectCanonicalDocument` projection 으로 read
+  - 검증: type-check 0 / 156/156 vitest PASS (FramesTab 33 + frameActions 7 + migrationP911 45 + canonical adapters 71) — vitest 는 mockState 격리로 default 변경 영향 0
+  - **1주 모니터링** (사용자 issue report 0건 확인) 후 본 ADR Status: `In Progress` → `Phase 2 Implemented` 승격
+- **Phase 2 cutover 완료** — read path canonical 전환 + 컴포넌트 분리 + dev migration trigger + 모니터링 진입. 잔여 영역 (P3 cascade 재작성, P4 DB schema migration, P5 hybrid 6 cleanup) 은 본 ADR 의 Phase 3-5 로 분리 진행
 
 ## Context
 
