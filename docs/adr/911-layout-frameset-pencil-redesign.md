@@ -110,6 +110,13 @@ In Progress — 2026-04-26 → 2026-04-27
   - **설계 결정: 별도 함수 (NOT modify computeLayoutGroups)** — 기존 `LayoutGroup` 의 page-sharing semantic 과 frame canvas area semantic 분리. workflowRenderer / skiaOverlayBuilder / invalidationPacket / BuilderCanvas 4 caller 영향 0건. "확장" 은 모듈 (workflowEdges.ts) 단위 유지
   - **caller 0건 유지** — BuilderCanvas / Skia render 통합은 P3-δ. 본 land 는 compute layer 만
   - 검증: `frameAreas.test.ts` 6/6 PASS (null doc / non-reusable filter / metadata.layoutId 우선 / framePositions miss fallback / name 부재 fallback / 다중 frame 순서 보존) + type-check 3/3 + canvas/ 광역 vitest 174/174 PASS (회귀 0)
+- **2026-04-28 (세션 47 후속)**: **P3-γ land — frame editing indicator 결정 + integration test (Gate G3-γ PASS, B 채택)**
+  - **설계 분기 발견**: design breakdown 의 "`editingContextId` 갱신" 표현이 consumer 분석 후 부정확 — `editingContextId` (`elements.ts`) 는 element id 타입, `resolveClickTarget` 의 parent_id chain 탐색에 사용. frameId (legacy layoutId) 직접 대입 시 click target 분해 실패 → `useCanvasElementSelectionHandlers.ts:187` 의 자동 exit trigger → 사용자 첫 클릭만에 frame editing 종료 회귀 위험
+  - **B 채택**: indicator 는 `useLayoutsStore.selectedReusableFrameId` (ADR-903 P3-B 에서 도입, 이미 `selectReusableFrame` 이 갱신 중). `editingContextId` 와 semantic 분리 — `framePositions` 별도 map 결정과 동일 domain 분리 패턴
+  - 변경 = test + 문서 정정만. 실제 코드 변경 0건 — 기존 `selectReusableFrame` 동작 유지
+  - 신규 integration test: `selectReusableFrameContext.test.ts` 4/4 PASS (frameId 갱신 / null 해제 / 연속 호출 / currentLayoutId backward-compat alias 동시 갱신)
+  - design breakdown 정정: §2 P3-γ 행 / §4 G3-γ 행 / §4.5 결정 근거 추가
+  - 캔버스 read path 통합은 P3-δ Skia render PR 에 동시 land (dead read 회피)
 
 ## Context
 

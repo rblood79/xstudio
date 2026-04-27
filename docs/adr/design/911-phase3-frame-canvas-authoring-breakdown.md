@@ -44,14 +44,14 @@ childrenMap.root = [
 
 ## 2. Sub-phase 분해
 
-| Sub-phase | 작업                                                                                                                                           | 예상 비용 |   위험   |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | :-------: | :------: |
-| **P3-α**  | `pagePositions` 확장 또는 신규 `framePositions` map 도입 — frame id → `{x, y, width, height}` 저장 + 갱신 setter                               |    1d     |   MED    |
-| **P3-β**  | `computeLayoutGroups` 확장 — frame 별 캔버스 영역 그룹 추가. selectedReusableFrameId 또는 모든 reusable frame 을 별도 영역으로 계산            |    1d     |   MED    |
-| **P3-γ**  | `editingContextId` 갱신 path — frameActions.selectReusableFrame 시 setEditingContextId(frameId) 호출. SkiaCanvas 가 editingContextId 기반 분기 |   0.5d    |   LOW    |
-| **P3-δ**  | Skia render path 통합 — BuilderCanvas 의 page viewport 외에 frame viewport 추가. frame body+slot 들이 frame viewport 안에 그려짐               |    2d     | **HIGH** |
-| **P3-ε**  | hit-test/drag/selection 통합 — frame 영역도 사용자 인터랙션 가능 (선택, 드래그, hover)                                                         |   1.5d    |   MED    |
-| **P3-ζ**  | Chrome MCP 시각 회귀 검증 + roundtrip — Frame 추가 → Layout preset 적용 → Skia slot 시각화 사용자 시나리오 GREEN                               |   0.5d    |   LOW    |
+| Sub-phase | 작업                                                                                                                                                                           | 예상 비용 |   위험   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------: | :------: |
+| **P3-α**  | `pagePositions` 확장 또는 신규 `framePositions` map 도입 — frame id → `{x, y, width, height}` 저장 + 갱신 setter                                                               |    1d     |   MED    |
+| **P3-β**  | `computeLayoutGroups` 확장 — frame 별 캔버스 영역 그룹 추가. selectedReusableFrameId 또는 모든 reusable frame 을 별도 영역으로 계산                                            |    1d     |   MED    |
+| **P3-γ**  | frame editing indicator 갱신 path — `selectReusableFrame` 이 `useLayoutsStore.selectedReusableFrameId` 갱신 (이미 구현). 캔버스 consumer 가 indicator read 후 P3-δ render 분기 |   0.5d    |   LOW    |
+| **P3-δ**  | Skia render path 통합 — BuilderCanvas 의 page viewport 외에 frame viewport 추가. frame body+slot 들이 frame viewport 안에 그려짐                                               |    2d     | **HIGH** |
+| **P3-ε**  | hit-test/drag/selection 통합 — frame 영역도 사용자 인터랙션 가능 (선택, 드래그, hover)                                                                                         |   1.5d    |   MED    |
+| **P3-ζ**  | Chrome MCP 시각 회귀 검증 + roundtrip — Frame 추가 → Layout preset 적용 → Skia slot 시각화 사용자 시나리오 GREEN                                                               |   0.5d    |   LOW    |
 
 **총 예상**: 6.5d ≈ **1주+** HIGH
 
@@ -89,14 +89,24 @@ childrenMap.root = [
 
 ## 4. Gate
 
-| Gate     | 시점      | 통과 조건                                                                                                                               | 실패 시                     |
-| -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| **G3-α** | P3-α 완료 | (a) `framePositions` 또는 확장된 `pagePositions` 에 frame id 좌표 저장 (b) updatePosition setter 동작 (c) test 5/5 PASS                 | 데이터 모델 재검토          |
-| **G3-β** | P3-β 완료 | (a) computeLayoutGroups 가 frame 영역 그룹 반환 (b) 기존 page 그룹화 회귀 0                                                             | layoutGroup 알고리즘 재검토 |
-| **G3-γ** | P3-γ 완료 | (a) frame 선택 시 editingContextId 갱신 (b) 다른 element 선택 시 editingContextId null 또는 frame 의 자식                               |                             |
-| **G3-δ** | P3-δ 완료 | (a) Skia 캔버스에 frame body 영역 그려짐 (b) frame body 자식 (slot) 도 영역 안에 그려짐 (c) Chrome MCP screenshot 사용자 시나리오 GREEN | render 알고리즘 재검토      |
-| **G3-ε** | P3-ε 완료 | (a) frame body 클릭 시 selection (b) drag 가능 (c) hover outline 표시                                                                   |                             |
-| **G3-ζ** | P3 종결   | (a) Chrome MCP 사용자 회귀 시나리오 100% GREEN (b) `mockLargeDataV2` 시각 회귀 0 (c) 기존 page 캔버스 회귀 0                            | 부분 land 후 후속           |
+| Gate     | 시점      | 통과 조건                                                                                                                                                                                                  | 실패 시                     |
+| -------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **G3-α** | P3-α 완료 | (a) `framePositions` 또는 확장된 `pagePositions` 에 frame id 좌표 저장 (b) updatePosition setter 동작 (c) test 5/5 PASS                                                                                    | 데이터 모델 재검토          |
+| **G3-β** | P3-β 완료 | (a) computeLayoutGroups 가 frame 영역 그룹 반환 (b) 기존 page 그룹화 회귀 0                                                                                                                                | layoutGroup 알고리즘 재검토 |
+| **G3-γ** | P3-γ 완료 | (a) `selectReusableFrame(frameId)` 후 `selectedReusableFrameId === frameId` (b) `selectReusableFrame(null)` 후 `selectedReusableFrameId === null` (c) `editingContextId` 미충돌 (element-id semantic 보존) |                             |
+| **G3-δ** | P3-δ 완료 | (a) Skia 캔버스에 frame body 영역 그려짐 (b) frame body 자식 (slot) 도 영역 안에 그려짐 (c) Chrome MCP screenshot 사용자 시나리오 GREEN                                                                    | render 알고리즘 재검토      |
+| **G3-ε** | P3-ε 완료 | (a) frame body 클릭 시 selection (b) drag 가능 (c) hover outline 표시                                                                                                                                      |                             |
+| **G3-ζ** | P3 종결   | (a) Chrome MCP 사용자 회귀 시나리오 100% GREEN (b) `mockLargeDataV2` 시각 회귀 0 (c) 기존 page 캔버스 회귀 0                                                                                               | 부분 land 후 후속           |
+
+## 4.5. P3-γ 설계 결정 (세션 47, B 채택)
+
+본 sub-phase 의 indicator 필드는 **`editingContextId` (X) → `selectedReusableFrameId` (✓)** 로 정정.
+
+**왜**: `editingContextId` 는 `elements.ts` 정의로 element id 타입. `resolveClickTarget` (`hierarchicalSelection.ts:25`) 가 `parent_id` chain 을 탐색하여 직계 자식 식별 — frameId (legacy layoutId) 직접 대입 시 chain 매칭 실패 → `useCanvasElementSelectionHandlers.ts:187` 의 자동 exit 분기 trigger → 사용자가 첫 클릭만에 frame editing 모드 강제 종료.
+
+**대안**: `selectedReusableFrameId` (`useLayoutsStore`, ADR-903 P3-B 도입) 는 이미 frame editing indicator 로 설계됐고 `selectReusableFrame` 이 갱신 중. 캔버스 read path 만 P3-δ Skia render 통합 시 추가 (dead read 회피).
+
+**대등 분리**: P3-α 의 `framePositions` 별도 map 결정과 동일한 domain 분리 패턴 — `editingContextId` (element 클릭 scope) 와 `selectedReusableFrameId` (frame 편집 indicator) 의 semantic 충돌 회피.
 
 ## 5. 비고
 
