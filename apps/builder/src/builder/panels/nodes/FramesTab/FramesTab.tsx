@@ -35,6 +35,7 @@ import {
 } from "../../../stores/utils/frameActions";
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
+import { selectCanonicalDocument } from "../../../stores/elements";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../../types/builder/stately.types";
@@ -45,7 +46,9 @@ import { useTreeExpandState } from "@/builder/hooks";
 import {
   isWebGLCanvas,
   isCanvasCompareMode,
+  isFramesTabCanonical,
 } from "../../../../utils/featureFlags";
+import type { FrameNode } from "@composition/shared";
 
 interface FramesTabProps {
   selectedElementId: string | null;
@@ -68,16 +71,9 @@ export function FramesTab({
   // P3-B canonical selector: selectedReusableFrameId (currentLayoutId alias 제거됨)
   const selectedReusableFrameId = useSelectedReusableFrameId();
 
-  // Legacy read bridge — frame 목록은 useLayoutsStore.layouts[] 직접 소비.
-  // PR-C 에서 selectCanonicalDocument 기반 read path 로 전환 예정.
   // CRUD 는 ADR-911 P2-a frameActions wrapper (PR-A) 로 위임.
   const layouts = useLayoutsStore((state) => state.layouts);
   const fetchLayouts = useLayoutsStore((state) => state.fetchLayouts);
-
-  // selectedReusableFrameId 기반 현재 프레임 조회 (legacy bridge)
-  const currentFrame = useMemo(() => {
-    return layouts.find((l) => l.id === selectedReusableFrameId) || null;
-  }, [layouts, selectedReusableFrameId]);
 
   // Edit Mode store
   const setEditModeLayoutId = useEditModeStore(
@@ -86,8 +82,44 @@ export function FramesTab({
 
   // ADR-040: elementsMap O(1) 조회
   const elementsMap = useStore((state) => state.elementsMap);
+  const pages = useStore((state) => state.pages);
   const removeElement = useStore((state) => state.removeElement);
   const mergeElements = useStore((state) => state.mergeElements);
+
+  // ADR-911 P2-a PR-C: dual-mode read path.
+  // - legacy: useLayoutsStore.layouts[] 직접 소비
+  // - canonical: selectCanonicalDocument 의 reusable FrameNode 추출
+  //   (selector cache 함정 회피 — useMemo 안에서 useStore.getState() 호출)
+  // id 정규화: canonical FrameNode.id 는 "layout-<legacyId>" 접두사 → metadata.layoutId
+  // (legacyToCanonical adapter 가 보존) 우선 사용. legacy CRUD 와 id 정합 유지.
+  const reusableFrames = useMemo<
+    ReadonlyArray<{ id: string; name: string }>
+  >(() => {
+    if (!isFramesTabCanonical()) {
+      return layouts.map((l) => ({ id: l.id, name: l.name }));
+    }
+    const state = useStore.getState();
+    const doc = selectCanonicalDocument(state, pages, layouts);
+    return doc.children
+      .filter(
+        (n): n is FrameNode =>
+          n.type === "frame" && (n as FrameNode).reusable === true,
+      )
+      .map((f) => {
+        const layoutId = (f.metadata as { layoutId?: string } | undefined)
+          ?.layoutId;
+        return {
+          id: layoutId ?? f.id,
+          name: f.name ?? "",
+        };
+      });
+    // elementsMap 변경 시 canonical projection 도 갱신 (selectCanonicalDocument 가 elements 소비)
+  }, [layouts, pages, elementsMap]);
+
+  // selectedReusableFrameId 기반 현재 프레임 조회
+  const currentFrame = useMemo(() => {
+    return reusableFrames.find((f) => f.id === selectedReusableFrameId) || null;
+  }, [reusableFrames, selectedReusableFrameId]);
 
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
 
@@ -365,7 +397,7 @@ export function FramesTab({
     async (frameId: string) => {
       try {
         await deleteReusableFrame(frameId);
-        const remaining = layouts.filter((l) => l.id !== frameId);
+        const remaining = reusableFrames.filter((f) => f.id !== frameId);
         if (remaining.length > 0) {
           handleSelectFrame(remaining[0].id);
         } else {
@@ -376,7 +408,7 @@ export function FramesTab({
         console.error("[FramesTab] Frame 삭제 에러:", error);
       }
     },
-    [layouts, handleSelectFrame, setEditModeLayoutId],
+    [reusableFrames, handleSelectFrame, setEditModeLayoutId],
   );
 
   // 새 Frame 생성 핸들러 — frameActions.createReusableFrame 위임
@@ -387,14 +419,14 @@ export function FramesTab({
     }
     try {
       const ref = await createReusableFrame({
-        name: `Frame ${layouts.length + 1}`,
+        name: `Frame ${reusableFrames.length + 1}`,
         projectId,
       });
       handleSelectFrame(ref.id);
     } catch (error) {
       console.error("[FramesTab] Frame 생성 에러:", error);
     }
-  }, [projectId, layouts.length, handleSelectFrame]);
+  }, [projectId, reusableFrames.length, handleSelectFrame]);
 
   // Element 삭제 핸들러
   const handleDeleteElement = useCallback(
@@ -437,10 +469,10 @@ export function FramesTab({
         </div>
 
         <div className="elements">
-          {layouts.length === 0 ? (
+          {reusableFrames.length === 0 ? (
             <p className="no_element">No frames available</p>
           ) : (
-            layouts.map((frame) => (
+            reusableFrames.map((frame) => (
               <div
                 key={frame.id}
                 className="element"
