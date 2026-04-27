@@ -14,6 +14,7 @@ In Progress — 2026-04-26 → 2026-04-27
   - 변경 규모: 243 files / +2302 / -2034
   - 검증: type-check 0 / specs 322/322 / shared 72/72 / builder 4 failed (baseline 동일 — ADR-913 회귀 0)
   - dev runtime 정상 작동 확인 (사용자 검증)
+- **2026-04-27 (세션 44)**: **Phase 4 design breakdown 사전 land** — `docs/adr/design/913-phase4-db-schema-migration-breakdown.md` (DB_VERSION 8→9 migration 6-step + ADR-903 P3-E E-6 패턴 재사용 + 3중 안전망 + 검증 명령). HIGH 위험 사전 설계로 미래 진입 시 즉시 구현 가능 상태 도달
 - **2026-04-27 (세션 44)**: **Phase 3 manual review 종결** (회귀 0 확증)
   - sweep 결과 (전수 grep, packages/ + apps/, test/dist 제외):
     - `.tag` 잔존 13건 → 의도된 변수명/CSS class/Tag spec preset 12건 + IDB adapter `(el as { tag?: string }).tag` 1건 (Phase 4 DB schema migration 영역의 의도된 legacy 검사)
@@ -111,6 +112,8 @@ In Progress — 2026-04-26 → 2026-04-27
 - **대안 C 기각**: hybrid 영구 잔존 → ADR-903 R1 영구화
 
 > 구현 상세: [903-phase5-persistence-imports-breakdown.md](design/903-phase5-persistence-imports-breakdown.md) §P5-C — ADR-903 Phase 5 design 문서 그대로 활용
+>
+> **Phase 4 (DB schema migration) 상세**: [913-phase4-db-schema-migration-breakdown.md](design/913-phase4-db-schema-migration-breakdown.md) — DB_VERSION 8→9 migration 6-step (4-1 schema bump → 4-2 dry-run → 4-3 entry 연결 → 4-4 write-through → 4-5 normalizeLegacyElement 제거 → 4-6 validation) + 3중 안전망 + 검증 명령
 
 ## Risks
 
