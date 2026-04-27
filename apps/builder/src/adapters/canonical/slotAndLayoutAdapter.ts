@@ -254,7 +254,20 @@ function convertElementToCanonical(
     children: childElements.map((c) =>
       convertElementToCanonical(c, allElements, idSegmentMap),
     ),
-    metadata: { type: "legacy-element-props", legacyProps: element.props },
+    // 2026-04-27: element top-level fields 보존 — CanonicalNodeRenderer 의 legacyUuid
+    // 식별용 (자식 childrenMap lookup 매칭). index.ts 와 동일 패턴.
+    metadata: {
+      type: "legacy-element-props",
+      legacyProps: {
+        ...element.props,
+        id: element.id,
+        parent_id: element.parent_id,
+        page_id: element.page_id,
+        layout_id: element.layout_id,
+        order_num: element.order_num,
+        fills: element.fills,
+      },
+    },
   };
 }
 
@@ -310,7 +323,19 @@ function convertElementWithSlotHoisting(
     children: childElements.map((c) =>
       convertElementWithSlotHoisting(c, allElements, idSegmentMap),
     ),
-    metadata: { type: "legacy-element-props", legacyProps: element.props },
+    // 2026-04-27: element top-level fields 보존 — convertElementToCanonical 와 동일 패턴.
+    metadata: {
+      type: "legacy-element-props",
+      legacyProps: {
+        ...element.props,
+        id: element.id,
+        parent_id: element.parent_id,
+        page_id: element.page_id,
+        layout_id: element.layout_id,
+        order_num: element.order_num,
+        fills: element.fills,
+      },
+    },
   };
 }
 
