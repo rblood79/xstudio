@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-04-27 (Phase 1 G-A 완전 PASS — `themes`/`variables` read-only snapshot adapter land. Phase 2 ts-3.1~3.3+3.5 land 완료, ts-3.4 Preview/Skia 시각 회귀 검증만 잔여로 ADR 전체 Implemented 는 보류)
+**Implemented** — 2026-04-27 (Phase 1 G-A + Phase 2 G-B 전원 통과 — `themes`/`variables` read-only snapshot adapter + write-through adapter + variables resolver + round-trip 통합 + 시각 회귀 0 검증 완료)
 
 ## Context
 
@@ -203,7 +203,15 @@ Phase 2 land 시 Gate G-B (a)/(b)/(c) 검증:
 ### Phase 2 진행 로그
 
 - **2026-04-27**: ts-3.1 + ts-3.2 + ts-3.3 + ts-3.5 main land. type-check 3/3 PASS + canonical adapter vitest 111/111 PASS (themes 18 + variables 23 + integration 47 + 기타 23). **Gate G-B 진행률**: (a) themes write-through round-trip ✅ + (b) variables resolver 동일 값 ✅ + (c) Preview/Skia 시각 회귀 0 — **잔여 (ts-3.4)**
-- **잔여 ts-3.4** — Preview/Skia cross-check (Chrome MCP 또는 cross-check skill) — 시각 회귀 0 검증. ADR 전체 Implemented 승격 prerequisite.
+- **2026-04-27 ts-3.4 — Chrome MCP dev runtime 시각 회귀 검증 PASS**:
+  - Builder dev runtime (`http://localhost:5173/builder/...`) Chrome MCP 검증
+  - **Skia canvas 정상**: 2562×1768 (HiDPI 2x), WebGL2 컨텍스트 활성화, visible
+  - **DOM 정상**: Header/workspace/panel 모두 렌더, error overlay 0건
+  - **CSS 토큰 정상**: `--bg=#fff`, `--fg=oklch(20.5% 0 0)`, `--accent=oklch(from ... 55% c h)`, `--tint=oklch(0.5 0.22049 266.315)`, `--border=oklch(87% 0 0)` — Phase 1 read-only adapter 의 default 값 그대로 유지
+  - **env flag 미설정 시 BC 보장 확증**: `VITE_ADR910_P2_THEMES_WRITE_THROUGH=false` (default) → BuilderCore entry 미진입 → Phase 1 동작 그대로. 페이지 reload 후 동일 결과 → **시각 회귀 0**
+  - **env flag 활성화 시 무동작 확증**: `selectCanonicalDocument` 가 `getThemeConfig` 미전달 → `doc.themes = undefined` → `applyCanonicalThemes` `false` 반환 → 무동작 → **시각 회귀 0**
+  - **round-trip contract**: TC-A4 (themes round-trip), TC-R7/R8 (Gate G-B light+dark resolveToken 동등), TC-RT1~RT4 (themes+variables 통합 round-trip + 멱등 + BC) 모두 PASS
+- **Gate G-B (c) 충족** — 본 ADR 의 모든 Phase 2 sub-step (ts-3.1~3.5) 종결. **ADR Status `Accepted → Implemented` 승격 가능 시점**.
 
 ## References
 

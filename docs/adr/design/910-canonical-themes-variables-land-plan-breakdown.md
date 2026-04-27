@@ -57,19 +57,19 @@ Phase 1 G-A 완전 PASS — 2026-04-27 완료.
 
 ### Phase 2 sub-step
 
-| 단계   | 산출물                                                                                                          |  상태  | 검증                                                                                         |
-| ------ | --------------------------------------------------------------------------------------------------------------- | :----: | -------------------------------------------------------------------------------------------- |
-| ts-3.1 | `applyCanonicalThemes(doc, setters)` + `ThemeConfigSetters` DI + BuilderCore env-flag entry                     |   ✅   | `themes.test.ts` 18 PASS (기존 12 + 신규 6) / commit `53906e26`                              |
-| ts-3.2 | `resolveCanonicalVariable(ref, doc)` — `tokenResolver.ts` 와 동일 값 반환 (Gate G-B (b))                        |   ✅   | `variables.test.ts` 23 PASS (기존 14 + 신규 9, light+dark contract 포함) / commit `0e63a807` |
-| ts-3.3 | round-trip 통합 테스트 — `legacyToCanonical` → `apply`+`resolve` → re-snapshot 동일 (`themes`/`variables` 양쪽) |   ✅   | `integration.test.ts` 47 PASS (기존 43 + 신규 4) / commit `e99f1054`                         |
-| ts-3.4 | Preview/Skia cross-check (Chrome MCP 또는 cross-check skill) — 시각 회귀 0                                      | 미진입 | Gate G-B (c) 잔여                                                                            |
-| ts-3.5 | feature flag `VITE_ADR910_P2_THEMES_WRITE_THROUGH` (rollback 경로) — BuilderCore initialize 종료 entry 게이트   |   ✅   | ts-3.1 land 시 동시 적용                                                                     |
+| 단계   | 산출물                                                                                                          | 상태 | 검증                                                                                              |
+| ------ | --------------------------------------------------------------------------------------------------------------- | :--: | ------------------------------------------------------------------------------------------------- |
+| ts-3.1 | `applyCanonicalThemes(doc, setters)` + `ThemeConfigSetters` DI + BuilderCore env-flag entry                     |  ✅  | `themes.test.ts` 18 PASS (기존 12 + 신규 6) / commit `53906e26`                                   |
+| ts-3.2 | `resolveCanonicalVariable(ref, doc)` — `tokenResolver.ts` 와 동일 값 반환 (Gate G-B (b))                        |  ✅  | `variables.test.ts` 23 PASS (기존 14 + 신규 9, light+dark contract 포함) / commit `0e63a807`      |
+| ts-3.3 | round-trip 통합 테스트 — `legacyToCanonical` → `apply`+`resolve` → re-snapshot 동일 (`themes`/`variables` 양쪽) |  ✅  | `integration.test.ts` 47 PASS (기존 43 + 신규 4) / commit `e99f1054`                              |
+| ts-3.4 | Preview/Skia cross-check (Chrome MCP) — 시각 회귀 0                                                             |  ✅  | Builder dev runtime 검증 — Skia 2562×1768 / CSS 토큰 정상 / error 0 / BC 충족 — Gate G-B (c) PASS |
+| ts-3.5 | feature flag `VITE_ADR910_P2_THEMES_WRITE_THROUGH` (rollback 경로) — BuilderCore initialize 종료 entry 게이트   |  ✅  | ts-3.1 land 시 동시 적용                                                                          |
 
 ### Phase 2 G-B Gate (ADR-910 line 126)
 
 - (a) `themes` write-through round-trip PASS — **✅ 충족** (ts-3.1 + ts-3.3)
 - (b) `variables` resolver 통합: `resolveCanonicalVariable(ref, doc)` ↔ `tokenResolver.ts` 동일 값 — **✅ 충족** (ts-3.2 TC-R7/R8 light+dark contract)
-- (c) Preview/Skia 시각 회귀 0 — **잔여** (ts-3.4)
+- (c) Preview/Skia 시각 회귀 0 — **✅ 충족** (ts-3.4 Chrome MCP dev runtime 검증)
 
 ### Phase 2 진입 시 회피 사항
 
