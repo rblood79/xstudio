@@ -77,15 +77,19 @@ export interface SyncMetadata {
   sync_status: "local-only" | "synced" | "conflict" | "pending";
 }
 
-// === Schema Migration Metadata (ADR-903 P3-E) ===
+// === Schema Migration Metadata (ADR-903 P3-E + ADR-913 Phase 4) ===
 
 /**
  * Per-project IndexedDB schema migration record.
  * `_meta` object store (DB_VERSION 8 도입) 의 record 1건 = 프로젝트 1개.
+ *
+ * - `legacy` — 미진입 (composition-1.0 migration 전)
+ * - `composition-1.0` — ADR-903 P3-E migration 완료 (canonical document 직렬화)
+ * - `composition-1.1` — ADR-913 Phase 4 migration 완료 (tag → type field rename)
  */
 export interface MetaRecord {
   projectId: string;
-  schemaVersion: "legacy" | "composition-1.0";
+  schemaVersion: "legacy" | "composition-1.0" | "composition-1.1";
   migratedAt?: string;
   backupKey?: string;
 }

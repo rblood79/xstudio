@@ -30,7 +30,7 @@ import type {
 import { LRUCache } from "./LRUCache";
 
 const DB_NAME = "composition";
-const DB_VERSION = 8; // ✅ 버전 8: ADR-903 P3-E _meta object store 추가 (schema migration metadata)
+const DB_VERSION = 9; // ✅ 버전 9: ADR-913 Phase 4 Step 4-1 schema bump (tag → type rename migration prep, _meta.schemaVersion enum "composition-1.1" 추가)
 
 /**
  * ADR-913 P1+P2 read-through compat — legacy `tag` field → canonical `type`.
@@ -76,6 +76,18 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = event.oldVersion;
+
+        // ADR-913 Phase 4 Step 4-1: oldVersion < 9 진입 marker.
+        // 현재 elements store 에 `tag` index 미존재 → schema 변경 없음 (no-op).
+        // tag → type rename 의 실제 데이터 변환은 Step 4-2 (dry-run) ~ Step 4-4
+        // (write-through) 에서 `runTagTypeMigration` 으로 처리. 본 단계는 _meta
+        // schemaVersion enum "composition-1.1" 도입을 위한 version bump 만 수행.
+        if (oldVersion < 9 && oldVersion > 0) {
+          console.log(
+            `[IndexedDB] ADR-913 Phase 4 Step 4-1: oldVersion=${oldVersion} → 9 (tag→type migration prep, no schema change)`,
+          );
+        }
 
         // Projects store
         if (!db.objectStoreNames.contains("projects")) {

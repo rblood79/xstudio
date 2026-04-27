@@ -2,13 +2,14 @@ import { describe, it, expect } from "vitest";
 
 describe("P3-E-1: IndexedDB _meta object store stub (RED phase)", () => {
   // Test 1: DB_VERSION 갱신 검증 (regex 기반 source 검증)
-  it("DB_VERSION 이 8 로 갱신된다", async () => {
+  // ADR-913 Phase 4 Step 4-1: DB_VERSION 8 → 9 schema bump
+  it("DB_VERSION 이 9 로 갱신된다 (ADR-913 Phase 4)", async () => {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const filePath = path.resolve(__dirname, "../indexedDB/adapter.ts");
     const source = await fs.readFile(filePath, "utf-8");
-    // const DB_VERSION = 8 패턴 매칭
-    expect(source).toMatch(/const DB_VERSION\s*=\s*8\b/);
+    // const DB_VERSION = 9 패턴 매칭
+    expect(source).toMatch(/const DB_VERSION\s*=\s*9\b/);
   });
 
   // Test 2: _meta store 생성 코드 검증
