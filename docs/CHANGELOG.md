@@ -5,6 +5,29 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 2 PR-D2 — FrameElementTree 컴포넌트 분리 — 세션 37 후반] - 2026-04-27
+
+### Architecture
+
+- **ADR-911 Phase 2 PR-D2 — FrameElementTree 프레젠테이션 컴포넌트 추출** (functional 동등):
+  - `apps/builder/src/builder/panels/nodes/FramesTab/FrameElementTree.tsx` 신규 (~205 lines)
+    - props: `tree` / `frameId` / `selectedElementId` / `expandedKeys` / `toggleKey` / `onCollapseAll` / `onElementClick` / `onElementDelete`
+    - 책임: Layers 헤더 + Collapse All 버튼 + element 트리 렌더 + placeholder (frameId null / 빈 tree)
+    - 내부 `renderTree` 재귀 — `renderFrameTree` 함수 흡수 (FramesTab 의 useCallback 제거)
+  - `FramesTab.tsx` 의 `renderFrameTree` (135 lines) + `sidebar_elements` JSX (35 lines) → `<FrameElementTree>` 호출 (15 lines)
+  - 미사용 import 제거: lucide icons (`Minimize`/`ChevronRight`/`Box`/`Trash`/`Settings2`) + `iconProps` + `ElementTreeItem`
+  - **Why**: PR-D 의 FrameList 분리에 이어 FramesTab 이 orchestrator 역할만 남도록 UI 책임 완전 분리. `renderFrameTree` 가 더 이상 `useCallback` 으로 부모 hook deps 에 묶이지 않아 메모이제이션 부담 감소 (이전 deps: `[expandedKeys, toggleKey, selectedElementId, currentFrame?.id]`). PR-E 진입 시 동일 컴포넌트가 page-bound element tree 같은 다른 consumer 에 재사용 가능
+  - 검증: vitest 33/33 PASS (FrameList 6 + FrameElementTree 12 + FramesTab 8 + frameActions 7) / type-check 0
+
+### Infrastructure
+
+- **FrameElementTree vitest 신규** (12 시나리오):
+  - `__tests__/FrameElementTree.test.tsx` — 프레젠테이션 단위 테스트 (mock 0 — props 순수 함수)
+  - placeholder 2: frameId null → "Select a frame" / tree=[] → "No elements"
+  - tree 렌더 5: 1-level 표시 / Slot type "Slot: name" 명명 / nested expanded → 자식 표시 / nested collapsed → 자식 미표시 / selectedElementId active 클래스
+  - interactions 5: element click → onElementClick(element) + frameId가 element.layout_id 로 매핑 / non-body Delete → onElementDelete + stopPropagation / body type → Settings 버튼 (Delete 없음) / ChevronRight icon click → toggleKey + stopPropagation / Collapse All → onCollapseAll
+  - **Why**: 컴포넌트 분리 시점에 결정적 UI 계약을 잠금. P3 cascade 재작성 시 element tree 동작이 보존되는지 즉시 감지
+
 ## [ADR-911 Phase 2 PR-D — FrameList 컴포넌트 분리 — 세션 37 후반] - 2026-04-27
 
 ### Architecture
