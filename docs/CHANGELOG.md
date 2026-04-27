@@ -5,6 +5,30 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-913 mechanical rename false-positive sweep — Tag literal 복원 + lucide generated 자동화] - 2026-04-27
+
+### Bug Fixes
+
+- **TagGroup remove 버튼 / `tag-list-wrapper` / `tag-show-all-btn` 스타일링 깨짐 회복**:
+  - ADR-913 P1+P2 mechanical rename (`\btag\b → type`, commit `99e4e7c9`) 가 React `className` literal 까지 false-positive 치환 → CSS `.tag-remove-btn` / `.tag-list-wrapper` / `.tag-show-all-btn` 클래스가 매칭 실패하여 Tag 삭제 버튼 마진 + show-all-btn 스타일이 적용되지 않음
+  - **Why**: ast-grep + node.js batch regex 가 `\btag\b` 단어 경계 만 검사 → React 의 `className="tag-…"` 리터럴 안의 `tag` 도 변환됨. CSS 파일은 commit scope 외라 `.tag-*` 그대로 → 클래스명 분리
+  - 수정: `packages/shared/src/components/TagGroup.tsx` 6 occurrence (`type-remove-btn` 3 / `type-list-wrapper` 1 / `type-show-all-btn` 2) → `tag-*` 복원
+- **`getTagRemoveAdjustedPaddingRight` / TagGroup remove padding 계산 dead 회복**:
+  - 동일 mechanical rename 이 `tag === "tag"` literal 비교를 `type === "type"` 로 변환 → element type lowercase 정규화 (`(element.type ?? "").toLowerCase()`) 와 비교 literal 자기-비교가 되어 분기가 항상 false → TagGroup `allowsRemoving` 시 우측 padding 축소 + remove 버튼 width 가산 로직 미작동
+  - **Why**: caller 4곳이 lowercase 변환된 `type` 변수를 함수에 전달, lowercase tag config map (`chip`/`togglebutton`/`tab` 등) 과 일관. literal 도 `"tag"` 가 정답
+  - 수정: `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` 4 occurrence + 주석 `.type-remove-btn` → `.tag-remove-btn`
+- **SelectionFilter "태그로" 필터 옵션 미작동**:
+  - ADR-913 mechanical rename 이 UI enum literal `filterType: "all" | "type" | "tag" | "property"` 의 `"tag"` 값 5 occurrence (type union / switch case / dropdown option value / 2 condition) 를 `"type"` 로 변환 → 두 옵션이 동일 값으로 충돌, `selectedTag` 상태가 dispatch 되지 않음
+  - 수정: `apps/builder/src/builder/components/selection/SelectionFilter.tsx` 5 occurrence 의 두 번째 `"type"` → `"tag"` 복원
+
+### Infrastructure
+
+- **`pnpm install` 차단 fix + lucide generated 자동 재생성**:
+  - `packages/specs/src/icons/lucideIconData.generated.ts` 가 ADR-913 mechanical rename 의 false-positive 로 lucide `'tag'` 아이콘 키 → `'type'` 로 변환 → `'type'` 키 중복 (line 1505 + 1595) → TS1117 "An object literal cannot have multiple properties with the same name" 으로 `prepare:specs` (DTS 빌드) + `pnpm install` 전체 차단
+  - **Why**: generated 파일이 source tree 에 commit 되어 mechanical rename scope 에 포함됨. lucide `tag.js` 와 `type-outline.js` / `type.js` 가 공존하여 collision 발생
+  - 수정: `node packages/specs/scripts/extract-lucide-icons.mjs` 재실행으로 ground truth 복원 + `package.json` 의 `prepare:specs` 에 추출 스크립트 추가 → 향후 install 시 자동 재생성으로 generated 파일 손상 자체 차단
+  - 위치: `packages/specs/src/icons/lucideIconData.generated.ts` / `package.json:34`
+
 ## [Body Spec SSOT 완결 — ADR-109 Publish symmetry + D1/D2/D4] - 2026-04-27
 
 ### Architecture

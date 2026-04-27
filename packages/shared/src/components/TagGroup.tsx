@@ -230,7 +230,7 @@ export function TagGroup<T extends object>({
                 <>
                   {tagContent}
                   {allowsRemoving && (
-                    <Button slot="remove" className="type-remove-btn">
+                    <Button slot="remove" className="tag-remove-btn">
                       <X size={14} />
                     </Button>
                   )}
@@ -454,7 +454,7 @@ export function TagGroup<T extends object>({
                   <>
                     {item.label}
                     {removing && (
-                      <Button slot="remove" className="type-remove-btn">
+                      <Button slot="remove" className="tag-remove-btn">
                         <X size={14} />
                       </Button>
                     )}
@@ -525,7 +525,7 @@ export function TagGroup<T extends object>({
         data-label-position={labelPosition}
       >
         {label && <Label>{label}</Label>}
-        <div className="type-list-wrapper">
+        <div className="tag-list-wrapper">
           <TagList
             items={items}
             renderEmptyState={renderEmptyState}
@@ -535,7 +535,7 @@ export function TagGroup<T extends object>({
           </TagList>
           {showAllButton && (
             <button
-              className="type-show-all-btn"
+              className="tag-show-all-btn"
               onClick={() => setIsCollapsed(false)}
               type="button"
             >
@@ -544,7 +544,7 @@ export function TagGroup<T extends object>({
           )}
           {hasMaxRows && !isCollapsed && (
             <button
-              className="type-show-all-btn"
+              className="tag-show-all-btn"
               onClick={() => setIsCollapsed(true)}
               type="button"
             >
@@ -567,7 +567,7 @@ export function Tag({ children, ...props }: TagProps): JSX.Element {
         <>
           {children}
           {allowsRemoving && (
-            <Button slot="remove" className="type-remove-btn">
+            <Button slot="remove" className="tag-remove-btn">
               <X size={14} />
             </Button>
           )}

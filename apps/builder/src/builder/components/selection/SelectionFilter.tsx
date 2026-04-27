@@ -37,7 +37,9 @@ export function SelectionFilter({
   onFilteredElements,
   className = "",
 }: SelectionFilterProps) {
-  const [filterType, setFilterType] = useState<"all" | "type" | "type" | "property">("all");
+  const [filterType, setFilterType] = useState<
+    "all" | "type" | "tag" | "property"
+  >("all");
   const [selectedTag, setSelectedTag] = useState<string>("");
   const [propertyKey, setPropertyKey] = useState<string>("");
   const [propertyValue, setPropertyValue] = useState<string>("");
@@ -64,7 +66,7 @@ export function SelectionFilter({
         break;
 
       case "type":
-      case "type":
+      case "tag":
         if (selectedTag) {
           filtered = allElements.filter((el) => el.type === selectedTag);
         }
@@ -92,7 +94,9 @@ export function SelectionFilter({
     const filteredIds = filtered.map((el) => el.id);
     onFilteredElements(filteredIds);
 
-    console.log(`✅ [Filter] Applied ${filterType} filter, found ${filteredIds.length} elements`);
+    console.log(
+      `✅ [Filter] Applied ${filterType} filter, found ${filteredIds.length} elements`,
+    );
   };
 
   // Clear filter
@@ -102,7 +106,7 @@ export function SelectionFilter({
     setPropertyKey("");
     setPropertyValue("");
     onFilteredElements(allElements.map((el) => el.id));
-    console.log('✅ [Filter] Cleared filter');
+    console.log("✅ [Filter] Cleared filter");
   };
 
   if (!isExpanded) {
@@ -150,12 +154,12 @@ export function SelectionFilter({
           options={[
             { value: "all", label: "전체" },
             { value: "type", label: "타입으로" },
-            { value: "type", label: "태그로" },
+            { value: "tag", label: "태그로" },
             { value: "property", label: "속성으로" },
           ]}
         />
 
-        {(filterType === "type" || filterType === "type") && (
+        {(filterType === "type" || filterType === "tag") && (
           <PropertySelect
             label="태그"
             value={selectedTag}
@@ -190,17 +194,14 @@ export function SelectionFilter({
             size="sm"
             onPress={handleApplyFilter}
             isDisabled={
-              (filterType === "type" || filterType === "type") && !selectedTag ||
-              filterType === "property" && !propertyKey
+              ((filterType === "type" || filterType === "tag") &&
+                !selectedTag) ||
+              (filterType === "property" && !propertyKey)
             }
           >
             필터 적용
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={handleClearFilter}
-          >
+          <Button variant="ghost" size="sm" onPress={handleClearFilter}>
             초기화
           </Button>
         </div>

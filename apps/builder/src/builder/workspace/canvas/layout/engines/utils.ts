@@ -597,7 +597,7 @@ function getTagRemoveAdjustedPaddingRight(
   },
   allowsRemoving: boolean,
 ): number {
-  if (type === "type" && allowsRemoving) {
+  if (type === "tag" && allowsRemoving) {
     // CSS TagGroup.css: allowsRemoving 상태에서는 우측 패딩이 size별 paddingY 값으로 축소된다.
     return sizeConfig.paddingY;
   }
@@ -1264,7 +1264,11 @@ export function calculateContentWidth(
 
       // Button icon 너비 반영: iconName이 있으면 iconSize + gap 추가
       let iconExtra = 0;
-      if (type === "button" || type === "submitbutton" || type === "fancybutton") {
+      if (
+        type === "button" ||
+        type === "submitbutton" ||
+        type === "fancybutton"
+      ) {
         const iconName = props?.iconName as string | undefined;
         if (iconName) {
           const btnConfig = sizeConfig as {
@@ -1290,11 +1294,11 @@ export function calculateContentWidth(
 
       // Tag remove 버튼 너비: allowsRemoving 시 X 아이콘 + gap + padding 추가
       let removeExtra = 0;
-      const tagAllowsRemoving = type === "type" && isTagAllowsRemoving(element);
-      if (type === "type") {
+      const tagAllowsRemoving = type === "tag" && isTagAllowsRemoving(element);
+      if (type === "tag") {
         if (tagAllowsRemoving) {
           const removeIconSize = Math.round(fontSize * 0.75);
-          const removeGap = 2; // CSS .type-remove-btn margin-left
+          const removeGap = 2; // CSS .tag-remove-btn margin-left
           const removePad = 2; // --spacing-2xs
           removeExtra = removeGap + removePad * 2 + removeIconSize;
         }
@@ -2228,7 +2232,8 @@ export function calculateContentHeight(
     if (isCompositional && childElements) {
       const hasLabel = !!props?.label;
       // wrapper type: Select → SelectTrigger, ComboBox → ComboBoxWrapper
-      const wrapperTag = type === "select" ? "SelectTrigger" : "ComboBoxWrapper";
+      const wrapperTag =
+        type === "select" ? "SelectTrigger" : "ComboBoxWrapper";
       const visibleChildren = childElements.filter(
         (c) =>
           !SELECT_HIDDEN_CHILDREN.has(c.type ?? "") &&
@@ -2984,7 +2989,7 @@ export function parseBoxModel(
       style?.paddingBottom !== undefined ||
       style?.paddingLeft !== undefined;
     if (!hasInlinePadding) {
-      const tagAllowsRemoving = type === "type" && isTagAllowsRemoving(element);
+      const tagAllowsRemoving = type === "tag" && isTagAllowsRemoving(element);
       // Icon-only 버튼: paddingX = paddingY (정사각형 패딩)
       const isIconOnlyButton =
         isFormElement &&
@@ -3310,7 +3315,8 @@ export function enrichWithIntrinsicSize(
             // INLINE_BLOCK 태그에 명시적 고정 너비(px)가 있으면 자신의 border-box 너비로
             // 텍스트 줄바꿈을 계산해야 함. 부모의 availableWidth를 사용하면 버튼 크기를
             // 초과한 너비로 측정되어 줄바꿈이 발생하지 않고 높이가 늘어나지 않는 버그 발생.
-            INLINE_BLOCK_TAGS.has(type) && (parseNumericValue(rawWidth) ?? 0) > 0
+            INLINE_BLOCK_TAGS.has(type) &&
+              (parseNumericValue(rawWidth) ?? 0) > 0
               ? (parseNumericValue(rawWidth) as number)
               : availableWidth,
             undefined,
