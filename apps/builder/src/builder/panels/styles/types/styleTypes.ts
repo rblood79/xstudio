@@ -17,7 +17,7 @@ export interface SectionProps {
 export type StyleSource =
   | { type: 'inline'; location: 'user-set' }
   | { type: 'computed'; location: string } // CSS class name
-  | { type: 'inherited'; location: string } // Parent element tag
+  | { type: 'inherited'; location: string } // Parent element type
   | { type: 'default'; location: 'component-default' };
 
 /**

@@ -19,7 +19,7 @@ export interface PropagationUpdate {
 
 interface ElementLike {
   id: string;
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
 }
 
@@ -40,7 +40,7 @@ function resolveChildPath(
     const children = childrenMap.get(parentId);
     if (!children || children.length === 0) return [];
     const target = childPath.toLowerCase();
-    return children.filter((c) => c.tag.toLowerCase() === target);
+    return children.filter((c) => c.type.toLowerCase() === target);
   }
 
   // 중첩 경로: 첫 단계는 parentId에서 시작, 이후 단계는 이전 결과의 id로 순회
@@ -55,7 +55,7 @@ function resolveChildPath(
       const children = childrenMap.get(pid);
       if (!children || children.length === 0) continue;
       for (const child of children) {
-        if (child.tag.toLowerCase() === stepTag) {
+        if (child.type.toLowerCase() === stepTag) {
           nextElements.push(child);
         }
       }
@@ -293,12 +293,12 @@ export function resolvePropagatedProps(
 export function applyFactoryPropagation<
   T extends {
     id: string;
-    tag: string;
+    type: string;
     parent_id?: string | null;
     props: Record<string, unknown>;
   },
 >(parent: T, children: T[]): T[] {
-  const rules = getPropagationRules(parent.tag);
+  const rules = getPropagationRules(parent.type);
   if (!rules || children.length === 0) return children;
 
   // 임시 childrenMap/elementsMap 빌드 (Store 추가 전이므로)

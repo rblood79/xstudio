@@ -29,12 +29,12 @@ export const getEditorStateTool: ToolExecutor = {
 
         const children = parentId
           ? childrenMap?.get(parentId) || []
-          : pageElements.filter((el) => el.parent_id === null || el.tag === 'body');
+          : pageElements.filter((el) => el.parent_id === null || el.type === 'body');
 
         return children.map((child) => {
           const node: Record<string, unknown> = {
             id: child.id,
-            tag: child.tag,
+            type: child.type,
           };
 
           // 주요 props만 포함 (토큰 절약)

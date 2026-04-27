@@ -811,14 +811,14 @@ export const BuilderCore: React.FC = () => {
 
   // 요소 추가 핸들러 (사용하지 않음 - 주석 처리)
   // const handleAddElementWrapper = useCallback(
-  //   async (tag: string, parentId?: string) => {
+  //   async (type: string, parentId?: string) => {
   //     if (!currentPageId) return;
   //     try {
   //       const addElement = useStore.getState().addElement as (
   //         element: Element
   //       ) => void;
   //       await handleAddElement(
-  //         tag,
+  //         type,
   //         currentPageId,
   //         parentId || selectedElementId,
   //         elements,

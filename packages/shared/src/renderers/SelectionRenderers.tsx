@@ -70,7 +70,7 @@ export const renderListBox = (
 
   // 실제 ListBoxItem 자식 요소들을 찾기
   const listBoxChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "ListBoxItem",
+    (child) => child.type === "ListBoxItem",
   );
 
   // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
@@ -162,7 +162,7 @@ export const renderListBox = (
     // Field 자식들 찾기 - context.childrenMap O(1) lookup
     const fieldChildren = (
       context.childrenMap.get(listBoxItemTemplate.id) ?? []
-    ).filter((child) => child.tag === "Field");
+    ).filter((child) => child.type === "Field");
 
     const renderItemFunction = (item: Record<string, unknown>) => {
       return (
@@ -482,7 +482,7 @@ export const renderGridList = (
 
   // 실제 GridListItem 자식 요소들을 찾기
   const gridListChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "GridListItem",
+    (child) => child.type === "GridListItem",
   );
 
   // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
@@ -515,7 +515,7 @@ export const renderGridList = (
         // Field 자식들 찾기 - context.childrenMap O(1) lookup
         const fieldChildren = (
           context.childrenMap.get(gridListItemTemplate.id) ?? []
-        ).filter((child) => child.tag === "Field");
+        ).filter((child) => child.type === "Field");
 
         return (
           <GridListItem
@@ -745,7 +745,7 @@ export const renderSelect = (
   //   신규 Select 는 items SSOT (factory 가 SelectItem Element 생성 안 함) —
   //   본 필터는 migration 전 기존 프로젝트 저장 데이터 호환 경로.
   const selectItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "SelectItem",
+    (child) => child.type === "SelectItem",
   );
 
   // ADR-073 P2: items[] SSOT
@@ -775,12 +775,12 @@ export const renderSelect = (
 
   // Child element에서 props 읽기 (compositional 패턴)
   const allSelectChildren = context.childrenMap.get(element.id) ?? [];
-  const selectLabelEl = allSelectChildren.find((c) => c.tag === "Label");
-  const triggerEl = allSelectChildren.find((c) => c.tag === "SelectTrigger");
+  const selectLabelEl = allSelectChildren.find((c) => c.type === "Label");
+  const triggerEl = allSelectChildren.find((c) => c.type === "SelectTrigger");
   const triggerChildren = triggerEl
     ? (context.childrenMap.get(triggerEl.id) ?? [])
     : [];
-  const selectValueEl = triggerChildren.find((c) => c.tag === "SelectValue");
+  const selectValueEl = triggerChildren.find((c) => c.type === "SelectValue");
 
   // child element props 우선 → parent props fallback
   const labelValue = selectLabelEl
@@ -820,7 +820,7 @@ export const renderSelect = (
       const selectItemTemplate = selectItemChildren[0];
       const fieldChildren = (
         context.childrenMap.get(selectItemTemplate.id) ?? []
-      ).filter((child) => child.tag === "Field");
+      ).filter((child) => child.type === "Field");
 
       return (
         <SelectItem
@@ -1047,7 +1047,7 @@ export const renderComboBox = (
   //   기존 프로젝트 호환 경로. RAC alias: ComboBoxItem (이름 동일). ADR-073 이관 완료.
   const comboBoxItemChildren = (
     context.childrenMap.get(element.id) ?? []
-  ).filter((child) => child.tag === "ComboBoxItem");
+  ).filter((child) => child.type === "ComboBoxItem");
 
   // ADR-073 P2: items[] SSOT
   const cbStoredItems = (element.props as { items?: StoredComboBoxItem[] })
@@ -1087,7 +1087,7 @@ export const renderComboBox = (
       const comboBoxItemTemplate = comboBoxItemChildren[0];
       const fieldChildren = (
         context.childrenMap.get(comboBoxItemTemplate.id) ?? []
-      ).filter((child) => child.tag === "Field");
+      ).filter((child) => child.type === "Field");
 
       const textValue = fieldChildren
         .filter(
@@ -1179,12 +1179,12 @@ export const renderComboBox = (
 
   // Child element에서 props 읽기 (compositional 패턴)
   const allChildren = context.childrenMap.get(element.id) ?? [];
-  const labelEl = allChildren.find((c) => c.tag === "Label");
-  const wrapperEl = allChildren.find((c) => c.tag === "ComboBoxWrapper");
+  const labelEl = allChildren.find((c) => c.type === "Label");
+  const wrapperEl = allChildren.find((c) => c.type === "ComboBoxWrapper");
   const wrapperChildren = wrapperEl
     ? (context.childrenMap.get(wrapperEl.id) ?? [])
     : [];
-  const inputEl = wrapperChildren.find((c) => c.tag === "ComboBoxInput");
+  const inputEl = wrapperChildren.find((c) => c.type === "ComboBoxInput");
 
   // child element props 우선 → parent props fallback
   const comboLabel = labelEl

@@ -49,7 +49,7 @@ export function KitComponentList({
           <div className="design-kit-card-info">
             <div className="design-kit-card-name">{master.name}</div>
             <div className="design-kit-card-meta">
-              {master.tag} · {master.instanceCount} instances
+              {master.type} · {master.instanceCount} instances
             </div>
           </div>
         </div>

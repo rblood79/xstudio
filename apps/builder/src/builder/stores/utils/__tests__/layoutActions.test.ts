@@ -39,12 +39,12 @@ function makeLayout(id: string, name = "Layout"): Layout {
 
 function makeElement(
   id: string,
-  tag: string,
+  type: string,
   opts: Partial<Element> = {},
 ): Element {
   return {
     id,
-    tag,
+    type,
     parent_id: null,
     page_id: null,
     layout_id: null,

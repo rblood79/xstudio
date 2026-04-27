@@ -39,7 +39,7 @@ describe("tagToType", () => {
     // Assert
     expect(result).toBe("frame");
     expect(warnSpy).toHaveBeenCalledOnce();
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("empty tag"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("empty type"));
   });
 });
 

@@ -19,7 +19,7 @@ import type { DataBinding } from "./element.types";
  * Supabase에서 저장되는 props 구조
  */
 export interface ElementProps {
-  tag?: string;
+  type?: string;
   style?: CSSProperties;
   className?: string;
   text?: string;
@@ -39,7 +39,7 @@ export interface ElementProps {
 export interface PreviewElement {
   id: string;
   customId?: string;
-  tag: string;
+  type: string;
   props: ElementProps;
   text?: string;
   parent_id?: string | null;
@@ -142,7 +142,7 @@ export type RenderFunction = (
  * 컴포넌트 렌더러 인터페이스
  */
 export interface ComponentRenderer {
-  canRender(tag: string): boolean;
+  canRender(type: string): boolean;
   render(element: PreviewElement, context: RenderContext): ReactNode;
 }
 

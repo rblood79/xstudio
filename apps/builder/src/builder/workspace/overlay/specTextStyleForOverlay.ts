@@ -29,7 +29,7 @@ const TEXT_BEARING_SPECS: Record<
   submitbutton: { spec: ButtonSpec, defaultSize: "md" },
   fancybutton: { spec: ButtonSpec, defaultSize: "md" },
   badge: { spec: BadgeSpec, defaultSize: "sm" },
-  tag: { spec: BadgeSpec, defaultSize: "sm" },
+  type: { spec: BadgeSpec, defaultSize: "sm" },
   chip: { spec: BadgeSpec, defaultSize: "sm" },
   togglebutton: { spec: ToggleButtonSpec, defaultSize: "md" },
   a: { spec: LinkSpec, defaultSize: "md" },
@@ -46,11 +46,11 @@ const TEXT_BEARING_SPECS: Record<
  * @returns TextStyleConfig 또는 null (Spec 미등록 태그)
  */
 export function extractFullSpecTextStyle(
-  tag: string,
+  type: string,
   props?: Record<string, unknown>,
   theme: "light" | "dark" = "light",
 ): TextStyleConfig | null {
-  const entry = TEXT_BEARING_SPECS[tag.toLowerCase()];
+  const entry = TEXT_BEARING_SPECS[type.toLowerCase()];
   if (!entry) return null;
 
   const { spec } = entry;

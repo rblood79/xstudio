@@ -249,7 +249,7 @@ export const createAddComplexElementAction =
         allElements.map((el) => sanitizeElement(el)),
       );
       console.log(
-        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentToAdd.tag} + 자식 ${normalizedChildren.length}개`,
+        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentToAdd.type} + 자식 ${normalizedChildren.length}개`,
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);

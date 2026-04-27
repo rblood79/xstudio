@@ -248,7 +248,7 @@ export class CanvasDeltaMessenger {
       // Proxy 오류 시 수동 복사
       return {
         id: element.id,
-        tag: element.tag,
+        type: element.type,
         props: this.sanitizeProps(element.props as Record<string, unknown>),
         parent_id: element.parent_id,
         page_id: element.page_id,

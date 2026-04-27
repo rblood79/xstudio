@@ -115,10 +115,10 @@ export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> =
 
 /** Phantom indicator의 width + gap (Row용). 해당 태그가 아니면 null */
 export function getPhantomIndicatorSpace(
-  tag: string,
+  type: string,
   size?: string,
 ): { width: number; height: number; gap: number } | null {
-  const config = PHANTOM_INDICATOR_CONFIGS[tag];
+  const config = PHANTOM_INDICATOR_CONFIGS[type];
   if (!config) return null;
   const s = (size ?? "md") as "sm" | "md" | "lg";
   const w = config.widths[s] ?? config.widths.md;
@@ -128,8 +128,8 @@ export function getPhantomIndicatorSpace(
 }
 
 /** Phantom indicator의 width + gap (number, 폴백 0) */
-export function getPhantomIndicatorWidth(tag: string, size?: string): number {
-  const space = getPhantomIndicatorSpace(tag, size);
+export function getPhantomIndicatorWidth(type: string, size?: string): number {
+  const space = getPhantomIndicatorSpace(type, size);
   return space?.width ?? 0;
 }
 
@@ -581,7 +581,7 @@ const INLINE_UI_SIZE_CONFIGS: Record<
   >
 > = {
   badge: BADGE_SIZE_CONFIG,
-  tag: TAG_SIZE_CONFIG,
+  type: TAG_SIZE_CONFIG,
   chip: BADGE_SIZE_CONFIG,
   togglebutton: TOGGLEBUTTON_SIZE_CONFIG,
   tab: TAB_SIZE_CONFIG,
@@ -590,14 +590,14 @@ const INLINE_UI_SIZE_CONFIGS: Record<
 };
 
 function getTagRemoveAdjustedPaddingRight(
-  tag: string,
+  type: string,
   sizeConfig: {
     paddingRight: number;
     paddingY: number;
   },
   allowsRemoving: boolean,
 ): number {
-  if (tag === "tag" && allowsRemoving) {
+  if (type === "type" && allowsRemoving) {
     // CSS TagGroup.css: allowsRemoving 상태에서는 우측 패딩이 size별 paddingY 값으로 축소된다.
     return sizeConfig.paddingY;
   }
@@ -619,7 +619,7 @@ export function setTagGroupAllowsRemovingContext(
 ): void {
   _tagGroupAllowsRemovingMap = new Map();
   for (const el of elementsMap.values()) {
-    if (el.tag === "TagGroup") {
+    if (el.type === "TagGroup") {
       const ar = Boolean(
         (el.props as Record<string, unknown> | undefined)?.allowsRemoving,
       );
@@ -663,10 +663,10 @@ export function isTagAllowsRemoving(
  * 엔진 모듈에서 버튼 크기 계산 시
  * BUTTON_SIZE_CONFIG / TOGGLEBUTTON_SIZE_CONFIG의 단일 진입점으로 사용.
  *
- * @returns 해당 tag/size의 config. 버튼 계열이 아니면 null.
+ * @returns 해당 type/size의 config. 버튼 계열이 아니면 null.
  */
 export function getButtonSizeConfig(
-  tag: string,
+  type: string,
   sizePropValue?: string,
 ): {
   paddingY: number;
@@ -674,7 +674,7 @@ export function getButtonSizeConfig(
   fontSize: number;
   borderWidth: number;
 } | null {
-  const t = tag.toLowerCase();
+  const t = type.toLowerCase();
 
   // button / submitbutton / fancybutton → BUTTON_SIZE_CONFIG
   if (t === "button" || t === "submitbutton" || t === "fancybutton") {
@@ -802,7 +802,7 @@ const BUTTON_LIKE_TAGS = new Set(["button", "input", "select", "a", "menu"]);
 const BUTTON_LIKE_BOX_TAGS = new Set(["button", "input", "menu"]);
 
 /**
- * Calendar 계열 tag (lowercase). RangeCalendarSpec은 CalendarSpec을 spread하므로
+ * Calendar 계열 type (lowercase). RangeCalendarSpec은 CalendarSpec을 spread하므로
  * layout 계산(`calculateContentHeight` 3.5 분기, `parseBoxModel` border-box)에서
  * 두 태그를 대칭 처리해야 자식 0개·유무에 관계없이 height가 일치한다.
  * Pascal-case 버전은 `SHELL_ONLY_CONTAINER_TAGS`(buildSpecNodeData.ts).
@@ -813,7 +813,7 @@ const CALENDAR_LIKE_TAGS = new Set(["calendar", "rangecalendar"]);
 const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   // Badge 계열: 'md' 기본값 (CSS TagGroup 기본 size=md와 동기화)
   badge: "md",
-  tag: "md",
+  type: "md",
   chip: "md",
   // Button 계열: 'md' 기본값
   button: "md",
@@ -842,7 +842,7 @@ export function calculateContentWidth(
   computedStyle?: ComputedStyle,
 ): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? "").toLowerCase();
+  const type = (element.type ?? "").toLowerCase();
 
   // 1. 명시적 width가 있으면 사용
   const explicitWidth = parseNumericValue(style?.width);
@@ -850,7 +850,7 @@ export function calculateContentWidth(
 
   // 1.05. Icon: iconSize 기반 intrinsic width (fit-content)
   // ADR-091 Phase 3: ICON_SIZE_MAP Record → IconSpec.sizes.iconSize 직접 참조.
-  if (tag === "icon") {
+  if (type === "icon") {
     const props = element.props as Record<string, unknown> | undefined;
     // fontSize 오버라이드 시 iconSize = fontSize
     const overrideFs = parseNumericValue(style?.fontSize);
@@ -860,7 +860,7 @@ export function calculateContentWidth(
   }
 
   // 1.1. StatusLight: dot + gap + text width
-  if (tag === "statuslight") {
+  if (type === "statuslight") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "md");
     const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.md;
@@ -875,7 +875,7 @@ export function calculateContentWidth(
   }
 
   // 1.15. Link: padding/border 없는 텍스트 전용 인라인 요소
-  if (tag === "link") {
+  if (type === "link") {
     const props = element.props as Record<string, unknown> | undefined;
     const text = String(props?.children ?? props?.text ?? "");
     if (!text) return 0;
@@ -889,7 +889,7 @@ export function calculateContentWidth(
   }
 
   // 1.2a. CalendarGrid / CalendarHeader: intrinsic width = cellSize * 7 + gap * 6
-  if (tag === "calendargrid" || tag === "calendarheader") {
+  if (type === "calendargrid" || type === "calendarheader") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     const calDims: Record<string, { iconSize: number; gap: number }> = {
@@ -906,7 +906,7 @@ export function calculateContentWidth(
   //   각 Breadcrumb 의 intrinsic width 를 여기서 산출. 부모 Breadcrumbs 는 자식 isLast 맥락을
   //   가지고 있으나 utils.ts 는 element 단위 호출 → isLast 미지. 보수적으로 "항상 separator
   //   포함" 최대 폭 산출 (last item 은 표시되지 않으므로 trailing whitespace 가 약간 남음).
-  if (tag === "breadcrumb") {
+  if (type === "breadcrumb") {
     const props = element.props as Record<string, unknown> | undefined;
     const parentSize = String(props?.size ?? "M");
     const rspSize = normalizeBreadcrumbRspSizeKey(parentSize);
@@ -938,7 +938,7 @@ export function calculateContentWidth(
 
   // 1.2. Breadcrumbs: ToggleButtonGroup과 동일 패턴 — 자식 Breadcrumb 텍스트 실측 합산
   // fullTreeLayout.ts에서 rawChildren을 enrichChildren으로 전달하여 자식 기반 계산 가능
-  if (tag === "breadcrumbs") {
+  if (type === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
     const rspSize = normalizeBreadcrumbRspSizeKey(String(props?.size ?? "M"));
     const separator = (props?.separator as string) ?? "›";
@@ -992,7 +992,7 @@ export function calculateContentWidth(
   }
 
   // 1.3. ProgressCircle: diameter 기반 고정 크기
-  if (tag === "progresscircle") {
+  if (type === "progresscircle") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "md");
     const dims =
@@ -1002,7 +1002,7 @@ export function calculateContentWidth(
 
   // 🚀 ToggleButtonGroup: 자식 버튼 텍스트 크기 합산
   // PixiToggleButtonGroup.tsx의 buttonSizes/contentWidth와 동일한 공식
-  if (tag === "togglebuttongroup") {
+  if (type === "togglebuttongroup") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     const sizeConfig =
@@ -1081,7 +1081,7 @@ export function calculateContentWidth(
   // Phantom indicator space (모듈 스코프 PHANTOM_INDICATOR_CONFIGS 사용)
   const _phantomProps = element.props as Record<string, unknown> | undefined;
   const _phantomSize = (_phantomProps?.size as string) ?? "md";
-  const phantomSpace = getPhantomIndicatorSpace(tag, _phantomSize);
+  const phantomSpace = getPhantomIndicatorSpace(type, _phantomSize);
   const phantomW = phantomSpace?.width ?? 0;
 
   // 2. Flex 컨테이너: childElements 기반 재귀 너비 계산 (텍스트 추출보다 먼저 처리)
@@ -1147,12 +1147,12 @@ export function calculateContentWidth(
   }
 
   // 2.5. Button icon-only: text 없이 iconName만 있는 경우 icon 크기 반환
-  if (tag === "button" || tag === "submitbutton" || tag === "fancybutton") {
+  if (type === "button" || type === "submitbutton" || type === "fancybutton") {
     const btnProps = element.props as Record<string, unknown> | undefined;
     const iconName = btnProps?.iconName as string | undefined;
     const btnText = extractTextContent(btnProps ?? {});
     if (iconName && !btnText) {
-      const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
+      const defaultSize = DEFAULT_SIZE_BY_TAG[type] ?? "md";
       const size = (btnProps?.size as string) ?? defaultSize;
       const sizeConfig =
         BUTTON_SIZE_CONFIG[size] ??
@@ -1170,7 +1170,7 @@ export function calculateContentWidth(
   // childElements가 없는 legacy Checkbox/Radio/Switch 요소의 fallback 경로
   const text = extractTextContent(element.props as Record<string, unknown>);
 
-  const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[tag];
+  const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[type];
   if (indicatorConfig) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
@@ -1188,7 +1188,7 @@ export function calculateContentWidth(
       : specIndicatorGap;
     // Spec에서 실제 text style 추출 (fontWeight/fontFamily 정합성)
     const indicatorSpecStyle = extractSpecTextStyle(
-      tag,
+      type,
       props as Record<string, unknown>,
     );
     // fallback: typography 토큰 매칭 text-sm=14, text-md=16, text-lg=18
@@ -1228,16 +1228,16 @@ export function calculateContentWidth(
     // 버튼, 인풋 등은 size prop에 따라 fontSize 결정
     // padding/border는 parseBoxModel에서 처리 → 여기서는 텍스트 너비만 반환
     // (inline padding 변경 시 이중 계산 방지)
-    const isFormElement = BUTTON_LIKE_TAGS.has(tag);
-    const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
+    const isFormElement = BUTTON_LIKE_TAGS.has(type);
+    const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[type];
     if (isFormElement || inlineUIConfig) {
       // Spec에서 실제 text style 추출 — 렌더러와 동일한 fontWeight/fontFamily 보장
       const inlineSpecStyle = extractSpecTextStyle(
-        tag,
+        type,
         props as Record<string, unknown>,
       );
 
-      const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
+      const defaultSize = DEFAULT_SIZE_BY_TAG[type] ?? "md";
       const size = (props?.size as string) ?? defaultSize;
       const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
       const sizeConfig =
@@ -1264,7 +1264,7 @@ export function calculateContentWidth(
 
       // Button icon 너비 반영: iconName이 있으면 iconSize + gap 추가
       let iconExtra = 0;
-      if (tag === "button" || tag === "submitbutton" || tag === "fancybutton") {
+      if (type === "button" || type === "submitbutton" || type === "fancybutton") {
         const iconName = props?.iconName as string | undefined;
         if (iconName) {
           const btnConfig = sizeConfig as {
@@ -1290,11 +1290,11 @@ export function calculateContentWidth(
 
       // Tag remove 버튼 너비: allowsRemoving 시 X 아이콘 + gap + padding 추가
       let removeExtra = 0;
-      const tagAllowsRemoving = tag === "tag" && isTagAllowsRemoving(element);
-      if (tag === "tag") {
+      const tagAllowsRemoving = type === "type" && isTagAllowsRemoving(element);
+      if (type === "type") {
         if (tagAllowsRemoving) {
           const removeIconSize = Math.round(fontSize * 0.75);
-          const removeGap = 2; // CSS .tag-remove-btn margin-left
+          const removeGap = 2; // CSS .type-remove-btn margin-left
           const removePad = 2; // --spacing-2xs
           removeExtra = removeGap + removePad * 2 + removeIconSize;
         }
@@ -1305,7 +1305,7 @@ export function calculateContentWidth(
       const minWidth = (sizeConfig as { minWidth?: number }).minWidth;
       if (minWidth !== undefined) {
         const effectivePaddingRight = getTagRemoveAdjustedPaddingRight(
-          tag,
+          type,
           sizeConfig,
           tagAllowsRemoving,
         );
@@ -1324,7 +1324,7 @@ export function calculateContentWidth(
       style?.fontWeight == null ||
       style?.fontFamily == null;
     const specStyle = needsSpecFallback
-      ? extractSpecTextStyle(tag, element.props as Record<string, unknown>)
+      ? extractSpecTextStyle(type, element.props as Record<string, unknown>)
       : null;
     // ADR-058 Phase 1: Text가 Spec 경로로 전환되면서 extractSpecTextStyle이
     // 실제 shape에서 fontSize를 읽어오므로 5-point patch 분기 제거.
@@ -1402,7 +1402,7 @@ export function calculateContentWidth(
   }
 
   // 4. Image: 자연 치수 캐시에서 로드된 이미지의 실제 너비 사용 (fit-content/auto)
-  if (tag === "image") {
+  if (type === "image") {
     const props = element.props as Record<string, unknown> | undefined;
     const src = String(props?.src || props?.source || "");
     if (src) {
@@ -1413,11 +1413,11 @@ export function calculateContentWidth(
 
   // 5. 태그별 기본 너비 사용 (ADR-096 Phase 4)
   //    5a. ComponentSpec.defaultWidth (Spec 있는 태그: input/select/textarea/image)
-  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(type);
   if (spec?.defaultWidth !== undefined) return spec.defaultWidth;
 
   //    5b. HTML primitive default (img/video/canvas/iframe)
-  const primitiveWidth = HTML_PRIMITIVE_DEFAULT_WIDTHS[tag];
+  const primitiveWidth = HTML_PRIMITIVE_DEFAULT_WIDTHS[type];
   if (primitiveWidth !== undefined) return primitiveWidth;
 
   // 6. 알 수 없는 태그는 기본값 사용
@@ -1430,7 +1430,7 @@ export function calculateContentWidth(
 
 // ADR-096 Phase 4: DEFAULT_ELEMENT_HEIGHTS Record 해체.
 //   - Spec 있는 태그 (button/select/textarea/image) → `ComponentSpec.defaultHeight`
-//   - HTML primitive (p/span/h1~h6/div/section/... 26 tag) → `HTML_PRIMITIVE_DEFAULT_HEIGHTS`
+//   - HTML primitive (p/span/h1~h6/div/section/... 26 type) → `HTML_PRIMITIVE_DEFAULT_HEIGHTS`
 //   lookup 체인: spec.defaultHeight → HTML_PRIMITIVE_DEFAULT_HEIGHTS → estimateTextHeight() fallback
 //   - input: InputSpec.sizes 기반 동적 계산 (step 2.5) — defaultHeight 미설정
 //   - label: Tailwind CSS v4 line-height:1.5 적용 → step 7에서 동적 계산 (fontSize*1.5)
@@ -1487,7 +1487,7 @@ export function calculateContentHeight(
   if (explicitHeight !== undefined) return explicitHeight;
 
   // 1.45. Icon: iconSize 기반 intrinsic height (fit-content)
-  const tag1 = (element.tag ?? "").toLowerCase();
+  const tag1 = (element.type ?? "").toLowerCase();
   if (tag1 === "icon") {
     const props = element.props as Record<string, unknown> | undefined;
     // fontSize 오버라이드 시 iconSize = fontSize
@@ -1771,7 +1771,7 @@ export function calculateContentHeight(
   // 1.6. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
   // ToggleButtonGroup 자체는 padding/border 없는 flex 컨테이너이므로
   // content-box height = 자식 ToggleButton의 border-box height
-  const tag0 = (element.tag ?? "").toLowerCase();
+  const tag0 = (element.type ?? "").toLowerCase();
   if (tag0 === "togglebuttongroup") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
@@ -1786,12 +1786,12 @@ export function calculateContentHeight(
   // 2. Self-rendering 요소는 size prop에 따라 높이 결정
   // contentHeight는 content-box 높이(텍스트 영역)만 반환해야 함
   // padding/border는 parseBoxModel에서 별도 관리 → BlockEngine이 합산
-  const tag = (element.tag ?? "").toLowerCase();
-  const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
-  const isButtonLike = BUTTON_LIKE_BOX_TAGS.has(tag);
+  const type = (element.type ?? "").toLowerCase();
+  const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[type];
+  const isButtonLike = BUTTON_LIKE_BOX_TAGS.has(type);
   if (isButtonLike || inlineUIConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
+    const defaultSize = DEFAULT_SIZE_BY_TAG[type] ?? "md";
     const size = (props?.size as string) ?? defaultSize;
     const configMap = isButtonLike ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
     const sizeConfig =
@@ -1881,7 +1881,7 @@ export function calculateContentHeight(
 
   // 2.5. Input: fontSize 기반 동적 높이 계산 (Text 컴포넌트와 동일 패턴)
   // InputSpec.sizes에서 fontSize를 읽고, line-height: 1.5 기준으로 텍스트 높이 반환
-  if (tag === "input") {
+  if (type === "input") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     const sizeConfig = InputSpec.sizes[sizeName] ?? InputSpec.sizes.md;
@@ -1904,7 +1904,7 @@ export function calculateContentHeight(
   }
 
   // 2.6a. ProgressCircle: diameter 기반 고정 크기
-  if (tag === "progresscircle") {
+  if (type === "progresscircle") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "md");
     const dims =
@@ -1915,15 +1915,15 @@ export function calculateContentHeight(
   // 2.6. ProgressBar/Meter: spec shapes 기반 높이 계산
   // label/showValue가 있으면 fontSize + gap + barHeight, 없으면 barHeight만
   if (
-    tag === "progressbar" ||
-    tag === "progress" ||
-    tag === "loadingbar" ||
-    tag === "meter" ||
-    tag === "gauge"
+    type === "progressbar" ||
+    type === "progress" ||
+    type === "loadingbar" ||
+    type === "meter" ||
+    type === "gauge"
   ) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "md");
-    const isMeter = tag === "meter" || tag === "gauge";
+    const isMeter = type === "meter" || type === "gauge";
     const dims = isMeter
       ? (METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md)
       : (PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md);
@@ -1967,7 +1967,7 @@ export function calculateContentHeight(
   // CSS border-box 높이 = lineHeight + paddingY*2 + borderWidth*2
   // calculateContentHeight는 content-box만 반환 → enrichWithIntrinsicSize에서 padding/border 추가
   // content-box = border-box - paddingY*2 (border는 SelectTrigger에 없고 부모 Button에 있음)
-  if (tag === "selecttrigger" || tag === "comboboxwrapper") {
+  if (type === "selecttrigger" || type === "comboboxwrapper") {
     const parentProps = element.props as Record<string, unknown> | undefined;
     const parentSize = (parentProps?.size as string) ?? "md";
     // content-box = border-box - paddingY*2 - borderWidth*2
@@ -1981,7 +1981,7 @@ export function calculateContentHeight(
   // Card의 새 트리 구조(Card → CardHeader → Heading, Card → CardContent → Description)에서
   // 각 래퍼가 자신의 자식 높이를 올바르게 반환해야 Card 전체 높이 계산이 정확해짐
   // flexDirection에 따라: column → 합산+gap, row → max (일반 flex 컨테이너와 동일)
-  if (tag === "cardheader" || tag === "cardcontent") {
+  if (type === "cardheader" || type === "cardcontent") {
     if (childElements && childElements.length > 0) {
       const gapValue = readGapValue(style) ?? 8;
       const flexDir = (style?.flexDirection as string) || "column";
@@ -2001,7 +2001,7 @@ export function calculateContentHeight(
         const childStyle = child.props?.style as
           | Record<string, unknown>
           | undefined;
-        const childTag = (child.tag ?? "").toLowerCase();
+        const childTag = (child.type ?? "").toLowerCase();
         const childExplicitH = parseNumericValue(childStyle?.height);
         const childIsFormEl = ["button", "input", "select"].includes(childTag);
         const childBoxSizing = childStyle?.boxSizing as string | undefined;
@@ -2043,7 +2043,7 @@ export function calculateContentHeight(
   // 3. Card 컴포넌트: 자식 기반 or 텍스트 콘텐츠 기반 높이 계산
   // 🚀 Card는 style.padding이 있으므로 BlockEngine이 padding을 별도로 추가함
   // contentHeight는 content-box 높이만 반환 (padding 제외)
-  if (tag === "card") {
+  if (type === "card") {
     // childElements가 있으면 자식 기반 높이 계산 (display:flex column)
     // Card factory가 Heading + Description 자식을 생성하므로 이 경로가 우선
     if (childElements && childElements.length > 0) {
@@ -2109,7 +2109,7 @@ export function calculateContentHeight(
 
   // 3.5. Calendar/RangeCalendar Compositional Architecture: Card 패턴과 동일
   // Calendar → CalendarHeader + CalendarGrid 자식 높이 합산
-  if (CALENDAR_LIKE_TAGS.has(tag)) {
+  if (CALENDAR_LIKE_TAGS.has(type)) {
     if (childElements && childElements.length > 0) {
       const gap = readGapValue(style) ?? 6;
       const calPad = parsePadding(style, availableWidth);
@@ -2134,21 +2134,21 @@ export function calculateContentHeight(
 
   // CalendarHeader: intrinsic height = 버튼 높이 (sm:24, md:30, lg:36)
   // ADR-091 Phase 3: headerHeights Record → CalendarHeaderSpec.sizes.height 직접 참조.
-  if (tag === "calendarheader") {
+  if (type === "calendarheader") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     return CalendarHeaderSpec.sizes[sizeName]?.height ?? 30;
   }
 
   // DateInput: intrinsic height — DateInputSpec.sizes.height 직접 참조 (ADR-091 Phase 3).
-  if (tag === "dateinput") {
+  if (type === "dateinput") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     return DateInputSpec.sizes[sizeName]?.height ?? 30;
   }
 
   // CalendarGrid: intrinsic height = weekdayRow + dateRows
-  if (tag === "calendargrid") {
+  if (type === "calendargrid") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     const gridDims: Record<string, { iconSize: number; gap: number }> = {
@@ -2171,7 +2171,7 @@ export function calculateContentHeight(
   }
 
   // 3.6a. DatePicker: 자식 기반 동적 높이 계산 (Card/Calendar 패턴)
-  if (tag === "datepicker") {
+  if (type === "datepicker") {
     if (childElements && childElements.length > 0) {
       const gap = readGapValue(style) ?? 8;
       const dpPad = parsePadding(style, availableWidth);
@@ -2197,7 +2197,7 @@ export function calculateContentHeight(
   // 3.6b. DateField: intrinsic height from size (sm:32, md:40, lg:48, xl:62)
   // ADR-091 Addendum 2: dfHeights Record → DateFieldSpec.sizes.intrinsicHeight 직접 참조.
   //   Label + gap + DateInput 합산 파생값을 spec 에 표면화 (composite 전체 intrinsic).
-  if (tag === "datefield") {
+  if (type === "datefield") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     return DateFieldSpec.sizes[sizeName]?.intrinsicHeight ?? 40;
@@ -2212,10 +2212,10 @@ export function calculateContentHeight(
   // ADR-073: SelectItem/ComboBoxItem element 소멸 → props.items SSOT 로 이관되어 childElements 에 애초 등장하지 않음.
   // ListBoxItem 만 드롭다운 전용 자식으로 남아 collapsed 상태에서 비표시.
   const SELECT_HIDDEN_CHILDREN = new Set(["ListBoxItem"]);
-  if (tag === "combobox" || tag === "select" || tag === "dropdown") {
+  if (type === "combobox" || type === "select" || type === "dropdown") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
-    const isCompositional = tag === "select" || tag === "combobox";
+    const isCompositional = type === "select" || type === "combobox";
 
     // gap: display:flex일 때만 적용 (CSS gap은 block에서 미적용)
     const displayVal = style?.display;
@@ -2227,25 +2227,25 @@ export function calculateContentHeight(
     // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
     if (isCompositional && childElements) {
       const hasLabel = !!props?.label;
-      // wrapper tag: Select → SelectTrigger, ComboBox → ComboBoxWrapper
-      const wrapperTag = tag === "select" ? "SelectTrigger" : "ComboBoxWrapper";
+      // wrapper type: Select → SelectTrigger, ComboBox → ComboBoxWrapper
+      const wrapperTag = type === "select" ? "SelectTrigger" : "ComboBoxWrapper";
       const visibleChildren = childElements.filter(
         (c) =>
-          !SELECT_HIDDEN_CHILDREN.has(c.tag ?? "") &&
-          (c.tag !== "Label" || hasLabel),
+          !SELECT_HIDDEN_CHILDREN.has(c.type ?? "") &&
+          (c.type !== "Label" || hasLabel),
       );
       let totalH = 0;
       let visibleCount = 0;
 
       for (const child of visibleChildren) {
-        const childTag = (child.tag ?? "").toLowerCase();
+        const childTag = (child.type ?? "").toLowerCase();
         const childStyle = (child.props?.style || {}) as Record<
           string,
           unknown
         >;
         let childH: number;
 
-        if (child.tag === wrapperTag) {
+        if (child.type === wrapperTag) {
           // SelectTrigger/ComboBoxWrapper: spec size.height를 직접 사용
           // CSS에서 trigger/wrapper 높이 = lineHeight + paddingY*2 + borderWidth*2
           // 이 값은 spec sizes.height에 이미 반영되어 있음
@@ -2375,7 +2375,7 @@ export function calculateContentHeight(
     const bodyHeight = comboBoxHeight(sizeName);
     const hasLabel = !!props?.label;
     if (hasLabel) {
-      const labelChild = childElements?.find((c) => c.tag === "Label");
+      const labelChild = childElements?.find((c) => c.type === "Label");
       const labelStyle = (labelChild?.props?.style || {}) as Record<
         string,
         unknown
@@ -2414,7 +2414,7 @@ export function calculateContentHeight(
 
   // 3.5. Checkbox/Radio/Switch: flexDirection에 따른 높이 계산
   // (PHANTOM_INDICATOR_CONFIGS 단일 소스 사용)
-  const heightIndicatorConfig = PHANTOM_INDICATOR_CONFIGS[tag];
+  const heightIndicatorConfig = PHANTOM_INDICATOR_CONFIGS[type];
   if (heightIndicatorConfig) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
@@ -2432,7 +2432,7 @@ export function calculateContentHeight(
     // Label 자식의 fontSize로 높이 추정 (size delegation 반영)
     let labelFs = 14;
     if (childElements && childElements.length > 0) {
-      const labelChild = childElements.find((c) => c.tag === "Label");
+      const labelChild = childElements.find((c) => c.type === "Label");
       if (labelChild) {
         const labelStyle = (labelChild.props?.style || {}) as Record<
           string,
@@ -2453,7 +2453,7 @@ export function calculateContentHeight(
       }
     } else {
       // 자식 없는 synthetic label: spec size에서 fontSize 추출
-      const specStyle = extractSpecTextStyle(tag, {
+      const specStyle = extractSpecTextStyle(type, {
         ...props,
         children: "x",
       } as Record<string, unknown>);
@@ -2474,7 +2474,7 @@ export function calculateContentHeight(
   // 4. Panel: spec shapes 기반 컴포넌트 — 자식 요소 없이 자체 렌더링
   // CSS Preview 기준 높이 추정 (title section + content section + border)
   // ⚠️ childElements 블록 밖에 배치: Panel은 element tree에 자식이 없음
-  if (tag === "panel") {
+  if (type === "panel") {
     const props = element.props as Record<string, unknown> | undefined;
     const hasTitle = !!props?.title;
     const sizeName = (props?.size as string) ?? "md";
@@ -2492,7 +2492,7 @@ export function calculateContentHeight(
 
   // 4.2. Breadcrumbs: display:flex, align-items:center — 높이 = spec size.height
   // RSP API: S=16px, M=24px, L=24px (default M)
-  if (tag === "breadcrumbs") {
+  if (type === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
     const rspSize = normalizeBreadcrumbRspSizeKey(String(props?.size ?? "M"));
     return BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
@@ -2500,7 +2500,7 @@ export function calculateContentHeight(
 
   // 4.2b. Breadcrumb (child) — ADR-086 P5: implicitStyles style 주입 제거 후
   //   child height 를 부모 Breadcrumbs spec.sizes.height 로 산출 (동일 값).
-  if (tag === "breadcrumb") {
+  if (type === "breadcrumb") {
     const props = element.props as Record<string, unknown> | undefined;
     const rspSize = normalizeBreadcrumbRspSizeKey(String(props?.size ?? "M"));
     return BreadcrumbsSpec.sizes[rspSize]?.height ?? 24;
@@ -2511,7 +2511,7 @@ export function calculateContentHeight(
   // ⚠️ lineHeight 체크보다 먼저 와야 함: 컨테이너의 높이는 자식 기반으로 산출해야 함
   if (childElements && childElements.length > 0) {
     // CheckboxGroup: 그룹 라벨 + 자식 Checkbox 세로 합산
-    if (tag === "checkboxgroup" || tag === "radiogroup") {
+    if (type === "checkboxgroup" || type === "radiogroup") {
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
       const gap = sizeName === "S" ? 8 : sizeName === "L" ? 16 : 12;
@@ -2544,7 +2544,7 @@ export function calculateContentHeight(
     //   동적 높이가 반영되지 않는 문제를 전용 분기로 확정 처리.
     //   TagList 재귀 호출은 이미 tag1==="taglist" 분기에서 items + maxRows + availableWidth
     //   기반 row-wrap height 를 돌려주므로 여기서는 단순 세로 합산 + gap 만 담당.
-    if (tag === "taggroup") {
+    if (type === "taggroup") {
       const props = element.props as Record<string, unknown> | undefined;
       // containerStyles.gap = "{spacing.xs}" → 4. style.gap 편집 우선, 없으면 token fallback.
       const gap = readGapValue(style) ?? 4;
@@ -2599,7 +2599,7 @@ export function calculateContentHeight(
 
     // Tabs: 탭 바 높이 + TabPanel 패딩 + 활성 Panel 높이
     // CSS Preview 기준: Tabs(flex col) → TabList(30px) + TabPanel(pad=16px → Panel)
-    if (tag === "tabs") {
+    if (type === "tabs") {
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
       const tabBarHeight =
@@ -2609,12 +2609,12 @@ export function calculateContentHeight(
         TabPanelsSpec.sizes.md.paddingX;
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
-      let panelChildren = childElements.filter((c) => c.tag === "TabPanel");
+      let panelChildren = childElements.filter((c) => c.type === "TabPanel");
       if (panelChildren.length === 0) {
-        const tabPanelsEl = childElements.find((c) => c.tag === "TabPanels");
+        const tabPanelsEl = childElements.find((c) => c.type === "TabPanels");
         if (tabPanelsEl && getChildElements) {
           panelChildren = getChildElements(tabPanelsEl.id).filter(
-            (c) => c.tag === "TabPanel",
+            (c) => c.type === "TabPanel",
           );
         }
       }
@@ -2678,7 +2678,7 @@ export function calculateContentHeight(
         const childStyle = child.props?.style as
           | Record<string, unknown>
           | undefined;
-        const childTag = (child.tag ?? "").toLowerCase();
+        const childTag = (child.type ?? "").toLowerCase();
         const childExplicitH = parseNumericValue(childStyle?.height);
         const childIsFormEl = ["button", "input", "select"].includes(childTag);
         const childBoxSizing = childStyle?.boxSizing as string | undefined;
@@ -2727,7 +2727,7 @@ export function calculateContentHeight(
     if (visibleBlockChildren.length > 0) {
       // Group: 자식이 원래 캔버스 좌표(left/top)를 유지하므로
       // block flow 합산이 아닌 bounding box 기반 높이 계산
-      if (tag === "group") {
+      if (type === "group") {
         let minTop = Infinity;
         let maxBottom = 0;
         for (const child of visibleBlockChildren) {
@@ -2766,7 +2766,7 @@ export function calculateContentHeight(
         const childStyle = child.props?.style as
           | Record<string, unknown>
           | undefined;
-        const childTag = (child.tag ?? "").toLowerCase();
+        const childTag = (child.type ?? "").toLowerCase();
         const childExplicitH = parseNumericValue(childStyle?.height);
         const childIsFormEl = ["button", "input", "select"].includes(childTag);
         const childBoxSizing = childStyle?.boxSizing as string | undefined;
@@ -2803,7 +2803,7 @@ export function calculateContentHeight(
   // whiteSpace: "nowrap"이면 줄바꿈 없으므로 스킵
   const ws49 = style?.whiteSpace as string | undefined;
   if (
-    TEXT_LEAF_TAGS.has(tag) &&
+    TEXT_LEAF_TAGS.has(type) &&
     availableWidth != null &&
     availableWidth > 0 &&
     ws49 !== "nowrap" &&
@@ -2868,7 +2868,7 @@ export function calculateContentHeight(
   }
 
   // 6. Image: 자연 치수 캐시에서 로드된 이미지의 실제 높이 사용 (fit-content/auto)
-  if (tag === "image") {
+  if (type === "image") {
     const props = element.props as Record<string, unknown> | undefined;
     const src = String(props?.src || props?.source || "");
     if (src) {
@@ -2879,11 +2879,11 @@ export function calculateContentHeight(
 
   // 7. 태그별 기본 높이 사용 (ADR-096 Phase 4)
   //    7a. ComponentSpec.defaultHeight (Spec 있는 태그: button/select/textarea/image)
-  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(type);
   if (spec?.defaultHeight !== undefined) return spec.defaultHeight;
 
-  //    7b. HTML primitive default (p/span/h1~h6/div/section/... 26 tag)
-  const primitiveHeight = HTML_PRIMITIVE_DEFAULT_HEIGHTS[tag];
+  //    7b. HTML primitive default (p/span/h1~h6/div/section/... 26 type)
+  const primitiveHeight = HTML_PRIMITIVE_DEFAULT_HEIGHTS[type];
   if (primitiveHeight !== undefined) return primitiveHeight;
 
   // 8. Text/Heading 등 composition 커스텀 태그: CSS line-height: 1.5 상속
@@ -2964,14 +2964,14 @@ export function parseBoxModel(
   // Select는 Compositional Architecture (Card와 동일) — BUTTON_SIZE_CONFIG 미적용
   // Select 컨테이너는 web CSS에서 padding:0 + display:flex 구조이며,
   // 내부 SelectTrigger가 자체 padding을 처리
-  const tag = (element.tag ?? "").toLowerCase();
-  const isFormElement = BUTTON_LIKE_BOX_TAGS.has(tag);
-  const inlineUISizeConfig = INLINE_UI_SIZE_CONFIGS[tag];
+  const type = (element.type ?? "").toLowerCase();
+  const isFormElement = BUTTON_LIKE_BOX_TAGS.has(type);
+  const inlineUISizeConfig = INLINE_UI_SIZE_CONFIGS[type];
   const hasSizeConfig = isFormElement || !!inlineUISizeConfig;
 
   if (hasSizeConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
+    const defaultSize = DEFAULT_SIZE_BY_TAG[type] ?? "md";
     const size = (props?.size as string) ?? defaultSize;
     const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUISizeConfig!;
     const sizeConfig =
@@ -2984,7 +2984,7 @@ export function parseBoxModel(
       style?.paddingBottom !== undefined ||
       style?.paddingLeft !== undefined;
     if (!hasInlinePadding) {
-      const tagAllowsRemoving = tag === "tag" && isTagAllowsRemoving(element);
+      const tagAllowsRemoving = type === "type" && isTagAllowsRemoving(element);
       // Icon-only 버튼: paddingX = paddingY (정사각형 패딩)
       const isIconOnlyButton =
         isFormElement &&
@@ -2995,7 +2995,7 @@ export function parseBoxModel(
         : sizeConfig.paddingLeft;
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
-        : getTagRemoveAdjustedPaddingRight(tag, sizeConfig, tagAllowsRemoving);
+        : getTagRemoveAdjustedPaddingRight(type, sizeConfig, tagAllowsRemoving);
       padding = {
         top: sizeConfig.paddingY,
         right: effectivePaddingRight,
@@ -3032,10 +3032,10 @@ export function parseBoxModel(
   // Preview iframe는 전역 `* { box-sizing: border-box; }`를 사용한다.
   // Section/Card(Box)는 style.boxSizing이 비어 있어도 명시적 width/height를
   // border-box로 해석해야 Web 모드와 동일하게 총 크기(패딩 포함)가 유지된다.
-  const isSectionElement = tag === "section";
-  const isCardLikeElement = tag === "card" || tag === "box";
-  const isCalendarElement = CALENDAR_LIKE_TAGS.has(tag);
-  const isDatePickerElement = tag === "datepicker";
+  const isSectionElement = type === "section";
+  const isCardLikeElement = type === "card" || type === "box";
+  const isCalendarElement = CALENDAR_LIKE_TAGS.has(type);
+  const isDatePickerElement = type === "datepicker";
   const treatAsBorderBox =
     boxSizing === "border-box" ||
     (isFormElement && (width !== undefined || height !== undefined)) ||
@@ -3107,7 +3107,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "togglebutton",
   "badge",
   "progresscircle",
-  "tag",
+  "type",
   "chip",
   "checkbox",
   "radio",
@@ -3200,7 +3200,7 @@ export function enrichWithIntrinsicSize(
   isFlexChild?: boolean,
 ): Element {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? "").toLowerCase();
+  const type = (element.type ?? "").toLowerCase();
 
   // DC-6: overflow cap — height/width: auto + overflow != visible 조합에서
   // 자식 합산이 availableHeight/Width를 초과하지 않도록 제한
@@ -3224,12 +3224,12 @@ export function enrichWithIntrinsicSize(
   // Image: replaced element — auto/fit-content 시 자연 치수 사용 필요
   const needsWidth =
     hasExplicitIntrinsicWidthKeyword ||
-    (INLINE_BLOCK_TAGS.has(tag) &&
+    (INLINE_BLOCK_TAGS.has(type) &&
       (!rawWidth || INTRINSIC_SIZE_KEYWORDS.has(rawWidth as string))) ||
     (isFlexChild &&
-      TEXT_LEAF_TAGS.has(tag) &&
+      TEXT_LEAF_TAGS.has(type) &&
       (!rawWidth || INTRINSIC_SIZE_KEYWORDS.has(rawWidth as string))) ||
-    (IMAGE_INTRINSIC_TAGS.has(tag) &&
+    (IMAGE_INTRINSIC_TAGS.has(type) &&
       typeof rawWidth === "string" &&
       INTRINSIC_SIZE_KEYWORDS.has(rawWidth));
 
@@ -3273,9 +3273,9 @@ export function enrichWithIntrinsicSize(
   if (
     box.contentHeight <= 0 &&
     !needsWidth &&
-    !SPEC_SHAPES_INPUT_TAGS.has(tag) &&
-    !INLINE_BLOCK_TAGS.has(tag) &&
-    !IMAGE_INTRINSIC_TAGS.has(tag) &&
+    !SPEC_SHAPES_INPUT_TAGS.has(type) &&
+    !INLINE_BLOCK_TAGS.has(type) &&
+    !IMAGE_INTRINSIC_TAGS.has(type) &&
     !(childElements && childElements.length > 0)
   ) {
     return element;
@@ -3301,16 +3301,16 @@ export function enrichWithIntrinsicSize(
           getChildElements,
           _computedStyle,
         )
-      : IMAGE_INTRINSIC_TAGS.has(tag) ||
-          SPEC_SHAPES_INPUT_TAGS.has(tag) ||
-          INLINE_BLOCK_TAGS.has(tag) ||
-          TEXT_LEAF_TAGS.has(tag)
+      : IMAGE_INTRINSIC_TAGS.has(type) ||
+          SPEC_SHAPES_INPUT_TAGS.has(type) ||
+          INLINE_BLOCK_TAGS.has(type) ||
+          TEXT_LEAF_TAGS.has(type)
         ? calculateContentHeight(
             element,
             // INLINE_BLOCK 태그에 명시적 고정 너비(px)가 있으면 자신의 border-box 너비로
             // 텍스트 줄바꿈을 계산해야 함. 부모의 availableWidth를 사용하면 버튼 크기를
             // 초과한 너비로 측정되어 줄바꿈이 발생하지 않고 높이가 늘어나지 않는 버그 발생.
-            INLINE_BLOCK_TAGS.has(tag) && (parseNumericValue(rawWidth) ?? 0) > 0
+            INLINE_BLOCK_TAGS.has(type) && (parseNumericValue(rawWidth) ?? 0) > 0
               ? (parseNumericValue(rawWidth) as number)
               : availableWidth,
             undefined,
@@ -3322,7 +3322,7 @@ export function enrichWithIntrinsicSize(
     let injectHeight = childResolvedHeight;
     // ComboBox/Select: calculateContentHeight가 전체 시각적 높이(label+input/trigger)를 반환
     // spec shapes가 내부 padding 없이 렌더링하므로 추가 padding/border 불필요
-    const isSpecShapesInput = SPEC_SHAPES_INPUT_TAGS.has(tag);
+    const isSpecShapesInput = SPEC_SHAPES_INPUT_TAGS.has(type);
     if (!isSpecShapesInput) {
       // BUTTON_LIKE_BOX_TAGS(button 등): inline padding이 설정된 경우
       // applyCommonTaffyStyle은 parsePadding(style)로 inline 값을 Taffy에 전달하지만,
@@ -3331,7 +3331,7 @@ export function enrichWithIntrinsicSize(
       // content area가 좁아지고 텍스트가 잘리는 버그 발생.
       // 따라서 inline padding이 설정된 경우 parsePadding(style)을 직접 사용하여
       // applyCommonTaffyStyle이 Taffy에 전달하는 값과 동일한 패딩으로 injectHeight 계산.
-      if (BUTTON_LIKE_BOX_TAGS.has(tag)) {
+      if (BUTTON_LIKE_BOX_TAGS.has(type)) {
         const hasInlinePad =
           style?.padding !== undefined ||
           style?.paddingTop !== undefined ||
@@ -3370,7 +3370,7 @@ export function enrichWithIntrinsicSize(
           getChildElements,
           _computedStyle,
         )
-      : INLINE_BLOCK_TAGS.has(tag) || hasExplicitIntrinsicWidthKeyword
+      : INLINE_BLOCK_TAGS.has(type) || hasExplicitIntrinsicWidthKeyword
         ? calculateContentWidth(
             element,
             undefined,
@@ -3525,7 +3525,7 @@ const VERTICALLY_CENTERED_TAGS = new Set([
   "input",
   "select",
   "badge",
-  "tag",
+  "type",
   "chip", // inline-flex 컴포넌트
 ]);
 
@@ -3627,7 +3627,7 @@ function getFontMetricsFromStyle(
  */
 export function calculateBaseline(element: Element, height: number): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? "").toLowerCase();
+  const type = (element.type ?? "").toLowerCase();
 
   // overflow가 visible이 아니면 하단이 baseline
   const overflow = style?.overflow as string | undefined;
@@ -3653,7 +3653,7 @@ export function calculateBaseline(element: Element, height: number): number {
 
   // 버튼/input 등 텍스트 수직 중앙 정렬 요소
   // CSS에서 이 요소들의 baseline은 수직 중앙의 텍스트 baseline
-  if (VERTICALLY_CENTERED_TAGS.has(tag)) {
+  if (VERTICALLY_CENTERED_TAGS.has(type)) {
     // baseline = (height - effectiveLineHeight) / 2 + ascent
     const lineHeight = parseLineHeight(style);
     const effectiveLineHeight = lineHeight ?? height;

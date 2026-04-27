@@ -105,7 +105,7 @@ export function createGroupFromSelection(
 
   // Generate customId for group (e.g., "group_1", "group_2")
   const existingGroups = Array.from(elementsMap.values()).filter(
-    (el) => el.tag === "Group" && el.customId?.startsWith("group_")
+    (el) => el.type === "Group" && el.customId?.startsWith("group_")
   );
   const maxGroupNum = existingGroups.length > 0
     ? Math.max(
@@ -121,7 +121,7 @@ export function createGroupFromSelection(
   const groupElement: Element = {
     id: ElementUtils.generateId(),
     customId: groupCustomId,
-    tag: "Group",
+    type: "Group",
     props: {
       label: `Group (${selectedElements.length} elements)`,
       style: {
@@ -189,9 +189,9 @@ export function ungroupElement(
     throw new Error(`[Ungroup] Group element not found: ${groupId}`);
   }
 
-  if (groupElement.tag !== "Group") {
+  if (groupElement.type !== "Group") {
     throw new Error(
-      `[Ungroup] Element is not a Group: ${groupId} (tag: ${groupElement.tag})`
+      `[Ungroup] Element is not a Group: ${groupId} (type: ${groupElement.type})`
     );
   }
 

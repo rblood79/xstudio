@@ -71,7 +71,7 @@ export const renderTree = (
   const { updateElementProps } = context;
 
   const treeItemChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "TreeItem",
+    (child) => child.type === "TreeItem",
   );
 
   const renderTreeItemsRecursively = (
@@ -80,10 +80,10 @@ export const renderTree = (
     return items.map((item) => {
       const itemChildren = context.childrenMap.get(item.id) ?? [];
       const childTreeItems = itemChildren.filter(
-        (child) => child.tag === "TreeItem",
+        (child) => child.type === "TreeItem",
       );
       const otherChildren = itemChildren.filter(
-        (child) => child.tag !== "TreeItem",
+        (child) => child.type !== "TreeItem",
       );
 
       const displayTitle = String(
@@ -186,9 +186,11 @@ export const renderTreeItem = (
 ): React.ReactNode => {
   const ownChildren = context.childrenMap.get(element.id) ?? [];
   const childTreeItems = ownChildren.filter(
-    (child) => child.tag === "TreeItem",
+    (child) => child.type === "TreeItem",
   );
-  const otherChildren = ownChildren.filter((child) => child.tag !== "TreeItem");
+  const otherChildren = ownChildren.filter(
+    (child) => child.type !== "TreeItem",
+  );
 
   const displayTitle = String(
     element.props.title ||
@@ -230,10 +232,10 @@ export const renderTagGroup = (
   // Tag 자식 검색: TagGroup 직접 자식 또는 TagList 중간 레이어 하위 모두 지원
   const tagListChild = childrenMap
     .get(element.id)
-    ?.find((child) => child.tag === "TagList");
+    ?.find((child) => child.type === "TagList");
   const tagParentId = tagListChild ? tagListChild.id : element.id;
   const tagChildren =
-    childrenMap.get(tagParentId)?.filter((child) => child.tag === "Tag") ?? [];
+    childrenMap.get(tagParentId)?.filter((child) => child.type === "Tag") ?? [];
 
   // ColumnMapping 추출
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
@@ -251,7 +253,7 @@ export const renderTagGroup = (
   // Tag 템플릿에 Field children이 있는지 미리 확인
   const tagTemplate = tagChildren.length > 0 ? tagChildren[0] : null;
   const fieldChildrenInTemplate = tagTemplate
-    ? (childrenMap.get(tagTemplate.id)?.filter((c) => c.tag === "Field") ?? [])
+    ? (childrenMap.get(tagTemplate.id)?.filter((c) => c.type === "Field") ?? [])
     : [];
   const hasFieldChildren = fieldChildrenInTemplate.length > 0;
 
@@ -287,7 +289,7 @@ export const renderTagGroup = (
         const fieldChildren =
           context.childrenMap
             .get(tagTemplate.id)
-            ?.filter((child) => child.tag === "Field") ?? [];
+            ?.filter((child) => child.type === "Field") ?? [];
 
         return (
           <Tag
@@ -346,15 +348,15 @@ export const renderTagGroup = (
           </Tag>
         ))
       : // Path 3 (legacy, P6 소멸 예정): Tag element tree fallback
-        tagChildren.map((tag) => (
+        tagChildren.map((type) => (
           <Tag
-            key={tag.id}
-            data-element-id={tag.id}
-            isDisabled={Boolean(tag.props.isDisabled)}
-            style={tag.props.style}
-            className={tag.props.className}
+            key={type.id}
+            data-element-id={type.id}
+            isDisabled={Boolean(type.props.isDisabled)}
+            style={type.props.style}
+            className={type.props.className}
           >
-            {String(tag.props.children || "")}
+            {String(type.props.children || "")}
           </Tag>
         ));
 
@@ -597,7 +599,7 @@ export const renderTagGroup = (
               console.log(`✅ [IndexedDB] Tag ${tagId} deleted successfully`);
             }
           } catch (err) {
-            console.error(`Error deleting tag ${tagId}:`, err);
+            console.error(`Error deleting type ${tagId}:`, err);
           }
         }
 
@@ -671,7 +673,7 @@ export const renderTag = (
 ): React.ReactNode => {
   // Field 자식 요소 찾기
   const fieldChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "Field",
+    (child) => child.type === "Field",
   );
 
   // Field children이 있으면 DataField 렌더링 (단, 데이터는 없으므로 라벨만 표시)
@@ -751,7 +753,7 @@ export const renderToggleButtonGroup = (
 
   const toggleButtonChildren = (
     context.childrenMap.get(element.id) ?? []
-  ).filter((child) => child.tag === "ToggleButton");
+  ).filter((child) => child.type === "ToggleButton");
 
   const selectedKeys = new Set<string>(
     getSelectedChildIds(toggleButtonChildren),
@@ -805,7 +807,7 @@ export const renderToggleButton = (
   const children = context.childrenMap.get(element.id) ?? [];
 
   const isInGroup = element.parent_id
-    ? elementsMap.get(element.parent_id)?.tag === "ToggleButtonGroup"
+    ? elementsMap.get(element.parent_id)?.type === "ToggleButtonGroup"
     : false;
 
   // id는 element.id — group의 selectedKeys Set과 키 일치 필수.

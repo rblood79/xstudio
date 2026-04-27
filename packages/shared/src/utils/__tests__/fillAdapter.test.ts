@@ -23,7 +23,7 @@ describe("fillAdapter", () => {
   it("fills 가 있으면 기존 background 필드를 지우고 파생 CSS 로 치환한다", () => {
     const adapted = adaptElementFillStyle({
       id: "el-1",
-      tag: "Box",
+      type: "Box",
       fills: [
         {
           type: "linear-gradient",

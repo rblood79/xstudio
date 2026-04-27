@@ -25,7 +25,7 @@ function formatTimestamp(timestamp: number): string {
 function getElementLabel(entry: HistoryEntry): string | null {
   const element = entry.data.element || entry.data.prevElement;
   if (element?.customId) return element.customId;
-  if (element?.tag) return element.tag;
+  if (element?.type) return element.type;
   if (entry.elementId && entry.elementId !== "batch_diff")
     return entry.elementId;
   return null;

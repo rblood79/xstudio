@@ -515,8 +515,8 @@ export function generateStaticHtml(
           .filter(child => child.parent_id === el.id && !child.deleted)
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-        const tag = mapTagToHtml(el.tag);
-        const dom = document.createElement(tag);
+        const type = mapTagToHtml(el.type);
+        const dom = document.createElement(type);
         dom.className = 'component';
         dom.dataset.elementId = el.id;
 
@@ -548,7 +548,7 @@ export function generateStaticHtml(
       }
 
       // Tag 매핑
-      function mapTagToHtml(tag) {
+      function mapTagToHtml(type) {
         const map = {
           'Container': 'div', 'Box': 'div', 'Flex': 'div', 'Grid': 'div',
           'Text': 'span', 'Heading': 'h2', 'Paragraph': 'p', 'Label': 'label',
@@ -559,7 +559,7 @@ export function generateStaticHtml(
           'Header': 'header', 'Footer': 'footer', 'Nav': 'nav', 'Main': 'main',
           'Aside': 'aside', 'Div': 'div', 'Span': 'span',
         };
-        return map[tag] || 'div';
+        return map[type] || 'div';
       }
 
       // 페이지 렌더링

@@ -39,7 +39,7 @@ function makeGridListElement(
 ): PreviewElement {
   return {
     id: "gl-contract",
-    tag: "GridList",
+    type: "GridList",
     props: {
       layout,
       columns,

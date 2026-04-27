@@ -33,13 +33,13 @@ Text, Div, Section, Nav
 
 ## 현재 빌더 상태
 - 페이지 ID: ${currentPageId}
-- 선택된 요소: ${selectedElement ? `${selectedElement.tag} (ID: ${selectedElementId})` : "없음"}
+- 선택된 요소: ${selectedElement ? `${selectedElement.type} (ID: ${selectedElementId})` : "없음"}
 - 총 요소 수: ${elements.length}개
 ${
   selectedElement
     ? `
 ## 선택된 요소 정보
-- 태그: ${selectedElement.tag}
+- 태그: ${selectedElement.type}
 - Props: ${JSON.stringify(selectedElement.props, null, 2)}
 - 부모 ID: ${selectedElement.parent_id || "root"}
 `

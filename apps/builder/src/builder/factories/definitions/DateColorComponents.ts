@@ -40,9 +40,9 @@ export function createDatePickerDefinition(
   const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
   return {
-    tag: "DatePicker",
+    type: "DatePicker",
     parent: {
-      tag: "DatePicker",
+      type: "DatePicker",
       props: {
         label: "Date Picker",
         variant: "default",
@@ -60,7 +60,7 @@ export function createDatePickerDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Date Picker",
           style: {
@@ -72,14 +72,14 @@ export function createDatePickerDefinition(
         order_num: 1,
       },
       {
-        tag: "DateInput",
+        type: "DateInput",
         props: {
           _parentTag: "DatePicker",
         } as ComponentElementProps,
         order_num: 2,
       },
       {
-        tag: "Calendar",
+        type: "Calendar",
         props: {
           defaultToday: true,
           isDisabled: false,
@@ -88,14 +88,14 @@ export function createDatePickerDefinition(
         order_num: 3,
         children: [
           {
-            tag: "CalendarHeader",
+            type: "CalendarHeader",
             props: {
               children: monthText,
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "CalendarGrid",
+            type: "CalendarGrid",
             props: {
               defaultToday: true,
               dayOffset: firstDay,
@@ -114,9 +114,9 @@ export function createDatePickerDefinition(
  * DateRangePicker 복합 컴포넌트 정의 (DatePicker 와 동일한 DOM 구조 패턴)
  *
  *   DateRangePicker (parent, flex column, gap:8px, width:284px)
- *     ├─ Label         (tag="Label")
- *     ├─ DateInput     (tag="DateInput", _parentTag="DateRangePicker")
- *     └─ Calendar      (tag="Calendar")
+ *     ├─ Label         (type="Label")
+ *     ├─ DateInput     (type="DateInput", _parentTag="DateRangePicker")
+ *     └─ Calendar      (type="Calendar")
  *         ├─ CalendarHeader
  *         └─ CalendarGrid
  */
@@ -132,9 +132,9 @@ export function createDateRangePickerDefinition(
   const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
   return {
-    tag: "DateRangePicker",
+    type: "DateRangePicker",
     parent: {
-      tag: "DateRangePicker",
+      type: "DateRangePicker",
       props: {
         label: "Date Range",
         variant: "default",
@@ -152,7 +152,7 @@ export function createDateRangePickerDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Date Range",
           style: {
@@ -164,14 +164,14 @@ export function createDateRangePickerDefinition(
         order_num: 1,
       },
       {
-        tag: "DateInput",
+        type: "DateInput",
         props: {
           _parentTag: "DateRangePicker",
         } as ComponentElementProps,
         order_num: 2,
       },
       {
-        tag: "Calendar",
+        type: "Calendar",
         props: {
           defaultToday: true,
           isDisabled: false,
@@ -180,14 +180,14 @@ export function createDateRangePickerDefinition(
         order_num: 3,
         children: [
           {
-            tag: "CalendarHeader",
+            type: "CalendarHeader",
             props: {
               children: monthText,
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "CalendarGrid",
+            type: "CalendarGrid",
             props: {
               defaultToday: true,
               dayOffset: firstDay,
@@ -207,8 +207,8 @@ export function createDateRangePickerDefinition(
  *
  * CSS DOM 구조와 동일:
  *   Calendar (parent)
- *     ├─ CalendarHeader (tag="CalendarHeader", children="February 2026")
- *     └─ CalendarGrid  (tag="CalendarGrid",  display:grid)
+ *     ├─ CalendarHeader (type="CalendarHeader", children="February 2026")
+ *     └─ CalendarGrid  (type="CalendarGrid",  display:grid)
  *
  * CalendarHeader / CalendarGrid 는 TAG_SPEC_MAP에 등록된 Spec 컴포넌트
  * (Compositional Architecture — 각 자식이 자체 spec shapes를 렌더링)
@@ -226,9 +226,9 @@ export function createCalendarDefinition(
   const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
   return {
-    tag: "Calendar",
+    type: "Calendar",
     parent: {
-      tag: "Calendar",
+      type: "Calendar",
       props: {
         variant: "default",
         size: "md",
@@ -242,14 +242,14 @@ export function createCalendarDefinition(
     },
     children: [
       {
-        tag: "CalendarHeader",
+        type: "CalendarHeader",
         props: {
           children: monthText,
         } as ComponentElementProps,
         order_num: 1,
       },
       {
-        tag: "CalendarGrid",
+        type: "CalendarGrid",
         props: {
           defaultToday: true,
           dayOffset: firstDay,
@@ -267,10 +267,10 @@ export function createCalendarDefinition(
  *
  * CSS DOM 구조:
  *   DateField (parent)
- *     ├─ Label      (tag="Label", children="Date")
- *     ├─ DateSegment (tag="DateSegment", segment="month")
- *     ├─ DateSegment (tag="DateSegment", segment="day")
- *     └─ DateSegment (tag="DateSegment", segment="year")
+ *     ├─ Label      (type="Label", children="Date")
+ *     ├─ DateSegment (type="DateSegment", segment="month")
+ *     ├─ DateSegment (type="DateSegment", segment="day")
+ *     └─ DateSegment (type="DateSegment", segment="year")
  */
 export function createDateFieldDefinition(
   context: ComponentCreationContext,
@@ -281,9 +281,9 @@ export function createDateFieldDefinition(
 
 
   return {
-    tag: "DateField",
+    type: "DateField",
     parent: {
-      tag: "DateField",
+      type: "DateField",
       props: {
         label: "Date Field",
         size: "md",
@@ -302,7 +302,7 @@ export function createDateFieldDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Date Field",
           style: {
@@ -314,14 +314,14 @@ export function createDateFieldDefinition(
         order_num: 0,
       },
       {
-        tag: "DateInput",
+        type: "DateInput",
         props: {
           style: { width: "100%" },
         } as ComponentElementProps,
         order_num: 1,
       },
       {
-        tag: "FieldError",
+        type: "FieldError",
         props: {
           children: "",
           style: { fontSize: 12, display: "none" },
@@ -337,10 +337,10 @@ export function createDateFieldDefinition(
  *
  * CSS DOM 구조:
  *   TimeField (parent)
- *     ├─ Label       (tag="Label", children="Time")
- *     ├─ TimeSegment (tag="TimeSegment", segment="hour")
- *     ├─ TimeSegment (tag="TimeSegment", segment="minute")
- *     └─ TimeSegment (tag="TimeSegment", segment="second")
+ *     ├─ Label       (type="Label", children="Time")
+ *     ├─ TimeSegment (type="TimeSegment", segment="hour")
+ *     ├─ TimeSegment (type="TimeSegment", segment="minute")
+ *     └─ TimeSegment (type="TimeSegment", segment="second")
  */
 export function createTimeFieldDefinition(
   context: ComponentCreationContext,
@@ -351,9 +351,9 @@ export function createTimeFieldDefinition(
 
 
   return {
-    tag: "TimeField",
+    type: "TimeField",
     parent: {
-      tag: "TimeField",
+      type: "TimeField",
       props: {
         label: "Time",
         size: "md",
@@ -373,7 +373,7 @@ export function createTimeFieldDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Time",
           style: {
@@ -385,14 +385,14 @@ export function createTimeFieldDefinition(
         order_num: 0,
       },
       {
-        tag: "DateInput",
+        type: "DateInput",
         props: {
           style: { width: "100%" },
         } as ComponentElementProps,
         order_num: 1,
       },
       {
-        tag: "FieldError",
+        type: "FieldError",
         props: {
           children: "",
           style: { fontSize: 12, display: "none" },
@@ -408,9 +408,9 @@ export function createTimeFieldDefinition(
  *
  * CSS DOM 구조:
  *   ColorField (parent)
- *     ├─ Label      (tag="Label", children="Color")
- *     ├─ Input      (tag="Input", placeholder="#000000")
- *     └─ ColorSwatch (tag="ColorSwatch", preview swatch)
+ *     ├─ Label      (type="Label", children="Color")
+ *     ├─ Input      (type="Input", placeholder="#000000")
+ *     └─ ColorSwatch (type="ColorSwatch", preview swatch)
  */
 export function createColorFieldDefinition(
   context: ComponentCreationContext,
@@ -421,9 +421,9 @@ export function createColorFieldDefinition(
 
 
   return {
-    tag: "ColorField",
+    type: "ColorField",
     parent: {
-      tag: "ColorField",
+      type: "ColorField",
       props: {
         labelPosition: "top",
         isDisabled: false,
@@ -440,7 +440,7 @@ export function createColorFieldDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Color",
           style: {
@@ -452,7 +452,7 @@ export function createColorFieldDefinition(
         order_num: 1,
       },
       {
-        tag: "Input",
+        type: "Input",
         props: {
           type: "text",
           placeholder: "#000000",
@@ -464,7 +464,7 @@ export function createColorFieldDefinition(
         order_num: 2,
       },
       {
-        tag: "ColorSwatch",
+        type: "ColorSwatch",
         props: {
           color: "#000000",
           style: {
@@ -484,9 +484,9 @@ export function createColorFieldDefinition(
  *
  * CSS DOM 구조와 동일:
  *   ColorPicker (parent)
- *     ├─ ColorArea   (tag="ColorArea",   width:200px, height:200px)
- *     ├─ ColorSlider (tag="ColorSlider", channel:"hue", display:block)
- *     └─ ColorField  (tag="ColorField",  placeholder:"#000000", display:block)
+ *     ├─ ColorArea   (type="ColorArea",   width:200px, height:200px)
+ *     ├─ ColorSlider (type="ColorSlider", channel:"hue", display:block)
+ *     └─ ColorField  (type="ColorField",  placeholder:"#000000", display:block)
  */
 export function createColorPickerDefinition(
   context: ComponentCreationContext,
@@ -498,9 +498,9 @@ export function createColorPickerDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "ColorPicker",
+    type: "ColorPicker",
     parent: {
-      tag: "ColorPicker",
+      type: "ColorPicker",
       props: {
         style: {
           display: "flex",
@@ -513,7 +513,7 @@ export function createColorPickerDefinition(
     },
     children: [
       {
-        tag: "ColorArea",
+        type: "ColorArea",
         props: {
           style: {
             width: "200px",
@@ -523,7 +523,7 @@ export function createColorPickerDefinition(
         order_num: 1,
       },
       {
-        tag: "ColorSlider",
+        type: "ColorSlider",
         props: {
           channel: "hue",
           style: {
@@ -534,7 +534,7 @@ export function createColorPickerDefinition(
         order_num: 2,
       },
       {
-        tag: "ColorField",
+        type: "ColorField",
         props: {
           placeholder: "#000000",
           style: {
@@ -551,7 +551,7 @@ export function createColorPickerDefinition(
  * ColorSwatchPicker 컴포넌트 정의
  *
  * CSS DOM 구조 대응:
- *   ColorSwatchPicker (parent, tag="ColorSwatchPicker", flex wrap)
+ *   ColorSwatchPicker (parent, type="ColorSwatchPicker", flex wrap)
  *     ├─ ColorSwatch (#FF0000)
  *     ├─ ColorSwatch (#00FF00)
  *     ├─ ColorSwatch (#0000FF)
@@ -577,9 +577,9 @@ export function createColorSwatchPickerDefinition(
   ];
 
   return {
-    tag: "ColorSwatchPicker",
+    type: "ColorSwatchPicker",
     parent: {
-      tag: "ColorSwatchPicker",
+      type: "ColorSwatchPicker",
       props: {
         columns: 6,
         style: {
@@ -593,7 +593,7 @@ export function createColorSwatchPickerDefinition(
       order_num: orderNum,
     },
     children: defaultColors.map((color, index) => ({
-      tag: "ColorSwatch",
+      type: "ColorSwatch",
       props: {
         color,
         style: {

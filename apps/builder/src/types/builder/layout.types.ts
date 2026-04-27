@@ -11,7 +11,7 @@
  * 산물이다. Skia canonical 전환(ADR-903) 이후에는 다음과 같이 흡수된다:
  *
  * - `Layout` → canonical `FrameNode` + `reusable: true` 로 흡수 (ADR-903 Phase 3)
- * - `SlotProps` / `tag="Slot"` + `slot_name` → 컨테이너의 `slot?: false | string[]`
+ * - `SlotProps` / `type="Slot"` + `slot_name` → 컨테이너의 `slot?: false | string[]`
  *   schema 속성으로 전환 (ADR-903 Phase 3)
  * - `ElementLayoutFields.layout_id` → page root `type:"ref"` to reusable layout shell
  * - `PageLayoutFields.layout_id` → page root ref 참조로 대체
@@ -93,10 +93,10 @@ export type LayoutUpdate = Partial<
 
 /**
  * Slot props 타입 (Element.props에 저장)
- * Slot은 tag="Slot"인 Element
+ * Slot은 type="Slot"인 Element
  *
  * @deprecated ADR-903 P3: canonical 컨테이너 schema 속성 `slot?: false | string[]`으로
- * 전환. 별도 Slot 특수 노드(`tag="Slot"`) 제거 예정. `name` 필드는 descendants path의
+ * 전환. 별도 Slot 특수 노드(`type="Slot"`) 제거 예정. `name` 필드는 descendants path의
  * key 역할로 흡수. Phase 1~3 기간 adapter 입력 타입으로만 사용.
  */
 export interface SlotProps extends Record<string, unknown> {

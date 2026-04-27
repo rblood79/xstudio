@@ -378,8 +378,8 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      const tag = (child.tag ?? "").toLowerCase();
-      if (!INLINE_BLOCK_TAGS.has(tag) && !TEXT_LEAF_TAGS.has(tag)) continue;
+      const type = (child.type ?? "").toLowerCase();
+      if (!INLINE_BLOCK_TAGS.has(type) && !TEXT_LEAF_TAGS.has(type)) continue;
 
       const childStyle = child.props?.style as
         | Record<string, unknown>
@@ -428,8 +428,8 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
     }
 
     const secondPassChildren = children.map((child, i) => {
-      const tag = (child.tag ?? "").toLowerCase();
-      if (!INLINE_BLOCK_TAGS.has(tag) && !TEXT_LEAF_TAGS.has(tag)) return child;
+      const type = (child.type ?? "").toLowerCase();
+      if (!INLINE_BLOCK_TAGS.has(type) && !TEXT_LEAF_TAGS.has(type)) return child;
 
       const actualWidth = actualWidths.get(child.id);
       if (actualWidth === undefined) return child;
@@ -549,7 +549,7 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
     // WebGL에서는 label 자식만 존재. Spec shapes(Skia)가 indicator를 그리지만
     // 레이아웃 트리에는 없으므로 phantom 노드로 공간을 예약한다.
     // childMap에 등록하지 않으므로 collectResults()에서 자동 스킵된다.
-    const parentTag = (parent.tag ?? "").toLowerCase();
+    const parentTag = (parent.type ?? "").toLowerCase();
     const isRowLayout =
       !parentStyle.flexDirection ||
       parentStyle.flexDirection === "row" ||

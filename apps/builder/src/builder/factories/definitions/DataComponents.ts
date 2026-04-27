@@ -31,9 +31,9 @@ export function createDataTableDefinition(
   const dataTableId = `datatable-${Date.now()}`;
 
   return {
-    tag: "DataTable",
+    type: "DataTable",
     parent: {
-      tag: "DataTable",
+      type: "DataTable",
       props: {
         id: dataTableId,
         name: "New DataTable",
@@ -82,9 +82,9 @@ export function createSlotDefinition(
   // ⭐ Layout/Slot System - Slot은 항상 layout_id 사용
 
   return {
-    tag: "Slot",
+    type: "Slot",
     parent: {
-      tag: "Slot",
+      type: "Slot",
       props: {
         name: "content",
         required: false,

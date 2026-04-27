@@ -126,16 +126,16 @@ class SelectionMemoryStore {
   private createLabel(elementIds: string[], elements: Element[]): string {
     if (elementIds.length === 1) {
       const element = elements.find((el) => el.id === elementIds[0]);
-      return element ? element.tag : "1 element";
+      return element ? element.type : "1 element";
     }
 
-    // Count elements by tag
+    // Count elements by type
     const tagCounts = new Map<string, number>();
     elementIds.forEach((id) => {
       const element = elements.find((el) => el.id === id);
       if (element) {
-        const count = tagCounts.get(element.tag) || 0;
-        tagCounts.set(element.tag, count + 1);
+        const count = tagCounts.get(element.type) || 0;
+        tagCounts.set(element.type, count + 1);
       }
     });
 
@@ -145,8 +145,8 @@ class SelectionMemoryStore {
       .slice(0, 2);
 
     if (sortedTags.length === 1) {
-      const [tag, count] = sortedTags[0];
-      return `${count} ${tag}${count > 1 ? "s" : ""}`;
+      const [type, count] = sortedTags[0];
+      return `${count} ${type}${count > 1 ? "s" : ""}`;
     } else if (sortedTags.length === 2) {
       const [tag1, count1] = sortedTags[0];
       const [tag2, count2] = sortedTags[1];

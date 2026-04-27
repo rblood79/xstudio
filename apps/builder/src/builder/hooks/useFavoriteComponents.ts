@@ -6,14 +6,14 @@ const FAVORITE_COMPONENTS_KEY = 'composition_favorite_components';
 /**
  * localStorage에서 즐겨찾기 로드
  */
-function loadFavoritesFromStorage(): { id: string; tag: string }[] {
+function loadFavoritesFromStorage(): { id: string; type: string }[] {
     try {
         const stored = localStorage.getItem(FAVORITE_COMPONENTS_KEY);
         if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) {
-                // string[] → { id, tag }[] 변환
-                return parsed.map((tag) => ({ id: tag, tag }));
+                // string[] → { id, type }[] 변환
+                return parsed.map((type) => ({ id: type, type }));
             }
         }
     } catch (error) {
@@ -25,10 +25,10 @@ function loadFavoritesFromStorage(): { id: string; tag: string }[] {
 /**
  * localStorage에 즐겨찾기 저장
  */
-function saveFavoritesToStorage(items: { id: string; tag: string }[]) {
+function saveFavoritesToStorage(items: { id: string; type: string }[]) {
     try {
-        // { id, tag }[] → string[] 변환
-        const tags = items.map((item) => item.tag);
+        // { id, type }[] → string[] 변환
+        const tags = items.map((item) => item.type);
         localStorage.setItem(FAVORITE_COMPONENTS_KEY, JSON.stringify(tags));
     } catch (error) {
         console.error('Failed to save favorite components:', error);
@@ -50,7 +50,7 @@ function saveFavoritesToStorage(items: { id: string; tag: string }[]) {
  * ```
  */
 export function useFavoriteComponents() {
-    const list = useListData<{ id: string; tag: string }>({
+    const list = useListData<{ id: string; type: string }>({
         initialItems: loadFavoritesFromStorage(),
         getKey: (item) => item.id,
     });
@@ -61,20 +61,20 @@ export function useFavoriteComponents() {
     }, [list.items]);
 
     // 즐겨찾기 토글
-    const toggleFavorite = (tag: string) => {
-        const exists = list.items.some((item) => item.tag === tag);
+    const toggleFavorite = (type: string) => {
+        const exists = list.items.some((item) => item.type === type);
         if (exists) {
             // 제거
-            list.remove(tag);
+            list.remove(type);
         } else {
             // 추가
-            list.append({ id: tag, tag });
+            list.append({ id: type, type });
         }
     };
 
     // 즐겨찾기 여부 확인
-    const isFavorite = (tag: string) => {
-        return list.items.some((item) => item.tag === tag);
+    const isFavorite = (type: string) => {
+        return list.items.some((item) => item.type === type);
     };
 
     // 즐겨찾기 초기화
@@ -86,7 +86,7 @@ export function useFavoriteComponents() {
     };
 
     // 하위 호환성을 위해 favoriteTags 배열 제공
-    const favoriteTags = list.items.map((item) => item.tag);
+    const favoriteTags = list.items.map((item) => item.type);
 
     return {
         favoriteTags,

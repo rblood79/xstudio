@@ -18,7 +18,7 @@ describe("useTransformAuxiliary", () => {
           "el-1",
           {
             id: "el-1",
-            tag: "Button",
+            type: "Button",
             parent_id: "p-1",
             props: {
               style: {
@@ -33,7 +33,7 @@ describe("useTransformAuxiliary", () => {
           "p-1",
           {
             id: "p-1",
-            tag: "Frame",
+            type: "Frame",
             props: { style: { display: "flex", flexDirection: "row" } },
           } as any,
         ],
@@ -93,7 +93,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
           "item-1",
           {
             id: "item-1",
-            tag: "ListBoxItem",
+            type: "ListBoxItem",
             parent_id: "lb-1",
             props: { style: { alignSelf: "center", justifySelf: "center" } },
           } as any,
@@ -102,7 +102,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
           "lb-1",
           {
             id: "lb-1",
-            tag: "ListBox",
+            type: "ListBox",
             // inline style 없음 — ListBoxSpec.containerStyles.display="flex" 가 유일 source
             props: {},
           } as any,
@@ -150,7 +150,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
           "child-x",
           {
             id: "child-x",
-            tag: "Button",
+            type: "Button",
             parent_id: "dlg-1",
             props: {},
           } as any,
@@ -159,7 +159,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
           "dlg-1",
           {
             id: "dlg-1",
-            tag: "Dialog", // Dialog 는 containerStyles 미보유 (overlay archetype)
+            type: "Dialog", // Dialog 는 containerStyles 미보유 (overlay archetype)
             props: {},
           } as any,
         ],

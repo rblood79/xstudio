@@ -27,7 +27,7 @@ export const ChildItemManager = memo(function ChildItemManager({
   const filteredChildren = useMemo(
     () =>
       rawChildren
-        .filter((child) => child.tag === childTag)
+        .filter((child) => child.type === childTag)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
     [rawChildren, childTag],
   );
@@ -37,7 +37,7 @@ export const ChildItemManager = memo(function ChildItemManager({
     const newElement: Element = {
       id: ElementUtils.generateId(),
       page_id: currentPageId || "1",
-      tag: childTag,
+      type: childTag,
       props: {
         children: `${childTag} ${filteredChildren.length + 1}`,
         ...field.defaultChildProps,

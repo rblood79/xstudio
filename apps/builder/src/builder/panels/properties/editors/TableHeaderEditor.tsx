@@ -68,7 +68,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({
 
   // 현재 테이블 헤더의 컬럼들 찾기
   const columns = rawChildren
-    .filter((el) => el.tag === "Column")
+    .filter((el) => el.type === "Column")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // 컬럼 추가 함수
@@ -86,7 +86,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({
       const newColumnElement: Element = {
         id: columnId,
         customId: generateCustomId("Column", currentElements),
-        tag: "Column",
+        type: "Column",
         props: {
           key: newColumnKey.trim(),
           children: newColumnLabel.trim(),
@@ -105,13 +105,13 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({
       // TableBody의 모든 Row 찾기 (childrenMap O(1))
       const tableChildren = currentChildrenMap.get(tableElement.id) ?? [];
       const tableBodyElement = tableChildren.find(
-        (el) => el.tag === "TableBody",
+        (el) => el.type === "TableBody",
       );
 
       const newCellElements: Element[] = [];
       if (tableBodyElement) {
         const rows = (currentChildrenMap.get(tableBodyElement.id) ?? []).filter(
-          (el) => el.tag === "Row",
+          (el) => el.type === "Row",
         );
 
         // Track all elements for unique ID generation
@@ -122,7 +122,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({
           const newCellElement: Element = {
             id: cellId,
             customId: generateCustomId("Cell", allElementsSoFar),
-            tag: "Cell",
+            type: "Cell",
             props: {
               children: "",
             },

@@ -59,14 +59,14 @@ function normalizeStyleValue(
 }
 
 function resolveSpecStyleDefaults(
-  tag: string,
+  type: string,
   props: Readonly<Record<string, unknown>> | undefined,
 ): Record<string, string | undefined> {
   const size = typeof props?.size === "string" ? props.size : undefined;
-  const transformPreset = resolveSpecPreset(tag, size);
-  const layoutPreset = resolveLayoutSpecPreset(tag, size, props);
-  const appearancePreset = resolveAppearanceSpecPreset(tag, size);
-  const typographyPreset = resolveTypographySpecPreset(tag, size);
+  const transformPreset = resolveSpecPreset(type, size);
+  const layoutPreset = resolveLayoutSpecPreset(type, size, props);
+  const appearancePreset = resolveAppearanceSpecPreset(type, size);
+  const typographyPreset = resolveTypographySpecPreset(type, size);
 
   return {
     width: normalizeStyleValue("width", transformPreset.width),
@@ -174,17 +174,17 @@ function resolveSpecStyleDefaults(
 
 function resolveResetBaseline(
   element: {
-    tag: string;
+    type: string;
     props?: Readonly<Record<string, unknown>>;
   },
 ): {
   legacyStyle: Record<string, unknown>;
   specStyle: Record<string, string | undefined>;
 } {
-  const defaultProps = getDefaultProps(element.tag);
+  const defaultProps = getDefaultProps(element.type);
   return {
     legacyStyle: (defaultProps?.style || {}) as Record<string, unknown>,
-    specStyle: resolveSpecStyleDefaults(element.tag, element.props),
+    specStyle: resolveSpecStyleDefaults(element.type, element.props),
   };
 }
 

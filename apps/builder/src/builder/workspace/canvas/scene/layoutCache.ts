@@ -165,7 +165,7 @@ function createElementLayoutSignature(element: Element): string {
 
   return [
     element.id,
-    element.tag,
+    element.type,
     element.parent_id ?? "root",
     element.order_num ?? 0,
     styleSignature,

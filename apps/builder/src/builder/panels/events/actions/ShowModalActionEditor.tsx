@@ -38,7 +38,7 @@ export function ShowModalActionEditor({
         value={config.modalId || ""}
         onChange={updateModalId}
         placeholder="Select modal..."
-        filter={(el) => el.tag === "Modal"}
+        filter={(el) => el.type === "Modal"}
       />
 
       <TextField className="field">

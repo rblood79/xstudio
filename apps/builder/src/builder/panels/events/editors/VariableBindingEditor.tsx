@@ -397,7 +397,7 @@ export function VariableBindingEditor({
           {parseResult.bindings.map((binding, index) => (
             <span
               key={index}
-              className={`binding-tag binding-${binding.type}`}
+              className={`binding-type binding-${binding.type}`}
               title={binding.path}
             >
               {binding.type}: {binding.path}

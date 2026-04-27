@@ -18,7 +18,7 @@ interface Rect {
 
 interface OverlayData {
   rect: Rect;
-  tag: string;
+  type: string;
 }
 
 export default function SelectionOverlay() {
@@ -59,7 +59,7 @@ export default function SelectionOverlay() {
       result.rects.forEach((rect, elementId) => {
         next.set(elementId, {
           rect,
-          tag: result.tags.get(elementId) || next.get(elementId)?.tag || "",
+          type: result.tags.get(elementId) || next.get(elementId)?.type || "",
         });
       });
       return next;
@@ -93,7 +93,7 @@ export default function SelectionOverlay() {
           // 🚀 Performance: getState()로 현재 elementsMap 조회
           const elementsMap = useStore.getState().elementsMap;
           const selectedElement = elementsMap.get(selectedElementId);
-          if (selectedElement?.tag === "body") {
+          if (selectedElement?.type === "body") {
             // 실제 <body> 태그에서 찾기
             if (iframe.contentDocument.body.getAttribute("data-element-id")) {
               element = iframe.contentDocument.body;
@@ -251,7 +251,7 @@ export default function SelectionOverlay() {
       if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
         const { top, left, width, height } = event.data.payload.rect;
         setOverlayRect({ top, left, width, height });
-        setSelectedTag(event.data.payload.tag || "");
+        setSelectedTag(event.data.payload.type || "");
         if (rafIdRef.current !== null) {
           cancelAnimationFrame(rafIdRef.current);
           rafIdRef.current = null;
@@ -269,8 +269,8 @@ export default function SelectionOverlay() {
             updatePositionRef.current?.();
           }
         }
-        if (event.data.payload?.tag) {
-          setSelectedTag(event.data.payload.tag);
+        if (event.data.payload?.type) {
+          setSelectedTag(event.data.payload.type);
         }
       } else if (event.data.type === "CLEAR_OVERLAY") {
         setOverlayRect(null);

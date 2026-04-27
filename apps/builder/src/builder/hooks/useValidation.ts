@@ -32,7 +32,7 @@ export const useValidation = (): UseValidationReturn => {
             // Tabs 하위 요소는 tabId 기반 매칭이므로 order_num 중복이 정상일 수 있음
             const parentId = children[0]?.parent_id;
             const parentElement = parentId ? elements.find((el) => el.id === parentId) : null;
-            const isTabsChildren = parentElement?.tag === 'Tabs';
+            const isTabsChildren = parentElement?.type === 'Tabs';
 
             // Tabs 하위 요소는 order_num 중복 검사 제외
             if (isTabsChildren) {
@@ -58,7 +58,7 @@ export const useValidation = (): UseValidationReturn => {
                     // 경고는 자동 수정되지 않은 경우에만 출력
                     if (!pageId || !fixedPagesRef.current.has(pageId)) {
                         console.warn(
-                            `⚠️ Duplicate order_num detected: ${current.tag} (${current.id.slice(0, 8)}...) and ${next.tag} (${next.id.slice(0, 8)}...) both have order_num=${currentOrder} → Auto-fixing...`
+                            `⚠️ Duplicate order_num detected: ${current.type} (${current.id.slice(0, 8)}...) and ${next.type} (${next.id.slice(0, 8)}...) both have order_num=${currentOrder} → Auto-fixing...`
                         );
                     }
                 }
@@ -66,7 +66,7 @@ export const useValidation = (): UseValidationReturn => {
                 // 순서 역전 확인 (정렬 후에는 발생하지 않지만, 데이터 무결성 확인)
                 if (currentOrder > nextOrder) {
                     console.warn(
-                        `❌ Order reversal detected: ${current.tag} (${current.id.slice(0, 8)}..., order_num=${currentOrder}) > ${next.tag} (${next.id.slice(0, 8)}..., order_num=${nextOrder})`
+                        `❌ Order reversal detected: ${current.type} (${current.id.slice(0, 8)}..., order_num=${currentOrder}) > ${next.type} (${next.id.slice(0, 8)}..., order_num=${nextOrder})`
                     );
                 }
             }

@@ -130,7 +130,7 @@ const COLOR_PROPERTIES = new Set([
 ]);
 
 // ============================================
-// font-variant → OpenType feature tag 매핑
+// font-variant → OpenType feature type 매핑
 // ============================================
 
 export interface FontFeatureTag {

@@ -5,10 +5,10 @@
  *   elements[] + pages[] + layouts[] → CompositionDocument (canonical doc tree)
  *
  * 변환 책임 분담:
- *  - tag → type rename: tagRename.ts (Stream 1 본 모듈)
+ *  - type → type rename: tagRename.ts (Stream 1 본 모듈)
  *  - componentRole/masterId/overrides/descendants → reusable/ref:
  *      componentRoleAdapter.ts (Stream 2)
- *  - tag="Slot" + slot_name + Page.layout_id → slot 메타 + descendants[path].children + page ref:
+ *  - type="Slot" + slot_name + Page.layout_id → slot 메타 + descendants[path].children + page ref:
  *      slotAndLayoutAdapter.ts (Stream 3)
  *  - parent_id/order_num → tree order: 본 파일 buildTree() 함수
  *
@@ -113,7 +113,7 @@ export function legacyToCanonical(
   const childrenByParent = indexChildrenByParent(elements);
 
   function buildNode(element: Element): CanonicalNode {
-    const baseType = tagToType(element.tag);
+    const baseType = tagToType(element.type);
 
     // componentRole 분기: master → reusable / instance → ref
     const roleResult = convertComponentRole(element, {
@@ -125,11 +125,11 @@ export function legacyToCanonical(
     childElements.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
     const canonicalChildren = childElements.map(buildNode);
 
-    // Slot tag 특수 처리: container의 slot 메타로 변환되어야 하지만,
+    // Slot type 특수 처리: container의 slot 메타로 변환되어야 하지만,
     // standalone Slot element는 부모 컨테이너 slot 메타로 흡수되어야 한다.
     // P1 단계에서는 Slot element를 일반 frame으로 변환 + metadata 보존.
     // (실제 흡수는 Stream 3이 page composition 단계에서 처리)
-    if (isLegacySlotTag(element.tag)) {
+    if (isLegacySlotTag(element.type)) {
       const slotName =
         (element.props.name as string | undefined) ?? element.slot_name ?? null;
       return {

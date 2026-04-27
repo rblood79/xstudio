@@ -336,10 +336,10 @@ export function useOverlayRAF(
  */
 export function isBodyElement(
   elementId: string,
-  elementsMap: Map<string, { tag: string }>
+  elementsMap: Map<string, { type: string }>
 ): boolean {
   const element = elementsMap.get(elementId);
-  return element?.tag?.toLowerCase() === 'body';
+  return element?.type?.toLowerCase() === 'body';
 }
 
 /**
@@ -351,7 +351,7 @@ export function isBodyElement(
  */
 export function isOnlyBodySelected(
   elementIds: string[],
-  elementsMap: Map<string, { tag: string }>
+  elementsMap: Map<string, { type: string }>
 ): boolean {
   if (elementIds.length === 0) return false;
   return elementIds.every((id) => isBodyElement(id, elementsMap));

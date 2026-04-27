@@ -6,10 +6,10 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  * TextField 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * TextField (parent, tag="TextField", display flex column)
- *   ├─ Label (tag="Label", children="Text Field")
- *   ├─ Input (tag="Input", type="text")
- *   └─ FieldError (tag="FieldError")
+ * TextField (parent, type="TextField", display flex column)
+ *   ├─ Label (type="Label", children="Text Field")
+ *   ├─ Input (type="Input", type="text")
+ *   └─ FieldError (type="FieldError")
  */
 export function createTextFieldDefinition(
   context: ComponentCreationContext,
@@ -21,9 +21,9 @@ export function createTextFieldDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "TextField",
+    type: "TextField",
     parent: {
-      tag: "TextField",
+      type: "TextField",
       props: {
         label: "Text Field",
         name: "",
@@ -47,7 +47,7 @@ export function createTextFieldDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Text Field",
           style: {
@@ -59,7 +59,7 @@ export function createTextFieldDefinition(
         order_num: 0,
       },
       {
-        tag: "Input",
+        type: "Input",
         props: {
           type: "text",
           placeholder: "Enter text...",
@@ -70,7 +70,7 @@ export function createTextFieldDefinition(
         order_num: 1,
       },
       {
-        tag: "FieldError",
+        type: "FieldError",
         props: {
           children: "",
           style: {
@@ -88,10 +88,10 @@ export function createTextFieldDefinition(
  * TextArea 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * TextArea (parent, tag="TextArea", display flex column)
- *   ├─ Label (tag="Label", children="Text Area")
- *   ├─ Input (tag="Input", height: 80, multiline)
- *   └─ FieldError (tag="FieldError")
+ * TextArea (parent, type="TextArea", display flex column)
+ *   ├─ Label (type="Label", children="Text Area")
+ *   ├─ Input (type="Input", height: 80, multiline)
+ *   └─ FieldError (type="FieldError")
  */
 export function createTextAreaDefinition(
   context: ComponentCreationContext,
@@ -103,9 +103,9 @@ export function createTextAreaDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "TextArea",
+    type: "TextArea",
     parent: {
-      tag: "TextArea",
+      type: "TextArea",
       props: {
         label: "Text Area",
         name: "",
@@ -128,7 +128,7 @@ export function createTextAreaDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Text Area",
           style: {
@@ -140,7 +140,7 @@ export function createTextAreaDefinition(
         order_num: 0,
       },
       {
-        tag: "Input",
+        type: "Input",
         props: {
           type: "text",
           placeholder: "Enter text...",
@@ -152,7 +152,7 @@ export function createTextAreaDefinition(
         order_num: 1,
       },
       {
-        tag: "FieldError",
+        type: "FieldError",
         props: {
           children: "",
           style: {
@@ -170,18 +170,18 @@ export function createTextAreaDefinition(
  * Form 컴포넌트 정의 (복합 컴포넌트)
  *
  * CSS DOM 구조:
- * Form (parent, tag="Form")
- *   ├─ Heading (tag="Heading", children="Form Title")
- *   ├─ Description (tag="Description", children="")
- *   ├─ FormField (tag="FormField", flex column, gap 4px)
- *   │  ├─ Label (tag="Label", children="Field Label")
- *   │  └─ TextField (tag="TextField", placeholder "Enter value...")
- *   └─ FormField (tag="FormField", flex column, gap 4px)
- *      ├─ Label (tag="Label", children="Another Field")
- *      └─ TextField (tag="TextField", placeholder "Enter value...")
+ * Form (parent, type="Form")
+ *   ├─ Heading (type="Heading", children="Form Title")
+ *   ├─ Description (type="Description", children="")
+ *   ├─ FormField (type="FormField", flex column, gap 4px)
+ *   │  ├─ Label (type="Label", children="Field Label")
+ *   │  └─ TextField (type="TextField", placeholder "Enter value...")
+ *   └─ FormField (type="FormField", flex column, gap 4px)
+ *      ├─ Label (type="Label", children="Another Field")
+ *      └─ TextField (type="TextField", placeholder "Enter value...")
  *
  * 주의: Form 안의 TextField 자식은 단순 Element로 정의
- * (tag만 지정, 내부 구조는 TextField의 Spec이 처리)
+ * (type만 지정, 내부 구조는 TextField의 Spec이 처리)
  */
 export function createFormDefinition(
   context: ComponentCreationContext,
@@ -193,9 +193,9 @@ export function createFormDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Form",
+    type: "Form",
     parent: {
-      tag: "Form",
+      type: "Form",
       props: {
         labelPosition: "top",
         style: {
@@ -210,7 +210,7 @@ export function createFormDefinition(
     },
     children: [
       {
-        tag: "Heading",
+        type: "Heading",
         props: {
           children: "Form Title",
           level: 3,
@@ -223,7 +223,7 @@ export function createFormDefinition(
         order_num: 0,
       },
       {
-        tag: "Description",
+        type: "Description",
         props: {
           children: "",
           style: {
@@ -234,7 +234,7 @@ export function createFormDefinition(
         order_num: 0.5,
       },
       {
-        tag: "FormField",
+        type: "FormField",
         props: {
           style: {
             display: "flex",
@@ -246,14 +246,14 @@ export function createFormDefinition(
         order_num: 1,
         children: [
           {
-            tag: "Label",
+            type: "Label",
             props: {
               children: "Field Label",
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "TextField",
+            type: "TextField",
             props: {
               label: "Text Field",
               placeholder: "Enter value...",
@@ -268,7 +268,7 @@ export function createFormDefinition(
         ],
       },
       {
-        tag: "FormField",
+        type: "FormField",
         props: {
           style: {
             display: "flex",
@@ -280,14 +280,14 @@ export function createFormDefinition(
         order_num: 2,
         children: [
           {
-            tag: "Label",
+            type: "Label",
             props: {
               children: "Another Field",
             } as ComponentElementProps,
             order_num: 1,
           },
           {
-            tag: "TextField",
+            type: "TextField",
             props: {
               label: "Text Field",
               placeholder: "Enter value...",
@@ -309,9 +309,9 @@ export function createFormDefinition(
  * Toast 컴포넌트 정의 (복합 컴포넌트)
  *
  * CSS DOM 구조:
- * Toast (parent, tag="Toast")
- *   ├─ Heading (tag="Heading", fontSize 14px, fontWeight 600)
- *   └─ Description (tag="Description", fontSize 14px)
+ * Toast (parent, type="Toast")
+ *   ├─ Heading (type="Heading", fontSize 14px, fontWeight 600)
+ *   └─ Description (type="Description", fontSize 14px)
  */
 export function createToastDefinition(
   context: ComponentCreationContext,
@@ -323,9 +323,9 @@ export function createToastDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Toast",
+    type: "Toast",
     parent: {
-      tag: "Toast",
+      type: "Toast",
       props: {
         style: {
           display: "flex",
@@ -341,7 +341,7 @@ export function createToastDefinition(
     },
     children: [
       {
-        tag: "Heading",
+        type: "Heading",
         props: {
           children: "Toast Title",
           level: 3,
@@ -354,7 +354,7 @@ export function createToastDefinition(
         order_num: 1,
       },
       {
-        tag: "Description",
+        type: "Description",
         props: {
           children: "Toast message content.",
           style: {
@@ -372,23 +372,23 @@ export function createToastDefinition(
  * Toolbar 컴포넌트 정의 (복합 컴포넌트)
  *
  * CSS DOM 구조:
- * Toolbar (parent, tag="Toolbar")
- *   ├─ Button (tag="Button", children="Action 1")
- *   ├─ Button (tag="Button", children="Action 2")
- *   ├─ Separator (tag="Separator")
- *   └─ Button (tag="Button", children="Action 3")
+ * Toolbar (parent, type="Toolbar")
+ *   ├─ Button (type="Button", children="Action 1")
+ *   ├─ Button (type="Button", children="Action 2")
+ *   ├─ Separator (type="Separator")
+ *   └─ Button (type="Button", children="Action 3")
  */
 /**
  * NumberField 복합 컴포넌트 정의
  *
  * DOM 구조 (ComboBox 와 동일한 패턴):
- * NumberField (parent, tag="NumberField", display flex column)
- *   ├─ Label (tag="Label", children="Number")
- *   ├─ ComboBoxWrapper (tag="ComboBoxWrapper", display flex row, bg+border)
- *   │    ├─ ComboBoxInput (tag="ComboBoxInput", placeholder="0")
- *   │    ├─ ComboBoxTrigger (tag="ComboBoxTrigger", iconName="minus")
- *   │    └─ ComboBoxTrigger (tag="ComboBoxTrigger", iconName="plus")
- *   └─ FieldError (tag="FieldError")
+ * NumberField (parent, type="NumberField", display flex column)
+ *   ├─ Label (type="Label", children="Number")
+ *   ├─ ComboBoxWrapper (type="ComboBoxWrapper", display flex row, bg+border)
+ *   │    ├─ ComboBoxInput (type="ComboBoxInput", placeholder="0")
+ *   │    ├─ ComboBoxTrigger (type="ComboBoxTrigger", iconName="minus")
+ *   │    └─ ComboBoxTrigger (type="ComboBoxTrigger", iconName="plus")
+ *   └─ FieldError (type="FieldError")
  */
 export function createNumberFieldDefinition(
   context: ComponentCreationContext,
@@ -399,9 +399,9 @@ export function createNumberFieldDefinition(
 
 
   return {
-    tag: "NumberField",
+    type: "NumberField",
     parent: {
-      tag: "NumberField",
+      type: "NumberField",
       props: {
         label: "Number",
         name: "",
@@ -424,7 +424,7 @@ export function createNumberFieldDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Number",
           style: {
@@ -436,7 +436,7 @@ export function createNumberFieldDefinition(
         order_num: 1,
       },
       {
-        tag: "ComboBoxWrapper",
+        type: "ComboBoxWrapper",
         props: {
           style: {
             width: "100%",
@@ -445,7 +445,7 @@ export function createNumberFieldDefinition(
         order_num: 2,
         children: [
           {
-            tag: "ComboBoxInput",
+            type: "ComboBoxInput",
             props: {
               placeholder: "0",
               style: {
@@ -455,7 +455,7 @@ export function createNumberFieldDefinition(
             order_num: 1,
           },
           {
-            tag: "ComboBoxTrigger",
+            type: "ComboBoxTrigger",
             props: {
               iconName: "minus",
               slot: "decrement",
@@ -463,7 +463,7 @@ export function createNumberFieldDefinition(
             order_num: 2,
           },
           {
-            tag: "ComboBoxTrigger",
+            type: "ComboBoxTrigger",
             props: {
               iconName: "plus",
               slot: "increment",
@@ -473,7 +473,7 @@ export function createNumberFieldDefinition(
         ],
       },
       {
-        tag: "FieldError",
+        type: "FieldError",
         props: {
           children: "",
           style: {
@@ -491,21 +491,21 @@ export function createNumberFieldDefinition(
  * SearchField 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * SearchField (parent, tag="SearchField")
- *   ├─ Label (tag="Label", children="Search")
- *   ├─ Input (tag="Input", type="search")
- *   └─ Button (tag="Button", children="✕", slot="clear")
+ * SearchField (parent, type="SearchField")
+ *   ├─ Label (type="Label", children="Search")
+ *   ├─ Input (type="Input", type="search")
+ *   └─ Button (type="Button", children="✕", slot="clear")
  */
 /**
  * SearchField 컴포넌트 정의 (ComboBox 동일 패턴)
  *
  * CSS DOM 구조:
  * SearchField (parent, flex column)
- *   ├─ Label (tag="Label")
- *   └─ SearchFieldWrapper (tag="SearchFieldWrapper", flex row)
- *        ├─ SearchIcon (tag="SearchIcon", 🔍)
- *        ├─ SearchInput (tag="SearchInput", flex:1)
- *        └─ SearchClearButton (tag="SearchClearButton", ✕)
+ *   ├─ Label (type="Label")
+ *   └─ SearchFieldWrapper (type="SearchFieldWrapper", flex row)
+ *        ├─ SearchIcon (type="SearchIcon", 🔍)
+ *        ├─ SearchInput (type="SearchInput", flex:1)
+ *        └─ SearchClearButton (type="SearchClearButton", ✕)
  */
 export function createSearchFieldDefinition(
   context: ComponentCreationContext,
@@ -516,9 +516,9 @@ export function createSearchFieldDefinition(
 
 
   return {
-    tag: "SearchField",
+    type: "SearchField",
     parent: {
-      tag: "SearchField",
+      type: "SearchField",
       props: {
         label: "Search",
         name: "",
@@ -537,7 +537,7 @@ export function createSearchFieldDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Search",
           style: {
@@ -549,7 +549,7 @@ export function createSearchFieldDefinition(
         order_num: 0,
       },
       {
-        tag: "SearchFieldWrapper",
+        type: "SearchFieldWrapper",
         props: {
           style: {
             width: "100%",
@@ -558,7 +558,7 @@ export function createSearchFieldDefinition(
         order_num: 1,
         children: [
           {
-            tag: "SearchIcon",
+            type: "SearchIcon",
             props: {
               iconName: "search",
               children: "",
@@ -567,7 +567,7 @@ export function createSearchFieldDefinition(
             order_num: 0,
           },
           {
-            tag: "SearchInput",
+            type: "SearchInput",
             props: {
               children: "",
               placeholder: "Search...",
@@ -576,7 +576,7 @@ export function createSearchFieldDefinition(
             order_num: 1,
           },
           {
-            tag: "SearchClearButton",
+            type: "SearchClearButton",
             props: {
               iconName: "x",
               children: "",
@@ -595,12 +595,12 @@ export function createSearchFieldDefinition(
  * React Aria Slider<number | number[]> 패턴 — isRange로 range 모드 전환
  *
  * CSS DOM 구조:
- * Slider (parent, tag="Slider", display grid)
- *   ├─ Label (tag="Label", grid-area: label)
- *   ├─ SliderOutput (tag="SliderOutput", grid-area: output)
- *   └─ SliderTrack (tag="SliderTrack", grid-area: track, position relative)
- *        ├─ SliderThumb (tag="SliderThumb", border-radius 50%)
- *        └─ SliderThumb (tag="SliderThumb", range 모드 시 추가)
+ * Slider (parent, type="Slider", display grid)
+ *   ├─ Label (type="Label", grid-area: label)
+ *   ├─ SliderOutput (type="SliderOutput", grid-area: output)
+ *   └─ SliderTrack (type="SliderTrack", grid-area: track, position relative)
+ *        ├─ SliderThumb (type="SliderThumb", border-radius 50%)
+ *        └─ SliderThumb (type="SliderThumb", range 모드 시 추가)
  */
 export function createSliderDefinition(
   context: ComponentCreationContext,
@@ -615,14 +615,14 @@ export function createSliderDefinition(
   const thumbChildren = isRange
     ? [
         {
-          tag: "SliderThumb" as const,
+          type: "SliderThumb" as const,
           props: {
             style: { width: 18, height: 18, borderRadius: "50%" },
           } as ComponentElementProps,
           order_num: 0,
         },
         {
-          tag: "SliderThumb" as const,
+          type: "SliderThumb" as const,
           props: {
             style: { width: 18, height: 18, borderRadius: "50%" },
           } as ComponentElementProps,
@@ -631,7 +631,7 @@ export function createSliderDefinition(
       ]
     : [
         {
-          tag: "SliderThumb" as const,
+          type: "SliderThumb" as const,
           props: {
             style: { width: 18, height: 18, borderRadius: "50%" },
           } as ComponentElementProps,
@@ -640,9 +640,9 @@ export function createSliderDefinition(
       ];
 
   return {
-    tag: "Slider",
+    type: "Slider",
     parent: {
-      tag: "Slider",
+      type: "Slider",
       props: {
         label: isRange ? "Range Slider" : "Slider",
         name: "",
@@ -666,7 +666,7 @@ export function createSliderDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: isRange ? "Range Slider" : "Slider",
           style: {
@@ -676,7 +676,7 @@ export function createSliderDefinition(
         order_num: 1,
       },
       {
-        tag: "SliderOutput",
+        type: "SliderOutput",
         props: {
           children: isRange ? "20 – 80" : "50",
           style: {
@@ -686,7 +686,7 @@ export function createSliderDefinition(
         order_num: 2,
       },
       {
-        tag: "SliderTrack",
+        type: "SliderTrack",
         props: {
           style: {
             width: "100%",
@@ -709,9 +709,9 @@ export function createToolbarDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Toolbar",
+    type: "Toolbar",
     parent: {
-      tag: "Toolbar",
+      type: "Toolbar",
       props: {
         "aria-label": "Toolbar",
       } as ComponentElementProps,
@@ -720,7 +720,7 @@ export function createToolbarDefinition(
     },
     children: [
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "Action 1",
           variant: "default",
@@ -730,7 +730,7 @@ export function createToolbarDefinition(
         order_num: 1,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "Action 2",
           variant: "default",
@@ -740,7 +740,7 @@ export function createToolbarDefinition(
         order_num: 2,
       },
       {
-        tag: "Separator",
+        type: "Separator",
         props: {
           orientation: "vertical",
           style: {
@@ -751,7 +751,7 @@ export function createToolbarDefinition(
         order_num: 3,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "Action 3",
           variant: "default",

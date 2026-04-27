@@ -194,14 +194,14 @@ function parseOS2Table(
     // Table directory starts at offset 12
     for (let i = 0; i < numTables; i++) {
       const offset = 12 + i * 16;
-      // tag: 4 bytes ASCII
-      const tag =
+      // type: 4 bytes ASCII
+      const type =
         String.fromCharCode(view.getUint8(offset)) +
         String.fromCharCode(view.getUint8(offset + 1)) +
         String.fromCharCode(view.getUint8(offset + 2)) +
         String.fromCharCode(view.getUint8(offset + 3));
 
-      if (tag === "OS/2") {
+      if (type === "OS/2") {
         const tableOffset = view.getUint32(offset + 8);
         // usWeightClass: OS/2 offset +4 (UInt16)
         const usWeightClass = view.getUint16(tableOffset + 4);

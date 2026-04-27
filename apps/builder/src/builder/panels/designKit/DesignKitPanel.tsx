@@ -75,8 +75,8 @@ function DesignKitPanelContent() {
       const instanceCount = componentIndex.masterToInstances.get(id)?.size ?? 0;
       masters.push({
         id,
-        name: el.componentName ?? el.tag ?? 'Component',
-        tag: el.tag ?? 'Box',
+        name: el.componentName ?? el.type ?? 'Component',
+        type: el.type ?? 'Box',
         childCount: childrenMap.get(id)?.length ?? 0,
         instanceCount,
       });

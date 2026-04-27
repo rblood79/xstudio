@@ -19,22 +19,22 @@ import type { DataBinding } from "../../types/builder/unified.types";
  * @example
  * ```tsx
  * const elements = [
- *   { id: '1', tag: 'body', parent_id: null, order_num: 0 },
- *   { id: '2', tag: 'div', parent_id: '1', order_num: 1 },
- *   { id: '3', tag: 'span', parent_id: '2', order_num: 2 },
+ *   { id: '1', type: 'body', parent_id: null, order_num: 0 },
+ *   { id: '2', type: 'div', parent_id: '1', order_num: 1 },
+ *   { id: '3', type: 'span', parent_id: '2', order_num: 2 },
  * ];
  *
  * const tree = buildTreeFromElements(elements);
  * // [
  * //   {
  * //     id: '1',
- * //     tag: 'body',
+ * //     type: 'body',
  * //     children: [
  * //       {
  * //         id: '2',
- * //         tag: 'div',
+ * //         type: 'div',
  * //         children: [
- * //           { id: '3', tag: 'span', children: [] }
+ * //           { id: '3', type: 'span', children: [] }
  * //         ]
  * //       }
  * //     ]
@@ -76,11 +76,11 @@ export function buildTreeFromElements(
         const parentElement = elementsMap.get(parentKey);
 
         // Tabs 특수 정렬: Tab과 Panel을 tabId 기준으로 쌍으로 그룹화
-        if (parentElement && parentElement.tag === "Tabs") {
+        if (parentElement && parentElement.type === "Tabs") {
           children = sortTabsChildren(children);
         }
         // Table 특수 정렬은 보류 (기존 로직 유지)
-        else if (parentElement && parentElement.tag === "Table") {
+        else if (parentElement && parentElement.type === "Table") {
           children = [...children].sort(
             (a, b) => (a.order_num || 0) - (b.order_num || 0),
           );
@@ -102,7 +102,7 @@ export function buildTreeFromElements(
       return children.map((el) => {
         const treeItem: ElementTreeItem = {
           id: el.id,
-          tag: el.tag,
+          type: el.type,
           parent_id: el.parent_id,
           order_num: el.order_num,
           props: el.props as Record<string, unknown>,
@@ -146,7 +146,7 @@ export function flattenTreeToElements(tree: ElementTreeItem[]): Element[] {
     items.forEach((item) => {
       const element: Element = {
         id: item.id,
-        tag: item.tag,
+        type: item.type,
         parent_id: item.parent_id || null,
         order_num: item.order_num,
         props: item.props as ElementProps,
@@ -256,12 +256,12 @@ function getCachedSortResult(
  * @returns 정렬된 요소 배열
  */
 export function sortTableChildren<T extends Element>(items: T[]): T[] {
-  const tableHeaders = items.filter((item) => item.tag === "TableHeader");
-  const tableBodies = items.filter((item) => item.tag === "TableBody");
-  const columnGroups = items.filter((item) => item.tag === "ColumnGroup");
-  const columns = items.filter((item) => item.tag === "Column");
-  const rows = items.filter((item) => item.tag === "Row");
-  const cells = items.filter((item) => item.tag === "Cell");
+  const tableHeaders = items.filter((item) => item.type === "TableHeader");
+  const tableBodies = items.filter((item) => item.type === "TableBody");
+  const columnGroups = items.filter((item) => item.type === "ColumnGroup");
+  const columns = items.filter((item) => item.type === "Column");
+  const rows = items.filter((item) => item.type === "Row");
+  const cells = items.filter((item) => item.type === "Cell");
 
   const byOrderNum = (a: T, b: T) => (a.order_num || 0) - (b.order_num || 0);
 

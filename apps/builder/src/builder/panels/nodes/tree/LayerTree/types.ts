@@ -10,7 +10,7 @@ export type VirtualChildType =
 export interface LayerTreeNode {
   id: string;
   name: string;
-  tag: string;
+  type: string;
   parentId: string | null;
   orderNum: number;
   depth: number;

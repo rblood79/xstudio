@@ -39,7 +39,7 @@ export function useTransformValues(
 
   const isBody = useStore((s) => {
     if (!id) return false;
-    return s.elementsMap.get(id)?.tag?.toLowerCase() === "body";
+    return s.elementsMap.get(id)?.type?.toLowerCase() === "body";
   });
 
   const specPreset = useMemo<TransformSpecPreset>(

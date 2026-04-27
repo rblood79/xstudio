@@ -16,7 +16,7 @@ export interface ComputedLayout {
 
 export interface SceneNode {
   id: string;
-  tag: string;
+  type: string;
   parentId: string | null;
   children: string[];
   style: Record<string, unknown>;

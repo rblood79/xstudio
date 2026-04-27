@@ -241,37 +241,37 @@ describe("resolveContainerVariants ↔ CSSGenerator 동등성 — ADR-108 G1", (
 describe("matchNestedSelector — ADR-108 P1 whitelist", () => {
   it("matches `> .react-aria-X` for direct child with tag=X", () => {
     expect(
-      matchNestedSelector("> .react-aria-Label", { tag: "Label" }, true),
+      matchNestedSelector("> .react-aria-Label", { type: "Label" }, true),
     ).toBe(true);
     expect(
-      matchNestedSelector("> .react-aria-Label", { tag: "Input" }, true),
+      matchNestedSelector("> .react-aria-Label", { type: "Input" }, true),
     ).toBe(false);
     expect(
-      matchNestedSelector("> .react-aria-Label", { tag: "Label" }, false),
+      matchNestedSelector("> .react-aria-Label", { type: "Label" }, false),
     ).toBe(false);
   });
 
   it("matches `> :not(.react-aria-X)` for direct child with tag!=X", () => {
     expect(
-      matchNestedSelector("> :not(.react-aria-Label)", { tag: "Input" }, true),
+      matchNestedSelector("> :not(.react-aria-Label)", { type: "Input" }, true),
     ).toBe(true);
     expect(
-      matchNestedSelector("> :not(.react-aria-Label)", { tag: "Label" }, true),
+      matchNestedSelector("> :not(.react-aria-Label)", { type: "Label" }, true),
     ).toBe(false);
     expect(
-      matchNestedSelector("> :not(.react-aria-Label)", { tag: "Input" }, false),
+      matchNestedSelector("> :not(.react-aria-Label)", { type: "Input" }, false),
     ).toBe(false);
   });
 
   it("matches `.react-aria-X` for any-depth tag=X", () => {
     expect(
-      matchNestedSelector(".react-aria-Input", { tag: "Input" }, true),
+      matchNestedSelector(".react-aria-Input", { type: "Input" }, true),
     ).toBe(true);
     expect(
-      matchNestedSelector(".react-aria-Input", { tag: "Input" }, false),
+      matchNestedSelector(".react-aria-Input", { type: "Input" }, false),
     ).toBe(true);
     expect(
-      matchNestedSelector(".react-aria-Input", { tag: "Label" }, true),
+      matchNestedSelector(".react-aria-Input", { type: "Label" }, true),
     ).toBe(false);
   });
 
@@ -279,39 +279,39 @@ describe("matchNestedSelector — ADR-108 P1 whitelist", () => {
     expect(
       matchNestedSelector(
         ".react-aria-Input:where([data-focused])",
-        { tag: "Input" },
+        { type: "Input" },
         true,
       ),
     ).toBe(false);
     expect(
       matchNestedSelector(
         ".react-aria-Group[data-invalid]",
-        { tag: "Group" },
+        { type: "Group" },
         true,
       ),
     ).toBe(false);
     expect(
       matchNestedSelector(
         "&[data-invalid] .react-aria-Button",
-        { tag: "Button" },
+        { type: "Button" },
         false,
       ),
     ).toBe(false);
     expect(
-      matchNestedSelector(".searchfield-container", { tag: "Group" }, true),
+      matchNestedSelector(".searchfield-container", { type: "Group" }, true),
     ).toBe(false);
     expect(
       matchNestedSelector(
         ".react-aria-DatePicker-time-field",
-        { tag: "DatePicker" },
+        { type: "DatePicker" },
         true,
       ),
     ).toBe(false);
   });
 
   it("returns false for empty/whitespace selector", () => {
-    expect(matchNestedSelector("", { tag: "Label" }, true)).toBe(false);
-    expect(matchNestedSelector("   ", { tag: "Label" }, true)).toBe(false);
+    expect(matchNestedSelector("", { type: "Label" }, true)).toBe(false);
+    expect(matchNestedSelector("   ", { type: "Label" }, true)).toBe(false);
   });
 
   it("isSupportedNestedSelector classifies whitelist correctly", () => {

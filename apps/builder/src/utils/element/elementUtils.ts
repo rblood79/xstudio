@@ -32,7 +32,7 @@ export class ElementUtils {
    */
   static findBodyElement(elements: Element[], pageId: string): string | null {
     const bodyElement = elements.find(
-      (el) => el.page_id === pageId && el.tag === "body",
+      (el) => el.page_id === pageId && el.type === "body",
     );
     return bodyElement?.id || null;
   }
@@ -52,7 +52,7 @@ export class ElementUtils {
     const frameNodeId = frameNodeIdForLegacyLayout(layoutId, doc);
     if (!frameNodeId) return null;
     const bodyElement = elements.find(
-      (el) => el.parent_id === frameNodeId && el.tag === "body",
+      (el) => el.parent_id === frameNodeId && el.type === "body",
     );
     return bodyElement?.id || null;
   }
@@ -100,7 +100,7 @@ export class ElementUtils {
     pageId: string,
   ): { elements: Element[]; updatedElements: Element[] } {
     const bodyElement = elements.find(
-      (el) => el.page_id === pageId && el.tag === "body",
+      (el) => el.page_id === pageId && el.type === "body",
     );
 
     if (!bodyElement) {
@@ -110,7 +110,7 @@ export class ElementUtils {
 
     const orphanElements = elements.filter(
       (el) =>
-        el.page_id === pageId && el.parent_id === null && el.tag !== "body",
+        el.page_id === pageId && el.parent_id === null && el.type !== "body",
     );
 
     if (orphanElements.length === 0) {

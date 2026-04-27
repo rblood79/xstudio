@@ -65,10 +65,10 @@ import type { Element } from "../../../../types/core/store.types";
 
 function makeElement(
   id: string,
-  tag: string,
+  type: string,
   props: Record<string, unknown>,
 ): Element {
-  return { id, tag, props };
+  return { id, type, props };
 }
 
 function setElement(

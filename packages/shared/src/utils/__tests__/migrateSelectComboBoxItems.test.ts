@@ -9,7 +9,7 @@ import {
 
 interface ElementLike {
   id: string;
-  tag: string;
+  type: string;
   parent_id: string | null;
   order_num: number;
   props: Record<string, unknown>;
@@ -20,14 +20,14 @@ describe("selectItemChildrenToItemsArray (ADR-073 P5)", () => {
     const children: ElementLike[] = [
       {
         id: "si-1",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel-1",
         order_num: 0,
         props: { label: "Apple", value: "APPLE", isDisabled: false },
       },
       {
         id: "si-2",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel-1",
         order_num: 1,
         props: { label: "Banana", value: "BANANA", isDisabled: true },
@@ -35,7 +35,11 @@ describe("selectItemChildrenToItemsArray (ADR-073 P5)", () => {
     ];
     const items = selectItemChildrenToItemsArray(children);
     expect(items).toHaveLength(2);
-    expect(items[0]).toMatchObject({ id: "si-1", label: "Apple", value: "APPLE" });
+    expect(items[0]).toMatchObject({
+      id: "si-1",
+      label: "Apple",
+      value: "APPLE",
+    });
     expect(items[1]).toMatchObject({
       id: "si-2",
       label: "Banana",
@@ -52,14 +56,14 @@ describe("selectItemChildrenToItemsArray (ADR-073 P5)", () => {
     const children: ElementLike[] = [
       {
         id: "b",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel",
         order_num: 2,
         props: { label: "B" },
       },
       {
         id: "a",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel",
         order_num: 0,
         props: { label: "A" },
@@ -73,7 +77,7 @@ describe("selectItemChildrenToItemsArray (ADR-073 P5)", () => {
     const children: ElementLike[] = [
       {
         id: "x",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel",
         order_num: 0,
         props: {},
@@ -91,14 +95,14 @@ describe("comboBoxItemChildrenToItemsArray (ADR-073 P5)", () => {
     const children: ElementLike[] = [
       {
         id: "ci-1",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb-1",
         order_num: 0,
         props: { label: "Apple", value: "APPLE", isDisabled: false },
       },
       {
         id: "ci-2",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb-1",
         order_num: 1,
         props: { label: "Banana", value: "BANANA", isDisabled: true },
@@ -106,7 +110,11 @@ describe("comboBoxItemChildrenToItemsArray (ADR-073 P5)", () => {
     ];
     const items = comboBoxItemChildrenToItemsArray(children);
     expect(items).toHaveLength(2);
-    expect(items[0]).toMatchObject({ id: "ci-1", label: "Apple", value: "APPLE" });
+    expect(items[0]).toMatchObject({
+      id: "ci-1",
+      label: "Apple",
+      value: "APPLE",
+    });
     expect(items[1]).toMatchObject({
       id: "ci-2",
       label: "Banana",
@@ -123,14 +131,14 @@ describe("comboBoxItemChildrenToItemsArray (ADR-073 P5)", () => {
     const children: ElementLike[] = [
       {
         id: "b",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb",
         order_num: 2,
         props: { label: "B" },
       },
       {
         id: "a",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb",
         order_num: 0,
         props: { label: "A" },
@@ -144,7 +152,7 @@ describe("comboBoxItemChildrenToItemsArray (ADR-073 P5)", () => {
     const children: ElementLike[] = [
       {
         id: "y",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb",
         order_num: 0,
         props: {},
@@ -160,8 +168,8 @@ describe("comboBoxItemChildrenToItemsArray (ADR-073 P5)", () => {
 describe("applySelectComboBoxMigration (ADR-073 P6-e)", () => {
   it("Select/ComboBox 자식 없음 → 원본 그대로, orphanIds 빈 배열", () => {
     const elements: ElementLike[] = [
-      { id: "body", tag: "body", parent_id: null, order_num: 0, props: {} },
-      { id: "sel", tag: "Select", parent_id: "body", order_num: 1, props: {} },
+      { id: "body", type: "body", parent_id: null, order_num: 0, props: {} },
+      { id: "sel", type: "Select", parent_id: "body", order_num: 1, props: {} },
     ];
     const result = applySelectComboBoxMigration(elements);
     expect(result.orphanIds).toEqual([]);
@@ -170,17 +178,17 @@ describe("applySelectComboBoxMigration (ADR-073 P6-e)", () => {
 
   it("Select + SelectItem 자식 2개 → items[] 주입 + orphan 2건 반환", () => {
     const elements: ElementLike[] = [
-      { id: "sel", tag: "Select", parent_id: null, order_num: 0, props: {} },
+      { id: "sel", type: "Select", parent_id: null, order_num: 0, props: {} },
       {
         id: "si-1",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel",
         order_num: 0,
         props: { label: "A" },
       },
       {
         id: "si-2",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel",
         order_num: 1,
         props: { label: "B" },
@@ -198,18 +206,18 @@ describe("applySelectComboBoxMigration (ADR-073 P6-e)", () => {
 
   it("ComboBox + ComboBoxItem 혼합 — 각 부모별 독립 items 주입", () => {
     const elements: ElementLike[] = [
-      { id: "cb1", tag: "ComboBox", parent_id: null, order_num: 0, props: {} },
-      { id: "cb2", tag: "ComboBox", parent_id: null, order_num: 1, props: {} },
+      { id: "cb1", type: "ComboBox", parent_id: null, order_num: 0, props: {} },
+      { id: "cb2", type: "ComboBox", parent_id: null, order_num: 1, props: {} },
       {
         id: "ci-1",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb1",
         order_num: 0,
         props: { label: "X" },
       },
       {
         id: "ci-2",
-        tag: "ComboBoxItem",
+        type: "ComboBoxItem",
         parent_id: "cb2",
         order_num: 0,
         props: { label: "Y" },
@@ -228,14 +236,14 @@ describe("applySelectComboBoxMigration (ADR-073 P6-e)", () => {
     const elements: ElementLike[] = [
       {
         id: "sel",
-        tag: "Select",
+        type: "Select",
         parent_id: null,
         order_num: 0,
         props: { label: "Pick", placeholder: "..." },
       },
       {
         id: "si",
-        tag: "SelectItem",
+        type: "SelectItem",
         parent_id: "sel",
         order_num: 0,
         props: { label: "A" },

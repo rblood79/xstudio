@@ -39,7 +39,7 @@ export async function createTable(
   const parent: Element = {
     id: ElementUtils.generateId(),
     customId: generateCustomId("Table", elements),
-    tag: "Table",
+    type: "Table",
     props: defaultProps as ComponentElementProps,
     parent_id: parentId,
     order_num: orderNum,
@@ -51,7 +51,7 @@ export async function createTable(
   const tableHeader: Element = {
     id: ElementUtils.generateId(),
     customId: generateCustomId("TableHeader", [...elements, parent]),
-    tag: "TableHeader",
+    type: "TableHeader",
     props: createDefaultTableHeaderProps() as ComponentElementProps,
     parent_id: parent.id,
     order_num: 1,
@@ -63,7 +63,7 @@ export async function createTable(
   const tableBody: Element = {
     id: ElementUtils.generateId(),
     customId: generateCustomId("TableBody", [...elements, parent, tableHeader]),
-    tag: "TableBody",
+    type: "TableBody",
     props: createDefaultTableBodyProps() as ComponentElementProps,
     parent_id: parent.id,
     order_num: 2,
@@ -96,7 +96,7 @@ export async function createColumnGroup(
 
   // 기존 Column Group들의 order_num 중 최대값 찾기
   const existingColumnGroups = elements.filter(
-    (el) => el.parent_id === parentElement?.id && el.tag === "ColumnGroup",
+    (el) => el.parent_id === parentElement?.id && el.type === "ColumnGroup",
   );
   const maxOrderNum =
     existingColumnGroups.length > 0
@@ -108,7 +108,7 @@ export async function createColumnGroup(
   const parent: Element = {
     id: ElementUtils.generateId(),
     customId: generateCustomId("ColumnGroup", elements),
-    tag: "ColumnGroup",
+    type: "ColumnGroup",
     props: createDefaultColumnGroupProps(),
     parent_id: parentElement?.id || null,
     order_num: maxOrderNum + 1,

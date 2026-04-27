@@ -62,7 +62,7 @@ export function UpdateFormFieldActionEditor({
         value={config.formId || ""}
         onChange={(value) => updateField("formId", value || undefined)}
         placeholder="Select form..."
-        filter={(el) => el.tag === "Form"}
+        filter={(el) => el.type === "Form"}
       />
 
       <TextField className="field">

@@ -35,7 +35,7 @@ import {
 // fixture helpers (integration.test.ts 패턴 공유)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function el(partial: Partial<Element> & Pick<Element, "id" | "tag">): Element {
+function el(partial: Partial<Element> & Pick<Element, "id" | "type">): Element {
   return {
     props: {},
     parent_id: null,
@@ -69,14 +69,14 @@ describe("selectResolvedTree", () => {
     const elements: Element[] = [
       el({
         id: "master-btn",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         customId: "MasterBtn",
         props: { label: "Submit", color: "blue" },
       }),
       el({
         id: "instance-btn",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "master-btn",
         customId: "InstanceBtn",
@@ -113,20 +113,20 @@ describe("selectResolvedTree", () => {
     const elements: Element[] = [
       el({
         id: "master-A",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         props: { label: "A" },
       }),
       el({
         id: "inst-A1",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "master-A",
         page_id: "P1",
       }),
       el({
         id: "inst-A2",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "master-A",
         page_id: "P1",
@@ -252,7 +252,7 @@ describe("resolveInstanceWithSharedCache", () => {
   it("TC9: instance + master → tag=master.tag, props=merged (legacy 와 deep-equal)", () => {
     const master: Element = el({
       id: "m1",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: {
         label: "Submit",
@@ -262,7 +262,7 @@ describe("resolveInstanceWithSharedCache", () => {
     });
     const instance: Element = el({
       id: "i1",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m1",
       overrides: { label: "Send", style: { color: "blue" } },
@@ -272,7 +272,7 @@ describe("resolveInstanceWithSharedCache", () => {
     const legacy = resolveInstanceElement(instance, master);
 
     expect(canonical).not.toBeNull();
-    expect(canonical?.tag).toBe("Button");
+    expect(canonical?.type).toBe("Button");
     expect(canonical?.id).toBe("i1");
     // style 심층 병합 포함 props 완전 일치 — ADR-903 Decision 시각 대칭
     expect(canonical?.props).toEqual(legacy.props);
@@ -281,7 +281,7 @@ describe("resolveInstanceWithSharedCache", () => {
   it("TC10: master 없음 → null (caller 는 element 그대로 처리)", () => {
     const instance: Element = el({
       id: "i1",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m-missing",
     });
@@ -291,7 +291,7 @@ describe("resolveInstanceWithSharedCache", () => {
   it("TC11: 비-instance element → null (caller 는 element 그대로 처리)", () => {
     const regular: Element = el({
       id: "r1",
-      tag: "Button",
+      type: "Button",
       props: { label: "Plain" },
     });
     // master 가 있어도 instance 가 아니면 null
@@ -301,13 +301,13 @@ describe("resolveInstanceWithSharedCache", () => {
   it("TC12: 동일 (instance, master) pair 반복 호출 — shared cache hit", () => {
     const master: Element = el({
       id: "m1",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: { label: "Submit" },
     });
     const instance: Element = el({
       id: "i1",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m1",
       overrides: { label: "Send" },
@@ -327,13 +327,13 @@ describe("resolveInstanceWithSharedCache", () => {
   it("TC13: singleton 기본값 사용 — 명시 cache 없이 getSharedResolverCache 공유", () => {
     const master: Element = el({
       id: "m-singleton",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: { label: "Singleton" },
     });
     const instance: Element = el({
       id: "i-singleton",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m-singleton",
     });
@@ -370,7 +370,7 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
   it("TC14: 빈 overrides — instance 가 master props 그대로 상속", () => {
     const master: Element = el({
       id: "m1",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: {
         label: "MasterOnly",
@@ -379,7 +379,7 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     });
     const instance: Element = el({
       id: "i1",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m1",
       overrides: {},
@@ -393,13 +393,13 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
   it("TC15: overrides 가 undefined — instance 가 master props 그대로 상속", () => {
     const master: Element = el({
       id: "m2",
-      tag: "Box",
+      type: "Box",
       componentRole: "master",
       props: { width: 100, height: 50 },
     });
     const instance: Element = el({
       id: "i2",
-      tag: "Box",
+      type: "Box",
       componentRole: "instance",
       masterId: "m2",
       // overrides 필드 자체 미설정
@@ -412,7 +412,7 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
   it("TC16: nested style merge — color 만 override, fontSize/padding 은 master 보존", () => {
     const master: Element = el({
       id: "m3",
-      tag: "Text",
+      type: "Text",
       componentRole: "master",
       props: {
         children: "Hello",
@@ -426,7 +426,7 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     });
     const instance: Element = el({
       id: "i3",
-      tag: "Text",
+      type: "Text",
       componentRole: "instance",
       masterId: "m3",
       overrides: {
@@ -447,13 +447,13 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
   it("TC17: scalar override 가 master scalar 를 완전 교체 (style 외 필드)", () => {
     const master: Element = el({
       id: "m4",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: { label: "Original", isDisabled: false },
     });
     const instance: Element = el({
       id: "i4",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m4",
       overrides: { label: "Overridden", isDisabled: true },
@@ -468,28 +468,28 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
   it("TC18: 다중 instance 가 같은 master 참조 — 각각 다른 props 산출", () => {
     const master: Element = el({
       id: "m5",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: { label: "Default", variant: "primary" },
     });
     const instances: Element[] = [
       el({
         id: "i5a",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "m5",
         overrides: { label: "A" },
       }),
       el({
         id: "i5b",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "m5",
         overrides: { label: "B", variant: "secondary" },
       }),
       el({
         id: "i5c",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "m5",
         overrides: {},
@@ -523,13 +523,13 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     // 다른 tag 로 변경된다면 instance 도 master.tag 를 따라가야 함 (legacy 동작).
     const master: Element = el({
       id: "m6",
-      tag: "Box", // master 가 Button → Box 로 바뀜
+      type: "Box", // master 가 Button → Box 로 바뀜
       componentRole: "master",
       props: { width: 100 },
     });
     const instance: Element = el({
       id: "i6",
-      tag: "Button", // 옛 tag 잔존
+      type: "Button", // 옛 tag 잔존
       componentRole: "instance",
       masterId: "m6",
     });
@@ -537,21 +537,21 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     const canonical = resolveInstanceWithSharedCache(instance, master);
     const legacy = resolveInstanceElement(instance, master);
 
-    expect(canonical?.tag).toBe("Box");
-    expect(legacy.tag).toBe("Box");
+    expect(canonical?.type).toBe("Box");
+    expect(legacy.type).toBe("Box");
     expect(canonical?.props).toEqual(legacy.props);
   });
 
   it("TC20: instance.id 보존 — master.id 로 덮어쓰지 않음", () => {
     const master: Element = el({
       id: "m7",
-      tag: "Button",
+      type: "Button",
       componentRole: "master",
       props: { label: "M" },
     });
     const instance: Element = el({
       id: "i7-unique",
-      tag: "Button",
+      type: "Button",
       componentRole: "instance",
       masterId: "m7",
       overrides: { label: "I" },
@@ -568,7 +568,7 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
   it("TC21: deeply-nested style 객체 — color + 추가 필드 (border) 머지", () => {
     const master: Element = el({
       id: "m8",
-      tag: "Box",
+      type: "Box",
       componentRole: "master",
       props: {
         style: {
@@ -580,7 +580,7 @@ describe("resolveInstanceWithSharedCache — D-C 안전망 회귀", () => {
     });
     const instance: Element = el({
       id: "i8",
-      tag: "Box",
+      type: "Box",
       componentRole: "instance",
       masterId: "m8",
       overrides: {

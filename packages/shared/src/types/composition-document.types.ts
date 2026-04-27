@@ -189,7 +189,7 @@ export interface CanonicalNode {
  * `FrameNode` — `type: "frame"` 노드.
  *
  * Frame 전용 컨테이너 필드 3종 (`clip` / `placeholder` / `slot`) 포함.
- * composition 기존 `overflow: hidden` / 빈 컨테이너 / `tag="Slot"` 시스템을 흡수.
+ * composition 기존 `overflow: hidden` / 빈 컨테이너 / `type="Slot"` 시스템을 흡수.
  */
 export interface FrameNode extends CanonicalNode {
   type: "frame";
@@ -213,7 +213,7 @@ export interface FrameNode extends CanonicalNode {
    * - `string[]`: 이 slot 에 삽입 가능한 reusable component ID 배열 (추천 목록)
    *
    * slot 채우기는 `descendants[slotPath].children` (mode C) 교체로 표현.
-   * legacy `tag="Slot"` + `slot_name` 시스템을 이 schema 속성으로 흡수.
+   * legacy `type="Slot"` + `slot_name` 시스템을 이 schema 속성으로 흡수.
    */
   slot?: false | string[];
 }

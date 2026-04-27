@@ -10,7 +10,7 @@ import type { CSSProperties } from "react";
 // Element 타입 (Runtime에서 사용하는 최소 타입)
 export interface RuntimeElement {
   id: string;
-  tag: string;
+  type: string;
   fills?: unknown[];
   props: Record<string, unknown> & {
     style?: CSSProperties;

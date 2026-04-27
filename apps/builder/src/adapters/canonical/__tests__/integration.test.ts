@@ -78,13 +78,13 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
     const elements: Element[] = [
       el({
         id: "m1",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         componentName: "Submit Button",
       }),
       el({
         id: "i1",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "m1",
         overrides: { variant: "danger" },
@@ -111,20 +111,20 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
     const elements: Element[] = [
       el({
         id: "shell-root",
-        tag: "Box",
+        type: "Box",
         layout_id: "L1",
         parent_id: null,
       }),
       el({
         id: "main-slot",
-        tag: "Slot",
+        type: "Slot",
         layout_id: "L1",
         parent_id: "shell-root",
         props: { name: "main" },
       }),
       el({
         id: "page-card",
-        tag: "Card",
+        type: "Card",
         page_id: "P1",
         slot_name: "main",
         parent_id: null,
@@ -169,20 +169,20 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
     const elements: Element[] = [
       el({
         id: "m1",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         customId: "ok-button",
       }),
       el({
         id: "label-child",
-        tag: "Label",
+        type: "Label",
         parent_id: "m1",
         customId: "label",
         props: { text: "OK" },
       }),
       el({
         id: "i1",
-        tag: "Button",
+        type: "Button",
         componentRole: "instance",
         masterId: "m1",
         descendants: { "label-child": { text: "Cancel" } },
@@ -200,7 +200,7 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
           ...elements,
           el({
             id: "i1-on-page",
-            tag: "Button",
+            type: "Button",
             componentRole: "instance",
             masterId: "m1",
             descendants: { "label-child": { text: "Cancel" } },
@@ -242,14 +242,14 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
     const elements: Element[] = [
       el({
         id: "p1-root1",
-        tag: "Heading",
+        type: "Heading",
         page_id: "P1",
         parent_id: null,
         order_num: 1,
       }),
       el({
         id: "p1-root2",
-        tag: "Paragraph",
+        type: "Paragraph",
         page_id: "P1",
         parent_id: null,
         order_num: 2,
@@ -277,10 +277,10 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
   it("orders children: layoutFrames → reusableMasters → pageNodes", () => {
     const layouts: Layout[] = [layout({ id: "L1", name: "Shell" })];
     const elements: Element[] = [
-      el({ id: "shell-root", tag: "Box", layout_id: "L1" }),
+      el({ id: "shell-root", type: "Box", layout_id: "L1" }),
       el({
         id: "m1",
-        tag: "Button",
+        type: "Button",
         componentRole: "master",
         componentName: "Btn",
       }),
@@ -317,7 +317,7 @@ describe("name field — entity 공통 (ADR-903 §3.10)", () => {
     const elements: Element[] = [
       el({
         id: "elem-with-name",
-        tag: "Box",
+        type: "Box",
         componentName: "MyCustomBox",
         page_id: "page-1",
       }),
@@ -344,7 +344,7 @@ describe("name field — entity 공통 (ADR-903 §3.10)", () => {
     const elements: Element[] = [
       el({
         id: "elem-no-name",
-        tag: "Box",
+        type: "Box",
         page_id: "page-1",
       }),
     ];

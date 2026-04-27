@@ -30,7 +30,7 @@ function makeGridList(
 ): Element {
   return {
     id: "gl-1",
-    tag: "GridList",
+    type: "GridList",
     props: {
       layout: props.layout ?? "stack",
       columns: props.columns,

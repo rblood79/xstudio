@@ -159,7 +159,7 @@ export const VERTICAL_ALIGN_MIDDLE_TAGS: ReadonlySet<string> = new Set([
   "switch",
   "togglebuttongroup",
   "badge",
-  "tag",
+  "type",
   "chip",
   "textfield",
   "numberfield",
@@ -391,15 +391,15 @@ export function blockifyDisplay(display: string): string {
  * @see utils.ts — INLINE_BLOCK_TAGS
  */
 export function getElementDisplay(element: {
-  tag?: string;
+  type?: string;
   props?: { style?: unknown };
 }): string {
   const style = (element.props?.style ?? {}) as Record<string, unknown>;
   if (typeof style.display === "string" && style.display.length > 0) {
     return style.display;
   }
-  const tag = (element.tag ?? "").toLowerCase();
-  if (INLINE_BLOCK_TAGS.has(tag)) {
+  const type = (element.type ?? "").toLowerCase();
+  if (INLINE_BLOCK_TAGS.has(type)) {
     return "inline-block";
   }
   return "block";

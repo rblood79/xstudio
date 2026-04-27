@@ -21,9 +21,9 @@ export function createDialogDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Dialog",
+    type: "Dialog",
     parent: {
-      tag: "Dialog",
+      type: "Dialog",
       props: {
         variant: "accent",
         size: "md",
@@ -41,7 +41,7 @@ export function createDialogDefinition(
     },
     children: [
       {
-        tag: "Heading",
+        type: "Heading",
         props: {
           children: "Dialog Title",
           level: 2,
@@ -54,7 +54,7 @@ export function createDialogDefinition(
         order_num: 1,
       },
       {
-        tag: "Description",
+        type: "Description",
         props: {
           children: "Dialog content goes here.",
           style: {
@@ -66,7 +66,7 @@ export function createDialogDefinition(
         order_num: 2,
       },
       {
-        tag: "DialogFooter",
+        type: "DialogFooter",
         props: {
           style: {
             display: "flex",
@@ -98,9 +98,9 @@ export function createPopoverDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Popover",
+    type: "Popover",
     parent: {
-      tag: "Popover",
+      type: "Popover",
       props: {
         variant: "default",
         size: "sm",
@@ -117,7 +117,7 @@ export function createPopoverDefinition(
     },
     children: [
       {
-        tag: "Heading",
+        type: "Heading",
         props: {
           children: "Popover Title",
           level: 3,
@@ -130,7 +130,7 @@ export function createPopoverDefinition(
         order_num: 1,
       },
       {
-        tag: "Description",
+        type: "Description",
         props: {
           children: "Popover content goes here.",
           style: {
@@ -162,9 +162,9 @@ export function createTooltipDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Tooltip",
+    type: "Tooltip",
     parent: {
-      tag: "Tooltip",
+      type: "Tooltip",
       props: {
         variant: "default",
         style: {
@@ -179,7 +179,7 @@ export function createTooltipDefinition(
     },
     children: [
       {
-        tag: "Description",
+        type: "Description",
         props: {
           children: "Tooltip text",
           style: {

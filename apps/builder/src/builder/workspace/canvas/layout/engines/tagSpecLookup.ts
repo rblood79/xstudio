@@ -17,7 +17,7 @@ import type { ComponentSpec } from "@composition/specs";
 import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
 
 /**
- * lowercase tag → ComponentSpec 즉시 lookup.
+ * lowercase type → ComponentSpec 즉시 lookup.
  *
  * 소비처: `implicitStyles.specSizeField` / `utils.getIntrinsicWidth|Height`
  * (ADR-096 defaultWidth/defaultHeight 조회) / `resolveContainerStylesFallback` 등.

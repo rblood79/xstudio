@@ -28,7 +28,7 @@ export async function auditMarginCollapse(): Promise<AuditResult> {
   for (const project of projects) {
     const { data: elements } = await supabase
       .from("elements")
-      .select("tag, properties")
+      .select("type, properties")
       .eq("project_id", project.id);
 
     if (!elements) continue;

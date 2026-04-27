@@ -18,7 +18,7 @@ export interface ComponentRef {
   customId: string;
 
   /** Component type (Button, ListBox, etc.) */
-  tag: string;
+  type: string;
 
   /** Available methods for this component type */
   methods: string[];
@@ -53,7 +53,7 @@ interface ComponentRegistryState {
   getComponentByCustomId: (customId: string) => ComponentRef | undefined;
 
   /** Get all components of a specific type */
-  getComponentsByType: (tag: string) => ComponentRef[];
+  getComponentsByType: (type: string) => ComponentRef[];
 
   /** Clear all components */
   clearRegistry: () => void;
@@ -144,8 +144,8 @@ export const useComponentRegistry = create<ComponentRegistryState>(
       return get().components.find((c) => c.customId === customId);
     },
 
-    getComponentsByType: (tag) => {
-      return get().components.filter((c) => c.tag === tag);
+    getComponentsByType: (type) => {
+      return get().components.filter((c) => c.type === type);
     },
 
     clearRegistry: () => {
@@ -157,14 +157,14 @@ export const useComponentRegistry = create<ComponentRegistryState>(
 /**
  * 컴포넌트 타입에 따른 사용 가능한 메서드 가져오기
  */
-export function getComponentMethods(tag: string): string[] {
-  return COMPONENT_METHODS[tag] || [];
+export function getComponentMethods(type: string): string[] {
+  return COMPONENT_METHODS[type] || [];
 }
 
 /**
  * 컴포넌트가 특정 메서드를 지원하는지 확인
  */
-export function supportsMethod(tag: string, method: string): boolean {
-  const methods = COMPONENT_METHODS[tag];
+export function supportsMethod(type: string, method: string): boolean {
+  const methods = COMPONENT_METHODS[type];
   return methods ? methods.includes(method) : false;
 }

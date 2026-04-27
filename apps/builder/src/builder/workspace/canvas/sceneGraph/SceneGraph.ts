@@ -6,13 +6,13 @@ export class SceneGraph {
 
   createNode(
     id: string,
-    tag: string,
+    type: string,
     parentId: string | null,
     style: Record<string, unknown> = {},
   ): SceneNode {
     const node: SceneNode = {
       id,
-      tag,
+      type,
       parentId,
       children: [],
       style,

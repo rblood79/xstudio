@@ -131,7 +131,7 @@ export const createCreateLayoutAction =
       // ⭐ Layout/Slot System: Layout용 body 요소 생성
       const bodyElement: Element = {
         id: crypto.randomUUID(),
-        tag: "body",
+        type: "body",
         props: getDefaultProps("body") as Element["props"],
         parent_id: null,
         page_id: null, // Layout 요소는 page_id 없음

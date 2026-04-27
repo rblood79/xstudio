@@ -111,7 +111,7 @@ function silentUpdateTextProp(elementId: string, value: string): void {
   const element = state.elementsMap.get(elementId);
   if (!element) return;
   const props = element.props as Record<string, unknown> | undefined;
-  const propKey = getTextPropKey(element.tag, props);
+  const propKey = getTextPropKey(element.type, props);
   const updatedElement = { ...element, props: { ...props, [propKey]: value } };
 
   // elementsMap 증분 패치 (새 Map — 불변성 보장)
@@ -166,13 +166,13 @@ function findTextData(
 }
 
 function extractTextStyle(
-  tag: string,
+  type: string,
   elementId: string,
   props: Record<string, unknown> | undefined,
   style: Record<string, unknown> | undefined,
 ): TextStyleConfig {
   // 1. Spec shapes에서 추출 (CSS Preview와 동일한 소스 — Button, Badge 등)
-  const specStyle = extractFullSpecTextStyle(tag, props);
+  const specStyle = extractFullSpecTextStyle(type, props);
   if (specStyle) return specStyle;
 
   // 2. Skia 노드에서 추출 (비-Spec 텍스트 요소: p, h1, span 등)
@@ -223,7 +223,7 @@ function extractTextStyle(
  * 텍스트 속성 키 결정 (저장 시 사용)
  */
 function getTextPropKey(
-  tag: string,
+  type: string,
   props: Record<string, unknown> | undefined,
 ): string {
   if (props && ("value" in props || "defaultValue" in props)) return "value";
@@ -238,7 +238,7 @@ function getTextPropKey(
     "SearchField",
     "TextArea",
   ]);
-  return inputTags.has(tag) ? "value" : "children";
+  return inputTags.has(type) ? "value" : "children";
 }
 
 // ============================================
@@ -261,9 +261,9 @@ export function useTextEdit(): UseTextEditReturn {
       if (!element) return;
 
       // 텍스트 요소만 편집 가능
-      if (!TEXT_ELEMENT_TAGS.has(element.tag)) {
+      if (!TEXT_ELEMENT_TAGS.has(element.type)) {
         console.warn(
-          `[useTextEdit] Element ${element.tag} is not a text element`,
+          `[useTextEdit] Element ${element.type} is not a text element`,
         );
         return;
       }
@@ -295,7 +295,7 @@ export function useTextEdit(): UseTextEditReturn {
         value: text,
         position,
         size,
-        style: extractTextStyle(element.tag, elementId, props, elStyle),
+        style: extractTextStyle(element.type, elementId, props, elStyle),
       });
     },
     [],
@@ -335,7 +335,7 @@ export function useTextEdit(): UseTextEditReturn {
       const element = useStore.getState().elementsMap.get(elementId);
       if (element) {
         const props = element.props as Record<string, unknown> | undefined;
-        const propKey = getTextPropKey(element.tag, props);
+        const propKey = getTextPropKey(element.type, props);
 
         // 원본 값으로 복원 (updateElementProps가 변경 감지하도록)
         silentUpdateTextProp(elementId, originalValue);

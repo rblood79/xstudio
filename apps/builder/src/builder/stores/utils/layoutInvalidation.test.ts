@@ -8,7 +8,7 @@ import type { Element } from "../../../types/core/store.types";
 function createElement(id: string, parentId: string | null): Element {
   return {
     id,
-    tag: "Box",
+    type: "Box",
     props: {},
     parent_id: parentId,
     page_id: "page-1",

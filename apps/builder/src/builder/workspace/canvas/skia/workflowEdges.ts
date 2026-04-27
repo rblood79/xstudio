@@ -35,7 +35,7 @@ export interface WorkflowPageInput {
 /** 입력 요소 최소 인터페이스 */
 export interface WorkflowElementInput {
   id: string;
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   page_id?: string | null;
   events?: WorkflowEventInput[];
@@ -92,8 +92,8 @@ export function normalizeSlug(slug?: string | null): string {
 // ============================================
 
 /** navigable 태그인지 확인 (Link, a, Button - 대소문자 무시) */
-function isNavigableTag(tag: string): boolean {
-  const lower = tag.toLowerCase();
+function isNavigableTag(type: string): boolean {
+  const lower = type.toLowerCase();
   return lower === "link" || lower === "a" || lower === "button";
 }
 
@@ -180,7 +180,7 @@ export function computeWorkflowEdges(
     if (!sourcePageId || !pageIdSet.has(sourcePageId)) continue;
 
     // 1) Link/a/Button 요소의 href 기반 navigation 엣지
-    if (isNavigableTag(element.tag)) {
+    if (isNavigableTag(element.type)) {
       const href = extractHrefFromProps(element.props);
       if (href && !isExternalOrAnchor(href)) {
         const cleanHref = normalizeSlug(href);
@@ -322,7 +322,7 @@ export function computeDataSourceEdges(
 
     const boundEntry = {
       elementId: el.id,
-      elementTag: el.tag,
+      elementTag: el.type,
       pageId: el.page_id || "",
     };
 

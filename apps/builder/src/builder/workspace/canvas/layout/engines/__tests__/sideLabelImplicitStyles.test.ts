@@ -4,30 +4,30 @@ import { applyImplicitStyles } from "../implicitStyles";
 
 function makeChild(
   id: string,
-  tag: string,
+  type: string,
   style?: Record<string, unknown>,
 ): Element {
   return {
     id,
-    tag,
+    type,
     props: { style: style ?? {} },
     childrenIds: [],
   } as Element;
 }
 
 function applyContainer(
-  tag: string,
+  type: string,
   props: Record<string, unknown>,
   children: Element[],
 ): ReturnType<typeof applyImplicitStyles> {
-  const containerId = `${tag}-1`;
+  const containerId = `${type}-1`;
   const normalizedChildren = children.map((child) => ({
     ...child,
     parent_id: containerId,
   })) as Element[];
   const container = {
     id: containerId,
-    tag,
+    type,
     props,
     childrenIds: normalizedChildren.map((child) => child.id),
   } as Element;
@@ -39,7 +39,8 @@ function applyContainer(
   return applyImplicitStyles(
     container,
     normalizedChildren,
-    (id) => byId.get(id)?.childrenIds.map((childId) => byId.get(childId)!) ?? [],
+    (id) =>
+      byId.get(id)?.childrenIds.map((childId) => byId.get(childId)!) ?? [],
     byId,
   );
 }
@@ -52,13 +53,13 @@ function applyNestedContainer(
 ): ReturnType<typeof applyImplicitStyles> {
   const parent = {
     id: `${parentTag}-parent`,
-    tag: parentTag,
+    type: parentTag,
     props: parentProps,
     childrenIds: [`${childTag}-child`],
   } as Element;
   const child = {
     id: `${childTag}-child`,
-    tag: childTag,
+    type: childTag,
     parent_id: parent.id,
     props: childProps,
     childrenIds: [],
@@ -71,16 +72,17 @@ function applyNestedContainer(
   return applyImplicitStyles(
     child,
     [],
-    (id) => byId.get(id)?.childrenIds.map((childId) => byId.get(childId)!) ?? [],
+    (id) =>
+      byId.get(id)?.childrenIds.map((childId) => byId.get(childId)!) ?? [],
     byId,
   );
 }
 
 function getChildStyle(
   result: ReturnType<typeof applyImplicitStyles>,
-  tag: string,
+  type: string,
 ): Record<string, unknown> {
-  return (result.filteredChildren.find((child) => child.tag === tag)?.props
+  return (result.filteredChildren.find((child) => child.type === type)?.props
     ?.style ?? {}) as Record<string, unknown>;
 }
 
@@ -190,9 +192,9 @@ describe("side-label implicit styles", () => {
     const fieldErrorStyle = getChildStyle(result, "FieldError");
     expect(fieldErrorStyle.width).toBe("100%");
     expect(typeof fieldErrorStyle.marginLeft).toBe("number");
-    expect(result.filteredChildren.find((child) => child.tag === "Calendar")).toBe(
-      undefined,
-    );
+    expect(
+      result.filteredChildren.find((child) => child.type === "Calendar"),
+    ).toBe(undefined);
   });
 
   it("TextArea side variant는 TextField와 같은 Label/Input/FieldError 보정을 사용한다", () => {

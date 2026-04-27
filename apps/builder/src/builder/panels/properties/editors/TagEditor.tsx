@@ -44,7 +44,7 @@ export const TagEditor = memo(function TagEditor({
   // Field 자식 요소들을 찾기
   const fieldChildren = useMemo(() => {
     return rawChildren
-      .filter((child) => child.tag === "Field")
+      .filter((child) => child.type === "Field")
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [rawChildren]);
 
@@ -124,7 +124,7 @@ export const TagEditor = memo(function TagEditor({
                   id: ElementUtils.generateId(),
                   customId: generateCustomId("Field", elements),
                   page_id: pageIdToUse,
-                  tag: "Field",
+                  type: "Field",
                   props: {
                     fieldKey: `field${fieldChildren.length + 1}`,
                     label: `Field ${fieldChildren.length + 1}`,
@@ -251,7 +251,7 @@ export const TagEditor = memo(function TagEditor({
                 id: ElementUtils.generateId(),
                 customId: generateCustomId("Field", elements),
                 page_id: pageIdToUse,
-                tag: "Field",
+                type: "Field",
                 props: {
                   fieldKey: "name",
                   label: "Name",

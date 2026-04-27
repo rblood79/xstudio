@@ -37,7 +37,7 @@ export interface SpecTextStyle {
   letterSpacing?: number;
 }
 
-/** tag → Spec + 기본 size 매핑 (텍스트 폭 측정이 필요한 inline 컴포넌트만) */
+/** type → Spec + 기본 size 매핑 (텍스트 폭 측정이 필요한 inline 컴포넌트만) */
 const TEXT_BEARING_SPECS: Record<
   string,
   { spec: ComponentSpec<Record<string, unknown>>; defaultSize: string }
@@ -46,7 +46,7 @@ const TEXT_BEARING_SPECS: Record<
   submitbutton: { spec: ButtonSpec, defaultSize: "md" },
   fancybutton: { spec: ButtonSpec, defaultSize: "md" },
   badge: { spec: BadgeSpec, defaultSize: "sm" },
-  tag: { spec: BadgeSpec, defaultSize: "sm" },
+  type: { spec: BadgeSpec, defaultSize: "sm" },
   chip: { spec: BadgeSpec, defaultSize: "sm" },
   togglebutton: { spec: ToggleButtonSpec, defaultSize: "md" },
   tab: {
@@ -89,15 +89,15 @@ const TEXT_BEARING_SPECS: Record<
  * fontSize, fontWeight, fontFamily를 반환한다.
  * 사용자 style override(props.style.fontSize 등)도 Spec 내부에서 반영된다.
  *
- * @param tag - 컴포넌트 태그 (lowercase)
+ * @param type - 컴포넌트 태그 (lowercase)
  * @param props - Element props (size, variant, style 포함)
  * @returns TextShape 기반 font 스타일, 또는 null (Spec 미등록 태그)
  */
 export function extractSpecTextStyle(
-  tag: string,
+  type: string,
   props?: Record<string, unknown>,
 ): SpecTextStyle | null {
-  const lower = tag.toLowerCase();
+  const lower = type.toLowerCase();
   const mapKey = lower === "breadcrumbs" ? "breadcrumb" : lower;
   const entry = TEXT_BEARING_SPECS[mapKey];
   if (!entry) return null;

@@ -6,7 +6,7 @@ const MAX_RECENT_ITEMS = 8;
 
 interface RecentComponent {
     id: string;
-    tag: string;
+    type: string;
     count: number;
 }
 
@@ -19,16 +19,16 @@ function loadRecentFromStorage(): RecentComponent[] {
         if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) {
-                // 하위 호환성: string[] 또는 { id, tag }[] 형식 지원
+                // 하위 호환성: string[] 또는 { id, type }[] 형식 지원
                 return parsed.map((item) => {
                     if (typeof item === 'string') {
-                        // string[] → { id, tag, count }[] 변환
-                        return { id: item, tag: item, count: 1 };
-                    } else if (item.tag && typeof item.tag === 'string') {
-                        // { id, tag }[] → { id, tag, count }[] 변환
-                        return { id: item.id || item.tag, tag: item.tag, count: item.count || 1 };
+                        // string[] → { id, type, count }[] 변환
+                        return { id: item, type: item, count: 1 };
+                    } else if (item.type && typeof item.type === 'string') {
+                        // { id, type }[] → { id, type, count }[] 변환
+                        return { id: item.id || item.type, type: item.type, count: item.count || 1 };
                     }
-                    return { id: item.id, tag: item.tag, count: item.count || 1 };
+                    return { id: item.id, type: item.type, count: item.count || 1 };
                 });
             }
         }
@@ -43,7 +43,7 @@ function loadRecentFromStorage(): RecentComponent[] {
  */
 function saveRecentToStorage(items: RecentComponent[]) {
     try {
-        // { id, tag, count }[] 형식으로 저장
+        // { id, type, count }[] 형식으로 저장
         localStorage.setItem(RECENT_COMPONENTS_KEY, JSON.stringify(items));
     } catch (error) {
         console.error('Failed to save recent components:', error);
@@ -82,16 +82,16 @@ export function useRecentComponents() {
     }, [list.items]);
 
     // 최근 사용 컴포넌트 추가
-    const addRecentComponent = (tag: string) => {
+    const addRecentComponent = (type: string) => {
         // 이미 존재하면 제거하고 count 증가
-        const existingItem = list.items.find((item) => item.tag === tag);
+        const existingItem = list.items.find((item) => item.type === type);
         if (existingItem) {
-            list.remove(tag);
+            list.remove(type);
             // 맨 앞에 추가하고 count 증가
-            list.prepend({ id: tag, tag, count: existingItem.count + 1 });
+            list.prepend({ id: type, type, count: existingItem.count + 1 });
         } else {
             // 새로 추가 (count = 1)
-            list.prepend({ id: tag, tag, count: 1 });
+            list.prepend({ id: type, type, count: 1 });
         }
 
         // MAX_RECENT_ITEMS 개수 제한
@@ -112,13 +112,13 @@ export function useRecentComponents() {
     };
 
     // 특정 컴포넌트의 사용 횟수 가져오기
-    const getComponentCount = (tag: string): number => {
-        const item = list.items.find((item) => item.tag === tag);
+    const getComponentCount = (type: string): number => {
+        const item = list.items.find((item) => item.type === type);
         return item?.count || 0;
     };
 
     // 하위 호환성을 위해 recentTags 배열 제공
-    const recentTags = list.items.map((item) => item.tag);
+    const recentTags = list.items.map((item) => item.type);
 
     return {
         recentTags,

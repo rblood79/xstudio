@@ -203,6 +203,63 @@ it("layoutTemplate singleColumn: visual diff 0 after canonical conversion", asyn
 
 `LayoutsTab` → `FramesTab` 전면 재설계. canonical reusable frame authoring UI 구현. 1주 dual-mode 운영 후 legacy cutover.
 
+---
+
+### P2-0: 현재 상태 인벤토리 (2026-04-27 기준)
+
+#### 현재 FramesTab 책임
+
+`apps/builder/src/builder/panels/nodes/FramesTab/FramesTab.tsx` (541 lines)
+
+| 책임                     | 현재 구현                                                       | legacy/canonical 판정 |
+| ------------------------ | --------------------------------------------------------------- | --------------------- |
+| frame 목록 표시          | `useLayoutsStore(state => state.layouts)` — Layout[] 직접 소비  | **legacy**            |
+| frame 선택               | `useSelectedReusableFrameId()` (P3-B canonical selector)        | canonical             |
+| frame elements 로드      | `db.elements.getByLayout(frameId)` + `el.layout_id === id` 필터 | **legacy**            |
+| frame elements 메모      | `elementsMap.filter(el => el.layout_id === currentFrame.id)`    | **legacy**            |
+| frame 생성               | `useLayoutsStore(state => state.createLayout)`                  | **legacy**            |
+| frame 삭제               | `useLayoutsStore(state => state.deleteLayout)`                  | **legacy**            |
+| frame 초기 로드          | `useLayoutsStore(state => state.fetchLayouts)` (mount effect)   | **legacy**            |
+| element 트리 표시        | `buildTreeFromElements(frameElements)`                          | neutral (재사용 가능) |
+| element 선택 / 편집 전달 | `setSelectedElement` / `sendElementSelectedMessage` props       | neutral               |
+
+**읽기 access pattern**: `useLayoutsStore` 3개 selector (layouts / setCurrentLayout / createLayout / deleteLayout / fetchLayouts) + `elementsMap` O(1) Map.
+
+**쓰기 access pattern**: `createLayout` (Supabase DB write + store 갱신) → `deleteLayout` (Supabase + cascade) → `fetchLayouts` (Supabase read).
+
+#### useLayoutsStore 결합 파일 (P2 직접 전환 대상)
+
+실측 grep (2026-04-27): `useLayoutsStore` 직접 import 파일 = **19개**. 전체 `layout_id` / `currentLayoutId` 결합 포함 시 **50+ 파일**이나, P2 scope 는 FramesTab 및 직접 연결 editors 에 한정.
+
+| 파일 (P2 전환 대상)                                                | 현재 의존                                                               | P2 처리 방향                     |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------- | -------------------------------- |
+| `panels/nodes/FramesTab/FramesTab.tsx`                             | layouts[] / createLayout / deleteLayout / fetchLayouts / `el.layout_id` | **canonical-native 재작성**      |
+| `panels/properties/editors/PageLayoutSelector.tsx`                 | `useLayoutsStore.fetchLayouts` (주석 deprecated)                        | **RefNode.ref 선택 UI 재작성**   |
+| `panels/properties/editors/LayoutSlugEditor.tsx`                   | `useLayoutsStore.updateLayout`                                          | **FrameNameEditor 흡수 대기**    |
+| `panels/properties/editors/ElementSlotSelector.tsx`                | `useLayoutsStore.getState().layouts`                                    | `frame.slot` 내부 전환           |
+| `panels/properties/editors/LayoutPresetSelector/usePresetApply.ts` | `useLayoutsStore`                                                       | frameTemplateApply 재작성        |
+| `workspace/canvas/BuilderCanvas.tsx`                               | `useLayoutsStore(state => state.layouts)`                               | **P3 scope** (cascade 재작성 시) |
+| `panels/components/ComponentsPanel.tsx`                            | `useLayoutsStore(state => state.currentLayoutId)`                       | **P3 scope**                     |
+| `builder/main/BuilderCore.tsx`                                     | `useLayoutsStore` 참조                                                  | **P3 scope**                     |
+| `hooks/usePageManager.ts`                                          | `layout_id != null` 혼용                                                | **P3 scope** (G3 cascade)        |
+
+P2 scope 직접 전환: 5개 파일. P3 scope (G3 cascade 재작성 시 전환): 4개 파일.
+
+#### Phase 1 함수 layer 재사용 가능 항목
+
+`apps/builder/src/lib/db/migrationP911.ts` (185 lines, 45 tests PASS):
+
+| 함수                              | 서명                                                                                    | P2 활용                                    |
+| --------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `convertTemplateToCanonicalFrame` | `(template: LayoutTemplate) => FrameNode`                                               | LayoutPresetSelector → frame template 변환 |
+| `hoistLayoutAsReusableFrame`      | `(layout: Layout) => FrameNode`                                                         | dev 환경 manual trigger migration          |
+| `dryRunMigrationP911`             | `(adapter, projectId, canonicalDoc) => Promise<MigrationP911Result>`                    | dev 검증 trigger UI                        |
+| `applyMigrationP911`              | `(currentDoc: CompositionDocument, result: MigrationP911Result) => CompositionDocument` | apply 시 canonical doc 갱신                |
+
+**`selectCanonicalDocument`** (`apps/builder/src/builder/stores/elements.ts:1892`): canonical document selector — P2 재작성 시 직접 사용.
+
+---
+
 ### P2-a: FramesTab 재설계 (canonical-native authoring)
 
 **대상**: `apps/builder/src/builder/panels/nodes/FramesTab/FramesTab.tsx`
@@ -335,6 +392,87 @@ grep -rn "LayoutsTab" apps/builder/src/builder/panels/ | wc -l  # -> feature fla
 | --------------------------- | ------------------------------------------------------------ |
 | (a) 시각 회귀 0             | `mockLargeDataV2` + 샘플 프로젝트 parallel-verify 25/25 PASS |
 | (b) dual-mode 1주 issue 0건 | GitHub issue 수동 확인 (frame/layout 키워드)                 |
+
+### P2-e: dev 환경 migration 진입점 (manual trigger)
+
+P3-E E-6 write-through 자동화는 P3 작업이지만, P2 구현 중 **dev 환경 검증**을 위해 legacy `layouts[]` → canonical `frames[]` 수동 변환 옵션이 필요하다.
+
+**진입점 선택지**:
+
+| 옵션     | 위치                               | 트리거                | P3 write-through 와의 관계                             |
+| -------- | ---------------------------------- | --------------------- | ------------------------------------------------------ |
+| A (권장) | `FramesTab` 개발자 메뉴 (dev-only) | 버튼 클릭             | 동일 `dryRunMigrationP911` + `applyMigrationP911` 호출 |
+| B        | `initializeProject` 내 조건부 분기 | 프로젝트 로드 시 자동 | P3 write-through entry 의 선행 버전 (P3 진입 시 제거)  |
+
+옵션 A 선택: P2 scope 를 최소화하고, P3 진입 시 정식 write-through 진입점(옵션 B)으로 교체.
+
+**구현 (dev-only, FramesTab 내)**:
+
+```ts
+// FramesTab.tsx — DEV 전용 migration trigger (P3 완료 시 제거)
+const handleDevMigrate = useCallback(async () => {
+  if (!projectId || process.env.NODE_ENV !== "development") return;
+  const db = await getDB();
+  const adapter: MigrationP911Adapter = {
+    layouts: { getByProject: (id) => db.layouts.getByProject(id) },
+  };
+  const canonicalDoc = selectCanonicalDocument(
+    useStore.getState(),
+    useStore.getState().pages,
+    useLayoutsStore.getState().layouts,
+  );
+  const result = await dryRunMigrationP911(adapter, projectId, canonicalDoc);
+  if (result.errors.length === 0 && result.hoisted.length > 0) {
+    const newDoc = applyMigrationP911(canonicalDoc, result);
+    // canonical document 갱신 (useStore.getState().setCanonicalDocument 또는 동급)
+    console.info(`[P911 dev] hoisted ${result.hoisted.length} frames`, newDoc);
+  } else {
+    console.warn("[P911 dev] dry-run result:", result);
+  }
+}, [projectId]);
+```
+
+**Chrome MCP 검증 (P1-c roundtrip)**: `dryRunMigrationP911` 결과 콘솔에서 `hoisted.length === layouts.length` 확인 후 `FramesTab` UI 에 frame 목록이 정상 표시되는지 검증.
+
+---
+
+### P2 Step 분해 + sub-budget
+
+총 12h 배분:
+
+| Step       | 내용                                                                                                                      | 시간 | RED/GREEN 사이클                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- | :--: | ---------------------------------------------------------------------------------------------------- |
+| **P2-0**   | 현재 FramesTab 코드 인벤토리 + 의존 그래프 작성                                                                           |  1h  | — (분석)                                                                                             |
+| **P2-a**   | `FramesTab.tsx` canonical-native 재작성 (`useLayoutsStore` → `selectCanonicalDocument`) + `frameActions.ts` CRUD skeleton |  3h  | RED: `useLayoutsStore` import 제거 → type-check fail / GREEN: `reusableFrames` selector 연결 후 PASS |
+| **P2-b**   | `FrameList.tsx` / `FrameDetails.tsx` / `SlotList.tsx` 신규 컴포넌트 + `AddFrameButton`                                    |  2h  | RED: FrameList 렌더 테스트 fail / GREEN: `reusableFrames` prop 전달 후 PASS                          |
+| **P2-c**   | `PageLayoutSelector.tsx` 재작성 (RefNode.ref UI) + `usePresetApply.ts` canonical mutation 전환                            |  2h  | RED: `useLayoutsStore` import 제거 → type-check fail / GREEN: `reusableFrames` 선택 후 PASS          |
+| **P2-d**   | `featureFlags.ts` `FRAMES_TAB_CANONICAL` + dual-mode legacy bridge 격리                                                   | 0.5h | —                                                                                                    |
+| **P2-e**   | dev migration trigger (handleDevMigrate) + Chrome MCP P1-c roundtrip 검증                                                 |  1h  | Chrome MCP: frame 목록 표시 확인                                                                     |
+| **P2-f**   | `mockLargeDataV2` parallel-verify 25/25 PASS + 1주 dual-mode 시작                                                         |  1h  | G2-(a) 시각 회귀 0                                                                                   |
+| **P2-g**   | 1주 후 G2-(b) issue 0건 확인 → P3 진입 승인                                                                               | 0.5h | —                                                                                                    |
+| **buffer** | type-check 수정 / 예기치 못한 legacy 의존 해소                                                                            |  1h  | —                                                                                                    |
+
+**vitest 검증 포인트**:
+
+```bash
+# P2-a 완료 후 — frameActions CRUD 유닛 테스트
+pnpm test frameActions --run
+
+# P2-c 완료 후 — PageLayoutSelector 렌더 테스트 (useLayoutsStore mock 없이)
+pnpm test PageLayoutSelector --run
+
+# P2-f — parallel-verify
+pnpm type-check
+```
+
+**coexistence 원칙 (P3-E 14 파일과의 graceful 공존)**:
+
+- P2 scope 직접 전환 대상: FramesTab + 5개 editors 파일
+- P3 scope 파일 (BuilderCanvas / ComponentsPanel / usePageManager / BuilderCore): P2 에서 **수정 없음** — `useLayoutsStore` legacy bridge 유지, G3 cascade 재작성 시 전환
+- `stores/layouts.ts` 본체: P2 에서 **수정 없음** — adapter shim 그대로 유지 (P4 완료 시 최소화)
+- `LayoutBodyEditor.tsx` / `LayoutSlugEditor.tsx`: P2 에서 **통합 대기** — FrameDetails 흡수 완료 후 P3-e 에서 삭제
+
+---
 
 ### P2 변경 파일 목록
 

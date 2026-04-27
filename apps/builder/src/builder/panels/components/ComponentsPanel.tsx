@@ -53,7 +53,7 @@ function ComponentsPanelContent() {
   // handleAddElement wrapper - 필요한 모든 데이터 자동 전달
   // ⭐ Layout/Slot System: Page 모드와 Layout 모드 분기 처리
   const handleAddElement = useCallback(
-    async (tag: string, parentId?: string) => {
+    async (type: string, parentId?: string) => {
       // 🆕 콜백 실행 시점에 최신 값을 가져옴 (구독 대신 getState 사용)
       const state = useStore.getState();
       const elements = state.elements;
@@ -92,10 +92,10 @@ function ComponentsPanelContent() {
         }
 
         console.log(
-          `🏗️ [ComponentsPanel] Layout 모드: ${tag}를 Layout ${currentLayoutId?.slice(0, 8)}에 추가 (parent: ${(parentId || validSelectedElementId)?.slice(0, 8) || "auto"})`,
+          `🏗️ [ComponentsPanel] Layout 모드: ${type}를 Layout ${currentLayoutId?.slice(0, 8)}에 추가 (parent: ${(parentId || validSelectedElementId)?.slice(0, 8) || "auto"})`,
         );
         await rawHandleAddElement(
-          tag,
+          type,
           "", // currentPageId - layout 모드에서는 사용 안함
           parentId || validSelectedElementId,
           layoutElements,
@@ -115,7 +115,7 @@ function ComponentsPanelContent() {
       // 🆕 O(1) 인덱스 기반 조회
       const pageElements = getPageElements(currentPageId);
       await rawHandleAddElement(
-        tag,
+        type,
         currentPageId,
         parentId || selectedElementId,
         pageElements,

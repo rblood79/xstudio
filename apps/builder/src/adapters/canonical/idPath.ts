@@ -38,7 +38,7 @@ export interface IdPathContext {
  * 우선순위:
  *  1. element.customId가 있으면 사용 (slash 치환 후)
  *  2. componentName이 있으면 사용 (slash 치환 후)
- *  3. tag 값 기반 fallback (예: "Button-3" — index suffix)
+ *  3. type 값 기반 fallback (예: "Button-3" — index suffix)
  * 형제간 이름 충돌 시 "-N" suffix.
  */
 export function buildIdPathContext(elements: Element[]): IdPathContext {
@@ -60,7 +60,7 @@ export function buildIdPathContext(elements: Element[]): IdPathContext {
     const nameCount = new Map<string, number>();
     for (const child of children) {
       const baseName = sanitizeIdSegment(
-        child.customId ?? child.componentName ?? child.tag,
+        child.customId ?? child.componentName ?? child.type,
       );
       const seq = (nameCount.get(baseName) ?? 0) + 1;
       nameCount.set(baseName, seq);

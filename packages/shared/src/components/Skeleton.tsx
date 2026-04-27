@@ -64,7 +64,7 @@ export type ComponentSkeletonVariant =
   | "pagination"
   | "color-swatch"
   | "color-area"
-  | "tag"
+  | "type"
   | "menu-item"
   | "disclosure";
 
@@ -448,7 +448,7 @@ function renderComponentVariant(componentVariant: ComponentSkeletonVariant) {
     case "color-area":
       return <span className="skeleton-area" />;
 
-    case "tag":
+    case "type":
       return (
         <>
           <span className="skeleton-content" />

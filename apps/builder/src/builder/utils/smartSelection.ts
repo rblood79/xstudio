@@ -11,11 +11,11 @@ import type { Element } from "../../types/core/store.types";
  * Selection suggestion type
  */
 export type SelectionSuggestion =
-  | "similar"      // Same tag and className
+  | "similar"      // Same type and className
   | "siblings"     // Same parent
   | "children"     // All descendants
   | "parent"       // Parent element
-  | "sameType"     // Same tag only
+  | "sameType"     // Same type only
   | "sameClass"    // Same className only
   | "sameStyle";   // Similar style properties
 
@@ -30,7 +30,7 @@ export interface SuggestionResult {
 }
 
 /**
- * Find similar elements (same tag and className)
+ * Find similar elements (same type and className)
  *
  * @param referenceId - Reference element ID
  * @param allElements - All elements in the page
@@ -49,7 +49,7 @@ export function selectSimilar(
     .filter(
       (el) =>
         el.id !== referenceId &&
-        el.tag === reference.tag &&
+        el.type === reference.type &&
         (el.props.className as string || "") === referenceClassName
     )
     .map((el) => el.id);
@@ -131,11 +131,11 @@ export function selectParent(
 }
 
 /**
- * Find elements with same tag
+ * Find elements with same type
  *
  * @param referenceId - Reference element ID
  * @param allElements - All elements in the page
- * @returns Array of element IDs with same tag
+ * @returns Array of element IDs with same type
  */
 export function selectSameType(
   referenceId: string,
@@ -145,7 +145,7 @@ export function selectSameType(
   if (!reference) return [];
 
   return allElements
-    .filter((el) => el.id !== referenceId && el.tag === reference.tag)
+    .filter((el) => el.id !== referenceId && el.type === reference.type)
     .map((el) => el.id);
 }
 
@@ -233,14 +233,14 @@ export function getAllSuggestions(
 
   const suggestions: SuggestionResult[] = [];
 
-  // Similar elements (tag + className)
+  // Similar elements (type + className)
   const similarIds = selectSimilar(referenceId, allElements);
   if (similarIds.length > 0) {
     suggestions.push({
       type: "similar",
       elementIds: similarIds,
       count: similarIds.length,
-      description: `Similar elements (same tag and className)`,
+      description: `Similar elements (same type and className)`,
     });
   }
 
@@ -277,14 +277,14 @@ export function getAllSuggestions(
     });
   }
 
-  // Same type (tag only)
+  // Same type (type only)
   const sameTypeIds = selectSameType(referenceId, allElements);
   if (sameTypeIds.length > 0) {
     suggestions.push({
       type: "sameType",
       elementIds: sameTypeIds,
       count: sameTypeIds.length,
-      description: `Same type (${reference.tag})`,
+      description: `Same type (${reference.type})`,
     });
   }
 

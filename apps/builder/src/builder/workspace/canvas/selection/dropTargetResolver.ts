@@ -171,7 +171,7 @@ function resolveCrossContainerDrop(
     const hitEl = store.elementsMap.get(hitId);
     if (!hitEl) continue;
     if (!hitEl.parent_id) continue; // root/body 제외
-    if (hitEl.tag?.toLowerCase() === "body") continue;
+    if (hitEl.type?.toLowerCase() === "body") continue;
     if (hitId === dragged.parent_id) continue; // 현재 부모는 same-parent 로직이 처리
 
     // 컨테이너 여부 확인: childrenMap에 해당 ID가 존재하거나 display가 컨테이너 성격

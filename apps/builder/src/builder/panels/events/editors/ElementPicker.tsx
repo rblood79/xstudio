@@ -33,12 +33,12 @@ interface ElementPickerProps {
   placeholder?: string;
 
   /** 필터 콜백 (특정 타입만 표시) */
-  filter?: (element: { id: string; tag: string; customId?: string }) => boolean;
+  filter?: (element: { id: string; type: string; customId?: string }) => boolean;
 }
 
 interface ElementOption {
   id: string;
-  tag: string;
+  type: string;
   customId?: string;
   displayName: string;
 }
@@ -76,15 +76,15 @@ export function ElementPicker({
     let filteredElements = pageElements;
     if (filter) {
       filteredElements = pageElements.filter((el) =>
-        filter({ id: el.id, tag: el.tag, customId: el.customId })
+        filter({ id: el.id, type: el.type, customId: el.customId })
       );
     }
 
     return filteredElements.map((el) => ({
       id: el.id,
-      tag: el.tag,
+      type: el.type,
       customId: el.customId,
-      displayName: el.customId ? `#${el.customId}` : `${el.tag} (${el.id.slice(0, 8)})`,
+      displayName: el.customId ? `#${el.customId}` : `${el.type} (${el.id.slice(0, 8)})`,
     }));
   }, [currentPageId, getPageElements, filter]);
 
@@ -96,7 +96,7 @@ export function ElementPicker({
     return options.filter(
       (opt) =>
         opt.displayName.toLowerCase().includes(searchLower) ||
-        opt.tag.toLowerCase().includes(searchLower) ||
+        opt.type.toLowerCase().includes(searchLower) ||
         opt.id.toLowerCase().includes(searchLower)
     );
   }, [options, inputValue]);
@@ -154,7 +154,7 @@ export function ElementPicker({
                 className="element-picker-item"
                 textValue={opt.displayName}
               >
-                <span className="element-tag">{opt.tag}</span>
+                <span className="element-type">{opt.type}</span>
                 <span className="element-name">{opt.displayName}</span>
               </ListBoxItem>
             ))

@@ -1,7 +1,7 @@
 /**
  * search_elements Tool
  *
- * tag, prop name/value, style 속성으로 요소 검색
+ * type, prop name/value, style 속성으로 요소 검색
  */
 
 import type { ToolExecutor, ToolExecutionResult } from '../../../types/integrations/ai.types';
@@ -11,7 +11,7 @@ export const searchElementsTool: ToolExecutor = {
   name: 'search_elements',
 
   async execute(args: Record<string, unknown>): Promise<ToolExecutionResult> {
-    const tagFilter = args.tag as string | undefined;
+    const tagFilter = args.type as string | undefined;
     const propName = args.propName as string | undefined;
     const propValue = args.propValue as string | undefined;
     const styleProp = args.styleProp as string | undefined;
@@ -24,10 +24,10 @@ export const searchElementsTool: ToolExecutor = {
       // 현재 페이지 요소만 대상
       let results = elements.filter((el) => el.page_id === currentPageId);
 
-      // tag 필터
+      // type 필터
       if (tagFilter) {
         const tagLower = tagFilter.toLowerCase();
-        results = results.filter((el) => el.tag.toLowerCase() === tagLower);
+        results = results.filter((el) => el.type.toLowerCase() === tagLower);
       }
 
       // prop name 필터
@@ -63,7 +63,7 @@ export const searchElementsTool: ToolExecutor = {
           returned: limited.length,
           elements: limited.map((el) => ({
             id: el.id,
-            tag: el.tag,
+            type: el.type,
             parentId: el.parent_id,
             propKeys: Object.keys((el.props as Record<string, unknown>) || {}).filter((k) => k !== 'style'),
           })),

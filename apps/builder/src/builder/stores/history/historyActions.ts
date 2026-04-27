@@ -143,10 +143,10 @@ export const createUndoAction = (set: SetState, get: GetState) => async () => {
             console.log(
               `🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`,
               {
-                parent: entry.data.element?.tag,
+                parent: entry.data.element?.type,
                 children: entry.data.childElements.map((child: Element) => ({
                   id: child.id,
-                  tag: child.tag,
+                  type: child.type,
                 })),
               },
             );
@@ -229,7 +229,7 @@ export const createUndoAction = (set: SetState, get: GetState) => async () => {
           const element = currentState.elements[elementIndex];
           console.log("🔄 Undo: Props 복원", {
             elementId: entry.elementId,
-            elementTag: element.tag,
+            elementTag: element.type,
             currentProps: { ...element.props },
             restoringTo: prevProps,
           });
@@ -276,7 +276,7 @@ export const createUndoAction = (set: SetState, get: GetState) => async () => {
         elementsToRestore.forEach((el, index) => {
           console.log(`📥 복원 요소 ${index + 1}:`, {
             id: el.id,
-            tag: el.tag,
+            type: el.type,
             tabId: (el.props as { tabId?: string }).tabId,
             title: (el.props as { title?: string }).title,
             order_num: el.order_num,
@@ -310,7 +310,7 @@ export const createUndoAction = (set: SetState, get: GetState) => async () => {
             if (prevPropsForEl) {
               console.log(`📥 복원 요소 props:`, {
                 elementId: el.id,
-                tag: el.tag,
+                type: el.type,
               });
               return { ...el, props: prevPropsForEl };
             }
@@ -393,7 +393,7 @@ export const createUndoAction = (set: SetState, get: GetState) => async () => {
         let restoredElements = [...currentState.elements, ...elementsToRestore];
         console.log(`📥 그룹 요소 복원:`, {
           groupId: elementsToRestore[0]?.id,
-          tag: elementsToRestore[0]?.tag,
+          type: elementsToRestore[0]?.type,
         });
 
         // 2. 자식 요소들을 그룹 안으로 이동
@@ -835,10 +835,10 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
             console.log(
               `🔄 Redo: 자식 요소 ${entry.data.childElements.length}개 추가`,
               {
-                parent: entry.data.element?.tag,
+                parent: entry.data.element?.type,
                 children: entry.data.childElements.map((child: Element) => ({
                   id: child.id,
-                  tag: child.tag,
+                  type: child.type,
                 })),
               },
             );
@@ -956,7 +956,7 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
             if (newPropsForEl) {
               console.log(`📥 적용 요소 props:`, {
                 elementId: el.id,
-                tag: el.tag,
+                type: el.type,
               });
               return { ...el, props: { ...el.props, ...newPropsForEl } };
             }
@@ -990,7 +990,7 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
         let newElements = [...currentState.elements, ...elementsToAdd];
         console.log(`📥 그룹 요소 추가:`, {
           groupId: elementsToAdd[0]?.id,
-          tag: elementsToAdd[0]?.tag,
+          type: elementsToAdd[0]?.type,
         });
 
         // 2. 자식 요소들을 그룹 안으로 이동

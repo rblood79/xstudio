@@ -560,7 +560,7 @@ export function searchTemplates(query: string): EventTemplate[] {
     return (
       template.name.toLowerCase().includes(lowerQuery) ||
       template.description.toLowerCase().includes(lowerQuery) ||
-      template.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
+      template.tags.some((type) => type.toLowerCase().includes(lowerQuery))
     );
   });
 }

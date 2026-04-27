@@ -52,7 +52,7 @@ export const toolDefinitions: ChatCompletionTool[] = [
       parameters: {
         type: "object",
         properties: {
-          tag: {
+          type: {
             type: "string",
             description: "생성할 컴포넌트 타입",
             enum: COMPONENT_TAGS,
@@ -91,7 +91,7 @@ export const toolDefinitions: ChatCompletionTool[] = [
             },
           },
         },
-        required: ["tag"],
+        required: ["type"],
       },
     },
   },
@@ -187,7 +187,7 @@ export const toolDefinitions: ChatCompletionTool[] = [
       parameters: {
         type: "object",
         properties: {
-          tag: {
+          type: {
             type: "string",
             description: "검색할 컴포넌트 태그 (예: Button, TextField)",
           },
@@ -236,7 +236,7 @@ export const toolDefinitions: ChatCompletionTool[] = [
                 args: {
                   type: "object",
                   description:
-                    "해당 작업의 인자. create: {tag, props, styles, parentId}, update: {elementId, props, styles}, delete: {elementId}",
+                    "해당 작업의 인자. create: {type, props, styles, parentId}, update: {elementId, props, styles}, delete: {elementId}",
                 },
               },
               required: ["action", "args"],

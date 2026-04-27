@@ -21,7 +21,7 @@
 // Phase 2: Preview/Skia가 canonical resolver 공통 소비
 // Phase 3: frameset/layout/slot 흡수
 // Phase 4: 편집 semantics (copy/paste/detach/override reset)
-// Phase 5: DB 저장 포맷 전환 (tag 컬럼 → type 컬럼)
+// Phase 5: DB 저장 포맷 전환 (type 컬럼 → type 컬럼)
 
 import type { CSSProperties, ReactNode } from "react";
 
@@ -91,11 +91,11 @@ export interface Element {
   id: string;
   customId?: string;
   /**
-   * @deprecated ADR-903 P0: canonical 'type' 필드로 rename 예정. Phase 1 adapter에서
-   * tag→type 일방향 정규화, Phase 5에서 DB 컬럼 rename. 값 공간은 pencil 정합
-   * ComponentTag literal union으로 수렴 (composition-document.types.ts 참조).
+   * ADR-913 P1+P2 (2026-04-27): canonical `type` 필드로 rename 완료. 값 공간은
+   * pencil 정합 ComponentTag literal union 으로 수렴 (composition-document.types.ts
+   * 참조). DB 컬럼 rename 은 Phase 4 (DB_VERSION 8→9).
    */
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   fills?: unknown[];
   parent_id?: string | null;

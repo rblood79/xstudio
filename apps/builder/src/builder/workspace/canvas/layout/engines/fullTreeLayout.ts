@@ -564,8 +564,8 @@ function buildNodeStyle(
   // `display: "grid"` + `gridTemplateColumns` 를 spec containerStyles 에만 선언하고
   // factory 가 props.style 에 중복 주입하지 않는 케이스에서 Skia Grid 레이아웃 누락 방지.
   const rawStyle = (element.props?.style ?? {}) as Record<string, unknown>;
-  const tag = (element.tag ?? "").toLowerCase();
-  const specFallback = resolveContainerStylesFallback(tag, rawStyle);
+  const type = (element.type ?? "").toLowerCase();
+  const specFallback = resolveContainerStylesFallback(type, rawStyle);
   const hasFallback = Object.keys(specFallback).length > 0;
   const mergedStyle = hasFallback ? { ...specFallback, ...rawStyle } : rawStyle;
   const enriched: Element = hasFallback
@@ -796,11 +796,11 @@ function traversePostOrder(
   let rawElement = storeElement;
 
   // Heading/Description → InlineAlert 부모 spec에서 font 스타일 주입 (텍스트 폭 측정 정합성)
-  if (rawElement.tag === "Heading" || rawElement.tag === "Description") {
+  if (rawElement.type === "Heading" || rawElement.type === "Description") {
     const parent = rawElement.parent_id
       ? elementsMap.get(rawElement.parent_id)
       : undefined;
-    if (parent?.tag === "InlineAlert") {
+    if (parent?.type === "InlineAlert") {
       const parentSize =
         ((parent.props as Record<string, unknown> | undefined)
           ?.size as string) ?? "md";
@@ -810,7 +810,7 @@ function traversePostOrder(
         ]) as unknown as Record<string, unknown>;
       const cs = (rawElement.props?.style ?? {}) as Record<string, unknown>;
       const injected: Record<string, unknown> = { ...cs };
-      if (rawElement.tag === "Heading") {
+      if (rawElement.type === "Heading") {
         if (injected.fontSize == null && specSize.headingFontSize != null)
           injected.fontSize = specSize.headingFontSize;
         if (injected.fontWeight == null && specSize.headingFontWeight != null)
@@ -834,7 +834,7 @@ function traversePostOrder(
   // grid+자식없음 → Taffy height=0 문제 방지
   // 하이브리드 모드 (자식 있음): grid 유지 — Label child가 Taffy 레이아웃 참여
   {
-    const rawTag = (rawElement.tag ?? "").toLowerCase();
+    const rawTag = (rawElement.type ?? "").toLowerCase();
     const hasChildren = getChildElements(rawElement.id).length > 0;
     if (
       !hasChildren &&
@@ -871,9 +871,9 @@ function traversePostOrder(
   //
   // 처리: Tag/Checkbox/Radio 의 부모 size delegation 과 동일하게 DFS 진입 시 rawElement
   //   props 를 부모값으로 보강. 자식 명시값(override:true 가 아닌 필드는 자식 우선)은 유지.
-  if (rawElement.tag === "TagList" && rawElement.parent_id) {
+  if (rawElement.type === "TagList" && rawElement.parent_id) {
     const parent = elementsMap.get(rawElement.parent_id);
-    if (parent?.tag === "TagGroup") {
+    if (parent?.type === "TagGroup") {
       const childProps = (rawElement.props ?? {}) as Record<string, unknown>;
       const parentProps = (parent.props ?? {}) as Record<string, unknown>;
       const delegated: Record<string, unknown> = {};
@@ -911,17 +911,17 @@ function traversePostOrder(
     }
   }
 
-  // Tag → TagGroup 부모 size 상속 (CSS data-tag-size parent delegation 에뮬레이션)
+  // Tag → TagGroup 부모 size 상속 (CSS data-type-size parent delegation 에뮬레이션)
   // DFS 진입 시 element에 size를 주입하면 이후 calculateContentHeight/parseBoxModel 등에서 자연스럽게 사용
-  if (rawElement.tag === "Tag") {
+  if (rawElement.type === "Tag") {
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
     let ancestor = rawElement.parent_id
       ? elementsMap.get(rawElement.parent_id)
       : undefined;
-    if (ancestor?.tag === "TagList" && ancestor.parent_id) {
+    if (ancestor?.type === "TagList" && ancestor.parent_id) {
       ancestor = elementsMap.get(ancestor.parent_id);
     }
-    if (ancestor?.tag === "TagGroup") {
+    if (ancestor?.type === "TagGroup") {
       const groupProps = ancestor.props as Record<string, unknown> | undefined;
       const delegated: Record<string, unknown> = {};
       // size delegation: TagGroup size → Tag (없으면 "md" 기본값)
@@ -945,7 +945,7 @@ function traversePostOrder(
   // implicitStyles가 containerProps.size로 indicator marginLeft를 계산하므로
   // Store에 size가 없는 Checkbox/Radio에 부모 Group의 size를 주입해야 함
   if (
-    (rawElement.tag === "Checkbox" || rawElement.tag === "Radio") &&
+    (rawElement.type === "Checkbox" || rawElement.type === "Radio") &&
     !(rawElement.props as Record<string, unknown> | undefined)?.size &&
     rawElement.parent_id
   ) {
@@ -953,14 +953,14 @@ function traversePostOrder(
     // CheckboxItems/RadioItems 래퍼 통과
     if (
       ancestor &&
-      (ancestor.tag === "CheckboxItems" || ancestor.tag === "RadioItems") &&
+      (ancestor.type === "CheckboxItems" || ancestor.type === "RadioItems") &&
       ancestor.parent_id
     ) {
       ancestor = elementsMap.get(ancestor.parent_id);
     }
     const groupTag =
-      rawElement.tag === "Checkbox" ? "CheckboxGroup" : "RadioGroup";
-    if (ancestor?.tag === groupTag) {
+      rawElement.type === "Checkbox" ? "CheckboxGroup" : "RadioGroup";
+    if (ancestor?.type === groupTag) {
       const groupSize = (ancestor.props as Record<string, unknown> | undefined)
         ?.size as string | undefined;
       if (groupSize) {
@@ -974,7 +974,7 @@ function traversePostOrder(
 
   // Label → 부모 size 상속 (DFS 진입 시 fontSize/lineHeight 주입)
   // CSS는 --label-font-size 변수로 처리하지만, Taffy는 인라인 fontSize가 필요
-  if (rawElement.tag === "Label") {
+  if (rawElement.type === "Label") {
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
     const labelStyle = (rawProps?.style || {}) as Record<string, unknown>;
     // lineHeight 미설정 시 주입 (factory가 fontSize만 설정하고 lineHeight를 누락한 경우 포함)
@@ -985,7 +985,7 @@ function traversePostOrder(
       let ancestorSize: string | undefined;
       let lastDelegationAncestor: Element | undefined;
       while (ancestor) {
-        if (LABEL_DELEGATION_PARENT_TAGS.has(ancestor.tag)) {
+        if (LABEL_DELEGATION_PARENT_TAGS.has(ancestor.type)) {
           lastDelegationAncestor = ancestor;
           ancestorSize =
             ((ancestor.props as Record<string, unknown> | undefined)
@@ -993,7 +993,7 @@ function traversePostOrder(
           if (ancestorSize) break; // size 찾음 → 확정
         }
         // 래퍼 태그면 계속 상위 탐색 (Checkbox → CheckboxItems → CheckboxGroup)
-        if (LABEL_WRAPPER_TAGS.has(ancestor.tag) && ancestor.parent_id) {
+        if (LABEL_WRAPPER_TAGS.has(ancestor.type) && ancestor.parent_id) {
           ancestor = elementsMap.get(ancestor.parent_id);
         } else {
           break;
@@ -1065,7 +1065,7 @@ function traversePostOrder(
   // DFS rawElement 주입(line 602)은 개별 Tag 노드 진입 시에만 적용되므로,
   // 부모(TagList/TagGroup)의 filteredChildren에도 동일하게 size를 주입해야
   // enrichWithIntrinsicSize → calculateContentWidth 재귀 시 올바른 크기를 산출한다.
-  const containerTag = (rawElement.tag ?? "").toLowerCase();
+  const containerTag = (rawElement.type ?? "").toLowerCase();
   if (containerTag === "taglist" || containerTag === "taggroup") {
     // TagGroup의 size/allowsRemoving 조회
     let groupSize: string | undefined;
@@ -1079,7 +1079,7 @@ function traversePostOrder(
       const parentEl = rawElement.parent_id
         ? elementsMap.get(rawElement.parent_id)
         : undefined;
-      if (parentEl?.tag === "TagGroup") {
+      if (parentEl?.type === "TagGroup") {
         const gp = parentEl.props as Record<string, unknown> | undefined;
         groupSize = gp?.size as string | undefined;
         groupAllowsRemoving = Boolean(gp?.allowsRemoving);
@@ -1087,7 +1087,7 @@ function traversePostOrder(
     }
     for (let i = 0; i < filteredChildren.length; i++) {
       const child = filteredChildren[i];
-      if (child.tag !== "Tag") continue;
+      if (child.type !== "Tag") continue;
       const childProps = child.props as Record<string, unknown> | undefined;
       const delegated: Record<string, unknown> = {};
       if (groupSize && !childProps?.size) delegated.size = groupSize;
@@ -1354,7 +1354,7 @@ function traversePostOrder(
         const patch = resolvePropagatedProps(
           containerTag,
           containerProps,
-          child.tag,
+          child.type,
           child.props as Record<string, unknown>,
         );
         return patch
@@ -1369,7 +1369,7 @@ function traversePostOrder(
       ? elementsMap.get(rawElement.parent_id)
       : undefined;
     if (parentEl) {
-      const parentRules = getPropagationRules(parentEl.tag.toLowerCase());
+      const parentRules = getPropagationRules(parentEl.type.toLowerCase());
       if (parentRules) {
         const parentProps = parentEl.props as Record<string, unknown>;
         const prevGet2 = effectiveGetChildElements;
@@ -1377,9 +1377,9 @@ function traversePostOrder(
           const children = prevGet2(id);
           return children.map((child) => {
             const patch = resolvePropagatedProps(
-              parentEl.tag,
+              parentEl.type,
               parentProps,
-              child.tag,
+              child.type,
               child.props as Record<string, unknown>,
             );
             return patch
@@ -1404,7 +1404,7 @@ function traversePostOrder(
         effectiveGetChildElements = (id: string) => {
           const children = prevGetChildElements2(id);
           return children.map((child) => {
-            if (child.tag !== "Label") return child;
+            if (child.type !== "Label") return child;
             const cs = (child.props?.style || {}) as Record<string, unknown>;
             if (cs.lineHeight != null) return child; // 인라인 lineHeight가 이미 있으면 스킵
             return {
@@ -1505,7 +1505,7 @@ function traversePostOrder(
       string,
       unknown
     >;
-    const enrichedTag = (rawElement.tag ?? "").toLowerCase();
+    const enrichedTag = (rawElement.type ?? "").toLowerCase();
     if (
       !enrichedStyle.height &&
       !hasTaffyChildren &&
@@ -1562,7 +1562,7 @@ function traversePostOrder(
         // Spec 기반 font 속성 추출 — 렌더러와 동일한 fontWeight/fontFamily 보장
         // (Button 공백 텍스트 줄바꿈 방지 패턴: docs/bug/skia-button-text-linebreak.md)
         const specStyle = extractSpecTextStyle(
-          rawElement.tag,
+          rawElement.type,
           props as Record<string, unknown>,
         );
         const fontFamily =
@@ -1846,7 +1846,7 @@ export function calculateFullTreeLayout(
   const rootIdx = indexMap.get(rootElementId);
   if (rootIdx !== undefined) {
     const rootEl = elementsMap.get(rootElementId);
-    if (rootEl && rootEl.tag.toLowerCase() === "body") {
+    if (rootEl && rootEl.type.toLowerCase() === "body") {
       const rootStyle = (rootEl.props?.style ?? {}) as Record<string, unknown>;
       const bp = parsePadding(rootStyle, availableWidth);
       const bb = parseBorder(rootStyle);

@@ -109,7 +109,7 @@ export interface AddElementAction {
   type: 'ADD_ELEMENT';
   config: {
     parentId: string;
-    tag: string;
+    type: string;
     props: Record<string, unknown>;
   };
 }

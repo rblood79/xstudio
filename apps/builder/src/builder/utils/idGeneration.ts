@@ -1,22 +1,22 @@
 import type { Element } from "../../types/builder/unified.types";
 
 /**
- * Generates a unique custom ID for a component based on its tag
- * Format: {tag}_{number} (e.g., button_1, select_2, textfield_3)
+ * Generates a unique custom ID for a component based on its type
+ * Format: {type}_{number} (e.g., button_1, select_2, textfield_3)
  *
- * @param tag - Component tag name (e.g., "Button", "Select")
+ * @param type - Component type name (e.g., "Button", "Select")
  * @param pageElements - All elements in the current page
  * @returns Generated custom ID (e.g., "button_1")
  */
 export function generateCustomId(
-  tag: string,
+  type: string,
   pageElements: Element[]
 ): string {
-  // Convert tag to lowercase for ID format
-  const tagLower = tag.toLowerCase();
+  // Convert type to lowercase for ID format
+  const tagLower = type.toLowerCase();
 
-  // Find all existing elements with the same tag
-  const sameTagElements = pageElements.filter((el) => el.tag === tag);
+  // Find all existing elements with the same type
+  const sameTagElements = pageElements.filter((el) => el.type === type);
 
   // Extract existing numbers from customIds
   const existingNumbers: number[] = [];

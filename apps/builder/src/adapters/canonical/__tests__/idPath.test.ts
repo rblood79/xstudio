@@ -29,7 +29,7 @@ function makeEl(
 describe("buildIdPathContext — 단일 root element", () => {
   it("customId가 있으면 customId를 path로 사용", () => {
     // Arrange
-    const el = makeEl({ id: "uuid-1", tag: "Button", customId: "ok-button" });
+    const el = makeEl({ id: "uuid-1", type: "Button", customId: "ok-button" });
 
     // Act
     const { idPathMap } = buildIdPathContext([el]);
@@ -42,7 +42,7 @@ describe("buildIdPathContext — 단일 root element", () => {
     // Arrange
     const el = makeEl({
       id: "uuid-2",
-      tag: "Button",
+      type: "Button",
       componentName: "Submit Button",
     });
 
@@ -55,7 +55,7 @@ describe("buildIdPathContext — 단일 root element", () => {
 
   it("customId·componentName 없으면 tag 사용", () => {
     // Arrange
-    const el = makeEl({ id: "uuid-3", tag: "Card" });
+    const el = makeEl({ id: "uuid-3", type: "Card" });
 
     // Act
     const { idPathMap } = buildIdPathContext([el]);
@@ -68,10 +68,10 @@ describe("buildIdPathContext — 단일 root element", () => {
 describe("buildIdPathContext — 부모-자식 2-level path", () => {
   it("부모/자식 형태의 path 생성", () => {
     // Arrange
-    const parent = makeEl({ id: "p1", tag: "Box" });
+    const parent = makeEl({ id: "p1", type: "Box" });
     const child = makeEl({
       id: "c1",
-      tag: "Label",
+      type: "Label",
       parent_id: "p1",
     });
 
@@ -87,10 +87,10 @@ describe("buildIdPathContext — 부모-자식 2-level path", () => {
 describe("buildIdPathContext — 형제 동명 suffix", () => {
   it("같은 이름의 형제가 3개 → 첫째는 원본, 둘째는 '-2', 셋째는 '-3'", () => {
     // Arrange
-    const parent = makeEl({ id: "parent", tag: "Box" });
-    const btn1 = makeEl({ id: "b1", tag: "Button", parent_id: "parent" });
-    const btn2 = makeEl({ id: "b2", tag: "Button", parent_id: "parent" });
-    const btn3 = makeEl({ id: "b3", tag: "Button", parent_id: "parent" });
+    const parent = makeEl({ id: "parent", type: "Box" });
+    const btn1 = makeEl({ id: "b1", type: "Button", parent_id: "parent" });
+    const btn2 = makeEl({ id: "b2", type: "Button", parent_id: "parent" });
+    const btn3 = makeEl({ id: "b3", type: "Button", parent_id: "parent" });
 
     // Act
     const { idPathMap } = buildIdPathContext([parent, btn1, btn2, btn3]);
@@ -107,7 +107,7 @@ describe("buildIdPathContext — slash sanitize", () => {
     // Arrange
     const el = makeEl({
       id: "uuid-slash",
-      tag: "Card",
+      type: "Card",
       componentName: "header/title",
     });
 
@@ -122,7 +122,7 @@ describe("buildIdPathContext — slash sanitize", () => {
 describe("buildIdPathContext — 빈 문자열 fallback", () => {
   it("tag가 빈 문자열이면 'node' fallback 사용", () => {
     // Arrange
-    const el = makeEl({ id: "uuid-empty", tag: "" });
+    const el = makeEl({ id: "uuid-empty", type: "" });
 
     // Act
     const { idPathMap } = buildIdPathContext([el]);
@@ -137,12 +137,12 @@ describe("buildIdPathContext — 역방향 매핑 pathIdMap 일관성", () => {
     // Arrange
     const parent = makeEl({
       id: "p",
-      tag: "Box",
+      type: "Box",
       customId: "container",
     });
     const child = makeEl({
       id: "c",
-      tag: "Button",
+      type: "Button",
       parent_id: "p",
       customId: "submit",
     });

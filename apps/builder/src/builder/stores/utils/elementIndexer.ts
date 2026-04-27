@@ -210,7 +210,7 @@ function isBodyElement(
   elementsMap: Map<string, Element>
 ): boolean {
   const element = elementsMap.get(elementId);
-  return element?.tag === "Body";
+  return element?.type === "Body";
 }
 
 // ============================================

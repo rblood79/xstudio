@@ -62,91 +62,91 @@ import { Badge } from "@composition/shared/components/Badge";
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {
-  handleAddElement: (tag: string, parentId?: string) => void;
+  handleAddElement: (type: string, parentId?: string) => void;
   selectedElementId?: string | null;
 }
 
 // 컴포넌트 정의 (React Aria / Spectrum 공식 분류 기준, 실용적 병합)
 const contentComp = [
-  { tag: "Text", label: "text", icon: Text },
-  { tag: "Icon", label: "icon", icon: Smile },
-  { tag: "Separator", label: "separator", icon: SeparatorHorizontal },
-  { tag: "Badge", label: "badge", icon: Star },
-  { tag: "ProgressBar", label: "progress bar", icon: BarChart3 },
-  { tag: "Skeleton", label: "skeleton", icon: Loader },
-  { tag: "Avatar", label: "avatar", icon: CircleUser },
-  { tag: "AvatarGroup", label: "avatar group", icon: Users },
-  { tag: "StatusLight", label: "status light", icon: CircleDot },
-  { tag: "InlineAlert", label: "inline alert", icon: AlertTriangle },
-  { tag: "ProgressCircle", label: "progress circle", icon: CircleDashed },
-  { tag: "Image", label: "image", icon: ImageIcon },
-  { tag: "IllustratedMessage", label: "illustrated message", icon: ImageIcon },
+  { type: "Text", label: "text", icon: Text },
+  { type: "Icon", label: "icon", icon: Smile },
+  { type: "Separator", label: "separator", icon: SeparatorHorizontal },
+  { type: "Badge", label: "badge", icon: Star },
+  { type: "ProgressBar", label: "progress bar", icon: BarChart3 },
+  { type: "Skeleton", label: "skeleton", icon: Loader },
+  { type: "Avatar", label: "avatar", icon: CircleUser },
+  { type: "AvatarGroup", label: "avatar group", icon: Users },
+  { type: "StatusLight", label: "status light", icon: CircleDot },
+  { type: "InlineAlert", label: "inline alert", icon: AlertTriangle },
+  { type: "ProgressCircle", label: "progress circle", icon: CircleDashed },
+  { type: "Image", label: "image", icon: ImageIcon },
+  { type: "IllustratedMessage", label: "illustrated message", icon: ImageIcon },
 ] as const;
 
 const layoutComp = [
-  { tag: "Card", label: "card", icon: AppWindowMac },
-  { tag: "Group", label: "group", icon: GroupIcon },
-  { tag: "Tabs", label: "tabs", icon: AppWindow },
-  { tag: "Breadcrumbs", label: "breadcrumbs", icon: ChevronRight },
-  { tag: "Link", label: "link", icon: Link },
-  { tag: "Nav", label: "navigation", icon: Menu },
-  { tag: "MaskedFrame", label: "masked frame", icon: Frame },
-  { tag: "Accordion", label: "accordion", icon: ChevronDown },
-  { tag: "Disclosure", label: "disclosure", icon: ChevronDown },
-  { tag: "CardView", label: "card view", icon: Grid },
-  { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
+  { type: "Card", label: "card", icon: AppWindowMac },
+  { type: "Group", label: "group", icon: GroupIcon },
+  { type: "Tabs", label: "tabs", icon: AppWindow },
+  { type: "Breadcrumbs", label: "breadcrumbs", icon: ChevronRight },
+  { type: "Link", label: "link", icon: Link },
+  { type: "Nav", label: "navigation", icon: Menu },
+  { type: "MaskedFrame", label: "masked frame", icon: Frame },
+  { type: "Accordion", label: "accordion", icon: ChevronDown },
+  { type: "Disclosure", label: "disclosure", icon: ChevronDown },
+  { type: "CardView", label: "card view", icon: Grid },
+  { type: "Slot", label: "slot", icon: Layers, layoutOnly: true },
 ] as const;
 
 const buttonsComp = [
-  { tag: "Button", label: "button", icon: MousePointer },
-  { tag: "ToggleButton", label: "toggle button", icon: ToggleLeft },
-  { tag: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
-  { tag: "Toolbar", label: "toolbar", icon: Settings },
-  { tag: "ButtonGroup", label: "button group", icon: GroupIcon },
-  { tag: "Menu", label: "menu", icon: Menu },
+  { type: "Button", label: "button", icon: MousePointer },
+  { type: "ToggleButton", label: "toggle button", icon: ToggleLeft },
+  { type: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
+  { type: "Toolbar", label: "toolbar", icon: Settings },
+  { type: "ButtonGroup", label: "button group", icon: GroupIcon },
+  { type: "Menu", label: "menu", icon: Menu },
 ] as const;
 
 const formsComp = [
-  { tag: "TextField", label: "text field", icon: RectangleEllipsis },
-  { tag: "NumberField", label: "number field", icon: Hash },
-  { tag: "SearchField", label: "search field", icon: Search },
-  { tag: "Checkbox", label: "checkbox", icon: SquareCheck },
-  { tag: "CheckboxGroup", label: "checkbox group", icon: GroupIcon },
-  { tag: "RadioGroup", label: "radio group", icon: GroupIcon },
-  { tag: "Select", label: "select", icon: ChevronDown },
-  { tag: "ComboBox", label: "combo box", icon: ChevronDown },
-  { tag: "Switch", label: "switch", icon: ToggleRight },
-  { tag: "Slider", label: "slider", icon: SlidersHorizontal },
-  { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
-  { tag: "DropZone", label: "drop zone", icon: Upload },
-  { tag: "FileTrigger", label: "file trigger", icon: FileUp },
-  { tag: "Form", label: "form", icon: GroupIcon },
+  { type: "TextField", label: "text field", icon: RectangleEllipsis },
+  { type: "NumberField", label: "number field", icon: Hash },
+  { type: "SearchField", label: "search field", icon: Search },
+  { type: "Checkbox", label: "checkbox", icon: SquareCheck },
+  { type: "CheckboxGroup", label: "checkbox group", icon: GroupIcon },
+  { type: "RadioGroup", label: "radio group", icon: GroupIcon },
+  { type: "Select", label: "select", icon: ChevronDown },
+  { type: "ComboBox", label: "combo box", icon: ChevronDown },
+  { type: "Switch", label: "switch", icon: ToggleRight },
+  { type: "Slider", label: "slider", icon: SlidersHorizontal },
+  { type: "TailSwatch", label: "color picker", icon: Paintbrush },
+  { type: "DropZone", label: "drop zone", icon: Upload },
+  { type: "FileTrigger", label: "file trigger", icon: FileUp },
+  { type: "Form", label: "form", icon: GroupIcon },
 ] as const;
 
 const collectionsComp = [
-  { tag: "Table", label: "table", icon: TableProperties },
-  { tag: "ListBox", label: "list box", icon: ListIcon },
-  { tag: "GridList", label: "grid list", icon: Grid },
-  { tag: "Tree", label: "tree", icon: ListTree },
-  { tag: "TagGroup", label: "tag group", icon: Tag },
-  { tag: "Section", label: "section", icon: Square },
-  { tag: "TableView", label: "table view", icon: TableProperties },
+  { type: "Table", label: "table", icon: TableProperties },
+  { type: "ListBox", label: "list box", icon: ListIcon },
+  { type: "GridList", label: "grid list", icon: Grid },
+  { type: "Tree", label: "tree", icon: ListTree },
+  { type: "TagGroup", label: "type group", icon: Tag },
+  { type: "Section", label: "section", icon: Square },
+  { type: "TableView", label: "table view", icon: TableProperties },
 ] as const;
 
 const dateTimeComp = [
-  { tag: "Calendar", label: "calendar", icon: Calendar },
-  { tag: "DatePicker", label: "date picker", icon: CalendarCheck },
-  { tag: "DateRangePicker", label: "date range picker", icon: CalendarDays },
-  { tag: "DateField", label: "date field", icon: CalendarCheck },
-  { tag: "TimeField", label: "time field", icon: ChevronDown },
-  { tag: "RangeCalendar", label: "range calendar", icon: CalendarDays },
+  { type: "Calendar", label: "calendar", icon: Calendar },
+  { type: "DatePicker", label: "date picker", icon: CalendarCheck },
+  { type: "DateRangePicker", label: "date range picker", icon: CalendarDays },
+  { type: "DateField", label: "date field", icon: CalendarCheck },
+  { type: "TimeField", label: "time field", icon: ChevronDown },
+  { type: "RangeCalendar", label: "range calendar", icon: CalendarDays },
 ] as const;
 
 const overlaysComp = [
-  { tag: "Dialog", label: "dialog", icon: AppWindowMac },
-  { tag: "Modal", label: "modal", icon: InspectionPanel },
-  { tag: "Popover", label: "popover", icon: AppWindowMac },
-  { tag: "Tooltip", label: "tooltip", icon: MessageSquare },
+  { type: "Dialog", label: "dialog", icon: AppWindowMac },
+  { type: "Modal", label: "modal", icon: InspectionPanel },
+  { type: "Popover", label: "popover", icon: AppWindowMac },
+  { type: "Tooltip", label: "tooltip", icon: MessageSquare },
 ] as const;
 
 // 카테고리 설정 (레이블 및 설명)
@@ -169,18 +169,18 @@ const ComponentItem = ({
   count = 0,
 }: {
   component: {
-    tag: string;
+    type: string;
     label: string;
     icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   };
-  onAdd: (tag: string, parentId?: string) => void;
+  onAdd: (type: string, parentId?: string) => void;
   selectedElementId?: string | null;
   isRecent?: boolean;
   count?: number;
 }) => {
   const handleClick = useCallback(() => {
-    onAdd(component.tag, selectedElementId || undefined);
-  }, [component.tag, onAdd, selectedElementId]);
+    onAdd(component.type, selectedElementId || undefined);
+  }, [component.type, onAdd, selectedElementId]);
 
   return (
     <button
@@ -230,9 +230,9 @@ const ComponentList = memo(
 
     // 이벤트 핸들러를 메모이제이션
     const handleComponentAdd = useCallback(
-      (tag: string, parentId?: string) => {
-        handleAddElement(tag, parentId);
-        addRecentComponent(tag); // Recent에 추가
+      (type: string, parentId?: string) => {
+        handleAddElement(type, parentId);
+        addRecentComponent(type); // Recent에 추가
       },
       [handleAddElement, addRecentComponent],
     );
@@ -281,8 +281,8 @@ const ComponentList = memo(
 
       for (const comp of allComponents) {
         const i18nKey =
-          specialTagMap[comp.tag] ??
-          comp.tag[0].toLowerCase() + comp.tag.slice(1);
+          specialTagMap[comp.type] ??
+          comp.type[0].toLowerCase() + comp.type.slice(1);
         const labels: string[] = [];
         for (const locale of allLocales) {
           const label = (
@@ -290,7 +290,7 @@ const ComponentList = memo(
           )[i18nKey];
           if (label) labels.push(label.toLowerCase());
         }
-        map.set(comp.tag, labels);
+        map.set(comp.type, labels);
       }
       return map;
     }, [allComponents]);
@@ -303,9 +303,9 @@ const ComponentList = memo(
 
       const scored = allComponents.map((comp) => {
         const lowerLabel = comp.label.toLowerCase();
-        const lowerTag = comp.tag.toLowerCase();
+        const lowerTag = comp.type.toLowerCase();
         const lowerCategory = comp.category.toLowerCase();
-        const i18nLabels = i18nLabelsMap.get(comp.tag) ?? [];
+        const i18nLabels = i18nLabelsMap.get(comp.type) ?? [];
 
         let score = 0;
 
@@ -387,7 +387,7 @@ const ComponentList = memo(
     // Recent 컴포넌트 가져오기
     const recentComponents = useMemo(() => {
       return recentTags
-        .map((tag) => allComponents.find((comp) => comp.tag === tag))
+        .map((type) => allComponents.find((comp) => comp.type === type))
         .filter((comp): comp is (typeof allComponents)[0] => comp !== undefined)
         .slice(0, 8);
     }, [recentTags, allComponents]);
@@ -395,7 +395,7 @@ const ComponentList = memo(
     // Favorites 컴포넌트 가져오기
     const favoriteComponents = useMemo(() => {
       return favoriteTags
-        .map((tag) => allComponents.find((comp) => comp.tag === tag))
+        .map((type) => allComponents.find((comp) => comp.type === type))
         .filter(
           (comp): comp is (typeof allComponents)[0] => comp !== undefined,
         );
@@ -463,12 +463,12 @@ const ComponentList = memo(
               <div className="list-group" role="list">
                 {recentComponents.map((component) => (
                   <ComponentItem
-                    key={component.tag}
+                    key={component.type}
                     component={component}
                     onAdd={handleComponentAdd}
                     selectedElementId={selectedElementId}
                     isRecent={true}
-                    count={getComponentCount(component.tag)}
+                    count={getComponentCount(component.type)}
                   />
                 ))}
               </div>
@@ -489,7 +489,7 @@ const ComponentList = memo(
               <div className="list-group" role="list">
                 {favoriteComponents.map((component) => (
                   <ComponentItem
-                    key={component.tag}
+                    key={component.type}
                     component={component}
                     onAdd={handleComponentAdd}
                     selectedElementId={selectedElementId}
@@ -520,7 +520,7 @@ const ComponentList = memo(
                   <div className="list-group" role="list">
                     {components.map((component) => (
                       <ComponentItem
-                        key={component.tag}
+                        key={component.type}
                         component={component}
                         onAdd={handleComponentAdd}
                         selectedElementId={selectedElementId}
@@ -548,7 +548,7 @@ const ComponentList = memo(
                   <div className="list-group" role="list">
                     {components.map((component) => (
                       <ComponentItem
-                        key={component.tag}
+                        key={component.type}
                         component={component}
                         onAdd={handleComponentAdd}
                         selectedElementId={selectedElementId}

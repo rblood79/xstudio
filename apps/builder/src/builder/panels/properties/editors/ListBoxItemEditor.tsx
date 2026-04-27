@@ -51,7 +51,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
   // Field 자식 요소들을 찾기
   const fieldChildren = useMemo(() => {
     return rawChildren
-      .filter((child) => child.tag === "Field")
+      .filter((child) => child.type === "Field")
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [rawChildren]);
 
@@ -127,7 +127,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
                   id: ElementUtils.generateId(),
                   customId: generateCustomId("Field", elements),
                   page_id: pageIdToUse,
-                  tag: "Field",
+                  type: "Field",
                   props: {
                     key: `field${fieldChildren.length + 1}`,
                     label: `Field ${fieldChildren.length + 1}`,
@@ -257,7 +257,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
                 id: ElementUtils.generateId(),
                 customId: generateCustomId("Field", elements),
                 page_id: pageIdToUse,
-                tag: "Field",
+                type: "Field",
                 props: {
                   key: "field1",
                   label: "Field 1",

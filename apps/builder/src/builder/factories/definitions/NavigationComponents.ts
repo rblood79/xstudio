@@ -25,9 +25,9 @@ export function createMenuDefinition(
   ];
 
   return {
-    tag: "Menu",
+    type: "Menu",
     parent: {
-      tag: "Menu",
+      type: "Menu",
       props: {
         "aria-label": "Menu",
         children: "Menu",
@@ -51,10 +51,10 @@ export function createMenuDefinition(
  * Nav 컴포넌트 정의
  *
  * CSS DOM 구조 대응:
- *   Nav (parent, tag="Nav")
- *     ├─ Link (tag="Link", children="Home", href="/")
- *     ├─ Link (tag="Link", children="About", href="/about")
- *     └─ Link (tag="Link", children="Contact", href="/contact")
+ *   Nav (parent, type="Nav")
+ *     ├─ Link (type="Link", children="Home", href="/")
+ *     ├─ Link (type="Link", children="About", href="/about")
+ *     └─ Link (type="Link", children="Contact", href="/contact")
  */
 export function createNavDefinition(
   context: ComponentCreationContext,
@@ -65,9 +65,9 @@ export function createNavDefinition(
 
 
   return {
-    tag: "Nav",
+    type: "Nav",
     parent: {
-      tag: "Nav",
+      type: "Nav",
       props: {
         label: "Navigation",
         style: {
@@ -79,7 +79,7 @@ export function createNavDefinition(
     },
     children: [
       {
-        tag: "Link",
+        type: "Link",
         props: {
           children: "Home",
           href: "/",
@@ -88,7 +88,7 @@ export function createNavDefinition(
         order_num: 1,
       },
       {
-        tag: "Link",
+        type: "Link",
         props: {
           children: "About",
           href: "/about",
@@ -97,7 +97,7 @@ export function createNavDefinition(
         order_num: 2,
       },
       {
-        tag: "Link",
+        type: "Link",
         props: {
           children: "Contact",
           href: "/contact",
@@ -113,7 +113,7 @@ export function createNavDefinition(
  * Pagination 컴포넌트 정의
  *
  * CSS DOM 구조 대응:
- *   Pagination (parent, tag="Pagination", flex row)
+ *   Pagination (parent, type="Pagination", flex row)
  *     ├─ Button ("←", Prev)
  *     ├─ Button ("1")
  *     ├─ Button ("2")
@@ -129,9 +129,9 @@ export function createPaginationDefinition(
 
 
   return {
-    tag: "Pagination",
+    type: "Pagination",
     parent: {
-      tag: "Pagination",
+      type: "Pagination",
       props: {
         totalPages: 5,
         currentPage: 1,
@@ -147,7 +147,7 @@ export function createPaginationDefinition(
     },
     children: [
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "←",
           variant: "secondary",
@@ -157,7 +157,7 @@ export function createPaginationDefinition(
         order_num: 1,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "1",
           variant: "accent",
@@ -166,7 +166,7 @@ export function createPaginationDefinition(
         order_num: 2,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "2",
           variant: "secondary",
@@ -176,7 +176,7 @@ export function createPaginationDefinition(
         order_num: 3,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "3",
           variant: "secondary",
@@ -186,7 +186,7 @@ export function createPaginationDefinition(
         order_num: 4,
       },
       {
-        tag: "Button",
+        type: "Button",
         props: {
           children: "→",
           variant: "secondary",
@@ -203,9 +203,9 @@ export function createPaginationDefinition(
  * Disclosure 컴포넌트 정의
  *
  * CSS DOM 구조 대응:
- *   Disclosure (parent, tag="Disclosure")
- *     ├─ DisclosureHeader (tag="DisclosureHeader", children="Section Title")
- *     └─ DisclosureContent (tag="DisclosureContent", children="Section content goes here.")
+ *   Disclosure (parent, type="Disclosure")
+ *     ├─ DisclosureHeader (type="DisclosureHeader", children="Section Title")
+ *     └─ DisclosureContent (type="DisclosureContent", children="Section content goes here.")
  */
 export function createDisclosureDefinition(
   context: ComponentCreationContext,
@@ -217,9 +217,9 @@ export function createDisclosureDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "Disclosure",
+    type: "Disclosure",
     parent: {
-      tag: "Disclosure",
+      type: "Disclosure",
       props: {
         style: {
           display: "block",
@@ -230,7 +230,7 @@ export function createDisclosureDefinition(
     },
     children: [
       {
-        tag: "DisclosureHeader",
+        type: "DisclosureHeader",
         props: {
           children: "Section Title",
           headingLevel: 3,
@@ -238,7 +238,7 @@ export function createDisclosureDefinition(
         order_num: 1,
       },
       {
-        tag: "DisclosureContent",
+        type: "DisclosureContent",
         props: {
           children: "Section content goes here.",
         } as ComponentElementProps,
@@ -252,13 +252,13 @@ export function createDisclosureDefinition(
  * DisclosureGroup 컴포넌트 정의
  *
  * CSS DOM 구조 대응 (3-level 중첩):
- *   DisclosureGroup (parent, tag="DisclosureGroup")
- *     ├─ Disclosure (tag="Disclosure", style: display block)
- *     │    ├─ DisclosureHeader (tag="DisclosureHeader", children="Section 1")
- *     │    └─ DisclosureContent (tag="DisclosureContent", children="Content 1")
- *     └─ Disclosure (tag="Disclosure", style: display block)
- *          ├─ DisclosureHeader (tag="DisclosureHeader", children="Section 2")
- *          └─ DisclosureContent (tag="DisclosureContent", children="Content 2")
+ *   DisclosureGroup (parent, type="DisclosureGroup")
+ *     ├─ Disclosure (type="Disclosure", style: display block)
+ *     │    ├─ DisclosureHeader (type="DisclosureHeader", children="Section 1")
+ *     │    └─ DisclosureContent (type="DisclosureContent", children="Content 1")
+ *     └─ Disclosure (type="Disclosure", style: display block)
+ *          ├─ DisclosureHeader (type="DisclosureHeader", children="Section 2")
+ *          └─ DisclosureContent (type="DisclosureContent", children="Content 2")
  *
  * ChildDefinition.children 재귀 필드로 3레벨 중첩 표현
  */
@@ -272,9 +272,9 @@ export function createDisclosureGroupDefinition(
   // ⭐ Layout/Slot System
 
   return {
-    tag: "DisclosureGroup",
+    type: "DisclosureGroup",
     parent: {
-      tag: "DisclosureGroup",
+      type: "DisclosureGroup",
       props: {
         style: {
           display: "block",
@@ -285,7 +285,7 @@ export function createDisclosureGroupDefinition(
     },
     children: [
       {
-        tag: "Disclosure",
+        type: "Disclosure",
         props: {
           style: {
             display: "block",
@@ -294,7 +294,7 @@ export function createDisclosureGroupDefinition(
         order_num: 1,
         children: [
           {
-            tag: "DisclosureHeader",
+            type: "DisclosureHeader",
             props: {
               children: "Section 1",
               headingLevel: 3,
@@ -302,7 +302,7 @@ export function createDisclosureGroupDefinition(
             order_num: 1,
           },
           {
-            tag: "DisclosureContent",
+            type: "DisclosureContent",
             props: {
               children: "Content 1",
             } as ComponentElementProps,
@@ -311,7 +311,7 @@ export function createDisclosureGroupDefinition(
         ],
       },
       {
-        tag: "Disclosure",
+        type: "Disclosure",
         props: {
           style: {
             display: "block",
@@ -320,7 +320,7 @@ export function createDisclosureGroupDefinition(
         order_num: 2,
         children: [
           {
-            tag: "DisclosureHeader",
+            type: "DisclosureHeader",
             props: {
               children: "Section 2",
               headingLevel: 3,
@@ -328,7 +328,7 @@ export function createDisclosureGroupDefinition(
             order_num: 1,
           },
           {
-            tag: "DisclosureContent",
+            type: "DisclosureContent",
             props: {
               children: "Content 2",
             } as ComponentElementProps,

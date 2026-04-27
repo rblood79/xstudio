@@ -99,11 +99,11 @@ export const ElementRenderer = memo(function ElementRenderer({
   }, [adaptedElement]);
 
   // 컴포넌트 가져오기
-  const componentEntry = getComponent(adaptedElement.tag);
+  const componentEntry = getComponent(adaptedElement.type);
 
   // 등록되지 않은 컴포넌트는 div로 fallback
   if (!componentEntry) {
-    console.warn(`[ElementRenderer] Unknown component: ${adaptedElement.tag}`);
+    console.warn(`[ElementRenderer] Unknown component: ${adaptedElement.type}`);
     // 자식 Element가 있으면 재귀 렌더링, 없으면 props.children(텍스트 등) 사용
     const fallbackContent =
       children.length > 0
@@ -120,7 +120,7 @@ export const ElementRenderer = memo(function ElementRenderer({
     return (
       <div
         data-element-id={adaptedElement.id}
-        data-element-tag={adaptedElement.tag}
+        data-element-type={adaptedElement.type}
         style={adaptedElement.props?.style as React.CSSProperties}
         {...eventHandlers}
       >
@@ -147,8 +147,8 @@ export const ElementRenderer = memo(function ElementRenderer({
     "CardFooter",
   ]);
   if (
-    adaptedElement.tag === "Card" &&
-    children.some((c) => STRUCTURAL_CARD_TAGS.has(c.tag))
+    adaptedElement.type === "Card" &&
+    children.some((c) => STRUCTURAL_CARD_TAGS.has(c.type))
   ) {
     (restProps as Record<string, unknown>).structuralChildren = true;
   }

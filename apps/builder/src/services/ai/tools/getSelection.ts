@@ -37,7 +37,7 @@ export const getSelectionTool: ToolExecutor = {
         success: true,
         data: {
           id: element.id,
-          tag: element.tag,
+          type: element.type,
           props: element.props,
           parent_id: element.parent_id,
           page_id: element.page_id,

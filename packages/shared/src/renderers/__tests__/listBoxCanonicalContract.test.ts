@@ -121,7 +121,7 @@ describe("ListBox legacy selectedIndex migration (ADR-076)", () => {
 describe("ListBox 혼합 모드 감지 (ADR-076 Hard Constraint #3)", () => {
   it("columnMapping + items 공존 감지", () => {
     const columnMapping = { columns: ["col1"] };
-    const listBoxChildren = [{ id: "tpl", tag: "ListBoxItem" }];
+    const listBoxChildren = [{ id: "tpl", type: "ListBoxItem" }];
     const items: StoredListBoxItem[] = [{ id: "x", label: "X" }];
 
     const hasValidTemplate =
@@ -141,7 +141,7 @@ describe("ListBox 혼합 모드 감지 (ADR-076 Hard Constraint #3)", () => {
 
   it("items 만 있을 때는 Path 2 선택", () => {
     const columnMapping = undefined;
-    const listBoxChildren: Array<{ id: string; tag: string }> = [];
+    const listBoxChildren: Array<{ id: string; type: string }> = [];
     const items: StoredListBoxItem[] = [{ id: "x", label: "X" }];
 
     const hasValidTemplate =
@@ -157,7 +157,7 @@ describe("ListBox 혼합 모드 감지 (ADR-076 Hard Constraint #3)", () => {
 
   it("legacy ListBoxItem 자식만 있을 때는 Path 3 fallback", () => {
     const columnMapping = undefined;
-    const listBoxChildren = [{ id: "child1", tag: "ListBoxItem" }];
+    const listBoxChildren = [{ id: "child1", type: "ListBoxItem" }];
     const items: StoredListBoxItem[] | undefined = undefined;
 
     const hasValidTemplate =

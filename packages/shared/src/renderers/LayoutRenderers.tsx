@@ -120,11 +120,11 @@ export const renderTabs = (
   // TabPanel element는 TabPanels 아래에 존재, itemId로 items와 페어링.
   const tabPanelsElement = childrenMap
     .get(element.id)
-    ?.find((child) => child.tag === "TabPanels");
+    ?.find((child) => child.type === "TabPanels");
   const panelChildren = tabPanelsElement
     ? (childrenMap
         .get(tabPanelsElement.id)
-        ?.filter((child) => child.tag === "TabPanel") ?? [])
+        ?.filter((child) => child.type === "TabPanel") ?? [])
     : [];
   const findPanelForItem = (itemId: string) =>
     panelChildren.find(
@@ -234,10 +234,10 @@ export const renderCard = (
   // 새 구조 감지: CardHeader/CardContent/CardPreview/CardFooter 자식이 있는지 확인
   const hasStructuralChildren = allChildren.some(
     (c) =>
-      c.tag === "CardHeader" ||
-      c.tag === "CardContent" ||
-      c.tag === "CardPreview" ||
-      c.tag === "CardFooter",
+      c.type === "CardHeader" ||
+      c.type === "CardContent" ||
+      c.type === "CardPreview" ||
+      c.type === "CardFooter",
   );
 
   const eventHandlers =
@@ -279,7 +279,7 @@ export const renderCard = (
 
   // 이전 구조: Heading/Description은 title/description props로 처리
   const children = allChildren.filter(
-    (child) => child.tag !== "Heading" && child.tag !== "Description",
+    (child) => child.type !== "Heading" && child.type !== "Description",
   );
 
   return (
@@ -386,7 +386,7 @@ export const renderCardContent = (
     >
       {children.map((child) => {
         // Description: React Aria slot 컨텍스트 없이 직접 렌더링
-        if (child.tag === "Description") {
+        if (child.type === "Description") {
           const text =
             typeof child.props?.children === "string"
               ? child.props.children
@@ -701,7 +701,7 @@ export const renderProgressBar = (
   const { childrenMap } = context;
 
   // Child element에서 label 읽기 (compositional 패턴)
-  const labelEl = childrenMap.get(element.id)?.find((c) => c.tag === "Label");
+  const labelEl = childrenMap.get(element.id)?.find((c) => c.type === "Label");
   const label = labelEl
     ? String(labelEl.props?.children || "")
     : String(element.props.label || "");
@@ -758,7 +758,7 @@ export const renderMeter = (
   // Child element에서 label 읽기 (compositional 패턴)
   const meterLabelEl = childrenMap
     .get(element.id)
-    ?.find((c) => c.tag === "Label");
+    ?.find((c) => c.type === "Label");
   const meterLabel = meterLabelEl
     ? String(meterLabelEl.props?.children || "")
     : String(element.props.label || "");
@@ -936,7 +936,7 @@ export const renderBreadcrumbs = (
     !("type" in (dataBinding as object));
 
   const breadcrumbChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "Breadcrumb",
+    (child) => child.type === "Breadcrumb",
   );
 
   return (
@@ -1560,7 +1560,7 @@ export const renderDisclosure = (
   const children = context.childrenMap.get(element.id) ?? [];
 
   const headerEl = children.find(
-    (c) => c.tag === "DisclosureHeader" || c.tag === "Heading",
+    (c) => c.type === "DisclosureHeader" || c.type === "Heading",
   );
 
   const title = headerEl
@@ -1572,7 +1572,7 @@ export const renderDisclosure = (
     : String(element.props.title || "Section");
 
   const contentChildren = children.filter(
-    (c) => c.tag !== "DisclosureHeader" && c.tag !== "Heading",
+    (c) => c.type !== "DisclosureHeader" && c.type !== "Heading",
   );
 
   return (
@@ -1666,7 +1666,7 @@ export const renderColorSwatchPicker = (
   context: RenderContext,
 ): React.ReactNode => {
   const swatchChildren = (context.childrenMap.get(element.id) ?? []).filter(
-    (child) => child.tag === "ColorSwatch",
+    (child) => child.type === "ColorSwatch",
   );
 
   return (

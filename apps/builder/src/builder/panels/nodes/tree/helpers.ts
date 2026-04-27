@@ -28,7 +28,7 @@ export type TreeItem = {
   children: TreeItem[];
 };
 
-export type WithTag = { tag: string };
+export type WithTag = { type: string };
 export type WithProps = { props: ElementProps };
 
 // ============================================
@@ -56,13 +56,13 @@ export const hasChildren = <T extends { id: string; parent_id?: string | null }>
 };
 
 /**
- * Type guard: 객체가 tag 프로퍼티를 가지고 있는지 확인
+ * Type guard: 객체가 type 프로퍼티를 가지고 있는지 확인
  */
 export const hasTag = (x: unknown): x is WithTag =>
   typeof x === "object" &&
   x !== null &&
-  "tag" in x &&
-  typeof (x as Record<string, unknown>)["tag"] === "string";
+  "type" in x &&
+  typeof (x as Record<string, unknown>)["type"] === "string";
 
 /**
  * Type guard: 객체가 props 프로퍼티를 가지고 있는지 확인

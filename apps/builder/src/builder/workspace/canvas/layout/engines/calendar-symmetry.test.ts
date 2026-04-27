@@ -14,7 +14,7 @@ import { calculateContentHeight } from "./utils";
 function makeHeader(parentId: string): Element {
   return {
     id: `${parentId}-hdr`,
-    tag: "CalendarHeader",
+    type: "CalendarHeader",
     props: { size: "md", children: "2026년 4월" },
     parent_id: parentId,
     order_num: 1,
@@ -24,7 +24,7 @@ function makeHeader(parentId: string): Element {
 function makeGrid(parentId: string): Element {
   return {
     id: `${parentId}-grid`,
-    tag: "CalendarGrid",
+    type: "CalendarGrid",
     props: {
       size: "md",
       defaultToday: true,
@@ -37,10 +37,10 @@ function makeGrid(parentId: string): Element {
   };
 }
 
-function makeCalendarLike(tag: "Calendar" | "RangeCalendar"): Element {
+function makeCalendarLike(type: "Calendar" | "RangeCalendar"): Element {
   return {
-    id: `${tag.toLowerCase()}-root`,
-    tag,
+    id: `${type.toLowerCase()}-root`,
+    type,
     props: { size: "md", variant: "default" },
     parent_id: null,
     order_num: 0,

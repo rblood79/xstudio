@@ -48,13 +48,13 @@ const CONTAINER_STYLES_FALLBACK_KEYS = [
  *
  * TokenRef 값 (`{spacing.xs}` 등) 은 `resolveToken` 으로 number/string 변환 후 반환.
  *
- * @param tag lowercase tag (예: "listbox", "combobox")
+ * @param type lowercase type (예: "listbox", "combobox")
  * @param parentStyle 사용자/factory 편집 적용된 parent style
  * @param specMap optional — 미주입 시 packages/specs 정본 map 사용. builder 는
  *   alias merged map 주입.
  */
 export function resolveContainerStylesFallback(
-  tag: string,
+  type: string,
   parentStyle: Record<string, unknown>,
   specMap: ReadonlyMap<
     string,
@@ -62,7 +62,7 @@ export function resolveContainerStylesFallback(
     ComponentSpec<any>
   > = LOWERCASE_TAG_SPEC_MAP,
 ): Record<string, unknown> {
-  const spec = specMap.get(tag);
+  const spec = specMap.get(type);
   const cs = spec?.containerStyles as Record<string, unknown> | undefined;
   if (!cs) return {};
 

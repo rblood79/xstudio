@@ -51,7 +51,7 @@ export function resolveLayoutForPage(
   );
 
   // Slot 정보 추출
-  const slots = layoutElements.filter((el) => el.tag === "Slot");
+  const slots = layoutElements.filter((el) => el.type === "Slot");
 
   // Page elements를 slot_name별로 그룹화
   const slotContents = groupElementsBySlot(pageElements, slots);
@@ -203,7 +203,7 @@ function buildResolvedElement(
   allPageElements: Element[],
 ): ResolvedElement {
   // Slot인 경우: Page elements로 교체
-  if (element.tag === "Slot") {
+  if (element.type === "Slot") {
     const slotName = (element.props as { name?: string })?.name || "unnamed";
     const content = slotContents.get(slotName);
 
@@ -319,7 +319,7 @@ export function isPageElement(element: Element): boolean {
  * Slot element 여부 확인
  */
 export function isSlotElement(element: Element): boolean {
-  return element.tag === "Slot";
+  return element.type === "Slot";
 }
 
 /**

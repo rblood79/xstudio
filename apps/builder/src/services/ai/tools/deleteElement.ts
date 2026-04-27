@@ -33,7 +33,7 @@ export const deleteElementTool: ToolExecutor = {
       }
 
       // body 요소 보호
-      if (element.tag === 'body') {
+      if (element.type === 'body') {
         return { success: false, error: 'body 요소는 삭제할 수 없습니다.' };
       }
 
@@ -43,7 +43,7 @@ export const deleteElementTool: ToolExecutor = {
         success: true,
         data: {
           deletedElementId: targetId,
-          tag: element.tag,
+          type: element.type,
         },
         affectedElementIds: [targetId],
       };

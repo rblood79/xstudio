@@ -32,9 +32,9 @@ export function createSelectDefinition(
   ];
 
   return {
-    tag: "Select",
+    type: "Select",
     parent: {
-      tag: "Select",
+      type: "Select",
       props: {
         label: "Select",
         name: "",
@@ -55,7 +55,7 @@ export function createSelectDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Select",
           style: {
@@ -67,7 +67,7 @@ export function createSelectDefinition(
         order_num: 0,
       },
       {
-        tag: "SelectTrigger",
+        type: "SelectTrigger",
         props: {
           style: {
             width: "100%",
@@ -76,7 +76,7 @@ export function createSelectDefinition(
         order_num: 1,
         children: [
           {
-            tag: "SelectValue",
+            type: "SelectValue",
             props: {
               placeholder: "Choose an option...",
               style: { flex: 1 },
@@ -84,7 +84,7 @@ export function createSelectDefinition(
             order_num: 0,
           },
           {
-            tag: "SelectIcon",
+            type: "SelectIcon",
             props: {
               children: "",
               style: { width: 18, height: 18, flexShrink: 0 },
@@ -121,9 +121,9 @@ export function createComboBoxDefinition(
   ];
 
   return {
-    tag: "ComboBox",
+    type: "ComboBox",
     parent: {
-      tag: "ComboBox",
+      type: "ComboBox",
       props: {
         label: "Combo Box",
         name: "",
@@ -146,7 +146,7 @@ export function createComboBoxDefinition(
     },
     children: [
       {
-        tag: "Label",
+        type: "Label",
         props: {
           children: "Combo Box",
           style: {
@@ -158,7 +158,7 @@ export function createComboBoxDefinition(
         order_num: 0,
       },
       {
-        tag: "ComboBoxWrapper",
+        type: "ComboBoxWrapper",
         props: {
           style: {
             width: "100%",
@@ -167,7 +167,7 @@ export function createComboBoxDefinition(
         order_num: 1,
         children: [
           {
-            tag: "ComboBoxInput",
+            type: "ComboBoxInput",
             props: {
               children: "",
               placeholder: "Type or select...",
@@ -176,7 +176,7 @@ export function createComboBoxDefinition(
             order_num: 0,
           },
           {
-            tag: "ComboBoxTrigger",
+            type: "ComboBoxTrigger",
             props: {
               children: "",
               style: { width: 18, height: 18, flexShrink: 0 },
@@ -228,9 +228,9 @@ export function createListBoxDefinition(
   ];
 
   return {
-    tag: "ListBox",
+    type: "ListBox",
     parent: {
-      tag: "ListBox",
+      type: "ListBox",
       props: {
         orientation: "vertical",
         selectionMode: "single",
@@ -288,9 +288,9 @@ export function createGridListDefinition(
   ];
 
   return {
-    tag: "GridList",
+    type: "GridList",
     parent: {
-      tag: "GridList",
+      type: "GridList",
       props: {
         layout: "stack",
         columns: 2,
@@ -319,9 +319,9 @@ export function createListDefinition(
 
 
   return {
-    tag: "List",
+    type: "List",
     parent: {
-      tag: "List",
+      type: "List",
       props: {
         style: {
           display: "flex",
@@ -334,21 +334,21 @@ export function createListDefinition(
     },
     children: [
       {
-        tag: "ListItem",
+        type: "ListItem",
         props: {
           children: "Item 1",
         } as ComponentElementProps,
         order_num: 1,
       },
       {
-        tag: "ListItem",
+        type: "ListItem",
         props: {
           children: "Item 2",
         } as ComponentElementProps,
         order_num: 2,
       },
       {
-        tag: "ListItem",
+        type: "ListItem",
         props: {
           children: "Item 3",
         } as ComponentElementProps,

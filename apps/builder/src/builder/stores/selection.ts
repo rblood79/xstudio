@@ -39,7 +39,7 @@ export interface SelectionState {
 
 // 다른 슬라이스(ElementsState)에서 필요한 상태
 interface RequiredElementsState {
-    elementsMap: Map<string, { id: string; tag: string; parent_id?: string | null }>;
+    elementsMap: Map<string, { id: string; type: string; parent_id?: string | null }>;
     childrenMap: Map<string, Array<{ id: string }>>;
 }
 
@@ -165,7 +165,7 @@ export const createSelectionSlice: StateCreator<CombinedSelectionState, [], [], 
         const parentElement = parentId ? elementsMap.get(parentId) : null;
 
         // body 직계 자식이면 루트로, 아니면 부모로 이동
-        const newContextId = parentElement?.tag === 'body' ? null : (parentId ?? null);
+        const newContextId = parentElement?.type === 'body' ? null : (parentId ?? null);
 
         // 빠져나온 컨테이너를 선택 상태로
         set({

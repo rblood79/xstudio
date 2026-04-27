@@ -36,11 +36,11 @@ const ModifiedSectionsWrapper = memo(function ModifiedSectionsWrapper() {
 });
 
 const AllSections = memo(function AllSections() {
-  const tag = useStore((s) => {
+  const type = useStore((s) => {
     const id = s.selectedElementId;
-    return id ? (s.elementsMap.get(id)?.tag ?? null) : null;
+    return id ? (s.elementsMap.get(id)?.type ?? null) : null;
   });
-  const hasSpec = tag != null && tag !== "";
+  const hasSpec = type != null && type !== "";
 
   return (
     <>

@@ -211,7 +211,7 @@ export function extractComputedStyleAsync(
 export interface ElementSelectionBundle {
   elementId: string;
   rect: DOMRect;
-  tag: string;
+  type: string;
   props: Record<string, unknown>;
   // Phase 6.2: computedStyle은 별도 메시지로 지연 전송
   // computedStyle?: Record<string, string>;
@@ -222,19 +222,19 @@ export interface ElementSelectionBundle {
  *
  * @param elementId - 요소 ID
  * @param element - DOM 요소
- * @param tag - 컴포넌트 태그
+ * @param type - 컴포넌트 태그
  * @param props - 요소 props
  */
 export function createSelectionBundle(
   elementId: string,
   element: HTMLElement,
-  tag: string,
+  type: string,
   props: Record<string, unknown>,
 ): ElementSelectionBundle {
   return {
     elementId,
     rect: element.getBoundingClientRect(),
-    tag,
+    type,
     props,
   };
 }

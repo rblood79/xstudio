@@ -36,11 +36,11 @@ const ListBoxPropertyEditor = memo(function ListBoxPropertyEditor(
   // 자식 ListBoxItem 중 하나라도 Field 자식 보유 → 템플릿 모드
   const hasTemplateMode = useStore((state) => {
     const children = state.childrenMap.get(elementId) ?? [];
-    const listBoxItems = children.filter((c) => c.tag === "ListBoxItem");
+    const listBoxItems = children.filter((c) => c.type === "ListBoxItem");
     if (listBoxItems.length === 0) return false;
     for (const lbi of listBoxItems) {
       const subs = state.childrenMap.get(lbi.id) ?? [];
-      if (subs.some((s) => s.tag === "Field")) return true;
+      if (subs.some((s) => s.type === "Field")) return true;
     }
     return false;
   });

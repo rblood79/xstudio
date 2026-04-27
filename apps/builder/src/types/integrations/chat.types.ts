@@ -4,9 +4,9 @@
  * Defines types for the chat-based design interface
  */
 
-export type MessageRole = 'user' | 'assistant' | 'system' | 'tool';
+export type MessageRole = "user" | "assistant" | "system" | "tool";
 
-export type MessageStatus = 'pending' | 'streaming' | 'complete' | 'error';
+export type MessageStatus = "pending" | "streaming" | "complete" | "error";
 
 export interface ChatMessage {
   id: string;
@@ -31,12 +31,12 @@ export interface ToolCallInfo {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
-  status: 'pending' | 'running' | 'success' | 'error';
+  status: "pending" | "running" | "success" | "error";
   result?: unknown;
   error?: string;
 }
 
-export type IntentAction = 'create' | 'modify' | 'delete' | 'style' | 'query';
+export type IntentAction = "create" | "modify" | "delete" | "style" | "query";
 
 export interface ComponentIntent {
   action: IntentAction;
@@ -58,7 +58,7 @@ export interface BuilderContext {
   selectedElementId?: string;
   elements: Array<{
     id: string;
-    tag: string;
+    type: string;
     props: Record<string, unknown>;
     parent_id: string | null;
   }>;
@@ -83,8 +83,17 @@ export interface ConversationState {
 
   // Agent Loop 액션
   setAgentRunning: (running: boolean) => void;
-  addToolMessage: (toolCallId: string, toolName: string, result: unknown) => void;
-  updateToolCallStatus: (toolCallId: string, status: ToolCallInfo['status'], result?: unknown, error?: string) => void;
+  addToolMessage: (
+    toolCallId: string,
+    toolName: string,
+    result: unknown,
+  ) => void;
+  updateToolCallStatus: (
+    toolCallId: string,
+    status: ToolCallInfo["status"],
+    result?: unknown,
+    error?: string,
+  ) => void;
   incrementTurn: () => void;
   appendToLastMessage: (delta: string) => void;
 }

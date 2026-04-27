@@ -95,11 +95,11 @@ const specEntries: Array<[string, ComponentSpec<Record<string, unknown>>]> = [];
  * 등록 후 인덱스가 이미 빌드된 상태면 재빌드를 예약한다.
  */
 export function registerPropagationSpec<P = Record<string, unknown>>(
-  tag: string,
+  type: string,
   spec: ComponentSpec<P>,
 ): void {
   if (!spec.propagation) return;
-  specEntries.push([tag, spec as ComponentSpec<Record<string, unknown>>]);
+  specEntries.push([type, spec as ComponentSpec<Record<string, unknown>>]);
   // 이미 빌드된 인덱스가 있으면 무효화하여 다음 조회 시 재빌드
   if (forwardIndex) {
     forwardIndex = null;
@@ -115,9 +115,9 @@ function ensureBuilt(): void {
   forwardIndex = new Map();
   reverseIndex = new Map();
 
-  for (const [tag, spec] of specEntries) {
+  for (const [type, spec] of specEntries) {
     if (!spec.propagation) continue;
-    const key = tag.toLowerCase();
+    const key = type.toLowerCase();
     forwardIndex.set(key, spec.propagation.rules);
 
     for (const rule of spec.propagation.rules) {

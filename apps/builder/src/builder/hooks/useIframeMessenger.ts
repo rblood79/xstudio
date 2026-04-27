@@ -468,7 +468,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         type: "ELEMENT_SELECTED",
         elementId,
         payload: {
-          tag: element.tag,
+          type: element.type,
           props: props || element.props,
           source: "builder",
         },
@@ -870,7 +870,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
               type: "ELEMENT_SELECTED",
               elementId: event.data.elementId,
               payload: {
-                tag: element.tag,
+                type: element.type,
                 props: element.props,
                 source: "builder",
               },

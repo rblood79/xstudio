@@ -13,7 +13,7 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
           "el-spec-only",
           {
             id: "el-spec-only",
-            tag: "ListBox",
+            type: "ListBox",
             props: { size: "md", style: {} },
           } as any,
         ],
@@ -21,7 +21,7 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
           "el-inline-wins",
           {
             id: "el-inline-wins",
-            tag: "ListBox",
+            type: "ListBox",
             props: {
               size: "md",
               style: { backgroundColor: "#ABCDEF", borderRadius: "12px" },
@@ -32,7 +32,7 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
           "el-fills-color",
           {
             id: "el-fills-color",
-            tag: "ListBox",
+            type: "ListBox",
             fills: [
               {
                 type: "color",

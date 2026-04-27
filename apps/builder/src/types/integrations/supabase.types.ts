@@ -121,7 +121,7 @@ export interface Database {
             elements: {
                 Row: {
                     id: string;
-                    tag: string;
+                    type: string;
                     props: ElementProps;
                     page_id: string;
                     parent_id?: string | null;

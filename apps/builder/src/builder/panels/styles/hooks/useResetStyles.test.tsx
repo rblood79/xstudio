@@ -23,25 +23,22 @@ import type { Element } from "../../../../types/core/store.types";
 const LAYOUT_DIRTY_PROPS = ["display", "flexDirection", "gap"];
 const TRANSFORM_DIRTY_PROPS = ["width", "height", "minWidth", "maxWidth"];
 
-function makeElement(
-  id: string,
-  props: Record<string, unknown>,
-): Element {
+function makeElement(id: string, props: Record<string, unknown>): Element {
   return {
     id,
-    tag: "TagGroup",
+    type: "TagGroup",
     props,
   };
 }
 
 function makeTaggedElement(
   id: string,
-  tag: string,
+  type: string,
   props: Record<string, unknown>,
 ): Element {
   return {
     id,
-    tag,
+    type,
     props,
   };
 }
@@ -127,9 +124,11 @@ describe("useResetStyles — spec preset dirty regression", () => {
 
     expect(dirty.current).toBe(true);
     expect(
-      (useStore.getState().elementsMap.get("taggroup-1")?.props?.style as {
-        gap?: number;
-      })?.gap,
+      (
+        useStore.getState().elementsMap.get("taggroup-1")?.props?.style as {
+          gap?: number;
+        }
+      )?.gap,
     ).toBe(12);
   });
 
@@ -150,9 +149,8 @@ describe("useResetStyles — spec preset dirty regression", () => {
       resetStyles.current(["gap"]);
     });
 
-    const style = useStore.getState().elementsMap.get("taggroup-1")?.props?.style as
-      | Record<string, unknown>
-      | undefined;
+    const style = useStore.getState().elementsMap.get("taggroup-1")?.props
+      ?.style as Record<string, unknown> | undefined;
 
     expect(style?.gap).toBeUndefined();
     expect(dirty.current).toBe(false);
@@ -166,18 +164,21 @@ describe("useResetStyles — default props false dirty audit", () => {
   const originalState = useStore.getState();
 
   const cases = [
-    { tag: "Checkbox", properties: ["display", "flexDirection"] },
-    { tag: "Radio", properties: ["display", "flexDirection"] },
-    { tag: "Slider", properties: ["height", "width", "maxWidth"] },
-    { tag: "Switch", properties: ["display", "flexDirection"] },
-    { tag: "Card", properties: ["gap", "padding", "borderWidth"] },
-    { tag: "Label", properties: ["height", "fontSize", "fontWeight", "width"] },
-    { tag: "Form", properties: ["display", "flexDirection", "gap"] },
-    { tag: "NumberField", properties: ["display"] },
-    { tag: "ColorPicker", properties: ["display", "flexDirection", "gap"] },
-    { tag: "ColorSwatch", properties: ["display", "borderWidth"] },
+    { type: "Checkbox", properties: ["display", "flexDirection"] },
+    { type: "Radio", properties: ["display", "flexDirection"] },
+    { type: "Slider", properties: ["height", "width", "maxWidth"] },
+    { type: "Switch", properties: ["display", "flexDirection"] },
+    { type: "Card", properties: ["gap", "padding", "borderWidth"] },
     {
-      tag: "DropZone",
+      type: "Label",
+      properties: ["height", "fontSize", "fontWeight", "width"],
+    },
+    { type: "Form", properties: ["display", "flexDirection", "gap"] },
+    { type: "NumberField", properties: ["display"] },
+    { type: "ColorPicker", properties: ["display", "flexDirection", "gap"] },
+    { type: "ColorSwatch", properties: ["display", "borderWidth"] },
+    {
+      type: "DropZone",
       properties: [
         "display",
         "flexDirection",
@@ -186,8 +187,8 @@ describe("useResetStyles — default props false dirty audit", () => {
         "borderWidth",
       ],
     },
-    { tag: "MaskedFrame", properties: ["height", "width", "borderRadius"] },
-    { tag: "Skeleton", properties: ["width", "height", "borderRadius"] },
+    { type: "MaskedFrame", properties: ["height", "width", "borderRadius"] },
+    { type: "Skeleton", properties: ["width", "height", "borderRadius"] },
   ] as const;
 
   beforeEach(() => {
@@ -209,12 +210,12 @@ describe("useResetStyles — default props false dirty audit", () => {
   });
 
   it.each(cases)(
-    "신규 $tag 는 기본 props baseline 에서 dirty=false 여야 한다",
-    ({ tag, properties }) => {
+    "신규 $type 는 기본 props baseline 에서 dirty=false 여야 한다",
+    ({ type, properties }) => {
       const element = makeTaggedElement(
-        `${tag.toLowerCase()}-1`,
-        tag,
-        getDefaultProps(tag),
+        `${type.toLowerCase()}-1`,
+        type,
+        getDefaultProps(type),
       );
 
       useStore.setState({

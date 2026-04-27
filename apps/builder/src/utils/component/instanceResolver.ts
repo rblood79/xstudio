@@ -183,7 +183,7 @@ export function resolveInstanceElement(
 
   return {
     ...instance,
-    tag: master.tag,
+    type: master.type,
     props,
   };
 }

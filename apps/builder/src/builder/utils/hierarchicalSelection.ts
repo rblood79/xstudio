@@ -9,7 +9,7 @@
 
 interface MinimalElement {
   id: string;
-  tag: string;
+  type: string;
   parent_id?: string | null;
 }
 
@@ -38,7 +38,7 @@ export function resolveClickTarget(
       const parentId = element.parent_id;
       if (!parentId) return null;
       const parentElement = elementsMap.get(parentId);
-      if (parentElement?.tag === 'body') return current;
+      if (parentElement?.type === 'body') return current;
     } else {
       // 특정 컨테이너 내부: parent_id가 editingContextId인 요소를 찾는다
       if (element.parent_id === editingContextId) return current;
@@ -98,7 +98,7 @@ export function resolveEditingContextForTreeSelection(
   if (!parentId) return null;
 
   const parentElement = elementsMap.get(parentId);
-  if (parentElement?.tag === 'body') return null;
+  if (parentElement?.type === 'body') return null;
 
   return parentId;
 }

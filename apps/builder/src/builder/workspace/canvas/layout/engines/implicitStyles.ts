@@ -91,21 +91,21 @@ export function formatProgressValue(
 //   모듈로 hoist. utils.ts 에서도 defaultWidth/defaultHeight lookup 에 재사용.
 
 // ADR-086 P2: spec.sizes 기반 필드 직접 소비 헬퍼 (Record 전수 폐쇄용).
-//   `TAG_SPEC_MAP[tag].sizes[sizeName]` lookup 을 정규화 + default size fallback.
+//   `TAG_SPEC_MAP[type].sizes[sizeName]` lookup 을 정규화 + default size fallback.
 function specSizeField<K extends keyof SizeSpec>(
-  tag: string,
+  type: string,
   sizeName: string,
   field: K,
 ): SizeSpec[K] | undefined {
-  const spec = LOWERCASE_TAG_SPEC_MAP.get(tag);
+  const spec = LOWERCASE_TAG_SPEC_MAP.get(type);
   if (!spec) return undefined;
   const size = spec.sizes[sizeName] ?? spec.sizes[spec.defaultSize];
   return size?.[field];
 }
 
 /** `spec.sizes[size].fontSize` TokenRef → px number resolve. 실패 시 undefined. */
-function specSizeFontSize(tag: string, sizeName: string): number | undefined {
-  const fs = specSizeField(tag, sizeName, "fontSize");
+function specSizeFontSize(type: string, sizeName: string): number | undefined {
+  const fs = specSizeField(type, sizeName, "fontSize");
   if (fs == null) return undefined;
   if (typeof fs === "number") return fs;
   const resolved = resolveToken(fs);
@@ -113,8 +113,8 @@ function specSizeFontSize(tag: string, sizeName: string): number | undefined {
 }
 
 /** `spec.sizes[size].lineHeight` TokenRef → px number resolve. 실패 시 undefined. */
-function specSizeLineHeight(tag: string, sizeName: string): number | undefined {
-  const lh = specSizeField(tag, sizeName, "lineHeight");
+function specSizeLineHeight(type: string, sizeName: string): number | undefined {
+  const lh = specSizeField(type, sizeName, "lineHeight");
   if (lh == null) return undefined;
   if (typeof lh === "number") return lh;
   const resolved = resolveToken(lh);
@@ -125,16 +125,16 @@ function specSizeLineHeight(tag: string, sizeName: string): number | undefined {
  * ADR-108 P0: packages/specs `resolveContainerStylesFallback` wrapper.
  *
  * builder 측 `LOWERCASE_TAG_SPEC_MAP` (packages/specs 102 정본 + 8 alias 병합) 을
- * 주입하여 ComboBoxWrapper 등 alias tag 도 정본 spec 의 containerStyles 로 fallback.
+ * 주입하여 ComboBoxWrapper 등 alias type 도 정본 spec 의 containerStyles 로 fallback.
  * 테스트 (`resolveContainerStylesFallback.test.ts` / `tokenConsumerDrift.test.ts`) 는
  * 본 파일에서 export 된 wrapper 를 import — ADR-080 G1 계약 유지.
  */
 export function resolveContainerStylesFallback(
-  tag: string,
+  type: string,
   parentStyle: Record<string, unknown>,
 ): Record<string, unknown> {
   return _resolveContainerStylesFallback(
-    tag,
+    type,
     parentStyle,
     LOWERCASE_TAG_SPEC_MAP,
   );
@@ -285,7 +285,7 @@ function withParentStyle(el: Element, style: Record<string, unknown>): Element {
 function injectCollectionItemFontStyles(children: Element[]): Element[] {
   return children.map((child) => {
     const cs = (child.props?.style as Record<string, unknown>) || {};
-    if (child.tag === "Text") {
+    if (child.type === "Text") {
       return {
         ...child,
         props: {
@@ -299,7 +299,7 @@ function injectCollectionItemFontStyles(children: Element[]): Element[] {
         },
       };
     }
-    if (child.tag === "Description") {
+    if (child.type === "Description") {
       return {
         ...child,
         props: {
@@ -323,7 +323,7 @@ function injectSideLabelLabelAndWrapperStyles(
   return children.map((child) => {
     const cs = (child.props?.style || {}) as Record<string, unknown>;
 
-    if (child.tag === "Label") {
+    if (child.type === "Label") {
       return {
         ...child,
         props: {
@@ -338,7 +338,7 @@ function injectSideLabelLabelAndWrapperStyles(
       };
     }
 
-    if (!wrapperTags.has(child.tag)) return child;
+    if (!wrapperTags.has(child.type)) return child;
 
     return {
       ...child,
@@ -361,7 +361,7 @@ function injectSideLabelLabelAndContentStyles(
   return children.map((child) => {
     const cs = (child.props?.style || {}) as Record<string, unknown>;
 
-    if (child.tag === "Label") {
+    if (child.type === "Label") {
       return {
         ...child,
         props: {
@@ -376,7 +376,7 @@ function injectSideLabelLabelAndContentStyles(
       };
     }
 
-    if (child.tag === "FieldError" || child.tag === "Description") {
+    if (child.type === "FieldError" || child.type === "Description") {
       return {
         ...child,
         props: {
@@ -391,7 +391,7 @@ function injectSideLabelLabelAndContentStyles(
       };
     }
 
-    if (!contentTags.has(child.tag)) return child;
+    if (!contentTags.has(child.type)) return child;
 
     return {
       ...child,
@@ -444,9 +444,9 @@ function injectMatchedSideLabelContentStyles(
   contentTags: ReadonlySet<string>,
 ): Element[] {
   return children.map((child) => {
-    const childTag = child.tag ?? "";
+    const childTag = child.type ?? "";
     const matches = nested.some((n) =>
-      matchNestedSelector(n.selector, { tag: childTag }, true),
+      matchNestedSelector(n.selector, { type: childTag }, true),
     );
     if (!matches) return child;
     const [adapted] = injectSideLabelLabelAndContentStyles(
@@ -508,7 +508,7 @@ export function applyImplicitStyles(
   /** 현재 노드에 사용 가능한 너비 (px) — maxRows 행 시뮬레이션용 */
   _availableWidth?: number,
 ): ImplicitStyleResult {
-  const containerTag = (containerEl.tag ?? "").toLowerCase();
+  const containerTag = (containerEl.type ?? "").toLowerCase();
   // ADR-083 Phase 0: Spec.containerStyles fallback 공통 선주입 layer.
   //   Spec 미선언 태그 → resolveContainerStylesFallback 이 {} 반환 → 영향 없음.
   //   Spec 선언 태그 (ADR-078 ListBox / ADR-079 ListBoxItem 외 Phase 1~11 로 리프팅될
@@ -544,7 +544,7 @@ export function applyImplicitStyles(
   // CSS 구조: TagGroup(column) > Label + TagList(row wrap) > Tags
   // TagList가 있으면 column 통과, 없으면(레거시) row wrap으로 보정
   if (containerTag === "taggroup") {
-    const hasTagList = children.some((c) => c.tag === "TagList");
+    const hasTagList = children.some((c) => c.type === "TagList");
     const tagGroupVariant = resolveActiveContainerVariants(
       containerTag,
       containerProps,
@@ -553,7 +553,7 @@ export function applyImplicitStyles(
 
     // Compositional Label: whiteSpace nowrap 주입 (줄바꿈 방지)
     filteredChildren = children.map((child) => {
-      if (child.tag === "Label") {
+      if (child.type === "Label") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         return {
           ...child,
@@ -606,7 +606,7 @@ export function applyImplicitStyles(
       : undefined;
     const parentProps = parentEl?.props as Record<string, unknown> | undefined;
     const orientation = parentProps?.orientation as string | undefined;
-    const parentTag = (parentEl?.tag ?? "").toLowerCase();
+    const parentTag = (parentEl?.type ?? "").toLowerCase();
     const parentVariant =
       parentTag === "taggroup"
         ? resolveActiveContainerVariants(parentTag, parentProps)
@@ -760,9 +760,9 @@ export function applyImplicitStyles(
     const sideMode = hasResolvedSideLabelVariant(groupVariant.styles);
     // Label 필터링 + whiteSpace nowrap 주입
     filteredChildren = children
-      .filter((child) => (child.tag === "Label" ? hasLabel : true))
+      .filter((child) => (child.type === "Label" ? hasLabel : true))
       .map((child) => {
-        if (child.tag === "Label") {
+        if (child.type === "Label") {
           const cs = (child.props?.style || {}) as Record<string, unknown>;
           return {
             ...child,
@@ -856,10 +856,10 @@ export function applyImplicitStyles(
       density,
     );
 
-    const tabListEl = children.find((c) => c.tag === "TabList");
-    const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
+    const tabListEl = children.find((c) => c.type === "TabList");
+    const tabPanelsEl = children.find((c) => c.type === "TabPanels");
     // 직속 TabPanel (TabPanels 없는 flat 구조)
-    const directPanel = children.find((c) => c.tag === "TabPanel");
+    const directPanel = children.find((c) => c.type === "TabPanel");
 
     if (tabListEl) {
       // 새 구조 (TabList 존재): TabList에 고정 height 주입 → Taffy 레이아웃 포함
@@ -928,7 +928,7 @@ export function applyImplicitStyles(
       (tabsProps?.defaultSelectedKey as string | undefined);
 
     // 활성 TabPanel: itemId가 selectedKey와 매칭 (ADR-066). 없으면 첫 번째.
-    const panelItems = children.filter((c) => c.tag === "TabPanel");
+    const panelItems = children.filter((c) => c.type === "TabPanel");
     const activePanel = selectedKey
       ? (panelItems.find(
           (p) => (p.props as Record<string, unknown>)?.itemId === selectedKey,
@@ -959,7 +959,7 @@ export function applyImplicitStyles(
     // items 기반 가상 Tab element 생성 (store row 아님, 렌더 전용 ephemeral)
     filteredChildren = items.map((item, i) => ({
       id: `${tabsParent?.id ?? containerEl.id}:virtualTab:${item.id}`,
-      tag: "Tab",
+      type: "Tab",
       props: {
         title: item.title,
         tabId: item.id,
@@ -1001,7 +1001,7 @@ export function applyImplicitStyles(
       "SearchFieldWrapper",
     ]);
     filteredChildren = children.filter(
-      (c) => (c.tag === "Label" ? hasLabel : false) || WRAPPER_TAGS.has(c.tag),
+      (c) => (c.type === "Label" ? hasLabel : false) || WRAPPER_TAGS.has(c.type),
     );
 
     // Wrapper에 padding + gap 주입
@@ -1012,7 +1012,7 @@ export function applyImplicitStyles(
           ? "SearchFieldWrapper"
           : "ComboBoxWrapper";
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === wrapperChildTag) {
+      if (child.type === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         const sizeName = getDelegatedSize(containerEl, elementById);
         return {
@@ -1066,14 +1066,14 @@ export function applyImplicitStyles(
     const WRAPPER_TAGS = new Set(["ComboBoxWrapper"]);
     filteredChildren = children.filter(
       (c) =>
-        (c.tag === "Label" ? hasLabel : false) ||
-        WRAPPER_TAGS.has(c.tag) ||
-        c.tag === "FieldError",
+        (c.type === "Label" ? hasLabel : false) ||
+        WRAPPER_TAGS.has(c.type) ||
+        c.type === "FieldError",
     );
 
     // Wrapper에 padding + gap 주입 (ComboBox 분기와 동일)
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "ComboBoxWrapper") {
+      if (child.type === "ComboBoxWrapper") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         const sizeName = getDelegatedSize(containerEl, elementById);
         return {
@@ -1140,7 +1140,7 @@ export function applyImplicitStyles(
 
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "SelectValue") {
+      if (child.type === "SelectValue") {
         return {
           ...child,
           props: {
@@ -1161,8 +1161,8 @@ export function applyImplicitStyles(
         } as Element;
       }
       // ADR-102: SelectIcon — RAC 공식 미존재 composition 고유 D3 시각 element (chevron 아이콘).
-      //   BC HIGH (factory 직렬화 tag) → 정당화 유지. grandparent(Select) iconName 전파.
-      if (child.tag === "SelectIcon") {
+      //   BC HIGH (factory 직렬화 type) → 정당화 유지. grandparent(Select) iconName 전파.
+      if (child.type === "SelectIcon") {
         // Select → SelectTrigger → SelectIcon: 조부모(Select)의 iconName 전파
         const selectEl = elementById.get(containerEl.parent_id ?? "");
         const selectProps = selectEl?.props as
@@ -1217,7 +1217,7 @@ export function applyImplicitStyles(
 
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "ComboBoxInput") {
+      if (child.type === "ComboBoxInput") {
         const comboBoxEl = elementById.get(containerEl.parent_id ?? "");
         const comboBoxProps = comboBoxEl?.props as
           | Record<string, unknown>
@@ -1244,7 +1244,7 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "ComboBoxTrigger") {
+      if (child.type === "ComboBoxTrigger") {
         // ComboBox → ComboBoxWrapper → ComboBoxTrigger: 조부모(ComboBox)의 iconName 전파
         const comboBoxEl = elementById.get(containerEl.parent_id ?? "");
         const comboBoxProps = comboBoxEl?.props as
@@ -1290,9 +1290,9 @@ export function applyImplicitStyles(
     const hasLabel = !!containerProps?.label;
     filteredChildren = children.filter(
       (c) =>
-        (c.tag === "Label" ? hasLabel : false) ||
-        c.tag === "Input" ||
-        c.tag === "FieldError",
+        (c.type === "Label" ? hasLabel : false) ||
+        c.type === "Input" ||
+        c.type === "FieldError",
     );
 
     const tfSpec = LOWERCASE_TAG_SPEC_MAP.get(containerTag);
@@ -1344,14 +1344,14 @@ export function applyImplicitStyles(
 
     filteredChildren = children.filter(
       (c) =>
-        (c.tag === "Label" ? hasLabel : false) ||
-        c.tag === "DateInput" ||
-        c.tag === "FieldError",
+        (c.type === "Label" ? hasLabel : false) ||
+        c.type === "DateInput" ||
+        c.type === "FieldError",
     );
 
     // DateInput에 부모 props 주입 (Spec shapes에서 세그먼트 텍스트 생성용)
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "DateInput") {
+      if (child.type === "DateInput") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         return {
           ...child,
@@ -1419,7 +1419,7 @@ export function applyImplicitStyles(
 
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "SearchInput") {
+      if (child.type === "SearchInput") {
         const searchEl = elementById.get(containerEl.parent_id ?? "");
         const searchProps = searchEl?.props as
           | Record<string, unknown>
@@ -1446,7 +1446,7 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "SearchIcon" || child.tag === "SearchClearButton") {
+      if (child.type === "SearchIcon" || child.type === "SearchClearButton") {
         const iconSz =
           specSizeField("searchfieldwrapper", sizeName, "iconSize") ?? 18;
         return {
@@ -1491,8 +1491,8 @@ export function applyImplicitStyles(
 
     // Label/Output 필터
     filteredChildren = children.filter((c) => {
-      if (c.tag === "Label") return hasLabel;
-      if (c.tag === "ProgressBarValue" || c.tag === "MeterValue")
+      if (c.type === "Label") return hasLabel;
+      if (c.type === "ProgressBarValue" || c.type === "MeterValue")
         return showValueLabel;
       return true;
     });
@@ -1500,7 +1500,7 @@ export function applyImplicitStyles(
     // 자식에 gridArea 주입 — 부모 grid-template-areas 의 명명 영역 매핑.
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "Label") {
+      if (child.type === "Label") {
         const labelFontSize = specSizeFontSize(containerTag, sizeName) ?? 14;
         return {
           ...child,
@@ -1516,8 +1516,8 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "ProgressBarTrack" || child.tag === "MeterTrack") {
-        const trackTag = child.tag.toLowerCase();
+      if (child.type === "ProgressBarTrack" || child.type === "MeterTrack") {
+        const trackTag = child.type.toLowerCase();
         const barHeight = specSizeField(trackTag, sizeName, "height") ?? 8;
         return {
           ...child,
@@ -1533,7 +1533,7 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "ProgressBarValue" || child.tag === "MeterValue") {
+      if (child.type === "ProgressBarValue" || child.type === "MeterValue") {
         const valueFontSize = specSizeFontSize(containerTag, sizeName) ?? 14;
         const valueLineHeight =
           specSizeLineHeight(containerTag, sizeName) ?? 20;
@@ -1592,15 +1592,15 @@ export function applyImplicitStyles(
 
     // Label/Output 필터
     filteredChildren = children.filter((c) => {
-      if (c.tag === "Label") return hasLabel;
-      if (c.tag === "SliderOutput") return showValue;
+      if (c.type === "Label") return hasLabel;
+      if (c.type === "SliderOutput") return showValue;
       return true;
     });
 
     // Label: width:0 + flexGrow:1 = CSS grid 1fr 에뮬레이션
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "Label") {
+      if (child.type === "Label") {
         const labelFontSize = specSizeFontSize("slider", sizeName) ?? 14;
         return {
           ...child,
@@ -1618,7 +1618,7 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "SliderTrack") {
+      if (child.type === "SliderTrack") {
         // ADR-086 P2: layout height = thumbSize (thumb 수용용, visual trackHeight 와 다름).
         //   SliderSpec.sizes[size].indicator.thumbSize 가 SSOT (14/18/22/26).
         const trackHeight =
@@ -1640,7 +1640,7 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "SliderOutput") {
+      if (child.type === "SliderOutput") {
         const valueFontSize = specSizeFontSize("slider", sizeName) ?? 14;
         const valueLineHeight = specSizeLineHeight("slider", sizeName) ?? 20;
         return {
@@ -1695,7 +1695,7 @@ export function applyImplicitStyles(
 
     let thumbIdx = 0;
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag !== "SliderThumb") return child;
+      if (child.type !== "SliderThumb") return child;
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       const val = values[thumbIdx] ?? values[0] ?? 50;
       thumbIdx++;
@@ -1732,8 +1732,8 @@ export function applyImplicitStyles(
     const sideMode = hasResolvedSideLabelVariant(fieldVariant.styles);
     const hasLabel = !!containerProps?.label;
     filteredChildren = children.filter((c) => {
-      if (c.tag === "Label") return hasLabel;
-      return !POPOVER_CHILDREN_TAGS.has(c.tag);
+      if (c.type === "Label") return hasLabel;
+      return !POPOVER_CHILDREN_TAGS.has(c.type);
     });
 
     if (sideMode) {
@@ -1785,7 +1785,7 @@ export function applyImplicitStyles(
     // CalendarHeader/CalendarGrid 자식에 width: 100% + whiteSpace: nowrap 주입
     // whiteSpace: nowrap → ElementSprite 다중 줄 보정 로직 우회 (폰트 메트릭 기반 Y 이탈 방지)
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "CalendarHeader" || child.tag === "CalendarGrid") {
+      if (child.type === "CalendarHeader" || child.type === "CalendarGrid") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         return {
           ...child,
@@ -1872,7 +1872,7 @@ export function applyImplicitStyles(
 
         const syntheticLabel: Element = {
           id: `${containerEl.id}__synlabel`,
-          tag: "Label",
+          type: "Label",
           props: {
             children: labelText,
             style: {
@@ -1922,7 +1922,7 @@ export function applyImplicitStyles(
     // 자식 Heading/Description에 spec 기반 font 스타일 주입
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "Heading") {
+      if (child.type === "Heading") {
         return {
           ...child,
           props: {
@@ -1935,7 +1935,7 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-      if (child.tag === "Description") {
+      if (child.type === "Description") {
         return {
           ...child,
           props: {
@@ -1954,9 +1954,9 @@ export function applyImplicitStyles(
   }
 
   // ── Separator: size → margin 주입 (Taffy는 CSS data-size 못 읽음) ──
-  if (filteredChildren.some((c) => c.tag === "Separator" || c.tag === "Hr")) {
+  if (filteredChildren.some((c) => c.type === "Separator" || c.type === "Hr")) {
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag !== "Separator" && child.tag !== "Hr") return child;
+      if (child.type !== "Separator" && child.type !== "Hr") return child;
       const childProps = child.props as Record<string, unknown> | undefined;
       const childStyle = (childProps?.style || {}) as Record<string, unknown>;
       // 이미 인라인 margin이 있으면 스킵
@@ -1988,7 +1988,7 @@ export function applyImplicitStyles(
 
   if (parentNecessity && NECESSITY_INDICATOR_TAGS.has(containerTag)) {
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "Label") {
+      if (child.type === "Label") {
         const originalText =
           (child.props?.children as string) ||
           (child.props?.label as string) ||
@@ -2013,9 +2013,9 @@ export function applyImplicitStyles(
 
   // ── Label flexShrink 공통 주입 ────────────────────────────────────
   // flex row 전환 시 Label이 축소되지 않도록 flexShrink: 0 보장
-  if (filteredChildren.some((c) => c.tag === "Label")) {
+  if (filteredChildren.some((c) => c.type === "Label")) {
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag !== "Label") return child;
+      if (child.type !== "Label") return child;
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (cs.flexShrink == null) {
         return {

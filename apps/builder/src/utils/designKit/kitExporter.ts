@@ -168,7 +168,7 @@ function exportComponents(
 function elementToKitElement(el: Element): KitElement {
   return {
     localId: el.id, // 내보내기 시에는 원본 ID를 localId로 사용
-    tag: el.tag,
+    type: el.type,
     props: el.props as Record<string, unknown>,
     parentLocalId: el.parent_id ?? null,
     orderNum: el.order_num ?? 0,

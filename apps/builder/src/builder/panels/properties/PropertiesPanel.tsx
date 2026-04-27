@@ -173,7 +173,7 @@ const PropertyEditorWrapper = memo(
         if (changedCount === 0) return;
 
         // ADR-048: propagation 규칙 중 변경된 prop과 매칭되는 것이 있으면 자식도 업데이트
-        const rules = getPropagationRules(element.tag);
+        const rules = getPropagationRules(element.type);
         if (rules && rules.some((r) => r.parentProp in changedProps)) {
           const childUpdates = buildPropagationUpdates(
             element,
@@ -181,11 +181,11 @@ const PropertyEditorWrapper = memo(
             rules,
             state.childrenMap as Map<
               string,
-              { id: string; tag: string; props: Record<string, unknown> }[]
+              { id: string; type: string; props: Record<string, unknown> }[]
             >,
             state.elementsMap as Map<
               string,
-              { id: string; tag: string; props: Record<string, unknown> }
+              { id: string; type: string; props: Record<string, unknown> }
             >,
           );
 
@@ -833,7 +833,7 @@ function PropertiesPanelContent() {
       console.log("[Paste] Adding elements to store...");
       await Promise.all(
         newElements.map((element) => {
-          console.log("[Paste] Adding element:", element.id, element.tag);
+          console.log("[Paste] Adding element:", element.id, element.type);
           return addElement(element);
         }),
       );
@@ -974,7 +974,7 @@ function PropertiesPanelContent() {
         setSelectedElement(nextElementId, nextElement.props);
         console.log(
           `✅ [Tab] Navigated to element ${nextIndex + 1}/${selectedElementIds.length}:`,
-          nextElement.tag,
+          nextElement.type,
         );
       }
     },

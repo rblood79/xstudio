@@ -109,7 +109,7 @@ function ComponentMemoryItem({ info }: ComponentMemoryItemProps) {
   return (
     <div className="component-memory-item" data-level={level} role="listitem">
       <div className="component-memory-item-header">
-        <span className="component-tag">{info.tag}</span>
+        <span className="component-type">{info.type}</span>
         {info.customId && (
           <span className="component-customid">#{info.customId}</span>
         )}
