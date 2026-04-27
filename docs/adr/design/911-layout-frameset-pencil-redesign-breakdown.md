@@ -446,8 +446,11 @@ const handleDevMigrate = useCallback(async () => {
 | **B**  | `FramesTab.handleAddFrame/handleDeleteFrame/handleSelectFrame` → `frameActions` 위임 (functional 동등) | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
 | **C**  | read path canonical 전환 — `selectCanonicalDocument` + `useMemo`/`getState` 패턴                       | P2-a 잔여        | ✅ 2026-04-27 (PR pending)           |
 | **D**  | `FrameList` 분리 (FrameDetails / SlotList 는 D2/E 로 deferred)                                         | P2-b             | ✅ 2026-04-27 main land (`b391c42a`) |
-| **D2** | `FrameElementTree` 분리 — Layers 헤더 + tree 렌더 + placeholder                                        | P2-b 잔여        | ✅ 2026-04-27 (PR pending)           |
-| **E**  | `PageLayoutSelector` 재작성 + `usePresetApply` canonical mutation + dev migration trigger              | P2-c + P2-e      | 후속 세션                            |
+| **D2** | `FrameElementTree` 분리 — Layers 헤더 + tree 렌더 + placeholder                                        | P2-b 잔여        | ✅ 2026-04-27 main land (`604b11f3`) |
+| **E1** | `PageLayoutSelector` dual-mode read 전환 + `slotAndLayoutAdapter` description 보존                     | P2-c 부분        | ✅ 2026-04-27 (PR pending)           |
+| **E2** | `usePresetApply.ts` canonical mutation 전환                                                            | P2-c 잔여        | 후속 세션                            |
+| **E3** | dev migration trigger (handleDevMigrate) + Chrome MCP P1-c roundtrip                                   | P2-e             | 후속 세션                            |
+| **E4** | 1주 dual-mode + cutover (`VITE_FRAMES_TAB_CANONICAL=true` default 전환)                                | P2-f + P2-g      | 후속 세션                            |
 | **G**  | parallel-verify 25/25 + 1주 dual-mode + cutover                                                        | P2-f + P2-g      | 후속 세션                            |
 
 | Step       | 내용                                                                                                                      | 시간 | RED/GREEN 사이클                                                                                     |

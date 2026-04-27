@@ -197,6 +197,8 @@ export function convertLayoutToReusableFrame(
       type: "legacy-layout",
       layoutId: layout.id,
       slug: layout.slug ?? null,
+      // ADR-911 P2 PR-E1: PageLayoutSelector canonical mode 에서 description 표시 보존
+      description: layout.description ?? null,
     },
     children: rootElements.map((el) =>
       convertElementWithSlotHoisting(
