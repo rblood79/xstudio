@@ -138,6 +138,14 @@ In Progress — 2026-04-26 → 2026-04-27
   - 검증: `visibleFrameRoots.test.ts` 7/7 PASS (신규 케이스 2: type !=='body' 인 Slot 첫 매칭 시 silent skip / 같은 layout_id 의 다중 body element 첫 매칭만 등록) + canvas/ 광역 14 파일 181/181 PASS (회귀 0) + type-check 3/3 PASS
   - **Gate G3-δ (a) 충족** — frame body 가 root 진입 + 좌표 적용 + 시각화 evidence 확보. (b) DFS 자식 (slot) 시각화 + (c) Chrome MCP 사용자 시나리오 GREEN 은 P3-ε / P3-ζ 에서 후속 검증
   - 잔여 P3 trail A: P3-ε hit-test/drag/selection (1.5d MED) + P3-ζ slot 자식 시각화 + Chrome MCP 회귀 검증 (0.5d LOW)
+- **2026-04-28 (세션 47 종결)**: **P3-δ fix #3 발견 — slot 자식 시각화 0건 / fullTreeLayout 발행 path 부재 (다음 세션 진입 대기)**
+  - **Chrome MCP 추가 evidence (systematic-debugging Phase 1-2)**: frame body 자체는 시각화 ✅ 하지만 자식 (Slot 3개) 시각화 ❌. screenshot 에 빈 사각형만 표시
+  - **Root cause 확정**: `useLayoutPublisher` (`hooks/useLayoutPublisher.ts:32`) 가 `visiblePages.map(...)` 만 처리 — frame body input 0건 / `publishLayoutMap(layoutMap, page_id)` 두번째 인자 = `bodyElement.page_id` (frame body 는 null) → frame body 와 자식 의 fullTreeLayout 호출 path **자체 부재** → layoutMap.get(slotId) === undefined → DFS 진입은 하지만 width=0 / height=0 → invisible
+  - **fix #3 scope (~1d HIGH)** = `useLayoutPublisher` 시그니처 확장 (`framePages` 추가) + `buildFrameRendererInput` 신규 + `BuilderCanvas` `frameLayoutPublisherInputs` useMemo + `publishLayoutMap` 키 fallback chain
+  - **결정 분기 3건 (다음 세션 진입 시 사용자 승인 대기)**: D4=A (buildFrameRendererInput 신규, page-centric 비대칭) / D5=A (publishLayoutMap fallback chain `page_id ?? layout_id ?? id`) / D6=A (단일 dimensionKey 에 frame entry 추가)
+  - design breakdown §4.7 사전 land — 다음 세션 즉시 진입 가능
+  - **본 세션 47 종결**: 7 commits land + Chrome MCP 4회 검증. P3-δ 의 Gate G3-δ (a) 시각 evidence 일부 (frame body 만) 충족, (b) slot 자식 시각화 + (c) Chrome MCP 사용자 시나리오 GREEN 은 fix #3 land 후 가능
+  - 본 세션 누적 commits: P3-α `f03c6d8b` / P3-β `783baab1` / P3-γ `aaa700c1` / P3-δ-1 inventory `e1e038d6` / P3-δ Skia render `3f1d9aa5` / P3-δ fix #1+#2 `5d5adce5` / 본 entry (P3-δ fix #3 design land)
 
 ## Context
 

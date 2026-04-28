@@ -180,6 +180,80 @@ buildRenderCommandStream → DFS → RenderCommand[] + boundsMap
 
 D1=A, D2=B, D3=A 채택 시 **~1d (HIGH 2d 의 lower bound)**. 다음 세션에서 본격 land. 본 세션 P3-δ-1 inventory 는 진입 위험 50% 감소 (변경 surface + 결정 분기 사전 lock-in).
 
+## 4.7. P3-δ fix #3 — frame body fullTreeLayout 발행 path (세션 47 후속, 다음 세션 진입)
+
+### 결함 요약
+
+본 세션 47 의 P3-δ + fix #1+#2 land 후 Chrome MCP 검증 (2026-04-28):
+
+- **frame body 자체는 시각화 ✅** — collectVisibleFrameRoots → rootElementIds 진입 + framePositions 좌표 적용. 큰 사각형 (390×844) 캔버스에 그려짐
+- **frame body 자식 (Slot 들) 시각화 ❌** — slot 분리선 / header / content 영역 미표시. screenshot 에 빈 사각형만 보임
+
+### Root cause (systematic-debugging Phase 1-2)
+
+| Layer                                      | 결함                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| **`useLayoutPublisher`**                   | `visiblePages.map(...)` 만 처리 — frame body input 0건                    |
+| **`buildPixiPageRendererInput`**           | `pageId: page.id` 가 필수 — frame body 는 page 가 아님                    |
+| **`publishLayoutMap(layoutMap, page_id)`** | 두번째 인자 = `bodyElement.page_id` — frame body 는 `page_id === null`    |
+| **`getCachedPageLayout`**                  | page-centric — bodyElement / pageElements / pageWidth/Height 가 page 기준 |
+
+→ frame body 와 자식 의 fullTreeLayout 호출 path **자체 부재**. layoutMap 에 entry 없음.
+
+→ `visitElement` (`renderCommands.ts:356`) 에서 `layoutMap.get(slotId) === undefined` → `skiaData.width/height` fallback. Slot 의 `skiaData.width = 0` → DFS 진입 하지만 0×0 → 시각적 invisible.
+
+frame body 자체가 보이는 이유 = framePositions 좌표 + skiaData 또는 element.props 의 width/height 가 어떻게든 살아있어서 큰 사각형으로 그려짐. 일관성 없는 동작이지만 root cause 는 자식 layout 미계산.
+
+### 변경 surface (예상 4 파일 + test)
+
+| 파일                                                 | 변경                                                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `hooks/useLayoutPublisher.ts`                        | 시그니처 확장: `framePages: PageLayoutInput[]` 추가 입력. frame body 도 동일 logic 처리         |
+| `renderers/rendererInput.ts`                         | `buildFrameRendererInput(...)` 신규 — frame body 용 PixiPageRendererInput-like 구조 빌드        |
+| `BuilderCanvas.tsx`                                  | `frameLayoutPublisherInputs` useMemo + useLayoutPublisher 두번째 인자                           |
+| `layout/engines/fullTreeLayout.ts::publishLayoutMap` | 키 정책: `bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id` (frame body fallback) |
+
+### 결정 분기 3건 (다음 세션 시작 시 사용자 승인 대기)
+
+#### D4. frame body input 빌드 함수
+
+| 옵션                                                        | 장점                                                 | 단점                                                    | 권고 |
+| ----------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------- | ---- |
+| **A. `buildFrameRendererInput` 신규 (page-centric 비대칭)** | rendererInput.ts 의 page 함수와 frame 함수 분리 명확 | 두 함수 사이 코드 중복 (~30 line)                       | ✓    |
+| B. `buildPixiPageRendererInput` generic 화                  | 단일 함수                                            | page-centric 가정 깨고 generic root 도입 — 변경 범위 큼 |      |
+
+**A 권고** — P3-α/β/γ/δ 의 domain 분리 일관 패턴 유지.
+
+#### D5. publishLayoutMap 키 정책
+
+| 옵션                                                            | 장점                            | 단점                                         | 권고 |
+| --------------------------------------------------------------- | ------------------------------- | -------------------------------------------- | ---- |
+| **A. fallback chain: `page_id ?? layout_id ?? id`**             | 최소 변경, frame body 매칭 가능 | 키 의미 mixed (page-id/layout-id/element-id) | ✓    |
+| B. `publishLayoutMap` 시그니처 확장 — 두번째 인자 명시 root key | 키 명시 명확                    | caller 다수 영향                             |      |
+
+**A 권고** — 즉시 도입 가능. Phase 4 cleanup 시 generic key 마이그레이션 (별도 작업).
+
+#### D6. layoutVersion / dimension key 통합
+
+`useLayoutPublisher` 의 dimensionKey 가 page 만 처리. frame 도 추가 시 `framePositionsVersion` + frame width/height 도 dimensionKey 에 포함 필요.
+
+| 옵션                                         | 장점                | 단점                                        |
+| -------------------------------------------- | ------------------- | ------------------------------------------- |
+| **A. 단일 dimensionKey 에 frame entry 추가** | 단일 useEffect 유지 | frame width/height 미정 시 처리 (page 동일) |
+| B. frame 별도 useEffect                      | scope 분리          | hook count 증가                             |
+
+**A 권고** — 단일 hook flow 유지.
+
+### G3-δ fix #3 통과 조건
+
+- (a) frame body 자식 (Slot) 의 layout 계산 결과가 layoutMap 에 entry 보유 (Chrome MCP `_lastBoundsMap` 에 slot id entry width > 0)
+- (b) Skia 캔버스에 slot 분리선 / 영역 시각화 — 수직 2단 preset 의 header / content 분리 명확
+- (c) Chrome MCP screenshot 사용자 시나리오 GREEN
+
+### 비용 재산정
+
+D4=A, D5=A, D6=A 채택 시 **~1d HIGH** (당초 P3-δ 본격 land 의 lower bound 와 동일 — fix #1/#2 의 추가 1d MED 가 본 fix 의 prerequisite 였음). 본 fix #3 land 후 G3-δ 전체 충족 → P3-ε / P3-ζ 진입.
+
 ## 5. 비고
 
 - 본 sub-phase 진입 시 **1주+ HIGH 작업**. design 단계가 prerequisite — 단순 fix 불가
