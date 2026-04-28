@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-04-26 → 2026-04-27
+In Progress — 2026-04-26 → 2026-04-28
 
 ### 진행 로그
 
@@ -146,6 +146,12 @@ In Progress — 2026-04-26 → 2026-04-27
   - design breakdown §4.7 사전 land — 다음 세션 즉시 진입 가능
   - **본 세션 47 종결**: 7 commits land + Chrome MCP 4회 검증. P3-δ 의 Gate G3-δ (a) 시각 evidence 일부 (frame body 만) 충족, (b) slot 자식 시각화 + (c) Chrome MCP 사용자 시나리오 GREEN 은 fix #3 land 후 가능
   - 본 세션 누적 commits: P3-α `f03c6d8b` / P3-β `783baab1` / P3-γ `aaa700c1` / P3-δ-1 inventory `e1e038d6` / P3-δ Skia render `3f1d9aa5` / P3-δ fix #1+#2 `5d5adce5` / 본 entry (P3-δ fix #3 design land)
+- **2026-04-28 (세션 47 후속, 본문 보강)**: **revision 2 — Hard Constraint #6 + Gate G6 신설 (Properties 패널 ##Slot section##)**
+  - 사용자 직접 확인 + pencil app `.pen` 2.11 schema MCP 직접 fetch (`mcp__pencil__get_editor_state`) 로 `Frame.slot: false | string[]` 호환 확정 — array 의 각 element 는 권장 reusable component ID
+  - Hard Constraint #6 추가: Properties (Inspector) 패널의 별도 ##Slot section## (`[+]` slot 활성화/추가 + `[-]` slot 제거/해제), Style 패널 (D3) 침범 없음
+  - Gate G6 신설: section 노출 + slot field 상태 표시 + 컨트롤 동작 + ADR-912 ##Component section## 와 패널 공존 / UI 충돌 0
+  - References 보강: pencil components docs + keyboard-shortcuts docs URL + `.pen` 2.11 핵심 type 명시
+  - ADR-912 본문 동시 revision 2 — 6 요소 확장 (⑥ Origin 토글 추가, `Cmd+Opt+K`/`Cmd+Opt+X` pencil 단축키 호환 baseline, Properties 패널 ##Component section## 위치 결정)
 
 ## Context
 
@@ -177,6 +183,11 @@ In Progress — 2026-04-26 → 2026-04-27
 3. **시각 결과 동일성** — 기존 사용자가 만든 layout-bound page 의 Builder/Preview/Publish 3축 출력은 재설계 후에도 시각적으로 동일 (구현 방법은 자유)
 4. **F4 진입 가능 조건** — 본 ADR 완료 후 ADR-903 의 G4 (Editing Semantics UI 5요소) 를 별도 ADR 로 진행 가능해야 함 (즉 본 ADR 가 G4 의 UI 토대를 제공)
 5. **pencil 공식 명칭 단일 표준** — composition 코드베이스의 명칭 (`Layout` / `Frame` / `Preset`) 중 pencil 공식 명칭 (`frame` / `ref` / `reusable` / `slot` / `descendants` / `clip` / `placeholder`) 과 의미상 충돌하는 영역만 변경. pencil 무관 영역 (Taffy layout engine / CSS layout files / Builder UI panel arrangement) 은 명칭 유지. 강제 alias 또는 신조어 도입 금지
+6. **Properties 패널 ##Slot section## land 필수** (revision 2 — 2026-04-28 사용자 결정 / pencil MCP schema 확정):
+   - frame 1 개 선택 시 Properties (Inspector) 패널의 별도 ##Slot section## 에 노출 (Style 패널 아님 — Slot 은 D1 구조 영역, Style 패널은 D3 시각 전용. ssot-hierarchy.md 정합)
+   - 표시 항목: 현재 frame 의 `slot` field 상태 (`false` 또는 `string[]`) + **`[+]` 버튼** (slot 활성화 / array 에 권장 ref id 추가) + **`[-]` 버튼** (slot 제거 / array 에서 ref id 제거)
+   - `Frame.slot: false | string[]` schema 호환 — array 의 각 element 는 **권장 reusable component ID** ("frame 자식 자리에 의미적으로 어울리는 ref 들의 hint")
+   - ADR-912 의 ##Component section## 와 **직교** — 같은 Properties 패널의 별도 section 으로 공존. ADR-912 ##Component section## = 현재 노드의 reusable/ref 메타. ##Slot section## = 현재 frame 이 자식 교체 위치임을 선언
 
 ### Soft Constraints
 
@@ -314,13 +325,14 @@ In Progress — 2026-04-26 → 2026-04-27
 
 ## Gates
 
-| Gate                                        | 시점         | 통과 조건                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 실패 시 대안                                   |
-| ------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **G1**: Layout migration 도구 land          | Phase 1 완료 | (a) layoutTemplates.ts 28 Slot 전수 자동 변환 정상 / (b) 사용자 IndexedDB 의 layout-bound elements 가 신 frame node 안의 descendants 로 변환 / (c) dry-run + roundtrip 시각 비교 (Skia/CSS) screenshot diff 0건                                                                                                                                                                                                                                                                                    | 변환 도구 보강 또는 변환 대상 좁히기           |
-| **G2**: 시각 회귀 0 (R1 매핑)               | Phase 2 완료 | (a) `mockLargeDataV2` + 샘플 프로젝트 100% 시각 회귀 0 (Skia/CSS 양축) / (b) 사용자 cutover 전 1주 dual-mode (legacy + canonical) 운영 후 issue report 0건                                                                                                                                                                                                                                                                                                                                         | dual-mode 기간 연장 또는 specific 시나리오 fix |
-| **G3**: cascade 회귀 0 (R3 매핑)            | Phase 3 완료 | (a) deleteLayout / cloneLayout / addPageToLayout / removePageFromLayout 50+ fixture roundtrip read-write-read 정합 0 drift / (b) undo/redo 정상                                                                                                                                                                                                                                                                                                                                                    | layoutActions 재작성 보강                      |
-| **G4**: legacy adapter 0건 + 명칭 충돌 해소 | Phase 4 완료 | (a) `apps/builder/src/builder/stores/layouts.ts` 본체 0줄 또는 adapter shim 한정 / (b) repo-wide grep `LayoutsTab` / `legacy layout_id` 결과 0 / (c) `useLayoutsStore` 호출 site 0건 (또는 adapter shim 안에서만) / (d) **명칭 충돌 해소** — `PanelSlot.tsx` → `PanelArea.tsx`, `BottomPanelSlot.tsx` → `BottomPanelArea.tsx` rename land (Builder UI panel slot ↔ pencil `slot` 의미 격리). repo-wide grep `PanelSlot\|BottomPanelSlot` 결과 0 (`apps/builder/src/builder/layout/` 디렉토리 한정) | adapter shim 디렉토리 한정 + dead code 제거    |
-| **G5**: pencil 호환 검증                    | Phase 5 완료 | (a) 샘플 pencil `.pen` 파일 5종 import → composition canonical document 변환 → roundtrip export → 원본과 schema-equivalent (binary diff 가능 영역만) / (b) ADR-903 §3.10 `imports` resolver 와 통합 가능 인터페이스                                                                                                                                                                                                                                                                                | composition 확장 필드 namespace 격리 보강      |
+| Gate                                                            | 시점                             | 통과 조건                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 실패 시 대안                                   |
+| --------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **G1**: Layout migration 도구 land                              | Phase 1 완료                     | (a) layoutTemplates.ts 28 Slot 전수 자동 변환 정상 / (b) 사용자 IndexedDB 의 layout-bound elements 가 신 frame node 안의 descendants 로 변환 / (c) dry-run + roundtrip 시각 비교 (Skia/CSS) screenshot diff 0건                                                                                                                                                                                                                                                                                    | 변환 도구 보강 또는 변환 대상 좁히기           |
+| **G2**: 시각 회귀 0 (R1 매핑)                                   | Phase 2 완료                     | (a) `mockLargeDataV2` + 샘플 프로젝트 100% 시각 회귀 0 (Skia/CSS 양축) / (b) 사용자 cutover 전 1주 dual-mode (legacy + canonical) 운영 후 issue report 0건                                                                                                                                                                                                                                                                                                                                         | dual-mode 기간 연장 또는 specific 시나리오 fix |
+| **G3**: cascade 회귀 0 (R3 매핑)                                | Phase 3 완료                     | (a) deleteLayout / cloneLayout / addPageToLayout / removePageFromLayout 50+ fixture roundtrip read-write-read 정합 0 drift / (b) undo/redo 정상                                                                                                                                                                                                                                                                                                                                                    | layoutActions 재작성 보강                      |
+| **G4**: legacy adapter 0건 + 명칭 충돌 해소                     | Phase 4 완료                     | (a) `apps/builder/src/builder/stores/layouts.ts` 본체 0줄 또는 adapter shim 한정 / (b) repo-wide grep `LayoutsTab` / `legacy layout_id` 결과 0 / (c) `useLayoutsStore` 호출 site 0건 (또는 adapter shim 안에서만) / (d) **명칭 충돌 해소** — `PanelSlot.tsx` → `PanelArea.tsx`, `BottomPanelSlot.tsx` → `BottomPanelArea.tsx` rename land (Builder UI panel slot ↔ pencil `slot` 의미 격리). repo-wide grep `PanelSlot\|BottomPanelSlot` 결과 0 (`apps/builder/src/builder/layout/` 디렉토리 한정) | adapter shim 디렉토리 한정 + dead code 제거    |
+| **G5**: pencil 호환 검증                                        | Phase 5 완료                     | (a) 샘플 pencil `.pen` 파일 5종 import → composition canonical document 변환 → roundtrip export → 원본과 schema-equivalent (binary diff 가능 영역만) / (b) ADR-903 §3.10 `imports` resolver 와 통합 가능 인터페이스                                                                                                                                                                                                                                                                                | composition 확장 필드 namespace 격리 보강      |
+| **G6**: Properties 패널 ##Slot section## land (revision 2 신규) | Phase 5 완료 또는 별도 sub-phase | (a) frame 1 개 선택 시 Properties (Inspector) 패널에 별도 ##Slot section## 노출 / (b) 현재 `slot` field 상태 (`false` 또는 `string[]`) 표시 / (c) `[+]` 버튼으로 slot 활성화 (`false → []`) + 권장 ref id 추가 / (d) `[-]` 버튼으로 slot 제거 (`[] → false`) + ref id 제거 / (e) ADR-912 ##Component section## 와 같은 패널 공존 — UI 충돌 0 / (f) Style 패널 (D3) 침범 0 — Properties 패널 한정                                                                                                   | section UI 만 land + 권장 ref id picker 후순위 |
 
 ## Consequences
 
@@ -345,4 +357,10 @@ In Progress — 2026-04-26 → 2026-04-27
 - [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 G3 (b)/(c)/(d) 잔여 흡수)
 - [ADR-903 phase 3 frameset breakdown](design/903-phase3-frameset-breakdown.md) — frameset 흡수 분석 (본 ADR Phase 1 마이그레이션 도구 설계 시 참조)
 - [ADR-903 residual grep audit](design/903-residual-grep-audit-2026-04-26.md) — 잔여 caller inventory (Phase 4 G4 측정 baseline)
-- [pencil app schema](https://pencil.dev/) — 본 ADR 의 호환 기준
+- [ADR-912](912-editing-semantics-ui-5elements.md) — Editing Semantics UI 6요소 (Properties 패널 ##Component section##). 본 ADR 의 ##Slot section## 과 직교 — 같은 패널 별도 section 공존
+- [pencil app schema (`.pen` 2.11)](https://pencil.dev/) — 본 ADR 의 호환 기준. 핵심 type 직접 확인 (2026-04-28 MCP 직접 fetch):
+  - `Entity.reusable: boolean` — origin 마킹
+  - `Frame.slot: false | string[]` — false=일반 frame, array=slot (각 element 는 권장 ref id)
+  - `Ref.descendants: { [idPath]: {} }` — slash-separated path override
+- [pencil app components docs](https://docs.pencil.dev/core-concepts/components) — Component Origin (magenta) / Instance (violet) bounding box 정의 출처
+- 사용자 직접 확인 (2026-04-28 세션 47) — Properties 패널 우측에 Component section + Slot section 별도 노출, `[-]` `[+]` `Create component` 컨트롤 명시
