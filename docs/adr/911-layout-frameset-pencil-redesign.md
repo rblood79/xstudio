@@ -174,6 +174,17 @@ In Progress — 2026-04-26 → 2026-04-28
     - 신규 `resolvePageWithFrame.test.ts` 8/8 PASS — T2 (frame default 노출) / T3 (page slot:content fill + frame default content 자식 hide) / 회귀 (layout 미바인딩 / frame body 미존재 / non-root 보존 / fallback 'content' / props.slot_name + element.slot_name 양방향 / deleted 제외)
   - **잔여 G3-θ (d) Chrome MCP screenshot**: 사용자 dev 환경 검증 — 다음 세션 사용자 확인 후 Implemented 후속 가능
 
+- **2026-04-28 (세션 49 후속)**: **P3-θ regression fix #1 — body 채택 정책 전환 (frameBody → pageBody)**
+  - **회귀 보고 (사용자)**: Frame 적용 시 page 영역 투명 / 내용 모두 사라짐 / Frames 탭에서 frame 삭제 시 정상 복귀
+  - **Root cause**: 초기 P3-θ resolver 가 `bodyElement = frameBody` 로 root 채택 → frame body 의 `width/height` (P3-δ fix #4 default 320×200) 가 page (390×844) 보다 훨씬 작음 → page 영역 일부만 그려짐 + page-body 의 시각 속성 (background/padding) 손실 + slot_name 미매칭 page root element 가 fallback Slot 매칭 실패 시 orphan → 미렌더 → 사용자에게 "투명/내용 사라짐" 으로 인식
+  - **Fix**: `bodyElement = pageBody` 유지 (frame body 자체는 결과 제외) + frame body **의 자식들** (Slot×N) 의 `parent_id` 를 page-body 로 reparent + frame Slot 의 자식 (Text 등) 은 그대로 (parent_id=Slot.id 유지) + slot_name 미매칭 page element 는 page-body 자식 그대로 유지 (orphan 방지) + frame body 또는 page body 미존재 시 `hasFrameBinding=false` 로 fallback
+  - **정책 정합 (design breakdown §4.10)**: "frame body subtree 를 page body 자식으로 가상 merge" 의 정확한 의도 = frame body **자체** 가 아닌 frame body **의 자식들** 을 reparent. page width/height/시각 속성 보존 + slot_name 미매칭 element orphan 방지
+  - **회귀 fixture 2 추가**:
+    - "frame Slot 0건 (빈 frame body) → page element 가 page-body 자식 유지 (orphan 방지)"
+    - "page width/height/배경 시각 속성 보존 (page body 가 root 유지)"
+  - 검증: type-check 3/3 PASS / canvas vitest 16/16 파일 199/199 PASS / `resolvePageWithFrame.test.ts` 10/10 (T2/T3 expected 갱신 + 회귀 fixture 2 추가)
+  - **사용자 추가 보고 잔여**: "새로고침시 초기화" — page.layout_id IndexedDB persistence 흐름 분석 미완. 본 fix 반영 후 사용자 dev 재검증 필요
+
 ## Context
 
 ### Domain (SSOT 체인 - [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))

@@ -57,8 +57,14 @@ function readSlotElementName(slot: Element): string {
  * page + (optional) frame element 합성 → ScenePageData 호환 출력.
  *
  * page.layout_id 미바인딩: 기존 동작 — page body + page nonBody.
- * page.layout_id 바인딩 + frame body 발견: frame body + (frame nonBody - 매칭
- *   Slot 의 default 자식) + (page root element 의 parent_id 재매핑 + page non-root).
+ * page.layout_id 바인딩 + frame body 발견: page body 유지 (root) + frame body
+ *   의 자식 (Slot 등) 을 page body 자식으로 reparent + frame Slot 의 default
+ *   자식 (Text 등) 그대로 + page root element slot_name 매칭 → 해당 Slot 자식
+ *   으로 재매핑 + page non-root 그대로.
+ *
+ * 정책 정합 (design breakdown §4.10): "frame body subtree 를 page body 자식으로
+ * 가상 merge" — frame body 자체가 아닌 frame body **의 자식들** 을 reparent.
+ * page width/height/배경 등 시각 속성 보존 + slot_name 미매칭 element orphan 방지.
  */
 export function resolvePageWithFrame(
   input: ResolvePageWithFrameInput,
@@ -103,9 +109,14 @@ export function resolvePageWithFrame(
     }
   }
 
-  if (!frameBody) {
-    const { body, nonBody } = splitPageBody();
-    return { bodyElement: body, pageElements: nonBody, hasFrameBinding: false };
+  const { body: pageBody, nonBody: pageNonBody } = splitPageBody();
+
+  if (!frameBody || !pageBody) {
+    return {
+      bodyElement: pageBody,
+      pageElements: pageNonBody,
+      hasFrameBinding: false,
+    };
   }
 
   const slotByName = new Map<string, Element>();
@@ -115,8 +126,8 @@ export function resolvePageWithFrame(
     if (!slotByName.has(slotName)) slotByName.set(slotName, el);
   }
 
-  const { body: pageBody, nonBody: pageNonBody } = splitPageBody();
-  const pageBodyId = pageBody?.id ?? null;
+  const pageBodyId = pageBody.id;
+  const frameBodyId = frameBody.id;
 
   const pageRootBySlot = new Map<string, Element[]>();
   const pageNonRoot: Element[] = [];
@@ -143,9 +154,13 @@ export function resolvePageWithFrame(
   const result: Element[] = [];
 
   for (const el of frameElements) {
-    if (el.id === frameBody.id) continue;
+    if (el.id === frameBodyId) continue;
     if (hiddenChildIds.has(el.id)) continue;
-    result.push(el);
+    if (el.parent_id === frameBodyId) {
+      result.push({ ...el, parent_id: pageBodyId });
+    } else {
+      result.push(el);
+    }
   }
 
   const fallbackSlot =
@@ -167,7 +182,7 @@ export function resolvePageWithFrame(
   result.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
 
   return {
-    bodyElement: frameBody,
+    bodyElement: pageBody,
     pageElements: result,
     hasFrameBinding: true,
   };

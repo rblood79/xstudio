@@ -387,11 +387,18 @@ D7=B, D8=A, D9=A 채택 시 **~1.5d MED**. P3-θ 는 P3-δ fix #1~#4 + B1 의 pr
 ### Land 결과 (2026-04-28 세션 49)
 
 - D7=B / D8=A / D9=A 모두 사용자 권고대로 승인 → 즉시 land
-- 신규 `apps/builder/src/builder/workspace/canvas/scene/resolvePageWithFrame.ts` (157 lines) — body 우선순위 (frame body > page body), Slot 매칭, hidden default child, parent_id 재매핑, page non-root 보존, deleted 제외
+- 신규 `apps/builder/src/builder/workspace/canvas/scene/resolvePageWithFrame.ts` — Slot 매칭, hidden default child, parent_id 재매핑, page non-root 보존, deleted 제외
 - `buildSceneIndex.buildPageDataMap` 통합 — 기존 page-only 분기 → resolver 호출
-- `resolvePageWithFrame.test.ts` 8/8 PASS — T2 / T3 / 회귀 6 fixture
-- 검증: type-check 3/3 PASS / canvas vitest 16/16 파일 197/197 PASS (회귀 0)
+- `resolvePageWithFrame.test.ts` 10/10 PASS — T2 / T3 / 회귀 8 fixture (regression fix #1 후 fixture 2 추가)
+- 검증: type-check 3/3 PASS / canvas vitest 16/16 파일 199/199 PASS (회귀 0)
 - Gate G3-θ a/b/c/e 충족 — (d) Chrome MCP screenshot 은 사용자 dev 환경 검증 후 G3-δ (c) 와 함께 종결 가능
+
+### Regression fix #1 (세션 49 후속) — body 채택 정책 전환
+
+- **회귀**: 초기 land 의 `bodyElement = frameBody` 정책으로 page 영역 투명/내용 사라짐 (사용자 보고)
+- **Root cause**: frame body 의 width/height (P3-δ fix #4 default 320×200) 가 page 보다 작음 + page-body 시각 속성 손실 + slot_name 미매칭 element orphan
+- **Fix**: `bodyElement = pageBody` 유지 + frame body 의 자식들 (Slot 등) 만 page-body 로 reparent + frame body 자체는 결과 제외 + slot_name 미매칭 page element 는 page-body 자식 그대로 유지 (orphan 방지)
+- **정합**: design breakdown §4.10 의 "frame body subtree 를 page body 자식으로 가상 merge" 의 정확한 의도 — frame body **자체** 가 아닌 frame body **의 자식들** 을 reparent
 
 ## 5. 비고
 

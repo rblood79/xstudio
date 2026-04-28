@@ -144,7 +144,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       pageBody,
     ];
 
-    it("frame body 가 root 로 채택, frame slot 구조 + default text 모두 노출", () => {
+    it("page body 가 root 유지, frame slot 들이 page body 자식으로 reparent + default text 노출", () => {
       const elementsMap = buildElementsMap(allElements);
 
       const result = resolvePageWithFrame({
@@ -154,7 +154,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       });
 
       expect(result.hasFrameBinding).toBe(true);
-      expect(result.bodyElement?.id).toBe("frame-body");
+      expect(result.bodyElement?.id).toBe("page-body");
 
       const ids = new Set(result.pageElements.map((el) => el.id));
       expect(ids).toEqual(
@@ -166,6 +166,24 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
           "text-footer",
         ]),
       );
+
+      const reparentedSlotHeader = result.pageElements.find(
+        (el) => el.id === "slot-header",
+      );
+      const reparentedSlotContent = result.pageElements.find(
+        (el) => el.id === "slot-content",
+      );
+      const reparentedSlotFooter = result.pageElements.find(
+        (el) => el.id === "slot-footer",
+      );
+      expect(reparentedSlotHeader?.parent_id).toBe("page-body");
+      expect(reparentedSlotContent?.parent_id).toBe("page-body");
+      expect(reparentedSlotFooter?.parent_id).toBe("page-body");
+
+      const textInHeader = result.pageElements.find(
+        (el) => el.id === "text-header",
+      );
+      expect(textInHeader?.parent_id).toBe("slot-header");
     });
   });
 
@@ -262,7 +280,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       });
 
       expect(result.hasFrameBinding).toBe(true);
-      expect(result.bodyElement?.id).toBe("frame-body");
+      expect(result.bodyElement?.id).toBe("page-body");
 
       const ids = new Set(result.pageElements.map((el) => el.id));
       expect(ids.has("default-content-text")).toBe(false);
@@ -276,6 +294,11 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
         (el) => el.id === "page-custom",
       );
       expect(remappedCustom?.parent_id).toBe("slot-content");
+
+      const slotContentRow = result.pageElements.find(
+        (el) => el.id === "slot-content",
+      );
+      expect(slotContentRow?.parent_id).toBe("page-body");
     });
 
     it("page slot_name 가 element-level (props 외부) 에 있어도 매칭", () => {
@@ -413,6 +436,84 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
 
     expect(remappedRoot?.parent_id).toBe("slot-content");
     expect(childResult?.parent_id).toBe("page-root");
+  });
+
+  it("frame Slot 0건 (빈 frame body) → page element 가 page-body 자식 유지 (orphan 방지 회귀 fixture)", () => {
+    const FRAME_ID = "frame-empty";
+    const frameBody = makeEl({
+      id: "frame-body",
+      type: "body",
+      layout_id: FRAME_ID,
+      page_id: null,
+    });
+    const pageBody = makeEl({
+      id: "page-body",
+      type: "body",
+      page_id: "page-1",
+    });
+    const pageCard = makeEl({
+      id: "page-card",
+      type: "Card",
+      page_id: "page-1",
+      parent_id: "page-body",
+    });
+    const elementsMap = buildElementsMap([frameBody, pageBody, pageCard]);
+
+    const result = resolvePageWithFrame({
+      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      pageElements: [pageBody, pageCard],
+      elementsMap,
+    });
+
+    expect(result.bodyElement?.id).toBe("page-body");
+    expect(result.hasFrameBinding).toBe(true);
+
+    const cardRow = result.pageElements.find((el) => el.id === "page-card");
+    expect(cardRow?.parent_id).toBe("page-body");
+  });
+
+  it("page width/height/배경 시각 속성 보존 (page body 가 root 유지)", () => {
+    const FRAME_ID = "frame-1";
+    const frameBody = makeEl({
+      id: "frame-body",
+      type: "body",
+      layout_id: FRAME_ID,
+      page_id: null,
+      props: { style: { width: 320, height: 200, background: "red" } },
+    });
+    const slotContent = makeEl({
+      id: "slot-content",
+      type: "Slot",
+      layout_id: FRAME_ID,
+      page_id: null,
+      parent_id: "frame-body",
+      props: { name: "content" },
+    });
+    const pageBody = makeEl({
+      id: "page-body",
+      type: "body",
+      page_id: "page-1",
+      props: { style: { width: 390, height: 844, background: "white" } },
+    });
+    const elementsMap = buildElementsMap([frameBody, slotContent, pageBody]);
+
+    const result = resolvePageWithFrame({
+      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      pageElements: [pageBody],
+      elementsMap,
+    });
+
+    expect(result.bodyElement?.id).toBe("page-body");
+    const bodyStyle = (result.bodyElement?.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
+    expect(bodyStyle.width).toBe(390);
+    expect(bodyStyle.height).toBe(844);
+    expect(bodyStyle.background).toBe("white");
+
+    const slotRow = result.pageElements.find((el) => el.id === "slot-content");
+    expect(slotRow?.parent_id).toBe("page-body");
   });
 
   it("deleted 표시된 frame element 는 제외", () => {

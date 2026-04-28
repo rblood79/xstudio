@@ -5,6 +5,22 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 P3-θ regression fix — body 채택 정책 전환] - 2026-04-28
+
+### Bug Fixes
+
+- **ADR-911 P3-θ regression fix #1** — Frame 적용 시 page 영역 투명/내용 사라짐 회귀 fix:
+  - **회귀**: 초기 P3-θ resolver 가 `bodyElement = frameBody` 로 root 채택 → frame body width/height (P3-δ fix #4 default 320×200) 가 page (390×844) 보다 훨씬 작음 + page-body 의 시각 속성 (background/padding) 손실 + slot_name 미매칭 page root element 가 fallback Slot 매칭 실패 시 orphan → 미렌더 → "투명/내용 사라짐"
+  - **Fix**: `bodyElement = pageBody` 유지 (frame body 자체는 결과 제외) + frame body **의 자식들** (Slot×N) 의 `parent_id` 를 page-body 로 reparent + frame Slot 의 자식 (Text 등) 은 그대로 (parent_id=Slot.id 유지) + slot_name 미매칭 page element 는 page-body 자식 그대로 유지 (orphan 방지) + frame body 또는 page body 미존재 시 `hasFrameBinding=false` fallback
+  - **정책 정합**: design breakdown §4.10 "frame body subtree 를 page body 자식으로 가상 merge" 의 정확한 의도 — frame body **자체** 가 아닌 **자식들** 을 reparent. page width/height/시각 속성 보존
+  - **회귀 fixture 2 추가**: frame Slot 0건 (빈 frame body) → page element 가 page-body 자식 유지 / page width/height/배경 시각 속성 보존
+  - 검증: type-check 3/3 PASS / canvas vitest 16/16 파일 199/199 PASS / `resolvePageWithFrame.test.ts` 10/10 (T2/T3 expected 갱신 + 회귀 fixture 2)
+  - 위치: `apps/builder/src/builder/workspace/canvas/scene/resolvePageWithFrame.ts`
+
+### Known Issues
+
+- **P3-θ 후속 — 새로고침시 layout_id 초기화** (사용자 보고): page.layout_id IndexedDB persistence 흐름 분석 미완. body 정책 fix 반영 후 사용자 dev 재검증 필요
+
 ## [ADR-911 Phase 3 frame canvas authoring + frame instance composition Land] - 2026-04-28
 
 ### Features
