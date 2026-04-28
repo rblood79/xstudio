@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Element } from "../../../../types/core/store.types";
+import {
+  resolveEditingSemanticsImpactConfirmation,
+  subscribeEditingSemanticsImpactConfirmation,
+  type EditingSemanticsImpactConfirmationRequest,
+} from "../../../utils/editingSemanticsImpactConfirmation";
 import { useStore } from "../../elements";
 import { historyManager } from "../../history";
 
@@ -600,6 +605,7 @@ describe("instance store actions", () => {
   });
 
   it("removes component origin silently when no instances exist", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     const origin = makeElement("origin", {
       componentName: "CTA",
       reusable: true,
@@ -618,6 +624,7 @@ describe("instance store actions", () => {
       reusable: false,
       componentRole: undefined,
     });
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("removes component origin and materializes impacted instances with single undo", async () => {
@@ -831,5 +838,77 @@ describe("instance store actions", () => {
       | undefined;
     expect(raceInstance).toMatchObject({ type: "Button" });
     expect(raceInstance?.ref).toBeUndefined();
+  });
+
+  it("waits for the impact dialog confirmation when TOCTOU changes instance count", async () => {
+    const origin = makeElement("origin", {
+      reusable: true,
+      props: { label: "Origin" },
+    });
+
+    useStore.setState({
+      elements: [origin],
+      elementsMap: new Map([["origin", origin]]),
+    } as never);
+    useStore.getState()._rebuildIndexes();
+
+    const requests: EditingSemanticsImpactConfirmationRequest[] = [];
+    const unsubscribe = subscribeEditingSemanticsImpactConfirmation(
+      (request) => {
+        if (request) {
+          requests.push(request);
+        }
+      },
+    );
+
+    try {
+      const togglePromise = useStore.getState().toggleComponentOrigin("origin", {
+        beforeMutation: () => {
+          const raceInstance = makeElement("race-instance", {
+            type: "ref",
+            ref: "origin",
+          } as never);
+          useStore.setState({
+            elements: [...useStore.getState().elements, raceInstance],
+            elementsMap: new Map(useStore.getState().elementsMap).set(
+              "race-instance",
+              raceInstance,
+            ),
+          } as never);
+          useStore.getState()._rebuildIndexes();
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(requests).toHaveLength(1);
+      });
+
+      expect(requests[0]).toMatchObject({
+        impactedInstanceIds: ["race-instance"],
+        instanceCount: 1,
+        originId: "origin",
+        originLabel: "Button component",
+      });
+      expect(useStore.getState().elementsMap.get("origin")).toMatchObject({
+        reusable: true,
+      });
+
+      resolveEditingSemanticsImpactConfirmation(true);
+      await togglePromise;
+
+      const raceInstance = useStore
+        .getState()
+        .elementsMap.get("race-instance") as
+        | (Element & { ref?: string })
+        | undefined;
+      expect(useStore.getState().elementsMap.get("origin")).toMatchObject({
+        reusable: false,
+      });
+      expect(raceInstance).toMatchObject({ type: "Button" });
+      expect(raceInstance?.ref).toBeUndefined();
+    } finally {
+      unsubscribe();
+      resolveEditingSemanticsImpactConfirmation(false);
+    }
   });
 });
