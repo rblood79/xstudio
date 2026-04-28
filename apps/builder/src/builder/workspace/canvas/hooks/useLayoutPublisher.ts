@@ -7,6 +7,11 @@
  *
  * 원리: getCachedPageLayout은 순수 함수 — store 데이터만 필요.
  * publishLayoutMap으로 모듈 레벨 변수에 발행하면 Command Stream이 읽음.
+ *
+ * ADR-911 P3-δ fix #3 (2026-04-28): framePages 입력 추가 — page-centric
+ * 가정 cracking 의 첫 단계. frame body 도 page 와 동일 layout 발행 logic 처리
+ * → publishLayoutMap key fallback chain (D5=A: page_id ?? layout_id ?? id)
+ * 으로 구분. dimensionKey 단일 통합 (D6=A).
  */
 
 import { useEffect, useRef } from "react";
@@ -26,29 +31,48 @@ interface PageLayoutInput {
 }
 
 /**
- * 모든 visible page의 레이아웃을 계산하고 publishLayoutMap으로 발행.
- * 단일 useEffect로 페이지 수에 무관하게 hooks 규칙 준수.
+ * 모든 visible page + frame body 의 레이아웃을 계산하고 publishLayoutMap 으로 발행.
+ * 단일 useEffect 로 페이지 수에 무관하게 hooks 규칙 준수.
+ *
+ * @param pages    visible page input
+ * @param framePages reusable frame body input (ADR-911 P3-δ fix #3)
  */
 export function useLayoutPublisher(
   pages: PageLayoutInput[],
+  framePages: PageLayoutInput[],
   layoutVersion: number,
 ): void {
   const pagesRef = useRef(pages);
+  const framePagesRef = useRef(framePages);
 
   useEffect(() => {
     pagesRef.current = pages;
+    framePagesRef.current = framePages;
   });
 
   // 차원 서명: breakpoint(pageWidth/Height) 변경은 layoutVersion을 bump하지 않지만
   // getCachedPageLayout의 cache key에 포함되므로 재발행이 필요하다.
-  const dimensionKey = pages
-    .map(({ pageId, input }) => `${pageId}:${input.pageWidth}:${input.pageHeight}`)
-    .join("|");
+  // D6=A: 단일 dimensionKey 에 frame entry 도 통합 — frame width/height 변경 시
+  // 동일 useEffect flow 로 재발행.
+  const dimensionKey =
+    pages
+      .map(
+        ({ pageId, input }) =>
+          `p:${pageId}:${input.pageWidth}:${input.pageHeight}`,
+      )
+      .join("|") +
+    "||" +
+    framePages
+      .map(
+        ({ pageId, input }) =>
+          `f:${pageId}:${input.pageWidth}:${input.pageHeight}`,
+      )
+      .join("|");
 
   useEffect(() => {
-    const currentPages = pagesRef.current;
+    const all = [...pagesRef.current, ...framePagesRef.current];
 
-    for (const { input } of currentPages) {
+    for (const { input } of all) {
       const {
         bodyElement,
         elementById,
@@ -87,7 +111,13 @@ export function useLayoutPublisher(
         wasmLayoutReady,
       });
 
-      publishLayoutMap(layoutMap, bodyElement.page_id ?? undefined);
+      // D5=A: publishLayoutMap key fallback chain.
+      // - page bodyElement: page_id 확정 → 기존 동작 유지
+      // - frame bodyElement: page_id=null, layout_id=frameId → frameId 키로 발행
+      // - 양쪽 모두 미정 시 element id fallback (graceful degradation)
+      const key =
+        bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
+      publishLayoutMap(layoutMap, key);
     }
   }, [layoutVersion, dimensionKey]);
 }

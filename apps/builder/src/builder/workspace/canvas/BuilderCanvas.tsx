@@ -39,6 +39,7 @@ import {
   resolveSelectedElementsForPage,
 } from "./interaction";
 import {
+  buildFrameRendererInput,
   buildPixiPageRendererInput,
   createSceneInvalidationPacket,
   createSkiaRendererInput,
@@ -186,6 +187,11 @@ export function BuilderCanvas({
   const childrenMap = useStore((state) => state.childrenMap);
   const dirtyElementIds = useStore((state) => state.dirtyElementIds);
   const layouts = useLayoutsStore((state) => state.layouts);
+  // ADR-911 P3-γ (옵션 B1, 2026-04-28): 선택된 reusable frame 만 캔버스 별도
+  // 영역 노출. null 이면 frame 영역 0건 → page 만 렌더.
+  const selectedReusableFrameId = useLayoutsStore(
+    (state) => state.selectedReusableFrameId,
+  );
   // ADR-074 Phase 4: aiGeneratingNodes/aiFlashAnimations/cleanupExpiredFlashes
   // 구독은 SkiaCanvas 내부로 이전 — BuilderCanvas 루트 리렌더 fan-out 차단.
 
@@ -347,7 +353,6 @@ export function BuilderCanvas({
     wasmLayoutReady,
     zoom,
   ]);
-  useLayoutPublisher(layoutPublisherInputs, layoutVersion);
 
   const workflowEdges = useMemo(() => {
     return computeWorkflowEdges(
@@ -373,29 +378,123 @@ export function BuilderCanvas({
   // deps 에 elementsMap 포함 (selectCanonicalDocument 가 elements 소비).
   const frameAreas = useMemo(() => {
     const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
-    return computeFrameAreas(doc, framePositions);
+    return computeFrameAreas(doc, framePositions, selectedReusableFrameId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pages, layouts, elementsMap, framePositions, framePositionsVersion]);
+  }, [
+    pages,
+    layouts,
+    elementsMap,
+    framePositions,
+    framePositionsVersion,
+    selectedReusableFrameId,
+  ]);
 
   // ADR-911 P3-β 보강 (P3-δ fix #2 — Chrome MCP evidence 2026-04-28):
   // framePositions 미초기화 frame 의 자동 init. page 영역 우측 (pageWidth + GAP)
   // 부터 수직 stack 배치. 이미 init 된 frame 은 skip (idempotent — 사용자 drag
   // 좌표 보존). framePositions deps 미포함 (effect 안 getState 로 snapshot read,
   // 무한 루프 회피).
+  //
+  // ADR-911 P3-δ fix #4 (2026-04-28 사용자 보고: "Frame 추가 시 세로 영역이
+  // body 보다 더 크게 생성"): height = pageHeight 사용 시 viewport 크기 (예:
+  // 844px) 가 frame 영역에 강제됨 → body content (작은 component template)
+  // 보다 훨씬 큰 빈 영역 시각화. fix: bodyElement.props.style.width/height
+  // explicit px 우선 → 없으면 작은 default (320×200, component-sized).
   useEffect(() => {
     if (frameAreas.length === 0) return;
     const current = useStore.getState().framePositions;
+    const elementsMapSnapshot = useStore.getState().elementsMap;
+
+    // Body element 식별 — type='body' && layout_id===frameId.
+    // visibleFrameRoots / buildFrameRendererInput 와 동일 정책 (page_id !== null
+    // 의 layout-bound page body 는 우선순위 낮음 — page_id===null 우선).
+    const findFrameBodyDimensions = (
+      frameId: string,
+    ): { width: number; height: number } => {
+      let body: { width: number; height: number } | null = null;
+      for (const el of elementsMapSnapshot.values()) {
+        if (el.type !== "body") continue;
+        if (el.layout_id !== frameId) continue;
+        const style = (el.props?.style as Record<string, unknown>) ?? {};
+        const w =
+          typeof style.width === "number"
+            ? style.width
+            : typeof style.width === "string"
+              ? parseFloat(style.width)
+              : NaN;
+        const h =
+          typeof style.height === "number"
+            ? style.height
+            : typeof style.height === "string"
+              ? parseFloat(style.height)
+              : NaN;
+        const cand = {
+          width: Number.isFinite(w) && w > 0 ? w : 320,
+          height: Number.isFinite(h) && h > 0 ? h : 200,
+        };
+        // page_id === null 인 canonical reusable frame body 우선
+        if (el.page_id == null) return cand;
+        if (!body) body = cand;
+      }
+      return body ?? { width: 320, height: 200 };
+    };
+
     for (let i = 0; i < frameAreas.length; i++) {
       const area = frameAreas[i];
       if (current[area.frameId]) continue;
+      const dims = findFrameBodyDimensions(area.frameId);
       updateFramePosition(area.frameId, {
         x: pageWidth + PAGE_STACK_GAP,
-        y: i * (pageHeight + PAGE_STACK_GAP),
-        width: pageWidth,
-        height: pageHeight,
+        y: i * (dims.height + PAGE_STACK_GAP),
+        width: dims.width,
+        height: dims.height,
       });
     }
   }, [frameAreas, pageWidth, pageHeight, updateFramePosition]);
+
+  // ADR-911 P3-δ fix #3 (D4=A, 2026-04-28): frame body 의 layout publish input.
+  // page-centric `layoutPublisherInputs` 와 분리 — `buildFrameRendererInput`
+  // 신규 함수 사용 (P3-α/β/γ/δ 의 domain 분리 일관 패턴).
+  // framePositions miss 시 frameAreas.x/y/width/height 로 fallback (P3-β 와 동일
+  // 정책). bodyElement 미발견 시 null → filter 로 제외.
+  const frameLayoutPublisherInputs = useMemo(() => {
+    return frameAreas
+      .map((area) => {
+        const pos = framePositions[area.frameId];
+        const input = buildFrameRendererInput({
+          dirtyElementIds,
+          elementById,
+          frameHeight: pos?.height ?? area.height,
+          frameId: area.frameId,
+          frameWidth: pos?.width ?? area.width,
+          frameX: pos?.x ?? area.x,
+          frameY: pos?.y ?? area.y,
+          pagePositionVersion: framePositionsVersion,
+          panOffset,
+          sceneSnapshot,
+          wasmLayoutReady,
+          zoom,
+        });
+        return input ? { pageId: area.frameId, input } : null;
+      })
+      .filter((v): v is NonNullable<typeof v> => v !== null);
+  }, [
+    frameAreas,
+    framePositions,
+    framePositionsVersion,
+    dirtyElementIds,
+    elementById,
+    panOffset,
+    sceneSnapshot,
+    wasmLayoutReady,
+    zoom,
+  ]);
+
+  useLayoutPublisher(
+    layoutPublisherInputs,
+    frameLayoutPublisherInputs,
+    layoutVersion,
+  );
 
   const skiaRendererInput = useMemo(() => {
     return createSkiaRendererInput({

@@ -429,8 +429,14 @@ export function computeFrameAreas(
     string,
     { x: number; y: number; width: number; height: number }
   >,
+  selectedReusableFrameId: string | null = null,
 ): FrameAreaGroup[] {
   if (!doc) return [];
+  // ADR-911 P3-γ design 옵션 B1 (2026-04-28 사용자 보고 → 채택):
+  // selectedReusableFrameId 가 set 일 때만 frame 영역 노출 — 선택 안 된 frame
+  // 영역이 항상 보이는 noise 제거. pencil app 의 component editing navigation
+  // context 와 정합 (frame 편집은 명시적 navigation, 항상 보이지 않음).
+  if (!selectedReusableFrameId) return [];
 
   const result: FrameAreaGroup[] = [];
   for (const child of doc.children) {
@@ -441,6 +447,8 @@ export function computeFrameAreas(
     const layoutId = (frame.metadata as { layoutId?: string } | undefined)
       ?.layoutId;
     const frameId = layoutId ?? frame.id;
+    if (frameId !== selectedReusableFrameId) continue;
+
     const pos = framePositions[frameId] ?? { x: 0, y: 0, width: 0, height: 0 };
 
     result.push({

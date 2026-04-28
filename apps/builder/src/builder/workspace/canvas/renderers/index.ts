@@ -1,4 +1,5 @@
 export {
+  buildFrameRendererInput,
   buildPixiPageRendererInput,
   createSkiaRendererInput,
   type PixiPageRendererInput,
