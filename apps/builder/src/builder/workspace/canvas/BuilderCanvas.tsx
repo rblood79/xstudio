@@ -23,6 +23,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { useStore } from "../../stores";
+import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
 import { selectCanonicalDocument } from "../../stores/elements";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
@@ -160,6 +161,8 @@ export function BuilderCanvas({
   // Store state
   const elements = useStore((state) => state.elements);
   const pages = useStore((state) => state.pages);
+  const currentEditMode = useEditModeStore((state) => state.mode);
+  const isFrameEditMode = currentEditMode === "layout";
   // ADR-074 Phase 4: selectedElementId/Ids/editingContextId/ai 3개 구독을
   // SkiaCanvas 내부로 이전. 루트 리렌더 fan-out 차단.
   const setSelectedElement = useStore((state) => state.setSelectedElement);
@@ -258,7 +261,6 @@ export function BuilderCanvas({
   const framePositionsVersion = useStore(
     (state) => state.framePositionsVersion,
   );
-  const updateFramePosition = useStore((state) => state.updateFramePosition);
   const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
   const previousLayoutKeyRef = useRef(
     `${pageWidth}:${pageHeight}:${pageLayoutDirection}`,
@@ -292,9 +294,10 @@ export function BuilderCanvas({
   // selection-only 변화 시 structure useMemo identity 유지 → 하위 useMemo
   // (skiaRendererInput / layoutPublisherInputs) 의 deps 변동 차단.
   const sceneStructureSnapshot = useMemo(() => {
+    const scenePages = isFrameEditMode ? [] : pages;
     return buildSceneStructureSnapshot({
       containerSize,
-      currentPageId,
+      currentPageId: isFrameEditMode ? null : currentPageId,
       elements,
       elementsMap,
       layoutVersion,
@@ -303,7 +306,7 @@ export function BuilderCanvas({
       pagePositions,
       pagePositionsVersion,
       pageWidth,
-      pages,
+      pages: scenePages,
       panOffset,
       zoom,
     });
@@ -312,6 +315,7 @@ export function BuilderCanvas({
     currentPageId,
     elements,
     elementsMap,
+    isFrameEditMode,
     layoutVersion,
     pageHeight,
     pageIndex,
@@ -331,8 +335,9 @@ export function BuilderCanvas({
 
   const visiblePageIds = sceneStructureSnapshot.document.visiblePageIds;
   const visiblePages = useMemo(() => {
+    if (isFrameEditMode) return [];
     return pages.filter((page) => visiblePageIds.has(page.id));
-  }, [pages, visiblePageIds]);
+  }, [isFrameEditMode, pages, visiblePageIds]);
 
   // ADR-100 Phase 6.4: PixiJS 없이 레이아웃 발행
   const layoutPublisherInputs = useMemo(() => {
@@ -389,98 +394,53 @@ export function BuilderCanvas({
   // selector cache 함정 회피 — useMemo 안에서 useStore.getState() 호출.
   // deps 에 elementsMap 포함 (selectCanonicalDocument 가 elements 소비).
   const frameAreas = useMemo(() => {
+    if (!isFrameEditMode) return [];
+    const anchorPageId = currentPageId ?? pages[0]?.id ?? null;
+    const anchorPosition = anchorPageId
+      ? pagePositions[anchorPageId]
+      : undefined;
     const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
-    return computeFrameAreas(doc, framePositions, selectedReusableFrameId);
+    return computeFrameAreas(doc, framePositions, selectedReusableFrameId).map(
+      (area) => ({
+        ...area,
+        x: anchorPosition?.x ?? 0,
+        y: anchorPosition?.y ?? 0,
+        width: pageWidth,
+        height: pageHeight,
+      }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    currentPageId,
     pages,
     layouts,
     elementsMap,
     framePositions,
     framePositionsVersion,
+    isFrameEditMode,
+    pageHeight,
+    pagePositions,
+    pageWidth,
     selectedReusableFrameId,
   ]);
-
-  // ADR-911 P3-β 보강 (P3-δ fix #2 — Chrome MCP evidence 2026-04-28):
-  // framePositions 미초기화 frame 의 자동 init. page 영역 우측 (pageWidth + GAP)
-  // 부터 수직 stack 배치. 이미 init 된 frame 은 skip (idempotent — 사용자 drag
-  // 좌표 보존). framePositions deps 미포함 (effect 안 getState 로 snapshot read,
-  // 무한 루프 회피).
-  //
-  // ADR-911 P3-δ fix #4 (2026-04-28 사용자 보고: "Frame 추가 시 세로 영역이
-  // body 보다 더 크게 생성"): height = pageHeight 사용 시 viewport 크기 (예:
-  // 844px) 가 frame 영역에 강제됨 → body content (작은 component template)
-  // 보다 훨씬 큰 빈 영역 시각화. fix: bodyElement.props.style.width/height
-  // explicit px 우선 → 없으면 작은 default (320×200, component-sized).
-  useEffect(() => {
-    if (frameAreas.length === 0) return;
-    const current = useStore.getState().framePositions;
-    const elementsMapSnapshot = useStore.getState().elementsMap;
-
-    // Body element 식별 — type='body' && layout_id===frameId.
-    // visibleFrameRoots / buildFrameRendererInput 와 동일 정책 (page_id !== null
-    // 의 layout-bound page body 는 우선순위 낮음 — page_id===null 우선).
-    const findFrameBodyDimensions = (
-      frameId: string,
-    ): { width: number; height: number } => {
-      let body: { width: number; height: number } | null = null;
-      for (const el of elementsMapSnapshot.values()) {
-        if (el.type !== "body") continue;
-        if (el.layout_id !== frameId) continue;
-        const style = (el.props?.style as Record<string, unknown>) ?? {};
-        const w =
-          typeof style.width === "number"
-            ? style.width
-            : typeof style.width === "string"
-              ? parseFloat(style.width)
-              : NaN;
-        const h =
-          typeof style.height === "number"
-            ? style.height
-            : typeof style.height === "string"
-              ? parseFloat(style.height)
-              : NaN;
-        const cand = {
-          width: Number.isFinite(w) && w > 0 ? w : 320,
-          height: Number.isFinite(h) && h > 0 ? h : 200,
-        };
-        // page_id === null 인 canonical reusable frame body 우선
-        if (el.page_id == null) return cand;
-        if (!body) body = cand;
-      }
-      return body ?? { width: 320, height: 200 };
-    };
-
-    for (let i = 0; i < frameAreas.length; i++) {
-      const area = frameAreas[i];
-      if (current[area.frameId]) continue;
-      const dims = findFrameBodyDimensions(area.frameId);
-      updateFramePosition(area.frameId, {
-        x: pageWidth + PAGE_STACK_GAP,
-        y: i * (dims.height + PAGE_STACK_GAP),
-        width: dims.width,
-        height: dims.height,
-      });
-    }
-  }, [frameAreas, pageWidth, pageHeight, updateFramePosition]);
 
   // ADR-911 P3-δ fix #3 (D4=A, 2026-04-28): frame body 의 layout publish input.
   // page-centric `layoutPublisherInputs` 와 분리 — `buildFrameRendererInput`
   // 신규 함수 사용 (P3-α/β/γ/δ 의 domain 분리 일관 패턴).
-  // framePositions miss 시 frameAreas.x/y/width/height 로 fallback (P3-β 와 동일
-  // 정책). bodyElement 미발견 시 null → filter 로 제외.
+  // frame authoring 은 현재 page 와 같은 작업면을 전환해서 쓰므로, stale
+  // framePositions 대신 정규화된 frameAreas 좌표/크기를 layout publish source 로
+  // 사용한다. bodyElement 미발견 시 null → filter 로 제외.
   const frameLayoutPublisherInputs = useMemo(() => {
     return frameAreas
       .map((area) => {
-        const pos = framePositions[area.frameId];
         const input = buildFrameRendererInput({
           dirtyElementIds,
           elementById,
-          frameHeight: pos?.height ?? area.height,
+          frameHeight: area.height,
           frameId: area.frameId,
-          frameWidth: pos?.width ?? area.width,
-          frameX: pos?.x ?? area.x,
-          frameY: pos?.y ?? area.y,
+          frameWidth: area.width,
+          frameX: area.x,
+          frameY: area.y,
           pagePositionVersion: framePositionsVersion,
           panOffset,
           sceneSnapshot,
@@ -492,7 +452,6 @@ export function BuilderCanvas({
       .filter((v): v is NonNullable<typeof v> => v !== null);
   }, [
     frameAreas,
-    framePositions,
     framePositionsVersion,
     dirtyElementIds,
     elementById,
@@ -512,6 +471,7 @@ export function BuilderCanvas({
     return createSkiaRendererInput({
       childrenMap,
       dirtyElementIds,
+      editMode: currentEditMode,
       elements,
       elementsMap,
       pageIndex,
@@ -525,6 +485,7 @@ export function BuilderCanvas({
     });
   }, [
     childrenMap,
+    currentEditMode,
     dirtyElementIds,
     elements,
     elementsMap,

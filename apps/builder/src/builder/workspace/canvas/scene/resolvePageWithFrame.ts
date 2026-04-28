@@ -53,6 +53,17 @@ function readSlotElementName(slot: Element): string {
   return fromProps ?? slot.slot_name ?? "content";
 }
 
+function asPageResolvedSlot(slot: Element, parentId: string): Element {
+  return {
+    ...slot,
+    parent_id: parentId,
+    props: {
+      ...slot.props,
+      _slotChrome: "hidden",
+    },
+  };
+}
+
 /**
  * page + (optional) frame element 합성 → ScenePageData 호환 출력.
  *
@@ -157,7 +168,11 @@ export function resolvePageWithFrame(
     if (el.id === frameBodyId) continue;
     if (hiddenChildIds.has(el.id)) continue;
     if (el.parent_id === frameBodyId) {
-      result.push({ ...el, parent_id: pageBodyId });
+      result.push(
+        el.type === "Slot"
+          ? asPageResolvedSlot(el, pageBodyId)
+          : { ...el, parent_id: pageBodyId },
+      );
     } else {
       result.push(el);
     }

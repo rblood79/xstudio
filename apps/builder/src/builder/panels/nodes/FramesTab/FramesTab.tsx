@@ -130,6 +130,7 @@ export function FramesTab({
 
   // 이미 로드된 frame ID 추적 (중복 로드 방지)
   const loadedFrameIdsRef = React.useRef<Set<string>>(new Set());
+  const frameSelectRequestRef = React.useRef(0);
 
   // selectedReusableFrameId 변경 시 DB에서 요소 로드 (fallback)
   useEffect(() => {
@@ -234,20 +235,26 @@ export function FramesTab({
   // Frame 선택 핸들러 — id 기반 (ADR-911 P2-a PR-B)
   const handleSelectFrame = useCallback(
     async (frameId: string) => {
+      const requestId = frameSelectRequestRef.current + 1;
+      frameSelectRequestRef.current = requestId;
+      selectReusableFrame(frameId);
+      setEditModeLayoutId(frameId);
+
       try {
         const db = await getDB();
         // ADR-903 P3-E follow-up: canonical parent 기반 조회
         const frameElements = await db.elements.getDescendants(frameId);
+        if (requestId !== frameSelectRequestRef.current) {
+          return;
+        }
 
         mergeElements(frameElements);
         loadedFrameIdsRef.current.add(frameId);
-
-        selectReusableFrame(frameId);
-        setEditModeLayoutId(frameId);
       } catch (error) {
+        if (requestId !== frameSelectRequestRef.current) {
+          return;
+        }
         console.error("[FramesTab] Frame 선택 에러:", error);
-        selectReusableFrame(frameId);
-        setEditModeLayoutId(frameId);
       }
     },
     [setEditModeLayoutId, mergeElements],

@@ -10,6 +10,11 @@ export function collectVisiblePageRoots(
 ): VisiblePageRootBuildResult {
   const rootElementIds: string[] = [];
   const bodyPagePositions: Record<string, { x: number; y: number }> = {};
+
+  if (rendererInput.editMode === "layout") {
+    return { bodyPagePositions, rootElementIds };
+  }
+
   const visiblePageIds = rendererInput.sceneSnapshot.document.visiblePageIds;
 
   for (const page of rendererInput.pages) {

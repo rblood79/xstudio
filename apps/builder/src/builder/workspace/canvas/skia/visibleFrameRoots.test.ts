@@ -25,6 +25,7 @@ const makeInput = (partial: Partial<SkiaRendererInput>): SkiaRendererInput => {
     elements,
     elementsMap,
     dirtyElementIds: new Set(),
+    editMode: "layout",
     pageIndex: { elementsByPage: new Map() } as never,
     pagePositionsVersion: 0,
     pagePositions: {},
@@ -39,13 +40,41 @@ const makeInput = (partial: Partial<SkiaRendererInput>): SkiaRendererInput => {
 };
 
 describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
+  it("page mode 에서는 selectedReusableFrameId/frameAreas 가 남아 있어도 frame roots 를 렌더하지 않는다", () => {
+    const bodyEl = makeElement({
+      id: "frame-body-1",
+      type: "body",
+      layout_id: "frame-A",
+    });
+
+    const result = collectVisibleFrameRoots(
+      makeInput({
+        editMode: "page",
+        elements: [bodyEl],
+        frameAreas: [
+          {
+            frameId: "frame-A",
+            frameName: "Frame A",
+            x: 100,
+            y: 50,
+            width: 320,
+            height: 200,
+          },
+        ],
+      }),
+    );
+
+    expect(result.rootElementIds).toEqual([]);
+    expect(result.bodyPagePositions).toEqual({});
+  });
+
   it("frameAreas 비어 있으면 빈 결과 반환", () => {
     const result = collectVisibleFrameRoots(makeInput({ frameAreas: [] }));
     expect(result.rootElementIds).toEqual([]);
     expect(result.bodyPagePositions).toEqual({});
   });
 
-  it("type='body' + layout_id 매칭 frame body 가 root + framePositions 좌표 반영", () => {
+  it("type='body' + layout_id 매칭 frame body 가 root + frameAreas 좌표 반영", () => {
     const bodyEl = makeElement({
       id: "frame-body-1",
       type: "body",
@@ -56,7 +85,7 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
       makeInput({
         elements: [bodyEl],
         framePositions: {
-          "frame-A": { x: 100, y: 50, width: 320, height: 200 },
+          "frame-A": { x: 999, y: 888, width: 320, height: 200 },
         },
         frameAreas: [
           {
@@ -75,7 +104,40 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     expect(result.bodyPagePositions["frame-body-1"]).toEqual({ x: 100, y: 50 });
   });
 
-  it("framePositions miss 시 frameAreas.x/y 로 fallback", () => {
+  it("page-bound body 가 같은 layout_id 를 가져도 frame mode root 로 등록하지 않는다", () => {
+    const pageBody = makeElement({
+      id: "page-body",
+      type: "body",
+      page_id: "page-1",
+      layout_id: "frame-A",
+    });
+    const frameBody = makeElement({
+      id: "frame-body",
+      type: "body",
+      page_id: null,
+      layout_id: "frame-A",
+    });
+
+    const result = collectVisibleFrameRoots(
+      makeInput({
+        elements: [pageBody, frameBody],
+        frameAreas: [
+          {
+            frameId: "frame-A",
+            frameName: "Frame A",
+            x: 0,
+            y: 0,
+            width: 320,
+            height: 200,
+          },
+        ],
+      }),
+    );
+
+    expect(result.rootElementIds).toEqual(["frame-body"]);
+  });
+
+  it("stale framePositions 가 있어도 정규화된 frameAreas.x/y 를 사용한다", () => {
     const bodyEl = makeElement({
       id: "frame-body-1",
       type: "body",
@@ -85,7 +147,9 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     const result = collectVisibleFrameRoots(
       makeInput({
         elements: [bodyEl],
-        framePositions: {},
+        framePositions: {
+          "frame-A": { x: 900, y: 900, width: 320, height: 200 },
+        },
         frameAreas: [
           {
             frameId: "frame-A",
@@ -247,5 +311,33 @@ describe("ADR-911 P3-δ collectVisibleFrameRoots", () => {
     );
 
     expect(result.rootElementIds).toEqual(["frame-body-A"]);
+  });
+
+  it("deleted frame body 는 live root 로 등록하지 않는다", () => {
+    const deletedBody = makeElement({
+      id: "deleted-body",
+      type: "body",
+      layout_id: "frame-X",
+      deleted: true,
+    });
+
+    const result = collectVisibleFrameRoots(
+      makeInput({
+        elements: [deletedBody],
+        frameAreas: [
+          {
+            frameId: "frame-X",
+            frameName: "X",
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+          },
+        ],
+      }),
+    );
+
+    expect(result.rootElementIds).toEqual([]);
+    expect(result.bodyPagePositions).toEqual({});
   });
 });

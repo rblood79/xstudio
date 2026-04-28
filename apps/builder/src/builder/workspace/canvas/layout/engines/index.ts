@@ -54,6 +54,8 @@ export { calculateFullTreeLayout, resetPersistentTree } from "./fullTreeLayout";
 // ADR-005 Phase 3: Flat Render Command Stream — 공유 Layout Map
 export {
   publishLayoutMap,
+  publishLayoutMapsBatch,
+  publishFilteredChildrenMap,
   getSharedLayoutMap,
   getSharedLayoutVersion,
   onLayoutPublished,

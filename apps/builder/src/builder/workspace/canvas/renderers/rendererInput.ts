@@ -125,7 +125,9 @@ export function buildFrameRendererInput({
   const pageElements: Element[] = [];
 
   for (const el of elementById.values()) {
+    if (el.deleted) continue;
     if (el.layout_id !== frameId) continue;
+    if (el.page_id != null) continue;
     if (el.type === "body") {
       if (!bodyElement) bodyElement = el;
       // body element 는 pageElements 에 포함하지 않음 — page 경로의 nonBodyElements
@@ -178,6 +180,7 @@ export interface SkiaRendererInput {
   elements: Element[];
   elementsMap: Map<string, Element>;
   dirtyElementIds: Set<string>;
+  editMode: "page" | "layout";
   pageIndex: PageElementIndex;
   pagePositionsVersion: number;
   pagePositions: Record<string, { x: number; y: number } | undefined>;
@@ -202,6 +205,7 @@ interface CreateSkiaRendererInputOptions {
   elements: Element[];
   elementsMap: Map<string, Element>;
   dirtyElementIds: Set<string>;
+  editMode: "page" | "layout";
   pageIndex: PageElementIndex;
   pagePositionsVersion: number;
   pagePositions: Record<string, { x: number; y: number } | undefined>;
@@ -229,6 +233,7 @@ export function createSkiaRendererInput(
     elements: resolvedTree.elements,
     elementsMap: resolvedTree.elementsMap,
     dirtyElementIds: input.dirtyElementIds,
+    editMode: input.editMode,
     pageIndex: input.pageIndex,
     pagePositionsVersion: input.pagePositionsVersion,
     pagePositions: input.pagePositions,

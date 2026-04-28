@@ -1015,6 +1015,9 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
 
   // ---------- shapes 생성 ----------
   const shapes = spec.render.shapes(specProps, sizeSpec, componentState);
+  if (type === "Slot" && specProps._slotChrome === "hidden") {
+    shapes.length = 0;
+  }
 
   normalizeMiddleBaselineTextLineHeight(
     shapes,

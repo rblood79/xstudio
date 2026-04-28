@@ -209,6 +209,31 @@ export function publishLayoutMap(
   for (const cb of _layoutPublishListeners) cb();
 }
 
+export function publishLayoutMapsBatch(
+  updates: Array<{ key: string; map: Map<string, ComputedLayout> | null }>,
+  deleteKeys: Iterable<string> = [],
+): void {
+  let touched = false;
+
+  for (const key of deleteKeys) {
+    _perPageLayoutMaps.delete(key);
+    touched = true;
+  }
+
+  for (const { key, map } of updates) {
+    if (map) {
+      _perPageLayoutMaps.set(key, map);
+    } else {
+      _perPageLayoutMaps.delete(key);
+    }
+    touched = true;
+  }
+
+  if (!touched) return;
+  _sharedLayoutVersion++;
+  for (const cb of _layoutPublishListeners) cb();
+}
+
 /** 공유된 fullTreeLayoutMap 조회 (모든 페이지 머지, 버전 캐시) */
 export function getSharedLayoutMap(): Map<string, ComputedLayout> | null {
   if (_perPageLayoutMaps.size === 0) return null;
@@ -1867,9 +1892,13 @@ export function calculateFullTreeLayout(
   }
 
   // Fix 1: 트리 소스 일원화 — filteredChildIdsMap 공유
-  // Multi-page: rootElement의 page_id로 페이지별 저장
-  const rootPageId = elementsMap.get(rootElementId)?.page_id;
-  publishFilteredChildrenMap(filteredChildIdsMap, rootPageId ?? undefined);
+  // Multi-page + frame authoring: layout map 과 동일한 key fallback chain 사용.
+  // frame body 는 page_id 가 null 이므로 `layout_id` 로 저장해야 page-mode
+  // filtered tree 와 frame-mode filtered tree 가 서로 `__default__` 에서 덮이지 않는다.
+  const rootElement = elementsMap.get(rootElementId);
+  const rootKey =
+    rootElement?.page_id ?? rootElement?.layout_id ?? rootElementId;
+  publishFilteredChildrenMap(filteredChildIdsMap, rootKey);
 
   // ── Step 3: 초기 빌드 또는 증분 갱신 ──────────────────────────────
   try {

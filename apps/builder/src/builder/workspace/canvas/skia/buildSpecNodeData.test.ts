@@ -23,6 +23,28 @@ function collectText(node: SkiaNodeData | undefined | null): string[] {
 }
 
 describe("buildSpecNodeData", () => {
+  it("hides Slot chrome when page-frame resolution marks it as page content anchor", () => {
+    const slot = makeElement("slot-content", {
+      type: "Slot",
+      props: {
+        name: "content",
+        _slotChrome: "hidden",
+      },
+    });
+
+    const node = buildSpecNodeData({
+      element: slot,
+      layout: { x: 0, y: 0, width: 240, height: 80 },
+      theme: "light",
+      elementsMap: new Map([[slot.id, slot]]),
+    });
+
+    expect(node).not.toBeNull();
+    expect(node?.box?.fillColor?.[3]).toBe(0);
+    expect(node?.box?.strokeColor).toBeUndefined();
+    expect(collectText(node)).toEqual([]);
+  });
+
   it("uses NumberField parent label for its Label child", () => {
     const parent = makeElement("number", {
       type: "NumberField",

@@ -16,7 +16,11 @@
 
 import { useEffect, useRef } from "react";
 import type { PixiPageRendererInput } from "../renderers";
-import { publishLayoutMap } from "../layout";
+import {
+  publishFilteredChildrenMap,
+  publishLayoutMapsBatch,
+} from "../layout";
+import type { ComputedLayout } from "../layout";
 import {
   getCachedPageLayout,
   createPageElementsSignature,
@@ -45,6 +49,7 @@ export function useLayoutPublisher(
 ): void {
   const pagesRef = useRef(pages);
   const framePagesRef = useRef(framePages);
+  const publishedKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     pagesRef.current = pages;
@@ -89,6 +94,11 @@ export function useLayoutPublisher(
 
   useEffect(() => {
     const all = [...pagesRef.current, ...framePagesRef.current];
+    const activeKeys = new Set<string>();
+    const layoutUpdates: Array<{
+      key: string;
+      map: Map<string, ComputedLayout> | null;
+    }> = [];
 
     for (const { input } of all) {
       const {
@@ -101,6 +111,9 @@ export function useLayoutPublisher(
       } = input;
 
       if (!bodyElement || !wasmLayoutReady) continue;
+      const key =
+        bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
+      activeKeys.add(key);
 
       const resolvedTree = resolveCanonicalRefTree({
         elements: pageElements,
@@ -143,9 +156,16 @@ export function useLayoutPublisher(
       // - page bodyElement: page_id 확정 → 기존 동작 유지
       // - frame bodyElement: page_id=null, layout_id=frameId → frameId 키로 발행
       // - 양쪽 모두 미정 시 element id fallback (graceful degradation)
-      const key =
-        bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
-      publishLayoutMap(layoutMap, key);
+      layoutUpdates.push({ key, map: layoutMap });
     }
+
+    const staleKeys: string[] = [];
+    for (const key of publishedKeysRef.current) {
+      if (activeKeys.has(key)) continue;
+      publishFilteredChildrenMap(null, key);
+      staleKeys.push(key);
+    }
+    publishLayoutMapsBatch(layoutUpdates, staleKeys);
+    publishedKeysRef.current = activeKeys;
   }, [layoutVersion, dimensionKey, layoutInputKey]);
 }

@@ -16,4 +16,23 @@ describe("useLayoutPublisher invalidation contract", () => {
       /\}, \[layoutVersion, dimensionKey, layoutInputKey\]\);/,
     );
   });
+
+  it("clears stale page/frame layout maps when the active render mode changes", async () => {
+    const source = await readFile(
+      resolve(__dirname, "useLayoutPublisher.ts"),
+      "utf-8",
+    );
+
+    expect(source).toContain("const publishedKeysRef = useRef<Set<string>>");
+    expect(source).toContain("const layoutUpdates: Array<");
+    expect(source).toMatch(
+      /const key =\s*bodyElement\.page_id \?\? bodyElement\.layout_id \?\? bodyElement\.id;/,
+    );
+    expect(source).toContain("activeKeys.add(key);");
+    expect(source).toContain("layoutUpdates.push({ key, map: layoutMap });");
+    expect(source).toMatch(/publishFilteredChildrenMap\(null, key\);/);
+    expect(source).toMatch(/publishLayoutMapsBatch\(layoutUpdates, staleKeys\);/);
+    expect(source).not.toMatch(/publishLayoutMap\(layoutMap, key\);/);
+    expect(source).toContain("publishedKeysRef.current = activeKeys;");
+  });
 });

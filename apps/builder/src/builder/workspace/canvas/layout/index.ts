@@ -56,6 +56,8 @@ export {
   resetPersistentTree,
   // ADR-005 Phase 3: Flat Render Command Stream — 공유 Layout Map
   publishLayoutMap,
+  publishLayoutMapsBatch,
+  publishFilteredChildrenMap,
   getSharedLayoutMap,
   getSharedLayoutVersion,
   onLayoutPublished,

@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { useStore } from "../../../../stores";
 import { LAYOUT_PRESETS } from "./presetDefinitions";
 import type {
@@ -38,6 +39,33 @@ interface UsePresetApplyReturn {
   isApplying: boolean;
 }
 
+const FRAME_BOUNDARY_MIN_HEIGHT_VALUES = new Set([
+  "100vh",
+  "100dvh",
+  "100svh",
+  "100lvh",
+]);
+
+export function normalizeFramePresetContainerStyle(
+  style: CSSProperties | undefined,
+): CSSProperties {
+  if (!style) return {};
+
+  const next: CSSProperties = { ...style };
+  const minHeight =
+    typeof next.minHeight === "string"
+      ? next.minHeight.trim().toLowerCase()
+      : undefined;
+
+  if (minHeight && FRAME_BOUNDARY_MIN_HEIGHT_VALUES.has(minHeight)) {
+    // Frame authoring surface is already bounded by the Page. Persisting viewport
+    // min-height makes a new frame look edited and can exceed the page height.
+    delete next.minHeight;
+  }
+
+  return next;
+}
+
 /**
  * 프리셋 적용 훅
  */
@@ -52,7 +80,7 @@ export function usePresetApply({
   const elementsMap = useStore((state) => state.elementsMap);
   const childrenMap = useStore((state) => state.childrenMap);
   const addComplexElement = useStore((state) => state.addComplexElement);
-  const removeElement = useStore((state) => state.removeElement);
+  const removeElements = useStore((state) => state.removeElements);
   const updateElementProps = useStore((state) => state.updateElementProps);
 
   // 현재 Layout의 기존 Slot 목록.
@@ -70,7 +98,7 @@ export function usePresetApply({
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
-      if (el.type === "Slot" && el.layout_id === layoutId) {
+      if (el.type === "Slot" && el.layout_id === layoutId && !el.deleted) {
         const slotChildren = childrenMap.get(el.id) ?? [];
         const slotName =
           ((el.props as { name?: string })?.name as string) || "unnamed";
@@ -147,10 +175,10 @@ export function usePresetApply({
             `[Preset] Removing ${existingSlots.length} existing slots...`,
           );
 
-          // 삭제 실행
-          await Promise.all(
-            existingSlots.map((slot) => removeElement(slot.elementId)),
-          );
+          // 병렬 removeElement 는 각 삭제가 오래된 currentState 를 기준으로
+          // set 할 수 있어, 마지막 commit 이 앞선 삭제를 메모리에 되살린다.
+          // replace 는 동일 부모의 slot 집합을 한 번에 제거해야 한다.
+          await removeElements(existingSlots.map((slot) => slot.elementId));
 
           console.log(
             `[Preset] Removed ${existingSlots.length} existing slots`,
@@ -206,9 +234,13 @@ export function usePresetApply({
               ?.style as Record<string, unknown>) || {};
 
           // containerStyle이 있으면 병합, 없으면 기존 스타일 유지
-          const mergedStyle = preset.containerStyle
-            ? { ...currentStyle, ...preset.containerStyle }
-            : currentStyle;
+          const presetContainerStyle = normalizeFramePresetContainerStyle(
+            preset.containerStyle,
+          );
+          const mergedStyle =
+            Object.keys(presetContainerStyle).length > 0
+              ? { ...currentStyle, ...presetContainerStyle }
+              : currentStyle;
 
           // ⭐ appliedPreset 키 저장 (동일 프리셋 감지용)
           await updateElementProps(bodyElementId, {
@@ -245,7 +277,7 @@ export function usePresetApply({
       bodyElementId,
       existingSlots,
       addComplexElement,
-      removeElement,
+      removeElements,
       updateElementProps,
     ],
   );

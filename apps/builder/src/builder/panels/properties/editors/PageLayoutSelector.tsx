@@ -26,6 +26,7 @@ import { selectCanonicalDocument } from "../../../stores/elements";
 import { getDB } from "../../../../lib/db";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 import { isFramesTabCanonical } from "../../../../utils/featureFlags";
+import { enqueuePagePersistence } from "../../../utils/pagePersistenceQueue";
 import type { FrameNode } from "@composition/shared";
 
 interface PageLayoutSelectorProps {
@@ -103,6 +104,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
       try {
         const { pages, setPages, mergeElements } = useStore.getState();
         const db = await getDB();
+        const nextLayoutId = layoutId || null;
 
         if (layoutId) {
           // ADR-903 P3-E follow-up: canonical parent 기반 조회
@@ -111,11 +113,30 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         }
 
         const updatedPages = pages.map((p) =>
-          p.id === pageId ? { ...p, layout_id: layoutId || null } : p,
+          p.id === pageId ? { ...p, layout_id: nextLayoutId } : p,
         );
+        const updatedPage = updatedPages.find((p) => p.id === pageId);
         setPages(updatedPages);
 
-        await db.pages.update(pageId, { layout_id: layoutId || null });
+        await enqueuePagePersistence(async () => {
+          const persistenceDb = await getDB();
+          const existingPage = await persistenceDb.pages.getById(pageId);
+
+          if (existingPage) {
+            await persistenceDb.pages.update(pageId, {
+              layout_id: nextLayoutId,
+            });
+            return;
+          }
+
+          if (updatedPage) {
+            await persistenceDb.pages.insert({
+              ...updatedPage,
+              layout_id: nextLayoutId,
+              updated_at: new Date().toISOString(),
+            });
+          }
+        });
       } catch (error) {
         console.error(
           "[PageLayoutSelector] Failed to update page layout:",

@@ -5,8 +5,8 @@
  * (`computeFrameAreas`) + P3-γ (`selectedReusableFrameId`) 결정에 따라 신설.
  *
  * Contract:
- * - input: `SkiaRendererInput.frameAreas` (canonical reusable frames) +
- *   `framePositions` (frame id → {x,y,width,height})
+ * - input: `SkiaRendererInput.frameAreas` (canonical reusable frames, 이미
+ *   현재 page 작업면 좌표/크기로 정규화됨)
  * - output: rootElementIds (frame body element id 목록) +
  *   bodyPagePositions (body element id → {x,y}) — `visiblePageRoots` 출력과
  *   동일 shape 라 caller (skiaFramePipeline) 가 단일 맵으로 병합 가능 (D3=A)
@@ -32,6 +32,10 @@ export function collectVisibleFrameRoots(
   const rootElementIds: string[] = [];
   const bodyPagePositions: Record<string, { x: number; y: number }> = {};
 
+  if (rendererInput.editMode !== "layout") {
+    return { rootElementIds, bodyPagePositions };
+  }
+
   if (rendererInput.frameAreas.length === 0) {
     return { rootElementIds, bodyPagePositions };
   }
@@ -44,6 +48,8 @@ export function collectVisibleFrameRoots(
   const bodyByLayoutId = new Map<string, string>();
   for (const el of rendererInput.elements) {
     if (el.type !== "body") continue;
+    if (el.page_id != null) continue;
+    if (el.deleted) continue;
     const layoutId = el.layout_id;
     if (!layoutId) continue;
     if (!bodyByLayoutId.has(layoutId)) {
@@ -56,10 +62,7 @@ export function collectVisibleFrameRoots(
     if (!bodyId) continue;
 
     rootElementIds.push(bodyId);
-    const pos = rendererInput.framePositions[area.frameId];
-    bodyPagePositions[bodyId] = pos
-      ? { x: pos.x, y: pos.y }
-      : { x: area.x, y: area.y };
+    bodyPagePositions[bodyId] = { x: area.x, y: area.y };
   }
 
   return { rootElementIds, bodyPagePositions };

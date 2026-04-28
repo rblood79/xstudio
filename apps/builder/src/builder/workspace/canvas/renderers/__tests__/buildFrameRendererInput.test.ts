@@ -177,6 +177,75 @@ describe("ADR-911 P3-δ fix #3 — buildFrameRendererInput", () => {
     expect(result).toBeNull();
   });
 
+  it("page-bound element 가 같은 layout_id 를 가져도 frame authoring input 에 포함하지 않는다", () => {
+    const body = makeElement({
+      id: "frame-body",
+      type: "body",
+      page_id: null,
+      layout_id: "frame-A",
+    });
+    const pageElement = makeElement({
+      id: "page-card",
+      type: "Card",
+      page_id: "page-1",
+      layout_id: "frame-A",
+      parent_id: "frame-body",
+    });
+    const elementById = new Map([
+      [body.id, body],
+      [pageElement.id, pageElement],
+    ]);
+
+    const result = buildFrameRendererInput({
+      ...baseOptions,
+      elementById,
+      frameHeight: 200,
+      frameId: "frame-A",
+      frameWidth: 320,
+      frameX: 0,
+      frameY: 0,
+      sceneSnapshot: makeSceneSnapshot(),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.bodyElement).toBe(body);
+    expect(result!.pageElements.map((el) => el.id)).toEqual([]);
+  });
+
+  it("deleted element 는 frame authoring input 에 포함하지 않는다", () => {
+    const body = makeElement({
+      id: "frame-body",
+      type: "body",
+      page_id: null,
+      layout_id: "frame-A",
+    });
+    const deletedSlot = makeElement({
+      id: "deleted-slot",
+      type: "Slot",
+      parent_id: "frame-body",
+      layout_id: "frame-A",
+      deleted: true,
+    });
+    const elementById = new Map([
+      [body.id, body],
+      [deletedSlot.id, deletedSlot],
+    ]);
+
+    const result = buildFrameRendererInput({
+      ...baseOptions,
+      elementById,
+      frameHeight: 200,
+      frameId: "frame-A",
+      frameWidth: 320,
+      frameX: 0,
+      frameY: 0,
+      sceneSnapshot: makeSceneSnapshot(),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.pageElements.map((el) => el.id)).toEqual([]);
+  });
+
   it("동일 frameId 의 type='body' element 중복 시 첫 매칭만 등록 + body 들은 pageElements 에서 모두 제외", () => {
     const body1 = makeElement({
       id: "body-1",

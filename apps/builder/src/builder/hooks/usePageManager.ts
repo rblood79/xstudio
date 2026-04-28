@@ -464,6 +464,7 @@ export const usePageManager = ({
           title: p.title || "Untitled",
           slug: p.slug,
           parent_id: p.parent_id ?? null,
+          layout_id: p.layout_id ?? null,
           order_num: p.order_num ?? 0,
           created_at: p.created_at || new Date().toISOString(),
           updated_at: p.updated_at || new Date().toISOString(),
@@ -485,7 +486,8 @@ export const usePageManager = ({
             parent_id: p.parent_id ?? null,
             order_num: p.order_num,
             layout_id:
-              (originalPage as { layout_id?: string | null })?.layout_id ||
+              p.layout_id ??
+              (originalPage as { layout_id?: string | null })?.layout_id ??
               null,
           };
         });

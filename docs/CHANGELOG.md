@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+- **Pages ↔ Frames 전환 시 scene source 가 섞이던 Skia 회귀 수정**:
+  - Page mode 는 page roots 만 렌더하고, persisted `selectedReusableFrameId`/`frameAreas` 가 남아 있어도 separate frame authoring roots 를 렌더하지 않음
+  - Frames mode 는 selected reusable frame root 만 렌더하고, visible page snapshots/page elements 를 Skia root collection 에서 제외
+  - Page mode 의 frame Slot 은 layout anchor 로만 남기고 Skia placeholder chrome 을 숨겨 raw Slot dashed box 가 page 화면에 노출되지 않도록 보정
+  - Frames mode frame authoring surface 를 현재 Page 의 좌표와 `pageWidth/pageHeight` 로 정규화. 기존 ADR-911 P3-δ 의 “page 오른쪽 별도 authoring area” stale `framePositions` 는 layout publish/render root 좌표 source 로 쓰지 않음
+- **Layout preset replace 시 Slot 이 live 화면에서 중첩되고 새로고침 후 정상화되던 회귀 수정**:
+  - `replace` 가 기존 Slot 여러 개를 `Promise.all(removeElement(...))` 로 병렬 삭제하면서 각 삭제가 오래된 `currentState` 로 set 하고 마지막 commit 이 앞선 삭제를 메모리에 되살리던 문제를 차단
+  - 기존 Slot 삭제를 `removeElements([...slotIds])` 단일 배치 액션으로 원자화해 IndexedDB 와 live Zustand state 의 삭제 결과를 일치
+- **Frame 추가 후 preset 적용 시 초기 높이가 Page 를 초과하고 Transform reset 이 활성화되던 회귀 수정**:
+  - Layout preset 의 `containerStyle.minHeight: "100vh"` 를 reusable frame body inline style 로 저장하지 않도록 적용 단계에서 정규화
+  - Frame authoring surface 는 이미 현재 Page 높이로 bounded 되므로 viewport 기준 `minHeight` 를 Transform override 로 남기지 않음
+- **Page 에 Frame 적용 후 새로고침하면 frame binding 이 사라지던 회귀 수정**:
+  - 신규 Page 생성 persistence 가 background queue 에 남아 있는 동안 Frame 선택 저장이 queue 밖에서 `pages.update(layout_id)` 를 먼저 실행해, live store 만 바뀌고 IndexedDB 에는 누락되거나 이후 `layout_id: null` insert 로 덮이던 경로를 차단
+  - `PageLayoutSelector` 의 `layout_id` 저장을 page persistence queue 뒤로 직렬화하고, queue 자체도 enqueue 호출 시점에 `queueTail` 을 즉시 append 하도록 보강
+  - project cloud upload/download 도 page `layout_id` 를 보존해 수동 sync 경로에서 Frame 적용 상태가 유실되지 않음
+- **Frame 적용 후 Page 요소/Frame Slot 이 보였다 안 보였다 하던 Skia shared layout 회귀 수정**:
+  - Page mode 의 frame 합성 layout 과 Frames mode 의 frame authoring layout 이 같은 Slot/frame element id 를 서로 다른 parent tree 로 계산하면서 shared layout map 에 동시에 남아 서로 덮어쓰던 문제를 차단
+  - `useLayoutPublisher` 가 현재 active page/frame key 만 유지하고 mode 전환 시 stale layout map + filtered children map 을 제거하며, layout map set/delete 를 batch publish 해 중간 상태가 렌더러에 노출되지 않도록 보강
+  - frame body 의 filtered children map key 도 `__default__` 대신 `page_id ?? layout_id ?? bodyId` fallback 을 사용해 page/frame tree source 와 layout map key 를 일치
+- **Frames tab 에 여러 Frame 등록 후 교차 선택 시 수직 3단 frame 이 깨지던 회귀 수정**:
+  - frame 선택을 DB descendant load 완료 전 즉시 반영하고, 늦게 끝난 이전 async load 가 최신 선택 frame 을 되돌리거나 stale subtree 를 병합하지 않도록 request token guard 추가
 - **Pages/Frames component 추가 후 selection 만 잡히고 화면에 보이지 않던 Skia 회귀 후속 수정**:
   - `StoreRenderBridge` 의 layout publish 재동기화가 canonical projection/synthetic id 때문에 incremental sync 로 빠질 수 있던 경로를 차단
   - layout publish, 초기 sync, async image materialization 은 full rebuild 를 강제해 첫 store sync 시 layout 이 없어서 `buildSpecNodeData` 가 null 을 반환한 component 도 layoutMap 발행 후 즉시 materialize
@@ -17,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Verification
 
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/StoreRenderBridge.static.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/skia/buildSpecNodeData.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.static.test.ts src/builder/workspace/canvas/BuilderCanvas.frameMode.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/utils/pagePersistenceQueue.static.test.ts src/utils/projectSync.layoutId.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts`
 - `pnpm -F @composition/builder type-check`
 - `git diff --check`
 - `npm run codex:preflight`
