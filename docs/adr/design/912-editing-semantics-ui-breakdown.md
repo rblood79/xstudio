@@ -14,15 +14,15 @@
 
 ## 1. baseline 차이점 요약
 
-| 영역                         | baseline (903 P4)                  | revision 2 (본 fork)                                                                            |
-| ---------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
-| 요소 수                      | 5                                  | **6 (⑥ Origin 토글 추가)**                                                                      |
-| 시각 마커 위치               | LayerTree + Canvas + DesignKit     | LayerTree + Canvas + **Properties 패널 라벨** (DesignKit 제거 — ADR-915 / Properties 라벨 신규) |
-| override 마커                | 별도 시각 cue                      | **두지 않음** — ④ Properties 필드별 indicator 로 흡수 (pencil 정합)                             |
-| ④ 필드별 reset               | P4 후속 defer 권고 (baseline §4.2) | **본 ADR 필수 채택 — Phase D 에 흡수** (codex M3)                                               |
-| sub-phase 수                 | 6 (P4-A ~ P4-F)                    | **8 (P4-A ~ P4-H, P4-G ⑥ + P4-H 회귀로 분리)**                                                  |
-| G4-A                         | 단일 Gate (시각 마커)              | **G4-A1 / A2 / A3 3-rolldown** (codex L1)                                                       |
-| R6 (Origin 토글 destructive) | 부재                               | **조건부 HIGH** — `instanceCount > 0` 시 (codex H3)                                             |
+| 영역                         | baseline (903 P4)                  | revision 2 (본 fork)                                                                                                                                                                                                                             |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 요소 수                      | 5                                  | **6 (⑥ Origin 토글 추가)**                                                                                                                                                                                                                       |
+| 시각 마커 위치               | LayerTree + Canvas + DesignKit     | LayerTree + Canvas + **Properties 패널 라벨** (DesignKit 제거 — ADR-915 / Properties 라벨 신규)                                                                                                                                                  |
+| override 마커                | 별도 시각 cue                      | **두지 않음** — ④ Properties 필드별 indicator 로 흡수 (pencil 정합)                                                                                                                                                                              |
+| ④ 필드별 reset               | P4 후속 defer 권고 (baseline §4.2) | **본 ADR 필수 채택 — Phase D 에 흡수** (codex M3)                                                                                                                                                                                                |
+| sub-phase 수                 | 6 (baseline P4-A ~ P4-F)           | **8 (Phase A1+A2+A3 / B / C / D / E / F / G / H — baseline P4-A detach materialize + P4-B path-based descendants 가 Phase C 통합 흡수, codex MED-1) + Phase F (Component section 통합 UI, codex H1) + Phase G (⑥ Origin 토글) + Phase H (회귀)** |
+| G4-A                         | 단일 Gate (시각 마커)              | **G4-A1 / A2 / A3 3-rolldown** (codex L1)                                                                                                                                                                                                        |
+| R6 (Origin 토글 destructive) | 부재                               | **조건부 HIGH** — `instanceCount > 0` 시 (codex H3)                                                                                                                                                                                              |
 
 ## 2. Sub-phase 분할 (8개)
 
@@ -54,11 +54,12 @@
 - 원본 → N개 인스턴스 highlight (composition 자체)
 - 단축키 (composition 자체 — pencil 미정의)
 
-### Phase C — detach UI + 경고 다이얼로그 (G4-C)
+### Phase C — detach UI + 경고 다이얼로그 + path-based descendants 처리 (G4-C, **baseline P4-A + P4-B 통합 흡수 — codex MED-1**)
 
 - 단축키 `Cmd/Ctrl+Opt/Alt+X` (pencil 호환)
 - 우클릭 + Properties 패널 detach 버튼
 - 경고 다이얼로그 + detach 후 ref → element subtree materialize + undo
+- **path-based descendants 처리 흡수** (baseline 903 P4-B): `descendants[idPath]` slash-separated path → element subtree 변환 시 path resolution + nested instance materialize. detach materialize 의 prerequisite. 분리 sub-phase 신설 안 함 — Phase C 내부 sub-task 로 통합 (Gate G4-C (c) "detach 후 ref → element subtree materialize" 가 path-based 처리를 implicitly 포함)
 
 ### Phase D — reset override + 필드별 indicator (G4-D, codex M3)
 
@@ -83,12 +84,17 @@
 
 ### Phase G — ⑥ Origin 토글 (G4-G, codex H3 — 선결조건 명시)
 
-- **선결조건**: G4-C (detach 본체) + Phase D (path-based descendants 처리) 완료 후 진입
+- **선결조건**: G4-C 완료 후 (Phase C 가 baseline P4-A detach materialize + P4-B path-based descendants 양쪽 흡수 — codex MED-1)
 - 단축키 `Cmd/Ctrl+Opt/Alt+K` 양방향 토글 (pencil 호환)
 - Properties 패널 ##Component section## "Create component" 버튼 + `[-]` 토글
 - **`instanceCount > 0` 또는 nested descendants 존재 시**: G4-E 다이얼로그 reuse 강제 + 경고
-- **`instanceCount === 0` 일 때만**: silent 실행 허용
-- reusable → standard 해제 시 모든 instance subtree detach materialize 정합 — `0 / 1 / 1000 instance count` fixture round-trip
+- **`instanceCount === 0` 일 때만**: silent 실행 허용 — 단 **TOCTOU guard 필수 (codex MED-2)**: silent 실행 직전 authoritative `instanceCount` 재계산 + `=== 0` confirm. 재계산 시 transaction/lock 또는 store snapshot 으로 race condition 차단 (편집 도중 instance 추가 시 → 다이얼로그 경로로 fallback). guard 메커니즘:
+  1. `Cmd+Opt+K` 트리거 시점 (T0): `instanceCount` 1차 측정
+  2. T0 결과가 0 이면 silent 경로 후보 진입, > 0 이면 즉시 다이얼로그
+  3. silent 경로에서 mutation 직전 (T1): `instanceCount` 재측정 + `=== 0` confirm
+  4. T1 결과가 변경됐으면 (≥ 1 추가됨) → silent abort + 다이얼로그 fallback + 사용자 알림
+  5. T1 confirm 후 mutation: store snapshot 또는 transaction 안에서 atomic 실행 (T1 ↔ mutation 사이 race 차단)
+- reusable → standard 해제 시 모든 instance subtree detach materialize 정합 — `0 / 1 / 1000 instance count` fixture round-trip + **TOCTOU race fixture** (T0=0, T1 시점 instance 1개 추가 → fallback 다이얼로그 노출 검증)
 - undo 정상 — 토글 전 상태 복원
 
 ### Phase H — 회귀 0 + undo (G4-H)

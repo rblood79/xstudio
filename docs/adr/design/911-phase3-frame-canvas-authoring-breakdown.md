@@ -254,6 +254,136 @@ frame body 자체가 보이는 이유 = framePositions 좌표 + skiaData 또는 
 
 D4=A, D5=A, D6=A 채택 시 **~1d HIGH** (당초 P3-δ 본격 land 의 lower bound 와 동일 — fix #1/#2 의 추가 1d MED 가 본 fix 의 prerequisite 였음). 본 fix #3 land 후 G3-δ 전체 충족 → P3-ε / P3-ζ 진입.
 
+## 4.8. P3-δ fix #4 — frame 영역 size 자동 결정 (사용자 회귀 fix)
+
+### 결함 요약
+
+P3-δ fix #2 의 framePositions auto-init 이 `height: pageHeight` 사용 — viewport 크기 (예: 844px iPhone, 1080px desktop) 가 frame 영역에 강제됨. Frame 은 component template (viewport-sized 가 아님) → body content 보다 훨씬 큰 빈 사각형 시각화.
+
+사용자 보고 (2026-04-28): "Frame 추가시 세로 영역이 body 보다 더 크게 생성됨".
+
+### Fix
+
+`BuilderCanvas.tsx` framePositions auto-init useEffect 에 `findFrameBodyDimensions(frameId)` 추가:
+
+1. `el.type === "body"` && `el.layout_id === frameId` 매칭
+2. `bodyElement.props.style.width/height` 명시 px 값 우선
+3. 없으면 component-sized default (320×200)
+4. `page_id === null` 인 canonical reusable frame body 우선 (legacy layout-bound page body 보다 우위)
+
+### Fix 효과
+
+- frame 영역 = body 의 실 의도 size 와 일치 (또는 reasonable default)
+- 빈 큰 영역 회귀 0
+- 세션 47 commit `e4f24697` (fix #3+#4+B1 묶음)
+
+## 4.9. P3-γ B1 filter — selectedReusableFrameId 만 노출 (사용자 noise 회귀 fix)
+
+### 결함 요약
+
+`computeFrameAreas` 가 모든 reusable frame 을 영역으로 반환 (옵션 B2). 사용자가 frame 을 명시 선택하지 않은 상태에서도 모든 reusable frame 의 별도 영역이 캔버스에 항상 노출 → noise.
+
+사용자 보고 (2026-04-28): "1.문제: Frames 가 canvas에 별도로 생성되고 그내부에 slot들이 생성되었다".
+
+### Fix
+
+§4.6 의 D2/D3 외 신규 옵션 분기:
+
+| 옵션                                                 | 동작                            | 채택   |
+| ---------------------------------------------------- | ------------------------------- | ------ |
+| **B1**: `selectedReusableFrameId` 일치 frame 만 노출 | 명시 선택 시에만 별도 영역 노출 | ✓      |
+| B2: 모든 reusable frame 항상 노출                    | noise 큼                        | (기각) |
+
+`computeFrameAreas(doc, framePositions, selectedReusableFrameId)` 시그니처 확장. `selectedReusableFrameId === null` 시 빈 배열. pencil app component editing navigation context 와 정합 (frame 편집은 명시적 navigation, 항상 보이지 않음).
+
+### Fix 효과
+
+- PagesTab 작업 시 frame 영역 0 (page 만 가시)
+- FramesTab → frame 클릭 시 그 frame 만 별도 영역으로 노출
+- 세션 47 commit `e4f24697` 동일 묶음
+
+## 4.10. P3-θ — Frame Slot Fill Resolution (다음 세션 진입, ~1.5d MED)
+
+### 결함 요약 (Chrome MCP evidence 2026-04-28)
+
+P3-δ fix #3+#4+B1 land 후 사용자 시나리오 검증:
+
+- Frame: vertical-3 preset 적용 (slot:header / slot:content / slot:footer + header/footer 에 Text 등록)
+- Page: `page.layout_id = frameId` 으로 frame 에 바인딩 ✅
+- 사용자 기대 (Page 영역 inline): `상단 (frame default header text) / 가운데 (page slot:content fill) / 하단 (frame default footer text)`
+
+**현재 동작 확증**:
+
+- Page rendering pipeline: `getPageElements(pageIndex, pageId)` 가 `el.page_id === pageId` 인 element 만 반환
+- Frame element (body / Slot×3 / Text×2) 는 `page_id === null` → **Page rendering 에서 자동 제외**
+- 결과: Page 영역에 frame 의 slot 구조 inline 노출 안 됨 (사용자 기대 미충족)
+
+### Root cause
+
+ADR-903 / ADR-911 의 canonical Ref/descendants resolution **legacy elements 영역 미구현**. canonical adapter 단계에서 Ref 처리는 있지만, **legacy rendering pipeline (`getPageElements` + `buildPageChildrenMap`) 은 page_id 인덱스만 사용** → frame slot subtree 가상 merge 단계 부재.
+
+이는 ADR-911 의 핵심 기능 (pencil component composition) — Phase 3 frame canvas authoring (frame 자체 편집) 의 **상보 작업**:
+
+- P3-α/β/γ/δ + fix #1~#4 = **frame 자체 편집** (separate canvas area)
+- **P3-θ (본 sub-phase)** = **frame instance composition** (page 가 frame slot 채우기 + inline 렌더)
+
+### 변경 surface (예상 4 파일 + test)
+
+| 파일                                                 | 변경                                                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `pageIndex.ts` 또는 `getPageElements` 호출 site      | `page.layout_id` set 시 `el.layout_id === pageLayoutId && el.page_id === null` 도 함께 반환     |
+| `buildPageChildrenMap` (`scene/layoutCache.ts`)      | frame body subtree 를 page body 자식으로 가상 merge (parent_id 재매핑 또는 별도 children entry) |
+| Slot resolution (신규 또는 기존 layoutResolver 확장) | page element 의 `slot_name` 일치 시 frame 의 Slot 자식 (default content) override               |
+| `tests/`                                             | T2 (frame default 노출) + T3 (page slot fill override) roundtrip + 회귀 fixture                 |
+
+### 결정 분기 3건 (다음 세션 사용자 승인 대기)
+
+#### D7. getPageElements 확장 vs 별도 resolver
+
+| 옵션                                               | 장점                                     | 단점                                                   | 권고 |
+| -------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------ | ---- |
+| **A. `getPageElements` 직접 확장**                 | page rendering pipeline 단일 진입점 유지 | pageIndex 의미 변형 (page_id 인덱스 → page+frame 복합) |      |
+| **B. 별도 `resolvePageWithFrame()` resolver 신규** | 기존 pageIndex 의미 보존                 | 호출 site 마다 resolver 적용 필요                      | ✓    |
+
+**B 권고** — pageIndex 의 page_id 의미를 보존하면서, page rendering 진입점에서 명시적 resolver 호출. canonical document 도입 시 `selectCanonicalDocument` 와 정합.
+
+#### D8. Slot 매칭 정책 (legacy slot_name vs canonical descendants[slotPath])
+
+| 옵션                                           | 장점                            | 단점                                            | 권고     |
+| ---------------------------------------------- | ------------------------------- | ----------------------------------------------- | -------- |
+| **A. legacy `slot_name` 매칭**                 | 기존 element schema 그대로 활용 | canonical Ref/descendants 와 별도 path          | ✓ (P3-θ) |
+| B. canonical `descendants[slotPath]` 직접 적용 | 장기 정합                       | legacy element 변환 부담 + Ref 인스턴스 ID 부재 |          |
+
+**A 권고** — P3-θ 는 legacy slot_name 매칭으로 즉시 도입. canonical descendants 전환은 ADR-913 Phase 5-A (`slot_name` cleanup) 와 동기화하여 마이그레이션.
+
+#### D9. 회귀 영향 — 기존 layout-bound page 동작
+
+P3-θ 가 `page.layout_id` set 시 frame element 를 page rendering 에 포함시키므로, **기존 layout-bound page 의 동작이 변경**됨:
+
+- 기존 (P3-θ 전): page 자체 element 만 rendering (frame slot 구조 inline 안 됨)
+- 후 (P3-θ 후): page + frame default + slot fill resolution
+
+회귀 위험: 사용자가 layout-bound page 를 만들어도 frame slot 구조가 안 보였던 기존 시나리오가 영향받음.
+
+| 옵션                           | 동작                                                  | 권고               |
+| ------------------------------ | ----------------------------------------------------- | ------------------ |
+| **A. 무조건 적용**             | 모든 layout-bound page 가 frame slot 구조 inline 노출 | 사용자 의도 정합 ✓ |
+| B. feature flag 으로 점진 적용 | rollback 경로 확보                                    | UX 일관성 떨어짐   |
+
+**A 권고** — 사용자 기대가 명확 (slot fill composition). 기존 동작은 미완성 상태였으므로 회귀 의미 약함.
+
+### G3-θ 통과 조건
+
+- (a) Page bound to frame → page 영역 inline 으로 frame default 노출 (T2)
+- (b) Page 의 slot_name="content" element → frame 의 content slot 자리 fill (T3)
+- (c) Frame 의 default header/footer 는 page slot fill 에 영향받지 않음 (override 분리)
+- (d) Chrome MCP screenshot 사용자 시나리오 GREEN
+- (e) 회귀 0 — 기존 page rendering (layout 미바인딩) 정상
+
+### 비용
+
+D7=B, D8=A, D9=A 채택 시 **~1.5d MED**. P3-θ 는 P3-δ fix #1~#4 + B1 의 prerequisite 가 아님 — 두 영역 schema 직교, 병렬 진행 가능. 하지만 사용자 시나리오 (frame composition) 의 **마지막 핵심 조각** — Phase 3 종결 직전 land 권장.
+
 ## 5. 비고
 
 - 본 sub-phase 진입 시 **1주+ HIGH 작업**. design 단계가 prerequisite — 단순 fix 불가

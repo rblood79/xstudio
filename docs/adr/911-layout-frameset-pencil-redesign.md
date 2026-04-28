@@ -152,6 +152,14 @@ In Progress — 2026-04-26 → 2026-04-28
   - Gate G6 신설: section 노출 + slot field 상태 표시 + 컨트롤 동작 + ADR-912 ##Component section## 와 패널 공존 / UI 충돌 0
   - References 보강: pencil components docs + keyboard-shortcuts docs URL + `.pen` 2.11 핵심 type 명시
   - ADR-912 본문 동시 revision 2 — 6 요소 확장 (⑥ Origin 토글 추가, `Cmd+Opt+K`/`Cmd+Opt+X` pencil 단축키 호환 baseline, Properties 패널 ##Component section## 위치 결정)
+- **2026-04-28 (세션 48)**: **P3-δ fix #3+#4 + B1 filter land (frame canvas authoring 마감) + P3-θ scope 사전 land**
+  - **fix #3 (slot 자식 시각화)**: D4=A (`buildFrameRendererInput` 신규, page-centric 함수와 분리) / D5=A (`publishLayoutMap` key fallback chain `page_id ?? layout_id ?? id`) / D6=A (단일 dimensionKey 통합) / `useLayoutPublisher` 시그니처 확장 (`framePages` 추가). 회귀 fix: body element 가 자기 자신의 child 가 되어 `RangeError: Maximum call stack size exceeded` → `buildFrameRendererInput` 의 pageElements 에서 body 제외 (page 경로 nonBodyElements 와 동일 정책)
+  - **fix #4 (frame 영역 size — 사용자 회귀 fix)**: 기존 `height: pageHeight` (viewport 크기) → frame body 보다 큰 빈 영역 → `bodyElement.props.style.width/height` 명시 px 우선 + 없으면 component-sized default (320×200) + `page_id===null` canonical reusable 우선
+  - **B1 filter (사용자 noise 회귀 fix)**: `computeFrameAreas(doc, framePositions, selectedReusableFrameId)` 시그니처 확장 → `selectedReusableFrameId === null` 시 빈 배열. design breakdown §4.7 옵션 B1 채택 (B2 모든 reusable → B1 selected only). pencil app component editing navigation context 정합
+  - **P3-θ scope land (다음 세션 진입 prerequisite)**: Chrome MCP evidence (Page bound to Frame, frame element page_id=null → page rendering 에서 자동 제외 확증) → ADR-911 의 핵심 기능 (pencil component composition) 미구현. design breakdown §4.10 사전 land — slot fill resolution (D7=B 별도 resolver / D8=A legacy slot_name 매칭 / D9=A 무조건 적용), ~1.5d MED. P3-α/β/γ/δ + fix #1~#4 = frame 자체 편집 / P3-θ = frame instance composition (page slot fill)
+  - **Gate G3-δ 충족**: (a) frame body 시각화 ✅ + (b) slot 자식 시각화 ✅. (c) Chrome MCP 사용자 시나리오 GREEN 은 P3-θ 후 — page 영역 inline frame slot 노출
+  - 검증: type-check 3/3 PASS / canvas vitest 15/15 파일 189/189 PASS (회귀 0) / 신규 `buildFrameRendererInput.test.ts` 6/6 + `frameAreas.test.ts` 7/7 (B1 filter test 2 추가)
+  - 본 세션 commits: docs revision 2 `c63ae536` / fix #3+#4+B1 `e4f24697` / 본 entry + P3-θ design land
 
 ## Context
 
