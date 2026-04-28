@@ -1,6 +1,7 @@
 import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
 import { getPageElements } from "../../../stores/utils/elementIndexer";
 import type { Element, Page } from "../../../../types/core/store.types";
+import { resolvePageWithFrame } from "./resolvePageWithFrame";
 import type { ScenePageData, ScenePageFrame } from "./sceneSnapshotTypes";
 
 export function buildDepthMap(
@@ -51,20 +52,15 @@ export function buildPageDataMap(
 
   for (const page of pages) {
     const pageElements = getPageElements(pageIndex, page.id, elementsMap);
-    let bodyElement: Element | null = null;
-    const nonBodyElements: Element[] = [];
-
-    for (const element of pageElements) {
-      if (element.type.toLowerCase() === "body") {
-        bodyElement = element;
-      } else {
-        nonBodyElements.push(element);
-      }
-    }
+    const resolved = resolvePageWithFrame({
+      page,
+      pageElements,
+      elementsMap,
+    });
 
     pageDataMap.set(page.id, {
-      bodyElement,
-      pageElements: nonBodyElements,
+      bodyElement: resolved.bodyElement,
+      pageElements: resolved.pageElements,
     });
   }
 

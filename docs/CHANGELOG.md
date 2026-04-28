@@ -5,6 +5,35 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-911 Phase 3 frame canvas authoring + frame instance composition Land] - 2026-04-28
+
+### Features
+
+- **ADR-911 P3-θ Slot Fill Resolution** — page 가 frame 에 바인딩될 때 frame slot 구조 inline 노출 + page slot fill resolution. 사용자 시나리오 (Frame vertical-3 preset + Page Apply Frame): 상단 frame default header + 가운데 page slot:content fill + 하단 frame default footer (Gate G3-θ a/b/c/e 충족, d 사용자 dev 검증 후 종결):
+  - **결정 분기 land**: D7=B (별도 resolver) / D8=A (legacy `slot_name` 매칭) / D9=A (무조건 적용) — 모두 design breakdown §4.10 권고대로 사용자 승인
+  - **신규 resolver** `resolvePageWithFrame(input)` — body 우선순위 (frame body > page body), Slot 매칭 (`props.name` ↔ page element `props.slot_name` 또는 `element.slot_name`), hidden default child (매칭 Slot 의 기본 자식 hide), parent_id 재매핑, page non-root 보존, deleted 제외
+  - **Override 분리** (G3-θ c): page slot fill 이 매칭된 Slot 의 default 자식만 hide. 매칭 안 된 Slot 의 default 자식 (frame default header/footer Text) 은 노출 유지 → frame default 와 page slot fill 이 독립적으로 합성됨
+  - **buildPageDataMap 통합**: `apps/builder/src/builder/workspace/canvas/scene/buildSceneIndex.ts` 의 page-only 분기를 resolver 호출로 전환 — `pageIndex.page_id` 의미 보존
+  - **Why**: ADR-903 / ADR-911 의 핵심 기능 (pencil component composition) 의 legacy rendering pipeline 영역 미구현. canonical adapter 단계 Ref 처리는 있지만 `getPageElements` + `buildPageChildrenMap` 가 page_id 인덱스만 사용 → frame element (page_id=null) 자동 제외 → page 영역 inline 노출 안 됨 (Chrome MCP evidence 2026-04-28 세션 48 확증)
+  - 위치: `apps/builder/src/builder/workspace/canvas/scene/resolvePageWithFrame.ts` (신규) + `buildSceneIndex.ts`
+
+### Bug Fixes
+
+- **ADR-911 P3-δ fix #3+#4 + B1 filter** (frame canvas authoring 마감, 세션 48):
+  - **fix #3 slot 자식 시각화** (D4=A `buildFrameRendererInput` 신규 + D5=A `publishLayoutMap` key fallback chain `page_id ?? layout_id ?? id` + D6=A 단일 dimensionKey 통합). **Why**: page-centric `buildPageRendererInput` 가 page_id 인덱스만 사용 → frame 자식 미시각화. 회귀 fix: body element 가 자기 자신의 child 가 되어 `RangeError: Maximum call stack size exceeded` → `buildFrameRendererInput` 의 pageElements 에서 body 제외 (page 경로 nonBodyElements 와 동일 정책)
+  - **fix #4 frame 영역 size**: `height: pageHeight` (viewport 크기) → frame body 보다 큰 빈 영역 생성 → `bodyElement.props.style.width/height` 명시 px 우선 + 없으면 component-sized default 320×200 + `page_id===null` canonical reusable 우선. **Why**: 사용자 보고 "Frame 추가시 세로 영역이 body 보다 더 크게 생성"
+  - **B1 filter 도입**: `computeFrameAreas(doc, framePositions, selectedReusableFrameId)` 시그니처 확장 → `selectedReusableFrameId === null` 시 빈 배열. design breakdown §4.7 옵션 B2 (모든 reusable) → B1 (selected only) 전환. **Why**: 사용자 보고 "Frames 가 canvas에 별도로 생성되고 그내부에 slot들이 생성" — pencil app component editing navigation context 정합
+
+### Architecture
+
+- **ADR-911 Phase 3 frame canvas authoring 본격 land** (세션 47~49):
+  - **P3-α** `framePositions` store + `framePositionsVersion` 카운터 도입 (Gate G3-α PASS)
+  - **P3-β** `computeFrameAreas` + `FrameAreaGroup` 도입 (Gate G3-β PASS)
+  - **P3-γ** frame editing indicator (B 채택) + integration test (Gate G3-γ PASS)
+  - **P3-δ** Skia render 통합 (D1=A / D2=B / D3=A 채택) + fix #1~#4 + B1 filter (Gate G3-δ a/b 충족)
+  - **P3-θ** Slot Fill Resolution — 본 entry 의 §Features 항목
+  - **잔여**: P3-ε hit-test/drag/selection (1.5d MED) + P3-ζ Chrome MCP 회귀 검증 (0.5d LOW). G3-δ (c) + G3-θ (d) 사용자 dev 검증 후 종결 가능
+
 ## [ADR-911 Phase 3 frame canvas authoring fundamental 결함 발견 + design breakdown land] - 2026-04-28
 
 ### Documentation

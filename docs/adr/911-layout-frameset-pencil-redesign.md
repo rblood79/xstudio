@@ -161,6 +161,19 @@ In Progress — 2026-04-26 → 2026-04-28
   - 검증: type-check 3/3 PASS / canvas vitest 15/15 파일 189/189 PASS (회귀 0) / 신규 `buildFrameRendererInput.test.ts` 6/6 + `frameAreas.test.ts` 7/7 (B1 filter test 2 추가)
   - 본 세션 commits: docs revision 2 `c63ae536` / fix #3+#4+B1 `e4f24697` / 본 entry + P3-θ design land
 
+- **2026-04-28 (세션 49)**: **P3-θ Slot Fill Resolution land — Gate G3-θ a/b/c/e 충족 (frame instance composition 진입)**
+  - **결정 분기 land**: 사용자 D7=B / D8=A / D9=A 모두 권고대로 승인. design breakdown §4.10 의 권고 채택.
+  - **D7=B (별도 resolver)**: 신규 `apps/builder/src/builder/workspace/canvas/scene/resolvePageWithFrame.ts` — `pageIndex` 의 `page_id` 의미 보존, page rendering 진입점 `buildPageDataMap` 에서 명시 호출. canonical document 도입 시 `selectCanonicalDocument` 와 정합 가능.
+  - **D8=A (legacy slot_name 매칭)**: page root element 의 `slot_name` (props.slot_name 또는 element.slot_name) 이 frame Slot 의 `name` 과 일치 시 page element 의 `parent_id` 를 해당 Slot 의 id 로 재매핑. 매칭 안 된 slot_name 은 `"content"` fallback. canonical descendants 전환은 ADR-913 Phase 5-A (`slot_name` cleanup) 시 동기화.
+  - **D9=A (무조건 적용)**: feature flag 없이 모든 layout-bound page 에 적용. 기존 동작은 미완성 상태 — 사용자 기대가 명확.
+  - **Override 분리 (G3-θ c)**: page slot fill 이 매칭된 Slot 의 default 자식 (frame element 중 `parent_id===slot.id`) 은 결과에서 제외 (hide). 매칭 안 된 Slot 의 default 자식은 그대로 노출 → frame default header/footer Text 는 page 가 해당 slot 으로 fill 안 했으면 보존
+  - **변경 surface land**: (1) `resolvePageWithFrame.ts` 신규 (157 lines, body 우선순위 / Slot 매칭 / hidden default child / parent_id 재매핑 + page non-root 보존 + deleted 제외) (2) `buildSceneIndex.buildPageDataMap` 통합 — 기존 page-only 분기 → resolver 호출
+  - **검증**:
+    - type-check 3/3 PASS
+    - canvas vitest 16/16 파일 197/197 PASS (회귀 0)
+    - 신규 `resolvePageWithFrame.test.ts` 8/8 PASS — T2 (frame default 노출) / T3 (page slot:content fill + frame default content 자식 hide) / 회귀 (layout 미바인딩 / frame body 미존재 / non-root 보존 / fallback 'content' / props.slot_name + element.slot_name 양방향 / deleted 제외)
+  - **잔여 G3-θ (d) Chrome MCP screenshot**: 사용자 dev 환경 검증 — 다음 세션 사용자 확인 후 Implemented 후속 가능
+
 ## Context
 
 ### Domain (SSOT 체인 - [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))
