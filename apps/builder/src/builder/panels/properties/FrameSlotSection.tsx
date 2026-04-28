@@ -1,6 +1,10 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { Layers, Minus, Plus, X } from "lucide-react";
 import type { Element } from "../../../types/core/store.types";
+import {
+  matchesReference,
+  resolveReference,
+} from "../../../utils/component/referenceResolution";
 import { PropertySection, PropertySelect } from "../../components";
 import { useStore } from "../../stores";
 
@@ -15,24 +19,6 @@ function isFrameElement(element: Element | undefined): boolean {
 
 function getElementLabel(element: Element): string {
   return element.componentName ?? element.customId ?? element.type;
-}
-
-function matchesSlotReference(element: Element, reference: string): boolean {
-  return (
-    element.id === reference ||
-    element.customId === reference ||
-    element.componentName === reference
-  );
-}
-
-function resolveSlotReference(
-  reference: string,
-  elements: Iterable<Element>,
-): Element | null {
-  for (const element of elements) {
-    if (matchesSlotReference(element, reference)) return element;
-  }
-  return null;
 }
 
 function getSlotValue(element: SlotElement): false | string[] {
@@ -76,7 +62,7 @@ export const FrameSlotSection = memo(function FrameSlotSection({
           candidate.id !== elementId &&
           candidate.reusable === true &&
           !recommended.some((reference) =>
-            matchesSlotReference(candidate, reference),
+            matchesReference(candidate, reference),
           ),
       )
       .map((candidate) => ({
@@ -90,7 +76,7 @@ export const FrameSlotSection = memo(function FrameSlotSection({
     () =>
       recommendedIds.map((id) => {
         const candidate =
-          elementsMap.get(id) ?? resolveSlotReference(id, elementsMap.values());
+          elementsMap.get(id) ?? resolveReference(id, elementsMap.values());
         return {
           id,
           label: candidate ? getElementLabel(candidate) : id,
@@ -131,7 +117,7 @@ export const FrameSlotSection = memo(function FrameSlotSection({
     if (
       selectedCandidate &&
       recommendedIds.some((reference) =>
-        matchesSlotReference(selectedCandidate, reference),
+        matchesReference(selectedCandidate, reference),
       )
     ) {
       return;

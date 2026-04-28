@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Element } from "../../types/core/store.types";
 import {
   isCanonicalRefElement,
+  resolveCanonicalRefMaster,
   resolveCanonicalRefElement,
   resolveCanonicalRefElementsMap,
   resolveCanonicalRefTree,
@@ -80,6 +81,19 @@ describe("canonicalRefResolution", () => {
       ref: "origin",
       props: { text: "Origin text" },
     });
+  });
+
+  it("resolves a canonical ref master by metadata componentName alias", () => {
+    const origin = makeElement("origin", {
+      type: "Button",
+      reusable: true,
+      metadata: {
+        componentName: "PrimaryAction",
+        type: "legacy-element-props",
+      },
+    } as Partial<Element>);
+
+    expect(resolveCanonicalRefMaster("PrimaryAction", [origin])).toBe(origin);
   });
 
   it("replicates component descendants under a canonical ref instance", () => {

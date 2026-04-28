@@ -32,6 +32,42 @@ ADR의 목적은 **미래의 개발자가 "왜 이렇게 결정했는가"를 이
 
 대화 맥락에 분석 데이터가 이미 있어도 ADR 본문에 직접 삽입 금지. 구현 상세(Phase, 파일 목록, 체크리스트, 코드 예시)는 반드시 `docs/adr/design/*-breakdown.md`에 분리.
 
+## ADR Fork / 분리 결정 시 framing checkpoint (CRITICAL)
+
+> **배경**: 2026-04-26~28 ADR-911/912 사례 — baseline (ADR-903 P4) framing 을 자동 승계하여 응용 ADR (ADR-911 frame preset) 을 base ADR (ADR-912 component 추상) 의 선행 ADR 로 잘못 framing. 24+ commits / sub-phase α/β/γ/δ/θ 진행 후 codex 3차 review 에서야 reverse 정정. 본 절차는 동일 손실 재발 차단 contract.
+
+### 적용 시점 — fork / 분리 결정의 모든 시점
+
+- 기존 ADR 의 잔여 영역을 신규 ADR 로 분리할 때
+- baseline ADR 에 흡수 미가능한 영역을 신규 ADR 로 발의할 때
+- ADR 한 개를 base / 응용 두 개로 split 할 때
+- 두 ADR 의 의존 방향이 의심될 때 (사용자가 "이거 거꾸로 아닌가" 트리거 시)
+
+### 4 질문 통과 절차 (사용자 1회 confirm 필수)
+
+ADR 분리 결정을 commit 하기 **전에** 다음 4 질문을 ADR 본문 또는 design breakdown §1 에 1줄씩 lock-in 한다. 사용자 confirm 받기 전에는 sub-phase 분해 (α/β/γ/δ 류) 진입 금지.
+
+1. **base / 응용 분류**: 두 ADR 중 하나가 추상 (component / format / SSOT) 이고 다른 하나가 응용 (frame / page / preset 같은 구체 적용) 인가? 그렇다면 base 가 응용의 prerequisite. 본 분류를 본문 §Context 또는 §Decision 에 1줄 명시.
+2. **schema 직교성**: 두 ADR 의 schema 가 직교인가, 한쪽이 다른 쪽의 specialization 인가? specialization 쪽이 base 의 후속.
+3. **baseline framing reverse 검증**: baseline ADR 의 의존 방향을 그대로 옮기는 것이 fork 후에도 valid 한가? grep + 사용자 1회 confirm. baseline framing 자동 승계 금지.
+4. **codex 3차 review 까지 미루지 말 것**: 1차 (표면 이슈) / 2차 (gate 정합) 후 3차에 가서야 framing 잡히는 패턴 회피. fork 시점에 위 1-3 질문 통과 후 codex 1차 진입.
+
+### Extended thinking 진입 의무
+
+framing 검증은 표면 사고로 처리 금지. ADR fork 결정 시 명시적으로 깊은 사고 모드 진입 후 4 질문 통과. token 효율 학습 압력 (짧은 답변 / plan→execute→done 사이클) 회피 — Anthropic 자체 가이드 정렬.
+
+### sub-phase 분해 진입 차단 게이트
+
+본 4 질문이 ADR 본문 또는 design §1 에 lock-in 되지 않았으면 design breakdown 의 sub-phase α/β/γ/δ 분해 자체 차단. 분해된 sub-phase 가 많을수록 framing 위반 인지 비용이 piecewise 분산 누적되어 본질 검증 trigger 못 걸림.
+
+### 금지 패턴
+
+- ❌ baseline ADR 의 framing 을 자동 승계 (fork 시점 의존 방향 별도 검증 안 함)
+- ❌ "이미 ADR 본문 작성됐으니 분해 진입" — 본 4 질문 미통과 시 분해 차단
+- ❌ codex 1차 / 2차 review 가 framing 검증을 한다고 가정 (codex review 는 본문 정합 layer, framing layer 아님)
+- ❌ revision 사이클 (1→2→3) 이 framing 검증을 cover 한다고 가정 (revision 은 표면 변경 layer)
+- ❌ design breakdown 에 추가 결정 (옵션 D1/D2/D3 / 결정 분기 등) 이 흘러 들어가서 ADR 본문 framing 위반에 침묵
+
 ## 섹션별 요구사항
 
 ### Context

@@ -26,6 +26,10 @@ import {
   resolveCanonicalRefProps,
   resolveCanonicalDescendantOverride,
 } from "@/utils/component/instanceResolver";
+import {
+  matchesReference,
+  resolveReference,
+} from "@/utils/component/referenceResolution";
 
 // Stream B 가 실제 구현체를 export 한다.
 // 본 stream 은 시그니처만 사용 — stub 은 Phase 2 Gate 통과 전까지 throw.
@@ -174,7 +178,7 @@ function _resolveRefNodeUncached(
   const resolved: ResolvedNode = {
     ...resolvedBase,
     children: resolvedChildren,
-    _resolvedFrom: refNode.ref,
+    _resolvedFrom: master.id,
     ...(overrideFields.length > 0 ? { _overrides: overrideFields } : {}),
   };
 
@@ -263,7 +267,7 @@ function applyOverrideToNode(
     };
     // mode C 가 frame slot children 을 교체한 경우 slot contract 검증
     if (child.type === "frame") {
-      validateSlotContract(child as FrameNode, resolved);
+      validateSlotContract(child as FrameNode, resolved, doc);
     }
     return resolved;
   }
@@ -317,7 +321,7 @@ function resolveFrameOrPlain(
 
   // Step 3: slot contract validate (FrameNode 만)
   if (node.type === "frame") {
-    validateSlotContract(node as FrameNode, result);
+    validateSlotContract(node as FrameNode, result, doc);
   }
 
   return result;
@@ -333,15 +337,22 @@ function resolveFrameOrPlain(
  * pencil 공식: slot 은 추천 목록 — hard error 아님.
  * warning 만 emit 하고 계속 진행.
  */
-function validateSlotContract(frame: FrameNode, resolved: ResolvedNode): void {
+function validateSlotContract(
+  frame: FrameNode,
+  resolved: ResolvedNode,
+  doc: CompositionDocument,
+): void {
   if (!Array.isArray(frame.slot) || frame.slot.length === 0) return;
 
-  const allowedSlots = new Set<string>(frame.slot);
   const children = resolved.children ?? [];
 
   for (const child of children) {
     const refId = child._resolvedFrom ?? child.id;
-    if (!allowedSlots.has(refId)) {
+    if (
+      !frame.slot.some((reference) =>
+        matchesResolvedSlotChildReference(child, reference, doc),
+      )
+    ) {
       console.warn(
         `[ADR-903] slot contract: frame "${frame.id}" slot=${JSON.stringify(frame.slot)} — child "${refId}" is outside recommended slot range (non-blocking)`,
       );
@@ -349,20 +360,37 @@ function validateSlotContract(frame: FrameNode, resolved: ResolvedNode): void {
   }
 }
 
+function matchesResolvedSlotChildReference(
+  child: ResolvedNode,
+  reference: string,
+  doc: CompositionDocument,
+): boolean {
+  if (matchesReference(child, reference)) return true;
+
+  if (!child._resolvedFrom) return false;
+
+  const master = doc.children.find(
+    (node) => node.reusable === true && node.id === child._resolvedFrom,
+  );
+  return master ? matchesReference(master, reference) : false;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * doc.children 에서 `id === refId` 이고 `reusable === true` 인 원본 노드를 찾는다.
+ * doc.children 에서 `refId` 가 id/name/metadata alias 와 매칭되고
+ * `reusable === true` 인 원본 노드를 찾는다.
  * 없으면 undefined 반환 (broken ref).
  */
 function findReusableMaster(
   doc: CompositionDocument,
   refId: string,
 ): CanonicalNode | undefined {
-  return doc.children.find(
-    (node) => node.id === refId && node.reusable === true,
+  return resolveReference(
+    refId,
+    doc.children.filter((node) => node.reusable === true),
   );
 }
 

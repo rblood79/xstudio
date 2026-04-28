@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Properties ##Component section## action surface 연결: Origin/Instance label, Go to component, Select instances, detach, field reset, Create component / `[-]`, impact dialog host, origin toggle shortcut/UI
   - Properties ##Slot section## base 연결: frame 선택 시 `Frame.slot: false | string[]` 상태 표시, enable/disable, reusable origin id recommended component add/remove, top-level `slot` + `metadata.slot` backup 보존
   - Slot recommendation reference 해석 보강: 저장된 reference 가 origin `id` 뿐 아니라 `customId`/`componentName` 을 가리켜도 동일 reusable target 으로 표시하고 중복 추가를 차단
+  - canonical resolver slot/ref validation 보강: `Frame.slot` 또는 `Ref.ref` reference 가 reusable master `name` 또는 metadata alias 를 가리켜도 정상 target 으로 인정하고 `_resolvedFrom` 은 canonical master id 로 정규화
+  - Slot/reference matcher 공용화: Properties Slot section, Builder canonical ref projection, canonical resolver 가 같은 `id`/`name`/`customId`/`componentName`/metadata alias 규칙을 사용
   - Component/Slot coexistence render contract 추가: reusable frame 선택 시 `Component`/`Origin` 과 `Slot` recommendation count/list 동시 노출 검증
   - Canvas context menu target resolver 추가: spatial hit-test + topmost hit 판정 후 detachable instance 에만 menu 표시
 - **ADR-912 / ADR-911 의존 방향 hardening**:
@@ -51,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/stores/utils/elementSanitizer.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/interaction/canvasContextMenu.test.ts src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx`
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/utils/canonicalRefResolution.test.ts`
 - `pnpm -F @composition/builder type-check`
 - `git diff --check`
 - `npm run codex:preflight`

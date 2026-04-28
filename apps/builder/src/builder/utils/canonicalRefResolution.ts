@@ -1,5 +1,6 @@
 import type { Element } from "../../types/core/store.types";
 import { mergePropsWithStyleDeep } from "../../utils/component/instanceResolver";
+import { resolveReference } from "../../utils/component/referenceResolution";
 
 type CanonicalRefFields = {
   descendants?: unknown;
@@ -38,17 +39,7 @@ export function resolveCanonicalRefMaster(
   ref: string,
   elements: Iterable<Element>,
 ): Element | undefined {
-  for (const element of elements) {
-    if (element.id === ref) return element;
-  }
-
-  for (const element of elements) {
-    if (element.customId === ref || element.componentName === ref) {
-      return element;
-    }
-  }
-
-  return undefined;
+  return resolveReference(ref, elements);
 }
 
 export function resolveCanonicalRefElement(

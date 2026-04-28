@@ -106,6 +106,25 @@ describe("resolveCanonicalDocument", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
+  it("TC2b: ref 가 reusable master name 을 가리켜도 master id 로 resolve 된다", () => {
+    // Arrange
+    const master = {
+      ...makeReusable("btn", "Button"),
+      name: "PrimaryButton",
+    } as CanonicalNode;
+    const ref = makeRef("i1", "PrimaryButton");
+    const doc = makeDoc([master, ref]);
+
+    // Act
+    const result = resolveCanonicalDocument(doc);
+
+    // Assert
+    const resolvedRef = result.find((n) => n.id === "i1") as ResolvedNode;
+    expect(resolvedRef).toBeDefined();
+    expect(resolvedRef._resolvedFrom).toBe("btn");
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
   // ────────────────────────────────────────────
   // TC3: broken ref
   // ────────────────────────────────────────────
@@ -332,6 +351,39 @@ describe("resolveCanonicalDocument", () => {
       (c) => c.id === "main-slot",
     );
     expect(resolvedSlot?.children?.[0].type).toBe("Button");
+  });
+
+  it("TC9b: slot recommendation 이 reusable master name 을 가리키면 경고하지 않는다", () => {
+    // Arrange
+    const allowedCard = {
+      ...makeReusable("allowed-card", "Card"),
+      name: "AllowedCard",
+    } as CanonicalNode;
+    const slotFrame = makeFrame("main-slot", {
+      slot: ["AllowedCard"],
+      children: [],
+    });
+    const master = makeReusable("layout", "frame", [slotFrame]);
+    const allowedRef = makeRef("slot-card", "allowed-card");
+    const ref = makeRef("page-1", "layout", {
+      descendants: {
+        "main-slot": {
+          children: [allowedRef],
+        } as { children: CanonicalNode[] },
+      },
+    });
+    const doc = makeDoc([allowedCard, master, ref]);
+
+    // Act
+    const result = resolveCanonicalDocument(doc);
+
+    // Assert
+    expect(warnSpy).not.toHaveBeenCalled();
+    const resolvedPage = result.find((n) => n.id === "page-1") as ResolvedNode;
+    const resolvedSlot = resolvedPage.children?.find(
+      (c) => c.id === "main-slot",
+    );
+    expect(resolvedSlot?.children?.[0]._resolvedFrom).toBe("allowed-card");
   });
 
   // ────────────────────────────────────────────
