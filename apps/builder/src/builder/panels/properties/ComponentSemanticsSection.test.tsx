@@ -171,6 +171,34 @@ describe("ComponentSemanticsSection", () => {
     expect(useStore.getState().selectedElementIds).toEqual(["origin"]);
   });
 
+  it("canonical instance action selects its origin by custom id", () => {
+    const origin = makeElement("origin", {
+      customId: "NumberField",
+      page_id: "page-1",
+      reusable: true,
+    });
+    const instance = makeElement("instance", {
+      type: "ref",
+      ref: "NumberField",
+      page_id: "page-1",
+    } as never);
+
+    useStore.setState({
+      currentPageId: "page-1",
+      elements: [origin, instance],
+      elementsMap: new Map([
+        ["origin", origin],
+        ["instance", instance],
+      ]),
+    });
+
+    render(<ComponentSemanticsSection elementId="instance" />);
+    fireEvent.click(screen.getByRole("button", { name: "Go to component" }));
+
+    expect(useStore.getState().selectedElementId).toBe("origin");
+    expect(useStore.getState().selectedElementIds).toEqual(["origin"]);
+  });
+
   it("origin action multi-selects all matching instances", () => {
     const origin = makeElement("origin", { page_id: "page-1", reusable: true });
     const instanceA = makeElement("instance-a", {

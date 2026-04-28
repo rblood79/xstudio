@@ -4,7 +4,7 @@ import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { getDB } from "../../../lib/db";
-import { getElementById } from "./elementHelpers";
+import { createCompleteProps, getElementById } from "./elementHelpers";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
 import {
@@ -12,6 +12,8 @@ import {
   rebuildComponentIndex,
   rebuildVariableUsageIndex,
 } from "./elementIndexer";
+import { buildDetachSnapshotsForOrigins } from "./instanceActions";
+import { sanitizeElement } from "./elementSanitizer";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
 import {
   isWebGLCanvas,
@@ -173,40 +175,79 @@ async function executeRemoval(
   options: { skipHistory?: boolean } = {},
 ) {
   const elementIdsToRemove = allUniqueElements.map((el) => el.id);
+  const removeSet = new Set(elementIdsToRemove);
+  const currentState = get();
+  const autoDetach = buildDetachSnapshotsForOrigins(
+    currentState,
+    allUniqueElements,
+    removeSet,
+  );
 
   // IndexedDB 삭제
-  try {
-    const db = await getDB();
-    await db.elements.deleteMany(elementIdsToRemove);
-  } catch (error) {
-    console.error("❌ [IndexedDB] 요소 삭제 중 오류:", error);
+  if (typeof indexedDB !== "undefined") {
+    try {
+      const db = await getDB();
+      await db.elements.deleteMany(elementIdsToRemove);
+      if (autoDetach.elements.length > 0) {
+        await db.elements.insertMany(
+          autoDetach.elements.map((element) => sanitizeElement(element)),
+        );
+      }
+    } catch (error) {
+      console.error("❌ [IndexedDB] 요소 삭제 중 오류:", error);
+    }
   }
-
-  const currentState = get();
 
   // 히스토리: 첫 번째 루트를 대표 elementId로, 나머지 모두를 childElements로 기록
   // ADR-073 P5: skipHistory=true 시 히스토리 기록 생략 (migration 경로에서 undo 스택 오염 방지)
   if (currentState.currentPageId && !options.skipHistory) {
-    historyManager.addEntry({
-      type: "remove",
-      elementId: rootElements[0].id,
-      data: {
-        element: { ...rootElements[0] },
-        childElements: allUniqueElements
-          .filter((el) => el.id !== rootElements[0].id)
-          .map((child) => ({ ...child })),
-      },
-    });
+    if (autoDetach.elements.length > 0) {
+      historyManager.addEntry({
+        type: "batch",
+        elementId: rootElements[0].id,
+        elementIds: [
+          ...elementIdsToRemove,
+          ...autoDetach.elements.map((element) => element.id),
+        ],
+        data: {
+          prevElements: [
+            ...allUniqueElements.map((element) => ({ ...element })),
+            ...autoDetach.previousElements.map((element) => ({ ...element })),
+          ],
+          elements: autoDetach.elements.map((element) => ({ ...element })),
+        },
+      });
+    } else {
+      historyManager.addEntry({
+        type: "remove",
+        elementId: rootElements[0].id,
+        data: {
+          element: { ...rootElements[0] },
+          childElements: allUniqueElements
+            .filter((el) => el.id !== rootElements[0].id)
+            .map((child) => ({ ...child })),
+        },
+      });
+    }
   }
 
   // 요소 필터링
-  const removeSet = new Set(elementIdsToRemove);
-  const filteredElements = currentState.elements.filter(
-    (el) => !removeSet.has(el.id),
+  const detachPreviousIds = new Set(
+    autoDetach.previousElements.map((element) => element.id),
   );
+  const filteredElements = currentState.elements.filter(
+    (el) => !removeSet.has(el.id) && !detachPreviousIds.has(el.id),
+  );
+  const updatedElements =
+    autoDetach.elements.length > 0
+      ? [...filteredElements, ...autoDetach.elements]
+      : filteredElements;
 
   // 선택 상태 정리
   const isSelectedRemoved = removeSet.has(currentState.selectedElementId || "");
+  const detachedSelectedElement = autoDetach.elements.find(
+    (element) => element.id === currentState.selectedElementId,
+  );
   const filteredSelectedIds = currentState.selectedElementIds.filter(
     (id: string) => !removeSet.has(id),
   );
@@ -224,7 +265,7 @@ async function executeRemoval(
   // 원자적 상태 업데이트: elements + 모든 인덱스를 단일 set()으로
   const newElementsMap = new Map<string, Element>();
   const newChildrenMap = new Map<string, Element[]>();
-  filteredElements.forEach((el) => {
+  updatedElements.forEach((el) => {
     newElementsMap.set(el.id, el);
     const parentId = el.parent_id || "root";
     if (!newChildrenMap.has(parentId)) {
@@ -233,7 +274,7 @@ async function executeRemoval(
     newChildrenMap.get(parentId)!.push(el);
   });
 
-  const newPageIndex = rebuildPageIndex(filteredElements, newElementsMap);
+  const newPageIndex = rebuildPageIndex(updatedElements, newElementsMap);
 
   // pageElementsSnapshot 재구축 — 레이어 트리가 이 스냅샷에 의존
   const newPageElementsSnapshot: Record<string, Element[]> = {};
@@ -246,7 +287,7 @@ async function executeRemoval(
   }
 
   set((state) => ({
-    elements: filteredElements,
+    elements: updatedElements,
     elementsMap: newElementsMap,
     childrenMap: newChildrenMap,
     pageIndex: newPageIndex,
@@ -259,6 +300,10 @@ async function executeRemoval(
       selectedElementId: null,
       selectedElementProps: {},
     }),
+    ...(!isSelectedRemoved &&
+      detachedSelectedElement && {
+        selectedElementProps: createCompleteProps(detachedSelectedElement),
+      }),
     ...(hasSelectedIdsChanged && {
       selectedElementIds: filteredSelectedIds,
       selectedElementIdsSet: new Set(filteredSelectedIds),

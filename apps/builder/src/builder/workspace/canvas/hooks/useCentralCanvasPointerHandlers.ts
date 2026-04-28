@@ -17,6 +17,7 @@ import {
 import { hitTestPoint } from "../wasm-bindings/spatialIndex";
 import { useKeyboardShortcutsRegistry } from "../../../hooks/useKeyboardShortcutsRegistry";
 import { observe, PERF_LABEL } from "../../../utils/perfMarks";
+import type { Element } from "../../../../types/core/store.types";
 
 interface ModifierState {
   ctrlKey: boolean;
@@ -36,6 +37,7 @@ interface UseCentralCanvasPointerHandlersOptions {
     (elementId: string, modifiers?: ModifierState) => void
   >;
   handleElementDoubleClickRef: MutableRefObject<(elementId: string) => void>;
+  getHitElementsMap?: () => Map<string, Element>;
   isEditingRef: MutableRefObject<boolean>;
   lastClickTargetRef: MutableRefObject<string | null>;
   lastClickTimeRef: MutableRefObject<number>;
@@ -90,6 +92,7 @@ export function useCentralCanvasPointerHandlers({
   editingElementIdRef,
   handleElementClickRef,
   handleElementDoubleClickRef,
+  getHitElementsMap,
   isEditingRef,
   lastClickTargetRef,
   lastClickTimeRef,
@@ -191,6 +194,7 @@ export function useCentralCanvasPointerHandlers({
       selectionBoundsRef.current = selectionBounds;
 
       const state = useStore.getState();
+      const hitElementsMap = getHitElementsMap?.() ?? state.elementsMap;
       const selectedIds = state.selectedElementIds;
       const isSingleSelection = selectedIds.length === 1;
       const now = Date.now();
@@ -209,14 +213,14 @@ export function useCentralCanvasPointerHandlers({
 
       const hitElementId = resolveTopmostHitElementId(
         hitTestPoint(canvasPos.x, canvasPos.y),
-        state.elementsMap,
+        hitElementsMap,
       );
 
       // body가 선택된 상태에서는 inSelectionBounds를 무시한다.
       // body의 selectionBounds가 전체 페이지를 커버하므로,
       // 내부 요소 클릭 시 inSelectionBounds=true가 되어 클릭이 무시되는 버그 방지.
       const selectedElement =
-        selectedIds.length === 1 ? state.elementsMap.get(selectedIds[0]) : null;
+        selectedIds.length === 1 ? hitElementsMap.get(selectedIds[0]) : null;
       const isBodySelected = selectedElement?.type.toLowerCase() === "body";
 
       const { inSelectionBounds } = isBodySelected
@@ -255,7 +259,7 @@ export function useCentralCanvasPointerHandlers({
 
         // ADR-043: 선택 즉시 pendingDrag 설정 — 첫 클릭에서 바로 드래그 가능
         // handleElementClick이 동기적으로 store를 갱신한 후 bounds 재계산
-        const hitElement = state.elementsMap.get(hitElementId);
+        const hitElement = hitElementsMap.get(hitElementId);
         if (hitElement && hitElement.type.toLowerCase() !== "body") {
           const freshBounds = computeSelectionBoundsForHitTest();
           if (freshBounds) {
@@ -484,6 +488,7 @@ export function useCentralCanvasPointerHandlers({
     editingElementIdRef,
     handleElementClickRef,
     handleElementDoubleClickRef,
+    getHitElementsMap,
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,

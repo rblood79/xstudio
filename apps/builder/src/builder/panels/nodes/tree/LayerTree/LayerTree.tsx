@@ -41,7 +41,7 @@ export function LayerTree({
       const key = [...keys][0] as string;
       if (key) {
         const node = nodeMap.get(key);
-        if (node && !node.virtualChildType && !node.isSyntheticRefChild) {
+        if (node && !node.virtualChildType) {
           onItemClick(node.element);
         }
       }
@@ -66,7 +66,7 @@ export function LayerTree({
       if (!key) return;
 
       const node = nodeMap.get(key);
-      if (!node || node.virtualChildType || node.isSyntheticRefChild) return;
+      if (!node || node.virtualChildType) return;
       onItemClick(node.element);
     },
     [nodeMap, onItemClick],

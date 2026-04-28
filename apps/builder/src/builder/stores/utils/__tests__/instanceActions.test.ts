@@ -688,6 +688,67 @@ describe("instance store actions", () => {
     ).toHaveLength(0);
   });
 
+  it("auto-detaches canonical instances when deleting their origin", async () => {
+    const origin = makeElement("origin", {
+      reusable: true,
+      props: { label: "Origin", style: { padding: "8px" } },
+    });
+    const child = makeElement("label", {
+      type: "Text",
+      parent_id: "origin",
+      customId: "label",
+      props: { text: "Default" },
+    });
+    const instance = makeElement("instance", {
+      type: "ref",
+      ref: "origin",
+      props: { label: "Instance" },
+      descendants: { label: { text: "Custom" } },
+    } as never);
+
+    useStore.setState({
+      currentPageId: "page-1",
+      elements: [origin, child, instance],
+      elementsMap: new Map([
+        ["origin", origin],
+        ["label", child],
+        ["instance", instance],
+      ]),
+    } as never);
+    useStore.getState()._rebuildIndexes();
+
+    await useStore.getState().removeElement("origin");
+
+    const detachedInstance = useStore.getState().elementsMap.get("instance") as
+      | (Element & { ref?: string })
+      | undefined;
+    const materializedChild = useStore
+      .getState()
+      .elements.find((element) => element.parent_id === "instance");
+
+    expect(useStore.getState().elementsMap.has("origin")).toBe(false);
+    expect(useStore.getState().elementsMap.has("label")).toBe(false);
+    expect(detachedInstance).toMatchObject({
+      id: "instance",
+      type: "Button",
+      props: { label: "Instance", style: { padding: "8px" } },
+    });
+    expect(detachedInstance?.ref).toBeUndefined();
+    expect(materializedChild).toMatchObject({
+      type: "Text",
+      props: { text: "Custom" },
+    });
+
+    await useStore.getState().undo();
+    expect(useStore.getState().elementsMap.get("origin")).toMatchObject({
+      reusable: true,
+    });
+    expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
+      type: "ref",
+      ref: "origin",
+    });
+  });
+
   it("removes component origin across 1000 canonical instances", async () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     confirmSpy.mockClear();

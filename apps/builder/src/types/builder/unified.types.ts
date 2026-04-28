@@ -86,6 +86,12 @@ export interface Element {
    * Phase 5 cleanup 시 DB schema migration 으로 descendants key path 변환 후 제거.
    */
   slot_name?: string | null;
+  /**
+   * Canonical frame slot declaration.
+   * `false` means this frame is not a slot. `string[]` is the list of
+   * recommended reusable component IDs for this slot.
+   */
+  slot?: false | string[];
 
   // --- G.1: Component-Instance System ---
   /**

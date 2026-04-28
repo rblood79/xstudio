@@ -22,12 +22,17 @@ interface UseCanvasElementSelectionHandlersOptions {
     targetPageId: string | null,
   ) => void;
   setCurrentPageId: (pageId: string) => void;
-  setSelectedElement: (elementId: string) => void;
+  setSelectedElement: (
+    elementId: string,
+    props?: Record<string, unknown>,
+  ) => void;
   setSelectedElements: (elementIds: string[]) => void;
   startEdit: (
     elementId: string,
     layoutPosition?: { x: number; y: number; width: number; height: number },
   ) => void;
+  getInteractiveChildrenMap?: () => Map<string, Element[]>;
+  getInteractiveElementsMap?: () => Map<string, Element>;
 }
 
 const TEXT_EDITABLE_TAGS = new Set([
@@ -66,20 +71,26 @@ function selectResolvedTarget(
   resolvedTarget: string,
   modifiers: SelectionModifiers | undefined,
   targetPageId: string | null,
-  setSelectedElement: (elementId: string) => void,
+  setSelectedElement: (
+    elementId: string,
+    props?: Record<string, unknown>,
+  ) => void,
   setSelectedElements: (elementIds: string[]) => void,
   clearSelection: () => void,
   selectElementWithPageTransition: (
     elementId: string,
     targetPageId: string | null,
   ) => void,
+  interactiveElementsMap: Map<string, Element>,
 ): void {
   const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
   if (isMultiSelectKey) {
     const currentState = useStore.getState();
     const currentPageId = currentState.currentPageId;
-    const targetElement = currentState.elementsMap.get(resolvedTarget);
+    const targetElement =
+      interactiveElementsMap.get(resolvedTarget) ??
+      currentState.elementsMap.get(resolvedTarget);
 
     // 다른 페이지 요소를 modifier와 함께 클릭한 경우: 단일 선택 + 페이지 전환으로 대체
     if (targetElement?.page_id && targetElement.page_id !== currentPageId) {
@@ -106,7 +117,17 @@ function selectResolvedTarget(
   if (targetPageId) {
     selectElementWithPageTransition(resolvedTarget, targetPageId);
   } else {
-    setSelectedElement(resolvedTarget);
+    const rawElement = useStore.getState().elementsMap.get(resolvedTarget);
+    if (rawElement) {
+      setSelectedElement(resolvedTarget);
+      return;
+    }
+
+    const targetElement = interactiveElementsMap.get(resolvedTarget);
+    setSelectedElement(
+      resolvedTarget,
+      targetElement?.props as Record<string, unknown> | undefined,
+    );
   }
 }
 
@@ -143,6 +164,8 @@ export function useCanvasElementSelectionHandlers({
   setSelectedElement,
   setSelectedElements,
   startEdit,
+  getInteractiveChildrenMap,
+  getInteractiveElementsMap,
 }: UseCanvasElementSelectionHandlersOptions) {
   // setCurrentPageId는 ADR-069 이전 API 호환을 위해 options에 유지하되,
   // 본 hook 내부에서는 selectElementWithPageTransition으로 전환되어 직접 사용하지 않는다.
@@ -155,7 +178,10 @@ export function useCanvasElementSelectionHandlers({
       }
 
       const state = useStore.getState();
-      const clickedElement = state.elementsMap.get(elementId);
+      const interactiveElementsMap =
+        getInteractiveElementsMap?.() ?? state.elementsMap;
+      const clickedElement =
+        interactiveElementsMap.get(elementId) ?? state.elementsMap.get(elementId);
 
       // ADR-069 Phase 1: page crossing 판정만 여기서 하고, 실제 clearSelection +
       // setCurrentPageId + setSelectedElement 3-set 병합은 selectResolvedTarget
@@ -169,7 +195,7 @@ export function useCanvasElementSelectionHandlers({
       let resolvedTarget = resolveClickTarget(
         elementId,
         state.editingContextId,
-        state.elementsMap,
+        interactiveElementsMap,
       );
 
       if (!resolvedTarget) {
@@ -185,7 +211,11 @@ export function useCanvasElementSelectionHandlers({
 
         // context 밖 요소 클릭: 루트로 즉시 복귀 후 해당 요소 선택 시도
         state.setEditingContext(null);
-        resolvedTarget = resolveClickTarget(elementId, null, state.elementsMap);
+        resolvedTarget = resolveClickTarget(
+          elementId,
+          null,
+          interactiveElementsMap,
+        );
         if (!resolvedTarget) {
           handleUnresolvedTarget(
             elementId,
@@ -205,6 +235,7 @@ export function useCanvasElementSelectionHandlers({
         setSelectedElements,
         clearSelection,
         selectElementWithPageTransition,
+        interactiveElementsMap,
       );
     },
     [
@@ -213,22 +244,29 @@ export function useCanvasElementSelectionHandlers({
       selectElementWithPageTransition,
       setSelectedElement,
       setSelectedElements,
+      getInteractiveElementsMap,
     ],
   );
 
   const handleElementDoubleClick = useCallback(
     (elementId: string) => {
       const state = useStore.getState();
+      const interactiveElementsMap =
+        getInteractiveElementsMap?.() ?? state.elementsMap;
+      const interactiveChildrenMap =
+        getInteractiveChildrenMap?.() ?? state.childrenMap;
       const resolvedTarget = resolveClickTarget(
         elementId,
         state.editingContextId,
-        state.elementsMap,
+        interactiveElementsMap,
       );
       if (!resolvedTarget) {
         return;
       }
 
-      const resolvedElement = state.elementsMap.get(resolvedTarget);
+      const resolvedElement =
+        interactiveElementsMap.get(resolvedTarget) ??
+        state.elementsMap.get(resolvedTarget);
       if (!resolvedElement) {
         return;
       }
@@ -239,7 +277,7 @@ export function useCanvasElementSelectionHandlers({
         return;
       }
 
-      const children = state.childrenMap.get(resolvedTarget);
+      const children = interactiveChildrenMap.get(resolvedTarget);
       if (children && children.length > 0) {
         state.enterEditingContext(resolvedTarget);
         return;
@@ -248,7 +286,7 @@ export function useCanvasElementSelectionHandlers({
       const layoutPosition = getElementBoundsSimple(resolvedTarget);
       startEdit(resolvedTarget, layoutPosition ?? undefined);
     },
-    [startEdit],
+    [getInteractiveChildrenMap, getInteractiveElementsMap, startEdit],
   );
 
   return {

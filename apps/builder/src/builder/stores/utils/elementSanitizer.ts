@@ -41,6 +41,7 @@ type ElementWithCanonicalFields = Element & {
   metadata?: Record<string, unknown>;
   ref?: string;
   reusable?: boolean;
+  slot?: false | string[];
 };
 
 function cloneSerializable<T>(value: T): T {
@@ -65,6 +66,7 @@ function withSerializableElementFields(element: Element): Element {
     overrides: cloneSerializable(element.overrides),
     descendants: cloneSerializable(canonical.descendants),
     metadata: cloneSerializable(canonical.metadata),
+    slot: cloneSerializable(canonical.slot),
     fills: cloneSerializable(element.fills),
     border: cloneSerializable(element.border),
     children: cloneSerializable(canonical.children),
@@ -121,6 +123,7 @@ export const sanitizeElement = (element: Element): Element => {
       reusable: (element as ElementWithCanonicalFields).reusable,
       ref: (element as ElementWithCanonicalFields).ref,
       metadata: (element as ElementWithCanonicalFields).metadata,
+      slot: (element as ElementWithCanonicalFields).slot,
       variableBindings: element.variableBindings,
       fills: element.fills,
       border: element.border,

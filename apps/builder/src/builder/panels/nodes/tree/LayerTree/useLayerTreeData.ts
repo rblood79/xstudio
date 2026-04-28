@@ -59,7 +59,7 @@ export function useLayerTreeData(elements: Element[]) {
         children: node.children,
       });
 
-      if (node.virtualChildType || node.isSyntheticRefChild) {
+      if (node.virtualChildType) {
         disabled.add(node.id);
       }
 

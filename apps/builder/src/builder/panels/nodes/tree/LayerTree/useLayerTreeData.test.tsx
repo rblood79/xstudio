@@ -92,7 +92,7 @@ describe("useLayerTreeData", () => {
         isSyntheticRefChild: true,
       }),
     ]);
-    expect(result.current.disabledKeys.has("instance/label")).toBe(true);
-    expect(result.current.disabledKeys.has("instance/input")).toBe(true);
+    expect(result.current.disabledKeys.has("instance/label")).toBe(false);
+    expect(result.current.disabledKeys.has("instance/input")).toBe(false);
   });
 });

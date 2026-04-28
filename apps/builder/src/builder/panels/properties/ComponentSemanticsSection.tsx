@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Component as ComponentIcon } from "lucide-react";
+import type { Element } from "../../../types/core/store.types";
 import { PropertySection } from "../../components";
 import { useStore } from "../../stores";
 import {
@@ -11,6 +12,25 @@ import {
   getEditingSemanticsRole,
   type EditingSemanticsOverrideItem,
 } from "../../utils/editingSemantics";
+
+function resolveOriginElement(
+  originId: string | null,
+  elements: Iterable<Element>,
+): Element | null {
+  if (!originId) return null;
+
+  for (const element of elements) {
+    if (
+      element.id === originId ||
+      element.customId === originId ||
+      element.componentName === originId
+    ) {
+      return element;
+    }
+  }
+
+  return null;
+}
 
 export const ComponentSemanticsSection = memo(
   function ComponentSemanticsSection({ elementId }: { elementId: string }) {
@@ -30,7 +50,7 @@ export const ComponentSemanticsSection = memo(
     const role = getEditingSemanticsRole(element);
     const label = getEditingSemanticsLabel(role);
     const originId = getEditingSemanticsOriginId(element);
-    const originElement = originId ? elementsMap.get(originId) : null;
+    const originElement = resolveOriginElement(originId, elementsMap.values());
     const isDetachableInstance = canDetachInstance(element);
     const overrideItems = getEditingSemanticsOverrideItems(element);
     const instanceIds =

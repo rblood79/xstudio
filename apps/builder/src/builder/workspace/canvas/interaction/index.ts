@@ -5,6 +5,7 @@ export {
   resolveSelectionHit,
   resolveTopmostHitElementId,
 } from "./selectionModel";
+export { resolveCanvasDetachContextTarget } from "./canvasContextMenu";
 export {
   commitPointerClick,
   isPointerDoubleClick,

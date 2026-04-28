@@ -13,6 +13,7 @@ describe("elementSanitizer", () => {
       ref: "origin",
       reusable: false,
       componentName: "TextField",
+      slot: ["TextField"],
       descendants: {
         label: { text: "Email" },
       },
@@ -39,6 +40,7 @@ describe("elementSanitizer", () => {
       ref: "origin",
       reusable: false,
       componentName: "TextField",
+      slot: ["TextField"],
       descendants: {
         label: { text: "Email" },
       },

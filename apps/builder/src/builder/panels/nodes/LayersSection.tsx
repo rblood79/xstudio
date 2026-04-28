@@ -115,12 +115,19 @@ export const LayersSection = memo(function LayersSection({
   // 🚀 useCallback으로 메모이제이션 - 매 렌더링마다 새 함수 생성 방지
   // 계층적 선택: 트리에서 직접 선택 시 editingContext 자동 조정
   const handleItemClick = useCallback(
-    (element: { id: string }) => {
+    (element: Element) => {
       const state = useStore.getState();
-      const newContextId = resolveEditingContextForTreeSelection(
+      let newContextId = resolveEditingContextForTreeSelection(
         element.id,
         state.elementsMap,
       );
+
+      if (!state.elementsMap.has(element.id)) {
+        const parentId = element.parent_id ?? null;
+        const parentElement = parentId ? state.elementsMap.get(parentId) : null;
+        newContextId = parentElement?.type === "body" ? null : parentId;
+      }
+
       if (newContextId !== state.editingContextId) {
         state.setEditingContext(newContextId);
       }

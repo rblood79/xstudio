@@ -5,6 +5,55 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-912 Editing Semantics UI 구현 wave #1 — instance/ref 회귀 수정] - 2026-04-28
+
+### Bug Fixes
+
+- **component instance 가 `ref` 단일 노드로 보이거나 선택/편집되지 않던 회귀 수정**:
+  - canonical `ref` root 를 origin component type/props 로 투영하고 origin descendants 를 synthetic instance child 로 materialize. LayerTree 는 child 구조를 표시하고 synthetic child 선택을 허용하되 drag/delete/context menu 는 차단
+  - Canvas hit-test/selection 이 projected elements map 을 사용해 instance root 더블클릭 후 `instance/label` 같은 child 선택 가능
+  - Properties panel 은 instance 선택 시 `ref` 대신 origin component name/type/props projection 을 노출해 기존 property editor surface 재사용
+  - Properties ##Component section## 의 Go to component 는 canonical `ref` 가 origin `id` 대신 `customId`/`componentName` 을 가리켜도 origin 을 선택
+  - Canvas right-click context menu 와 LayerTree row context menu 에 Detach instance 진입점을 연결해 Properties/shortcut 외 detach 경로 제공
+- **origin 변경이 instance 에 즉시 반영되지 않던 Skia live render 회귀 수정**:
+  - NumberField/SearchField 등 parent prop 이 child Label/Input 으로 전파되지 않던 문제를 Spec `propagation.rules` fallback 으로 일반화
+  - SearchField nested placeholder/label override 와 Select/ComboBox/TagGroup/ProgressBar/Meter/Slider/DateField/TimeField/DatePicker/DateRangePicker 계열 parent→Label 전파 fixture 추가
+- **origin 삭제 시 instance 가 고아 `ref` 로 남고 detach 불가하던 회귀 수정**:
+  - origin 삭제 직전 impacted instance detach snapshot 생성 → origin subtree 제거 + detached standalone subtree 삽입
+  - undo 시 origin + ref 상태 복원. pencil app 의 "origin 삭제 시 instance 자동 detach" 동작과 정렬
+
+### Architecture
+
+- **ADR-912 Phase A/C/H 기반 구현 land**:
+  - canonical field persistence 보강: `ref`, `reusable`, `descendants`, `metadata`, `componentName` 등 sanitizer 보존
+  - Preview runtime 과 Skia/LayerTree/Properties selection path 가 동일 canonical ref projection 을 공유
+  - selection/hover editor chrome semantic marker 적용: origin = magenta solid, instance = violet dotted. hover outline 과 selection corner handle stroke color 도 semantic role 과 일치
+  - Properties ##Component section## action surface 연결: Origin/Instance label, Go to component, Select instances, detach, field reset, Create component / `[-]`, impact dialog host, origin toggle shortcut/UI
+  - Properties ##Slot section## base 연결: frame 선택 시 `Frame.slot: false | string[]` 상태 표시, enable/disable, reusable origin id recommended component add/remove, top-level `slot` + `metadata.slot` backup 보존
+  - Component/Slot coexistence render contract 추가: reusable frame 선택 시 `Component`/`Origin` 과 `Slot` recommendation count/list 동시 노출 검증
+  - Canvas context menu target resolver 추가: spatial hit-test + topmost hit 판정 후 detachable instance 에만 menu 표시
+- **ADR-912 / ADR-911 의존 방향 hardening**:
+  - ADR-912 는 ADR-911 의 영향을 받지 않는 Component/Slot base ADR 로 고정
+  - ADR-911 의 Slot section / Gate G6 소유권 표현은 ADR-912 로 supersede. ADR-911 은 완료된 ADR-912 기능의 frame-bundled preset 편의 확장만 담당
+  - 다음 구현 우선순위도 ADR-912 Slot section base 완료 → ADR-911 편의 확장 재개 순서로 고정
+
+### Documentation
+
+- ADR-912 본문 Status 를 `Accepted → In Progress` 로 갱신하고 implementation wave #1 진행 로그 추가
+- ADR-912 design breakdown 을 skeleton 에서 구현 추적 문서로 전환, 사용자 보고별 fix 매핑과 남은 Gate(G4-B~G4-H) 정리 및 Component/Slot section + detach context menu wiring 로그 추가
+- ADR README 최신 상태와 ADR-912 row 를 implementation wave #1 기준으로 갱신
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/buildSpecNodeData.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/instanceActions.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/stores/utils/elementSanitizer.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/interaction/canvasContextMenu.test.ts src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx`
+- `pnpm -F @composition/builder type-check`
+- `git diff --check`
+- `npm run codex:preflight`
+
 ## [Monitor 패널 노출 축소 — 단축키 전용 활성화] - 2026-04-28
 
 ### Features
@@ -20,18 +69,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **ADR-912/911 의존 방향 정정** (revision 3 framing 재정의):
   - **정정 사유**: baseline (ADR-903 Phase 4) framing 이 ADR-912 (reusable component 추상) 를 ADR-911 (Layout/frameset preset) 의 후속으로 박아 의존 방향이 거꾸로. codex review 3차 M-1 + 사용자 framing 재정의 (2026-04-28 세션 49 후속) 로 발견 → 정정
-  - **올바른 의존 방향**: ADR-912 = reusable component 추상의 **base** (Origin/Instance/Override + Component section + detach + Origin 토글) / ADR-911 = component 의 **frame-bundled preset 응용** (frame = layout-bundled reusable component, ##Slot section## = ##Component section## 의 frame-specific specialization)
-  - **Why**: ADR-912 base 없이 ADR-911 Phase 3 가 진행되며 frame preset 이 추상 없이 응용만 land — Phase 3 후속 (P3-ε / P3-ζ — Slot section UI / FramesTab Slot composition) 에서 ADR-912 Component section 정합화 시 baseline 어긋남 risk 누적
+  - **올바른 의존 방향**: ADR-912 = reusable component + slot 추상의 **base** (Origin/Instance/Override + Component section + Slot section + detach + Origin 토글) / ADR-911 = 완료된 ADR-912 기능의 **frame-bundled preset 편의 확장**
+  - **Why**: ADR-912 base 없이 ADR-911 Phase 3 가 진행되며 frame preset 이 추상 없이 응용만 land — Phase 3 후속 (P3-ε / P3-ζ — FramesTab Slot composition) 에서 ADR-912 Component/Slot section 정합화 시 baseline 어긋남 risk 누적
 - **ADR-912 Accepted (revision 3)**:
   - 위치: `docs/adr/912-editing-semantics-ui-5elements.md` Status `Proposed → Accepted`
   - codex review 3차 통과 (M-1 의존 방향 정정 / L-1 LOW 추적성 권고). 1차 7건 (HIGH 3 / MED 3 / LOW 1) + 2차 2건 (MED-1 phase 명칭 / MED-2 TOCTOU guard) + 3차 의존 방향 정정 모두 반영
   - 본문 + design §7 framing 정정 — "선결 ADR-911" 제거 / "ADR-911 = preset 응용" 명시 / 차단 해제 조건 = "사용자 review + Status Proposed→Accepted" (ADR-911 P3 land 와 무관)
-  - 다음: Phase A1 진입 (Canvas Origin/Instance 시각 마커 base land)
+  - 다음: ADR-912 Component/Slot base 우선 구현
 - **ADR-911 Frozen (Phase 3 후속 동결)**:
   - 위치: `docs/adr/911-layout-frameset-pencil-redesign.md` Status `In Progress → Frozen`
   - 보존 범위: Phase 0~2 (Implemented) + Phase 3 P3-α/β/γ/δ + δ fix #1~#4 + B1 filter + θ scope + θ regression fix #1 모두 land 보존 — 사용자 가시 동작 (frame default + page slot fill GREEN) 유지
-  - 정지 영역: P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot — 모두 ADR-912 Phase A1 land 후 재개
-  - 재개 조건: ADR-912 Phase A1 land 완료 시 P3-ε / P3-ζ 가 ##Component section## 위 frame-specific specialization 으로 재설계 진입
+  - 정지 영역: P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot — 모두 ADR-912 Component/Slot base 완료 후 재개
+  - 재개 조건: ADR-912 Component/Slot base 완료 시 P3-ε / P3-ζ 가 frame authoring 편의 확장으로 재설계 진입
 
 ### Documentation
 

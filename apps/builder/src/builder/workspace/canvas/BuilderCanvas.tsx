@@ -20,6 +20,7 @@ import {
   useState,
   lazy,
   Suspense,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
@@ -36,6 +37,7 @@ import { TextEditOverlay, useTextEdit } from "../overlay";
 import { DotBackground } from "../components/DotBackground";
 import {
   computeSelectionBounds,
+  resolveCanvasDetachContextTarget,
   resolveSelectedElementsForPage,
 } from "./interaction";
 import {
@@ -67,6 +69,7 @@ import {
 } from "./skia/workflowEdges";
 
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
+import { hitTestPoint } from "./wasm-bindings/spatialIndex";
 
 // ============================================
 // Types
@@ -88,6 +91,12 @@ export interface BuilderCanvasProps {
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
 const PAGE_STACK_GAP = 80;
+
+type CanvasContextMenuState = {
+  elementId: string;
+  x: number;
+  y: number;
+};
 
 // ============================================
 // Sub-Components
@@ -163,6 +172,9 @@ export function BuilderCanvas({
     (state) => state.selectElementWithPageTransition,
   );
   const invalidateLayout = useStore((state) => state.invalidateLayout);
+  const detachInstance = useStore((state) => state.detachInstance);
+  const [canvasContextMenu, setCanvasContextMenu] =
+    useState<CanvasContextMenuState | null>(null);
 
   // Settings state (SettingsPanel 연동)
   const showGrid = useStore((state) => state.showGrid);
@@ -526,12 +538,107 @@ export function BuilderCanvas({
     frameAreas,
   ]);
 
+  const interactiveElementsMapRef = useRef(skiaRendererInput.elementsMap);
+  const interactiveChildrenMapRef = useRef(skiaRendererInput.childrenMap);
+
+  useEffect(() => {
+    interactiveElementsMapRef.current = skiaRendererInput.elementsMap;
+    interactiveChildrenMapRef.current = skiaRendererInput.childrenMap;
+  }, [skiaRendererInput.childrenMap, skiaRendererInput.elementsMap]);
+
+  const getInteractiveElementsMap = useCallback(
+    () => interactiveElementsMapRef.current,
+    [],
+  );
+  const getInteractiveChildrenMap = useCallback(
+    () => interactiveChildrenMapRef.current,
+    [],
+  );
+
   const screenToCanvasPoint = useCallback(
     (position: { x: number; y: number }) => {
       return screenToViewportPoint(position, zoom, panOffset);
     },
     [panOffset, zoom],
   );
+
+  useEffect(() => {
+    if (!canvasContextMenu) return;
+
+    const close = () => setCanvasContextMenu(null);
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [canvasContextMenu]);
+
+  const handleCanvasContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const element = containerRef.current;
+      if (!element) return;
+
+      const target = event.target as HTMLElement;
+      if (target.closest('input, textarea, [contenteditable="true"]')) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      const canvasPoint = screenToCanvasPoint({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+      const state = useStore.getState();
+      const hitElementsMap = getInteractiveElementsMap();
+      const elementId = resolveCanvasDetachContextTarget(
+        hitTestPoint(canvasPoint.x, canvasPoint.y),
+        hitElementsMap,
+        state.elementsMap,
+      );
+
+      if (!elementId) {
+        setCanvasContextMenu(null);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const hitElement =
+        state.elementsMap.get(elementId) ?? hitElementsMap.get(elementId);
+      if (hitElement?.page_id && hitElement.page_id !== state.currentPageId) {
+        selectElementWithPageTransition(elementId, hitElement.page_id);
+      } else {
+        setSelectedElement(elementId);
+      }
+
+      setCanvasContextMenu({
+        elementId,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    [
+      getInteractiveElementsMap,
+      screenToCanvasPoint,
+      selectElementWithPageTransition,
+      setSelectedElement,
+    ],
+  );
+
+  const handleDetachCanvasContextMenuInstance = useCallback(() => {
+    const elementId = canvasContextMenu?.elementId;
+    if (!elementId) return;
+    setCanvasContextMenu(null);
+
+    const confirmed = window.confirm(
+      "Detach this instance from its component?",
+    );
+    if (!confirmed) return;
+
+    detachInstance(elementId);
+  }, [canvasContextMenu?.elementId, detachInstance]);
 
   // ADR-074 Phase 3: packet 을 scene(selection-invariant) / overlay(selection deps)
   // 로 분리. selection-only 변화 시 scenePacket identity 유지 → 하위 useMemo 중
@@ -616,7 +723,7 @@ export function BuilderCanvas({
     const state = useStore.getState();
     const selectedElements = resolveSelectedElementsForPage({
       currentPageId: state.currentPageId,
-      elementsMap: state.elementsMap,
+      elementsMap: interactiveElementsMapRef.current,
       selectedElementIds: state.selectedElementIds,
     });
 
@@ -706,6 +813,7 @@ export function BuilderCanvas({
     editingElementIdRef,
     handleElementClickRef,
     handleElementDoubleClickRef,
+    getHitElementsMap: getInteractiveElementsMap,
     isEditingRef,
     lastClickTargetRef,
     lastClickTimeRef,
@@ -755,6 +863,8 @@ export function BuilderCanvas({
       setSelectedElement,
       setSelectedElements,
       startEdit,
+      getInteractiveChildrenMap,
+      getInteractiveElementsMap,
     });
 
   // Ref 동기화: 최신 핸들러를 ref에 할당 (중앙 DOM 이벤트 핸들러에서 사용)
@@ -777,6 +887,7 @@ export function BuilderCanvas({
       ref={setContainerNode}
       className="canvas-container"
       tabIndex={-1}
+      onContextMenu={handleCanvasContextMenu}
       onPointerDown={(e) => {
         // 캔버스 영역 클릭 시 컨테이너에 포커스 → activeScope가 'canvas-focused'로 전환
         // Backspace/Delete 등 캔버스 스코프 단축키 활성화
@@ -848,6 +959,29 @@ export function BuilderCanvas({
       )}
 
       <GPUDebugOverlay />
+
+      {canvasContextMenu && (
+        <div
+          aria-label="Canvas context menu"
+          className="canvas-context-menu"
+          role="menu"
+          style={{
+            left: `${canvasContextMenu.x}px`,
+            top: `${canvasContextMenu.y}px`,
+          }}
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button
+            className="canvas-context-menu-item"
+            onClick={handleDetachCanvasContextMenuInstance}
+            role="menuitem"
+            type="button"
+          >
+            Detach instance
+          </button>
+        </div>
+      )}
 
       {/* 텍스트 편집 오버레이 (B1.5) */}
       {editState && editState.elementId && (

@@ -511,6 +511,7 @@ export const createUpdateElementAction =
     get()._rebuildIndexes();
 
     // 2. IndexedDB에 저장 (로컬 우선 저장) — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
+    if (typeof indexedDB === "undefined") return;
     void (async () => {
       try {
         const db = await getDB();

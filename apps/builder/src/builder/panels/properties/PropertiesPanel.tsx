@@ -37,6 +37,7 @@ import {
 } from "../../components";
 import { ElementSlotSelector } from "./editors/ElementSlotSelector";
 import { ComponentSemanticsSection } from "./ComponentSemanticsSection";
+import { FrameSlotSection } from "./FrameSlotSection";
 import { ActionIconButton } from "../../components/ui";
 import { Copy, ClipboardPaste, Settings2 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -1532,6 +1533,8 @@ function PropertiesPanelContent() {
         />
 
         <ComponentSemanticsSection elementId={selectedElement.id} />
+
+        <FrameSlotSection elementId={selectedElement.id} />
 
         {/* ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리 */}
         <PropertyEditorWrapper selectedElement={selectedElement} />

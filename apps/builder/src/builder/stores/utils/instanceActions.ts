@@ -488,6 +488,45 @@ function buildDetachSnapshot(
   return buildLegacyDetachSnapshot(state, instanceId);
 }
 
+export function buildDetachSnapshotsForOrigins(
+  state: ElementsState,
+  origins: Element[],
+  excludedElementIds: Set<string> = new Set(),
+): { elements: Element[]; previousElements: Element[] } {
+  const usedIds = new Set(state.elements.map((element) => element.id));
+  const seenInstanceIds = new Set<string>();
+  const previousElements: Element[] = [];
+  const elements: Element[] = [];
+
+  for (const origin of origins) {
+    if (getEditingSemanticsRole(origin) !== "origin") continue;
+
+    const impactedInstanceIds = getEditingSemanticsImpactInstanceIds(
+      origin,
+      state.elements,
+    );
+    for (const instanceId of impactedInstanceIds) {
+      if (seenInstanceIds.has(instanceId)) continue;
+      if (excludedElementIds.has(instanceId)) continue;
+      seenInstanceIds.add(instanceId);
+
+      const snapshot = buildDetachSnapshot(state, instanceId, usedIds);
+      if (!snapshot) {
+        console.warn("[Instance] cannot auto-detach impacted instance:", {
+          originId: origin.id,
+          instanceId,
+        });
+        continue;
+      }
+
+      previousElements.push(...snapshot.previousElements);
+      elements.push(...snapshot.elements);
+    }
+  }
+
+  return { previousElements, elements };
+}
+
 function applyElementSnapshotBatch(
   get: () => ElementsState,
   set: (

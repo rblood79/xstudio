@@ -1,7 +1,7 @@
-# ADR-912 design — Editing Semantics UI 6요소 breakdown (skeleton)
+# ADR-912 design — Editing Semantics UI 6요소 breakdown
 
-> **Status**: skeleton (Accepted 전 codex H2 권고로 선행 land — 2026-04-28 세션 47).
-> Phase A 진입 시 본 skeleton 의 각 sub-phase 가 파일 변경 목록 + 회귀 시나리오 + roundtrip evidence 로 확장됨.
+> **Status**: In Progress (Accepted 후 implementation wave #1 작업 로그 누적 — 2026-04-28 세션 50+).
+> 최초 skeleton 은 Accepted 전 codex H2 권고로 선행 land(2026-04-28 세션 47). Phase A 진입 후 본 파일이 sub-phase 별 파일 변경 목록 + 회귀 시나리오 + roundtrip evidence 의 추적 문서로 전환됨.
 >
 > **Baseline**: [903-phase4-editing-semantics-breakdown.md](903-phase4-editing-semantics-breakdown.md) (637 LOC) — ADR-903 G4 분해 시 작성. 본 fork 가 아래 차별점 적용:
 >
@@ -31,19 +31,19 @@
 #### A1 — Canvas bounding box marker (origin = magenta+solid / instance = violet+dot)
 
 - 영역: Skia overlay render layer (component runtime style 과 분리 — D3 누출 없음, codex M2)
-- 핵심 결정: marker 는 `skipCSSGeneration` + Skia overlay 전용 path. CSS variable / Spec D3 token 미사용
+- 핵심 결정: marker 는 `skipCSSGeneration` + Skia overlay 전용 path. CSS variable / Spec D3 token 미사용. hover 도 같은 semantic color 를 사용하고, selection box 의 4개 corner handle stroke 도 origin/instance color 와 일치
 - 검증: Storybook 시각 + Chrome MCP screenshot + CSS/Skia grep (marker 색/선이 component CSS 로 누출 0)
 
 #### A2 — LayerTree 보조 마커 (origin/instance 아이콘 또는 색 dot)
 
 - 영역: LayerTree row indicator
-- 핵심 결정: A1 의 magenta/violet 와 공통 시각 언어 (색 dot 또는 작은 아이콘)
+- 핵심 결정: A1 의 magenta/violet 와 공통 시각 언어 (색 dot 또는 작은 아이콘). projected instance child 는 selection 가능하지만 drag/delete/context menu 는 차단
 - 검증: LayerTree fixture + 시각 검증
 
 #### A3 — Properties 패널 라벨 (Origin / Instance text label)
 
 - 영역: Properties 패널 ##Component section## 헤더 영역
-- 핵심 결정: 텍스트 라벨 — "Origin" 또는 "Instance" (i18n 가능 영어 baseline). pencil 의 보조 cue
+- 핵심 결정: 텍스트 라벨 — "Origin" 또는 "Instance" (i18n 가능 영어 baseline). pencil 의 보조 cue. instance 선택 시 Properties data 는 `ref` root 가 아니라 origin component type/name/props projection 으로 노출
 - 검증: 패널 렌더 fixture + 라벨 정확도 (`reusable: true` → "Origin" / `type: "ref"` → "Instance" / 그 외 → 라벨 미노출)
 
 > **G4-A 통과 조건** (3 sub-gate 묶음): A1 + A2 + A3 모두 land + 기존 시각 cue (선택 outline / hover / focus) 와 충돌 0 + override 별도 마커 부재 (pencil 정합) 검증
@@ -60,6 +60,7 @@
 - 우클릭 + Properties 패널 detach 버튼
 - 경고 다이얼로그 + detach 후 ref → element subtree materialize + undo
 - **path-based descendants 처리 흡수** (baseline 903 P4-B): `descendants[idPath]` slash-separated path → element subtree 변환 시 path resolution + nested instance materialize. detach materialize 의 prerequisite. 분리 sub-phase 신설 안 함 — Phase C 내부 sub-task 로 통합 (Gate G4-C (c) "detach 후 ref → element subtree materialize" 가 path-based 처리를 implicitly 포함)
+- origin 삭제 시 pencil app 과 동일하게 남은 instance 를 자동 detach materialize 하는 회귀 fix 포함. 고아 `ref` 로 남거나 detach 불가능한 상태가 되면 G4-C/G4-H 실패
 
 ### Phase D — reset override + 필드별 indicator (G4-D, codex M3)
 
@@ -78,7 +79,7 @@
 ### Phase F — Component section 통합 UI 검증 (G4-F, codex H1 신규)
 
 - Properties 패널 ##Component section## 가 ①(라벨) + ②(Go to component) + ③(detach) + ④(필드별 reset) + ⑥(Create component / `[-]`) 모든 진입점 단일 section 통합 노출
-- ADR-911 ##Slot section## 과 같은 패널 공존 — UI 충돌 0 (cross-section 어수선 0)
+- 본 ADR ##Slot section## base 와 같은 패널 공존 — UI 충돌 0 (cross-section 어수선 0)
 - section 활성화/비활성화 (frame 외 노드 선택 시) 정상
 - Storybook + Chrome MCP 시각 검증 — 두 section 동시 노출 화면 capture
 
@@ -114,7 +115,7 @@
 | G4-C                                  | C        | detach 단축키 + 경고 + materialize + undo                                                       |
 | G4-D                                  | D        | 필드별 reset + indicator + recursive walk + undo                                                |
 | G4-E                                  | E        | 영향 미리보기 + 카운트 정확 + 60fps                                                             |
-| G4-F                                  | F        | Component section 통합 UI + ADR-911 Slot 공존 0 충돌                                            |
+| G4-F                                  | F        | Component section 통합 UI + 본 ADR Slot section base 공존 0 충돌                                |
 | G4-G (codex H3 — 선결조건)            | G        | G4-C + Phase D 완료 후 진입 + instanceCount 정확도 + 0/1/1000 fixture round-trip                |
 | G4-H                                  | H        | 회귀 0 + 모든 undo + 50+ fixture                                                                |
 
@@ -128,46 +129,108 @@
 | R2 (detach materialize 누락)                   | C               | 50+ fixture round-trip                                                 |
 | R3 (deep nested key 누락)                      | D               | recursive walk + resolver 재실행                                       |
 | R4 (영향 계산 부하)                            | E               | 동기 우선 + 100ms 초과 시 worker                                       |
-| R5 (ADR-911 신 UI 위 재작성)                   | F               | ADR-911 Slot section 직교 검증                                         |
+| R5 (ADR-911 이 본 ADR 을 역제약)               | F               | ADR-912 Component/Slot base 우선 완료 + ADR-911 편의 확장 제한         |
 | **R6 (Origin 토글 destructive — 조건부 HIGH)** | **G**           | **G4-G 선결조건 + 0/1/1000 fixture round-trip**                        |
 | R7 (pencil drift)                              | (cross-cutting) | revision 2 baseline snapshot SHA 명시 — `3f7db76e` (2026-04-28T01:22Z) |
 
-## 5. ADR-911 ##Slot section## 와의 직교 검증 (Phase F)
+## 5. Slot section base + ADR-911 편의 확장 경계 (Phase F)
 
-본 ADR ##Component section## 와 ADR-911 ##Slot section## 은 같은 Properties (Inspector) 패널에 공존:
+본 ADR 이 ##Component section## 와 ##Slot section## base 를 모두 소유한다. ADR-911 은 이 base 를 변경하거나 선행 기준을 제공하지 않으며, 본 ADR 완료 후 frame authoring 편의 확장으로만 재개한다.
 
 | section                        | 표시 조건                          | 표시 항목                                                                                                  |
 | ------------------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | ##Component section## (본 ADR) | element 1 개 선택 시 항상 노출     | Component Name + Origin/Instance 라벨 + Go to component + Create component / `[-]` + detach + 필드별 reset |
-| ##Slot section## (ADR-911)     | 선택된 노드가 `frame` 일 때만 노출 | `slot` field 상태 (false 또는 string[]) + `[+]` (활성화/추가) + `[-]` (제거/해제)                          |
+| ##Slot section## (본 ADR)      | 선택된 노드가 `frame` 일 때만 노출 | `slot` field 상태 (false 또는 string[]) + `[+]` (활성화/추가) + `[-]` (제거/해제)                          |
 
 - 선택 노드가 frame 이면 두 section 동시 노출 (위/아래 또는 collapse 가능 영역)
 - frame 이 아닌 노드 (text / icon / rectangle 등) 선택 시 ##Slot section## 미노출, ##Component section## 만
 - UI 충돌 0 검증 = Storybook + Chrome MCP capture (frame + 비-frame 양쪽)
+- ADR-911 은 위 base 를 재정의하지 않는다. 이후 FramesTab / frame preset UX 는 이 section 들을 더 쉽게 쓰게 하는 보조 흐름만 제공한다
 
-## 6. design 확장 작업 (Phase A 진입 시)
+## 6. 구현 추적 작업
 
-본 skeleton 은 sub-phase + Gates + Risks 매핑까지만 land. 다음 항목은 Phase A 진입 시점에 본 design 파일에 채움:
+본 문서는 최초 skeleton 에서 구현 추적 문서로 전환됨. 다음 항목은 각 wave 종료 시 누적:
 
 - 각 sub-phase 별 파일 변경 목록 (apps/builder/src/builder/...)
 - 회귀 시나리오 fixture (50+ project + 0/1/1000 instance count)
 - roundtrip evidence (Skia/CSS/Preview 3축 screenshot diff)
-- ADR-911 Phase 3 후속 (P3-ε / P3-ζ) 의 본 ADR specialization 재설계 인터페이스 (본 ADR Phase A1 land 후 ADR-911 P3-ε/P3-ζ 가 ##Component section## 위 frame-specific specialization 으로 진입)
+- ADR-911 Phase 3 후속 (P3-ε / P3-ζ) 재개 인터페이스: 본 ADR Component/Slot base 완료 후, ADR-911 은 해당 기능의 frame authoring 편의 확장으로만 진입
 - ⑥ Origin 토글 ↔ ⑤ 영향 미리보기 다이얼로그 reuse 시 prop 인터페이스 정의
 
 ## 7. 후속 / 차단 사항 (revision 3 의존 방향 정정 — 2026-04-28 세션 49+)
 
-> **의존 방향 정정**: 본 ADR = reusable component 추상의 **base** / ADR-911 = component 의 **frame-bundled preset 응용**. baseline (ADR-903 Phase 4) framing 이 거꾸로 박혀 있어 codex 3차 review M-1 + 사용자 framing 재정의 (2026-04-28 세션 49) 로 정정. ADR-911 ##Slot section## 은 본 ADR ##Component section## 의 frame-specific specialization.
+> **의존 방향 정정 hardening**: 본 ADR = reusable component + slot 추상의 **base** / ADR-911 = 완료된 본 ADR 기능의 **frame-bundled preset 편의 확장**. baseline (ADR-903 Phase 4) framing 이 거꾸로 박혀 있어 codex 3차 review M-1 + 사용자 framing 재정의 (2026-04-28 세션 49) 로 1차 정정했고, 2026-04-28 세션 50+ 후속에서 "ADR-912 는 ADR-911 의 영향을 받지 않는다" 를 명시했다. Slot section base 도 본 ADR scope 이며, ADR-911 은 이를 재정의하지 않는다.
 
-- **차단**: 본 design skeleton 이 Accepted 되기 전 ADR-912 Phase A1 진입 금지 (codex H2)
-- **차단 해제 조건**: 사용자 review + ADR-912 본문 Status `Proposed → Accepted` 승격 (ADR-911 P3 land 와 무관 — ADR-911 이 본 ADR 의 preset 응용이므로 의존 역방향)
-- **본 ADR Phase A~H land 후 ADR-911 Phase 3 후속 재개**: ADR-911 P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot 은 모두 본 ADR Phase A1 (시각 마커 base) land 후 ##Component section## 위 frame-specific specialization 으로 재설계 진입
-- **선결 (재정의)**: 본 ADR Phase A1 (Canvas Origin/Instance 시각 마커 + LayerTree 라벨 + Properties ##Component section## 라벨 base) 가 ADR-911 P3-ε/P3-ζ 의 baseline. ADR-911 Hard Constraint #6 (##Slot section## land — 세션 47 Hard Constraint 추가) 는 본 ADR Phase F (G4-F Component section 통합 UI 검증) 의 공존 baseline 으로 유지 — section 공존 자체는 ADR-911 Phase 0~2 + P3-α/β/γ/δ 까지의 land 로 충분
+- **차단 해제됨**: 사용자 review + ADR-912 본문 Status `Proposed → Accepted` 승격 완료. 이후 세션 50+ 에서 Phase A/C/H 기반 구현 wave #1 진입
+- **본 ADR Component/Slot base 완료 후 ADR-911 Phase 3 후속 재개**: ADR-911 P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot 은 모두 본 ADR 완료 후 frame authoring 편의 확장으로 재설계 진입
+- **선결 (재정의)**: ADR-912 의 Component section + Slot section base 완료가 ADR-911 재개의 유일한 baseline. ADR-911 Hard Constraint #6 의 Slot section 표현은 본 ADR 기준으로 supersede 하며, ADR-911 은 독자 Slot UI 소유권을 갖지 않는다
 
-## 관련
+## 8. 2026-04-28 implementation wave #1 — 작업 / fix 로그
 
-- [ADR-912 본문](../912-editing-semantics-ui-5elements.md) (revision 2 — 2026-04-28)
-- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md) (revision 2 — Hard Constraint #6 + Gate G6 신설 / Frozen 2026-04-28 세션 49+ — 본 ADR base land 후 P3-ε/P3-ζ 재개)
+| Phase | 작업 / fix | 주요 파일 |
+| ----- | ---------- | --------- |
+| A1/C/H | canonical `ref` root 를 origin component 로 투영하고 origin descendants 를 synthetic child 로 materialize. projection root 는 `ref` 를 보존해 instance semantic role 과 origin navigation 의 기준 유지 | `apps/builder/src/builder/utils/canonicalRefResolution.ts` |
+| A2/H | LayerTree 에서 child 구조가 있는 component instance 를 `ref` 단일 row 가 아니라 projected child tree 로 표시. synthetic child 선택 허용, drag/delete/context menu 는 차단 | `apps/builder/src/builder/panels/nodes/tree/LayerTree/useLayerTreeData.ts`, `LayerTree.tsx`, `LayerTreeItemContent.tsx`, `LayersSection.tsx` |
+| A1/H | Canvas selection marker 를 semantic role 기반으로 분기. origin = magenta solid, instance = violet dotted. hover outline 과 selection corner handle 색상도 동일 role 색상 사용 | `selectionRenderer.ts`, `hoverRenderer.ts`, `skiaOverlayBuilder.ts`, `skiaOverlayHelpers.ts`, `skiaWorkflowSelection.ts` |
+| A3/F 기반 | Properties 선택 데이터가 instance 에 대해 `ref` 대신 origin type/name/props projection 을 반환해 ref 로 표시되거나 Properties 가 비는 회귀 수정 | `apps/builder/src/builder/stores/index.ts` |
+| H | Canvas hit-test/selection 에 projected elements map 을 사용해 instance root 더블클릭 후 synthetic child 선택 가능. LayerTree synthetic child 선택 fallback 도 parent editing context 로 연결 | `BuilderCanvas.tsx`, `useCanvasElementSelectionHandlers.ts`, `useCentralCanvasPointerHandlers.ts`, `LayersSection.tsx` |
+| D 기반 | NumberField/SearchField 등 parent prop 변경이 projected instance child(Label/Input 등)에 즉시 전파되지 않던 회귀를 Spec `propagation.rules` fallback 으로 일반화 | `apps/builder/src/builder/workspace/canvas/skia/buildSpecNodeData.ts` |
+| C/H | origin 삭제 시 남은 instance 가 고아 `ref` 로 남는 버그 수정. 삭제 전 detach snapshot 을 만든 뒤 origin subtree 제거 + detached standalone subtree 삽입. undo 는 origin + ref 상태 복원 | `apps/builder/src/builder/stores/utils/elementRemoval.ts`, `instanceActions.ts` |
+| C/H | canonical 필드가 sanitizer/persistence 에서 유실되지 않도록 `ref`, `reusable`, `descendants`, `metadata`, `componentName` 등 보존 | `apps/builder/src/builder/stores/utils/elementSanitizer.ts` |
+| B/F | Properties ##Component section## 에 Origin/Instance 라벨, Go to component, Select instances, detach, field reset, Create component / `[-]` 토글을 연결. canonical `ref` 가 origin `customId`/`componentName` 을 가리켜도 origin navigation 이 동작하도록 lookup 을 보강 | `apps/builder/src/builder/panels/properties/ComponentSemanticsSection.tsx` |
+| E/G | "N개 인스턴스 영향" confirmation host 와 origin toggle shortcut/UI 를 연결. origin 해제 시 impacted instance detach snapshot + TOCTOU 재확인 경로를 사용 | `apps/builder/src/builder/components/overlay/EditingSemanticsImpactDialog.tsx`, `apps/builder/src/builder/hooks/useGlobalKeyboardShortcuts.ts`, `apps/builder/src/builder/stores/utils/instanceActions.ts` |
+| F/H | Properties ##Slot section## frame-only base UI 를 연결. `Frame.slot: false | string[]` enable/disable, reusable origin id recommended component add/remove, top-level `slot` + `metadata.slot` backup, sanitizer `slot` 보존을 포함 | `apps/builder/src/builder/panels/properties/FrameSlotSection.tsx`, `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`, `apps/builder/src/types/builder/unified.types.ts`, `apps/builder/src/builder/stores/utils/elementSanitizer.ts` |
+| C/H | Canvas right-click context menu 에 Detach instance 진입점을 연결. spatial hit-test + topmost 판정 후 detachable instance 일 때만 menu 를 표시하고 기존 `detachInstance` action 을 실행. LayerTree row context menu 도 동일 action 경로 검증 | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`, `apps/builder/src/builder/workspace/canvas/interaction/canvasContextMenu.ts`, `apps/builder/src/builder/workspace/Workspace.css`, `apps/builder/src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.tsx` |
+| F | Component section 과 Slot section 이 같은 Properties surface 에 공존하는 render contract 를 고정. reusable frame 선택 시 `Component`/`Origin` 과 `Slot` recommendation count/list 가 동시에 노출됨 | `apps/builder/src/builder/panels/properties/FrameSlotSection.test.tsx` |
+
+### 사용자 보고별 fix 매핑
+
+| 사용자 보고 | 처리 결과 |
+| ----------- | --------- |
+| `ctrl+c => ctrl+v` 시 instance/ref 생성 방식이 pencil 과 다름 | canonical projection/persistence 기반을 보강. 중복 생성 자체는 copy/paste 회귀 항목으로 계속 감시 |
+| TextField/Text/NumberField/SearchField instance 가 child 까지 instance tree 로 보이지 않고 `ref` 로 끝남 | projected ref tree + LayerTree synthetic child + Preview/Skia projection 으로 child 구조 표시/선택 가능 |
+| origin 변경이 instance 에 즉시 반영되지 않고 새로고침 후에만 반영 | selected/projected map 과 Skia spec propagation fallback 으로 live render path 보강 |
+| Properties panel 에 instance 가 component name 이 아니라 `ref` 로 표시되어 properties 가 비어 있음 | `useSelectedElementData()` projection 으로 origin component type/name/props 노출 |
+| selection/hover marker 가 pencil 과 다름 | origin magenta solid, instance violet dotted, hover/corner handle semantic color 적용 |
+| instance child 를 더블클릭/LayerTree 에서 선택 불가 | projected hit-test map + tree selection fallback 으로 synthetic child 선택 가능 |
+| SearchField 는 label/placeholder override 가 NumberField 와 다르게 동작 | Spec propagation rules 기반 일반화로 SearchField nested input/label 포함 |
+| origin 삭제 후 instance 가 고아 `ref` 가 되고 detach 불가 | origin delete auto-detach + undo snapshot 도입 |
+| Properties ##Component section## 의 action 연결 상태 확인 필요 | Go to component / Select instances / detach / field reset / Create component / `[-]` 토글 연결. canonical ref target 이 id 가 아닌 customId/componentName 이어도 origin 탐색 가능 |
+| ADR-912 가 Slot base 를 소유해야 하며 ADR-911 의 영향을 받으면 안 됨 | ADR-912 Properties ##Slot section## base 를 구현하고 ADR-911 Slot section / Gate G6 표현은 supersede 로 고정 |
+| detach 를 Properties/단축키 외 우클릭으로 실행해야 함 | Canvas right-click context menu + LayerTree row context menu 에 Detach instance 진입점을 연결 |
+| Component section 과 Slot section 이 같은 Properties panel 에 동시에 보여야 함 | reusable frame fixture 로 두 section 의 동시 render contract 를 테스트 고정. browser screenshot evidence 는 별도 남은 gate 로 유지 |
+
+### 검증 evidence
+
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/canonicalRefResolution.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/buildSpecNodeData.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/utils/__tests__/instanceActions.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/index.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/nodes/tree/LayerTree/useLayerTreeData.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/hierarchicalSelection.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/skiaOverlayHelpers.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/ComponentSemanticsSection.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/stores/utils/elementSanitizer.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/interaction/canvasContextMenu.test.ts src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx`
+- `pnpm -F @composition/builder type-check`
+- `git diff --check`
+- `npm run codex:preflight`
+
+### 남은 gate
+
+- G4-B: 원본→인스턴스 highlight 의 최종 시각 검증
+- G4-C: detach warning dialog copy/UX 최종 검증
+- G4-E: 1000 instance 성능 gate
+- G4-F: Component section + Slot section base browser screenshot evidence
+- G4-G: `Cmd/Ctrl+Opt/Alt+K` origin toggle TOCTOU fixture 확장
+- G4-H: 50+ fixture round-trip + copy/paste/duplicate/delete/slot assign 전체 회귀 sweep
+
+## 9. 관련
+
+- [ADR-912 본문](../912-editing-semantics-ui-5elements.md) (In Progress — 2026-04-28 implementation wave #1)
+- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md) (Frozen 2026-04-28 세션 49+ / 세션 50+ hardening — Slot section base 소유권은 본 ADR 로 supersede, 본 ADR 완료 후 frame authoring 편의 확장으로만 P3-ε/P3-ζ 재개)
 - [ADR-903 Phase 4 baseline](903-phase4-editing-semantics-breakdown.md) (637 LOC, 본 fork 의 baseline)
 - [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md) — D1/D2/D3 분할 정본
 - [adr-writing.md](../../../.claude/rules/adr-writing.md) — Risk-First 템플릿 + "스캐폴딩 먼저" 원칙

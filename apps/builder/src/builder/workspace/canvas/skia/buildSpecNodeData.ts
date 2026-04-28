@@ -21,6 +21,7 @@ import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import {
   normalizeBreadcrumbRspSizeKey,
   type ComponentState,
+  type PropagationRule,
 } from "@composition/specs";
 import { getSpecForTag } from "../sprites/tagSpecMap";
 import { specShapesToSkia } from "./specShapeConverter";
@@ -28,7 +29,10 @@ import {
   withAccentOverride,
   type TintPreset,
 } from "../../../../utils/theme/tintToSkiaColors";
-import { getParentTagsForChild } from "../../../utils/propagationRegistry";
+import {
+  getParentTagsForChild,
+  getPropagationRules,
+} from "../../../utils/propagationRegistry";
 import { getNecessityIndicatorSuffix } from "@composition/shared/components";
 import { formatProgressValue } from "../layout/engines/implicitStyles";
 import {
@@ -197,6 +201,7 @@ const PARENT_LABEL_PROP_SOURCE_TAGS = new Set([
   "TextField",
   "TextArea",
   "NumberField",
+  "SearchField",
   "ColorField",
 ]);
 
@@ -226,6 +231,122 @@ function resolveParentLabelText(
 
   const label = getProps(parent).label;
   return typeof label === "string" ? label : null;
+}
+
+function propagationPathMatches(
+  ancestor: Element,
+  element: Element,
+  childPath: PropagationRule["childPath"],
+  elementsMap: Map<string, Element>,
+): boolean {
+  const expectedPath = Array.isArray(childPath) ? childPath : [childPath];
+  const actualPath = [element.type];
+  let parentId = element.parent_id;
+
+  while (parentId) {
+    const parent = elementsMap.get(parentId);
+    if (!parent) return false;
+    if (parent.id === ancestor.id) {
+      if (actualPath.length !== expectedPath.length) return false;
+      return actualPath.every((type, index) => type === expectedPath[index]);
+    }
+    actualPath.unshift(parent.type);
+    parentId = parent.parent_id;
+  }
+
+  return false;
+}
+
+function getPropagationAncestors(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): Element[] {
+  const ancestors: Element[] = [];
+  let parentId = element.parent_id;
+  while (parentId) {
+    const parent = elementsMap.get(parentId);
+    if (!parent) break;
+    ancestors.push(parent);
+    parentId = parent.parent_id;
+  }
+  return ancestors.reverse();
+}
+
+function shouldSkipStylePropagation(
+  style: Record<string, unknown>,
+  rule: PropagationRule,
+): boolean {
+  if (rule.override) return false;
+  if (rule.childProp && style[rule.childProp] !== undefined) return true;
+  return (rule.skipIfSet ?? []).some((key) => style[key] !== undefined);
+}
+
+function resolvePropagationValue(
+  rule: PropagationRule,
+  parentProps: Record<string, unknown>,
+): unknown {
+  let value =
+    rule.parentProp !== undefined
+      ? parentProps[rule.parentProp]
+      : rule.styleValue;
+  if (value === undefined) return undefined;
+
+  if (rule.transform) {
+    try {
+      value = rule.transform(value, parentProps);
+    } catch {
+      return undefined;
+    }
+  }
+
+  return value;
+}
+
+function applyParentPropagationProps(
+  element: Element,
+  props: Record<string, unknown>,
+  elementsMap: Map<string, Element>,
+): Record<string, unknown> {
+  let nextProps = props;
+  const ancestors = getPropagationAncestors(element, elementsMap);
+
+  for (const ancestor of ancestors) {
+    const rules = getPropagationRules(ancestor.type);
+    if (!rules) continue;
+
+    const parentProps = getProps(ancestor);
+    for (const rule of rules) {
+      if (
+        !propagationPathMatches(ancestor, element, rule.childPath, elementsMap)
+      ) {
+        continue;
+      }
+
+      const childProp = rule.childProp ?? rule.parentProp;
+      if (!childProp) continue;
+
+      const value = resolvePropagationValue(rule, parentProps);
+      if (value === undefined) continue;
+
+      if (rule.asStyle) {
+        const style = (nextProps.style ?? {}) as Record<string, unknown>;
+        if (shouldSkipStylePropagation(style, rule)) continue;
+        nextProps = {
+          ...nextProps,
+          style: {
+            ...style,
+            [childProp]: value,
+          },
+        };
+        continue;
+      }
+
+      if (!rule.override && nextProps[childProp] !== undefined) continue;
+      nextProps = { ...nextProps, [childProp]: value };
+    }
+  }
+
+  return nextProps;
 }
 
 /** Registry 기반 부모 size delegation (0-3 level 조상 탐색) */
@@ -682,6 +803,7 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
   if (parentLabelText !== null) {
     specProps = { ...specProps, children: parentLabelText };
   }
+  specProps = applyParentPropagationProps(element, specProps, elementsMap);
 
   // Size injection — Breadcrumb은 항상 RSP 키 S|M|L (Skia shapes·패딩·typography 토큰 정합)
   if (element.type === "Breadcrumb") {
