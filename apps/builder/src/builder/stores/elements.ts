@@ -40,7 +40,12 @@ import {
   type BatchPropsUpdate,
 } from "./utils/elementUpdate";
 import { ElementUtils } from "../../utils/element/elementUtils";
-import { createInstance as createInstanceAction } from "./utils/instanceActions";
+import {
+  createInstance as createInstanceAction,
+  detachInstance as detachInstanceAction,
+  resetInstanceOverrideField as resetInstanceOverrideFieldAction,
+  toggleComponentOrigin as toggleComponentOriginAction,
+} from "./utils/instanceActions";
 import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
 import { observe, PERF_LABEL } from "../utils/perfMarks";
@@ -237,6 +242,16 @@ export interface ElementsState {
     parentId: string,
     pageId: string,
   ) => Element | null;
+  detachInstance: (instanceId: string) => { previousState: Element } | null;
+  toggleComponentOrigin: (
+    elementId: string,
+    options?: { beforeMutation?: () => void | Promise<void> },
+  ) => Promise<{ elements: Element[]; previousElements: Element[] } | null>;
+  resetInstanceOverrideField: (
+    instanceId: string,
+    fieldKey: string,
+    descendantPath?: string,
+  ) => { previousState: Element } | null;
 
   // ADR-006: 외부 트리거(텍스트 측정기 교체, 폰트 로딩 등)에서 레이아웃 재계산 요청
   invalidateLayout: () => void;
@@ -1597,6 +1612,31 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // G.1: Instance 생성 액션
     createInstance: (masterId: string, parentId: string, pageId: string) => {
       return createInstanceAction(get, set, masterId, parentId, pageId);
+    },
+
+    detachInstance: (instanceId: string) => {
+      return detachInstanceAction(get, set, instanceId);
+    },
+
+    toggleComponentOrigin: (
+      elementId: string,
+      options?: { beforeMutation?: () => void | Promise<void> },
+    ) => {
+      return toggleComponentOriginAction(get, set, elementId, options);
+    },
+
+    resetInstanceOverrideField: (
+      instanceId: string,
+      fieldKey: string,
+      descendantPath?: string,
+    ) => {
+      return resetInstanceOverrideFieldAction(
+        get,
+        set,
+        instanceId,
+        fieldKey,
+        descendantPath,
+      );
     },
 
     invalidateLayout: () => {

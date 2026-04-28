@@ -8,7 +8,6 @@ import {
   Laptop,
   Tablet,
   Smartphone,
-  Activity,
   GitBranch,
   Settings,
   Command,
@@ -88,9 +87,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   showWorkflowOverlay,
   onWorkflowOverlayToggle,
 }) => {
-  const { layout, toggleBottomPanel, openPanelAsModal } = usePanelLayout();
-  const isMonitorOpen =
-    layout.showBottom && layout.activeBottomPanels.includes("monitor");
+  const { openPanelAsModal } = usePanelLayout();
   const isCompareMode = useCompareModeStore((state) => state.isCompareMode);
   const toggleCompareMode = useCompareModeStore(
     (state) => state.toggleCompareMode,
@@ -248,7 +245,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           selectedKeys={
             new Set([
               ...(isCompareMode ? ["compare"] : []),
-              ...(isMonitorOpen ? ["monitor"] : []),
               ...(showWorkflowOverlay ? ["workflow"] : []),
             ])
           }
@@ -257,18 +253,12 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             const selectedKeys = new Set(keys);
             const wasCompareMode = isCompareMode;
             const isCompareNowSelected = selectedKeys.has("compare");
-            const wasMonitorOpen = isMonitorOpen;
-            const isMonitorNowSelected = selectedKeys.has("monitor");
             const wasWorkflow = showWorkflowOverlay;
             const isWorkflowNowSelected = selectedKeys.has("workflow");
 
             // Compare mode 토글
             if (wasCompareMode !== isCompareNowSelected) {
               toggleCompareMode();
-            }
-            // Monitor 토글
-            if (wasMonitorOpen !== isMonitorNowSelected) {
-              toggleBottomPanel("monitor");
             }
             // Workflow 오버레이 토글
             if (wasWorkflow !== isWorkflowNowSelected) {
@@ -285,13 +275,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           >
             <Columns
               color={isCompareMode ? "var(--color-white)" : iconProps.color}
-              strokeWidth={iconProps.strokeWidth}
-              size={iconProps.size}
-            />
-          </ToggleButton>
-          <ToggleButton id="monitor" aria-label="Toggle Monitor Panel">
-            <Activity
-              color={isMonitorOpen ? "var(--color-white)" : iconProps.color}
               strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />

@@ -18,6 +18,7 @@ export interface LayerTreeNode {
   isLeaf: boolean;
   children?: LayerTreeNode[];
   element: Element;
+  isSyntheticRefChild?: boolean;
   virtualChildType?: VirtualChildType;
   virtualChildIndex?: number;
   virtualChildData?: unknown;

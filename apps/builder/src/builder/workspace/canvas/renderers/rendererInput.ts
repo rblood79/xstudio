@@ -2,6 +2,7 @@ import type { Element, Page } from "../../../../types/core/store.types";
 import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
 import type { ScenePageSnapshot, SceneStructureSnapshot } from "../scene";
 import type { FrameAreaGroup } from "../skia/workflowEdges";
+import { resolveCanonicalRefTree } from "../../../utils/canonicalRefResolution";
 
 export interface PixiPageRendererInput {
   bodyElement: Element | null;
@@ -217,10 +218,16 @@ interface CreateSkiaRendererInputOptions {
 export function createSkiaRendererInput(
   input: CreateSkiaRendererInputOptions,
 ): SkiaRendererInput {
-  return {
+  const resolvedTree = resolveCanonicalRefTree({
     childrenMap: input.childrenMap,
     elements: input.elements,
     elementsMap: input.elementsMap,
+  });
+
+  return {
+    childrenMap: resolvedTree.childrenMap,
+    elements: resolvedTree.elements,
+    elementsMap: resolvedTree.elementsMap,
     dirtyElementIds: input.dirtyElementIds,
     pageIndex: input.pageIndex,
     pagePositionsVersion: input.pagePositionsVersion,

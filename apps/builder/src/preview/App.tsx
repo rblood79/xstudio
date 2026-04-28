@@ -41,6 +41,7 @@ import type { Layout } from "../types/builder/layout.types";
 // ADR-903 P2 옵션 C: canonical renderer feature flag
 // ?canonical=1 URL param 으로 opt-in. 기본 false → legacy 경로 보존 (회귀 0 보장).
 import { CanonicalNodeRenderer } from "./components/CanonicalNodeRenderer";
+import { resolveCanonicalRefTree } from "../builder/utils/canonicalRefResolution";
 
 /**
  * Canonical renderer 경로 활성화 결정.
@@ -438,14 +439,25 @@ function CanvasContent() {
     };
   }, [handleLinkClick]);
 
+  const resolvedElements = useMemo(() => {
+    if (elements.length === 0) return elements;
+    const sourceElementsMap = new Map(
+      elements.map((el) => [el.id, el as unknown as Element]),
+    );
+    return resolveCanonicalRefTree({
+      elements: elements as unknown as Element[],
+      elementsMap: sourceElementsMap,
+    }).elements as unknown as PreviewElement[];
+  }, [elements]);
+
   // id/parent_id 기반 O(1) 조회 인덱스 (RenderContext에 함께 노출)
   const elementsMap = useMemo(
-    () => new Map(elements.map((el) => [el.id, el])),
-    [elements],
+    () => new Map(resolvedElements.map((el) => [el.id, el])),
+    [resolvedElements],
   );
   const childrenMap = useMemo(() => {
     const map = new Map<string, PreviewElement[]>();
-    for (const el of elements) {
+    for (const el of resolvedElements) {
       const pid = el.parent_id;
       if (!pid) continue;
       let bucket = map.get(pid);
@@ -459,12 +471,12 @@ function CanvasContent() {
       bucket.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     }
     return map;
-  }, [elements]);
+  }, [resolvedElements]);
 
   // RenderContext 생성
   const renderContext: RenderContext = useMemo(
     () => ({
-      elements,
+      elements: resolvedElements,
       elementsMap,
       childrenMap,
       updateElementProps,
@@ -480,7 +492,7 @@ function CanvasContent() {
       resolveActionId: (_id: string) => undefined,
     }),
     [
-      elements,
+      resolvedElements,
       elementsMap,
       childrenMap,
       updateElementProps,
@@ -510,7 +522,7 @@ function CanvasContent() {
       // 렌더러가 없으면 기본 HTML 렌더링
 
       // 자식 요소 찾기
-      const children = elements
+      const children = resolvedElements
         .filter((child) => child.parent_id === adaptedElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -643,7 +655,7 @@ function CanvasContent() {
         content,
       );
     },
-    [elements, renderContext],
+    [resolvedElements, renderContext],
   );
 
   // ⭐ ref 업데이트 (순환 의존성 해결)
@@ -824,7 +836,7 @@ function CanvasContent() {
       try {
         const doc = legacyToCanonical(
           {
-            elements: elements as unknown as Element[],
+            elements: resolvedElements as unknown as Element[],
             pages: pages as unknown as Page[],
             layouts: layouts as unknown as Layout[],
           },
@@ -875,10 +887,10 @@ function CanvasContent() {
     // ⭐ Page 모드에서 Layout이 적용된 경우: Layout 기반 렌더링
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
     if (currentLayoutId && currentPageId) {
-      const layoutElements = elements.filter(
+      const layoutElements = resolvedElements.filter(
         (el) => el.layout_id === currentLayoutId,
       );
-      const pageElements = elements.filter(
+      const pageElements = resolvedElements.filter(
         (el) => el.page_id === currentPageId && !el.layout_id,
       );
 
@@ -906,7 +918,7 @@ function CanvasContent() {
 
     // ⭐ Layout 편집 모드 (currentLayoutId만 있고 currentPageId 없음)
     if (currentLayoutId && !currentPageId) {
-      const layoutElements = elements.filter(
+      const layoutElements = resolvedElements.filter(
         (el) => el.layout_id === currentLayoutId,
       );
       const layoutBody = layoutElements.find(
@@ -923,14 +935,14 @@ function CanvasContent() {
     }
 
     // ⭐ Layout이 없는 경우 (Page만 있음)
-    const bodyElement = elements.find(
+    const bodyElement = resolvedElements.find(
       (el) => el.type === "body" && !el.parent_id,
     );
 
     if (bodyElement) {
       // ⭐ body를 div로 렌더링하지 않고 자식들만 직접 렌더링
       // body의 속성은 useEffect에서 실제 <body> 태그에 적용됨
-      const bodyChildren = elements
+      const bodyChildren = resolvedElements
         .filter((el) => el.parent_id === bodyElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -938,13 +950,14 @@ function CanvasContent() {
     }
 
     // body가 없으면 루트 요소들 렌더링
-    const rootElements = elements
+    const rootElements = resolvedElements
       .filter((el) => !el.parent_id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
     return rootElements.map((el) => renderElement(el, el.id));
   }, [
     elements,
+    resolvedElements,
     renderElement,
     currentLayoutId,
     currentPageId,

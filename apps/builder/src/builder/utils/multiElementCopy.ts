@@ -23,6 +23,50 @@ export interface CopiedElementsData {
   timestamp: number;
 }
 
+function isReusableOrigin(element: Element): boolean {
+  return (
+    element.reusable === true ||
+    (element as { componentRole?: unknown }).componentRole === "master"
+  );
+}
+
+function getReusableOriginRoot(copiedData: CopiedElementsData): Element | null {
+  if (copiedData.rootIds.length !== 1) return null;
+  const root = copiedData.elements.find(
+    (element) => element.id === copiedData.rootIds[0],
+  );
+  if (!root || !isReusableOrigin(root)) return null;
+  return root;
+}
+
+function parsePixels(value: unknown): number {
+  if (typeof value === 'string') {
+    const match = value.match(/^(-?\d+(?:\.\d+)?)px$/);
+    if (match) return parseFloat(match[1]);
+  }
+  if (typeof value === 'number') return value;
+  return 0;
+}
+
+function createRefOverrideProps(
+  origin: Element,
+  offset: { x: number; y: number },
+): Record<string, unknown> {
+  const currentStyle = (origin.props.style || {}) as Record<string, unknown>;
+  const left = parsePixels(currentStyle.left);
+  const top = parsePixels(currentStyle.top);
+  const hasPosition = "left" in currentStyle || "top" in currentStyle;
+
+  if (!hasPosition) return {};
+
+  return {
+    style: {
+      left: `${left + offset.x}px`,
+      top: `${top + offset.y}px`,
+    },
+  };
+}
+
 /**
  * Copy multiple elements with relationship preservation
  *
@@ -109,6 +153,25 @@ export function pasteMultipleElements(
     return [];
   }
 
+  const reusableOrigin = getReusableOriginRoot(copiedData);
+  if (reusableOrigin) {
+    return [
+      normalizeExternalFillIngress({
+        id: ElementUtils.generateId(),
+        type: "ref",
+        ref: reusableOrigin.id,
+        parent_id: reusableOrigin.parent_id ?? null,
+        page_id: currentPageId,
+        layout_id: reusableOrigin.layout_id,
+        order_num: reusableOrigin.order_num,
+        props: createRefOverrideProps(reusableOrigin, offset),
+        componentName: reusableOrigin.componentName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Element),
+    ];
+  }
+
   // Create ID mapping: old ID → new ID
   const idMap = new Map<string, string>();
   copiedData.elements.forEach((element) => {
@@ -138,16 +201,6 @@ export function pasteMultipleElements(
     if (copiedData.rootIds.includes(element.id)) {
       // Apply offset to root elements
       const currentStyle = (element.props.style || {}) as Record<string, unknown>;
-
-      // Parse and offset position values
-      const parsePixels = (value: unknown): number => {
-        if (typeof value === 'string') {
-          const match = value.match(/^(-?\d+(?:\.\d+)?)px$/);
-          if (match) return parseFloat(match[1]);
-        }
-        if (typeof value === 'number') return value;
-        return 0;
-      };
 
       const left = parsePixels(currentStyle.left);
       const top = parsePixels(currentStyle.top);

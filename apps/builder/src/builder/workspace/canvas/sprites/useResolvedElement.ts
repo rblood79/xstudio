@@ -26,6 +26,7 @@ import type { Element } from "../../../../types/builder/unified.types";
 import { isInstanceElement } from "../../../../types/builder/unified.types";
 import { useStore } from "../../../stores";
 import { resolveInstanceWithSharedCache } from "../../../../resolvers/canonical/storeBridge";
+import { resolveCanonicalRefElement } from "../../../utils/canonicalRefResolution";
 
 /**
  * Element의 instance resolution을 수행
@@ -39,8 +40,15 @@ export function useResolvedElement(element: Element): Element {
     if (!isInstanceElement(element) || !element.masterId) return undefined;
     return state.elementsMap.get(element.masterId);
   });
+  const elementsMap = useStore((state) => state.elementsMap);
 
   return useMemo(() => {
+    const canonicalResolved = resolveCanonicalRefElement(
+      element,
+      elementsMap.values(),
+    );
+    if (canonicalResolved !== element) return canonicalResolved;
+
     if (isInstanceElement(element) && masterElement) {
       // canonical 은 isInstanceElement(element) && master 정상 시 항상 결과
       // 반환. 본 분기 안에서는 두 가드 모두 충족하므로 null 도달 불가 —
@@ -48,5 +56,5 @@ export function useResolvedElement(element: Element): Element {
       return resolveInstanceWithSharedCache(element, masterElement) ?? element;
     }
     return element;
-  }, [element, masterElement]);
+  }, [element, elementsMap, masterElement]);
 }

@@ -64,6 +64,7 @@ export {
   type ShortcutTooltipProps,
   CommandPalette,
   type CommandPaletteProps,
+  EditingSemanticsImpactDialogHost,
 } from "./overlay";
 
 // UI 컴포넌트

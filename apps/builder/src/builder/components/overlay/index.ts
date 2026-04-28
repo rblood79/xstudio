@@ -8,3 +8,4 @@
 
 export { ShortcutTooltip, type ShortcutTooltipProps } from './ShortcutTooltip';
 export { CommandPalette, type CommandPaletteProps } from './CommandPalette';
+export { EditingSemanticsImpactDialogHost } from './EditingSemanticsImpactDialog';

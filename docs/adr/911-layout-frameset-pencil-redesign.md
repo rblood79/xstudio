@@ -2,7 +2,13 @@
 
 ## Status
 
-In Progress — 2026-04-26 → 2026-04-28
+Frozen — 2026-04-28 (의존 방향 정정 결정 — ADR-912 base 선결로 전환)
+
+> **동결 사유** (2026-04-28 세션 49+): 본 ADR 은 ADR-912 (Editing Semantics UI — reusable component 추상) 의 **frame-bundled preset 응용** 임이 framing 재정의 됨. 즉 본 ADR 의 `Frame.reusable` / `Frame.slot` / `Ref.descendants` schema 는 ADR-912 의 Origin/Instance/Override 추상의 frame-specific specialization 이며, 본 ADR 의 ##Slot section## (Hard Constraint #6) 은 ADR-912 의 ##Component section## 위 specialization. baseline (ADR-903 Phase 4) 의존 방향이 거꾸로 박혀 있어 ADR-912 base 없이 본 ADR Phase 3 가 진행되며 frame preset 이 추상 없이 응용만 land — Phase 3 후속 (P3-ε / P3-ζ — Slot section UI / FramesTab Slot composition) 에서 ADR-912 Component section 정합화 시 baseline 어긋남 risk 누적. **해결**: ADR-912 Phase A1 (시각 마커 base) land 후 본 ADR Phase 3 후속 재개 — 그 시점에 본 ADR Phase 3 후속이 ADR-912 base 위 specialization 으로 정합화 가능.
+
+> **동결 보존 범위**: Phase 0~2 (Implemented) + Phase 3 의 P3-α/β/γ/δ + δ fix #1+#2+#3+#4 + B1 filter + θ scope land + θ regression fix #1 (~commit `e4f24697` + 세션 49 후속) 모두 보존. P3-θ regression fix #1 은 frame instance composition body 채택 정책 GREEN — frame schema 자체 land 는 ADR-912 base 와 무관하게 실 사용자 가시 동작 (frame default + page slot fill) 보존 가치.
+
+> **재개 조건**: ADR-912 Phase A1 (Canvas Origin/Instance 시각 마커 land) 완료 + ADR-912 본문 §"의존" 에 "ADR-911 = preset 응용" framing 명시 land. 재개 시 P3-ε / P3-ζ 가 ADR-912 ##Component section## 위 specialization 으로 재설계 진입.
 
 ### 진행 로그
 
@@ -184,6 +190,12 @@ In Progress — 2026-04-26 → 2026-04-28
     - "page width/height/배경 시각 속성 보존 (page body 가 root 유지)"
   - 검증: type-check 3/3 PASS / canvas vitest 16/16 파일 199/199 PASS / `resolvePageWithFrame.test.ts` 10/10 (T2/T3 expected 갱신 + 회귀 fixture 2 추가)
   - **사용자 추가 보고 잔여**: "새로고침시 초기화" — page.layout_id IndexedDB persistence 흐름 분석 미완. 본 fix 반영 후 사용자 dev 재검증 필요
+
+- **2026-04-28 (세션 49 후속) — 동결 결정**: **본 ADR Phase 3 후속 (P3-ε / P3-ζ) 진행 정지**
+  - **결정 사유**: ADR-912 codex 3차 리뷰 + 사용자 framing 재정의 — 본 ADR 은 ADR-912 (reusable component 추상) 의 **frame-bundled preset 응용**. 의존 방향이 거꾸로 박혀 있었음 (baseline ADR-903 Phase 4 framing 의 stale).
+  - **현재 land 보존**: Phase 0~2 + P3-α/β/γ/δ + δ fix #1~#4 + B1 + θ scope + θ regression fix #1 모두 보존. 사용자 가시 동작 (frame default + page slot fill GREEN) 유지.
+  - **정지 영역**: P3-ε (FramesTab inline frame editing 진입), P3-ζ (Chrome MCP 회귀 검증 추가), G3-θ (d) Chrome MCP screenshot — 모두 ADR-912 Phase A1 (시각 마커 land) 완료 후 재개.
+  - **다음 진입**: ADR-912 본문 framing 정정 + Accept 승격 → ADR-912 Phase A1 진행. 본 ADR 은 ADR-912 Phase A1 land 완료 시 P3-ε / P3-ζ 가 ##Component section## specialization 으로 재설계 진입.
 
 ## Context
 

@@ -17,6 +17,12 @@ import type { Element } from "../../../../../types/core/store.types";
 import type { ElementProps } from "../../../../../types/integrations/supabase.types";
 import type { TreeItemState } from "../TreeBase/types";
 import type { LayerTreeNode } from "./types";
+import { useStore } from "../../../../stores";
+import {
+  canDetachInstance,
+  getEditingSemanticsLabel,
+  getEditingSemanticsRole,
+} from "../../../../utils/editingSemantics";
 
 interface LayerTreeItemContentProps {
   node: LayerTreeNode;
@@ -81,14 +87,52 @@ function NormalItemContent({
   state,
   onDelete,
 }: NormalItemContentProps) {
-  const { depth, hasChildren, type, element, name } = node;
+  const { depth, hasChildren, type, element, name, isSyntheticRefChild } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
+  const detachInstance = useStore((store) => store.detachInstance);
+  const semanticsRole = getEditingSemanticsRole(element);
+  const semanticsLabel = getEditingSemanticsLabel(semanticsRole);
+  const isDetachableInstance = canDetachInstance(element);
+  const [contextMenuPosition, setContextMenuPosition] = React.useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (!contextMenuPosition) return;
+
+    const close = () => setContextMenuPosition(null);
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [contextMenuPosition]);
+
+  const handleContextMenu = (event: React.MouseEvent) => {
+    if (isSyntheticRefChild || !isDetachableInstance) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleDetachInstance = () => {
+    if (!isDetachableInstance) return;
+    setContextMenuPosition(null);
+    const confirmed = window.confirm(
+      "Detach this instance from its component?",
+    );
+    if (!confirmed) return;
+    detachInstance(element.id);
+  };
 
   return (
     <div
       className={`elementItem ${isSelected ? "active" : ""} ${
         isFocusVisible ? "focused" : ""
       }`}
+      onContextMenu={handleContextMenu}
     >
       <div
         className="elementItemIndent"
@@ -117,17 +161,31 @@ function NormalItemContent({
           />
         )}
       </div>
-      <div className="elementItemLabel">{name}</div>
+      <div className="elementItemLabel">
+        {semanticsRole && semanticsLabel && (
+          <span
+            className={`editing-semantics-dot editing-semantics-dot--${semanticsRole}`}
+            aria-label={semanticsLabel}
+            title={semanticsLabel}
+          />
+        )}
+        <span className="elementItemLabelText">{name}</span>
+      </div>
       <div className="elementItemActions">
         <Button
           slot="drag"
           className={`iconButton layer-drag-handle${
-            type === "body" ? " layer-drag-handle--hidden" : ""
+            type === "body" || isSyntheticRefChild
+              ? " layer-drag-handle--hidden"
+              : ""
           }`}
           aria-label={`Drag ${name}`}
-          aria-hidden={type === "body"}
-          style={{ pointerEvents: type === "body" ? "none" : "auto" }}
-          isDisabled={type === "body"}
+          aria-hidden={type === "body" || isSyntheticRefChild}
+          style={{
+            pointerEvents:
+              type === "body" || isSyntheticRefChild ? "none" : "auto",
+          }}
+          isDisabled={type === "body" || isSyntheticRefChild}
         >
           <GripVertical
             color={ICON_EDIT_PROPS.color}
@@ -144,7 +202,7 @@ function NormalItemContent({
             />
           </Button>
         )}
-        {type !== "body" && (
+        {type !== "body" && !isSyntheticRefChild && (
           <Button
             className="iconButton"
             aria-label={`Delete ${type}`}
@@ -158,6 +216,27 @@ function NormalItemContent({
           </Button>
         )}
       </div>
+      {contextMenuPosition && (
+        <div
+          className="layer-context-menu"
+          role="menu"
+          style={{
+            left: `${contextMenuPosition.x}px`,
+            top: `${contextMenuPosition.y}px`,
+          }}
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button
+            className="layer-context-menu-item"
+            onClick={handleDetachInstance}
+            role="menuitem"
+            type="button"
+          >
+            Detach instance
+          </button>
+        </div>
+      )}
     </div>
   );
 }

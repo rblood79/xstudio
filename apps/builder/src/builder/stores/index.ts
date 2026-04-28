@@ -11,6 +11,10 @@ import {
   InspectorActionsState,
 } from "./inspectorActions";
 import type { SelectedElement } from "../inspector/types";
+import {
+  isCanonicalRefElement,
+  resolveCanonicalRefElement,
+} from "../utils/canonicalRefResolution";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -126,14 +130,28 @@ export const useSelectedElementData = (): SelectedElement | null => {
     if (!selectedElementId) return null;
 
     // getState()로 동기적 읽기 (구독 없음)
-    const element = useStore.getState().elementsMap.get(selectedElementId);
+    const state = useStore.getState();
+    const element = state.elementsMap.get(selectedElementId);
     if (!element) return null;
+    const resolvedElement = isCanonicalRefElement(element)
+      ? resolveCanonicalRefElement(element, state.elementsMap.values())
+      : element;
 
     // selectedElementProps가 비어있으면 element에서 직접 추출
     const props =
-      selectedElementProps && Object.keys(selectedElementProps).length > 0
-        ? selectedElementProps
-        : element.props;
+      isCanonicalRefElement(element) && resolvedElement !== element
+        ? {
+            ...resolvedElement.props,
+            ...(selectedElementProps.computedStyle !== undefined && {
+              computedStyle: selectedElementProps.computedStyle,
+            }),
+            ...(selectedElementProps.events !== undefined && {
+              events: selectedElementProps.events,
+            }),
+          }
+        : selectedElementProps && Object.keys(selectedElementProps).length > 0
+          ? selectedElementProps
+          : element.props;
 
     const { style, computedStyle, events, ...otherProps } = props as Record<
       string,
@@ -143,7 +161,7 @@ export const useSelectedElementData = (): SelectedElement | null => {
     return {
       id: element.id,
       customId: element.customId,
-      type: element.type,
+      type: resolvedElement.type,
       properties: otherProps,
       style: (style as React.CSSProperties) || {},
       computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,

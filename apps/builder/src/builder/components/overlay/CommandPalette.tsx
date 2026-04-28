@@ -161,7 +161,7 @@ export function CommandPalette({
   }, [isOpen]);
 
   // Modal Panel 액션을 위한 훅
-  const { openPanelAsModal, togglePanel } = usePanelLayout();
+  const { openPanelAsModal, togglePanel, toggleBottomPanel } = usePanelLayout();
 
   // 명령 실행
   const executeCommand = useCallback(
@@ -199,6 +199,9 @@ export function CommandPalette({
         case "toggleHistory":
           togglePanel("right", "history");
           return;
+        case "toggleMonitor":
+          toggleBottomPanel("monitor");
+          return;
         case "openSettings":
           togglePanel("left", "settings");
           return;
@@ -208,7 +211,7 @@ export function CommandPalette({
           break;
       }
     },
-    [handleOpenChange, openPanelAsModal, togglePanel],
+    [handleOpenChange, openPanelAsModal, togglePanel, toggleBottomPanel],
   );
 
   // 키보드 내비게이션

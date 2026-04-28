@@ -36,6 +36,7 @@ import {
   SelectionMemory,
 } from "../../components";
 import { ElementSlotSelector } from "./editors/ElementSlotSelector";
+import { ComponentSemanticsSection } from "./ComponentSemanticsSection";
 import { ActionIconButton } from "../../components/ui";
 import { Copy, ClipboardPaste, Settings2 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -63,6 +64,7 @@ import { alignElements } from "../../stores/utils/elementAlignment";
 import type { AlignmentType } from "../../stores/utils/elementAlignment";
 import { distributeElements } from "../../stores/utils/elementDistribution";
 import type { DistributionType } from "../../stores/utils/elementDistribution";
+import { canDetachInstance } from "../../utils/editingSemantics";
 import {
   trackBatchUpdate,
   trackGroupCreation,
@@ -941,6 +943,20 @@ function PropertiesPanelContent() {
     console.log("✅ [Esc] Selection cleared");
   }, [setSelectedElement]);
 
+  const handleDetachSelectedInstance = useCallback(() => {
+    const state = useStore.getState();
+    const selectedId = state.selectedElementId ?? selectedElement?.id;
+    const element = selectedId ? state.elementsMap.get(selectedId) : null;
+    if (!selectedId || !canDetachInstance(element)) return;
+
+    const confirmed = window.confirm(
+      "Detach this instance from its component?",
+    );
+    if (!confirmed) return;
+
+    state.detachInstance(selectedId);
+  }, [selectedElement?.id]);
+
   // ⭐ Phase 3: Advanced Selection - Tab Navigation
   const handleTabNavigation = useCallback(
     (event: KeyboardEvent) => {
@@ -1332,6 +1348,12 @@ function PropertiesPanelContent() {
         handler: handleEscapeClearSelection,
         description: "Clear Selection",
       },
+      {
+        key: "x",
+        modifier: "cmdAlt" as const,
+        handler: handleDetachSelectedInstance,
+        description: "Detach Instance",
+      },
       // ⭐ Phase 4: Grouping shortcuts
       {
         key: "g",
@@ -1411,6 +1433,7 @@ function PropertiesPanelContent() {
       handleDuplicate,
       handleSelectAll,
       handleEscapeClearSelection,
+      handleDetachSelectedInstance,
       handleGroupSelection,
       handleUngroupSelection,
       handleAlign,
@@ -1428,6 +1451,7 @@ function PropertiesPanelContent() {
       handleDuplicate,
       handleSelectAll,
       handleEscapeClearSelection,
+      handleDetachSelectedInstance,
       handleGroupSelection,
       handleUngroupSelection,
       handleAlign,
@@ -1506,6 +1530,8 @@ function PropertiesPanelContent() {
           onSetSelectedElement={setSelectedElement}
           onSetSelectedElements={setSelectedElements}
         />
+
+        <ComponentSemanticsSection elementId={selectedElement.id} />
 
         {/* ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리 */}
         <PropertyEditorWrapper selectedElement={selectedElement} />

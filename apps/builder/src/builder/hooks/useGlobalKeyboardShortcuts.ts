@@ -26,6 +26,7 @@ import {
   SHORTCUT_DEFINITIONS,
   type ShortcutId,
 } from "../config/keyboardShortcuts";
+import { usePanelLayout } from "./usePanelLayout";
 import { useActiveScope } from "./useActiveScope";
 import {
   applyViewportState,
@@ -93,6 +94,7 @@ export function useGlobalKeyboardShortcuts() {
   // ----------------------------------------
 
   const activeScope = useActiveScope();
+  const { toggleBottomPanel } = usePanelLayout();
 
   // ----------------------------------------
   // Undo/Redo Handlers
@@ -138,6 +140,14 @@ export function useGlobalKeyboardShortcuts() {
 
   const handleZoom100 = useCallback(() => zoomTo(1), [zoomTo]);
   const handleZoom200 = useCallback(() => zoomTo(2), [zoomTo]);
+
+  // ----------------------------------------
+  // Panel Handlers
+  // ----------------------------------------
+
+  const handleToggleMonitor = useCallback(() => {
+    toggleBottomPanel("monitor");
+  }, [toggleBottomPanel]);
 
   // ----------------------------------------
   // Copy/Paste/Delete Handlers (Phase 6)
@@ -241,6 +251,15 @@ export function useGlobalKeyboardShortcuts() {
     await removeElements(deletableIds);
   }, []);
 
+  const handleToggleComponentOrigin = useCallback(async () => {
+    const { selectedElementId, toggleComponentOrigin } = useStore.getState();
+    if (!selectedElementId) {
+      console.log("[Keyboard] Toggle component: No element selected");
+      return;
+    }
+    await toggleComponentOrigin(selectedElementId);
+  }, []);
+
   /**
    * Events Panel Copy - 선택된 액션들 복사
    * (현재는 placeholder - Events panel에서 구체적 구현 필요)
@@ -326,12 +345,14 @@ export function useGlobalKeyboardShortcuts() {
       zoomToFit: handleZoomToFit,
       zoom100: handleZoom100,
       zoom200: handleZoom200,
+      toggleMonitor: handleToggleMonitor,
 
       // Canvas (Phase 6: 스코프 기반)
       copy: getScopedHandler(handleCanvasCopy, handleEventsCopy),
       paste: getScopedHandler(handleCanvasPaste, handleEventsPaste),
       delete: getScopedHandler(handleCanvasDelete, handleEventsDelete),
       deleteAlt: getScopedHandler(handleCanvasDelete, handleEventsDelete),
+      toggleComponentOrigin: handleToggleComponentOrigin,
       escape: handleEscape,
     }),
     [
@@ -342,11 +363,13 @@ export function useGlobalKeyboardShortcuts() {
       handleZoomToFit,
       handleZoom100,
       handleZoom200,
+      handleToggleMonitor,
       // Phase 6
       getScopedHandler,
       handleCanvasCopy,
       handleCanvasPaste,
       handleCanvasDelete,
+      handleToggleComponentOrigin,
       handleEventsCopy,
       handleEventsPaste,
       handleEventsDelete,
@@ -370,9 +393,12 @@ export function useGlobalKeyboardShortcuts() {
       "zoomToFit",
       "zoom100",
       "zoom200",
+      // Panels
+      "toggleMonitor",
       // Canvas (Phase 6)
       "copy",
       "paste",
+      "toggleComponentOrigin",
       "delete",
       "deleteAlt",
       "escape",

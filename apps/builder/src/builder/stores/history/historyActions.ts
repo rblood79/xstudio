@@ -52,6 +52,30 @@ function cloneForHistory<T>(value: T): T {
   }
 }
 
+function applyElementSnapshotBatch(
+  currentElements: Element[],
+  removeIds: Set<string>,
+  upsertElements: Element[],
+): Element[] {
+  const upsertIds = new Set(upsertElements.map((element) => element.id));
+  const retained = currentElements.filter(
+    (element) => !removeIds.has(element.id) && !upsertIds.has(element.id),
+  );
+  return [...retained, ...upsertElements];
+}
+
+function resolveSelectedPropsAfterBatch(
+  selectedElementId: string | null,
+  selectedElementProps: ComponentElementProps,
+  updatedElements: Element[],
+): ComponentElementProps {
+  if (!selectedElementId) return selectedElementProps;
+  const selectedElement = updatedElements.find(
+    (element) => element.id === selectedElementId,
+  );
+  return selectedElement ? createCompleteProps(selectedElement) : {};
+}
+
 /**
  * Undo 액션 생성 팩토리
  *
@@ -288,8 +312,25 @@ export const createUndoAction = (set: SetState, get: GetState) => async () => {
       }
 
       case "batch": {
-        // Batch update Undo - 각 요소의 이전 props 복원
-        if (entry.data.batchUpdates) {
+        if (entry.data.prevElements && entry.data.elements) {
+          const prevElements = entry.data.prevElements.map((element) =>
+            cloneForHistory(element),
+          );
+          const nextIds = new Set(
+            entry.data.elements.map((element) => element.id),
+          );
+          updatedElements = applyElementSnapshotBatch(
+            currentState.elements,
+            nextIds,
+            prevElements,
+          );
+          updatedSelectedElementProps = resolveSelectedPropsAfterBatch(
+            currentState.selectedElementId,
+            currentState.selectedElementProps,
+            updatedElements,
+          );
+        } else if (entry.data.batchUpdates) {
+          // Batch update Undo - 각 요소의 이전 props 복원
           console.log("🔄 Undo: Batch update 복원 중:", {
             updateCount: entry.data.batchUpdates.length,
           });
@@ -817,6 +858,7 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
     const elementsToAdd: Element[] = [];
     let elementIdsToRemove: string[] = [];
     let propsToUpdate: ComponentElementProps | null = null;
+    let elementToUpdate: Element | null = null;
 
     // produce 밖에서 안전하게 데이터 준비
     try {
@@ -848,6 +890,9 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
 
         case "update": {
           // 🚀 Phase 2: structuredClone 사용
+          if (entry.data.element) {
+            elementToUpdate = cloneForHistory(entry.data.element);
+          }
           if (entry.data.props) {
             propsToUpdate = cloneForHistory(entry.data.props);
           }
@@ -911,7 +956,14 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
         const elementIndex = currentState.elements.findIndex(
           (el) => el.id === entry.elementId,
         );
-        if (elementIndex >= 0 && propsToUpdate) {
+        if (elementIndex >= 0 && elementToUpdate) {
+          updatedElements = currentState.elements.map((el, i) =>
+            i === elementIndex ? { ...el, ...elementToUpdate } : el,
+          );
+          if (currentState.selectedElementId === entry.elementId) {
+            updatedSelectedElementProps = createCompleteProps(elementToUpdate);
+          }
+        } else if (elementIndex >= 0 && propsToUpdate) {
           updatedElements = currentState.elements.map((el, i) =>
             i === elementIndex
               ? { ...el, props: { ...el.props, ...propsToUpdate } }
@@ -934,8 +986,25 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
       }
 
       case "batch": {
-        // Batch update Redo - 각 요소의 newProps 적용
-        if (entry.data.batchUpdates) {
+        if (entry.data.prevElements && entry.data.elements) {
+          const nextElements = entry.data.elements.map((element) =>
+            cloneForHistory(element),
+          );
+          const prevIds = new Set(
+            entry.data.prevElements.map((element) => element.id),
+          );
+          updatedElements = applyElementSnapshotBatch(
+            currentState.elements,
+            prevIds,
+            nextElements,
+          );
+          updatedSelectedElementProps = resolveSelectedPropsAfterBatch(
+            currentState.selectedElementId,
+            currentState.selectedElementProps,
+            updatedElements,
+          );
+        } else if (entry.data.batchUpdates) {
+          // Batch update Redo - 각 요소의 newProps 적용
           console.log("🔄 Redo: Batch update 적용 중:", {
             updateCount: entry.data.batchUpdates.length,
           });
@@ -1181,7 +1250,23 @@ export const createRedoAction = (set: SetState, get: GetState) => async () => {
             break;
           }
 
-          if (entry.data.props) {
+          if (entry.data.element) {
+            const updatedElement = entry.data.element;
+
+            try {
+              const db = await getDB();
+              await db.elements.put(sanitizeElement(updatedElement));
+              console.log("✅ Redo: IndexedDB에서 요소 업데이트 완료");
+            } catch (idbError) {
+              console.warn("⚠️ Redo: IndexedDB 업데이트 실패:", idbError);
+            }
+
+            await supabase
+              .from("elements")
+              .update(sanitizeElementForSupabase(updatedElement))
+              .eq("id", entry.elementId);
+            console.log("✅ Redo: Supabase에서 요소 업데이트 완료");
+          } else if (entry.data.props) {
             const element = getElementById(get().elementsMap, entry.elementId);
             if (element) {
               const updatedElement = {
@@ -1635,7 +1720,24 @@ function applyHistoryEntry(
       }
 
       case "batch": {
-        if (entry.data.batchUpdates) {
+        if (entry.data.prevElements && entry.data.elements) {
+          const prevElements = entry.data.prevElements.map((element) =>
+            cloneForHistory(element),
+          );
+          const nextIds = new Set(
+            entry.data.elements.map((element) => element.id),
+          );
+          updatedElements = applyElementSnapshotBatch(
+            elements,
+            nextIds,
+            prevElements,
+          );
+          updatedSelectedElementProps = resolveSelectedPropsAfterBatch(
+            selectedElementId,
+            selectedElementProps,
+            updatedElements,
+          );
+        } else if (entry.data.batchUpdates) {
           const updateMap = new Map<string, ComponentElementProps>();
           entry.data.batchUpdates.forEach(
             (update: {
@@ -1763,10 +1865,20 @@ function applyHistoryEntry(
         const propsToUpdate = entry.data.props
           ? cloneForHistory(entry.data.props)
           : null;
+        const elementToUpdate = entry.data.element
+          ? cloneForHistory(entry.data.element)
+          : null;
         const elementIndex = elements.findIndex(
           (el) => el.id === entry.elementId,
         );
-        if (elementIndex >= 0 && propsToUpdate) {
+        if (elementIndex >= 0 && elementToUpdate) {
+          updatedElements = elements.map((el, i) =>
+            i === elementIndex ? { ...el, ...elementToUpdate } : el,
+          );
+          if (selectedElementId === entry.elementId) {
+            updatedSelectedElementProps = createCompleteProps(elementToUpdate);
+          }
+        } else if (elementIndex >= 0 && propsToUpdate) {
           updatedElements = elements.map((el, i) =>
             i === elementIndex
               ? { ...el, props: { ...el.props, ...propsToUpdate } }
@@ -1794,7 +1906,24 @@ function applyHistoryEntry(
       }
 
       case "batch": {
-        if (entry.data.batchUpdates) {
+        if (entry.data.prevElements && entry.data.elements) {
+          const nextElements = entry.data.elements.map((element) =>
+            cloneForHistory(element),
+          );
+          const prevIds = new Set(
+            entry.data.prevElements.map((element) => element.id),
+          );
+          updatedElements = applyElementSnapshotBatch(
+            elements,
+            prevIds,
+            nextElements,
+          );
+          updatedSelectedElementProps = resolveSelectedPropsAfterBatch(
+            selectedElementId,
+            selectedElementProps,
+            updatedElements,
+          );
+        } else if (entry.data.batchUpdates) {
           const updateMap = new Map<string, ComponentElementProps>();
           entry.data.batchUpdates.forEach(
             (update: {

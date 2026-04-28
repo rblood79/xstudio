@@ -17,8 +17,58 @@ export interface SupabaseElement {
   /** layout element 의 경우 null. page element 의 경우 page UUID. */
   page_id: string | null;
   layout_id?: string | null;
+  slot_name?: string | null;
   order_num: number;
   data_binding?: unknown;
+  events?: unknown[];
+  deleted?: boolean;
+  component_role?: string;
+  master_id?: string;
+  overrides?: Record<string, unknown>;
+  descendants?: unknown;
+  component_name?: string;
+  reusable?: boolean;
+  ref?: string;
+  metadata?: Record<string, unknown>;
+  variable_bindings?: string[];
+  fills?: unknown;
+  border?: unknown;
+}
+
+type ElementWithCanonicalFields = Element & {
+  children?: unknown;
+  descendants?: unknown;
+  metadata?: Record<string, unknown>;
+  ref?: string;
+  reusable?: boolean;
+};
+
+function cloneSerializable<T>(value: T): T {
+  if (value === undefined) return value;
+  try {
+    if (typeof structuredClone !== "undefined") {
+      return structuredClone(value);
+    }
+  } catch {
+    // JSON fallback below drops non-serializable values intentionally.
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function withSerializableElementFields(element: Element): Element {
+  const canonical = element as ElementWithCanonicalFields;
+  return {
+    ...element,
+    props: cloneSerializable(element.props || {}),
+    dataBinding: cloneSerializable(element.dataBinding),
+    events: cloneSerializable(element.events),
+    overrides: cloneSerializable(element.overrides),
+    descendants: cloneSerializable(canonical.descendants),
+    metadata: cloneSerializable(canonical.metadata),
+    fills: cloneSerializable(element.fills),
+    border: cloneSerializable(element.border),
+    children: cloneSerializable(canonical.children),
+  } as Element;
 }
 
 /**
@@ -47,33 +97,7 @@ export const sanitizeElement = (element: Element): Element => {
   }
 
   try {
-    // structuredClone 우선 사용 (최신 브라우저)
-    if (typeof structuredClone !== "undefined") {
-      return {
-        id: element.id,
-        customId: element.customId,
-        type: element.type,
-        props: structuredClone(element.props || {}),
-        parent_id: element.parent_id,
-        page_id: element.page_id,
-        layout_id: element.layout_id, // ⭐ Layout/Slot System: layout_id 포함
-        order_num: element.order_num,
-        dataBinding: element.dataBinding,
-      };
-    }
-
-    // fallback: JSON 방식
-    return {
-      id: element.id,
-      customId: element.customId,
-      type: element.type,
-      props: JSON.parse(JSON.stringify(element.props || {})),
-      parent_id: element.parent_id,
-      page_id: element.page_id,
-      layout_id: element.layout_id, // ⭐ Layout/Slot System: layout_id 포함
-      order_num: element.order_num,
-      dataBinding: element.dataBinding,
-    };
+    return withSerializableElementFields(element);
   } catch (error) {
     console.error("Element sanitization error:", error);
     // 기본 값으로 대체
@@ -85,8 +109,21 @@ export const sanitizeElement = (element: Element): Element => {
       parent_id: element.parent_id,
       page_id: element.page_id || "",
       layout_id: element.layout_id || null, // ⭐ Layout/Slot System: layout_id 포함
+      slot_name: element.slot_name || null,
       order_num: element.order_num || 0,
       dataBinding: element.dataBinding,
+      events: element.events,
+      componentRole: element.componentRole,
+      masterId: element.masterId,
+      overrides: element.overrides,
+      descendants: element.descendants,
+      componentName: element.componentName,
+      reusable: (element as ElementWithCanonicalFields).reusable,
+      ref: (element as ElementWithCanonicalFields).ref,
+      metadata: (element as ElementWithCanonicalFields).metadata,
+      variableBindings: element.variableBindings,
+      fills: element.fills,
+      border: element.border,
     };
   }
 };
@@ -105,21 +142,33 @@ export const sanitizeElementForSupabase = (
   element: Element,
 ): SupabaseElement => {
   try {
-    const props =
-      typeof structuredClone !== "undefined"
-        ? structuredClone(element.props || {})
-        : JSON.parse(JSON.stringify(element.props || {}));
+    const sanitized = withSerializableElementFields(element);
+    const canonical = sanitized as ElementWithCanonicalFields;
 
     return {
-      id: element.id,
-      custom_id: element.customId,
-      type: element.type,
-      props,
-      parent_id: element.parent_id ?? null,
-      page_id: element.page_id ?? null,
-      layout_id: element.layout_id ?? null,
-      order_num: element.order_num ?? 0,
-      data_binding: element.dataBinding,
+      id: sanitized.id,
+      custom_id: sanitized.customId,
+      type: sanitized.type,
+      props: sanitized.props,
+      parent_id: sanitized.parent_id ?? null,
+      page_id: sanitized.page_id ?? null,
+      layout_id: sanitized.layout_id ?? null,
+      slot_name: sanitized.slot_name ?? null,
+      order_num: sanitized.order_num ?? 0,
+      data_binding: sanitized.dataBinding,
+      events: sanitized.events,
+      deleted: sanitized.deleted,
+      component_role: sanitized.componentRole,
+      master_id: sanitized.masterId,
+      overrides: sanitized.overrides,
+      descendants: canonical.descendants,
+      component_name: sanitized.componentName,
+      reusable: canonical.reusable,
+      ref: canonical.ref,
+      metadata: canonical.metadata,
+      variable_bindings: sanitized.variableBindings,
+      fills: sanitized.fills,
+      border: sanitized.border,
     };
   } catch (error) {
     console.error("Element sanitization for Supabase error:", error);
@@ -131,8 +180,22 @@ export const sanitizeElementForSupabase = (
       parent_id: element.parent_id ?? null,
       page_id: element.page_id ?? null,
       layout_id: element.layout_id ?? null,
+      slot_name: element.slot_name ?? null,
       order_num: element.order_num ?? 0,
       data_binding: element.dataBinding,
+      events: element.events,
+      deleted: element.deleted,
+      component_role: element.componentRole,
+      master_id: element.masterId,
+      overrides: element.overrides,
+      descendants: element.descendants,
+      component_name: element.componentName,
+      reusable: (element as ElementWithCanonicalFields).reusable,
+      ref: (element as ElementWithCanonicalFields).ref,
+      metadata: (element as ElementWithCanonicalFields).metadata,
+      variable_bindings: element.variableBindings,
+      fills: element.fills,
+      border: element.border,
     };
   }
 };

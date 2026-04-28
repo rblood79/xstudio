@@ -1,4 +1,9 @@
 import { measureWorkspacePanelInsets } from "../../utils/panelLayoutRuntime";
+import type { Element } from "../../../../types/core/store.types";
+import {
+  getEditingSemanticsRole,
+  type EditingSemanticsRole,
+} from "../../../utils/editingSemantics";
 import type { BoundingBox } from "../selection/types";
 import {
   DEFAULT_MINIMAP_CONFIG,
@@ -15,6 +20,7 @@ import type { PageFrame } from "./workflowRenderer";
 export interface HoverHighlightTarget {
   dashed: boolean;
   bounds: BoundingBox;
+  semanticRole: EditingSemanticsRole | null;
 }
 
 export interface PageTitleRenderItem {
@@ -53,13 +59,18 @@ export function buildHoverHighlightTargets(
   hoveredContextId: string | null,
   hoveredLeafIds: string[],
   isGroupHover: boolean,
+  elementsMap: Map<string, Element> = new Map(),
 ): HoverHighlightTarget[] {
   const targets: HoverHighlightTarget[] = [];
 
   if (hoveredContextId) {
     const contextBounds = treeBoundsMap.get(hoveredContextId);
     if (contextBounds) {
-      targets.push({ bounds: contextBounds, dashed: false });
+      targets.push({
+        bounds: contextBounds,
+        dashed: false,
+        semanticRole: getEditingSemanticsRole(elementsMap.get(hoveredContextId)),
+      });
     }
   }
 
@@ -67,7 +78,11 @@ export function buildHoverHighlightTargets(
     for (const leafId of hoveredLeafIds) {
       const leafBounds = treeBoundsMap.get(leafId);
       if (leafBounds) {
-        targets.push({ bounds: leafBounds, dashed: true });
+        targets.push({
+          bounds: leafBounds,
+          dashed: true,
+          semanticRole: getEditingSemanticsRole(elementsMap.get(leafId)),
+        });
       }
     }
   }

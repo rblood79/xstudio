@@ -5,6 +5,42 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Monitor 패널 노출 축소 — 단축키 전용 활성화] - 2026-04-28
+
+### Features
+
+- **Monitor 패널 Header 버튼 제거 + 단축키 활성화**:
+  - Header 우측 View toggle 에서 Monitor 버튼 제거 — 일반 사용자 UI 에서 개발/진단 도구 노출 축소
+  - Monitor bottom panel 은 `Ctrl+Alt+M` 단축키와 Command Palette 의 `모니터 패널 토글` 명령으로 활성화
+  - 기존 MonitorPanel Gateway 구조와 bottom panel 등록은 유지 — 필요 시 성능/메모리 진단 가능
+
+## [ADR-912/911 의존 방향 정정 — ADR-912 Accepted + ADR-911 Frozen] - 2026-04-28
+
+### Architecture
+
+- **ADR-912/911 의존 방향 정정** (revision 3 framing 재정의):
+  - **정정 사유**: baseline (ADR-903 Phase 4) framing 이 ADR-912 (reusable component 추상) 를 ADR-911 (Layout/frameset preset) 의 후속으로 박아 의존 방향이 거꾸로. codex review 3차 M-1 + 사용자 framing 재정의 (2026-04-28 세션 49 후속) 로 발견 → 정정
+  - **올바른 의존 방향**: ADR-912 = reusable component 추상의 **base** (Origin/Instance/Override + Component section + detach + Origin 토글) / ADR-911 = component 의 **frame-bundled preset 응용** (frame = layout-bundled reusable component, ##Slot section## = ##Component section## 의 frame-specific specialization)
+  - **Why**: ADR-912 base 없이 ADR-911 Phase 3 가 진행되며 frame preset 이 추상 없이 응용만 land — Phase 3 후속 (P3-ε / P3-ζ — Slot section UI / FramesTab Slot composition) 에서 ADR-912 Component section 정합화 시 baseline 어긋남 risk 누적
+- **ADR-912 Accepted (revision 3)**:
+  - 위치: `docs/adr/912-editing-semantics-ui-5elements.md` Status `Proposed → Accepted`
+  - codex review 3차 통과 (M-1 의존 방향 정정 / L-1 LOW 추적성 권고). 1차 7건 (HIGH 3 / MED 3 / LOW 1) + 2차 2건 (MED-1 phase 명칭 / MED-2 TOCTOU guard) + 3차 의존 방향 정정 모두 반영
+  - 본문 + design §7 framing 정정 — "선결 ADR-911" 제거 / "ADR-911 = preset 응용" 명시 / 차단 해제 조건 = "사용자 review + Status Proposed→Accepted" (ADR-911 P3 land 와 무관)
+  - 다음: Phase A1 진입 (Canvas Origin/Instance 시각 마커 base land)
+- **ADR-911 Frozen (Phase 3 후속 동결)**:
+  - 위치: `docs/adr/911-layout-frameset-pencil-redesign.md` Status `In Progress → Frozen`
+  - 보존 범위: Phase 0~2 (Implemented) + Phase 3 P3-α/β/γ/δ + δ fix #1~#4 + B1 filter + θ scope + θ regression fix #1 모두 land 보존 — 사용자 가시 동작 (frame default + page slot fill GREEN) 유지
+  - 정지 영역: P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot — 모두 ADR-912 Phase A1 land 후 재개
+  - 재개 조건: ADR-912 Phase A1 land 완료 시 P3-ε / P3-ζ 가 ##Component section## 위 frame-specific specialization 으로 재설계 진입
+
+### Documentation
+
+- **README.md ADR 상태 갱신**:
+  - ADR-911 entry: `In Progress → Frozen` + 의존 방향 정정 + 보존/정지 범위 명시
+  - ADR-912 entry: `Proposed → Accepted` + revision 3 framing + Phase A1 다음 단계 명시
+  - 미구현 카테고리 카운트 변동 없음 (둘 다 미구현 → Frozen + Accepted 도 미구현 카테고리 유지)
+  - 위치: `docs/adr/README.md` line 213-214 + 최종 업데이트 헤더
+
 ## [ADR-911 P3-θ regression fix — body 채택 정책 전환] - 2026-04-28
 
 ### Bug Fixes

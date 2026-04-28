@@ -229,6 +229,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     defaultPosition: "bottom",
     minWidth: 600,
     description: "메모리 사용량 모니터링 및 최적화",
+    shortcut: "Ctrl+Alt+M",
   },
 ];
 

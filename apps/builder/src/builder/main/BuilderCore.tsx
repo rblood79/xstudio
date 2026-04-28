@@ -21,7 +21,11 @@ import { BuilderViewport } from "./BuilderViewport";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
-import { ToastContainer, CommandPalette } from "../components";
+import {
+  ToastContainer,
+  CommandPalette,
+  EditingSemanticsImpactDialogHost,
+} from "../components";
 import { registerPanelElement } from "../workspace/utils/panelLayoutRuntime";
 
 import {
@@ -59,6 +63,10 @@ import { exportProject } from "@composition/shared/utils";
 import { loadFontRegistry } from "../fonts/customFonts";
 import { generateThemeCSS } from "../../utils/theme/generateThemeCSS";
 import { NEUTRAL_PALETTES } from "../../utils/theme/neutralToSkiaColors";
+import {
+  applyEditingSemanticsFixture,
+  shouldApplyEditingSemanticsFixture,
+} from "../dev/editingSemanticsFixture";
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -348,6 +356,10 @@ export const BuilderCore: React.FC = () => {
 
       // Preview iframe에 초기 테마 토큰 전송
       // iframe이 준비되면 자동으로 전송되도록 별도 useEffect 사용
+
+      if (import.meta.env.DEV && shouldApplyEditingSemanticsFixture()) {
+        applyEditingSemanticsFixture(useStore.getState());
+      }
 
       initializedProjectId.current = projectId;
       isInitializing.current = false;
@@ -1086,6 +1098,9 @@ export const BuilderCore: React.FC = () => {
 
       {/* 🚀 Phase 7: 커맨드 팔레트 (Cmd+K) */}
       <CommandPalette />
+
+      {/* ADR-912 Phase E: origin 편집 영향 미리보기 */}
+      <EditingSemanticsImpactDialogHost />
 
       {/* Modal 패널 컨테이너 */}
       <ModalPanelContainer />

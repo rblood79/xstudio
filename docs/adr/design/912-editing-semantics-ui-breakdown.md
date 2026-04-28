@@ -152,19 +152,22 @@
 - 각 sub-phase 별 파일 변경 목록 (apps/builder/src/builder/...)
 - 회귀 시나리오 fixture (50+ project + 0/1/1000 instance count)
 - roundtrip evidence (Skia/CSS/Preview 3축 screenshot diff)
-- ADR-911 Phase 3 P3-ε / P3-ζ 와의 의존 순서 (FramesTab + Slot section UI 가 본 ADR Component section 의 토대)
+- ADR-911 Phase 3 후속 (P3-ε / P3-ζ) 의 본 ADR specialization 재설계 인터페이스 (본 ADR Phase A1 land 후 ADR-911 P3-ε/P3-ζ 가 ##Component section## 위 frame-specific specialization 으로 진입)
 - ⑥ Origin 토글 ↔ ⑤ 영향 미리보기 다이얼로그 reuse 시 prop 인터페이스 정의
 
-## 7. 후속 / 차단 사항
+## 7. 후속 / 차단 사항 (revision 3 의존 방향 정정 — 2026-04-28 세션 49+)
 
-- **차단**: 본 design skeleton 이 Accepted 되기 전 ADR-912 Phase A 진입 금지 (codex H2)
-- **차단 해제 조건**: 사용자 review + ADR-911 Phase 3 (P3-δ fix #3 + P3-ε + P3-ζ) land 완료
-- **선결**: ADR-911 Hard Constraint #6 (##Slot section## land) 가 Phase F 통과 조건 — 양 section 공존 검증의 baseline
+> **의존 방향 정정**: 본 ADR = reusable component 추상의 **base** / ADR-911 = component 의 **frame-bundled preset 응용**. baseline (ADR-903 Phase 4) framing 이 거꾸로 박혀 있어 codex 3차 review M-1 + 사용자 framing 재정의 (2026-04-28 세션 49) 로 정정. ADR-911 ##Slot section## 은 본 ADR ##Component section## 의 frame-specific specialization.
+
+- **차단**: 본 design skeleton 이 Accepted 되기 전 ADR-912 Phase A1 진입 금지 (codex H2)
+- **차단 해제 조건**: 사용자 review + ADR-912 본문 Status `Proposed → Accepted` 승격 (ADR-911 P3 land 와 무관 — ADR-911 이 본 ADR 의 preset 응용이므로 의존 역방향)
+- **본 ADR Phase A~H land 후 ADR-911 Phase 3 후속 재개**: ADR-911 P3-ε (FramesTab inline frame editing) / P3-ζ (Chrome MCP 회귀 검증) / G3-θ (d) Chrome MCP screenshot 은 모두 본 ADR Phase A1 (시각 마커 base) land 후 ##Component section## 위 frame-specific specialization 으로 재설계 진입
+- **선결 (재정의)**: 본 ADR Phase A1 (Canvas Origin/Instance 시각 마커 + LayerTree 라벨 + Properties ##Component section## 라벨 base) 가 ADR-911 P3-ε/P3-ζ 의 baseline. ADR-911 Hard Constraint #6 (##Slot section## land — 세션 47 Hard Constraint 추가) 는 본 ADR Phase F (G4-F Component section 통합 UI 검증) 의 공존 baseline 으로 유지 — section 공존 자체는 ADR-911 Phase 0~2 + P3-α/β/γ/δ 까지의 land 로 충분
 
 ## 관련
 
 - [ADR-912 본문](../912-editing-semantics-ui-5elements.md) (revision 2 — 2026-04-28)
-- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md) (revision 2 — Hard Constraint #6 + Gate G6 신설)
+- [ADR-911 본문](../911-layout-frameset-pencil-redesign.md) (revision 2 — Hard Constraint #6 + Gate G6 신설 / Frozen 2026-04-28 세션 49+ — 본 ADR base land 후 P3-ε/P3-ζ 재개)
 - [ADR-903 Phase 4 baseline](903-phase4-editing-semantics-breakdown.md) (637 LOC, 본 fork 의 baseline)
 - [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md) — D1/D2/D3 분할 정본
 - [adr-writing.md](../../../.claude/rules/adr-writing.md) — Risk-First 템플릿 + "스캐폴딩 먼저" 원칙

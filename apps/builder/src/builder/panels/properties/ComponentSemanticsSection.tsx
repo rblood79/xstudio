@@ -1,0 +1,187 @@
+import { memo } from "react";
+import { Component as ComponentIcon } from "lucide-react";
+import { PropertySection } from "../../components";
+import { useStore } from "../../stores";
+import {
+  canDetachInstance,
+  getEditingSemanticsImpactInstanceIds,
+  getEditingSemanticsLabel,
+  getEditingSemanticsOriginId,
+  getEditingSemanticsOverrideItems,
+  getEditingSemanticsRole,
+  type EditingSemanticsOverrideItem,
+} from "../../utils/editingSemantics";
+
+export const ComponentSemanticsSection = memo(
+  function ComponentSemanticsSection({ elementId }: { elementId: string }) {
+    const element = useStore((state) => state.elementsMap.get(elementId));
+    const elementsMap = useStore((state) => state.elementsMap);
+    const selectElementWithPageTransition = useStore(
+      (state) => state.selectElementWithPageTransition,
+    );
+    const setSelectedElements = useStore((state) => state.setSelectedElements);
+    const detachInstance = useStore((state) => state.detachInstance);
+    const toggleComponentOrigin = useStore(
+      (state) => state.toggleComponentOrigin,
+    );
+    const resetInstanceOverrideField = useStore(
+      (state) => state.resetInstanceOverrideField,
+    );
+    const role = getEditingSemanticsRole(element);
+    const label = getEditingSemanticsLabel(role);
+    const originId = getEditingSemanticsOriginId(element);
+    const originElement = originId ? elementsMap.get(originId) : null;
+    const isDetachableInstance = canDetachInstance(element);
+    const overrideItems = getEditingSemanticsOverrideItems(element);
+    const instanceIds =
+      role === "origin"
+        ? getEditingSemanticsImpactInstanceIds(element, elementsMap.values())
+        : [];
+    const roleLabel = label ?? "Standard";
+    const roleClass = role ?? "standard";
+
+    if (!element) return null;
+
+    const handleGoToOrigin = () => {
+      if (!originElement) return;
+      selectElementWithPageTransition(
+        originElement.id,
+        originElement.page_id ?? null,
+      );
+    };
+
+    const handleDetachInstance = () => {
+      if (!isDetachableInstance) return;
+      const confirmed = window.confirm(
+        "Detach this instance from its component?",
+      );
+      if (!confirmed) return;
+      detachInstance(elementId);
+    };
+
+    const handleCreateComponent = async () => {
+      await toggleComponentOrigin(elementId);
+    };
+
+    const handleRemoveComponent = async () => {
+      await toggleComponentOrigin(elementId);
+    };
+
+    const handleSelectInstances = () => {
+      if (instanceIds.length === 0) return;
+      const firstInstance = elementsMap.get(instanceIds[0]);
+      if (firstInstance) {
+        selectElementWithPageTransition(
+          firstInstance.id,
+          firstInstance.page_id ?? null,
+        );
+      }
+      setSelectedElements(instanceIds);
+    };
+
+    const handleResetOverrideField = (item: EditingSemanticsOverrideItem) => {
+      resetInstanceOverrideField(
+        elementId,
+        item.fieldKey,
+        item.descendantPath,
+      );
+    };
+
+    return (
+      <PropertySection title="Component" icon={ComponentIcon}>
+        <div className="component-semantics-row">
+          <span className="component-semantics-name">Role</span>
+          <span
+            className={`component-semantics-badge component-semantics-badge--${roleClass}`}
+          >
+            {roleLabel}
+          </span>
+        </div>
+        {role === "origin" && (
+          <div className="component-semantics-row">
+            <span className="component-semantics-name">Impacts</span>
+            <span className="component-semantics-count">
+              {instanceIds.length} instances
+            </span>
+          </div>
+        )}
+        {!role && (
+          <button
+            className="component-semantics-action"
+            onClick={handleCreateComponent}
+            type="button"
+          >
+            Create component
+          </button>
+        )}
+        {role === "origin" && (
+          <button
+            aria-label="Remove component"
+            className="component-semantics-action"
+            onClick={handleRemoveComponent}
+            type="button"
+          >
+            [-] Remove component
+          </button>
+        )}
+        {role === "instance" && (
+          <>
+            <button
+              className="component-semantics-action"
+              disabled={!originElement}
+              onClick={handleGoToOrigin}
+              type="button"
+            >
+              Go to component
+            </button>
+            {isDetachableInstance && (
+              <button
+                className="component-semantics-action"
+                onClick={handleDetachInstance}
+                type="button"
+              >
+                Detach instance
+              </button>
+            )}
+            {overrideItems.length > 0 && (
+              <div
+                aria-label="Overrides"
+                className="component-semantics-overrides"
+              >
+                <span className="component-semantics-name">Overrides</span>
+                <div className="component-semantics-field-list">
+                  {overrideItems.map((item) => (
+                    <button
+                      aria-label={`Reset ${item.label} override`}
+                      className="component-semantics-field"
+                      key={item.id}
+                      onClick={() => handleResetOverrideField(item)}
+                      type="button"
+                    >
+                      <span className="component-semantics-field-dot" />
+                      <span className="component-semantics-field-name">
+                        {item.label}
+                      </span>
+                      <span className="component-semantics-field-reset">
+                        Reset
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {role === "origin" && instanceIds.length > 0 && (
+          <button
+            className="component-semantics-action"
+            onClick={handleSelectInstances}
+            type="button"
+          >
+            Select instances ({instanceIds.length})
+          </button>
+        )}
+      </PropertySection>
+    );
+  },
+);

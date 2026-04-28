@@ -11,6 +11,11 @@ import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 import { getDB } from "../../../lib/db";
 import { globalToast } from "../toast";
+import {
+  getEditingSemanticsImpactInstanceIds,
+  getEditingSemanticsRole,
+} from "../../utils/editingSemantics";
+import { requestEditingSemanticsImpactConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 
 // ─── Dirty Tracking 유틸리티 ─────────────────────────────────────────
 // elements.ts의 NON_LAYOUT_PROPS/INHERITED_LAYOUT_PROPS를 재사용하지 않고
@@ -192,6 +197,55 @@ function sanitizeElementUpdate(
   };
 }
 
+const confirmedOriginImpactKeys = new Set<string>();
+
+export function clearOriginImpactConfirmationCacheForTests(): void {
+  confirmedOriginImpactKeys.clear();
+}
+
+function nowMs(): number {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
+
+async function confirmOriginImpactIfNeeded(
+  state: ElementsState,
+  element: Element,
+): Promise<boolean> {
+  if (getEditingSemanticsRole(element) !== "origin") return true;
+
+  const startedAt = nowMs();
+  const impactedInstanceIds = getEditingSemanticsImpactInstanceIds(
+    element,
+    state.elements,
+  );
+  const countDurationMs = nowMs() - startedAt;
+  if (countDurationMs > 100) {
+    console.warn(
+      `[EditingSemantics] origin impact count took ${countDurationMs.toFixed(1)}ms for ${impactedInstanceIds.length} instances`,
+    );
+  }
+
+  const instanceCount = impactedInstanceIds.length;
+  if (instanceCount === 0) return Promise.resolve(true);
+
+  const confirmationKey = `${element.id}:${instanceCount}`;
+  if (confirmedOriginImpactKeys.has(confirmationKey)) {
+    return Promise.resolve(true);
+  }
+
+  const confirmed = await requestEditingSemanticsImpactConfirmation({
+    countDurationMs,
+    impactedInstanceIds,
+    instanceCount,
+    originId: element.id,
+    originLabel: element.componentName ?? element.customId ?? element.type,
+  });
+  if (confirmed) {
+    confirmedOriginImpactKeys.add(confirmationKey);
+  }
+  return confirmed;
+}
+
 /**
  * UpdateElementProps 액션 생성 팩토리
  *
@@ -224,6 +278,7 @@ export const createUpdateElementPropsAction =
       !hasShallowPatchChanges(element.props as Record<string, unknown>, patch)
     )
       return;
+    if (!(await confirmOriginImpactIfNeeded(currentState, element))) return;
 
     const shouldRecordHistory = Boolean(currentState.currentPageId);
     const prevPropsClone = shouldRecordHistory
@@ -372,6 +427,7 @@ export const createUpdateElementAction =
     // produce 외부에서는 elementsMap 사용 가능
     const element = getElementById(currentState.elementsMap, elementId);
     if (!element) return;
+    if (!(await confirmOriginImpactIfNeeded(currentState, element))) return;
 
     const shouldRecordHistory =
       Boolean(currentState.currentPageId) && Boolean(sanitizedUpdates.props);

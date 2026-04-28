@@ -9,6 +9,7 @@
 import type { CanvasKit, Canvas } from "canvaskit-wasm";
 import { SkiaDisposable } from "./disposable";
 import type { BoundingBox } from "../selection/types";
+import type { EditingSemanticsRole } from "../../../utils/editingSemantics";
 import type {
   OverflowContentInfo,
   ChildOverflowContext,
@@ -22,6 +23,14 @@ const HOVER_R = 0x3b / 255;
 const HOVER_G = 0x82 / 255;
 const HOVER_B = 0xf6 / 255;
 const HOVER_ALPHA = 0.5;
+
+/** ADR-912 editor-only semantic hover colors. */
+const ORIGIN_HOVER_R = 0xec / 255; // magenta-500 (#ec4899)
+const ORIGIN_HOVER_G = 0x48 / 255;
+const ORIGIN_HOVER_B = 0x99 / 255;
+const INSTANCE_HOVER_R = 0x8b / 255; // violet-500 (#8b5cf6)
+const INSTANCE_HOVER_G = 0x5c / 255;
+const INSTANCE_HOVER_B = 0xf6 / 255;
 
 // ============================================
 // Constants — overflow content (blue-500, 낮은 alpha)
@@ -55,6 +64,7 @@ export function renderHoverHighlight(
   bounds: BoundingBox,
   zoom: number,
   dashed = false,
+  semanticRole: EditingSemanticsRole | null = null,
 ): void {
   const scope = new SkiaDisposable();
   let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
@@ -64,7 +74,22 @@ export function renderHoverHighlight(
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Stroke);
     paint.setStrokeWidth(sw);
-    paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HOVER_ALPHA));
+    if (semanticRole === "origin") {
+      paint.setColor(
+        ck.Color4f(ORIGIN_HOVER_R, ORIGIN_HOVER_G, ORIGIN_HOVER_B, HOVER_ALPHA),
+      );
+    } else if (semanticRole === "instance") {
+      paint.setColor(
+        ck.Color4f(
+          INSTANCE_HOVER_R,
+          INSTANCE_HOVER_G,
+          INSTANCE_HOVER_B,
+          HOVER_ALPHA,
+        ),
+      );
+    } else {
+      paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HOVER_ALPHA));
+    }
 
     if (dashed) {
       dashEffect = ck.PathEffect.MakeDash([4 / zoom, 3 / zoom]);

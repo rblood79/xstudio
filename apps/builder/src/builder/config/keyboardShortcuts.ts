@@ -191,6 +191,16 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
     i18n: { ko: '히스토리 패널 토글' },
   },
 
+  toggleMonitor: {
+    key: 'm',
+    modifier: 'ctrlAlt',
+    category: 'panels',
+    scope: 'global',
+    priority: SHORTCUT_PRIORITY.PANELS,
+    description: 'Toggle Monitor Panel',
+    i18n: { ko: '모니터 패널 토글' },
+  },
+
   openSettings: {
     key: ',',
     modifier: 'cmd',
@@ -253,6 +263,16 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
     priority: SHORTCUT_PRIORITY.CANVAS,
     description: 'Duplicate',
     i18n: { ko: '복제' },
+  },
+
+  toggleComponentOrigin: {
+    key: 'k',
+    modifier: 'cmdAlt',
+    category: 'canvas',
+    scope: ['canvas-focused', 'panel:properties'],
+    priority: SHORTCUT_PRIORITY.CANVAS,
+    description: 'Create/Remove Component',
+    i18n: { ko: '컴포넌트 생성/해제' },
   },
 
   selectAll: {

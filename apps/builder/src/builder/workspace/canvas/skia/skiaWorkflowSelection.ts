@@ -1,4 +1,8 @@
 import type { Element } from "../../../../types/core/store.types";
+import {
+  getEditingSemanticsRole,
+  type EditingSemanticsRole,
+} from "../../../utils/editingSemantics";
 import { getElementBoundsSimple } from "../elementRegistry";
 import type { RendererSelectionInvalidation } from "../renderers";
 import { calculateCombinedBounds } from "../selection/types";
@@ -11,6 +15,7 @@ import type { WorkflowHighlightState } from "./workflowRenderer";
 export interface SelectionRenderResult {
   bounds: BoundingBox | null;
   lasso: LassoRenderData | null;
+  semanticRole: EditingSemanticsRole | null;
   showHandles: boolean;
 }
 
@@ -92,6 +97,7 @@ export function buildSelectionRenderData(
   const selectedIds = selection.selectedElementIds;
 
   let selectionBounds: BoundingBox | null = null;
+  let semanticRole: EditingSemanticsRole | null = null;
   let showHandles = false;
 
   if (selectedIds.length > 0) {
@@ -102,6 +108,10 @@ export function buildSelectionRenderData(
       const element = elementsMap.get(id);
       if (!element || element.page_id !== currentPageId) {
         continue;
+      }
+
+      if (selectedIds.length === 1) {
+        semanticRole = getEditingSemanticsRole(element);
       }
 
       const treeBounds = treeBoundsMap.get(id);
@@ -145,5 +155,5 @@ export function buildSelectionRenderData(
     showHandles = selectedIds.length === 1;
   }
 
-  return { bounds: selectionBounds, showHandles, lasso: null };
+  return { bounds: selectionBounds, semanticRole, showHandles, lasso: null };
 }

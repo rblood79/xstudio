@@ -24,6 +24,7 @@ import {
   buildPageChildrenMap,
   buildChildrenIdMap,
 } from "../scene/layoutCache";
+import { resolveCanonicalRefTree } from "../../../utils/canonicalRefResolution";
 
 interface PageLayoutInput {
   pageId: string;
@@ -84,25 +85,35 @@ export function useLayoutPublisher(
 
       if (!bodyElement || !wasmLayoutReady) continue;
 
-      const pageChildrenMap = buildPageChildrenMap({
-        bodyElement,
-        elementById,
-        pageElements,
+      const resolvedTree = resolveCanonicalRefTree({
+        elements: pageElements,
+        elementsMap: elementById,
       });
-      const pageElementsSignature = createPageElementsSignature(pageElements);
-      const freshElements = pageElements.map(
-        (el) => elementById.get(el.id) ?? el,
+      const resolvedElementById = resolvedTree.elementsMap;
+      const resolvedBodyElement =
+        resolvedElementById.get(bodyElement.id) ?? bodyElement;
+      const resolvedPageElements = resolvedTree.elements;
+
+      const pageChildrenMap = buildPageChildrenMap({
+        bodyElement: resolvedBodyElement,
+        elementById: resolvedElementById,
+        pageElements: resolvedPageElements,
+      });
+      const pageElementsSignature =
+        createPageElementsSignature(resolvedPageElements);
+      const freshElements = resolvedPageElements.map(
+        (el) => resolvedElementById.get(el.id) ?? el,
       );
       const pageLayoutSignature = createPageLayoutSignature(
-        bodyElement,
+        resolvedBodyElement,
         freshElements,
       );
       const childrenIdMap = buildChildrenIdMap(pageChildrenMap);
 
       const layoutMap = getCachedPageLayout({
-        bodyElement,
+        bodyElement: resolvedBodyElement,
         childrenIdMap,
-        elementById,
+        elementById: resolvedElementById,
         pageChildrenMap,
         pageElementsSignature,
         pageLayoutSignature,

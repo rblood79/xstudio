@@ -4,6 +4,7 @@ import type { Element } from "../../../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../../../types/builder/stately.types";
 import type { ElementProps } from "../../../../../types/integrations/supabase.types";
 import { useStore } from "../../../../stores";
+import { resolveCanonicalRefTree } from "../../../../utils/canonicalRefResolution";
 import {
   childrenAs,
   type ButtonItem,
@@ -14,14 +15,28 @@ import {
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
+  const allElementsMap = useStore((state) => state.elementsMap);
+  const projectedElements = useMemo(() => {
+    if (elements.length === 0) return elements;
+    return resolveCanonicalRefTree({
+      elements,
+      elementsMap: allElementsMap,
+    }).elements;
+  }, [allElementsMap, elements]);
+
   const elementTree = useMemo(
-    () => buildTreeFromElements(elements),
-    [elements],
+    () => buildTreeFromElements(projectedElements),
+    [projectedElements],
   );
 
   const treeNodes = useMemo(
-    () => convertToLayerTreeNodes(elementTree, elements),
-    [elementTree, elements],
+    () =>
+      convertToLayerTreeNodes(
+        elementTree,
+        projectedElements,
+        allElementsMap,
+      ),
+    [allElementsMap, elementTree, projectedElements],
   );
 
   // nodeMap: treeNodes 기반 O(1) 조회용 맵
@@ -44,7 +59,7 @@ export function useLayerTreeData(elements: Element[]) {
         children: node.children,
       });
 
-      if (node.virtualChildType) {
+      if (node.virtualChildType || node.isSyntheticRefChild) {
         disabled.add(node.id);
       }
 
@@ -105,6 +120,7 @@ export function useLayerTreeData(elements: Element[]) {
 function convertToLayerTreeNodes(
   tree: ElementTreeItem[],
   elements: Element[],
+  persistedElementsMap: Map<string, Element>,
   depth = 0,
 ): LayerTreeNode[] {
   const elementsMap = new Map(elements.map((el) => [el.id, el]));
@@ -112,9 +128,15 @@ function convertToLayerTreeNodes(
   return tree.flatMap((item): LayerTreeNode[] => {
     const element = elementsMap.get(item.id);
     if (!element) return [];
+    const persistedElement = persistedElementsMap.get(item.id);
 
     const childNodes = item.children
-      ? convertToLayerTreeNodes(item.children, elements, depth + 1)
+      ? convertToLayerTreeNodes(
+          item.children,
+          elements,
+          persistedElementsMap,
+          depth + 1,
+        )
       : [];
     const virtualChildren = getVirtualChildren(item, depth + 1, element);
     const children = [...childNodes, ...virtualChildren];
@@ -128,7 +150,8 @@ function convertToLayerTreeNodes(
       depth,
       hasChildren: children.length > 0,
       isLeaf: children.length === 0,
-      element,
+      element: persistedElement ?? element,
+      isSyntheticRefChild: !persistedElement,
       children,
     };
 

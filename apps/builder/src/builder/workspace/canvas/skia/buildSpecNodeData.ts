@@ -193,6 +193,13 @@ const FORM_INHERITANCE_TAGS = new Set([
   "ColorField",
 ]);
 
+const PARENT_LABEL_PROP_SOURCE_TAGS = new Set([
+  "TextField",
+  "TextArea",
+  "NumberField",
+  "ColorField",
+]);
+
 const DATE_INPUT_PARENT_TAGS = new Set([
   "DateField",
   "TimeField",
@@ -206,6 +213,19 @@ const DATE_INPUT_PARENT_TAGS = new Set([
 
 function getProps(element: Element): Record<string, unknown> {
   return (element.props ?? {}) as Record<string, unknown>;
+}
+
+function resolveParentLabelText(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): string | null {
+  if (element.type !== "Label" || !element.parent_id) return null;
+
+  const parent = elementsMap.get(element.parent_id);
+  if (!parent || !PARENT_LABEL_PROP_SOURCE_TAGS.has(parent.type)) return null;
+
+  const label = getProps(parent).label;
+  return typeof label === "string" ? label : null;
 }
 
 /** Registry 기반 부모 size delegation (0-3 level 조상 탐색) */
@@ -657,6 +677,11 @@ export function buildSpecNodeData(input: SpecBuildInput): SkiaNodeData | null {
 
   // ---------- specProps 준비 ----------
   let specProps: Record<string, unknown> = { ...props };
+
+  const parentLabelText = resolveParentLabelText(element, elementsMap);
+  if (parentLabelText !== null) {
+    specProps = { ...specProps, children: parentLabelText };
+  }
 
   // Size injection — Breadcrumb은 항상 RSP 키 S|M|L (Skia shapes·패딩·typography 토큰 정합)
   if (element.type === "Breadcrumb") {

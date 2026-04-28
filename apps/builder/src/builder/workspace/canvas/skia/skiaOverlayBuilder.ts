@@ -10,6 +10,7 @@
  */
 
 import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
+import type { Element } from "../../../../types/core/store.types";
 import type { BoundingBox } from "../selection/types";
 import type { RendererInvalidationPacket } from "../renderers";
 import type { AIEffectNodeBounds, SkiaRenderable } from "./types";
@@ -157,6 +158,7 @@ export interface OverlayBuildInput {
   workflowHoveredEdgeId: string | null;
   // Hover
   elementHoverState: ElementHoverState;
+  elementsMap: Map<string, Element>;
   // Overflow (Figma-style content outline)
   overflowInfoMap?: Map<string, OverflowContentInfo>;
   // Drop Indicator (드래그 중 타겟 표시)
@@ -206,6 +208,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     workflowElementBoundsMap,
     workflowHoveredEdgeId,
     elementHoverState,
+    elementsMap,
     overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
@@ -382,6 +385,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
         hoveredCtxId,
         hoveredLeafIds,
         isGroupHover,
+        elementsMap,
       );
       for (const target of hoverTargets) {
         renderHoverHighlight(
@@ -390,6 +394,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           target.bounds,
           cameraZoom,
           target.dashed,
+          target.semanticRole,
         );
       }
 
@@ -408,9 +413,21 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
 
       // ── Selection (드래그 중에는 숨김 — 드래그 요소가 반투명으로 떠있으므로) ──
       if (selectionData.bounds && !dropIndicatorState) {
-        renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
+        renderSelectionBox(
+          ck,
+          canvas,
+          selectionData.bounds,
+          cameraZoom,
+          selectionData.semanticRole,
+        );
         if (selectionData.showHandles) {
-          renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);
+          renderTransformHandles(
+            ck,
+            canvas,
+            selectionData.bounds,
+            cameraZoom,
+            selectionData.semanticRole,
+          );
         }
         renderDimensionLabels(
           ck,

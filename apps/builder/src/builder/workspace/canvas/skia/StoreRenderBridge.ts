@@ -33,6 +33,10 @@ import type { TransitionManager } from "./transitionManager";
 import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
 import { InlineAlertSpec } from "@composition/specs";
 import { resolveInstanceWithSharedCache } from "@/resolvers/canonical/storeBridge";
+import {
+  resolveCanonicalRefElement,
+  resolveCanonicalRefTree,
+} from "../../../utils/canonicalRefResolution";
 
 function isImageElement(element: Element): boolean {
   return IMAGE_TAGS.has(element.type);
@@ -164,30 +168,40 @@ export class StoreRenderBridge {
     theme: "light" | "dark",
     childrenMap: Map<string, Element[]> | null = null,
   ): void {
+    const resolvedTree = resolveCanonicalRefTree({
+      childrenMap,
+      elements: Array.from(elementsMap.values()),
+      elementsMap,
+    });
+    const renderElementsMap = resolvedTree.elementsMap;
+    const renderChildrenMap = resolvedTree.childrenMap;
+
     // theme 변경 시 전체 rebuild 강제 (모든 Spec 색상 재계산 필요)
     const themeChanged = theme !== this.prevTheme;
     this.prevTheme = theme;
 
-    const changedIds = themeChanged ? null : this.detectChangedIds(elementsMap);
+    const changedIds = themeChanged
+      ? null
+      : this.detectChangedIds(renderElementsMap);
 
     if (changedIds === null) {
       // 첫 실행 또는 theme 변경: 전체 rebuild
-      this.fullRebuild(elementsMap, layoutMap, theme, childrenMap);
+      this.fullRebuild(renderElementsMap, layoutMap, theme, renderChildrenMap);
     } else if (changedIds.size === 0) {
       // 동일 참조 = 요소 변경 없음, layout만 변경 → 전체 rebuild
-      this.fullRebuild(elementsMap, layoutMap, theme, childrenMap);
+      this.fullRebuild(renderElementsMap, layoutMap, theme, renderChildrenMap);
     } else {
       // 증분 갱신: 변경된 요소만 rebuild
       this.incrementalSync(
         changedIds,
-        elementsMap,
+        renderElementsMap,
         layoutMap,
         theme,
-        childrenMap,
+        renderChildrenMap,
       );
     }
 
-    this.prevElementsMap = elementsMap;
+    this.prevElementsMap = renderElementsMap;
   }
 
   /**
@@ -414,7 +428,10 @@ export class StoreRenderBridge {
     // 와 시각 등가, ADR-903 storeBridge.test.ts TC9 검증).
     //
     // master 가 없는 broken instance 는 null 반환 → 원본 element 유지.
-    let effectiveElement = element;
+    let effectiveElement = resolveCanonicalRefElement(
+      element,
+      elementsMap.values(),
+    );
     if (isInstanceElement(element) && element.masterId) {
       const master = elementsMap.get(element.masterId);
       const resolved = resolveInstanceWithSharedCache(element, master);

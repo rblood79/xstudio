@@ -14,6 +14,7 @@ import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
 import { SkiaDisposable } from "./disposable";
 import type { BoundingBox } from "../selection/types";
 import { HANDLE_SIZE, HANDLE_CONFIGS } from "../selection/types";
+import type { EditingSemanticsRole } from "../../../utils/editingSemantics";
 
 // ============================================
 // Constants (0x3b82f6 = blue-500)
@@ -23,6 +24,34 @@ import { HANDLE_SIZE, HANDLE_CONFIGS } from "../selection/types";
 const SELECTION_R = 0x3b / 255; // 0.231
 const SELECTION_G = 0x82 / 255; // 0.510
 const SELECTION_B = 0xf6 / 255; // 0.965
+
+/** ADR-912 editor-only semantic markers. Spec/CSS runtime styles must not consume these. */
+const ORIGIN_MARKER_R = 0xec / 255; // magenta-500 (#ec4899)
+const ORIGIN_MARKER_G = 0x48 / 255;
+const ORIGIN_MARKER_B = 0x99 / 255;
+const INSTANCE_MARKER_R = 0x8b / 255; // violet-500 (#8b5cf6)
+const INSTANCE_MARKER_G = 0x5c / 255;
+const INSTANCE_MARKER_B = 0xf6 / 255;
+
+function setSemanticStrokeColor(
+  ck: CanvasKit,
+  paint: InstanceType<CanvasKit["Paint"]>,
+  semanticRole: EditingSemanticsRole | null,
+): void {
+  if (semanticRole === "origin") {
+    paint.setColor(
+      ck.Color4f(ORIGIN_MARKER_R, ORIGIN_MARKER_G, ORIGIN_MARKER_B, 1),
+    );
+    return;
+  }
+  if (semanticRole === "instance") {
+    paint.setColor(
+      ck.Color4f(INSTANCE_MARKER_R, INSTANCE_MARKER_G, INSTANCE_MARKER_B, 1),
+    );
+    return;
+  }
+  paint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
+}
 
 /** Page Title 레이블 설정 */
 const PAGE_TITLE_FONT_SIZE = 12; // 화면상 폰트 크기 (px)
@@ -69,15 +98,22 @@ export function renderSelectionBox(
   canvas: Canvas,
   bounds: BoundingBox,
   zoom: number,
+  semanticRole: EditingSemanticsRole | null = null,
 ): void {
   const scope = new SkiaDisposable();
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
   try {
     const sw = 1 / zoom;
     const paint = scope.track(new ck.Paint());
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Stroke);
     paint.setStrokeWidth(sw);
-    paint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
+    setSemanticStrokeColor(ck, paint, semanticRole);
+
+    if (semanticRole === "instance") {
+      dashEffect = ck.PathEffect.MakeDash([sw, sw * 1.8]);
+      paint.setPathEffect(dashEffect);
+    }
 
     const rect = ck.LTRBRect(
       bounds.x,
@@ -87,6 +123,7 @@ export function renderSelectionBox(
     );
     canvas.drawRect(rect, paint);
   } finally {
+    dashEffect?.delete();
     scope.dispose();
   }
 }
@@ -106,6 +143,7 @@ export function renderTransformHandles(
   canvas: Canvas,
   bounds: BoundingBox,
   zoom: number,
+  semanticRole: EditingSemanticsRole | null = null,
 ): void {
   const scope = new SkiaDisposable();
   try {
@@ -124,7 +162,7 @@ export function renderTransformHandles(
     strokePaint.setAntiAlias(true);
     strokePaint.setStyle(ck.PaintStyle.Stroke);
     strokePaint.setStrokeWidth(sw);
-    strokePaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
+    setSemanticStrokeColor(ck, strokePaint, semanticRole);
 
     for (const config of HANDLE_CONFIGS) {
       if (!config.isCorner) continue;

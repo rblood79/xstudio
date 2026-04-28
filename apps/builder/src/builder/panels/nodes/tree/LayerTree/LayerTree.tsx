@@ -41,7 +41,7 @@ export function LayerTree({
       const key = [...keys][0] as string;
       if (key) {
         const node = nodeMap.get(key);
-        if (node && !node.virtualChildType) {
+        if (node && !node.virtualChildType && !node.isSyntheticRefChild) {
           onItemClick(node.element);
         }
       }
@@ -66,7 +66,7 @@ export function LayerTree({
       if (!key) return;
 
       const node = nodeMap.get(key);
-      if (!node || node.virtualChildType) return;
+      if (!node || node.virtualChildType || node.isSyntheticRefChild) return;
       onItemClick(node.element);
     },
     [nodeMap, onItemClick],
@@ -110,7 +110,9 @@ export function LayerTree({
 
   // 드래그 가능 여부
   const canDrag = useCallback((node: LayerTreeNode) => {
-    return !node.virtualChildType && node.type !== "body";
+    return (
+      !node.virtualChildType && !node.isSyntheticRefChild && node.type !== "body"
+    );
   }, []);
 
   // 렌더링
