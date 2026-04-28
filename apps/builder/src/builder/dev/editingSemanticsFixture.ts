@@ -12,6 +12,8 @@ const PAGE_ID = "adr-912-editing-semantics-page";
 const BODY_ID = "adr-912-editing-semantics-body";
 const ORIGIN_ID = "adr-912-origin";
 const INSTANCE_ID = "adr-912-instance";
+const SLOT_FRAME_ID = "adr-912-slot-frame";
+const SLOT_RECOMMENDATION_ID = "adr-912-slot-recommendation";
 
 export function shouldApplyEditingSemanticsFixture(): boolean {
   if (typeof window === "undefined") return false;
@@ -22,6 +24,7 @@ function getInitialSelection(): string {
   if (typeof window === "undefined") return ORIGIN_ID;
 
   const value = new URLSearchParams(window.location.search).get(FIXTURE_PARAM);
+  if (value === "slot") return SLOT_FRAME_ID;
   return value === "instance" ? INSTANCE_ID : ORIGIN_ID;
 }
 
@@ -108,14 +111,65 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
     },
   };
 
+  const slotRecommendation: SemanticFixtureElement = {
+    id: SLOT_RECOMMENDATION_ID,
+    type: "NumberField",
+    componentName: "RecommendedNumberField",
+    reusable: true,
+    page_id: PAGE_ID,
+    parent_id: BODY_ID,
+    order_num: 4,
+    props: {
+      label: "Recommended number",
+      style: {
+        height: "72px",
+        width: "220px",
+      },
+    },
+    created_at: now,
+    updated_at: now,
+  };
+
+  const slotFrame: SemanticFixtureElement = {
+    id: SLOT_FRAME_ID,
+    type: "frame",
+    componentName: "ArticleFrame",
+    reusable: true,
+    page_id: PAGE_ID,
+    parent_id: BODY_ID,
+    order_num: 5,
+    slot: [SLOT_RECOMMENDATION_ID],
+    metadata: {
+      slot: [SLOT_RECOMMENDATION_ID],
+    },
+    props: {
+      style: {
+        border: "1px solid #d1d5db",
+        borderRadius: "8px",
+        height: "160px",
+        padding: "16px",
+        width: "280px",
+      },
+    },
+    created_at: now,
+    updated_at: now,
+  } as SemanticFixtureElement;
+
   store.setPages([page]);
-  store.setElements([body, origin, instanceA, instanceB]);
+  store.setElements([
+    body,
+    origin,
+    instanceA,
+    instanceB,
+    slotRecommendation,
+    slotFrame,
+  ]);
   store.setCurrentPageId(PAGE_ID);
   store.selectElementWithPageTransition(getInitialSelection(), PAGE_ID);
 
   if (import.meta.env.DEV) {
     console.info(
-      "[ADR-912] editing semantics fixture loaded. Use ?editingSemanticsFixture=origin or =instance.",
+      "[ADR-912] editing semantics fixture loaded. Use ?editingSemanticsFixture=origin, =instance, or =slot.",
     );
   }
 }

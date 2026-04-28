@@ -190,7 +190,7 @@
 | H | Skia node materialization 회귀 수정. layout publish 이후 `StoreRenderBridge` 가 canonical projection/synthetic id 때문에 incremental sync 로 빠지면 첫 sync 때 layout 이 없어 null 이던 Spec node 가 registry 에 재등록되지 않는 문제가 남음. layout publish/초기 sync/async image materialization 은 full rebuild 를 강제해 selection bounds 만 있고 draw node 가 없는 상태를 방지 | `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts`, `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.static.test.ts` |
 | H | Pages/Frames scene source isolation 수정. Page mode 는 page root 만, Frames mode 는 selected reusable frame root 만 Skia root collection 에 들어가도록 `editMode` 를 renderer input 에 명시. Page mode 의 frame Slot 은 layout anchor 로 유지하되 Skia placeholder chrome 을 숨겨 raw Slot dashed box 가 Page 화면에 노출되지 않게 함. Frames mode authoring surface 는 현재 Page 의 좌표와 `pageWidth/pageHeight` 로 정규화해 기존 `framePositions` 의 page-right 별도 authoring area 좌표/크기를 사용하지 않음 | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`, `apps/builder/src/builder/workspace/canvas/renderers/rendererInput.ts`, `visiblePageRoots.ts`, `visibleFrameRoots.ts`, `buildSpecNodeData.ts`, `resolvePageWithFrame.ts` |
 | C/H | Canvas right-click context menu 에 Detach instance 진입점을 연결. spatial hit-test + topmost 판정 후 detachable instance 일 때만 menu 를 표시하고 기존 `detachInstance` action 을 실행. LayerTree row context menu 도 동일 action 경로 검증 | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`, `apps/builder/src/builder/workspace/canvas/interaction/canvasContextMenu.ts`, `apps/builder/src/builder/workspace/Workspace.css`, `apps/builder/src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.tsx` |
-| F | Component section 과 Slot section 이 같은 Properties surface 에 공존하는 render contract 를 고정. reusable frame 선택 시 `Component`/`Origin` 과 `Slot` recommendation count/list 가 동시에 노출됨 | `apps/builder/src/builder/panels/properties/FrameSlotSection.test.tsx` |
+| F | Component section 과 Slot section 이 같은 Properties surface 에 공존하는 render contract 를 고정. reusable frame 선택 시 `Component`/`Name=ArticleFrame`/`Origin` 과 `Slot` recommendation count/list 가 동시에 노출됨. browser evidence 는 `?editingSemanticsFixture=slot` dev fixture 로 캡처해 보존 | `apps/builder/src/builder/panels/properties/ComponentSemanticsSection.tsx`, `apps/builder/src/builder/dev/editingSemanticsFixture.ts`, `apps/builder/src/builder/panels/properties/FrameSlotSection.test.tsx`, `docs/adr/evidence/912-g4f-component-slot.png` |
 
 ### 사용자 보고별 fix 매핑
 
@@ -207,7 +207,7 @@
 | Properties ##Component section## 의 action 연결 상태 확인 필요 | Go to component / Select instances / detach / field reset / Create component / `[-]` 토글 연결. canonical ref target 이 id 가 아닌 customId/componentName 이어도 origin 탐색 가능 |
 | ADR-912 가 Slot base 를 소유해야 하며 ADR-911 의 영향을 받으면 안 됨 | ADR-912 Properties ##Slot section## base 를 구현하고 ADR-911 Slot section / Gate G6 표현은 supersede 로 고정 |
 | detach 를 Properties/단축키 외 우클릭으로 실행해야 함 | Canvas right-click context menu + LayerTree row context menu 에 Detach instance 진입점을 연결 |
-| Component section 과 Slot section 이 같은 Properties panel 에 동시에 보여야 함 | reusable frame fixture 로 두 section 의 동시 render contract 를 테스트 고정. Slot recommendation 이 origin `componentName` 으로 저장된 경우도 label resolve + duplicate guard 를 테스트 고정. browser screenshot evidence 는 별도 남은 gate 로 유지 |
+| Component section 과 Slot section 이 같은 Properties panel 에 동시에 보여야 함 | reusable frame fixture 로 두 section 의 동시 render contract 를 테스트 고정. Slot recommendation 이 origin `componentName` 으로 저장된 경우도 label resolve + duplicate guard 를 테스트 고정. `?editingSemanticsFixture=slot` browser screenshot evidence 로 `Component`/`Name=ArticleFrame`/`Origin` + `Slot` recommendation list 동시 노출을 확인 |
 | preset 선택 후 Slot 이 새로고침 전까지 보이지 않음 | Slot selector 를 canonical projection 의존에서 legacy `layout_id` 직접 매칭으로 전환해 preset apply 직후 생성된 Slot 을 즉시 노출 |
 | 다른 Slot 선택 시 live 화면에서 중첩되고 새로고침 후 정상화 | Slot assignment write 를 `props.slot_name` 단독에서 `props.slot_name` + top-level `slot_name` 동시 갱신으로 변경해 live resolver 와 persistence resolver 의 read source 를 일치 |
 | preset 변경 `replace` 후 Slot 이 live 화면에서 계속 쌓이고 새로고침 후 정상화 | 기존 Slot 다건 삭제를 `Promise.all(removeElement(...))` 에서 `removeElements([...slotIds])` 배치 삭제로 변경. 병렬 단건 삭제가 stale `currentState` 로 서로의 삭제 결과를 되살리던 메모리 회귀 차단 |
@@ -233,6 +233,8 @@
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/stores/utils/elementSanitizer.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/interaction/canvasContextMenu.test.ts src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx`
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/dev/editingSemanticsFixture.test.ts`
+- Playwright screenshot evidence: `docs/adr/evidence/912-g4f-component-slot.png` (`http://127.0.0.1:5173/builder/adr-912-fixture?editingSemanticsFixture=slot`; checked `Component`, `Name`, `ArticleFrame`, `Origin`, `Slot`, `1 recommendations`, `RecommendedNumberField`)
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/utils/canonicalRefResolution.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts`
@@ -255,7 +257,6 @@
 - G4-B: 원본→인스턴스 highlight 의 최종 시각 검증
 - G4-C: detach warning dialog copy/UX 최종 검증
 - G4-E: 1000 instance 성능 gate
-- G4-F: Component section + Slot section base browser screenshot evidence
 - G4-H: 50+ fixture round-trip + copy/paste/duplicate/delete/slot assign 전체 회귀 sweep
 
 ## 9. 관련

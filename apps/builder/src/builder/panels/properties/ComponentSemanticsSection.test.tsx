@@ -46,13 +46,21 @@ describe("ComponentSemanticsSection", () => {
   it("renders Origin label for reusable element", () => {
     useStore.setState({
       elementsMap: new Map([
-        ["origin", makeElement("origin", { reusable: true })],
+        [
+          "origin",
+          makeElement("origin", {
+            componentName: "ArticleFrame",
+            reusable: true,
+          }),
+        ],
       ]),
     });
 
     render(<ComponentSemanticsSection elementId="origin" />);
 
     expect(screen.getByText("Component")).toBeTruthy();
+    expect(screen.getByText("Name")).toBeTruthy();
+    expect(screen.getByText("ArticleFrame")).toBeTruthy();
     expect(screen.getByText("Role")).toBeTruthy();
     expect(screen.getByText("Origin")).toBeTruthy();
   });

@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - frame body 의 filtered children map key 도 `__default__` 대신 `page_id ?? layout_id ?? bodyId` fallback 을 사용해 page/frame tree source 와 layout map key 를 일치
 - **Frames tab 에 여러 Frame 등록 후 교차 선택 시 수직 3단 frame 이 깨지던 회귀 수정**:
   - frame 선택을 DB descendant load 완료 전 즉시 반영하고, 늦게 끝난 이전 async load 가 최신 선택 frame 을 되돌리거나 stale subtree 를 병합하지 않도록 request token guard 추가
+- **Properties Component section 의 component name 누락 수정**:
+  - Component section 에 `Name` row 를 추가해 reusable frame origin 선택 시 `ArticleFrame` 같은 component name 과 `Origin` role label 이 동시에 보이도록 보강
+  - ADR-912 G4-F dev fixture(`?editingSemanticsFixture=slot`) 를 추가해 같은 Properties surface 에 `Component`/`Name`/`Origin` 과 `Slot` recommendation list 가 동시에 보이는 browser screenshot evidence 를 고정
 - **Pages/Frames component 추가 후 selection 만 잡히고 화면에 보이지 않던 Skia 회귀 후속 수정**:
   - `StoreRenderBridge` 의 layout publish 재동기화가 canonical projection/synthetic id 때문에 incremental sync 로 빠질 수 있던 경로를 차단
   - layout publish, 초기 sync, async image materialization 은 full rebuild 를 강제해 첫 store sync 시 layout 이 없어서 `buildSpecNodeData` 가 null 을 반환한 component 도 layoutMap 발행 후 즉시 materialize
@@ -44,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/utils/pagePersistenceQueue.static.test.ts src/utils/projectSync.layoutId.static.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/dev/editingSemanticsFixture.test.ts`
+- Playwright screenshot evidence: `docs/adr/evidence/912-g4f-component-slot.png`
 - `pnpm -F @composition/builder type-check`
 - `git diff --check`
 - `npm run codex:preflight`

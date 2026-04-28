@@ -32,6 +32,20 @@ function resolveOriginElement(
   return null;
 }
 
+function getComponentDisplayName(
+  element: Element,
+  originElement: Element | null,
+): string {
+  return (
+    element.componentName ??
+    element.customId ??
+    originElement?.componentName ??
+    originElement?.customId ??
+    originElement?.type ??
+    element.type
+  );
+}
+
 export const ComponentSemanticsSection = memo(
   function ComponentSemanticsSection({ elementId }: { elementId: string }) {
     const element = useStore((state) => state.elementsMap.get(elementId));
@@ -61,6 +75,7 @@ export const ComponentSemanticsSection = memo(
     const roleClass = role ?? "standard";
 
     if (!element) return null;
+    const componentName = getComponentDisplayName(element, originElement);
 
     const handleGoToOrigin = () => {
       if (!originElement) return;
@@ -109,6 +124,10 @@ export const ComponentSemanticsSection = memo(
 
     return (
       <PropertySection title="Component" icon={ComponentIcon}>
+        <div className="component-semantics-row">
+          <span className="component-semantics-name">Name</span>
+          <span className="component-semantics-value">{componentName}</span>
+        </div>
         <div className="component-semantics-row">
           <span className="component-semantics-name">Role</span>
           <span
