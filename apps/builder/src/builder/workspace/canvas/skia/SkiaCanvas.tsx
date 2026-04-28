@@ -39,6 +39,7 @@ import {
 import { tickAnimations, getInterpolatedOffsets } from "./dragAnimator";
 import { setDragSiblingOffsets } from "./nodeRendererTree";
 import { buildSkiaFrameContent } from "./skiaFramePipeline";
+import { invalidateCommandStreamCache } from "./renderCommands";
 import { type PageFrame } from "./workflowRenderer";
 import { type CachedEdgeGeometry } from "./workflowHitTest";
 import {
@@ -256,6 +257,9 @@ export function SkiaCanvas({
     rendererInputRef.current = rendererInput;
     documentPageFrameVersionRef.current =
       rendererInput.sceneSnapshot.document.allPageFrameVersion;
+    invalidateCommandStreamCache();
+    rendererRef.current?.invalidateContent();
+    recordInvalidation("content", "rendererInput");
   }, [rendererInput]);
 
   useEffect(() => {

@@ -5,6 +5,22 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-912 Skia render materialization follow-up — layout publish full rebuild] - 2026-04-29
+
+### Bug Fixes
+
+- **Pages/Frames component 추가 후 selection 만 잡히고 화면에 보이지 않던 Skia 회귀 후속 수정**:
+  - `StoreRenderBridge` 의 layout publish 재동기화가 canonical projection/synthetic id 때문에 incremental sync 로 빠질 수 있던 경로를 차단
+  - layout publish, 초기 sync, async image materialization 은 full rebuild 를 강제해 첫 store sync 시 layout 이 없어서 `buildSpecNodeData` 가 null 을 반환한 component 도 layoutMap 발행 후 즉시 materialize
+  - 이전 Skia stale content/cache invalidation + `useLayoutPublisher` input 구조 감지 보강 위에 node registry materialization 경로를 추가로 닫음
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/StoreRenderBridge.static.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx`
+- `pnpm -F @composition/builder type-check`
+- `git diff --check`
+- `npm run codex:preflight`
+
 ## [ADR-912 Editing Semantics UI 구현 wave #1 — instance/ref 회귀 수정] - 2026-04-28
 
 ### Bug Fixes
@@ -33,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Slot recommendation reference 해석 보강: 저장된 reference 가 origin `id` 뿐 아니라 `customId`/`componentName` 을 가리켜도 동일 reusable target 으로 표시하고 중복 추가를 차단
   - canonical resolver slot/ref validation 보강: `Frame.slot` 또는 `Ref.ref` reference 가 reusable master `name` 또는 metadata alias 를 가리켜도 정상 target 으로 인정하고 `_resolvedFrom` 은 canonical master id 로 정규화
   - Slot/reference matcher 공용화: Properties Slot section, Builder canonical ref projection, canonical resolver 가 같은 `id`/`name`/`customId`/`componentName`/metadata alias 규칙을 사용
+  - Slot assignment live refresh fix: preset 적용 직후 `ElementSlotSelector` 가 legacy Slot `layout_id` 를 직접 매칭해 새 Slot 을 즉시 표시하고, assignment 변경 시 `props.slot_name` + top-level `slot_name` 을 함께 갱신
+  - Pages ↔ Frames 전환 즉시 refresh fix: Preview iframe pageInfo effect 가 `editMode`/`currentLayoutId` 변경도 구독해 mode 전환 메시지를 바로 전송
+  - Render sync recovery: `useIframeMessenger` 가 initial `PREVIEW_READY` 이후 `state.elements` 변경을 다시 구독해 add/update/delete 시 `UPDATE_ELEMENTS` 를 rAF batch 로 재전송. 실제 Builder Skia canvas 는 `rendererInput` 변경 시 content surface + command stream cache 를 함께 무효화하고, `useLayoutPublisher` 는 `layoutVersion` 없이 page/frame input 구조만 바뀌는 `_rebuildIndexes()` commit 도 layoutMap 재발행 trigger 로 처리. Pages 모드 component 추가와 Slot/page-frame 변경이 새로고침 전까지 보이지 않거나 selection 만 잡히던 stale runtime/render 회귀 수정
   - Component/Slot coexistence render contract 추가: reusable frame 선택 시 `Component`/`Origin` 과 `Slot` recommendation count/list 동시 노출 검증
   - Canvas context menu target resolver 추가: spatial hit-test + topmost hit 판정 후 detachable instance 에만 menu 표시
 - **ADR-912 / ADR-911 의존 방향 hardening**:
@@ -55,6 +74,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx`
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/resolvers/canonical/__tests__/resolver.test.ts src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/utils/canonicalRefResolution.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/hooks/__tests__/useIframeMessenger.canonical.test.ts src/builder/panels/properties/editors/ElementSlotSelector.test.tsx`
 - `pnpm -F @composition/builder type-check`
 - `git diff --check`
 - `npm run codex:preflight`

@@ -141,22 +141,23 @@ export class StoreRenderBridge {
 
     const resolveTheme = getTheme ?? (() => theme);
 
-    const resync = () => {
+    const resync = (forceFullRebuild = false) => {
       this.sync(
         getElements(),
         getLayoutMap(),
         resolveTheme(),
         getChildrenMap?.() ?? null,
+        forceFullRebuild,
       );
     };
-    this.pendingResync = resync;
+    this.pendingResync = () => resync(true);
 
     // 초기 동기화 (전체 rebuild)
-    resync();
+    resync(true);
 
     // 변경 구독: Zustand store + layout publish
-    this.unsubscribe = subscribe(resync);
-    this.unsubscribeLayout = onLayoutPublished(resync);
+    this.unsubscribe = subscribe(() => resync(false));
+    this.unsubscribeLayout = onLayoutPublished(() => resync(true));
   }
 
   /**
@@ -167,6 +168,7 @@ export class StoreRenderBridge {
     layoutMap: Map<string, ComputedLayout> | null,
     theme: "light" | "dark",
     childrenMap: Map<string, Element[]> | null = null,
+    forceFullRebuild = false,
   ): void {
     const resolvedTree = resolveCanonicalRefTree({
       childrenMap,
@@ -180,12 +182,17 @@ export class StoreRenderBridge {
     const themeChanged = theme !== this.prevTheme;
     this.prevTheme = theme;
 
-    const changedIds = themeChanged
-      ? null
-      : this.detectChangedIds(renderElementsMap);
+    const changedIds =
+      forceFullRebuild || themeChanged
+        ? null
+        : this.detectChangedIds(renderElementsMap);
 
     if (changedIds === null) {
-      // 첫 실행 또는 theme 변경: 전체 rebuild
+      // 첫 실행, theme 변경, layout publish, image load: 전체 rebuild
+      // layout publish는 layout-dependent Spec node를 materialize한다.
+      // addElement 직후 첫 store sync에서 layout이 아직 없으면
+      // buildSpecNodeData가 null을 반환할 수 있으므로 incremental sync로
+      // 빠지면 "selection은 있으나 보이지 않음" 상태가 남는다.
       this.fullRebuild(renderElementsMap, layoutMap, theme, renderChildrenMap);
     } else if (changedIds.size === 0) {
       // 동일 참조 = 요소 변경 없음, layout만 변경 → 전체 rebuild
@@ -215,12 +222,9 @@ export class StoreRenderBridge {
   ): Set<string> | null {
     if (!this.prevElementsMap) return null;
     if (this.prevElementsMap === elementsMap) {
-      // 동일 참조 = store 요소 변경 없음. layout publish 로 돌아온 resync 케이스.
-      // empty Set 반환 → sync()가 fullRebuild 분기 선택 (size === 0).
-      // addElement 의 2-step set(elements → _rebuildIndexes) + layoutMap 지연 도착
-      // 경합에서 첫 resync 가 layout=undefined 로 등록한 신규 element 들을
-      // fullRebuild 경로로 layoutMap 기준 재등록한다. synthetic(virtual Tab) 은
-      // fullRebuild 내부 layoutMap 순회에서 동일하게 처리되므로 별도 주입 불필요.
+      // 동일 참조 = store 요소 변경 없음. 일반 구독 경로에서는 empty Set 반환
+      // → sync()가 fullRebuild 분기 선택 (size === 0). layout publish는
+      // connect()에서 forceFullRebuild=true로 들어와 이 감지 함수에 의존하지 않는다.
       return new Set();
     }
 

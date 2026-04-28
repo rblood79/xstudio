@@ -70,6 +70,23 @@ export function useLayoutPublisher(
       )
       .join("|");
 
+  // addElement 는 elements/layoutVersion 갱신 후 pageIndex/elementsMap 을 별도
+  // commit 으로 rebuild 한다. 두 번째 commit 은 layoutVersion 이 변하지 않으므로
+  // page/frame input 구조 자체도 publish trigger 에 포함해야 신규 child 가
+  // layoutMap 없이 투명/미등록 상태로 남지 않는다.
+  const layoutInputKey = [...pages, ...framePages]
+    .map(({ pageId, input }) => {
+      const pageElementsSignature = createPageElementsSignature(
+        input.pageElements,
+      );
+      const pageLayoutSignature = createPageLayoutSignature(
+        input.bodyElement,
+        input.pageElements,
+      );
+      return `${pageId}:${input.bodyElement?.id ?? "no-body"}:${pageElementsSignature}:${pageLayoutSignature}`;
+    })
+    .join("||");
+
   useEffect(() => {
     const all = [...pagesRef.current, ...framePagesRef.current];
 
@@ -130,5 +147,5 @@ export function useLayoutPublisher(
         bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
       publishLayoutMap(layoutMap, key);
     }
-  }, [layoutVersion, dimensionKey]);
+  }, [layoutVersion, dimensionKey, layoutInputKey]);
 }

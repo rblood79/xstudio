@@ -9,9 +9,6 @@ import { memo, useMemo } from "react";
 import { Layers } from "lucide-react";
 import { PropertySelect, PropertySection } from "../../../components";
 import { useStore } from "../../../stores";
-import { selectCanonicalDocument } from "../../../stores/elements";
-import { useLayoutsStore } from "../../../stores/layouts";
-import { belongsToLegacyLayout } from "../../../../adapters/canonical";
 import type { SlotInfo } from "../../../../types/builder/layout.types";
 
 interface ElementSlotSelectorProps {
@@ -31,43 +28,35 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
   const pages = useStore((state) => state.pages);
 
   // Element의 Page → Layout → Slots 찾기
-  // ADR-903 P3-E E-6 후속: layout slot 검색에 canonical document 필요
-  // (write-through 후 element.layout_id null → frame descendants 매칭).
-  // doc 을 useStore selector 로 구독하지 않고 useMemo 안에서 lazy 생성 —
-  // selectCanonicalDocument 가 매 호출마다 새 객체를 반환하면 useSyncExternalStore
-  // cache miss 로 무한 루프 (Maximum update depth) 발생.
+  // ADR-912 follow-up: preset apply 직후 생성된 legacy Slot element 는
+  // layout_id 를 즉시 보유한다. canonical projection 을 기다리면 Slot selector 가
+  // 새로고침 전까지 비어 보일 수 있으므로 usePresetApply 와 같은 직접 매칭을 사용한다.
   const slots = useMemo((): SlotInfo[] => {
     if (!element?.page_id) return [];
 
     const page = pages.find((p) => p.id === element.page_id);
     if (!page?.layout_id) return [];
 
-    const state = useStore.getState();
-    const layouts = useLayoutsStore.getState().layouts;
-    const canonicalDoc = selectCanonicalDocument(state, pages, layouts);
-
-    // Layout의 Slot elements 찾기 (canonical reusable frame descendants + type === "Slot")
     const slotElements: (typeof element)[] = [];
     elementsMap.forEach((el) => {
-      if (
-        el.type === "Slot" &&
-        belongsToLegacyLayout(el, page.layout_id, canonicalDoc)
-      ) {
+      if (el.type === "Slot" && el.layout_id === page.layout_id) {
         slotElements.push(el);
       }
     });
 
-    return slotElements.map((el) => {
-      const slotName = (el.props as { name?: string })?.name;
-      return {
-        // 이름 없는 Slot은 elementId를 접미사로 사용하여 고유성 보장
-        name: slotName || `slot_${el.id.slice(0, 8)}`,
-        displayName: slotName || "unnamed",
-        required: (el.props as { required?: boolean })?.required || false,
-        description: (el.props as { description?: string })?.description,
-        elementId: el.id,
-      };
-    });
+    return slotElements
+      .sort((left, right) => (left.order_num ?? 0) - (right.order_num ?? 0))
+      .map((el) => {
+        const slotName = (el.props as { name?: string })?.name;
+        return {
+          // 이름 없는 Slot은 elementId를 접미사로 사용하여 고유성 보장
+          name: slotName || `slot_${el.id.slice(0, 8)}`,
+          displayName: slotName || "unnamed",
+          required: (el.props as { required?: boolean })?.required || false,
+          description: (el.props as { description?: string })?.description,
+          elementId: el.id,
+        };
+      });
   }, [element, elementsMap, pages]);
 
   // ⭐ React Hook 규칙: useMemo는 조기 리턴 전에 호출해야 함

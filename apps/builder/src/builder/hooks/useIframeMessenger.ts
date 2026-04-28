@@ -115,12 +115,15 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const previewGeneratedElementsRef = useRef<Map<string, Element>>(new Map());
   const previewGeneratedElementsFlushIdRef = useRef<number | null>(null);
 
+  const elements = useStore((state) => state.elements);
   const elementsMap = useStore((state) => state.elementsMap);
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
+  const currentEditMode = useEditModeStore((state) => state.mode);
 
   // ⭐ Nested Routes & Slug System: Layouts 구독
   const layouts = useLayoutsStore((state) => state.layouts);
+  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
 
   // ⭐ DataTables 구독 (PropertyDataBinding용)
   const dataTables = useDataTables();
@@ -951,13 +954,16 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       return;
     }
 
-    // 현재 Page 찾기
     const currentPage = pages.find((p) => p.id === currentPageId);
-    const layoutId = currentPage?.layout_id || null;
+    const pageId = currentEditMode === "layout" ? null : currentPageId;
+    const layoutId =
+      currentEditMode === "layout"
+        ? currentLayoutId
+        : currentPage?.layout_id || null;
 
     // 이전 값과 같으면 스킵
     if (
-      lastSentPageInfoRef.current.pageId === currentPageId &&
+      lastSentPageInfoRef.current.pageId === pageId &&
       lastSentPageInfoRef.current.layoutId === layoutId
     ) {
       return;
@@ -973,13 +979,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         return;
       }
 
-      lastSentPageInfoRef.current = { pageId: currentPageId, layoutId };
-      sendPageInfoToIframe(currentPageId, layoutId);
+      lastSentPageInfoRef.current = { pageId, layoutId };
+      sendPageInfoToIframe(pageId, layoutId);
       const duration = performance.now() - frameStart;
       if (duration >= 8) {
         console.log("[perf] iframe.page-info.effect", {
           durationMs: Number(duration.toFixed(1)),
-          pageId: currentPageId,
+          pageId,
           layoutId,
         });
       }
@@ -989,7 +995,36 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       cancelScheduledFrame(pendingPageInfoFrameRef.current);
       pendingPageInfoFrameRef.current = null;
     };
-  }, [currentPageId, pages, sendPageInfoToIframe]);
+  }, [
+    currentEditMode,
+    currentLayoutId,
+    currentPageId,
+    pages,
+    sendPageInfoToIframe,
+  ]);
+
+  const pendingElementsFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isWebGLOnly) return;
+
+    if (lastSentElementsRef.current === elements) {
+      return;
+    }
+
+    cancelScheduledFrame(pendingElementsFrameRef.current);
+
+    pendingElementsFrameRef.current = scheduleNextFrame(() => {
+      pendingElementsFrameRef.current = null;
+      lastSentElementsRef.current = elements;
+      sendElementsToIframe(elements);
+    });
+
+    return () => {
+      cancelScheduledFrame(pendingElementsFrameRef.current);
+      pendingElementsFrameRef.current = null;
+    };
+  }, [elements, isWebGLOnly, sendElementsToIframe]);
 
   // ⭐ Nested Routes & Slug System: Layouts가 변경될 때마다 iframe에 전송
   const lastSentLayoutsRef = useRef<string>("");

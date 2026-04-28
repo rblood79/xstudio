@@ -50,5 +50,36 @@ describe("P3-D-4: useIframeMessenger UPDATE_ELEMENTS schema 전환 (RED phase)",
       // reusableFrameId 식별자 등장
       expect(source).toMatch(/reusableFrameId/);
     });
+
+    it("UPDATE_PAGE_INFO effect 가 page/layout edit mode 전환을 dependency 로 구독한다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../useIframeMessenger.ts");
+      const source = await fs.readFile(filePath, "utf-8");
+      const effectBlock = source.match(
+        /lastSentPageInfoRef\.current[\s\S]{0,1800}sendPageInfoToIframe\(pageId, layoutId\);[\s\S]{0,700}\]\);/,
+      );
+      expect(
+        effectBlock,
+        "UPDATE_PAGE_INFO effect block 추출 실패 — 시그니처 변경 시 regex 동기화",
+      ).not.toBeNull();
+      expect(effectBlock![0]).toMatch(/currentEditMode/);
+      expect(effectBlock![0]).toMatch(/currentLayoutId/);
+    });
+
+    it("elements 변경 시 UPDATE_ELEMENTS 를 다시 전송하는 effect 가 존재한다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../useIframeMessenger.ts");
+      const source = await fs.readFile(filePath, "utf-8");
+      expect(source).toMatch(/const elements = useStore\(\(state\) => state\.elements\)/);
+      const effectBlock = source.match(
+        /pendingElementsFrameRef[\s\S]{0,900}sendElementsToIframe\(elements\);[\s\S]{0,300}\[elements, isWebGLOnly, sendElementsToIframe\]/,
+      );
+      expect(
+        effectBlock,
+        "elements 변경 sync effect 추출 실패 — 시그니처 변경 시 regex 동기화",
+      ).not.toBeNull();
+    });
   });
 });

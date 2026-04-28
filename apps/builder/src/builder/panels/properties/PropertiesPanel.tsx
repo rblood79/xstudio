@@ -1546,9 +1546,19 @@ function PropertiesPanelContent() {
             selectedElement.properties?.slot_name as string | null | undefined
           }
           onSlotChange={(slotName) => {
-            useStore
-              .getState()
-              .updateSelectedProperties({ slot_name: slotName });
+            const state = useStore.getState();
+            const element = state.elementsMap.get(selectedElement.id);
+            const props = {
+              ...((element?.props ?? selectedElement.properties) as Record<
+                string,
+                unknown
+              >),
+              slot_name: slotName,
+            };
+            void state.updateElement(selectedElement.id, {
+              props: props as Element["props"],
+              slot_name: slotName,
+            });
           }}
         />
 
