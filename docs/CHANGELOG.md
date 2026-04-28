@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - selection/hover editor chrome semantic marker 적용: origin = magenta solid, instance = violet dotted. hover outline 과 selection corner handle stroke color 도 semantic role 과 일치
   - Properties ##Component section## action surface 연결: Origin/Instance label, Go to component, Select instances, detach, field reset, Create component / `[-]`, impact dialog host, origin toggle shortcut/UI
   - Properties ##Slot section## base 연결: frame 선택 시 `Frame.slot: false | string[]` 상태 표시, enable/disable, reusable origin id recommended component add/remove, top-level `slot` + `metadata.slot` backup 보존
+  - Slot recommendation reference 해석 보강: 저장된 reference 가 origin `id` 뿐 아니라 `customId`/`componentName` 을 가리켜도 동일 reusable target 으로 표시하고 중복 추가를 차단
   - Component/Slot coexistence render contract 추가: reusable frame 선택 시 `Component`/`Origin` 과 `Slot` recommendation count/list 동시 노출 검증
   - Canvas context menu target resolver 추가: spatial hit-test + topmost hit 판정 후 detachable instance 에만 menu 표시
 - **ADR-912 / ADR-911 의존 방향 hardening**:

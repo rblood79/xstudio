@@ -17,6 +17,24 @@ function getElementLabel(element: Element): string {
   return element.componentName ?? element.customId ?? element.type;
 }
 
+function matchesSlotReference(element: Element, reference: string): boolean {
+  return (
+    element.id === reference ||
+    element.customId === reference ||
+    element.componentName === reference
+  );
+}
+
+function resolveSlotReference(
+  reference: string,
+  elements: Iterable<Element>,
+): Element | null {
+  for (const element of elements) {
+    if (matchesSlotReference(element, reference)) return element;
+  }
+  return null;
+}
+
 function getSlotValue(element: SlotElement): false | string[] {
   return Array.isArray(element.slot) ? element.slot : false;
 }
@@ -51,13 +69,15 @@ export const FrameSlotSection = memo(function FrameSlotSection({
   const isActive = Array.isArray(slot);
 
   const reusableCandidates = useMemo(() => {
-    const recommended = new Set(recommendedIds);
+    const recommended = recommendedIds;
     return [...elementsMap.values()]
       .filter(
         (candidate) =>
           candidate.id !== elementId &&
           candidate.reusable === true &&
-          !recommended.has(candidate.id),
+          !recommended.some((reference) =>
+            matchesSlotReference(candidate, reference),
+          ),
       )
       .map((candidate) => ({
         label: getElementLabel(candidate),
@@ -69,7 +89,8 @@ export const FrameSlotSection = memo(function FrameSlotSection({
   const recommendedItems = useMemo(
     () =>
       recommendedIds.map((id) => {
-        const candidate = elementsMap.get(id);
+        const candidate =
+          elementsMap.get(id) ?? resolveSlotReference(id, elementsMap.values());
         return {
           id,
           label: candidate ? getElementLabel(candidate) : id,
@@ -106,7 +127,15 @@ export const FrameSlotSection = memo(function FrameSlotSection({
 
   const handleAddRecommendation = () => {
     if (!isActive || !selectedCandidateId) return;
-    if (recommendedIds.includes(selectedCandidateId)) return;
+    const selectedCandidate = elementsMap.get(selectedCandidateId);
+    if (
+      selectedCandidate &&
+      recommendedIds.some((reference) =>
+        matchesSlotReference(selectedCandidate, reference),
+      )
+    ) {
+      return;
+    }
     saveSlot([...recommendedIds, selectedCandidateId]);
   };
 

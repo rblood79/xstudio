@@ -163,4 +163,38 @@ describe("FrameSlotSection", () => {
     expect(screen.getByText("1 recommendations")).toBeTruthy();
     expect(screen.getByText("NumberField")).toBeTruthy();
   });
+
+  it("resolves existing recommendations by component name and prevents duplicates", async () => {
+    const frame = makeElement("frame", { slot: ["NumberField"] });
+    const origin = makeElement("origin", {
+      componentName: "NumberField",
+      reusable: true,
+      type: "NumberField",
+    });
+
+    useStore.setState({
+      elements: [frame, origin],
+      elementsMap: new Map([
+        ["frame", frame],
+        ["origin", origin],
+      ]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    render(<FrameSlotSection elementId="frame" />);
+
+    expect(screen.getByText("NumberField")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Add recommended component" }),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove NumberField" }));
+
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("frame")).toMatchObject({
+        metadata: { slot: [] },
+        slot: [],
+      });
+    });
+  });
 });
