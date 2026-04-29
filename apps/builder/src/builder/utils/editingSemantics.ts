@@ -64,7 +64,12 @@ export function hasEditingSlotMarker(element: unknown): boolean {
   if (!candidate) return false;
 
   const props = asRecord(candidate.props);
-  if (props?._slotChrome === "hidden") return false;
+  if (
+    props?._slotChrome === "hidden" &&
+    props?._slotMarkerChrome !== "visible"
+  ) {
+    return false;
+  }
 
   if (candidate.type === "Slot") return true;
   if (hasSlotArray(candidate.slot)) return true;

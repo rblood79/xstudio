@@ -14,10 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - frame subtree 를 Page별 synthetic projection id(`page::page-frame::frameElement`) 로 분리하고, Page root fill 은 해당 Page 의 projected Slot 아래로 reparent
   - Skia renderer input 과 `StoreRenderBridge` 가 raw store map 이 아니라 page-resolved projection map/childrenMap 을 사용해 layout publish tree, command stream tree, hit-test/selection tree 를 일치
   - `useLayoutPublisher` layout 계산 입력에도 projected page elements 를 주입해 synthetic Slot/frame node 가 원본 `elementsMap` 누락으로 layout/paint 에서 빠지지 않도록 보강
+- **Page 에 적용된 Frame Slot 이 보이지 않던 overlay 회귀 수정**:
+  - Page-frame Slot 은 Spec dashed box/text chrome 은 숨기되 editor overlay marker 는 유지하도록 `_slotChrome` 과 `_slotMarkerChrome` 정책을 분리
+  - empty Slot 은 Pencil-style hatch+border 를 표시하고, child 가 채워진 Slot 은 hatch 없이 border 만 표시
 
 ### Verification
 
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/renderers/__tests__/createSkiaRendererInput.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/editingSemantics.test.ts src/builder/workspace/canvas/skia/skiaOverlayHelpers.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/skia/skiaOverlayBuilder.static.test.ts src/builder/workspace/canvas/skia/buildSpecNodeData.test.ts`
 
 ## [ADR-912 Skia render materialization follow-up — layout publish full rebuild] - 2026-04-29
 

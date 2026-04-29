@@ -189,9 +189,13 @@ describe("buildSelectionRenderData editing semantics", () => {
           "frame-content-slot",
           makeElement("frame-content-slot", {
             layout_id: "frame-layout-1",
-            page_id: null,
-            parent_id: "frame-body",
-            props: { name: "content" },
+            page_id: "page-1",
+            parent_id: "page-body",
+            props: {
+              _slotChrome: "hidden",
+              _slotMarkerChrome: "visible",
+              name: "content",
+            },
             type: "Slot",
           }),
         ],

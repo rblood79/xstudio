@@ -69,6 +69,7 @@ function asPageResolvedSlot(slot: Element, parentId: string): Element {
     props: {
       ...slot.props,
       _slotChrome: "hidden",
+      _slotMarkerChrome: "visible",
     },
   };
 }

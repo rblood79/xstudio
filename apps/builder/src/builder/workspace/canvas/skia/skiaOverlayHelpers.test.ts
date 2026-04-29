@@ -142,7 +142,7 @@ describe("buildHoverHighlightTargets editing semantics", () => {
 });
 
 describe("buildSlotMarkerTargets", () => {
-  it("collects only empty visible slot authoring bounds and skips hidden/filled slot chrome", () => {
+  it("collects visible slot authoring bounds, hatching only empty slots and keeping filled slot borders", () => {
     const targets = buildSlotMarkerTargets(
       new Map([
         ["slot-header", { x: 0, y: 0, width: 100, height: 40 }],
@@ -152,7 +152,11 @@ describe("buildSlotMarkerTargets", () => {
         ["card-content-filled", { x: 0, y: 240, width: 100, height: 40 }],
         ["page-slot-filled", { x: 0, y: 300, width: 100, height: 40 }],
         ["slot-hidden", { x: 0, y: 360, width: 100, height: 40 }],
-        ["plain", { x: 0, y: 420, width: 100, height: 40 }],
+        [
+          "page-slot-hidden-visible",
+          { x: 0, y: 420, width: 100, height: 40 },
+        ],
+        ["plain", { x: 0, y: 480, width: 100, height: 40 }],
       ]),
       new Map([
         [
@@ -233,6 +237,17 @@ describe("buildSlotMarkerTargets", () => {
             type: "Slot",
           }),
         ],
+        [
+          "page-slot-hidden-visible",
+          makeElement("page-slot-hidden-visible", {
+            props: {
+              _slotChrome: "hidden",
+              _slotMarkerChrome: "visible",
+              name: "content",
+            },
+            type: "Slot",
+          }),
+        ],
         ["plain", makeElement("plain")],
       ]),
       new Map([
@@ -251,14 +266,37 @@ describe("buildSlotMarkerTargets", () => {
     expect(targets).toEqual([
       {
         bounds: { x: 0, y: 0, width: 100, height: 40 },
+        showHatch: true,
+        slotMarkerRole: "origin",
+      },
+      {
+        bounds: { x: 0, y: 60, width: 100, height: 40 },
+        showHatch: false,
         slotMarkerRole: "origin",
       },
       {
         bounds: { x: 0, y: 120, width: 100, height: 40 },
+        showHatch: true,
         slotMarkerRole: "origin",
       },
       {
         bounds: { x: 0, y: 180, width: 100, height: 40 },
+        showHatch: true,
+        slotMarkerRole: "origin",
+      },
+      {
+        bounds: { x: 0, y: 240, width: 100, height: 40 },
+        showHatch: false,
+        slotMarkerRole: "origin",
+      },
+      {
+        bounds: { x: 0, y: 300, width: 100, height: 40 },
+        showHatch: false,
+        slotMarkerRole: "origin",
+      },
+      {
+        bounds: { x: 0, y: 420, width: 100, height: 40 },
+        showHatch: true,
         slotMarkerRole: "origin",
       },
     ]);

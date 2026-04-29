@@ -186,6 +186,9 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       expect(reparentedSlotHeader?.props?._slotChrome).toBe("hidden");
       expect(reparentedSlotContent?.props?._slotChrome).toBe("hidden");
       expect(reparentedSlotFooter?.props?._slotChrome).toBe("hidden");
+      expect(reparentedSlotHeader?.props?._slotMarkerChrome).toBe("visible");
+      expect(reparentedSlotContent?.props?._slotMarkerChrome).toBe("visible");
+      expect(reparentedSlotFooter?.props?._slotMarkerChrome).toBe("visible");
 
       const textInHeader = result.pageElements.find(
         (el) => el.id === scoped("text-header"),
@@ -308,6 +311,7 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       );
       expect(slotContentRow?.parent_id).toBe("page-body");
       expect(slotContentRow?.props?._slotChrome).toBe("hidden");
+      expect(slotContentRow?.props?._slotMarkerChrome).toBe("visible");
     });
 
     it("page slot_name 가 element-level (props 외부) 에 있어도 매칭", () => {

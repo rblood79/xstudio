@@ -384,6 +384,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           target.bounds,
           cameraZoom,
           target.slotMarkerRole,
+          target.showHatch,
         );
       }
 

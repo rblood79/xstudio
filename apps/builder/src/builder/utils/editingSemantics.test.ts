@@ -43,7 +43,7 @@ describe("editingSemantics", () => {
     expect(getEditingSemanticsLabel(null)).toBeNull();
   });
 
-  it("detects Pencil-style slot declarations and skips hidden slot chrome", () => {
+  it("detects Pencil-style slot declarations and separates hidden spec chrome from editor markers", () => {
     expect(hasEditingSlotMarker({ type: "frame", slot: ["Text"] })).toBe(true);
     expect(
       hasEditingSlotMarker({
@@ -55,6 +55,12 @@ describe("editingSemantics", () => {
     expect(
       hasEditingSlotMarker({ type: "Slot", props: { _slotChrome: "hidden" } }),
     ).toBe(false);
+    expect(
+      hasEditingSlotMarker({
+        type: "Slot",
+        props: { _slotChrome: "hidden", _slotMarkerChrome: "visible" },
+      }),
+    ).toBe(true);
   });
 
   it("colors slot markers by origin or instance context", () => {
@@ -95,6 +101,12 @@ describe("editingSemantics", () => {
         props: { _slotChrome: "hidden" },
       }),
     ).toBeNull();
+    expect(
+      getEditingSlotMarkerRole({
+        type: "Slot",
+        props: { _slotChrome: "hidden", _slotMarkerChrome: "visible" },
+      }),
+    ).toBe("origin");
   });
 
   it("resolves canonical and legacy instance origin ids", () => {

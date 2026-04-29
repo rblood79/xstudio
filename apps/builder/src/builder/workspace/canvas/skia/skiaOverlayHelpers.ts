@@ -28,6 +28,7 @@ export interface HoverHighlightTarget {
 
 export interface SlotMarkerTarget {
   bounds: BoundingBox;
+  showHatch: boolean;
   slotMarkerRole: EditingSemanticsRole;
 }
 
@@ -116,12 +117,12 @@ export function buildSlotMarkerTargets(
   for (const [id, bounds] of treeBoundsMap) {
     const element = elementsMap.get(id);
     if (!hasEditingSlotMarker(element)) continue;
-    if (hasVisibleSlotContent(id, elementsMap, childrenMap)) continue;
+    const showHatch = !hasVisibleSlotContent(id, elementsMap, childrenMap);
 
     const slotMarkerRole = getEditingSlotMarkerRole(element, elementsMap);
     if (!slotMarkerRole) continue;
 
-    targets.push({ bounds, slotMarkerRole });
+    targets.push({ bounds, showHatch, slotMarkerRole });
   }
 
   return targets;
