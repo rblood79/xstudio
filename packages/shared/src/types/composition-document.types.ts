@@ -228,6 +228,15 @@ export interface CanonicalNode {
   children?: CanonicalNode[];
 
   /**
+   * Slot declaration.
+   *
+   * Pencil schema exposes this on `Frame`, and composition also preserves it on
+   * frame-compatible structural container shells such as `CardContent` so their
+   * stable descendant path can be filled through `RefNode.descendants`.
+   */
+  slot?: false | string[];
+
+  /**
    * 엔티티 레벨 theme override.
    * ADR-021 Tint/dark mode 시스템의 노드별 override.
    * 예: `{ mode: "dark", tint: "blue" }`
@@ -246,7 +255,8 @@ export interface CanonicalNode {
 /**
  * `FrameNode` — `type: "frame"` 노드.
  *
- * Frame 전용 컨테이너 필드 3종 (`clip` / `placeholder` / `slot`) 포함.
+   * Frame 전용 컨테이너 필드 2종 (`clip` / `placeholder`) 포함.
+   * `slot` 은 CanonicalNode 공통 필드로 보존한다.
  * composition 기존 `overflow: hidden` / 빈 컨테이너 / `type="Slot"` 시스템을 흡수.
  */
 export interface FrameNode extends CanonicalNode {
@@ -265,15 +275,6 @@ export interface FrameNode extends CanonicalNode {
    */
   placeholder?: boolean;
 
-  /**
-   * slot 선언 — pencil.dev 공식: `false | string[]`.
-   * - `false`: slot 비활성화
-   * - `string[]`: 이 slot 에 삽입 가능한 reusable component ID 배열 (추천 목록)
-   *
-   * slot 채우기는 `descendants[slotPath].children` (mode C) 교체로 표현.
-   * legacy `type="Slot"` + `slot_name` 시스템을 이 schema 속성으로 흡수.
-   */
-  slot?: false | string[];
 }
 
 // ─────────────────────────────────────────────

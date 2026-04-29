@@ -106,9 +106,10 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnSource).toMatch(/selectCanonicalReusableFrames\(/);
     });
 
-    // layoutIdSet 이 reusableFrames.map((f) => f.id) 로 구성됨을 확증.
-    // Spec A-4: layout 매칭 키가 canonical FrameNode.id 임을 보장.
-    it("layoutIdSet 이 reusableFrames.map((f) => f.id) 로 구성된다", async () => {
+    // layoutIdSet 이 canonical FrameNode.id 를 legacy layout id 로 정규화함을 확증.
+    // Spec A-4 후속: canonical frame id("layout-<id>") 와 element.layout_id("<id>")
+    // 저장 포맷이 다르므로 hydrate 시 매칭 키는 legacy layout id 여야 한다.
+    it("layoutIdSet 이 reusable frame id 를 legacy layout id 로 정규화해 구성된다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
@@ -119,8 +120,30 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
-      // new Set(reusableFrames.map((f) => f.id))
-      expect(initFnSource).toMatch(/new Set\([\s\S]{0,80}reusableFrames\.map/);
+      expect(initFnSource).toMatch(
+        /new Set\([\s\S]{0,120}reusableFrames\.map\(getLegacyLayoutIdFromReusableFrame\)/,
+      );
+      expect(source).toMatch(/rawId\.startsWith\("layout-"\)/);
+      expect(source).toMatch(/rawId\.slice\("layout-"\.length\)/);
+    });
+
+    it("새로고침 hydrate 는 store 가 아니라 DB snapshot layouts/elements 로 canonical doc 을 만든다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../usePageManager.ts");
+      const rawSource = await fs.readFile(filePath, "utf-8");
+      const source = rawSource.replace(/\/\/.*$/gm, "");
+      const initFnMatch = source.match(
+        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+      );
+      expect(initFnMatch).not.toBeNull();
+      const initFnSource = initFnMatch![0];
+      expect(initFnSource).toMatch(/getProjectLayoutsForCanonical\(\s*db,\s*projectId/);
+      expect(initFnSource).toMatch(/elements:\s*allElements/);
+      expect(initFnSource).toMatch(
+        /elementsMap:\s*new Map\(allElements\.map\(\(el\) => \[el\.id, el\]\)\)/,
+      );
+      expect(initFnSource).toMatch(/canonicalLayouts/);
     });
 
     // layoutElements 가 allElements.filter 로 layout_id 매칭 추출됨을 확증.

@@ -13,6 +13,8 @@ import { useStore } from "../../stores";
 import { ComponentSemanticsSection } from "./ComponentSemanticsSection";
 import { FrameSlotSection } from "./FrameSlotSection";
 
+const defaultAddElement = useStore.getState().addElement;
+
 function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
     id,
@@ -29,6 +31,7 @@ describe("FrameSlotSection", () => {
   beforeEach(() => {
     historyManager.setCurrentPage("page-1");
     useStore.setState({
+      addElement: defaultAddElement,
       currentPageId: "page-1",
       elements: [],
       elementsMap: new Map(),
@@ -42,7 +45,7 @@ describe("FrameSlotSection", () => {
     cleanup();
   });
 
-  it("renders only for frame elements", () => {
+  it("renders only for slot host elements", () => {
     const text = makeElement("text", { type: "Text" });
 
     useStore.setState({
@@ -53,6 +56,31 @@ describe("FrameSlotSection", () => {
     const { container } = render(<FrameSlotSection elementId="text" />);
 
     expect(container.firstChild).toBeNull();
+  });
+
+  it("enables slot declaration on CardContent internal container shells", async () => {
+    const cardContent = makeElement("card-content", {
+      parent_id: "card",
+      type: "CardContent",
+    });
+
+    useStore.setState({
+      elements: [cardContent],
+      elementsMap: new Map([["card-content", cardContent]]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    render(<FrameSlotSection elementId="card-content" />);
+
+    expect(screen.getByText("Slot")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Enable slot" }));
+
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("card-content")).toMatchObject({
+        metadata: { slot: [] },
+        slot: [],
+      });
+    });
   });
 
   it("enables and disables frame slot declaration", async () => {
@@ -195,6 +223,52 @@ describe("FrameSlotSection", () => {
         metadata: { slot: [] },
         slot: [],
       });
+    });
+  });
+
+  it("inserts a recommended component as default slot content", async () => {
+    const footer = makeElement("footer", {
+      type: "CardFooter",
+      slot: ["origin"],
+    });
+    const origin = makeElement("origin", {
+      componentName: "BodyText",
+      reusable: true,
+      type: "Text",
+    });
+
+    const addElement = vi.fn(async (element: Element) => {
+      const state = useStore.getState();
+      useStore.setState({
+        elements: [...state.elements, element],
+        elementsMap: new Map([...state.elementsMap, [element.id, element]]),
+      });
+      useStore.getState()._rebuildIndexes();
+    });
+
+    useStore.setState({
+      addElement,
+      elements: [footer, origin],
+      elementsMap: new Map([
+        ["footer", footer],
+        ["origin", origin],
+      ]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    render(<FrameSlotSection elementId="footer" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Insert BodyText" }));
+
+    await waitFor(() => {
+      const children = useStore.getState().childrenMap.get("footer") ?? [];
+      expect(children).toEqual([
+        expect.objectContaining({
+          type: "ref",
+          ref: "origin",
+          parent_id: "footer",
+        }),
+      ]);
     });
   });
 });

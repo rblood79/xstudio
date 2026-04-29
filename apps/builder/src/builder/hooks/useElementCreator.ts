@@ -49,6 +49,36 @@ export interface UseElementCreatorReturn {
   retryLastOperation: () => Promise<void>;
 }
 
+interface ResolveCreationParentIdInput {
+  selectedElementId: string | null;
+  elements: Element[];
+  currentPageId: string | null;
+  layoutId: string | null | undefined;
+  doc: CompositionDocument;
+}
+
+export function resolveCreationParentId({
+  selectedElementId,
+  elements,
+  currentPageId,
+  layoutId,
+  doc,
+}: ResolveCreationParentIdInput): string | null {
+  const selectedElement = selectedElementId
+    ? elements.find((el) => el.id === selectedElementId)
+    : null;
+  if (selectedElement) {
+    return selectedElement.id;
+  }
+
+  return ElementUtils.findBodyByContext(
+    elements,
+    currentPageId || null,
+    layoutId || null,
+    doc,
+  );
+}
+
 export const useElementCreator = (): UseElementCreatorReturn => {
   const isProcessingRef = useRef(false);
   const elementsRef = useRef<Element[]>([]);
@@ -144,17 +174,15 @@ export const useElementCreator = (): UseElementCreatorReturn => {
               );
             } else {
               // 단순 컴포넌트 생성 (캐시 활용)
-              // parent_id가 없으면 body 요소를 parent로 설정
-              // ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
-              let parentId = selectedElementId || null;
-              if (!parentId) {
-                parentId = ElementUtils.findBodyByContext(
-                  elements,
-                  currentPageId || null,
-                  layoutId || null,
-                  doc,
-                );
-              }
+              // selectedElementId 는 page-level selection id 일 수 있으므로
+              // 실제 element id 로 확인된 경우에만 parent_id 로 사용한다.
+              let parentId = resolveCreationParentId({
+                selectedElementId,
+                elements,
+                currentPageId: currentPageId || null,
+                layoutId,
+                doc,
+              });
 
               // Card + action component → CardFooter 자동 라우팅
               const parentEl = parentId

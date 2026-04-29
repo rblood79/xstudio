@@ -15,42 +15,22 @@ import { SkiaDisposable } from "./disposable";
 import type { BoundingBox } from "../selection/types";
 import { HANDLE_SIZE, HANDLE_CONFIGS } from "../selection/types";
 import type { EditingSemanticsRole } from "../../../utils/editingSemantics";
+import { getSemanticOverlayColor } from "./semanticOverlayColors";
 
 // ============================================
-// Constants (0x3b82f6 = blue-500)
+// Constants
 // ============================================
 
-/** Selection 테두리 색상 — ck.Color4f 형식 */
-const SELECTION_R = 0x3b / 255; // 0.231
-const SELECTION_G = 0x82 / 255; // 0.510
-const SELECTION_B = 0xf6 / 255; // 0.965
-
-/** ADR-912 editor-only semantic markers. Spec/CSS runtime styles must not consume these. */
-const ORIGIN_MARKER_R = 0xec / 255; // magenta-500 (#ec4899)
-const ORIGIN_MARKER_G = 0x48 / 255;
-const ORIGIN_MARKER_B = 0x99 / 255;
-const INSTANCE_MARKER_R = 0x8b / 255; // violet-500 (#8b5cf6)
-const INSTANCE_MARKER_G = 0x5c / 255;
-const INSTANCE_MARKER_B = 0xf6 / 255;
+const SELECTION_R = 0x3b / 255;
+const SELECTION_G = 0x82 / 255;
+const SELECTION_B = 0xf6 / 255;
 
 function setSemanticStrokeColor(
   ck: CanvasKit,
   paint: InstanceType<CanvasKit["Paint"]>,
   semanticRole: EditingSemanticsRole | null,
 ): void {
-  if (semanticRole === "origin") {
-    paint.setColor(
-      ck.Color4f(ORIGIN_MARKER_R, ORIGIN_MARKER_G, ORIGIN_MARKER_B, 1),
-    );
-    return;
-  }
-  if (semanticRole === "instance") {
-    paint.setColor(
-      ck.Color4f(INSTANCE_MARKER_R, INSTANCE_MARKER_G, INSTANCE_MARKER_B, 1),
-    );
-    return;
-  }
-  paint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
+  paint.setColor(getSemanticOverlayColor(ck, semanticRole, 1));
 }
 
 /** Page Title 레이블 설정 */
@@ -71,6 +51,26 @@ const DIMENSION_LABEL_BG_G = 0xa2 / 255;
 const DIMENSION_LABEL_BG_B = 0xff / 255;
 const DIMENSION_LABEL_LINE_HEIGHT = 16; // 레이블 줄 높이
 const DIMENSION_LABEL_BORDER_RADIUS = 4; // 배경 둥근 모서리
+
+function setDimensionLabelBackgroundColor(
+  ck: CanvasKit,
+  paint: InstanceType<CanvasKit["Paint"]>,
+  semanticRole: EditingSemanticsRole | null,
+): void {
+  if (semanticRole) {
+    paint.setColor(getSemanticOverlayColor(ck, semanticRole, 1));
+    return;
+  }
+
+  paint.setColor(
+    ck.Color4f(
+      DIMENSION_LABEL_BG_R,
+      DIMENSION_LABEL_BG_G,
+      DIMENSION_LABEL_BG_B,
+      1,
+    ),
+  );
+}
 
 // ============================================
 // Types
@@ -203,6 +203,7 @@ export function renderDimensionLabels(
   bounds: BoundingBox,
   zoom: number,
   fontMgr?: FontMgr,
+  semanticRole: EditingSemanticsRole | null = null,
 ): void {
   // fontMgr 없으면 텍스트 렌더링 불가 — 박스만 표시
   if (!fontMgr) {
@@ -231,14 +232,7 @@ export function renderDimensionLabels(
       const bgPaint = scope.track(new ck.Paint());
       bgPaint.setAntiAlias(true);
       bgPaint.setStyle(ck.PaintStyle.Fill);
-      bgPaint.setColor(
-        ck.Color4f(
-          DIMENSION_LABEL_BG_R,
-          DIMENSION_LABEL_BG_G,
-          DIMENSION_LABEL_BG_B,
-          1,
-        ),
-      );
+      setDimensionLabelBackgroundColor(ck, bgPaint, semanticRole);
 
       const rrect = ck.RRectXY(
         ck.LTRBRect(labelX, labelY, labelX + labelWidth, labelY + labelHeight),
@@ -308,14 +302,7 @@ export function renderDimensionLabels(
     const bgPaint = scope.track(new ck.Paint());
     bgPaint.setAntiAlias(true);
     bgPaint.setStyle(ck.PaintStyle.Fill);
-    bgPaint.setColor(
-      ck.Color4f(
-        DIMENSION_LABEL_BG_R,
-        DIMENSION_LABEL_BG_G,
-        DIMENSION_LABEL_BG_B,
-        1,
-      ),
-    );
+    setDimensionLabelBackgroundColor(ck, bgPaint, semanticRole);
 
     const rrect = ck.RRectXY(
       ck.LTRBRect(labelX, labelY, labelX + labelWidth, labelY + labelHeight),

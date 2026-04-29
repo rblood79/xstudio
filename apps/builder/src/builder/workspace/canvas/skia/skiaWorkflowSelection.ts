@@ -1,5 +1,6 @@
 import type { Element } from "../../../../types/core/store.types";
 import {
+  getEditingSlotMarkerRole,
   getEditingSemanticsRole,
   type EditingSemanticsRole,
 } from "../../../utils/editingSemantics";
@@ -17,6 +18,7 @@ export interface SelectionRenderResult {
   lasso: LassoRenderData | null;
   semanticRole: EditingSemanticsRole | null;
   showHandles: boolean;
+  slotMarkerRole: EditingSemanticsRole | null;
 }
 
 export interface PageFrameLike {
@@ -98,6 +100,7 @@ export function buildSelectionRenderData(
 
   let selectionBounds: BoundingBox | null = null;
   let semanticRole: EditingSemanticsRole | null = null;
+  let slotMarkerRole: EditingSemanticsRole | null = null;
   let showHandles = false;
 
   if (selectedIds.length > 0) {
@@ -112,6 +115,7 @@ export function buildSelectionRenderData(
 
       if (selectedIds.length === 1) {
         semanticRole = getEditingSemanticsRole(element);
+        slotMarkerRole = getEditingSlotMarkerRole(element, elementsMap);
       }
 
       const treeBounds = treeBoundsMap.get(id);
@@ -155,5 +159,11 @@ export function buildSelectionRenderData(
     showHandles = selectedIds.length === 1;
   }
 
-  return { bounds: selectionBounds, semanticRole, showHandles, lasso: null };
+  return {
+    bounds: selectionBounds,
+    lasso: null,
+    semanticRole,
+    showHandles,
+    slotMarkerRole,
+  };
 }

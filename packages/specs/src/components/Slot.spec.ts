@@ -9,8 +9,6 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
-import { fontFamily } from "../primitives/typography";
-import { resolveSpecFontSize } from "../renderers/utils/resolveSpecFontSize";
 import { FileText, Type, AlertCircle } from "lucide-react";
 
 /**
@@ -30,7 +28,6 @@ export interface SlotProps {
  */
 const SLOT_DEFAULTS = {
   background: "{color.base}" as TokenRef,
-  text: "{color.neutral-subdued}" as TokenRef,
   border: "{color.border}" as TokenRef,
 };
 
@@ -104,8 +101,6 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
 
   render: {
     shapes: (props, size, _state = "default") => {
-      const label = props.label || "Slot";
-
       // 사용자 스타일 우선, 없으면 spec 기본값
       const borderRadius = parsePxValue(
         props.style?.borderRadius,
@@ -115,31 +110,6 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
 
       const bgColor = props.style?.backgroundColor ?? SLOT_DEFAULTS.background;
       const borderColor = props.style?.borderColor ?? SLOT_DEFAULTS.border;
-
-      // 사용자 스타일 padding 우선, 없으면 spec 기본값
-      const paddingX = parsePxValue(
-        props.style?.paddingLeft ??
-          props.style?.paddingRight ??
-          props.style?.padding,
-        size.paddingX,
-      );
-
-      // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-      const fontSize = resolveSpecFontSize(
-        props.style?.fontSize ?? size.fontSize,
-        16,
-      );
-      const fwRaw = props.style?.fontWeight;
-      const fw =
-        fwRaw != null
-          ? typeof fwRaw === "number"
-            ? fwRaw
-            : parseInt(String(fwRaw), 10) || 400
-          : 400;
-      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const textAlign =
-        (props.style?.textAlign as "left" | "center" | "right") || "center";
-      const textColor = props.style?.color ?? SLOT_DEFAULTS.text;
 
       const shapes: Shape[] = [
         // 배경
@@ -168,20 +138,6 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
       // Child Composition: 자식 Element가 있으면 shell만 반환
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
-
-      // 플레이스홀더 텍스트
-      shapes.push({
-        type: "text" as const,
-        x: paddingX,
-        y: 0,
-        text: label,
-        fontSize,
-        fontFamily: ff,
-        fontWeight: fw,
-        fill: textColor,
-        align: textAlign,
-        baseline: "middle" as const,
-      });
 
       return shapes;
     },

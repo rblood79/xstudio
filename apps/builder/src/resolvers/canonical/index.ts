@@ -14,7 +14,6 @@
 import type {
   CompositionDocument,
   CanonicalNode,
-  FrameNode,
   RefNode,
   DescendantOverride,
   ResolvedNode,
@@ -37,6 +36,8 @@ import {
   computeDescendantsFingerprint,
   computeSlotBindingFingerprint,
 } from "./cache";
+
+type SlotHostNode = CanonicalNode & { slot?: false | string[] };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API
@@ -63,7 +64,7 @@ export function resolveCanonicalDocument(
 /**
  * 단일 노드를 resolve 한다.
  * - `type === "ref"` → resolveRefNode
- * - 그 외 → 자식 재귀 + slot contract 검증 (FrameNode)
+ * - 그 외 → 자식 재귀 + slot contract 검증 (slot host)
  */
 function resolveNode(
   node: CanonicalNode,
@@ -265,9 +266,9 @@ function applyOverrideToNode(
       children: resolvedChildren,
       _overrides: ["children"],
     };
-    // mode C 가 frame slot children 을 교체한 경우 slot contract 검증
-    if (child.type === "frame") {
-      validateSlotContract(child as FrameNode, resolved, doc);
+    // mode C 가 slot host children 을 교체한 경우 slot contract 검증
+    if (hasSlotContract(child)) {
+      validateSlotContract(child, resolved, doc);
     }
     return resolved;
   }
@@ -291,7 +292,7 @@ function applyOverrideToNode(
 /**
  * 일반(non-ref) 노드를 resolve 한다.
  * - 자식 재귀
- * - FrameNode 이면 slot contract validate (Step 3)
+ * - slot host 이면 slot contract validate (Step 3)
  *
  * `inheritedDescendants` / `pathPrefix` 는 ref 컨텍스트 내부에서 하향 전달용.
  */
@@ -319,9 +320,9 @@ function resolveFrameOrPlain(
     ...(resolvedChildren !== undefined ? { children: resolvedChildren } : {}),
   };
 
-  // Step 3: slot contract validate (FrameNode 만)
-  if (node.type === "frame") {
-    validateSlotContract(node as FrameNode, result, doc);
+  // Step 3: slot contract validate
+  if (hasSlotContract(node)) {
+    validateSlotContract(node, result, doc);
   }
 
   return result;
@@ -332,13 +333,13 @@ function resolveFrameOrPlain(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * FrameNode.slot 이 string[] 일 때 children 의 reusable id 범위 검증.
+ * slot host 의 `slot` 이 string[] 일 때 children 의 reusable id 범위 검증.
  *
  * pencil 공식: slot 은 추천 목록 — hard error 아님.
  * warning 만 emit 하고 계속 진행.
  */
 function validateSlotContract(
-  frame: FrameNode,
+  frame: SlotHostNode,
   resolved: ResolvedNode,
   doc: CompositionDocument,
 ): void {
@@ -354,10 +355,14 @@ function validateSlotContract(
       )
     ) {
       console.warn(
-        `[ADR-903] slot contract: frame "${frame.id}" slot=${JSON.stringify(frame.slot)} — child "${refId}" is outside recommended slot range (non-blocking)`,
+        `[ADR-903] slot contract: host "${frame.id}" slot=${JSON.stringify(frame.slot)} — child "${refId}" is outside recommended slot range (non-blocking)`,
       );
     }
   }
+}
+
+function hasSlotContract(node: CanonicalNode): node is SlotHostNode {
+  return Array.isArray((node as SlotHostNode).slot);
 }
 
 function matchesResolvedSlotChildReference(

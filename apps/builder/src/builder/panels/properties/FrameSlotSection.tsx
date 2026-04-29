@@ -13,8 +13,18 @@ type SlotElement = Element & {
   slot?: false | string[];
 };
 
-function isFrameElement(element: Element | undefined): boolean {
-  return element?.type.toLowerCase() === "frame";
+const SLOT_HOST_TYPES = new Set([
+  "box",
+  "cardcontent",
+  "cardfooter",
+  "cardheader",
+  "frame",
+  "group",
+  "section",
+]);
+
+function isSlotHostElement(element: Element | undefined): boolean {
+  return Boolean(element && SLOT_HOST_TYPES.has(element.type.toLowerCase()));
 }
 
 function getElementLabel(element: Element): string {
@@ -47,6 +57,8 @@ export const FrameSlotSection = memo(function FrameSlotSection({
     (state) => state.elementsMap.get(elementId) as SlotElement | undefined,
   );
   const elementsMap = useStore((state) => state.elementsMap);
+  const childrenMap = useStore((state) => state.childrenMap);
+  const addElement = useStore((state) => state.addElement);
   const updateElement = useStore((state) => state.updateElement);
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
 
@@ -95,7 +107,7 @@ export const FrameSlotSection = memo(function FrameSlotSection({
     setSelectedCandidateId(reusableCandidates[0]?.value ?? "");
   }, [reusableCandidates, selectedCandidateId]);
 
-  if (!element || !isFrameElement(element)) return null;
+  if (!element || !isSlotHostElement(element)) return null;
 
   const saveSlot = (nextSlot: false | string[]) => {
     void updateElement(element.id, withSlotMetadata(element, nextSlot));
@@ -128,6 +140,31 @@ export const FrameSlotSection = memo(function FrameSlotSection({
   const handleRemoveRecommendation = (id: string) => {
     if (!isActive) return;
     saveSlot(recommendedIds.filter((candidateId) => candidateId !== id));
+  };
+
+  const handleInsertDefault = (id: string) => {
+    if (!element) return;
+    const candidate = elementsMap.get(id) ?? resolveReference(id, elementsMap.values());
+    if (!candidate) return;
+
+    const children = childrenMap.get(element.id) ?? [];
+    const alreadyInserted = children.some((child) => {
+      const childRef = (child as Element & { ref?: unknown }).ref;
+      return typeof childRef === "string" && matchesReference(candidate, childRef);
+    });
+    if (alreadyInserted) return;
+
+    void addElement({
+      id: crypto.randomUUID(),
+      type: "ref",
+      ref: candidate.id,
+      componentName: getElementLabel(candidate),
+      parent_id: element.id,
+      page_id: element.page_id ?? null,
+      layout_id: element.layout_id ?? null,
+      order_num: children.length,
+      props: {},
+    } as Element);
   };
 
   return (
@@ -190,12 +227,20 @@ export const FrameSlotSection = memo(function FrameSlotSection({
             {recommendedItems.length === 0 ? (
               <span className="frame-slot-empty">No recommended components</span>
             ) : (
-              recommendedItems.map((item) => (
-                <div className="frame-slot-item" key={item.id}>
-                  <span className="frame-slot-item-label">{item.label}</span>
-                  <button
-                    aria-label={`Remove ${item.label}`}
-                    className="frame-slot-remove"
+                recommendedItems.map((item) => (
+                  <div className="frame-slot-item" key={item.id}>
+                    <span className="frame-slot-item-label">{item.label}</span>
+                    <button
+                      aria-label={`Insert ${item.label}`}
+                      className="frame-slot-remove"
+                      onClick={() => handleInsertDefault(item.id)}
+                      type="button"
+                    >
+                      <Plus aria-hidden="true" size={14} />
+                    </button>
+                    <button
+                      aria-label={`Remove ${item.label}`}
+                      className="frame-slot-remove"
                     onClick={() => handleRemoveRecommendation(item.id)}
                     type="button"
                   >

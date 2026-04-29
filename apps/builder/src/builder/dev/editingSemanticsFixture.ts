@@ -13,6 +13,7 @@ const BODY_ID = "adr-912-editing-semantics-body";
 const ORIGIN_ID = "adr-912-origin";
 const INSTANCE_ID = "adr-912-instance";
 const SLOT_FRAME_ID = "adr-912-slot-frame";
+const SLOT_INSTANCE_ID = "adr-912-slot-instance";
 const SLOT_RECOMMENDATION_ID = "adr-912-slot-recommendation";
 
 export function shouldApplyEditingSemanticsFixture(): boolean {
@@ -25,6 +26,7 @@ function getInitialSelection(): string {
 
   const value = new URLSearchParams(window.location.search).get(FIXTURE_PARAM);
   if (value === "slot") return SLOT_FRAME_ID;
+  if (value === "slot-instance") return SLOT_INSTANCE_ID;
   return value === "instance" ? INSTANCE_ID : ORIGIN_ID;
 }
 
@@ -155,6 +157,23 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
     updated_at: now,
   } as SemanticFixtureElement;
 
+  const slotInstance: SemanticFixtureElement = {
+    id: SLOT_INSTANCE_ID,
+    type: "ref",
+    ref: SLOT_FRAME_ID,
+    page_id: PAGE_ID,
+    parent_id: BODY_ID,
+    order_num: 6,
+    props: {
+      style: {
+        height: "160px",
+        width: "280px",
+      },
+    },
+    created_at: now,
+    updated_at: now,
+  } as SemanticFixtureElement;
+
   store.setPages([page]);
   store.setElements([
     body,
@@ -163,13 +182,14 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
     instanceB,
     slotRecommendation,
     slotFrame,
+    slotInstance,
   ]);
   store.setCurrentPageId(PAGE_ID);
   store.selectElementWithPageTransition(getInitialSelection(), PAGE_ID);
 
   if (import.meta.env.DEV) {
     console.info(
-      "[ADR-912] editing semantics fixture loaded. Use ?editingSemanticsFixture=origin, =instance, or =slot.",
+      "[ADR-912] editing semantics fixture loaded. Use ?editingSemanticsFixture=origin, =instance, =slot, or =slot-instance.",
     );
   }
 }

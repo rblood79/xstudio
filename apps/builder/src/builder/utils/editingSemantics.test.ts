@@ -9,6 +9,8 @@ import {
   getEditingSemanticsOverrideFields,
   getEditingSemanticsOverrideItems,
   getEditingSemanticsRole,
+  getEditingSlotMarkerRole,
+  hasEditingSlotMarker,
 } from "./editingSemantics";
 
 describe("editingSemantics", () => {
@@ -39,6 +41,60 @@ describe("editingSemantics", () => {
   it("plain elements do not show a semantics marker", () => {
     expect(getEditingSemanticsRole({ type: "Button", props: {} })).toBeNull();
     expect(getEditingSemanticsLabel(null)).toBeNull();
+  });
+
+  it("detects Pencil-style slot declarations and skips hidden slot chrome", () => {
+    expect(hasEditingSlotMarker({ type: "frame", slot: ["Text"] })).toBe(true);
+    expect(
+      hasEditingSlotMarker({
+        type: "CardFooter",
+        metadata: { slot: ["Button"] },
+      }),
+    ).toBe(true);
+    expect(hasEditingSlotMarker({ type: "Slot", props: {} })).toBe(true);
+    expect(
+      hasEditingSlotMarker({ type: "Slot", props: { _slotChrome: "hidden" } }),
+    ).toBe(false);
+  });
+
+  it("colors slot markers by origin or instance context", () => {
+    const origin = { id: "origin", type: "frame", reusable: true };
+    const originSlot = {
+      id: "footer",
+      type: "CardFooter",
+      parent_id: "origin",
+      slot: ["text-origin"],
+    };
+    const instance = { id: "instance", type: "ref", ref: "origin" };
+    const instanceSlot = {
+      id: "instance/footer",
+      type: "CardFooter",
+      parent_id: "instance",
+      slot: ["text-origin"],
+    };
+    const elementsById = new Map<string, unknown>([
+      ["origin", origin],
+      ["footer", originSlot],
+      ["instance", instance],
+      ["instance/footer", instanceSlot],
+    ]);
+
+    expect(getEditingSlotMarkerRole(originSlot, elementsById)).toBe("origin");
+    expect(getEditingSlotMarkerRole(instanceSlot, elementsById)).toBe(
+      "instance",
+    );
+  });
+
+  it("treats visible legacy slots without component ancestry as origin authoring chrome", () => {
+    expect(getEditingSlotMarkerRole({ type: "Slot", props: {} })).toBe(
+      "origin",
+    );
+    expect(
+      getEditingSlotMarkerRole({
+        type: "Slot",
+        props: { _slotChrome: "hidden" },
+      }),
+    ).toBeNull();
   });
 
   it("resolves canonical and legacy instance origin ids", () => {

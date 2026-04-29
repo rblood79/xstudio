@@ -386,6 +386,36 @@ describe("resolveCanonicalDocument", () => {
     expect(resolvedSlot?.children?.[0]._resolvedFrom).toBe("allowed-card");
   });
 
+  it("TC9c: CardContent 같은 내부 slot host 도 mode C children 교체 시 contract 를 검증한다", () => {
+    const cardContent = makePlain("content", "CardContent", {
+      slot: ["allowed-card"],
+      children: [],
+    });
+    const master = makeReusable("card", "Card", [cardContent]);
+    const forbiddenButton = makePlain("b1", "Button");
+    const ref = makeRef("card-instance", "card", {
+      descendants: {
+        content: {
+          children: [forbiddenButton],
+        } as { children: CanonicalNode[] },
+      },
+    });
+    const doc = makeDoc([master, ref]);
+
+    const result = resolveCanonicalDocument(doc);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/slot contract/);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/host "content"/);
+    const resolvedInstance = result.find(
+      (n) => n.id === "card-instance",
+    ) as ResolvedNode;
+    const resolvedContent = resolvedInstance.children?.find(
+      (c) => c.id === "content",
+    );
+    expect(resolvedContent?.children?.[0].type).toBe("Button");
+  });
+
   // ────────────────────────────────────────────
   // TC10: _overrides 추적 — mode A patch 필드
   // ────────────────────────────────────────────

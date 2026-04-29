@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Page mode 의 frame 합성 layout 과 Frames mode 의 frame authoring layout 이 같은 Slot/frame element id 를 서로 다른 parent tree 로 계산하면서 shared layout map 에 동시에 남아 서로 덮어쓰던 문제를 차단
   - `useLayoutPublisher` 가 현재 active page/frame key 만 유지하고 mode 전환 시 stale layout map + filtered children map 을 제거하며, layout map set/delete 를 batch publish 해 중간 상태가 렌더러에 노출되지 않도록 보강
   - frame body 의 filtered children map key 도 `__default__` 대신 `page_id ?? layout_id ?? bodyId` fallback 을 사용해 page/frame tree source 와 layout map key 를 일치
+- **Page 에 Frame 적용 시 frame content 가 Page 상단에만 붙던 합성 레이아웃 회귀 수정**:
+  - `resolvePageWithFrame` 이 frame body 의 container layout 문법(`display`/`flexDirection`/`grid` 등)을 page body 합성 root 에 반영하되 page 의 width/height/background 는 유지
+  - page-resolved root Slot 에 flex/grid fill 기본값을 주입해 hidden Slot chrome 상태에서도 content Slot 이 남은 Page 영역을 채우도록 보강
+  - `useLayoutPublisher` 가 synthetic `bodyElement` 를 원본 `elementsMap` body 로 되돌리지 않도록 layout 계산 입력 map 에 우선 주입
+- **Slot 내부 중앙 `Slot` placeholder text 제거**:
+  - visible Slot chrome 은 Pencil-style hatch+border marker 가 담당하므로 `SlotSpec` 의 standalone text shape 생성을 제거
+  - Slot background/border shell 은 유지해 hit-test/layout anchor 와 editor marker target 은 그대로 보존
+- **Slot hatch 를 empty placeholder chrome 으로 정정**:
+  - child 가 없는 empty Slot host 에만 diagonal hatch + border 를 표시
+  - child 가 채워진 Slot host 는 hatch 를 제거하고 hover/selection border 와 handles/size label 만 semantic color 로 표시
+  - Page 에 Frame 적용 시 page fill 이 raw `elementsMap` parent 관계가 아니라 layout publish 의 filtered render tree 에만 반영되는 경로를 고려해, hatch empty 판정을 실제 render `childrenMap` 기준으로 보정
 - **Frames tab 에 여러 Frame 등록 후 교차 선택 시 수직 3단 frame 이 깨지던 회귀 수정**:
   - frame 선택을 DB descendant load 완료 전 즉시 반영하고, 늦게 끝난 이전 async load 가 최신 선택 frame 을 되돌리거나 stale subtree 를 병합하지 않도록 request token guard 추가
 - **Properties Component section 의 component name 누락 수정**:
@@ -37,6 +48,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `StoreRenderBridge` 의 layout publish 재동기화가 canonical projection/synthetic id 때문에 incremental sync 로 빠질 수 있던 경로를 차단
   - layout publish, 초기 sync, async image materialization 은 full rebuild 를 강제해 첫 store sync 시 layout 이 없어서 `buildSpecNodeData` 가 null 을 반환한 component 도 layoutMap 발행 후 즉시 materialize
   - 이전 Skia stale content/cache invalidation + `useLayoutPublisher` input 구조 감지 보강 위에 node registry materialization 경로를 추가로 닫음
+- **Frame 적용 Page 에서 Page 자체 선택 후 추가한 component 가 body tree 밖에 생성되던 회귀 수정**:
+  - simple component 생성 경로가 `selectedElementId` 를 실제 element id 검증 없이 parent_id 로 저장하던 문제를 차단
+  - selected id 가 page id 처럼 현재 page elements 에 없는 selection 이면 body element 로 fallback 하도록 정규화해, frame 적용 시에도 body/content slot 경로와 LayerTree 구조를 일치
+- **새로고침 후 Apply Frame 선택값은 남지만 frame slot 이 Page 에 합성되지 않던 회귀 수정**:
+  - project initialize 시점에 `layouts` store 와 `elementsMap` 이 아직 hydrate 전이면 canonical reusable frame 목록이 비어 frame descendants 가 병합되지 않던 경로를 차단
+  - DB snapshot 의 `allElements` + project layouts 로 canonical input 을 만들고, canonical frame id(`layout-<id>`) 를 legacy `layout_id` 로 정규화해 frame body/slot elements 를 첫 hydrate 에 포함
+
+### Features
+
+- **ADR-912 Slot section 을 내부 container slot host 까지 확장**:
+  - Pencil `.pen` schema 의 `Frame.slot` 의미에 맞춰 `CardContent` 같은 구조 container shell 을 instance `descendants[idPath].children` 교체 target 으로 지정 가능
+  - Properties ##Slot section## 은 `frame` 뿐 아니라 `CardContent`/`CardHeader`/`CardFooter`/`Group`/`Section` 등 frame-compatible host 에서도 enable/disable 과 recommended component add/remove 를 제공
+  - Slot recommendation list 에서 추천 component origin 을 default content 로 삽입할 수 있어 CardFooter slot 에 등록한 Text origin 을 origin component 화면에 바로 표시 가능
+  - Component instance 선택 시 ##Slot Fill## section 을 노출해 추천 component origin 을 `descendants[slotPath].children` ref 로 채우고 instance 화면에 표시
+- **ADR-912 slot marker 를 Pencil hatch+border 패턴에 맞춰 보강**:
+  - visible slot host bounds 에 editor-only diagonal hatch overlay 와 border stroke 를 상시 표시
+  - slot marker 색상은 component context 를 따라 origin slot 은 Pencil origin `#D480FF`, instance slot 은 Pencil instance `#9580FF` 로 표시하고, legacy Slot authoring chrome 은 origin `#D480FF` 로 fallback
+  - 선택 요소 하단 size label 배경도 origin/instance semantic color 를 따라가도록 맞춤
+  - Page 합성용 `_slotChrome:"hidden"` 은 제외해 page 화면에 raw Slot chrome 이 노출되지 않게 유지하고 기존 component runtime style/spec 에는 누출하지 않음
+
+### Architecture
+
+- **Internal slot fill projection 보강**:
+  - canonical adapter 가 Element top-level `slot`/`metadata.slot` 을 CanonicalNode `slot` 으로 보존
+  - canonical resolver 는 `type === "frame"` 고정 대신 `slot` field 를 가진 host 를 slot contract validation 대상으로 처리
+  - Builder synthetic ref projection 은 `descendants[path].children` mode C replacement children 을 materialize 해 내부 slot custom subtree 가 LayerTree/Canvas input 에 남도록 보강
+  - Slot fill action 은 replacement child 를 `{ type: "ref", ref: <originId> }` 로 저장해 origin id recommendation 과 실제 instance content fill 을 분리
 
 ### Verification
 
@@ -48,6 +86,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/dev/editingSemanticsFixture.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx src/resolvers/canonical/__tests__/resolver.test.ts src/adapters/canonical/__tests__/integration.test.ts src/builder/utils/canonicalRefResolution.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/panels/properties/FrameSlotSection.test.tsx src/builder/panels/properties/ComponentSlotFillSection.test.tsx src/builder/utils/canonicalRefResolution.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/editingSemantics.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/workspace/canvas/skia/skiaOverlayHelpers.test.ts src/builder/dev/editingSemanticsFixture.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/skiaOverlayHelpers.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/workspace/canvas/skia/skiaOverlayBuilder.static.test.ts src/builder/workspace/canvas/skia/buildSpecNodeData.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/hooks/useElementCreator.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/hooks/__tests__/usePageManager.canonical.test.ts`
 - Playwright screenshot evidence: `docs/adr/evidence/912-g4f-component-slot.png`
 - `pnpm -F @composition/builder type-check`
 - `git diff --check`
@@ -75,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ADR-912 Phase A/C/H 기반 구현 land**:
   - canonical field persistence 보강: `ref`, `reusable`, `descendants`, `metadata`, `componentName` 등 sanitizer 보존
   - Preview runtime 과 Skia/LayerTree/Properties selection path 가 동일 canonical ref projection 을 공유
-  - selection/hover editor chrome semantic marker 적용: origin = magenta solid, instance = violet dotted. hover outline 과 selection corner handle stroke color 도 semantic role 과 일치
+  - selection/hover editor chrome semantic marker 적용: origin = Pencil origin `#D480FF` solid, instance = Pencil instance `#9580FF` dotted. hover outline, selection corner handle stroke color, 하단 size label 배경도 semantic role 과 일치
   - Properties ##Component section## action surface 연결: Origin/Instance label, Go to component, Select instances, detach, field reset, Create component / `[-]`, impact dialog host, origin toggle shortcut/UI
   - Properties ##Slot section## base 연결: frame 선택 시 `Frame.slot: false | string[]` 상태 표시, enable/disable, reusable origin id recommended component add/remove, top-level `slot` + `metadata.slot` backup 보존
   - Slot recommendation reference 해석 보강: 저장된 reference 가 origin `id` 뿐 아니라 `customId`/`componentName` 을 가리켜도 동일 reusable target 으로 표시하고 중복 추가를 차단

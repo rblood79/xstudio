@@ -117,6 +117,35 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
     expect(master?.name).toBe("Submit Button");
   });
 
+  it("preserves slot declarations on internal component container shells", () => {
+    const elements: Element[] = [
+      el({
+        id: "card",
+        type: "Card",
+        componentRole: "master",
+        componentName: "ArticleCard",
+      }),
+      el({
+        id: "card-content",
+        type: "CardContent",
+        parent_id: "card",
+        customId: "content",
+        slot: ["body-copy"],
+      }),
+    ];
+
+    const doc = legacyToCanonical({ elements, pages: [], layouts: [] }, deps);
+    const master = doc.children.find((c) => c.reusable === true);
+    const content = master?.children?.find((c) => c.id === "content");
+
+    expect(master?.type).toBe("Card");
+    expect(content).toMatchObject({
+      id: "content",
+      type: "CardContent",
+      slot: ["body-copy"],
+    });
+  });
+
   // ============================================
   // TC3: layout shell + page with slot fill
   // ============================================

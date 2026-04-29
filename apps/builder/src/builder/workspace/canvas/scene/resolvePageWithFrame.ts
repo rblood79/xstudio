@@ -64,6 +64,116 @@ function asPageResolvedSlot(slot: Element, parentId: string): Element {
   };
 }
 
+const PAGE_BODY_STYLE_PRESERVE_KEYS = [
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "background",
+  "backgroundColor",
+  "backgroundImage",
+] as const;
+
+function mergePageBodyWithFrameLayout(
+  pageBody: Element,
+  frameBody: Element,
+): Element {
+  const pageProps = (pageBody.props ?? {}) as Record<string, unknown>;
+  const frameProps = (frameBody.props ?? {}) as Record<string, unknown>;
+  const pageStyle = (pageProps.style ?? {}) as Record<string, unknown>;
+  const frameStyle = (frameProps.style ?? {}) as Record<string, unknown>;
+
+  const mergedStyle: Record<string, unknown> = {
+    ...pageStyle,
+    ...frameStyle,
+  };
+
+  // Page binding must keep the Page as the viewport authority. Frame body
+  // contributes layout grammar, but page dimensions/background stay page-owned.
+  for (const key of PAGE_BODY_STYLE_PRESERVE_KEYS) {
+    if (pageStyle[key] !== undefined) {
+      mergedStyle[key] = pageStyle[key];
+    }
+  }
+
+  return {
+    ...pageBody,
+    props: {
+      ...pageProps,
+      style: mergedStyle,
+    },
+  };
+}
+
+function getPageResolvedSlotStyle(
+  slot: Element,
+  frameBody: Element,
+): Record<string, unknown> {
+  const slotProps = (slot.props ?? {}) as Record<string, unknown>;
+  const slotStyle = (slotProps.style ?? {}) as Record<string, unknown>;
+  const frameStyle =
+    ((frameBody.props ?? {}) as { style?: Record<string, unknown> }).style ??
+    {};
+  const display = String(frameStyle.display ?? "").toLowerCase();
+  const flexDirection = String(frameStyle.flexDirection ?? "row").toLowerCase();
+  const slotName = readSlotElementName(slot);
+  const nextStyle: Record<string, unknown> = { ...slotStyle };
+
+  if (display === "flex" || display === "inline-flex") {
+    if (flexDirection === "column" || flexDirection === "column-reverse") {
+      nextStyle.width ??= "100%";
+      if (
+        slotName === "content" &&
+        nextStyle.height == null &&
+        nextStyle.flex == null
+      ) {
+        nextStyle.flex = "1 1 auto";
+        nextStyle.minHeight ??= 0;
+      } else {
+        nextStyle.flexShrink ??= 0;
+      }
+    } else {
+      nextStyle.height ??= "100%";
+      if (
+        slotName === "content" &&
+        nextStyle.width == null &&
+        nextStyle.flex == null
+      ) {
+        nextStyle.flex = "1 1 auto";
+        nextStyle.minWidth ??= 0;
+      } else {
+        nextStyle.flexShrink ??= 0;
+      }
+    }
+  }
+
+  if (display === "grid" || display === "inline-grid") {
+    nextStyle.gridArea ??= slotName;
+    nextStyle.width ??= "100%";
+    nextStyle.height ??= "100%";
+  }
+
+  return nextStyle;
+}
+
+function asPageResolvedRootSlot(
+  slot: Element,
+  parentId: string,
+  frameBody: Element,
+): Element {
+  const resolved = asPageResolvedSlot(slot, parentId);
+  const style = getPageResolvedSlotStyle(slot, frameBody);
+  return {
+    ...resolved,
+    props: {
+      ...resolved.props,
+      style,
+    },
+  };
+}
+
 /**
  * page + (optional) frame element 합성 → ScenePageData 호환 출력.
  *
@@ -139,6 +249,7 @@ export function resolvePageWithFrame(
 
   const pageBodyId = pageBody.id;
   const frameBodyId = frameBody.id;
+  const resolvedPageBody = mergePageBodyWithFrameLayout(pageBody, frameBody);
 
   const pageRootBySlot = new Map<string, Element[]>();
   const pageNonRoot: Element[] = [];
@@ -170,7 +281,7 @@ export function resolvePageWithFrame(
     if (el.parent_id === frameBodyId) {
       result.push(
         el.type === "Slot"
-          ? asPageResolvedSlot(el, pageBodyId)
+          ? asPageResolvedRootSlot(el, pageBodyId, frameBody)
           : { ...el, parent_id: pageBodyId },
       );
     } else {
@@ -197,7 +308,7 @@ export function resolvePageWithFrame(
   result.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
 
   return {
-    bodyElement: pageBody,
+    bodyElement: resolvedPageBody,
     pageElements: result,
     hasFrameBinding: true,
   };

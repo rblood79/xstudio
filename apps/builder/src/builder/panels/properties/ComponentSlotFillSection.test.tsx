@@ -1,0 +1,117 @@
+// @vitest-environment jsdom
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Element } from "../../../types/core/store.types";
+import { historyManager } from "../../stores/history";
+import { useStore } from "../../stores";
+import { ComponentSlotFillSection } from "./ComponentSlotFillSection";
+
+function makeElement(id: string, overrides: Partial<Element> = {}): Element {
+  return {
+    id,
+    type: "Card",
+    parent_id: null,
+    page_id: "page-1",
+    order_num: 0,
+    props: {},
+    ...overrides,
+  } as Element;
+}
+
+describe("ComponentSlotFillSection", () => {
+  beforeEach(() => {
+    historyManager.setCurrentPage("page-1");
+    useStore.setState({
+      currentPageId: "page-1",
+      elements: [],
+      elementsMap: new Map(),
+      selectedElementId: null,
+      selectedElementProps: {},
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    cleanup();
+  });
+
+  it("fills an instance internal slot with a recommended reusable component", async () => {
+    const cardOrigin = makeElement("card-origin", {
+      reusable: true,
+      componentName: "ArticleCard",
+    });
+    const footerSlot = makeElement("footer", {
+      type: "CardFooter",
+      customId: "footer",
+      parent_id: "card-origin",
+      slot: ["text-origin"],
+    });
+    const textOrigin = makeElement("text-origin", {
+      type: "Text",
+      reusable: true,
+      componentName: "BodyText",
+    });
+    const cardInstance = makeElement("card-instance", {
+      type: "ref",
+      ref: "card-origin",
+    } as Partial<Element>);
+
+    useStore.setState({
+      elements: [cardOrigin, footerSlot, textOrigin, cardInstance],
+      elementsMap: new Map([
+        ["card-origin", cardOrigin],
+        ["footer", footerSlot],
+        ["text-origin", textOrigin],
+        ["card-instance", cardInstance],
+      ]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    render(<ComponentSlotFillSection elementId="card-instance" />);
+
+    expect(screen.getByText("Slot Fill")).toBeTruthy();
+    expect(screen.getByText("Empty")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Fill slot" }));
+
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("card-instance")).toMatchObject({
+        descendants: {
+          footer: {
+            children: [
+              {
+                id: "text-origin",
+                type: "ref",
+                ref: "text-origin",
+              },
+            ],
+          },
+        },
+      });
+    });
+  });
+
+  it("does not render for component origins", () => {
+    const cardOrigin = makeElement("card-origin", {
+      reusable: true,
+    });
+
+    useStore.setState({
+      elements: [cardOrigin],
+      elementsMap: new Map([["card-origin", cardOrigin]]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    const { container } = render(
+      <ComponentSlotFillSection elementId="card-origin" />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+});

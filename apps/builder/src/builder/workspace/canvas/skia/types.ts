@@ -7,6 +7,7 @@
  */
 
 import type { CanvasKit, Canvas } from "canvaskit-wasm";
+import type { Element } from "../../../../types/core/store.types";
 
 // ============================================
 // Core Interfaces
@@ -330,7 +331,9 @@ export interface FrameInputSnapshot {
 export interface SelectionOverlayBuildResult {
   bounds: import("../selection/types").BoundingBox | null;
   lasso: import("./selectionRenderer").LassoRenderData | null;
+  semanticRole: import("../../../utils/editingSemantics").EditingSemanticsRole | null;
   showHandles: boolean;
+  slotMarkerRole: import("../../../utils/editingSemantics").EditingSemanticsRole | null;
 }
 
 /**
@@ -368,6 +371,8 @@ export interface FrameRenderPlan {
 export interface SharedSceneDerivedData {
   /** element → bounding box (content 빌드에서 생성, 모든 overlay가 재사용) */
   treeBoundsMap: Map<string, import("../selection/types").BoundingBox>;
+  /** 실제 렌더 트리의 parent → children 맵. page-frame 합성/filtered layout 기준 */
+  childrenMap: Map<string, Element[]>;
   /** overflow 컨테이너 → 자식 bounds 정보 (ADR-050 Phase 3) */
   overflowInfoMap: Map<
     string,

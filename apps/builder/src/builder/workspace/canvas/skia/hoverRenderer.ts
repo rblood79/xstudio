@@ -14,6 +14,7 @@ import type {
   OverflowContentInfo,
   ChildOverflowContext,
 } from "./skiaFrameHelpers";
+import { getSemanticOverlayColor } from "./semanticOverlayColors";
 
 // ============================================
 // Constants — 호버 하이라이트 (blue-500, alpha 0.5)
@@ -23,14 +24,6 @@ const HOVER_R = 0x3b / 255;
 const HOVER_G = 0x82 / 255;
 const HOVER_B = 0xf6 / 255;
 const HOVER_ALPHA = 0.5;
-
-/** ADR-912 editor-only semantic hover colors. */
-const ORIGIN_HOVER_R = 0xec / 255; // magenta-500 (#ec4899)
-const ORIGIN_HOVER_G = 0x48 / 255;
-const ORIGIN_HOVER_B = 0x99 / 255;
-const INSTANCE_HOVER_R = 0x8b / 255; // violet-500 (#8b5cf6)
-const INSTANCE_HOVER_G = 0x5c / 255;
-const INSTANCE_HOVER_B = 0xf6 / 255;
 
 // ============================================
 // Constants — overflow content (blue-500, 낮은 alpha)
@@ -74,22 +67,7 @@ export function renderHoverHighlight(
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Stroke);
     paint.setStrokeWidth(sw);
-    if (semanticRole === "origin") {
-      paint.setColor(
-        ck.Color4f(ORIGIN_HOVER_R, ORIGIN_HOVER_G, ORIGIN_HOVER_B, HOVER_ALPHA),
-      );
-    } else if (semanticRole === "instance") {
-      paint.setColor(
-        ck.Color4f(
-          INSTANCE_HOVER_R,
-          INSTANCE_HOVER_G,
-          INSTANCE_HOVER_B,
-          HOVER_ALPHA,
-        ),
-      );
-    } else {
-      paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HOVER_ALPHA));
-    }
+    paint.setColor(getSemanticOverlayColor(ck, semanticRole, HOVER_ALPHA));
 
     if (dashed) {
       dashEffect = ck.PathEffect.MakeDash([4 / zoom, 3 / zoom]);

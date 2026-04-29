@@ -476,14 +476,23 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     expect(cardRow?.parent_id).toBe("page-body");
   });
 
-  it("page width/height/배경 시각 속성 보존 (page body 가 root 유지)", () => {
+  it("page width/height/배경 시각 속성 보존 + frame body layout 문법 적용", () => {
     const FRAME_ID = "frame-1";
     const frameBody = makeEl({
       id: "frame-body",
       type: "body",
       layout_id: FRAME_ID,
       page_id: null,
-      props: { style: { width: 320, height: 200, background: "red" } },
+      props: {
+        style: {
+          width: 320,
+          height: 200,
+          background: "red",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        },
+      },
     });
     const slotContent = makeEl({
       id: "slot-content",
@@ -515,9 +524,83 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     expect(bodyStyle.width).toBe(390);
     expect(bodyStyle.height).toBe(844);
     expect(bodyStyle.background).toBe("white");
+    expect(bodyStyle.display).toBe("flex");
+    expect(bodyStyle.flexDirection).toBe("column");
+    expect(bodyStyle.gap).toBe(12);
 
     const slotRow = result.pageElements.find((el) => el.id === "slot-content");
     expect(slotRow?.parent_id).toBe("page-body");
+  });
+
+  it("page-frame 합성 시 root Slot 이 frame body flex 방향을 따라 page height 를 채운다", () => {
+    const FRAME_ID = "frame-vertical";
+    const frameBody = makeEl({
+      id: "frame-body",
+      type: "body",
+      layout_id: FRAME_ID,
+      page_id: null,
+      props: { style: { display: "flex", flexDirection: "column" } },
+    });
+    const header = makeEl({
+      id: "slot-header",
+      type: "Slot",
+      layout_id: FRAME_ID,
+      page_id: null,
+      parent_id: "frame-body",
+      props: { name: "header" },
+    });
+    const content = makeEl({
+      id: "slot-content",
+      type: "Slot",
+      layout_id: FRAME_ID,
+      page_id: null,
+      parent_id: "frame-body",
+      props: { name: "content" },
+    });
+    const footer = makeEl({
+      id: "slot-footer",
+      type: "Slot",
+      layout_id: FRAME_ID,
+      page_id: null,
+      parent_id: "frame-body",
+      props: { name: "footer" },
+    });
+    const pageBody = makeEl({
+      id: "page-body",
+      type: "body",
+      page_id: "page-1",
+    });
+    const elementsMap = buildElementsMap([
+      frameBody,
+      header,
+      content,
+      footer,
+      pageBody,
+    ]);
+
+    const result = resolvePageWithFrame({
+      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      pageElements: [pageBody],
+      elementsMap,
+    });
+
+    const headerStyle = result.pageElements.find(
+      (el) => el.id === "slot-header",
+    )?.props?.style as Record<string, unknown> | undefined;
+    const contentStyle = result.pageElements.find(
+      (el) => el.id === "slot-content",
+    )?.props?.style as Record<string, unknown> | undefined;
+    const footerStyle = result.pageElements.find(
+      (el) => el.id === "slot-footer",
+    )?.props?.style as Record<string, unknown> | undefined;
+
+    expect(headerStyle).toMatchObject({ width: "100%", flexShrink: 0 });
+    expect(contentStyle).toMatchObject({
+      width: "100%",
+      flex: "1 1 auto",
+      minHeight: 0,
+    });
+    expect(footerStyle).toMatchObject({ width: "100%", flexShrink: 0 });
   });
 
   it("deleted 표시된 frame element 는 제외", () => {

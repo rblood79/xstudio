@@ -44,6 +44,7 @@ import {
   buildSlotPathMap,
   legacyLayoutToCanonicalFrame,
 } from "./slotAndLayoutAdapter";
+import { getCanonicalSlotDeclaration } from "./slotDeclaration";
 import {
   snapshotThemesFromConfig,
   type ThemeConfigInput,
@@ -184,6 +185,7 @@ export function legacyToCanonical(
         : {}),
       children: canonicalChildren,
       ...(roleResult.rootOverrides ?? {}),
+      ...getCanonicalSlotDeclaration(element),
       // legacy Element.props + top-level fields 를 metadata 로 보존 (ADR-911).
       // CanonicalNodeRenderer 의 legacyUuid resolution 이 의존하는 contract.
       metadata: buildLegacyElementMetadata(element),

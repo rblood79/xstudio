@@ -107,6 +107,7 @@ export function buildSkiaFrameContent(
   let treeBoundsMap: Map<string, BoundingBox>;
   let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
   let contentNode: SkiaRenderable;
+  let renderChildrenMap: Map<string, Element[]> = rendererInput.childrenMap;
 
   if (useCommandStream) {
     const result = buildViaCommandStream(
@@ -121,6 +122,7 @@ export function buildSkiaFrameContent(
     );
     if (!result) return null;
     treeBoundsMap = result.treeBoundsMap;
+    renderChildrenMap = result.childrenMap ?? renderChildrenMap;
     nodeBoundsMap = result.nodeBoundsMap;
     contentNode = result.contentNode;
   } else {
@@ -146,7 +148,7 @@ export function buildSkiaFrameContent(
     sharedScene: buildSharedSceneDerivedData(
       treeBoundsMap,
       rendererInput.elementsMap,
-      rendererInput.childrenMap,
+      renderChildrenMap,
       registryVersion,
       pagePosVersion,
       cameraX,
@@ -176,6 +178,7 @@ export function buildSharedSceneDerivedData(
 ): SharedSceneDerivedData {
   return {
     treeBoundsMap,
+    childrenMap,
     overflowInfoMap: getCachedOverflowInfoMap(
       treeBoundsMap,
       elementsMap,
@@ -209,6 +212,7 @@ export function buildWorkflowElementBounds(
 
 interface InternalBuildResult {
   treeBoundsMap: Map<string, BoundingBox>;
+  childrenMap?: Map<string, Element[]>;
   nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
   contentNode: SkiaRenderable;
 }
@@ -306,7 +310,12 @@ function buildViaCommandStream(
     },
   };
 
-  return { treeBoundsMap, nodeBoundsMap, contentNode };
+  return {
+    treeBoundsMap,
+    childrenMap: commandChildrenMap,
+    nodeBoundsMap,
+    contentNode,
+  };
 }
 
 // ============================================

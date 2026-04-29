@@ -31,6 +31,7 @@ import {
   renderLasso,
   renderPageTitle,
 } from "./selectionRenderer";
+import { renderSlotHatchPattern } from "./slotMarkerRenderer";
 import {
   renderWorkflowEdges,
   renderDataSourceEdges,
@@ -57,6 +58,7 @@ import {
   buildMinimapRenderData,
   buildMinimapViewportBounds,
   buildPageTitleRenderItems,
+  buildSlotMarkerTargets,
   shouldRenderWorkflowMinimap,
   type PageTitleBounds,
 } from "./skiaOverlayHelpers";
@@ -159,6 +161,7 @@ export interface OverlayBuildInput {
   // Hover
   elementHoverState: ElementHoverState;
   elementsMap: Map<string, Element>;
+  childrenMap: Map<string, Element[]>;
   // Overflow (Figma-style content outline)
   overflowInfoMap?: Map<string, OverflowContentInfo>;
   // Drop Indicator (드래그 중 타겟 표시)
@@ -209,6 +212,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     workflowHoveredEdgeId,
     elementHoverState,
     elementsMap,
+    childrenMap,
     overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
@@ -367,6 +371,22 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
         }
       }
 
+      // ── Slot Markers (Pencil-style authoring chrome) ──
+      const slotMarkerTargets = buildSlotMarkerTargets(
+        treeBoundsMap,
+        elementsMap,
+        childrenMap,
+      );
+      for (const target of slotMarkerTargets) {
+        renderSlotHatchPattern(
+          ck,
+          canvas,
+          target.bounds,
+          cameraZoom,
+          target.slotMarkerRole,
+        );
+      }
+
       // ── Editing Context Border ──
       const editingContextId = selection.editingContextId;
       if (editingContextId && treeBoundsMap.has(editingContextId)) {
@@ -394,7 +414,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           target.bounds,
           cameraZoom,
           target.dashed,
-          target.semanticRole,
+          target.semanticRole ?? target.slotMarkerRole,
         );
       }
 
@@ -413,12 +433,14 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
 
       // ── Selection (드래그 중에는 숨김 — 드래그 요소가 반투명으로 떠있으므로) ──
       if (selectionData.bounds && !dropIndicatorState) {
+        const selectionSemanticRole =
+          selectionData.semanticRole ?? selectionData.slotMarkerRole;
         renderSelectionBox(
           ck,
           canvas,
           selectionData.bounds,
           cameraZoom,
-          selectionData.semanticRole,
+          selectionSemanticRole,
         );
         if (selectionData.showHandles) {
           renderTransformHandles(
@@ -426,7 +448,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
             canvas,
             selectionData.bounds,
             cameraZoom,
-            selectionData.semanticRole,
+            selectionSemanticRole,
           );
         }
         renderDimensionLabels(
@@ -435,6 +457,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           selectionData.bounds,
           cameraZoom,
           fontMgr,
+          selectionSemanticRole,
         );
       }
       if (selectionData.lasso) {

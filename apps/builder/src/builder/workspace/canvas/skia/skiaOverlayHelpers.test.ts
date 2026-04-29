@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Element } from "../../../../types/core/store.types";
-import { buildHoverHighlightTargets } from "./skiaOverlayHelpers";
+import {
+  buildHoverHighlightTargets,
+  buildSlotMarkerTargets,
+} from "./skiaOverlayHelpers";
 
 function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
@@ -31,8 +34,16 @@ describe("buildHoverHighlightTargets editing semantics", () => {
     );
 
     expect(targets).toEqual([
-      expect.objectContaining({ dashed: false, semanticRole: "origin" }),
-      expect.objectContaining({ dashed: true, semanticRole: "instance" }),
+      expect.objectContaining({
+        dashed: false,
+        semanticRole: "origin",
+        slotMarkerRole: null,
+      }),
+      expect.objectContaining({
+        dashed: true,
+        semanticRole: "instance",
+        slotMarkerRole: null,
+      }),
     ]);
   });
 
@@ -46,7 +57,210 @@ describe("buildHoverHighlightTargets editing semantics", () => {
     );
 
     expect(targets).toEqual([
-      expect.objectContaining({ dashed: false, semanticRole: null }),
+      expect.objectContaining({
+        dashed: false,
+        semanticRole: null,
+        slotMarkerRole: null,
+      }),
+    ]);
+  });
+
+  it("marks slot hover targets with origin and instance slot roles", () => {
+    const origin = makeElement("origin", {
+      parent_id: null,
+      reusable: true,
+      type: "frame",
+    });
+    const originSlot = makeElement("origin/footer", {
+      parent_id: "origin",
+      slot: ["text"],
+      type: "CardFooter",
+    });
+    const instance = makeElement("instance", {
+      type: "ref",
+      ref: "origin",
+    });
+    const instanceSlot = makeElement("instance/footer", {
+      parent_id: "instance",
+      slot: ["text"],
+      type: "CardFooter",
+    });
+
+    const targets = buildHoverHighlightTargets(
+      new Map([
+        ["origin/footer", { x: 0, y: 0, width: 100, height: 40 }],
+        ["instance/footer", { x: 120, y: 0, width: 100, height: 40 }],
+      ]),
+      "origin/footer",
+      ["instance/footer"],
+      true,
+      new Map([
+        ["origin", origin],
+        ["origin/footer", originSlot],
+        ["instance", instance],
+        ["instance/footer", instanceSlot],
+      ]),
+    );
+
+    expect(targets).toEqual([
+      expect.objectContaining({
+        semanticRole: null,
+        slotMarkerRole: "origin",
+      }),
+      expect.objectContaining({
+        semanticRole: null,
+        slotMarkerRole: "instance",
+      }),
+    ]);
+  });
+
+  it("marks visible legacy Slot hover targets as origin slot authoring chrome", () => {
+    const targets = buildHoverHighlightTargets(
+      new Map([["slot-header", { x: 0, y: 0, width: 100, height: 40 }]]),
+      "slot-header",
+      [],
+      false,
+      new Map([
+        [
+          "slot-header",
+          makeElement("slot-header", {
+            parent_id: "frame-body",
+            props: { name: "header" },
+            type: "Slot",
+          }),
+        ],
+      ]),
+    );
+
+    expect(targets).toEqual([
+      expect.objectContaining({
+        semanticRole: null,
+        slotMarkerRole: "origin",
+      }),
+    ]);
+  });
+});
+
+describe("buildSlotMarkerTargets", () => {
+  it("collects only empty visible slot authoring bounds and skips hidden/filled slot chrome", () => {
+    const targets = buildSlotMarkerTargets(
+      new Map([
+        ["slot-header", { x: 0, y: 0, width: 100, height: 40 }],
+        ["slot-filled", { x: 0, y: 60, width: 100, height: 40 }],
+        ["slot-with-deleted-child", { x: 0, y: 120, width: 100, height: 40 }],
+        ["card-footer", { x: 0, y: 180, width: 100, height: 40 }],
+        ["card-content-filled", { x: 0, y: 240, width: 100, height: 40 }],
+        ["page-slot-filled", { x: 0, y: 300, width: 100, height: 40 }],
+        ["slot-hidden", { x: 0, y: 360, width: 100, height: 40 }],
+        ["plain", { x: 0, y: 420, width: 100, height: 40 }],
+      ]),
+      new Map([
+        [
+          "slot-header",
+          makeElement("slot-header", {
+            props: { name: "header" },
+            type: "Slot",
+          }),
+        ],
+        [
+          "slot-filled",
+          makeElement("slot-filled", {
+            props: { name: "content" },
+            type: "Slot",
+          }),
+        ],
+        [
+          "slot-filled-child",
+          makeElement("slot-filled-child", {
+            parent_id: "slot-filled",
+            type: "Text",
+          }),
+        ],
+        [
+          "slot-with-deleted-child",
+          makeElement("slot-with-deleted-child", {
+            props: { name: "sidebar" },
+            type: "Slot",
+          }),
+        ],
+        [
+          "deleted-slot-child",
+          makeElement("deleted-slot-child", {
+            deleted: true,
+            parent_id: "slot-with-deleted-child",
+            type: "Text",
+          }),
+        ],
+        [
+          "card-footer",
+          makeElement("card-footer", {
+            slot: ["recommended-text"],
+            type: "CardFooter",
+          }),
+        ],
+        [
+          "card-content-filled",
+          makeElement("card-content-filled", {
+            slot: ["recommended-text"],
+            type: "CardContent",
+          }),
+        ],
+        [
+          "card-content-child",
+          makeElement("card-content-child", {
+            parent_id: "card-content-filled",
+            type: "Text",
+          }),
+        ],
+        [
+          "page-slot-filled",
+          makeElement("page-slot-filled", {
+            props: { name: "content" },
+            type: "Slot",
+          }),
+        ],
+        [
+          "page-content",
+          makeElement("page-content", {
+            parent_id: "page-body",
+            type: "Text",
+          }),
+        ],
+        [
+          "slot-hidden",
+          makeElement("slot-hidden", {
+            props: { _slotChrome: "hidden", name: "content" },
+            type: "Slot",
+          }),
+        ],
+        ["plain", makeElement("plain")],
+      ]),
+      new Map([
+        [
+          "page-slot-filled",
+          [
+            makeElement("page-content", {
+              parent_id: "page-body",
+              type: "Text",
+            }),
+          ],
+        ],
+      ]),
+    );
+
+    expect(targets).toEqual([
+      {
+        bounds: { x: 0, y: 0, width: 100, height: 40 },
+        slotMarkerRole: "origin",
+      },
+      {
+        bounds: { x: 0, y: 120, width: 100, height: 40 },
+        slotMarkerRole: "origin",
+      },
+      {
+        bounds: { x: 0, y: 180, width: 100, height: 40 },
+        slotMarkerRole: "origin",
+      },
     ]);
   });
 });

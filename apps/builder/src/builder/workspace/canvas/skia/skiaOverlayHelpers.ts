@@ -1,7 +1,9 @@
 import { measureWorkspacePanelInsets } from "../../utils/panelLayoutRuntime";
 import type { Element } from "../../../../types/core/store.types";
 import {
+  getEditingSlotMarkerRole,
   getEditingSemanticsRole,
+  hasEditingSlotMarker,
   type EditingSemanticsRole,
 } from "../../../utils/editingSemantics";
 import type { BoundingBox } from "../selection/types";
@@ -21,6 +23,12 @@ export interface HoverHighlightTarget {
   dashed: boolean;
   bounds: BoundingBox;
   semanticRole: EditingSemanticsRole | null;
+  slotMarkerRole: EditingSemanticsRole | null;
+}
+
+export interface SlotMarkerTarget {
+  bounds: BoundingBox;
+  slotMarkerRole: EditingSemanticsRole;
 }
 
 export interface PageTitleRenderItem {
@@ -70,6 +78,10 @@ export function buildHoverHighlightTargets(
         bounds: contextBounds,
         dashed: false,
         semanticRole: getEditingSemanticsRole(elementsMap.get(hoveredContextId)),
+        slotMarkerRole: getEditingSlotMarkerRole(
+          elementsMap.get(hoveredContextId),
+          elementsMap,
+        ),
       });
     }
   }
@@ -82,12 +94,56 @@ export function buildHoverHighlightTargets(
           bounds: leafBounds,
           dashed: true,
           semanticRole: getEditingSemanticsRole(elementsMap.get(leafId)),
+          slotMarkerRole: getEditingSlotMarkerRole(
+            elementsMap.get(leafId),
+            elementsMap,
+          ),
         });
       }
     }
   }
 
   return targets;
+}
+
+export function buildSlotMarkerTargets(
+  treeBoundsMap: Map<string, BoundingBox>,
+  elementsMap: Map<string, Element> = new Map(),
+  childrenMap: Map<string, Element[]> = new Map(),
+): SlotMarkerTarget[] {
+  const targets: SlotMarkerTarget[] = [];
+
+  for (const [id, bounds] of treeBoundsMap) {
+    const element = elementsMap.get(id);
+    if (!hasEditingSlotMarker(element)) continue;
+    if (hasVisibleSlotContent(id, elementsMap, childrenMap)) continue;
+
+    const slotMarkerRole = getEditingSlotMarkerRole(element, elementsMap);
+    if (!slotMarkerRole) continue;
+
+    targets.push({ bounds, slotMarkerRole });
+  }
+
+  return targets;
+}
+
+function hasVisibleSlotContent(
+  slotHostId: string,
+  elementsMap: Map<string, Element>,
+  childrenMap: Map<string, Element[]>,
+): boolean {
+  const renderChildren = childrenMap.get(slotHostId);
+  if (renderChildren?.some((child) => !child.deleted)) {
+    return true;
+  }
+
+  for (const element of elementsMap.values()) {
+    if (element.parent_id !== slotHostId) continue;
+    if (element.deleted) continue;
+    return true;
+  }
+
+  return false;
 }
 
 export function shouldRenderWorkflowMinimap(

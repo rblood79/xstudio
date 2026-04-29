@@ -8,6 +8,8 @@ type CanonicalRefFields = {
   ref?: unknown;
 };
 
+type OverrideNode = Record<string, unknown>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -163,6 +165,129 @@ function propsFromDescendantPatch(
   return props;
 }
 
+function getOverrideNodeSegment(node: OverrideNode, index: number): string {
+  const customId = node.customId;
+  if (typeof customId === "string" && customId) return customId;
+
+  const id = node.id;
+  if (typeof id === "string" && id) return id;
+
+  const name = node.name;
+  if (typeof name === "string" && name) return name;
+
+  return `child-${index}`;
+}
+
+function getOverrideNodeProps(node: OverrideNode): Record<string, unknown> {
+  const metadata = node.metadata;
+  if (isRecord(metadata) && isRecord(metadata.legacyProps)) {
+    return metadata.legacyProps;
+  }
+
+  const {
+    children: _children,
+    customId: _customId,
+    descendants: _descendants,
+    id: _id,
+    metadata: _metadata,
+    name: _name,
+    ref: _ref,
+    reusable: _reusable,
+    slot: _slot,
+    type: _type,
+    ...props
+  } = node;
+
+  return props;
+}
+
+function getOverrideNodeSlot(node: OverrideNode): false | string[] | undefined {
+  const slot = node.slot;
+  return slot === false || Array.isArray(slot) ? slot : undefined;
+}
+
+function materializeOverrideChildren(
+  refElement: Element,
+  overrideChildren: unknown[],
+  syntheticParentId: string,
+  sourceChildrenMap: Map<string, Element[]>,
+  resultElementsMap: Map<string, Element>,
+  resultChildrenMap: Map<string, Element[]>,
+  resultElements: Element[],
+  pathPrefix: string,
+): void {
+  const syntheticChildren: Element[] = [];
+
+  overrideChildren.forEach((child, index) => {
+    if (!isRecord(child)) return;
+
+    const segment = getOverrideNodeSegment(child, index);
+    const syntheticId = `${syntheticParentId}/${segment}`;
+    const type = typeof child.type === "string" ? child.type : "frame";
+    const name = typeof child.name === "string" ? child.name : undefined;
+    const ref = typeof child.ref === "string" ? child.ref : undefined;
+    const descendants = isRecord(child.descendants) ? child.descendants : undefined;
+    const slot = getOverrideNodeSlot(child);
+    const syntheticChild = {
+      id: syntheticId,
+      customId: typeof child.id === "string" ? child.id : segment,
+      type,
+      parent_id: syntheticParentId,
+      page_id: refElement.page_id ?? null,
+      layout_id: refElement.layout_id ?? null,
+      order_num: index,
+      props: getOverrideNodeProps(child),
+      ...(name ? { componentName: name } : {}),
+      ...(ref ? { ref } : {}),
+      ...(descendants ? { descendants } : {}),
+      ...(slot !== undefined ? { slot } : {}),
+    } as Element;
+
+    const resolvedChild = isCanonicalRefElement(syntheticChild)
+      ? resolveCanonicalRefElement(syntheticChild, resultElementsMap.values())
+      : syntheticChild;
+
+    resultElements.push(resolvedChild);
+    resultElementsMap.set(syntheticId, resolvedChild);
+    syntheticChildren.push(resolvedChild);
+
+    if (isCanonicalRefElement(syntheticChild) && ref) {
+      const master = resolveCanonicalRefMaster(ref, resultElementsMap.values());
+      if (master) {
+        materializeSyntheticDescendants(
+          syntheticChild,
+          master,
+          syntheticId,
+          sourceChildrenMap,
+          resultElementsMap,
+          resultChildrenMap,
+          resultElements,
+        );
+        return;
+      }
+    }
+
+    const nestedChildren = child.children;
+    if (Array.isArray(nestedChildren)) {
+      const nextPath = pathPrefix ? `${pathPrefix}/${segment}` : segment;
+      materializeOverrideChildren(
+        refElement,
+        nestedChildren,
+        syntheticId,
+        sourceChildrenMap,
+        resultElementsMap,
+        resultChildrenMap,
+        resultElements,
+        nextPath,
+      );
+    }
+  });
+
+  if (syntheticChildren.length > 0) {
+    resultChildrenMap.set(syntheticParentId, syntheticChildren);
+  }
+}
+
 function materializeSyntheticDescendants(
   refElement: Element,
   sourceParent: Element,
@@ -200,7 +325,18 @@ function materializeSyntheticDescendants(
     resultElementsMap.set(syntheticId, syntheticChild);
     syntheticChildren.push(syntheticChild);
 
-    if (!patch || !Array.isArray(patch.children)) {
+    if (patch && Array.isArray(patch.children)) {
+      materializeOverrideChildren(
+        refElement,
+        patch.children,
+        syntheticId,
+        sourceChildrenMap,
+        resultElementsMap,
+        resultChildrenMap,
+        resultElements,
+        path,
+      );
+    } else {
       materializeSyntheticDescendants(
         refElement,
         sourceChild,

@@ -32,6 +32,7 @@ import type { ConvertSlotElementFn, ConvertPageLayoutFn } from "./types";
 import { tagToType, isLegacySlotTag } from "./tagRename";
 import { buildLegacyElementMetadata } from "./legacyMetadata";
 import { buildIdPathContext, segId } from "./idPath";
+import { getCanonicalSlotDeclaration } from "./slotDeclaration";
 
 // ─────────────────────────────────────────────
 // ConvertSlotElementFn
@@ -255,6 +256,7 @@ function convertElementToCanonical(
     children: childElements.map((c) =>
       convertElementToCanonical(c, allElements, idSegmentMap),
     ),
+    ...getCanonicalSlotDeclaration(element),
     metadata: buildLegacyElementMetadata(element),
   };
 }

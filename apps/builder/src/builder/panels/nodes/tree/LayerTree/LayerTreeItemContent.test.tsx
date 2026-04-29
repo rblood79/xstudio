@@ -43,7 +43,7 @@ describe("LayerTreeItemContent editing semantics marker", () => {
     cleanup();
   });
 
-  it("origin node renders magenta semantic dot with accessible label", () => {
+  it("origin node renders Pencil origin semantic dot with accessible label", () => {
     render(
       <LayerTreeItemContent
         node={makeNode()}
@@ -57,7 +57,7 @@ describe("LayerTreeItemContent editing semantics marker", () => {
     expect(screen.getByText("Origin Button")).toBeTruthy();
   });
 
-  it("instance node renders violet semantic dot with accessible label", () => {
+  it("instance node renders Pencil instance semantic dot with accessible label", () => {
     render(
       <LayerTreeItemContent
         node={makeNode({

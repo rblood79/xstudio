@@ -15,9 +15,11 @@ type EditingSemanticsElementLike = {
   masterId?: unknown;
   metadata?: unknown;
   overrides?: unknown;
+  parent_id?: unknown;
   props?: unknown;
   ref?: unknown;
   reusable?: unknown;
+  slot?: unknown;
   type?: unknown;
 };
 
@@ -48,6 +50,69 @@ export function getEditingSemanticsRole(
   return null;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function hasSlotArray(value: unknown): boolean {
+  return Array.isArray(value);
+}
+
+export function hasEditingSlotMarker(element: unknown): boolean {
+  const candidate = asElementLike(element);
+  if (!candidate) return false;
+
+  const props = asRecord(candidate.props);
+  if (props?._slotChrome === "hidden") return false;
+
+  if (candidate.type === "Slot") return true;
+  if (hasSlotArray(candidate.slot)) return true;
+
+  const metadata = asRecord(candidate.metadata);
+  return hasSlotArray(metadata?.slot);
+}
+
+export function getEditingSlotMarkerRole(
+  element: unknown,
+  elementsById: Map<string, unknown> = new Map(),
+): EditingSemanticsRole | null {
+  const candidate = asElementLike(element);
+  if (!candidate || !hasEditingSlotMarker(candidate)) return null;
+
+  const ownRole = getEditingSemanticsRole(candidate);
+  if (ownRole) return ownRole;
+
+  const visited = new Set<string>();
+  let parentId =
+    typeof candidate.parent_id === "string" ? candidate.parent_id : null;
+
+  while (parentId && !visited.has(parentId)) {
+    visited.add(parentId);
+    const parent = elementsById.get(parentId);
+    const role = getEditingSemanticsRole(parent);
+    if (role) return role;
+
+    const parentLike = asElementLike(parent);
+    parentId =
+      parentLike && typeof parentLike.parent_id === "string"
+        ? parentLike.parent_id
+        : null;
+  }
+
+  if (typeof candidate.id === "string" && candidate.id.includes("/")) {
+    const segments = candidate.id.split("/");
+    while (segments.length > 1) {
+      segments.pop();
+      const ancestor = elementsById.get(segments.join("/"));
+      const role = getEditingSemanticsRole(ancestor);
+      if (role) return role;
+    }
+  }
+
+  return "origin";
+}
+
 export function getEditingSemanticsLabel(
   role: EditingSemanticsRole | null,
 ): string | null {
@@ -76,11 +141,6 @@ export function canDetachInstance(element: unknown): boolean {
     candidate?.componentRole === "instance" ||
     (candidate?.type === "ref" && typeof candidate.ref === "string")
   );
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
 }
 
 function getCanonicalOverrideFieldKeys(

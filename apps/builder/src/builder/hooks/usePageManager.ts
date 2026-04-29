@@ -16,8 +16,40 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 import { applyCollectionItemsMigration } from "@composition/shared";
 import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
 import { scheduleNextFrame } from "../utils/scheduleTask";
+import type { Layout } from "../../types/builder/layout.types";
+import type { FrameNode } from "@composition/shared";
 
 const PAGE_STACK_GAP = 80;
+
+function getLegacyLayoutIdFromReusableFrame(frame: FrameNode): string {
+  const metadata = frame.metadata as { layoutId?: unknown } | undefined;
+  const rawId =
+    typeof metadata?.layoutId === "string" && metadata.layoutId.length > 0
+      ? metadata.layoutId
+      : frame.id;
+  return rawId.startsWith("layout-") ? rawId.slice("layout-".length) : rawId;
+}
+
+async function getProjectLayoutsForCanonical(
+  db: unknown,
+  projectId: string,
+): Promise<Layout[]> {
+  const layoutsState = useLayoutsStore.getState();
+  const projectLayouts = layoutsState.layouts.filter(
+    (layout) => layout.project_id === projectId,
+  );
+  if (projectLayouts.length > 0) {
+    return projectLayouts;
+  }
+
+  const data = await (
+    db as {
+      layouts: { getByProject: (projectId: string) => Promise<Layout[]> };
+    }
+  ).layouts.getByProject(projectId);
+
+  return data ?? [];
+}
 
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
@@ -520,13 +552,30 @@ export const usePageManager = ({
 
         // ADR-903 P3-D-4 Phase C: canonical reusable FrameNode 기반 layout elements 추출.
         // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout_id 매칭으로 필터링.
+        //
+        // 새로고침 직후에는 layouts store 와 elementsMap 이 아직 hydrate 전 상태일 수 있다.
+        // 이때 page.layout_id 는 살아 있어 PageLayoutSelector 는 선택값을 표시하지만,
+        // frame body/slot elements 가 store 에 병합되지 않아 page-frame 합성이 실패한다.
+        // initializeProject 의 DB snapshot(allElements + project layouts)을 canonical input 으로
+        // 사용해 첫 hydrate 시점부터 적용 frame descendants 를 포함한다.
+        const canonicalLayouts = await getProjectLayoutsForCanonical(
+          db,
+          projectId,
+        );
+        const canonicalState = {
+          ...useStore.getState(),
+          elements: allElements,
+          elementsMap: new Map(allElements.map((el) => [el.id, el])),
+        };
         const canonicalDoc = selectCanonicalDocument(
-          useStore.getState(),
+          canonicalState,
           storePages,
-          useLayoutsStore.getState().layouts,
+          canonicalLayouts,
         );
         const reusableFrames = selectCanonicalReusableFrames(canonicalDoc);
-        const layoutIdSet = new Set(reusableFrames.map((f) => f.id));
+        const layoutIdSet = new Set(
+          reusableFrames.map(getLegacyLayoutIdFromReusableFrame),
+        );
         const layoutElements = allElements.filter(
           (el) => el.layout_id != null && layoutIdSet.has(el.layout_id),
         );

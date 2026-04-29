@@ -41,6 +41,7 @@ describe("buildSelectionRenderData editing semantics", () => {
     );
 
     expect(result.semanticRole).toBe("origin");
+    expect(result.slotMarkerRole).toBeNull();
     expect(result.bounds).toEqual({ x: 10, y: 20, width: 100, height: 40 });
     expect(result.showHandles).toBe(true);
   });
@@ -56,6 +57,7 @@ describe("buildSelectionRenderData editing semantics", () => {
     );
 
     expect(result.semanticRole).toBe("instance");
+    expect(result.slotMarkerRole).toBeNull();
   });
 
   it("keeps instance semantic role after canonical ref projection", () => {
@@ -92,6 +94,85 @@ describe("buildSelectionRenderData editing semantics", () => {
       ref: "origin",
     });
     expect(result.semanticRole).toBe("instance");
+    expect(result.slotMarkerRole).toBeNull();
+  });
+
+  it("single selected slot under an origin exposes origin slot marker role", () => {
+    const result = buildSelectionRenderData(
+      0,
+      0,
+      1,
+      new Map([["origin/footer", { x: 0, y: 0, width: 120, height: 48 }]]),
+      makeSelection(["origin/footer"]),
+      new Map([
+        [
+          "origin",
+          makeElement("origin", {
+            parent_id: null,
+            reusable: true,
+            type: "frame",
+          }),
+        ],
+        [
+          "origin/footer",
+          makeElement("origin/footer", {
+            parent_id: "origin",
+            slot: ["text"],
+            type: "CardFooter",
+          }),
+        ],
+      ]),
+    );
+
+    expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBe("origin");
+  });
+
+  it("single selected slot under an instance exposes instance slot marker role", () => {
+    const result = buildSelectionRenderData(
+      0,
+      0,
+      1,
+      new Map([["instance/footer", { x: 0, y: 0, width: 120, height: 48 }]]),
+      makeSelection(["instance/footer"]),
+      new Map([
+        ["instance", makeElement("instance", { type: "ref", ref: "origin" })],
+        [
+          "instance/footer",
+          makeElement("instance/footer", {
+            parent_id: "instance",
+            slot: ["text"],
+            type: "CardFooter",
+          }),
+        ],
+      ]),
+    );
+
+    expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBe("instance");
+  });
+
+  it("single selected legacy Slot without component ancestry falls back to origin slot marker", () => {
+    const result = buildSelectionRenderData(
+      0,
+      0,
+      1,
+      new Map([["slot-header", { x: 0, y: 0, width: 120, height: 48 }]]),
+      makeSelection(["slot-header"]),
+      new Map([
+        [
+          "slot-header",
+          makeElement("slot-header", {
+            parent_id: "frame-body",
+            props: { name: "header" },
+            type: "Slot",
+          }),
+        ],
+      ]),
+    );
+
+    expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBe("origin");
   });
 
   it("multi-selection suppresses semantic role marker", () => {
@@ -111,6 +192,7 @@ describe("buildSelectionRenderData editing semantics", () => {
     );
 
     expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBeNull();
     expect(result.showHandles).toBe(false);
   });
 });

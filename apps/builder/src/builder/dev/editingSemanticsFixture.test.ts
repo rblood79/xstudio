@@ -56,4 +56,31 @@ describe("editingSemanticsFixture", () => {
       "adr-912-editing-semantics-page",
     );
   });
+
+  it("selects a ref instance of the slot frame for violet slot marker evidence", () => {
+    window.history.pushState(
+      {},
+      "",
+      "/builder/adr-912-fixture?editingSemanticsFixture=slot-instance",
+    );
+
+    const store = makeStoreStub();
+    applyEditingSemanticsFixture(store as ElementsState);
+
+    const elements = vi.mocked(store.setElements).mock.calls[0][0] as Array<
+      Element & { ref?: string }
+    >;
+    const slotInstance = elements.find(
+      (element) => element.id === "adr-912-slot-instance",
+    );
+
+    expect(slotInstance).toMatchObject({
+      ref: "adr-912-slot-frame",
+      type: "ref",
+    });
+    expect(store.selectElementWithPageTransition).toHaveBeenCalledWith(
+      "adr-912-slot-instance",
+      "adr-912-editing-semantics-page",
+    );
+  });
 });

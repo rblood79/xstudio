@@ -170,11 +170,11 @@
     }
 
     .component-semantics-badge--origin::before {
-      background: #ec4899;
+      background: #d480ff;
     }
 
     .component-semantics-badge--instance::before {
-      background: #8b5cf6;
+      background: #9580ff;
     }
 
     .component-semantics-badge--standard::before {
@@ -247,7 +247,7 @@
     }
 
     .component-semantics-field-dot {
-      background: #8b5cf6;
+      background: #9580ff;
       border-radius: 999px;
       height: 6px;
       width: 6px;

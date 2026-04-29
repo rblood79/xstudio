@@ -154,4 +154,131 @@ describe("canonicalRefResolution", () => {
       props: { text: "Email" },
     });
   });
+
+  it("materializes mode C children replacement under a synthetic slot host", () => {
+    const origin = makeElement("card", {
+      type: "Card",
+      reusable: true,
+    });
+    const content = makeElement("content", {
+      type: "CardContent",
+      customId: "content",
+      parent_id: "card",
+      slot: [],
+    });
+    const placeholder = makeElement("placeholder", {
+      type: "Text",
+      customId: "placeholder",
+      parent_id: "content",
+      props: { text: "Default body" },
+    });
+    const ref = makeElement("instance", {
+      type: "ref",
+      ref: "card",
+      descendants: {
+        content: {
+          children: [
+            {
+              id: "custom-body",
+              type: "Text",
+              metadata: {
+                legacyProps: { text: "Custom body" },
+              },
+            },
+          ],
+        },
+      },
+    } as never);
+
+    const tree = resolveCanonicalRefTree({
+      elements: [origin, content, placeholder, ref],
+      elementsMap: new Map([
+        ["card", origin],
+        ["content", content],
+        ["placeholder", placeholder],
+        ["instance", ref],
+      ]),
+    });
+
+    expect(tree.childrenMap.get("instance")).toEqual([
+      expect.objectContaining({
+        id: "instance/content",
+        type: "CardContent",
+        slot: [],
+      }),
+    ]);
+    expect(tree.childrenMap.get("instance/content")).toEqual([
+      expect.objectContaining({
+        id: "instance/content/custom-body",
+        type: "Text",
+        props: { text: "Custom body" },
+      }),
+    ]);
+    expect(tree.elementsMap.has("instance/content/placeholder")).toBe(false);
+  });
+
+  it("resolves ref children inserted through a mode C slot replacement", () => {
+    const card = makeElement("card", {
+      type: "Card",
+      reusable: true,
+    });
+    const content = makeElement("content", {
+      type: "CardContent",
+      customId: "content",
+      parent_id: "card",
+      slot: ["button"],
+    });
+    const button = makeElement("button", {
+      type: "Button",
+      reusable: true,
+      props: { label: "Default" },
+    });
+    const label = makeElement("button-label", {
+      type: "Label",
+      customId: "label",
+      parent_id: "button",
+      props: { text: "Default" },
+    });
+    const ref = makeElement("instance", {
+      type: "ref",
+      ref: "card",
+      descendants: {
+        content: {
+          children: [
+            {
+              id: "action",
+              type: "ref",
+              ref: "button",
+            },
+          ],
+        },
+      },
+    } as never);
+
+    const tree = resolveCanonicalRefTree({
+      elements: [card, content, button, label, ref],
+      elementsMap: new Map([
+        ["card", card],
+        ["content", content],
+        ["button", button],
+        ["button-label", label],
+        ["instance", ref],
+      ]),
+    });
+
+    expect(tree.childrenMap.get("instance/content")).toEqual([
+      expect.objectContaining({
+        id: "instance/content/action",
+        type: "Button",
+        ref: "button",
+      }),
+    ]);
+    expect(tree.childrenMap.get("instance/content/action")).toEqual([
+      expect.objectContaining({
+        id: "instance/content/action/label",
+        type: "Label",
+        props: { text: "Default" },
+      }),
+    ]);
+  });
 });
