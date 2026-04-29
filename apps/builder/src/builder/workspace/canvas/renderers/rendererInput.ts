@@ -219,13 +219,61 @@ interface CreateSkiaRendererInputOptions {
   frameAreas: FrameAreaGroup[];
 }
 
+function buildRendererChildrenMap(
+  elementsMap: Map<string, Element>,
+): Map<string, Element[]> {
+  const childrenMap = new Map<string, Element[]>();
+
+  for (const element of elementsMap.values()) {
+    if (element.deleted) continue;
+    const parentId = element.parent_id ?? null;
+    if (!parentId) continue;
+    const list = childrenMap.get(parentId);
+    if (list) {
+      list.push(element);
+    } else {
+      childrenMap.set(parentId, [element]);
+    }
+  }
+
+  for (const list of childrenMap.values()) {
+    list.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+  }
+
+  return childrenMap;
+}
+
+function buildPageResolvedRenderTree(input: CreateSkiaRendererInputOptions): {
+  childrenMap: Map<string, Element[]>;
+  elements: Element[];
+  elementsMap: Map<string, Element>;
+} {
+  const elementsMap = new Map(input.elementsMap);
+
+  for (const pageSnapshot of input.sceneSnapshot.pageSnapshots.values()) {
+    if (pageSnapshot.bodyElement) {
+      elementsMap.set(pageSnapshot.bodyElement.id, pageSnapshot.bodyElement);
+    }
+    for (const element of pageSnapshot.pageElements) {
+      elementsMap.set(element.id, element);
+    }
+  }
+
+  return {
+    childrenMap: buildRendererChildrenMap(elementsMap),
+    elements: Array.from(elementsMap.values()),
+    elementsMap,
+  };
+}
+
 export function createSkiaRendererInput(
   input: CreateSkiaRendererInputOptions,
 ): SkiaRendererInput {
+  const renderTree = buildPageResolvedRenderTree(input);
   const resolvedTree = resolveCanonicalRefTree({
-    childrenMap: input.childrenMap,
-    elements: input.elements,
-    elementsMap: input.elementsMap,
+    childrenMap: renderTree.childrenMap,
+    elements: renderTree.elements,
+    elementsMap: renderTree.elementsMap,
   });
 
   return {

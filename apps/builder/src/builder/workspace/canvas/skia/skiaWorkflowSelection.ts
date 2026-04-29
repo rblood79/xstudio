@@ -29,6 +29,25 @@ export interface PageFrameLike {
   y: number;
 }
 
+function isRenderableSelectionTarget(
+  id: string,
+  element: Element,
+  currentPageId: string | null,
+  treeBoundsMap: Map<string, BoundingBox>,
+): boolean {
+  if (element.page_id === currentPageId) {
+    return true;
+  }
+
+  return (
+    currentPageId !== null &&
+    element.type === "Slot" &&
+    element.page_id == null &&
+    typeof element.layout_id === "string" &&
+    treeBoundsMap.has(id)
+  );
+}
+
 export function buildWorkflowHighlightState(
   hoveredEdgeId: string | null,
   focusedPageId: string | null,
@@ -109,7 +128,15 @@ export function buildSelectionRenderData(
 
     for (const id of selectedIds) {
       const element = elementsMap.get(id);
-      if (!element || element.page_id !== currentPageId) {
+      if (
+        !element ||
+        !isRenderableSelectionTarget(
+          id,
+          element,
+          currentPageId,
+          treeBoundsMap,
+        )
+      ) {
         continue;
       }
 

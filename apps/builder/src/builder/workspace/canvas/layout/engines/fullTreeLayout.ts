@@ -260,6 +260,16 @@ let _filteredVersion = 0;
 let _mergedFilteredMap: Map<string, string[]> | null = null;
 let _mergedFilteredVersion = -1;
 
+function cloneFilteredChildrenMap(
+  map: Map<string, string[]>,
+): Map<string, string[]> {
+  const clone = new Map<string, string[]>();
+  for (const [key, childIds] of map) {
+    clone.set(key, [...childIds]);
+  }
+  return clone;
+}
+
 /** filteredChildIdsMap을 페이지 단위로 공유 */
 export function publishFilteredChildrenMap(
   map: Map<string, string[]> | null,
@@ -272,6 +282,15 @@ export function publishFilteredChildrenMap(
     _perPageFilteredMaps.delete(key);
   }
   _filteredVersion++;
+}
+
+/** cache hit 경로에서 동일 key 의 filteredChildIdsMap 을 재발행하기 위한 조회 API */
+export function getPublishedFilteredChildrenMap(
+  pageId?: string,
+): Map<string, string[]> | null {
+  const key = pageId ?? "__default__";
+  const map = _perPageFilteredMaps.get(key);
+  return map ? cloneFilteredChildrenMap(map) : null;
 }
 
 // ─── 공유 Synthetic Elements Map ──────────────────────────────────

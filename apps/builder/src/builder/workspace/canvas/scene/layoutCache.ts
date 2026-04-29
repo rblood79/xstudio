@@ -1,6 +1,10 @@
 import type { Element } from "../../../../types/core/store.types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
-import { calculateFullTreeLayout } from "../layout/engines/fullTreeLayout";
+import {
+  calculateFullTreeLayout,
+  getPublishedFilteredChildrenMap,
+  publishFilteredChildrenMap,
+} from "../layout/engines/fullTreeLayout";
 import { parseBorder, parsePadding } from "../layout/engines/utils";
 
 interface BuildPageChildrenMapInput {
@@ -17,6 +21,8 @@ interface CachedPageLayoutEntry {
   pageHeight: number;
   pageWidth: number;
   wasmLayoutReady: boolean;
+  filteredChildIdsMap: Map<string, string[]> | null;
+  rootKey: string;
 }
 
 const pageLayoutCache = new Map<string, CachedPageLayoutEntry>();
@@ -249,6 +255,10 @@ export function buildChildrenIdMap(
   return childrenIdMap;
 }
 
+function getLayoutPublishKey(bodyElement: Element): string {
+  return bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
+}
+
 interface GetCachedPageLayoutInput {
   bodyElement: Element | null;
   childrenIdMap: Map<string, string[]>;
@@ -276,6 +286,7 @@ export function getCachedPageLayout({
     return null;
   }
 
+  const rootKey = getLayoutPublishKey(bodyElement);
   const cacheKey = bodyElement.page_id ?? bodyElement.id;
   const cachedEntry = pageLayoutCache.get(cacheKey);
 
@@ -288,6 +299,10 @@ export function getCachedPageLayout({
     cachedEntry.pageHeight === pageHeight &&
     cachedEntry.wasmLayoutReady === wasmLayoutReady
   ) {
+    publishFilteredChildrenMap(
+      cachedEntry.filteredChildIdsMap,
+      cachedEntry.rootKey,
+    );
     return cachedEntry.fullTreeLayoutMap;
   }
   const bodyStyle = bodyElement.props?.style as
@@ -316,6 +331,7 @@ export function getCachedPageLayout({
     availableHeight,
     (id: string) => pageChildrenMap.get(id) ?? [],
   );
+  const filteredChildIdsMap = getPublishedFilteredChildrenMap(rootKey);
 
   pageLayoutCache.set(cacheKey, {
     bodyId: bodyElement.id,
@@ -325,6 +341,8 @@ export function getCachedPageLayout({
     pageHeight,
     pageWidth,
     wasmLayoutReady,
+    filteredChildIdsMap,
+    rootKey,
   });
 
   return fullTreeLayoutMap;

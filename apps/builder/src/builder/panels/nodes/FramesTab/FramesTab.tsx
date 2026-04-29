@@ -36,6 +36,7 @@ import { buildTreeFromElements } from "../../../utils/treeUtils";
 import { MessageService } from "../../../../utils/messaging";
 import { getDB } from "../../../../lib/db";
 import { useTreeExpandState } from "@/builder/hooks";
+import { loadFrameElements } from "../../../utils/frameElementLoader";
 import {
   isWebGLCanvas,
   isCanvasCompareMode,
@@ -140,22 +141,14 @@ export function FramesTab({
       return;
     }
 
-    const loadFrameElements = async () => {
+    const loadSelectedFrameElements = async () => {
       try {
         const db = await getDB();
-        // ADR-903 P3-E follow-up: canonical parent 기반 조회
-        const frameElements = await db.elements.getDescendants(
+        const frameElements = await loadFrameElements(
+          db,
           selectedReusableFrameId,
         );
-
-        const currentElements = useStore.getState().elements;
-        const storeSetElements = useStore.getState().setElements;
-
-        // 해당 frame 소속 이외 elements 유지 + 새 frame elements 병합
-        const otherElements = currentElements.filter(
-          (el) => el.layout_id !== selectedReusableFrameId,
-        );
-        storeSetElements([...otherElements, ...frameElements]);
+        mergeElements(frameElements);
 
         loadedFrameIdsRef.current.add(selectedReusableFrameId);
       } catch (error) {
@@ -163,8 +156,8 @@ export function FramesTab({
       }
     };
 
-    loadFrameElements();
-  }, [selectedReusableFrameId]);
+    loadSelectedFrameElements();
+  }, [selectedReusableFrameId, mergeElements]);
 
   // ADR-040: elementsMap 순회로 layout_id 필터링
   const frameElements = useMemo(() => {
@@ -242,8 +235,7 @@ export function FramesTab({
 
       try {
         const db = await getDB();
-        // ADR-903 P3-E follow-up: canonical parent 기반 조회
-        const frameElements = await db.elements.getDescendants(frameId);
+        const frameElements = await loadFrameElements(db, frameId);
         if (requestId !== frameSelectRequestRef.current) {
           return;
         }

@@ -17,4 +17,20 @@ describe("FramesTab frame selection race guard", () => {
       /if \(requestId !== frameSelectRequestRef\.current\) \{[\s\S]*return;[\s\S]*\}/,
     );
   });
+
+  it("does not replace live frame elements with an empty descendant load", async () => {
+    const source = await readFile(resolve(__dirname, "FramesTab.tsx"), "utf-8");
+
+    expect(source).toContain(
+      'import { loadFrameElements } from "../../../utils/frameElementLoader";',
+    );
+    expect(source).toMatch(/const frameElements = await loadFrameElements\(/);
+    expect(source).toMatch(/mergeElements\(frameElements\);/);
+    expect(source).not.toContain(
+      "const storeSetElements = useStore.getState().setElements;",
+    );
+    expect(source).not.toMatch(
+      /filter\(\s*\(el\) => el\.layout_id !== selectedReusableFrameId/,
+    );
+  });
 });

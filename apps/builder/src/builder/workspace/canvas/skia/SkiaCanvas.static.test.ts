@@ -19,4 +19,21 @@ describe("SkiaCanvas render invalidation contract", () => {
       "rendererInput 변경 시 Skia content/cache invalidation effect 가 필요합니다.",
     ).not.toBeNull();
   });
+
+  it("feeds StoreRenderBridge from page-resolved rendererInput maps", async () => {
+    const source = await readFile(resolve(__dirname, "SkiaCanvas.tsx"), "utf-8");
+
+    expect(source).toContain(
+      "getElements: () => rendererInputRef.current.elementsMap,",
+    );
+    expect(source).toContain(
+      "getChildrenMap: () => rendererInputRef.current.childrenMap,",
+    );
+    expect(source).not.toContain(
+      "getElements: () => useStore.getState().elementsMap,",
+    );
+    expect(source).not.toContain(
+      "getChildrenMap: () => useStore.getState().childrenMap,",
+    );
+  });
 });

@@ -45,7 +45,8 @@ const mockEditModeState = {
   setCurrentLayoutId: vi.fn(),
 };
 
-const mockGetByLayout = vi.fn(async () => [] as never[]);
+const mockGetAllElements = vi.fn(async () => [] as never[]);
+const mockGetDescendants = vi.fn(async () => [] as never[]);
 
 // ─── module mocks ───────────────────────────────────────────────────────────
 vi.mock("react-router-dom", () => ({
@@ -95,7 +96,10 @@ vi.mock("@/builder/stores", () => ({
 
 vi.mock("@/lib/db", () => ({
   getDB: vi.fn(async () => ({
-    elements: { getByLayout: mockGetByLayout },
+    elements: {
+      getAll: mockGetAllElements,
+      getDescendants: mockGetDescendants,
+    },
   })),
 }));
 
@@ -158,7 +162,8 @@ function resetMockState() {
   mockStoreState.pages = [];
   mockIsFramesTabCanonical = false;
   vi.clearAllMocks();
-  mockGetByLayout.mockResolvedValue([] as never[]);
+  mockGetAllElements.mockResolvedValue([] as never[]);
+  mockGetDescendants.mockResolvedValue([] as never[]);
   mockSelectCanonicalDocument.mockReturnValue({ children: [] });
   // wrapper Promise resolve 기본값 — 정상 동작
   createReusableFrameMock.mockResolvedValue({

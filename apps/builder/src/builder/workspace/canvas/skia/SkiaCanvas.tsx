@@ -273,9 +273,9 @@ export function SkiaCanvas({
     if (app) return; // PixiJS가 있으면 기존 Sprite 경로 사용
     const bridge = new StoreRenderBridge();
     bridge.connect({
-      getElements: () => useStore.getState().elementsMap,
+      getElements: () => rendererInputRef.current.elementsMap,
       getLayoutMap: () => getSharedLayoutMap(),
-      getChildrenMap: () => useStore.getState().childrenMap,
+      getChildrenMap: () => rendererInputRef.current.childrenMap,
       // 선택적 구독: elementsMap/childrenMap/darkMode 변경 감지
       subscribe: (cb) => {
         let prevElements = useStore.getState().elementsMap;

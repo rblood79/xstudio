@@ -39,6 +39,15 @@ export interface ResolvePageWithFrameOutput {
   hasFrameBinding: boolean;
 }
 
+const PAGE_FRAME_ELEMENT_ID_SEPARATOR = "::page-frame::";
+
+export function toPageFrameElementId(
+  pageId: string,
+  frameElementId: string,
+): string {
+  return `${pageId}${PAGE_FRAME_ELEMENT_ID_SEPARATOR}${frameElementId}`;
+}
+
 function isBodyType(type: string): boolean {
   return type.toLowerCase() === "body";
 }
@@ -249,7 +258,25 @@ export function resolvePageWithFrame(
 
   const pageBodyId = pageBody.id;
   const frameBodyId = frameBody.id;
+  const frameElementIds = new Set(frameElements.map((el) => el.id));
   const resolvedPageBody = mergePageBodyWithFrameLayout(pageBody, frameBody);
+
+  const projectFrameElementId = (id: string): string =>
+    toPageFrameElementId(page.id, id);
+
+  const projectFrameParentId = (parentId: string | null | undefined) => {
+    if (!parentId || parentId === frameBodyId) return pageBodyId;
+    return frameElementIds.has(parentId)
+      ? projectFrameElementId(parentId)
+      : parentId;
+  };
+
+  const projectFrameElement = (el: Element): Element => ({
+    ...el,
+    id: projectFrameElementId(el.id),
+    parent_id: projectFrameParentId(el.parent_id),
+    page_id: page.id,
+  });
 
   const pageRootBySlot = new Map<string, Element[]>();
   const pageNonRoot: Element[] = [];
@@ -274,26 +301,36 @@ export function resolvePageWithFrame(
   }
 
   const result: Element[] = [];
+  const projectedSlotByName = new Map<string, Element>();
 
   for (const el of frameElements) {
     if (el.id === frameBodyId) continue;
     if (hiddenChildIds.has(el.id)) continue;
+    const projected = projectFrameElement(el);
     if (el.parent_id === frameBodyId) {
-      result.push(
-        el.type === "Slot"
-          ? asPageResolvedRootSlot(el, pageBodyId, frameBody)
-          : { ...el, parent_id: pageBodyId },
-      );
+      const resolved =
+        projected.type === "Slot"
+          ? asPageResolvedRootSlot(projected, pageBodyId, frameBody)
+          : projected;
+      result.push(resolved);
+      if (resolved.type === "Slot") {
+        projectedSlotByName.set(readSlotElementName(el), resolved);
+      }
     } else {
-      result.push(el);
+      result.push(projected);
+      if (projected.type === "Slot") {
+        projectedSlotByName.set(readSlotElementName(el), projected);
+      }
     }
   }
 
   const fallbackSlot =
-    slotByName.get("content") ?? slotByName.values().next().value ?? null;
+    projectedSlotByName.get("content") ??
+    projectedSlotByName.values().next().value ??
+    null;
 
   for (const [slotName, elements] of pageRootBySlot) {
-    const targetSlot = slotByName.get(slotName) ?? fallbackSlot;
+    const targetSlot = projectedSlotByName.get(slotName) ?? fallbackSlot;
     if (!targetSlot) {
       result.push(...elements);
       continue;

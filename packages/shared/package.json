@@ -57,11 +57,11 @@
   },
   "dependencies": {
     "@internationalized/date": "^3.11.0",
-    "@internationalized/number": "^3.6.5",
+    "@internationalized/number": "^3.6.6",
     "@react-aria/focus": "^3.21.4",
     "@react-aria/utils": "^3.33.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/react-virtual": "^3.13.19",
+    "@tanstack/react-virtual": "^3.13.24",
     "@types/node": "catalog:",
     "clsx": "^2.1.1",
     "jszip": "^3.10.1",

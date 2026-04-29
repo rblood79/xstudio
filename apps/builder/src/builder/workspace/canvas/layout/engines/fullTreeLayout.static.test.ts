@@ -20,6 +20,17 @@ describe("fullTreeLayout shared filtered children key contract", () => {
     );
   });
 
+  it("exposes cloned filtered children maps for layout cache hit republish", async () => {
+    const source = await readFile(
+      resolve(__dirname, "fullTreeLayout.ts"),
+      "utf-8",
+    );
+
+    expect(source).toMatch(/function cloneFilteredChildrenMap\(/);
+    expect(source).toMatch(/export function getPublishedFilteredChildrenMap\(/);
+    expect(source).toMatch(/return map \? cloneFilteredChildrenMap\(map\) : null;/);
+  });
+
   it("batch-publishes layout map updates with a single listener notification", async () => {
     const source = await readFile(
       resolve(__dirname, "fullTreeLayout.ts"),

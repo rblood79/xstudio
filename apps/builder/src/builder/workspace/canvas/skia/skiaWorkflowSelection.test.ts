@@ -175,6 +175,61 @@ describe("buildSelectionRenderData editing semantics", () => {
     expect(result.slotMarkerRole).toBe("origin");
   });
 
+  it("renders selection for a page-applied frame Slot projection", () => {
+    const result = buildSelectionRenderData(
+      0,
+      0,
+      1,
+      new Map([
+        ["frame-content-slot", { x: 24, y: 96, width: 320, height: 240 }],
+      ]),
+      makeSelection(["frame-content-slot"]),
+      new Map([
+        [
+          "frame-content-slot",
+          makeElement("frame-content-slot", {
+            layout_id: "frame-layout-1",
+            page_id: null,
+            parent_id: "frame-body",
+            props: { name: "content" },
+            type: "Slot",
+          }),
+        ],
+      ]),
+    );
+
+    expect(result.bounds).toEqual({ x: 24, y: 96, width: 320, height: 240 });
+    expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBe("origin");
+    expect(result.showHandles).toBe(true);
+  });
+
+  it("does not render non-page Slot layout selection without current page bounds", () => {
+    const result = buildSelectionRenderData(
+      0,
+      0,
+      1,
+      new Map(),
+      makeSelection(["frame-content-slot"]),
+      new Map([
+        [
+          "frame-content-slot",
+          makeElement("frame-content-slot", {
+            layout_id: "frame-layout-1",
+            page_id: null,
+            parent_id: "frame-body",
+            props: { name: "content" },
+            type: "Slot",
+          }),
+        ],
+      ]),
+    );
+
+    expect(result.bounds).toBeNull();
+    expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBeNull();
+  });
+
   it("multi-selection suppresses semantic role marker", () => {
     const result = buildSelectionRenderData(
       0,

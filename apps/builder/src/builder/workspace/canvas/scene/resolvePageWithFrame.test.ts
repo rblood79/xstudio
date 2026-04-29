@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import type { Element, Page } from "../../../../types/core/store.types";
 
-import { resolvePageWithFrame } from "./resolvePageWithFrame";
+import {
+  resolvePageWithFrame,
+  toPageFrameElementId,
+} from "./resolvePageWithFrame";
 
 const makeEl = (
   partial: Partial<Element> & { id: string; type: string },
@@ -155,26 +158,27 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
 
       expect(result.hasFrameBinding).toBe(true);
       expect(result.bodyElement?.id).toBe("page-body");
+      const scoped = (id: string) => toPageFrameElementId("page-1", id);
 
       const ids = new Set(result.pageElements.map((el) => el.id));
       expect(ids).toEqual(
         new Set([
-          "slot-header",
-          "slot-content",
-          "slot-footer",
-          "text-header",
-          "text-footer",
+          scoped("slot-header"),
+          scoped("slot-content"),
+          scoped("slot-footer"),
+          scoped("text-header"),
+          scoped("text-footer"),
         ]),
       );
 
       const reparentedSlotHeader = result.pageElements.find(
-        (el) => el.id === "slot-header",
+        (el) => el.id === scoped("slot-header"),
       );
       const reparentedSlotContent = result.pageElements.find(
-        (el) => el.id === "slot-content",
+        (el) => el.id === scoped("slot-content"),
       );
       const reparentedSlotFooter = result.pageElements.find(
-        (el) => el.id === "slot-footer",
+        (el) => el.id === scoped("slot-footer"),
       );
       expect(reparentedSlotHeader?.parent_id).toBe("page-body");
       expect(reparentedSlotContent?.parent_id).toBe("page-body");
@@ -184,9 +188,9 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       expect(reparentedSlotFooter?.props?._slotChrome).toBe("hidden");
 
       const textInHeader = result.pageElements.find(
-        (el) => el.id === "text-header",
+        (el) => el.id === scoped("text-header"),
       );
-      expect(textInHeader?.parent_id).toBe("slot-header");
+      expect(textInHeader?.parent_id).toBe(scoped("slot-header"));
     });
   });
 
@@ -284,22 +288,23 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
 
       expect(result.hasFrameBinding).toBe(true);
       expect(result.bodyElement?.id).toBe("page-body");
+      const scoped = (id: string) => toPageFrameElementId("page-1", id);
 
       const ids = new Set(result.pageElements.map((el) => el.id));
-      expect(ids.has("default-content-text")).toBe(false);
+      expect(ids.has(scoped("default-content-text"))).toBe(false);
       expect(ids.has("page-custom")).toBe(true);
-      expect(ids.has("slot-content")).toBe(true);
-      expect(ids.has("slot-header")).toBe(true);
-      expect(ids.has("text-header")).toBe(true);
-      expect(ids.has("text-footer")).toBe(true);
+      expect(ids.has(scoped("slot-content"))).toBe(true);
+      expect(ids.has(scoped("slot-header"))).toBe(true);
+      expect(ids.has(scoped("text-header"))).toBe(true);
+      expect(ids.has(scoped("text-footer"))).toBe(true);
 
       const remappedCustom = result.pageElements.find(
         (el) => el.id === "page-custom",
       );
-      expect(remappedCustom?.parent_id).toBe("slot-content");
+      expect(remappedCustom?.parent_id).toBe(scoped("slot-content"));
 
       const slotContentRow = result.pageElements.find(
-        (el) => el.id === "slot-content",
+        (el) => el.id === scoped("slot-content"),
       );
       expect(slotContentRow?.parent_id).toBe("page-body");
       expect(slotContentRow?.props?._slotChrome).toBe("hidden");
@@ -334,7 +339,9 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       const remappedCustom = result.pageElements.find(
         (el) => el.id === "page-custom",
       );
-      expect(remappedCustom?.parent_id).toBe("slot-content");
+      expect(remappedCustom?.parent_id).toBe(
+        toPageFrameElementId("page-1", "slot-content"),
+      );
     });
   });
 
@@ -380,7 +387,9 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     });
 
     const remapped = result.pageElements.find((el) => el.id === "misslotted");
-    expect(remapped?.parent_id).toBe("slot-content");
+    expect(remapped?.parent_id).toBe(
+      toPageFrameElementId("page-1", "slot-content"),
+    );
   });
 
   it("page non-root element (다른 page element 의 자식) 는 그대로 유지", () => {
@@ -438,8 +447,92 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
       (el) => el.id === "page-child",
     );
 
-    expect(remappedRoot?.parent_id).toBe("slot-content");
+    expect(remappedRoot?.parent_id).toBe(
+      toPageFrameElementId("page-1", "slot-content"),
+    );
     expect(childResult?.parent_id).toBe("page-root");
+  });
+
+  it("동일 frame 을 여러 page 에 적용해도 page별 slot projection id 가 충돌하지 않는다", () => {
+    const FRAME_ID = "frame-shared";
+    const frameBody = makeEl({
+      id: "frame-body",
+      type: "body",
+      layout_id: FRAME_ID,
+      page_id: null,
+    });
+    const slotContent = makeEl({
+      id: "slot-content",
+      type: "Slot",
+      layout_id: FRAME_ID,
+      page_id: null,
+      parent_id: "frame-body",
+      props: { name: "content" },
+    });
+    const page1Body = makeEl({
+      id: "page-1-body",
+      type: "body",
+      page_id: "page-1",
+    });
+    const page1Card = makeEl({
+      id: "page-1-card",
+      type: "Card",
+      page_id: "page-1",
+      parent_id: "page-1-body",
+      props: { slot_name: "content" },
+    });
+    const page2Body = makeEl({
+      id: "page-2-body",
+      type: "body",
+      page_id: "page-2",
+    });
+    const page2Button = makeEl({
+      id: "page-2-button",
+      type: "Button",
+      page_id: "page-2",
+      parent_id: "page-2-body",
+      props: { slot_name: "content" },
+    });
+    const elementsMap = buildElementsMap([
+      frameBody,
+      slotContent,
+      page1Body,
+      page1Card,
+      page2Body,
+      page2Button,
+    ]);
+
+    const page1Result = resolvePageWithFrame({
+      page: makePage({ id: "page-1", layout_id: FRAME_ID }),
+      pageElements: [page1Body, page1Card],
+      elementsMap,
+    });
+    const page2Result = resolvePageWithFrame({
+      page: makePage({ id: "page-2", layout_id: FRAME_ID }),
+      pageElements: [page2Body, page2Button],
+      elementsMap,
+    });
+
+    const page1SlotId = toPageFrameElementId("page-1", "slot-content");
+    const page2SlotId = toPageFrameElementId("page-2", "slot-content");
+    const page1Slot = page1Result.pageElements.find(
+      (el) => el.id === page1SlotId,
+    );
+    const page2Slot = page2Result.pageElements.find(
+      (el) => el.id === page2SlotId,
+    );
+    const page1Fill = page1Result.pageElements.find(
+      (el) => el.id === "page-1-card",
+    );
+    const page2Fill = page2Result.pageElements.find(
+      (el) => el.id === "page-2-button",
+    );
+
+    expect(page1Slot?.parent_id).toBe("page-1-body");
+    expect(page2Slot?.parent_id).toBe("page-2-body");
+    expect(page1SlotId).not.toBe(page2SlotId);
+    expect(page1Fill?.parent_id).toBe(page1SlotId);
+    expect(page2Fill?.parent_id).toBe(page2SlotId);
   });
 
   it("frame Slot 0건 (빈 frame body) → page element 가 page-body 자식 유지 (orphan 방지 회귀 fixture)", () => {
@@ -528,7 +621,9 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     expect(bodyStyle.flexDirection).toBe("column");
     expect(bodyStyle.gap).toBe(12);
 
-    const slotRow = result.pageElements.find((el) => el.id === "slot-content");
+    const slotRow = result.pageElements.find(
+      (el) => el.id === toPageFrameElementId("page-1", "slot-content"),
+    );
     expect(slotRow?.parent_id).toBe("page-body");
   });
 
@@ -585,13 +680,13 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     });
 
     const headerStyle = result.pageElements.find(
-      (el) => el.id === "slot-header",
+      (el) => el.id === toPageFrameElementId("page-1", "slot-header"),
     )?.props?.style as Record<string, unknown> | undefined;
     const contentStyle = result.pageElements.find(
-      (el) => el.id === "slot-content",
+      (el) => el.id === toPageFrameElementId("page-1", "slot-content"),
     )?.props?.style as Record<string, unknown> | undefined;
     const footerStyle = result.pageElements.find(
-      (el) => el.id === "slot-footer",
+      (el) => el.id === toPageFrameElementId("page-1", "slot-footer"),
     )?.props?.style as Record<string, unknown> | undefined;
 
     expect(headerStyle).toMatchObject({ width: "100%", flexShrink: 0 });
@@ -647,7 +742,9 @@ describe("ADR-911 P3-θ resolvePageWithFrame", () => {
     });
 
     const ids = new Set(result.pageElements.map((el) => el.id));
-    expect(ids.has("slot-deleted")).toBe(false);
-    expect(ids.has("slot-content")).toBe(true);
+    expect(ids.has(toPageFrameElementId("page-1", "slot-deleted"))).toBe(
+      false,
+    );
+    expect(ids.has(toPageFrameElementId("page-1", "slot-content"))).toBe(true);
   });
 });

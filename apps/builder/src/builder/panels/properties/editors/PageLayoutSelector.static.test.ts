@@ -19,6 +19,10 @@ describe("PageLayoutSelector frame binding persistence contract", () => {
     expect(source).toMatch(
       /await persistenceDb\.pages\.insert\(\{[\s\S]*layout_id: nextLayoutId,/,
     );
+    expect(source).toContain(
+      'import { loadFrameElements } from "../../../utils/frameElementLoader";',
+    );
+    expect(source).toMatch(/const layoutElements = await loadFrameElements\(/);
     expect(source).not.toMatch(
       /await db\.pages\.update\(pageId,\s*\{\s*layout_id:/,
     );

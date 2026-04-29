@@ -27,6 +27,7 @@ import { getDB } from "../../../../lib/db";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 import { isFramesTabCanonical } from "../../../../utils/featureFlags";
 import { enqueuePagePersistence } from "../../../utils/pagePersistenceQueue";
+import { loadFrameElements } from "../../../utils/frameElementLoader";
 import type { FrameNode } from "@composition/shared";
 
 interface PageLayoutSelectorProps {
@@ -107,8 +108,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         const nextLayoutId = layoutId || null;
 
         if (layoutId) {
-          // ADR-903 P3-E follow-up: canonical parent 기반 조회
-          const layoutElements = await db.elements.getDescendants(layoutId);
+          const layoutElements = await loadFrameElements(db, layoutId);
           mergeElements(layoutElements);
         }
 

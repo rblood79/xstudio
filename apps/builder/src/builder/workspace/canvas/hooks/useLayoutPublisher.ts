@@ -117,6 +117,9 @@ export function useLayoutPublisher(
 
       const sourceElementById = new Map(elementById);
       sourceElementById.set(bodyElement.id, bodyElement);
+      for (const element of pageElements) {
+        sourceElementById.set(element.id, element);
+      }
       const resolvedTree = resolveCanonicalRefTree({
         elements: pageElements,
         elementsMap: sourceElementById,

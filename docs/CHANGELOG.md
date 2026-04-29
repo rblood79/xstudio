@@ -5,6 +5,20 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-912 Page-frame shared Frame projection collision fix] - 2026-04-30
+
+### Bug Fixes
+
+- **동일 Frame 을 여러 Page 에 적용하면 각 Page child 가 서로 복제된 것처럼 섞이던 Skia 회귀 수정**:
+  - Page-frame 합성 resolver 가 raw frame Slot id 를 모든 Page 에 재사용해 shared layout/filtered children/Skia registry 에서 같은 Slot parent 로 충돌하던 경로를 차단
+  - frame subtree 를 Page별 synthetic projection id(`page::page-frame::frameElement`) 로 분리하고, Page root fill 은 해당 Page 의 projected Slot 아래로 reparent
+  - Skia renderer input 과 `StoreRenderBridge` 가 raw store map 이 아니라 page-resolved projection map/childrenMap 을 사용해 layout publish tree, command stream tree, hit-test/selection tree 를 일치
+  - `useLayoutPublisher` layout 계산 입력에도 projected page elements 를 주입해 synthetic Slot/frame node 가 원본 `elementsMap` 누락으로 layout/paint 에서 빠지지 않도록 보강
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/renderers/__tests__/createSkiaRendererInput.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts`
+
 ## [ADR-912 Skia render materialization follow-up — layout publish full rebuild] - 2026-04-29
 
 ### Bug Fixes
@@ -54,6 +68,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **새로고침 후 Apply Frame 선택값은 남지만 frame slot 이 Page 에 합성되지 않던 회귀 수정**:
   - project initialize 시점에 `layouts` store 와 `elementsMap` 이 아직 hydrate 전이면 canonical reusable frame 목록이 비어 frame descendants 가 병합되지 않던 경로를 차단
   - DB snapshot 의 `allElements` + project layouts 로 canonical input 을 만들고, canonical frame id(`layout-<id>`) 를 legacy `layout_id` 로 정규화해 frame body/slot elements 를 첫 hydrate 에 포함
+- **Frame 적용 Page 의 content Slot hover 는 되지만 selection box 가 표시되지 않던 회귀 수정**:
+  - hit-test 는 frame Slot id 를 선택하지만 selection renderer 가 raw frame Slot 의 `page_id: null` 을 현재 Page 와 불일치로 걸러 selection bounds 를 만들지 못하던 경로를 차단
+  - 현재 rendered `treeBoundsMap` 에 존재하는 layout Slot projection 만 selection target 예외로 허용해 stale frame layout element 가 Page selection 으로 새지 않도록 제한
+- **Frames tab 진입 후 Page tab 복귀 시 live frame 적용이 해제되던 회귀 수정**:
+  - FramesTab fallback load 가 `db.elements.getDescendants(frameId)` 빈 결과를 받은 뒤 기존 `layout_id === frameId` 요소를 메모리에서 제거해, Page 의 `layout_id` 는 남았지만 resolver 가 frame body 를 찾지 못하던 경로를 차단
+  - frame element load 를 canonical descendants 우선 + legacy `layout_id` fallback helper 로 통합하고, FramesTab 은 빈 조회 결과로 live elements 를 replace 하지 않고 merge 만 수행
+  - PageLayoutSelector 의 Apply Frame live load 도 동일 helper 를 사용해 새로고침 hydrate 경로와 live apply 경로를 일치
+- **Frames tab 복귀 후 Skia command stream 이 raw page tree 로 fallback 하던 회귀 수정**:
+  - Frames mode 진입 시 page key 의 filtered children map 이 stale cleanup 으로 삭제된 뒤, Page mode 복귀에서 `getCachedPageLayout` 이 cache hit 로 빠지면 layout map 만 재사용하고 frame 합성 filtered children map 을 재발행하지 않던 경로를 차단
+  - cached page layout entry 에 실제 publish 된 filtered children map 과 root key 를 저장하고, cache hit 에도 `publishFilteredChildrenMap` 을 재실행해 command stream 이 Page-frame 합성 tree 를 계속 사용하도록 보장
 
 ### Features
 
@@ -93,6 +117,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/visiblePageRoots.test.ts src/builder/workspace/canvas/skia/visibleFrameRoots.test.ts src/builder/workspace/canvas/renderers/__tests__/buildFrameRendererInput.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/hooks/useElementCreator.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/hooks/__tests__/usePageManager.canonical.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/utils/frameElementLoader.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/scene/layoutCache.static.test.ts src/builder/workspace/canvas/layout/engines/fullTreeLayout.static.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/utils/frameElementLoader.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/panels/nodes/FramesTab/__tests__/FramesTab.test.tsx src/builder/panels/properties/editors/PageLayoutSelector.static.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts`
 - Playwright screenshot evidence: `docs/adr/evidence/912-g4f-component-slot.png`
 - `pnpm -F @composition/builder type-check`
 - `git diff --check`
