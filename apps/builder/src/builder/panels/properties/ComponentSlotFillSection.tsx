@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Layers, Plus, X } from "lucide-react";
 import type { Element } from "../../../types/core/store.types";
 import {
@@ -119,8 +119,25 @@ function getFilledLabel(
   return labels.length > 0 ? labels.join(", ") : "Empty";
 }
 
-function getFillNodeId(candidate: Element): string {
-  return candidate.customId ?? candidate.id;
+function getFillNodeId(candidate: Element, existingChildren: unknown[]): string {
+  const baseId = candidate.customId ?? candidate.id;
+  const existingIds = new Set(
+    existingChildren
+      .filter(isRecord)
+      .map((child) => child.id)
+      .filter((id): id is string => typeof id === "string"),
+  );
+
+  if (!existingIds.has(baseId)) return baseId;
+
+  let index = 2;
+  let nextId = `${baseId}-${index}`;
+  while (existingIds.has(nextId)) {
+    index += 1;
+    nextId = `${baseId}-${index}`;
+  }
+
+  return nextId;
 }
 
 export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
@@ -134,6 +151,7 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
   const updateElement = useStore((state) => state.updateElement);
   const [selectedSlotPath, setSelectedSlotPath] = useState("");
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
+  const pendingChildrenByPathRef = useRef<Record<string, unknown[]>>({});
 
   const master = useMemo(() => {
     if (!element || !isCanonicalRefElement(element)) return undefined;
@@ -158,6 +176,17 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     [elementsMap, selectedSlot],
   );
 
+  const descendantsKey = JSON.stringify(
+    ((element as SlotFillElement | undefined)?.descendants ?? {}) as Record<
+      string,
+      unknown
+    >,
+  );
+
+  useEffect(() => {
+    pendingChildrenByPathRef.current = {};
+  }, [elementId, descendantsKey]);
+
   useEffect(() => {
     if (selectedSlot && selectedSlot.path !== selectedSlotPath) {
       setSelectedSlotPath(selectedSlot.path);
@@ -181,21 +210,36 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
   const filledLabel = getFilledLabel(filledChildren, elementsMap);
 
   const handleFillSlot = () => {
-    const candidate = elementsMap.get(selectedCandidateId);
+    const latestState = useStore.getState();
+    const latestElementsMap = latestState.elementsMap;
+    const candidate = latestElementsMap.get(selectedCandidateId);
     if (!candidate || !selectedSlot) return;
 
-    const descendants = instance.descendants ?? {};
+    const latestInstance =
+      (latestElementsMap.get(element.id) as SlotFillElement | undefined) ??
+      instance;
+    const descendants = latestInstance.descendants ?? {};
+    const currentChildren = getSlotFillChildren(
+      latestInstance,
+      selectedSlot.path,
+    );
+    const effectiveChildren =
+      pendingChildrenByPathRef.current[selectedSlot.path] ?? currentChildren;
+    const nextChildren = [
+      ...effectiveChildren,
+      {
+        id: getFillNodeId(candidate, effectiveChildren),
+        type: "ref",
+        ref: candidate.id,
+      },
+    ];
+    pendingChildrenByPathRef.current[selectedSlot.path] = nextChildren;
+
     void updateElement(element.id, {
       descendants: {
         ...descendants,
         [selectedSlot.path]: {
-          children: [
-            {
-              id: getFillNodeId(candidate),
-              type: "ref",
-              ref: candidate.id,
-            },
-          ],
+          children: nextChildren,
         },
       },
     } as Partial<Element>);
@@ -205,6 +249,7 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     const descendants = instance.descendants ?? {};
     const nextDescendants = { ...descendants };
     delete nextDescendants[selectedSlot.path];
+    delete pendingChildrenByPathRef.current[selectedSlot.path];
 
     void updateElement(element.id, {
       descendants: nextDescendants,

@@ -148,11 +148,6 @@ export const FrameSlotSection = memo(function FrameSlotSection({
     if (!candidate) return;
 
     const children = childrenMap.get(element.id) ?? [];
-    const alreadyInserted = children.some((child) => {
-      const childRef = (child as Element & { ref?: unknown }).ref;
-      return typeof childRef === "string" && matchesReference(candidate, childRef);
-    });
-    if (alreadyInserted) return;
 
     void addElement({
       id: crypto.randomUUID(),

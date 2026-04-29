@@ -17,11 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Page 에 적용된 Frame Slot 이 보이지 않던 overlay 회귀 수정**:
   - Page-frame Slot 은 Spec dashed box/text chrome 은 숨기되 editor overlay marker 는 유지하도록 `_slotChrome` 과 `_slotMarkerChrome` 정책을 분리
   - empty Slot 은 Pencil-style hatch+border 를 표시하고, child 가 채워진 Slot 은 hatch 없이 border 만 표시
+- **Frames mode 새로고침 후 일부 Frame body/Slot 이 누락되거나 Slot size 가 0 으로 보이던 회귀 수정**:
+  - `BuilderCore` 의 layout-mode refresh 보정도 `FramesTab`/`PageLayoutSelector` 와 동일한 `loadFrameElements` fallback 을 사용해 canonical descendants 에 frame body 가 없으면 legacy `layout_id` snapshot 으로 복원
+  - 빈 frame load 결과로 `initializeProject` 첫 hydrate 에 포함된 frame body/slot 을 replace 하지 않도록 가드해 다중 Frame 등록 후 새로고침 표시 상태를 안정화
 
 ### Verification
 
 - `pnpm -F @composition/builder exec vitest run src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/renderers/__tests__/createSkiaRendererInput.test.ts src/builder/workspace/canvas/hooks/useLayoutPublisher.static.test.ts src/builder/workspace/canvas/skia/SkiaCanvas.static.test.ts`
 - `pnpm -F @composition/builder exec vitest run src/builder/utils/editingSemantics.test.ts src/builder/workspace/canvas/skia/skiaOverlayHelpers.test.ts src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/workspace/canvas/scene/resolvePageWithFrame.test.ts src/builder/workspace/canvas/skia/skiaOverlayBuilder.static.test.ts src/builder/workspace/canvas/skia/buildSpecNodeData.test.ts`
+- `pnpm -F @composition/builder exec vitest run src/builder/main/BuilderCore.static.test.ts src/builder/utils/frameElementLoader.test.ts src/builder/panels/nodes/FramesTab/FramesTab.static.test.ts src/builder/workspace/canvas/BuilderCanvas.frameMode.static.test.ts`
 
 ## [ADR-912 Skia render materialization follow-up — layout publish full rebuild] - 2026-04-29
 

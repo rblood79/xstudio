@@ -271,4 +271,50 @@ describe("FrameSlotSection", () => {
       ]);
     });
   });
+
+  it("inserts the same recommended component multiple times as slot content", async () => {
+    const footer = makeElement("footer", {
+      type: "CardFooter",
+      slot: ["origin"],
+    });
+    const origin = makeElement("origin", {
+      componentName: "Button",
+      reusable: true,
+      type: "Button",
+    });
+
+    const addElement = vi.fn(async (element: Element) => {
+      const state = useStore.getState();
+      useStore.setState({
+        elements: [...state.elements, element],
+        elementsMap: new Map([...state.elementsMap, [element.id, element]]),
+      });
+      useStore.getState()._rebuildIndexes();
+    });
+
+    useStore.setState({
+      addElement,
+      elements: [footer, origin],
+      elementsMap: new Map([
+        ["footer", footer],
+        ["origin", origin],
+      ]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    render(<FrameSlotSection elementId="footer" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Insert Button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Insert Button" }));
+
+    await waitFor(() => {
+      const children = useStore.getState().childrenMap.get("footer") ?? [];
+      expect(children).toHaveLength(2);
+      expect(children).toEqual([
+        expect.objectContaining({ type: "ref", ref: "origin" }),
+        expect.objectContaining({ type: "ref", ref: "origin" }),
+      ]);
+      expect(children[0].id).not.toBe(children[1].id);
+    });
+  });
 });

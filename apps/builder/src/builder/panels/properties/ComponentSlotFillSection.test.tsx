@@ -97,6 +97,65 @@ describe("ComponentSlotFillSection", () => {
     });
   });
 
+  it("appends repeated fills instead of replacing existing slot children", async () => {
+    const cardOrigin = makeElement("card-origin", {
+      reusable: true,
+      componentName: "ArticleCard",
+    });
+    const footerSlot = makeElement("footer", {
+      type: "CardFooter",
+      customId: "footer",
+      parent_id: "card-origin",
+      slot: ["button-origin"],
+    });
+    const buttonOrigin = makeElement("button-origin", {
+      type: "Button",
+      reusable: true,
+      componentName: "Button",
+    });
+    const cardInstance = makeElement("card-instance", {
+      type: "ref",
+      ref: "card-origin",
+    } as Partial<Element>);
+
+    useStore.setState({
+      elements: [cardOrigin, footerSlot, buttonOrigin, cardInstance],
+      elementsMap: new Map([
+        ["card-origin", cardOrigin],
+        ["footer", footerSlot],
+        ["button-origin", buttonOrigin],
+        ["card-instance", cardInstance],
+      ]),
+    });
+    useStore.getState()._rebuildIndexes();
+
+    render(<ComponentSlotFillSection elementId="card-instance" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Fill slot" }));
+    fireEvent.click(screen.getByRole("button", { name: "Fill slot" }));
+
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("card-instance")).toMatchObject({
+        descendants: {
+          footer: {
+            children: [
+              {
+                id: "button-origin",
+                type: "ref",
+                ref: "button-origin",
+              },
+              {
+                id: "button-origin-2",
+                type: "ref",
+                ref: "button-origin",
+              },
+            ],
+          },
+        },
+      });
+    });
+  });
+
   it("does not render for component origins", () => {
     const cardOrigin = makeElement("card-origin", {
       reusable: true,
