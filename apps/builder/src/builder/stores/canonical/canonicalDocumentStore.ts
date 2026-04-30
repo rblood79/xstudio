@@ -446,3 +446,25 @@ export function selectActiveCanonicalDocument(): CompositionDocument | null {
   if (!state.currentProjectId) return null;
   return state.documents.get(state.currentProjectId) ?? null;
 }
+
+// ─────────────────────────────────────────────
+// Dev-only window 노출 — ADR-916 Phase 2 G3 Step 1b 검증용
+// ─────────────────────────────────────────────
+//
+// dev console 에서 canonical store hydration 검증 가능:
+//   window.__canonical_STORE__.getState().documents.size       // 1
+//   window.__canonical_STORE__.getState().currentProjectId     // proj-id
+//   window.__canonical_STORE__.getState().documentVersion      // mutation 시 증가
+//   [...window.__canonical_STORE__.getState().documents.values()][0]  // 활성 doc
+//
+// production bundle 영향 0 — `import.meta.env.DEV` 가드.
+
+declare global {
+  interface Window {
+    __canonical_STORE__?: typeof useCanonicalDocumentStore;
+  }
+}
+
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+  window.__canonical_STORE__ = useCanonicalDocumentStore;
+}
