@@ -42,7 +42,7 @@ interface LegacyMetadata {
  *   (ref 노드의 경우 fallback 시 "ref" 가 들어와 LayerTree 분기 무력화 → 본 경로
  *   진입 시 metadata 누락 노드는 `null` 반환으로 처리).
  */
-function canonicalNodeToElement(
+export function canonicalNodeToElement(
   node: CanonicalNode,
   parentId: string | null,
   orderNum: number,
@@ -153,4 +153,72 @@ export function useCanonicalElements(): Element[] | null {
     if (!doc) return null;
     return canonicalDocumentToElements(doc);
   }, [doc]);
+}
+
+/**
+ * canonical document 트리에서 `metadata.legacyProps.id === legacyId` 인 노드를
+ * DFS 검색. legacy uuid 와 canonical node.id (segId, stable path) 가 다르기
+ * 때문에, selectedElementId (legacy uuid) 기반 lookup 은 metadata 검색 필요.
+ *
+ * @returns 매칭 노드 또는 `null` (없음)
+ */
+function findNodeByLegacyId(
+  doc: CompositionDocument,
+  legacyId: string,
+): CanonicalNode | null {
+  function visit(node: CanonicalNode): CanonicalNode | null {
+    const md = node.metadata as LegacyMetadata | undefined;
+    if (
+      md?.type === LEGACY_ELEMENT_PROPS_METADATA_TYPE &&
+      md.legacyProps?.id === legacyId
+    ) {
+      return node;
+    }
+    if (node.children) {
+      for (const c of node.children) {
+        const found = visit(c);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  for (const c of doc.children) {
+    const found = visit(c);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * 활성 canonical document 에서 selected legacy element 를 `Element` 형태로 파생.
+ *
+ * **ADR-916 Phase 2 G3 Step 2 (Selection/properties)** read backbone — selected
+ * element 의 panel 데이터를 canonical store 에서 직접 파생.
+ *
+ * **lookup 정책**: selectedElementId 는 legacy uuid (예: "uuid-xxx"), canonical
+ * node.id 는 segId (stable path, 예: "page:p1/0/2"). 따라서 store 의
+ * `findNodeById` 가 아닌 metadata.legacyProps.id 기반 DFS 검색 사용.
+ *
+ * **비용**: O(n) DFS per render. document mutation 또는 selectedElementId 변경시
+ * 만 재계산 (useMemo 가드). hot path 가 selection panel 1개라 perf 영향 미미.
+ *
+ * **반환 조건**:
+ * - `selectedElementId === null` → null
+ * - canonical store 비활성 (doc null) → null
+ * - 매칭 노드 없음 → null
+ * - metadata 미보존 노드 (canonicalNodeToElement → null) → null
+ *
+ * @param selectedElementId — caller 의 selectedElementId (legacy uuid)
+ * @returns canonical 에서 파생된 legacy `Element` 또는 `null`
+ */
+export function useCanonicalSelectedElement(
+  selectedElementId: string | null,
+): Element | null {
+  const doc = useActiveCanonicalDocument();
+  return useMemo(() => {
+    if (!selectedElementId || !doc) return null;
+    const node = findNodeByLegacyId(doc, selectedElementId);
+    if (!node) return null;
+    return canonicalNodeToElement(node, null, 0);
+  }, [selectedElementId, doc]);
 }

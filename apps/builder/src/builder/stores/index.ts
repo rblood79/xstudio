@@ -15,6 +15,8 @@ import {
   isCanonicalRefElement,
   resolveCanonicalRefElement,
 } from "../utils/canonicalRefResolution";
+import { isCanonicalDocumentSyncEnabled } from "../../utils/featureFlags";
+import { useCanonicalSelectedElement } from "./canonical/canonicalElementsView";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -124,18 +126,42 @@ export const useSelectedElementData = (): SelectedElement | null => {
   // elementsMap 전체 구독 대신 이미 계산된 props 사용
   const selectedElementProps = useStore((state) => state.selectedElementProps);
 
+  // ADR-916 Phase 2 G3 Step 2 — canonical mode 시 selected element 를 canonical
+  // store 에서 파생. flag 미활성 또는 canonical 에 노드 없을 때 `null` 반환 →
+  // legacy elementsMap fallback. flag 와 무관하게 항상 hook 호출 (Rules of Hooks).
+  const canonicalSelectedElement =
+    useCanonicalSelectedElement(selectedElementId);
+
   // 🚀 추가 정보를 위해 elementsMap에서 한 번만 읽기 (구독 아님)
   // type, customId, dataBinding은 자주 변경되지 않음
   return useMemo(() => {
     if (!selectedElementId) return null;
 
-    // getState()로 동기적 읽기 (구독 없음)
-    const state = useStore.getState();
-    const element = state.elementsMap.get(selectedElementId);
-    if (!element) return null;
-    const resolvedElement = isCanonicalRefElement(element)
-      ? resolveCanonicalRefElement(element, state.elementsMap.values())
-      : element;
+    // dual-mode source 결정. canonical mode + canonical 에 element 존재 시
+    // canonical 우선, 그 외 legacy elementsMap fallback.
+    const useCanonical =
+      isCanonicalDocumentSyncEnabled() && canonicalSelectedElement !== null;
+
+    let element: Element | undefined;
+    let resolvedElement: Element | undefined;
+
+    if (useCanonical && canonicalSelectedElement) {
+      // canonical mode — store sync 가 ref resolution 을 미리 처리하지 않으므로
+      // 변환된 Element 그대로 사용. ref instance 분기는 Sub-Phase B 후속 cutover
+      // 시점에 재검토.
+      element = canonicalSelectedElement;
+      resolvedElement = element;
+    } else {
+      // legacy mode — getState()로 동기적 읽기 (구독 없음)
+      const state = useStore.getState();
+      element = state.elementsMap.get(selectedElementId);
+      if (!element) return null;
+      resolvedElement = isCanonicalRefElement(element)
+        ? resolveCanonicalRefElement(element, state.elementsMap.values())
+        : element;
+    }
+
+    if (!element || !resolvedElement) return null;
 
     // selectedElementProps가 비어있으면 element에서 직접 추출
     const props =
@@ -170,7 +196,7 @@ export const useSelectedElementData = (): SelectedElement | null => {
       dataBinding: element.dataBinding as SelectedElement["dataBinding"],
       events: (events as SelectedElement["events"]) || [],
     };
-  }, [selectedElementId, selectedElementProps]);
+  }, [selectedElementId, selectedElementProps, canonicalSelectedElement]);
 };
 
 /**

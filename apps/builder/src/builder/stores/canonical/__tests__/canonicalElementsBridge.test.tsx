@@ -273,6 +273,19 @@ describe("useCanonicalNode hook", () => {
     expect(second).toBe(first); // reference equal
   });
 
+  it("nodeId === null 시 null 반환 (Step 2 시그니처 확장)", () => {
+    const node = makeNode("any");
+    const doc = makeDoc({ children: [node] });
+    act(() => {
+      const s = useCanonicalDocumentStore.getState();
+      s.setDocument("proj-a", doc);
+      s.setCurrentProject("proj-a");
+    });
+
+    const { result } = renderHook(() => useCanonicalNode(null));
+    expect(result.current).toBeNull();
+  });
+
   it("nodeId 변경 시 새 노드 반환", () => {
     const a = makeNode("node-a");
     const b = makeNode("node-b");

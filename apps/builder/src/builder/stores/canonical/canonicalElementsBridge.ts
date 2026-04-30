@@ -115,23 +115,22 @@ export function subscribeCanonicalStore(listener: () => void): () => void {
  * 활성 canonical document 의 nodeId 노드를 React 컴포넌트에서 구독.
  *
  * - canonical store mutation 시 자동 re-render.
- * - nodeId 가 store 에 없거나 currentProjectId 가 `null` 일 때 `null` 반환.
+ * - nodeId 가 `null`/empty/없음/currentProjectId `null` 시 `null` 반환.
  * - snapshot 안정성 = store 의 clone-on-write 보장 (mutation 발생 시에만
  *   reference 변경).
  *
- * **Sub-Phase B 시점 확장 예정**:
- * - `bridgeEnabled === false` 일 때 legacy `elementsMap` 에서 element 조회
- *   후 `legacyToCanonical()` 로 cast (memoized).
+ * **Step 2 (Selection/properties)** 진입 — `nodeId: string | null` 확장. caller
+ * 가 selectedElementId 같이 nullable id 직접 전달 가능.
  *
  * @example
- *   const node = useCanonicalNode("frame-abc");
+ *   const node = useCanonicalNode(selectedElementId);
  *   if (!node) return null;
  *   return <SomeView node={node} />;
  */
-export function useCanonicalNode(nodeId: string): CanonicalNode | null {
+export function useCanonicalNode(nodeId: string | null): CanonicalNode | null {
   return useSyncExternalStore(
     subscribeCanonicalStore,
-    () => getCanonicalNode(nodeId),
+    () => (nodeId ? getCanonicalNode(nodeId) : null),
     () => null, // SSR snapshot — Phase 2 단계 SSR 미지원
   );
 }
