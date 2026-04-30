@@ -30,6 +30,45 @@ Observed aggregate facts:
 | Multiple refs under one slot fill | Observed. |
 | Same `ref` repeated under one slot fill | Observed in welcome documents. |
 
+Observed node corpus summary:
+
+| Metric | Observation |
+| --- | --- |
+| Checked `.pen` files | 12 bundled documents/libraries. |
+| Total observed nodes | 6068 nodes, including nested descendants. |
+| Dominant node types | `frame`, `text`, `ref`. |
+| Component markers | 958 reusable nodes and 878 ref nodes. |
+| Instance override maps | 692 nodes with `descendants`. |
+| Slot hosts | 110 frame nodes with `slot`. |
+| Top-level keys | `version`, `children`, optional `themes`, optional `variables`. |
+
+Frame/layout observations:
+
+| Metric | Observation |
+| --- | --- |
+| Total frame nodes | 2586 |
+| Frames with children | 2431 |
+| Explicit `layout: "vertical"` | 828 |
+| Explicit `layout: "none"` | 311 |
+| Omitted layout/default horizontal | 1447 |
+| Frames with flex-like fields | 1991 frames used at least one of `gap`, `padding`, `alignItems`, `justifyContent`. |
+
+The installed app's behavior signatures map `layout: "horizontal"` to a
+horizontal layout direction, `layout: "vertical"` to vertical direction, and
+`layout: "none"` to no auto-layout. Frame defaults initialize as horizontal
+fit-content containers, so a missing `layout` field on a frame should be read
+as default row-like auto-layout, not as a plain inert group.
+
+Observed design-system archetype clusters:
+
+| Cluster | Signal |
+| --- | --- |
+| Forms | Button, input, textarea, select, combobox, checkbox, radio, switch, OTP input, search box. |
+| Navigation | Sidebar, breadcrumb, tabs, pagination, dropdown/menu. |
+| Data display | Card, table, data table, list item, badge, labels. |
+| Overlay/feedback | Dialog, modal, tooltip, alert, progress. |
+| Visual primitives | Icon, avatar, path/vector, divider, marker. |
+
 ## High-Signal Slot Cases
 
 Observed examples from bundled Pencil data:
@@ -62,10 +101,25 @@ data model:
 These signatures support the same conclusion as the `.pen` data: slot fill is
 append-oriented and instance-local.
 
+## UI/UX Signatures
+
+The installed app and extracted behavior signatures point to a canvas-first
+editor with:
+
+- Left sidebar tabs for Layers, Slides, Components, Libraries, and optionally
+  Agent.
+- Layer tree selection sync, inline rename, drag reorder, and visibility
+  toggles.
+- Camera/zoom controls with zoom-to-bounds and zoom-aware overlay sizing.
+- Component actions for create, detach, go-to-master, slot enablement, and
+  context editing.
+- Toast-style feedback for export/error/loading states.
+- Preferences for pixel grid, frame names, scroll-wheel zoom, zoom inversion,
+  and sidebar behavior.
+
 ## Limitation
 
 GUI automation was not completed because the local Computer Use bridge was not
 authorized for Apple Events and returned `-10000`. The current evidence is
 therefore based on local app metadata, bundled documents, and static behavior
 signatures.
-

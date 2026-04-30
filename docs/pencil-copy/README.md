@@ -34,6 +34,9 @@ bundle metadata, bundled `.pen` documents, and static behavior signatures.
 | File | Purpose |
 | --- | --- |
 | [slot-model.md](slot-model.md) | Slot and descendants behavior contract. |
+| [ui-ux-analysis.md](ui-ux-analysis.md) | Editor UX, panels, tools, component archetypes, and interaction patterns. |
+| [format-model.md](format-model.md) | `.pen` document format model and node/property taxonomy. |
+| [format-ui-associations.md](format-ui-associations.md) | How file-format fields drive visible UI/UX behavior. |
 | [composition-mapping.md](composition-mapping.md) | Current Composition parity mapping. |
 | [observations.md](observations.md) | Local Pencil app observations and evidence summary. |
 | [fixtures/slot-fill.synthetic.json](fixtures/slot-fill.synthetic.json) | Non-Pencil synthetic fixture for tests. |
@@ -51,3 +54,17 @@ For slot insertion, Composition should match Pencil's split model:
 5. The recommendation list itself should remain set-like and should not need
    duplicate entries.
 
+## Broader Compatibility Priority
+
+Beyond slots, the Pencil behavior worth matching first is:
+
+1. File format as source of truth: node tree + refs + descendants + variables.
+2. Direct canvas editing with selection handles, zoom-aware overlays, and
+   deferred scenegraph commits.
+3. Component instance semantics: master refs, instance overrides, and guarded
+   descendant editing.
+4. Dense workbench chrome: left tabs for Layers/Slides/Components/Libraries,
+   inspector controls for geometry/style/component metadata, and bottom/right
+   task surfaces only when needed.
+5. Design-system libraries represented as reusable frame/ref graphs, not as a
+   separate opaque component registry.

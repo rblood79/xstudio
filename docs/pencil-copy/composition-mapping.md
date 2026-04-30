@@ -44,10 +44,37 @@ Keep tests for these cases:
 - Rapid repeated fill does not lose the first pending child.
 - Recommendation registration still prevents duplicate recommendation entries.
 
+## Broader Mapping Targets
+
+| Pencil behavior | Composition target |
+| --- | --- |
+| Root `children` drive canvas and layers | Keep `childrenMap`/tree views derived from persisted element hierarchy. |
+| `reusable` marks component masters | Avoid a separate component registry that can drift from document nodes. |
+| `ref` instances carry overrides | Preserve canonical ref/master semantics and instance-local descendants. |
+| `variables` resolve tokenized visual fields | Keep token references through storage, render, inspector, and export. |
+| Symbolic sizing values | Do not collapse `fill_container`/`fit_content` equivalents into lossy CSS text. |
+| Frame as layout group | Treat frame as the default grouping/container primitive, analogous to `div` + flex layout. |
+| Omitted frame layout | Interpret as default horizontal/row layout unless explicit `layout: "none"` is present. |
+| Theme dimension maps | Keep theme state separate from variable values. |
+| Prompt nodes are canvas artifacts | Treat AI prompt/context data as document-level data when implementing parity features. |
+| Scenegraph commit blocks | Group one user action into one undo entry. |
+| Selection-driven inspector | Keep inspector sections conditional on selected node type and component status. |
+
+## Gaps To Audit Before Claiming Full Parity
+
+- Whether Composition's layer tree can represent reusable masters, refs, and
+  instance descendants with the same visual distinction.
+- Whether tokenized fill/stroke/font values round-trip without resolving to
+  literals too early.
+- Whether symbolic sizing values survive canvas, inspector, preview, and export
+  paths.
+- Whether prompt/context metadata has a durable file-format home.
+- Whether slide/export behavior is frame-derived rather than maintained as a
+  separate order list that can drift.
+
 ## Non-Goals
 
 - Do not copy Pencil's UI source or minified runtime code.
 - Do not mirror Pencil's private variable names, class names, or bundled code
   structure.
 - Do not store Pencil `.pen` examples verbatim as fixtures.
-
