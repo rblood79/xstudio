@@ -27,6 +27,103 @@ type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
 type SetState = Parameters<StateCreator<LayoutsStore>>[0];
 type GetState = Parameters<StateCreator<LayoutsStore>>[1];
 
+function sortLayouts(layouts: Layout[]): Layout[] {
+  return [...layouts].sort((a, b) => {
+    const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+    if (orderDiff !== 0) return orderDiff;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function mergeFetchResultWithConcurrentLocalChanges(
+  fetchedLayouts: Layout[],
+  layoutsAtFetchStart: Layout[],
+  currentLayouts: Layout[],
+  projectId: string,
+): Layout[] {
+  const startById = new Map(
+    layoutsAtFetchStart.map((layout) => [layout.id, layout]),
+  );
+  const currentById = new Map(
+    currentLayouts.map((layout) => [layout.id, layout]),
+  );
+  const mergedById = new Map<string, Layout>();
+
+  for (const fetchedLayout of fetchedLayouts) {
+    const startedWithLayout = startById.get(fetchedLayout.id);
+    const currentLayout = currentById.get(fetchedLayout.id);
+
+    if (currentLayout && currentLayout !== startedWithLayout) {
+      mergedById.set(fetchedLayout.id, currentLayout);
+      continue;
+    }
+
+    mergedById.set(fetchedLayout.id, fetchedLayout);
+  }
+
+  for (const currentLayout of currentLayouts) {
+    if (currentLayout.project_id !== projectId) continue;
+    if (mergedById.has(currentLayout.id)) continue;
+
+    const startedWithLayout = startById.get(currentLayout.id);
+    if (currentLayout !== startedWithLayout) {
+      mergedById.set(currentLayout.id, currentLayout);
+    }
+  }
+
+  for (const startedLayout of layoutsAtFetchStart) {
+    if (startedLayout.project_id !== projectId) continue;
+    if (!currentById.has(startedLayout.id)) {
+      mergedById.delete(startedLayout.id);
+    }
+  }
+
+  return sortLayouts(Array.from(mergedById.values()));
+}
+
+function frameMatchesLegacyLayoutId(
+  frame: FrameNode,
+  layoutId: string,
+): boolean {
+  const metadata = frame.metadata as { layoutId?: string } | undefined;
+  return (
+    frame.id === layoutId ||
+    frame.id === `layout-${layoutId}` ||
+    metadata?.layoutId === layoutId
+  );
+}
+
+function collectFrameSlotNames(frame: FrameNode): string[] {
+  if (Array.isArray(frame.slot)) {
+    return frame.slot;
+  }
+
+  const slotNames: string[] = [];
+  const visit = (nodes: readonly unknown[]) => {
+    for (const node of nodes) {
+      const candidate = node as {
+        type?: string;
+        placeholder?: boolean;
+        metadata?: { slotName?: string };
+        name?: string;
+        children?: readonly unknown[];
+      };
+      if (candidate.type === "frame" && candidate.placeholder === true) {
+        const slotName = candidate.metadata?.slotName ?? candidate.name;
+        if (slotName) {
+          slotNames.push(slotName);
+        }
+      }
+      if (candidate.children) {
+        visit(candidate.children);
+      }
+    }
+  };
+
+  visit(frame.children ?? []);
+  return slotNames;
+}
+
 // ============================================
 // CRUD Actions
 // ============================================
@@ -38,6 +135,7 @@ type GetState = Parameters<StateCreator<LayoutsStore>>[1];
 export const createFetchLayoutsAction =
   (set: SetState, get: GetState) =>
   async (projectId: string): Promise<void> => {
+    const layoutsAtFetchStart = get().layouts;
     set({ isLoading: true, error: null });
 
     try {
@@ -48,12 +146,14 @@ export const createFetchLayoutsAction =
         }
       ).layouts.getByProject(projectId);
 
-      // Sort by order_num first, then by name
-      const sortedData = (data || []).sort((a, b) => {
-        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
-        if (orderDiff !== 0) return orderDiff;
-        return a.name.localeCompare(b.name);
-      });
+      const sortedData = sortLayouts(data || []);
+      const currentLayouts = get().layouts;
+      const nextLayouts = mergeFetchResultWithConcurrentLocalChanges(
+        sortedData,
+        layoutsAtFetchStart,
+        currentLayouts,
+        projectId,
+      );
 
       // P3-B: selectedReusableFrameId (canonical) 우선, currentLayoutId fallback
       // ADR-903 P3-B 안전망 #4 — dev-only migration 경고 logging
@@ -75,14 +175,14 @@ export const createFetchLayoutsAction =
 
       // 저장된 id가 실제 레이아웃 목록에 있는지 확인
       const isCurrentLayoutValid =
-        activeFrameId && sortedData.some((l) => l.id === activeFrameId);
+        activeFrameId && nextLayouts.some((l) => l.id === activeFrameId);
 
       // 자동 선택 조건: 레이아웃이 있고 (선택된 게 없거나 유효하지 않으면)
-      const shouldAutoSelect = sortedData.length > 0 && !isCurrentLayoutValid;
+      const shouldAutoSelect = nextLayouts.length > 0 && !isCurrentLayoutValid;
 
       // ⭐ order_num === 0인 Layout 우선 선택, 없으면 첫 번째 선택 (Pages 탭과 동일)
       const defaultLayout =
-        sortedData.find((l) => l.order_num === 0) || sortedData[0];
+        nextLayouts.find((l) => l.order_num === 0) || nextLayouts[0];
       const newFrameId = shouldAutoSelect
         ? (defaultLayout?.id ?? null)
         : isCurrentLayoutValid
@@ -90,7 +190,7 @@ export const createFetchLayoutsAction =
           : null;
 
       set({
-        layouts: sortedData,
+        layouts: nextLayouts,
         isLoading: false,
         // P3-B: 양쪽 동기화 (backward-compat)
         selectedReusableFrameId: newFrameId,
@@ -151,6 +251,8 @@ export const createCreateLayoutAction =
       const { layouts } = get();
       set({
         layouts: [...layouts, newLayout],
+        selectedReusableFrameId: newLayout.id,
+        currentLayoutId: newLayout.id,
         isLoading: false,
       });
 
@@ -223,7 +325,9 @@ export const createDeleteLayoutAction =
       );
       const frameExists = canonicalDoc.children.some(
         (n): n is FrameNode =>
-          n.type === "frame" && n.reusable === true && n.id === id,
+          n.type === "frame" &&
+          n.reusable === true &&
+          frameMatchesLegacyLayoutId(n, id),
       );
 
       if (frameExists) {
@@ -419,14 +523,21 @@ export const createGetLayoutSlotsAction =
 
     const frame = doc.children.find(
       (n): n is FrameNode =>
-        n.type === "frame" && n.reusable === true && n.id === layoutId,
+        n.type === "frame" &&
+        n.reusable === true &&
+        frameMatchesLegacyLayoutId(n, layoutId),
     );
 
-    if (!frame || !Array.isArray(frame.slot)) {
+    if (!frame) {
       return [];
     }
 
-    return frame.slot.map((slotName) => ({
+    const slotNames = collectFrameSlotNames(frame);
+    if (slotNames.length === 0) {
+      return [];
+    }
+
+    return slotNames.map((slotName) => ({
       name: slotName,
       displayName: slotName,
       required: false,

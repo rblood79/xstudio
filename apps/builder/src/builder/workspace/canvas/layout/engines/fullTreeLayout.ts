@@ -1839,12 +1839,14 @@ export function calculateFullTreeLayout(
   // 이전 패스의 synthetic elements 정리 (삭제된 TagList의 유령 엔트리 방지)
   clearSyntheticElements();
 
-  // 페이지별 persistent tree 조회/생성
-  const pageId = rootEl.page_id ?? "__default__";
-  let persistentTree = persistentTrees.get(pageId);
+  // 페이지/Frame root 별 persistent tree 조회/생성.
+  // Frame body 는 page_id 가 null 이므로 layout_id 로 분리하지 않으면 여러
+  // reusable Frame 이 "__default__" Taffy tree 를 공유해 root state 가 섞인다.
+  const rootKey = rootEl.page_id ?? rootEl.layout_id ?? rootElementId;
+  let persistentTree = persistentTrees.get(rootKey);
   if (!persistentTree) {
     persistentTree = new PersistentTaffyTree();
-    persistentTrees.set(pageId, persistentTree);
+    persistentTrees.set(rootKey, persistentTree);
   }
   if (!persistentTree.isAvailable) return null;
 
@@ -1910,9 +1912,6 @@ export function calculateFullTreeLayout(
   // Multi-page + frame authoring: layout map 과 동일한 key fallback chain 사용.
   // frame body 는 page_id 가 null 이므로 `layout_id` 로 저장해야 page-mode
   // filtered tree 와 frame-mode filtered tree 가 서로 `__default__` 에서 덮이지 않는다.
-  const rootElement = elementsMap.get(rootElementId);
-  const rootKey =
-    rootElement?.page_id ?? rootElement?.layout_id ?? rootElementId;
   publishFilteredChildrenMap(filteredChildIdsMap, rootKey);
 
   // ── Step 3: 초기 빌드 또는 증분 갱신 ──────────────────────────────
@@ -2213,8 +2212,8 @@ export function calculateFullTreeLayout(
     if (import.meta.env.DEV) {
       console.error("[fullTreeLayout] WASM failed:", err);
     }
-    // 에러 시 해당 페이지의 persistent tree만 리셋 → 다음 프레임에 초기 빌드(Path A) 재시도
-    resetPersistentTree(pageId);
+    // 에러 시 해당 root 의 persistent tree만 리셋 → 다음 프레임에 초기 빌드(Path A) 재시도
+    resetPersistentTree(rootKey);
     return null;
   }
   // Phase 1: finally { taffy.clear() } 제거 — persistent tree 유지

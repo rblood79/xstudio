@@ -16,10 +16,7 @@
 
 import { useEffect, useRef } from "react";
 import type { PixiPageRendererInput } from "../renderers";
-import {
-  publishFilteredChildrenMap,
-  publishLayoutMapsBatch,
-} from "../layout";
+import { publishFilteredChildrenMap, publishLayoutMapsBatch } from "../layout";
 import type { ComputedLayout } from "../layout";
 import {
   getCachedPageLayout,
@@ -90,6 +87,15 @@ export function useLayoutPublisher(
       );
       return `${pageId}:${input.bodyElement?.id ?? "no-body"}:${pageElementsSignature}:${pageLayoutSignature}`;
     })
+    .join("||");
+
+  // 새로고침 직후 frame inputs 가 먼저 생성되고 WASM layout 이 아직 pending 이면
+  // effect 는 skip 된다. 이후 ready 전환만으로도 layoutMap 을 다시 publish 해야 한다.
+  const readinessKey = [...pages, ...framePages]
+    .map(
+      ({ pageId, input }) =>
+        `${pageId}:${input.wasmLayoutReady ? "ready" : "pending"}`,
+    )
     .join("||");
 
   useEffect(() => {
@@ -172,5 +178,5 @@ export function useLayoutPublisher(
     }
     publishLayoutMapsBatch(layoutUpdates, staleKeys);
     publishedKeysRef.current = activeKeys;
-  }, [layoutVersion, dimensionKey, layoutInputKey]);
+  }, [layoutVersion, dimensionKey, layoutInputKey, readinessKey]);
 }

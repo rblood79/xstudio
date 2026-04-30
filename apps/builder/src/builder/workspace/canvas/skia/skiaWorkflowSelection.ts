@@ -40,13 +40,11 @@ function isRenderableSelectionTarget(
   currentPageId: string | null,
   treeBoundsMap: Map<string, BoundingBox>,
 ): boolean {
-  if (element.page_id === currentPageId) {
+  if (currentPageId !== null && element.page_id === currentPageId) {
     return true;
   }
 
   return (
-    currentPageId !== null &&
-    element.type === "Slot" &&
     element.page_id == null &&
     typeof element.layout_id === "string" &&
     treeBoundsMap.has(id)

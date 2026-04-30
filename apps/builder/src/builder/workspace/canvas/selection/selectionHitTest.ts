@@ -19,6 +19,55 @@ export interface BodySelectionResult {
   pageId: string | null;
 }
 
+export interface FrameBodySelectionArea {
+  frameId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function containsPoint(
+  bounds: { x: number; y: number; width: number; height: number },
+  point: CanvasPoint,
+): boolean {
+  return (
+    point.x >= bounds.x &&
+    point.x <= bounds.x + bounds.width &&
+    point.y >= bounds.y &&
+    point.y <= bounds.y + bounds.height
+  );
+}
+
+function findFrameBodySelectionAtCanvasPoint({
+  canvasPoint,
+  elementsMap,
+  frameAreas,
+}: {
+  canvasPoint: CanvasPoint;
+  elementsMap: Map<string, Element>;
+  frameAreas: FrameBodySelectionArea[];
+}): BodySelectionResult | null {
+  for (const area of frameAreas) {
+    if (!containsPoint(area, canvasPoint)) continue;
+
+    for (const element of elementsMap.values()) {
+      if (element.deleted) continue;
+      if (element.type.toLowerCase() !== "body") continue;
+      if (element.page_id != null) continue;
+      if (element.layout_id !== area.frameId) continue;
+      return {
+        bodyElementId: element.id,
+        pageId: null,
+      };
+    }
+
+    return { bodyElementId: null, pageId: null };
+  }
+
+  return null;
+}
+
 export function pickTopmostHitElementId(
   hitCandidates: string[],
   elementsMap: Map<string, Element>,
@@ -52,16 +101,27 @@ export function findBodySelectionAtCanvasPoint({
   pagePositions,
   pageWidth,
   pages,
+  frameAreas = [],
 }: {
   canvasPoint: CanvasPoint;
   currentPageId: string | null;
   elementsMap: Map<string, Element>;
+  frameAreas?: FrameBodySelectionArea[];
   pageHeight: number;
   pageIndexElementsByPage: Map<string, Set<string>>;
   pagePositions: PagePositionMap;
   pageWidth: number;
   pages: PageLike[];
 }): BodySelectionResult {
+  const frameSelection = findFrameBodySelectionAtCanvasPoint({
+    canvasPoint,
+    elementsMap,
+    frameAreas,
+  });
+  if (frameSelection) {
+    return frameSelection;
+  }
+
   let pageId: string | null = null;
 
   for (const page of pages) {
@@ -71,10 +131,10 @@ export function findBodySelectionAtCanvasPoint({
     }
 
     if (
-      canvasPoint.x >= position.x &&
-      canvasPoint.x <= position.x + pageWidth &&
-      canvasPoint.y >= position.y &&
-      canvasPoint.y <= position.y + pageHeight
+      containsPoint(
+        { x: position.x, y: position.y, width: pageWidth, height: pageHeight },
+        canvasPoint,
+      )
     ) {
       pageId = page.id;
       break;

@@ -13,12 +13,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as elementsStoreModule from "../../elements";
 
 import {
+  createFetchLayoutsAction,
   createGetLayoutSlotsAction,
   createDeleteLayoutAction,
 } from "../layoutActions";
 import type { Element, Page } from "../../../../types/builder/unified.types";
 import type { Layout } from "../../../../types/builder/layout.types";
-import type { CompositionDocument, FrameNode } from "@composition/shared";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -51,22 +51,25 @@ function makeElement(
   } as Element;
 }
 
-function makeReusableFrame(id: string, slots: string[]): FrameNode {
-  return {
-    id,
-    type: "frame",
-    reusable: true,
-    name: `frame-${id}`,
-    children: [],
-    slot: slots,
+async function mockElementsState(elements: Element[] = [], pages: Page[] = []) {
+  const snapshot = {
+    elementsMap: new Map(elements.map((element) => [element.id, element])),
+    pages,
+    removeElements: vi.fn(),
+    setPages: vi.fn(),
+    mergeElements: vi.fn(),
   };
-}
+  vi.mocked(elementsStoreModule.useStore).getState = vi.fn(() => snapshot);
 
-function makeDoc(frames: FrameNode[]): CompositionDocument {
-  return {
-    version: "composition-1.0",
-    children: frames,
-  };
+  const actualElementsModule =
+    await vi.importActual<typeof import("../../elements")>("../../elements");
+  actualElementsModule.useStore.setState(
+    snapshot as Partial<
+      ReturnType<typeof actualElementsModule.useStore.getState>
+    >,
+  );
+
+  return snapshot;
 }
 
 // ─── mock 공통 설정 ─────────────────────────────────────────────────────────
@@ -115,21 +118,130 @@ vi.mock("../../../../lib/db", () => {
 
 // ─── test suite ─────────────────────────────────────────────────────────────
 
-describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () => {
-  const selectCanonicalDocumentMock = vi.mocked(
-    elementsStoreModule.selectCanonicalDocument,
-  );
-
+describe("P3-D-3: createFetchLayoutsAction pending mutation guard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("FrameNode.slot 배열에서 SlotInfo 목록을 올바르게 추출한다", () => {
-    const layoutId = "layout-1";
-    const frame = makeReusableFrame(layoutId, ["header", "content", "footer"]);
-    const doc = makeDoc([frame]);
+  type LayoutFetchState = {
+    layouts: Layout[];
+    selectedReusableFrameId: string | null;
+    currentLayoutId: string | null;
+    isLoading: boolean;
+    error: Error | null;
+  };
 
-    selectCanonicalDocumentMock.mockReturnValue(doc);
+  function createFetchHarness(initialState: LayoutFetchState) {
+    let state = initialState;
+    const mockSet = vi.fn((partial: Partial<LayoutFetchState>) => {
+      state = { ...state, ...partial };
+    });
+    const mockGet = vi.fn(() => state);
+    const fetchLayouts = createFetchLayoutsAction(
+      mockSet as unknown as Parameters<typeof createFetchLayoutsAction>[0],
+      mockGet as unknown as Parameters<typeof createFetchLayoutsAction>[1],
+    );
+
+    return {
+      fetchLayouts,
+      get state() {
+        return state;
+      },
+      setState(nextState: LayoutFetchState) {
+        state = nextState;
+      },
+    };
+  }
+
+  it("fetch 중 생성된 frame layout을 stale fetch 결과로 drop하지 않는다", async () => {
+    const newLayout = makeLayout("new-frame", "Frame 1");
+    const harness = createFetchHarness({
+      layouts: [],
+      selectedReusableFrameId: null,
+      currentLayoutId: null,
+      isLoading: false,
+      error: null,
+    });
+
+    const { getDB } = await import("../../../../lib/db");
+    const db = await (getDB as ReturnType<typeof vi.fn>)();
+    db.layouts.getByProject.mockImplementationOnce(async () => {
+      harness.setState({
+        ...harness.state,
+        layouts: [newLayout],
+        selectedReusableFrameId: newLayout.id,
+        currentLayoutId: newLayout.id,
+      });
+      return [];
+    });
+
+    await harness.fetchLayouts("proj-1");
+
+    expect(harness.state.layouts.map((layout) => layout.id)).toEqual([
+      "new-frame",
+    ]);
+    expect(harness.state.selectedReusableFrameId).toBe("new-frame");
+    expect(harness.state.currentLayoutId).toBe("new-frame");
+  });
+
+  it("fetch 중 삭제된 frame layout을 stale fetch 결과로 되살리지 않는다", async () => {
+    const oldLayout = makeLayout("old-frame", "Old Frame");
+    const harness = createFetchHarness({
+      layouts: [oldLayout],
+      selectedReusableFrameId: oldLayout.id,
+      currentLayoutId: oldLayout.id,
+      isLoading: false,
+      error: null,
+    });
+
+    const { getDB } = await import("../../../../lib/db");
+    const db = await (getDB as ReturnType<typeof vi.fn>)();
+    db.layouts.getByProject.mockImplementationOnce(async () => {
+      harness.setState({
+        ...harness.state,
+        layouts: [],
+        selectedReusableFrameId: null,
+        currentLayoutId: null,
+      });
+      return [oldLayout];
+    });
+
+    await harness.fetchLayouts("proj-1");
+
+    expect(harness.state.layouts).toEqual([]);
+    expect(harness.state.selectedReusableFrameId).toBeNull();
+    expect(harness.state.currentLayoutId).toBeNull();
+  });
+});
+
+describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await mockElementsState();
+  });
+
+  it("FrameNode.slot 배열에서 SlotInfo 목록을 올바르게 추출한다", async () => {
+    const layoutId = "layout-1";
+    const body = makeElement("body-1", "body", { layout_id: layoutId });
+    const header = makeElement("slot-header", "Slot", {
+      layout_id: layoutId,
+      parent_id: body.id,
+      order_num: 1,
+      props: { name: "header" },
+    });
+    const content = makeElement("slot-content", "Slot", {
+      layout_id: layoutId,
+      parent_id: body.id,
+      order_num: 2,
+      props: { name: "content" },
+    });
+    const footer = makeElement("slot-footer", "Slot", {
+      layout_id: layoutId,
+      parent_id: body.id,
+      order_num: 3,
+      props: { name: "footer" },
+    });
+    await mockElementsState([body, header, content, footer]);
 
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
@@ -148,17 +260,6 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
 
   it("FrameNode.slot === false 이면 빈 배열을 반환한다", () => {
     const layoutId = "layout-2";
-    const frame: FrameNode = {
-      id: layoutId,
-      type: "frame",
-      reusable: true,
-      name: "frame-2",
-      children: [],
-      slot: false,
-    };
-    const doc = makeDoc([frame]);
-
-    selectCanonicalDocumentMock.mockReturnValue(doc);
 
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
@@ -175,12 +276,9 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
 
   it("canonical document 에 해당 frame 이 없으면 빈 배열을 반환한다", () => {
     const layoutId = "layout-absent";
-    const doc = makeDoc([]); // 빈 document
-
-    selectCanonicalDocumentMock.mockReturnValue(doc);
 
     const mockGet = vi.fn(() => ({
-      layouts: [makeLayout(layoutId)],
+      layouts: [],
       selectedReusableFrameId: layoutId,
       currentLayoutId: layoutId,
     })) as unknown as Parameters<typeof createGetLayoutSlotsAction>[0];
@@ -192,12 +290,15 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
     expect(slots).toHaveLength(0);
   });
 
-  it("선택된 레이아웃이 없을 때도 layoutId 파라미터로 frame 을 찾는다", () => {
+  it("선택된 레이아웃이 없을 때도 layoutId 파라미터로 frame 을 찾는다", async () => {
     const layoutId = "layout-3";
-    const frame = makeReusableFrame(layoutId, ["main"]);
-    const doc = makeDoc([frame]);
-
-    selectCanonicalDocumentMock.mockReturnValue(doc);
+    const body = makeElement("body-3", "body", { layout_id: layoutId });
+    const mainSlot = makeElement("slot-main", "Slot", {
+      layout_id: layoutId,
+      parent_id: body.id,
+      props: { name: "main" },
+    });
+    await mockElementsState([body, mainSlot]);
 
     // selectedReusableFrameId 가 다른 frame 을 가리키는 경우
     const mockGet = vi.fn(() => ({
@@ -217,19 +318,13 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
 });
 
 describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)", () => {
-  const selectCanonicalDocumentMock = vi.mocked(
-    elementsStoreModule.selectCanonicalDocument,
-  );
-
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await mockElementsState();
   });
 
   it("canonical document 에 없는 layout 삭제 시 elements 를 제거하지 않는다", async () => {
     const layoutId = "layout-del-1";
-    const doc = makeDoc([]); // frame 없음
-
-    selectCanonicalDocumentMock.mockReturnValue(doc);
 
     const removeElements = vi.fn(async () => {});
     const setPages = vi.fn();
@@ -241,6 +336,15 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       setPages,
       mergeElements: vi.fn(),
     }));
+    const actualElementsModule =
+      await vi.importActual<typeof import("../../elements")>("../../elements");
+    actualElementsModule.useStore.setState({
+      elementsMap: new Map<string, Element>(),
+      pages: [] as Page[],
+      removeElements,
+      setPages,
+      mergeElements: vi.fn(),
+    } as Partial<ReturnType<typeof actualElementsModule.useStore.getState>>);
 
     const mockSet = vi.fn();
     const mockGet = vi.fn(() => ({
@@ -258,11 +362,6 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
 
   it("layout_id 기반 elements 를 여전히 DB에서 로드하여 cascade 삭제한다 (P3-D 과도기)", async () => {
     const layoutId = "layout-del-2";
-
-    // canonical document 에는 frame 있음
-    const frame = makeReusableFrame(layoutId, []);
-    const doc = makeDoc([frame]);
-    selectCanonicalDocumentMock.mockReturnValue(doc);
 
     const layoutEl1 = makeElement("el-1", "body", { layout_id: layoutId });
     const layoutEl2 = makeElement("el-2", "Slot", { layout_id: layoutId });
@@ -283,6 +382,18 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       setPages: vi.fn(),
       mergeElements: vi.fn(),
     }));
+    const actualElementsModule =
+      await vi.importActual<typeof import("../../elements")>("../../elements");
+    actualElementsModule.useStore.setState({
+      elementsMap: new Map<string, Element>([
+        ["el-1", layoutEl1],
+        ["el-2", layoutEl2],
+      ]),
+      pages: [] as Page[],
+      removeElements,
+      setPages: vi.fn(),
+      mergeElements: vi.fn(),
+    } as Partial<ReturnType<typeof actualElementsModule.useStore.getState>>);
 
     const mockSet = vi.fn();
     const mockGet = vi.fn(() => ({

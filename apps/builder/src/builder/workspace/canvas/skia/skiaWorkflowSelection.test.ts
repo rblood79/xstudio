@@ -208,6 +208,32 @@ describe("buildSelectionRenderData editing semantics", () => {
     expect(result.showHandles).toBe(true);
   });
 
+  it("renders selection for a layout-owned frame body while the store current page is retained", () => {
+    const result = buildSelectionRenderData(
+      0,
+      0,
+      1,
+      new Map([["frame-body", { x: 16, y: 24, width: 800, height: 600 }]]),
+      makeSelection(["frame-body"]),
+      new Map([
+        [
+          "frame-body",
+          makeElement("frame-body", {
+            layout_id: "frame-layout-1",
+            page_id: null,
+            parent_id: null,
+            type: "body",
+          }),
+        ],
+      ]),
+    );
+
+    expect(result.bounds).toEqual({ x: 16, y: 24, width: 800, height: 600 });
+    expect(result.semanticRole).toBeNull();
+    expect(result.slotMarkerRole).toBeNull();
+    expect(result.showHandles).toBe(true);
+  });
+
   it("does not render non-page Slot layout selection without current page bounds", () => {
     const result = buildSelectionRenderData(
       0,

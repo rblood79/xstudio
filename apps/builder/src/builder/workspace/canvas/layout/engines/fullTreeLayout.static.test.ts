@@ -10,13 +10,29 @@ describe("fullTreeLayout shared filtered children key contract", () => {
     );
 
     expect(source).toMatch(
-      /const rootKey =\s*rootElement\?\.page_id \?\? rootElement\?\.layout_id \?\? rootElementId;/,
+      /const rootKey = rootEl\.page_id \?\? rootEl\.layout_id \?\? rootElementId;/,
     );
     expect(source).toContain(
       "publishFilteredChildrenMap(filteredChildIdsMap, rootKey);",
     );
     expect(source).not.toContain(
       "publishFilteredChildrenMap(filteredChildIdsMap, rootPageId ?? undefined)",
+    );
+  });
+
+  it("keys persistent Taffy trees by page/layout/id so reusable Frames do not share __default__", async () => {
+    const source = await readFile(
+      resolve(__dirname, "fullTreeLayout.ts"),
+      "utf-8",
+    );
+
+    expect(source).toMatch(
+      /const rootKey = rootEl\.page_id \?\? rootEl\.layout_id \?\? rootElementId;/,
+    );
+    expect(source).toContain("persistentTrees.get(rootKey)");
+    expect(source).toContain("persistentTrees.set(rootKey, persistentTree)");
+    expect(source).not.toContain(
+      'const pageId = rootEl.page_id ?? "__default__";',
     );
   });
 
@@ -28,7 +44,9 @@ describe("fullTreeLayout shared filtered children key contract", () => {
 
     expect(source).toMatch(/function cloneFilteredChildrenMap\(/);
     expect(source).toMatch(/export function getPublishedFilteredChildrenMap\(/);
-    expect(source).toMatch(/return map \? cloneFilteredChildrenMap\(map\) : null;/);
+    expect(source).toMatch(
+      /return map \? cloneFilteredChildrenMap\(map\) : null;/,
+    );
   });
 
   it("batch-publishes layout map updates with a single listener notification", async () => {
@@ -41,6 +59,8 @@ describe("fullTreeLayout shared filtered children key contract", () => {
     expect(source).toMatch(
       /for \(const \{ key, map \} of updates\) \{[\s\S]*_perPageLayoutMaps\.set\(key, map\);/,
     );
-    expect(source).toMatch(/for \(const cb of _layoutPublishListeners\) cb\(\);/);
+    expect(source).toMatch(
+      /for \(const cb of _layoutPublishListeners\) cb\(\);/,
+    );
   });
 });

@@ -797,6 +797,7 @@ export function BuilderCanvas({
     editingElementIdRef,
     handleElementClickRef,
     handleElementDoubleClickRef,
+    frameAreas,
     getHitElementsMap: getInteractiveElementsMap,
     isEditingRef,
     lastClickTargetRef,

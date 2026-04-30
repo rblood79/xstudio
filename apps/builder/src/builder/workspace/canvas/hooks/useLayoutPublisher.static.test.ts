@@ -9,11 +9,16 @@ describe("useLayoutPublisher invalidation contract", () => {
       "utf-8",
     );
 
-    expect(source).toMatch(/const layoutInputKey = \[\.\.\.pages, \.\.\.framePages\]/);
+    expect(source).toMatch(
+      /const layoutInputKey = \[\.\.\.pages, \.\.\.framePages\]/,
+    );
     expect(source).toMatch(/createPageElementsSignature\(/);
     expect(source).toMatch(/createPageLayoutSignature\(/);
     expect(source).toMatch(
-      /\}, \[layoutVersion, dimensionKey, layoutInputKey\]\);/,
+      /const readinessKey = \[\.\.\.pages, \.\.\.framePages\]/,
+    );
+    expect(source).toMatch(
+      /\}, \[layoutVersion, dimensionKey, layoutInputKey, readinessKey\]\);/,
     );
   });
 
@@ -38,7 +43,9 @@ describe("useLayoutPublisher invalidation contract", () => {
     expect(source).toMatch(/elementsMap: sourceElementById,/);
     expect(source).toContain("layoutUpdates.push({ key, map: layoutMap });");
     expect(source).toMatch(/publishFilteredChildrenMap\(null, key\);/);
-    expect(source).toMatch(/publishLayoutMapsBatch\(layoutUpdates, staleKeys\);/);
+    expect(source).toMatch(
+      /publishLayoutMapsBatch\(layoutUpdates, staleKeys\);/,
+    );
     expect(source).not.toMatch(/publishLayoutMap\(layoutMap, key\);/);
     expect(source).toContain("publishedKeysRef.current = activeKeys;");
   });

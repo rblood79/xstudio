@@ -27,6 +27,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import type { Element } from "@/types/core/store.types";
+import type { ElementTreeItem } from "@/types/builder/stately.types";
 
 // ─── mock state holders ─────────────────────────────────────────────────────
 type LayoutLite = { id: string; name: string; project_id: string };
@@ -52,6 +53,7 @@ const mockEditModeState = {
   setCurrentLayoutId: vi.fn(),
 };
 
+const mockBuildTreeFromElements = vi.hoisted(() => vi.fn(() => []));
 const mockGetAllElements = vi.fn(async () => [] as Element[]);
 const mockGetDescendants = vi.fn(async () => [] as Element[]);
 
@@ -141,7 +143,7 @@ vi.mock("@/builder/hooks", () => ({
 }));
 
 vi.mock("@/builder/utils/treeUtils", () => ({
-  buildTreeFromElements: vi.fn(() => []),
+  buildTreeFromElements: mockBuildTreeFromElements,
 }));
 
 // ─── import under test (after mocks) ────────────────────────────────────────
@@ -177,6 +179,7 @@ function resetMockState() {
   mockGetAllElements.mockResolvedValue([] as Element[]);
   mockGetDescendants.mockResolvedValue([] as Element[]);
   mockSelectCanonicalDocument.mockReturnValue({ children: [] });
+  mockBuildTreeFromElements.mockImplementation(() => []);
   // wrapper Promise resolve 기본값 — 정상 동작
   createReusableFrameMock.mockResolvedValue({
     id: "new-frame",
@@ -271,6 +274,38 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
         );
       });
     });
+
+    it("선택 id가 frame 목록 projection보다 먼저 도착해도 body tree를 렌더한다", () => {
+      mockLayoutsState.layouts = [];
+      mockLayoutsState.selectedReusableFrameId = "new-frame";
+      const body: Element = {
+        id: "body-new-frame",
+        type: "body",
+        props: {},
+        parent_id: null,
+        page_id: null,
+        layout_id: "new-frame",
+        order_num: 0,
+      };
+      mockStoreState.elementsMap = new Map([[body.id, body]]);
+      mockBuildTreeFromElements.mockImplementation(
+        (elements: Element[]): ElementTreeItem[] =>
+          elements.map((element) => ({
+            id: element.id,
+            type: element.type,
+            parent_id: element.parent_id,
+            order_num: element.order_num,
+            props: element.props as Record<string, unknown>,
+            deleted: element.deleted,
+            children: [],
+          })),
+      );
+
+      render(<FramesTab {...makeProps()} />);
+
+      expect(screen.getByText("body")).toBeTruthy();
+      expect(screen.queryByText("Select a frame to view elements")).toBeNull();
+    });
   });
 
   describe("frame creation", () => {
@@ -293,6 +328,10 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
         name: "Frame 1",
         projectId: "test-project",
       });
+      expect(selectReusableFrameMock).toHaveBeenCalledWith("new-frame");
+      expect(mockEditModeState.setCurrentLayoutId).toHaveBeenCalledWith(
+        "new-frame",
+      );
     });
   });
 

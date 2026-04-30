@@ -1,0 +1,238 @@
+# ADR-916 구현 상세 — Canonical Document SSOT 전환
+
+본 문서는 [ADR-916](../916-canonical-document-ssot-transition.md)의 phase plan, inventory, gate 측정 방법을 정의한다. 핵심은 `CompositionDocument`를 최종 SSOT로 승격하고, legacy `elements[]`를 runtime 중심이 아니라 adapter/migration 경계로 격리하는 것이다.
+
+## 1. 최종 구조
+
+| Layer                 | 최종 역할                                | 남겨도 되는 것                                                                                                                                     | 제거/격리 대상                          |
+| --------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Canonical core        | 저장/편집/렌더 입력의 SSOT               | `CompositionDocument.version`, `children`, `type`, `frame`, `ref`, `reusable`, `descendants`, `slot`, `themes`, `variables`, `imports`, `metadata` | legacy ownership 필드                   |
+| Composition extension | Composition-only behavior                | `x-composition.events`, `x-composition.actions`, `x-composition.dataBinding`, editor-safe metadata                                                 | function callback, React runtime object |
+| Adapter boundary      | 기존 프로젝트 read-through/import/export | `legacyToCanonical`, `canonicalToLegacy`, migration backup, Pencil import/export                                                                   | hot path에서 전체 문서 projection       |
+| Renderer input        | Skia/Preview/Publish 소비 모델           | resolved canonical tree, derived scene snapshot                                                                                                    | `layout_id`/`slot_name` 직접 분기       |
+
+## 2. Core / Extension / Legacy 분류
+
+| 항목            | 최종 위치             | 이유                                    | 현재 anchor                                  |
+| --------------- | --------------------- | --------------------------------------- | -------------------------------------------- |
+| `version`       | canonical core        | document schema version                 | `CompositionDocument.version`                |
+| `children`      | canonical core        | document tree root                      | `CompositionDocument.children`               |
+| `type`          | canonical core        | component/structure discriminator       | `CanonicalNode.type`                         |
+| `frame`         | canonical core        | layout/group primitive                  | `FrameNode.type === "frame"`                 |
+| `reusable`      | canonical core        | origin/master 선언                      | `CanonicalNode.reusable`                     |
+| `ref`           | canonical core        | instance 참조                           | `RefNode.ref`                                |
+| `descendants`   | canonical core        | instance override/slot fill             | `RefNode.descendants`                        |
+| `slot`          | canonical core        | slot contract/recommendation            | `CanonicalNode.slot`                         |
+| `themes`        | canonical core        | ADR-910 document-level theme            | `CompositionDocument.themes`                 |
+| `variables`     | canonical core        | ADR-910 variable snapshot/resolver      | `CompositionDocument.variables`              |
+| `imports`       | canonical core hook   | external document/reference hook        | `CompositionDocument.imports`                |
+| `events`        | Composition extension | Pencil core에 없는 app behavior         | legacy `Element.events`                      |
+| `actions`       | Composition extension | workflow behavior, function 아님        | Events Panel action model                    |
+| `dataBinding`   | Composition extension | app data source binding                 | legacy `Element.dataBinding`                 |
+| `layout_id`     | adapter-only legacy   | frame/ref/descendants로 대체            | legacy `Element.layout_id`, `Page.layout_id` |
+| `slot_name`     | adapter-only legacy   | `descendants[slotPath].children`로 대체 | legacy `Element.slot_name`                   |
+| `componentRole` | adapter-only legacy   | `reusable`/`type:"ref"`로 대체          | legacy `Element.componentRole`               |
+| `masterId`      | adapter-only legacy   | `RefNode.ref`로 대체                    | legacy `Element.masterId`                    |
+| `overrides`     | adapter-only legacy   | `RefNode.descendants` patch mode로 대체 | legacy `Element.overrides`                   |
+
+## 3. Extension namespace 결정
+
+canonical core는 Pencil 구조 정합을 유지해야 하므로 Composition-only behavior를 core field로 직접 추가하지 않는다. 다만 Composition 내부 저장에는 app behavior가 필요하다.
+
+### 채택안: top-level namespaced extension field
+
+```ts
+interface CompositionExtension {
+  events?: SerializedEventHandler[];
+  dataBinding?: SerializedDataBinding;
+  actions?: SerializedAction[];
+  editor?: Record<string, unknown>;
+}
+
+interface CompositionExtendedNode extends CanonicalNode {
+  "x-composition"?: CompositionExtension;
+}
+```
+
+| 후보                   | 장점                                                     | 단점                                                             | 판정 |
+| ---------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- | ---- |
+| `x-composition`        | Pencil-compatible core와 명확히 분리, JSON에서 검색 쉬움 | 타입 확장 필요                                                   | 채택 |
+| `metadata.composition` | 기존 `metadata` 활용 가능                                | `metadata.type` 계약과 섞이고 app behavior가 metadata로 과적재됨 | 보류 |
+| `props.events`         | 기존 renderer path와 가까움                              | function callback/React props와 혼동, core/behavior 경계 붕괴    | 기각 |
+
+규칙:
+
+1. function callback은 serialize하지 않는다.
+2. React Aria `onPress`, `onSelectionChange`, hover-triggered behavior는 serialized event name으로만 저장한다.
+3. hover visual state는 event가 아니라 Spec/renderer state이다. hover로 동작을 실행할 때만 extension event가 된다.
+
+## 4. Phase Plan
+
+| Phase   | 목표                         | 주요 작업                                                                                           | Gate  |
+| ------- | ---------------------------- | --------------------------------------------------------------------------------------------------- | ----- |
+| Phase 0 | boundary freeze              | core/extension/legacy 분류 확정, 타입 TODO/ADR link 추가, 측정 baseline 갱신                        | G1    |
+| Phase 1 | canonical document store API | `getDocument`, `setDocument`, `mutateNode`, `insertNode`, `removeNode`, `updateDescendant` API 설계 | G2    |
+| Phase 2 | hot path read cutover        | drag/selection/render/LayerTree/Preview sync에서 full projection 제거, canonical snapshot 구독      | G3    |
+| Phase 3 | persistence write-through    | canonical document 저장 우선, legacy shadow write 또는 export adapter로 축소                        | G4    |
+| Phase 4 | legacy field quarantine      | ADR-913 Phase 5 + ADR-911 layout cleanup과 연결, adapter 디렉터리 외 legacy read/write 0건          | G5    |
+| Phase 5 | parity/extension closure     | Skia/Preview/Publish/History parity, event/dataBinding extension serializer                         | G6/G7 |
+
+## 5. Phase 0 — Boundary Freeze
+
+산출물:
+
+- `composition-document.types.ts`에 core/extension boundary 주석 보강
+- `unified.types.ts` legacy field에 ADR-916 adapter-only marker 추가
+- `events`/`dataBinding`의 canonical core 진입 금지 문서화
+- baseline command 결과를 본 문서에 기록
+
+측정:
+
+```bash
+rg -n "legacyToCanonical\\(" apps packages
+rg -n "\\b(layout_id|slot_name|componentRole|masterId|overrides)\\b" apps packages
+rg -n "\\bevents\\b|\\bdataBinding\\b" apps/builder/src packages/shared/src
+```
+
+완료 조건:
+
+| 조건                       | 통과 기준                               |
+| -------------------------- | --------------------------------------- |
+| core/extension/legacy 분류 | 본 문서 표와 타입 주석이 일치           |
+| Pencil schema 오해 방지    | "Pencil schema 그대로 채택" 문구 0건    |
+| events 위치                | core field가 아닌 extension-only로 명시 |
+
+## 6. Phase 1 — Canonical Document Store API
+
+현재 `legacyToCanonical(input, deps)`는 read-through adapter다. Phase 1에서는 canonical document 자체를 mutation할 수 있는 API를 별도 surface로 만든다.
+
+필수 API 초안:
+
+```ts
+interface CanonicalDocumentActions {
+  getDocument(projectId: string): CompositionDocument;
+  setDocument(projectId: string, doc: CompositionDocument): void;
+  updateNode(nodeId: string, patch: Partial<CanonicalNode>): void;
+  insertNode(parentPath: string, node: CanonicalNode, index?: number): void;
+  removeNode(nodePath: string): void;
+  updateDescendant(
+    refPath: string,
+    descendantPath: string,
+    value: DescendantOverride,
+  ): void;
+}
+```
+
+원칙:
+
+1. mutation API는 legacy `Element`를 입력으로 받지 않는다.
+2. adapter는 legacy load/import/export에만 사용한다.
+3. history entry는 canonical patch 단위로 기록한다.
+4. `descendants` update는 slot fill, override patch, reset override를 모두 표현해야 한다.
+
+## 7. Phase 2 — Hot Path Cutover
+
+우선 제거 대상:
+
+| 경로                       | 현재 문제                                          | 전환 목표                                |
+| -------------------------- | -------------------------------------------------- | ---------------------------------------- |
+| canvas drag/drop helper    | mousemove 중 doc build 위험                        | canonical snapshot 또는 scene index 사용 |
+| BuilderCore layout refresh | elements 변경마다 projection/filter                | canonical store selector 사용            |
+| LayerTree                  | legacy childrenMap + synthetic canonical 혼재      | canonical tree에서 derived view 생성     |
+| Preview sync               | legacy element payload + canonical projection 혼재 | resolved canonical tree publish          |
+| Selection/properties       | selected legacy element에서 canonical 역추적       | selected canonical path/id 기준          |
+
+측정:
+
+```bash
+rg -n "legacyToCanonical\\(|selectCanonicalDocument\\(" apps/builder/src/builder apps/builder/src/preview
+rg -n "layout_id|slot_name|componentRole|masterId" apps/builder/src/builder apps/builder/src/preview
+```
+
+완료 조건:
+
+- drag/selection/render/LayerTree/Preview sync 경로에서 full document projection 0건
+- `selectCanonicalDocument`는 adapter boundary 또는 cold path에서만 호출
+- frame/slot/ref rendering은 canonical snapshot에서 파생
+
+## 8. Phase 3 — Persistence Write-Through
+
+저장 전략:
+
+| 단계                        | 동작                                             | 목적                 |
+| --------------------------- | ------------------------------------------------ | -------------------- |
+| 3-A shadow write            | canonical 저장 + legacy export 결과 비교         | 무손실 확인          |
+| 3-B canonical primary       | 저장 source를 canonical document로 전환          | SSOT 전환            |
+| 3-C legacy export on demand | legacy `elements[]`는 export/compat에서만 생성   | adapter 격리         |
+| 3-D migration marker        | `_meta.schemaVersion`을 canonical-primary로 승격 | 재실행/rollback 제어 |
+
+필수 안전장치:
+
+- localStorage/IndexedDB backup
+- dry-run diff summary
+- project-level rollback marker
+- sample project roundtrip
+- visual smoke: Skia + Preview + Publish
+
+## 9. Phase 4 — Legacy Field Quarantine
+
+ADR-913 Phase 5와 ADR-911 잔여 layout cleanup을 본 ADR의 final gate로 묶는다.
+
+| 필드                       | 담당 ADR          | ADR-916 종결 기준                            |
+| -------------------------- | ----------------- | -------------------------------------------- |
+| `slot_name`                | ADR-913 Phase 5-A | adapter 밖 read/write 0건                    |
+| `overrides`                | ADR-913 Phase 5-B | `RefNode.descendants` patch mode로 통합      |
+| `componentRole`            | ADR-913 Phase 5-C | `reusable`/`type:"ref"`만 사용               |
+| `masterId`                 | ADR-913 Phase 5-D | `RefNode.ref`만 사용                         |
+| `descendants` legacy shape | ADR-913 Phase 5-E | canonical `DescendantOverride` union만 사용  |
+| `layout_id`                | ADR-911 Phase 3/4 | reusable frame + page ref/descendants로 통합 |
+
+완료 기준:
+
+```bash
+rg -n "\\b(layout_id|slot_name|componentRole|masterId|overrides)\\b" apps packages \
+  -g '*.ts' -g '*.tsx' \
+  -g '!apps/builder/src/adapters/**' \
+  -g '!apps/builder/src/lib/db/migration*.ts'
+```
+
+결과는 0건이 원칙이다. 불가피한 잔존은 adapter/shim 디렉터리로 이동하고 파일명에 `legacy`를 포함해야 한다.
+
+## 10. Phase 5 — Runtime Parity + Extension Closure
+
+검증 matrix:
+
+| 영역            | 필수 시나리오                                                            |
+| --------------- | ------------------------------------------------------------------------ |
+| Slot            | 같은 recommended component 반복 fill, append semantics, clear slot       |
+| Ref             | origin -> instance navigation, instance -> origin navigation, detach     |
+| Descendants     | patch / node replacement / children replacement 3-mode                   |
+| Frame           | reusable frame 생성, page ref 연결, layout preset import                 |
+| History         | slot fill, detach, override reset undo/redo                              |
+| Preview/Publish | canonical resolved tree 기반 렌더                                        |
+| Events          | `x-composition.events` serialize/deserialize, callback 저장 0건          |
+| DataBinding     | `x-composition.dataBinding` serialize/deserialize, renderer adapter 연결 |
+
+## 11. ADR 의존 관계 정리
+
+| ADR     | ADR-916에서의 역할                        | 조정 필요                                                |
+| ------- | ----------------------------------------- | -------------------------------------------------------- |
+| ADR-903 | canonical format foundation               | completed 유지, final SSOT cutover는 ADR-916이 담당      |
+| ADR-910 | `themes`/`variables` canonical field land | 그대로 유지                                              |
+| ADR-911 | `layout_id`/frame authoring cleanup       | ADR-916 G5의 layout field quarantine에 연결              |
+| ADR-912 | editing semantics base                    | ADR-916 parity matrix의 reusable/ref UX 기준으로 사용    |
+| ADR-913 | `tag -> type` + hybrid cleanup            | ADR-916 G5의 field quarantine에 연결                     |
+| ADR-914 | imports resolver                          | canonical primary 저장 이후 import/export adapter로 연결 |
+
+## 12. 완료 판정
+
+ADR-916은 아래 조건이 모두 충족될 때 `Implemented`로 이동한다.
+
+| 조건                       | 기준                                                         |
+| -------------------------- | ------------------------------------------------------------ |
+| canonical primary storage  | 신규 저장 source가 `CompositionDocument`                     |
+| legacy adapter quarantine  | legacy field runtime read/write가 adapter-only               |
+| hot path projection 0      | drag/selection/render/preview sync에 full projection 없음    |
+| extension boundary closure | events/dataBinding/actions가 `x-composition` 아래에만 직렬화 |
+| parity pass                | Skia/Preview/Publish/History/Slot/Ref 시나리오 회귀 0        |
+| docs sync                  | ADR-911/913/914 README row와 본 ADR gate 상태 일치           |

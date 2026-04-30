@@ -43,6 +43,7 @@ export {
 export type {
   BodySelectionResult,
   CanvasPoint,
+  FrameBodySelectionArea,
   PageLike,
   PagePositionMap,
 } from "./selectionHitTest";

@@ -134,7 +134,13 @@ export function FramesTab({
 
   // selectedReusableFrameId 기반 현재 프레임 조회
   const currentFrame = useMemo(() => {
-    return reusableFrames.find((f) => f.id === selectedReusableFrameId) || null;
+    const projectedFrame =
+      reusableFrames.find((f) => f.id === selectedReusableFrameId) || null;
+    if (projectedFrame || !selectedReusableFrameId) {
+      return projectedFrame;
+    }
+
+    return { id: selectedReusableFrameId, name: "" };
   }, [reusableFrames, selectedReusableFrameId]);
 
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
@@ -261,7 +267,11 @@ export function FramesTab({
     if (!currentFrame) return [];
     const filtered: Element[] = [];
     elementsMap.forEach((el) => {
-      if (el.layout_id === currentFrame.id) {
+      if (
+        !el.deleted &&
+        el.layout_id === currentFrame.id &&
+        el.page_id == null
+      ) {
         filtered.push(el);
       }
     });
@@ -395,7 +405,7 @@ export function FramesTab({
         name: getNextFrameName(reusableFrames),
         projectId,
       });
-      handleSelectFrame(ref.id);
+      await handleSelectFrame(ref.id);
     } catch (error) {
       console.error("[FramesTab] Frame 생성 에러:", error);
     }

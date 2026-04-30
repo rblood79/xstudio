@@ -5,7 +5,7 @@ import {
   type RefObject,
 } from "react";
 import { useStore } from "../../../stores";
-import type { BoundingBox } from "../selection";
+import type { BoundingBox, FrameBodySelectionArea } from "../selection";
 import {
   commitPointerClick,
   isPointerDoubleClick,
@@ -37,6 +37,7 @@ interface UseCentralCanvasPointerHandlersOptions {
     (elementId: string, modifiers?: ModifierState) => void
   >;
   handleElementDoubleClickRef: MutableRefObject<(elementId: string) => void>;
+  frameAreas?: FrameBodySelectionArea[];
   getHitElementsMap?: () => Map<string, Element>;
   isEditingRef: MutableRefObject<boolean>;
   lastClickTargetRef: MutableRefObject<string | null>;
@@ -92,6 +93,7 @@ export function useCentralCanvasPointerHandlers({
   editingElementIdRef,
   handleElementClickRef,
   handleElementDoubleClickRef,
+  frameAreas = [],
   getHitElementsMap,
   isEditingRef,
   lastClickTargetRef,
@@ -324,6 +326,7 @@ export function useCentralCanvasPointerHandlers({
             canvasPoint: canvasPos,
             currentPageId: state.currentPageId,
             elementsMap: state.elementsMap,
+            frameAreas,
             pageHeight,
             pageIndexElementsByPage: state.pageIndex.elementsByPage,
             pagePositions: state.pagePositions,
@@ -331,7 +334,19 @@ export function useCentralCanvasPointerHandlers({
             pages: state.pages,
           });
 
-          if (bodySelection.pageId) {
+          if (bodySelection.bodyElementId) {
+            const needsPageTransition =
+              bodySelection.pageId != null &&
+              bodySelection.pageId !== state.currentPageId;
+            if (needsPageTransition) {
+              selectElementWithPageTransition(
+                bodySelection.bodyElementId,
+                bodySelection.pageId,
+              );
+            } else {
+              setSelectedElement(bodySelection.bodyElementId);
+            }
+          } else if (bodySelection.pageId) {
             // ADR-074 Phase 1: 페이지 영역 내부 빈 공간 클릭
             // - Case A (페이지 전환 + body 선택): selectElementWithPageTransition
             //   단일 set()으로 병합하여 store notify 2회 → 1회로 축소.
@@ -341,21 +356,10 @@ export function useCentralCanvasPointerHandlers({
             //   bodyElementId가 없는 페이지는 희귀 edge라 별도 action 신설 보류.
             const needsPageTransition =
               bodySelection.pageId !== state.currentPageId;
-            if (bodySelection.bodyElementId) {
-              if (needsPageTransition) {
-                selectElementWithPageTransition(
-                  bodySelection.bodyElementId,
-                  bodySelection.pageId,
-                );
-              } else {
-                setSelectedElement(bodySelection.bodyElementId);
-              }
-            } else {
-              if (needsPageTransition) {
-                setCurrentPageId(bodySelection.pageId);
-              }
-              setSelectedElements([]);
+            if (needsPageTransition) {
+              setCurrentPageId(bodySelection.pageId);
             }
+            setSelectedElements([]);
           } else {
             // 페이지 영역 밖 클릭 → 선택 모두 해제
             setSelectedElements([]);
@@ -488,6 +492,7 @@ export function useCentralCanvasPointerHandlers({
     editingElementIdRef,
     handleElementClickRef,
     handleElementDoubleClickRef,
+    frameAreas,
     getHitElementsMap,
     isEditingRef,
     lastClickTargetRef,

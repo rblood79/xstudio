@@ -19,6 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - layout mode 복원 시 선택 frame 하나만 보정하지 않고 등록된 frame 전체의 body/slot elements 를 `loadFrameElements` fallback 으로 병합
   - FramesTab 진입 시 store 에 없는 frame elements 를 보강 로드해 여러 frame 등록 후 새로고침해도 tree/canvas 입력이 비지 않도록 보정
   - Page 전환 중 frame elements 를 로드하는 경로도 `getDescendants(layoutId)` 직접 호출 대신 legacy `layout_id` snapshot fallback helper 로 통일
+  - 새로고침 직후 frame inputs 가 WASM layout ready 전에 만들어지면 layoutMap publish 가 skip 된 뒤 재실행되지 않던 경로를 차단하고, `wasmLayoutReady` 전환도 frame/page layout publish trigger 에 포함
+- **Frames 탭에서 Frame 추가 직후 body 가 보이지 않던 생성 경로 수정**:
+  - 새 Frame 생성 시 `layouts` store 가 신규 frame 을 즉시 selected frame 으로 지정해 body 자동 선택과 renderer input 이 같은 frame id 를 보도록 보정
+  - selected frame id 가 frame 목록 canonical projection 보다 먼저 도착해도 `FramesTab` 이 fallback current frame 으로 body tree 를 렌더
+  - 진행 중인 `fetchLayouts` 가 새로 생성/삭제된 local frame state 를 stale DB snapshot 으로 덮어쓰지 않도록 fetch 결과 병합 guard 추가
+  - legacy layout id 와 canonical frame id(`layout-<id>`) 매칭을 통일해 Slot 조회/delete cascade 가 canonical projection 에서 빠지지 않도록 보정
+- **Frames 탭에서 Frame 을 연속 추가하면 홀수 번째 body 만 보이던 Skia layout 회귀 수정**:
+  - reusable Frame body 는 `page_id` 가 없으므로 persistent Taffy tree 를 `__default__` 로 공유하지 않고 `page_id ?? layout_id ?? bodyId` key 로 분리
+  - layout map, filtered children map, persistent tree 가 같은 frame root key 를 사용해 여러 Frame 의 root state 가 생성 순서에 따라 섞이지 않도록 보정
+- **Frames 탭에서 Frame body 선택 시 selection box 가 나타나지 않던 회귀 수정**:
+  - Frame authoring 중 store 의 `currentPageId` 가 남아 있어도 실제 렌더된 `layout_id` 소유 element 는 `treeBoundsMap` 기준으로 selection target 에 포함
+  - body, Slot, frame child selection 이 page id 매칭이 아니라 현재 render root membership 으로 overlay bounds 를 계산하도록 보정
+- **Skia 화면에서 Frame body 빈 영역 클릭 시 body 가 선택되지 않던 회귀 수정**:
+  - 빈 영역 body fallback hit-test 가 Page 영역보다 Frame authoring 영역을 먼저 검사하도록 보정
+  - `page_id=null` 인 Frame body selection 을 Page 밖 클릭으로 오인해 clear 하지 않고 실제 `layout_id` body 선택으로 처리
 - **Frame preset 적용 직후 Layout reset 이 활성화되던 baseline 판정 수정**:
   - `appliedPreset` 의 normalized `containerStyle` 을 frame body reset baseline 으로 포함해 preset 이 만든 `display`/`flexDirection` 을 사용자 override 로 보지 않도록 보정
   - Layout reset 은 사용자가 변경한 값만 preset baseline 으로 되돌리며, 수직 2단 preset 적용 직후에는 dirty 상태가 되지 않음
