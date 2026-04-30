@@ -2,6 +2,21 @@ import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
+const RANGE_CALENDAR_MONTH_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
+
+function formatRangeCalendarMonth(date: Date): string {
+  const locale = navigator.language || "ko-KR";
+  const cached = RANGE_CALENDAR_MONTH_FORMATTERS.get(locale);
+  if (cached) return cached.format(date);
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+  });
+  RANGE_CALENDAR_MONTH_FORMATTERS.set(locale, formatter);
+  return formatter.format(date);
+}
+
 /**
  * Avatar 컴포넌트 정의
  *
@@ -653,10 +668,7 @@ export function createRangeCalendarDefinition(
       {
         type: "CalendarHeader",
         props: {
-          children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
-            year: "numeric",
-            month: "long",
-          }).format(now),
+          children: formatRangeCalendarMonth(now),
         } as ComponentElementProps,
         order_num: 1,
       },

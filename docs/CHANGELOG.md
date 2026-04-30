@@ -5,6 +5,16 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Skia 캘린더 컴포넌트 등록 경량화 — 월 포맷터 재사용] - 2026-04-27
+
+### Performance
+
+- Skia full tree layout의 grid rebuild 조건을 세분화하여, **자식이 없는 leaf grid 노드 신규 등록**은 incremental update 경로를 사용하도록 변경했습니다. 기존에는 display가 grid인 신규 노드면 항상 `persistentTree.reset() + buildFull()`이 실행되어 페이지 전체 재계산이 발생했습니다.
+  - 위치: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts`
+- Calendar 계열 컴포넌트 등록 시 `Intl.DateTimeFormat` 인스턴스를 매번 새로 생성하던 경로를 locale 단위 캐시(Map) 재사용으로 변경하여, 다중 등록 시 누적 포맷터 생성 비용을 줄였습니다.
+  - 위치: `apps/builder/src/builder/factories/definitions/DateColorComponents.ts`
+  - 위치: `apps/builder/src/builder/factories/definitions/DisplayComponents.ts`
+
 ## [ADR-910 Implemented — Canonical `themes`/`variables` 필드 Land Plan 전체 종결] - 2026-04-27
 
 ### Architecture

@@ -2,19 +2,33 @@ import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
+const CALENDAR_MONTH_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
+
+function getCalendarMonthFormatter(locale: string): Intl.DateTimeFormat {
+  const cached = CALENDAR_MONTH_FORMATTERS.get(locale);
+  if (cached) return cached;
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+  });
+  CALENDAR_MONTH_FORMATTERS.set(locale, formatter);
+  return formatter;
+}
+
 /** Calendar 현재 월 초기 데이터 (DatePicker/DateRangePicker/Calendar 공유) */
 function buildCalendarInitData() {
   const now = new Date();
   const calYear = now.getFullYear();
   const calMonth = now.getMonth();
+  const locale =
+    (typeof navigator !== "undefined" && navigator.language) || "ko-KR";
+  const formatter = getCalendarMonthFormatter(locale);
   return {
     now,
     firstDay: new Date(calYear, calMonth, 1).getDay(),
     calTotalDays: new Date(calYear, calMonth + 1, 0).getDate(),
-    monthText: new Intl.DateTimeFormat(
-      (typeof navigator !== "undefined" && navigator.language) || "ko-KR",
-      { year: "numeric", month: "long" },
-    ).format(now),
+    monthText: formatter.format(now),
   };
 }
 

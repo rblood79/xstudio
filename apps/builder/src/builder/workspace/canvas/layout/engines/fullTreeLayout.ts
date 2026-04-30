@@ -315,6 +315,22 @@ function isGridDisplay(display: unknown): boolean {
   return display === "grid" || display === "inline-grid";
 }
 
+/**
+ * Grid full rebuild 강제 조건.
+ *
+ * - 자식이 있는 grid container 는 Taffy incremental add/update 경로에서
+ *   track/placement 캐시 invalidation 이 충분하지 않아 full rebuild 필요.
+ * - 자식이 없는 leaf grid 는 auto-placement/track 재배치 이슈 영향이 없으므로
+ *   incremental 경로를 허용해 등록 시 불필요한 전체 트리 rebuild를 회피한다.
+ */
+function shouldForceGridFullRebuild(
+  display: unknown,
+  childCount: number,
+): boolean {
+  if (!isGridDisplay(display)) return false;
+  return childCount > 0;
+}
+
 // ─── Implicit Style 패치 ──────────────────────────────────────────────
 
 /** CSS dimension 속성 (number → "${v}px" 변환) */
@@ -1881,11 +1897,11 @@ export function calculateFullTreeLayout(
       for (const node of batch) {
         const prevJson = persistentTree.getLastJson(node.elementId);
         const curDisplay = node.style.display;
-        // 신규 노드 (prevJson 없음) 가 grid container 면 full rebuild 필요 —
+        // 신규 노드 (prevJson 없음) 가 "자식이 있는 grid container" 면 full rebuild 필요 —
         // Taffy WASM `addNode` 증분 추가로는 grid track (gridTemplateColumns/Areas)
         // 이 auto-placement 로 degrade 됨. `buildFull` 로만 정상 배치.
         if (!prevJson) {
-          if (isGridDisplay(curDisplay)) {
+          if (shouldForceGridFullRebuild(curDisplay, node.children.length)) {
             needsFullRebuild = true;
             break;
           }
@@ -1900,7 +1916,7 @@ export function calculateFullTreeLayout(
         // track/placement 캐시 invalidation 실패 (padding 변경→1줄 degrade,
         // gap 변경→미반영). GRID_REBUILD_TRIGGER_KEYS 중 하나라도 변경 시
         // full rebuild 강제.
-        if (isGridDisplay(curDisplay)) {
+        if (shouldForceGridFullRebuild(curDisplay, node.children.length)) {
           let gridChanged = false;
           for (const k of GRID_REBUILD_TRIGGER_KEYS) {
             if (
