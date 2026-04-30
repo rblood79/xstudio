@@ -10,13 +10,13 @@ import { AlertTriangle } from "lucide-react";
 import {
   resolveEditingSemanticsImpactConfirmation,
   subscribeEditingSemanticsImpactConfirmation,
-  type EditingSemanticsImpactConfirmationRequest,
+  type EditingSemanticsConfirmationRequest,
 } from "../../utils/editingSemanticsImpactConfirmation";
 import "./EditingSemanticsImpactDialog.css";
 
 export function EditingSemanticsImpactDialogHost() {
   const [request, setRequest] =
-    useState<EditingSemanticsImpactConfirmationRequest | null>(null);
+    useState<EditingSemanticsConfirmationRequest | null>(null);
 
   useEffect(() => {
     return subscribeEditingSemanticsImpactConfirmation(setRequest);
@@ -36,14 +36,33 @@ export function EditingSemanticsImpactDialogHost() {
     resolveEditingSemanticsImpactConfirmation(true);
   };
 
+  const isDetachRequest = request?.kind === "detach-instance";
+  const instanceCount = isDetachRequest ? 1 : (request?.instanceCount ?? 0);
   const instanceLabel =
-    request?.instanceCount === 1
-      ? "1 instance"
-      : `${request?.instanceCount ?? 0} instances`;
-  const previewInstanceIds = request?.impactedInstanceIds.slice(0, 5) ?? [];
+    instanceCount === 1 ? "1 instance" : `${instanceCount} instances`;
+  const previewInstanceIds =
+    request && !isDetachRequest ? request.impactedInstanceIds.slice(0, 5) : [];
   const hiddenInstanceCount = Math.max(
     0,
-    (request?.instanceCount ?? 0) - previewInstanceIds.length,
+    instanceCount - previewInstanceIds.length,
+  );
+  const title = isDetachRequest ? "Detach instance" : "Component impact";
+  const body = isDetachRequest ? (
+    <p>
+      Detaching <strong>{request?.instanceLabel ?? "this instance"}</strong>{" "}
+      will turn it into a standalone element. Future origin changes will no
+      longer update this instance.
+    </p>
+  ) : (
+    <>
+      <p>
+        Editing {request?.originLabel ?? "this component"} will affect{" "}
+        <strong>{instanceLabel}</strong>.
+      </p>
+      <p className="editing-impact-meta">
+        Counted in {request?.countDurationMs.toFixed(1) ?? "0.0"}ms.
+      </p>
+    </>
   );
 
   return (
@@ -58,17 +77,11 @@ export function EditingSemanticsImpactDialogHost() {
           <div className="editing-impact-header">
             <AlertTriangle aria-hidden="true" size={18} />
             <Heading className="editing-impact-title" slot="title">
-              Component impact
+              {title}
             </Heading>
           </div>
           <div className="editing-impact-body">
-            <p>
-              Editing {request?.originLabel ?? "this component"} will affect{" "}
-              <strong>{instanceLabel}</strong>.
-            </p>
-            <p className="editing-impact-meta">
-              Counted in {request?.countDurationMs.toFixed(1) ?? "0.0"}ms.
-            </p>
+            {body}
             {previewInstanceIds.length > 0 && (
               <div
                 aria-label="Affected instances"

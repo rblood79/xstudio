@@ -30,8 +30,10 @@ import type {
 } from "../types";
 
 import { useCollectionData } from "../hooks";
-import type { NecessityIndicator } from "./Field";
-import { renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 import { Skeleton } from "./Skeleton";
 import "./styles/generated/Select.css";
 

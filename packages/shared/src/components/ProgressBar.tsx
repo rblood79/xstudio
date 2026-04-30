@@ -12,7 +12,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSizeSubset } from "../types";
-import { formatPercent, formatNumber } from "../utils/core/numberUtils";
+import { formatPercent } from "../utils/core/numberUtils";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/generated/ProgressBar.css";

@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "../../../../stores";
 import { historyManager } from "../../../../stores/history";
@@ -97,7 +103,7 @@ describe("LayerTreeItemContent editing semantics marker", () => {
     expect(screen.queryByLabelText("Instance")).toBeNull();
   });
 
-  it("legacy instance node exposes detach through row context menu", () => {
+  it("legacy instance node exposes detach through row context menu", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const origin = {
       id: "origin",
@@ -143,11 +149,13 @@ describe("LayerTreeItemContent editing semantics marker", () => {
     });
     fireEvent.click(screen.getByRole("menuitem", { name: "Detach instance" }));
 
-    expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-      componentRole: undefined,
-      masterId: undefined,
-      overrides: undefined,
-      props: { label: "Detached" },
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
+        componentRole: undefined,
+        masterId: undefined,
+        overrides: undefined,
+        props: { label: "Detached" },
+      });
     });
   });
 });

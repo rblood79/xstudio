@@ -17,6 +17,11 @@ export interface SelectionRenderResult {
   bounds: BoundingBox | null;
   lasso: LassoRenderData | null;
   semanticRole: EditingSemanticsRole | null;
+  semanticTargets: Array<{
+    bounds: BoundingBox;
+    semanticRole: EditingSemanticsRole | null;
+    slotMarkerRole: EditingSemanticsRole | null;
+  }>;
   showHandles: boolean;
   slotMarkerRole: EditingSemanticsRole | null;
 }
@@ -119,6 +124,7 @@ export function buildSelectionRenderData(
 
   let selectionBounds: BoundingBox | null = null;
   let semanticRole: EditingSemanticsRole | null = null;
+  const semanticTargets: SelectionRenderResult["semanticTargets"] = [];
   let slotMarkerRole: EditingSemanticsRole | null = null;
   let showHandles = false;
 
@@ -130,40 +136,62 @@ export function buildSelectionRenderData(
       const element = elementsMap.get(id);
       if (
         !element ||
-        !isRenderableSelectionTarget(
-          id,
-          element,
-          currentPageId,
-          treeBoundsMap,
-        )
+        !isRenderableSelectionTarget(id, element, currentPageId, treeBoundsMap)
       ) {
         continue;
       }
 
+      const elementSemanticRole = getEditingSemanticsRole(element);
+      const elementSlotMarkerRole = getEditingSlotMarkerRole(
+        element,
+        elementsMap,
+      );
       if (selectedIds.length === 1) {
-        semanticRole = getEditingSemanticsRole(element);
-        slotMarkerRole = getEditingSlotMarkerRole(element, elementsMap);
+        semanticRole = elementSemanticRole;
+        slotMarkerRole = elementSlotMarkerRole;
       }
 
       const treeBounds = treeBoundsMap.get(id);
       if (treeBounds) {
-        boxes.push({
+        const bounds = {
           x: treeBounds.x,
           y: treeBounds.y,
           width: treeBounds.width,
           height: treeBounds.height,
-        });
+        };
+        boxes.push(bounds);
+        if (
+          selectedIds.length > 1 &&
+          (elementSemanticRole || elementSlotMarkerRole)
+        ) {
+          semanticTargets.push({
+            bounds,
+            semanticRole: elementSemanticRole,
+            slotMarkerRole: elementSlotMarkerRole,
+          });
+        }
         continue;
       }
 
       const globalBounds = getElementBoundsSimple(id);
       if (globalBounds) {
-        boxes.push({
+        const bounds = {
           x: (globalBounds.x - cameraX) / cameraZoom,
           y: (globalBounds.y - cameraY) / cameraZoom,
           width: globalBounds.width / cameraZoom,
           height: globalBounds.height / cameraZoom,
-        });
+        };
+        boxes.push(bounds);
+        if (
+          selectedIds.length > 1 &&
+          (elementSemanticRole || elementSlotMarkerRole)
+        ) {
+          semanticTargets.push({
+            bounds,
+            semanticRole: elementSemanticRole,
+            slotMarkerRole: elementSlotMarkerRole,
+          });
+        }
         continue;
       }
 
@@ -190,6 +218,7 @@ export function buildSelectionRenderData(
     bounds: selectionBounds,
     lasso: null,
     semanticRole,
+    semanticTargets,
     showHandles,
     slotMarkerRole,
   };

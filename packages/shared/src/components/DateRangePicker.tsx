@@ -29,8 +29,10 @@ import {
 import { getLocalTimeZone, today, now } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
-import type { NecessityIndicator } from "./Field";
-import { renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 
 import "./styles/generated/DateRangePicker.css";
 

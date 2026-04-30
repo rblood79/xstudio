@@ -9,15 +9,14 @@ import {
   Trash,
   GripVertical,
 } from "lucide-react";
-import {
-  ICON_EDIT_PROPS,
-  type TreeItem as TreeItemType,
-} from "../helpers";
+import { ICON_EDIT_PROPS, type TreeItem as TreeItemType } from "../helpers";
 import type { Element } from "../../../../../types/core/store.types";
 import type { ElementProps } from "../../../../../types/integrations/supabase.types";
 import type { TreeItemState } from "../TreeBase/types";
 import type { LayerTreeNode } from "./types";
 import { useStore } from "../../../../stores";
+import { useKeyboardShortcutsRegistry } from "../../../../hooks/useKeyboardShortcutsRegistry";
+import { requestEditingSemanticsDetachConfirmation } from "../../../../utils/editingSemanticsImpactConfirmation";
 import {
   canDetachInstance,
   getEditingSemanticsLabel,
@@ -32,7 +31,7 @@ interface LayerTreeItemContentProps {
   onSelectTabElement?: (
     parentId: string,
     props: ElementProps,
-    index: number
+    index: number,
   ) => void;
 }
 
@@ -63,13 +62,7 @@ export function LayerTreeItemContent({
   }
 
   // 일반 요소 렌더링
-  return (
-    <NormalItemContent
-      node={node}
-      state={state}
-      onDelete={onDelete}
-    />
-  );
+  return <NormalItemContent node={node} state={state} onDelete={onDelete} />;
 }
 
 // ============================================
@@ -82,11 +75,7 @@ interface NormalItemContentProps {
   onDelete: (element: Element) => Promise<void>;
 }
 
-function NormalItemContent({
-  node,
-  state,
-  onDelete,
-}: NormalItemContentProps) {
+function NormalItemContent({ node, state, onDelete }: NormalItemContentProps) {
   const { depth, hasChildren, type, element, name, isSyntheticRefChild } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
   const detachInstance = useStore((store) => store.detachInstance);
@@ -97,18 +86,33 @@ function NormalItemContent({
     x: number;
     y: number;
   } | null>(null);
+  const closeContextMenu = React.useCallback(() => {
+    setContextMenuPosition(null);
+  }, []);
 
   React.useEffect(() => {
     if (!contextMenuPosition) return;
 
-    const close = () => setContextMenuPosition(null);
-    window.addEventListener("pointerdown", close);
-    window.addEventListener("keydown", close);
+    window.addEventListener("pointerdown", closeContextMenu);
     return () => {
-      window.removeEventListener("pointerdown", close);
-      window.removeEventListener("keydown", close);
+      window.removeEventListener("pointerdown", closeContextMenu);
     };
-  }, [contextMenuPosition]);
+  }, [closeContextMenu, contextMenuPosition]);
+
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: "Escape",
+        modifier: "none",
+        handler: closeContextMenu,
+        preventDefault: false,
+        disabled: !contextMenuPosition,
+        category: "nodes",
+        description: "Close layer item context menu",
+      },
+    ],
+    [closeContextMenu, contextMenuPosition],
+  );
 
   const handleContextMenu = (event: React.MouseEvent) => {
     if (isSyntheticRefChild || !isDetachableInstance) return;
@@ -117,12 +121,13 @@ function NormalItemContent({
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
   };
 
-  const handleDetachInstance = () => {
+  const handleDetachInstance = async () => {
     if (!isDetachableInstance) return;
     setContextMenuPosition(null);
-    const confirmed = window.confirm(
-      "Detach this instance from its component?",
-    );
+    const confirmed = await requestEditingSemanticsDetachConfirmation({
+      instanceId: element.id,
+      instanceLabel: name,
+    });
     if (!confirmed) return;
     detachInstance(element.id);
   };
@@ -252,7 +257,7 @@ interface VirtualChildContentProps {
   onSelectTabElement?: (
     parentId: string,
     props: ElementProps,
-    index: number
+    index: number,
   ) => void;
 }
 
@@ -262,8 +267,15 @@ function VirtualChildContent({
   selectedTab,
   onSelectTabElement,
 }: VirtualChildContentProps) {
-  const { depth, name, virtualChildType, virtualChildIndex, virtualChildData, parentId, element } =
-    node;
+  const {
+    depth,
+    name,
+    virtualChildType,
+    virtualChildIndex,
+    virtualChildData,
+    parentId,
+    element,
+  } = node;
 
   if (virtualChildIndex === undefined) return null;
 
@@ -277,7 +289,7 @@ function VirtualChildContent({
     onSelectTabElement(
       parentId,
       element.props as ElementProps,
-      virtualChildIndex
+      virtualChildIndex,
     );
   };
 
@@ -320,7 +332,7 @@ function VirtualChildContent({
 
 function getVirtualChildIcon(
   type: LayerTreeNode["virtualChildType"],
-  data: unknown
+  data: unknown,
 ) {
   if (type === "tree") {
     const treeItem = data as TreeItemType;

@@ -16,7 +16,10 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
-import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/generated/TextField.css";

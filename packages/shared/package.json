@@ -18,8 +18,8 @@
       "default": "./src/utils/index.ts"
     },
     "./components": {
-      "types": "./src/components/index.tsx",
-      "default": "./src/components/index.tsx"
+      "types": "./src/components/index.ts",
+      "default": "./src/components/index.ts"
     },
     "./components/*": {
       "types": "./src/components/*.tsx",

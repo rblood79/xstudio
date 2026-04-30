@@ -25,8 +25,10 @@ import type { ComponentSize } from "../types";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import { useCollectionData } from "../hooks";
-import type { NecessityIndicator } from "./Field";
-import { renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 import { Skeleton } from "./Skeleton";
 import "./styles/generated/ComboBox.css";
 

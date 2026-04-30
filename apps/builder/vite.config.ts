@@ -164,7 +164,7 @@ export default defineConfig(({ command }) => {
         },
         {
           find: "@composition/shared/components",
-          replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.tsx`,
+          replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.ts`,
         },
         {
           find: "@composition/shared/utils",

@@ -18,6 +18,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   startTransition,
 } from "react";
@@ -107,7 +108,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const [iframeReadyState, setIframeReadyState] =
     useState<IframeReadyState>("not_initialized");
   const iframeReadyStateRef = useRef<IframeReadyState>("not_initialized"); // 🔧 Ref로 즉시 상태 변경
-  const isProcessingRef = useRef(false);
   const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
   const lastAckTimestampRef = useRef<number>(0); // ✅ 마지막 ACK 시점
   const isSendingRef = useRef(false); // ✅ 전송 중 플래그
@@ -908,35 +908,29 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     };
   }, []);
 
-  const handleUndo = debounce(async () => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
+  const { handleUndo, handleRedo } = useMemo(() => {
+    const runHistoryAction = (action: "undo" | "redo") => {
+      try {
+        // 백업 시스템의 히스토리 사용
+        const historyAction = useStore.getState()[action];
+        historyAction();
+      } catch (error) {
+        console.error(`백업 시스템 ${action} error:`, error);
+      }
+    };
 
-    try {
-      // 백업 시스템의 히스토리 사용
-      const { undo } = useStore.getState();
-      undo();
-    } catch (error) {
-      console.error("백업 시스템 Undo error:", error);
-    } finally {
-      isProcessingRef.current = false;
-    }
-  }, 300);
+    return {
+      handleUndo: debounce(() => runHistoryAction("undo"), 300),
+      handleRedo: debounce(() => runHistoryAction("redo"), 300),
+    };
+  }, []);
 
-  const handleRedo = debounce(async () => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
-
-    try {
-      // 백업 시스템의 히스토리 사용
-      const { redo } = useStore.getState();
-      redo();
-    } catch (error) {
-      console.error("백업 시스템 Redo error:", error);
-    } finally {
-      isProcessingRef.current = false;
-    }
-  }, 300);
+  useEffect(() => {
+    return () => {
+      handleUndo.cancel();
+      handleRedo.cancel();
+    };
+  }, [handleUndo, handleRedo]);
 
   // Page 정보가 변경될 때 iframe에 전송
   const lastSentPageInfoRef = useRef<{

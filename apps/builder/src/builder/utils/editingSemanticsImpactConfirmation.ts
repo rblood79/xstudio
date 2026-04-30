@@ -1,16 +1,27 @@
 export type EditingSemanticsImpactConfirmationRequest = {
   countDurationMs: number;
+  kind?: "origin-impact";
   impactedInstanceIds: string[];
   instanceCount: number;
   originId: string;
   originLabel: string;
 };
 
-type Listener = (
-  request: EditingSemanticsImpactConfirmationRequest | null,
-) => void;
+export type EditingSemanticsDetachConfirmationRequest = {
+  instanceId: string;
+  instanceLabel: string;
+  kind: "detach-instance";
+  originId?: string | null;
+  originLabel?: string | null;
+};
 
-let activeRequest: EditingSemanticsImpactConfirmationRequest | null = null;
+export type EditingSemanticsConfirmationRequest =
+  | EditingSemanticsImpactConfirmationRequest
+  | EditingSemanticsDetachConfirmationRequest;
+
+type Listener = (request: EditingSemanticsConfirmationRequest | null) => void;
+
+let activeRequest: EditingSemanticsConfirmationRequest | null = null;
 let activeResolve: ((confirmed: boolean) => void) | null = null;
 const listeners = new Set<Listener>();
 
@@ -21,10 +32,14 @@ function notify(): void {
 }
 
 function fallbackConfirm(
-  request: EditingSemanticsImpactConfirmationRequest,
+  request: EditingSemanticsConfirmationRequest,
 ): boolean {
   const confirmFn = globalThis.window?.confirm;
   if (typeof confirmFn !== "function") return true;
+  if (request.kind === "detach-instance") {
+    return confirmFn("Detach this instance from its component?");
+  }
+
   const label =
     request.instanceCount === 1
       ? "1 instance"
@@ -44,6 +59,24 @@ export function subscribeEditingSemanticsImpactConfirmation(
 
 export function requestEditingSemanticsImpactConfirmation(
   request: EditingSemanticsImpactConfirmationRequest,
+): Promise<boolean> {
+  return requestEditingSemanticsConfirmation({
+    ...request,
+    kind: request.kind ?? "origin-impact",
+  });
+}
+
+export function requestEditingSemanticsDetachConfirmation(
+  request: Omit<EditingSemanticsDetachConfirmationRequest, "kind">,
+): Promise<boolean> {
+  return requestEditingSemanticsConfirmation({
+    ...request,
+    kind: "detach-instance",
+  });
+}
+
+function requestEditingSemanticsConfirmation(
+  request: EditingSemanticsConfirmationRequest,
 ): Promise<boolean> {
   if (listeners.size === 0) {
     return Promise.resolve(fallbackConfirm(request));

@@ -94,6 +94,7 @@ export function FramesTab({
   const reusableFrames = useMemo<
     ReadonlyArray<{ id: string; name: string }>
   >(() => {
+    void elementsMap;
     if (!isFramesTabCanonical()) {
       return layouts.map((l) => ({ id: l.id, name: l.name }));
     }

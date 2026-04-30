@@ -1,12 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useCallback,
-  useState,
-  ReactNode,
-} from "react";
+import { useCallback, useState, ReactNode } from "react";
 import { Button } from "./Button";
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { ToastContext } from "./ToastContext";
 
 import "./styles/Toast.css";
 
@@ -32,29 +27,6 @@ export interface ToastOptions {
 
 export interface ToastItem extends ToastOptions {
   id: string;
-}
-
-interface ToastContextValue {
-  toasts: ToastItem[];
-  addToast: (options: ToastOptions) => string;
-  removeToast: (id: string) => void;
-  removeAllToasts: () => void;
-}
-
-/**
- * Toast Context
- */
-const ToastContext = createContext<ToastContextValue | null>(null);
-
-/**
- * useToast hook - Access toast functionality
- */
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
 }
 
 /**

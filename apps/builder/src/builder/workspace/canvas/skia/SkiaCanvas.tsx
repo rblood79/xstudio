@@ -769,7 +769,7 @@ export function SkiaCanvas({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [ready, containerEl, dropIndicatorSnapshotRef]);
+  }, [ready, containerEl, dropIndicatorSnapshotRef, pageTitleBoundsMapRef]);
 
   // 페이지 전환 시 오버레이 갱신
   const prevPageIdRef = useRef(

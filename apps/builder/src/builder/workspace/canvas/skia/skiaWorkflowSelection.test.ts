@@ -234,7 +234,7 @@ describe("buildSelectionRenderData editing semantics", () => {
     expect(result.slotMarkerRole).toBeNull();
   });
 
-  it("multi-selection suppresses semantic role marker", () => {
+  it("multi-selection keeps per-item semantic highlight targets", () => {
     const result = buildSelectionRenderData(
       0,
       0,
@@ -252,6 +252,13 @@ describe("buildSelectionRenderData editing semantics", () => {
 
     expect(result.semanticRole).toBeNull();
     expect(result.slotMarkerRole).toBeNull();
+    expect(result.semanticTargets).toEqual([
+      {
+        bounds: { x: 0, y: 0, width: 80, height: 32 },
+        semanticRole: "origin",
+        slotMarkerRole: null,
+      },
+    ]);
     expect(result.showHandles).toBe(false);
   });
 });

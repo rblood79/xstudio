@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Element } from "../../types/core/store.types";
-import { copyMultipleElements, pasteMultipleElements } from "./multiElementCopy";
+import {
+  copyMultipleElements,
+  deserializeCopiedElements,
+  pasteMultipleElements,
+  serializeCopiedElements,
+} from "./multiElementCopy";
 
 function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
@@ -77,5 +82,47 @@ describe("multiElementCopy", () => {
       parent_id: pasted[0].id,
       props: { text: "Copied" },
     });
+  });
+
+  it("round-trips 50 canonical refs through copy, clipboard serialization, paste, and duplicate offset", () => {
+    const refs = Array.from({ length: 50 }, (_, index) =>
+      makeElement(`instance-${index}`, {
+        type: "ref",
+        ref: "origin",
+        props: {
+          label: `Instance ${index}`,
+          style: { left: `${index}px`, top: `${index * 2}px` },
+        },
+      } as never),
+    );
+    const copied = copyMultipleElements(
+      refs.map((element) => element.id),
+      new Map(refs.map((element) => [element.id, element])),
+    );
+    const serialized = serializeCopiedElements(copied);
+    const deserialized = deserializeCopiedElements(serialized);
+
+    expect(deserialized).not.toBeNull();
+    const pasted = pasteMultipleElements(deserialized!, "page-2", {
+      x: 10,
+      y: 10,
+    });
+
+    expect(pasted).toHaveLength(50);
+    for (let index = 0; index < 50; index += 1) {
+      expect(pasted[index]).toMatchObject({
+        type: "ref",
+        ref: "origin",
+        page_id: "page-2",
+        props: {
+          label: `Instance ${index}`,
+          style: {
+            left: `${index + 10}px`,
+            top: `${index * 2 + 10}px`,
+          },
+        },
+      });
+      expect(pasted[index].id).not.toBe(`instance-${index}`);
+    }
   });
 });

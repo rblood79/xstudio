@@ -11,7 +11,7 @@
  * @since 2025-12-10 Phase 7 Auto Recovery
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import {
   performanceMonitor,
   type PerformanceMetrics,
@@ -102,13 +102,16 @@ export function useAutoRecovery(options?: {
     ...options?.config,
   };
 
-  const statsRef = useRef<RecoveryStats>({
+  const initialStats: RecoveryStats = {
     totalRecoveries: 0,
     lastRecoveryTime: null,
     lastRecoveryReason: null,
     history: [],
-  });
+  };
+  const [stats, setStats] = useState<RecoveryStats>(initialStats);
+  const statsRef = useRef<RecoveryStats>(initialStats);
 
+  const [isRecovering, setIsRecovering] = useState(false);
   const isRecoveringRef = useRef(false);
   const lastCheckTimeRef = useRef(0);
 
@@ -135,6 +138,7 @@ export function useAutoRecovery(options?: {
       }
 
       isRecoveringRef.current = true;
+      setIsRecovering(true);
       const healthBefore =
         performanceMonitor.getLastMetrics()?.healthScore ?? 0;
 
@@ -172,20 +176,22 @@ export function useAutoRecovery(options?: {
         const metricsAfter = performanceMonitor.collect();
 
         // 통계 업데이트
-        statsRef.current.totalRecoveries++;
-        statsRef.current.lastRecoveryTime = now;
-        statsRef.current.lastRecoveryReason = reason;
-        statsRef.current.history.push({
-          timestamp: now,
-          reason,
-          healthBefore,
-          healthAfter: metricsAfter.healthScore,
-        });
-
-        // 히스토리 최대 10개 유지
-        if (statsRef.current.history.length > 10) {
-          statsRef.current.history.shift();
-        }
+        const nextStats: RecoveryStats = {
+          totalRecoveries: statsRef.current.totalRecoveries + 1,
+          lastRecoveryTime: now,
+          lastRecoveryReason: reason,
+          history: [
+            ...statsRef.current.history,
+            {
+              timestamp: now,
+              reason,
+              healthBefore,
+              healthAfter: metricsAfter.healthScore,
+            },
+          ].slice(-10),
+        };
+        statsRef.current = nextStats;
+        setStats(nextStats);
 
         console.log(`✅ [AutoRecovery] Recovery complete`);
         console.log(`  Health after: ${metricsAfter.healthScore}`);
@@ -194,11 +200,12 @@ export function useAutoRecovery(options?: {
         );
 
         // 콜백 호출
-        options?.onRecovery?.(reason, { ...statsRef.current });
+        options?.onRecovery?.(reason, { ...nextStats });
       } catch (error) {
         console.error("[AutoRecovery] Recovery failed:", error);
       } finally {
         isRecoveringRef.current = false;
+        setIsRecovering(false);
       }
     },
     [currentPageId, config.recoveryCooldown, options],
@@ -264,9 +271,9 @@ export function useAutoRecovery(options?: {
   ]);
 
   return {
-    stats: statsRef.current,
+    stats,
     triggerRecovery,
-    isRecovering: isRecoveringRef.current,
+    isRecovering,
   };
 }
 

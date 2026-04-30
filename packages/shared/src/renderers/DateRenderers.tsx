@@ -146,7 +146,6 @@ export const renderDatePicker = (
   const locale = element.props.locale as string | undefined;
   const calendarSystem = element.props.calendarSystem as string | undefined;
   const size = element.props.size as string | undefined;
-  const variant = element.props.variant as string | undefined;
   const granularity = getGranularity();
   const isTime = ["hour", "minute", "second"].includes(granularity);
   // locale/calendarSystem + date↔time 타입 전환 시 리마운트 (CalendarDate↔ZonedDateTime)

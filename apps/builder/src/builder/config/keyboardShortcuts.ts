@@ -7,21 +7,25 @@
  * @since Phase 2 구현 (2025-12-28)
  */
 
-import type { ShortcutDefinition, ShortcutDefinitions, ShortcutScope } from '../types/keyboard';
+import type {
+  ShortcutDefinition,
+  ShortcutDefinitions,
+  ShortcutScope,
+} from "../types/keyboard";
 
 // ============================================
 // Priority Constants
 // ============================================
 
 export const SHORTCUT_PRIORITY = {
-  SYSTEM: 100,      // Undo, Redo, Save
-  NAVIGATION: 90,   // Zoom, Pan
-  PANELS: 80,       // Panel toggles
-  CANVAS: 70,       // Element manipulation
-  TOOLS: 60,        // Tool selection
-  PROPERTIES: 50,   // Property editing
-  EVENTS: 50,       // Events panel
-  NODES: 50,        // Nodes panel
+  SYSTEM: 100, // Undo, Redo, Save
+  NAVIGATION: 90, // Zoom, Pan
+  PANELS: 80, // Panel toggles
+  CANVAS: 70, // Element manipulation
+  TOOLS: 60, // Tool selection
+  PROPERTIES: 50, // Property editing
+  EVENTS: 50, // Events panel
+  NODES: 50, // Nodes panel
 } as const;
 
 // ============================================
@@ -34,27 +38,27 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   undo: {
-    key: 'z',
-    modifier: 'cmd',
-    category: 'system',
-    scope: 'global',
+    key: "z",
+    modifier: "cmd",
+    category: "system",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.SYSTEM,
     allowInInput: true,
     capture: true,
-    description: 'Undo',
-    i18n: { ko: '실행 취소' },
+    description: "Undo",
+    i18n: { ko: "실행 취소" },
   },
 
   redo: {
-    key: 'z',
-    modifier: 'cmdShift',
-    category: 'system',
-    scope: 'global',
+    key: "z",
+    modifier: "cmdShift",
+    category: "system",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.SYSTEM,
     allowInInput: true,
     capture: true,
-    description: 'Redo',
-    i18n: { ko: '다시 실행' },
+    description: "Redo",
+    i18n: { ko: "다시 실행" },
   },
 
   // ==========================================
@@ -62,69 +66,69 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   zoomIn: {
-    key: '=',
-    modifier: 'cmd',
-    category: 'navigation',
-    scope: 'global',
+    key: "=",
+    modifier: "cmd",
+    category: "navigation",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.NAVIGATION,
     capture: true,
-    description: 'Zoom In',
-    i18n: { ko: '확대' },
+    description: "Zoom In",
+    i18n: { ko: "확대" },
   },
 
   zoomInNumpad: {
-    key: '+',
-    modifier: 'cmd',
-    category: 'navigation',
-    scope: 'global',
+    key: "+",
+    modifier: "cmd",
+    category: "navigation",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.NAVIGATION,
     capture: true,
-    description: 'Zoom In (numpad)',
-    i18n: { ko: '확대 (숫자패드)' },
+    description: "Zoom In (numpad)",
+    i18n: { ko: "확대 (숫자패드)" },
   },
 
   zoomOut: {
-    key: '-',
-    modifier: 'cmd',
-    category: 'navigation',
-    scope: 'global',
+    key: "-",
+    modifier: "cmd",
+    category: "navigation",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.NAVIGATION,
     capture: true,
-    description: 'Zoom Out',
-    i18n: { ko: '축소' },
+    description: "Zoom Out",
+    i18n: { ko: "축소" },
   },
 
   zoomToFit: {
-    key: '0',
-    modifier: 'cmd',
-    category: 'navigation',
-    scope: 'global',
+    key: "0",
+    modifier: "cmd",
+    category: "navigation",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.NAVIGATION,
     capture: true,
-    description: 'Fit to Screen',
-    i18n: { ko: '화면에 맞추기' },
+    description: "Fit to Screen",
+    i18n: { ko: "화면에 맞추기" },
   },
 
   zoom100: {
-    key: '1',
-    modifier: 'cmd',
-    category: 'navigation',
-    scope: 'global',
+    key: "1",
+    modifier: "cmd",
+    category: "navigation",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.NAVIGATION,
     capture: true,
-    description: 'Zoom 100%',
-    i18n: { ko: '100%로 확대' },
+    description: "Zoom 100%",
+    i18n: { ko: "100%로 확대" },
   },
 
   zoom200: {
-    key: '2',
-    modifier: 'cmd',
-    category: 'navigation',
-    scope: 'global',
+    key: "2",
+    modifier: "cmd",
+    category: "navigation",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.NAVIGATION,
     capture: true,
-    description: 'Zoom 200%',
-    i18n: { ko: '200%로 확대' },
+    description: "Zoom 200%",
+    i18n: { ko: "200%로 확대" },
   },
 
   // ==========================================
@@ -132,93 +136,93 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   toggleNodes: {
-    key: 'n',
-    modifier: 'ctrlShift',
-    category: 'panels',
-    scope: 'global',
+    key: "n",
+    modifier: "ctrlShift",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Nodes Panel',
-    i18n: { ko: '노드 패널 토글' },
+    description: "Toggle Nodes Panel",
+    i18n: { ko: "노드 패널 토글" },
   },
 
   toggleComponents: {
-    key: 'c',
-    modifier: 'ctrlShift',
-    category: 'panels',
-    scope: 'global',
+    key: "c",
+    modifier: "ctrlShift",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Components Panel',
-    i18n: { ko: '컴포넌트 패널 토글' },
+    description: "Toggle Components Panel",
+    i18n: { ko: "컴포넌트 패널 토글" },
   },
 
   toggleProperties: {
-    key: 'p',
-    modifier: 'ctrlShift',
-    category: 'panels',
-    scope: 'global',
+    key: "p",
+    modifier: "ctrlShift",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Properties Panel',
-    i18n: { ko: '속성 패널 토글' },
+    description: "Toggle Properties Panel",
+    i18n: { ko: "속성 패널 토글" },
   },
 
   toggleStyles: {
-    key: 's',
-    modifier: 'ctrlShift',
-    category: 'panels',
-    scope: 'global',
+    key: "s",
+    modifier: "ctrlShift",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Styles Panel',
-    i18n: { ko: '스타일 패널 토글' },
+    description: "Toggle Styles Panel",
+    i18n: { ko: "스타일 패널 토글" },
   },
 
   toggleEvents: {
-    key: 'e',
-    modifier: 'ctrlShift',
-    category: 'panels',
-    scope: 'global',
+    key: "e",
+    modifier: "ctrlShift",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Events Panel',
-    i18n: { ko: '이벤트 패널 토글' },
+    description: "Toggle Events Panel",
+    i18n: { ko: "이벤트 패널 토글" },
   },
 
   toggleHistory: {
-    key: 'h',
-    modifier: 'ctrlShift',
-    category: 'panels',
-    scope: 'global',
+    key: "h",
+    modifier: "ctrlShift",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle History Panel',
-    i18n: { ko: '히스토리 패널 토글' },
+    description: "Toggle History Panel",
+    i18n: { ko: "히스토리 패널 토글" },
   },
 
   toggleMonitor: {
-    key: 'm',
-    modifier: 'ctrlAlt',
-    category: 'panels',
-    scope: 'global',
+    key: "m",
+    modifier: "ctrlAlt",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Monitor Panel',
-    i18n: { ko: '모니터 패널 토글' },
+    description: "Toggle Monitor Panel",
+    i18n: { ko: "모니터 패널 토글" },
   },
 
   openSettings: {
-    key: ',',
-    modifier: 'cmd',
-    category: 'panels',
-    scope: 'global',
+    key: ",",
+    modifier: "cmd",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Open Settings',
-    i18n: { ko: '설정 열기' },
+    description: "Open Settings",
+    i18n: { ko: "설정 열기" },
   },
 
   toggleHelp: {
-    key: '?',
-    modifier: 'cmd',
-    category: 'panels',
-    scope: 'global',
+    key: "?",
+    modifier: "cmd",
+    category: "panels",
+    scope: "global",
     priority: SHORTCUT_PRIORITY.PANELS,
-    description: 'Toggle Keyboard Shortcuts Help',
-    i18n: { ko: '키보드 단축키 도움말 토글' },
+    description: "Toggle Keyboard Shortcuts Help",
+    i18n: { ko: "키보드 단축키 도움말 토글" },
   },
 
   // ==========================================
@@ -226,113 +230,124 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   copy: {
-    key: 'c',
-    modifier: 'cmd',
-    category: 'canvas',
-    scope: ['canvas-focused', 'panel:events'],
+    key: "c",
+    modifier: "cmd",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:events"],
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Copy',
-    i18n: { ko: '복사' },
+    description: "Copy",
+    i18n: { ko: "복사" },
   },
 
   paste: {
-    key: 'v',
-    modifier: 'cmd',
-    category: 'canvas',
-    scope: ['canvas-focused', 'panel:events'],
+    key: "v",
+    modifier: "cmd",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:events"],
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Paste',
-    i18n: { ko: '붙여넣기' },
+    description: "Paste",
+    i18n: { ko: "붙여넣기" },
   },
 
   cut: {
-    key: 'x',
-    modifier: 'cmd',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "x",
+    modifier: "cmd",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Cut',
-    i18n: { ko: '잘라내기' },
+    description: "Cut",
+    i18n: { ko: "잘라내기" },
   },
 
   duplicate: {
-    key: 'd',
-    modifier: 'cmd',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "d",
+    modifier: "cmd",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Duplicate',
-    i18n: { ko: '복제' },
+    description: "Duplicate",
+    i18n: { ko: "복제" },
   },
 
   toggleComponentOrigin: {
-    key: 'k',
-    modifier: 'cmdAlt',
-    category: 'canvas',
-    scope: ['canvas-focused', 'panel:properties'],
+    key: "k",
+    modifier: "cmdAlt",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:properties"],
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Create/Remove Component',
-    i18n: { ko: '컴포넌트 생성/해제' },
+    description: "Create/Remove Component",
+    i18n: { ko: "컴포넌트 생성/해제" },
+  },
+
+  detachInstance: {
+    key: "x",
+    modifier: "cmdAlt",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:properties"],
+    priority: SHORTCUT_PRIORITY.CANVAS,
+    capture: true,
+    description: "Detach Instance",
+    i18n: { ko: "인스턴스 분리" },
   },
 
   selectAll: {
-    key: 'a',
-    modifier: 'cmd',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "a",
+    modifier: "cmd",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Select All',
-    i18n: { ko: '모두 선택' },
+    description: "Select All",
+    i18n: { ko: "모두 선택" },
   },
 
   delete: {
-    key: 'Backspace',
-    modifier: 'none',
-    category: 'canvas',
-    scope: ['canvas-focused', 'panel:events'],
+    key: "Backspace",
+    modifier: "none",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:events"],
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Delete',
-    i18n: { ko: '삭제' },
+    description: "Delete",
+    i18n: { ko: "삭제" },
   },
 
   deleteAlt: {
-    key: 'Delete',
-    modifier: 'none',
-    category: 'canvas',
-    scope: ['canvas-focused', 'panel:events'],
+    key: "Delete",
+    modifier: "none",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:events"],
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Delete',
-    i18n: { ko: '삭제' },
+    description: "Delete",
+    i18n: { ko: "삭제" },
   },
 
   escape: {
-    key: 'Escape',
-    modifier: 'none',
-    category: 'canvas',
-    scope: ['canvas-focused', 'panel:events', 'modal'],
+    key: "Escape",
+    modifier: "none",
+    category: "canvas",
+    scope: ["canvas-focused", "panel:events", "modal"],
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Clear Selection / Close Modal',
-    i18n: { ko: '선택 해제 / 모달 닫기' },
+    description: "Clear Selection / Close Modal",
+    i18n: { ko: "선택 해제 / 모달 닫기" },
   },
 
   nextElement: {
-    key: 'Tab',
-    modifier: 'none',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "Tab",
+    modifier: "none",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Next Element',
-    i18n: { ko: '다음 요소' },
+    description: "Next Element",
+    i18n: { ko: "다음 요소" },
   },
 
   prevElement: {
-    key: 'Tab',
-    modifier: 'shift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "Tab",
+    modifier: "shift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Previous Element',
-    i18n: { ko: '이전 요소' },
+    description: "Previous Element",
+    i18n: { ko: "이전 요소" },
   },
 
   // ==========================================
@@ -340,103 +355,103 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   group: {
-    key: 'g',
-    modifier: 'cmd',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "g",
+    modifier: "cmd",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Group',
-    i18n: { ko: '그룹화' },
+    description: "Group",
+    i18n: { ko: "그룹화" },
   },
 
   ungroup: {
-    key: 'g',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "g",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Ungroup',
-    i18n: { ko: '그룹 해제' },
+    description: "Ungroup",
+    i18n: { ko: "그룹 해제" },
   },
 
   alignLeft: {
-    key: 'l',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "l",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Align Left',
-    i18n: { ko: '왼쪽 정렬' },
+    description: "Align Left",
+    i18n: { ko: "왼쪽 정렬" },
   },
 
   alignHCenter: {
-    key: 'h',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "h",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS - 1, // toggleHistory보다 낮음
-    description: 'Align Horizontal Center',
-    i18n: { ko: '가로 중앙 정렬' },
+    description: "Align Horizontal Center",
+    i18n: { ko: "가로 중앙 정렬" },
   },
 
   alignRight: {
-    key: 'r',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "r",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Align Right',
-    i18n: { ko: '오른쪽 정렬' },
+    description: "Align Right",
+    i18n: { ko: "오른쪽 정렬" },
   },
 
   alignTop: {
-    key: 't',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "t",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Align Top',
-    i18n: { ko: '위쪽 정렬' },
+    description: "Align Top",
+    i18n: { ko: "위쪽 정렬" },
   },
 
   alignVCenter: {
-    key: 'm',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "m",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Align Vertical Center',
-    i18n: { ko: '세로 중앙 정렬' },
+    description: "Align Vertical Center",
+    i18n: { ko: "세로 중앙 정렬" },
   },
 
   alignBottom: {
-    key: 'b',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "b",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Align Bottom',
-    i18n: { ko: '아래쪽 정렬' },
+    description: "Align Bottom",
+    i18n: { ko: "아래쪽 정렬" },
   },
 
   distributeH: {
-    key: 'd',
-    modifier: 'cmdShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "d",
+    modifier: "cmdShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Distribute Horizontally',
-    i18n: { ko: '가로 분배' },
+    description: "Distribute Horizontally",
+    i18n: { ko: "가로 분배" },
   },
 
   distributeV: {
-    key: 'v',
-    modifier: 'altShift',
-    category: 'canvas',
-    scope: 'canvas-focused',
+    key: "v",
+    modifier: "altShift",
+    category: "canvas",
+    scope: "canvas-focused",
     priority: SHORTCUT_PRIORITY.CANVAS,
-    description: 'Distribute Vertically',
-    i18n: { ko: '세로 분배' },
+    description: "Distribute Vertically",
+    i18n: { ko: "세로 분배" },
   },
 
   // ==========================================
@@ -444,43 +459,43 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   copyProperties: {
-    key: 'c',
-    modifier: 'cmdShift',
-    category: 'properties',
-    scope: 'panel:properties',
+    key: "c",
+    modifier: "cmdShift",
+    category: "properties",
+    scope: "panel:properties",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Copy Properties',
-    i18n: { ko: '속성 복사' },
+    description: "Copy Properties",
+    i18n: { ko: "속성 복사" },
   },
 
   pasteProperties: {
-    key: 'v',
-    modifier: 'cmdShift',
-    category: 'properties',
-    scope: 'panel:properties',
+    key: "v",
+    modifier: "cmdShift",
+    category: "properties",
+    scope: "panel:properties",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Paste Properties',
-    i18n: { ko: '속성 붙여넣기' },
+    description: "Paste Properties",
+    i18n: { ko: "속성 붙여넣기" },
   },
 
   copyAllProperties: {
-    key: 'c',
-    modifier: 'cmdAlt',
-    category: 'properties',
-    scope: 'panel:properties',
+    key: "c",
+    modifier: "cmdAlt",
+    category: "properties",
+    scope: "panel:properties",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Copy All Properties',
-    i18n: { ko: '모든 속성 복사' },
+    description: "Copy All Properties",
+    i18n: { ko: "모든 속성 복사" },
   },
 
   pasteAllProperties: {
-    key: 'v',
-    modifier: 'cmdAlt',
-    category: 'properties',
-    scope: 'panel:properties',
+    key: "v",
+    modifier: "cmdAlt",
+    category: "properties",
+    scope: "panel:properties",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Paste All Properties',
-    i18n: { ko: '모든 속성 붙여넣기' },
+    description: "Paste All Properties",
+    i18n: { ko: "모든 속성 붙여넣기" },
   },
 
   // ==========================================
@@ -488,53 +503,53 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   copyStyles: {
-    key: 'c',
-    modifier: 'cmdShift',
-    category: 'properties',
-    scope: 'panel:styles',
+    key: "c",
+    modifier: "cmdShift",
+    category: "properties",
+    scope: "panel:styles",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Copy Styles',
-    i18n: { ko: '스타일 복사' },
+    description: "Copy Styles",
+    i18n: { ko: "스타일 복사" },
   },
 
   pasteStyles: {
-    key: 'v',
-    modifier: 'cmdShift',
-    category: 'properties',
-    scope: 'panel:styles',
+    key: "v",
+    modifier: "cmdShift",
+    category: "properties",
+    scope: "panel:styles",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Paste Styles',
-    i18n: { ko: '스타일 붙여넣기' },
+    description: "Paste Styles",
+    i18n: { ko: "스타일 붙여넣기" },
   },
 
   toggleFocusMode: {
-    key: 'f',
-    modifier: 'cmd',
-    category: 'properties',
-    scope: 'panel:styles',
+    key: "f",
+    modifier: "cmd",
+    category: "properties",
+    scope: "panel:styles",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Toggle Focus Mode',
-    i18n: { ko: '포커스 모드 토글' },
+    description: "Toggle Focus Mode",
+    i18n: { ko: "포커스 모드 토글" },
   },
 
   expandAllSections: {
-    key: 'e',
-    modifier: 'cmd',
-    category: 'properties',
-    scope: 'panel:styles',
+    key: "e",
+    modifier: "cmd",
+    category: "properties",
+    scope: "panel:styles",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Expand All Sections',
-    i18n: { ko: '모든 섹션 펼치기' },
+    description: "Expand All Sections",
+    i18n: { ko: "모든 섹션 펼치기" },
   },
 
   collapseAllSections: {
-    key: 'w',
-    modifier: 'cmd',
-    category: 'properties',
-    scope: 'panel:styles',
+    key: "w",
+    modifier: "cmd",
+    category: "properties",
+    scope: "panel:styles",
     priority: SHORTCUT_PRIORITY.PROPERTIES,
-    description: 'Collapse All Sections',
-    i18n: { ko: '모든 섹션 접기' },
+    description: "Collapse All Sections",
+    i18n: { ko: "모든 섹션 접기" },
   },
 
   // ==========================================
@@ -542,23 +557,23 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   arrowUp: {
-    key: 'ArrowUp',
-    modifier: 'none',
-    category: 'events',
-    scope: ['canvas-focused', 'panel:events'],
+    key: "ArrowUp",
+    modifier: "none",
+    category: "events",
+    scope: ["canvas-focused", "panel:events"],
     priority: SHORTCUT_PRIORITY.EVENTS,
-    description: 'Navigate Up',
-    i18n: { ko: '위로 이동' },
+    description: "Navigate Up",
+    i18n: { ko: "위로 이동" },
   },
 
   arrowDown: {
-    key: 'ArrowDown',
-    modifier: 'none',
-    category: 'events',
-    scope: ['canvas-focused', 'panel:events'],
+    key: "ArrowDown",
+    modifier: "none",
+    category: "events",
+    scope: ["canvas-focused", "panel:events"],
     priority: SHORTCUT_PRIORITY.EVENTS,
-    description: 'Navigate Down',
-    i18n: { ko: '아래로 이동' },
+    description: "Navigate Down",
+    i18n: { ko: "아래로 이동" },
   },
 
   // ==========================================
@@ -566,84 +581,84 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinitions = {
   // ==========================================
 
   treeNavDown: {
-    key: 'ArrowDown',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "ArrowDown",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Next Item',
-    i18n: { ko: '다음 항목' },
+    description: "Next Item",
+    i18n: { ko: "다음 항목" },
   },
 
   treeNavUp: {
-    key: 'ArrowUp',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "ArrowUp",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Previous Item',
-    i18n: { ko: '이전 항목' },
+    description: "Previous Item",
+    i18n: { ko: "이전 항목" },
   },
 
   treeNavRight: {
-    key: 'ArrowRight',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "ArrowRight",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Expand',
-    i18n: { ko: '펼치기' },
+    description: "Expand",
+    i18n: { ko: "펼치기" },
   },
 
   treeNavLeft: {
-    key: 'ArrowLeft',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "ArrowLeft",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Collapse',
-    i18n: { ko: '접기' },
+    description: "Collapse",
+    i18n: { ko: "접기" },
   },
 
   treeNavHome: {
-    key: 'Home',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "Home",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'First Item',
-    i18n: { ko: '첫 번째 항목' },
+    description: "First Item",
+    i18n: { ko: "첫 번째 항목" },
   },
 
   treeNavEnd: {
-    key: 'End',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "End",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Last Item',
-    i18n: { ko: '마지막 항목' },
+    description: "Last Item",
+    i18n: { ko: "마지막 항목" },
   },
 
   treeSelect: {
-    key: 'Enter',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: "Enter",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Select Item',
-    i18n: { ko: '항목 선택' },
+    description: "Select Item",
+    i18n: { ko: "항목 선택" },
   },
 
   treeSelectSpace: {
-    key: ' ',
-    code: 'Space',
-    modifier: 'none',
-    category: 'nodes',
-    scope: 'panel:nodes',
+    key: " ",
+    code: "Space",
+    modifier: "none",
+    category: "nodes",
+    scope: "panel:nodes",
     priority: SHORTCUT_PRIORITY.NODES,
-    description: 'Select Item',
-    i18n: { ko: '항목 선택' },
+    description: "Select Item",
+    i18n: { ko: "항목 선택" },
   },
 } as const;
 
@@ -660,9 +675,11 @@ export type ShortcutId = keyof typeof SHORTCUT_DEFINITIONS;
 /**
  * 특정 스코프에서 활성화된 단축키 필터링
  */
-export function getShortcutsForScope(scope: ShortcutScope): ShortcutDefinition[] {
+export function getShortcutsForScope(
+  scope: ShortcutScope,
+): ShortcutDefinition[] {
   return Object.values(SHORTCUT_DEFINITIONS).filter((def) => {
-    if (def.scope === 'global') return true;
+    if (def.scope === "global") return true;
     if (Array.isArray(def.scope)) return def.scope.includes(scope);
     return def.scope === scope;
   });
@@ -687,7 +704,9 @@ export function getShortcutsByCategory(): Record<string, ShortcutDefinition[]> {
 /**
  * 단축키 ID로 정의 가져오기
  */
-export function getShortcutById(id: ShortcutId): ShortcutDefinition | undefined {
+export function getShortcutById(
+  id: ShortcutId,
+): ShortcutDefinition | undefined {
   return SHORTCUT_DEFINITIONS[id];
 }
 

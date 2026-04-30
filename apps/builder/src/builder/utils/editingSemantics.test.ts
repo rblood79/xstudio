@@ -27,9 +27,7 @@ describe("editingSemantics", () => {
   });
 
   it("legacy component roles stay visible during migration", () => {
-    expect(getEditingSemanticsRole({ componentRole: "master" })).toBe(
-      "origin",
-    );
+    expect(getEditingSemanticsRole({ componentRole: "master" })).toBe("origin");
     expect(
       getEditingSemanticsRole({
         componentRole: "instance",
@@ -149,6 +147,27 @@ describe("editingSemantics", () => {
     ).toEqual(["i1", "i2", "i3"]);
   });
 
+  it("counts 1000 impacted instances within the ADR-912 100ms budget", () => {
+    const elements = Array.from({ length: 1000 }, (_, index) => ({
+      id: `instance-${index}`,
+      type: "ref",
+      ref: index % 2 === 0 ? "origin-id" : "OriginName",
+    }));
+    const startedAt = performance.now();
+    const impacted = getEditingSemanticsImpactInstanceIds(
+      {
+        id: "origin-id",
+        componentName: "OriginName",
+        reusable: true,
+      },
+      elements,
+    );
+    const durationMs = performance.now() - startedAt;
+
+    expect(impacted).toHaveLength(1000);
+    expect(durationMs).toBeLessThan(100);
+  });
+
   it("allows detach only for legacy instances", () => {
     expect(
       canDetachLegacyInstance({
@@ -156,9 +175,7 @@ describe("editingSemantics", () => {
         masterId: "origin",
       }),
     ).toBe(true);
-    expect(canDetachLegacyInstance({ type: "ref", ref: "origin" })).toBe(
-      false,
-    );
+    expect(canDetachLegacyInstance({ type: "ref", ref: "origin" })).toBe(false);
     expect(canDetachLegacyInstance({ componentRole: "master" })).toBe(false);
   });
 

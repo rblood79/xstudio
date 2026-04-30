@@ -35,7 +35,7 @@ import type {
  * @stub 실제 구현은 Phase 2+
  */
 export function computeDescendantsFingerprint(
-  overrides: Record<string, unknown> | undefined,
+  _overrides: Record<string, unknown> | undefined,
 ): string {
   throw new Error(
     "P0 stub — computeDescendantsFingerprint: Phase 2+ 구현 대상",
@@ -58,7 +58,7 @@ export function computeDescendantsFingerprint(
  * @stub 실제 구현은 Phase 2+
  */
 export function computeSlotBindingFingerprint(
-  slotChildren: CanonicalNode[] | undefined,
+  _slotChildren: CanonicalNode[] | undefined,
 ): string {
   throw new Error(
     "P0 stub — computeSlotBindingFingerprint: Phase 2+ 구현 대상",

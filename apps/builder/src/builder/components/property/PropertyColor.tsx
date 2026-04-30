@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, memo } from 'react';
+import React, { useCallback, useRef, memo } from "react";
 import {
   ColorPicker as AriaColorPicker,
   ColorField as AriaColorField,
@@ -6,7 +6,7 @@ import {
   DialogTrigger,
   Button as AriaButton,
   type Color,
-} from 'react-aria-components';
+} from "react-aria-components";
 import { ColorSwatch } from "@composition/shared/components/ColorSwatch";
 import { ColorArea } from "@composition/shared/components/ColorArea";
 import { ColorSlider } from "@composition/shared/components/ColorSlider";
@@ -47,32 +47,40 @@ function ColorPickerInner({
   const focusedElementIdRef = useRef<string | null>(null);
 
   React.useEffect(() => {
-    setLocalColor(initialValue);
-    setInputValue(initialValue);
-    lastSavedValue.current = initialValue;
-    focusedElementIdRef.current = null;
+    queueMicrotask(() => {
+      setLocalColor(initialValue);
+      setInputValue(initialValue);
+      lastSavedValue.current = initialValue;
+      focusedElementIdRef.current = null;
+    });
   }, [initialValue, selectedElementId]);
 
   // 드래그 중: 로컬 상태만 업데이트 (UI 실시간 반영)
   const handleChange = useCallback((color: Color | null) => {
     if (!color) return;
-    const hexValue = color.toString('hex');
+    const hexValue = color.toString("hex");
     setLocalColor(hexValue);
     setInputValue(hexValue);
   }, []);
 
   // 드래그 종료: 실제 저장 (onChangeEnd)
-  const handleChangeEnd = useCallback((color: Color) => {
-    const hexValue = color.toString('hex');
-    if (hexValue !== lastSavedValue.current) {
-      lastSavedValue.current = hexValue;
-      onChange(hexValue);
-    }
-  }, [onChange]);
+  const handleChangeEnd = useCallback(
+    (color: Color) => {
+      const hexValue = color.toString("hex");
+      if (hexValue !== lastSavedValue.current) {
+        lastSavedValue.current = hexValue;
+        onChange(hexValue);
+      }
+    },
+    [onChange],
+  );
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  }, []);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+    },
+    [],
+  );
 
   const handleBlur = useCallback(() => {
     const currentElementId = useStore.getState().selectedElementId ?? null;
@@ -90,17 +98,20 @@ function ColorPickerInner({
     }
   }, [inputValue, onChange]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (inputValue !== lastSavedValue.current) {
-        lastSavedValue.current = inputValue;
-        setLocalColor(inputValue);
-        onChange(inputValue);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (inputValue !== lastSavedValue.current) {
+          lastSavedValue.current = inputValue;
+          setLocalColor(inputValue);
+          onChange(inputValue);
+        }
+        (e.target as HTMLInputElement).blur();
       }
-      (e.target as HTMLInputElement).blur();
-    }
-  }, [inputValue, onChange]);
+    },
+    [inputValue, onChange],
+  );
 
   return (
     <AriaColorPicker value={localColor} onChange={handleChange}>
@@ -145,31 +156,36 @@ function ColorPickerInner({
 
 // 🚀 Phase 21: memo 적용
 // 🚀 Jotai selectAtom equality 체크로 동일 값이면 리렌더 없음 → key 변경 없음
-export const PropertyColor = memo(function PropertyColor({
-  label,
-  value,
-  onChange,
-  className,
-}: PropertyColorProps) {
-  const selectedElementId = useStore((state) => state.selectedElementId);
-  return (
-    <fieldset className={`properties-aria property-color-input ${className || ''}`}>
-      {label && <legend className="fieldset-legend">{label}</legend>}
-      <ColorPickerInner
-        key={`${selectedElementId ?? "none"}:${value}`}
-        initialValue={value}
-        onChange={onChange}
-        label={label}
-      />
-    </fieldset>
-  );
-}, (prevProps, nextProps) => {
-  // 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
-  return (
-    prevProps.label === nextProps.label &&
-    prevProps.value === nextProps.value &&
-    prevProps.className === nextProps.className &&
-    prevProps.icon === nextProps.icon &&
-    prevProps.placeholder === nextProps.placeholder
-  );
-});
+export const PropertyColor = memo(
+  function PropertyColor({
+    label,
+    value,
+    onChange,
+    className,
+  }: PropertyColorProps) {
+    const selectedElementId = useStore((state) => state.selectedElementId);
+    return (
+      <fieldset
+        className={`properties-aria property-color-input ${className || ""}`}
+      >
+        {label && <legend className="fieldset-legend">{label}</legend>}
+        <ColorPickerInner
+          key={`${selectedElementId ?? "none"}:${value}`}
+          initialValue={value}
+          onChange={onChange}
+          label={label}
+        />
+      </fieldset>
+    );
+  },
+  (prevProps, nextProps) => {
+    // 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+    return (
+      prevProps.label === nextProps.label &&
+      prevProps.value === nextProps.value &&
+      prevProps.className === nextProps.className &&
+      prevProps.icon === nextProps.icon &&
+      prevProps.placeholder === nextProps.placeholder
+    );
+  },
+);

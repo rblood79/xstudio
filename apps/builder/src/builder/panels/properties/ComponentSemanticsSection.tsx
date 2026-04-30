@@ -3,6 +3,7 @@ import { Component as ComponentIcon } from "lucide-react";
 import type { Element } from "../../../types/core/store.types";
 import { PropertySection } from "../../components";
 import { useStore } from "../../stores";
+import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import {
   canDetachInstance,
   getEditingSemanticsImpactInstanceIds,
@@ -85,11 +86,16 @@ export const ComponentSemanticsSection = memo(
       );
     };
 
-    const handleDetachInstance = () => {
+    const handleDetachInstance = async () => {
       if (!isDetachableInstance) return;
-      const confirmed = window.confirm(
-        "Detach this instance from its component?",
-      );
+      const confirmed = await requestEditingSemanticsDetachConfirmation({
+        instanceId: elementId,
+        instanceLabel: componentName,
+        originId,
+        originLabel: originElement
+          ? getComponentDisplayName(originElement, null)
+          : originId,
+      });
       if (!confirmed) return;
       detachInstance(elementId);
     };
@@ -115,11 +121,7 @@ export const ComponentSemanticsSection = memo(
     };
 
     const handleResetOverrideField = (item: EditingSemanticsOverrideItem) => {
-      resetInstanceOverrideField(
-        elementId,
-        item.fieldKey,
-        item.descendantPath,
-      );
+      resetInstanceOverrideField(elementId, item.fieldKey, item.descendantPath);
     };
 
     return (

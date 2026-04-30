@@ -14,19 +14,25 @@
  * @updated 2026-02-10 Phase 2 - 3탭 구조 재설계
  */
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import type { FillItem, ColorFillItem, ImageFillItem, MeshGradientFillItem, BlendMode } from '../../../../types/builder/fill.types';
-import { FillType } from '../../../../types/builder/fill.types';
-import { normalizeToHex8 } from '../utils/colorUtils';
-import { FillTypeSelector, type FillCategory } from './FillTypeSelector';
-import { ColorPickerPanel } from './ColorPickerPanel';
-import { GradientEditor } from './GradientEditor';
-import { MeshGradientEditor } from './MeshGradientEditor';
-import { ImageFillEditor } from './ImageFillEditor';
-import { VariableBindingButton } from './VariableBindingButton';
-import { BlendModeSelector } from './BlendModeSelector';
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  FillItem,
+  ColorFillItem,
+  ImageFillItem,
+  MeshGradientFillItem,
+  BlendMode,
+} from "../../../../types/builder/fill.types";
+import { FillType } from "../../../../types/builder/fill.types";
+import { normalizeToHex8 } from "../utils/colorUtils";
+import { FillTypeSelector, type FillCategory } from "./FillTypeSelector";
+import { ColorPickerPanel } from "./ColorPickerPanel";
+import { GradientEditor } from "./GradientEditor";
+import { MeshGradientEditor } from "./MeshGradientEditor";
+import { ImageFillEditor } from "./ImageFillEditor";
+import { VariableBindingButton } from "./VariableBindingButton";
+import { BlendModeSelector } from "./BlendModeSelector";
 
-import './FillDetailPopover.css';
+import "./FillDetailPopover.css";
 
 interface FillDetailPopoverProps {
   fill: FillItem;
@@ -41,28 +47,28 @@ interface FillDetailPopoverProps {
 function fillTypeToCategory(type: FillType): FillCategory {
   switch (type) {
     case FillType.Color:
-      return 'color';
+      return "color";
     case FillType.LinearGradient:
     case FillType.RadialGradient:
     case FillType.AngularGradient:
-      return 'gradient';
+      return "gradient";
     case FillType.Image:
-      return 'image';
+      return "image";
     case FillType.MeshGradient:
-      return 'gradient';
+      return "gradient";
     default:
-      return 'color';
+      return "color";
   }
 }
 
 /** FillCategory → 기본 FillType 매핑 */
 function categoryToDefaultFillType(category: FillCategory): FillType {
   switch (category) {
-    case 'color':
+    case "color":
       return FillType.Color;
-    case 'gradient':
+    case "gradient":
       return FillType.LinearGradient;
-    case 'image':
+    case "image":
       return FillType.Image;
   }
 }
@@ -75,20 +81,25 @@ export const FillDetailPopover = memo(function FillDetailPopover({
   onUpdateEnd,
   onTypeChange,
 }: FillDetailPopoverProps) {
-  const currentCategory = useMemo(() => fillTypeToCategory(fill.type), [fill.type]);
+  const currentCategory = useMemo(
+    () => fillTypeToCategory(fill.type),
+    [fill.type],
+  );
   const isColor = fill.type === FillType.Color;
   const isMeshGradient = fill.type === FillType.MeshGradient;
-  const isGradient = currentCategory === 'gradient' && !isMeshGradient;
+  const isGradient = currentCategory === "gradient" && !isMeshGradient;
   const isImage = fill.type === FillType.Image;
 
-  const rawColorValue = isColor ? (fill as ColorFillItem).color : '#000000FF';
-  const isVariableBound = rawColorValue.startsWith('$--');
-  const colorValue = isVariableBound ? '#000000FF' : normalizeToHex8(rawColorValue);
+  const rawColorValue = isColor ? (fill as ColorFillItem).color : "#000000FF";
+  const isVariableBound = rawColorValue.startsWith("$--");
+  const colorValue = isVariableBound
+    ? "#000000FF"
+    : normalizeToHex8(rawColorValue);
   const [committedColorValue, setCommittedColorValue] = useState(colorValue);
 
   useEffect(() => {
     setCommittedColorValue(colorValue);
-  }, [fill.id, fill.type]);
+  }, [colorValue, fill.id, fill.type]);
 
   // 대분류 탭 변경 (Color ↔ Gradient ↔ Image)
   const handleCategoryChange = useCallback(
@@ -129,7 +140,10 @@ export const FillDetailPopover = memo(function FillDetailPopover({
 
   return (
     <div className="fill-detail-popover section">
-      <FillTypeSelector value={currentCategory} onChange={handleCategoryChange} />
+      <FillTypeSelector
+        value={currentCategory}
+        onChange={handleCategoryChange}
+      />
       {isColor && (
         <>
           <VariableBindingButton
@@ -146,7 +160,7 @@ export const FillDetailPopover = memo(function FillDetailPopover({
       )}
       {isGradient && (
         <GradientEditor
-          fill={fill as Parameters<typeof GradientEditor>[0]['fill']}
+          fill={fill as Parameters<typeof GradientEditor>[0]["fill"]}
           onChange={onUpdate}
           onChangeEnd={onUpdateEnd}
           onSubTypeChange={handleGradientSubTypeChange}

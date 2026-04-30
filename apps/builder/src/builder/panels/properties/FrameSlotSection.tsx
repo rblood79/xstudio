@@ -63,7 +63,10 @@ export const FrameSlotSection = memo(function FrameSlotSection({
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
 
   const slot = element ? getSlotValue(element) : false;
-  const recommendedIds = Array.isArray(slot) ? slot : [];
+  const recommendedIds = useMemo(
+    () => (Array.isArray(slot) ? slot : []),
+    [slot],
+  );
   const isActive = Array.isArray(slot);
 
   const reusableCandidates = useMemo(() => {
@@ -100,7 +103,9 @@ export const FrameSlotSection = memo(function FrameSlotSection({
   useEffect(() => {
     if (
       selectedCandidateId &&
-      reusableCandidates.some((candidate) => candidate.value === selectedCandidateId)
+      reusableCandidates.some(
+        (candidate) => candidate.value === selectedCandidateId,
+      )
     ) {
       return;
     }
@@ -144,7 +149,8 @@ export const FrameSlotSection = memo(function FrameSlotSection({
 
   const handleInsertDefault = (id: string) => {
     if (!element) return;
-    const candidate = elementsMap.get(id) ?? resolveReference(id, elementsMap.values());
+    const candidate =
+      elementsMap.get(id) ?? resolveReference(id, elementsMap.values());
     if (!candidate) return;
 
     const children = childrenMap.get(element.id) ?? [];
@@ -220,22 +226,24 @@ export const FrameSlotSection = memo(function FrameSlotSection({
 
           <div aria-label="Recommended components" className="frame-slot-list">
             {recommendedItems.length === 0 ? (
-              <span className="frame-slot-empty">No recommended components</span>
+              <span className="frame-slot-empty">
+                No recommended components
+              </span>
             ) : (
-                recommendedItems.map((item) => (
-                  <div className="frame-slot-item" key={item.id}>
-                    <span className="frame-slot-item-label">{item.label}</span>
-                    <button
-                      aria-label={`Insert ${item.label}`}
-                      className="frame-slot-remove"
-                      onClick={() => handleInsertDefault(item.id)}
-                      type="button"
-                    >
-                      <Plus aria-hidden="true" size={14} />
-                    </button>
-                    <button
-                      aria-label={`Remove ${item.label}`}
-                      className="frame-slot-remove"
+              recommendedItems.map((item) => (
+                <div className="frame-slot-item" key={item.id}>
+                  <span className="frame-slot-item-label">{item.label}</span>
+                  <button
+                    aria-label={`Insert ${item.label}`}
+                    className="frame-slot-remove"
+                    onClick={() => handleInsertDefault(item.id)}
+                    type="button"
+                  >
+                    <Plus aria-hidden="true" size={14} />
+                  </button>
+                  <button
+                    aria-label={`Remove ${item.label}`}
+                    className="frame-slot-remove"
                     onClick={() => handleRemoveRecommendation(item.id)}
                     type="button"
                   >

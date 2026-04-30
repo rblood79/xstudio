@@ -11,12 +11,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import {
-  Plus,
-  Trash2,
-  Play,
-  Wand2,
-} from "lucide-react";
+import { Plus, Trash2, Play, Wand2 } from "lucide-react";
 import type { ApiEditorTab } from "../types/editorTypes";
 import { useDataStore } from "../../../stores/data";
 import type {
@@ -24,10 +19,7 @@ import type {
   HttpMethod,
   ApiHeader,
 } from "../../../../types/builder/data.types";
-import {
-  PropertyInput,
-  PropertySelect,
-} from "../../../components";
+import { PropertyInput, PropertySelect } from "../../../components";
 import { ColumnSelector } from "../components/ColumnSelector";
 import {
   detectColumns,
@@ -52,12 +44,19 @@ const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
   { value: "DELETE", label: "DELETE" },
 ];
 
-export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointEditorProps) {
+export function ApiEndpointEditor({
+  endpoint,
+  onClose,
+  activeTab,
+}: ApiEndpointEditorProps) {
   const updateApiEndpoint = useDataStore((state) => state.updateApiEndpoint);
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
   const createDataTable = useDataStore((state) => state.createDataTable);
 
-  const [testResult, setTestResult] = useState<{ success: boolean; data: unknown } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    data: unknown;
+  } | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [detectedColumns, setDetectedColumns] = useState<DetectedColumn[]>([]);
   const [isImporting, setIsImporting] = useState(false);
@@ -72,12 +71,15 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
         console.error("API Endpoint 업데이트 실패:", error);
       }
     },
-    [endpoint.id, updateApiEndpoint]
+    [endpoint.id, updateApiEndpoint],
   );
 
   // Headers 업데이트 (ApiHeader[] 형식)
   const handleAddHeader = useCallback(() => {
-    const newHeaders = [...(endpoint.headers || []), { key: "", value: "", enabled: true }];
+    const newHeaders = [
+      ...(endpoint.headers || []),
+      { key: "", value: "", enabled: true },
+    ];
     handleBasicUpdate({ headers: newHeaders });
   }, [endpoint.headers, handleBasicUpdate]);
 
@@ -87,7 +89,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
       newHeaders[index] = { ...newHeaders[index], key, value };
       handleBasicUpdate({ headers: newHeaders });
     },
-    [endpoint.headers, handleBasicUpdate]
+    [endpoint.headers, handleBasicUpdate],
   );
 
   const handleDeleteHeader = useCallback(
@@ -96,7 +98,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
       newHeaders.splice(index, 1);
       handleBasicUpdate({ headers: newHeaders });
     },
-    [endpoint.headers, handleBasicUpdate]
+    [endpoint.headers, handleBasicUpdate],
   );
 
   // 테스트 실행
@@ -122,13 +124,27 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
       let dataToAnalyze = result;
 
       // 응답이 객체인 경우 배열 필드 자동 탐색
-      if (!Array.isArray(dataToAnalyze) && typeof dataToAnalyze === "object" && dataToAnalyze !== null) {
+      if (
+        !Array.isArray(dataToAnalyze) &&
+        typeof dataToAnalyze === "object" &&
+        dataToAnalyze !== null
+      ) {
         // 응답 객체에서 배열 필드 찾기 (예: results, data, items, records 등)
-        const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries"];
+        const commonArrayFields = [
+          "results",
+          "data",
+          "items",
+          "records",
+          "list",
+          "rows",
+          "entries",
+        ];
         for (const field of commonArrayFields) {
           const fieldValue = (dataToAnalyze as Record<string, unknown>)[field];
           if (Array.isArray(fieldValue) && fieldValue.length > 0) {
-            console.log(`🔍 Auto-detected array field: "${field}" with ${fieldValue.length} items`);
+            console.log(
+              `🔍 Auto-detected array field: "${field}" with ${fieldValue.length} items`,
+            );
             dataToAnalyze = fieldValue;
 
             // 🆕 dataPath가 비어있으면 자동 설정
@@ -157,7 +173,12 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
     } finally {
       setIsExecuting(false);
     }
-  }, [endpoint.id, endpoint.responseMapping, executeApiEndpoint, handleBasicUpdate]);
+  }, [
+    endpoint.id,
+    endpoint.responseMapping,
+    executeApiEndpoint,
+    handleBasicUpdate,
+  ]);
 
   // activeTab="run"으로 열렸을 때 자동으로 API 실행 (초기 1회만)
   useEffect(() => {
@@ -174,7 +195,9 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
       try {
         // 스키마 생성
         const schema = columnsToSchema(columns);
-        const selectedKeys = columns.filter((c) => c.selected).map((c) => c.key);
+        const selectedKeys = columns
+          .filter((c) => c.selected)
+          .map((c) => c.key);
 
         // 데이터 추출
         // ⚠️ 주의: executeApiEndpoint이 이미 dataPath를 적용하여 반환하므로
@@ -184,12 +207,26 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
 
         // 만약 데이터가 아직 배열이 아니고 객체인 경우에만 배열 필드 찾기
         // (handleTest에서 자동 감지했지만, 여기서 한번 더 확인)
-        if (!Array.isArray(dataToImport) && typeof dataToImport === "object" && dataToImport !== null) {
-          const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries"];
+        if (
+          !Array.isArray(dataToImport) &&
+          typeof dataToImport === "object" &&
+          dataToImport !== null
+        ) {
+          const commonArrayFields = [
+            "results",
+            "data",
+            "items",
+            "records",
+            "list",
+            "rows",
+            "entries",
+          ];
           for (const field of commonArrayFields) {
             const fieldValue = (dataToImport as Record<string, unknown>)[field];
             if (Array.isArray(fieldValue) && fieldValue.length > 0) {
-              console.log(`🔍 handleImport: Auto-detected array field "${field}"`);
+              console.log(
+                `🔍 handleImport: Auto-detected array field "${field}"`,
+              );
               dataToImport = fieldValue;
               break;
             }
@@ -205,7 +242,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
         // 선택된 컬럼만 추출
         const mockData = extractSelectedData(
           dataToImport as unknown[],
-          selectedKeys
+          selectedKeys,
         );
 
         console.log(`🔍 handleImport: mockData extracted`, {
@@ -222,10 +259,14 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
           useMockData: false, // API 데이터이므로 mockData 사용 안함
         });
 
-        console.log(`✅ DataTable "${tableName}" 생성 완료 (${schema.length} 컬럼, ${mockData.length} 행)`);
+        console.log(
+          `✅ DataTable "${tableName}" 생성 완료 (${schema.length} 컬럼, ${mockData.length} 행)`,
+        );
 
         // 성공 알림 (간단한 alert - 추후 Toast로 개선)
-        alert(`DataTable "${tableName}"이(가) 생성되었습니다.\n${schema.length}개 컬럼, ${mockData.length}개 행`);
+        alert(
+          `DataTable "${tableName}"이(가) 생성되었습니다.\n${schema.length}개 컬럼, ${mockData.length}개 행`,
+        );
 
         // 컬럼 선택 초기화
         setDetectedColumns([]);
@@ -236,7 +277,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
         setIsImporting(false);
       }
     },
-    [testResult?.data, endpoint.project_id, createDataTable]
+    [testResult, endpoint.project_id, createDataTable],
   );
 
   // Note: onClose is handled by parent DataTableEditorPanel
@@ -245,10 +286,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
   return (
     <>
       {activeTab === "basic" && (
-        <BasicEditor
-          endpoint={endpoint}
-          onUpdate={handleBasicUpdate}
-        />
+        <BasicEditor endpoint={endpoint} onUpdate={handleBasicUpdate} />
       )}
 
       {activeTab === "headers" && (
@@ -261,17 +299,11 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
       )}
 
       {activeTab === "body" && (
-        <BodyEditor
-          endpoint={endpoint}
-          onUpdate={handleBasicUpdate}
-        />
+        <BodyEditor endpoint={endpoint} onUpdate={handleBasicUpdate} />
       )}
 
       {activeTab === "response" && (
-        <ResponseEditor
-          endpoint={endpoint}
-          onUpdate={handleBasicUpdate}
-        />
+        <ResponseEditor endpoint={endpoint} onUpdate={handleBasicUpdate} />
       )}
 
       {activeTab === "run" && (
@@ -344,7 +376,10 @@ function QueryParamsEditor({ endpoint, onUpdate }: QueryParamsEditorProps) {
   const params = endpoint.queryParams || [];
 
   const handleAdd = () => {
-    const newParams = [...params, { key: "", value: "", type: "string" as const, required: false }];
+    const newParams = [
+      ...params,
+      { key: "", value: "", type: "string" as const, required: false },
+    ];
     onUpdate({ queryParams: newParams });
   };
 
@@ -416,7 +451,8 @@ function HeadersEditor({
   return (
     <div className="kv-editor">
       <p className="kv-description">
-        HTTP 헤더를 설정합니다. {"{{변수명}}"} 형식으로 변수를 참조할 수 있습니다.
+        HTTP 헤더를 설정합니다. {"{{변수명}}"} 형식으로 변수를 참조할 수
+        있습니다.
       </p>
 
       <div className="kv-list">
@@ -516,14 +552,26 @@ function ResponseEditor({ endpoint, onUpdate }: ResponseEditorProps) {
 
       // 응답에서 배열 필드 찾기
       if (result && typeof result === "object" && !Array.isArray(result)) {
-        const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries", "content", "hits"];
+        const commonArrayFields = [
+          "results",
+          "data",
+          "items",
+          "records",
+          "list",
+          "rows",
+          "entries",
+          "content",
+          "hits",
+        ];
         for (const field of commonArrayFields) {
           const fieldValue = (result as Record<string, unknown>)[field];
           if (Array.isArray(fieldValue) && fieldValue.length > 0) {
             onUpdate({
               responseMapping: { ...endpoint.responseMapping, dataPath: field },
             });
-            setDetectResult(`✓ "${field}" 감지됨 (${fieldValue.length}개 항목)`);
+            setDetectResult(
+              `✓ "${field}" 감지됨 (${fieldValue.length}개 항목)`,
+            );
             return;
           }
         }
@@ -566,7 +614,9 @@ function ResponseEditor({ endpoint, onUpdate }: ResponseEditorProps) {
         </button>
       </div>
       {detectResult && (
-        <p className={`detect-result ${detectResult.startsWith("✓") ? "success" : detectResult.startsWith("⚠") ? "warning" : "error"}`}>
+        <p
+          className={`detect-result ${detectResult.startsWith("✓") ? "success" : detectResult.startsWith("⚠") ? "warning" : "error"}`}
+        >
           {detectResult}
         </p>
       )}
@@ -581,7 +631,8 @@ function ResponseEditor({ endpoint, onUpdate }: ResponseEditorProps) {
         placeholder="pokemon_list"
       />
       <p className="field-description">
-        API 응답 데이터를 저장할 DataTable 이름입니다. Test 탭에서 Import 시 기본값으로 사용됩니다.
+        API 응답 데이터를 저장할 DataTable 이름입니다. Test 탭에서 Import 시
+        기본값으로 사용됩니다.
       </p>
 
       <div className="section-divider" />
@@ -620,7 +671,11 @@ function FieldMappingEditor({ endpoint, onUpdate }: FieldMappingEditorProps) {
     });
   };
 
-  const handleUpdate = (index: number, sourceKey: string, targetKey: string) => {
+  const handleUpdate = (
+    index: number,
+    sourceKey: string,
+    targetKey: string,
+  ) => {
     const newMappings = [...fieldMappings];
     newMappings[index] = { sourceKey, targetKey };
     onUpdate({
@@ -653,7 +708,9 @@ function FieldMappingEditor({ endpoint, onUpdate }: FieldMappingEditorProps) {
               type="text"
               className="kv-input key"
               value={mapping.sourceKey}
-              onChange={(e) => handleUpdate(index, e.target.value, mapping.targetKey)}
+              onChange={(e) =>
+                handleUpdate(index, e.target.value, mapping.targetKey)
+              }
               placeholder="API Field"
             />
             <span className="kv-arrow">→</span>
@@ -661,7 +718,9 @@ function FieldMappingEditor({ endpoint, onUpdate }: FieldMappingEditorProps) {
               type="text"
               className="kv-input value"
               value={mapping.targetKey}
-              onChange={(e) => handleUpdate(index, mapping.sourceKey, e.target.value)}
+              onChange={(e) =>
+                handleUpdate(index, mapping.sourceKey, e.target.value)
+              }
               placeholder="DataTable Field"
             />
             <button
@@ -731,7 +790,9 @@ function TestEditor({
       </button>
 
       {testResult && (
-        <div className={`test-result ${testResult.success ? "success" : "error"}`}>
+        <div
+          className={`test-result ${testResult.success ? "success" : "error"}`}
+        >
           <div className="result-header">
             {testResult.success ? "✓ Success" : "✗ Error"}
           </div>

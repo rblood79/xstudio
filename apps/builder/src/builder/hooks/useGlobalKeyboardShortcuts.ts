@@ -39,6 +39,8 @@ import {
   serializeCopiedElements,
   deserializeCopiedElements,
 } from "../utils/multiElementCopy";
+import { canDetachInstance } from "../utils/editingSemantics";
+import { requestEditingSemanticsDetachConfirmation } from "../utils/editingSemanticsImpactConfirmation";
 import { useCopyPaste } from "./useCopyPaste";
 
 // ============================================
@@ -260,6 +262,33 @@ export function useGlobalKeyboardShortcuts() {
     await toggleComponentOrigin(selectedElementId);
   }, []);
 
+  const handleDetachInstance = useCallback(async () => {
+    const { selectedElementId, elementsMap, detachInstance } =
+      useStore.getState();
+    if (!selectedElementId) {
+      console.log("[Keyboard] Detach instance: No element selected");
+      return;
+    }
+
+    const element = elementsMap.get(selectedElementId);
+    if (!canDetachInstance(element)) {
+      console.log("[Keyboard] Detach instance: Selection is not an instance");
+      return;
+    }
+
+    const confirmed = await requestEditingSemanticsDetachConfirmation({
+      instanceId: selectedElementId,
+      instanceLabel:
+        element?.componentName ??
+        element?.customId ??
+        element?.type ??
+        selectedElementId,
+    });
+    if (!confirmed) return;
+
+    detachInstance(selectedElementId);
+  }, []);
+
   /**
    * Events Panel Copy - 선택된 액션들 복사
    * (현재는 placeholder - Events panel에서 구체적 구현 필요)
@@ -353,6 +382,7 @@ export function useGlobalKeyboardShortcuts() {
       delete: getScopedHandler(handleCanvasDelete, handleEventsDelete),
       deleteAlt: getScopedHandler(handleCanvasDelete, handleEventsDelete),
       toggleComponentOrigin: handleToggleComponentOrigin,
+      detachInstance: handleDetachInstance,
       escape: handleEscape,
     }),
     [
@@ -370,6 +400,7 @@ export function useGlobalKeyboardShortcuts() {
       handleCanvasPaste,
       handleCanvasDelete,
       handleToggleComponentOrigin,
+      handleDetachInstance,
       handleEventsCopy,
       handleEventsPaste,
       handleEventsDelete,
@@ -399,6 +430,7 @@ export function useGlobalKeyboardShortcuts() {
       "copy",
       "paste",
       "toggleComponentOrigin",
+      "detachInstance",
       "delete",
       "deleteAlt",
       "escape",

@@ -155,8 +155,10 @@ export function TagGroup<T extends object>({
   }, [hasMaxRows, isCollapsed, computeVisibleTagCount]);
 
   useEffect(() => {
-    setIsCollapsed(true);
-    setVisibleTagCount(Infinity);
+    queueMicrotask(() => {
+      setIsCollapsed(true);
+      setVisibleTagCount(Infinity);
+    });
   }, [maxRows]);
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)

@@ -5,6 +5,34 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-912 Editing Semantics UI gate closure] - 2026-04-30
+
+### Bug Fixes
+
+- **Detach instance 경고 UX 를 모든 진입점에 공통 적용**:
+  - Properties panel, LayerTree row context menu, Canvas context menu, global shortcut 가 동일 confirmation host 를 사용
+  - 기존 `window.confirm` fallback 을 제거하고, detach 후 origin 과 분리되어 이후 origin 변경을 받지 않는다는 copy 를 명시
+- **원본에서 Select instances 실행 시 instance semantic highlight 누락 수정**:
+  - multi-selection combined bounds 와 별개로 각 selected instance 의 violet dotted semantic target 을 유지
+  - origin/instance marker parity 가 단일 선택과 다중 선택 모두에서 같은 overlay path 를 사용
+
+### Features
+
+- **Pencil 호환 detach shortcut 추가**:
+  - `Cmd/Ctrl + Option/Alt + X` 를 shortcut catalog 와 global handler 에 등록
+  - 실행 전 `canDetachInstance` guard 와 detach warning dialog 를 거쳐 기존 `detachInstance` store action 을 호출
+
+### Documentation
+
+- **ADR-912 를 Implemented 로 승격하고 ADR-911 재개 조건을 갱신**:
+  - ADR-912 G4-B/G4-C/G4-E/G4-H 잔여 gate 를 닫고 design breakdown 의 남은 gate 목록을 0건으로 정리
+  - ADR-911 은 Implemented 가 아니라 `Ready to Resume` 상태로 전환. 이후 P3-ε/P3-ζ 는 ADR-912 기능 위의 frame authoring 편의 확장으로만 재개 가능
+  - ADR README 에서 ADR-912 row 를 완료 테이블로 이동하고 미구현 count 를 7→6 으로 갱신
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run src/builder/components/overlay/EditingSemanticsImpactDialog.test.tsx src/builder/panels/properties/ComponentSemanticsSection.test.tsx src/builder/panels/nodes/tree/LayerTree/LayerTreeItemContent.test.tsx src/builder/workspace/canvas/skia/skiaWorkflowSelection.test.ts src/builder/utils/editingSemantics.test.ts src/builder/utils/multiElementCopy.test.ts src/builder/stores/utils/__tests__/editingSemanticsRegressionSweep.test.ts src/builder/config/keyboardShortcuts.test.ts`
+
 ## [ADR-912 Page-frame shared Frame projection collision fix] - 2026-04-30
 
 ### Bug Fixes

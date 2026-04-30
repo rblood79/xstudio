@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import type { Element, Page } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
 import type { ElementsState } from "@/builder/stores/elements";
-import type { CanonicalNode, RefNode, ResolvedNode } from "@composition/shared";
+import type { ResolvedNode } from "@composition/shared";
 
 import { resolveInstanceElement } from "@/utils/component/instanceResolver";
 import {

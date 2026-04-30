@@ -52,7 +52,6 @@ export const TreeItemEditor = memo(function TreeItemEditor({
   useEffect(() => {
     const { currentPageId } = useStore.getState();
     if (currentPageId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalPageId(currentPageId);
     }
   }, []);

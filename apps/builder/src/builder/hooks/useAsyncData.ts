@@ -15,11 +15,11 @@
  * });
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAsyncState } from '../stores/asyncState';
-import { SmartCache } from '../../utils/smartCache';
-import { globalRequestDeduplicator } from '../../utils/requestDeduplication';
-import { globalPerformanceMonitor } from '../../utils/performanceMonitor';
+import { useState, useEffect, useCallback } from "react";
+import { useAsyncState } from "../stores/asyncState";
+import { SmartCache } from "../../utils/smartCache";
+import { globalRequestDeduplicator } from "../../utils/requestDeduplication";
+import { globalPerformanceMonitor } from "../../utils/performanceMonitor";
 
 interface UseAsyncDataOptions<TData> {
   /** 쿼리 식별 키 (asyncState + 캐시 키) */
@@ -116,7 +116,7 @@ export function useAsyncData<TData>({
         setError(queryKey, null);
 
         // ✅ Query 상태: success
-        globalPerformanceMonitor.recordQueryState(queryKey, 'success');
+        globalPerformanceMonitor.recordQueryState(queryKey, "success");
 
         return;
       }
@@ -132,7 +132,7 @@ export function useAsyncData<TData>({
     setError(queryKey, null);
 
     // ✅ Query 상태: loading
-    globalPerformanceMonitor.recordQueryState(queryKey, 'loading');
+    globalPerformanceMonitor.recordQueryState(queryKey, "loading");
 
     // ✅ Fetch 시작 시간
     const fetchStartTime = performance.now();
@@ -144,7 +144,7 @@ export function useAsyncData<TData>({
 
       const result = await globalRequestDeduplicator.deduplicate(
         queryKey,
-        queryFn
+        queryFn,
       );
 
       // ✅ Fetch 완료 시간
@@ -200,7 +200,9 @@ export function useAsyncData<TData>({
    * 초기 로드
    */
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, [fetchData]);
 
   /**

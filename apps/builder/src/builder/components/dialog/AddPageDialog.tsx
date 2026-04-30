@@ -18,12 +18,25 @@ import {
   Input,
   TextField,
 } from "react-aria-components";
-import { CirclePlus, FolderTree, Layout, Link, AlertCircle } from "lucide-react";
+import {
+  CirclePlus,
+  FolderTree,
+  Layout,
+  Link,
+  AlertCircle,
+} from "lucide-react";
 import { useStore } from "../../stores";
 import { useLayoutsStore } from "../../stores/layouts";
-import { generateSlugFromTitle, validateSlug } from "../../../utils/slugValidator";
+import {
+  generateSlugFromTitle,
+  validateSlug,
+} from "../../../utils/slugValidator";
 import { generatePageUrl } from "../../../utils/urlGenerator";
-import { iconProps, iconEditProps, iconSmall } from "../../../utils/ui/uiConstants";
+import {
+  iconProps,
+  iconEditProps,
+  iconSmall,
+} from "../../../utils/ui/uiConstants";
 import "./AddPageDialog.css";
 
 export interface AddPageDialogResult {
@@ -38,7 +51,10 @@ interface AddPageDialogProps {
   existingPagesCount: number;
 }
 
-export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogProps) {
+export function AddPageDialog({
+  onSubmit,
+  existingPagesCount,
+}: AddPageDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -58,12 +74,14 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setTitle(defaultTitle);
-      setSlug(defaultSlug);
-      setLayoutId(null);
-      setParentId(null);
-      setSlugError(null);
-      setIsSubmitting(false);
+      queueMicrotask(() => {
+        setTitle(defaultTitle);
+        setSlug(defaultSlug);
+        setLayoutId(null);
+        setParentId(null);
+        setSlugError(null);
+        setIsSubmitting(false);
+      });
     }
   }, [isOpen, defaultTitle, defaultSlug]);
 
@@ -110,7 +128,12 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
     return generatePageUrl({
       page: tempPage,
       layout: layout
-        ? { id: layout.id, name: layout.name, project_id: layout.project_id, slug: layout.slug || undefined }
+        ? {
+            id: layout.id,
+            name: layout.name,
+            project_id: layout.project_id,
+            slug: layout.slug || undefined,
+          }
         : null,
       allPages: pages.map((p) => ({
         id: p.id,

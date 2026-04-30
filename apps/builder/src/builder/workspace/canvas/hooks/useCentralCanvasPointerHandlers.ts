@@ -499,6 +499,7 @@ export function useCentralCanvasPointerHandlers({
     pageWidth,
     screenToCanvasPoint,
     selectionBoundsRef,
+    selectElementWithPageTransition,
     setCurrentPageId,
     setCursor,
     setSelectedElement,

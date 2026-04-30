@@ -84,7 +84,7 @@ export interface PencilNode {
  * @stub 실제 구현은 Phase 5+
  */
 export function pencilPrimitiveToComponent(
-  primitive: PencilNode,
+  _primitive: PencilNode,
 ): CanonicalNode {
   throw new Error("P0 stub — pencilPrimitiveToComponent: Phase 5+ 구현 대상");
 }
@@ -113,6 +113,6 @@ export function pencilPrimitiveToComponent(
  *
  * @stub 실제 구현은 Phase 5+
  */
-export function componentToPencilTree(node: CanonicalNode): PencilNode {
+export function componentToPencilTree(_node: CanonicalNode): PencilNode {
   throw new Error("P0 stub — componentToPencilTree: Phase 5+ 구현 대상");
 }

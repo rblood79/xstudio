@@ -9,7 +9,7 @@ import type { ComponentSizeSubset } from "../types";
 import {
   useToggleButtonGroupEmphasized,
   useToggleButtonGroupIndicator,
-} from "./ToggleButtonGroup";
+} from "./ToggleButtonGroupContext";
 import "./styles/generated/ToggleButton.css";
 
 export interface ToggleButtonExtendedProps extends ToggleButtonProps {

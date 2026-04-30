@@ -26,6 +26,7 @@ import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
 import { selectCanonicalDocument } from "../../stores/elements";
+import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { isUnifiedFlag } from "./wasm-bindings/featureFlags";
@@ -58,6 +59,7 @@ import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { useLayoutPublisher } from "./hooks/useLayoutPublisher";
 import { useDragBridge } from "./hooks/useDragBridge";
 import { usePageDrag } from "./hooks/usePageDrag";
+import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
 import type { PageTitleBounds } from "./skia/skiaOverlayHelpers";
 
 import { buildSceneStructureSnapshot } from "./scene";
@@ -522,18 +524,33 @@ export function BuilderCanvas({
     },
     [panOffset, zoom],
   );
+  const closeCanvasContextMenu = useCallback(() => {
+    setCanvasContextMenu(null);
+  }, []);
 
   useEffect(() => {
     if (!canvasContextMenu) return;
 
-    const close = () => setCanvasContextMenu(null);
-    window.addEventListener("pointerdown", close);
-    window.addEventListener("keydown", close);
+    window.addEventListener("pointerdown", closeCanvasContextMenu);
     return () => {
-      window.removeEventListener("pointerdown", close);
-      window.removeEventListener("keydown", close);
+      window.removeEventListener("pointerdown", closeCanvasContextMenu);
     };
-  }, [canvasContextMenu]);
+  }, [canvasContextMenu, closeCanvasContextMenu]);
+
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: "Escape",
+        modifier: "none",
+        handler: closeCanvasContextMenu,
+        preventDefault: false,
+        disabled: !canvasContextMenu,
+        category: "canvas",
+        description: "Close canvas context menu",
+      },
+    ],
+    [canvasContextMenu, closeCanvasContextMenu],
+  );
 
   const handleCanvasContextMenu = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -588,18 +605,24 @@ export function BuilderCanvas({
     ],
   );
 
-  const handleDetachCanvasContextMenuInstance = useCallback(() => {
+  const handleDetachCanvasContextMenuInstance = useCallback(async () => {
     const elementId = canvasContextMenu?.elementId;
     if (!elementId) return;
     setCanvasContextMenu(null);
 
-    const confirmed = window.confirm(
-      "Detach this instance from its component?",
-    );
+    const element = elements.find((candidate) => candidate.id === elementId);
+    const confirmed = await requestEditingSemanticsDetachConfirmation({
+      instanceId: elementId,
+      instanceLabel:
+        element?.componentName ??
+        element?.customId ??
+        element?.type ??
+        elementId,
+    });
     if (!confirmed) return;
 
     detachInstance(elementId);
-  }, [canvasContextMenu?.elementId, detachInstance]);
+  }, [canvasContextMenu?.elementId, detachInstance, elements]);
 
   // ADR-074 Phase 3: packet 을 scene(selection-invariant) / overlay(selection deps)
   // 로 분리. selection-only 변화 시 scenePacket identity 유지 → 하위 useMemo 중

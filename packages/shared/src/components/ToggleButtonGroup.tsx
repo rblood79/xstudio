@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   ToggleButton as RACToggleButton,
   ToggleButtonGroup as RACToggleButtonGroup,
@@ -12,18 +12,11 @@ import type {
   ComponentSizeSubset,
 } from "../types";
 import { useCollectionData } from "../hooks";
+import {
+  ToggleButtonGroupEmphasizedContext,
+  ToggleButtonGroupIndicatorContext,
+} from "./ToggleButtonGroupContext";
 import "./styles/generated/ToggleButtonGroup.css";
-
-export const ToggleButtonGroupIndicatorContext = createContext(false);
-export const ToggleButtonGroupEmphasizedContext = createContext(false);
-
-export function useToggleButtonGroupIndicator() {
-  return useContext(ToggleButtonGroupIndicatorContext);
-}
-
-export function useToggleButtonGroupEmphasized() {
-  return useContext(ToggleButtonGroupEmphasizedContext);
-}
 
 export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
   indicator?: boolean;

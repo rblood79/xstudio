@@ -4,6 +4,7 @@ import { renderHook } from "@testing-library/react";
 import { useAppearanceValues } from "./useAppearanceValues";
 import { useStore } from "../../../stores";
 import * as preset from "../utils/specPresetResolver";
+import type { Element } from "../../../../types/core/store.types";
 
 describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/borderColor)", () => {
   beforeEach(() => {
@@ -15,7 +16,7 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
             id: "el-spec-only",
             type: "ListBox",
             props: { size: "md", style: {} },
-          } as any,
+          } as Element,
         ],
         [
           "el-inline-wins",
@@ -26,7 +27,7 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
               size: "md",
               style: { backgroundColor: "#ABCDEF", borderRadius: "12px" },
             },
-          } as any,
+          } as Element,
         ],
         [
           "el-fills-color",
@@ -41,7 +42,7 @@ describe("useAppearanceValues — ADR-082 P3 spec fallback (backgroundColor/bord
               },
             ],
             props: { size: "md", style: {} },
-          } as any,
+          } as Element,
         ],
       ]),
     });

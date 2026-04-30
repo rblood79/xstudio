@@ -18,8 +18,10 @@ import {
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import type { ComponentSizeSubset } from "../types";
-import type { NecessityIndicator } from "./Field";
-import { renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 import { useCollectionData } from "../hooks";
 
 import "./styles/generated/RadioGroup.css";

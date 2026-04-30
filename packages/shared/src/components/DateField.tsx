@@ -20,7 +20,10 @@ import {
 import type { ComponentSize } from "../types";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
-import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 
 import "./styles/generated/DateField.css";
 

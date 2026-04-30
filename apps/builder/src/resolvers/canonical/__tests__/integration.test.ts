@@ -101,6 +101,7 @@ describe("ADR-903 P2 통합 테스트: legacyToCanonical → resolveCanonicalDoc
     const instanceNode = pageFrame.children?.find(
       (c): c is ResolvedNode => c.type !== "ref",
     );
+    expect(instanceNode).toBeDefined();
     // resolved 결과는 ref type 이 아닌 master type 으로 열림
     // _resolvedFrom 이 master id 를 가리키는지 확인
     const allResolved = pageFrame.children ?? [];

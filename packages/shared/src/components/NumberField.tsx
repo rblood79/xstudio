@@ -19,7 +19,10 @@ import {
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
 import { Plus, Minus } from "lucide-react";
-import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 
 import "./styles/generated/NumberField.css";
 

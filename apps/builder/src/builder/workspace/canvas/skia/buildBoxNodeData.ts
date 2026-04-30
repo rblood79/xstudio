@@ -50,8 +50,7 @@ interface BoxBuildInput {
 // ---------------------------------------------------------------------------
 
 export function buildBoxNodeData(input: BoxBuildInput): SkiaNodeData | null {
-  const { element, layout, scrollState, isCollectionItem, isCardItem, theme } =
-    input;
+  const { element, layout, scrollState, isCollectionItem, isCardItem } = input;
 
   // ADR-902 후속: body 는 BodySpec (TAG_SPEC_MAP 등록) 이 담당 → isSpecPath=true
   // → buildSpecNodeData 경로로 진입하여 이 함수에 body 가 도달하지 않는다.

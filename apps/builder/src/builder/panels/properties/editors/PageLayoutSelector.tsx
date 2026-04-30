@@ -58,6 +58,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
   const reusableFrames = useMemo<
     ReadonlyArray<{ id: string; name: string; description?: string }>
   >(() => {
+    void elementsMap;
     if (!isFramesTabCanonical()) {
       return layouts.map((l) => ({
         id: l.id,

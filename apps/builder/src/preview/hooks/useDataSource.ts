@@ -18,8 +18,8 @@
  * const { value, setValue } = useVariable('currentUserId');
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRuntimeStore } from '../store';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRuntimeStore } from "../store";
 
 // ============================================
 // Types
@@ -103,7 +103,7 @@ function setCachedData<T>(key: string, data: T, ttl: number): void {
  */
 export function useDataSource<T = unknown>(
   sourceName: string,
-  options: DataSourceOptions = {}
+  options: DataSourceOptions = {},
 ): DataSourceResult<T> {
   const { autoFetch = true, params, cacheTTL = 0, deps = [] } = options;
 
@@ -137,23 +137,26 @@ export function useDataSource<T = unknown>(
 
       // {{route.xxx}} 패턴 치환
       for (const [key, value] of Object.entries(resolved)) {
-        if (typeof value === 'string') {
-          resolved[key] = value.replace(/\{\{route\.(\w+)\}\}/g, (_, paramName) => {
-            return routeParams[paramName] || '';
-          });
+        if (typeof value === "string") {
+          resolved[key] = value.replace(
+            /\{\{route\.(\w+)\}\}/g,
+            (_, paramName) => {
+              return routeParams[paramName] || "";
+            },
+          );
           // {{app.xxx}} 패턴 치환
           resolved[key] = (resolved[key] as string).replace(
             /\{\{app\.(\w+)\}\}/g,
             (_, stateName) => {
-              return String(appState[stateName] || '');
-            }
+              return String(appState[stateName] || "");
+            },
           );
         }
       }
 
       return resolved;
     },
-    [routeParams, appState]
+    [routeParams, appState],
   );
 
   // Fetch 함수
@@ -182,46 +185,48 @@ export function useDataSource<T = unknown>(
 
         // DataSource 타입에 따른 처리
         switch (dataSource.type) {
-          case 'static':
+          case "static":
             // 정적 데이터
             result = dataSource.data;
             break;
 
-          case 'rest': {
+          case "rest": {
             // REST API 호출
             const resolvedParams = resolveParams(fetchParams || params);
-            let url = dataSource.url || '';
+            let url = dataSource.url || "";
 
             // URL 파라미터 치환
             url = url.replace(/\{\{(\w+)\}\}/g, (_, paramName) => {
-              return String(resolvedParams[paramName] || '');
+              return String(resolvedParams[paramName] || "");
             });
 
             // Query params 추가
             if (
-              dataSource.method === 'GET' &&
+              dataSource.method === "GET" &&
               Object.keys(resolvedParams).length > 0
             ) {
               const queryString = new URLSearchParams(
-                resolvedParams as Record<string, string>
+                resolvedParams as Record<string, string>,
               ).toString();
-              url += (url.includes('?') ? '&' : '?') + queryString;
+              url += (url.includes("?") ? "&" : "?") + queryString;
             }
 
             const response = await fetch(url, {
-              method: dataSource.method || 'GET',
+              method: dataSource.method || "GET",
               headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
                 ...dataSource.headers,
               },
               body:
-                dataSource.method !== 'GET' && dataSource.body
+                dataSource.method !== "GET" && dataSource.body
                   ? dataSource.body
                   : undefined,
             });
 
             if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`,
+              );
             }
 
             result = await response.json();
@@ -231,26 +236,29 @@ export function useDataSource<T = unknown>(
               try {
                 // 안전한 함수 실행 (eval 대신 Function 생성자)
                 const transformFn = new Function(
-                  'data',
-                  'context',
-                  `return ${dataSource.transform}`
+                  "data",
+                  "context",
+                  `return ${dataSource.transform}`,
                 );
-                result = transformFn(result, { params: resolvedParams, routeParams });
+                result = transformFn(result, {
+                  params: resolvedParams,
+                  routeParams,
+                });
               } catch (transformError) {
-                console.error('Transform error:', transformError);
+                console.error("Transform error:", transformError);
               }
             }
             break;
           }
 
-          case 'supabase':
+          case "supabase":
             // Supabase 쿼리 (향후 구현)
-            console.warn('Supabase data source not yet implemented');
+            console.warn("Supabase data source not yet implemented");
             break;
 
-          case 'graphql':
+          case "graphql":
             // GraphQL 쿼리 (향후 구현)
-            console.warn('GraphQL data source not yet implemented');
+            console.warn("GraphQL data source not yet implemented");
             break;
         }
 
@@ -293,7 +301,7 @@ export function useDataSource<T = unknown>(
       resolveParams,
       setDataState,
       routeParams,
-    ]
+    ],
   );
 
   // Execute 함수 (POST 등 mutation용)
@@ -302,15 +310,17 @@ export function useDataSource<T = unknown>(
       await fetchData(execParams);
       return data;
     },
-    [fetchData, data]
+    [fetchData, data],
   );
 
   // 자동 fetch
   useEffect(() => {
     if (autoFetch && dataSource) {
       // onLoad 타입이거나 autoFetch 설정이 없으면 자동 fetch
-      if (dataSource.autoFetch !== 'manual') {
-        fetchData();
+      if (dataSource.autoFetch !== "manual") {
+        queueMicrotask(() => {
+          fetchData();
+        });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -320,9 +330,11 @@ export function useDataSource<T = unknown>(
   useEffect(() => {
     const existingState = dataStates.get(sourceName);
     if (existingState) {
-      setData(existingState.data as T);
-      setLoading(existingState.loading);
-      setError(existingState.error);
+      queueMicrotask(() => {
+        setData(existingState.data as T);
+        setLoading(existingState.loading);
+        setError(existingState.error);
+      });
     }
   }, [sourceName, dataStates]);
 
@@ -344,7 +356,9 @@ export function useDataSource<T = unknown>(
  *
  * @param variableName - 변수 이름 (app.xxx, page.xxx, component.xxx.yyy)
  */
-export function useVariable<T = unknown>(variableName: string): VariableResult<T> {
+export function useVariable<T = unknown>(
+  variableName: string,
+): VariableResult<T> {
   const getState = useRuntimeStore((s) => s.getState);
   const setState = useRuntimeStore((s) => s.setState);
   const appState = useRuntimeStore((s) => s.appState);
@@ -357,18 +371,18 @@ export function useVariable<T = unknown>(variableName: string): VariableResult<T
 
   // 변수 존재 여부 확인
   const exists = (() => {
-    const [scope, ...rest] = variableName.split('.');
-    const key = rest.join('.');
+    const [scope, ...rest] = variableName.split(".");
+    const key = rest.join(".");
 
     switch (scope) {
-      case 'app':
+      case "app":
         return key in appState;
-      case 'page':
+      case "page":
         return currentPageId
           ? key in (pageStates.get(currentPageId) || {})
           : false;
-      case 'component': {
-        const dotIndex = key.indexOf('.');
+      case "component": {
+        const dotIndex = key.indexOf(".");
         if (dotIndex > 0) {
           const elementId = key.slice(0, dotIndex);
           const propKey = key.slice(dotIndex + 1);
@@ -387,7 +401,7 @@ export function useVariable<T = unknown>(variableName: string): VariableResult<T
     (newValue: T) => {
       setState(variableName, newValue);
     },
-    [setState, variableName]
+    [setState, variableName],
   );
 
   return {
@@ -418,7 +432,7 @@ export function useRouteParams(): Record<string, string> {
 
 export interface DataBindingConfig {
   /** 바인딩 소스 (dataTable, api, variable, route) */
-  source: 'dataTable' | 'api' | 'variable' | 'route';
+  source: "dataTable" | "api" | "variable" | "route";
   /** 소스 이름 또는 경로 */
   name: string;
   /** 데이터 경로 (예: "items[0].name") */
@@ -433,30 +447,30 @@ export interface DataBindingConfig {
  * @param config - 바인딩 설정
  */
 export function useDataBinding<T = unknown>(
-  config: DataBindingConfig
+  config: DataBindingConfig,
 ): T | undefined {
   const { source, name, path, defaultValue } = config;
 
   // 각 소스 타입별 훅 사용
   const dataSourceResult = useDataSource(
-    source === 'dataTable' || source === 'api' ? name : '',
-    { autoFetch: source === 'dataTable' || source === 'api' }
+    source === "dataTable" || source === "api" ? name : "",
+    { autoFetch: source === "dataTable" || source === "api" },
   );
-  const variableResult = useVariable(source === 'variable' ? name : '');
+  const variableResult = useVariable(source === "variable" ? name : "");
   const routeParams = useRouteParams();
 
   // 소스별 데이터 추출
   let rawData: unknown;
 
   switch (source) {
-    case 'dataTable':
-    case 'api':
+    case "dataTable":
+    case "api":
       rawData = dataSourceResult.data;
       break;
-    case 'variable':
+    case "variable":
       rawData = variableResult.value;
       break;
-    case 'route':
+    case "route":
       rawData = routeParams[name];
       break;
   }
@@ -468,7 +482,7 @@ export function useDataBinding<T = unknown>(
 
     for (const part of pathParts) {
       if (current === null || current === undefined) break;
-      if (typeof current === 'object') {
+      if (typeof current === "object") {
         current = (current as Record<string, unknown>)[part];
       } else {
         current = undefined;

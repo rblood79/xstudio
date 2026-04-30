@@ -29,12 +29,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type {
-  ComponentSizeSubset,
-  DataBinding,
-  ColumnMapping,
-  DataBindingValue,
-} from "../types";
+import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import { useCollectionData } from "../hooks";
 import {

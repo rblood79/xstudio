@@ -34,7 +34,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       // initializeProject 함수 안에서 db.elements.getByLayout 호출이 0건이어야 함
       // (다른 함수의 getByLayout 호출은 제거 대상 아님)
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(
         initFnMatch,
@@ -53,7 +53,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
@@ -75,7 +75,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       // false-positive 매칭 차단
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
@@ -99,7 +99,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
@@ -116,7 +116,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
@@ -134,11 +134,13 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
-      expect(initFnSource).toMatch(/getProjectLayoutsForCanonical\(\s*db,\s*projectId/);
+      expect(initFnSource).toMatch(
+        /getProjectLayoutsForCanonical\(\s*db,\s*projectId/,
+      );
       expect(initFnSource).toMatch(/elements:\s*allElements/);
       expect(initFnSource).toMatch(
         /elementsMap:\s*new Map\(allElements\.map\(\(el\) => \[el\.id, el\]\)\)/,
@@ -156,7 +158,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
@@ -196,7 +198,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
@@ -210,7 +212,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       const rawSource = await fs.readFile(filePath, "utf-8");
       const source = rawSource.replace(/\/\/.*$/gm, "");
       const initFnMatch = source.match(
-        /const initializeProject[\s\S]+?(?=\n\n  const |\n\n  return |\n  \};\n)/,
+        /const initializeProject[\s\S]+?(?=\n\n {2}const |\n\n {2}return |\n {2}\};\n)/,
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];

@@ -22,10 +22,10 @@ import { TAG_SPEC_MAP } from "../../sprites/tagSpecMap";
  * 소비처: `implicitStyles.specSizeField` / `utils.getIntrinsicWidth|Height`
  * (ADR-096 defaultWidth/defaultHeight 조회) / `resolveContainerStylesFallback` 등.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export const LOWERCASE_TAG_SPEC_MAP: ReadonlyMap<
   string,
-  ComponentSpec<any>
+  ComponentSpec<unknown>
 > = new Map(
   Object.entries(TAG_SPEC_MAP).map(([k, v]) => [
     k.toLowerCase(),

@@ -11,16 +11,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // canonical adapter / resolver mocks
 import * as elementsStoreModule from "../../elements";
-import * as canonicalAdapterModule from "../../../../adapters/canonical";
 
 import {
   createGetLayoutSlotsAction,
   createDeleteLayoutAction,
 } from "../layoutActions";
-import type {
-  LayoutsStoreState,
-  LayoutsStoreActions,
-} from "../../../../types/builder/layout.types";
 import type { Element, Page } from "../../../../types/builder/unified.types";
 import type { Layout } from "../../../../types/builder/layout.types";
 import type { CompositionDocument, FrameNode } from "@composition/shared";

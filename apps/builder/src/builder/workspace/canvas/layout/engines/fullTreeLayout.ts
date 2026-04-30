@@ -28,11 +28,7 @@ import {
   parseCSSPropWithContext,
   measureTextWidth,
 } from "./utils";
-import {
-  resolveStyle,
-  ROOT_COMPUTED_STYLE,
-  getRootComputedStyle,
-} from "./cssResolver";
+import { resolveStyle, getRootComputedStyle } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
 import {
   toTaffyDisplay,

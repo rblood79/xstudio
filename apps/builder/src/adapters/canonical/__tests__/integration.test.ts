@@ -232,8 +232,6 @@ describe("legacyToCanonical integration (ADR-903 P1)", () => {
       }),
     ];
 
-    const doc = legacyToCanonical({ elements, pages: [], layouts: [] }, deps);
-
     // master 는 reusable 로 land. instance i1 은 page 가 없어 root children 미등장 —
     // descendants remap 검증을 위해 별도 호출하여 buildIdPathContext 결과를 확인.
     // TC4 는 instance 가 root children 에 포함되는 시나리오로 보강 — page 추가:

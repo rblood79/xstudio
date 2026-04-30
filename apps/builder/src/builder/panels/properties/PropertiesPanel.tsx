@@ -76,6 +76,7 @@ import {
 } from "../../stores/utils/historyHelpers";
 import { supabase } from "../../../env/supabase.client";
 import type { Element } from "../../../types/core/store.types";
+import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 
 /**
  * PropertyEditorWrapper - Editor 컴포넌트를 분리하여 불필요한 리렌더링 방지
@@ -945,15 +946,20 @@ function PropertiesPanelContent() {
     console.log("✅ [Esc] Selection cleared");
   }, [setSelectedElement]);
 
-  const handleDetachSelectedInstance = useCallback(() => {
+  const handleDetachSelectedInstance = useCallback(async () => {
     const state = useStore.getState();
     const selectedId = state.selectedElementId ?? selectedElement?.id;
     const element = selectedId ? state.elementsMap.get(selectedId) : null;
     if (!selectedId || !canDetachInstance(element)) return;
 
-    const confirmed = window.confirm(
-      "Detach this instance from its component?",
-    );
+    const confirmed = await requestEditingSemanticsDetachConfirmation({
+      instanceId: selectedId,
+      instanceLabel:
+        element?.componentName ??
+        element?.customId ??
+        element?.type ??
+        selectedId,
+    });
     if (!confirmed) return;
 
     state.detachInstance(selectedId);

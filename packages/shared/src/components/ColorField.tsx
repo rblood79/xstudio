@@ -9,7 +9,10 @@ import {
 import { Text } from "./Content";
 import { Label, FieldError } from "./Field";
 import type { ComponentSize } from "../types";
-import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 
 import "./styles/generated/ColorField.css";
 

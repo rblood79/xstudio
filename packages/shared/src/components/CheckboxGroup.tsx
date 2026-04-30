@@ -12,8 +12,10 @@ import { CheckIcon, Minus } from "lucide-react";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import type { ComponentSizeSubset } from "../types";
-import type { NecessityIndicator } from "./Field";
-import { renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 import { useCollectionData } from "../hooks";
 
 import "./styles/generated/CheckboxGroup.css";
@@ -112,7 +114,6 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -139,7 +140,6 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -171,7 +171,6 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          
           data-checkbox-size={size}
           data-label-position={labelPosition}
         >
@@ -197,7 +196,6 @@ export function CheckboxGroup({
         {...props}
         className={checkboxGroupClassName}
         data-orientation={orientation}
-        
         data-checkbox-size={size}
         data-label-position={labelPosition}
       >
@@ -226,7 +224,6 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -253,7 +250,6 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          
           data-checkbox-size={size}
           data-label-position={labelPosition}
           isDisabled
@@ -294,7 +290,6 @@ export function CheckboxGroup({
           {...props}
           className={checkboxGroupClassName}
           data-orientation={orientation}
-          
           data-checkbox-size={size}
           data-label-position={labelPosition}
         >
@@ -341,7 +336,6 @@ export function CheckboxGroup({
       {...props}
       className={checkboxGroupClassName}
       data-orientation={orientation}
-      
       data-checkbox-size={size}
       data-label-position={labelPosition}
     >

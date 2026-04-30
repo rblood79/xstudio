@@ -746,7 +746,7 @@ export const renderToggleButtonGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, batchUpdateElementProps } = context;
+  const { batchUpdateElementProps } = context;
 
   const orientation = element.props.orientation as "horizontal" | "vertical";
   const indicator = Boolean(element.props.indicator);

@@ -339,7 +339,7 @@ export function useViewportCulling({
 
         const culledCount = elements.length - visibleElements.length;
 
-        if (import.meta.env.DEV && Math.random() < 0.01) {
+        if (import.meta.env.DEV && version > 0 && version % 100 === 0) {
           crossValidateCulling(
             elements,
             visibleElements,
@@ -376,7 +376,6 @@ export function useViewportCulling({
 
     return getCachedCullingResult(cacheKey, computeResult);
     // zoom/panOffset은 getBounds()에 간접 반영되지만, 뷰 변경 시 재계산 트리거 필요
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     cacheKey,
     elements,

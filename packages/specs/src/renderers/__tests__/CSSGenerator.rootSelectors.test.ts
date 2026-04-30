@@ -67,7 +67,7 @@ describe("rootSelectors emit (0-D.10)", () => {
         makeSpec({
           rootSelectors: {
             ":not([aria-hidden])": { styles: { color: "red" } },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/must start with "&"/);
@@ -79,7 +79,7 @@ describe("rootSelectors emit (0-D.10)", () => {
         makeSpec({
           rootSelectors: {
             "&{ injected }": { styles: { color: "red" } },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -91,7 +91,7 @@ describe("rootSelectors emit (0-D.10)", () => {
         makeSpec({
           rootSelectors: {
             "&.test}": { styles: { color: "red" } },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -103,7 +103,7 @@ describe("rootSelectors emit (0-D.10)", () => {
         makeSpec({
           rootSelectors: {
             "&;test": { styles: { color: "red" } },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -115,7 +115,7 @@ describe("rootSelectors emit (0-D.10)", () => {
         makeSpec({
           rootSelectors: {
             "&@media print": { styles: { color: "red" } },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -230,7 +230,7 @@ describe("staticSelectors descendant `:not()`", () => {
         makeSpec({
           staticSelectors: {
             ".bar { injected }": { color: "red" },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -242,7 +242,7 @@ describe("staticSelectors descendant `:not()`", () => {
         makeSpec({
           staticSelectors: {
             ".bar@media": { color: "red" },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -321,7 +321,7 @@ describe("nested in rootSelectors `:not()` validation", () => {
                 ".bar{ injected }": { color: "red" },
               },
             },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);
@@ -337,7 +337,7 @@ describe("nested in rootSelectors `:not()` validation", () => {
                 ".bar@media": { color: "red" },
               },
             },
-          } as unknown as Record<string, any>,
+          } as unknown as Record<string, unknown>,
         }),
       ),
     ).toThrow(/forbidden chars/);

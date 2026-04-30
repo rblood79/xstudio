@@ -71,7 +71,9 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
    * 초기 데이터 로드
    */
   useEffect(() => {
-    fetchTokens();
+    queueMicrotask(() => {
+      fetchTokens();
+    });
   }, [fetchTokens]);
 
   /**

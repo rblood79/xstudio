@@ -78,14 +78,15 @@ function getTailwindColorValue(name: TailwindColorName): string {
   return TAILWIND_HEX_COLORS[name];
 }
 
-export const DEFAULT_TAILWIND_SWATCHES: TailwindSwatch[] =
-  tailwindColorNames.map((name) => ({
+const DEFAULT_TAILWIND_SWATCHES: TailwindSwatch[] = tailwindColorNames.map(
+  (name) => ({
     name,
     value: getTailwindColorValue(name),
-  }));
+  }),
+);
 
 const SLIDER_GRADIENT = `linear-gradient(to right, ${DEFAULT_TAILWIND_SWATCHES.map(
-  (swatch) => swatch.value
+  (swatch) => swatch.value,
 ).join(", ")})`;
 
 const THUMB_CLASSNAMES =
@@ -97,7 +98,7 @@ export function MyColorArea({ className, ...props }: MyColorAreaProps) {
       {...props}
       className={composeTailwindRenderProps(
         className,
-        "relative aspect-square w-full min-w-[12rem] max-w-[18rem] rounded-xl border border-slate-200 bg-transparent shadow-sm data-[disabled=true]:opacity-40"
+        "relative aspect-square w-full min-w-[12rem] max-w-[18rem] rounded-xl border border-slate-200 bg-transparent shadow-sm data-[disabled=true]:opacity-40",
       )}
     >
       <ColorThumb className={THUMB_CLASSNAMES} />
@@ -113,7 +114,7 @@ export function MyColorSlider({ className, ...props }: MyColorSliderProps) {
       {...props}
       className={composeTailwindRenderProps(
         className,
-        "group grid gap-2 text-sm data-[orientation=vertical]:grid-rows-[auto_1fr]"
+        "group grid gap-2 text-sm data-[orientation=vertical]:grid-rows-[auto_1fr]",
       )}
     >
       <SliderTrack

@@ -25,7 +25,7 @@
  * @see packages/shared/src/types/composition-document.types.ts
  */
 
-import type { Element, Page } from "@/types/builder/unified.types";
+import type { Element } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
 import type { CanonicalNode, FrameNode, RefNode } from "@composition/shared";
 import type { ConvertSlotElementFn, ConvertPageLayoutFn } from "./types";

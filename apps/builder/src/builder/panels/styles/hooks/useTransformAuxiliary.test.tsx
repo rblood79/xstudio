@@ -3,12 +3,12 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import {
   useWidthSizeMode,
-  useHeightSizeMode,
   useParentDisplay,
   useParentFlexDirection,
   useSelfAlignmentKeys,
 } from "./useTransformAuxiliary";
 import { useStore } from "../../../stores";
+import type { Element } from "../../../../types/core/store.types";
 
 describe("useTransformAuxiliary", () => {
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe("useTransformAuxiliary", () => {
                 justifySelf: "center",
               },
             },
-          } as any,
+          } as Element,
         ],
         [
           "p-1",
@@ -35,7 +35,7 @@ describe("useTransformAuxiliary", () => {
             id: "p-1",
             type: "Frame",
             props: { style: { display: "flex", flexDirection: "row" } },
-          } as any,
+          } as Element,
         ],
       ]),
     });
@@ -68,8 +68,8 @@ describe("useTransformAuxiliary", () => {
   });
 
   it("useSelfAlignmentKeys returns [] for block parent", () => {
-    useStore.setState((s: any) => {
-      const map = new Map<string, any>(s.elementsMap);
+    useStore.setState((s) => {
+      const map = new Map<string, Element>(s.elementsMap);
       const existing = map.get("p-1") ?? {};
       map.set("p-1", {
         ...existing,
@@ -96,7 +96,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
             type: "ListBoxItem",
             parent_id: "lb-1",
             props: { style: { alignSelf: "center", justifySelf: "center" } },
-          } as any,
+          } as Element,
         ],
         [
           "lb-1",
@@ -105,7 +105,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
             type: "ListBox",
             // inline style 없음 — ListBoxSpec.containerStyles.display="flex" 가 유일 source
             props: {},
-          } as any,
+          } as Element,
         ],
       ]),
     });
@@ -130,8 +130,8 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
   });
 
   it("inline style.display overrides Spec containerStyles fallback (inline 우선)", () => {
-    useStore.setState((s: any) => {
-      const map = new Map<string, any>(s.elementsMap);
+    useStore.setState((s) => {
+      const map = new Map<string, Element>(s.elementsMap);
       const existing = map.get("lb-1") ?? {};
       map.set("lb-1", {
         ...existing,
@@ -153,7 +153,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
             type: "Button",
             parent_id: "dlg-1",
             props: {},
-          } as any,
+          } as Element,
         ],
         [
           "dlg-1",
@@ -161,7 +161,7 @@ describe("useTransformAuxiliary — ADR-082 A1 부모 Spec fallback", () => {
             id: "dlg-1",
             type: "Dialog", // Dialog 는 containerStyles 미보유 (overlay archetype)
             props: {},
-          } as any,
+          } as Element,
         ],
       ]),
     });

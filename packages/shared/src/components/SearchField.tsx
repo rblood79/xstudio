@@ -18,7 +18,10 @@ import {
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
 import { getIconData } from "@composition/specs";
-import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 
 import "./styles/generated/SearchField.css";
 

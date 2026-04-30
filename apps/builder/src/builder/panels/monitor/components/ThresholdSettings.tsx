@@ -32,7 +32,9 @@ export function ThresholdSettings({
   const [localConfig, setLocalConfig] = useState(config);
 
   useEffect(() => {
-    setLocalConfig(config);
+    queueMicrotask(() => {
+      setLocalConfig(config);
+    });
   }, [config]);
 
   const handleSave = () => {

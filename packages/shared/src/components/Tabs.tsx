@@ -365,7 +365,7 @@ export function TabList<T extends object>({
 }
 
 // Tab에서 showIndicator 컨텍스트 사용
-export function useTabListIndicator() {
+function useTabListIndicator() {
   return useContext(TabListIndicatorContext);
 }
 

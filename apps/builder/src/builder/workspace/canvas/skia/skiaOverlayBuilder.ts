@@ -433,6 +433,17 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
       }
 
       // ── Selection (드래그 중에는 숨김 — 드래그 요소가 반투명으로 떠있으므로) ──
+      if (selectionData.semanticTargets.length > 0 && !dropIndicatorState) {
+        for (const target of selectionData.semanticTargets) {
+          renderSelectionBox(
+            ck,
+            canvas,
+            target.bounds,
+            cameraZoom,
+            target.semanticRole ?? target.slotMarkerRole,
+          );
+        }
+      }
       if (selectionData.bounds && !dropIndicatorState) {
         const selectionSemanticRole =
           selectionData.semanticRole ?? selectionData.slotMarkerRole;

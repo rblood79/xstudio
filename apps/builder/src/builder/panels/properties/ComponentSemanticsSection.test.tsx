@@ -231,11 +231,15 @@ describe("ComponentSemanticsSection", () => {
     render(<ComponentSemanticsSection elementId="origin" />);
     expect(screen.getByText("2 instances")).toBeTruthy();
     expect(
-      (screen.getByRole("button", {
-        name: "Remove component",
-      }) as HTMLButtonElement).disabled,
+      (
+        screen.getByRole("button", {
+          name: "Remove component",
+        }) as HTMLButtonElement
+      ).disabled,
     ).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Select instances (2)" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select instances (2)" }),
+    );
 
     expect(useStore.getState().selectedElementIds).toEqual([
       "instance-a",
@@ -244,7 +248,7 @@ describe("ComponentSemanticsSection", () => {
     expect(useStore.getState().multiSelectMode).toBe(true);
   });
 
-  it("legacy instance detach action asks before detaching", () => {
+  it("legacy instance detach action asks before detaching", async () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     const origin = makeElement("origin", {
       componentRole: "master",
@@ -273,11 +277,13 @@ describe("ComponentSemanticsSection", () => {
     fireEvent.click(screen.getByRole("button", { name: "Detach instance" }));
 
     expect(confirmSpy).toHaveBeenCalled();
-    expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
-      componentRole: undefined,
-      masterId: undefined,
-      overrides: undefined,
-      props: { label: "Detached" },
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("instance")).toMatchObject({
+        componentRole: undefined,
+        masterId: undefined,
+        overrides: undefined,
+        props: { label: "Detached" },
+      });
     });
   });
 
@@ -371,7 +377,7 @@ describe("ComponentSemanticsSection", () => {
     ).toBeTruthy();
   });
 
-  it("legacy instance detach action preserves the instance when cancelled", () => {
+  it("legacy instance detach action preserves the instance when cancelled", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     const origin = makeElement("origin", { componentRole: "master" });
     const instance = makeElement("instance", {
@@ -392,6 +398,8 @@ describe("ComponentSemanticsSection", () => {
     render(<ComponentSemanticsSection elementId="instance" />);
     fireEvent.click(screen.getByRole("button", { name: "Detach instance" }));
 
-    expect(useStore.getState().elementsMap.get("instance")).toBe(instance);
+    await waitFor(() => {
+      expect(useStore.getState().elementsMap.get("instance")).toBe(instance);
+    });
   });
 });

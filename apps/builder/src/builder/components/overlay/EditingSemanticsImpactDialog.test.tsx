@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  requestEditingSemanticsDetachConfirmation,
   requestEditingSemanticsImpactConfirmation,
   resolveEditingSemanticsImpactConfirmation,
 } from "../../utils/editingSemanticsImpactConfirmation";
@@ -67,6 +68,25 @@ describe("EditingSemanticsImpactDialogHost", () => {
     expect(screen.getByText("instance-4")).toBeTruthy();
     expect(screen.queryByText("instance-5")).toBeNull();
     expect(screen.getByText("+3 more")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await expect(result).resolves.toBe(true);
+  });
+
+  it("renders detach warning copy", async () => {
+    render(<EditingSemanticsImpactDialogHost />);
+
+    const result = requestEditingSemanticsDetachConfirmation({
+      instanceId: "instance-a",
+      instanceLabel: "Primary button instance",
+      originLabel: "Primary button",
+    });
+
+    expect(await screen.findByText("Detach instance")).toBeTruthy();
+    expect(screen.getByText("Primary button instance")).toBeTruthy();
+    expect(
+      screen.getByText(/will turn it into a standalone element/i),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await expect(result).resolves.toBe(true);

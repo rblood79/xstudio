@@ -110,9 +110,9 @@ describe("ADR-082 G1 — cssVarToTokenRef 역변환 parser", () => {
     it("비문자열 입력 — null (방어)", () => {
       // @ts-expect-error — 런타임 방어 확인
       expect(cssVarToTokenRef(42)).toBeNull();
-      // @ts-expect-error
+      // @ts-expect-error — 런타임 방어 확인
       expect(cssVarToTokenRef(null)).toBeNull();
-      // @ts-expect-error
+      // @ts-expect-error — 런타임 방어 확인
       expect(cssVarToTokenRef(undefined)).toBeNull();
     });
   });

@@ -32,9 +32,8 @@ export const PropertyCustomId = memo(function PropertyCustomId({
 
   // Sync local state with prop value when it changes externally
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInputValue(value || "");
-     
+
     setError(undefined);
   }, [value]);
 
@@ -82,7 +81,11 @@ export const PropertyCustomId = memo(function PropertyCustomId({
       // Validate before saving
       // ⭐ 최적화: validation 시에만 elementsMap 가져오기 (구독 방지)
       const elementsMap = useStore.getState().elementsMap;
-      const validation = validateCustomId(inputValue, elementId, Array.from(elementsMap.values()));
+      const validation = validateCustomId(
+        inputValue,
+        elementId,
+        Array.from(elementsMap.values()),
+      );
 
       if (!validation.isValid) {
         setError(validation.error);
@@ -112,27 +115,22 @@ export const PropertyCustomId = memo(function PropertyCustomId({
 
   return (
     <>
-    <PropertyFieldset legend={label} icon={Hash} className={className}>
-      <input
-        className="react-aria-Input"
-        type="text"
-        value={inputValue}
-        onChange={(e) => handleChange(e.target.value)}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        aria-invalid={error ? "true" : "false"}
-        aria-describedby={error ? "customid-error" : undefined}
-      />
-      
-    </PropertyFieldset>
-    {error && (
-        <div
-          id="customid-error"
-          className="react-aria-FieldError"
-          role="alert"
-        >
+      <PropertyFieldset legend={label} icon={Hash} className={className}>
+        <input
+          className="react-aria-Input"
+          type="text"
+          value={inputValue}
+          onChange={(e) => handleChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={error ? "customid-error" : undefined}
+        />
+      </PropertyFieldset>
+      {error && (
+        <div id="customid-error" className="react-aria-FieldError" role="alert">
           {error}
         </div>
       )}

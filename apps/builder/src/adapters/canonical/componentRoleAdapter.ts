@@ -13,7 +13,6 @@
  * 표현하는 수단이 없었기 때문이다.
  */
 
-import type { Element } from "@/types/builder/unified.types";
 import type { ConvertComponentRoleFn } from "./types";
 
 export const convertComponentRole: ConvertComponentRoleFn = (

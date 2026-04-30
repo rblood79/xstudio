@@ -956,11 +956,13 @@ function CanvasContent() {
 
     return rootElements.map((el) => renderElement(el, el.id));
   }, [
-    elements,
+    layouts,
+    pages,
     resolvedElements,
     renderElement,
     currentLayoutId,
     currentPageId,
+    renderContext,
     renderLayoutElement,
   ]);
 

@@ -1,10 +1,10 @@
 import React, { lazy } from "react";
 
 // Component map definition (code splitting)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export const componentMap: Record<
   string,
-  React.LazyExoticComponent<React.ComponentType<any>>
+  React.LazyExoticComponent<React.ComponentType<Record<string, unknown>>>
 > = {
   Button: lazy(() =>
     import("@composition/shared/components/Button").then((module) => ({

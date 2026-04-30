@@ -12,9 +12,9 @@
  * @since 2025-12-18 Phase 9.3
  */
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { longTaskMonitor, type MetricStats } from '../../utils/longTaskMonitor';
-import { postMessageMonitor } from '../../utils/postMessageMonitor';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { longTaskMonitor, type MetricStats } from "../../utils/longTaskMonitor";
+import { postMessageMonitor } from "../../utils/postMessageMonitor";
 
 // ============================================
 // Types
@@ -66,7 +66,9 @@ export interface PerformanceHookReturn {
  * }
  * ```
  */
-export function usePerformanceMonitor(componentName?: string): PerformanceHookReturn {
+export function usePerformanceMonitor(
+  componentName?: string,
+): PerformanceHookReturn {
   const renderStartRef = useRef<number>(0);
   const renderCountRef = useRef<number>(0);
 
@@ -85,7 +87,7 @@ export function usePerformanceMonitor(componentName?: string): PerformanceHookRe
         if (renderTime > 16) {
           // 16ms 초과 시 (60fps 미만)
           console.debug(
-            `[Render] ${componentName} took ${renderTime.toFixed(1)}ms (render #${renderCountRef.current})`
+            `[Render] ${componentName} took ${renderTime.toFixed(1)}ms (render #${renderCountRef.current})`,
           );
         }
       });
@@ -101,7 +103,7 @@ export function usePerformanceMonitor(componentName?: string): PerformanceHookRe
     async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
       return longTaskMonitor.measureAsync(name, fn);
     },
-    []
+    [],
   );
 
   const startMeasure = useCallback((name: string): (() => void) => {
@@ -113,7 +115,7 @@ export function usePerformanceMonitor(componentName?: string): PerformanceHookRe
   }, []);
 
   const printReport = useCallback(() => {
-    console.group('📊 Combined Performance Report');
+    console.group("📊 Combined Performance Report");
     longTaskMonitor.printReport();
     postMessageMonitor.printReport();
     console.groupEnd();
@@ -164,7 +166,7 @@ export function usePerformanceMonitor(componentName?: string): PerformanceHookRe
 export function useMeasuredCallback<T extends (...args: unknown[]) => unknown>(
   name: string,
   callback: T,
-  deps: React.DependencyList
+  _deps: React.DependencyList,
 ): T {
   const callbackRef = useRef(callback);
 
@@ -176,8 +178,7 @@ export function useMeasuredCallback<T extends (...args: unknown[]) => unknown>(
     (...args: Parameters<T>) => {
       return longTaskMonitor.measure(name, () => callbackRef.current(...args));
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, ...deps]
+    [name],
   ) as T;
 
   return measuredCallback;
@@ -213,7 +214,7 @@ export function useMeasuredCallback<T extends (...args: unknown[]) => unknown>(
 export function useMeasuredEffect(
   name: string,
   effect: React.EffectCallback,
-  deps: React.DependencyList
+  deps: React.DependencyList,
 ): void {
   useEffect(() => {
     const end = longTaskMonitor.start(name);
@@ -247,7 +248,7 @@ export function useMeasuredEffect(
  */
 export function withPerformanceMonitoring<P extends object>(
   Component: React.ComponentType<P>,
-  componentName: string
+  componentName: string,
 ): React.FC<P> {
   const WrappedComponent: React.FC<P> = (props) => {
     usePerformanceMonitor(componentName);

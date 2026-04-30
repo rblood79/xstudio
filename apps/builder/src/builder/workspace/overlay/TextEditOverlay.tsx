@@ -11,7 +11,7 @@
  * @updated 2026-03-07 Quill 에디터 전환 (Pencil nUt 패턴)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import "quill/dist/quill.core.css";
 import { getSceneBounds, subscribeBounds } from "../canvas/skia/renderCommands";
@@ -82,14 +82,16 @@ export function TextEditOverlay({
   // boundsMap(scene 좌표)는 매 프레임 갱신됨 → zoom/pan 적용하여 screen 좌표 산출
   const zoomRef = useRef(zoom);
   const panOffsetRef = useRef(panOffset);
-  zoomRef.current = zoom;
-  panOffsetRef.current = panOffset;
+  useEffect(() => {
+    zoomRef.current = zoom;
+    panOffsetRef.current = panOffset;
+  }, [zoom, panOffset]);
 
   const [livePos, setLivePos] = useState(position);
   const [liveSize, setLiveSize] = useState(size);
 
   // scene→screen 변환 헬퍼 (subscribeBounds 콜백 + zoom/pan 변경에서 공유)
-  const applyTransform = useRef(
+  const applyTransform = useCallback(
     (sceneBounds: { x: number; y: number; width: number; height: number }) => {
       const z = zoomRef.current;
       const pan = panOffsetRef.current;
@@ -106,7 +108,8 @@ export function TextEditOverlay({
           : prev,
       );
     },
-  ).current;
+    [],
+  );
 
   // boundsMap 변경 시 구독 (rAF 폴링 대체 — 이벤트 기반)
   useEffect(() => {
@@ -125,9 +128,11 @@ export function TextEditOverlay({
   const onCompleteRef = useRef(onComplete);
   const onCancelRef = useRef(onCancel);
   const onChangeRef = useRef(onChange);
-  onCompleteRef.current = onComplete;
-  onCancelRef.current = onCancel;
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+    onCancelRef.current = onCancel;
+    onChangeRef.current = onChange;
+  }, [onCancel, onChange, onComplete]);
 
   // Initialize Quill editor (Pencil nUt constructor 패턴)
   useEffect(() => {

@@ -19,7 +19,10 @@ import {
 } from "react-aria-components";
 import { Time } from "@internationalized/date";
 import type { ComponentSize } from "../types";
-import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
+import {
+  type NecessityIndicator,
+  renderNecessityIndicator,
+} from "./FieldNecessityIndicator";
 
 import "./styles/generated/TimeField.css";
 
