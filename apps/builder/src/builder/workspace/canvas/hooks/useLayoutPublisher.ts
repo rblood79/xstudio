@@ -16,7 +16,11 @@
 
 import { useEffect, useRef } from "react";
 import type { PixiPageRendererInput } from "../renderers";
-import { publishFilteredChildrenMap, publishLayoutMapsBatch } from "../layout";
+import {
+  publishFilteredChildrenMap,
+  publishLayoutMapsBatch,
+  publishSyntheticElementsMap,
+} from "../layout";
 import type { ComputedLayout } from "../layout";
 import {
   getCachedPageLayout,
@@ -174,6 +178,7 @@ export function useLayoutPublisher(
     for (const key of publishedKeysRef.current) {
       if (activeKeys.has(key)) continue;
       publishFilteredChildrenMap(null, key);
+      publishSyntheticElementsMap(null, key);
       staleKeys.push(key);
     }
     publishLayoutMapsBatch(layoutUpdates, staleKeys);

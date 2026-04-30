@@ -302,12 +302,15 @@ Frame canvas 좌상단에는 Page title 과 같은 Pencil-style label 을 렌더
 
 Frames mode 에서는 Page 탭의 page canvas 가 렌더되지 않으므로, 빈 공간 클릭의 body fallback 도 page 영역 hit-test 를 수행하지 않는다. hidden page 위치가 current page 를 변경하면 frameAreas 의 anchor 가 바뀌어 Frame canvas 가 이동하므로, frame body 영역만 body fallback 대상으로 유지한다.
 
+Tabs 는 `items` 기반 virtual Tab 을 layout pass 중 synthetic element 로 만든다. multi-page / multi-frame publish 에서 synthetic map 을 전역 단일 map 으로 clear 하면 마지막 root 의 virtual Tab 만 남아 다른 Page/Frame 의 Tabs 가 새로고침 또는 탭 전환 후 비정상 렌더링된다. 따라서 layoutMap / filteredChildrenMap 과 같은 `page_id ?? layout_id ?? id` root key 로 synthetic element map 도 저장하고 cache hit 시 함께 재발행한다.
+
 ### Fix 효과
 
 - PagesTab 작업 시 frame 영역 0 (page 만 가시)
 - FramesTab → 등록된 reusable frame 전체를 Page layout direction 으로 노출
 - 각 Frame canvas 좌상단 title 로 현재 overview 의 Frame 식별 가능
 - FramesTab 빈 공간 클릭으로 hidden Page 위치가 선택되어 Frame canvas 가 이동하지 않음
+- 여러 Page/Frame 에 Tabs 가 있어도 virtual Tab synthetic children 이 마지막 root 기준으로 사라지지 않음
 - FramesTab canvas 에서 다른 Frame 을 클릭하면 selected frame indicator 와 Node tree 가 즉시 동기화
 - 세션 47 commit `e4f24697` 동일 묶음
 

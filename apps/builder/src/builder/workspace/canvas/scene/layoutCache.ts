@@ -3,7 +3,9 @@ import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import {
   calculateFullTreeLayout,
   getPublishedFilteredChildrenMap,
+  getPublishedSyntheticElementsMap,
   publishFilteredChildrenMap,
+  publishSyntheticElementsMap,
 } from "../layout/engines/fullTreeLayout";
 import { parseBorder, parsePadding } from "../layout/engines/utils";
 
@@ -22,6 +24,7 @@ interface CachedPageLayoutEntry {
   pageWidth: number;
   wasmLayoutReady: boolean;
   filteredChildIdsMap: Map<string, string[]> | null;
+  syntheticElementsMap: Map<string, Element> | null;
   rootKey: string;
 }
 
@@ -303,6 +306,10 @@ export function getCachedPageLayout({
       cachedEntry.filteredChildIdsMap,
       cachedEntry.rootKey,
     );
+    publishSyntheticElementsMap(
+      cachedEntry.syntheticElementsMap,
+      cachedEntry.rootKey,
+    );
     return cachedEntry.fullTreeLayoutMap;
   }
   const bodyStyle = bodyElement.props?.style as
@@ -332,6 +339,7 @@ export function getCachedPageLayout({
     (id: string) => pageChildrenMap.get(id) ?? [],
   );
   const filteredChildIdsMap = getPublishedFilteredChildrenMap(rootKey);
+  const syntheticElementsMap = getPublishedSyntheticElementsMap(rootKey);
 
   pageLayoutCache.set(cacheKey, {
     bodyId: bodyElement.id,
@@ -342,6 +350,7 @@ export function getCachedPageLayout({
     pageWidth,
     wasmLayoutReady,
     filteredChildIdsMap,
+    syntheticElementsMap,
     rootKey,
   });
 

@@ -43,6 +43,7 @@ describe("useLayoutPublisher invalidation contract", () => {
     expect(source).toMatch(/elementsMap: sourceElementById,/);
     expect(source).toContain("layoutUpdates.push({ key, map: layoutMap });");
     expect(source).toMatch(/publishFilteredChildrenMap\(null, key\);/);
+    expect(source).toMatch(/publishSyntheticElementsMap\(null, key\);/);
     expect(source).toMatch(
       /publishLayoutMapsBatch\(layoutUpdates, staleKeys\);/,
     );

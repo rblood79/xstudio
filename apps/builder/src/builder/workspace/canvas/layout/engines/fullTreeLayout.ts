@@ -159,6 +159,7 @@ export function resetPersistentTree(pageId?: string): void {
     }
     // stale 레이아웃 제거
     publishLayoutMap(null, pageId);
+    publishSyntheticElementsMap(null, pageId);
   } else {
     for (const tree of persistentTrees.values()) {
       tree.reset();
@@ -168,6 +169,7 @@ export function resetPersistentTree(pageId?: string): void {
     for (const key of [..._perPageLayoutMaps.keys()]) {
       publishLayoutMap(null, key);
     }
+    clearSyntheticElements();
   }
 }
 
@@ -290,22 +292,102 @@ export function getPublishedFilteredChildrenMap(
 }
 
 // ─── 공유 Synthetic Elements Map ──────────────────────────────────
-// Command Stream 경로에서 synthetic element를 조회할 수 있도록 공유
-const _syntheticElementsMap = new Map<string, Element>();
+// Command Stream 경로에서 synthetic element를 조회할 수 있도록 root별로 공유.
+// Tabs virtual Tab 처럼 layout pass 중 생성되는 element 는 elementsMap 에 없고
+// filteredChildrenMap 에 id만 남으므로, layoutMap/filteredMap 과 같은 key
+// fallback(page_id ?? layout_id ?? id)으로 저장해야 multi-page/frame 렌더에서
+// 마지막 root 의 synthetic children 만 남는 회귀를 막을 수 있다.
+const _perPageSyntheticElementsMaps = new Map<string, Map<string, Element>>();
+let _activeSyntheticElementsMap: Map<string, Element> | null = null;
+let _syntheticElementsVersion = 0;
+let _mergedSyntheticElementsMap: Map<string, Element> | null = null;
+let _mergedSyntheticElementsVersion = -1;
+
+function cloneSyntheticElementsMap(
+  map: ReadonlyMap<string, Element>,
+): Map<string, Element> {
+  return new Map(map);
+}
+
+function beginSyntheticElementsCollection(): void {
+  _activeSyntheticElementsMap = new Map();
+}
+
+function publishCollectedSyntheticElements(rootKey: string): void {
+  publishSyntheticElementsMap(
+    _activeSyntheticElementsMap ?? new Map(),
+    rootKey,
+  );
+  _activeSyntheticElementsMap = null;
+}
+
+export function publishSyntheticElementsMap(
+  map: ReadonlyMap<string, Element> | null,
+  pageId?: string,
+): void {
+  const key = pageId ?? "__default__";
+  if (map) {
+    _perPageSyntheticElementsMaps.set(key, cloneSyntheticElementsMap(map));
+  } else {
+    _perPageSyntheticElementsMaps.delete(key);
+  }
+  _syntheticElementsVersion++;
+}
 
 /** Synthetic element 등록 (DFS synthetic handler에서 호출) */
 export function registerSyntheticElement(el: Element): void {
-  _syntheticElementsMap.set(el.id, el);
+  if (_activeSyntheticElementsMap) {
+    _activeSyntheticElementsMap.set(el.id, el);
+    return;
+  }
+
+  const defaultMap =
+    _perPageSyntheticElementsMaps.get("__default__") ?? new Map();
+  defaultMap.set(el.id, el);
+  publishSyntheticElementsMap(defaultMap);
 }
 
 /** 레이아웃 패스 시작 시 이전 synthetic elements 정리 (메모리 릭 방지) */
-export function clearSyntheticElements(): void {
-  _syntheticElementsMap.clear();
+export function clearSyntheticElements(pageId?: string): void {
+  if (pageId) {
+    _perPageSyntheticElementsMaps.delete(pageId);
+  } else {
+    _perPageSyntheticElementsMaps.clear();
+    _activeSyntheticElementsMap = null;
+  }
+  _syntheticElementsVersion++;
+}
+
+export function getPublishedSyntheticElementsMap(
+  pageId?: string,
+): Map<string, Element> | null {
+  const key = pageId ?? "__default__";
+  const map = _perPageSyntheticElementsMaps.get(key);
+  return map ? cloneSyntheticElementsMap(map) : null;
 }
 
 /** Synthetic elements 조회 (command stream 경로에서 elementsMap fallback) */
 export function getSyntheticElementsMap(): ReadonlyMap<string, Element> {
-  return _syntheticElementsMap;
+  if (_perPageSyntheticElementsMaps.size === 0) {
+    return _activeSyntheticElementsMap ?? new Map();
+  }
+  if (_mergedSyntheticElementsVersion === _syntheticElementsVersion) {
+    return _mergedSyntheticElementsMap ?? new Map();
+  }
+
+  const merged = new Map<string, Element>();
+  for (const pageMap of _perPageSyntheticElementsMaps.values()) {
+    for (const [id, element] of pageMap) merged.set(id, element);
+  }
+  if (_activeSyntheticElementsMap) {
+    for (const [id, element] of _activeSyntheticElementsMap) {
+      merged.set(id, element);
+    }
+  }
+
+  _mergedSyntheticElementsMap = merged;
+  _mergedSyntheticElementsVersion = _syntheticElementsVersion;
+  return merged;
 }
 
 /** 공유된 filteredChildIdsMap 조회 (모든 페이지 머지, 버전 캐시) */
@@ -1836,9 +1918,6 @@ export function calculateFullTreeLayout(
   const rootEl = elementsMap.get(rootElementId);
   if (!rootEl) return null;
 
-  // 이전 패스의 synthetic elements 정리 (삭제된 TagList의 유령 엔트리 방지)
-  clearSyntheticElements();
-
   // 페이지/Frame root 별 persistent tree 조회/생성.
   // Frame body 는 page_id 가 null 이므로 layout_id 로 분리하지 않으면 여러
   // reusable Frame 이 "__default__" Taffy tree 를 공유해 root state 가 섞인다.
@@ -1849,6 +1928,7 @@ export function calculateFullTreeLayout(
     persistentTrees.set(rootKey, persistentTree);
   }
   if (!persistentTree.isAvailable) return null;
+  beginSyntheticElementsCollection();
 
   // ── Step 1: DFS post-order 순회 → 배치 배열 구성 ──────────────────
   //    (항상 수행 — implicit style, enrichment, CSS resolve 필요)
@@ -1913,6 +1993,7 @@ export function calculateFullTreeLayout(
   // frame body 는 page_id 가 null 이므로 `layout_id` 로 저장해야 page-mode
   // filtered tree 와 frame-mode filtered tree 가 서로 `__default__` 에서 덮이지 않는다.
   publishFilteredChildrenMap(filteredChildIdsMap, rootKey);
+  publishCollectedSyntheticElements(rootKey);
 
   // ── Step 3: 초기 빌드 또는 증분 갱신 ──────────────────────────────
   try {

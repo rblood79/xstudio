@@ -49,6 +49,18 @@ describe("fullTreeLayout shared filtered children key contract", () => {
     );
   });
 
+  it("stores synthetic layout children by the same root key as filtered children", async () => {
+    const source = await readFile(
+      resolve(__dirname, "fullTreeLayout.ts"),
+      "utf-8",
+    );
+
+    expect(source).toContain("const _perPageSyntheticElementsMaps");
+    expect(source).toContain("beginSyntheticElementsCollection();");
+    expect(source).toContain("publishCollectedSyntheticElements(rootKey);");
+    expect(source).toContain("publishSyntheticElementsMap(null, pageId);");
+  });
+
   it("batch-publishes layout map updates with a single listener notification", async () => {
     const source = await readFile(
       resolve(__dirname, "fullTreeLayout.ts"),

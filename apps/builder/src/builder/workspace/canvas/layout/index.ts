@@ -58,6 +58,7 @@ export {
   publishLayoutMap,
   publishLayoutMapsBatch,
   publishFilteredChildrenMap,
+  publishSyntheticElementsMap,
   getSharedLayoutMap,
   getSharedLayoutVersion,
   onLayoutPublished,
