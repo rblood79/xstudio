@@ -5,6 +5,52 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Canonical Document SSOT 전환 — ADR-916 Phase 0 G1 land + Accepted 승격] - 2026-05-01
+
+### Architecture
+
+- **ADR-916 Status `Proposed → Accepted` 승격** (Phase 0 G1 Schema Boundary Freeze land 동시):
+  - 위치: `docs/adr/916-canonical-document-ssot-transition.md` + `docs/adr/design/916-canonical-document-ssot-transition-breakdown.md`
+  - **Why**: ADR-903/910/911/912/913/914 라인업 누적 + tier3 entry "다음 Tier 1 = ADR-916 진입" 권고 — `CompositionDocument` canonical schema 를 저장/편집/렌더/history/preview/publish 의 장기 SSOT 로 승격. 본 phase 는 schema boundary 만 고정 (logic 변경 0).
+  - ADR fork checkpoint 4 질문 lock-in (§Decision):
+    1. base/응용 분류 — ADR-916 = canonical SSOT 추상 base / ADR-911/913/914 = 응용 specialization
+    2. schema 직교성 — canonical core ⊥ Composition extension (`x-composition`) ⊥ legacy adapter ⊥ Pencil primitive
+    3. ADR-903 baseline reverse 검증 — read-through projection ↔ primary SSOT reverse 가 valid 한 사유 명시 (transition bridge / 후속 ADR 누적 / closure ADR 부재)
+    4. codex 1차 review 진입 시점 명시
+- **`CanonicalNode.props?: Record<string, unknown>` 신규 canonical 필드** (G1 §2.1 결정):
+  - 위치: `packages/shared/src/types/composition-document.types.ts`
+  - **Why**: `Button`/`TextField`/`Section` 등 component semantics 의 최종 저장 위치 확정. Phase 1 이후 신규 canonical write 는 `metadata.legacyProps` 가 아닌 `CanonicalNode.props` 사용. legacy export adapter 가 필요할 때만 `metadata.legacyProps` 로 transition.
+- **`CompositionExtension` / `CompositionExtendedNode` / `SerializedEventHandler` / `SerializedAction` / `SerializedDataBinding` 타입 추가** (G1 §3 namespace):
+  - 위치: `packages/shared/src/types/composition-document.types.ts`
+  - **Why**: canonical core 의 Pencil 구조 정합 유지. `events`/`actions`/`dataBinding`/`editor` 는 canonical core 가 아닌 `x-composition` namespaced extension 으로 분리. function callback / React runtime object serialize 금지.
+- **legacy 9 필드에 ADR-916 G5/G7 cleanup target marker 부착**:
+  - 위치: `apps/builder/src/types/builder/unified.types.ts`
+  - 대상: `Element.events` / `Element.dataBinding` (G7 Extension Boundary), `Element.layout_id` / `Element.slot_name` / `Element.componentRole` / `Element.masterId` / `Element.overrides` / `Element.descendants` / `Element.componentName` (G5 Legacy Field Quarantine)
+  - **Why**: 기존 `@deprecated ADR-913 Phase 5` 마커 위에 ADR-916 G5/G7 gate 동기화. Phase 4/Phase 5 시점에 `apps/builder/src/adapters/canonical/**` 디렉터리 외 read/write 0건이 cutover 기준.
+- **design §5 Phase 0 baseline grep 4건 기록** (main HEAD `119f0206c`):
+  - `legacyToCanonical(` 호출 site **44** (Phase 2 G3 제거 대상)
+  - `metadata.legacyProps|legacyProps` 참조 **92** (Phase 1 이후 신규 write 0건 + Phase 4 adapter 외 0건 목표)
+  - legacy 5필드 broad word grep **1062** (broad noise 포함 — Phase 4 G5 정밀 grep 으로 재측정)
+  - events/dataBinding broad word grep **856** (Phase 5 G7 시점 adapter 외 0건 목표)
+
+### Documentation
+
+- **`docs/adr/README.md` 갱신**:
+  - ADR-916 을 미구현 → 부분 완료 섹션으로 이동 (Status `Accepted` + Phase 0 G1 land 반영)
+  - 카운트: 부분 완료 7→**8** / 미구현 7→**6** / 합계 120 유지
+  - "최종 업데이트" 헤더에 2026-05-01 ADR-916 Phase 0 G1 land 요약 prepend
+- **ADR-916 본문 §"진행 로그"** — Phase 0 G1 land 5 항목 (framing lock-in / 타입 land / legacy marker / design §5 / type-check) 기록.
+
+### Verification
+
+- `pnpm type-check` 3/3 PASS (5.23s, cache miss). 신규 `CanonicalNode.props?` optional 필드 추가가 기존 41+ canonical consumer 를 깨지 않음을 확증.
+
+### Next steps
+
+- **Phase 1 G2 (Canonical Store/API)** — `CanonicalDocumentActions` mutation API + `CanonicalLegacyAdapter` 역방향 export adapter API 설계 (design §6)
+- **Codex 1차 review** — framing #3 reverse 정당화 + G1 산출물 동시 round-trip
+- ADR-911 G3/G4/G5 잔여 + ADR-913 P4-Step 4-4 / P5-A~5-E 는 ADR-916 G2 land 후 재평가
+
 ## [ADR-912 Editing Semantics UI gate closure] - 2026-04-30
 
 ### Bug Fixes

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Canonical Document Types — ADR-903 P0
+ * @fileoverview Canonical Document Types — ADR-903 P0 + ADR-916 G1
  *
  * **scope 분리 (R5)**:
  * - `CanonicalNode.type` (ComponentTag, 121-literal) — composition component / pencil 구조 타입
@@ -14,6 +14,20 @@
  * (`type` / `reusable` / `ref` / `descendants` / `slot` / `clip` / `placeholder` /
  * `version` / `themes` / `variables` / `imports` / `name` / `metadata`) 사용.
  * 이름 변경 금지.
+ *
+ * **ADR-916 G1 boundary (Schema Boundary Freeze)**:
+ *
+ * 1. canonical core — 본 파일의 `CompositionDocument` / `CanonicalNode` /
+ *    `FrameNode` / `RefNode` + `props` 필드. 저장/편집/렌더 SSOT.
+ * 2. Composition extension — `x-composition.events` / `actions` / `dataBinding` /
+ *    `editor` (`CompositionExtension` 타입). canonical core 가 아닌 namespaced
+ *    extension. function callback / React runtime object serialize 금지.
+ * 3. adapter-only legacy — `metadata.legacyProps` (transition only) 및 legacy
+ *    `Element.layout_id` / `slot_name` / `componentRole` / `masterId` / `overrides`.
+ *    `apps/builder/src/adapters/canonical/**` 디렉터리 외 read/write 0건이 G5 목표.
+ * 4. Pencil primitive schema — 본 파일은 Pencil 호환 필드명 (frame/ref/
+ *    descendants/slot/clip/placeholder) 만 채택. Pencil primitive schema 자체는
+ *    채택 대상 아님 (대안 B 기각).
  */
 
 import type { ComponentTag } from "./composition-vocabulary";
@@ -210,11 +224,35 @@ export interface CanonicalNode {
   name?: string;
 
   /**
+   * **ADR-916 G1 §2.1 — component props payload (canonical SSOT)**.
+   *
+   * `Button` / `TextField` / `Section` 등 composition component semantics 의
+   * 최종 저장 위치. Phase 1 이후 신규 canonical write 는 `metadata.legacyProps`
+   * 가 아닌 본 필드를 사용한다.
+   *
+   * **저장 가능**: serializable JSON payload (string/number/boolean/null/object/array).
+   * **저장 금지**:
+   * - function callback (event handler 함수)
+   * - React element / runtime object
+   * - `events` / `actions` / `dataBinding` (이들은 `x-composition` extension 으로 분리)
+   *
+   * legacy export adapter (`canonicalToLegacy`) 가 필요할 때만 본 필드에서
+   * legacy `Element.props` 를 생성한다. `metadata.legacyProps` 는 read-through
+   * adapter 출력 전용이며 write SSOT 아님.
+   */
+  props?: Record<string, unknown>;
+
+  /**
    * Extensibility hook — 메타데이터 저장소.
    *
    * 사용 예:
    * - `metadata.compositionType`: export adapter 가 원본 composition component 이름 저장 (roundtrip 지원)
    * - `metadata.importedFrom`: import adapter 경유 시 `"<importKey>:<nodeId>"` 저장
+   * - `metadata.legacyProps`: **ADR-916 transition-only adapter 출력**. legacy
+   *   `Element.props` 보존용 read-through projection 결과. canonical primary
+   *   write 경로에서는 사용 금지 (대신 `CanonicalNode.props` 사용). Phase 4
+   *   Legacy Field Quarantine 이후 `apps/builder/src/adapters/canonical/**`
+   *   외 read/write 0건이 목표.
    */
   metadata?: {
     type: string;
@@ -404,4 +442,104 @@ export function migrate(
   throw new Error(
     `migrate: not implemented (from "${fromVersion}" to "${toVersion}")`,
   );
+}
+
+// ─────────────────────────────────────────────
+// ADR-916 G1 §3 — Composition Extension namespace
+// ─────────────────────────────────────────────
+
+/**
+ * **ADR-916 G1 §3 채택안** — `x-composition` extension namespace.
+ *
+ * canonical core 는 Pencil 구조 정합 유지를 위해 Composition-only behavior
+ * (event handler / data binding / workflow action / editor metadata) 를
+ * core field 로 직접 추가하지 않는다. 대신 namespaced extension 으로 분리.
+ *
+ * **저장 가능**:
+ * - `events`: serialized event handler descriptor (callback 본문 아님)
+ * - `actions`: workflow action sequence (function reference 아님)
+ * - `dataBinding`: app data source binding 선언
+ * - `editor`: editor-only metadata (selection state / panel collapsed 등)
+ *
+ * **저장 금지**:
+ * - function callback / React element / runtime object
+ * - hover visual state (이는 Spec/renderer state 이며 event 가 아님)
+ *
+ * **전환 규칙** (design §3 dual-storage inventory):
+ * - 기존 top-level `Element.events` → `x-composition.events` 로 이동.
+ *   legacy export 시 top-level 로 복원.
+ * - 기존 `props.events` (Preview event handler path) → `x-composition.events`
+ *   에서 preview adapter 가 event handler map 생성.
+ * - 기존 `Element.dataBinding` / DB `data_binding` → `x-composition.dataBinding`
+ *   으로 이동. legacy export 시 `data_binding` 으로 복원.
+ * - 기존 Events Panel `actions` → `x-composition.events[].actions` 아래에 serialize.
+ *
+ * Phase 5 G7 Extension Boundary gate 충족 시점에 events/dataBinding/actions
+ * 이 canonical core 에 직접 직렬화되는 0건 상태로 cutover.
+ */
+export interface CompositionExtension {
+  /** Serialized event handler descriptor (callback 함수 본문 직렬화 금지) */
+  events?: SerializedEventHandler[];
+
+  /** App data source binding 선언 */
+  dataBinding?: SerializedDataBinding;
+
+  /** Workflow action sequence (function reference 아님) */
+  actions?: SerializedAction[];
+
+  /** Editor-only metadata (selection state 등) — runtime read/write 만 */
+  editor?: Record<string, unknown>;
+}
+
+/**
+ * canonical node 에 `x-composition` extension 을 부착한 확장 노드.
+ *
+ * Phase 1 mutation API 가 본 타입을 입력으로 받고, Phase 2 hot path 에서
+ * resolved canonical tree 로 소비. legacy export adapter 가 본 타입에서
+ * legacy `Element.events` / `Element.dataBinding` 을 생성.
+ */
+export interface CompositionExtendedNode extends CanonicalNode {
+  "x-composition"?: CompositionExtension;
+}
+
+// ─────────────────────────────────────────────
+// ADR-916 G1 — Extension payload primitive type stubs
+// ─────────────────────────────────────────────
+
+/**
+ * Phase 0 placeholder. Phase 5 G7 시점에 events/actions/dataBinding 의 정확한
+ * serializer schema 가 확정되면 본 stub 을 구체 타입으로 교체.
+ *
+ * 현재 의도:
+ * - `kind`: "onPress" / "onSelectionChange" 등 React Aria event name 직렬화
+ * - `actionRef`: `CompositionExtension.actions[]` 의 stable id 참조
+ *
+ * function callback / React element / runtime object 직렬화 금지.
+ */
+export interface SerializedEventHandler {
+  kind: string;
+  actionRef?: string;
+  [k: string]: unknown;
+}
+
+/**
+ * Phase 0 placeholder. workflow action sequence 직렬화 stub.
+ * Phase 5 G7 시점에 정확한 action schema 확정.
+ */
+export interface SerializedAction {
+  id: string;
+  kind: string;
+  [k: string]: unknown;
+}
+
+/**
+ * Phase 0 placeholder. data binding 선언 직렬화 stub.
+ * legacy `DataBinding` (`apps/builder/src/types/builder/unified.types.ts`) 를
+ * 그대로 받아오는 구조. Phase 5 G7 시점에 D2 Props/API 매핑 정합화.
+ */
+export interface SerializedDataBinding {
+  type: "collection" | "value" | "field";
+  source: string;
+  config: Record<string, unknown>;
+  [k: string]: unknown;
 }

@@ -68,22 +68,36 @@ export interface Element {
   created_at?: string;
   updated_at?: string;
   deleted?: boolean; // 삭제 여부 (UI 필터링용) ⭐
+  /**
+   * @deprecated ADR-916 G7 Extension Boundary cleanup target.
+   * canonical `x-composition.dataBinding` (`CompositionExtension.dataBinding`)
+   * 으로 이동. legacy export adapter 가 필요할 때 본 필드를 복원.
+   * Phase 5 G7 cutover 시점에 adapter 디렉터리 외 read/write 0건 목표.
+   */
   // Inspector 데이터 바인딩 (선택적)
   dataBinding?: DataBinding;
+  /**
+   * @deprecated ADR-916 G7 Extension Boundary cleanup target.
+   * canonical `x-composition.events` (`CompositionExtension.events`) 로 이동.
+   * legacy export adapter 가 필요할 때 본 필드를 복원.
+   * function callback 직렬화 금지 — `SerializedEventHandler` descriptor 사용.
+   */
   // Inspector 이벤트 핸들러 (선택적)
   events?: unknown[]; // EventHandler[] 타입 (순환 참조 방지를 위해 unknown 사용)
   // Layout/Slot System 필드
   /**
-   * @deprecated ADR-911 G3 + ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-911 G3 + ADR-913 Phase 5 + ADR-916 G5 cleanup target.
    * canonical `parent_id` (frame node id) + `selectCanonicalDocument` 의 reusable
    * FrameNode 매칭으로 대체. ADR-903 P3-E E-6 write-through 후 신규 데이터에서는
-   * null. Phase 4 G4 시점에 schema 자동 migration + 필드 삭제 예정.
+   * null. ADR-916 G5 Legacy Field Quarantine 시점에 `apps/builder/src/adapters/
+   * canonical/**` 외 read/write 0건 + DB schema migration 으로 필드 삭제.
    */
   layout_id?: string | null;
   /**
-   * @deprecated ADR-911 G3 + ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-913 Phase 5-A + ADR-916 G5 cleanup target.
    * canonical `descendants[slotPath].children` (RefNode override 맵) 으로 대체.
-   * Phase 5 cleanup 시 DB schema migration 으로 descendants key path 변환 후 제거.
+   * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건 + DB schema migration
+   * 으로 descendants key path 변환 후 필드 삭제.
    */
   slot_name?: string | null;
   /**
@@ -95,31 +109,36 @@ export interface Element {
 
   // --- G.1: Component-Instance System ---
   /**
-   * @deprecated ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-913 Phase 5-C + ADR-916 G5 cleanup target.
    * canonical `type: "ref"` (RefNode) + `ref` field 로 대체. instance 판별은 더
    * 이상 별도 role 필드 아님 — `node.type === "ref"` 만으로 충분.
+   * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건 + DB schema migration
+   * 으로 필드 삭제.
    */
   componentRole?: ComponentRole;
   /**
-   * @deprecated ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-913 Phase 5-D + ADR-916 G5 cleanup target.
    * canonical `RefNode.ref` (master 의 stable id) 로 대체.
+   * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건.
    */
   masterId?: string;
   /**
-   * @deprecated ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-913 Phase 5-B + ADR-916 G5 cleanup target.
    * canonical `RefNode.descendants[slotPath]` (DescendantOverride 3-mode) 로 대체.
    * 기존 `Record<string, unknown>` flat shape 은 path-based 으로 변환.
+   * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건.
    */
   overrides?: Record<string, unknown>;
   /**
-   * @deprecated ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-913 Phase 5-E + ADR-916 G5 cleanup target.
    * canonical `RefNode.descendants` (Record<string, DescendantOverride>) 로
    * 통합. 기존 `DescendantOverrides` (Record<string, Record<string, unknown>>)
    * 는 `(A) DescendantPatchMode` 모드와 호환되나 (B)/(C) 모드 미지원 → migration 필요.
+   * ADR-916 G5 시점에 canonical `DescendantOverride` union 으로만 사용.
    */
   descendants?: DescendantOverrides;
   /**
-   * @deprecated ADR-913 Phase 5 cleanup target.
+   * @deprecated ADR-913 Phase 5 + ADR-916 G5 cleanup target.
    * canonical `CanonicalNode.name` (모든 노드 공통) 으로 흡수. reusable 전용 prop
    * 이 아니라 모든 노드에 사용 가능한 sentence-case 이름.
    */

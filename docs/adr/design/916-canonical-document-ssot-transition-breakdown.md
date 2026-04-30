@@ -137,12 +137,12 @@ interface CompositionExtendedNode extends CanonicalNode {
 
 산출물:
 
-- `composition-document.types.ts`에 core/extension boundary 주석 보강
-- `CanonicalNode.props?: Record<string, unknown>` shared type 추가
-- `unified.types.ts` legacy field에 ADR-916 adapter-only marker 추가
-- `metadata.legacyProps` transition-only marker 추가
-- `events`/`dataBinding`의 canonical core 진입 금지 및 dual-storage inventory 문서화
-- baseline command 결과를 본 문서에 기록
+- `composition-document.types.ts`에 core/extension boundary 주석 보강 ✅ (G1 §2.1 + §3 + @fileoverview ADR-916 G1 boundary 표)
+- `CanonicalNode.props?: Record<string, unknown>` shared type 추가 ✅
+- `unified.types.ts` legacy field에 ADR-916 adapter-only marker 추가 ✅ (5필드 — `layout_id` / `slot_name` / `componentRole` / `masterId` / `overrides` / `descendants` / `componentName`)
+- `metadata.legacyProps` transition-only marker 추가 ✅ (`CanonicalNode.metadata` 주석)
+- `events`/`dataBinding`의 canonical core 진입 금지 및 dual-storage inventory 문서화 ✅ (`CompositionExtension` + `CompositionExtendedNode` + `Element.events`/`Element.dataBinding` @deprecated marker)
+- baseline command 결과를 본 문서에 기록 ✅ (아래 baseline 표)
 
 측정:
 
@@ -153,14 +153,23 @@ rg -n "\\b(layout_id|slot_name|componentRole|masterId|overrides)\\b" apps packag
 rg -n "\\bprops\\.events\\b|\\bevents\\b|\\bdataBinding\\b|\\bdata_binding\\b" apps packages
 ```
 
+### Baseline (2026-05-01, ADR-916 Phase 0 G1 land 직전 main HEAD `119f0206c`)
+
+| Grep                                                                                 | 결과 |                                                                       의미                                                                        |
+| ------------------------------------------------------------------------------------ | ---: | :-----------------------------------------------------------------------------------------------------------------------------------------------: |
+| `legacyToCanonical\(` (호출 site 수)                                                 |   44 |                                         Phase 2 제거 대상 (drag/selection/render/LayerTree/Preview sync)                                          |
+| `metadata\.legacyProps\|legacyProps` (참조 수)                                       |   92 |                                             Phase 1 이후 신규 write 0건 + Phase 4 adapter 외 0건 목표                                             |
+| `\b(layout_id\|slot_name\|componentRole\|masterId\|overrides)\b` (broad word grep)   | 1062 | Phase 4 G5 정밀 grep (`adapters/` / test fixture 제외 후 0건 목표). 본 수치는 broad noise 포함 — Phase 4 Step 4-1 시점에 §9 정밀 grep 으로 재측정 |
+| `\bprops\.events\b\|\bevents\b\|\bdataBinding\b\|\bdata_binding\b` (broad word grep) |  856 |                               Phase 5 G7 Extension Boundary 시점에 adapter 외 0건 목표. 본 수치는 broad noise 포함                                |
+
 완료 조건:
 
-| 조건                       | 통과 기준                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------- |
-| core/extension/legacy 분류 | 본 문서 표와 타입 주석이 일치                                                     |
-| component props 위치       | `CanonicalNode.props?: Record<string, unknown>` 타입 추가 + 신규 write path 지정  |
-| Pencil schema 오해 방지    | "Pencil schema 그대로 채택" 문구 0건                                              |
-| events/dataBinding 위치    | core field가 아닌 extension-only로 명시 + legacy dual-storage migration path 존재 |
+| 조건                       | 통과 기준                                                                         |                             결과                             |
+| -------------------------- | --------------------------------------------------------------------------------- | :----------------------------------------------------------: |
+| core/extension/legacy 분류 | 본 문서 표와 타입 주석이 일치                                                     |                           ✅ PASS                            |
+| component props 위치       | `CanonicalNode.props?: Record<string, unknown>` 타입 추가 + 신규 write path 지정  |                           ✅ PASS                            |
+| Pencil schema 오해 방지    | "Pencil schema 그대로 채택" 문구 0건                                              |             ✅ PASS (대안 B 기각 §Decision 명시)             |
+| events/dataBinding 위치    | core field가 아닌 extension-only로 명시 + legacy dual-storage migration path 존재 | ✅ PASS (`CompositionExtension` + dual-storage inventory §3) |
 
 ## 6. Phase 1 — Canonical Document Store API
 
