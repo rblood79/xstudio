@@ -108,7 +108,7 @@ function loadPersistedRuntimeValues(): Map<string, unknown> {
 
 function savePersistedRuntimeValues(
   runtimeValues: Map<string, unknown>,
-  variables: Map<string, Variable>
+  variables: Map<string, Variable>,
 ) {
   try {
     const toSave: Record<string, unknown> = {};
@@ -233,8 +233,9 @@ export const createDataSlice: StateCreator<DataStore> = (set, get) => {
         runtimeValues,
       });
 
-      console.log(`[DataStore] Initialized: ${variables.size} variables, ${get().dataTables.size} tables`);
-
+      console.log(
+        `[DataStore] Initialized: ${variables.size} variables, ${get().dataTables.size} tables`,
+      );
     } catch (error) {
       console.error("[DataStore] Initialization failed:", error);
       set({ isLoading: false });
@@ -311,8 +312,18 @@ export const createDataSlice: StateCreator<DataStore> = (set, get) => {
 // ============================================
 
 export const useDataStore = create<DataStore>()(
-  subscribeWithSelector(createDataSlice)
+  subscribeWithSelector(createDataSlice),
 );
+
+// [ADR-916] 임시 dev 노출 — Step 1b 검증 후 제거
+declare global {
+  interface Window {
+    __data_STORE__?: typeof useDataStore;
+  }
+}
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+  window.__data_STORE__ = useDataStore;
+}
 
 // ============================================
 // Selectors (for optimized re-renders)
