@@ -79,7 +79,8 @@ composition-patterns 스킬의 규칙을 따르며 구현한다.
 
 ## Phase 3: 타입 검증
 
-구현 완료 후 Codex 기본 검증은 `npm run type-check`를 사용한다.
+구현 완료 후 Codex 기본 검증은 `pnpm run type-check` 또는 변경 파일 기준
+`pnpm run codex:typecheck`를 사용한다.
 IDE 진단 도구가 연결된 세션이면 변경 파일 diagnostics를 추가로 확인한다.
 
 - 에러 0개 확인
@@ -111,7 +112,7 @@ Storybook이나 개발 서버로 실제 렌더링을 확인한다.
 | Phase                | 생략 가능 조건                             |
 | -------------------- | ------------------------------------------ |
 | Phase 1 (React Aria) | React Aria 미지원 컴포넌트, 단순 버그 수정 |
-| Phase 3 (IDE)        | `pnpm type-check`로 대체 가능              |
+| Phase 3 (IDE)        | `pnpm run type-check`로 대체 가능          |
 | Phase 4 (브라우저)   | 서버 미실행, 시각적 변화 없는 수정         |
 
 ## 산출물 템플릿
@@ -131,7 +132,7 @@ Storybook이나 개발 서버로 실제 렌더링을 확인한다.
 - [ ] Spec 작성 (`packages/specs/src/components/`)
 - [ ] Factory 정의 (`factories/definitions/`)
 - [ ] Preview Renderer (`preview/renderers/`)
-- [ ] Canvas 연동 (`TAG_SPEC_MAP` + `pnpm build:specs`)
+- [ ] Canvas 연동 (`TAG_SPEC_MAP` + `pnpm run build:specs`)
 - [ ] Property Editor (선택)
 - [ ] `/cross-check` 렌더링 정합성 검증
 

@@ -3,64 +3,96 @@ name: composition-patterns
 description: Defines code patterns, rules, and best practices for composition Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Use when writing, reviewing, refactoring, or debugging any composition code, or when making architectural decisions about the builder.
 TRIGGER when: user mentions "코드 패턴", "규칙 확인", "컨벤션 체크", "아키텍처 규칙", "composition 규칙", "패턴 체크", "코드 리뷰 기준", "code patterns", "conventions", "architecture rules", or asks about composition coding standards, Spec rules, rendering conventions, or state management patterns.
 user-invocable: true
-scope: composition Builder codebase (apps/builder, packages/specs, packages/shared, packages/layout-flow)
+scope: composition Builder codebase (apps/builder, packages/specs, packages/shared, packages/composition-layout)
 ---
 
 # composition Patterns Skill
 
-composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
+composition 코드 작업의 rule index입니다. 이 파일은 routing용으로만 사용하고,
+세부 내용은 필요한 rule/reference를 1~3개만 골라 읽습니다.
 
-> **Codex 매크로 규칙 엔트리포인트는 `.agents/rules/`입니다.**
-> 컴포넌트/도메인별 상세 규칙은 이 디렉터리의 `rules/`와 `reference/`를 사용합니다.
+## 읽기 전략
 
-## 규칙 카테고리
+1. 변경 파일을 먼저 확인합니다.
+2. 관련 macro rule을 `.agents/rules/`에서 엽니다.
+3. 구체적 위반 가능성이 있을 때만 이 skill의 `rules/` 또는 `reference/`를
+   추가로 엽니다.
+4. legacy `.claude/*`는 macro rule이 링크한 상세가 꼭 필요할 때만 확인합니다.
 
-### CRITICAL (즉시 적용 필수)
+## Macro Rules
 
-#### Domain (domain-\*)
+| 영역                 | 먼저 볼 파일                                        | 핵심 확인                                           |
+| -------------------- | --------------------------------------------------- | --------------------------------------------------- |
+| State/Zustand        | [state-management](../../rules/state-management.md) | Memory → Index → History → DB → Preview → Rebalance |
+| Canvas/WebGL/Preview | [canvas-rendering](../../rules/canvas-rendering.md) | Spec/CSS/Canvas/Preview consumer 동시 확인          |
+| Layout               | [layout-engine](../../rules/layout-engine.md)       | `layoutVersion`, full rebuild, cache invalidation   |
+| CSS/Token            | [css-tokens](../../rules/css-tokens.md)             | token 우선, hard-coded drift 방지                   |
+| Spec SSOT            | [ssot-hierarchy](../../rules/ssot-hierarchy.md)     | D1 RAC, D2 RSP/custom, D3 Spec 시각 SSOT            |
+| ADR/Docs             | [adr-writing](../../rules/adr-writing.md)           | Risk-First 구조, README/status sync                 |
 
-- **[domain-element-hierarchy](rules/domain-element-hierarchy.md)** - Element 계층 구조
-- **[domain-o1-lookup](rules/domain-o1-lookup.md)** - O(1) 인덱스 기반 검색
-- **[domain-history-integration](rules/domain-history-integration.md)** - 히스토리 기록 필수
-- **[domain-async-pipeline](rules/domain-async-pipeline.md)** - 비동기 파이프라인 순서
-- **[domain-layout-resolution](rules/domain-layout-resolution.md)** - Page/Layout 합성
-- **[domain-delta-messaging](rules/domain-delta-messaging.md)** - Delta 메시징 패턴
-- **[domain-component-lifecycle](rules/domain-component-lifecycle.md)** - 컴포넌트 생명주기
-- **[domain-structure-change-audit](rules/domain-structure-change-audit.md)** - Element 트리 변경 시 소비자 감사
-- **[domain-section-component](rules/domain-section-component.md)** - 패널 섹션은 `Section` 컴포넌트 사용
+## 핵심 불변식
 
-#### Zustand / Validation / Styling / TypeScript
+- Element tree 변경은 direct consumer뿐 아니라 selection, history, preview sync,
+  layout, persistence consumer를 함께 감사합니다.
+- Zustand update는 index와 derived map stale 여부를 먼저 확인합니다.
+- 렌더링 변경은 `packages/specs`, `packages/shared` CSS/renderer, Builder Canvas
+  경로를 한 경로만 고치고 끝내지 않습니다.
+- React Aria 접근성/DOM behavior는 임의 재구현보다 공식 primitive와 local wrapper
+  패턴을 우선합니다.
+- Style은 token과 existing CSS layer를 우선하고, inline hard-code를 늘리지
+  않습니다.
+- postMessage는 origin 검증과 ready/buffer contract를 유지합니다.
+- `any`, `@ts-ignore`, broad cast로 계약 문제를 숨기지 않습니다.
 
-- **[zustand-childrenmap-staleness](rules/zustand-childrenmap-staleness.md)** - childrenMap stale → elementsMap 최신 조회
-- **[validation-input-boundary](rules/validation-input-boundary.md)** / **[validation-error-boundary](rules/validation-error-boundary.md)**
-- **[style-no-inline-tailwind](rules/style-no-inline-tailwind.md)** / **[style-tv-variants](rules/style-tv-variants.md)** / **[style-react-aria-prefix](rules/style-react-aria-prefix.md)** / **[style-overlay-s2-pattern](rules/style-overlay-s2-pattern.md)**
-- **style-action-icon-button** — `ActionIconButton` 사용 (`.button-base` 우회, tooltip 내장)
-- **[type-no-any](rules/type-no-any.md)** / **[type-explicit-return](rules/type-explicit-return.md)**
+## 상세 Rule Map
 
-#### PIXI / Security / Spec
+- Domain: [element hierarchy](rules/domain-element-hierarchy.md),
+  [O(1) lookup](rules/domain-o1-lookup.md),
+  [history](rules/domain-history-integration.md),
+  [async pipeline](rules/domain-async-pipeline.md),
+  [layout resolution](rules/domain-layout-resolution.md),
+  [delta messaging](rules/domain-delta-messaging.md),
+  [component lifecycle](rules/domain-component-lifecycle.md),
+  [structure audit](rules/domain-structure-change-audit.md),
+  [panel section](rules/domain-section-component.md)
+- Zustand: [childrenMap staleness](rules/zustand-childrenmap-staleness.md),
+  [factory pattern](rules/zustand-factory-pattern.md),
+  [modular files](rules/zustand-modular-files.md)
+- Spec: [build sync](rules/spec-build-sync.md),
+  [value sync](rules/spec-value-sync.md),
+  [SSOT](rules/spec-single-source-truth.md),
+  [shape rendering](rules/spec-shape-rendering.md),
+  [token usage](rules/spec-token-usage.md),
+  [container dimensions](rules/spec-container-dimension-injection.md)
+- Styling: [no inline tailwind](rules/style-no-inline-tailwind.md),
+  [tv variants](rules/style-tv-variants.md),
+  [React Aria prefix](rules/style-react-aria-prefix.md),
+  [overlay S2](rules/style-overlay-s2-pattern.md),
+  [CSS reuse](rules/style-css-reuse.md)
+- React Aria: [hooks required](rules/react-aria-hooks-required.md),
+  [no manual aria](rules/react-aria-no-manual-aria.md),
+  [stately hooks](rules/react-aria-stately-hooks.md)
+- PIXI/Canvas: [no xy props](rules/pixi-no-xy-props.md),
+  [hybrid layout](rules/pixi-hybrid-layout-engine.md),
+  [hit rect](rules/pixi-container-hit-rect.md),
+  [border box](rules/pixi-border-box-model.md),
+  [text isLeaf](rules/pixi-text-isleaf.md),
+  [absolute hitarea](rules/pixi-hitarea-absolute.md),
+  [viewport culling](rules/pixi-viewport-culling.md),
+  [no flex height](rules/pixi-no-flex-height.md)
+- Inspector/Preview: [inline styles](rules/inspector-inline-styles.md),
+  [history sync](rules/inspector-history-sync.md),
+  [postMessage origin](rules/postmessage-origin-verify.md),
+  [buffer ready](rules/postmessage-buffer-ready.md)
+- Quality: [input boundary](rules/validation-input-boundary.md),
+  [error boundary](rules/validation-error-boundary.md),
+  [no any](rules/type-no-any.md),
+  [explicit return](rules/type-explicit-return.md),
+  [tests/stories](rules/test-stories-required.md),
+  [perf checklist](rules/perf-checklist.md),
+  [map/set lookups](rules/perf-map-set-lookups.md)
 
-- **[pixi-direct-container](rules/pixi-no-xy-props.md)** / **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** / **[pixi-container-hit-rect](rules/pixi-container-hit-rect.md)**
-- **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
-- **[spec-build-sync](rules/spec-build-sync.md)** / **[spec-value-sync](rules/spec-value-sync.md)**
-
-> **layoutVersion, order_num, WASM 초기화, display 전환, Field Component, Spec↔CSS 경계** 등의 매크로 규칙은 `.agents/rules/` (canvas-rendering.md, layout-engine.md, state-management.md)와 이 디렉터리의 상세 규칙을 함께 참조합니다.
-
-### HIGH (강력 권장)
-
-- **[arch-reference-impl](rules/arch-reference-impl.md)** / **[spec-single-source-truth](rules/spec-single-source-truth.md)** / **[spec-shape-rendering](rules/spec-shape-rendering.md)** / **[spec-token-usage](rules/spec-token-usage.md)**
-- **spec-text-style** — `extractSpecTextStyle()` 사용, fontSize/fontWeight 하드코딩 금지
-- **[spec-container-dimension-injection](rules/spec-container-dimension-injection.md)** — `_containerWidth`/`_containerHeight` props 주입
-- **[style-css-reuse](rules/style-css-reuse.md)** / **[react-aria-hooks-required](rules/react-aria-hooks-required.md)** / **[react-aria-no-manual-aria](rules/react-aria-no-manual-aria.md)** / **[react-aria-stately-hooks](rules/react-aria-stately-hooks.md)**
-- **[supabase-no-direct-calls](rules/supabase-no-direct-calls.md)** / **[supabase-service-modules](rules/supabase-service-modules.md)** / **[supabase-rls-required](rules/supabase-rls-required.md)**
-- **[zustand-factory-pattern](rules/zustand-factory-pattern.md)** / **[zustand-modular-files](rules/zustand-modular-files.md)**
-- **[postmessage-buffer-ready](rules/postmessage-buffer-ready.md)** / **[inspector-inline-styles](rules/inspector-inline-styles.md)** / **[inspector-history-sync](rules/inspector-history-sync.md)**
-- **[pixi-border-box-model](rules/pixi-border-box-model.md)** / **[pixi-text-isleaf](rules/pixi-text-isleaf.md)** / **[pixi-hitarea-absolute](rules/pixi-hitarea-absolute.md)** / **[pixi-viewport-culling](rules/pixi-viewport-culling.md)**
-
-### MEDIUM
-
-- **[pixi-no-flex-height](rules/pixi-no-flex-height.md)** / **[perf-checklist](rules/perf-checklist.md)** / **[perf-map-set-lookups](rules/perf-map-set-lookups.md)** / **[test-stories-required](rules/test-stories-required.md)**
-
-## 상세 레퍼런스
+## Reference Map
 
 | 도메인                     | 파일                                                                               |
 | -------------------------- | ---------------------------------------------------------------------------------- |
@@ -71,100 +103,21 @@ composition Builder의 코드 패턴, 규칙 및 모범 사례 통합 스킬.
 | Style Panel                | [reference/style-panel.md](reference/style-panel.md)                               |
 | Component Registry         | [reference/component-registry.md](reference/component-registry.md)                 |
 
-## 서브에이전트 위임 가이드라인
+## 병렬/위임 경계
 
-### 수정 금지 패턴 (Protected Patterns)
+- 사용자가 병렬/서브에이전트를 명시한 경우에만 위임합니다.
+- 위임 시 파일/모듈 ownership을 분리하고, 서로의 변경을 revert하지 말라고
+  명시합니다.
+- 구현 위임은 disjoint write set으로 나눕니다.
 
-```
-1. _hasChildren 패턴 (삭제/이동/조건 변경 금지)
-2. CHILD_COMPOSITION_EXCLUDE_TAGS 관련 로직
-3. ElementSprite.tsx의 _hasChildren 주입 로직
-4. rearrangeShapesForColumn / SPEC_RENDERS_ALL_TAGS_SET 가드
-5. TAG_SPEC_MAP 등록 로직
-```
+## 검증
 
-### 위임 템플릿
+- 기본 완료 gate: `pnpm run codex:preflight`
+- Spec/CSS 영향: `pnpm run build:specs` 필요 여부 확인
+- Canvas/Preview 시각 영향: `cross-check` 또는 브라우저/Playwright 검증
+- 문서-only 변경이면 type-check를 생략할 수 있지만, 생략 이유를 결과에 남깁니다.
 
-```markdown
-## 작업 범위
+## 발동 제외
 
-[구체적 수정 내용만 기술]
-
-## 수정 대상 파일
-
-[파일 목록]
-
-## 수정 패턴
-
-[Before → After 예시 코드]
-
-## 수정 금지
-
-- \_hasChildren, COMPLEX_COMPONENT_TAGS, shapes early return, 요청 범위 외 리팩토링
-```
-
-## 공통 세션 프로토콜
-
-### 세션 시작
-
-1. `Read .agents/progress.md` — Codex 엔트리포인트
-2. `Read .agents/agent-memory/{자신}/MEMORY.md` — 역할별 요약 메모
-3. 필요 시 링크된 legacy `.claude/...` 파일까지 열어 세부 이력을 확인
-4. 중복 작업 방지, 막힌 지점 이어가기
-
-### 세션 종료
-
-1. progress.md 갱신 (완료/진행 중/이슈)
-2. agent-memory 갱신 (발견사항 기록)
-3. 빌드 통과, 커밋 가능한 상태 보장
-
-### 에러 복구
-
-- 같은 에러 3회 반복 금지 → 2회 실패 후 전략 전환
-- `any`/`@ts-ignore` 우회 금지
-- 불확실 시 질문, 해결 불가 시 에스컬레이션
-
-### 출력 크기 제한
-
-- 반환은 1,000~2,000 토큰 이내 구조화된 요약
-- 상세 → 파일 저장 후 경로만 반환
-
-## ADR
-
-- **[ADR-001](../../../docs/adr/001-state-management.md)** Zustand | **[ADR-002](../../../docs/adr/002-styling-approach.md)** ITCSS+tv() | **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** Canvas
-- **[ADR-004](../../../docs/adr/004-preview-isolation.md)** iframe | **[ADR-005](../../../docs/adr/005-css-text-wrapping.md)** Text Wrap | **[ADR-008](../../../docs/adr/008-layout-engine.md)** Taffy
-- **[Component Spec](../../../docs/COMPONENT_SPEC.md)** 단일 소스 아키텍처
-
-## 규칙 효과 측정
-
-규칙의 실제 효과를 추적하여 컨텍스트 예산을 최적화합니다.
-
-### 측정 템플릿
-
-리뷰 세션은 `.agents/agent-memory/reviewer/MEMORY.md`에 기록:
-
-| 규칙     | 위반 수 | False Positive | 실효성          | 비고 |
-| -------- | ------- | -------------- | --------------- | ---- |
-| (규칙명) | N       | N              | HIGH/MEDIUM/LOW |      |
-
-### 정리 기준
-
-- **위반 0 + 3개월 이상**: Codex가 내재화했을 가능성 → 제거 후보 (컨텍스트 절약)
-- **False Positive > 50%**: 규칙 조건이 너무 넓음 → 조건 좁히기
-- **위반 빈번 + 실효성 LOW**: 규칙이 모호함 → Why 보강 또는 코드 레벨 방지로 전환
-
-## Evals
-
-### Positive (발동해야 하는 경우)
-
-- "캔버스에서 텍스트가 잘려요" → ✅ 캔버스 렌더링 규칙 참조 필요
-- "Zustand store에 슬라이스 추가하려면?" → ✅ 상태 관리 규칙 참조
-- "이 코드가 composition 컨벤션에 맞나?" → ✅ 규칙 인덱스 조회
-- "Spec 파일 새로 만들 때 주의사항?" → ✅ Spec 빌드/등록 규칙
-
-### Negative (발동하면 안 되는 경우)
-
-- "README 업데이트해줘" → ❌ 문서 작업, 코드 패턴 무관
-- "git commit 해줘" → ❌ Git 작업
-- "이 React 훅 설명해줘" (일반 React) → ❌ composition 특화 아님
-- "TypeScript 타입 추론 원리가 뭐야?" → ❌ 일반 TS 지식
+- 단순 README/문서 오타, Git commit/push만 요청, 일반 React/TypeScript 질문,
+  repository 설정만 바꾸는 작업에는 기본적으로 이 skill을 열지 않습니다.

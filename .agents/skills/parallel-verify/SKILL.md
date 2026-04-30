@@ -56,7 +56,7 @@ user_invocable: true
 
 1. 각 에이전트의 발견사항을 통합 테이블로 정리
 2. CRITICAL/HIGH 이슈를 우선 수정
-3. `pnpm build:specs && pnpm type-check`로 검증
+3. `pnpm run build:specs`와 `pnpm run codex:typecheck` 필요 여부를 확인하고 검증
 4. 최종 결과 보고
 
 ## Evals

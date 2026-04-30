@@ -119,6 +119,37 @@ while (이슈 테이블에 미해결 CRITICAL/HIGH 존재):
 
 개발 서버(`localhost:5173`)가 실행 중이면 Chrome MCP로 **Skia Canvas ↔ Preview iframe ↔ Style Panel** 세 축 대칭을 프로그래매틱 + visual 이중 확증합니다. 세션 16 (2026-04-22) ADR-082 G4 / ADR-056 / ADR-064 재확증에서 확립된 패턴.
 
+### 5.0 사전 게이트 — dist 신선도 확인 (CRITICAL)
+
+> **Why**: spec source 변경 후 `pnpm build:specs` 누락 시 dev 서버는 stale dist 를 서빙하여 Phase 5 시각 검증이 거짓 통과/거짓 실패를 낳음. ADR-057/058 verification 중 "stale specs/dist requiring rebuild" hidden cause 재발 방지.
+
+Chrome MCP 진입 전 반드시 아래 절차 수행:
+
+```bash
+# 1) flag 파일 확인 (PostToolUse spec-rebuild-flag.sh 가 생성)
+test -f "$CLAUDE_PROJECT_DIR/.claude/.spec-rebuild-pending" && echo "STALE" || echo "FRESH"
+
+# 2) STALE 또는 mtime 비교에서 stale 감지 시 강제 rebuild
+SRC_MAX=$(find packages/specs/src -name '*.ts' -newer packages/specs/dist/index.js 2>/dev/null | head -1)
+GEN_MAX=$(find packages/shared/src/components/styles/generated -name '*.css' 2>/dev/null | head -1)
+if [ -n "$SRC_MAX" ] || [ ! -d packages/specs/dist ] || [ -z "$GEN_MAX" ]; then
+  pnpm build:specs
+  rm -f "$CLAUDE_PROJECT_DIR/.claude/.spec-rebuild-pending"
+fi
+
+# 3) dev 서버 hard reload (Vite HMR 이 spec dist 변경을 항상 picks up 하지 않음)
+#    Chrome MCP javascript_tool 또는 reload navigation 사용
+```
+
+검증 기준:
+
+- [ ] `packages/specs/dist/` 존재
+- [ ] `packages/shared/src/components/styles/generated/` 디렉토리에 ≥1 CSS 파일
+- [ ] flag 파일 (`.claude/.spec-rebuild-pending`) 미존재
+- [ ] (선택) `dist/index.js` mtime ≥ 가장 최근 `packages/specs/src/**/*.ts` mtime
+
+신선도 미충족 시 Phase 5 진입 금지. rebuild 후 재검증.
+
 ### 5.1 탭 세팅 (재사용 원칙)
 
 ```
