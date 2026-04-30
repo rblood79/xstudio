@@ -340,10 +340,39 @@ rg -n "layout_id|slot_name|componentRole|masterId" apps/builder/src/builder apps
 - `apps/builder/src/builder/stores/canonical/__tests__/canonicalDocumentSync.test.ts` (신규, **11 test PASS**)
   - lifecycle 3 + null projectId 2 + propagation 5 + microtask coalesce 1
 
-**Step 1b 진입 prerequisite (다음 세션)**:
+**Step 1b 분해 (작업량 재추정)**:
 
-- `startCanonicalDocumentSync()` 호출을 builder 부트스트랩 (`apps/builder/src/main.tsx` 또는 project init effect) 에 추가 — Step 1b 진입 시점 함께 land 권장
-- LayerTree dual-mode cutover (`useLayerTreeData.ts` 가 feature flag 활성화 시 `useActiveCanonicalDocument()` 사용 + canonical → LayerTreeNode 변환 helper)
+design §7-B 의 "LayerTree pilot 1-2d MED" 가 단일 PR 가정이었으나, 본 step 진입 시점 실측 분해:
+
+| Sub-step  | risk | est   | 비고                                                       |
+| --------- | ---- | ----- | ---------------------------------------------------------- |
+| Step 1b-1 | LOW  | ~30분 | Bootstrap 호출 + env flag (default false 보수)             |
+| Step 1b-2 | MED  | ~1d   | LayerTree dual-mode cutover (canonical → LayerTreeNode)    |
+| Step 1b-3 | MED  | ~1-2h | Chrome MCP visual evidence (legacy vs canonical 시각 정합) |
+
+#### Step 1b-1: Bootstrap 호출 + env flag ✅ (2026-05-01)
+
+**결정 분기**: D10=B (Builder mount lifecycle) / D11=β (Step 1b-1 단독 land) / D12=i (flag default `false` 보수).
+
+**산출물**:
+
+- `apps/builder/src/utils/featureFlags.ts` 에 `isCanonicalDocumentSyncEnabled()` getter 추가 (`VITE_ADR916_DOCUMENT_SYNC`, default `false`)
+- `apps/builder/src/builder/main/BuilderCore.tsx` mount useEffect 에 `startCanonicalDocumentSync()` 호출 (flag enabled 시) + cleanup unsubscribe → Builder route 이탈 시 sync 자동 정리
+
+**회귀 안전망**: default `false` 이므로 production 영향 0. flag enable 은 Step 1b-2 진입 사용자 검증 시점.
+
+**검증**:
+
+| 검증                        | 결과           | 비고                                                   |
+| --------------------------- | -------------- | ------------------------------------------------------ |
+| `pnpm turbo run type-check` | 3/3 successful | builder cache miss 291ms                               |
+| vitest (canonical 전체)     | 70/70 PASS     | apps/builder cwd — 회귀 0                              |
+| flag 패턴 정합              | ✅             | `isFramesTabCanonical()` (ADR-911 P2) 와 동일 시그니처 |
+
+#### Step 1b-2 진입 prerequisite (다음 세션):
+
+- 사용자 환경에서 `VITE_ADR916_DOCUMENT_SYNC=true` 명시 enable + dev 검증 (canonical store mutation 시 update 확인)
+- `useLayerTreeData.ts` dual-mode cutover (canonical → LayerTreeNode 변환 helper + virtual children + ref/instance 분기)
 - Chrome MCP visual evidence (legacy vs canonical 모드 LayerTree 표시 정합성)
 
 **검증 evidence**:

@@ -39,6 +39,14 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ land)
   - **unit test land** — `apps/builder/src/builder/stores/canonical/__tests__/canonicalDocumentSync.test.ts` 신규: lifecycle 3 + null projectId 2 + propagation 5 + microtask coalesce 1 = **11 test PASS**. test scheduler override 패턴 (`setSyncScheduler((cb) => cb())`) 으로 microtask flush 대기 없이 결과 검증 가능, default `queueMicrotask` 회복 시 coalesce 검증 (3 mutation → 1 sync, version diff = 1).
   - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 313ms) + vitest canonical 전체 70/70 PASS (37 store + 22 bridge + 11 sync — 회귀 0).
   - **Gate G3 진행률**: 5/5 hot path 중 0/5 path 실 cutover. Sub-Phase B Step 1b (LayerTree pilot) 진입 가능 — `useActiveCanonicalDocument()` 가 실제 데이터 수신할 backbone 완성. legacy mutation → canonical store 자동 mirror 경로 단방향 sync 가동.
+- **2026-05-01 — Phase 2 G3 Sub-Phase B Step 1b-1: Bootstrap 호출 + env flag land**:
+  - **결정 분기 D10=B / D11=β / D12=i** — Builder mount lifecycle 에 sync 호출 (route 이탈 시 cleanup 자동) + Step 1b-1 단독 land (LayerTree dual-mode cutover 는 Step 1b-2 다음 세션) + flag default `false` (보수, LayerTree pilot 검증 시점 사용자 명시 enable).
+  - **재추정 발견**: design §7-B "LayerTree pilot 1-2d MED" 가 단일 PR 가정이었으나 실측 작업 분해 시 (1) Bootstrap + flag = LOW ~30분, (2) LayerTree dual-mode cutover = MED ~1d, (3) Chrome MCP visual evidence = MED ~1-2h. Step 1b 가 1b-1 / 1b-2 / 1b-3 으로 세분화. 본 commit = 1b-1 만.
+  - **flag land** — `apps/builder/src/utils/featureFlags.ts` 에 `isCanonicalDocumentSyncEnabled()` getter 추가 (`VITE_ADR916_DOCUMENT_SYNC` env, default `false`). 기존 `isFramesTabCanonical()` (ADR-911 P2) 패턴 정합 — `parseBoolean` + env override + emergency rollback (`VITE_ADR916_DOCUMENT_SYNC=false` 즉시 비활성화).
+  - **bootstrap 호출 land** — `apps/builder/src/builder/main/BuilderCore.tsx` import chain 에 `isCanonicalDocumentSyncEnabled` + `startCanonicalDocumentSync` 추가. mount useEffect (history useEffect 직전 위치, deps `[]`): flag enabled 시 `startCanonicalDocumentSync()` 호출 + cleanup 으로 unsubscribe 함수 반환 → Builder route 이탈 시 sync 자동 정리.
+  - **회귀 안전망**: default `false` 이므로 production 영향 0 — Step 1b-2 진입 사용자 검증 후 명시 enable. canonical store hydrated 되어도 hot path consumer 가 없어 메모리 cost 만 발생 (LayerTree cutover 시점에 의미 발현).
+  - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 291ms) + vitest canonical 전체 70/70 PASS (apps/builder cwd, 회귀 0). root cwd 실행 시 jsdom 환경 분리 이슈는 pre-existing config 한계 — 본 변경 무관, apps/builder cwd 에서 정상.
+  - **Step 1b-2 진입 prerequisite (다음 세션)**: (1) 사용자 환경에서 `VITE_ADR916_DOCUMENT_SYNC=true` 명시 enable + dev console 로그 확인 (canonical store 가 mutation 시 update 되는지), (2) `useLayerTreeData.ts` dual-mode cutover (canonical → LayerTreeNode 변환 helper + virtual children + ref/instance 분기), (3) Chrome MCP visual evidence (legacy vs canonical 모드 LayerTree 표시 정합성).
 
 ## Context
 

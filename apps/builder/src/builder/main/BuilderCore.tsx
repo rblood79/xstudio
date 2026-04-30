@@ -19,7 +19,12 @@ import { BuilderCanvas } from "./BuilderCanvas";
 
 import { BuilderViewport } from "./BuilderViewport";
 import { Workspace } from "../workspace";
-import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
+import {
+  isWebGLCanvas,
+  isCanvasCompareMode,
+  isCanonicalDocumentSyncEnabled,
+} from "../../utils/featureFlags";
+import { startCanonicalDocumentSync } from "../stores/canonical/canonicalDocumentSync";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import {
   ToastContainer,
@@ -90,6 +95,18 @@ export const BuilderCore: React.FC = () => {
   const toggleWorkflowOverlay = useStore(
     (state) => state.toggleWorkflowOverlay,
   );
+
+  // ADR-916 Phase 2 G3 Sub-Phase B Step 1b-1 — Canonical document write-through sync.
+  //
+  // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 legacy 3 store mutation 을 canonical
+  // store 에 자동 mirror. default `false` — Step 1b-2 (LayerTree dual-mode cutover)
+  // 진입 시점에 사용자 명시 enable. mount/unmount lifecycle 에 묶어 Builder route
+  // 이탈 시 sync 자동 정리.
+  useEffect(() => {
+    if (!isCanonicalDocumentSyncEnabled()) return;
+    const stop = startCanonicalDocumentSync();
+    return stop;
+  }, []);
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {

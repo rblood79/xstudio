@@ -174,6 +174,27 @@ export function isFramesTabCanonical(): boolean {
 }
 
 /**
+ * Canonical document sync 활성화 여부 (ADR-916 Phase 2 G3 Sub-Phase B Step 1b-1).
+ *
+ * `true` 일 때 Builder 컴포넌트 mount 시 `startCanonicalDocumentSync()` 호출 →
+ * legacy 3 store (`useStore` / `useLayoutsStore` / `useDataStore`) mutation 을
+ * canonical store 에 자동 mirror.
+ *
+ * **default `false` (보수적)**: Step 1b-2 (LayerTree dual-mode cutover) 진입 전
+ * 까지는 canonical store 가 hydrated 되어도 hot path consumer 가 없으므로
+ * production 영향 0. flag enable 은 LayerTree pilot 검증 시점에 사용자 명시
+ * 결정.
+ *
+ * **rollback 경로**: env override `VITE_ADR916_DOCUMENT_SYNC=false` 로 즉시
+ * 비활성화 가능. canonical store 가 비어 있어도 5 hot path 는 legacy 경로 유지.
+ *
+ * @returns true if write-through sync should start on Builder mount (default false)
+ */
+export function isCanonicalDocumentSyncEnabled(): boolean {
+  return parseBoolean(import.meta.env.VITE_ADR916_DOCUMENT_SYNC, false);
+}
+
+/**
  * 모든 Feature Flags 조회
  *
  * @returns 현재 Feature Flags 상태
