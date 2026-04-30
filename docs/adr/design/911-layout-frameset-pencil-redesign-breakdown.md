@@ -1,6 +1,6 @@
 # ADR-911 Layout/Slot Frameset 완전 재설계 — 구현 상세
 
-> **상위 ADR**: [ADR-911](../911-layout-frameset-pencil-redesign.md) (Status: Proposed — 2026-04-26)
+> **상위 ADR**: [ADR-911](../911-layout-frameset-pencil-redesign.md) (Status: In Progress — 2026-04-30)
 > **의존 ADR**: ADR-903 (Implemented 2026-04-26) — P3-E E-6 IndexedDB migration 완료 후 진입
 > **총 예상 규모**: ~42h / 5 Phase (P1 8h → P2 12h → P3 8h → P4 8h → P5 6h)
 
@@ -510,6 +510,21 @@ pnpm type-check
 ### 목적
 
 `layoutActions.ts` 의 4 core cascade action (`deleteLayout` / `cloneLayout` / `addPageToLayout` / `removePageFromLayout`) 을 canonical FrameNode mutation 으로 완전 재작성. legacy `layout_id` 기반 cascade 완전 제거. 50+ fixture roundtrip 테스트.
+
+### 2026-04-30 중간 hardening: legacy cascade slices
+
+G3 전체 canonical 전환 전, 사용자 가시 회귀를 먼저 닫은 slices:
+
+- Slice #1 `duplicateLayout` immediate merge:
+  - `createDuplicateLayoutAction` 은 cloned layout element subtree 를 IndexedDB 에 `insertMany` 한 뒤 live Zustand `elementsMap` 에 merge 하지 않았다.
+  - 그 결과 Frame 복제 직후 새 body/Slot 이 Frames authoring surface 에 즉시 나타나지 않고, 새로고침 후에야 DB snapshot 으로 복원될 수 있었다.
+  - fix: clone payload 의 새 `layout_id`, 새 id, remapped `parent_id`, `page_id:null` 을 유지한 채 `mergeElements(newElements)` 를 같은 턴에 호출한다.
+- Slice #2 `deleteLayout` orphan page-ref cleanup:
+  - canonical frame projection 이 없어 element cascade 를 skip 하는 삭제 경로에서도 Page `layout_id` 를 삭제되는 layout id 로 남겨둘 수 있었다.
+  - fix: `db.pages.getAll()` 기반 Page ref cleanup 은 projection guard 밖에서 항상 실행하고, element deletion 만 `frameExists` guard 안에 둔다.
+- test: `apps/builder/src/builder/stores/utils/__tests__/layoutActions.test.ts` 가 DB insert/store merge payload 와 frame projection 없음 + page ref cleanup 을 함께 검증한다.
+
+주의: 이 slice 는 legacy `layoutActions.ts` 안정화이며 G3 최종 조건을 대체하지 않는다. 아래 canonical-native `deleteReusableFrame` / `duplicateReusableFrame` / `setPageFrameRef` 전환과 50+ fixture roundtrip 은 계속 잔여다.
 
 ### P3-a: deleteLayout → deleteReusableFrame (canonical)
 

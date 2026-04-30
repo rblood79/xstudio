@@ -2,13 +2,13 @@
 
 ## Status
 
-Ready to Resume — 2026-04-30 (ADR-912 Component/Slot base Implemented, 편의 확장만 재개)
+In Progress — 2026-04-30 (P3-ε/P3-ζ closure + G3 cascade slices #1~#2, G4/G5 잔여)
 
 > **재개 사유** (2026-04-30): 본 ADR 은 ADR-912 (Editing Semantics UI — reusable component + slot 추상) 의 **frame-bundled preset 편의 확장** 임이 framing 재정의 됐고, 2026-04-30 ADR-912 가 Component/Slot base 를 `Implemented` 로 승격했다. 본 ADR 은 여전히 ADR-912 에 영향을 주거나 기준을 제공하지 않는다. `Frame.reusable` / `Frame.slot` / `Ref.descendants` schema 의 사용자 가시 편집 base 는 ADR-912 기준을 따른다. 본 ADR 의 이전 ##Slot section## 소유권 표현은 잘못된 설계 전제였고, ADR-912 기준으로 supersede 된다. **재개 범위**: P3-ε / P3-ζ 는 FramesTab / frame preset UX 가 완료된 ADR-912 기능을 더 쉽게 쓰게 하는 보조 흐름으로만 재설계한다.
 
 > **동결 보존 범위**: Phase 0~2 (Implemented) + Phase 3 의 P3-α/β/γ/δ + δ fix #1+#2+#3+#4 + B1 filter + θ scope land + θ regression fix #1 (~commit `e4f24697` + 세션 49 후속) 모두 보존. P3-θ regression fix #1 은 frame instance composition body 채택 정책 GREEN — frame schema 자체 land 는 ADR-912 base 와 무관하게 실 사용자 가시 동작 (frame default + page slot fill) 보존 가치.
 
-> **재개 조건**: 충족됨. ADR-912 Component/Slot base 완료(2026-04-30). 재개 시 P3-ε / P3-ζ 는 ADR-912 기능의 frame authoring 편의 확장으로만 재설계 진입한다.
+> **재개 조건 및 closure 결과**: 충족됨. ADR-912 Component/Slot base 완료(2026-04-30) 후 P3-ε / P3-ζ 는 ADR-912 기능의 frame authoring 편의 확장으로 재설계했고, 사용자 브라우저 회귀 검증까지 완료했다. G3 cascade 는 `duplicateLayout` write-through slice #1 과 `deleteLayout` orphan page-ref cleanup slice #2 까지 보강했으나, ADR-911 전체는 아직 G3 canonical-native cascade 완결 / G4 legacy adapter 0 / G5 pencil 호환 검증 잔여가 있으므로 `Implemented` 로 승격하지 않는다.
 
 ### 진행 로그
 
@@ -203,6 +203,28 @@ Ready to Resume — 2026-04-30 (ADR-912 Component/Slot base Implemented, 편의 
 - **2026-04-30 — 재개 조건 충족**:
   - ADR-912 가 Component/Slot base 와 G4-A~H gate 를 `Implemented` 로 닫음.
   - 본 ADR 의 P3-ε / P3-ζ 는 이제 재개 가능하나, scope 는 ADR-912 기능을 호출하거나 추천값/preset/FramesTab 편의 진입점을 제공하는 확장으로만 제한한다.
+- **2026-04-30 — P3-ε drag gate Pencil 기준 재정의**:
+  - `docs/pencil-copy` 기준으로 drag 는 Frame 전용 특수 기능이 아니라 document node 의 canvas 직접 조작이다. `x/y` 는 drag 로 갱신되지만, layout 이 위치를 소유하는 경우에는 자유 이동이 아니라 layout-aware reorder/drop 으로 commit 된다.
+  - Frames tab multi-canvas overview 의 Frame canvas 자체 위치는 overview layout 이 소유한다. 따라서 P3-ε 는 "Frame canvas 자유 drag" 를 필수 gate 로 두지 않고, Frame body/Slot/child hit-test + selection + hover + Node tree/Properties sync 를 필수로 둔다. Drag 는 manual-position child 에서 local `x/y` 갱신, auto-layout child 에서 reorder/drop intent, overview Frame canvas 에서 explicit non-draggable 로 정리한다.
+- **2026-04-30 — P3-ε implementation slice #1**:
+  - Frame body 빈 영역 hover 에 이어 selection fallback 도 rendered frame area 의 topmost order 와 맞춘다.
+  - Canvas drag gate 는 `position:absolute` manual-position child 를 reorder/drop path 에 태우지 않고 drag delta 를 `style.left/top` 으로 commit 한다. Auto-layout child 는 기존 layout-aware reorder/drop path 를 유지하고, body 는 기존처럼 drag 대상에서 제외한다.
+  - 사용자 dev 검증: Frame body / Slot 선택 후 Properties/Style 패널의 Transform·Layout 변경이 적용됨을 확인했다. 이는 P3-ε 의 Node tree/Properties sync 항목을 충족한다.
+  - 검증: `useElementHoverInteraction.test.ts`, `useDragBridge.test.ts`, `selectionHitTest.test.ts` targeted Vitest + builder type-check PASS.
+- **2026-04-30 — P3-ζ browser regression closure**:
+  - 사용자 브라우저 검증으로 Frames 탭 기본 렌더, 새로고침 후 body/slot 유지, Pages↔Frames 전환, Frame body/Slot hover+selection, Transform/Layout 편집, Frame 적용 Page, 동일 Frame 다중 Page 적용, Tabs 복합 컴포넌트 회귀, drag 위치 소유권 기준을 모두 확인했다.
+  - 이로써 P3-δ (c) Chrome 사용자 시나리오, G3-θ (d) screenshot/user scenario, G3-ε, G3-ζ 를 frame authoring 편의 확장 범위에서 닫는다.
+  - 다음 잔여는 ADR-911 본문 Gate 기준의 G3 cascade 회귀 0, G4 legacy adapter 0건 + 명칭 충돌 해소, G5 pencil import/export schema-equivalent 검증이다.
+- **2026-04-30 — G3 cascade slice #1 (`duplicateLayout` immediate merge)**:
+  - `createDuplicateLayoutAction` 이 cloned layout element subtree 를 IndexedDB 에 `insertMany` 한 뒤 live Zustand `elementsMap` 에 merge 하지 않아, 복제한 Frame body/Slot 이 새로고침 전 authoring surface 에 누락될 수 있는 회귀를 보강했다.
+  - cloned subtree 는 새 `layout_id`, 새 id, remapped `parent_id`, `page_id:null` 을 유지하며, DB write-through 와 같은 턴에 `mergeElements(newElements)` 로 store 를 동기화한다.
+  - 회귀 테스트: `layoutActions.test.ts` 에 slot+child 포함 frame clone fixture 를 추가해 DB insert payload 와 live store merge 를 함께 검증한다.
+  - 잔여: G3 전체 완료 조건인 canonical-native `deleteReusableFrame` / `duplicateReusableFrame` / `setPageFrameRef` 전환, 50+ fixture roundtrip, undo/redo 검증은 아직 남아 있다.
+- **2026-04-30 — G3 cascade slice #2 (`deleteLayout` orphan page-ref cleanup)**:
+  - `createDeleteLayoutAction` 의 canonical frame projection guard 는 element cascade skip 용도로 유지하되, 삭제되는 layout row 를 참조하는 Page `layout_id` 는 frame projection 유무와 무관하게 항상 `null` 로 해제한다.
+  - 이로써 stale layout row 삭제나 projection race 상황에서도 Page 가 존재하지 않는 Frame 을 계속 가리키는 orphan reference 를 남기지 않는다.
+  - 회귀 테스트: canonical document 에 frame 이 없는 삭제 시나리오에서 `removeElements` 는 호출하지 않지만 `db.pages.update(pageId, { layout_id:null })` 와 live `setPages` 는 실행됨을 검증한다.
+  - 잔여: element cascade 자체는 아직 `layout_id` legacy fallback 기반이며, canonical-native frame subtree mutation 으로의 완전 전환은 후속 G3 작업이다.
 
 ## Context
 
@@ -238,6 +260,11 @@ Ready to Resume — 2026-04-30 (ADR-912 Component/Slot base Implemented, 편의 
    - frame 1 개 선택 시 Properties (Inspector) 패널의 별도 ##Slot section## 에 노출되는 base UI 는 ADR-912 가 소유
    - `Frame.slot: false | string[]` schema 호환과 `[+]` / `[-]` 기본 동작도 ADR-912 gate 에서 완료
    - 본 ADR 은 Slot section 을 새로 정의하지 않는다. 이후 FramesTab / preset UX 에서 해당 ADR-912 기능을 호출하거나 추천값을 제공하는 편의 확장만 가능
+7. **Pencil drag semantics** — canvas drag 는 위치 소유권을 따른다:
+   - manual-position node 는 drag 로 local `x/y` 를 갱신
+   - auto-layout child 는 자유 `x/y` 이동 대신 layout-aware reorder/drop intent 로 commit
+   - Frames tab overview 의 Frame canvas 자체는 overview layout 이 위치를 소유하므로 자유 drag 로 `framePositions.x/y` 를 저장하지 않음
+   - selection / hover / LayerTree sync / Properties sync 는 frame body 와 slot 에서 필수
 
 ### Soft Constraints
 

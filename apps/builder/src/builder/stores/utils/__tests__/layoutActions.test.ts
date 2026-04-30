@@ -16,6 +16,7 @@ import {
   createFetchLayoutsAction,
   createGetLayoutSlotsAction,
   createDeleteLayoutAction,
+  createDuplicateLayoutAction,
 } from "../layoutActions";
 import type { Element, Page } from "../../../../types/builder/unified.types";
 import type { Layout } from "../../../../types/builder/layout.types";
@@ -49,6 +50,19 @@ function makeElement(
     updated_at: new Date().toISOString(),
     ...opts,
   } as Element;
+}
+
+function makePage(id: string, opts: Partial<Page> = {}): Page {
+  return {
+    id,
+    title: id,
+    project_id: "proj-1",
+    slug: `/${id}`,
+    order_num: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    ...opts,
+  };
 }
 
 async function mockElementsState(elements: Element[] = [], pages: Page[] = []) {
@@ -323,15 +337,18 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     await mockElementsState();
   });
 
-  it("canonical document 에 없는 layout 삭제 시 elements 를 제거하지 않는다", async () => {
+  it("canonical document 에 없는 layout 삭제 시 elements 는 제거하지 않고 page ref 는 해제한다", async () => {
     const layoutId = "layout-del-1";
 
     const removeElements = vi.fn(async () => {});
     const setPages = vi.fn();
+    const pageUsingLayout = makePage("page-1", { layout_id: layoutId });
+    const pageWithoutLayout = makePage("page-2", { layout_id: null });
+    const pages = [pageUsingLayout, pageWithoutLayout];
 
     vi.mocked(elementsStoreModule.useStore).getState = vi.fn(() => ({
       elementsMap: new Map<string, Element>(),
-      pages: [] as Page[],
+      pages,
       removeElements,
       setPages,
       mergeElements: vi.fn(),
@@ -340,11 +357,15 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
       await vi.importActual<typeof import("../../elements")>("../../elements");
     actualElementsModule.useStore.setState({
       elementsMap: new Map<string, Element>(),
-      pages: [] as Page[],
+      pages,
       removeElements,
       setPages,
       mergeElements: vi.fn(),
     } as Partial<ReturnType<typeof actualElementsModule.useStore.getState>>);
+
+    const { getDB } = await import("../../../../lib/db");
+    const db = await (getDB as ReturnType<typeof vi.fn>)();
+    db.pages.getAll.mockResolvedValue(pages);
 
     const mockSet = vi.fn();
     const mockGet = vi.fn(() => ({
@@ -358,6 +379,13 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
 
     // elements 제거 호출이 없어야 함 (cascade 대상 없음)
     expect(removeElements).not.toHaveBeenCalled();
+    expect(db.pages.update).toHaveBeenCalledWith("page-1", {
+      layout_id: null,
+    });
+    expect(setPages).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "page-1", layout_id: null }),
+      expect.objectContaining({ id: "page-2", layout_id: null }),
+    ]);
   });
 
   it("layout_id 기반 elements 를 여전히 DB에서 로드하여 cascade 삭제한다 (P3-D 과도기)", async () => {
@@ -409,5 +437,124 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
     expect(removeElements).toHaveBeenCalledWith(
       expect.arrayContaining(["el-1", "el-2"]),
     );
+  });
+});
+
+describe("P3-D-3: createDuplicateLayoutAction cascade", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await mockElementsState();
+  });
+
+  it("복제한 layout element subtree 를 새 layout_id/parent_id 로 remap 하고 store 에 즉시 merge 한다", async () => {
+    const layoutId = "layout-source";
+    const sourceLayout = makeLayout(layoutId, "Source Frame");
+    const sourceBody = makeElement("body-source", "body", {
+      layout_id: layoutId,
+      order_num: 0,
+    });
+    const sourceSlot = makeElement("slot-source", "Slot", {
+      layout_id: layoutId,
+      parent_id: sourceBody.id,
+      order_num: 1,
+      props: { name: "content" },
+    });
+    const sourceText = makeElement("text-source", "Text", {
+      layout_id: layoutId,
+      parent_id: sourceSlot.id,
+      order_num: 2,
+      page_id: null,
+      props: { text: "Default" },
+    });
+
+    const randomUuid = vi
+      .spyOn(crypto, "randomUUID")
+      .mockReturnValueOnce("layout-copy")
+      .mockReturnValueOnce("body-copy")
+      .mockReturnValueOnce("slot-copy")
+      .mockReturnValueOnce("text-copy");
+
+    const { getDB } = await import("../../../../lib/db");
+    const db = await (getDB as ReturnType<typeof vi.fn>)();
+    db.elements.getAll.mockResolvedValue([sourceBody, sourceSlot, sourceText]);
+
+    const mergeElements = vi.fn();
+    const elementsSnapshot = {
+      elementsMap: new Map<string, Element>([
+        [sourceBody.id, sourceBody],
+        [sourceSlot.id, sourceSlot],
+        [sourceText.id, sourceText],
+      ]),
+      pages: [] as Page[],
+      removeElements: vi.fn(),
+      setPages: vi.fn(),
+      mergeElements,
+    };
+    vi.mocked(elementsStoreModule.useStore).getState = vi.fn(
+      () => elementsSnapshot,
+    );
+    const actualElementsModule =
+      await vi.importActual<typeof import("../../elements")>("../../elements");
+    actualElementsModule.useStore.setState(
+      elementsSnapshot as Partial<
+        ReturnType<typeof actualElementsModule.useStore.getState>
+      >,
+    );
+
+    let state = {
+      layouts: [sourceLayout],
+      selectedReusableFrameId: sourceLayout.id,
+      currentLayoutId: sourceLayout.id,
+      isLoading: false,
+      error: null,
+    };
+    const mockSet = vi.fn((partial: Partial<typeof state>) => {
+      state = { ...state, ...partial };
+    });
+    const mockGet = vi.fn(() => state);
+
+    const duplicateLayout = createDuplicateLayoutAction(
+      mockSet as unknown as Parameters<typeof createDuplicateLayoutAction>[0],
+      mockGet as unknown as Parameters<typeof createDuplicateLayoutAction>[1],
+    );
+
+    const newLayout = await duplicateLayout(layoutId);
+
+    expect(newLayout).toMatchObject({
+      id: "layout-copy",
+      name: "Source Frame (Copy)",
+      project_id: "proj-1",
+    });
+    expect(db.elements.insertMany).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: "body-copy",
+        layout_id: "layout-copy",
+        page_id: null,
+        parent_id: null,
+      }),
+      expect.objectContaining({
+        id: "slot-copy",
+        layout_id: "layout-copy",
+        page_id: null,
+        parent_id: "body-copy",
+      }),
+      expect.objectContaining({
+        id: "text-copy",
+        layout_id: "layout-copy",
+        page_id: null,
+        parent_id: "slot-copy",
+      }),
+    ]);
+    expect(mergeElements).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "body-copy" }),
+      expect.objectContaining({ id: "slot-copy", parent_id: "body-copy" }),
+      expect.objectContaining({ id: "text-copy", parent_id: "slot-copy" }),
+    ]);
+    expect(state.layouts.map((layout) => layout.id)).toEqual([
+      "layout-source",
+      "layout-copy",
+    ]);
+
+    randomUuid.mockRestore();
   });
 });

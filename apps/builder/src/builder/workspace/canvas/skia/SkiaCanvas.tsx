@@ -335,6 +335,7 @@ export function SkiaCanvas({
 
   useElementHoverInteraction({
     containerEl,
+    frameAreasRef,
     hoverStateRef: elementHoverStateRef,
     overlayVersionRef,
     treeBoundsMapRef,

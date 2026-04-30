@@ -48,7 +48,8 @@ function findFrameBodySelectionAtCanvasPoint({
   elementsMap: Map<string, Element>;
   frameAreas: FrameBodySelectionArea[];
 }): BodySelectionResult | null {
-  for (const area of frameAreas) {
+  for (let i = frameAreas.length - 1; i >= 0; i--) {
+    const area = frameAreas[i];
     if (!containsPoint(area, canvasPoint)) continue;
 
     for (const element of elementsMap.values()) {

@@ -1,6 +1,6 @@
 # ADR-911 Phase 3 — Frame Canvas Authoring 시각 path Breakdown
 
-> **상태**: Proposed (2026-04-28 세션 46) — 본격 land 미진입
+> **상태**: Closed (2026-04-30) — P3-α/β/γ/δ + δ fix #1~#4 + θ + P3-ε/P3-ζ closure 완료. ADR-911 본문 G3/G4/G5 잔여는 별도 진행
 > **연결 ADR**: [911](../911-layout-frameset-pencil-redesign.md) Phase 3 sub-phase
 > **prerequisite**: 본 sub-phase 가 [ADR-912](../912-editing-semantics-ui-5elements.md) 의 Canvas 시각 마커 land 의 prerequisite
 
@@ -44,14 +44,14 @@ childrenMap.root = [
 
 ## 2. Sub-phase 분해
 
-| Sub-phase | 작업                                                                                                                                                                           | 예상 비용 |   위험   |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------: | :------: |
-| **P3-α**  | `pagePositions` 확장 또는 신규 `framePositions` map 도입 — frame id → `{x, y, width, height}` 저장 + 갱신 setter                                                               |    1d     |   MED    |
-| **P3-β**  | `computeLayoutGroups` 확장 — frame 별 캔버스 영역 그룹 추가. selectedReusableFrameId 또는 모든 reusable frame 을 별도 영역으로 계산                                            |    1d     |   MED    |
-| **P3-γ**  | frame editing indicator 갱신 path — `selectReusableFrame` 이 `useLayoutsStore.selectedReusableFrameId` 갱신 (이미 구현). 캔버스 consumer 가 indicator read 후 P3-δ render 분기 |   0.5d    |   LOW    |
-| **P3-δ**  | Skia render path 통합 — BuilderCanvas 의 page viewport 외에 frame viewport 추가. frame body+slot 들이 frame viewport 안에 그려짐                                               |    2d     | **HIGH** |
-| **P3-ε**  | hit-test/drag/selection 통합 — frame 영역도 사용자 인터랙션 가능 (선택, 드래그, hover)                                                                                         |   1.5d    |   MED    |
-| **P3-ζ**  | Chrome MCP 시각 회귀 검증 + roundtrip — Frame 추가 → Layout preset 적용 → Skia slot 시각화 사용자 시나리오 GREEN                                                               |   0.5d    |   LOW    |
+| Sub-phase | 작업                                                                                                                                                                                                   | 예상 비용 |   위험   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------: | :------: |
+| **P3-α**  | `pagePositions` 확장 또는 신규 `framePositions` map 도입 — frame id → `{x, y, width, height}` 저장 + 갱신 setter                                                                                       |    1d     |   MED    |
+| **P3-β**  | `computeLayoutGroups` 확장 — frame 별 캔버스 영역 그룹 추가. selectedReusableFrameId 또는 모든 reusable frame 을 별도 영역으로 계산                                                                    |    1d     |   MED    |
+| **P3-γ**  | frame editing indicator 갱신 path — `selectReusableFrame` 이 `useLayoutsStore.selectedReusableFrameId` 갱신 (이미 구현). 캔버스 consumer 가 indicator read 후 P3-δ render 분기                         |   0.5d    |   LOW    |
+| **P3-δ**  | Skia render path 통합 — BuilderCanvas 의 page viewport 외에 frame viewport 추가. frame body+slot 들이 frame viewport 안에 그려짐                                                                       |    2d     | **HIGH** |
+| **P3-ε**  | hit-test/selection/hover 통합 + Pencil drag semantics 정리 — frame 영역도 사용자 인터랙션 가능. Drag 는 자유 이동이 아니라 위치 소유권에 따라 수동 `x/y` 이동 또는 layout-aware reorder/drop 으로 해석 |   1.5d    |   MED    |
+| **P3-ζ**  | Chrome MCP 시각 회귀 검증 + roundtrip — Frame 추가 → Layout preset 적용 → Skia slot 시각화 사용자 시나리오 GREEN                                                                                       |   0.5d    |   LOW    |
 
 **총 예상**: 6.5d ≈ **1주+** HIGH
 
@@ -89,14 +89,14 @@ childrenMap.root = [
 
 ## 4. Gate
 
-| Gate     | 시점      | 통과 조건                                                                                                                                                                                                  | 실패 시                     |
-| -------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| **G3-α** | P3-α 완료 | (a) `framePositions` 또는 확장된 `pagePositions` 에 frame id 좌표 저장 (b) updatePosition setter 동작 (c) test 5/5 PASS                                                                                    | 데이터 모델 재검토          |
-| **G3-β** | P3-β 완료 | (a) computeLayoutGroups 가 frame 영역 그룹 반환 (b) 기존 page 그룹화 회귀 0                                                                                                                                | layoutGroup 알고리즘 재검토 |
-| **G3-γ** | P3-γ 완료 | (a) `selectReusableFrame(frameId)` 후 `selectedReusableFrameId === frameId` (b) `selectReusableFrame(null)` 후 `selectedReusableFrameId === null` (c) `editingContextId` 미충돌 (element-id semantic 보존) |                             |
-| **G3-δ** | P3-δ 완료 | (a) Skia 캔버스에 frame body 영역 그려짐 (b) frame body 자식 (slot) 도 영역 안에 그려짐 (c) Chrome MCP screenshot 사용자 시나리오 GREEN                                                                    | render 알고리즘 재검토      |
-| **G3-ε** | P3-ε 완료 | (a) frame body 클릭 시 selection (b) drag 가능 (c) hover outline 표시                                                                                                                                      |                             |
-| **G3-ζ** | P3 종결   | (a) Chrome MCP 사용자 회귀 시나리오 100% GREEN (b) `mockLargeDataV2` 시각 회귀 0 (c) 기존 page 캔버스 회귀 0                                                                                               | 부분 land 후 후속           |
+| Gate     | 시점      | 통과 조건                                                                                                                                                                                                                                  | 실패 시                     |
+| -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| **G3-α** | P3-α 완료 | (a) `framePositions` 또는 확장된 `pagePositions` 에 frame id 좌표 저장 (b) updatePosition setter 동작 (c) test 5/5 PASS                                                                                                                    | 데이터 모델 재검토          |
+| **G3-β** | P3-β 완료 | (a) computeLayoutGroups 가 frame 영역 그룹 반환 (b) 기존 page 그룹화 회귀 0                                                                                                                                                                | layoutGroup 알고리즘 재검토 |
+| **G3-γ** | P3-γ 완료 | (a) `selectReusableFrame(frameId)` 후 `selectedReusableFrameId === frameId` (b) `selectReusableFrame(null)` 후 `selectedReusableFrameId === null` (c) `editingContextId` 미충돌 (element-id semantic 보존)                                 |                             |
+| **G3-δ** | P3-δ 완료 | (a) Skia 캔버스에 frame body 영역 그려짐 (b) frame body 자식 (slot) 도 영역 안에 그려짐 (c) Chrome MCP screenshot 사용자 시나리오 GREEN                                                                                                    | render 알고리즘 재검토      |
+| **G3-ε** | P3-ε 완료 | (a) frame body 클릭 시 selection (b) hover outline 표시 (c) drag semantics 는 Pencil 기준 준수: manual-position node 는 `x/y` 갱신, layout/overview 가 위치를 소유하면 자유 이동 대신 reorder/drop intent 또는 explicit non-draggable 처리 |                             |
+| **G3-ζ** | P3 종결   | (a) Chrome MCP 사용자 회귀 시나리오 100% GREEN (b) `mockLargeDataV2` 시각 회귀 0 (c) 기존 page 캔버스 회귀 0                                                                                                                               | 부분 land 후 후속           |
 
 ## 4.5. P3-γ 설계 결정 (세션 47, B 채택)
 
@@ -411,6 +411,68 @@ D7=B, D8=A, D9=A 채택 시 **~1.5d MED**. P3-θ 는 P3-δ fix #1~#4 + B1 의 pr
 - **Root cause**: frame body 의 width/height (P3-δ fix #4 default 320×200) 가 page 보다 작음 + page-body 시각 속성 손실 + slot_name 미매칭 element orphan
 - **Fix**: `bodyElement = pageBody` 유지 + frame body 의 자식들 (Slot 등) 만 page-body 로 reparent + frame body 자체는 결과 제외 + slot_name 미매칭 page element 는 page-body 자식 그대로 유지 (orphan 방지)
 - **정합**: design breakdown §4.10 의 "frame body subtree 를 page body 자식으로 가상 merge" 의 정확한 의도 — frame body **자체** 가 아닌 frame body **의 자식들** 을 reparent
+
+## 4.11. P3-ε Pencil drag semantics clarification (2026-04-30)
+
+### Pencil 기준
+
+`docs/pencil-copy` 기준으로 Pencil 의 drag 는 Frame 전용 특수 기능이 아니라 **document node 의 canvas 직접 조작**이다.
+
+- Canvas 는 drawing / selecting / dragging / resizing / arranging 의 1차 편집면이다.
+- `.pen` 의 `x` / `y` 는 inspector geometry 와 canvas transform 에 연결되며, drag 는 local coordinate 를 갱신한다.
+- 단, **layout owns position** 인 경우에는 임의 `x` / `y` 이동이 아니라 layout-aware insertion/reorder 로 확정한다.
+- Drag 중 즉시 destructive reparent 를 하지 않고, drop 시점에 layout-aware insertion index 로 commit 한다.
+- Layer tree drag reorder 는 `children` 순서를 바꾸며 render/layout order 에 반영된다.
+
+### Composition 적용
+
+Frames tab 은 2026-04-30 UX follow-up 으로 Page tab 과 같은 multi-canvas overview 를 채택했다. 따라서 등록된 Frame canvas 의 위치는 사용자 node 좌표가 아니라 overview layout 이 소유한다.
+
+P3-ε 의 drag gate 는 다음처럼 해석한다:
+
+| 대상                                        | 위치 소유권               | 허용 동작                                                                                                           |
+| ------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Frame 내부 일반 child                       | element local geometry    | 기존 canvas drag/resize path 로 `x/y` 또는 style geometry 갱신                                                      |
+| `layout: "none"` 또는 manual-position child | element local geometry    | drag 로 local `x/y` 갱신                                                                                            |
+| Auto-layout frame child                     | parent layout             | 자유 `x/y` 이동 금지. drop 시 insertion/reorder intent 로 commit                                                    |
+| Frames tab overview 의 Frame canvas 자체    | overview layout           | 자유 drag 로 `framePositions.x/y` 저장하지 않음. 필요 시 별도 reorder affordance 또는 explicit non-draggable chrome |
+| Layers tree row                             | document `children` order | drag reorder 로 layer/layout order 갱신                                                                             |
+
+### Gate 정정
+
+기존 "drag 가능" 문구는 과도했다. Pencil 호환 gate 는 "항상 frame canvas 를 자유 이동" 이 아니라, **선택/hover/inspector sync 는 필수이고 drag 는 위치 소유권에 따라 수동 위치 이동, reorder/drop intent, 또는 명시적 non-draggable 로 결정**하는 것이다.
+
+따라서 P3-ε closure 에서는 다음을 확인한다:
+
+1. Frame body / Slot / child hit-test 가 실제 rendered bounds 기준으로 동작한다.
+2. Frame body 클릭 시 Node tree 와 Properties target 이 같은 frame 으로 동기화된다.
+3. Hover outline 과 selection overlay 가 Pencil marker semantics 와 충돌하지 않는다.
+4. Overview 가 위치를 소유하는 Frame canvas 는 자유 drag 로 위치가 임의 저장되지 않는다.
+5. Manual-position child 의 drag 는 local geometry 를 갱신하고, auto-layout child 의 drag 는 reorder/drop intent 로만 commit 된다.
+
+### Implementation slice #1 (2026-04-30)
+
+- `useElementHoverInteraction` 은 normal child hit-test 가 비었을 때 rendered `frameAreas` 의 topmost frame body 를 hover target 으로 보강한다.
+- `selectionHitTest` 의 frame body fallback 도 hover 와 동일하게 `frameAreas` 를 topmost order 로 해석한다.
+- `useDragBridge` 는 `position:absolute` child 를 manual-position target 으로 판정해 drag 중에는 visual offset 만 적용하고, drop 시 `style.left/top` 을 delta 만큼 갱신한다. 이 경우 drop indicator / sibling reorder animation 은 비활성화한다.
+- 기존 auto-layout child 는 `resolveDropTarget` + `batchUpdateElementOrders` / `moveElementToContainer` 경로를 유지한다. `body` 는 기존 `useCentralCanvasPointerHandlers` gate 로 drag 대상에서 제외한다.
+- 사용자 dev 검증: Frame body / Slot 선택 후 Properties/Style 패널의 Transform·Layout 변경이 적용됨을 확인했다. 이는 P3-ε closure 항목 중 Node tree/Properties sync 를 충족한다.
+- Verification: `useElementHoverInteraction.test.ts`, `useDragBridge.test.ts`, `selectionHitTest.test.ts` targeted Vitest PASS + builder type-check PASS.
+
+### P3-ζ closure (2026-04-30)
+
+사용자 인증 브라우저에서 `http://localhost:5173/builder/1019ab30-83e3-4987-965f-7aa168219ecc` 기준 회귀 체크를 완료했다.
+
+- Frames 탭 기본 렌더: Frame 여러 개, title, body, slot 표시와 새로고침 후 body/slot 유지 확인
+- Pages ↔ Frames 전환: 각 탭의 표시 대상 분리와 frame 적용 상태 유지 확인
+- Frame body / Slot interaction: hover, selection, Node tree, Properties/Style 패널 target 동기화 확인
+- Transform / Layout 편집: body와 Slot 선택 후 style 변경 적용 및 유지 확인
+- Frame 적용 Page: slot 구조 inline 표시, Apply Frame 값과 렌더 일치, Page/body 선택 후 add target 정합 확인
+- Shared Frame multi-page: 동일 Frame 을 여러 Page 에 적용해도 Page별 child 가 섞이거나 복제되지 않음 확인
+- 복합 컴포넌트 회귀: frame 적용/미적용 Page 의 Tabs 렌더와 새로고침 후 상태 확인
+- Drag semantics: overview Frame canvas 임의 이동 없음, auto-layout child 는 reorder/drop 의미 유지, manual-position child 는 local geometry 변경 기준 확인
+
+결론: G3-δ (c), G3-θ (d), G3-ε, G3-ζ 는 본 Phase 3 frame canvas authoring sub-phase 범위에서 closure. ADR-911 전체 잔여는 본문 Gate G3/G4/G5 로 이관한다.
 
 ## 5. 비고
 

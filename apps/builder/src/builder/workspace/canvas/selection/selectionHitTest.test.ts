@@ -58,6 +58,42 @@ describe("findBodySelectionAtCanvasPoint", () => {
     expect(result).toEqual({ bodyElementId: "frame-body", pageId: null });
   });
 
+  it("selects the topmost frame body when frame areas overlap", () => {
+    const result = findBodySelectionAtCanvasPoint({
+      canvasPoint: { x: 40, y: 40 },
+      currentPageId: "page-1",
+      elementsMap: new Map([
+        [
+          "frame-body-a",
+          makeBody({
+            id: "frame-body-a",
+            layout_id: "frame-a",
+            page_id: null,
+          }),
+        ],
+        [
+          "frame-body-b",
+          makeBody({
+            id: "frame-body-b",
+            layout_id: "frame-b",
+            page_id: null,
+          }),
+        ],
+      ]),
+      frameAreas: [
+        { frameId: "frame-a", x: 0, y: 0, width: 800, height: 600 },
+        { frameId: "frame-b", x: 0, y: 0, width: 800, height: 600 },
+      ],
+      pageHeight: 600,
+      pageIndexElementsByPage: new Map(),
+      pagePositions: {},
+      pageWidth: 800,
+      pages: [],
+    });
+
+    expect(result).toEqual({ bodyElementId: "frame-body-b", pageId: null });
+  });
+
   it("does not fall through to page body when a frame area owns the click but has no body", () => {
     const result = findBodySelectionAtCanvasPoint({
       canvasPoint: { x: 40, y: 40 },

@@ -36,6 +36,10 @@ import { hitTestPoint } from "../wasm-bindings/spatialIndex";
 import { getSceneBounds } from "../skia/renderCommands";
 import type { BoundingBox } from "../selection/types";
 
+type SceneBoundsResolver = (
+  elementId: string,
+) => BoundingBox | null | undefined;
+
 interface UseDragBridgeOptions {
   onStartMoveRef: MutableRefObject<
     (
@@ -52,6 +56,80 @@ interface UseDragBridgeOptions {
   dropIndicatorSnapshotRef: MutableRefObject<DropIndicatorSnapshot | null>;
   /** false이면 ref 바인딩 스킵 (SelectionLayer가 대신 바인딩) */
   enabled?: boolean;
+}
+
+function asStyleRecord(element: Element): Record<string, unknown> {
+  const style = element.props?.style;
+  return style && typeof style === "object" && !Array.isArray(style)
+    ? (style as Record<string, unknown>)
+    : {};
+}
+
+function parsePx(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!/^-?\d+(?:\.\d+)?(?:px)?$/.test(trimmed)) {
+    return null;
+  }
+
+  const parsed = Number.parseFloat(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatPx(value: number): string {
+  const rounded = Math.round(value * 1000) / 1000;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(3).replace(/0+$/, "").replace(/\.$/, "")}px`;
+}
+
+export function isManualPositionDragTarget(
+  element: Element | undefined,
+): boolean {
+  if (!element || element.deleted) {
+    return false;
+  }
+
+  const style = asStyleRecord(element);
+  return style.position === "absolute";
+}
+
+export function resolveManualPositionDragProps(
+  element: Element | undefined,
+  delta: { x: number; y: number },
+  getBounds: SceneBoundsResolver = getSceneBounds,
+): Record<string, unknown> | null {
+  if (!element || !isManualPositionDragTarget(element)) {
+    return null;
+  }
+
+  if (delta.x === 0 && delta.y === 0) {
+    return null;
+  }
+
+  const style = asStyleRecord(element);
+  const elementBounds = getBounds(element.id);
+  const parentBounds = element.parent_id ? getBounds(element.parent_id) : null;
+  const fallbackLeft =
+    elementBounds != null ? elementBounds.x - (parentBounds?.x ?? 0) : 0;
+  const fallbackTop =
+    elementBounds != null ? elementBounds.y - (parentBounds?.y ?? 0) : 0;
+
+  const baseLeft = parsePx(style.left) ?? fallbackLeft;
+  const baseTop = parsePx(style.top) ?? fallbackTop;
+
+  return {
+    style: {
+      ...style,
+      left: formatPx(baseLeft + delta.x),
+      top: formatPx(baseTop + delta.y),
+    },
+  };
 }
 
 export function useDragBridge({
@@ -82,9 +160,18 @@ export function useDragBridge({
       const scenePoint = data.current;
       if (!scenePoint) return;
 
+      const dragged = dragState.elementsMap.get(draggedId);
+      if (isManualPositionDragTarget(dragged)) {
+        setDragVisualOffset(draggedId, delta.x, delta.y);
+        updateAnimationTargets(null);
+        setDragSiblingOffsets(null);
+        lastResolvedDropTargetRef.current = null;
+        dropIndicatorSnapshotRef.current = null;
+        return;
+      }
+
       // 드래그 시작 시 원래 order_num 스냅샷 캡처
       if (!dragStartSnapshotRef.current) {
-        const dragged = dragState.elementsMap.get(draggedId);
         if (dragged) {
           const allChildren = [...dragState.elementsMap.values()]
             .filter((e) => e.parent_id === dragged.parent_id)
@@ -171,6 +258,11 @@ export function useDragBridge({
       }
     },
     onMoveEnd: (elementId, _delta) => {
+      const state = useStore.getState();
+      const manualPositionProps = resolveManualPositionDragProps(
+        state.elementsMap.get(elementId),
+        _delta,
+      );
       const finalTarget = lastResolvedDropTargetRef.current;
       const startSnapshot = dragStartSnapshotRef.current;
 
@@ -183,9 +275,18 @@ export function useDragBridge({
       dragStartSnapshotRef.current = null;
       dropIndicatorSnapshotRef.current = null;
 
+      if (manualPositionProps) {
+        void state.batchUpdateElementProps([
+          {
+            elementId,
+            props: manualPositionProps,
+          },
+        ]);
+        return;
+      }
+
       // 단일 store commit
       if (finalTarget && !finalTarget.isAdjacentInsertion) {
-        const state = useStore.getState();
         if (finalTarget.isReparent) {
           state.moveElementToContainer(
             elementId,

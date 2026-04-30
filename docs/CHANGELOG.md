@@ -34,6 +34,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Skia 화면에서 Frame body 빈 영역 클릭 시 body 가 선택되지 않던 회귀 수정**:
   - 빈 영역 body fallback hit-test 가 Page 영역보다 Frame authoring 영역을 먼저 검사하도록 보정
   - `page_id=null` 인 Frame body selection 을 Page 밖 클릭으로 오인해 clear 하지 않고 실제 `layout_id` body 선택으로 처리
+- **Skia 화면에서 Frame body 빈 영역 hover outline 이 나타나지 않던 회귀 수정**:
+  - hover 후보가 body 직계 child 에만 한정되어 Frame body 자체의 빈 영역이 hover target 이 되지 않던 경로를 보정
+  - Frames tab overview 의 rendered frame area 를 기준으로 `page_id=null` + `layout_id=<frameId>` body 를 hover target 으로 보강
+- **Frames 탭 P3-ε interaction gate 보강**:
+  - Frame body selection fallback 이 hover 와 같은 topmost frame area 기준으로 동작하도록 보정
+  - `position:absolute` manual-position child drag 는 reorder/drop 대신 `style.left/top` 을 갱신하고, auto-layout child 는 기존 layout-aware reorder/drop commit 을 유지
+  - Frame body / Slot 선택 후 Transform·Layout 편집이 Properties/Style 패널을 통해 적용되는 것을 확인해 Node tree/Properties sync 기준을 닫음
+- **ADR-911 P3-ζ browser regression closure**:
+  - 사용자 인증 브라우저에서 Frames 탭 기본 렌더, 새로고침 유지, Pages↔Frames 전환, body/Slot hover+selection, Transform/Layout 편집, Frame 적용 Page, 동일 Frame 다중 Page, Tabs 복합 컴포넌트, drag 위치 소유권 기준을 모두 확인
+  - P3-δ (c), G3-θ (d), G3-ε, G3-ζ 를 frame authoring 편의 확장 범위에서 닫고, ADR-911 전체 잔여를 G3 cascade / G4 legacy adapter / G5 pencil 호환 검증으로 재정리
+- **ADR-911 G3 cascade slice #1 — Frame 복제 직후 body/Slot 누락 회귀 수정**:
+  - `createDuplicateLayoutAction` 이 cloned layout element subtree 를 IndexedDB 에 저장한 뒤 live Zustand `elementsMap` 에 merge 하지 않아 새로고침 전 Frames authoring surface 에 복제된 body/Slot 이 빠질 수 있던 경로를 보강
+  - clone payload 는 새 `layout_id`, 새 id, remapped `parent_id`, `page_id:null` 을 유지하고, DB write-through 와 같은 턴에 `mergeElements(newElements)` 로 store 를 동기화
+  - `layoutActions.test.ts` 에 Slot + child 포함 frame clone fixture 를 추가해 DB insert payload 와 live store merge 를 함께 검증
+- **ADR-911 G3 cascade slice #2 — Frame 삭제 후 Page orphan ref 방지**:
+  - `deleteLayout` 에서 canonical frame projection 이 없으면 element cascade 는 skip 하되, 삭제되는 layout 을 참조하는 Page `layout_id` 는 projection guard 밖에서 항상 `null` 로 해제
+  - stale layout row 삭제나 projection race 상황에서도 Apply Frame 값이 존재하지 않는 Frame 을 계속 가리키는 orphan reference 로 남지 않도록 보강
+  - `layoutActions.test.ts` 에 frame projection 없음 + page ref cleanup fixture 를 추가해 `removeElements` skip 과 `db.pages.update` / live `setPages` 실행을 함께 검증
 - **Frames 탭 authoring surface 를 Page 추가 UX 와 같은 multi-canvas overview 로 개선**:
   - Frames mode 에서 선택된 Frame 하나만 같은 위치에 렌더하지 않고 등록된 reusable Frame 전체를 표시
   - Page layout direction(horizontal/vertical/zigzag) 과 같은 배치 규칙으로 Frame canvas 를 정렬해 추가한 layout 을 한 화면에서 비교 가능

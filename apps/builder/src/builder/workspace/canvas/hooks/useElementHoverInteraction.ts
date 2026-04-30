@@ -13,11 +13,12 @@
  * @see useWorkflowInteraction.ts — 동일 패턴 (window-level 리스너, RAF 스로틀)
  */
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { MutableRefObject, RefObject } from 'react';
-import { useStore } from '../../../stores';
-import { useViewportSyncStore } from '../stores';
-import type { BoundingBox } from '../selection/types';
+import { useCallback, useEffect, useRef } from "react";
+import type { MutableRefObject, RefObject } from "react";
+import type { Element } from "../../../../types/core/store.types";
+import { useStore } from "../../../stores";
+import { useViewportSyncStore } from "../stores";
+import type { BoundingBox } from "../selection/types";
 
 // ============================================
 // Types
@@ -35,12 +36,22 @@ export interface ElementHoverState {
 interface UseElementHoverInteractionOptions {
   /** 부모 컨테이너 DOM 요소 */
   containerEl: HTMLDivElement | null;
+  /** Frames tab multi-canvas overview 에서 frame body 빈 영역 hover 판정용 */
+  frameAreasRef?: RefObject<ReadonlyArray<FrameHoverArea>>;
   /** 호버 상태 ref (60fps 갱신, Zustand 아님) */
   hoverStateRef: MutableRefObject<ElementHoverState>;
   /** overlayVersion ref (리렌더 트리거) */
   overlayVersionRef: MutableRefObject<number>;
   /** treeBoundsMap ref (Skia 트리 기반 씬-로컬 절대 바운드) */
   treeBoundsMapRef: RefObject<Map<string, BoundingBox>>;
+}
+
+interface FrameHoverArea {
+  frameId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 // ============================================
@@ -73,12 +84,58 @@ function collectLeafDescendants(
   return result;
 }
 
+function containsPoint(
+  bounds: { x: number; y: number; width: number; height: number },
+  x: number,
+  y: number,
+): boolean {
+  return (
+    x >= bounds.x &&
+    x <= bounds.x + bounds.width &&
+    y >= bounds.y &&
+    y <= bounds.y + bounds.height
+  );
+}
+
+export function resolveFrameBodyHoverTarget({
+  boundsMap,
+  elementsMap,
+  frameAreas,
+  sceneX,
+  sceneY,
+}: {
+  boundsMap: ReadonlyMap<string, BoundingBox>;
+  elementsMap: ReadonlyMap<string, Element>;
+  frameAreas: ReadonlyArray<FrameHoverArea>;
+  sceneX: number;
+  sceneY: number;
+}): string | null {
+  for (let i = frameAreas.length - 1; i >= 0; i--) {
+    const area = frameAreas[i];
+    if (!containsPoint(area, sceneX, sceneY)) continue;
+
+    for (const element of elementsMap.values()) {
+      if (element.deleted) continue;
+      if (element.type.toLowerCase() !== "body") continue;
+      if (element.page_id != null) continue;
+      if (element.layout_id !== area.frameId) continue;
+      if (!boundsMap.has(element.id)) continue;
+      return element.id;
+    }
+
+    return null;
+  }
+
+  return null;
+}
+
 // ============================================
 // Hook
 // ============================================
 
 export function useElementHoverInteraction({
   containerEl,
+  frameAreasRef,
   hoverStateRef,
   overlayVersionRef,
   treeBoundsMapRef,
@@ -86,110 +143,145 @@ export function useElementHoverInteraction({
   const rafRef = useRef<number | null>(null);
   const lastMouseRef = useRef({ x: 0, y: 0 });
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    // 좌표 변화 없으면 스킵 (subpixel jitter 방지)
-    if (e.clientX === lastMouseRef.current.x && e.clientY === lastMouseRef.current.y) return;
-    lastMouseRef.current = { x: e.clientX, y: e.clientY };
-
-    // RAF 스로틀: 프레임당 1회
-    if (rafRef.current !== null) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      if (!containerEl) return;
-
-      const rect = containerEl.getBoundingClientRect();
-      const mouseX = lastMouseRef.current.x;
-      const mouseY = lastMouseRef.current.y;
-
-      // 캔버스 밖이면 호버 해제
-      if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
-        if (hoverStateRef.current.hoveredElementId !== null) {
-          hoverStateRef.current.hoveredElementId = null;
-          hoverStateRef.current.hoveredLeafIds = [];
-          hoverStateRef.current.isGroupHover = false;
-          overlayVersionRef.current++;
-        }
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
+      // 좌표 변화 없으면 스킵 (subpixel jitter 방지)
+      if (
+        e.clientX === lastMouseRef.current.x &&
+        e.clientY === lastMouseRef.current.y
+      )
         return;
-      }
+      lastMouseRef.current = { x: e.clientX, y: e.clientY };
 
-      // 스크린 → 씬-로컬 좌표 변환
-      const { zoom, panOffset } = useViewportSyncStore.getState();
-      const sceneX = (mouseX - rect.left - panOffset.x) / zoom;
-      const sceneY = (mouseY - rect.top - panOffset.y) / zoom;
+      // RAF 스로틀: 프레임당 1회
+      if (rafRef.current !== null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (!containerEl) return;
 
-      const state = useStore.getState();
-      const { editingContextId, childrenMap, elementsMap } = state;
+        const rect = containerEl.getBoundingClientRect();
+        const mouseX = lastMouseRef.current.x;
+        const mouseY = lastMouseRef.current.y;
 
-      // Context 레벨 후보 수집 (editingContext 직계 자식 또는 body 직계 자식)
-      let candidates: ReadonlyArray<{ id: string }>;
-      if (editingContextId) {
-        candidates = childrenMap.get(editingContextId) ?? [];
-      } else {
-        // 루트: 모든 body의 직계 자식 수집
-        const rootCandidates: Array<{ id: string }> = [];
-        for (const [, el] of elementsMap) {
-          if (el.type !== 'body') continue;
-          const bodyChildren = childrenMap.get(el.id);
-          if (bodyChildren) {
-            for (const child of bodyChildren) {
-              rootCandidates.push(child);
+        // 캔버스 밖이면 호버 해제
+        if (
+          mouseX < rect.left ||
+          mouseX > rect.right ||
+          mouseY < rect.top ||
+          mouseY > rect.bottom
+        ) {
+          if (hoverStateRef.current.hoveredElementId !== null) {
+            hoverStateRef.current.hoveredElementId = null;
+            hoverStateRef.current.hoveredLeafIds = [];
+            hoverStateRef.current.isGroupHover = false;
+            overlayVersionRef.current++;
+          }
+          return;
+        }
+
+        // 스크린 → 씬-로컬 좌표 변환
+        const { zoom, panOffset } = useViewportSyncStore.getState();
+        const sceneX = (mouseX - rect.left - panOffset.x) / zoom;
+        const sceneY = (mouseY - rect.top - panOffset.y) / zoom;
+
+        const state = useStore.getState();
+        const { editingContextId, childrenMap, elementsMap } = state;
+
+        // Context 레벨 후보 수집 (editingContext 직계 자식 또는 body 직계 자식)
+        let candidates: ReadonlyArray<{ id: string }>;
+        if (editingContextId) {
+          candidates = childrenMap.get(editingContextId) ?? [];
+        } else {
+          // 루트: 모든 body의 직계 자식 수집
+          const rootCandidates: Array<{ id: string }> = [];
+          for (const [, el] of elementsMap) {
+            if (el.type !== "body") continue;
+            const bodyChildren = childrenMap.get(el.id);
+            if (bodyChildren) {
+              for (const child of bodyChildren) {
+                rootCandidates.push(child);
+              }
             }
           }
+          candidates = rootCandidates;
         }
-        candidates = rootCandidates;
-      }
 
-      // Context 레벨 AABB 히트 테스트 (역순 = z-order 높은 것 우선)
-      const boundsMap = treeBoundsMapRef.current;
-      let contextHitId: string | null = null;
+        // Context 레벨 AABB 히트 테스트 (역순 = z-order 높은 것 우선)
+        const boundsMap = treeBoundsMapRef.current;
+        let contextHitId: string | null = null;
 
-      if (boundsMap && boundsMap.size > 0) {
-        for (let i = candidates.length - 1; i >= 0; i--) {
-          const candidate = candidates[i];
-          const bounds = boundsMap.get(candidate.id);
-          if (!bounds) continue;
+        if (boundsMap && boundsMap.size > 0) {
+          for (let i = candidates.length - 1; i >= 0; i--) {
+            const candidate = candidates[i];
+            const bounds = boundsMap.get(candidate.id);
+            if (!bounds) continue;
 
-          if (
-            sceneX >= bounds.x &&
-            sceneX <= bounds.x + bounds.width &&
-            sceneY >= bounds.y &&
-            sceneY <= bounds.y + bounds.height
-          ) {
-            contextHitId = candidate.id;
-            break;
+            if (
+              sceneX >= bounds.x &&
+              sceneX <= bounds.x + bounds.width &&
+              sceneY >= bounds.y &&
+              sceneY <= bounds.y + bounds.height
+            ) {
+              contextHitId = candidate.id;
+              break;
+            }
+          }
+
+          // Frame body 자체는 root/body 후보로 수집되지 않는다. Frames tab
+          // overview 의 빈 frame 영역 hover 는 rendered frame area 를 기준으로
+          // body target 을 보강한다.
+          if (!contextHitId) {
+            contextHitId = resolveFrameBodyHoverTarget({
+              boundsMap,
+              elementsMap,
+              frameAreas: frameAreasRef?.current ?? [],
+              sceneX,
+              sceneY,
+            });
           }
         }
-      }
 
-      // 상태 변경 감지 (context 레벨 히트 대상 비교)
-      if (contextHitId !== hoverStateRef.current.hoveredElementId) {
-        hoverStateRef.current.hoveredElementId = contextHitId;
+        // 상태 변경 감지 (context 레벨 히트 대상 비교)
+        if (contextHitId !== hoverStateRef.current.hoveredElementId) {
+          hoverStateRef.current.hoveredElementId = contextHitId;
 
-        if (contextHitId && boundsMap) {
-          // 컨테이너면 모든 리프 자손 수집, 리프면 자신만
-          const leafIds = collectLeafDescendants(contextHitId, childrenMap, boundsMap);
-          const isGroup = leafIds.length > 1 || (
-            leafIds.length === 1 && leafIds[0] !== contextHitId
-          );
-          hoverStateRef.current.hoveredLeafIds = leafIds;
-          hoverStateRef.current.isGroupHover = isGroup;
-        } else {
-          hoverStateRef.current.hoveredLeafIds = [];
-          hoverStateRef.current.isGroupHover = false;
+          if (contextHitId && boundsMap) {
+            // 컨테이너면 모든 리프 자손 수집, 리프면 자신만
+            const leafIds = collectLeafDescendants(
+              contextHitId,
+              childrenMap,
+              boundsMap,
+            );
+            const isGroup =
+              leafIds.length > 1 ||
+              (leafIds.length === 1 && leafIds[0] !== contextHitId);
+            hoverStateRef.current.hoveredLeafIds = leafIds;
+            hoverStateRef.current.isGroupHover = isGroup;
+          } else {
+            hoverStateRef.current.hoveredLeafIds = [];
+            hoverStateRef.current.isGroupHover = false;
+          }
+
+          overlayVersionRef.current++;
         }
-
-        overlayVersionRef.current++;
-      }
-    });
-  }, [containerEl, hoverStateRef, overlayVersionRef, treeBoundsMapRef]);
+      });
+    },
+    [
+      containerEl,
+      frameAreasRef,
+      hoverStateRef,
+      overlayVersionRef,
+      treeBoundsMapRef,
+    ],
+  );
 
   useEffect(() => {
     if (!containerEl) return;
 
-    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener("pointermove", handlePointerMove);
 
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener("pointermove", handlePointerMove);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;

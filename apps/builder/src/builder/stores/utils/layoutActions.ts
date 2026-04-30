@@ -330,30 +330,32 @@ export const createDeleteLayoutAction =
           frameMatchesLegacyLayoutId(n, id),
       );
 
-      if (frameExists) {
-        // 1. ⭐ Layout을 사용하는 Page들의 layout_id를 null로 설정
-        const allPages = await db.pages.getAll();
-        const pagesUsingLayout = allPages.filter(
-          (p) => (p as Page & { layout_id?: string }).layout_id === id,
+      // 1. ⭐ Layout을 사용하는 Page들의 layout_id를 null로 설정.
+      // canonical frame projection 이 없어서 element cascade 를 skip 하더라도,
+      // 삭제되는 layout row 를 가리키는 page ref 는 orphan 으로 남기지 않는다.
+      const allPages = await db.pages.getAll();
+      const pagesUsingLayout = allPages.filter(
+        (p) => (p as Page & { layout_id?: string }).layout_id === id,
+      );
+
+      if (pagesUsingLayout.length > 0) {
+        await Promise.all(
+          pagesUsingLayout.map((page) =>
+            db.pages.update(page.id, { layout_id: null }),
+          ),
         );
 
-        if (pagesUsingLayout.length > 0) {
-          await Promise.all(
-            pagesUsingLayout.map((page) =>
-              db.pages.update(page.id, { layout_id: null }),
-            ),
-          );
+        // 메모리 상태의 pages도 업데이트
+        const { pages, setPages } = useStore.getState();
+        const updatedPages = pages.map((p) =>
+          pagesUsingLayout.some((up) => up.id === p.id)
+            ? { ...p, layout_id: null }
+            : p,
+        );
+        setPages(updatedPages);
+      }
 
-          // 메모리 상태의 pages도 업데이트
-          const { pages, setPages } = useStore.getState();
-          const updatedPages = pages.map((p) =>
-            pagesUsingLayout.some((up) => up.id === p.id)
-              ? { ...p, layout_id: null }
-              : p,
-          );
-          setPages(updatedPages);
-        }
-
+      if (frameExists) {
         // 2. ⭐ Layout의 모든 elements 삭제
         // P3-D 과도기: layout_id 기반 DB 로딩 cascade 유지 (P3-E 에서 canonical descendants 기반으로 전환)
         const allElements = await db.elements.getAll();
@@ -454,6 +456,11 @@ export const createDuplicateLayoutAction =
         }));
 
         await db.elements.insertMany(newElements as Element[]);
+
+        // 복제 직후 Frames 탭/Skia authoring surface 에 새 body/slot 이 즉시
+        // 보이도록 DB write-through 와 메모리 store 를 같은 턴에 동기화한다.
+        const { mergeElements } = useStore.getState();
+        mergeElements(newElements as Element[]);
       }
 
       // 4. 메모리 상태 업데이트
