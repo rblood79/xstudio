@@ -17,3 +17,23 @@ describe("skiaOverlayBuilder slot placeholder chrome contract", () => {
     );
   });
 });
+
+describe("skiaOverlayBuilder frame title contract", () => {
+  it("renders frame titles from frameAreas without registering page title hit bounds", async () => {
+    const source = await readFile(
+      resolve(__dirname, "skiaOverlayBuilder.ts"),
+      "utf-8",
+    );
+
+    expect(source).toContain("buildFrameTitleRenderItems(");
+    expect(source).toContain("frameAreas?: FrameAreaGroup[];");
+    expect(source).toContain("Page title drag 동작과 섞이면 안 된다.");
+
+    const frameTitleBlock = source.match(
+      /const frameTitleItems = buildFrameTitleRenderItems\([\s\S]*?for \(const item of frameTitleItems\) \{[\s\S]*?renderPageTitle\([\s\S]*?\);[\s\S]*?\}/,
+    );
+
+    expect(frameTitleBlock).not.toBeNull();
+    expect(frameTitleBlock?.[0]).not.toContain("pageTitleBoundsMap.set");
+  });
+});

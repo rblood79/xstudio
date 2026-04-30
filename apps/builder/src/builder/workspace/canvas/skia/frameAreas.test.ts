@@ -26,7 +26,7 @@ describe("ADR-911 P3-β computeFrameAreas", () => {
     expect(computeFrameAreas(undefined, {}, "any-frame")).toEqual([]);
   });
 
-  it("selectedReusableFrameId null → 빈 배열 (옵션 B1: 명시 선택 시에만 노출)", () => {
+  it("selectedReusableFrameId null 이어도 reusable frame 전체를 반환", () => {
     const doc = makeDoc([
       makeFrame({ id: "frame-A", reusable: true, name: "A" }),
     ]);
@@ -36,7 +36,16 @@ describe("ADR-911 P3-β computeFrameAreas", () => {
         { "frame-A": { x: 0, y: 0, width: 100, height: 100 } },
         null,
       ),
-    ).toEqual([]);
+    ).toEqual([
+      {
+        frameId: "frame-A",
+        frameName: "A",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+      },
+    ]);
   });
 
   it("non-reusable frame 과 frame 이 아닌 노드는 제외", () => {
@@ -119,7 +128,7 @@ describe("ADR-911 P3-β computeFrameAreas", () => {
     expect(result[0].frameName).toBe("frame-noname");
   });
 
-  it("선택된 frame 만 노출 (다중 reusable 중 선택된 하나)", () => {
+  it("다중 reusable frame 을 모두 노출해 Frames tab overview 를 제공", () => {
     const doc = makeDoc([
       makeFrame({ id: "f1", reusable: true, name: "First" }),
       makeFrame({ id: "f2", reusable: false, name: "Skip" }),
@@ -135,12 +144,12 @@ describe("ADR-911 P3-β computeFrameAreas", () => {
       "f3",
     );
 
-    // 옵션 B1: 선택된 f3 만 노출 — f1 은 reusable 이지만 미선택 → 제외
-    expect(result.map((g) => g.frameId)).toEqual(["f3"]);
-    expect(result[0]).toMatchObject({ x: 400, width: 480 });
+    expect(result.map((g) => g.frameId)).toEqual(["f1", "f3"]);
+    expect(result[0]).toMatchObject({ x: 0, width: 320 });
+    expect(result[1]).toMatchObject({ x: 400, width: 480 });
   });
 
-  it("선택된 frame 이 reusable=false 또는 doc 부재 시 빈 배열", () => {
+  it("reusable=false frame 은 제외", () => {
     const doc = makeDoc([
       makeFrame({ id: "frame-A", reusable: false, name: "Inline" }),
     ]);

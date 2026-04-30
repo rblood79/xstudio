@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { useStore } from "../../../stores";
+import { useEditModeStore } from "../../../stores/editMode";
+import { selectReusableFrame } from "../../../stores/utils/frameActions";
 import { resolveClickTarget } from "../../../utils/hierarchicalSelection";
 import type { Element } from "../../../../types/core/store.types";
 import { getElementBoundsSimple } from "../elementRegistry";
@@ -62,6 +64,17 @@ const TEXT_EDITABLE_TAGS = new Set([
   "button",
 ]);
 
+function syncReusableFrameSelectionForElement(
+  element: Element | undefined,
+): void {
+  if (!element) return;
+  if (element.page_id != null) return;
+  if (typeof element.layout_id !== "string") return;
+
+  selectReusableFrame(element.layout_id);
+  useEditModeStore.getState().setCurrentLayoutId(element.layout_id);
+}
+
 // ADR-069 Phase 1: startTransition 제거
 // Zustand 외부 store는 React의 `useSyncExternalStore`로 구독되며 transition lane으로
 // 분리되지 않는다 (set() 즉시 notify). 따라서 startTransition 래핑은 외부 store
@@ -118,6 +131,9 @@ function selectResolvedTarget(
     selectElementWithPageTransition(resolvedTarget, targetPageId);
   } else {
     const rawElement = useStore.getState().elementsMap.get(resolvedTarget);
+    syncReusableFrameSelectionForElement(
+      rawElement ?? interactiveElementsMap.get(resolvedTarget),
+    );
     if (rawElement) {
       setSelectedElement(resolvedTarget);
       return;
@@ -143,6 +159,8 @@ function handleUnresolvedTarget(
   if (clickedElement?.type.toLowerCase() !== "body") {
     return;
   }
+
+  syncReusableFrameSelectionForElement(clickedElement);
 
   // ADR-069 Phase 1: body + 페이지 전환을 병합 action으로 단일 set()
   if (
@@ -181,7 +199,8 @@ export function useCanvasElementSelectionHandlers({
       const interactiveElementsMap =
         getInteractiveElementsMap?.() ?? state.elementsMap;
       const clickedElement =
-        interactiveElementsMap.get(elementId) ?? state.elementsMap.get(elementId);
+        interactiveElementsMap.get(elementId) ??
+        state.elementsMap.get(elementId);
 
       // ADR-069 Phase 1: page crossing 판정만 여기서 하고, 실제 clearSelection +
       // setCurrentPageId + setSelectedElement 3-set 병합은 selectResolvedTarget

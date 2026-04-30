@@ -14,7 +14,7 @@ import type { Element } from "../../../../types/core/store.types";
 import type { BoundingBox } from "../selection/types";
 import type { RendererInvalidationPacket } from "../renderers";
 import type { AIEffectNodeBounds, SkiaRenderable } from "./types";
-import type { WorkflowEdge } from "./workflowEdges";
+import type { FrameAreaGroup, WorkflowEdge } from "./workflowEdges";
 import type { PageFrame, ElementBounds } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { SelectionRenderResult } from "./skiaWorkflowSelection";
@@ -54,6 +54,7 @@ import { buildEdgeGeometryCache } from "./workflowHitTest";
 import { buildWorkflowElementBounds } from "./skiaFramePipeline";
 import {
   buildHoverHighlightTargets,
+  buildFrameTitleRenderItems,
   buildMinimapConfig,
   buildMinimapRenderData,
   buildMinimapViewportBounds,
@@ -176,6 +177,8 @@ export interface OverlayBuildInput {
     height: number;
     elementCount: number;
   }>;
+  /** Frames 탭 multi-canvas overview 용 frame title 렌더 입력. */
+  frameAreas?: FrameAreaGroup[];
   /**
    * 페이지 타이틀 drag hit-test 를 위한 scene 좌표 bounds 저장소.
    * renderSkia 호출마다 clear 후 실제 렌더된 title 의 bounds 를 populate 한다.
@@ -188,6 +191,24 @@ export interface OverlayBuildInput {
   skiaCanvasWidth: number;
   skiaCanvasHeight: number;
   dpr: number;
+}
+
+function resolveSelectedFrameIdForTitle(
+  selectedElementIds: string[],
+  elementsMap: Map<string, Element>,
+): string | null {
+  for (const elementId of selectedElementIds) {
+    const element = elementsMap.get(elementId);
+    if (
+      element?.page_id == null &&
+      typeof element?.layout_id === "string" &&
+      element.layout_id.length > 0
+    ) {
+      return element.layout_id;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -216,6 +237,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
+    frameAreas,
     pageTitleBoundsMap,
     minimapVisible,
     skiaCanvasWidth,
@@ -289,6 +311,31 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
             });
           }
         }
+      }
+
+      // ── Frame Titles ──
+      // Page title 과 동일한 Pencil-style label 을 재사용하되, page drag hit-test
+      // map 에는 등록하지 않는다. Frame title 은 현재 시점에서 시각 chrome 이며
+      // Page title drag 동작과 섞이면 안 된다.
+      const frameTitleItems = buildFrameTitleRenderItems(
+        frameAreas ?? [],
+        resolveSelectedFrameIdForTitle(
+          selection.selectedElementIds,
+          elementsMap,
+        ),
+      );
+      for (const item of frameTitleItems) {
+        canvas.save();
+        canvas.translate(item.x, item.y);
+        renderPageTitle(
+          ck,
+          canvas,
+          item.title,
+          cameraZoom,
+          fontMgr,
+          item.highlighted,
+        );
+        canvas.restore();
       }
 
       // ── Workflow Overlay ──

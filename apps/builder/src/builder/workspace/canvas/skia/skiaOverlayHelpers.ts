@@ -16,7 +16,7 @@ import {
   MINIMAP_MIN_WIDTH,
   type MinimapConfig,
 } from "./workflowMinimap";
-import type { WorkflowEdge } from "./workflowEdges";
+import type { FrameAreaGroup, WorkflowEdge } from "./workflowEdges";
 import type { PageFrame } from "./workflowRenderer";
 
 export interface HoverHighlightTarget {
@@ -39,6 +39,14 @@ export interface PageTitleRenderItem {
   x: number;
   y: number;
   pageId: string;
+}
+
+export interface FrameTitleRenderItem {
+  highlighted: boolean;
+  title: string;
+  x: number;
+  y: number;
+  frameId: string;
 }
 
 /**
@@ -78,7 +86,9 @@ export function buildHoverHighlightTargets(
       targets.push({
         bounds: contextBounds,
         dashed: false,
-        semanticRole: getEditingSemanticsRole(elementsMap.get(hoveredContextId)),
+        semanticRole: getEditingSemanticsRole(
+          elementsMap.get(hoveredContextId),
+        ),
         slotMarkerRole: getEditingSlotMarkerRole(
           elementsMap.get(hoveredContextId),
           elementsMap,
@@ -230,6 +240,23 @@ export function buildPageTitleRenderItems(
       y: frame.y,
       elementCount: frame.elementCount ?? 0,
       highlighted: hasSelection && frame.id === activePageId,
+    }));
+}
+
+export function buildFrameTitleRenderItems(
+  frameAreas: FrameAreaGroup[],
+  activeFrameId: string | null,
+): FrameTitleRenderItem[] {
+  return frameAreas
+    .filter((frame): frame is FrameAreaGroup & { frameName: string } =>
+      Boolean(frame.frameName),
+    )
+    .map((frame) => ({
+      frameId: frame.frameId,
+      title: frame.frameName,
+      x: frame.x,
+      y: frame.y,
+      highlighted: frame.frameId === activeFrameId,
     }));
 }
 

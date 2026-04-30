@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Skia 화면에서 Frame body 빈 영역 클릭 시 body 가 선택되지 않던 회귀 수정**:
   - 빈 영역 body fallback hit-test 가 Page 영역보다 Frame authoring 영역을 먼저 검사하도록 보정
   - `page_id=null` 인 Frame body selection 을 Page 밖 클릭으로 오인해 clear 하지 않고 실제 `layout_id` body 선택으로 처리
+- **Frames 탭 authoring surface 를 Page 추가 UX 와 같은 multi-canvas overview 로 개선**:
+  - Frames mode 에서 선택된 Frame 하나만 같은 위치에 렌더하지 않고 등록된 reusable Frame 전체를 표시
+  - Page layout direction(horizontal/vertical/zigzag) 과 같은 배치 규칙으로 Frame canvas 를 정렬해 추가한 layout 을 한 화면에서 비교 가능
+  - Page canvas 좌상단 title 과 같은 Pencil-style label 을 Frame canvas 좌상단에도 렌더해 multi-frame overview 에서 각 Frame 을 즉시 식별 가능
+  - Skia 화면에서 다른 Frame body/child 를 클릭하면 해당 `layout_id` 를 selected reusable frame 으로 동기화해 Node tree 와 canvas selection 이 같은 Frame 을 가리킴
+  - Frames mode 의 빈 공간 클릭에서 숨겨진 Page hit-test 를 비활성화해 Page 탭의 과거 page 위치를 클릭해도 current page anchor 가 바뀌며 Frame canvas 가 이동하지 않도록 보정
 - **Frame preset 적용 직후 Layout reset 이 활성화되던 baseline 판정 수정**:
   - `appliedPreset` 의 normalized `containerStyle` 을 frame body reset baseline 으로 포함해 preset 이 만든 `display`/`flexDirection` 을 사용자 override 로 보지 않도록 보정
   - Layout reset 은 사용자가 변경한 값만 preset baseline 으로 되돌리며, 수직 2단 preset 적용 직후에는 dirty 상태가 되지 않음

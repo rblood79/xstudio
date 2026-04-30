@@ -277,29 +277,38 @@ P3-δ fix #2 의 framePositions auto-init 이 `height: pageHeight` 사용 — vi
 - 빈 큰 영역 회귀 0
 - 세션 47 commit `e4f24697` (fix #3+#4+B1 묶음)
 
-## 4.9. P3-γ B1 filter — selectedReusableFrameId 만 노출 (사용자 noise 회귀 fix)
+## 4.9. P3-γ frame visibility policy — B1 filter 에서 multi-frame overview 로 전환
 
 ### 결함 요약
 
-`computeFrameAreas` 가 모든 reusable frame 을 영역으로 반환 (옵션 B2). 사용자가 frame 을 명시 선택하지 않은 상태에서도 모든 reusable frame 의 별도 영역이 캔버스에 항상 노출 → noise.
+초기 판단은 `computeFrameAreas` 가 모든 reusable frame 을 영역으로 반환하면 noise 가 크다는 것이었다. 그래서 2026-04-28 에는 `selectedReusableFrameId` 일치 frame 만 노출하는 B1 을 채택했다.
 
 사용자 보고 (2026-04-28): "1.문제: Frames 가 canvas에 별도로 생성되고 그내부에 slot들이 생성되었다".
+
+2026-04-30 UX 재검토: Frames 탭은 Page 탭처럼 layout 을 추가/비교하는 작업면이므로, 선택된 하나만 같은 위치에 표시하면 추가한 Frame 전체를 한 번에 볼 수 없다. 따라서 B1 은 Frames mode authoring UX 에서는 superseded 되며, Page 추가와 동일하게 reusable frame 전체를 `pageLayoutDirection` 기준으로 배치한다. `selectedReusableFrameId` 는 현재 Node tree/properties 대상 indicator 로만 유지한다.
 
 ### Fix
 
 §4.6 의 D2/D3 외 신규 옵션 분기:
 
-| 옵션                                                 | 동작                            | 채택   |
-| ---------------------------------------------------- | ------------------------------- | ------ |
-| **B1**: `selectedReusableFrameId` 일치 frame 만 노출 | 명시 선택 시에만 별도 영역 노출 | ✓      |
-| B2: 모든 reusable frame 항상 노출                    | noise 큼                        | (기각) |
+| 옵션                                                   | 동작                                                                    | 채택                        |
+| ------------------------------------------------------ | ----------------------------------------------------------------------- | --------------------------- |
+| B1: `selectedReusableFrameId` 일치 frame 만 노출       | 명시 선택 시에만 별도 영역 노출                                         | superseded (2026-04-30)     |
+| **B2R**: Frames mode 에서 모든 reusable frame overview | Page 추가와 동일한 방향(horizontal/vertical/zigzag)으로 모든 Frame 배치 | ✓ (2026-04-30 UX follow-up) |
 
-`computeFrameAreas(doc, framePositions, selectedReusableFrameId)` 시그니처 확장. `selectedReusableFrameId === null` 시 빈 배열. pencil app component editing navigation context 와 정합 (frame 편집은 명시적 navigation, 항상 보이지 않음).
+`computeFrameAreas(doc, framePositions, selectedReusableFrameId)` 는 reusable frame 전체를 반환한다. BuilderCanvas 가 `pageLayoutDirection` 과 `PAGE_STACK_GAP` 으로 Page 와 같은 multi-canvas 배치를 적용한다. canvas 에서 다른 Frame body/child 를 클릭하면 해당 element 의 `layout_id` 를 `selectedReusableFrameId`/editMode layoutId 로 동기화해 Node tree 와 properties panel 이 같은 Frame 을 가리킨다.
+
+Frame canvas 좌상단에는 Page title 과 같은 Pencil-style label 을 렌더한다. 이 label 은 multi-frame overview 식별용 chrome 이며 Page title drag hit-test map 에는 등록하지 않는다.
+
+Frames mode 에서는 Page 탭의 page canvas 가 렌더되지 않으므로, 빈 공간 클릭의 body fallback 도 page 영역 hit-test 를 수행하지 않는다. hidden page 위치가 current page 를 변경하면 frameAreas 의 anchor 가 바뀌어 Frame canvas 가 이동하므로, frame body 영역만 body fallback 대상으로 유지한다.
 
 ### Fix 효과
 
 - PagesTab 작업 시 frame 영역 0 (page 만 가시)
-- FramesTab → frame 클릭 시 그 frame 만 별도 영역으로 노출
+- FramesTab → 등록된 reusable frame 전체를 Page layout direction 으로 노출
+- 각 Frame canvas 좌상단 title 로 현재 overview 의 Frame 식별 가능
+- FramesTab 빈 공간 클릭으로 hidden Page 위치가 선택되어 Frame canvas 가 이동하지 않음
+- FramesTab canvas 에서 다른 Frame 을 클릭하면 selected frame indicator 와 Node tree 가 즉시 동기화
 - 세션 47 commit `e4f24697` 동일 묶음
 
 ## 4.10. P3-θ — Frame Slot Fill Resolution (✅ land 2026-04-28 세션 49)

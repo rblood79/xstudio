@@ -23,6 +23,7 @@ import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { WorkflowHoverState } from "../hooks/useWorkflowInteraction";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
 import type { DropIndicatorState } from "./dropIndicatorRenderer";
+import type { FrameAreaGroup } from "./workflowEdges";
 import { renderGrid } from "./gridRenderer";
 import { buildGridRenderInput } from "./skiaOverlayHelpers";
 import { buildSelectionRenderData } from "./skiaWorkflowSelection";
@@ -83,6 +84,7 @@ export interface BuildFrameRenderPlanInput {
     height: number;
     elementCount: number;
   }>;
+  frameAreas?: FrameAreaGroup[];
   /**
    * 페이지 타이틀 drag hit-test 용 scene 좌표 bounds 누적 맵.
    * BuilderCanvas 가 ref 로 주입하며 render pass 가 매 프레임 갱신한다.
@@ -115,6 +117,7 @@ export function buildFrameRenderPlan(
     invalidationPacket,
     allPageFrames,
     visiblePageFrames,
+    frameAreas,
     pageTitleBoundsMap,
     workflowHoverState,
     elementHoverState,
@@ -169,6 +172,7 @@ export function buildFrameRenderPlan(
     overflowInfoMap: sharedScene.overflowInfoMap,
     dropIndicatorState,
     visiblePageFrames,
+    frameAreas,
     pageTitleBoundsMap,
     minimapVisible,
     minimapConfig,

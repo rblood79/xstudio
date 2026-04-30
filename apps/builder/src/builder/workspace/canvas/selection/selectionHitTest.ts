@@ -98,6 +98,7 @@ export function findBodySelectionAtCanvasPoint({
   elementsMap,
   pageHeight,
   pageIndexElementsByPage,
+  pageSelectionEnabled = true,
   pagePositions,
   pageWidth,
   pages,
@@ -109,6 +110,7 @@ export function findBodySelectionAtCanvasPoint({
   frameAreas?: FrameBodySelectionArea[];
   pageHeight: number;
   pageIndexElementsByPage: Map<string, Set<string>>;
+  pageSelectionEnabled?: boolean;
   pagePositions: PagePositionMap;
   pageWidth: number;
   pages: PageLike[];
@@ -120,6 +122,10 @@ export function findBodySelectionAtCanvasPoint({
   });
   if (frameSelection) {
     return frameSelection;
+  }
+
+  if (!pageSelectionEnabled) {
+    return { bodyElementId: null, pageId: null };
   }
 
   let pageId: string | null = null;

@@ -47,9 +47,7 @@ describe("findBodySelectionAtCanvasPoint", () => {
           }),
         ],
       ]),
-      frameAreas: [
-        { frameId: "frame-1", x: 0, y: 0, width: 800, height: 600 },
-      ],
+      frameAreas: [{ frameId: "frame-1", x: 0, y: 0, width: 800, height: 600 }],
       pageHeight: 600,
       pageIndexElementsByPage: new Map([["page-1", new Set(["page-body"])]]),
       pagePositions: { "page-1": { x: 0, y: 0 } },
@@ -67,14 +65,30 @@ describe("findBodySelectionAtCanvasPoint", () => {
       elementsMap: new Map([
         ["page-body", makeBody({ id: "page-body", page_id: "page-1" })],
       ]),
-      frameAreas: [
-        { frameId: "frame-1", x: 0, y: 0, width: 800, height: 600 },
-      ],
+      frameAreas: [{ frameId: "frame-1", x: 0, y: 0, width: 800, height: 600 }],
       pageHeight: 600,
       pageIndexElementsByPage: new Map([["page-1", new Set(["page-body"])]]),
       pagePositions: { "page-1": { x: 0, y: 0 } },
       pageWidth: 800,
       pages: [{ id: "page-1" }],
+    });
+
+    expect(result).toEqual({ bodyElementId: null, pageId: null });
+  });
+
+  it("ignores hidden page areas when page body selection is disabled", () => {
+    const result = findBodySelectionAtCanvasPoint({
+      canvasPoint: { x: 840, y: 40 },
+      currentPageId: "page-1",
+      elementsMap: new Map([
+        ["page-body-2", makeBody({ id: "page-body-2", page_id: "page-2" })],
+      ]),
+      pageHeight: 600,
+      pageIndexElementsByPage: new Map([["page-2", new Set(["page-body-2"])]]),
+      pagePositions: { "page-2": { x: 800, y: 0 } },
+      pageSelectionEnabled: false,
+      pageWidth: 800,
+      pages: [{ id: "page-2" }],
     });
 
     expect(result).toEqual({ bodyElementId: null, pageId: null });

@@ -23,6 +23,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { useStore } from "../../stores";
+import type { PageLayoutDirection } from "../../stores/canvasSettings";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
 import { selectCanonicalDocument } from "../../stores/elements";
@@ -94,6 +95,27 @@ export interface BuilderCanvasProps {
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
 const PAGE_STACK_GAP = 80;
+
+function computeStackedCanvasPosition(
+  index: number,
+  width: number,
+  height: number,
+  gap: number,
+  direction: PageLayoutDirection,
+): { x: number; y: number } {
+  if (direction === "vertical") {
+    return { x: 0, y: index * (height + gap) };
+  }
+
+  if (direction === "zigzag") {
+    return {
+      x: (index % 2) * (width + gap),
+      y: Math.floor(index / 2) * (height + gap),
+    };
+  }
+
+  return { x: index * (width + gap), y: 0 };
+}
 
 type CanvasContextMenuState = {
   elementId: string;
@@ -204,8 +226,8 @@ export function BuilderCanvas({
   const childrenMap = useStore((state) => state.childrenMap);
   const dirtyElementIds = useStore((state) => state.dirtyElementIds);
   const layouts = useLayoutsStore((state) => state.layouts);
-  // ADR-911 P3-γ (옵션 B1, 2026-04-28): 선택된 reusable frame 만 캔버스 별도
-  // 영역 노출. null 이면 frame 영역 0건 → page 만 렌더.
+  // Frames tab overview: canvas 는 reusable frame 전체를 표시하고, 이 값은
+  // Node tree/properties 의 현재 frame 선택 동기화에 사용한다.
   const selectedReusableFrameId = useLayoutsStore(
     (state) => state.selectedReusableFrameId,
   );
@@ -403,13 +425,22 @@ export function BuilderCanvas({
       : undefined;
     const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
     return computeFrameAreas(doc, framePositions, selectedReusableFrameId).map(
-      (area) => ({
-        ...area,
-        x: anchorPosition?.x ?? 0,
-        y: anchorPosition?.y ?? 0,
-        width: pageWidth,
-        height: pageHeight,
-      }),
+      (area, index) => {
+        const stackedPosition = computeStackedCanvasPosition(
+          index,
+          pageWidth,
+          pageHeight,
+          PAGE_STACK_GAP,
+          pageLayoutDirection,
+        );
+        return {
+          ...area,
+          x: (anchorPosition?.x ?? 0) + stackedPosition.x,
+          y: (anchorPosition?.y ?? 0) + stackedPosition.y,
+          width: pageWidth,
+          height: pageHeight,
+        };
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -421,6 +452,7 @@ export function BuilderCanvas({
     framePositionsVersion,
     isFrameEditMode,
     pageHeight,
+    pageLayoutDirection,
     pagePositions,
     pageWidth,
     selectedReusableFrameId,
@@ -760,6 +792,7 @@ export function BuilderCanvas({
     if (!element) return;
 
     const onPointerDownCapture = (event: PointerEvent) => {
+      if (isFrameEditMode) return;
       if (event.button !== 0) return;
       const target = event.target as HTMLElement;
       if (target.closest('input, textarea, [contenteditable="true"]')) return;
@@ -788,7 +821,7 @@ export function BuilderCanvas({
     return () => {
       element.removeEventListener("pointerdown", onPointerDownCapture, true);
     };
-  }, [screenToCanvasPoint, startPageDrag]);
+  }, [isFrameEditMode, screenToCanvasPoint, startPageDrag]);
 
   useCentralCanvasPointerHandlers({
     completeEditRef,
@@ -806,6 +839,7 @@ export function BuilderCanvas({
     onStartMove: onStartMoveRef,
     onUpdateDrag: onUpdateDragRef,
     onEndDrag: onEndDragRef,
+    pageSelectionEnabled: !isFrameEditMode,
     pageHeight,
     pageWidth,
     screenToCanvasPoint,
@@ -813,7 +847,6 @@ export function BuilderCanvas({
     selectElementWithPageTransition,
     setCurrentPageId,
     setCursor,
-    setSelectedElement,
     setSelectedElements,
     zoom,
   });

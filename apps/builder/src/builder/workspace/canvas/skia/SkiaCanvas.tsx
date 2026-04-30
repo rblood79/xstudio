@@ -196,6 +196,7 @@ export function SkiaCanvas({
   const visiblePageFramesRef = useRef(
     rendererInput.sceneSnapshot.document.visiblePageFrames,
   );
+  const frameAreasRef = useRef(rendererInput.frameAreas);
   const documentPageFrameVersionRef = useRef(
     rendererInput.sceneSnapshot.document.allPageFrameVersion,
   );
@@ -254,6 +255,7 @@ export function SkiaCanvas({
       rendererInput.sceneSnapshot.document.allPageFrames;
     visiblePageFramesRef.current =
       rendererInput.sceneSnapshot.document.visiblePageFrames;
+    frameAreasRef.current = rendererInput.frameAreas;
     rendererInputRef.current = rendererInput;
     documentPageFrameVersionRef.current =
       rendererInput.sceneSnapshot.document.allPageFrameVersion;
@@ -692,7 +694,11 @@ export function SkiaCanvas({
           hasAIEffects,
           contentNode,
           allPageFrames: allPageFramesRef.current,
-          visiblePageFrames: visiblePageFramesRef.current,
+          visiblePageFrames:
+            currentRendererInput.editMode === "layout"
+              ? []
+              : visiblePageFramesRef.current,
+          frameAreas: frameAreasRef.current,
           pageTitleBoundsMap: pageTitleBoundsMapRef?.current,
           workflowHoverState: workflowHoverStateRef.current,
           elementHoverState: elementHoverStateRef.current,

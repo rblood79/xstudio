@@ -4,7 +4,10 @@ import { resolve } from "node:path";
 
 describe("SkiaCanvas render invalidation contract", () => {
   it("invalidates content and command stream cache when rendererInput changes", async () => {
-    const source = await readFile(resolve(__dirname, "SkiaCanvas.tsx"), "utf-8");
+    const source = await readFile(
+      resolve(__dirname, "SkiaCanvas.tsx"),
+      "utf-8",
+    );
 
     expect(source).toMatch(
       /import \{ invalidateCommandStreamCache \} from "\.\/renderCommands";/,
@@ -21,7 +24,10 @@ describe("SkiaCanvas render invalidation contract", () => {
   });
 
   it("feeds StoreRenderBridge from page-resolved rendererInput maps", async () => {
-    const source = await readFile(resolve(__dirname, "SkiaCanvas.tsx"), "utf-8");
+    const source = await readFile(
+      resolve(__dirname, "SkiaCanvas.tsx"),
+      "utf-8",
+    );
 
     expect(source).toContain(
       "getElements: () => rendererInputRef.current.elementsMap,",
@@ -35,5 +41,21 @@ describe("SkiaCanvas render invalidation contract", () => {
     expect(source).not.toContain(
       "getChildrenMap: () => useStore.getState().childrenMap,",
     );
+  });
+
+  it("uses frameAreas for frame titles and suppresses page titles in layout mode", async () => {
+    const source = await readFile(
+      resolve(__dirname, "SkiaCanvas.tsx"),
+      "utf-8",
+    );
+
+    expect(source).toContain(
+      "const frameAreasRef = useRef(rendererInput.frameAreas);",
+    );
+    expect(source).toContain(
+      "frameAreasRef.current = rendererInput.frameAreas;",
+    );
+    expect(source).toContain("frameAreas: frameAreasRef.current,");
+    expect(source).toContain('currentRendererInput.editMode === "layout"');
   });
 });

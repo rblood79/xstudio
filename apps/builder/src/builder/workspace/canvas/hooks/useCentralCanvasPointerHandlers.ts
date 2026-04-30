@@ -56,6 +56,7 @@ interface UseCentralCanvasPointerHandlersOptions {
   onEndDrag: MutableRefObject<() => void>;
   /** ADR-043 Phase 5: 드래그 취소 콜백 (Escape 키) */
   onCancelDrag: MutableRefObject<() => void>;
+  pageSelectionEnabled?: boolean;
   pageHeight: number;
   pageWidth: number;
   screenToCanvasPoint: (position: { x: number; y: number }) => {
@@ -73,7 +74,6 @@ interface UseCentralCanvasPointerHandlersOptions {
   ) => void;
   setCurrentPageId: (pageId: string) => void;
   setCursor: (cursor: string) => void;
-  setSelectedElement: (elementId: string) => void;
   setSelectedElements: (elementIds: string[]) => void;
   zoom: number;
 }
@@ -102,6 +102,7 @@ export function useCentralCanvasPointerHandlers({
   onUpdateDrag,
   onCancelDrag,
   onEndDrag,
+  pageSelectionEnabled = true,
   pageHeight,
   pageWidth,
   screenToCanvasPoint,
@@ -109,7 +110,6 @@ export function useCentralCanvasPointerHandlers({
   selectElementWithPageTransition,
   setCurrentPageId,
   setCursor,
-  setSelectedElement,
   setSelectedElements,
   zoom,
 }: UseCentralCanvasPointerHandlersOptions): void {
@@ -329,29 +329,24 @@ export function useCentralCanvasPointerHandlers({
             frameAreas,
             pageHeight,
             pageIndexElementsByPage: state.pageIndex.elementsByPage,
+            pageSelectionEnabled,
             pagePositions: state.pagePositions,
             pageWidth,
             pages: state.pages,
           });
 
           if (bodySelection.bodyElementId) {
-            const needsPageTransition =
-              bodySelection.pageId != null &&
-              bodySelection.pageId !== state.currentPageId;
-            if (needsPageTransition) {
-              selectElementWithPageTransition(
-                bodySelection.bodyElementId,
-                bodySelection.pageId,
-              );
-            } else {
-              setSelectedElement(bodySelection.bodyElementId);
-            }
+            handleElementClickRef.current(bodySelection.bodyElementId, {
+              ctrlKey: event.ctrlKey,
+              metaKey: event.metaKey,
+              shiftKey: event.shiftKey,
+            });
           } else if (bodySelection.pageId) {
             // ADR-074 Phase 1: 페이지 영역 내부 빈 공간 클릭
             // - Case A (페이지 전환 + body 선택): selectElementWithPageTransition
             //   단일 set()으로 병합하여 store notify 2회 → 1회로 축소.
-            // - Case B (페이지 동일 + body 선택): 기존 setSelectedElement 유지.
-            //   (이미 1-call, 중복 action 호출 불필요)
+            // - Case B (페이지 동일 + body 선택): handleElementClickRef 경유.
+            //   Frame body 도 같은 경로에서 selected reusable frame 을 동기화한다.
             // - Case C/D (body 없음): 페이지 전환 여부와 무관하게 기존 2-call 유지.
             //   bodyElementId가 없는 페이지는 희귀 edge라 별도 action 신설 보류.
             const needsPageTransition =
@@ -500,6 +495,7 @@ export function useCentralCanvasPointerHandlers({
     onEndDrag,
     onStartMove,
     onUpdateDrag,
+    pageSelectionEnabled,
     pageHeight,
     pageWidth,
     screenToCanvasPoint,
@@ -507,7 +503,6 @@ export function useCentralCanvasPointerHandlers({
     selectElementWithPageTransition,
     setCurrentPageId,
     setCursor,
-    setSelectedElement,
     setSelectedElements,
     zoom,
   ]);

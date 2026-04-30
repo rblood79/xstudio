@@ -420,6 +420,8 @@ export function computeLayoutGroups(
  * - id 정규화: `metadata.layoutId` (legacyToCanonical adapter 가 보존) 우선,
  *   부재 시 FrameNode.id 사용. legacy `useLayoutsStore.layouts[]` CRUD 와 정합.
  * - 좌표/크기: `framePositions[frameId]` lookup, miss 시 `{0,0,0,0}` (P3-α 의 기본 동작과 동일)
+ * - Frames tab UX: page multi-canvas 처럼 reusable frame 전체를 반환한다.
+ *   선택 frame 하나로 제한하면 등록 layout 을 한 화면에서 비교할 수 없다.
  *
  * 본 함수는 P3-β scope: compute layer 만. BuilderCanvas / Skia render 통합은 P3-δ.
  */
@@ -429,14 +431,9 @@ export function computeFrameAreas(
     string,
     { x: number; y: number; width: number; height: number }
   >,
-  selectedReusableFrameId: string | null = null,
+  _selectedReusableFrameId: string | null = null,
 ): FrameAreaGroup[] {
   if (!doc) return [];
-  // ADR-911 P3-γ design 옵션 B1 (2026-04-28 사용자 보고 → 채택):
-  // selectedReusableFrameId 가 set 일 때만 frame 영역 노출 — 선택 안 된 frame
-  // 영역이 항상 보이는 noise 제거. pencil app 의 component editing navigation
-  // context 와 정합 (frame 편집은 명시적 navigation, 항상 보이지 않음).
-  if (!selectedReusableFrameId) return [];
 
   const result: FrameAreaGroup[] = [];
   for (const child of doc.children) {
@@ -447,7 +444,6 @@ export function computeFrameAreas(
     const layoutId = (frame.metadata as { layoutId?: string } | undefined)
       ?.layoutId;
     const frameId = layoutId ?? frame.id;
-    if (frameId !== selectedReusableFrameId) continue;
 
     const pos = framePositions[frameId] ?? { x: 0, y: 0, width: 0, height: 0 };
 

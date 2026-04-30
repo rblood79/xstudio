@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Element } from "../../../../types/core/store.types";
 import {
+  buildFrameTitleRenderItems,
   buildHoverHighlightTargets,
   buildSlotMarkerTargets,
 } from "./skiaOverlayHelpers";
@@ -152,10 +153,7 @@ describe("buildSlotMarkerTargets", () => {
         ["card-content-filled", { x: 0, y: 240, width: 100, height: 40 }],
         ["page-slot-filled", { x: 0, y: 300, width: 100, height: 40 }],
         ["slot-hidden", { x: 0, y: 360, width: 100, height: 40 }],
-        [
-          "page-slot-hidden-visible",
-          { x: 0, y: 420, width: 100, height: 40 },
-        ],
+        ["page-slot-hidden-visible", { x: 0, y: 420, width: 100, height: 40 }],
         ["plain", { x: 0, y: 480, width: 100, height: 40 }],
       ]),
       new Map([
@@ -298,6 +296,49 @@ describe("buildSlotMarkerTargets", () => {
         bounds: { x: 0, y: 420, width: 100, height: 40 },
         showHatch: true,
         slotMarkerRole: "origin",
+      },
+    ]);
+  });
+});
+
+describe("buildFrameTitleRenderItems", () => {
+  it("builds Pencil-style frame labels from multi-frame areas", () => {
+    const items = buildFrameTitleRenderItems(
+      [
+        {
+          frameId: "frame-a",
+          frameName: "Checkout",
+          x: 100,
+          y: 200,
+          width: 1440,
+          height: 900,
+        },
+        {
+          frameId: "frame-b",
+          frameName: "Settings",
+          x: 1600,
+          y: 200,
+          width: 1440,
+          height: 900,
+        },
+      ],
+      "frame-b",
+    );
+
+    expect(items).toEqual([
+      {
+        frameId: "frame-a",
+        title: "Checkout",
+        x: 100,
+        y: 200,
+        highlighted: false,
+      },
+      {
+        frameId: "frame-b",
+        title: "Settings",
+        x: 1600,
+        y: 200,
+        highlighted: true,
       },
     ]);
   });
