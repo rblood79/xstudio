@@ -2,7 +2,7 @@
 
 ## Status
 
-Superseded by [ADR-900](../900-unified-skia-rendering-engine.md) — 2026-04-08
+Superseded by [ADR-900](900-unified-skia-rendering-engine.md) — 2026-04-08
 
 PixiJS 씬 그래프(Phase 0~2 전제)가 ADR-900 Phase 8-9에서 완전 제거됨. Taffy WASM 레이아웃(Phase 0, PersistentTaffyTree)은 ADR-900 Phase 10(Rust Layout)으로 교체 예정. Phase 5 OffscreenCanvas Worker는 미구현 상태로 종료.
 

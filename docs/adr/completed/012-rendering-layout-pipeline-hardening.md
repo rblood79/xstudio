@@ -2,7 +2,9 @@
 
 ## Status
 
-Partial
+Superseded — 2026-04-30 (ADR-900 이후 legacy residual archive)
+
+ADR-009 기반 Taffy/PixiJS 렌더링 하드닝 계획은 ADR-900 Unified Skia 전환으로 active root queue 에서 제거한다. 이 문서는 P0~P2 및 P3-2/P3-3 구현 이력과 P3-1 dirty tracking 잔여 debt 의 historical reference 로만 보존한다.
 
 ## Date
 

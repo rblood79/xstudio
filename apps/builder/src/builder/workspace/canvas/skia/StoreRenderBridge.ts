@@ -31,7 +31,7 @@ import { onLayoutPublished } from "../layout";
 import { getSyntheticElementsMap } from "../layout/engines/fullTreeLayout";
 import type { TransitionManager } from "./transitionManager";
 import { ANIMATABLE_NUMERIC_PROPERTIES } from "./interpolators";
-import { InlineAlertSpec } from "@composition/specs";
+import { InlineAlertSpec, parsePxValue } from "@composition/specs";
 import { resolveInstanceWithSharedCache } from "@/resolvers/canonical/storeBridge";
 import {
   resolveCanonicalRefElement,
@@ -70,23 +70,6 @@ export function parseTransitionShorthand(value: string): TransitionDef[] {
     const easing = tokens[2] ?? "ease";
     return { property, duration, easing };
   });
-}
-
-/**
- * element.props.style에서 numeric 속성값을 추출한다.
- * 문자열(예: "16px")인 경우 parseFloat으로 숫자 추출.
- */
-function getNumericStyleValue(
-  style: Record<string, unknown>,
-  property: string,
-): number | undefined {
-  const val = style[property];
-  if (typeof val === "number") return val;
-  if (typeof val === "string") {
-    const parsed = parseFloat(val);
-    return isNaN(parsed) ? undefined : parsed;
-  }
-  return undefined;
 }
 
 /**
@@ -580,8 +563,8 @@ export class StoreRenderBridge {
       if (!targetProps) continue;
 
       for (const prop of targetProps) {
-        const prevVal = getNumericStyleValue(prevStyle, prop);
-        const nextVal = getNumericStyleValue(nextStyle, prop);
+        const prevVal = parsePxValue(prevStyle[prop], undefined);
+        const nextVal = parsePxValue(nextStyle[prop], undefined);
 
         if (
           prevVal !== undefined &&

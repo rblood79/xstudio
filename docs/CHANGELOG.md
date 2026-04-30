@@ -76,6 +76,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- **ADR-012 / ADR-900 을 ADR root active queue 에서 completed archive 로 이동**:
+  - `docs/adr/012-rendering-layout-pipeline-hardening.md` → `docs/adr/completed/012-rendering-layout-pipeline-hardening.md`
+  - `docs/adr/900-unified-skia-rendering-engine.md` → `docs/adr/completed/900-unified-skia-rendering-engine.md`
+  - ADR-012 는 ADR-009 기반 Taffy/PixiJS hardening 계획을 ADR-900 이후 legacy residual 로 Superseded 처리하고, P3-1 dirty tracking 잔여 debt 는 historical reference 로 보존
+  - ADR-900 은 Accepted baseline 으로 completed archive 에 등록하고, README 카운트 갱신: 완료 104→106, 부분 완료 8→7, 합계 119→120
+- **ADR-914 standalone plan 을 Superseded archive 로 이동**:
+  - `docs/adr/914-imports-resolver-designkit-integration.md` → `docs/adr/completed/914-imports-resolver-designkit-integration.md`
+  - ADR-915 로 DesignKit integration scope 는 이미 무효화됐고, 남은 P5-D/P5-E `imports` fetch/cache/resolver scope 는 ADR-916 canonical document SSOT transition 과 ADR-911 G5 Pencil import/export parity 로 흡수
+  - ADR-911 잔여 G3/G4/G5 와 ADR-913 Phase 4/5 진입 순서를 ADR-916 G2/G5/G6 이후로 재정렬
+  - ADR README 카운트 갱신: 완료 103→104, 미구현 8→7, 합계 119 유지
 - **ADR-912 를 Implemented 로 승격하고 ADR-911 재개 조건을 갱신**:
   - ADR-912 G4-B/G4-C/G4-E/G4-H 잔여 gate 를 닫고 design breakdown 의 남은 gate 목록을 0건으로 정리
   - ADR-911 은 Implemented 가 아니라 `Ready to Resume` 상태로 전환. 이후 P3-ε/P3-ζ 는 ADR-912 기능 위의 frame authoring 편의 확장으로만 재개 가능
@@ -419,9 +429,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 위치: `apps/builder/src/lib/db/migrationTagType.ts` + `__tests__/migrationTagType.test.ts`
   - **Step 4-3** `usePageManager.initializeProject` 의 P3-E migration 호출 직후에 `runTagTypeMigration(db, projectId, { dryRun: true })` 추가. 진입 조건: `metaRecord` 미존재 또는 `schemaVersion ∈ {legacy, composition-1.0}`. dev console 로그 — skipped/일반/transformedCount > 0 시 `${N} elements need tag→type migration`. try/catch graceful degrade (BC)
   - 위치: `apps/builder/src/builder/hooks/usePageManager.ts`
-  - **Why**: Step 4-4 (write-through, env flag `VITE_ADR913_P4_WRITE_THROUGH`) 진입 전 측정 인프라 사전 land — ADR-911 monitoring 종결 (~2026-05-04) 후 즉시 활성화 가능
+  - **Why**: Step 4-4 (write-through, env flag `VITE_ADR913_P4_WRITE_THROUGH`) 진입 전 측정 인프라 사전 land — 당시에는 monitoring 완료 뒤 활성화로 계획했으나, 2026-04-30 이후 ADR-916 G2 canonical store/export adapter 이후 재평가로 변경
 - 검증: type-check 3/3 PASS + db 영역 vitest 142/142 PASS (기존 126 + 신규 16) + usePageManager.canonical 회귀 0
-- **잔여 Phase 4 단계**: Step 4-4 (write-through, ADR-911 monitoring 종결 후) / Step 4-5 (`normalizeLegacyElement` helper 제거, write-through 1주+ 안정 + composition-1.1 비율 ≥ 95% 후) / Step 4-6 (Phase 4 종결)
+- **잔여 Phase 4 단계**: Step 4-4 (write-through, ADR-916 G2 이후 재평가) / Step 4-5 (`normalizeLegacyElement` helper 제거, write-through 1주+ 안정 + composition-1.1 또는 canonical-primary 기준 충족 후) / Step 4-6 (Phase 4 종결)
 
 ### Documentation
 
@@ -547,8 +557,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ADR-912 G4-A — 시각 마커 3종 (LayerTree + Canvas + DesignKit) → **2종 (LayerTree + Canvas)** 로 축소
   - ADR-016 line 43 — 다이어그램에서 `DesignKitPanel` 박스 제거
   - ADR-011 line 1079 — `appliedKitIds` 표 항목 strikethrough + ADR-915 footnote (이미 ADR-054 Superseded)
-  - ADR-914 — **보류** (Proposed 단계 + imports 본체 미진입). 본 ADR-915 land 후 ADR-914 진입 시점에 P5-F section 후속 갱신 (DesignKit 통합 결정 항목 제거)
-- **CompositionDocument types 정리** — `metadata.importedFrom: "designkit:<kit-id>"` 주석 제거 (`packages/shared/src/types/composition-document.types.ts`). `imports` resolver 후속 ADR-914 reference 만 유지
+  - ADR-914 — 당시 **보류** (Proposed 단계 + imports 본체 미진입). 이후 2026-04-30 ADR-916 으로 잔여 imports scope 흡수 + Superseded 처리
+- **CompositionDocument types 정리** — `metadata.importedFrom: "designkit:<kit-id>"` 주석 제거 (`packages/shared/src/types/composition-document.types.ts`). `imports` resolver 는 이후 ADR-916 으로 흡수
 
 ### Gates 검증
 
@@ -932,12 +942,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Gate G5-B~G5-F. ADR-911 와 독립 진행 가능 (영역 분리)
   - 위치: `docs/adr/913-tag-type-rename-hybrid-cleanup.md` (Risk-First 본문 ~210 LOC). design 문서 `903-phase5-persistence-imports-breakdown.md` §P5-C 그대로 활용
 
-- **ADR-914 — `imports` resolver + DesignKit 통합 (Proposed)**:
+- **ADR-914 — `imports` resolver + DesignKit 통합 (Proposed 당시, 2026-04-30 Superseded)**:
   - ADR-903 P5-D/E/F 잔여 흡수. P5-D imports fetch + parse / P5-E ResolverCache 동기 캐시 히트 + async prefetch / P5-F DesignKit 통합 결정 (Option α 무수정 + 별도 vs Option β 통합)
   - 대안 A (단일 ADR + 3 Phase) 채택 — B (3 ADR 분리, 의존 그래프 부담) / C (imports 만 우선, 성능 MED + 사용자 혼동) 기각
   - DesignKit 복사-적용 파이프라인 무수정 — ADR-903 R7 (DesignKit 별도 track) 명시적 수용
   - Gate P5-D/E/F + G-Integration (ADR-911 와 통합)
-  - 위치: `docs/adr/914-imports-resolver-designkit-integration.md` (Risk-First 본문 ~180 LOC). design 문서 §P5-D/E/F 그대로 활용
+  - 위치: `docs/adr/completed/914-imports-resolver-designkit-integration.md` (Risk-First 본문 ~180 LOC). design 문서 §P5-D/E/F 는 historical reference 로 보존
 
 - **ADR-903 라인 라인업 완성**:
   - ADR-911: Layout/frameset 완전 재설계 (pencil 호환) — G3 (b)/(c)/(d) 흡수

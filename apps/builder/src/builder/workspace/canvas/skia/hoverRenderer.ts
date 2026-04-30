@@ -14,15 +14,13 @@ import type {
   OverflowContentInfo,
   ChildOverflowContext,
 } from "./skiaFrameHelpers";
-import { getSemanticOverlayColor } from "./semanticOverlayColors";
+import {
+  getSemanticOverlayColor,
+  OVERLAY_BLUE_R,
+  OVERLAY_BLUE_G,
+  OVERLAY_BLUE_B,
+} from "./semanticOverlayColors";
 
-// ============================================
-// Constants — 호버 하이라이트 (blue-500, alpha 0.5)
-// ============================================
-
-const HOVER_R = 0x3b / 255;
-const HOVER_G = 0x82 / 255;
-const HOVER_B = 0xf6 / 255;
 const HOVER_ALPHA = 0.5;
 
 // ============================================
@@ -117,7 +115,12 @@ export function renderOverflowContent(
     fillPaint.setAntiAlias(true);
     fillPaint.setStyle(ck.PaintStyle.Fill);
     fillPaint.setColor(
-      ck.Color4f(HOVER_R, HOVER_G, HOVER_B, OVERFLOW_FILL_ALPHA),
+      ck.Color4f(
+        OVERLAY_BLUE_R,
+        OVERLAY_BLUE_G,
+        OVERLAY_BLUE_B,
+        OVERFLOW_FILL_ALPHA,
+      ),
     );
 
     const strokePaint = scope.track(new ck.Paint());
@@ -125,7 +128,12 @@ export function renderOverflowContent(
     strokePaint.setStyle(ck.PaintStyle.Stroke);
     strokePaint.setStrokeWidth(1 / zoom);
     strokePaint.setColor(
-      ck.Color4f(HOVER_R, HOVER_G, HOVER_B, OVERFLOW_STROKE_ALPHA),
+      ck.Color4f(
+        OVERLAY_BLUE_R,
+        OVERLAY_BLUE_G,
+        OVERLAY_BLUE_B,
+        OVERFLOW_STROKE_ALPHA,
+      ),
     );
 
     for (const child of overflowChildren) {
@@ -183,7 +191,14 @@ export function renderOverflowHatching(
     paint.setStyle(ck.PaintStyle.Stroke);
     paint.setStrokeWidth(1.5 / zoom);
     // --focus-ring 토큰 색상 (blue-500 = #3b82f6)
-    paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HATCHING_ALPHA));
+    paint.setColor(
+      ck.Color4f(
+        OVERLAY_BLUE_R,
+        OVERLAY_BLUE_G,
+        OVERLAY_BLUE_B,
+        HATCHING_ALPHA,
+      ),
+    );
 
     const spacing = HATCHING_LINE_SPACING / zoom;
     const left = cb.x;
@@ -232,6 +247,7 @@ export function renderEditingContextBorder(
   zoom: number,
 ): void {
   const scope = new SkiaDisposable();
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
   try {
     const sw = 1 / zoom;
     const paint = scope.track(new ck.Paint());
@@ -240,8 +256,7 @@ export function renderEditingContextBorder(
     paint.setStrokeWidth(sw);
     paint.setColor(ck.Color4f(CONTEXT_R, CONTEXT_G, CONTEXT_B, CONTEXT_ALPHA));
 
-    // 점선 효과
-    const dashEffect = ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]);
+    dashEffect = ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]);
     paint.setPathEffect(dashEffect);
 
     const rect = ck.LTRBRect(
@@ -251,9 +266,8 @@ export function renderEditingContextBorder(
       bounds.y + bounds.height,
     );
     canvas.drawRect(rect, paint);
-
-    dashEffect.delete();
   } finally {
+    dashEffect?.delete();
     scope.dispose();
   }
 }

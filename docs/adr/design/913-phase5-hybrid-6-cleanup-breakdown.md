@@ -1,10 +1,10 @@
 # ADR-913 Phase 5 Implementation Breakdown — Hybrid 6 Fields Cleanup
 
-> 본 문서는 [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) **Phase 5 (HIGH risk, ~2d 예상)** 의 sub-phase 분해 + 영향 영역 + 검증 명령. ADR-903 P3-E + ADR-911/913 Phase 1~4 패턴을 답습.
+> 본 문서는 [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) **Phase 5 (HIGH risk, ~2d 예상)** 의 sub-phase 분해 + 영향 영역 + 검증 명령. ADR-903 P3-E + ADR-911/913 Phase 1~4 패턴을 답습하되, 2026-04-30 이후 실행 순서는 [ADR-916](../916-canonical-document-ssot-transition.md) 선행으로 재정렬한다.
 
 ## 1. 목표 + Gate G5
 
-ADR-913 line 121 R2 `Element.tag` rename 후 **hybrid 잔존 5 필드** (layout_id 제외 — ADR-911 흡수 영역) 의 cleanup. 단일 SSOT 단일화 도달 후 ADR-913 Status `In Progress → Implemented` 승격.
+ADR-913 line 121 R2 `Element.tag` rename 후 **hybrid 잔존 5 필드** (layout_id 제외 — ADR-911/ADR-916 흡수 영역) 의 cleanup. 단일 SSOT 단일화 도달 후 ADR-913 Status `In Progress → Implemented` 승격. 이 cleanup 은 ADR-916 G5 Legacy Field Quarantine 의 하위 작업으로만 진행한다.
 
 ### Gate G5 (Phase 5 종결 조건)
 
@@ -131,15 +131,17 @@ Phase 5 종결 + ADR-913 Status Implemented 승격
 
 ## 5. 진입 prerequisite
 
-- ADR-913 Phase 4 전체 (Step 4-4 + 4-5 + 4-6) 완결 — write-through + helper 제거 + validation
-- ADR-911 Phase 2 Implemented 승격 — monitoring 종결 (~2026-05-04 후)
+- ADR-916 Phase 0/1 통과 — canonical core/props/extension/legacy 분류 고정 + canonical store/API + canonical→legacy export adapter API 존재
+- ADR-916 G5 field quarantine baseline 갱신 — `layout_id`, `slot_name`, `componentRole`, `masterId`, legacy `overrides/descendants` 의 adapter-only 기준 확정
+- ADR-913 Phase 4 전체 (Step 4-4 + 4-5 + 4-6) 재평가 후 완결 — write-through 방향이 canonical primary/shadow write 정책과 충돌하지 않아야 함
 - `Element.tag` 필드 영구 제거 (Step 4-5)
 
 ## 6. 진입 비권장 시점
 
+- ADR-916 Phase 0/1 이전 — canonical props/store/export adapter boundary 가 없으면 legacy field cleanup 이 최종 SSOT 와 어긋날 수 있음
 - ADR-911 Phase 3 (cascade 재작성) 진행 중 — 두 hybrid 영역 동시 변경 시 회귀 추적 어려움
 - prod 빌드 임박 시점 — 5 sub-phase 누적 land 후 1주+ monitoring 권장
-- ADR-912 (재설계 보류) 와 동시 진행 금지 — UI 5요소가 hybrid 필드에 의존 (보류 사유 점검 후 진입)
+- ADR-912 base 와 충돌하는 UI 재설계 동시 진행 금지 — UI 6요소와 Slot section base 는 완료됐으며 본 Phase 는 field quarantine 에만 집중
 
 ## 7. 검증 명령 (sub-phase 별)
 
@@ -184,7 +186,7 @@ ADR-913 line 121 R2 (mechanical rename + hybrid cleanup):
 
 - ADR-913 Status `In Progress → Implemented` 승격 (Phase 5-E 종결 후)
 - closure 5단계: Status + 본문 + README + completed/ archive + reference link 정합화
-- format 변경 ADR 라인업: ADR-903 ✅ + ADR-910 ✅ + ADR-913 ✅ + ADR-911 (monitoring → Phase 3+4) + ADR-912 (재설계 보류) + ADR-914 (P5-D/E 후) 진행
+- format 변경 ADR 라인업: ADR-903 ✅ + ADR-910 ✅ + ADR-912 ✅ + ADR-916 선행 → ADR-911 잔여 G3/G4/G5 + ADR-913 Phase 4/5. ADR-914 는 Superseded archive 로 이동했고 P5-D/E imports scope 는 ADR-916 으로 흡수
 
 ## 관련 문서
 
@@ -193,3 +195,5 @@ ADR-913 line 121 R2 (mechanical rename + hybrid cleanup):
 - ADR-913 inventory (2026-04-27 세션 36): `docs/adr/design/913-tag-type-rename-inventory.md`
 - ADR-903 §3.10: `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md`
 - ADR-911 (layout_id 흡수): `docs/adr/911-layout-frameset-pencil-redesign.md`
+- ADR-916 (canonical document SSOT 선행 gate): `docs/adr/916-canonical-document-ssot-transition.md`
+- ADR-914 (Superseded): `docs/adr/completed/914-imports-resolver-designkit-integration.md`

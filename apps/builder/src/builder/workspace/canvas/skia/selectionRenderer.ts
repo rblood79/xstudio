@@ -15,15 +15,12 @@ import { SkiaDisposable } from "./disposable";
 import type { BoundingBox } from "../selection/types";
 import { HANDLE_SIZE, HANDLE_CONFIGS } from "../selection/types";
 import type { EditingSemanticsRole } from "../../../utils/editingSemantics";
-import { getSemanticOverlayColor } from "./semanticOverlayColors";
-
-// ============================================
-// Constants
-// ============================================
-
-const SELECTION_R = 0x3b / 255;
-const SELECTION_G = 0x82 / 255;
-const SELECTION_B = 0xf6 / 255;
+import {
+  getSemanticOverlayColor,
+  OVERLAY_BLUE_R,
+  OVERLAY_BLUE_G,
+  OVERLAY_BLUE_B,
+} from "./semanticOverlayColors";
 
 function setSemanticStrokeColor(
   ck: CanvasKit,
@@ -31,6 +28,29 @@ function setSemanticStrokeColor(
   semanticRole: EditingSemanticsRole | null,
 ): void {
   paint.setColor(getSemanticOverlayColor(ck, semanticRole, 1));
+}
+
+/**
+ * fontMgr 로드 시점/이름 표기 차이에 견고하도록 Variable → static → generic
+ * 순으로 6단계 fallback 한다. bc499fc4 이후 fontMgr 는 "Pretendard Variable"
+ * / "Inter Variable" 로 로드되므로 legacy 이름과 generic fallback 도 포함.
+ */
+function resolveOverlayTypeface(
+  fontMgr: FontMgr,
+  fontStyle: {
+    weight: number;
+    width: number;
+    slant: number;
+  },
+): ReturnType<FontMgr["matchFamilyStyle"]> | null {
+  return (
+    fontMgr.matchFamilyStyle("Pretendard Variable", fontStyle) ??
+    fontMgr.matchFamilyStyle("Inter Variable", fontStyle) ??
+    fontMgr.matchFamilyStyle("Pretendard", fontStyle) ??
+    fontMgr.matchFamilyStyle("Inter", fontStyle) ??
+    fontMgr.matchFamilyStyle("sans-serif", fontStyle) ??
+    fontMgr.matchFamilyStyle("", fontStyle)
+  );
 }
 
 /** Page Title 레이블 설정 */
@@ -196,7 +216,6 @@ export function renderTransformHandles(
  * 씬-로컬 좌표계에서 호출되며, fontSize/padding은 1/zoom으로 스케일하여
  * 화면상 일정한 크기를 유지한다.
  */
-let _dimensionLabelTypefaceWarned = false; // 폰트 로드 완료 후 리셋됨
 export function renderDimensionLabels(
   ck: CanvasKit,
   canvas: Canvas,
@@ -262,26 +281,13 @@ export function renderDimensionLabels(
     const height = Math.round(bounds.height);
     const dimensionText = `${width} × ${height}`;
 
-    // Font + Paint를 사용한 직접 텍스트 렌더링
-    // Variable font 내장 이름으로 매칭 (fontManager.nameMap 참조)
     const fontStyle = {
       weight: ck.FontWeight.Medium,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
     };
-    const typeface =
-      fontMgr.matchFamilyStyle("Pretendard Variable", fontStyle) ??
-      fontMgr.matchFamilyStyle("Inter Variable", fontStyle) ??
-      fontMgr.matchFamilyStyle("Pretendard", fontStyle) ??
-      fontMgr.matchFamilyStyle("Inter", fontStyle) ??
-      fontMgr.matchFamilyStyle("sans-serif", fontStyle) ??
-      fontMgr.matchFamilyStyle("", fontStyle);
-
-    if (!typeface) {
-      // 모든 폴백 실패 — 다음 프레임에서 재시도 (return하지 않고 no-font 경로로 진입하지 않음)
-      return;
-    }
-    _dimensionLabelTypefaceWarned = false; // 폰트 로드 후 경고 리셋
+    const typeface = resolveOverlayTypeface(fontMgr, fontStyle);
+    if (!typeface) return;
 
     const font = scope.track(new ck.Font(typeface, fontSize));
     font.setSubpixel(true);
@@ -362,7 +368,9 @@ export function renderLasso(
     const fillPaint = scope.track(new ck.Paint());
     fillPaint.setAntiAlias(true);
     fillPaint.setStyle(ck.PaintStyle.Fill);
-    fillPaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 0.1));
+    fillPaint.setColor(
+      ck.Color4f(OVERLAY_BLUE_R, OVERLAY_BLUE_G, OVERLAY_BLUE_B, 0.1),
+    );
     canvas.drawRect(rect, fillPaint);
 
     // Stroke
@@ -371,7 +379,7 @@ export function renderLasso(
     strokePaint.setStyle(ck.PaintStyle.Stroke);
     strokePaint.setStrokeWidth(sw);
     strokePaint.setColor(
-      ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 0.8),
+      ck.Color4f(OVERLAY_BLUE_R, OVERLAY_BLUE_G, OVERLAY_BLUE_B, 0.8),
     );
     canvas.drawRect(rect, strokePaint);
   } finally {
@@ -404,20 +412,12 @@ export function renderPageTitle(
   try {
     const invZoom = 1 / zoom;
 
-    // Typeface 획득 — bc499fc4 이후 fontMgr 는 "Pretendard Variable" / "Inter Variable"
-    // 로 로드되므로 legacy 이름과 generic fallback 포함한 체인으로 탐색한다.
     const fontStyle = {
       weight: isActive ? ck.FontWeight.Medium : ck.FontWeight.Normal,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
     };
-    const typeface =
-      fontMgr.matchFamilyStyle("Pretendard Variable", fontStyle) ??
-      fontMgr.matchFamilyStyle("Inter Variable", fontStyle) ??
-      fontMgr.matchFamilyStyle("Pretendard", fontStyle) ??
-      fontMgr.matchFamilyStyle("Inter", fontStyle) ??
-      fontMgr.matchFamilyStyle("sans-serif", fontStyle) ??
-      fontMgr.matchFamilyStyle("", fontStyle);
+    const typeface = resolveOverlayTypeface(fontMgr, fontStyle);
     if (!typeface) return null;
 
     // 고정 폰트 사이즈로 렌더링하여 줌 시 글리프 간격 흔들림 방지
@@ -429,7 +429,9 @@ export function renderPageTitle(
     textPaint.setAntiAlias(true);
     textPaint.setStyle(ck.PaintStyle.Fill);
     if (isActive) {
-      textPaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
+      textPaint.setColor(
+        ck.Color4f(OVERLAY_BLUE_R, OVERLAY_BLUE_G, OVERLAY_BLUE_B, 1),
+      );
     } else {
       textPaint.setColor(
         ck.Color4f(

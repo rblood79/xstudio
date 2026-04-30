@@ -802,7 +802,7 @@ export function renderPageFrameHighlight(
   pageIds: Set<string>,
   pageFrameMap: Map<string, PageFrame>,
   zoom: number,
-  color: [number, number, number],
+  color: readonly [number, number, number],
   opacity: number,
 ): void {
   if (pageIds.size === 0) return;

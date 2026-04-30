@@ -124,14 +124,14 @@ interface CompositionExtendedNode extends CanonicalNode {
 
 ## 4. Phase Plan
 
-| Phase   | 목표                         | 주요 작업                                                                                      | Gate  |
-| ------- | ---------------------------- | ---------------------------------------------------------------------------------------------- | ----- |
-| Phase 0 | boundary freeze              | core/props/extension/legacy 분류 확정, 타입 TODO/ADR link 추가, 측정 baseline 갱신             | G1    |
-| Phase 1 | canonical document store/API | document mutation API + canonical -> legacy export adapter API 설계                            | G2    |
-| Phase 2 | hot path read cutover        | drag/selection/render/LayerTree/Preview sync에서 full projection 제거, canonical snapshot 구독 | G3    |
-| Phase 3 | persistence write-through    | canonical document 저장 우선, legacy shadow write 또는 export adapter로 축소                   | G4    |
-| Phase 4 | legacy field quarantine      | ADR-913 Phase 5 + ADR-911 layout cleanup과 연결, adapter 디렉터리 외 legacy read/write 0건     | G5    |
-| Phase 5 | parity/extension closure     | Skia/Preview/Publish/History parity, event/dataBinding extension serializer                    | G6/G7 |
+| Phase   | 목표                         | 주요 작업                                                                                                    | Gate  |
+| ------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
+| Phase 0 | boundary freeze              | core/props/extension/legacy 분류 확정, 타입 TODO/ADR link 추가, 측정 baseline 갱신                           | G1    |
+| Phase 1 | canonical document store/API | document mutation API + canonical -> legacy export adapter API 설계                                          | G2    |
+| Phase 2 | hot path read cutover        | drag/selection/render/LayerTree/Preview sync에서 full projection 제거, canonical snapshot 구독               | G3    |
+| Phase 3 | persistence write-through    | canonical document 저장 우선, legacy shadow write 또는 export adapter로 축소                                 | G4    |
+| Phase 4 | legacy field quarantine      | ADR-913 Phase 5 + ADR-911 layout cleanup과 연결, adapter 디렉터리 외 legacy read/write 0건                   | G5    |
+| Phase 5 | parity/extension closure     | Skia/Preview/Publish/History parity, `imports` resolver/cache policy, event/dataBinding extension serializer | G6/G7 |
 
 ## 5. Phase 0 — Boundary Freeze
 
@@ -265,7 +265,7 @@ Phase 3 진입 전 필수 API:
 
 ## 9. Phase 4 — Legacy Field Quarantine
 
-ADR-913 Phase 5와 ADR-911 잔여 layout cleanup을 본 ADR의 final gate로 묶는다.
+ADR-913 Phase 5와 ADR-911 잔여 layout cleanup을 본 ADR의 final gate로 묶는다. ADR-914의 독립 imports resolver/cache 계획은 2026-04-30 superseded 처리됐으므로, `imports` 자체는 canonical core hook으로 유지하되 fetch/cache/resolver 실행 경계는 본 ADR의 adapter/import/export 단계에서 다시 확정한다.
 
 | 필드                       | 담당 ADR          | ADR-916 종결 기준                            |
 | -------------------------- | ----------------- | -------------------------------------------- |
@@ -307,6 +307,7 @@ rg -n "\\b(layout_id|slot_name|component_role|master_id)\\b" \
 | Descendants     | patch / node replacement / children replacement 3-mode                              |
 | Props           | `metadata.legacyProps` 없이 canonical props payload로 Button/TextField/Section 렌더 |
 | Frame           | reusable frame 생성, page ref 연결, layout preset import                            |
+| Imports         | external `.pen` reference fetch, ResolverCache/cache invalidation, import namespace |
 | History         | slot fill, detach, override reset undo/redo                                         |
 | Preview/Publish | canonical resolved tree 기반 렌더                                                   |
 | Events          | `x-composition.events` serialize/deserialize, callback 저장 0건                     |
@@ -314,14 +315,14 @@ rg -n "\\b(layout_id|slot_name|component_role|master_id)\\b" \
 
 ## 11. ADR 의존 관계 정리
 
-| ADR     | ADR-916에서의 역할                        | 조정 필요                                                |
-| ------- | ----------------------------------------- | -------------------------------------------------------- |
-| ADR-903 | canonical format foundation               | completed 유지, final SSOT cutover는 ADR-916이 담당      |
-| ADR-910 | `themes`/`variables` canonical field land | 그대로 유지                                              |
-| ADR-911 | `layout_id`/frame authoring cleanup       | ADR-916 G5의 layout field quarantine에 연결              |
-| ADR-912 | editing semantics base                    | ADR-916 parity matrix의 reusable/ref UX 기준으로 사용    |
-| ADR-913 | `tag -> type` + hybrid cleanup            | ADR-916 G5의 field quarantine에 연결                     |
-| ADR-914 | imports resolver                          | canonical primary 저장 이후 import/export adapter로 연결 |
+| ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
+| ------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-903 | canonical format foundation               | completed 유지, final SSOT cutover는 ADR-916이 담당                                                                                             |
+| ADR-910 | `themes`/`variables` canonical field land | 그대로 유지                                                                                                                                     |
+| ADR-911 | `layout_id`/frame authoring cleanup       | ADR-916 G5의 layout field quarantine에 연결                                                                                                     |
+| ADR-912 | editing semantics base                    | ADR-916 parity matrix의 reusable/ref UX 기준으로 사용                                                                                           |
+| ADR-913 | `tag -> type` + hybrid cleanup            | ADR-916 G5의 field quarantine에 연결                                                                                                            |
+| ADR-914 | imports resolver historical scope         | Superseded. DesignKit scope 는 ADR-915 로 무효화, P5-D/P5-E fetch/cache/resolver 는 ADR-916 import/export adapter + runtime parity gate 로 흡수 |
 
 ## 12. 완료 판정
 

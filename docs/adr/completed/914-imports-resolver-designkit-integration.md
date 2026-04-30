@@ -1,33 +1,46 @@
-# ADR-914: `imports` resolver + DesignKit 통합 — 외부 `.pen` fetch + ResolverCache + DesignKit 재매핑
+# ADR-914: `imports` resolver + DesignKit 통합 — Superseded
 
 ## Status
 
-Proposed — 2026-04-26
+Superseded — 2026-04-30
 
-> **부분 무효화 안내 (2026-04-27)**: 본 ADR 의 **P5-F (DesignKit 통합 결정 + 실행)** 영역은 [ADR-915](915-designkit-system-removal.md) (Implemented 2026-04-27) 로 **무효화** 되었다. DesignKit 시스템 자체가 ADR-915 §2.1 자가 CRITICAL "기능 가치 부재" 근거로 즉시 전수 제거되었으며, 본 ADR 의 P5-F 관련 항목 (Hard Constraint #1, Soft Constraint #2, Risk R3, Gate P5-F, Negative Consequence 1) 은 strikethrough 처리. **잔여 scope 는 P5-D (`imports` fetch + parse) + P5-E (ResolverCache 통합) + G-Integration (ADR-911 통합)** 로 한정.
+> **Superseded by [ADR-916](../916-canonical-document-ssot-transition.md) + [ADR-915](915-remove-designkit-system.md)**.
+> DesignKit integration scope was invalidated by ADR-915. The remaining `imports` fetch/cache/resolver work is no longer executed as a standalone ADR; it is absorbed into ADR-916 canonical document SSOT transition (`imports` canonical core hook + import/export adapter boundary) and ADR-911 G5 Pencil import/export parity.
+>
+> Historical note: 2026-04-27 partial invalidation had already removed the P5-F DesignKit section. 2026-04-30 closes the remaining P5-D/P5-E/G-Integration scope as ADR-916-owned follow-up.
 
 ## Context
 
-### Domain (SSOT 체인 - [ssot-hierarchy.md](../../.claude/rules/ssot-hierarchy.md))
+### Domain (SSOT 체인 - [ssot-hierarchy.md](../../../.claude/rules/ssot-hierarchy.md))
 
-- **해당 domain**: **D2 (Props/API) + persistence + 외부 자산 통합** — pencil 공식 `imports` field + composition DesignKit 시스템 통합. ADR-903 의 P5-D/E/F 잔여 흡수.
+- **해당 domain (historical)**: **D2 (Props/API) + persistence + 외부 자산 통합** — pencil 공식 `imports` field + composition DesignKit 시스템 통합. ADR-903 의 P5-D/E/F 잔여 흡수.
+- **현재 처리**: DesignKit 은 ADR-915 로 제거됐고, `imports` resolver/cache 는 ADR-916 canonical document boundary + ADR-911 G5 import/export parity 로 흡수한다.
 
 ### 배경
 
-[ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) §3.10 의 `imports` field 는 P0 단계에서 **타입 스텁만** land 됨 (실제 fetch / cache / resolver 통합 미구현). 또한 composition DesignKit 시스템 (`kitLoader.ts:259` + `kitExporter.ts:33`) 은 **복사-적용 파이프라인** 으로 동작 — pencil `imports` 의 **참조형 외부 자산 fetch** 와 의미가 다름.
+[ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) §3.10 의 `imports` field 는 P0 단계에서 **타입 스텁만** land 됨 (실제 fetch / cache / resolver 통합 미구현). 또한 composition DesignKit 시스템 (`kitLoader.ts:259` + `kitExporter.ts:33`) 은 **복사-적용 파이프라인** 으로 동작 — pencil `imports` 의 **참조형 외부 자산 fetch** 와 의미가 다름.
 
 ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가") 를 명시적으로 분리해 **별도 migration track** 으로 처리하기로 결정됐고, 본 ADR 가 그 track 의 land plan.
 
 ### 현재 상태
 
-| 영역                                                                  |                상태                |
-| --------------------------------------------------------------------- | :--------------------------------: |
-| pencil `imports` field 타입 스텁 (`imports?: Record<string, string>`) |           ✅ ADR-903 P0            |
-| 외부 `.pen` fetch + parse                                             |             ❌ 미구현              |
-| ResolverCache 통합 (resolved tree 캐싱)                               |             ❌ 미구현              |
-| import 된 reusable 노드의 `<importKey>:<nodeId>` 형식 ref 참조        |             ❌ 미구현              |
-| DesignKit (`kitLoader.ts` / `kitExporter.ts`) 복사-적용 파이프라인    | ✅ 운영 중 (본 ADR 가 무수정 유지) |
-| DesignKit ↔ canonical document 통합                                   |             ❌ 미구현              |
+| 영역                                                                  |             상태             |
+| --------------------------------------------------------------------- | :--------------------------: |
+| pencil `imports` field 타입 스텁 (`imports?: Record<string, string>`) |        ✅ ADR-903 P0         |
+| 외부 `.pen` fetch + parse                                             |          ❌ 미구현           |
+| ResolverCache 통합 (resolved tree 캐싱)                               |          ❌ 미구현           |
+| import 된 reusable 노드의 `<importKey>:<nodeId>` 형식 ref 참조        |          ❌ 미구현           |
+| DesignKit (`kitLoader.ts` / `kitExporter.ts`) 복사-적용 파이프라인    | 제거됨 — ADR-915 Implemented |
+| DesignKit ↔ canonical document 통합                                   |  무효화 — ADR-915 / ADR-916  |
+
+### Superseded Resolution (2026-04-30)
+
+| 원 ADR scope                        | 현재 소유자                         | 처리                                                                      |
+| ----------------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
+| P5-D `imports` fetch + parse        | ADR-916 Phase 1~3 / G2~G4           | canonical store/API + import/export adapter boundary 안에서 재설계        |
+| P5-E ResolverCache                  | ADR-916 Phase 2~5 / G3~G6           | hot path projection 제거 후 resolved canonical tree/cache 정책으로 재평가 |
+| G-Integration with ADR-911          | ADR-911 G5 + ADR-916 Runtime Parity | Pencil `.pen` import/export schema-equivalent gate로 흡수                 |
+| P5-F DesignKit integration decision | ADR-915                             | DesignKit 시스템 제거로 무효화                                            |
 
 ### Hard Constraints
 
@@ -75,7 +88,9 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 
 ## Decision
 
-**대안 A: 단일 ADR + 3 Phase (imports → ResolverCache → DesignKit 통합 결정)** 를 선택한다.
+**2026-04-30 결정**: 본 ADR 의 독립 구현은 폐기한다. `imports` 는 canonical document core hook 으로 남기되, fetch/cache/resolver 실행 계획은 ADR-916 의 canonical primary 전환과 함께 재정의한다. ADR-911 은 ADR-916 이후의 Pencil import/export parity gate에서 이 인터페이스를 소비한다.
+
+Historical decision: **대안 A: 단일 ADR + 3 Phase (imports → ResolverCache → DesignKit 통합 결정)** 를 선택했으나, ADR-915/916 이후 독립 실행 가치가 사라졌다.
 
 선택 근거:
 
@@ -89,7 +104,7 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 - **대안 B 기각**: 의존 그래프 부담 + 중간 상태 (캐시 미스) 운영 비효율
 - **대안 C 기각**: ResolverCache 미통합 시 성능 MED + DesignKit 결정 누락 시 사용자 혼동
 
-> 구현 상세: [903-phase5-persistence-imports-breakdown.md](design/903-phase5-persistence-imports-breakdown.md) §P5-D/E/F — ADR-903 Phase 5 design 문서 그대로 활용
+> 구현 상세: [903-phase5-persistence-imports-breakdown.md](../design/903-phase5-persistence-imports-breakdown.md) §P5-D/E/F — historical reference. P5-D/E 는 ADR-916 으로 재귀속했고 P5-F 는 ADR-915 로 무효화됐다.
 
 ## Risks
 
@@ -105,6 +120,8 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 잔존 HIGH 위험 없음.
 
 ## Gates
+
+아래 gate 는 historical record 다. 독립 실행하지 않고 ADR-916 G2~G6 및 ADR-911 G5 gate 로 이동한다.
 
 | Gate                                     | 시점        | 통과 조건                                                                                                                                                | 실패 시 대안                                                                 |
 | ---------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -131,9 +148,10 @@ ADR-903 R7 ("DesignKit 을 pencil `imports` 와 혼동 시 범위 과소평가")
 
 ## References
 
-- [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 P5-D/E ~~/F~~ 잔여 흡수, P5-F 는 ADR-915 로 분리)
-- [ADR-903 Phase 5 design](design/903-phase5-persistence-imports-breakdown.md) — P5-D/E/F 영역 본 ADR 의 구현 상세 그대로 활용 (P5-F 는 ADR-915 로 무효화)
-- [ADR-911](911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (본 ADR 의 통합 대상)
-- [ADR-913](913-tag-type-rename-hybrid-cleanup.md) — `tag → type` rename + hybrid cleanup (본 ADR 와 독립 진행 가능)
-- [ADR-915](completed/915-designkit-system-removal.md) — DesignKit 시스템 즉시 전수 제거 (Implemented 2026-04-27, 본 ADR 의 P5-F 무효화 근거)
+- [ADR-916](../916-canonical-document-ssot-transition.md) — canonical document SSOT 전환 (본 ADR 의 `imports` resolver/cache 잔여 scope 흡수)
+- [ADR-903](903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 P5-D/E ~~/F~~ 잔여 흡수, P5-F 는 ADR-915 로 분리)
+- [ADR-903 Phase 5 design](../design/903-phase5-persistence-imports-breakdown.md) — P5-D/E/F historical design reference (P5-F 는 ADR-915 로 무효화, P5-D/E 는 ADR-916 으로 재귀속)
+- [ADR-911](../911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (ADR-916 이후 G5 import/export parity 통합 대상)
+- [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) — `tag → type` rename + hybrid cleanup (ADR-916 G5 field quarantine 에 연결)
+- [ADR-915](915-remove-designkit-system.md) — DesignKit 시스템 즉시 전수 제거 (Implemented 2026-04-27, 본 ADR 의 P5-F 무효화 근거)
 - pencil app `imports` schema — 본 ADR 의 호환 기준

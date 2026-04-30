@@ -44,6 +44,7 @@ import {
   renderOverflowContent,
   renderOverflowHatching,
 } from "./hoverRenderer";
+import { OVERLAY_BLUE_RGB } from "./semanticOverlayColors";
 import { renderWorkflowMinimap, type MinimapConfig } from "./workflowMinimap";
 import {
   buildPageFrameMap,
@@ -365,7 +366,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
             connectedPageIds,
             pageFrameMap,
             cameraZoom,
-            [0x3b / 255, 0x82 / 255, 0xf6 / 255],
+            OVERLAY_BLUE_RGB,
             0.8,
           );
         }

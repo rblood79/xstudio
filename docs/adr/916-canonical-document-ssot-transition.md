@@ -6,7 +6,7 @@ Proposed — 2026-04-30
 
 ## Context
 
-ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slot` 문법, resolver-first migration을 도입했고, ADR-910은 `themes`/`variables`를 canonical document에 land했다. ADR-911/912/913/914는 그 후속 영역인 frame/slot authoring, editing semantics, `tag -> type`, hybrid field cleanup, imports resolver를 나누어 처리한다.
+ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slot` 문법, resolver-first migration을 도입했고, ADR-910은 `themes`/`variables`를 canonical document에 land했다. ADR-911/912/913/914는 그 후속 영역인 frame/slot authoring, editing semantics, `tag -> type`, hybrid field cleanup, imports resolver를 나누어 처리했다. 2026-04-30 기준 ADR-914 독립 계획은 superseded 처리하고, 잔여 `imports` resolver/cache 범위는 본 ADR의 canonical document boundary로 흡수한다.
 
 그러나 현재 runtime/persistence 구조는 아직 **canonical document가 최종 SSOT가 아니라 read-through projection**에 가깝다. `elements[] + pages[] + layouts[]`에서 매번 `CompositionDocument`를 만들고, legacy 필드(`layout_id`, `slot_name`, `componentRole`, `masterId`, legacy `overrides/descendants`)를 canonical 의미로 역해석한다. 이 상태는 format 전환기의 완충책으로는 유효하지만, 최종 구조가 되면 성능과 의미 충돌을 계속 만든다.
 
@@ -27,7 +27,7 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 **Soft Constraints**:
 
 - 단계별 feature flag와 shadow write/read verification을 사용한다.
-- ADR-911/913/914의 기존 phase를 최대한 재사용하되, 최종 cutover gate는 본 ADR에서 통합 관리한다.
+- ADR-911/913의 기존 phase와 ADR-914의 historical imports scope를 최대한 재사용하되, 최종 cutover gate는 본 ADR에서 통합 관리한다.
 - migration 도중 임시 adapter 최적화는 허용하지만 최종 목표로 삼지 않는다.
 
 ## Alternatives Considered
@@ -138,7 +138,7 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 - [ADR-911: Layout/Slot Frameset 완전 재설계](911-layout-frameset-pencil-redesign.md)
 - [ADR-912: Editing Semantics UI 6요소 + Slot section base](completed/912-editing-semantics-ui-5elements.md)
 - [ADR-913: `Element.tag -> Element.type` rename + hybrid 6 필드 cleanup](913-tag-type-rename-hybrid-cleanup.md)
-- [ADR-914: `imports` resolver + DesignKit 통합](914-imports-resolver-designkit-integration.md)
+- [ADR-914: `imports` resolver + DesignKit 통합](completed/914-imports-resolver-designkit-integration.md) — Superseded; 잔여 `imports` resolver/cache scope 는 본 ADR 이 흡수
 - [`CompositionDocument` 타입](../../packages/shared/src/types/composition-document.types.ts)
 - [Legacy `Element` 타입](../../apps/builder/src/types/builder/unified.types.ts)
 - [Legacy -> canonical adapter](../../apps/builder/src/adapters/canonical/index.ts)

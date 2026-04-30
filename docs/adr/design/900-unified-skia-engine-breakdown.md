@@ -1,6 +1,6 @@
-# ADR-100 구현 상세: Unified Skia Rendering Engine
+# ADR-900 구현 상세: Unified Skia Rendering Engine
 
-> 이 문서는 [ADR-100](../adr/100-unified-skia-rendering-engine.md)의 구현 상세입니다.
+> 이 문서는 [ADR-900](../completed/900-unified-skia-rendering-engine.md)의 구현 상세입니다.
 
 ## 검증된 오픈소스 의존성 및 참조
 
@@ -568,7 +568,7 @@ function enrichFromRegistry(
 }
 ```
 
-|                         |        현재         |             ADR-100              |
+|                         |        현재         |             ADR-900              |
 | ----------------------- | :-----------------: | :------------------------------: |
 | enrichWithIntrinsicSize |  ~1500줄 (if/else)  | ~200줄 데이터 + ~300줄 범용 엔진 |
 | 새 컴포넌트 추가        |   코드 수정 필수    |   **레지스트리에 항목 추가만**   |
@@ -1455,7 +1455,7 @@ function renderText(
 
 ### 정합성 비교
 
-|                         |         현재          |        ADR-051         |     ADR-100 하이브리드     |
+|                         |         현재          |        ADR-051         |     ADR-900 하이브리드     |
 | ----------------------- | :-------------------: | :--------------------: | :------------------------: |
 | **줄바꿈 결정**         |       Canvas 2D       |       Canvas 2D        |         Canvas 2D          |
 | **렌더링**              | CanvasKit (자체 판단) | CanvasKit (Break Hint) |   CanvasKit (Break Hint)   |
@@ -1469,9 +1469,9 @@ function renderText(
 
 ### ADR-051 관계
 
-ADR-100이 구현되면 ADR-051은 **Superseded**:
+ADR-900이 구현되면 ADR-051은 **Superseded**:
 
-| ADR-051 구성요소                        | ADR-100에서                                                                 |
+| ADR-051 구성요소                        | ADR-900에서                                                                 |
 | --------------------------------------- | --------------------------------------------------------------------------- |
 | canvas2dSegmentCache.ts (612줄)         | `canvas2dLineBreak()` ~30줄로 축소 (줄바꿈 결정만 재활용, Tier 보정 불필요) |
 | Break Hint Injection                    | 유지 (하이브리드 단계 2)                                                    |
@@ -1653,8 +1653,8 @@ layout/engines/
 
 ### 보류 Phase — Level 4 성능 스케일링 (10,000+ 요소, 별도 ADR)
 
-> ADR-100은 Level 1~3 (5000 요소 50-60fps). Level 4는 10,000+ 요소 60fps 목표.
-> 현재 설계가 Level 4를 차단하지 않음을 검증 완료 (ADR-100 확장 경로 섹션 참조).
+> ADR-900은 Level 1~3 (5000 요소 50-60fps). Level 4는 10,000+ 요소 60fps 목표.
+> 현재 설계가 Level 4를 차단하지 않음을 검증 완료 (ADR-900 확장 경로 섹션 참조).
 
 - **Phase L4-1: Web Worker Layout** — Rust WASM Layout Engine을 Web Worker에서 실행. 메인 스레드 레이아웃 0ms. SharedArrayBuffer로 결과 전달 (zero-copy)
 - **Phase L4-2: OffscreenCanvas Render** — CanvasKit 렌더링을 OffscreenCanvas Worker에서 실행. 메인 스레드 렌더 0ms. GPUBackend 추상화가 이미 지원
@@ -1690,7 +1690,7 @@ layout/engines/
 
 > **핵심 발견**: M4 Pro(고사양)에서도 요소 0개 아이들 상태에서 50fps — 60fps 미달.
 > Dual Renderer(PixiJS+Skia) 오버헤드가 프레임 예산 16.67ms 중 ~20ms를 소비.
-> ADR-100의 근거가 실측으로 확인됨.
+> ADR-900의 근거가 실측으로 확인됨.
 > | React 컴포넌트 수 (캔버스) | N (요소 수) | 0 | -100% |
 > | JS 힙 메모리 | ~150MB (1000 요소) | ~80MB | -47% |
 > | 번들 (PixiJS) | ~450KB (gzip) | 0 | -450KB |
@@ -2081,7 +2081,7 @@ function rollback(reason: string): void {
   // 가장 최근 활성화된 flag를 비활성화
   disableLastEnabledFlag();
   // 알림 전송
-  sendAlert(`ADR-100 auto-rollback: ${reason}`);
+  sendAlert(`ADR-900 auto-rollback: ${reason}`);
 }
 ```
 

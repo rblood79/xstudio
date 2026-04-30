@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-04-26 → 2026-04-27
+In Progress — 2026-04-26 → 2026-04-30 (잔여 Phase 4/5 는 ADR-916 이후 재개)
 
 ### 진행 로그
 
@@ -32,15 +32,15 @@ In Progress — 2026-04-26 → 2026-04-27
     - `__tests__/migrationTagType.test.ts` 신규 16 tests (TC-T1~T5 transformer + TC-M1~M11 integration, 50 fixture round-trip 포함)
   - **Step 4-3** (commit `19864dfe`) — `usePageManager.initializeProject` 의 P3-E migration 호출 직후에 `runTagTypeMigration(db, projectId, { dryRun: true })` 추가. 진입 조건: `metaRecord` 미존재 또는 `schemaVersion ∈ {legacy, composition-1.0}`. dev console 로그 출력 (`[ADR-913 P4 dry-run] status / transformedCount / errors`). try/catch graceful degrade
   - **검증**: type-check 3/3 PASS / db 영역 vitest 142/142 PASS (기존 126 + 신규 16) / usePageManager.canonical 회귀 0
-  - **비파괴**: 3 단계 모두 dryRun=true 고정 → DB 무변경. 실제 transform 은 Step 4-4 (write-through, ADR-911 monitoring 종결 ~2026-05-04 후 진입)
+  - **비파괴**: 3 단계 모두 dryRun=true 고정 → DB 무변경. 실제 transform 은 Step 4-4 (write-through) 로 남았으나, 2026-04-30 이후 진입 조건은 ADR-911 monitoring 이 아니라 ADR-916 G2 canonical store/export adapter 확정으로 재정렬한다.
 - **2026-04-27 (세션 45)**: **Phase 5 design breakdown 사전 land** — `docs/adr/design/913-phase5-hybrid-6-cleanup-breakdown.md`
   - Inventory 갱신 (Phase 1+2 mechanical rename 후): componentRole 43 / masterId 61 / slot_name 38 / overrides 37 / descendants 100 = **279 ref / 73 file** (layout_id 207 ref ADR-911 흡수 영역 제외)
   - sub-Phase 5-A~5-E 분할 (필드별 5 단계) — 진입 순서 ref 수 적은 순 (LOW first): 5-A slot_name (38) → 5-B overrides (37) → 5-C componentRole (43) → 5-D masterId (61) → 5-E descendants (100, 내부 분할 권장)
-  - 진입 prerequisite: Phase 4 전체 (Step 4-4/4-5/4-6) 완결 + ADR-911 Phase 2 Implemented
+  - 진입 prerequisite: ADR-916 Phase 0/1 (G1/G2) 로 canonical props/store/export adapter boundary 확정 + Phase 4 전체 (Step 4-4/4-5/4-6) 재평가. Phase 5 는 ADR-916 G5 field quarantine 의 하위 작업으로 실행한다.
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
-  - Phase 4 (DB schema migration DB_VERSION 8→9) — Step 4-1/4-2/4-3 land. **잔여 = Step 4-4 (write-through, ADR-911 monitoring 종결 후), Step 4-5 (`normalizeLegacyElement` helper 제거), Step 4-6 (Validation+cleanup)**
-  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — 2d, **HIGH risk**. componentRole 43 / masterId 61 / slot_name 38 / overrides 37 / descendants 100 = 279 ref. sub-Phase 5-A~5-E 분할. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
+  - Phase 4 (DB schema migration DB_VERSION 8→9) — Step 4-1/4-2/4-3 land. **잔여 = Step 4-4 (write-through; ADR-916 G2 이후 canonical primary/shadow write 방향 재평가), Step 4-5 (`normalizeLegacyElement` helper 제거), Step 4-6 (Validation+cleanup)**
+  - Phase 5 (Hybrid 5 필드 cleanup, layout_id 제외) — 2d, **HIGH risk**. componentRole 43 / masterId 61 / slot_name 38 / overrides 37 / descendants 100 = 279 ref. sub-Phase 5-A~5-E 분할. **ADR-916 G5 Legacy Field Quarantine 의 하위 작업으로만 진행**. 구현 상세: [Phase 5 breakdown](design/913-phase5-hybrid-6-cleanup-breakdown.md)
 
 ## Context
 
@@ -61,7 +61,7 @@ In Progress — 2026-04-26 → 2026-04-27
   - `slot_name` 38 ref / 12 file
   - `overrides` 37 ref / 13 file
 - **`layoutTemplates.ts` 28 Slot 선언** — canonical format serialize 미적용 (ADR-911 Phase 1 함수 layer 가 변환 처리)
-- **DB 저장 schema** — `tag` 컬럼이 elements store 의 indexed field → **Phase 4 Step 4-1 (DB_VERSION 8→9, 2026-04-27 세션 45) 완료 + Step 4-2 dry-run + Step 4-3 entry 연결 land. Step 4-4 write-through 진입 대기 (ADR-911 monitoring 종결 후)**
+- **DB 저장 schema** — `tag` 컬럼이 elements store 의 indexed field → **Phase 4 Step 4-1 (DB_VERSION 8→9, 2026-04-27 세션 45) 완료 + Step 4-2 dry-run + Step 4-3 entry 연결 land. Step 4-4 write-through 은 ADR-916 G2 이후 canonical primary/shadow write 방향에 맞춰 재평가**
 
 이 상태에서 신 컴포넌트 추가 / migration / pencil import-export 모두 hybrid 경로를 거쳐야 함 → SSOT 혼동 + dead code 영구화.
 
@@ -157,7 +157,7 @@ In Progress — 2026-04-26 → 2026-04-27
 ### Positive
 
 - ADR-903 R5 (`tag → type` rename 부분 누락) + R1 (legacy hybrid 영구화) 근본 해소
-- pencil 공식 schema 와 1:1 매칭 — 외부 import/export 자연스럽게 지원 (ADR-911 + ADR-914 와 통합)
+- pencil 공식 schema 와 1:1 매칭 — 외부 import/export 자연스럽게 지원 (ADR-911 + ADR-916 으로 흡수된 ADR-914 `imports` scope 와 통합)
 - legacy 0 도달 → 신 컴포넌트 추가 / migration / pencil import-export 모두 단일 SSOT 경로
 - ADR-903 G5 (b)~(f) 잔여 영역 종결
 
@@ -173,4 +173,6 @@ In Progress — 2026-04-26 → 2026-04-27
 - [ADR-903 Phase 5 design](design/903-phase5-persistence-imports-breakdown.md) — P5-C 영역 본 ADR 의 구현 상세 그대로 활용
 - [ADR-903 P3-E E-6](#) — IndexedDB schema 자동 migration 패턴 (본 ADR Phase 4 G5-E 에서 재사용)
 - [ADR-911](911-layout-frameset-pencil-redesign.md) — Layout/frameset pencil 호환 재설계 (본 ADR 가 hybrid `layout_id` 영역 cleanup 의 일부 흡수)
+- [ADR-916](916-canonical-document-ssot-transition.md) — canonical document SSOT 전환. 본 ADR 의 Phase 4 write-through 와 Phase 5 hybrid cleanup 의 선행 gate
+- [ADR-914](completed/914-imports-resolver-designkit-integration.md) — Superseded. import/export 관련 잔여 scope 는 ADR-916 으로 흡수
 - pencil app schema — 본 ADR 의 `type` 필드 호환 기준

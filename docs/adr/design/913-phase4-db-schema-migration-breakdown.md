@@ -1,6 +1,6 @@
 # ADR-913 Phase 4 Implementation Breakdown — DB Schema Migration `tag → type` (DB_VERSION 8 → 9)
 
-> 본 문서는 [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) **Phase 4 (HIGH risk, 1.5d 예상)** 의 sub-step + migration script + 안전망 + 검증 명령을 분리. ADR-903 P3-E E-6 의 자동 migration 패턴 재사용.
+> 본 문서는 [ADR-913](../913-tag-type-rename-hybrid-cleanup.md) **Phase 4 (HIGH risk, 1.5d 예상)** 의 sub-step + migration script + 안전망 + 검증 명령을 분리. ADR-903 P3-E E-6 의 자동 migration 패턴을 재사용하되, 2026-04-30 이후 Step 4-4 write-through 는 [ADR-916](../916-canonical-document-ssot-transition.md) G2 canonical store/export adapter 이후 재평가한다.
 
 ## 1. 목표 + Gate G5-E
 
@@ -40,8 +40,8 @@ ADR-903 P3-E 의 E-1~E-6 모델을 그대로 답습. 각 step 은 독립 commit/
 | 4-1  | DB_VERSION 8→9 bump + `composition-1.1` enum                                   | ✅ Land 2026-04-27 | metaStore.test.ts 5 PASS / commit `0e9b5101`                                        |
 | 4-2  | `runTagTypeMigration` dry-run (READ-ONLY)                                      | ✅ Land 2026-04-27 | `migrationTagType.test.ts` 16 PASS (50 fixture round-trip 포함) / commit `79aaf808` |
 | 4-3  | `usePageManager.initializeProject` dry-run entry 연결 (READ-ONLY)              | ✅ Land 2026-04-27 | type-check 3/3 + db 142/142 + usePageManager.canonical 회귀 0 / commit `19864dfe`   |
-| 4-4  | write-through 활성화 (`dryRun=false`, env flag `VITE_ADR913_P4_WRITE_THROUGH`) |   미진입 (HIGH)    | ADR-911 monitoring 종결 (~2026-05-04) 후 진입                                       |
-| 4-5  | `normalizeLegacyElement` helper 제거 (cutover)                                 |       미진입       | Step 4-4 land 1주+ 안정 + composition-1.1 비율 ≥ 95% 후 진입                        |
+| 4-4  | write-through 활성화 (`dryRun=false`, env flag `VITE_ADR913_P4_WRITE_THROUGH`) |   미진입 (HIGH)    | ADR-916 G2 이후 canonical primary/shadow write 방향 재평가                          |
+| 4-5  | `normalizeLegacyElement` helper 제거 (cutover)                                 |       미진입       | Step 4-4 land 1주+ 안정 + composition-1.1/canonical-primary 기준 충족 후 진입       |
 | 4-6  | Validation + cleanup (Phase 4 종결)                                            |       미진입       | Step 4-5 land 후 진입                                                               |
 
 ### Step 4-1 — DB_VERSION bump + onupgradeneeded 분기 (READ-ONLY land) — ✅ Land 2026-04-27 `0e9b5101`
@@ -269,11 +269,12 @@ pnpm vitest run apps/builder/src/lib/db
 
 - ADR-913 Phase 1 + 2 + 3 land (✅ 본 세션 종결)
 - ADR-903 P3-E E-6 패턴 재사용 (✅ Implemented 2026-04-26)
+- ADR-916 G2 canonical store/API + canonical→legacy export adapter API 확정
 - dev 환경 수동 검증 1주+ 가능 (사용자 동의)
 
 ## 8. 진입 비권장 시점
 
-- ADR-911 Phase 2 monitoring 진행 중 (현재 ~2026-05-04 까지) — 두 migration 이 동시 진행 시 회귀 추적 어려움
+- ADR-916 Phase 0/1 이전 — canonical primary/shadow write 방향이 확정되지 않아 Step 4-4 write-through 의미가 바뀔 수 있음
 - ADR-910 Phase 2 write-through 진입 시기와 겹침 — schema 동시 변경 위험
 - prod 빌드 임박 시점 — write-through 활성화 후 1주+ 안정성 마진 필요
 
@@ -288,4 +289,5 @@ pnpm vitest run apps/builder/src/lib/db
 - ADR-913: `docs/adr/913-tag-type-rename-hybrid-cleanup.md`
 - ADR-903 P3-E breakdown: `docs/adr/design/903-phase3e-persistence-breakdown.md` (620 LOC, 본 Phase 4 의 baseline 패턴)
 - ADR-913 inventory: `docs/adr/design/913-tag-type-rename-inventory.md`
+- ADR-916: `docs/adr/916-canonical-document-ssot-transition.md`
 - ADR-903: `docs/adr/completed/903-ref-descendants-slot-composition-format-migration-plan.md`

@@ -340,10 +340,14 @@ export class SkiaRenderer {
     this.contentSnapshot?.delete();
     this.contentSurface.flush();
     this.contentSnapshot = this.contentSurface.makeImageSnapshot();
-    this.snapshotCamera = { ...camera }; // camera-only blit 델타 기준점 갱신
+    this.snapshotCamera.zoom = camera.zoom; // camera-only blit 델타 기준점 갱신
+    this.snapshotCamera.panX = camera.panX;
+    this.snapshotCamera.panY = camera.panY;
     this.contentDirty = false;
 
-    recordWasmMetric("contentRenderTime", performance.now() - start);
+    if (process.env.NODE_ENV === "development") {
+      recordWasmMetric("contentRenderTime", performance.now() - start);
+    }
   }
 
   /**
@@ -454,13 +458,16 @@ export class SkiaRenderer {
       camera.panX === this.snapshotCamera.panX &&
       camera.panY === this.snapshotCamera.panY;
 
-    const blitStart = performance.now();
+    const isDev = process.env.NODE_ENV === "development";
+    const blitStart = isDev ? performance.now() : 0;
     if (cameraMatchesSnapshot) {
       this.blitToMainNoFlush();
     } else {
       this.blitWithCameraTransformNoFlush(camera);
     }
-    recordWasmMetric("blitTime", performance.now() - blitStart);
+    if (isDev) {
+      recordWasmMetric("blitTime", performance.now() - blitStart);
+    }
     this.renderOverlay(cullingBounds, camera);
     this.mainSurface.flush();
   }
@@ -618,7 +625,7 @@ export class SkiaRenderer {
         break;
     }
 
-    if (frameType !== "idle") {
+    if (process.env.NODE_ENV === "development" && frameType !== "idle") {
       recordWasmMetric("skiaFrameTime", performance.now() - frameStart);
     }
 
@@ -640,7 +647,9 @@ export class SkiaRenderer {
     this.lastRegistryVersion = registryVersion;
     this.lastOverlayVersion = overlayVersion;
     this.lastScreenOverlayVersion = screenOverlayVersion;
-    this.lastCamera = { ...camera };
+    this.lastCamera.zoom = camera.zoom;
+    this.lastCamera.panX = camera.panX;
+    this.lastCamera.panY = camera.panY;
   }
 
   // ============================================
@@ -671,7 +680,9 @@ export class SkiaRenderer {
     this.mainCanvas.restore();
     this.mainSurface.flush();
 
-    recordWasmMetric("skiaFrameTime", performance.now() - start);
+    if (process.env.NODE_ENV === "development") {
+      recordWasmMetric("skiaFrameTime", performance.now() - start);
+    }
   }
 
   /**
