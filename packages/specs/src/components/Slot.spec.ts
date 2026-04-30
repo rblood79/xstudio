@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { ComponentSpec, TokenRef } from "../types";
 import { parsePxValue, parseBorderWidth } from "../primitives";
 import { FileText, Type, AlertCircle } from "lucide-react";
 
@@ -16,7 +16,6 @@ import { FileText, Type, AlertCircle } from "lucide-react";
  */
 export interface SlotProps {
   size?: "sm" | "md" | "lg";
-  label?: string;
   name?: string;
   description?: string;
   required?: boolean;
@@ -111,8 +110,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
       const bgColor = props.style?.backgroundColor ?? SLOT_DEFAULTS.background;
       const borderColor = props.style?.borderColor ?? SLOT_DEFAULTS.border;
 
-      const shapes: Shape[] = [
-        // 배경
+      return [
         {
           id: "bg",
           type: "roundRect" as const,
@@ -124,7 +122,6 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
           fill: bgColor,
           fillAlpha: 0.5,
         },
-        // 점선 테두리
         {
           type: "border" as const,
           target: "bg",
@@ -134,12 +131,6 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
           radius: borderRadius as unknown as number,
         },
       ];
-
-      // Child Composition: 자식 Element가 있으면 shell만 반환
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
-      return shapes;
     },
 
     react: () => ({}),

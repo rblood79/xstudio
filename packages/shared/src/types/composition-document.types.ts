@@ -228,11 +228,14 @@ export interface CanonicalNode {
   children?: CanonicalNode[];
 
   /**
-   * Slot declaration.
+   * slot 선언 — pencil.dev 공식: `false | string[]`.
+   * - `false`: slot 비활성화
+   * - `string[]`: 이 slot 에 삽입 가능한 reusable component ID 배열 (추천 목록)
    *
-   * Pencil schema exposes this on `Frame`, and composition also preserves it on
-   * frame-compatible structural container shells such as `CardContent` so their
-   * stable descendant path can be filled through `RefNode.descendants`.
+   * pencil schema 는 `Frame` 에만 노출하지만, composition 은 `CardContent` 등
+   * frame-호환 structural container shell 에도 보존하여 `RefNode.descendants`
+   * 의 stable id path 채우기를 허용한다. 비-frame/비-shell 노드에 설정 시
+   * resolver 는 무시한다.
    */
   slot?: false | string[];
 
@@ -255,8 +258,8 @@ export interface CanonicalNode {
 /**
  * `FrameNode` — `type: "frame"` 노드.
  *
-   * Frame 전용 컨테이너 필드 2종 (`clip` / `placeholder`) 포함.
-   * `slot` 은 CanonicalNode 공통 필드로 보존한다.
+ * Frame 전용 컨테이너 필드 2종 (`clip` / `placeholder`) 포함.
+ * `slot` 은 CanonicalNode 공통 필드로 보존한다.
  * composition 기존 `overflow: hidden` / 빈 컨테이너 / `type="Slot"` 시스템을 흡수.
  */
 export interface FrameNode extends CanonicalNode {
@@ -274,7 +277,6 @@ export interface FrameNode extends CanonicalNode {
    * slot 이 채워지지 않았을 때 editor/canvas 에서 placeholder UI 렌더.
    */
   placeholder?: boolean;
-
 }
 
 // ─────────────────────────────────────────────
