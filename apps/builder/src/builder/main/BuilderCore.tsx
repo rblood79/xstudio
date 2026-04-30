@@ -25,6 +25,12 @@ import {
   isCanonicalDocumentSyncEnabled,
 } from "../../utils/featureFlags";
 import { startCanonicalDocumentSync } from "../stores/canonical/canonicalDocumentSync";
+// ADR-916 Phase 2 G3 Step 4 — BuilderCore layout refresh dual-mode
+import {
+  subscribeCanonicalStore,
+  getActiveCanonicalDocument,
+} from "../stores/canonical/canonicalElementsBridge";
+import { canonicalDocumentToElements } from "../stores/canonical/canonicalElementsView";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import {
   ToastContainer,
@@ -538,22 +544,20 @@ export const BuilderCore: React.FC = () => {
     // iframe이 준비되지 않았으면 구독하지 않음 (WebGL-only 모드 포함)
     if (iframeReadyState !== "ready") return;
 
-    const unsubscribe = useStore.subscribe((state, prevState) => {
-      // elements가 변경되었는지 확인 (참조 비교)
-      if (state.elements === prevState.elements) return;
-
-      // editMode 가져오기
+    // ADR-916 Phase 2 G3 Step 4 — sourceElements 평가 + filter + publish 로직을
+    // 단일 helper 로 추출. legacy/canonical 양쪽 mode 가 동일 logic 으로 publish.
+    const publishElements = (sourceElements: Element[]): void => {
       const editMode = useEditModeStore.getState().mode;
       const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
 
       // editMode에 따라 필터링
       // ADR-903 P3-D-5 step 5e-2: doc 전달 → belongsToLegacyLayout canonical 활용.
-      // editMode === "layout" 분기에서 callback 당 1회 생성 (filter 콜에서 재사용).
-      let filteredElements = state.elements;
+      let filteredElements = sourceElements;
       if (editMode === "layout" && currentLayoutId) {
         const layouts = useLayoutsStore.getState().layouts;
+        const state = useStore.getState();
         const doc = selectCanonicalDocument(state, state.pages, layouts);
-        filteredElements = state.elements.filter((el) =>
+        filteredElements = sourceElements.filter((el) =>
           belongsToLegacyLayout(el, currentLayoutId, doc),
         );
       }
@@ -568,6 +572,32 @@ export const BuilderCore: React.FC = () => {
       lastSentElementsRef.current = filteredElements;
       lastSentEditModeRef.current = editMode;
       sendElementsToIframe(filteredElements);
+    };
+
+    // canonical mode 시 canonical store mutation 추적 (legacy store.subscribe
+    // 은 sync 가 canonical 로 propagate 하므로 publish 책임 canonical 단일화).
+    if (isCanonicalDocumentSyncEnabled()) {
+      let lastDerivedRef: Element[] | null = null;
+      const unsubscribe = subscribeCanonicalStore(() => {
+        const doc = getActiveCanonicalDocument();
+        if (!doc) {
+          // canonical 미초기화 시 legacy fallback (write-through sync 부트스트랩
+          // 직전 단계). useStore.getState().elements 사용.
+          publishElements(useStore.getState().elements);
+          return;
+        }
+        const derived = canonicalDocumentToElements(doc);
+        if (derived === lastDerivedRef) return;
+        lastDerivedRef = derived;
+        publishElements(derived);
+      });
+      return () => unsubscribe();
+    }
+
+    // legacy mode — 기존 store.subscribe 경로 유지.
+    const unsubscribe = useStore.subscribe((state, prevState) => {
+      if (state.elements === prevState.elements) return;
+      publishElements(state.elements);
     });
 
     return () => {
