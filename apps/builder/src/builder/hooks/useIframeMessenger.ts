@@ -42,7 +42,17 @@ import { elementsApi } from "../../services/api";
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from "../utils/canvasDeltaMessenger";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
-import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
+import {
+  isWebGLCanvas,
+  isCanvasCompareMode,
+  isCanonicalDocumentSyncEnabled,
+} from "../../utils/featureFlags";
+// ADR-916 Phase 2 G3 Step 3 — canonical document → derived Element[] source
+import {
+  useCanonicalElements,
+  canonicalDocumentToElements,
+} from "../stores/canonical/canonicalElementsView";
+import { getActiveCanonicalDocument } from "../stores/canonical/canonicalElementsBridge";
 // ADR-006 P2-2: postMessage 보안 검증
 import {
   isValidBootstrapMessage,
@@ -115,7 +125,17 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   const previewGeneratedElementsRef = useRef<Map<string, Element>>(new Map());
   const previewGeneratedElementsFlushIdRef = useRef<number | null>(null);
 
-  const elements = useStore((state) => state.elements);
+  const legacyElements = useStore((state) => state.elements);
+  // ADR-916 Phase 2 G3 Step 3 — canonical mode 시 active document 의 derived
+  // Element[] 를 publish source 로 사용. flag 미활성/canonical 미초기화 시 legacy
+  // store 의 elements 그대로 사용. caller (sendElementsToIframe / preview iframe)
+  // 무수정.
+  const canonicalElements = useCanonicalElements();
+  const elements = useMemo(() => {
+    if (!isCanonicalDocumentSyncEnabled()) return legacyElements;
+    if (!canonicalElements) return legacyElements;
+    return canonicalElements;
+  }, [legacyElements, canonicalElements]);
   const elementsMap = useStore((state) => state.elementsMap);
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
@@ -620,7 +640,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           sendVariablesToIframe();
 
           // Elements 전송
-          const currentElements = useStore.getState().elements;
+          // ADR-916 Phase 2 G3 Step 3 — sendInitialData 는 useCallback 안의 closure
+          // 라 React state (elements) 가 stale 가능. 매 호출 시 dual-mode 평가:
+          // canonical mode + active doc 존재 → derived Element[] / 그 외 → legacy.
+          let currentElements: Element[];
+          const canonicalDoc = isCanonicalDocumentSyncEnabled()
+            ? getActiveCanonicalDocument()
+            : null;
+          if (canonicalDoc) {
+            currentElements = canonicalDocumentToElements(canonicalDoc);
+          } else {
+            currentElements = useStore.getState().elements;
+          }
           if (currentElements.length > 0) {
             // Phase 2.1 최적화: 참조 저장 (중복 전송 방지)
             lastSentElementsRef.current = currentElements;
