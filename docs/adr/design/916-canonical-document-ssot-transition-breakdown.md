@@ -238,7 +238,7 @@ Generic `T*` 매개변수로 builder 의 `Element` / `Page` / `Layout` 타입에
 - **history/undo 통합** — Phase 1 mutation 은 history entry 를 push 하지 않음. Phase 2/3 시점에 canonical patch → history record 변환 결정 (R1 잔존).
 - **persistence write-through** — Phase 3 G4. 본 store 는 in-memory only.
 - **legacy elementsMap 양방향 sync** — Phase 2 hot path cutover (G3) 와 함께. 본 store 는 legacy store 와 별개.
-- **selector subscription pattern** — `useCanonicalNode(nodeId)` 류 React hook 은 Phase 2 hot path cutover 시점에 추가 (`selectCanonicalNode` 는 cold path 용 placeholder).
+- **selector subscription pattern** — `useCanonicalNode(nodeId)` 류 React hook 은 Phase 2 hot path cutover 시점에 추가 (`selectCanonicalNode` 는 cold path 용 placeholder). **✅ Phase 2 G3 Sub-Phase A (2026-05-01) land 완료** — `apps/builder/src/builder/stores/canonical/canonicalElementsBridge.ts` 의 `useCanonicalNode(nodeId)` + `useActiveCanonicalDocument()` 가 `useSyncExternalStore` 기반으로 구현 (D6=i 채택). Sub-Phase B 의 5 hot path cutover 는 본 hook 을 read backbone 으로 사용.
 
 ### 6-F. 원칙 (design breakdown §6 unchanged)
 
@@ -280,6 +280,47 @@ rg -n "layout_id|slot_name|componentRole|masterId" apps/builder/src/builder apps
 - drag/selection/render/LayerTree/Preview sync 경로에서 full document projection 0건
 - `selectCanonicalDocument`는 adapter boundary 또는 cold path에서만 호출
 - frame/slot/ref rendering은 canonical snapshot에서 파생
+
+### 7-A. Sub-Phase A: Bridge layer + selector subscription pattern ✅ (2026-05-01)
+
+**결정 분기**: D4=γ (3-4d bridge first + 1 path pilot) / D5=A (bridge layer 먼저 land) / D6=i (`useSyncExternalStore` — Zustand v5 selector cache miss 회피).
+
+**산출물**:
+
+- `apps/builder/src/builder/stores/canonical/canonicalElementsBridge.ts` (신규, ~140 lines)
+  - read API: `getCanonicalNode(nodeId)` / `getActiveCanonicalDocument()` (Phase 1 selector wrap)
+  - subscribe API: `subscribeCanonicalStore(listener)` (Zustand v5 native subscribe)
+  - feature flag: `isCanonicalBridgeEnabled()` / `setCanonicalBridgeEnabled(value)` (default `false`)
+  - React hook: `useCanonicalNode(nodeId): CanonicalNode | null` / `useActiveCanonicalDocument(): CompositionDocument | null` (`useSyncExternalStore` 기반)
+- `apps/builder/src/builder/stores/canonical/__tests__/canonicalElementsBridge.test.tsx` (신규, **22 test PASS**)
+  - feature flag 3 + read API 7 + subscribe API 4 + `useCanonicalNode` 5 + `useActiveCanonicalDocument` 3
+  - snapshot stability 검증 + mutation re-render evidence
+
+**Sub-Phase A scope**:
+
+- canonical store 단독 read (legacy `elementsMap` fallback 미포함)
+- subscribe lifecycle + React hook backbone
+- 5 hot path 자체 cutover 미진행 (Sub-Phase B)
+
+**검증 evidence**:
+
+| 검증                        | 결과           | 비고                                                |
+| --------------------------- | -------------- | --------------------------------------------------- |
+| `pnpm turbo run type-check` | 3/3 successful | builder cache miss 313ms / shared·publish cache hit |
+| vitest (canonical 전체)     | 59/59 PASS     | 37 store + 22 bridge — 회귀 0                       |
+| Gate G3 진행률              | 0/5 path       | backbone 구축 — Sub-Phase B 진입 prerequisite 충족  |
+
+### 7-B. Sub-Phase B: 5 hot path path-by-path cutover (다음 세션 진입)
+
+**진입 순서 권장** (회귀 isolation 좁힘 → 넓힘):
+
+1. **LayerTree pilot** (1-2d MED) — derived view 생성 단순. `useActiveCanonicalDocument()` 가 read backbone. 회귀 = layer 표시 정확성.
+2. **Selection/properties** (1d MED) — selected nodeId 기준 `useCanonicalNode` 직접 호출. 회귀 = panel 데이터 정확성.
+3. **Preview sync** (1-2d HIGH) — resolved canonical tree publish 채널. 회귀 = preview iframe 시각.
+4. **BuilderCore layout refresh** (1-2d HIGH) — projection/filter 제거 + canonical selector 도입. 회귀 = layoutVersion 트리거 정합.
+5. **canvas drag/drop helper** (1d HIGH) — mousemove 중 doc build 회피 + scene index 도입. 회귀 = drag preview + drop position.
+
+각 path 별 회귀 0 확증 (cross-check skill + Chrome MCP evidence) 후 다음 path 진입. legacy `elementsMap` fallback 자동 변환 (`legacyToCanonical()` 캐싱) 은 본 Sub-Phase B 진입 시점에 bridge 에 추가.
 
 ## 8. Phase 3 — Persistence Write-Through
 
