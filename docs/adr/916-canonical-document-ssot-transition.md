@@ -47,6 +47,15 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ land)
   - **회귀 안전망**: default `false` 이므로 production 영향 0 — Step 1b-2 진입 사용자 검증 후 명시 enable. canonical store hydrated 되어도 hot path consumer 가 없어 메모리 cost 만 발생 (LayerTree cutover 시점에 의미 발현).
   - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 291ms) + vitest canonical 전체 70/70 PASS (apps/builder cwd, 회귀 0). root cwd 실행 시 jsdom 환경 분리 이슈는 pre-existing config 한계 — 본 변경 무관, apps/builder cwd 에서 정상.
   - **Step 1b-2 진입 prerequisite (다음 세션)**: (1) 사용자 환경에서 `VITE_ADR916_DOCUMENT_SYNC=true` 명시 enable + dev console 로그 확인 (canonical store 가 mutation 시 update 되는지), (2) `useLayerTreeData.ts` dual-mode cutover (canonical → LayerTreeNode 변환 helper + virtual children + ref/instance 분기), (3) Chrome MCP visual evidence (legacy vs canonical 모드 LayerTree 표시 정합성).
+- **2026-05-01 — Phase 2 G3 Sub-Phase B Step 1b: LayerTree pilot land (1 PR 통합)**:
+  - **결정 분기 D13=A / D14=i / D15 통합** — canonical → Element[] derived view helper + metadata.legacyProps 활용 + 1 PR 통합 land (사용자 지시 "쓸데없이 쪼개기 하지마" / "본래 목적을 찾아라" 반영).
+  - **schema 보강** — `apps/builder/src/adapters/canonical/legacyMetadata.ts` 의 `buildLegacyElementMetadata()` 가 보존하는 element top-level fields 를 6개 → 7개로 확장 (`element.type` 추가). canonical inverse 변환에서 ref 노드의 원본 element.type 복원 가능 (canonical type === "ref" 만으로는 LayerTree 분기 무력화).
+  - **derived view land** — `apps/builder/src/builder/stores/canonical/canonicalElementsView.ts` 신규 (~140 lines): (1) `canonicalDocumentToElements(doc)` helper — DFS + metadata.legacyProps 기반 무손실 inverse 변환 (id/parent_id/page_id/layout_id/order_num/fills/type + props spread 7-fields), (2) metadata 미보존 노드는 skip + 자식 parent context 승계 (page placeholder / slot synthetic 안전), (3) `useCanonicalElements()` React hook — `useActiveCanonicalDocument()` + `useMemo` 변환.
+  - **dual-mode cutover land** — `apps/builder/src/builder/panels/nodes/tree/LayerTree/useLayerTreeData.ts` 진입점에 source 분기 추가: `isCanonicalDocumentSyncEnabled()` && canonical store hydrated 시 `useCanonicalElements()` 결과 사용, 미충족 시 caller 가 전달한 legacy `elements[]` 유지. 하류 파이프라인 (`resolveCanonicalRefTree` / `buildTreeFromElements` / `convertToLayerTreeNodes`) 변경 0 — 기존 schema/동작 무손실.
+  - **회귀 안전망**: flag default `false` 이므로 production 영향 0. flag enable 시에도 canonical → Element[] derived view 라 LayerTreeNode.element / selectedElementId / batchUpdateElements 모두 legacy UUID 기반 유지 → 5 hot path cascade 회피.
+  - **unit test land** — `apps/builder/src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts` 신규 (**7 test PASS**): happy path 3 (single root + nested DFS + ref 노드 type 복원) + metadata 미보존 노드 2 + fields 무손실 복원 2.
+  - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 304ms) + vitest canonical 전체 77/77 PASS (37 store + 22 bridge + 11 sync + 7 view, 회귀 0) + LayerTree 기존 vitest 5/5 PASS (회귀 0).
+  - **Gate G3 진행률**: 5/5 hot path 중 **1/5 path cutover backbone 완성** (LayerTree). 사용자 환경 dev enable + Chrome MCP visual evidence 후 LayerTree pilot 완결 → Step 2 (Selection/properties) 진입 가능.
 
 ## Context
 
