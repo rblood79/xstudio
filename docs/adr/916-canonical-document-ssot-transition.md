@@ -92,6 +92,16 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ lan
   - **검증** — type-check 3/3 + vitest canvas+canonical 224/224 PASS (회귀 0).
   - **Gate G3 진행률**: **5/5 path ✅ — Phase 2 G3 종결**.
   - **Phase 2 G3 종결 의의** — 5 hot path 모두 dual-mode cutover land 완료 (LayerTree + Selection/properties + Preview sync + BuilderCore layout refresh + canvas drag/drop helper). canonical store 가 read backbone — flag enabled 시 single source publish, flag disabled 시 legacy fallback (production 영향 0). 다음 진입점 = Phase 3 G4 — Persistence Write-Through (canonical primary storage 전환 + legacy export on demand).
+- **2026-05-01 — Phase 2 G3 dev evidence 사용자 검증 + Phase 3 G4 design lock-in**:
+  - **G3 dev evidence 사용자 검증 PASS** — `VITE_ADR916_DOCUMENT_SYNC=true` enable 후 Builder 진입. `currentProjectId === '<route projectId>'` ✅ + `documentVersion` 7→8→9→10 페이지 요소 추가마다 +1 증가 ✅. ADR-903 P3-E E-4 + ADR-913 P4 dry-run 모두 status=success errors=0. 5 hot path 회귀 0 — G3 monitoring 종결.
+  - **Phase 3 G4 fork checkpoint 4 질문 통과 (design §8.0 lock-in)**: (1) base/응용 분류 = 3-A shadow write base / 3-B/C/D 응용, (2) schema 직교성 = read↔write 직교 단 D17=B 채택 시 G3 회귀 검증 의무, (3) baseline framing reverse = ADR-903 read-through ↔ ADR-916 primary SSOT reverse Phase 0 시점 lock-in 그대로 valid, (4) codex 3차 미루지 말 것 = D16~D19 lock-in 직후 codex 1차 진입.
+  - **결정 분기 D16~D19 lock-in (design §8.2)**:
+    - **D16=A** — 필수 API 3개 stub-first 단독 PR + 3-A logic 후속 별 PR (회귀 isolation, codex stub 단계 review 가능). D16=B 통합 / D16=C PoC-only 기각.
+    - **D17=A** — localStorage 우선 canonical primary 전환 (DB schema 미변경, rollback 단순, G3 read path 회귀 0 보장). D17=B DB schema bump 은 3-D 시점 별개 진행 권장 / D17=C 동시 전환 분리 권장.
+    - **D18=A** — `exportLegacyDocument(doc)` 단일 SSOT 격리 (grep gate 단순). D18=B cache layer 는 perf 별도 작업.
+    - **D19=B** — schemaVersion bump + project-level rollback marker (`canRollback: boolean` + backup snapshot). D19=A bump-only 기각 (rollback 부재) / D19=C automated trigger 분리 권장.
+  - **sub-phase 진입 순서 (design §8.3 확정)**: 3-A-stub (LOW ~30분-1h, 필수 API 3개 stub) → 3-A-impl (MED ~1d, 실 구현 + shadow logic) → 3-A monitoring (1-2주, destructive diff 0 확인) → 3-B (MED ~1d, localStorage primary + G3 read 회귀 재검증) → 3-C (LOW ~30분-1h, export adapter 단일 SSOT grep gate) → 3-D (MED ~1d, schemaVersion bump + rollback marker = G4 PASS 시그널).
+  - **다음 진입점**: 3-A-stub 단독 PR — 필수 API 3개 (`exportLegacyDocument` / `diffLegacyRoundtrip` / `restoreFromLegacyBackup`) stub + vitest 시그니처 검증. codex 1차 review prerequisite 충족.
 
 ## Context
 
