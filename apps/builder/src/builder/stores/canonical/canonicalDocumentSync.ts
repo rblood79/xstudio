@@ -57,8 +57,12 @@ function performSync(): void {
   syncScheduled = false;
 
   const projectId = useDataStore.getState().currentProjectId;
+  // [ADR-916] 임시 진단 — Step 1b 검증 후 제거
+  console.log("[ADR-916] performSync", {
+    projectId,
+    elementsMapSize: useStore.getState().elementsMap.size,
+  });
   if (!projectId) {
-    // 비활성 — canonical store 도 inactive 유지 (data 가 아직 로드 안 됨).
     return;
   }
 
@@ -76,11 +80,19 @@ function performSync(): void {
   if (canonical.currentProjectId !== projectId) {
     canonical.setCurrentProject(projectId);
   }
+  console.log("[ADR-916] performSync done", {
+    docChildren: doc.children.length,
+    canonicalVersion: useCanonicalDocumentStore.getState().documentVersion,
+  });
 }
 
 function scheduleSync(): void {
-  if (syncScheduled) return;
+  if (syncScheduled) {
+    console.log("[ADR-916] scheduleSync — already scheduled, skip");
+    return;
+  }
   syncScheduled = true;
+  console.log("[ADR-916] scheduleSync — queued");
   scheduler(performSync);
 }
 
@@ -106,6 +118,7 @@ function scheduleSync(): void {
  *   stop(); // cleanup
  */
 export function startCanonicalDocumentSync(): () => void {
+  console.log("[ADR-916] startCanonicalDocumentSync — register listeners");
   // initial sync — canonical store 가 처음 hydration 됨.
   scheduleSync();
 
@@ -114,15 +127,24 @@ export function startCanonicalDocumentSync(): () => void {
     if (state.elementsMap === prev.elementsMap && state.pages === prev.pages) {
       return;
     }
+    console.log("[ADR-916] elements listener fired", {
+      sizeBefore: prev.elementsMap.size,
+      sizeAfter: state.elementsMap.size,
+    });
     scheduleSync();
   });
 
   const unsubLayouts = useLayoutsStore.subscribe((state, prev) => {
     if (state.layouts === prev.layouts) return;
+    console.log("[ADR-916] layouts listener fired");
     scheduleSync();
   });
 
   const unsubData = useDataStore.subscribe((state, prev) => {
+    console.log("[ADR-916] dataStore listener fired", {
+      curr: state.currentProjectId,
+      prev: prev.currentProjectId,
+    });
     if (state.currentProjectId === prev.currentProjectId) return;
     scheduleSync();
   });
