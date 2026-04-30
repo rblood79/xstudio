@@ -26,15 +26,15 @@
 
 ### 3. ADR / 문서 reference
 
-| 위치                                                     |     라인      | 처리                                                                                                                                    |
-| -------------------------------------------------------- | :-----------: | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/adr/020-design-kit-improvement.md`                 |    (전체)     | Status: Proposed → **Superseded by ADR-915** + `completed/` 이동                                                                        |
-| `docs/adr/911-layout-frameset-pencil-redesign.md`        |      249      | "ADR-903 P5-D/E/F (`imports` resolver + DesignKit 통합) 와 자연스럽게 통합" → DesignKit 부분 제거                                       |
-| `docs/adr/912-editing-semantics-ui-5elements.md`         | 18 / 34 / 112 | G4-A 시각 마커 항목에서 "DesignKit" 제거 (LayerTree + Canvas 만 유지)                                                                   |
-| `docs/adr/016-photoshop-ui-ux.md`                        |      43       | 다이어그램 박스에서 `DesignKitPanel` 제거                                                                                               |
-| `docs/adr/011-ai-assistant-design.md`                    |     1079      | `appliedKitIds` 표 항목 정리 (이미 ADR-054 Superseded — 가벼운 footnote)                                                                |
-| `docs/adr/914-imports-resolver-designkit-integration.md` |    (전체)     | **보류** — Proposed 단계 + imports 본체 미진입. 본 ADR-915 land 후 진입 시점에 P5-F section (DesignKit 통합 결정) 만 갱신. 후속 PR 처리 |
-| `docs/adr/README.md`                                     |   (현황 표)   | ADR-020 → 완료 섹션 (Superseded) / ADR-915 → 신규 추가                                                                                  |
+| 위치                                                       |     라인      | 처리                                                                                                                                    |
+| ---------------------------------------------------------- | :-----------: | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/adr/020-design-kit-improvement.md`                   |    (전체)     | Status: Proposed → **Superseded by ADR-915** + `completed/` 이동                                                                        |
+| `docs/adr/911-layout-frameset-pencil-redesign.md`          |      249      | "ADR-903 P5-D/E/F (`imports` resolver + DesignKit 통합) 와 자연스럽게 통합" → DesignKit 부분 제거                                       |
+| `docs/adr/completed/912-editing-semantics-ui-5elements.md` | 18 / 34 / 112 | G4-A 시각 마커 항목에서 "DesignKit" 제거 (LayerTree + Canvas 만 유지)                                                                   |
+| `docs/adr/016-photoshop-ui-ux.md`                          |      43       | 다이어그램 박스에서 `DesignKitPanel` 제거                                                                                               |
+| `docs/adr/011-ai-assistant-design.md`                      |     1079      | `appliedKitIds` 표 항목 정리 (이미 ADR-054 Superseded — 가벼운 footnote)                                                                |
+| `docs/adr/914-imports-resolver-designkit-integration.md`   |    (전체)     | **보류** — Proposed 단계 + imports 본체 미진입. 본 ADR-915 land 후 진입 시점에 P5-F section (DesignKit 통합 결정) 만 갱신. 후속 PR 처리 |
+| `docs/adr/README.md`                                       |   (현황 표)   | ADR-020 → 완료 섹션 (Superseded) / ADR-915 → 신규 추가                                                                                  |
 
 ### 4. 영속화 / DB
 
@@ -68,14 +68,14 @@ git mv docs/adr/020-design-kit-improvement.md docs/adr/completed/020-design-kit-
 
 ### 1-2. ADR reference 정리
 
-| 파일                                                  | 변경                                                                                                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/adr/911-layout-frameset-pencil-redesign.md:249` | "ADR-903 P5-D/E/F (`imports` resolver + DesignKit 통합)" → "ADR-903 P5-D/E (`imports` resolver) — DesignKit 통합은 ADR-915 로 제거됨" |
-| `docs/adr/912-editing-semantics-ui-5elements.md:18`   | "DesignKit role 마커 (재사용 원본 시각화) **0건**" → 항목 제거                                                                        |
-| `docs/adr/912-editing-semantics-ui-5elements.md:34`   | "① reusable / ref / override 시각 마커 3종 (LayerTree + Canvas + DesignKit)" → "...3종 (LayerTree + Canvas)"                          |
-| `docs/adr/912-editing-semantics-ui-5elements.md:112`  | G4-A 표에서 "DesignKit" 제거                                                                                                          |
-| `docs/adr/016-photoshop-ui-ux.md:43`                  | 다이어그램에서 `DesignKitPanel` 박스 제거 (좌측 패널 구성 갱신)                                                                       |
-| `docs/adr/011-ai-assistant-design.md:1079`            | 표 항목 footnote: "_[ADR-054 Superseded + ADR-915 제거됨]_"                                                                           |
+| 파일                                                           | 변경                                                                                                                                  |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/adr/911-layout-frameset-pencil-redesign.md:249`          | "ADR-903 P5-D/E/F (`imports` resolver + DesignKit 통합)" → "ADR-903 P5-D/E (`imports` resolver) — DesignKit 통합은 ADR-915 로 제거됨" |
+| `docs/adr/completed/912-editing-semantics-ui-5elements.md:18`  | "DesignKit role 마커 (재사용 원본 시각화) **0건**" → 항목 제거                                                                        |
+| `docs/adr/completed/912-editing-semantics-ui-5elements.md:34`  | "① reusable / ref / override 시각 마커 3종 (LayerTree + Canvas + DesignKit)" → "...3종 (LayerTree + Canvas)"                          |
+| `docs/adr/completed/912-editing-semantics-ui-5elements.md:112` | G4-A 표에서 "DesignKit" 제거                                                                                                          |
+| `docs/adr/016-photoshop-ui-ux.md:43`                           | 다이어그램에서 `DesignKitPanel` 박스 제거 (좌측 패널 구성 갱신)                                                                       |
+| `docs/adr/011-ai-assistant-design.md:1079`                     | 표 항목 footnote: "_[ADR-054 Superseded + ADR-915 제거됨]_"                                                                           |
 
 ### 1-3. ADR-914 처리
 

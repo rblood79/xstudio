@@ -136,7 +136,7 @@ ADR-903은 `CompositionDocument` canonical format, `reusable/ref/descendants/slo
 - [ADR-903: ref/descendants + slot 기본 composition 포맷 전환 계획](completed/903-ref-descendants-slot-composition-format-migration-plan.md)
 - [ADR-910: Canonical `themes`/`variables` 필드 Land Plan](completed/910-canonical-themes-variables-land-plan.md)
 - [ADR-911: Layout/Slot Frameset 완전 재설계](911-layout-frameset-pencil-redesign.md)
-- [ADR-912: Editing Semantics UI 6요소 + Slot section base](912-editing-semantics-ui-5elements.md)
+- [ADR-912: Editing Semantics UI 6요소 + Slot section base](completed/912-editing-semantics-ui-5elements.md)
 - [ADR-913: `Element.tag -> Element.type` rename + hybrid 6 필드 cleanup](913-tag-type-rename-hybrid-cleanup.md)
 - [ADR-914: `imports` resolver + DesignKit 통합](914-imports-resolver-designkit-integration.md)
 - [`CompositionDocument` 타입](../../packages/shared/src/types/composition-document.types.ts)

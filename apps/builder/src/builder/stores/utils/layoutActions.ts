@@ -19,7 +19,8 @@ import type {
 } from "../../../types/builder/layout.types";
 import type { Element, Page } from "../../../types/builder/unified.types";
 import { getDefaultProps } from "../../../types/builder/unified.types";
-import { useStore, selectCanonicalDocument } from "../elements";
+import { selectCanonicalDocument } from "../elements";
+import { getLiveElementsState } from "../rootStoreAccess";
 import type { FrameNode } from "@composition/shared";
 
 // Type aliases for set/get
@@ -244,7 +245,7 @@ export const createCreateLayoutAction =
       await db.elements.insert(bodyElement);
 
       // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
-      const { mergeElements } = useStore.getState();
+      const { mergeElements } = getLiveElementsState();
       mergeElements([bodyElement]);
 
       // 메모리 상태 업데이트
@@ -316,7 +317,7 @@ export const createDeleteLayoutAction =
       // ADR-903 P3-D-3: canonical document 가드.
       // canonical tree 에 해당 reusable frame 이 존재할 때만 cascade 실행.
       // (frame 미존재 = stale layout 또는 이미 detach 된 노드 → cascade skip)
-      const elementsStateForGuard = useStore.getState();
+      const elementsStateForGuard = getLiveElementsState();
       const layoutsForGuard = get().layouts;
       const canonicalDoc = selectCanonicalDocument(
         elementsStateForGuard,
@@ -346,7 +347,7 @@ export const createDeleteLayoutAction =
         );
 
         // 메모리 상태의 pages도 업데이트
-        const { pages, setPages } = useStore.getState();
+        const { pages, setPages } = getLiveElementsState();
         const updatedPages = pages.map((p) =>
           pagesUsingLayout.some((up) => up.id === p.id)
             ? { ...p, layout_id: null }
@@ -367,7 +368,7 @@ export const createDeleteLayoutAction =
           );
 
           // 메모리 상태의 elements도 업데이트
-          const { removeElements } = useStore.getState();
+          const { removeElements } = getLiveElementsState();
           await removeElements(layoutElements.map((el) => el.id));
         }
       }
@@ -459,7 +460,7 @@ export const createDuplicateLayoutAction =
 
         // 복제 직후 Frames 탭/Skia authoring surface 에 새 body/slot 이 즉시
         // 보이도록 DB write-through 와 메모리 store 를 같은 턴에 동기화한다.
-        const { mergeElements } = useStore.getState();
+        const { mergeElements } = getLiveElementsState();
         mergeElements(newElements as Element[]);
       }
 
@@ -523,7 +524,7 @@ export const createGetLayoutByIdAction =
 export const createGetLayoutSlotsAction =
   (get: GetState, _getElements: () => Element[]) =>
   (layoutId: string): SlotInfo[] => {
-    const elementsState = useStore.getState();
+    const elementsState = getLiveElementsState();
     const { pages } = elementsState;
     const { layouts } = get();
     const doc = selectCanonicalDocument(elementsState, pages, layouts);

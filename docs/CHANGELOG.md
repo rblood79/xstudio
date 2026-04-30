@@ -52,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `deleteLayout` 에서 canonical frame projection 이 없으면 element cascade 는 skip 하되, 삭제되는 layout 을 참조하는 Page `layout_id` 는 projection guard 밖에서 항상 `null` 로 해제
   - stale layout row 삭제나 projection race 상황에서도 Apply Frame 값이 존재하지 않는 Frame 을 계속 가리키는 orphan reference 로 남지 않도록 보강
   - `layoutActions.test.ts` 에 frame projection 없음 + page ref cleanup fixture 를 추가해 `removeElements` skip 과 `db.pages.update` / live `setPages` 실행을 함께 검증
+- **ADR-911 G3 cascade slice #3 — 적용된 Frame 삭제 후 Skia stale render 회귀 수정**:
+  - Frame 삭제 액션이 `stores/elements.ts` 의 standalone compatibility store 를 갱신하고, Skia/PageLayoutSelector 는 `stores/index.ts` 통합 store 를 구독해 live 화면이 삭제 전 Frame 합성을 유지하던 경로를 보정
+  - `layoutActions` 와 `layouts.getLayoutSlots` 가 `rootStoreAccess.getLiveElementsState()` 를 통해 런타임 통합 Builder store 를 우선 사용하고, 테스트/비브라우저 환경에서만 기존 elements store 로 fallback
+  - `setPages` 가 page list shape / order / `layout_id` 변경 시에만 `layoutVersion` 을 증분하도록 제한해 Frame apply/unapply/delete 경로의 layout publisher 와 renderer cache invalidation 을 같은 턴에 트리거
+  - `rootStoreAccess.test.ts` / `pagesLayoutInvalidation.test.ts` 로 live store 우선 조회, frame binding 해제 시 `layoutVersion` 증분, 단순 page metadata 변경 시 no-bump 를 함께 검증
 - **Frames 탭 authoring surface 를 Page 추가 UX 와 같은 multi-canvas overview 로 개선**:
   - Frames mode 에서 선택된 Frame 하나만 같은 위치에 렌더하지 않고 등록된 reusable Frame 전체를 표시
   - Page layout direction(horizontal/vertical/zigzag) 과 같은 배치 규칙으로 Frame canvas 를 정렬해 추가한 layout 을 한 화면에서 비교 가능
@@ -75,6 +80,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ADR-912 G4-B/G4-C/G4-E/G4-H 잔여 gate 를 닫고 design breakdown 의 남은 gate 목록을 0건으로 정리
   - ADR-911 은 Implemented 가 아니라 `Ready to Resume` 상태로 전환. 이후 P3-ε/P3-ζ 는 ADR-912 기능 위의 frame authoring 편의 확장으로만 재개 가능
   - ADR README 에서 ADR-912 row 를 완료 테이블로 이동하고 미구현 count 를 7→6 으로 갱신
+- **ADR-912 본문을 completed archive 로 이동**:
+  - `docs/adr/912-editing-semantics-ui-5elements.md` → `docs/adr/completed/912-editing-semantics-ui-5elements.md`
+  - ADR README / ADR-911 / ADR-916 / 관련 design breakdown 의 현재 링크를 completed 경로로 갱신
 
 ### Verification
 

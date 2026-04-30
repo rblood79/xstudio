@@ -25,7 +25,7 @@ import {
   createGetLayoutSlotsAction,
   createValidateLayoutDeleteAction,
 } from "./utils/layoutActions";
-import { useStore } from "./elements";
+import { getLiveElementsState } from "./rootStoreAccess";
 
 // ============================================
 // Store Type
@@ -50,7 +50,7 @@ export const createLayoutsSlice: StateCreator<LayoutsStore> = (set, get) => {
 
   // getLayoutSlots는 elements store에 의존하므로 특별 처리
   const getLayoutSlots = (layoutId: string): SlotInfo[] => {
-    const getElements = () => useStore.getState().elements;
+    const getElements = () => getLiveElementsState().elements;
     return createGetLayoutSlotsAction(get, getElements)(layoutId);
   };
 

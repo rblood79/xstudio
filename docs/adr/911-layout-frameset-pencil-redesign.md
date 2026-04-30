@@ -2,13 +2,13 @@
 
 ## Status
 
-In Progress — 2026-04-30 (P3-ε/P3-ζ closure + G3 cascade slices #1~#2, G4/G5 잔여)
+In Progress — 2026-04-30 (P3-ε/P3-ζ closure + G3 cascade slices #1~#3, G4/G5 잔여)
 
 > **재개 사유** (2026-04-30): 본 ADR 은 ADR-912 (Editing Semantics UI — reusable component + slot 추상) 의 **frame-bundled preset 편의 확장** 임이 framing 재정의 됐고, 2026-04-30 ADR-912 가 Component/Slot base 를 `Implemented` 로 승격했다. 본 ADR 은 여전히 ADR-912 에 영향을 주거나 기준을 제공하지 않는다. `Frame.reusable` / `Frame.slot` / `Ref.descendants` schema 의 사용자 가시 편집 base 는 ADR-912 기준을 따른다. 본 ADR 의 이전 ##Slot section## 소유권 표현은 잘못된 설계 전제였고, ADR-912 기준으로 supersede 된다. **재개 범위**: P3-ε / P3-ζ 는 FramesTab / frame preset UX 가 완료된 ADR-912 기능을 더 쉽게 쓰게 하는 보조 흐름으로만 재설계한다.
 
 > **동결 보존 범위**: Phase 0~2 (Implemented) + Phase 3 의 P3-α/β/γ/δ + δ fix #1+#2+#3+#4 + B1 filter + θ scope land + θ regression fix #1 (~commit `e4f24697` + 세션 49 후속) 모두 보존. P3-θ regression fix #1 은 frame instance composition body 채택 정책 GREEN — frame schema 자체 land 는 ADR-912 base 와 무관하게 실 사용자 가시 동작 (frame default + page slot fill) 보존 가치.
 
-> **재개 조건 및 closure 결과**: 충족됨. ADR-912 Component/Slot base 완료(2026-04-30) 후 P3-ε / P3-ζ 는 ADR-912 기능의 frame authoring 편의 확장으로 재설계했고, 사용자 브라우저 회귀 검증까지 완료했다. G3 cascade 는 `duplicateLayout` write-through slice #1 과 `deleteLayout` orphan page-ref cleanup slice #2 까지 보강했으나, ADR-911 전체는 아직 G3 canonical-native cascade 완결 / G4 legacy adapter 0 / G5 pencil 호환 검증 잔여가 있으므로 `Implemented` 로 승격하지 않는다.
+> **재개 조건 및 closure 결과**: 충족됨. ADR-912 Component/Slot base 완료(2026-04-30) 후 P3-ε / P3-ζ 는 ADR-912 기능의 frame authoring 편의 확장으로 재설계했고, 사용자 브라우저 회귀 검증까지 완료했다. G3 cascade 는 `duplicateLayout` write-through slice #1, `deleteLayout` orphan page-ref cleanup slice #2, Page frame binding live invalidation slice #3 까지 보강했으나, ADR-911 전체는 아직 G3 canonical-native cascade 완결 / G4 legacy adapter 0 / G5 pencil 호환 검증 잔여가 있으므로 `Implemented` 로 승격하지 않는다.
 
 ### 진행 로그
 
@@ -225,6 +225,12 @@ In Progress — 2026-04-30 (P3-ε/P3-ζ closure + G3 cascade slices #1~#2, G4/G5
   - 이로써 stale layout row 삭제나 projection race 상황에서도 Page 가 존재하지 않는 Frame 을 계속 가리키는 orphan reference 를 남기지 않는다.
   - 회귀 테스트: canonical document 에 frame 이 없는 삭제 시나리오에서 `removeElements` 는 호출하지 않지만 `db.pages.update(pageId, { layout_id:null })` 와 live `setPages` 는 실행됨을 검증한다.
   - 잔여: element cascade 자체는 아직 `layout_id` legacy fallback 기반이며, canonical-native frame subtree mutation 으로의 완전 전환은 후속 G3 작업이다.
+- **2026-04-30 — G3 cascade slice #3 (`setPages` page frame binding invalidation)**:
+  - Frame 삭제 액션이 `stores/elements.ts` 의 standalone compatibility store 를 갱신하고, Skia/PageLayoutSelector 는 `stores/index.ts` 통합 store 를 구독해 live 화면이 삭제 전 Frame 합성을 유지하던 회귀를 보강한다.
+  - `layoutActions` 와 `layouts.getLayoutSlots` 는 `rootStoreAccess.getLiveElementsState()` 로 런타임 통합 Builder store 를 우선 사용하고, 테스트/비브라우저 환경에서만 기존 elements store 로 fallback 한다.
+  - `setPages` 는 page list shape / order / `layout_id` 변경 시에만 `layoutVersion` 을 증분해 PageLayoutSelector 직접 apply/unapply 와 `deleteLayout` cleanup 모두 같은 layout publisher/cache invalidation 계약을 사용한다.
+  - 회귀 테스트: `rootStoreAccess.test.ts` / `pagesLayoutInvalidation.test.ts` 에서 live store 우선 조회, frame binding 해제 시 `layoutVersion` 증분, title 같은 canvas layout 비영향 metadata 변경 no-bump 를 검증한다.
+  - 잔여: canonical-native `setPageFrameRef` write API 로 전환되면 이 live invalidation 계약도 canonical mutation boundary 로 이동해야 한다.
 
 ## Context
 
@@ -434,7 +440,7 @@ In Progress — 2026-04-30 (P3-ε/P3-ζ closure + G3 cascade slices #1~#2, G4/G5
 - [ADR-903](completed/903-ref-descendants-slot-composition-format-migration-plan.md) — canonical document migration (Implemented 2026-04-26, 본 ADR 의 G3 (b)/(c)/(d) 잔여 흡수)
 - [ADR-903 phase 3 frameset breakdown](design/903-phase3-frameset-breakdown.md) — frameset 흡수 분석 (본 ADR Phase 1 마이그레이션 도구 설계 시 참조)
 - [ADR-903 residual grep audit](design/903-residual-grep-audit-2026-04-26.md) — 잔여 caller inventory (Phase 4 G4 측정 baseline)
-- [ADR-912](912-editing-semantics-ui-5elements.md) — Editing Semantics UI 6요소 + Slot section base. 본 ADR 은 ADR-912 의 영향을 주지 않으며, 완료된 ADR-912 Component/Slot 기능 위 frame authoring 편의 확장만 제공
+- [ADR-912](completed/912-editing-semantics-ui-5elements.md) — Editing Semantics UI 6요소 + Slot section base. 본 ADR 은 ADR-912 의 영향을 주지 않으며, 완료된 ADR-912 Component/Slot 기능 위 frame authoring 편의 확장만 제공
 - [pencil app schema (`.pen` 2.11)](https://pencil.dev/) — 본 ADR 의 호환 기준. 핵심 type 직접 확인 (2026-04-28 MCP 직접 fetch):
   - `Entity.reusable: boolean` — origin 마킹
   - `Frame.slot: false | string[]` — false=일반 frame, array=slot (각 element 는 권장 ref id)

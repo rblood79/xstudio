@@ -80,6 +80,29 @@ import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
 import type { CompositionDocument } from "@composition/shared";
 import type { Layout } from "../../types/builder/layout.types";
 
+function pageLayoutId(page: Page): string | null {
+  return page.layout_id ?? null;
+}
+
+function shouldInvalidatePagesLayout(
+  currentPages: Page[],
+  nextPages: Page[],
+): boolean {
+  if (currentPages.length !== nextPages.length) {
+    return true;
+  }
+
+  return currentPages.some((page, index) => {
+    const nextPage = nextPages[index];
+    return (
+      !nextPage ||
+      page.id !== nextPage.id ||
+      page.order_num !== nextPage.order_num ||
+      pageLayoutId(page) !== pageLayoutId(nextPage)
+    );
+  });
+}
+
 export interface ElementsState {
   elements: Element[];
   pageElementsSnapshot: Record<string, Element[]>;
@@ -966,7 +989,20 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       }),
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
-    setPages: (pages) => set({ pages }),
+    setPages: (pages) =>
+      set((state) => {
+        const shouldInvalidateLayout = shouldInvalidatePagesLayout(
+          state.pages,
+          pages,
+        );
+
+        return {
+          pages,
+          ...(shouldInvalidateLayout
+            ? { layoutVersion: state.layoutVersion + 1 }
+            : {}),
+        };
+      }),
 
     appendPageShell: (page, bodyElement, position, options) => {
       const activate = options?.activate ?? true;
