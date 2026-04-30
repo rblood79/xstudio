@@ -140,14 +140,18 @@ export function startCanonicalDocumentSync(): () => void {
     scheduleSync();
   });
 
-  const unsubData = useDataStore.subscribe((state, prev) => {
-    console.log("[ADR-916] dataStore listener fired", {
-      curr: state.currentProjectId,
-      prev: prev.currentProjectId,
-    });
-    if (state.currentProjectId === prev.currentProjectId) return;
-    scheduleSync();
-  });
+  // useDataStore 는 `subscribeWithSelector` middleware 사용 → native
+  // `.subscribe(listener)` fallback 이 동작하지 않음. selector-aware 시그니처
+  // (selector + listener) 필수. zustand v5 subscribeWithSelector 가 selector
+  // 결과 변경 감지 후 listener 호출.
+  const unsubData = useDataStore.subscribe(
+    (state) => state.currentProjectId,
+    (curr, prev) => {
+      console.log("[ADR-916] dataStore listener fired", { curr, prev });
+      if (curr === prev) return;
+      scheduleSync();
+    },
+  );
 
   return () => {
     unsubElements();
