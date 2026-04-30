@@ -10,6 +10,10 @@ import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
 import { useLayoutsStore } from "../../../stores/layouts";
 import { sameLegacyOwnership } from "@/adapters/canonical";
+// ADR-916 Phase 2 G3 Step 5 — drag mousemove 빈번 doc build 회피 (canonical
+// store hit 시 build cost 0, miss 시 legacy fallback selectCanonicalDocument).
+import { isCanonicalDocumentSyncEnabled } from "@/utils/featureFlags";
+import { getActiveCanonicalDocument } from "../../../stores/canonical/canonicalElementsBridge";
 
 interface UseCanvasDragDropHelpersParams {
   depthMap: Map<string, number>;
@@ -150,10 +154,14 @@ export function useCanvasDragDropHelpers({
       excludedIds.add(draggedId);
 
       // ADR-903 P3-D-5 step 5e-3: doc 전달 → sameLegacyOwnership canonical 활용.
-      // callback 1회 생성 + loop 안에서 재사용 (cost = O(N) doc build, drag mouse-move 빈번).
+      // ADR-916 Phase 2 G3 Step 5: drag mousemove 빈번 — canonical store hit 시
+      // pre-built doc 직접 사용 (build cost 0). miss 시 legacy fallback.
       const state = useStore.getState();
       const layouts = useLayoutsStore.getState().layouts;
-      const doc = selectCanonicalDocument(state, state.pages, layouts);
+      const doc = isCanonicalDocumentSyncEnabled()
+        ? (getActiveCanonicalDocument() ??
+          selectCanonicalDocument(state, state.pages, layouts))
+        : selectCanonicalDocument(state, state.pages, layouts);
 
       const candidates: Array<{
         bounds: BoundingBox;
@@ -262,9 +270,13 @@ export function useCanvasDragDropHelpers({
       }
 
       // ADR-903 P3-D-5 step 5e-3: doc 1회 생성 (drop 시 1회 호출) → sameLegacyOwnership 두 호출에서 공유.
+      // ADR-916 Phase 2 G3 Step 5: canonical store hit 시 pre-built doc 사용.
       const state = useStore.getState();
       const layouts = useLayoutsStore.getState().layouts;
-      const doc = selectCanonicalDocument(state, state.pages, layouts);
+      const doc = isCanonicalDocumentSyncEnabled()
+        ? (getActiveCanonicalDocument() ??
+          selectCanonicalDocument(state, state.pages, layouts))
+        : selectCanonicalDocument(state, state.pages, layouts);
 
       if (!sameLegacyOwnership(movedElement, targetElement, doc)) {
         return [];
