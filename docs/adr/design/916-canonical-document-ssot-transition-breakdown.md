@@ -171,54 +171,90 @@ rg -n "\\bprops\\.events\\b|\\bevents\\b|\\bdataBinding\\b|\\bdata_binding\\b" a
 | Pencil schema 오해 방지    | "Pencil schema 그대로 채택" 문구 0건                                              |             ✅ PASS (대안 B 기각 §Decision 명시)             |
 | events/dataBinding 위치    | core field가 아닌 extension-only로 명시 + legacy dual-storage migration path 존재 | ✅ PASS (`CompositionExtension` + dual-storage inventory §3) |
 
-## 6. Phase 1 — Canonical Document Store API
+## 6. Phase 1 — Canonical Document Store API ✅ 2026-05-01 land
 
 현재 `legacyToCanonical(input, deps)`는 read-through adapter다. Phase 1에서는 canonical document 자체를 mutation할 수 있는 API를 별도 surface로 만든다.
 
-필수 API 초안:
+**Phase 1 land scope (R1 보수 = "API + unit test 까지만")**:
+
+- D1=B (types + skeleton + unit test) — write-through 는 Phase 3 (G4)
+- D2=β (별도 Zustand slice — `apps/builder/src/builder/stores/canonical/canonicalDocumentStore.ts`) — elementsMap wrapper 가 아니라 분리 store, Phase 2 hot path cutover 시 elementsMap 의존 제거 자연스럽게 가능
+- D3=i (역방향 adapter spec only) — `CanonicalLegacyAdapter` interface 만 type lock-in, 구현은 Phase 3
+
+### 6-A. land 산출물 (2026-05-01, ADR-916 Phase 1 G2)
+
+| 산출물                                                                                                               | 위치                                                                                 |              |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | :----------: |
+| `CanonicalDocumentActions` interface (7 method) + `CanonicalLegacyAdapter` spec stub                                 | `packages/shared/src/types/composition-document-actions.types.ts`                    | ✅ 신규 land |
+| barrel export                                                                                                        | `packages/shared/src/types/index.ts` 末미 추가                                       |   ✅ land    |
+| Zustand slice 구현 (`useCanonicalDocumentStore`) + `selectCanonicalNode` / `selectActiveCanonicalDocument` selectors | `apps/builder/src/builder/stores/canonical/canonicalDocumentStore.ts`                | ✅ 신규 land |
+| vitest unit test (37 test, 7 action × happy path + edge case)                                                        | `apps/builder/src/builder/stores/canonical/__tests__/canonicalDocumentStore.test.ts` | ✅ 신규 land |
+
+### 6-B. 활성 document 모델
+
+design breakdown §6 spec 의 mutation method 시그니처는 projectId 를 받지 않는다 (`updateNode(nodeId, patch)` 등). 이를 Phase 1 에서는 **활성 document 모델** 로 해석:
+
+- store state: `currentProjectId: string | null` + `documents: Map<string, CompositionDocument>` + `documentVersion: number`.
+- mutation method 는 currentProjectId 가 가리키는 document 에 작용.
+- `setCurrentProject(projectId | null)` action 을 추가 (spec 외 — 활성 document 모델의 결과).
+- currentProjectId 가 `null` 또는 document 미존재 / 노드 미발견 시 **no-op + dev warn** (silent fail / throw 모두 회피 — hot path race 대응).
+
+### 6-C. 시그니처 구체화 (Phase 1 결정)
+
+- `nodeId` = document 내 unique id (DFS 검색).
+- `parentPath` / `nodePath` = Phase 1 에서는 single-segment nodeId 와 동일. multi-segment path (reusable boundary 가로지르는 경로) 는 Phase 2 hot path cutover 시점에 필요해지면 확장 (R6 잔존).
+- `descendantPath` = pencil.dev 공식 slash-separated id path (`"label"` / `"ok-button/label"`).
+- `updateNode` 가 `patch.id` / `patch.type` / `patch.props` 를 받으면 **silently 무시** — id/type 은 구조 invariant, props 는 `updateNodeProps` 사용 권장 (semantic intent 분리).
+- `updateNodeProps` 가 `events` / `actions` / `dataBinding` key 를 받으면 **dev warn + skip** (G7 Extension Boundary 사전 enforcement).
+- 모든 성공 mutation 은 `documentVersion + 1` + 새 `documents` Map reference 생성 (Zustand selector trigger).
+
+### 6-D. 역방향 adapter (Phase 3 prerequisite)
+
+`CanonicalLegacyAdapter` 는 Phase 1 spec only:
 
 ```ts
-interface CanonicalDocumentActions {
-  getDocument(projectId: string): CompositionDocument;
-  setDocument(projectId: string, doc: CompositionDocument): void;
-  updateNode(nodeId: string, patch: Partial<CanonicalNode>): void;
-  updateNodeProps(nodeId: string, patch: Record<string, unknown>): void;
-  insertNode(parentPath: string, node: CanonicalNode, index?: number): void;
-  removeNode(nodePath: string): void;
-  updateDescendant(
-    refPath: string,
-    descendantPath: string,
-    value: DescendantOverride,
-  ): void;
-}
-```
-
-역방향 adapter API 초안:
-
-```ts
-interface CanonicalLegacyExport {
-  elements: LegacyElement[];
-  pages: LegacyPage[];
-  layouts: LegacyLayout[];
-  diagnostics: CanonicalExportDiagnostic[];
-}
-
-interface CanonicalLegacyAdapter {
-  exportLegacyDocument(doc: CompositionDocument): CanonicalLegacyExport;
+interface CanonicalLegacyAdapter<
+  TElement = unknown,
+  TPage = unknown,
+  TLayout = unknown,
+> {
+  exportLegacyDocument(
+    doc: CompositionDocument,
+  ): CanonicalLegacyExport<TElement, TPage, TLayout>;
   diffLegacyRoundtrip(
-    before: LegacyAdapterInput,
-    after: CanonicalLegacyExport,
+    before: CanonicalLegacyAdapterInput<TElement, TPage, TLayout>,
+    after: CanonicalLegacyExport<TElement, TPage, TLayout>,
   ): CanonicalRoundtripDiff;
+  restoreFromLegacyBackup?(
+    projectId: string,
+  ): CanonicalLegacyAdapterInput<TElement, TPage, TLayout> | null;
 }
 ```
 
-원칙:
+Generic `T*` 매개변수로 builder 의 `Element` / `Page` / `Layout` 타입에 의존하지 않음 — Phase 3 호출 site 에서 builder 타입 주입.
+
+### 6-E. Phase 1 외부 (Phase 2~5 잔존)
+
+- **history/undo 통합** — Phase 1 mutation 은 history entry 를 push 하지 않음. Phase 2/3 시점에 canonical patch → history record 변환 결정 (R1 잔존).
+- **persistence write-through** — Phase 3 G4. 본 store 는 in-memory only.
+- **legacy elementsMap 양방향 sync** — Phase 2 hot path cutover (G3) 와 함께. 본 store 는 legacy store 와 별개.
+- **selector subscription pattern** — `useCanonicalNode(nodeId)` 류 React hook 은 Phase 2 hot path cutover 시점에 추가 (`selectCanonicalNode` 는 cold path 용 placeholder).
+
+### 6-F. 원칙 (design breakdown §6 unchanged)
 
 1. mutation API는 legacy `Element`를 입력으로 받지 않는다.
 2. adapter는 legacy load/import/export에만 사용한다.
-3. history entry는 canonical patch 단위로 기록한다.
-4. `descendants` update는 slot fill, override patch, reset override를 모두 표현해야 한다.
+3. history entry는 canonical patch 단위로 기록한다 (Phase 2/3 통합).
+4. `descendants` update는 slot fill, override patch, reset override를 모두 표현해야 한다 (`DescendantOverride` 3-mode union).
 5. `exportLegacyDocument()`는 Phase 3 shadow write 전 필수 산출물이다.
+
+### 6-G. 검증 evidence (Gate G2 PASS)
+
+| 검증               | 결과           | 비고                                                                                   |
+| ------------------ | -------------- | -------------------------------------------------------------------------------------- |
+| `pnpm type-check`  | 3/3 successful | shared / builder / publish 모두 PASS (turbo cache miss)                                |
+| vitest (canonical) | 37/37 PASS     | 7 action × happy + edge case + selector + immutability                                 |
+| Gate G2 통과 조건  | ✅             | document mutation API + adapter API spec + `elements[]` 직접 mutation 없이 테스트 가능 |
 
 ## 7. Phase 2 — Hot Path Cutover
 

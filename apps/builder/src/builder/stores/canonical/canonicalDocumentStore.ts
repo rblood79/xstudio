@@ -1,0 +1,448 @@
+/**
+ * @fileoverview Canonical Document Store (Zustand) — ADR-916 Phase 1 (G2)
+ *
+ * `CanonicalDocumentActions` (packages/shared) 의 Zustand 구현체.
+ *
+ * **Phase 1 land scope (R1 보수)**:
+ * - In-memory mutation skeleton (history/undo/persistence 미통합).
+ * - 활성 document 모델: `currentProjectId` + `Map<projectId, doc>`.
+ * - mutation 호출은 caller 가 history entry 를 push 하지 않아도 됨 — Phase 2/3
+ *   시점에 canonical patch → history record 통합 결정 (R1 잔존).
+ * - elementsMap legacy store 와 양방향 sync 없음 — Phase 2 hot path cutover
+ *   (G3) 와 함께 통합.
+ *
+ * **Phase 2/3 결합점**:
+ * - Phase 2 G3: `legacyToCanonical()` 호출 결과를 본 store 의 `setDocument`
+ *   로 push 하는 bridge 추가 (read-side cutover).
+ * - Phase 3 G4: `setDocument` / mutation 호출 시 canonical primary 저장 +
+ *   `CanonicalLegacyAdapter.exportLegacyDocument()` 결과 shadow write.
+ */
+
+import { create } from "zustand";
+import type {
+  CanonicalDocumentActions,
+  CanonicalNode,
+  CompositionDocument,
+  DescendantOverride,
+  RefNode,
+} from "@composition/shared";
+
+// ─────────────────────────────────────────────
+// Store state
+// ─────────────────────────────────────────────
+
+interface CanonicalDocumentState {
+  /**
+   * projectId → canonical document map.
+   *
+   * Map 자체를 immutable 으로 교체 (clone-on-write) — Zustand 가 reference
+   * equality 로 selector 변경을 감지하도록.
+   */
+  documents: Map<string, CompositionDocument>;
+
+  /**
+   * 활성 projectId — mutation method 가 작용하는 document.
+   * `null` 일 때 mutation 호출은 no-op + dev warn.
+   */
+  currentProjectId: string | null;
+
+  /**
+   * mutation 카운터. Phase 2 selector cache 무효화용.
+   * 모든 mutation 성공 시 +1.
+   */
+  documentVersion: number;
+}
+
+type CanonicalDocumentStore = CanonicalDocumentState & CanonicalDocumentActions;
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+/** 노드 트리에서 nodeId 와 일치하는 첫 노드 + 부모 + 부모 children 내 index */
+interface FindResult {
+  node: CanonicalNode;
+  /** root 직계인 경우 `null` */
+  parent: CanonicalNode | null;
+  index: number;
+  /** root 의 직계인 경우 `null`, 아니면 `parent.children` */
+  childrenArray: CanonicalNode[];
+}
+
+function findNodeById(
+  doc: CompositionDocument,
+  nodeId: string,
+): FindResult | null {
+  if (!doc.children) return null;
+
+  // root level scan
+  for (let i = 0; i < doc.children.length; i++) {
+    const child = doc.children[i];
+    if (child.id === nodeId) {
+      return {
+        node: child,
+        parent: null,
+        index: i,
+        childrenArray: doc.children,
+      };
+    }
+    const nested = findNodeByIdInSubtree(child, nodeId);
+    if (nested) return nested;
+  }
+
+  return null;
+}
+
+function findNodeByIdInSubtree(
+  parent: CanonicalNode,
+  nodeId: string,
+): FindResult | null {
+  if (!parent.children) return null;
+
+  for (let i = 0; i < parent.children.length; i++) {
+    const child = parent.children[i];
+    if (child.id === nodeId) {
+      return {
+        node: child,
+        parent,
+        index: i,
+        childrenArray: parent.children,
+      };
+    }
+    const nested = findNodeByIdInSubtree(child, nodeId);
+    if (nested) return nested;
+  }
+
+  return null;
+}
+
+/** structural clone — Zustand selector reference 변경 보장. */
+function cloneDocument(doc: CompositionDocument): CompositionDocument {
+  return {
+    ...doc,
+    children: doc.children.map(cloneNode),
+  };
+}
+
+function cloneNode(node: CanonicalNode): CanonicalNode {
+  return {
+    ...node,
+    children: node.children?.map(cloneNode),
+    props: node.props ? { ...node.props } : undefined,
+    metadata: node.metadata ? { ...node.metadata } : undefined,
+  };
+}
+
+/** dev warn helper — production 에서는 silent no-op 보장. */
+function devWarn(message: string, context?: Record<string, unknown>): void {
+  if (
+    typeof process !== "undefined" &&
+    process.env?.NODE_ENV !== "production"
+  ) {
+    // eslint-disable-next-line no-console
+    console.warn(`[canonicalDocumentStore] ${message}`, context ?? "");
+  }
+}
+
+/** props 에 저장 금지된 key (G7 Extension Boundary 사전 enforcement) */
+const PROPS_FORBIDDEN_KEYS = new Set(["events", "actions", "dataBinding"]);
+
+// ─────────────────────────────────────────────
+// Store
+// ─────────────────────────────────────────────
+
+export const useCanonicalDocumentStore = create<CanonicalDocumentStore>(
+  (set, get) => ({
+    // ── State ──
+    documents: new Map(),
+    currentProjectId: null,
+    documentVersion: 0,
+
+    // ── Actions ──
+
+    getDocument: (projectId) => {
+      return get().documents.get(projectId);
+    },
+
+    setDocument: (projectId, doc) => {
+      set((state) => {
+        const next = new Map(state.documents);
+        next.set(projectId, doc);
+        return {
+          documents: next,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+
+    setCurrentProject: (projectId) => {
+      set({ currentProjectId: projectId });
+    },
+
+    updateNode: (nodeId, patch) => {
+      set((state) => {
+        const projectId = state.currentProjectId;
+        if (!projectId) {
+          devWarn("updateNode called without active project", { nodeId });
+          return state;
+        }
+        const doc = state.documents.get(projectId);
+        if (!doc) {
+          devWarn("updateNode: active project has no document", {
+            projectId,
+            nodeId,
+          });
+          return state;
+        }
+
+        const nextDoc = cloneDocument(doc);
+        const found = findNodeById(nextDoc, nodeId);
+        if (!found) {
+          devWarn("updateNode: node not found", { nodeId });
+          return state;
+        }
+
+        // structural invariant: id / type 변경은 silently 무시.
+        const sanitizedPatch = { ...patch };
+        delete sanitizedPatch.id;
+        delete sanitizedPatch.type;
+        delete sanitizedPatch.props; // updateNodeProps 사용 권장 — 본 patch 에서 제외
+
+        const merged: CanonicalNode = { ...found.node, ...sanitizedPatch };
+        found.childrenArray[found.index] = merged;
+
+        const nextMap = new Map(state.documents);
+        nextMap.set(projectId, nextDoc);
+        return {
+          documents: nextMap,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+
+    updateNodeProps: (nodeId, patch) => {
+      set((state) => {
+        const projectId = state.currentProjectId;
+        if (!projectId) {
+          devWarn("updateNodeProps called without active project", { nodeId });
+          return state;
+        }
+        const doc = state.documents.get(projectId);
+        if (!doc) {
+          devWarn("updateNodeProps: active project has no document", {
+            projectId,
+            nodeId,
+          });
+          return state;
+        }
+
+        const nextDoc = cloneDocument(doc);
+        const found = findNodeById(nextDoc, nodeId);
+        if (!found) {
+          devWarn("updateNodeProps: node not found", { nodeId });
+          return state;
+        }
+
+        const nextProps: Record<string, unknown> = {
+          ...(found.node.props ?? {}),
+        };
+
+        for (const [key, value] of Object.entries(patch)) {
+          if (PROPS_FORBIDDEN_KEYS.has(key)) {
+            devWarn(
+              `updateNodeProps: '${key}' belongs to x-composition extension, not props (skipped)`,
+              { nodeId, key },
+            );
+            continue;
+          }
+          if (value === undefined) {
+            delete nextProps[key];
+          } else {
+            nextProps[key] = value;
+          }
+        }
+
+        const updated: CanonicalNode = {
+          ...found.node,
+          props: Object.keys(nextProps).length > 0 ? nextProps : undefined,
+        };
+        found.childrenArray[found.index] = updated;
+
+        const nextMap = new Map(state.documents);
+        nextMap.set(projectId, nextDoc);
+        return {
+          documents: nextMap,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+
+    insertNode: (parentPath, node, index) => {
+      set((state) => {
+        const projectId = state.currentProjectId;
+        if (!projectId) {
+          devWarn("insertNode called without active project", {
+            parentPath,
+            nodeId: node.id,
+          });
+          return state;
+        }
+        const doc = state.documents.get(projectId);
+        if (!doc) {
+          devWarn("insertNode: active project has no document", {
+            projectId,
+            parentPath,
+          });
+          return state;
+        }
+
+        const nextDoc = cloneDocument(doc);
+
+        // Phase 1 단순화: parentPath = parent nodeId.
+        const parentFound = findNodeById(nextDoc, parentPath);
+        if (!parentFound) {
+          devWarn("insertNode: parent not found", { parentPath });
+          return state;
+        }
+
+        const parent = parentFound.node;
+        const cloneToInsert = cloneNode(node);
+        const nextChildren: CanonicalNode[] = parent.children
+          ? [...parent.children]
+          : [];
+
+        const insertIdx =
+          typeof index === "number"
+            ? Math.max(0, Math.min(index, nextChildren.length))
+            : nextChildren.length;
+        nextChildren.splice(insertIdx, 0, cloneToInsert);
+
+        const updatedParent: CanonicalNode = {
+          ...parent,
+          children: nextChildren,
+        };
+        parentFound.childrenArray[parentFound.index] = updatedParent;
+
+        const nextMap = new Map(state.documents);
+        nextMap.set(projectId, nextDoc);
+        return {
+          documents: nextMap,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+
+    removeNode: (nodePath) => {
+      set((state) => {
+        const projectId = state.currentProjectId;
+        if (!projectId) {
+          devWarn("removeNode called without active project", { nodePath });
+          return state;
+        }
+        const doc = state.documents.get(projectId);
+        if (!doc) {
+          devWarn("removeNode: active project has no document", {
+            projectId,
+            nodePath,
+          });
+          return state;
+        }
+
+        const nextDoc = cloneDocument(doc);
+        const found = findNodeById(nextDoc, nodePath);
+        if (!found) {
+          devWarn("removeNode: node not found", { nodePath });
+          return state;
+        }
+
+        found.childrenArray.splice(found.index, 1);
+
+        const nextMap = new Map(state.documents);
+        nextMap.set(projectId, nextDoc);
+        return {
+          documents: nextMap,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+
+    updateDescendant: (refPath, descendantPath, value) => {
+      set((state) => {
+        const projectId = state.currentProjectId;
+        if (!projectId) {
+          devWarn("updateDescendant called without active project", {
+            refPath,
+            descendantPath,
+          });
+          return state;
+        }
+        const doc = state.documents.get(projectId);
+        if (!doc) {
+          devWarn("updateDescendant: active project has no document", {
+            projectId,
+            refPath,
+          });
+          return state;
+        }
+
+        const nextDoc = cloneDocument(doc);
+        const found = findNodeById(nextDoc, refPath);
+        if (!found) {
+          devWarn("updateDescendant: ref node not found", { refPath });
+          return state;
+        }
+
+        if (found.node.type !== "ref") {
+          devWarn("updateDescendant: target is not a RefNode", {
+            refPath,
+            actualType: found.node.type,
+          });
+          return state;
+        }
+
+        const refNode = found.node as RefNode;
+        const nextDescendants: Record<string, DescendantOverride> = {
+          ...(refNode.descendants ?? {}),
+        };
+        nextDescendants[descendantPath] = value;
+
+        const updated: RefNode = {
+          ...refNode,
+          descendants: nextDescendants,
+        };
+        found.childrenArray[found.index] = updated;
+
+        const nextMap = new Map(state.documents);
+        nextMap.set(projectId, nextDoc);
+        return {
+          documents: nextMap,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+  }),
+);
+
+// ─────────────────────────────────────────────
+// Selectors / utilities
+// ─────────────────────────────────────────────
+
+/**
+ * 활성 document 의 nodeId 노드를 반환 (없으면 null).
+ * Phase 2 hot path cutover 시점의 useSyncExternalStore selector 후보.
+ */
+export function selectCanonicalNode(nodeId: string): CanonicalNode | null {
+  const state = useCanonicalDocumentStore.getState();
+  if (!state.currentProjectId) return null;
+  const doc = state.documents.get(state.currentProjectId);
+  if (!doc) return null;
+  const found = findNodeById(doc, nodeId);
+  return found?.node ?? null;
+}
+
+/** 활성 document 자체를 반환. cold path 전용 (Phase 2 cutover 후). */
+export function selectActiveCanonicalDocument(): CompositionDocument | null {
+  const state = useCanonicalDocumentStore.getState();
+  if (!state.currentProjectId) return null;
+  return state.documents.get(state.currentProjectId) ?? null;
+}
