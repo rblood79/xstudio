@@ -56,6 +56,17 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ land)
   - **unit test land** — `apps/builder/src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts` 신규 (**7 test PASS**): happy path 3 (single root + nested DFS + ref 노드 type 복원) + metadata 미보존 노드 2 + fields 무손실 복원 2.
   - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 304ms) + vitest canonical 전체 77/77 PASS (37 store + 22 bridge + 11 sync + 7 view, 회귀 0) + LayerTree 기존 vitest 5/5 PASS (회귀 0).
   - **Gate G3 진행률**: 5/5 hot path 중 **1/5 path cutover backbone 완성** (LayerTree). 사용자 환경 dev enable + Chrome MCP visual evidence 후 LayerTree pilot 완결 → Step 2 (Selection/properties) 진입 가능.
+- **2026-05-01 — Step 1b dev 검증 + caller-driven sync 전환**:
+  - **회귀 #1 (subscribe 시그니처)**: 사용자 dev 환경 (`VITE_ADR916_DOCUMENT_SYNC=true pnpm dev`) 검증 시 `currentProjectId === null` + `documentVersion === 0` 영구 지속 발견. console 로그 분석 결과 `useDataStore.subscribe(listener)` native fallback 이 fire 0건 (useStore / useLayoutsStore 는 정상). root cause = `useDataStore` 가 `subscribeWithSelector` middleware 사용 (data.ts:313) → selector-aware 시그니처 (`subscribe(selector, listener)`) 필수.
+  - **회귀 #2 (dataStore fragility)**: subscribe 시그니처 fix 후에도 `useDataStore.isInitialized === false` 지속 → BuilderCore 의 init useEffect 가 sequential await 중 stuck 또는 condition skip. dataStore 자체가 fragile source 임이 확정.
+  - **caller-driven 전환 (근본 fix)**: `startCanonicalDocumentSync()` → `startCanonicalDocumentSync(projectId: string)` 시그니처 변경. caller (BuilderCore) 가 `useParams<{projectId}>()` 의 routing 값을 명시 전달. dataStore 의존 완전 제거 + 2 store subscribe 만 유지 (useStore + useLayoutsStore). routing source 는 dataStore lifecycle 와 무관 — 항상 immediate available.
+  - **stop() 시 currentProjectId reset 추가** — 다른 project sync 시작 시 stale 데이터 노출 방지.
+  - **dev evidence (사용자 검증)**: Builder 페이지 (`/builder/<projectId>`) 진입 + `VITE_ADR916_DOCUMENT_SYNC=true` enable 후:
+    - `window.__canonical_STORE__.getState().currentProjectId === '<route projectId>'` ✅
+    - `documentVersion` 페이지 요소 추가 시 7→8→9→10→11 증가 ✅ (sync 정상 trigger)
+  - **vitest 갱신**: 11 test 모두 caller-driven 시그니처 사용 (`startCanonicalDocumentSync("proj-a")` 명시). 신규 검증 = stop 시 reset / 동일 projectId skip / start 미호출 시 무시.
+  - **검증** — `pnpm turbo run type-check` 3/3 PASS + vitest canonical 전체 77/77 PASS (회귀 0).
+  - **Step 1b LayerTree pilot 완결** — sync backbone + caller-driven 전환 + dev evidence 모두 확보. design §7-B Step 2 (Selection/properties) 진입 가능.
 
 ## Context
 

@@ -315,16 +315,6 @@ export const useDataStore = create<DataStore>()(
   subscribeWithSelector(createDataSlice),
 );
 
-// [ADR-916] 임시 dev 노출 — Step 1b 검증 후 제거
-declare global {
-  interface Window {
-    __data_STORE__?: typeof useDataStore;
-  }
-}
-if (typeof window !== "undefined" && import.meta.env.DEV) {
-  window.__data_STORE__ = useDataStore;
-}
-
 // ============================================
 // Selectors (for optimized re-renders)
 // ============================================

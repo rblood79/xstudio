@@ -97,10 +97,7 @@ export const BuilderCore: React.FC = () => {
   );
 
   // ADR-916 Phase 2 G3 — Canonical document write-through sync (caller-driven).
-  //
-  // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 useParams 의 projectId 를 명시
-  // 전달하여 sync 시작. dataStore.isInitialized 등 외부 store 상태 의존 없음.
-  // route 이탈 시 cleanup 자동 + canonical store currentProjectId 도 reset.
+  // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 projectId 명시 전달하여 sync 시작.
   useEffect(() => {
     if (!isCanonicalDocumentSyncEnabled() || !projectId) return;
     const stop = startCanonicalDocumentSync(projectId);
