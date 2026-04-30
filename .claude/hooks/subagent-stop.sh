@@ -1,31 +1,9 @@
 #!/usr/bin/env bash
-# SubagentStop hook — 서브에이전트 종료 시 결과를 JSONL로 기록
-# 주간 리포트(weekly-report.sh) / INDEX.md 자동 갱신이 이 로그를 집계함
+# SubagentStop hook — DEPRECATED 2026-04-30
 #
-# 2.1.x payload 구조 (실측):
-#   .agent_type          — e.g. "Explore", "implementer", "reviewer"
-#   .agent_id            — 고유 ID
-#   .session_id
-#   .last_assistant_message
-#   .hook_event_name     — "SubagentStop"
-set -euo pipefail
-
-payload=$(cat)
-log_dir="$CLAUDE_PROJECT_DIR/.claude/stats"
-mkdir -p "$log_dir"
-log_file="$log_dir/agents.jsonl"
-
-ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-if command -v jq >/dev/null 2>&1; then
-  agent_type=$(echo "$payload" | jq -r '.agent_type // "unknown"' 2>/dev/null || echo "unknown")
-  agent_id=$(echo "$payload" | jq -r '.agent_id // empty' 2>/dev/null || echo "")
-  session_id=$(echo "$payload" | jq -r '.session_id // empty' 2>/dev/null || echo "")
-  # 한 줄 JSON
-  jq -cn --arg ts "$ts" --arg at "$agent_type" --arg aid "$agent_id" --arg sid "$session_id" \
-    '{ts:$ts, agent_type:$at, agent_id:$aid, session_id:$sid}' >> "$log_file"
-else
-  echo "{\"ts\":\"$ts\",\"raw\":$(echo "$payload" | sed 's/"/\\"/g; s/^/"/; s/$/"/')}" >> "$log_file"
-fi
-
+# 이전 동작: payload 의 .agent_type 을 stats/agents.jsonl 에 기록
+# 폐기 사유: 65% 가 빈 문자열로 기록 (302/492 entries) — payload schema 일관성 결함
+# 대체 데이터: stats/daily-log.jsonl (transcript 기반, daily-stats-snapshot.sh 가 갱신)
+#
+# 본 hook 은 no-op 으로 유지 — 필요 시 settings.json 에서 SubagentStop 항목 제거 가능
 exit 0

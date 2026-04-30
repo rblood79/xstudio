@@ -19,6 +19,12 @@ PROTECTED_PATTERNS=(
   "secret"
   ".claude/settings.json"
   ".claude/settings.local.json"
+  ".claude/hooks/"
+  ".claude/rules/"
+  ".claude/agents/"
+  "CLAUDE.md"
+  "CLAUDE.local.md"
+  "AGENTS.md"
   "supabase/config.toml"
 )
 

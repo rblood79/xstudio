@@ -60,14 +60,6 @@ else
   echo ""
 fi
 
-# progress.md 현재 상태 주입 (있으면)
-PROGRESS_FILE="$PROJECT_DIR/progress.md"
-if [ -f "$PROGRESS_FILE" ]; then
-  echo "## Current Progress"
-  head -40 "$PROGRESS_FILE"
-  echo ""
-fi
-
 echo "## Key Files"
 echo "- SKILL.md: .claude/skills/composition-patterns/SKILL.md"
 echo "- Rules: .claude/rules/ (canvas-rendering, layout-engine, state-management, css-tokens)"

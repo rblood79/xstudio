@@ -45,14 +45,6 @@ echo "--- Agent Top 10 ---"
 find . -name "*.jsonl" -mtime -"$days" -print0 | xargs -0 grep -h '"name":"Agent"' 2>/dev/null \
   | grep -oE '"subagent_type":"[^"]+"' | sort | uniq -c | sort -rn | head -10
 
-# SubagentStop 로그 요약 (있으면)
-stats="$CLAUDE_PROJECT_DIR/.claude/stats/agents.jsonl"
-if [ -f "$stats" ]; then
-  echo ""
-  echo "--- SubagentStop 기록 ($(wc -l < "$stats" | tr -d ' ')건) ---"
-  tail -20 "$stats"
-fi
-
 # 경고: 미사용 핵심 skill
 echo ""
 echo "--- 미사용 핵심 Skills 경고 ---"

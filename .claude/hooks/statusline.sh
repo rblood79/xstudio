@@ -31,18 +31,9 @@ if [ -n "$cwd" ] && [ -d "$cwd/.git" ] || git -C "${cwd:-.}" rev-parse --git-dir
   [ -n "$branch" ] && branch="${CYAN}⎇ ${branch}${RESET}"
 fi
 
-# 최근 subagent 기록 (agents.jsonl 마지막 항목)
-agent_info=""
-stats="${cwd}/.claude/stats/agents.jsonl"
-if [ -f "$stats" ]; then
-  last_agent=$(tail -1 "$stats" | grep -oE '"subagent_type":"[^"]+"' | head -1 | cut -d'"' -f4 2>/dev/null || echo "")
-  [ -n "$last_agent" ] && agent_info="${DIM}↳${last_agent}${RESET}"
-fi
-
 # 출력 조립
 out="$model"
 [ -n "$ctx_str" ] && out="$out $ctx_str"
 [ -n "$branch" ] && out="$out $branch"
-[ -n "$agent_info" ] && out="$out $agent_info"
 
 printf '%b' "$out"
