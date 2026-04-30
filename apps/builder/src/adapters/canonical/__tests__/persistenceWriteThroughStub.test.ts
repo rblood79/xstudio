@@ -1,21 +1,40 @@
 /**
- * @fileoverview ADR-916 Phase 3 G4 — 3-A-stub 시그니처 검증
+ * @fileoverview ADR-916 Phase 3 G4 — 3-A-impl 실 동작 검증.
  *
- * 필수 API 3개 stub 의 타입 시그니처 + return 값 검증. 3-A-impl 진입 시점에
- * 본 test 가 실 동작 검증으로 확장. codex 1차 review 의 prerequisite (API
- * 시그니처 lock-in 확인용).
+ * 3-A-stub 단계에서 시그니처만 검증하던 6 test 를 실 동작 검증으로 확장.
+ * 4 영역: exportLegacyDocument round-trip / diffLegacyRoundtrip 3 카테고리 분류
+ * / restoreFromLegacyBackup localStorage backup-restore / shadowWriteDiff
+ * evaluator + logger.
+ *
+ * @vitest-environment jsdom
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompositionDocument } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
+import type { LegacyAdapterInput } from "../types";
 
+import { legacyToCanonical } from "../index";
+import { convertComponentRole } from "../componentRoleAdapter";
+import { convertPageLayout } from "../slotAndLayoutAdapter";
 import { exportLegacyDocument } from "../exportLegacyDocument";
 import {
   diffLegacyRoundtrip,
   type RoundtripDiff,
 } from "../diffLegacyRoundtrip";
-import { restoreFromLegacyBackup } from "../restoreFromLegacyBackup";
+import {
+  clearLegacyBackup,
+  loadLegacyBackup,
+  restoreFromLegacyBackup,
+  saveLegacyBackup,
+} from "../restoreFromLegacyBackup";
+import {
+  evaluateShadowWrite,
+  evaluateShadowWriteFromCanonical,
+  isShadowWriteEnabled,
+  logShadowWriteResult,
+  setShadowWriteEnabled,
+} from "../shadowWriteDiff";
 
 // ─────────────────────────────────────────────
 // Fixtures
@@ -23,12 +42,12 @@ import { restoreFromLegacyBackup } from "../restoreFromLegacyBackup";
 
 function makeDoc(): CompositionDocument {
   return {
-    schemaVersion: "1.0",
+    version: "composition-1.0",
     children: [],
   };
 }
 
-function makeElement(id: string): Element {
+function makeElement(id: string, overrides: Partial<Element> = {}): Element {
   return {
     id,
     type: "Box",
@@ -37,63 +56,304 @@ function makeElement(id: string): Element {
     order_num: 0,
     page_id: null,
     layout_id: null,
+    ...overrides,
   };
 }
 
+function makeAdapterInput(
+  elements: Element[],
+  pages = [{ id: "page-1", title: "Page 1", slug: "page-1", order_num: 0 }],
+  layouts: LegacyAdapterInput["layouts"] = [],
+): LegacyAdapterInput {
+  return { elements, pages, layouts };
+}
+
+const adapterDeps = {
+  convertComponentRole,
+  convertPageLayout,
+};
+
 // ─────────────────────────────────────────────
-// A. exportLegacyDocument — 3-A-stub
+// A. exportLegacyDocument — round-trip
 // ─────────────────────────────────────────────
 
-describe("exportLegacyDocument (3-A-stub)", () => {
+describe("exportLegacyDocument (3-A-impl)", () => {
   it("CompositionDocument 인자 → Element[] 반환", () => {
     const doc = makeDoc();
     const result = exportLegacyDocument(doc);
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it("3-A-stub: 빈 배열 반환 (no-op fallback)", () => {
-    const doc = makeDoc();
-    expect(exportLegacyDocument(doc)).toEqual([]);
+  it("빈 doc → 빈 배열", () => {
+    expect(exportLegacyDocument(makeDoc())).toEqual([]);
+  });
+
+  it("legacyToCanonical → exportLegacyDocument round-trip 무손실 (page 1 + element 2)", () => {
+    const before: Element[] = [
+      makeElement("el-a", {
+        page_id: "page-1",
+        order_num: 0,
+        props: { label: "Hello" },
+      }),
+      makeElement("el-b", {
+        page_id: "page-1",
+        parent_id: "el-a",
+        order_num: 1,
+        props: { value: 42 },
+      }),
+    ];
+
+    const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
+    const after = exportLegacyDocument(doc);
+
+    // id 매칭 확인 (export 결과에 모든 id 보존)
+    const afterIds = new Set(after.map((e) => e.id));
+    expect(afterIds.has("el-a")).toBe(true);
+    expect(afterIds.has("el-b")).toBe(true);
+
+    // top-level fields 보존
+    const exportedA = after.find((e) => e.id === "el-a")!;
+    expect(exportedA.page_id).toBe("page-1");
+    expect(exportedA.props).toEqual({ label: "Hello" });
+
+    const exportedB = after.find((e) => e.id === "el-b")!;
+    expect(exportedB.parent_id).toBe("el-a");
+    expect(exportedB.order_num).toBe(1);
+    expect(exportedB.props).toEqual({ value: 42 });
+  });
+
+  it("synthetic 컨테이너 (page wrapper) 는 element 로 emit 안 함", () => {
+    const before: Element[] = [makeElement("el-a", { page_id: "page-1" })];
+    const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
+    const after = exportLegacyDocument(doc);
+
+    // page-1 자체는 element 가 아니므로 export 결과에서 제외
+    expect(after.find((e) => e.id === "page-1")).toBeUndefined();
+    expect(after.length).toBe(1);
+    expect(after[0].id).toBe("el-a");
+  });
+
+  it("metadata.legacyProps 의 fills 필드 보존", () => {
+    const before: Element[] = [
+      makeElement("el-a", {
+        page_id: "page-1",
+        fills: [{ id: "f1", type: "solid", color: "#fff", visible: true }],
+      }),
+    ];
+    const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
+    const after = exportLegacyDocument(doc);
+    expect(after[0].fills).toEqual([
+      { id: "f1", type: "solid", color: "#fff", visible: true },
+    ]);
   });
 });
 
 // ─────────────────────────────────────────────
-// B. diffLegacyRoundtrip — 3-A-stub
+// B. diffLegacyRoundtrip — 3 카테고리 분류
 // ─────────────────────────────────────────────
 
-describe("diffLegacyRoundtrip (3-A-stub)", () => {
-  it("Element[] 2개 → RoundtripDiff 반환 (3 카테고리)", () => {
-    const before = [makeElement("a")];
-    const after = [makeElement("a")];
-    const result = diffLegacyRoundtrip(before, after);
-    expect(result).toHaveProperty("destructive");
-    expect(result).toHaveProperty("reorder");
-    expect(result).toHaveProperty("cosmetic");
-  });
-
-  it("3-A-stub: 모든 카테고리 빈 배열", () => {
-    const before = [makeElement("a")];
-    const after = [makeElement("b")]; // 다른 id 인데도 stub 은 빈 결과
-    const result: RoundtripDiff = diffLegacyRoundtrip(before, after);
+describe("diffLegacyRoundtrip (3-A-impl)", () => {
+  it("동일 snapshot → 모든 카테고리 빈 배열", () => {
+    const a = [makeElement("a", { page_id: "p1", order_num: 0 })];
+    const b = [makeElement("a", { page_id: "p1", order_num: 0 })];
+    const result = diffLegacyRoundtrip(a, b);
     expect(result.destructive).toEqual([]);
     expect(result.reorder).toEqual([]);
+    expect(result.cosmetic).toEqual([]);
+  });
+
+  it("missing element → destructive (field=missing)", () => {
+    const before = [makeElement("a"), makeElement("b")];
+    const after = [makeElement("a")];
+    const result: RoundtripDiff = diffLegacyRoundtrip(before, after);
+    expect(result.destructive).toHaveLength(1);
+    expect(result.destructive[0].id).toBe("b");
+    expect(result.destructive[0].field).toBe("missing");
+  });
+
+  it("extra element → destructive (field=extra)", () => {
+    const before = [makeElement("a")];
+    const after = [makeElement("a"), makeElement("c")];
+    const result = diffLegacyRoundtrip(before, after);
+    expect(result.destructive.find((d) => d.field === "extra")?.id).toBe("c");
+  });
+
+  it("parent_id 변경 → destructive", () => {
+    const before = [makeElement("a", { parent_id: "p1" })];
+    const after = [makeElement("a", { parent_id: "p2" })];
+    const result = diffLegacyRoundtrip(before, after);
+    expect(result.destructive).toHaveLength(1);
+    expect(result.destructive[0].field).toBe("parent_id");
+    expect(result.destructive[0].before).toBe("p1");
+    expect(result.destructive[0].after).toBe("p2");
+  });
+
+  it("order_num 변경 → reorder (destructive 아님)", () => {
+    const before = [makeElement("a", { order_num: 1 })];
+    const after = [makeElement("a", { order_num: 2 })];
+    const result = diffLegacyRoundtrip(before, after);
+    expect(result.destructive).toEqual([]);
+    expect(result.reorder).toHaveLength(1);
+    expect(result.reorder[0].field).toBe("order_num");
+  });
+
+  it("props 값 변경 → destructive (field=props.{key})", () => {
+    const before = [makeElement("a", { props: { label: "X" } })];
+    const after = [makeElement("a", { props: { label: "Y" } })];
+    const result = diffLegacyRoundtrip(before, after);
+    expect(result.destructive).toHaveLength(1);
+    expect(result.destructive[0].field).toBe("props.label");
+  });
+
+  it("null ↔ undefined nullish 차이 → cosmetic", () => {
+    const before = [makeElement("a", { props: { x: null } })];
+    const after = [makeElement("a", { props: { x: undefined } })];
+    const result = diffLegacyRoundtrip(before, after);
+    expect(result.destructive).toEqual([]);
+    expect(result.cosmetic).toHaveLength(1);
+    expect(result.cosmetic[0].field).toBe("props.x");
+  });
+
+  it("nested object props deep equal — 동일 값은 차이 없음", () => {
+    const before = [
+      makeElement("a", { props: { style: { color: "red", size: 12 } } }),
+    ];
+    const after = [
+      makeElement("a", { props: { style: { color: "red", size: 12 } } }),
+    ];
+    const result = diffLegacyRoundtrip(before, after);
+    expect(result.destructive).toEqual([]);
     expect(result.cosmetic).toEqual([]);
   });
 });
 
 // ─────────────────────────────────────────────
-// C. restoreFromLegacyBackup — 3-A-stub
+// C. restoreFromLegacyBackup — localStorage backup
 // ─────────────────────────────────────────────
 
-describe("restoreFromLegacyBackup (3-A-stub)", () => {
-  it("projectId 인자 → Promise<boolean> 반환", async () => {
-    const result = restoreFromLegacyBackup("test-project");
-    expect(result).toBeInstanceOf(Promise);
-    const resolved = await result;
-    expect(typeof resolved).toBe("boolean");
+describe("restoreFromLegacyBackup (3-A-impl)", () => {
+  beforeEach(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.clear();
+    }
   });
 
-  it("3-A-stub: 항상 false 반환 (rollback 미지원 fallback)", async () => {
-    expect(await restoreFromLegacyBackup("any-id")).toBe(false);
+  afterEach(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.clear();
+    }
+  });
+
+  it("backup 없음 → false", async () => {
+    expect(await restoreFromLegacyBackup("missing-project")).toBe(false);
+  });
+
+  it("saveLegacyBackup → loadLegacyBackup round-trip", () => {
+    const elements = [makeElement("a"), makeElement("b")];
+    expect(saveLegacyBackup("proj-1", elements)).toBe(true);
+    const loaded = loadLegacyBackup("proj-1");
+    expect(loaded).not.toBeNull();
+    expect(loaded?.length).toBe(2);
+    expect(loaded?.[0].id).toBe("a");
+  });
+
+  it("save 후 restoreFromLegacyBackup → true", async () => {
+    saveLegacyBackup("proj-2", [makeElement("a")]);
+    expect(await restoreFromLegacyBackup("proj-2")).toBe(true);
+  });
+
+  it("clearLegacyBackup → 후속 restore false", async () => {
+    saveLegacyBackup("proj-3", [makeElement("a")]);
+    clearLegacyBackup("proj-3");
+    expect(await restoreFromLegacyBackup("proj-3")).toBe(false);
+  });
+
+  it("corrupted backup (invalid JSON) → loadLegacyBackup null", () => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "__adr916_legacy_backup_proj-bad",
+      "not-json-{",
+    );
+    expect(loadLegacyBackup("proj-bad")).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────
+// D. shadowWriteDiff — evaluator + logger
+// ─────────────────────────────────────────────
+
+describe("shadowWriteDiff (3-A-impl)", () => {
+  beforeEach(() => {
+    setShadowWriteEnabled(false);
+  });
+
+  it("isShadowWriteEnabled / setShadowWriteEnabled flag toggle", () => {
+    expect(isShadowWriteEnabled()).toBe(false);
+    setShadowWriteEnabled(true);
+    expect(isShadowWriteEnabled()).toBe(true);
+    setShadowWriteEnabled(false);
+    expect(isShadowWriteEnabled()).toBe(false);
+  });
+
+  it("evaluateShadowWrite — destructive=0 시 hasDestructive false", () => {
+    const a = [makeElement("a")];
+    const b = [makeElement("a")];
+    const result = evaluateShadowWrite(a, b);
+    expect(result.hasDestructive).toBe(false);
+    expect(result.summary).toEqual({
+      destructive: 0,
+      reorder: 0,
+      cosmetic: 0,
+    });
+  });
+
+  it("evaluateShadowWrite — destructive 발생 시 hasDestructive true", () => {
+    const a = [makeElement("a", { props: { x: 1 } })];
+    const b = [makeElement("a", { props: { x: 2 } })];
+    const result = evaluateShadowWrite(a, b);
+    expect(result.hasDestructive).toBe(true);
+    expect(result.summary.destructive).toBe(1);
+  });
+
+  it("evaluateShadowWriteFromCanonical — round-trip 무손실 시 destructive=0", () => {
+    const before: Element[] = [
+      makeElement("el-a", { page_id: "page-1", props: { label: "X" } }),
+    ];
+    const doc = legacyToCanonical(makeAdapterInput(before), adapterDeps);
+    const result = evaluateShadowWriteFromCanonical(before, doc);
+    expect(result.hasDestructive).toBe(false);
+  });
+
+  it("logShadowWriteResult — destructive 시 console.warn 호출", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = evaluateShadowWrite(
+      [makeElement("a", { props: { x: 1 } })],
+      [makeElement("a", { props: { x: 2 } })],
+    );
+    logShadowWriteResult(result, { projectId: "p1", source: "test" });
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("logShadowWriteResult — destructive=0 + reorder>0 시 console.info", () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const result = evaluateShadowWrite(
+      [makeElement("a", { order_num: 0 })],
+      [makeElement("a", { order_num: 1 })],
+    );
+    logShadowWriteResult(result, { projectId: "p1" });
+    expect(infoSpy).toHaveBeenCalled();
+    infoSpy.mockRestore();
+  });
+
+  it("logShadowWriteResult — 모든 카테고리 0 시 silent (no console call)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const result = evaluateShadowWrite([makeElement("a")], [makeElement("a")]);
+    logShadowWriteResult(result);
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(infoSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+    infoSpy.mockRestore();
   });
 });

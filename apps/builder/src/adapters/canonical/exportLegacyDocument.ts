@@ -1,37 +1,128 @@
 /**
- * @fileoverview ADR-916 Phase 3 G4 — 3-A-stub: exportLegacyDocument
+ * @fileoverview ADR-916 Phase 3 G4 — 3-A-impl: exportLegacyDocument
  *
  * canonical primary storage 전환 후 legacy compat payload 생성 SSOT (D18=A 단일
- * 진입점). Phase 3-A-stub 단계는 stub return — 3-A-impl 에서 실 구현.
+ * 진입점).
  *
  * **D18=A 채택 사유**: 모든 legacy `elements[]` 생성 site 가 본 함수 경유 →
  * grep gate 단순 (`exportLegacyDocument` 외 legacy direct write 0건). 단일
  * 진입점 testability + post-cutover refactor scope 좁힘.
  *
- * **3-A-impl 시점 구현 예정**:
- * - canonical document tree DFS 순회
- * - `metadata.legacyProps` 보존 노드 → Element 역변환 (`canonicalNodeToElement`
- *   재사용 검토)
- * - layout/page 분리 + parent_id/order_num 정확성
- * - fixture 100건 round-trip 무손실 검증
+ * **변환 contract**:
+ * - canonical 노드의 `metadata.legacyProps` 가 element 의 7 top-level fields
+ *   (id / parent_id / page_id / layout_id / order_num / fills / type) + props
+ *   전체 보존 (`buildLegacyElementMetadata` 단일 SSOT 출처).
+ * - DFS 순회 시 `metadata.legacyProps` 가진 노드만 element 로 emit.
+ * - synthetic 컨테이너 (page node / layout shell / reusable master 외부 wrapper)
+ *   는 metadata.legacyProps 없으므로 자동 skip.
+ * - round-trip 보장: `exportLegacyDocument(legacyToCanonical({elements,…})).length
+ *   === elements.length` (모든 legacy fields 무손실 복원).
  */
 
-import type { CompositionDocument } from "@composition/shared";
+import type { CanonicalNode, CompositionDocument } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
+import type { FillItem } from "@/types/builder/fill.types";
+
+import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "./legacyMetadata";
+
+interface LegacyPropsShape {
+  id?: string;
+  parent_id?: string | null;
+  page_id?: string | null;
+  layout_id?: string | null;
+  order_num?: number;
+  fills?: FillItem[];
+  type?: string;
+  [propKey: string]: unknown;
+}
 
 /**
  * canonical document → legacy `Element[]` payload 역변환.
  *
- * **Phase 3-A-stub**: 미구현. 호출 site 가 `[]` 받아 no-op 동작 → 본 stub 시점
- * 에서는 legacy direct write 경로가 그대로 유지 (fallback). 3-A-impl 시점
- * 실 구현 land 후 shadow write 활성.
+ * `metadata.legacyProps` 보존된 노드만 element 로 복원. 보존 누락된 컨테이너 노드
+ * (page / layout / reusable shell) 는 element[] 에서 제외 — pages[] / layouts[]
+ * 는 별도 export 경로 사용.
  *
  * @param doc - canonical CompositionDocument (sync 결과 또는 primary write 결과)
- * @returns legacy Element[] (3-A-stub: 빈 배열)
- *
- * @todo 3-A-impl — DFS 역변환 + fixture 100건 무손실 검증
+ * @returns legacy Element[] (DFS 순회 결과, parent_id 그대로 보존)
  */
-export function exportLegacyDocument(_doc: CompositionDocument): Element[] {
-  // TODO(ADR-916 3-A-impl): canonical → legacy round-trip 실 구현
-  return [];
+export function exportLegacyDocument(doc: CompositionDocument): Element[] {
+  const elements: Element[] = [];
+
+  for (const root of doc.children) {
+    walkAndCollect(root, elements);
+  }
+
+  return elements;
+}
+
+function walkAndCollect(node: CanonicalNode, out: Element[]): void {
+  const legacy = extractLegacyElement(node);
+  if (legacy) {
+    out.push(legacy);
+  }
+
+  if (node.children) {
+    for (const child of node.children) {
+      walkAndCollect(child, out);
+    }
+  }
+}
+
+/**
+ * canonical node 에서 legacy Element 복원 — `metadata.legacyProps` 가 보존되어
+ * 있으면 그것을 source 로 element 재구성. 보존 없으면 null (synthetic 컨테이너).
+ */
+function extractLegacyElement(node: CanonicalNode): Element | null {
+  const meta = node.metadata as
+    | {
+        type?: string;
+        legacyProps?: LegacyPropsShape;
+      }
+    | undefined;
+
+  if (
+    !meta ||
+    meta.type !== LEGACY_ELEMENT_PROPS_METADATA_TYPE ||
+    !meta.legacyProps
+  ) {
+    return null;
+  }
+
+  const legacyProps = meta.legacyProps;
+
+  // 7 top-level fields 분리 — 나머지는 props.
+  const {
+    id,
+    parent_id,
+    page_id,
+    layout_id,
+    order_num,
+    fills,
+    type,
+    ...restProps
+  } = legacyProps;
+
+  if (!id || typeof id !== "string") {
+    return null;
+  }
+
+  const elementType =
+    typeof type === "string" && type.length > 0 ? type : node.type;
+
+  const element: Element = {
+    id,
+    type: elementType,
+    props: restProps as Record<string, unknown>,
+    parent_id: parent_id ?? null,
+    order_num: typeof order_num === "number" ? order_num : 0,
+    page_id: page_id ?? null,
+    layout_id: layout_id ?? null,
+  };
+
+  if (fills !== undefined) {
+    element.fills = fills as FillItem[];
+  }
+
+  return element;
 }

@@ -102,6 +102,19 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ lan
     - **D19=B** — schemaVersion bump + project-level rollback marker (`canRollback: boolean` + backup snapshot). D19=A bump-only 기각 (rollback 부재) / D19=C automated trigger 분리 권장.
   - **sub-phase 진입 순서 (design §8.3 확정)**: 3-A-stub (LOW ~30분-1h, 필수 API 3개 stub) → 3-A-impl (MED ~1d, 실 구현 + shadow logic) → 3-A monitoring (1-2주, destructive diff 0 확인) → 3-B (MED ~1d, localStorage primary + G3 read 회귀 재검증) → 3-C (LOW ~30분-1h, export adapter 단일 SSOT grep gate) → 3-D (MED ~1d, schemaVersion bump + rollback marker = G4 PASS 시그널).
   - **다음 진입점**: 3-A-stub 단독 PR — 필수 API 3개 (`exportLegacyDocument` / `diffLegacyRoundtrip` / `restoreFromLegacyBackup`) stub + vitest 시그니처 검증. codex 1차 review prerequisite 충족.
+- **2026-05-01 — Phase 3 G4 sub-phase 3-A-stub: 필수 API 3개 stub land (단독 PR, D16=A)**:
+  - **신규 API stub** — `apps/builder/src/adapters/canonical/{exportLegacyDocument,diffLegacyRoundtrip,restoreFromLegacyBackup}.ts` 3 파일. 시그니처 + TODO marker + 빈/false return.
+  - **타입 surface** — `RoundtripDiff` + `RoundtripDiffEntry` (3 카테고리 destructive/reorder/cosmetic) export.
+  - **vitest 6 test PASS** — stub 시그니처 검증 (인자 / 반환 타입 / stub return). 3-A-impl 시점 본 test 가 실 동작 검증으로 확장 prerequisite.
+  - **D16=A 채택 사유 검증** — stub 단독 PR 로 API 시그니처 codex 1차 review 가능 + 3-A-impl 진입 시 logic 회귀 isolation 좁힘.
+- **2026-05-01 — Phase 3 G4 sub-phase 3-A-impl: 필수 API 실 구현 + shadow write evaluator land (1 PR 통합)**:
+  - **`exportLegacyDocument` 실 구현** — `metadata.legacyProps` 가 보존하는 7 top-level fields (id/parent_id/page_id/layout_id/order_num/fills/type) + props 전체를 source 로 DFS 순회 하여 `Element[]` 복원. synthetic 컨테이너 (page wrapper / layout shell / reusable master) 는 metadata.legacyProps 없으므로 자동 skip. round-trip 무손실 contract — `exportLegacyDocument(legacyToCanonical({elements,pages,layouts}))` 가 모든 legacy id + structural fields 보존.
+  - **`diffLegacyRoundtrip` 실 구현** — element id 매칭 (Map) + 4 structural fields (type/parent_id/page_id/layout_id) + props recursive deep-equal. 3 카테고리 분류: destructive (missing/extra/structural/props 손실) / reorder (order_num) / cosmetic (null↔undefined nullish 동등).
+  - **`restoreFromLegacyBackup` 실 구현 + helper API 3개** — localStorage key `__adr916_legacy_backup_{projectId}` 직렬화 (BackupPayload version 1.0 + savedAt). 신규 helper: `saveLegacyBackup(projectId, elements)` / `loadLegacyBackup(projectId)` / `clearLegacyBackup(projectId)`. `restoreFromLegacyBackup` 은 backup 존재 + parse 가능 시 true (실 elements 적용은 caller 책임 — 3-D 시점 사용자 evidence 수집 시 별도 hook 통합).
+  - **shadow write evaluator land** — `apps/builder/src/adapters/canonical/shadowWriteDiff.ts` 신규: pure 함수 `evaluateShadowWrite(legacyBefore, legacyAfter): ShadowWriteResult` + `evaluateShadowWriteFromCanonical(legacyBefore, doc)` wrapper + console helper `logShadowWriteResult(result, context)`. flag `isShadowWriteEnabled()` / `setShadowWriteEnabled(value)` (default false, 3-A monitoring 시점 enable). attach subscription / auto-fire 는 caller-driven 패턴 (memory feedback-caller-driven-sync-pattern) — 후속 단계 결정.
+  - **vitest 25 test PASS (stub 6 → impl 25, +19)** — `persistenceWriteThroughStub.test.ts` expand: A. exportLegacyDocument round-trip (5 test, page wrapper skip + fills 보존 포함) + B. diffLegacyRoundtrip 3 카테고리 (8 test) + C. restoreFromLegacyBackup localStorage round-trip + corrupted JSON guard (5 test, jsdom 환경 marker) + D. shadowWriteDiff evaluator + logger (7 test, console.warn/info spy + flag toggle).
+  - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 137/137 PASS (118 baseline + 19 신규, 회귀 0).
+  - **Phase 3 G4 진행률** — 4 sub-phase 중 3-A 완료 (stub + impl). 다음 진입점 = 3-A monitoring (1-2주 destructive=0 dev 환경 evidence) → 3-B (localStorage primary 전환) → 3-C (export SSOT grep gate) → 3-D (schemaVersion bump + rollback marker = G4 PASS).
 
 ## Context
 
