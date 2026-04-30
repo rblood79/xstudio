@@ -11,6 +11,9 @@
 
 ## False Positive 기록
 
+- **`getCanonicalSlotDeclaration` packages/ 이동 가능성**: `apps/builder/src/adapters/canonical/slotDeclaration.ts` 가 `Element`(builder store 타입)을 직접 참조하므로 `packages/shared` 이동 시 패키지 경계 역전 발생 — apps-only 배치가 올바름. 재지적 금지.
+- **`CanonicalNode.slot` 이동 후 `isCanonicalNode()` 중복 여부**: `composition-vocabulary.ts:184-186` 의 slot 검증은 이미 공통 노드 기준으로 작성되어 있어 FrameNode→CanonicalNode 이동 후 변경 불필요 — 정상 상태 오해 금지.
+
 - **ADR-913 P4 Step 4-3 dry-run backup 생성**: `migrationTagType.ts`에서 `dryRun=true`인데도 `createMigrationBackup`을 호출하는 패턴 — 의도된 안전망. 주석에 "Step 4-4 write-through 진입 시 fallback 안전망 보장" 명시. dry-run이라도 backup을 만들어두는 것이 설계 의도이므로 효율성 이슈로 지적하면 false positive.
 - **applyCanonicalThemes 4 setter 순차 호출 — themeVersion 4회 증가**: 설계 문서에 "batch 적용은 Phase 2 ts-3.5 monitoring 단계에서 검토"로 명시 의도. 현재는 의도된 단순 구현. 단, 실제 themeConfigStore setter에 값 동일 시 early return 미존재 — 같은 값으로 setTint 호출해도 themeVersion++ + notifyLayoutChange() 항상 실행되는 점은 진짜 문제로 분류 가능.
 - **BuilderCore entry `selectCanonicalDocument` + `applyCanonicalThemes` 호출**: env flag `VITE_ADR910_P2_THEMES_WRITE_THROUGH === "true"` 게이트로 완전 차단됨. flag 기본값 미설정 시 실행 안 됨 — false positive.
@@ -19,6 +22,16 @@
 
 - **dry-run entry 중복 IDB read (elements.getAll x2)**: `usePageManager.ts`의 ADR-903 dry-run (runLegacyToCanonicalMigration)과 ADR-913 dry-run (runTagTypeMigration)이 sequential하게 각각 `elements.getAll()` 호출 — 동일 데이터를 2회 IDB read. 두 migration이 같은 조건 분기(`metaRecord === legacy`)에 있으므로 `elements` 공유 가능하나 현재 두 함수가 독립 인터페이스를 가짐. Step 4-4 write-through 전에 통합 검토 권장.
 - **createMigrationBackup 내부에서도 elements.getAll + layouts.getAll**: `migrationTagType.ts:168-170`에서 `createMigrationBackup` 호출 시 내부에서 `Promise.all([elements.getAll(), layouts.getAll()])` — runTagTypeMigration의 step 3 `elements.getAll()`(L174)과 elements를 이중 read. write-through 단계에서 backup 후 elements 재사용 패턴으로 리팩토링 필요.
+
+## Spec shapes() dead branch 패턴
+
+- **placeholder text 제거 후 `_hasChildren` 체크가 dead branch로 잔존**: `Slot.spec.ts:139-140` — placeholder text 블록 제거(d339eee38) 후 `if (hasChildren) return shapes` 와 이후 `return shapes` 두 경로가 동일. hot-path에서 매 호출마다 `(props as Record<string, unknown>)._hasChildren` 타입 캐스팅 + truthy 체크가 불필요하게 실행됨. placeholder 계열 shapes() 수정 시 `hasChildren` early-return 분기가 여전히 의미있는지 확인 필수.
+
+## CanonicalNode 타입 설계 패턴
+
+- **`slot` 공통 필드 leaky abstraction (d339eee38)**: `CanonicalNode.slot` 이동 시 `type: "text"` / `RefNode` 등 비-frame 노드도 `slot` 필드를 합법적으로 가질 수 있게 됨. pencil schema는 Frame 전용. JSDoc에 비-frame 설정 시 resolver 처리 계약 명시 또는 Union 타입 분리 필요.
+- **JSDoc 이동 내력 narration 금지**: 필드 이동 시 "이전에 FrameNode에 있었다" 식의 WHAT 내력을 JSDoc에 남기는 패턴 — 값 계약(false/string[] 두 bullet)만 복원하고 이동 이력은 git log로 충분.
+- **FrameNode JSDoc 들여쓰기 오류**: 필드 이동 후 JSDoc 들여쓰기가 `   *`(3칸)로 남는 패턴 — 파일 내 `  *`(2칸) 표준과 불일치. (composition-document.types.ts:258)
 
 ## 리뷰 빈출 이슈 패턴
 

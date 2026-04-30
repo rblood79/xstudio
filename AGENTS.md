@@ -15,30 +15,35 @@ composition 협업을 위한 간단한 가이드입니다. 변경은 작게, 관
 
 ## Build, Test, and Development Commands
 
-- `npm run dev`: Vite 개발 서버.
-- `npm run build`: `tsc -b` + Vite 프로덕션 빌드.
-- `npm run build:preview` / `npm run build:all`: 프리뷰 빌드만 또는 프리뷰+메인 빌드.
-- 도구 실행 전 항상 `mise hook-env` 로 환경 셔임을 활성화하세요.
-- Codex 품질 게이트: `npm run codex:preflight` (보호 파일 체크 + 변경 파일 Prettier + TS 변경 시 type-check).
-- 세부 실행: `npm run codex:guard`, `npm run codex:format`, `npm run codex:typecheck`.
-- `npm run lint`: ESLint + 로컬 안티패턴 룰(Zustand 셀렉터, 단축키 레지스트리, 이벤트 import).
-- `npm run test`, `npm run test:coverage`: Vitest 및 커버리지. Playwright는 `npm run playwright:install` 후 `npx playwright test`.
-- `npm run storybook`, `npm run build-storybook`: 컴포넌트 문서 dev/prod.
+- `pnpm run dev`: Vite 개발 서버.
+- `pnpm run build`: `tsc -b` + Vite 프로덕션 빌드.
+- `pnpm run build:preview` / `pnpm run build:all`: 프리뷰 빌드만 또는 프리뷰+메인 빌드.
+- 도구 실행 전 항상 `mise hook-env` 로 환경 셔임을 활성화하세요. `scripts/codex/env.sh`는 `mise`가 설치된 경우 자동으로 hook-env를 시도합니다.
+- Codex 품질 게이트: `pnpm run codex:preflight` (보호 파일 체크 + 변경 파일 Prettier + TS 변경 시 type-check).
+- 세부 실행: `pnpm run codex:guard`, `pnpm run codex:format`, `pnpm run codex:typecheck`.
+- Codex harness: `pnpm run codex:harness -- help`, `pnpm run codex:route -- "<요청>"`, `pnpm run codex:snapshot`.
+- `pnpm run lint`: ESLint + 로컬 안티패턴 룰(Zustand 셀렉터, 단축키 레지스트리, 이벤트 import).
+- `pnpm run test`, `pnpm run test:coverage`: Vitest 및 커버리지. Playwright는 `pnpm run playwright:install` 후 `pnpm exec playwright test`.
+- `pnpm run storybook`, `pnpm run build-storybook`: 컴포넌트 문서 dev/prod.
 
 ## Codex Workflow Mapping
 
 - Codex의 1차 컨텍스트는 `AGENTS.md`, `.agents/README.md`, `.agents/skills/composition-patterns/SKILL.md`입니다.
 - `.claude/`는 legacy 자산으로 유지하되, Codex 엔트리포인트는 `.agents/` 경로를 우선 사용합니다.
+- Claude식 자동 hook/statusline을 Codex에 있다고 가정하지 않습니다. 반복 가능한 자동화는 repo-local harness로 실행합니다.
+- 세션 시작/재개: `pnpm run codex:session-start` 또는 `pnpm run codex:harness -- start`.
+- 라우팅이 애매한 요청: `pnpm run codex:route -- "<요청>"`으로 skill/rule/gate 후보를 확인합니다.
+- 압축/인수인계 전: `pnpm run codex:snapshot`으로 변경 파일 기반 context snapshot을 남깁니다.
 - Claude slash command 대응:
   - `/cross-check` → `.agents/skills/cross-check/SKILL.md`
   - `/new-adr` → `.agents/skills/create-adr/SKILL.md`
   - `/impl` 성격 작업 → `component-design`, `composition-patterns`
   - `/sweep` → `.agents/skills/parallel-verify/SKILL.md`
 - Claude hook 대응:
-  - 보호 파일 차단 → `npm run codex:guard`
-  - 변경 파일 포맷 → `npm run codex:format`
-  - TS 변경 type-check → `npm run codex:typecheck`
-  - 완료 전 일괄 게이트 → `npm run codex:preflight`
+  - 보호 파일 차단 → `pnpm run codex:guard`
+  - 변경 파일 포맷 → `pnpm run codex:format`
+  - TS 변경 type-check → `pnpm run codex:typecheck`
+  - 완료 전 일괄 게이트 → `pnpm run codex:preflight`
 - 자동 SessionStart/UserPromptSubmit/SubagentStop/PreCompact/statusline 같은 Claude 전용 훅은 Codex에서 자동 실행되지 않습니다. 대신 `.agents/progress.md`, `.agents/agent-memory/*`, `.agents/skills/INDEX.md`를 수동 엔트리포인트로 사용합니다.
 
 ## Coding Style & Naming Conventions

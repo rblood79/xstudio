@@ -4,15 +4,18 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$ROOT_DIR/scripts/codex/env.sh"
+codex_activate_env
 cd "$ROOT_DIR"
+
+if [ "${1:-}" = "--" ]; then
+  shift
+fi
 
 if [ "$#" -gt 0 ]; then
   FILES="$(printf '%s\n' "$@")"
 else
-  FILES="$(git diff --name-only --cached --diff-filter=ACMR 2>/dev/null || true)"
-  if [ -z "$FILES" ]; then
-    FILES="$(git diff --name-only --diff-filter=ACMR 2>/dev/null || true)"
-  fi
+  FILES="$(codex_changed_files)"
 fi
 
 if [ -z "$FILES" ]; then
