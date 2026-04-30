@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ land)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ land)
 
 ### 진행 로그
 
@@ -67,6 +67,31 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ land)
   - **vitest 갱신**: 11 test 모두 caller-driven 시그니처 사용 (`startCanonicalDocumentSync("proj-a")` 명시). 신규 검증 = stop 시 reset / 동일 projectId skip / start 미호출 시 무시.
   - **검증** — `pnpm turbo run type-check` 3/3 PASS + vitest canonical 전체 77/77 PASS (회귀 0).
   - **Step 1b LayerTree pilot 완결** — sync backbone + caller-driven 전환 + dev evidence 모두 확보. design §7-B Step 2 (Selection/properties) 진입 가능.
+- **2026-05-01 — Phase 2 G3 Step 2: Selection/properties cutover land (1 PR 통합)**:
+  - **결정 분기 D13=A / D14=A / D15=A** — 1 PR 통합 land (sub-step 분해 회피, 사용자 surface 최소화 정책 준수) + legacy uuid 기준 `metadata.legacyProps.id` DFS lookup (segId 와 다른 lookup 키 분리) + `useSelectedElementData()` 단일 진입점 dual-mode (caller 무수정).
+  - **lookup 키 분리 발견**: canonical node.id = segId (stable path, 예: `page:p1/0/2`), legacy element.id = uuid (예: `uuid-xxx`). selectedElementId 는 legacy uuid 이므로 `selectCanonicalNode(uuid)` 미매칭 → `findNodeByLegacyId(doc, legacyId)` 가 `metadata.legacyProps.id === legacyId` DFS 검색.
+  - **bridge 시그니처 확장** — `useCanonicalNode(nodeId: string | null)` null 안전 확장 (caller selectedElementId 직접 전달 가능).
+  - **view hook land** — `apps/builder/src/builder/stores/canonical/canonicalElementsView.ts` 의 `canonicalNodeToElement` export 승격 (Step 1b internal → public, Step 2 hook 재사용) + `findNodeByLegacyId` 내부 helper (DFS metadata 검색) + `useCanonicalSelectedElement(selectedElementId)` 신규 hook (`useActiveCanonicalDocument` + `findNodeByLegacyId` + `canonicalNodeToElement` 조합).
+  - **dual-mode 진입점** — `apps/builder/src/builder/stores/index.ts::useSelectedElementData()` 에 `isCanonicalDocumentSyncEnabled() && canonicalSelectedElement !== null` 분기 추가. canonical 우선, fallback legacy `state.elementsMap`. caller (PropertiesPanel + 5+ Style sections + inspector editors) 무수정 단일 SSOT 진입점.
+  - **검증** — `pnpm turbo run type-check` 3/3 PASS + vitest canonical 84/84 PASS (77 → 84, +7 신규: bridge `useCanonicalNode(null)` 1 + view `useCanonicalSelectedElement` 6) + 광역 stores+properties+inspector 209/209 PASS (회귀 0).
+  - **Gate G3 진행률**: 5/5 path 중 **2/5 path cutover** (LayerTree + Selection/properties).
+- **2026-05-01 — Phase 2 G3 Step 3: Preview sync cutover land (1 PR 통합)**:
+  - **`useIframeMessenger.ts` elements source dual-mode** — `legacyElements = useStore((state) => state.elements)` rename + `elements = useMemo` dual-mode (canonical mode + active doc 존재 시 `useCanonicalElements()` derived, 그 외 legacy). `sendInitialData` closure 안 `useStore.getState().elements` 호출도 매 호출 시 dual-mode 평가 (`getActiveCanonicalDocument` + `canonicalDocumentToElements`).
+  - **postMessage UPDATE_ELEMENTS 채널 무수정** — caller 가 dual-mode source 자동 사용.
+  - **ADR-903 P3-D-4 source-text test regex 갱신** — `legacyElements` + `useMemo` 패턴 정합 검증.
+  - **검증** — type-check 3/3 + vitest hooks+preview+canonical 101/101 PASS (회귀 0).
+  - **Gate G3 진행률**: 5/5 path 중 **3/5 path cutover** (+ Preview sync).
+- **2026-05-01 — Phase 2 G3 Step 4: BuilderCore layout refresh cutover land (1 PR 통합)**:
+  - **`BuilderCore.tsx` 의 elements 변경 → iframe sync useEffect dual-mode 분기** — `publishElements(sourceElements)` helper 추출 (editMode filter + lastSentRef 비교 + sendElementsToIframe 호출 logic 단일화). canonical mode 시 `subscribeCanonicalStore` listener (canonical store mutation 시 `getActiveCanonicalDocument` + `canonicalDocumentToElements` → `publishElements`). `lastDerivedRef` ref 비교로 중복 publish 방지. doc 부재 시 legacy fallback. legacy mode 는 기존 `useStore.subscribe` 경로 유지.
+  - **dual subscribe 회피** — canonical mode 활성 시 canonical store 단일 publish source (write-through sync 가 legacy → canonical propagate 보장).
+  - **검증** — type-check 3/3 + vitest hooks+main+stores 200/200 PASS (회귀 0). 광역 vitest 6 fail (factoryOwnership / resolver TC1 / useFillActions) = Step 1b 종결 시점부터 pre-existing — 본 cutover 무관 확정 (별도 처리 권장).
+  - **Gate G3 진행률**: 5/5 path 중 **4/5 path cutover** (+ BuilderCore layout refresh).
+- **2026-05-01 — Phase 2 G3 Step 5: Canvas drag/drop helper cutover land (1 PR 통합) → Phase 2 G3 종결 ✅**:
+  - **`useCanvasDragDropHelpers.ts` doc build 2 site dual-mode** — `findDropTarget` (drag mousemove 빈번 hot path, legacy: 매 호출 O(n) `selectCanonicalDocument`). canonical mode hit 시 `getActiveCanonicalDocument()` pre-built doc 직접 사용 → build cost 0. miss 시 legacy fallback `selectCanonicalDocument(state, pages, layouts)`. `buildReorderUpdates` (drop 시 1회 cold path) 도 동일 패턴 정합 유지.
+  - **scope 분리** — `BuilderCanvas.tsx` 의 `useMemo` 캐싱된 doc build 2 site (`computeLayoutGroups` + `computeFrameAreas`) 는 deps 변경 시만 재계산 cold path → Step 5 scope 외, 미수정.
+  - **검증** — type-check 3/3 + vitest canvas+canonical 224/224 PASS (회귀 0).
+  - **Gate G3 진행률**: **5/5 path ✅ — Phase 2 G3 종결**.
+  - **Phase 2 G3 종결 의의** — 5 hot path 모두 dual-mode cutover land 완료 (LayerTree + Selection/properties + Preview sync + BuilderCore layout refresh + canvas drag/drop helper). canonical store 가 read backbone — flag enabled 시 single source publish, flag disabled 시 legacy fallback (production 영향 0). 다음 진입점 = Phase 3 G4 — Persistence Write-Through (canonical primary storage 전환 + legacy export on demand).
 
 ## Context
 
