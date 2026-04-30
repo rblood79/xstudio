@@ -295,29 +295,50 @@ export const BuilderCore: React.FC = () => {
           const { fetchLayouts } = useLayoutsStore.getState();
           await fetchLayouts(projectId);
 
-          const { selectedReusableFrameId, currentLayoutId } =
+          const { selectedReusableFrameId, currentLayoutId, layouts } =
             useLayoutsStore.getState();
           const activeFrameId = selectedReusableFrameId ?? currentLayoutId;
-          if (activeFrameId) {
-            const layoutElements = await loadFrameElements(db, activeFrameId);
+          const frameIds = Array.from(
+            new Set([
+              ...(activeFrameId ? [activeFrameId] : []),
+              ...layouts.map((layout) => layout.id),
+            ]),
+          );
+          const frameElementGroups = await Promise.all(
+            frameIds.map(async (frameId) => ({
+              frameId,
+              elements: await loadFrameElements(db, frameId),
+            })),
+          );
+          const frameElementsWithData = frameElementGroups.filter(
+            (group) => group.elements.length > 0,
+          );
+          const layoutElements = frameElementsWithData.flatMap(
+            (group) => group.elements,
+          );
 
-            if (layoutElements.length > 0) {
-              // 기존 요소들과 병합
-              // ADR-903 P3-D-5 step 5e: doc 전달 → belongsToLegacyLayout canonical 활용.
-              // initialize 진입 시 1회 실행 (memoization 불필요).
-              const { elements, pages, setElements } = useStore.getState();
-              const layouts = useLayoutsStore.getState().layouts;
-              const doc = selectCanonicalDocument(
-                useStore.getState(),
-                pages,
-                layouts,
-              );
-              const otherElements = elements.filter(
-                (el) => !belongsToLegacyLayout(el, activeFrameId, doc),
-              );
-              const mergedElements = [...otherElements, ...layoutElements];
-              setElements(mergedElements);
-            }
+          if (layoutElements.length > 0) {
+            // 기존 요소들과 병합
+            // ADR-903 P3-D-5 step 5e: doc 전달 → belongsToLegacyLayout canonical 활용.
+            // initialize 진입 시 1회 실행 (memoization 불필요).
+            const { elements, pages, setElements } = useStore.getState();
+            const layoutsAfterFetch = useLayoutsStore.getState().layouts;
+            const doc = selectCanonicalDocument(
+              useStore.getState(),
+              pages,
+              layoutsAfterFetch,
+            );
+            const loadedFrameIds = frameElementsWithData.map(
+              (group) => group.frameId,
+            );
+            const otherElements = elements.filter(
+              (el) =>
+                !loadedFrameIds.some((frameId) =>
+                  belongsToLegacyLayout(el, frameId, doc),
+                ),
+            );
+            const mergedElements = [...otherElements, ...layoutElements];
+            setElements(mergedElements);
           }
 
           // ⭐ DataStore 초기화 (Variables, DataTables, ApiEndpoints, Transformers)

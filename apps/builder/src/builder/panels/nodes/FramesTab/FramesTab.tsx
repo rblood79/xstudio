@@ -57,6 +57,22 @@ interface FramesTabProps {
   projectId?: string;
 }
 
+function hasHydratedFrameElements(
+  elementsMap: ReadonlyMap<string, Element>,
+  frameId: string,
+): boolean {
+  for (const element of elementsMap.values()) {
+    if (
+      !element.deleted &&
+      element.layout_id === frameId &&
+      element.page_id == null
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function FramesTab({
   selectedElementId,
   setSelectedElement,
@@ -132,33 +148,113 @@ export function FramesTab({
 
   // 이미 로드된 frame ID 추적 (중복 로드 방지)
   const loadedFrameIdsRef = React.useRef<Set<string>>(new Set());
+  const loadingFrameIdsRef = React.useRef<Set<string>>(new Set());
   const frameSelectRequestRef = React.useRef(0);
 
   // selectedReusableFrameId 변경 시 DB에서 요소 로드 (fallback)
   useEffect(() => {
     if (!selectedReusableFrameId) return;
 
-    if (loadedFrameIdsRef.current.has(selectedReusableFrameId)) {
+    if (
+      loadedFrameIdsRef.current.has(selectedReusableFrameId) ||
+      loadingFrameIdsRef.current.has(selectedReusableFrameId)
+    ) {
+      return;
+    }
+
+    if (hasHydratedFrameElements(elementsMap, selectedReusableFrameId)) {
+      loadedFrameIdsRef.current.add(selectedReusableFrameId);
       return;
     }
 
     const loadSelectedFrameElements = async () => {
+      loadingFrameIdsRef.current.add(selectedReusableFrameId);
       try {
         const db = await getDB();
         const frameElements = await loadFrameElements(
           db,
           selectedReusableFrameId,
         );
-        mergeElements(frameElements);
-
-        loadedFrameIdsRef.current.add(selectedReusableFrameId);
+        if (frameElements.length > 0) {
+          mergeElements(frameElements);
+          loadedFrameIdsRef.current.add(selectedReusableFrameId);
+        }
       } catch (error) {
         console.error("[FramesTab] Frame 요소 로드 실패:", error);
+      } finally {
+        loadingFrameIdsRef.current.delete(selectedReusableFrameId);
       }
     };
 
     loadSelectedFrameElements();
-  }, [selectedReusableFrameId, mergeElements]);
+  }, [selectedReusableFrameId, elementsMap, mergeElements]);
+
+  // 새로고침 직후 전역 hydrate race 로 selected frame 이외의 body/slot 이
+  // 메모리에 없을 수 있다. Frames 탭 목록이 로드되면 등록된 frame 전체 중
+  // 아직 store 에 없는 frame elements 를 보강 로드해 tree/canvas 입력을 맞춘다.
+  useEffect(() => {
+    if (reusableFrames.length === 0) return;
+
+    const missingFrameIds = reusableFrames
+      .map((frame) => frame.id)
+      .filter(
+        (frameId) =>
+          !loadedFrameIdsRef.current.has(frameId) &&
+          !loadingFrameIdsRef.current.has(frameId) &&
+          !hasHydratedFrameElements(elementsMap, frameId),
+      );
+
+    for (const frame of reusableFrames) {
+      if (hasHydratedFrameElements(elementsMap, frame.id)) {
+        loadedFrameIdsRef.current.add(frame.id);
+      }
+    }
+
+    if (missingFrameIds.length === 0) return;
+
+    missingFrameIds.forEach((frameId) =>
+      loadingFrameIdsRef.current.add(frameId),
+    );
+
+    const loadMissingFrameElements = async () => {
+      try {
+        const db = await getDB();
+        const frameElementGroups = await Promise.all(
+          missingFrameIds.map(async (frameId) => ({
+            frameId,
+            elements: await loadFrameElements(db, frameId),
+          })),
+        );
+        const liveFrameIds = new Set(
+          useLayoutsStore.getState().layouts.map((layout) => layout.id),
+        );
+        const liveFrameElementGroups = frameElementGroups.filter((group) =>
+          liveFrameIds.has(group.frameId),
+        );
+
+        const frameElements = liveFrameElementGroups.flatMap(
+          (group) => group.elements,
+        );
+        if (frameElements.length > 0) {
+          mergeElements(frameElements);
+        }
+
+        liveFrameElementGroups.forEach((group) => {
+          if (group.elements.length > 0) {
+            loadedFrameIdsRef.current.add(group.frameId);
+          }
+        });
+      } catch (error) {
+        console.error("[FramesTab] Frame 요소 보강 로드 실패:", error);
+      } finally {
+        missingFrameIds.forEach((frameId) =>
+          loadingFrameIdsRef.current.delete(frameId),
+        );
+      }
+    };
+
+    loadMissingFrameElements();
+  }, [reusableFrames, elementsMap, mergeElements]);
 
   // ADR-040: elementsMap 순회로 layout_id 필터링
   const frameElements = useMemo(() => {
@@ -234,6 +330,15 @@ export function FramesTab({
       selectReusableFrame(frameId);
       setEditModeLayoutId(frameId);
 
+      if (hasHydratedFrameElements(elementsMap, frameId)) {
+        loadedFrameIdsRef.current.add(frameId);
+        return;
+      }
+      if (loadingFrameIdsRef.current.has(frameId)) {
+        return;
+      }
+      loadingFrameIdsRef.current.add(frameId);
+
       try {
         const db = await getDB();
         const frameElements = await loadFrameElements(db, frameId);
@@ -241,16 +346,20 @@ export function FramesTab({
           return;
         }
 
-        mergeElements(frameElements);
-        loadedFrameIdsRef.current.add(frameId);
+        if (frameElements.length > 0) {
+          mergeElements(frameElements);
+          loadedFrameIdsRef.current.add(frameId);
+        }
       } catch (error) {
         if (requestId !== frameSelectRequestRef.current) {
           return;
         }
         console.error("[FramesTab] Frame 선택 에러:", error);
+      } finally {
+        loadingFrameIdsRef.current.delete(frameId);
       }
     },
-    [setEditModeLayoutId, mergeElements],
+    [setEditModeLayoutId, elementsMap, mergeElements],
   );
 
   // Frame 삭제 핸들러 — frameActions.deleteReusableFrame 위임

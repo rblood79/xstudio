@@ -16,6 +16,7 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 import { applyCollectionItemsMigration } from "@composition/shared";
 import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
 import { scheduleNextFrame } from "../utils/scheduleTask";
+import { loadFrameElements } from "../utils/frameElementLoader";
 import type { Layout } from "../../types/builder/layout.types";
 import type { FrameNode } from "@composition/shared";
 
@@ -236,7 +237,8 @@ export const usePageManager = ({
           const allElements = [...elementsData];
 
           if (currentPage?.layout_id) {
-            const layoutElements = await db.elements.getDescendants(
+            const layoutElements = await loadFrameElements(
+              db,
               currentPage.layout_id,
             );
             console.log(

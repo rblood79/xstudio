@@ -17,9 +17,9 @@ describe("BuilderCore frame refresh hydration contract", () => {
     expect(source).toMatch(
       /const activeFrameId = selectedReusableFrameId \?\? currentLayoutId;/,
     );
-    expect(source).toMatch(
-      /const layoutElements = await loadFrameElements\(db, activeFrameId\);/,
-    );
+    expect(source).toMatch(/const frameIds = Array\.from\(/);
+    expect(source).toMatch(/layouts\.map\(\(layout\) => layout\.id\)/);
+    expect(source).toMatch(/elements: await loadFrameElements\(db, frameId\)/);
     expect(source).not.toContain("getDescendants(currentLayoutId)");
   });
 

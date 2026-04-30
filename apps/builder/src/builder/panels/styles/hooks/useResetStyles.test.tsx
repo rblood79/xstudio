@@ -234,3 +234,65 @@ describe("useResetStyles — default props false dirty audit", () => {
     },
   );
 });
+
+describe("useResetStyles — layout preset baseline", () => {
+  const originalState = useStore.getState();
+
+  beforeEach(() => {
+    const body = makeTaggedElement("frame-body-1", "body", {
+      appliedPreset: "vertical-2",
+      style: {
+        display: "flex",
+        flexDirection: "column",
+      },
+    });
+
+    useStore.setState({
+      selectedElementId: body.id,
+      selectedElementProps: body.props,
+      currentPageId: null,
+      elements: [body],
+      elementsMap: new Map([[body.id, body]]),
+      childrenMap: new Map(),
+      dirtyElementIds: new Set(),
+      layoutVersion: 0,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    useStore.setState(originalState, true);
+  });
+
+  it("preset 이 적용된 frame body 의 containerStyle 은 Layout dirty 로 보지 않는다", () => {
+    const { result: dirty } = renderHook(() =>
+      useHasDirtyStyles(["display", "flexDirection"]),
+    );
+
+    expect(dirty.current).toBe(false);
+  });
+
+  it("reset 은 사용자 변경만 preset baseline 으로 되돌린다", () => {
+    const { result: dirty } = renderHook(() =>
+      useHasDirtyStyles(["display", "flexDirection"]),
+    );
+    const { result: resetStyles } = renderHook(() => useResetStyles());
+
+    act(() => {
+      useStore.getState().updateSelectedStyles({ flexDirection: "row" });
+    });
+
+    expect(dirty.current).toBe(true);
+
+    act(() => {
+      resetStyles.current(["display", "flexDirection"]);
+    });
+
+    const style = useStore.getState().elementsMap.get("frame-body-1")?.props
+      ?.style as Record<string, unknown> | undefined;
+
+    expect(style?.display).toBe("flex");
+    expect(style?.flexDirection).toBe("column");
+    expect(dirty.current).toBe(false);
+  });
+});

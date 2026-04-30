@@ -19,6 +19,8 @@ import {
   resolveTypographySpecPreset,
 } from "../utils/specPresetResolver";
 import { numToPx, uniform4Way } from "../utils/styleValueHelpers";
+import { LAYOUT_PRESETS } from "../../properties/editors/LayoutPresetSelector/presetDefinitions";
+import { normalizeFramePresetContainerStyle } from "../../properties/editors/LayoutPresetSelector/presetStyle";
 
 const PX_LIKE_STYLE_PROPS = new Set([
   "width",
@@ -47,10 +49,7 @@ const PX_LIKE_STYLE_PROPS = new Set([
   "letterSpacing",
 ]);
 
-function normalizeStyleValue(
-  prop: string,
-  value: unknown,
-): string | undefined {
+function normalizeStyleValue(prop: string, value: unknown): string | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   if (typeof value === "number" && PX_LIKE_STYLE_PROPS.has(prop)) {
     return `${value}px`;
@@ -77,7 +76,10 @@ function resolveSpecStyleDefaults(
     maxWidth: normalizeStyleValue("maxWidth", transformPreset.maxWidth),
     minHeight: normalizeStyleValue("minHeight", transformPreset.minHeight),
     maxHeight: normalizeStyleValue("maxHeight", transformPreset.maxHeight),
-    aspectRatio: normalizeStyleValue("aspectRatio", transformPreset.aspectRatio),
+    aspectRatio: normalizeStyleValue(
+      "aspectRatio",
+      transformPreset.aspectRatio,
+    ),
     display: normalizeStyleValue("display", layoutPreset.display),
     flexDirection: normalizeStyleValue(
       "flexDirection",
@@ -129,7 +131,10 @@ function resolveSpecStyleDefaults(
           numToPx(layoutPreset.marginLeft),
         ),
     ),
-    marginTop: normalizeStyleValue("marginTop", numToPx(layoutPreset.marginTop)),
+    marginTop: normalizeStyleValue(
+      "marginTop",
+      numToPx(layoutPreset.marginTop),
+    ),
     marginRight: normalizeStyleValue(
       "marginRight",
       numToPx(layoutPreset.marginRight),
@@ -146,7 +151,10 @@ function resolveSpecStyleDefaults(
       "backgroundColor",
       appearancePreset.backgroundColor,
     ),
-    borderColor: normalizeStyleValue("borderColor", appearancePreset.borderColor),
+    borderColor: normalizeStyleValue(
+      "borderColor",
+      appearancePreset.borderColor,
+    ),
     borderWidth: normalizeStyleValue(
       "borderWidth",
       numToPx(appearancePreset.borderWidth),
@@ -156,11 +164,11 @@ function resolveSpecStyleDefaults(
       numToPx(appearancePreset.borderRadius),
     ),
     fontFamily: normalizeStyleValue("fontFamily", typographyPreset.fontFamily),
-    fontSize: normalizeStyleValue("fontSize", numToPx(typographyPreset.fontSize)),
-    fontWeight: normalizeStyleValue(
-      "fontWeight",
-      typographyPreset.fontWeight,
+    fontSize: normalizeStyleValue(
+      "fontSize",
+      numToPx(typographyPreset.fontSize),
     ),
+    fontWeight: normalizeStyleValue("fontWeight", typographyPreset.fontWeight),
     lineHeight: normalizeStyleValue(
       "lineHeight",
       numToPx(typographyPreset.lineHeight),
@@ -172,20 +180,49 @@ function resolveSpecStyleDefaults(
   };
 }
 
-function resolveResetBaseline(
-  element: {
-    type: string;
-    props?: Readonly<Record<string, unknown>>;
-  },
-): {
+function resolveResetBaseline(element: {
+  type: string;
+  props?: Readonly<Record<string, unknown>>;
+}): {
   legacyStyle: Record<string, unknown>;
   specStyle: Record<string, string | undefined>;
 } {
   const defaultProps = getDefaultProps(element.type);
+  const presetStyle = resolveAppliedPresetBaselineStyle(element);
   return {
-    legacyStyle: (defaultProps?.style || {}) as Record<string, unknown>,
+    legacyStyle: {
+      ...((defaultProps?.style || {}) as Record<string, unknown>),
+      ...presetStyle,
+    },
     specStyle: resolveSpecStyleDefaults(element.type, element.props),
   };
+}
+
+function resolveAppliedPresetBaselineStyle(element: {
+  type: string;
+  props?: Readonly<Record<string, unknown>>;
+}): Record<string, unknown> {
+  if (element.type.toLowerCase() !== "body") {
+    return {};
+  }
+
+  const appliedPreset =
+    typeof element.props?.appliedPreset === "string"
+      ? element.props.appliedPreset
+      : undefined;
+  if (!appliedPreset) {
+    return {};
+  }
+
+  const preset = LAYOUT_PRESETS[appliedPreset];
+  if (!preset) {
+    return {};
+  }
+
+  return normalizeFramePresetContainerStyle(preset.containerStyle) as Record<
+    string,
+    unknown
+  >;
 }
 
 function resolveTargetValue(
@@ -208,7 +245,8 @@ export function useHasDirtyStyles(properties: string[]): boolean {
     const element = state.elementsMap.get(selectedId);
     if (!element) return false;
 
-    const currentStyle = (element.props?.style as Record<string, unknown>) || {};
+    const currentStyle =
+      (element.props?.style as Record<string, unknown>) || {};
     const { legacyStyle, specStyle } = resolveResetBaseline(element);
 
     for (const prop of properties) {
@@ -236,7 +274,8 @@ export function useResetStyles() {
     const element = state.elementsMap.get(selectedId);
     if (!element) return;
 
-    const currentStyle = (element.props?.style as Record<string, unknown>) || {};
+    const currentStyle =
+      (element.props?.style as Record<string, unknown>) || {};
     const { legacyStyle, specStyle } = resolveResetBaseline(element);
 
     // 실제로 변경이 필요한 속성만 포함 (dirty check)

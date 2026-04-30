@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **원본에서 Select instances 실행 시 instance semantic highlight 누락 수정**:
   - multi-selection combined bounds 와 별개로 각 selected instance 의 violet dotted semantic target 을 유지
   - origin/instance marker parity 가 단일 선택과 다중 선택 모두에서 같은 overlay path 를 사용
+- **Frames 탭 새로고침 후 등록 Frame body/Slot 이 누락되던 회귀 수정**:
+  - layout mode 복원 시 선택 frame 하나만 보정하지 않고 등록된 frame 전체의 body/slot elements 를 `loadFrameElements` fallback 으로 병합
+  - FramesTab 진입 시 store 에 없는 frame elements 를 보강 로드해 여러 frame 등록 후 새로고침해도 tree/canvas 입력이 비지 않도록 보정
+  - Page 전환 중 frame elements 를 로드하는 경로도 `getDescendants(layoutId)` 직접 호출 대신 legacy `layout_id` snapshot fallback helper 로 통일
+- **Frame preset 적용 직후 Layout reset 이 활성화되던 baseline 판정 수정**:
+  - `appliedPreset` 의 normalized `containerStyle` 을 frame body reset baseline 으로 포함해 preset 이 만든 `display`/`flexDirection` 을 사용자 override 로 보지 않도록 보정
+  - Layout reset 은 사용자가 변경한 값만 preset baseline 으로 되돌리며, 수직 2단 preset 적용 직후에는 dirty 상태가 되지 않음
 
 ### Features
 

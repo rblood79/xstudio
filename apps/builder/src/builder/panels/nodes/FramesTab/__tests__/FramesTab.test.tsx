@@ -19,7 +19,14 @@
 
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, fireEvent, screen, cleanup } from "@testing-library/react";
+import {
+  render,
+  fireEvent,
+  screen,
+  cleanup,
+  waitFor,
+} from "@testing-library/react";
+import type { Element } from "@/types/core/store.types";
 
 // ─── mock state holders ─────────────────────────────────────────────────────
 type LayoutLite = { id: string; name: string; project_id: string };
@@ -31,7 +38,7 @@ const mockLayoutsState = {
 };
 
 const mockStoreState = {
-  elementsMap: new Map(),
+  elementsMap: new Map<string, Element>(),
   pages: [] as Array<{ id: string }>,
   removeElement: vi.fn(),
   mergeElements: vi.fn(),
@@ -45,8 +52,8 @@ const mockEditModeState = {
   setCurrentLayoutId: vi.fn(),
 };
 
-const mockGetAllElements = vi.fn(async () => [] as never[]);
-const mockGetDescendants = vi.fn(async () => [] as never[]);
+const mockGetAllElements = vi.fn(async () => [] as Element[]);
+const mockGetDescendants = vi.fn(async () => [] as Element[]);
 
 // ─── module mocks ───────────────────────────────────────────────────────────
 vi.mock("react-router-dom", () => ({
@@ -54,8 +61,13 @@ vi.mock("react-router-dom", () => ({
 }));
 
 vi.mock("@/builder/stores/layouts", () => ({
-  useLayoutsStore: <T,>(selector?: (state: typeof mockLayoutsState) => T) =>
-    selector ? selector(mockLayoutsState) : (mockLayoutsState as unknown as T),
+  useLayoutsStore: Object.assign(
+    <T,>(selector?: (state: typeof mockLayoutsState) => T) =>
+      selector
+        ? selector(mockLayoutsState)
+        : (mockLayoutsState as unknown as T),
+    { getState: () => mockLayoutsState },
+  ),
   useSelectedReusableFrameId: () => mockLayoutsState.selectedReusableFrameId,
 }));
 
@@ -158,12 +170,12 @@ function makeProps(): React.ComponentProps<typeof FramesTab> {
 function resetMockState() {
   mockLayoutsState.layouts = [];
   mockLayoutsState.selectedReusableFrameId = null;
-  mockStoreState.elementsMap = new Map();
+  mockStoreState.elementsMap = new Map<string, Element>();
   mockStoreState.pages = [];
   mockIsFramesTabCanonical = false;
   vi.clearAllMocks();
-  mockGetAllElements.mockResolvedValue([] as never[]);
-  mockGetDescendants.mockResolvedValue([] as never[]);
+  mockGetAllElements.mockResolvedValue([] as Element[]);
+  mockGetDescendants.mockResolvedValue([] as Element[]);
   mockSelectCanonicalDocument.mockReturnValue({ children: [] });
   // wrapper Promise resolve 기본값 — 정상 동작
   createReusableFrameMock.mockResolvedValue({
@@ -201,6 +213,63 @@ describe("FramesTab (ADR-911 P2-a PR-B baseline)", () => {
 
       expect(screen.getByText("Header Frame")).toBeTruthy();
       expect(screen.getByText("Footer Frame")).toBeTruthy();
+    });
+
+    it("새로고침 후 store에 없는 등록 frame들의 body/slot을 보강 로드한다", async () => {
+      mockLayoutsState.layouts = [
+        { id: "f-1", name: "Header Frame", project_id: "test-project" },
+        { id: "f-2", name: "Footer Frame", project_id: "test-project" },
+      ];
+      const body1: Element = {
+        id: "body-f-1",
+        type: "body",
+        props: {},
+        parent_id: null,
+        page_id: null,
+        layout_id: "f-1",
+        order_num: 0,
+      };
+      const slot1: Element = {
+        id: "slot-f-1",
+        type: "Slot",
+        props: {},
+        parent_id: "body-f-1",
+        page_id: null,
+        layout_id: "f-1",
+        order_num: 1,
+      };
+      const body2: Element = {
+        id: "body-f-2",
+        type: "body",
+        props: {},
+        parent_id: null,
+        page_id: null,
+        layout_id: "f-2",
+        order_num: 0,
+      };
+      const slot2: Element = {
+        id: "slot-f-2",
+        type: "Slot",
+        props: {},
+        parent_id: "body-f-2",
+        page_id: null,
+        layout_id: "f-2",
+        order_num: 1,
+      };
+      mockGetAllElements.mockResolvedValue([body1, slot1, body2, slot2]);
+
+      render(<FramesTab {...makeProps()} />);
+
+      await waitFor(() => {
+        expect(mockStoreState.mergeElements).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({ id: "body-f-1" }),
+            expect.objectContaining({ id: "slot-f-1" }),
+            expect.objectContaining({ id: "body-f-2" }),
+            expect.objectContaining({ id: "slot-f-2" }),
+          ]),
+        );
+      });
     });
   });
 
