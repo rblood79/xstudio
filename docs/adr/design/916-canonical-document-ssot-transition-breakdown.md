@@ -310,7 +310,7 @@ rg -n "layout_id|slot_name|componentRole|masterId" apps/builder/src/builder apps
 | vitest (canonical 전체)     | 59/59 PASS     | 37 store + 22 bridge — 회귀 0                       |
 | Gate G3 진행률              | 0/5 path       | backbone 구축 — Sub-Phase B 진입 prerequisite 충족  |
 
-### 7-B. Sub-Phase B: 5 hot path path-by-path cutover (다음 세션 진입)
+### 7-B. Sub-Phase B: 5 hot path path-by-path cutover
 
 **진입 순서 권장** (회귀 isolation 좁힘 → 넓힘):
 
@@ -320,7 +320,40 @@ rg -n "layout_id|slot_name|componentRole|masterId" apps/builder/src/builder apps
 4. **BuilderCore layout refresh** (1-2d HIGH) — projection/filter 제거 + canonical selector 도입. 회귀 = layoutVersion 트리거 정합.
 5. **canvas drag/drop helper** (1d HIGH) — mousemove 중 doc build 회피 + scene index 도입. 회귀 = drag preview + drop position.
 
-각 path 별 회귀 0 확증 (cross-check skill + Chrome MCP evidence) 후 다음 path 진입. legacy `elementsMap` fallback 자동 변환 (`legacyToCanonical()` 캐싱) 은 본 Sub-Phase B 진입 시점에 bridge 에 추가.
+각 path 별 회귀 0 확증 (cross-check skill + Chrome MCP evidence) 후 다음 path 진입.
+
+#### Step 1a: Legacy → canonical write-through sync ✅ (2026-05-01)
+
+**결정 분기**: D7=A (write-through 정통 경로) / D8=β (Step 1a 단독 land) / D9=i (Zustand v5 native subscribe + ref 비교 selector — legacy store 무수정).
+
+**CRITICAL 발견 → 격상 경로**: Sub-Phase A bridge land 후 baseline 측정 결과 canonical store `setDocument` 호출 site **0건**. LayerTree pilot 이 `useActiveCanonicalDocument()` 사용 시 즉시 `null` 회귀 → write-through sync 가 5 hot path 공통 prerequisite 임이 확정. Sub-Phase B Step 1 = sync 우선 land + LayerTree cutover 후속 분리.
+
+**산출물**:
+
+- `apps/builder/src/builder/stores/canonical/canonicalDocumentSync.ts` (신규, ~150 lines)
+  - `startCanonicalDocumentSync(): () => void` 공개 API (3 store subscribe + initial schedule + unsubscribe)
+  - microtask coalesce (`queueMicrotask` — 동일 macrotask 내 다중 mutation → 1번 sync)
+  - ref 비교 selector (`elementsMap`/`pages`/`layouts`/`currentProjectId` 동일 ref 시 skip)
+  - `null` projectId no-op (data store 미초기화 안전)
+  - `selectCanonicalDocument()` 재사용 (elements.ts:2024 기존 helper)
+  - test helper: `setSyncScheduler` / `resetSyncScheduler` / `isSyncScheduled`
+- `apps/builder/src/builder/stores/canonical/__tests__/canonicalDocumentSync.test.ts` (신규, **11 test PASS**)
+  - lifecycle 3 + null projectId 2 + propagation 5 + microtask coalesce 1
+
+**Step 1b 진입 prerequisite (다음 세션)**:
+
+- `startCanonicalDocumentSync()` 호출을 builder 부트스트랩 (`apps/builder/src/main.tsx` 또는 project init effect) 에 추가 — Step 1b 진입 시점 함께 land 권장
+- LayerTree dual-mode cutover (`useLayerTreeData.ts` 가 feature flag 활성화 시 `useActiveCanonicalDocument()` 사용 + canonical → LayerTreeNode 변환 helper)
+- Chrome MCP visual evidence (legacy vs canonical 모드 LayerTree 표시 정합성)
+
+**검증 evidence**:
+
+| 검증                        | 결과           | 비고                                           |
+| --------------------------- | -------------- | ---------------------------------------------- |
+| `pnpm turbo run type-check` | 3/3 successful | builder cache miss 313ms                       |
+| vitest (canonical 전체)     | 70/70 PASS     | 37 store + 22 bridge + 11 sync — 회귀 0        |
+| coalesce 검증               | ✅             | 3 mutation → 1 sync (version diff = 1)         |
+| ref 비교 skip               | ✅             | 동일 ref setState → sync 미실행 (version 보존) |
 
 ## 8. Phase 3 — Persistence Write-Through
 

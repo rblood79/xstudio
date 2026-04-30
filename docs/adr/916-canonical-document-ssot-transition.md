@@ -31,6 +31,14 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ land)
   - **Sub-Phase A scope 명시** — canonical store 단독 read (legacy `elementsMap` fallback 미포함). `legacyToCanonical()` 자동 변환 캐싱 + 5 hot path path-by-path cutover (LayerTree → Selection/properties → Preview sync → BuilderCore → canvas drag/drop) 는 Sub-Phase B 부터 진입.
   - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 313ms, shared/publish cache hit) + vitest canonical 전체 59/59 PASS (37 store + 22 bridge — 회귀 0).
   - **Gate G3 진행률**: 5/5 hot path 중 0/5 path 실 cutover (backbone 구축 단계). Sub-Phase B 진입 prerequisite 충족 — `useCanonicalNode` / `useActiveCanonicalDocument` hook 이 LayerTree pilot 의 read backbone 으로 사용 가능.
+- **2026-05-01 — Phase 2 G3 Sub-Phase B Step 1a: Legacy → canonical write-through sync land**:
+  - **결정 분기 D7=A / D8=β / D9=i** — write-through sync 채택 (canonical store 가 mirror, design §6-E 정통 경로) + Step 1a 단독 land (회귀 isolation, LayerTree cutover 는 다음 세션 Step 1b) + Zustand v5 native subscribe + ref 비교 selector (legacy store 무수정).
+  - **CRITICAL 발견 (Sub-Phase A 후속)**: Sub-Phase A bridge land 후 baseline 측정 결과 canonical store `setDocument` 호출 site **0건** — Phase 1 store 가 어디서도 채워지지 않은 상태. LayerTree pilot 진입 시 `useActiveCanonicalDocument()` 가 즉시 `null` 회귀 위험 발견 → write-through sync 가 5 hot path 공통 prerequisite 임이 확정. Sub-Phase B 진입 첫 작업으로 Step 1a 격상.
+  - **sync 모듈 land** — `apps/builder/src/builder/stores/canonical/canonicalDocumentSync.ts` 신규 (~150 lines): (1) `startCanonicalDocumentSync(): () => void` 공개 API (3 store subscribe + initial schedule + return unsubscribe), (2) microtask coalesce (`queueMicrotask` 기반, 동일 macrotask 내 다중 mutation → 1번 sync collapse), (3) ref 비교 selector (`elementsMap`/`pages`/`layouts`/`currentProjectId` 동일 ref 시 sync skip), (4) `null` projectId no-op (data store 미초기화 시 안전), (5) `selectCanonicalDocument()` 재사용 (`apps/builder/src/builder/stores/elements.ts:2024` 기존 helper — 신규 변환 로직 0).
+  - **호출 site 명시 (Step 1b 진입 prerequisite)**: 본 모듈은 land 만 됐고 실제 `startCanonicalDocumentSync()` 호출은 builder 부트스트랩 (`apps/builder/src/main.tsx` 또는 project init effect) 에 추가 필요. Step 1b (LayerTree pilot) 진입 시점에 함께 land 권장.
+  - **unit test land** — `apps/builder/src/builder/stores/canonical/__tests__/canonicalDocumentSync.test.ts` 신규: lifecycle 3 + null projectId 2 + propagation 5 + microtask coalesce 1 = **11 test PASS**. test scheduler override 패턴 (`setSyncScheduler((cb) => cb())`) 으로 microtask flush 대기 없이 결과 검증 가능, default `queueMicrotask` 회복 시 coalesce 검증 (3 mutation → 1 sync, version diff = 1).
+  - **검증** — `pnpm turbo run type-check` 3/3 PASS (builder cache miss 313ms) + vitest canonical 전체 70/70 PASS (37 store + 22 bridge + 11 sync — 회귀 0).
+  - **Gate G3 진행률**: 5/5 hot path 중 0/5 path 실 cutover. Sub-Phase B Step 1b (LayerTree pilot) 진입 가능 — `useActiveCanonicalDocument()` 가 실제 데이터 수신할 backbone 완성. legacy mutation → canonical store 자동 mirror 경로 단방향 sync 가동.
 
 ## Context
 
