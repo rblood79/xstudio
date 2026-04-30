@@ -1,41 +1,32 @@
 /**
- * @fileoverview Legacy → Canonical write-through sync — ADR-916 Phase 2 G3 Sub-Phase B Step 1a
+ * @fileoverview Legacy → Canonical write-through sync — ADR-916 Phase 2 G3 Sub-Phase B
  *
- * Phase 2 hot path cutover 의 prerequisite. legacy 3 store
- * (`useStore` / `useLayoutsStore` / `useDataStore`) 의 mutation 을 감지하여
- * `selectCanonicalDocument()` 결과를 `useCanonicalDocumentStore.setDocument()`
- * 로 자동 push.
+ * caller-driven sync. caller (BuilderCore) 가 `startCanonicalDocumentSync(projectId)`
+ * 로 sync 를 시작하면, legacy `useStore` / `useLayoutsStore` mutation 을 감지하여
+ * `selectCanonicalDocument()` 결과를 `useCanonicalDocumentStore.setDocument()` 로
+ * 자동 push.
  *
- * **D7=A 채택 근거**:
- * - design §6-E "legacy elementsMap 양방향 sync — Phase 2 hot path cutover (G3)
- *   와 함께" 의 정통 경로.
- * - canonical store 가 진정한 mirror 가 됨 (단방향 sync 우선, mutation 경로
- *   양방향 sync 는 Phase 3 G4).
- * - 한 번 변환 → 모든 hot path 동일 reference (`useSyncExternalStore` snapshot
- *   stability 보장).
- *
- * **D9=i 채택 근거**:
- * - Zustand v5 native `subscribe` API + ref 비교 selector — middleware 추가
- *   없이 legacy store 무수정.
- * - `subscribeWithSelector` middleware 미사용 → store 의 subscribe listener
- *   가 store 전체 변경마다 호출 + ref 비교를 listener 안에서 처리.
+ * **caller-driven 전환 사유 (Step 1b dev 검증)**:
+ * - 초기 design 은 `useDataStore.currentProjectId` subscribe 로 trigger 했으나,
+ *   사용자 dev 환경에서 `useDataStore.isInitialized === false` (init useEffect 가
+ *   sequential await 중 stuck 또는 condition skip) 로 인해 currentProjectId 가
+ *   영구 null. dataStore 의존 자체가 fragile.
+ * - caller (BuilderCore) 는 `useParams<{ projectId }>()` 로 routing 시점에 즉시
+ *   projectId 를 알고 있음 → caller 가 명시 전달이 robust.
  *
  * **microtask coalesce**:
  * - rapid mutation (예: batchUpdateElementOrders 의 단일 set() 안에서 다중 변경)
  *   에서 매번 sync 실행하면 cost. queueMicrotask 로 1 macrotask 안의 모든 변경
  *   을 1번 sync 로 collapse.
- * - 첫 변경 감지 → schedule → microtask flush 시 actual sync. 추가 변경이
- *   같은 macrotask 안에서 발생하면 schedule no-op.
  *
- * **Sub-Phase B Step 1b 진입 prerequisite**:
- * - 본 모듈 land 후 LayerTree pilot 의 `useActiveCanonicalDocument()` 가
- *   실제 데이터를 수신 — pilot 진입 가능.
- * - 5 hot path 모두 본 모듈 의존.
+ * **2 store subscribe 만 유지**:
+ * - useStore (elementsMap / pages) — native subscribe
+ * - useLayoutsStore (layouts) — native subscribe (persist middleware native fallback OK)
+ * - useDataStore subscribe 제거 — caller 가 projectId 명시 전달
  */
 
 import { useStore } from "..";
 import { useLayoutsStore } from "../layouts";
-import { useDataStore } from "../data";
 import { selectCanonicalDocument } from "../elements";
 import { useCanonicalDocumentStore } from "./canonicalDocumentStore";
 
@@ -44,25 +35,15 @@ import { useCanonicalDocumentStore } from "./canonicalDocumentStore";
 // ─────────────────────────────────────────────
 
 let syncScheduled = false;
-
-/**
- * coalesced sync 실행. 호출 시 microtask 가 이미 예약되어 있으면 no-op.
- *
- * `scheduler` 는 default `queueMicrotask` 이고, test 가 즉시 실행 mode 로
- * override 가능 (`setSyncScheduler(fn)`).
- */
 let scheduler: (cb: () => void) => void = queueMicrotask;
 
 function performSync(): void {
   syncScheduled = false;
 
-  const projectId = useDataStore.getState().currentProjectId;
-  // [ADR-916] 임시 진단 — Step 1b 검증 후 제거
-  console.log("[ADR-916] performSync", {
-    projectId,
-    elementsMapSize: useStore.getState().elementsMap.size,
-  });
+  const canonical = useCanonicalDocumentStore.getState();
+  const projectId = canonical.currentProjectId;
   if (!projectId) {
+    // sync 가 stop 된 상태 (caller 가 cleanup 후 listener 가 늦게 fire).
     return;
   }
 
@@ -75,24 +56,12 @@ function performSync(): void {
     layouts,
   );
 
-  const canonical = useCanonicalDocumentStore.getState();
   canonical.setDocument(projectId, doc);
-  if (canonical.currentProjectId !== projectId) {
-    canonical.setCurrentProject(projectId);
-  }
-  console.log("[ADR-916] performSync done", {
-    docChildren: doc.children.length,
-    canonicalVersion: useCanonicalDocumentStore.getState().documentVersion,
-  });
 }
 
 function scheduleSync(): void {
-  if (syncScheduled) {
-    console.log("[ADR-916] scheduleSync — already scheduled, skip");
-    return;
-  }
+  if (syncScheduled) return;
   syncScheduled = true;
-  console.log("[ADR-916] scheduleSync — queued");
   scheduler(performSync);
 }
 
@@ -101,62 +70,52 @@ function scheduleSync(): void {
 // ─────────────────────────────────────────────
 
 /**
- * legacy → canonical write-through sync 시작. 반환값 = unsubscribe 함수.
+ * legacy → canonical write-through sync 시작.
  *
- * **호출 site**: builder 부트스트랩 (`apps/builder/src/main.tsx` 또는
- * project init effect). Sub-Phase B Step 1a 단계에서는 본 함수가 land 만
- * 되고, 실제 호출 site 추가는 Step 1b 진입 시점 (LayerTree pilot 과 함께).
+ * @param projectId — 활성 project id. caller (BuilderCore) 가 useParams 로
+ *   가져온 routing 값을 명시 전달.
+ * @returns unsubscribe 함수. 호출 시 listener 해제 + canonical store
+ *   currentProjectId 를 null 로 reset (다른 project sync 시작 시 충돌 방지).
  *
- * - 시작 시 1회 즉시 schedule (canonical store 초기 hydration).
- * - 3 store mutation 감지 시 schedule.
- * - 같은 macrotask 안의 다중 변경은 1번 sync 로 coalesce.
- * - 호출자가 unsubscribe 하면 sync 중단.
+ * **순서**:
+ * 1. canonical store 의 currentProjectId 를 projectId 로 set.
+ * 2. initial sync schedule — store hydration.
+ * 3. useStore + useLayoutsStore subscribe 등록.
  *
  * @example
- *   const stop = startCanonicalDocumentSync();
- *   // ... 앱 실행
- *   stop(); // cleanup
+ *   const stop = startCanonicalDocumentSync(projectId);
+ *   // ... Builder 작업
+ *   stop(); // cleanup (route 이탈 시)
  */
-export function startCanonicalDocumentSync(): () => void {
-  console.log("[ADR-916] startCanonicalDocumentSync — register listeners");
-  // initial sync — canonical store 가 처음 hydration 됨.
+export function startCanonicalDocumentSync(projectId: string): () => void {
+  // 1. canonical store 의 active project 를 caller 가 직접 set.
+  const canonical = useCanonicalDocumentStore.getState();
+  if (canonical.currentProjectId !== projectId) {
+    canonical.setCurrentProject(projectId);
+  }
+
+  // 2. initial sync — projectId 가 set 된 직후 즉시 hydration.
   scheduleSync();
 
+  // 3. legacy 2 store subscribe (dataStore 제외).
   const unsubElements = useStore.subscribe((state, prev) => {
-    // ref 비교 — elementsMap 또는 pages 변경 시만 sync.
     if (state.elementsMap === prev.elementsMap && state.pages === prev.pages) {
       return;
     }
-    console.log("[ADR-916] elements listener fired", {
-      sizeBefore: prev.elementsMap.size,
-      sizeAfter: state.elementsMap.size,
-    });
     scheduleSync();
   });
 
   const unsubLayouts = useLayoutsStore.subscribe((state, prev) => {
     if (state.layouts === prev.layouts) return;
-    console.log("[ADR-916] layouts listener fired");
     scheduleSync();
   });
-
-  // useDataStore 는 `subscribeWithSelector` middleware 사용 → native
-  // `.subscribe(listener)` fallback 이 동작하지 않음. selector-aware 시그니처
-  // (selector + listener) 필수. zustand v5 subscribeWithSelector 가 selector
-  // 결과 변경 감지 후 listener 호출.
-  const unsubData = useDataStore.subscribe(
-    (state) => state.currentProjectId,
-    (curr, prev) => {
-      console.log("[ADR-916] dataStore listener fired", { curr, prev });
-      if (curr === prev) return;
-      scheduleSync();
-    },
-  );
 
   return () => {
     unsubElements();
     unsubLayouts();
-    unsubData();
+    // canonical store 의 currentProjectId 를 null 로 reset — 다른 project sync
+    // 시작 시 stale 데이터 노출 방지.
+    useCanonicalDocumentStore.getState().setCurrentProject(null);
   };
 }
 

@@ -1,20 +1,16 @@
 /**
- * @fileoverview canonicalDocumentSync unit tests — ADR-916 Phase 2 G3 Sub-Phase B Step 1a
+ * @fileoverview canonicalDocumentSync unit tests — ADR-916 Phase 2 G3 Sub-Phase B
  *
- * 검증 영역:
- * 1. lifecycle — start / stop, initial schedule
- * 2. null projectId no-op
- * 3. propagation — elementsMap / pages / layouts / currentProjectId 변경 → canonical store update
+ * caller-driven sync 검증 (post Step 1b dev-fix):
+ * 1. lifecycle — start(projectId) / stop, initial schedule + setCurrentProject
+ * 2. 미호출 시 sync 0
+ * 3. propagation — elementsMap / pages / layouts 변경 → canonical store update
  * 4. microtask coalesce — 동일 macrotask 내 다중 mutation → 1번 sync
- *
- * **scheduler override 패턴**: production 의 `queueMicrotask` 는 microtask
- * tick 대기. test 에서는 `setSyncScheduler((cb) => cb())` 로 즉시 실행 모드 사용.
- * coalesce 검증만 default scheduler 로 별도 진행.
+ * 5. cleanup 시 canonical store currentProjectId reset
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { useDataStore } from "../../data";
 import { useLayoutsStore } from "../../layouts";
 import { useStore } from "../..";
 import { useCanonicalDocumentStore } from "../canonicalDocumentStore";
@@ -45,7 +41,6 @@ function resetLegacyStores(): void {
     pages: [],
   });
   useLayoutsStore.setState({ layouts: [] });
-  useDataStore.setState({ currentProjectId: null });
 }
 
 beforeEach(() => {
@@ -69,20 +64,30 @@ afterEach(() => {
 // A. Lifecycle
 // ─────────────────────────────────────────────
 
-describe("startCanonicalDocumentSync — lifecycle", () => {
-  it("start 시 initial sync schedule", () => {
-    useDataStore.setState({ currentProjectId: "proj-a" });
-    stopSync = startCanonicalDocumentSync();
+describe("startCanonicalDocumentSync(projectId) — lifecycle", () => {
+  it("start 시 projectId 즉시 set + initial sync", () => {
+    stopSync = startCanonicalDocumentSync("proj-a");
 
-    // immediate scheduler 로 인해 setDocument 즉시 실행됨.
     const canonical = useCanonicalDocumentStore.getState();
-    expect(canonical.documents.has("proj-a")).toBe(true);
     expect(canonical.currentProjectId).toBe("proj-a");
+    expect(canonical.documents.has("proj-a")).toBe(true);
+  });
+
+  it("이미 같은 projectId 면 setCurrentProject 호출 skip (불필요한 reference 변경 방지)", () => {
+    useCanonicalDocumentStore.getState().setCurrentProject("proj-a");
+    const versionBefore = useCanonicalDocumentStore.getState().documentVersion;
+
+    stopSync = startCanonicalDocumentSync("proj-a");
+
+    const canonical = useCanonicalDocumentStore.getState();
+    // setDocument 는 호출 (initial sync) 됐지만 setCurrentProject 추가 호출 없음.
+    expect(canonical.currentProjectId).toBe("proj-a");
+    // documentVersion 은 setDocument 한 번만 = +1 보장.
+    expect(canonical.documentVersion).toBe(versionBefore + 1);
   });
 
   it("stop 후 mutation 발생해도 canonical store 변경 안 됨", () => {
-    useDataStore.setState({ currentProjectId: "proj-a" });
-    const stop = startCanonicalDocumentSync();
+    const stop = startCanonicalDocumentSync("proj-a");
     stop();
 
     const versionBefore = useCanonicalDocumentStore.getState().documentVersion;
@@ -92,38 +97,35 @@ describe("startCanonicalDocumentSync — lifecycle", () => {
     expect(versionAfter).toBe(versionBefore);
   });
 
-  it("isSyncScheduled — schedule 후 실행 전 true, 실행 후 false", () => {
-    // immediate scheduler 로 schedule 호출 즉시 false 복귀.
-    useDataStore.setState({ currentProjectId: "proj-a" });
-    stopSync = startCanonicalDocumentSync();
-    // initial sync 가 immediate 로 실행되었으므로 false.
+  it("stop 시 canonical store currentProjectId reset (null)", () => {
+    const stop = startCanonicalDocumentSync("proj-a");
+    expect(useCanonicalDocumentStore.getState().currentProjectId).toBe(
+      "proj-a",
+    );
+
+    stop();
+    expect(useCanonicalDocumentStore.getState().currentProjectId).toBeNull();
+  });
+
+  it("isSyncScheduled — immediate scheduler 로 schedule 즉시 false", () => {
+    stopSync = startCanonicalDocumentSync("proj-a");
     expect(isSyncScheduled()).toBe(false);
   });
 });
 
 // ─────────────────────────────────────────────
-// B. null projectId no-op
+// B. start 미호출 시 mutation 무시
 // ─────────────────────────────────────────────
 
-describe("currentProjectId null → no-op", () => {
-  it("currentProjectId 가 null 이면 setDocument 호출 안 됨", () => {
-    // currentProjectId = null (default)
-    stopSync = startCanonicalDocumentSync();
+describe("start 미호출 시", () => {
+  it("legacy mutation 발생해도 canonical store 변경 0", () => {
+    // start 호출 안 함.
+    useStore.setState({ elementsMap: new Map() });
+    useLayoutsStore.setState({ layouts: [] });
 
     const canonical = useCanonicalDocumentStore.getState();
     expect(canonical.documents.size).toBe(0);
     expect(canonical.documentVersion).toBe(0);
-  });
-
-  it("null 이었다가 setCurrentProjectId 후 sync 재개", () => {
-    stopSync = startCanonicalDocumentSync();
-    expect(useCanonicalDocumentStore.getState().documents.size).toBe(0);
-
-    useDataStore.setState({ currentProjectId: "proj-late" });
-
-    expect(
-      useCanonicalDocumentStore.getState().documents.has("proj-late"),
-    ).toBe(true);
   });
 });
 
@@ -132,12 +134,8 @@ describe("currentProjectId null → no-op", () => {
 // ─────────────────────────────────────────────
 
 describe("mutation propagation", () => {
-  beforeEach(() => {
-    useDataStore.setState({ currentProjectId: "proj-a" });
-  });
-
   it("elementsMap 변경 → canonical store re-sync", () => {
-    stopSync = startCanonicalDocumentSync();
+    stopSync = startCanonicalDocumentSync("proj-a");
     const v0 = useCanonicalDocumentStore.getState().documentVersion;
 
     useStore.setState({ elementsMap: new Map() });
@@ -147,7 +145,7 @@ describe("mutation propagation", () => {
   });
 
   it("pages 변경 → canonical store re-sync", () => {
-    stopSync = startCanonicalDocumentSync();
+    stopSync = startCanonicalDocumentSync("proj-a");
     const v0 = useCanonicalDocumentStore.getState().documentVersion;
 
     useStore.setState({ pages: [] });
@@ -157,7 +155,7 @@ describe("mutation propagation", () => {
   });
 
   it("layouts 변경 → canonical store re-sync", () => {
-    stopSync = startCanonicalDocumentSync();
+    stopSync = startCanonicalDocumentSync("proj-a");
     const v0 = useCanonicalDocumentStore.getState().documentVersion;
 
     useLayoutsStore.setState({ layouts: [] });
@@ -166,27 +164,10 @@ describe("mutation propagation", () => {
     expect(v1).toBeGreaterThan(v0);
   });
 
-  it("currentProjectId 변경 → canonical store currentProjectId 추종", () => {
-    stopSync = startCanonicalDocumentSync();
-    expect(useCanonicalDocumentStore.getState().currentProjectId).toBe(
-      "proj-a",
-    );
-
-    useDataStore.setState({ currentProjectId: "proj-b" });
-
-    expect(useCanonicalDocumentStore.getState().currentProjectId).toBe(
-      "proj-b",
-    );
-    expect(useCanonicalDocumentStore.getState().documents.has("proj-b")).toBe(
-      true,
-    );
-  });
-
   it("동일 ref 변경 (no actual change) → sync skip", () => {
-    stopSync = startCanonicalDocumentSync();
+    stopSync = startCanonicalDocumentSync("proj-a");
     const v0 = useCanonicalDocumentStore.getState().documentVersion;
 
-    // 동일 ref 로 setState — listener 호출되지만 ref 비교에서 skip.
     const sameMap = useStore.getState().elementsMap;
     useStore.setState({ elementsMap: sameMap });
 
@@ -200,14 +181,9 @@ describe("mutation propagation", () => {
 // ─────────────────────────────────────────────
 
 describe("microtask coalesce", () => {
-  beforeEach(() => {
-    useDataStore.setState({ currentProjectId: "proj-a" });
-  });
-
   it("default queueMicrotask scheduler 로 다중 mutation → 1번 sync", async () => {
-    // default scheduler 복원 (queueMicrotask)
     resetSyncScheduler();
-    stopSync = startCanonicalDocumentSync();
+    stopSync = startCanonicalDocumentSync("proj-a");
 
     // initial sync 가 microtask 에 schedule 됨 — flush.
     await Promise.resolve();
@@ -220,12 +196,10 @@ describe("microtask coalesce", () => {
 
     expect(isSyncScheduled()).toBe(true);
 
-    // microtask flush.
     await Promise.resolve();
 
     expect(isSyncScheduled()).toBe(false);
     const v1 = useCanonicalDocumentStore.getState().documentVersion;
-    // 3번 mutation 이 1번 sync 로 collapse — version 정확히 1 증가.
     expect(v1 - v0).toBe(1);
   });
 });

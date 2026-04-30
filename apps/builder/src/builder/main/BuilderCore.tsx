@@ -96,26 +96,16 @@ export const BuilderCore: React.FC = () => {
     (state) => state.toggleWorkflowOverlay,
   );
 
-  // ADR-916 Phase 2 G3 Sub-Phase B Step 1b-1 — Canonical document write-through sync.
+  // ADR-916 Phase 2 G3 — Canonical document write-through sync (caller-driven).
   //
-  // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 legacy 3 store mutation 을 canonical
-  // store 에 자동 mirror. default `false` — Step 1b-2 (LayerTree dual-mode cutover)
-  // 진입 시점에 사용자 명시 enable. mount/unmount lifecycle 에 묶어 Builder route
-  // 이탈 시 sync 자동 정리.
+  // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 useParams 의 projectId 를 명시
+  // 전달하여 sync 시작. dataStore.isInitialized 등 외부 store 상태 의존 없음.
+  // route 이탈 시 cleanup 자동 + canonical store currentProjectId 도 reset.
   useEffect(() => {
-    // [ADR-916] 임시 진단 로그 — Step 1b 검증 후 제거 예정
-    console.log("[ADR-916] sync useEffect entry", {
-      enabled: isCanonicalDocumentSyncEnabled(),
-      envValue: import.meta.env.VITE_ADR916_DOCUMENT_SYNC,
-    });
-    if (!isCanonicalDocumentSyncEnabled()) return;
-    console.log("[ADR-916] sync started — startCanonicalDocumentSync()");
-    const stop = startCanonicalDocumentSync();
-    return () => {
-      console.log("[ADR-916] sync stopped");
-      stop();
-    };
-  }, []);
+    if (!isCanonicalDocumentSyncEnabled() || !projectId) return;
+    const stop = startCanonicalDocumentSync(projectId);
+    return stop;
+  }, [projectId]);
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
