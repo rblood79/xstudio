@@ -1,6 +1,15 @@
 {
   "permissions": {
-    "allow": ["Bash(git commit:*)", "Bash(git push origin main:*)"]
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(git push origin main:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(rm -Rf:*)",
+      "Bash(rm -fR:*)"
+    ]
   },
   "alwaysThinkingEnabled": true,
   "autoDreamEnabled": true,
