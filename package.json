@@ -32,7 +32,8 @@
     "wasm:test": "wasm-pack test --node apps/builder/src/builder/workspace/canvas/wasm",
     "prepare:wasm": "node scripts/prepare-wasm.mjs",
     "prepare:specs": "node packages/specs/scripts/extract-lucide-icons.mjs && pnpm run build:specs",
-    "postinstall": "pnpm run prepare:wasm && pnpm run prepare:specs"
+    "postinstall": "pnpm run prepare:wasm && pnpm run prepare:specs",
+    "codex:session-start": "bash scripts/codex/session-start.sh"
   },
   "devDependencies": {
     "@playwright/mcp": "^0.0.71",
