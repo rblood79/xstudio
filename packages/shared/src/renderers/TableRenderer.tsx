@@ -8,6 +8,7 @@ import type {
   ColumnMapping,
 } from "../types";
 import { generateId } from "../utils";
+import { getElementDataBinding } from "../utils/legacyExtensionFields";
 
 /**
  * Table 컴포넌트 렌더러
@@ -79,7 +80,7 @@ export const renderTable = (
   });
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'api', name: 'xxx')
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&

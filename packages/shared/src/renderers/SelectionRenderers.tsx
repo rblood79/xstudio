@@ -35,6 +35,7 @@ import {
   isListBoxSectionEntry,
   isGridListSectionEntry,
 } from "@composition/specs";
+import { getElementDataBinding } from "../utils/legacyExtensionFields";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -78,7 +79,7 @@ export const renderListBox = (
     .columnMapping;
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -247,11 +248,7 @@ export const renderListBox = (
         }
         filterFields={element.props.filterFields as string[] | undefined}
         defaultSelectedKeys={computeDefaultSelectedKeys()}
-        dataBinding={
-          (element.dataBinding || element.props.dataBinding) as
-            | DataBinding
-            | undefined
-        }
+        dataBinding={getElementDataBinding(element) as DataBinding | undefined}
         columnMapping={columnMapping}
         onSelectionChange={onSelectionChange}
       >
@@ -328,11 +325,7 @@ export const renderListBox = (
       }
       filterFields={element.props.filterFields as string[] | undefined}
       defaultSelectedKeys={computeDefaultSelectedKeys(storedItems)}
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
+      dataBinding={getElementDataBinding(element) as DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={onSelectionChange}
     >
@@ -490,7 +483,7 @@ export const renderGridList = (
     .columnMapping;
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -642,11 +635,7 @@ export const renderGridList = (
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
+      dataBinding={getElementDataBinding(element) as DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
@@ -757,7 +746,7 @@ export const renderSelect = (
     .columnMapping;
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -935,11 +924,7 @@ export const renderSelect = (
       labelPosition={(elementProps.labelPosition as "top" | "side") || "top"}
       name={elementProps.name ? String(elementProps.name) : undefined}
       autoFocus={Boolean(elementProps.autoFocus)}
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
+      dataBinding={getElementDataBinding(element) as DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // ADR-073 P3: items[] 경로에서 Canonical contract — items[].id lookup
@@ -1060,7 +1045,7 @@ export const renderComboBox = (
     .columnMapping;
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -1235,11 +1220,7 @@ export const renderComboBox = (
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
       name={element.props.name ? String(element.props.name) : undefined}
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
+      dataBinding={getElementDataBinding(element) as DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // selectedKey가 undefined이면 선택 해제로 처리

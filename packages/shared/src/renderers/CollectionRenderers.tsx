@@ -30,6 +30,7 @@ import type {
 } from "@composition/specs";
 import { isMenuSectionEntry, isMenuSeparatorEntry } from "@composition/specs";
 import { getSelectedChildIds } from "./selection";
+import { getElementDataBinding } from "../utils/legacyExtensionFields";
 
 /**
  * Stored → Runtime 변환 (Q11=나: EVENT_REGISTRY에 직접 의존 금지)
@@ -120,11 +121,7 @@ export const renderTree = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
+      dataBinding={getElementDataBinding(element) as DataBinding | undefined}
       style={element.props.style}
       className={element.props.className}
       aria-label={String(
@@ -242,7 +239,7 @@ export const renderTagGroup = (
     .columnMapping;
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -396,11 +393,7 @@ export const renderTagGroup = (
           ? element.props.maxRows
           : undefined
       }
-      dataBinding={
-        (element.dataBinding || element.props.dataBinding) as
-          | DataBinding
-          | undefined
-      }
+      dataBinding={getElementDataBinding(element) as DataBinding | undefined}
       columnMapping={columnMapping}
       removedItemIds={removedItemIds}
       onSelectionChange={async (selectedKeys) => {
@@ -875,9 +868,7 @@ export const renderMenu = (
     size: (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md",
     style: element.props.style,
     className: element.props.className,
-    dataBinding: (element.dataBinding || element.props.dataBinding) as
-      | DataBinding
-      | undefined,
+    dataBinding: getElementDataBinding(element) as DataBinding | undefined,
     selectionMode: (
       element.props as { selectionMode?: "none" | "single" | "multiple" }
     ).selectionMode,

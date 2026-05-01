@@ -30,6 +30,7 @@ import {
 import { parseColor } from "react-aria-components";
 import { Slot } from "../components/Slot";
 import { getIconData } from "@composition/specs";
+import { getElementDataBinding } from "../utils/legacyExtensionFields";
 import type {
   PreviewElement,
   RenderContext,
@@ -105,7 +106,7 @@ export const renderTabs = (
   const { childrenMap, updateElementProps, renderElement } = context;
 
   // PropertyDataBinding 형식 감지
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -927,7 +928,7 @@ export const renderBreadcrumbs = (
     context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   // PropertyDataBinding 형식 감지
-  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const dataBinding = getElementDataBinding(element);
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&

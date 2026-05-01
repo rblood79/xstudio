@@ -886,6 +886,43 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 
 **G6-1 진척 marker**: Phase 5 G7 Extension Boundary closure 의 진정 cleanup work 진입 — events 영역 logic access **3 → 1 (-2, 67% 감소)**, dataBinding 영역 light cleanup 1. 후속 sub-phase = events 영역 잔존 1 (migration.utils.ts, packages/shared 영역) + dataBinding 광역 47 site cleanup + Element.actions 영역 측정.
 
+#### 10.2.5 G6-1 second slice land (2026-05-01) — packages/shared `legacyExtensionFields.ts` helper + dataBinding priority pattern 16 site migration
+
+**framing**: G6-1 first slice 후속 — packages/shared 영역 (renderers) 의 legacy `Element.dataBinding` read site 광역 cleanup. monorepo dependency 정합 (packages/shared 가 apps/builder import 불가) → packages/shared 영역 helper 별도 신규.
+
+**design intent 의문 명시 (priority 차이)**:
+
+- apps/builder 영역 helper (`apps/builder/src/adapters/canonical/legacyExtensionFields.ts`) default = `'props-first'` — UI workflow editor 가 inline 수정한 `props.<field>` canonical primary.
+- packages/shared 영역 helper (`packages/shared/src/utils/legacyExtensionFields.ts`) default = `'legacy-first'` — renderers 기존 패턴 `element.<field> || element.props.<field>` 보존.
+
+두 영역의 priority 차이는 framing 의문 (Phase 5 G7 closure 시점 canonical primary 저장 진입과 함께 통일 결정 사항). 본 세션 helper signature 는 priority option 으로 양쪽 caller 호환.
+
+**land 내용**:
+
+- **`packages/shared/src/utils/legacyExtensionFields.ts` 신규** — `getElementEvents(element, priority?)` + `getElementDataBinding(element, priority?)` 2 helper. `ExtensionReadPriority` type export (`'legacy-first' | 'props-first'`). default = `'legacy-first'` (packages/shared 영역 renderers 기존 패턴 보존).
+- **`packages/shared/src/utils/index.ts` barrel** — `export * from "./legacyExtensionFields"` 추가.
+- **packages/shared 영역 priority pattern caller 16 site migration**:
+  - `SelectionRenderers.tsx`: 9 site (`const dataBinding = element.dataBinding || element.props.dataBinding` × 4 + `(element.dataBinding || element.props.dataBinding) as ...` × 5)
+  - `CollectionRenderers.tsx`: 4 site (`const dataBinding =` × 1 + cast × 2 + object literal `dataBinding:` × 1)
+  - `LayoutRenderers.tsx`: 2 site (line 109/931 priority pattern, line 153/960 ternary `isPropertyBinding ? dataBinding : element.dataBinding` 의 `element.dataBinding` direct 부분은 의도적 props ignore — 본 세션 미변환)
+  - `TableRenderer.tsx`: 1 site (line 82 priority pattern, 나머지 18 site 는 `element.dataBinding?.type/source/config` direct access — helper return type `unknown` 한계, 후속 sub-phase)
+
+- **본 세션 cleanup 영역 외 (후속 sub-phase 영역)**:
+  - **direct access pattern (`element.dataBinding?.type/source/config`)**: TableRenderer 18 + SelectionRenderers 3 (`?.type === "field"` 등) + LayoutRenderers ternary 2 + DataTableComponent 1 = **24 site**. helper return type `unknown` 으로 `?.type` access 불가 — 후속 sub-phase 에서 helper signature 정밀화 (예: type-narrow generic) 후 변환.
+  - **apps/builder 영역 cast read**: treeUtils 2 + inspectorActions 1 + index 1 + elementMapper 2 + ... = **5 site**. 모두 props ignore direct cast 의도 — 후속 sub-phase.
+  - **events packages/shared 잔존 1 (migration.utils.ts:158)**: schema migration utility, `element.events ?? []` 패턴 — props fallback 적용 시 schema export 의미 변경 위험. 별 bucket marker 보존.
+
+- **dataBinding 측정**:
+  | 측정 시점 | packages/shared renderers | apps/builder | 합계 |
+  |---|--:|--:|--:|
+  | 진입 시점 (G6-1 first slice 종결) | 40 | 5 | 45 |
+  | priority pattern cleanup 후 | 24 | 5 | 29 |
+  | -16 (-36%, packages/shared priority pattern 영역) | | | |
+
+**검증**: `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
+
+**G6-1 second slice 진척 marker**: dataBinding priority pattern packages/shared 영역 0 도달 ✅. 잔존 29 = direct access pattern (24) + apps/builder cast read (5), 후속 sub-phase 에서 helper signature 정밀화 + apps/builder 영역 cast read 변환.
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
