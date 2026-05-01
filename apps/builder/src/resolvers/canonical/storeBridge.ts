@@ -163,34 +163,10 @@ export function getCanonicalParentId(
 // 3) ResolvedNode → legacy props 추출 (두 metadata 패턴 대응)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * resolved 노드의 `metadata` 에서 legacy props 를 추출한다.
- *
- * P2 resolver 는 두 metadata 패턴을 사용한다:
- * 1. **ref-resolve** (`_resolveRefNodeUncached`): `metadata = { ...resolvedProps, type }`
- *    — `type` 외 모든 키가 props
- * 2. **slot override mode A** / **adapter 원본** (`resolveCanonicalDescendantOverride`):
- *    `metadata = { type, legacyProps: {...} }` — `legacyProps` 필드에 props 가 보존됨
- *
- * 본 helper 는 두 패턴 모두 대응한다.
- *
- * 우선순위:
- * - `metadata.legacyProps` 가 있으면 그 값 사용
- * - 없으면 `type` 키만 제외한 나머지 metadata 전체를 props 로 사용
- */
-export function extractLegacyPropsFromResolved(
-  resolved: ResolvedNode,
-): Record<string, unknown> {
-  const meta = resolved.metadata as Record<string, unknown> | undefined;
-  if (!meta) return {};
-
-  if (meta.legacyProps !== undefined) {
-    return (meta.legacyProps as Record<string, unknown>) ?? {};
-  }
-
-  const { type: _type, ...rest } = meta;
-  return rest;
-}
+// ADR-916 G6-2 — `extractLegacyPropsFromResolved` 는 `extractLegacyProps.ts` 로
+// 분리됨 (storeBridge import chain 의 vitest mock 함정 우회 + isolated unit test).
+// 본 re-export 는 production caller (CanonicalNodeRenderer 등) 의 import path 보존.
+export { extractLegacyPropsFromResolved } from "./extractLegacyProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4) per-instance shared-cache resolve (mini-doc)

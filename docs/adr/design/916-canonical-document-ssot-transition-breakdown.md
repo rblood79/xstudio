@@ -1067,6 +1067,59 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 
 본 세션 fallback 추가는 read backbone 의 두 경로 분기 codify 만 land. canonical primary write 진입 (실제 `node.props` 만 저장하는 경로) 은 Phase 3 G4 영역 — 본 fallback 은 Phase 3 G4 진입 시점에 실 사용. 현재는 회귀 codify + fixture evidence 만 land 상태로, 사용자-가시 영향 0.
 
+#### 10.2.9 G6-2 first slice land (2026-05-01) — Preview canonical 렌더 fallback (`extractLegacyPropsFromResolved` G6-1 정합)
+
+**framing**: G6-1 closure (Extension Boundary + Props Parity 양 sub-phase) 후 자연 후속 — Preview canonical 렌더 경로의 G6-1 fallback 정합. design §10.2.2 G6-2 영역 의 (1) Preview parity 부분 first slice. (2) History parity + (3) Publish parity 는 후속 slice / 별 sub-phase.
+
+**fork checkpoint 4 질문 lock-in**:
+
+1. **base/응용 분류**: G6-2 = G6-1 의 응용 (G6-1 second work fallback 가 ResolvedNode → legacy props 추출 layer 까지 전파).
+2. **schema 직교성**: G6-1 (Element 복원) ⊥ G6-2 first slice (ResolvedNode → legacy props 변환). ResolvedNode = CanonicalNode extends, props field 동일 SSOT.
+3. **baseline framing reverse**: G6-1 closure prerequisite 충족, fallback 경로 정합 자연 후속. 의존 방향 정확.
+4. **codex 3차 미루지 말 것**: LOW scope (~1 PR), 회귀 영역 0 (Case 1/Case 2 우선순위 보존). 사용자 surface 시 codex review 진입.
+
+**scope 정확화 (design ~2-3d MED 추정 vs 실 측정)**:
+
+design §10.2.2 추정 = ~2-3d MED. 실 baseline 측정 결과:
+
+- **History parity 영역** = Step 1a (legacy → canonical write-through sync, 2026-05-01 land) 가 **이미 자동 cover** — legacy elements mutation → microtask coalesce → canonical store sync. legacy history undo 시 elements store 변경 → write-through propagate 로 canonical 자동 sync. 본 영역 추가 work = 회귀 codify 만 (별 vitest 영역 — `canonicalDocumentSync.test.ts` pre-existing setup fail 영역, 본 work 회피).
+- **Preview parity 영역** = ADR-903 P2 옵션 C `CanonicalNodeRenderer` (feature flag `?canonical=1`) 이미 land. G6-1 second work fallback 정합 추가 = `extractLegacyPropsFromResolved` 의 canonical primary fallback 분기 추가만 필요. **본 first slice scope**.
+- **Publish parity 영역** = `apps/publish/src/` 가 canonical 미사용 (legacy elements 직접 렌더). 본 ADR scope 외 (별 publish ADR 영역).
+
+→ **G6-2 진정 work scope = ~1d LOW** (Preview parity first slice). History parity = 회귀 codify 만 (별 sub-phase, pre-existing fail 영역 debug 후), Publish parity = scope 외.
+
+**land 내용**:
+
+- **`extractLegacyPropsFromResolved` 에 canonical primary fallback 추가** — 세 metadata/props 패턴 대응:
+  1. legacy adapter (metadata.legacyProps) — 기존 동작
+  2. ref-resolve (metadata 에 type + spread) — 기존 동작 (Case 2 조건: `Object.keys(rest).length > 0` — 기존 ref-resolve 패턴은 항상 type 외 키 존재하므로 backward compat)
+  3. **canonical primary fallback** (resolved.props 직접) — G6-2 신규
+  - 위치: `apps/builder/src/resolvers/canonical/extractLegacyProps.ts` (신규 split file)
+- **`extractLegacyPropsFromResolved` 를 별 file 로 split** — `apps/builder/src/resolvers/canonical/extractLegacyProps.ts` 신규.
+  - **사유**: `storeBridge.ts` 가 `@/builder/stores/elements` import → vitest mock path resolution 함정 (`createElementsSlice is not a function` setup fail) 에 갇힘. `extractLegacyPropsFromResolved` 는 store 무관 helper 이므로 split 가능. memory 패턴 적용.
+  - `storeBridge.ts` 는 backward compat re-export 만 유지 — production caller (CanonicalNodeRenderer 등) import path 무변경.
+- **fixture vitest 신규** — `apps/builder/src/resolvers/canonical/__tests__/extractLegacyPropsFromResolved.canonical.test.ts` (8 test):
+  - **TC9-TC13 (canonical primary fallback)**: metadata 없음 + resolved.props 있음 → props 직접 / metadata 가 type 만 있고 props 있음 / 우선순위 (legacy adapter > ref-resolve > canonical primary) / 회귀 (모두 없음 → `{}`)
+  - **TC14-TC16 (G6-1 fallback 정합 evidence)**: Button/TextField/Section canonical primary node 가 ResolvedNode 통과 후에도 props 보존 — G6-1 second work fallback 와 G6-2 fallback 의 SSOT 정합
+
+**검증 evidence**:
+
+- `pnpm type-check` 3/3 PASS
+- vitest `extractLegacyPropsFromResolved.canonical.test.ts` **8/8 PASS**
+- 광역 회귀 0 검증: baseline (origin/main `0d39b3068`, stash) **274/275 PASS** (1 fail = pre-existing resolver TC1) → 본 work 적용 후 **282/283 PASS** (+8 신규 fixture 모두 PASS, 동일 1 pre-existing fail). 본 work 회귀 0 ✅.
+
+**G6-2 진척 marker**:
+
+- ✅ G6-2 first slice — Preview canonical 렌더 fallback (G6-1 정합)
+- ⏭️ G6-2 second slice (예정) — History parity 회귀 codify (canonicalDocumentSync.test.ts pre-existing setup fail debug 후)
+- ⏭️ Publish parity — scope 외 (canonical 미사용, 별 publish ADR 영역)
+
+**다음 sub-phase 권장**:
+
+- **G6-2 second slice** (LOW, ~0.5d): canonicalDocumentSync.test.ts setup fail debug + history parity 회귀 codify (legacy history.undo() → canonical store sync 자동 cover evidence vitest)
+- **G6-3 (Slot/Ref/Descendants/Frame Parity)** — ADR-911 P3 / ADR-913 P5 base cleanup 의존, prerequisite 미충족 시 진입 회피
+- **write boundary cleanup** (별 sub-phase, G7 closure 진정 work): `updateNodeExtension` API caller migration
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
