@@ -25,6 +25,7 @@ import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
 import { sanitizeFillDerivedStylePatch } from "../panels/styles/utils/fillDerivedStyleProps";
 import { saveService } from "../../services/save";
+import { getElementDataBinding } from "../../adapters/canonical/legacyExtensionFields";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import type { BatchPropsUpdate } from "./utils/elementUpdate";
@@ -532,10 +533,7 @@ export const createInspectorActionsSlice: StateCreator<
       const element = getSelectedElement();
       if (!element) return;
 
-      updateAndSave(
-        element.id,
-        sanitizeInspectorProps({ [key]: value }),
-      );
+      updateAndSave(element.id, sanitizeInspectorProps({ [key]: value }));
     },
 
     updateSelectedProperties: (properties) => {
@@ -659,7 +657,7 @@ export const createInspectorActionsSlice: StateCreator<
           : element;
 
       const currentStyle = sanitizeFillDerivedStylePatch(
-        ((baseElement.props?.style as Record<string, string>) || {}),
+        (baseElement.props?.style as Record<string, string>) || {},
         true,
       );
 
@@ -686,7 +684,7 @@ export const createInspectorActionsSlice: StateCreator<
       }
 
       const currentStyle = sanitizeFillDerivedStylePatch(
-        ((element.props?.style as Record<string, string>) || {}),
+        (element.props?.style as Record<string, string>) || {},
         true,
       );
 
@@ -818,7 +816,7 @@ export function mapElementToSelectedElement(element: Element): SelectedElement {
     computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,
     semanticClasses: [],
     cssVariables: {},
-    dataBinding: element.dataBinding as SelectedElement["dataBinding"],
+    dataBinding: getElementDataBinding(element, "legacy-only"),
     events: (events as SelectedElement["events"]) || [],
   };
 }

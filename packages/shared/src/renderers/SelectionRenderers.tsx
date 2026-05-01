@@ -399,13 +399,15 @@ export const renderDataField = (
   const { elementsMap } = context;
 
   // dataBinding이 있고 source가 "parent"인 경우 부모 데이터에서 값 추출
+  // ADR-916 G7: element.dataBinding direct (props ignore) — legacy-only priority
   let value = element.props.value;
+  const dataBindingLegacy = getElementDataBinding(element, "legacy-only");
 
   if (
-    element.dataBinding?.type === "field" &&
-    element.dataBinding?.source === "parent"
+    dataBindingLegacy?.type === "field" &&
+    dataBindingLegacy?.source === "parent"
   ) {
-    const path = element.dataBinding.config?.path as string | undefined;
+    const path = dataBindingLegacy.config?.path as string | undefined;
 
     // 부모 element 찾기 (ListBoxItem, GridListItem 등)
     const parent = element.parent_id

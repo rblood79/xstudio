@@ -81,6 +81,8 @@ export const renderTable = (
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'api', name: 'xxx')
   const dataBinding = getElementDataBinding(element);
+  // standard DataBinding 검출 — element.dataBinding direct (props ignore, ADR-916 G7)
+  const dataBindingLegacy = getElementDataBinding(element, "legacy-only");
   const isPropertyBinding =
     dataBinding &&
     typeof dataBinding === "object" &&
@@ -90,8 +92,8 @@ export const renderTable = (
 
   // dataBinding을 통한 API 데이터 사용 여부 확인
   const hasApiBinding =
-    element.dataBinding?.type === "collection" &&
-    element.dataBinding?.source === "api";
+    dataBindingLegacy?.type === "collection" &&
+    dataBindingLegacy?.source === "api";
 
   // API 설정 추출
   let apiConfig: {
@@ -106,8 +108,8 @@ export const renderTable = (
     };
   } = {};
 
-  if (hasApiBinding && element.dataBinding?.config) {
-    const config = element.dataBinding.config as typeof apiConfig;
+  if (hasApiBinding && dataBindingLegacy?.config) {
+    const config = dataBindingLegacy.config as typeof apiConfig;
     apiConfig = {
       baseUrl: config.baseUrl,
       customUrl: config.customUrl,
@@ -119,15 +121,15 @@ export const renderTable = (
 
   // 정적 데이터 바인딩에서 데이터 추출
   const staticData =
-    element.dataBinding?.type === "collection" &&
-    element.dataBinding?.source === "static" &&
-    element.dataBinding?.config &&
-    (element.dataBinding.config as { data?: unknown[] }).data;
+    dataBindingLegacy?.type === "collection" &&
+    dataBindingLegacy?.source === "static" &&
+    dataBindingLegacy?.config &&
+    (dataBindingLegacy.config as { data?: unknown[] }).data;
 
   // Supabase 데이터는 props.data에 저장됨
   const supabaseData =
-    element.dataBinding?.type === "collection" &&
-    element.dataBinding?.source === "supabase" &&
+    dataBindingLegacy?.type === "collection" &&
+    dataBindingLegacy?.source === "supabase" &&
     (element.props as { data?: unknown[] }).data;
 
   // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
@@ -139,7 +141,7 @@ export const renderTable = (
     Array.isArray(rawData) && rawData.length === 0 ? undefined : rawData;
 
   // 데이터 소스 변경 감지 - 이전과 다른 데이터 소스면 요청 캐시 초기화
-  const currentDataSource = element.dataBinding?.source || "none";
+  const currentDataSource = dataBindingLegacy?.source || "none";
   const tableRequestPrefix = `${element.id}_`;
 
   // 현재 테이블의 모든 요청 기록 중 다른 데이터 소스 것들 삭제
@@ -161,8 +163,8 @@ export const renderTable = (
 
   // Static Data의 컬럼 매핑 (props.columnMapping에서 가져옴)
   if (
-    element.dataBinding?.type === "collection" &&
-    element.dataBinding?.source === "static" &&
+    dataBindingLegacy?.type === "collection" &&
+    dataBindingLegacy?.source === "static" &&
     (element.props as { columnMapping?: unknown }).columnMapping
   ) {
     const columnMapping = (
@@ -198,8 +200,8 @@ export const renderTable = (
 
   // Supabase의 컬럼 매핑 (props.columnMapping에서 가져옴)
   if (
-    element.dataBinding?.type === "collection" &&
-    element.dataBinding?.source === "supabase" &&
+    dataBindingLegacy?.type === "collection" &&
+    dataBindingLegacy?.source === "supabase" &&
     (element.props as { columnMapping?: unknown }).columnMapping
   ) {
     const columnMapping = (
@@ -235,8 +237,8 @@ export const renderTable = (
 
   // API의 컬럼 매핑 (props.columns에서 가져옴)
   if (
-    element.dataBinding?.type === "collection" &&
-    element.dataBinding?.source === "api" &&
+    dataBindingLegacy?.type === "collection" &&
+    dataBindingLegacy?.source === "api" &&
     (element.props as { columns?: string[] }).columns
   ) {
     const apiColumns = (element.props as { columns: string[] }).columns;
@@ -271,7 +273,7 @@ export const renderTable = (
     columnElements.length === 0 &&
     tableHeaderElement
   ) {
-    const dataSource = element.dataBinding?.source || "none";
+    const dataSource = dataBindingLegacy?.source || "none";
     const requestKey = `${element.id}_${dataSource}_${mappedColumns.map((c) => c.key).join("_")}`;
 
     if (!columnCreationRequestedRef.current?.has(requestKey)) {

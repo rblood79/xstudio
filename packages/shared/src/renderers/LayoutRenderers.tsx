@@ -150,9 +150,9 @@ export const renderTabs = (
       size={(element.props.size as ComponentSize) || "md"}
       isDisabled={Boolean(element.props.isDisabled)}
       dataBinding={
-        (isPropertyBinding ? dataBinding : element.dataBinding) as
-          | DataBinding
-          | undefined
+        isPropertyBinding
+          ? dataBinding
+          : getElementDataBinding(element, "legacy-only")
       }
       columnMapping={element.props.columnMapping as ColumnMapping | undefined}
       onSelectionChange={(key) => {
@@ -957,9 +957,9 @@ export const renderBreadcrumbs = (
       style={element.props.style}
       className={element.props.className}
       dataBinding={
-        (isPropertyBinding ? dataBinding : element.dataBinding) as
-          | DataBinding
-          | undefined
+        isPropertyBinding
+          ? dataBinding
+          : getElementDataBinding(element, "legacy-only")
       }
       columnMapping={element.props.columnMapping as ColumnMapping | undefined}
       {...eventHandlers}

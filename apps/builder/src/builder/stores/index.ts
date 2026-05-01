@@ -17,6 +17,7 @@ import {
 } from "../utils/canonicalRefResolution";
 import { isCanonicalDocumentSyncEnabled } from "../../utils/featureFlags";
 import { useCanonicalSelectedElement } from "./canonical/canonicalElementsView";
+import { getElementDataBinding } from "../../adapters/canonical/legacyExtensionFields";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -193,7 +194,7 @@ export const useSelectedElementData = (): SelectedElement | null => {
       computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,
       semanticClasses: [],
       cssVariables: {},
-      dataBinding: element.dataBinding as SelectedElement["dataBinding"],
+      dataBinding: getElementDataBinding(element, "legacy-only"),
       events: (events as SelectedElement["events"]) || [],
     };
   }, [selectedElementId, selectedElementProps, canonicalSelectedElement]);

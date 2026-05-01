@@ -8,6 +8,7 @@ import type { Element } from "../../types/core/store.types";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import type { ElementProps } from "../../types/integrations/supabase.types";
 import type { DataBinding } from "../../types/builder/unified.types";
+import { getElementDataBinding } from "../../adapters/canonical/legacyExtensionFields";
 
 /**
  * flat Element 배열을 hierarchical ElementTreeItem 구조로 변환
@@ -107,7 +108,9 @@ export function buildTreeFromElements(
           order_num: el.order_num,
           props: el.props as Record<string, unknown>,
           deleted: el.deleted,
-          dataBinding: el.dataBinding as Record<string, unknown> | undefined,
+          dataBinding: getElementDataBinding(el, "legacy-only") as
+            | Record<string, unknown>
+            | undefined,
           children: buildTree(el.id), // O(1) Map 조회로 재귀
         };
 
@@ -151,7 +154,7 @@ export function flattenTreeToElements(tree: ElementTreeItem[]): Element[] {
         order_num: item.order_num,
         props: item.props as ElementProps,
         deleted: item.deleted,
-        dataBinding: item.dataBinding as DataBinding | undefined,
+        dataBinding: getElementDataBinding(item, "legacy-only"),
         page_id: "", // 필요 시 추가
         created_at: "", // 필요 시 추가
         updated_at: "", // 필요 시 추가

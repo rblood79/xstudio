@@ -1,11 +1,13 @@
 import type { Element } from "../../../types/core/store.types";
 import type { SelectedElement } from "../types";
+import { getElementDataBinding } from "../../../adapters/canonical/legacyExtensionFields";
 
 /**
  * Builder의 Element 타입을 Inspector의 SelectedElement 타입으로 변환
  */
 export function mapElementToSelected(element: Element): SelectedElement {
-  const { style, computedStyle, events, ...otherProps } = element.props as Record<string, unknown>;
+  const { style, computedStyle, events, ...otherProps } =
+    element.props as Record<string, unknown>;
 
   return {
     id: element.id,
@@ -17,7 +19,7 @@ export function mapElementToSelected(element: Element): SelectedElement {
     computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,
     semanticClasses: [],
     cssVariables: {},
-    dataBinding: element.dataBinding as SelectedElement["dataBinding"],
+    dataBinding: getElementDataBinding(element, "legacy-only"),
     events: (events as SelectedElement["events"]) || [],
   };
 }
@@ -26,7 +28,7 @@ export function mapElementToSelected(element: Element): SelectedElement {
  * Inspector의 변경사항을 Builder의 Element 업데이트 형식으로 변환
  */
 export function mapSelectedToElementUpdate(
-  selected: SelectedElement
+  selected: SelectedElement,
 ): Partial<Element> {
   const props: Record<string, unknown> = {
     ...selected.properties,

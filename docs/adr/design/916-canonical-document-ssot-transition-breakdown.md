@@ -923,6 +923,53 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 
 **G6-1 second slice 진척 marker**: dataBinding priority pattern packages/shared 영역 0 도달 ✅. 잔존 29 = direct access pattern (24) + apps/builder cast read (5), 후속 sub-phase 에서 helper signature 정밀화 + apps/builder 영역 cast read 변환.
 
+#### 10.2.6 G6-1 third slice land (2026-05-01) — helper return type 정밀화 + `'legacy-only'` priority + direct access pattern 24 + apps/builder cast read 5 cleanup
+
+**framing 진입**: §10.2.5 후속 — direct access pattern (`element.dataBinding?.type/source/config`) 24 site 와 apps/builder cast read 5 site 가 helper signature 정밀화 후 cleanup 가능. design intent 정독 결과 priority pattern 의 `dataBinding` (legacy + props fallback) 과 direct access 의 `element.dataBinding` (legacy only, props ignore) 가 의도적 differential — `'legacy-only'` priority 추가가 정합.
+
+**design intent 명시 (TableRenderer 사례)**:
+
+- `const dataBinding = getElementDataBinding(element)` (priority pattern, legacy-first default) → **PropertyDataBinding 형식 검출용** (source + name 있음, type 없음 — UI editor inline binding)
+- `const dataBindingLegacy = getElementDataBinding(element, "legacy-only")` (direct access pattern) → **standard DataBinding 형식 검출용** (type + source + config — persistent legacy storage)
+
+두 형식이 동일 element 에서 분리 저장 가능 — element.dataBinding (standard) vs element.props.dataBinding (PropertyDataBinding). priority pattern + direct access 가 두 형식 분리 검출.
+
+**land 내용**:
+
+- **packages/shared helper signature 정밀화**:
+  - `getElementDataBinding` return type: `unknown` → `DataBinding | undefined` (DataBinding from `../types/element.types`)
+  - `ExtensionReadPriority` type 확장: `'legacy-first' | 'props-first' | 'legacy-only'` (props ignore 의도 표현)
+- **apps/builder helper signature 정밀화** (동일 패턴):
+  - return type: `unknown` → `DataBinding | undefined` (DataBinding from `@composition/shared`)
+  - `ExtensionReadPriority` type export + `'legacy-only'` priority 추가
+- **packages/shared direct access pattern 24 site cleanup**:
+  - `TableRenderer.tsx` 18 site: `const dataBindingLegacy = getElementDataBinding(element, "legacy-only")` local var 추가, `element.dataBinding?.type/source/config` → `dataBindingLegacy?.type/source/config` (replace_all 3회 + manual 2 site).
+  - `SelectionRenderers.tsx` 3 site (lines 405/406/408): 동일 패턴, local var 추가.
+  - `LayoutRenderers.tsx` ternary 2 site (lines 153/960): `(isPropertyBinding ? dataBinding : element.dataBinding) as DataBinding | undefined` → `isPropertyBinding ? dataBinding : getElementDataBinding(element, "legacy-only")` (cast 제거, type-narrow 자동).
+  - `DataTableComponent.tsx` 1 site (line 117): `element.dataBinding as DataBinding | undefined` → `getElementDataBinding(element, "legacy-only")`.
+- **apps/builder cast read 5 site cleanup**:
+  - `treeUtils.ts:110` (`Record<string, unknown> | undefined` cast): `getElementDataBinding(el, "legacy-only") as ...` (caller side type narrow 보존).
+  - `treeUtils.ts:154` (`DataBinding | undefined` cast): `getElementDataBinding(item, "legacy-only")` (cast 제거).
+  - `elementMapper.ts:20` (`SelectedElement["dataBinding"]` cast): cast 제거. `:50` (selected.dataBinding mapping) 은 SelectedElement source — helper 적용 의도 외, 그대로 유지.
+  - `inspectorActions.ts:821` + `index.ts:196` (`SelectedElement["dataBinding"]` cast): cast 제거.
+
+**cleanup 영역 외 (후속 sub-phase)**:
+
+- `inspectorActions.ts:285-286` write site (`additionalUpdates?.dataBinding` payload assign) — write boundary 영역, helper 미적용.
+- `elementMapper.ts:50` SelectedElement → Element mapping — helper 적용 의도 외.
+
+**dataBinding 측정** (본 세션 진척):
+
+| 측정 시점              | packages/shared renderers | apps/builder cast read |            합계 |
+| ---------------------- | ------------------------: | ---------------------: | --------------: |
+| G6-1 second slice 종결 |        24 (direct access) |                      5 |              29 |
+| third slice cleanup 후 |                      0 ✅ |                   0 ✅ |               0 |
+| 누적 변동              |                       -24 |                     -5 | **-29 (-100%)** |
+
+**G6-1 packages/shared + apps/builder cast read 영역 종결 ✅**. 잔존 logic access 31 = 새로 발견된 영역 (`elementDiff` 8 + `canonicalDocumentStore` 4 + `composition-document.types` 4 + `createElement` AI tool 2 + `PropertiesPanel` 2 + `inspectorActions` write boundary 2 + 기타 comment / type schema) — G6-1 cleanup 영역 외, **후속 sub-phase** 또는 **별 G6-2/G7 영역** (write boundary / AI tool / canonical store 등).
+
+**검증**: `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |

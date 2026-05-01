@@ -15,6 +15,13 @@
  * @see docs/adr/design/916-canonical-document-ssot-transition-breakdown.md §10.2 G6-1
  */
 
+import type { DataBinding } from "@composition/shared";
+
+export type ExtensionReadPriority =
+  | "legacy-first"
+  | "props-first"
+  | "legacy-only";
+
 /**
  * Generic legacy element shape — `Element` (apps/builder unified.types) 와
  * 다른 local input interface (예: workflowEdges 의 `WorkflowElementInput`) 양쪽
@@ -49,19 +56,32 @@ export function getElementEvents(
 /**
  * legacy `Element.dataBinding` 영역 — read-through priority.
  *
- * 1. `props.dataBinding` — UI canonical primary 저장.
- * 2. `element.dataBinding` — legacy fallback (ADR-916 G7 cleanup target).
- * 3. `undefined` — 미지정 default.
+ * default priority = `'props-first'` (apps/builder 영역 — UI workflow editor 가
+ * inline 수정한 `props.dataBinding` 가 canonical primary).
  *
  * Phase 5 G7 closure 시 helper 내부 reverse —
  * `node.extension['x-composition'].dataBinding` 우선 read.
  */
 export function getElementDataBinding(
   element: LegacyElementWithExtension,
-): unknown {
+  priority: ExtensionReadPriority = "props-first",
+): DataBinding | undefined {
+  if (priority === "legacy-only") {
+    if (element.dataBinding !== undefined)
+      return element.dataBinding as DataBinding;
+    return undefined;
+  }
   const props = element.props as Record<string, unknown> | undefined;
   const propsBinding = props?.dataBinding;
-  if (propsBinding !== undefined) return propsBinding;
-  if (element.dataBinding !== undefined) return element.dataBinding;
+  if (priority === "legacy-first") {
+    if (element.dataBinding !== undefined)
+      return element.dataBinding as DataBinding;
+    if (propsBinding !== undefined) return propsBinding as DataBinding;
+    return undefined;
+  }
+  // props-first
+  if (propsBinding !== undefined) return propsBinding as DataBinding;
+  if (element.dataBinding !== undefined)
+    return element.dataBinding as DataBinding;
   return undefined;
 }

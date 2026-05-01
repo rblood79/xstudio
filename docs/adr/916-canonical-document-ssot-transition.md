@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 first/second slice ✅** (apps/builder + packages/shared `legacyExtensionFields.ts` helper 2종 + caller 18 site migration: events apps/builder 영역 0 도달, dataBinding priority pattern packages/shared 영역 0 도달, 잔존 29 = direct access pattern 24 + apps/builder cast read 5). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics 영역) 은 ADR-911 P3 / ADR-913 P5 base cleanup work 의존, 별 ADR phase)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 first/second/third slice ✅** (helper 2종 + caller 47 site cleanup: events apps/builder 0 + dataBinding renderers priority+direct 40 + apps/builder cast read 5 모두 0 도달, helper return type `DataBinding | undefined` 정밀화 + `'legacy-only'` priority 추가). 잔존 31 = elementDiff / canonicalDocumentStore / AI tool / write boundary / type schema 영역 (G6-1 cleanup 외, 후속 sub-phase). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
 
 ### 진행 로그
 
@@ -391,6 +391,34 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
     | 누적 변동 | -16 | 0 | **-16 (-36%)** |
   - **검증** — `pnpm type-check` 3/3 PASS (cache miss 0, all 3.787s) + vitest canonical 광역 148/148 PASS (회귀 0).
   - **Phase 5 G6-1 second slice 진척 marker** — dataBinding priority pattern packages/shared 영역 **0 도달 ✅** (16 → 0). 후속 sub-phase = direct access pattern 24 site (helper return type 정밀화) + apps/builder cast read 5 site + Element.actions 영역 측정.
+- **2026-05-01 — Phase 5 G6-1 third slice land: helper return type 정밀화 + `'legacy-only'` priority + direct access pattern 24 + apps/builder cast read 5 cleanup (1 PR 통합)**:
+  - **사용자 명시 진행 신호**: "착수 시작해" + design §10.2.5 후속 sub-phase 진입점 (direct access pattern + apps/builder cast read).
+  - **design intent 명시 (priority + direct access 분리 의도)**: TableRenderer 정독 결과 — `dataBinding` (priority pattern, legacy + props fallback) = **PropertyDataBinding 형식 검출** (source + name 있음, type 없음 — UI editor inline binding). `element.dataBinding` (direct access, legacy only) = **standard DataBinding 형식 검출** (type + source + config — persistent legacy storage). 두 형식 분리 저장 가능 → priority pattern + direct access 가 의도적 differential, helper signature `'legacy-only'` priority 추가가 정합.
+  - **packages/shared helper signature 정밀화** (`packages/shared/src/utils/legacyExtensionFields.ts`):
+    - return type: `unknown` → `DataBinding | undefined` (DataBinding from `../types/element.types`)
+    - `ExtensionReadPriority` type 확장: `'legacy-first' | 'props-first' | 'legacy-only'` (props ignore 의도 표현)
+  - **apps/builder helper signature 정밀화** (`apps/builder/src/adapters/canonical/legacyExtensionFields.ts`):
+    - return type: `unknown` → `DataBinding | undefined` (DataBinding from `@composition/shared`)
+    - `ExtensionReadPriority` type export + `'legacy-only'` priority 추가
+  - **packages/shared direct access pattern 24 site cleanup**:
+    - `TableRenderer.tsx` 18 site: `dataBindingLegacy` local var 추가, `element.dataBinding?.type/source/config` → `dataBindingLegacy?.type/source/config` (replace_all 3회 + manual 2 site config cast)
+    - `SelectionRenderers.tsx` 3 site (lines 405/406/408): 동일 패턴, local var 추가
+    - `LayoutRenderers.tsx` ternary 2 site (lines 153/960): `(isPropertyBinding ? dataBinding : element.dataBinding) as ...` → `isPropertyBinding ? dataBinding : getElementDataBinding(element, "legacy-only")` (cast 제거, type-narrow 자동)
+    - `DataTableComponent.tsx` 1 site: `element.dataBinding as DataBinding | undefined` → `getElementDataBinding(element, "legacy-only")`
+  - **apps/builder cast read 5 site cleanup**:
+    - `treeUtils.ts:110` (Record cast): `getElementDataBinding(el, "legacy-only") as Record<string, unknown> | undefined`
+    - `treeUtils.ts:154` (DataBinding cast): `getElementDataBinding(item, "legacy-only")` (cast 제거)
+    - `elementMapper.ts:20` (SelectedElement cast): cast 제거. `:50` SelectedElement → Element mapping 은 helper 적용 의도 외, 그대로 유지.
+    - `inspectorActions.ts:821` + `index.ts:196` (SelectedElement cast): cast 제거.
+  - **dataBinding 측정** (본 세션 진척):
+    | 측정 시점 | packages/shared direct access | apps/builder cast read | 합계 |
+    |---|--:|--:|--:|
+    | G6-1 second slice 종결 | 24 | 5 | 29 |
+    | third slice cleanup 후 | **0 ✅** | **0 ✅** | **0** |
+    | 누적 변동 | -24 | -5 | **-29 (-100%)** |
+  - **G6-1 packages/shared + apps/builder cast read 영역 종결 ✅**. 잔존 logic access 31 = 새로 발견된 영역 (`elementDiff` 8 + `canonicalDocumentStore` 4 + `composition-document.types` 4 + `createElement` AI tool 2 + `PropertiesPanel` 2 + `inspectorActions` write boundary 2 + 기타 comment / type schema) — G6-1 cleanup 영역 외, **후속 sub-phase** 또는 **별 G6-2/G7 영역** (write boundary / AI tool / canonical store 등).
+  - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
+  - **Phase 5 G6-1 third slice 진척 marker** — direct access pattern + apps/builder cast read 영역 모두 0 도달 ✅. G6-1 본격 cleanup 영역 (renderers + apps/builder cast read) 종결. 후속 = G6-1 second work (Props canonical primary 렌더 회귀) 또는 G6-2 (History + Preview/Publish) 또는 별 영역 (elementDiff / canonicalDocumentStore / AI tool / write boundary).
 
 ## Context
 

@@ -26,7 +26,12 @@
  * @see docs/adr/design/916-canonical-document-ssot-transition-breakdown.md §10.2 G6-1
  */
 
-export type ExtensionReadPriority = "legacy-first" | "props-first";
+import type { DataBinding } from "../types/element.types";
+
+export type ExtensionReadPriority =
+  | "legacy-first"
+  | "props-first"
+  | "legacy-only";
 
 /**
  * Generic legacy element shape — packages/shared 의 다양한 caller (TableRenderer
@@ -69,20 +74,32 @@ export function getElementEvents(
  * default priority = `'legacy-first'` (packages/shared 영역 renderers 기존 패턴 보존).
  * Phase 5 G7 closure 시 helper 내부 reverse —
  * `node.extension['x-composition'].dataBinding` 우선 read.
+ *
+ * return type `DataBinding | undefined` — caller 가 `?.type / ?.source / ?.config`
+ * direct access 시 type-narrow 안전. 단 legacy/props 의 raw 값이 `DataBinding`
+ * shape 와 불일치할 경우 type assertion (cast) 책임은 helper 가 부담 — caller 는
+ * 기존 cast 를 제거 가능.
  */
 export function getElementDataBinding(
   element: LegacyElementWithExtension,
   priority: ExtensionReadPriority = "legacy-first",
-): unknown {
+): DataBinding | undefined {
+  if (priority === "legacy-only") {
+    if (element.dataBinding !== undefined)
+      return element.dataBinding as DataBinding;
+    return undefined;
+  }
   const props = element.props as Record<string, unknown> | undefined;
   const propsBinding = props?.dataBinding;
   if (priority === "legacy-first") {
-    if (element.dataBinding !== undefined) return element.dataBinding;
-    if (propsBinding !== undefined) return propsBinding;
+    if (element.dataBinding !== undefined)
+      return element.dataBinding as DataBinding;
+    if (propsBinding !== undefined) return propsBinding as DataBinding;
     return undefined;
   }
   // props-first
-  if (propsBinding !== undefined) return propsBinding;
-  if (element.dataBinding !== undefined) return element.dataBinding;
+  if (propsBinding !== undefined) return propsBinding as DataBinding;
+  if (element.dataBinding !== undefined)
+    return element.dataBinding as DataBinding;
   return undefined;
 }

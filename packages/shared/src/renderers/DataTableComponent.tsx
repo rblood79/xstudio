@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { DataBinding, PreviewElement, RenderContext } from "../types";
+import { getElementDataBinding } from "../utils/legacyExtensionFields";
 
 /**
  * 데이터 로드 함수 (DataTable Store의 로직 재사용)
@@ -114,7 +115,7 @@ export function DataTableComponent({
   const dataTableId = props.id || element.id;
   const autoLoad = props.autoLoad !== false;
   const refreshInterval = props.refreshInterval;
-  const dataBinding = element.dataBinding as DataBinding | undefined;
+  const dataBinding = getElementDataBinding(element, "legacy-only");
 
   // 데이터 로드
   useEffect(() => {
