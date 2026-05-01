@@ -49,11 +49,11 @@ import {
 } from "@/builder/hooks";
 import { useStore } from "../../stores";
 import {
-  getElementLayoutId,
   getLegacySlotName,
   LEGACY_SLOT_NAME_FIELD,
   withLegacySlotName,
 } from "../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../adapters/canonical/frameMirror";
 import { getPropagationRules } from "../../utils/propagationRegistry";
 import { buildPropagationUpdates } from "../../utils/propagationEngine";
 import type { BatchPropsUpdate } from "../../stores/utils/elementUpdate";
@@ -106,7 +106,7 @@ const PropertyEditorWrapper = memo(
     const elementContext = useMemo((): EditorContext => {
       const element = useStore.getState().elementsMap.get(selectedElement.id);
       return {
-        layoutId: element ? getElementLayoutId(element) : null,
+        layoutId: element ? getFrameElementMirrorId(element) : null,
         pageId: element?.page_id || null,
         editMode, // ⭐ 현재 편집 모드 전달
       };

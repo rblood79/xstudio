@@ -22,10 +22,10 @@
 import type { Element, Page } from "../../../../types/core/store.types";
 import {
   getElementSlotName,
-  getLegacyLayoutId,
   getLegacySlotName,
 } from "../../../../adapters/canonical/legacyElementFields";
 import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
+import { getNullablePageFrameBindingId } from "../../../../adapters/canonical/frameMirror";
 
 export interface ResolvePageWithFrameInput {
   /** 현재 page (layout_id 가 set 되어 있으면 frame 합성) */
@@ -206,7 +206,7 @@ export function resolvePageWithFrame(
   input: ResolvePageWithFrameInput,
 ): ResolvePageWithFrameOutput {
   const { page, pageElements, elementsMap } = input;
-  const layoutId = getLegacyLayoutId(page);
+  const layoutId = getNullablePageFrameBindingId(page);
 
   const splitPageBody = (): {
     body: Element | null;

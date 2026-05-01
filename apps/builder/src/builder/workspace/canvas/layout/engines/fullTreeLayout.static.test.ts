@@ -10,7 +10,7 @@ describe("fullTreeLayout shared filtered children key contract", () => {
     );
 
     expect(source).toMatch(
-      /const rootKey = rootEl\.page_id \?\? getElementLayoutId\(rootEl\) \?\? rootElementId;/,
+      /const rootKey =\s*rootEl\.page_id \?\? getFrameElementMirrorId\(rootEl\) \?\? rootElementId;/,
     );
     expect(source).toContain(
       "publishFilteredChildrenMap(filteredChildIdsMap, rootKey);",
@@ -27,7 +27,7 @@ describe("fullTreeLayout shared filtered children key contract", () => {
     );
 
     expect(source).toMatch(
-      /const rootKey = rootEl\.page_id \?\? getElementLayoutId\(rootEl\) \?\? rootElementId;/,
+      /const rootKey =\s*rootEl\.page_id \?\? getFrameElementMirrorId\(rootEl\) \?\? rootElementId;/,
     );
     expect(source).toContain("persistentTrees.get(rootKey)");
     expect(source).toContain("persistentTrees.set(rootKey, persistentTree)");

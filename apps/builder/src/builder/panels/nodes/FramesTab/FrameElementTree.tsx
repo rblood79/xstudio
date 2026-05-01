@@ -16,7 +16,7 @@ import { iconProps } from "../../../../utils/ui/uiConstants";
 import type { ElementProps } from "../../../../types/integrations/supabase.types";
 import type { Element } from "../../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../../types/builder/stately.types";
-import { withLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { withFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 
 export interface FrameElementTreeProps {
   /** 렌더할 element 트리 */
@@ -59,7 +59,7 @@ export function FrameElementTree({
           const hasChildNodes = item.children && item.children.length > 0;
           const isExpanded = expandedKeys.has(item.id);
 
-          const element: Element = withLegacyLayoutId(
+          const element: Element = withFrameElementMirrorId(
             {
               id: item.id,
               type: item.type,

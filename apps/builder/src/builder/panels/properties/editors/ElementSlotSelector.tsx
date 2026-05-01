@@ -11,7 +11,7 @@ import { PropertySelect, PropertySection } from "../../../components";
 import { useStore } from "../../../stores";
 import type { SlotInfo } from "../../../../types/builder/layout.types";
 import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
-import { getLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { getNullablePageFrameBindingId } from "../../../../adapters/canonical/frameMirror";
 
 interface ElementSlotSelectorProps {
   elementId: string;
@@ -37,7 +37,7 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
     if (!element?.page_id) return [];
 
     const page = pages.find((p) => p.id === element.page_id);
-    const pageLayoutId = getLegacyLayoutId(page);
+    const pageLayoutId = getNullablePageFrameBindingId(page);
     if (!pageLayoutId) return [];
 
     const slotElements: (typeof element)[] = [];

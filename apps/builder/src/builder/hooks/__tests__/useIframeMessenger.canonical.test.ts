@@ -89,5 +89,17 @@ describe("P3-D-4: useIframeMessenger UPDATE_ELEMENTS schema 전환 (RED phase)",
         "elements 변경 sync effect 추출 실패 — 시그니처 변경 시 regex 동기화",
       ).not.toBeNull();
     });
+
+    it("page/frame mirror field access 는 frameMirror adapter 를 경유한다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../useIframeMessenger.ts");
+      const source = await fs.readFile(filePath, "utf-8");
+
+      expect(source).not.toContain("legacyElementFields");
+      expect(source).toContain('from "../../adapters/canonical/frameMirror"');
+      expect(source).toContain("getNullablePageFrameBindingId");
+      expect(source).toContain("withPageFrameBinding");
+    });
   });
 });

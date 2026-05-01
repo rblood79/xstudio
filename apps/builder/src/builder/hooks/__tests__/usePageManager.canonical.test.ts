@@ -106,7 +106,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnSource).toMatch(/selectCanonicalReusableFrames\(/);
     });
 
-    // layoutIdSet 이 canonical FrameNode.id 를 legacy layout id 로 정규화함을 확증.
+    // layoutIdSet 이 canonical FrameNode.id 를 mirror frame id 로 정규화함을 확증.
     // Spec A-4 후속: canonical frame id("layout-<id>") 와 element.layout_id("<id>")
     // 저장 포맷이 다르므로 hydrate 시 매칭 키는 legacy layout id 여야 한다.
     it("layoutIdSet 이 reusable frame id 를 legacy layout id 로 정규화해 구성된다", async () => {
@@ -121,10 +121,9 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
       expect(initFnSource).toMatch(
-        /new Set\([\s\S]{0,120}reusableFrames\.map\(getLegacyLayoutIdFromReusableFrame\)/,
+        /new Set\([\s\S]{0,120}reusableFrames\.map\(getReusableFrameMirrorId\)/,
       );
-      expect(source).toMatch(/rawId\.startsWith\("layout-"\)/);
-      expect(source).toMatch(/rawId\.slice\("layout-"\.length\)/);
+      expect(source).toContain("getReusableFrameMirrorId");
     });
 
     it("새로고침 hydrate 는 store 가 아니라 DB snapshot layouts/elements 로 canonical doc 을 만든다", async () => {
@@ -148,7 +147,7 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnSource).toMatch(/canonicalLayouts/);
     });
 
-    // layoutElements 가 allElements.filter 로 legacy layout binding 매칭 추출됨을 확증.
+    // layoutElements 가 allElements.filter 로 frame mirror binding 매칭 추출됨을 확증.
     // Spec A-3: minimal stub 의 'const layoutElements: Element[] = []' 패턴 부활 차단.
     // 동시에 db.elements.getByLayout 추가 호출 0 (이미 로드된 allElements 재사용) 보장.
     it("layoutElements 가 allElements.filter(helper 매칭) 으로 채워진다", async () => {
@@ -162,14 +161,28 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
-      // allElements.filter( ... getElementLayoutId ... layoutIdSet.has ... )
+      // allElements.filter( ... getFrameElementMirrorId ... layoutIdSet.has ... )
       expect(initFnSource).toMatch(
-        /allElements\.filter\([\s\S]{0,250}getElementLayoutId[\s\S]{0,160}layoutIdSet\.has/,
+        /allElements\.filter\([\s\S]{0,250}getFrameElementMirrorId[\s\S]{0,160}layoutIdSet\.has/,
       );
       // minimal stub 패턴 부활 차단 — const layoutElements: Element[] = []
       expect(initFnSource).not.toMatch(
         /const\s+layoutElements\s*:\s*Element\[\]\s*=\s*\[\s*\]/,
       );
+    });
+
+    it("page/frame mirror field access 는 frameMirror adapter 를 경유한다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../usePageManager.ts");
+      const source = await fs.readFile(filePath, "utf-8");
+
+      expect(source).not.toContain("legacyElementFields");
+      expect(source).toContain('from "../../adapters/canonical/frameMirror"');
+      expect(source).toContain("getNullablePageFrameBindingId");
+      expect(source).toContain("withPageFrameBinding");
+      expect(source).toContain("getReusableFrameMirrorId");
+      expect(source).toContain("getFrameElementMirrorId");
     });
   });
 

@@ -1,5 +1,5 @@
 import type { Element } from "../../../../types/core/store.types";
-import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import {
   calculateFullTreeLayout,
@@ -261,7 +261,9 @@ export function buildChildrenIdMap(
 
 function getLayoutPublishKey(bodyElement: Element): string {
   return (
-    bodyElement.page_id ?? getElementLayoutId(bodyElement) ?? bodyElement.id
+    bodyElement.page_id ??
+    getFrameElementMirrorId(bodyElement) ??
+    bodyElement.id
   );
 }
 

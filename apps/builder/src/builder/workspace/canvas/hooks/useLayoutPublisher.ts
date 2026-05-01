@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 import type { PixiPageRendererInput } from "../renderers";
 import {
   publishFilteredChildrenMap,
@@ -124,7 +124,7 @@ export function useLayoutPublisher(
       if (!bodyElement || !wasmLayoutReady) continue;
       const key =
         bodyElement.page_id ??
-        getElementLayoutId(bodyElement) ??
+        getFrameElementMirrorId(bodyElement) ??
         bodyElement.id;
       activeKeys.add(key);
 

@@ -7,11 +7,10 @@ import { selectCanonicalDocument } from "@/builder/stores/elements";
 import { enqueuePagePersistence } from "@/builder/utils/pagePersistenceQueue";
 import { mergeElementsCanonicalPrimary } from "./canonicalMutations";
 import { loadFrameElements } from "./frameElementLoader";
-import {
-  getLegacyLayoutId,
-  LEGACY_LAYOUT_ID_FIELD,
-  withLegacyLayoutId,
-} from "./legacyElementFields";
+import { LEGACY_LAYOUT_ID_FIELD } from "./legacyElementFields";
+import { getPageFrameBindingId, withPageFrameBinding } from "./frameMirror";
+
+export { getPageFrameBindingId } from "./frameMirror";
 
 type ElementsStateForCanonicalDocument = Parameters<
   typeof selectCanonicalDocument
@@ -23,10 +22,6 @@ export interface ApplyPageFrameBindingInput {
   layouts: Layout[];
   getElementsState: () => ElementsStateForCanonicalDocument;
   setPages: (pages: Page[]) => void;
-}
-
-export function getPageFrameBindingId(page: Page | undefined | null): string {
-  return getLegacyLayoutId(page) ?? "";
 }
 
 function setCanonicalDocumentFromPageBinding(
@@ -67,7 +62,7 @@ async function persistPageFrameBindingMirror(
     }
 
     await persistenceDb.pages.insert({
-      ...withLegacyLayoutId(updatedPage, frameId),
+      ...withPageFrameBinding(updatedPage, frameId),
       updated_at: new Date().toISOString(),
     });
   });
@@ -88,7 +83,7 @@ export async function applyPageFrameBindingCanonicalPrimary({
 
   const state = getElementsState();
   const updatedPages = state.pages.map((page) =>
-    page.id === pageId ? withLegacyLayoutId(page, frameId) : page,
+    page.id === pageId ? withPageFrameBinding(page, frameId) : page,
   );
   const updatedPage = updatedPages.find((page) => page.id === pageId);
 

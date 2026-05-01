@@ -10,9 +10,9 @@ import { isMasterElement } from "../../types/builder/unified.types";
 import { normalizeExternalFillIngress } from "../panels/styles/utils/fillExternalIngress";
 import { ElementUtils } from "../../utils/element/elementUtils";
 import {
-  getElementLayoutId,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  getFrameElementMirrorId,
+  withFrameElementMirrorId,
+} from "../../adapters/canonical/frameMirror";
 
 /**
  * Copied elements data structure
@@ -165,7 +165,7 @@ export function pasteMultipleElements(
   if (reusableOrigin) {
     return [
       normalizeExternalFillIngress(
-        withLegacyLayoutId(
+        withFrameElementMirrorId(
           {
             id: ElementUtils.generateId(),
             type: "ref",
@@ -178,7 +178,7 @@ export function pasteMultipleElements(
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           } as Element,
-          getElementLayoutId(reusableOrigin),
+          getFrameElementMirrorId(reusableOrigin),
         ),
       ),
     ];

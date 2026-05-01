@@ -8,9 +8,9 @@ import {
 import { PropertySection, PropertySelect } from "../../components";
 import { useStore } from "../../stores";
 import {
-  getElementLayoutId,
-  withLegacyLayoutId,
-} from "../../../adapters/canonical/legacyElementFields";
+  getFrameElementMirrorId,
+  withFrameElementMirrorId,
+} from "../../../adapters/canonical/frameMirror";
 
 type SlotElement = Element & {
   metadata?: Record<string, unknown>;
@@ -160,7 +160,7 @@ export const FrameSlotSection = memo(function FrameSlotSection({
     const children = childrenMap.get(element.id) ?? [];
 
     void addElement(
-      withLegacyLayoutId(
+      withFrameElementMirrorId(
         {
           id: crypto.randomUUID(),
           type: "ref",
@@ -171,7 +171,7 @@ export const FrameSlotSection = memo(function FrameSlotSection({
           order_num: children.length,
           props: {},
         } as Element,
-        getElementLayoutId(element),
+        getFrameElementMirrorId(element),
       ),
     );
   };

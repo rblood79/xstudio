@@ -38,9 +38,10 @@ import {
   iconSmall,
 } from "../../../utils/ui/uiConstants";
 import {
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../../adapters/canonical/legacyElementFields";
+  getNullablePageFrameBindingId,
+  withPageFrameBinding,
+} from "../../../adapters/canonical/frameMirror";
+import type { Page } from "../../../types/builder/unified.types";
 import "./AddPageDialog.css";
 
 export interface AddPageDialogResult {
@@ -53,6 +54,20 @@ export interface AddPageDialogResult {
 interface AddPageDialogProps {
   onSubmit: (result: AddPageDialogResult) => Promise<void>;
   existingPagesCount: number;
+}
+
+function toUrlPage(page: Page) {
+  return withPageFrameBinding(
+    {
+      id: page.id,
+      title: page.title,
+      slug: page.slug || "",
+      project_id: page.project_id || "",
+      parent_id: page.parent_id,
+      order_num: page.order_num,
+    },
+    getNullablePageFrameBindingId(page),
+  );
 }
 
 export function AddPageDialog({
@@ -119,7 +134,7 @@ export function AddPageDialog({
     const layout = layoutId ? layouts.find((l) => l.id === layoutId) : null;
 
     // Create a temporary page object for URL generation
-    const tempPage = withLegacyLayoutId(
+    const tempPage = withPageFrameBinding(
       {
         id: "temp",
         title,
@@ -141,19 +156,7 @@ export function AddPageDialog({
             slug: layout.slug || undefined,
           }
         : null,
-      allPages: pages.map((p) =>
-        withLegacyLayoutId(
-          {
-            id: p.id,
-            title: p.title,
-            slug: p.slug || "",
-            project_id: p.project_id || "",
-            parent_id: p.parent_id,
-            order_num: p.order_num,
-          },
-          getLegacyLayoutId(p),
-        ),
-      ),
+      allPages: pages.map(toUrlPage),
     });
   }, [title, slug, layoutId, parentId, layouts, pages]);
 

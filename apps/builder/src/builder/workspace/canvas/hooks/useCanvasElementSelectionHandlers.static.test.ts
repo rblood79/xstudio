@@ -9,12 +9,11 @@ describe("useCanvasElementSelectionHandlers frame selection contract", () => {
       "utf-8",
     );
 
+    expect(source).toContain("function syncReusableFrameSelectionForElement(");
+    expect(source).toContain("getFrameElementMirrorId(element);");
+    expect(source).toContain("selectReusableFrame(layoutId);");
     expect(source).toContain(
-      "function syncReusableFrameSelectionForElement(",
-    );
-    expect(source).toContain("selectReusableFrame(element.layout_id);");
-    expect(source).toContain(
-      "useEditModeStore.getState().setCurrentLayoutId(element.layout_id);",
+      "useEditModeStore.getState().setCurrentLayoutId(layoutId);",
     );
     expect(source).toContain(
       "syncReusableFrameSelectionForElement(clickedElement);",

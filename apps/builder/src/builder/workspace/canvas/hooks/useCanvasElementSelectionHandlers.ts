@@ -5,7 +5,7 @@ import { selectReusableFrame } from "../../../stores/utils/frameActions";
 import { resolveClickTarget } from "../../../utils/hierarchicalSelection";
 import type { Element } from "../../../../types/core/store.types";
 import { getElementBoundsSimple } from "../elementRegistry";
-import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 
 interface SelectionModifiers {
   ctrlKey: boolean;
@@ -70,7 +70,7 @@ function syncReusableFrameSelectionForElement(
 ): void {
   if (!element) return;
   if (element.page_id != null) return;
-  const layoutId = getElementLayoutId(element);
+  const layoutId = getFrameElementMirrorId(element);
   if (!layoutId) return;
 
   selectReusableFrame(layoutId);

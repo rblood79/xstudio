@@ -45,9 +45,9 @@ import {
   createMultipleElementsCanonicalPrimary,
 } from "../../adapters/canonical/canonicalMutations";
 import {
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  getNullablePageFrameBindingId,
+  withPageFrameBinding,
+} from "../../adapters/canonical/frameMirror";
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from "../utils/canvasDeltaMessenger";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
@@ -233,7 +233,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const layoutId =
       currentEditMode === "layout"
         ? selectedReusableFrameId
-        : getLegacyLayoutId(currentPage);
+        : getNullablePageFrameBindingId(currentPage);
     const pageInfo = {
       pageId: currentEditMode === "layout" ? null : currentPageId,
       layoutId,
@@ -350,7 +350,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // PreviewPage (RuntimePage) 형태로 변환
     const previewPages = currentPages.map((p) =>
-      withLegacyLayoutId(
+      withPageFrameBinding(
         {
           id: p.id,
           title: p.title,
@@ -358,7 +358,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           order_num: p.order_num ?? 0,
           parent_id: p.parent_id ?? null,
         },
-        getLegacyLayoutId(p),
+        getNullablePageFrameBindingId(p),
       ),
     );
 
@@ -987,7 +987,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const layoutId =
       currentEditMode === "layout"
         ? selectedReusableFrameId
-        : getLegacyLayoutId(currentPage);
+        : getNullablePageFrameBindingId(currentPage);
 
     // 이전 값과 같으면 스킵
     if (
@@ -1092,7 +1092,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     const pagesJson = JSON.stringify(
       pages.map((p) =>
-        withLegacyLayoutId(
+        withPageFrameBinding(
           {
             id: p.id,
             title: p.title,
@@ -1100,7 +1100,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             order_num: p.order_num ?? 0,
             parent_id: p.parent_id ?? null,
           },
-          getLegacyLayoutId(p),
+          getNullablePageFrameBindingId(p),
         ),
       ),
     );

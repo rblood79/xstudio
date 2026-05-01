@@ -22,7 +22,7 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { LayoutPresetSelector } from "./LayoutPresetSelector";
 import { LayoutSlugEditor } from "./LayoutSlugEditor";
-import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 
 export const LayoutBodyEditor = memo(
   function LayoutBodyEditor({
@@ -35,7 +35,7 @@ export const LayoutBodyEditor = memo(
       const element = useStore.getState().elementsMap.get(elementId);
       return {
         customId: element?.customId || "",
-        layoutId: element ? getElementLayoutId(element) : null,
+        layoutId: element ? getFrameElementMirrorId(element) : null,
       };
     }, [elementId]);
 

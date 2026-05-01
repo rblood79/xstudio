@@ -31,15 +31,30 @@ import {
 import { useLayouts } from "../../../stores/layouts";
 import { iconSmall } from "../../../../utils/ui/uiConstants";
 import {
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../../../adapters/canonical/legacyElementFields";
+  getNullablePageFrameBindingId,
+  withPageFrameBinding,
+} from "../../../../adapters/canonical/frameMirror";
+import type { Page } from "../../../../types/builder/unified.types";
 
 interface PageParentSelectorProps {
   pageId: string;
 }
 
 const MAX_NESTING_DEPTH = 5;
+
+function toUrlPage(page: Page) {
+  return withPageFrameBinding(
+    {
+      id: page.id,
+      title: page.title,
+      slug: page.slug,
+      project_id: page.project_id,
+      parent_id: page.parent_id,
+      order_num: page.order_num,
+    },
+    getNullablePageFrameBindingId(page),
+  );
+}
 
 export const PageParentSelector = memo(function PageParentSelector({
   pageId,
@@ -63,23 +78,13 @@ export const PageParentSelector = memo(function PageParentSelector({
   const previewUrl = useMemo(() => {
     if (!page) return "/";
 
-    const pageLayoutId = getLegacyLayoutId(page);
+    const pageLayoutId = getNullablePageFrameBindingId(page);
     const layout = pageLayoutId
       ? layouts.find((l) => l.id === pageLayoutId)
       : null;
 
     return generatePageUrl({
-      page: withLegacyLayoutId(
-        {
-          id: page.id,
-          title: page.title,
-          slug: page.slug,
-          project_id: page.project_id,
-          parent_id: page.parent_id,
-          order_num: page.order_num,
-        },
-        pageLayoutId,
-      ),
+      page: toUrlPage(page),
       layout: layout
         ? {
             id: layout.id,
@@ -88,19 +93,7 @@ export const PageParentSelector = memo(function PageParentSelector({
             slug: layout.slug || undefined,
           }
         : null,
-      allPages: pages.map((p) =>
-        withLegacyLayoutId(
-          {
-            id: p.id,
-            title: p.title,
-            slug: p.slug,
-            project_id: p.project_id,
-            parent_id: p.parent_id,
-            order_num: p.order_num,
-          },
-          getLegacyLayoutId(p),
-        ),
-      ),
+      allPages: pages.map(toUrlPage),
     });
   }, [page, pages, layouts]);
 
@@ -122,42 +115,11 @@ export const PageParentSelector = memo(function PageParentSelector({
       if (p.id === pageId) return;
       if (childPageIds.includes(p.id)) return;
 
-      const depthIfSelected =
-        getNestingDepth(
-          p.id,
-          pages.map((pg) =>
-            withLegacyLayoutId(
-              {
-                id: pg.id,
-                title: pg.title,
-                slug: pg.slug,
-                project_id: pg.project_id,
-                parent_id: pg.parent_id,
-                order_num: pg.order_num,
-              },
-              getLegacyLayoutId(pg),
-            ),
-          ),
-        ) + 1;
+      const depthIfSelected = getNestingDepth(p.id, pages.map(toUrlPage)) + 1;
 
       if (depthIfSelected >= MAX_NESTING_DEPTH) return;
 
-      const depth = getNestingDepth(
-        p.id,
-        pages.map((pg) =>
-          withLegacyLayoutId(
-            {
-              id: pg.id,
-              title: pg.title,
-              slug: pg.slug,
-              project_id: pg.project_id,
-              parent_id: pg.parent_id,
-              order_num: pg.order_num,
-            },
-            getLegacyLayoutId(pg),
-          ),
-        ),
-      );
+      const depth = getNestingDepth(p.id, pages.map(toUrlPage));
       const indent = "  ".repeat(depth);
 
       options.push({ value: p.id, label: `${indent}${p.title}` });
@@ -170,23 +132,7 @@ export const PageParentSelector = memo(function PageParentSelector({
     async (newParentId: string) => {
       if (
         newParentId &&
-        hasCircularReference(
-          pageId,
-          newParentId,
-          pages.map((p) =>
-            withLegacyLayoutId(
-              {
-                id: p.id,
-                title: p.title,
-                slug: p.slug,
-                project_id: p.project_id,
-                parent_id: p.parent_id,
-                order_num: p.order_num,
-              },
-              getLegacyLayoutId(p),
-            ),
-          ),
-        )
+        hasCircularReference(pageId, newParentId, pages.map(toUrlPage))
       ) {
         console.error("[PageParentSelector] Circular reference detected");
         return;

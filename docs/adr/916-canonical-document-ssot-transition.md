@@ -146,6 +146,18 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
 - **2026-05-02 — ADR-911/916 G5 fifth cleanup slice**:
   - properties/canvas runtime 의 frame membership 판정을 `isFrameElementForFrame()` adapter predicate 로 통일했다. `matchesLegacyLayoutId` direct import 는 `apps/builder/src/adapters/canonical/**` 내부만 남는다.
   - 검증: targeted vitest `frameElementLoader.test.ts` + `resolvePageWithFrame.test.ts` + `buildFrameRendererInput.test.ts` + `selectionHitTest.test.ts` + `useElementHoverInteraction.test.ts` + `ElementSlotSelector.test.tsx` + `usePresetApply.static.test.ts` 7 files / 36 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 sixth cleanup slice**:
+  - Page/frame mirror id read/write helper 를 `frameMirror` canonical adapter 로 분리했다. `usePageManager` 의 page 생성/hydrate/frame element 추출과 `PageParentSelector`/`ElementSlotSelector`/`resolvePageWithFrame` 의 page-frame binding read 가 adapter API 를 경유한다.
+  - 검증: targeted vitest `frameMirror.test.ts` + `pageFrameBinding.test.ts` + `usePageManager.canonical.test.ts` + `ElementSlotSelector.test.tsx` + `resolvePageWithFrame.test.ts` 5 files / 28 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 seventh cleanup slice**:
+  - `useIframeMessenger` 와 `AddPageDialog` 의 page-frame mirror read/write 를 `frameMirror` adapter 로 전환했다. Preview payload 와 page URL preview 생성 경로에서 direct `legacyElementFields` import 를 제거했다.
+  - 검증: targeted vitest `useIframeMessenger.canonical.test.ts` + `AddPageDialog.static.test.ts` + `frameMirror.test.ts` + `usePageManager.canonical.test.ts` 4 files / 19 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 eighth cleanup slice**:
+  - Element ownership mirror read/write 를 `frameMirror` adapter 로 확장했다. factory/add, frame element tree, frame slot default insert, slider range thumb insert, multi-element copy, canvas delta sanitize, layout preset slot creation caller 의 direct `legacyElementFields` helper import 를 제거했다.
+  - 검증: targeted vitest `frameMirror.test.ts` + `useElementCreator.test.ts` + `multiElementCopy.test.ts` + `elementCreationCanonical.test.ts` + `FrameSlotSection.test.tsx` + `FrameElementTree.test.tsx` + `usePresetApply.static.test.ts` 7 files / 45 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 ninth cleanup slice**:
+  - Validation/properties/canvas layout/skia read hot path 의 frame ownership read 를 `frameMirror` adapter 로 전환했다. `useValidation`, `useErrorHandler`, `PropertiesPanel`, `LayoutBodyEditor`, `LayerTree` drop validation, `elements` page layout invalidation, canvas selection, layout publish/cache, full-tree layout, Skia overlay/selection/visible roots 의 direct ownership helper import 를 제거했다.
+  - 검증: targeted vitest 13 files / 51 tests PASS.
 
 ## Context
 

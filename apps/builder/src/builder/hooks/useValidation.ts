@@ -2,7 +2,7 @@ import { useCallback, useRef } from "react";
 import { Element } from "../../types/core/store.types";
 import { reorderElements } from "../stores/utils/elementReorder";
 import { useStore } from "../stores";
-import { getElementLayoutId } from "../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../adapters/canonical/frameMirror";
 
 export interface UseValidationReturn {
   validateOrderNumbers: (elements: Element[]) => void;
@@ -20,7 +20,7 @@ export const useValidation = (): UseValidationReturn => {
     const groups = elements.reduce(
       (acc, element) => {
         const contextId =
-          element.page_id || getElementLayoutId(element) || "unknown";
+          element.page_id || getFrameElementMirrorId(element) || "unknown";
         const key = `${contextId}_${element.parent_id || "root"}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(element);
@@ -60,7 +60,7 @@ export const useValidation = (): UseValidationReturn => {
 
         // 중복 order_num 확인
         if (currentOrder === nextOrder) {
-          const pageId = current.page_id || getElementLayoutId(current);
+          const pageId = current.page_id || getFrameElementMirrorId(current);
           if (pageId) {
             pagesWithDuplicates.add(pageId);
           }

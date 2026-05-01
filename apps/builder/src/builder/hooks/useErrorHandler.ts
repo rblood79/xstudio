@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Element } from "../../types/core/store.types";
 import { ElementUtils } from "../../utils/element/elementUtils";
-import { hasLegacyLayoutId } from "../../adapters/canonical/legacyElementFields";
+import { hasFrameElementMirrorId } from "../../adapters/canonical/frameMirror";
 
 export interface ErrorInfo {
   id: string;
@@ -311,7 +311,7 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
           errors.push(`요소 ${element.id}: 태그가 없습니다.`);
         }
         // ⭐ Layout/Slot System: page_id 또는 legacy layout binding 중 하나는 있어야 함
-        if (!element.page_id && !hasLegacyLayoutId(element)) {
+        if (!element.page_id && !hasFrameElementMirrorId(element)) {
           errors.push(
             `요소 ${element.id}: 페이지 ID 또는 레이아웃 ID가 없습니다.`,
           );

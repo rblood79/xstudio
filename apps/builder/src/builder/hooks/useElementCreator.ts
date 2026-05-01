@@ -11,7 +11,7 @@ import { COMPLEX_COMPONENT_TAGS } from "../factories/constants";
 import { useErrorHandler, type ErrorInfo } from "./useErrorHandler";
 import { generateCustomId } from "../utils/idGeneration";
 import { ElementUtils } from "../../utils/element/elementUtils";
-import { withLegacyLayoutId } from "../../adapters/canonical/legacyElementFields";
+import { withFrameElementMirrorId } from "../../adapters/canonical/frameMirror";
 //import { useStore } from '../stores';
 
 export interface UseElementCreatorReturn {
@@ -218,7 +218,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 elements,
               );
 
-              const newElement: Element = withLegacyLayoutId(
+              const newElement: Element = withFrameElementMirrorId(
                 {
                   id: crypto.randomUUID(), // UUID 생성
                   type,

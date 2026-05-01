@@ -10,9 +10,9 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import {
-  getElementLayoutId,
-  withLegacyLayoutId,
-} from "../../../../adapters/canonical/legacyElementFields";
+  getFrameElementMirrorId,
+  withFrameElementMirrorId,
+} from "../../../../adapters/canonical/frameMirror";
 
 /**
  * Slider hybrid afterSections — Range Mode만 수동
@@ -99,7 +99,7 @@ export const SliderHybridAfterSections = memo(
             if (thumbCount < 2) {
               const parentEl = elementsMap.get(elementId);
               await store.addElement(
-                withLegacyLayoutId(
+                withFrameElementMirrorId(
                   {
                     id: crypto.randomUUID(),
                     type: "SliderThumb",
@@ -111,7 +111,7 @@ export const SliderHybridAfterSections = memo(
                     order_num: thumbCount,
                     deleted: false,
                   },
-                  parentEl ? getElementLayoutId(parentEl) : null,
+                  parentEl ? getFrameElementMirrorId(parentEl) : null,
                 ),
               );
             }

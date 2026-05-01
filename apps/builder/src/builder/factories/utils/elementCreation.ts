@@ -9,7 +9,7 @@ import { applyFactoryPropagation } from "../../utils/propagationEngine";
 import { resolveOwnerPageId } from "../../../adapters/canonical/legacyMetadata";
 // ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
-import { withLegacyLayoutId } from "../../../adapters/canonical/legacyElementFields";
+import { withFrameElementMirrorId } from "../../../adapters/canonical/frameMirror";
 
 /**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성 시 필요한 컨텍스트.
@@ -42,7 +42,7 @@ export function createElementsFromDefinition(
   const resolvedPageId = resolveOwnerPageId(pageId, layoutId);
 
   // 부모 요소 생성
-  const parent: Element = withLegacyLayoutId(
+  const parent: Element = withFrameElementMirrorId(
     {
       ...definition.parent,
       id: ElementUtils.generateId(),
@@ -64,7 +64,7 @@ export function createElementsFromDefinition(
   ): void {
     childDefs.forEach((childDef) => {
       const { children: nestedChildren, ...elementDef } = childDef;
-      const child: Element = withLegacyLayoutId(
+      const child: Element = withFrameElementMirrorId(
         {
           ...elementDef,
           id: ElementUtils.generateId(),

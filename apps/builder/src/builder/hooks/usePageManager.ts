@@ -10,10 +10,11 @@ import { selectCanonicalDocument } from "../stores/elements";
 import { mergeElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
 import { selectCanonicalReusableFrames } from "../../adapters/canonical";
 import {
-  getElementLayoutId,
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  getFrameElementMirrorId,
+  getNullablePageFrameBindingId,
+  getReusableFrameMirrorId,
+  withPageFrameBinding,
+} from "../../adapters/canonical/frameMirror";
 import { useLayoutsStore } from "../stores/layouts";
 import { useViewportSyncStore } from "../workspace/canvas/stores";
 import type { ElementProps } from "../../types/integrations/supabase.types";
@@ -23,18 +24,8 @@ import { enqueuePagePersistence } from "../utils/pagePersistenceQueue";
 import { scheduleNextFrame } from "../utils/scheduleTask";
 import { loadFrameElements } from "../../adapters/canonical/frameElementLoader";
 import type { Layout } from "../../types/builder/layout.types";
-import type { FrameNode } from "@composition/shared";
 
 const PAGE_STACK_GAP = 80;
-
-function getLegacyLayoutIdFromReusableFrame(frame: FrameNode): string {
-  const metadata = frame.metadata as { layoutId?: unknown } | undefined;
-  const rawId =
-    typeof metadata?.layoutId === "string" && metadata.layoutId.length > 0
-      ? metadata.layoutId
-      : frame.id;
-  return rawId.startsWith("layout-") ? rawId.slice("layout-".length) : rawId;
-}
 
 async function getProjectLayoutsForCanonical(
   db: unknown,
@@ -241,7 +232,7 @@ export const usePageManager = ({
           const currentPage = pages.find((p) => p.id === pageId);
           const allElements = [...elementsData];
 
-          const pageFrameId = getLegacyLayoutId(currentPage);
+          const pageFrameId = getNullablePageFrameBindingId(currentPage);
           if (pageFrameId) {
             const layoutElements = await loadFrameElements(db, pageFrameId);
             console.log(
@@ -306,7 +297,7 @@ export const usePageManager = ({
         );
         const nextOrderNum = maxOrderNum + 1;
 
-        const newPageData: Page = withLegacyLayoutId(
+        const newPageData: Page = withPageFrameBinding(
           {
             id: ElementUtils.generateId(),
             project_id: projectId,
@@ -387,7 +378,7 @@ export const usePageManager = ({
         );
         const nextOrderNum = maxOrderNum + 1;
 
-        const newPageData: Page = withLegacyLayoutId(
+        const newPageData: Page = withPageFrameBinding(
           {
             id: ElementUtils.generateId(),
             project_id: projectId,
@@ -500,7 +491,7 @@ export const usePageManager = ({
 
         // IndexedDB Page를 ApiPage로 변환
         const apiPages: ApiPage[] = projectPages.map((p) =>
-          withLegacyLayoutId(
+          withPageFrameBinding(
             {
               id: p.id,
               project_id: p.project_id,
@@ -511,7 +502,7 @@ export const usePageManager = ({
               created_at: p.created_at || new Date().toISOString(),
               updated_at: p.updated_at || new Date().toISOString(),
             },
-            getLegacyLayoutId(p),
+            getNullablePageFrameBindingId(p),
           ),
         );
 
@@ -523,7 +514,7 @@ export const usePageManager = ({
         const storePages = apiPages.map((p) => {
           // IndexedDB의 원본 페이지에서 legacy layout binding 가져오기
           const originalPage = projectPages.find((pp) => pp.id === p.id);
-          return withLegacyLayoutId(
+          return withPageFrameBinding(
             {
               id: p.id,
               title: p.title,
@@ -532,7 +523,8 @@ export const usePageManager = ({
               parent_id: p.parent_id ?? null,
               order_num: p.order_num,
             },
-            getLegacyLayoutId(p) ?? getLegacyLayoutId(originalPage),
+            getNullablePageFrameBindingId(p) ??
+              getNullablePageFrameBindingId(originalPage),
           );
         });
         const {
@@ -586,10 +578,10 @@ export const usePageManager = ({
         );
         const reusableFrames = selectCanonicalReusableFrames(canonicalDoc);
         const layoutIdSet = new Set(
-          reusableFrames.map(getLegacyLayoutIdFromReusableFrame),
+          reusableFrames.map(getReusableFrameMirrorId),
         );
         const layoutElements = allElements.filter((el) => {
-          const elementLayoutId = getElementLayoutId(el);
+          const elementLayoutId = getFrameElementMirrorId(el);
           return elementLayoutId != null && layoutIdSet.has(elementLayoutId);
         });
 

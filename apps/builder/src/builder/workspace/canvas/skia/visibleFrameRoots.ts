@@ -18,7 +18,7 @@
  */
 
 import type { SkiaRendererInput } from "../renderers";
-import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../../adapters/canonical/frameMirror";
 
 export interface VisibleFrameRootBuildResult {
   /** frame body element id → { x, y } — `visiblePageRoots` 와 동일 shape */
@@ -51,7 +51,7 @@ export function collectVisibleFrameRoots(
     if (el.type !== "body") continue;
     if (el.page_id != null) continue;
     if (el.deleted) continue;
-    const layoutId = getElementLayoutId(el);
+    const layoutId = getFrameElementMirrorId(el);
     if (!layoutId) continue;
     if (!bodyByLayoutId.has(layoutId)) {
       bodyByLayoutId.set(layoutId, el.id);

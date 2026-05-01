@@ -14,9 +14,9 @@
 
 import type { Element } from "../../types/core/store.types";
 import {
-  getElementLayoutId,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  getFrameElementMirrorId,
+  withFrameElementMirrorId,
+} from "../../adapters/canonical/frameMirror";
 import {
   getElementDataBinding,
   getElementEvents,
@@ -254,7 +254,7 @@ export class CanvasDeltaMessenger {
       return JSON.parse(JSON.stringify(element));
     } catch {
       // Proxy 오류 시 수동 복사
-      return withLegacyLayoutId(
+      return withFrameElementMirrorId(
         {
           id: element.id,
           type: element.type,
@@ -267,7 +267,7 @@ export class CanvasDeltaMessenger {
           dataBinding: getElementDataBinding(element),
           fills: element.fills,
         },
-        getElementLayoutId(element),
+        getFrameElementMirrorId(element),
       );
     }
   }

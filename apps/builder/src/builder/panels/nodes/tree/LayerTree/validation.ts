@@ -1,5 +1,5 @@
 import type { Key } from "react-stately";
-import { getElementLayoutId } from "../../../../../adapters/canonical/legacyElementFields";
+import { getFrameElementMirrorId } from "../../../../../adapters/canonical/frameMirror";
 import type { LayerTreeNode } from "./types";
 
 type TreeDataLike = {
@@ -43,7 +43,8 @@ export function isValidDrop(
   const targetElement = targetNode.element;
   if (
     draggedElement.page_id !== targetElement.page_id ||
-    getElementLayoutId(draggedElement) !== getElementLayoutId(targetElement)
+    getFrameElementMirrorId(draggedElement) !==
+      getFrameElementMirrorId(targetElement)
   ) {
     return { valid: false, reason: "context-mismatch" };
   }

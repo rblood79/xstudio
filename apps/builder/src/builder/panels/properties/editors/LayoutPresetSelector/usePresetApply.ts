@@ -21,10 +21,8 @@ import type {
 } from "./types";
 import type { Element } from "../../../../../types/builder/unified.types";
 import { isFrameElementForFrame } from "../../../../../adapters/canonical/frameElementLoader";
-import {
-  getLegacySlotName,
-  withLegacyLayoutId,
-} from "../../../../../adapters/canonical/legacyElementFields";
+import { withFrameElementMirrorId } from "../../../../../adapters/canonical/frameMirror";
+import { getLegacySlotName } from "../../../../../adapters/canonical/legacyElementFields";
 
 export { normalizeFramePresetContainerStyle } from "./presetStyle";
 
@@ -186,7 +184,7 @@ export function usePresetApply({
         let orderNum = 1;
         const slotElements: Element[] = slotsToCreate.map(
           (slotDef): Element =>
-            withLegacyLayoutId(
+            withFrameElementMirrorId(
               {
                 id: crypto.randomUUID(),
                 type: "Slot",

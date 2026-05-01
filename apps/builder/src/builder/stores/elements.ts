@@ -79,7 +79,7 @@ import {
   legacyToCanonical,
   type LegacyAdapterDeps,
 } from "@/adapters/canonical";
-import { getLegacyLayoutId } from "@/adapters/canonical/legacyElementFields";
+import { getNullablePageFrameBindingId } from "@/adapters/canonical/frameMirror";
 import type { LegacyAdapterInput } from "@/adapters/canonical/types";
 import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
 import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
@@ -89,7 +89,7 @@ import type { CompositionDocument } from "@composition/shared";
 import type { Layout } from "../../types/builder/layout.types";
 
 function pageLayoutId(page: Page): string | null {
-  return getLegacyLayoutId(page);
+  return getNullablePageFrameBindingId(page);
 }
 
 function shouldInvalidatePagesLayout(
