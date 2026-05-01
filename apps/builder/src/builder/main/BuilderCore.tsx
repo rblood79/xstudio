@@ -112,13 +112,26 @@ export const BuilderCore: React.FC = () => {
 
   // ADR-916 Phase 5 G6-2 third slice — canonicalMutations DI registration.
   // wrapper API (canonicalMutations.ts) 의 ESM circular import chain 차단을
-  // 위해 callback registration pattern 사용. mount 시점 1회 등록.
+  // 위해 callback registration pattern 사용. mount + projectId 변경 시 등록.
+  //
+  // 2026-05-02 §8.7 확장 — canonical primary reverse path 용 callback 2 추가:
+  // - getCurrentLegacySnapshot: legacy state 전체 snapshot (elements/pages/layouts)
+  // - getCurrentProjectId: 활성 projectId (canonical store setDocument target)
   useEffect(() => {
     registerCanonicalMutationStoreActions({
       mergeElements: useStore.getState().mergeElements,
       setElements: useStore.getState().setElements,
+      getCurrentLegacySnapshot: () => {
+        const state = useStore.getState();
+        return {
+          elements: Array.from(state.elementsMap.values()),
+          pages: state.pages,
+          layouts: useLayoutsStore.getState().layouts,
+        };
+      },
+      getCurrentProjectId: () => projectId ?? null,
     });
-  }, []);
+  }, [projectId]);
 
   // ADR-916 Phase 2 G3 — Canonical document write-through sync (caller-driven).
   // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 projectId 명시 전달하여 sync 시작.

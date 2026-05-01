@@ -23,12 +23,21 @@
  * - useStore (elementsMap / pages) — native subscribe
  * - useLayoutsStore (layouts) — native subscribe (persist middleware native fallback OK)
  * - useDataStore subscribe 제거 — caller 가 projectId 명시 전달
+ *
+ * **2026-05-02 §8.7 — canonical primary mode 분기**:
+ * `isCanonicalPrimaryEnabled()=true` 시 legacy → canonical sync 자체 disable.
+ * canonical primary path 에서는 wrapper (canonicalMutations.ts) 가 직접
+ * canonical setDocument + legacy mirror 양쪽 처리 — sync 모듈이 추가 처리하면
+ * 중복 쓰기 발생 (legacy mirror → useStore.subscribe → sync 재호출). 단
+ * `currentProjectId` 만 set 해서 canonical selector (`useActiveCanonicalDocument`
+ * 등) 가 정상 동작.
  */
 
 import { useStore } from "..";
 import { useLayoutsStore } from "../layouts";
 import { selectCanonicalDocument } from "../elements";
 import { useCanonicalDocumentStore } from "./canonicalDocumentStore";
+import { isCanonicalPrimaryEnabled } from "@/utils/featureFlags";
 
 // ─────────────────────────────────────────────
 // Sync state
@@ -92,6 +101,16 @@ export function startCanonicalDocumentSync(projectId: string): () => void {
   const canonical = useCanonicalDocumentStore.getState();
   if (canonical.currentProjectId !== projectId) {
     canonical.setCurrentProject(projectId);
+  }
+
+  // §8.7 — canonical primary mode 활성 시 legacy → canonical sync disable.
+  // wrapper (canonicalMutations.ts) 가 직접 canonical setDocument + legacy
+  // mirror 양쪽 처리 → 본 모듈의 listener 등록 시 중복 쓰기 발생.
+  // currentProjectId 만 set 한 채로 listener skip + cleanup 시 reset.
+  if (isCanonicalPrimaryEnabled()) {
+    return () => {
+      useCanonicalDocumentStore.getState().setCurrentProject(null);
+    };
   }
 
   // 2. initial sync — projectId 가 set 된 직후 즉시 hydration.

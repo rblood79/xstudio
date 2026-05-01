@@ -597,6 +597,55 @@ rg -n "elementsApi\.(create|update|insert|delete)|setElements\(|mergeElements\("
 # → 0 matches 가 G4 PASS 시그널 (D18=A 단일 SSOT 격리 검증)
 ```
 
+### 8.7 wrapper 내부 진정 reverse — drift #1 본질 work (2026-05-02 land 진입)
+
+**framing 정정 (2026-05-02 사용자 정정 trigger)**: §8.6 grep gate baseline 0 도달 = **형식적 PASS**. caller 16 site 가 wrapper 통해 호출 ✅, 그러나 wrapper 내부는 여전히 legacy mutation primary ❌ → HC #1 ("최종 SSOT 고정 = `CompositionDocument`") reverse 미도달. **drift #1 본질 work = wrapper 5 내부 reverse + canonicalDocumentSync 방향 swap**.
+
+**monitoring 1-2주 framing 정정**: §8.3 의 "3-A monitoring 1-2주 destructive=0 evidence" 는 보수적 안전 장치였으나, evidence 의 본질 = **fixture coverage + edge case 검증** 이지 시간 텀 자체가 mitigation 강화 아님. fixture coverage 충분도가 본질. 따라서 monitoring 우회 + 즉시 reverse 가능 — fixture coverage gap 발견 시 즉시 fixture 보강 의무로 대체.
+
+#### 8.7.1 wrapper 5 ↔ canonical store action 매핑표
+
+본 §8.7 진입 시점 (2026-05-02) baseline:
+
+| wrapper                                  | input                     | 카테고리        | canonical reverse path                                                                                                                                                             | 무한 루프 방지                                 |
+| ---------------------------------------- | ------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `mergeElementsCanonicalPrimary`          | `Element[]` (병합)        | in-memory       | (1) 현재 legacy state + 입력 elements merge → (2) `legacyToCanonical()` full doc → (3) `canonical.setDocument()` → (4) `exportLegacyDocument()` 결과 `legacy.setElements()` mirror | flag enable 시 `canonicalDocumentSync` disable |
+| `setElementsCanonicalPrimary`            | `Element[]` (전체 교체)   | in-memory       | (1) 입력 elements + 기존 pages/layouts → (2) `legacyToCanonical()` full doc → (3) `canonical.setDocument()` → (4) `exportLegacyDocument()` 결과 `legacy.setElements()` mirror      | 동일                                           |
+| `createElementCanonicalPrimary`          | `Partial<Element>` (DB)   | DB persist only | DB `elementsApi.createElement()` 그대로 — caller 가 반환 Element 받아서 별도 in-memory 호출. canonical reverse 영향 없음                                                           | —                                              |
+| `updateElementCanonicalPrimary`          | `(id, patch)` (DB)        | DB persist only | 동일 — DB persist 만, in-memory 무관                                                                                                                                               | —                                              |
+| `createMultipleElementsCanonicalPrimary` | `Partial<Element>[]` (DB) | DB persist only | 동일                                                                                                                                                                               | —                                              |
+
+**진정 reverse work scope = in-memory wrapper 2개** (`mergeElements` / `setElements`). DB wrapper 3개는 reverse 영향 없음 (DB row = legacy export 결과, schema 변경 없음 = D17=A).
+
+#### 8.7.2 4 의문 정밀화
+
+1. **mergeElements 의 신규/기존 분기**: `legacy state + 입력 elements` merge 시 동일 id 면 입력으로 덮어쓰기. `legacyToCanonical(mergedElements)` 가 canonical doc 재생성 — full document 재구성 path. per-element insertNode/updateNode 분기 불필요 (full doc 재구성이 더 robust, lookup 키 분리 — segId vs uuid — 회피).
+2. **setElements 전체 교체**: 입력 elements + **기존 pages/layouts 보존** (입력 elements 만 변경, pages/layouts 는 이전 state). `legacyToCanonical({elements: input, pages: currentPages, layouts: currentLayouts})` 호출.
+3. **DB persist 와 in-memory 순서**: DB wrapper 3개는 DB save 후 caller 가 반환 Element 받아서 별도 in-memory wrapper 호출 (현재 caller 패턴). canonical reverse 시점에도 동일 — DB save 는 reverse 무관, in-memory wrapper 만 reverse.
+4. **무한 루프 방지**: wrapper 가 canonical setDocument + legacy setElements 양쪽 호출 → `canonicalDocumentSync` 가 useStore.subscribe 으로 legacy mutation 감지 → 또 canonical setDocument 재호출 (중복 처리). 해결 = flag enable 시 `canonicalDocumentSync` disable (Phase B.2 §8.7.4).
+
+#### 8.7.3 sub-step β/γ/δ 정의
+
+| sub-step                         | 정의                                                                                                      | scope             | 위험                                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------- |
+| **β monitoring trigger** (선택)  | `shadowWriteSubscription` module + flag `VITE_ADR916_SHADOW_WRITE` — dev 환경 destructive=0 evidence 수집 | 후속 sub-phase    | LOW — fixture coverage 충분도 검증 보강용. monitoring 1-2주는 본질 의무 아님 |
+| **γ wrapper internal reverse**   | mergeElements / setElements wrapper 2개 내부 reverse + DI deps 확장 (legacyToCanonical caller 주입)       | 본 §8.7 본격 land | HIGH — fixture coverage gap 발견 시 즉시 fixture 보강 의무                   |
+| **δ canonicalDocumentSync swap** | flag enable 시 sync disable (canonical primary 면 mirror 생성 충돌 회피)                                  | γ 와 동일 PR      | MED — flag toggle test 회귀 검증 의무                                        |
+
+#### 8.7.4 진입 순서 (확정)
+
+1. **γ + δ 통합 land** (본 §8.7 진입 본격 work, ~2-3d HIGH) — wrapper 2 reverse + sync 방향 swap + flag `VITE_ADR916_CANONICAL_PRIMARY` land + vitest 회귀 (canonical 광역 175+ 유지 + setup fail 0 + g5 grep gate baseline 0 유지)
+2. **β monitoring** (선택, γ land 후 evidence 보강용) — `shadowWriteSubscription` + dev 환경 destructive=0 evidence 수집. 본 §8.7 본격 PASS 시그널과 분리
+3. **3-D schemaVersion 실 bump** — γ land 후 신규 backup `canonical-primary-1.0` marker. design §8.3 step 6 정합
+
+#### 8.7.5 land 후 재검증 의무
+
+- `canonical 광역 175+` PASS 유지 (canonicalDocumentStore 37 + bridge 22 + sync 11 + view 7 + exportLegacyDocument 5 + diffLegacyRoundtrip 8 + restoreFromLegacyBackup 5 + shadowWriteDiff 7 + g5LegacyFieldGrepGate + 기타)
+- setup fail 영역 (`itemsActions.test.ts` + `pagesLayoutInvalidation.test.ts`) 10/10 PASS
+- g5 grep gate baseline 0 유지 — wrapper reverse 가 `apps/builder/src/adapters/**` exclude 영역 안에 배치되어 grep gate 영향 0
+- type-check 3/3 PASS
+- 사용자 dev 환경 1회 사용 evidence — `VITE_ADR916_CANONICAL_PRIMARY=true` enable 후 page element add/edit/delete 시나리오에서 destructive diff 0 (`shadowWriteDiff` evaluator 사용)
+
 ## 9. Phase 4 — Legacy Field Quarantine
 
 ADR-913 Phase 5와 ADR-911 잔여 layout cleanup을 본 ADR의 final gate로 묶는다. ADR-914의 독립 imports resolver/cache 계획은 2026-04-30 superseded 처리됐으므로, `imports` 자체는 canonical core hook으로 유지하되 fetch/cache/resolver 실행 경계는 본 ADR의 adapter/import/export 단계에서 다시 확정한다.

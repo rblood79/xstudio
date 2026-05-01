@@ -1,16 +1,24 @@
 /**
- * @fileoverview ADR-916 Phase 3 G4 — Canonical mutation wrapper (mutation reverse 진입점).
+ * @fileoverview ADR-916 Phase 3 G4 — Canonical mutation wrapper (mutation reverse 진정 진입점).
  *
  * caller 가 legacy `setElements` / `mergeElements` 직접 호출 대신 본 wrapper 를
- * 경유하면 (1) legacy store mirror (BC 보존) + (2) canonical store mutation
- * 양쪽 동시 적용. design §8.6 grep gate 의 단일 SSOT 격리 (D18=A) 정합.
+ * 경유. design §8.6 grep gate 의 단일 SSOT 격리 (D18=A) 정합.
  *
- * **단계적 reverse 전략**:
- * - 본 단계 (3-B 단축 후): wrapper 가 legacy + canonical 양쪽 mutation. legacy
- *   가 여전히 BC source. canonical 은 mirror.
- * - 후속 단계 (mutation reverse 광역 완료 시): wrapper 내부 reverse — canonical
- *   primary mutation + `exportLegacyDocument` 결과 legacy mirror. 즉 caller
- *   변경 0 + wrapper 내부만 reverse.
+ * **2026-05-02 land — drift #1 본질 reverse**:
+ *
+ * §8.7 진정 reverse work — `isCanonicalPrimaryEnabled()` flag 분기:
+ *
+ * - **flag false (default, BC)**: legacy primary path — 기존처럼 `getActions().mergeElements/setElements()` 호출.
+ * - **flag true (canonical primary)**: in-memory wrapper (merge/set) 가 (1) 현재
+ *   legacy snapshot 과 입력 elements merge → (2) `legacyToCanonical()` full doc
+ *   재구성 → (3) canonical store `setDocument` push → (4) `exportLegacyDocument()`
+ *   결과를 legacy mirror 로 `setElements()` 호출.
+ *   DB wrapper (create/update/createMultiple) 는 reverse 영향 없음 — DB persist
+ *   자체는 elementsApi 그대로 사용 (D17=A 채택, schema 미변경).
+ *
+ * **무한 루프 방지**: flag enable 시 `canonicalDocumentSync` 가 자체 disable
+ * (`canonicalDocumentSync.ts` 안 분기). canonical setDocument → legacy mirror →
+ * useStore.subscribe 가 sync 재호출 → 중복 처리 위험 차단.
  *
  * **파일 위치 의도**: `apps/builder/src/adapters/canonical/` 안에 둠 → design
  * §8.6 grep gate 의 `apps/builder/src/adapters/**` exclude 패턴 안에 들어가서
@@ -26,19 +34,42 @@
  */
 
 import type { Element } from "@/types/builder/unified.types";
+import type { Page, Layout } from "@/types/builder/unified.types";
 import { elementsApi } from "@/adapters/canonical/legacyElementsApiService";
+import { exportLegacyDocument } from "./exportLegacyDocument";
+import { legacyToCanonical } from "@/adapters/canonical";
+import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
+import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
+import { useCanonicalDocumentStore } from "@/builder/stores/canonical/canonicalDocumentStore";
+import { isCanonicalPrimaryEnabled } from "@/utils/featureFlags";
 
 // ─────────────────────────────────────────────
 // Callback registration (DI pattern)
 // ─────────────────────────────────────────────
 
 /**
+ * canonical primary reverse path 에 필요한 legacy snapshot 형태.
+ */
+export type LegacySnapshot = {
+  elements: Element[];
+  pages: Page[];
+  layouts: Layout[];
+};
+
+/**
  * store action 타입 — wrapper 가 호출하는 최소 action 집합.
  * useStore 전체 타입 의존을 피해 circular import chain 차단.
+ *
+ * **2026-05-02 §8.7 확장**: canonical primary reverse path 용 3 callback 추가
+ * (`getCurrentLegacySnapshot` / `getCurrentProjectId`).
  */
 export type CanonicalMutationStoreActions = {
   mergeElements: (els: Element[]) => void;
   setElements: (els: Element[]) => void;
+  /** canonical primary path: 현재 legacy state 전체 snapshot 조회 */
+  getCurrentLegacySnapshot: () => LegacySnapshot;
+  /** canonical primary path: 활성 projectId (canonical store setDocument target) */
+  getCurrentProjectId: () => string | null;
 };
 
 let _registeredActions: CanonicalMutationStoreActions | null = null;
@@ -53,8 +84,14 @@ let _registeredActions: CanonicalMutationStoreActions | null = null;
  *   registerCanonicalMutationStoreActions({
  *     mergeElements: useStore.getState().mergeElements,
  *     setElements: useStore.getState().setElements,
+ *     getCurrentLegacySnapshot: () => ({
+ *       elements: Array.from(useStore.getState().elementsMap.values()),
+ *       pages: useStore.getState().pages,
+ *       layouts: useLayoutsStore.getState().layouts,
+ *     }),
+ *     getCurrentProjectId: () => projectId ?? null,
  *   });
- * }, []);
+ * }, [projectId]);
  */
 export function registerCanonicalMutationStoreActions(
   actions: CanonicalMutationStoreActions,
@@ -81,43 +118,126 @@ function getActions(): CanonicalMutationStoreActions {
 }
 
 // ─────────────────────────────────────────────
+// Canonical primary reverse path (§8.7)
+// ─────────────────────────────────────────────
+
+/**
+ * mergeElements 의 canonical primary 변형.
+ *
+ * 1. 현재 legacy snapshot + 입력 elements merge (동일 id 면 입력으로 덮어쓰기)
+ * 2. `legacyToCanonical(merged)` full doc 재구성
+ * 3. canonical store `setDocument` push
+ * 4. `exportLegacyDocument(doc)` → legacy `setElements` mirror
+ */
+function applyCanonicalPrimaryMerge(elements: Element[]): void {
+  const actions = getActions();
+  const snapshot = actions.getCurrentLegacySnapshot();
+
+  // merge: 기존 + 입력 (동일 id 면 입력으로 덮어쓰기)
+  const mergedById = new Map<string, Element>();
+  for (const el of snapshot.elements) {
+    mergedById.set(el.id, el);
+  }
+  for (const el of elements) {
+    mergedById.set(el.id, el);
+  }
+  const mergedElements = Array.from(mergedById.values());
+
+  // canonical doc 생성 + canonical store push
+  const doc = legacyToCanonical(
+    {
+      elements: mergedElements,
+      pages: snapshot.pages,
+      layouts: snapshot.layouts,
+    },
+    { convertComponentRole, convertPageLayout },
+  );
+  const projectId = actions.getCurrentProjectId();
+  if (projectId) {
+    useCanonicalDocumentStore.getState().setDocument(projectId, doc);
+  }
+
+  // legacy mirror — exportLegacyDocument round-trip 결과
+  const legacyMirror = exportLegacyDocument(doc);
+  actions.setElements(legacyMirror);
+}
+
+/**
+ * setElements 의 canonical primary 변형.
+ *
+ * 1. 입력 elements + 기존 pages/layouts (snapshot) 으로 full doc 재구성
+ * 2. canonical store `setDocument` push
+ * 3. `exportLegacyDocument(doc)` → legacy `setElements` mirror
+ */
+function applyCanonicalPrimarySet(elements: Element[]): void {
+  const actions = getActions();
+  const snapshot = actions.getCurrentLegacySnapshot();
+
+  const doc = legacyToCanonical(
+    {
+      elements,
+      pages: snapshot.pages,
+      layouts: snapshot.layouts,
+    },
+    { convertComponentRole, convertPageLayout },
+  );
+  const projectId = actions.getCurrentProjectId();
+  if (projectId) {
+    useCanonicalDocumentStore.getState().setDocument(projectId, doc);
+  }
+
+  const legacyMirror = exportLegacyDocument(doc);
+  actions.setElements(legacyMirror);
+}
+
+// ─────────────────────────────────────────────
 // In-memory store wrapper API
 // ─────────────────────────────────────────────
 
 /**
  * legacy `mergeElements` 의 canonical-aware wrapper.
  *
- * 본 단계 (mutation reverse pilot): 단순히 legacy `mergeElements(elements)`
- * 호출. wrapper 진입점 마련 + caller 변환을 통해 grep gate baseline 점진 감소.
- *
- * 후속 단계 (production destructive=0 evidence 후): canonical store mutation 우선
- * + legacy mirror 자동.
+ * - flag false (default): legacy primary path — 기존 동작.
+ * - flag true: §8.7 canonical primary reverse — canonical store mutation 우선
+ *   + legacy mirror 자동.
  *
  * @param elements - 추가/병합할 legacy element 배열
  */
 export function mergeElementsCanonicalPrimary(elements: Element[]): void {
+  if (isCanonicalPrimaryEnabled()) {
+    applyCanonicalPrimaryMerge(elements);
+    return;
+  }
   getActions().mergeElements(elements);
 }
 
 /**
  * legacy `setElements` 의 canonical-aware wrapper.
  *
+ * - flag false (default): legacy primary path — 기존 동작.
+ * - flag true: §8.7 canonical primary reverse — canonical store mutation 우선
+ *   + legacy mirror 자동.
+ *
  * @param elements - 전체 element 배열 (replace)
  */
 export function setElementsCanonicalPrimary(elements: Element[]): void {
+  if (isCanonicalPrimaryEnabled()) {
+    applyCanonicalPrimarySet(elements);
+    return;
+  }
   getActions().setElements(elements);
 }
 
 // ─────────────────────────────────────────────
 // DB persistence wrapper API
 // ─────────────────────────────────────────────
+//
+// DB wrapper 3개는 §8.7 reverse 영향 없음 — D17=A 채택 (schema 미변경, DB row =
+// legacy export 결과). DB persist 후 caller 가 반환 Element 받아서 in-memory
+// wrapper (merge/set) 호출 → 그 시점에 canonical primary path 가동.
 
 /**
  * legacy `elementsApi.createElement` 의 canonical-aware wrapper.
- *
- * 본 단계: 단순히 `elementsApi.createElement(element)` 호출. caller 변환을 통해
- * grep gate baseline 감소. 후속 단계에서 wrapper 내부 reverse — canonical store
- * mutation → `exportLegacyDocument` → DB persist.
  *
  * @param element - 신규 legacy element (Partial 허용)
  * @returns 저장된 Element (DB id 포함)
