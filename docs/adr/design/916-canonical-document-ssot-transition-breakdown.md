@@ -1028,6 +1028,45 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 - **G6-2 (History + Preview/Publish) 진입**: G6-1 closure 후, design §10.2.2 sub-phase 그룹 정합.
 - **write boundary 영역 cleanup** (별 sub-phase, G7 closure 진정 work): `inspectorActions:285-286` payload write / createElement AI tool / undo-redo 복원 — `updateNodeExtension` API caller migration 진척 marker.
 
+#### 10.2.8 G6-1 second work land (2026-05-01) — canonical primary fallback + spec consumer parity evidence
+
+**framing**: G6-1 first work (closure 시그널 도달, §10.2.4~10.2.7) 완료 후 자연 후속 — Props canonical primary 렌더 경로 codify. G6-1 first work (Extension Boundary 영역 cleanup) 와 schema 직교 (events/dataBinding extension ⊥ component props). 1 PR LOW scope, 회귀 영역 0 (fallback 추가 + 기존 metadata.legacyProps 경로 보존).
+
+**fork checkpoint 4 질문 lock-in**:
+
+1. **base/응용 분류**: G6-1 first work 와 second work 는 직교 sibling slice (G6-1 안). base 관계 없음.
+2. **schema 직교성**: ✅ events/dataBinding (extension) ⊥ props (component canonical primary).
+3. **baseline framing reverse**: G6-1 first work 의 read site cleanup 결과가 second work prerequisite 영향 0 (fallback 경로 신설은 read backbone 영역, first work 와 영역 분리).
+4. **codex 3차 미루지 말 것**: LOW scope 1 PR — 회귀 영역 0, 사용자 surface 시 codex review 진입.
+
+**land 내용**:
+
+- **`canonicalNodeToElement` 에 canonical primary fallback 분기 추가** — `metadata.legacyProps` 없어도 `node.props` 가 정의된 노드는 `node.id/.type/.props/.name` 직접 사용해서 Element 복원. `parent_id`/`order_num` 은 caller parent context, `page_id`/`layout_id`/`fills` 는 null/undefined. page placeholder / slot synthetic (props 미정의) 노드는 기존대로 null skip — fallback 진입 조건 `node.props != null` 로 회귀 격리.
+  - 위치: `apps/builder/src/builder/stores/canonical/canonicalElementsView.ts:49-103`.
+  - docstring 갱신: 두 경로 분기 (legacy adapter vs canonical primary fallback) 명시 + null skip 조건 명시.
+- **fixture vitest 확장 (B-1 + B-2 신규 7건)** — `apps/builder/src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts`:
+  - **B-1 canonical primary fallback (5건)**: Button/TextField/Section 3종 fallback Element 복원 + name → componentName 매핑 + nested children parent context 승계 + node.props 미정의 노드 회귀 (page placeholder skip 유지) + metadata.legacyProps 우선순위 (양 경로 공존 시 legacy 우선).
+  - **B-2 spec consumer parity evidence (3건)**: ButtonSpec/TextFieldSpec/SectionSpec `render.shapes()` 가 양 경로 (legacy adapter 경유 vs canonical primary) 에서 동일 결과 산출. Skia + DOM 렌더 양쪽이 spec.render.shapes() 단일 산출에 의존하므로 본 evidence = 시각 정합 surrogate.
+- **vitest 결과**: canonicalElementsView.test.ts **23/23 PASS** (기존 16 + 신규 7).
+- **광역 회귀 0 검증**: `pnpm vitest run src/adapters/canonical src/resolvers/canonical src/builder/stores/canonical` baseline (origin/main `353e8fc05`, stash) **264/265 PASS** (1 fail = pre-existing `integration.test.ts TC1` resolver 영역) → 본 work 적용 후 **274/275 PASS** (+10 신규, 동일 1 fail). 본 work 회귀 0 ✅.
+- **type-check**: 3/3 PASS (FULL TURBO cache).
+
+**G6-1 진척 marker (closure)**:
+
+- ✅ G6-1 first work — Extension Boundary closure (events/dataBinding read site cleanup 47 → 0)
+- ✅ G6-1 second work — Props canonical primary fallback + spec consumer parity evidence
+
+**G6-1 closure 시그널 도달 ✅** (Extension Boundary + Props Parity 양 sub-phase 완료). Phase 5 G6-2 (History + Preview/Publish Parity) 진입 prerequisite 충족.
+
+**다음 sub-phase 권장**:
+
+- **G6-2 — History + Preview/Publish Parity** (LOW-MED, ~2-3d): canonical store mutation 의 history granularity (undo/redo) + Preview/Publish 의 canonical resolved tree 렌더 정합. ADR-911/913 결합 회피 가능, G6-1 회귀 codify 가 prerequisite (✅ 충족).
+- **write boundary cleanup** (별 sub-phase, G7 closure 진정 work): `inspectorActions:285-286` payload write / createElement AI tool / undo-redo 복원 — `updateNodeExtension` API caller migration 진척 marker. G6-2 와 병렬 가능 영역.
+
+**framing 의문 명시 — fallback 경로 활성화 시점**:
+
+본 세션 fallback 추가는 read backbone 의 두 경로 분기 codify 만 land. canonical primary write 진입 (실제 `node.props` 만 저장하는 경로) 은 Phase 3 G4 영역 — 본 fallback 은 Phase 3 G4 진입 시점에 실 사용. 현재는 회귀 codify + fixture evidence 만 land 상태로, 사용자-가시 영향 0.
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |

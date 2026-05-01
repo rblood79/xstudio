@@ -1,5 +1,6 @@
 /**
  * @fileoverview canonicalElementsView unit tests — ADR-916 Phase 2 G3 Step 1b/2
+ *   + Phase 5 G6-1 second work canonical primary fallback (2026-05-01)
  *
  * 검증 영역:
  * 1. canonicalDocumentToElements — DFS + metadata.legacyProps 역추적
@@ -8,11 +9,16 @@
  *    무손실 복원
  * 4. legacyToCanonical 결과를 그대로 통과시킨 round-trip 동등성
  * 5. (Step 2) useCanonicalSelectedElement — selectedElementId 단일 노드 변환
+ * 6. (G6-1 second work) canonical primary fallback — `metadata.legacyProps` 없이
+ *    `node.props` 만 정의된 노드도 Element 복원. Button/TextField/Section spec
+ *    consumer 가 양 경로 (legacy adapter / canonical primary) 에서 동일 shapes
+ *    산출하는 정합 evidence.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import type { CanonicalNode, CompositionDocument } from "@composition/shared";
+import { ButtonSpec, TextFieldSpec, SectionSpec } from "@composition/specs";
 
 import {
   canonicalDocumentToElements,
@@ -182,6 +188,296 @@ describe("canonicalDocumentToElements — metadata 미보존 노드", () => {
     ]);
 
     expect(canonicalDocumentToElements(doc)).toHaveLength(0);
+  });
+});
+
+// ─────────────────────────────────────────────
+// B-1. (G6-1 second work) canonical primary fallback
+// ─────────────────────────────────────────────
+//
+// metadata.legacyProps 없이 `node.props` 만 정의된 canonical primary write 결과
+// 노드도 Element 복원. page placeholder / slot synthetic (props 미정의) 은
+// 기존대로 null skip — fallback 진입 조건이 `node.props != null` 이므로 회귀 0.
+
+describe("canonicalDocumentToElements — canonical primary fallback (G6-1)", () => {
+  it("Button — metadata.legacyProps 없어도 node.props 로 Element 복원", () => {
+    const doc = makeDoc([
+      {
+        id: "canonical-btn-1",
+        type: "Button",
+        props: { variant: "primary", children: "Click me", size: "md" },
+      },
+    ]);
+
+    const elements = canonicalDocumentToElements(doc);
+    expect(elements).toHaveLength(1);
+    const el = elements[0];
+    expect(el.id).toBe("canonical-btn-1");
+    expect(el.type).toBe("Button");
+    expect(el.props).toEqual({
+      variant: "primary",
+      children: "Click me",
+      size: "md",
+    });
+    expect(el.parent_id).toBeNull();
+    expect(el.order_num).toBe(0);
+    expect(el.page_id).toBeNull();
+  });
+
+  it("TextField — canonical primary 모드 정합", () => {
+    const doc = makeDoc([
+      {
+        id: "canonical-tf-1",
+        type: "TextField",
+        props: { label: "Email", placeholder: "you@example.com", size: "md" },
+      },
+    ]);
+
+    const [el] = canonicalDocumentToElements(doc);
+    expect(el.id).toBe("canonical-tf-1");
+    expect(el.type).toBe("TextField");
+    expect(el.props).toEqual({
+      label: "Email",
+      placeholder: "you@example.com",
+      size: "md",
+    });
+  });
+
+  it("Section — canonical primary 모드 정합", () => {
+    const doc = makeDoc([
+      {
+        id: "canonical-sec-1",
+        type: "Section",
+        props: { variant: "default" },
+      },
+    ]);
+
+    const [el] = canonicalDocumentToElements(doc);
+    expect(el.id).toBe("canonical-sec-1");
+    expect(el.type).toBe("Section");
+    expect(el.props).toEqual({ variant: "default" });
+  });
+
+  it("name 필드 → componentName 매핑 (canonical primary)", () => {
+    const doc = makeDoc([
+      {
+        id: "canonical-named-1",
+        type: "Button",
+        name: "Primary CTA",
+        props: { variant: "primary", children: "Submit" },
+      },
+    ]);
+
+    const [el] = canonicalDocumentToElements(doc);
+    expect(el.componentName).toBe("Primary CTA");
+  });
+
+  it("nested children — canonical primary parent + canonical primary child", () => {
+    const doc = makeDoc([
+      {
+        id: "canonical-section-1",
+        type: "Section",
+        props: { variant: "default" },
+        children: [
+          {
+            id: "canonical-button-1",
+            type: "Button",
+            props: { variant: "primary", children: "Inside section" },
+          },
+        ],
+      },
+    ]);
+
+    const elements = canonicalDocumentToElements(doc);
+    expect(elements).toHaveLength(2);
+    expect(elements[0].id).toBe("canonical-section-1");
+    expect(elements[1].id).toBe("canonical-button-1");
+    expect(elements[1].parent_id).toBe("canonical-section-1");
+    expect(elements[1].order_num).toBe(0);
+  });
+
+  it("회귀 — node.props 미정의 + metadata 미보존 → 기존대로 null skip (page placeholder)", () => {
+    const doc = makeDoc([
+      {
+        id: "page-placeholder",
+        type: "frame",
+        metadata: { type: "legacy-page", pageId: "page-1" },
+        // props 미정의
+      },
+    ]);
+
+    expect(canonicalDocumentToElements(doc)).toHaveLength(0);
+  });
+
+  it("metadata.legacyProps 경유 노드는 기존대로 legacy 경로 우선", () => {
+    // 동일 props 가 양 위치에 있을 때 legacy 경로가 우선 — 기존 동작 회귀.
+    const doc = makeDoc([
+      {
+        id: "seg-x",
+        type: "Button",
+        props: { variant: "secondary", children: "canonical" },
+        metadata: makeMetadata({
+          id: "uuid-x",
+          parent_id: null,
+          order_num: 0,
+          type: "Button",
+          variant: "primary",
+          children: "legacy",
+        }),
+      },
+    ]);
+
+    const [el] = canonicalDocumentToElements(doc);
+    // legacy 경로 진입 → uuid 와 legacy props 가 우선.
+    expect(el.id).toBe("uuid-x");
+    expect(el.props).toEqual({ variant: "primary", children: "legacy" });
+  });
+});
+
+// ─────────────────────────────────────────────
+// B-2. (G6-1 second work) spec consumer 정합 evidence
+// ─────────────────────────────────────────────
+//
+// Button/TextField/Section spec 의 render.shapes() 가 양 경로 (legacy adapter
+// 경유 vs canonical primary) 에서 동일 결과를 산출하는 정합 evidence.
+// Skia + DOM 렌더 양쪽이 spec.render.shapes() 단일 산출에 의존하므로 본 evidence
+// = 시각 정합 surrogate.
+
+describe("canonicalDocumentToElements — spec consumer parity (G6-1)", () => {
+  const sizeContext = { width: 120, height: 32, fontSize: 14 };
+
+  it("ButtonSpec.render.shapes() — legacy adapter vs canonical primary 동일 결과", () => {
+    const propsCanonical = {
+      variant: "primary",
+      children: "Click",
+      size: "md",
+    };
+
+    const docLegacy = makeDoc([
+      {
+        id: "seg-a",
+        type: "Button",
+        metadata: makeMetadata({
+          id: "uuid-a",
+          parent_id: null,
+          order_num: 0,
+          type: "Button",
+          ...propsCanonical,
+        }),
+      },
+    ]);
+
+    const docCanonical = makeDoc([
+      {
+        id: "uuid-a",
+        type: "Button",
+        props: propsCanonical,
+      },
+    ]);
+
+    const [elLegacy] = canonicalDocumentToElements(docLegacy);
+    const [elCanonical] = canonicalDocumentToElements(docCanonical);
+
+    const shapesLegacy = ButtonSpec.render!.shapes!(
+      elLegacy.props,
+      sizeContext,
+      "default",
+    );
+    const shapesCanonical = ButtonSpec.render!.shapes!(
+      elCanonical.props,
+      sizeContext,
+      "default",
+    );
+
+    expect(shapesCanonical).toEqual(shapesLegacy);
+  });
+
+  it("TextFieldSpec.render.shapes() — 양 경로 동일 결과", () => {
+    const propsCanonical = {
+      label: "Email",
+      placeholder: "you@example.com",
+      size: "md",
+    };
+
+    const docLegacy = makeDoc([
+      {
+        id: "seg-tf",
+        type: "TextField",
+        metadata: makeMetadata({
+          id: "uuid-tf",
+          parent_id: null,
+          order_num: 0,
+          type: "TextField",
+          ...propsCanonical,
+        }),
+      },
+    ]);
+
+    const docCanonical = makeDoc([
+      {
+        id: "uuid-tf",
+        type: "TextField",
+        props: propsCanonical,
+      },
+    ]);
+
+    const [elLegacy] = canonicalDocumentToElements(docLegacy);
+    const [elCanonical] = canonicalDocumentToElements(docCanonical);
+
+    const shapesLegacy = TextFieldSpec.render!.shapes!(
+      elLegacy.props,
+      sizeContext,
+      "default",
+    );
+    const shapesCanonical = TextFieldSpec.render!.shapes!(
+      elCanonical.props,
+      sizeContext,
+      "default",
+    );
+
+    expect(shapesCanonical).toEqual(shapesLegacy);
+  });
+
+  it("SectionSpec.render.shapes() — 양 경로 동일 결과", () => {
+    const propsCanonical = { variant: "default" };
+
+    const docLegacy = makeDoc([
+      {
+        id: "seg-sec",
+        type: "Section",
+        metadata: makeMetadata({
+          id: "uuid-sec",
+          parent_id: null,
+          order_num: 0,
+          type: "Section",
+          ...propsCanonical,
+        }),
+      },
+    ]);
+
+    const docCanonical = makeDoc([
+      {
+        id: "uuid-sec",
+        type: "Section",
+        props: propsCanonical,
+      },
+    ]);
+
+    const [elLegacy] = canonicalDocumentToElements(docLegacy);
+    const [elCanonical] = canonicalDocumentToElements(docCanonical);
+
+    const shapesLegacy = SectionSpec.render!.shapes!(
+      elLegacy.props,
+      sizeContext,
+      "default",
+    );
+    const shapesCanonical = SectionSpec.render!.shapes!(
+      elCanonical.props,
+      sizeContext,
+      "default",
+    );
+
+    expect(shapesCanonical).toEqual(shapesLegacy);
   });
 });
 

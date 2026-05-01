@@ -38,13 +38,24 @@ interface LegacyMetadata {
 /**
  * canonical CanonicalNode + parent context → legacy Element 재구성.
  *
- * - `metadata.type === "legacy-element-props"` 이고 `legacyProps.id` 가 있을 때만
- *   변환 가능. 미보존 노드 (예: page placeholder, slot synthetic) 는 `null` 반환.
- * - `parent_id` / `order_num` 은 metadata 우선, 미보존 시 caller 가 전달한
- *   parent context 사용.
- * - `type` 은 metadata.legacyProps.type 우선, 미보존 시 `node.type` fallback
- *   (ref 노드의 경우 fallback 시 "ref" 가 들어와 LayerTree 분기 무력화 → 본 경로
- *   진입 시 metadata 누락 노드는 `null` 반환으로 처리).
+ * **두 경로 분기 (ADR-916 G6-1)**:
+ *
+ * 1. **legacy adapter 경유** (Phase 1~Phase 5 G6-1 first work 까지의 backbone):
+ *    `metadata.type === "legacy-element-props"` + `legacyProps.id` 보존된 노드.
+ *    `legacyToCanonical` 가 산출한 read-through projection. 7 fields
+ *    (id/parent_id/page_id/layout_id/order_num/fills/type) 무손실 복원.
+ * 2. **canonical primary fallback** (G6-1 second work, 2026-05-01):
+ *    `metadata.legacyProps` 없이 `node.props` 만 정의된 canonical primary
+ *    write 결과. `node.id/.type/.props/.name` 직접 사용해서 Element 복원.
+ *    page_id/layout_id/fills 미정의 → null. parent_id/order_num 은 caller
+ *    parent context 사용. **Phase 3 G4 canonical primary write 진입 prerequisite**.
+ *
+ * **null skip 조건** (양 경로 모두 미충족):
+ * - metadata 미보존 + props 미정의 (page placeholder, slot synthetic 등)
+ * - metadata.type === "legacy-element-props" 인데 legacyProps.id 누락
+ *
+ * `type` 은 legacy 경로에서는 metadata.legacyProps.type 우선 (ref 노드 원본
+ * type 보존), canonical primary 경로에서는 `node.type` 직접 사용.
  */
 export function canonicalNodeToElement(
   node: CanonicalNode,
@@ -57,7 +68,25 @@ export function canonicalNodeToElement(
     metadata.type !== LEGACY_ELEMENT_PROPS_METADATA_TYPE ||
     !metadata.legacyProps
   ) {
-    return null;
+    // ADR-916 G6-1 second work — canonical primary fallback.
+    // Button/TextField/Section 등 component spec consumer 가 `metadata.legacyProps`
+    // 없이도 Skia + DOM 정합 렌더 가능하도록 `CanonicalNode.props` 직접 사용.
+    // page placeholder / slot synthetic (props 미정의) 노드는 기존대로 null skip.
+    if (!node.props) return null;
+
+    return withLegacyLayoutId(
+      {
+        id: node.id,
+        type: node.type,
+        props: { ...node.props },
+        parent_id: parentId,
+        order_num: orderNum,
+        page_id: null,
+        fills: undefined,
+        componentName: node.name,
+      },
+      null,
+    );
   }
 
   const lp = metadata.legacyProps;
