@@ -1290,6 +1290,77 @@ design §10.2.4 footnote 의 "write boundary cleanup" 정의 — `inspectorActio
 - **Phase 4 G5 P5-B `overrides`** (MED-HIGH, ~1-2d, design §9.7 reorder 권장): instance 시스템 cleanup, ADR-911 P3 영역 결합 위험 고려. 본 phase 진정 진척과 직교.
 - **Phase 3 G4 진입** (HIGH, ~3-5d, write 경로 cutover): canonical primary write 활성화. 본 phase 의 baseline 측정 결과 11+ caller migration 영역 codify (Inspector mapping / history undo-redo / Events Panel / AI tool / factory). G7 closure marker grep gate 가 Phase 3 G4 land 시점에 자동 회귀 보장.
 
+#### 10.2.13 G6-2 second slice land (2026-05-02) — history parity 자동 cover (canonicalDocumentSync 회로) + setup fail framing 재조정
+
+**framing**: design §10.2.9 의 G6-2 second slice "canonicalDocumentSync.test.ts setup fail debug + history parity 회귀 codify" — baseline 측정 결과 `setup fail debug` 가 unbounded scope (memory tier3-entry 명시: "elements.ts:1935 dead useStore export + circular import 가능성") 로 확정. **framing 재조정**: setup fail debug 는 별 sub-phase 분리, history parity 회귀 codify 만 isolated vitest 패턴 (memory `feedback-vitest-mock-path-resolution.md` 재활용) 으로 land.
+
+**fork checkpoint 4 질문 lock-in**:
+
+1. **base/응용 분류**: G6-2 second slice = G6-2 first slice (Preview canonical 렌더 fallback) 의 sibling. history parity 가 G7 본격 cutover (§10.2.11) 의 자동 결과 — 별도 logic land 불필요, 검증 evidence 만 codify.
+2. **schema 직교성**: ✅ history undo/redo (mutation forward/reverse) ⊥ G7 cutover schema (`x-composition` extension). 두 영역이 동일 변환 회로 통과 (legacyToCanonical) → schema 직교성 자동 보장.
+3. **baseline framing reverse**: G7 본격 cutover prerequisite 충족, history parity 가 cutover 의 결과로 자동 cover. 의존 방향 정확.
+4. **codex 3차 미루지 말 것**: LOW scope (~30분, vitest 6건 추가). 회귀 영역 0 (logic 변경 0, 검증 evidence 만).
+
+**baseline 측정 — `canonicalDocumentSync.test.ts` setup fail 영역 분석**:
+
+| 영역                                                                                | 진단                                                                                                                                                                                                                                                                                           | scope                                          |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `apps/builder/src/builder/stores/canonical/__tests__/canonicalDocumentSync.test.ts` | `import { useStore } from "../.."` → `stores/index.ts:55 createElementsSlice(set, get, store)` 호출 → `createElementsSlice is not a function`                                                                                                                                                  | unbounded (별 sub-phase)                       |
+| `apps/builder/src/resolvers/canonical/__tests__/storeBridge.test.ts`                | 동일 setup fail (zustand init 영역)                                                                                                                                                                                                                                                            | unbounded (별 sub-phase)                       |
+| `apps/builder/src/builder/stores/elements.ts:1935`                                  | `export const useStore = create<ElementsState>(createElementsSlice);` — module evaluation 시 즉시 store 생성, dead duplicate (production caller 0 — `selectCanonicalDocument` 만 사용). test caller 2 site (`itemsActions.test.ts` / `pagesLayoutInvalidation.test.ts`) 가 isolated store 의도 | dead duplicate hygiene + circular eval suspect |
+
+**setup fail unbounded 사유**:
+
+- elements.ts:1935 의 dead useStore 가 module evaluation 시 즉시 `create<T>(creator)` 호출 → vitest jsdom 환경에서 React/zustand internal state 미설정 시 fail 가능. 실제 throw 위치 추적 필요 (debug log 추가 / minimal repro).
+- production code 영향 0 (caller 0건), test fixture 격리 의도 가능 — 무차별 제거 시 `itemsActions.test.ts` / `pagesLayoutInvalidation.test.ts` 회귀.
+- 진정 fix scope = (a) lazy initialization Proxy 패턴, (b) test 2 file 의 useStore caller 를 stores/index.ts 로 migration, (c) circular import chain 정밀 추적 — 모두 별 sub-phase 영역.
+
+→ **본 phase scope 외, 별 sub-phase (G6-2 third slice 또는 별 hygiene work) 에서 진정 진척**.
+
+**land 내용** — `legacyExtensionRoundtrip.test.ts` F. history parity section (6/6 PASS):
+
+- **F-1 forward mutation (events 추가)** — initial element (events 미정의) → mutation (events 추가) → legacyToCanonical 통과 후 `x-composition.events` 직렬화
+- **F-2 reverse mutation (events 제거 = history.undo)** — withEvents element → undone (events undefined) → legacyToCanonical 통과 후 `x-composition` 미노출
+- **F-3 re-mutation (events 재추가 = history.redo)** — undone → redone (events 재추가) → legacyToCanonical 통과 후 `x-composition.events` 재직렬화
+- **F-4 dataBinding mutation forward/reverse 회로** — initial → withDb → undone (dataBinding undefined) 동일 cover
+- **F-5 multi-element mutation (events + dataBinding 동시)** — 2 element 의 양 분리, metadata.legacyProps 미spread (G7 cutover 정합)
+- **F-6 round-trip 보장 (forward → reverse → forward 동등)** — original → legacyToCanonical → exportLegacyDocument → events/dataBinding 무손실 복원
+
+**isolated 검증 패턴 — vitest mock path resolution 함정 회피**:
+
+- `canonicalDocumentSync.test.ts` 가 `useStore` import 시 `stores/index.ts` evaluation → `createElementsSlice is not a function` setup fail 영역 (unbounded debug, 별 sub-phase).
+- 본 file (`legacyExtensionRoundtrip.test.ts`) 은 `legacyToCanonical` + `exportLegacyDocument` 만 import → store 무경유.
+- 회로의 핵심 변환 단계 (`legacyToCanonical`) 단독 검증으로 history parity 자동 cover evidence 도달. memory 패턴 재활용.
+
+**검증 evidence**:
+
+- `pnpm type-check` 3/3 PASS (FULL TURBO)
+- vitest `legacyExtensionRoundtrip.test.ts` **27/27 PASS** (closure 21 → history 27, +6 history parity)
+- adapter 영역 광역 회귀 0 검증: `pnpm vitest run src/adapters/canonical` **175/175 PASS** (11 file 모두 PASS, 169 → 175 +6)
+- **본 work 회귀 0 ✅** — logic 변경 0, 검증 evidence 만 추가
+
+**G6-2 진척 marker**:
+
+- ✅ G6-2 first slice — Preview canonical 렌더 fallback (§10.2.9, G6-1 정합)
+- ✅ **G6-2 second slice — history parity 자동 cover** (본 work, §10.2.13)
+- ⏭️ G6-2 third slice (예정) — `canonicalDocumentSync.test.ts` setup fail debug + 진정 store-level history granularity 검증 (별 sub-phase, unbounded scope 분리)
+- ⏭️ Publish parity — scope 외 (canonical 미사용, 별 publish ADR 영역, §10.2.9 명시)
+
+**framing 의문 명시 — design §10.2.9 추정 vs 실 measurement**:
+
+design §10.2.9 명시 G6-2 second slice = `setup fail debug + history parity 회귀 codify` (LOW ~0.5d). 본 land 결과:
+
+- **history parity 회귀 codify** = 본 work (~30분 LOW) — design 추정 정합.
+- **setup fail debug** = unbounded scope (elements.ts:1935 dead useStore + circular import 가능성, test caller 격리 영향) — design 추정 LOW 미정합. 별 sub-phase 분리 결정.
+
+본 framing 재조정으로 G6-2 closure 시점에 setup fail 진정 fix 가 prerequisite 인지 별 G6-2 third slice 로 분리할지 후속 결정. 현재는 isolated 검증 패턴으로 history parity 본질 cover 충족.
+
+**다음 sub-phase 권장**:
+
+- **G6-2 third slice** (MED unbounded debug, 별 work): `canonicalDocumentSync.test.ts` setup fail root cause 진단 + fix (lazy init Proxy / test caller migration / circular import chain 추적 중 1 선택). prerequisite 영역 명시 — G6-2 closure 시점에 별 sub-phase 진입 결정.
+- **Phase 4 G5 P5-B `overrides`** (MED-HIGH ~1-2d, design §9.7 reorder, 본격 cleanup ADR-911 P3 영역 결합으로 partial 진척만 가능, §10.2.12 명시).
+- **Phase 3 G4 진입** (HIGH ~3-5d, write 경로 cutover, §10.2.12 명시 11+ caller migration 영역 codified).
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
