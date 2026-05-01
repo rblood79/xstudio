@@ -9,6 +9,9 @@
 import { z } from "zod";
 import { EXPORT_LIMITS } from "../types/export.types";
 
+const LEGACY_LAYOUT_ID_FIELD = "layout_id" as const;
+const LEGACY_SLOT_NAME_FIELD = "slot_name" as const;
+
 // ============================================
 // Base Schemas
 // ============================================
@@ -60,8 +63,8 @@ export const ElementSchema = z.object({
   parent_id: z.string().nullable().optional(),
   order_num: z.number().int().min(0).optional().default(0),
   page_id: z.string().nullable().optional(),
-  layout_id: z.string().nullable().optional(),
-  slot_name: z.string().nullable().optional(),
+  [LEGACY_LAYOUT_ID_FIELD]: z.string().nullable().optional(),
+  [LEGACY_SLOT_NAME_FIELD]: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
   deleted: z.boolean().optional(),
@@ -88,7 +91,7 @@ export const PageSchema = z.object({
   project_id: z.string().min(1, { message: "Project ID is required" }),
   parent_id: z.string().nullable().optional(),
   order_num: z.number().int().min(0).optional().default(0),
-  layout_id: z.string().nullable().optional(),
+  [LEGACY_LAYOUT_ID_FIELD]: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });

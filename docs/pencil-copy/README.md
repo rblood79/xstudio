@@ -18,28 +18,33 @@ reconstruction of Pencil.
 
 Observed local install:
 
-| Field | Value |
-| --- | --- |
-| App path | `/Applications/Pencil.app` |
-| Bundle identifier | `dev.pencil.desktop` |
-| Version | `1.1.53` |
-| App archive | `/Applications/Pencil.app/Contents/Resources/app.asar` |
+| Field                       | Value                                                              |
+| --------------------------- | ------------------------------------------------------------------ |
+| App path                    | `/Applications/Pencil.app`                                         |
+| Bundle identifier           | `dev.pencil.desktop`                                               |
+| Version                     | `1.1.53`                                                           |
+| App archive                 | `/Applications/Pencil.app/Contents/Resources/app.asar`             |
+| Last local recheck          | 2026-05-01                                                         |
+| Measured `app.asar` SHA-256 | `ba0c429743018e820b39d4672e8eb0f9d95312a1549fc2a44476ea76ca600d90` |
 
-The GUI automation attempt through Computer Use failed with macOS Apple Event
-authorization error `-10000`. The current notes therefore rely on installed
-bundle metadata, bundled `.pen` documents, and static behavior signatures.
+GUI automation has not been completed. An earlier attempt failed with macOS
+Apple Event authorization error `-10000`; the 2026-05-01 recheck attempted
+Computer Use again, but Accessibility/Screen Recording permissions remained
+pending. The current notes therefore rely on installed bundle metadata, bundled
+`.pen` documents, and static behavior signatures.
 
 ## Files
 
-| File | Purpose |
-| --- | --- |
-| [slot-model.md](slot-model.md) | Slot and descendants behavior contract. |
-| [ui-ux-analysis.md](ui-ux-analysis.md) | Editor UX, panels, tools, component archetypes, and interaction patterns. |
-| [format-model.md](format-model.md) | `.pen` document format model and node/property taxonomy. |
-| [format-ui-associations.md](format-ui-associations.md) | How file-format fields drive visible UI/UX behavior. |
-| [composition-mapping.md](composition-mapping.md) | Current Composition parity mapping. |
-| [observations.md](observations.md) | Local Pencil app observations and evidence summary. |
-| [fixtures/slot-fill.synthetic.json](fixtures/slot-fill.synthetic.json) | Non-Pencil synthetic fixture for tests. |
+| File                                                                   | Purpose                                                                   |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [slot-model.md](slot-model.md)                                         | Slot and descendants behavior contract.                                   |
+| [ui-ux-analysis.md](ui-ux-analysis.md)                                 | Editor UX, panels, tools, component archetypes, and interaction patterns. |
+| [drag-drop-analysis.md](drag-drop-analysis.md)                         | Current installed-app analysis of object move drag/drop behavior.         |
+| [format-model.md](format-model.md)                                     | `.pen` document format model and node/property taxonomy.                  |
+| [format-ui-associations.md](format-ui-associations.md)                 | How file-format fields drive visible UI/UX behavior.                      |
+| [composition-mapping.md](composition-mapping.md)                       | Current Composition parity mapping.                                       |
+| [observations.md](observations.md)                                     | Local Pencil app observations and evidence summary.                       |
+| [fixtures/slot-fill.synthetic.json](fixtures/slot-fill.synthetic.json) | Non-Pencil synthetic fixture for tests.                                   |
 
 ## Current Verdict
 
@@ -59,8 +64,8 @@ For slot insertion, Composition should match Pencil's split model:
 Beyond slots, the Pencil behavior worth matching first is:
 
 1. File format as source of truth: node tree + refs + descendants + variables.
-2. Direct canvas editing with selection handles, zoom-aware overlays, and
-   deferred scenegraph commits.
+2. Direct canvas editing with selection handles, zoom-aware overlays, transient
+   drag updates, and deferred undo/history commit.
 3. Component instance semantics: master refs, instance overrides, and guarded
    descendant editing.
 4. Dense workbench chrome: left tabs for Layers/Slides/Components/Libraries,

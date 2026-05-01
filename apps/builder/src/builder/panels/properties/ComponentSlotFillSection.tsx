@@ -8,14 +8,14 @@ import {
 import { resolveReference } from "../../../utils/component/referenceResolution";
 import { PropertySection, PropertySelect } from "../../components";
 import { useStore } from "../../stores";
+import {
+  getLegacyDescendants,
+  LEGACY_DESCENDANTS_FIELD,
+} from "../../../adapters/canonical/legacyElementFields";
 
 type SlotHostElement = Element & {
   metadata?: { slot?: unknown };
   slot?: false | string[];
-};
-
-type SlotFillElement = Element & {
-  descendants?: Record<string, Record<string, unknown>>;
 };
 
 type SlotHostInfo = {
@@ -46,11 +46,8 @@ function getSlotValue(element: Element): string[] | null {
   return null;
 }
 
-function getSlotFillChildren(
-  instance: SlotFillElement,
-  path: string,
-): unknown[] {
-  const override = instance.descendants?.[path];
+function getSlotFillChildren(instance: Element, path: string): unknown[] {
+  const override = getLegacyDescendants(instance)?.[path];
   return override && Array.isArray(override.children) ? override.children : [];
 }
 
@@ -93,7 +90,9 @@ function getFillCandidateOptions(
   const candidates =
     recommended.length > 0
       ? recommended
-      : [...elementsMap.values()].filter((candidate) => candidate.reusable === true);
+      : [...elementsMap.values()].filter(
+          (candidate) => candidate.reusable === true,
+        );
 
   return candidates
     .map((candidate) => ({
@@ -107,19 +106,22 @@ function getFilledLabel(
   children: unknown[],
   elementsMap: Map<string, Element>,
 ): string {
-  const labels = children
-    .filter(isRecord)
-    .map((child) => {
-      const ref = typeof child.ref === "string" ? child.ref : undefined;
-      const candidate = ref ? resolveReference(ref, elementsMap.values()) : undefined;
-      if (candidate) return getElementLabel(candidate);
-      return typeof child.type === "string" ? child.type : "Unknown";
-    });
+  const labels = children.filter(isRecord).map((child) => {
+    const ref = typeof child.ref === "string" ? child.ref : undefined;
+    const candidate = ref
+      ? resolveReference(ref, elementsMap.values())
+      : undefined;
+    if (candidate) return getElementLabel(candidate);
+    return typeof child.type === "string" ? child.type : "Unknown";
+  });
 
   return labels.length > 0 ? labels.join(", ") : "Empty";
 }
 
-function getFillNodeId(candidate: Element, existingChildren: unknown[]): string {
+function getFillNodeId(
+  candidate: Element,
+  existingChildren: unknown[],
+): string {
   const baseId = candidate.customId ?? candidate.id;
   const existingIds = new Set(
     existingChildren
@@ -176,16 +178,13 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     [elementsMap, selectedSlot],
   );
 
-  const descendantsKey = JSON.stringify(
-    ((element as SlotFillElement | undefined)?.descendants ?? {}) as Record<
-      string,
-      unknown
-    >,
+  const legacyOverrideKey = JSON.stringify(
+    element ? (getLegacyDescendants(element) ?? {}) : {},
   );
 
   useEffect(() => {
     pendingChildrenByPathRef.current = {};
-  }, [elementId, descendantsKey]);
+  }, [elementId, legacyOverrideKey]);
 
   useEffect(() => {
     if (selectedSlot && selectedSlot.path !== selectedSlotPath) {
@@ -205,7 +204,7 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
 
   if (!element || !isCanonicalRefElement(element) || !selectedSlot) return null;
 
-  const instance = element as SlotFillElement;
+  const instance = element;
   const filledChildren = getSlotFillChildren(instance, selectedSlot.path);
   const filledLabel = getFilledLabel(filledChildren, elementsMap);
 
@@ -215,10 +214,8 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     const candidate = latestElementsMap.get(selectedCandidateId);
     if (!candidate || !selectedSlot) return;
 
-    const latestInstance =
-      (latestElementsMap.get(element.id) as SlotFillElement | undefined) ??
-      instance;
-    const descendants = latestInstance.descendants ?? {};
+    const latestInstance = latestElementsMap.get(element.id) ?? instance;
+    const legacyDescendantMap = getLegacyDescendants(latestInstance) ?? {};
     const currentChildren = getSlotFillChildren(
       latestInstance,
       selectedSlot.path,
@@ -236,8 +233,8 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     pendingChildrenByPathRef.current[selectedSlot.path] = nextChildren;
 
     void updateElement(element.id, {
-      descendants: {
-        ...descendants,
+      [LEGACY_DESCENDANTS_FIELD]: {
+        ...legacyDescendantMap,
         [selectedSlot.path]: {
           children: nextChildren,
         },
@@ -246,13 +243,13 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
   };
 
   const handleClearSlot = () => {
-    const descendants = instance.descendants ?? {};
-    const nextDescendants = { ...descendants };
-    delete nextDescendants[selectedSlot.path];
+    const legacyDescendantMap = getLegacyDescendants(instance) ?? {};
+    const nextLegacyDescendantMap = { ...legacyDescendantMap };
+    delete nextLegacyDescendantMap[selectedSlot.path];
     delete pendingChildrenByPathRef.current[selectedSlot.path];
 
     void updateElement(element.id, {
-      descendants: nextDescendants,
+      [LEGACY_DESCENDANTS_FIELD]: nextLegacyDescendantMap,
     } as Partial<Element>);
   };
 

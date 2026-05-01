@@ -1,4 +1,5 @@
 import type { Key } from "react-stately";
+import { getElementLayoutId } from "../../../../../adapters/canonical/legacyElementFields";
 import type { LayerTreeNode } from "./types";
 
 type TreeDataLike = {
@@ -9,7 +10,7 @@ export function isValidDrop(
   draggedId: string,
   targetId: string,
   dropPosition: "before" | "after" | "on",
-  tree: TreeDataLike
+  tree: TreeDataLike,
 ): { valid: boolean; reason?: string } {
   const draggedNode = tree.getItem(draggedId)?.value;
   const targetNode = tree.getItem(targetId)?.value;
@@ -42,7 +43,7 @@ export function isValidDrop(
   const targetElement = targetNode.element;
   if (
     draggedElement.page_id !== targetElement.page_id ||
-    draggedElement.layout_id !== targetElement.layout_id
+    getElementLayoutId(draggedElement) !== getElementLayoutId(targetElement)
   ) {
     return { valid: false, reason: "context-mismatch" };
   }
@@ -53,7 +54,7 @@ export function isValidDrop(
 function isDescendant(
   ancestorId: string,
   descendantId: string,
-  tree: TreeDataLike
+  tree: TreeDataLike,
 ): boolean {
   let current = tree.getItem(descendantId);
   while (current) {

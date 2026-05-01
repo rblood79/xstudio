@@ -27,10 +27,23 @@ import {
 import { requestEditingSemanticsImpactConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
+import {
+  getInstanceMasterReference,
+  getElementLayoutId,
+  getLegacyDescendants,
+  getLegacyOverrides,
+  isLegacyInstanceElement,
+  isLegacyMasterElement,
+  LEGACY_COMPONENT_ROLE_FIELD,
+  LEGACY_DESCENDANTS_FIELD,
+  LEGACY_MASTER_ID_FIELD,
+  LEGACY_OVERRIDES_FIELD,
+  LEGACY_LAYOUT_ID_FIELD,
+} from "../../../adapters/canonical/legacyElementFields";
 
 type CanonicalElementFields = {
   children?: unknown;
-  descendants?: Record<string, unknown>;
+  [LEGACY_DESCENDANTS_FIELD]?: Record<string, unknown>;
   metadata?: { type?: string; legacyProps?: unknown; [key: string]: unknown };
   ref?: unknown;
 };
@@ -138,11 +151,11 @@ function getComponentNameForElement(element: Element): string {
 }
 
 function getDescendantOverride(
-  descendants: Record<string, unknown> | undefined,
+  legacyOverrideMap: Record<string, unknown> | undefined,
   source: Element,
   relativePath: string,
 ): Record<string, unknown> | undefined {
-  if (!descendants) return undefined;
+  if (!legacyOverrideMap) return undefined;
   const candidates = [
     relativePath,
     source.customId,
@@ -150,7 +163,7 @@ function getDescendantOverride(
     source.id,
   ].filter((candidate): candidate is string => Boolean(candidate));
   for (const candidate of candidates) {
-    const override = descendants[candidate];
+    const override = legacyOverrideMap[candidate];
     if (isRecord(override)) return override;
   }
   return undefined;
@@ -166,7 +179,7 @@ function propsFromCanonicalOverride(
 
   const {
     children: _children,
-    descendants: _descendants,
+    [LEGACY_DESCENDANTS_FIELD]: _legacyOverrideMap,
     id: _id,
     metadata: _metadata,
     name: _name,
@@ -181,7 +194,7 @@ function propsFromCanonicalOverride(
 function stripCanonicalRuntimeFields(element: Element): Element {
   const clone = { ...element } as Element & CanonicalElementFields;
   delete clone.children;
-  delete clone.descendants;
+  delete clone[LEGACY_DESCENDANTS_FIELD];
   delete clone.metadata;
   delete clone.ref;
   return clone;
@@ -221,10 +234,10 @@ function createMaterializedElementFromOverride(
     order_num: orderNum,
     props: propsFromCanonicalOverride(override),
     reusable: undefined,
-    componentRole: undefined,
-    masterId: undefined,
-    overrides: undefined,
-    descendants: undefined,
+    [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
+    [LEGACY_MASTER_ID_FIELD]: undefined,
+    [LEGACY_OVERRIDES_FIELD]: undefined,
+    [LEGACY_DESCENDANTS_FIELD]: undefined,
     componentName:
       typeof override.name === "string"
         ? override.name
@@ -260,7 +273,7 @@ function buildCanonicalDetachSnapshot(
     return null;
   }
 
-  const descendants = asCanonicalElement(refElement).descendants;
+  const legacyDescendantMap = getLegacyDescendants(refElement);
   const pageId = refElement.page_id ?? master.page_id ?? null;
   const createdChildren: Element[] = [];
 
@@ -312,10 +325,12 @@ function buildCanonicalDetachSnapshot(
     parentId: string,
     relativePath: string,
     orderNum: number,
-    activeDescendants: Record<string, unknown> | undefined = descendants,
+    activeLegacyDescendantMap:
+      | Record<string, unknown>
+      | undefined = legacyDescendantMap,
   ): Element => {
     const override = getDescendantOverride(
-      activeDescendants,
+      activeLegacyDescendantMap,
       source,
       relativePath,
     );
@@ -327,7 +342,7 @@ function buildCanonicalDetachSnapshot(
     );
     if (hasReplacement && Array.isArray(override?.children)) {
       throw new Error(
-        `[Instance] canonical descendants override at "${relativePath}" violates 3-mode discriminator`,
+        `[Instance] canonical slot override at "${relativePath}" violates 3-mode discriminator`,
       );
     }
     const nestedRef = !hasReplacement ? getCanonicalRef(source) : null;
@@ -337,7 +352,7 @@ function buildCanonicalDetachSnapshot(
       ? getRootOverrideProps(source)
       : {};
     const childDescendants = nestedMaster
-      ? asCanonicalElement(source).descendants
+      ? getLegacyDescendants(source)
       : activeDescendants;
     const replacementId =
       hasReplacement && typeof override?.id === "string"
@@ -371,10 +386,10 @@ function buildCanonicalDetachSnapshot(
             order_num: orderNum,
             props: mergedProps,
             reusable: undefined,
-            componentRole: undefined,
-            masterId: undefined,
-            overrides: undefined,
-            descendants: undefined,
+            [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
+            [LEGACY_MASTER_ID_FIELD]: undefined,
+            [LEGACY_OVERRIDES_FIELD]: undefined,
+            [LEGACY_DESCENDANTS_FIELD]: undefined,
           },
     );
 
@@ -421,14 +436,14 @@ function buildCanonicalDetachSnapshot(
     type: master.type,
     parent_id: refElement.parent_id ?? null,
     page_id: refElement.page_id ?? master.page_id ?? null,
-    layout_id: refElement.layout_id ?? null,
+    [LEGACY_LAYOUT_ID_FIELD]: getElementLayoutId(refElement),
     order_num: refElement.order_num,
     props: rootProps,
     reusable: undefined,
-    componentRole: undefined,
-    masterId: undefined,
-    overrides: undefined,
-    descendants: undefined,
+    [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
+    [LEGACY_MASTER_ID_FIELD]: undefined,
+    [LEGACY_OVERRIDES_FIELD]: undefined,
+    [LEGACY_DESCENDANTS_FIELD]: undefined,
     componentName: refElement.componentName ?? master.componentName,
   });
   const previousState = { ...refElement };
@@ -455,18 +470,20 @@ function buildLegacyDetachSnapshot(
   instanceId: string,
 ): { elements: Element[]; previousElements: Element[] } | null {
   const instance = state.elementsMap.get(instanceId);
-  if (!instance || instance.componentRole !== "instance") return null;
+  if (!instance || !isLegacyInstanceElement(instance)) return null;
 
-  const master = instance.masterId
-    ? state.elementsMap.get(instance.masterId)
-    : undefined;
+  const masterRef = getInstanceMasterReference(instance);
+  const master = masterRef ? state.elementsMap.get(masterRef) : undefined;
 
   let mergedProps: Record<string, unknown>;
   if (master) {
     const { props } = resolveInstanceProps(instance, master);
     mergedProps = props;
   } else {
-    mergedProps = { ...instance.props, ...instance.overrides };
+    mergedProps = {
+      ...instance.props,
+      ...(getLegacyOverrides(instance) ?? {}),
+    };
   }
 
   return {
@@ -474,10 +491,10 @@ function buildLegacyDetachSnapshot(
       {
         ...instance,
         props: mergedProps,
-        componentRole: undefined,
-        masterId: undefined,
-        overrides: undefined,
-        descendants: undefined,
+        [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
+        [LEGACY_MASTER_ID_FIELD]: undefined,
+        [LEGACY_OVERRIDES_FIELD]: undefined,
+        [LEGACY_DESCENDANTS_FIELD]: undefined,
       },
     ],
     previousElements: [{ ...instance }],
@@ -599,14 +616,14 @@ export function createInstance(
       | Partial<ElementsState>
       | ((state: ElementsState) => Partial<ElementsState>),
   ) => void,
-  masterId: string,
+  masterRefId: string,
   parentId: string,
   pageId: string,
 ): Element | null {
   const state = get();
-  const master = state.elementsMap.get(masterId);
-  if (!master || master.componentRole !== "master") {
-    console.warn("[Instance] master not found or not a master:", masterId);
+  const master = state.elementsMap.get(masterRefId);
+  if (!master || !isLegacyMasterElement(master)) {
+    console.warn("[Instance] master not found or not a master:", masterRefId);
     return null;
   }
 
@@ -617,10 +634,10 @@ export function createInstance(
     0,
   );
 
-  // ADR-916 G5-B P5-B: legacy field write site cleanup — empty Record 를
-  // undefined 로 변경, 신규 legacy instance 는 IndexedDB 에 overrides field
-  // 자체를 저장하지 않음 (read site 는 isRecord 검사 후 fallback 으로 안전).
-  // legacy `componentRole === "instance"` 분기 자체는 ADR-911 P3 cleanup 영역.
+  // ADR-916 G5-B P5-B: legacy override write site cleanup — empty Record 를
+  // undefined 로 변경, 신규 legacy instance 는 IndexedDB 에 해당 field 자체를
+  // 저장하지 않음 (read site 는 isRecord 검사 후 fallback 으로 안전).
+  // legacy role 분기 자체는 ADR-911 P3 cleanup 영역.
   const instanceElement: Element = {
     id: uuidv4(),
     type: master.type,
@@ -628,9 +645,9 @@ export function createInstance(
     parent_id: parentId,
     page_id: pageId,
     order_num: maxOrder + 1,
-    componentRole: "instance",
-    masterId: masterId,
-    overrides: undefined,
+    [LEGACY_COMPONENT_ROLE_FIELD]: "instance",
+    [LEGACY_MASTER_ID_FIELD]: masterRefId,
+    [LEGACY_OVERRIDES_FIELD]: undefined,
     componentName: master.componentName,
   };
 
@@ -648,8 +665,8 @@ export function createInstance(
 /**
  * Instance를 독립 요소로 분리 (Detach)
  *
- * master props + overrides를 병합하여 독립적인 props를 가진 일반 요소로 변환.
- * componentRole, masterId, overrides, descendants 필드를 모두 제거.
+ * master props + instance patch를 병합하여 독립적인 props를 가진 일반 요소로 변환.
+ * legacy instance marker 필드를 모두 제거.
  *
  * @returns detach 이전 상태 (undo 복원용)
  */
@@ -767,7 +784,7 @@ export async function toggleComponentOrigin(
 
   const nextOrigin: Element = {
     ...latestElement,
-    componentRole: undefined,
+    [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
     reusable: false,
   };
   const usedIds = new Set(latestState.elements.map((current) => current.id));
@@ -797,9 +814,9 @@ export async function toggleComponentOrigin(
 /**
  * Instance override 필드를 제거한다.
  *
- * legacy instance는 `overrides`, canonical ref는 `metadata.legacyProps` 또는
- * `props`를 root override 저장소로 사용한다. canonical descendant override는
- * `descendantPath`가 지정된 경우 `descendants[path][fieldKey]` 단위로 제거한다.
+ * legacy instance는 root patch, canonical ref는 `metadata.legacyProps` 또는
+ * `props`를 root override 저장소로 사용한다. canonical child override는
+ * `descendantPath`가 지정된 경우 slot path 단위로 제거한다.
  */
 export function resetInstanceOverrideField(
   get: () => ElementsState,
@@ -820,10 +837,10 @@ export function resetInstanceOverrideField(
   let nextElement: Element | null = null;
 
   if (descendantPath && instance.type === "ref") {
-    const canonical = asCanonicalElement(instance);
-    const descendants = canonical.descendants;
-    const targetOverride = descendants?.[descendantPath];
-    if (!isRecord(descendants) || !isRecord(targetOverride)) return null;
+    const legacyDescendantMap = getLegacyDescendants(instance);
+    const targetOverride = legacyDescendantMap?.[descendantPath];
+    if (!isRecord(legacyDescendantMap) || !isRecord(targetOverride))
+      return null;
 
     const nextOverride = resetCanonicalOverrideRecordField(
       targetOverride,
@@ -831,24 +848,24 @@ export function resetInstanceOverrideField(
     );
     if (!nextOverride) return null;
 
-    const nextDescendants = { ...descendants };
+    const nextLegacyDescendantMap = { ...legacyDescendantMap };
     if (hasCanonicalOverridePayload(nextOverride)) {
-      nextDescendants[descendantPath] = nextOverride;
+      nextLegacyDescendantMap[descendantPath] = nextOverride;
     } else {
-      delete nextDescendants[descendantPath];
+      delete nextLegacyDescendantMap[descendantPath];
     }
 
     nextElement = {
       ...instance,
-      descendants: nextDescendants,
+      [LEGACY_DESCENDANTS_FIELD]: nextLegacyDescendantMap,
     } as Element;
-  } else if (instance.componentRole === "instance") {
-    const overrides = isRecord(instance.overrides) ? instance.overrides : {};
-    const nextOverrides = removeRecordKey(overrides, fieldKey);
-    if (!nextOverrides) return null;
+  } else if (isLegacyInstanceElement(instance)) {
+    const legacyPropsPatch = getLegacyOverrides(instance) ?? {};
+    const nextLegacyPropsPatch = removeRecordKey(legacyPropsPatch, fieldKey);
+    if (!nextLegacyPropsPatch) return null;
     nextElement = {
       ...instance,
-      overrides: nextOverrides,
+      [LEGACY_OVERRIDES_FIELD]: nextLegacyPropsPatch,
     };
   } else if (instance.type === "ref") {
     const canonical = asCanonicalElement(instance);

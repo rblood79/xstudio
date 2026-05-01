@@ -22,6 +22,7 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { LayoutPresetSelector } from "./LayoutPresetSelector";
 import { LayoutSlugEditor } from "./LayoutSlugEditor";
+import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 
 export const LayoutBodyEditor = memo(
   function LayoutBodyEditor({
@@ -34,7 +35,7 @@ export const LayoutBodyEditor = memo(
       const element = useStore.getState().elementsMap.get(elementId);
       return {
         customId: element?.customId || "",
-        layoutId: element?.layout_id || null,
+        layoutId: element ? getElementLayoutId(element) : null,
       };
     }, [elementId]);
 

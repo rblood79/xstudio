@@ -37,6 +37,10 @@ import {
   iconEditProps,
   iconSmall,
 } from "../../../utils/ui/uiConstants";
+import {
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../../adapters/canonical/legacyElementFields";
 import "./AddPageDialog.css";
 
 export interface AddPageDialogResult {
@@ -115,15 +119,17 @@ export function AddPageDialog({
     const layout = layoutId ? layouts.find((l) => l.id === layoutId) : null;
 
     // Create a temporary page object for URL generation
-    const tempPage = {
-      id: "temp",
-      title,
-      slug,
-      project_id: "",
-      parent_id: parentId,
-      layout_id: layoutId,
-      order_num: 0,
-    };
+    const tempPage = withLegacyLayoutId(
+      {
+        id: "temp",
+        title,
+        slug,
+        project_id: "",
+        parent_id: parentId,
+        order_num: 0,
+      },
+      layoutId,
+    );
 
     return generatePageUrl({
       page: tempPage,
@@ -135,15 +141,19 @@ export function AddPageDialog({
             slug: layout.slug || undefined,
           }
         : null,
-      allPages: pages.map((p) => ({
-        id: p.id,
-        title: p.title,
-        slug: p.slug || "",
-        project_id: p.project_id || "",
-        parent_id: p.parent_id,
-        layout_id: p.layout_id,
-        order_num: p.order_num,
-      })),
+      allPages: pages.map((p) =>
+        withLegacyLayoutId(
+          {
+            id: p.id,
+            title: p.title,
+            slug: p.slug || "",
+            project_id: p.project_id || "",
+            parent_id: p.parent_id,
+            order_num: p.order_num,
+          },
+          getLegacyLayoutId(p),
+        ),
+      ),
     });
   }, [title, slug, layoutId, parentId, layouts, pages]);
 

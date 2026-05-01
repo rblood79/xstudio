@@ -20,6 +20,12 @@
  */
 
 import type { Element, Page } from "../../../../types/core/store.types";
+import {
+  getElementSlotName,
+  getLegacyLayoutId,
+  getLegacySlotName,
+  matchesLegacyLayoutId,
+} from "../../../../adapters/canonical/legacyElementFields";
 
 export interface ResolvePageWithFrameInput {
   /** 현재 page (layout_id 가 set 되어 있으면 frame 합성) */
@@ -53,13 +59,12 @@ function isBodyType(type: string): boolean {
 }
 
 function readSlotName(el: Element): string {
-  const fromProps = (el.props as { slot_name?: string } | undefined)?.slot_name;
-  return fromProps ?? el.slot_name ?? "content";
+  return getLegacySlotName(el.props) ?? getElementSlotName(el) ?? "content";
 }
 
 function readSlotElementName(slot: Element): string {
   const fromProps = (slot.props as { name?: string } | undefined)?.name;
-  return fromProps ?? slot.slot_name ?? "content";
+  return fromProps ?? getElementSlotName(slot) ?? "content";
 }
 
 function asPageResolvedSlot(slot: Element, parentId: string): Element {
@@ -201,7 +206,7 @@ export function resolvePageWithFrame(
   input: ResolvePageWithFrameInput,
 ): ResolvePageWithFrameOutput {
   const { page, pageElements, elementsMap } = input;
-  const layoutId = page.layout_id ?? null;
+  const layoutId = getLegacyLayoutId(page);
 
   const splitPageBody = (): {
     body: Element | null;
@@ -226,7 +231,7 @@ export function resolvePageWithFrame(
 
   const frameElements: Element[] = [];
   for (const el of elementsMap.values()) {
-    if (el.layout_id !== layoutId) continue;
+    if (!matchesLegacyLayoutId(el, layoutId)) continue;
     if (el.page_id != null) continue;
     if (el.deleted) continue;
     frameElements.push(el);

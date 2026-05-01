@@ -5,7 +5,10 @@
  * Helper functions to track multi-element operations in history
  */
 
-import type { Element, ComponentElementProps } from "../../../types/builder/unified.types";
+import type {
+  Element,
+  ComponentElementProps,
+} from "../../../types/builder/unified.types";
 import type { ComponentIndex } from "./elementIndexer";
 import { historyManager } from "../history";
 
@@ -19,27 +22,29 @@ import { historyManager } from "../history";
 export function trackBatchUpdate(
   elementIds: string[],
   updates: Record<string, unknown>,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): void {
   if (elementIds.length === 0) return;
 
   // Collect previous props for all elements
-  const batchUpdates = elementIds.map((id) => {
-    const element = elementsMap.get(id);
-    if (!element) return null;
+  const batchUpdates = elementIds
+    .map((id) => {
+      const element = elementsMap.get(id);
+      if (!element) return null;
 
-    return {
-      elementId: id,
-      prevProps: element.props as ComponentElementProps,
-      newProps: { ...element.props, ...updates } as ComponentElementProps,
-    };
-  }).filter((update): update is NonNullable<typeof update> => update !== null);
+      return {
+        elementId: id,
+        prevProps: element.props as ComponentElementProps,
+        newProps: { ...element.props, ...updates } as ComponentElementProps,
+      };
+    })
+    .filter((update): update is NonNullable<typeof update> => update !== null);
 
   if (batchUpdates.length === 0) return;
 
   // Add to history
   historyManager.addEntry({
-    type: 'batch',
+    type: "batch",
     elementId: elementIds[0], // Primary element for reference
     elementIds: elementIds,
     data: {
@@ -47,7 +52,9 @@ export function trackBatchUpdate(
     },
   });
 
-  console.log(`✅ [History] Tracked batch update for ${batchUpdates.length} elements`);
+  console.log(
+    `✅ [History] Tracked batch update for ${batchUpdates.length} elements`,
+  );
 }
 
 /**
@@ -58,12 +65,12 @@ export function trackBatchUpdate(
  */
 export function trackGroupCreation(
   groupElement: Element,
-  childElements: Element[]
+  childElements: Element[],
 ): void {
   if (childElements.length === 0) return;
 
   historyManager.addEntry({
-    type: 'group',
+    type: "group",
     elementId: groupElement.id,
     elementIds: childElements.map((el) => el.id),
     data: {
@@ -76,7 +83,9 @@ export function trackGroupCreation(
     },
   });
 
-  console.log(`✅ [History] Tracked group creation: ${groupElement.id} with ${childElements.length} children`);
+  console.log(
+    `✅ [History] Tracked group creation: ${groupElement.id} with ${childElements.length} children`,
+  );
 }
 
 /**
@@ -89,12 +98,12 @@ export function trackGroupCreation(
 export function trackUngroup(
   groupId: string,
   childElements: Element[],
-  groupElement: Element
+  groupElement: Element,
 ): void {
   if (childElements.length === 0) return;
 
   historyManager.addEntry({
-    type: 'ungroup',
+    type: "ungroup",
     elementId: groupId,
     elementIds: childElements.map((el) => el.id),
     data: {
@@ -107,7 +116,9 @@ export function trackUngroup(
     },
   });
 
-  console.log(`✅ [History] Tracked ungroup: ${groupId} with ${childElements.length} children`);
+  console.log(
+    `✅ [History] Tracked ungroup: ${groupId} with ${childElements.length} children`,
+  );
 }
 
 /**
@@ -122,7 +133,7 @@ export function trackMultiDelete(elements: Element[]): void {
   // This allows proper undo/redo with parent-child relationships
   elements.forEach((element) => {
     historyManager.addEntry({
-      type: 'remove',
+      type: "remove",
       elementId: element.id,
       data: {
         element: element,
@@ -131,7 +142,9 @@ export function trackMultiDelete(elements: Element[]): void {
     });
   });
 
-  console.log(`✅ [History] Tracked multi-delete for ${elements.length} elements`);
+  console.log(
+    `✅ [History] Tracked multi-delete for ${elements.length} elements`,
+  );
 }
 
 /**
@@ -152,9 +165,9 @@ export function trackMultiPaste(newElements: Element[]): void {
   const [firstElement, ...restElements] = newElements;
 
   historyManager.addEntry({
-    type: 'add',
+    type: "add",
     elementId: firstElement.id, // Primary element for reference
-    elementIds: newElements.map(el => el.id), // All pasted element IDs
+    elementIds: newElements.map((el) => el.id), // All pasted element IDs
     data: {
       element: firstElement, // 첫 번째 요소 (primary)
       childElements: restElements, // 나머지 요소들 (모두 형제 관계일 수도 있음)
@@ -162,7 +175,9 @@ export function trackMultiPaste(newElements: Element[]): void {
     },
   });
 
-  console.log(`✅ [History] Tracked multi-paste: single batch entry for ${newElements.length} elements`);
+  console.log(
+    `✅ [History] Tracked multi-paste: single batch entry for ${newElements.length} elements`,
+  );
 }
 
 // ============================================
@@ -184,7 +199,9 @@ export function trackAIBatchOperation(
 ): void {
   if (prevElements.length === 0 && nextElements.length === 0) return;
   historyManager.addBatchDiffEntry(prevElements, nextElements);
-  console.log(`✅ [History] Tracked AI batch operation: ${prevElements.length} → ${nextElements.length} elements`);
+  console.log(
+    `✅ [History] Tracked AI batch operation: ${prevElements.length} → ${nextElements.length} elements`,
+  );
 }
 
 /**
@@ -194,24 +211,26 @@ export function trackAIBatchOperation(
  * 모든 인스턴스에 전파된 변경사항을 trackBatchUpdate()로 묶어
  * Undo 시 Master + 인스턴스 모두 원래 상태로 복원한다.
  *
- * @param masterId - Master 컴포넌트 ID
+ * @param masterRefId - Master 컴포넌트 ID
  * @param updates - 전파할 속성 업데이트
  * @param componentIndex - 현재 ComponentIndex (masterToInstances 조회용)
  * @param elementsMap - 전체 요소 Map
  */
 export function trackInstancePropagation(
-  masterId: string,
+  masterRefId: string,
   updates: Record<string, unknown>,
   componentIndex: ComponentIndex,
   elementsMap: Map<string, Element>,
 ): void {
-  const instanceIds = componentIndex.masterToInstances.get(masterId);
+  const instanceIds = componentIndex.masterToInstances.get(masterRefId);
   if (!instanceIds || instanceIds.size === 0) return;
 
   // Master + 모든 Instance를 하나의 batch로 추적
-  const allIds = [masterId, ...instanceIds];
+  const allIds = [masterRefId, ...instanceIds];
   trackBatchUpdate(allIds, updates, elementsMap);
-  console.log(`✅ [History] Tracked instance propagation: master ${masterId} → ${instanceIds.size} instances`);
+  console.log(
+    `✅ [History] Tracked instance propagation: master ${masterRefId} → ${instanceIds.size} instances`,
+  );
 }
 
 /**
@@ -221,16 +240,28 @@ export function trackInstancePropagation(
  * @param updateElementProps - Function to update element props
  */
 export async function undoBatchUpdate(
-  batchUpdates: Array<{ elementId: string; prevProps: ComponentElementProps; newProps: ComponentElementProps }>,
-  updateElementProps: (id: string, props: Record<string, unknown>) => Promise<void>
+  batchUpdates: Array<{
+    elementId: string;
+    prevProps: ComponentElementProps;
+    newProps: ComponentElementProps;
+  }>,
+  updateElementProps: (
+    id: string,
+    props: Record<string, unknown>,
+  ) => Promise<void>,
 ): Promise<void> {
   await Promise.all(
     batchUpdates.map((update) =>
-      updateElementProps(update.elementId, update.prevProps as Record<string, unknown>)
-    )
+      updateElementProps(
+        update.elementId,
+        update.prevProps as Record<string, unknown>,
+      ),
+    ),
   );
 
-  console.log(`✅ [History] Undid batch update for ${batchUpdates.length} elements`);
+  console.log(
+    `✅ [History] Undid batch update for ${batchUpdates.length} elements`,
+  );
 }
 
 /**
@@ -240,16 +271,28 @@ export async function undoBatchUpdate(
  * @param updateElementProps - Function to update element props
  */
 export async function redoBatchUpdate(
-  batchUpdates: Array<{ elementId: string; prevProps: ComponentElementProps; newProps: ComponentElementProps }>,
-  updateElementProps: (id: string, props: Record<string, unknown>) => Promise<void>
+  batchUpdates: Array<{
+    elementId: string;
+    prevProps: ComponentElementProps;
+    newProps: ComponentElementProps;
+  }>,
+  updateElementProps: (
+    id: string,
+    props: Record<string, unknown>,
+  ) => Promise<void>,
 ): Promise<void> {
   await Promise.all(
     batchUpdates.map((update) =>
-      updateElementProps(update.elementId, update.newProps as Record<string, unknown>)
-    )
+      updateElementProps(
+        update.elementId,
+        update.newProps as Record<string, unknown>,
+      ),
+    ),
   );
 
-  console.log(`✅ [History] Redid batch update for ${batchUpdates.length} elements`);
+  console.log(
+    `✅ [History] Redid batch update for ${batchUpdates.length} elements`,
+  );
 }
 
 /**
@@ -266,7 +309,7 @@ export async function undoGroupCreation(
   childIds: string[],
   removeElement: (id: string) => Promise<void>,
   updateElement: (id: string, updates: Partial<Element>) => Promise<void>,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): Promise<void> {
   // Get group element to restore children's original parent_id
   const groupElement = elementsMap.get(groupId);
@@ -275,8 +318,8 @@ export async function undoGroupCreation(
   // Restore children's original parent_id
   await Promise.all(
     childIds.map((childId) =>
-      updateElement(childId, { parent_id: originalParentId })
-    )
+      updateElement(childId, { parent_id: originalParentId }),
+    ),
   );
 
   // Remove group
@@ -297,7 +340,7 @@ export async function redoGroupCreation(
   groupElement: Element,
   childIds: string[],
   addElement: (element: Element) => Promise<void>,
-  updateElement: (id: string, updates: Partial<Element>) => Promise<void>
+  updateElement: (id: string, updates: Partial<Element>) => Promise<void>,
 ): Promise<void> {
   // Recreate group
   await addElement(groupElement);
@@ -305,8 +348,8 @@ export async function redoGroupCreation(
   // Move children into group
   await Promise.all(
     childIds.map((childId) =>
-      updateElement(childId, { parent_id: groupElement.id })
-    )
+      updateElement(childId, { parent_id: groupElement.id }),
+    ),
   );
 
   console.log(`✅ [History] Redid group creation: ${groupElement.id}`);

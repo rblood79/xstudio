@@ -1,4 +1,5 @@
 import type { Element } from "../../../../types/core/store.types";
+import { matchesLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 import { getElementBoundsSimple } from "../elementRegistry";
 
 export interface CanvasPoint {
@@ -56,7 +57,7 @@ function findFrameBodySelectionAtCanvasPoint({
       if (element.deleted) continue;
       if (element.type.toLowerCase() !== "body") continue;
       if (element.page_id != null) continue;
-      if (element.layout_id !== area.frameId) continue;
+      if (!matchesLegacyLayoutId(element, area.frameId)) continue;
       return {
         bodyElementId: element.id,
         pageId: null,

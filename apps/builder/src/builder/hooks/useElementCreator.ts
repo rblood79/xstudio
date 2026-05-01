@@ -11,6 +11,7 @@ import { COMPLEX_COMPONENT_TAGS } from "../factories/constants";
 import { useErrorHandler, type ErrorInfo } from "./useErrorHandler";
 import { generateCustomId } from "../utils/idGeneration";
 import { ElementUtils } from "../../utils/element/elementUtils";
+import { withLegacyLayoutId } from "../../adapters/canonical/legacyElementFields";
 //import { useStore } from '../stores';
 
 export interface UseElementCreatorReturn {
@@ -217,19 +218,21 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 elements,
               );
 
-              const newElement: Element = {
-                id: crypto.randomUUID(), // UUID 생성
-                type,
-                customId: generateCustomId(type, elements),
-                props: getDefaultProps(type),
-                // Layout 모드면 layout_id 사용, 아니면 page_id 사용
-                page_id: layoutId ? null : currentPageId,
-                layout_id: layoutId || null,
-                parent_id: parentId,
-                order_num: orderNum,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              };
+              const newElement: Element = withLegacyLayoutId(
+                {
+                  id: crypto.randomUUID(), // UUID 생성
+                  type,
+                  customId: generateCustomId(type, elements),
+                  props: getDefaultProps(type),
+                  // Layout 모드면 legacy layout binding 사용, 아니면 page_id 사용
+                  page_id: layoutId ? null : currentPageId,
+                  parent_id: parentId,
+                  order_num: orderNum,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                },
+                layoutId || null,
+              );
 
               // addElement 호출 (내부에서 DB 저장 처리)
               addElement(newElement);

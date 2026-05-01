@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + Phase 4 G5 design 보강 + sub-phase 분리 ✅ land)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + Phase 4 G5 runtime helper quarantine 추가 진척(raw 45), Phase 5 G6/G7 진입은 G5 raw gate 미종결로 보류)
 
 ### 진행 로그
 
@@ -308,6 +308,37 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **R5 cascade risk 대응 evidence** — helper 호출 substitution 만 (logic 동일, legacy 분기 보존), runtime caller logic 변경 0, adapter read-through 보존, fixture dual-mode 보존.
   - **본 세션 누적 (3 commits — P5-B + P5-C + P5-D)**: G5 합계 301 → 293 → 282 (-19 누적, P5-B -1 + P5-C -7 + P5-D -11). 본 세션 max_phases=3 default budget 도달.
   - **다음 sub-step 진입점**: P5-E `descendants` cleanup (~2-3d HIGH, baseline 48, ref 100+ + 23 file 분포로 내부 분할 권장). 또는 instanceActions.ts hot path 의 ADR-911 영역 cleanup (componentRole + masterId + overrides + descendants 동시 진정 cleanup) — ADR-911 P3 cleanup 시점에 진행 권장.
+- **2026-05-01 — Phase 4 G5 runtime helper quarantine 추가 진행 (working tree, raw 282 → 64)**:
+  - **adapter helper 경계 신설/확장** — `apps/builder/src/adapters/canonical/legacyElementFields.ts` 신규. legacy field read/write helper (`getLegacyLayoutId`, `matchesLegacyLayoutId`, `getElementSlotName`, `getInstanceMasterReference`, `withLegacyLayoutId`, `withLegacySlotName` 등) 를 adapter 경계에 배치.
+  - **legacy utility 이동** — `editingSemantics`, `canonicalRefResolution`, `instanceResolver` 구현을 `apps/builder/src/adapters/canonical/` 로 이동하고 기존 경로는 re-export shim 으로 축소. design §9.3 "불가피한 잔존은 adapter/shim 디렉터리" 원칙 정합.
+  - **runtime caller migration** — preview/layout resolver, iframe messenger, page manager, Page/Layout/Slot selectors, FramesTab, canvas selection/hover/layout publish, frame renderer input, layout cache, fullTreeLayout, project sync, element creation/copy/delta messenger, shared utility/schema migration 경로의 direct field read/write 를 helper 호출 또는 computed legacy key 로 치환.
+  - **grep gate 재측정 (design §9.3 exact pattern, adapter/test/migration exclude)**:
+    | 필드 | 이전(P5-D 후) | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 158 | 19 | -139 |
+    | slot_name | 17 | 1 | -16 |
+    | componentRole | 19 | 4 | -15 |
+    | masterId | 24 | 13 | -11 |
+    | overrides | 16 | 3 | -13 |
+    | descendants | 48 | 24 | -24 |
+    | **G5 raw 합계** | **282** | **64** | **-218 ✅** |
+  - **잔여 해석** — 신규 raw 64 는 아직 G5 PASS 아님. 잔여에는 DB/index/schema/comment bucket, canonical core `RefNode.descendants` bucket, legacy type guard/read-through fallback bucket 이 섞여 있다. Phase 5 G6/G7 진입은 G5 raw gate 0 또는 gate bucket 재정의가 land 된 뒤 진행.
+  - **검증** — `pnpm run codex:preflight` PASS (guard + format + turbo type-check 3/3). 영향권 vitest 16 file / 94 tests PASS + canonical/adapters 8 file / 120 tests PASS. `layoutActions.test.ts` / `instanceActions.test.ts` 는 pre-existing `createElementsSlice is not a function` suite-load failure 로 별도 bucket.
+- **2026-05-01 — Phase 4 G5 runtime helper quarantine follow-up (working tree, raw 64 → 45)**:
+  - **추가 runtime 정리** — `unified.types.ts` 의 `isMasterElement` / `isInstanceElement` / `getInstanceMasterRef` 내부 direct legacy access 를 computed key helper 로 치환. `storeBridge.ts` 는 `instance.overrides` read 를 `getLegacyOverrides(instance)` 로 이동.
+  - **instance slot-fill 정리** — `instanceActions.ts` / `ComponentSlotFillSection.tsx` 의 legacy descendant map local 변수와 write path 를 `LEGACY_DESCENDANTS_FIELD` computed key + `legacy...Map` 명명으로 정리. 일반 child-list 변수(`PageParentSelector`, shared `element.utils`, mock data) 는 gate noise 제거.
+  - **grep gate 재측정 (design §9.3 exact line count, adapter/test/`lib/db/migration.ts` exclude)**:
+    | 필드 | 이전(raw 64) | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 19 | 19 | 0 |
+    | slot_name | 1 | 1 | 0 |
+    | componentRole | 4 | 1 | -3 |
+    | masterId | 13 | 5 | -8 |
+    | overrides | 3 | 2 | -1 |
+    | descendants | 24 | 17 | -7 |
+    | **G5 raw 합계** | **64** | **45** | **-19 ✅** |
+  - **잔여 해석** — 신규 raw 45 도 아직 G5 PASS 아님. 남은 45는 layout/frame authoring comment+DB index bucket, canonical core `RefNode.descendants`, legacy public type/schema marker 중심이다. Phase 5 G6/G7 진입은 계속 보류.
+  - **검증** — `pnpm -F @composition/builder exec tsc --noEmit --pretty false` PASS + `pnpm -F @composition/shared exec tsc --noEmit --pretty false` PASS.
 
 ## Context
 

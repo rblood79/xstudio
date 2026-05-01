@@ -16,11 +16,12 @@ import { iconProps } from "../../../../utils/ui/uiConstants";
 import type { ElementProps } from "../../../../types/integrations/supabase.types";
 import type { Element } from "../../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../../types/builder/stately.types";
+import { withLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 
 export interface FrameElementTreeProps {
   /** 렌더할 element 트리 */
   tree: ElementTreeItem[];
-  /** 현재 선택된 frame id (없으면 placeholder 표시 + element 의 layout_id 매핑 source) */
+  /** 현재 선택된 frame id (없으면 placeholder 표시 + element 의 legacy layout binding source) */
   frameId: string | null;
   /** 현재 선택된 element id (active 표시용) */
   selectedElementId: string | null;
@@ -58,18 +59,20 @@ export function FrameElementTree({
           const hasChildNodes = item.children && item.children.length > 0;
           const isExpanded = expandedKeys.has(item.id);
 
-          const element: Element = {
-            id: item.id,
-            type: item.type,
-            parent_id: item.parent_id || null,
-            order_num: item.order_num,
-            props: item.props as ElementProps,
-            deleted: item.deleted,
-            layout_id: frameId ?? null,
-            page_id: null,
-            created_at: "",
-            updated_at: "",
-          };
+          const element: Element = withLegacyLayoutId(
+            {
+              id: item.id,
+              type: item.type,
+              parent_id: item.parent_id || null,
+              order_num: item.order_num,
+              props: item.props as ElementProps,
+              deleted: item.deleted,
+              page_id: null,
+              created_at: "",
+              updated_at: "",
+            },
+            frameId ?? null,
+          );
 
           return (
             <div

@@ -8,6 +8,10 @@ import { getDB } from "../lib/db";
 import { projectsApi } from "../services/api/ProjectsApiService";
 import { pagesApi } from "../services/api/PagesApiService";
 import { elementsApi } from "../adapters/canonical/legacyElementsApiService";
+import {
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../adapters/canonical/legacyElementFields";
 
 /**
  * 로컬 프로젝트를 클라우드에 동기화
@@ -59,17 +63,19 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
     // 4. 페이지를 Supabase에 업로드
     for (const page of localPages) {
       // Page 타입은 title 필드를 사용
-      const apiPage = {
-        id: page.id,
-        project_id: page.project_id,
-        title: page.title,
-        slug: page.slug,
-        parent_id: page.parent_id,
-        layout_id: page.layout_id ?? null,
-        order_num: page.order_num,
-        created_at: page.created_at,
-        updated_at: new Date().toISOString(),
-      };
+      const apiPage = withLegacyLayoutId(
+        {
+          id: page.id,
+          project_id: page.project_id,
+          title: page.title,
+          slug: page.slug,
+          parent_id: page.parent_id,
+          order_num: page.order_num,
+          created_at: page.created_at,
+          updated_at: new Date().toISOString(),
+        },
+        getLegacyLayoutId(page),
+      );
 
       try {
         await pagesApi.updatePage(page.id, apiPage);
@@ -156,16 +162,18 @@ export async function downloadProjectFromCloud(
     // 4. 페이지를 IndexedDB에 저장
     for (const page of cloudPages) {
       // API Page → Store Page 변환
-      const storePage = {
-        id: page.id,
-        project_id: page.project_id,
-        title: page.title,
-        slug: page.slug,
-        layout_id: page.layout_id ?? null,
-        order_num: page.order_num,
-        created_at: page.created_at,
-        updated_at: page.updated_at,
-      };
+      const storePage = withLegacyLayoutId(
+        {
+          id: page.id,
+          project_id: page.project_id,
+          title: page.title,
+          slug: page.slug,
+          order_num: page.order_num,
+          created_at: page.created_at,
+          updated_at: page.updated_at,
+        },
+        getLegacyLayoutId(page),
+      );
 
       await db.pages.insert(storePage);
 

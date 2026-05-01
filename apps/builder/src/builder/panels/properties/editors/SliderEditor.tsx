@@ -9,6 +9,10 @@ import type { ComponentEditorProps } from "../../../inspector/types";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
+import {
+  getElementLayoutId,
+  withLegacyLayoutId,
+} from "../../../../adapters/canonical/legacyElementFields";
 
 /**
  * Slider hybrid afterSections — Range Mode만 수동
@@ -58,7 +62,9 @@ export const SliderHybridAfterSections = memo(
         const maxVal = Number(currentProps.maxValue) || 100;
 
         const sliderChildren = childrenMap.get(elementId) ?? [];
-        const sliderTrack = sliderChildren.find((c) => c.type === "SliderTrack");
+        const sliderTrack = sliderChildren.find(
+          (c) => c.type === "SliderTrack",
+        );
         const sliderOutputRef = sliderChildren.find(
           (c) => c.type === "SliderOutput",
         );
@@ -92,18 +98,22 @@ export const SliderHybridAfterSections = memo(
             ).length;
             if (thumbCount < 2) {
               const parentEl = elementsMap.get(elementId);
-              await store.addElement({
-                id: crypto.randomUUID(),
-                type: "SliderThumb",
-                props: {
-                  style: { width: 18, height: 18, borderRadius: "50%" },
-                },
-                parent_id: sliderTrack.id,
-                page_id: parentEl?.page_id ?? null,
-                layout_id: parentEl?.layout_id ?? null,
-                order_num: thumbCount,
-                deleted: false,
-              });
+              await store.addElement(
+                withLegacyLayoutId(
+                  {
+                    id: crypto.randomUUID(),
+                    type: "SliderThumb",
+                    props: {
+                      style: { width: 18, height: 18, borderRadius: "50%" },
+                    },
+                    parent_id: sliderTrack.id,
+                    page_id: parentEl?.page_id ?? null,
+                    order_num: thumbCount,
+                    deleted: false,
+                  },
+                  parentEl ? getElementLayoutId(parentEl) : null,
+                ),
+              );
             }
           }
         } else {
@@ -125,7 +135,9 @@ export const SliderHybridAfterSections = memo(
 
           if (sliderTrack) {
             const trackChildren = childrenMap.get(sliderTrack.id) ?? [];
-            const thumbs = trackChildren.filter((c) => c.type === "SliderThumb");
+            const thumbs = trackChildren.filter(
+              (c) => c.type === "SliderThumb",
+            );
             if (thumbs.length > 1) {
               const toRemove = thumbs.slice(1).map((t) => t.id);
               await store.removeElements(toRemove);

@@ -19,6 +19,7 @@ import type { PageFrame, ElementBounds } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { SelectionRenderResult } from "./skiaWorkflowSelection";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
+import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 import {
   renderDropIndicator,
   type DropIndicatorState,
@@ -200,12 +201,9 @@ function resolveSelectedFrameIdForTitle(
 ): string | null {
   for (const elementId of selectedElementIds) {
     const element = elementsMap.get(elementId);
-    if (
-      element?.page_id == null &&
-      typeof element?.layout_id === "string" &&
-      element.layout_id.length > 0
-    ) {
-      return element.layout_id;
+    const layoutId = element ? getElementLayoutId(element) : null;
+    if (element?.page_id == null && layoutId) {
+      return layoutId;
     }
   }
 

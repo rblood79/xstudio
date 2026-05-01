@@ -20,6 +20,11 @@ import type {
   SlotDefinition,
 } from "./types";
 import type { Element } from "../../../../../types/builder/unified.types";
+import {
+  getLegacySlotName,
+  matchesLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../../../../adapters/canonical/legacyElementFields";
 
 export { normalizeFramePresetContainerStyle } from "./presetStyle";
 
@@ -67,25 +72,27 @@ export function usePresetApply({
   // 항상 false → existingSlots 0개 → currentPresetKey null → 우측 LayoutPresetSelector
   // 의 "적용됨" 표시 stale.
   //
-  // 직접 매칭 (`el.layout_id === layoutId`) 은 hoist 영향 받지 않음. slot 은
-  // P4 까지 legacy element 로 elementsMap 에 존재 (layout_id field 보유). 좌측
+  // 직접 layout binding 매칭은 hoist 영향 받지 않음. slot 은
+  // P4 까지 legacy element 로 elementsMap 에 존재. 좌측
   // FramesTab.frameElements 도 같은 직접 매칭 패턴 사용 — 정상 작동 확인됨.
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
     const slots: ExistingSlotInfo[] = [];
     elementsMap.forEach((el) => {
-      if (el.type === "Slot" && el.layout_id === layoutId && !el.deleted) {
+      if (
+        el.type === "Slot" &&
+        matchesLegacyLayoutId(el, layoutId) &&
+        !el.deleted
+      ) {
         const slotChildren = childrenMap.get(el.id) ?? [];
         const slotName =
           ((el.props as { name?: string })?.name as string) || "unnamed";
         const hasChildren =
           slotChildren.length > 0 ||
-          // slot_name 매칭도 확인
+          // legacy slot binding 매칭도 확인
           (() => {
             let found = false;
             elementsMap.forEach((other) => {
-              if (
-                (other.props as { slot_name?: string })?.slot_name === slotName
-              ) {
+              if (getLegacySlotName(other.props) === slotName) {
                 found = true;
               }
             });
@@ -182,20 +189,23 @@ export function usePresetApply({
         // ============================================
         let orderNum = 1;
         const slotElements: Element[] = slotsToCreate.map(
-          (slotDef): Element => ({
-            id: crypto.randomUUID(),
-            type: "Slot",
-            props: {
-              name: slotDef.name,
-              required: slotDef.required,
-              description: slotDef.description,
-              style: slotDef.defaultStyle,
-            },
-            parent_id: bodyElementId,
-            layout_id: layoutId,
-            page_id: null,
-            order_num: orderNum++,
-          }),
+          (slotDef): Element =>
+            withLegacyLayoutId(
+              {
+                id: crypto.randomUUID(),
+                type: "Slot",
+                props: {
+                  name: slotDef.name,
+                  required: slotDef.required,
+                  description: slotDef.description,
+                  style: slotDef.defaultStyle,
+                },
+                parent_id: bodyElementId,
+                page_id: null,
+                order_num: orderNum++,
+              },
+              layoutId,
+            ),
         );
 
         // ============================================

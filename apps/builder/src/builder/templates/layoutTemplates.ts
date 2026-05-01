@@ -6,6 +6,10 @@
  */
 
 import type { SlotProps } from "../../types/builder/layout.types";
+import {
+  LEGACY_LAYOUT_ID_FIELD,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 
 /**
  * Layout 템플릿 요소 정의
@@ -65,7 +69,10 @@ export const singleColumnTemplate: LayoutTemplate = {
       children: [
         {
           type: "Slot",
-          props: { name: "header", description: "Page header area" } as SlotProps,
+          props: {
+            name: "header",
+            description: "Page header area",
+          } as SlotProps,
           style: { width: "100%" },
         },
         {
@@ -79,7 +86,10 @@ export const singleColumnTemplate: LayoutTemplate = {
         },
         {
           type: "Slot",
-          props: { name: "footer", description: "Page footer area" } as SlotProps,
+          props: {
+            name: "footer",
+            description: "Page footer area",
+          } as SlotProps,
           style: { width: "100%" },
         },
       ],
@@ -112,7 +122,10 @@ export const twoColumnTemplate: LayoutTemplate = {
       children: [
         {
           type: "Slot",
-          props: { name: "header", description: "Page header area" } as SlotProps,
+          props: {
+            name: "header",
+            description: "Page header area",
+          } as SlotProps,
           style: { width: "100%" },
         },
         {
@@ -145,7 +158,10 @@ export const twoColumnTemplate: LayoutTemplate = {
         },
         {
           type: "Slot",
-          props: { name: "footer", description: "Page footer area" } as SlotProps,
+          props: {
+            name: "footer",
+            description: "Page footer area",
+          } as SlotProps,
           style: { width: "100%" },
         },
       ],
@@ -179,7 +195,10 @@ export const threeColumnTemplate: LayoutTemplate = {
       children: [
         {
           type: "Slot",
-          props: { name: "header", description: "Page header area" } as SlotProps,
+          props: {
+            name: "header",
+            description: "Page header area",
+          } as SlotProps,
           style: { width: "100%" },
         },
         {
@@ -220,7 +239,10 @@ export const threeColumnTemplate: LayoutTemplate = {
         },
         {
           type: "Slot",
-          props: { name: "footer", description: "Page footer area" } as SlotProps,
+          props: {
+            name: "footer",
+            description: "Page footer area",
+          } as SlotProps,
           style: { width: "100%" },
         },
       ],
@@ -461,7 +483,11 @@ export const landingPageTemplate: LayoutTemplate = {
   slots: [
     { name: "header", description: "Site header with navigation" },
     { name: "hero", description: "Hero section with main CTA" },
-    { name: "content", required: true, description: "Main page content sections" },
+    {
+      name: "content",
+      required: true,
+      description: "Main page content sections",
+    },
     { name: "cta", description: "Call-to-action section" },
     { name: "footer", description: "Site footer" },
   ],
@@ -588,41 +614,47 @@ export function getLayoutTemplateById(id: string): LayoutTemplate | undefined {
 export function createElementsFromTemplate(
   template: LayoutTemplate,
   layoutId: string,
-  generateId: () => string
-): Array<{
-  id: string;
-  type: string;
-  props: Record<string, unknown>;
-  style?: React.CSSProperties;
-  parent_id: string | null;
-  layout_id: string;
-  order_num: number;
-}> {
-  const elements: Array<{
+  generateId: () => string,
+): Array<
+  {
     id: string;
     type: string;
     props: Record<string, unknown>;
     style?: React.CSSProperties;
     parent_id: string | null;
-    layout_id: string;
     order_num: number;
-  }> = [];
+  } & Record<typeof LEGACY_LAYOUT_ID_FIELD, string>
+> {
+  type LegacyTemplateElement = {
+    id: string;
+    type: string;
+    props: Record<string, unknown>;
+    style?: React.CSSProperties;
+    parent_id: string | null;
+    order_num: number;
+  } & Record<typeof LEGACY_LAYOUT_ID_FIELD, string>;
+
+  const elements: LegacyTemplateElement[] = [];
 
   function processElement(
     templateEl: LayoutTemplateElement,
     parentId: string | null,
-    orderNum: number
+    orderNum: number,
   ): string {
     const id = generateId();
-    elements.push({
-      id,
-      type: templateEl.type,
-      props: templateEl.props,
-      style: templateEl.style,
-      parent_id: parentId,
-      layout_id: layoutId,
-      order_num: orderNum,
-    });
+    elements.push(
+      withLegacyLayoutId(
+        {
+          id,
+          type: templateEl.type,
+          props: templateEl.props,
+          style: templateEl.style,
+          parent_id: parentId,
+          order_num: orderNum,
+        },
+        layoutId,
+      ) as LegacyTemplateElement,
+    );
 
     if (templateEl.children) {
       templateEl.children.forEach((child, index) => {

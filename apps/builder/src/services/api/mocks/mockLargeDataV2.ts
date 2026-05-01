@@ -633,7 +633,7 @@ const generateMockOrganizations = (count: number): MockOrganization[] => {
 const generateMockDepartments = (
   organizations: MockOrganization[],
   min = 2,
-  max = 5
+  max = 5,
 ): MockDepartment[] => {
   const departments: MockDepartment[] = [];
   organizations.forEach((org) => {
@@ -654,13 +654,13 @@ const generateMockDepartments = (
 const generateMockProjects = (
   organizations: MockOrganization[],
   departments: MockDepartment[],
-  count: number
+  count: number,
 ): MockProject[] => {
   const projects: MockProject[] = [];
   for (let i = 0; i < count; i++) {
     const organization = randomFromArray(organizations);
     const deptCandidates = departments.filter(
-      (dept) => dept.organizationId === organization.id
+      (dept) => dept.organizationId === organization.id,
     );
     const department = randomFromArray(deptCandidates);
     const startDate = getRandomDateWithinYears(2);
@@ -707,7 +707,7 @@ const generateMockUsers = ({
   for (let i = 1; i <= count; i++) {
     const organization = randomFromArray(organizations);
     const organizationDepartments = departments.filter(
-      (dept) => dept.organizationId === organization.id
+      (dept) => dept.organizationId === organization.id,
     );
     const department =
       organizationDepartments.length > 0
@@ -759,14 +759,14 @@ const generateMockProjectMemberships = ({
 
   projects.forEach((project) => {
     const sameOrgUsers = users.filter(
-      (user) => user.organizationId === project.organizationId
+      (user) => user.organizationId === project.organizationId,
     );
     const candidateUsers = sameOrgUsers.length >= 3 ? sameOrgUsers : users;
     const minMembers =
       candidateUsers.length > 1 ? Math.min(3, candidateUsers.length) : 1;
     const maxMembers = Math.max(
       minMembers,
-      Math.min(12, candidateUsers.length)
+      Math.min(12, candidateUsers.length),
     );
     const memberCount = randomInt(minMembers, maxMembers);
     const selectedUsers = new Set<MockUserData>();
@@ -806,7 +806,7 @@ interface GenerateAuditLogsOptions {
 
 const generateMockAuditLogs = (
   { users, projects, organizations }: GenerateAuditLogsOptions,
-  count = 500
+  count = 500,
 ): MockAuditLog[] => {
   const logs: MockAuditLog[] = [];
   for (let i = 0; i < count; i++) {
@@ -865,7 +865,7 @@ interface GenerateInvitationsOptions {
 
 const generateMockInvitations = (
   { organizations, roles, users }: GenerateInvitationsOptions,
-  count = 200
+  count = 200,
 ): MockInvitation[] => {
   const globalRoles = roles.filter((role) => role.scope === "global");
   const invitations: MockInvitation[] = [];
@@ -894,7 +894,7 @@ const generateMockInvitations = (
 
 const generateMockEngines = (
   projects: MockProject[],
-  users: MockUserData[]
+  users: MockUserData[],
 ): MockEngine[] => {
   const engines: MockEngine[] = [];
 
@@ -918,7 +918,7 @@ const generateMockEngines = (
       const projectUsers = users.filter(
         (u) =>
           u.projectMembershipIds.length > 0 &&
-          u.organizationId === project.organizationId
+          u.organizationId === project.organizationId,
       );
       const creator =
         projectUsers.length > 0
@@ -938,7 +938,7 @@ const generateMockEngines = (
           weight: `${randomInt(50, 300)}kg`,
           dimensions: `${randomInt(400, 800)}x${randomInt(
             300,
-            600
+            600,
           )}x${randomInt(400, 700)}mm`,
         },
         createdAt: formatDate(createdAt),
@@ -965,7 +965,7 @@ const generateComponentsRecursive = (
   maxDepth: number,
   minChildrenPerNode: number,
   maxChildrenPerNode: number,
-  assemblyProbability: number
+  assemblyProbability: number,
 ): MockComponent[] => {
   const components: MockComponent[] = [];
   const {
@@ -1044,11 +1044,11 @@ const generateComponentsRecursive = (
   const childCountMultiplier = Math.max(0.3, 1 - depth * 0.15);
   const adjustedMinChildren = Math.max(
     1,
-    Math.floor(minChildrenPerNode * childCountMultiplier)
+    Math.floor(minChildrenPerNode * childCountMultiplier),
   );
   const adjustedMaxChildren = Math.max(
     adjustedMinChildren,
-    Math.floor(maxChildrenPerNode * childCountMultiplier)
+    Math.floor(maxChildrenPerNode * childCountMultiplier),
   );
   const childCount = randomInt(adjustedMinChildren, adjustedMaxChildren);
 
@@ -1067,7 +1067,7 @@ const generateComponentsRecursive = (
       maxDepth,
       minChildrenPerNode,
       maxChildrenPerNode,
-      assemblyProbability * 0.7
+      assemblyProbability * 0.7,
     );
     components.push(...childComponents);
   }
@@ -1083,7 +1083,7 @@ const generateMockComponents = (
     maxChildrenPerNode?: number;
     topLevelAssemblies?: number[];
     assemblyProbability?: number;
-  } = {}
+  } = {},
 ): MockComponent[] => {
   const {
     maxDepth = 5,
@@ -1100,7 +1100,7 @@ const generateMockComponents = (
 
     const assemblyCount = randomInt(
       topLevelAssemblies[0],
-      topLevelAssemblies[1]
+      topLevelAssemblies[1],
     );
     const selectedAssemblies = [];
     const availableAssemblies = [...COMPONENT_ASSEMBLIES];
@@ -1125,7 +1125,7 @@ const generateMockComponents = (
         maxDepth,
         minChildrenPerNode,
         maxChildrenPerNode,
-        assemblyProbability
+        assemblyProbability,
       );
 
       components.push(...treeComponents);
@@ -1138,13 +1138,13 @@ const generateMockComponents = (
 const hydrateManagers = (
   departments: MockDepartment[],
   organizations: MockOrganization[],
-  users: MockUserData[]
+  users: MockUserData[],
 ): void => {
   const usersByDepartment = new Map<string, MockUserData[]>();
   departments.forEach((department) => {
     usersByDepartment.set(
       department.id,
-      users.filter((user) => user.departmentId === department.id)
+      users.filter((user) => user.departmentId === department.id),
     );
   });
 
@@ -1158,7 +1158,7 @@ const hydrateManagers = (
 
   organizations.forEach((organization) => {
     const orgUsers = users.filter(
-      (user) => user.organizationId === organization.id
+      (user) => user.organizationId === organization.id,
     );
     organization.primaryContactUserId =
       orgUsers.length > 0 ? randomFromArray(orgUsers).id : undefined;
@@ -1170,7 +1170,7 @@ const generateCmsMockData = (
     organizationCount: number;
     projectCount: number;
     userCount: number;
-  }>
+  }>,
 ): CmsMockData => {
   // ✅ 개선: 성능 모니터링
   console.time("⏱️ Mock 데이터 생성");
@@ -1196,7 +1196,7 @@ const generateCmsMockData = (
     const projects = generateMockProjects(
       organizations,
       departments,
-      config.projectCount
+      config.projectCount,
     );
     const users = generateMockUsers({
       count: config.userCount,
@@ -1250,7 +1250,9 @@ const generateCmsMockData = (
       console.error("스택 트레이스:", error.stack);
     }
 
-    throw new Error(`Mock 데이터 생성 중 오류 발생: ${error}`, { cause: error });
+    throw new Error(`Mock 데이터 생성 중 오류 발생: ${error}`, {
+      cause: error,
+    });
   }
 };
 
@@ -1337,12 +1339,13 @@ const generateJsonPlaceholderUsers = (): MockJsonPlaceholderUser[] => {
   return largeMockData.slice(0, 100).map((user, index) => ({
     id: index + 1,
     name: user.name,
-    username: user.name.replace(/\s+/g, '').toLowerCase() + (index + 1),
+    username: user.name.replace(/\s+/g, "").toLowerCase() + (index + 1),
     email: user.email,
     address: {
-      street: user.address.split(' ')[0] + ' ' + (user.address.split(' ')[1] || ''),
+      street:
+        user.address.split(" ")[0] + " " + (user.address.split(" ")[1] || ""),
       suite: `Apt. ${randomInt(100, 999)}`,
-      city: user.address.includes('시') ? user.address.split(' ')[0] : '서울시',
+      city: user.address.includes("시") ? user.address.split(" ")[0] : "서울시",
       zipcode: `${randomInt(10000, 99999)}`,
       geo: {
         lat: (37.5 + Math.random() * 0.5).toFixed(4),
@@ -1350,11 +1353,11 @@ const generateJsonPlaceholderUsers = (): MockJsonPlaceholderUser[] => {
       },
     },
     phone: user.phone,
-    website: `${user.name.toLowerCase().replace(/\s+/g, '')}.${randomFromArray(['com', 'net', 'org', 'io'])}`,
+    website: `${user.name.toLowerCase().replace(/\s+/g, "")}.${randomFromArray(["com", "net", "org", "io"])}`,
     company: {
       name: user.company,
-      catchPhrase: `${randomFromArray(['혁신적인', '미래지향적인', '고객중심의', '글로벌'])} ${randomFromArray(['솔루션', '서비스', '플랫폼', '기술'])}`,
-      bs: `${randomFromArray(['e-commerce', 'cloud computing', 'AI-driven', 'blockchain'])} ${randomFromArray(['solutions', 'platforms', 'services', 'infrastructure'])}`,
+      catchPhrase: `${randomFromArray(["혁신적인", "미래지향적인", "고객중심의", "글로벌"])} ${randomFromArray(["솔루션", "서비스", "플랫폼", "기술"])}`,
+      bs: `${randomFromArray(["e-commerce", "cloud computing", "AI-driven", "blockchain"])} ${randomFromArray(["solutions", "platforms", "services", "infrastructure"])}`,
     },
   }));
 };
@@ -1362,16 +1365,16 @@ const generateJsonPlaceholderUsers = (): MockJsonPlaceholderUser[] => {
 // Posts 생성 (100개)
 const generateMockPosts = (): MockPost[] => {
   const titles = [
-    '새로운 프로젝트 시작',
-    '팀 미팅 결과',
-    '기술 블로그 포스팅',
-    '제품 업데이트 안내',
-    '고객 피드백 분석',
-    '다음 분기 계획',
-    '성과 리뷰',
-    '신기술 도입 검토',
+    "새로운 프로젝트 시작",
+    "팀 미팅 결과",
+    "기술 블로그 포스팅",
+    "제품 업데이트 안내",
+    "고객 피드백 분석",
+    "다음 분기 계획",
+    "성과 리뷰",
+    "신기술 도입 검토",
   ];
-  
+
   return Array.from({ length: 100 }, (_, i) => ({
     id: i + 1,
     userId: (i % 10) + 1,
@@ -1385,13 +1388,13 @@ const generateMockPosts = (): MockPost[] => {
 // Comments 생성 (500개)
 const generateMockComments = (): MockComment[] => {
   const commentPrefixes = [
-    '좋은 의견입니다',
-    '동의합니다',
-    '추가로 제안하자면',
-    '흥미로운 관점이네요',
-    '잘 읽었습니다',
+    "좋은 의견입니다",
+    "동의합니다",
+    "추가로 제안하자면",
+    "흥미로운 관점이네요",
+    "잘 읽었습니다",
   ];
-  
+
   return Array.from({ length: 500 }, (_, i) => ({
     id: i + 1,
     postId: (i % 100) + 1,
@@ -1405,13 +1408,13 @@ const generateMockComments = (): MockComment[] => {
 // Albums 생성 (100개)
 const generateMockAlbums = (): MockAlbum[] => {
   const albumTypes = [
-    '여행 사진',
-    '프로젝트 기록',
-    '팀 이벤트',
-    '제품 사진',
-    '회사 행사',
+    "여행 사진",
+    "프로젝트 기록",
+    "팀 이벤트",
+    "제품 사진",
+    "회사 행사",
   ];
-  
+
   return Array.from({ length: 100 }, (_, i) => ({
     id: i + 1,
     userId: (i % 10) + 1,
@@ -1421,8 +1424,8 @@ const generateMockAlbums = (): MockAlbum[] => {
 
 // Photos 생성 (300개)
 const generateMockPhotos = (): MockPhoto[] => {
-  const colors = ['92c952', '771796', 'd32776', 'f66b97', '24f355', 'e8a838'];
-  
+  const colors = ["92c952", "771796", "d32776", "f66b97", "24f355", "e8a838"];
+
   return Array.from({ length: 300 }, (_, i) => ({
     id: i + 1,
     albumId: (i % 100) + 1,
@@ -1435,15 +1438,15 @@ const generateMockPhotos = (): MockPhoto[] => {
 // Todos 생성 (200개)
 const generateMockTodos = (): MockTodo[] => {
   const todoTasks = [
-    '문서 작성',
-    '코드 리뷰',
-    '회의 준비',
-    '이메일 답장',
-    '보고서 제출',
-    '테스트 실행',
-    '배포 준비',
+    "문서 작성",
+    "코드 리뷰",
+    "회의 준비",
+    "이메일 답장",
+    "보고서 제출",
+    "테스트 실행",
+    "배포 준비",
   ];
-  
+
   return Array.from({ length: 200 }, (_, i) => ({
     id: i + 1,
     userId: (i % 10) + 1,
@@ -1469,13 +1472,13 @@ export const mockTodos = generateMockTodos();
  */
 export const buildComponentTree = (
   engineId: string,
-  components: MockComponent[]
+  components: MockComponent[],
 ) => {
   type TreeNode = MockComponent & { children: TreeNode[] };
 
   const engineComponents = components.filter((c) => c.engineId === engineId);
   const map = new Map<string, TreeNode>(
-    engineComponents.map((c) => [c.id, { ...c, children: [] }])
+    engineComponents.map((c) => [c.id, { ...c, children: [] }]),
   );
   const roots: TreeNode[] = [];
 
@@ -1508,19 +1511,19 @@ export const buildComponentTree = (
 export const getProjectEnginesSummary = (
   projectId: string,
   engines: MockEngine[],
-  components: MockComponent[]
+  components: MockComponent[],
 ) => {
   const projectEngines = engines.filter((e) => e.projectId === projectId);
 
   return projectEngines.map((engine) => {
     const engineComponents = components.filter((c) => c.engineId === engine.id);
     const assemblies = engineComponents.filter(
-      (c) => c.type === "assembly" && c.level === 0
+      (c) => c.type === "assembly" && c.level === 0,
     );
     const totalParts = engineComponents.filter((c) => c.type === "part");
     const totalCost = engineComponents.reduce(
       (sum, c) => sum + c.cost * c.quantity,
-      0
+      0,
     );
     const maxDepth = Math.max(...engineComponents.map((c) => c.level), 0);
 
@@ -1540,7 +1543,7 @@ export const getProjectEnginesSummary = (
  */
 export const getComponentTreeDepth = (
   engineId: string,
-  components: MockComponent[]
+  components: MockComponent[],
 ): number => {
   const engineComponents = components.filter((c) => c.engineId === engineId);
   if (engineComponents.length === 0) return 0;
@@ -1553,7 +1556,7 @@ export const getComponentTreeDepth = (
 export const getComponentsByLevel = (
   engineId: string,
   level: number,
-  components: MockComponent[]
+  components: MockComponent[],
 ): MockComponent[] => {
   return components.filter((c) => c.engineId === engineId && c.level === level);
 };
@@ -1563,7 +1566,7 @@ export const getComponentsByLevel = (
  */
 export const getComponentPath = (
   componentId: string,
-  components: MockComponent[]
+  components: MockComponent[],
 ): MockComponent[] => {
   const component = components.find((c) => c.id === componentId);
   if (!component) return [];
@@ -1586,15 +1589,15 @@ export const getComponentPath = (
  */
 export const getComponentDescendants = (
   componentId: string,
-  components: MockComponent[]
+  components: MockComponent[],
 ): MockComponent[] => {
-  const descendants: MockComponent[] = [];
+  const nestedComponents: MockComponent[] = [];
   const children = components.filter((c) => c.parentId === componentId);
 
   children.forEach((child) => {
-    descendants.push(child);
-    descendants.push(...getComponentDescendants(child.id, components));
+    nestedComponents.push(child);
+    nestedComponents.push(...getComponentDescendants(child.id, components));
   });
 
-  return descendants;
+  return nestedComponents;
 };

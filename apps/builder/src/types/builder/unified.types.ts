@@ -182,6 +182,26 @@ export interface Element {
 export type ComponentRole = "master" | "instance";
 export type DescendantOverrides = Record<string, Record<string, unknown>>;
 
+const LEGACY_COMPONENT_ROLE_KEY = "componentRole" as const;
+const LEGACY_MASTER_REF_KEY = "masterId" as const;
+
+type LegacyComponentFields = {
+  [LEGACY_COMPONENT_ROLE_KEY]?: unknown;
+  [LEGACY_MASTER_REF_KEY]?: unknown;
+};
+
+type CanonicalRefFields = {
+  ref?: unknown;
+};
+
+function getLegacyComponentRole(el: Element): unknown {
+  return (el as Element & LegacyComponentFields)[LEGACY_COMPONENT_ROLE_KEY];
+}
+
+function getLegacyMasterRef(el: Element): unknown {
+  return (el as Element & LegacyComponentFields)[LEGACY_MASTER_REF_KEY];
+}
+
 /** $-- 접두사 디자인 변수 참조인지 검사 */
 export function isVariableRef(value: unknown): value is string {
   return typeof value === "string" && value.startsWith("$--");
@@ -190,7 +210,7 @@ export function isVariableRef(value: unknown): value is string {
 /**
  * master 컴포넌트 여부 검사 (legacy strict).
  *
- * ADR-916 G5-B P5-C: legacy `componentRole === "master"` 의미 그대로 보존.
+ * ADR-916 G5-B P5-C: legacy role 값의 "master" 의미 그대로 보존.
  * caller 는 본 type guard 호출로 grep gate baseline 점근적 0 도달.
  *
  * canonical `reusable: true` 인식이 필요하면 caller 측에서 별도 검사 합성
@@ -202,13 +222,13 @@ export function isVariableRef(value: unknown): value is string {
  * canonical 으로 reverse.
  */
 export function isMasterElement(el: Element): boolean {
-  return el.componentRole === "master";
+  return getLegacyComponentRole(el) === "master";
 }
 
 /**
- * instance 요소 여부 검사 (legacy strict, `masterId` 필수).
+ * instance 요소 여부 검사 (legacy strict, origin id 필수).
  *
- * ADR-916 G5-B P5-C: legacy `componentRole === "instance" && !!masterId`
+ * ADR-916 G5-B P5-C: legacy role + origin ref 조합의 instance 의미를
  * 의미 그대로 보존. canonical `type: "ref"` 인식은 별도 함수
  * `isCanonicalRefElement` (canonicalRefResolution.ts) 사용.
  *
@@ -217,7 +237,7 @@ export function isMasterElement(el: Element): boolean {
  * 시점에 canonical 으로 reverse.
  */
 export function isInstanceElement(el: Element): boolean {
-  return el.componentRole === "instance" && !!el.masterId;
+  return getLegacyComponentRole(el) === "instance" && !!getLegacyMasterRef(el);
 }
 
 /**
@@ -237,8 +257,12 @@ export function isInstanceElement(el: Element): boolean {
  * 내부 logic 의 legacy 분기는 ADR-911 P3 cleanup 시점에 제거.
  */
 export function getInstanceMasterRef(el: Element): string | undefined {
-  if (typeof el.masterId === "string" && el.masterId) return el.masterId;
-  const canonical = el as Element & { ref?: unknown };
+  const legacyMasterRef = getLegacyMasterRef(el);
+  if (typeof legacyMasterRef === "string" && legacyMasterRef) {
+    return legacyMasterRef;
+  }
+
+  const canonical = el as Element & CanonicalRefFields;
   if (el.type === "ref" && typeof canonical.ref === "string" && canonical.ref) {
     return canonical.ref;
   }

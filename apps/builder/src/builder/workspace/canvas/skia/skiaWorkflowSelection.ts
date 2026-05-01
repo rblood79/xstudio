@@ -12,6 +12,7 @@ import type { LassoRenderData } from "./selectionRenderer";
 import { computeConnectedEdges } from "./workflowGraphUtils";
 import type { WorkflowEdge } from "./workflowEdges";
 import type { WorkflowHighlightState } from "./workflowRenderer";
+import { hasLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 
 export interface SelectionRenderResult {
   bounds: BoundingBox | null;
@@ -46,7 +47,7 @@ function isRenderableSelectionTarget(
 
   return (
     element.page_id == null &&
-    typeof element.layout_id === "string" &&
+    hasLegacyLayoutId(element) &&
     treeBoundsMap.has(id)
   );
 }

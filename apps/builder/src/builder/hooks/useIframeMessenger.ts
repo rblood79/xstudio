@@ -44,6 +44,10 @@ import {
   mergeElementsCanonicalPrimary,
   createMultipleElementsCanonicalPrimary,
 } from "../../adapters/canonical/canonicalMutations";
+import {
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from "../utils/canvasDeltaMessenger";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
@@ -228,14 +232,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         : elementsToSend.filter((element) => element.page_id === currentPageId);
 
     // Layout 편집 모드: pageId=null, layoutId=currentLayoutId
-    // Page 모드: pageId=currentPageId, layoutId=page.layout_id (Page에 적용된 Layout)
+    // Page 모드: pageId=currentPageId, layoutId=page legacy layout binding
     // ADR-903 P3-D-4 Phase B: reusableFrameId 신규 field — canonical model 의
     // reusable frame 식별자. 현 시점 layoutId 와 동일 의미 (alias). Preview 가
     // version 으로 분기해 신규 field 우선 사용 가능. legacy layoutId 는 BC 위해 유지.
     const layoutId =
       currentEditMode === "layout"
         ? layoutStoreLayoutId
-        : currentPage?.layout_id || null;
+        : getLegacyLayoutId(currentPage);
     const pageInfo = {
       pageId: currentEditMode === "layout" ? null : currentPageId,
       layoutId,
@@ -351,14 +355,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const currentPages = useStore.getState().pages;
 
     // PreviewPage (RuntimePage) 형태로 변환
-    const previewPages = currentPages.map((p) => ({
-      id: p.id,
-      title: p.title,
-      slug: p.slug,
-      order_num: p.order_num ?? 0,
-      layout_id: p.layout_id ?? null,
-      parent_id: p.parent_id ?? null,
-    }));
+    const previewPages = currentPages.map((p) =>
+      withLegacyLayoutId(
+        {
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          order_num: p.order_num ?? 0,
+          parent_id: p.parent_id ?? null,
+        },
+        getLegacyLayoutId(p),
+      ),
+    );
 
     const message = {
       type: "UPDATE_PAGES" as const,
@@ -988,7 +996,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const layoutId =
       currentEditMode === "layout"
         ? currentLayoutId
-        : currentPage?.layout_id || null;
+        : getLegacyLayoutId(currentPage);
 
     // 이전 값과 같으면 스킵
     if (
@@ -1092,14 +1100,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     }
 
     const pagesJson = JSON.stringify(
-      pages.map((p) => ({
-        id: p.id,
-        title: p.title,
-        slug: p.slug,
-        order_num: p.order_num ?? 0,
-        layout_id: p.layout_id ?? null,
-        parent_id: p.parent_id ?? null,
-      })),
+      pages.map((p) =>
+        withLegacyLayoutId(
+          {
+            id: p.id,
+            title: p.title,
+            slug: p.slug,
+            order_num: p.order_num ?? 0,
+            parent_id: p.parent_id ?? null,
+          },
+          getLegacyLayoutId(p),
+        ),
+      ),
     );
 
     if (lastSentPagesRef.current === pagesJson) {

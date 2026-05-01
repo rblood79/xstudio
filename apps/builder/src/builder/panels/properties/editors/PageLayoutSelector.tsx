@@ -9,9 +9,9 @@
  *   (PR-C FramesTab 과 동일한 패턴 — selector cache 함정 회피용 useMemo + getState)
  *
  * id 정규화: canonical FrameNode.id 는 `"layout-<legacyId>"` 접두사 → `metadata.layoutId`
- * 우선 사용. legacy `page.layout_id` 와 정합 유지.
+ * 우선 사용. legacy page layout binding 과 정합 유지.
  *
- * write (`handleLayoutChange`) 는 legacy 그대로 — `pages.update(layout_id)` 직접 호출.
+ * write (`handleLayoutChange`) 는 legacy bridge 를 통한다.
  * P3-D 이후 canonical document mutation (page RefNode.ref 변경) 으로 전환.
  *
  * @deprecated-path `useLayoutsStore` direct access → `useLayouts` / dual-mode reusableFrames
@@ -29,6 +29,11 @@ import { isFramesTabCanonical } from "../../../../utils/featureFlags";
 import { enqueuePagePersistence } from "../../../utils/pagePersistenceQueue";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
+import {
+  getLegacyLayoutId,
+  LEGACY_LAYOUT_ID_FIELD,
+  withLegacyLayoutId,
+} from "../../../../adapters/canonical/legacyElementFields";
 import { loadFrameElements } from "../../../utils/frameElementLoader";
 import type { FrameNode } from "@composition/shared";
 
@@ -88,8 +93,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     // elementsMap 변경 시 canonical projection 도 갱신 (selectCanonicalDocument 가 elements 소비)
   }, [layouts, pages, elementsMap]);
 
-  // P3-C: page.layout_id는 legacy field — P3-D에서 canonical ref로 전환 예정
-  const currentLayoutId = page?.layout_id || "";
+  const currentLayoutId = getLegacyLayoutId(page) || "";
   const currentLayout = useMemo(
     () => reusableFrames.find((f) => f.id === currentLayoutId),
     [reusableFrames, currentLayoutId],
@@ -116,7 +120,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         }
 
         const updatedPages = pages.map((p) =>
-          p.id === pageId ? { ...p, layout_id: nextLayoutId } : p,
+          p.id === pageId ? withLegacyLayoutId(p, nextLayoutId) : p,
         );
         const updatedPage = updatedPages.find((p) => p.id === pageId);
         setPages(updatedPages);
@@ -127,15 +131,14 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
 
           if (existingPage) {
             await persistenceDb.pages.update(pageId, {
-              layout_id: nextLayoutId,
+              [LEGACY_LAYOUT_ID_FIELD]: nextLayoutId,
             });
             return;
           }
 
           if (updatedPage) {
             await persistenceDb.pages.insert({
-              ...updatedPage,
-              layout_id: nextLayoutId,
+              ...withLegacyLayoutId(updatedPage, nextLayoutId),
               updated_at: new Date().toISOString(),
             });
           }

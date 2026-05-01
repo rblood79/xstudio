@@ -5,6 +5,7 @@ import { selectReusableFrame } from "../../../stores/utils/frameActions";
 import { resolveClickTarget } from "../../../utils/hierarchicalSelection";
 import type { Element } from "../../../../types/core/store.types";
 import { getElementBoundsSimple } from "../elementRegistry";
+import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 
 interface SelectionModifiers {
   ctrlKey: boolean;
@@ -69,10 +70,11 @@ function syncReusableFrameSelectionForElement(
 ): void {
   if (!element) return;
   if (element.page_id != null) return;
-  if (typeof element.layout_id !== "string") return;
+  const layoutId = getElementLayoutId(element);
+  if (!layoutId) return;
 
-  selectReusableFrame(element.layout_id);
-  useEditModeStore.getState().setCurrentLayoutId(element.layout_id);
+  selectReusableFrame(layoutId);
+  useEditModeStore.getState().setCurrentLayoutId(layoutId);
 }
 
 // ADR-069 Phase 1: startTransition 제거

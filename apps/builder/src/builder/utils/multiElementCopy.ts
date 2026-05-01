@@ -9,6 +9,10 @@ import type { Element } from "../../types/core/store.types";
 import { isMasterElement } from "../../types/builder/unified.types";
 import { normalizeExternalFillIngress } from "../panels/styles/utils/fillExternalIngress";
 import { ElementUtils } from "../../utils/element/elementUtils";
+import {
+  getElementLayoutId,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 
 /**
  * Copied elements data structure
@@ -160,19 +164,23 @@ export function pasteMultipleElements(
   const reusableOrigin = getReusableOriginRoot(copiedData);
   if (reusableOrigin) {
     return [
-      normalizeExternalFillIngress({
-        id: ElementUtils.generateId(),
-        type: "ref",
-        ref: reusableOrigin.id,
-        parent_id: reusableOrigin.parent_id ?? null,
-        page_id: currentPageId,
-        layout_id: reusableOrigin.layout_id,
-        order_num: reusableOrigin.order_num,
-        props: createRefOverrideProps(reusableOrigin, offset),
-        componentName: reusableOrigin.componentName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element),
+      normalizeExternalFillIngress(
+        withLegacyLayoutId(
+          {
+            id: ElementUtils.generateId(),
+            type: "ref",
+            ref: reusableOrigin.id,
+            parent_id: reusableOrigin.parent_id ?? null,
+            page_id: currentPageId,
+            order_num: reusableOrigin.order_num,
+            props: createRefOverrideProps(reusableOrigin, offset),
+            componentName: reusableOrigin.componentName,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as Element,
+          getElementLayoutId(reusableOrigin),
+        ),
+      ),
     ];
   }
 

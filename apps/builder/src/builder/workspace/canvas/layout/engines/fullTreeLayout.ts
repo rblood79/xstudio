@@ -10,6 +10,7 @@
  */
 
 import type { Element } from "../../../../../types/core/store.types";
+import { getElementLayoutId } from "../../../../../adapters/canonical/legacyElementFields";
 import type { ComputedLayout } from "./LayoutEngine";
 import type { TaffyStyle } from "../../wasm-bindings/taffyLayout";
 import { isRustWasmReady } from "../../wasm-bindings/rustWasm";
@@ -1919,9 +1920,9 @@ export function calculateFullTreeLayout(
   if (!rootEl) return null;
 
   // 페이지/Frame root 별 persistent tree 조회/생성.
-  // Frame body 는 page_id 가 null 이므로 layout_id 로 분리하지 않으면 여러
+  // Frame body 는 page_id 가 null 이므로 layout binding 으로 분리하지 않으면 여러
   // reusable Frame 이 "__default__" Taffy tree 를 공유해 root state 가 섞인다.
-  const rootKey = rootEl.page_id ?? rootEl.layout_id ?? rootElementId;
+  const rootKey = rootEl.page_id ?? getElementLayoutId(rootEl) ?? rootElementId;
   let persistentTree = persistentTrees.get(rootKey);
   if (!persistentTree) {
     persistentTree = new PersistentTaffyTree();

@@ -5,7 +5,7 @@
  *
  * P3-C 변경:
  * - `useLayoutsStore((state) => state.layouts)` → `useLayouts()` hook
- * - `page.layout_id` field 참조는 URL 생성 유틸 전달용 — P3-D에서 canonical ref로 전환 예정
+ * - page legacy layout binding 참조는 URL 생성 유틸 전달용
  *
  * @deprecated-path `useLayoutsStore` direct access → `useLayouts`
  */
@@ -30,6 +30,10 @@ import {
 } from "../../../../utils/slugValidator";
 import { useLayouts } from "../../../stores/layouts";
 import { iconSmall } from "../../../../utils/ui/uiConstants";
+import {
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../../../adapters/canonical/legacyElementFields";
 
 interface PageParentSelectorProps {
   pageId: string;
@@ -59,21 +63,23 @@ export const PageParentSelector = memo(function PageParentSelector({
   const previewUrl = useMemo(() => {
     if (!page) return "/";
 
-    // P3-C: page.layout_id는 URL 생성 유틸 전달용 — legacy field 유지
-    const layout = page.layout_id
-      ? layouts.find((l) => l.id === page.layout_id)
+    const pageLayoutId = getLegacyLayoutId(page);
+    const layout = pageLayoutId
+      ? layouts.find((l) => l.id === pageLayoutId)
       : null;
 
     return generatePageUrl({
-      page: {
-        id: page.id,
-        title: page.title,
-        slug: page.slug,
-        project_id: page.project_id,
-        parent_id: page.parent_id,
-        layout_id: page.layout_id,
-        order_num: page.order_num,
-      },
+      page: withLegacyLayoutId(
+        {
+          id: page.id,
+          title: page.title,
+          slug: page.slug,
+          project_id: page.project_id,
+          parent_id: page.parent_id,
+          order_num: page.order_num,
+        },
+        pageLayoutId,
+      ),
       layout: layout
         ? {
             id: layout.id,
@@ -82,63 +88,75 @@ export const PageParentSelector = memo(function PageParentSelector({
             slug: layout.slug || undefined,
           }
         : null,
-      allPages: pages.map((p) => ({
-        id: p.id,
-        title: p.title,
-        slug: p.slug,
-        project_id: p.project_id,
-        parent_id: p.parent_id,
-        layout_id: p.layout_id,
-        order_num: p.order_num,
-      })),
+      allPages: pages.map((p) =>
+        withLegacyLayoutId(
+          {
+            id: p.id,
+            title: p.title,
+            slug: p.slug,
+            project_id: p.project_id,
+            parent_id: p.parent_id,
+            order_num: p.order_num,
+          },
+          getLegacyLayoutId(p),
+        ),
+      ),
     });
   }, [page, pages, layouts]);
 
   const parentOptions = useMemo(() => {
     const options = [{ value: "", label: "No Parent (Root)" }];
 
-    const getDescendants = (parentId: string): string[] => {
+    const getChildPageIds = (parentId: string): string[] => {
       const children = pages.filter((p) => p.parent_id === parentId);
-      const descendants: string[] = children.map((c) => c.id);
+      const childPageIds: string[] = children.map((c) => c.id);
       children.forEach((child) => {
-        descendants.push(...getDescendants(child.id));
+        childPageIds.push(...getChildPageIds(child.id));
       });
-      return descendants;
+      return childPageIds;
     };
 
-    const descendants = getDescendants(pageId);
+    const childPageIds = getChildPageIds(pageId);
 
     pages.forEach((p) => {
       if (p.id === pageId) return;
-      if (descendants.includes(p.id)) return;
+      if (childPageIds.includes(p.id)) return;
 
       const depthIfSelected =
         getNestingDepth(
           p.id,
-          pages.map((pg) => ({
-            id: pg.id,
-            title: pg.title,
-            slug: pg.slug,
-            project_id: pg.project_id,
-            parent_id: pg.parent_id,
-            layout_id: pg.layout_id,
-            order_num: pg.order_num,
-          })),
+          pages.map((pg) =>
+            withLegacyLayoutId(
+              {
+                id: pg.id,
+                title: pg.title,
+                slug: pg.slug,
+                project_id: pg.project_id,
+                parent_id: pg.parent_id,
+                order_num: pg.order_num,
+              },
+              getLegacyLayoutId(pg),
+            ),
+          ),
         ) + 1;
 
       if (depthIfSelected >= MAX_NESTING_DEPTH) return;
 
       const depth = getNestingDepth(
         p.id,
-        pages.map((pg) => ({
-          id: pg.id,
-          title: pg.title,
-          slug: pg.slug,
-          project_id: pg.project_id,
-          parent_id: pg.parent_id,
-          layout_id: pg.layout_id,
-          order_num: pg.order_num,
-        })),
+        pages.map((pg) =>
+          withLegacyLayoutId(
+            {
+              id: pg.id,
+              title: pg.title,
+              slug: pg.slug,
+              project_id: pg.project_id,
+              parent_id: pg.parent_id,
+              order_num: pg.order_num,
+            },
+            getLegacyLayoutId(pg),
+          ),
+        ),
       );
       const indent = "  ".repeat(depth);
 
@@ -155,15 +173,19 @@ export const PageParentSelector = memo(function PageParentSelector({
         hasCircularReference(
           pageId,
           newParentId,
-          pages.map((p) => ({
-            id: p.id,
-            title: p.title,
-            slug: p.slug,
-            project_id: p.project_id,
-            parent_id: p.parent_id,
-            layout_id: p.layout_id,
-            order_num: p.order_num,
-          })),
+          pages.map((p) =>
+            withLegacyLayoutId(
+              {
+                id: p.id,
+                title: p.title,
+                slug: p.slug,
+                project_id: p.project_id,
+                parent_id: p.parent_id,
+                order_num: p.order_num,
+              },
+              getLegacyLayoutId(p),
+            ),
+          ),
         )
       ) {
         console.error("[PageParentSelector] Circular reference detected");

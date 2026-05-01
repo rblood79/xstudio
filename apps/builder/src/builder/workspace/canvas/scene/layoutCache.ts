@@ -1,4 +1,5 @@
 import type { Element } from "../../../../types/core/store.types";
+import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import {
   calculateFullTreeLayout,
@@ -259,7 +260,9 @@ export function buildChildrenIdMap(
 }
 
 function getLayoutPublishKey(bodyElement: Element): string {
-  return bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
+  return (
+    bodyElement.page_id ?? getElementLayoutId(bodyElement) ?? bodyElement.id
+  );
 }
 
 interface GetCachedPageLayoutInput {

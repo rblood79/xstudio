@@ -48,6 +48,12 @@ import {
   useActiveScope,
 } from "@/builder/hooks";
 import { useStore } from "../../stores";
+import {
+  getElementLayoutId,
+  getLegacySlotName,
+  LEGACY_SLOT_NAME_FIELD,
+  withLegacySlotName,
+} from "../../../adapters/canonical/legacyElementFields";
 import { getPropagationRules } from "../../utils/propagationRegistry";
 import { buildPropagationUpdates } from "../../utils/propagationEngine";
 import type { BatchPropsUpdate } from "../../stores/utils/elementUpdate";
@@ -100,7 +106,7 @@ const PropertyEditorWrapper = memo(
     const elementContext = useMemo((): EditorContext => {
       const element = useStore.getState().elementsMap.get(selectedElement.id);
       return {
-        layoutId: element?.layout_id || null,
+        layoutId: element ? getElementLayoutId(element) : null,
         pageId: element?.page_id || null,
         editMode, // ⭐ 현재 편집 모드 전달
       };
@@ -1551,22 +1557,20 @@ function PropertiesPanelContent() {
         {/* ⭐ Layout/Slot System: Element가 들어갈 Slot 선택 */}
         <ElementSlotSelector
           elementId={selectedElement.id}
-          currentSlotName={
-            selectedElement.properties?.slot_name as string | null | undefined
-          }
+          currentSlotName={getLegacySlotName(selectedElement.properties)}
           onSlotChange={(slotName) => {
             const state = useStore.getState();
             const element = state.elementsMap.get(selectedElement.id);
-            const props = {
-              ...((element?.props ?? selectedElement.properties) as Record<
+            const props = withLegacySlotName(
+              (element?.props ?? selectedElement.properties) as Record<
                 string,
                 unknown
-              >),
-              slot_name: slotName,
-            };
+              >,
+              slotName,
+            );
             void state.updateElement(selectedElement.id, {
               props: props as Element["props"],
-              slot_name: slotName,
+              [LEGACY_SLOT_NAME_FIELD]: slotName,
             });
           }}
         />

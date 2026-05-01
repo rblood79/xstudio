@@ -3,6 +3,7 @@ import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
 import type { ScenePageSnapshot, SceneStructureSnapshot } from "../scene";
 import type { FrameAreaGroup } from "../skia/workflowEdges";
 import { resolveCanonicalRefTree } from "../../../utils/canonicalRefResolution";
+import { matchesLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 
 export interface PixiPageRendererInput {
   bodyElement: Element | null;
@@ -126,7 +127,7 @@ export function buildFrameRendererInput({
 
   for (const el of elementById.values()) {
     if (el.deleted) continue;
-    if (el.layout_id !== frameId) continue;
+    if (!matchesLegacyLayoutId(el, frameId)) continue;
     if (el.page_id != null) continue;
     if (el.type === "body") {
       if (!bodyElement) bodyElement = el;

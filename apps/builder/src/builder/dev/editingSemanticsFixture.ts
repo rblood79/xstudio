@@ -2,10 +2,14 @@ import type { Element, Page } from "../../types/core/store.types";
 import type { ElementsState } from "../stores/elements";
 // ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)
 import { setElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
+import {
+  LEGACY_COMPONENT_ROLE_FIELD,
+  LEGACY_MASTER_ID_FIELD,
+} from "../../adapters/canonical/legacyElementFields";
 
 type SemanticFixtureElement = Element & {
-  componentRole?: "master" | "instance";
-  masterId?: string;
+  [LEGACY_COMPONENT_ROLE_FIELD]?: "master" | "instance";
+  [LEGACY_MASTER_ID_FIELD]?: string;
   reusable?: boolean;
 };
 
@@ -88,8 +92,8 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
   const instanceA: SemanticFixtureElement = {
     id: INSTANCE_ID,
     type: "Button",
-    componentRole: "instance",
-    masterId: ORIGIN_ID,
+    [LEGACY_COMPONENT_ROLE_FIELD]: "instance",
+    [LEGACY_MASTER_ID_FIELD]: ORIGIN_ID,
     page_id: PAGE_ID,
     parent_id: BODY_ID,
     order_num: 2,

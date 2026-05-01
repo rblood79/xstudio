@@ -9,11 +9,12 @@ import { applyFactoryPropagation } from "../../utils/propagationEngine";
 import { resolveOwnerPageId } from "../../../adapters/canonical/legacyMetadata";
 // ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
+import { withLegacyLayoutId } from "../../../adapters/canonical/legacyElementFields";
 
 /**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성 시 필요한 컨텍스트.
  *
- * page_id/layout_id 미주입 element 는 canonical mode 의 page-indexed 분기에서
+ * page_id/layout binding 미주입 element 는 canonical mode 의 page-indexed 분기에서
  * 누락되어 화면 렌더 실패 (ADR-911). caller 가 ownership 정보를 명시 전달.
  */
 export interface ElementCreationContext {
@@ -41,15 +42,17 @@ export function createElementsFromDefinition(
   const resolvedPageId = resolveOwnerPageId(pageId, layoutId);
 
   // 부모 요소 생성
-  const parent: Element = {
-    ...definition.parent,
-    id: ElementUtils.generateId(),
-    customId: generateCustomId(definition.parent.type, currentElements),
-    page_id: resolvedPageId,
-    layout_id: layoutId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
+  const parent: Element = withLegacyLayoutId(
+    {
+      ...definition.parent,
+      id: ElementUtils.generateId(),
+      customId: generateCustomId(definition.parent.type, currentElements),
+      page_id: resolvedPageId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    layoutId,
+  );
 
   // 자식 요소들 재귀 생성 (중첩 children 지원)
   const allElementsSoFar = [...currentElements, parent];
@@ -61,16 +64,18 @@ export function createElementsFromDefinition(
   ): void {
     childDefs.forEach((childDef) => {
       const { children: nestedChildren, ...elementDef } = childDef;
-      const child: Element = {
-        ...elementDef,
-        id: ElementUtils.generateId(),
-        customId: generateCustomId(elementDef.type, allElementsSoFar),
-        parent_id: parentId,
-        page_id: resolvedPageId,
-        layout_id: layoutId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      const child: Element = withLegacyLayoutId(
+        {
+          ...elementDef,
+          id: ElementUtils.generateId(),
+          customId: generateCustomId(elementDef.type, allElementsSoFar),
+          parent_id: parentId,
+          page_id: resolvedPageId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        layoutId,
+      );
       allChildren.push(child);
       allElementsSoFar.push(child);
 

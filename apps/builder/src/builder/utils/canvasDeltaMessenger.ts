@@ -13,6 +13,10 @@
  */
 
 import type { Element } from "../../types/core/store.types";
+import {
+  getElementLayoutId,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 
@@ -143,7 +147,7 @@ export class CanvasDeltaMessenger {
       fills?: unknown[];
       parentId?: string | null;
       orderNum?: number;
-    }
+    },
   ): boolean {
     if (!this.isReady()) return false;
 
@@ -184,7 +188,7 @@ export class CanvasDeltaMessenger {
       fills?: unknown[];
       parentId?: string | null;
       orderNum?: number;
-    }>
+    }>,
   ): boolean {
     if (!this.isReady()) return false;
 
@@ -208,7 +212,7 @@ export class CanvasDeltaMessenger {
    */
   sendFullElements(
     elements: Element[],
-    pageInfo?: { pageId: string | null; layoutId: string | null }
+    pageInfo?: { pageId: string | null; layoutId: string | null },
   ): boolean {
     if (!this.isReady()) return false;
 
@@ -246,26 +250,30 @@ export class CanvasDeltaMessenger {
       return JSON.parse(JSON.stringify(element));
     } catch {
       // Proxy 오류 시 수동 복사
-      return {
-        id: element.id,
-        type: element.type,
-        props: this.sanitizeProps(element.props as Record<string, unknown>),
-        parent_id: element.parent_id,
-        page_id: element.page_id,
-        order_num: element.order_num,
-        customId: element.customId,
-        events: element.events,
-        dataBinding: element.dataBinding,
-        layout_id: element.layout_id,
-        fills: element.fills,
-      };
+      return withLegacyLayoutId(
+        {
+          id: element.id,
+          type: element.type,
+          props: this.sanitizeProps(element.props as Record<string, unknown>),
+          parent_id: element.parent_id,
+          page_id: element.page_id,
+          order_num: element.order_num,
+          customId: element.customId,
+          events: element.events,
+          dataBinding: element.dataBinding,
+          fills: element.fills,
+        },
+        getElementLayoutId(element),
+      );
     }
   }
 
   /**
    * Props 직렬화
    */
-  private sanitizeProps(props: Record<string, unknown>): Record<string, unknown> {
+  private sanitizeProps(
+    props: Record<string, unknown>,
+  ): Record<string, unknown> {
     try {
       return JSON.parse(JSON.stringify(props));
     } catch {
@@ -303,7 +311,7 @@ export const canvasDeltaMessenger = new CanvasDeltaMessenger();
  */
 export function extractPropsChanges(
   prevProps: Record<string, unknown>,
-  nextProps: Record<string, unknown>
+  nextProps: Record<string, unknown>,
 ): Record<string, unknown> {
   const changes: Record<string, unknown> = {};
 
@@ -358,7 +366,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
  */
 export function shouldUseDelta(
   totalElements: number,
-  changedCount: number
+  changedCount: number,
 ): boolean {
   // 요소가 적으면 Full Update가 더 간단
   if (totalElements < 50) return false;

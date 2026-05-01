@@ -9,6 +9,11 @@ import { selectCanonicalDocument } from "../stores/elements";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
 import { selectCanonicalReusableFrames } from "../../adapters/canonical";
+import {
+  getElementLayoutId,
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 import { runLegacyToCanonicalMigration } from "../../lib/db/migration";
 import { runTagTypeMigration } from "../../lib/db/migrationTagType";
 import { useLayoutsStore } from "../stores/layouts";
@@ -238,13 +243,11 @@ export const usePageManager = ({
           const currentPage = pages.find((p) => p.id === pageId);
           const allElements = [...elementsData];
 
-          if (currentPage?.layout_id) {
-            const layoutElements = await loadFrameElements(
-              db,
-              currentPage.layout_id,
-            );
+          const currentLayoutId = getLegacyLayoutId(currentPage);
+          if (currentLayoutId) {
+            const layoutElements = await loadFrameElements(db, currentLayoutId);
             console.log(
-              `📥 [fetchElements] Layout ${currentPage.layout_id.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`,
+              `📥 [fetchElements] Layout ${currentLayoutId.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`,
             );
             // Layout 요소들 추가 (중복 제거)
             const existingIds = new Set(allElements.map((el) => el.id));
@@ -305,17 +308,19 @@ export const usePageManager = ({
         );
         const nextOrderNum = maxOrderNum + 1;
 
-        const newPageData: Page = {
-          id: ElementUtils.generateId(),
-          project_id: projectId,
-          title: `Page ${nextOrderNum + 1}`,
-          slug: `/page-${nextOrderNum + 1}`,
-          parent_id: null,
-          order_num: nextOrderNum,
-          layout_id: null, // ⭐ Layout/Slot System: 페이지 생성 시 layout_id 초기화
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        const newPageData: Page = withLegacyLayoutId(
+          {
+            id: ElementUtils.generateId(),
+            project_id: projectId,
+            title: `Page ${nextOrderNum + 1}`,
+            slug: `/page-${nextOrderNum + 1}`,
+            parent_id: null,
+            order_num: nextOrderNum,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          null,
+        );
 
         // 새 페이지에 기본 body 요소 생성
         const bodyElement: Element = {
@@ -384,17 +389,19 @@ export const usePageManager = ({
         );
         const nextOrderNum = maxOrderNum + 1;
 
-        const newPageData: Page = {
-          id: ElementUtils.generateId(),
-          project_id: projectId,
-          title: title,
-          slug: slug,
-          parent_id: parentId,
-          order_num: nextOrderNum,
-          layout_id: layoutId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        const newPageData: Page = withLegacyLayoutId(
+          {
+            id: ElementUtils.generateId(),
+            project_id: projectId,
+            title: title,
+            slug: slug,
+            parent_id: parentId,
+            order_num: nextOrderNum,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          layoutId,
+        );
 
         // 새 페이지에 기본 body 요소 생성
         const bodyElement: Element = {
@@ -494,38 +501,41 @@ export const usePageManager = ({
         }
 
         // IndexedDB Page를 ApiPage로 변환
-        const apiPages: ApiPage[] = projectPages.map((p) => ({
-          id: p.id,
-          project_id: p.project_id,
-          title: p.title || "Untitled",
-          slug: p.slug,
-          parent_id: p.parent_id ?? null,
-          layout_id: p.layout_id ?? null,
-          order_num: p.order_num ?? 0,
-          created_at: p.created_at || new Date().toISOString(),
-          updated_at: p.updated_at || new Date().toISOString(),
-        }));
+        const apiPages: ApiPage[] = projectPages.map((p) =>
+          withLegacyLayoutId(
+            {
+              id: p.id,
+              project_id: p.project_id,
+              title: p.title || "Untitled",
+              slug: p.slug,
+              parent_id: p.parent_id ?? null,
+              order_num: p.order_num ?? 0,
+              created_at: p.created_at || new Date().toISOString(),
+              updated_at: p.updated_at || new Date().toISOString(),
+            },
+            getLegacyLayoutId(p),
+          ),
+        );
 
         apiPages.forEach((page) => pageList.append(page));
 
         // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
         // ApiPage → store Page 변환 (title → name)
-        // ⭐ Layout/Slot System: layout_id도 함께 저장
+        // Layout/Slot System: legacy layout binding도 함께 저장
         const storePages = apiPages.map((p) => {
-          // IndexedDB의 원본 페이지에서 layout_id 가져오기
+          // IndexedDB의 원본 페이지에서 legacy layout binding 가져오기
           const originalPage = projectPages.find((pp) => pp.id === p.id);
-          return {
-            id: p.id,
-            title: p.title,
-            slug: p.slug,
-            project_id: p.project_id,
-            parent_id: p.parent_id ?? null,
-            order_num: p.order_num,
-            layout_id:
-              p.layout_id ??
-              (originalPage as { layout_id?: string | null })?.layout_id ??
-              null,
-          };
+          return withLegacyLayoutId(
+            {
+              id: p.id,
+              title: p.title,
+              slug: p.slug,
+              project_id: p.project_id,
+              parent_id: p.parent_id ?? null,
+              order_num: p.order_num,
+            },
+            getLegacyLayoutId(p) ?? getLegacyLayoutId(originalPage),
+          );
         });
         const {
           setPages,
@@ -555,10 +565,10 @@ export const usePageManager = ({
         );
 
         // ADR-903 P3-D-4 Phase C: canonical reusable FrameNode 기반 layout elements 추출.
-        // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout_id 매칭으로 필터링.
+        // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout binding 으로 필터링.
         //
         // 새로고침 직후에는 layouts store 와 elementsMap 이 아직 hydrate 전 상태일 수 있다.
-        // 이때 page.layout_id 는 살아 있어 PageLayoutSelector 는 선택값을 표시하지만,
+        // 이때 page layout binding 은 살아 있어 PageLayoutSelector 는 선택값을 표시하지만,
         // frame body/slot elements 가 store 에 병합되지 않아 page-frame 합성이 실패한다.
         // initializeProject 의 DB snapshot(allElements + project layouts)을 canonical input 으로
         // 사용해 첫 hydrate 시점부터 적용 frame descendants 를 포함한다.
@@ -580,9 +590,10 @@ export const usePageManager = ({
         const layoutIdSet = new Set(
           reusableFrames.map(getLegacyLayoutIdFromReusableFrame),
         );
-        const layoutElements = allElements.filter(
-          (el) => el.layout_id != null && layoutIdSet.has(el.layout_id),
-        );
+        const layoutElements = allElements.filter((el) => {
+          const elementLayoutId = getElementLayoutId(el);
+          return elementLayoutId != null && layoutIdSet.has(elementLayoutId);
+        });
 
         const mergedMap = new Map<string, Element>();
         pageElements.forEach((el) => mergedMap.set(el.id, el));

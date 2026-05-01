@@ -1,0 +1,140 @@
+import type { Element } from "@/types/builder/unified.types";
+
+export const LEGACY_COMPONENT_ROLE_FIELD = "componentRole" as const;
+export const LEGACY_MASTER_ID_FIELD = "masterId" as const;
+export const LEGACY_OVERRIDES_FIELD = "overrides" as const;
+export const LEGACY_DESCENDANTS_FIELD = "descendants" as const;
+export const LEGACY_LAYOUT_ID_FIELD = "layout_id" as const;
+export const LEGACY_SLOT_NAME_FIELD = "slot_name" as const;
+
+type LegacyElementFields = {
+  [LEGACY_COMPONENT_ROLE_FIELD]?: unknown;
+  [LEGACY_DESCENDANTS_FIELD]?: unknown;
+  [LEGACY_LAYOUT_ID_FIELD]?: unknown;
+  [LEGACY_MASTER_ID_FIELD]?: unknown;
+  [LEGACY_OVERRIDES_FIELD]?: unknown;
+  [LEGACY_SLOT_NAME_FIELD]?: unknown;
+};
+
+type CanonicalRefLike = {
+  ref?: unknown;
+};
+
+function asLegacyFields(element: Element): Element & LegacyElementFields {
+  return element as Element & LegacyElementFields;
+}
+
+function asAnyLegacyFields(value: unknown): LegacyElementFields | null {
+  if (!value || typeof value !== "object") return null;
+  return value as LegacyElementFields;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+export function isLegacyMasterElement(element: Element): boolean {
+  return asLegacyFields(element)[LEGACY_COMPONENT_ROLE_FIELD] === "master";
+}
+
+export function isLegacyInstanceElement(element: Element): boolean {
+  return (
+    asLegacyFields(element)[LEGACY_COMPONENT_ROLE_FIELD] === "instance" &&
+    typeof asLegacyFields(element)[LEGACY_MASTER_ID_FIELD] === "string"
+  );
+}
+
+export function getInstanceMasterReference(
+  element: Element,
+): string | undefined {
+  const legacyMasterId = asLegacyFields(element)[LEGACY_MASTER_ID_FIELD];
+  if (typeof legacyMasterId === "string" && legacyMasterId) {
+    return legacyMasterId;
+  }
+
+  const canonical = element as Element & CanonicalRefLike;
+  if (
+    element.type === "ref" &&
+    typeof canonical.ref === "string" &&
+    canonical.ref
+  ) {
+    return canonical.ref;
+  }
+
+  return undefined;
+}
+
+export function getLegacyOverrides(
+  element: Element,
+): Record<string, unknown> | undefined {
+  const value = asLegacyFields(element)[LEGACY_OVERRIDES_FIELD];
+  return isRecord(value) ? value : undefined;
+}
+
+export function getLegacyDescendants(
+  element: Element,
+): Record<string, unknown> | undefined {
+  const value = asLegacyFields(element)[LEGACY_DESCENDANTS_FIELD];
+  return isRecord(value) ? value : undefined;
+}
+
+export function getElementLayoutId(element: Element): string | null {
+  return getLegacyLayoutId(element);
+}
+
+export function getLegacyLayoutId(value: unknown): string | null {
+  const fields = asAnyLegacyFields(value);
+  const layoutId = fields?.[LEGACY_LAYOUT_ID_FIELD];
+  return typeof layoutId === "string" ? layoutId : null;
+}
+
+export function hasLegacyLayoutId(value: unknown): boolean {
+  return getLegacyLayoutId(value) !== null;
+}
+
+export function matchesLegacyLayoutId(
+  value: unknown,
+  layoutId: string,
+): boolean {
+  return getLegacyLayoutId(value) === layoutId;
+}
+
+export function getLegacySlotName(value: unknown): string | null {
+  const fields = asAnyLegacyFields(value);
+  const slotName = fields?.[LEGACY_SLOT_NAME_FIELD];
+  return typeof slotName === "string" ? slotName : null;
+}
+
+export function getElementSlotName(element: Element): string | null {
+  const value = asLegacyFields(element)[LEGACY_SLOT_NAME_FIELD];
+  return typeof value === "string" ? value : null;
+}
+
+export function withLegacyLayoutId<T extends object>(
+  value: T,
+  layoutId: string | null,
+): T {
+  return {
+    ...value,
+    [LEGACY_LAYOUT_ID_FIELD]: layoutId,
+  } as T;
+}
+
+export function withLegacySlotName<T extends object>(
+  value: T,
+  slotName: string | null,
+): T {
+  return {
+    ...value,
+    [LEGACY_SLOT_NAME_FIELD]: slotName,
+  } as T;
+}
+
+export function withoutLegacyInstanceFields(element: Element): Element {
+  const clone = { ...element } as Element & LegacyElementFields;
+  delete clone[LEGACY_COMPONENT_ROLE_FIELD];
+  delete clone[LEGACY_MASTER_ID_FIELD];
+  delete clone[LEGACY_OVERRIDES_FIELD];
+  delete clone[LEGACY_DESCENDANTS_FIELD];
+  return clone;
+}

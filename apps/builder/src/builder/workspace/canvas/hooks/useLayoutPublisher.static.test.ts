@@ -31,7 +31,7 @@ describe("useLayoutPublisher invalidation contract", () => {
     expect(source).toContain("const publishedKeysRef = useRef<Set<string>>");
     expect(source).toContain("const layoutUpdates: Array<");
     expect(source).toMatch(
-      /const key =\s*bodyElement\.page_id \?\? bodyElement\.layout_id \?\? bodyElement\.id;/,
+      /const key =\s*bodyElement\.page_id\s*\?\?\s*getElementLayoutId\(bodyElement\)\s*\?\?\s*bodyElement\.id;/,
     );
     expect(source).toContain("activeKeys.add(key);");
     expect(source).toContain("const sourceElementById = new Map(elementById);");

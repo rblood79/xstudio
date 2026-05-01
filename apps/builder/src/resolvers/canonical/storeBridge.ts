@@ -16,7 +16,7 @@
  * production render path 변경 없음 — 본 모듈은 helper 만 제공하고, 실제 consumer
  * 전환은 `useResolvedElement` 변경 (D-B) + sprite wiring (후속) 단계에서 진행.
  *
- * @see docs/adr/903-ref-descendants-slot-composition-format-migration-plan.md
+ * @see ADR-903 ref/slot composition format migration plan
  * @see resolvers/canonical/index.ts (P2 S1 본체)
  * @see adapters/canonical/index.ts (P1 adapter)
  */
@@ -37,6 +37,7 @@ import type { Layout } from "@/types/builder/layout.types";
 import type { ElementsState } from "@/builder/stores/elements";
 
 import { selectCanonicalDocument } from "@/builder/stores/elements";
+import { getLegacyOverrides } from "@/adapters/canonical/legacyElementFields";
 import { resolveCanonicalDocument } from "./index";
 import { getSharedResolverCache } from "./cache";
 
@@ -168,7 +169,7 @@ export function getCanonicalParentId(
  * P2 resolver 는 두 metadata 패턴을 사용한다:
  * 1. **ref-resolve** (`_resolveRefNodeUncached`): `metadata = { ...resolvedProps, type }`
  *    — `type` 외 모든 키가 props
- * 2. **descendants mode A** / **adapter 원본** (`resolveCanonicalDescendantOverride`):
+ * 2. **slot override mode A** / **adapter 원본** (`resolveCanonicalDescendantOverride`):
  *    `metadata = { type, legacyProps: {...} }` — `legacyProps` 필드에 props 가 보존됨
  *
  * 본 helper 는 두 패턴 모두 대응한다.
@@ -209,8 +210,8 @@ export function extractLegacyPropsFromResolved(
  *   조합. 같은 instance / master pair 의 반복 호출은 cache hit
  * - master 가 없으면 `null` 반환 — caller 는 legacy fallback 또는 element 그대로 처리
  *
- * @param instance - componentRole === "instance" Element
- * @param master   - instance.masterId 로 조회한 master Element
+ * @param instance - legacy instance Element
+ * @param master   - instance origin 으로 조회한 master Element
  * @param cache    - shared ResolverCache (default: singleton)
  * @returns        canonical 경로로 resolve 된 Element (type = master.type, props = merged)
  */
@@ -238,7 +239,7 @@ export function resolveInstanceWithSharedCache(
     ref: master.id,
     metadata: {
       type: "legacy-instance-overrides",
-      legacyProps: instance.overrides ?? {},
+      legacyProps: getLegacyOverrides(instance) ?? {},
     },
   };
 

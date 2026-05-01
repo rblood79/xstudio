@@ -10,11 +10,12 @@
  *
  * ADR-911 P3-δ fix #3 (2026-04-28): framePages 입력 추가 — page-centric
  * 가정 cracking 의 첫 단계. frame body 도 page 와 동일 layout 발행 logic 처리
- * → publishLayoutMap key fallback chain (D5=A: page_id ?? layout_id ?? id)
+ * → publishLayoutMap key fallback chain (D5=A: page id → layout binding → id)
  * 으로 구분. dimensionKey 단일 통합 (D6=A).
  */
 
 import { useEffect, useRef } from "react";
+import { getElementLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 import type { PixiPageRendererInput } from "../renderers";
 import {
   publishFilteredChildrenMap,
@@ -122,7 +123,9 @@ export function useLayoutPublisher(
 
       if (!bodyElement || !wasmLayoutReady) continue;
       const key =
-        bodyElement.page_id ?? bodyElement.layout_id ?? bodyElement.id;
+        bodyElement.page_id ??
+        getElementLayoutId(bodyElement) ??
+        bodyElement.id;
       activeKeys.add(key);
 
       const sourceElementById = new Map(elementById);

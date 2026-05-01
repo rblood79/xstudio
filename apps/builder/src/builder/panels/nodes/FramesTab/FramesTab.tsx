@@ -32,6 +32,7 @@ import { useStore } from "../../../stores";
 import { selectCanonicalDocument } from "../../../stores/elements";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
+import { matchesLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 import { ElementProps } from "../../../../types/integrations/supabase.types";
 import { Element } from "../../../../types/core/store.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
@@ -66,7 +67,7 @@ function hasHydratedFrameElements(
   for (const element of elementsMap.values()) {
     if (
       !element.deleted &&
-      element.layout_id === frameId &&
+      matchesLegacyLayoutId(element, frameId) &&
       element.page_id == null
     ) {
       return true;
@@ -263,14 +264,14 @@ export function FramesTab({
     loadMissingFrameElements();
   }, [reusableFrames, elementsMap]);
 
-  // ADR-040: elementsMap 순회로 layout_id 필터링
+  // ADR-040: elementsMap 순회로 legacy layout binding 필터링
   const frameElements = useMemo(() => {
     if (!currentFrame) return [];
     const filtered: Element[] = [];
     elementsMap.forEach((el) => {
       if (
         !el.deleted &&
-        el.layout_id === currentFrame.id &&
+        matchesLegacyLayoutId(el, currentFrame.id) &&
         el.page_id == null
       ) {
         filtered.push(el);

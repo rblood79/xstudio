@@ -20,6 +20,10 @@ import { useRuntimeStore } from "../store";
 import type { RuntimeLayout } from "../store/types";
 import { generatePageUrl, hasDynamicParams } from "../../utils/urlGenerator";
 import type { Page } from "../../types/builder/unified.types";
+import {
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 
 // ============================================
 // Page Renderer Component
@@ -193,33 +197,40 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
   // ⭐ Nested Routes & Slug System: 각 페이지의 최종 URL 계산
   const routeConfigs = useMemo(() => {
     // RuntimePage를 Page 타입으로 변환 (generatePageUrl 호환)
-    const pagesAsPage: Page[] = pages.map((p) => ({
-      id: p.id,
-      title: p.title,
-      slug: p.slug,
-      project_id: "", // Canvas에서는 사용하지 않음
-      parent_id: p.parent_id,
-      layout_id: p.layout_id,
-      order_num: p.order_num,
-    }));
+    const pagesAsPage: Page[] = pages.map((p) =>
+      withLegacyLayoutId(
+        {
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          project_id: "", // Canvas에서는 사용하지 않음
+          parent_id: p.parent_id,
+          order_num: p.order_num,
+        },
+        getLegacyLayoutId(p),
+      ),
+    );
 
     const configs = pages.map((page) => {
       // Layout 찾기
-      const layout = page.layout_id
-        ? layouts.find((l: RuntimeLayout) => l.id === page.layout_id)
+      const pageLayoutId = getLegacyLayoutId(page);
+      const layout = pageLayoutId
+        ? layouts.find((l: RuntimeLayout) => l.id === pageLayoutId)
         : null;
 
       // 최종 URL 계산
       const finalUrl = generatePageUrl({
-        page: {
-          id: page.id,
-          title: page.title,
-          slug: page.slug,
-          project_id: "",
-          parent_id: page.parent_id,
-          layout_id: page.layout_id,
-          order_num: page.order_num,
-        },
+        page: withLegacyLayoutId(
+          {
+            id: page.id,
+            title: page.title,
+            slug: page.slug,
+            project_id: "",
+            parent_id: page.parent_id,
+            order_num: page.order_num,
+          },
+          pageLayoutId,
+        ),
         layout: layout
           ? {
               id: layout.id,
@@ -234,7 +245,7 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
       return {
         pageId: page.id,
         path: finalUrl,
-        layoutId: page.layout_id,
+        layoutId: pageLayoutId,
         isDynamic: hasDynamicParams(finalUrl),
       };
     });

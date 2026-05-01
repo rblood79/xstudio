@@ -1,4 +1,5 @@
 import type { Element } from "../../types/core/store.types";
+import { matchesLegacyLayoutId } from "../../adapters/canonical/legacyElementFields";
 
 export interface FrameElementLoaderDb {
   elements: {
@@ -13,7 +14,9 @@ function isBodyElement(element: Element): boolean {
 
 function isFrameLayoutElement(element: Element, frameId: string): boolean {
   return (
-    !element.deleted && element.layout_id === frameId && element.page_id == null
+    !element.deleted &&
+    matchesLegacyLayoutId(element, frameId) &&
+    element.page_id == null
   );
 }
 
@@ -22,7 +25,8 @@ function hasFrameBody(elements: Element[], frameId: string): boolean {
     (element) =>
       !element.deleted &&
       isBodyElement(element) &&
-      (element.layout_id === frameId || element.parent_id === frameId),
+      (matchesLegacyLayoutId(element, frameId) ||
+        element.parent_id === frameId),
   );
 }
 

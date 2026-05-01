@@ -25,7 +25,7 @@ describe("FramesTab frame selection race guard", () => {
       'import { loadFrameElements } from "../../../utils/frameElementLoader";',
     );
     expect(source).toMatch(/const frameElements = await loadFrameElements\(/);
-    expect(source).toMatch(/mergeElements\(frameElements\);/);
+    expect(source).toMatch(/mergeElementsCanonicalPrimary\(frameElements\);/);
     expect(source).not.toContain(
       "const storeSetElements = useStore.getState().setElements;",
     );

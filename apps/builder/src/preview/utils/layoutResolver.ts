@@ -13,6 +13,13 @@ import type {
   SlotValidationError,
   LayoutResolutionResult,
 } from "../../types/builder/layout.types";
+import {
+  getElementSlotName,
+  getLegacyLayoutId,
+  getLegacySlotName,
+  hasLegacyLayoutId,
+  matchesLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 
 // ============================================
 // Main Resolver
@@ -32,7 +39,7 @@ export function resolveLayoutForPage(
   allElements: Element[],
 ): LayoutResolutionResult {
   // Layout 없으면 기존 방식 (Page elements만 렌더링)
-  if (!layout || !page?.layout_id) {
+  if (!layout || !getLegacyLayoutId(page)) {
     const pageElements = allElements.filter((el) => el.page_id === page?.id);
     return {
       resolvedTree: buildElementTree(pageElements, null),
@@ -43,11 +50,13 @@ export function resolveLayoutForPage(
   }
 
   // Layout elements 필터링
-  const layoutElements = allElements.filter((el) => el.layout_id === layout.id);
+  const layoutElements = allElements.filter((el) =>
+    matchesLegacyLayoutId(el, layout.id),
+  );
 
   // Page elements 필터링 (Layout에 속하지 않은 것)
   const pageElements = allElements.filter(
-    (el) => el.page_id === page.id && !el.layout_id,
+    (el) => el.page_id === page.id && !hasLegacyLayoutId(el),
   );
 
   // Slot 정보 추출
@@ -109,8 +118,8 @@ function groupElementsBySlot(
   rootPageElements.forEach((element) => {
     // ⭐ FIX: slot_name은 props 내부에 저장됨 (Inspector에서 설정)
     const slotName =
-      (element.props as { slot_name?: string })?.slot_name ||
-      element.slot_name ||
+      getLegacySlotName(element.props) ||
+      getElementSlotName(element) ||
       "content";
 
     const content = slotContents.get(slotName);
@@ -305,14 +314,14 @@ function buildElementTree(
  * Layout element 여부 확인
  */
 export function isLayoutElement(element: Element): boolean {
-  return !!element.layout_id && !element.page_id;
+  return hasLegacyLayoutId(element) && !element.page_id;
 }
 
 /**
  * Page element 여부 확인
  */
 export function isPageElement(element: Element): boolean {
-  return !!element.page_id && !element.layout_id;
+  return !!element.page_id && !hasLegacyLayoutId(element);
 }
 
 /**
@@ -337,6 +346,6 @@ export function filterElementsByEditMode(
   if (mode === "page") {
     return elements.filter((el) => el.page_id === targetId);
   } else {
-    return elements.filter((el) => el.layout_id === targetId);
+    return elements.filter((el) => matchesLegacyLayoutId(el, targetId));
   }
 }

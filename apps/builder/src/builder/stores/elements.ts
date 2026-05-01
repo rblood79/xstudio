@@ -79,6 +79,7 @@ import {
   legacyToCanonical,
   type LegacyAdapterDeps,
 } from "@/adapters/canonical";
+import { getLegacyLayoutId } from "@/adapters/canonical/legacyElementFields";
 import type { LegacyAdapterInput } from "@/adapters/canonical/types";
 import { convertComponentRole } from "@/adapters/canonical/componentRoleAdapter";
 import { convertPageLayout } from "@/adapters/canonical/slotAndLayoutAdapter";
@@ -88,7 +89,7 @@ import type { CompositionDocument } from "@composition/shared";
 import type { Layout } from "../../types/builder/layout.types";
 
 function pageLayoutId(page: Page): string | null {
-  return page.layout_id ?? null;
+  return getLegacyLayoutId(page);
 }
 
 function shouldInvalidatePagesLayout(
@@ -268,7 +269,7 @@ export interface ElementsState {
 
   // G.1: Instance 생성 액션
   createInstance: (
-    masterId: string,
+    masterRefId: string,
     parentId: string,
     pageId: string,
   ) => Element | null;
@@ -462,7 +463,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     masterToInstances: new Map(
       Array.from(
         componentIndex.masterToInstances.entries(),
-        ([masterId, ids]) => [masterId, new Set(ids)],
+        ([masterRefId, ids]) => [masterRefId, new Set(ids)],
       ),
     ),
     masterComponents: new Map(componentIndex.masterComponents),
@@ -479,7 +480,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     ),
   });
 
-  // ADR-916 G5-B P5-C: legacy `componentRole === "master" | "instance"` literal
+  // ADR-916 G5-B P5-C: legacy role literal
   // 검사 → isMasterElement / isInstanceElement 호출로 단일화. 두 type guard
   // 자체는 read-through fallback marker 보존 (legacy 의미 유지).
   const indexComponentElement = (
@@ -490,10 +491,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       componentIndex.masterComponents.set(element.id, element);
     }
 
-    // ADR-916 G5-B P5-D: legacy `element.masterId` direct property access →
+    // ADR-916 G5-B P5-D: legacy origin direct property access →
     // getInstanceMasterRef helper 호출 단일화 (canonical RefNode 의 ref 도
     // 자동 호환). isInstanceElement 가 strict legacy 이므로 본 분기에서는
-    // legacy masterId 만 도달, helper 의 canonical 분기는 dead in this branch
+    // legacy origin 만 도달, helper 의 canonical 분기는 dead in this branch
     // (안전).
     if (isInstanceElement(element)) {
       const masterRef = getInstanceMasterRef(element);
@@ -1665,8 +1666,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     },
 
     // G.1: Instance 생성 액션
-    createInstance: (masterId: string, parentId: string, pageId: string) => {
-      return createInstanceAction(get, set, masterId, parentId, pageId);
+    createInstance: (masterRefId: string, parentId: string, pageId: string) => {
+      return createInstanceAction(get, set, masterRefId, parentId, pageId);
     },
 
     detachInstance: (instanceId: string) => {

@@ -17,12 +17,18 @@ import type {
   LayoutsStoreState,
   LayoutsStoreActions,
 } from "../../../types/builder/layout.types";
-import type { Element, Page } from "../../../types/builder/unified.types";
+import type { Element } from "../../../types/builder/unified.types";
 import { getDefaultProps } from "../../../types/builder/unified.types";
 import { selectCanonicalDocument } from "../elements";
 import { getLiveElementsState } from "../rootStoreAccess";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
+import {
+  getLegacyLayoutId,
+  LEGACY_LAYOUT_ID_FIELD,
+  matchesLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../../adapters/canonical/legacyElementFields";
 import type { FrameNode } from "@composition/shared";
 
 // Type aliases for set/get
@@ -232,17 +238,19 @@ export const createCreateLayoutAction =
       ).layouts.insert(newLayout);
 
       // ⭐ Layout/Slot System: Layout용 body 요소 생성
-      const bodyElement: Element = {
-        id: crypto.randomUUID(),
-        type: "body",
-        props: getDefaultProps("body") as Element["props"],
-        parent_id: null,
-        page_id: null, // Layout 요소는 page_id 없음
-        layout_id: newLayout.id, // Layout ID 설정
-        order_num: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      const bodyElement: Element = withLegacyLayoutId(
+        {
+          id: crypto.randomUUID(),
+          type: "body",
+          props: getDefaultProps("body") as Element["props"],
+          parent_id: null,
+          page_id: null, // Layout 요소는 page_id 없음
+          order_num: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        newLayout.id,
+      );
 
       await db.elements.insert(bodyElement);
 
@@ -304,7 +312,7 @@ export const createUpdateLayoutAction =
 /**
  * Layout을 삭제하는 액션
  * ⭐ Layout 삭제 시 관련 데이터도 정리:
- * 1. Layout을 사용하는 Page들의 layout_id를 null로 설정
+ * 1. Layout을 사용하는 Page들의 legacy layout binding을 null로 설정
  * 2. Layout의 모든 elements 삭제
  */
 export const createDeleteLayoutAction =
@@ -332,18 +340,18 @@ export const createDeleteLayoutAction =
           frameMatchesLegacyLayoutId(n, id),
       );
 
-      // 1. ⭐ Layout을 사용하는 Page들의 layout_id를 null로 설정.
+      // 1. ⭐ Layout을 사용하는 Page들의 legacy layout binding을 null로 설정.
       // canonical frame projection 이 없어서 element cascade 를 skip 하더라도,
       // 삭제되는 layout row 를 가리키는 page ref 는 orphan 으로 남기지 않는다.
       const allPages = await db.pages.getAll();
       const pagesUsingLayout = allPages.filter(
-        (p) => (p as Page & { layout_id?: string }).layout_id === id,
+        (p) => getLegacyLayoutId(p) === id,
       );
 
       if (pagesUsingLayout.length > 0) {
         await Promise.all(
           pagesUsingLayout.map((page) =>
-            db.pages.update(page.id, { layout_id: null }),
+            db.pages.update(page.id, { [LEGACY_LAYOUT_ID_FIELD]: null }),
           ),
         );
 
@@ -351,7 +359,7 @@ export const createDeleteLayoutAction =
         const { pages, setPages } = getLiveElementsState();
         const updatedPages = pages.map((p) =>
           pagesUsingLayout.some((up) => up.id === p.id)
-            ? { ...p, layout_id: null }
+            ? withLegacyLayoutId(p, null)
             : p,
         );
         setPages(updatedPages);
@@ -359,9 +367,11 @@ export const createDeleteLayoutAction =
 
       if (frameExists) {
         // 2. ⭐ Layout의 모든 elements 삭제
-        // P3-D 과도기: layout_id 기반 DB 로딩 cascade 유지 (P3-E 에서 canonical descendants 기반으로 전환)
+        // P3-D 과도기: legacy layout binding 기반 DB 로딩 cascade 유지
         const allElements = await db.elements.getAll();
-        const layoutElements = allElements.filter((el) => el.layout_id === id);
+        const layoutElements = allElements.filter((el) =>
+          matchesLegacyLayoutId(el, id),
+        );
 
         if (layoutElements.length > 0) {
           await Promise.all(
@@ -437,7 +447,9 @@ export const createDuplicateLayoutAction =
 
       // 3. 원본 Layout의 elements 복제 (IndexedDB에서 가져오기)
       const allElements = await db.elements.getAll();
-      const originalElements = allElements.filter((el) => el.layout_id === id);
+      const originalElements = allElements.filter((el) =>
+        matchesLegacyLayoutId(el, id),
+      );
 
       if (originalElements && originalElements.length > 0) {
         // ID 매핑 (원본 ID → 새 ID)
@@ -448,14 +460,18 @@ export const createDuplicateLayoutAction =
           idMap.set(el.id, crypto.randomUUID());
         });
 
-        // Elements 복제 (새 ID와 새 layout_id 사용)
-        const newElements = originalElements.map((el) => ({
-          ...el,
-          id: idMap.get(el.id)!,
-          layout_id: newLayout.id,
-          parent_id: el.parent_id ? idMap.get(el.parent_id) || null : null,
-          page_id: null, // Layout element는 page_id 없음
-        }));
+        // Elements 복제 (새 ID와 새 legacy layout binding 사용)
+        const newElements = originalElements.map((el) =>
+          withLegacyLayoutId(
+            {
+              ...el,
+              id: idMap.get(el.id)!,
+              parent_id: el.parent_id ? idMap.get(el.parent_id) || null : null,
+              page_id: null, // Layout element는 page_id 없음
+            },
+            newLayout.id,
+          ),
+        );
 
         await db.elements.insertMany(newElements as Element[]);
 
@@ -568,7 +584,7 @@ export const createValidateLayoutDeleteAction =
       const db = await getDB();
       const allPages = await db.pages.getAll();
       const pagesUsingLayout = allPages.filter(
-        (p) => (p as Page & { layout_id?: string }).layout_id === id,
+        (p) => getLegacyLayoutId(p) === id,
       );
 
       const pageIds = pagesUsingLayout.map((p) => p.id);

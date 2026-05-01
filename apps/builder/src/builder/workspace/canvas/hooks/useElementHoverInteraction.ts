@@ -19,6 +19,7 @@ import type { Element } from "../../../../types/core/store.types";
 import { useStore } from "../../../stores";
 import { useViewportSyncStore } from "../stores";
 import type { BoundingBox } from "../selection/types";
+import { matchesLegacyLayoutId } from "../../../../adapters/canonical/legacyElementFields";
 
 // ============================================
 // Types
@@ -118,7 +119,7 @@ export function resolveFrameBodyHoverTarget({
       if (element.deleted) continue;
       if (element.type.toLowerCase() !== "body") continue;
       if (element.page_id != null) continue;
-      if (element.layout_id !== area.frameId) continue;
+      if (!matchesLegacyLayoutId(element, area.frameId)) continue;
       if (!boundsMap.has(element.id)) continue;
       return element.id;
     }

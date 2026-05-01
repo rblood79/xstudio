@@ -42,6 +42,11 @@ import type { Layout } from "../types/builder/layout.types";
 // ?canonical=1 URL param 으로 opt-in. 기본 false → legacy 경로 보존 (회귀 0 보장).
 import { CanonicalNodeRenderer } from "./components/CanonicalNodeRenderer";
 import { resolveCanonicalRefTree } from "../builder/utils/canonicalRefResolution";
+import {
+  getLegacySlotName,
+  hasLegacyLayoutId,
+  matchesLegacyLayoutId,
+} from "../adapters/canonical/legacyElementFields";
 
 /**
  * Canonical renderer 경로 활성화 결정.
@@ -218,7 +223,7 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          el.layout_id === currentLayoutId &&
+          matchesLegacyLayoutId(el, currentLayoutId) &&
           !el.parent_id,
       );
     } else if (currentLayoutId && !currentPageId) {
@@ -226,13 +231,13 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          el.layout_id === currentLayoutId &&
+          matchesLegacyLayoutId(el, currentLayoutId) &&
           !el.parent_id,
       );
     } else {
       // Page 모드: Page의 body 사용 (Layout 없음)
       bodyElement = elements.find(
-        (el) => el.type === "body" && !el.parent_id && !el.layout_id,
+        (el) => el.type === "body" && !el.parent_id && !hasLegacyLayoutId(el),
       );
     }
 
@@ -699,8 +704,7 @@ function CanvasContent() {
           slotContent = pageElements
             .filter((pe) => {
               if (pe.parent_id !== pageBody.id) return false;
-              const peSlotName =
-                (pe.props as { slot_name?: string })?.slot_name || "content";
+              const peSlotName = getLegacySlotName(pe.props) || "content";
               return peSlotName === slotName;
             })
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -709,8 +713,7 @@ function CanvasContent() {
           slotContent = pageElements
             .filter((pe) => {
               if (pe.type === "body") return false; // body는 제외
-              const peSlotName =
-                (pe.props as { slot_name?: string })?.slot_name || "content";
+              const peSlotName = getLegacySlotName(pe.props) || "content";
               return peSlotName === slotName && !pe.parent_id;
             })
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -887,11 +890,11 @@ function CanvasContent() {
     // ⭐ Page 모드에서 Layout이 적용된 경우: Layout 기반 렌더링
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
     if (currentLayoutId && currentPageId) {
-      const layoutElements = resolvedElements.filter(
-        (el) => el.layout_id === currentLayoutId,
+      const layoutElements = resolvedElements.filter((el) =>
+        matchesLegacyLayoutId(el, currentLayoutId),
       );
       const pageElements = resolvedElements.filter(
-        (el) => el.page_id === currentPageId && !el.layout_id,
+        (el) => el.page_id === currentPageId && !hasLegacyLayoutId(el),
       );
 
       // Layout의 root element (body) 찾기
@@ -918,8 +921,8 @@ function CanvasContent() {
 
     // ⭐ Layout 편집 모드 (currentLayoutId만 있고 currentPageId 없음)
     if (currentLayoutId && !currentPageId) {
-      const layoutElements = resolvedElements.filter(
-        (el) => el.layout_id === currentLayoutId,
+      const layoutElements = resolvedElements.filter((el) =>
+        matchesLegacyLayoutId(el, currentLayoutId),
       );
       const layoutBody = layoutElements.find(
         (el) => el.type === "body" && !el.parent_id,

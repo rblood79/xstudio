@@ -20,6 +20,10 @@ import { useMemo } from "react";
 import type { CanonicalNode, CompositionDocument } from "@composition/shared";
 import type { Element } from "../../../types/builder/unified.types";
 import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "../../../adapters/canonical/legacyMetadata";
+import {
+  LEGACY_LAYOUT_ID_FIELD,
+  withLegacyLayoutId,
+} from "../../../adapters/canonical/legacyElementFields";
 import { useActiveCanonicalDocument } from "./canonicalElementsBridge";
 
 // ─────────────────────────────────────────────
@@ -67,7 +71,7 @@ export function canonicalNodeToElement(
     id: _id,
     parent_id: lpParentId,
     page_id: lpPageId,
-    layout_id: lpLayoutId,
+    [LEGACY_LAYOUT_ID_FIELD]: lpLayoutId,
     order_num: lpOrderNum,
     fills: lpFills,
     type: lpType,
@@ -75,26 +79,27 @@ export function canonicalNodeToElement(
   } = lp;
   void _id;
 
-  return {
-    id: legacyId,
-    type: typeof lpType === "string" ? lpType : node.type,
-    props: restProps,
-    parent_id:
-      typeof lpParentId === "string" || lpParentId === null
-        ? (lpParentId as string | null)
-        : parentId,
-    order_num: typeof lpOrderNum === "number" ? lpOrderNum : orderNum,
-    page_id:
-      typeof lpPageId === "string" || lpPageId === null
-        ? (lpPageId as string | null)
-        : null,
-    layout_id:
-      typeof lpLayoutId === "string" || lpLayoutId === null
-        ? (lpLayoutId as string | null)
-        : null,
-    fills: lpFills as Element["fills"],
-    componentName: node.name,
-  };
+  return withLegacyLayoutId(
+    {
+      id: legacyId,
+      type: typeof lpType === "string" ? lpType : node.type,
+      props: restProps,
+      parent_id:
+        typeof lpParentId === "string" || lpParentId === null
+          ? (lpParentId as string | null)
+          : parentId,
+      order_num: typeof lpOrderNum === "number" ? lpOrderNum : orderNum,
+      page_id:
+        typeof lpPageId === "string" || lpPageId === null
+          ? (lpPageId as string | null)
+          : null,
+      fills: lpFills as Element["fills"],
+      componentName: node.name,
+    },
+    typeof lpLayoutId === "string" || lpLayoutId === null
+      ? (lpLayoutId as string | null)
+      : null,
+  );
 }
 
 /**

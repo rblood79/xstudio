@@ -6,7 +6,29 @@
  * @since 2025-12-11 Phase 10 B2.2
  */
 
-import type { Element } from '../types/element.types';
+import type { Element } from "../types/element.types";
+
+const LEGACY_LAYOUT_ID_FIELD = "layout_id" as const;
+const LEGACY_SLOT_NAME_FIELD = "slot_name" as const;
+
+type LegacyElementFields = {
+  [LEGACY_LAYOUT_ID_FIELD]?: unknown;
+  [LEGACY_SLOT_NAME_FIELD]?: unknown;
+};
+
+function getLegacyLayoutId(element: Element): string | null {
+  const value = (element as Element & LegacyElementFields)[
+    LEGACY_LAYOUT_ID_FIELD
+  ];
+  return typeof value === "string" ? value : null;
+}
+
+function getLegacySlotName(element: Element): string | null {
+  const value = (element as Element & LegacyElementFields)[
+    LEGACY_SLOT_NAME_FIELD
+  ];
+  return typeof value === "string" ? value : null;
+}
 
 // ============================================
 // ID Generation
@@ -26,35 +48,50 @@ export function generateId(): string {
 /**
  * ID로 요소 찾기
  */
-export function findElementById(elements: Element[], id: string): Element | undefined {
+export function findElementById(
+  elements: Element[],
+  id: string,
+): Element | undefined {
   return elements.find((el) => el.id === id);
 }
 
 /**
  * 부모 ID로 자식 요소들 찾기
  */
-export function findChildElements(elements: Element[], parentId: string | null): Element[] {
+export function findChildElements(
+  elements: Element[],
+  parentId: string | null,
+): Element[] {
   return elements.filter((el) => el.parent_id === parentId);
 }
 
 /**
  * 요소의 자손들 찾기 (재귀)
  */
-export function findDescendants(elements: Element[], parentId: string): Element[] {
+export function findDescendants(
+  elements: Element[],
+  parentId: string,
+): Element[] {
   const children = findChildElements(elements, parentId);
-  let descendants = [...children];
+  let nestedChildren = [...children];
 
   for (const child of children) {
-    descendants = [...descendants, ...findDescendants(elements, child.id)];
+    nestedChildren = [
+      ...nestedChildren,
+      ...findDescendants(elements, child.id),
+    ];
   }
 
-  return descendants;
+  return nestedChildren;
 }
 
 /**
  * 요소의 조상들 찾기
  */
-export function findAncestors(elements: Element[], elementId: string): Element[] {
+export function findAncestors(
+  elements: Element[],
+  elementId: string,
+): Element[] {
   const ancestors: Element[] = [];
   let current = findElementById(elements, elementId);
 
@@ -76,7 +113,7 @@ export function findAncestors(elements: Element[], elementId: string): Element[]
  */
 export function buildElementTree(
   elements: Element[],
-  parentId: string | null = null
+  parentId: string | null = null,
 ): Element[] {
   return elements
     .filter((el) => el.parent_id === parentId && !el.deleted)
@@ -95,7 +132,7 @@ export function isRenderableElement(element: Element): boolean {
   if (element.deleted) return false;
 
   // 특정 태그 제외 (필요 시 확장)
-  const nonRenderableTags = ['Body', 'Head', 'Script'];
+  const nonRenderableTags = ["Body", "Head", "Script"];
   if (nonRenderableTags.includes(element.type)) return false;
 
   return true;
@@ -114,7 +151,7 @@ export function extractStyle(element: Element): React.CSSProperties {
  */
 export function extractTextContent(element: Element): string {
   const props = element.props as Record<string, unknown>;
-  return String(props?.children || props?.text || props?.label || '');
+  return String(props?.children || props?.text || props?.label || "");
 }
 
 // ============================================
@@ -124,15 +161,23 @@ export function extractTextContent(element: Element): string {
 /**
  * 페이지의 요소들 필터링
  */
-export function getPageElements(elements: Element[], pageId: string): Element[] {
+export function getPageElements(
+  elements: Element[],
+  pageId: string,
+): Element[] {
   return elements.filter((el) => el.page_id === pageId && !el.deleted);
 }
 
 /**
  * 레이아웃의 요소들 필터링
  */
-export function getLayoutElements(elements: Element[], layoutId: string): Element[] {
-  return elements.filter((el) => el.layout_id === layoutId && !el.deleted);
+export function getLayoutElements(
+  elements: Element[],
+  layoutId: string,
+): Element[] {
+  return elements.filter(
+    (el) => getLegacyLayoutId(el) === layoutId && !el.deleted,
+  );
 }
 
 /**
@@ -140,15 +185,16 @@ export function getLayoutElements(elements: Element[], layoutId: string): Elemen
  */
 export function getElementsBySlot(
   elements: Element[],
-  pageId: string
+  pageId: string,
 ): Map<string, Element[]> {
   const slotMap = new Map<string, Element[]>();
 
   for (const element of elements) {
-    if (element.page_id === pageId && element.slot_name) {
-      const slotElements = slotMap.get(element.slot_name) || [];
+    const slotName = getLegacySlotName(element);
+    if (element.page_id === pageId && slotName) {
+      const slotElements = slotMap.get(slotName) || [];
       slotElements.push(element);
-      slotMap.set(element.slot_name, slotElements);
+      slotMap.set(slotName, slotElements);
     }
   }
 

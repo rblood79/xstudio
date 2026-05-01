@@ -24,6 +24,10 @@ import type { SharedRenderContext } from "@composition/shared/types";
 import { extractLegacyPropsFromResolved } from "../../resolvers/canonical/storeBridge";
 import type { RenderContext } from "../types/index";
 import type { PreviewElement } from "../types/index";
+import {
+  getLegacyLayoutId,
+  withLegacyLayoutId,
+} from "../../adapters/canonical/legacyElementFields";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -78,16 +82,18 @@ export function CanonicalNodeRenderer({
   // legacy DOM 마커는 원본 UUID 가 필요하므로 legacyProps.id 를 우선.
   const legacyUuid = (legacyProps.id as string | undefined) ?? node.id;
 
-  const previewEl: PreviewElement = {
-    id: legacyUuid,
-    type,
-    props: legacyProps as PreviewElement["props"],
-    parent_id: (legacyProps.parent_id as string | undefined) ?? null,
-    page_id: (legacyProps.page_id as string | undefined) ?? null,
-    layout_id: (legacyProps.layout_id as string | undefined) ?? null,
-    order_num: (legacyProps.order_num as number | undefined) ?? 0,
-    fills: (legacyProps.fills as unknown[] | undefined) ?? [],
-  };
+  const previewEl: PreviewElement = withLegacyLayoutId(
+    {
+      id: legacyUuid,
+      type,
+      props: legacyProps as PreviewElement["props"],
+      parent_id: (legacyProps.parent_id as string | undefined) ?? null,
+      page_id: (legacyProps.page_id as string | undefined) ?? null,
+      order_num: (legacyProps.order_num as number | undefined) ?? 0,
+      fills: (legacyProps.fills as unknown[] | undefined) ?? [],
+    },
+    getLegacyLayoutId(legacyProps),
+  );
 
   // fills + style 변환 (adaptElementFillStyle)
   const adaptedEl = adaptElementFillStyle(previewEl);
