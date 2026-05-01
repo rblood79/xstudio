@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + Phase 4 G5 runtime helper quarantine 추가 진척(raw 45), Phase 5 G6/G7 진입은 G5 raw gate 미종결로 보류)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + Phase 4 G5 runtime helper quarantine 추가 진척(raw 45), Phase 5 G7 preflight 착수 surface land, 정식 G6/G7 gate는 G5 raw gate 미종결로 보류)
 
 ### 진행 로그
 
@@ -339,6 +339,12 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
     | **G5 raw 합계** | **64** | **45** | **-19 ✅** |
   - **잔여 해석** — 신규 raw 45 도 아직 G5 PASS 아님. 남은 45는 layout/frame authoring comment+DB index bucket, canonical core `RefNode.descendants`, legacy public type/schema marker 중심이다. Phase 5 G6/G7 진입은 계속 보류.
   - **검증** — `pnpm -F @composition/builder exec tsc --noEmit --pretty false` PASS + `pnpm -F @composition/shared exec tsc --noEmit --pretty false` PASS.
+- **2026-05-01 — Phase 5 G7 Extension Boundary preflight 착수 (G5 raw 45 blocked 상태에서 surface land)**:
+  - **착수 범위 명확화** — design §9.4 / §9.6 기준 정식 Phase 5 G6/G7 gate 는 G5 raw gate 미종결로 아직 blocked. 본 land 는 G5를 우회한 pass 선언이 아니라, G7 Extension Boundary 의 store/API surface 를 먼저 닫는 preflight 착수.
+  - **shared action contract 확장** — `packages/shared/src/types/composition-document-actions.types.ts` 에 `updateNodeExtension(nodeId, patch)` 추가. `events` / `actions` / `dataBinding` / `editor` 를 canonical props 가 아닌 `x-composition` namespaced extension 으로만 patch 하는 API.
+  - **canonical store implementation** — `apps/builder/src/builder/stores/canonical/canonicalDocumentStore.ts` 에 `updateNodeExtension` 구현. `value === undefined` 는 key 삭제, 모든 key 삭제 시 `"x-composition"` field 제거. function callback / Symbol / React-like runtime object / cycle 등 non-JSON payload 는 dev warn + skip.
+  - **G7 regression evidence** — `canonicalDocumentStore.test.ts` 에 extension 저장/삭제/invalid payload reject/documentVersion/clone immutability test 추가. `updateNodeProps` 의 props 금지 key 방어와 별개로, 합법 저장 위치가 `x-composition` 임을 검증.
+  - **검증** — `pnpm -F @composition/shared exec tsc --noEmit --pretty false` PASS + `pnpm -F @composition/builder exec tsc --noEmit --pretty false` PASS + `pnpm -F @composition/builder exec vitest run src/builder/stores/canonical/__tests__/canonicalDocumentStore.test.ts` 42 tests PASS.
 
 ## Context
 

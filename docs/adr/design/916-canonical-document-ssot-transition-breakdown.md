@@ -755,6 +755,18 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 | Events          | `x-composition.events` serialize/deserialize, callback 저장 0건                     |
 | DataBinding     | `x-composition.dataBinding` serialize/deserialize, renderer adapter 연결            |
 
+### 10.1 착수 로그 — G7 Extension Boundary preflight
+
+2026-05-01 착수 범위는 **G7 store/API surface** 로 제한한다. §9.4 기준 정식 Phase 5 G6/G7 gate 는 G5 raw 45 잔여로 아직 blocked 이며, 본 land 는 pass 선언이 아니라 extension boundary 의 합법 write surface 를 먼저 닫는 preflight 이다.
+
+| 항목                   | 착수 결과                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| Shared action contract | `CanonicalDocumentActions.updateNodeExtension(nodeId, patch)` 추가                                       |
+| Store write surface    | `x-composition.events/actions/dataBinding/editor` patch + delete 지원                                    |
+| Props boundary         | `updateNodeProps` 는 기존처럼 `events/actions/dataBinding` key 를 skip, 합법 저장 위치는 `x-composition` |
+| Runtime payload guard  | function callback / Symbol / non-JSON runtime object / cycle skip + dev warn                             |
+| Unit evidence          | `canonicalDocumentStore.test.ts` 42 tests PASS                                                           |
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |

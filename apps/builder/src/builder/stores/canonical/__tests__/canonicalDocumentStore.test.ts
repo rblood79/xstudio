@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   CanonicalNode,
+  CompositionExtension,
+  CompositionExtendedNode,
   CompositionDocument,
   DescendantOverride,
   RefNode,
@@ -57,6 +59,12 @@ function makeRefNode(
     ref,
     ...overrides,
   };
+}
+
+function getExtension(nodeId: string): CompositionExtension | undefined {
+  return (selectCanonicalNode(nodeId) as CompositionExtendedNode | null)?.[
+    "x-composition"
+  ];
 }
 
 /** store 를 매 테스트 시작 시 깨끗한 상태로 리셋 */
@@ -313,6 +321,120 @@ describe("canonicalDocumentStore — updateNodeProps", () => {
 });
 
 // ─────────────────────────────────────────────
+// updateNodeExtension
+// ─────────────────────────────────────────────
+
+describe("canonicalDocumentStore — updateNodeExtension", () => {
+  beforeEach(resetStore);
+
+  function setupActiveDoc(): void {
+    const doc = makeDoc({
+      children: [
+        makeNode("button-1", "Button", {
+          props: { label: "Click" },
+        }),
+      ],
+    });
+    const store = useCanonicalDocumentStore.getState();
+    store.setDocument("p", doc);
+    store.setCurrentProject("p");
+  }
+
+  it("stores events / actions / dataBinding only in x-composition", () => {
+    setupActiveDoc();
+
+    useCanonicalDocumentStore.getState().updateNodeExtension("button-1", {
+      events: [{ kind: "onPress", actionRef: "action-1" }],
+      actions: [{ id: "action-1", kind: "navigate", target: "/home" }],
+      dataBinding: {
+        type: "value",
+        source: "state",
+        config: { path: "user.name" },
+      },
+      editor: { panel: "events" },
+    });
+
+    const extension = getExtension("button-1");
+    expect(extension).toEqual({
+      events: [{ kind: "onPress", actionRef: "action-1" }],
+      actions: [{ id: "action-1", kind: "navigate", target: "/home" }],
+      dataBinding: {
+        type: "value",
+        source: "state",
+        config: { path: "user.name" },
+      },
+      editor: { panel: "events" },
+    });
+    expect(selectCanonicalNode("button-1")?.props).toEqual({
+      label: "Click",
+    });
+  });
+
+  it("removes x-composition when all extension keys are deleted", () => {
+    setupActiveDoc();
+    const store = useCanonicalDocumentStore.getState();
+
+    store.updateNodeExtension("button-1", {
+      events: [{ kind: "onPress", actionRef: "action-1" }],
+      editor: { panel: "events" },
+    });
+    expect(getExtension("button-1")).toBeDefined();
+
+    store.updateNodeExtension("button-1", {
+      events: undefined,
+      editor: undefined,
+    });
+    expect(getExtension("button-1")).toBeUndefined();
+  });
+
+  it("rejects function callbacks and runtime objects in extension payload", () => {
+    setupActiveDoc();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    useCanonicalDocumentStore.getState().updateNodeExtension("button-1", {
+      events: [
+        {
+          kind: "onPress",
+          callback: () => undefined,
+        },
+      ] as unknown as CompositionExtension["events"],
+      dataBinding: {
+        type: "value",
+        source: "state",
+        config: { marker: Symbol("runtime") },
+      } as unknown as CompositionExtension["dataBinding"],
+      editor: { panel: "events" },
+    });
+
+    expect(getExtension("button-1")).toEqual({ editor: { panel: "events" } });
+    expect(warn.mock.calls.length).toBeGreaterThanOrEqual(2);
+
+    warn.mockRestore();
+  });
+
+  it("does not increment documentVersion when extension patch is fully rejected", () => {
+    setupActiveDoc();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const before = useCanonicalDocumentStore.getState().documentVersion;
+
+    useCanonicalDocumentStore.getState().updateNodeExtension("button-1", {
+      actions: [
+        {
+          id: "bad",
+          kind: "callback",
+          run: () => undefined,
+        },
+      ] as unknown as CompositionExtension["actions"],
+    });
+
+    expect(useCanonicalDocumentStore.getState().documentVersion).toBe(before);
+    expect(getExtension("button-1")).toBeUndefined();
+
+    warn.mockRestore();
+  });
+});
+
+// ─────────────────────────────────────────────
 // insertNode
 // ─────────────────────────────────────────────
 
@@ -548,6 +670,12 @@ describe("canonicalDocumentStore — documentVersion + immutability", () => {
     useCanonicalDocumentStore.getState().removeNode("kid");
     const v3 = useCanonicalDocumentStore.getState().documentVersion;
     expect(v3).toBe(v2 + 1);
+
+    useCanonicalDocumentStore.getState().updateNodeExtension("root", {
+      editor: { panel: "events" },
+    });
+    const v4 = useCanonicalDocumentStore.getState().documentVersion;
+    expect(v4).toBe(v3 + 1);
   });
 
   it("no-op mutations do not increment documentVersion", () => {
@@ -580,6 +708,20 @@ describe("canonicalDocumentStore — documentVersion + immutability", () => {
     expect(doc1).not.toBe(doc2);
     expect(doc1?.children).not.toBe(doc2?.children);
     expect(doc1?.children[0]).not.toBe(doc2?.children[0]);
+  });
+
+  it("x-composition extension is cloned on unrelated node mutation", () => {
+    setupActiveDoc();
+    useCanonicalDocumentStore.getState().updateNodeExtension("root", {
+      editor: { panel: "events" },
+    });
+    const beforeExtension = getExtension("root");
+
+    useCanonicalDocumentStore.getState().updateNode("root", { name: "new" });
+    const afterExtension = getExtension("root");
+
+    expect(afterExtension).toEqual(beforeExtension);
+    expect(afterExtension).not.toBe(beforeExtension);
   });
 });
 

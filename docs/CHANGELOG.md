@@ -5,6 +5,26 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-916 Phase 5 G7 Extension Boundary preflight] - 2026-05-01
+
+### Architecture
+
+- **Canonical document extension write surface 추가**
+  - `CanonicalDocumentActions.updateNodeExtension(nodeId, patch)` 추가
+  - `events`, `actions`, `dataBinding`, `editor` 를 canonical props 가 아닌 `x-composition` extension 으로만 저장
+  - `undefined` patch 는 extension key 삭제, 빈 extension 은 `"x-composition"` field 제거
+
+### Safety
+
+- function callback, Symbol, non-JSON runtime object, circular payload 를 extension payload 에 저장하지 않고 dev warn 후 skip
+- 기존 `updateNodeProps` 의 `events/actions/dataBinding` props 저장 금지 방어와 함께 G7 boundary 의 합법 저장 경로를 명시
+
+### Verification
+
+- `pnpm -F @composition/shared exec tsc --noEmit --pretty false` PASS
+- `pnpm -F @composition/builder exec tsc --noEmit --pretty false` PASS
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/canonical/__tests__/canonicalDocumentStore.test.ts` — 42 tests PASS
+
 ## [Canonical Document SSOT 전환 — ADR-916 Phase 0 G1 land + Accepted 승격] - 2026-05-01
 
 ### Architecture

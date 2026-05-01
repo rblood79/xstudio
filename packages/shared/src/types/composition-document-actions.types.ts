@@ -29,6 +29,7 @@
 
 import type {
   CanonicalNode,
+  CompositionExtension,
   CompositionDocument,
   DescendantOverride,
 } from "./composition-document.types";
@@ -104,6 +105,22 @@ export interface CanonicalDocumentActions {
    * - 노드 미발견 시 no-op + dev warn.
    */
   updateNodeProps(nodeId: string, patch: Record<string, unknown>): void;
+
+  /**
+   * 활성 document 의 nodeId 노드의 `x-composition` extension 을 부분 patch.
+   *
+   * Phase 5 G7 착수 surface:
+   * - `events` / `actions` / `dataBinding` / `editor` 는 canonical props 가 아닌
+   *   namespaced extension 에만 저장한다.
+   * - `value === undefined` 인 key 는 extension 에서 삭제.
+   * - function callback / React runtime object / non-JSON payload 는 skip +
+   *   dev warn. renderer adapter 는 serialized descriptor 만 소비해야 한다.
+   * - 모든 key 삭제 후 extension 이 비면 `"x-composition"` field 자체를 제거.
+   */
+  updateNodeExtension(
+    nodeId: string,
+    patch: Partial<CompositionExtension>,
+  ): void;
 
   /**
    * 활성 document 의 parentPath (Phase 1 = parent nodeId) 자식 배열에

@@ -22,6 +22,8 @@ import { create } from "zustand";
 import type {
   CanonicalDocumentActions,
   CanonicalNode,
+  CompositionExtension,
+  CompositionExtendedNode,
   CompositionDocument,
   DescendantOverride,
   RefNode,
@@ -125,12 +127,18 @@ function cloneDocument(doc: CompositionDocument): CompositionDocument {
 }
 
 function cloneNode(node: CanonicalNode): CanonicalNode {
-  return {
+  const clone: CanonicalNode = {
     ...node,
     children: node.children?.map(cloneNode),
     props: node.props ? { ...node.props } : undefined,
     metadata: node.metadata ? { ...node.metadata } : undefined,
   };
+  const extension = getCompositionExtension(node);
+  if (extension) {
+    (clone as CompositionExtendedNode)["x-composition"] =
+      cloneCompositionExtension(extension);
+  }
+  return clone;
 }
 
 /** dev warn helper — production 에서는 silent no-op 보장. */
@@ -146,6 +154,72 @@ function devWarn(message: string, context?: Record<string, unknown>): void {
 
 /** props 에 저장 금지된 key (G7 Extension Boundary 사전 enforcement) */
 const PROPS_FORBIDDEN_KEYS = new Set(["events", "actions", "dataBinding"]);
+const EXTENSION_KEYS = new Set(["events", "actions", "dataBinding", "editor"]);
+
+function getCompositionExtension(
+  node: CanonicalNode,
+): CompositionExtension | undefined {
+  return (node as CompositionExtendedNode)["x-composition"];
+}
+
+function cloneCompositionExtension(
+  extension: CompositionExtension,
+): CompositionExtension {
+  const clone: CompositionExtension = {};
+  if (extension.events) {
+    clone.events = extension.events.map((event) => ({ ...event }));
+  }
+  if (extension.actions) {
+    clone.actions = extension.actions.map((action) => ({ ...action }));
+  }
+  if (extension.dataBinding) {
+    clone.dataBinding = {
+      ...extension.dataBinding,
+      config: { ...extension.dataBinding.config },
+    };
+  }
+  if (extension.editor) {
+    clone.editor = { ...extension.editor };
+  }
+  return clone;
+}
+
+function isSerializableExtensionValue(
+  value: unknown,
+  seen = new WeakSet<object>(),
+): boolean {
+  if (value === null) return true;
+
+  switch (typeof value) {
+    case "string":
+    case "boolean":
+      return true;
+    case "number":
+      return Number.isFinite(value);
+    case "object": {
+      if (seen.has(value)) return false;
+      seen.add(value);
+
+      if (Array.isArray(value)) {
+        return value.every((entry) =>
+          isSerializableExtensionValue(entry, seen),
+        );
+      }
+
+      const prototype = Object.getPrototypeOf(value);
+      if (prototype !== Object.prototype && prototype !== null) {
+        return false;
+      }
+
+      return Object.values(value as Record<string, unknown>).every((entry) => {
+        if (entry === undefined) return false;
+        return isSerializableExtensionValue(entry, seen);
+      });
+    }
+    default:
+      return false;
+  }
+}
 
 // ─────────────────────────────────────────────
 // Store
@@ -266,6 +340,85 @@ export const useCanonicalDocumentStore = create<CanonicalDocumentStore>(
           ...found.node,
           props: Object.keys(nextProps).length > 0 ? nextProps : undefined,
         };
+        found.childrenArray[found.index] = updated;
+
+        const nextMap = new Map(state.documents);
+        nextMap.set(projectId, nextDoc);
+        return {
+          documents: nextMap,
+          documentVersion: state.documentVersion + 1,
+        };
+      });
+    },
+
+    updateNodeExtension: (nodeId, patch) => {
+      set((state) => {
+        const projectId = state.currentProjectId;
+        if (!projectId) {
+          devWarn("updateNodeExtension called without active project", {
+            nodeId,
+          });
+          return state;
+        }
+        const doc = state.documents.get(projectId);
+        if (!doc) {
+          devWarn("updateNodeExtension: active project has no document", {
+            projectId,
+            nodeId,
+          });
+          return state;
+        }
+
+        const nextDoc = cloneDocument(doc);
+        const found = findNodeById(nextDoc, nodeId);
+        if (!found) {
+          devWarn("updateNodeExtension: node not found", { nodeId });
+          return state;
+        }
+
+        const nextExtension: Record<string, unknown> = {
+          ...(getCompositionExtension(found.node) ?? {}),
+        };
+        let changed = false;
+
+        for (const [key, value] of Object.entries(patch)) {
+          if (!EXTENSION_KEYS.has(key)) {
+            devWarn("updateNodeExtension: unknown extension key skipped", {
+              nodeId,
+              key,
+            });
+            continue;
+          }
+
+          if (value === undefined) {
+            if (Object.prototype.hasOwnProperty.call(nextExtension, key)) {
+              delete nextExtension[key];
+              changed = true;
+            }
+            continue;
+          }
+
+          if (!isSerializableExtensionValue(value)) {
+            devWarn(
+              `updateNodeExtension: '${key}' must be serializable (skipped)`,
+              { nodeId, key },
+            );
+            continue;
+          }
+
+          nextExtension[key] = value;
+          changed = true;
+        }
+
+        if (!changed) return state;
+
+        const updated = { ...found.node } as CompositionExtendedNode;
+        if (Object.keys(nextExtension).length > 0) {
+          updated["x-composition"] =
+            nextExtension as Partial<CompositionExtension>;
+        } else {
+          delete updated["x-composition"];
+        }
         found.childrenArray[found.index] = updated;
 
         const nextMap = new Map(state.documents);
