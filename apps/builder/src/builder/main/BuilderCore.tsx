@@ -35,7 +35,10 @@ import { canonicalDocumentToElements } from "../stores/canonical/canonicalElemen
 // ADR-916 Phase 3 G4 sub-phase 3-B — Canonical primary backup bootstrap
 import { saveLegacyBackup } from "@/adapters/canonical/restoreFromLegacyBackup";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
-import { setElementsCanonicalPrimary } from "@/adapters/canonical/canonicalMutations";
+import {
+  setElementsCanonicalPrimary,
+  registerCanonicalMutationStoreActions,
+} from "@/adapters/canonical/canonicalMutations";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import {
   ToastContainer,
@@ -106,6 +109,16 @@ export const BuilderCore: React.FC = () => {
   const toggleWorkflowOverlay = useStore(
     (state) => state.toggleWorkflowOverlay,
   );
+
+  // ADR-916 Phase 5 G6-2 third slice — canonicalMutations DI registration.
+  // wrapper API (canonicalMutations.ts) 의 ESM circular import chain 차단을
+  // 위해 callback registration pattern 사용. mount 시점 1회 등록.
+  useEffect(() => {
+    registerCanonicalMutationStoreActions({
+      mergeElements: useStore.getState().mergeElements,
+      setElements: useStore.getState().setElements,
+    });
+  }, []);
 
   // ADR-916 Phase 2 G3 — Canonical document write-through sync (caller-driven).
   // flag `VITE_ADR916_DOCUMENT_SYNC=true` 시 projectId 명시 전달하여 sync 시작.

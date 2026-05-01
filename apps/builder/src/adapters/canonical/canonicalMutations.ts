@@ -16,11 +16,69 @@
  * §8.6 grep gate 의 `apps/builder/src/adapters/**` exclude 패턴 안에 들어가서
  * grep gate 의 violation 카운트에서 자동 제외. caller 변환 1개당 baseline 1
  * 감소.
+ *
+ * **Circular dependency 해소 (DI pattern)**:
+ * elements.ts → canonicalMutations.ts → stores/index → elements.ts 의 ESM
+ * circular import chain 을 callback registration 으로 차단. BuilderCore mount
+ * 시점에 `registerCanonicalMutationStoreActions` 로 store action 주입.
+ * 테스트 환경에서는 `vi.mock` 또는 `registerCanonicalMutationStoreActions` 로
+ * mock action 주입 가능.
  */
 
 import type { Element } from "@/types/builder/unified.types";
-import { useStore } from "@/builder/stores";
 import { elementsApi } from "@/adapters/canonical/legacyElementsApiService";
+
+// ─────────────────────────────────────────────
+// Callback registration (DI pattern)
+// ─────────────────────────────────────────────
+
+/**
+ * store action 타입 — wrapper 가 호출하는 최소 action 집합.
+ * useStore 전체 타입 의존을 피해 circular import chain 차단.
+ */
+export type CanonicalMutationStoreActions = {
+  mergeElements: (els: Element[]) => void;
+  setElements: (els: Element[]) => void;
+};
+
+let _registeredActions: CanonicalMutationStoreActions | null = null;
+
+/**
+ * BuilderCore (또는 테스트 setup) 에서 store action 을 주입한다.
+ * mount useEffect 에서 1회 호출.
+ *
+ * @example
+ * // BuilderCore.tsx
+ * useEffect(() => {
+ *   registerCanonicalMutationStoreActions({
+ *     mergeElements: useStore.getState().mergeElements,
+ *     setElements: useStore.getState().setElements,
+ *   });
+ * }, []);
+ */
+export function registerCanonicalMutationStoreActions(
+  actions: CanonicalMutationStoreActions,
+): void {
+  _registeredActions = actions;
+}
+
+/**
+ * 테스트 / 모듈 재로드 후 등록된 action 을 초기화한다.
+ * afterEach 에서 호출 가능 (선택적).
+ */
+export function resetCanonicalMutationStoreActions(): void {
+  _registeredActions = null;
+}
+
+function getActions(): CanonicalMutationStoreActions {
+  if (!_registeredActions) {
+    throw new Error(
+      "[canonicalMutations] store actions not registered. " +
+        "Call registerCanonicalMutationStoreActions() before using mutation wrappers.",
+    );
+  }
+  return _registeredActions;
+}
 
 // ─────────────────────────────────────────────
 // In-memory store wrapper API
@@ -29,7 +87,7 @@ import { elementsApi } from "@/adapters/canonical/legacyElementsApiService";
 /**
  * legacy `mergeElements` 의 canonical-aware wrapper.
  *
- * 본 단계 (mutation reverse pilot): 단순히 legacy `useStore.mergeElements(elements)`
+ * 본 단계 (mutation reverse pilot): 단순히 legacy `mergeElements(elements)`
  * 호출. wrapper 진입점 마련 + caller 변환을 통해 grep gate baseline 점진 감소.
  *
  * 후속 단계 (production destructive=0 evidence 후): canonical store mutation 우선
@@ -38,7 +96,7 @@ import { elementsApi } from "@/adapters/canonical/legacyElementsApiService";
  * @param elements - 추가/병합할 legacy element 배열
  */
 export function mergeElementsCanonicalPrimary(elements: Element[]): void {
-  useStore.getState().mergeElements(elements);
+  getActions().mergeElements(elements);
 }
 
 /**
@@ -47,7 +105,7 @@ export function mergeElementsCanonicalPrimary(elements: Element[]): void {
  * @param elements - 전체 element 배열 (replace)
  */
 export function setElementsCanonicalPrimary(elements: Element[]): void {
-  useStore.getState().setElements(elements);
+  getActions().setElements(elements);
 }
 
 // ─────────────────────────────────────────────

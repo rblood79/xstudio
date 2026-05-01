@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-02 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 closure 시그널 도달 ✅** (read site cleanup 47 → 0 = 100%) + **Phase 5 G6-1 second work ✅** (canonical primary fallback + spec consumer parity evidence) + **Phase 5 G6-2 first slice ✅** (Preview canonical 렌더 fallback, extractLegacyPropsFromResolved G6-1 정합) + **Phase 5 G7 transition first slice ✅** (events/dataBinding round-trip 보존, buildLegacyElementMetadata + exportLegacyDocument) + **Phase 5 G7 본격 cutover ✅** (`x-composition` extension only 전환) + **Phase 5 G7 closure marker ✅** (직렬화 contract + write boundary 분류) + **Phase 5 G6-2 second slice ✅** (history parity 자동 cover, canonicalDocumentSync 회로 isolated evidence) + **Phase 5 G6-2 third slice ⏭️** (진정 unbounded scope 확정, transitive circular import 별 sub-phase). 잔존 = G6-2 third slice fix (unbounded debug) / Phase 4 G5 P5-B overrides (MED-HIGH) / Phase 3 G4 canonical primary write (HIGH, 11+ caller migration). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
+In Progress — 2026-05-02 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 closure 시그널 도달 ✅** (read site cleanup 47 → 0 = 100%) + **Phase 5 G6-1 second work ✅** (canonical primary fallback + spec consumer parity evidence) + **Phase 5 G6-2 first slice ✅** (Preview canonical 렌더 fallback, extractLegacyPropsFromResolved G6-1 정합) + **Phase 5 G7 transition first slice ✅** (events/dataBinding round-trip 보존, buildLegacyElementMetadata + exportLegacyDocument) + **Phase 5 G7 본격 cutover ✅** (`x-composition` extension only 전환) + **Phase 5 G7 closure marker ✅** (직렬화 contract + write boundary 분류) + **Phase 5 G6-2 second slice ✅** (history parity 자동 cover, canonicalDocumentSync 회로 isolated evidence) + **Phase 5 G6-2 third slice ✅** (canonicalMutations DI pattern — ESM circular import 차단, vitest setup fail 영역 + canonical 광역 + G4 grep gate baseline 0 유지 모두 PASS). 잔존 = Phase 4 G5 P5-B overrides (MED-HIGH) / Phase 3 G4 canonical primary write (HIGH, 11+ caller migration). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
 
 ### 진행 로그
 
@@ -540,6 +540,23 @@ In Progress — 2026-05-02 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **측정**: land 내용 = design §10.2.14 only. logic 변경 0, revert 완료.
   - **G6-2 third slice scope 확정**: 진정 unbounded debug — 별 sub-phase / 별 hygiene work. G6-2 closure 시점 결정 영역.
   - **다음 sub-phase 권장**: Phase 4 G5 P5-B `overrides` (MED-HIGH ~1-2d, design §9.7 reorder) / Phase 3 G4 진입 (HIGH ~3-5d, write 경로 cutover, 11+ caller migration codified)
+- **2026-05-02 — Phase 5 G6-2 third slice closure ✅ (canonicalMutations DI pattern — ESM circular import 차단)**:
+  - **사용자 명시 진행 신호**: "ADR 916 계획 절반만 실현상태라 먼저 계획대로 착수부터 진행". 직전 framing drift 검증 (drift 4건) 결과 G6-2 third slice = G4 진정 reverse 진입 prerequisite 인식 후 debugger subagent + systematic-debugging skill 적용.
+  - **진정 root cause 확정 (b7d75f3e4 추정 정정)**: `apps/builder/src/adapters/canonical/canonicalMutations.ts` wrapper API 의 module evaluation timing 이슈. wrapper body 가 `useStore` 직접 import + 호출 → `elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.ts` ESM circular chain → vitest setup 시점 `createElementsSlice` undefined. b7d75f3e4 추정 ("transitive circular import chain") 은 정확했으나 origin 파일 미특정 — 본 세션 정확히 wrapper API 자체임을 확정.
+  - **fix 옵션 (a) DI pattern (callback registration) 채택** — 옵션 (b) `elementsApi` 직접 호출은 G4 grep gate baseline 0 회귀 야기 (caller wrapper 우회 시 baseline 다시 증가, D18=A 단일 SSOT 격리 위반) 으로 기각.
+  - **land 내용 (3 file, +71 / -3 lines)**:
+    - `canonicalMutations.ts`: `useStore` import 제거, `CanonicalMutationStoreActions` 타입 + `registerCanonicalMutationStoreActions(actions)` + `resetCanonicalMutationStoreActions()` + 내부 `getActions()` helper 추가. 5 wrapper 중 `mergeElementsCanonicalPrimary` / `setElementsCanonicalPrimary` 2종이 `getActions()` 경유. `createElementCanonicalPrimary` / `updateElementCanonicalPrimary` / `createMultipleElementsCanonicalPrimary` 3종은 `elementsApi` 의존 (변경 0).
+    - `BuilderCore.tsx`: mount useEffect 에서 `registerCanonicalMutationStoreActions({ mergeElements: useStore.getState().mergeElements, setElements: useStore.getState().setElements })` 1회 호출. ADR-916 Phase 2 G3 sync useEffect 직전 위치 (의존 0, deps `[]`).
+    - 추가 `import { registerCanonicalMutationStoreActions } from "@/adapters/canonical/canonicalMutations"`.
+  - **wrapper 외부 시그니처 변경 0** — caller 16 site 무수정. logic 변경 0 (DI 만 적용). production runtime 동작 동일.
+  - **검증 evidence**:
+    - vitest setup fail 영역 (`itemsActions.test.ts` + `pagesLayoutInvalidation.test.ts`): **2 file / 10 tests PASS ✅** (이전 setup phase 에서 fail)
+    - canonical 광역 (`stores/canonical/__tests__/`): **4 file / 99 tests PASS ✅**
+    - adapter canonical 광역 (`adapters/canonical/__tests__/`): **11 file / 175 tests PASS ✅**
+    - G4 grep gate (`exportSsotGrepGate.test.ts`): **1 file / 2 tests PASS ✅** (baseline 0 유지 확증, D18=A 단일 SSOT 격리 보존)
+    - `pnpm -F @composition/builder exec tsc --noEmit --pretty false`: **exit 0 PASS ✅**
+  - **G6-2 closure 도달 ✅** — first slice (Preview canonical 렌더) + second slice (history parity 자동 cover) + third slice (DI pattern circular import 차단) 모두 land. G6 Runtime Parity 통과 조건 (Skia/Preview/Publish/History/Undo/Redo 회귀 0) 의 history 영역 회귀 검증 vitest 가 정상 동작 도달.
+  - **다음 진입점 (직전 framing drift 분석 정합)**: Phase 3 G4 wrapper 내부 진정 reverse (HIGH ~3-5d, drift #1 본질 해소, canonical store mutation 우선 + legacy mirror 전환) — 별 세션 surface 권장 (max_phases=3 budget 초과). 또는 Phase 4 G5 P5-B `overrides` (MED-HIGH ~1-2d, ADR-911 P3 영역 결합 위험).
 
 ## Context
 
