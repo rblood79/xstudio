@@ -15,6 +15,10 @@
  */
 
 import type { Element } from "../../../types/core/store.types";
+import {
+  isMasterElement,
+  isInstanceElement,
+} from "../../../types/builder/unified.types";
 
 /**
  * 페이지별 요소 인덱스
@@ -48,7 +52,7 @@ export function createEmptyPageIndex(): PageElementIndex {
  */
 export function rebuildPageIndex(
   elements: Element[],
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): PageElementIndex {
   const index = createEmptyPageIndex();
 
@@ -69,7 +73,7 @@ export function rebuildPageIndex(
 export function indexElement(
   index: PageElementIndex,
   element: Element,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): void {
   const { page_id, id, parent_id } = element;
 
@@ -104,7 +108,7 @@ export function indexElement(
  */
 export function unindexElement(
   index: PageElementIndex,
-  element: Element
+  element: Element,
 ): void {
   const { page_id, id } = element;
 
@@ -150,7 +154,7 @@ export function unindexElement(
 export function getPageElements(
   index: PageElementIndex,
   pageId: string,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): Element[] {
   // 인덱스에서 조회
   const elementIds = index.elementsByPage.get(pageId);
@@ -184,7 +188,7 @@ export function getPageElements(
 export function getRootElements(
   index: PageElementIndex,
   pageId: string,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): Element[] {
   const rootIds = index.rootsByPage.get(pageId);
   if (!rootIds || rootIds.length === 0) {
@@ -207,7 +211,7 @@ export function getRootElements(
  */
 function isBodyElement(
   elementId: string,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): boolean {
   const element = elementsMap.get(elementId);
   return element?.type === "Body";
@@ -236,17 +240,18 @@ export function createEmptyComponentIndex(): ComponentIndex {
 /**
  * 전체 요소에서 Component Index 구축
  *
- * - componentRole === 'master' → masterComponents에 등록
- * - componentRole === 'instance' && masterId → masterToInstances에 등록
+ * ADR-916 G5-B P5-C: legacy `componentRole === "master" | "instance"` literal
+ * 검사 → isMasterElement / isInstanceElement type guard 호출로 단일화. 두 guard
+ * 자체는 read-through fallback marker 보존.
  */
 export function rebuildComponentIndex(elements: Element[]): ComponentIndex {
   const index = createEmptyComponentIndex();
 
   for (const el of elements) {
-    if (el.componentRole === 'master') {
+    if (isMasterElement(el)) {
       index.masterComponents.set(el.id, el);
     }
-    if (el.componentRole === 'instance' && el.masterId) {
+    if (isInstanceElement(el) && el.masterId) {
       if (!index.masterToInstances.has(el.masterId)) {
         index.masterToInstances.set(el.masterId, new Set());
       }
@@ -279,7 +284,9 @@ export function createEmptyVariableUsageIndex(): VariableUsageIndex {
  *
  * element.variableBindings 배열에서 변수 이름 추출하여 역인덱스 생성
  */
-export function rebuildVariableUsageIndex(elements: Element[]): VariableUsageIndex {
+export function rebuildVariableUsageIndex(
+  elements: Element[],
+): VariableUsageIndex {
   const index = createEmptyVariableUsageIndex();
 
   for (const el of elements) {
@@ -312,7 +319,7 @@ export function updateElementParent(
   index: PageElementIndex,
   element: Element,
   oldParentId: string | null,
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): void {
   const { page_id, id, parent_id: newParentId } = element;
 

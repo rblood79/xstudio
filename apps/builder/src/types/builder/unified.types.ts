@@ -109,9 +109,17 @@ export interface Element {
 
   // --- G.1: Component-Instance System ---
   /**
-   * @deprecated ADR-913 Phase 5-C + ADR-916 G5 cleanup target.
+   * @deprecated ADR-913 Phase 5-C + ADR-916 G5-B P5-C cleanup target.
    * canonical `type: "ref"` (RefNode) + `ref` field 로 대체. instance 판별은 더
    * 이상 별도 role 필드 아님 — `node.type === "ref"` 만으로 충분.
+   *
+   * **read-through fallback only (ADR-916 G5-B P5-C)**: 본 필드는 read-through
+   * fallback 만 보장 — legacy IndexedDB 데이터의 `componentRole` 을 graceful
+   * 하게 read 하기 위한 transition bridge. 신규 write 는 canonical
+   * `reusable: true` (master) 또는 `type: "ref"` + `ref: <id>` (instance) 만 사용.
+   * caller 는 직접 literal 비교 (legacy role 키 == "master" | "instance")
+   * 대신 `isMasterElement(el)` / `isInstanceElement(el)` type guard 사용 권장.
+   *
    * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건 + DB schema migration
    * 으로 필드 삭제.
    */
@@ -172,12 +180,35 @@ export function isVariableRef(value: unknown): value is string {
   return typeof value === "string" && value.startsWith("$--");
 }
 
-/** master 컴포넌트 여부 검사 */
+/**
+ * master 컴포넌트 여부 검사 (legacy strict).
+ *
+ * ADR-916 G5-B P5-C: legacy `componentRole === "master"` 의미 그대로 보존.
+ * caller 는 본 type guard 호출로 grep gate baseline 점근적 0 도달.
+ *
+ * canonical `reusable: true` 인식이 필요하면 caller 측에서 별도 검사 합성
+ * (예: `isMasterElement(el) || el.reusable === true`) — multiElementCopy 의
+ * isReusableOrigin 패턴 참조.
+ *
+ * @deprecated read-through fallback only — 신규 write 는 canonical
+ * `reusable: true` 만 사용. 본 함수 내부 logic 은 ADR-911 P3 cleanup 시점에
+ * canonical 으로 reverse.
+ */
 export function isMasterElement(el: Element): boolean {
   return el.componentRole === "master";
 }
 
-/** instance 요소 여부 검사 (masterId 필수) */
+/**
+ * instance 요소 여부 검사 (legacy strict, `masterId` 필수).
+ *
+ * ADR-916 G5-B P5-C: legacy `componentRole === "instance" && !!masterId`
+ * 의미 그대로 보존. canonical `type: "ref"` 인식은 별도 함수
+ * `isCanonicalRefElement` (canonicalRefResolution.ts) 사용.
+ *
+ * @deprecated read-through fallback only — 신규 write 는 canonical
+ * `type: "ref"` + `ref` 만 사용. 본 함수 내부 logic 은 ADR-911 P3 cleanup
+ * 시점에 canonical 으로 reverse.
+ */
 export function isInstanceElement(el: Element): boolean {
   return el.componentRole === "instance" && !!el.masterId;
 }

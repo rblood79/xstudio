@@ -9,7 +9,11 @@ import {
   ComponentElementProps,
   ComputedLayout,
 } from "../../types/core/store.types";
-import { Page } from "../../types/builder/unified.types";
+import {
+  Page,
+  isMasterElement,
+  isInstanceElement,
+} from "../../types/builder/unified.types";
 import type { PageLayoutDirection } from "./canvasSettings";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
@@ -474,15 +478,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     ),
   });
 
+  // ADR-916 G5-B P5-C: legacy `componentRole === "master" | "instance"` literal
+  // 검사 → isMasterElement / isInstanceElement 호출로 단일화. 두 type guard
+  // 자체는 read-through fallback marker 보존 (legacy 의미 유지).
   const indexComponentElement = (
     componentIndex: ComponentIndex,
     element: Element,
   ) => {
-    if (element.componentRole === "master") {
+    if (isMasterElement(element)) {
       componentIndex.masterComponents.set(element.id, element);
     }
 
-    if (element.componentRole === "instance" && element.masterId) {
+    if (isInstanceElement(element) && element.masterId) {
       if (!componentIndex.masterToInstances.has(element.masterId)) {
         componentIndex.masterToInstances.set(element.masterId, new Set());
       }
@@ -494,12 +501,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     componentIndex: ComponentIndex,
     element: Element,
   ) => {
-    if (element.componentRole === "master") {
+    if (isMasterElement(element)) {
       componentIndex.masterComponents.delete(element.id);
       componentIndex.masterToInstances.delete(element.id);
     }
 
-    if (element.componentRole === "instance" && element.masterId) {
+    if (isInstanceElement(element) && element.masterId) {
       const instanceIds = componentIndex.masterToInstances.get(
         element.masterId,
       );

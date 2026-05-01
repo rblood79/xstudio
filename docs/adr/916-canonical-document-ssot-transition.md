@@ -238,6 +238,37 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **검증** — `pnpm type-check` 3/3 PASS (cache miss 314ms) + vitest canonical 73/73 test PASS (1 file load 단계 fail = canonicalDocumentSync.test.ts 의 settings slice zustand init pre-existing, stash 비교로 본 변경 영향 0 확정).
   - **R5 cascade risk 대응 evidence** — JSDoc/주석 변경 + 1 line write site (`{}` → `undefined`) 만, runtime caller logic 변경 0, adapter read-through 보존, `metadata.legacyProps` 7 fields marker 영향 0.
   - **다음 sub-step 진입점**: P5-C `componentRole` cleanup (~2d MED, ADR-911 `componentRoleAdapter.ts` 활용 가능, instance 시스템 logic 변경 영역 분리). 또는 P5-D `masterId` cleanup (~2-3d MED-HIGH, RefNode.ref 전환). design §9.7 reorder 권장 정합.
+- **2026-05-01 — Phase 4 G5-B P5-C `componentRole` cleanup (caller 5 site migration + JSDoc, baseline 26 → 19, -7)**:
+  - **사용자 명시 신호** "ADR 916 부터 진행해, 911,913 계입 시키지마" 정합 — ADR-916 §9 본문 + design §9.6/§9.7 update only, ADR-911 본문 (`componentRoleAdapter.ts` 는 ADR-911 product 코드라 사용 OK, 단 ADR-911 본문 .md 파일 touch 0). ADR-911 영역 (`instanceActions.ts` 9 site `componentRole` 분기 + `editingSemantics.ts` 5 site role 판정) 침범 없이 P5-C 진행 가능 영역 한정.
+  - **scope 결정**: caller 5 site (multiElementCopy 1 + elements 4 + elementIndexer 2) 의 직접 literal 비교 (`el.componentRole === "master" | "instance"`) → `isMasterElement(el)` / `isInstanceElement(el)` type guard 호출로 단일화. type guard 자체는 strict legacy 의미 유지 (logic 변경 0, read-through fallback marker 보존). `editingSemanticsFixture.ts` 1 site 는 dual-mode dev 검증 가치로 보존 (canonical resolver 가 legacy `componentRole === "instance"` fixture 도 호환되는지 확증).
+  - **type guard 강화 (의미 동일, JSDoc 만 강화)** (`apps/builder/src/types/builder/unified.types.ts`):
+    - `isMasterElement(el)` JSDoc — `@deprecated read-through fallback only` marker + canonical `reusable: true` 별도 인식 시 caller 측 합성 패턴 (multiElementCopy `isReusableOrigin` 참조) 명문화.
+    - `isInstanceElement(el)` JSDoc — `@deprecated read-through fallback only` marker + canonical `type: "ref"` 인식은 별도 함수 `isCanonicalRefElement` 사용 명문화.
+    - `Element.componentRole` JSDoc 강화 — read-through fallback only marker + caller 가 직접 literal 비교 대신 type guard 사용 권장.
+  - **caller migration land**:
+    - `apps/builder/src/builder/utils/multiElementCopy.ts:29` — `isReusableOrigin` 내부 직접 literal 비교 → `isMasterElement(element)` 호출 합성 (canonical `reusable === true` 와 OR).
+    - `apps/builder/src/builder/stores/elements.ts:481/485/497/502` — `indexComponentElement` / `unindexComponentElement` 의 4 site → `isMasterElement(element)` / `isInstanceElement(element)` 호출. masterId 별도 검사 보존 (canonical RefNode 호환 안전망).
+    - `apps/builder/src/builder/stores/utils/elementIndexer.ts:246/249` — `rebuildComponentIndex` 의 2 site → `isMasterElement(el)` / `isInstanceElement(el)` 호출.
+  - **grep gate baseline 재측정**:
+    | 필드 | 이전 | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 158 | 158 | 0 |
+    | slot_name | 17 | 17 | 0 |
+    | componentRole | 26 | 19 | -7 |
+    | masterId | 35 | 35 | 0 |
+    | overrides | 16 | 16 | 0 |
+    | descendants | 48 | 48 | 0 |
+    | **G5 합계** | **300** | **293** | **-7 ✅** |
+  - **잔존 19 caller 영역** (본 phase 침범 회피 = ADR-911 영역 결합):
+    - `instanceActions.ts` 9 site (instance lifecycle reset/merge/update 본질) — ADR-911 P3 cleanup 영역
+    - `editingSemantics.ts` 5 site (origin/instance role 판정) — ADR-911 영역
+    - `unified.types.ts` 2 site (isMasterElement / isInstanceElement 내부 logic) — read-through fallback 보존
+    - `editingSemanticsFixture.ts` 1 site (dev fixture dual-mode 검증)
+    - `composition-document.types.ts` 1 site (type 주석)
+    - `canonicalRefResolution.ts` 1 site (strip dict)
+  - **검증** — `pnpm type-check` 3/3 PASS (cache miss 326ms) + vitest canonical 73/73 PASS (1 file load fail = canonicalDocumentSync.test.ts pre-existing, stash 비교로 본 변경 영향 0 확정).
+  - **R5 cascade risk 대응 evidence** — type guard 호출 substitution 만 (logic 동일), runtime caller logic 변경 0, adapter read-through 보존, fixture dual-mode 보존.
+  - **다음 sub-step 진입점**: P5-D `masterId` cleanup (~2-3d MED-HIGH, baseline 35, RefNode.ref 전환). 또는 P5-E `descendants` cleanup (HIGH 분할, baseline 48). design §9.7 reorder 정합.
 
 ## Context
 

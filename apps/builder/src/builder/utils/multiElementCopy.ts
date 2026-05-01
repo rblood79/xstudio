@@ -6,6 +6,7 @@
  */
 
 import type { Element } from "../../types/core/store.types";
+import { isMasterElement } from "../../types/builder/unified.types";
 import { normalizeExternalFillIngress } from "../panels/styles/utils/fillExternalIngress";
 import { ElementUtils } from "../../utils/element/elementUtils";
 
@@ -24,10 +25,10 @@ export interface CopiedElementsData {
 }
 
 function isReusableOrigin(element: Element): boolean {
-  return (
-    element.reusable === true ||
-    (element as { componentRole?: unknown }).componentRole === "master"
-  );
+  // ADR-916 G5-B P5-C: legacy `componentRole === "master"` 검사 → isMasterElement
+  // 호출로 단일화 (isMasterElement 자체는 read-through fallback marker 보존).
+  // canonical 진입 시 element.reusable === true 도 별도 인식.
+  return element.reusable === true || isMasterElement(element);
 }
 
 function getReusableOriginRoot(copiedData: CopiedElementsData): Element | null {
@@ -40,11 +41,11 @@ function getReusableOriginRoot(copiedData: CopiedElementsData): Element | null {
 }
 
 function parsePixels(value: unknown): number {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const match = value.match(/^(-?\d+(?:\.\d+)?)px$/);
     if (match) return parseFloat(match[1]);
   }
-  if (typeof value === 'number') return value;
+  if (typeof value === "number") return value;
   return 0;
 }
 
@@ -76,7 +77,7 @@ function createRefOverrideProps(
  */
 export function copyMultipleElements(
   elementIds: string[],
-  elementsMap: Map<string, Element>
+  elementsMap: Map<string, Element>,
 ): CopiedElementsData {
   // Get all elements to copy
   const elementsToCopy = elementIds
@@ -121,7 +122,10 @@ export function copyMultipleElements(
 
     // Find children of current element
     for (const element of elementsMap.values()) {
-      if (element.parent_id === current.id && !allElementsIncludingDescendants.has(element)) {
+      if (
+        element.parent_id === current.id &&
+        !allElementsIncludingDescendants.has(element)
+      ) {
         allElementsIncludingDescendants.add(element);
         queue.push(element);
       }
@@ -147,7 +151,7 @@ export function copyMultipleElements(
 export function pasteMultipleElements(
   copiedData: CopiedElementsData,
   currentPageId: string,
-  offset: { x: number; y: number } = { x: 10, y: 10 }
+  offset: { x: number; y: number } = { x: 10, y: 10 },
 ): Element[] {
   if (copiedData.elements.length === 0) {
     return [];
@@ -200,7 +204,10 @@ export function pasteMultipleElements(
 
     if (copiedData.rootIds.includes(element.id)) {
       // Apply offset to root elements
-      const currentStyle = (element.props.style || {}) as Record<string, unknown>;
+      const currentStyle = (element.props.style || {}) as Record<
+        string,
+        unknown
+      >;
 
       const left = parsePixels(currentStyle.left);
       const top = parsePixels(currentStyle.top);
@@ -236,7 +243,9 @@ export function pasteMultipleElements(
  * @param copiedData - Data from copyMultipleElements
  * @returns JSON string with magic prefix
  */
-export function serializeCopiedElements(copiedData: CopiedElementsData): string {
+export function serializeCopiedElements(
+  copiedData: CopiedElementsData,
+): string {
   // Convert Map to array for JSON serialization
   const serializable = {
     __composition_elements__: true, // Magic marker for validation
@@ -256,9 +265,11 @@ export function serializeCopiedElements(copiedData: CopiedElementsData): string 
  * @param json - JSON string from clipboard
  * @returns CopiedElementsData or null if invalid
  */
-export function deserializeCopiedElements(json: string): CopiedElementsData | null {
+export function deserializeCopiedElements(
+  json: string,
+): CopiedElementsData | null {
   // Quick check: does it look like JSON?
-  if (!json || typeof json !== 'string' || !json.trim().startsWith('{')) {
+  if (!json || typeof json !== "string" || !json.trim().startsWith("{")) {
     return null;
   }
 
@@ -273,12 +284,14 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
 
     // Validate structure
     if (!parsed.elements || !Array.isArray(parsed.elements)) {
-      console.warn('[Paste] Invalid clipboard data structure - missing elements array');
+      console.warn(
+        "[Paste] Invalid clipboard data structure - missing elements array",
+      );
       return null;
     }
 
     if (parsed.elements.length === 0) {
-      console.warn('[Paste] Clipboard data contains no elements');
+      console.warn("[Paste] Clipboard data contains no elements");
       return null;
     }
 
@@ -304,7 +317,7 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
  */
 export function getNextOrderNum(
   parentId: string | null,
-  elements: Element[]
+  elements: Element[],
 ): number {
   const siblings = elements.filter((el) => el.parent_id === parentId);
 
