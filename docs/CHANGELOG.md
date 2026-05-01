@@ -5,6 +5,22 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-916 Phase 3 G4 wrapper 진정 reverse logic land ✅ — drift #1 본질 해소 (§8.7)] - 2026-05-02
+
+### Architecture
+
+- **§8.7 wrapper 진정 reverse logic land ✅ — drift #1 본질 해소** (commit `989e7afc2`):
+  - 위치: `apps/builder/src/adapters/canonical/canonicalMutations.ts` + `apps/builder/src/builder/stores/canonical/canonicalDocumentSync.ts` + `apps/builder/src/builder/main/BuilderCore.tsx` + `docs/adr/design/916-canonical-document-ssot-transition-breakdown.md`
+  - **Why**: §8.6 grep gate baseline 0 도달 = **형식적 PASS** (caller 16 site wrapper 통해 호출 ✅, wrapper 내부 legacy mutation primary ❌) → drift #1 = HC #1 ("최종 SSOT 고정 = `CompositionDocument`") reverse 미도달 본질. 사용자 framing 정정 ("drift #1 선행 해소 의무") + monitoring 1-2주 framing 정정 (시간 텀 본질 아님, fixture coverage 가 본질) 후 wrapper 진정 reverse 본격 진입.
+  - **land 4 영역**:
+    - (1) **design §8.7 신규 보강** — sub-step β (monitoring trigger 선택) / γ (wrapper internal reverse) / δ (canonicalDocumentSync swap) 정의 + monitoring 1-2주 framing 정정 + wrapper 5 ↔ canonical store action 매핑표 + 4 의문 (mergeElements 신규/기존 분기 / setElements 전체 교체 시 pages/layouts 보존 / DB persist 와 in-memory 순서 / 무한 루프 방지) 정밀화 lock-in
+    - (2) **`canonicalMutations.ts` wrapper 진정 reverse** — `isCanonicalPrimaryEnabled()` flag 분기. in-memory wrapper 2개 (mergeElements / setElements) reverse path: (a) 현재 legacy snapshot + 입력 elements merge → (b) `legacyToCanonical()` full doc 재구성 → (c) canonical store `setDocument` push → (d) `exportLegacyDocument()` 결과 legacy `setElements` mirror. DB wrapper 3개 (createElement / updateElement / createMultipleElements) 영향 없음 (D17=A 채택, schema 미변경, DB row = legacy export 결과). DI pattern 확장 — `LegacySnapshot` type + `getCurrentLegacySnapshot` / `getCurrentProjectId` 2 callback 추가
+    - (3) **`canonicalDocumentSync.ts` 방향 swap** — flag enable 시 sync 자체 disable (`currentProjectId` 만 set + listener 등록 skip + cleanup 시 reset). canonical primary path 에서는 wrapper 가 직접 양쪽 처리 → 무한 루프 방지
+    - (4) **`BuilderCore.tsx` register 호출 확장** — 3 callback 추가 (`getCurrentLegacySnapshot` / `getCurrentProjectId`) + deps `[projectId]` (route 이탈 시 자동 재등록)
+  - **검증**: type-check 3/3 PASS + vitest canonical 광역 274/274 PASS (회귀 0) + setup fail 영역 10/10 PASS (DI pattern 정상) + g5 + exportSsot grep gate 5/5 PASS (baseline 0 유지, wrapper 가 `apps/builder/src/adapters/**` exclude 영역 안 배치)
+  - **rollback 경로**: `VITE_ADR916_CANONICAL_PRIMARY=false` (default) — 기존 legacy primary path 그대로. 사용자 dev 환경 명시 enable 후 destructive=0 evidence 수집 (선택, fixture coverage 보강용)
+  - **Drift 상태 갱신**: drift #1 logic land ✅ (flag enable 시 canonical primary 활성) / drift #3 자동 충족 path 진입 (reverse path 가 `exportLegacyDocument` SSOT 사용). drift #2 (R4 mitigation framing) = 사용자 결정 영역 변동 없음
+
 ## [ADR-916 Phase 5 G6-2 closure ✅ — canonicalMutations DI pattern (ESM circular import 차단) + 본문 진행 로그 sync] - 2026-05-02
 
 ### Architecture
