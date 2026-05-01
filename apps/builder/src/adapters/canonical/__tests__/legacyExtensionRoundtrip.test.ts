@@ -496,3 +496,131 @@ describe("Round-trip — legacy → canonical (extension) → legacy 동등", ()
     ]);
   });
 });
+
+// ─────────────────────────────────────────────
+// E. G7 closure marker — canonical document 직렬화 형태 contract
+// ─────────────────────────────────────────────
+
+/**
+ * **G7 closure 의 본질**: events/dataBinding 가 canonical document 의 직렬화
+ * 형태에서 `x-composition` extension 단일 위치에만 존재. metadata.legacyProps
+ * (transition first slice 의 dual-storage) 또는 다른 위치에는 0건.
+ *
+ * 본 contract 검증은 canonical document 의 schema 정합성 보장 — Phase 3 G4
+ * canonical primary write 진입 시점에 events/dataBinding 의 SSOT 가 extension
+ * 임을 grep gate 자동 검증.
+ *
+ * 본 영역 외 write boundary 5 site (Inspector mapper / history undo-redo /
+ * AI tool / factory / Events Panel) 는 element top-level events/dataBinding
+ * 직접 write 영역 — Phase 3 G4 canonical primary write 진입 시점의 migration
+ * 영역 (G7 closure 의 일부 아님). design §10.2.12 분류 참조.
+ */
+describe("G7 closure marker — canonical document 직렬화 형태 contract", () => {
+  it("legacyToCanonical 결과의 모든 metadata.legacyProps 에 events/dataBinding 키 0건", () => {
+    const elements: Element[] = [
+      {
+        id: "el-c-1",
+        type: "Button",
+        props: { variant: "primary" },
+        events: [{ id: "evt-1", kind: "onPress" }],
+      },
+      {
+        id: "el-c-2",
+        type: "ListBox",
+        props: { variant: "default" },
+        dataBinding: {
+          type: "collection",
+          source: "supabase",
+          config: { table: "users" },
+        },
+      },
+      {
+        id: "el-c-3",
+        type: "Box",
+        props: { name: "container" },
+        // events/dataBinding 미정의
+      },
+    ];
+
+    const doc = buildCanonicalFromElements(elements);
+
+    // DFS 순회 — 모든 노드의 metadata.legacyProps 에 events/dataBinding 키 0건
+    function visit(node: CanonicalNode): void {
+      const meta = node.metadata as
+        | { legacyProps?: Record<string, unknown> }
+        | undefined;
+      if (meta?.legacyProps) {
+        expect(meta.legacyProps).not.toHaveProperty("events");
+        expect(meta.legacyProps).not.toHaveProperty("dataBinding");
+      }
+      if (node.children) {
+        for (const child of node.children) visit(child);
+      }
+    }
+    for (const child of doc.children) visit(child);
+  });
+
+  it("legacyToCanonical 결과 — events 정의 element 가 있으면 해당 노드의 'x-composition'.events 단일 위치에만 존재", () => {
+    const original: Element = {
+      id: "el-c-events",
+      type: "Button",
+      props: {},
+      events: [{ id: "evt-c", kind: "onPress" }],
+    };
+
+    const doc = buildCanonicalFromElements([original]);
+    const node = firstElementNode(doc);
+
+    // 직렬화 형태 contract: x-composition.events 에만 존재
+    expect(node["x-composition"]?.events).toEqual([
+      { id: "evt-c", kind: "onPress" },
+    ]);
+    // 다른 위치 0건 (metadata.legacyProps / node 직접 / children 등)
+    const meta = node.metadata as
+      | { legacyProps?: Record<string, unknown> }
+      | undefined;
+    expect(meta?.legacyProps).not.toHaveProperty("events");
+    expect((node as unknown as { events?: unknown }).events).toBeUndefined();
+  });
+
+  it("legacyToCanonical 결과 — dataBinding 정의 element 가 있으면 해당 노드의 'x-composition'.dataBinding 단일 위치에만 존재", () => {
+    const original: Element = {
+      id: "el-c-db",
+      type: "ListBox",
+      props: {},
+      dataBinding: {
+        type: "value",
+        source: "state",
+        config: { key: "count" },
+      },
+    };
+
+    const doc = buildCanonicalFromElements([original]);
+    const node = firstElementNode(doc);
+
+    expect(node["x-composition"]?.dataBinding).toEqual({
+      type: "value",
+      source: "state",
+      config: { key: "count" },
+    });
+    const meta = node.metadata as
+      | { legacyProps?: Record<string, unknown> }
+      | undefined;
+    expect(meta?.legacyProps).not.toHaveProperty("dataBinding");
+    expect(
+      (node as unknown as { dataBinding?: unknown }).dataBinding,
+    ).toBeUndefined();
+  });
+
+  it("legacyToCanonical 결과 — events/dataBinding 미정의 element 는 'x-composition' 자체 노출 안 함", () => {
+    const original: Element = {
+      id: "el-c-none",
+      type: "Box",
+      props: { name: "container" },
+    };
+
+    const doc = buildCanonicalFromElements([original]);
+    const node = firstElementNode(doc);
+    expect(node["x-composition"]).toBeUndefined();
+  });
+});

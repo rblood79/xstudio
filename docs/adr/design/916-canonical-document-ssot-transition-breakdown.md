@@ -1235,6 +1235,61 @@ design §10.2.4 footnote 의 "write boundary cleanup" 정의 (`inspectorActions:
 - **G7 closure verification** (LOW, ~0.5d): G7 본격 cutover 후 모든 hot path consumer (Preview / CanonicalNodeRenderer / inspector 등) 가 `x-composition` extension 우선 read 검증 + write 경로 (canonicalDocumentSync.test.ts setup fail 영역 진정 fix 후 events/dataBinding cover 검증)
 - **Phase 4 G5 P5-B `overrides`** (MED-HIGH, ~1-2d, design §9.7 reorder 권장): instance 시스템 cleanup, ADR-911 P3 영역 결합 위험 고려
 
+#### 10.2.12 G7 closure marker land (2026-05-01) — canonical document 직렬화 형태 contract + write boundary 분류
+
+**framing**: G7 closure 의 본질 = **canonical document 직렬화 형태 검증** (events/dataBinding 가 `x-composition` extension 단일 위치에만 존재). G7 본격 cutover (§10.2.11) 직후 baseline 측정 결과 — write boundary cleanup 영역은 G7 closure 의 일부가 아니라 **Phase 3 G4 canonical primary write 영역** 으로 framing 재조정.
+
+**fork checkpoint 4 질문 lock-in**:
+
+1. **base/응용 분류**: G7 closure marker = canonical schema layer 의 직렬화 contract verification (G7 본격 cutover §10.2.11 의 진정 marker). write boundary cleanup ⊂ Phase 3 G4 영역 (canonical primary write 활성화 시점) — base/응용 분리.
+2. **schema 직교성**: closure marker (canonical document 직렬화 형태) ⊥ write boundary (legacy element top-level 직접 write). 두 영역이 서로 다른 layer.
+3. **baseline framing reverse**: G7 본격 cutover §10.2.11 prerequisite 충족 + write boundary 영역이 Phase 3 G4 cutover after migration 영역으로 framing 정정. 의존 방향 정확.
+4. **codex 3차 미루지 말 것**: LOW scope (~30분, vitest 4건 추가). 회귀 영역 0 (closure contract 검증만).
+
+**baseline 측정 결과 (2026-05-01, main HEAD `8c68a86ce`)**:
+
+| 영역                                                                                                                                                   | site 수 | scope 분류                                        | 본 phase target |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------------- | --------------- |
+| adapter / store / view 양방향 변환 (`index.ts` / `slotAndLayoutAdapter` / `exportLegacyDocument` / `canonicalDocumentStore` / `canonicalElementsView`) | 13+     | G7 cutover 정합 영역                              | ✅ 충족         |
+| `elementMapper.ts:44` (Inspector mapping `props.events = selected.events`)                                                                             | 1       | Preview adapter mirror                            | Phase 3 G4 영역 |
+| `elementDiff.ts:203/210/272/275/331/334` (history undo/redo 양방향 diff)                                                                               | 6       | history layer                                     | Phase 3 G4 영역 |
+| `inspectorActions.ts:616` (Events Panel 사용자 입력 mutation)                                                                                          | 1       | UI mutation hook                                  | Phase 3 G4 영역 |
+| `createElement.ts:67` (AI tool create)                                                                                                                 | 1       | AI tool factory                                   | Phase 3 G4 영역 |
+| `DataComponents.ts:42` / `definitions.ts:82` (factory + AI tool literal)                                                                               | 2       | factory layer                                     | Phase 3 G4 영역 |
+| **합계 (G7 closure 영역 외)**                                                                                                                          | **11+** | Phase 3 G4 canonical primary write 시점 migration | ⏭️ 후속         |
+
+**framing 재조정 — design §10.2.4 footnote 재정의**:
+
+design §10.2.4 footnote 의 "write boundary cleanup" 정의 — `inspectorActions:285-286` payload write / `createElement` AI tool / undo-redo 복원 — 이 영역들이 **G7 closure 의 cleanup target 이 아니라 Phase 3 G4 canonical primary write 진입 시점의 migration 영역** 임을 baseline 측정 결과로 확정. G7 closure 의 진정 marker = canonical document 직렬화 형태 검증 (events/dataBinding 가 `x-composition` 단일 위치) — 본 work 의 closure marker grep gate 로 자동화.
+
+**land 내용**:
+
+- **`legacyExtensionRoundtrip.test.ts` G. closure marker section 신규** (4/4 PASS):
+  - **E-1**: legacyToCanonical 결과의 모든 metadata.legacyProps 에 events/dataBinding 키 0건 (DFS 순회로 전수 검증)
+  - **E-2**: events 정의 element → 해당 노드 `x-composition.events` 단일 위치에만 존재 (다른 위치 0건)
+  - **E-3**: dataBinding 정의 element → 해당 노드 `x-composition.dataBinding` 단일 위치에만 존재
+  - **E-4**: events/dataBinding 미정의 element → `x-composition` 자체 미노출
+- **본 marker 의 의미**: canonical document schema 정합성 자동 검증. Phase 3 G4 canonical primary write 진입 시점에 events/dataBinding 의 SSOT 가 extension 임을 grep gate 로 무손실 보장.
+
+**검증 evidence**:
+
+- `pnpm type-check` 3/3 PASS (FULL TURBO)
+- vitest `legacyExtensionRoundtrip.test.ts` **21/21 PASS** (cutover 17건 → closure 21건, +4 marker)
+- adapter 영역 광역 회귀 0 검증: `pnpm vitest run src/adapters/canonical` **169/169 PASS** (11 file 모두 PASS, 165 → 169 +4)
+- **본 work 회귀 0 ✅** — closure contract 검증만 추가, logic 변경 0
+
+**G7 진척 marker**:
+
+- ✅ transition first slice (§10.2.10)
+- ✅ 본격 cutover (§10.2.11)
+- ✅ **closure marker — canonical document 직렬화 형태 contract** (본 work, §10.2.12)
+- ⏭️ G7 closure verification (consumer side) — `x-composition` 우선 read evidence (Preview adapter / Inspector / CanonicalNodeRenderer 등 hot path 검증, Phase 3 G4 prerequisite 일부)
+
+**다음 sub-phase 권장**:
+
+- **Phase 4 G5 P5-B `overrides`** (MED-HIGH, ~1-2d, design §9.7 reorder 권장): instance 시스템 cleanup, ADR-911 P3 영역 결합 위험 고려. 본 phase 진정 진척과 직교.
+- **Phase 3 G4 진입** (HIGH, ~3-5d, write 경로 cutover): canonical primary write 활성화. 본 phase 의 baseline 측정 결과 11+ caller migration 영역 codify (Inspector mapping / history undo-redo / Events Panel / AI tool / factory). G7 closure marker grep gate 가 Phase 3 G4 land 시점에 자동 회귀 보장.
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |
