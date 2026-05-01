@@ -18,6 +18,7 @@ import type { Element } from "../../../types/core/store.types";
 import {
   isMasterElement,
   isInstanceElement,
+  getInstanceMasterRef,
 } from "../../../types/builder/unified.types";
 
 /**
@@ -251,11 +252,15 @@ export function rebuildComponentIndex(elements: Element[]): ComponentIndex {
     if (isMasterElement(el)) {
       index.masterComponents.set(el.id, el);
     }
-    if (isInstanceElement(el) && el.masterId) {
-      if (!index.masterToInstances.has(el.masterId)) {
-        index.masterToInstances.set(el.masterId, new Set());
+    // ADR-916 G5-B P5-D: legacy `el.masterId` direct access → getInstanceMasterRef
+    // helper 호출 단일화 (canonical RefNode 의 ref 자동 호환).
+    if (isInstanceElement(el)) {
+      const masterRef = getInstanceMasterRef(el);
+      if (!masterRef) continue;
+      if (!index.masterToInstances.has(masterRef)) {
+        index.masterToInstances.set(masterRef, new Set());
       }
-      index.masterToInstances.get(el.masterId)!.add(el.id);
+      index.masterToInstances.get(masterRef)!.add(el.id);
     }
   }
 

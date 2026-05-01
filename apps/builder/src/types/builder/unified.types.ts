@@ -125,8 +125,15 @@ export interface Element {
    */
   componentRole?: ComponentRole;
   /**
-   * @deprecated ADR-913 Phase 5-D + ADR-916 G5 cleanup target.
+   * @deprecated ADR-913 Phase 5-D + ADR-916 G5-B P5-D cleanup target.
    * canonical `RefNode.ref` (master 의 stable id) 로 대체.
+   *
+   * **read-through fallback only (ADR-916 G5-B P5-D)**: 본 필드는 read-through
+   * fallback 만 보장 — legacy IndexedDB 데이터를 graceful 하게 read 하기 위한
+   * transition bridge. 신규 write 는 canonical `type: "ref"` + `ref: <stable id>`
+   * 만 사용. caller 는 직접 legacy 필드 access 대신 `getInstanceMasterRef(el)`
+   * helper 사용 권장 (legacy + canonical `ref` 양쪽 호환).
+   *
    * ADR-916 G5 시점에 adapter 디렉터리 외 read/write 0건.
    */
   masterId?: string;
@@ -211,6 +218,31 @@ export function isMasterElement(el: Element): boolean {
  */
 export function isInstanceElement(el: Element): boolean {
   return el.componentRole === "instance" && !!el.masterId;
+}
+
+/**
+ * Instance 의 master/origin id 조회 (legacy + canonical 호환).
+ *
+ * ADR-916 G5-B P5-D: legacy instance 의 master id (legacy 필드) 또는
+ * canonical `el.ref` (RefNode) 중 존재하는 값을 반환. caller 는 직접 legacy
+ * 필드 access 대신 본 helper 사용으로 grep gate baseline 점근적 0 도달 +
+ * canonical RefNode 자동 호환.
+ *
+ * 우선순위: legacy `masterId` → canonical `ref` → null. legacy 데이터는
+ * read-through fallback 으로 보존, 신규 write 는 canonical `RefNode.ref` 만
+ * 사용.
+ *
+ * @deprecated 부분 — legacy `masterId` 분기는 read-through fallback only.
+ * 신규 write 는 canonical `type: "ref"` + `ref: <stable id>` 만 사용. 본 함수
+ * 내부 logic 의 legacy 분기는 ADR-911 P3 cleanup 시점에 제거.
+ */
+export function getInstanceMasterRef(el: Element): string | undefined {
+  if (typeof el.masterId === "string" && el.masterId) return el.masterId;
+  const canonical = el as Element & { ref?: unknown };
+  if (el.type === "ref" && typeof canonical.ref === "string" && canonical.ref) {
+    return canonical.ref;
+  }
+  return undefined;
 }
 
 // === 통합된 Page 타입 ===

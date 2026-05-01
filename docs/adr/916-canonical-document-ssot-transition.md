@@ -269,6 +269,45 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **검증** — `pnpm type-check` 3/3 PASS (cache miss 326ms) + vitest canonical 73/73 PASS (1 file load fail = canonicalDocumentSync.test.ts pre-existing, stash 비교로 본 변경 영향 0 확정).
   - **R5 cascade risk 대응 evidence** — type guard 호출 substitution 만 (logic 동일), runtime caller logic 변경 0, adapter read-through 보존, fixture dual-mode 보존.
   - **다음 sub-step 진입점**: P5-D `masterId` cleanup (~2-3d MED-HIGH, baseline 35, RefNode.ref 전환). 또는 P5-E `descendants` cleanup (HIGH 분할, baseline 48). design §9.7 reorder 정합.
+- **2026-05-01 — Phase 4 G5-B P5-D `masterId` cleanup (helper getInstanceMasterRef + 4 file caller migration, baseline 35 → 24, -11)**:
+  - **사용자 명시 신호** "ADR 916 완료가 우선이다 911,913 계입 시키지마라" 정합 — ADR-916 §9 본문 + design §9.6/§9.7 update only, ADR-911 본문 (.md) touch 0. ADR-911 영역 (`instanceActions.ts` 9 site `instance.masterId` 분기 + `editingSemantics.ts` 2 site role 판정) 침범 없이 P5-D 진행 가능 영역 한정.
+  - **scope 결정**: 4 file caller (elements 7 access + elementIndexer 4 access + StoreRenderBridge 2 access + useResolvedElement 2 access) 의 `element.masterId` direct property access → `getInstanceMasterRef(el)` helper 호출로 단일화. helper 내부는 legacy `el.masterId` + canonical `el.ref` (RefNode) dual-mode read-through fallback. caller 측 grep miss + canonical RefNode 자동 호환.
+  - **helper 신규 도입** (`apps/builder/src/types/builder/unified.types.ts`):
+    - `getInstanceMasterRef(el: Element): string | undefined` 신규 export.
+    - 우선순위 = legacy `masterId` → canonical `ref` (RefNode) → undefined.
+    - JSDoc `@deprecated 부분` marker — legacy `masterId` 분기는 read-through fallback only, 신규 write 는 canonical `RefNode.ref` 만 사용. ADR-911 P3 cleanup 시점에 legacy 분기 제거.
+  - **type field marker 강화**:
+    - `Element.masterId` JSDoc — 기존 `@deprecated ADR-913 Phase 5-D + ADR-916 G5 cleanup target` 에 **read-through fallback only (ADR-916 G5-B P5-D)** 명시 추가. caller 가 직접 property access 대신 `getInstanceMasterRef(el)` helper 사용 권장 명문화.
+  - **caller migration land**:
+    - `apps/builder/src/builder/stores/elements.ts:492-516` — `indexComponentElement` / `unindexComponentElement` 의 `element.masterId` 7 access → `getInstanceMasterRef(element)` 호출 + `masterRef` local 변수 사용. `if (!masterRef) return;` 안전망 (canonical RefNode broken case 대응).
+    - `apps/builder/src/builder/stores/utils/elementIndexer.ts:248-263` — `rebuildComponentIndex` 의 `el.masterId` 4 access → 동일 패턴 (helper 호출 + local 변수 + continue 안전망).
+    - `apps/builder/src/builder/workspace/canvas/skia/StoreRenderBridge.ts:422-431` — sync 함수 내 `element.masterId` 2 access → 동일 패턴 (helper + local + null guard).
+    - `apps/builder/src/builder/workspace/canvas/sprites/useResolvedElement.ts:39-46` — `useResolvedElement` hook 의 `element.masterId` 2 access → 동일 패턴 (`useStore` selector 내 helper 호출).
+  - **grep gate baseline 재측정**:
+    | 필드 | 이전 | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 158 | 158 | 0 |
+    | slot_name | 17 | 17 | 0 |
+    | componentRole | 19 | 19 | 0 |
+    | masterId | 35 | 24 | -11 |
+    | overrides | 16 | 16 | 0 |
+    | descendants | 48 | 48 | 0 |
+    | **G5 합계** | **293** | **282** | **-11 ✅** |
+  - **잔존 24 caller 영역** (본 phase 침범 회피 = ADR-911 영역 결합 + read-through fallback / 주석 / type 정의 / parameter signature):
+    - `instanceActions.ts` 9 site (instance lifecycle reset/merge/update + createInstance signature + parameter) — ADR-911 P3 cleanup 영역
+    - `editingSemantics.ts` 2 site (origin id 판정) — ADR-911 영역
+    - `elements.ts:270, 1660` 2 site — createInstance signature parameter
+    - `historyHelpers.ts:203` 1 site — parameter
+    - `unified.types.ts` 2 site (`isInstanceElement` body + `getInstanceMasterRef` body) — read-through fallback 보존
+    - `component.types.ts` 2 site (type 정의 — `ResolvedInstanceProps` interface)
+    - `editingSemanticsFixture.ts` 1 site (dev fixture dual-mode 검증)
+    - `storeBridge.ts` 1 site (JSDoc 주석)
+    - `canonicalRefResolution.ts` 1 site (strip dict)
+    - `unified.types.ts` Element.masterId field 정의 1 site
+  - **검증** — `pnpm type-check` 3/3 PASS (cache miss 348ms) + vitest canonical 73/73 PASS (1 file load fail = pre-existing, stash 비교로 본 변경 영향 0 확정. 측정 중간 cache miss 환경 변동으로 일시 15 fail 측정됐으나 stash pop 후 재측정 시 73 PASS 동일 — false positive).
+  - **R5 cascade risk 대응 evidence** — helper 호출 substitution 만 (logic 동일, legacy 분기 보존), runtime caller logic 변경 0, adapter read-through 보존, fixture dual-mode 보존.
+  - **본 세션 누적 (3 commits — P5-B + P5-C + P5-D)**: G5 합계 301 → 293 → 282 (-19 누적, P5-B -1 + P5-C -7 + P5-D -11). 본 세션 max_phases=3 default budget 도달.
+  - **다음 sub-step 진입점**: P5-E `descendants` cleanup (~2-3d HIGH, baseline 48, ref 100+ + 23 file 분포로 내부 분할 권장). 또는 instanceActions.ts hot path 의 ADR-911 영역 cleanup (componentRole + masterId + overrides + descendants 동시 진정 cleanup) — ADR-911 P3 cleanup 시점에 진행 권장.
 
 ## Context
 

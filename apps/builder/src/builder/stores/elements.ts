@@ -13,6 +13,7 @@ import {
   Page,
   isMasterElement,
   isInstanceElement,
+  getInstanceMasterRef,
 } from "../../types/builder/unified.types";
 import type { PageLayoutDirection } from "./canvasSettings";
 import { historyManager } from "./history";
@@ -489,11 +490,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       componentIndex.masterComponents.set(element.id, element);
     }
 
-    if (isInstanceElement(element) && element.masterId) {
-      if (!componentIndex.masterToInstances.has(element.masterId)) {
-        componentIndex.masterToInstances.set(element.masterId, new Set());
+    // ADR-916 G5-B P5-D: legacy `element.masterId` direct property access →
+    // getInstanceMasterRef helper 호출 단일화 (canonical RefNode 의 ref 도
+    // 자동 호환). isInstanceElement 가 strict legacy 이므로 본 분기에서는
+    // legacy masterId 만 도달, helper 의 canonical 분기는 dead in this branch
+    // (안전).
+    if (isInstanceElement(element)) {
+      const masterRef = getInstanceMasterRef(element);
+      if (!masterRef) return;
+      if (!componentIndex.masterToInstances.has(masterRef)) {
+        componentIndex.masterToInstances.set(masterRef, new Set());
       }
-      componentIndex.masterToInstances.get(element.masterId)!.add(element.id);
+      componentIndex.masterToInstances.get(masterRef)!.add(element.id);
     }
   };
 
@@ -506,14 +514,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       componentIndex.masterToInstances.delete(element.id);
     }
 
-    if (isInstanceElement(element) && element.masterId) {
-      const instanceIds = componentIndex.masterToInstances.get(
-        element.masterId,
-      );
+    if (isInstanceElement(element)) {
+      const masterRef = getInstanceMasterRef(element);
+      if (!masterRef) return;
+      const instanceIds = componentIndex.masterToInstances.get(masterRef);
       if (instanceIds) {
         instanceIds.delete(element.id);
         if (instanceIds.size === 0) {
-          componentIndex.masterToInstances.delete(element.masterId);
+          componentIndex.masterToInstances.delete(masterRef);
         }
       }
     }

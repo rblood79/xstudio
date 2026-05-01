@@ -15,7 +15,10 @@
  */
 
 import type { Element } from "../../../../types/core/store.types";
-import { isInstanceElement } from "../../../../types/builder/unified.types";
+import {
+  isInstanceElement,
+  getInstanceMasterRef,
+} from "../../../../types/builder/unified.types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import { buildSkiaNodeData, type BuildContext } from "./buildSkiaNodeData";
 import { buildBoxNodeData } from "./buildBoxNodeData";
@@ -419,10 +422,15 @@ export class StoreRenderBridge {
       element,
       elementsMap.values(),
     );
-    if (isInstanceElement(element) && element.masterId) {
-      const master = elementsMap.get(element.masterId);
-      const resolved = resolveInstanceWithSharedCache(element, master);
-      if (resolved) effectiveElement = resolved;
+    // ADR-916 G5-B P5-D: legacy `element.masterId` direct access →
+    // getInstanceMasterRef helper 호출 (canonical RefNode ref 자동 호환).
+    if (isInstanceElement(element)) {
+      const masterRef = getInstanceMasterRef(element);
+      if (masterRef) {
+        const master = elementsMap.get(masterRef);
+        const resolved = resolveInstanceWithSharedCache(element, master);
+        if (resolved) effectiveElement = resolved;
+      }
     }
 
     // InlineAlert → Heading/Description font delegation (Skia 렌더링 경로)

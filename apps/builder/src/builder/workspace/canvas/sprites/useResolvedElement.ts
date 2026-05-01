@@ -23,7 +23,10 @@
 
 import { useMemo } from "react";
 import type { Element } from "../../../../types/builder/unified.types";
-import { isInstanceElement } from "../../../../types/builder/unified.types";
+import {
+  isInstanceElement,
+  getInstanceMasterRef,
+} from "../../../../types/builder/unified.types";
 import { useStore } from "../../../stores";
 import { resolveInstanceWithSharedCache } from "../../../../resolvers/canonical/storeBridge";
 import { resolveCanonicalRefElement } from "../../../utils/canonicalRefResolution";
@@ -36,9 +39,13 @@ import { resolveCanonicalRefElement } from "../../../utils/canonicalRefResolutio
  */
 export function useResolvedElement(element: Element): Element {
   // Instance resolution: master 조회 (instance인 경우만)
+  // ADR-916 G5-B P5-D: legacy `element.masterId` direct access →
+  // getInstanceMasterRef helper 호출 (canonical RefNode ref 자동 호환).
   const masterElement = useStore((state) => {
-    if (!isInstanceElement(element) || !element.masterId) return undefined;
-    return state.elementsMap.get(element.masterId);
+    if (!isInstanceElement(element)) return undefined;
+    const masterRef = getInstanceMasterRef(element);
+    if (!masterRef) return undefined;
+    return state.elementsMap.get(masterRef);
   });
   const elementsMap = useStore((state) => state.elementsMap);
 
