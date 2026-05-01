@@ -5,6 +5,38 @@ All notable changes to composition will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-916 Phase 5 G6-2 closure ✅ — canonicalMutations DI pattern (ESM circular import 차단) + 본문 진행 로그 sync] - 2026-05-02
+
+### Architecture
+
+- **G6-2 third slice closure ✅ — canonicalMutations DI pattern (callback registration)**
+  - 위치: `apps/builder/src/adapters/canonical/canonicalMutations.ts` + `apps/builder/src/builder/main/BuilderCore.tsx`
+  - **Why**: wrapper API body 가 `useStore` 직접 import → `elements.ts → canonicalMutations.ts → builder/stores/index.ts → elements.ts` ESM circular chain → vitest setup phase 에서 `createElementsSlice` undefined. b7d75f3e4 commit 의 추정 ("transitive circular import chain") 은 정확했으나 origin 파일 (wrapper API 자체) 미특정. 본 closure 가 정확한 origin 확정 + DI pattern fix.
+  - 변경: `useStore` import 제거 + `CanonicalMutationStoreActions` 타입 + `registerCanonicalMutationStoreActions(actions)` / `resetCanonicalMutationStoreActions()` / 내부 `getActions()` helper. 5 wrapper 중 2종 (`mergeElementsCanonicalPrimary` / `setElementsCanonicalPrimary`) 만 `getActions()` 경유 (3종 `create/update/createMultiple` 은 `elementsApi` 의존 변경 0). BuilderCore mount useEffect 에서 1회 등록.
+  - 외부 영향 0: wrapper 외부 시그니처 변경 0 (caller 16 site 무수정), logic 변경 0 (DI 만), production runtime 동일.
+  - 옵션 (b) `elementsApi` 직접 호출 (wrapper 우회) 기각 사유: G4 grep gate baseline 0 회귀 (D18=A 단일 SSOT 격리 위반).
+- **G6-2 closure 도달 ✅** (first + second + third slice 모두 land):
+  - first slice ✅ — Preview canonical 렌더 fallback (commit `acab96fdf`, 2026-05-01)
+  - second slice ✅ — history parity 자동 cover via canonicalDocumentSync 회로 (commit `4023806bf`, 2026-05-02)
+  - third slice ✅ — DI pattern circular import 차단 (commit `89f7f3ff4`, 2026-05-02)
+- **ADR 본문 §"진행 로그" 8 commits 분 sync** (commit `e3bf016f8`, +94 lines):
+  - 메모리 baseline (commit `353e8fc05` 세션 57 G6-1 closure 시그널) 이후 land 된 7 commits 분 entry 추가 (G6-1 second work / G6-2 first+second slice / G7 transition first slice / G7 본격 cutover / G7 closure marker / G6-2 third slice debug attempt)
+  - Status header 갱신 (G6-1 closure 시그널 → G6-2 closure + G7 closure marker 모두 ✅)
+  - typo fix: `framiG-6ng` → `framing`
+- **framing drift 검증 결과** (직전 세션 분석):
+  - drift #4 (G6-2 third slice unbounded → HC #8 영구 보류 위험) 해소 ✅ (본 closure)
+  - drift #1 (G3 / G4 형식적 PASS, HC #1 진정 미도달) 잔존 — G4 wrapper 내부 진정 reverse 별 세션 영역 (HIGH ~3-5d)
+  - drift #2 (R4 mitigation 약화 — ADR-911/913 회피 정책 충돌) 잔존 — 사용자 framing 결정 영역
+  - drift #3 (R7 component props `metadata.legacyProps` 부분 잔존) 잔존 — G4 reverse 시 자동 충족
+
+### Verification
+
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/__tests__/itemsActions.test.ts src/builder/stores/__tests__/pagesLayoutInvalidation.test.ts` — **2 file / 10 tests PASS** (이전 setup phase fail)
+- `pnpm -F @composition/builder exec vitest run src/builder/stores/canonical/__tests__/` — **4 file / 99 tests PASS**
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/` — **11 file / 175 tests PASS**
+- `pnpm -F @composition/builder exec vitest run src/adapters/canonical/__tests__/exportSsotGrepGate.test.ts` — **1 file / 2 tests PASS** (G4 grep gate baseline 0 유지, D18=A 단일 SSOT 격리 보존)
+- `pnpm -F @composition/builder exec tsc --noEmit --pretty false` — **exit 0 PASS**
+
 ## [ADR-916 Phase 5 G7 Extension Boundary preflight] - 2026-05-01
 
 ### Architecture
