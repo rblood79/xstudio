@@ -10,7 +10,7 @@ import { supabase } from "../../../env/supabase.client";
 import {
   sanitizeElement,
   sanitizeElementForSupabase,
-} from "../utils/elementSanitizer";
+} from "../../../adapters/canonical/legacyElementSanitizer";
 import { getElementById, createCompleteProps } from "../utils/elementHelpers";
 import { reorderElements } from "../utils/elementReorder";
 import type { ElementsState } from "../elements";

@@ -122,7 +122,7 @@ vi.mock("../elementTagNormalizer", () => ({
   })),
 }));
 
-vi.mock("../elementSanitizer", () => ({
+vi.mock("../../../../adapters/canonical/legacyElementSanitizer", () => ({
   sanitizeElement: vi.fn((el: Element) => el),
 }));
 
@@ -481,7 +481,8 @@ describe("P3-D-2: elementCreation 히스토리 조건 교체 (RED phase)", () =>
         doc,
       });
 
-      const sanitizerModule = await import("../elementSanitizer");
+      const sanitizerModule =
+        await import("../../../../adapters/canonical/legacyElementSanitizer");
       const dbModule = await import("../../../../lib/db");
       const db = await (dbModule.getDB as ReturnType<typeof vi.fn>)();
 

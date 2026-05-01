@@ -5,7 +5,7 @@ import { Element } from "../../../types/core/store.types";
 import { normalizeExternalFillIngress } from "../../panels/styles/utils/fillExternalIngress";
 import { historyManager } from "../history";
 import { getDB } from "../../../lib/db";
-import { sanitizeElement } from "./elementSanitizer";
+import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
 import { selectCanonicalDocument } from "../elements";

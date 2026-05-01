@@ -1,4 +1,4 @@
-import { Element } from "../../../types/core/store.types";
+import { Element } from "../../types/core/store.types";
 
 /**
  * Supabase 저장용 Element 타입 (snake_case 컬럼명)

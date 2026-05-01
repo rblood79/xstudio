@@ -26,7 +26,7 @@ import {
 } from "../../utils/editingSemantics";
 import { requestEditingSemanticsImpactConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { getDB } from "../../../lib/db";
-import { sanitizeElement } from "./elementSanitizer";
+import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
 
 type CanonicalElementFields = {
   children?: unknown;
@@ -35,7 +35,9 @@ type CanonicalElementFields = {
   ref?: unknown;
 };
 
-function asCanonicalElement(element: Element): Element & CanonicalElementFields {
+function asCanonicalElement(
+  element: Element,
+): Element & CanonicalElementFields {
   return element as Element & CanonicalElementFields;
 }
 
@@ -73,7 +75,9 @@ function removeRecordKey(
   return rest;
 }
 
-function hasCanonicalOverridePayload(override: Record<string, unknown>): boolean {
+function hasCanonicalOverridePayload(
+  override: Record<string, unknown>,
+): boolean {
   if (typeof override.type === "string") return true;
   if (Array.isArray(override.children)) return true;
 
@@ -222,7 +226,9 @@ function createMaterializedElementFromOverride(
     overrides: undefined,
     descendants: undefined,
     componentName:
-      typeof override.name === "string" ? override.name : fallback.componentName,
+      typeof override.name === "string"
+        ? override.name
+        : fallback.componentName,
   });
 }
 
@@ -327,7 +333,9 @@ function buildCanonicalDetachSnapshot(
     const nestedRef = !hasReplacement ? getCanonicalRef(source) : null;
     const nestedMaster = nestedRef ? resolveRefMaster(nestedRef, state) : null;
     const materializationSource = nestedMaster ?? source;
-    const sourceOverrideProps = nestedMaster ? getRootOverrideProps(source) : {};
+    const sourceOverrideProps = nestedMaster
+      ? getRootOverrideProps(source)
+      : {};
     const childDescendants = nestedMaster
       ? asCanonicalElement(source).descendants
       : activeDescendants;
@@ -558,17 +566,16 @@ function applyElementSnapshotBatch(
       (element) => !removeIds.has(element.id),
     );
     const updatedElements = [...retained, ...nextElements];
-    const selectedElementProps =
-      prevState.selectedElementId
-        ? (() => {
-            const selected = nextElements.find(
-              (element) => element.id === prevState.selectedElementId,
-            );
-            return selected
-              ? createCompleteProps(selected)
-              : prevState.selectedElementProps;
-          })()
-        : prevState.selectedElementProps;
+    const selectedElementProps = prevState.selectedElementId
+      ? (() => {
+          const selected = nextElements.find(
+            (element) => element.id === prevState.selectedElementId,
+          );
+          return selected
+            ? createCompleteProps(selected)
+            : prevState.selectedElementProps;
+        })()
+      : prevState.selectedElementProps;
     return {
       elements: updatedElements,
       selectedElementProps,

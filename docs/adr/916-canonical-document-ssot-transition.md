@@ -156,6 +156,22 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **ADR-911/913 closure 동시 마감 framing 명시 (design §9.4)** — G5-A 종결 시 ADR-911 closure marker, G5-B 종결 시 ADR-913 P5 closure marker. ADR-913 Phase 4 (DB schema migration) 는 P5 와 직교, 별도 진행. ADR-916 G5 closure = G5-A + G5-B 모두 grep gate 0 도달 시점, Phase 5 G6/G7 진입 prerequisite.
   - **Phase 4 G5 진입 mutation work 미진행** — 본 land 는 design 보강 + 진행 로그 entry only (LOW risk, mutation scope = 0). 다음 sub-phase 진입점 = G5-A first work (`elementSanitizer.ts` single point cleanup 우선 검토 또는 ADR-911 P3 잔여 frame canvas authoring 진행).
   - **검증** — `pnpm type-check` 3/3 PASS (design+ADR markdown 변경, 코드 영향 0).
+- **2026-05-01 — Phase 4 G5 first work: elementSanitizer adapter 영역 격리 (G5 baseline 360 → 323, -37 ✅)**:
+  - **single point cleanup 우선 정책 채택** — design §9.5 R5 cascade 대응 절차 中 single point cleanup 우선 (6 필드 모두 등장 site 부터 cleanup) 정합. `apps/builder/src/builder/stores/utils/elementSanitizer.ts` (37 matches: layout_id 7 + slot_name 6 + componentRole 4 + masterId 4 + overrides 8 + descendants 8) 정독 결과 = **DB-facing serialization layer** (Supabase camelCase ↔ snake_case 변환 + postMessage 직렬화). 본질이 adapter-like 역할이지만 위치가 stores/utils — design §9 grep pattern exclude 영역 (`apps/builder/src/adapters/**`) 밖.
+  - **file move + rename land** — `apps/builder/src/builder/stores/utils/elementSanitizer.ts` → `apps/builder/src/adapters/canonical/legacyElementSanitizer.ts` (design §9 footnote: "불가피한 잔존은 adapter/shim 디렉터리로 이동하고 파일명에 `legacy`를 포함" 정합). test file 도 `__tests__/legacyElementSanitizer.test.ts` 동시 이동. caller import path 7 site 갱신 (factories/utils/elementCreation + stores/history/historyActions + stores/utils/elementCreation + stores/utils/instanceActions + stores/utils/elementRemoval + 본 file 내부 types path + test file 내부 mock path).
+  - **grep gate baseline 재측정**:
+    | 필드 | 이전 | 신규 | 변동 |
+    |---|---:|---:|---:|
+    | layout_id | 165 | 158 | -7 |
+    | slot_name | 23 | 17 | -6 |
+    | componentRole | 41 | 37 | -4 |
+    | masterId | 50 | 46 | -4 |
+    | overrides | 25 | 17 | -8 |
+    | descendants | 56 | 48 | -8 |
+    | **G5 합계** | **360** | **323** | **-37 ✅** |
+  - **검증** — `pnpm type-check` 3/3 PASS (cache miss 314ms) + vitest canonical 9 file **145 PASS** (이전 143 + sanitizer test 흡수, 회귀 0). stores/utils 광역 vitest = 6 fail / 3 pass / 31 tests (main HEAD baseline 6 fail / 4 pass / 33 tests 와 비교: pass file count 4 → 3 = sanitizer test 가 canonical/**tests** 로 이동, **본 변경 신규 fail 0 확정**, pre-existing 6 fail 그대로).
+  - **R5 cascade risk 대응 evidence** — file move = mechanical refactor, runtime caller logic 변경 0, adapter read-through 보존 (sanitizer 가 Element ↔ SupabaseElement 변환 보존). `metadata.legacyProps` 7 fields marker 영향 0.
+  - **다음 sub-phase 진입점** — G5-A 본격 cleanup 진입 (`page.layout_id → page.bodyElement (frame ref)` 마이그레이션, ADR-911 P3 잔여 본질 결합) 또는 G5-B 진입 (ADR-913 P5-A `slot_name` cleanup 부터). instanceActions.ts (38 matches) 가 ADR-913 P5 핵심 hot path 로 single point cleanup 후속 검토 가치 있음.
 
 ## Context
 

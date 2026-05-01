@@ -4,7 +4,7 @@ import { useStore } from "../../stores";
 import { ComponentDefinition, ChildDefinition } from "../types";
 import { generateCustomId } from "../../utils/idGeneration";
 import { getDB } from "../../../lib/db";
-import { sanitizeElement } from "../../stores/utils/elementSanitizer";
+import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
 import { resolveOwnerPageId } from "../../../adapters/canonical/legacyMetadata";
 // ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)

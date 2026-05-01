@@ -3,7 +3,7 @@ import type { Element } from "../../../types/core/store.types";
 import {
   sanitizeElement,
   sanitizeElementForSupabase,
-} from "./elementSanitizer";
+} from "../legacyElementSanitizer";
 
 describe("elementSanitizer", () => {
   it("preserves canonical component fields for IndexedDB round trip", () => {

@@ -13,7 +13,7 @@ import {
   rebuildVariableUsageIndex,
 } from "./elementIndexer";
 import { buildDetachSnapshotsForOrigins } from "./instanceActions";
-import { sanitizeElement } from "./elementSanitizer";
+import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
 import {
   isWebGLCanvas,
