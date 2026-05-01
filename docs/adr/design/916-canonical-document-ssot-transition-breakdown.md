@@ -970,6 +970,64 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 
 **검증**: `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
 
+#### 10.2.7 G6-1 잔존 31 영역 분석 — 3 agent 병렬 dispatch 결과 (2026-05-01)
+
+**framing**: §10.2.6 후속 — 잔존 logic access 31 영역의 cleanup 가능성 평가 위해 3 agent 병렬 dispatch (worktree 격리). 각 agent = research + cleanup attempt + report.
+
+**3 agent 결과 종합 (모두 cleanup 0 site)**:
+
+1. **Agent 1 — `elementDiff.ts` 8 site** (apps/builder/src/builder/stores/utils/elementDiff.ts):
+   - **모두 skip** — write-adjacent / type schema / history diff raw equality.
+   - line 44, 65 = `ElementDiff` / `SerializableElementDiff` interface 정의 (type schema bucket).
+   - line 209 = `deepEqual(prevElement.dataBinding, nextElement.dataBinding)` — **history diff 시스템의 raw field-level equality**. helper 적용 시 priority logic 개입으로 `element.dataBinding` 변경되어도 `props.dataBinding` 같으면 diff 미생성 의미 오염. **의도적 raw field 비교 — helper 적용 의도 외**.
+   - line 211-212 = diff payload 캡처 (`prev: prevElement.dataBinding`) — write-adjacent.
+   - line 274-275, 333-334 = undo/redo 복원 write site.
+
+2. **Agent 2 — `createElement.ts` 2 + `PropertiesPanel.tsx` 2 site**:
+   - **모두 skip** — write site / already-resolved prop.
+   - createElement.ts:28, 67 = AI tool element 신규 생성 시 dataBinding payload 저장 (write site).
+   - PropertiesPanel.tsx:273-274 = memo 비교 함수의 derived prop 비교. **`element.dataBinding` direct access 가 아니라 already-resolved `SelectedElement.dataBinding`** (이미 `stores/index.ts:197` 에서 `getElementDataBinding(element, "legacy-only")` 경유 추출됨).
+
+3. **Agent 3 — Element.actions 영역 측정**:
+   - **Element.actions logic access = 0 site**. `Element` type 에 top-level `actions?` field **자체 미정의**.
+   - `actions` 는 처음부터 nested (`events[].actions` 또는 canonical `CompositionExtension.actions`) 로만 존재 — Phase 5 G7 schema 영역에서 `events` / `dataBinding` 만 legacy top-level field.
+   - **stale docstring 발견**: `apps/builder/src/adapters/canonical/legacyExtensionFields.ts` head 가 `Element.actions` 를 events/dataBinding 와 동렬로 언급 — design 초기 G7 scope 작성 시점에 `CompositionExtension.actions` 와 혼동 흔적. 정정 land.
+
+**3 agent 결과 종합 진척**:
+
+- **logic access cleanup 추가 0 site** (G6-1 cleanup 영역 외).
+- **valuable findings 3 종**:
+  1. **baseline 측정 grep pattern 정밀화 권장** — 현재 `\.dataBinding\b` 가 `SelectedElement.dataBinding` (already-resolved derived prop) 등 false positive 포함. 정밀 grep = `element\.dataBinding\b` (direct access only) + bucket 분류.
+  2. **Element.actions 영역 0 도달 ✅** — Phase 5 G7 schema 영역 cleanup target 미존재, helper 신규 / caller migration 모두 불필요. `Element.events` / `Element.dataBinding` 만 cleanup target.
+  3. **write-adjacent + history diff 영역 = helper 적용 의도 외** — elementDiff 의 history diff raw equality / undo-redo 복원 / AI tool element 생성 / Inspector write boundary 영역은 helper 미적용. 이 영역은 G6-1 cleanup 영역 정의 명시 외.
+
+**G6-1 cleanup 영역 진정 정의 codify**:
+
+- ✅ **read site (priority pattern + direct access + cast read)**: helper 경유 cleanup. **47 site cleanup 완료** (G6-1 first/second/third slice).
+- ❌ **write site / write-adjacent**: helper 미적용. `element.dataBinding = X` / `payload.dataBinding = X` / object literal 저장 / undo-redo 복원 / history diff raw equality.
+- ❌ **already-resolved derived prop**: `SelectedElement.dataBinding` 등 normalized 상태, `element.dataBinding` direct 가 아님.
+- ❌ **type schema definition**: `ElementDiff.dataBinding` interface 정의 등.
+- ❌ **comment / JSDoc / migration marker**: noise bucket.
+
+**잔존 측정 정정** (3 agent 결과 반영):
+
+| 측정 시점                         | logic access read | write site / write-adjacent | already-resolved | type schema |  comment | 합계 |
+| --------------------------------- | ----------------: | --------------------------: | ---------------: | ----------: | -------: | ---: |
+| G6-1 third slice 종결 (이전 추정) |                31 |                    (미분류) |         (미분류) |    (미분류) | (미분류) |   31 |
+| 3 agent 분석 후 (정정)            |          **0 ✅** |                         ~10 |                2 |          ~6 |      ~13 |   31 |
+
+**G6-1 read site cleanup = 0 도달 ✅** (47 → 0, 100%). 잔존 31 는 모두 helper 적용 의도 외 영역 (write / already-resolved / schema / comment). G6-1 closure 시그널 도달.
+
+**docstring 정정 land**:
+
+- `apps/builder/src/adapters/canonical/legacyExtensionFields.ts` head: `Element.actions` 참조 제거 + Element type 에 top-level `actions?` 미정의 명시 + `actions` 가 nested (events sub-field / canonical extension) 만 존재 명시.
+
+**후속 sub-phase 진입 권장**:
+
+- **G6-1 second work — Props canonical primary 렌더 회귀**: Button/TextField/Section spec consumer 가 `metadata.legacyProps` 없이도 Skia + DOM 정합 렌더, fixture + visual evidence ~1d MED.
+- **G6-2 (History + Preview/Publish) 진입**: G6-1 closure 후, design §10.2.2 sub-phase 그룹 정합.
+- **write boundary 영역 cleanup** (별 sub-phase, G7 closure 진정 work): `inspectorActions:285-286` payload write / createElement AI tool / undo-redo 복원 — `updateNodeExtension` API caller migration 진척 marker.
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |

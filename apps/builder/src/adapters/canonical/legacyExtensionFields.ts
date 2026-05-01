@@ -1,11 +1,15 @@
 /**
  * @fileoverview ADR-916 Phase 5 G7 Extension Boundary — legacy `Element.events`
- * / `Element.dataBinding` / `Element.actions` read-through helper.
+ * / `Element.dataBinding` read-through helper.
  *
  * canonical primary 저장 위치 = `CompositionNode.extension['x-composition']`
  * (canonical store mutation 시 `updateNodeExtension` API 사용, Phase 5 G7
- * preflight land). legacy `Element.events` / `Element.dataBinding` /
- * `Element.actions` 는 transition bridge — read-through fallback only.
+ * preflight land). legacy `Element.events` / `Element.dataBinding` 는 transition
+ * bridge — read-through fallback only.
+ *
+ * **`Element.actions` 영역 명시 제외**: Element type 에 top-level `actions?` field
+ * 자체 미정의. `actions` 는 처음부터 nested (`events[].actions` 또는 canonical
+ * `CompositionExtension.actions`) 로만 존재 — 본 helper scope 외.
  *
  * 본 helper 는 caller 가 legacy field 를 직접 read 하는 site 를 단일 진입점으로
  * 단일화하여, Phase 5 G7 closure 시점에 helper 내부 logic 만 reverse 하면 모든

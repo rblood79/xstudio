@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 first/second/third slice ✅** (helper 2종 + caller 47 site cleanup: events apps/builder 0 + dataBinding renderers priority+direct 40 + apps/builder cast read 5 모두 0 도달, helper return type `DataBinding | undefined` 정밀화 + `'legacy-only'` priority 추가). 잔존 31 = elementDiff / canonicalDocumentStore / AI tool / write boundary / type schema 영역 (G6-1 cleanup 외, 후속 sub-phase). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 closure 시그널 도달 ✅** (read site cleanup 47 → 0 = 100%, helper 2종 + 'legacy-only' priority + Element.actions 영역 0 도달 검증). 잔존 31 = write site / write-adjacent / already-resolved derived prop / type schema / comment 영역 — 모두 helper 적용 의도 외. 후속 = G6-1 second work (Props canonical primary 렌더 회귀) 또는 G6-2 (History + Preview/Publish) 또는 write boundary cleanup. 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics) 은 ADR-911 P3 / ADR-913 P5 의존, 별 ADR phase)
 
 ### 진행 로그
 
@@ -419,6 +419,34 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **G6-1 packages/shared + apps/builder cast read 영역 종결 ✅**. 잔존 logic access 31 = 새로 발견된 영역 (`elementDiff` 8 + `canonicalDocumentStore` 4 + `composition-document.types` 4 + `createElement` AI tool 2 + `PropertiesPanel` 2 + `inspectorActions` write boundary 2 + 기타 comment / type schema) — G6-1 cleanup 영역 외, **후속 sub-phase** 또는 **별 G6-2/G7 영역** (write boundary / AI tool / canonical store 등).
   - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
   - **Phase 5 G6-1 third slice 진척 marker** — direct access pattern + apps/builder cast read 영역 모두 0 도달 ✅. G6-1 본격 cleanup 영역 (renderers + apps/builder cast read) 종결. 후속 = G6-1 second work (Props canonical primary 렌더 회귀) 또는 G6-2 (History + Preview/Publish) 또는 별 영역 (elementDiff / canonicalDocumentStore / AI tool / write boundary).
+- **2026-05-01 — Phase 5 G6-1 잔존 31 영역 분석: 3 agent 병렬 dispatch 결과 + cleanup 영역 진정 정의 codify (1 PR 통합)**:
+  - **사용자 명시 진행 신호**: "후속 sub phase 중 팀 agent 가능한 항목은 구성해서 착수해". 잔존 logic access 31 영역의 cleanup 가능성 평가 위해 3 agent 병렬 dispatch (worktree 격리, 각 agent research + cleanup attempt + report).
+  - **3 agent 결과 종합 (모두 cleanup 0 site)**:
+    - **Agent 1 — `elementDiff.ts` 8 site**: 모두 skip — write-adjacent (line 211-212 diff payload, 274-275/333-334 undo-redo 복원) / type schema (line 44, 65 ElementDiff interface) / **history diff raw equality** (line 209 `deepEqual(prevElement.dataBinding, nextElement.dataBinding)` — helper 적용 시 priority logic 개입으로 의미 오염, **의도적 raw field 비교**).
+    - **Agent 2 — `createElement.ts` 2 + `PropertiesPanel.tsx` 2 site**: 모두 skip — AI tool element 생성 시 dataBinding payload write site (createElement:28, 67) / **already-resolved derived prop** (PropertiesPanel:273-274 = `SelectedElement.dataBinding` 비교, `element.dataBinding` direct 가 아님).
+    - **Agent 3 — Element.actions 영역 측정**: **logic access = 0 site ✅**. `Element` type 에 top-level `actions?` field **자체 미정의** (정독: `packages/shared/src/types/element.types.ts:117-118` 에 `dataBinding?` + `events?` 만 정의). `actions` 는 처음부터 nested (`events[].actions` / canonical `CompositionExtension.actions`) 로만 존재.
+  - **3 agent valuable findings 3 종**:
+    1. **baseline 측정 grep pattern 정밀화 권장** — 현재 `\.dataBinding\b` 가 `SelectedElement.dataBinding` (already-resolved derived prop) 등 false positive 포함. 정밀 grep = `element\.dataBinding\b` (direct access only).
+    2. **Element.actions 영역 0 도달 ✅** — Phase 5 G7 schema 영역 cleanup target 미존재, helper 신규 / caller migration 모두 불필요.
+    3. **write-adjacent + history diff 영역 = helper 적용 의도 외** — 본 G6-1 cleanup 영역 정의 명시 외.
+  - **G6-1 cleanup 영역 진정 정의 codify (design §10.2.7)**:
+    - ✅ read site (priority pattern + direct access + cast read): helper 경유 cleanup. **47 site cleanup 완료**.
+    - ❌ write site / write-adjacent: `element.dataBinding = X` / payload 저장 / undo-redo 복원 / history diff raw equality.
+    - ❌ already-resolved derived prop: `SelectedElement.dataBinding` 등 normalized.
+    - ❌ type schema definition / comment / JSDoc / migration marker.
+  - **잔존 측정 정정** (3 agent 결과 반영):
+    | 분류 | site 수 |
+    |---|--:|
+    | logic access read (cleanup target) | **0 ✅** |
+    | write site / write-adjacent | ~10 |
+    | already-resolved derived prop | 2 |
+    | type schema definition | ~6 |
+    | comment / JSDoc | ~13 |
+    | **합계** | **31** |
+  - **G6-1 read site cleanup = 100% 도달 ✅** (47 → 0). 잔존 31 모두 helper 적용 의도 외 영역.
+  - **docstring 정정 land**: `apps/builder/src/adapters/canonical/legacyExtensionFields.ts` head 의 `Element.actions` 참조 제거 (stale, design 초기 G7 scope 작성 시점 `CompositionExtension.actions` 와 혼동 흔적). `actions` 가 nested (events sub-field / canonical extension) 만 존재 명시.
+  - **검증** — `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
+  - **Phase 5 G6-1 closure 시그널 도달 ✅** — read site cleanup 47 → 0 (100%), Element.actions 영역 0 도달, write site 영역은 별 sub-phase. 후속 = G6-1 second work (Props canonical primary 렌더 회귀, fixture + visual evidence) 또는 G6-2 (History + Preview/Publish) 또는 write boundary 영역 cleanup (별 G7 closure 진정 work).
 
 ## Context
 
