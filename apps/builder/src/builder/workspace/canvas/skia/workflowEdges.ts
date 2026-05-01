@@ -9,6 +9,7 @@
  */
 
 import { getLegacyPageLayoutId } from "@/adapters/canonical";
+import { getElementEvents } from "@/adapters/canonical/legacyExtensionFields";
 import type { CompositionDocument, FrameNode } from "@composition/shared";
 
 // ============================================
@@ -199,13 +200,10 @@ export function computeWorkflowEdges(
     }
 
     // 2) 이벤트 기반 navigation 엣지
-    // props.events가 UI의 canonical 소스, element.events는 폴백
-    const events = (
-      Array.isArray((element.props as Record<string, unknown>).events)
-        ? (element.props as Record<string, unknown>).events
-        : element.events
-    ) as WorkflowEventInput[] | undefined;
-    if (!Array.isArray(events)) continue;
+    // props.events 가 UI canonical primary, element.events 는 legacy fallback —
+    // ADR-916 Phase 5 G7 Extension Boundary 정합 (read-through helper 단일화).
+    const events = getElementEvents(element) as WorkflowEventInput[];
+    if (events.length === 0) continue;
 
     for (const event of events) {
       if (!event || event.enabled === false) continue;

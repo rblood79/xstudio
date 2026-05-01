@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0, comment 24 + console.log 1 + TS interface schema 2 + resolver param 1 noise bucket 분리) + Phase 5 G7 preflight 착수 surface land. **정식 G6/G7 gate 진입 prerequisite 충족** — 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics 영역) 은 ADR-911 P3 / ADR-913 P5 base cleanup work 의존, 별 ADR phase)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0) + **Phase 5 G6-1 first work first slice ✅** (Extension Boundary closure 진정 cleanup 진입 — `legacyExtensionFields.ts` helper + caller 2 site migration, events apps/builder 영역 0 도달, dataBinding 광역 47 site 잔존). 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics 영역) 은 ADR-911 P3 / ADR-913 P5 base cleanup work 의존, 별 ADR phase)
 
 ### 진행 로그
 
@@ -354,6 +354,18 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **vitest codify** — `apps/builder/src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts` 신규 (~210 lines): G5 5 필드 strict logic-access 측정 + 4 bucket 분류 자동 검증. `BASELINE_STRICT_LOGIC_ACCESS = 0` 도달 marker (regression detection — 신규 logic-access 추가 시 즉시 fail). 3 test PASS — strict 잔존 0 / bucket 분류 동작 / 분류 무손실.
   - **Phase 4 G5 logic-access PASS marker 도달 ✅** — Phase 5 G6 (Runtime Parity) + G7 (Extension Boundary) 정식 gate 진입 prerequisite 충족. 진정 logic cleanup 잔존 (instanceActions / ComponentSlotFillSection / editingSemantics 의 legacy `componentRole === "instance"` 분기 / `el.masterId` direct access body / `Element.descendants` 영역) 은 ADR-911 P3 / ADR-913 P5 base cleanup work 의존 — 별 ADR phase, ADR-916 G5 scope 외.
   - **검증** — `pnpm type-check` 3/3 PASS + vitest g5 grep gate 3/3 PASS (신규 codify) + canonical 광역 회귀 0.
+- **2026-05-01 — Phase 5 G6-1 first work first slice land: Extension Boundary closure 진정 cleanup 진입 (1 PR 통합)**:
+  - **사용자 명시 진행 신호 + framing surface**: "계획대로 다음 phase 착수 시작해" + design §10 Phase 5 G6/G7 본격 entry. design §10.2 sub-phase 분해 land + first slice 진입 통합. ADR-911/913 결합 0 영역 (Extension Boundary closure) 한정 — 사용자 "ADR-916 부터 진행, 911/913 회피" 정합.
+  - **design §10.2 본격화 (sub-phase 분해 + 우선순위 정렬)**: §10 검증 matrix 10 영역 → ADR-911/913 결합도 + 진척 가능성 분류표 + sub-phase 그룹 4종 (G6-1 Extension+Props LOW / G6-2 History+Preview LOW-MED / G6-3 Slot+Ref+Descendants+Frame HIGH / G6-4 Imports MED-HIGH). G6-1 = ADR-911/913 결합 회피 가능 영역, 첫 진입 sub-phase.
+  - **framing 재조정 (§10.2.4 land)**: design §10.2.3 에서 caller grep gate vitest codify 만 first work scope 였으나, `updateNodeProps` / `updateNodeExtension` 실 caller 0건 → grep gate sub-zero (현재도 0, 미래 marker only). 진정 진척 영역 재발굴 = legacy `Element.events` / `Element.dataBinding` runtime read site cleanup.
+  - **`legacyExtensionFields.ts` helper 신규** — `apps/builder/src/adapters/canonical/legacyExtensionFields.ts`. `getElementEvents(element)` + `getElementDataBinding(element)` 2 helper. read priority: `props.<field>` (UI canonical primary) → `element.<field>` (legacy fallback) → 기본값. `LegacyElementWithExtension` generic input — `Element` (apps/builder unified.types) 와 `WorkflowElementInput` (workflowEdges local) 양쪽 호환. Phase 5 G7 closure 시 helper 내부 reverse 만으로 모든 caller 자동 canonical primary 전환.
+  - **caller 2 site migration**:
+    - `apps/builder/src/builder/utils/canvasDeltaMessenger.ts:262-263` — postMessage `Created` payload 의 `events: element.events` + `dataBinding: element.dataBinding` 직접 read 를 `getElementEvents(element)` + `getElementDataBinding(element)` 로 대체.
+    - `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts:203-208` — `props.events` / `element.events` priority logic 6 line 을 `getElementEvents(element)` 단일 호출로 통합. `WorkflowEventInput[]` cast + `events.length === 0` continue 단순화.
+  - **events legacy field read 잔존 측정** (helper 경유 후): apps/builder 영역 0 도달 ✅. packages/shared `migration.utils.ts:158` 만 잔존 (apps/builder/src/adapters import 불가, 별 bucket — 후속 sub-phase 에서 packages/shared 영역 helper 신규 또는 schema migration 영역 별 처리).
+  - **events logic access 진척**: 진입 시점 3 → 본 세션 1 (-2, 67% 감소). dataBinding 영역 1 site cleanup (canvasDeltaMessenger), 광역 47 site 잔존 (TableRenderer 19 / SelectionRenderers 12 / LayoutRenderers 4 / CollectionRenderers 4 / 기타 8) — 후속 sub-phase 본격 cleanup 영역.
+  - **검증** — `pnpm type-check` 3/3 PASS (cache miss builder 1, shared+publish cache hit) + vitest canonical 광역 148/148 PASS (회귀 0).
+  - **Phase 5 G6-1 진척 marker** — Extension Boundary closure 의 진정 cleanup work 진입. 후속 sub-phase = events 영역 잔존 1 (packages/shared) + dataBinding 광역 47 site + Element.actions 영역 측정 + Props canonical primary 렌더 회귀 (G6-1 second work).
 
 ## Context
 

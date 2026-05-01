@@ -825,6 +825,67 @@ design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이
 | Runtime payload guard  | function callback / Symbol / non-JSON runtime object / cycle skip + dev warn                             |
 | Unit evidence          | `canonicalDocumentStore.test.ts` 42 tests PASS                                                           |
 
+### 10.2 G6 (Runtime Parity) sub-phase 분해 + 우선순위 정렬 (2026-05-01 land)
+
+**§9.3 strict logic-access PASS marker 도달 후 본격 G6 entry prerequisite work**. §10 검증 matrix 10 영역을 ADR-911/913 결합도 + 진척 가능성 기준으로 분류하여 sub-phase 분해.
+
+#### 10.2.1 영역별 ADR-911/913 결합도 + 진입 가능성
+
+| 영역            | ADR-911 결합 | ADR-913 결합 | 진입 risk    | sub-phase | 우선순위 |
+| --------------- | ------------ | ------------ | ------------ | --------- | -------- |
+| **Props**       | LOW          | LOW          | **LOW**      | G6-1      | **1**    |
+| **Extension**   | LOW          | LOW          | **LOW**      | G6-1      | **1**    |
+| **History**     | LOW          | LOW-MED      | **LOW-MED**  | G6-2      | **2**    |
+| **Preview**     | LOW-MED      | LOW          | **LOW-MED**  | G6-2      | **2**    |
+| **Publish**     | LOW          | LOW          | **LOW**      | G6-2      | **2**    |
+| **Slot**        | HIGH         | MED          | **HIGH**     | G6-3      | 3        |
+| **Ref**         | MED          | HIGH         | **HIGH**     | G6-3      | 3        |
+| **Descendants** | MED          | HIGH         | **HIGH**     | G6-3      | 3        |
+| **Frame**       | HIGH         | MED          | **HIGH**     | G6-3      | 3        |
+| **Imports**     | MED          | LOW          | **MED-HIGH** | G6-4      | 4        |
+
+#### 10.2.2 sub-phase 그룹
+
+- **G6-1 — Extension Boundary + Props Parity** (`LOW`, ~1d): Phase 5 G7 preflight 후속. `updateNodeExtension` API 가 합법 surface 임을 회귀 vitest codify + Props canonical primary 렌더 (Button/TextField/Section 의 `metadata.legacyProps` 없이도 Skia + DOM 렌더 정합).
+- **G6-2 — History + Preview/Publish Parity** (`LOW-MED`, ~2-3d): canonical store mutation 의 history granularity (undo/redo) + Preview/Publish 의 canonical resolved tree 렌더 정합. ADR-911/913 결합 회피 가능 영역 — Props/Extension 회귀 codify 가 prerequisite.
+- **G6-3 — Slot/Ref/Descendants/Frame Parity** (`HIGH`, ~1주+): ADR-911 P3 frame canvas authoring + ADR-913 P5 instance schema 본격 결합. **ADR-911 P3 / ADR-913 P5 base cleanup work land 후 진입**. ADR-916 G5 §9.7 reorder 의 P5-A/B/C/D/E + G5-A 본격 진척과 동시 진행 가능.
+- **G6-4 — Imports Parity** (`MED-HIGH`, ~3-5d): ADR-915 DesignKit scope superseded 후 잔여 fetch/cache/resolver. ResolverCache invalidation + external `.pen` reference fetch + import namespace 정합. ADR-911/913 직접 결합 적음 — G6-3 후 또는 별 진행 가능.
+
+#### 10.2.3 본 세션 진입 = G6-1 first work (Extension Boundary closure 회귀 codify)
+
+**framing surface 의무**: G6-1 본격 work 가 Phase 5 G7 preflight 후속 — `updateNodeExtension` API 가 land 됐으나 caller migration / 회귀 evidence codify 미land. 본 first work scope:
+
+- **`updateNodeExtension` boundary closure 회귀 vitest** — Phase 5 G7 preflight 의 `canonicalDocumentStore.test.ts` 42 PASS 는 store-level 검증. Boundary closure 회귀 = 신규 caller 가 events/dataBinding 을 props 로 우회 저장하지 않는지 grep gate codify 필요.
+- **events/dataBinding/actions key 의 props 저장 차단 검증** — `updateNodeProps` 가 forbidden key skip 동작은 store test 에 검증됨. 추가로 caller 영역 grep gate (`updateNodeProps({ events: ..., })` / `updateNodeProps({ dataBinding: ..., })` 류) 가 0건임을 codify.
+- **Props canonical primary 렌더 회귀 (G6-1 second work)** — 별 PR slice. Button/TextField/Section spec consumer 가 `metadata.legacyProps` 없이도 Skia + DOM 정합 렌더. fixture + visual evidence 필요 ~1d MED.
+
+본 세션 진입 = **G6-1 first work first slice** = boundary closure caller grep gate vitest codify. ADR-911/913 결합 0, schema marker only, 1 PR LOW scope.
+
+#### 10.2.4 G6-1 first work first slice land (2026-05-01) — `legacyExtensionFields.ts` helper + caller 2 site migration
+
+**framing 재조정** — design §10.2.3 에서 caller grep gate vitest codify 만 본 세션 first work 로 정의했으나, `updateNodeProps` / `updateNodeExtension` 실 caller 가 0건이라는 grep 결과로 grep gate 자체가 sub-zero (현재도 0, 미래 marker only) 임을 확인. **진정 진척 영역 재발굴** = legacy `Element.events` / `Element.dataBinding` runtime read site cleanup (Phase 5 G7 closure 의 진정 cleanup target).
+
+**land 내용**:
+
+- **`apps/builder/src/adapters/canonical/legacyExtensionFields.ts` 신규** — `getElementEvents(element)` + `getElementDataBinding(element)` 2 helper. read priority: `props.<field>` (UI canonical primary) → `element.<field>` (legacy fallback) → 기본값 (`[]` / `undefined`). `LegacyElementWithExtension` generic input shape — `Element` (apps/builder unified.types) 와 다른 local interface (예: workflowEdges `WorkflowElementInput`) 양쪽 호환.
+- **caller 2 site migration**:
+  - `apps/builder/src/builder/utils/canvasDeltaMessenger.ts:262-263` — postMessage `Created` payload 의 `events: element.events` + `dataBinding: element.dataBinding` 직접 read 를 helper 호출로 대체.
+  - `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts:203-208` — `props.events` / `element.events` priority logic 6 line 을 `getElementEvents(element)` 단일 호출로 통합. `WorkflowEventInput[]` cast 보존 + `events.length === 0` continue 로 단순화 (`!Array.isArray` early-return 제거 — helper 가 항상 array return).
+- **events legacy field read 잔존 측정** (helper 경유 후, packages/shared/src/utils/migration.utils.ts:158 만 잔존):
+  | 영역 | 진입 시점 logic access | 본 세션 cleanup | 잔존 |
+  | --- | -: | -: | -: |
+  | `apps/builder/src/builder/utils/canvasDeltaMessenger.ts` | 1 | -1 | 0 |
+  | `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | 1 | -1 | 0 |
+  | `packages/shared/src/utils/migration.utils.ts` (별 bucket) | 1 | 0 | 1 |
+  | `apps/builder/src/builder/panels/events/state/useEventHandlers.ts` (JSDoc, comment bucket) | 0 | 0 | 0 |
+  | **합계** | **3** | **-2** | **1** |
+- **dataBinding legacy field read 잔존**: 본 세션 1 site cleanup (canvasDeltaMessenger.ts:263). 광역 47 site 중 (TableRenderer 19 / SelectionRenderers 12 / LayoutRenderers 4 / CollectionRenderers 4 / 기타 8) → 후속 sub-phase 본격 cleanup 영역.
+- **packages/shared `migration.utils.ts:158` 잔존 사유** — packages/shared 영역은 apps/builder/src/adapters import 불가 (모노레포 의존 방향). 별 bucket marker, 후속 sub-phase 에서 packages/shared 영역 helper 신규 또는 schema migration 영역 별 처리.
+
+**검증**: `pnpm type-check` 3/3 PASS + vitest canonical 광역 148/148 PASS (회귀 0).
+
+**G6-1 진척 marker**: Phase 5 G7 Extension Boundary closure 의 진정 cleanup work 진입 — events 영역 logic access **3 → 1 (-2, 67% 감소)**, dataBinding 영역 light cleanup 1. 후속 sub-phase = events 영역 잔존 1 (migration.utils.ts, packages/shared 영역) + dataBinding 광역 47 site cleanup + Element.actions 영역 측정.
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |

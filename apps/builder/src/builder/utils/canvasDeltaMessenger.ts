@@ -17,6 +17,10 @@ import {
   getElementLayoutId,
   withLegacyLayoutId,
 } from "../../adapters/canonical/legacyElementFields";
+import {
+  getElementDataBinding,
+  getElementEvents,
+} from "../../adapters/canonical/legacyExtensionFields";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 
@@ -259,8 +263,8 @@ export class CanvasDeltaMessenger {
           page_id: element.page_id,
           order_num: element.order_num,
           customId: element.customId,
-          events: element.events,
-          dataBinding: element.dataBinding,
+          events: getElementEvents(element),
+          dataBinding: getElementDataBinding(element),
           fills: element.fills,
         },
         getElementLayoutId(element),
