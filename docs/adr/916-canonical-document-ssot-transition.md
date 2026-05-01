@@ -158,6 +158,35 @@ In Progress — 2026-05-02 direct cutover land. Phase 0 G1 / Phase 1 G2 / Phase 
 - **2026-05-02 — ADR-911/916 G5 ninth cleanup slice**:
   - Validation/properties/canvas layout/skia read hot path 의 frame ownership read 를 `frameMirror` adapter 로 전환했다. `useValidation`, `useErrorHandler`, `PropertiesPanel`, `LayoutBodyEditor`, `LayerTree` drop validation, `elements` page layout invalidation, canvas selection, layout publish/cache, full-tree layout, Skia overlay/selection/visible roots 의 direct ownership helper import 를 제거했다.
   - 검증: targeted vitest 13 files / 51 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 tenth cleanup slice**:
+  - Store/canonical bridge 의 frame mirror write 를 `frameMirror` adapter 로 전환했다. `canonicalElementsView` derived view 와 `instanceActions` detach materialization 의 direct ownership write helper import 를 제거했고, G5 strict logic-access grep gate baseline 0 을 유지했다.
+  - 검증 중 `instanceActions` canonical detach materialization 의 기존 `activeDescendants` 오타를 `activeLegacyDescendantMap` 으로 수정했다.
+  - 검증: targeted vitest `canonicalElementsView.test.ts` + `instanceActions.test.ts` + `frameMirror.test.ts` + `g5LegacyFieldGrepGate.test.ts` 4 files / 46 tests PASS.
+- **2026-05-02 — ADR-911/916 G5 eleventh cleanup slice**:
+  - Project sync, layout template, Preview runtime 의 frame mirror read/write 를 `frameMirror` adapter 로 전환했다. `projectSync`, `layoutTemplates`, `CanvasRouter`, `CanonicalNodeRenderer`, preview layout resolver/App 의 direct `legacyElementFields` helper import 를 제거했다.
+  - 검증: targeted vitest `frameMirror.test.ts` + `projectSync.layoutId.static.test.ts` + `layoutTemplates.static.test.ts` + `previewFrameMirror.static.test.ts` 4 files / 6 tests PASS.
+- **2026-05-02 — ADR-913/916 G5 twelfth cleanup slice**:
+  - Slot ownership mirror read/write 를 `slotMirror` adapter 로 분리했다. Properties panel, layout preset apply, page/frame resolver, preview slot resolution 은 `slot_name` mirror payload 를 direct legacy helper 로 읽거나 쓰지 않는다.
+  - 검증: targeted vitest `slotMirror.test.ts` + `previewFrameMirror.static.test.ts` + `resolvePageWithFrame.test.ts` + `usePresetApply.static.test.ts` 4 files / 16 tests PASS.
+- **2026-05-02 — ADR-913/916 G5 thirteenth cleanup slice**:
+  - Component semantics mirror read/write 를 `componentSemanticsMirror` adapter 로 분리했다. `ComponentSlotFillSection`, editing semantics fixture, store bridge, instance lifecycle action 의 direct component marker helper import 를 제거했다.
+  - `editingSemanticsFixture` 는 canonical export round-trip 이 raw dev evidence marker 를 제거하는 경로를 피하고 dev fixture payload 를 그대로 보존하도록 `setElements()` 경로를 사용한다.
+  - 검증: targeted vitest `componentSemanticsMirror.test.ts` + `instanceActions.test.ts` + `ComponentSlotFillSection.test.tsx` + `editingSemanticsFixture.test.ts` + `storeBridge.test.ts` + `g5LegacyFieldGrepGate.test.ts` 6 files / 57 tests PASS.
+- **2026-05-02 — ADR-913/916 G5 fourteenth cleanup slice**:
+  - `packages/shared` export schema/element utilities 의 내부 helper naming 을 mirror terminology 로 정리했다. `layout_id`/`slot_name` mirror field 는 현재 export schema boundary 에만 남긴다.
+  - 검증: `pnpm run codex:preflight` PASS.
+- **2026-05-02 — ADR-916 projection removal fifteenth cleanup slice**:
+  - Preview runtime 은 Builder 가 보낸 `UPDATE_CANONICAL_DOCUMENT` 를 저장하고 `App.tsx` 에서 수신된 `CompositionDocument` 를 직접 `resolveCanonicalDocument()` 한다. Preview 렌더 경로의 `legacyToCanonical()` 호출은 0건으로 제거했다.
+  - Canvas drag/drop helper 와 BuilderCanvas layout/frame memo 는 `selectCanonicalDocument()` rebuild 대신 active canonical document 를 사용한다. active document 가 아직 없으면 drag/drop reorder target/update 는 no-op 으로 빠져 projection fallback 을 재도입하지 않는다.
+  - FramesTab/PageLayoutSelector/ComponentsPanel 의 visible panel read/add path 도 active canonical document 기준으로 전환했다. 초기 hydration 전 목록 UI 는 `layouts` fallback 을 유지하지만 per-render `selectCanonicalDocument()` rebuild 는 수행하지 않는다.
+  - 잔여 `selectCanonicalDocument()` / `legacyToCanonical()` 호출은 adapter, hydration/sync, element creation, layout cascade, store bridge, 테스트/문서 경계로 남아 있으며 다음 cleanup slice 의 대상이다.
+  - 검증: targeted vitest 8 files / 25 tests PASS.
+- **2026-05-02 — ADR-916 projection removal sixteenth cleanup slice**:
+  - BuilderCore layout refresh/theme write-through/publish path 는 더 이상 caller level 에서 `selectCanonicalDocument()` 를 호출하지 않는다. refresh/publish 필터링은 `isFrameElementForFrame()` adapter 로 판정하고, theme write-through 는 active canonical document 가 있을 때만 적용한다.
+  - `usePageManager.initializeProject` 는 hydrate 시 `allElements + pages + layouts` 로 canonical document 를 재구성하지 않고, project layouts snapshot id set + `getFrameElementMirrorId()` 로 frame elements 를 포함한다.
+  - `elementCreation` history/reorder context 는 active canonical document 를 직접 읽고, `layoutActions.getLayoutSlots` 는 active canonical document 의 FrameNode.slot 을 직접 조회한다. 해당 caller/store action 경로의 `selectCanonicalDocument()` 호출은 제거했다.
+  - 잔여 production 호출은 `canonicalDocumentSync`, `frameLayoutCascade`, `pageFrameBinding`, `storeBridge`, `elements.ts` adapter 정의로 축소했다.
+  - 검증: targeted vitest 12 files / 60 tests PASS.
 
 ## Context
 

@@ -36,6 +36,8 @@ export const createRuntimeStore = () =>
     // ============================================
     elements: [],
     setElements: (elements: RuntimeElement[]) => set({ elements }),
+    canonicalDocument: null,
+    setCanonicalDocument: (canonicalDocument) => set({ canonicalDocument }),
     updateElementProps: (id: string, props: Record<string, unknown>) => {
       const patch = props ?? {};
       if (Object.keys(patch).length === 0) return;

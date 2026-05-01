@@ -15,14 +15,11 @@ import { useCallback } from "react";
 import type { PanelProps } from "../core/types";
 import ComponentList from "./ComponentList";
 import { useStore } from "../../stores";
-import { selectCanonicalDocument } from "../../stores/elements";
 import { useEditModeStore } from "../../stores/editMode";
-import {
-  useLayoutsStore,
-  useSelectedReusableFrameId,
-} from "../../stores/layouts";
+import { useSelectedReusableFrameId } from "../../stores/layouts";
 import { useElementCreator } from "@/builder/hooks";
 import { belongsToLegacyLayout } from "../../../adapters/canonical";
+import { getActiveCanonicalDocument } from "../../stores/canonical/canonicalElementsBridge";
 
 /**
  * ComponentsPanel - Gateway 컴포넌트
@@ -61,13 +58,12 @@ function ComponentsPanelContent() {
       const state = useStore.getState();
       const elements = state.elements;
       const getPageElements = state.getPageElements;
-      // ADR-903 P3-E E-6: layout 모드에서 body element 변환에 doc 필수.
-      const layoutsState = useLayoutsStore.getState();
-      const doc = selectCanonicalDocument(
-        state,
-        state.pages,
-        layoutsState.layouts,
-      );
+      // ADR-916 projection 제거: element creation path 는 active canonical document 만 사용.
+      const doc = getActiveCanonicalDocument();
+      if (!doc) {
+        console.error("[ComponentsPanel] canonical document is not ready");
+        return;
+      }
 
       // Layout 모드인 경우
       if (editMode === "layout" && selectedReusableFrameId) {

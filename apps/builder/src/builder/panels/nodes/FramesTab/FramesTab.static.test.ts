@@ -33,4 +33,11 @@ describe("FramesTab frame selection race guard", () => {
       /filter\(\s*\(el\) => el\.layout_id !== selectedReusableFrameId/,
     );
   });
+
+  it("uses active canonical document without rebuilding projection for frame list", async () => {
+    const source = await readFile(resolve(__dirname, "FramesTab.tsx"), "utf-8");
+
+    expect(source).toContain("useActiveCanonicalDocument");
+    expect(source).not.toContain("selectCanonicalDocument");
+  });
 });

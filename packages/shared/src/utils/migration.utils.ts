@@ -12,7 +12,7 @@ import type {
 } from "../types/export.types";
 import { ExportErrorCode, type ExportError } from "../types/export.types";
 
-const LEGACY_LAYOUT_ID_FIELD = "layout_id" as const;
+const FRAME_BINDING_MIRROR_FIELD = "layout_id" as const;
 
 // ============================================
 // Types
@@ -149,7 +149,7 @@ const migrations: Record<string, MigrationFn> = {
         ...page,
         parent_id: page.parent_id ?? null,
         order_num: page.order_num ?? index,
-        [LEGACY_LAYOUT_ID_FIELD]: page[LEGACY_LAYOUT_ID_FIELD] ?? null,
+        [FRAME_BINDING_MIRROR_FIELD]: page[FRAME_BINDING_MIRROR_FIELD] ?? null,
       })),
       elements: legacy.elements.map(({ tag, ...element }, index) => ({
         ...element,

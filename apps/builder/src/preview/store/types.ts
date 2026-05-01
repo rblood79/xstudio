@@ -6,6 +6,7 @@
  */
 
 import type { CSSProperties } from "react";
+import type { CompositionDocument } from "@composition/shared";
 
 // Element 타입 (Runtime에서 사용하는 최소 타입)
 export interface RuntimeElement {
@@ -129,6 +130,8 @@ export interface RuntimeStoreState extends StateHierarchy {
   // Elements
   elements: RuntimeElement[];
   setElements: (elements: RuntimeElement[]) => void;
+  canonicalDocument: CompositionDocument | null;
+  setCanonicalDocument: (document: CompositionDocument | null) => void;
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
   /**
    * 여러 요소 props를 한 번의 set()으로 일괄 적용 (Preview 단일 commit 보장)

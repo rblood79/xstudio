@@ -7,10 +7,7 @@ import {
   viewportToScreenSize,
 } from "../viewport/viewportTransforms";
 import { useStore } from "../../../stores";
-import { selectCanonicalDocument } from "../../../stores/elements";
-import { useLayoutsStore } from "../../../stores/layouts";
 import { sameLegacyOwnership } from "@/adapters/canonical";
-// ADR-916 direct cutover — canonical store hit 시 build cost 0, miss 시 fallback.
 import { getActiveCanonicalDocument } from "../../../stores/canonical/canonicalElementsBridge";
 
 interface UseCanvasDragDropHelpersParams {
@@ -151,14 +148,10 @@ export function useCanvasDragDropHelpers({
       const excludedIds = getDescendantIds(draggedId);
       excludedIds.add(draggedId);
 
-      // ADR-903 P3-D-5 step 5e-3: doc 전달 → sameLegacyOwnership canonical 활용.
-      // ADR-916 Phase 2 G3 Step 5: drag mousemove 빈번 — canonical store hit 시
-      // pre-built doc 직접 사용 (build cost 0). miss 시 legacy fallback.
-      const state = useStore.getState();
-      const layouts = useLayoutsStore.getState().layouts;
-      const doc =
-        getActiveCanonicalDocument() ??
-        selectCanonicalDocument(state, state.pages, layouts);
+      // ADR-916 projection 제거: drag mousemove hot path 에서 legacy snapshot 을
+      // CompositionDocument 로 재구성하지 않는다.
+      const doc = getActiveCanonicalDocument();
+      if (!doc) return null;
 
       const candidates: Array<{
         bounds: BoundingBox;
@@ -266,13 +259,9 @@ export function useCanvasDragDropHelpers({
         return [];
       }
 
-      // ADR-903 P3-D-5 step 5e-3: doc 1회 생성 (drop 시 1회 호출) → sameLegacyOwnership 두 호출에서 공유.
-      // ADR-916 Phase 2 G3 Step 5: canonical store hit 시 pre-built doc 사용.
-      const state = useStore.getState();
-      const layouts = useLayoutsStore.getState().layouts;
-      const doc =
-        getActiveCanonicalDocument() ??
-        selectCanonicalDocument(state, state.pages, layouts);
+      // ADR-916 projection 제거: drop path 도 active canonical document 만 사용.
+      const doc = getActiveCanonicalDocument();
+      if (!doc) return [];
 
       if (!sameLegacyOwnership(movedElement, targetElement, doc)) {
         return [];

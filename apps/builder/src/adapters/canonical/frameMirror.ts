@@ -1,19 +1,18 @@
 import type { FrameNode } from "@composition/shared";
-import type { Element, Page } from "@/types/builder/unified.types";
 import {
-  getElementLayoutId,
   getLegacyLayoutId,
   hasLegacyLayoutId,
+  LEGACY_LAYOUT_ID_FIELD,
   withLegacyLayoutId,
 } from "./legacyElementFields";
 
-export function getNullablePageFrameBindingId(
-  page: Page | undefined | null,
-): string | null {
+export const FRAME_ELEMENT_MIRROR_ID_FIELD = LEGACY_LAYOUT_ID_FIELD;
+
+export function getNullablePageFrameBindingId(page: unknown): string | null {
   return getLegacyLayoutId(page);
 }
 
-export function getPageFrameBindingId(page: Page | undefined | null): string {
+export function getPageFrameBindingId(page: unknown): string {
   return getNullablePageFrameBindingId(page) ?? "";
 }
 
@@ -33,8 +32,8 @@ export function getReusableFrameMirrorId(frame: FrameNode): string {
   return rawId.startsWith("layout-") ? rawId.slice("layout-".length) : rawId;
 }
 
-export function getFrameElementMirrorId(element: Element): string | null {
-  return getElementLayoutId(element);
+export function getFrameElementMirrorId(element: unknown): string | null {
+  return getLegacyLayoutId(element);
 }
 
 export function hasFrameElementMirrorId(value: unknown): boolean {

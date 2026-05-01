@@ -9,9 +9,9 @@ import { resolveReference } from "../../../utils/component/referenceResolution";
 import { PropertySection, PropertySelect } from "../../components";
 import { useStore } from "../../stores";
 import {
-  getLegacyDescendants,
-  LEGACY_DESCENDANTS_FIELD,
-} from "../../../adapters/canonical/legacyElementFields";
+  COMPONENT_DESCENDANTS_MIRROR_FIELD,
+  getComponentDescendantsMirror,
+} from "../../../adapters/canonical/componentSemanticsMirror";
 
 type SlotHostElement = Element & {
   metadata?: { slot?: unknown };
@@ -47,7 +47,7 @@ function getSlotValue(element: Element): string[] | null {
 }
 
 function getSlotFillChildren(instance: Element, path: string): unknown[] {
-  const override = getLegacyDescendants(instance)?.[path];
+  const override = getComponentDescendantsMirror(instance)?.[path];
   return override && Array.isArray(override.children) ? override.children : [];
 }
 
@@ -179,7 +179,7 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
   );
 
   const legacyOverrideKey = JSON.stringify(
-    element ? (getLegacyDescendants(element) ?? {}) : {},
+    element ? (getComponentDescendantsMirror(element) ?? {}) : {},
   );
 
   useEffect(() => {
@@ -215,7 +215,8 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     if (!candidate || !selectedSlot) return;
 
     const latestInstance = latestElementsMap.get(element.id) ?? instance;
-    const legacyDescendantMap = getLegacyDescendants(latestInstance) ?? {};
+    const legacyDescendantMap =
+      getComponentDescendantsMirror(latestInstance) ?? {};
     const currentChildren = getSlotFillChildren(
       latestInstance,
       selectedSlot.path,
@@ -233,7 +234,7 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
     pendingChildrenByPathRef.current[selectedSlot.path] = nextChildren;
 
     void updateElement(element.id, {
-      [LEGACY_DESCENDANTS_FIELD]: {
+      [COMPONENT_DESCENDANTS_MIRROR_FIELD]: {
         ...legacyDescendantMap,
         [selectedSlot.path]: {
           children: nextChildren,
@@ -243,13 +244,13 @@ export const ComponentSlotFillSection = memo(function ComponentSlotFillSection({
   };
 
   const handleClearSlot = () => {
-    const legacyDescendantMap = getLegacyDescendants(instance) ?? {};
+    const legacyDescendantMap = getComponentDescendantsMirror(instance) ?? {};
     const nextLegacyDescendantMap = { ...legacyDescendantMap };
     delete nextLegacyDescendantMap[selectedSlot.path];
     delete pendingChildrenByPathRef.current[selectedSlot.path];
 
     void updateElement(element.id, {
-      [LEGACY_DESCENDANTS_FIELD]: nextLegacyDescendantMap,
+      [COMPONENT_DESCENDANTS_MIRROR_FIELD]: nextLegacyDescendantMap,
     } as Partial<Element>);
   };
 

@@ -25,9 +25,9 @@ import type {
 import type { Element } from "../../../types/builder/unified.types";
 import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "../../../adapters/canonical/legacyMetadata";
 import {
-  LEGACY_LAYOUT_ID_FIELD,
-  withLegacyLayoutId,
-} from "../../../adapters/canonical/legacyElementFields";
+  FRAME_ELEMENT_MIRROR_ID_FIELD,
+  withFrameElementMirrorId,
+} from "../../../adapters/canonical/frameMirror";
 import { useActiveCanonicalDocument } from "./canonicalElementsBridge";
 
 /**
@@ -107,7 +107,7 @@ export function canonicalNodeToElement(
     // page placeholder / slot synthetic (props 미정의) 노드는 기존대로 null skip.
     if (!node.props) return null;
 
-    return withLegacyLayoutId(
+    return withFrameElementMirrorId(
       {
         id: node.id,
         type: node.type,
@@ -134,7 +134,7 @@ export function canonicalNodeToElement(
     id: _id,
     parent_id: lpParentId,
     page_id: lpPageId,
-    [LEGACY_LAYOUT_ID_FIELD]: lpLayoutId,
+    [FRAME_ELEMENT_MIRROR_ID_FIELD]: lpLayoutId,
     order_num: lpOrderNum,
     fills: lpFills,
     type: lpType,
@@ -142,7 +142,7 @@ export function canonicalNodeToElement(
   } = lp;
   void _id;
 
-  return withLegacyLayoutId(
+  return withFrameElementMirrorId(
     {
       id: legacyId,
       type: typeof lpType === "string" ? lpType : node.type,

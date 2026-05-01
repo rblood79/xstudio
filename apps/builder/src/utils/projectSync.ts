@@ -9,9 +9,9 @@ import { projectsApi } from "../services/api/ProjectsApiService";
 import { pagesApi } from "../services/api/PagesApiService";
 import { elementsApi } from "../adapters/canonical/legacyElementsApiService";
 import {
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../adapters/canonical/legacyElementFields";
+  getNullablePageFrameBindingId,
+  withPageFrameBinding,
+} from "../adapters/canonical/frameMirror";
 
 /**
  * 로컬 프로젝트를 클라우드에 동기화
@@ -63,7 +63,7 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
     // 4. 페이지를 Supabase에 업로드
     for (const page of localPages) {
       // Page 타입은 title 필드를 사용
-      const apiPage = withLegacyLayoutId(
+      const apiPage = withPageFrameBinding(
         {
           id: page.id,
           project_id: page.project_id,
@@ -74,7 +74,7 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
           created_at: page.created_at,
           updated_at: new Date().toISOString(),
         },
-        getLegacyLayoutId(page),
+        getNullablePageFrameBindingId(page),
       );
 
       try {
@@ -162,7 +162,7 @@ export async function downloadProjectFromCloud(
     // 4. 페이지를 IndexedDB에 저장
     for (const page of cloudPages) {
       // API Page → Store Page 변환
-      const storePage = withLegacyLayoutId(
+      const storePage = withPageFrameBinding(
         {
           id: page.id,
           project_id: page.project_id,
@@ -172,7 +172,7 @@ export async function downloadProjectFromCloud(
           created_at: page.created_at,
           updated_at: page.updated_at,
         },
-        getLegacyLayoutId(page),
+        getNullablePageFrameBindingId(page),
       );
 
       await db.pages.insert(storePage);

@@ -22,7 +22,7 @@ import type {
 import type { Element } from "../../../../../types/builder/unified.types";
 import { isFrameElementForFrame } from "../../../../../adapters/canonical/frameElementLoader";
 import { withFrameElementMirrorId } from "../../../../../adapters/canonical/frameMirror";
-import { getLegacySlotName } from "../../../../../adapters/canonical/legacyElementFields";
+import { getSlotMirrorName } from "../../../../../adapters/canonical/slotMirror";
 
 export { normalizeFramePresetContainerStyle } from "./presetStyle";
 
@@ -86,7 +86,7 @@ export function usePresetApply({
           (() => {
             let found = false;
             elementsMap.forEach((other) => {
-              if (getLegacySlotName(other.props) === slotName) {
+              if (getSlotMirrorName(other.props) === slotName) {
                 found = true;
               }
             });

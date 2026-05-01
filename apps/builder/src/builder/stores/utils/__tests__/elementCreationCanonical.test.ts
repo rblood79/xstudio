@@ -4,10 +4,8 @@
  * 본 test 는 factoryOwnership.test.ts 에서 P3-D-2 부분만 분리한 것.
  * 분리 이유: vitest path resolution 이 다른 directory tree 의 test 파일
  * (apps/builder/src/builder/factories/__tests__/) 에서 elementCreation.ts 의
- * "../elements" import 경로와 mock path "../../stores/elements" 를 다른
- * module ID 로 cache 해 selectCanonicalDocument mock 이 적용 안 됨.
- * 같은 directory tree (stores/utils/__tests__/) 로 이동하면 layoutActions.test.ts
- * 와 동일한 path pattern (`../../elements`) 으로 mock 이 정상 작동한다.
+ * store bridge import 경로와 mock path 를 다른 module ID 로 cache 할 수 있어
+ * 같은 directory tree (stores/utils/__tests__/) 로 유지한다.
  *
  * 범위: elementCreation.ts L74 + L191 + L108-126 (히스토리 조건 + reorder 분기)
  * 목표: layout_id / state.currentPageId 기반 → canonical parent context 기반
@@ -19,7 +17,6 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import * as elementsStoreModule from "../../elements";
 import * as historyModule from "../../history";
 
 import {
@@ -28,7 +25,6 @@ import {
 } from "../elementCreation";
 import type { Element } from "../../../../types/core/store.types";
 import type { Page } from "../../../../types/builder/unified.types";
-import type { Layout } from "../../../../types/builder/layout.types";
 import type { CompositionDocument, FrameNode } from "@composition/shared";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -81,11 +77,10 @@ function makeDoc(frames: FrameNode[]): CompositionDocument {
 
 // ─── mocks ──────────────────────────────────────────────────────────────────
 
-// elementCreation.ts 는 elements module 에서 selectCanonicalDocument 만
-// runtime import (ElementsState 는 type-only). spread 없는 명시 mock 으로
-// vitest path resolution issue 를 우회한다.
-vi.mock("../../elements", () => ({
-  selectCanonicalDocument: vi.fn(),
+const mockGetActiveCanonicalDocument = vi.fn();
+
+vi.mock("@/builder/stores/canonical/canonicalElementsBridge", () => ({
+  getActiveCanonicalDocument: () => mockGetActiveCanonicalDocument(),
 }));
 
 vi.mock("../../history", () => ({
@@ -132,14 +127,6 @@ vi.mock("../../../utils/propagationEngine", () => ({
   ),
 }));
 
-// useLayoutsStore mock — selectCanonicalDocument mock 이 결과를 override 하므로
-// 실 layouts 값은 무관, getState() 가 throw 하지 않도록만 보장
-vi.mock("../../layouts", () => ({
-  useLayoutsStore: {
-    getState: () => ({ layouts: [] as Layout[] }),
-  },
-}));
-
 // ─── shared mock state factory ─────────────────────────────────────────────
 
 interface MockStateOpts {
@@ -147,7 +134,6 @@ interface MockStateOpts {
   childrenMap?: Map<string, Element[]>;
   elementsMap?: Map<string, Element>;
   pages?: Page[];
-  layouts?: Layout[];
   doc?: CompositionDocument;
 }
 
@@ -175,11 +161,7 @@ function setupStateMocks(opts: MockStateOpts = {}) {
     },
   );
 
-  if (opts.doc) {
-    vi.mocked(elementsStoreModule.selectCanonicalDocument).mockReturnValue(
-      opts.doc,
-    );
-  }
+  mockGetActiveCanonicalDocument.mockReturnValue(opts.doc ?? null);
 
   return { state, getMock, setMock };
 }

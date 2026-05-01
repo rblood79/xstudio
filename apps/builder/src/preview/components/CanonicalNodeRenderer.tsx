@@ -25,9 +25,9 @@ import { extractLegacyPropsFromResolved } from "../../resolvers/canonical/storeB
 import type { RenderContext } from "../types/index";
 import type { PreviewElement } from "../types/index";
 import {
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  getFrameElementMirrorId,
+  withFrameElementMirrorId,
+} from "../../adapters/canonical/frameMirror";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -82,7 +82,7 @@ export function CanonicalNodeRenderer({
   // legacy DOM 마커는 원본 UUID 가 필요하므로 legacyProps.id 를 우선.
   const legacyUuid = (legacyProps.id as string | undefined) ?? node.id;
 
-  const previewEl: PreviewElement = withLegacyLayoutId(
+  const previewEl: PreviewElement = withFrameElementMirrorId(
     {
       id: legacyUuid,
       type,
@@ -92,7 +92,7 @@ export function CanonicalNodeRenderer({
       order_num: (legacyProps.order_num as number | undefined) ?? 0,
       fills: (legacyProps.fills as unknown[] | undefined) ?? [],
     },
-    getLegacyLayoutId(legacyProps),
+    getFrameElementMirrorId(legacyProps),
   );
 
   // fills + style 변환 (adaptElementFillStyle)

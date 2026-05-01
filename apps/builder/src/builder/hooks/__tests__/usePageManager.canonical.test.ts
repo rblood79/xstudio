@@ -63,10 +63,10 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
     });
 
-    // [RED] current: canonical resolver 미사용 (코멘트 TODO 만 존재)
-    // GREEN: selectCanonicalDocument(...) 또는 selectCanonicalReusableFrames(...)
-    // 실제 호출 (괄호 포함) 등장 — 코멘트 제거 후 검사
-    it("canonical resolver (selectCanonicalDocument 또는 selectCanonicalReusableFrames) 가 호출된다", async () => {
+    // ADR-916 projection 제거: initializeProject 는 legacy snapshot 을
+    // CompositionDocument 로 재구성하지 않고 project layouts snapshot 으로
+    // reusable frame id set 을 만든다.
+    it("projection rebuild 없이 project layouts snapshot 으로 frame id set 을 구성한다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
@@ -79,9 +79,12 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
-      // 호출 형태 (괄호) 만 매칭
-      expect(initFnSource).toMatch(
+      expect(initFnSource).not.toMatch(
         /selectCanonicalDocument\(|selectCanonicalReusableFrames\(/,
+      );
+      expect(initFnSource).toMatch(/getProjectLayoutsForCanonical\(/);
+      expect(initFnSource).toMatch(
+        /canonicalLayouts\.map\(\(layout\) => layout\.id\)/,
       );
     });
   });
@@ -90,9 +93,9 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
   // Phase C GREEN 정합화 검증 (P3-D-4 Phase C 4-step plan)
   // ─────────────────────────────────────────────
   describe("initializeProject — Phase C GREEN 정합화 contract", () => {
-    // selectCanonicalReusableFrames 호출이 등장하여 reusable FrameNode 가 추출됨을 확증.
-    // Spec A-2: minimal stub 의 'void canonicalDoc' 패턴이 다시 부활하는 회귀 차단.
-    it("selectCanonicalReusableFrames 가 호출되어 reusable FrameNode 가 추출된다", async () => {
+    // ADR-916 projection 제거: selectCanonicalReusableFrames 가 다시 caller 로
+    // 올라오는 회귀를 차단한다.
+    it("selectCanonicalReusableFrames caller 호출이 없다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
@@ -103,13 +106,11 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       );
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
-      expect(initFnSource).toMatch(/selectCanonicalReusableFrames\(/);
+      expect(initFnSource).not.toMatch(/selectCanonicalReusableFrames\(/);
     });
 
-    // layoutIdSet 이 canonical FrameNode.id 를 mirror frame id 로 정규화함을 확증.
-    // Spec A-4 후속: canonical frame id("layout-<id>") 와 element.layout_id("<id>")
-    // 저장 포맷이 다르므로 hydrate 시 매칭 키는 legacy layout id 여야 한다.
-    it("layoutIdSet 이 reusable frame id 를 legacy layout id 로 정규화해 구성된다", async () => {
+    // layoutIdSet 이 project layouts snapshot 의 id 를 기준으로 구성됨을 확증.
+    it("layoutIdSet 이 project layout id snapshot 으로 구성된다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
@@ -121,12 +122,12 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnMatch).not.toBeNull();
       const initFnSource = initFnMatch![0];
       expect(initFnSource).toMatch(
-        /new Set\([\s\S]{0,120}reusableFrames\.map\(getReusableFrameMirrorId\)/,
+        /new Set\([\s\S]{0,120}canonicalLayouts\.map\(\(layout\) => layout\.id\)/,
       );
-      expect(source).toContain("getReusableFrameMirrorId");
+      expect(source).not.toContain("getReusableFrameMirrorId");
     });
 
-    it("새로고침 hydrate 는 store 가 아니라 DB snapshot layouts/elements 로 canonical doc 을 만든다", async () => {
+    it("새로고침 hydrate 는 store 가 아니라 DB/project layouts snapshot 을 사용한다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
       const filePath = path.resolve(__dirname, "../usePageManager.ts");
@@ -140,11 +141,8 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(initFnSource).toMatch(
         /getProjectLayoutsForCanonical\(\s*db,\s*projectId/,
       );
-      expect(initFnSource).toMatch(/elements:\s*allElements/);
-      expect(initFnSource).toMatch(
-        /elementsMap:\s*new Map\(allElements\.map\(\(el\) => \[el\.id, el\]\)\)/,
-      );
       expect(initFnSource).toMatch(/canonicalLayouts/);
+      expect(initFnSource).not.toMatch(/selectCanonicalDocument\(/);
     });
 
     // layoutElements 가 allElements.filter 로 frame mirror binding 매칭 추출됨을 확증.
@@ -181,7 +179,6 @@ describe("P3-D-4: usePageManager.initializeProject canonical 전환 (RED phase)"
       expect(source).toContain('from "../../adapters/canonical/frameMirror"');
       expect(source).toContain("getNullablePageFrameBindingId");
       expect(source).toContain("withPageFrameBinding");
-      expect(source).toContain("getReusableFrameMirrorId");
       expect(source).toContain("getFrameElementMirrorId");
     });
   });

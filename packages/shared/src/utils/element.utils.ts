@@ -8,24 +8,24 @@
 
 import type { Element } from "../types/element.types";
 
-const LEGACY_LAYOUT_ID_FIELD = "layout_id" as const;
-const LEGACY_SLOT_NAME_FIELD = "slot_name" as const;
+const FRAME_ELEMENT_MIRROR_FIELD = "layout_id" as const;
+const SLOT_NAME_MIRROR_FIELD = "slot_name" as const;
 
-type LegacyElementFields = {
-  [LEGACY_LAYOUT_ID_FIELD]?: unknown;
-  [LEGACY_SLOT_NAME_FIELD]?: unknown;
+type ElementMirrorFields = {
+  [FRAME_ELEMENT_MIRROR_FIELD]?: unknown;
+  [SLOT_NAME_MIRROR_FIELD]?: unknown;
 };
 
-function getLegacyLayoutId(element: Element): string | null {
-  const value = (element as Element & LegacyElementFields)[
-    LEGACY_LAYOUT_ID_FIELD
+function getFrameElementMirrorId(element: Element): string | null {
+  const value = (element as Element & ElementMirrorFields)[
+    FRAME_ELEMENT_MIRROR_FIELD
   ];
   return typeof value === "string" ? value : null;
 }
 
-function getLegacySlotName(element: Element): string | null {
-  const value = (element as Element & LegacyElementFields)[
-    LEGACY_SLOT_NAME_FIELD
+function getSlotMirrorName(element: Element): string | null {
+  const value = (element as Element & ElementMirrorFields)[
+    SLOT_NAME_MIRROR_FIELD
   ];
   return typeof value === "string" ? value : null;
 }
@@ -176,7 +176,7 @@ export function getLayoutElements(
   layoutId: string,
 ): Element[] {
   return elements.filter(
-    (el) => getLegacyLayoutId(el) === layoutId && !el.deleted,
+    (el) => getFrameElementMirrorId(el) === layoutId && !el.deleted,
   );
 }
 
@@ -190,7 +190,7 @@ export function getElementsBySlot(
   const slotMap = new Map<string, Element[]>();
 
   for (const element of elements) {
-    const slotName = getLegacySlotName(element);
+    const slotName = getSlotMirrorName(element);
     if (element.page_id === pageId && slotName) {
       const slotElements = slotMap.get(slotName) || [];
       slotElements.push(element);

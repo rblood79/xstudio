@@ -8,11 +8,10 @@ import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
-import { selectCanonicalDocument } from "../elements";
-import { useLayoutsStore } from "../layouts";
 import { normalizeElementTagInElement } from "./elementTagNormalizer";
 import { applyFactoryPropagation } from "../../utils/propagationEngine";
 import type { CompositionDocument, FrameNode } from "@composition/shared";
+import { getActiveCanonicalDocument } from "@/builder/stores/canonical/canonicalElementsBridge";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -96,15 +95,10 @@ export const createAddElementAction =
     // ADR-903 P3-D-2: canonical parent context 기반 분기
     // - 히스토리 조건: parent 가 page context 또는 reusable frame context 면 기록
     // - reorder 분기: page context → currentPageId 기반 / reusable → frame.id 기반
-    const elementsStateForCanonical = get();
-    const { pages } = elementsStateForCanonical;
-    const { layouts } = useLayoutsStore.getState();
-    const doc = selectCanonicalDocument(
-      elementsStateForCanonical,
-      pages,
-      layouts,
-    );
-    const parentFrame = findCanonicalParentFrame(doc, elementToAdd.parent_id);
+    const doc = getActiveCanonicalDocument();
+    const parentFrame = doc
+      ? findCanonicalParentFrame(doc, elementToAdd.parent_id)
+      : undefined;
     const isPageContext = isPageContextFrame(parentFrame);
     const isReusableContext = isReusableContextFrame(parentFrame);
 
@@ -211,15 +205,10 @@ export const createAddComplexElementAction =
     const allElements = [parentToAdd, ...normalizedChildren];
 
     // ADR-903 P3-D-2: canonical parent context 기반 히스토리 조건
-    const elementsStateForCanonical = get();
-    const { pages } = elementsStateForCanonical;
-    const { layouts } = useLayoutsStore.getState();
-    const doc = selectCanonicalDocument(
-      elementsStateForCanonical,
-      pages,
-      layouts,
-    );
-    const parentFrame = findCanonicalParentFrame(doc, parentToAdd.parent_id);
+    const doc = getActiveCanonicalDocument();
+    const parentFrame = doc
+      ? findCanonicalParentFrame(doc, parentToAdd.parent_id)
+      : undefined;
     const isPageContext = isPageContextFrame(parentFrame);
     const isReusableContext = isReusableContextFrame(parentFrame);
 

@@ -9,9 +9,8 @@ describe("BuilderCore frame refresh hydration contract", () => {
       "utf-8",
     );
 
-    expect(source).toContain(
-      'import { loadFrameElements } from "@/adapters/canonical/frameElementLoader";',
-    );
+    expect(source).toContain('from "@/adapters/canonical/frameElementLoader";');
+    expect(source).toContain("isFrameElementForFrame");
     expect(source).toMatch(/if \(editMode === "layout"\) \{/);
     expect(source).toMatch(/await fetchLayouts\(projectId\);/);
     expect(source).toMatch(/const activeFrameId = selectedReusableFrameId;/);
@@ -20,6 +19,7 @@ describe("BuilderCore frame refresh hydration contract", () => {
     expect(source).toMatch(/elements: await loadFrameElements\(db, frameId\)/);
     expect(source).not.toContain("currentLayoutId");
     expect(source).not.toContain("getDescendants(currentLayoutId)");
+    expect(source).not.toContain("selectCanonicalDocument");
   });
 
   it("does not replace hydrated frame elements with an empty refresh load", async () => {

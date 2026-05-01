@@ -23,6 +23,7 @@ import type {
   RuntimeApiEndpoint,
   RuntimeVariable,
 } from "../store/types";
+import type { CompositionDocument } from "@composition/shared";
 
 // ============================================
 // Helper: Get Target Origin for postMessage
@@ -52,6 +53,11 @@ export interface UpdateElementsMessage {
     layoutId: string | null;
     reusableFrameId?: string | null;
   };
+}
+
+export interface UpdateCanonicalDocumentMessage {
+  type: "UPDATE_CANONICAL_DOCUMENT";
+  document: CompositionDocument | null;
 }
 
 export interface UpdateElementPropsMessage {
@@ -206,6 +212,7 @@ export type DeltaMessage =
 
 export type BuilderToPreviewMessage =
   | UpdateElementsMessage
+  | UpdateCanonicalDocumentMessage
   | UpdateElementPropsMessage
   | DeleteElementMessage
   | DeleteElementsMessage
@@ -234,6 +241,7 @@ export type BuilderToPreviewMessage =
 type StoreActions = Pick<
   PreviewStoreState,
   | "setElements"
+  | "setCanonicalDocument"
   | "updateElementProps"
   | "setThemeVars"
   | "setDarkMode"
@@ -294,6 +302,10 @@ export class MessageHandler {
     switch (data.type) {
       case "UPDATE_ELEMENTS":
         this.handleUpdateElements(data);
+        break;
+
+      case "UPDATE_CANONICAL_DOCUMENT":
+        this.handleUpdateCanonicalDocument(data);
         break;
 
       case "UPDATE_ELEMENT_PROPS":
@@ -396,6 +408,12 @@ export class MessageHandler {
 
     // ACK 전송
     this.sendToBuilder({ type: "ELEMENTS_UPDATED_ACK" });
+  }
+
+  private handleUpdateCanonicalDocument(
+    data: UpdateCanonicalDocumentMessage,
+  ): void {
+    this.store.setCanonicalDocument(data.document ?? null);
   }
 
   private handleUpdateElementProps(data: UpdateElementPropsMessage): void {

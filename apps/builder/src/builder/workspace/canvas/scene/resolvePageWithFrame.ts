@@ -20,12 +20,9 @@
  */
 
 import type { Element, Page } from "../../../../types/core/store.types";
-import {
-  getElementSlotName,
-  getLegacySlotName,
-} from "../../../../adapters/canonical/legacyElementFields";
 import { isFrameElementForFrame } from "../../../../adapters/canonical/frameElementLoader";
 import { getNullablePageFrameBindingId } from "../../../../adapters/canonical/frameMirror";
+import { getSlotMirrorName } from "../../../../adapters/canonical/slotMirror";
 
 export interface ResolvePageWithFrameInput {
   /** 현재 page (layout_id 가 set 되어 있으면 frame 합성) */
@@ -59,12 +56,12 @@ function isBodyType(type: string): boolean {
 }
 
 function readSlotName(el: Element): string {
-  return getLegacySlotName(el.props) ?? getElementSlotName(el) ?? "content";
+  return getSlotMirrorName(el.props) ?? getSlotMirrorName(el) ?? "content";
 }
 
 function readSlotElementName(slot: Element): string {
   const fromProps = (slot.props as { name?: string } | undefined)?.name;
-  return fromProps ?? getElementSlotName(slot) ?? "content";
+  return fromProps ?? getSlotMirrorName(slot) ?? "content";
 }
 
 function asPageResolvedSlot(slot: Element, parentId: string): Element {

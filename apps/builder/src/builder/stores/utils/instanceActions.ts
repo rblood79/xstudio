@@ -28,22 +28,24 @@ import { requestEditingSemanticsImpactConfirmation } from "../../utils/editingSe
 import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../../adapters/canonical/legacyElementSanitizer";
 import {
-  getInstanceMasterReference,
-  getElementLayoutId,
-  getLegacyDescendants,
-  getLegacyOverrides,
-  isLegacyInstanceElement,
-  isLegacyMasterElement,
-  LEGACY_COMPONENT_ROLE_FIELD,
-  LEGACY_DESCENDANTS_FIELD,
-  LEGACY_MASTER_ID_FIELD,
-  LEGACY_OVERRIDES_FIELD,
-  LEGACY_LAYOUT_ID_FIELD,
-} from "../../../adapters/canonical/legacyElementFields";
+  COMPONENT_DESCENDANTS_MIRROR_FIELD,
+  COMPONENT_MASTER_ID_MIRROR_FIELD,
+  COMPONENT_OVERRIDES_MIRROR_FIELD,
+  COMPONENT_ROLE_MIRROR_FIELD,
+  getComponentDescendantsMirror,
+  getComponentMasterReference,
+  getComponentOverridesMirror,
+  isComponentInstanceMirrorElement,
+  isComponentOriginMirrorElement,
+} from "../../../adapters/canonical/componentSemanticsMirror";
+import {
+  getFrameElementMirrorId,
+  withFrameElementMirrorId,
+} from "../../../adapters/canonical/frameMirror";
 
 type CanonicalElementFields = {
   children?: unknown;
-  [LEGACY_DESCENDANTS_FIELD]?: Record<string, unknown>;
+  [COMPONENT_DESCENDANTS_MIRROR_FIELD]?: Record<string, unknown>;
   metadata?: { type?: string; legacyProps?: unknown; [key: string]: unknown };
   ref?: unknown;
 };
@@ -179,7 +181,7 @@ function propsFromCanonicalOverride(
 
   const {
     children: _children,
-    [LEGACY_DESCENDANTS_FIELD]: _legacyOverrideMap,
+    [COMPONENT_DESCENDANTS_MIRROR_FIELD]: _legacyOverrideMap,
     id: _id,
     metadata: _metadata,
     name: _name,
@@ -194,7 +196,7 @@ function propsFromCanonicalOverride(
 function stripCanonicalRuntimeFields(element: Element): Element {
   const clone = { ...element } as Element & CanonicalElementFields;
   delete clone.children;
-  delete clone[LEGACY_DESCENDANTS_FIELD];
+  delete clone[COMPONENT_DESCENDANTS_MIRROR_FIELD];
   delete clone.metadata;
   delete clone.ref;
   return clone;
@@ -234,10 +236,10 @@ function createMaterializedElementFromOverride(
     order_num: orderNum,
     props: propsFromCanonicalOverride(override),
     reusable: undefined,
-    [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
-    [LEGACY_MASTER_ID_FIELD]: undefined,
-    [LEGACY_OVERRIDES_FIELD]: undefined,
-    [LEGACY_DESCENDANTS_FIELD]: undefined,
+    [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+    [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+    [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
+    [COMPONENT_DESCENDANTS_MIRROR_FIELD]: undefined,
     componentName:
       typeof override.name === "string"
         ? override.name
@@ -273,7 +275,7 @@ function buildCanonicalDetachSnapshot(
     return null;
   }
 
-  const legacyDescendantMap = getLegacyDescendants(refElement);
+  const legacyDescendantMap = getComponentDescendantsMirror(refElement);
   const pageId = refElement.page_id ?? master.page_id ?? null;
   const createdChildren: Element[] = [];
 
@@ -352,8 +354,8 @@ function buildCanonicalDetachSnapshot(
       ? getRootOverrideProps(source)
       : {};
     const childDescendants = nestedMaster
-      ? getLegacyDescendants(source)
-      : activeDescendants;
+      ? getComponentDescendantsMirror(source)
+      : activeLegacyDescendantMap;
     const replacementId =
       hasReplacement && typeof override?.id === "string"
         ? override.id
@@ -386,10 +388,10 @@ function buildCanonicalDetachSnapshot(
             order_num: orderNum,
             props: mergedProps,
             reusable: undefined,
-            [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
-            [LEGACY_MASTER_ID_FIELD]: undefined,
-            [LEGACY_OVERRIDES_FIELD]: undefined,
-            [LEGACY_DESCENDANTS_FIELD]: undefined,
+            [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+            [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+            [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
+            [COMPONENT_DESCENDANTS_MIRROR_FIELD]: undefined,
           },
     );
 
@@ -429,23 +431,25 @@ function buildCanonicalDetachSnapshot(
     getLegacyProps(master),
     getRootOverrideProps(refElement),
   );
-  const detachedRoot: Element = stripCanonicalRuntimeFields({
-    ...master,
-    ...refElement,
-    id: refElement.id,
-    type: master.type,
-    parent_id: refElement.parent_id ?? null,
-    page_id: refElement.page_id ?? master.page_id ?? null,
-    [LEGACY_LAYOUT_ID_FIELD]: getElementLayoutId(refElement),
-    order_num: refElement.order_num,
-    props: rootProps,
-    reusable: undefined,
-    [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
-    [LEGACY_MASTER_ID_FIELD]: undefined,
-    [LEGACY_OVERRIDES_FIELD]: undefined,
-    [LEGACY_DESCENDANTS_FIELD]: undefined,
-    componentName: refElement.componentName ?? master.componentName,
-  });
+  const detachedRoot: Element = withFrameElementMirrorId(
+    stripCanonicalRuntimeFields({
+      ...master,
+      ...refElement,
+      id: refElement.id,
+      type: master.type,
+      parent_id: refElement.parent_id ?? null,
+      page_id: refElement.page_id ?? master.page_id ?? null,
+      order_num: refElement.order_num,
+      props: rootProps,
+      reusable: undefined,
+      [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+      [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
+      [COMPONENT_DESCENDANTS_MIRROR_FIELD]: undefined,
+      componentName: refElement.componentName ?? master.componentName,
+    }),
+    getFrameElementMirrorId(refElement),
+  );
   const previousState = { ...refElement };
 
   getSortedChildren(state, master.id).forEach((child, index) => {
@@ -470,9 +474,9 @@ function buildLegacyDetachSnapshot(
   instanceId: string,
 ): { elements: Element[]; previousElements: Element[] } | null {
   const instance = state.elementsMap.get(instanceId);
-  if (!instance || !isLegacyInstanceElement(instance)) return null;
+  if (!instance || !isComponentInstanceMirrorElement(instance)) return null;
 
-  const masterRef = getInstanceMasterReference(instance);
+  const masterRef = getComponentMasterReference(instance);
   const master = masterRef ? state.elementsMap.get(masterRef) : undefined;
 
   let mergedProps: Record<string, unknown>;
@@ -482,7 +486,7 @@ function buildLegacyDetachSnapshot(
   } else {
     mergedProps = {
       ...instance.props,
-      ...(getLegacyOverrides(instance) ?? {}),
+      ...(getComponentOverridesMirror(instance) ?? {}),
     };
   }
 
@@ -491,10 +495,10 @@ function buildLegacyDetachSnapshot(
       {
         ...instance,
         props: mergedProps,
-        [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
-        [LEGACY_MASTER_ID_FIELD]: undefined,
-        [LEGACY_OVERRIDES_FIELD]: undefined,
-        [LEGACY_DESCENDANTS_FIELD]: undefined,
+        [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
+        [COMPONENT_MASTER_ID_MIRROR_FIELD]: undefined,
+        [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
+        [COMPONENT_DESCENDANTS_MIRROR_FIELD]: undefined,
       },
     ],
     previousElements: [{ ...instance }],
@@ -622,7 +626,7 @@ export function createInstance(
 ): Element | null {
   const state = get();
   const master = state.elementsMap.get(masterRefId);
-  if (!master || !isLegacyMasterElement(master)) {
+  if (!master || !isComponentOriginMirrorElement(master)) {
     console.warn("[Instance] master not found or not a master:", masterRefId);
     return null;
   }
@@ -645,9 +649,9 @@ export function createInstance(
     parent_id: parentId,
     page_id: pageId,
     order_num: maxOrder + 1,
-    [LEGACY_COMPONENT_ROLE_FIELD]: "instance",
-    [LEGACY_MASTER_ID_FIELD]: masterRefId,
-    [LEGACY_OVERRIDES_FIELD]: undefined,
+    [COMPONENT_ROLE_MIRROR_FIELD]: "instance",
+    [COMPONENT_MASTER_ID_MIRROR_FIELD]: masterRefId,
+    [COMPONENT_OVERRIDES_MIRROR_FIELD]: undefined,
     componentName: master.componentName,
   };
 
@@ -784,7 +788,7 @@ export async function toggleComponentOrigin(
 
   const nextOrigin: Element = {
     ...latestElement,
-    [LEGACY_COMPONENT_ROLE_FIELD]: undefined,
+    [COMPONENT_ROLE_MIRROR_FIELD]: undefined,
     reusable: false,
   };
   const usedIds = new Set(latestState.elements.map((current) => current.id));
@@ -837,7 +841,7 @@ export function resetInstanceOverrideField(
   let nextElement: Element | null = null;
 
   if (descendantPath && instance.type === "ref") {
-    const legacyDescendantMap = getLegacyDescendants(instance);
+    const legacyDescendantMap = getComponentDescendantsMirror(instance);
     const targetOverride = legacyDescendantMap?.[descendantPath];
     if (!isRecord(legacyDescendantMap) || !isRecord(targetOverride))
       return null;
@@ -857,15 +861,15 @@ export function resetInstanceOverrideField(
 
     nextElement = {
       ...instance,
-      [LEGACY_DESCENDANTS_FIELD]: nextLegacyDescendantMap,
+      [COMPONENT_DESCENDANTS_MIRROR_FIELD]: nextLegacyDescendantMap,
     } as Element;
-  } else if (isLegacyInstanceElement(instance)) {
-    const legacyPropsPatch = getLegacyOverrides(instance) ?? {};
+  } else if (isComponentInstanceMirrorElement(instance)) {
+    const legacyPropsPatch = getComponentOverridesMirror(instance) ?? {};
     const nextLegacyPropsPatch = removeRecordKey(legacyPropsPatch, fieldKey);
     if (!nextLegacyPropsPatch) return null;
     nextElement = {
       ...instance,
-      [LEGACY_OVERRIDES_FIELD]: nextLegacyPropsPatch,
+      [COMPONENT_OVERRIDES_MIRROR_FIELD]: nextLegacyPropsPatch,
     };
   } else if (instance.type === "ref") {
     const canonical = asCanonicalElement(instance);

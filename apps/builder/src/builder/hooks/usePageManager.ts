@@ -5,14 +5,11 @@ import { type Page as ApiPage } from "../../services/api/PagesApiService";
 import { type Page, getDefaultProps } from "../../types/builder/unified.types";
 import { getDB } from "../../lib/db";
 import { useStore } from "../stores";
-import { selectCanonicalDocument } from "../stores/elements";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
-import { selectCanonicalReusableFrames } from "../../adapters/canonical";
 import {
   getFrameElementMirrorId,
   getNullablePageFrameBindingId,
-  getReusableFrameMirrorId,
   withPageFrameBinding,
 } from "../../adapters/canonical/frameMirror";
 import { useLayoutsStore } from "../stores/layouts";
@@ -554,31 +551,15 @@ export const usePageManager = ({
           (el) => el.page_id && pageIdSet.has(el.page_id),
         );
 
-        // ADR-903 P3-D-4 Phase C: canonical reusable FrameNode 기반 layout elements 추출.
+        // ADR-916 projection 제거: reusable frame ids 는 project layouts snapshot 을
+        // 직접 사용하고, legacy snapshot → canonical document rebuild 를 수행하지 않는다.
         // db.elements.getByLayout 호출 없이 이미 로드된 allElements 를 layout binding 으로 필터링.
-        //
-        // 새로고침 직후에는 layouts store 와 elementsMap 이 아직 hydrate 전 상태일 수 있다.
-        // 이때 page layout binding 은 살아 있어 PageLayoutSelector 는 선택값을 표시하지만,
-        // frame body/slot elements 가 store 에 병합되지 않아 page-frame 합성이 실패한다.
-        // initializeProject 의 DB snapshot(allElements + project layouts)을 canonical input 으로
-        // 사용해 첫 hydrate 시점부터 적용 frame descendants 를 포함한다.
         const canonicalLayouts = await getProjectLayoutsForCanonical(
           db,
           projectId,
         );
-        const canonicalState = {
-          ...useStore.getState(),
-          elements: allElements,
-          elementsMap: new Map(allElements.map((el) => [el.id, el])),
-        };
-        const canonicalDoc = selectCanonicalDocument(
-          canonicalState,
-          storePages,
-          canonicalLayouts,
-        );
-        const reusableFrames = selectCanonicalReusableFrames(canonicalDoc);
         const layoutIdSet = new Set(
-          reusableFrames.map(getReusableFrameMirrorId),
+          canonicalLayouts.map((layout) => layout.id),
         );
         const layoutElements = allElements.filter((el) => {
           const elementLayoutId = getFrameElementMirrorId(el);

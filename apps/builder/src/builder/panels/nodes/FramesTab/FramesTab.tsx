@@ -29,7 +29,7 @@ import {
 } from "../../../stores/utils/frameActions";
 import { useEditModeStore } from "../../../stores/editMode";
 import { useStore } from "../../../stores";
-import { selectCanonicalDocument } from "../../../stores/elements";
+import { useActiveCanonicalDocument } from "../../../stores/canonical/canonicalElementsBridge";
 // ADR-916 Phase 3 G4 — mutation reverse wrapper (D18=A 정합)
 import { mergeElementsCanonicalPrimary } from "../../../../adapters/canonical/canonicalMutations";
 import {
@@ -81,21 +81,20 @@ export function FramesTab({
 
   // ADR-040: elementsMap O(1) 조회
   const elementsMap = useStore((state) => state.elementsMap);
-  const pages = useStore((state) => state.pages);
   const removeElement = useStore((state) => state.removeElement);
+  const activeCanonicalDocument = useActiveCanonicalDocument();
 
-  // ADR-911 direct cutover: selectCanonicalDocument 의 reusable FrameNode 를
-  // 단일 read path 로 사용한다. selector cache 함정 회피를 위해 useMemo 안에서
-  // useStore.getState() 를 호출한다.
+  // ADR-916 projection 제거: active canonical document 의 reusable FrameNode 를
+  // 단일 read path 로 사용한다.
   // id 정규화: canonical FrameNode.id 는 "layout-<legacyId>" 접두사 → metadata.layoutId
-  // (legacyToCanonical adapter 가 보존) 우선 사용. legacy CRUD 와 id 정합 유지.
+  // 우선 사용. legacy CRUD 와 id 정합 유지.
   const reusableFrames = useMemo<
     ReadonlyArray<{ id: string; name: string }>
   >(() => {
-    void elementsMap;
-    const state = useStore.getState();
-    const doc = selectCanonicalDocument(state, pages, layouts);
-    return doc.children
+    if (!activeCanonicalDocument) {
+      return layouts.map((layout) => ({ id: layout.id, name: layout.name }));
+    }
+    return activeCanonicalDocument.children
       .filter(
         (n): n is FrameNode =>
           n.type === "frame" && (n as FrameNode).reusable === true,
@@ -108,8 +107,7 @@ export function FramesTab({
           name: f.name ?? "",
         };
       });
-    // elementsMap 변경 시 canonical projection 도 갱신 (selectCanonicalDocument 가 elements 소비)
-  }, [layouts, pages, elementsMap]);
+  }, [activeCanonicalDocument, layouts]);
 
   // selectedReusableFrameId 기반 현재 프레임 조회
   const currentFrame = useMemo(() => {

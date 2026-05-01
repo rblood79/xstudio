@@ -3,15 +3,22 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 describe("projectSync page layout_id contract", () => {
-  it("preserves page layout_id on cloud upload and download", async () => {
+  it("preserves page frame binding through the frameMirror adapter", async () => {
     const source = await readFile(
       resolve(__dirname, "projectSync.ts"),
       "utf-8",
     );
 
-    const layoutIdMappings =
-      source.match(/layout_id:\s*page\.layout_id \?\? null/g) ?? [];
+    expect(source).toContain("withPageFrameBinding(");
+    expect(source).toContain("getNullablePageFrameBindingId(page)");
+    expect(source).not.toContain("withLegacyLayoutId");
+    expect(source).not.toContain("getLegacyLayoutId");
 
-    expect(layoutIdMappings).toHaveLength(2);
+    const pageFrameBindings = source.match(/withPageFrameBinding\(/g) ?? [];
+    const pageFrameReads =
+      source.match(/getNullablePageFrameBindingId\(page\)/g) ?? [];
+
+    expect(pageFrameBindings).toHaveLength(2);
+    expect(pageFrameReads).toHaveLength(2);
   });
 });

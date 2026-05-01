@@ -7,9 +7,9 @@
 
 import type { SlotProps } from "../../types/builder/layout.types";
 import {
-  LEGACY_LAYOUT_ID_FIELD,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  FRAME_ELEMENT_MIRROR_ID_FIELD,
+  withFrameElementMirrorId,
+} from "../../adapters/canonical/frameMirror";
 
 /**
  * Layout 템플릿 요소 정의
@@ -623,7 +623,7 @@ export function createElementsFromTemplate(
     style?: React.CSSProperties;
     parent_id: string | null;
     order_num: number;
-  } & Record<typeof LEGACY_LAYOUT_ID_FIELD, string>
+  } & Record<typeof FRAME_ELEMENT_MIRROR_ID_FIELD, string>
 > {
   type LegacyTemplateElement = {
     id: string;
@@ -632,7 +632,7 @@ export function createElementsFromTemplate(
     style?: React.CSSProperties;
     parent_id: string | null;
     order_num: number;
-  } & Record<typeof LEGACY_LAYOUT_ID_FIELD, string>;
+  } & Record<typeof FRAME_ELEMENT_MIRROR_ID_FIELD, string>;
 
   const elements: LegacyTemplateElement[] = [];
 
@@ -643,7 +643,7 @@ export function createElementsFromTemplate(
   ): string {
     const id = generateId();
     elements.push(
-      withLegacyLayoutId(
+      withFrameElementMirrorId(
         {
           id,
           type: templateEl.type,

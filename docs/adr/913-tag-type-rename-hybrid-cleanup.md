@@ -42,13 +42,16 @@ In Progress — 2026-05-02 (Phase 4 direct cutover 완료, 잔여는 Phase 5 hyb
   - IDB read-through helper `normalizeLegacyElement` 를 제거했다. 기존 tag-only row 는 보존 대상이 아니며, 현행 runtime/persistence format 은 `Element.type` 단일 기준이다.
   - Phase 4 Step 4-4/4-5/4-6 은 별도 migration 단계가 아니라 direct cutover 로 종결한다.
 - **2026-05-02 — Phase 5-A/C/D runtime access sweep**:
-  - `slot_name` sweep: non-adapter / non-test / non-type runtime code 의 직접 field access 0건. page/frame slot fill 경로는 `getLegacySlotName()` / `getElementSlotName()` helper 로 이미 격리되어 있다.
-  - `componentRole` / `masterId` / `overrides` sweep: non-adapter runtime direct access 0건. `elementIndexer`, Skia `StoreRenderBridge`, `useResolvedElement` 는 `isMasterElement()` / `isInstanceElement()` / `getInstanceMasterRef()` helper 또는 canonical resolver param 을 사용한다.
+  - `slot_name` sweep: non-adapter / non-test / non-type runtime code 의 직접 field access 0건. page/frame slot fill 경로는 `slotMirror` adapter 로 격리되어 있다.
+  - `componentRole` / `masterId` / `overrides` sweep: non-adapter runtime direct access 0건. `elementIndexer`, Skia `StoreRenderBridge`, `useResolvedElement` 는 `isMasterElement()` / `isInstanceElement()` / `getInstanceMasterRef()` helper 또는 canonical resolver param 을 사용하고, properties/fixture/store bridge/instance action 신규 경로는 `componentSemanticsMirror` adapter 로 격리되어 있다.
   - 검증: `g5LegacyFieldGrepGate.test.ts` 1 file / 3 tests PASS. 잔여 Phase 5 는 type schema/comment/test fixture 정리와 `descendants` schema sweep 이다.
 - **2026-05-02 — Phase 5-E `descendants` runtime schema sweep**:
   - `descendants` 는 canonical `RefNode.descendants` 필드로 합법 잔존하므로 raw grep 0이 목표가 아니다. 새 `adr913DescendantsGrepGate.test.ts` 가 non-adapter runtime 접근을 canonical resolver (`resolvers/canonical/index.ts`), canonical store (`canonicalDocumentStore.ts`), shared type validator (`composition-vocabulary.ts`) allowlist 로 제한한다.
   - legacy `Element.descendants` 직접 access 는 adapter boundary 밖 runtime code 에서 0건으로 고정했다. comment/type schema/test fixture 는 별도 cleanup 대상으로만 남긴다.
   - 검증: `adr913DescendantsGrepGate.test.ts` 1 file / 1 test PASS.
+- **2026-05-02 — Phase 5 shared schema/helper naming cleanup**:
+  - `packages/shared` 의 project export schema 와 element utility 내부 `LEGACY_*` / `getLegacy*` 명칭을 mirror terminology 로 전환했다. 현재 `layout_id` / `slot_name` field 는 export schema mirror boundary 로만 유지한다.
+  - 검증: `pnpm run codex:preflight` PASS.
 - **잔여 Phase**:
   - ~~Phase 3 (Manual review)~~ — **종결 (2026-04-27)**
   - ~~Phase 4 (DB schema migration DB_VERSION 8→9)~~ — **direct cutover 로 종결 (2026-05-02)**. Step 4-4 write-through / 4-5 normalize helper / 4-6 validation 은 별도 migration 없이 제거 완료.

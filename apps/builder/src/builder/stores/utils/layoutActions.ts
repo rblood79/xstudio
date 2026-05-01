@@ -18,7 +18,6 @@ import type {
   LayoutsStoreActions,
 } from "../../../types/builder/layout.types";
 import type { Element } from "../../../types/builder/unified.types";
-import { selectCanonicalDocument } from "../elements";
 import { getLiveElementsState } from "../rootStoreAccess";
 import { mergeElementsCanonicalPrimary } from "../../../adapters/canonical/canonicalMutations";
 import {
@@ -28,6 +27,7 @@ import {
   getPageIdsUsingFrameMirror,
 } from "../../../adapters/canonical/frameLayoutCascade";
 import type { FrameNode } from "@composition/shared";
+import { getActiveCanonicalDocument } from "../canonical/canonicalElementsBridge";
 
 // Type aliases for set/get
 type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
@@ -419,10 +419,11 @@ export const createGetLayoutByIdAction =
 export const createGetLayoutSlotsAction =
   (get: GetState, _getElements: () => Element[]) =>
   (layoutId: string): SlotInfo[] => {
-    const elementsState = getLiveElementsState();
-    const { pages } = elementsState;
-    const { layouts } = get();
-    const doc = selectCanonicalDocument(elementsState, pages, layouts);
+    void get;
+    const doc = getActiveCanonicalDocument();
+    if (!doc) {
+      return [];
+    }
 
     const frame = doc.children.find(
       (n): n is FrameNode =>

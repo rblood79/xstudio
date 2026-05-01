@@ -49,10 +49,10 @@ import {
 } from "@/builder/hooks";
 import { useStore } from "../../stores";
 import {
-  getLegacySlotName,
-  LEGACY_SLOT_NAME_FIELD,
-  withLegacySlotName,
-} from "../../../adapters/canonical/legacyElementFields";
+  getSlotMirrorName,
+  SLOT_NAME_MIRROR_FIELD,
+  withSlotMirrorName,
+} from "../../../adapters/canonical/slotMirror";
 import { getFrameElementMirrorId } from "../../../adapters/canonical/frameMirror";
 import { getPropagationRules } from "../../utils/propagationRegistry";
 import { buildPropagationUpdates } from "../../utils/propagationEngine";
@@ -1557,11 +1557,11 @@ function PropertiesPanelContent() {
         {/* ⭐ Layout/Slot System: Element가 들어갈 Slot 선택 */}
         <ElementSlotSelector
           elementId={selectedElement.id}
-          currentSlotName={getLegacySlotName(selectedElement.properties)}
+          currentSlotName={getSlotMirrorName(selectedElement.properties)}
           onSlotChange={(slotName) => {
             const state = useStore.getState();
             const element = state.elementsMap.get(selectedElement.id);
-            const props = withLegacySlotName(
+            const props = withSlotMirrorName(
               (element?.props ?? selectedElement.properties) as Record<
                 string,
                 unknown
@@ -1570,7 +1570,7 @@ function PropertiesPanelContent() {
             );
             void state.updateElement(selectedElement.id, {
               props: props as Element["props"],
-              [LEGACY_SLOT_NAME_FIELD]: slotName,
+              [SLOT_NAME_MIRROR_FIELD]: slotName,
             });
           }}
         />

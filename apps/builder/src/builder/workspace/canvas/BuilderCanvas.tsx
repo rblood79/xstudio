@@ -26,7 +26,7 @@ import { useStore } from "../../stores";
 import type { PageLayoutDirection } from "../../stores/canvasSettings";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
-import { selectCanonicalDocument } from "../../stores/elements";
+import { useActiveCanonicalDocument } from "../../stores/canonical/canonicalElementsBridge";
 import { requestEditingSemanticsDetachConfirmation } from "../../utils/editingSemanticsImpactConfirmation";
 import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
@@ -226,6 +226,7 @@ export function BuilderCanvas({
   const childrenMap = useStore((state) => state.childrenMap);
   const dirtyElementIds = useStore((state) => state.dirtyElementIds);
   const layouts = useLayoutsStore((state) => state.layouts);
+  const activeCanonicalDocument = useActiveCanonicalDocument();
   // Frames tab overview: canvas 는 reusable frame 전체를 표시하고, 이 값은
   // Node tree/properties 의 현재 frame 선택 동기화에 사용한다.
   const selectedReusableFrameId = useLayoutsStore(
@@ -407,47 +408,40 @@ export function BuilderCanvas({
     );
   }, [elements]);
   const layoutGroups = useMemo(() => {
-    // ADR-903 P3-D-5 step 5b: doc 생성 + computeLayoutGroups 에 전달.
-    // computeLayoutGroups 가 elements 무관 (page-layout 매핑만) 이므로
-    // useStore.getState() snapshot 사용 안전 (reactive 불필요).
-    const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
-    return computeLayoutGroups(pages, layouts, doc);
-  }, [pages, layouts]);
+    return computeLayoutGroups(pages, layouts, activeCanonicalDocument);
+  }, [activeCanonicalDocument, pages, layouts]);
 
   // ADR-911 P3-δ (B): canonical reusable frame 별 캔버스 영역 그룹.
-  // selector cache 함정 회피 — useMemo 안에서 useStore.getState() 호출.
-  // deps 에 elementsMap 포함 (selectCanonicalDocument 가 elements 소비).
   const frameAreas = useMemo(() => {
     if (!isFrameEditMode) return [];
     const anchorPageId = currentPageId ?? pages[0]?.id ?? null;
     const anchorPosition = anchorPageId
       ? pagePositions[anchorPageId]
       : undefined;
-    const doc = selectCanonicalDocument(useStore.getState(), pages, layouts);
-    return computeFrameAreas(doc, framePositions, selectedReusableFrameId).map(
-      (area, index) => {
-        const stackedPosition = computeStackedCanvasPosition(
-          index,
-          pageWidth,
-          pageHeight,
-          PAGE_STACK_GAP,
-          pageLayoutDirection,
-        );
-        return {
-          ...area,
-          x: (anchorPosition?.x ?? 0) + stackedPosition.x,
-          y: (anchorPosition?.y ?? 0) + stackedPosition.y,
-          width: pageWidth,
-          height: pageHeight,
-        };
-      },
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return computeFrameAreas(
+      activeCanonicalDocument,
+      framePositions,
+      selectedReusableFrameId,
+    ).map((area, index) => {
+      const stackedPosition = computeStackedCanvasPosition(
+        index,
+        pageWidth,
+        pageHeight,
+        PAGE_STACK_GAP,
+        pageLayoutDirection,
+      );
+      return {
+        ...area,
+        x: (anchorPosition?.x ?? 0) + stackedPosition.x,
+        y: (anchorPosition?.y ?? 0) + stackedPosition.y,
+        width: pageWidth,
+        height: pageHeight,
+      };
+    });
   }, [
+    activeCanonicalDocument,
     currentPageId,
     pages,
-    layouts,
-    elementsMap,
     framePositions,
     framePositionsVersion,
     isFrameEditMode,

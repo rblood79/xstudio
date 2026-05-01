@@ -24,6 +24,13 @@ import {
 } from "../layoutActions";
 import type { Element, Page } from "../../../../types/builder/unified.types";
 import type { Layout } from "../../../../types/builder/layout.types";
+import type { CompositionDocument } from "@composition/shared";
+
+const mockGetActiveCanonicalDocument = vi.hoisted(() => vi.fn());
+
+vi.mock("@/builder/stores/canonical/canonicalElementsBridge", () => ({
+  getActiveCanonicalDocument: () => mockGetActiveCanonicalDocument(),
+}));
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -67,6 +74,26 @@ function makePage(id: string, opts: Partial<Page> = {}): Page {
     updated_at: new Date().toISOString(),
     ...opts,
   };
+}
+
+function makeFrameDoc(
+  layoutId: string,
+  slot: string[] | false = [],
+): CompositionDocument {
+  return {
+    version: "composition-1.0",
+    children: [
+      {
+        id: `layout-${layoutId}`,
+        type: "frame",
+        reusable: true,
+        name: layoutId,
+        slot,
+        metadata: { layoutId },
+        children: [],
+      },
+    ],
+  } as CompositionDocument;
 }
 
 async function mockElementsState(elements: Element[] = [], pages: Page[] = []) {
@@ -236,6 +263,7 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
   beforeEach(async () => {
     vi.clearAllMocks();
     await mockElementsState();
+    mockGetActiveCanonicalDocument.mockReturnValue(null);
   });
 
   it("FrameNode.slot 배열에서 SlotInfo 목록을 올바르게 추출한다", async () => {
@@ -260,6 +288,9 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
       props: { name: "footer" },
     });
     await mockElementsState([body, header, content, footer]);
+    mockGetActiveCanonicalDocument.mockReturnValue(
+      makeFrameDoc(layoutId, ["header", "content", "footer"]),
+    );
 
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
@@ -277,6 +308,9 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
 
   it("FrameNode.slot === false 이면 빈 배열을 반환한다", () => {
     const layoutId = "layout-2";
+    mockGetActiveCanonicalDocument.mockReturnValue(
+      makeFrameDoc(layoutId, false),
+    );
 
     const mockGet = vi.fn(() => ({
       layouts: [makeLayout(layoutId)],
@@ -292,6 +326,10 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
 
   it("canonical document 에 해당 frame 이 없으면 빈 배열을 반환한다", () => {
     const layoutId = "layout-absent";
+    mockGetActiveCanonicalDocument.mockReturnValue({
+      version: "composition-1.0",
+      children: [],
+    } satisfies CompositionDocument);
 
     const mockGet = vi.fn(() => ({
       layouts: [],
@@ -314,6 +352,9 @@ describe("P3-D-3: createGetLayoutSlotsAction (canonical document 기반)", () =>
       props: { name: "main" },
     });
     await mockElementsState([body, mainSlot]);
+    mockGetActiveCanonicalDocument.mockReturnValue(
+      makeFrameDoc(layoutId, ["main"]),
+    );
 
     // selectedReusableFrameId 가 다른 frame 을 가리키는 경우
     const mockGet = vi.fn(() => ({
@@ -339,6 +380,10 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
 
   it("canonical document 에 없는 layout 삭제 시 elements 는 제거하지 않고 page ref 는 해제한다", async () => {
     const layoutId = "layout-del-1";
+    vi.mocked(elementsStoreModule.selectCanonicalDocument).mockReturnValue({
+      version: "composition-1.0",
+      children: [],
+    } satisfies CompositionDocument);
 
     const removeElements = vi.fn(async () => {});
     const setPages = vi.fn();
@@ -391,6 +436,12 @@ describe("P3-D-3: createDeleteLayoutAction cascade (canonical document 기반)",
 
   it("canonical document mirror 로 frame subtree 를 제거하고 DB mirror 를 삭제한다", async () => {
     const layoutId = "layout-del-2";
+    vi.mocked(elementsStoreModule.selectCanonicalDocument)
+      .mockReturnValueOnce(makeFrameDoc(layoutId))
+      .mockReturnValueOnce({
+        version: "composition-1.0",
+        children: [],
+      } satisfies CompositionDocument);
 
     const layoutEl1 = makeElement("el-1", "body", { layout_id: layoutId });
     const layoutEl2 = makeElement("el-2", "Slot", { layout_id: layoutId });

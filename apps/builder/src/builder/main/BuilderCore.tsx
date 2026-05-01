@@ -3,13 +3,9 @@ import { useParams } from "react-router-dom";
 import { Key } from "react-aria-components";
 
 import { useStore } from "../stores";
-import { selectCanonicalDocument } from "../stores/elements";
 import { historyManager } from "../stores/history";
 import type { Element } from "../../types/core/store.types";
-import {
-  applyCanonicalThemes,
-  belongsToLegacyLayout,
-} from "@/adapters/canonical";
+import { applyCanonicalThemes } from "@/adapters/canonical";
 
 // 패널 등록 (side effect import - registerAllPanels() 자동 실행)
 import "../panels";
@@ -61,7 +57,10 @@ import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
 import { useDataTableStore } from "../stores/datatable";
 import { useDataStore } from "../stores/data";
-import { loadFrameElements } from "@/adapters/canonical/frameElementLoader";
+import {
+  isFrameElementForFrame,
+  loadFrameElements,
+} from "@/adapters/canonical/frameElementLoader";
 
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
@@ -360,23 +359,17 @@ export const BuilderCore: React.FC = () => {
           );
 
           if (layoutElements.length > 0) {
-            // 기존 요소들과 병합
-            // ADR-903 P3-D-5 step 5e: doc 전달 → belongsToLegacyLayout canonical 활용.
-            // initialize 진입 시 1회 실행 (memoization 불필요).
-            const { elements, pages, setElements } = useStore.getState();
-            const layoutsAfterFetch = useLayoutsStore.getState().layouts;
-            const doc = selectCanonicalDocument(
-              useStore.getState(),
-              pages,
-              layoutsAfterFetch,
-            );
+            // 기존 요소들과 병합.
+            // ADR-916 projection 제거: initialize path 에서 legacy snapshot 을
+            // canonical document 로 재구성하지 않고 frame mirror adapter 로 판정한다.
+            const { elements } = useStore.getState();
             const loadedFrameIds = frameElementsWithData.map(
               (group) => group.frameId,
             );
             const otherElements = elements.filter(
               (el) =>
                 !loadedFrameIds.some((frameId) =>
-                  belongsToLegacyLayout(el, frameId, doc),
+                  isFrameElementForFrame(el, frameId),
                 ),
             );
             const mergedElements = [...otherElements, ...layoutElements];
@@ -401,25 +394,20 @@ export const BuilderCore: React.FC = () => {
 
       // ADR-910 Phase 2 ts-3.1: canonical themes write-through (env flag opt-in)
       // env flag 미설정 시 호출 안 함 — Phase 1 (read-only snapshot) 동작 유지.
-      // 현재 selectCanonicalDocument 는 themes 미주입 → 무동작 (BC).
-      // Phase 4 Step 4-2 이후 DB 직접 로드 시 doc.themes 채워지면 활성화.
+      // ADR-916 projection 제거: active canonical document 만 사용한다.
       if (import.meta.env.VITE_ADR910_P2_THEMES_WRITE_THROUGH === "true") {
         try {
-          const layouts = useLayoutsStore.getState().layouts;
-          const storeState = useStore.getState();
-          const doc = selectCanonicalDocument(
-            storeState,
-            storeState.pages,
-            layouts,
-          );
-          const applied = applyCanonicalThemes(
-            doc,
-            useThemeConfigStore.getState(),
-          );
-          if (applied && import.meta.env.DEV) {
-            console.log(
-              "[ADR-910 P2 ts-3.1] applied canonical themes from document",
+          const doc = getActiveCanonicalDocument();
+          if (doc) {
+            const applied = applyCanonicalThemes(
+              doc,
+              useThemeConfigStore.getState(),
             );
+            if (applied && import.meta.env.DEV) {
+              console.log(
+                "[ADR-910 P2 ts-3.1] applied canonical themes from document",
+              );
+            }
           }
         } catch (err) {
           console.warn("[ADR-910 P2 ts-3.1] applyCanonicalThemes failed:", err);
@@ -575,14 +563,12 @@ export const BuilderCore: React.FC = () => {
         useLayoutsStore.getState().selectedReusableFrameId;
 
       // editMode에 따라 필터링
-      // ADR-903 P3-D-5 step 5e-2: doc 전달 → belongsToLegacyLayout canonical 활용.
+      // ADR-916 projection 제거: publish path 에서 projection rebuild 없이
+      // active canonical document 를 재사용한다.
       let filteredElements = sourceElements;
       if (editMode === "layout" && selectedReusableFrameId) {
-        const layouts = useLayoutsStore.getState().layouts;
-        const state = useStore.getState();
-        const doc = selectCanonicalDocument(state, state.pages, layouts);
         filteredElements = sourceElements.filter((el) =>
-          belongsToLegacyLayout(el, selectedReusableFrameId, doc),
+          isFrameElementForFrame(el, selectedReusableFrameId),
         );
       }
 

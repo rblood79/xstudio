@@ -37,9 +37,10 @@ import type { Layout } from "@/types/builder/layout.types";
 import type { ElementsState } from "@/builder/stores/elements";
 
 import { selectCanonicalDocument } from "@/builder/stores/elements";
-import { getLegacyOverrides } from "@/adapters/canonical/legacyElementFields";
+import { getComponentOverridesMirror } from "@/adapters/canonical/componentSemanticsMirror";
 import { resolveCanonicalDocument } from "./index";
 import { getSharedResolverCache } from "./cache";
+import { extractLegacyPropsFromResolved } from "./extractLegacyProps";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1) Store-snapshot → ResolvedNode[] selector (full tree)
@@ -215,7 +216,7 @@ export function resolveInstanceWithSharedCache(
     ref: master.id,
     metadata: {
       type: "legacy-instance-overrides",
-      legacyProps: getLegacyOverrides(instance) ?? {},
+      legacyProps: getComponentOverridesMirror(instance) ?? {},
     },
   };
 

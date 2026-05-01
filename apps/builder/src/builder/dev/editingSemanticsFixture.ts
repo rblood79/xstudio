@@ -1,15 +1,13 @@
 import type { Element, Page } from "../../types/core/store.types";
 import type { ElementsState } from "../stores/elements";
-// ADR-916 Phase 3 G4 — mutation reverse pilot caller (D18=A 정합)
-import { setElementsCanonicalPrimary } from "../../adapters/canonical/canonicalMutations";
 import {
-  LEGACY_COMPONENT_ROLE_FIELD,
-  LEGACY_MASTER_ID_FIELD,
-} from "../../adapters/canonical/legacyElementFields";
+  COMPONENT_MASTER_ID_MIRROR_FIELD,
+  COMPONENT_ROLE_MIRROR_FIELD,
+} from "../../adapters/canonical/componentSemanticsMirror";
 
 type SemanticFixtureElement = Element & {
-  [LEGACY_COMPONENT_ROLE_FIELD]?: "master" | "instance";
-  [LEGACY_MASTER_ID_FIELD]?: string;
+  [COMPONENT_ROLE_MIRROR_FIELD]?: "master" | "instance";
+  [COMPONENT_MASTER_ID_MIRROR_FIELD]?: string;
   reusable?: boolean;
 };
 
@@ -92,8 +90,8 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
   const instanceA: SemanticFixtureElement = {
     id: INSTANCE_ID,
     type: "Button",
-    [LEGACY_COMPONENT_ROLE_FIELD]: "instance",
-    [LEGACY_MASTER_ID_FIELD]: ORIGIN_ID,
+    [COMPONENT_ROLE_MIRROR_FIELD]: "instance",
+    [COMPONENT_MASTER_ID_MIRROR_FIELD]: ORIGIN_ID,
     page_id: PAGE_ID,
     parent_id: BODY_ID,
     order_num: 2,
@@ -181,8 +179,8 @@ export function applyEditingSemanticsFixture(store: ElementsState): void {
   } as SemanticFixtureElement;
 
   store.setPages([page]);
-  // ADR-916 G4 wrapper 경유 — mutation reverse pilot
-  setElementsCanonicalPrimary([
+  // dev-only evidence fixture: keep raw top-level markers such as slot/ref/reusable.
+  store.setElements([
     body,
     origin,
     instanceA,

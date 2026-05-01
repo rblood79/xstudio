@@ -57,7 +57,11 @@ import {
   useCanonicalElements,
   canonicalDocumentToElements,
 } from "../stores/canonical/canonicalElementsView";
-import { getActiveCanonicalDocument } from "../stores/canonical/canonicalElementsBridge";
+import {
+  getActiveCanonicalDocument,
+  useActiveCanonicalDocument,
+} from "../stores/canonical/canonicalElementsBridge";
+import type { CompositionDocument } from "@composition/shared";
 // ADR-006 P2-2: postMessage 보안 검증
 import {
   isValidBootstrapMessage,
@@ -134,6 +138,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   // ADR-916 direct cutover — active canonical document 의 derived Element[] 를
   // publish source 로 사용. 초기 hydration 전에는 legacy elements fallback.
   const canonicalElements = useCanonicalElements();
+  const activeCanonicalDocument = useActiveCanonicalDocument();
   const elements = useMemo(() => {
     if (!canonicalElements) return legacyElements;
     return canonicalElements;
@@ -260,6 +265,28 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     };
     iframe.contentWindow.postMessage(message, window.location.origin);
   }, []); // ✅ 의존성 제거 (Ref 사용)
+
+  const sendCanonicalDocumentToIframe = useCallback(
+    (document: CompositionDocument | null) => {
+      const iframe = MessageService.getIframe();
+      const currentReadyState = iframeReadyStateRef.current;
+      const message = {
+        type: "UPDATE_CANONICAL_DOCUMENT" as const,
+        document,
+      };
+
+      if (currentReadyState !== "ready" || !iframe?.contentWindow) {
+        messageQueueRef.current.push({
+          type: "UPDATE_CANONICAL_DOCUMENT",
+          payload: message,
+        });
+        return;
+      }
+
+      iframe.contentWindow.postMessage(message, window.location.origin);
+    },
+    [],
+  );
 
   // ⭐ Layout/Slot System: Page 정보를 iframe에 전송
   const sendPageInfoToIframe = useCallback(
@@ -558,6 +585,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       } else if (item.type === "UPDATE_PAGE_INFO") {
         // ⭐ Layout/Slot System: Page 정보 전송
         iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+      } else if (item.type === "UPDATE_CANONICAL_DOCUMENT") {
+        iframe.contentWindow!.postMessage(item.payload, window.location.origin);
       } else if (item.type === "UPDATE_LAYOUTS") {
         // ⭐ Nested Routes & Slug System: Layouts 전송
         iframe.contentWindow!.postMessage(item.payload, window.location.origin);
@@ -636,6 +665,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           // ⭐ ADR-903 P2 옵션 C: 초기 pages 전송 (canonical resolver hydration)
           sendPagesToIframe();
 
+          const canonicalDoc = getActiveCanonicalDocument();
+          sendCanonicalDocumentToIframe(canonicalDoc);
+
           // ⭐ DataTables 전송 (PropertyDataBinding용)
           sendDataTablesToIframe();
 
@@ -649,7 +681,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
           // sendInitialData 는 useCallback 안의 closure 라 React state (elements) 가
           // stale 가능. 매 호출 시 active canonical document 를 직접 확인한다.
           let currentElements: Element[];
-          const canonicalDoc = getActiveCanonicalDocument();
           if (canonicalDoc) {
             currentElements = canonicalDocumentToElements(canonicalDoc);
           } else {
@@ -928,6 +959,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
       elementsMap,
       processMessageQueue,
       sendElementsToIframe,
+      sendCanonicalDocumentToIframe,
       sendLayoutsToIframe,
       sendPagesToIframe,
       sendDataTablesToIframe,
@@ -1032,6 +1064,29 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
   ]);
 
   const pendingElementsFrameRef = useRef<number | null>(null);
+  const lastSentCanonicalDocumentRef = useRef<CompositionDocument | null>(null);
+  const pendingCanonicalDocumentFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isWebGLOnly) return;
+
+    if (lastSentCanonicalDocumentRef.current === activeCanonicalDocument) {
+      return;
+    }
+
+    cancelScheduledFrame(pendingCanonicalDocumentFrameRef.current);
+
+    pendingCanonicalDocumentFrameRef.current = scheduleNextFrame(() => {
+      pendingCanonicalDocumentFrameRef.current = null;
+      lastSentCanonicalDocumentRef.current = activeCanonicalDocument;
+      sendCanonicalDocumentToIframe(activeCanonicalDocument);
+    });
+
+    return () => {
+      cancelScheduledFrame(pendingCanonicalDocumentFrameRef.current);
+      pendingCanonicalDocumentFrameRef.current = null;
+    };
+  }, [activeCanonicalDocument, isWebGLOnly, sendCanonicalDocumentToIframe]);
 
   useEffect(() => {
     if (isWebGLOnly) return;

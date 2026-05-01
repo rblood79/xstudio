@@ -20,4 +20,14 @@ describe("PageLayoutSelector frame binding persistence contract", () => {
       /await db\.pages\.update\(pageId,\s*\{\s*layout_id:/,
     );
   });
+
+  it("uses active canonical document without rebuilding projection for frame options", async () => {
+    const source = await readFile(
+      resolve(__dirname, "PageLayoutSelector.tsx"),
+      "utf-8",
+    );
+
+    expect(source).toContain("useActiveCanonicalDocument");
+    expect(source).not.toContain("selectCanonicalDocument");
+  });
 });

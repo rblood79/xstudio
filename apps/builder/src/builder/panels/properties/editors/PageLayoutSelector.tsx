@@ -4,8 +4,7 @@
  * ADR-903 P3-C: page 의 layout 연결 → page 노드의 reusable frame ref 선택 UI.
  * ADR-911 direct cutover: canonical reusable FrameNode read path.
  *
- * - `selectCanonicalDocument` 의 reusable FrameNode 추출
- *   (FramesTab 과 동일한 패턴 — selector cache 함정 회피용 useMemo + getState)
+ * - active canonical document 의 reusable FrameNode 추출
  *
  * id 정규화: canonical FrameNode.id 는 `"layout-<legacyId>"` 접두사 → `metadata.layoutId`
  * 우선 사용. legacy page layout binding 과 정합 유지.
@@ -18,7 +17,7 @@ import { Layout, X } from "lucide-react";
 import { PropertySelect, PropertySection } from "../../../components";
 import { useLayouts, useLayoutsStore } from "../../../stores/layouts";
 import { useStore } from "../../../stores";
-import { selectCanonicalDocument } from "../../../stores/elements";
+import { useActiveCanonicalDocument } from "../../../stores/canonical/canonicalElementsBridge";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 import {
   applyPageFrameBindingCanonicalPrimary,
@@ -34,6 +33,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
   pageId,
 }: PageLayoutSelectorProps) {
   const page = useStore((state) => state.pages.find((p) => p.id === pageId));
+  const activeCanonicalDocument = useActiveCanonicalDocument();
 
   // P3-C: useLayouts() hook (P3-B canonical surface)
   const layouts = useLayouts();
@@ -47,17 +47,18 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     }
   }, [layouts.length, fetchLayouts, page?.project_id]);
 
-  // ADR-911 direct cutover: FramesTab 패턴과 동일한 canonical read path.
-  // selector cache 함정 회피 — useMemo 안에서 useStore.getState() 호출.
-  const elementsMap = useStore((state) => state.elementsMap);
-  const pages = useStore((state) => state.pages);
+  // ADR-916 projection 제거: FramesTab 과 동일하게 active canonical document 를 사용.
   const reusableFrames = useMemo<
     ReadonlyArray<{ id: string; name: string; description?: string }>
   >(() => {
-    void elementsMap;
-    const state = useStore.getState();
-    const doc = selectCanonicalDocument(state, pages, layouts);
-    return doc.children
+    if (!activeCanonicalDocument) {
+      return layouts.map((layout) => ({
+        id: layout.id,
+        name: layout.name,
+        description: layout.description,
+      }));
+    }
+    return activeCanonicalDocument.children
       .filter(
         (n): n is FrameNode =>
           n.type === "frame" && (n as FrameNode).reusable === true,
@@ -72,8 +73,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
           description: meta?.description,
         };
       });
-    // elementsMap 변경 시 canonical projection 도 갱신 (selectCanonicalDocument 가 elements 소비)
-  }, [layouts, pages, elementsMap]);
+  }, [activeCanonicalDocument, layouts]);
 
   const selectedFrameId = getPageFrameBindingId(page);
   const currentLayout = useMemo(

@@ -29,24 +29,16 @@ import type { RuntimeElement } from "./store/types";
 import { EventEngine } from "../utils/events/eventEngine";
 import { camelToKebab } from "./utils/computedStyleExtractor";
 
-// ADR-903 P2 dev-only 비교 로깅 (옵션 B). production 빌드에서는 import.meta.env.DEV
-// 가 false 로 substitute → tree-shake. tree-shake 안 되더라도 bundle 영향 minimal.
-import { legacyToCanonical } from "../adapters/canonical";
-import { convertComponentRole } from "../adapters/canonical/componentRoleAdapter";
-import { convertPageLayout } from "../adapters/canonical/slotAndLayoutAdapter";
 import { resolveCanonicalDocument } from "../resolvers/canonical";
-import type { Element, Page } from "../types/builder/unified.types";
-import type { Layout } from "../types/builder/layout.types";
+import type { Element } from "../types/builder/unified.types";
 
 // ADR-903 P2 옵션 C: canonical renderer feature flag
 // ?canonical=1 URL param 으로 opt-in. 기본 false → legacy 경로 보존 (회귀 0 보장).
 import { CanonicalNodeRenderer } from "./components/CanonicalNodeRenderer";
 import { resolveCanonicalRefTree } from "../builder/utils/canonicalRefResolution";
-import {
-  getLegacySlotName,
-  hasLegacyLayoutId,
-  matchesLegacyLayoutId,
-} from "../adapters/canonical/legacyElementFields";
+import { isFrameElementForFrame } from "../adapters/canonical/frameElementLoader";
+import { hasFrameElementMirrorId } from "../adapters/canonical/frameMirror";
+import { getSlotMirrorName } from "../adapters/canonical/slotMirror";
 
 /**
  * Canonical renderer 경로 활성화 결정.
@@ -113,9 +105,7 @@ function CanvasContent() {
   const setElements = useRuntimeStore((s) => s.setElements);
   const currentLayoutId = useRuntimeStore((s) => s.currentLayoutId);
   const currentPageId = useRuntimeStore((s) => s.currentPageId);
-  // ADR-903 P2 비교 로깅용 (dev-only)
-  const pages = useRuntimeStore((s) => s.pages);
-  const layouts = useRuntimeStore((s) => s.layouts);
+  const canonicalDocument = useRuntimeStore((s) => s.canonicalDocument);
   const navigate = useNavigate();
 
   // ⭐ 모듈 레벨 싱글톤 EventEngine 사용
@@ -142,44 +132,34 @@ function CanvasContent() {
   }, [navigate]);
 
   // ────────────────────────────────────────────────────────────────────────────
-  // ADR-903 P2 dev-only 비교 로깅 (옵션 B)
+  // ADR-916 projection 제거: Builder 가 보낸 canonical document 를 직접 resolve.
   //
-  // production render path 는 변경하지 않는다 — 사용자가 dev console 에서
-  // "[ADR-903 P2]" 로 검색하여 canonical resolver 가 production 데이터에서
-  // throw 없이 동작하는지 + 결과 트리 size 가 합리적인지 확인.
-  //
-  // 본 로깅이 안정적이라고 판단되면 다음 phase (C: feature flag + 새 renderer)
-  // 진입. import.meta.env.DEV 가드로 production bundle 영향 0.
+  // Preview runtime 은 렌더 중 legacy snapshot 을 다시 canonical projection 하지
+  // 않는다. dev 에서는 수신된 document resolve 결과만 로깅한다.
   // ────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    if (elements.length === 0) return;
+    if (!canonicalDocument) return;
 
     try {
-      const doc = legacyToCanonical(
-        {
-          elements: elements as unknown as Element[],
-          pages: pages as unknown as Page[],
-          layouts: layouts as unknown as Layout[],
-        },
-        { convertComponentRole, convertPageLayout },
-      );
-      const resolved = resolveCanonicalDocument(doc);
+      const resolved = resolveCanonicalDocument(canonicalDocument);
 
-      const refCount = doc.children.filter((c) => c.type === "ref").length;
-      const reusableCount = doc.children.filter((c) => c.reusable).length;
+      const refCount = canonicalDocument.children.filter(
+        (c) => c.type === "ref",
+      ).length;
+      const reusableCount = canonicalDocument.children.filter(
+        (c) => c.reusable,
+      ).length;
 
-      console.log("[ADR-903 P2] canonical resolve", {
+      console.log("[ADR-916] preview canonical resolve", {
         input: {
           elements: elements.length,
-          pages: pages.length,
-          layouts: layouts.length,
           currentPageId,
           currentLayoutId,
         },
         document: {
-          version: doc.version,
-          children: doc.children.length,
+          version: canonicalDocument.version,
+          children: canonicalDocument.children.length,
           reusables: reusableCount,
           refs: refCount,
         },
@@ -188,9 +168,9 @@ function CanvasContent() {
         },
       });
     } catch (err) {
-      console.warn("[ADR-903 P2] canonical resolve failed", err);
+      console.warn("[ADR-916] preview canonical resolve failed", err);
     }
-  }, [elements, pages, layouts, currentPageId, currentLayoutId]);
+  }, [canonicalDocument, elements.length, currentPageId, currentLayoutId]);
 
   // ⭐ 이전에 적용된 body 스타일 키들을 추적
   const appliedStyleKeysRef = useRef<Set<string>>(new Set());
@@ -223,7 +203,7 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          matchesLegacyLayoutId(el, currentLayoutId) &&
+          isFrameElementForFrame(el, currentLayoutId) &&
           !el.parent_id,
       );
     } else if (currentLayoutId && !currentPageId) {
@@ -231,13 +211,14 @@ function CanvasContent() {
       bodyElement = elements.find(
         (el) =>
           el.type === "body" &&
-          matchesLegacyLayoutId(el, currentLayoutId) &&
+          isFrameElementForFrame(el, currentLayoutId) &&
           !el.parent_id,
       );
     } else {
       // Page 모드: Page의 body 사용 (Layout 없음)
       bodyElement = elements.find(
-        (el) => el.type === "body" && !el.parent_id && !hasLegacyLayoutId(el),
+        (el) =>
+          el.type === "body" && !el.parent_id && !hasFrameElementMirrorId(el),
       );
     }
 
@@ -704,7 +685,7 @@ function CanvasContent() {
           slotContent = pageElements
             .filter((pe) => {
               if (pe.parent_id !== pageBody.id) return false;
-              const peSlotName = getLegacySlotName(pe.props) || "content";
+              const peSlotName = getSlotMirrorName(pe.props) || "content";
               return peSlotName === slotName;
             })
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -713,7 +694,7 @@ function CanvasContent() {
           slotContent = pageElements
             .filter((pe) => {
               if (pe.type === "body") return false; // body는 제외
-              const peSlotName = getLegacySlotName(pe.props) || "content";
+              const peSlotName = getSlotMirrorName(pe.props) || "content";
               return peSlotName === slotName && !pe.parent_id;
             })
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -825,27 +806,19 @@ function CanvasContent() {
   // ⭐ 실제 <body> 태그를 사용하므로 body element를 div로 렌더링하지 않고 자식만 렌더링
   const renderElementsTree = useCallback(() => {
     // ──────────────────────────────────────────────────────────────────────────
-    // ADR-903 P2 옵션 C: canonical renderer 경로 (?canonical=1)
+    // ADR-916: canonical renderer 경로 (?canonical=1)
     //
     // USE_CANONICAL_RENDER === true 시:
-    //  1. elements + pages + layouts → legacyToCanonical → CompositionDocument
+    //  1. Builder 가 보낸 CompositionDocument 를 직접 사용
     //  2. resolveCanonicalDocument → ResolvedNode[]
     //  3. 현재 page 에 해당하는 노드만 필터링
-    //  4. CanonicalNodeRenderer 로 렌더링 (DOM 마커 dual: canonical-id + legacy-uuid)
+    //  4. CanonicalNodeRenderer 로 렌더링
     //
-    // 기본값 false → legacy hybrid 12 분기 유지 (회귀 0 보장).
+    // document 미수신/resolve 실패 시 아래 legacy element fallback 으로 렌더링.
     // ──────────────────────────────────────────────────────────────────────────
-    if (USE_CANONICAL_RENDER) {
+    if (USE_CANONICAL_RENDER && canonicalDocument) {
       try {
-        const doc = legacyToCanonical(
-          {
-            elements: resolvedElements as unknown as Element[],
-            pages: pages as unknown as Page[],
-            layouts: layouts as unknown as Layout[],
-          },
-          { convertComponentRole, convertPageLayout },
-        );
-        const resolved = resolveCanonicalDocument(doc);
+        const resolved = resolveCanonicalDocument(canonicalDocument);
 
         // 현재 page 에 해당하는 top-level 노드 필터링.
         // page 식별: metadata.type === "page" (P3-1 결정) 또는 "legacy-page" (P1 adapter 결과).
@@ -862,7 +835,7 @@ function CanvasContent() {
         if (pageNodes.length === 0) {
           // canonical 결과 없음 → legacy fallback (안전망)
           console.warn(
-            "[ADR-903 옵션C] canonical 노드 없음 — legacy fallback",
+            "[ADR-916] preview canonical 노드 없음 — legacy fallback",
             { currentPageId, resolvedCount: resolved.length },
           );
         } else {
@@ -881,7 +854,7 @@ function CanvasContent() {
       } catch (err) {
         // canonical 경로 실패 → legacy fallback (안전망)
         console.warn(
-          "[ADR-903 옵션C] canonical render 실패 — legacy fallback",
+          "[ADR-916] preview canonical render 실패 — legacy fallback",
           err,
         );
       }
@@ -891,10 +864,10 @@ function CanvasContent() {
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
     if (currentLayoutId && currentPageId) {
       const layoutElements = resolvedElements.filter((el) =>
-        matchesLegacyLayoutId(el, currentLayoutId),
+        isFrameElementForFrame(el, currentLayoutId),
       );
       const pageElements = resolvedElements.filter(
-        (el) => el.page_id === currentPageId && !hasLegacyLayoutId(el),
+        (el) => el.page_id === currentPageId && !hasFrameElementMirrorId(el),
       );
 
       // Layout의 root element (body) 찾기
@@ -922,7 +895,7 @@ function CanvasContent() {
     // ⭐ Layout 편집 모드 (currentLayoutId만 있고 currentPageId 없음)
     if (currentLayoutId && !currentPageId) {
       const layoutElements = resolvedElements.filter((el) =>
-        matchesLegacyLayoutId(el, currentLayoutId),
+        isFrameElementForFrame(el, currentLayoutId),
       );
       const layoutBody = layoutElements.find(
         (el) => el.type === "body" && !el.parent_id,
@@ -959,8 +932,7 @@ function CanvasContent() {
 
     return rootElements.map((el) => renderElement(el, el.id));
   }, [
-    layouts,
-    pages,
+    canonicalDocument,
     resolvedElements,
     renderElement,
     currentLayoutId,

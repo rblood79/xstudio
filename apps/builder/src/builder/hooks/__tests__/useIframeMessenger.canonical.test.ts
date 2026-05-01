@@ -90,6 +90,20 @@ describe("P3-D-4: useIframeMessenger UPDATE_ELEMENTS schema 전환 (RED phase)",
       ).not.toBeNull();
     });
 
+    it("canonical document 를 Preview 에 별도 전송해 Preview 내부 projection 을 제거한다", async () => {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const filePath = path.resolve(__dirname, "../useIframeMessenger.ts");
+      const source = await fs.readFile(filePath, "utf-8");
+
+      expect(source).toContain("useActiveCanonicalDocument");
+      expect(source).toContain("UPDATE_CANONICAL_DOCUMENT");
+      expect(source).toContain("sendCanonicalDocumentToIframe(canonicalDoc)");
+      expect(source).toContain(
+        "sendCanonicalDocumentToIframe(activeCanonicalDocument)",
+      );
+    });
+
     it("page/frame mirror field access 는 frameMirror adapter 를 경유한다", async () => {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");

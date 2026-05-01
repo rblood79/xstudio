@@ -21,9 +21,9 @@ import type { RuntimeLayout } from "../store/types";
 import { generatePageUrl, hasDynamicParams } from "../../utils/urlGenerator";
 import type { Page } from "../../types/builder/unified.types";
 import {
-  getLegacyLayoutId,
-  withLegacyLayoutId,
-} from "../../adapters/canonical/legacyElementFields";
+  getNullablePageFrameBindingId,
+  withPageFrameBinding,
+} from "../../adapters/canonical/frameMirror";
 
 // ============================================
 // Page Renderer Component
@@ -198,7 +198,7 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
   const routeConfigs = useMemo(() => {
     // RuntimePage를 Page 타입으로 변환 (generatePageUrl 호환)
     const pagesAsPage: Page[] = pages.map((p) =>
-      withLegacyLayoutId(
+      withPageFrameBinding(
         {
           id: p.id,
           title: p.title,
@@ -207,20 +207,20 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
           parent_id: p.parent_id,
           order_num: p.order_num,
         },
-        getLegacyLayoutId(p),
+        getNullablePageFrameBindingId(p),
       ),
     );
 
     const configs = pages.map((page) => {
       // Layout 찾기
-      const pageLayoutId = getLegacyLayoutId(page);
+      const pageLayoutId = getNullablePageFrameBindingId(page);
       const layout = pageLayoutId
         ? layouts.find((l: RuntimeLayout) => l.id === pageLayoutId)
         : null;
 
       // 최종 URL 계산
       const finalUrl = generatePageUrl({
-        page: withLegacyLayoutId(
+        page: withPageFrameBinding(
           {
             id: page.id,
             title: page.title,
