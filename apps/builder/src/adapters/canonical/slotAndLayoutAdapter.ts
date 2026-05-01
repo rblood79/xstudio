@@ -27,12 +27,40 @@
 
 import type { Element } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
-import type { CanonicalNode, FrameNode, RefNode } from "@composition/shared";
+import type {
+  CanonicalNode,
+  CompositionExtension,
+  FrameNode,
+  RefNode,
+  SerializedDataBinding,
+  SerializedEventHandler,
+} from "@composition/shared";
 import type { ConvertSlotElementFn, ConvertPageLayoutFn } from "./types";
 import { tagToType, isLegacySlotTag } from "./tagRename";
 import { buildLegacyElementMetadata } from "./legacyMetadata";
 import { buildIdPathContext, segId } from "./idPath";
 import { getCanonicalSlotDeclaration } from "./slotDeclaration";
+
+/**
+ * ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — element.events / dataBinding
+ * 를 `x-composition` extension 으로 분리. index.ts 의 `buildCompositionExtensionField`
+ * 와 동일 contract — 본 모듈은 별도 분기를 가지므로 helper 중복 정의.
+ */
+function buildCompositionExtensionField(element: Element): {
+  "x-composition"?: CompositionExtension;
+} {
+  const ext: CompositionExtension = {};
+  if (Array.isArray(element.events) && element.events.length > 0) {
+    ext.events = element.events as SerializedEventHandler[];
+  }
+  if (element.dataBinding !== undefined && element.dataBinding !== null) {
+    ext.dataBinding = element.dataBinding as SerializedDataBinding;
+  }
+  if (ext.events === undefined && ext.dataBinding === undefined) {
+    return {};
+  }
+  return { "x-composition": ext };
+}
 
 // ─────────────────────────────────────────────
 // ConvertSlotElementFn
@@ -258,6 +286,7 @@ function convertElementToCanonical(
     ),
     ...getCanonicalSlotDeclaration(element),
     metadata: buildLegacyElementMetadata(element),
+    ...buildCompositionExtensionField(element),
   };
 }
 
@@ -314,6 +343,7 @@ function convertElementWithSlotHoisting(
       convertElementWithSlotHoisting(c, allElements, idSegmentMap),
     ),
     metadata: buildLegacyElementMetadata(element),
+    ...buildCompositionExtensionField(element),
   };
 }
 

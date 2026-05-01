@@ -17,9 +17,17 @@
  *   는 metadata.legacyProps 없으므로 자동 skip.
  * - round-trip 보장: `exportLegacyDocument(legacyToCanonical({elements,…})).length
  *   === elements.length` (모든 legacy fields 무손실 복원).
+ *
+ * **ADR-916 Phase 5 G7 본격 cutover** (2026-05-01): events / dataBinding 은
+ * `x-composition` extension namespace 에서 reverse 추출. metadata.legacyProps
+ * dual-storage 종결 — extension 이 단일 SSOT.
  */
 
-import type { CanonicalNode, CompositionDocument } from "@composition/shared";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+  CompositionExtension,
+} from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
 import type { FillItem } from "@/types/builder/fill.types";
 
@@ -33,9 +41,6 @@ interface LegacyPropsShape {
   order_num?: number;
   fills?: FillItem[];
   type?: string;
-  // ADR-916 Phase 5 G7 transition — events/dataBinding round-trip 보존.
-  events?: unknown[];
-  dataBinding?: unknown;
   [propKey: string]: unknown;
 }
 
@@ -94,7 +99,7 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
 
   const legacyProps = meta.legacyProps;
 
-  // 7 top-level fields + events/dataBinding (G7 transition) 분리 — 나머지는 props.
+  // 7 top-level fields 분리 — 나머지는 props.
   const {
     id,
     parent_id,
@@ -103,8 +108,6 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
     order_num,
     fills,
     type,
-    events,
-    dataBinding,
     ...restProps
   } = legacyProps;
 
@@ -129,12 +132,17 @@ function extractLegacyElement(node: CanonicalNode): Element | null {
     element.fills = fills as FillItem[];
   }
 
-  // ADR-916 Phase 5 G7 transition — events/dataBinding round-trip 복원.
-  if (events !== undefined) {
-    element.events = events as unknown[];
+  // ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — events/dataBinding 은
+  // `x-composition` extension namespace 에서 reverse 복원. metadata.legacyProps
+  // dual-storage 종결 — extension 이 단일 SSOT.
+  const ext = (
+    node as CanonicalNode & { "x-composition"?: CompositionExtension }
+  )["x-composition"];
+  if (ext?.events !== undefined) {
+    element.events = ext.events as Element["events"];
   }
-  if (dataBinding !== undefined) {
-    element.dataBinding = dataBinding as Element["dataBinding"];
+  if (ext?.dataBinding !== undefined) {
+    element.dataBinding = ext.dataBinding as Element["dataBinding"];
   }
 
   return element;

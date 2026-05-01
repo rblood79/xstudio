@@ -17,7 +17,11 @@
  */
 
 import { useMemo } from "react";
-import type { CanonicalNode, CompositionDocument } from "@composition/shared";
+import type {
+  CanonicalNode,
+  CompositionDocument,
+  CompositionExtension,
+} from "@composition/shared";
 import type { Element } from "../../../types/builder/unified.types";
 import { LEGACY_ELEMENT_PROPS_METADATA_TYPE } from "../../../adapters/canonical/legacyMetadata";
 import {
@@ -25,6 +29,32 @@ import {
   withLegacyLayoutId,
 } from "../../../adapters/canonical/legacyElementFields";
 import { useActiveCanonicalDocument } from "./canonicalElementsBridge";
+
+/**
+ * ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — `x-composition` extension 에서
+ * events / dataBinding 추출하여 Element 에 spread 가능한 partial 객체 반환.
+ * 양쪽 미정의 시 빈 객체 반환.
+ */
+function extractExtensionFields(node: CanonicalNode): {
+  events?: Element["events"];
+  dataBinding?: Element["dataBinding"];
+} {
+  const ext = (
+    node as CanonicalNode & { "x-composition"?: CompositionExtension }
+  )["x-composition"];
+  if (!ext) return {};
+  const out: {
+    events?: Element["events"];
+    dataBinding?: Element["dataBinding"];
+  } = {};
+  if (ext.events !== undefined) {
+    out.events = ext.events as Element["events"];
+  }
+  if (ext.dataBinding !== undefined) {
+    out.dataBinding = ext.dataBinding as Element["dataBinding"];
+  }
+  return out;
+}
 
 // ─────────────────────────────────────────────
 // Conversion helpers
@@ -63,6 +93,9 @@ export function canonicalNodeToElement(
   orderNum: number,
 ): Element | null {
   const metadata = node.metadata as LegacyMetadata | undefined;
+  // ADR-916 Phase 5 G7 본격 cutover — `x-composition` extension 에서
+  // events/dataBinding 복원. metadata.legacyProps dual-storage 종결.
+  const extFields = extractExtensionFields(node);
   if (
     !metadata ||
     metadata.type !== LEGACY_ELEMENT_PROPS_METADATA_TYPE ||
@@ -84,6 +117,7 @@ export function canonicalNodeToElement(
         page_id: null,
         fills: undefined,
         componentName: node.name,
+        ...extFields,
       },
       null,
     );
@@ -124,6 +158,7 @@ export function canonicalNodeToElement(
           : null,
       fills: lpFills as Element["fills"],
       componentName: node.name,
+      ...extFields,
     },
     typeof lpLayoutId === "string" || lpLayoutId === null
       ? (lpLayoutId as string | null)

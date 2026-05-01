@@ -1179,6 +1179,62 @@ design §10.2.2 추정 = ~2-3d MED. 실 baseline 측정 결과:
 
 design §10.2.4 footnote 의 "write boundary cleanup" 정의 (`inspectorActions:285-286` payload write / `createElement` AI tool / undo-redo 복원 — `updateNodeExtension` API caller migration) 가 baseline 측정으로 **caller 0건** 확인 후 무효화. 본 G7 transition first slice 는 진정 진척 영역 재발굴 결과 — adapter layer 의 round-trip 보존이 write-through sync 의 events/dataBinding 자동 cover prerequisite. inspector dual-write / AI tool migration 은 G7 본격 cutover 시점에 재평가 (canonical primary write 진입 시점).
 
+#### 10.2.11 G7 본격 cutover land (2026-05-01) — `x-composition` extension only 전환
+
+**framing**: G7 transition first slice (§10.2.10, `metadata.legacyProps` dual-storage) 의 진정 진척 — `x-composition` extension namespace 가 events/dataBinding 단일 SSOT 로 cutover. transition first slice 의 dual-storage 종결.
+
+**fork checkpoint 4 질문 lock-in**:
+
+1. **base/응용 분류**: G7 본격 cutover = canonical schema layer (CompositionExtendedNode 의 `x-composition` extension 활성화). transition first slice (`metadata.legacyProps` dual-storage) 의 진정 진척 — adapter 변환 layer 보다 한 단계 깊은 schema layer 로 진입.
+2. **schema 직교성**: `x-composition.events` / `x-composition.dataBinding` ⊥ `metadata.legacyProps`. dual-storage 종결 후 single SSOT — 두 영역이 양립 안 함.
+3. **baseline framing reverse**: transition first slice prerequisite 충족. 본 cutover = G7 closure (extension boundary 100% activation) 의 base step. 의존 방향 정확.
+4. **codex 3차 미루지 말 것**: MED scope (~30분 작업, 5 file 변경 + test 17건). 회귀 영역 = canonical document 모든 consumer 지만 isolated round-trip vitest 17건 + adapter 광역 165/165 PASS 로 backward compat 확증.
+
+**land 내용**:
+
+- **`legacyToCanonical buildNode` (apps/builder/src/adapters/canonical/index.ts)** — `x-composition` extension 추가:
+  - `buildCompositionExtensionField(element)` helper 신규 (events/dataBinding conditional spread)
+  - 양쪽 미정의 시 빈 객체 반환 → extension key 자체 노출 회피
+  - `slotAndLayoutAdapter.ts` 의 `convertElementToCanonical` / `convertElementWithSlotHoisting` 에도 동일 helper 호출 추가 (page subtree 안 element 변환 path)
+  - `import` 추가: `CompositionExtension` / `SerializedDataBinding` / `SerializedEventHandler`
+- **`buildLegacyElementMetadata` (legacyMetadata.ts)** — events/dataBinding spread 제거:
+  - transition first slice 의 dual-storage 종결 (`metadata.legacyProps.events` / `dataBinding` 미생성)
+  - docstring 갱신 (G7 본격 cutover 명시 + extension SSOT 위치 명기)
+- **`exportLegacyDocument.extractLegacyElement` (exportLegacyDocument.ts)** — `x-composition` extension reverse:
+  - `metadata.legacyProps` destructure 에서 events/dataBinding 제거
+  - `node["x-composition"]` 에서 events/dataBinding 추출 → element top-level 로 분리
+  - `LegacyPropsShape` 에서 events/dataBinding 필드 제거
+  - 모듈 docstring 갱신 (G7 본격 cutover 영역 명시)
+- **`canonicalNodeToElement` (apps/builder/src/builder/stores/canonical/canonicalElementsView.ts)** — extension 복원:
+  - `extractExtensionFields(node)` helper 신규 — `x-composition.events` / `dataBinding` 추출
+  - 양 분기 (legacy adapter 경유 + canonical primary fallback) 모두에 spread 적용 → 양쪽에서 events/dataBinding 자동 노출
+- **`legacyExtensionRoundtrip.test.ts` 갱신** (17/17 PASS):
+  - **A. legacyToCanonical extension 분리 (5건)**: events/dataBinding 양쪽 / 동시 / 미정의 / 빈 배열 skip
+  - **B. buildLegacyElementMetadata dual-storage 종결 (3건)**: events/dataBinding 미spread 검증 + props 의 동명 키는 보존
+  - **C. exportLegacyDocument extension reverse (4건)**: extension 보존 노드 → element 복원 / 미정의 → element 미정의 / props 잔존 0 / legacy fixture 잔여 호환 contract
+  - **D. round-trip 정합 (5건)**: Button + events / ListBox + dataBinding / 동시 / 미정의 / props.events + top-level 공존
+  - dummy page wrapper helper (`buildCanonicalFromElements` + `firstElementNode`) 도입 — element 별 page_id 보존하며 legacyToCanonical 호출
+
+**검증 evidence**:
+
+- `pnpm type-check` 3/3 PASS (FULL TURBO)
+- vitest `legacyExtensionRoundtrip.test.ts` **17/17 PASS** (transition first slice 13건 → cutover 17건, +4건 신규)
+- adapter 영역 광역 회귀 0 검증: `pnpm vitest run src/adapters/canonical` **165/165 PASS** (11 file 모두 PASS, 161 → 165 +4건)
+- canonical store 영역 회귀 0 검증: `vitest src/builder/stores/canonical/__tests__/canonicalElementsView.test.ts` **23/23 PASS** (extension spread 추가 후 회귀 0)
+- G7 cutover 인접 영역 (`exportSsotGrepGate` / `persistenceWriteThroughStub` / `canonicalDocumentStore` / `FrameSlotSection`) **81/81 PASS**
+- 광역 측정 시 pre-existing fail (`storeBridge.test.ts` / `canonicalDocumentSync.test.ts` zustand init setup fail + `integration.test.ts` TC1) — 단일 file isolated 측정으로 본 cutover 와 무관 noise 분리 (memory tier3-entry 명시 사전 land 6 fail 영역)
+
+**G7 진척 marker**:
+
+- ✅ transition first slice — events/dataBinding round-trip 보존 (`metadata.legacyProps` dual-storage, §10.2.10)
+- ✅ **본격 cutover — `x-composition` extension only 전환** (본 work, §10.2.11)
+- ⏭️ closure verification — write boundary cleanup baseline 재측정 (G7 closure 시점, ADR-916 parity Gate 충족)
+
+**다음 sub-phase 권장**:
+
+- **G7 closure verification** (LOW, ~0.5d): G7 본격 cutover 후 모든 hot path consumer (Preview / CanonicalNodeRenderer / inspector 등) 가 `x-composition` extension 우선 read 검증 + write 경로 (canonicalDocumentSync.test.ts setup fail 영역 진정 fix 후 events/dataBinding cover 검증)
+- **Phase 4 G5 P5-B `overrides`** (MED-HIGH, ~1-2d, design §9.7 reorder 권장): instance 시스템 cleanup, ADR-911 P3 영역 결합 위험 고려
+
 ## 11. ADR 의존 관계 정리
 
 | ADR     | ADR-916에서의 역할                        | 조정 필요                                                                                                                                       |

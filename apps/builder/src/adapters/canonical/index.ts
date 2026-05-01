@@ -26,8 +26,11 @@
 import type {
   CanonicalNode,
   CompositionDocument,
+  CompositionExtension,
   FrameNode,
   RefNode,
+  SerializedDataBinding,
+  SerializedEventHandler,
 } from "@composition/shared";
 import type { Element } from "@/types/builder/unified.types";
 import type { Layout } from "@/types/builder/layout.types";
@@ -189,6 +192,11 @@ export function legacyToCanonical(
       // legacy Element.props + top-level fields 를 metadata 로 보존 (ADR-911).
       // CanonicalNodeRenderer 의 legacyUuid resolution 이 의존하는 contract.
       metadata: buildLegacyElementMetadata(element),
+      // ADR-916 Phase 5 G7 본격 cutover (2026-05-01): events/dataBinding 을
+      // `x-composition` namespaced extension 으로 분리. metadata.legacyProps
+      // dual-storage 제거 — extension 이 단일 SSOT. exportLegacyDocument 는
+      // extension 에서 reverse, canonicalNodeToElement 는 extension 에서 복원.
+      ...buildCompositionExtensionField(element),
     };
 
     return node;
@@ -271,6 +279,34 @@ export function legacyToCanonical(
       : {}),
     children: [...layoutFrames, ...reusableMasters, ...pageNodes],
   };
+}
+
+/**
+ * ADR-916 Phase 5 G7 본격 cutover (2026-05-01) — element.events / element.dataBinding
+ * 가 정의된 경우 `x-composition` extension field 를 spread 가능한 partial 객체로
+ * 반환. 양쪽 미정의 시 빈 객체 반환 (extension key 자체 노출 회피).
+ *
+ * **schema 가정** (`SerializedEventHandler` / `SerializedDataBinding` Phase 0
+ * placeholder, Phase 5 G7 closure 시점에 schema 확정):
+ * - `element.events` (legacy `unknown[]`) → `x-composition.events: SerializedEventHandler[]`
+ *   로 cast (kind/actionRef 외 임의 키 허용 — `[k: string]: unknown`).
+ * - `element.dataBinding` (legacy `DataBinding`) → `x-composition.dataBinding:
+ *   SerializedDataBinding` 로 cast (type/source/config schema 그대로 호환).
+ */
+function buildCompositionExtensionField(element: Element): {
+  "x-composition"?: CompositionExtension;
+} {
+  const ext: CompositionExtension = {};
+  if (Array.isArray(element.events) && element.events.length > 0) {
+    ext.events = element.events as SerializedEventHandler[];
+  }
+  if (element.dataBinding !== undefined && element.dataBinding !== null) {
+    ext.dataBinding = element.dataBinding as SerializedDataBinding;
+  }
+  if (ext.events === undefined && ext.dataBinding === undefined) {
+    return {};
+  }
+  return { "x-composition": ext };
 }
 
 function indexChildrenByParent(
