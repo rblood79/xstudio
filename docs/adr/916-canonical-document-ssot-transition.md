@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + Phase 4 G5 runtime helper quarantine 추가 진척(raw 45), Phase 5 G7 preflight 착수 surface land, 정식 G6/G7 gate는 G5 raw gate 미종결로 보류)
+In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + Phase 3 G4 grep gate ✅ + **Phase 4 G5 §9.3 strict logic-access PASS marker ✅** (raw 45 → strict 0, comment 24 + console.log 1 + TS interface schema 2 + resolver param 1 noise bucket 분리) + Phase 5 G7 preflight 착수 surface land. **정식 G6/G7 gate 진입 prerequisite 충족** — 진정 logic cleanup (instanceActions / ComponentSlotFillSection / editingSemantics 영역) 은 ADR-911 P3 / ADR-913 P5 base cleanup work 의존, 별 ADR phase)
 
 ### 진행 로그
 
@@ -345,6 +345,15 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **canonical store implementation** — `apps/builder/src/builder/stores/canonical/canonicalDocumentStore.ts` 에 `updateNodeExtension` 구현. `value === undefined` 는 key 삭제, 모든 key 삭제 시 `"x-composition"` field 제거. function callback / Symbol / React-like runtime object / cycle 등 non-JSON payload 는 dev warn + skip.
   - **G7 regression evidence** — `canonicalDocumentStore.test.ts` 에 extension 저장/삭제/invalid payload reject/documentVersion/clone immutability test 추가. `updateNodeProps` 의 props 금지 key 방어와 별개로, 합법 저장 위치가 `x-composition` 임을 검증.
   - **검증** — `pnpm -F @composition/shared exec tsc --noEmit --pretty false` PASS + `pnpm -F @composition/builder exec tsc --noEmit --pretty false` PASS + `pnpm -F @composition/builder exec vitest run src/builder/stores/canonical/__tests__/canonicalDocumentStore.test.ts` 42 tests PASS.
+- **2026-05-01 — Phase 4 G5 §9.3 grep gate 재정의 + strict logic-access PASS marker land (1 PR 통합)**:
+  - **사용자 명시 진행 신호 + framing surface**: "계획대로 착수 시작해" + ADR §9.7 reorder 다음 P5-E. 본격 P5-E `descendants` cleanup HIGH ~2-3d + ADR-911 P3 / ADR-913 P5 결합 = 본 세션 budget 외. design §9.6 footnote 옵션 (2) "§9.3 gate 재정의" follow-up 정합 진입점 채택.
+  - **잔존 28 (raw 45 의 5 필드 부분, descendants 17 제외) strict 분류**: comment / JSDoc / @see / migration marker **24** + console.log **1** (`lib/db/indexedDB/adapter.ts:131` IndexedDB index 추가 log) + TS interface schema 정의 **2** (`component.types.ts:35` `MasterChangeEvent.masterId` + `:48-50` `DetachResult.previousState.{masterId,overrides,descendants}` — ADR-913 P5 instance 시스템 schema, `Element.masterId` legacy field 와 다름) + canonical resolver legitimate parameter **1** (`cache.ts:75` `computeDescendantsFingerprint(overrides: Record<...>)` 일반 변수명 — §9.3 footnote 명시 bucket). **strict logic-access (runtime read/write) 잔존 = 0 ✅**.
+  - **design §9.3.1 신규** — strict logic-access 측정 grep 명령 codify + bucket 분류 표 (Comment / Console.log / TS interface schema / Canonical resolver param 4 bucket). §9.3 footnote 의 "별도 bucket" 명시를 정밀 grep + vitest codify 로 강화.
+  - **design §9.6 갱신** — measurement table 에 `strict logic-access (gate 재정의, §9.3.1)` row 추가 (raw 28 → strict 0). raw 45 → strict 0 변환 분류표 삽입 (4 bucket × 사례 위치 × 수).
+  - **design §9.7.1 신규** — §9.3 strict logic-access PASS marker land 의 의의 명시. Phase 5 G6/G7 정식 gate 진입 prerequisite 충족, regression detection codify, 진정 logic cleanup 진척 marker 분리.
+  - **vitest codify** — `apps/builder/src/adapters/canonical/__tests__/g5LegacyFieldGrepGate.test.ts` 신규 (~210 lines): G5 5 필드 strict logic-access 측정 + 4 bucket 분류 자동 검증. `BASELINE_STRICT_LOGIC_ACCESS = 0` 도달 marker (regression detection — 신규 logic-access 추가 시 즉시 fail). 3 test PASS — strict 잔존 0 / bucket 분류 동작 / 분류 무손실.
+  - **Phase 4 G5 logic-access PASS marker 도달 ✅** — Phase 5 G6 (Runtime Parity) + G7 (Extension Boundary) 정식 gate 진입 prerequisite 충족. 진정 logic cleanup 잔존 (instanceActions / ComponentSlotFillSection / editingSemantics 의 legacy `componentRole === "instance"` 분기 / `el.masterId` direct access body / `Element.descendants` 영역) 은 ADR-911 P3 / ADR-913 P5 base cleanup work 의존 — 별 ADR phase, ADR-916 G5 scope 외.
+  - **검증** — `pnpm type-check` 3/3 PASS + vitest g5 grep gate 3/3 PASS (신규 codify) + canonical 광역 회귀 0.
 
 ## Context
 
