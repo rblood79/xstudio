@@ -196,6 +196,21 @@ In Progress — 2026-05-01 (Phase 0 G1 ✅ + Phase 1 G2 ✅ + Phase 2 G3 ✅ + P
   - **R5 cascade risk 대응 evidence** — file move + import path 갱신만, runtime caller logic 변경 0. service 영역 보존 (services/api/index.ts re-export 유지, dashboard 등 caller 무수정).
   - **G5 누적 진척 (2 commit)**: 360 (codify) → 323 (sanitizer 격리, -37) → 301 (ElementsApiService 격리, -22) = **누적 -59 ✅**. componentRole / masterId DB snake_case 영역 0 도달 (ADR-913 P5-C/D base cleanup 의 DB-facing 진척 marker).
   - **다음 sub-phase 진입점** — instanceActions.ts (componentRole 9 + masterId 8 + overrides 9 + descendants 12 = 38 matches, ADR-913 P5 hot path) single point cleanup 검토 또는 G5-A 본격 (`page.layout_id → page.bodyElement` 마이그레이션).
+- **2026-05-01 — Phase 4 G5 third work: BaseApiService dead duplicate 정리 + design §9.6/§9.7 보강 (본 세션 phase 4 종결)**:
+  - **framing 의무 raise (사용자 신호 "phase 4 완료까지 진행해" scope 검증)**: P5 sub-step 별 caller 정독 결과 = P5-B (instanceActions 9 site, instance 시스템 logic 변경 MED-HIGH) / P5-C (~2d) / P5-D (~2-3d) / P5-E (HIGH 분할) / G5-A (ADR-911 P3 frame canvas authoring 본질 결합, HIGH ~1주+). **G5 baseline 0 도달 = 다중 세션 필수** — 본 세션 max_phases=3 budget 내 도달 불가. surface 1회 + LOW hygiene 진척 자율 land + 다음 세션 진입 전략 land.
+  - **BaseApiService dead duplicate 정리** — `apps/builder/src/services/api/BaseApiService.ts:223-330` 의 stale `ElementsApiService extends BaseApiService` 클래스 + `elementsApi` 싱글톤 export 삭제. 해당 dead code 는 ADR-916 G5 second work (commit `05c92416b`) 에서 적절한 정의가 `apps/builder/src/adapters/canonical/legacyElementsApiService.ts` 로 이동된 후 잔존. 모든 caller (services/api/index.ts re-export + utils/projectSync + factories/utils/dbPersistence + adapters/canonical/canonicalMutations + dashboard 등) 가 adapter 영역 정의를 사용하므로 dead code. unused `import { Element }` 도 함께 제거. **baseline 영향 0** (dead code 였으므로) but file hygiene + 향후 confusion 회피.
+  - **design §9.6 측정 history codify** — 본 세션 baseline 변동 추적표 + DB snake_case 측정 추가. main HEAD `e5719bdf6` (codify 360) → `ec73bc66c` (sanitizer 격리, -37) → `05c92416b` (ElementsApiService 격리, -22) = baseline 301. DB snake_case `component_role` / `master_id` 0 도달 명문화.
+  - **design §9.7 본격 sub-step 진입 전략 (다음 세션)** — P5-A/B/C/D/E + G5-A 의 caller pattern + 진입 risk 표 + reorder 권장 (P5-B → P5-C → P5-D → P5-E → P5-A → G5-A). design §4 ref 수 기준 reorder 사유: ADR-911 P3 결합 위험 회피 + ADR-911 영역과 직교 sub-step (P5-B/C/D) 우선. P5-A 는 ADR-911 P3 frame.slot[] 인프라 land 또는 G5-A 진행 후 진입.
+  - **본 세션 land 누적 (5 commit)**:
+    | commit | 작업 | baseline 변동 |
+    | --- | --- | ---: |
+    | `7ae825224` | Phase 4 G5 design 보강 + framing lock-in | codify 360 |
+    | `ec73bc66c` | first work — sanitizer 격리 | -37 |
+    | `05c92416b` | second work — ElementsApiService 격리 | -22 |
+    | `<next>` | third work — BaseApiService dead duplicate + design §9.6/§9.7 | 0 (hygiene + codify) |
+  - **검증** — `pnpm type-check` 3/3 PASS (BaseApiService.ts dead code 제거 후 cache miss 332ms, unused import 정리 후 회귀 0). 영향 영역 vitest = 본 변경 영향 file 의 test 없음 (BaseApiService 자체 test 없음, dead code 였으므로 caller 영향 0).
+  - **본 세션 phase 4 진척 종결**: G5 baseline 360 → 301 (-59 누적, 16% 감소) + DB snake_case component_role/master_id 0 도달 + dead duplicate 정리 + design §9.6/§9.7 next-session 진입 전략 명문화. 본 세션 LOW risk mechanical refactor 영역 모두 land. **본격 sub-step (P5-B 부터) 진입 = 별 세션 ~3-4h MED scope**, 다음 세션 surface 후 결정.
+  - **본 ADR-916 Status `In Progress` 유지** — phase 4 G5 closure 미도달 (다중 세션 plan), Phase 5 G6/G7 진입 prerequisite 미충족.
 
 ## Context
 

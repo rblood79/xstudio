@@ -683,6 +683,54 @@ R5: "legacy field quarantine 이 과도하게 빨리 진행되어 기존 프로�
 4. **single point of cleanup 우선** — `elementSanitizer.ts` 같은 6 필드 모두 등장 site 부터 cleanup 진입 시 cascade 영향 가시성 ↑.
 5. caller chain 추적 — top files 의 hot path 변경이 하류 caller (panels / hooks / workspace) 에 영향 줄 때마다 type-check + vitest 회귀 0 검증.
 
+### 9.6 측정 history + 본 세션 land 진척
+
+본 §9.2 baseline 은 단일 시점 measurement 가 아닌 **history**. 각 sub-step 진입 시점 measurement 누적.
+
+| 측정 시점                       | main HEAD   | layout_id | slot_name | componentRole | masterId | overrides | descendants |   **G5 합계** |
+| ------------------------------- | ----------- | --------: | --------: | ------------: | -------: | --------: | ----------: | ------------: |
+| 2026-05-01 codify (design 보강) | `e5719bdf6` |       165 |        23 |            41 |       50 |        25 |          56 |       **360** |
+| sanitizer 격리 후 (first work)  | `ec73bc66c` |       158 |        17 |            37 |       46 |        17 |          48 | **323** (-37) |
+| ElementsApiService 격리 후      | `05c92416b` |       158 |        17 |            26 |       35 |        17 |          48 | **301** (-22) |
+
+**DB snake_case 측정 (design §9.3 두번째 grep)**:
+
+| 측정 시점                           | layout_id | slot_name | component_role | master_id |
+| ----------------------------------- | --------: | --------: | -------------: | --------: |
+| ElementsApiService 격리 후 baseline |        29 |         1 |          **0** |     **0** |
+
+`component_role` / `master_id` 0 도달 ✅ (ADR-913 P5-C/D base cleanup DB-facing 진척 marker). `layout_id` 29 잔존 = lib/db/migration.ts (12, exclude) + indexedDB/adapter.ts (12, ADR-913 P4 DB schema migration 영역) + project.schema.ts (2) + lib/db/types.ts (2) + PagesApiService.ts (1). `slot_name` 1 잔존 = project.schema.ts:64 (Zod schema definition).
+
+**본 세션 진입 가능 영역 측정**:
+
+- ✅ **mechanical adapter 격리** (single point cleanup 패턴) = **이미 land** (sanitizer + ElementsApiService). 다른 후보 file 발굴 결과:
+  - `lib/db/indexedDB/adapter.ts` (12 matches) — IndexedDB schema column index, console.log + 주석. logic access 0 (grep pattern 매치 안 함). **격리 불필요** — 본 file 의 12 matches 는 design §9.3 첫번째 grep 결과에 포함되지 않음 (실제 baseline 158 layout_id 영역 외).
+  - `lib/db/types.ts` (2 matches) + `project.schema.ts` (2-3 matches) = legacy schema definition. ADR-913 Phase 4 DB schema migration 영역.
+  - `PagesApiService.ts` (1 match) = page CRUD service. 본격 cleanup 영역.
+- ✅ **BaseApiService dead duplicate** (LOW hygiene) = stale ElementsApiService 클래스 + elementsApi 싱글톤 export 제거. 모든 caller 가 adapter 영역 (`legacyElementsApiService.ts`) 경유. baseline 영향 0 (dead code 였으므로) but file hygiene 개선.
+
+### 9.7 본격 sub-step 진입 전략 (다음 세션 plan)
+
+본 §9 본격 cleanup sub-step 은 **단일 세션 budget 외**:
+
+| sub-step                 | 정독 결과 caller pattern                                                                                                                                           | 진입 risk                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| **P5-A `slot_name`**     | resolvePageWithFrame slot resolution / element.utils slotMap / PropertiesPanel UI / preview slot fill 의 read site `props.slot_name ?? element.slot_name` fallback | **HIGH** — ADR-911 P3 미완성 frame.slot[] 인프라 결합 (design §6 비권장 시점). prerequisite 검증 필요 |
+| **P5-B `overrides`**     | instanceActions 9 site (instance 생명주기 reset/merge/update) + instanceResolver merge + storeBridge legacyProps export + editingSemantics overrides keys          | **MED-HIGH** — instance 시스템 logic 본질 변경, ~1-2d                                                 |
+| **P5-C `componentRole`** | instanceActions hot path / editingSemantics / multiElementCopy / canonicalRefResolution                                                                            | **MED** — ADR-911 `componentRoleAdapter` 활용 가능, ~2d                                               |
+| **P5-D `masterId`**      | instanceActions / elements store / elementIndexer / useResolvedElement / StoreRenderBridge                                                                         | **MED-HIGH** — RefNode.ref 전환 ~2-3d                                                                 |
+| **P5-E `descendants`**   | instanceActions / ComponentSlotFillSection / canonicalRefResolution / resolvers/canonical/index / packages/shared types                                            | **HIGH** — ref 수 100+ + 23 file. 내부 분할 권장 ~2-3d                                                |
+| **G5-A `layout_id`**     | panels/properties/editors / hooks (usePageManager) / preview / workspace/canvas / utils — `page.layout_id → page.bodyElement (frame ref)` 마이그레이션             | **HIGH** — ADR-911 P3 frame canvas authoring 본질 결합, ~1주+                                         |
+
+**진입 순서 권장** (안전성 + design 정합):
+
+1. **P5-B → P5-C → P5-D** — instance 시스템 cleanup 묶음 (LOW-MED), ADR-911 영역과 직교
+2. **P5-E** — descendants schema 정합성 점검 (HIGH 분할)
+3. **P5-A** — ADR-911 P3 closure (또는 G5-A) 후 진입
+4. **G5-A** — ADR-911 P3 잔여 frame canvas authoring 본질 결합 진행 (별 ADR-911 본격 phase)
+
+design §4 권장 진입 순서 (P5-A → P5-B → ...) 는 ref 수 기준만이었음. 본 §9.7 reorder 는 **ADR-911 P3 결합 위험** 회피 우선. P5-A 는 ADR-911 P3 frame.slot[] 인프라 완전 land 또는 G5-A 진행 후 진입.
+
 ## 10. Phase 5 — Runtime Parity + Extension Closure
 
 검증 matrix:
